@@ -1,5 +1,12 @@
+import { setFlagsFromString } from 'v8';
+import { runInNewContext } from 'vm';
 import { clipAndCacheSurfacesForViewport } from './clipAndCacheSurfacesForViewport';
 import { extractContourData } from '../Contour/utils/extractContourData';
+
+setFlagsFromString('--expose_gc');
+
+/** The garbage collector of the engine, which a test may run. */
+const collectGarbage = runInNewContext('gc') as () => void;
 
 /**
  * A stand-in for the polySeg worker. `getSurfacesAABBs` gives each surface
@@ -173,5 +180,21 @@ describe('clipAndCacheSurfacesForViewport', () => {
       ['changingSurface'],
       ['changingSurface'],
     ]);
+  });
+
+  it('keeps no array of a surface reachable once the surface is gone', async () => {
+    const viewport = viewportOf('goneSurface') as never;
+    let surface = surfaceOf('goneSurface-1', 1, 40);
+    const points = new WeakRef(surface.points);
+    const polys = new WeakRef(surface.polys);
+
+    await clipAndCacheSurfacesForViewport([surface], viewport);
+    surface = undefined;
+    mockWorker.executeTask.mockClear();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    collectGarbage();
+
+    expect(points.deref()).toBeUndefined();
+    expect(polys.deref()).toBeUndefined();
   });
 });

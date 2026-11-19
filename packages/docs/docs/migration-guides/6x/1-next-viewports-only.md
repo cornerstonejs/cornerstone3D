@@ -98,6 +98,10 @@ are temporary.
   `getEffectiveRenderBackend() === 'cpu'`, or `draw` in
   `viewport.getRenderPlan()`. In place of `setUseCPURendering(false)` and
   `resetUseCPURendering()` call `setRenderBackend('auto')`.
+  `setUseCPURendering(true)` turned off the GPU settings presets
+  (`gpuSettingsForRender()` gave `undefined`); `setRenderBackend('cpu')`
+  does not, because a 3D viewport and a layer pinned to the GPU still draw
+  on the GPU. Only a device without WebGL renders with no preset.
   `setUseCPURendering()` also marked the library initialized, so code that
   called it in place of `init()` must call `init()`: `setRenderBackend()`
   does not mark it. `rendering.useLegacyCameraFOV` stays: the 3D viewport

@@ -206,14 +206,56 @@ function removeSurfaceSliceProps(
   }
 
   if (!sliceSurfaces.actors.size) {
-    viewport.element.removeEventListener(
-      Enums.Events.CAMERA_MODIFIED,
-      sliceSurfaces.onCameraModified
-    );
-    sliceSurfacesByViewport.delete(viewport);
+    releaseSliceSurfaces(viewport, sliceSurfaces);
   }
 
   viewport.render();
+}
+
+/**
+ * Stops listening to the camera of a planar viewport for its surfaces, and
+ * drops the entry of its surfaces.
+ */
+function releaseSliceSurfaces(
+  viewport: PlanarViewport,
+  sliceSurfaces: SliceSurfaces
+): void {
+  viewport.element.removeEventListener(
+    Enums.Events.CAMERA_MODIFIED,
+    sliceSurfaces.onCameraModified
+  );
+  sliceSurfacesByViewport.delete(viewport);
+}
+
+/**
+ * Takes every surface out of the renderer of a viewport whose element is
+ * disabled, stops listening to its camera and drops its entry, so nothing
+ * of the tools keeps the viewport. It does not render. The tools call it on
+ * ELEMENT_DISABLED, before the viewport is destroyed.
+ *
+ * @param viewport - The viewport of the disabled element.
+ */
+function removeSurfaceSlicePropsOfDisabledViewport(
+  viewport: Types.IViewport
+): void {
+  if (!showsSurfacesAsSliceProps(viewport)) {
+    return;
+  }
+
+  const sliceSurfaces = sliceSurfacesByViewport.get(viewport);
+
+  if (!sliceSurfaces) {
+    return;
+  }
+
+  const renderer = viewport.getRenderer();
+
+  for (const actor of sliceSurfaces.actors.values()) {
+    renderer?.removeActor(actor);
+  }
+
+  sliceSurfaces.actors.clear();
+  releaseSliceSurfaces(viewport, sliceSurfaces);
 }
 
 /**
@@ -244,5 +286,6 @@ export {
   addOrUpdateSurfaceSliceProp,
   getSurfaceSlicePropEntry,
   removeSurfaceSliceProps,
+  removeSurfaceSlicePropsOfDisabledViewport,
   showsSurfacesAsSliceProps,
 };

@@ -23,7 +23,7 @@ import {
   resetGpuSettingsPreset,
   setGpuSettingsPreset,
 } from '../src/utilities/gpuSettingsPresets';
-import { setLossyDownsampling } from '../src/init';
+import { setLossyDownsampling, setRenderBackend } from '../src/init';
 
 const mockVolumes = new Map();
 
@@ -206,6 +206,38 @@ describe('two viewports over one volume report independently', () => {
     expect(volume.getTextureSet('full-resolution/full-extent').references).toBe(
       2
     );
+  });
+});
+
+describe('the GPU renders when planar viewports prefer the CPU', () => {
+  afterEach(() => {
+    setRenderBackend('auto');
+  });
+
+  it('binds the reduced texture of the preset in a 3D viewport', () => {
+    const volume = makeVolume({ volumeId: 'volume-3d-cpu-preference' });
+    const rendering = makeRendering(volume);
+    const path = new VtkVolume3DRenderPath();
+
+    setGpuSettingsPreset('low');
+    setRenderBackend('cpu');
+    provision(path, rendering);
+    render(path, rendering);
+
+    expect(rendering.boundTexture.getGrid().dimensions).toEqual([256, 256, 8]);
+  });
+
+  it('binds the reduced texture of the preset in a planar layer that draws on the GPU', () => {
+    const volume = makeVolume({ volumeId: 'volume-slice-cpu-preference' });
+    const rendering = makeRendering(volume, 'viewport-slice');
+    const path = new VtkVolumeSliceRenderPath();
+
+    setGpuSettingsPreset('low');
+    setRenderBackend('cpu');
+    provision(path, rendering);
+    render(path, rendering);
+
+    expect(rendering.boundTexture.getGrid().dimensions).toEqual([256, 256, 8]);
   });
 });
 

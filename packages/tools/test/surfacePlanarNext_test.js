@@ -4,6 +4,7 @@ import * as csTools3d from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
 import { getConfig, setConfig } from '../src/config';
 import { getSurfaceActorEntry } from '../src/stateManagement/segmentation/helpers';
+import { getSurfaceSlicePropEntry } from '../src/tools/displayTools/Surface/surfaceSliceProps';
 import {
   createNextViewport,
   createSeries,
@@ -420,4 +421,50 @@ describe('A Surface representation on a direct next planar viewport -- ', () => 
       ).toBeUndefined();
     });
   }
+
+  it('lets the viewport go when its element is disabled: no camera listener of the surfaces and no entry stay', async function () {
+    const series = await createSeries({
+      id: 'surfacePlanarDisable',
+      size: SIZE,
+    });
+    const viewport = createNextViewport(renderingEngine, 'surfaceDisable');
+    const { element } = viewport;
+    const added = [];
+    const removed = [];
+    const addEventListener = element.addEventListener.bind(element);
+    const removeEventListener = element.removeEventListener.bind(element);
+
+    await showVolume(viewport, series, 10);
+
+    element.addEventListener = (type, listener, options) => {
+      if (type === Enums.Events.CAMERA_MODIFIED) {
+        added.push(listener);
+      }
+
+      addEventListener(type, listener, options);
+    };
+    element.removeEventListener = (type, listener, options) => {
+      if (type === Enums.Events.CAMERA_MODIFIED) {
+        removed.push(listener);
+      }
+
+      removeEventListener(type, listener, options);
+    };
+
+    await showSurface(viewport);
+
+    const representationUID = `${segmentationId}-Surface-1`;
+
+    expect(added.length).toBeGreaterThan(0);
+    expect(getSurfaceSlicePropEntry(viewport, representationUID)).toBeDefined();
+
+    renderingEngine.disableElement(viewport.id);
+
+    added.forEach((listener) => {
+      expect(removed).toContain(listener);
+    });
+    expect(
+      getSurfaceSlicePropEntry(viewport, representationUID)
+    ).toBeUndefined();
+  });
 });

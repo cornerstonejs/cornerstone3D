@@ -53,14 +53,12 @@ const polyDataCache = new Map<
 >();
 
 /**
- * The bounding box of each surface by the id of the surface, with the points
- * and the polys that it was computed from. A surface whose points or polys
- * are other arrays, as after an update of the surface, gets a new box.
+ * The bounding box of a surface by the array of its points, the one input of
+ * the box. A surface whose points are another array, as after an update of
+ * the surface, gets a new box. The key is weak: the cache keeps no array of a
+ * surface that is gone.
  */
-const surfacesAABBCache = new Map<
-  string,
-  { points: number[]; polys: number[]; aabb: unknown }
->();
+const surfacesAABBCache = new WeakMap<number[], unknown>();
 
 const triggerWorkerProgress = (eventTarget, progress) => {
   triggerEvent(eventTarget, Enums.Events.WEB_WORKER_PROGRESS, {
@@ -125,7 +123,7 @@ export async function clipAndCacheSurfacesForViewport(
 
   const surfacesAABB = new Map();
   surfacesInfo.forEach((surface) => {
-    surfacesAABB.set(surface.id, surfacesAABBCache.get(surface.id)?.aabb);
+    surfacesAABB.set(surface.id, surfacesAABBCache.get(surface.points));
   });
 
   const { viewPlaneNormal } = viewport.getViewReference();
@@ -190,21 +188,15 @@ export async function clipAndCacheSurfacesForViewport(
 
 /**
  * Updates the surfaces AABB cache with the AABB information for the given surfaces.
- * The AABB of a surface is kept while the surface keeps its points and polys,
- * and computed again when they change.
+ * The AABB of a surface is kept while the surface keeps its points, and
+ * computed again when they change.
  * @param surfacesInfo - An array of surfaces information.
  * @returns A Promise that resolves when the surfaces AABB cache has been updated.
  */
 async function updateSurfacesAABBCache(surfacesInfo: SurfacesInfo[]) {
-  const surfacesWithoutAABB = surfacesInfo.filter((surface) => {
-    const cached = surfacesAABBCache.get(surface.id);
-
-    return (
-      !cached ||
-      cached.points !== surface.points ||
-      cached.polys !== surface.polys
-    );
-  });
+  const surfacesWithoutAABB = surfacesInfo.filter(
+    (surface) => !surfacesAABBCache.has(surface.points)
+  );
 
   if (!surfacesWithoutAABB.length) {
     return;
@@ -232,11 +224,9 @@ async function updateSurfacesAABBCache(surfacesInfo: SurfacesInfo[]) {
       (candidate) => candidate.id === id
     );
 
-    surfacesAABBCache.set(id, {
-      points: surface?.points,
-      polys: surface?.polys,
-      aabb,
-    });
+    if (surface) {
+      surfacesAABBCache.set(surface.points, aabb);
+    }
   });
 }
 

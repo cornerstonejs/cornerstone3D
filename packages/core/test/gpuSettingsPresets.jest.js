@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach } from '@jest/globals';
+import { describe, it, expect, afterEach, jest } from '@jest/globals';
 import {
   getGpuSettingsPreset,
   getGpuSettingsPresets,
@@ -8,7 +8,33 @@ import {
   gridLimitsOfGpuSettings,
   gpuSettingsForRender,
 } from '../src/utilities/gpuSettingsPresets';
-import { setLossyDownsampling, setRenderBackend } from '../src/init';
+import {
+  init,
+  resetInitialization,
+  setLossyDownsampling,
+  setRenderBackend,
+} from '../src/init';
+
+let mockWebGL = true;
+
+jest.mock('../src/utilities/renderingCapabilities', () => {
+  const actual = jest.requireActual('../src/utilities/renderingCapabilities');
+
+  return {
+    ...actual,
+    getRenderingCapabilities: () => ({
+      ...actual.getRenderingCapabilities(),
+      webgl: mockWebGL,
+    }),
+  };
+});
+
+/** Runs init() again as on a page of a device with or without WebGL. */
+function initOnDevice({ webgl }) {
+  mockWebGL = webgl;
+  resetInitialization();
+  init();
+}
 
 // The named capability profiles, which an application states.
 //
@@ -88,20 +114,31 @@ describe('the GPU settings presets', () => {
 
 describe('CPU rendering', () => {
   afterEach(() => {
+    initOnDevice({ webgl: true });
     setRenderBackend('auto');
     setLossyDownsampling({ final: false });
   });
 
-  // The API must do this: the presets are WebGL GPU limits, so CPU rendering
-  // renders as with final downsampling off.
-  it('applies no preset to CPU rendering', () => {
+  // The API must do this: the presets are WebGL GPU limits, so a device
+  // without WebGL renders as with final downsampling off.
+  it('applies no preset on a device without WebGL', () => {
+    initOnDevice({ webgl: true });
     setLossyDownsampling({ final: true });
     setGpuSettingsPreset('low-tablet');
 
     expect(gpuSettingsForRender()?.id).toBe('low-tablet');
 
-    setRenderBackend('cpu');
+    initOnDevice({ webgl: false });
 
     expect(gpuSettingsForRender()).toBeUndefined();
+  });
+
+  it('keeps the preset when planar viewports prefer the CPU, for the renders that stay on the GPU', () => {
+    initOnDevice({ webgl: true });
+    setLossyDownsampling({ final: true });
+    setGpuSettingsPreset('low-tablet');
+    setRenderBackend('cpu');
+
+    expect(gpuSettingsForRender()?.id).toBe('low-tablet');
   });
 });

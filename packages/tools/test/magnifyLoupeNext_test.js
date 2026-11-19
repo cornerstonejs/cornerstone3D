@@ -528,6 +528,58 @@ function worldPerPixel(viewport) {
   return Math.hypot(top[0] - bottom[0], top[1] - bottom[1], top[2] - bottom[2]);
 }
 
+/** The world size of one canvas pixel along the width and the height. */
+function pixelSizes(viewport) {
+  const origin = viewport.canvasToWorld([0, 0]);
+  const right = viewport.canvasToWorld([1, 0]);
+  const down = viewport.canvasToWorld([0, 1]);
+
+  return {
+    horizontal: Math.hypot(
+      right[0] - origin[0],
+      right[1] - origin[1],
+      right[2] - origin[2]
+    ),
+    vertical: Math.hypot(
+      down[0] - origin[0],
+      down[1] - origin[1],
+      down[2] - origin[2]
+    ),
+  };
+}
+
+/**
+ * Expects a loupe to keep the stretch of its source: the world size of one
+ * pixel along the width over that along the height is the same in both,
+ * and one pixel of the loupe spans `verticalWorldPerPixel` along its height.
+ */
+function expectStretchOfSource(loupe, source, verticalWorldPerPixel) {
+  const loupeSizes = pixelSizes(loupe);
+  const sourceSizes = pixelSizes(source);
+
+  expect(loupeSizes.horizontal / loupeSizes.vertical).toBeCloseTo(
+    sourceSizes.horizontal / sourceSizes.vertical,
+    5
+  );
+  expect(loupeSizes.vertical).toBeCloseTo(verticalWorldPerPixel, 5);
+}
+
+/**
+ * The view states that stretch a view to twice its width: a scale of two
+ * values, and a display area of such a scale.
+ */
+const STRETCHES = {
+  scale: { scale: [2, 1] },
+  'display area': { displayArea: { type: 'SCALE', scale: [2, 1] } },
+};
+
+/** Shows the stack as `showStack`, stretched to twice its width. */
+async function showStretchedStack(source, stretch = STRETCHES.scale) {
+  await showStack(source);
+  source.setViewState(stretch);
+  await renderAndWait(source);
+}
+
 function getCentre(viewport) {
   return [viewport.element.clientWidth / 2, viewport.element.clientHeight / 2];
 }
@@ -805,6 +857,37 @@ describe('The loupe of MagnifyTool on a next planar viewport -- ', () => {
 
     tool._dragEndCallback({ detail: { element: source.element } });
   }, 20000);
+
+  Object.entries(STRETCHES).forEach(([name, stretch]) => {
+    it(`keeps the stretch of its source by a ${name}, which the legacy loupe dropped`, async function () {
+      const source = createSource(renderingEngine);
+      const getLoupe = () => renderingEngine.getViewport(MAGNIFY_VIEWPORT_ID);
+
+      await showStretchedStack(source, stretch);
+
+      expect(
+        pixelSizes(source).vertical / pixelSizes(source).horizontal
+      ).toBeCloseTo(2, 5);
+
+      tool.preMouseDownCallback({
+        type: csTools3d.Enums.Events.MOUSE_DOWN,
+        detail: pointer(source, [230, 120]),
+        preventDefault() {},
+      });
+
+      const loupe = await waitForLoupe(getLoupe);
+
+      expectStretchOfSource(
+        loupe,
+        source,
+        (pixelSizes(source).vertical * source.element.clientHeight) /
+          (tool.configuration.magnifySize * loupe.element.clientHeight)
+      );
+      expectColoursOfSource(loupe, source);
+
+      tool._dragEndCallback({ detail: { element: source.element } });
+    }, 20000);
+  });
 });
 
 describe('The glass of AdvancedMagnifyTool on a next planar viewport -- ', () => {
@@ -934,5 +1017,40 @@ describe('The glass of AdvancedMagnifyTool on a next planar viewport -- ', () =>
       glass.getDisplaySets().map(({ displaySetId }) => displaySetId)
     ).toEqual(displaySetIds);
     expectColoursOfSource(glass, source);
+  }, 20000);
+
+  /** The world size along the height of one pixel of a glass of the tool. */
+  function glassWorldPerPixel(source, glass) {
+    const { zoomFactor } = tool.magnifyViewportManager.getViewport(glass.id);
+
+    return (
+      (pixelSizes(source).vertical *
+        source.element.clientHeight *
+        glass.element.clientWidth) /
+      (source.element.clientWidth * zoomFactor * glass.element.clientHeight)
+    );
+  }
+
+  it('keeps the stretch of its source, which the legacy glass dropped, and follows a change of it', async function () {
+    const source = createSource(renderingEngine);
+
+    ToolGroupManager.getToolGroup(toolGroupId).setToolPassive(
+      AdvancedMagnifyTool.toolName
+    );
+    await showStretchedStack(source);
+
+    const glass = await addGlass(source, [230, 120]);
+
+    expectStretchOfSource(glass, source, glassWorldPerPixel(source, glass));
+    expectColoursOfSource(glass, source);
+
+    source.setViewState({ scale: [3, 1] });
+    await renderAndWait(source);
+    await waitForRender(glass);
+
+    expect(
+      pixelSizes(source).vertical / pixelSizes(source).horizontal
+    ).toBeCloseTo(3, 5);
+    expectStretchOfSource(glass, source, glassWorldPerPixel(source, glass));
   }, 20000);
 });

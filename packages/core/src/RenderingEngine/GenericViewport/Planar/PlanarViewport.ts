@@ -322,8 +322,12 @@ class PlanarViewport extends GenericViewport<
   suppressEvents = false;
   /** Set when a render path draws in `render()` instead of the engine. */
   private drewOutsideEngine = false;
-  /** The mounts of `mountDisplaySets` that run now, which hold a CPU draw. */
-  private mountCpuDrawHolds = 0;
+  /**
+   * The request of the mount of `mountDisplaySets` that holds a CPU draw now.
+   * Only the newest mount holds it: a mount that a newer one replaced neither
+   * holds nor releases it.
+   */
+  private mountCpuDrawHoldRequestId?: number;
   /** Set when a CPU draw was asked for while a mount held it. */
   private cpuDrawHeldByMount = false;
   /** The image load of a CPU stack that holds the draws of the viewport. */
@@ -597,7 +601,7 @@ class PlanarViewport extends GenericViewport<
 
     this.clearResolvedViewCache();
     this.removeReplaceableData(entries);
-    this.mountCpuDrawHolds += 1;
+    this.mountCpuDrawHoldRequestId = requestId;
 
     try {
       for (const [index, { displaySetId, options = {} }] of entries.entries()) {
@@ -616,7 +620,7 @@ class PlanarViewport extends GenericViewport<
         );
       }
     } finally {
-      this.releaseMountCpuDrawHold();
+      this.releaseMountCpuDrawHold(requestId);
     }
 
     if (!isStale()) {
@@ -2888,11 +2892,11 @@ class PlanarViewport extends GenericViewport<
 
   /**
    * Whether a mount holds the draw of a CPU path. A draw asked for meanwhile
-   * is marked and done once when the last mount ends.
+   * is marked and done once when the newest mount ends.
    */
   private holdsCpuDrawForMount(): boolean {
     if (
-      !this.mountCpuDrawHolds ||
+      this.mountCpuDrawHoldRequestId === undefined ||
       getRenderSurfaceForRenderMode(
         this.renderContext.renderPath.renderMode
       ) !== 'cpu'
@@ -2907,13 +2911,18 @@ class PlanarViewport extends GenericViewport<
   }
 
   /**
-   * Ends the CPU draw hold of one mount. The last mount to end draws once
-   * when a draw was asked for meanwhile.
+   * Ends the CPU draw hold of the mount of `requestId`, when that mount still
+   * holds it, and draws once when a draw was asked for meanwhile. A mount
+   * that a newer one replaced ends without a change.
    */
-  private releaseMountCpuDrawHold(): void {
-    this.mountCpuDrawHolds = Math.max(0, this.mountCpuDrawHolds - 1);
+  private releaseMountCpuDrawHold(requestId: number): void {
+    if (requestId !== this.mountCpuDrawHoldRequestId) {
+      return;
+    }
 
-    if (this.mountCpuDrawHolds || !this.cpuDrawHeldByMount) {
+    this.mountCpuDrawHoldRequestId = undefined;
+
+    if (!this.cpuDrawHeldByMount) {
       return;
     }
 

@@ -1010,7 +1010,13 @@ legacy picture within two levels of 255.
   flipped, it showed the image unturned and unflipped; on a legacy volume
   viewport it took the rotation and not the flips), and it gave the
   presentation of the first volume only (read in the code). The legacy loupe
-  showed the image of a stack alone, without the overlays of a fusion.
+  showed the image of a stack alone, without the overlays of a fusion. The
+  loupe and the glasses keep the stretch of their viewport (a `scale` of two
+  different values, a `fitAspect` scale mode or a display area that
+  stretches): one pixel spans the same world height as before, and its
+  world width keeps the ratio of the viewport. The legacy loupe and glass
+  dropped it: on a legacy stack viewport with `setAspectRatio([2, 1])` they
+  showed the image unstretched.
 - **`MIPJumpToClickTool` works in volume mode.** On a stack it finds no
   point, and it does not throw.
 - **`CrosshairsTool` and `VolumeCroppingControlTool` leave a viewport that

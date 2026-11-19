@@ -1,7 +1,6 @@
 import type { VoxelGridLimits } from '../types';
-import { getEffectiveRenderBackend, getLossyDownsampling } from '../init';
+import { getLossyDownsampling, isWebGLUnavailable } from '../init';
 import Events from '../enums/Events';
-import RenderBackends from '../enums/RenderBackends';
 import eventTarget from '../eventTarget';
 import triggerEvent from './triggerEvent';
 
@@ -152,15 +151,14 @@ function getActiveGpuSettings(): GpuSettings {
 
 /**
  * The GPU settings that a render applies, or `undefined` when final
- * downsampling is off or the effective render backend is the CPU (a device
- * without WebGL, a lost WebGL context, or `rendering.planar.renderBackend:
- * 'cpu'`). Then no preset applies, and a volume renders as in 4.x: the
- * presets describe WebGL GPU limits, not CPU memory. Every render path reads
- * the settings here, so that one check covers them all.
+ * downsampling is off or the device has no WebGL. Then no preset applies, and
+ * a volume renders as in 4.x: the presets describe WebGL GPU limits, not CPU
+ * memory. `rendering.planar.renderBackend: 'cpu'` keeps them: a 3D viewport
+ * and a planar layer pinned to the GPU still render on the GPU. Every render
+ * path reads the settings here, so that one check covers them all.
  */
 function gpuSettingsForRender(): GpuSettings | undefined {
-  return getLossyDownsampling().final &&
-    getEffectiveRenderBackend() !== RenderBackends.CPU
+  return getLossyDownsampling().final && !isWebGLUnavailable()
     ? getActiveGpuSettings()
     : undefined;
 }

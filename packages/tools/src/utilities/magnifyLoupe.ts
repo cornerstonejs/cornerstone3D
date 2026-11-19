@@ -85,9 +85,12 @@ export async function mountLoupeSource(
  * Each display set of the loupe takes the presentation that it has on the
  * source (window, invert, colormap, opacity and the rest), and the loupe
  * takes from the view state of the source the orientation, the slice, the
- * rotation and the flips. The world point goes to the centre of the loupe.
+ * rotation and the flips, and the stretch: the ratio of the horizontal to the
+ * vertical scale that the source resolves to, from its `scale`, its scale
+ * mode or its display area. The world point goes to the centre of the loupe.
  * The zoom of the loupe is set through the projection service so that one
- * canvas pixel of the loupe spans `worldPerPixel` along its height.
+ * canvas pixel of the loupe spans `worldPerPixel` along its height, and the
+ * zoom keeps the stretch.
  */
 export function syncLoupeWithSource(
   sourceViewport: PlanarViewport,
@@ -112,6 +115,7 @@ export function syncLoupeWithSource(
 
   const { orientation, slice, rotation, flipHorizontal, flipVertical } =
     sourceViewport.getViewState();
+  const sourceScale = getViewportZoomPan(sourceViewport)?.scale ?? [1, 1];
   const viewState: Partial<PlanarViewState> = {
     orientation,
     rotation,
@@ -120,6 +124,8 @@ export function syncLoupeWithSource(
     anchorWorld: [worldPoint[0], worldPoint[1], worldPoint[2]],
     anchorCanvas: [0.5, 0.5],
     displayArea: undefined,
+    scale: [sourceScale[0] / sourceScale[1], 1],
+    scaleMode: 'fit',
   };
 
   if (slice) {

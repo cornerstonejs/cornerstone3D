@@ -26,6 +26,7 @@ import { removeAnnotation } from '../stateManagement';
 import getSynchronizersForViewport from './SynchronizerManager/getSynchronizersForViewport';
 import getToolGroupForViewport from './ToolGroupManager/getToolGroupForViewport';
 import { annotationRenderingEngine } from '../stateManagement/annotation/AnnotationRenderingEngine';
+import { removeSurfaceSlicePropsOfDisabledViewport } from '../tools/displayTools/Surface/surfaceSliceProps';
 
 const VIEWPORT_ELEMENT = 'viewport-element';
 
@@ -65,6 +66,7 @@ function removeEnabledElement(
   // @TODO: We used to "disable" the tool before removal. Should we preserve the hook that would call on tools?
   _removeViewportFromSynchronizers(element);
   _removeViewportFromToolGroup(element);
+  _removeSurfaceSliceProps(element);
 
   // _removeAllToolsForElement(canvas)
   _removeEnabledElement(element);
@@ -95,6 +97,18 @@ const _removeViewportFromToolGroup = (element: HTMLDivElement) => {
 
   if (toolGroup) {
     toolGroup.removeViewports(renderingEngineId, viewportId);
+  }
+};
+
+/**
+ * Lets go of the surfaces that a planar viewport shows as props of its
+ * renderer, and of the camera listener that keeps them at the slice.
+ */
+const _removeSurfaceSliceProps = (element: HTMLDivElement) => {
+  const enabledElement = getEnabledElement(element);
+
+  if (enabledElement) {
+    removeSurfaceSlicePropsOfDisabledViewport(enabledElement.viewport);
   }
 };
 
