@@ -1,4 +1,5 @@
 import { vec3 } from 'gl-matrix';
+import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import {
   Events,
   MetadataModules,
@@ -57,6 +58,8 @@ import type {
   ViewportDataReference,
 } from '../ViewportArchitectureTypes';
 import GenericViewport from '../GenericViewport';
+import { disableViewportWidgets } from '../viewportWidgets';
+import type { ViewportWidget } from '../Volume3D/viewport3DTypes';
 import type { GenericViewportReferenceContext } from '../genericViewportReferenceCompatibility';
 import {
   getGenericViewportImageDisplaySet,
@@ -86,7 +89,10 @@ import {
   normalizePlanarScale,
   type PlanarScaleInput,
 } from './planarCameraScale';
-import type { DerivedPlanarPresentation } from './planarRenderCamera';
+import {
+  fitPlanarCameraClippingRange,
+  type DerivedPlanarPresentation,
+} from './planarRenderCamera';
 import {
   getPlanarProjectionPan,
   getPlanarProjectionScale,
@@ -308,6 +314,14 @@ class PlanarViewport extends GenericViewport<
   suppressEvents = false;
   /** Set when a render path draws in `render()` instead of the engine. */
   private drewOutsideEngine = false;
+  /**
+   * Set once the viewport warned that the CPU path does not draw the props
+   * that the application added to its vtk.js renderer. A draw on the GPU
+   * clears it.
+   */
+  private warnedOfHiddenRendererContent = false;
+  /** The widgets that tools keep on the viewport, by id. */
+  protected readonly widgets = new Map<string, ViewportWidget>();
   protected renderContext: PlanarViewportRenderContext;
 
   private readonly mountedData: PlanarMountedData;
@@ -998,6 +1012,50 @@ class PlanarViewport extends GenericViewport<
     }
 
     return this.renderContext.vtk.canvas;
+  }
+
+  /**
+   * Returns the vtk.js renderer of the viewport, in stack mode and in volume
+   * mode. A prop of the application goes in with
+   * `getRenderer().addActor(actor)` and out with
+   * `getRenderer().removeActor(actor)`, each followed by `render()`. The
+   * application keeps the prop: `getActors()` does not list it. Where the
+   * slice is drawn on the GPU, the prop is drawn with it, in world
+   * coordinates, behind the slice where it stands behind it. The CPU path
+   * does not draw the renderer, so a prop does not show there.
+   *
+   * @returns The vtk.js renderer of the viewport.
+   */
+  getRenderer(): vtkRenderer {
+    return this.renderContext.vtk.renderer;
+  }
+
+  /**
+   * Keeps a widget of a tool under an id, as the 3D viewport does: the
+   * OrientationMarkerTool keeps its vtk.js orientation marker widget here.
+   * The rendering engine draws the renderer of each widget with the
+   * viewport. A widget that follows the camera of `getRenderer()`, as the
+   * orientation marker does, turns with the orientation of the view. The CPU
+   * path does not draw it.
+   *
+   * @param widgetId - The id of the widget, the tool name for a tool.
+   * @param widget - The widget.
+   */
+  addWidget(widgetId: string, widget: ViewportWidget): void {
+    this.widgets.set(widgetId, widget);
+  }
+
+  /** Every widget that the viewport keeps. The rendering engine reads it. */
+  getWidgets(): ViewportWidget[] {
+    return Array.from(this.widgets.values());
+  }
+
+  /**
+   * Disables every widget and takes the actor of a widget out of its
+   * renderer. The rendering engine calls it when it disables the viewport.
+   */
+  override removeWidgets(): void {
+    disableViewportWidgets(this.widgets.values());
   }
 
   /**
@@ -2282,7 +2340,11 @@ class PlanarViewport extends GenericViewport<
     this.renderContext.cpu.composition.renderPassId += 1;
     this.drewOutsideEngine = false;
 
-    if (!this.renderBindings()) {
+    const drawnByBindings = this.renderBindings();
+
+    this.answerForRendererContent();
+
+    if (!drawnByBindings) {
       this.requestRenderingEngineRender();
     }
 
@@ -2316,6 +2378,47 @@ class PlanarViewport extends GenericViewport<
         this.getDisplaySetPresentation(binding.data.id)
       );
     }
+  }
+
+  /**
+   * Answers for the props that the application added to the vtk.js renderer
+   * of the viewport, and for its widgets. On the GPU the clipping range of
+   * the camera holds every visible prop, so a prop is not cut by the depth
+   * of the slice. The CPU path does not draw the renderer nor the widgets:
+   * the viewport warns once that they do not show, and draws on.
+   */
+  private answerForRendererContent(): void {
+    const { renderer } = this.renderContext.vtk;
+    const { renderMode } = this.renderContext.renderPath;
+
+    if (getRenderSurfaceForRenderMode(renderMode) !== 'cpu') {
+      this.warnedOfHiddenRendererContent = false;
+      fitPlanarCameraClippingRange(renderer);
+      return;
+    }
+
+    if (this.warnedOfHiddenRendererContent) {
+      return;
+    }
+
+    const ownActors = new Set<unknown>(
+      this.getActors().map(({ actor }) => actor)
+    );
+    const props = renderer
+      .getViewProps()
+      .filter((prop) => !ownActors.has(prop)).length;
+    const widgets = this.getWidgets().filter((widget) =>
+      widget.getEnabled?.()
+    ).length;
+
+    if (!props && !widgets) {
+      return;
+    }
+
+    this.warnedOfHiddenRendererContent = true;
+    log.warn(
+      `[PlanarViewport] Viewport ${this.id} draws its slice on the CPU, and the CPU path does not draw the vtk.js renderer: ${props} prop(s) added with getRenderer() and ${widgets} widget(s) added with addWidget() do not show. Draw the slice on the GPU to show them.`
+    );
   }
 
   /**

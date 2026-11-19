@@ -571,6 +571,7 @@ export function applyPlanarICameraToRenderer(args: {
   vtkCamera.setFocalPoint(...activeSourceICamera.focalPoint);
   vtkCamera.setPosition(...activeSourceICamera.position);
   vtkCamera.setViewUp(...activeSourceICamera.viewUp);
+  fitPlanarCameraClippingRange(renderer);
 
   return activeSourceICamera;
 }
@@ -684,6 +685,67 @@ export function setPlanarVolumeCameraClippingRange(
   renderer: vtkRenderer
 ): void {
   setVtkCameraClippingRange(renderer.getActiveCamera());
+}
+
+/**
+ * The part of the depth of the visible props that the clipping range of a
+ * planar camera adds on each side.
+ */
+const PLANAR_CLIPPING_RANGE_MARGIN = 0.01;
+
+/**
+ * The part of the parallel scale that the clipping range of a planar camera
+ * keeps at least on each side, so a single slice, which has no depth, is
+ * not cut.
+ */
+const PLANAR_CLIPPING_RANGE_MIN_MARGIN = 0.1;
+
+/**
+ * Makes the clipping range of the camera of a planar renderer hold every
+ * visible prop of the renderer: the slices that the viewport draws and the
+ * props that the application added to the renderer. A range that holds them
+ * all is kept as it is, so a viewport without such a prop draws with the
+ * range of its render path. Otherwise the range is fitted to the props, and
+ * a parallel camera may clip behind its position, so a prop on the side of
+ * the viewer shows whole wherever the camera stands. A renderer without a
+ * visible prop keeps its range.
+ *
+ * @param renderer - The VTK renderer of a planar viewport.
+ */
+export function fitPlanarCameraClippingRange(renderer: vtkRenderer): void {
+  const bounds = renderer.computeVisiblePropBounds();
+
+  if (
+    !(
+      bounds[0] <= bounds[1] &&
+      bounds[2] <= bounds[3] &&
+      bounds[4] <= bounds[5]
+    )
+  ) {
+    return;
+  }
+
+  const camera = renderer.getActiveCamera();
+
+  if (!camera.getParallelProjection()) {
+    renderer.resetCameraClippingRange(bounds);
+    return;
+  }
+
+  const [near, far] = camera.computeClippingRange(bounds);
+  const [currentNear, currentFar] = camera.getClippingRange();
+
+  if (near >= currentNear && far <= currentFar) {
+    return;
+  }
+
+  const margin = Math.max(
+    (far - near) * PLANAR_CLIPPING_RANGE_MARGIN,
+    camera.getParallelScale() * PLANAR_CLIPPING_RANGE_MIN_MARGIN,
+    RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS
+  );
+
+  camera.setClippingRange(near - margin, far + margin);
 }
 
 /**

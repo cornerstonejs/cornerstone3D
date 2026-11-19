@@ -370,6 +370,7 @@ describe('PlanarViewport render plan', () => {
       removeActor: jest.fn(),
       getActors: jest.fn(() => []),
       resetCameraClippingRange: jest.fn(),
+      computeVisiblePropBounds: () => [1, -1, 1, -1, 1, -1],
       getViewProps: () => props,
       addViewProp: (prop) => {
         if (!props.includes(prop)) {

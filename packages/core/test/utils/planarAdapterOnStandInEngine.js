@@ -13,7 +13,11 @@ export function createPlanarAdapterOnStandInEngine(
   viewportId,
   { canvas = document.createElement('canvas'), defaultOptions = {} } = {}
 ) {
-  const renderer = { getActiveCamera: () => ({ setParallelProjection() {} }) };
+  const renderer = {
+    getActiveCamera: () => ({ setParallelProjection() {} }),
+    computeVisiblePropBounds: () => [1, -1, 1, -1, 1, -1],
+    getViewProps: () => [],
+  };
   let viewport;
   const renderingEngine = {
     id: uuidv4(),

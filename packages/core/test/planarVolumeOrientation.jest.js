@@ -48,7 +48,11 @@ function createViewport(defaultOptions = {}) {
 
   setSize(element, 64, 64);
 
-  const renderer = { getActiveCamera: () => ({ setParallelProjection() {} }) };
+  const renderer = {
+    getActiveCamera: () => ({ setParallelProjection() {} }),
+    computeVisiblePropBounds: () => [1, -1, 1, -1, 1, -1],
+    getViewProps: () => [],
+  };
   let viewport;
   const renderingEngine = {
     id: utilities.uuidv4(),

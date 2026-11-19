@@ -365,8 +365,59 @@ leave the canvas. Against the legacy volume viewport:
   slices were missing. `utilities.getSlicesClippingPlanes(viewport)` gives
   them, for a volume and for a stack, and the cut of a surface into the
   contours of each slice uses it in both modes.
-- **No vtk.js actors of the application in a slice viewport.** A planar
-  viewport has no `addActor` and no `getRenderer`, in either mode.
+- **A Surface representation shows as its cut.** On a planar viewport the
+  surface of each segment is a prop of the renderer of the viewport. In
+  volume mode it is clipped to the slice on display, 0.05 mm on each side, as
+  on the legacy volume viewport: a thin outline on a slice that cuts the
+  surface, nothing on a slice that does not, and the clipping follows each
+  scroll. In stack mode it is drawn whole, as on the legacy stack viewport:
+  in front of the image where it stands toward the viewer, hidden by the
+  image where it stands behind it. Adding a surface does not move the view.
+  The legacy viewport reset its camera, which moved a volume to its centre
+  slice. The colour of a segment follows a change, as in 3D.
+  `segmentation.helpers.getSurfaceActorEntry` does not find the prop, as
+  `getActors()` does not list it.
+
+## vtk.js actors and widgets of the application in a planar viewport
+
+- **A prop goes into the renderer of the viewport.** In stack mode and in
+  volume mode, as on a 3D viewport:
+
+  ```ts
+  viewport.getRenderer().addActor(actor);
+  viewport.render();
+
+  viewport.getRenderer().removeActor(actor);
+  viewport.render();
+  ```
+
+  It replaces `addActor`, `addActors`, `setActors` and `removeActors` of the
+  legacy stack and volume viewports for a prop that is not data. The
+  application keeps the prop: `getActors()` does not list it, and there is
+  no `ACTORS_CHANGED` event. The prop is drawn with the slice, in world
+  coordinates, so it follows a zoom, a pan and a scroll. The clipping range
+  of the camera holds every visible prop, so a prop is not cut by the depth
+  of the slice. A prop behind the slice is hidden by the slice where the
+  slice covers it, as on the legacy stack viewport. The viewport does not
+  clip a prop to its slab: an application that wants the cut sets clipping
+  planes on the mapper of its prop. A prop does not move the fit of a reset,
+  which is the fit of the display set.
+
+- **Widgets.** `viewport.addWidget(widgetId, widget)`, `getWidgets()` and
+  `removeWidgets()` are on the planar viewport as on the 3D viewport. The
+  orientation marker of `OrientationMarkerTool` shows on a planar viewport
+  and turns with the orientation of the view, in both modes.
+- **Nothing of the renderer shows on the CPU.** A slice drawn on the CPU is
+  drawn on a 2D canvas, and the vtk.js renderer is not drawn: a prop and a
+  widget do not show. The viewport does not throw. It warns once, through
+  the logger `cs3d.core.RenderingEngine.PlanarViewport`, with the number of
+  props and widgets that do not show, and again after a later draw on the
+  GPU and a new switch to the CPU.
+- **A view that shows only a prop is a 3D viewport.** A planar viewport takes
+  its camera from its display set and draws nothing without one. A view of
+  vtk.js props alone, such as the output of `vtkImageCPRMapper`, is a
+  `VOLUME_3D_NEXT` viewport: `getRenderer().addActor(actor)`,
+  `setViewState({ viewPlaneNormal, viewUp })`, `resetViewState()`.
 
 ## The render plan
 
@@ -570,9 +621,14 @@ layer of a fusion: the opacity is applied as given.
   `VolumeCroppingTool` leave the scene when the tool is disabled and come
   back when it is active again. On the legacy viewport they stayed.
 - **Widgets.** The orientation marker shows on a 3D viewport. `addWidget`
-  and `getWidgets` are on the 3D viewport only, because a widget needs a
-  vtk.js renderer. No next viewport has `getWidget`: keep your own reference
-  to a widget that you add.
+  and `getWidgets` are on the 3D viewport and on the planar viewport, the two
+  next viewports with a vtk.js renderer. No next viewport has `getWidget`:
+  keep your own reference to a widget that you add.
+- **One orientation marker for each viewport.** With the tool in two tool
+  groups, each tool made a marker for the viewports of both groups. The
+  first marker of each viewport stayed in the shared render window and drew
+  in the corner of every viewport, so a view could show the marker of
+  another view. Each tool now makes the markers of its own tool group only.
 - **A labelmap shows in 3D.** In 5.x a Labelmap representation drew nothing
   on a next 3D viewport.
 - **Zoom and pan.** Zoom 1 and pan `[0, 0]` are the fit of a reset. They are

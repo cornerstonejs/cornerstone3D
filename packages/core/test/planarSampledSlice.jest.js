@@ -1710,6 +1710,8 @@ describe('PlanarViewport with slice first (render path)', () => {
       removeActor: jest.fn((actor) => actors.splice(actors.indexOf(actor), 1)),
       getActors: jest.fn(() => actors),
       resetCameraClippingRange: jest.fn(),
+      computeVisiblePropBounds: () => [1, -1, 1, -1, 1, -1],
+      getViewProps: () => actors,
     };
     renderingEngineCache.set({
       id: engineId,

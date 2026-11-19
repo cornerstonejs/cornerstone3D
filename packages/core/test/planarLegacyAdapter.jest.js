@@ -105,7 +105,11 @@ function setUpCore() {
  * CPU render paths draw without it.
  */
 function createAdapter(element, viewportId, defaultOptions = {}) {
-  const renderer = { getActiveCamera: () => ({ setParallelProjection() {} }) };
+  const renderer = {
+    getActiveCamera: () => ({ setParallelProjection() {} }),
+    computeVisiblePropBounds: () => [1, -1, 1, -1, 1, -1],
+    getViewProps: () => [],
+  };
   let viewport;
   const renderingEngine = {
     id: utilities.uuidv4(),
@@ -869,6 +873,8 @@ describe('planar legacy adapter and a MONOCHROME1 image', () => {
     setUpCore();
     const renderer = {
       getActiveCamera: () => ({ setParallelProjection() {} }),
+      computeVisiblePropBounds: () => [1, -1, 1, -1, 1, -1],
+      getViewProps: () => [],
     };
     let viewport;
     const renderingEngine = {

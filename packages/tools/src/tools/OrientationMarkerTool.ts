@@ -275,14 +275,24 @@ class OrientationMarkerTool extends BaseTool {
       return;
     }
 
+    const viewportsInfo = getToolGroup(this.toolGroupId)?.viewportsInfo ?? [];
     let viewports = renderingEngine.getViewports();
-    viewports = filterViewportsWithToolEnabled(viewports, this.getToolName());
+    viewports = filterViewportsWithToolEnabled(
+      viewports,
+      this.getToolName()
+    ).filter((viewport) =>
+      viewportsInfo.some(
+        ({ viewportId, renderingEngineId }) =>
+          viewportId === viewport.id &&
+          renderingEngineId === viewport.renderingEngineId
+      )
+    );
 
     viewports.forEach((viewport) => {
       // The orientation marker relies on the VTK offscreen-render pipeline
-      // (addWidget/getRenderer/getOffscreenMultiRenderWindow). The legacy
-      // viewports and the next 3D viewport have it; a next viewport without a
-      // vtk.js renderer (e.g. PlanarViewport) is skipped instead of crashing.
+      // (addWidget/getRenderer/getOffscreenMultiRenderWindow). The next planar
+      // and 3D viewports have it; a next viewport without a vtk.js renderer
+      // (video, whole slide, ECG) is skipped instead of crashing.
       // This is the single choke point - addAxisActorInViewport is never
       // reached for them, and resize()/cleanUpData() already self-guard.
       if (

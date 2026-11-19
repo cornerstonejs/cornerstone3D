@@ -1,8 +1,5 @@
 import { utilities, type Types } from '@cornerstonejs/core';
-import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
-import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
-import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
-import vtkCellArray from '@kitware/vtk.js/Common/Core/CellArray';
+import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import { resetViewportCamera } from '../../../utilities/setViewportCamera';
 import {
   getSurfaceActorEntry,
@@ -12,15 +9,21 @@ import {
   addOrUpdateSurfaceDisplaySet,
   showsSurfacesAsDisplaySets,
 } from './surfaceDisplaySet';
+import {
+  addOrUpdateSurfaceSliceProp,
+  showsSurfacesAsSliceProps,
+} from './surfaceSliceProps';
+import { createSurfaceActor, updateSurfaceActorData } from './surfaceActor';
 
 /**
- * Shows a surface of a segmentation on a 3D viewport, or updates the one that
+ * Shows a surface of a segmentation on a viewport, or updates the one that
  * the viewport shows. On a direct next 3D viewport the surface is a geometry
- * display set, and the promise resolves when it is mounted. On a legacy 3D
- * viewport and on a legacy adapter it is an actor of the application, added
- * before the function returns.
+ * display set, and the promise resolves when it is mounted. On a next planar
+ * viewport, and on its legacy adapter, it is a prop of the vtk.js renderer of
+ * the viewport, clipped to the slice in volume mode. On the legacy 3D adapter
+ * it is an actor of the application, added before the function returns.
  *
- * @param viewport - The 3D viewport.
+ * @param viewport - The viewport.
  * @param surface - The surface, with its colour and its visibility.
  * @param segmentationId - The id of the segmentation of the surface.
  * @param geometryId - The id of the cached geometry of the surface, which a
@@ -41,6 +44,15 @@ async function addOrUpdateSurfaceToElement(
     );
   }
 
+  if (showsSurfacesAsSliceProps(viewport)) {
+    addOrUpdateSurfaceSliceProp(
+      viewport,
+      surface,
+      getSurfaceRepresentationUID(segmentationId, surface.segmentIndex)
+    );
+    return;
+  }
+
   const surfaceActorEntry = getSurfaceActorEntry(
     viewport.id,
     segmentationId,
@@ -57,77 +69,16 @@ async function addOrUpdateSurfaceToElement(
     if (!isVisible) {
       return;
     }
-    // we already have an actor for this surface, we just need to update it
 
-    // Todo: figure out if the surface configuration has changed
-
-    const surfaceMapper = surfaceActor.getMapper();
-    const currentPolyData = surfaceMapper.getInputData();
-
-    // check if the new data is the same as the old data by checking the
-    // length of the points and the length of the polys
-
-    const newPoints = surface.points;
-    const newPolys = surface.polys;
-
-    const currentPoints = currentPolyData.getPoints().getData();
-    const currentPolys = currentPolyData.getPolys().getData();
-
-    if (
-      newPoints.length === currentPoints.length &&
-      newPolys.length === currentPolys.length
-    ) {
-      // the data is the same, we don't need to update the actor
-
-      return;
+    if (updateSurfaceActorData(surfaceActor, surface)) {
+      viewport.getRenderer().resetCameraClippingRange();
     }
-
-    const polyData = vtkPolyData.newInstance();
-    polyData.getPoints().setData(newPoints, 3);
-
-    const triangles = vtkCellArray.newInstance({
-      values: Float32Array.from(newPolys),
-    });
-
-    polyData.setPolys(triangles);
-
-    surfaceMapper.setInputData(polyData);
-    surfaceMapper.modified();
-
-    viewport.getRenderer().resetCameraClippingRange();
 
     return;
   }
 
-  // Default to true since we are setting a new segmentation, however,
-  // in the event listener, we will make other segmentations visible/invisible
-  // based on the config
-  const points = surface.points;
-  const polys = surface.polys;
-  const color = surface.color;
-
-  const surfacePolyData = vtkPolyData.newInstance();
-  surfacePolyData.getPoints().setData(points, 3);
-
-  const triangles = vtkCellArray.newInstance({
-    values: Float32Array.from(polys),
-  });
-  surfacePolyData.setPolys(triangles);
-
-  const mapper = vtkMapper.newInstance({});
-
   let clippingFilter;
-  mapper.setInputData(surfacePolyData);
-
-  const actor = vtkActor.newInstance();
-  actor.setMapper(mapper);
-
-  // sets the color of the surface actor
-  actor.getProperty().setColor(color[0] / 255, color[1] / 255, color[2] / 255);
-
-  // set line width
-  // Todo: make this configurable
-  actor.getProperty().setLineWidth(2);
+  const actor = createSurfaceActor(surface);
 
   const representationUID = getSurfaceRepresentationUID(
     segmentationId,

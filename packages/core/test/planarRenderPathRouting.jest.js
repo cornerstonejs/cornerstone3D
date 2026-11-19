@@ -275,6 +275,7 @@ describe('PlanarViewport remount after presentation changes', () => {
       removeActor: jest.fn(),
       getActors: jest.fn(() => []),
       resetCameraClippingRange: jest.fn(),
+      computeVisiblePropBounds: () => [1, -1, 1, -1, 1, -1],
       getViewProps: () => props,
       addViewProp: (prop) => {
         if (!props.includes(prop)) {

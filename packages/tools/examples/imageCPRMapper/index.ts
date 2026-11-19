@@ -1,10 +1,15 @@
-import type { Types } from '@cornerstonejs/core';
+import type {
+  GenericVolumeViewport3D,
+  PlanarViewport,
+  Types,
+} from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
   volumeLoader,
   getRenderingEngine,
   utilities,
+  cache,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -16,6 +21,8 @@ import { getAnnotations } from '../../src/stateManagement/annotation/annotationS
 
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
+import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
+import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkImageCPRMapper from '@kitware/vtk.js/Rendering/Core/ImageCPRMapper';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 
@@ -35,10 +42,12 @@ const { MouseBindings } = csToolsEnums;
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
+const volumeDisplaySetId = 'CT_VOLUME_DISPLAY_SET';
 const renderingEngineId = 'myRenderingEngine';
 let renderingEngine: RenderingEngine;
 
 let centerline;
+let cprActor: vtkImageSlice;
 
 const viewportIds = ['CT_VOLUME_SAGITTAL', 'CT_STACK'];
 
@@ -74,7 +83,9 @@ addButtonToToolbar({
   title: 'CPR Mapper',
   onClick: () => {
     renderingEngine = getRenderingEngine(renderingEngineId);
-    const viewport = renderingEngine.getViewport(viewportIds[0]);
+    const viewport = renderingEngine.getViewport<PlanarViewport>(
+      viewportIds[0]
+    );
     if (!viewport) {
       return;
     }
@@ -114,23 +125,26 @@ addButtonToToolbar({
       mapper.setUseUniformOrientation(true);
       mapper.setUniformOrientation([0, 1, 0, 0]);
 
-      const volumeActor = viewport.getDefaultActor().actor;
-      const imageData = volumeActor.getMapper().getInputData();
+      const imageData = createImageDataForCPR(cache.getVolume(volumeId));
       mapper.setInputData(imageData, 0);
       mapper.setInputData(centerline, 1);
       mapper.setWidth(500);
 
-      const stackViewport = <Types.IStackViewport>(
-        renderingEngine.getViewport(viewportIds[1])
+      const cprViewport = renderingEngine.getViewport<GenericVolumeViewport3D>(
+        viewportIds[1]
       );
       const actor = vtkImageSlice.newInstance();
       actor.setMapper(mapper);
-      stackViewport.setActors([{ uid: 'cprActor', actor: actor }]);
 
-      const renderer = stackViewport.getRenderer();
-      renderer.resetCamera();
+      const renderer = cprViewport.getRenderer();
+      if (cprActor) {
+        renderer.removeActor(cprActor);
+      }
+      renderer.addActor(actor);
+      cprActor = actor;
 
-      stackViewport.render();
+      cprViewport.resetViewState();
+      cprViewport.render();
     }
   },
 });
@@ -209,12 +223,12 @@ async function run() {
     wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
-  // Create a stack and a volume viewport
+  // Create a planar viewport for the volume and a 3D viewport for the CPR
   // Match the order of viewportIds and DOM elements for left-to-right rendering
   const viewportInputArray = [
     {
       viewportId: viewportIds[0],
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: sagittalElement,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -223,7 +237,7 @@ async function run() {
     },
     {
       viewportId: viewportIds[1],
-      type: ViewportType.STACK,
+      type: ViewportType.VOLUME_3D_NEXT,
       element: cprElement,
       defaultOptions: {
         background: <Types.Point3>[0.2, 0, 0.2],
@@ -246,72 +260,55 @@ async function run() {
     imageIds: volumeImageIds,
   });
 
-  const volumeViewport = <Types.IVolumeViewport>(
-    renderingEngine.getViewport(viewportIds[0])
+  const volumeViewport = renderingEngine.getViewport<PlanarViewport>(
+    viewportIds[0]
   );
+
+  renderingEngine
+    .getViewport<GenericVolumeViewport3D>(viewportIds[1])
+    .setViewState({ viewPlaneNormal: [0, 0, -1], viewUp: [0, -1, 0] });
 
   // Set the volume to load
   volume.load();
 
-  // Set the volume on the viewport
-  volumeViewport.setVolumes([{ volumeId }]).then(() => {
-    prepareImageDataForPicking(volumeViewport);
+  utilities.genericViewportDisplaySetMetadataProvider.add(volumeDisplaySetId, {
+    kind: 'planar',
+    imageIds: volumeImageIds,
+    volumeId,
   });
+
+  // Set the volume on the viewport
+  volumeViewport.setDisplaySets({ displaySetId: volumeDisplaySetId });
 
   // Render the image
   renderingEngine.renderViewports(viewportIds);
 }
 
 /**
- * Creates the minimum infrastructure needed to pick a point in the 3D volume
- * with VTK.js
- * @remarks
- * @param viewport
- * @returns
+ * Makes the vtk.js image data that the CPR mapper reads: the geometry of the
+ * volume, with its voxels as scalars. The volume keeps its voxels in its
+ * voxel manager, and its own image data, which the viewport draws, has no
+ * scalars, so the CPR mapper gets an image data of its own.
+ *
+ * @param volume - The volume of the cache
+ * @returns The image data for the CPR mapper
  */
-function prepareImageDataForPicking(viewport: Types.IVolumeViewport) {
-  const volumeActor = viewport.getDefaultActor()?.actor;
-  if (!volumeActor) {
-    return;
-  }
-  // Get the imageData from the volumeActor
-  const imageData = volumeActor.getMapper().getInputData();
+function createImageDataForCPR(volume: Types.IImageVolume) {
+  const { voxelManager } = volume;
+  const imageData = vtkImageData.newInstance();
 
-  if (!imageData) {
-    console.error('No imageData found in the volumeActor');
-    return null;
-  }
+  imageData.setDimensions(volume.dimensions);
+  imageData.setSpacing(volume.spacing);
+  imageData.setOrigin(volume.origin);
+  imageData.setDirection(volume.direction);
+  imageData.getPointData().setScalars(
+    vtkDataArray.newInstance({
+      numberOfComponents: voxelManager.numberOfComponents,
+      values: voxelManager.getCompleteScalarDataArray(),
+    })
+  );
 
-  // Get the voxelManager from the imageData
-  const { voxelManager } = imageData.get('voxelManager');
-
-  if (!voxelManager) {
-    console.error('No voxelManager found in the imageData');
-    return imageData;
-  }
-
-  // Create a fake scalar object to expose the scalar data to VTK.js
-  const fakeScalars = {
-    getData: () => {
-      return voxelManager.getCompleteScalarDataArray();
-    },
-    getNumberOfComponents: () => voxelManager.numberOfComponents,
-    getDataType: () =>
-      voxelManager.getCompleteScalarDataArray().constructor.name,
-    getMTime: () => 0,
-    getRange: () => {
-      const { min, max } = utilities.getMinMax(
-        voxelManager.getCompleteScalarDataArray()
-      );
-      return [min, max];
-    },
-  };
-
-  // Set the point data to return the fakeScalars
-  imageData.setPointData({
-    getScalars: () => fakeScalars,
-    getMTime: () => 0, // Required by VTK to track data updates
-  });
+  return imageData;
 }
 
 run();

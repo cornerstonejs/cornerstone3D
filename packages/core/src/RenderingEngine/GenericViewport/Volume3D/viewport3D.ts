@@ -26,6 +26,7 @@ import type {
   ViewportDataBinding,
 } from '../ViewportArchitectureTypes';
 import GenericViewport from '../GenericViewport';
+import { disableViewportWidgets } from '../viewportWidgets';
 import {
   getDimensionGroupReferenceContext,
   type GenericViewportReferenceContext,
@@ -371,18 +372,7 @@ class VolumeViewport3D extends GenericViewport<
    * renderer. The rendering engine calls it when it disables the viewport.
    */
   override removeWidgets(): void {
-    this.getWidgets().forEach((widget) => {
-      if (widget.getEnabled?.()) {
-        widget.setEnabled(false);
-      }
-
-      const actor = widget.getActor?.();
-      const renderer = widget.getRenderer?.();
-
-      if (actor && renderer) {
-        renderer.removeActor(actor);
-      }
-    });
+    disableViewportWidgets(this.widgets.values());
   }
 
   /**

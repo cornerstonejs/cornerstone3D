@@ -26,7 +26,10 @@ import {
   triggerPlanarVolumeNewImageAtAttach,
   triggerPlanarVolumeNewImageOfPlacedSlice,
 } from './planarImageEvents';
-import { applyPlanarICameraToRenderer } from './planarRenderCamera';
+import {
+  applyPlanarICameraToRenderer,
+  fitPlanarCameraClippingRange,
+} from './planarRenderCamera';
 import {
   getPlanarRenderPathActiveSourceICamera,
   resolvePlanarRenderPathProjection,
@@ -310,6 +313,7 @@ export class VtkSampledSliceRenderPath
     );
     this.updateSlice(mount, getPlanarRenderPathActiveSourceICamera(ctx));
     ctx.vtk.renderer.resetCameraClippingRange();
+    fitPlanarCameraClippingRange(ctx.vtk.renderer);
   }
 
   private applyViewState(mount: SampledSliceMount, cameraInput: unknown): void {
@@ -359,6 +363,7 @@ export class VtkSampledSliceRenderPath
 
     this.updateSlice(mount, projection.activeSourceICamera);
     ctx.vtk.renderer.resetCameraClippingRange();
+    fitPlanarCameraClippingRange(ctx.vtk.renderer);
 
     if (triggerImageEvent) {
       triggerPlanarVolumeNewImageOfPlacedSlice(ctx, {

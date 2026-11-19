@@ -598,8 +598,8 @@ abstract class GenericViewport<
 
   /**
    * Does nothing: only a viewport with a vtk.js renderer keeps widgets, which
-   * is the 3D viewport. The rendering engine calls it for every viewport that
-   * it disables.
+   * are the planar and the 3D viewport. The rendering engine calls it for
+   * every viewport that it disables.
    */
   removeWidgets(): void {}
 

@@ -45,6 +45,7 @@ import {
 import {
   applyPlanarICameraToActor,
   applyPlanarICameraToRenderer,
+  fitPlanarCameraClippingRange,
 } from './planarRenderCamera';
 import {
   getPlanarRenderPathActiveSourceICamera,
@@ -272,6 +273,7 @@ export class VtkVolumeSliceRenderPath
       rendering.overlayOrder
     );
     ctx.vtk.renderer.resetCameraClippingRange();
+    fitPlanarCameraClippingRange(ctx.vtk.renderer);
   }
 
   private applyViewState(
@@ -339,6 +341,7 @@ export class VtkVolumeSliceRenderPath
       rendering.overlayOrder
     );
     ctx.vtk.renderer.resetCameraClippingRange();
+    fitPlanarCameraClippingRange(ctx.vtk.renderer);
 
     if (triggerImageEvent) {
       triggerPlanarVolumeNewImageOfPlacedSlice(ctx, {

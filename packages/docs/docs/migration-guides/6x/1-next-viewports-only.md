@@ -185,6 +185,9 @@ Carried over, in the new shape:
   presentation;
 - a perspective camera, on a 3D viewport with `parallelProjection: false`;
 - a surface in a 3D viewport, as a display set;
+- vtk.js actors and widgets of the application in a slice viewport, as props
+  of `viewport.getRenderer()` and through `viewport.addWidget()`, as on a 3D
+  viewport;
 - a stretched picture, as the scale pair of the view state of a planar
   viewport;
 - the frame range of a video, as a key of its view state.
@@ -195,7 +198,6 @@ Not carried over:
 - a `callback` and an `actorUID` on a volume or stack input;
 - a preset on a slice viewport;
 - a display area and an aspect ratio on a 3D viewport;
-- vtk.js actors of the application in a slice viewport;
 - options that change after creation (`setOptions`, `reset`) on the 3D, video,
   whole slide and ECG viewports;
 - a stored initial camera (`storeAsInitialCamera`);

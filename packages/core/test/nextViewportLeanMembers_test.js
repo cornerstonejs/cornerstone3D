@@ -132,7 +132,9 @@ describe('Legacy members that are not on the direct next viewports -- ', () => {
   });
 
   NEXT_FAMILIES.filter(
-    ([, viewportType]) => viewportType !== ViewportType.VOLUME_3D_NEXT
+    ([, viewportType]) =>
+      viewportType !== ViewportType.VOLUME_3D_NEXT &&
+      viewportType !== ViewportType.PLANAR_NEXT
   ).forEach(([family, viewportType]) => {
     it(`keeps no widgets on a direct next ${family} viewport, which the engine disables without them`, function () {
       const viewport = enableViewport(renderingEngine, viewportType);
@@ -146,22 +148,25 @@ describe('Legacy members that are not on the direct next viewports -- ', () => {
     });
   });
 
-  it('keeps the widgets of a direct next 3D viewport, without getWidget, and turns them off when the engine disables it', function () {
-    const viewport = enableViewport(
-      renderingEngine,
-      ViewportType.VOLUME_3D_NEXT
-    );
-    const widget = createWidget();
+  NEXT_FAMILIES.filter(
+    ([, viewportType]) =>
+      viewportType === ViewportType.VOLUME_3D_NEXT ||
+      viewportType === ViewportType.PLANAR_NEXT
+  ).forEach(([family, viewportType]) => {
+    it(`keeps the widgets of a direct next ${family} viewport, without getWidget, and turns them off when the engine disables it`, function () {
+      const viewport = enableViewport(renderingEngine, viewportType);
+      const widget = createWidget();
 
-    viewport.addWidget('marker', widget);
+      viewport.addWidget('marker', widget);
 
-    expect(viewport.getWidget).toBeUndefined();
-    expect(viewport.getWidgets()).toEqual([widget]);
+      expect(viewport.getWidget).toBeUndefined();
+      expect(viewport.getWidgets()).toEqual([widget]);
 
-    renderingEngine.disableElement(viewport.id);
+      renderingEngine.disableElement(viewport.id);
 
-    expect(widget.enabled).toBe(false);
-    expect(widget.removedActors).toEqual([widget.getActor()]);
+      expect(widget.enabled).toBe(false);
+      expect(widget.removedActors).toEqual([widget.getActor()]);
+    });
   });
 
   it('keeps getWidget on the 3D legacy adapter, as on the legacy 3D viewport', function () {

@@ -31,6 +31,8 @@ function createViewport(defaultOptions = {}) {
   };
   const renderer = {
     getActiveCamera: jest.fn(() => activeCamera),
+    computeVisiblePropBounds: () => [1, -1, 1, -1, 1, -1],
+    getViewProps: () => [],
   };
   let viewport;
   const renderingEngine = {

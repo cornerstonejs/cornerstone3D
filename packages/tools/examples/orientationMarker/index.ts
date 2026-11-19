@@ -1,10 +1,11 @@
-import type { Types } from '@cornerstonejs/core';
+import type {
+  GenericVolumeViewport3D,
+  PlanarViewport,
+} from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
   volumeLoader,
-  setVolumesForViewports,
-  CONSTANTS,
   utilities,
 } from '@cornerstonejs/core';
 import {
@@ -14,7 +15,7 @@ import {
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import addDropDownToToolbar from '../../../../utils/demo/helpers/addDropdownToToolbar';
-import setPetTransferFunction from '../../../../utils/demo/helpers/setPetTransferFunctionForVolumeActor';
+import { petPresentation } from '../../../../utils/demo/helpers/volumePresentationRecipes';
 import { VolumeRotateTool } from '@cornerstonejs/tools';
 
 async function getImageStacks() {
@@ -89,6 +90,8 @@ const ptVolumeName = 'PT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const ctVolumeId = `${volumeLoaderScheme}:${ctVolumeName}`;
 const ptVolumeId = `${volumeLoaderScheme}:${ptVolumeName}`;
+const ctDisplaySetId = 'CT_DISPLAY_SET';
+const ptDisplaySetId = 'PT_DISPLAY_SET';
 const toolGroupId = 'MY_TOOLGROUP_ID';
 
 // ======== Set up page ======== //
@@ -190,7 +193,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportIds[0],
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.VOLUME_3D_NEXT,
       element: elements[0],
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -198,7 +201,7 @@ async function run() {
     },
     {
       viewportId: viewportIds[1],
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.VOLUME_3D_NEXT,
       element: elements[1],
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -206,7 +209,7 @@ async function run() {
     },
     {
       viewportId: viewportIds[2],
-      type: ViewportType.ORTHOGRAPHIC,
+      type: ViewportType.PLANAR_NEXT,
       element: elements[2],
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -237,47 +240,41 @@ async function run() {
 
   const ctViewportIds = viewportIds.slice(0, 2);
 
-  setVolumesForViewports(
-    renderingEngine,
-    [
-      {
-        volumeId: ctVolumeId,
-        slabThickness: 300,
-      },
-    ],
-    [...ctViewportIds]
-  ).then(() => {
-    ctViewportIds.forEach((viewportId) => {
-      const volumeActor = renderingEngine
-        .getViewport(viewportId)
-        .getDefaultActor().actor as Types.VolumeActor;
+  utilities.genericViewportDisplaySetMetadataProvider.add(ctDisplaySetId, {
+    imageIds: ctImageIds,
+    volumeId: ctVolumeId,
+  });
+  utilities.genericViewportDisplaySetMetadataProvider.add(ptDisplaySetId, {
+    kind: 'planar',
+    imageIds: ptImageIds,
+    volumeId: ptVolumeId,
+  });
 
-      utilities.applyPreset(
-        volumeActor,
-        CONSTANTS.VIEWPORT_PRESETS.find((preset) => preset.name === 'CT-Bone')
-      );
+  ctViewportIds.forEach((viewportId) => {
+    const viewport =
+      renderingEngine.getViewport<GenericVolumeViewport3D>(viewportId);
 
-      const viewport = renderingEngine.getViewport(viewportId);
+    viewport.setDisplaySets({ displaySetId: ctDisplaySetId }).then(() => {
+      viewport.setDisplaySetPresentation(ctDisplaySetId, {
+        preset: 'CT-Bone',
+      });
 
       viewport.render();
     });
   });
 
-  setVolumesForViewports(
-    renderingEngine,
-    [
-      {
-        volumeId: ptVolumeId,
-        callback: setPetTransferFunction,
-        blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
-        slabThickness: 300,
-      },
-    ],
-    [viewportIds[2]]
-  ).then(() => {
-    const viewport = renderingEngine.getViewport(viewportIds[2]);
+  const ptViewport = renderingEngine.getViewport<PlanarViewport>(
+    viewportIds[2]
+  );
 
-    viewport.render();
+  ptViewport.setDisplaySets({ displaySetId: ptDisplaySetId }).then(() => {
+    ptViewport.setDisplaySetPresentation(ptDisplaySetId, {
+      ...petPresentation(),
+      blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
+      slabThickness: 300,
+    });
+
+    ptViewport.render();
   });
 
   ctToolGroup.setToolActive(OrientationMarkerTool.toolName);

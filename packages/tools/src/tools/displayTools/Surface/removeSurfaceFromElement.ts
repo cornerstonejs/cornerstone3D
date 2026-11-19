@@ -4,6 +4,11 @@ import {
   removeSurfaceDisplaySets,
   showsSurfacesAsDisplaySets,
 } from './surfaceDisplaySet';
+import {
+  removeSurfaceSliceProps,
+  showsSurfacesAsSliceProps,
+} from './surfaceSliceProps';
+import { getSurfaceRepresentationUID } from '../../../stateManagement/segmentation/helpers/getSegmentationActor';
 
 /**
  * Remove the surface representation from the viewport's HTML Element.
@@ -24,6 +29,15 @@ function removeSurfaceFromElement(
 
   if (showsSurfacesAsDisplaySets(viewport)) {
     removeSurfaceDisplaySets(viewport, segmentationId);
+
+    return;
+  }
+
+  if (showsSurfacesAsSliceProps(viewport)) {
+    removeSurfaceSliceProps(
+      viewport,
+      getSurfaceRepresentationUID(segmentationId, '')
+    );
 
     return;
   }

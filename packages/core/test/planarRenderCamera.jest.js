@@ -526,7 +526,10 @@ describe('applyPlanarICameraToRenderer', () => {
       setPosition: jest.fn(),
       setViewUp: jest.fn(),
     };
-    const renderer = { getActiveCamera: () => camera };
+    const renderer = {
+      getActiveCamera: () => camera,
+      computeVisiblePropBounds: () => [1, -1, 1, -1, 1, -1],
+    };
 
     return { renderer, camera };
   }
