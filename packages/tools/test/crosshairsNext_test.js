@@ -38,7 +38,7 @@ function createEmptyViewports(renderingEngine) {
       OrientationAxis.SAGITTAL,
       OrientationAxis.CORONAL,
     ].map((orientation, index) => ({
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       width: 512,
       height: 128,
       viewportId: viewportIds[index],

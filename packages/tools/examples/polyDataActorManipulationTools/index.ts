@@ -1,4 +1,4 @@
-import type { GenericVolumeViewport3D, Types } from '@cornerstonejs/core';
+import type { VolumeViewport3D, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
@@ -165,7 +165,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportId1,
-      type: ViewportType.VOLUME_3D_NEXT,
+      type: ViewportType.VOLUME_3D,
       element: element1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -174,7 +174,7 @@ async function run() {
     },
     {
       viewportId: viewportId2,
-      type: ViewportType.VOLUME_3D_NEXT,
+      type: ViewportType.VOLUME_3D,
       element: element2,
       defaultOptions: {
         parallelProjection: false,
@@ -192,8 +192,7 @@ async function run() {
 
   viewportIds.forEach((viewportId) => {
     // Get the stack viewport that was created
-    const viewport =
-      renderingEngine.getViewport<GenericVolumeViewport3D>(viewportId);
+    const viewport = renderingEngine.getViewport<VolumeViewport3D>(viewportId);
 
     const actor = getSphereActor({
       center: [0, 0, 0],

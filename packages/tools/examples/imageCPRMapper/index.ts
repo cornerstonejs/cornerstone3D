@@ -1,5 +1,5 @@
 import type {
-  GenericVolumeViewport3D,
+  VolumeViewport3D,
   PlanarViewport,
   Types,
 } from '@cornerstonejs/core';
@@ -130,7 +130,7 @@ addButtonToToolbar({
       mapper.setInputData(centerline, 1);
       mapper.setWidth(500);
 
-      const cprViewport = renderingEngine.getViewport<GenericVolumeViewport3D>(
+      const cprViewport = renderingEngine.getViewport<VolumeViewport3D>(
         viewportIds[1]
       );
       const actor = vtkImageSlice.newInstance();
@@ -228,7 +228,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportIds[0],
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: sagittalElement,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -237,7 +237,7 @@ async function run() {
     },
     {
       viewportId: viewportIds[1],
-      type: ViewportType.VOLUME_3D_NEXT,
+      type: ViewportType.VOLUME_3D,
       element: cprElement,
       defaultOptions: {
         background: <Types.Point3>[0.2, 0, 0.2],
@@ -265,7 +265,7 @@ async function run() {
   );
 
   renderingEngine
-    .getViewport<GenericVolumeViewport3D>(viewportIds[1])
+    .getViewport<VolumeViewport3D>(viewportIds[1])
     .setViewState({ viewPlaneNormal: [0, 0, -1], viewUp: [0, -1, 0] });
 
   // Set the volume to load

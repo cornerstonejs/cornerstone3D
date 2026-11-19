@@ -11,7 +11,7 @@ jest.mock('@cornerstonejs/core', () => ({
       MAXIMUM_INTENSITY_BLEND: 1,
     },
     ViewportType: {
-      PLANAR_NEXT: 'planarNext',
+      PLANAR: 'planar',
     },
     VoxelStatistics: {
       Average: 'average',
@@ -163,7 +163,7 @@ const triggerSegmentationDataModifiedMock =
 function createPlanarVolumeViewport(labelmapId: string) {
   return {
     id: 'viewport-id',
-    type: 'planarNext',
+    type: 'planar',
     addDisplaySet: jest.fn(),
     getActors: jest.fn(() => [
       {
@@ -206,7 +206,7 @@ describe('labelmapRenderPlan', () => {
   it('owns stack labelmap mount and expected actor UID behavior', async () => {
     const viewport = {
       id: 'viewport-id',
-      type: 'planarNext',
+      type: 'planar',
     };
     const segmentation = {
       segmentationId: 'segmentation-id',
@@ -251,7 +251,7 @@ describe('labelmapRenderPlan', () => {
     };
     const viewport = {
       id: 'viewport-id',
-      type: 'planarNext',
+      type: 'planar',
       removeData: jest.fn(),
     };
     const segmentation = {
@@ -298,7 +298,7 @@ describe('labelmapRenderPlan', () => {
     };
     const viewport = {
       id: 'viewport-id',
-      type: 'planarNext',
+      type: 'planar',
       addDisplaySet: jest.fn(),
       getActors: jest.fn(() => [
         {
@@ -489,7 +489,7 @@ describe('labelmapRenderPlan', () => {
     };
     const viewport = {
       id: 'viewport-id',
-      type: 'planarNext',
+      type: 'planar',
       removeData: jest.fn(),
     };
     const segmentation = {
@@ -546,7 +546,7 @@ describe('labelmapRenderPlan', () => {
   it('keeps the slice image outline when slice images were asked for on a sampled slice source', async () => {
     const viewport = {
       id: 'viewport-id',
-      type: 'planarNext',
+      type: 'planar',
     };
     const segmentation = {
       segmentationId: 'segmentation-id',
@@ -592,7 +592,7 @@ describe('labelmapRenderPlan', () => {
     };
     const viewport = {
       id: 'viewport-id',
-      type: 'planarNext',
+      type: 'planar',
     };
 
     shouldUseSliceRenderingMock.mockReturnValue(true);

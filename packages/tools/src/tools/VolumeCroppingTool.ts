@@ -9,7 +9,7 @@ import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 
 import { BaseTool } from './base';
 
-import type { Types, GenericVolumeViewport3D } from '@cornerstonejs/core';
+import type { Types, VolumeViewport3D } from '@cornerstonejs/core';
 import {
   getRenderingEngine,
   getEnabledElementByIds,
@@ -408,7 +408,7 @@ class VolumeCroppingTool extends BaseTool {
       viewport.id,
       'orientation-controller'
     );
-    const actor = this._getVolumeActor(viewport as GenericVolumeViewport3D);
+    const actor = this._getVolumeActor(viewport as VolumeViewport3D);
     if (!actor) {
       return false;
     }
@@ -1072,7 +1072,7 @@ class VolumeCroppingTool extends BaseTool {
   };
 
   _addSphere(
-    viewport: GenericVolumeViewport3D,
+    viewport: VolumeViewport3D,
     point: Types.Point3,
     axis: string,
     position: string,
@@ -1433,7 +1433,7 @@ class VolumeCroppingTool extends BaseTool {
     return { viewport, world };
   };
 
-  _getViewport = (): GenericVolumeViewport3D | null => {
+  _getViewport = (): VolumeViewport3D | null => {
     const viewportsInfo = this._getViewportsInfo();
     if (!viewportsInfo || viewportsInfo.length === 0) {
       return null;
@@ -1441,12 +1441,10 @@ class VolumeCroppingTool extends BaseTool {
     const [viewport3D] = viewportsInfo;
     const renderingEngine = getRenderingEngine(viewport3D.renderingEngineId);
     const viewport = renderingEngine?.getViewport(viewport3D.viewportId);
-    return (viewport as GenericVolumeViewport3D) || null;
+    return (viewport as VolumeViewport3D) || null;
   };
 
-  _getVolumeActor(
-    viewport?: GenericVolumeViewport3D
-  ): Types.VolumeActor | undefined {
+  _getVolumeActor(viewport?: VolumeViewport3D): Types.VolumeActor | undefined {
     const vp = viewport || this._getViewport();
     return vp
       ?.getActors?.()
@@ -1454,9 +1452,7 @@ class VolumeCroppingTool extends BaseTool {
       ?.actor as Types.VolumeActor | undefined;
   }
 
-  _getVolumeMapper(
-    viewport?: GenericVolumeViewport3D
-  ): vtkVolumeMapper | undefined {
+  _getVolumeMapper(viewport?: VolumeViewport3D): vtkVolumeMapper | undefined {
     const actor = this._getVolumeActor(viewport);
     return actor?.getMapper() as vtkVolumeMapper | undefined;
   }

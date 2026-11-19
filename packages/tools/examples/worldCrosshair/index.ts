@@ -46,7 +46,7 @@ const renderingEngineId = 'myRenderingEngine';
 // ======== Set up page ======== //
 setTitleAndDescription(
   'World Crosshair (Reference Point)',
-  'The WorldCrosshairTool stores one persistent world-space reference point, running on native PLANAR_NEXT (generic) viewports. Click to set the point; it stays fixed in world space while you scroll, pan and zoom. Points off the current slice are drawn dashed with their signed distance.'
+  'The WorldCrosshairTool stores one persistent world-space reference point, running on native PLANAR (generic) viewports. Click to set the point; it stays fixed in world space while you scroll, pan and zoom. Points off the current slice are drawn dashed with their signed distance.'
 );
 
 const size = '500px';
@@ -174,7 +174,7 @@ async function run() {
   viewportIds.forEach((viewportId, index) => {
     renderingEngine.enableElement({
       viewportId,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: elements[index],
       defaultOptions: {
         orientation: orientations[index],

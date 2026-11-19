@@ -628,7 +628,7 @@ async function setUpDisplay() {
   const viewportInputArray = [
     {
       viewportId: viewportIds.CT.AXIAL,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: element1_1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -636,7 +636,7 @@ async function setUpDisplay() {
     },
     {
       viewportId: viewportIds.CT.SAGITTAL,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: element1_2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -644,7 +644,7 @@ async function setUpDisplay() {
     },
     {
       viewportId: viewportIds.CT.CORONAL,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: element1_3,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -652,7 +652,7 @@ async function setUpDisplay() {
     },
     {
       viewportId: viewportIds.PT.AXIAL,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: element2_1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -661,7 +661,7 @@ async function setUpDisplay() {
     },
     {
       viewportId: viewportIds.PT.SAGITTAL,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: element2_2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -670,7 +670,7 @@ async function setUpDisplay() {
     },
     {
       viewportId: viewportIds.PT.CORONAL,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: element2_3,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -679,7 +679,7 @@ async function setUpDisplay() {
     },
     {
       viewportId: viewportIds.FUSION.AXIAL,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: element3_1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -687,7 +687,7 @@ async function setUpDisplay() {
     },
     {
       viewportId: viewportIds.FUSION.SAGITTAL,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: element3_2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -695,7 +695,7 @@ async function setUpDisplay() {
     },
     {
       viewportId: viewportIds.FUSION.CORONAL,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: element3_3,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -703,7 +703,7 @@ async function setUpDisplay() {
     },
     {
       viewportId: viewportIds.PETMIP.CORONAL,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: element_mip,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -792,7 +792,7 @@ addButtonToToolbar({
   onClick: async () => {
     const viewportInput = {
       viewportId: viewportIds.PETMIP.CORONAL,
-      type: ViewportType.VOLUME_3D_NEXT,
+      type: ViewportType.VOLUME_3D,
       element: element_mip,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,

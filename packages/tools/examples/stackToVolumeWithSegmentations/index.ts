@@ -156,7 +156,7 @@ async function showDisplaySetInPlace(
 
   renderingEngine.enableElement({
     viewportId,
-    type: ViewportType.PLANAR_NEXT,
+    type: ViewportType.PLANAR,
     element,
     defaultOptions: { background: options.background },
   });
@@ -318,7 +318,7 @@ async function _startFromVolume(
 
   const viewportInput = {
     viewportId,
-    type: ViewportType.PLANAR_NEXT,
+    type: ViewportType.PLANAR,
     element,
     defaultOptions: {
       orientation: Enums.OrientationAxis.SAGITTAL,
@@ -398,7 +398,7 @@ async function _startFromStack(
   // Create a stack viewport
   const viewportInput = {
     viewportId,
-    type: ViewportType.PLANAR_NEXT,
+    type: ViewportType.PLANAR,
     element,
     defaultOptions: {
       background: <Types.Point3>[0.4, 0, 0.4],

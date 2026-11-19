@@ -1,4 +1,4 @@
-import type { Types, VideoGenericViewport } from '@cornerstonejs/core';
+import type { Types, VideoViewport } from '@cornerstonejs/core';
 import { RenderingEngine, Enums, utilities } from '@cornerstonejs/core';
 import dicomImageLoader from '@cornerstonejs/dicom-image-loader';
 import { api } from 'dicomweb-client';
@@ -28,12 +28,12 @@ type DisplaySet = ReturnType<typeof splitDisplaySetsFromImageIds>[number];
 // Maps a display set's viewport-type hint to the cornerstone viewport type to
 // enable for it.
 const HINT_TO_VIEWPORT_TYPE: Record<string, Enums.ViewportType> = {
-  stack: ViewportType.PLANAR_NEXT,
-  volume: ViewportType.PLANAR_NEXT,
-  volume3d: ViewportType.VOLUME_3D_NEXT,
-  video: ViewportType.VIDEO_NEXT,
-  wholeslide: ViewportType.WHOLE_SLIDE_NEXT,
-  ecg: ViewportType.ECG_NEXT,
+  stack: ViewportType.PLANAR,
+  volume: ViewportType.PLANAR,
+  volume3d: ViewportType.VOLUME_3D,
+  video: ViewportType.VIDEO,
+  wholeslide: ViewportType.WHOLE_SLIDE,
+  ecg: ViewportType.ECG,
 };
 
 const BACKGROUND_BY_HINT: Record<string, Types.Point3> = {
@@ -225,8 +225,7 @@ function renderDetails(row: Row, viewport: Types.IViewport, status: string) {
 }
 
 async function mountRow(row: Row) {
-  const viewportType =
-    HINT_TO_VIEWPORT_TYPE[row.hint] ?? ViewportType.PLANAR_NEXT;
+  const viewportType = HINT_TO_VIEWPORT_TYPE[row.hint] ?? ViewportType.PLANAR;
 
   try {
     registerDisplaySetData(row);
@@ -267,7 +266,7 @@ async function mountRow(row: Row) {
       });
     }
     if (row.hint === 'video') {
-      renderingEngine.getViewport<VideoGenericViewport>(row.viewportId).play();
+      renderingEngine.getViewport<VideoViewport>(row.viewportId).play();
     }
 
     viewport.render();

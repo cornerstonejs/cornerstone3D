@@ -1,8 +1,4 @@
-import type {
-  Types,
-  ECGGenericViewport,
-  ECGViewState,
-} from '@cornerstonejs/core';
+import type { Types, ECGViewport, ECGViewState } from '@cornerstonejs/core';
 import { RenderingEngine, Enums, utilities } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
@@ -111,7 +107,7 @@ async function run() {
 
   renderingEngine.enableElement({
     viewportId,
-    type: ViewportType.ECG_NEXT,
+    type: ViewportType.ECG,
     element,
     defaultOptions: {
       background: [0, 0.2, 0] as Types.Point3,
@@ -120,7 +116,7 @@ async function run() {
 
   toolGroup.addViewport(viewportId, renderingEngineId);
 
-  const viewport = renderingEngine.getViewport<ECGGenericViewport>(viewportId);
+  const viewport = renderingEngine.getViewport<ECGViewport>(viewportId);
 
   utilities.genericViewportDisplaySetMetadataProvider.add(ecgDataId, {
     kind: 'ecg',

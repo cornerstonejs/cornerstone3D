@@ -186,12 +186,12 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportId1,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: element1,
     },
     {
       viewportId: viewportId2,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: element2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -199,12 +199,12 @@ async function run() {
     },
     {
       viewportId: viewportId3,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: element3,
     },
     {
       viewportId: viewportId4,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: element4,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,

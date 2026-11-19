@@ -6,7 +6,7 @@ jest.mock('@cornerstonejs/core', () => {
         IMAGE_RENDERED: 'CORNERSTONE_IMAGE_RENDERED',
       },
       ViewportType: {
-        PLANAR_NEXT: 'planarNext',
+        PLANAR: 'planar',
       },
     },
     getEnabledElement: jest.fn(),
@@ -103,7 +103,7 @@ describe('segmentation imageChangeEventListener', () => {
     const enabledElement = {
       viewport: {
         id: viewportId,
-        type: 'planarNext',
+        type: 'planar',
         element,
         getCurrentImageId: () => 'image:0',
       },
@@ -165,7 +165,7 @@ describe('segmentation imageChangeEventListener on a planar viewport with slice-
     element = document.createElement('div');
     viewport = {
       id: viewportId,
-      type: Enums.ViewportType.PLANAR_NEXT,
+      type: Enums.ViewportType.PLANAR,
       element,
       getCurrentImageId: () => 'image:0',
     };

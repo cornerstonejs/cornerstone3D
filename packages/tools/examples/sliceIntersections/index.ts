@@ -47,7 +47,7 @@ const renderingEngineId = 'myRenderingEngine';
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Slice Intersections',
-  'The SliceIntersectionTool renders one intersection line per plane (red = axial, yellow = sagittal, green = coronal) on native PLANAR_NEXT (generic) viewports. Every line is a true plane-plane intersection: there is no shared crosshair center. Drag a line to scroll that plane; use the handles to rotate it or change its slab thickness.'
+  'The SliceIntersectionTool renders one intersection line per plane (red = axial, yellow = sagittal, green = coronal) on native PLANAR (generic) viewports. Every line is a true plane-plane intersection: there is no shared crosshair center. Drag a line to scroll that plane; use the handles to rotate it or change its slab thickness.'
 );
 
 const size = '500px';
@@ -157,7 +157,7 @@ async function run() {
   viewportIds.forEach((viewportId, index) => {
     renderingEngine.enableElement({
       viewportId,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: elements[index],
       defaultOptions: {
         orientation: orientations[index],

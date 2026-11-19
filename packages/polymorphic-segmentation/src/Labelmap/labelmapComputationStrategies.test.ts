@@ -48,7 +48,7 @@ describe('computeLabelmapFromContourSegmentation', () => {
   it('makes a volume labelmap for a planar viewport in volume mode', async () => {
     const viewport = {
       ...nextApi(),
-      type: 'planarNext',
+      type: 'planar',
       getCurrentMode: () => 'volume',
     };
 
@@ -65,7 +65,7 @@ describe('computeLabelmapFromContourSegmentation', () => {
       { getCurrentMode: () => 'stack' },
       {
         ...nextApi(),
-        type: 'planarNext',
+        type: 'planar',
         getCurrentMode: () => 'stack',
       },
     ];

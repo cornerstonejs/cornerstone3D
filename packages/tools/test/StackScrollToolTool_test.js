@@ -63,7 +63,7 @@ describe('Cornerstone Tools Scroll Wheel:', () => {
 
   it('Should successfully scroll through a volume', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       viewportId: viewportId,
       width: 512,
       height: 128,
@@ -136,7 +136,7 @@ describe('Cornerstone Tools Scroll Wheel:', () => {
 
   it('Should successfully scroll through stack of images', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       viewportId: viewportId,
       width: 256,
       height: 256,
@@ -235,7 +235,7 @@ describe('Cornerstone Tools Scroll Wheel:', () => {
 
   it('Should successfully scroll through stack of images and then go back', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       viewportId: viewportId,
       width: 256,
       height: 256,

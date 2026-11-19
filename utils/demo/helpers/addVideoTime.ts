@@ -1,4 +1,4 @@
-import type { VideoGenericViewport } from '@cornerstonejs/core';
+import type { VideoViewport } from '@cornerstonejs/core';
 import { Enums } from '@cornerstonejs/core';
 
 const seconds = (time) => `${(time || 0).toFixed(1)} s`;
@@ -16,7 +16,7 @@ type VideoRenderedEvent = CustomEvent<{ time: number; duration: number }>;
  */
 export default function addVideoTime(
   afterElement: HTMLElement,
-  viewport: VideoGenericViewport
+  viewport: VideoViewport
 ) {
   const rangeDiv = document.createElement('div');
   rangeDiv.innerHTML =

@@ -46,7 +46,7 @@ const viewportsInfo = [
     displaySetId: stackDisplaySetId,
     viewportInput: {
       viewportId: 'CT_STACK_AXIAL',
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: null,
       defaultOptions: {
         background: <Types.Point3>[0.2, 0, 0.2],
@@ -58,7 +58,7 @@ const viewportsInfo = [
     displaySetId: volumeDisplaySetId,
     viewportInput: {
       viewportId: 'CT_VOLUME_AXIAL',
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: null,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,

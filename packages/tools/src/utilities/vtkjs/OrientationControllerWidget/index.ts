@@ -9,7 +9,7 @@ import { Enums } from '@cornerstonejs/core';
 import type {
   Types,
   PlanarViewport,
-  GenericVolumeViewport3D,
+  VolumeViewport3D,
 } from '@cornerstonejs/core';
 import vtkAnnotatedRhombicuboctahedronActor from '../AnnotatedRhombicuboctahedronActor';
 import { beginOwnedDrag, endOwnedDrag } from '../../interactionDragCoordinator';
@@ -220,7 +220,7 @@ export class vtkOrientationControllerWidget {
       (viewport as Types.IViewport)
         .getRenderingEngine()
         ?.getRenderer(viewportId) ??
-      (viewport as PlanarViewport | GenericVolumeViewport3D).getRenderer();
+      (viewport as PlanarViewport | VolumeViewport3D).getRenderer();
 
     const vtkMainRenderer = mainRenderer as vtkRenderer;
     const overlayRenderer = vtkRenderer.newInstance();
@@ -307,7 +307,7 @@ export class vtkOrientationControllerWidget {
       (viewport as Types.IViewport)
         .getRenderingEngine()
         ?.getRenderer(viewportId) ??
-      (viewport as PlanarViewport | GenericVolumeViewport3D).getRenderer();
+      (viewport as PlanarViewport | VolumeViewport3D).getRenderer();
     if (!renderer) {
       return null;
     }
@@ -319,8 +319,7 @@ export class vtkOrientationControllerWidget {
     const devicePixelRatio = window.devicePixelRatio || 1;
     const canvasPosWithDPR = [x * devicePixelRatio, y * devicePixelRatio];
 
-    const canvas = (viewport as PlanarViewport | GenericVolumeViewport3D)
-      .canvas;
+    const canvas = (viewport as PlanarViewport | VolumeViewport3D).canvas;
     const { width, height } = canvas;
 
     const [xMin, yMin, xMax, yMax] =
@@ -361,8 +360,7 @@ export class vtkOrientationControllerWidget {
     position: PositionConfig['position'],
     screenSizePixels: number
   ): [number, number, number] | null {
-    const canvas = (viewport as PlanarViewport | GenericVolumeViewport3D)
-      .canvas;
+    const canvas = (viewport as PlanarViewport | VolumeViewport3D).canvas;
     if (!canvas) {
       return null;
     }
@@ -379,7 +377,7 @@ export class vtkOrientationControllerWidget {
     // even when the size is large.
     const marginRatio = [
       Enums.ViewportType.VOLUME_3D,
-      Enums.ViewportType.VOLUME_3D_NEXT,
+      Enums.ViewportType.VOLUME_3D,
     ].includes(viewport.type)
       ? 1.3
       : 1.1;
@@ -424,8 +422,7 @@ export class vtkOrientationControllerWidget {
   ): boolean {
     // Calculate marker size in world units to maintain fixed screen size
     // This keeps the marker at a constant screen size regardless of zoom
-    const canvas = (viewport as PlanarViewport | GenericVolumeViewport3D)
-      .canvas;
+    const canvas = (viewport as PlanarViewport | VolumeViewport3D).canvas;
     if (!canvas) {
       cs3dLogger.warn('OrientationControllerWidget: No canvas available');
       return false;
@@ -436,7 +433,7 @@ export class vtkOrientationControllerWidget {
       (viewport as Types.IViewport)
         .getRenderingEngine()
         ?.getRenderer(viewport.id) ??
-      (viewport as PlanarViewport | GenericVolumeViewport3D).getRenderer();
+      (viewport as PlanarViewport | VolumeViewport3D).getRenderer();
     const camera = (mainRenderer as vtkRenderer)?.getActiveCamera();
     if (!camera) {
       return false;
@@ -1020,7 +1017,7 @@ export class vtkOrientationControllerWidget {
       (viewport as Types.IViewport)
         .getRenderingEngine()
         ?.getRenderer(viewportId) ??
-      (viewport as PlanarViewport | GenericVolumeViewport3D).getRenderer();
+      (viewport as PlanarViewport | VolumeViewport3D).getRenderer();
     if (!mainRenderer) {
       return;
     }

@@ -74,7 +74,7 @@ async function loadImage32Float() {
 
   const viewportInput = {
     viewportId,
-    type: ViewportType.PLANAR_NEXT,
+    type: ViewportType.PLANAR,
     element,
     defaultOptions: {
       orientation: Enums.OrientationAxis.SAGITTAL,
@@ -104,7 +104,7 @@ async function loadImage16Float() {
 
   const viewportInput = {
     viewportId,
-    type: ViewportType.PLANAR_NEXT,
+    type: ViewportType.PLANAR,
     element,
     defaultOptions: {
       orientation: Enums.OrientationAxis.SAGITTAL,
@@ -166,7 +166,7 @@ async function run() {
   // Create a volume viewport
   const viewportInput = {
     viewportId,
-    type: ViewportType.PLANAR_NEXT,
+    type: ViewportType.PLANAR,
     element,
     defaultOptions: {
       orientation: Enums.OrientationAxis.SAGITTAL,

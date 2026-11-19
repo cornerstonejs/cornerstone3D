@@ -242,7 +242,7 @@ async function run() {
   // Create a stack viewport
   const viewportInput = {
     viewportId,
-    type: ViewportType.PLANAR_NEXT,
+    type: ViewportType.PLANAR,
     element,
     defaultOptions: {
       background: [0.2, 0, 0.2] as Types.Point3,

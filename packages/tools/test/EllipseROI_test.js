@@ -84,7 +84,7 @@ describe('Ellipse Tool: ', () => {
 
     it('Should successfully create a ellipse tool on a canvas with mouse drag - 512 x 128', function (done) {
       const element = createViewports(renderingEngine, {
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
         width: 512,
         height: 128,
         viewportId: viewportId,
@@ -228,7 +228,7 @@ describe('Ellipse Tool: ', () => {
 
     it('Should cancel drawing of a EllipseTool annotation', function (done) {
       const element = createViewports(renderingEngine, {
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
         width: 512,
         height: 128,
         viewportId: viewportId,

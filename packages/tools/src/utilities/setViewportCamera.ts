@@ -27,17 +27,17 @@ export default function setViewportCamera(
   camera: Partial<Types.ICamera>
 ): void {
   const vp = viewport as CameraWritableViewport;
-  // A PLANAR_NEXT viewport (slab / MPR / MIP) expresses orientation through its
+  // A PLANAR viewport (slab / MPR / MIP) expresses orientation through its
   // view reference (viewPlaneNormal / viewUp / focalPoint), not through
   // setViewState - PlanarViewState holds only an in-plane rotation and silently
   // drops an off-axis viewPlaneNormal, so camera-rotation tools (e.g.
   // VolumeRotate on the TMTV MIP) were no-ops. Rewrite the rotation through
   // setViewReference, deriving the view-plane normal from position -> focalPoint
-  // when the camera does not carry one. VOLUME_3D_NEXT continues to apply the
+  // when the camera does not carry one. VOLUME_3D continues to apply the
   // full camera (position/parallelScale/etc.) via setViewState
   // (-> applyVolume3DCamera).
   if (
-    (viewport as { type?: string }).type === Enums.ViewportType.PLANAR_NEXT &&
+    (viewport as { type?: string }).type === Enums.ViewportType.PLANAR &&
     typeof vp.setViewReference === 'function'
   ) {
     const ref = viewport.getViewReference();

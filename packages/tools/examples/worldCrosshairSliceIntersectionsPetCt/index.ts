@@ -1,5 +1,5 @@
 import type {
-  GenericVolumeViewport3D,
+  VolumeViewport3D,
   PlanarViewport,
   Types,
 } from '@cornerstonejs/core';
@@ -322,7 +322,7 @@ async function run() {
   allViewportSpecs.forEach((spec, index) => {
     renderingEngine.enableElement({
       viewportId: spec.viewportId,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: allElements[index],
       defaultOptions: {
         ...(spec.orientation ? { orientation: spec.orientation } : {}),
@@ -333,7 +333,7 @@ async function run() {
 
   renderingEngine.enableElement({
     viewportId: ct3dViewportId,
-    type: ViewportType.VOLUME_3D_NEXT,
+    type: ViewportType.VOLUME_3D,
     element: ct3dElement,
     defaultOptions: {
       orientation: OrientationAxis.CORONAL,
@@ -422,7 +422,7 @@ async function run() {
   // ----------------------------------------------------------------------
   const ct3dViewport = getRenderingEngine(renderingEngineId).getViewport(
     ct3dViewportId
-  ) as GenericVolumeViewport3D;
+  ) as VolumeViewport3D;
   await ct3dViewport.setDisplaySets({
     displaySetId: ct3dDataId,
     options: { renderMode: 'vtkVolume3d' },
@@ -495,7 +495,7 @@ async function run() {
       evt.preventDefault();
       const viewport = getRenderingEngine(renderingEngineId).getViewport(
         ct3dViewportId
-      ) as GenericVolumeViewport3D;
+      ) as VolumeViewport3D;
       const vtkCamera = viewport.getVtkActiveCamera();
       const zoomFactor = evt.deltaY > 0 ? 1.1 : 1 / 1.1;
       viewport.setViewState({

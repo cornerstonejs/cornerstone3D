@@ -929,7 +929,7 @@ async function run() {
   renderingEngine.setViewports(
     viewportSpecs.map(({ viewportId, orientation }) => ({
       viewportId,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: elementsByViewportId.get(viewportId),
       defaultOptions: {
         orientation,

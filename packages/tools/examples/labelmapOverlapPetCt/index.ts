@@ -325,13 +325,13 @@ async function run() {
   renderingEngine.setViewports([
     {
       viewportId: viewportIds.CT_AXIAL,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: ctAxialEl,
       defaultOptions: { orientation: Enums.OrientationAxis.AXIAL, background },
     },
     {
       viewportId: viewportIds.CT_SAGITTAL,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: ctSagittalEl,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -340,7 +340,7 @@ async function run() {
     },
     {
       viewportId: viewportIds.CT_CORONAL,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: ctCoronalEl,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -349,13 +349,13 @@ async function run() {
     },
     {
       viewportId: viewportIds.PT_AXIAL,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: ptAxialEl,
       defaultOptions: { orientation: Enums.OrientationAxis.AXIAL, background },
     },
     {
       viewportId: viewportIds.PT_SAGITTAL,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: ptSagittalEl,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -364,7 +364,7 @@ async function run() {
     },
     {
       viewportId: viewportIds.PT_CORONAL,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: ptCoronalEl,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,

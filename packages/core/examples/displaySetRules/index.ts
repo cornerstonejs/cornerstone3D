@@ -6,7 +6,7 @@ import {
   utilities,
   type PlanarViewport,
   type Types,
-  type VideoGenericViewport,
+  type VideoViewport,
 } from '@cornerstonejs/core';
 import dicomImageLoader from '@cornerstonejs/dicom-image-loader';
 import {
@@ -90,19 +90,19 @@ function isVolumeCapable(displaySet: IDisplaySet): boolean {
 
 /** The 2x2 MPR + 3D layout, as [label, viewport type, orientation] slots. */
 const MPR_3D_SLOTS: [string, Enums.ViewportType, Enums.OrientationAxis?][] = [
-  ['Axial', ViewportType.PLANAR_NEXT, OrientationAxis.AXIAL],
-  ['Sagittal', ViewportType.PLANAR_NEXT, OrientationAxis.SAGITTAL],
-  ['Coronal', ViewportType.PLANAR_NEXT, OrientationAxis.CORONAL],
-  ['3D', ViewportType.VOLUME_3D_NEXT, undefined],
+  ['Axial', ViewportType.PLANAR, OrientationAxis.AXIAL],
+  ['Sagittal', ViewportType.PLANAR, OrientationAxis.SAGITTAL],
+  ['Coronal', ViewportType.PLANAR, OrientationAxis.CORONAL],
+  ['3D', ViewportType.VOLUME_3D, undefined],
 ];
 
 const HINT_TO_VIEWPORT_TYPE: Record<string, Enums.ViewportType> = {
-  stack: ViewportType.PLANAR_NEXT,
-  volume: ViewportType.PLANAR_NEXT,
-  volume3d: ViewportType.VOLUME_3D_NEXT,
-  video: ViewportType.VIDEO_NEXT,
-  ecg: ViewportType.ECG_NEXT,
-  wholeslide: ViewportType.WHOLE_SLIDE_NEXT,
+  stack: ViewportType.PLANAR,
+  volume: ViewportType.PLANAR,
+  volume3d: ViewportType.VOLUME_3D,
+  video: ViewportType.VIDEO,
+  ecg: ViewportType.ECG,
+  wholeslide: ViewportType.WHOLE_SLIDE,
 };
 
 const MPR_3D_LAYOUT = '2x2 MPR + 3D';
@@ -1326,10 +1326,10 @@ function addFrameControls(
  * would attach bindings that cannot act on it.
  */
 function toolGroupIdFor(viewportType: Enums.ViewportType): string | undefined {
-  if (viewportType === ViewportType.VOLUME_3D_NEXT) {
+  if (viewportType === ViewportType.VOLUME_3D) {
     return toolGroupId3d;
   }
-  if (viewportType === ViewportType.ECG_NEXT) {
+  if (viewportType === ViewportType.ECG) {
     return undefined;
   }
   return toolGroupId2d;
@@ -1371,19 +1371,19 @@ async function mountViewport(
     displaySetId: displaySet.displaySetId,
   });
 
-  if (viewportType === ViewportType.PLANAR_NEXT && orientation) {
+  if (viewportType === ViewportType.PLANAR && orientation) {
     viewport.setDisplaySetPresentation(
       displaySet.displaySetId,
       ctPresentation()
     );
   }
-  if (viewportType === ViewportType.VOLUME_3D_NEXT) {
+  if (viewportType === ViewportType.VOLUME_3D) {
     viewport.setDisplaySetPresentation(displaySet.displaySetId, {
       preset: 'CT-Bone',
     });
   }
-  if (viewportType === ViewportType.VIDEO_NEXT) {
-    renderingEngine.getViewport<VideoGenericViewport>(viewportId).play();
+  if (viewportType === ViewportType.VIDEO) {
+    renderingEngine.getViewport<VideoViewport>(viewportId).play();
   }
 
   viewport.render();
@@ -1518,8 +1518,7 @@ async function buildCell(displaySet: IDisplaySet, index: number) {
       const element = viewportElement(320);
       body.appendChild(element);
       const viewportId = `dsr-${index}-0`;
-      const viewportType =
-        HINT_TO_VIEWPORT_TYPE[layout] ?? ViewportType.PLANAR_NEXT;
+      const viewportType = HINT_TO_VIEWPORT_TYPE[layout] ?? ViewportType.PLANAR;
       await mountViewport(
         displaySet,
         element,
@@ -1528,7 +1527,7 @@ async function buildCell(displaySet: IDisplaySet, index: number) {
         layout === 'volume' ? OrientationAxis.AXIAL : undefined
       );
 
-      if (viewportType === ViewportType.PLANAR_NEXT && layout !== 'volume') {
+      if (viewportType === ViewportType.PLANAR && layout !== 'volume') {
         addFrameControls(body, element, viewportId);
       }
     }

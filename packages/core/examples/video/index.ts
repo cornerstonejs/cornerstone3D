@@ -1,4 +1,4 @@
-import type { Types, VideoGenericViewport } from '@cornerstonejs/core';
+import type { Types, VideoViewport } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
@@ -48,8 +48,7 @@ element.addEventListener(Events.CAMERA_MODIFIED, (_) => {
   const renderingEngine = getRenderingEngine(renderingEngineId);
 
   // Get the stack viewport
-  const viewport =
-    renderingEngine.getViewport<VideoGenericViewport>(viewportId);
+  const viewport = renderingEngine.getViewport<VideoViewport>(viewportId);
 
   if (!viewport) {
     return;
@@ -70,8 +69,7 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport =
-      renderingEngine.getViewport<VideoGenericViewport>(viewportId);
+    const viewport = renderingEngine.getViewport<VideoViewport>(viewportId);
 
     // Set a range to highlight bones
     viewport.play();
@@ -85,8 +83,7 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport =
-      renderingEngine.getViewport<VideoGenericViewport>(viewportId);
+    const viewport = renderingEngine.getViewport<VideoViewport>(viewportId);
 
     // Set a range to highlight bones
     viewport.pause();
@@ -128,7 +125,7 @@ async function run() {
     );
   }
 
-  const viewportType = Enums.ViewportType.VIDEO_NEXT;
+  const viewportType = Enums.ViewportType.VIDEO;
 
   // Instantiate a rendering engine
   const renderingEngine = new RenderingEngine(renderingEngineId);
@@ -146,8 +143,7 @@ async function run() {
   renderingEngine.enableElement(viewportInput);
 
   // Get the viewport that was created
-  const viewport =
-    renderingEngine.getViewport<VideoGenericViewport>(viewportId);
+  const viewport = renderingEngine.getViewport<VideoViewport>(viewportId);
 
   // Drive the viewport from the display set (displaySetId is the source imageId).
   await viewport.setDisplaySets({

@@ -14,7 +14,7 @@ function createNextViewports(renderingEngine) {
   return ['nextSource', 'nextTarget'].map((viewportId) => {
     testUtils.createViewports(renderingEngine, {
       viewportId,
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       orientation: OrientationAxis.ACQUISITION,
       width: 200,
       height: 200,

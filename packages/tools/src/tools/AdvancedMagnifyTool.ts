@@ -240,7 +240,7 @@ class AdvancedMagnifyTool extends AnnotationTool {
       radius
     ) as [Types.Point3, Types.Point3, Types.Point3, Types.Point3];
 
-    // Native PLANAR_NEXT ("next") source viewports have no getCamera; read the
+    // Native PLANAR ("next") source viewports have no getCamera; read the
     // orientation through the lane-agnostic getViewportICamera helper instead.
     const { viewPlaneNormal, viewUp } = getViewportICamera(viewport);
 
@@ -1596,7 +1596,7 @@ class AdvancedMagnifyViewport {
     const viewportInput = {
       element: magnifyElement,
       viewportId: magnifyViewportId,
-      type: Enums.ViewportType.PLANAR_NEXT,
+      type: Enums.ViewportType.PLANAR,
       defaultOptions: {},
     };
 

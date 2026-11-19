@@ -99,7 +99,7 @@ interface ContourHistoryContext extends ToolsContext {
  * incantation in packages/tools/examples/genericStackLabelmapSegmentation
  * (and mirrored by the Playwright spec
  * tests/genericViewport/genericStackLabelmapSegmentation.spec.ts): a stack
- * PLANAR_NEXT viewport, one derived Uint8Array labelmap image per stack
+ * PLANAR viewport, one derived Uint8Array labelmap image per stack
  * imageId, a single Labelmap segmentation registered and attached to the
  * viewport, and BrushTool active with a small (world-mm) radius so several
  * disjoint strokes fit inside the 64x64mm synthetic slice without

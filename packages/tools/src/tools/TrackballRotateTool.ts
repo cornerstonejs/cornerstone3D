@@ -11,7 +11,7 @@ import {
 import type {
   PlanarViewport,
   Types,
-  GenericVolumeViewport3D,
+  VolumeViewport3D,
 } from '@cornerstonejs/core';
 import { mat4, vec3 } from 'gl-matrix';
 import type { EventTypes, PublicToolProps, ToolProps } from '../types';
@@ -63,7 +63,7 @@ class TrackballRotateTool extends BaseTool {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
     const enabledElement = getEnabledElement(element);
-    const viewport = enabledElement.viewport as GenericVolumeViewport3D;
+    const viewport = enabledElement.viewport as VolumeViewport3D;
     const actor = viewport.getDefaultActor()?.actor as
       | Types.VolumeActor
       | undefined;
@@ -192,7 +192,7 @@ class TrackballRotateTool extends BaseTool {
   };
 
   rotateCamera = (viewport, centerWorld, axis, angle) => {
-    if (viewport.type === Enums.ViewportType.PLANAR_NEXT) {
+    if (viewport.type === Enums.ViewportType.PLANAR) {
       this._rotatePlanarView(viewport, centerWorld, axis, angle);
 
       return;

@@ -1,5 +1,5 @@
 import type {
-  GenericVolumeViewport3D,
+  VolumeViewport3D,
   PlanarViewport,
   Types,
 } from '@cornerstonejs/core';
@@ -261,7 +261,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportIdAxial,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: elementAxial,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -270,7 +270,7 @@ async function run() {
     },
     {
       viewportId: viewportIdCoronal,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: elementCoronal,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -279,7 +279,7 @@ async function run() {
     },
     {
       viewportId: viewportIdSagittal,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: elementSagittal,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -288,7 +288,7 @@ async function run() {
     },
     {
       viewportId: viewportId3D,
-      type: ViewportType.VOLUME_3D_NEXT,
+      type: ViewportType.VOLUME_3D,
       element: element3D,
       defaultOptions: {
         background: <Types.Point3>[0.2, 0, 0.2],
@@ -323,7 +323,7 @@ async function run() {
 
   await Promise.all(
     allViewportIds.map((viewportId) => {
-      const viewport: PlanarViewport | GenericVolumeViewport3D =
+      const viewport: PlanarViewport | VolumeViewport3D =
         renderingEngine.getViewport(viewportId);
 
       return viewport.setDisplaySets({ displaySetId });
@@ -331,7 +331,7 @@ async function run() {
   );
 
   // Configure 3D viewport
-  const viewport3D: GenericVolumeViewport3D =
+  const viewport3D: VolumeViewport3D =
     renderingEngine.getViewport(viewportId3D);
 
   viewport3D.setDisplaySetPresentation(displaySetId, {

@@ -276,7 +276,7 @@ async function mountViewports(renderingEngine, volumeIds = [volumeId]) {
       OrientationAxis.SAGITTAL,
       OrientationAxis.CORONAL,
     ].map((orientation, index) => ({
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       width: canvasSize,
       height: canvasSize,
       viewportId: viewportIds[index],

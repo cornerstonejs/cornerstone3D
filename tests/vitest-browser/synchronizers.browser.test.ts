@@ -2,7 +2,7 @@
 // (`createZoomPanSynchronizer`, `createVOISynchronizer`,
 // `createImageSliceSynchronizer`, `createCameraPositionSynchronizer`, plus
 // the `SynchronizerManager`/`Synchronizer` API surface) as pure cross-viewport
-// state equality on GenericViewports (`PlanarViewport`, `ViewportType.PLANAR_NEXT`).
+// state equality on GenericViewports (`PlanarViewport`, `ViewportType.PLANAR`).
 //
 // Black-box rule: assertions only ever touch public `@cornerstonejs/tools` and
 // `@cornerstonejs/core` exports, DOM state, and events -- never
@@ -111,7 +111,7 @@ async function attachSharedViewport(
 
   renderingEngine.enableElement({
     viewportId,
-    type: ViewportType.PLANAR_NEXT,
+    type: ViewportType.PLANAR,
     element,
     defaultOptions: {
       orientation: OrientationAxis.AXIAL,

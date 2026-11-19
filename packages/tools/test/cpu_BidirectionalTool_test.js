@@ -93,7 +93,7 @@ describe('Bidirectional Tool (CPU): ', () => {
   it('Should successfully create a Bidirectional tool on a cpu stack viewport with mouse drag - 512 x 128', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
       viewportId,
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       width: 512,
       height: 128,
     });
@@ -211,7 +211,7 @@ describe('Bidirectional Tool (CPU): ', () => {
   it('Should successfully create a bidirectional tool on a cpu stack viewport and modify its handle', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
       viewportId,
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       width: 256,
       height: 256,
     });
@@ -365,7 +365,7 @@ describe('Bidirectional Tool (CPU): ', () => {
   it('Should successfully create a bidirectional tool on a cpu stack viewport and select but not move it', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
       viewportId,
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       width: 256,
       height: 256,
     });
@@ -514,7 +514,7 @@ describe('Bidirectional Tool (CPU): ', () => {
   it('Should successfully create a bidirectional tool on a cpu stack viewport and select AND move it', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
       viewportId,
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       width: 256,
       height: 256,
     });
@@ -718,7 +718,7 @@ describe('Bidirectional Tool (CPU): ', () => {
   it('Should successfully cancel drawing of a bidirectional on a cpu stack viewport', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
       viewportId,
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       width: 256,
       height: 256,
     });

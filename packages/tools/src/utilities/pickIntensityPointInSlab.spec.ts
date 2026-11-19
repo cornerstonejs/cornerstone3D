@@ -24,7 +24,7 @@ function createFakeVolume(
 
 /**
  * Minimal axial Generic ("next") planar viewport: enough surface for the
- * isGenericViewport / viewportSupportsDisplaySetPresentation duck-typing,
+ * viewportSupportsDisplaySetPresentation duck-typing,
  * plus a camera looking along +z with its focal plane at z = focalPoint[2].
  */
 function createFakeMipViewport({
@@ -44,7 +44,7 @@ function createFakeMipViewport({
 
   return {
     id: 'mip',
-    type: 'planarNext',
+    type: 'planar',
     setDisplaySets: async () => undefined,
     setDisplaySetPresentation: () => undefined,
     setViewState: () => undefined,

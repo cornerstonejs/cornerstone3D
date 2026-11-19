@@ -292,7 +292,7 @@ async function run() {
 
   renderingEngine.enableElement({
     viewportId,
-    type: ViewportType.PLANAR_NEXT,
+    type: ViewportType.PLANAR,
     element,
     defaultOptions: {
       orientation: Enums.OrientationAxis.SAGITTAL,

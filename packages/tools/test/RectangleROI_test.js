@@ -83,7 +83,7 @@ describe('Rectangle ROI Tool:', () => {
 
   it('Should successfully create a rectangle tool on a canvas with mouse drag - 512 x 128', function (done) {
     const element = createViewports(renderingEngine, {
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       width: 512,
       height: 128,
       viewportId: viewportId,
@@ -194,7 +194,7 @@ describe('Rectangle ROI Tool:', () => {
 
   it('Should successfully create a rectangle tool on a canvas with mouse drag in a Volume viewport - 512 x 128', function (done) {
     const element = createViewports(renderingEngine, {
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       width: 512,
       height: 128,
       viewportId: viewportId,
@@ -296,7 +296,7 @@ describe('Rectangle ROI Tool:', () => {
 
   it('Should successfully create a rectangle tool and modify its handle', function (done) {
     const element = createViewports(renderingEngine, {
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       width: 256,
       height: 256,
       viewportId: viewportId,
@@ -442,7 +442,7 @@ describe('Rectangle ROI Tool:', () => {
 
   it('Should successfully create a rectangle tool and select but not move it', function (done) {
     const element = createViewports(renderingEngine, {
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       width: 512,
       height: 256,
       viewportId: viewportId,

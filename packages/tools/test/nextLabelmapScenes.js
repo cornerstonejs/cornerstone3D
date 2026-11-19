@@ -19,7 +19,7 @@ function createNextPlanarViewport(
   orientation = OrientationAxis.AXIAL
 ) {
   testUtils.createViewports(renderingEngine, {
-    viewportType: ViewportType.PLANAR_NEXT,
+    viewportType: ViewportType.PLANAR,
     orientation,
     viewportId,
   });

@@ -507,7 +507,7 @@ describe('annotationToolsMatrix', () => {
     // PlanarViewport.ts) -- it exists only on the separate
     // PlanarViewportLegacyAdapter subclass
     // (.../Planar/PlanarViewportLegacyAdapter.ts:49), which this harness
-    // deliberately does not use (it opens ViewportType.PLANAR_NEXT
+    // deliberately does not use (it opens ViewportType.PLANAR
     // directly, the architecture under test for this whole campaign). The
     // resulting uncaught `TypeError: viewport.getCamera is not a function`
     // is thrown from inside the RAF-driven AnnotationRenderingEngine render

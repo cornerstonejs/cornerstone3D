@@ -95,7 +95,7 @@ const viewportIds = viewportSpecs.map(({ viewportId }) => viewportId);
 // ======== Set up page ======== //
 setTitleAndDescription(
   'World Crosshair on MIP',
-  'The WorldCrosshairTool running on native PLANAR_NEXT viewports including a PET maximum intensity projection (full-volume slab). Clicking the MIP snaps the reference point to the hottest voxel along the line of sight - the lesion the projection actually shows - and the CT viewports jump to that anatomy. Inside the slab the MIP marker renders solid instead of dashed.'
+  'The WorldCrosshairTool running on native PLANAR viewports including a PET maximum intensity projection (full-volume slab). Clicking the MIP snaps the reference point to the hottest voxel along the line of sight - the lesion the projection actually shows - and the CT viewports jump to that anatomy. Inside the slab the MIP marker renders solid instead of dashed.'
 );
 
 const size = '380px';
@@ -229,7 +229,7 @@ async function run() {
   viewportSpecs.forEach((spec, index) => {
     renderingEngine.enableElement({
       viewportId: spec.viewportId,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: elements[index],
       defaultOptions: {
         orientation: spec.orientation,

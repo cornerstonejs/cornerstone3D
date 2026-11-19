@@ -81,7 +81,7 @@ describe('Rectangle ROI StartEnd Tool:', () => {
 
   it('Should successfully create a rectangle tool on a canvas with mouse drag in a Volume viewport - 512 x 128', function (done) {
     const element = createViewports(renderingEngine, {
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       width: 512,
       height: 128,
       viewportId: viewportId,

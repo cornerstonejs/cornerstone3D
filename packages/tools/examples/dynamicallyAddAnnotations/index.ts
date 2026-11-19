@@ -62,7 +62,7 @@ const viewportsInfo = [
     showsStack: true,
     viewportInput: {
       viewportId: STACK_VIEWPORT_ID,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: null,
       defaultOptions: {
         background: <Types.Point3>[0.2, 0, 0.2],
@@ -73,7 +73,7 @@ const viewportsInfo = [
     toolGroupId: 'VOLUME_TOOLGROUP_ID',
     viewportInput: {
       viewportId: VOLUME_VIEWPORT_ID,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: null,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,

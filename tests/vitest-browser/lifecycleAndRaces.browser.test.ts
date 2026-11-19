@@ -1,5 +1,5 @@
 // Plan 4: lifecycle, teardown, and race-condition coverage for the
-// GenericViewport (PLANAR_NEXT) architecture. State-based only -- no
+// GenericViewport (PLANAR) architecture. State-based only -- no
 // screenshots. See plans/vitest-browser-state-tests/04-lifecycle-teardown-races.md.
 
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
@@ -125,7 +125,7 @@ test('enable -> disable -> re-enable the same element yields a live, distinct vi
 
   renderingEngine.enableElement({
     viewportId,
-    type: ViewportType.PLANAR_NEXT,
+    type: ViewportType.PLANAR,
     element,
     defaultOptions: {
       orientation: OrientationAxis.AXIAL,
@@ -549,9 +549,8 @@ test('resize keeps the fit-mode anchor world point centered after the canvas dim
   // Pinned "fit mode recenter" semantics: PlanarViewport's default view state
   // (createDefaultPlanarViewState, Planar/planarViewState.ts) uses
   // scaleMode 'fit' with anchorCanvas [0.5, 0.5] (fractional canvas center).
-  // ContextPoolRenderingEngine._resizeVTKViewports special-cases Generic
-  // viewports (isGenericViewport(vp)) to call only vp.resize() and skip the
-  // legacy getCamera/setCamera snapshot-restore dance; PlanarViewport.resize()
+  // ContextPoolRenderingEngine._resizeVTKViewports calls only vp.resize()
+  // and does no getCamera/setCamera snapshot-restore; PlanarViewport.resize()
   // -> resizeBindingsWithActiveFirst() recomputes the fit scale for the new
   // canvas size while keeping the same fractional anchor point pinned to the
   // same world point. So the world point under the canvas center should be
@@ -617,7 +616,7 @@ test('a 2x2 grid of viewports on one engine renders independently; disabling one
 
     renderingEngine.enableElement({
       viewportId,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element,
       defaultOptions: {
         orientation: OrientationAxis.AXIAL,

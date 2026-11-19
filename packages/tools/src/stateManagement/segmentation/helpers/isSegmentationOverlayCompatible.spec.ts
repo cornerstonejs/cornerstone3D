@@ -1,5 +1,5 @@
 jest.mock('@cornerstonejs/core', () => ({
-  Enums: { ViewportType: { PLANAR_NEXT: 'planarNext' } },
+  Enums: { ViewportType: { PLANAR: 'planar' } },
   cache: {
     getImage: jest.fn(),
     getVolume: jest.fn(),
@@ -46,7 +46,7 @@ const IMAGE_FRAME_OF_REFERENCE = {
 /** A planar viewport in stack mode that shows the images given. */
 function makeStackViewport(imageIds: string[]) {
   return {
-    type: 'planarNext',
+    type: 'planar',
     getCurrentMode: jest.fn(() => 'stack'),
     getImageIds: jest.fn(() => imageIds),
   };
@@ -59,7 +59,7 @@ function makeStackViewport(imageIds: string[]) {
  */
 function makeVolumeViewport(frameOfReferenceUID: string | undefined) {
   return {
-    type: 'planarNext',
+    type: 'planar',
     getCurrentMode: jest.fn(() => 'volume'),
     getFrameOfReferenceUID: jest.fn(() => frameOfReferenceUID),
     getImageIds: jest.fn(() => {
@@ -81,7 +81,7 @@ function makePlanarViewport({
   mode?: 'stack' | 'volume';
 }) {
   return {
-    type: 'planarNext',
+    type: 'planar',
     getCurrentMode: jest.fn(() => mode),
     getImageIds: jest.fn(() => imageIds),
     getFrameOfReferenceUID: jest.fn(() => 'planarNext-viewport-VP_1'),
@@ -367,7 +367,7 @@ describe('isSegmentationOverlayCompatible', () => {
     it('treats a throwing getFrameOfReferenceUID as "unknown" and stays permissive', () => {
       setLabelmapReferencedImageIds(OTHER_IMAGE_IDS);
       const viewport = {
-        type: 'planarNext',
+        type: 'planar',
         getCurrentMode: jest.fn(() => 'volume'),
         getFrameOfReferenceUID: jest.fn(() => {
           throw new Error('viewport destroyed');

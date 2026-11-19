@@ -262,7 +262,7 @@ type EditData = {
 
 /**
  * SliceIntersectionTool ("Slice Intersections") renders and manipulates
- * slice plane intersection lines on Generic (PLANAR_NEXT) viewports.
+ * slice plane intersection lines on Generic (PLANAR) viewports.
  *
  * The tool thinks in PLANES, not viewports: viewports showing the same plane
  * family over the same frame of reference (e.g. CT axial + PT axial + a 2D
@@ -1786,7 +1786,7 @@ class SliceIntersectionTool extends AnnotationTool {
   private _isPlanarViewport(
     viewport: Types.IViewport
   ): viewport is Types.IViewport {
-    return viewport?.type === ViewportType.PLANAR_NEXT;
+    return viewport?.type === ViewportType.PLANAR;
   }
 
   /**

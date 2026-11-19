@@ -97,7 +97,7 @@ function makeViewport(type, mode, extra = {}) {
 
 /** A stand-in of a planar viewport in stack or volume mode. */
 function makePlanar(mode, extra = {}) {
-  return makeViewport('planarNext', mode, extra);
+  return makeViewport('planar', mode, extra);
 }
 
 const sagittalCamera = {
@@ -177,7 +177,7 @@ describe('annotationHydration', () => {
   });
 
   it('still throws for a viewport that is neither stack nor volume', () => {
-    const viewport = makeViewport('videoNext', 'video', {
+    const viewport = makeViewport('video', 'video', {
       getViewReference: () => ({ viewPlaneNormal: [0, 0, 1] }),
     });
 
@@ -423,7 +423,7 @@ describe('UltrasoundDirectionalTool new annotation', () => {
     expect(addOn(makePlanar('stack'))).not.toThrow();
     expect(
       addOn(
-        makeViewport('ecgNext', 'ecg', {
+        makeViewport('ecg', 'ecg', {
           getWaveformData: jest.fn(),
           getImageData: jest.fn(),
         })
@@ -435,7 +435,7 @@ describe('UltrasoundDirectionalTool new annotation', () => {
     expect(addOn(makePlanar('stack'))).not.toThrow();
     expect(
       addOn(
-        makeViewport('ecgNext', 'empty', {
+        makeViewport('ecg', 'empty', {
           getWaveformData: jest.fn(),
           getImageData: jest.fn(),
         })
@@ -449,7 +449,7 @@ describe('UltrasoundDirectionalTool new annotation', () => {
 
 describe('VolumeCroppingControlTool drag', () => {
   it('ignores a drag on a 3D viewport', () => {
-    const viewport = makeViewport('volume3dNext', 'volume3d');
+    const viewport = makeViewport('volume3d', 'volume3d');
     const tool = new VolumeCroppingControlTool();
     tool._getAnnotations = jest.fn(() => []);
     getEnabledElement.mockReturnValue({ viewport });

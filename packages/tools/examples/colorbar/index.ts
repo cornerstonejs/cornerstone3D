@@ -322,7 +322,7 @@ async function run() {
   // Enable the viewport
   renderingEngine.enableElement({
     viewportId: 'CT_STACK_AXIAL',
-    type: ViewportType.PLANAR_NEXT,
+    type: ViewportType.PLANAR,
     element,
     defaultOptions: {
       background: <Types.Point3>[0.2, 0, 0.2],

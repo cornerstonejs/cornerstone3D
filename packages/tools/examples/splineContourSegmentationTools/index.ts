@@ -314,7 +314,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportId,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: element,
       defaultOptions: {
         background: <Types.Point3>[0.2, 0, 0.2],

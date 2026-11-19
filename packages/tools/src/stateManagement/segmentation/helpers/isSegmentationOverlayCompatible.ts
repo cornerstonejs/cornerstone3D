@@ -203,7 +203,7 @@ export function isSegmentationOverlayCompatible(
   // no labelmap can match, and every representation was dropped. Every other
   // viewport takes the stack rule.
   const isVolumeViewport =
-    viewport.type === Enums.ViewportType.PLANAR_NEXT &&
+    viewport.type === Enums.ViewportType.PLANAR &&
     mountsAVolume(viewport as Parameters<typeof mountsAVolume>[0]);
 
   return isVolumeViewport

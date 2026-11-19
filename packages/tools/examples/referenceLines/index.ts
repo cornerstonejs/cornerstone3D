@@ -268,7 +268,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportIds[0],
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: element1,
       defaultOptions: {
         background: <Types.Point3>[0.2, 0, 0.2],
@@ -276,7 +276,7 @@ async function run() {
     },
     {
       viewportId: viewportIds[1],
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: element2,
       defaultOptions: {
         background: <Types.Point3>[0.2, 0, 0.2],
@@ -284,7 +284,7 @@ async function run() {
     },
     {
       viewportId: viewportIds[2],
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: element3,
       defaultOptions: {
         background: <Types.Point3>[0.2, 0, 0.2],
@@ -292,7 +292,7 @@ async function run() {
     },
     {
       viewportId: viewportIds[3],
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: element4,
       defaultOptions: {
         background: <Types.Point3>[0.2, 0, 0.2],
@@ -300,7 +300,7 @@ async function run() {
     },
     {
       viewportId: viewportIds[4],
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: element5,
       defaultOptions: {
         background: <Types.Point3>[0.5, 0, 0.2],

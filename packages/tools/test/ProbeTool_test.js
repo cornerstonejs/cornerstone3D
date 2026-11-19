@@ -83,7 +83,7 @@ describe('Probe Tool:', () => {
 
   it('Should successfully click to put a probe tool on a canvas - 512 x 128', function (done) {
     const element = createViewports(renderingEngine, {
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       width: 512,
       height: 128,
       viewportId: viewportId,
@@ -176,7 +176,7 @@ describe('Probe Tool:', () => {
 
   it('Should successfully click to put two probe tools on a canvas - 256 x 256', function (done) {
     const element = createViewports(renderingEngine, {
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       width: 256,
       height: 256,
       viewportId: viewportId,
@@ -309,7 +309,7 @@ describe('Probe Tool:', () => {
 
   it('Should successfully click to put a probe tool on a canvas - 256 x 512', function (done) {
     const element = createViewports(renderingEngine, {
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       width: 256,
       height: 512,
       viewportId: viewportId,
@@ -401,7 +401,7 @@ describe('Probe Tool:', () => {
 
   it('Should successfully click to put a probe tool on a canvas - 256 x 512', function (done) {
     const element = createViewports(renderingEngine, {
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       width: 256,
       height: 512,
       viewportId: viewportId,
@@ -495,7 +495,7 @@ describe('Probe Tool:', () => {
 
   it('Should successfully create a prob tool on a canvas with mouse drag in a Volume viewport - 512 x 128', function (done) {
     const element = createViewports(renderingEngine, {
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       width: 512,
       height: 128,
       viewportId: viewportId,
@@ -574,7 +574,7 @@ describe('Probe Tool:', () => {
 
   it('Should successfully create a Probe tool and select AND move it', function (done) {
     const element = createViewports(renderingEngine, {
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       width: 256,
       height: 256,
       viewportId: viewportId,

@@ -63,7 +63,7 @@ async function run() {
   const viewportId = 'CT_SAGITTAL_STACK';
   const viewportInput = {
     viewportId,
-    type: ViewportType.PLANAR_NEXT,
+    type: ViewportType.PLANAR,
     element,
     defaultOptions: {
       orientation: Enums.OrientationAxis.SAGITTAL,

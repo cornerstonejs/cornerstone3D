@@ -165,7 +165,7 @@ async function run() {
     {
       viewportId: viewportId1,
       element: element1,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       defaultOptions: {
         orientation: 'sagittal',
       },
@@ -173,7 +173,7 @@ async function run() {
     {
       viewportId: viewportId2,
       element: element2,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
       },

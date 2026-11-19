@@ -1,4 +1,4 @@
-import type { Types, VideoGenericViewport } from '@cornerstonejs/core';
+import type { Types, VideoViewport } from '@cornerstonejs/core';
 import { Enums, RenderingEngine } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
@@ -60,7 +60,7 @@ setTitleAndDescription(
 const size = '512px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
-let viewport: VideoGenericViewport;
+let viewport: VideoViewport;
 
 viewportGrid.style.display = 'flex';
 viewportGrid.style.flexDirection = 'row';
@@ -284,7 +284,7 @@ async function run() {
   toolGroup.addViewport(viewportId, renderingEngineId);
 
   // Get the stack viewport that was created
-  viewport = renderingEngine.getViewport<VideoGenericViewport>(viewportId);
+  viewport = renderingEngine.getViewport<VideoViewport>(viewportId);
   addVideoTime(viewportGrid, viewport);
 
   // Set the stack on the viewport

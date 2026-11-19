@@ -322,7 +322,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: stackViewportId,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: stackElement,
       defaultOptions: {
         background: [0.2, 0, 0.2] as Types.Point3,
@@ -330,7 +330,7 @@ async function run() {
     },
     {
       viewportId: stackViewportId2,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: stackElement2,
       defaultOptions: {
         background: [0.2, 0, 0.2] as Types.Point3,
@@ -338,7 +338,7 @@ async function run() {
     },
     {
       viewportId: stackViewportId3,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: stackElement3,
       defaultOptions: {
         background: [0.2, 0, 0.2] as Types.Point3,
@@ -346,7 +346,7 @@ async function run() {
     },
     {
       viewportId: volumeViewportId,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: volumeElement,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,

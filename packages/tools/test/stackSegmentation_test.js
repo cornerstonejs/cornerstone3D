@@ -63,7 +63,7 @@ describe('Stack Segmentation Rendering:', () => {
 
   it('should successfully render a segmentation on a stack viewport', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       viewportId: viewportId1,
     });
 
@@ -139,7 +139,7 @@ describe('Stack Segmentation Rendering:', () => {
 
   it('should successfully render two segmentations on a stack viewport', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       viewportId: viewportId1,
     });
 
@@ -250,7 +250,7 @@ describe('Stack Segmentation Rendering:', () => {
 
   it('should successfully render a segmentation on a stack viewport and use brush to edit it', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       viewportId: viewportId1,
     });
 

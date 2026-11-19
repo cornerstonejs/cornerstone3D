@@ -96,13 +96,13 @@ async function run() {
   const viewportInputArray: Types.PublicViewportInput[] = [
     {
       viewportId: viewportIds[0],
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: elements[0],
       defaultOptions: {},
     },
     {
       viewportId: viewportIds[1],
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: elements[1],
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -110,7 +110,7 @@ async function run() {
     },
     {
       viewportId: viewportIds[2],
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: elements[2],
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,

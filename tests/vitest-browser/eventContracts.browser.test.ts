@@ -1,7 +1,7 @@
 // Plan 3: event contracts.
 //
 // Pins the observable event behavior of PlanarViewport (GenericViewport /
-// PLANAR_NEXT) as a contract: which events fire, how many, in what order,
+// PLANAR) as a contract: which events fire, how many, in what order,
 // with what payload shape, and that nothing fires after teardown. Downstream
 // consumers (tools, OHIF) build on this surface; regressions here are
 // invisible to screenshot tests.
@@ -205,7 +205,7 @@ test('enable fires exactly one ELEMENT_ENABLED on eventTarget with the viewportI
 
   ctx.renderingEngine.enableElement({
     viewportId: secondViewportId,
-    type: ViewportType.PLANAR_NEXT,
+    type: ViewportType.PLANAR,
     element: secondElement,
     defaultOptions: {
       orientation: OrientationAxis.AXIAL,

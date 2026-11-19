@@ -241,7 +241,7 @@ async function run() {
   // Create a viewport
   const viewportInput1 = {
     viewportId: viewportId1,
-    type: ViewportType.PLANAR_NEXT,
+    type: ViewportType.PLANAR,
     element: element1,
     defaultOptions: {
       orientation: Enums.OrientationAxis.ACQUISITION,
@@ -250,7 +250,7 @@ async function run() {
   };
   const viewportInput2 = {
     viewportId: viewportId2,
-    type: ViewportType.PLANAR_NEXT,
+    type: ViewportType.PLANAR,
     element: element2,
     defaultOptions: {
       orientation: Enums.OrientationAxis.ACQUISITION,

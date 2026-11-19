@@ -56,7 +56,7 @@ function createNextViewport(renderingEngine, toolGroup) {
     useEnableElement: true,
     orientation: null,
     viewportId: 'nextVideo',
-    viewportType: ViewportType.VIDEO_NEXT,
+    viewportType: ViewportType.VIDEO,
   });
   toolGroup.addViewport('nextVideo', renderingEngineId);
 

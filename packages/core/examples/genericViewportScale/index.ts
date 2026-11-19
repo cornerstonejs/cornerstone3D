@@ -403,7 +403,7 @@ async function run() {
 
   renderingEngine.enableElement({
     viewportId: stackViewportId,
-    type: ViewportType.PLANAR_NEXT,
+    type: ViewportType.PLANAR,
     element: stackElement,
     defaultOptions: {
       background: stackViewportBackground,
@@ -411,7 +411,7 @@ async function run() {
   });
   renderingEngine.enableElement({
     viewportId: volumeViewportId,
-    type: ViewportType.PLANAR_NEXT,
+    type: ViewportType.PLANAR,
     element: volumeElement,
     defaultOptions: {
       background: volumeViewportBackground,

@@ -1,8 +1,5 @@
 import type vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
-import type {
-  PlanarViewport,
-  GenericVolumeViewport3D,
-} from '@cornerstonejs/core';
+import type { PlanarViewport, VolumeViewport3D } from '@cornerstonejs/core';
 
 /**
  * Puts a prop of a tool, a handle or a line, into the scene of a 3D viewport.
@@ -14,7 +11,7 @@ import type {
  * @param _uid - The UID of the actor, which a legacy viewport used.
  */
 export function addToolProp(
-  viewport: PlanarViewport | GenericVolumeViewport3D,
+  viewport: PlanarViewport | VolumeViewport3D,
   actor: vtkActor,
   _uid: string
 ): void {
@@ -32,7 +29,7 @@ export function addToolProp(
  * @param actor - The vtk.js actor of the tool.
  */
 export function removeToolProp(
-  viewport: PlanarViewport | GenericVolumeViewport3D,
+  viewport: PlanarViewport | VolumeViewport3D,
   actor: vtkActor
 ): void {
   viewport.getRenderer().removeActor(actor);

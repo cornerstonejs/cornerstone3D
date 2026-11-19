@@ -108,7 +108,7 @@ const LEGACY_LIMITED_DRAGS = [
 /** Makes a direct next planar viewport of 400 by 300 pixels. */
 function createViewport(renderingEngine, viewportId, orientation) {
   testUtils.createViewports(renderingEngine, {
-    viewportType: ViewportType.PLANAR_NEXT,
+    viewportType: ViewportType.PLANAR,
     viewportId,
     orientation,
     width: 400,

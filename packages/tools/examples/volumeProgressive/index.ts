@@ -1,5 +1,5 @@
 import type {
-  GenericVolumeViewport3D,
+  VolumeViewport3D,
   PlanarViewport,
   Types,
 } from '@cornerstonejs/core';
@@ -652,7 +652,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportIds[0],
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: element1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -661,7 +661,7 @@ async function run() {
     },
     {
       viewportId: viewportIds[1],
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: element2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -670,7 +670,7 @@ async function run() {
     },
     {
       viewportId: viewportIds[2],
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: element3,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -679,7 +679,7 @@ async function run() {
     },
     {
       viewportId: viewportId3D,
-      type: ViewportType.VOLUME_3D_NEXT,
+      type: ViewportType.VOLUME_3D,
       element: element4,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -688,7 +688,7 @@ async function run() {
     },
     {
       viewportId: viewportId3DSeg,
-      type: ViewportType.VOLUME_3D_NEXT,
+      type: ViewportType.VOLUME_3D,
       element: element5,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -769,7 +769,7 @@ async function run() {
     await Promise.all(
       viewportIds.map((viewportId) =>
         renderingEngine
-          .getViewport<PlanarViewport | GenericVolumeViewport3D>(viewportId)
+          .getViewport<PlanarViewport | VolumeViewport3D>(viewportId)
           .setDisplaySets({ displaySetId: volumeId })
       )
     );
@@ -781,7 +781,7 @@ async function run() {
 
     // The 3D viewport shows nothing without a transfer function.
     const viewport3D =
-      renderingEngine.getViewport<GenericVolumeViewport3D>(viewportId3D);
+      renderingEngine.getViewport<VolumeViewport3D>(viewportId3D);
 
     viewport3D?.setDisplaySetPresentation(volumeId, { preset: 'CT-Bone' });
 
@@ -1048,7 +1048,7 @@ async function run() {
     });
 
     const viewport =
-      renderingEngine.getViewport<GenericVolumeViewport3D>(viewportId3DSeg);
+      renderingEngine.getViewport<VolumeViewport3D>(viewportId3DSeg);
 
     await viewport.setDisplaySets({ displaySetId: segVolumeId });
 

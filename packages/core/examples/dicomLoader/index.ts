@@ -76,13 +76,13 @@ function resetViewports(volume: boolean) {
   if (!volume) {
     viewportInputArray.push({
       viewportId,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: element,
     });
   } else {
     viewportInputArray.push({
       viewportId,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: element,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,

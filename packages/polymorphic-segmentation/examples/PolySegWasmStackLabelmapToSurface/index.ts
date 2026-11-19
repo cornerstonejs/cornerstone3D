@@ -205,12 +205,12 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportId1,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: element1,
     },
     {
       viewportId: viewportId2,
-      type: ViewportType.VOLUME_3D_NEXT,
+      type: ViewportType.VOLUME_3D,
       element: element2,
       defaultOptions: {
         background: CONSTANTS.BACKGROUND_COLORS.slicer3D,

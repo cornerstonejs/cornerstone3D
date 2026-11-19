@@ -15,7 +15,7 @@ const RADIUS = 8;
 function createNextViewport(renderingEngine) {
   testUtils.createViewports(renderingEngine, {
     viewportId: 'next',
-    viewportType: ViewportType.PLANAR_NEXT,
+    viewportType: ViewportType.PLANAR,
     orientation: OrientationAxis.ACQUISITION,
     width: 400,
     height: 300,

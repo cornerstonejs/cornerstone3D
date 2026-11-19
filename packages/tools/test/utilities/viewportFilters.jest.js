@@ -1,7 +1,6 @@
 jest.mock('@cornerstonejs/core', () => ({
   getEnabledElement: jest.fn(),
   utilities: {
-    isGenericViewport: jest.fn(() => false),
     clonePoint3: (point) =>
       point ? [point[0], point[1], point[2]] : undefined,
     isEqual: (v1, v2, tolerance = 1e-5) => {

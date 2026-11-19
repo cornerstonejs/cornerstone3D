@@ -76,7 +76,7 @@ function createFakePlanarViewport({
     // helpers read the element size, not the hidden canvas size.
     element: { clientWidth: CANVAS_SIZE, clientHeight: CANVAS_SIZE },
     getFrameOfReferenceUID: () => frameOfReferenceUID,
-    // --- Generic ("next") surface (isGenericViewport duck-typing) ---
+    // --- Generic ("next") surface ---
     setDisplaySets: async () => undefined,
     setDisplaySetPresentation: jest.fn(
       (dataIdArg: string, props: Record<string, unknown>) => {
@@ -199,7 +199,7 @@ function createFakeLegacyViewport({
 
   return {
     id,
-    type: 'videoNext',
+    type: 'video',
     renderingEngineId: 'fakeRenderingEngine',
     canvas: { clientWidth: CANVAS_SIZE, clientHeight: CANVAS_SIZE },
     getFrameOfReferenceUID: () => 'FOR1',

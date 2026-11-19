@@ -1,4 +1,4 @@
-import type { GenericVolumeViewport3D, Types } from '@cornerstonejs/core';
+import type { VolumeViewport3D, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
@@ -151,7 +151,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportId2,
-      type: ViewportType.VOLUME_3D_NEXT,
+      type: ViewportType.VOLUME_3D,
       element: element2,
       defaultOptions: {
         background: <Types.Point3>[0.2, 0, 0.2],
@@ -172,8 +172,7 @@ async function run() {
     volumeId,
   });
 
-  const viewport3d: GenericVolumeViewport3D =
-    renderingEngine.getViewport(viewportId2);
+  const viewport3d: VolumeViewport3D = renderingEngine.getViewport(viewportId2);
 
   await viewport3d.setDisplaySets({ displaySetId });
   viewport3d.setDisplaySetPresentation(displaySetId, {

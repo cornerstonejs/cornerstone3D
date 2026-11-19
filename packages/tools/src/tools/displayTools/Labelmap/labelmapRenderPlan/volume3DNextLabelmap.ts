@@ -29,7 +29,7 @@ function isVolume3DNextViewport(
   const nextViewport = viewport as Partial<Volume3DNextViewport>;
 
   return (
-    nextViewport.type === Enums.ViewportType.VOLUME_3D_NEXT &&
+    nextViewport.type === Enums.ViewportType.VOLUME_3D &&
     typeof nextViewport.addDisplaySet === 'function' &&
     typeof nextViewport.setDisplaySetPresentation === 'function'
   );

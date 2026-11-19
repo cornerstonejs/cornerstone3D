@@ -123,7 +123,7 @@ async function run() {
   const viewportId = 'CT_STACK';
   const viewportInput = {
     viewportId,
-    type: ViewportType.PLANAR_NEXT,
+    type: ViewportType.PLANAR,
     element,
     defaultOptions: {
       background: <Types.Point3>[0.2, 0, 0.2],

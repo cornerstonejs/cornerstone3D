@@ -77,7 +77,7 @@ export default function getViewportLabelmapRenderMode(
     return 'image';
   }
 
-  if (compatibilityViewport.type === Enums.ViewportType.PLANAR_NEXT) {
+  if (compatibilityViewport.type === Enums.ViewportType.PLANAR) {
     if (compatibilityViewport.getVolumeId?.()) {
       return 'volume';
     }

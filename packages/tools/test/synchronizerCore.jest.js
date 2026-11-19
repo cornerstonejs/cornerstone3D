@@ -21,7 +21,6 @@ jest.mock('@cornerstonejs/core', () => {
           })),
         },
       },
-      isGenericViewport: jest.fn(() => false),
       clonePoint3: jest.fn((point) => (point ? [...point] : undefined)),
       getViewportContentMode: jest.fn((viewport) =>
         viewport?.getCurrentMode?.()
@@ -43,7 +42,6 @@ import {
   getRenderingEngine,
   getEnabledElement,
   getEnabledElementByViewportId,
-  utilities,
   eventTarget,
   viewportProjection,
 } from '@cornerstonejs/core';
@@ -484,7 +482,6 @@ describe('SynchronizerManager', () => {
 describe('cameraSyncCallback', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    utilities.isGenericViewport.mockReturnValue(false);
   });
 
   it('throws when there is no rendering engine for the target', () => {
@@ -501,8 +498,6 @@ describe('cameraSyncCallback', () => {
   });
 
   it('copies the view reference and zoom/pan presentation for Generic viewports', () => {
-    utilities.isGenericViewport.mockReturnValue(true);
-
     const sourceViewReference = { FrameOfReferenceUID: 'FOR1' };
     const zoomPanPresentation = { zoom: 2, pan: [1, 1] };
     const zoomPanViewState = { zoom: 2, pan: [1, 1], resolved: true };
@@ -549,8 +544,6 @@ describe('cameraSyncCallback', () => {
   });
 
   it('bails out for Generic viewports when the source viewport cannot be resolved', () => {
-    utilities.isGenericViewport.mockReturnValue(true);
-
     const targetViewport = { setViewReference: jest.fn(), render: jest.fn() };
     getRenderingEngine.mockImplementation((id) =>
       id === 're-target'
@@ -573,11 +566,9 @@ describe('cameraSyncCallback', () => {
 describe('voiSyncCallback', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    utilities.isGenericViewport.mockReturnValue(false);
   });
 
   it('propagates invert and colormap to a next viewport only when the matching sync options are enabled', () => {
-    utilities.isGenericViewport.mockReturnValue(true);
     const tViewport = {
       setDisplaySetPresentation: jest.fn(),
       render: jest.fn(),
@@ -608,7 +599,6 @@ describe('voiSyncCallback', () => {
   });
 
   it('does not propagate invert or colormap to a next viewport without the matching options', () => {
-    utilities.isGenericViewport.mockReturnValue(true);
     const tViewport = {
       setDisplaySetPresentation: jest.fn(),
       render: jest.fn(),
@@ -636,7 +626,6 @@ describe('voiSyncCallback', () => {
   });
 
   it('gives the target the invert of a next source viewport, which sets no invertStateChanged', () => {
-    utilities.isGenericViewport.mockReturnValue(true);
     const tViewport = {
       setDisplaySetPresentation: jest.fn(),
       render: jest.fn(),
@@ -667,7 +656,6 @@ describe('voiSyncCallback', () => {
   });
 
   it('routes to the matching display-set binding on Generic viewports', () => {
-    utilities.isGenericViewport.mockReturnValue(true);
     const tViewport = {
       findDataIdByVolumeId: jest.fn(() => 'data-1'),
       setDisplaySetPresentation: jest.fn(),
@@ -691,7 +679,6 @@ describe('voiSyncCallback', () => {
   });
 
   it('applies to the default binding on Generic viewports when there is no source volumeId', () => {
-    utilities.isGenericViewport.mockReturnValue(true);
     const tViewport = {
       setDisplaySetPresentation: jest.fn(),
       render: jest.fn(),
@@ -713,7 +700,6 @@ describe('voiSyncCallback', () => {
   });
 
   it('skips Generic viewports without a matching volume binding, but still renders', () => {
-    utilities.isGenericViewport.mockReturnValue(true);
     const tViewport = {
       findDataIdByVolumeId: jest.fn(() => undefined),
       setDisplaySetPresentation: jest.fn(),
@@ -961,10 +947,6 @@ describe('areViewportsCoplanar', () => {
   const makeViewport = (viewPlaneNormal) => ({
     getViewReference: () => ({ viewPlaneNormal }),
     getResolvedView: () => ({ toICamera: () => ({ viewPlaneNormal }) }),
-  });
-
-  beforeEach(() => {
-    utilities.isGenericViewport.mockReturnValue(true);
   });
 
   it('returns true for viewports with the same normal', () => {

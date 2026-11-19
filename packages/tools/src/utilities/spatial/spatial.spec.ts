@@ -41,7 +41,7 @@ function createFakeAxialViewport({
 
   return {
     id,
-    type: 'planarNext',
+    type: 'planar',
     renderingEngineId: 'fakeRenderingEngine',
     element: { clientWidth: canvasSize, clientHeight: canvasSize },
     setDisplaySets: () => undefined,

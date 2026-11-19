@@ -385,7 +385,7 @@ function renderAndWait(viewport) {
 function createSource(renderingEngine) {
   testUtils.createViewports(renderingEngine, {
     viewportId: 'source',
-    viewportType: ViewportType.PLANAR_NEXT,
+    viewportType: ViewportType.PLANAR,
     orientation: OrientationAxis.ACQUISITION,
     width: 400,
     height: 300,
@@ -543,7 +543,7 @@ function expectColour(actual, expected) {
 /** Expects a loupe to be a direct next planar viewport. */
 function expectNextPlanarLoupe(loupe) {
   expect(loupe.constructor).toBe(PlanarViewport);
-  expect(loupe.type).toBe(ViewportType.PLANAR_NEXT);
+  expect(loupe.type).toBe(ViewportType.PLANAR);
 }
 
 /**

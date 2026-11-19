@@ -79,10 +79,10 @@ async function createVolume() {
  */
 async function createScene(renderingEngine) {
   testUtils.createViewports(renderingEngine, [
-    { viewportType: ViewportType.PLANAR_NEXT, viewportId: tiltedVolumeId },
-    { viewportType: ViewportType.PLANAR_NEXT, viewportId: axialVolumeId },
+    { viewportType: ViewportType.PLANAR, viewportId: tiltedVolumeId },
+    { viewportType: ViewportType.PLANAR, viewportId: axialVolumeId },
     ...stackIds.map((viewportId) => ({
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       viewportId,
     })),
   ]);

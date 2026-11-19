@@ -1,4 +1,4 @@
-import type { GenericVolumeViewport3D, Types } from '@cornerstonejs/core';
+import type { VolumeViewport3D, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
@@ -157,7 +157,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportId1,
-      type: ViewportType.VOLUME_3D_NEXT,
+      type: ViewportType.VOLUME_3D,
       element: element1,
       defaultOptions: {
         background: <Types.RGB>[0.2, 0, 0.2],
@@ -165,7 +165,7 @@ async function run() {
     },
     {
       viewportId: viewportId2,
-      type: ViewportType.VOLUME_3D_NEXT,
+      type: ViewportType.VOLUME_3D,
       element: element2,
       defaultOptions: {
         background: <Types.RGB>[0.2, 0.2, 0],
@@ -173,7 +173,7 @@ async function run() {
     },
     {
       viewportId: viewportId3,
-      type: ViewportType.VOLUME_3D_NEXT,
+      type: ViewportType.VOLUME_3D,
       element: element3,
       defaultOptions: {
         background: <Types.RGB>[0.2, 0.2, 0.2],
@@ -181,7 +181,7 @@ async function run() {
     },
     {
       viewportId: viewportId4,
-      type: ViewportType.VOLUME_3D_NEXT,
+      type: ViewportType.VOLUME_3D,
       element: element4,
       defaultOptions: {
         background: <Types.RGB>[0.4, 0.4, 0.4],
@@ -212,8 +212,7 @@ async function run() {
     } as Types.MeshData,
   });
 
-  const viewport1 =
-    renderingEngine.getViewport<GenericVolumeViewport3D>(viewportId1);
+  const viewport1 = renderingEngine.getViewport<VolumeViewport3D>(viewportId1);
   await viewport1.addDisplaySet(meshId1, {
     renderMode: 'vtkGeometry3d',
   });
@@ -231,8 +230,7 @@ async function run() {
     } as Types.MeshData,
   });
 
-  const viewport2 =
-    renderingEngine.getViewport<GenericVolumeViewport3D>(viewportId2);
+  const viewport2 = renderingEngine.getViewport<VolumeViewport3D>(viewportId2);
 
   await viewport2.addDisplaySet(meshId2, {
     renderMode: 'vtkGeometry3d',
@@ -251,8 +249,7 @@ async function run() {
     } as Types.MeshData,
   });
 
-  const viewport3 =
-    renderingEngine.getViewport<GenericVolumeViewport3D>(viewportId3);
+  const viewport3 = renderingEngine.getViewport<VolumeViewport3D>(viewportId3);
 
   await viewport3.addDisplaySet(meshId3, {
     renderMode: 'vtkGeometry3d',
@@ -271,8 +268,7 @@ async function run() {
     } as Types.MeshData,
   });
 
-  const viewport4 =
-    renderingEngine.getViewport<GenericVolumeViewport3D>(viewportId4);
+  const viewport4 = renderingEngine.getViewport<VolumeViewport3D>(viewportId4);
 
   await viewport4.addDisplaySet(meshId4, {
     renderMode: 'vtkGeometry3d',

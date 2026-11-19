@@ -68,7 +68,7 @@ describe('EraserTool:', () => {
 
     it('Should successfully delete a length annotation on a canvas with mouse down - 512 x 128', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
         width: 512,
         height: 128,
         viewportId: viewportId,

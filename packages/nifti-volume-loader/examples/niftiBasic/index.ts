@@ -59,7 +59,7 @@ async function setup() {
   const viewportInputArray = [
     {
       viewportId: viewportId1,
-      type: Enums.ViewportType.PLANAR_NEXT,
+      type: Enums.ViewportType.PLANAR,
       element: element1,
     },
   ];

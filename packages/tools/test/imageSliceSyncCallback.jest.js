@@ -178,7 +178,7 @@ describe('imageSliceSyncCallback', () => {
     const sourceViewport = createSourceViewport('image:2');
     const targetViewport = createTargetViewport({
       currentImageIdIndex: 0,
-      type: 'planarNext',
+      type: 'planar',
       getCurrentMode: () => 'volume',
       volumeId: 'volume-id',
     });

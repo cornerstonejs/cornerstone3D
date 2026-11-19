@@ -1,7 +1,4 @@
-import type {
-  GenericVolumeViewport3D,
-  PlanarViewport,
-} from '@cornerstonejs/core';
+import type { VolumeViewport3D, PlanarViewport } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
@@ -193,7 +190,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportIds[0],
-      type: ViewportType.VOLUME_3D_NEXT,
+      type: ViewportType.VOLUME_3D,
       element: elements[0],
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -201,7 +198,7 @@ async function run() {
     },
     {
       viewportId: viewportIds[1],
-      type: ViewportType.VOLUME_3D_NEXT,
+      type: ViewportType.VOLUME_3D,
       element: elements[1],
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -209,7 +206,7 @@ async function run() {
     },
     {
       viewportId: viewportIds[2],
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: elements[2],
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -251,8 +248,7 @@ async function run() {
   });
 
   ctViewportIds.forEach((viewportId) => {
-    const viewport =
-      renderingEngine.getViewport<GenericVolumeViewport3D>(viewportId);
+    const viewport = renderingEngine.getViewport<VolumeViewport3D>(viewportId);
 
     viewport.setDisplaySets({ displaySetId: ctDisplaySetId }).then(() => {
       viewport.setDisplaySetPresentation(ctDisplaySetId, {

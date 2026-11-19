@@ -2047,7 +2047,7 @@ class CrosshairsTool extends AnnotationTool {
   };
 
   _checkIfViewportsRenderingSameScene = (viewport, otherViewport) => {
-    // Native PLANAR_NEXT has no getAllVolumeIds; two native viewports render the same
+    // Native PLANAR has no getAllVolumeIds; two native viewports render the same
     // scene when they are bound to the same dataset (view-reference dataId), which is
     // the MPR case (axial/sagittal/coronal of one volume share a dataId).
     const ref = viewport.getViewReference?.();

@@ -253,7 +253,7 @@ async function updateViewport() {
   const viewportInput = {
     viewportId,
     element: viewportContainer,
-    type: ViewportType.PLANAR_NEXT,
+    type: ViewportType.PLANAR,
     defaultOptions: {},
   };
 

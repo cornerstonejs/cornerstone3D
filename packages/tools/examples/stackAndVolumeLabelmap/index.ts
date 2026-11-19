@@ -163,14 +163,14 @@ async function run() {
     {
       viewportId: viewportId1,
       element: element1,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       defaultOptions: {
         orientation: 'sagittal',
       },
     },
     {
       viewportId: viewportId2,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: element2,
     },
   ];

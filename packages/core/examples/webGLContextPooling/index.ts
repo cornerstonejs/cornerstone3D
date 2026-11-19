@@ -242,7 +242,7 @@ async function run() {
   const viewportInputArray: Types.PublicViewportInput[] = viewportIds.map(
     (viewportId, index) => ({
       viewportId,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: viewportElements[index],
       defaultOptions: {
         background: <Types.Point3>[0.1, 0.1, 0.1],

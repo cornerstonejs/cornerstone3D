@@ -109,7 +109,7 @@ function createNextViewport(renderingEngine) {
     height: 300,
     useEnableElement: true,
     viewportId: 'next3D',
-    viewportType: ViewportType.VOLUME_3D_NEXT,
+    viewportType: ViewportType.VOLUME_3D,
   });
   ToolGroupManager.getToolGroup(toolGroupId).addViewport(
     'next3D',
@@ -401,7 +401,7 @@ describe('Tools on a direct next 3D viewport -- ', () => {
     await showVolume(next);
     testUtils.createViewports(renderingEngine, {
       viewportId: 'nextVideo',
-      viewportType: ViewportType.VIDEO_NEXT,
+      viewportType: ViewportType.VIDEO,
       useEnableElement: true,
     });
 

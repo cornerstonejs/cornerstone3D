@@ -4,7 +4,7 @@ import type {
   ProjectionScale,
   ProjectionSnapshot,
   Types,
-  GenericVolumeViewport3D,
+  VolumeViewport3D,
 } from '@cornerstonejs/core';
 import {
   CONSTANTS,
@@ -53,7 +53,7 @@ type PlanarProjectionPatch = {
   zoom?: number;
 };
 type Volume3DProjectionPatch = {
-  camera?: Parameters<GenericVolumeViewport3D['setViewState']>[0];
+  camera?: Parameters<VolumeViewport3D['setViewState']>[0];
 };
 
 setTitleAndDescription(
@@ -248,10 +248,10 @@ function getPlanarViewport(): PlanarViewport {
 /**
  * Looks up the Volume 3D Next viewport used by this example.
  */
-function getVolumeViewport(): GenericVolumeViewport3D {
+function getVolumeViewport(): VolumeViewport3D {
   return getRenderingEngine(renderingEngineId).getViewport(
     volumeViewportId
-  ) as GenericVolumeViewport3D;
+  ) as VolumeViewport3D;
 }
 
 /**
@@ -314,7 +314,7 @@ function applyVolumeProjectionPatch(): void {
   }
 
   const nextViewState = viewportProjection.withPresentation<
-    Parameters<GenericVolumeViewport3D['setViewState']>[0],
+    Parameters<VolumeViewport3D['setViewState']>[0],
     Volume3DProjectionPatch
   >(viewport, {
     camera: {
@@ -343,7 +343,7 @@ function resetProjectionViewports(): void {
 /**
  * Applies a volume-rendering preset to the current Volume 3D actor.
  */
-function applyVolumeRenderingPreset(viewport: GenericVolumeViewport3D): void {
+function applyVolumeRenderingPreset(viewport: VolumeViewport3D): void {
   const preset = CONSTANTS.VIEWPORT_PRESETS.find(
     ({ name }) => name === volumePresetName
   );
@@ -404,7 +404,7 @@ async function run() {
 
   renderingEngine.enableElement({
     viewportId: planarViewportId,
-    type: ViewportType.PLANAR_NEXT,
+    type: ViewportType.PLANAR,
     element: planarElement,
     defaultOptions: {
       background: [0.08, 0.17, 0.2] as Types.Point3,
@@ -412,7 +412,7 @@ async function run() {
   });
   renderingEngine.enableElement({
     viewportId: volumeViewportId,
-    type: ViewportType.VOLUME_3D_NEXT,
+    type: ViewportType.VOLUME_3D,
     element: volumeElement,
     defaultOptions: {
       background: [0.18, 0.13, 0.22] as Types.Point3,

@@ -1,6 +1,6 @@
 // State-based tests pinning the contracts of the `cornerstoneTools.annotation`
 // namespace (state, selection, locking, visibility) plus the annotation event
-// surface and JSON persistence, driven against a GenericViewport (PLANAR_NEXT)
+// surface and JSON persistence, driven against a GenericViewport (PLANAR)
 // harness viewport. Black box: every assertion goes through the public
 // `@cornerstonejs/tools` / `@cornerstonejs/core` exports, DOM state, and
 // events -- never through packages/tools/src/** deep imports.

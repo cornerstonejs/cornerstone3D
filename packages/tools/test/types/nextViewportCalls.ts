@@ -7,21 +7,21 @@
  * It holds no cast. A call that needs one here needs one in an application.
  */
 import type {
-  ECGGenericViewport,
-  GenericVolumeViewport3D,
+  ECGViewport,
+  VolumeViewport3D,
   PlanarViewport,
   Types,
-  VideoGenericViewport,
-  WSIGenericViewport,
+  VideoViewport,
+  WSIViewport,
 } from '@cornerstonejs/core';
 import { utilities } from '../../src';
 import type { Types as ToolTypes } from '../../src';
 
 declare const planar: PlanarViewport;
-declare const volume3D: GenericVolumeViewport3D;
-declare const video: VideoGenericViewport;
-declare const wholeSlide: WSIGenericViewport;
-declare const ecg: ECGGenericViewport;
+declare const volume3D: VolumeViewport3D;
+declare const video: VideoViewport;
+declare const wholeSlide: WSIViewport;
+declare const ecg: ECGViewport;
 declare const generic: Types.IViewport;
 declare const enabledElement: Types.IEnabledElement;
 declare const point: Types.Point3;

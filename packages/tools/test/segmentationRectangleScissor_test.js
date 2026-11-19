@@ -64,7 +64,7 @@ describe('Segmentation Tools:', () => {
 
   it('should be able to create a new segmentation from a viewport', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       orientation: Enums.OrientationAxis.AXIAL,
       viewportId: viewportId1,
     });
@@ -128,7 +128,7 @@ describe('Segmentation Tools:', () => {
 
   it('should be able to edit the segmentation data with the rectangle scissor', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       orientation: Enums.OrientationAxis.AXIAL,
       viewportId: viewportId1,
     });
@@ -270,12 +270,12 @@ describe('Segmentation Tools:', () => {
       renderingEngine,
       [
         {
-          viewportType: ViewportType.PLANAR_NEXT,
+          viewportType: ViewportType.PLANAR,
           orientation: Enums.OrientationAxis.AXIAL,
           viewportId: viewportId1,
         },
         {
-          viewportType: ViewportType.PLANAR_NEXT,
+          viewportType: ViewportType.PLANAR,
           orientation: Enums.OrientationAxis.SAGITTAL,
           viewportId: viewportId2,
         },

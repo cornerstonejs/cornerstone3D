@@ -1,6 +1,6 @@
 import type {
   PlanarViewport,
-  GenericVolumeViewport3D,
+  VolumeViewport3D,
   Types,
 } from '@cornerstonejs/core';
 import {
@@ -177,8 +177,8 @@ function getMprViewports(): PlanarViewport[] {
   return mprViewportIds.map((id) => getViewport<PlanarViewport>(id));
 }
 
-function getVolume3dViewport(): GenericVolumeViewport3D {
-  return getViewport<GenericVolumeViewport3D>(volume3dViewportId);
+function getVolume3dViewport(): VolumeViewport3D {
+  return getViewport<VolumeViewport3D>(volume3dViewportId);
 }
 
 function renderAll(): void {
@@ -200,14 +200,14 @@ function getReferenceLineDraggableRotatable(): boolean {
   // Must be true for the crosshairs to be interactive: it gates both the
   // reference-line grab (drag-to-translate, which reslices the other MPR
   // viewports - the "jump") and the center gap. Rotation drag itself is a
-  // no-op on native PLANAR_NEXT (the tool gates OPERATION.ROTATE off for
+  // no-op on native PLANAR (the tool gates OPERATION.ROTATE off for
   // GenericViewports), so the rotation handles render but are inert for now.
   return true;
 }
 
 function getReferenceLineSlabThicknessControlsOn(): boolean {
   // Slab-thickness handles stay off: slab control is not supported on native
-  // PLANAR_NEXT yet.
+  // PLANAR yet.
   return false;
 }
 
@@ -389,7 +389,7 @@ async function run() {
 
   renderingEngine.enableElement({
     viewportId: acqViewportId,
-    type: ViewportType.PLANAR_NEXT,
+    type: ViewportType.PLANAR,
     element: acqElement,
     defaultOptions: {
       background: [0.04, 0.04, 0.08] as Types.Point3,
@@ -397,7 +397,7 @@ async function run() {
   });
   renderingEngine.enableElement({
     viewportId: axialViewportId,
-    type: ViewportType.PLANAR_NEXT,
+    type: ViewportType.PLANAR,
     element: axialElement,
     defaultOptions: {
       orientation: OrientationAxis.AXIAL,
@@ -406,7 +406,7 @@ async function run() {
   });
   renderingEngine.enableElement({
     viewportId: sagittalViewportId,
-    type: ViewportType.PLANAR_NEXT,
+    type: ViewportType.PLANAR,
     element: sagittalElement,
     defaultOptions: {
       orientation: OrientationAxis.SAGITTAL,
@@ -415,7 +415,7 @@ async function run() {
   });
   renderingEngine.enableElement({
     viewportId: coronalViewportId,
-    type: ViewportType.PLANAR_NEXT,
+    type: ViewportType.PLANAR,
     element: coronalElement,
     defaultOptions: {
       orientation: OrientationAxis.CORONAL,
@@ -424,7 +424,7 @@ async function run() {
   });
   renderingEngine.enableElement({
     viewportId: volume3dViewportId,
-    type: ViewportType.VOLUME_3D_NEXT,
+    type: ViewportType.VOLUME_3D,
     element: volume3dElement,
     defaultOptions: {
       orientation: OrientationAxis.CORONAL,

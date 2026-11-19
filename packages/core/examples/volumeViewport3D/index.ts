@@ -1,4 +1,4 @@
-import type { GenericVolumeViewport3D, Types } from '@cornerstonejs/core';
+import type { VolumeViewport3D, Types } from '@cornerstonejs/core';
 import {
   CONSTANTS,
   Enums,
@@ -74,8 +74,7 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the volume viewport
-    const viewport =
-      renderingEngine.getViewport<GenericVolumeViewport3D>(viewportId);
+    const viewport = renderingEngine.getViewport<VolumeViewport3D>(viewportId);
 
     // Apply the rotation to the camera of the viewport
     const viewState = viewportProjection.withPresentation(viewport, {
@@ -95,8 +94,7 @@ addDropdownToToolbar({
   },
   onSelectedValueChange: (presetName) => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
-    const viewport =
-      renderingEngine.getViewport<GenericVolumeViewport3D>(viewportId);
+    const viewport = renderingEngine.getViewport<VolumeViewport3D>(viewportId);
     viewport.setDisplaySetPresentation(displaySetId, {
       preset: presetName as string,
     });
@@ -111,8 +109,7 @@ addDropdownToToolbar({
   },
   onSelectedValueChange: (sampleDistanceMultiplier) => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
-    const viewport =
-      renderingEngine.getViewport<GenericVolumeViewport3D>(viewportId);
+    const viewport = renderingEngine.getViewport<VolumeViewport3D>(viewportId);
     viewport.setDisplaySetPresentation(displaySetId, {
       sampleDistanceMultiplier: Number(sampleDistanceMultiplier),
     });
@@ -157,7 +154,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportId,
-      type: ViewportType.VOLUME_3D_NEXT,
+      type: ViewportType.VOLUME_3D,
       element: element1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -178,8 +175,7 @@ async function run() {
 
   // Set the volume to load
   volume.load();
-  const viewport =
-    renderingEngine.getViewport<GenericVolumeViewport3D>(viewportId);
+  const viewport = renderingEngine.getViewport<VolumeViewport3D>(viewportId);
 
   utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
     imageIds,

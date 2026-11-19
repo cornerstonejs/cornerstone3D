@@ -70,7 +70,7 @@ function createNextViewport(renderingEngine) {
   testUtils.createViewports(renderingEngine, {
     ...viewportOptions,
     viewportId: 'next3D',
-    viewportType: ViewportType.VOLUME_3D_NEXT,
+    viewportType: ViewportType.VOLUME_3D,
   });
   ToolGroupManager.getToolGroup(toolGroupId).addViewport(
     'next3D',

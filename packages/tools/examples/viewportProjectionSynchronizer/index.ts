@@ -392,7 +392,7 @@ async function run() {
 
   renderingEngine.enableElement({
     viewportId: leftViewportId,
-    type: ViewportType.PLANAR_NEXT,
+    type: ViewportType.PLANAR,
     element: leftElement,
     defaultOptions: {
       background: [0.08, 0.17, 0.2] as Types.Point3,
@@ -400,7 +400,7 @@ async function run() {
   });
   renderingEngine.enableElement({
     viewportId: rightViewportId,
-    type: ViewportType.PLANAR_NEXT,
+    type: ViewportType.PLANAR,
     element: rightElement,
     defaultOptions: {
       background: [0.19, 0.14, 0.18] as Types.Point3,

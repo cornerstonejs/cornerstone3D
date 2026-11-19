@@ -89,7 +89,7 @@ describe('ProbeTool (CPU):', () => {
     const element = createViewports(
       renderingEngine,
       {
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
         width: 512,
         height: 128,
         viewportId,
@@ -184,7 +184,7 @@ describe('ProbeTool (CPU):', () => {
     const element = createViewports(
       renderingEngine,
       {
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
         width: 256,
         height: 256,
         viewportId,

@@ -109,7 +109,7 @@ describe('Cornerstone Tools: ', () => {
       renderingEngine,
       [
         {
-          viewportType: ViewportType.PLANAR_NEXT,
+          viewportType: ViewportType.PLANAR,
           width: 512,
           height: 128,
           viewportId: viewportIds[0],
@@ -117,7 +117,7 @@ describe('Cornerstone Tools: ', () => {
           orientation: Enums.OrientationAxis.AXIAL,
         },
         {
-          viewportType: ViewportType.PLANAR_NEXT,
+          viewportType: ViewportType.PLANAR,
           width: 512,
           height: 128,
           viewportId: viewportIds[1],
@@ -125,7 +125,7 @@ describe('Cornerstone Tools: ', () => {
           orientation: Enums.OrientationAxis.SAGITTAL,
         },
         {
-          viewportType: ViewportType.PLANAR_NEXT,
+          viewportType: ViewportType.PLANAR,
           width: 512,
           height: 128,
           viewportId: viewportIds[2],
@@ -212,7 +212,7 @@ describe('Cornerstone Tools: ', () => {
       renderingEngine,
       [
         {
-          viewportType: ViewportType.PLANAR_NEXT,
+          viewportType: ViewportType.PLANAR,
           width: 512,
           height: 128,
           viewportId: viewportIds[0],
@@ -220,7 +220,7 @@ describe('Cornerstone Tools: ', () => {
           orientation: Enums.OrientationAxis.AXIAL,
         },
         {
-          viewportType: ViewportType.PLANAR_NEXT,
+          viewportType: ViewportType.PLANAR,
           width: 512,
           height: 128,
           viewportId: viewportIds[1],
@@ -228,7 +228,7 @@ describe('Cornerstone Tools: ', () => {
           orientation: Enums.OrientationAxis.SAGITTAL,
         },
         {
-          viewportType: ViewportType.PLANAR_NEXT,
+          viewportType: ViewportType.PLANAR,
           width: 512,
           height: 128,
           viewportId: viewportIds[2],

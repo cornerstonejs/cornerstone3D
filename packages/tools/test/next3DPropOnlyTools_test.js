@@ -41,7 +41,7 @@ function createPropOnlyViewport(renderingEngine, parallelProjection) {
   document.body.appendChild(element);
   renderingEngine.enableElement({
     viewportId,
-    type: ViewportType.VOLUME_3D_NEXT,
+    type: ViewportType.VOLUME_3D,
     element,
     defaultOptions: {
       orientation: OrientationAxis.SAGITTAL,

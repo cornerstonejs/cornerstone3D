@@ -6,7 +6,7 @@ import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import type {
   Types,
   PlanarViewport,
-  GenericVolumeViewport3D,
+  VolumeViewport3D,
 } from '@cornerstonejs/core';
 import { addToolProp } from './toolProps';
 
@@ -23,7 +23,7 @@ import { addToolProp } from './toolProps';
  * @returns Object with actor and source
  */
 export function addLine3DBetweenPoints(
-  viewport: PlanarViewport | GenericVolumeViewport3D,
+  viewport: PlanarViewport | VolumeViewport3D,
   point1: Types.Point3,
   point2: Types.Point3,
   color: [number, number, number] = [0.7, 0.7, 0.7],

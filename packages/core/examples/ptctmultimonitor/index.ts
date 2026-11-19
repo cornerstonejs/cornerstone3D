@@ -716,7 +716,7 @@ function createViewportInputArrayForStudy(config, studyIndex) {
   const viewportInputArray = [
     {
       viewportId: studyViewportIds.CT.AXIAL,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: studyElements.element_1_1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -724,7 +724,7 @@ function createViewportInputArrayForStudy(config, studyIndex) {
     },
     {
       viewportId: studyViewportIds.CT.SAGITTAL,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: studyElements.element_1_2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -732,7 +732,7 @@ function createViewportInputArrayForStudy(config, studyIndex) {
     },
     {
       viewportId: studyViewportIds.CT.CORONAL,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: studyElements.element_1_3,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -740,7 +740,7 @@ function createViewportInputArrayForStudy(config, studyIndex) {
     },
     {
       viewportId: studyViewportIds.PT.AXIAL,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: studyElements.element_2_1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -749,7 +749,7 @@ function createViewportInputArrayForStudy(config, studyIndex) {
     },
     {
       viewportId: studyViewportIds.PT.SAGITTAL,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: studyElements.element_2_2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -758,7 +758,7 @@ function createViewportInputArrayForStudy(config, studyIndex) {
     },
     {
       viewportId: studyViewportIds.PT.CORONAL,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: studyElements.element_2_3,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -767,7 +767,7 @@ function createViewportInputArrayForStudy(config, studyIndex) {
     },
     {
       viewportId: studyViewportIds.FUSION.AXIAL,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: studyElements.element_3_1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -775,7 +775,7 @@ function createViewportInputArrayForStudy(config, studyIndex) {
     },
     {
       viewportId: studyViewportIds.FUSION.SAGITTAL,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: studyElements.element_3_2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -783,7 +783,7 @@ function createViewportInputArrayForStudy(config, studyIndex) {
     },
     {
       viewportId: studyViewportIds.FUSION.CORONAL,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: studyElements.element_3_3,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -791,7 +791,7 @@ function createViewportInputArrayForStudy(config, studyIndex) {
     },
     {
       viewportId: studyViewportIds.PETMIP.CORONAL,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: studyElements.element_mip,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,

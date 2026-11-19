@@ -671,7 +671,7 @@ async function openExample(page: Page): Promise<string> {
           cs.setRenderBackend('gpu');
           engine.enableElement({
             viewportId: id,
-            type: cs.Enums.ViewportType.PLANAR_NEXT,
+            type: cs.Enums.ViewportType.PLANAR,
             element,
             defaultOptions: { background: stackCase.background },
           });

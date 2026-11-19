@@ -171,7 +171,7 @@ class MagnifyTool extends BaseTool {
 
       const viewportInput = {
         viewportId: MAGNIFY_VIEWPORT_ID,
-        type: Enums.ViewportType.PLANAR_NEXT,
+        type: Enums.ViewportType.PLANAR,
         element: magnifyToolElement as HTMLDivElement,
       };
 

@@ -229,7 +229,7 @@ async function run() {
 
   const viewportInput = {
     viewportId,
-    type: ViewportType.PLANAR_NEXT,
+    type: ViewportType.PLANAR,
     element,
     defaultOptions: {
       background: [0.2, 0, 0.2] as Types.Point3,

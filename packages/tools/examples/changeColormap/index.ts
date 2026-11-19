@@ -163,7 +163,7 @@ async function run() {
 
   const viewportInput = {
     viewportId,
-    type: ViewportType.PLANAR_NEXT,
+    type: ViewportType.PLANAR,
     element,
     defaultOptions: {
       orientation: Enums.OrientationAxis.AXIAL,

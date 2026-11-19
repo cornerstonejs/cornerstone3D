@@ -1,4 +1,4 @@
-import type { Types, VideoGenericViewport } from '@cornerstonejs/core';
+import type { Types, VideoViewport } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
@@ -63,8 +63,7 @@ info.appendChild(flipVerticalInfo);
 
 element.addEventListener(Events.CAMERA_MODIFIED, () => {
   const renderingEngine = getRenderingEngine(renderingEngineId);
-  const viewport =
-    renderingEngine.getViewport<VideoGenericViewport>(viewportId);
+  const viewport = renderingEngine.getViewport<VideoViewport>(viewportId);
 
   if (!viewport) {
     return;
@@ -87,9 +86,7 @@ addButtonToToolbar({
   title: 'Play',
   onClick: () => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as VideoGenericViewport;
+    const viewport = renderingEngine.getViewport(viewportId) as VideoViewport;
 
     viewport.play();
   },
@@ -99,9 +96,7 @@ addButtonToToolbar({
   title: 'Pause',
   onClick: () => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as VideoGenericViewport;
+    const viewport = renderingEngine.getViewport(viewportId) as VideoViewport;
 
     viewport.pause();
   },
@@ -111,9 +106,7 @@ addButtonToToolbar({
   title: 'Reset View',
   onClick: () => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
-    const viewport = renderingEngine.getViewport(
-      viewportId
-    ) as VideoGenericViewport;
+    const viewport = renderingEngine.getViewport(viewportId) as VideoViewport;
 
     viewport.resetViewState();
   },
@@ -161,7 +154,7 @@ async function run() {
 
   renderingEngine.enableElement({
     viewportId,
-    type: ViewportType.VIDEO_NEXT,
+    type: ViewportType.VIDEO,
     element,
     defaultOptions: {
       background: [0, 0.2, 0] as Types.Point3,
@@ -170,8 +163,7 @@ async function run() {
 
   toolGroup.addViewport(viewportId, renderingEngineId);
 
-  const viewport =
-    renderingEngine.getViewport<VideoGenericViewport>(viewportId);
+  const viewport = renderingEngine.getViewport<VideoViewport>(viewportId);
 
   utilities.genericViewportDisplaySetMetadataProvider.add(videoDataId, {
     kind: 'video',

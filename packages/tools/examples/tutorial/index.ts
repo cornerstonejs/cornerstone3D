@@ -56,7 +56,7 @@ async function run() {
   const viewportInput = {
     viewportId,
     element,
-    type: ViewportType.PLANAR_NEXT,
+    type: ViewportType.PLANAR,
   };
 
   renderingEngine.enableElement(viewportInput);

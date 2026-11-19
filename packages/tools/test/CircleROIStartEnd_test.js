@@ -87,7 +87,7 @@ describe('Circle Start End Tool: ', () => {
   it('Should successfully create a circle start end tool on a canvas with mouse drag - 512 x 128', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
       viewportId,
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       width: 512,
       height: 128,
     });
@@ -205,7 +205,7 @@ describe('Circle Start End Tool: ', () => {
   it('takes the focal point of the resolved view, a typed array, as its start and end slice', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
       viewportId,
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       width: 512,
       height: 128,
     });

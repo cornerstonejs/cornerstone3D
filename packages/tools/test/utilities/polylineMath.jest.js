@@ -643,8 +643,8 @@ describe('projectTo2D', () => {
 });
 
 describe('getSubPixelSpacingAndXYDirections', () => {
-  // `isGenericViewport`/`getViewportContentMode` are duck-typed: they check
-  // for method presence, and the mode comes from `getCurrentMode`. So plain
+  // `getViewportContentMode` is duck-typed: it checks for method presence,
+  // and the mode comes from `getCurrentMode`. So plain
   // stub objects work without needing to mock `@cornerstonejs/core` for this
   // function specifically.
 

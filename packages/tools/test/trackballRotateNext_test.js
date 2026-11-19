@@ -291,7 +291,7 @@ describe('TrackballRotateTool on a direct next viewport -- ', () => {
 
   it('turns the camera of a 3D viewport about the point at the centre of the canvas', async function () {
     testUtils.createViewports(renderingEngine, {
-      viewportType: ViewportType.VOLUME_3D_NEXT,
+      viewportType: ViewportType.VOLUME_3D,
       orientation: OrientationAxis.SAGITTAL,
       viewportId,
       useEnableElement: true,

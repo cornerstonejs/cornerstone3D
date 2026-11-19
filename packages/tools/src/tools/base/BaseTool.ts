@@ -5,11 +5,7 @@ import {
   viewportHasPan,
   viewportHasZoom,
 } from '@cornerstonejs/core';
-import type {
-  Types,
-  PlanarViewport,
-  VideoGenericViewport,
-} from '@cornerstonejs/core';
+import type { Types, PlanarViewport, VideoViewport } from '@cornerstonejs/core';
 import ToolModes from '../../enums/ToolModes';
 import Events from '../../enums/Events';
 import {
@@ -378,7 +374,7 @@ abstract class BaseTool {
         return;
       }
 
-      return (viewports[0] as VideoGenericViewport).getImageData();
+      return (viewports[0] as VideoViewport).getImageData();
     } else {
       throw new Error(
         'getTargetIdImage: targetId must start with "imageId:" or "volumeId:"'

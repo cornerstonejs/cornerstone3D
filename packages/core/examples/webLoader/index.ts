@@ -164,12 +164,12 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: 'COLOR_STACK',
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: element1,
     },
     {
       viewportId: 'COLOR_VOLUME_1',
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: element2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -177,7 +177,7 @@ async function run() {
     },
     {
       viewportId: 'COLOR_VOLUME_2',
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: element3,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -185,7 +185,7 @@ async function run() {
     },
     {
       viewportId: 'COLOR_VOLUME_3',
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: element4,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,

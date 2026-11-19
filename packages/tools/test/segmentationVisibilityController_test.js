@@ -61,7 +61,7 @@ describe('Segmentation Controller:', () => {
 
   xit('should be able to load two segmentations on the toolGroup', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       orientation: Enums.OrientationAxis.AXIAL,
       viewportId: viewportId1,
     });

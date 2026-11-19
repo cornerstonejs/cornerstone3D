@@ -88,7 +88,7 @@ describe('RectangleROITool (CPU):', () => {
     const element = createViewports(
       renderingEngine,
       {
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
         width: 512,
         height: 128,
         viewportId,
@@ -203,7 +203,7 @@ describe('RectangleROITool (CPU):', () => {
     const element = createViewports(
       renderingEngine,
       {
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
         width: 256,
         height: 256,
         viewportId,
@@ -352,7 +352,7 @@ describe('RectangleROITool (CPU):', () => {
     const element = createViewports(
       renderingEngine,
       {
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
         width: 512,
         height: 256,
         viewportId,
@@ -496,7 +496,7 @@ describe('RectangleROITool (CPU):', () => {
     const element = createViewports(
       renderingEngine,
       {
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
         width: 512,
         height: 128,
         viewportId,

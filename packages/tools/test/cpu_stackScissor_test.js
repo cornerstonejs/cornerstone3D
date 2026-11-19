@@ -86,7 +86,7 @@ describe('Stack segmentation scissors on the CPU:', () => {
 
   it('fills the labelmap of a stack with the circle scissor when the stack draws on the CPU', (done) => {
     const element = createViewports(renderingEngine, {
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       viewportId,
       width: 256,
       height: 256,

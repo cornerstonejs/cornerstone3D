@@ -165,7 +165,7 @@ async function showDisplaySetInPlace(
 
   renderingEngine.enableElement({
     viewportId,
-    type: ViewportType.PLANAR_NEXT,
+    type: ViewportType.PLANAR,
     element,
     defaultOptions: { background: options.background },
   });
@@ -230,7 +230,7 @@ async function run() {
   // Create a stack viewport
   const viewportInput = {
     viewportId: viewportIds[0],
-    type: ViewportType.PLANAR_NEXT,
+    type: ViewportType.PLANAR,
 
     element: element1,
     defaultOptions: {

@@ -52,7 +52,7 @@ element1.style.background = 'green';
 
 const viewportInput = {
   viewportId,
-  type: ViewportType.PLANAR_NEXT,
+  type: ViewportType.PLANAR,
   element: element1,
   defaultOptions: {
     background: [0.2, 0, 0.2] as Types.Point3,

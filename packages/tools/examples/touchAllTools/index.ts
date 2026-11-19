@@ -816,7 +816,7 @@ async function run() {
   renderingEngine.setViewports([
     {
       viewportId: viewportIdSagittal,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: elementSagittal,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -825,7 +825,7 @@ async function run() {
     },
     {
       viewportId: viewportIdStack,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: elementStack,
       defaultOptions: {
         background: [0, 0, 0] as Types.Point3,

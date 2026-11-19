@@ -32,7 +32,7 @@ function makeNextPlanar(mode, extra = {}) {
   };
 
   return {
-    type: 'planarNext',
+    type: 'planar',
     element: document.createElement('div'),
     setDisplaySets: jest.fn(),
     setDisplaySetPresentation: jest.fn(),
@@ -111,7 +111,7 @@ describe('WholeBodySegmentTool volume of a direct next planar viewport', () => {
 describe('AnnotationMultiSlice.setViewportFrameRange', () => {
   it('sets the frame range key of the view state on a direct next video viewport, which has no setFrameRange', () => {
     const viewport = {
-      type: Enums.ViewportType.VIDEO_NEXT,
+      type: Enums.ViewportType.VIDEO,
       getCurrentMode: () => 'video',
       setViewState: jest.fn(),
     };
@@ -129,7 +129,7 @@ describe('AnnotationMultiSlice.setViewportFrameRange', () => {
   it('asks the content mode of the viewport for a video, not its type', () => {
     const video = { getCurrentMode: () => 'video', setViewState: jest.fn() };
     const emptyVideo = {
-      type: Enums.ViewportType.VIDEO_NEXT,
+      type: Enums.ViewportType.VIDEO,
       getCurrentMode: () => 'empty',
       setViewState: jest.fn(),
     };
@@ -144,12 +144,12 @@ describe('AnnotationMultiSlice.setViewportFrameRange', () => {
 
   it('sets no frame range on a direct next planar viewport, and none without a range', () => {
     const planar = {
-      type: Enums.ViewportType.PLANAR_NEXT,
+      type: Enums.ViewportType.PLANAR,
       getCurrentMode: () => 'stack',
       setViewState: jest.fn(),
     };
     const video = {
-      type: Enums.ViewportType.VIDEO_NEXT,
+      type: Enums.ViewportType.VIDEO,
       getCurrentMode: () => 'video',
       setViewState: jest.fn(),
     };

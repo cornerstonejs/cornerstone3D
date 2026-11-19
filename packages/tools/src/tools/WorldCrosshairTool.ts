@@ -160,7 +160,7 @@ export type WorldCrosshairToolConfiguration = {
   /** Whether to render the point in the configured 3D viewports. */
   showIn3D: boolean;
   /**
-   * Ids of Generic 3D (VOLUME_3D_NEXT) viewports in which the point is
+   * Ids of Generic 3D (VOLUME_3D) viewports in which the point is
    * rendered as three world-space intersecting lines (one per patient
    * axis). Kept as an explicit list so 3D viewports (usually in their own
    * tool group for trackball manipulation) need not join this tool's group.
@@ -238,7 +238,7 @@ function parseCssColorToRGB(color: string): [number, number, number] {
  * deliberately does not react to CAMERA_MODIFIED or view-state resets.
  *
  * The tool targets the Generic ("next") viewport architecture exclusively: it
- * only operates on direct PLANAR_NEXT viewports through the native view-state
+ * only operates on direct PLANAR viewports through the native view-state
  * API (getResolvedView / setViewReference / setViewState). Legacy stack and
  * volume viewports (and their compatibility adapters) are ignored.
  *
@@ -1151,7 +1151,7 @@ class WorldCrosshairTool extends AnnotationTool {
             | undefined
       )
       .filter(
-        (viewport) => viewport && viewport.type === ViewportType.VOLUME_3D_NEXT
+        (viewport) => viewport && viewport.type === ViewportType.VOLUME_3D
       );
   }
 
@@ -1194,7 +1194,7 @@ class WorldCrosshairTool extends AnnotationTool {
   private _isPlanarViewport(
     viewport: Types.IViewport
   ): viewport is Types.IViewport {
-    return viewport?.type === ViewportType.PLANAR_NEXT;
+    return viewport?.type === ViewportType.PLANAR;
   }
 
   protected _getViewportsInfo(): Types.IViewportId[] {

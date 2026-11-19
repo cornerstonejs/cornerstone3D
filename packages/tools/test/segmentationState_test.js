@@ -59,7 +59,7 @@ describe('Segmentation State:', () => {
   // Refactor this once the new state shape is documented.
   xit('should successfully create a state when segmentation is added', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       orientation: Enums.OrientationAxis.AXIAL,
       viewportId: viewportId,
     });
@@ -163,7 +163,7 @@ describe('Segmentation State:', () => {
 
   it('should successfully create a global default representation configuration', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       orientation: Enums.OrientationAxis.AXIAL,
       viewportId: viewportId,
     });

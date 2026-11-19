@@ -87,7 +87,7 @@ describe('CobbAngleTool:', () => {
   it('Should successfully create a Cobb angle tool with angle less than 90 degrees on a canvas with mouse drag - 512 x 128', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
       viewportId,
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       width: 512,
       height: 128,
     });
@@ -240,7 +240,7 @@ describe('CobbAngleTool:', () => {
   it('Should successfully create a Cobb Angle tool with angle greater than 90 degrees on a canvas with mouse clicks in a Volume viewport - 512 x 128', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
       viewportId,
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       width: 512,
       height: 128,
     });
@@ -395,7 +395,7 @@ describe('CobbAngleTool:', () => {
   it('Should successfully create a Cobb Angle tool with combined clicks and drag and modify its handle', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
       viewportId,
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       width: 256,
       height: 256,
     });
@@ -590,7 +590,7 @@ describe('CobbAngleTool:', () => {
   it('Should successfully create a Cobb angle tool with combined clicks and drags and select but not move it', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
       viewportId,
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       width: 256,
       height: 256,
     });

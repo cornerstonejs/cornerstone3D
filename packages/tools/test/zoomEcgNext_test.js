@@ -78,7 +78,7 @@ async function showEcgWithZoomTool(renderingEngine) {
 
   const element = testUtils.createViewports(renderingEngine, {
     viewportId,
-    viewportType: ViewportType.ECG_NEXT,
+    viewportType: ViewportType.ECG,
     width: 400,
     height: HEIGHT,
     useEnableElement: true,

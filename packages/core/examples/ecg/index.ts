@@ -1,4 +1,4 @@
-import type { ECGGenericViewport, Types } from '@cornerstonejs/core';
+import type { ECGViewport, Types } from '@cornerstonejs/core';
 import { RenderingEngine, Enums } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import { addDicomPart10Instance } from '@cornerstonejs/metadata/utilities/metadataProvider';
@@ -126,7 +126,7 @@ async function run() {
 
   const viewportInput = {
     viewportId,
-    type: ViewportType.ECG_NEXT,
+    type: ViewportType.ECG,
     element,
     defaultOptions: {
       background: [0.2, 0, 0.2] as Types.Point3,
@@ -138,7 +138,7 @@ async function run() {
   // Bind tool group to this viewport
   toolGroup.addViewport(viewportId, renderingEngineId);
 
-  const viewport = renderingEngine.getViewport<ECGGenericViewport>(viewportId);
+  const viewport = renderingEngine.getViewport<ECGViewport>(viewportId);
 
   // Load ECG data into the viewport (calibration is resolved via metadata provider in ECGViewport)
   await viewport.setDisplaySets({ displaySetId: ecgImageId });

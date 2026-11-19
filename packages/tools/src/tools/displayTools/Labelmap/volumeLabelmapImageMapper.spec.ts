@@ -8,7 +8,7 @@ jest.mock('@cornerstonejs/core', () => ({
       COMPOSITE: 0,
     },
     ViewportType: {
-      PLANAR_NEXT: 'planarNext',
+      PLANAR: 'planar',
     },
   },
 }));
@@ -82,7 +82,7 @@ function makeSegmentation() {
 function makePlanarNextViewport() {
   return {
     id: 'vp-planar',
-    type: 'planarNext',
+    type: 'planar',
     addImages: jest.fn(async () => {}),
     getCurrentImageId: jest.fn(() => 'curr-image'),
     getActors: jest.fn(() => []),

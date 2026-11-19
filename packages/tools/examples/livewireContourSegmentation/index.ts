@@ -342,7 +342,7 @@ async function run() {
   // Create a stack viewport
   const stackViewportInput = {
     viewportId: stackViewportId,
-    type: ViewportType.PLANAR_NEXT,
+    type: ViewportType.PLANAR,
     element: stackViewportElement,
     defaultOptions: {
       background: <Types.Point3>[0.2, 0, 0.2],
@@ -394,7 +394,7 @@ async function run() {
   // Create a volume viewport (Coronal)
   const volumeCoronalViewportInput = {
     viewportId: volumeCoronalViewportId,
-    type: ViewportType.PLANAR_NEXT,
+    type: ViewportType.PLANAR,
     element: volumeCoronalViewportElement,
     defaultOptions: {
       orientation: Enums.OrientationAxis.CORONAL,
@@ -427,7 +427,7 @@ async function run() {
   // Create a volume viewport (Coronal)
   const volumeSagittalViewportInput = {
     viewportId: volumeSagittalViewportId,
-    type: ViewportType.PLANAR_NEXT,
+    type: ViewportType.PLANAR,
     element: volumeSagittalViewportElement,
     defaultOptions: {
       orientation: Enums.OrientationAxis.SAGITTAL,

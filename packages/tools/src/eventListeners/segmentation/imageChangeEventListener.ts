@@ -29,7 +29,7 @@ const enable = function (element: HTMLDivElement): void {
   }
 
   const { viewport } = enabledElement;
-  const isPlanarViewport = viewport.type === Enums.ViewportType.PLANAR_NEXT;
+  const isPlanarViewport = viewport.type === Enums.ViewportType.PLANAR;
   const canUseStackImageEvents =
     typeof (viewport as { getCurrentImageId?: () => string })
       .getCurrentImageId === 'function';
@@ -203,7 +203,7 @@ function _imageChangeEventListener(evt) {
 
     // A planar viewport fires CAMERA_MODIFIED when it scrolls, so the stack
     // labelmap is synced here.
-    const isPlanarNext = viewport.type === Enums.ViewportType.PLANAR_NEXT;
+    const isPlanarNext = viewport.type === Enums.ViewportType.PLANAR;
     if (!isPlanarNext) {
       perViewportManualTriggers.delete(viewportId);
       return;

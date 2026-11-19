@@ -122,7 +122,7 @@ const ANIMATE_RESET_CAMERA_OPTIONS = {
  */
 function canChangeOrientation(viewport: Types.IViewport): boolean {
   return (
-    viewport.type === Enums.ViewportType.VOLUME_3D_NEXT ||
+    viewport.type === Enums.ViewportType.VOLUME_3D ||
     cornerstoneUtilities.viewportIsInVolumeMode(viewport)
   );
 }

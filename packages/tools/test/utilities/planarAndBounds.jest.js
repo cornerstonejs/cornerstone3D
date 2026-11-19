@@ -19,10 +19,6 @@ jest.mock('@cornerstonejs/core', () => {
       // packages/utils/src/utilities/math/isEqual.ts.
       isEqual: (v1, v2, tolerance = 1e-5) => Math.abs(v1 - v2) <= tolerance,
       getViewportContentMode,
-      isGenericViewport: (viewport) =>
-        typeof viewport?.setDisplaySets === 'function' &&
-        typeof viewport?.setDisplaySetPresentation === 'function' &&
-        typeof viewport?.setViewState === 'function',
       viewportIsInStackMode: (viewport) =>
         getViewportContentMode(viewport) === 'stack',
       getTargetVolumeAndSpacingInNormalDir: jest.fn(),
@@ -39,7 +35,7 @@ const nextViewportApi = () => ({
 
 // filterAnnotationsForDisplay's native-volume branch calls getViewportICamera
 // to bridge a resolved-view viewport into an ICamera-shaped object. That
-// bridging logic (isGenericViewport / clonePoint3 / getResolvedView) is
+// bridging logic (clonePoint3 / getResolvedView) is
 // outside the scope of this filter, so we stub it directly.
 jest.mock('../../src/utilities/getViewportICamera', () => ({
   __esModule: true,
@@ -383,7 +379,7 @@ describe('utilities/planar/filterAnnotationsForDisplay', () => {
   it('a viewport in stack mode: excludes invisible annotations without calling isReferenceViewable', () => {
     const isReferenceViewable = jest.fn(() => true);
     const viewport = {
-      type: 'planarNext',
+      type: 'planar',
       getCurrentImageId: jest.fn(() => 'stack://image1'),
       isReferenceViewable,
     };
@@ -401,7 +397,7 @@ describe('utilities/planar/filterAnnotationsForDisplay', () => {
     const getCurrentImageId = jest.fn(() => 'stack://image1');
     const viewport = {
       ...nextViewportApi(),
-      type: 'planarNext',
+      type: 'planar',
       getCurrentImageId,
       isReferenceViewable,
     };

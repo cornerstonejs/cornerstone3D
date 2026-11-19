@@ -1,4 +1,4 @@
-import type { Types, GenericVolumeViewport3D } from '@cornerstonejs/core';
+import type { Types, VolumeViewport3D } from '@cornerstonejs/core';
 import {
   cache,
   getEnabledElementByViewportId,
@@ -123,7 +123,7 @@ async function updateSurfaceDataOnce(segmentationId: string) {
       return;
     }
 
-    const actorEntries = (viewport as GenericVolumeViewport3D).getActors();
+    const actorEntries = (viewport as VolumeViewport3D).getActors();
 
     const segmentIndicesAsSurface = actorEntries
       .map((actor) => (actor.representationUID as string)?.split('-').pop())

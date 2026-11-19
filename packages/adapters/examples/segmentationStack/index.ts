@@ -299,7 +299,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: state.viewportIds[0],
-      type: cornerstone.Enums.ViewportType.PLANAR_NEXT,
+      type: cornerstone.Enums.ViewportType.PLANAR,
       element: element1,
     },
   ];

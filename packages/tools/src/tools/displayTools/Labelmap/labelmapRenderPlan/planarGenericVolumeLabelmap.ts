@@ -61,7 +61,7 @@ function isPlanarNextVolumeViewport(
   const genericViewport = viewport as Partial<PlanarNextVolumeViewport>;
 
   return (
-    genericViewport.type === Enums.ViewportType.PLANAR_NEXT &&
+    genericViewport.type === Enums.ViewportType.PLANAR &&
     typeof genericViewport.getVolumeId === 'function' &&
     typeof genericViewport.getViewReference === 'function' &&
     typeof genericViewport.getViewState === 'function' &&

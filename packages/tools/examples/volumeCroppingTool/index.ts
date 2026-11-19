@@ -1,5 +1,5 @@
 import type {
-  GenericVolumeViewport3D,
+  VolumeViewport3D,
   PlanarViewport,
   Types,
 } from '@cornerstonejs/core';
@@ -362,7 +362,7 @@ async function run(numViewports = getNumViewportsFromUrl()) {
   const orthographicViewports = [
     {
       viewportId: viewportId1,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: element1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -371,7 +371,7 @@ async function run(numViewports = getNumViewportsFromUrl()) {
     },
     {
       viewportId: viewportId2,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: element2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -380,7 +380,7 @@ async function run(numViewports = getNumViewportsFromUrl()) {
     },
     {
       viewportId: viewportId3,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: element3,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -404,7 +404,7 @@ async function run(numViewports = getNumViewportsFromUrl()) {
     ...orthographicViewports,
     {
       viewportId: viewportId4,
-      type: ViewportType.VOLUME_3D_NEXT,
+      type: ViewportType.VOLUME_3D,
       element: element4,
       defaultOptions: {
         background: <Types.Point3>[0, 0, 0],
@@ -435,7 +435,7 @@ async function run(numViewports = getNumViewportsFromUrl()) {
       viewport.setDisplaySetPresentation(displaySetId, ctPresentation());
     }),
     renderingEngine
-      .getViewport<GenericVolumeViewport3D>(viewportId4)
+      .getViewport<VolumeViewport3D>(viewportId4)
       .setDisplaySets({ displaySetId }),
   ]);
 
@@ -687,8 +687,7 @@ async function run(numViewports = getNumViewportsFromUrl()) {
     },
   });
 
-  const viewport =
-    renderingEngine.getViewport<GenericVolumeViewport3D>(viewportId4);
+  const viewport = renderingEngine.getViewport<VolumeViewport3D>(viewportId4);
 
   viewport.setDisplaySetPresentation(displaySetId, {
     preset: 'CT-Bone',

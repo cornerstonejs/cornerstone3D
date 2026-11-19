@@ -214,7 +214,7 @@ describe('The volume labelmap mount on the next viewports', () => {
         options: { orientation: OrientationAxis.AXIAL },
       });
 
-      expect(viewport.type).toBe(ViewportType.PLANAR_NEXT);
+      expect(viewport.type).toBe(ViewportType.PLANAR);
       expect(viewport.addVolumes).toBeUndefined();
 
       const { renderPlan, mountResult } = await mountLabelmap(
@@ -265,7 +265,7 @@ describe('The volume labelmap mount on the next viewports', () => {
         options: { renderMode: 'vtkVolume3d' },
       });
 
-      expect(viewport.type).toBe(ViewportType.VOLUME_3D_NEXT);
+      expect(viewport.type).toBe(ViewportType.VOLUME_3D);
       expect(viewport.addVolumes).toBeUndefined();
 
       const { renderPlan, mountResult } = await mountLabelmap(

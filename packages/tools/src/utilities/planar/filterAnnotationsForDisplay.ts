@@ -22,14 +22,14 @@ export default function filterAnnotationsForDisplay(
   // drawn on any viewport sharing the volume / frame of reference renders onto
   // this slice when it lies within it (parallel plane + world-space proximity).
   // This covers both the legacy VolumeViewport and native volume-mode
-  // PLANAR_NEXT viewports (MPR). Native volume-mode MUST use this geometric path
+  // PLANAR viewports (MPR). Native volume-mode MUST use this geometric path
   // rather than the index-based isReferenceViewable below: a measurement drawn
   // in vtkImage/stack mode carries a STACK sliceIndex that never matches the MPR
   // volume's currentImageIdIndex, so the index check rejects it -- but the
   // world-space slice proximity still holds, so the geometric path renders it
   // across to MPR exactly as legacy did. (ohifohifnextapi-23b)
   if (csUtils.getViewportContentMode(viewport) === 'volume') {
-    // Native PLANAR_NEXT viewports do not implement getCamera(); the ICamera
+    // Native PLANAR viewports do not implement getCamera(); the ICamera
     // bridge derives the equivalent { viewPlaneNormal, focalPoint, ... } from the
     // resolved view / view reference.
     const camera = getViewportICamera(viewport) as Types.ICamera;

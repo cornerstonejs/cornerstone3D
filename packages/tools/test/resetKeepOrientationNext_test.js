@@ -48,7 +48,7 @@ function createViewports(renderingEngine) {
       OrientationAxis.SAGITTAL,
       OrientationAxis.CORONAL,
     ].map((orientation, index) => ({
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       viewportId: viewportIds[index],
       orientation,
     }))

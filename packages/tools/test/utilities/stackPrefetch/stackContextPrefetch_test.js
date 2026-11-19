@@ -28,7 +28,7 @@ describe('stackContextPrefetch:', () => {
 
   it('can be disabled without error', function (done) {
     const element = testUtils.createViewports(testEnv.renderingEngine, {
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       orientation: Enums.OrientationAxis.AXIAL,
       viewportId: viewportId,
       width: 128,

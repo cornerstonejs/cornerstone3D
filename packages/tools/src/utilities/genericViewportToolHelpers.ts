@@ -39,7 +39,7 @@ export function getViewSlabDepthOfViewport(
 
 /**
  * Navigates a native (Generic) viewport to a focal point via its view reference.
- * Native PLANAR_NEXT has no setCamera; navigating by view reference snaps to the
+ * Native PLANAR has no setCamera; navigating by view reference snaps to the
  * nearest slice along the view-plane normal.
  */
 export function jumpToFocalPoint(

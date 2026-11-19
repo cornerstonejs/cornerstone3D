@@ -85,7 +85,7 @@ describe('Circle Tool: ', () => {
   it('Should successfully create a circle tool on a canvas with mouse drag - 512 x 128', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
       viewportId,
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       width: 512,
       height: 128,
     });
@@ -194,7 +194,7 @@ describe('Circle Tool: ', () => {
   it('Should successfully create a circle tool on a canvas with mouse drag in a Volume viewport - 512 x 128', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
       viewportId,
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       width: 512,
       height: 128,
     });
@@ -289,7 +289,7 @@ describe('Circle Tool: ', () => {
   it('Should compute statistics for every volume of a fusion viewport', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
       viewportId,
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       width: 512,
       height: 128,
     });
@@ -428,7 +428,7 @@ describe('Circle Tool: ', () => {
   it('Should cancel drawing of a CircleTool annotation', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
       viewportId,
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       width: 512,
       height: 128,
     });

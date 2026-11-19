@@ -572,19 +572,19 @@ async function run() {
   renderingEngine.setViewports([
     {
       viewportId: stackViewportId,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: stackElement,
       defaultOptions: { background: [0.2, 0, 0.2] as Types.Point3 },
     },
     {
       viewportId: mprViewportId,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: mprElement,
       defaultOptions: { background: [0, 0.2, 0.2] as Types.Point3 },
     },
     {
       viewportId: petViewportId,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: petElement,
       defaultOptions: { background: [0.2, 0.2, 0] as Types.Point3 },
     },

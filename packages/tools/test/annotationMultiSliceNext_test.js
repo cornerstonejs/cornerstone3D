@@ -243,7 +243,7 @@ describe('AnnotationMultiSlice on a direct next planar viewport -- ', () => {
     const next = enableViewport(
       renderingEngine,
       'nextStack',
-      ViewportType.PLANAR_NEXT,
+      ViewportType.PLANAR,
       true
     );
 
@@ -274,13 +274,13 @@ describe('AnnotationMultiSlice on a direct next planar viewport -- ', () => {
     const stack = enableViewport(
       renderingEngine,
       'nextStack',
-      ViewportType.PLANAR_NEXT,
+      ViewportType.PLANAR,
       true
     );
     const volume = enableViewport(
       renderingEngine,
       'nextVolume',
-      ViewportType.PLANAR_NEXT,
+      ViewportType.PLANAR,
       true
     );
 
@@ -336,7 +336,7 @@ describe('AnnotationMultiSlice on a direct next planar viewport -- ', () => {
     const next = enableViewport(
       renderingEngine,
       'nextStack',
-      ViewportType.PLANAR_NEXT,
+      ViewportType.PLANAR,
       true
     );
 
@@ -359,13 +359,13 @@ describe('AnnotationMultiSlice on a direct next planar viewport -- ', () => {
     const stack = enableViewport(
       renderingEngine,
       'nextStack',
-      ViewportType.PLANAR_NEXT,
+      ViewportType.PLANAR,
       true
     );
     const volume = enableViewport(
       renderingEngine,
       'nextVolume',
-      ViewportType.PLANAR_NEXT,
+      ViewportType.PLANAR,
       true
     );
 
@@ -399,13 +399,13 @@ describe('AnnotationMultiSlice on a direct next planar viewport -- ', () => {
     const stack = enableViewport(
       renderingEngine,
       'nextStack',
-      ViewportType.PLANAR_NEXT,
+      ViewportType.PLANAR,
       true
     );
     const volume = enableViewport(
       renderingEngine,
       'nextVolume',
-      ViewportType.PLANAR_NEXT,
+      ViewportType.PLANAR,
       true
     );
 

@@ -202,7 +202,7 @@ async function run() {
   renderingEngine.setViewports(
     viewportSpecs.map((spec) => ({
       viewportId: spec.viewportId,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: viewportElements.get(spec.viewportId),
       defaultOptions: {
         background: [0, 0, 0] as Types.Point3,

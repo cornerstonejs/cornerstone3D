@@ -101,7 +101,7 @@ describe('Length Tool (CPU):', () => {
     const element = createViewports(
       renderingEngine,
       {
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
         width: 256,
         height: 256,
         viewportId,
@@ -215,7 +215,7 @@ describe('Length Tool (CPU):', () => {
     const element = createViewports(
       renderingEngine,
       {
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
         width: 256,
         height: 256,
         viewportId,

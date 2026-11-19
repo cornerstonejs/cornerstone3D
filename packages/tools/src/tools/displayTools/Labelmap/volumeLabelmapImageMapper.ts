@@ -58,7 +58,7 @@ function isPlanarSliceRenderingViewport(
     viewport as Partial<PlanarSliceRenderingViewport>;
 
   return (
-    compatibilityViewport.type === Enums.ViewportType.PLANAR_NEXT &&
+    compatibilityViewport.type === Enums.ViewportType.PLANAR &&
     typeof compatibilityViewport.addImages === 'function' &&
     typeof compatibilityViewport.getCurrentImageId === 'function' &&
     typeof compatibilityViewport.render === 'function'

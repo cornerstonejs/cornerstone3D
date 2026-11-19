@@ -28,7 +28,7 @@ function showsSurfacesAsSliceProps(
   viewport: Types.IViewport
 ): viewport is PlanarViewport {
   return (
-    viewport.type !== Enums.ViewportType.VOLUME_3D_NEXT &&
+    viewport.type !== Enums.ViewportType.VOLUME_3D &&
     typeof (viewport as Partial<PlanarViewport>).getRenderer === 'function'
   );
 }

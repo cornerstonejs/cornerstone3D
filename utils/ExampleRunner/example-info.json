@@ -581,7 +581,7 @@
       },
       "worldCrosshairSliceIntersectionsPetCt": {
         "name": "World Crosshair + Slice Intersections (PET/CT, Generic Viewports)",
-        "description": "CT and PT rows of native PLANAR_NEXT viewports (2D planar stack plus axial/sagittal/coronal volume slices and a 3D bone rendering); one intersection line per plane group drives CT and PT together, with both tools independently toggleable."
+        "description": "CT and PT rows of native PLANAR viewports (2D planar stack plus axial/sagittal/coronal volume slices and a 3D bone rendering); one intersection line per plane group drives CT and PT together, with both tools independently toggleable."
       },
       "sliceIntersections": {
         "name": "Slice Intersections",

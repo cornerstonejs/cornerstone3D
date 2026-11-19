@@ -349,7 +349,7 @@ describe('planarInvariants: cross-viewport reference (same frame of reference)',
 
     renderingEngineB.enableElement({
       viewportId: viewportIdB,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: elementB,
       defaultOptions: {
         orientation: OrientationAxis.AXIAL,

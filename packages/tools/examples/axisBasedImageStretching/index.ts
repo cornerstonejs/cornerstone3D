@@ -489,7 +489,7 @@ async function run() {
     ? [
         {
           viewportId: stackViewportId,
-          type: ViewportType.PLANAR_NEXT,
+          type: ViewportType.PLANAR,
           element: element1,
           defaultOptions: {
             background: <Types.Point3>[0.2, 0.0, 0.0],
@@ -499,7 +499,7 @@ async function run() {
     : [
         {
           viewportId: stackViewportId,
-          type: ViewportType.PLANAR_NEXT,
+          type: ViewportType.PLANAR,
           element: element1,
           defaultOptions: {
             background: <Types.Point3>[0.2, 0.0, 0.0],
@@ -507,7 +507,7 @@ async function run() {
         },
         {
           viewportId: axialViewportId,
-          type: ViewportType.PLANAR_NEXT,
+          type: ViewportType.PLANAR,
           element: element2,
           defaultOptions: {
             orientation: Enums.OrientationAxis.AXIAL,
@@ -516,7 +516,7 @@ async function run() {
         },
         {
           viewportId: sagittalViewportId,
-          type: ViewportType.PLANAR_NEXT,
+          type: ViewportType.PLANAR,
           element: element3,
           defaultOptions: {
             orientation: Enums.OrientationAxis.SAGITTAL,
@@ -525,7 +525,7 @@ async function run() {
         },
         {
           viewportId: coronalViewportId,
-          type: ViewportType.PLANAR_NEXT,
+          type: ViewportType.PLANAR,
           element: element4,
           defaultOptions: {
             orientation: Enums.OrientationAxis.CORONAL,

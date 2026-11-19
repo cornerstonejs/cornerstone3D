@@ -358,7 +358,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: state.viewportIds[0],
-      type: cornerstone.Enums.ViewportType.PLANAR_NEXT,
+      type: cornerstone.Enums.ViewportType.PLANAR,
       element: element1,
       defaultOptions: {
         orientation: cornerstone.Enums.OrientationAxis.AXIAL,
@@ -367,7 +367,7 @@ async function run() {
     },
     {
       viewportId: state.viewportIds[1],
-      type: cornerstone.Enums.ViewportType.PLANAR_NEXT,
+      type: cornerstone.Enums.ViewportType.PLANAR,
       element: element2,
       defaultOptions: {
         orientation: cornerstone.Enums.OrientationAxis.SAGITTAL,
@@ -376,7 +376,7 @@ async function run() {
     },
     {
       viewportId: state.viewportIds[2],
-      type: cornerstone.Enums.ViewportType.PLANAR_NEXT,
+      type: cornerstone.Enums.ViewportType.PLANAR,
       element: element3,
       defaultOptions: {
         orientation: cornerstone.Enums.OrientationAxis.CORONAL,

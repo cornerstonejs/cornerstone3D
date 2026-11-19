@@ -287,7 +287,7 @@ async function run() {
   // Create the viewport
   const viewportInput = {
     viewportId,
-    type: ViewportType.PLANAR_NEXT,
+    type: ViewportType.PLANAR,
     element,
   };
 

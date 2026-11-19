@@ -331,7 +331,7 @@ async function run() {
   renderingEngine.setViewports([
     {
       viewportId: viewportIds.STACK,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: stackElement,
       defaultOptions: {
         background: [0.2, 0, 0.2] as Types.Point3,
@@ -339,7 +339,7 @@ async function run() {
     },
     {
       viewportId: viewportIds.AXIAL,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: axialElement,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -348,7 +348,7 @@ async function run() {
     },
     {
       viewportId: viewportIds.SAGITTAL,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: sagittalElement,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -357,7 +357,7 @@ async function run() {
     },
     {
       viewportId: viewportIds.CORONAL,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: coronalElement,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,

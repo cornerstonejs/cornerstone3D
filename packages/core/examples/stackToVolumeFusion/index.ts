@@ -164,7 +164,7 @@ async function run() {
 
   const viewportInput = {
     viewportId,
-    type: ViewportType.PLANAR_NEXT,
+    type: ViewportType.PLANAR,
     element,
     defaultOptions: {
       background: [0.2, 0, 0.2] as Types.Point3,
@@ -222,7 +222,7 @@ async function convertStackToFusionVolume() {
   // Create new volume viewport
   const viewportInput = {
     viewportId,
-    type: ViewportType.PLANAR_NEXT,
+    type: ViewportType.PLANAR,
     element,
     defaultOptions: {
       orientation: Enums.OrientationAxis.AXIAL,
@@ -255,7 +255,7 @@ async function convertStackToVolumeWithLabelmap() {
   // Create new volume viewport
   const viewportInput = {
     viewportId,
-    type: ViewportType.PLANAR_NEXT,
+    type: ViewportType.PLANAR,
     element,
     defaultOptions: {
       orientation: Enums.OrientationAxis.AXIAL,

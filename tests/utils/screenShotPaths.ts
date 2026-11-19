@@ -280,7 +280,7 @@ const screenShotPaths = {
     length: 'length.png',
     sagittal: 'sagittal.png',
     // Manipulation outputs diverge from legacy by 25% (GPU) / 81% (CPU)
-    // because legacy ORTHOGRAPHIC and next PLANAR_NEXT viewports map the
+    // because legacy ORTHOGRAPHIC and next PLANAR viewports map the
     // same scroll/zoom/pan inputs to different camera/slice deltas. Legacy
     // baselines still exist under volumeAnnotation.spec.ts/*-manip.png for
     // standalone coverage; revisit sharing once next reaches input parity.

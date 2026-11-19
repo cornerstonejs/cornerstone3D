@@ -62,7 +62,7 @@ function isPlanarGpuVolumeSliceViewport(
   const compatibilityViewport =
     viewport as ViewportLabelmapImageMapperCompatibilityViewport;
 
-  if (compatibilityViewport.type !== Enums.ViewportType.PLANAR_NEXT) {
+  if (compatibilityViewport.type !== Enums.ViewportType.PLANAR) {
     return false;
   }
 
@@ -85,7 +85,7 @@ export function isPlanarSampledSliceViewport(
   const compatibilityViewport =
     viewport as ViewportLabelmapImageMapperCompatibilityViewport;
 
-  if (compatibilityViewport.type !== Enums.ViewportType.PLANAR_NEXT) {
+  if (compatibilityViewport.type !== Enums.ViewportType.PLANAR) {
     return false;
   }
 

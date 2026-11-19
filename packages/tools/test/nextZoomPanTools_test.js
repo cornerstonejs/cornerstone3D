@@ -81,7 +81,7 @@ async function wheel(element, canvasPoint, steps, zoomIn = true) {
 function createNext3DViewport(renderingEngine, viewportId, options = {}) {
   testUtils.createViewports(renderingEngine, {
     viewportId,
-    viewportType: ViewportType.VOLUME_3D_NEXT,
+    viewportType: ViewportType.VOLUME_3D,
     orientation: OrientationAxis.AXIAL,
     width: WIDTH,
     height: HEIGHT,

@@ -123,7 +123,7 @@ async function run() {
   for (let i = 0; i < count; i++) {
     viewportInputArray.push({
       viewportId: viewportIds[i],
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: elements[i],
       defaultOptions: {
         background: [0.1, 0.1, 0.1] as Types.Point3,

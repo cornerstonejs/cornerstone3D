@@ -72,7 +72,7 @@ describe('Calibration ', () => {
   it('Should be able to calibrate an image and update the tool', function (done) {
     const element = testUtils.createViewports(renderingEngine, {
       viewportId,
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       width: 256,
       height: 256,
     });

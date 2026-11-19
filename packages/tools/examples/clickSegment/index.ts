@@ -225,7 +225,7 @@ async function run() {
   renderingEngine.setViewports([
     {
       viewportId,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element,
     },
   ]);

@@ -175,12 +175,12 @@ async function run() {
     {
       viewportId: viewportId1,
       element: element1,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
     },
     {
       viewportId: viewportId2,
       element: element2,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
     },
   ];
   renderingEngine.setViewports(viewportInputArray);

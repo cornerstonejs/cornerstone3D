@@ -1,4 +1,4 @@
-import type { Types, WSIGenericViewport } from '@cornerstonejs/core';
+import type { Types, WSIViewport } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
@@ -46,8 +46,7 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
 
     // Get the stack viewport
-    const viewport =
-      renderingEngine.getViewport<WSIGenericViewport>(viewportId);
+    const viewport = renderingEngine.getViewport<WSIViewport>(viewportId);
 
     viewport.setZoom(2 * viewport.getZoom());
     viewport.render();
@@ -111,7 +110,7 @@ async function run() {
 
   const viewportInput = {
     viewportId,
-    type: ViewportType.WHOLE_SLIDE_NEXT,
+    type: ViewportType.WHOLE_SLIDE,
     element,
     defaultOptions: {
       background: [0.2, 0, 0.2] as Types.Point3,
@@ -121,7 +120,7 @@ async function run() {
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  const viewport = renderingEngine.getViewport<WSIGenericViewport>(viewportId);
+  const viewport = renderingEngine.getViewport<WSIViewport>(viewportId);
 
   client.getDICOMwebMetadata = (imageId) => wadors.metaDataManager.get(imageId);
 

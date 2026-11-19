@@ -48,7 +48,7 @@ const LEGACY_SLAB_DEPTH = {
 /** Makes a direct next planar viewport of 400 by 400 pixels, axial. */
 function createNextViewport(renderingEngine) {
   testUtils.createViewports(renderingEngine, {
-    viewportType: ViewportType.PLANAR_NEXT,
+    viewportType: ViewportType.PLANAR,
     viewportId,
   });
 
@@ -256,7 +256,7 @@ describe('The depth of a brush and of the statistics in a slab of a direct next 
 
   it('fills the slices of the slab with a brush and gives a new annotation the depth of the slab, as the legacy volume viewport did', async function () {
     testUtils.createViewports(renderingEngine, {
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       orientation: OrientationAxis.AXIAL,
       viewportId,
     });

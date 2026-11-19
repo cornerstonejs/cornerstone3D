@@ -1,4 +1,4 @@
-// Shared GenericViewport (PLANAR_NEXT) test-harness setup, generalizing the
+// Shared GenericViewport (PLANAR) test-harness setup, generalizing the
 // setup flow proven in tests/vitest-browser/genericStackApi.browser.test.ts
 // to all four planar render modes.
 
@@ -159,7 +159,7 @@ export async function createPlanarViewport(
 
   renderingEngine.enableElement({
     viewportId,
-    type: ViewportType.PLANAR_NEXT,
+    type: ViewportType.PLANAR,
     element,
     defaultOptions: {
       orientation,

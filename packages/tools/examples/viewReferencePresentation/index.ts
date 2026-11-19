@@ -420,7 +420,7 @@ async function run() {
     {
       viewportId: viewportId0,
       displaySetId: ctStackDisplaySetId,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: element0,
       defaultOptions: {
         background: <Types.Point3>[0, 0.3, 0],
@@ -429,7 +429,7 @@ async function run() {
     {
       viewportId: viewportId1,
       displaySetId: ctVolumeDisplaySetId,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: element1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -439,7 +439,7 @@ async function run() {
     {
       viewportId: viewportId2,
       displaySetId: ctVolumeDisplaySetId,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: element2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -449,7 +449,7 @@ async function run() {
     {
       viewportId: viewportId3,
       displaySetId: ctVolumeDisplaySetId,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: element3,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -459,7 +459,7 @@ async function run() {
     {
       viewportId: viewportId4,
       displaySetId: testStackDisplaySetId,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: element4,
       defaultOptions: {
         background: <Types.Point3>[0, 0.5, 0],

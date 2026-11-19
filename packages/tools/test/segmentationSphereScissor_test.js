@@ -72,17 +72,17 @@ describe('Segmentation Tools:', () => {
   it('should be able to edit the segmentation data with the sphere scissor', function (done) {
     const elements = testUtils.createViewports(renderingEngine, [
       {
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
         orientation: Enums.OrientationAxis.AXIAL,
         viewportId: viewportId1,
       },
       {
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
         orientation: Enums.OrientationAxis.SAGITTAL,
         viewportId: viewportId2,
       },
       {
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
         orientation: Enums.OrientationAxis.CORONAL,
         viewportId: viewportId3,
       },

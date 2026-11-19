@@ -3,11 +3,11 @@ import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 import vtkPoints from '@kitware/vtk.js/Common/Core/Points';
 import vtkCellArray from '@kitware/vtk.js/Common/Core/CellArray';
-import type { Types, GenericVolumeViewport3D } from '@cornerstonejs/core';
+import type { Types, VolumeViewport3D } from '@cornerstonejs/core';
 
 /**
  * Isolated 3D rendering extension for the WorldCrosshairTool ("Reference
- * Point"). It renders the reference point in Generic 3D (VOLUME_3D_NEXT)
+ * Point"). It renders the reference point in Generic 3D (VOLUME_3D)
  * viewports as world-space intersecting lines along the three patient axes
  * (crossing at the point), mirroring the 2D crosshair rendering. It holds no
  * tool state: the tool passes the authoritative worldPoint in on every
@@ -66,7 +66,7 @@ function setCrosshairLinePoints(
 }
 
 function getViewportRenderer(viewport: Types.IViewport) {
-  const vtkViewport = viewport as Partial<GenericVolumeViewport3D>;
+  const vtkViewport = viewport as Partial<VolumeViewport3D>;
 
   return typeof vtkViewport?.getRenderer === 'function'
     ? vtkViewport.getRenderer()

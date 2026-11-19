@@ -149,7 +149,7 @@ describe('Sculptor Tool:', () => {
     };
 
     const element = createViewports(renderingEngine, {
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       width: 512,
       height: 128,
       viewportId: viewportId,

@@ -1,5 +1,5 @@
 import type {
-  GenericVolumeViewport3D,
+  VolumeViewport3D,
   PlanarViewport,
   Types,
 } from '@cornerstonejs/core';
@@ -153,7 +153,7 @@ addButtonToToolbar({
 
     viewportIds.forEach((viewportId) => {
       const viewport = renderingEngine.getViewport<
-        PlanarViewport | GenericVolumeViewport3D
+        PlanarViewport | VolumeViewport3D
       >(viewportId);
       viewport.resetViewState();
       viewport.render();
@@ -198,7 +198,7 @@ function setCrossHairPosition(pickedPoint) {
   crosshairTool.setToolCenter(pickedPoint, true);
 }
 
-function addSphere(viewport: GenericVolumeViewport3D, point) {
+function addSphere(viewport: VolumeViewport3D, point) {
   if (!sphereActor) {
     const sphereSource = vtkSphereSource.newInstance();
     sphereSource.setCenter(point);
@@ -400,7 +400,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportId1,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: element1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -409,7 +409,7 @@ async function run() {
     },
     {
       viewportId: viewportId2,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: element2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -418,7 +418,7 @@ async function run() {
     },
     {
       viewportId: viewportId3,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: element3,
       defaultOptions: {
         orientation: Enums.OrientationAxis.CORONAL,
@@ -427,7 +427,7 @@ async function run() {
     },
     {
       viewportId: viewportId4,
-      type: ViewportType.VOLUME_3D_NEXT,
+      type: ViewportType.VOLUME_3D,
       element: element4,
       defaultOptions: {
         background: <Types.Point3>[0, 0, 0],
@@ -453,7 +453,7 @@ async function run() {
       });
     }),
     renderingEngine
-      .getViewport<GenericVolumeViewport3D>(viewportId4)
+      .getViewport<VolumeViewport3D>(viewportId4)
       .setDisplaySets({ displaySetId }),
   ]);
 
@@ -498,8 +498,7 @@ async function run() {
   picker.setTolerance(0);
   picker.initializePickList();
   // Render the image
-  const viewport =
-    renderingEngine.getViewport<GenericVolumeViewport3D>(viewportId4);
+  const viewport = renderingEngine.getViewport<VolumeViewport3D>(viewportId4);
   renderingEngine.renderViewports(viewportIds);
   viewport.setDisplaySetPresentation(displaySetId, {
     preset: 'CT-Bone',
@@ -521,7 +520,7 @@ async function run() {
       // Get the rendering engine and viewport
       const renderingEngine = getRenderingEngine(renderingEngineId);
       const viewport =
-        renderingEngine.getViewport<GenericVolumeViewport3D>(viewportId4);
+        renderingEngine.getViewport<VolumeViewport3D>(viewportId4);
 
       // Get canvas coordinates relative to the element
       const rect = element4.getBoundingClientRect();
@@ -555,8 +554,7 @@ eventTarget.addEventListener(
   (evt) => {
     const { toolCenter } = evt.detail;
     const renderingEngine = getRenderingEngine(renderingEngineId);
-    const viewport =
-      renderingEngine.getViewport<GenericVolumeViewport3D>(viewportId4);
+    const viewport = renderingEngine.getViewport<VolumeViewport3D>(viewportId4);
     if (sphereActor) {
       addSphere(viewport, toolCenter);
     }
@@ -571,7 +569,7 @@ eventTarget.addEventListener(
  * @param viewport
  * @returns
  */
-function prepareImageDataForPicking(viewport: GenericVolumeViewport3D) {
+function prepareImageDataForPicking(viewport: VolumeViewport3D) {
   const volumeActor = viewport.getDefaultActor()?.actor as Types.VolumeActor;
   if (!volumeActor) {
     return;

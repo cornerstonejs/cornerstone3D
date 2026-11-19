@@ -207,7 +207,7 @@ describe('SegmentationIntersectionTool on a direct next viewport -- ', () => {
 
   it('is set enabled on a 3D viewport, which has no slice', async function () {
     testUtils.createViewports(renderingEngine, {
-      viewportType: ViewportType.VOLUME_3D_NEXT,
+      viewportType: ViewportType.VOLUME_3D,
       viewportId,
       useEnableElement: true,
     });

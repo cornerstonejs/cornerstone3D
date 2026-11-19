@@ -1,4 +1,4 @@
-import type { Types, VideoGenericViewport } from '@cornerstonejs/core';
+import type { Types, VideoViewport } from '@cornerstonejs/core';
 import { RenderingEngine, Enums, eventTarget } from '@cornerstonejs/core';
 import {
   addButtonToToolbar,
@@ -77,7 +77,7 @@ const baseEventDetail = {
   renderingEngineId,
 };
 
-let viewport: VideoGenericViewport;
+let viewport: VideoViewport;
 let playing = false;
 
 addToggleButtonToToolbar({
@@ -370,7 +370,7 @@ async function run() {
   renderingEngine.enableElement(viewportInput);
 
   // Get the stack viewport that was created
-  viewport = renderingEngine.getViewport<VideoGenericViewport>(viewportId);
+  viewport = renderingEngine.getViewport<VideoViewport>(viewportId);
 
   toolGroup.addViewport(viewport.id, renderingEngineId);
 

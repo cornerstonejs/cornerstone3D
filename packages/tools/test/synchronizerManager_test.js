@@ -96,12 +96,12 @@ describe('Synchronizer Manager:', () => {
   it('Should successfully synchronize viewports for Camera sync', function (done) {
     const [element1, element2] = testUtils.createViewports(renderingEngine, [
       {
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
         orientation: Enums.OrientationAxis.AXIAL,
         viewportId: viewportId1,
       },
       {
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
         orientation: Enums.OrientationAxis.AXIAL,
         viewportId: viewportId2,
       },
@@ -178,12 +178,12 @@ describe('Synchronizer Manager:', () => {
   it('Should successfully synchronize viewports for VOI Synchronizer', function (done) {
     const [element1, element2] = testUtils.createViewports(renderingEngine, [
       {
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
         orientation: Enums.OrientationAxis.AXIAL,
         viewportId: viewportId1,
       },
       {
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
         orientation: Enums.OrientationAxis.AXIAL,
         viewportId: viewportId2,
       },

@@ -1,7 +1,4 @@
-import type {
-  GenericVolumeViewport3D,
-  PlanarViewport,
-} from '@cornerstonejs/core';
+import type { VolumeViewport3D, PlanarViewport } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
@@ -158,7 +155,7 @@ addToggleButtonToToolbar({
   title: 'Show 3D Anatomy',
   defaultToggle: false,
   onClick: async (toggle) => {
-    const viewport3: GenericVolumeViewport3D =
+    const viewport3: VolumeViewport3D =
       renderingEngine.getViewport(viewportId3);
 
     const visibility = toggle;
@@ -242,7 +239,7 @@ async function run() {
   const viewportInputArray = [
     {
       viewportId: viewportId1,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: element1,
       defaultOptions: {
         orientation: Enums.OrientationAxis.AXIAL,
@@ -250,7 +247,7 @@ async function run() {
     },
     {
       viewportId: viewportId2,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: element2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,
@@ -258,7 +255,7 @@ async function run() {
     },
     {
       viewportId: viewportId3,
-      type: ViewportType.VOLUME_3D_NEXT,
+      type: ViewportType.VOLUME_3D,
       element: element3,
       defaultOptions: {
         background: CONSTANTS.BACKGROUND_COLORS.slicer3D,
@@ -291,8 +288,7 @@ async function run() {
     })
   );
 
-  const viewport3: GenericVolumeViewport3D =
-    renderingEngine.getViewport(viewportId3);
+  const viewport3: VolumeViewport3D = renderingEngine.getViewport(viewportId3);
 
   await viewport3.setDisplaySets({ displaySetId });
 

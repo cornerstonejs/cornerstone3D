@@ -189,7 +189,7 @@ async function run() {
   const viewportInputs = [
     {
       viewportId: viewportIdStack,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: element1,
       defaultOptions: {
         background: <Types.Point3>[1, 0.5, 0.2],
@@ -197,7 +197,7 @@ async function run() {
     },
     {
       viewportId: viewportIdVolume,
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element: element2,
       defaultOptions: {
         orientation: Enums.OrientationAxis.SAGITTAL,

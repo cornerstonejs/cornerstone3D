@@ -102,10 +102,10 @@ class ViewportColorbar extends Colorbar {
 
     let imageRange;
     if (!scalarData) {
-      // Streaming volumes (legacy and native PLANAR_NEXT) keep pixels in a
+      // Streaming volumes (legacy and native PLANAR) keep pixels in a
       // voxelManager rather than on the vtk point data. Prefer the voxelManager
       // attached to the mapper input data - it is present for both viewport
-      // families and does not require a volumeId. A direct PLANAR_NEXT viewport
+      // families and does not require a volumeId. A direct PLANAR viewport
       // exposes no getAllVolumeIds, so callers cannot always supply one; only
       // fall back to a cached volume lookup when the input voxelManager is
       // unavailable, and default the range instead of throwing.
