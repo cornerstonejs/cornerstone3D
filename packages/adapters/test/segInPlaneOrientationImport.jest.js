@@ -11,7 +11,7 @@ jest.mock('@cornerstonejs/core', () => {
     imageLoader: {
       ...actual.imageLoader,
       createAndCacheDerivedLabelmapImage: (referencedImageId) => {
-        const pixelData = new Uint8Array(6);
+        const pixelData = new Uint16Array(6);
         return {
           referencedImageId,
           getPixelData: () => pixelData,
@@ -58,23 +58,30 @@ const EXPECTED_LABELS = [
 ];
 
 /**
- * Samples EXPECTED_LABELS onto a SEG frame on the target slice, with the given
- * row and column cosines.
+ * Samples `labels` (EXPECTED_LABELS by default) onto a SEG frame on the target
+ * slice, with the given row and column cosines and the given bit depth.
  */
-function makeSegFrame(segRow, segColumn) {
+function makeSegFrame(
+  segRow,
+  segColumn,
+  labels = EXPECTED_LABELS,
+  bitsAllocated = 8
+) {
   const { rows, columns, values, origin } = sampleSegFrame(
     ROWS,
     COLUMNS,
-    (i, j) => EXPECTED_LABELS[i * COLUMNS + j],
+    (i, j) => labels[i * COLUMNS + j],
     segRow,
     segColumn
   );
   origin[2] = TARGET_SLICE;
 
+  const LabelsArray = bitsAllocated === 16 ? Uint16Array : Uint8Array;
+
   return {
     rows,
     columns,
-    labels: Uint8Array.from(values),
+    labels: LabelsArray.from(values),
     imagePositionPatient: origin,
   };
 }
@@ -86,8 +93,15 @@ function makeSegFrame(segRow, segColumn) {
  * `referenceBy` is 'sop' for a frame with a SourceImageSequence, or
  * 'geometry' for a frame that only has its ImagePositionPatient.
  */
-function buildSeg(segmentationType, segRow, segColumn, referenceBy) {
-  const frame = makeSegFrame(segRow, segColumn);
+function buildSeg(
+  segmentationType,
+  segRow,
+  segColumn,
+  referenceBy,
+  labels = EXPECTED_LABELS,
+  bitsAllocated = 8
+) {
+  const frame = makeSegFrame(segRow, segColumn, labels, bitsAllocated);
   const isLabelmap = segmentationType === 'LABELMAP';
   const sourceReference =
     referenceBy === 'sop'
@@ -116,9 +130,9 @@ function buildSeg(segmentationType, segRow, segColumn, referenceBy) {
     Rows: frame.rows,
     Columns: frame.columns,
     NumberOfFrames: framePixels.length,
-    BitsAllocated: isLabelmap ? 8 : 1,
-    BitsStored: isLabelmap ? 8 : 1,
-    HighBit: isLabelmap ? 7 : 0,
+    BitsAllocated: isLabelmap ? bitsAllocated : 1,
+    BitsStored: isLabelmap ? bitsAllocated : 1,
+    HighBit: isLabelmap ? bitsAllocated - 1 : 0,
     FrameOfReferenceUID: FRAME_OF_REFERENCE_UID,
     ReferencedSeriesSequence: { SeriesInstanceUID: SERIES_INSTANCE_UID },
     SharedFunctionalGroupsSequence: {
@@ -152,7 +166,14 @@ function buildSeg(segmentationType, segRow, segColumn, referenceBy) {
 
 let schemeCount = 0;
 
-async function importSeg(segmentationType, segRow, segColumn, referenceBy) {
+async function importSeg(
+  segmentationType,
+  segRow,
+  segColumn,
+  referenceBy,
+  labels = EXPECTED_LABELS,
+  bitsAllocated = 8
+) {
   const stack = makeReferencedStack(SLICE_COUNT, {
     rows: ROWS,
     columns: COLUMNS,
@@ -161,7 +182,9 @@ async function importSeg(segmentationType, segRow, segColumn, referenceBy) {
     segmentationType,
     segRow,
     segColumn,
-    referenceBy
+    referenceBy,
+    labels,
+    bitsAllocated
   );
 
   // A fresh scheme per import keeps frame imageIds out of each other's cache.
@@ -224,3 +247,30 @@ describe.each([
     );
   }
 );
+
+// Labels above 255 only fit in 16 bits, so a frame that is flipped, transposed
+// or rotated relative to the source must not be narrowed to 8 bits on import.
+// prettier-ignore
+const EXPECTED_LABELS_16_BIT = [
+  300, 513, 0,
+  0,   0,   777,
+];
+
+describe('importing a 16-bit LABELMAP SEG on a non-square source', () => {
+  it.each(IN_PLANE_ORIENTATIONS)(
+    '%s SEG keeps labels above 255',
+    async (_, segRow, segColumn) => {
+      const pixelsForSlice = await importSeg(
+        'LABELMAP',
+        segRow,
+        segColumn,
+        'sop',
+        EXPECTED_LABELS_16_BIT,
+        16
+      );
+
+      expect(pixelsForSlice(TARGET_SLICE)).toEqual(EXPECTED_LABELS_16_BIT);
+      expect(pixelsForSlice(0)).toEqual(new Array(ROWS * COLUMNS).fill(0));
+    }
+  );
+});
