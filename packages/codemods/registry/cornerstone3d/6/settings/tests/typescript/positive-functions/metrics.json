@@ -1,0 +1,36 @@
+{
+  "cornerstone3d-6-review": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "12",
+        "rule": "setUseCPURendering: it marked the library initialized, call init() first"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "14",
+        "rule": "setUseCPURendering: it marked the library initialized, call init() first"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "20",
+        "rule": "setUseCPURendering: it marked the library initialized, call init() first"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "31",
+        "rule": "setUseCPURendering: it marked the library initialized, call init() first"
+      },
+      "count": 1
+    }
+  ]
+}

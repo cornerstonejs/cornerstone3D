@@ -1,0 +1,20 @@
+schema_version: '1.0'
+name: '@cornerstonejs/cornerstone3d-6-events'
+version: '0.1.0'
+description: 'Rewrite the removed Cornerstone3D events that have one 6.0 event in their place.'
+author: 'Cornerstone.js Contributors'
+license: 'MIT'
+workflow: 'workflow.yaml'
+repository: 'https://github.com/cornerstonejs/cornerstone3D'
+category: 'migration'
+targets:
+  languages: ['typescript', 'tsx', 'javascript', 'jsx']
+keywords:
+  - cornerstone3d
+  - migration
+  - upgrade
+  - v6
+  - events
+registry:
+  access: 'public'
+  visibility: 'public'

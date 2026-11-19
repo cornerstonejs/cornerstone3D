@@ -37,6 +37,9 @@ marks **In the code** are removed when 6.0 is released.
   [For a coding agent](./4-upgrade-step-by-step.md#for-a-coding-agent), and
   looks up each legacy name in
   [Every legacy call and what replaces it](./3-api-map.md).
+- **Both** can first run the codemod `@cornerstonejs/cornerstone3d-6`, which
+  does the mechanical renames and rewrites and lists what it leaves. See
+  [The codemod](./4-upgrade-step-by-step.md#the-codemod).
 
 | Page                                                     | What it holds                                                                                             |
 | -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |

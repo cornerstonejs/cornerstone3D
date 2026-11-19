@@ -1,0 +1,12 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "8",
+        "rule": "setProperties: the key preset"
+      },
+      "count": 1
+    }
+  ]
+}

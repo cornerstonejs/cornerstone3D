@@ -1,0 +1,29 @@
+version: '1'
+nodes:
+  - id: classes-and-types
+    name: Cornerstone3D 6.0 classes and types
+    steps:
+      - name: Rewrite the classes and types in TypeScript files
+        js-ast-grep:
+          js_file: scripts/classes-and-types.ts
+          language: typescript
+          base_path: .
+          semantic_analysis: file
+          include:
+            - '**/*.{ts,mts,cts}'
+          exclude:
+            - '**/node_modules/**'
+            - '**/dist/**'
+            - '**/build/**'
+      - name: Rewrite the classes and types in TSX and JavaScript files
+        js-ast-grep:
+          js_file: scripts/classes-and-types.ts
+          language: tsx
+          base_path: .
+          semantic_analysis: file
+          include:
+            - '**/*.{tsx,js,jsx,mjs,cjs}'
+          exclude:
+            - '**/node_modules/**'
+            - '**/dist/**'
+            - '**/build/**'

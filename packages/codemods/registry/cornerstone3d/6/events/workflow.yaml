@@ -1,0 +1,29 @@
+version: '1'
+nodes:
+  - id: events
+    name: Cornerstone3D 6.0 events
+    steps:
+      - name: Rewrite the events in TypeScript files
+        js-ast-grep:
+          js_file: scripts/events.ts
+          language: typescript
+          base_path: .
+          semantic_analysis: file
+          include:
+            - '**/*.{ts,mts,cts}'
+          exclude:
+            - '**/node_modules/**'
+            - '**/dist/**'
+            - '**/build/**'
+      - name: Rewrite the events in TSX and JavaScript files
+        js-ast-grep:
+          js_file: scripts/events.ts
+          language: tsx
+          base_path: .
+          semantic_analysis: file
+          include:
+            - '**/*.{tsx,js,jsx,mjs,cjs}'
+          exclude:
+            - '**/node_modules/**'
+            - '**/dist/**'
+            - '**/build/**'

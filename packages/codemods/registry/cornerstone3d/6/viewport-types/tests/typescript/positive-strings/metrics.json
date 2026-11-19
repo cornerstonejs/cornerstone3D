@@ -1,0 +1,12 @@
+{
+  "cornerstone3d-6-review": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "10",
+        "rule": "'orthographic': default orientation AXIAL"
+      },
+      "count": 1
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.tsx",
+        "line": "12",
+        "rule": "import of @cornerstonejs/tools/tools/displayTools/Labelmap/labelmapRenderPlan/legacyVolumePlan"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.tsx",
+        "line": "16",
+        "rule": "rotateViewportAroundWorldPoint"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.tsx",
+        "line": "21",
+        "rule": "rotateViewportAroundWorldPoint"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.tsx",
+        "line": "4",
+        "rule": "import of @cornerstonejs/tools/tools/displayTools/Labelmap/addVolumesAsIndependentComponents"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.tsx",
+        "line": "5",
+        "rule": "getSlabThicknessOrDefault"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.tsx",
+        "line": "7",
+        "rule": "viewportSupportsStackCompatibility"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.tsx",
+        "line": "8",
+        "rule": "StackCompatibilityViewport"
+      },
+      "count": 1
+    }
+  ]
+}

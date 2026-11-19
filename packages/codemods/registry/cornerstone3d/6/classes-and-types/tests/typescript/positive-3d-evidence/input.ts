@@ -1,0 +1,30 @@
+import type { Types } from '@cornerstonejs/core';
+import { Enums, RenderingEngine } from '@cornerstonejs/core';
+
+const { ViewportType } = Enums;
+const renderingEngine = new RenderingEngine('engine');
+const viewportId = 'CT_3D';
+const axialId = 'CT_AXIAL';
+
+renderingEngine.setViewports([
+  { viewportId, type: ViewportType.VOLUME_3D, element: element1 },
+  { viewportId: axialId, type: ViewportType.PLANAR, element: element2 },
+]);
+
+const threeD = renderingEngine.getViewport(viewportId) as Types.IVolumeViewport;
+const axial = renderingEngine.getViewport(axialId) as Types.IVolumeViewport;
+
+function applyPreset(
+  viewport: Types.IViewport,
+  viewportType: Enums.ViewportType
+) {
+  if (viewportType === ViewportType.VOLUME_3D) {
+    (viewport as Types.IVolumeViewport).setProperties({ preset: 'CT-Bone' });
+  }
+}
+
+function unknownFamily(viewport: Types.IBaseVolumeViewport) {
+  return viewport;
+}
+
+console.log(threeD, axial, applyPreset, unknownFamily);

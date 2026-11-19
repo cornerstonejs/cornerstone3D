@@ -1,0 +1,26 @@
+version: '1'
+nodes:
+  - id: cornerstone3d-6
+    name: Cornerstone3D 6.0 migration
+    steps:
+      - name: Rewrite the settings
+        codemod:
+          source: '@cornerstonejs/cornerstone3d-6-settings'
+      - name: Rewrite the viewport types
+        codemod:
+          source: '@cornerstonejs/cornerstone3d-6-viewport-types'
+      - name: Rewrite the classes and types
+        codemod:
+          source: '@cornerstonejs/cornerstone3d-6-classes-and-types'
+      - name: Rewrite the events
+        codemod:
+          source: '@cornerstonejs/cornerstone3d-6-events'
+      - name: Rewrite the data calls
+        codemod:
+          source: '@cornerstonejs/cornerstone3d-6-display-sets'
+      - name: Rewrite the viewport members
+        codemod:
+          source: '@cornerstonejs/cornerstone3d-6-viewport-members'
+      - name: Rewrite the tools modules
+        codemod:
+          source: '@cornerstonejs/cornerstone3d-6-tools'

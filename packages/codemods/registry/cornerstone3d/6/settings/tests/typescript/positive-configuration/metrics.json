@@ -1,0 +1,20 @@
+{
+  "cornerstone3d-6-review": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "25",
+        "rule": "rendering.useCPURendering: a 3D viewport stays on the GPU"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "8",
+        "rule": "rendering.useCPURendering: a 3D viewport stays on the GPU"
+      },
+      "count": 1
+    }
+  ]
+}

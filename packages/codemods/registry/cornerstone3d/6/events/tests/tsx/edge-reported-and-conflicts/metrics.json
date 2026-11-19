@@ -1,0 +1,46 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.tsx",
+        "line": "11",
+        "rule": "Events.PRE_STACK_NEW_IMAGE"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.tsx",
+        "line": "13",
+        "rule": "'CORNERSTONE_STACK_NEW_IMAGE'"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.tsx",
+        "line": "4",
+        "rule": "Events.ACTORS_CHANGED"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.tsx",
+        "line": "9",
+        "rule": "Types.EventTypes.ActorsChangedEvent"
+      },
+      "count": 1
+    }
+  ],
+  "cornerstone3d-6-review": [
+    {
+      "cardinality": {
+        "file": "input.tsx",
+        "line": "4",
+        "rule": "Events.STACK_NEW_IMAGE: NEW_IMAGE also fires for each slice of a volume"
+      },
+      "count": 1
+    }
+  ]
+}

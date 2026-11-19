@@ -93,6 +93,52 @@ rg -c "ViewportType\.(STACK|ORTHOGRAPHIC|PERSPECTIVE)|\.(setStack|setVolumes|add
 Keep the list. It tells which screens there are, and which one is the
 smallest to start with.
 
+### The codemod
+
+The codemod `@cornerstonejs/cornerstone3d-6` does the mechanical part of the
+steps below: the renames, and the rewrites that need no knowledge of the
+application. Run it from the latest 5.x, on a clean branch, before step 1:
+
+```sh
+npx codemod @cornerstonejs/cornerstone3d-6 --dry-run
+npx codemod @cornerstonejs/cornerstone3d-6
+```
+
+It reads `.ts`, `.tsx` and JavaScript files, and changes:
+
+- the viewport types (step 1): `STACK` and `ORTHOGRAPHIC` in a viewport input
+  become `PLANAR`, with the 5.x default orientation `AXIAL` written out where
+  an `ORTHOGRAPHIC` viewport had none, and the `_NEXT` names and `*Next`
+  strings get their plain names;
+- the types and the class checks (step 2): `Types.IStackViewport` and its kin
+  become the class of their family, a cast of `getViewport` becomes its type
+  argument, and `instanceof StackViewport` becomes a test of the mode;
+- `setStack`, `setVolumes` and `setVolumesForViewports` in their common shape,
+  `setVideo` and `setEcg` (step 3): a registered display set and
+  `setDisplaySets`, awaited;
+- `setProperties` of presentation keys, `resetCamera` and the other members
+  with one fixed call (steps 4 to 8 and 10);
+- the events that have one event in their place (step 9), the settings
+  (step 12) and two moved modules of the tools (step 11).
+
+It writes no comment into the code. At the end it prints two lists. Each
+entry names a rule, a file and a line.
+
+- `cornerstone3d-6-manual`: what it left to you, such as a `setVolumes` with a
+  `callback`, `getCamera`, a `setProperties` with `slabThickness`, or
+  `PERSPECTIVE`. The steps below say what to write.
+- `cornerstone3d-6-review`: what it rewrote at a
+  [decision by a person](#changes-that-need-a-decision-by-a-person): the
+  `AXIAL` orientation it wrote, a `STACK_NEW_IMAGE` listener that now hears
+  `NEW_IMAGE` for the slices of a volume too, a `setUseCPURendering` call.
+
+Then run your formatter and your type checker, and do the steps of this page:
+their searches find what is left. On the 5.x examples of this repository the
+codemod rewrote three of four uses of a removed name, rewrote none wrongly, and
+reported every one it left. Its
+[README](https://github.com/cornerstonejs/cornerstone3D/blob/main/packages/codemods/registry/cornerstone3d/6/README.md)
+lists each package with what it changes and what it reports.
+
 ## Step 1. The viewport types
 
 **Search**
@@ -1047,7 +1093,8 @@ change an answer in a way that has one right fix. The row gives it.
 
 ## For a coding agent
 
-Rules for doing this upgrade mechanically.
+Rules for doing this upgrade mechanically. Run [the codemod](#the-codemod)
+first, and take its two lists as the start of the work.
 
 1. **Follow the order.** Do the steps from 1 to 12, for one screen at a
    time. Finish the check of a step before the next step.

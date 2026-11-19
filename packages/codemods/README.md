@@ -17,6 +17,16 @@ Run only the Generic Viewport migration:
 npx codemod @cornerstonejs/cornerstone3d-5-generic-viewport
 ```
 
+Run the full Cornerstone3D 6.0 migration, from the latest 5.x:
+
+```sh
+npx codemod @cornerstonejs/cornerstone3d-6
+```
+
+It prints the sites that it leaves to you as the metrics
+`cornerstone3d-6-manual` and `cornerstone3d-6-review`. See
+[registry/cornerstone3d/6/README.md](registry/cornerstone3d/6/README.md).
+
 ## Registry Packages
 
 This workspace currently includes:
@@ -34,6 +44,14 @@ The Generic Viewport migration changes:
 
 For simple variable declarations, `getStackViewport(id)` also adds a runtime
 capability guard.
+
+- `@cornerstonejs/cornerstone3d-6`: runs the seven Cornerstone3D 6.0
+  migration packages in the recommended order: `-settings`,
+  `-viewport-types`, `-classes-and-types`, `-events`, `-display-sets`,
+  `-viewport-members` and `-tools` (each under
+  `@cornerstonejs/cornerstone3d-6-`). Each package keeps a copy of
+  `scripts/lib.ts`, because each is published on its own;
+  `yarn validate:registry` checks that the copies are equal.
 
 ## Development
 
@@ -57,6 +75,11 @@ Run only the JSSG fixture tests:
 cd packages/codemods
 yarn test
 ```
+
+`yarn test` runs the fixtures of every registry package. A 6.0 package keeps
+the fixtures of `.ts` files in `tests/typescript`, parsed as TypeScript, and
+the others in `tests/tsx`; each `metrics.json` holds the sites that a fixture
+reports.
 
 Run a local registry package against a target checkout:
 

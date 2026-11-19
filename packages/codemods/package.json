@@ -20,7 +20,7 @@
     "clean": "shx rm -rf dist",
     "clean:deep": "pnpm run clean && shx rm -rf node_modules",
     "dev": "pnpm run test",
-    "test": "npx codemod jssg test -l tsx registry/cornerstone3d/5/generic-viewport/scripts/rendering-engine-viewport-accessors.ts registry/cornerstone3d/5/generic-viewport/tests",
+    "test": "node scripts/test-registry-packages.mjs",
     "validate": "pnpm run validate:registry && pnpm run test",
     "validate:registry": "node scripts/validate-registry-packages.mjs",
     "lint": "oxlint ."

@@ -1,0 +1,29 @@
+version: '1'
+nodes:
+  - id: display-sets
+    name: Cornerstone3D 6.0 display sets
+    steps:
+      - name: Rewrite the data calls in TypeScript files
+        js-ast-grep:
+          js_file: scripts/display-sets.ts
+          language: typescript
+          base_path: .
+          semantic_analysis: file
+          include:
+            - '**/*.{ts,mts,cts}'
+          exclude:
+            - '**/node_modules/**'
+            - '**/dist/**'
+            - '**/build/**'
+      - name: Rewrite the data calls in TSX and JavaScript files
+        js-ast-grep:
+          js_file: scripts/display-sets.ts
+          language: tsx
+          base_path: .
+          semantic_analysis: file
+          include:
+            - '**/*.{tsx,js,jsx,mjs,cjs}'
+          exclude:
+            - '**/node_modules/**'
+            - '**/dist/**'
+            - '**/build/**'

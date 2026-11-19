@@ -1,0 +1,29 @@
+version: '1'
+nodes:
+  - id: settings
+    name: Cornerstone3D 6.0 settings
+    steps:
+      - name: Rewrite the settings in TypeScript files
+        js-ast-grep:
+          js_file: scripts/settings.ts
+          language: typescript
+          base_path: .
+          semantic_analysis: file
+          include:
+            - '**/*.{ts,mts,cts}'
+          exclude:
+            - '**/node_modules/**'
+            - '**/dist/**'
+            - '**/build/**'
+      - name: Rewrite the settings in TSX and JavaScript files
+        js-ast-grep:
+          js_file: scripts/settings.ts
+          language: tsx
+          base_path: .
+          semantic_analysis: file
+          include:
+            - '**/*.{tsx,js,jsx,mjs,cjs}'
+          exclude:
+            - '**/node_modules/**'
+            - '**/dist/**'
+            - '**/build/**'

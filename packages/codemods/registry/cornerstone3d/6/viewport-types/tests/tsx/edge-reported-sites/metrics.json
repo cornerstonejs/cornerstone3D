@@ -1,0 +1,70 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.tsx",
+        "line": "12",
+        "rule": "ViewportType.STACK"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.tsx",
+        "line": "17",
+        "rule": "ViewportType.ORTHOGRAPHIC"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.tsx",
+        "line": "32",
+        "rule": "ViewportType.PERSPECTIVE"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.tsx",
+        "line": "37",
+        "rule": "ViewportType.ORTHOGRAPHIC: orientation"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.tsx",
+        "line": "43",
+        "rule": "'perspective'"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.tsx",
+        "line": "44",
+        "rule": "defaultOptions.displayArea"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.tsx",
+        "line": "49",
+        "rule": "'planarNext'"
+      },
+      "count": 1
+    }
+  ],
+  "cornerstone3d-6-review": [
+    {
+      "cardinality": {
+        "file": "input.tsx",
+        "line": "27",
+        "rule": "ViewportType.ORTHOGRAPHIC: orientation"
+      },
+      "count": 1
+    }
+  ]
+}
