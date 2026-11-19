@@ -1,0 +1,12 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "15",
+        "rule": "setVolumes: the image ids of the volume are not known"
+      },
+      "count": 1
+    }
+  ]
+}

@@ -11,6 +11,11 @@ npx codemod @cornerstonejs/cornerstone3d-6-settings
 
 ## Changes
 
+The configuration keys change only in an object that the file passes to the
+core `init` or `setConfiguration`, directly or through a variable. The
+functions are found by their import, also under an alias, or through the
+core namespace.
+
 - `rendering.useGenericViewport` is removed from a configuration object; an
   empty `rendering` goes too, and `init({ rendering: { useGenericViewport: true } })`
   becomes `init()`.
@@ -24,16 +29,20 @@ npx codemod @cornerstonejs/cornerstone3d-6-settings
 - `resetUseCPURendering()` becomes `setRenderBackend('auto')`.
 - `getShouldUseCPURendering()` becomes `getEffectiveRenderBackend() === 'cpu'`.
 
-The imports of `@cornerstonejs/core` follow: the old names go when no use is
-left, the new ones come in.
+The imports of `@cornerstonejs/core` follow: an old name goes when every
+reference to it changed, the new ones come in, under a fresh alias such as
+`coreSetRenderBackend` when a name of the file takes or hides theirs.
 
 ## Reported
 
 - Review: each `setUseCPURendering` call (it also marked the library
   initialized; call `init()` first) and each `useCPURendering` key (a 3D
   viewport stays on the GPU).
-- Manual: `getUseGenericViewport()`, `setUseCPURendering` with two arguments
-  or used as a value, and `useCPURendering` next to a `planar` key.
+- Manual: `getUseGenericViewport()`, `setUseCPURendering` with two arguments,
+  a setting function used as a value (a shorthand property, an export; its
+  import stays), and `useCPURendering` next to a `planar` key.
+- Manual: a key of an object that the file does not pass to `init`, and a
+  removed key whose value runs code, such as `useGenericViewport: read()`.
 - `viewport.setUseCPURendering()`, the member of a stack viewport, is
   reported by `@cornerstonejs/cornerstone3d-6-viewport-members`.
 

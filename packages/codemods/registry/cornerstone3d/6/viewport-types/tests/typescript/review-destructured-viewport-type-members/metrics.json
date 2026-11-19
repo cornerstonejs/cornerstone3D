@@ -1,0 +1,12 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "4",
+        "rule": "ViewportType.STACK"
+      },
+      "count": 1
+    }
+  ]
+}

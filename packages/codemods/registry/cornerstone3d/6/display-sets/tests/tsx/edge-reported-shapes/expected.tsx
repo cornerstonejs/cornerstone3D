@@ -21,12 +21,7 @@ export function Viewer({ engine, imageIds, volumeId }) {
   const canStack = typeof viewport.setStack === 'function';
 
   function legacyLoad() {
-    csUtils.genericViewportDisplaySetMetadataProvider.add(`${viewport.id}:stack`, {
-      kind: 'planar',
-      imageIds,
-      initialImageIdIndex: 2,
-    });
-    viewport.setDisplaySets({ displaySetId: `${viewport.id}:stack` });
+    viewport.setStack(imageIds, 2);
   }
 
   return (

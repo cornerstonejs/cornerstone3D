@@ -20,8 +20,12 @@ npx codemod @cornerstonejs/cornerstone3d-6-classes-and-types
 - `Types.IVolumeViewport`, `Types.IBaseVolumeViewport` and
   `BaseVolumeViewport` become `VolumeViewport3D` where the file shows a 3D
   viewport: the viewport input with the id of the `getViewport` call has the
-  type `VOLUME_3D`, or an enclosing `if` or `case` tests `VOLUME_3D`.
-  Applications cast 3D viewports to `IVolumeViewport` in 5.x.
+  type `VOLUME_3D`, or the node runs only when the type of that viewport
+  equals `VOLUME_3D` (an enclosing `if`, `else` or `case` that compares
+  `<viewport>.type` or a name such as `viewportType`, without a negation or
+  `||`, and a `case` that no case falls into). Applications cast 3D viewports
+  to `IVolumeViewport` in 5.x. Where a test of `VOLUME_3D` encloses the node
+  and decides nothing, the type stays and is reported.
 - A cast of `getViewport` on a typed rendering engine becomes its type
   argument: `renderingEngine.getViewport(id) as Types.IStackViewport` becomes
   `renderingEngine.getViewport<PlanarViewport>(id)`. On an untyped engine the
@@ -31,18 +35,28 @@ npx codemod @cornerstonejs/cornerstone3d-6-classes-and-types
   `BaseVolumeViewport` become `PlanarViewport` in a type, and `Viewport`
   becomes `GenericViewport`.
 - `x instanceof StackViewport` becomes `utilities.viewportIsInStackMode(x)`,
-  `VolumeViewport` `utilities.getViewportContentMode(x) === 'volume'`,
-  `BaseVolumeViewport` `utilities.viewportIsInVolumeMode(x)`.
+  `VolumeViewport` `(utilities.getViewportContentMode(x) === 'volume')` (in
+  parentheses where the comparison would bind otherwise),
+  `BaseVolumeViewport` `utilities.viewportIsInVolumeMode(x)`. Only after an
+  awaited mount of `x` (`await x.setStack(...)` and its kin) earlier in the
+  same function: before its first mount a viewport is in the mode `empty`,
+  where a 5.x instance check was already true.
 - `GenericVolumeViewport3D`, `VideoGenericViewport`, `WSIGenericViewport`,
   `ECGGenericViewport` and the legacy `LegacyVolumeViewport3D` become
   `VolumeViewport3D`, `VideoViewport`, `WSIViewport` and `ECGViewport`, in
-  the import and in every use.
+  the import and in every use. A shorthand property and an export keep their
+  public name (`{ GenericVolumeViewport3D: VolumeViewport3D }`,
+  `export { VolumeViewport3D as GenericVolumeViewport3D }`), and so does a
+  re-export of the core.
 
 ## Reported
 
-- Review: each `instanceof` rewrite. An empty viewport is in no mode, where
-  a legacy instance check was true before the data.
-- Manual: a legacy class used as a value (`new StackViewport(...)`), the
+- Review: each `instanceof` rewrite.
+- Manual: an `instanceof` before a mount
+  (`the viewport may not show its data yet`), a legacy class used as a value
+  (`new StackViewport(...)`, a shorthand property, an export or a re-export
+  of the core; its import stays), an `IVolumeViewport` under a test of
+  `VOLUME_3D` that does not show the family, the
   removed `Types.*ViewportProperties`, `Types.IVolumeInput`,
   `Types.VolumeInputCallback`, `Types.SetAspectRatioOptions` and
   `Types.ImageSetOptions`, and `utilities.isGenericViewport(...)`

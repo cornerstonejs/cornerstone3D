@@ -7,6 +7,12 @@ the renames, and the rewrites that need no knowledge of the application. They
 report every site that needs the application, and they write no comment into
 your code.
 
+They change code only where the file shows that it is Cornerstone's: a name
+bound to an import of `@cornerstonejs/*`, a viewport got from a rendering
+engine, an enabled element or a Cornerstone type, a viewport input or a
+configuration that reaches a Cornerstone call. A variable named `viewport`
+alone puts the site in the report. A CommonJS module gets no `import`.
+
 ## Usage
 
 Start from the latest 5.x, on a clean branch.

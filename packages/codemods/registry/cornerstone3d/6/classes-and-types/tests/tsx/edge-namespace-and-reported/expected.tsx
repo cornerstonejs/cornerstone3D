@@ -13,7 +13,7 @@ export function Panel({ viewport, threeD, properties }: Props) {
     id: 'x',
     element: document.createElement('div'),
   });
-  const isVolume = utilities.getViewportContentMode(viewport) === 'volume';
+  const isVolume = viewport instanceof cornerstone.VolumeViewport;
   const generic = utilities.isGenericViewport(viewport);
   const typed = viewport as cornerstone.PlanarViewport;
 

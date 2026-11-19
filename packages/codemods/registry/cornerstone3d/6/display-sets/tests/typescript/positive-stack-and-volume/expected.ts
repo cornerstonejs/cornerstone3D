@@ -6,23 +6,25 @@ async function run(imageIds: string[]) {
   const viewport = renderingEngine.getViewport<PlanarViewport>('CT_STACK');
   const stack = [imageIds[0]];
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(`${viewport.id}:stack`, {
+  const displaySetId = `${viewport.renderingEngineId}:${viewport.id}:${stack[0]}`;
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
     kind: 'planar',
     imageIds: stack,
     initialImageIdIndex: 0,
   });
-  await viewport.setDisplaySets({ displaySetId: `${viewport.id}:stack` });
+  await viewport.setDisplaySets({ displaySetId });
   viewport.render();
 
   const secondViewport =
     renderingEngine.getViewport<PlanarViewport>('CT_STACK_2');
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(`${secondViewport.id}:stack`, {
+  const displaySetId2 = `${secondViewport.renderingEngineId}:${secondViewport.id}:${imageIds[0]}`;
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId2, {
     kind: 'planar',
     imageIds,
     initialImageIdIndex: 50,
   });
-  await secondViewport.setDisplaySets({ displaySetId: `${secondViewport.id}:stack` });
+  await secondViewport.setDisplaySets({ displaySetId: displaySetId2 });
 
   const volumeId = 'cornerstoneStreamingImageVolume:CT';
   const volume = await volumeLoader.createAndCacheVolume(volumeId, {

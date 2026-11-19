@@ -1,0 +1,12 @@
+{
+  "cornerstone3d-6-review": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "3",
+        "rule": "Events.STACK_NEW_IMAGE: NEW_IMAGE also fires for each slice of a volume"
+      },
+      "count": 1
+    }
+  ]
+}

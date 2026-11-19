@@ -1,0 +1,100 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.tsx",
+        "line": "10",
+        "rule": "setProperties: not one object literal"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.tsx",
+        "line": "11",
+        "rule": "resetCamera: options without a twin"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.tsx",
+        "line": "12",
+        "rule": "setCamera"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.tsx",
+        "line": "13",
+        "rule": "setCamera"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.tsx",
+        "line": "14",
+        "rule": "isDisabled"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.tsx",
+        "line": "16",
+        "rule": "getCamera"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.tsx",
+        "line": "16",
+        "rule": "getProperties"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.tsx",
+        "line": "16",
+        "rule": "scaling"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.tsx",
+        "line": "20",
+        "rule": "setProperties: the viewport may not show its data yet"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.tsx",
+        "line": "24",
+        "rule": "viewportSupportsStackCompatibility"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.tsx",
+        "line": "8",
+        "rule": "setProperties: not one object literal"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.tsx",
+        "line": "9",
+        "rule": "setProperties: the key isComputedVOI"
+      },
+      "count": 1
+    }
+  ]
+}

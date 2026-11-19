@@ -104,7 +104,12 @@ npx codemod @cornerstonejs/cornerstone3d-6 --dry-run
 npx codemod @cornerstonejs/cornerstone3d-6
 ```
 
-It reads `.ts`, `.tsx` and JavaScript files, and changes:
+It reads `.ts`, `.tsx` and JavaScript files. It changes code only where the
+file shows that it is Cornerstone's: a name bound to an import of
+`@cornerstonejs/*`, a viewport got from a rendering engine, an enabled
+element or a Cornerstone type, a viewport input or a configuration that
+reaches a Cornerstone call. A variable named `viewport` alone puts the site
+in the list of what it left. It changes:
 
 - the viewport types (step 1): `STACK` and `ORTHOGRAPHIC` in a viewport input
   become `PLANAR`, with the 5.x default orientation `AXIAL` written out where
@@ -112,7 +117,8 @@ It reads `.ts`, `.tsx` and JavaScript files, and changes:
   strings get their plain names;
 - the types and the class checks (step 2): `Types.IStackViewport` and its kin
   become the class of their family, a cast of `getViewport` becomes its type
-  argument, and `instanceof StackViewport` becomes a test of the mode;
+  argument, and `instanceof StackViewport` becomes a test of the mode where
+  the viewport was mounted before it (an empty viewport has no mode);
 - `setStack`, `setVolumes` and `setVolumesForViewports` in their common shape,
   `setVideo` and `setEcg` (step 3): a registered display set and
   `setDisplaySets`, awaited;
@@ -315,6 +321,14 @@ rg -n "setVolumesForViewports|addVolumesToViewports|convertStackToVolumeViewport
 
 **Change.** Register each series once as a display set, under an id that the
 application chooses. Then show it by its id.
+
+The id names the data, such as the series instance UID. Give another series
+another id: when the new source of a viewport has the id of the source it
+shows, `setDisplaySets` keeps the segmentation overlays of that source. The
+registration is global, so an application with two rendering engines whose
+viewports share ids puts the engine in the id too. The codemod registers a
+stack under `` `${viewport.renderingEngineId}:${viewport.id}:${imageIds[0]}` ``:
+one registration for each engine, viewport and series.
 [A display set is registered once](./1-next-viewports-only.md#a-display-set-is-registered-once)
 says what each family registers, and how a fusion is shown.
 

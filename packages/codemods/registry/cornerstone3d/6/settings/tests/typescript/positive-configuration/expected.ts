@@ -12,6 +12,8 @@ await initDemo({
   core: {
     rendering: {
       preferSizeOverAccuracy: true,
+      useGenericViewport: true,
+      useCPURendering: false,
       planarSettings: {},
     },
   },
@@ -19,7 +21,7 @@ await initDemo({
 
 export const configuration = {
   rendering: {
-    planar: { renderBackend: isMobile ? 'cpu' : 'auto' },
-    planarSettings: {},
+    useCPURendering: isMobile,
+    planarSettings: { cpuVolume: { useViewportSamplingForLinear: true } },
   },
 };

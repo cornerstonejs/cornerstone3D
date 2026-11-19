@@ -57,11 +57,11 @@ renderingEngine.setViewports(viewportInputArray);
 
 const viewport = renderingEngine.getViewport('CT_STACK');
 
-if (viewport.getCurrentMode() === 'stack') {
+if (viewport.type === ViewportType.STACK) {
   console.log('stack');
 }
 
-if (viewport.getCurrentMode() !== 'volume') {
+if (viewport.type !== ViewportType.ORTHOGRAPHIC) {
   console.log('not a volume');
 }
 

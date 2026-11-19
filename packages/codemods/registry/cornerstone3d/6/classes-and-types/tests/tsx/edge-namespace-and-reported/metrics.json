@@ -11,6 +11,14 @@
     {
       "cardinality": {
         "file": "input.tsx",
+        "line": "16",
+        "rule": "instanceof VolumeViewport: the viewport may not show its data yet"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.tsx",
         "line": "17",
         "rule": "isGenericViewport"
       },
@@ -21,16 +29,6 @@
         "file": "input.tsx",
         "line": "8",
         "rule": "Types.StackViewportProperties"
-      },
-      "count": 1
-    }
-  ],
-  "cornerstone3d-6-review": [
-    {
-      "cardinality": {
-        "file": "input.tsx",
-        "line": "16",
-        "rule": "instanceof VolumeViewport"
       },
       "count": 1
     }

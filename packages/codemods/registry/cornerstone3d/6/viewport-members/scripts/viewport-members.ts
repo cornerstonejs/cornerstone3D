@@ -8,7 +8,7 @@ import {
   enclosingFunction,
   isCoreExport,
   isRepeatable,
-  isViewportExpression,
+  viewportEvidence,
   methodCall,
   objectEntries,
   site,
@@ -117,6 +117,7 @@ const REPORTED_METHODS = new Set([
   'setAspectRatio',
   'setOptions',
   'reset',
+  'getSliceIndexForImage',
 ]);
 
 /** The legacy properties that the transform reports on a viewport. */
@@ -269,8 +270,15 @@ function isMountedAt(run: Run, call: Node, receiver: string): boolean {
 }
 
 /**
+ * Returns the name of a key of a pair, without the quotes of a string key.
+ */
+function keyName(key: Node): string {
+  return key.kind() === 'string' ? key.text().slice(1, -1) : key.text();
+}
+
+/**
  * Returns the text of an object literal with the keys of its pairs renamed by
- * a map of key names.
+ * a map of key names. A quoted key keeps its quotes.
  */
 function renameKeys(objectNode: Node, names: Record<string, string>): string {
   const offset = objectNode.range().start.index;
@@ -279,7 +287,8 @@ function renameKeys(objectNode: Node, names: Record<string, string>): string {
     .filter((child) => child.kind() === 'pair')
     .map((pair) => pair.field('key'))
     .filter(
-      (key) => key && names[key.text()] && names[key.text()] !== key.text()
+      (key) =>
+        key && names[keyName(key)] && names[keyName(key)] !== keyName(key)
     )
     .reverse();
   let text = objectNode.text();
@@ -287,8 +296,9 @@ function renameKeys(objectNode: Node, names: Record<string, string>): string {
   for (const key of keys) {
     const start = key.range().start.index - offset;
     const end = key.range().end.index - offset;
+    const quote = key.kind() === 'string' ? key.text()[0] : '';
 
-    text = `${text.slice(0, start)}${names[key.text()]}${text.slice(end)}`;
+    text = `${text.slice(0, start)}${quote}${names[keyName(key)]}${quote}${text.slice(end)}`;
   }
 
   return text;
@@ -367,16 +377,24 @@ function rewriteSetProperties(
 }
 
 /**
- * Rewrites or reports one call of a legacy member on a viewport.
+ * Rewrites or reports one call of a legacy member on a viewport. A receiver
+ * that only its name shows to be a viewport is reported.
  */
 function rewriteCall(run: Run, call: Node): void {
   const parts = methodCall(call);
+  const evidence = parts ? viewportEvidence(parts.object) : undefined;
 
-  if (!parts || !isViewportExpression(parts.object)) {
+  if (!evidence) {
     return;
   }
 
   const { object, property, method, args } = parts;
+
+  if (evidence === 'name') {
+    reportSite(run, method, call);
+
+    return;
+  }
   const argTexts = args.map((arg) => arg.text());
 
   if (RENAMED_METHODS[method]) {
@@ -398,7 +416,9 @@ function rewriteCall(run: Run, call: Node): void {
   if (UTILITY_CALLS[method]) {
     const { name, arity, suffix = '' } = UTILITY_CALLS[method];
     const utilities =
-      args.length === arity ? run.imports.ensure('utilities') : undefined;
+      args.length === arity
+        ? run.imports.ensure('utilities', { at: call })
+        : undefined;
     const callArgs = [unwrap(object).text(), ...argTexts].join(', ');
 
     if (
@@ -450,27 +470,14 @@ function rewriteCall(run: Run, call: Node): void {
       return;
     }
 
-    case 'getSliceIndexForImage':
-      if (args.length === 1 && viewportFamily(object) === 'planar') {
-        run.edits.add(
-          replaceFromProperty(
-            call,
-            property,
-            `getImageIds().indexOf(${argTexts[0]})`
-          )
-        );
-      } else {
-        reportSite(run, method, call);
-      }
-
-      return;
-
     case 'isOrientationChangeable': {
       const enums =
         isRepeatable(object) && !args.length
-          ? run.imports.ensure('Enums')
+          ? run.imports.ensure('Enums', { at: call })
           : undefined;
-      const utilities = enums ? run.imports.ensure('utilities') : undefined;
+      const utilities = enums
+        ? run.imports.ensure('utilities', { at: call })
+        : undefined;
       const viewport = unwrap(object).text();
 
       if (
@@ -488,7 +495,10 @@ function rewriteCall(run: Run, call: Node): void {
     }
 
     case 'getCornerstoneImage': {
-      const cache = args.length === 0 ? run.imports.ensure('cache') : undefined;
+      const cache =
+        args.length === 0
+          ? run.imports.ensure('cache', { at: call })
+          : undefined;
 
       if (
         !cache ||
@@ -543,15 +553,19 @@ function rewriteProperty(run: Run, member: Node): void {
   const property = member.field('property');
   const name = property?.text() ?? '';
   const parent = member.parent();
+  const evidence = object ? viewportEvidence(object) : undefined;
 
-  if (!object || !isViewportExpression(object)) {
+  if (
+    !evidence ||
+    (parent?.kind() === 'call_expression' &&
+      parent.field('function')?.id() === member.id())
+  ) {
     return;
   }
 
-  if (
-    parent?.kind() === 'call_expression' &&
-    parent.field('function')?.id() === member.id()
-  ) {
+  if (evidence === 'name') {
+    reportSite(run, name, member);
+
     return;
   }
 
@@ -567,7 +581,7 @@ function rewriteProperty(run: Run, member: Node): void {
   }
 
   if (name === 'modality') {
-    const utilities = run.imports.ensure('utilities');
+    const utilities = run.imports.ensure('utilities', { at: member });
 
     if (
       !utilities ||
@@ -648,7 +662,6 @@ const codemod: Codemod<TSX> = (root) => {
     'resetCamera',
     'setProperties',
     'setCamera',
-    'getSliceIndexForImage',
     'isOrientationChangeable',
     'getCornerstoneImage',
     'setAverageWhite',

@@ -1,4 +1,22 @@
 {
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "57",
+        "rule": "ViewportType.STACK: the viewport may not show its data yet"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "61",
+        "rule": "ViewportType.ORTHOGRAPHIC: the viewport may not show its data yet"
+      },
+      "count": 1
+    }
+  ],
   "cornerstone3d-6-review": [
     {
       "cardinality": {

@@ -1,0 +1,12 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "21",
+        "rule": "Types.IVolumeViewport: a test of a 3D type here does not show the family"
+      },
+      "count": 1
+    }
+  ]
+}

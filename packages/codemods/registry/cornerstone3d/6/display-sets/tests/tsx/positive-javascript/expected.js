@@ -11,12 +11,13 @@ async function run(element, imageIds) {
 
   const viewport = renderingEngine.getViewport('stack');
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(`${viewport.id}:stack`, {
+  const displaySetId = `${viewport.renderingEngineId}:${viewport.id}:${imageIds[0]}`;
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
     kind: 'planar',
     imageIds,
     initialImageIdIndex: 0,
   });
-  await viewport.setDisplaySets({ displaySetId: `${viewport.id}:stack` });
+  await viewport.setDisplaySets({ displaySetId });
 }
 
 export default run;

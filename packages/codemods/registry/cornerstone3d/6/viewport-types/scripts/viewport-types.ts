@@ -4,14 +4,19 @@ import { useMetricAtom } from 'codemod:metrics';
 import {
   CoreImports,
   EditSet,
+  declarationNodeOf,
   indentOf,
   isCoreEnum,
-  isViewportExpression,
+  isMountedBefore,
+  isRenderingEngine,
+  methodCall,
   objectEntries,
+  referencesOf,
   site,
   unwrap,
+  viewportEvidence,
 } from './lib.ts';
-import type { Node } from './lib.ts';
+import type { Node, ViewportEvidence } from './lib.ts';
 
 /** Sites that the reader changes. */
 const manual = useMetricAtom('cornerstone3d-6-manual');
@@ -53,6 +58,18 @@ const EQUALITY = new Set(['===', '!==', '==', '!=']);
 
 /** The keys that make an object literal a viewport input. */
 const INPUT_KEYS = ['viewportId', 'element'];
+
+/** The methods of a rendering engine that take viewport inputs. */
+const INPUT_METHODS = new Set(['enableElement', 'setViewports']);
+
+/** The parents through which a viewport input keeps flowing to a call. */
+const FLOW_KINDS = new Set([
+  'parenthesized_expression',
+  'as_expression',
+  'satisfies_expression',
+  'array',
+  'spread_element',
+]);
 
 /**
  * Returns the pair `type: value` whose value holds the node, through
@@ -99,7 +116,7 @@ function typePairOf(node: Node): { pair: Node; direct: boolean } | undefined {
 }
 
 /**
- * Tells whether an object literal is a viewport input.
+ * Tells whether an object literal has the keys of a viewport input.
  */
 function isViewportInput(objectNode: Node): boolean {
   const { keys } = objectEntries(objectNode);
@@ -108,11 +125,72 @@ function isViewportInput(objectNode: Node): boolean {
 }
 
 /**
- * Returns the other operand of an equality test when it is `<viewport>.type`.
+ * Tells whether a variable reaches `enableElement` or `setViewports` of a
+ * core rendering engine through one of its references.
  */
-function comparedViewport(
-  node: Node
-): { binary: Node; viewport: Node; operator: string } | undefined {
+function variableReaches(name: Node, depth: number): boolean {
+  return referencesOf(name).some(
+    (reference) =>
+      reference.kind() === 'identifier' &&
+      reachesViewportCall(reference, depth + 1)
+  );
+}
+
+/**
+ * Tells whether a value reaches `enableElement` or `setViewports` of a core
+ * rendering engine in the file: as an argument, as an entry of an array
+ * argument, pushed onto such an array, or through a variable that holds it.
+ */
+function reachesViewportCall(node: Node, depth = 0): boolean {
+  if (depth > 3) {
+    return false;
+  }
+
+  let current = node;
+
+  while (FLOW_KINDS.has(current.parent()?.kind() ?? '')) {
+    current = current.parent();
+  }
+
+  const parent = current.parent();
+
+  if (parent?.kind() === 'arguments') {
+    const call = methodCall(parent.parent());
+
+    if (call && INPUT_METHODS.has(call.method)) {
+      return isRenderingEngine(call.object);
+    }
+
+    const array =
+      call?.method === 'push' && call.object.kind() === 'identifier'
+        ? declarationNodeOf(call.object)
+        : undefined;
+
+    return Boolean(array && variableReaches(array, depth));
+  }
+
+  const name =
+    parent?.kind() === 'variable_declarator' &&
+    parent.field('value')?.id() === current.id()
+      ? parent.field('name')
+      : undefined;
+
+  return Boolean(name?.kind() === 'identifier' && variableReaches(name, depth));
+}
+
+/**
+ * Returns the other operand of an equality test when it is `<viewport>.type`,
+ * with what shows that its object is a viewport.
+ */
+function comparedViewport(node: Node):
+  | {
+      binary: Node;
+      viewport: Node;
+      operator: string;
+      evidence: ViewportEvidence;
+      optional: boolean;
+    }
+  | undefined {
   let current = node;
 
   while (current.parent()?.kind() === 'parenthesized_expression') {
@@ -134,16 +212,59 @@ function comparedViewport(
   const left = binary.field('left');
   const right = binary.field('right');
   const other = unwrap(left?.id() === current.id() ? right : left);
+  const evidence =
+    other?.kind() === 'member_expression' &&
+    other.field('property')?.text() === 'type'
+      ? viewportEvidence(other.field('object'))
+      : undefined;
 
-  if (
-    other?.kind() !== 'member_expression' ||
-    other.field('property')?.text() !== 'type' ||
-    !isViewportExpression(other.field('object'))
-  ) {
+  if (!evidence) {
     return undefined;
   }
 
-  return { binary, viewport: other.field('object'), operator };
+  return {
+    binary,
+    viewport: other.field('object'),
+    operator,
+    evidence,
+    optional: other
+      .children()
+      .some((child) => child.kind() === 'optional_chain'),
+  };
+}
+
+/**
+ * Rewrites a comparison of the type of a viewport with a removed type to a
+ * test of its content mode, when an awaited mount of that viewport comes
+ * before it: the type of a viewport is known from its creation, its mode only
+ * from its first mount. Reports the comparison otherwise. `?.type` keeps its
+ * `?.`.
+ */
+function rewriteModeTest(
+  run: Run,
+  comparison: ReturnType<typeof comparedViewport>,
+  mode: string,
+  rule: string,
+  node: Node
+): void {
+  const receiver = unwrap(comparison.viewport).text();
+
+  if (!isMountedBefore(comparison.binary, receiver)) {
+    manual.increment(
+      site(run.root, `${rule}: the viewport may not show its data yet`, node)
+    );
+
+    return;
+  }
+
+  const operator = comparison.operator.startsWith('!') ? '!==' : '===';
+  const access = comparison.optional ? '?.' : '.';
+
+  run.edits.add(
+    comparison.binary.replace(
+      `${comparison.viewport.text()}${access}getCurrentMode() ${operator} '${mode}'`
+    )
+  );
 }
 
 /**
@@ -229,7 +350,7 @@ function addDefaultOrientation(run: Run, typePair: Node, rule: string): void {
     }
   }
 
-  const enums = run.imports.ensure('Enums');
+  const enums = run.imports.ensure('Enums', { at: typePair });
 
   if (!enums) {
     manual.increment(site(run.root, `${rule}: orientation`, typePair));
@@ -309,15 +430,14 @@ function rewriteMember(run: Run, node: Node, member: string): void {
 
   const comparison = comparedViewport(node);
 
-  if (comparison) {
-    const mode = MODE_OF_LEGACY[member];
-    const operator = comparison.operator.startsWith('!') ? '!==' : '===';
+  if (comparison?.evidence === 'name') {
+    manual.increment(site(run.root, rule, node));
 
-    run.edits.add(
-      comparison.binary.replace(
-        `${comparison.viewport.text()}.getCurrentMode() ${operator} '${mode}'`
-      )
-    );
+    return;
+  }
+
+  if (comparison) {
+    rewriteModeTest(run, comparison, MODE_OF_LEGACY[member], rule, node);
 
     return;
   }
@@ -344,22 +464,31 @@ function rewriteMember(run: Run, node: Node, member: string): void {
 }
 
 /**
- * Rewrites one string that names a removed or deprecated viewport type.
+ * Rewrites one string that names a removed or deprecated viewport type: in
+ * a comparison with the type of a viewport of the core, or as the `type` of
+ * a viewport input that reaches `enableElement` or `setViewports`. An object
+ * with the keys of a viewport input that does not is reported.
  */
 function rewriteString(run: Run, node: Node, value: string): void {
   const quote = node.text()[0];
   const comparison = comparedViewport(node);
 
+  if (comparison?.evidence === 'name') {
+    manual.increment(site(run.root, `'${value}'`, node));
+
+    return;
+  }
+
   if (comparison) {
     if (NEXT_STRINGS[value]) {
       run.edits.add(node.replace(`${quote}${NEXT_STRINGS[value]}${quote}`));
     } else if (MODE_OF_LEGACY[value]) {
-      const operator = comparison.operator.startsWith('!') ? '!==' : '===';
-
-      run.edits.add(
-        comparison.binary.replace(
-          `${comparison.viewport.text()}.getCurrentMode() ${operator} '${MODE_OF_LEGACY[value]}'`
-        )
+      rewriteModeTest(
+        run,
+        comparison,
+        MODE_OF_LEGACY[value],
+        `'${value}'`,
+        node
       );
     } else {
       manual.increment(site(run.root, `'${value}'`, node));
@@ -369,9 +498,24 @@ function rewriteString(run: Run, node: Node, value: string): void {
   }
 
   const typePair = typePairOf(node);
-  const isInput = typePair && isViewportInput(typePair.pair.parent());
+  const objectNode = typePair?.pair.parent();
+  const looksLikeInput = Boolean(objectNode && isViewportInput(objectNode));
 
-  if (!isInput) {
+  if (looksLikeInput && value === 'perspective') {
+    manual.increment(site(run.root, `'${value}'`, node));
+
+    return;
+  }
+
+  if (looksLikeInput && !reachesViewportCall(objectNode)) {
+    manual.increment(
+      site(run.root, `'${value}': not shown to be a viewport input`, node)
+    );
+
+    return;
+  }
+
+  if (!looksLikeInput) {
     if (NEXT_STRINGS[value]) {
       manual.increment(site(run.root, `'${value}'`, node));
     }
@@ -381,12 +525,6 @@ function rewriteString(run: Run, node: Node, value: string): void {
 
   if (NEXT_STRINGS[value]) {
     run.edits.add(node.replace(`${quote}${NEXT_STRINGS[value]}${quote}`));
-
-    return;
-  }
-
-  if (value === 'perspective') {
-    manual.increment(site(run.root, `'${value}'`, node));
 
     return;
   }
@@ -428,6 +566,49 @@ function reportInputOptions(run: Run, typePair: Node): void {
 
     if (entry) {
       manual.increment(site(run.root, `defaultOptions.${key}`, entry));
+    }
+  }
+}
+
+/**
+ * Rewrites the keys that a pattern takes out of the core
+ * `Enums.ViewportType`: a `_NEXT` key gets its plain name and keeps its local
+ * name, and a removed key is reported.
+ */
+function rewriteDestructured(run: Run): void {
+  for (const pattern of run.rootNode.findAll({
+    rule: { kind: 'object_pattern' },
+  })) {
+    const declarator = pattern.parent();
+    const value =
+      declarator?.kind() === 'variable_declarator' &&
+      declarator.field('name')?.id() === pattern.id()
+        ? declarator.field('value')
+        : undefined;
+
+    if (!value || !isCoreEnum(value, 'ViewportType')) {
+      continue;
+    }
+
+    for (const entry of pattern.children()) {
+      const isShorthand =
+        entry.kind() === 'shorthand_property_identifier_pattern';
+      const keyNode = isShorthand
+        ? entry
+        : entry.kind() === 'pair_pattern'
+          ? entry.field('key')
+          : undefined;
+      const member = keyNode?.text() ?? '';
+
+      if (NEXT_MEMBERS[member]) {
+        run.edits.add(
+          isShorthand
+            ? entry.replace(`${NEXT_MEMBERS[member]}: ${member}`)
+            : keyNode.replace(NEXT_MEMBERS[member])
+        );
+      } else if (/^(STACK|ORTHOGRAPHIC|PERSPECTIVE)$/.test(member)) {
+        manual.increment(site(run.root, `ViewportType.${member}`, entry));
+      }
     }
   }
 }
@@ -484,6 +665,8 @@ const codemod: Codemod<TSX> = (root) => {
   for (const pair of typePairs) {
     reportInputOptions(run, pair);
   }
+
+  rewriteDestructured(run);
 
   if (!run.edits.all().length) {
     return null;

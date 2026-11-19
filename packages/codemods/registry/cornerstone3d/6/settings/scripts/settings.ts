@@ -4,9 +4,14 @@ import { useMetricAtom } from 'codemod:metrics';
 import {
   CoreImports,
   EditSet,
+  comparisonAt,
   coreImportOf,
+  coreSpecifiers,
+  isCoreExport,
   isCoreNamespace,
+  isPure,
   objectEntries,
+  referencesOf,
   removeProperty,
   site,
 } from './lib.ts';
@@ -26,20 +31,8 @@ const SETTING_FUNCTIONS = new Set([
   'getUseGenericViewport',
 ]);
 
-/** The parents in which `a === b` needs no parentheses. */
-const SAFE_PARENTS = new Set([
-  'variable_declarator',
-  'arguments',
-  'parenthesized_expression',
-  'return_statement',
-  'pair',
-  'array',
-  'template_substitution',
-  'expression_statement',
-  'assignment_expression',
-  'arrow_function',
-  'ternary_expression',
-]);
+/** The core functions that take the configuration. */
+const CONFIGURATION_FUNCTIONS = ['init', 'setConfiguration'];
 
 /** The expressions that need parentheses before `? :`. */
 const LOW_PRECEDENCE = new Set([
@@ -121,7 +114,73 @@ function removeSetting(run: Run, pair: Node, holder: Node): boolean {
 }
 
 /**
- * Rewrites the removed keys of the `rendering` configuration.
+ * Tells whether an object literal, or a variable that holds it, is passed to
+ * the core `init` or `setConfiguration` in the file.
+ */
+function reachesConfigurationCall(node: Node): boolean {
+  let current = node;
+
+  while (
+    [
+      'parenthesized_expression',
+      'as_expression',
+      'satisfies_expression',
+    ].includes(current.parent()?.kind() ?? '')
+  ) {
+    current = current.parent();
+  }
+
+  const parent = current.parent();
+
+  if (parent?.kind() === 'arguments') {
+    const callee = parent.parent()?.field('function');
+
+    return Boolean(
+      callee &&
+        CONFIGURATION_FUNCTIONS.some((name) => isCoreExport(callee, name))
+    );
+  }
+
+  if (
+    parent?.kind() !== 'variable_declarator' ||
+    parent.field('value')?.id() !== current.id()
+  ) {
+    return false;
+  }
+
+  const name = parent.field('name');
+
+  return Boolean(
+    name?.kind() === 'identifier' &&
+      referencesOf(name).some(
+        (reference) =>
+          reference.kind() === 'identifier' &&
+          reachesConfigurationCall(reference)
+      )
+  );
+}
+
+/**
+ * Returns the outermost object literal that holds a pair through nested
+ * pairs.
+ */
+function configurationOf(pair: Node): Node {
+  let objectNode = pair.parent();
+
+  while (
+    objectNode.parent()?.kind() === 'pair' &&
+    objectNode.parent().parent()?.kind() === 'object'
+  ) {
+    objectNode = objectNode.parent().parent();
+  }
+
+  return objectNode;
+}
+
+/**
+ * Rewrites the removed keys of the `rendering` configuration of an object
+ * that the file passes to `init` or `setConfiguration`. A key of another
+ * object, or a key whose value runs code, is reported.
  */
 function rewriteConfiguration(run: Run): void {
   const pairs = run.rootNode.findAll({
@@ -137,35 +196,36 @@ function rewriteConfiguration(run: Run): void {
 
   for (const pair of pairs) {
     const key = keyOf(pair);
-
-    if (key === 'useViewportSamplingForLinear') {
-      const holder = holderPair(pair, 'cpuVolume');
-
-      if (holder) {
-        removeSetting(run, pair, holder);
-      }
-
-      continue;
-    }
-
-    const rendering = holderPair(pair, 'rendering');
-
-    if (!rendering) {
-      continue;
-    }
-
-    if (key === 'useGenericViewport') {
-      removeSetting(run, pair, rendering);
-      continue;
-    }
-
+    const holderName =
+      key === 'useViewportSamplingForLinear' ? 'cpuVolume' : 'rendering';
+    const holder = holderPair(pair, holderName);
+    const rule = `${holderName}.${key}`;
     const value = pair.field('value');
-    const { keys } = objectEntries(pair.parent());
 
-    if (value?.text() === 'false') {
-      removeSetting(run, pair, rendering);
+    if (!holder) {
       continue;
     }
+
+    if (!reachesConfigurationCall(configurationOf(pair))) {
+      manual.increment(
+        site(run.root, `${rule}: not shown to reach init()`, pair)
+      );
+      continue;
+    }
+
+    const removes = key !== 'useCPURendering' || value?.text() === 'false';
+
+    if (removes && (!value || !isPure(value))) {
+      manual.increment(site(run.root, `${rule}: its value has effects`, pair));
+      continue;
+    }
+
+    if (removes) {
+      removeSetting(run, pair, holder);
+      continue;
+    }
+
+    const { keys } = objectEntries(pair.parent());
 
     if (keys.includes('planar')) {
       manual.increment(site(run.root, 'rendering.useCPURendering', pair));
@@ -190,40 +250,20 @@ function rewriteConfiguration(run: Run): void {
 }
 
 /**
- * Returns the removed setting function that a callee names, through its
- * import or the core namespace.
+ * Returns the expression that names a core function at a call, the way the
+ * old call named its function.
  */
-function settingFunction(callee: Node): string | undefined {
-  if (callee.kind() === 'identifier') {
-    const name = coreImportOf(callee)?.name;
-
-    return name && SETTING_FUNCTIONS.has(name) ? name : undefined;
-  }
-
-  if (callee.kind() === 'member_expression') {
-    const object = callee.field('object');
-    const name = callee.field('property')?.text() ?? '';
-
-    return SETTING_FUNCTIONS.has(name) &&
-      object?.kind() === 'identifier' &&
-      isCoreNamespace(object)
-      ? name
-      : undefined;
-  }
-
-  return undefined;
-}
-
-/**
- * Returns the expression that names a core function in this file, the way
- * the old call named its function.
- */
-function functionRef(run: Run, callee: Node, name: string): string | undefined {
+function functionRef(
+  run: Run,
+  call: Node,
+  callee: Node,
+  name: string
+): string | undefined {
   if (callee.kind() === 'member_expression') {
     return `${callee.field('object').text()}.${name}`;
   }
 
-  return run.imports.ensure(name);
+  return run.imports.ensure(name, { at: call });
 }
 
 /**
@@ -250,19 +290,25 @@ function rewriteCall(
     return false;
   }
 
-  if (name === 'getShouldUseCPURendering') {
-    const ref = functionRef(run, callee, 'getEffectiveRenderBackend');
-    const test = `${ref}() === 'cpu'`;
-    const parent = call.parent();
-    const safe =
-      SAFE_PARENTS.has(parent?.kind() ?? '') ||
-      (parent?.kind() === 'binary_expression' &&
-        /^(&&|\|\||\?\?)$/.test(parent.field('operator')?.text() ?? ''));
+  const newName =
+    name === 'getShouldUseCPURendering'
+      ? 'getEffectiveRenderBackend'
+      : 'setRenderBackend';
+  const ref = functionRef(run, call, callee, newName);
 
-    return run.edits.add(call.replace(safe ? test : `(${test})`));
+  if (!ref) {
+    manual.increment(
+      site(run.root, `${name}: ${newName} cannot be imported`, call)
+    );
+
+    return false;
   }
 
-  const ref = functionRef(run, callee, 'setRenderBackend');
+  if (name === 'getShouldUseCPURendering') {
+    return run.edits.add(
+      call.replace(comparisonAt(call, `${ref}() === 'cpu'`))
+    );
+  }
 
   if (name === 'resetUseCPURendering') {
     return run.edits.add(call.replace(`${ref}('auto')`));
@@ -291,55 +337,65 @@ function rewriteCall(
 }
 
 /**
- * Rewrites the calls of the removed setting functions, and drops their
- * imports when no use is left.
+ * Rewrites a reference to a removed setting function when it is the callee
+ * of a call, and reports it otherwise. Returns whether it changed.
+ */
+function rewriteReference(run: Run, callee: Node, name: string): boolean {
+  const call = callee.parent();
+  const isCall =
+    call?.kind() === 'call_expression' &&
+    call.field('function')?.id() === callee.id();
+
+  if (!isCall) {
+    manual.increment(site(run.root, name, callee));
+
+    return false;
+  }
+
+  return rewriteCall(run, call, callee, name);
+}
+
+/**
+ * Rewrites the calls of the removed setting functions, through each named
+ * import with its local name or through the core namespace. A named import
+ * goes when every reference to it changed.
  */
 function rewriteFunctions(run: Run): void {
-  const left = new Map<string, number>();
-  const identifiers = run.rootNode.findAll({
-    rule: {
-      any: [{ kind: 'identifier' }, { kind: 'property_identifier' }],
-      regex: `^(${[...SETTING_FUNCTIONS].join('|')})$`,
-    },
-  });
-
-  for (const identifier of identifiers) {
-    if (
-      identifier
-        .ancestors()
-        .some((ancestor) => ancestor.kind() === 'import_statement')
-    ) {
+  for (const { name, local } of coreSpecifiers(run.rootNode)) {
+    if (!SETTING_FUNCTIONS.has(name)) {
       continue;
     }
 
-    const callee =
-      identifier.kind() === 'property_identifier'
-        ? identifier.parent()
-        : identifier;
-    const name = callee ? settingFunction(callee) : undefined;
+    let left = 0;
 
-    if (!name) {
-      continue;
+    for (const reference of referencesOf(local)) {
+      const isIdentifier = reference.kind() === 'identifier';
+
+      if (!isIdentifier) {
+        manual.increment(site(run.root, name, reference));
+      }
+
+      left += isIdentifier && rewriteReference(run, reference, name) ? 0 : 1;
     }
 
-    const call = callee.parent();
-    const isCall =
-      call?.kind() === 'call_expression' &&
-      call.field('function')?.id() === callee.id();
-    const changed = isCall ? rewriteCall(run, call, callee, name) : false;
-
-    if (!isCall) {
-      manual.increment(site(run.root, name, callee));
-    }
-
-    if (!changed && callee.kind() === 'identifier') {
-      left.set(name, (left.get(name) ?? 0) + 1);
+    if (!left) {
+      run.imports.remove(name, local.text());
     }
   }
 
-  for (const name of SETTING_FUNCTIONS) {
-    if (run.imports.local(name) && !left.get(name)) {
-      run.imports.remove(name);
+  for (const member of run.rootNode.findAll({
+    rule: {
+      kind: 'member_expression',
+      has: {
+        field: 'property',
+        regex: `^(${[...SETTING_FUNCTIONS].join('|')})$`,
+      },
+    },
+  })) {
+    const object = member.field('object');
+
+    if (object?.kind() === 'identifier' && isCoreNamespace(object)) {
+      rewriteReference(run, member, member.field('property').text());
     }
   }
 }

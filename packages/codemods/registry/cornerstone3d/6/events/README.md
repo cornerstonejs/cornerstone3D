@@ -18,9 +18,13 @@ An event is found through the core `Enums.Events`: `Enums.Events.X`,
 
 - `STACK_NEW_IMAGE` and `VOLUME_NEW_IMAGE` become `NEW_IMAGE`.
 - `IMAGE_LOAD_ERROR` becomes `IMAGE_LOAD_FAILED`.
-- A destructured name is renamed with its uses; two that become one keep one
-  entry. When the new name is taken in the file, the entry becomes
-  `NEW_IMAGE: STACK_NEW_IMAGE`.
+- A destructured name is renamed with its uses. When the pattern has
+  `NEW_IMAGE` already, the entry goes and its uses take the local name of
+  `NEW_IMAGE`, where that name means the same binding at each use. When the
+  new name is taken in the file, or a use is not a plain name, the entry
+  becomes `NEW_IMAGE: STACK_NEW_IMAGE`. An entry with a local name keeps it
+  and only its key changes: `{ STACK_NEW_IMAGE: onImage }` becomes
+  `{ NEW_IMAGE: onImage }`.
 - `Types.EventTypes.StackNewImageEvent` and `VolumeNewImageEvent` become
   `NewImageEvent`, their `Detail` types `NewImageEventDetail`.
 
@@ -33,8 +37,10 @@ An event is found through the core `Enums.Events`: `Enums.Events.X`,
 - Manual: `PRE_STACK_NEW_IMAGE`, `STACK_VIEWPORT_SCROLL`, `PRESET_MODIFIED`,
   `ACTORS_CHANGED`, `CLIPPING_PLANES_UPDATED`, the two
   `DYNAMIC_VOLUME_TIME_POINT_*` events, their event types, and a string
-  such as `'CORNERSTONE_STACK_NEW_IMAGE'` (a listener of it compiles and
-  never runs).
+  such as `'CORNERSTONE_STACK_NEW_IMAGE'`,
+  `'DYNAMIC_VOLUME_TIME_POINT_LOADED'` or `'IMAGE_LOAD_ERROR'` (a listener
+  of it compiles and never runs; a planar viewport no longer fires
+  `IMAGE_LOAD_ERROR`).
 
 ## Development
 

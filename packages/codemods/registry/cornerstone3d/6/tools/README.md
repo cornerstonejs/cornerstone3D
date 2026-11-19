@@ -15,6 +15,9 @@ npx codemod @cornerstonejs/cornerstone3d-6-tools
 - `@cornerstonejs/tools/tools/displayTools/Labelmap/labelmapRenderPlan/legacyVolumePlan`
   becomes `.../labelmapRenderPlan/volumeLabelmapPlan`, and
   `createLegacyVolumeLabelmapPlan` `createVolumeLabelmapPlan`, with its uses.
+  When the file uses the new name already, or uses the old one in a
+  shorthand property or an export, the import keeps the old local name:
+  `createVolumeLabelmapPlan as createLegacyVolumeLabelmapPlan`.
 - `@cornerstonejs/tools/segmentation/labelmapModel/labelmapLegacyAdapter`
   becomes `.../labelmapModel/labelmapPrimaryLayerFields`, with the same two
   functions.

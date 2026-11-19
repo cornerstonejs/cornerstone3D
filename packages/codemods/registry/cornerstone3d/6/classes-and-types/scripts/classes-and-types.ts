@@ -2,11 +2,15 @@ import type { Codemod, SgRoot } from 'codemod:ast-grep';
 import type TSX from 'codemod:ast-grep/langs/tsx';
 import { useMetricAtom } from 'codemod:metrics';
 import {
+  CORE_PACKAGE,
   CoreImports,
   EditSet,
+  comparisonAt,
   coreImportOf,
+  importSource,
   isCoreExport,
   isCoreNamespace,
+  isMountedBefore,
   methodCall,
   objectEntries,
   site,
@@ -100,6 +104,20 @@ const PLANAR_TYPE =
 /** The calls that give a typed rendering engine. */
 const ENGINE_FACTORIES = new Set(['getRenderingEngine', 'RenderingEngine']);
 
+/** The operators of an equality test. */
+const EQUALITY = new Set(['===', '==', '!==', '!=']);
+
+/** The statements that end a `case` without falling through. */
+const CASE_ENDS = new Set([
+  'break_statement',
+  'return_statement',
+  'throw_statement',
+  'continue_statement',
+]);
+
+/** What a test of the viewport type tells about the family of a node. */
+type Decision = '3d' | 'planar' | 'ambiguous' | undefined;
+
 /**
  * The state of one run of the transform on a file.
  */
@@ -166,34 +184,220 @@ function isTypedEngine(node: Node): boolean {
 }
 
 /**
- * Returns the family that the file shows for a type node: '3d' or 'planar'
- * when an enclosing `if` or `case` tests the viewport type, or when the
- * viewport inputs of the file with the id of the `getViewport` call that the
- * type casts all have one family. Undefined otherwise.
+ * Returns the texts that name the viewport a type node types: the expression
+ * of its cast and the variable that the cast or the annotation declares.
  */
-function familyEvidence(run: Run, typeNode: Node): '3d' | 'planar' | undefined {
+function receiversOf(typeNode: Node): Set<string> {
+  const receivers = new Set<string>();
+  const holder = typeNode
+    .ancestors()
+    .find((ancestor) =>
+      [
+        'as_expression',
+        'type_assertion',
+        'variable_declarator',
+        'required_parameter',
+        'optional_parameter',
+      ].includes(ancestor.kind())
+    );
+
+  if (!holder) {
+    return receivers;
+  }
+
+  const named = holder.children().filter((child) => child.isNamed());
+  const expression =
+    holder.kind() === 'as_expression'
+      ? named[0]
+      : holder.kind() === 'type_assertion'
+        ? named[named.length - 1]
+        : undefined;
+  const declarator =
+    holder.kind() === 'variable_declarator'
+      ? holder
+      : holder.parent()?.kind() === 'variable_declarator'
+        ? holder.parent()
+        : undefined;
+
+  if (expression) {
+    receivers.add(unwrap(expression).text());
+  }
+
+  for (const name of [declarator?.field('name'), holder.field('pattern')]) {
+    if (name?.kind() === 'identifier') {
+      receivers.add(name.text());
+    }
+  }
+
+  return receivers;
+}
+
+/**
+ * Tells whether a tested value is the type of the viewport that a type node
+ * types: `<receiver>.type`, or a name such as `type` or `viewportType`.
+ */
+function isTiedValue(value: Node, receivers: Set<string>): boolean {
+  const inner = unwrap(value);
+
+  if (inner.kind() === 'identifier') {
+    return true;
+  }
+
+  return (
+    inner.kind() === 'member_expression' &&
+    inner.field('property')?.text() === 'type' &&
+    receivers.has(unwrap(inner.field('object')).text())
+  );
+}
+
+/**
+ * Returns the family that a viewport type names, by its text.
+ */
+function familyOfTypeText(text: string): '3d' | 'planar' | undefined {
+  if (THREE_D_TYPE.test(text)) {
+    return '3d';
+  }
+
+  return PLANAR_TYPE.test(text) ? 'planar' : undefined;
+}
+
+/**
+ * Returns what a condition tells about the family of a node that runs when
+ * the condition is `positive`: a 3D or a planar family when the node runs
+ * only when the tested type equals it, planar when it runs only when the
+ * type is not 3D. A condition that names a 3D type and decides nothing (a
+ * negation, `||`, a value other than the type of the viewport) is
+ * `ambiguous`; one that names planar types only adds nothing to the default,
+ * planar, and is undefined like one that names no type.
+ */
+function decidedFamily(
+  condition: Node,
+  positive: boolean,
+  receivers: Set<string>
+): Decision {
+  if (!familyOfTypeText(condition.text())) {
+    return undefined;
+  }
+
+  const undecided: Decision = THREE_D_TYPE.test(condition.text())
+    ? 'ambiguous'
+    : undefined;
+  const inner = unwrap(condition);
+  const operator = inner.field('operator')?.text() ?? '';
+
+  if (inner.kind() !== 'binary_expression') {
+    return undecided;
+  }
+
+  if (operator === '&&' && positive) {
+    const decisions = new Set(
+      [inner.field('left'), inner.field('right')]
+        .map((side) => decidedFamily(side, true, receivers))
+        .filter(Boolean)
+    );
+
+    return decisions.size === 1 ? [...decisions][0] : undecided;
+  }
+
+  if (!EQUALITY.has(operator)) {
+    return undecided;
+  }
+
+  const left = inner.field('left');
+  const right = inner.field('right');
+  const leftFamily = familyOfTypeText(left.text());
+  const typeSide = leftFamily ? left : right;
+  const value = leftFamily ? right : left;
+  const family = familyOfTypeText(typeSide.text());
+
+  if (
+    !family ||
+    familyOfTypeText(value.text()) ||
+    !isTiedValue(value, receivers)
+  ) {
+    return undecided;
+  }
+
+  if (operator.startsWith('!') !== positive) {
+    return family;
+  }
+
+  return family === '3d' ? 'planar' : undecided;
+}
+
+/**
+ * Returns what a `case` tells about the family of the nodes in its body. A
+ * case that the case before it falls into decides nothing, and is ambiguous
+ * when it names a 3D type.
+ */
+function caseFamily(caseNode: Node, receivers: Set<string>): Decision {
+  const value = caseNode.field('value');
+  const family = value ? familyOfTypeText(value.text()) : undefined;
+
+  if (!family) {
+    return undefined;
+  }
+
+  const previous = caseNode.prev();
+  const previousLast = previous
+    ?.children()
+    .filter((child) => child.isNamed() && child.kind() !== 'comment')
+    .pop();
+  const discriminant = caseNode.parent()?.parent()?.field('value');
+  const fallsIn =
+    previous?.kind() === 'switch_case' &&
+    !CASE_ENDS.has(previousLast?.kind() ?? '');
+
+  if (fallsIn || !discriminant || !isTiedValue(discriminant, receivers)) {
+    return family === '3d' ? 'ambiguous' : undefined;
+  }
+
+  return family;
+}
+
+/**
+ * Returns the family that the file shows for a type node: '3d' or 'planar'
+ * when an enclosing `if`, `else` or `case` runs only for that family of the
+ * viewport it types, or when the viewport inputs of the file with the id of
+ * the `getViewport` call that the type casts all have one family;
+ * 'ambiguous' when an enclosing test names a viewport type and decides
+ * nothing; undefined otherwise.
+ */
+function familyEvidence(run: Run, typeNode: Node): Decision {
+  const receivers = receiversOf(typeNode);
   let child = typeNode;
+  let ambiguous = false;
 
   for (const ancestor of typeNode.ancestors()) {
-    const test =
+    const inConsequence =
       ancestor.kind() === 'if_statement' &&
-      ancestor.field('consequence')?.id() === child.id()
-        ? ancestor.field('condition')?.text()
+      ancestor.field('consequence')?.id() === child.id();
+    const inAlternative =
+      ancestor.kind() === 'if_statement' &&
+      ancestor.field('alternative')?.id() === child.id();
+    const decision =
+      inConsequence || inAlternative
+        ? decidedFamily(ancestor.field('condition'), inConsequence, receivers)
         : ancestor.kind() === 'switch_case'
-          ? ancestor.field('value')?.text()
+          ? caseFamily(ancestor, receivers)
           : undefined;
 
-    if (test && THREE_D_TYPE.test(test)) {
-      return '3d';
+    if (decision === '3d' || decision === 'planar') {
+      return decision;
     }
 
-    if (test && PLANAR_TYPE.test(test)) {
-      return 'planar';
-    }
-
+    ambiguous ||= decision === 'ambiguous';
     child = ancestor;
   }
 
+  return inputFamily(run, typeNode) ?? (ambiguous ? 'ambiguous' : undefined);
+}
+
+/**
+ * Returns the family of the viewport inputs of the file with the id of the
+ * `getViewport` call that a type node casts, when they all have one.
+ */
+function inputFamily(run: Run, typeNode: Node): '3d' | 'planar' | undefined {
   const holder = typeNode
     .ancestors()
     .find((ancestor) =>
@@ -245,17 +449,36 @@ function familyEvidence(run: Run, typeNode: Node): '3d' | 'planar' | undefined {
 /**
  * Returns the 6.0 class of a legacy type name at a type node: the 3D class
  * for a name that also typed a 3D viewport when the file shows a 3D viewport,
- * the planar class otherwise.
+ * the planar class otherwise. Returns undefined, and reports the site, when
+ * a test of a 3D type around the node does not show the family: the type
+ * stays for the reader.
  */
 function classFor(
   run: Run,
   typeNode: Node,
   name: string,
-  planarClass: string
-): string {
-  return VOLUME_OR_3D.has(name) && familyEvidence(run, typeNode) === '3d'
-    ? 'VolumeViewport3D'
-    : planarClass;
+  planarClass: string,
+  label: string
+): string | undefined {
+  if (!VOLUME_OR_3D.has(name)) {
+    return planarClass;
+  }
+
+  const family = familyEvidence(run, typeNode);
+
+  if (family === 'ambiguous') {
+    manual.increment(
+      site(
+        run.root,
+        `${label}: a test of a 3D type here does not show the family`,
+        typeNode
+      )
+    );
+
+    return undefined;
+  }
+
+  return family === '3d' ? 'VolumeViewport3D' : planarClass;
 }
 
 /**
@@ -299,14 +522,18 @@ function replaceType(run: Run, typeNode: Node, className: string): boolean {
 }
 
 /**
- * Returns the identifiers and type identifiers of the file that refer to an
- * import specifier.
+ * Returns the identifiers, type identifiers and shorthand properties of the
+ * file that refer to an import specifier.
  */
 function referencesOf(run: Run, specifier: Node, local: string): Node[] {
   return run.rootNode
     .findAll({
       rule: {
-        any: [{ kind: 'identifier' }, { kind: 'type_identifier' }],
+        any: [
+          { kind: 'identifier' },
+          { kind: 'type_identifier' },
+          { kind: 'shorthand_property_identifier' },
+        ],
         regex: `^${local}$`,
       },
     })
@@ -334,11 +561,30 @@ function instanceofOf(node: Node): Node | undefined {
 }
 
 /**
- * Rewrites `value instanceof LegacyClass` to the test of the content mode.
+ * Rewrites `value instanceof LegacyClass` to the test of the content mode,
+ * when an awaited mount of the value comes before it: a 5.x class is known
+ * from the creation of the viewport, a 6.0 mode only from its first mount.
+ * Reports the test otherwise.
  */
 function rewriteInstanceof(run: Run, binary: Node, name: string): boolean {
   const test = INSTANCEOF_TEST[name];
-  const utilities = test ? run.imports.ensure('utilities') : undefined;
+  const left = binary.field('left');
+
+  if (test && !isMountedBefore(binary, unwrap(left).text())) {
+    manual.increment(
+      site(
+        run.root,
+        `instanceof ${name}: the viewport may not show its data yet`,
+        binary
+      )
+    );
+
+    return false;
+  }
+
+  const utilities = test
+    ? run.imports.ensure('utilities', { at: binary })
+    : undefined;
 
   if (!test || !utilities) {
     manual.increment(site(run.root, `instanceof ${name}`, binary));
@@ -346,8 +592,9 @@ function rewriteInstanceof(run: Run, binary: Node, name: string): boolean {
     return false;
   }
 
+  const text = test(utilities, left.text());
   const added = run.edits.add(
-    binary.replace(test(utilities, binary.field('left').text()))
+    binary.replace(text.includes(' === ') ? comparisonAt(binary, text) : text)
   );
 
   if (added) {
@@ -380,12 +627,16 @@ function rewriteLegacyClass(
     }
 
     if (reference.kind() === 'type_identifier') {
-      const className = run.imports.ensure(
-        classFor(run, reference, name, LEGACY_CLASS_TYPE[name]),
-        {
-          type: true,
-        }
+      const chosen = classFor(
+        run,
+        reference,
+        name,
+        LEGACY_CLASS_TYPE[name],
+        name
       );
+      const className = chosen
+        ? run.imports.ensure(chosen, { type: true })
+        : undefined;
 
       left += className && replaceType(run, reference, className) ? 0 : 1;
       continue;
@@ -402,7 +653,7 @@ function rewriteLegacyClass(
 
 /**
  * Renames a class that 6.0 names differently, in the import and in every
- * reference.
+ * reference. A shorthand property and an export keep their public key.
  */
 function renameClass(
   run: Run,
@@ -418,7 +669,52 @@ function renameClass(
   }
 
   for (const reference of references) {
-    run.edits.add(reference.replace(newLocal));
+    const parent = reference.parent();
+
+    if (reference.kind() === 'shorthand_property_identifier') {
+      run.edits.add(reference.replace(`${local}: ${newLocal}`));
+    } else if (
+      parent?.kind() === 'export_specifier' &&
+      !parent.field('alias')
+    ) {
+      run.edits.add(parent.replace(`${newLocal} as ${local}`));
+    } else {
+      run.edits.add(reference.replace(newLocal));
+    }
+  }
+}
+
+/**
+ * Rewrites the re-exports of the core: a renamed class keeps its public name
+ * through `as`, and a removed class is reported, as 6.0 has no export of
+ * that name.
+ */
+function rewriteReExports(run: Run): void {
+  const statements = run.rootNode
+    .children()
+    .filter(
+      (child) =>
+        child.kind() === 'export_statement' &&
+        importSource(child) === CORE_PACKAGE
+    );
+
+  for (const statement of statements) {
+    for (const specifier of statement.findAll({
+      rule: { kind: 'export_specifier' },
+    })) {
+      const nameNode = specifier.field('name');
+      const name = nameNode?.text() ?? '';
+
+      if (LEGACY_CLASS_TYPE[name]) {
+        manual.increment(site(run.root, name, specifier));
+      } else if (RENAMED_CLASS[name]) {
+        run.edits.add(
+          specifier.field('alias')
+            ? nameNode.replace(RENAMED_CLASS[name])
+            : specifier.replace(`${RENAMED_CLASS[name]} as ${name}`)
+        );
+      }
+    }
   }
 }
 
@@ -483,12 +779,18 @@ function rewriteNestedTypes(run: Run): void {
     const { namespace, name, nameNode } = nested;
 
     if (namespace === 'Types' && TYPES_TO_CLASS[name]) {
-      const className = run.imports.ensure(
-        classFor(run, node, name, TYPES_TO_CLASS[name]),
-        { type: true }
+      const chosen = classFor(
+        run,
+        node,
+        name,
+        TYPES_TO_CLASS[name],
+        `Types.${name}`
       );
+      const className = chosen
+        ? run.imports.ensure(chosen, { type: true })
+        : undefined;
 
-      if (!className || !replaceType(run, node, className)) {
+      if (chosen && (!className || !replaceType(run, node, className))) {
         manual.increment(site(run.root, `Types.${name}`, node));
       }
     } else if (namespace === 'Types' && TYPES_RENAMED[name]) {
@@ -496,11 +798,15 @@ function rewriteNestedTypes(run: Run): void {
     } else if (namespace === 'Types' && TYPES_REPORTED.has(name)) {
       manual.increment(site(run.root, `Types.${name}`, node));
     } else if (namespace === 'core' && LEGACY_CLASS_TYPE[name]) {
-      replaceType(
-        run,
-        node,
-        `${run.imports.namespace}.${classFor(run, node, name, LEGACY_CLASS_TYPE[name])}`
-      );
+      const chosen = classFor(run, node, name, LEGACY_CLASS_TYPE[name], name);
+      const module = node
+        .children()
+        .find((child) => child.isNamed())
+        .text();
+
+      if (chosen) {
+        replaceType(run, node, `${module}.${chosen}`);
+      }
     } else if (namespace === 'core' && RENAMED_CLASS[name]) {
       run.edits.add(nameNode.replace(RENAMED_CLASS[name]));
     }
@@ -603,6 +909,7 @@ const codemod: Codemod<TSX> = (root) => {
 
   rewriteNestedTypes(run);
   rewriteNamespaceValues(run);
+  rewriteReExports(run);
   reportIsGenericViewport(run);
 
   const importEdits = run.imports.edits();

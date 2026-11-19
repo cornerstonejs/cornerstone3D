@@ -16,7 +16,7 @@ engine.setViewports([
 
 const viewport = engine.getViewport('a');
 
-if (viewport.getCurrentMode() === 'stack') {
+if (viewport.type === 'stack') {
   console.log('a stack');
 }
 

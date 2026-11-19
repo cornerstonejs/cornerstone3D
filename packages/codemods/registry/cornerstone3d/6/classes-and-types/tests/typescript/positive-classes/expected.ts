@@ -1,24 +1,26 @@
 import type { PlanarViewport } from '@cornerstonejs/core';
 import {
+  StackViewport,
+  VolumeViewport,
+  BaseVolumeViewport,
   VideoViewport,
   VolumeViewport3D as Next3D,
   ECGViewport,
   getEnabledElement,
-  utilities,
 } from '@cornerstonejs/core';
 
 function describe(element: HTMLDivElement): string {
   const { viewport } = getEnabledElement(element);
 
-  if (utilities.viewportIsInStackMode(viewport)) {
+  if (viewport instanceof StackViewport) {
     return 'stack';
   }
 
-  if (!(utilities.getViewportContentMode(viewport) === 'volume')) {
+  if (!(viewport instanceof VolumeViewport)) {
     return 'other';
   }
 
-  return utilities.viewportIsInVolumeMode(viewport) ? 'volume' : 'none';
+  return viewport instanceof BaseVolumeViewport ? 'volume' : 'none';
 }
 
 function asStack(viewport: unknown): PlanarViewport {

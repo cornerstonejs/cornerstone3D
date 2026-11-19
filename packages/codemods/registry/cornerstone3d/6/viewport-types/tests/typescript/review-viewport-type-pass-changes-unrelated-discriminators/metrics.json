@@ -1,0 +1,30 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "3",
+        "rule": "'stack': not shown to be a viewport input"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "5",
+        "rule": "'orthographic': not shown to be a viewport input"
+      },
+      "count": 1
+    }
+  ],
+  "cornerstone3d-6-review": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "15",
+        "rule": "'orthographic': default orientation AXIAL"
+      },
+      "count": 1
+    }
+  ]
+}

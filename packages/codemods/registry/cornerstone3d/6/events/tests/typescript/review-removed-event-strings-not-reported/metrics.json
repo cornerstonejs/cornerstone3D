@@ -1,0 +1,28 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "3",
+        "rule": "'IMAGE_LOAD_ERROR'"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "5",
+        "rule": "'DYNAMIC_VOLUME_TIME_POINT_INDEX_CHANGED'"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "9",
+        "rule": "'DYNAMIC_VOLUME_TIME_POINT_LOADED'"
+      },
+      "count": 1
+    }
+  ]
+}

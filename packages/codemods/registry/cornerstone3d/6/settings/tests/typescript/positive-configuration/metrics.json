@@ -1,13 +1,39 @@
 {
-  "cornerstone3d-6-review": [
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "16",
+        "rule": "rendering.useGenericViewport: not shown to reach init()"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "17",
+        "rule": "rendering.useCPURendering: not shown to reach init()"
+      },
+      "count": 1
+    },
     {
       "cardinality": {
         "file": "input.ts",
         "line": "25",
-        "rule": "rendering.useCPURendering: a 3D viewport stays on the GPU"
+        "rule": "rendering.useCPURendering: not shown to reach init()"
       },
       "count": 1
     },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "26",
+        "rule": "cpuVolume.useViewportSamplingForLinear: not shown to reach init()"
+      },
+      "count": 1
+    }
+  ],
+  "cornerstone3d-6-review": [
     {
       "cardinality": {
         "file": "input.ts",

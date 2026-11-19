@@ -1,0 +1,20 @@
+{
+  "cornerstone3d-6-review": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "7",
+        "rule": "instanceof VolumeViewport"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "8",
+        "rule": "instanceof StackViewport"
+      },
+      "count": 1
+    }
+  ]
+}

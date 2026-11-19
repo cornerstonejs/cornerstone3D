@@ -4,19 +4,26 @@ import { useMetricAtom } from 'codemod:metrics';
 import {
   CoreImports,
   EditSet,
+  asPrimary,
+  bindsAt,
   coreImportOf,
+  coreSpecifiers,
+  declarationNodeOf,
   enclosingFunction,
-  indentOf,
   isAsyncFunction,
   isCoreExport,
   isCoreNamespace,
+  isOptionalCall,
+  isPure,
   isRepeatable,
-  isViewportExpression,
   methodCall,
   objectEntries,
+  referencesOf,
+  replaceStatement,
   site,
   statementOfCall,
   unwrap,
+  viewportEvidence,
 } from './lib.ts';
 import type { Node } from './lib.ts';
 
@@ -59,7 +66,6 @@ interface Run {
   rootNode: Node;
   imports: CoreImports;
   edits: EditSet;
-  functionsRewritten: Set<number>;
 }
 
 /**
@@ -148,16 +154,6 @@ function isCoreVolumeCreation(call: Node): boolean {
 }
 
 /**
- * Tells whether the function `outer` contains the node, or is the module
- * when `outer` is undefined.
- */
-function encloses(outer: Node | undefined, node: Node): boolean {
-  return (
-    !outer || node.ancestors().some((ancestor) => ancestor.id() === outer.id())
-  );
-}
-
-/**
  * Returns the image ids expression of the volume that the file creates with
  * `createAndCacheVolume(volumeId, { imageIds })` before the target, in a
  * scope that the target sees, or undefined.
@@ -201,7 +197,9 @@ function imageIdsOfVolume(
       return undefined;
     }
 
-    if (!isVisibleAt(run, imageIds, target)) {
+    const declaration = declarationNodeOf(imageIds);
+
+    if (!declaration || !bindsAt(run.rootNode, declaration, target)) {
       return undefined;
     }
 
@@ -209,40 +207,6 @@ function imageIdsOfVolume(
   }
 
   return found.size === 1 ? [...found][0] : undefined;
-}
-
-/**
- * Tells whether the binding that a name refers to at one place is the
- * binding of that name at the target.
- */
-function isVisibleAt(run: Run, name: Node, target: Node): boolean {
-  const definition = name.definition();
-
-  if (!definition || definition.kind !== 'local') {
-    return false;
-  }
-
-  const scope = enclosingFunction(definition.node);
-
-  if (!encloses(scope, target)) {
-    return false;
-  }
-
-  const shadows = run.rootNode
-    .findAll({ rule: { kind: 'identifier', regex: `^${name.text()}$` } })
-    .filter((other) => {
-      const otherScope = enclosingFunction(other);
-
-      return (
-        otherScope &&
-        otherScope.id() !== scope?.id() &&
-        encloses(scope, otherScope) &&
-        encloses(otherScope, target) &&
-        other.definition()?.node.id() !== definition.node.id()
-      );
-    });
-
-  return shadows.length === 0;
 }
 
 /**
@@ -291,8 +255,46 @@ function registration(
 }
 
 /**
+ * Formats the call that mounts a display set by the expression of its id.
+ */
+function mountCall(wait: string, viewport: string, id: string): string {
+  const key = id === 'displaySetId' ? id : `displaySetId: ${id}`;
+
+  return `${wait}${viewport}.setDisplaySets({ ${key} });`;
+}
+
+/**
+ * Returns why a data call cannot become statements, or undefined: an
+ * optional call would mount on a missing viewport, and a call inside an
+ * expression has no statement to expand.
+ */
+function statementReason(call: Node): string | undefined {
+  if (isOptionalCall(call)) {
+    return 'an optional call';
+  }
+
+  return statementOfCall(call) ? undefined : 'not a statement';
+}
+
+/**
+ * Returns `viewportId`, or `viewportId2` and so on: the first that is none
+ * of the names.
+ */
+function callbackParameter(taken: Set<string>): string {
+  for (let index = 1; ; index += 1) {
+    const name = index === 1 ? 'viewportId' : `viewportId${index}`;
+
+    if (!taken.has(name)) {
+      return name;
+    }
+  }
+}
+
+/**
  * Rewrites `viewport.setStack(imageIds, index)` in a statement to the
- * registration of a display set under `${viewport.id}:stack` and its mount.
+ * registration of a display set and its mount. The display set id names the
+ * rendering engine, the viewport and the first image, so another series gets
+ * another id and two engines never share one.
  */
 function rewriteSetStack(
   run: Run,
@@ -301,42 +303,64 @@ function rewriteSetStack(
   args: Node[]
 ): void {
   const statementInfo = statementOfCall(call);
-  const reason = !statementInfo
-    ? 'not a statement'
-    : !isRepeatable(object)
+  const reason =
+    statementReason(call) ??
+    (!isRepeatable(object)
       ? 'the viewport is not a name'
       : args.length < 1 ||
           args.length > 2 ||
           args.some((arg) => arg.kind() === 'spread_element')
         ? 'the arguments'
-        : undefined;
-  const utilities = reason ? undefined : run.imports.ensure('utilities');
+        : undefined);
+  const utilities = reason
+    ? undefined
+    : run.imports.ensure('utilities', { at: call });
 
   if (reason || !utilities) {
     manual.increment(
-      site(run.root, `setStack: ${reason ?? 'utilities is taken'}`, call)
+      site(
+        run.root,
+        `setStack: ${reason ?? 'utilities cannot be imported'}`,
+        call
+      )
     );
 
     return;
   }
 
   const { statement, awaited } = statementInfo;
-  const indent = indentOf(run.rootNode, statement);
-  const idText = `\`\${${unwrap(object).text()}.id}:stack\``;
-  const imageIds = args[0].text();
-  const index = args[1]?.text() ?? '0';
+  const receiver = unwrap(object).text();
+  const [list, indexArg] = args;
+  const listLocal = isPure(list) ? undefined : run.imports.fresh('imageIds');
+  const firstElement =
+    list.kind() === 'array'
+      ? list
+          .children()
+          .find((child) => child.isNamed() && child.kind() !== 'comment')
+      : undefined;
+  const first =
+    !listLocal && firstElement
+      ? firstElement.text()
+      : `${listLocal ?? asPrimary(list)}[0]`;
+  const idLocal = run.imports.fresh('displaySetId');
+  const index = indexArg?.text() ?? '0';
   const wait = awaitPrefix(run, call, awaited, 'setStack');
-  const text = `${registration(
-    utilities,
-    idText,
-    [
-      ['imageIds', imageIds],
-      ['initialImageIdIndex', index],
-    ],
-    indent
-  )}\n${indent}${wait}${object.text()}.setDisplaySets({ displaySetId: ${idText} });`;
+  const edit = replaceStatement(run.rootNode, statement, (indent) => [
+    ...(listLocal ? [`const ${listLocal} = ${list.text()};`] : []),
+    `const ${idLocal} = \`\${${receiver}.renderingEngineId}:\${${receiver}.id}:\${${first}}\`;`,
+    registration(
+      utilities,
+      idLocal,
+      [
+        ['imageIds', listLocal ?? list.text()],
+        ['initialImageIdIndex', index],
+      ],
+      indent
+    ),
+    mountCall(wait, object.text(), idLocal),
+  ]);
 
-  if (!run.edits.add(statement.replace(text))) {
+  if (!run.edits.add(edit)) {
     manual.increment(site(run.root, 'setStack', call));
   }
 }
@@ -354,63 +378,21 @@ function rewriteSetVolumes(
   const statementInfo = statementOfCall(call);
   const { volumeId, reason: inputReason } = singleVolumeId(args[0]);
   const imageIds = volumeId ? imageIdsOfVolume(run, volumeId, call) : undefined;
-  const reason = !statementInfo
-    ? 'not a statement'
-    : args.length !== 1
+  const reason =
+    statementReason(call) ??
+    (args.length !== 1
       ? 'more arguments'
       : (inputReason ??
-        (!imageIds ? 'the image ids of the volume are not known' : undefined));
-  const utilities = reason ? undefined : run.imports.ensure('utilities');
-
-  if (reason || !utilities) {
-    manual.increment(
-      site(run.root, `setVolumes: ${reason ?? 'utilities is taken'}`, call)
-    );
-
-    return;
-  }
-
-  const { statement, awaited } = statementInfo;
-  const indent = indentOf(run.rootNode, statement);
-  const id = volumeId.text();
-  const wait = awaitPrefix(run, call, awaited, 'setVolumes');
-  const text = `${registration(
-    utilities,
-    id,
-    [
-      ['imageIds', imageIds],
-      ['volumeId', id],
-    ],
-    indent
-  )}\n${indent}${wait}${object.text()}.setDisplaySets({ displaySetId: ${id} });`;
-
-  if (!run.edits.add(statement.replace(text))) {
-    manual.increment(site(run.root, 'setVolumes', call));
-  }
-}
-
-/**
- * Rewrites `setVolumesForViewports(engine, [{ volumeId }], viewportIds)` in a
- * statement to the registration and a mount on each viewport.
- */
-function rewriteSetVolumesForViewports(run: Run, call: Node): void {
-  const args = argumentsOf(call);
-  const statementInfo = statementOfCall(call);
-  const { volumeId, reason: inputReason } = singleVolumeId(args[1]);
-  const imageIds = volumeId ? imageIdsOfVolume(run, volumeId, call) : undefined;
-  const reason = !statementInfo
-    ? 'not a statement'
-    : args.length !== 3
-      ? 'the arguments'
-      : (inputReason ??
-        (!imageIds ? 'the image ids of the volume are not known' : undefined));
-  const utilities = reason ? undefined : run.imports.ensure('utilities');
+        (!imageIds ? 'the image ids of the volume are not known' : undefined)));
+  const utilities = reason
+    ? undefined
+    : run.imports.ensure('utilities', { at: call });
 
   if (reason || !utilities) {
     manual.increment(
       site(
         run.root,
-        `setVolumesForViewports: ${reason ?? 'utilities is taken'}`,
+        `setVolumes: ${reason ?? 'utilities cannot be imported'}`,
         call
       )
     );
@@ -419,35 +401,104 @@ function rewriteSetVolumesForViewports(run: Run, call: Node): void {
   }
 
   const { statement, awaited } = statementInfo;
-  const indent = indentOf(run.rootNode, statement);
   const id = volumeId.text();
-  const wait = awaitPrefix(run, call, awaited, 'setVolumesForViewports');
-  const mount = [
-    `${indent}${wait}Promise.all(`,
-    `${indent}  ${args[2].text()}.map((viewportId) =>`,
-    `${indent}    ${args[0].text()}.getViewport(viewportId).setDisplaySets({ displaySetId: ${id} })`,
-    `${indent}  )`,
-    `${indent});`,
-  ].join('\n');
-  const text = `${registration(
-    utilities,
-    id,
-    [
-      ['imageIds', imageIds],
-      ['volumeId', id],
-    ],
-    indent
-  )}\n\n${mount}`;
+  const wait = awaitPrefix(run, call, awaited, 'setVolumes');
+  const edit = replaceStatement(run.rootNode, statement, (indent) => [
+    registration(
+      utilities,
+      id,
+      [
+        ['imageIds', imageIds],
+        ['volumeId', id],
+      ],
+      indent
+    ),
+    mountCall(wait, object.text(), id),
+  ]);
 
-  if (run.edits.add(statement.replace(text))) {
-    const callee = call.field('function');
-
-    if (callee?.kind() === 'identifier') {
-      run.functionsRewritten.add(callee.id());
-    }
-  } else {
-    manual.increment(site(run.root, 'setVolumesForViewports', call));
+  if (!run.edits.add(edit)) {
+    manual.increment(site(run.root, 'setVolumes', call));
   }
+}
+
+/**
+ * Rewrites `setVolumesForViewports(engine, [{ volumeId }], viewportIds)` in a
+ * statement to the registration and a mount on each viewport. An engine that
+ * is not a name is read once into a local first, as the call read it once.
+ */
+function rewriteSetVolumesForViewports(run: Run, call: Node): boolean {
+  const args = argumentsOf(call);
+  const statementInfo = statementOfCall(call);
+  const { volumeId, reason: inputReason } = singleVolumeId(args[1]);
+  const imageIds = volumeId ? imageIdsOfVolume(run, volumeId, call) : undefined;
+  const reason =
+    statementReason(call) ??
+    (args.length !== 3
+      ? 'the arguments'
+      : (inputReason ??
+        (!imageIds ? 'the image ids of the volume are not known' : undefined)));
+  const utilities = reason
+    ? undefined
+    : run.imports.ensure('utilities', { at: call });
+
+  if (reason || !utilities) {
+    manual.increment(
+      site(
+        run.root,
+        `setVolumesForViewports: ${reason ?? 'utilities cannot be imported'}`,
+        call
+      )
+    );
+
+    return false;
+  }
+
+  const { statement, awaited } = statementInfo;
+  const [engine, , list] = args;
+  const id = volumeId.text();
+  const engineLocal = isRepeatable(engine)
+    ? undefined
+    : run.imports.fresh('renderingEngine');
+  const engineText = engineLocal ?? engine.text();
+  const parameter = callbackParameter(
+    new Set(
+      [engine, volumeId]
+        .flatMap((node) => [
+          node,
+          ...node.findAll({ rule: { kind: 'identifier' } }),
+        ])
+        .map((node) => node.text())
+    )
+  );
+  const wait = awaitPrefix(run, call, awaited, 'setVolumesForViewports');
+  const edit = replaceStatement(run.rootNode, statement, (indent) => [
+    ...(engineLocal ? [`const ${engineLocal} = ${engine.text()};`] : []),
+    registration(
+      utilities,
+      id,
+      [
+        ['imageIds', imageIds],
+        ['volumeId', id],
+      ],
+      indent
+    ),
+    '',
+    [
+      `${wait}Promise.all(`,
+      `${indent}  ${asPrimary(list)}.map((${parameter}) =>`,
+      `${indent}    ${engineText}.getViewport(${parameter}).setDisplaySets({ displaySetId: ${id} })`,
+      `${indent}  )`,
+      `${indent});`,
+    ].join('\n'),
+  ]);
+
+  if (run.edits.add(edit)) {
+    return true;
+  }
+
+  manual.increment(site(run.root, 'setVolumesForViewports', call));
+
+  return false;
 }
 
 /**
@@ -510,7 +561,7 @@ function rewriteMembers(run: Run): void {
   for (const call of calls) {
     const { object, property, method, args } = methodCall(call);
 
-    if (REPORTED_MEMBERS.has(method) || !isViewportExpression(object)) {
+    if (REPORTED_MEMBERS.has(method) || viewportEvidence(object) !== 'core') {
       manual.increment(site(run.root, method, call));
       continue;
     }
@@ -556,11 +607,14 @@ function coreDataFunction(callee: Node): string | undefined {
 }
 
 /**
- * Rewrites and reports the data functions of the core, and drops the import
- * of `setVolumesForViewports` when no use is left.
+ * Rewrites and reports the data functions of the core. Each other reference
+ * to an import of `setVolumesForViewports`, such as a shorthand property or
+ * an alias read as a value, is reported; the import goes when every
+ * reference was a call that the transform rewrote.
  */
 function rewriteFunctions(run: Run): void {
-  let left = 0;
+  const rewritten = new Set<number>();
+  const reported = new Set<number>();
 
   for (const call of run.rootNode.findAll({
     rule: { kind: 'call_expression' },
@@ -572,29 +626,37 @@ function rewriteFunctions(run: Run): void {
       continue;
     }
 
-    if (name === 'setVolumesForViewports') {
+    const changed =
+      name === 'setVolumesForViewports' &&
       rewriteSetVolumesForViewports(run, call);
-    } else {
+
+    if (name !== 'setVolumesForViewports') {
       manual.increment(site(run.root, name, call));
     }
+
+    (changed ? rewritten : reported).add(callee.range().start.index);
   }
 
-  for (const identifier of run.rootNode.findAll({
-    rule: { kind: 'identifier', regex: '^setVolumesForViewports$' },
-  })) {
-    if (
-      !identifier
-        .ancestors()
-        .some((ancestor) => ancestor.kind() === 'import_statement') &&
-      coreImportOf(identifier) &&
-      !run.functionsRewritten.has(identifier.id())
-    ) {
-      left += 1;
+  for (const { name, local } of coreSpecifiers(run.rootNode)) {
+    if (name !== 'setVolumesForViewports') {
+      continue;
     }
-  }
 
-  if (!left && run.functionsRewritten.size) {
-    run.imports.remove('setVolumesForViewports');
+    let left = 0;
+
+    for (const reference of referencesOf(local)) {
+      const start = reference.range().start.index;
+
+      if (!rewritten.has(start) && !reported.has(start)) {
+        manual.increment(site(run.root, name, reference));
+      }
+
+      left += rewritten.has(start) ? 0 : 1;
+    }
+
+    if (!left && rewritten.size) {
+      run.imports.remove(name, local.text());
+    }
   }
 }
 
@@ -658,7 +720,6 @@ const codemod: Codemod<TSX> = (root) => {
     rootNode,
     imports: new CoreImports(rootNode),
     edits: new EditSet(),
-    functionsRewritten: new Set<number>(),
   };
 
   rewriteMembers(run);

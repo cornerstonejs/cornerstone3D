@@ -12,15 +12,19 @@ npx codemod @cornerstonejs/cornerstone3d-6-viewport-members
 
 ## Changes
 
-Only on a viewport: a name such as `viewport` or `ctViewport`, a call of
-`getViewport`, or a variable typed as or holding one. A `renderer.resetCamera()`
-of vtk.js stays.
+Only on a viewport that the file shows to come from Cornerstone: a call of
+`getViewport` on a rendering engine made with `new RenderingEngine` or got
+with `getRenderingEngine`, the `viewport` of `getEnabledElement`, a cast,
+annotation or type argument of a Cornerstone viewport type, or a variable
+that holds one of these. A legacy member on a name such as `viewport` alone
+is reported by its name. A `renderer.resetCamera()` of vtk.js stays.
 
 - `resetCamera()` and `resetCamera({ resetPan, resetZoom, resetOrientation })`
   become `resetViewState(...)`.
 - `setProperties({ ... })` with one object of presentation keys becomes
   `setDisplaySetPresentation({ ... })`, which sets the source display set;
-  `VOILUTFunction` becomes `voiLUTFunction`. `preset` and
+  `VOILUTFunction` becomes `voiLUTFunction`, also as a quoted key, which
+  keeps its quotes. `preset` and
   `sampleDistanceMultiplier` count only on a viewport typed as a 3D viewport.
   An ECG `setProperties` of view keys becomes `setViewState` (`layoutType`
   becomes `traceLayout`).
@@ -40,8 +44,7 @@ of vtk.js stays.
 - `setFrameRange(range)` and `setAverageWhite(value)` become `setViewState`
   and `setDisplaySetPresentation`.
 - On a viewport typed as a planar viewport: `setCamera({ flipHorizontal })`
-  becomes `setViewState(...)`, `getSliceIndexForImage(imageId)`
-  `getImageIds().indexOf(imageId)`.
+  becomes `setViewState(...)`.
 
 ## Reported
 
@@ -52,7 +55,10 @@ variable, a spread, or a key without a twin (`slabThickness`, `preset`,
 `setCamera` of other keys, `getProperties`, `resetProperties`, the default
 properties, the view presentation, the actor members, `getSliceViewInfo`,
 `getIntensityFromWorld`, `jumpToWorld`, `flip`, `setBlendMode`,
-`setSlabThickness`, `togglePlayPause`, `setChannelVisibility`, writes of a
+`setSlabThickness`, `togglePlayPause`, `setChannelVisibility`,
+`getSliceIndexForImage` (5.x took a view reference too and gave `undefined`
+for a missing image, where `getImageIds().indexOf(imageId)` gives -1), writes
+of a
 renamed property, the properties `requestedType`, `options`, `scaling` and
 the others of the map, and the removed helpers of the core
 (`viewportSupportsStackCompatibility`, `getImageLegacy`, `scrollVolume`,

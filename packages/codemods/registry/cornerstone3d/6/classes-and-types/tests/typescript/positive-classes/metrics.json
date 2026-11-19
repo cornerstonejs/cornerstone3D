@@ -1,10 +1,10 @@
 {
-  "cornerstone3d-6-review": [
+  "cornerstone3d-6-manual": [
     {
       "cardinality": {
         "file": "input.ts",
         "line": "15",
-        "rule": "instanceof StackViewport"
+        "rule": "instanceof StackViewport: the viewport may not show its data yet"
       },
       "count": 1
     },
@@ -12,7 +12,7 @@
       "cardinality": {
         "file": "input.ts",
         "line": "19",
-        "rule": "instanceof VolumeViewport"
+        "rule": "instanceof VolumeViewport: the viewport may not show its data yet"
       },
       "count": 1
     },
@@ -20,7 +20,7 @@
       "cardinality": {
         "file": "input.ts",
         "line": "23",
-        "rule": "instanceof BaseVolumeViewport"
+        "rule": "instanceof BaseVolumeViewport: the viewport may not show its data yet"
       },
       "count": 1
     }

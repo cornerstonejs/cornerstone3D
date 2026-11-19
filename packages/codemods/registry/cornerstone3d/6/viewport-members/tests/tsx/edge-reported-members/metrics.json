@@ -4,7 +4,7 @@
       "cardinality": {
         "file": "input.tsx",
         "line": "10",
-        "rule": "setProperties: not one object literal"
+        "rule": "setProperties"
       },
       "count": 1
     },
@@ -12,7 +12,7 @@
       "cardinality": {
         "file": "input.tsx",
         "line": "11",
-        "rule": "resetCamera: options without a twin"
+        "rule": "resetCamera"
       },
       "count": 1
     },
@@ -68,7 +68,7 @@
       "cardinality": {
         "file": "input.tsx",
         "line": "20",
-        "rule": "setProperties: the viewport may not show its data yet"
+        "rule": "setProperties"
       },
       "count": 1
     },
@@ -84,7 +84,7 @@
       "cardinality": {
         "file": "input.tsx",
         "line": "8",
-        "rule": "setProperties: not one object literal"
+        "rule": "setProperties"
       },
       "count": 1
     },
@@ -92,7 +92,7 @@
       "cardinality": {
         "file": "input.tsx",
         "line": "9",
-        "rule": "setProperties: the key isComputedVOI"
+        "rule": "setProperties"
       },
       "count": 1
     }

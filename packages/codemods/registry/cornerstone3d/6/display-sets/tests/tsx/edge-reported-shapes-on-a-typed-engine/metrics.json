@@ -1,0 +1,86 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.tsx",
+        "line": "11",
+        "rule": "setVolumes: the input has callback"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.tsx",
+        "line": "14",
+        "rule": "setVolumes: the image ids of the volume are not known"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.tsx",
+        "line": "15",
+        "rule": "addVolumes"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.tsx",
+        "line": "16",
+        "rule": "setStack: the viewport is not a name"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.tsx",
+        "line": "17",
+        "rule": "convertStackToVolumeViewport"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.tsx",
+        "line": "18",
+        "rule": "addVolumesToViewports"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.tsx",
+        "line": "21",
+        "rule": "setStack: not a statement"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.tsx",
+        "line": "22",
+        "rule": "setStack read"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.tsx",
+        "line": "29",
+        "rule": "'setStack' in"
+      },
+      "count": 1
+    }
+  ],
+  "cornerstone3d-6-review": [
+    {
+      "cardinality": {
+        "file": "input.tsx",
+        "line": "25",
+        "rule": "setStack: not awaited, a next viewport has no view before its mount"
+      },
+      "count": 1
+    }
+  ]
+}

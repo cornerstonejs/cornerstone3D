@@ -23,7 +23,7 @@ function describe(viewportId: string, imageId: string, canvasPoint: number[]) {
     image: cache.getImage(viewport.getCurrentImageId()),
     modality: utilities.getViewportModality(viewport),
     destroyed: viewport.isDestroyed,
-    index: viewport.getImageIds().indexOf(imageId),
+    index: viewport.getSliceIndexForImage(imageId),
     changeable: (viewport.type === Enums.ViewportType.VOLUME_3D || utilities.viewportIsInVolumeMode(viewport)),
   };
 }

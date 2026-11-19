@@ -1,7 +1,13 @@
 import type { Codemod, SgRoot } from 'codemod:ast-grep';
 import type TSX from 'codemod:ast-grep/langs/tsx';
 import { useMetricAtom } from 'codemod:metrics';
-import { EditSet, importSource, site } from './lib.ts';
+import {
+  EditSet,
+  importSource,
+  isNameTaken,
+  referencesOf,
+  site,
+} from './lib.ts';
 import type { Node } from './lib.ts';
 
 /** Sites that the reader changes. */
@@ -78,7 +84,10 @@ function namedSpecifiers(statement: Node): Node[] | undefined {
 
 /**
  * Moves an import of a module of the tools to its 6.0 path, with its names
- * and their uses. Reports a statement with a name the move does not know.
+ * and their uses. A renamed name keeps its old local name through `as` when
+ * the new name is taken in the file or a use is not a plain name, such as a
+ * shorthand property. Reports a statement with a name the move does not
+ * know.
  */
 function moveImport(
   run: Run,
@@ -116,22 +125,25 @@ function moveImport(
       continue;
     }
 
-    run.edits.add(nameNode.replace(newName));
-
     if (specifier.field('alias')) {
+      run.edits.add(nameNode.replace(newName));
       continue;
     }
 
-    for (const use of run.rootNode.findAll({
-      rule: { kind: 'identifier', regex: `^${name}$` },
-    })) {
-      if (
-        use.id() !== nameNode.id() &&
-        use.definition()?.node.id() === specifier.id()
-      ) {
-        run.edits.add(use.replace(newName));
-      }
+    const uses = referencesOf(nameNode);
+    const keepLocal =
+      isNameTaken(run.rootNode, newName) ||
+      uses.some((use) => use.kind() !== 'identifier');
+
+    if (keepLocal) {
+      run.edits.add(nameNode.replace(`${newName} as ${name}`));
+      continue;
     }
+
+    run.edits.add(
+      nameNode.replace(newName),
+      ...uses.map((use) => use.replace(newName))
+    );
   }
 }
 

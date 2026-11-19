@@ -4,7 +4,7 @@
       "cardinality": {
         "file": "input.tsx",
         "line": "10",
-        "rule": "setVolumes: the input has callback"
+        "rule": "setVolumes"
       },
       "count": 1
     },
@@ -12,7 +12,7 @@
       "cardinality": {
         "file": "input.tsx",
         "line": "13",
-        "rule": "setVolumes: the image ids of the volume are not known"
+        "rule": "setVolumes"
       },
       "count": 1
     },
@@ -28,7 +28,7 @@
       "cardinality": {
         "file": "input.tsx",
         "line": "15",
-        "rule": "setStack: the viewport is not a name"
+        "rule": "setStack"
       },
       "count": 1
     },
@@ -52,7 +52,7 @@
       "cardinality": {
         "file": "input.tsx",
         "line": "20",
-        "rule": "setStack: not a statement"
+        "rule": "setStack"
       },
       "count": 1
     },
@@ -67,18 +67,16 @@
     {
       "cardinality": {
         "file": "input.tsx",
-        "line": "28",
-        "rule": "'setStack' in"
+        "line": "24",
+        "rule": "setStack"
       },
       "count": 1
-    }
-  ],
-  "cornerstone3d-6-review": [
+    },
     {
       "cardinality": {
         "file": "input.tsx",
-        "line": "24",
-        "rule": "setStack: not awaited, a next viewport has no view before its mount"
+        "line": "28",
+        "rule": "'setStack' in"
       },
       "count": 1
     }
