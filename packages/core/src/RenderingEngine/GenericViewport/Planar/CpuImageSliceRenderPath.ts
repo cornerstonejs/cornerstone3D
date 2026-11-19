@@ -618,7 +618,7 @@ export class CpuImageSlicePath
     >
 {
   readonly id = 'planar:cpu-image-slice';
-  readonly type = ViewportType.PLANAR_NEXT;
+  readonly type = ViewportType.PLANAR;
 
   matches(data: LoadedData, options: DataAddOptions): boolean {
     return (

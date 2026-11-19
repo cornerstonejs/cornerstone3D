@@ -476,7 +476,7 @@ describe('vtkOrientationControllerWidget margin', () => {
 
   it('uses the 3D margin on a next 3D viewport, from its type', () => {
     const plain3D = markerX(makeViewport('volume3d', 'volume3d'));
-    const next3D = markerX(makeViewport('volume3dNext', 'empty'));
+    const next3D = markerX(makeViewport('volume3d', 'empty'));
     const planar = markerX(makePlanar('volume'));
 
     expect(next3D).toBe(plain3D);

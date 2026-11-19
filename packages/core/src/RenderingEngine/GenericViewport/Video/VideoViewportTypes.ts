@@ -68,6 +68,7 @@ export interface VideoViewportInput {
   defaultOptions?: ViewportInputOptions;
 }
 
+/** @deprecated Use `VideoViewportInput`: the same type. */
 export type VideoGenericViewportInput = VideoViewportInput;
 
 /** @internal */

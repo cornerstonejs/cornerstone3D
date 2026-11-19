@@ -8,11 +8,11 @@ const renderingEngineId = utilities.uuidv4();
 
 /** The five families of direct next viewports. */
 const NEXT_FAMILIES = [
-  ['planar', ViewportType.PLANAR_NEXT],
-  ['3D', ViewportType.VOLUME_3D_NEXT],
-  ['video', ViewportType.VIDEO_NEXT],
-  ['whole slide', ViewportType.WHOLE_SLIDE_NEXT],
-  ['ECG', ViewportType.ECG_NEXT],
+  ['planar', ViewportType.PLANAR],
+  ['3D', ViewportType.VOLUME_3D],
+  ['video', ViewportType.VIDEO],
+  ['whole slide', ViewportType.WHOLE_SLIDE],
+  ['ECG', ViewportType.ECG],
 ];
 
 /** Enables one viewport of a type. */
@@ -97,7 +97,7 @@ describe('Legacy members that are not on the direct next viewports -- ', () => {
   });
 
   it('cannot be set from outside', function () {
-    const viewport = enableViewport(renderingEngine, ViewportType.PLANAR_NEXT);
+    const viewport = enableViewport(renderingEngine, ViewportType.PLANAR);
 
     expect(() => {
       viewport.isDestroyed = true;
@@ -107,8 +107,8 @@ describe('Legacy members that are not on the direct next viewports -- ', () => {
 
   NEXT_FAMILIES.filter(
     ([, viewportType]) =>
-      viewportType !== ViewportType.VOLUME_3D_NEXT &&
-      viewportType !== ViewportType.PLANAR_NEXT
+      viewportType !== ViewportType.VOLUME_3D &&
+      viewportType !== ViewportType.PLANAR
   ).forEach(([family, viewportType]) => {
     it(`keeps no widgets on a direct next ${family} viewport, which the engine disables without them`, function () {
       const viewport = enableViewport(renderingEngine, viewportType);
@@ -124,8 +124,8 @@ describe('Legacy members that are not on the direct next viewports -- ', () => {
 
   NEXT_FAMILIES.filter(
     ([, viewportType]) =>
-      viewportType === ViewportType.VOLUME_3D_NEXT ||
-      viewportType === ViewportType.PLANAR_NEXT
+      viewportType === ViewportType.VOLUME_3D ||
+      viewportType === ViewportType.PLANAR
   ).forEach(([family, viewportType]) => {
     it(`keeps the widgets of a direct next ${family} viewport, without getWidget, and turns them off when the engine disables it`, function () {
       const viewport = enableViewport(renderingEngine, viewportType);

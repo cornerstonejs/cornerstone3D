@@ -28,7 +28,7 @@ import {
   ViewportProjectionService,
   viewportProjection,
 } from './RenderingEngine/GenericViewport';
-import ECGGenericViewport, {
+import ECGViewport, {
   createDefaultECGRenderPaths,
   createECGRenderPathResolver,
   DefaultECGDataProvider,
@@ -50,7 +50,7 @@ import ECGGenericViewport, {
   type ECGTraceRegion,
   type ECGProperties,
 } from './RenderingEngine/GenericViewport/ECG';
-import VideoGenericViewport, {
+import VideoViewport, {
   createDefaultVideoRenderPaths,
   createVideoRenderPathResolver,
   DefaultVideoDataProvider,
@@ -62,18 +62,24 @@ import PlanarViewport, {
   DefaultPlanarDataProvider,
   planarProjection,
 } from './RenderingEngine/GenericViewport/Planar';
-import GenericVolumeViewport3D, {
+import VolumeViewport3D, {
   createDefaultVolume3DRenderPaths,
   createVolume3DRenderPathResolver,
   DefaultVolume3DDataProvider,
   volume3DProjection,
 } from './RenderingEngine/GenericViewport/Volume3D';
-import WSIGenericViewport, {
+import WSIViewport, {
   createDefaultWSIRenderPaths,
   createWSIRenderPathResolver,
   DefaultWSIDataProvider,
   wsiProjection,
 } from './RenderingEngine/GenericViewport/WSI';
+import {
+  ECGGenericViewport,
+  GenericVolumeViewport3D,
+  VideoGenericViewport,
+  WSIGenericViewport,
+} from './RenderingEngine/GenericViewport/deprecatedViewportClassNames';
 export type {
   BuiltInViewportProjectionByKind,
   BuiltInViewportProjectionByType,
@@ -306,6 +312,8 @@ const renderingEngineExportsV2 = {
   GenericViewport,
   DefaultRenderPathResolver,
   defaultRenderPathResolver,
+  ECGViewport,
+  /** @deprecated Use `ECGViewport`: the same class. */
   ECGGenericViewport,
   createDefaultECGRenderPaths,
   createECGRenderPathResolver,
@@ -317,6 +325,8 @@ const renderingEngineExportsV2 = {
   resolveDefaultECGTraceLayout,
   ECG_CLINICAL_SWEEP_SPEEDS,
   ECG_CLINICAL_SENSITIVITIES,
+  VideoViewport,
+  /** @deprecated Use `VideoViewport`: the same class. */
   VideoGenericViewport,
   createDefaultVideoRenderPaths,
   createVideoRenderPathResolver,
@@ -327,11 +337,13 @@ const renderingEngineExportsV2 = {
   createPlanarRenderPathResolver,
   DefaultPlanarDataProvider,
   planarProjection,
-  VolumeViewport3D: GenericVolumeViewport3D,
+  VolumeViewport3D,
   createDefaultVolume3DRenderPaths,
   createVolume3DRenderPathResolver,
   DefaultVolume3DDataProvider,
   volume3DProjection,
+  WSIViewport,
+  /** @deprecated Use `WSIViewport`: the same class. */
   WSIGenericViewport,
   createDefaultWSIRenderPaths,
   createWSIRenderPathResolver,
@@ -377,7 +389,9 @@ export {
   //
   Settings,
   // Rendering Engine
+  VolumeViewport3D,
   GenericVolumeViewport3D,
+  ECGViewport,
   ECGGenericViewport,
   GenericViewport,
   ViewportProjectionService,
@@ -432,6 +446,7 @@ export {
   resolveDefaultECGTraceLayout,
   ECG_CLINICAL_SWEEP_SPEEDS,
   ECG_CLINICAL_SENSITIVITIES,
+  VideoViewport,
   VideoGenericViewport,
   createDefaultVideoRenderPaths,
   createVideoRenderPathResolver,
@@ -446,6 +461,7 @@ export {
   createVolume3DRenderPathResolver,
   DefaultVolume3DDataProvider,
   volume3DProjection,
+  WSIViewport,
   WSIGenericViewport,
   createDefaultWSIRenderPaths,
   createWSIRenderPathResolver,

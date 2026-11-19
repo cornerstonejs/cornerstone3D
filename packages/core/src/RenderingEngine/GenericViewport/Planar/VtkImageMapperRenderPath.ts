@@ -384,7 +384,7 @@ export class VtkImageMapperPath
     >
 {
   readonly id = 'planar:vtk-image-mapper';
-  readonly type = ViewportType.PLANAR_NEXT;
+  readonly type = ViewportType.PLANAR;
 
   matches(data: LoadedData, options: DataAddOptions): boolean {
     return (

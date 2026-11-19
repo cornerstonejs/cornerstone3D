@@ -9,27 +9,31 @@ import {
   attachFidelityIndicator,
   canReportFidelity,
   detachFidelityIndicator,
-  maybeAttachFidelityIndicator,
-  utilities,
-  viewportProjection,
-} from '../../src';
-import type {
   ECGGenericViewport,
   Enums,
   GenericVolumeViewport3D,
+  maybeAttachFidelityIndicator,
+  utilities,
+  VideoGenericViewport,
+  viewportProjection,
+  WSIGenericViewport,
+} from '../../src';
+import type {
+  ECGViewport,
   PlanarResolvedICamera,
   PlanarViewport,
   RenderingEngine,
   Types,
-  VideoGenericViewport,
-  WSIGenericViewport,
+  VideoViewport,
+  VolumeViewport3D,
+  WSIViewport,
 } from '../../src';
 
 declare const planar: PlanarViewport;
-declare const volume3D: GenericVolumeViewport3D;
-declare const video: VideoGenericViewport;
-declare const wholeSlide: WSIGenericViewport;
-declare const ecg: ECGGenericViewport;
+declare const volume3D: VolumeViewport3D;
+declare const video: VideoViewport;
+declare const wholeSlide: WSIViewport;
+declare const ecg: ECGViewport;
 declare const generic: Types.IGenericViewport;
 declare const viewport: Types.IViewport;
 declare const enabledElement: Types.IEnabledElement;
@@ -67,6 +71,49 @@ export const viewportsOfTheLibrary: Types.IGenericViewport[] = [
   viewport,
   enabledElement.viewport,
 ];
+
+/**
+ * The deprecated 5.x class names are the same classes: as types, both ways,
+ * and as values.
+ */
+export const classesByTheirDeprecatedNames: [
+  GenericVolumeViewport3D,
+  VideoGenericViewport,
+  WSIGenericViewport,
+  ECGGenericViewport,
+] = [volume3D, video, wholeSlide, ecg];
+export const deprecatedNamesOfTheClasses: [
+  VolumeViewport3D,
+  VideoViewport,
+  WSIViewport,
+  ECGViewport,
+] = classesByTheirDeprecatedNames;
+export const constructorsByTheirDeprecatedNames: [
+  typeof VolumeViewport3D,
+  typeof VideoViewport,
+  typeof WSIViewport,
+  typeof ECGViewport,
+] = [
+  GenericVolumeViewport3D,
+  VideoGenericViewport,
+  WSIGenericViewport,
+  ECGGenericViewport,
+];
+
+/**
+ * A `_NEXT` name of `Enums.ViewportType` has the plain string, so the type of
+ * a viewport still compares with it, and a `_NEXT` name is a plain type.
+ */
+export const typesOfTheDeprecatedNames: boolean[] = [
+  planar.type === Enums.ViewportType.PLANAR_NEXT,
+  volume3D.type === Enums.ViewportType.VOLUME_3D_NEXT,
+  video.type === Enums.ViewportType.VIDEO_NEXT,
+  wholeSlide.type === Enums.ViewportType.WHOLE_SLIDE_NEXT,
+  ecg.type === Enums.ViewportType.ECG_NEXT,
+];
+export const plainTypeOfADeprecatedName: Enums.ViewportType.PLANAR =
+  Enums.ViewportType.PLANAR_NEXT;
+export const deprecatedStringAsAType: Types.ViewportType = 'planarNext';
 
 /** The members of the base class, read from the interface. */
 export function membersOfTheInterface() {

@@ -163,7 +163,7 @@ export type WaveformViewport = IViewport & {
 /**
  * Returns `true` when the viewport exposes a waveform (ECG) API.
  *
- * Use this instead of `instanceof ECGGenericViewport`: it works without
+ * Use this instead of `instanceof ECGViewport`: it works without
  * importing the class.
  */
 export function viewportSupportsWaveform(

@@ -10,13 +10,13 @@ import {
   ViewportProjectionService,
   viewportProjection,
 } from './GenericViewport';
-import ECGGenericViewport, {
+import ECGViewport, {
   createDefaultECGRenderPaths,
   createECGRenderPathResolver,
   DefaultECGDataProvider,
   ecgProjection,
 } from './GenericViewport/ECG';
-import VideoGenericViewport, {
+import VideoViewport, {
   createDefaultVideoRenderPaths,
   createVideoRenderPathResolver,
   DefaultVideoDataProvider,
@@ -28,18 +28,24 @@ import PlanarViewport, {
   DefaultPlanarDataProvider,
   planarProjection,
 } from './GenericViewport/Planar';
-import GenericVolumeViewport3D, {
+import VolumeViewport3D, {
   createDefaultVolume3DRenderPaths,
   createVolume3DRenderPathResolver,
   DefaultVolume3DDataProvider,
   volume3DProjection,
 } from './GenericViewport/Volume3D';
-import WSIGenericViewport, {
+import WSIViewport, {
   createDefaultWSIRenderPaths,
   createWSIRenderPathResolver,
   DefaultWSIDataProvider,
   wsiProjection,
 } from './GenericViewport/WSI';
+import {
+  ECGGenericViewport,
+  GenericVolumeViewport3D,
+  VideoGenericViewport,
+  WSIGenericViewport,
+} from './GenericViewport/deprecatedViewportClassNames';
 export * from './helpers';
 export type {
   BuiltInViewportProjectionByKind,
@@ -105,11 +111,15 @@ const renderingEngineExportsV2 = {
   defaultRenderPathResolver,
   ViewportProjectionService,
   viewportProjection,
+  ECGViewport,
+  /** @deprecated Use `ECGViewport`: the same class. */
   ECGGenericViewport,
   createDefaultECGRenderPaths,
   createECGRenderPathResolver,
   DefaultECGDataProvider,
   ecgProjection,
+  VideoViewport,
+  /** @deprecated Use `VideoViewport`: the same class. */
   VideoGenericViewport,
   createDefaultVideoRenderPaths,
   createVideoRenderPathResolver,
@@ -120,11 +130,13 @@ const renderingEngineExportsV2 = {
   createPlanarRenderPathResolver,
   DefaultPlanarDataProvider,
   planarProjection,
-  VolumeViewport3D: GenericVolumeViewport3D,
+  VolumeViewport3D,
   createDefaultVolume3DRenderPaths,
   createVolume3DRenderPathResolver,
   DefaultVolume3DDataProvider,
   volume3DProjection,
+  WSIViewport,
+  /** @deprecated Use `WSIViewport`: the same class. */
   WSIGenericViewport,
   createDefaultWSIRenderPaths,
   createWSIRenderPathResolver,
@@ -138,17 +150,20 @@ export {
   BaseRenderingEngine,
   TiledRenderingEngine,
   ContextPoolRenderingEngine,
+  VolumeViewport3D,
   GenericVolumeViewport3D,
   GenericViewport,
   DefaultRenderPathResolver,
   defaultRenderPathResolver,
   ViewportProjectionService,
   viewportProjection,
+  ECGViewport,
   ECGGenericViewport,
   createDefaultECGRenderPaths,
   createECGRenderPathResolver,
   DefaultECGDataProvider,
   ecgProjection,
+  VideoViewport,
   VideoGenericViewport,
   createDefaultVideoRenderPaths,
   createVideoRenderPathResolver,
@@ -163,6 +178,7 @@ export {
   createVolume3DRenderPathResolver,
   DefaultVolume3DDataProvider,
   volume3DProjection,
+  WSIViewport,
   WSIGenericViewport,
   createDefaultWSIRenderPaths,
   createWSIRenderPathResolver,

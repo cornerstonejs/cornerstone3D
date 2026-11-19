@@ -18,9 +18,8 @@ kind of legacy code, changes it and ends with a check.
 
 **State.** The steps use calls that are in the code. What is marked
 **Decided, not in the code yet** is the removal: the legacy classes, types,
-settings and helpers are still in the code, and the viewport types have their
-`_NEXT` names until the rename lands, see
-[Viewport types](./3-api-map.md#viewport-types).
+settings and helpers are still in the code. The viewport types have their
+plain names, see [Viewport types](./3-api-map.md#viewport-types).
 
 ## Before you start
 
@@ -127,7 +126,7 @@ renderingEngine.enableElement({
 });
 ```
 
-**Check.** `viewport.type` is `'planarNext'`, and `viewport.getCurrentMode()`
+**Check.** `viewport.type` is `'planar'`, and `viewport.getCurrentMode()`
 is `'empty'` until step 3 shows data.
 
 **What can go wrong**
@@ -921,10 +920,11 @@ same. Leave both out unless the application has to pin the viewports.
 Without them a router picks the path for each layer, and a device without
 WebGL draws on the CPU by itself.
 
-The rename of the viewport types is **Decided, not in the code yet**. When
-it lands, replace `PLANAR_NEXT`, `VOLUME_3D_NEXT`, `VIDEO_NEXT`,
-`WHOLE_SLIDE_NEXT` and `ECG_NEXT` with `PLANAR`, `VOLUME_3D`, `VIDEO`,
-`WHOLE_SLIDE` and `ECG`.
+The rename of the viewport types is in the code. Replace `PLANAR_NEXT`,
+`VOLUME_3D_NEXT`, `VIDEO_NEXT`, `WHOLE_SLIDE_NEXT` and `ECG_NEXT` with
+`PLANAR`, `VOLUME_3D`, `VIDEO`, `WHOLE_SLIDE` and `ECG` (the `_NEXT` names
+still work: they are deprecated aliases), and a stored or compared
+`'planarNext'` with `'planar'`.
 
 **Check.** The type checker passes. `viewport.getRenderPlan()` of a planar
 viewport says for each layer what draws it and why. Go through every screen
@@ -994,10 +994,9 @@ Rules for doing this upgrade mechanically.
    the code. What is marked **Decided, not in the code yet** is the removal:
    the legacy classes and their types, the compatibility adapters, the
    setting `rendering.useGenericViewport`, the helper
-   `utilities.ECGUtilities`, and the rename of the viewport types. These
-   names still exist and still compile. Do not keep them: move off each one
-   as its row says, and use the `_NEXT` names of the viewport types until
-   the rename lands.
+   `utilities.ECGUtilities`. These names still exist and still compile. Do
+   not keep them: move off each one as its row says. The viewport types
+   have their plain names; the `_NEXT` names are deprecated aliases.
 5. **Do not import a private name.** A cell with `-` means that no call takes
    the place of the legacy name. Do not import from a path inside a package,
    such as `@cornerstonejs/core/dist`, and do not use a `LegacyAdapter` class

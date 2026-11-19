@@ -674,7 +674,7 @@ export class CpuVolumeSlicePath
     >
 {
   readonly id = 'planar:cpu-volume-slice';
-  readonly type = ViewportType.PLANAR_NEXT;
+  readonly type = ViewportType.PLANAR;
 
   matches(data: LoadedData, options: DataAddOptions): boolean {
     return (

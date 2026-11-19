@@ -328,7 +328,7 @@ async function showNextStack(renderingEngine, renderBackend) {
   const viewport = createViewport(
     renderingEngine,
     'next',
-    ViewportType.PLANAR_NEXT,
+    ViewportType.PLANAR,
     OrientationAxis.ACQUISITION
   );
   const displaySetId = `stack:${utilities.uuidv4()}`;
@@ -361,7 +361,7 @@ async function showNextVolume(
   const viewport = createViewport(
     renderingEngine,
     viewportId,
-    ViewportType.PLANAR_NEXT,
+    ViewportType.PLANAR,
     OrientationAxis.AXIAL
   );
   const volumeIds = await createSceneVolumes(fusion);

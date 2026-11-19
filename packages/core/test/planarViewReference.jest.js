@@ -1311,7 +1311,7 @@ describe('PlanarViewReferenceController', () => {
       const emptyHarness = createControllerHarness([]);
 
       expect(emptyHarness.controller.getFrameOfReferenceUID()).toBe(
-        'planar-viewport-viewport-1'
+        'planarNext-viewport-viewport-1'
       );
     });
 

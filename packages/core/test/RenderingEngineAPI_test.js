@@ -33,19 +33,19 @@ describe('RenderingEngineAPI -- ', () => {
     it('should be able to access the viewports from renderingEngine', function () {
       createViewports(renderingEngine, {
         viewportId: axialViewportId,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
         orientation: Enums.OrientationAxis.AXIAL,
         useEnableElement: true,
       });
       createViewports(renderingEngine, {
         viewportId: sagittalViewportId,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
         orientation: Enums.OrientationAxis.SAGITTAL,
         useEnableElement: true,
       });
       createViewports(renderingEngine, {
         viewportId: customOrientationViewportId,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
         orientation: { viewPlaneNormal: [0, 0, 1], viewUp: [0, 1, 0] },
         useEnableElement: true,
       });
@@ -61,7 +61,7 @@ describe('RenderingEngineAPI -- ', () => {
     it('should be able to destroy the rendering engine', function () {
       createViewports(renderingEngine, {
         viewportId: axialViewportId,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
         orientation: Enums.OrientationAxis.AXIAL,
       });
 
@@ -75,7 +75,7 @@ describe('RenderingEngineAPI -- ', () => {
     it('should be able to handle destroy of an engine that has been destroyed', function () {
       createViewports(renderingEngine, {
         viewportId: axialViewportId,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
         orientation: Enums.OrientationAxis.AXIAL,
       });
 
@@ -104,7 +104,7 @@ describe('RenderingEngineAPI -- ', () => {
     it('should be able to successfully use enable api', function () {
       createViewports(renderingEngine, {
         viewportId: axialViewportId,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
         orientation: Enums.OrientationAxis.AXIAL,
         useEnableElement: true,
       });
@@ -120,7 +120,7 @@ describe('RenderingEngineAPI -- ', () => {
     it('should not enable element without an element', function () {
       const entry = {
         viewportId: axialViewportId,
-        type: ViewportType.PLANAR_NEXT,
+        type: ViewportType.PLANAR,
         defaultOptions: {
           orientation: Enums.OrientationAxis.AXIAL,
         },
@@ -132,7 +132,7 @@ describe('RenderingEngineAPI -- ', () => {
     it('should successfully use disable element API', function () {
       createViewports(renderingEngine, {
         viewportId: axialViewportId,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
         orientation: Enums.OrientationAxis.AXIAL,
         useEnableElement: true,
       });
@@ -148,7 +148,7 @@ describe('RenderingEngineAPI -- ', () => {
     it('should resize legacy custom-pipeline viewports without changing the engine contract', function () {
       createViewports(renderingEngine, {
         viewportId: customOrientationViewportId,
-        viewportType: ViewportType.ECG_NEXT,
+        viewportType: ViewportType.ECG,
         useEnableElement: true,
       });
 
@@ -177,7 +177,7 @@ describe('RenderingEngineAPI -- ', () => {
         createViewports(renderingEngine, [
           {
             viewportId: sagittalViewportId,
-            viewportType: ViewportType.PLANAR_NEXT,
+            viewportType: ViewportType.PLANAR,
             orientation: Enums.OrientationAxis.SAGITTAL,
           },
           {
@@ -187,7 +187,7 @@ describe('RenderingEngineAPI -- ', () => {
           },
         ])
       ).toThrowError(
-        "ViewportType 'stack' was removed in Cornerstone3D 6.0: use ViewportType.PLANAR_NEXT (a planar viewport shows a stack or a volume)"
+        "ViewportType 'stack' was removed in Cornerstone3D 6.0: use ViewportType.PLANAR (a planar viewport shows a stack or a volume)"
       );
       expect(renderingEngine.getViewports().length).toBe(0);
     });
@@ -201,7 +201,7 @@ describe('RenderingEngineAPI -- ', () => {
           useEnableElement: true,
         })
       ).toThrowError(
-        "ViewportType 'orthographic' was removed in Cornerstone3D 6.0: use ViewportType.PLANAR_NEXT with an orientation in defaultOptions, for example OrientationAxis.AXIAL (a planar viewport shows a stack or a volume)"
+        "ViewportType 'orthographic' was removed in Cornerstone3D 6.0: use ViewportType.PLANAR with an orientation in defaultOptions, for example OrientationAxis.AXIAL (a planar viewport shows a stack or a volume)"
       );
       expect(() =>
         createViewports(renderingEngine, {
@@ -210,7 +210,7 @@ describe('RenderingEngineAPI -- ', () => {
           useEnableElement: true,
         })
       ).toThrowError(
-        "ViewportType 'perspective' was removed in Cornerstone3D 6.0: use ViewportType.VOLUME_3D_NEXT with parallelProjection: false in defaultOptions"
+        "ViewportType 'perspective' was removed in Cornerstone3D 6.0: use ViewportType.VOLUME_3D with parallelProjection: false in defaultOptions"
       );
       expect(renderingEngine.getViewports().length).toBe(0);
     });
@@ -244,13 +244,54 @@ describe('RenderingEngineAPI -- ', () => {
       const viewport = renderingEngine.getViewport(customOrientationViewportId);
 
       expect(viewport).toBeTruthy();
-      expect(viewport.type).toBe(ViewportType.ECG_NEXT);
+      expect(viewport.type).toBe(ViewportType.ECG);
+    });
+
+    [
+      ['planar', 'PLANAR_NEXT', 'planarNext', cornerstone3D.PlanarViewport],
+      [
+        'volume3d',
+        'VOLUME_3D_NEXT',
+        'volume3dNext',
+        cornerstone3D.VolumeViewport3D,
+      ],
+      ['video', 'VIDEO_NEXT', 'videoNext', cornerstone3D.VideoViewport],
+      [
+        'wholeSlide',
+        'WHOLE_SLIDE_NEXT',
+        'wholeSlideNext',
+        cornerstone3D.WSIViewport,
+      ],
+      ['ecg', 'ECG_NEXT', 'ecgNext', cornerstone3D.ECGViewport],
+    ].forEach(([type, nextName, nextType, ViewportClass]) => {
+      it(`makes the ${type} viewport, with the type '${type}', for ViewportType.${nextName} at enableElement and '${nextType}' at setViewports`, function () {
+        createViewports(renderingEngine, {
+          viewportId: 'byNextName',
+          viewportType: ViewportType[nextName],
+          useEnableElement: true,
+        });
+
+        const byNextName = renderingEngine.getViewport('byNextName');
+
+        expect(byNextName).toBeInstanceOf(ViewportClass);
+        expect(byNextName.type).toBe(type);
+
+        createViewports(renderingEngine, [
+          { viewportId: 'byNextString', viewportType: nextType },
+        ]);
+
+        const byNextString = renderingEngine.getViewport('byNextString');
+
+        expect(byNextString).toBeInstanceOf(ViewportClass);
+        expect(byNextString.type).toBe(type);
+        expect(byNextString.type).toBe(ViewportType[nextName]);
+      });
     });
 
     it('should resize remapped custom-pipeline Generic viewports without legacy camera APIs', function () {
       createViewports(renderingEngine, {
         viewportId: customOrientationViewportId,
-        viewportType: ViewportType.ECG_NEXT,
+        viewportType: ViewportType.ECG,
         useEnableElement: true,
       });
 

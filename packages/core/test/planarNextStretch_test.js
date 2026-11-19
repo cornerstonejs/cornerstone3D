@@ -13,7 +13,7 @@ const HEIGHT = 300;
 function createNextViewport(renderingEngine, viewportId) {
   testUtils.createViewports(renderingEngine, {
     viewportId,
-    viewportType: ViewportType.PLANAR_NEXT,
+    viewportType: ViewportType.PLANAR,
     orientation: OrientationAxis.ACQUISITION,
     width: WIDTH,
     height: HEIGHT,

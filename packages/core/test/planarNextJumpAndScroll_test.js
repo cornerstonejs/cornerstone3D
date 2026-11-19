@@ -11,7 +11,7 @@ const renderingEngineId = utilities.uuidv4();
 function createNextViewport(renderingEngine, viewportId = 'next') {
   testUtils.createViewports(renderingEngine, {
     viewportId,
-    viewportType: ViewportType.PLANAR_NEXT,
+    viewportType: ViewportType.PLANAR,
     orientation: OrientationAxis.ACQUISITION,
     width: 400,
     height: 300,

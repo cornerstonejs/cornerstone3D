@@ -182,6 +182,7 @@ export interface ECGViewportInput {
   defaultOptions?: Pick<ViewportInputOptions, 'traceLayout' | 'suppressEvents'>;
 }
 
+/** @deprecated Use `ECGViewportInput`: the same type. */
 export type ECGGenericViewportInput = ECGViewportInput;
 
 /** @internal */

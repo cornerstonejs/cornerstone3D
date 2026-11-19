@@ -73,7 +73,7 @@ async function createVideoViewport(renderingEngine) {
     useEnableElement: true,
     orientation: null,
     viewportId: 'nextVideoScrollStep',
-    viewportType: ViewportType.VIDEO_NEXT,
+    viewportType: ViewportType.VIDEO,
   });
 
   const viewport = renderingEngine.getViewport('nextVideoScrollStep');

@@ -119,7 +119,7 @@ async function updateSurfaceDataOnce(segmentationId: string) {
   viewportIds.forEach((viewportId) => {
     const enabledElement = getEnabledElementByViewportId(viewportId);
     const viewport = enabledElement.viewport;
-    if (viewport.type !== 'volume3d' && viewport.type !== 'volume3dNext') {
+    if (viewport.type !== 'volume3d') {
       return;
     }
 

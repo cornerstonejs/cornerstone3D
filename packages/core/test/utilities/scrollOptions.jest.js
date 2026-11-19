@@ -11,7 +11,7 @@ import scroll from '../../src/utilities/scroll';
  */
 function createGenericViewport(mode) {
   return {
-    type: mode === 'stack' || mode === 'volume' ? 'planarNext' : mode,
+    type: mode === 'stack' || mode === 'volume' ? 'planar' : mode,
     element: document.createElement('div'),
     getCurrentMode: () => mode,
     setDisplaySets() {},

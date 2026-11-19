@@ -65,7 +65,7 @@ describe('renderToCanvas -- GPU', () => {
     const width = 256;
     const height = 256;
     const element = createViewports(renderingEngine, {
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       width,
       height,
       viewportId,
@@ -139,7 +139,7 @@ describe('renderToCanvas -- GPU', () => {
     const width = 256;
     const height = 256;
     const element = createViewports(renderingEngine, {
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       width,
       height,
       viewportId,

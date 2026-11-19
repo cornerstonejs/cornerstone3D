@@ -202,7 +202,7 @@ test.describe('Viewport Projection Service example', () => {
         renderingEngineId: PROJECTION_ENGINE_ID,
         viewportId: PLANAR_VIEWPORT_ID,
         constructorName: 'PlanarViewport',
-        type: 'planarNext',
+        type: 'planar',
         renderModesByDataId: {
           [PLANAR_DATA_ID]: 'vtkImage',
         },
@@ -211,7 +211,7 @@ test.describe('Viewport Projection Service example', () => {
         renderingEngineId: PROJECTION_ENGINE_ID,
         viewportId: VOLUME_VIEWPORT_ID,
         constructorName: 'VolumeViewport3D',
-        type: 'volume3dNext',
+        type: 'volume3d',
         renderModesByDataId: {
           [VOLUME_DATA_ID]: 'vtkVolume3d',
         },
@@ -314,7 +314,7 @@ test.describe('Viewport Projection Synchronizer example', () => {
         renderingEngineId: SYNC_ENGINE_ID,
         viewportId: LEFT_VIEWPORT_ID,
         constructorName: 'PlanarViewport',
-        type: 'planarNext',
+        type: 'planar',
         renderModesByDataId: {
           [LEFT_DATA_ID]: 'vtkImage',
         },
@@ -323,7 +323,7 @@ test.describe('Viewport Projection Synchronizer example', () => {
         renderingEngineId: SYNC_ENGINE_ID,
         viewportId: RIGHT_VIEWPORT_ID,
         constructorName: 'PlanarViewport',
-        type: 'planarNext',
+        type: 'planar',
         renderModesByDataId: {
           [RIGHT_DATA_ID]: 'vtkImage',
         },

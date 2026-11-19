@@ -235,7 +235,7 @@ describe('Planar presentation, the PET colormap recipe on a fusion -- ', () => {
       document.body.appendChild(element);
       renderingEngine.enableElement({
         viewportId: 'fusion',
-        type: ViewportType.PLANAR_NEXT,
+        type: ViewportType.PLANAR,
         element,
         defaultOptions: { orientation: OrientationAxis.AXIAL },
       });

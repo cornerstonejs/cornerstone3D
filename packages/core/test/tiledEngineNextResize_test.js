@@ -55,7 +55,7 @@ describe('A direct next planar viewport on the tiled rendering engine', () => {
 
   it('keeps the point at the centre of the canvas in the centre after a resize of its element', async () => {
     const element = testUtils.createViewports(renderingEngine, {
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       viewportId,
       width: 400,
       height: 400,

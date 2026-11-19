@@ -37,7 +37,7 @@ test.describe('ECG GenericViewport', () => {
         renderingEngineId: 'myRenderingEngine',
         viewportId: 'ecgGenericViewport',
         constructorName: 'ECGViewport',
-        type: 'ecgNext',
+        type: 'ecg',
         renderModesByDataId: {
           'ecg-next:primary': 'signal2d',
         },

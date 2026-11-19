@@ -35,7 +35,7 @@ test.describe('Video GenericViewport', () => {
         renderingEngineId: 'myRenderingEngine',
         viewportId: 'videoGenericViewport',
         constructorName: 'VideoViewport',
-        type: 'videoNext',
+        type: 'video',
         renderModesByDataId: {
           'video-next:primary': 'video2d',
         },

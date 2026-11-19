@@ -371,7 +371,7 @@ function setRenderBackend(backend: RenderBackendValue, reason?: string): void {
  * Turns slice first on or off for planar viewports (see
  * `rendering.planar.sliceFirst`): a volume-backed display set cuts the visible
  * slice on the CPU and draws it as a 2D image in place of a 3D texture. The
- * mounted planar next viewports (`ViewportType.PLANAR_NEXT`, the legacy
+ * mounted planar next viewports (`ViewportType.PLANAR`, the legacy
  * adapters among them) run their render path decision again, and display
  * sets whose render mode changes are remounted in place. Legacy viewports are
  * not touched, since slice first does not apply to them. A per-display-set
@@ -397,7 +397,7 @@ function setSliceFirst(enabled: boolean): void {
     sliceFirst: enabled,
   };
   _updateRenderingPipelinesForAllViewports(
-    (viewport) => viewport.type === ViewportType.PLANAR_NEXT
+    (viewport) => viewport.type === ViewportType.PLANAR
   );
 }
 
@@ -405,7 +405,7 @@ const failedVolumeTextureIds = new Set<string>();
 
 /** Whether a viewport is a planar next viewport, the one the router serves. */
 function isPlanarNextViewport(viewport: { type: string }): boolean {
-  return viewport.type === ViewportType.PLANAR_NEXT;
+  return viewport.type === ViewportType.PLANAR;
 }
 
 /**

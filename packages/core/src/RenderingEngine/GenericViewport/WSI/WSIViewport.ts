@@ -43,7 +43,7 @@ export default class WSIViewport extends GenericViewport<
   WSIDataPresentation,
   WSIViewportRenderContext
 > {
-  readonly type = ViewportType.WHOLE_SLIDE_NEXT;
+  readonly type = ViewportType.WHOLE_SLIDE;
   readonly renderingEngineId: string;
   modality = 'SM';
 

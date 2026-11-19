@@ -7,7 +7,7 @@ type GenericViewportActorSurface = IViewport & {
 };
 
 /**
- * Resolves the cache volume id backing a generic ("next" / PLANAR_NEXT)
+ * Resolves the cache volume id backing a generic ("next" / PLANAR)
  * viewport target.
  *
  * VOI tooling and the colorbar identify a target by its display-set `dataId`,

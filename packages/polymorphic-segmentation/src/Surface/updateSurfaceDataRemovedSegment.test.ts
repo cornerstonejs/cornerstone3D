@@ -54,13 +54,13 @@ function createSurfaceActorEntries(viewportId: string) {
 describe('updateSurfaceData with a deleted segment', () => {
   it('takes the surface of the deleted segment off two next 3D viewports, and its geometry out of the cache once', async () => {
     const other = {
-      type: 'volume3dNext',
+      type: 'volume3d',
       getActors: () => createSurfaceActorEntries('other3D'),
       removeData: jest.fn(),
       render: jest.fn(),
     };
     const next = {
-      type: 'volume3dNext',
+      type: 'volume3d',
       getActors: () => createSurfaceActorEntries('next3D'),
       removeData: jest.fn(),
       render: jest.fn(),

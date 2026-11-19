@@ -90,7 +90,7 @@ function createViewports(renderingEngine, nextIds) {
     testUtils.createViewports(renderingEngine, {
       ...options,
       viewportId,
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
     })
   );
 

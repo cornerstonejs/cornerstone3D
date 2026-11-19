@@ -54,7 +54,7 @@ function createNextViewport(renderingEngine) {
     height: CANVAS_HEIGHT,
     useEnableElement: true,
     viewportId: 'next3D',
-    viewportType: ViewportType.VOLUME_3D_NEXT,
+    viewportType: ViewportType.VOLUME_3D,
   });
 
   return renderingEngine.getViewport('next3D');

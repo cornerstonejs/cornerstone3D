@@ -169,7 +169,7 @@ describe('Planar render backend resolution', () => {
   describe('registered custom backends', () => {
     const fancyRenderPath = {
       id: 'test:fancy-image-slice',
-      type: 'planarNext',
+      type: 'planar',
       matches: (data, options) =>
         data.type === 'image' && options.renderMode === 'test:fancyImage',
       createRenderPath: () => {

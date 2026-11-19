@@ -54,6 +54,7 @@ import {
   pixelSpacingOfCanvasToWorld,
 } from '../helpers/fidelityIndicator/displaySpacingOfViewport';
 import { notifyFidelityStateChanged } from '../helpers/fidelityIndicator/notifyFidelityStateChanged';
+import { getViewportLocalFrameOfReferenceUID } from '../helpers/deprecatedViewportTypes';
 import {
   type BindingFidelitySource,
   fidelityLinesFromBindings,
@@ -476,12 +477,13 @@ abstract class GenericViewport<
   /**
    * Returns the frame of reference UID from the computed camera when
    * available, falling back to the current binding or a viewport-local
-   * identifier.
+   * identifier (`<5.x type string>-viewport-<id>` for a built-in type, see
+   * `getViewportLocalFrameOfReferenceUID`).
    */
   getFrameOfReferenceUID(): string {
     return (
       this.getResolvedView()?.getFrameOfReferenceUID() ??
-      `${this.type}-viewport-${this.id}`
+      getViewportLocalFrameOfReferenceUID(this.type, this.id)
     );
   }
 

@@ -96,7 +96,7 @@ function createNextViewport(renderingEngine, options) {
   document.body.appendChild(element);
   renderingEngine.enableElement({
     viewportId: 'next3D',
-    type: ViewportType.VOLUME_3D_NEXT,
+    type: ViewportType.VOLUME_3D,
     element,
     defaultOptions: {
       background: [1, 0, 1],

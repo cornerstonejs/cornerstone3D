@@ -57,18 +57,18 @@ describe('fidelityIndicator attach gates', () => {
     it('accepts viewports that declare canReportFidelity (volume and stack)', () => {
       expect(
         canReportFidelity(
-          viewportStub({ type: ViewportType.PLANAR_NEXT, canReport: true })
+          viewportStub({ type: ViewportType.PLANAR, canReport: true })
         )
       ).toBe(true);
       expect(
         canReportFidelity(
-          viewportStub({ type: ViewportType.PLANAR_NEXT, canReport: true })
+          viewportStub({ type: ViewportType.PLANAR, canReport: true })
         )
       ).toBe(true);
       expect(
         canReportFidelity(
           viewportStub({
-            type: ViewportType.PLANAR_NEXT,
+            type: ViewportType.PLANAR,
             canReport: true,
           })
         )
@@ -78,12 +78,12 @@ describe('fidelityIndicator attach gates', () => {
     it('rejects viewports that cannot report fidelity', () => {
       expect(
         canReportFidelity(
-          viewportStub({ type: ViewportType.PLANAR_NEXT, canReport: false })
+          viewportStub({ type: ViewportType.PLANAR, canReport: false })
         )
       ).toBe(false);
       expect(
         canReportFidelity(
-          viewportStub({ type: ViewportType.VIDEO_NEXT, canReport: false })
+          viewportStub({ type: ViewportType.VIDEO, canReport: false })
         )
       ).toBe(false);
     });
@@ -147,7 +147,7 @@ describe('fidelityIndicator attach gates', () => {
     });
 
     it('does not attach DOM when the product indicator is disabled', () => {
-      const viewport = viewportStub({ type: ViewportType.PLANAR_NEXT });
+      const viewport = viewportStub({ type: ViewportType.PLANAR });
 
       maybeAttachFidelityIndicator(viewport);
 
@@ -167,7 +167,7 @@ describe('fidelityIndicator attach gates', () => {
     });
 
     it('mounts on the outer element so tooltips are not inside overflow:hidden', () => {
-      const viewport = viewportStub({ type: ViewportType.PLANAR_NEXT });
+      const viewport = viewportStub({ type: ViewportType.PLANAR });
 
       maybeAttachFidelityIndicator(viewport);
 
@@ -182,7 +182,7 @@ describe('fidelityIndicator attach gates', () => {
     });
 
     it('restores inline position after detach', () => {
-      const viewport = viewportStub({ type: ViewportType.PLANAR_NEXT });
+      const viewport = viewportStub({ type: ViewportType.PLANAR });
       expect(viewport.element.style.position).toBe('');
 
       maybeAttachFidelityIndicator(viewport);
@@ -202,7 +202,7 @@ describe('fidelityIndicator attach gates', () => {
     });
 
     it('leaves a single .fi-root when attach follows the engine default', () => {
-      const viewport = viewportStub({ type: ViewportType.PLANAR_NEXT });
+      const viewport = viewportStub({ type: ViewportType.PLANAR });
 
       maybeAttachFidelityIndicator(viewport);
       const cleanup = attachFidelityIndicator(viewport);
@@ -258,7 +258,7 @@ describe('fidelityIndicator attach gates', () => {
     });
 
     function attach() {
-      const viewport = viewportStub({ type: ViewportType.PLANAR_NEXT });
+      const viewport = viewportStub({ type: ViewportType.PLANAR });
       viewport.getFidelityLines = () =>
         fidelityLinesFromBindings(undefined, [
           {
@@ -395,7 +395,7 @@ describe('fidelityIndicator attach gates', () => {
     class FidelityTestViewport extends GenericViewport {
       constructor(element, ...renderings) {
         super({ id: 'gvp-1', element });
-        this.type = ViewportType.PLANAR_NEXT;
+        this.type = ViewportType.PLANAR;
         this.renderingEngineId = 're-1';
         this.viewState = {};
         this.renderContext = { viewportId: 'gvp-1', type: 'planar' };
@@ -583,7 +583,7 @@ describe('fidelityIndicator attach gates', () => {
     });
   });
 
-  describe('VOLUME_3D_NEXT viewport', () => {
+  describe('VOLUME_3D viewport', () => {
     it('reports fidelity and uses the 3D display spacing on every axis', () => {
       const full = {
         dimensions: [64, 64, 64],

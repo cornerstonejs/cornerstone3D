@@ -441,15 +441,15 @@ describe('slice first decision', () => {
   it('setSliceFirst updates planar next viewports only, setRenderBackend all of them', () => {
     const engineId = 'slice-first-fan-out-engine';
     const video = {
-      type: ViewportType.VIDEO_NEXT,
+      type: ViewportType.VIDEO,
       updateRenderingPipeline: jest.fn(),
     };
     const volume3D = {
-      type: ViewportType.VOLUME_3D_NEXT,
+      type: ViewportType.VOLUME_3D,
       updateRenderingPipeline: jest.fn(),
     };
     const planar = {
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       updateRenderingPipeline: jest.fn(),
     };
 

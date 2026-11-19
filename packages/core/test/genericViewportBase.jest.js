@@ -35,7 +35,7 @@ class TestViewport extends GenericViewport {
   }) {
     super({ id, element });
 
-    this.type = ViewportType.PLANAR_NEXT;
+    this.type = ViewportType.PLANAR;
     this.renderingEngineId = renderingEngineId;
     this.dataProvider = dataProvider;
     this.renderPathResolver = renderPathResolver;
@@ -704,10 +704,10 @@ describe('GenericViewport', () => {
       const { viewport } = createHarness();
 
       expect(viewport.getFrameOfReferenceUID()).toBe(
-        `${viewport.type}-viewport-${viewport.id}`
+        `planarNext-viewport-${viewport.id}`
       );
       expect(viewport.getViewReferenceId()).toBe(
-        `frameOfReference:${viewport.type}-viewport-${viewport.id}`
+        `frameOfReference:planarNext-viewport-${viewport.id}`
       );
     });
 

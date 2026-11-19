@@ -36,7 +36,7 @@ export const ecgProjectionAdapter: ViewportProjectionAdapter<
   ECGProjectionSnapshot
 > = {
   id: ECG_PROJECTION_ID,
-  viewportTypes: [ViewportType.ECG_NEXT],
+  viewportTypes: [ViewportType.ECG],
   getSnapshot: (request) =>
     getECGProjectionSnapshot(request as ECGProjectionRequest),
   getPresentation: (snapshot, selector) =>

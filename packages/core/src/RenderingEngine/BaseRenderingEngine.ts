@@ -108,7 +108,7 @@ abstract class BaseRenderingEngine {
    * ```
    * renderingEngine.enableElement({
    *  viewportId: viewportId,
-   *  type: ViewportType.PLANAR_NEXT,
+   *  type: ViewportType.PLANAR,
    *  element,
    *  defaultOptions: {
    *    orientation: Enums.OrientationAxis.AXIAL,
@@ -239,7 +239,7 @@ abstract class BaseRenderingEngine {
    *renderingEngine.setViewports([
    *   {
    *     viewportId: axialViewportId,
-   *     type: ViewportType.PLANAR_NEXT,
+   *     type: ViewportType.PLANAR,
    *     element: document.getElementById('axialDiv'),
    *     defaultOptions: {
    *       orientation: Enums.OrientationAxis.AXIAL,
@@ -247,7 +247,7 @@ abstract class BaseRenderingEngine {
    *   },
    *   {
    *     viewportId: sagittalViewportId,
-   *     type: ViewportType.PLANAR_NEXT,
+   *     type: ViewportType.PLANAR,
    *     element: document.getElementById('sagittalDiv'),
    *     defaultOptions: {
    *       orientation: Enums.OrientationAxis.SAGITTAL,
@@ -255,7 +255,7 @@ abstract class BaseRenderingEngine {
    *   },
    *   {
    *     viewportId: customOrientationViewportId,
-   *     type: ViewportType.PLANAR_NEXT,
+   *     type: ViewportType.PLANAR,
    *     element: document.getElementById('customOrientationDiv'),
    *     defaultOptions: {
    *       orientation: { viewPlaneNormal: [0, 0, 1], viewUp: [0, 1, 0] },

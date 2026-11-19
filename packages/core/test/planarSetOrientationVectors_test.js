@@ -80,7 +80,7 @@ describe('setOrientation with vectors against the legacy volume viewport -- ', (
       toolGroupIds: ['default'],
     });
     renderingEngine = testEnv.renderingEngine;
-    next = createViewport(renderingEngine, 'next', ViewportType.PLANAR_NEXT);
+    next = createViewport(renderingEngine, 'next', ViewportType.PLANAR);
     volumeId = await createVolume();
     await showVolumeOnNext(next, volumeId);
   });

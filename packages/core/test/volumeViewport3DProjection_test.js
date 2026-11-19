@@ -14,7 +14,7 @@ const CENTRE = [WIDTH / 2, HEIGHT / 2];
 function createViewport(renderingEngine, options = {}) {
   testUtils.createViewports(renderingEngine, {
     viewportId: 'next3D',
-    viewportType: ViewportType.VOLUME_3D_NEXT,
+    viewportType: ViewportType.VOLUME_3D,
     orientation: OrientationAxis.AXIAL,
     width: WIDTH,
     height: HEIGHT,

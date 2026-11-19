@@ -310,14 +310,13 @@ function contextPoolEngineStub({
   lostContexts = [],
 } = {}) {
   const viewports = [
-    { id: 'stack-a', type: ViewportType.PLANAR_NEXT },
-    { id: 'planar-b', type: ViewportType.PLANAR_NEXT },
-    { id: 'stack-c', type: ViewportType.PLANAR_NEXT },
-    { id: 'video-d', type: ViewportType.VIDEO_NEXT },
+    { id: 'stack-a', type: ViewportType.PLANAR },
+    { id: 'planar-b', type: ViewportType.PLANAR },
+    { id: 'stack-c', type: ViewportType.PLANAR },
+    { id: 'video-d', type: ViewportType.VIDEO },
   ].map((viewport) => ({
     ...viewport,
-    getUseCustomRenderingPipeline: () =>
-      viewport.type === ViewportType.VIDEO_NEXT,
+    getUseCustomRenderingPipeline: () => viewport.type === ViewportType.VIDEO,
   }));
   const contextOf = { 'stack-a': 0, 'planar-b': 0, 'stack-c': 1 };
   const windows = [0, 1].map((index) =>

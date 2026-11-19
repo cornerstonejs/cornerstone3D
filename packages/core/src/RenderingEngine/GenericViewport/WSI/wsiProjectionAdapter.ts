@@ -35,7 +35,7 @@ export const wsiProjectionAdapter: ViewportProjectionAdapter<
   WSIProjectionSnapshot
 > = {
   id: WSI_PROJECTION_ID,
-  viewportTypes: [ViewportType.WHOLE_SLIDE_NEXT],
+  viewportTypes: [ViewportType.WHOLE_SLIDE],
   getSnapshot: (request) =>
     getWSIProjectionSnapshot(request as WSIProjectionRequest),
   getPresentation: (snapshot, selector) =>

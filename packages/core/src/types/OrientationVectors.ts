@@ -14,7 +14,7 @@ import type { Point3 } from './Point3';
  * renderingEngine.setViewports([
  *  {
  *    viewportId: 'a-viewport-uid',
- *    type: ViewportType.PLANAR_NEXT,
+ *    type: ViewportType.PLANAR,
  *    element: document.querySelector('div'),
  *    defaultOptions: {
  *      orientation: {

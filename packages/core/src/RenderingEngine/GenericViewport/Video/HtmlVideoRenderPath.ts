@@ -217,7 +217,7 @@ export class HtmlVideoPath
   implements RenderPathDefinition<VideoElementRenderContext>
 {
   readonly id = 'video:html-element';
-  readonly type = ViewportType.VIDEO_NEXT;
+  readonly type = ViewportType.VIDEO;
 
   matches(data: LoadedData, options: DataAddOptions): boolean {
     return data.type === 'video' && options.renderMode === 'video2d';

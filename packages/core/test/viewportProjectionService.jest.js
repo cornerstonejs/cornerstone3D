@@ -140,27 +140,27 @@ describe('ViewportProjectionService', () => {
     );
     expect(
       viewportProjection.getAdapter({
-        type: ViewportType.PLANAR_NEXT,
+        type: ViewportType.PLANAR,
       })?.id
     ).toBe('planar');
     expect(
       viewportProjection.getAdapter({
-        type: ViewportType.VOLUME_3D_NEXT,
+        type: ViewportType.VOLUME_3D,
       })?.id
     ).toBe('volume3d');
     expect(
       viewportProjection.getAdapter({
-        type: ViewportType.VIDEO_NEXT,
+        type: ViewportType.VIDEO,
       })?.id
     ).toBe('video');
     expect(
       viewportProjection.getAdapter({
-        type: ViewportType.ECG_NEXT,
+        type: ViewportType.ECG,
       })?.id
     ).toBe('ecg');
     expect(
       viewportProjection.getAdapter({
-        type: ViewportType.WHOLE_SLIDE_NEXT,
+        type: ViewportType.WHOLE_SLIDE,
       })?.id
     ).toBe('wsi');
   });
@@ -196,7 +196,7 @@ describe('ViewportProjectionService', () => {
     const resolvedView = createVideoResolvedView(viewState);
     const viewport = {
       element,
-      type: ViewportType.VIDEO_NEXT,
+      type: ViewportType.VIDEO,
       getFrameOfReferenceUID: () => 'fallback-video-frame',
       getResolvedView: () => resolvedView,
       getViewState: () => viewState,
@@ -295,7 +295,7 @@ describe('ViewportProjectionService', () => {
     const viewport = {
       canvas,
       element,
-      type: ViewportType.ECG_NEXT,
+      type: ViewportType.ECG,
       getFrameOfReferenceUID: () => 'fallback-ecg-frame',
       getResolvedView: () => resolvedView,
       getViewState: () => viewState,
@@ -380,7 +380,7 @@ describe('ViewportProjectionService', () => {
     const resolvedView = createWSIResolvedView(viewState);
     const viewport = {
       element,
-      type: ViewportType.WHOLE_SLIDE_NEXT,
+      type: ViewportType.WHOLE_SLIDE,
       getFrameOfReferenceUID: () => 'fallback-wsi-frame',
       getResolvedView: () => resolvedView,
       getViewState: () => viewState,
@@ -461,6 +461,21 @@ describe('ViewportProjectionService', () => {
 
     expect(snapshot.adapterId).toBe('externalProjection');
     expect(snapshot.viewportType).toBe('externalViewport');
+  });
+
+  it('finds the adapter of the plain type for a 5.x type string, as a viewport type or a request', () => {
+    [
+      ['planarNext', 'planar'],
+      ['volume3dNext', 'volume3d'],
+      ['videoNext', 'video'],
+      ['ecgNext', 'ecg'],
+      ['wholeSlideNext', 'wsi'],
+    ].forEach(([type, adapterId]) => {
+      expect(viewportProjection.getAdapter({ type })?.id).toBe(adapterId);
+      expect(
+        viewportProjection.getAdapter(undefined, { viewportType: type })?.id
+      ).toBe(adapterId);
+    });
   });
 
   it('returns presentation and semantic state through the selected adapter', () => {

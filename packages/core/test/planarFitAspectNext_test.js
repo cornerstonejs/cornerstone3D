@@ -192,10 +192,7 @@ describe("The fit of a stretched picture, scaleMode 'fitAspect', on a direct nex
     ['volume', 'cpu'],
   ].forEach(([mode, renderBackend]) => {
     it(`fits a picture of 100 by 50 mm stretched by the scale pair into the canvas, again after a resize, and a reset goes back to the plain fit: ${mode} mode on the ${renderBackend}`, async function () {
-      const viewport = createViewport(
-        renderingEngine,
-        ViewportType.PLANAR_NEXT
-      );
+      const viewport = createViewport(renderingEngine, ViewportType.PLANAR);
 
       await showOnNextViewport(viewport, mode, renderBackend);
       expectDrawnSize(viewport, [400, 200]);
@@ -232,7 +229,7 @@ describe("The fit of a stretched picture, scaleMode 'fitAspect', on a direct nex
   });
 
   it('gives the picture and the scale that setAspectRatio with fit gives on a legacy adapter, and half that scale gives half the picture', async function () {
-    const viewport = createViewport(renderingEngine, ViewportType.PLANAR_NEXT);
+    const viewport = createViewport(renderingEngine, ViewportType.PLANAR);
 
     await showOnNextViewport(viewport, 'stack', 'gpu');
     await setViewStateAndWait(viewport, {
@@ -253,7 +250,7 @@ describe("The fit of a stretched picture, scaleMode 'fitAspect', on a direct nex
   });
 
   it("keeps the plain fit of a picture that is not stretched, as 'fit'", async function () {
-    const viewport = createViewport(renderingEngine, ViewportType.PLANAR_NEXT);
+    const viewport = createViewport(renderingEngine, ViewportType.PLANAR);
 
     await showOnNextViewport(viewport, 'stack', 'gpu');
     await setViewStateAndWait(viewport, {

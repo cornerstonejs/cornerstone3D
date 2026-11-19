@@ -6,6 +6,7 @@ import type {
   ViewportProjectionAdapter,
 } from './ViewportProjectionTypes';
 import { ViewportType } from '../../enums';
+import { resolveDeprecatedViewportType } from '../helpers/deprecatedViewportTypes';
 import type { ViewPresentation, ViewPresentationSelector } from '../../types';
 import { planarProjectionAdapter } from './Planar/planarProjectionAdapter';
 import type {
@@ -58,35 +59,35 @@ export type BuiltInViewportProjectionByKind = {
     request: PlanarProjectionRequest;
     snapshot: PlanarProjectionSnapshot;
     viewState: PlanarViewState;
-    viewportType: ViewportType.PLANAR_NEXT;
+    viewportType: ViewportType.PLANAR;
   };
   volume3d: {
     presentation: Volume3DProjectionPresentation;
     request: Volume3DProjectionRequest;
     snapshot: Volume3DProjectionSnapshot;
     viewState: Volume3DCamera;
-    viewportType: ViewportType.VOLUME_3D_NEXT;
+    viewportType: ViewportType.VOLUME_3D;
   };
   video: {
     presentation: ViewPresentation;
     request: VideoProjectionRequest;
     snapshot: VideoProjectionSnapshot;
     viewState: VideoViewState;
-    viewportType: ViewportType.VIDEO_NEXT;
+    viewportType: ViewportType.VIDEO;
   };
   ecg: {
     presentation: ViewPresentation;
     request: ECGProjectionRequest;
     snapshot: ECGProjectionSnapshot;
     viewState: ECGViewState;
-    viewportType: ViewportType.ECG_NEXT;
+    viewportType: ViewportType.ECG;
   };
   wsi: {
     presentation: ViewPresentation;
     request: WSIProjectionRequest;
     snapshot: WSIProjectionSnapshot;
     viewState: WSIViewState;
-    viewportType: ViewportType.WHOLE_SLIDE_NEXT;
+    viewportType: ViewportType.WHOLE_SLIDE;
   };
 };
 
@@ -94,11 +95,11 @@ export type BuiltInViewportProjectionKind =
   keyof BuiltInViewportProjectionByKind;
 
 export type BuiltInViewportProjectionByType = {
-  [ViewportType.PLANAR_NEXT]: BuiltInViewportProjectionByKind['planar'];
-  [ViewportType.VOLUME_3D_NEXT]: BuiltInViewportProjectionByKind['volume3d'];
-  [ViewportType.VIDEO_NEXT]: BuiltInViewportProjectionByKind['video'];
-  [ViewportType.ECG_NEXT]: BuiltInViewportProjectionByKind['ecg'];
-  [ViewportType.WHOLE_SLIDE_NEXT]: BuiltInViewportProjectionByKind['wsi'];
+  [ViewportType.PLANAR]: BuiltInViewportProjectionByKind['planar'];
+  [ViewportType.VOLUME_3D]: BuiltInViewportProjectionByKind['volume3d'];
+  [ViewportType.VIDEO]: BuiltInViewportProjectionByKind['video'];
+  [ViewportType.ECG]: BuiltInViewportProjectionByKind['ecg'];
+  [ViewportType.WHOLE_SLIDE]: BuiltInViewportProjectionByKind['wsi'];
 };
 
 export type BuiltInViewportProjectionType =
@@ -190,14 +191,17 @@ export type ProjectionViewStateForViewport<
  * Resolve the viewport type used for adapter lookup.
  *
  * Explicit request values win so tests and external callers can query an
- * adapter without requiring a full viewport instance.
+ * adapter without requiring a full viewport instance. A deprecated 5.x type
+ * string (`'planarNext'` and so on) finds the adapter of its plain type.
  */
 function getViewportType(request: ProjectionRequest): string | undefined {
   const viewportType =
     request.viewportType ??
     (request.viewport as ViewportLike | undefined)?.type;
 
-  return viewportType === undefined ? undefined : String(viewportType);
+  return viewportType === undefined
+    ? undefined
+    : resolveDeprecatedViewportType(String(viewportType));
 }
 
 /**

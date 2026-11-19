@@ -96,7 +96,7 @@ function createNextViewport(renderingEngine, options = {}) {
   document.body.appendChild(element);
   renderingEngine.enableElement({
     viewportId: 'next3D',
-    type: ViewportType.VOLUME_3D_NEXT,
+    type: ViewportType.VOLUME_3D,
     element,
     defaultOptions: {
       orientation: OrientationAxis.SAGITTAL,
@@ -321,7 +321,7 @@ describe('Direct next 3D viewport in perspective -- ', () => {
     document.body.appendChild(element);
     renderingEngine.enableElement({
       viewportId: 'changed3D',
-      type: ViewportType.VOLUME_3D_NEXT,
+      type: ViewportType.VOLUME_3D,
       element,
       defaultOptions: {
         orientation: OrientationAxis.SAGITTAL,
@@ -386,7 +386,7 @@ describe('The actor of one display set on the direct next viewports -- ', () => 
     document.body.appendChild(element);
     renderingEngine.enableElement({
       viewportId: 'planar',
-      type: ViewportType.PLANAR_NEXT,
+      type: ViewportType.PLANAR,
       element,
       defaultOptions: { orientation: OrientationAxis.AXIAL },
     });

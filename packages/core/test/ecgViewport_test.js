@@ -15,12 +15,12 @@ describe('ECGViewport', () => {
     const testEnv = testUtils.setupTestEnvironment({
       renderingEngineId,
       viewportId,
-      type: ViewportType.ECG_NEXT,
+      type: ViewportType.ECG,
     });
     renderingEngine = testEnv.renderingEngine;
     element = testUtils.createViewports(renderingEngine, {
       viewportId,
-      viewportType: ViewportType.ECG_NEXT,
+      viewportType: ViewportType.ECG,
     });
   });
 

@@ -51,7 +51,7 @@ export const volume3DProjectionAdapter: ViewportProjectionAdapter<
   Volume3DProjectionSnapshot
 > = {
   id: VOLUME3D_PROJECTION_ID,
-  viewportTypes: [ViewportType.VOLUME_3D_NEXT],
+  viewportTypes: [ViewportType.VOLUME_3D],
   getSnapshot: (request) =>
     getVolume3DProjectionSnapshot(request as Volume3DProjectionRequest),
   getPresentation: (snapshot) => getVolume3DProjectionPresentation(snapshot),

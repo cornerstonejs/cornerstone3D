@@ -35,7 +35,7 @@ test.describe('WSI GenericViewport', () => {
         renderingEngineId: 'myRenderingEngine',
         viewportId: 'wsiGenericViewport',
         constructorName: 'WSIViewport',
-        type: 'wholeSlideNext',
+        type: 'wholeSlide',
         renderModesByDataId: {
           'wsi-next:primary': 'wsi2d',
         },

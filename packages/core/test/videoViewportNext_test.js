@@ -164,11 +164,7 @@ describe('Direct next video viewport -- ', () => {
 
     renderingEngine = testEnv.renderingEngine;
     videoUrl = addTestVideoMetadata();
-    next = createViewport(
-      renderingEngine,
-      'nextVideo',
-      ViewportType.VIDEO_NEXT
-    );
+    next = createViewport(renderingEngine, 'nextVideo', ViewportType.VIDEO);
     await showVideo(next);
   }, 15000);
 
@@ -596,7 +592,7 @@ describe('Direct next video viewport -- ', () => {
       useEnableElement: true,
       orientation: null,
       viewportId: 'emptyNextVideo',
-      viewportType: ViewportType.VIDEO_NEXT,
+      viewportType: ViewportType.VIDEO,
     });
 
     expect(next.getCurrentMode()).toBe('video');
@@ -640,11 +636,7 @@ describe('Direct next video viewport at mount -- ', () => {
 
     renderingEngine = testEnv.renderingEngine;
     videoUrl = addTestVideoMetadata();
-    next = createViewport(
-      renderingEngine,
-      'nextVideo',
-      ViewportType.VIDEO_NEXT
-    );
+    next = createViewport(renderingEngine, 'nextVideo', ViewportType.VIDEO);
   });
 
   afterEach(function () {

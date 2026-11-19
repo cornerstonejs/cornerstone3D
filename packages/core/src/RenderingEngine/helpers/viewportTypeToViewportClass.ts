@@ -5,9 +5,10 @@ import ViewportTypes, {
 import type { ViewportType as ViewportTypeWire } from '../../types/ViewportTypeRegistry';
 import ECGViewport from '../GenericViewport/ECG/ECGViewport';
 import PlanarViewport from '../GenericViewport/Planar/PlanarViewport';
-import NextVideoViewport from '../GenericViewport/Video/VideoViewport';
+import VideoViewport from '../GenericViewport/Video/VideoViewport';
 import VolumeViewport3D from '../GenericViewport/Volume3D/viewport3D';
-import NextWSIViewport from '../GenericViewport/WSI/WSIViewport';
+import WSIViewport from '../GenericViewport/WSI/WSIViewport';
+import { viewportTypeByDeprecatedString } from './deprecatedViewportTypes';
 import type { ViewportTypeConstants } from '../../types/ViewportTypeRegistry';
 import type {
   ViewportInput,
@@ -65,18 +66,19 @@ let hasRegisteredCoreViewportTypes = false;
  */
 const removedViewportTypeMessages: Record<string, string> = {
   stack:
-    "ViewportType 'stack' was removed in Cornerstone3D 6.0: use ViewportType.PLANAR_NEXT (a planar viewport shows a stack or a volume)",
+    "ViewportType 'stack' was removed in Cornerstone3D 6.0: use ViewportType.PLANAR (a planar viewport shows a stack or a volume)",
   orthographic:
-    "ViewportType 'orthographic' was removed in Cornerstone3D 6.0: use ViewportType.PLANAR_NEXT with an orientation in defaultOptions, for example OrientationAxis.AXIAL (a planar viewport shows a stack or a volume)",
+    "ViewportType 'orthographic' was removed in Cornerstone3D 6.0: use ViewportType.PLANAR with an orientation in defaultOptions, for example OrientationAxis.AXIAL (a planar viewport shows a stack or a volume)",
   perspective:
-    "ViewportType 'perspective' was removed in Cornerstone3D 6.0: use ViewportType.VOLUME_3D_NEXT with parallelProjection: false in defaultOptions",
+    "ViewportType 'perspective' was removed in Cornerstone3D 6.0: use ViewportType.VOLUME_3D with parallelProjection: false in defaultOptions",
 };
 
 /**
- * Registers the viewport types of the library: the five next viewports
- * under their `*Next` strings, and the strings `'volume3d'`, `'video'`,
- * `'wholeSlide'` and `'ecg'` as aliases of the next 3D, video, whole slide
- * and ECG viewports.
+ * Registers the viewport types of the library: the five viewports under
+ * their plain strings (`'planar'`, `'volume3d'`, `'video'`, `'wholeSlide'`,
+ * `'ecg'`), and the 5.x strings `'planarNext'`, `'volume3dNext'`,
+ * `'videoNext'`, `'wholeSlideNext'` and `'ecgNext'` as deprecated aliases of
+ * the same viewports.
  */
 function registerCoreViewportTypes() {
   if (hasRegisteredCoreViewportTypes) {
@@ -85,36 +87,29 @@ function registerCoreViewportTypes() {
   hasRegisteredCoreViewportTypes = true;
 
   registerViewportType({
-    type: ViewportType.PLANAR_NEXT,
+    type: ViewportType.PLANAR,
     ViewportClass: PlanarViewport,
   });
   registerViewportType({
-    type: ViewportType.VOLUME_3D_NEXT,
+    type: ViewportType.VOLUME_3D,
     ViewportClass: VolumeViewport3D,
   });
   registerViewportType({
-    type: ViewportType.VIDEO_NEXT,
-    ViewportClass: NextVideoViewport,
+    type: ViewportType.VIDEO,
+    ViewportClass: VideoViewport,
   });
   registerViewportType({
-    type: ViewportType.WHOLE_SLIDE_NEXT,
-    ViewportClass: NextWSIViewport as unknown as ViewportConstructor,
+    type: ViewportType.WHOLE_SLIDE,
+    ViewportClass: WSIViewport as unknown as ViewportConstructor,
   });
   registerViewportType({
-    type: ViewportType.ECG_NEXT,
+    type: ViewportType.ECG,
     ViewportClass: ECGViewport,
   });
 
-  registerViewportTypeAlias(
-    ViewportType.VOLUME_3D,
-    ViewportType.VOLUME_3D_NEXT
-  );
-  registerViewportTypeAlias(ViewportType.VIDEO, ViewportType.VIDEO_NEXT);
-  registerViewportTypeAlias(
-    ViewportType.WHOLE_SLIDE,
-    ViewportType.WHOLE_SLIDE_NEXT
-  );
-  registerViewportTypeAlias(ViewportType.ECG, ViewportType.ECG_NEXT);
+  for (const [alias, type] of Object.entries(viewportTypeByDeprecatedString)) {
+    registerViewportTypeAlias(alias, type);
+  }
 }
 
 /**

@@ -24,7 +24,7 @@ function createNextViewportWithDisplayAreaOption(renderingEngine, viewportId) {
   document.body.appendChild(element);
   renderingEngine.enableElement({
     viewportId,
-    type: ViewportType.PLANAR_NEXT,
+    type: ViewportType.PLANAR,
     element,
     defaultOptions: {
       background: [1, 0, 1],

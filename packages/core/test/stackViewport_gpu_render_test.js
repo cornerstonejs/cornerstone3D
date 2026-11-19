@@ -133,7 +133,7 @@ describe('renderingCore -- Stack', () => {
     it('Should render one stack viewport of square size properly: nearest', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
         orientation: Enums.OrientationAxis.AXIAL,
       });
 
@@ -175,7 +175,7 @@ describe('renderingCore -- Stack', () => {
     it('Should render one stack viewport of rectangle size properly: nearest', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
         orientation: Enums.OrientationAxis.AXIAL,
       });
 
@@ -219,7 +219,7 @@ describe('renderingCore -- Stack', () => {
     it('Should render one stack viewport of square size and 5mm spacing properly: nearest', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
         orientation: Enums.OrientationAxis.AXIAL,
       });
 
@@ -264,7 +264,7 @@ describe('renderingCore -- Stack', () => {
     it('Should use enableElement API to render one stack viewport of square size and 5mm spacing properly: nearest', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
         orientation: Enums.OrientationAxis.AXIAL,
       });
 
@@ -283,7 +283,7 @@ describe('renderingCore -- Stack', () => {
 
       renderingEngine.enableElement({
         viewportId: viewportId,
-        type: ViewportType.PLANAR_NEXT,
+        type: ViewportType.PLANAR,
         element: element,
         defaultOptions: {
           background: [1, 0, 1], // pinkish background
@@ -318,7 +318,7 @@ describe('renderingCore -- Stack', () => {
     it('Should render one stack viewport, first slice correctly: nearest', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
         orientation: Enums.OrientationAxis.AXIAL,
       });
 
@@ -391,7 +391,7 @@ describe('renderingCore -- Stack', () => {
     it('Should render one stack viewport, last slice correctly: nearest', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
         orientation: Enums.OrientationAxis.AXIAL,
       });
 
@@ -464,7 +464,7 @@ describe('renderingCore -- Stack', () => {
     it('Should render one stack viewport with CT presets correctly: nearest', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
         orientation: Enums.OrientationAxis.AXIAL,
       });
 
@@ -511,7 +511,7 @@ describe('renderingCore -- Stack', () => {
     it('Should render one stack viewport with multiple imageIds of different size and different spacing: nearest', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
         orientation: Enums.OrientationAxis.AXIAL,
       });
 
@@ -571,7 +571,7 @@ describe('renderingCore -- Stack', () => {
     it('Should render one stack viewport with multiple imageIds of different size and different spacing, second slice: nearest', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
         orientation: Enums.OrientationAxis.AXIAL,
       });
 
@@ -633,7 +633,7 @@ describe('renderingCore -- Stack', () => {
     it('Should render one stack viewport with linear interpolation correctly', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
         orientation: Enums.OrientationAxis.AXIAL,
       });
 
@@ -675,7 +675,7 @@ describe('renderingCore -- Stack', () => {
     it('Should render one stack viewport with multiple images with linear interpolation correctly', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
         orientation: Enums.OrientationAxis.AXIAL,
       });
 
@@ -731,7 +731,7 @@ describe('renderingCore -- Stack', () => {
     it('Should render color images: linear', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
         orientation: Enums.OrientationAxis.SAGITTAL,
         width: 512,
         height: 512,
@@ -776,7 +776,7 @@ describe('renderingCore -- Stack', () => {
     it('Should render color images: nearest', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
         orientation: Enums.OrientationAxis.AXIAL,
         width: 512,
         height: 512,
@@ -826,7 +826,7 @@ describe('renderingCore -- Stack', () => {
     it('Should be able to render a stack viewport with PET modality scaling', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
         orientation: Enums.OrientationAxis.AXIAL,
       });
 
@@ -863,7 +863,7 @@ describe('renderingCore -- Stack', () => {
     it('Should be able to calibrate the pixel spacing', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
         orientation: Enums.OrientationAxis.AXIAL,
       });
 
@@ -922,7 +922,7 @@ describe('renderingCore -- Stack', () => {
     it('Should be able to use setProperties API', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
         orientation: Enums.OrientationAxis.AXIAL,
       });
 
@@ -984,7 +984,7 @@ describe('renderingCore -- Stack', () => {
     it('Should preserve stack properties when actor recreation is only caused by a data type mismatch', function (done) {
       testUtils.createViewports(renderingEngine, {
         viewportId,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
         orientation: Enums.OrientationAxis.AXIAL,
       });
 
@@ -1049,7 +1049,7 @@ describe('renderingCore -- Stack', () => {
     it('Should preserve inversion when scrolling after resetProperties', function (done) {
       testUtils.createViewports(renderingEngine, {
         viewportId,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
         orientation: Enums.OrientationAxis.AXIAL,
       });
 
@@ -1100,7 +1100,7 @@ describe('renderingCore -- Stack', () => {
     it('Should be able to resetProperties API', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
         orientation: Enums.OrientationAxis.AXIAL,
       });
 
@@ -1179,7 +1179,7 @@ describe('renderingCore -- Stack', () => {
     it('Should be able to flip a stack viewport horizontally', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
         orientation: Enums.OrientationAxis.AXIAL,
       });
 
@@ -1226,7 +1226,7 @@ describe('renderingCore -- Stack', () => {
     it('Should be able to flip a stack viewport vertically and rotate it', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
         orientation: Enums.OrientationAxis.AXIAL,
       });
 
@@ -1277,7 +1277,7 @@ describe('renderingCore -- Stack', () => {
     it('Should render a MONOCHROME1 image inverted, as its MONOCHROME2 image with invert set', async function () {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
         orientation: Enums.OrientationAxis.AXIAL,
       });
       const vp = renderingEngine.getViewport(viewportId);
@@ -1303,7 +1303,7 @@ describe('renderingCore -- Stack', () => {
     it('Should keep an invert flag set on a MONOCHROME1 image and reset it to the default of the image', async function () {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
         orientation: Enums.OrientationAxis.AXIAL,
       });
       const vp = renderingEngine.getViewport(viewportId);

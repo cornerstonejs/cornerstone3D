@@ -32,7 +32,7 @@ xdescribe('Volume Viewport SetProperties -- ', () => {
     const element = testUtils.createViewports(renderingEngine, {
       viewportId,
       orientation: Enums.OrientationAxis.CORONAL,
-      viewportType: Enums.ViewportType.PLANAR_NEXT,
+      viewportType: Enums.ViewportType.PLANAR,
     });
 
     const volumeId = testUtils.encodeVolumeIdInfo({

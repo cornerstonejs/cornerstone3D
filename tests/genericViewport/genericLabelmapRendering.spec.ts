@@ -74,7 +74,7 @@ test.describe('Labelmap Rendering - Next (GPU)', () => {
         renderingEngineId: 'myRenderingEngine',
         viewportId: 'CT_AXIAL',
         constructorName: 'PlanarViewport',
-        type: 'planarNext',
+        type: 'planar',
         renderModesByDataId: {
           'labelmap-rendering-next:source': getPlainVolumeSliceRenderMode(),
         },
@@ -83,7 +83,7 @@ test.describe('Labelmap Rendering - Next (GPU)', () => {
         renderingEngineId: 'myRenderingEngine',
         viewportId: 'CT_SAGITTAL',
         constructorName: 'PlanarViewport',
-        type: 'planarNext',
+        type: 'planar',
         renderModesByDataId: {
           'labelmap-rendering-next:source': getPlainVolumeSliceRenderMode(),
         },
@@ -92,7 +92,7 @@ test.describe('Labelmap Rendering - Next (GPU)', () => {
         renderingEngineId: 'myRenderingEngine',
         viewportId: 'CT_CORONAL',
         constructorName: 'PlanarViewport',
-        type: 'planarNext',
+        type: 'planar',
         renderModesByDataId: {
           'labelmap-rendering-next:source': getPlainVolumeSliceRenderMode(),
         },
@@ -134,7 +134,7 @@ test.describe('Labelmap Rendering - Next (CPU)', () => {
         renderingEngineId: 'myRenderingEngine',
         viewportId: 'CT_AXIAL',
         constructorName: 'PlanarViewport',
-        type: 'planarNext',
+        type: 'planar',
         renderModesByDataId: {
           'labelmap-rendering-next:source': 'cpuVolume',
         },
@@ -143,7 +143,7 @@ test.describe('Labelmap Rendering - Next (CPU)', () => {
         renderingEngineId: 'myRenderingEngine',
         viewportId: 'CT_SAGITTAL',
         constructorName: 'PlanarViewport',
-        type: 'planarNext',
+        type: 'planar',
         renderModesByDataId: {
           'labelmap-rendering-next:source': 'cpuVolume',
         },
@@ -152,7 +152,7 @@ test.describe('Labelmap Rendering - Next (CPU)', () => {
         renderingEngineId: 'myRenderingEngine',
         viewportId: 'CT_CORONAL',
         constructorName: 'PlanarViewport',
-        type: 'planarNext',
+        type: 'planar',
         renderModesByDataId: {
           'labelmap-rendering-next:source': 'cpuVolume',
         },

@@ -76,7 +76,7 @@ describe('loadImageToCanvas -- GPU', () => {
 
   it('draws the slice of a view reference of a volume as a planar viewport draws it', async function () {
     const element = testUtils.createViewports(renderingEngine, {
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       width: CANVAS_SIZE,
       height: CANVAS_SIZE,
       viewportId,
@@ -121,7 +121,7 @@ describe('loadImageToCanvas -- GPU', () => {
 
   it('draws the middle slice of a volume without a slice in the view reference', async function () {
     const element = testUtils.createViewports(renderingEngine, {
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       width: CANVAS_SIZE,
       height: CANVAS_SIZE,
       viewportId,
@@ -153,7 +153,7 @@ describe('loadImageToCanvas -- GPU', () => {
 
   it('draws a PET image that is not scaled with the window of its pixel range', async function () {
     const element = testUtils.createViewports(renderingEngine, {
-      viewportType: ViewportType.PLANAR_NEXT,
+      viewportType: ViewportType.PLANAR,
       width: CANVAS_SIZE,
       height: CANVAS_SIZE,
       viewportId,

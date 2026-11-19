@@ -53,7 +53,7 @@ describe('StackViewport CPU -- ', () => {
     it('Should render one cpu stack viewport of square size properly', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
       });
 
       const imageInfo = {
@@ -97,7 +97,7 @@ describe('StackViewport CPU -- ', () => {
     it('Should render one cpu stack viewport of rectangle size properly: nearest', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
       });
 
       const imageInfo = {
@@ -158,7 +158,7 @@ describe('StackViewport CPU -- ', () => {
 
       renderingEngine.enableElement({
         viewportId: viewportId,
-        type: ViewportType.PLANAR_NEXT,
+        type: ViewportType.PLANAR,
         element: element,
         defaultOptions: {
           background: [1, 0, 1], // pinkish background
@@ -193,7 +193,7 @@ describe('StackViewport CPU -- ', () => {
     it('Should render one cpu stack viewport, first slice correctly: nearest', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
       });
 
       const imageInfo1 = {
@@ -268,7 +268,7 @@ describe('StackViewport CPU -- ', () => {
     it('Should render one cpu stack viewport, last slice correctly: nearest', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
       });
 
       const imageInfo1 = {
@@ -345,7 +345,7 @@ describe('StackViewport CPU -- ', () => {
     it('Should render one cpu stack viewport with voi presets correctly: nearest', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
       });
 
       const imageInfo = {
@@ -400,7 +400,7 @@ describe('StackViewport CPU -- ', () => {
     it('Should render one cpu stack viewport with multiple imageIds of different size and different spacing: nearest', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
       });
 
       const imageInfo1 = {
@@ -457,7 +457,7 @@ describe('StackViewport CPU -- ', () => {
     it('Should render one cpu stack viewport with multiple images with linear interpolation correctly', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
       });
 
       const imageInfo1 = {
@@ -511,7 +511,7 @@ describe('StackViewport CPU -- ', () => {
     it('Should render one cpu stack viewport with invert', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
       });
 
       const imageInfo = {
@@ -561,7 +561,7 @@ describe('StackViewport CPU -- ', () => {
     it('Should render one cpu stack viewport with rotation', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
       });
 
       const imageInfo = {

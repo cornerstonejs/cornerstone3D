@@ -47,7 +47,7 @@ function createNextPlanarViewport(
 ) {
   return enableViewport(renderingEngine, {
     viewportId: 'next',
-    type: ViewportType.PLANAR_NEXT,
+    type: ViewportType.PLANAR,
     orientation,
     defaultOptions,
   });
@@ -368,7 +368,7 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
         (orientation, index) =>
           enableViewport(renderingEngine, {
             viewportId: `next${index}`,
-            type: ViewportType.PLANAR_NEXT,
+            type: ViewportType.PLANAR,
             orientation,
           })
       );
@@ -416,7 +416,7 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
       const [source, target] = [0, 1].map((index) =>
         enableViewport(renderingEngine, {
           viewportId: `next${index}`,
-          type: ViewportType.PLANAR_NEXT,
+          type: ViewportType.PLANAR,
           orientation: OrientationAxis.AXIAL,
         })
       );
@@ -487,7 +487,7 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
       const [source, target] = [0, 1].map((index) =>
         enableViewport(renderingEngine, {
           viewportId: `next${index}`,
-          type: ViewportType.PLANAR_NEXT,
+          type: ViewportType.PLANAR,
           orientation: OrientationAxis.AXIAL,
         })
       );
@@ -526,7 +526,7 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
       const [source, target] = [0, 1].map((index) =>
         enableViewport(renderingEngine, {
           viewportId: `next${index}`,
-          type: ViewportType.PLANAR_NEXT,
+          type: ViewportType.PLANAR,
           orientation: OrientationAxis.AXIAL,
         })
       );
@@ -642,7 +642,7 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
     async function readCornersWithOptions(renderingEngine, options, apply) {
       const viewport = enableViewport(renderingEngine, {
         viewportId: 'next',
-        type: ViewportType.PLANAR_NEXT,
+        type: ViewportType.PLANAR,
         orientation: OrientationAxis.ACQUISITION,
         defaultOptions: options,
       });
@@ -677,7 +677,7 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
     it('leaves the options to the application on a direct next viewport', async function () {
       const viewport = enableViewport(renderingEngine, {
         viewportId: 'next',
-        type: ViewportType.PLANAR_NEXT,
+        type: ViewportType.PLANAR,
         orientation: OrientationAxis.ACQUISITION,
         defaultOptions: { aspectRatio: [2, 1], ...DISPLAY_AREA_OPTIONS },
       });
@@ -781,7 +781,7 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
     it('fires IMAGE_SPACING_CALIBRATED on a direct next viewport from calibrateSpacing, and not when an image shows', async function () {
       const viewport = enableViewport(renderingEngine, {
         viewportId: 'next',
-        type: ViewportType.PLANAR_NEXT,
+        type: ViewportType.PLANAR,
         orientation: OrientationAxis.ACQUISITION,
       });
       const imageIds = createCalibratedImageIds(viewport);
@@ -814,7 +814,7 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
     it('fires IMAGE_SPACING_CALIBRATED with the detail of the legacy stack viewport when the application calls calibrateSpacing for a newly shown image of a new calibration', async function () {
       const viewport = enableViewport(renderingEngine, {
         viewportId: 'next',
-        type: ViewportType.PLANAR_NEXT,
+        type: ViewportType.PLANAR,
         orientation: OrientationAxis.ACQUISITION,
       });
       const imageIds = createCalibratedImageIds(viewport);

@@ -28,7 +28,7 @@ function createViewport(renderingEngine) {
     useEnableElement: true,
     orientation: null,
     viewportId: 'nextVideoTime',
-    viewportType: ViewportType.VIDEO_NEXT,
+    viewportType: ViewportType.VIDEO,
   });
 
   return renderingEngine.getViewport('nextVideoTime');

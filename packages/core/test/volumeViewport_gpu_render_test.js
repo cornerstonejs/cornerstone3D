@@ -51,7 +51,7 @@ describe('Volume Viewport GPU -- ', () => {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
         orientation: Enums.OrientationAxis.SAGITTAL,
-        viewportType: ViewportType.VOLUME_3D_NEXT,
+        viewportType: ViewportType.VOLUME_3D,
         width: 500,
         height: 500,
       });
@@ -106,7 +106,7 @@ describe('Volume Viewport GPU -- ', () => {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
         orientation: Enums.OrientationAxis.AXIAL,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
         width: 500,
         height: 500,
       });
@@ -160,7 +160,7 @@ describe('Volume Viewport GPU -- ', () => {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
         orientation: Enums.OrientationAxis.AXIAL,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
       });
 
       const volumeId = testUtils.encodeVolumeIdInfo({
@@ -207,7 +207,7 @@ describe('Volume Viewport GPU -- ', () => {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
         orientation: Enums.OrientationAxis.SAGITTAL,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
       });
 
       const volumeId = testUtils.encodeVolumeIdInfo({
@@ -259,7 +259,7 @@ describe('Volume Viewport GPU -- ', () => {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
         orientation: Enums.OrientationAxis.SAGITTAL,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
       });
 
       const volumeId = testUtils.encodeVolumeIdInfo({
@@ -309,7 +309,7 @@ describe('Volume Viewport GPU -- ', () => {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
         orientation: Enums.OrientationAxis.CORONAL,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
       });
 
       const volumeId = testUtils.encodeVolumeIdInfo({
@@ -363,7 +363,7 @@ describe('Volume Viewport GPU -- ', () => {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
         orientation: Enums.OrientationAxis.CORONAL,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
       });
 
       const volumeId = testUtils.encodeVolumeIdInfo({
@@ -413,7 +413,7 @@ describe('Volume Viewport GPU -- ', () => {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
         orientation: Enums.OrientationAxis.CORONAL,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
       });
 
       const volumeId = testUtils.encodeVolumeIdInfo({
@@ -465,7 +465,7 @@ describe('Volume Viewport GPU -- ', () => {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
         orientation: Enums.OrientationAxis.CORONAL,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
       });
 
       const volumeId = testUtils.encodeVolumeIdInfo({
@@ -517,7 +517,7 @@ describe('Volume Viewport GPU -- ', () => {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
         orientation: Enums.OrientationAxis.CORONAL,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
       });
 
       const vp = renderingEngine.getViewport(viewportId);
@@ -570,7 +570,7 @@ describe('Volume Viewport GPU -- ', () => {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
         orientation: Enums.OrientationAxis.CORONAL,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
       });
 
       const volumeId = testUtils.encodeVolumeIdInfo({
@@ -622,7 +622,7 @@ describe('Volume Viewport GPU -- ', () => {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
         orientation: Enums.OrientationAxis.CORONAL,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
       });
 
       const volumeId = testUtils.encodeVolumeIdInfo({
@@ -668,7 +668,7 @@ describe('Volume Viewport GPU -- ', () => {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
         orientation: Enums.OrientationAxis.CORONAL,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
       });
 
       const volumeId = testUtils.encodeVolumeIdInfo({
@@ -724,7 +724,7 @@ describe('Volume Viewport GPU -- ', () => {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
         orientation: Enums.OrientationAxis.CORONAL,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
       });
 
       const volumeId = testUtils.encodeVolumeIdInfo({
@@ -777,7 +777,7 @@ describe('Volume Viewport GPU -- ', () => {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
         orientation: Enums.OrientationAxis.CORONAL,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
       });
 
       const volumeId = testUtils.encodeVolumeIdInfo({
@@ -829,7 +829,7 @@ describe('Volume Viewport GPU -- ', () => {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
         orientation: Enums.OrientationAxis.AXIAL,
-        viewportType: ViewportType.PLANAR_NEXT,
+        viewportType: ViewportType.PLANAR,
       });
 
       const volumeId = testUtils.encodeVolumeIdInfo({

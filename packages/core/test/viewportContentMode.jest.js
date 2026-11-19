@@ -55,7 +55,7 @@ describe('viewportCapabilities — Generic ("next") viewport guards (CS-5/CS-17)
         isGenericViewport({
           ...genericViewport,
           ...legacyStackViewport,
-          type: 'planarNext',
+          type: 'planar',
         })
       ).toBe(true);
     });
@@ -103,13 +103,11 @@ describe('viewportCapabilities — Generic ("next") viewport guards (CS-5/CS-17)
     });
 
     it('does not give a mode for a next or unknown type without getCurrentMode', () => {
-      ['planarNext', 'volume3dNext', 'videoNext', 'custom', 'toString'].forEach(
-        (type) => {
-          expect(
-            getViewportContentMode({ ...genericViewport, type })
-          ).toBeUndefined();
-        }
-      );
+      ['planar', 'volume3d', 'video', 'custom', 'toString'].forEach((type) => {
+        expect(
+          getViewportContentMode({ ...genericViewport, type })
+        ).toBeUndefined();
+      });
       expect(getViewportContentMode({ type: 42 })).toBeUndefined();
       expect(getViewportContentMode(null)).toBeUndefined();
     });
@@ -118,17 +116,17 @@ describe('viewportCapabilities — Generic ("next") viewport guards (CS-5/CS-17)
       const legacyEcg = { type: 'ecg', getCurrentMode: () => 'empty' };
       const adapter = {
         ...genericViewport,
-        type: 'planarNext',
+        type: 'planar',
         getCurrentMode: () => 'stack',
       };
       const emptyAdapter = {
         ...genericViewport,
-        type: 'planarNext',
+        type: 'planar',
         getCurrentMode: () => 'empty',
       };
       const nextViewport = {
         ...genericViewport,
-        type: 'planarNext',
+        type: 'planar',
         getCurrentMode: () => 'volume',
       };
 

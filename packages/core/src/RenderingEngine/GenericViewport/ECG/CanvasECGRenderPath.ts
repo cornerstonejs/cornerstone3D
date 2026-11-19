@@ -83,7 +83,7 @@ export class CanvasECGPath
   implements RenderPathDefinition<ECGCanvasRenderContext>
 {
   readonly id = 'ecg:canvas-signal';
-  readonly type = ViewportType.ECG_NEXT;
+  readonly type = ViewportType.ECG;
 
   matches(data: LoadedData, options: DataAddOptions): boolean {
     return data.type === 'ecg' && options.renderMode === 'signal2d';

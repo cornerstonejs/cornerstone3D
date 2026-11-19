@@ -1023,6 +1023,15 @@ and is deprecated.
 
 ## Smaller changes
 
+- **`viewport.type` is the plain string.** A planar viewport has the type
+  `'planar'` where a 5.x next viewport had `'planarNext'`, and the other
+  families have `'volume3d'`, `'video'`, `'wholeSlide'` and `'ecg'` in place
+  of `'volume3dNext'`, `'videoNext'`, `'wholeSlideNext'` and `'ecgNext'`. A
+  comparison with `ViewportType.PLANAR` or `ViewportType.PLANAR_NEXT` holds
+  as before, since both are `'planar'`. Code that compares `viewport.type`
+  with the string `'planarNext'`, or stores it and reads it back, changes to
+  `'planar'`. The `viewportType` of a projection snapshot is the same plain
+  string. See [Viewport types](./3-api-map.md#viewport-types).
 - **No `setOptions()` and no `reset()`** on the 3D, video, whole slide and ECG
   viewports. The options that a viewport was made with are in
   `defaultOptions`, and they do not change. Change the view through the view

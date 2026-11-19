@@ -20,6 +20,7 @@ import {
   isImageRenderMode,
   isVolumeRenderMode,
 } from '../../helpers/renderBackendRegistry';
+import { getViewportLocalFrameOfReferenceUID } from '../../helpers/deprecatedViewportTypes';
 import {
   getDimensionGroupReferenceContext,
   type GenericViewportReferenceContext,
@@ -206,7 +207,10 @@ class PlanarViewReferenceController {
 
     return (
       binding?.getFrameOfReferenceUID() ??
-      `${this.host.viewportType}-viewport-${this.host.viewportId}`
+      getViewportLocalFrameOfReferenceUID(
+        this.host.viewportType,
+        this.host.viewportId
+      )
     );
   }
 
@@ -284,7 +288,10 @@ class PlanarViewReferenceController {
       data: binding.data as LoadedData<PlanarPayload>,
       frameOfReferenceUID:
         binding.getFrameOfReferenceUID() ??
-        `${this.host.viewportType}-viewport-${this.host.viewportId}`,
+        getViewportLocalFrameOfReferenceUID(
+          this.host.viewportType,
+          this.host.viewportId
+        ),
       rendering: binding.rendering as PlanarRendering,
     };
   }

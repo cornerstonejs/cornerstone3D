@@ -33,7 +33,7 @@ function createViewport(renderingEngine) {
     useEnableElement: true,
     orientation: null,
     viewportId: 'nextVideoMount',
-    viewportType: ViewportType.VIDEO_NEXT,
+    viewportType: ViewportType.VIDEO,
   });
 
   return renderingEngine.getViewport('nextVideoMount');

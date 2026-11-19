@@ -34,7 +34,7 @@ function createViewports(renderingEngine, { nextIds }) {
     testUtils.createViewports(renderingEngine, {
       ...viewportOptions,
       viewportId,
-      viewportType: ViewportType.VOLUME_3D_NEXT,
+      viewportType: ViewportType.VOLUME_3D,
     })
   );
 

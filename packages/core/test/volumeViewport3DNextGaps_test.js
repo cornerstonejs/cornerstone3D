@@ -83,7 +83,7 @@ function createViewports(renderingEngine, { nextIds }) {
     testUtils.createViewports(renderingEngine, {
       ...viewportOptions,
       viewportId,
-      viewportType: ViewportType.VOLUME_3D_NEXT,
+      viewportType: ViewportType.VOLUME_3D,
     })
   );
 
@@ -731,7 +731,7 @@ function createSuppressedViewport(renderingEngine) {
   document.body.appendChild(element);
   renderingEngine.enableElement({
     viewportId: 'next3D',
-    type: ViewportType.VOLUME_3D_NEXT,
+    type: ViewportType.VOLUME_3D,
     element,
     defaultOptions: {
       orientation: OrientationAxis.SAGITTAL,

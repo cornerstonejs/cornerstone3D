@@ -82,6 +82,7 @@ export interface WSIViewportInput {
   defaultOptions?: Pick<ViewportInputOptions, 'suppressEvents'>;
 }
 
+/** @deprecated Use `WSIViewportInput`: the same type. */
 export type WSIGenericViewportInput = WSIViewportInput;
 
 /** @internal */

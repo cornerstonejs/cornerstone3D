@@ -35,7 +35,7 @@ export const videoProjectionAdapter: ViewportProjectionAdapter<
   VideoProjectionSnapshot
 > = {
   id: VIDEO_PROJECTION_ID,
-  viewportTypes: [ViewportType.VIDEO_NEXT],
+  viewportTypes: [ViewportType.VIDEO],
   getSnapshot: (request) =>
     getVideoProjectionSnapshot(request as VideoProjectionRequest),
   getPresentation: (snapshot, selector) =>

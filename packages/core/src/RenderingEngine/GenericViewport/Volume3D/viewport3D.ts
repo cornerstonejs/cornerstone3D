@@ -68,7 +68,7 @@ class VolumeViewport3D extends GenericViewport<
   Volume3DDataPresentation,
   Volume3DViewportRenderContext
 > {
-  readonly type = ViewportType.VOLUME_3D_NEXT;
+  readonly type = ViewportType.VOLUME_3D;
   readonly renderingEngineId: string;
   readonly canvas: HTMLCanvasElement;
   sWidth: number;

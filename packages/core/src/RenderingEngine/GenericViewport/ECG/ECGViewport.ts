@@ -46,7 +46,7 @@ class ECGViewport extends GenericViewport<
   ECGDataPresentation,
   ECGCanvasRenderContext
 > {
-  readonly type = ViewportType.ECG_NEXT;
+  readonly type = ViewportType.ECG;
   readonly renderingEngineId: string;
   readonly canvas: HTMLCanvasElement;
   readonly canvasContext: CanvasRenderingContext2D;

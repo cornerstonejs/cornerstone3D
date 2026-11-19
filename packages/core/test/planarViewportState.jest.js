@@ -442,7 +442,7 @@ describe('PlanarViewport view state', () => {
     };
     const viewport = {
       element,
-      type: ViewportType.VOLUME_3D_NEXT,
+      type: ViewportType.VOLUME_3D,
       getFrameOfReferenceUID: () => 'volume-frame',
       getResolvedView: () => resolvedView,
       getViewState: () => camera,

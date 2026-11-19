@@ -45,7 +45,7 @@ function createNextViewport(renderingEngine, { orientation, nextId = 'next' }) {
     height: 300,
     useEnableElement: true,
     viewportId: nextId,
-    viewportType: ViewportType.PLANAR_NEXT,
+    viewportType: ViewportType.PLANAR,
   });
 
   return renderingEngine.getViewport(nextId);

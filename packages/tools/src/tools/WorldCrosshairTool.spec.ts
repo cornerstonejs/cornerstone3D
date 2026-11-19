@@ -51,7 +51,7 @@ function createFakePlanarViewport({
 
   const viewport = {
     id,
-    type: 'planarNext',
+    type: 'planar',
     renderingEngineId: 'fakeRenderingEngine',
     canvas: { clientWidth: 0, clientHeight: 0 },
     // Generic viewports render to the element's displayed space; geometry

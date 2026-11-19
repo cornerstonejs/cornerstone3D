@@ -197,7 +197,7 @@ export class VtkGeometry3DPath
     >
 {
   readonly id = 'volume3d:vtk-geometry';
-  readonly type = ViewportType.VOLUME_3D_NEXT;
+  readonly type = ViewportType.VOLUME_3D;
 
   matches(data: LoadedData, options: DataAddOptions): boolean {
     return data.type === 'geometry' && options.renderMode === 'vtkGeometry3d';

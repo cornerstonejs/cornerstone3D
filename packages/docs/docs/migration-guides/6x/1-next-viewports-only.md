@@ -38,14 +38,15 @@ are temporary.
   code. `enableElement` and `setViewports` throw an `Error` for each of the
   three strings, before the engine changes anything, and the message names
   the type to use, for example
-  `ViewportType 'stack' was removed in Cornerstone3D 6.0: use ViewportType.PLANAR_NEXT (a planar viewport shows a stack or a volume)`.
+  `ViewportType 'stack' was removed in Cornerstone3D 6.0: use ViewportType.PLANAR (a planar viewport shows a stack or a volume)`.
   A saved layout or hanging protocol that stores one of these strings fails
   at load with that message: store the planar type instead (with an
   orientation in `defaultOptions` for `'orthographic'`), or the 3D type with
   `parallelProjection: false` for `'perspective'`. `viewport.requestedType`
   is gone with them: `viewport.type` is the type of the viewport.
 - **The word "next" in the type names.** The five types that remain get plain
-  names. See [The viewport types](#the-viewport-types).
+  names. This part is in the code, and the `_NEXT` names stay as deprecated
+  aliases. See [The viewport types](#the-viewport-types).
 - **The legacy viewport API:** `setStack`, `setVolumes`, `addVolumes`,
   `setProperties`, `getProperties`, `getCamera`, `setCamera`, `resetCamera`,
   `getViewPresentation`, `setViewPresentation`, and the actor methods of the
@@ -98,11 +99,22 @@ other families keep one type each.
 [Viewport types](./3-api-map.md#viewport-types) has the table from each 5.x
 type to its 6.0 type.
 
-`VOLUME_3D`, `VIDEO`, `WHOLE_SLIDE` and `ECG` keep their names and now mean the
-next viewport of that family. This is in the code: each gives the same
-viewport as its `_NEXT` name, and the `viewport.type` of that viewport is the
-`_NEXT` type. The rename is the last step of the removal. Until it lands, the
-code of these pages uses the `_NEXT` names.
+The types have plain names, and this is in the code: `PLANAR` (`'planar'`),
+`VOLUME_3D` (`'volume3d'`), `VIDEO` (`'video'`), `WHOLE_SLIDE`
+(`'wholeSlide'`) and `ECG` (`'ecg'`). `VOLUME_3D`, `VIDEO`, `WHOLE_SLIDE` and
+`ECG` keep their 5.x names and strings and now mean the next viewport of
+that family. `viewport.type` is the plain string.
+
+The 5.x next names stay in 6.x as deprecated aliases. `PLANAR_NEXT`,
+`VOLUME_3D_NEXT`, `VIDEO_NEXT`, `WHOLE_SLIDE_NEXT` and `ECG_NEXT` have the
+plain strings as their values, so code that uses them, including the code
+of some of these pages, works as before. A stored `'planarNext'`,
+`'volume3dNext'`, `'videoNext'`, `'wholeSlideNext'` or `'ecgNext'` given to
+`enableElement` or `setViewports` still makes the viewport of its family.
+The classes have their plain names too: `VolumeViewport3D`, `VideoViewport`,
+`WSIViewport` and `ECGViewport`, with `GenericVolumeViewport3D`,
+`VideoGenericViewport`, `WSIGenericViewport` and `ECGGenericViewport` as
+deprecated aliases.
 
 The context pool rendering engine of 5.x spread the stack viewports over its
 WebGL contexts (`rendering.webGlContextCount`). In 6.0 every planar and 3D
@@ -125,7 +137,7 @@ viewport shows decides how it behaves, not its type:
 renderingEngine.enableElement({
   viewportId,
   element,
-  type: Enums.ViewportType.PLANAR_NEXT,
+  type: Enums.ViewportType.PLANAR,
   defaultOptions: { orientation: Enums.OrientationAxis.AXIAL },
 });
 

@@ -58,7 +58,7 @@ class VideoViewport extends GenericViewport<
 > {
   // ── Fields ───────────────────────────────────────────────────────────
 
-  readonly type = ViewportType.VIDEO_NEXT;
+  readonly type = ViewportType.VIDEO;
   readonly renderingEngineId: string;
 
   /**

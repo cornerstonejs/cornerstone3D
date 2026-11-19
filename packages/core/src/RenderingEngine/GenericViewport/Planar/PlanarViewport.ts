@@ -304,7 +304,7 @@ class PlanarViewport extends GenericViewport<
   PlanarDataPresentation,
   PlanarViewportRenderContext
 > {
-  readonly type = ViewportType.PLANAR_NEXT;
+  readonly type = ViewportType.PLANAR;
   readonly renderingEngineId: string;
   readonly canvas: HTMLCanvasElement;
   sWidth: number;
@@ -899,7 +899,7 @@ class PlanarViewport extends GenericViewport<
   /**
    * Retrieves an image actor from the viewport actors. Mirrors the legacy
    * Viewport.getImageActor so VOI/colorbar tooling that depends on it keeps
-   * working on native PLANAR_NEXT viewports. CPU render paths (e.g. CPU stack
+   * working on native PLANAR viewports. CPU render paths (e.g. CPU stack
    * slice rendering) have no VTK image actor, so this returns null there and
    * callers fall back to a default range instead of throwing.
    *
@@ -933,7 +933,7 @@ class PlanarViewport extends GenericViewport<
    * Returns the vtk image data backing the default image actor, mirroring the
    * legacy `Viewport.getDefaultImageData`. Tools (e.g. the ONNX auto-pilot
    * segmentation controller) call this directly on the viewport; native
-   * PLANAR_NEXT viewports previously threw
+   * PLANAR viewports previously threw
    * `getDefaultImageData is not a function`. Returns undefined when no VTK image
    * actor is mounted (e.g. CPU render paths).
    */
@@ -1178,7 +1178,7 @@ class PlanarViewport extends GenericViewport<
   /**
    * Content-true classification of the bound source data for a planar viewport.
    *
-   * A `PLANAR_NEXT` viewport renders both image-id stacks and volume slices, so
+   * A `PLANAR` viewport renders both image-id stacks and volume slices, so
    * its content mode is derived from the active source binding's render mode
    * (and, as a fallback, from whether a source volume id is bound) rather than
    * from the viewport type. Returns `empty` when no source data is mounted.
@@ -1217,7 +1217,7 @@ class PlanarViewport extends GenericViewport<
    * The native presentation write path previously emitted no event, so OHIF's
    * VOI sliders, colorbar, window-level readout, and VOI/colormap
    * synchronizers went stale after any programmatic or tool-driven
-   * `setDisplaySetPresentation` change on a direct `PLANAR_NEXT` viewport. The
+   * `setDisplaySetPresentation` change on a direct `PLANAR` viewport. The
    * legacy compatibility adapter keeps emitting `COLORMAP_MODIFIED` through its
    * own path (which applies presentation via `setDataPresentationState`
    * directly, not through `mergeDataPresentation`), so this hook does not
@@ -1356,7 +1356,7 @@ class PlanarViewport extends GenericViewport<
    * content it is the slice count along the current view direction. This is the
    * native equivalent of the legacy stack/volume `getNumberOfSlices()` and is
    * what `csUtils.jumpToSlice`, scroll, and image-slice synchronizers rely on
-   * for a `PLANAR_NEXT` viewport (which is not a `StackViewport`, so it takes
+   * for a `PLANAR` viewport (which is not a `StackViewport`, so it takes
    * the slice-count navigation branch).
    *
    * @returns The total slice count for the active source data.

@@ -499,8 +499,8 @@ type ViewportContentMode =
  * class `GenericViewport`.
  *
  * The class of a family has more members (`PlanarViewport`,
- * `GenericVolumeViewport3D`, `VideoGenericViewport`, `WSIGenericViewport`,
- * `ECGGenericViewport`): type the variable with the class when the family is
+ * `VolumeViewport3D`, `VideoViewport`, `WSIViewport`, `ECGViewport`): type
+ * the variable with the class when the family is
  * known, for instance with
  * `renderingEngine.getViewport<PlanarViewport>(viewportId)`, or narrow with
  * `utilities.viewportSupportsDisplaySetPresentation` and

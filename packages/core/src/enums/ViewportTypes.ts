@@ -11,14 +11,15 @@ import type {
 export type ViewportTypesMap = ViewportTypeConstants;
 
 const builtInViewportTypes: CoreViewportTypeConstants = {
+  PLANAR: ViewportType.PLANAR,
   VOLUME_3D: ViewportType.VOLUME_3D,
-  VOLUME_3D_NEXT: ViewportType.VOLUME_3D_NEXT,
-  PLANAR_NEXT: ViewportType.PLANAR_NEXT,
   VIDEO: ViewportType.VIDEO,
-  VIDEO_NEXT: ViewportType.VIDEO_NEXT,
   WHOLE_SLIDE: ViewportType.WHOLE_SLIDE,
-  WHOLE_SLIDE_NEXT: ViewportType.WHOLE_SLIDE_NEXT,
   ECG: ViewportType.ECG,
+  PLANAR_NEXT: ViewportType.PLANAR_NEXT,
+  VOLUME_3D_NEXT: ViewportType.VOLUME_3D_NEXT,
+  VIDEO_NEXT: ViewportType.VIDEO_NEXT,
+  WHOLE_SLIDE_NEXT: ViewportType.WHOLE_SLIDE_NEXT,
   ECG_NEXT: ViewportType.ECG_NEXT,
 };
 

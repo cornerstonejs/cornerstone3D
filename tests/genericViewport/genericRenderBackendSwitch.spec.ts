@@ -79,7 +79,7 @@ test.describe('Render backend live switch', () => {
         renderingEngineId: ENGINE_ID,
         viewportId: VIEWPORT_ID,
         constructorName: 'PlanarViewport',
-        type: 'planarNext',
+        type: 'planar',
         renderModesByDataId: { [DATA_ID]: 'vtkImage' },
       },
     ]);

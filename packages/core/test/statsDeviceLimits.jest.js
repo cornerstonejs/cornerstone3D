@@ -105,7 +105,7 @@ describe('device facts in the debug panel', () => {
         {
           renderingEngineId: 'engine',
           viewportId: 'FUSION',
-          viewportType: 'planarNext',
+          viewportType: 'planar',
           bindings: [
             {
               dataId: 'pt',

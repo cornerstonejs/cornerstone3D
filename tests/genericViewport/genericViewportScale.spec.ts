@@ -48,7 +48,7 @@ test.describe('Generic viewport two-axis scale', () => {
         renderingEngineId: RENDERING_ENGINE_ID,
         viewportId: STACK_VIEWPORT_ID,
         constructorName: 'PlanarViewport',
-        type: 'planarNext',
+        type: 'planar',
         renderModesByDataId: {
           [STACK_DATA_ID]: 'vtkImage',
         },
@@ -57,7 +57,7 @@ test.describe('Generic viewport two-axis scale', () => {
         renderingEngineId: RENDERING_ENGINE_ID,
         viewportId: VOLUME_VIEWPORT_ID,
         constructorName: 'PlanarViewport',
-        type: 'planarNext',
+        type: 'planar',
         renderModesByDataId: {
           [VOLUME_DATA_ID]: getPlainVolumeSliceRenderMode(),
         },

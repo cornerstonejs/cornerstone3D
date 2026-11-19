@@ -58,7 +58,7 @@ function volumeSliceRendering(volumeId) {
 function fakeViewport(id, bindings) {
   return {
     id,
-    type: 'planarNext',
+    type: 'planar',
     _debug: {
       renderModes: Object.fromEntries(
         bindings.map(({ displaySetId, rendering }) => [
@@ -105,7 +105,7 @@ function entry(viewportId, bindings) {
   return {
     renderingEngineId: 'engine',
     viewportId,
-    viewportType: 'planarNext',
+    viewportType: 'planar',
     bindings,
   };
 }

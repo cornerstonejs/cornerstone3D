@@ -522,7 +522,7 @@ export class VtkSampledSlicePath
     >
 {
   readonly id = 'planar:vtk-sampled-slice';
-  readonly type = ViewportType.PLANAR_NEXT;
+  readonly type = ViewportType.PLANAR;
 
   matches(data: LoadedData, options: DataAddOptions): boolean {
     return (

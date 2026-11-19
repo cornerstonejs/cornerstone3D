@@ -64,7 +64,7 @@ export const planarProjectionAdapter: ViewportProjectionAdapter<
   PlanarProjectionSnapshot
 > = {
   id: PLANAR_PROJECTION_ID,
-  viewportTypes: [ViewportType.PLANAR_NEXT],
+  viewportTypes: [ViewportType.PLANAR],
   getSnapshot: (request) =>
     getPlanarProjectionSnapshot(request as PlanarProjectionRequest),
   getPresentation: (snapshot, selector?: ViewPresentationSelector) =>

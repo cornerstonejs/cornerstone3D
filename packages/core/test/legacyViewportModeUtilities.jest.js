@@ -20,7 +20,7 @@ function nextApi() {
 function makeAdapter(mode, extra = {}) {
   return {
     ...nextApi(),
-    type: 'planarNext',
+    type: 'planar',
     element: document.createElement('div'),
     getCurrentMode: () => mode,
     ...extra,
