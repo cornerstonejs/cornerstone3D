@@ -126,4 +126,24 @@ describe('fetchArrayBuffer compression detection', () => {
     expect(onHeader).toHaveBeenCalledTimes(1);
     expect(onHeader.mock.calls[0][0]).toMatchObject({ isValid: true });
   });
+
+  it('waits for chunked plain data before reporting completion', async () => {
+    const payload = new Uint8Array(600);
+    mockFetchChunks([payload.slice(0, 100), payload.slice(100)]);
+
+    const events = [];
+    const onHeader = jest.fn(() => events.push('header'));
+    const onLoad = jest.fn(() => events.push('load'));
+
+    const result = await fetchArrayBuffer({
+      url: 'https://example.com/volume.nii.gz',
+      onProgress: jest.fn(),
+      controller: new AbortController(),
+      onLoad,
+      onHeader,
+    });
+
+    expect(events).toEqual(['header', 'load']);
+    expect(result.data).toHaveLength(payload.length);
+  });
 });

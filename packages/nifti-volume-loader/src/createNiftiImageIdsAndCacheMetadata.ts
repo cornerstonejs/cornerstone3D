@@ -84,7 +84,7 @@ export async function fetchArrayBuffer({
       ? decompressionStream.writable.getWriter()
       : null;
 
-    readStream(
+    const streamPromise = readStream(
       reader,
       decompressionWriter,
       isCompressed,
@@ -109,6 +109,10 @@ export async function fetchArrayBuffer({
           break;
         }
       }
+    } else {
+      // Plain data has no decompressed reader to drain, so wait for the source
+      // stream to finish before reporting the buffer as loaded.
+      await streamPromise;
     }
 
     if (onLoad && typeof onLoad === 'function') {
