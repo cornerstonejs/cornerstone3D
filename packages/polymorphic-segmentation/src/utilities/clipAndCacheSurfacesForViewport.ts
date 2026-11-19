@@ -41,12 +41,26 @@ export type SurfaceClipResult = {
 export type PolyDataClipCacheType = Map<number, Map<string, SurfaceClipResult>>;
 
 /**
- * a cache from actorUID to cacheId to SurfaceClipResult
- * Map<actorUID, Map<cacheId, SurfaceClipResult>>
- * cacheId is slice specific (viewPlaneNormal, sliceIndex)
+ * The contours cut from surfaces, by the id of the viewport, then by the id of
+ * the surface (one segment of one segmentation), then by the slice
+ * (`generateCacheId`): an entry is unique for its viewport, its surface and
+ * its slice. A cut of a surface for a viewport replaces the entries of that
+ * surface for that viewport.
  */
-const polyDataCache = new Map() as PolyDataClipCacheType;
-const surfacesAABBCache = new Map();
+const polyDataCache = new Map<
+  string,
+  Map<string, Map<string, SurfaceClipResult>>
+>();
+
+/**
+ * The bounding box of each surface by the id of the surface, with the points
+ * and the polys that it was computed from. A surface whose points or polys
+ * are other arrays, as after an update of the surface, gets a new box.
+ */
+const surfacesAABBCache = new Map<
+  string,
+  { points: number[]; polys: number[]; aabb: unknown }
+>();
 
 const triggerWorkerProgress = (eventTarget, progress) => {
   triggerEvent(eventTarget, Enums.Events.WEB_WORKER_PROGRESS, {
@@ -68,10 +82,13 @@ function getSlicesClippingPlanes(viewport: Types.IViewport) {
 /**
  * Clips and caches surfaces for a specific viewport.
  *
- * @param surfacesInfo - An array of surfaces information.
+ * @param surfacesInfo - An array of surfaces information. The id of each
+ * surface must name that surface (its geometry id): the bounding box and the
+ * contours are kept by it.
  * @param viewport - The volume viewport.
- * @param segmentationId - The id of the segmentation.
- * @returns The cached polyData.
+ * @returns The contours of these surfaces on this viewport, by segment index
+ * and then by slice. Contours that other viewports or other surfaces got
+ * before are not in it.
  */
 export async function clipAndCacheSurfacesForViewport(
   surfacesInfo: SurfacesInfo[],
@@ -108,10 +125,22 @@ export async function clipAndCacheSurfacesForViewport(
 
   const surfacesAABB = new Map();
   surfacesInfo.forEach((surface) => {
-    surfacesAABB.set(surface.id, surfacesAABBCache.get(surface.id));
+    surfacesAABB.set(surface.id, surfacesAABBCache.get(surface.id)?.aabb);
   });
 
   const { viewPlaneNormal } = viewport.getViewReference();
+  const viewportCache =
+    polyDataCache.get(viewport.id) ??
+    new Map<string, Map<string, SurfaceClipResult>>();
+  const contoursBySegmentIndex = new Map() as PolyDataClipCacheType;
+
+  polyDataCache.set(viewport.id, viewportCache);
+  surfacesInfo.forEach(({ id, segmentIndex }) => {
+    const surfaceCache = new Map<string, SurfaceClipResult>();
+
+    viewportCache.set(id, surfaceCache);
+    contoursBySegmentIndex.set(Number(segmentIndex), surfaceCache);
+  });
 
   await workerManager
     .executeTask(
@@ -131,13 +160,20 @@ export async function clipAndCacheSurfacesForViewport(
           // update cache callback
           ({ sliceIndex, polyDataResults }) => {
             polyDataResults.forEach((polyDataResult, segmentIndex) => {
-              const segmentIndexNumber = Number(segmentIndex);
+              const surfaceCache = contoursBySegmentIndex.get(
+                Number(segmentIndex)
+              );
+
+              if (!surfaceCache) {
+                return;
+              }
+
               const cacheId = generateCacheId(
                 viewport,
                 viewPlaneNormal,
                 sliceIndex
               );
-              updatePolyDataCache(segmentIndexNumber, cacheId, polyDataResult);
+              updatePolyDataCache(surfaceCache, cacheId, polyDataResult);
             });
           },
         ],
@@ -149,19 +185,26 @@ export async function clipAndCacheSurfacesForViewport(
 
   triggerWorkerProgress(eventTarget, 100);
 
-  return polyDataCache;
+  return contoursBySegmentIndex;
 }
 
 /**
  * Updates the surfaces AABB cache with the AABB information for the given surfaces.
- * If the AABB information for a surface already exists in the cache, it will not be updated.
+ * The AABB of a surface is kept while the surface keeps its points and polys,
+ * and computed again when they change.
  * @param surfacesInfo - An array of surfaces information.
  * @returns A Promise that resolves when the surfaces AABB cache has been updated.
  */
 async function updateSurfacesAABBCache(surfacesInfo: SurfacesInfo[]) {
-  const surfacesWithoutAABB = surfacesInfo.filter(
-    (surface) => !surfacesAABBCache.has(surface.id)
-  );
+  const surfacesWithoutAABB = surfacesInfo.filter((surface) => {
+    const cached = surfacesAABBCache.get(surface.id);
+
+    return (
+      !cached ||
+      cached.points !== surface.points ||
+      cached.polys !== surface.polys
+    );
+  });
 
   if (!surfacesWithoutAABB.length) {
     return;
@@ -185,7 +228,15 @@ async function updateSurfacesAABBCache(surfacesInfo: SurfacesInfo[]) {
 
   // update the surfacesAABBCache with the new surfacesAABB
   surfacesAABB.forEach((aabb, id) => {
-    surfacesAABBCache.set(id, aabb);
+    const surface = surfacesWithoutAABB.find(
+      (candidate) => candidate.id === id
+    );
+
+    surfacesAABBCache.set(id, {
+      points: surface?.points,
+      polys: surface?.polys,
+      aabb,
+    });
   });
 }
 
@@ -194,18 +245,15 @@ export function generateCacheId(viewport, viewPlaneNormal, sliceIndex) {
   return `${viewport.id}-${pointToString(viewPlaneNormal)}-${sliceIndex}`;
 }
 
-// Helper function to update PolyData cache
+/**
+ * Puts the contour of one slice into the cache of one surface on one viewport.
+ */
 export function updatePolyDataCache(
-  segmentIndex: number,
+  surfaceCache: Map<string, SurfaceClipResult>,
   cacheId: string,
   polyDataResult: SurfaceClipResult
 ) {
   const { points, lines, numberOfCells } = polyDataResult;
 
-  let segmentCache = polyDataCache.get(segmentIndex);
-  if (!segmentCache) {
-    segmentCache = new Map<string, SurfaceClipResult>();
-    polyDataCache.set(segmentIndex, segmentCache);
-  }
-  segmentCache.set(cacheId, { points, lines, numberOfCells });
+  surfaceCache.set(cacheId, { points, lines, numberOfCells });
 }

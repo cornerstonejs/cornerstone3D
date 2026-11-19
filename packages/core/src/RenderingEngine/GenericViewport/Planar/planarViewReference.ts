@@ -134,6 +134,10 @@ export function getPlanarReferencedImageId(args: {
  * For volume paths, uses `getTargetVolumeSpatialCamera` to compute the
  * camera at a potentially overridden sliceIndex (from viewRefSpecifier).
  *
+ * `referencePlaneThickness`, the depth of the slab shown, goes into the
+ * plane restriction when it is given, as the thickness that a new annotation
+ * takes.
+ *
  * @returns A ViewReference suitable for `isReferenceViewable` comparisons.
  */
 export function getPlanarViewReference(args: {
@@ -144,6 +148,7 @@ export function getPlanarViewReference(args: {
   rendering?: PlanarRendering;
   renderContext: PlanarViewportRenderContext;
   viewRefSpecifier?: ViewReferenceSpecifier;
+  referencePlaneThickness?: number;
 }): ViewReference {
   const { frameOfReferenceUID, rendering, viewRefSpecifier } = args;
   const { dimensionGroupNumber } = getDimensionGroupReferenceContext(
@@ -185,6 +190,9 @@ export function getPlanarViewReference(args: {
             point: toPoint3(viewRefSpecifier?.points?.[0]) || cameraFocalPoint,
             inPlaneVector1: viewUp,
             inPlaneVector2,
+            ...(args.referencePlaneThickness !== undefined && {
+              referencePlaneThickness: args.referencePlaneThickness,
+            }),
           }
         : undefined,
   };

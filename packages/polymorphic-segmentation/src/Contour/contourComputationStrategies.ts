@@ -122,7 +122,7 @@ async function computeContourFromLabelmapSegmentation(
 
   const pointsAndPolys = results.map((surface) => {
     return {
-      id: surface.segmentIndex.toString(),
+      id: `${segmentationId}-${surface.segmentIndex}`,
       points: surface.data.points,
       polys: surface.data.polys,
       segmentIndex: surface.segmentIndex,

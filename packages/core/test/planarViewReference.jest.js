@@ -1123,6 +1123,7 @@ function createControllerHarness(bindingEntries) {
     getBinding: (dataId) => bindings.get(dataId),
     getBindings: () => bindings.entries(),
     getCurrentBinding: () => mountedData.getCurrentBinding(),
+    getDisplaySetPresentation: () => undefined,
     getRenderContext: () => renderContext,
     getResolvedView: (args = {}) => {
       const binding = mountedData.getCurrentBinding();

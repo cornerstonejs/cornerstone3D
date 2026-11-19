@@ -3,14 +3,10 @@ import { RENDERING_DEFAULTS } from '../constants';
 /**
  * Resolves a slab depth in mm, and reports "no slab" as undefined.
  *
- * The caller supplies a **full** depth, and the two render paths reach that
- * depth differently:
- *
- * - A volume viewport stores a half thickness, because
- *   `setOrientationOfClippingPlanes` puts the two clipping planes at
- *   `focalPoint ± slabThickness`. Such a caller passes `getSlabThickness() * 2`.
- * - A generic planar viewport uses `vtkImageResliceMapper`, where the field is
- *   already a full thickness. Such a caller passes the value as it is.
+ * The caller supplies a **full** depth. The `slabThickness` of the
+ * presentation of a planar viewport is a half thickness: a slab of `T` shows
+ * the slices within about `T` of the plane on each side, as the legacy
+ * `setSlabThickness(T)` did. Such a caller passes twice the value.
  *
  * A depth at or below twice `RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS` means
  * "no slab was requested", and not "a slab of 0.1 mm was requested". A literal

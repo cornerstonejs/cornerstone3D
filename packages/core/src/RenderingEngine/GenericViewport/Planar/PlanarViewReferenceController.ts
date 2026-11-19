@@ -15,7 +15,11 @@ import * as metaData from '../../../metaData';
 import { MetadataModules } from '../../../enums';
 import imageIdToURI from '../../../utilities/imageIdToURI';
 import isEqual from '../../../utilities/isEqual';
-import { isImageRenderMode } from '../../helpers/renderBackendRegistry';
+import getViewSlabDepth from '../../../utilities/getViewSlabDepth';
+import {
+  isImageRenderMode,
+  isVolumeRenderMode,
+} from '../../helpers/renderBackendRegistry';
 import {
   getDimensionGroupReferenceContext,
   type GenericViewportReferenceContext,
@@ -32,6 +36,7 @@ import {
 import { resolvePlanarViewportView } from './PlanarResolvedView';
 import type { PlanarDataBinding } from './PlanarMountedData';
 import type {
+  PlanarDataPresentation,
   PlanarPayload,
   PlanarViewportRenderContext,
   PlanarViewState,
@@ -62,6 +67,7 @@ export type PlanarViewReferenceHost = {
   getBinding(dataId: string): PlanarDataBinding | undefined;
   getBindings(): Iterable<[string, PlanarDataBinding]>;
   getCurrentBinding(): PlanarDataBinding | undefined;
+  getDisplaySetPresentation(dataId: string): PlanarDataPresentation | undefined;
   getRenderContext(): PlanarViewportRenderContext;
   getResolvedView(args?: {
     frameOfReferenceUID?: string;
@@ -119,7 +125,34 @@ class PlanarViewReferenceController {
       rendering: referenceContext?.rendering,
       renderContext: this.host.getRenderContext(),
       viewRefSpecifier,
+      referencePlaneThickness: this.getReferenceSlabDepth(referenceContext),
     });
+  }
+
+  /**
+   * The depth in mm that a new annotation of the view takes as its
+   * `referencePlaneThickness`: twice the `slabThickness` of the presentation
+   * of the display set of the reference, because a slab of `T` shows the
+   * slices within about `T` of the plane, as the legacy volume viewport
+   * doubled its slab. Undefined in stack mode and without a slab.
+   */
+  private getReferenceSlabDepth(
+    referenceContext: PlanarReferenceContext | undefined
+  ): number | undefined {
+    if (
+      !referenceContext ||
+      !isVolumeRenderMode(referenceContext.rendering?.renderMode)
+    ) {
+      return;
+    }
+
+    const slabThickness = this.host.getDisplaySetPresentation(
+      referenceContext.dataId
+    )?.slabThickness;
+
+    return typeof slabThickness === 'number'
+      ? getViewSlabDepth(slabThickness * 2)
+      : undefined;
   }
 
   getViewReferenceId(viewRefSpecifier: ViewReferenceSpecifier = {}): string {
@@ -647,6 +680,7 @@ class PlanarViewReferenceController {
     }
 
     const sliceWorldPoint =
+      sliceTarget?.imagePlanePoint ??
       normalizedViewRef.cameraFocalPoint ??
       sliceTarget?.sliceWorldPoint ??
       (typeof sliceTarget?.imageIdIndex === 'number'
@@ -802,13 +836,25 @@ class PlanarViewReferenceController {
    *    directly to the slice's exact world center (`sliceWorldPoint`), which
    *    is ordering-independent; feeding the list index into the camera-order
    *    basis instead would navigate to the mirrored slice.
+   *
+   * As on the legacy volume viewport, a slice index counts only with the
+   * volume id of the volume and a view plane normal. In the acquisition plane
+   * a named image goes before a focal point (`imagePlanePoint`), and an image
+   * of another series of the same frame of reference names the plane of its
+   * image position.
    */
   private resolveVolumeReferenceSliceTarget(
     referenceContext: PlanarReferenceContext,
     viewRef: ViewReference,
     effectiveViewPlaneNormal: Point3,
     isOppositeNormal: boolean
-  ): { imageIdIndex?: number; sliceWorldPoint?: Point3 } | undefined {
+  ):
+    | {
+        imageIdIndex?: number;
+        sliceWorldPoint?: Point3;
+        imagePlanePoint?: Point3;
+      }
+    | undefined {
     const { rendering } = referenceContext;
 
     if (
@@ -841,12 +887,28 @@ class PlanarViewReferenceController {
       viewRef.referencedImageId,
       viewRef.referencedImageURI
     );
+    const inAcquisitionPlane = this.showsAcquisitionPlane(
+      rendering.imageVolume,
+      effectiveViewPlaneNormal
+    );
 
     if (typeof referencedImageIndex === 'number') {
-      return this.toVolumeSliceTarget(
+      const target = this.toVolumeSliceTarget(
         rendering.imageVolume,
         referencedImageIndex
       );
+
+      return inAcquisitionPlane && target.sliceWorldPoint
+        ? { imagePlanePoint: target.sliceWorldPoint }
+        : target;
+    }
+
+    const otherImagePoint = inAcquisitionPlane
+      ? this.getOtherImagePlanePoint(referenceContext, viewRef)
+      : undefined;
+
+    if (otherImagePoint) {
+      return { imagePlanePoint: otherImagePoint };
     }
 
     const targetPoint =
@@ -869,18 +931,57 @@ class PlanarViewReferenceController {
           closestImageIndex
         );
       }
+    }
+  }
 
+  /**
+   * Whether a view plane normal shows the acquisition plane of a volume, with
+   * the tolerance of the legacy `VolumeViewport.isInAcquisitionPlane`.
+   */
+  private showsAcquisitionPlane(
+    imageVolume: { direction?: ArrayLike<number> } | undefined,
+    viewPlaneNormal: Point3
+  ): boolean {
+    const direction = imageVolume?.direction;
+
+    if (!direction) {
+      return false;
+    }
+
+    return (
+      Math.abs(
+        vec3.dot(viewPlaneNormal as unknown as vec3, [
+          direction[6],
+          direction[7],
+          direction[8],
+        ])
+      ) > PARALLEL_COSINE
+    );
+  }
+
+  /**
+   * The image position of an image that a reference names and the volume
+   * does not hold, when the reference is of the frame of reference of the
+   * volume: the plane of that image, which the legacy volume viewport went to.
+   */
+  private getOtherImagePlanePoint(
+    referenceContext: PlanarReferenceContext,
+    viewRef: ViewReference
+  ): Point3 | undefined {
+    if (
+      !viewRef.referencedImageId ||
+      viewRef.FrameOfReferenceUID !== referenceContext.frameOfReferenceUID
+    ) {
       return;
     }
 
-    if (typeof viewRef.sliceIndex === 'number') {
-      return {
-        imageIdIndex: Math.min(
-          Math.max(0, viewRef.sliceIndex),
-          maxImageIdIndex
-        ),
-      };
-    }
+    const imagePlane = metaData.get(
+      MetadataModules.IMAGE_PLANE,
+      viewRef.referencedImageId
+    ) as { imagePositionPatient?: Point3 } | undefined;
+    const position = imagePlane?.imagePositionPatient;
+
+    return position ? ([...position] as Point3) : undefined;
   }
 
   /**

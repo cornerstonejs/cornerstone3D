@@ -201,14 +201,22 @@ describe('Tools on a direct next planar viewport in stack mode and in volume mod
 
       await showStack(stack, series, 3);
       await showVolume(volume, series, 3);
-      await clipAndCacheSurfacesForViewport(surfacesInfo, stack);
-
-      const polyDataCache = await clipAndCacheSurfacesForViewport(
+      const stackPolyDataCache = await clipAndCacheSurfacesForViewport(
+        surfacesInfo,
+        stack
+      );
+      const volumePolyDataCache = await clipAndCacheSurfacesForViewport(
         surfacesInfo,
         volume
       );
-      const stackContours = getCachedContoursBySlice(polyDataCache, stack.id);
-      const volumeContours = getCachedContoursBySlice(polyDataCache, volume.id);
+      const stackContours = getCachedContoursBySlice(
+        stackPolyDataCache,
+        stack.id
+      );
+      const volumeContours = getCachedContoursBySlice(
+        volumePolyDataCache,
+        volume.id
+      );
 
       expect(Array.from(stackContours.keys()).sort()).toEqual([2, 3, 4, 5]);
       expect(Array.from(volumeContours.keys()).sort()).toEqual([2, 3, 4, 5]);

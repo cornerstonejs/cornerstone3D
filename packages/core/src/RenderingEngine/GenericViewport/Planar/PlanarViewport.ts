@@ -318,6 +318,12 @@ class PlanarViewport extends GenericViewport<
   private mountCpuDrawHolds = 0;
   /** Set when a CPU draw was asked for while a mount held it. */
   private cpuDrawHeldByMount = false;
+  /** The image load of a CPU stack that holds the draws of the viewport. */
+  private cpuDrawHoldImageLoad?: Promise<void>;
+  /** The image loads of a CPU stack that have ended and hold no draw. */
+  private readonly endedImageLoads = new WeakSet<Promise<void>>();
+  /** Set when a CPU draw was asked for while an image load held it. */
+  private cpuDrawHeldByImageLoad = false;
   /**
    * Set once the viewport warned that the CPU path does not draw the props
    * that the application added to its vtk.js renderer. A draw on the GPU
@@ -412,6 +418,8 @@ class PlanarViewport extends GenericViewport<
       getBinding: (dataId) => this.getBinding(dataId),
       getBindings: () => this.bindings.entries(),
       getCurrentBinding: () => this.getCurrentBinding(),
+      getDisplaySetPresentation: (dataId) =>
+        this.getDisplaySetPresentation(dataId),
       getRenderContext: () => this.renderContext,
       getResolvedView: (viewArgs) => this.getResolvedView(viewArgs),
       getViewState: () => this.viewState,
@@ -2315,8 +2323,10 @@ class PlanarViewport extends GenericViewport<
    * mounts: the draws asked for meanwhile wait, and the viewport draws once
    * when the mount ends, so a mount gives one draw and one IMAGE_RENDERED, as
    * the legacy CPU stack viewport drew once in the frame of the rendering
-   * engine. A GPU path renders through the rendering engine, which draws once
-   * in a frame.
+   * engine. The same holds while a CPU stack loads the image of a scroll: the
+   * draws wait for the image, so a scroll gives one draw with the new image.
+   * A GPU path renders through the rendering engine, which draws once in a
+   * frame.
    */
   render(): void {
     if (this.isDestroyed) {
@@ -2328,10 +2338,15 @@ class PlanarViewport extends GenericViewport<
       return;
     }
 
-    if (this.holdsRenderForRemount() || this.holdsCpuDrawForMount()) {
+    if (
+      this.holdsRenderForRemount() ||
+      this.holdsCpuDrawForMount() ||
+      this.holdsCpuDrawForImageLoad()
+    ) {
       return;
     }
 
+    this.cpuDrawHeldByImageLoad = false;
     this.setNeedsRender();
     this.renderContext.cpu.composition.renderPassId += 1;
     this.drewOutsideEngine = false;
@@ -2894,6 +2909,61 @@ class PlanarViewport extends GenericViewport<
     }
 
     this.cpuDrawHeldByMount = false;
+    this.render();
+  }
+
+  /**
+   * Whether the CPU stack path of the source waits for the image of a new
+   * slice, as after a scroll. A draw asked for meanwhile would draw the image
+   * shown before; it is marked and done when the load ends. The new image
+   * draws when it comes, and when its load fails the viewport draws once. A
+   * load that has ended holds nothing, whatever it delivered.
+   */
+  private holdsCpuDrawForImageLoad(): boolean {
+    const rendering = this.getCurrentPlanarRendering();
+
+    if (
+      rendering?.renderMode !== ActorRenderMode.CPU_IMAGE ||
+      !rendering.imageLoad ||
+      this.endedImageLoads.has(rendering.imageLoad) ||
+      rendering.lastRequestedImageIdIndex === undefined ||
+      rendering.lastRequestedImageIdIndex === rendering.currentImageIdIndex ||
+      rendering.lastRequestedImageIdIndex === rendering.failedImageIdIndex
+    ) {
+      return false;
+    }
+
+    const { imageLoad } = rendering;
+
+    if (this.cpuDrawHoldImageLoad !== imageLoad) {
+      this.cpuDrawHoldImageLoad = imageLoad;
+      void imageLoad.then(() => this.releaseImageLoadCpuDrawHold(imageLoad));
+    }
+
+    this.cpuDrawHeldByImageLoad = true;
+    this.setNeedsRender();
+
+    return true;
+  }
+
+  /**
+   * Ends the CPU draw hold of an image load. The viewport draws once when a
+   * draw was asked for meanwhile and the image did not draw it.
+   */
+  private releaseImageLoadCpuDrawHold(imageLoad: Promise<void>): void {
+    this.endedImageLoads.add(imageLoad);
+
+    if (this.cpuDrawHoldImageLoad !== imageLoad) {
+      return;
+    }
+
+    this.cpuDrawHoldImageLoad = undefined;
+
+    if (!this.cpuDrawHeldByImageLoad) {
+      return;
+    }
+
+    this.cpuDrawHeldByImageLoad = false;
     this.render();
   }
 

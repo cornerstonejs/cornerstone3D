@@ -6,10 +6,12 @@ import { getViewportPresentation } from './viewportPresentation';
  * The full depth in mm that a viewport's slab shows, or undefined when the
  * viewport shows no slab of its own.
  *
- * A next planar viewport keeps it in the presentation of its source display
- * set, as a full thickness. This function passes that value through. A stack
- * has no slab, and a viewport without display set presentations gives
- * undefined.
+ * A next planar viewport keeps the slab in the presentation of its source
+ * display set. A `slabThickness` of `T` shows the slices within about `T` of
+ * the plane on each side, as the legacy `setSlabThickness(T)` did, so the
+ * depth is twice the value, as the legacy helper gave twice
+ * `getSlabThickness()`. A stack has no slab, and a viewport without display
+ * set presentations gives undefined.
  *
  * A caller that needs a depth, such as a brush fill, must use this function
  * and not the raw value. See
@@ -25,8 +27,11 @@ export function getViewSlabDepthOfViewport(
           | { slabThickness?: number }
           | undefined)
       : undefined;
+    const slabThickness = presentation?.slabThickness;
 
-    return csUtils.getViewSlabDepth(presentation?.slabThickness);
+    return typeof slabThickness === 'number'
+      ? csUtils.getViewSlabDepth(slabThickness * 2)
+      : undefined;
   }
 
   return undefined;

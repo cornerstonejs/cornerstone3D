@@ -161,7 +161,7 @@ async function render(
         points: data.points,
         polys: data.polys,
         segmentIndex: data.segmentIndex,
-        id: data.segmentIndex,
+        id: geometryId,
       });
     }
 

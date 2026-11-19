@@ -33,6 +33,11 @@ import type {
   Volume3DVtkGeometryAdapterContext,
 } from './viewport3DTypes';
 import applyVolume3DCamera from './applyVolume3DCamera';
+import {
+  VOLUME_3D_FIT_VIEW_ANGLE,
+  getVolume3DFitCamera,
+  setVolume3DPhysicalCamera,
+} from './vtkVolume3DInitialCamera';
 
 /** @internal */
 export class VtkGeometry3DRenderPath
@@ -53,7 +58,7 @@ export class VtkGeometry3DRenderPath
     });
 
     if (!hadVisibleProps) {
-      ctx.vtk.renderer.resetCamera();
+      fitCameraToGeometry(ctx);
     }
 
     ctx.vtk.renderer.resetCameraClippingRange();
@@ -309,6 +314,32 @@ function applyDataPresentation(
         );
     }
   });
+}
+
+/**
+ * Fits the camera of a 3D viewport that shows nothing yet to the geometry
+ * that it gets, with the fit and the view angle of `resetViewState`, as the
+ * legacy 3D viewport fitted an actor in `setActors` and `resetCamera`. The
+ * view plane normal and the view up stay.
+ */
+function fitCameraToGeometry(ctx: Volume3DVtkGeometryAdapterContext): void {
+  const { renderer } = ctx.vtk;
+  const vtkCamera = renderer.getActiveCamera();
+  const fit = getVolume3DFitCamera(
+    ctx,
+    { bounds: renderer.computeVisiblePropBounds() },
+    vtkCamera.getViewPlaneNormal() as Point3,
+    vtkCamera.getViewUp() as Point3
+  );
+
+  applyVolume3DCamera(ctx, {
+    focalPoint: fit.focalPoint,
+    position: fit.position,
+    parallelScale: fit.parallelScale,
+    viewAngle: VOLUME_3D_FIT_VIEW_ANGLE,
+    viewUp: fit.viewUpToUse,
+  });
+  setVolume3DPhysicalCamera(ctx, fit.radius, fit.focalPoint);
 }
 
 function hasVisibleProps(ctx: Volume3DVtkGeometryAdapterContext): boolean {

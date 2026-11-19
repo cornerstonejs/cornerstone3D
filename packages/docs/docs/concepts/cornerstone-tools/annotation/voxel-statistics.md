@@ -216,14 +216,15 @@ those annotations appear on.
 
 ## Where `T` comes from
 
-A new annotation takes `T` once, at creation, from the slab thickness of the
-viewport that the user drew in. `Viewport.getReferencePlaneThickness` supplies the
-value, and `BaseVolumeViewport` overrides that method. After creation, `T`
-belongs to the annotation and lives on `PlaneRestriction.referencePlaneThickness`.
+A new annotation takes `T` once, at creation, from the slab of the viewport
+that the user drew in. The view reference of a planar viewport in volume mode
+supplies the value as `planeRestriction.referencePlaneThickness`, and the tools
+copy the view reference into the annotation. After creation, `T` belongs to the
+annotation and lives on `PlaneRestriction.referencePlaneThickness`.
 
 When a reference records no thickness, `T` defaults to one voxel along the
-normal. A stack viewport uses that default, and so does every annotation that
-predates the field.
+normal. A planar viewport in stack mode records none and uses that default,
+and so does every annotation that predates the field.
 
 A `T` of 0 or less also counts as unrecorded and takes the same default. A
 planar shape reports 0 from `getRequiredThickness`, and a caller may pass that
@@ -234,18 +235,19 @@ Reading the slab once at creation does not contradict the independence of
 Rule M from `t`. The code reads the slab when it creates the reference, and
 never when it recalculates the statistics.
 
-### Two conversions on the volume viewport
+### Two conversions of the slab of a planar viewport
 
-`BaseVolumeViewport.getReferencePlaneThickness` applies two conversions that a
-reader of the raw slab value would miss.
+The view reference of a planar viewport applies two conversions to the
+`slabThickness` of the presentation of its display set that a reader of the raw
+slab value would miss.
 
-**It doubles the value.** `getSlabThickness` returns the number passed to
-`setOrientationOfClippingPlanes`, which places the clipping planes at
-`focalPoint ± slabThickness`. The stored number is therefore a _half_
-thickness on that render path, and the geometric thickness is twice it. The
-generic planar path uses `vtkImageResliceMapper`, where the same field is
-already a full thickness, so the doubling belongs on the volume viewport and
-not in the shared reference code.
+**It doubles the value.** A `slabThickness` of `T` shows the slices within
+about `T` of the plane on each side. The GPU path and the CPU path both sample
+the slab as the vtk.js image reslice mapper does, and its samples reach that
+far. The legacy volume viewport of 5.x placed its clipping planes at
+`focalPoint ± slabThickness`, so the same number showed the same slab there.
+The number is therefore a _half_ thickness, and the depth that the user sees
+is twice it, as the legacy volume viewport recorded it.
 
 **It maps the rendering minimum to undefined.** A slab at
 `RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS` means "no slab was requested",
@@ -255,11 +257,11 @@ guarantee that an annotation always covers at least one layer. Mapping it to
 undefined lets `T` fall back to one voxel along the normal.
 
 `utilities.getViewSlabDepth` holds the second conversion, and every caller
-that needs a depth uses it. The caller supplies a full depth, so a volume
-viewport passes `getSlabThickness() * 2` and a generic planar viewport passes
-the value as it is. A brush fill reaches the function through
-`getViewSlabDepthOfViewport` in the tools package, which selects the render
-path. A caller that reads `getSlabThickness` and treats the value as a depth
+that needs a depth uses it. The caller supplies a full depth, so a caller
+passes twice the `slabThickness` of the presentation. A brush fill reaches the
+function through `getViewSlabDepthOfViewport` in the tools package, which reads
+the presentation of the source display set and gives the same depth as the view
+reference. A caller that reads `slabThickness` and treats the value as a depth
 fills half of the depth that the user sees.
 
 ## Using the iterator
@@ -621,4 +623,4 @@ Four more exports sit outside that namespace:
 | `utilities.getEffectiveSpacingAlongDirection`, in core            | the step that crosses one voxel along a line  |
 | `utilities.getViewSlabDepth`, in core                             | a slab depth, with "no slab" as undefined     |
 | `utilities.sampleAreaAnnotationVoxels`, in `@cornerstonejs/tools` | the one path every area annotation tool takes |
-| `utilities.getViewSlabDepthOfViewport`, in `@cornerstonejs/tools` | the slab depth of a viewport, per render path |
+| `utilities.getViewSlabDepthOfViewport`, in `@cornerstonejs/tools` | the slab depth that a viewport shows          |

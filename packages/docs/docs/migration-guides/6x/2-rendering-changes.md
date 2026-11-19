@@ -149,6 +149,14 @@ leave the canvas. Against the legacy volume viewport:
   keys of the presentation of one display set. The legacy `setSlabThickness`
   set all actors. A change of `slabThickness` fires `CAMERA_MODIFIED`, as the
   legacy member did. Other presentation changes fire no camera event.
+- **A brush and a new annotation take the depth of the slab shown.** A
+  `slabThickness` of `T` shows the slices within about `T` of the plane, so
+  the depth is `2T`, as on the legacy volume viewport.
+  `utilities.getViewSlabDepthOfViewport` of the tools gives it, a circle brush
+  fills that depth, and the view reference records it as
+  `planeRestriction.referencePlaneThickness`, so the statistics of a new area
+  annotation cover it. In 5.x a next viewport gave `T`, and its annotations
+  recorded no thickness and measured one slice.
 - **A slab is the step of `getTargetVolumeAndSpacingInNormalDir`.** With a
   `volumeId` and `useSlabThickness`, the step that
   `utilities.getTargetVolumeAndSpacingInNormalDir` gives is the
@@ -379,6 +387,17 @@ leave the canvas. Against the legacy volume viewport:
   slice index of such a reference, which counts in the other series. In
   volume mode a reference of another series in the same frame of reference
   still moves the view to its plane, as on the legacy volume viewport.
+- **A volume goes where the legacy volume went for a part of a reference.**
+  In volume mode, `setViewReference` uses a `sliceIndex` only with the
+  `volumeId` of the volume and a `viewPlaneNormal`; a slice index without
+  them moves nothing. In the acquisition plane a named image goes before a
+  `cameraFocalPoint`, and an image of another series of the frame of
+  reference moves the view to the plane of its image position. In 5.x the
+  next viewport went to a bare slice index in the order of the view, and to
+  the focal point before the image. For a reference of another frame of
+  reference, or of none, the legacy volume viewport threw "Incompatible view
+  refs"; a planar viewport moves nothing and does not throw. A
+  `cameraFocalPoint` without a frame of reference still moves it.
 - **A reference of a sagittal or a coronal slice is viewable with navigation
   on every slice of that view.** Its slice index counts in the slices along
   the view, as on the legacy volume viewport. In 5.x the next planar
@@ -410,6 +429,17 @@ leave the canvas. Against the legacy volume viewport:
   slices were missing. `utilities.getSlicesClippingPlanes(viewport)` gives
   them, for a volume and for a stack, and the cut of a surface into the
   contours of each slice uses it in both modes.
+- **The contours cut from surfaces are kept for each viewport and each
+  surface.** `clipAndCacheSurfacesForViewport(surfacesInfo, viewport)` of
+  polySeg gives the contours of those surfaces on that viewport only, so
+  `extractContourData` of its result no longer holds the contours that
+  other viewports or other segmentations with the same segment index got
+  before, which a viewport then showed twice. The id of each surface names
+  the surface (its geometry id; for a labelmap, the segmentation and the
+  segment index), and the bounding box of a surface is computed again when
+  its points or its polys change. In 5.x the result held every contour cut
+  before, and a box was kept for good, in two of the paths by the segment
+  index.
 - **A Surface representation shows as its cut.** On a planar viewport the
   surface of each segment is a prop of the renderer of the viewport. In
   volume mode it is clipped to the slice on display, 0.05 mm on each side, as
@@ -519,6 +549,14 @@ through one CPU draw step that follows the GPU:
   engine. The draw of a linear image at rest fires one more. In 5.x a next
   viewport drew at each render call, so a mount of a stack fired
   `IMAGE_RENDERED` three times.
+- **A scroll of a stack draws once on the CPU.** While a stack loads the
+  image of a new slice (`setImageIdIndex`, `scroll`, `utilities.scroll`, or
+  `setViewState` with a slice), the renders that are asked for wait, and the
+  viewport draws once when the image comes, as the legacy CPU stack viewport
+  drew once with the new image. The draw of a linear image at rest fires one
+  more `IMAGE_RENDERED`. When the load fails the viewport draws once with
+  the image shown before. In 5.x a next viewport first drew the image shown
+  before, so a scroll fired `IMAGE_RENDERED` up to three times.
 
 Not equal yet: the outline of a labelmap is not drawn on the CPU, and a slab
 through the whole volume is not drawn on the CPU.
@@ -682,6 +720,13 @@ legacy picture within two levels of 255.
   gives the actors of the display sets.
   [The 3D viewport](./3-api-map.md#the-3d-viewport) has the call for each
   member.
+- **A surface shown first is fitted as a reset fits it.** When a surface is
+  the first thing that a 3D viewport shows, the mount fits the camera with
+  the fit and the view angle of 90 degrees of `resetViewState()`, as the
+  legacy `setActors` and `resetCamera` did, so a later reset does not change
+  the picture. In 5.x the mount used the fit of vtk.js, with a view angle of
+  30 degrees and the bounding radius as the parallel scale, and the first
+  `resetViewState()` changed the picture.
 - **A reset fits a surface that reaches outside the volume.**
   `resetViewState()`, and the zoom and the pan against the fit, count a
   visible surface. The legacy viewport fitted the volume only, so such a
