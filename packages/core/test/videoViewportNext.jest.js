@@ -7,7 +7,7 @@ import {
   jest,
 } from '@jest/globals';
 import VideoViewport from '../src/RenderingEngine/GenericViewport/Video/VideoViewport';
-import { Enums, viewportProjection } from '../src/index';
+import { Enums, metaData, utilities, viewportProjection } from '../src/index';
 
 const WIDTH = 400;
 const HEIGHT = 300;
@@ -393,5 +393,121 @@ describe('suppressEvents on the direct next video viewport', () => {
 
     viewport.destroy();
     element.remove();
+  });
+});
+
+/**
+ * What `getCamera` of the legacy video viewport gave at the fit, measured on
+ * the test video of the karma tests: the focal point at the world point of
+ * the centre of the canvas, this position, view up and normal, and a parallel
+ * scale of half the canvas height in world units.
+ */
+const LEGACY_CAMERA_AT_FIT = {
+  position: [0, 0, 0],
+  viewUp: [0, -1, 0],
+  viewPlaneNormal: [0, 0, 1],
+};
+
+/**
+ * What `getImageDataMetadata` of the legacy video viewport gave for a video
+ * whose image plane module has 10 rows, 20 columns and a column pixel spacing
+ * of 0.5. It read the metadata with `getVideoImageDataMetadata`.
+ */
+const LEGACY_PIXEL_SPACED_METADATA = {
+  dimensions: [20, 10, 1],
+  spacing: [0.5, 1, 1],
+  hasPixelSpacing: true,
+};
+
+/**
+ * What `getSliceIndexForImage` of the legacy video viewport gave for the
+ * image id of the frames 7 to 9 and for the image id of the frame 4.
+ */
+const LEGACY_FRAME_STARTS = [7, 4];
+
+describe('Camera and zoom of the next video viewport', () => {
+  let viewport;
+  let element;
+
+  beforeEach(async () => {
+    ({ viewport, element } = await createViewport());
+  });
+
+  afterEach(() => {
+    viewport.destroy();
+    element.remove();
+  });
+
+  it('gives the camera of the frame on display from the resolved view, as getCamera of the legacy video viewport', () => {
+    const camera = viewport.getResolvedView().toICamera();
+    const worldToCanvasRatio = Math.min(
+      WIDTH / VIDEO_WIDTH,
+      HEIGHT / VIDEO_HEIGHT
+    );
+
+    expect(camera.focalPoint).toEqual(
+      viewport.canvasToWorld([WIDTH / 2, HEIGHT / 2])
+    );
+    expect(camera.focalPoint).toEqual([VIDEO_WIDTH / 2, VIDEO_HEIGHT / 2, 0]);
+    expect(camera.position).toEqual(LEGACY_CAMERA_AT_FIT.position);
+    expect(camera.viewUp).toEqual(LEGACY_CAMERA_AT_FIT.viewUp);
+    expect(camera.viewPlaneNormal).toEqual(
+      LEGACY_CAMERA_AT_FIT.viewPlaneNormal
+    );
+    expect(camera.parallelScale).toBeCloseTo(HEIGHT / 2 / worldToCanvasRatio);
+  });
+
+  it('zooms about the centre, or about the canvas point of the second argument of setZoom', () => {
+    viewport.setZoom(2);
+
+    expect(viewport.getZoom()).toBeCloseTo(2);
+    expect(viewport.getResolvedView().toICamera().focalPoint[0]).toBeCloseTo(
+      VIDEO_WIDTH / 2
+    );
+
+    const anchor = viewport.canvasToWorld([10, 20]);
+
+    viewport.setZoom(4, [10, 20]);
+
+    expect(viewport.getZoom()).toBeCloseTo(4);
+    expect(viewport.canvasToWorld([10, 20])[0]).toBeCloseTo(anchor[0]);
+    expect(viewport.canvasToWorld([10, 20])[1]).toBeCloseTo(anchor[1]);
+  });
+});
+
+describe('Image plane metadata and frames of a video image', () => {
+  it('finds the first frame of an image id with FrameRange, as getSliceIndexForImage of the legacy video viewport', () => {
+    const uri = 'https://server/studies/1/series/2/instances/3';
+
+    expect([
+      utilities.FrameRange.imageIdToFrameStart(`wadors:${uri}/frames/7-9`),
+      utilities.FrameRange.imageIdToFrameStart(`wadors:${uri}/frames/4`),
+    ]).toEqual(LEGACY_FRAME_STARTS);
+  });
+
+  it('reads the image plane metadata of a video image with VideoUtilities, as getImageDataMetadata of the legacy video viewport', () => {
+    const provider = (type, imageId) =>
+      type === 'imagePlaneModule' && imageId === VIDEO_ID
+        ? { rows: 10, columns: 20, columnPixelSpacing: 0.5 }
+        : undefined;
+
+    metaData.addProvider(provider, 100000);
+
+    try {
+      const imageMetadata =
+        utilities.VideoUtilities.getVideoImageDataMetadata(VIDEO_ID);
+
+      expect(imageMetadata.dimensions).toEqual(
+        LEGACY_PIXEL_SPACED_METADATA.dimensions
+      );
+      expect(imageMetadata.spacing).toEqual(
+        LEGACY_PIXEL_SPACED_METADATA.spacing
+      );
+      expect(imageMetadata.hasPixelSpacing).toBe(
+        LEGACY_PIXEL_SPACED_METADATA.hasPixelSpacing
+      );
+    } finally {
+      metaData.removeProvider(provider);
+    }
   });
 });

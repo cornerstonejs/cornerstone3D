@@ -420,7 +420,9 @@ the presentation gives zoom 1 and pan `[0, 0]`.
   camera, so `storeAsInitialCamera` and `resetToCenter` have no twin.
 - A planar, a video and an ECG viewport still have `getZoom`, `setZoom`,
   `getPan` and `setPan` from 5.x. The second argument of `setZoom` is a canvas
-  point there, not `storeAsInitialCamera`. New code uses `viewportProjection`.
+  point there, not `storeAsInitialCamera`. On a legacy video viewport
+  `setZoom` did not zoom and `getZoom` always gave 1; a video viewport now
+  zooms. New code uses `viewportProjection`.
 - A 3D viewport has none of the four members, and a whole slide viewport has
   no `getPan` and no `setPan`. Use `viewportProjection` there, as in the
   sample above.
@@ -921,7 +923,7 @@ decides. A coding agent stops here and asks.
 | A viewport on the CPU                               | The VOI lookup table and the modality lookup table of an image are not applied, as on the GPU. The area around the image has the background colour                               | Whether the application relied on the lookup tables on the CPU. See [the section](./2-rendering-changes.md#a-viewport-on-the-cpu-shows-the-gpu-picture) |
 | The crosshair                                       | `CrosshairsTool` sets no blend mode for its slab                                                                                                                                 | Set `blendMode` in the presentation. Or use `WorldCrosshairTool` with `SliceIntersectionTool`                                                           |
 | `ViewportType.PERSPECTIVE`                          | The legacy type drew a thin slab of the volume. A 3D viewport with `parallelProjection: false` draws the volume in 3D                                                            | What the screen shows                                                                                                                                   |
-| The zoom and the pan of a video and an ECG viewport | `getPan()` gives canvas pixels from the fit. The legacy viewport gave world units                                                                                                | What code that stores a pan does with stored values                                                                                                     |
+| The zoom and the pan of a video and an ECG viewport | `getPan()` gives canvas pixels from the fit. The legacy viewport gave world units, and the legacy video viewport did not zoom                                                    | What code that stores a pan does with stored values                                                                                                     |
 | The pan of a whole slide viewport                   | It is measured from the centre of the slide. The legacy `getPan()` measured from the view at mount, and `setPan(pan, true)` stored a new origin                                  | What code that stores a pan does with stored values                                                                                                     |
 | The zoom of a 3D viewport                           | It is measured against the fit for the direction of the camera now. The legacy `getZoom()` measured against the camera of the last reset                                         | What code that stores or compares a zoom does                                                                                                           |
 | Playback of a video                                 | `setPlaybackRate()` does not start or pause playback                                                                                                                             | Where the application calls `play()` and `pause()`                                                                                                      |

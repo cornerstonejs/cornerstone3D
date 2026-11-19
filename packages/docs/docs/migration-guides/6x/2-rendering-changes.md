@@ -787,14 +787,20 @@ legacy picture within two levels of 255.
   undefined. The detail has no `time` and no `duration`, which the legacy
   video viewport put into `STACK_NEW_IMAGE`: read
   `viewport.getCurrentTime()`, and divide `viewport.getNumberOfFrames()` by
-  `viewport.getFrameRate()` for the duration.
+  `viewport.getFrameRate()` for the duration. The legacy video viewport fired
+  `STACK_NEW_IMAGE` with each draw: on each animation frame while the video
+  played, and on each render, pan, zoom, reset, resize and seek, also when
+  the frame stayed the same. `NEW_IMAGE` does not fire for a pan, a zoom, a
+  resize or a render: listen to `CAMERA_MODIFIED` for a pan or a zoom, and to
+  `IMAGE_RENDERED` for a draw.
 - **`options.frameNumber` of `setDisplaySets` is honoured.**
 - **`voiRange` and `averageWhite` of the presentation are applied.**
 - **`IMAGE_RENDERED` fires.** A next video viewport fires it when what it shows
   changes: a new frame, a seek, a pan, a zoom, a resize or a call of
-  `render()`, at most once for each animation frame. It never fired in 5.x, so
-  an annotation did not follow a pan or a zoom. The legacy viewport fires one
-  on every animation frame while a video plays.
+  `render()`, at most once for each animation frame. The next video viewport
+  of 5.x never fired it, so an annotation did not follow a pan or a zoom
+  there. The legacy viewport fires one with every draw, so on every animation
+  frame while a video plays.
 - **The pixels of the frame.** `getImageData()` gives the pixels of the frame
   on display, as on the legacy viewport, so a probe and the ROI tools give
   statistics.

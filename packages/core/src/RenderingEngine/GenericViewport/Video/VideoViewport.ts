@@ -905,7 +905,7 @@ class VideoViewport extends GenericViewport<
    * frames and the image id of the frame. A video has no image object for a
    * frame. Then asks for the IMAGE_RENDERED of the frame.
    */
-  protected triggerFrameEvents(): void {
+  private triggerFrameEvents(): void {
     const element = this.getVideoElement();
 
     if (this.isDestroyed || !element) {

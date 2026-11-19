@@ -109,17 +109,6 @@ describe('WholeBodySegmentTool volume of a direct next planar viewport', () => {
 });
 
 describe('AnnotationMultiSlice.setViewportFrameRange', () => {
-  it('gives the viewport the frame range as one array of 1-based frames', () => {
-    const viewport = { setFrameRange: jest.fn() };
-
-    AnnotationMultiSlice.setViewportFrameRange(viewport, {
-      sliceIndex: 4,
-      multiSliceReference: { sliceIndex: 9 },
-    });
-
-    expect(viewport.setFrameRange).toHaveBeenCalledWith([5, 10]);
-  });
-
   it('sets the frame range key of the view state on a direct next video viewport, which has no setFrameRange', () => {
     const viewport = {
       type: Enums.ViewportType.VIDEO_NEXT,

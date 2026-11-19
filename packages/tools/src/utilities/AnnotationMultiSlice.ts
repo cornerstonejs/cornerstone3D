@@ -176,9 +176,8 @@ export default class AnnotationMultiSlice {
 
   /**
    * This sets the viewport frame range if it has a frame range.  This is the
-   * playback range for display. A legacy viewport and a legacy adapter take
-   * it with `setFrameRange`, a next video viewport as the `frameRange` key
-   * of its view state.
+   * playback range for display, which a video viewport takes as the
+   * `frameRange` key of its view state.
    */
   public static setViewportFrameRange(viewport, specifier) {
     if (!specifier.multiSliceReference?.sliceIndex) {
@@ -190,9 +189,7 @@ export default class AnnotationMultiSlice {
       specifier.multiSliceReference.sliceIndex + 1,
     ];
 
-    if (viewport.setFrameRange) {
-      viewport.setFrameRange(frameRange);
-    } else if (utilities.getViewportContentMode(viewport) === 'video') {
+    if (utilities.getViewportContentMode(viewport) === 'video') {
       viewport.setViewState({ frameRange });
     }
   }
