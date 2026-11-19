@@ -5,7 +5,6 @@ import eventTarget from '../src/eventTarget';
 import * as getEnabledElementModule from '../src/getEnabledElement';
 import ECGViewport from '../src/RenderingEngine/GenericViewport/ECG/ECGViewport';
 import WSIViewport from '../src/RenderingEngine/GenericViewport/WSI/WSIViewport';
-import WSIViewportLegacyAdapter from '../src/RenderingEngine/GenericViewport/WSI/WSIViewportLegacyAdapter';
 import { mountNext, unmount } from './utils/wsiStandIn';
 
 jest.mock('../src/getEnabledElement');
@@ -99,17 +98,6 @@ describe('Scroll on a next viewport that has no slices', () => {
     expect(view.getResolution()).toBe(resolution);
     expect(view.getCenter()).toEqual(center);
     expect(outOfBounds).not.toHaveBeenCalled();
-  });
-
-  it('zooms the whole slide adapter for utilities.scroll, as before', async () => {
-    const { viewport, view } = enable(
-      await mountNext(WSIViewportLegacyAdapter, 0.4)
-    );
-    const resolution = view.getResolution();
-
-    scroll(viewport, { delta: 1 });
-
-    expect(view.getResolution()).toBeCloseTo(resolution * 1.1, 6);
   });
 
   it('moves the time window of a direct next ECG viewport for utilities.scroll, and jumpToSlice does not throw on it', async () => {

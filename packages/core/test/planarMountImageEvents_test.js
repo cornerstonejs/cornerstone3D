@@ -1,7 +1,6 @@
 import * as cornerstone3D from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
 import {
-  createLegacyViewport,
   createNextViewport,
   createSeries,
   renderAndWait,
@@ -10,7 +9,7 @@ import {
 } from './utils/planarSeriesBothModes';
 
 const { Enums, utilities } = cornerstone3D;
-const { Events, OrientationAxis, ViewportType } = Enums;
+const { Events, OrientationAxis } = Enums;
 
 const renderingEngineId = utilities.uuidv4();
 
@@ -418,81 +417,4 @@ describe('The new image event of a mount and of a scroll on a planar viewport --
       expectNoOldPair(events);
     });
   }
-
-  /**
-   * What the legacy adapters fire for a series. The legacy volume viewport
-   * class of 5.x fired VOLUME_NEW_IMAGE once, for image index 3 of 8 slices,
-   * and no STACK_NEW_IMAGE. Its adapter fires both twice: first as the volume
-   * is attached, for the index of its middle image, then for the slice that
-   * the mount shows. The legacy stack viewport class fired STACK_NEW_IMAGE
-   * once, as its adapter does. An adapter is a next viewport too, so it also
-   * fires NEW_IMAGE, once for what the mount shows.
-   */
-  it('keeps the old pair that the legacy adapters fire at a mount, and fires NEW_IMAGE once too', async function () {
-    const series = await createSeries({ id: 'mount-legacy' });
-    const fired = {};
-
-    for (const [id, type] of [
-      ['adapterVolume', ViewportType.ORTHOGRAPHIC],
-      ['adapterStack', ViewportType.STACK],
-    ]) {
-      const viewport = createLegacyViewport(renderingEngine, id, type, {
-        orientation: OrientationAxis.AXIAL,
-      });
-      const events = recordNewImageEvents(viewport.element);
-
-      if (type === ViewportType.STACK) {
-        await viewport.setStack(series.imageIds, 0);
-      } else {
-        await viewport.setVolumes([{ volumeId: series.volumeId }]);
-      }
-
-      await firstRenderDone(viewport);
-      fired[id] = {
-        stack: events.stack.map(({ imageId, imageIdIndex }) => ({
-          image: series.imageIds.indexOf(imageId),
-          imageIdIndex,
-        })),
-        volume: events.volume.map(({ imageIndex, numberOfSlices }) => ({
-          imageIndex,
-          numberOfSlices,
-        })),
-        newImage: events.newImage.map(
-          ({ imageId, imageIdIndex, numberOfSlices, image }) => ({
-            image: series.imageIds.indexOf(imageId),
-            imageIdIndex,
-            numberOfSlices,
-            hasImage: image !== undefined,
-          })
-        ),
-        sliceIndex: viewport.getCurrentImageIdIndex(),
-        imageOnDisplay: series.imageIds.indexOf(viewport.getCurrentImageId()),
-      };
-    }
-
-    expect(fired.adapterVolume).toEqual({
-      stack: [
-        { image: 4, imageIdIndex: 4 },
-        { image: 3, imageIdIndex: 3 },
-      ],
-      volume: [
-        { imageIndex: 4, numberOfSlices: 8 },
-        { imageIndex: 3, numberOfSlices: 8 },
-      ],
-      newImage: [
-        { image: 4, imageIdIndex: 3, numberOfSlices: 8, hasImage: false },
-      ],
-      sliceIndex: 3,
-      imageOnDisplay: 4,
-    });
-    expect(fired.adapterStack).toEqual({
-      stack: [{ image: 0, imageIdIndex: 0 }],
-      volume: [],
-      newImage: [
-        { image: 0, imageIdIndex: 0, numberOfSlices: 8, hasImage: true },
-      ],
-      sliceIndex: 0,
-      imageOnDisplay: 0,
-    });
-  });
 });

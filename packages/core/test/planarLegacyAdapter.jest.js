@@ -16,10 +16,6 @@ import vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 import PlanarViewport from '../src/RenderingEngine/GenericViewport/Planar/PlanarViewport';
 import PlanarViewportLegacyAdapter from '../src/RenderingEngine/GenericViewport/Planar/PlanarViewportLegacyAdapter';
 import { PlanarSampledSliceCanvas } from '../src/RenderingEngine/GenericViewport/Planar/planarSampledSliceCanvas';
-import {
-  getDefaultImageInvert,
-  getDefaultImageVOIRange,
-} from '../src/RenderingEngine/helpers/planarImageRendering';
 import genericViewportDisplaySetMetadataProvider from '../src/utilities/genericViewportDisplaySetMetadataProvider';
 import renderingEngineCache from '../src/RenderingEngine/renderingEngineCache';
 import getSliceRange from '../src/utilities/getSliceRange';
@@ -867,99 +863,6 @@ describe('planar legacy adapter and a MONOCHROME1 image', () => {
     }
 
     expect(steps).toEqual([false, [true, true], [false, false]]);
-  });
-
-  it('starts a display set of a direct planar viewport inverted and keeps what the application sets', async () => {
-    setUpCore();
-    const renderer = {
-      getActiveCamera: () => ({ setParallelProjection() {} }),
-      computeVisiblePropBounds: () => [1, -1, 1, -1, 1, -1],
-      getViewProps: () => [],
-    };
-    let viewport;
-    const renderingEngine = {
-      id: utilities.uuidv4(),
-      getRenderer: () => renderer,
-      getViewports: () => (viewport ? [viewport] : []),
-      renderViewport() {},
-      destroy() {
-        viewport.destroy();
-        renderingEngineCache.delete(renderingEngine.id);
-      },
-    };
-
-    renderingEngineCache.set(renderingEngine);
-    renderingEngines.push(renderingEngine);
-    viewport = new PlanarViewport({
-      id: 'direct',
-      element: document.getElementById('element'),
-      renderingEngineId: renderingEngine.id,
-      canvas: document.createElement('canvas'),
-      sWidth: 64,
-      sHeight: 64,
-      defaultOptions: {},
-    });
-    genericViewportDisplaySetMetadataProvider.add('xray', {
-      kind: 'planar',
-      imageIds: createPhotometricImageIds(['MONOCHROME1']),
-      initialImageIdIndex: 0,
-    });
-
-    await viewport.setDisplaySets({ displaySetId: 'xray' });
-
-    expect(viewport.getDisplaySetPresentation('xray').invert).toBeUndefined();
-    expect(viewport.getDefaultInvert('xray')).toBe(true);
-    expect(await readDrawnInvert(viewport, drawSpy)).toBe(true);
-
-    viewport.setDisplaySetPresentation('xray', { invert: false });
-
-    expect(await readDrawnInvert(viewport, drawSpy)).toBe(false);
-
-    viewport.resetDisplaySetPresentation('xray');
-
-    expect(viewport.getDisplaySetPresentation('xray').invert).toBeUndefined();
-    expect(await readDrawnInvert(viewport, drawSpy)).toBe(true);
-  });
-});
-
-describe('getDefaultImageInvert', () => {
-  afterEach(() => {
-    metaData.removeAllProviders();
-  });
-
-  it('reads the photometric interpretation of the metadata before image.invert', () => {
-    metaData.addProvider((type, imageId) => {
-      if (type !== 'imagePixelModule') {
-        return;
-      }
-
-      return { photometricInterpretation: imageId.split(':')[1] };
-    });
-
-    expect(getDefaultImageInvert({ imageId: 'pi:MONOCHROME1' })).toBe(true);
-    expect(
-      getDefaultImageInvert({ imageId: 'pi:MONOCHROME1', invert: false })
-    ).toBe(true);
-    expect(
-      getDefaultImageInvert({ imageId: 'pi:MONOCHROME2', invert: true })
-    ).toBe(false);
-    expect(getDefaultImageInvert({ imageId: 'pi:', invert: true })).toBe(true);
-    expect(getDefaultImageInvert({ imageId: 'pi:' })).toBe(false);
-  });
-});
-
-describe('getDefaultImageVOIRange', () => {
-  it('gives a grayscale image without a window the range of its pixel values, as the legacy stack viewport', () => {
-    expect(
-      getDefaultImageVOIRange({ minPixelValue: 100, maxPixelValue: 300 })
-    ).toEqual({ lower: 100, upper: 300 });
-    expect(
-      getDefaultImageVOIRange({
-        color: true,
-        minPixelValue: 0,
-        maxPixelValue: 255,
-      })
-    ).toBeUndefined();
   });
 });
 

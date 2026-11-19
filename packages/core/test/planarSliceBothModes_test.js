@@ -5,7 +5,6 @@ import * as testUtils from '../../../utils/test/testUtils';
 import {
   STRAIGHT_PLANE,
   TILTED_PLANE,
-  createLegacyViewport,
   createNextViewport,
   createSeries,
   dot,
@@ -20,7 +19,7 @@ import {
 } from './utils/planarSeriesBothModes';
 
 const { Enums, utilities } = cornerstone3D;
-const { OrientationAxis, ViewportType } = Enums;
+const { OrientationAxis } = Enums;
 
 const renderingEngineId = utilities.uuidv4();
 
@@ -380,78 +379,6 @@ describe('A direct next planar viewport in stack mode and in volume mode -- ', (
         expect(indexOfSlicePixel(volumeSlice, [x, y])).toEqual([31 - x, y, 3]);
       });
     });
-
-    it('gives the image on display of a legacy stack viewport and of a legacy adapter in stack mode', async function () {
-      const series = await createSeries();
-      const legacy = createLegacyViewport(
-        renderingEngine,
-        'legacy',
-        ViewportType.STACK
-      );
-      const adapter = createLegacyViewport(
-        renderingEngine,
-        'adapter',
-        ViewportType.STACK,
-        { adapter: true }
-      );
-
-      await legacy.setStack(series.imageIds, 3);
-      await renderAndWait(legacy);
-      await adapter.setStack(series.imageIds, 3);
-      await renderAndWait(adapter);
-
-      [legacy, adapter].forEach((viewport) => {
-        const slice = utilities.getCurrentVolumeViewportSlice(viewport);
-
-        expect(slice.width).toBe(32);
-        expect(slice.height).toBe(24);
-        expect(Array.from(slice.scalarData)).toEqual(
-          storedSlicePixels(series, 3)
-        );
-        SLICE_PIXELS.forEach(([x, y]) => {
-          expect(indexOfSlicePixel(slice, [x, y])).toEqual([x, y, 0]);
-        });
-      });
-    });
-
-    it('gives the pixels of the slice on display of a legacy volume viewport that looks against the slice axis', async function () {
-      const series = await createSeries();
-      const legacy = createLegacyViewport(
-        renderingEngine,
-        'legacy',
-        ViewportType.ORTHOGRAPHIC,
-        { orientation: OrientationAxis.AXIAL }
-      );
-
-      await legacy.setVolumes([{ volumeId: series.volumeId }]);
-      await renderAndWait(legacy);
-
-      const camera = legacy.getCamera();
-      const shift = worldOfVoxel(series, [0, 0, 2])[2] - camera.focalPoint[2];
-
-      legacy.setCamera({
-        focalPoint: [
-          camera.focalPoint[0],
-          camera.focalPoint[1],
-          camera.focalPoint[2] + shift,
-        ],
-        position: [
-          camera.position[0],
-          camera.position[1],
-          camera.position[2] + shift,
-        ],
-      });
-      await renderAndWait(legacy);
-
-      const slice = utilities.getCurrentVolumeViewportSlice(legacy);
-
-      expect(legacy.getCamera().viewPlaneNormal[2]).toBe(-1);
-      expect(legacy.getCurrentImageId()).toBe(series.imageIds[2]);
-      expect(indexOfSlicePixel(slice, [5, 7])).toEqual([5, 7, 2]);
-      expect(Array.from(slice.scalarData)).toEqual(
-        storedSlicePixels(series, 2)
-      );
-    });
   });
 
   describe('the clipping planes of the slices', () => {
@@ -511,69 +438,6 @@ describe('A direct next planar viewport in stack mode and in volume mode -- ', (
       expect(empty.getCurrentMode()).toBe('empty');
       expect(utilities.getSlicesClippingPlanes(empty)).toEqual([]);
     });
-
-    it('gives the planes of the legacy adapters as a next viewport', async function () {
-      const series = await createSeries();
-      const stack = createNextViewport(renderingEngine, 'stack');
-      const volume = createNextViewport(renderingEngine, 'volume');
-      const legacyStack = createLegacyViewport(
-        renderingEngine,
-        'legacyStack',
-        ViewportType.STACK
-      );
-      const adapterStack = createLegacyViewport(
-        renderingEngine,
-        'adapterStack',
-        ViewportType.STACK,
-        { adapter: true }
-      );
-      const legacyVolume = createLegacyViewport(
-        renderingEngine,
-        'legacyVolume',
-        ViewportType.ORTHOGRAPHIC,
-        { orientation: OrientationAxis.AXIAL }
-      );
-      const adapterVolume = createLegacyViewport(
-        renderingEngine,
-        'adapterVolume',
-        ViewportType.ORTHOGRAPHIC,
-        { adapter: true, orientation: OrientationAxis.AXIAL }
-      );
-
-      await showStack(stack, series, 3);
-      await showVolume(volume, series, 3);
-      await legacyStack.setStack(series.imageIds, 3);
-      await renderAndWait(legacyStack);
-      await adapterStack.setStack(series.imageIds, 3);
-      await renderAndWait(adapterStack);
-      await legacyVolume.setVolumes([{ volumeId: series.volumeId }]);
-      await renderAndWait(legacyVolume);
-      await adapterVolume.setVolumes([{ volumeId: series.volumeId }]);
-      await renderAndWait(adapterVolume);
-
-      const stackPlanes = utilities.getSlicesClippingPlanes(stack);
-      const volumePlanes = utilities.getSlicesClippingPlanes(volume);
-      const legacyVolumePlanes =
-        utilities.getSlicesClippingPlanes(legacyVolume);
-      const adapterVolumePlanes =
-        utilities.getSlicesClippingPlanes(adapterVolume);
-
-      expect(stackPlanes.length).toBe(8);
-      expect(utilities.getSlicesClippingPlanes(legacyStack)).toEqual(
-        stackPlanes
-      );
-      expect(utilities.getSlicesClippingPlanes(adapterStack)).toEqual(
-        stackPlanes
-      );
-      expect(legacyVolumePlanes.length).toBe(8);
-      expect(adapterVolumePlanes.length).toBe(8);
-      legacyVolumePlanes.forEach((entry, index) => {
-        expect(adapterVolumePlanes[index].sliceIndex).toBe(entry.sliceIndex);
-        expect(volumePlanes[index].sliceIndex).toBe(entry.sliceIndex);
-        expectSamePlanes(adapterVolumePlanes[index], entry);
-        expectSamePlanes(volumePlanes[index], entry);
-      });
-    });
   });
 
   describe('isInAcquisitionPlane', () => {
@@ -609,72 +473,6 @@ describe('A direct next planar viewport in stack mode and in volume mode -- ', (
       const empty = createNextViewport(renderingEngine, 'empty');
 
       expect(utilities.isInAcquisitionPlane(empty)).toBe(false);
-    });
-
-    it('gives the answer of the member of a legacy viewport and of a legacy adapter', async function () {
-      const series = await createSeries();
-      const legacyStack = createLegacyViewport(
-        renderingEngine,
-        'legacyStack',
-        ViewportType.STACK
-      );
-      const adapterStack = createLegacyViewport(
-        renderingEngine,
-        'adapterStack',
-        ViewportType.STACK,
-        { adapter: true }
-      );
-      const legacyAxial = createLegacyViewport(
-        renderingEngine,
-        'legacyAxial',
-        ViewportType.ORTHOGRAPHIC,
-        { orientation: OrientationAxis.AXIAL }
-      );
-      const legacySagittal = createLegacyViewport(
-        renderingEngine,
-        'legacySagittal',
-        ViewportType.ORTHOGRAPHIC,
-        { orientation: OrientationAxis.SAGITTAL }
-      );
-      const adapterAxial = createLegacyViewport(
-        renderingEngine,
-        'adapterAxial',
-        ViewportType.ORTHOGRAPHIC,
-        { adapter: true, orientation: OrientationAxis.AXIAL }
-      );
-      const adapterSagittal = createLegacyViewport(
-        renderingEngine,
-        'adapterSagittal',
-        ViewportType.ORTHOGRAPHIC,
-        { adapter: true, orientation: OrientationAxis.SAGITTAL }
-      );
-
-      await legacyStack.setStack(series.imageIds, 3);
-      await renderAndWait(legacyStack);
-      await adapterStack.setStack(series.imageIds, 3);
-      await renderAndWait(adapterStack);
-
-      for (const viewport of [
-        legacyAxial,
-        legacySagittal,
-        adapterAxial,
-        adapterSagittal,
-      ]) {
-        await viewport.setVolumes([{ volumeId: series.volumeId }]);
-        await renderAndWait(viewport);
-      }
-
-      [
-        [legacyStack, true],
-        [adapterStack, true],
-        [legacyAxial, true],
-        [legacySagittal, false],
-        [adapterAxial, true],
-        [adapterSagittal, false],
-      ].forEach(([viewport, expected]) => {
-        expect(viewport.isInAcquisitionPlane()).toBe(expected);
-        expect(utilities.isInAcquisitionPlane(viewport)).toBe(expected);
-      });
     });
 
     it('is true for a viewport that shows one image plane without the member, and false for 3D content', function () {

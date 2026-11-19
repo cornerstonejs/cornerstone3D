@@ -1,4 +1,4 @@
-import ECGViewportLegacyAdapter from '../src/RenderingEngine/GenericViewport/ECG/ECGViewportLegacyAdapter';
+import ECGViewport from '../src/RenderingEngine/GenericViewport/ECG/ECGViewport';
 import * as metaData from '../src/metaData';
 
 const N = 5000;
@@ -24,7 +24,7 @@ function makeWaveform() {
 async function makeViewport(id = 'vp') {
   const element = document.createElement('div');
   document.body.appendChild(element);
-  const viewport = new ECGViewportLegacyAdapter({
+  const viewport = new ECGViewport({
     id,
     element,
     renderingEngineId: 're',
@@ -155,14 +155,14 @@ describe('ECG viewport references and camera', () => {
     expect(canvasToWorld([10, 10])).toEqual(viewport.canvasToWorld([10, 10]));
   });
 
-  it('keeps the view when a saved camera is restored past the record end', async () => {
+  it('keeps the view when a saved view state is restored past the record end', async () => {
     const viewport = await makeViewport();
     viewport.setZoom(4);
     const endCanvas = viewport.worldToCanvas([N - 1, 0, 0]);
     viewport.setPan([viewport.getPan()[0] + (300 - endCanvas[0]), 0]);
     const panBefore = viewport.getPan();
 
-    viewport.setCamera(viewport.getCamera());
+    viewport.setViewState(viewport.getViewState());
 
     expect(viewport.getPan()[0]).toBeCloseTo(panBefore[0], 3);
     expect(viewport.getPan()[1]).toBeCloseTo(panBefore[1], 3);
@@ -203,7 +203,7 @@ describe('ECG viewport references and camera', () => {
 
     const element = document.createElement('div');
     document.body.appendChild(element);
-    const viewport = new ECGViewportLegacyAdapter({
+    const viewport = new ECGViewport({
       id: 'vp12',
       element,
       renderingEngineId: 're12',

@@ -440,12 +440,12 @@ describe('slice first decision', () => {
 
   it('setSliceFirst updates planar next viewports only, setRenderBackend all of them', () => {
     const engineId = 'slice-first-fan-out-engine';
-    const stack = {
-      type: ViewportType.STACK,
+    const video = {
+      type: ViewportType.VIDEO_NEXT,
       updateRenderingPipeline: jest.fn(),
     };
-    const legacyVolume = {
-      type: ViewportType.ORTHOGRAPHIC,
+    const volume3D = {
+      type: ViewportType.VOLUME_3D_NEXT,
       updateRenderingPipeline: jest.fn(),
     };
     const planar = {
@@ -455,21 +455,21 @@ describe('slice first decision', () => {
 
     renderingEngineCache.set({
       id: engineId,
-      getViewports: () => [stack, legacyVolume, planar],
+      getViewports: () => [video, volume3D, planar],
     });
 
     try {
       setSliceFirst(true);
 
       expect(planar.updateRenderingPipeline).toHaveBeenCalledTimes(1);
-      expect(stack.updateRenderingPipeline).not.toHaveBeenCalled();
-      expect(legacyVolume.updateRenderingPipeline).not.toHaveBeenCalled();
+      expect(video.updateRenderingPipeline).not.toHaveBeenCalled();
+      expect(volume3D.updateRenderingPipeline).not.toHaveBeenCalled();
 
       setRenderBackend(RenderBackends.GPU);
 
       expect(planar.updateRenderingPipeline).toHaveBeenCalledTimes(2);
-      expect(stack.updateRenderingPipeline).toHaveBeenCalledTimes(1);
-      expect(legacyVolume.updateRenderingPipeline).toHaveBeenCalledTimes(1);
+      expect(video.updateRenderingPipeline).toHaveBeenCalledTimes(1);
+      expect(volume3D.updateRenderingPipeline).toHaveBeenCalledTimes(1);
     } finally {
       renderingEngineCache.delete(engineId);
     }

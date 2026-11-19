@@ -1,6 +1,5 @@
 import { describe, it, expect, afterEach } from '@jest/globals';
 import WSIViewport from '../src/RenderingEngine/GenericViewport/WSI/WSIViewport';
-import WSIViewportLegacyAdapter from '../src/RenderingEngine/GenericViewport/WSI/WSIViewportLegacyAdapter';
 import { viewportProjection } from '../src/RenderingEngine/GenericViewport/viewportProjection';
 import { Events, MetadataModules } from '../src/enums';
 import * as metaData from '../src/metaData';
@@ -14,7 +13,6 @@ import {
   ROWS,
   WIDTH,
   createClient,
-  mountLegacy,
   mountNext,
   remountNext,
   unmount,
@@ -108,7 +106,7 @@ afterEach(() => {
 });
 
 describe('Whole slide stand-in', () => {
-  it('shows the same slide points on a legacy and a next viewport at one map zoom', async () => {
+  it('shows the slide points of the legacy viewport on a next viewport at one map zoom', async () => {
     const next = await track(mountNext(WSIViewport, 0.4));
 
     [
@@ -456,15 +454,6 @@ describe('Small members of the direct next whole slide viewport', () => {
     expect(canvas.style.width).toBe('100%');
     expect(canvas.style.height).toBe('100%');
   });
-
-  it('keeps getCanvas on the legacy adapter, as on the legacy viewport', async () => {
-    const adapter = await track(
-      mountNext(WSIViewportLegacyAdapter, 0.4, { withCanvas: false })
-    );
-
-    expect(adapter.viewport.getCanvas()).toBe(adapter.viewport.canvas);
-    expect(adapter.element.contains(adapter.viewport.canvas)).toBe(true);
-  });
 });
 
 describe('Zoom at mount of the direct next whole slide viewport', () => {
@@ -504,46 +493,10 @@ describe('Zoom at mount of the direct next whole slide viewport', () => {
 });
 
 describe('Scroll of a whole slide viewport', () => {
-  it('has no scroll on the direct next class, which the adapter keeps', async () => {
+  it('has no scroll on the direct next class', async () => {
     const next = await track(mountNext(WSIViewport, 0.4));
 
     expect(next.viewport.scroll).toBeUndefined();
-    expect(typeof WSIViewportLegacyAdapter.prototype.scroll).toBe('function');
-  });
-
-  it('zooms the adapter by the factor of the legacy viewport for one step', async () => {
-    const legacy = await track(mountLegacy(0.4));
-    const adapter = await track(mountNext(WSIViewportLegacyAdapter, 0.4));
-    const legacyCenter = legacy.view.getCenter();
-    const adapterCenter = adapter.view.getCenter();
-
-    legacy.viewport.scroll(1);
-    adapter.viewport.scroll(1);
-
-    expect(legacy.view.getResolution()).toBeCloseTo(4.4, 6);
-    expect(adapter.view.getResolution()).toBeCloseTo(
-      legacy.view.getResolution(),
-      6
-    );
-    expectClose(legacy.view.getCenter(), legacyCenter);
-    expectClose(adapter.view.getCenter(), adapterCenter);
-  });
-
-  it('zooms the adapter in for a step back and keeps the zoom of the map in step', async () => {
-    const legacy = await track(mountLegacy(0));
-    const adapter = await track(mountNext(WSIViewportLegacyAdapter, 0));
-
-    legacy.viewport.scroll(-2);
-    adapter.viewport.scroll(-2);
-
-    expect(adapter.view.getResolution()).toBeCloseTo(
-      legacy.view.getResolution(),
-      6
-    );
-    expect(adapter.viewport.getZoom()).toBeCloseTo(
-      legacy.viewport.getZoom(),
-      6
-    );
   });
 });
 

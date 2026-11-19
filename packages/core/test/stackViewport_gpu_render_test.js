@@ -984,6 +984,7 @@ describe('renderingCore -- Stack', () => {
     it('Should preserve stack properties when actor recreation is only caused by a data type mismatch', function (done) {
       testUtils.createViewports(renderingEngine, {
         viewportId,
+        viewportType: ViewportType.PLANAR_NEXT,
         orientation: Enums.OrientationAxis.AXIAL,
       });
 
@@ -1011,10 +1012,16 @@ describe('renderingCore -- Stack', () => {
       const vp = renderingEngine.getViewport(viewportId);
       const expectedVOIRange = { lower: -260, upper: 140 };
       const expectedColormap = { name: 'hsv' };
+      let firstImageData;
 
-      vp.setStack([imageId1, imageId2], 0)
+      testUtils
+        .setStackOnNextViewport(vp, [imageId1, imageId2], 0)
         .then(() => {
-          vp.setProperties({
+          firstImageData = vp
+            .getDefaultActor()
+            .actor.getMapper()
+            .getInputData();
+          vp.setDisplaySetPresentation(vp.getSourceDataId(), {
             colormap: expectedColormap,
             interpolationType: InterpolationType.NEAREST,
             voiRange: expectedVOIRange,
@@ -1024,9 +1031,11 @@ describe('renderingCore -- Stack', () => {
           return vp.setImageIdIndex(1);
         })
         .then(() => {
-          const props = vp.getProperties();
+          const props = getStackProperties(vp);
 
-          expect(vp.stackActorReInitialized).toBe(true);
+          expect(
+            vp.getDefaultActor().actor.getMapper().getInputData()
+          ).not.toBe(firstImageData);
           expect(props.interpolationType).toBe(InterpolationType.NEAREST);
           expect(props.invert).toBe(true);
           expect(props.colormap).toEqual(expectedColormap);

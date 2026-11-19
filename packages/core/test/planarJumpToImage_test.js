@@ -1,7 +1,6 @@
 import * as cornerstone3D from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
 import {
-  createLegacyViewport,
   createNextViewport,
   createSeries,
   renderAndWait,
@@ -11,7 +10,7 @@ import {
 } from './utils/planarSeriesBothModes';
 
 const { Enums, utilities } = cornerstone3D;
-const { OrientationAxis, ViewportType } = Enums;
+const { OrientationAxis } = Enums;
 
 const renderingEngineId = utilities.uuidv4();
 const WIDTH = 400;
@@ -329,23 +328,6 @@ describe('A jump to an image by a view reference on a direct next planar viewpor
       await showVolume(next, series, 2, { orientation });
 
       const landedOn = await jumpByImageIdAlone(next, series);
-
-      expect(landedOn).toEqual(JUMP_ORDER);
-    });
-
-    it(`lands on the image on a legacy adapter of the volume viewport, for a volume whose slices run ${order}`, async function () {
-      const series = await createSeries({ id: 'jump-legacy' });
-      const adapter = createLegacyViewport(
-        renderingEngine,
-        'adapterJump',
-        ViewportType.ORTHOGRAPHIC,
-        { adapter: true, orientation }
-      );
-
-      await adapter.setVolumes([{ volumeId: series.volumeId }]);
-      await renderAndWait(adapter);
-
-      const landedOn = await jumpByImageIdAlone(adapter, series);
 
       expect(landedOn).toEqual(JUMP_ORDER);
     });

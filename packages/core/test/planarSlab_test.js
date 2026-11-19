@@ -87,7 +87,7 @@ const LEGACY_AVERAGE_SLAB_GREY = 6;
 
 /**
  * Makes a viewport of a type, axial and of the size of the tests, in the
- * rendering engine. The legacy volume type gives the planar legacy adapter.
+ * rendering engine.
  */
 function createViewport(renderingEngine, viewportId, viewportType) {
   testUtils.createViewports(renderingEngine, {
@@ -182,18 +182,6 @@ function getLargestDifference(first, second) {
 }
 
 /**
- * Sets a slab of the blend mode and thickness on a legacy adapter through
- * the legacy API, renders it and reads the middle pixel.
- */
-async function drawLegacySlab(viewport, blendMode, slabThickness) {
-  viewport.setBlendMode(blendMode);
-  viewport.setSlabThickness(slabThickness);
-  await renderAndWait(viewport);
-
-  return readMiddlePixel(viewport);
-}
-
-/**
  * Sets a slab of the blend mode and thickness on a direct next viewport
  * through the presentation of its display set, renders it and reads the
  * middle pixel.
@@ -281,41 +269,6 @@ describe('Planar slab thickness against the legacy volume viewport -- ', () => {
       );
 
       expect(Math.abs(nextValue - legacyValue)).toBeLessThanOrEqual(2);
-    }
-  }, 60000);
-
-  it('reaches as far on the adapter as on the legacy viewport for the same number', async function () {
-    const adapter = createViewport(
-      renderingEngine,
-      'adapter',
-      ViewportType.ORTHOGRAPHIC
-    );
-
-    await adapter.setVolumes([{ volumeId }]);
-    adapter.setProperties({ voiRange: VOI_RANGE });
-
-    for (const slabThickness of [6, 8]) {
-      const blendMode = BlendModes.MAXIMUM_INTENSITY_BLEND;
-      const shows = [
-        LEGACY_MIDDLE_PIXELS[blendMode][slabThickness],
-        await drawLegacySlab(adapter, blendMode, slabThickness),
-      ].map((value) => value > 64);
-
-      expect(shows).toEqual(shows.map(() => slabThickness > PLANE_DISTANCE));
-    }
-
-    for (const slabThickness of [10, 20]) {
-      const blendMode = BlendModes.AVERAGE_INTENSITY_BLEND;
-      const legacyValue = LEGACY_MIDDLE_PIXELS[blendMode][slabThickness];
-      const adapterValue = await drawLegacySlab(
-        adapter,
-        blendMode,
-        slabThickness
-      );
-
-      expect(Math.abs(adapterValue - legacyValue)).toBeLessThanOrEqual(2);
-      expect(adapter.getSlabThickness()).toBe(slabThickness);
-      expect(adapter.getProperties().slabThickness).toBe(slabThickness);
     }
   }, 60000);
 

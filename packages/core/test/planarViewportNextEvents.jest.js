@@ -4,13 +4,10 @@ import {
   fakeMetaDataProvider,
 } from '../../../utils/test/testUtilsImageLoader';
 import { describe, it, expect, afterEach } from '@jest/globals';
-import PlanarViewport from '../src/RenderingEngine/GenericViewport/Planar/PlanarViewport';
-import PlanarViewportLegacyAdapter from '../src/RenderingEngine/GenericViewport/Planar/PlanarViewportLegacyAdapter';
 import genericViewportDisplaySetMetadataProvider from '../src/utilities/genericViewportDisplaySetMetadataProvider';
-import renderingEngineCache from '../src/RenderingEngine/renderingEngineCache';
+import { createPlanarViewportOnStandInEngine } from './utils/planarViewportOnStandInEngine';
 
 const {
-  utilities,
   setUseCPURendering,
   Enums,
   imageLoader,
@@ -115,62 +112,6 @@ function setUpCore() {
   return element;
 }
 
-/**
- * Makes the CPU stack viewport that a legacy `STACK` type gives: the legacy
- * adapter of the planar viewport, with the id `legacy`.
- */
-function createLegacy(element, defaultOptions = {}) {
-  return createNext(
-    element,
-    defaultOptions,
-    PlanarViewportLegacyAdapter,
-    'legacy'
-  );
-}
-
-/**
- * Makes a direct next planar viewport on a stand-in rendering engine. A real
- * rendering engine needs WebGL for a planar viewport, which jsdom lacks; the
- * CPU render paths draw without it. `ViewportClass` makes the legacy adapter
- * of the planar viewport the same way.
- */
-function createNext(
-  element,
-  defaultOptions = {},
-  ViewportClass = PlanarViewport,
-  id = 'next'
-) {
-  const renderer = {
-    getActiveCamera: () => ({ setParallelProjection() {} }),
-    computeVisiblePropBounds: () => [1, -1, 1, -1, 1, -1],
-    getViewProps: () => [],
-  };
-  let viewport;
-  const renderingEngine = {
-    id: utilities.uuidv4(),
-    getRenderer: () => renderer,
-    getViewports: () => (viewport ? [viewport] : []),
-    renderViewport() {},
-    destroy() {
-      viewport.destroy();
-      renderingEngineCache.delete(renderingEngine.id);
-    },
-  };
-
-  renderingEngineCache.set(renderingEngine);
-  viewport = new ViewportClass({
-    id,
-    element,
-    renderingEngineId: renderingEngine.id,
-    canvas: document.createElement('canvas'),
-    sWidth: 64,
-    sHeight: 64,
-    defaultOptions,
-  });
-
-  return { renderingEngine, viewport };
-}
-
 /** Shows a stack on a direct next viewport. */
 async function showStack(viewport, imageIds, imageIdIndex = 0) {
   genericViewportDisplaySetMetadataProvider.add('stack', {
@@ -247,6 +188,15 @@ const LEGACY_SET_IMAGE_ID_INDEX_READS = {
 const LEGACY_OVERLAY_VIEWABLE = [true, false, false];
 
 /**
+ * What `isReferenceViewable` of the legacy stack viewport on image 1, on the
+ * CPU and on the GPU, answered with `asNearbyProjection` for references with
+ * only the focal point [3, 4, z], for z = 1.0004, 0.9996 and 1.002: a point
+ * within half the spacing of the image data along its normal (0.001) is
+ * viewable.
+ */
+const LEGACY_NEARBY_PROJECTION_VIEWABLE = [true, true, false];
+
+/**
  * Resolves when the element fires NEW_IMAGE for an image index. A direct next
  * viewport and a legacy adapter both fire it.
  */
@@ -275,7 +225,9 @@ describe('Direct next planar viewport events and image loads against the legacy 
 
   /** Makes a direct next viewport on its element. */
   function createNextViewport(defaultOptions = {}) {
-    const next = createNext(setUpCore(), defaultOptions);
+    const next = createPlanarViewportOnStandInEngine(setUpCore(), 'next', {
+      defaultOptions,
+    });
 
     renderingEngines.push(next.renderingEngine);
 
@@ -404,54 +356,6 @@ describe('Direct next planar viewport events and image loads against the legacy 
       expect(next).toEqual([failed]);
     });
 
-    it('fires IMAGE_LOAD_ERROR on the legacy adapter, with the detail of the legacy stack viewport', async () => {
-      const recorded = [];
-
-      for (const useAdapter of [false, true]) {
-        const element = setUpCore();
-        const { renderingEngine, viewport } = useAdapter
-          ? createNext(element, {}, PlanarViewportLegacyAdapter)
-          : createLegacy(element);
-        const details = [];
-        const listener = (evt) => details.push(evt.detail);
-
-        renderingEngines.push(renderingEngine);
-        eventTarget.addEventListener(Events.IMAGE_LOAD_ERROR, listener);
-
-        try {
-          await viewport.setStack(createImageIds({ fail: [2] }), 0);
-          await viewport.setImageIdIndex(2).catch(() => undefined);
-          await settle();
-          cache.purgeCache();
-          await viewport
-            .setStack(createImageIds({ name: 'firstURI', fail: [1] }), 1)
-            .catch(() => undefined);
-          await settle();
-        } finally {
-          eventTarget.removeEventListener(Events.IMAGE_LOAD_ERROR, listener);
-        }
-
-        recorded.push(details);
-        cache.purgeCache();
-      }
-
-      const [legacy, adapter] = recorded;
-
-      expect(legacy).toEqual([
-        {
-          error: expect.any(Error),
-          imageIdIndex: 2,
-          imageId: createImageIds({ fail: [2] })[2],
-        },
-        {
-          error: expect.any(Error),
-          imageIdIndex: 1,
-          imageId: createImageIds({ name: 'firstURI', fail: [1] })[1],
-        },
-      ]);
-      expect(adapter).toEqual(legacy);
-    });
-
     it('leaves no unhandled rejection', async () => {
       const imageIds = createImageIds({ fail: [2] });
       const rejections = [];
@@ -572,6 +476,25 @@ describe('Direct next planar viewport events and image loads against the legacy 
       ];
 
       expect(answers).toEqual(LEGACY_OVERLAY_VIEWABLE);
+    });
+
+    it('takes a point within half a slice spacing of the image shown as viewable with asNearbyProjection, as the legacy stack viewport', async () => {
+      const viewport = createNextViewport();
+
+      await showStack(viewport, createImageIds(), 1);
+
+      const answers = [
+        [3, 4, 1.0004],
+        [3, 4, 0.9996],
+        [3, 4, 1.002],
+      ].map((cameraFocalPoint) =>
+        viewport.isReferenceViewable(
+          { cameraFocalPoint },
+          { asNearbyProjection: true }
+        )
+      );
+
+      expect(answers).toEqual(LEGACY_NEARBY_PROJECTION_VIEWABLE);
     });
   });
 });

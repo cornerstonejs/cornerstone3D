@@ -3,7 +3,6 @@ import { describe, it, expect, afterEach, beforeEach } from '@jest/globals';
 import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 import vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 import PlanarViewport from '../src/RenderingEngine/GenericViewport/Planar/PlanarViewport';
-import PlanarViewportLegacyAdapter from '../src/RenderingEngine/GenericViewport/Planar/PlanarViewportLegacyAdapter';
 import genericViewportDisplaySetMetadataProvider from '../src/utilities/genericViewportDisplaySetMetadataProvider';
 import renderingEngineCache from '../src/RenderingEngine/renderingEngineCache';
 import getSliceRange from '../src/utilities/getSliceRange';
@@ -118,22 +117,6 @@ function getLegacyScrollFocalPoint(camera, volume, spacing, delta) {
   ).newFocalPoint;
 }
 
-/**
- * The step index and the number of steps of a legacy volume viewport for a
- * step, as `getVolumeViewportScrollInfo` counts them.
- */
-function getLegacySteps(camera, volume, spacing) {
-  const { min, max, current } = getLegacySliceRange(camera, volume);
-  const numScrollSteps = Math.round((max - min) / spacing);
-
-  return {
-    currentStepIndex: Math.round(
-      ((current - min) / (max - min)) * numScrollSteps
-    ),
-    numberOfSteps: numScrollSteps + 1,
-  };
-}
-
 function project(point, normal) {
   return point[0] * normal[0] + point[1] * normal[1] + point[2] * normal[2];
 }
@@ -227,57 +210,9 @@ describe('scrolling a slab on a planar viewport', () => {
       expect(viewport.getCurrentImageIdIndex()).toBe(before + 1);
     });
   });
-
-  describe('on the planar legacy adapter', () => {
-    beforeEach(async () => {
-      ({ renderingEngine, viewport } = createViewport(
-        PlanarViewportLegacyAdapter,
-        setUpCore(),
-        'adapter'
-      ));
-      volume = createVolume('scroll-volume');
-      await viewport.setVolumes([{ volumeId: volume.volumeId }]);
-      viewport.setSlabThickness(SLAB);
-    });
-
-    it('steps by the slab thickness on a scroll without options, as the legacy volume viewport', async () => {
-      const camera = viewport.getCamera();
-      const expected = getLegacyScrollFocalPoint(camera, volume, SLAB, 1);
-
-      await viewport.scroll(1);
-
-      expect(
-        project(viewport.getCamera().focalPoint, camera.viewPlaneNormal)
-      ).toBeCloseTo(project(expected, camera.viewPlaneNormal), 6);
-    });
-
-    it('counts slab steps in getCurrentImageIdIndex, as the legacy volume viewport', () => {
-      expect(viewport.getCurrentImageIdIndex()).toBe(
-        getLegacySteps(viewport.getCamera(), volume, SLAB).currentStepIndex
-      );
-    });
-
-    it('counts slab steps in getNumberOfSlices with useSlabThickness, and slices without it', () => {
-      expect(viewport.getNumberOfSlices(undefined, true)).toBe(
-        getLegacySteps(viewport.getCamera(), volume, SLAB).numberOfSteps
-      );
-      expect(viewport.getNumberOfSlices()).toBe(30);
-    });
-
-    it('steps by the slab thickness with scrollSlabs of utilities.scroll, as the legacy volume viewport', () => {
-      const camera = viewport.getCamera();
-      const expected = getLegacyScrollFocalPoint(camera, volume, SLAB, 1);
-
-      utilities.scroll(viewport, { delta: 1, scrollSlabs: true });
-
-      expect(
-        project(viewport.getCamera().focalPoint, camera.viewPlaneNormal)
-      ).toBeCloseTo(project(expected, camera.viewPlaneNormal), 6);
-    });
-  });
 });
 
-describe('the number of slices of the planar legacy adapter', () => {
+describe('the number of slices of a direct next planar viewport', () => {
   let renderingEngine;
 
   afterEach(() => {
@@ -316,7 +251,7 @@ describe('the number of slices of the planar legacy adapter', () => {
       let viewport;
 
       ({ renderingEngine, viewport } = createViewport(
-        PlanarViewportLegacyAdapter,
+        PlanarViewport,
         setUpCore(),
         'slices'
       ));
@@ -331,15 +266,21 @@ describe('the number of slices of the planar legacy adapter', () => {
         scalarData: new Float32Array(8 * 6 * 20),
       });
 
-      await viewport.setVolumes([{ volumeId: volume.volumeId }]);
-      viewport.setOrientation(orientation);
+      genericViewportDisplaySetMetadataProvider.add('slices', {
+        imageIds: volume.imageIds,
+        volumeId: volume.volumeId,
+      });
+      await viewport.setDisplaySets({
+        displaySetId: 'slices',
+        options: { orientation },
+      });
 
-      const legacy = getLegacyNumberOfSlices(viewport.getCamera(), volume);
+      const legacy = getLegacyNumberOfSlices(
+        viewport.getCameraForEvent(),
+        volume
+      );
 
       expect(viewport.getNumberOfSlices()).toBe(legacy);
-      expect(PlanarViewport.prototype.getNumberOfSlices.call(viewport)).toBe(
-        legacy
-      );
     });
   });
 });

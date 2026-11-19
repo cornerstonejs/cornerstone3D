@@ -35,7 +35,7 @@ class TestViewport extends GenericViewport {
   }) {
     super({ id, element });
 
-    this.type = ViewportType.STACK;
+    this.type = ViewportType.PLANAR_NEXT;
     this.renderingEngineId = renderingEngineId;
     this.dataProvider = dataProvider;
     this.renderPathResolver = renderPathResolver;

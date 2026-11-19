@@ -339,8 +339,9 @@ leave the canvas. Against the legacy volume viewport:
   call takes a `suppressEvents` argument.
 - **`isReferenceViewable` honours `asOverlay`,** so a labelmap image that is
   not in the stack but lies on the geometry of the image on display shows.
-  The option `asNearbyProjection` has no effect on a next viewport. Nothing
-  called it.
+  With `asNearbyProjection` a reference by a focal point only shows in stack
+  mode when the point lies within half a slice spacing of the image on
+  display, as on the legacy stack viewport.
 - **A view reference crosses between a stack and a volume of the same
   images.** A next view reference names its display set (`dataId`). A planar
   viewport of another display set that has the image that the reference

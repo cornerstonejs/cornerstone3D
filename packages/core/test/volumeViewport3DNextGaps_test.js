@@ -50,6 +50,24 @@ const LEGACY_SPHERE_CAMERA = {
 };
 
 /**
+ * What `getBounds` of the legacy 3D viewport gave, the bounds of every
+ * visible prop of its renderer: with the volume of the tests, with the volume
+ * and the sphere of the tests, and with only a sphere of radius 5 around
+ * [10, 20, 30].
+ */
+const LEGACY_BOUNDS = {
+  volume: [-0.5, 29.5, -0.5, 39.5, -0.5, 11.5],
+  volumeAndSphere: [
+    -98.48077392578125, 98.48077392578125, -93.66078186035156,
+    93.66078186035156, -100, 100,
+  ],
+  smallSphere: [
+    5.075961112976074, 14.924038887023926, 15.31696081161499, 24.68303918838501,
+    25, 35,
+  ],
+};
+
+/**
  * Makes direct next 3D viewports of one size and orientation in one
  * rendering engine, one for each of `nextIds`.
  */
@@ -540,11 +558,15 @@ describe('Direct next 3D viewport, colour and presets -- ', () => {
   });
 });
 
-/** A vtk.js sphere of radius 100 around the origin. */
-function createSphereActorEntry(uid = 'spherePolyData') {
+/** A vtk.js sphere, of radius 100 around the origin unless told otherwise. */
+function createSphereActorEntry(
+  uid = 'spherePolyData',
+  center = [0, 0, 0],
+  radius = 100
+) {
   const sphereSource = vtkSphereSource.newInstance({
-    center: [0, 0, 0],
-    radius: 100,
+    center,
+    radius,
     phiResolution: 10,
     thetaResolution: 10,
   });
@@ -651,6 +673,40 @@ describe('Direct next 3D viewport, the scene -- ', () => {
     expectSameCamera(next.getViewState(), LEGACY_SPHERE_CAMERA);
     expect(next.getRenderer().getActors().length).toBe(1);
     expect(next.getActors().length).toBe(0);
+  });
+
+  it('gives the bounds of what it shows through getImageData and its renderer, where the legacy viewport has getBounds', async function () {
+    const [next, props] = createViewports(renderingEngine, {
+      nextIds: ['next3D', 'next3DProps'],
+    });
+    const volumeId = await createVolume();
+
+    await showVolume(next, volumeId);
+
+    expectPointsClose(
+      next.getImageData().imageData.getBounds(),
+      LEGACY_BOUNDS.volume
+    );
+    expectPointsClose(
+      [...next.getRenderer().computeVisiblePropBounds()],
+      LEGACY_BOUNDS.volume
+    );
+
+    next.getRenderer().addActor(createSphereActorEntry().actor);
+
+    expectPointsClose(
+      [...next.getRenderer().computeVisiblePropBounds()],
+      LEGACY_BOUNDS.volumeAndSphere
+    );
+
+    props
+      .getRenderer()
+      .addActor(createSphereActorEntry('smallSphere', [10, 20, 30], 5).actor);
+
+    expectPointsClose(
+      [...props.getRenderer().computeVisiblePropBounds()],
+      LEGACY_BOUNDS.smallSphere
+    );
   });
 });
 

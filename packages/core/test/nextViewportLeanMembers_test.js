@@ -15,7 +15,7 @@ const NEXT_FAMILIES = [
   ['ECG', ViewportType.ECG_NEXT],
 ];
 
-/** Enables one viewport of a type. A legacy type gives its legacy adapter. */
+/** Enables one viewport of a type. */
 function enableViewport(renderingEngine, viewportType) {
   const viewportId = `viewport-${viewportType}`;
 
@@ -96,20 +96,6 @@ describe('Legacy members that are not on the direct next viewports -- ', () => {
     });
   });
 
-  it('keeps isOrientationChangeable on the 3D, video, whole slide and ECG adapters, with the answer of the legacy viewports', function () {
-    for (const [viewportType, legacyAnswer] of [
-      [ViewportType.VOLUME_3D, true],
-      [ViewportType.VIDEO, false],
-      [ViewportType.WHOLE_SLIDE, false],
-      [ViewportType.ECG, false],
-    ]) {
-      const adapter = enableViewport(renderingEngine, viewportType);
-
-      expect(utilities.isGenericViewport(adapter)).toBe(true);
-      expect(adapter.isOrientationChangeable()).toBe(legacyAnswer);
-    }
-  });
-
   it('cannot be set from outside', function () {
     const viewport = enableViewport(renderingEngine, ViewportType.PLANAR_NEXT);
 
@@ -117,18 +103,6 @@ describe('Legacy members that are not on the direct next viewports -- ', () => {
       viewport.isDestroyed = true;
     }).toThrow();
     expect(viewport.isDestroyed).toBe(false);
-  });
-
-  it('keeps isDisabled on a legacy adapter', function () {
-    const adapter = enableViewport(renderingEngine, ViewportType.STACK);
-
-    expect(utilities.isGenericViewport(adapter)).toBe(true);
-    expect(adapter.isDisabled).toBe(false);
-
-    renderingEngine.disableElement(adapter.id);
-
-    expect(adapter.isDisabled).toBe(true);
-    expect(adapter.isDestroyed).toBe(true);
   });
 
   NEXT_FAMILIES.filter(
@@ -167,17 +141,5 @@ describe('Legacy members that are not on the direct next viewports -- ', () => {
       expect(widget.enabled).toBe(false);
       expect(widget.removedActors).toEqual([widget.getActor()]);
     });
-  });
-
-  it('keeps getWidget on the 3D legacy adapter, as on the legacy 3D viewport', function () {
-    const adapter = enableViewport(renderingEngine, ViewportType.VOLUME_3D);
-    const widget = createWidget();
-
-    adapter.addWidget('marker', widget);
-
-    expect(adapter.getWidget('marker')).toBe(widget);
-    expect(adapter.getWidget('other')).toBeUndefined();
-    expect(adapter.getWidgets()).toEqual([widget]);
-    expect(utilities.isGenericViewport(adapter)).toBe(true);
   });
 });

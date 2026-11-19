@@ -18,8 +18,7 @@ const renderingEngineId = utilities.uuidv4();
 
 /**
  * Enables a viewport of a type with the default options, through the
- * rendering engine. A legacy type gives its legacy adapter. The callers
- * still say `legacy` or `adapter` for a legacy type: both give the adapter.
+ * rendering engine.
  */
 function enableViewport(
   renderingEngine,
@@ -137,21 +136,64 @@ const LEGACY_PLAIN_LOADS = {
 };
 
 /**
- * Makes a legacy stack viewport with the id `legacy` and its legacy adapter
- * with the id `adapter`, of one size and options.
+ * The canvas points of three corners of the first image of
+ * `createStackImageIds`, as `getImageCornersOnCanvas` gives them, on the
+ * legacy stack viewport of 400 by 300 pixels with `aspectRatio: [2, 1]` in
+ * its options: the same at the mount and after a zoom, a pan and
+ * `resetCamera`, the picture at half its height. The fit of this image is
+ * bound by its width, so the scale pair [1, 1 / 2] of a next viewport shows
+ * the same picture.
  */
-function createStackAdapterPair(renderingEngine, defaultOptions) {
-  return ['legacy', 'adapter'].map((viewportId) =>
-    enableViewport(renderingEngine, {
-      viewportId,
-      type: ViewportType.STACK,
-      orientation: OrientationAxis.ACQUISITION,
-      defaultOptions,
-      legacy: viewportId === 'legacy',
-      adapter: viewportId === 'adapter',
-    })
-  );
-}
+const LEGACY_ASPECT_RATIO_CORNERS = [
+  [3.1, 101.6],
+  [396.9, 101.6],
+  [3.1, 198.4],
+];
+
+/**
+ * The same corners on the legacy stack viewport with the display area of
+ * `DISPLAY_AREA_OPTIONS` in its options. It did not apply the display area
+ * at the mount, which showed the fit of the image, and applied it after a
+ * zoom, a pan and `resetCamera`.
+ */
+const LEGACY_DISPLAY_AREA_CORNERS = {
+  atMount: [
+    [3.1, 53.1],
+    [396.9, 53.1],
+    [3.1, 246.9],
+  ],
+  afterReset: [
+    [6.3, 56.3],
+    [793.8, 56.3],
+    [6.3, 443.7],
+  ],
+};
+
+/** A display area in the options of a viewport. */
+const DISPLAY_AREA_OPTIONS = {
+  displayArea: {
+    imageArea: [0.5, 0.5],
+    imageCanvasPoint: {
+      imagePoint: [0.25, 0.25],
+      canvasPoint: [0.5, 0.5],
+    },
+  },
+};
+
+/**
+ * What IMAGE_SPACING_CALIBRATED of the legacy stack viewport gave, as
+ * `recordCalibrationEvents` records it, when it showed the images 1, 2 and 1
+ * of `createCalibratedImageIds` after image 0: an event each time image 1,
+ * whose calibration is new, was shown.
+ */
+const LEGACY_CALIBRATION_EVENTS = [1, 1].map((imageIdIndex) => ({
+  imageIdIndex,
+  viewportId: 'legacy',
+  scale: 2,
+  calibrationScale: 2,
+  hasImageData: true,
+  worldToIndexOfPoint: [10, 4],
+}));
 
 /** Makes and caches a volume of the fake volume loader. */
 async function createVolume(name = 'volumeURI') {
@@ -237,30 +279,16 @@ function createStackImageIds(name = 'imageURI') {
   );
 }
 
-/**
- * Shows a stack on a legacy stack viewport or its adapter with `setStack`,
- * and on a direct next viewport through a display set.
- */
+/** Shows a stack on a direct next viewport through a display set. */
 async function showStack(viewport, imageIds) {
-  if (typeof viewport.setStack !== 'function') {
-    const displaySetId = `stack:${viewport.id}`;
+  const displaySetId = `stack:${viewport.id}`;
 
-    utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-      kind: 'planar',
-      imageIds,
-      initialImageIdIndex: 0,
-    });
-    await viewport.setDisplaySets({ displaySetId });
-  } else {
-    await viewport.setStack(imageIds, 0);
-  }
-
-  await renderAndWait(viewport);
-}
-
-/** Resets the view of a legacy stack viewport or of its adapter. */
-async function resetView(viewport) {
-  viewport.resetCamera();
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    kind: 'planar',
+    imageIds,
+    initialImageIdIndex: 0,
+  });
+  await viewport.setDisplaySets({ displaySetId });
   await renderAndWait(viewport);
 }
 
@@ -604,89 +632,94 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
     });
   });
 
-  describe('display area and aspect ratio from the options of a legacy adapter', () => {
-    const OPTIONS = {
-      aspectRatio: { aspectRatio: [2, 1] },
-      displayArea: {
-        displayArea: {
-          imageArea: [0.5, 0.5],
-          imageCanvasPoint: {
-            imagePoint: [0.25, 0.25],
-            canvasPoint: [0.5, 0.5],
-          },
-        },
-      },
-    };
-
-    Object.entries(OPTIONS).forEach(([name, defaultOptions]) => {
-      it(`applies ${name} at mount and again at a reset, as the legacy stack viewport applies it at a reset`, async function () {
-        const results = [];
-
-        for (const viewport of createStackAdapterPair(
-          renderingEngine,
-          defaultOptions
-        )) {
-          await showStack(viewport, createStackImageIds(`${viewport.id}URI`));
-
-          const atMount = getImageCornersOnCanvas(viewport);
-
-          viewport.setZoom(3);
-          viewport.setPan([20, 10]);
-          await renderAndWait(viewport);
-          await resetView(viewport);
-          results.push({
-            atMount,
-            afterReset: getImageCornersOnCanvas(viewport),
-            aspectRatio: viewport.getAspectRatio(),
-          });
-        }
-
-        const [legacy, adapter] = results;
-
-        expectCornersClose(adapter.atMount, legacy.afterReset);
-        expectCornersClose(adapter.afterReset, legacy.afterReset);
-        expect(adapter.aspectRatio).toEqual(legacy.aspectRatio);
+  describe('display area and stretch of the options on a direct next viewport', () => {
+    /**
+     * Shows the stack on a direct next viewport with the options, applies
+     * them through `apply` after the mount and again after a zoom, a pan and
+     * `resetViewState`, and gives the corners of the image on the canvas
+     * before the first `apply`, after it and after the reset.
+     */
+    async function readCornersWithOptions(renderingEngine, options, apply) {
+      const viewport = enableViewport(renderingEngine, {
+        viewportId: 'next',
+        type: ViewportType.PLANAR_NEXT,
+        orientation: OrientationAxis.ACQUISITION,
+        defaultOptions: options,
       });
-    });
 
-    it('stretches the image with setAspectRatio and reads it back, as the legacy stack viewport', async function () {
-      const results = [];
+      await showStack(viewport, createStackImageIds('nextURI'));
 
-      for (const viewport of createStackAdapterPair(renderingEngine)) {
-        await showStack(viewport, createStackImageIds(`${viewport.id}URI`));
-        viewport.setAspectRatio([1, 2]);
-        await renderAndWait(viewport);
+      const plain = getImageCornersOnCanvas(viewport);
 
-        const kept = getImageCornersOnCanvas(viewport);
+      apply(viewport);
+      await renderAndWait(viewport);
 
-        viewport.setAspectRatio([3, 1], { fit: true });
-        await renderAndWait(viewport);
-        results.push({
-          kept,
-          fit: getImageCornersOnCanvas(viewport),
-          aspectRatio: viewport.getAspectRatio(),
-        });
-      }
+      const atMount = getImageCornersOnCanvas(viewport);
 
-      const [legacy, adapter] = results;
+      viewport.setViewState(
+        cornerstone3D.viewportProjection.withPresentation(viewport, {
+          zoom: 3,
+          pan: [20, 10],
+        })
+      );
+      await renderAndWait(viewport);
+      viewport.resetViewState();
+      apply(viewport);
+      await renderAndWait(viewport);
 
-      expectCornersClose(adapter.kept, legacy.kept);
-      expectCornersClose(adapter.fit, legacy.fit);
-      expect(adapter.aspectRatio).toEqual(legacy.aspectRatio);
-    });
+      return {
+        plain,
+        atMount,
+        afterReset: getImageCornersOnCanvas(viewport),
+      };
+    }
 
     it('leaves the options to the application on a direct next viewport', async function () {
       const viewport = enableViewport(renderingEngine, {
         viewportId: 'next',
         type: ViewportType.PLANAR_NEXT,
         orientation: OrientationAxis.ACQUISITION,
-        defaultOptions: { ...OPTIONS.aspectRatio, ...OPTIONS.displayArea },
+        defaultOptions: { aspectRatio: [2, 1], ...DISPLAY_AREA_OPTIONS },
       });
 
       await showStack(viewport, createStackImageIds('nextURI'));
 
       expect(viewport.getViewState().scale).toEqual([1, 1]);
       expect(viewport.getViewState().displayArea).toBeUndefined();
+    });
+
+    it('shows the display area of the options with setDisplayArea at the mount and after a reset, as the legacy stack viewport after a reset', async function () {
+      const corners = await readCornersWithOptions(
+        renderingEngine,
+        DISPLAY_AREA_OPTIONS,
+        (viewport) =>
+          viewport.setDisplayArea(viewport.defaultOptions.displayArea)
+      );
+
+      expectCornersClose(corners.plain, LEGACY_DISPLAY_AREA_CORNERS.atMount);
+      expectCornersClose(
+        corners.atMount,
+        LEGACY_DISPLAY_AREA_CORNERS.afterReset
+      );
+      expectCornersClose(
+        corners.afterReset,
+        LEGACY_DISPLAY_AREA_CORNERS.afterReset
+      );
+    });
+
+    it('shows the aspect ratio of the options with the scale pair of the view state at the mount and after a reset, as the legacy stack viewport', async function () {
+      const corners = await readCornersWithOptions(
+        renderingEngine,
+        { aspectRatio: [2, 1] },
+        (viewport) => {
+          const [width, height] = viewport.defaultOptions.aspectRatio;
+
+          viewport.setViewState({ scale: [1, height / width] });
+        }
+      );
+
+      expectCornersClose(corners.atMount, LEGACY_ASPECT_RATIO_CORNERS);
+      expectCornersClose(corners.afterReset, LEGACY_ASPECT_RATIO_CORNERS);
     });
   });
 
@@ -745,32 +778,6 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
       return events;
     }
 
-    it('fires IMAGE_SPACING_CALIBRATED on the legacy adapter when a newly shown image has a new calibration, as the legacy stack viewport', async function () {
-      const results = [];
-
-      for (const viewport of createStackAdapterPair(renderingEngine)) {
-        const imageIds = createCalibratedImageIds(viewport);
-        const events = recordCalibrationEvents(viewport, imageIds);
-
-        await showStack(viewport, imageIds);
-
-        for (const imageIdIndex of [1, 2]) {
-          await viewport.setImageIdIndex(imageIdIndex);
-          await renderAndWait(viewport);
-        }
-
-        results.push(events);
-      }
-
-      const [legacy, adapter] = results;
-
-      expect(legacy.map(({ imageIdIndex }) => imageIdIndex)).toEqual([1]);
-      expect(legacy[0].scale).toBe(2);
-      expect(adapter).toEqual(
-        legacy.map((event) => ({ ...event, viewportId: 'adapter' }))
-      );
-    });
-
     it('fires IMAGE_SPACING_CALIBRATED on a direct next viewport from calibrateSpacing, and not when an image shows', async function () {
       const viewport = enableViewport(renderingEngine, {
         viewportId: 'next',
@@ -802,6 +809,44 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
           worldToIndexOfPoint: [10, 4],
         },
       ]);
+    });
+
+    it('fires IMAGE_SPACING_CALIBRATED with the detail of the legacy stack viewport when the application calls calibrateSpacing for a newly shown image of a new calibration', async function () {
+      const viewport = enableViewport(renderingEngine, {
+        viewportId: 'next',
+        type: ViewportType.PLANAR_NEXT,
+        orientation: OrientationAxis.ACQUISITION,
+      });
+      const imageIds = createCalibratedImageIds(viewport);
+      const events = recordCalibrationEvents(viewport, imageIds);
+      let shownCalibration;
+
+      viewport.element.addEventListener(Events.NEW_IMAGE, (evt) => {
+        const { imageId } = evt.detail;
+        const calibration = cornerstone3D.metaData.get(
+          'calibratedPixelSpacing',
+          imageId
+        );
+
+        if (calibration && calibration !== shownCalibration) {
+          viewport.calibrateSpacing(imageId);
+        }
+
+        shownCalibration = calibration;
+      });
+      await showStack(viewport, imageIds);
+
+      for (const imageIdIndex of [1, 2, 1]) {
+        await viewport.setImageIdIndex(imageIdIndex);
+        await renderAndWait(viewport);
+      }
+
+      expect(events).toEqual(
+        LEGACY_CALIBRATION_EVENTS.map((event) => ({
+          ...event,
+          viewportId: 'next',
+        }))
+      );
     });
   });
 
@@ -1033,44 +1078,6 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
       expect(detail.imageIdIndex).toBe(viewport.getCurrentImageIdIndex());
       expect(detail.numberOfSlices).toBe(viewport.getNumberOfSlices());
       expect(detail.numberOfSlices).toBeGreaterThan(series.size.slices);
-    });
-
-    it('keeps imageIds[imageIdIndex] in STACK_NEW_IMAGE of the legacy adapter in volume mode, and names the image on display in its NEW_IMAGE', async function () {
-      const series = await createSeries();
-      const adapter = enableViewport(renderingEngine, {
-        viewportId: 'adapter',
-        type: ViewportType.ORTHOGRAPHIC,
-        orientation: OrientationAxis.AXIAL,
-        adapter: true,
-      });
-      const events = recordSliceEvents(adapter.element);
-
-      await adapter.setVolumes([{ volumeId: series.volumeId }]);
-      await renderAndWait(adapter);
-
-      const newImagesOfMount = detailsOf(events, Events.NEW_IMAGE).length;
-      const newImage = await scrollOneSlice(adapter, events);
-      const details = detailsOf(events, Events.STACK_NEW_IMAGE);
-
-      expect(details.length).toBeGreaterThan(1);
-      details.forEach((detail) => {
-        expect(typeof detail.imageIdIndex).toBe('number');
-        expect(detail.imageId).toBe(series.imageIds[detail.imageIdIndex]);
-      });
-      expect(detailsOf(events, Events.VOLUME_NEW_IMAGE).length).toBe(
-        details.length
-      );
-      expect(newImagesOfMount).toBe(1);
-      expect(detailsOf(events, Events.NEW_IMAGE).length).toBe(2);
-      expect(newImage).toEqual({
-        viewportId: 'adapter',
-        renderingEngineId,
-        imageIdIndex: adapter.getCurrentImageIdIndex(),
-        numberOfSlices: series.size.slices,
-        imageId: adapter.getCurrentImageId(),
-        image: undefined,
-      });
-      expect(series.imageIds).toContain(newImage.imageId);
     });
   });
 

@@ -176,28 +176,6 @@ async function showVolume(renderingEngine, orientation, volumeIds) {
   return next;
 }
 
-/**
- * Makes a legacy adapter of a stack viewport, with the id `adapter`, and
- * shows the stack on it.
- */
-async function showAdapterStack(renderingEngine, imageIds) {
-  testUtils.createViewports(renderingEngine, {
-    viewportId: 'adapter',
-    viewportType: ViewportType.STACK,
-    orientation: OrientationAxis.ACQUISITION,
-    width: 400,
-    height: 300,
-    useEnableElement: true,
-  });
-
-  const adapter = renderingEngine.getViewport('adapter');
-
-  await adapter.setStack(imageIds, 0);
-  await renderAndWait(adapter);
-
-  return adapter;
-}
-
 /** Scrolls a stack viewport to an image and waits until it shows it. */
 async function showImage(viewport, imageIdIndex) {
   const imageId = viewport.getImageIds()[imageIdIndex];

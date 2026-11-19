@@ -1,6 +1,4 @@
 import { getConfiguration } from '../../src/init';
-import { ViewportType } from '../../src/enums';
-import WSIViewportLegacyAdapter from '../../src/RenderingEngine/GenericViewport/WSI/WSIViewportLegacyAdapter';
 import genericViewportDisplaySetMetadataProvider from '../../src/utilities/genericViewportDisplaySetMetadataProvider';
 
 export const WIDTH = 400;
@@ -216,39 +214,6 @@ export function remountNext(viewport, slideRotation = 0) {
   return withMicroscopyViewer(slideRotation, () =>
     viewport.setDisplaySets({ displaySetId: IMAGE_ID })
   );
-}
-
-/**
- * Mounts the slide on the viewport that a legacy `WHOLE_SLIDE` type gives,
- * the legacy adapter of the whole slide viewport, with `setWSI`, or with
- * `setDataIds` and no web client when `withDataIds` is set, with the
- * default options given.
- */
-export async function mountLegacy(
-  slideRotation = 0,
-  { withDataIds, defaultOptions = {} } = {}
-) {
-  const { element, canvas } = createElement();
-  const viewport = new WSIViewportLegacyAdapter({
-    id: 'wsiLegacy',
-    element,
-    canvas,
-    renderingEngineId: 'renderingEngine',
-    type: ViewportType.WHOLE_SLIDE,
-    sx: 0,
-    sy: 0,
-    sWidth: WIDTH,
-    sHeight: HEIGHT,
-    defaultOptions,
-  });
-
-  const view = await withMicroscopyViewer(slideRotation, () =>
-    withDataIds
-      ? viewport.setDataIds([IMAGE_ID], { miniNavigationOverlay: false })
-      : viewport.setWSI([IMAGE_ID], createClient())
-  );
-
-  return { viewport, element, view };
 }
 
 /** Removes a mounted viewport and its element. */

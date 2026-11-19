@@ -28,7 +28,6 @@ const { ViewportType, OrientationAxis, Events } = Enums;
 const renderingEngineId = utilities.uuidv4();
 const SIZE = 128;
 const VOI_RANGE = { lower: 0, upper: 255 };
-const UPDATE_BASELINES = false;
 
 /**
  * The pixels at the edge of the canvas that the comparisons leave out: the
@@ -93,6 +92,14 @@ const LEGACY_PLAIN = {
  * of `CASES`, the same for the stack, the volume and the fusion.
  */
 const LEGACY_RENDER_PASSES = legacyRenderPasses;
+
+/**
+ * The largest difference of a colour channel between the picture of the
+ * legacy stack viewport, and of the legacy volume viewport, with sharpening 1
+ * and smoothing 5 and its picture with sharpening 1 alone: the legacy
+ * viewports drew the sharpening alone when both were above 0.
+ */
+const LEGACY_BOTH_AGAINST_SHARPENING = 0;
 
 /** The colormap of the second layer of the fusion. */
 const FUSION_COLORMAP = {
@@ -215,8 +222,7 @@ async function createSceneVolumes(fusion) {
 }
 
 /**
- * Makes a viewport of the size of the picture on a black background. A
- * legacy type gives its legacy adapter.
+ * Makes a viewport of the size of the picture on a black background.
  */
 function createViewport(renderingEngine, viewportId, type, orientation) {
   testUtils.createViewports(renderingEngine, {
@@ -317,45 +323,6 @@ function getCaseName(caseName) {
   return caseName.replace(/[ .]/g, '_');
 }
 
-async function showLegacyStack(renderingEngine) {
-  const viewport = createViewport(
-    renderingEngine,
-    'legacy',
-    ViewportType.STACK,
-    OrientationAxis.ACQUISITION
-  );
-
-  await viewport.setStack(await createPatternImageIds('legacyPattern'), 0);
-  viewport.setProperties({ voiRange: VOI_RANGE });
-  await renderAndWait(viewport);
-
-  return viewport;
-}
-
-async function showLegacyVolume(renderingEngine, fusion) {
-  const viewport = createViewport(
-    renderingEngine,
-    'legacy',
-    ViewportType.ORTHOGRAPHIC,
-    OrientationAxis.AXIAL
-  );
-  const volumeIds = await createSceneVolumes(fusion);
-
-  await viewport.setVolumes(volumeIds.map((volumeId) => ({ volumeId })));
-  viewport.setProperties({ voiRange: VOI_RANGE }, volumeIds[0]);
-
-  if (fusion) {
-    viewport.setProperties(
-      { voiRange: VOI_RANGE, colormap: FUSION_COLORMAP },
-      volumeIds[1]
-    );
-  }
-
-  await renderAndWait(viewport);
-
-  return viewport;
-}
-
 /** Shows the stack of the pattern on a direct next planar viewport. */
 async function showNextStack(renderingEngine, renderBackend) {
   const viewport = createViewport(
@@ -432,12 +399,6 @@ async function showNextVolume(
 
   return { viewport, displaySetId: entries[0].displaySetId };
 }
-
-const LEGACY_SCENES = {
-  stack: (renderingEngine) => showLegacyStack(renderingEngine),
-  volume: (renderingEngine) => showLegacyVolume(renderingEngine, false),
-  fusion: (renderingEngine) => showLegacyVolume(renderingEngine, true),
-};
 
 /**
  * The reference of a direct next viewport: what a legacy scene drew, whose
@@ -573,39 +534,31 @@ describe('Sharpening and smoothing of the planar viewports -- ', () => {
     });
   });
 
-  Object.entries(LEGACY_SCENES).forEach(([sceneName, show]) => {
-    it(`draws the legacy ${sceneName} with each setting as the expected picture`, async function () {
-      const viewport = await show(renderingEngine);
+  NEXT_SCENES.filter(
+    ([, referenceName]) => !/fusion/i.test(referenceName)
+  ).forEach(([name, , showNext]) => {
+    it(`shows ${name} with sharpening and smoothing both above 0 as with the sharpening alone on the direct next viewport, as the legacy viewport`, async function () {
+      const { viewport, displaySetId } = await showNext(renderingEngine);
       const plain = readPixels(viewport);
-      const volumeId = viewport.getVolumeId?.();
 
-      for (const [index, [caseName, properties]] of CASES.entries()) {
-        viewport.setProperties(properties, volumeId);
-        await renderAndWait(viewport);
+      viewport.setDisplaySetPresentation(displaySetId, {
+        sharpening: 1,
+        smoothing: 5,
+      });
+      await renderAndWait(viewport);
+      const both = readPixels(viewport);
 
-        expect(maxDifference(plain, readPixels(viewport))).toBeGreaterThan(20);
-        await testUtils.compareImages(
-          getShownCanvas(viewport).toDataURL('image/png'),
-          EXPECTED[sceneName][index],
-          `planarSharpening_${sceneName}_${getCaseName(caseName)}`,
-          UPDATE_BASELINES
-        );
-        viewport.setProperties({ sharpening: 0, smoothing: 0 }, volumeId);
-      }
+      expect(maxDifference(plain, both)).toBeGreaterThan(20);
+      viewport.setDisplaySetPresentation(displaySetId, {
+        sharpening: 1,
+        smoothing: 0,
+      });
+      await renderAndWait(viewport);
+
+      expect(maxDifference(both, readPixels(viewport))).toBe(
+        LEGACY_BOTH_AGAINST_SHARPENING
+      );
     });
-  });
-
-  it('shows with sharpening and smoothing both above 0 the picture of the sharpening alone on the legacy viewport', async function () {
-    const viewport = await showLegacyStack(renderingEngine);
-
-    viewport.setProperties({ sharpening: 1, smoothing: 5 });
-    await renderAndWait(viewport);
-    const both = readPixels(viewport);
-
-    viewport.setProperties({ sharpening: 1, smoothing: 0 });
-    await renderAndWait(viewport);
-
-    expect(maxDifference(both, readPixels(viewport))).toBe(0);
   });
 
   NEXT_SCENES.forEach(
@@ -712,44 +665,6 @@ describe('Sharpening and smoothing of the planar viewports -- ', () => {
     cpu.setDisplaySetPresentation(cpuId, { sharpening: 0 });
     await renderAndWait(cpu);
     expect(maxDifference(plain, readPixels(cpu))).toBe(0);
-  });
-
-  it('passes both keys through the setProperties of the planar legacy adapter', async function () {
-    const legacy = await showLegacyStack(renderingEngine);
-    const adapter = createViewport(
-      renderingEngine,
-      'adapter',
-      ViewportType.STACK,
-      OrientationAxis.ACQUISITION,
-      true
-    );
-
-    await adapter.setStack(await createPatternImageIds('adapterPattern'), 0);
-    adapter.setProperties({ voiRange: VOI_RANGE });
-    await renderAndWait(adapter);
-
-    for (const [caseName, properties] of CASES) {
-      legacy.setProperties(properties);
-      adapter.setProperties(properties);
-      await renderAndWait(legacy);
-      await renderAndWait(adapter);
-
-      expect(adapter.getProperties()).toEqual(
-        jasmine.objectContaining(properties)
-      );
-      expect(describeRenderPasses(adapter)).toEqual(
-        describeRenderPasses(legacy)
-      );
-
-      const result = compareInside(readPixels(legacy), readPixels(adapter));
-
-      console.log(
-        `[SHARPENING] adapter ${caseName}: max ${result.max}, over ${result.over}`
-      );
-      expect(result.over).toBe(0);
-      legacy.setProperties({ sharpening: 0, smoothing: 0 });
-      adapter.setProperties({ sharpening: 0, smoothing: 0 });
-    }
   });
 
   it('convolves a canvas of 512 and of 1024 pixels on the CPU in a measured time', function () {

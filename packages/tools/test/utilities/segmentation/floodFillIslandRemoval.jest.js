@@ -8,7 +8,7 @@ import {
   beforeAll,
 } from '@jest/globals';
 import IslandRemoval from '../../../src/utilities/segmentation/floodFillIslandRemoval';
-import { createPlanarAdapterOnStandInEngine } from '../../../../core/test/utils/planarAdapterOnStandInEngine';
+import { createPlanarViewportOnStandInEngine } from '../../../../core/test/utils/planarViewportOnStandInEngine';
 
 const dimensions = [32, 32, 5];
 const [width, height, depth] = dimensions;
@@ -95,9 +95,9 @@ function createBox(voxels, segmentIndex, x = 10, y = 10, z = 2, w = 5, h = 5) {
 }
 
 /**
- * Makes the viewport that a legacy `STACK` type gives. It is made on a
- * stand-in rendering engine, because a planar viewport in a real rendering
- * engine needs WebGL, which jsdom lacks.
+ * Makes a direct planar viewport. It is made on a stand-in rendering
+ * engine, because a planar viewport in a real rendering engine needs WebGL,
+ * which jsdom lacks.
  */
 function createViewport(width, height) {
   const element = document.createElement('div');
@@ -106,7 +106,7 @@ function createViewport(width, height) {
   element.style.height = `${height}px`;
   document.body.appendChild(element);
 
-  return createPlanarAdapterOnStandInEngine(element, viewportId, {
+  return createPlanarViewportOnStandInEngine(element, viewportId, {
     defaultOptions: {
       background: [1, 0, 1],
     },

@@ -1,14 +1,14 @@
-import PlanarViewportLegacyAdapter from '../../src/RenderingEngine/GenericViewport/Planar/PlanarViewportLegacyAdapter';
+import PlanarViewport from '../../src/RenderingEngine/GenericViewport/Planar/PlanarViewport';
 import renderingEngineCache from '../../src/RenderingEngine/renderingEngineCache';
 import uuidv4 from '../../src/utilities/uuidv4';
 
 /**
- * Makes the viewport that a legacy `STACK` type gives, the planar legacy
- * adapter, on a stand-in rendering engine. A real rendering engine needs
- * WebGL for a planar viewport, which jsdom lacks; the CPU render paths draw
- * without it. `destroy` of the stand-in engine destroys the viewport.
+ * Makes a direct planar viewport on a stand-in rendering engine. A real
+ * rendering engine needs WebGL for a planar viewport, which jsdom lacks; the
+ * CPU render paths draw without it. `destroy` of the stand-in engine destroys
+ * the viewport.
  */
-export function createPlanarAdapterOnStandInEngine(
+export function createPlanarViewportOnStandInEngine(
   element,
   viewportId,
   { canvas = document.createElement('canvas'), defaultOptions = {} } = {}
@@ -31,7 +31,7 @@ export function createPlanarAdapterOnStandInEngine(
   };
 
   renderingEngineCache.set(renderingEngine);
-  viewport = new PlanarViewportLegacyAdapter({
+  viewport = new PlanarViewport({
     id: viewportId,
     element,
     renderingEngineId: renderingEngine.id,

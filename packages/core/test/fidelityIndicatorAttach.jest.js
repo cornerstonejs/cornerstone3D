@@ -27,7 +27,6 @@ import { fidelityLinesFromVolumeActors } from '../src/RenderingEngine/helpers/fi
 
 function viewportStub({
   type,
-  requestedType,
   getActors = true,
   canReport = true,
   lines = [],
@@ -41,7 +40,6 @@ function viewportStub({
   return {
     id: 'vp-1',
     type,
-    requestedType,
     element,
     getActors: getActors ? () => [] : undefined,
     canReportFidelity: () => canReport,
@@ -60,19 +58,18 @@ describe('fidelityIndicator attach gates', () => {
     it('accepts viewports that declare canReportFidelity (volume and stack)', () => {
       expect(
         canReportFidelity(
-          viewportStub({ type: ViewportType.ORTHOGRAPHIC, canReport: true })
+          viewportStub({ type: ViewportType.PLANAR_NEXT, canReport: true })
         )
       ).toBe(true);
       expect(
         canReportFidelity(
-          viewportStub({ type: ViewportType.STACK, canReport: true })
+          viewportStub({ type: ViewportType.PLANAR_NEXT, canReport: true })
         )
       ).toBe(true);
       expect(
         canReportFidelity(
           viewportStub({
             type: ViewportType.PLANAR_NEXT,
-            requestedType: ViewportType.STACK,
             canReport: true,
           })
         )
@@ -82,12 +79,12 @@ describe('fidelityIndicator attach gates', () => {
     it('rejects viewports that cannot report fidelity', () => {
       expect(
         canReportFidelity(
-          viewportStub({ type: ViewportType.STACK, canReport: false })
+          viewportStub({ type: ViewportType.PLANAR_NEXT, canReport: false })
         )
       ).toBe(false);
       expect(
         canReportFidelity(
-          viewportStub({ type: ViewportType.VIDEO, canReport: false })
+          viewportStub({ type: ViewportType.VIDEO_NEXT, canReport: false })
         )
       ).toBe(false);
     });
@@ -255,7 +252,7 @@ describe('fidelityIndicator attach gates', () => {
     });
 
     it('does not attach DOM when the product indicator is disabled', () => {
-      const viewport = viewportStub({ type: ViewportType.ORTHOGRAPHIC });
+      const viewport = viewportStub({ type: ViewportType.PLANAR_NEXT });
 
       maybeAttachFidelityIndicator(viewport);
 
@@ -275,7 +272,7 @@ describe('fidelityIndicator attach gates', () => {
     });
 
     it('mounts on the outer element so tooltips are not inside overflow:hidden', () => {
-      const viewport = viewportStub({ type: ViewportType.ORTHOGRAPHIC });
+      const viewport = viewportStub({ type: ViewportType.PLANAR_NEXT });
 
       maybeAttachFidelityIndicator(viewport);
 
@@ -290,7 +287,7 @@ describe('fidelityIndicator attach gates', () => {
     });
 
     it('restores inline position after detach', () => {
-      const viewport = viewportStub({ type: ViewportType.ORTHOGRAPHIC });
+      const viewport = viewportStub({ type: ViewportType.PLANAR_NEXT });
       expect(viewport.element.style.position).toBe('');
 
       maybeAttachFidelityIndicator(viewport);
@@ -310,7 +307,7 @@ describe('fidelityIndicator attach gates', () => {
     });
 
     it('leaves a single .fi-root when attach follows the engine default', () => {
-      const viewport = viewportStub({ type: ViewportType.ORTHOGRAPHIC });
+      const viewport = viewportStub({ type: ViewportType.PLANAR_NEXT });
 
       maybeAttachFidelityIndicator(viewport);
       const cleanup = attachFidelityIndicator(viewport);
@@ -366,7 +363,7 @@ describe('fidelityIndicator attach gates', () => {
     });
 
     function attach() {
-      const viewport = viewportStub({ type: ViewportType.ORTHOGRAPHIC });
+      const viewport = viewportStub({ type: ViewportType.PLANAR_NEXT });
       const records = new Map();
       viewport.getActors = () => [{ uid: 'vol', actor: {} }];
       viewport.getFidelityLines = () =>

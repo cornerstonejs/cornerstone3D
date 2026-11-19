@@ -61,6 +61,7 @@ import GenericViewport from '../GenericViewport';
 import { disableViewportWidgets } from '../viewportWidgets';
 import type { ViewportWidget } from '../Volume3D/viewport3DTypes';
 import type { GenericViewportReferenceContext } from '../genericViewportReferenceCompatibility';
+import { isPointNearImagePlane } from '../genericViewportReferenceCompatibility';
 import {
   getGenericViewportImageDisplaySet,
   isGenericViewportImageDisplaySet,
@@ -2015,6 +2016,10 @@ class PlanarViewport extends GenericViewport<
    * orientation of the images. Its plane restriction, which pins its first
    * slice, is not asked then.
    *
+   * In stack mode `asNearbyProjection` takes a reference by a focal point
+   * only as viewable when the point lies within half a slice spacing of the
+   * image shown, as the legacy stack viewport does.
+   *
    * @param viewRef - View reference to test.
    * @param options - Optional compatibility flags for the spatial check.
    * @returns `true` when the reference can be viewed in this viewport state.
@@ -2023,9 +2028,27 @@ class PlanarViewport extends GenericViewport<
     viewRef: ViewReference,
     options: ReferenceCompatibleOptions = {}
   ): boolean {
-    return super.isReferenceViewable(
+    const isViewable = super.isReferenceViewable(
       getPlanarReferenceForViewableCheck(viewRef),
       options
+    );
+
+    if (
+      !isViewable ||
+      !options.asNearbyProjection ||
+      !viewRef.cameraFocalPoint ||
+      viewRef.referencedImageId ||
+      viewRef.volumeId ||
+      viewRef.FrameOfReferenceUID ||
+      this.getCurrentMode() !== 'stack'
+    ) {
+      return isViewable;
+    }
+
+    const imageData = this.getImageData() as CPUIImageData | undefined;
+
+    return Boolean(
+      imageData && isPointNearImagePlane(viewRef.cameraFocalPoint, imageData)
     );
   }
 

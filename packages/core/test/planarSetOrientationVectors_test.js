@@ -17,7 +17,7 @@ const SQRT_HALF = Math.sqrt(0.5);
 
 /**
  * Makes a viewport of a type, axial and of the size of the tests, in the
- * rendering engine. The legacy volume type gives the planar legacy adapter.
+ * rendering engine.
  */
 function createViewport(renderingEngine, viewportId, viewportType) {
   testUtils.createViewports(renderingEngine, {
@@ -63,27 +63,6 @@ async function showVolumeOnNext(viewport, volumeId) {
   });
 }
 
-function normalize(vector) {
-  const length = Math.hypot(...vector);
-
-  return vector.map((value) => value / length);
-}
-
-/**
- * The view up that a camera draws with: the stored view up made orthogonal
- * to the normal, as vtk.js builds the view transform from it.
- */
-function getDrawnViewUp({ viewUp, viewPlaneNormal }) {
-  const dot = viewUp.reduce(
-    (sum, value, index) => sum + value * viewPlaneNormal[index],
-    0
-  );
-
-  return normalize(
-    viewUp.map((value, index) => value - dot * viewPlaneNormal[index])
-  );
-}
-
 function expectClose(actual, expected) {
   expected.forEach((value, index) => {
     expect(actual[index]).toBeCloseTo(value, 5);
@@ -93,8 +72,6 @@ function expectClose(actual, expected) {
 describe('setOrientation with vectors against the legacy volume viewport -- ', () => {
   let renderingEngine;
   let volumeId;
-  let legacy;
-  let adapter;
   let next;
 
   beforeEach(async function () {
@@ -108,71 +85,12 @@ describe('setOrientation with vectors against the legacy volume viewport -- ', (
     await showVolumeOnNext(next, volumeId);
   });
 
-  /**
-   * Makes two viewports of the legacy volume type, `legacy` and `adapter`,
-   * and shows the volume on both.
-   */
-  async function showVolumeOnLegacyViewports() {
-    legacy = createViewport(
-      renderingEngine,
-      'legacy',
-      ViewportType.ORTHOGRAPHIC
-    );
-    adapter = createViewport(
-      renderingEngine,
-      'adapter',
-      ViewportType.ORTHOGRAPHIC
-    );
-    await legacy.setVolumes([{ volumeId }]);
-    await adapter.setVolumes([{ volumeId }]);
-  }
-
   afterEach(function () {
     testUtils.cleanupTestEnvironment({
       renderingEngineId,
       toolGroupIds: ['default'],
     });
     utilities.genericViewportDisplaySetMetadataProvider.clear?.();
-  });
-
-  const cases = [
-    {
-      name: 'a normal without view up that the current view up is orthogonal to',
-      before: OrientationAxis.SAGITTAL,
-      orientation: { viewPlaneNormal: [SQRT_HALF, SQRT_HALF, 0] },
-    },
-    {
-      name: 'an axis normal without view up that the current view up is not orthogonal to',
-      before: OrientationAxis.AXIAL,
-      orientation: { viewPlaneNormal: [0, 1, 0] },
-    },
-    {
-      name: 'an oblique normal without view up that the current view up is not orthogonal to',
-      before: OrientationAxis.AXIAL,
-      orientation: { viewPlaneNormal: [0, SQRT_HALF, SQRT_HALF] },
-    },
-    {
-      name: 'a view up that is not orthogonal to the normal',
-      before: OrientationAxis.AXIAL,
-      orientation: { viewPlaneNormal: [0, 0, -1], viewUp: [0, -1, 0.5] },
-    },
-  ];
-
-  cases.forEach(({ name, before, orientation }) => {
-    it(`draws the view of the legacy viewport on the legacy adapter for ${name}`, async function () {
-      await showVolumeOnLegacyViewports();
-      legacy.setOrientation(before);
-      adapter.setOrientation(before);
-      legacy.setOrientation(orientation);
-      adapter.setOrientation(orientation);
-
-      const legacyCamera = legacy.getCamera();
-      const adapterCamera = adapter.getCamera();
-
-      expect(utilities.isGenericViewport(adapter)).toBe(true);
-      expectClose(adapterCamera.viewPlaneNormal, legacyCamera.viewPlaneNormal);
-      expectClose(adapterCamera.viewUp, getDrawnViewUp(legacyCamera));
-    });
   });
 
   it('gives on a direct next viewport the same view by setOrientation and by setViewState, for both vectors and for a normal alone', function () {

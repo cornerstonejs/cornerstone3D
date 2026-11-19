@@ -4,13 +4,12 @@ import {
   fakeMetaDataProvider,
 } from '../../../utils/test/testUtilsImageLoader';
 
-import { createPlanarAdapterOnStandInEngine } from './utils/planarAdapterOnStandInEngine';
+import { createPlanarViewportOnStandInEngine } from './utils/planarViewportOnStandInEngine';
 
 import { describe, it, expect } from '@jest/globals';
 import { render } from 'react-dom';
 
-const { utilities, setUseCPURendering, Enums, imageLoader, metaData, init } =
-  cornerstone3D;
+const { utilities, Enums, imageLoader, metaData, init } = cornerstone3D;
 const { Events } = Enums;
 
 const viewportId = 'VIEWPORT';
@@ -69,13 +68,12 @@ describe('stackViewport_node_render', function () {
   let viewport, element, renderingEngine;
 
   beforeEach(() => {
-    setUseCPURendering(true);
     window.devicePixelRatio = 1;
 
     const initData = initCore();
     element = initData.element;
 
-    ({ renderingEngine, viewport } = createPlanarAdapterOnStandInEngine(
+    ({ renderingEngine, viewport } = createPlanarViewportOnStandInEngine(
       element,
       viewportId,
       {
@@ -101,7 +99,15 @@ describe('stackViewport_node_render', function () {
         resolve(image);
       });
     });
-    viewport.setStack([imageId], 0);
+    utilities.genericViewportDisplaySetMetadataProvider.add('stack', {
+      kind: 'planar',
+      imageIds: [imageId],
+      initialImageIdIndex: 0,
+    });
+    viewport.setDisplaySets({
+      displaySetId: 'stack',
+      options: { renderBackend: 'cpu' },
+    });
     viewport.render();
     return promise;
   });

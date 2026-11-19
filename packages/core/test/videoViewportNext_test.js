@@ -101,11 +101,6 @@ function createViewport(renderingEngine, viewportId, viewportType) {
   return renderingEngine.getViewport(viewportId);
 }
 
-/** The video element that the viewport of the legacy type shows. */
-function legacyVideoElement(legacy) {
-  return legacy.element.querySelector('video');
-}
-
 /** The video element that a direct next video viewport shows. */
 function nextVideoElement(next) {
   return next.element.querySelector('video');
@@ -125,30 +120,6 @@ async function showVideo(next) {
       !nextVideoElement(next).seeking
   );
   await animationFrames(3);
-}
-
-/**
- * Makes the viewport of the legacy `VIDEO` type, which is the legacy adapter
- * of the video viewport, and shows the test video on it, on the first frame,
- * paused.
- */
-async function showVideoOnAdapter(renderingEngine) {
-  const legacy = createViewport(
-    renderingEngine,
-    'legacyVideo',
-    ViewportType.VIDEO
-  );
-
-  await legacy.setVideo(TEST_VIDEO.imageId, 1);
-  await waitFor(
-    () =>
-      legacyVideoElement(legacy).paused &&
-      legacyVideoElement(legacy).readyState >= 2 &&
-      legacyVideoElement(legacy).currentTime === 0
-  );
-  await animationFrames(3);
-
-  return legacy;
 }
 
 /**
@@ -303,37 +274,6 @@ describe('Direct next video viewport -- ', () => {
       });
     });
     expect(events.stack).toEqual([]);
-  });
-
-  it('keeps STACK_NEW_IMAGE of the legacy adapter for the frame of a seek, with the time and the duration, and fires NEW_IMAGE too', async function () {
-    const legacy = await showVideoOnAdapter(renderingEngine);
-    const events = recordNewImageEvents(legacy.element);
-
-    legacy.setFrameNumber(6);
-    await waitFor(() => events.stack.length > 0 && events.newImage.length > 0);
-    await animationFrames(3);
-
-    expect(events.stack).toEqual([
-      {
-        element: legacy.element,
-        imageId: events.newImage[0].imageId,
-        imageIdIndex: 5,
-        viewportId: 'legacyVideo',
-        renderingEngineId,
-        time: legacyVideoElement(legacy).currentTime,
-        duration: legacyVideoElement(legacy).duration,
-      },
-    ]);
-    expect(events.newImage).toEqual([
-      {
-        viewportId: 'legacyVideo',
-        renderingEngineId,
-        imageIdIndex: 5,
-        numberOfSlices: TEST_VIDEO.numberOfFrames,
-        imageId: jasmine.any(String),
-        image: undefined,
-      },
-    ]);
   });
 
   it('fires IMAGE_RENDERED while it plays, not more often than the legacy viewport', async function () {

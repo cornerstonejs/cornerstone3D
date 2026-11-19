@@ -1,7 +1,6 @@
 import { describe, it, expect, afterEach, beforeEach } from '@jest/globals';
 import { getConfiguration } from '../src/init';
 import WSIViewport from '../src/RenderingEngine/GenericViewport/WSI/WSIViewport';
-import WSIViewportLegacyAdapter from '../src/RenderingEngine/GenericViewport/WSI/WSIViewportLegacyAdapter';
 import { viewportProjection } from '../src/RenderingEngine/GenericViewport/viewportProjection';
 
 const WIDTH = 400;
@@ -391,64 +390,6 @@ describe.each(SLIDE_ROTATIONS)(
         80 * 90 * Math.pow(state.resolution * SPACING, 2),
         1
       );
-    });
-  }
-);
-
-describe.each(SLIDE_ROTATIONS)(
-  'WSI legacy adapter on %s',
-  (_, slideRotation) => {
-    let made;
-
-    beforeEach(async () => {
-      made = await mount(WSIViewportLegacyAdapter, slideRotation);
-    });
-
-    afterEach(() => {
-      made.viewport.destroy();
-      made.element.remove();
-    });
-
-    it('shows the slide as the legacy viewport does and reports no rotation', () => {
-      const { viewport, view } = made;
-
-      expect(view.getRotation()).toBeCloseTo(slideRotation, 12);
-      expect(viewport.getRotation()).toBe(0);
-      expect(viewport.getCamera().rotation).toBeCloseTo(0, 12);
-      expect(viewport.getCamera().viewUp).toEqual([0, -1, 0]);
-      expect(viewport.getViewPresentation().rotation).toBeCloseTo(0, 12);
-    });
-
-    it('pans in canvas pixels on the turned map', () => {
-      const { viewport, view } = made;
-
-      viewport.setViewState({ zoom: view.getZoom() + 2 });
-
-      const state = legacyView(view, slideRotation);
-      const { focalPoint } = viewport.getCamera();
-
-      viewport.setPan([40, -20]);
-
-      expectClose(viewport.getPan(), [40, -20]);
-      expectClose(viewport.worldToCanvas(focalPoint), [
-        WIDTH / 2 + 40,
-        HEIGHT / 2 - 20,
-      ]);
-      expectClose(
-        pixelAt(viewport, [WIDTH / 2, HEIGHT / 2]),
-        referencePixel(state, [WIDTH / 2 - 40, HEIGHT / 2 + 20])
-      );
-      expect(view.getRotation()).toBeCloseTo(slideRotation, 12);
-    });
-
-    it('goes back to the rotation of the slide on resetCamera', () => {
-      const { viewport, view } = made;
-
-      viewport.setCamera({ rotation: degrees(0.7) });
-
-      expect(view.getRotation()).toBeCloseTo(slideRotation + 0.7, 12);
-      expect(viewport.resetCamera()).toBe(true);
-      expect(view.getRotation()).toBeCloseTo(slideRotation, 12);
     });
   }
 );

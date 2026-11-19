@@ -232,7 +232,7 @@ function createViewports(renderingEngine, options = {}, count = 1) {
 
   for (let i = 0; i < optionsArray.length; i++) {
     const {
-      viewportType = Enums.ViewportType.STACK,
+      viewportType = Enums.ViewportType.PLANAR_NEXT,
       width = 400,
       height = 400,
       orientation = Enums.OrientationAxis.AXIAL,
