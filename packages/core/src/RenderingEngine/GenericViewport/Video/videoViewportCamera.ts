@@ -1,3 +1,4 @@
+import { SpeedUnit } from '../../../enums/VideoEnums';
 import type { ViewAnchor } from '../ViewportCameraTypes';
 import type { VideoViewState, VideoProperties } from './VideoViewportTypes';
 
@@ -49,6 +50,45 @@ function isVideoFrameRange(
   );
 }
 
+/**
+ * Whether a value is a scroll step of a video view state: a number of frames
+ * or of seconds above 0.
+ */
+function isVideoScrollStep(
+  scrollStep: unknown
+): scrollStep is VideoViewState['scrollStep'] {
+  const step = scrollStep as VideoViewState['scrollStep'] | undefined;
+
+  return (
+    typeof step?.value === 'number' &&
+    Number.isFinite(step.value) &&
+    step.value > 0 &&
+    (step.unit === SpeedUnit.FRAME || step.unit === SpeedUnit.SECOND)
+  );
+}
+
+/**
+ * The number of frames of one scroll step of a video view state at a frame
+ * rate: one frame when the view state has no step.
+ */
+export function getVideoScrollStepFrames(
+  viewState: VideoViewState,
+  fps: number
+): number {
+  const { scrollStep } = viewState;
+
+  if (!scrollStep) {
+    return 1;
+  }
+
+  const frames =
+    scrollStep.unit === SpeedUnit.SECOND
+      ? scrollStep.value * fps
+      : scrollStep.value;
+
+  return frames > 0 ? frames : 1;
+}
+
 export function normalizeVideoViewState(
   camera: VideoViewState
 ): VideoViewState {
@@ -58,6 +98,14 @@ export function normalizeVideoViewState(
       : {}),
     ...(isVideoFrameRange(camera.frameRange)
       ? { frameRange: [camera.frameRange[0], camera.frameRange[1]] }
+      : {}),
+    ...(isVideoScrollStep(camera.scrollStep)
+      ? {
+          scrollStep: {
+            value: camera.scrollStep.value,
+            unit: camera.scrollStep.unit,
+          },
+        }
       : {}),
     anchorCanvas: cloneAnchorCanvas(camera.anchorCanvas ?? [0.5, 0.5]),
     scale: Math.max(camera.scale ?? 1, 0.001),

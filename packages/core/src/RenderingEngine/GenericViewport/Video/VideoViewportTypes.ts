@@ -9,6 +9,7 @@ import type { ViewportCameraBase } from '../ViewportCameraTypes';
 import type { VideoImageMetadata } from '../../../utilities/VideoUtilities';
 import type { VOIRange } from '../../../types';
 import type ViewportInputOptions from '../../../types/ViewportInputOptions';
+import type { SpeedUnit } from '../../../enums/VideoEnums';
 
 /** @internal */
 export interface VideoStreamPayload {
@@ -32,6 +33,15 @@ export interface VideoViewState extends ViewportCameraBase<[number, number]> {
    * mount of a video clear it.
    */
   frameRange?: [number, number];
+  /**
+   * How far one step of `scroll` moves: `value` frames, or `value` seconds
+   * with `SpeedUnit.SECOND`. One frame when not set. `utilities.scroll` and
+   * the stack scroll tool move by steps of it, and `getNumberOfSlices` and
+   * `getSliceIndex` count in these steps, as with the legacy
+   * `setScrollSpeed`. A reset of the view state and a mount of a video keep
+   * it.
+   */
+  scrollStep?: { value: number; unit: SpeedUnit };
 }
 
 export interface VideoProperties {

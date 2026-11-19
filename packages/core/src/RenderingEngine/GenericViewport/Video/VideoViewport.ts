@@ -39,6 +39,7 @@ import type {
 } from './VideoViewportTypes';
 import {
   createDefaultVideoViewState,
+  getVideoScrollStepFrames,
   normalizeVideoViewState,
 } from './videoViewportCamera';
 import { createVideoRenderPathResolver } from './VideoRenderPathResolver';
@@ -164,7 +165,10 @@ class VideoViewport extends GenericViewport<
         );
       }
 
-      this.viewState = createDefaultVideoViewState();
+      this.viewState = this.normalizeViewState({
+        ...createDefaultVideoViewState(),
+        scrollStep: this.viewState.scrollStep,
+      });
 
       if (videoData.frameRange[0] > 1) {
         this.viewState.currentTimeSeconds = frameNumberToTimeSeconds(
@@ -299,8 +303,13 @@ class VideoViewport extends GenericViewport<
     }
   }
 
+  /**
+   * The index of the frame on display, counted in scroll steps of the view
+   * state, as the legacy video viewport counted in steps of its scroll
+   * speed. With no scroll step it is the frame index.
+   */
   getSliceIndex(): number {
-    return this.getCurrentImageIdIndex();
+    return this.getCurrentImageIdIndex() / this.getScrollStepFrames();
   }
 
   /**
@@ -575,7 +584,8 @@ class VideoViewport extends GenericViewport<
   /**
    * Scrolls through frames using a signed delta.
    *
-   * @param delta - Signed number of frames to move by.
+   * @param delta - Signed number of scroll steps to move by. A step is one
+   * frame, or the `scrollStep` of the view state.
    * @param _debounceLoading - Unused compatibility argument kept for stack-like
    * callers.
    * @param loop - Whether to wrap when scrolling past either end.
@@ -596,7 +606,9 @@ class VideoViewport extends GenericViewport<
     const maxTimeSeconds =
       videoData.durationSeconds ??
       frameNumberToTimeSeconds(videoData.frameRange[1], videoData.fps);
-    let nextTimeSeconds = this.getCurrentTime() + delta / videoData.fps;
+    let nextTimeSeconds =
+      this.getCurrentTime() +
+      (delta * this.getScrollStepFrames()) / videoData.fps;
 
     if (loop) {
       const durationSeconds = Math.max(
@@ -640,10 +652,23 @@ class VideoViewport extends GenericViewport<
   }
 
   /**
-   * Returns the stack-like slice count used by tool compatibility layers.
+   * Returns the stack-like slice count used by tool compatibility layers:
+   * the number of frames, counted in scroll steps of the view state, as the
+   * legacy video viewport counted in steps of its scroll speed.
    */
   getNumberOfSlices(): number {
-    return this.getImageIds().length || this.getNumberOfFrames();
+    return Math.round(
+      (this.getImageIds().length || this.getNumberOfFrames()) /
+        this.getScrollStepFrames()
+    );
+  }
+
+  /**
+   * The number of frames of one scroll step: the `scrollStep` of the view
+   * state at the frame rate of the video, or one frame.
+   */
+  protected getScrollStepFrames(): number {
+    return getVideoScrollStepFrames(this.viewState, this.getFrameRate());
   }
 
   /**
@@ -747,7 +772,8 @@ class VideoViewport extends GenericViewport<
   }
 
   /**
-   * Resets layout navigation while preserving the current video time.
+   * Resets layout navigation while preserving the current video time and
+   * the scroll step.
    */
   resetViewState(): boolean {
     if (this.isDestroyed) {
@@ -755,11 +781,12 @@ class VideoViewport extends GenericViewport<
     }
 
     const previousCamera = this.getCameraForEvent();
-    const { currentTimeSeconds } = this.viewState;
+    const { currentTimeSeconds, scrollStep } = this.viewState;
 
     this.viewState = this.normalizeViewState({
       ...createDefaultVideoViewState(),
       currentTimeSeconds,
+      scrollStep,
     });
     this.modified(previousCamera);
     this.triggerCameraResetEvent();

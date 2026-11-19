@@ -2,6 +2,7 @@ import {
   getDimensionGroupReferenceContext,
   isGenericViewportReferenceViewable,
 } from '../src/RenderingEngine/GenericViewport/genericViewportReferenceCompatibility';
+import genericViewportDisplaySetMetadataProvider from '../src/utilities/genericViewportDisplaySetMetadataProvider';
 
 describe('GenericViewport reference compatibility', () => {
   const baseContext = {
@@ -41,6 +42,72 @@ describe('GenericViewport reference compatibility', () => {
         [baseContext]
       )
     ).toBe(true);
+  });
+
+  it('takes a reference of another display set of the same images by an image of the context', () => {
+    const otherData = {
+      FrameOfReferenceUID: 'for-1',
+      dataId: 'data-2',
+      volumeId: 'volume-2',
+      sliceIndex: 0,
+      viewPlaneNormal: [0, 0, -1],
+    };
+
+    genericViewportDisplaySetMetadataProvider.add('data-2', {
+      imageIds: [...baseContext.imageIds].reverse(),
+      volumeId: 'volume-2',
+    });
+
+    expect(
+      isGenericViewportReferenceViewable(
+        {
+          ...otherData,
+          dataId: 'data-unknown',
+          referencedImageId: 'scheme:image-2',
+        },
+        [baseContext],
+        { withNavigation: true }
+      )
+    ).toBe(false);
+    expect(
+      isGenericViewportReferenceViewable(
+        { ...otherData, referencedImageId: 'scheme:image-2' },
+        [baseContext]
+      )
+    ).toBe(true);
+    expect(
+      isGenericViewportReferenceViewable(
+        { ...otherData, referencedImageId: 'scheme:image-3' },
+        [baseContext]
+      )
+    ).toBe(false);
+    expect(
+      isGenericViewportReferenceViewable(
+        { ...otherData, referencedImageId: 'scheme:image-3' },
+        [baseContext],
+        { withNavigation: true }
+      )
+    ).toBe(true);
+    expect(
+      isGenericViewportReferenceViewable(
+        { ...otherData, referencedImageId: 'scheme:image-9' },
+        [baseContext],
+        { withNavigation: true }
+      )
+    ).toBe(false);
+    expect(
+      isGenericViewportReferenceViewable(
+        {
+          ...otherData,
+          referencedImageId: 'scheme:image-3',
+          viewPlaneNormal: [1, 0, 0],
+        },
+        [baseContext],
+        { withNavigation: true }
+      )
+    ).toBe(false);
+
+    genericViewportDisplaySetMetadataProvider.remove('data-2');
   });
 
   it('shows a reference to an image URI of the whole data on every slice', () => {

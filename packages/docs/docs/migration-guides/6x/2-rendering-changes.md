@@ -341,6 +341,17 @@ leave the canvas. Against the legacy volume viewport:
   not in the stack but lies on the geometry of the image on display shows.
   The option `asNearbyProjection` has no effect on a next viewport. Nothing
   called it.
+- **A view reference crosses between a stack and a volume of the same
+  images.** A next view reference names its display set (`dataId`). A planar
+  viewport of another display set that has the image that the reference
+  names takes it, as the legacy stack and volume viewports did:
+  `isReferenceViewable(viewRef, { withNavigation: true })` is true, and
+  `setViewReference(viewRef)` shows that image. The slice index and the
+  volume of such a reference count in the other display set and are not
+  asked. A reference of other images, or of a plane that the viewport does
+  not show, is not viewable. Without the option the answer is true when the
+  viewport shows that image; the legacy volume viewport compared the slice
+  index of the stack with its own there, and answered false.
 - **`IMAGE_SPACING_CALIBRATED` fires from `calibrateSpacing(imageId)`,** and
   its detail has `worldToIndex` and `scale`. It does not fire by itself when
   a newly shown image has another calibration, as it did on the legacy stack
@@ -571,6 +582,12 @@ layer of a fusion: the opacity is applied as given.
 
 - **A reset fits like the first mount.** `resetViewState()` zoomed out further
   than the first picture.
+- **The first mount fits the camera in the orientation of the options,** also
+  when a camera was written while the viewport showed nothing, as the reset
+  of `TrackballRotateTool` on a resize does. In 5.x the next 3D viewport put
+  that camera back after the fit, so it kept the default camera of vtk.js
+  until `resetViewState()`, and that reset kept the wrong orientation. The
+  legacy 3D viewport reset the camera at `setVolumes` in the same way.
 - **`setViewReference()` moves the camera.** It did nothing, so a camera
   synchronizer between two 3D viewports did nothing.
 - **A preset is a key of the presentation, and it stays.**
@@ -725,6 +742,16 @@ layer of a fusion: the opacity is applied as given.
   Playback stays in the range, and a reset and a mount clear it. There is no
   `setFrameRange()` and no `getFrameRange()`. A change of the range is a view
   state change, so it fires `CAMERA_MODIFIED`.
+- **The scroll step is the view state key `scrollStep`:**
+  `viewport.setViewState({ scrollStep: { value: 4, unit: Enums.VideoEnums.SpeedUnit.FRAME } })`,
+  or `SpeedUnit.SECOND` for seconds, in place of `setScrollSpeed(4)`. Each
+  step of `scroll()`, of `utilities.scroll` and of the stack scroll tool
+  moves that far, and `getNumberOfSlices()` and `getSliceIndex()` count in
+  steps, as with the legacy scroll speed. A reset and a mount keep it. The
+  steps divide the number of frames of the metadata; the legacy viewport
+  divided the length of the media times the frame rate, which can be a few
+  frames more, so a long drag of the stack scroll tool can end one step
+  apart.
 - **`setPlaybackRate()` sets the rate only.** On the legacy viewport it also
   started playback, and paused below a rate of 0.0625.
 - **An annotation over a range of frames shows on every frame of the range.**
@@ -746,7 +773,9 @@ layer of a fusion: the opacity is applied as given.
 - **`suppressEvents`** in the options silences `CAMERA_MODIFIED` and
   `CAMERA_RESET`.
 - **A labelmap over a video** is not available. It is not available on the
-  legacy viewport either: both throw. Contour segmentations show.
+  legacy viewport either: both throw. No 5.x release showed one, from 5.0.0
+  to 5.18.2: the legacy video viewport throws when the labelmap is mounted.
+  Contour segmentations show.
 
 ## Tools on the next viewports
 
@@ -764,6 +793,14 @@ layer of a fusion: the opacity is applied as given.
   of `NEW_IMAGE` with the image before.
 - **`MIPJumpToClickTool` works in volume mode.** On a stack it finds no
   point, and it does not throw.
+- **`CrosshairsTool` and `VolumeCroppingControlTool` leave a viewport that
+  reset itself.** On its `CAMERA_RESET` they reset the views of the other
+  viewports of their group, and not that one again, so
+  `viewport.resetViewState({ resetOrientation: false })` keeps its
+  orientation. The legacy tools reset it again with its orientation, and the
+  legacy volume viewport did not keep an orientation on that reset anyway.
+  `resetCroppingSpheres(element)` takes the element of a viewport that it
+  leaves; without one it resets every view, as before.
 - **A brush on a stretched view fills a shape that looks round on the
   screen,** in stack mode and in volume mode. The brush strategies read the
   scale pair of the view state.
@@ -780,6 +817,13 @@ layer of a fusion: the opacity is applied as given.
   and the VOI synchronizer reaches a 3D target when the event names a
   volume. On a whole slide viewport the limits are factors against the fit
   too.
+- **The `PanTool` options `ignoreX`, `ignoreY`, `ignoreZ` and
+  `limitToViewport` work on a next viewport,** as on the legacy viewports.
+  With an ignored axis the picture moves by the canvas delta of the world
+  delta of the drag with that axis at zero. With `limitToViewport` a drag
+  that would take the picture out of the canvas, or uncover the canvas when
+  the picture is zoomed in, does not move it. In 5.x the four options did
+  nothing on a next viewport.
 - **A zoom keeps a stretch.** On a planar viewport with a scale pair, the
   zoom tool, the zoom and pan synchronizer and the undo of a zoom multiply
   both axes.

@@ -441,8 +441,15 @@ class VolumeCroppingControlTool extends AnnotationTool {
    * Resets the view of each viewport of the tool group and makes the
    * annotation of each again. The reset of a view fires CAMERA_RESET, so
    * `onResetCamera` does nothing while this runs.
+   *
+   * A viewport whose element is given has just reset itself, and the tool
+   * answers its CAMERA_RESET: its view is not reset again, so it keeps what
+   * its caller asked to keep, such as its orientation with
+   * `resetOrientation: false`.
+   *
+   * @param resetElement - The element of a viewport that has reset itself.
    */
-  resetCroppingSpheres = () => {
+  resetCroppingSpheres = (resetElement?: HTMLDivElement) => {
     const viewportsInfo = this._getViewportsInfo();
 
     this._isResettingViews = true;
@@ -464,13 +471,15 @@ class VolumeCroppingControlTool extends AnnotationTool {
         const resetToCenter = true;
         const resetRotation = true;
         const suppressEvents = true;
-        resetViewportCamera(viewport, {
-          resetPan,
-          resetZoom,
-          resetToCenter,
-          resetRotation,
-          suppressEvents,
-        });
+        if (viewport.element !== resetElement) {
+          resetViewportCamera(viewport, {
+            resetPan,
+            resetZoom,
+            resetToCenter,
+            resetRotation,
+            suppressEvents,
+          });
+        }
         const { element } = viewport;
         let annotations = this._getAnnotations(enabledElement);
         annotations = this.filterInteractableAnnotationsForElement(
@@ -661,7 +670,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
       return;
     }
 
-    this.resetCroppingSpheres();
+    this.resetCroppingSpheres(evt.detail?.element);
   };
 
   mouseMoveCallback = (

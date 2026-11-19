@@ -227,6 +227,12 @@ class VolumeViewport3D extends GenericViewport<
    * A volume added as the source fires VOLUME_VIEWPORT_NEW_VOLUME; an
    * overlay does not, as the legacy `addVolumes`.
    *
+   * The first display set of a viewport that shows nothing fits the camera
+   * in the orientation of the options. A camera that was written while the
+   * viewport showed nothing, as a reset on a resize does, is not applied over
+   * that fit; its projection stays. The legacy 3D viewport reset its camera
+   * at `setVolumes` in the same way.
+   *
    * @param displaySetId - Logical display set id to add.
    * @param options - Requested 3D render-mode options.
    */
@@ -239,6 +245,13 @@ class VolumeViewport3D extends GenericViewport<
       displaySetId,
       volumeOptions.renderMode
     );
+
+    if (!this.bindings.size) {
+      this.viewState = {
+        parallelProjection: this.viewState.parallelProjection,
+      } as Volume3DCamera;
+    }
+
     await super.addDisplaySet(displaySetId, {
       renderMode,
       role: volumeOptions.role,

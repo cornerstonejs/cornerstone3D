@@ -69,6 +69,19 @@ async function showVolume(renderingEngine) {
   );
 }
 
+/** A view of the axial viewport turned by about 37 degrees about the x axis. */
+const OBLIQUE = {
+  viewPlaneNormal: [0, 0.6, -0.8],
+  viewUp: [0, -0.8, -0.6],
+};
+
+/** Checks that two world vectors are the same, to a thousandth. */
+function expectVectorsToBeClose(actual, expected) {
+  [0, 1, 2].forEach((axis) => {
+    expect(actual[axis]).toBeCloseTo(expected[axis], 3);
+  });
+}
+
 /** The ids of the viewports that have an annotation of the tool, sorted. */
 function getAnnotatedViewportIds(element) {
   return (annotation.state.getAnnotations(toolName, element) || [])
@@ -146,6 +159,53 @@ describe('VolumeCroppingControlTool on direct next planar viewports -- ', () => 
     expect(sagittal.getViewState().scale).toEqual([1, 1]);
     expect(getAnnotatedViewportIds(elements[0])).toEqual(
       [...viewportIds].sort()
+    );
+  });
+
+  /**
+   * The legacy volume viewport of commit 58914567b went back to the axial
+   * normal on `resetCamera({ resetOrientation: false })` with or without the
+   * tool, and the tool reset the other viewports too (the zoom 3 of the
+   * sagittal viewport went back to 1). A next planar viewport keeps its
+   * orientation on that reset, and the tool must not reset it again.
+   */
+  it('keeps the orientation of a viewport reset with resetOrientation false, and resets the other views', async function () {
+    createEmptyViewports(renderingEngine);
+    await showVolume(renderingEngine);
+    activateCroppingControl();
+
+    const axial = renderingEngine.getViewport(viewportIds[0]);
+    const sagittal = renderingEngine.getViewport(viewportIds[1]);
+
+    axial.setViewState({ orientation: OBLIQUE });
+    axial.setViewState({ scale: [2, 2] });
+    sagittal.setViewState({ scale: [3, 3] });
+    axial.resetViewState({ resetOrientation: false });
+
+    expect(axial.getViewState().orientation).toEqual(OBLIQUE);
+    expectVectorsToBeClose(
+      axial.getViewReference().viewPlaneNormal,
+      OBLIQUE.viewPlaneNormal
+    );
+    expect(axial.getViewState().scale).toEqual([1, 1]);
+    expect(sagittal.getViewState().scale).toEqual([1, 1]);
+    expect(sagittal.getViewState().orientation).toBe(OrientationAxis.SAGITTAL);
+  });
+
+  it('still takes the orientation back on a reset of every field', async function () {
+    createEmptyViewports(renderingEngine);
+    await showVolume(renderingEngine);
+    activateCroppingControl();
+
+    const axial = renderingEngine.getViewport(viewportIds[0]);
+
+    axial.setViewState({ orientation: OBLIQUE });
+    axial.resetViewState();
+
+    expect(axial.getViewState().orientation).toBe(OrientationAxis.AXIAL);
+    expectVectorsToBeClose(
+      axial.getViewReference().viewPlaneNormal,
+      [0, 0, -1]
     );
   });
 });

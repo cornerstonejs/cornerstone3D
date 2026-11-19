@@ -9,6 +9,8 @@ import type {
 import type { PlaneRestriction } from '../../types/IViewport';
 import { MetadataModules } from '../../enums';
 import * as metaData from '../../metaData';
+import cache from '../../cache/cache';
+import { getGenericViewportImageDisplaySet } from './genericViewportDisplaySetAccess';
 import getSpacingInNormalDirection from '../../utilities/getSpacingInNormalDirection';
 import imageIdToURI from '../../utilities/imageIdToURI';
 import isEqual from '../../utilities/isEqual';
@@ -83,12 +85,11 @@ function isReferenceViewableInContext(
     return false;
   }
 
-  if (!isDataIdCompatible(viewRef, context)) {
-    return false;
-  }
-
-  if (!isVolumeIdCompatible(viewRef, context)) {
-    return false;
+  if (
+    !isDataIdCompatible(viewRef, context) ||
+    !isVolumeIdCompatible(viewRef, context)
+  ) {
+    return isOtherDataReferenceViewable(viewRef, context, options);
   }
 
   if (!isPlaneCompatible(viewRef, context, options)) {
@@ -104,6 +105,86 @@ function isReferenceViewableInContext(
   }
 
   return isSliceIndexCompatible(viewRef, context, options);
+}
+
+/**
+ * Whether a reference of another display set or of another volume shows in a
+ * context that has the same images, as a stack and a volume of one series.
+ * The legacy stack and volume viewports took such a reference by the image
+ * that it names. The display set of the reference, or its volume when it
+ * names no display set, must be known and hold that image, the context must
+ * have the image too, and the plane of the reference must be one that the
+ * context shows. Its slice index counts in the other display set and is not
+ * asked.
+ */
+function isOtherDataReferenceViewable(
+  viewRef: ViewReference,
+  context: GenericViewportReferenceContext,
+  options: ReferenceCompatibleOptions
+): boolean {
+  if (
+    !hasReferencedImage(viewRef, getReferenceDataImageIds(viewRef)) ||
+    !hasReferencedImage(viewRef, context.imageIds, context.imageURIs)
+  ) {
+    return false;
+  }
+
+  const {
+    dataId: _dataId,
+    volumeId: _volumeId,
+    sliceIndex: _sliceIndex,
+    ...reference
+  } = viewRef;
+
+  return (
+    isPlaneCompatible(reference, context, options) &&
+    isReferencedImageCompatible(reference, context, options) &&
+    isDimensionGroupCompatible(reference, context, options)
+  );
+}
+
+/**
+ * The image ids of the data that a reference names: of its registered
+ * display set, or of its volume in the cache when it names no display set.
+ * Undefined when that data is not known.
+ */
+function getReferenceDataImageIds(
+  viewRef: ViewReference
+): string[] | undefined {
+  if (viewRef.dataId) {
+    return getGenericViewportImageDisplaySet(viewRef.dataId)?.imageIds;
+  }
+
+  return viewRef.volumeId
+    ? cache.getVolume(viewRef.volumeId)?.imageIds
+    : undefined;
+}
+
+/**
+ * Whether the image that a reference names is among image ids, or among the
+ * image URIs of data as a whole.
+ */
+function hasReferencedImage(
+  viewRef: ViewReference,
+  imageIds: string[] | undefined,
+  imageURIs?: string[]
+): boolean {
+  const referencedImageURIs = getReferencedImageURIs(viewRef);
+
+  if (!referencedImageURIs.length) {
+    return false;
+  }
+
+  if (imageURIs?.some((imageURI) => referencedImageURIs.includes(imageURI))) {
+    return true;
+  }
+
+  return Boolean(
+    imageIds?.length &&
+      getImageIdsURIEntries(imageIds).some((imageURIEntry) =>
+        imageURIEntryMatches(imageURIEntry, referencedImageURIs)
+      )
+  );
 }
 
 function isFrameOfReferenceCompatible(

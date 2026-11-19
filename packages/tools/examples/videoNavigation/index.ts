@@ -76,18 +76,6 @@ const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'videoViewportId';
 let viewport: VideoGenericViewport;
 let playing = false;
-let scrollSpeed = 1;
-let scrollUnit = Enums.VideoEnums.SpeedUnit.FRAME;
-
-/**
- * The number of frames that one step of the next and previous buttons
- * moves: the scroll distance of the dropdown, in frames.
- */
-function getFramesPerStep() {
-  return scrollUnit === Enums.VideoEnums.SpeedUnit.SECOND
-    ? scrollSpeed * viewport.getFrameRate()
-    : scrollSpeed;
-}
 
 addButtonToToolbar({
   id: 'play',
@@ -114,7 +102,7 @@ addButtonToToolbar({
   id: 'previous',
   title: 'previous',
   onClick() {
-    viewport.scroll(-getFramesPerStep());
+    viewport.scroll(-1);
   },
 });
 
@@ -122,7 +110,7 @@ addButtonToToolbar({
   id: 'next',
   title: 'next',
   onClick() {
-    viewport.scroll(getFramesPerStep());
+    viewport.scroll(1);
   },
 });
 
@@ -172,10 +160,11 @@ addDropdownToToolbar({
   options: { values: scrollSpeeds, defaultValue: '1 f' },
   onSelectedValueChange: (value) => {
     value = value.toString();
-    const unit = value[value.length - 1];
+    const unit = value[value.length - 1] as Enums.VideoEnums.SpeedUnit;
     const newScrollSpeed = Number(value.substring(0, value.length - 2));
-    scrollSpeed = newScrollSpeed;
-    scrollUnit = unit as Enums.VideoEnums.SpeedUnit;
+    viewport.setViewState({
+      scrollStep: { value: newScrollSpeed, unit },
+    });
   },
 });
 

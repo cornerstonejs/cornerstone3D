@@ -48,9 +48,6 @@ class VideoViewportLegacyAdapter extends VideoViewport {
    */
   readonly suppressEvents = Boolean(this.defaultOptions.suppressEvents);
 
-  /** The number of frames that one step of `scroll` moves. */
-  private scrollSpeed = 1;
-
   /** The id of the viewport. The legacy video viewport never set it. */
   get uid(): string {
     return this.id;
@@ -277,7 +274,7 @@ class VideoViewportLegacyAdapter extends VideoViewport {
       muted: dataPresentation?.muted,
       pan: viewPresentation?.pan,
       playbackRate: dataPresentation?.playbackRate,
-      scrollSpeed: this.scrollSpeed,
+      scrollSpeed: this.getScrollStepFrames(),
       voiRange: dataPresentation?.voiRange ?? { lower: 0, upper: 255 },
     };
   }
@@ -373,22 +370,22 @@ class VideoViewportLegacyAdapter extends VideoViewport {
   }
 
   /**
-   * Moves by frames, as the next viewport does, with each step the number
-   * of frames of `setScrollSpeed`.
+   * Moves by steps, as the next viewport does, with each step the number of
+   * frames of `setScrollSpeed`.
    */
   async scroll(delta = 1, debounceLoading = true, loop = false): Promise<void> {
-    super.scroll(delta * this.scrollSpeed, debounceLoading, loop);
+    super.scroll(delta, debounceLoading, loop);
   }
 
   /**
    * Sets how far one step of `scroll` moves, in frames, or in seconds with
-   * `SpeedUnit.SECOND`.
+   * `SpeedUnit.SECOND`: the `scrollStep` of the view state.
    */
   setScrollSpeed(scrollSpeed = 1, unit = VideoEnums.SpeedUnit.FRAME): void {
-    this.scrollSpeed =
-      unit === VideoEnums.SpeedUnit.SECOND
-        ? scrollSpeed * this.getFrameRate()
-        : scrollSpeed;
+    this.viewState = this.normalizeViewState({
+      ...this.viewState,
+      scrollStep: { value: scrollSpeed, unit },
+    });
   }
 
   /**

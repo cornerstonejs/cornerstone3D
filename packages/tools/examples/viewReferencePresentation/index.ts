@@ -349,6 +349,10 @@ function resize() {
  *
  * If applyPresentation is true, then viewports which do NOT match get the presentation
  * applied additionally.
+ *
+ * The presentation is read after the view reference is set:
+ * `viewportProjection.withPresentation` gives the whole view state, with the
+ * slice that the viewport shows at that time.
  */
 function viewportRenderedListener(event) {
   const { element } = event.detail;
@@ -358,27 +362,23 @@ function viewportRenderedListener(event) {
   const viewPres = viewportProjection.getPresentation(renderedViewport);
   for (const destElement of setViewElements) {
     const destViewport = getPlanarViewport(destElement);
+    const isViewable = destViewport.isReferenceViewable(viewRef, {
+      withNavigation: true,
+      asVolume: false,
+      withOrientation,
+    });
+    if (!isViewable && !applyPresentation) {
+      continue;
+    }
+    if (isViewable) {
+      destViewport.setViewReference(viewRef);
+    }
     const destViewState =
       viewPres && viewportProjection.withPresentation(destViewport, viewPres);
-    if (
-      destViewport.isReferenceViewable(viewRef, {
-        withNavigation: true,
-        asVolume: false,
-        withOrientation,
-      })
-    ) {
-      destViewport.setViewReference(viewRef);
-      if (destViewState) {
-        destViewport.setViewState(destViewState);
-      }
-      destViewport.render();
-    } else if (applyPresentation) {
-      // Apply the presentation values even though the reference isn't compatible.
-      if (destViewState) {
-        destViewport.setViewState(destViewState);
-      }
-      destViewport.render();
+    if (destViewState) {
+      destViewport.setViewState(destViewState);
     }
+    destViewport.render();
   }
 }
 
