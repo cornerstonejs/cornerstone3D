@@ -7,8 +7,8 @@ import {
   waitFor,
 } from '../../../utils/test/testUtilsVideo';
 
-const { Enums, utilities } = cornerstone3D;
-const { ViewportType } = Enums;
+const { Enums, utilities, eventTarget } = cornerstone3D;
+const { ViewportType, Events } = Enums;
 const { SpeedUnit } = Enums.VideoEnums;
 
 const renderingEngineId = utilities.uuidv4();
@@ -129,6 +129,51 @@ describe('The scroll step of a direct next video viewport -- ', () => {
       viewport.scroll(-1);
       await settle(viewport);
       expect(viewport.getCurrentImageIdIndex()).toBe(legacy.afterBack);
+    }
+  });
+
+  it('fires STACK_SCROLL_OUT_OF_BOUNDS of utilities.scroll when the frames of the step pass an end, with the sign of the delta as the direction', async function () {
+    const viewport = await createVideoViewport(renderingEngine);
+    const events = [];
+    const listener = (event) => events.push(event.detail);
+
+    viewport.setViewState({
+      scrollStep: { value: 3, unit: SpeedUnit.FRAME },
+    });
+    eventTarget.addEventListener(Events.STACK_SCROLL_OUT_OF_BOUNDS, listener);
+
+    try {
+      viewport.seek(1.8);
+      await settle(viewport);
+      expect(viewport.getCurrentImageIdIndex()).toBe(18);
+
+      utilities.scroll(viewport, { delta: 1 });
+      await settle(viewport);
+      expect(events).toEqual([{ imageIdIndex: 18, direction: 1 }]);
+      expect(viewport.getCurrentImageIdIndex()).toBe(19);
+
+      viewport.seek(0.1);
+      await settle(viewport);
+      expect(viewport.getCurrentImageIdIndex()).toBe(1);
+
+      utilities.scroll(viewport, { delta: -1 });
+      await settle(viewport);
+      expect(events).toEqual([
+        { imageIdIndex: 18, direction: 1 },
+        { imageIdIndex: 1, direction: -1 },
+      ]);
+
+      viewport.seek(1.5);
+      await settle(viewport);
+      utilities.scroll(viewport, { delta: 1 });
+      await settle(viewport);
+      expect(viewport.getCurrentImageIdIndex()).toBe(18);
+      expect(events.length).toBe(2);
+    } finally {
+      eventTarget.removeEventListener(
+        Events.STACK_SCROLL_OUT_OF_BOUNDS,
+        listener
+      );
     }
   });
 

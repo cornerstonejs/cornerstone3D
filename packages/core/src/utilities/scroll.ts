@@ -7,6 +7,8 @@ import type {
   IViewport,
 } from '../types';
 import type PlanarViewport from '../RenderingEngine/GenericViewport/Planar/PlanarViewport';
+import type VideoViewport from '../RenderingEngine/GenericViewport/Video/VideoViewport';
+import { getVideoScrollStepFrames } from '../RenderingEngine/GenericViewport/Video/videoViewportCamera';
 import { getPlanarVolumeSliceRange } from '../RenderingEngine/GenericViewport/Planar/planarSliceBasis';
 import { resolveSlabThickness } from '../RenderingEngine/GenericViewport/Planar/planarVolumeSliceBlendMode';
 import getTargetVolumeAndSpacingInNormalDir from './getTargetVolumeAndSpacingInNormalDir';
@@ -88,11 +90,12 @@ export default function scroll(
   const imageIdIndex = (
     viewport as ImageScrollViewport
   ).getCurrentImageIdIndex();
+  const frames = delta * framesPerScrollStep(viewport);
 
   if (
-    imageIdIndex + delta >
+    imageIdIndex + frames >
       (viewport as ImageScrollViewport).getImageIds().length - 1 ||
-    imageIdIndex + delta < 0
+    imageIdIndex + frames < 0
   ) {
     const eventData: EventTypes.StackScrollOutOfBoundsEventDetail = {
       imageIdIndex,
@@ -106,6 +109,20 @@ export default function scroll(
     options.debounceLoading,
     options.loop
   );
+}
+
+/**
+ * The frames that one scroll step moves: the scroll step of the view state
+ * on a video, one image on any other viewport.
+ */
+function framesPerScrollStep(viewport: IViewport): number {
+  if (getViewportContentMode(viewport) !== 'video') {
+    return 1;
+  }
+
+  const video = viewport as unknown as VideoViewport;
+
+  return getVideoScrollStepFrames(video.getViewState(), video.getFrameRate());
 }
 
 /**
@@ -323,9 +340,10 @@ function scrollNextPlanar(viewport: PlanarViewport, options: ScrollOptions) {
  * detail of the legacy volume viewport: VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS
  * when the scroll was asked to go past an end and the view shows an image of
  * the volume (the acquisition plane), VOLUME_VIEWPORT_SCROLL otherwise.
- * `volumeId` is the one of the options, and `currentImageId` is the image
- * shown after the scroll. A volume of one slice has no step and fires
- * nothing.
+ * `volumeId` is the one of the options, or the volume that the viewport
+ * shows when the options give none (the legacy event gave undefined there).
+ * `currentImageId` is the image shown after the scroll, undefined out of the
+ * acquisition plane. A volume of one slice has no step and fires nothing.
  */
 function triggerVolumeScrollEvent(
   viewport: PlanarViewport,
@@ -345,7 +363,7 @@ function triggerVolumeScrollEvent(
 
   const currentImageId = viewport.getCurrentImageId();
   const eventData: EventTypes.VolumeScrollOutOfBoundsEventDetail = {
-    volumeId,
+    volumeId: volumeId ?? viewport.getVolumeId(),
     viewport,
     delta,
     desiredStepIndex,

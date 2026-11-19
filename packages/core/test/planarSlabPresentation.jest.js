@@ -187,4 +187,43 @@ describe('Direct next planar viewport and the slab step of getTargetVolumeAndSpa
       );
     }
   );
+
+  it.each(Object.keys(LEGACY_SLAB_STEP))(
+    'gives the same step without a target id, the volume being chosen by its spacing, with the slab %s',
+    async (slab) => {
+      let viewport;
+
+      ({ renderingEngine, viewport } = createPlanarViewportOnStandInEngine(
+        setUpCore(),
+        'slab-step-auto'
+      ));
+
+      const volumeId = `volume-step-auto-${slab}`;
+      const displaySetId = createVolumeDisplaySet(volumeId);
+
+      await viewport.setDisplaySets({
+        displaySetId,
+        options: { orientation: OrientationAxis.AXIAL, renderBackend: 'cpu' },
+      });
+
+      if (SLABS[slab]) {
+        viewport.setDisplaySetPresentation(displaySetId, SLABS[slab]);
+      }
+
+      const camera = viewport.getResolvedView().toICamera();
+      const target = (useSlabThickness) =>
+        utilities.getTargetVolumeAndSpacingInNormalDir(
+          viewport,
+          camera,
+          undefined,
+          useSlabThickness
+        );
+
+      expect(target(true).imageVolume?.volumeId).toBe(volumeId);
+      expect({
+        withSlab: target(true).spacingInNormalDirection,
+        without: target(false).spacingInNormalDirection,
+      }).toEqual(LEGACY_SLAB_STEP[slab]);
+    }
+  );
 });

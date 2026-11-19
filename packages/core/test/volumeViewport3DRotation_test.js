@@ -21,12 +21,15 @@ const LEGACY_VIEW_UP_AFTER_ROTATION = {
   90: [-1, 0, 0],
 };
 
-/** Makes a direct 3D viewport of 400 by 300 pixels, coronal. */
-function createViewport(renderingEngine) {
+/** Makes a direct 3D viewport of 400 by 300 pixels, coronal by default. */
+function createViewport(
+  renderingEngine,
+  orientation = OrientationAxis.CORONAL
+) {
   testUtils.createViewports(renderingEngine, {
     viewportId: 'rotation3D',
     viewportType: ViewportType.VOLUME_3D,
-    orientation: OrientationAxis.CORONAL,
+    orientation,
     width: 400,
     height: 300,
     useEnableElement: true,
@@ -145,6 +148,38 @@ describe('Rotation of a 3D viewport through the projection -- ', () => {
       300,
       4
     );
+  });
+
+  [
+    { name: 'no orientation', orientation: null },
+    { name: 'the acquisition plane', orientation: OrientationAxis.ACQUISITION },
+  ].forEach(({ name, orientation }) => {
+    it(`gives the same camera for the same rotation twice, and reads it back, with ${name}`, async function () {
+      const viewport = createViewport(renderingEngine, orientation);
+
+      await showVolume(viewport);
+
+      const before = viewport.getViewState();
+
+      await applyRotation(viewport, 90);
+
+      const once = viewport.getViewState();
+
+      await applyRotation(viewport, 90);
+
+      const twice = viewport.getViewState();
+
+      expectVector(twice.viewUp, once.viewUp);
+      expectVector(twice.viewPlaneNormal, before.viewPlaneNormal);
+      expect(viewportProjection.getPresentation(viewport).rotation).toBeCloseTo(
+        90,
+        4
+      );
+
+      await applyRotation(viewport, 0);
+
+      expectVector(viewport.getViewState().viewUp, before.viewUp);
+    });
   });
 
   it('keeps the camera of a presentation that was read, with its rotation', async function () {

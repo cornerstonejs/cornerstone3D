@@ -46,7 +46,9 @@ const isPrimaryVolume = (volume): boolean =>
  * @param camera - current camera
  * @param targetId - If a targetId is forced to be used.
  * @param useSlabThickness - If true, the number of steps will be calculated
- * based on the slab thickness instead of the spacing in the normal direction
+ * based on the slab thickness instead of the spacing in the normal direction,
+ * with a target id and without one. Without one, the volume is still chosen
+ * by its spacing along the normal.
  * @returns An object containing the imageVolume and spacingInNormalDirection.
  *
  */
@@ -142,6 +144,15 @@ export default function getTargetVolumeAndSpacingInNormalDir(
       smallest.imageVolume = imageVolume;
       smallest.actorUID = volumeActors[i].uid;
     }
+  }
+
+  if (useSlabThickness && smallest.imageVolume) {
+    smallest.spacingInNormalDirection = getSpacingInNormal(
+      smallest.imageVolume,
+      viewPlaneNormal,
+      viewport,
+      true
+    );
   }
 
   return smallest;

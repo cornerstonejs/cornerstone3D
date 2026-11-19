@@ -156,6 +156,10 @@ function scrollAndRecord(viewport, imageIds, options) {
  * - `utilities.jumpToSlice` scrolls, so it fired VOLUME_VIEWPORT_SCROLL too;
  * - a stack viewport fired only STACK_SCROLL_OUT_OF_BOUNDS, with
  *   `{ imageIdIndex, direction }`, when a scroll asked to go past an end.
+ *
+ * One value differs on purpose: without a `volumeId` in the options, the
+ * detail gives the volume that the viewport shows, where the legacy detail
+ * gave undefined, so that its type can keep `volumeId` a string.
  */
 describe('Scroll events of a planar viewport -- ', () => {
   let renderingEngine;
@@ -173,7 +177,10 @@ describe('Scroll events of a planar viewport -- ', () => {
 
   it('fires VOLUME_VIEWPORT_SCROLL inside the volume and VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS past an end in the acquisition plane', async function () {
     const viewport = createViewport(renderingEngine);
-    const { imageIds } = await showVolume(viewport, OrientationAxis.AXIAL);
+    const { volumeId, imageIds } = await showVolume(
+      viewport,
+      OrientationAxis.AXIAL
+    );
 
     await utilities.jumpToSlice(viewport.element, { imageIndex: 3 });
 
@@ -190,7 +197,7 @@ describe('Scroll events of a planar viewport -- ', () => {
       [
         {
           event: Events.VOLUME_VIEWPORT_SCROLL,
-          volumeId: undefined,
+          volumeId,
           viewport: true,
           delta: 2,
           desiredStepIndex: 5,
@@ -202,7 +209,7 @@ describe('Scroll events of a planar viewport -- ', () => {
       [
         {
           event: Events.VOLUME_VIEWPORT_SCROLL,
-          volumeId: undefined,
+          volumeId,
           viewport: true,
           delta: -1,
           desiredStepIndex: 4,
@@ -214,7 +221,7 @@ describe('Scroll events of a planar viewport -- ', () => {
       [
         {
           event: Events.VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS,
-          volumeId: undefined,
+          volumeId,
           viewport: true,
           delta: 40,
           desiredStepIndex: 44,
@@ -226,7 +233,7 @@ describe('Scroll events of a planar viewport -- ', () => {
       [
         {
           event: Events.VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS,
-          volumeId: undefined,
+          volumeId,
           viewport: true,
           delta: -40,
           desiredStepIndex: -29,
@@ -282,9 +289,32 @@ describe('Scroll events of a planar viewport -- ', () => {
     ]);
   });
 
+  it('gives the volumeId of the mounted volume in the detail when the options give none', async function () {
+    const viewport = createViewport(renderingEngine);
+    const { volumeId, imageIds } = await showVolume(
+      viewport,
+      OrientationAxis.AXIAL
+    );
+
+    await utilities.jumpToSlice(viewport.element, { imageIndex: 10 });
+
+    const inside = await scrollAndRecord(viewport, imageIds, { delta: 1 });
+    const past = await scrollAndRecord(viewport, imageIds, { delta: 1 });
+
+    expect(inside.map(({ event, volumeId: id }) => [event, id])).toEqual([
+      [Events.VOLUME_VIEWPORT_SCROLL, volumeId],
+    ]);
+    expect(past.map(({ event, volumeId: id }) => [event, id])).toEqual([
+      [Events.VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS, volumeId],
+    ]);
+  });
+
   it('fires VOLUME_VIEWPORT_SCROLL past an end out of the acquisition plane, with no image id', async function () {
     const viewport = createViewport(renderingEngine);
-    const { imageIds } = await showVolume(viewport, OrientationAxis.SAGITTAL);
+    const { volumeId, imageIds } = await showVolume(
+      viewport,
+      OrientationAxis.SAGITTAL
+    );
     const numScrollSteps = viewport.getNumberOfSlices() - 1;
 
     await utilities.jumpToSlice(viewport.element, { imageIndex: 3 });
@@ -296,7 +326,7 @@ describe('Scroll events of a planar viewport -- ', () => {
     expect(inside).toEqual([
       {
         event: Events.VOLUME_VIEWPORT_SCROLL,
-        volumeId: undefined,
+        volumeId,
         viewport: true,
         delta: 2,
         desiredStepIndex: 5,
@@ -308,7 +338,7 @@ describe('Scroll events of a planar viewport -- ', () => {
     expect(past).toEqual([
       {
         event: Events.VOLUME_VIEWPORT_SCROLL,
-        volumeId: undefined,
+        volumeId,
         viewport: true,
         delta: 40,
         desiredStepIndex: 45,
@@ -321,7 +351,10 @@ describe('Scroll events of a planar viewport -- ', () => {
 
   it('fires VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS when a loop wraps past an end in volume mode', async function () {
     const viewport = createViewport(renderingEngine);
-    const { imageIds } = await showVolume(viewport, OrientationAxis.AXIAL);
+    const { volumeId, imageIds } = await showVolume(
+      viewport,
+      OrientationAxis.AXIAL
+    );
 
     await utilities.jumpToSlice(viewport.element, { imageIndex: 11 });
 
@@ -334,7 +367,7 @@ describe('Scroll events of a planar viewport -- ', () => {
     expect(wrapped).toEqual([
       {
         event: Events.VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS,
-        volumeId: undefined,
+        volumeId,
         viewport: true,
         delta: 1,
         desiredStepIndex: 12,
@@ -347,7 +380,10 @@ describe('Scroll events of a planar viewport -- ', () => {
 
   it('fires VOLUME_VIEWPORT_SCROLL on a jump to a slice in volume mode', async function () {
     const viewport = createViewport(renderingEngine);
-    const { imageIds } = await showVolume(viewport, OrientationAxis.AXIAL);
+    const { volumeId, imageIds } = await showVolume(
+      viewport,
+      OrientationAxis.AXIAL
+    );
 
     await utilities.jumpToSlice(viewport.element, { imageIndex: 10 });
 
@@ -358,7 +394,7 @@ describe('Scroll events of a planar viewport -- ', () => {
     expect(jumped).toEqual([
       {
         event: Events.VOLUME_VIEWPORT_SCROLL,
-        volumeId: undefined,
+        volumeId,
         viewport: true,
         delta: -5,
         desiredStepIndex: 5,

@@ -241,6 +241,9 @@ class ViewportProjectionService {
 
   /**
    * Find the adapter matching the viewport type and optional projection kind.
+   * A 5.x type string (`'planarNext'` and so on) stands for its plain type on
+   * both sides: in the viewport or the request, and in the `viewportTypes` of
+   * an adapter.
    */
   getAdapter(
     viewport: unknown,
@@ -259,7 +262,9 @@ class ViewportProjectionService {
 
       if (
         viewportType &&
-        !adapter.viewportTypes.some((type) => String(type) === viewportType)
+        !adapter.viewportTypes.some(
+          (type) => resolveDeprecatedViewportType(String(type)) === viewportType
+        )
       ) {
         continue;
       }

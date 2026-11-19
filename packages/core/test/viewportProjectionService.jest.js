@@ -478,6 +478,24 @@ describe('ViewportProjectionService', () => {
     });
   });
 
+  it('finds an adapter registered for a 5.x type string, for its plain type and for that string', () => {
+    const service = new ViewportProjectionService();
+    const adapter = createAdapter('legacyTypeProjection', ['planarNext']);
+
+    service.register(adapter);
+
+    expect(service.getAdapter({ type: ViewportType.PLANAR })?.id).toBe(
+      'legacyTypeProjection'
+    );
+    expect(service.getAdapter({ type: 'planarNext' })?.id).toBe(
+      'legacyTypeProjection'
+    );
+    expect(
+      service.getAdapter(undefined, { viewportType: 'planarNext' })?.id
+    ).toBe('legacyTypeProjection');
+    expect(service.getAdapter({ type: ViewportType.VIDEO })).toBeUndefined();
+  });
+
   it('returns presentation and semantic state through the selected adapter', () => {
     const service = new ViewportProjectionService();
     const adapter = createAdapter('stateProjection');

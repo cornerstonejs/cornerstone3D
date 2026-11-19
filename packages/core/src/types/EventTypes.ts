@@ -259,7 +259,11 @@ type VolumeScrollOutOfBoundsEventDetail = {
   currentStepIndex: number;
   delta: number; // difference between the desired and current frame
   numScrollSteps: number; // total scroll steps in the volume
-  currentImageId: string; // get ImageId (ImageIndex for in-plane acquisition)
+  /**
+   * The image id shown after the scroll. Undefined out of the acquisition
+   * plane, where the view shows no single image, as in 5.x.
+   */
+  currentImageId?: string;
 };
 
 /**

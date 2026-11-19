@@ -41,6 +41,7 @@ import Volume3DResolvedView from './Volume3DResolvedView';
 import applyVolume3DCamera from './applyVolume3DCamera';
 import { getVolume3DColormap } from './applyVolume3DPresentation';
 import type { Volume3DProjectionFit } from './Volume3DProjectionTypes';
+import { setVolume3DZeroRotationViewUp } from './volume3DProjectionSnapshot';
 import {
   VOLUME_3D_FIT_VIEW_ANGLE,
   getOrientationVectors,
@@ -199,6 +200,10 @@ class VolumeViewport3D extends GenericViewport<
    * entry is mounted as the source binding; subsequent entries default to the
    * overlay role unless they specify one explicitly.
    *
+   * The data of every entry is loaded before the shown display sets go, so
+   * an entry without data rejects and leaves the shown scene as it was, as
+   * the legacy `setVolumes` did for a volume that was not in the cache.
+   *
    * @param entries - Display sets to mount, each with its own render-mode options.
    */
   async setDisplaySets(
@@ -207,6 +212,12 @@ class VolumeViewport3D extends GenericViewport<
       options?: Volume3DSetDataOptions;
     }>
   ): Promise<void> {
+    for (const { displaySetId, options = {} } of entries) {
+      await this.dataProvider.load(displaySetId, {
+        renderMode: this.resolveRenderMode(displaySetId, options.renderMode),
+      });
+    }
+
     this.removeAllData();
     this.mountsDisplaySets = true;
 
@@ -248,7 +259,9 @@ class VolumeViewport3D extends GenericViewport<
       volumeOptions.renderMode
     );
 
-    if (!this.bindings.size) {
+    const showedNothing = !this.bindings.size;
+
+    if (showedNothing) {
       this.viewState = {
         parallelProjection: this.viewState.parallelProjection,
       } as Volume3DCamera;
@@ -271,6 +284,11 @@ class VolumeViewport3D extends GenericViewport<
       })
     );
     this.viewState = this.getViewState();
+
+    if (showedNothing && this.viewState.viewUp) {
+      setVolume3DZeroRotationViewUp(this, this.viewState.viewUp);
+    }
+
     this.triggerMountedVOIModified(displaySetId);
 
     if (!this.mountsDisplaySets && volumeOptions.role === 'source') {

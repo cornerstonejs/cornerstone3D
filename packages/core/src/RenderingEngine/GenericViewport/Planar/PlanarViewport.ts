@@ -1,5 +1,6 @@
 import { vec3 } from 'gl-matrix';
-import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
+import vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
+import { isWebGLUnavailable } from '../../../init';
 import {
   Events,
   MetadataModules,
@@ -399,8 +400,13 @@ class PlanarViewport extends GenericViewport<
 
   // ── Static ───────────────────────────────────────────────────────────
 
+  /**
+   * True on a device without WebGL: the viewport then draws itself on the
+   * CPU, and the rendering engine makes no WebGL context for it, as for the
+   * 5.x stack viewport on such a device.
+   */
   static get useCustomRenderingPipeline(): boolean {
-    return false;
+    return isWebGLUnavailable();
   }
 
   // ── Constructor ──────────────────────────────────────────────────────
@@ -446,8 +452,9 @@ class PlanarViewport extends GenericViewport<
       setViewState: (viewStatePatch) => this.setViewState(viewStatePatch),
       updateBindingsCameraState: () => this.updateBindingsCameraState(),
     });
-    const renderingEngine = renderingEngineCache.get(this.renderingEngineId);
-    const renderer = renderingEngine?.getRenderer(this.id);
+    const renderer = isWebGLUnavailable()
+      ? vtkRenderer.newInstance()
+      : renderingEngineCache.get(this.renderingEngineId)?.getRenderer(this.id);
 
     if (!renderer) {
       throw new Error(
@@ -2290,10 +2297,11 @@ class PlanarViewport extends GenericViewport<
   // ====================================================================
 
   /**
-   * Returns whether this viewport bypasses the shared rendering pipeline.
+   * Returns whether this viewport bypasses the shared rendering pipeline:
+   * only on a device without WebGL, where it draws itself on the CPU.
    */
   getUseCustomRenderingPipeline(): boolean {
-    return false;
+    return isWebGLUnavailable();
   }
 
   /**

@@ -603,7 +603,9 @@ abstract class BaseRenderingEngine {
       renderingEngineId: this.id,
     };
 
-    triggerEvent(eventTarget, Events.ELEMENT_ENABLED, eventDetail);
+    if (!(viewport as { suppressEvents?: boolean }).suppressEvents) {
+      triggerEvent(eventTarget, Events.ELEMENT_ENABLED, eventDetail);
+    }
   }
 
   /**

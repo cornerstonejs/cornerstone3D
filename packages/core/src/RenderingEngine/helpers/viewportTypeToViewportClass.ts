@@ -17,8 +17,16 @@ import type {
   NormalizedViewportInput,
 } from '../../types/IViewport';
 
+/**
+ * A viewport class that the rendering engine can drive: its viewports have
+ * the public interface and the members that the engine reads and calls
+ * without a check, `canvas` and `getUseCustomRenderingPipeline()`.
+ */
 interface ViewportConstructor {
-  new (viewportInput: ViewportInput): IViewport;
+  new (viewportInput: ViewportInput): IViewport & {
+    readonly canvas: HTMLCanvasElement;
+    getUseCustomRenderingPipeline(): boolean;
+  };
   useCustomRenderingPipeline?: boolean;
 }
 

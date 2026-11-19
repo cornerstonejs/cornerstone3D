@@ -388,7 +388,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     // Handle custom rendering pipeline viewports
     if (viewportUsesCustomRenderingPipeline(viewport)) {
       const eventDetail =
-        viewport.customRenderViewportToCanvas() as EventTypes.ImageRenderedEventDetail;
+        viewport.customRenderViewportToCanvas?.() as EventTypes.ImageRenderedEventDetail;
       return eventDetail;
     }
 

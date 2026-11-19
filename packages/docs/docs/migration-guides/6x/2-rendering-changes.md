@@ -175,7 +175,10 @@ leave the canvas. Against the legacy volume viewport:
   `utilities.getTargetVolumeAndSpacingInNormalDir` gives is the
   `slabThickness` of the presentation of the source display set, as the
   legacy `getProperties().slabThickness` was. In 5.x a next viewport gave the
-  spacing of the volume.
+  spacing of the volume. Without a `volumeId` (`targetId` undefined), the
+  volume is still the one with the finest spacing, and `useSlabThickness`
+  gives the slab as well. In 5.x that call gave the spacing of the volume on
+  every viewport, the legacy volume viewport too.
 - **An average slab shows in the fidelity.** An average slab in the
   presentation of the source display set sets the display resolution of
   `getFidelityState()` along the view normal to the slab thickness, as the

@@ -489,7 +489,7 @@ class TiledRenderingEngine extends BaseRenderingEngine {
     }
     if (viewportTypeUsesCustomRenderingPipeline(viewport.type) === true) {
       eventDetail =
-        viewport.customRenderViewportToCanvas() as EventTypes.ImageRenderedEventDetail;
+        viewport.customRenderViewportToCanvas?.() as EventTypes.ImageRenderedEventDetail;
     } else {
       if (!this.offscreenMultiRenderWindow) {
         throw new Error(

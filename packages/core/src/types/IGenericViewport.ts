@@ -11,4 +11,4 @@ type IGenericViewport<
 > = IViewport<TViewState, TDataPresentation>;
 
 export type { ViewportContentMode };
-export type { IGenericViewport as default };
+export type { IGenericViewport, IGenericViewport as default };

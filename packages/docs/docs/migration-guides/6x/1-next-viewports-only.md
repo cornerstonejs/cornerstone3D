@@ -92,7 +92,10 @@ are temporary.
   `getShouldUseCPURendering`. The render plan picks
   the CPU path by itself. The detection of a device without WebGL at `init()`
   is internal now: on such a device the rendering engines make no WebGL
-  context and `'auto'` draws on the CPU. To force the CPU on the planar
+  context and `'auto'` draws on the CPU. A planar viewport then draws itself,
+  and its `getUseCustomRenderingPipeline()` gives `true`, as the 5.x stack
+  viewport did on such a device. A 3D viewport needs WebGL: its
+  `enableElement` throws there. To force the CPU on the planar
   viewports, set `rendering.planar.renderBackend` to `'cpu'`, or call
   `setRenderBackend('cpu')`. In place of `getShouldUseCPURendering()` read
   `getEffectiveRenderBackend() === 'cpu'`, or `draw` in

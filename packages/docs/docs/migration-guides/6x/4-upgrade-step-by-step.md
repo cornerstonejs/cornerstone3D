@@ -815,7 +815,12 @@ a volume: scroll, change the window, reset. Compare with the table.
 - `STACK_SCROLL_OUT_OF_BOUNDS` fires in stack mode only, as on the legacy
   stack viewport. In volume mode `utilities.scroll` fires
   `VOLUME_VIEWPORT_SCROLL` and `VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS` with
-  the detail of the legacy volume viewport.
+  the detail of the legacy volume viewport. Without a `volumeId` in the
+  scroll options, `detail.volumeId` is the volume that the viewport shows,
+  where 5.x gave `undefined`. `currentImageId` is optional in
+  `Types.EventTypes.VolumeScrollOutOfBoundsEventDetail` now: it is
+  `undefined` out of the acquisition plane, as in 5.x, so a typed listener
+  checks it before it reads it.
 - In volume mode `detail.imageIdIndex` of `NEW_IMAGE` is the slice index of
   the view. It can run against the order of the image ids, so it is not the
   place of `detail.imageId` in `viewport.getImageIds()`.
