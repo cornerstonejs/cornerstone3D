@@ -41,14 +41,6 @@ interface Cornerstone3DConfig {
     // (see utilities/renderingCapabilities) and do not consult this flag.
     preferSizeOverAccuracy?: boolean;
     /**
-     * Forces CPU rendering for legacy viewports.
-     * @deprecated For GenericViewport-based viewports use
-     * `renderBackend: 'cpu'` instead. This flag remains the control for
-     * legacy viewports and is still honored by the 'auto' backend
-     * resolution.
-     */
-    useCPURendering?: boolean;
-    /**
      * Use the legacy camera field of view calculation method which uses bounds
      * to calculate the field of view. When false (default), uses the image dimensions
      * directly for more accurate full-screen display.
@@ -104,11 +96,10 @@ interface Cornerstone3DConfig {
        * The render backend preference for planar GenericViewports: 'gpu',
        * 'cpu', or any backend registered via `registerRenderBackend()` pin
        * the backend, 'auto' (default) resolves it from the capability
-       * detection performed at init() and the deprecated useCPURendering
-       * flag. Per-display-set `renderBackend` mount options override this
+       * detection performed at init(): the CPU on a device without WebGL.
+       * Per-display-set `renderBackend` mount options override this
        * value; use setRenderBackend() to change it at runtime with a live
-       * render-path swap. Legacy viewports (StackViewport et al.) keep
-       * reading `useCPURendering` and are not governed by this flag.
+       * render-path swap.
        */
       renderBackend?: RenderBackendValue;
       /**

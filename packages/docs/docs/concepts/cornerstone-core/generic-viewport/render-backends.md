@@ -9,8 +9,8 @@ summary: How planar Generic Viewports select a render backend, and how extension
 A render backend is the named rendering implementation a planar Generic
 Viewport mounts data through. Cornerstone ships two concrete backends, `'gpu'`
 (VTK/WebGL) and `'cpu'`, plus the `'auto'` preference that resolves to one of
-them from the capability detection performed at `init()` (WebGL availability,
-texture-format probes, and the deprecated `useCPURendering` flag).
+them from the capability detection performed at `init()` (WebGL availability
+and texture-format probes): `'cpu'` on a device without WebGL.
 
 Backends are addressed by plain wire strings. The `Enums.RenderBackends`
 constants object maps readable names to those strings (`RenderBackends.GPU ===

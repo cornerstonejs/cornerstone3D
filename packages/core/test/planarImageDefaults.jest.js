@@ -19,8 +19,7 @@ import {
 import genericViewportDisplaySetMetadataProvider from '../src/utilities/genericViewportDisplaySetMetadataProvider';
 import { createPlanarViewportOnStandInEngine } from './utils/planarViewportOnStandInEngine';
 
-const { setUseCPURendering, imageLoader, metaData, init, cache } =
-  cornerstone3D;
+const { setRenderBackend, imageLoader, metaData, init, cache } = cornerstone3D;
 
 /**
  * The invert that the legacy stack viewport drew for each image of a stack of
@@ -50,9 +49,9 @@ function setSize(element, width, height) {
  * 64 element for a viewport.
  */
 function setUpCore() {
-  setUseCPURendering(true);
   window.devicePixelRatio = 1;
   init({});
+  setRenderBackend('cpu');
   imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader);
   metaData.addProvider(fakeMetaDataProvider, 10000);
 
@@ -120,7 +119,7 @@ describe('Direct next planar viewport and the default invert of an image', () =>
     metaData.removeAllProviders();
     imageLoader.unregisterAllImageLoaders();
     genericViewportDisplaySetMetadataProvider.clear();
-    setUseCPURendering(false);
+    setRenderBackend('auto');
   });
 
   it('draws each image of a mixed stack with its own default, where the legacy stack viewport kept an earlier invert', async () => {

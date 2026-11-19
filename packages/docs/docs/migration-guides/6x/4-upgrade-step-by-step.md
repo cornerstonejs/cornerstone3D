@@ -849,7 +849,7 @@ Paint a labelmap and look at the fill.
 **Search**
 
 ```sh
-rg -n "useGenericViewport|useCPURendering|setUseCPURendering|resetUseCPURendering|getShouldUseCPURendering|useLegacyCameraFOV|useViewportSamplingForLinear" src
+rg -n "useGenericViewport|useCPURendering|setUseCPURendering|resetUseCPURendering|getShouldUseCPURendering|useViewportSamplingForLinear" src
 rg -n "ViewportType\.(STACK|ORTHOGRAPHIC|PERSPECTIVE)\b|\.(setStack|setVolumes|addVolumes|setProperties|getProperties|resetProperties|getCamera|setCamera|resetCamera|getViewPresentation|setViewPresentation)\(|setVolumesForViewports|addVolumesToViewports" src
 ```
 
@@ -949,9 +949,8 @@ Rules for doing this upgrade mechanically.
 4. **Know what is not built.** Every call in the column "Use instead" is in
    the code. What is marked **Decided, not in the code yet** is the removal:
    the legacy classes and their types, the compatibility adapters, the
-   settings `rendering.useGenericViewport`, `rendering.useCPURendering` and
-   `rendering.useLegacyCameraFOV`, the helper `utilities.ECGUtilities`, and
-   the rename of the viewport types. These
+   setting `rendering.useGenericViewport`, the helper
+   `utilities.ECGUtilities`, and the rename of the viewport types. These
    names still exist and still compile. Do not keep them: move off each one
    as its row says, and use the `_NEXT` names of the viewport types until
    the rename lands.

@@ -74,11 +74,21 @@ are temporary.
   `Types.IBaseVolumeViewport`. The interface of a next viewport is
   `Types.IGenericViewport`. `Types.IViewport` describes a legacy viewport
   today, and it is not decided whether the name stays.
-- **Settings that only the legacy viewports read:**
-  `rendering.useCPURendering` with `setUseCPURendering`,
-  `resetUseCPURendering` and `getShouldUseCPURendering`, and
-  `rendering.useLegacyCameraFOV`. To pin the planar viewports to the CPU, set
-  `rendering.planar.renderBackend` to `'cpu'`.
+- **The CPU rendering setting:** `rendering.useCPURendering` with
+  `setUseCPURendering`, `resetUseCPURendering` and
+  `getShouldUseCPURendering`. This part is in the code. The render plan picks
+  the CPU path by itself. The detection of a device without WebGL at `init()`
+  is internal now: on such a device the rendering engines make no WebGL
+  context and `'auto'` draws on the CPU. To force the CPU on the planar
+  viewports, set `rendering.planar.renderBackend` to `'cpu'`, or call
+  `setRenderBackend('cpu')`. In place of `getShouldUseCPURendering()` read
+  `getEffectiveRenderBackend() === 'cpu'`, or `draw` in
+  `viewport.getRenderPlan()`. In place of `setUseCPURendering(false)` and
+  `resetUseCPURendering()` call `setRenderBackend('auto')`.
+  `setUseCPURendering()` also marked the library initialized, so code that
+  called it in place of `init()` must call `init()`: `setRenderBackend()`
+  does not mark it. `rendering.useLegacyCameraFOV` stays: the 3D viewport
+  reads it.
 
 ## The viewport types
 

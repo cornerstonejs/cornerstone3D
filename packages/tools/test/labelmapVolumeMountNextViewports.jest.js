@@ -3,7 +3,7 @@ import {
   cache,
   Enums,
   init,
-  setUseCPURendering,
+  setRenderBackend,
   utilities,
   volumeLoader,
 } from '@cornerstonejs/core';
@@ -187,7 +187,7 @@ describe('The volume labelmap mount on the next viewports', () => {
   afterEach(() => {
     renderingEngine?.destroy();
     renderingEngine = undefined;
-    setUseCPURendering(false);
+    setRenderBackend('auto');
     cache.purgeCache();
     utilities.genericViewportDisplaySetMetadataProvider.clear();
     jest.clearAllMocks();
@@ -199,7 +199,7 @@ describe('The volume labelmap mount on the next viewports', () => {
   ])(
     'mounts the labelmap of a planar viewport in volume mode as an overlay display set, with %s',
     async (_name, blendMode) => {
-      setUseCPURendering(true);
+      setRenderBackend('cpu');
       let viewport;
 
       ({ renderingEngine, viewport } = createPlanarViewportOnStandInEngine(

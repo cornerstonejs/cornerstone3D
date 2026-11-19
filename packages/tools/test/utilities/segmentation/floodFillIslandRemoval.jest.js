@@ -1,4 +1,4 @@
-import { cache, volumeLoader, setUseCPURendering } from '@cornerstonejs/core';
+import { cache, volumeLoader, setRenderBackend } from '@cornerstonejs/core';
 import {
   describe,
   it,
@@ -21,7 +21,7 @@ describe('floodFillIslandRemoval internal fill tracking', function () {
 
   beforeAll(() => {
     window.devicePixelRatio = 1;
-    setUseCPURendering(true);
+    setRenderBackend('cpu');
   });
 
   beforeEach(() => {

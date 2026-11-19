@@ -17,9 +17,8 @@ import {
   eventTarget,
   getRenderingEngine,
   init as initCore,
-  getShouldUseCPURendering,
-  setUseCPURendering,
-  getConfiguration,
+  getRenderBackend,
+  setRenderBackend,
   getRenderingEngines,
 } from '@cornerstonejs/core';
 import {
@@ -71,13 +70,6 @@ function setupTestEnvironment({
   window.devicePixelRatio = 1;
 
   initCore();
-
-  const renderingConfiguration = getConfiguration().rendering;
-  const resolvedUseCpuRendering =
-    getShouldUseCPURendering() || getForcedCpuRenderingFromKarma();
-
-  cpuRenderingConfigurationStack.push(renderingConfiguration.useCPURendering);
-  setUseCPURendering(resolvedUseCpuRendering, false);
   initTools();
   tools.forEach((tool) => addTool(tool));
 
@@ -85,6 +77,13 @@ function setupTestEnvironment({
   getRenderingEngines().forEach((renderingEngine) => {
     renderingEngine.destroy();
   });
+
+  if (getForcedCpuRenderingFromKarma()) {
+    cpuRenderingConfigurationStack.push(getRenderBackend());
+    setRenderBackend('cpu');
+  } else {
+    cpuRenderingConfigurationStack.push(undefined);
+  }
 
   // Clear cache and reset metadata
   cache.purgeCache();
@@ -198,10 +197,10 @@ function cleanupTestEnvironment(options = {}) {
 
   cache.setMaxCacheSize(ONE_GB);
 
-  const previousUseCpuRendering = cpuRenderingConfigurationStack.pop();
+  const previousRenderBackend = cpuRenderingConfigurationStack.pop();
 
-  if (previousUseCpuRendering !== undefined) {
-    setUseCPURendering(previousUseCpuRendering, false);
+  if (previousRenderBackend !== undefined) {
+    setRenderBackend(previousRenderBackend);
   }
 
   // Clean up DOM elements

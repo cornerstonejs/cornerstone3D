@@ -3,7 +3,7 @@ import { describe, it, expect, afterEach } from '@jest/globals';
 import genericViewportDisplaySetMetadataProvider from '../src/utilities/genericViewportDisplaySetMetadataProvider';
 import { createPlanarViewportOnStandInEngine } from './utils/planarViewportOnStandInEngine';
 
-const { setUseCPURendering, Enums, init, cache, volumeLoader } = cornerstone3D;
+const { setRenderBackend, Enums, init, cache, volumeLoader } = cornerstone3D;
 const { OrientationAxis } = Enums;
 
 /**
@@ -33,9 +33,9 @@ function setSize(element, width, height) {
 
 /** Turns CPU rendering on and gives a 64 by 64 element for a viewport. */
 function setUpCore() {
-  setUseCPURendering(true);
   window.devicePixelRatio = 1;
   init({});
+  setRenderBackend('cpu');
   document.body.innerHTML = '<div id="element"></div>';
 
   const element = document.getElementById('element');
@@ -82,7 +82,7 @@ describe('Direct next planar viewport with a fusion', () => {
   afterEach(() => {
     renderingEngine?.destroy();
     renderingEngine = undefined;
-    setUseCPURendering(false);
+    setRenderBackend('auto');
     cache.purgeCache();
     genericViewportDisplaySetMetadataProvider.clear();
   });

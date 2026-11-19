@@ -14,7 +14,7 @@ import {
   restoreElementTouchAction,
 } from './helpers/elementTouchAction';
 import {
-  getShouldUseCPURendering,
+  isWebGLUnavailable,
   isCornerstoneInitialized,
   getConfiguration,
 } from '../init';
@@ -65,6 +65,10 @@ abstract class BaseRenderingEngine {
   protected _needsRender = new Set<string>();
   protected _animationFrameSet = false;
   protected _animationFrameHandle: number | null = null;
+  /**
+   * True when init() found no WebGL on the device. The engine then makes no
+   * WebGL context when it is made, and the planar viewports draw on the CPU.
+   */
   protected useCPURendering: boolean;
 
   /**
@@ -72,7 +76,7 @@ abstract class BaseRenderingEngine {
    */
   constructor(id?: string) {
     this.id = id ? id : uuidv4();
-    this.useCPURendering = getShouldUseCPURendering();
+    this.useCPURendering = isWebGLUnavailable();
 
     renderingEngineCache.set(this);
 

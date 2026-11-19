@@ -25,7 +25,6 @@ const defaultConfig: Cornerstone3DConfig = {
   isMobile: false, // is mobile device
   dangerouslyDisableFidelityIndicator: false,
   rendering: {
-    useCPURendering: false,
     // GPU rendering options
     preferSizeOverAccuracy: false,
     // Use new method by default for accurate full-width display
@@ -47,8 +46,8 @@ const defaultConfig: Cornerstone3DConfig = {
     planar: {
       /**
        * Render backend for planar GenericViewports: 'gpu' | 'cpu' pin the
-       * backend, 'auto' resolves it from capability detection at init() (and
-       * the deprecated useCPURendering flag). See setRenderBackend().
+       * backend, 'auto' resolves it from capability detection at init().
+       * See setRenderBackend().
        */
       renderBackend: RenderBackends.Auto,
       sliceFirst: true,
@@ -102,6 +101,9 @@ let config: Cornerstone3DConfig = {
 };
 
 let webWorkerManager: CentralizedWebWorkerManager | null = null;
+
+/** Set by init() when the device has no WebGL. */
+let webGLUnavailable = false;
 
 function _hasNorm16TextureSupport() {
   const capabilities = getRenderingCapabilities();
@@ -157,9 +159,9 @@ function init(configuration = config): boolean {
   }
 
   const capabilities = getRenderingCapabilities();
-  if (!capabilities.webgl) {
+  webGLUnavailable = !capabilities.webgl;
+  if (webGLUnavailable) {
     log.info('CornerstoneRender: GPU not detected, using CPU rendering');
-    config.rendering.useCPURendering = true;
   } else {
     log.info('CornerstoneRender: using GPU rendering');
 
@@ -200,14 +202,25 @@ function getRenderBackend(): RenderBackendValue {
 }
 
 /**
- * Resolves the 'auto' backend: CPU when the deprecated useCPURendering flag
- * is set (init() sets it when no WebGL context is available) and GPU
- * otherwise. Exposed for per-display-set `renderBackend: 'auto'` overrides,
- * which resolve against this regardless of the configured global pin.
+ * Whether init() found no WebGL on this device. The rendering engines then
+ * make no WebGL context, and the 'auto' render backend draws on the CPU. It
+ * is the decision of the library: an application that wants the CPU on a
+ * device with WebGL sets `rendering.planar.renderBackend` to 'cpu'.
+ * @internal
+ */
+function isWebGLUnavailable(): boolean {
+  return webGLUnavailable;
+}
+
+/**
+ * Resolves the 'auto' backend: CPU when init() found no WebGL on the device
+ * or a WebGL context was lost (`recordLostContext`), and GPU otherwise.
+ * Exposed for per-display-set `renderBackend: 'auto'` overrides, which
+ * resolve against this regardless of the configured global pin.
  * @category Initialization
  */
 function resolveAutoRenderBackend(): EffectiveRenderBackend {
-  return config.rendering.useCPURendering || drawsOnCpuAfterLostContext()
+  return isWebGLUnavailable() || drawsOnCpuAfterLostContext()
     ? RenderBackends.CPU
     : RenderBackends.GPU;
 }
@@ -444,26 +457,6 @@ function retryGpu(): void {
   _updateRenderingPipelinesForAllViewports(isPlanarNextViewport);
 }
 
-/**
- * Forces CPU rendering for legacy viewports. The 'auto' render backend also
- * honors this flag, so calling it affects GenericViewport-based viewports
- * unless they are pinned to 'gpu'/'cpu' via renderBackend.
- * @param status - boolean
- * @category Initialization
- * @deprecated Use `setRenderBackend('cpu' | 'auto')` instead.
- */
-function setUseCPURendering(status: boolean, updateViewports = true): void {
-  const previousEffective = getEffectiveRenderBackend();
-
-  config.rendering.useCPURendering = status;
-  csRenderInitialized = true;
-  if (updateViewports) {
-    _updateRenderingPipelinesForAllViewports();
-  }
-
-  _notifyEffectiveBackendChange(previousEffective, 'setUseCPURendering');
-}
-
 function setPreferSizeOverAccuracy(status: boolean): void {
   config.rendering.preferSizeOverAccuracy = status;
   csRenderInitialized = true;
@@ -494,32 +487,6 @@ function canRenderFloatTextures(): boolean {
   }
 
   return !isIOS();
-}
-
-/**
- * Resets the cornerstone-core init state if it has been manually
- * initialized to force use the cpu rendering (e.g., for tests)
- * @category Initialization
- * @deprecated Use `setRenderBackend('auto')` instead.
- */
-function resetUseCPURendering(): void {
-  const previousEffective = getEffectiveRenderBackend();
-
-  config.rendering.useCPURendering = !getRenderingCapabilities().webgl;
-  _updateRenderingPipelinesForAllViewports();
-
-  _notifyEffectiveBackendChange(previousEffective, 'resetUseCPURendering');
-}
-
-/**
- * Returns whether or not we are using CPU rendering on legacy viewports.
- * GenericViewport-based viewports resolve through
- * {@link getEffectiveRenderBackend} instead.
- * @returns true if we are using CPU rendering.
- * @category Initialization
- */
-function getShouldUseCPURendering(): boolean {
-  return config.rendering.useCPURendering;
 }
 
 /**
@@ -575,29 +542,6 @@ function _updateRenderingPipelinesForAllViewports(
   });
 }
 
-/**
- * Emits RENDER_BACKEND_CHANGED when a deprecated CPU-rendering toggle changed
- * the effective backend (the configured value stays whatever it was, so the
- * event carries the effective transition).
- */
-function _notifyEffectiveBackendChange(
-  previousEffective: EffectiveRenderBackend,
-  reason: string
-): void {
-  const effectiveBackend = getEffectiveRenderBackend();
-
-  if (previousEffective === effectiveBackend) {
-    return;
-  }
-
-  triggerEvent(eventTarget, Events.RENDER_BACKEND_CHANGED, {
-    previous: previousEffective,
-    current: effectiveBackend,
-    effectiveBackend,
-    reason,
-  });
-}
-
 function getWebWorkerManager() {
   if (!webWorkerManager) {
     webWorkerManager = new CentralizedWebWorkerManager();
@@ -637,11 +581,9 @@ async function peerImport(moduleId: string) {
 
 export {
   init,
-  getShouldUseCPURendering,
+  isWebGLUnavailable,
   isCornerstoneInitialized,
-  setUseCPURendering,
   setPreferSizeOverAccuracy,
-  resetUseCPURendering,
   getRenderBackend,
   setRenderBackend,
   setSliceFirst,

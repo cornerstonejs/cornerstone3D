@@ -1,6 +1,7 @@
 import {
   ActorRenderMode,
-  getShouldUseCPURendering,
+  Enums,
+  getEffectiveRenderBackend,
   type Types,
 } from '@cornerstonejs/core';
 import { getConfig } from '../../../config';
@@ -15,6 +16,14 @@ const CPU_RENDER_MODES = new Set<Types.ActorRenderMode>([
   ActorRenderMode.CPU_VOLUME,
 ]);
 
+/**
+ * Whether the planar viewports draw on the CPU by default: on a device without
+ * WebGL, or with `rendering.planar.renderBackend: 'cpu'`.
+ */
+function drawsOnCpuByDefault(): boolean {
+  return getEffectiveRenderBackend() === Enums.RenderBackends.CPU;
+}
+
 function getDefaultActor(viewport: Types.IViewport) {
   try {
     return viewport.getDefaultActor?.();
@@ -25,7 +34,7 @@ function getDefaultActor(viewport: Types.IViewport) {
 
 export function isCPUViewport(viewport?: Types.IViewport): boolean {
   if (!viewport) {
-    return getShouldUseCPURendering();
+    return drawsOnCpuByDefault();
   }
 
   const cpuViewport = viewport as ViewportWithCPUFallback;
@@ -54,7 +63,7 @@ export function isCPUViewport(viewport?: Types.IViewport): boolean {
     return true;
   }
 
-  return getShouldUseCPURendering();
+  return drawsOnCpuByDefault();
 }
 
 export function shouldUseLazyLabelmapEditing(

@@ -1,7 +1,7 @@
 jest.mock('../src/init', () => ({
   ...jest.requireActual('../src/init'),
   isCornerstoneInitialized: () => true,
-  getShouldUseCPURendering: () => true,
+  isWebGLUnavailable: () => true,
 }));
 
 import ContextPoolRenderingEngine from '../src/RenderingEngine/ContextPoolRenderingEngine';

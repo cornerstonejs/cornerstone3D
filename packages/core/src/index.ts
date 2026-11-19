@@ -203,11 +203,8 @@ import getEnabledElement, {
 import * as metaData from './metaData';
 import {
   init,
-  getShouldUseCPURendering,
   isCornerstoneInitialized,
-  setUseCPURendering,
   setPreferSizeOverAccuracy,
-  resetUseCPURendering,
   getRenderBackend,
   setRenderBackend,
   setSliceFirst,
@@ -466,11 +463,7 @@ export {
   imageLoadPoolManager as requestPoolManager,
   imageRetrievalPoolManager,
   imageLoadPoolManager,
-  // CPU Rendering
-  getShouldUseCPURendering,
-  setUseCPURendering,
   setPreferSizeOverAccuracy,
-  resetUseCPURendering,
   // Render backend (gpu | cpu | auto) + capability detection
   RenderBackends,
   getRenderBackend,

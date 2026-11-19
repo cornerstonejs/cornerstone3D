@@ -8,11 +8,7 @@ import {
   gridLimitsOfGpuSettings,
   gpuSettingsForRender,
 } from '../src/utilities/gpuSettingsPresets';
-import {
-  resetUseCPURendering,
-  setLossyDownsampling,
-  setUseCPURendering,
-} from '../src/init';
+import { setLossyDownsampling, setRenderBackend } from '../src/init';
 
 // The named capability profiles, which an application states.
 //
@@ -92,7 +88,7 @@ describe('the GPU settings presets', () => {
 
 describe('CPU rendering', () => {
   afterEach(() => {
-    resetUseCPURendering();
+    setRenderBackend('auto');
     setLossyDownsampling({ final: false });
   });
 
@@ -104,7 +100,7 @@ describe('CPU rendering', () => {
 
     expect(gpuSettingsForRender()?.id).toBe('low-tablet');
 
-    setUseCPURendering(true, false);
+    setRenderBackend('cpu');
 
     expect(gpuSettingsForRender()).toBeUndefined();
   });

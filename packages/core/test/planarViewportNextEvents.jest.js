@@ -8,7 +8,7 @@ import genericViewportDisplaySetMetadataProvider from '../src/utilities/genericV
 import { createPlanarViewportOnStandInEngine } from './utils/planarViewportOnStandInEngine';
 
 const {
-  setUseCPURendering,
+  setRenderBackend,
   Enums,
   imageLoader,
   metaData,
@@ -99,9 +99,9 @@ function testImageLoader(imageId) {
  * a 64 by 64 element for a viewport.
  */
 function setUpCore() {
-  setUseCPURendering(true);
   window.devicePixelRatio = 1;
   init({});
+  setRenderBackend('cpu');
   imageLoader.registerImageLoader('fakeImageLoader', testImageLoader);
   metaData.addProvider(fakeMetaDataProvider, 10000);
 
@@ -243,7 +243,7 @@ describe('Direct next planar viewport events and image loads against the legacy 
     genericViewportDisplaySetMetadataProvider.clear?.();
     metaData.removeAllProviders();
     imageLoader.unregisterAllImageLoaders();
-    setUseCPURendering(false);
+    setRenderBackend('auto');
     document.body.innerHTML = '';
   });
 

@@ -6,7 +6,6 @@ import {
   isCornerstoneInitialized,
   resetInitialization,
   setRenderBackend,
-  setUseCPURendering,
 } from '../src/init';
 import eventTarget from '../src/eventTarget';
 import cache from '../src/cache/cache';
@@ -41,7 +40,6 @@ describe('Planar render backend resolution', () => {
 
   afterEach(() => {
     getVolumeSpy.mockRestore();
-    setUseCPURendering(false, false);
     setRenderBackend(RenderBackends.Auto);
     eventTarget.reset();
   });
@@ -56,19 +54,6 @@ describe('Planar render backend resolution', () => {
       setRenderBackend('cpu');
       const { renderMode } = service.select(IMAGE_DATASET);
       expect(renderMode).toBe(ActorRenderMode.CPU_IMAGE);
-    });
-
-    it('honors the deprecated useCPURendering flag under auto', () => {
-      setUseCPURendering(true, false);
-      const { renderMode } = service.select(IMAGE_DATASET);
-      expect(renderMode).toBe(ActorRenderMode.CPU_IMAGE);
-    });
-
-    it('lets a global gpu pin win over the deprecated CPU flag', () => {
-      setUseCPURendering(true, false);
-      setRenderBackend('gpu');
-      const { renderMode } = service.select(IMAGE_DATASET);
-      expect(renderMode).toBe(ActorRenderMode.VTK_IMAGE);
     });
 
     it('lets a per-mount cpu pin win over a global gpu pin', () => {
@@ -175,34 +160,6 @@ describe('Planar render backend resolution', () => {
       eventTarget.addEventListener(Events.RENDER_BACKEND_CHANGED, listener);
 
       setRenderBackend('cpu');
-
-      expect(listener).not.toHaveBeenCalled();
-      eventTarget.removeEventListener(Events.RENDER_BACKEND_CHANGED, listener);
-    });
-
-    it('emits when the deprecated setUseCPURendering changes the effective backend', () => {
-      const listener = jest.fn();
-      eventTarget.addEventListener(Events.RENDER_BACKEND_CHANGED, listener);
-
-      setUseCPURendering(true);
-
-      expect(listener).toHaveBeenCalledTimes(1);
-      expect(listener.mock.calls[0][0].detail).toMatchObject({
-        previous: RenderBackends.GPU,
-        current: RenderBackends.CPU,
-        reason: 'setUseCPURendering',
-      });
-
-      eventTarget.removeEventListener(Events.RENDER_BACKEND_CHANGED, listener);
-    });
-
-    it('does not emit for setUseCPURendering under an explicit gpu pin', () => {
-      setRenderBackend('gpu');
-
-      const listener = jest.fn();
-      eventTarget.addEventListener(Events.RENDER_BACKEND_CHANGED, listener);
-
-      setUseCPURendering(true);
 
       expect(listener).not.toHaveBeenCalled();
       eventTarget.removeEventListener(Events.RENDER_BACKEND_CHANGED, listener);

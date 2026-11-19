@@ -2,7 +2,7 @@ import {
   utilities,
   cache,
   volumeLoader,
-  setUseCPURendering,
+  setRenderBackend,
 } from '@cornerstonejs/core';
 import {
   describe,
@@ -29,7 +29,7 @@ describe('IslandRemove', function () {
 
   beforeAll(() => {
     window.devicePixelRatio = 1;
-    setUseCPURendering(true);
+    setRenderBackend('cpu');
   });
 
   beforeEach(() => {

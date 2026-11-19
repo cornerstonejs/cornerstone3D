@@ -2540,7 +2540,7 @@ class PlanarViewport extends GenericViewport<
    * state to the rebuilt binding. Display sets pinned via a per-mount
    * renderBackend re-resolve to the same path and are effectively skipped.
    *
-   * Called by the global setRenderBackend()/setUseCPURendering() fan-out; the
+   * Called by the global setRenderBackend() fan-out; the
    * rebuild is async but the hook itself is fire-and-forget by contract.
    */
   override updateRenderingPipeline(): void {

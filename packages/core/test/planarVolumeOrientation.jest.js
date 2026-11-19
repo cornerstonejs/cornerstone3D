@@ -11,7 +11,7 @@ import { MPR_CAMERA_VALUES } from '../src/constants';
 
 const {
   utilities,
-  setUseCPURendering,
+  setRenderBackend,
   Enums,
   init,
   cache,
@@ -39,9 +39,9 @@ function setSize(element, width, height) {
  * jsdom lacks; the CPU render paths draw without it.
  */
 function createViewport(defaultOptions = {}) {
-  setUseCPURendering(true);
   window.devicePixelRatio = 1;
   init({});
+  setRenderBackend('cpu');
   document.body.innerHTML = '<div id="element"></div>';
 
   const element = document.getElementById('element');
@@ -155,7 +155,7 @@ describe('orientation of a volume on a direct next planar viewport', () => {
   afterEach(() => {
     renderingEngine?.destroy();
     renderingEngine = undefined;
-    setUseCPURendering(false);
+    setRenderBackend('auto');
     cache.purgeCache();
     metaData.removeAllProviders();
   });
@@ -233,7 +233,7 @@ describe('reformat names in the options of a direct next planar viewport', () =>
   afterEach(() => {
     renderingEngine?.destroy();
     renderingEngine = undefined;
-    setUseCPURendering(false);
+    setRenderBackend('auto');
     cache.purgeCache();
     metaData.removeAllProviders();
   });
@@ -283,7 +283,7 @@ describe('one rule for the orientation of a direct next planar viewport', () => 
   afterEach(() => {
     renderingEngine?.destroy();
     renderingEngine = undefined;
-    setUseCPURendering(false);
+    setRenderBackend('auto');
     cache.purgeCache();
     metaData.removeAllProviders();
     imageLoader.unregisterAllImageLoaders();

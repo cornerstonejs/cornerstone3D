@@ -9,7 +9,7 @@ import getSliceRange from '../src/utilities/getSliceRange';
 import snapFocalPointToSlice from '../src/utilities/snapFocalPointToSlice';
 import getSpacingInNormalDirection from '../src/utilities/getSpacingInNormalDirection';
 
-const { utilities, setUseCPURendering, Enums, init, cache, volumeLoader } =
+const { utilities, setRenderBackend, Enums, init, cache, volumeLoader } =
   cornerstone3D;
 const { OrientationAxis } = Enums;
 
@@ -27,9 +27,9 @@ function setSize(element, width, height) {
 
 /** Turns CPU rendering on and gives a 64 by 64 element for a viewport. */
 function setUpCore() {
-  setUseCPURendering(true);
   window.devicePixelRatio = 1;
   init({});
+  setRenderBackend('cpu');
   document.body.innerHTML = '<div id="element"></div>';
 
   const element = document.getElementById('element');
@@ -129,7 +129,7 @@ describe('scrolling a slab on a planar viewport', () => {
   afterEach(() => {
     renderingEngine?.destroy();
     renderingEngine = undefined;
-    setUseCPURendering(false);
+    setRenderBackend('auto');
     cache.purgeCache();
   });
 
@@ -218,7 +218,7 @@ describe('the number of slices of a direct next planar viewport', () => {
   afterEach(() => {
     renderingEngine?.destroy();
     renderingEngine = undefined;
-    setUseCPURendering(false);
+    setRenderBackend('auto');
     cache.purgeCache();
   });
 

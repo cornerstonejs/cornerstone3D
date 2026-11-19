@@ -76,7 +76,7 @@ test.skip('Stack Viewport with CPU Rendering', () => {
 
 async function checkCPURendering(page: Page) {
   const isUsingCPU = await page.evaluate(() => {
-    return window.cornerstone.getShouldUseCPURendering();
+    return window.cornerstone.getEffectiveRenderBackend() === 'cpu';
   });
   expect(isUsingCPU).toBe(true);
 

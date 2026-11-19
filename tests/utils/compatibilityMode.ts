@@ -20,7 +20,7 @@ export async function validateCompatibilityRuntime(
     const searchParams = new URLSearchParams(window.location.search);
     const cornerstone = (window as typeof window & {
       cornerstone?: {
-        getShouldUseCPURendering?: () => boolean;
+        getRenderBackend?: () => string;
         getEffectiveRenderBackend?: () => string;
       };
     }).cornerstone;
@@ -28,7 +28,7 @@ export async function validateCompatibilityRuntime(
     return {
       url: window.location.href,
       cpuParam: searchParams.get('cpu'),
-      useCPURendering: cornerstone?.getShouldUseCPURendering?.(),
+      renderBackend: cornerstone?.getRenderBackend?.(),
       effectiveRenderBackend: cornerstone?.getEffectiveRenderBackend?.(),
     };
   });
@@ -39,9 +39,9 @@ export async function validateCompatibilityRuntime(
       `${title ?? 'example'} should be opened with ?cpu=1`
     ).toBe('1');
     expect(
-      runtime.useCPURendering,
-      `${title ?? 'example'} should enable CPU rendering`
-    ).toBe(true);
+      runtime.renderBackend,
+      `${title ?? 'example'} should pin the cpu render backend`
+    ).toBe('cpu');
     expect(
       runtime.effectiveRenderBackend,
       `${title ?? 'example'} should resolve the cpu render backend`
