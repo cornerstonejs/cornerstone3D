@@ -2,13 +2,17 @@ import { BaseTool } from './base';
 import { Events } from '../enums';
 
 import { getEnabledElement, Enums } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import type { EventTypes, PublicToolProps, ToolProps, IPoints } from '../types';
 import { getViewportIdsWithToolToRender } from '../utilities/viewportFilters';
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
 import { getNativeSourceProperties } from '../utilities/genericViewportToolHelpers';
+import {
+  getWorldHeightPerPixel,
+  mountLoupeSource,
+  syncLoupeWithSource,
+} from '../utilities/magnifyLoupe';
 import { state } from '../store/state';
-import { vec3 } from 'gl-matrix';
 
 import {
   hideElementCursor,
@@ -129,27 +133,22 @@ class MagnifyTool extends BaseTool {
     magnifyElement.style.left = `${left}px`;
   };
 
+  /**
+   * Makes the loupe: a next planar viewport in an element over the source
+   * viewport. It shows the source display set with the presentation, the
+   * slice, the orientation, the rotation and the flips of the source, with
+   * the world point under the pointer at its centre. Its canvas spans
+   * `1 / magnifySize` of the world height that the source canvas spans.
+   */
   _createMagnificationViewport = () => {
     const {
       enabledElement,
-      referencedImageId,
       viewportIdsToRender,
       renderingEngine,
       currentPoints,
     } = this.editData;
     const { viewport } = enabledElement;
     const { element } = viewport;
-    // The loupe mirrors the source viewport's appearance. Native PLANAR_NEXT has no
-    // getProperties/getViewPresentation; read its VOI/LUT via getDisplaySetPresentation
-    // and its rotation/flip via the projection-aware helper.
-    const native = getNativeSourceProperties(viewport);
-    const viewportProperties = native.properties;
-    const {
-      rotation: originalViewportRotation,
-      flipHorizontal: originalViewportFlipHorizontal,
-      flipVertical: originalViewportFlipVertical,
-    } = native;
-
     const { canvas: canvasPos, world: worldPos } = currentPoints;
 
     let magnifyToolElement: HTMLDivElement;
@@ -172,7 +171,7 @@ class MagnifyTool extends BaseTool {
 
       const viewportInput = {
         viewportId: MAGNIFY_VIEWPORT_ID,
-        type: Enums.ViewportType.STACK,
+        type: Enums.ViewportType.PLANAR_NEXT,
         element: magnifyToolElement as HTMLDivElement,
       };
 
@@ -182,64 +181,25 @@ class MagnifyTool extends BaseTool {
     // Todo: use CSS transform instead of setting top and left for better performance
     this._positionMagnifyElement(magnifyToolElement, canvasPos, element);
 
+    const sourceViewport = viewport as unknown as PlanarViewport;
     const magnifyViewport = renderingEngine.getViewport(
       MAGNIFY_VIEWPORT_ID
-    ) as Types.IStackViewport;
-    magnifyViewport.setStack([referencedImageId]).then(() => {
-      if (this._hasBeenRemoved) {
+    ) as unknown as PlanarViewport;
+    const worldPerPixel =
+      (getWorldHeightPerPixel(sourceViewport) * element.clientHeight) /
+      (this.configuration.magnifySize * magnifyToolElement.clientHeight);
+
+    mountLoupeSource(sourceViewport, magnifyViewport).then((mounted) => {
+      if (this._hasBeenRemoved || !mounted) {
         return;
       }
-      // match the original viewport voi range
-      magnifyViewport.setProperties(viewportProperties);
 
-      // match the original viewport's rotation and flip state
-      magnifyViewport.setViewPresentation({
-        rotation: originalViewportRotation,
-        flipHorizontal: originalViewportFlipHorizontal,
-        flipVertical: originalViewportFlipVertical,
-      });
-
-      const { focalPoint, position, viewPlaneNormal } =
-        magnifyViewport.getCamera();
-
-      // Use the source viewport's parallelScale as the magnification base.
-      // Native PLANAR_NEXT has no getCamera/parallelScale and its on-screen canvas is
-      // hidden, so reconstruct the source's actual on-screen parallelScale geometrically:
-      // worldPerPixel (vertical) from canvasToWorld of two element-space points 1px apart,
-      // then parallelScale = worldPerPixel * elementHeight / 2. This tracks the source's
-      // pan/zoom (matching legacy), unlike the loupe's own fit parallelScale.
-      const sourceElement = viewport.element as HTMLElement;
-      const worldTop = viewport.canvasToWorld([0, 0] as Types.Point2);
-      const worldBottom = viewport.canvasToWorld([0, 1] as Types.Point2);
-      const worldPerPixel = vec3.distance(
-        worldTop as Types.Point3,
-        worldBottom as Types.Point3
+      syncLoupeWithSource(
+        sourceViewport,
+        magnifyViewport,
+        worldPos,
+        worldPerPixel
       );
-      const parallelScale = (worldPerPixel * sourceElement.clientHeight) / 2;
-
-      const distance = Math.sqrt(
-        Math.pow(focalPoint[0] - position[0], 2) +
-          Math.pow(focalPoint[1] - position[1], 2) +
-          Math.pow(focalPoint[2] - position[2], 2)
-      );
-
-      const updatedFocalPoint = <Types.Point3>[
-        worldPos[0],
-        worldPos[1],
-        worldPos[2],
-      ];
-
-      const updatedPosition = <Types.Point3>[
-        updatedFocalPoint[0] + distance * viewPlaneNormal[0],
-        updatedFocalPoint[1] + distance * viewPlaneNormal[1],
-        updatedFocalPoint[2] + distance * viewPlaneNormal[2],
-      ];
-
-      magnifyViewport.setCamera({
-        parallelScale: parallelScale * (1 / this.configuration.magnifySize),
-        focalPoint: updatedFocalPoint,
-        position: updatedPosition,
-      });
       magnifyViewport.render();
     });
 
@@ -265,7 +225,9 @@ class MagnifyTool extends BaseTool {
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
-    const magnifyViewport = renderingEngine.getViewport(MAGNIFY_VIEWPORT_ID);
+    const magnifyViewport = renderingEngine.getViewport(
+      MAGNIFY_VIEWPORT_ID
+    ) as unknown as PlanarViewport;
 
     const magnifyElement = element.querySelector(
       '.magnifyTool'
@@ -277,23 +239,18 @@ class MagnifyTool extends BaseTool {
 
     this._positionMagnifyElement(magnifyElement, canvasPos, element);
 
-    const { focalPoint, position } = magnifyViewport.getCamera();
+    const { anchorWorld } = magnifyViewport.getViewState();
 
-    const updatedPosition = <Types.Point3>[
-      position[0] + deltaPointsWorld[0],
-      position[1] + deltaPointsWorld[1],
-      position[2] + deltaPointsWorld[2],
-    ];
+    if (!anchorWorld) {
+      return;
+    }
 
-    const updatedFocalPoint = <Types.Point3>[
-      focalPoint[0] + deltaPointsWorld[0],
-      focalPoint[1] + deltaPointsWorld[1],
-      focalPoint[2] + deltaPointsWorld[2],
-    ];
-
-    magnifyViewport.setCamera({
-      focalPoint: updatedFocalPoint,
-      position: updatedPosition,
+    magnifyViewport.setViewState({
+      anchorWorld: <Types.Point3>[
+        anchorWorld[0] + deltaPointsWorld[0],
+        anchorWorld[1] + deltaPointsWorld[1],
+        anchorWorld[2] + deltaPointsWorld[2],
+      ],
     });
 
     magnifyViewport.render();

@@ -9,7 +9,7 @@ import {
   CONSTANTS,
   getEnabledElementByViewportId,
 } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 
 import {
   addAnnotation,
@@ -52,6 +52,11 @@ import type { AdvancedMagnifyAnnotation } from '../types/ToolSpecificAnnotationT
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
 import getViewportICamera from '../utilities/getViewportICamera';
 import { getNativeSourceProperties } from '../utilities/genericViewportToolHelpers';
+import {
+  getWorldHeightPerPixel,
+  mountLoupeSource,
+  syncLoupeWithSource,
+} from '../utilities/magnifyLoupe';
 import type { StyleSpecifier } from '../types/AnnotationStyle';
 import { getCanvasCircleRadius } from '../utilities/math/circle';
 
@@ -64,6 +69,7 @@ import type {
 } from '../types/EventTypes';
 import { distanceToPoint } from '../utilities/math/point';
 import { addSegmentationRepresentations } from '../stateManagement/segmentation';
+import { getSegmentationRepresentations } from '../stateManagement/segmentation/getSegmentationRepresentation';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
 const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
@@ -73,9 +79,6 @@ const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
 const MAGNIFY_CLASSNAME = 'advancedMagnifyTool';
 const MAGNIFY_VIEWPORT_INITIAL_RADIUS = 125;
 const { Events: csEvents } = Enums;
-
-// TODO: find a better to identify segmentation actors
-const isSegmentation = (actor) => !!actor.representationUID;
 
 export type AutoPanCallbackData = {
   points: {
@@ -1047,6 +1050,7 @@ class AdvancedMagnifyViewportManager {
     } = viewportInfo;
     const { viewport: sourceViewport } = sourceEnabledElement;
     const { element: sourceElement } = sourceViewport;
+    const { currentImageId } = getNativeSourceProperties(sourceViewport);
 
     const magnifyViewport = new AdvancedMagnifyViewport({
       magnifyViewportId,
@@ -1064,9 +1068,7 @@ class AdvancedMagnifyViewportManager {
       magnifyViewport,
       magnifyViewportInfo: viewportInfo,
       sourceImageSize: getSourceImageSize(
-        cache.getImage(
-          (sourceViewport as Types.IStackViewport).getCurrentImageId?.()
-        )
+        currentImageId ? cache.getImage(currentImageId) : undefined
       ),
     });
 
@@ -1517,36 +1519,34 @@ class AdvancedMagnifyViewport {
     return magnifyElement;
   }
 
-  private _convertZoomFactorToParallelScale(
-    viewport,
-    magnifyViewport,
-    zoomFactor
-  ) {
-    // Native PLANAR_NEXT has no getCamera/parallelScale and its on-screen canvas is
-    // hidden (offsetWidth === 0). Reconstruct the source's parallelScale geometrically:
-    // worldPerPixel (vertical) comes from canvasToWorld of two element-space points one
-    // pixel apart, and parallelScale = worldPerPixel * elementHeight / 2. Then apply the
-    // same legacy formula: parallelScaleSource * (1/zoom) * (loupeWidth / sourceWidth).
-    const sourceElement = viewport.element as HTMLElement;
-    const sourceWidth = sourceElement.clientWidth;
-    const sourceHeight = sourceElement.clientHeight;
-    const worldTop = viewport.canvasToWorld([0, 0] as Types.Point2);
-    const worldBottom = viewport.canvasToWorld([0, 1] as Types.Point2);
-    const worldPerPixel = vec3.distance(
-      worldTop as Types.Point3,
-      worldBottom as Types.Point3
-    );
-    const parallelScaleSource = (worldPerPixel * sourceHeight) / 2;
-    const canvasRatio = magnifyViewport.canvas.offsetWidth / sourceWidth;
+  /**
+   * The world distance of one pixel of the glass for a zoom factor, as the
+   * legacy glass had it: the world height that the source viewport shows,
+   * times the width of the glass over the width of the source, over the zoom
+   * factor, spread over the height of the glass. On a source as wide as it is
+   * high, one pixel of the source takes `zoomFactor` pixels of the glass.
+   */
+  private _getMagnifiedWorldPerPixel(
+    sourceViewport: PlanarViewport,
+    magnifyViewport: PlanarViewport,
+    zoomFactor: number
+  ): number {
+    const sourceElement = sourceViewport.element;
+    const magnifyElement = magnifyViewport.element;
+    const sourceWorldHeight =
+      getWorldHeightPerPixel(sourceViewport) * sourceElement.clientHeight;
+    const canvasRatio = magnifyElement.clientWidth / sourceElement.clientWidth;
 
-    return parallelScaleSource * (1 / zoomFactor) * canvasRatio;
+    return (
+      (sourceWorldHeight * canvasRatio) /
+      (zoomFactor * magnifyElement.clientHeight)
+    );
   }
 
   private _cloneToolGroups(
     sourceViewport: Types.IViewport,
     magnifyViewport: Types.IViewport
   ) {
-    const sourceActors = sourceViewport.getActors();
     const magnifyToolGroupId = `${magnifyViewport.id}-toolGroup`;
     const sourceToolGroup = getToolGroupForViewport(
       sourceViewport.id,
@@ -1570,10 +1570,12 @@ class AdvancedMagnifyViewport {
       magnifyViewport.renderingEngineId
     );
 
-    sourceActors.filter(isSegmentation).forEach((actor) => {
+    getSegmentationRepresentations(sourceViewport.id, {
+      type: SegmentationRepresentations.Labelmap,
+    }).forEach(({ segmentationId }) => {
       addSegmentationRepresentations(this.viewportId, [
         {
-          segmentationId: actor.referencedId,
+          segmentationId,
           type: SegmentationRepresentations.Labelmap,
         },
       ]);
@@ -1582,31 +1584,19 @@ class AdvancedMagnifyViewport {
     return { sourceToolGroup, magnifyToolGroup };
   }
 
-  private _cloneStack(
-    sourceViewport: Types.IStackViewport,
-    magnifyViewport: Types.IStackViewport
-  ): void {
-    const imageIds = sourceViewport.getImageIds();
-
-    magnifyViewport.setStack(imageIds).then(() => {
-      this._isViewportReady = true;
-      this.update();
-    });
-  }
-
+  /**
+   * Makes the glass a next planar viewport that shows the source display set
+   * of the source viewport: the images of a stack, or the volume in the
+   * orientation of the source view. The glass is ready once it is mounted.
+   */
   private _cloneViewport(sourceViewport, magnifyElement) {
     const { viewportId: magnifyViewportId } = this;
     const renderingEngine =
       sourceViewport.getRenderingEngine() as Types.IRenderingEngine;
-
-    // Native PLANAR_NEXT sources have no setStack/setProperties/setCamera, so the loupe
-    // can't be a native viewport. Mirror MagnifyTool: back the loupe with a legacy STACK
-    // viewport so every clone/sync call below uses the legacy API surface. The native
-    // source still feeds it via getImageIds()/getCurrentImageIdIndex().
     const viewportInput = {
       element: magnifyElement,
       viewportId: magnifyViewportId,
-      type: Enums.ViewportType.STACK,
+      type: Enums.ViewportType.PLANAR_NEXT,
       defaultOptions: {},
     };
 
@@ -1616,10 +1606,17 @@ class AdvancedMagnifyViewport {
       renderingEngine.getViewport(magnifyViewportId)
     );
 
-    this._cloneStack(
-      sourceViewport as Types.IStackViewport,
-      magnifyViewport as Types.IStackViewport
-    );
+    mountLoupeSource(
+      sourceViewport as PlanarViewport,
+      magnifyViewport as unknown as PlanarViewport
+    ).then((mounted) => {
+      if (!mounted) {
+        return;
+      }
+
+      this._isViewportReady = true;
+      this.update();
+    });
 
     // Prevent handling events outside of the magnifying glass because it has rounded border
     this._inheritBorderRadius(magnifyElement);
@@ -1959,84 +1956,31 @@ class AdvancedMagnifyViewport {
     this._enabledElement = getEnabledElement(magnifyElement);
   }
 
-  private _syncViewportsCameras(sourceViewport, magnifyViewport) {
-    const worldPos = sourceViewport.canvasToWorld(this.position);
-
-    // Use the original viewport for the base for parallelScale
-    const parallelScale = this._convertZoomFactorToParallelScale(
-      sourceViewport,
-      magnifyViewport,
-      this.zoomFactor
-    );
-
-    // Native PLANAR_NEXT has no getCamera; read flip state through the projection-aware
-    // helper. The loupe (legacy STACK) still exposes getCamera.
-    const { flipHorizontal, flipVertical } =
-      getNativeSourceProperties(sourceViewport);
-
-    const { focalPoint, position, viewPlaneNormal } =
-      magnifyViewport.getCamera();
-
-    const distance = Math.sqrt(
-      Math.pow(focalPoint[0] - position[0], 2) +
-        Math.pow(focalPoint[1] - position[1], 2) +
-        Math.pow(focalPoint[2] - position[2], 2)
-    );
-
-    const updatedFocalPoint = <Types.Point3>[
-      worldPos[0],
-      worldPos[1],
-      worldPos[2],
-    ];
-
-    const updatedPosition = <Types.Point3>[
-      updatedFocalPoint[0] + distance * viewPlaneNormal[0],
-      updatedFocalPoint[1] + distance * viewPlaneNormal[1],
-      updatedFocalPoint[2] + distance * viewPlaneNormal[2],
-    ];
-
-    magnifyViewport.setCamera({
-      parallelScale,
-      focalPoint: updatedFocalPoint,
-      position: updatedPosition,
-      flipHorizontal,
-      flipVertical,
-    });
-  }
-
-  private _syncStackViewports(
-    sourceViewport: Types.IStackViewport,
-    magnifyViewport: Types.IStackViewport
-  ) {
-    magnifyViewport.setImageIdIndex(sourceViewport.getCurrentImageIdIndex());
-  }
-
+  /**
+   * Makes the glass show what the source shows around the world point under
+   * the centre of the glass: the same slice and presentation, turned and
+   * flipped as the source, magnified by the zoom factor.
+   */
   private _syncViewports() {
-    const { viewport: sourceViewport } = this._sourceEnabledElement;
-    const { viewport: magnifyViewport } = this._enabledElement;
+    const sourceViewport = this._sourceEnabledElement
+      .viewport as unknown as PlanarViewport;
+    const magnifyViewport = this._enabledElement
+      .viewport as unknown as PlanarViewport;
 
-    // Native PLANAR_NEXT has no getProperties; read its VOI/LUT via the display-set
-    // presentation keyed by the source data id (mirrors MagnifyTool). The loupe is a
-    // legacy STACK viewport, so setProperties below still works.
-    const sourceProperties =
-      getNativeSourceProperties(sourceViewport).properties;
-    const imageData = magnifyViewport.getImageData();
-
-    if (!imageData) {
+    if (magnifyViewport.getCurrentMode() === 'empty') {
       return;
     }
 
-    magnifyViewport.setProperties(sourceProperties);
-    this._syncViewportsCameras(sourceViewport, magnifyViewport);
-
-    // Native sources are driven as a stack (legacy STACK loupe); keep the loupe's image
-    // index in sync via getCurrentImageIdIndex(), which native viewports support.
-    this._syncStackViewports(
-      sourceViewport as Types.IStackViewport,
-      magnifyViewport as Types.IStackViewport
+    syncLoupeWithSource(
+      sourceViewport,
+      magnifyViewport,
+      sourceViewport.canvasToWorld(this.position),
+      this._getMagnifiedWorldPerPixel(
+        sourceViewport,
+        magnifyViewport,
+        this.zoomFactor
+      )
     );
-
-    this._syncViewportsCameras(sourceViewport, magnifyViewport);
     magnifyViewport.render();
   }
 

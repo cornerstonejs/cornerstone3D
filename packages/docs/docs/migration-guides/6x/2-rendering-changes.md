@@ -792,6 +792,19 @@ layer of a fusion: the opacity is applied as given.
 - **`AdvancedMagnifyTool` resets on a stack of images of several sizes.** It
   compares the rows, the columns and the number of components of the image
   of `NEW_IMAGE` with the image before.
+- **The magnifying glasses show their viewport as it is drawn.** The loupe
+  of `MagnifyTool` and each glass of `AdvancedMagnifyTool` are next planar
+  viewports with the display sets of their viewport, overlays too, each
+  with its presentation, and with the slice, the orientation, the rotation
+  and the flips of the view. A glass also shows the labelmaps. The zoom and
+  the place are as before: the loupe spans `1 / magnifySize` of the world
+  height of the viewport, and a glass `1 / zoomFactor` of the width of the
+  viewport over its own width. Differs: the legacy glass did not turn and
+  flip with its viewport (measured on a legacy stack viewport turned and
+  flipped, it showed the image unturned and unflipped; on a legacy volume
+  viewport it took the rotation and not the flips), and it gave the
+  presentation of the first volume only (read in the code). The legacy loupe
+  showed the image of a stack alone, without the overlays of a fusion.
 - **`MIPJumpToClickTool` works in volume mode.** On a stack it finds no
   point, and it does not throw.
 - **`CrosshairsTool` and `VolumeCroppingControlTool` leave a viewport that
