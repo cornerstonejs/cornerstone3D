@@ -119,6 +119,11 @@ function buildSeg(
     : [1, 2, 3].map((segmentNumber) =>
         frame.labels.map((label) => (label === segmentNumber ? 1 : 0))
       );
+  // A LABELMAP SEG uses the label values themselves as segment numbers, so the
+  // SegmentSequence has to describe every nonzero label in the frame.
+  const segmentNumbers = isLabelmap
+    ? [...new Set(frame.labels.filter((label) => label !== 0))]
+    : [1, 2, 3];
 
   const multiframe = {
     SOPClassUID: isLabelmap
@@ -154,7 +159,7 @@ function buildSeg(
             },
           }),
     })),
-    SegmentSequence: [1, 2, 3].map((segmentNumber) => ({
+    SegmentSequence: segmentNumbers.map((segmentNumber) => ({
       SegmentNumber: segmentNumber,
       SegmentLabel: `Segment ${segmentNumber}`,
       SegmentAlgorithmType: 'MANUAL',
