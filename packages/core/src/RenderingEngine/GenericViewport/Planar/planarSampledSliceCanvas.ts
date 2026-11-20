@@ -25,6 +25,7 @@ import type {
   PlanarViewportRenderContext,
 } from './PlanarViewportTypes';
 import { getVolumeClipPlanes } from './planarSampledSlice';
+import { hasSlab } from './PlanarRenderPathDecisionService';
 import type {
   PlanarSampledSlice,
   PlanarScreenCamera,
@@ -1286,7 +1287,9 @@ function getValuesOnVoxelCentres(
  * such a pixel at its centre from a texture clamped to its edge, so a pixel
  * whose centre lies outside shows the colour of the values at its centre
  * moved onto the voxel centres (`getValuesOnVoxelCentres`), coloured with
- * the tables of the slice.
+ * the tables of the slice. A slab is drawn on the GPU volume path
+ * (`hasSlab`), whose shader shows nothing of the slab on a pixel whose centre
+ * lies outside the volume, so such a pixel of a slab is cleared.
  *
  * @returns the pixels that the slice covers in part, or undefined for none
  */
@@ -1300,6 +1303,7 @@ function clearOutsideVolume(
 ): PlanarSliceEdgePixels | undefined {
   const { width, height, pixelData } = slice;
   const numberOfComponents = slice.numberOfComponents ?? 1;
+  const isSlab = hasSlab(volume, slice.sampledFor.slab?.thickness);
   const centreRuns = Array.from({ length: height }, (_, row) =>
     getInsideRun(slice, planes, row, CENTRE_SAMPLE[0])
   );
@@ -1344,6 +1348,11 @@ function clearOutsideVolume(
       ).length;
 
       if (inside === samples.length) {
+        continue;
+      }
+
+      if (isSlab && !isCentreInside(column, row)) {
+        pixels[rowStart + column] = 0;
         continue;
       }
 

@@ -1075,6 +1075,43 @@ describe('SegmentationIntersectionTool with the surface of a segmentation on a 3
     expect(data.actorsWorldPointsMap.has(representationUID)).toBe(false);
   });
 
+  it('keeps no cut lines of a surface that is removed with its geometry while the tool is disabled, and draws nothing of it once enabled again', async function () {
+    const representationUID = `${segmentationId}-Surface-1`;
+    const series = await createSeries({
+      id: 'segmentationIntersectionNextRemovedWhileDisabled',
+      size: SIZE,
+    });
+    const viewport = createNextViewport(renderingEngine, viewportId);
+    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+
+    await showVolume(viewport, series, 10, {
+      orientation: OrientationAxis.AXIAL,
+    });
+    await showSphereOn3DViewport(renderingEngine);
+    await enableToolAndWaitForRender(viewport.element);
+
+    const [{ data }] = getIntersectionAnnotations(viewport);
+
+    expect(data.actorsWorldPointsMap.get(representationUID)?.size).toBe(1);
+
+    toolGroup.setToolDisabled(toolName);
+    segmentation.removeSegmentationRepresentation(viewport3DId, {
+      segmentationId,
+      type: Surface,
+    });
+    cache.removeGeometryLoadObject(geometryId);
+
+    expect(data.actorsWorldPointsMap.has(representationUID)).toBe(false);
+
+    await enableToolAndWaitForRender(viewport.element);
+
+    expect(getIntersectionAnnotations(viewport)).toEqual([
+      jasmine.objectContaining({ data }),
+    ]);
+    expect(data.actorsWorldPointsMap.has(representationUID)).toBe(false);
+    expect(drawnPaths(viewport).length).toBe(0);
+  });
+
   it('draws nothing on an idle planar viewport of a second rendering engine when the Surface representation is removed, where the first engine has a viewport of the same id', async function () {
     const secondRenderingEngine = new cornerstone3D.RenderingEngine(
       `${renderingEngineId}Second`

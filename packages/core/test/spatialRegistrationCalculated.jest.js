@@ -239,6 +239,52 @@ describe('A calculated spatial registration', () => {
     ).toBe(7);
   });
 
+  it('keeps the registration that the application added with the matrix of a calculated one when the calculated one no longer holds', () => {
+    const source = makeViewport(
+      'g1CopySource',
+      'f2EngineA',
+      'axial50',
+      'frameOne'
+    );
+    const target = makeViewport(
+      'g1CopyTarget',
+      'f2EngineB',
+      'axial0',
+      'frameTwo'
+    );
+
+    addRenderingEngine('f2EngineA', [source]);
+    addRenderingEngine('f2EngineB', [target]);
+    calculateViewportsSpatialRegistration(source, target);
+    spatialRegistrationMetadataProvider.add(
+      ['g1CopyOtherSource', 'g1CopyOtherTarget'],
+      registrationOf(source, target)
+    );
+    source.frameOfReferenceUID = 'frameThree';
+
+    expect(
+      translationZ(
+        spatialRegistrationMetadataProvider.get(
+          'spatialRegistrationModule',
+          'g1CopyOtherSource',
+          'g1CopyOtherTarget'
+        )
+      )
+    ).toBe(50);
+    expect(
+      translationZ(
+        spatialRegistrationMetadataProvider.get(
+          'spatialRegistrationModule',
+          'g1CopyOtherSource',
+          'g1CopyOtherTarget',
+          'f2EngineC',
+          'f2EngineD'
+        )
+      )
+    ).toBe(50);
+    expect(registrationOf(source, target)).toBeUndefined();
+  });
+
   it('replaces the registration of the other direction when the reverse one is calculated', () => {
     const first = makeViewport('f2ReverseFirst', 'f2EngineA', 'axial10');
     const second = makeViewport('f2ReverseSecond', 'f2EngineB', 'axial0');

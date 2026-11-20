@@ -22,32 +22,50 @@ export type CalculatedRegistrationViewport = {
 };
 
 /**
- * The viewports that each calculated registration was worked out for. An
- * application's own registration has no entry.
+ * The viewports that a calculated registration was worked out for, and
+ * whether each of them was in its rendering engine then.
  */
-const calculatedFor = new WeakMap<
-  mat4,
-  [CalculatedRegistrationViewport, CalculatedRegistrationViewport]
->();
+type CalculatedRegistrationSource = {
+  viewports: [CalculatedRegistrationViewport, CalculatedRegistrationViewport];
+  inRenderingEngine: boolean[];
+};
+
+/**
+ * The source of the calculated registration under each key of each store. An
+ * application's own registration has none, also when its matrix is the
+ * object of a calculated one.
+ */
+const calculatedFor = new Map<
+  Record<string, mat4>,
+  Record<string, CalculatedRegistrationSource>
+>([
+  [state, {}],
+  [lastByViewportIds, {}],
+]);
 
 /**
  * Whether a calculated registration no longer holds: one of its viewports
- * shows another frame of reference than when it was calculated. A viewport
- * that is gone, or that gave no frame of reference then, keeps it.
+ * shows another frame of reference than when it was calculated, or is gone
+ * from the rendering engine that it was in then (disabled, or its rendering
+ * engine destroyed). A viewport that gave no frame of reference then keeps
+ * it, and so does a viewport that was in no rendering engine then.
  */
-function isStale(registration: mat4 | undefined): boolean {
-  return !!calculatedFor
-    .get(registration)
-    ?.some(({ viewportId, renderingEngineId, frameOfReferenceUID }) => {
+function isStale(source: CalculatedRegistrationSource | undefined): boolean {
+  return !!source?.viewports.some(
+    ({ viewportId, renderingEngineId, frameOfReferenceUID }, index) => {
       const viewport =
         getRenderingEngine(renderingEngineId)?.getViewport(viewportId);
 
+      if (!viewport) {
+        return source.inRenderingEngine[index];
+      }
+
       return (
-        !!viewport &&
         frameOfReferenceUID !== undefined &&
         viewport.getFrameOfReferenceUID?.() !== frameOfReferenceUID
       );
-    });
+    }
+  );
 }
 
 /** Removes the registrations of a store under these keys that no longer hold. */
@@ -55,11 +73,92 @@ function dropStale(
   registrations: Record<string, mat4>,
   ...entryIds: string[]
 ): void {
+  const sources = calculatedFor.get(registrations);
+
   entryIds.forEach((entryId) => {
-    if (isStale(registrations[entryId])) {
+    if (isStale(sources[entryId])) {
       delete registrations[entryId];
+      delete sources[entryId];
     }
   });
+}
+
+/**
+ * Puts a registration under a key of a store, with the source of a
+ * calculated one, or none for an application's own registration.
+ */
+function setEntry(
+  registrations: Record<string, mat4>,
+  entryId: string,
+  payload: mat4,
+  source?: CalculatedRegistrationSource
+): void {
+  const sources = calculatedFor.get(registrations);
+
+  registrations[entryId] = payload;
+
+  if (source) {
+    sources[entryId] = source;
+  } else {
+    delete sources[entryId];
+  }
+}
+
+/**
+ * Removes the registration under a key of a store, unless it is the key that
+ * was just written: the reverse key of two viewports of the same id is that
+ * key itself.
+ */
+function deleteEntry(
+  registrations: Record<string, mat4>,
+  entryId: string,
+  writtenEntryId: string
+): void {
+  if (entryId === writtenEntryId) {
+    return;
+  }
+
+  delete registrations[entryId];
+  delete calculatedFor.get(registrations)[entryId];
+}
+
+/**
+ * Adds a registration under the key of its query and under the key of the
+ * viewport ids alone, and removes the one of the other direction under each
+ * of those kinds of key.
+ */
+function addRegistration(
+  query: string[],
+  payload: mat4,
+  source?: CalculatedRegistrationSource
+): void {
+  const [viewportId1, viewportId2, renderingEngineId1, renderingEngineId2] =
+    query;
+  const entryId = getEntryId(
+    viewportId1,
+    viewportId2,
+    renderingEngineId1,
+    renderingEngineId2
+  );
+  const viewportIdsEntryId = getEntryId(viewportId1, viewportId2);
+
+  setEntry(state, entryId, payload, source);
+  setEntry(lastByViewportIds, viewportIdsEntryId, payload, source);
+  deleteEntry(
+    state,
+    getEntryId(
+      viewportId2,
+      viewportId1,
+      renderingEngineId2,
+      renderingEngineId1
+    ),
+    entryId
+  );
+  deleteEntry(
+    lastByViewportIds,
+    getEntryId(viewportId2, viewportId1),
+    viewportIdsEntryId
+  );
 }
 
 /**
@@ -123,36 +222,14 @@ function getRegistration(
  * the second to the first under the same kind of key, so the two directions
  * stay the inverse of each other. A registration that
  * `utilities.calculateViewportsSpatialRegistration` calculated is given only
- * while its viewports show the frames of reference that they showed then; an
- * application's own registration is given as long as it is there.
+ * while its viewports are there and show the frames of reference that they
+ * showed then; an application's own registration is given as long as it is
+ * there, also when it was added with the matrix of a calculated one.
  */
 const spatialRegistrationMetadataProvider = {
   /* Adding a new entry to the state object. */
   add: (query: string[], payload: mat4): void => {
-    const [viewportId1, viewportId2, renderingEngineId1, renderingEngineId2] =
-      query;
-    const entryId = getEntryId(
-      viewportId1,
-      viewportId2,
-      renderingEngineId1,
-      renderingEngineId2
-    );
-
-    if (!state[entryId]) {
-      state[entryId] = {};
-    }
-
-    state[entryId] = payload;
-    lastByViewportIds[getEntryId(viewportId1, viewportId2)] = payload;
-    delete state[
-      getEntryId(
-        viewportId2,
-        viewportId1,
-        renderingEngineId2,
-        renderingEngineId1
-      )
-    ];
-    delete lastByViewportIds[getEntryId(viewportId2, viewportId1)];
+    addRegistration(query, payload);
   },
 
   get: (
@@ -213,7 +290,7 @@ const spatialRegistrationMetadataProvider = {
  * Adds a registration that was calculated from the images on display of two
  * viewports, for the viewport ids and the rendering engine ids of the two,
  * and keeps the frames of reference that they showed, so the provider stops
- * giving it once one of them shows another frame of reference.
+ * giving it once one of them shows another frame of reference or is gone.
  */
 export function addCalculatedRegistration(
   viewports: [CalculatedRegistrationViewport, CalculatedRegistrationViewport],
@@ -221,15 +298,21 @@ export function addCalculatedRegistration(
 ): void {
   const [first, second] = viewports;
 
-  calculatedFor.set(payload, viewports);
-  spatialRegistrationMetadataProvider.add(
+  addRegistration(
     [
       first.viewportId,
       second.viewportId,
       first.renderingEngineId,
       second.renderingEngineId,
     ],
-    payload
+    payload,
+    {
+      viewports,
+      inRenderingEngine: viewports.map(
+        ({ viewportId, renderingEngineId }) =>
+          !!getRenderingEngine(renderingEngineId)?.getViewport(viewportId)
+      ),
+    }
   );
 }
 

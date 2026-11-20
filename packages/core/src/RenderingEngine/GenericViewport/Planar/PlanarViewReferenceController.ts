@@ -15,7 +15,9 @@ import * as metaData from '../../../metaData';
 import { MetadataModules } from '../../../enums';
 import imageIdToURI from '../../../utilities/imageIdToURI';
 import isEqual from '../../../utilities/isEqual';
-import getImagesFrameOfReferenceUID from '../../../utilities/getImagesFrameOfReferenceUID';
+import getImagesFrameOfReferenceUID, {
+  isEarlierImagesFrameOfReferenceUID,
+} from '../../../utilities/getImagesFrameOfReferenceUID';
 import getViewSlabDepth from '../../../utilities/getViewSlabDepth';
 import {
   isImageRenderMode,
@@ -545,13 +547,45 @@ class PlanarViewReferenceController {
     return true;
   }
 
+  /**
+   * Whether a reference is in the frame of reference of a context: it names
+   * none, or the same, or the name made up for the images of the context
+   * before that name took a SHA-256 digest, when it names one of those images
+   * (`isEarlierImagesFrameOfReferenceUID`), as a reference saved then.
+   */
+  private isInFrameOfReference(
+    viewRef: ViewReference,
+    referenceContext: PlanarReferenceContext
+  ): boolean {
+    if (
+      !viewRef.FrameOfReferenceUID ||
+      viewRef.FrameOfReferenceUID === referenceContext.frameOfReferenceUID
+    ) {
+      return true;
+    }
+
+    const imageIds = this.getImageIdsForReferenceContext(referenceContext);
+    const referencedImageURI =
+      viewRef.referencedImageURI ||
+      (viewRef.referencedImageId
+        ? imageIdToURI(viewRef.referencedImageId)
+        : undefined);
+
+    return (
+      !!referencedImageURI &&
+      !!imageIds?.some(
+        (imageId) => imageIdToURI(imageId) === referencedImageURI
+      ) &&
+      isEarlierImagesFrameOfReferenceUID(viewRef.FrameOfReferenceUID, imageIds)
+    );
+  }
+
   private applyViewReferenceToCurrentBinding(viewRef: ViewReference): boolean {
     const referenceContext = this.getCurrentPlanarReferenceContext();
 
     if (
       !referenceContext ||
-      (viewRef.FrameOfReferenceUID &&
-        referenceContext.frameOfReferenceUID !== viewRef.FrameOfReferenceUID)
+      !this.isInFrameOfReference(viewRef, referenceContext)
     ) {
       return false;
     }

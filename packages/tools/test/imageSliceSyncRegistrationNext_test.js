@@ -190,4 +190,33 @@ describe('The spatial registration of two direct next planar viewports in differ
 
     expect(target.getCurrentImageId()).toBe(other.imageIds[4]);
   });
+
+  it('is not given for the viewport ids once the viewports it was calculated for are gone, also when viewports of those ids show other data in another rendering engine', async function () {
+    const { source, target } = await showTwoFrames(
+      renderingEngine,
+      'registrationGone'
+    );
+    const registrationOfIds = () =>
+      utilities.spatialRegistrationMetadataProvider.get(
+        'spatialRegistrationModule',
+        source.id,
+        target.id
+      );
+
+    utilities.calculateViewportsSpatialRegistration(source, target);
+
+    expect(registrationOfIds()).toBeDefined();
+
+    renderingEngine.destroy();
+
+    const otherEngine = new cornerstone3D.RenderingEngine(
+      `${renderingEngineId}Other`
+    );
+    const series = await createSeries({ id: 'registrationGoneOther' });
+
+    await showStack(createNextViewport(otherEngine, source.id), series, 2);
+    await showStack(createNextViewport(otherEngine, target.id), series, 3);
+
+    expect(registrationOfIds()).toBeUndefined();
+  });
 });

@@ -587,12 +587,18 @@ are, so between viewports of other data it gives another size.
   reference for each viewport, so two viewports of the same images did not
   share annotations or view references. Only a viewport with no data still
   gives the 5.x name made of the type and the id of the viewport
-  (`planarNext-viewport-<viewportId>`).
+  (`planarNext-viewport-<viewportId>`). An earlier build of 6.0 made the name
+  with a 32-bit hash in place of the digest (the FNV-1a hash of the sorted
+  URIs joined by new lines, `utilities.fnv1aHash`). A view reference saved
+  with that earlier name still restores: `setViewReference` and
+  `isReferenceViewable` take it in place of the new name when it names one
+  of the images of the viewport, and `getViewReference` gives the new name.
 - **Stored annotations of images without a frame of reference take the new
   name.** An annotation stored from 5.x, or from a 5.x next viewport, holds
   `undefined` or `planarNext-viewport-<viewportId>` in
   `metadata.FrameOfReferenceUID`, and in `metadata.planeRestriction` when
-  it has one. `annotation.state.addAnnotation(annotation, element)` puts it
+  it has one. An annotation stored from an earlier build of 6.0 may hold the
+  earlier name of the images, which is not the name of their group either. `annotation.state.addAnnotation(annotation, element)` puts it
   in the group of the viewport, but its metadata keeps the old name, which
   `viewport.isReferenceViewable` compares with the frame of reference of
   the viewport, so the annotation tools can leave it out. Show the images of
@@ -1276,18 +1282,22 @@ legacy picture within two levels of 255.
 - **A calculated registration holds for the frames of reference it was
   calculated for.** `utilities.spatialRegistrationMetadataProvider` gives
   the registration of `calculateViewportsSpatialRegistration` only while
-  both viewports show the frame of reference that they showed then. After
-  a viewport gets the data of another study, the image slice synchronizer
-  takes the identity for two viewports of one frame of reference, or
-  calculates the registration again. A registration that the application
-  added with `add` stays until the application replaces it. In 5.x a
-  calculated registration stayed with the viewport ids for good.
+  both viewports are there and show the frame of reference that they
+  showed then. After a viewport gets the data of another study, the image
+  slice synchronizer takes the identity for two viewports of one frame of
+  reference, or calculates the registration again. Once a viewport is
+  disabled, or its rendering engine destroyed, the registration is gone,
+  also for `get` with the viewport ids alone. A registration that the
+  application added with `add` stays until the application replaces it,
+  also when its matrix is one that `get` gave for a calculated registration.
+  In 5.x a calculated registration stayed with the viewport ids for good.
 - **A registration replaces the one of the other direction.**
   `spatialRegistrationMetadataProvider.add([viewportId1, viewportId2, ...], matrix)`
   removes the registration from `viewportId2` to `viewportId1` added with
   the same kind of query, so `get` gives `matrix` one way and its inverse
-  the other way. In 5.x a direct registration went before the inverse of a
-  newer one of the other direction.
+  the other way. A query that is its own reverse, such as two viewports of
+  the same id, keeps its registration. In 5.x a direct registration went
+  before the inverse of a newer one of the other direction.
 - **`utilities.getImageLegacy(element)` of the core is gone.** Use
   `cache.getImage(viewport.getCurrentImageId())`.
 - **`AdvancedMagnifyTool` resets on a stack of images of several sizes.** It
@@ -1403,7 +1413,9 @@ legacy picture within two levels of 255.
   with no other draw request. They do the same when a Surface
   representation is removed from a viewport, so the lines of a surface that
   no viewport shows any more go, and the tool drops the cuts it kept for
-  it. A 3D viewport of the tool group gets no line. In 5.x the tool read
+  it. Once no tool group has the tool enabled, it drops every cut it kept,
+  and cuts again when it is enabled. A 3D viewport of the tool group gets no
+  line. In 5.x the tool read
   `clippingFilter` of each actor entry, which nothing set, and drew no line.
   The example `surfaceRendering` shows it.
 
@@ -1489,9 +1501,13 @@ and is deprecated.
   segment showed a surface.
 - **A surface that polySeg converts has the frame of reference of the
   series.** A surface converted from a labelmap gets the frame of reference
-  of the labelmap: of its volume or its images, or of the volume or the
-  images that it references. A surface converted from contours gets the
-  frame of reference of their annotations. It is the frame of reference of
+  of the labelmap: of its volume or its images, or of the images that it
+  was made from (the images of the volume that it or its labelmap volume
+  references, its `referencedImageIds`, or the `referencedImageId` of each
+  of its images), or, when those images have none, the name that
+  `utilities.getImagesFrameOfReferenceUID` makes up for them. The surface of
+  a segment converted from contours gets the frame of reference of the
+  annotations of that segment. It is the frame of reference of
   the representation that polySeg converts: a segmentation with contours
   and a labelmap has its surfaces converted from the contours, so they take
   the frame of reference of the contours, and a surface that the update

@@ -30,6 +30,19 @@ function imageIdsOf(name) {
   );
 }
 
+/**
+ * The name that a planar viewport made up for images without a frame of
+ * reference before the name took a SHA-256 digest: the FNV-1a hash of their
+ * sorted URIs, joined by new lines.
+ */
+function earlierFrameOfReferenceOf(imageIds) {
+  const imageURIs = [...new Set(imageIds.map(utilities.imageIdToURI))].sort();
+
+  return `noFrameOfReference-${imageURIs.length}-${utilities.fnv1aHash(
+    imageURIs.join('\n')
+  )}`;
+}
+
 /** The answers of `isReferenceViewable` without options and with navigation. */
 function answers(viewport, viewRef) {
   return {
@@ -239,5 +252,59 @@ describe('Images without a frame of reference on direct next planar viewports --
       found: ['noFrameVolumeLength'],
       shown: ['noFrameVolumeLength'],
     });
+  });
+
+  it('takes a view reference saved with the name made up for its images before the SHA-256 digest, by the image that it names, on a stack and on a volume', async function () {
+    const imageIds = imageIdsOf('noFrameEarlier');
+    const otherIds = imageIdsOf('noFrameEarlierOther');
+    const volumeId = 'noFrameEarlierVolume';
+    const stack = createNextViewport(renderingEngine, 'noFrameEarlierStack');
+    const volume = createNextViewport(renderingEngine, 'noFrameEarlierVolume');
+
+    await Promise.all(
+      imageIds.map((imageId) => imageLoader.loadAndCacheImage(imageId))
+    );
+    volumeLoader.createAndCacheVolumeFromImagesSync(volumeId, imageIds);
+    registerStack('noFrame:earlier', imageIds);
+    utilities.genericViewportDisplaySetMetadataProvider.add(
+      'noFrame:earlierVolume',
+      { imageIds, volumeId }
+    );
+    await showStackAt(stack, 'noFrame:earlier', imageIds, 4);
+
+    const saved = {
+      ...stack.getViewReference(),
+      FrameOfReferenceUID: earlierFrameOfReferenceOf(imageIds),
+    };
+    const savedOfOtherImages = {
+      ...saved,
+      FrameOfReferenceUID: earlierFrameOfReferenceOf(otherIds),
+    };
+
+    await showStackAt(stack, 'noFrame:earlier', imageIds, 1);
+    await volume.setDisplaySets({
+      displaySetId: 'noFrame:earlierVolume',
+      options: { orientation: OrientationAxis.ACQUISITION },
+    });
+    await renderAndWait(volume);
+
+    expect(saved.FrameOfReferenceUID).not.toBe(stack.getFrameOfReferenceUID());
+    expect(saved.referencedImageId).toBe(imageIds[4]);
+    expect(answers(stack, saved).withNavigation).toBe(true);
+    expect(answers(volume, saved).withNavigation).toBe(true);
+    expect(answers(stack, savedOfOtherImages).withNavigation).toBe(false);
+
+    stack.setViewReference(savedOfOtherImages);
+    await renderAndWait(stack);
+
+    expect(stack.getCurrentImageIdIndex()).toBe(1);
+
+    stack.setViewReference(saved);
+    volume.setViewReference(saved);
+    await renderAndWait(stack);
+    await renderAndWait(volume);
+
+    expect(stack.getCurrentImageIdIndex()).toBe(4);
+    expect(volume.getCurrentImageId()).toBe(imageIds[4]);
   });
 });

@@ -213,4 +213,60 @@ describe('The spatial registration of two pairs of rendering engines whose viewp
       )
     ).toBe(7);
   });
+
+  it('gives the registration calculated between two viewports of the same id in two rendering engines when it is asked with the viewport ids alone', () => {
+    calculateViewportsSpatialRegistration(
+      makeViewport('g1Axial', 'engineA', 10),
+      makeViewport('g1Axial', 'engineB', 20)
+    );
+
+    expect(
+      translationZ(
+        spatialRegistrationMetadataProvider.get(
+          'spatialRegistrationModule',
+          'g1Axial',
+          'g1Axial',
+          'engineA',
+          'engineB'
+        )
+      )
+    ).toBe(10);
+    expect(
+      translationZ(
+        spatialRegistrationMetadataProvider.get(
+          'spatialRegistrationModule',
+          'g1Axial',
+          'g1Axial'
+        )
+      )
+    ).toBe(10);
+  });
+
+  it('keeps the registration that the application added from a viewport id to the same id', () => {
+    spatialRegistrationMetadataProvider.add(
+      ['g1Same', 'g1Same'],
+      mat4.fromTranslation(mat4.create(), [0, 0, 7])
+    );
+
+    expect(
+      translationZ(
+        spatialRegistrationMetadataProvider.get(
+          'spatialRegistrationModule',
+          'g1Same',
+          'g1Same'
+        )
+      )
+    ).toBe(7);
+    expect(
+      translationZ(
+        spatialRegistrationMetadataProvider.get(
+          'spatialRegistrationModule',
+          'g1Same',
+          'g1Same',
+          'engineA',
+          'engineB'
+        )
+      )
+    ).toBe(7);
+  });
 });

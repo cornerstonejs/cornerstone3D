@@ -17,7 +17,7 @@ import {
 } from '../stateManagement/annotation/annotationState';
 import { drawPath } from '../drawingSvg';
 import _getHash from '../drawingSvg/_getHash';
-import { getToolGroup } from '../store/ToolGroupManager';
+import { getAllToolGroups, getToolGroup } from '../store/ToolGroupManager';
 import triggerAnnotationRender from '../utilities/triggerAnnotationRender';
 import type {
   PublicToolProps,
@@ -30,7 +30,7 @@ import type {
   SegmentationRenderedEventType,
   SegmentationRepresentationRemovedEventType,
 } from '../types/EventTypes';
-import { Events } from '../enums';
+import { Events, ToolModes } from '../enums';
 import AnnotationDisplayTool from './base/AnnotationDisplayTool';
 import { distanceToPoint } from '../utilities/math/point';
 import { pointToString } from '../utilities/pointToString';
@@ -159,10 +159,20 @@ class SegmentationIntersectionTool extends AnnotationDisplayTool {
     this._init();
   };
 
+  /**
+   * Stops listening for surface changes. When no tool group has the tool of
+   * this name enabled any more, nothing drops the cut lines of a surface that
+   * is removed from now on, so the cut lines of every surface are released
+   * (`releaseOutlines`): an enabled tool cuts them again as it draws.
+   */
   onSetToolDisabled = (): void => {
     SURFACE_CHANGE_EVENTS.forEach((eventName) =>
       eventTarget.removeEventListener(eventName, this._onSurfaceChanged)
     );
+
+    if (!isEnabledInAToolGroup(this.getToolName())) {
+      releaseOutlines(this.getToolName());
+    }
   };
 
   /**
@@ -320,6 +330,28 @@ function addFrameAnnotation(
   };
 
   addAnnotation(newAnnotation, frameOfReferenceUID);
+}
+
+/** Whether a tool group has the tool of this name enabled. */
+function isEnabledInAToolGroup(toolName: string): boolean {
+  return getAllToolGroups().some(
+    (toolGroup) =>
+      toolGroup.getToolOptions(toolName)?.mode === ToolModes.Enabled
+  );
+}
+
+/**
+ * Drops from each annotation of the tool the outlines of every surface, with
+ * the surface data that they were cut from (`cutSurfaceDataByOutlines`).
+ */
+function releaseOutlines(toolName: string): void {
+  getAllAnnotations()
+    .filter(({ metadata }) => metadata?.toolName === toolName)
+    .forEach((annotation) =>
+      (
+        annotation as SegmentationIntersectionAnnotation
+      ).data.actorsWorldPointsMap.clear()
+    );
 }
 
 /**

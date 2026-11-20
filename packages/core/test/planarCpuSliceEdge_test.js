@@ -41,7 +41,7 @@ const OBLIQUE_ORIENTATION = {
 
 /**
  * Makes a cube volume of VOXELS voxels a side, each of VALUE, or of the value
- * that `valueOf(i, j)` gives.
+ * that `valueOf(i, j, k)` gives.
  */
 async function createVolume(valueOf = () => VALUE) {
   const volumeId = testUtils.encodeVolumeIdInfo({
@@ -71,7 +71,7 @@ async function createVolume(valueOf = () => VALUE) {
   for (let k = 0; k < VOXELS; k++) {
     for (let j = 0; j < VOXELS; j++) {
       for (let i = 0; i < VOXELS; i++) {
-        volume.voxelManager.setAtIJK(i, j, k, valueOf(i, j));
+        volume.voxelManager.setAtIJK(i, j, k, valueOf(i, j, k));
       }
     }
   }
@@ -326,6 +326,49 @@ function showStripedEdges(viewport) {
   viewport.setViewState({ rotation: 45, scale: [0.33, 0.33] });
 }
 
+/** Whether a layer of voxels is one of the two in the middle of the volume. */
+function isMiddleLayer(k) {
+  return k === VOXELS / 2 - 1 || k === VOXELS / 2;
+}
+
+/**
+ * The view of `showStripedEdges` with a maximum slab of 4 mm, which the GPU
+ * draws on its volume path. The plane of the slab lies on the middle layers,
+ * and the slab reaches the layers beside them. The GPU volume path shows
+ * nothing of the slab on a pixel whose centre lies outside the faces.
+ * Measured before the change of `clearOutsideVolume`: with stripes on the
+ * middle layers only, 88 of 348 edge pixels of the CPU picture differed by
+ * more than a tenth of VALUE, up to half of VALUE.
+ */
+function showStripedSlabEdges(viewport) {
+  viewport.setDisplaySetPresentation(viewport.getRenderPlan()[0].dataId, {
+    interpolationType: InterpolationType.LINEAR,
+    slabThickness: 4,
+    blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
+  });
+  viewport.setViewState({ rotation: 45, scale: [0.33, 0.33] });
+}
+
+/**
+ * Shows a volume on a GPU and a CPU viewport with the view of
+ * `showStripedSlabEdges` and compares the edge pixels of their pictures.
+ */
+async function compareStripedSlabEdges(renderingEngine, valueOf) {
+  const volumeId = await createVolume(valueOf);
+  const gpu = await showVolume(renderingEngine, 'gpu', volumeId, {
+    renderBackend: 'gpu',
+  });
+  const cpu = await showVolume(renderingEngine, 'cpu', volumeId, {
+    renderBackend: 'cpu',
+  });
+  const { gpuRed, cpuRed } = await drawBoth(gpu, cpu, showStripedSlabEdges);
+
+  expect(gpu.getRenderPlan()[0].renderMode).toBe('vtkVolumeSlice');
+  expect(cpu.getRenderPlan()[0].renderMode).toBe('cpuVolume');
+
+  return compareEdges(gpuRed, cpuRed);
+}
+
 /**
  * Compares two pictures on the edge pixels of the first: the pixels shown in
  * either picture with a pixel of the background of the first beside them or
@@ -458,6 +501,30 @@ describe('The edge pixels of a slice on the CPU against the GPU picture -- ', ()
 
     expect(gpu.getRenderPlan()[0].renderMode).toBe('vtkSampledSlice');
     expect(cpu.getRenderPlan()[0].renderMode).toBe('cpuVolume');
+    expect(result.edge).toBeGreaterThan(0);
+    expect(result.max).toBeLessThanOrEqual(ONE_SAMPLE);
+    expect(result.differing).toBeLessThanOrEqual(
+      result.edge * MAX_DIFFERING_EDGE_SHARE
+    );
+  }, 30000);
+
+  it('shows nothing of a rotated maximum slab on a partly covered edge pixel whose centre lies outside the faces, as the GPU volume path, where the middle layers are bright', async function () {
+    const result = await compareStripedSlabEdges(renderingEngine, (i, j, k) =>
+      isMiddleLayer(k) ? stripes(i) : VALUE / 5
+    );
+
+    expect(result.edge).toBeGreaterThan(0);
+    expect(result.max).toBeLessThanOrEqual(ONE_SAMPLE);
+    expect(result.differing).toBeLessThanOrEqual(
+      result.edge * MAX_DIFFERING_EDGE_SHARE
+    );
+  }, 30000);
+
+  it('shows nothing of a rotated maximum slab on a partly covered edge pixel whose centre lies outside the faces, as the GPU volume path, where only the layers beside the middle are bright', async function () {
+    const result = await compareStripedSlabEdges(renderingEngine, (i, j, k) =>
+      isMiddleLayer(k) ? VALUE / 5 : stripes(i)
+    );
+
     expect(result.edge).toBeGreaterThan(0);
     expect(result.max).toBeLessThanOrEqual(ONE_SAMPLE);
     expect(result.differing).toBeLessThanOrEqual(

@@ -20,15 +20,18 @@ const { getAnnotation } = cornerstoneTools.annotation.state;
 const { SegmentationRepresentations } = cornerstoneTools.Enums;
 
 /**
- * The frame of reference of the data that a segmentation is converted from,
- * the representation `source`: for a labelmap, of its volume or the volume
- * that it references, else of its images or the images that it references;
- * for contours, of their annotations. The viewport of the conversion gives
- * it when the source has none.
+ * The frame of reference of the data that a segment of a segmentation is
+ * converted from, the representation `source`: for a labelmap, of its volume
+ * or the volume that it references, else of its images, else of the images
+ * that it was made from (`getSourceImageIds`), or the one that core makes up
+ * for those images when they have none; for contours, of the first
+ * annotation of the segment that has one. The viewport of the conversion
+ * gives it when the source has none.
  */
 function getFrameOfReferenceUID(
   segmentation: ToolsTypes.Segmentation,
   source: ToolsEnums.SegmentationRepresentations,
+  segmentIndex: number,
   viewport?: Types.IViewport
 ): string | undefined {
   const { Labelmap: labelmap, Contour: contour } =
@@ -43,38 +46,31 @@ function getFrameOfReferenceUID(
       }
     }
 
-    for (const imageId of [
-      labelmap?.imageIds?.[0],
-      labelmap?.referencedImageIds?.[0],
-    ]) {
-      const frameOfReferenceUID =
-        imageId &&
-        (
-          metaData.get('imagePlaneModule', imageId) as
-            | Types.ImagePlaneModule
-            | undefined
-        )?.frameOfReferenceUID;
-      if (frameOfReferenceUID) {
-        return frameOfReferenceUID;
-      }
+    const labelmapImageFrameOfReferenceUID = getImageFrameOfReferenceUID(
+      labelmap?.imageIds?.[0]
+    );
+
+    if (labelmapImageFrameOfReferenceUID) {
+      return labelmapImageFrameOfReferenceUID;
     }
 
-    const sourceImagesFrameOfReferenceUID =
-      getSourceImagesFrameOfReferenceUID(labelmap);
+    const sourceImageIds = getSourceImageIds(labelmap);
 
-    if (sourceImagesFrameOfReferenceUID) {
-      return sourceImagesFrameOfReferenceUID;
+    if (sourceImageIds.length) {
+      return (
+        getImageFrameOfReferenceUID(sourceImageIds[0]) ||
+        utilities.getImagesFrameOfReferenceUID(sourceImageIds)
+      );
     }
   }
 
   if (source === SegmentationRepresentations.Contour) {
-    for (const annotationUIDs of contour?.annotationUIDsMap?.values() ?? []) {
-      for (const annotationUID of annotationUIDs) {
-        const frameOfReferenceUID =
-          getAnnotation(annotationUID)?.metadata?.FrameOfReferenceUID;
-        if (frameOfReferenceUID) {
-          return frameOfReferenceUID;
-        }
+    for (const annotationUID of contour?.annotationUIDsMap?.get(segmentIndex) ??
+      []) {
+      const frameOfReferenceUID =
+        getAnnotation(annotationUID)?.metadata?.FrameOfReferenceUID;
+      if (frameOfReferenceUID) {
+        return frameOfReferenceUID;
       }
     }
   }
@@ -82,26 +78,51 @@ function getFrameOfReferenceUID(
   return viewport?.getFrameOfReferenceUID();
 }
 
-/**
- * The frame of reference that core makes up for the images that a labelmap
- * was made from (`utilities.getImagesFrameOfReferenceUID`), for images that
- * have none: the images of the volume that the labelmap volume references,
- * else the images that the labelmap references. A planar viewport of those
- * images has that frame of reference, so the surface lies in its frame.
- */
-function getSourceImagesFrameOfReferenceUID(
-  labelmap: ToolsTypes.LabelmapSegmentationData | undefined
+/** The frame of reference of an image in its image plane module. */
+function getImageFrameOfReferenceUID(
+  imageId: string | undefined
 ): string | undefined {
-  const referencedVolumeId =
-    labelmap?.volumeId &&
-    cache.getVolume(labelmap.volumeId)?.referencedVolumeId;
-  const imageIds =
-    (referencedVolumeId && cache.getVolume(referencedVolumeId)?.imageIds) ||
-    labelmap?.referencedImageIds;
-
-  return imageIds?.length
-    ? utilities.getImagesFrameOfReferenceUID(imageIds)
+  return imageId
+    ? (
+        metaData.get('imagePlaneModule', imageId) as
+          | Types.ImagePlaneModule
+          | undefined
+      )?.frameOfReferenceUID
     : undefined;
+}
+
+/**
+ * The images that a labelmap was made from, in the forms that a labelmap
+ * names them: the images of the volume that it references (its own
+ * `referencedVolumeId`, else the one of its labelmap volume), else its
+ * `referencedImageIds`, else the `referencedImageId` of each of its images,
+ * as a derived labelmap image names the image that it overlays. A planar
+ * viewport of those images has their frame of reference, so the surface lies
+ * in its frame.
+ */
+function getSourceImageIds(
+  labelmap: ToolsTypes.LabelmapSegmentationData | undefined
+): string[] {
+  const labelmapVolume = labelmap?.volumeId
+    ? cache.getVolume(labelmap.volumeId)
+    : undefined;
+  const referencedVolumeId =
+    labelmap?.referencedVolumeId || labelmapVolume?.referencedVolumeId;
+  const referencedVolumeImageIds = referencedVolumeId
+    ? cache.getVolume(referencedVolumeId)?.imageIds
+    : undefined;
+
+  if (referencedVolumeImageIds?.length) {
+    return referencedVolumeImageIds;
+  }
+
+  if (labelmap?.referencedImageIds?.length) {
+    return labelmap.referencedImageIds;
+  }
+
+  return (labelmap?.imageIds ?? labelmapVolume?.imageIds ?? [])
+    .map((imageId) => cache.getImage(imageId)?.referencedImageId)
+    .filter(Boolean);
 }
 
 /**
@@ -123,11 +144,6 @@ export async function createAndCacheSurfacesFromRaw(
   // Initialize segmentationRepresentation and toolGroupId if a representation UID is provided
 
   const segmentation = getSegmentation(segmentationId);
-  const frameOfReferenceUID = getFrameOfReferenceUID(
-    segmentation,
-    source,
-    options.viewport
-  );
 
   const geometryIds = new Map<number, string>();
 
@@ -155,7 +171,12 @@ export async function createAndCacheSurfacesFromRaw(
     const closedSurface = {
       id: `segmentation_${segmentation.segmentationId}_surface_${segmentIndex}`,
       color,
-      frameOfReferenceUID,
+      frameOfReferenceUID: getFrameOfReferenceUID(
+        segmentation,
+        source,
+        segmentIndex,
+        options.viewport
+      ),
       points: rawSurfaceData.data.points,
       polys: rawSurfaceData.data.polys,
       segmentIndex,

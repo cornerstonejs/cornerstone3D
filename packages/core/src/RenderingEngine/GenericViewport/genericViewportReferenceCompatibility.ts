@@ -12,6 +12,7 @@ import * as metaData from '../../metaData';
 import cache from '../../cache/cache';
 import { getGenericViewportImageDisplaySet } from './genericViewportDisplaySetAccess';
 import getSpacingInNormalDirection from '../../utilities/getSpacingInNormalDirection';
+import { isEarlierImagesFrameOfReferenceUID } from '../../utilities/getImagesFrameOfReferenceUID';
 import imageIdToURI from '../../utilities/imageIdToURI';
 import isEqual from '../../utilities/isEqual';
 
@@ -227,13 +228,24 @@ function hasReferencedImage(
   );
 }
 
+/**
+ * Whether a reference is in the frame of reference of a context: it names
+ * none, or the same, or the name made up for the images of the context
+ * before that name took a SHA-256 digest, when it names one of those images
+ * (`isEarlierImagesFrameOfReferenceUID`), as a reference saved then.
+ */
 function isFrameOfReferenceCompatible(
   viewRef: ViewReference,
   context: GenericViewportReferenceContext
 ): boolean {
   return (
     !viewRef.FrameOfReferenceUID ||
-    viewRef.FrameOfReferenceUID === context.frameOfReferenceUID
+    viewRef.FrameOfReferenceUID === context.frameOfReferenceUID ||
+    (isEarlierImagesFrameOfReferenceUID(
+      viewRef.FrameOfReferenceUID,
+      context.imageIds
+    ) &&
+      hasReferencedImage(viewRef, context.imageIds))
   );
 }
 
