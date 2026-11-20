@@ -7,3 +7,4 @@ export * from './getColorKeyForPlaneIndex';
 export * from './getOrientationFromNormal';
 export * from './computePlanePlaneIntersection';
 export * from './findLineBoundsIntersection';
+export * from './setCropClippingPlanes';

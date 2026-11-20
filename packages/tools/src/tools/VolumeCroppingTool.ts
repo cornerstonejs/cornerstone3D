@@ -25,7 +25,7 @@ import getViewportICamera from '../utilities/getViewportICamera';
 import setViewportCamera, {
   resetViewportCamera,
 } from '../utilities/setViewportCamera';
-import { Events } from '../enums';
+import { Events, ToolModes } from '../enums';
 
 import type { EventTypes, PublicToolProps, ToolProps } from '../types';
 
@@ -37,6 +37,7 @@ import {
   parseCornerKey,
   type ClippingPlane,
   copyClippingPlanes,
+  setCropClippingPlanes,
 } from '../utilities/volumeCropping';
 import {
   addLine3DBetweenPoints,
@@ -175,6 +176,7 @@ const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
  * @property {number} rotateIncrementDegrees - Rotation increment for camera rotation (default: 2)
  * @property {number} rotateSampleDistanceFactor - Sample distance multiplier during rotation for performance (default: 2)
  * @property {number} rotateClippingPlanesIncrementDegrees - Rotation increment for clipping planes rotation (default: 5)
+ * @property {boolean} disjointSegmentation - Show the segmentation only outside the crop box, so that it does not overlap the cropped volume (default: false)
  *
  * @events
  * @event VOLUMECROPPING_TOOL_CHANGED - Fired when sphere positions change or clipping planes are updated.
@@ -183,6 +185,7 @@ const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
  *   - seriesInstanceUID: string - Series instance UID for event filtering
  *   - viewportId?: string - Optional viewport ID
  *   - renderingEngineId?: string - Optional rendering engine ID
+ *   - disjointSegmentation: boolean - True when the segmentation shows only outside the crop box
  * @event VOLUMECROPPINGCONTROL_TOOL_CHANGED - Listens for changes from VolumeCroppingControlTool
  * @event VOLUME_VIEWPORT_NEW_VOLUME - Listens for new volume loading to reinitialize cropping bounds
  * @event TOOLGROUP_VIEWPORT_ADDED - Listens for new viewport additions to extend resize observation
@@ -194,6 +197,8 @@ const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
  * - **getClippingPlanesVisible()**: Get current clipping plane visibility state
  * - **setRotatePlanesOnDrag(enable: boolean)**: Enable/disable rotating clipping planes on drag (default: false)
  * - **getRotatePlanesOnDrag()**: Get current rotate planes on drag state
+ * - **setDisjointSegmentation(enable: boolean)**: Show the segmentation only outside the crop box (default: false)
+ * - **getDisjointSegmentation()**: Get current disjoint segmentation state
  *
  *
  * @see {@link VolumeCroppingControlTool} - Companion tool for 2D viewport reference lines
@@ -265,6 +270,7 @@ class VolumeCroppingTool extends BaseTool {
         rotateIncrementDegrees: 2,
         rotateSampleDistanceFactor: 2, // Factor to increase sample distance (lower resolution) when rotating
         rotateClippingPlanesIncrementDegrees: 5, // Rotation increment for clipping planes (higher = faster rotation)
+        disjointSegmentation: false,
       },
     }
   ) {
@@ -341,6 +347,10 @@ class VolumeCroppingTool extends BaseTool {
     this.configuration.showHandles = false;
 
     const viewport = this._getViewport();
+    if (viewport) {
+      // Restores the segmentation actors, because the clipping planes are now hidden.
+      this._notifyClippingPlanesChanged(viewport);
+    }
     if (
       viewport &&
       this.originalClippingPlanes &&
@@ -383,6 +393,8 @@ class VolumeCroppingTool extends BaseTool {
 
     const viewportsInfo = this._getViewportsInfo();
     this._unsubscribeToViewportNewVolumeSet(viewportsInfo);
+    // The mode is now Disabled, so the notify restores all actors.
+    this._notifyClippingPlanesChanged();
   }
 
   onCameraModified = (evt) => {
@@ -391,7 +403,18 @@ class VolumeCroppingTool extends BaseTool {
       : evt.detail;
     const enabledElement = getEnabledElement(element);
     this._updateClippingPlanes(enabledElement.viewport);
+    // The camera slab update of the viewport rewrites planes 0 and 1 of every mapper.
+    this._updateSegmentationClipping(enabledElement.viewport);
     enabledElement.viewport.render();
+  };
+
+  _onActorsChanged = () => {
+    // A segmentation that is added or re-created later gets the crop.
+    if (this._isCropActive()) {
+      const viewport = this._getViewport();
+      this._updateSegmentationClipping(viewport);
+      viewport?.render();
+    }
   };
 
   preMouseDownCallback = (evt: EventTypes.InteractionEventType) => {
@@ -677,7 +700,6 @@ class VolumeCroppingTool extends BaseTool {
     }
 
     if (
-      visible &&
       viewport &&
       this.originalClippingPlanes?.length >= NUM_CLIPPING_PLANES
     ) {
@@ -734,6 +756,88 @@ class VolumeCroppingTool extends BaseTool {
     if (viewport) {
       viewport.render();
     }
+  }
+
+  /**
+   * Gets whether the segmentation shows only outside the crop box.
+   *
+   * @returns True when the disjoint segmentation display is on
+   */
+  getDisjointSegmentation(): boolean {
+    return !!this.configuration.disjointSegmentation;
+  }
+
+  /**
+   * Sets the disjoint segmentation display. When it is on and the clipping
+   * planes are visible, the volume shows inside the crop box and the
+   * segmentation actors show only outside the crop box, so the two never
+   * overlap. This applies to the 3D viewport of this tool, and, through the
+   * VOLUMECROPPING_TOOL_CHANGED event, to the orthographic viewports of a
+   * VolumeCroppingControlTool: there the volume shows inside the crop
+   * rectangle and the segmentation outside it. A move or a rotation of the
+   * crop box in any of these viewports updates the split in all of them.
+   * When it is off, the crop box crops the segmentation actors of the 3D
+   * viewport to the inside, like the volume.
+   *
+   * A 2D slice outside the crop box depth shows only the segmentation. The
+   * split also applies to segmentation actors that are added later, and the
+   * actors are restored when the clipping planes are hidden or a tool is
+   * disabled.
+   *
+   * Limits:
+   * - Segmentation actors are the actors with a `representationUID`. In the 2D
+   *   viewports all other actors (for example a fusion volume) are cropped to
+   *   the rectangle. Contour segmentations in 2D are SVG annotations, not
+   *   actors, so they are not split.
+   * - Labelmaps that render as image slices (vtkImageMapper) and surface
+   *   segmentations in the 2D viewports ignore the shader replacements, so
+   *   they still overlap the image inside the crop rectangle.
+   * - The split applies only while the VolumeCroppingControlTool of a 2D
+   *   viewport is not disabled.
+   * - The 3D segmentation uses the crop planes in world coordinates, so it
+   *   assumes an identity user matrix on the actors.
+   *
+   * The disjoint display uses vtk.js shader replacements; see
+   * `setCropClippingPlanes`.
+   *
+   * @param enable - True to show the segmentation only outside the crop box
+   */
+  setDisjointSegmentation(enable: boolean): void {
+    this.configuration.disjointSegmentation = enable;
+    const viewport = this._getViewport();
+    if (
+      viewport &&
+      this.originalClippingPlanes?.length >= NUM_CLIPPING_PLANES
+    ) {
+      this._notifyClippingPlanesChanged(viewport);
+      viewport.render();
+    }
+  }
+
+  _isCropActive(): boolean {
+    return (
+      !!this.configuration.showClippingPlanes &&
+      this.mode !== ToolModes.Disabled &&
+      this.originalClippingPlanes?.length >= NUM_CLIPPING_PLANES
+    );
+  }
+
+  _isDisjointSegmentationActive(): boolean {
+    return !!this.configuration.disjointSegmentation && this._isCropActive();
+  }
+
+  /**
+   * Crops the segmentation actors of the 3D viewport with the crop box: to the
+   * inside, like the volume, or, in the disjoint mode, to the outside only.
+   * Restores them when the crop box is off.
+   */
+  _updateSegmentationClipping(viewport): void {
+    const planes = this._isCropActive() ? this.originalClippingPlanes : null;
+    const invert = this._isDisjointSegmentationActive();
+    viewport
+      ?.getActors()
+      .filter(({ representationUID }) => representationUID)
+      .forEach(({ actor }) => setCropClippingPlanes(actor, planes, { invert }));
   }
 
   _dragCallback(evt: EventTypes.InteractionEventType): void {
@@ -1753,6 +1857,7 @@ class VolumeCroppingTool extends BaseTool {
     this.sphereStates = [];
     this.edgeLines = {};
     this._initialize3DViewports(viewportsInfo);
+    this._notifyClippingPlanesChanged();
   };
 
   _unsubscribeToViewportNewVolumeSet(viewportsInfo) {
@@ -1766,6 +1871,10 @@ class VolumeCroppingTool extends BaseTool {
       element.removeEventListener(
         Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME,
         this._onNewVolume
+      );
+      element.removeEventListener(
+        Enums.Events.ACTORS_CHANGED,
+        this._onActorsChanged
       );
     });
   }
@@ -1781,6 +1890,10 @@ class VolumeCroppingTool extends BaseTool {
       element.addEventListener(
         Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME,
         this._onNewVolume
+      );
+      element.addEventListener(
+        Enums.Events.ACTORS_CHANGED,
+        this._onActorsChanged
       );
     });
   }
@@ -2060,12 +2173,7 @@ class VolumeCroppingTool extends BaseTool {
       this._updateClippingPlanes(viewport);
       viewport.render();
 
-      triggerEvent(eventTarget, Events.VOLUMECROPPING_TOOL_CHANGED, {
-        originalClippingPlanes: this.originalClippingPlanes,
-        viewportId: viewport.id,
-        renderingEngineId: viewport.renderingEngineId,
-        seriesInstanceUID: this.seriesInstanceUID,
-      });
+      this._notifyClippingPlanesChanged(viewport);
     }
   };
 
@@ -2135,10 +2243,14 @@ class VolumeCroppingTool extends BaseTool {
       seriesInstanceUID?: string;
       viewportId?: string;
       renderingEngineId?: string;
+      disjointSegmentation: boolean;
     } = {
       originalClippingPlanes: this.originalClippingPlanes,
       seriesInstanceUID: this.seriesInstanceUID,
+      disjointSegmentation: this._isDisjointSegmentationActive(),
     };
+
+    this._updateSegmentationClipping(viewport ?? this._getViewport());
 
     if (viewport) {
       eventData.viewportId = viewport.id;
