@@ -16,26 +16,11 @@ export async function show(ok: boolean, ids: string[], fallback: () => void) {
   }
   else fallback();
 
-  for (const id of ids) {
-    const displaySetId2 = JSON.stringify([viewport.renderingEngineId, viewport.id, id]);
-    utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId2, {
-      kind: 'planar',
-      imageIds: [id],
-      initialImageIdIndex: 0,
-    });
-    await viewport.setDisplaySets({ displaySetId: displaySetId2 });
-  }
+  for (const id of ids) viewport.setStack([id], 0);
 
   const volumeId = 'volume';
 
   await volumeLoader.createAndCacheVolume(volumeId, { imageIds: ids });
 
-  if (ok) {
-    utilities.genericViewportDisplaySetMetadataProvider.add(volumeId, {
-      kind: 'planar',
-      imageIds: ids,
-      volumeId,
-    });
-    await viewport.setDisplaySets({ displaySetId: volumeId });
-  }
+  if (ok) viewport.setVolumes([{ volumeId }]);
 }

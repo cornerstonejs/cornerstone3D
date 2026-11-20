@@ -1,0 +1,20 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "16",
+        "rule": "setEcg: not awaited"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "8",
+        "rule": "setEcg: not awaited"
+      },
+      "count": 1
+    }
+  ]
+}

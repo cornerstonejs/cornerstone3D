@@ -10,8 +10,6 @@ import {
   coreImportOf,
   coreReExports,
   coreSpecifiers,
-  enclosingFunction,
-  isAsyncFunction,
   isCoreExport,
   isCoreNamespace,
   isOptionalCall,
@@ -32,9 +30,6 @@ import type { Node } from './lib.ts';
 
 /** Sites that the reader changes. */
 const manual = useMetricAtom('cornerstone3d-6-manual');
-
-/** Rewrites at a decision of the migration guide. */
-const review = useMetricAtom('cornerstone3d-6-review');
 
 /** The data members of the legacy viewports that the transform reports. */
 const REPORTED_MEMBERS = new Set([
@@ -296,32 +291,31 @@ function runsWith(call: Node, statement: Node): boolean {
 }
 
 /**
- * Returns `await ` when the new call waits: the old call waited, or its
- * function is async. Reports a call that cannot wait.
+ * Tells whether the code waits for a call where it makes it, or hands its
+ * promise on: the call, in parentheses or not, is under `await`, is the value
+ * of a `return` or is the body of an arrow function. Code after any other
+ * call runs before the mount ends.
  */
-function awaitPrefix(
-  run: Run,
-  call: Node,
-  awaited: boolean,
-  rule: string
-): string {
-  if (awaited) {
-    return 'await ';
+function isWaitedFor(call: Node): boolean {
+  let node = call;
+  let parent = call.parent();
+
+  while (parent?.kind() === 'parenthesized_expression') {
+    node = parent;
+    parent = parent.parent();
   }
 
-  if (isAsyncFunction(enclosingFunction(call))) {
-    return 'await ';
+  if (
+    parent?.kind() === 'await_expression' ||
+    parent?.kind() === 'return_statement'
+  ) {
+    return true;
   }
 
-  review.increment(
-    site(
-      run.root,
-      `${rule}: not awaited, a next viewport has no view before its mount`,
-      call
-    )
+  return (
+    parent?.kind() === 'arrow_function' &&
+    parent.field('body')?.id() === node.id()
   );
-
-  return '';
 }
 
 /**
@@ -341,12 +335,13 @@ function registration(
 }
 
 /**
- * Formats the call that mounts a display set by the expression of its id.
+ * Formats the awaited call that mounts a display set by the expression of its
+ * id.
  */
-function mountCall(wait: string, viewport: string, id: string): string {
+function mountCall(viewport: string, id: string): string {
   const key = id === 'displaySetId' ? id : `displaySetId: ${id}`;
 
-  return `${wait}${viewport}.setDisplaySets({ ${key} });`;
+  return `await ${viewport}.setDisplaySets({ ${key} });`;
 }
 
 /**
@@ -413,7 +408,10 @@ function withoutParentheses(node: Node): Node {
  * two of these tuples give one text. A viewport that is a property read,
  * such as a getter, is read once into a `const` before the image list, and
  * an image list that is not a plain value is read once into a `const`, as
- * the old call read each once and in that order.
+ * the old call read each once and in that order. A call that is not awaited
+ * is reported: 5.x set the image ids and the index before its promise, so
+ * the code after it saw them, where a 6.0 viewport shows nothing before its
+ * mount ends, and only the reader knows which of the two the code needs.
  */
 function rewriteSetStack(
   run: Run,
@@ -430,7 +428,9 @@ function rewriteSetStack(
         ? 'a spread argument'
         : args.length < 1 || args.length > 2
           ? 'the arguments'
-          : undefined);
+          : !statementInfo?.awaited
+            ? 'not awaited'
+            : undefined);
   const utilities = reason
     ? undefined
     : run.imports.ensure('utilities', { at: call });
@@ -447,7 +447,7 @@ function rewriteSetStack(
     return;
   }
 
-  const { statement, awaited } = statementInfo;
+  const { statement } = statementInfo;
   const target = unwrap(object);
   const viewportLocal =
     target.kind() === 'identifier' || target.kind() === 'this'
@@ -470,7 +470,6 @@ function rewriteSetStack(
       : `${listLocal ?? asPrimary(list)}[0]`;
   const idLocal = run.imports.fresh('displaySetId');
   const index = indexArg?.text() ?? '0';
-  const wait = awaitPrefix(run, call, awaited, 'setStack');
   const edit = replaceStatement(run.rootNode, statement, (indent) => [
     ...(viewportLocal
       ? [`const ${viewportLocal} = ${withoutParentheses(object).text()};`]
@@ -486,7 +485,7 @@ function rewriteSetStack(
       ],
       indent
     ),
-    mountCall(wait, viewportLocal ?? object.text(), idLocal),
+    mountCall(viewportLocal ?? object.text(), idLocal),
   ]);
 
   if (!run.edits.add(edit)) {
@@ -496,7 +495,9 @@ function rewriteSetStack(
 
 /**
  * Rewrites `viewport.setVolumes([{ volumeId }])` in a statement to the
- * registration of a display set under the volume id and its mount.
+ * registration of a display set under the volume id and its mount. A call
+ * that is not awaited is reported: the code after it saw the camera of a 5.x
+ * volume viewport, where a 6.0 viewport has no view before its mount ends.
  */
 function rewriteSetVolumes(
   run: Run,
@@ -512,7 +513,11 @@ function rewriteSetVolumes(
     (args.length !== 1
       ? 'more arguments'
       : (inputReason ??
-        (!imageIds ? 'the image ids of the volume are not known' : undefined)));
+        (!imageIds
+          ? 'the image ids of the volume are not known'
+          : !statementInfo?.awaited
+            ? 'not awaited'
+            : undefined)));
   const utilities = reason
     ? undefined
     : run.imports.ensure('utilities', { at: call });
@@ -529,9 +534,8 @@ function rewriteSetVolumes(
     return;
   }
 
-  const { statement, awaited } = statementInfo;
+  const { statement } = statementInfo;
   const id = volumeId.text();
-  const wait = awaitPrefix(run, call, awaited, 'setVolumes');
   const edit = replaceStatement(run.rootNode, statement, (indent) => [
     registration(
       utilities,
@@ -542,7 +546,7 @@ function rewriteSetVolumes(
       ],
       indent
     ),
-    mountCall(wait, object.text(), id),
+    mountCall(object.text(), id),
   ]);
 
   if (!run.edits.add(edit)) {
@@ -672,7 +676,10 @@ function rewriteSetVolumesForViewports(run: Run, call: Node): boolean {
 
 /**
  * Rewrites `setVideo(imageId, frameNumber)` and `setEcg(imageId)` to
- * `setDisplaySets`, the image id as the display set id.
+ * `setDisplaySets`, the image id as the display set id. A call that the code
+ * does not wait for or hand on is reported: 5.x set the image id (a video
+ * also its frame count and its source) before its promise, so the code after
+ * it saw them, where a 6.0 viewport shows nothing before its mount ends.
  */
 function rewriteSingleSource(
   run: Run,
@@ -689,6 +696,12 @@ function rewriteSingleSource(
     args.some((arg) => arg.kind() === 'spread_element')
   ) {
     manual.increment(site(run.root, `${method}: the arguments`, call));
+
+    return;
+  }
+
+  if (!isWaitedFor(call)) {
+    manual.increment(site(run.root, `${method}: not awaited`, call));
 
     return;
   }
@@ -918,8 +931,8 @@ function reportPresenceChecks(run: Run): void {
  * Rewrites the data calls of the legacy viewports: `setStack`, `setVolumes`
  * and `setVolumesForViewports` in their common shapes become a registered
  * display set and `setDisplaySets`, `setVideo` and `setEcg` become
- * `setDisplaySets`. Every other shape and the other data calls are
- * reported.
+ * `setDisplaySets`, each only where the code waits for its promise or hands
+ * it on. Every other shape and the other data calls are reported.
  */
 const codemod: Codemod<TSX> = (root) => {
   const rootNode = root.root();

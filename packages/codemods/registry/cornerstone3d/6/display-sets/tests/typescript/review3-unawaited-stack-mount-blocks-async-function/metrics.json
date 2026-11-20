@@ -1,0 +1,20 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "17",
+        "rule": "setStack: not awaited"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "9",
+        "rule": "setStack: not awaited"
+      },
+      "count": 1
+    }
+  ]
+}

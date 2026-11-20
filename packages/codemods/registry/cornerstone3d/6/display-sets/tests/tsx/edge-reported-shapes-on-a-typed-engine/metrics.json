@@ -67,18 +67,16 @@
     {
       "cardinality": {
         "file": "input.tsx",
-        "line": "29",
-        "rule": "'setStack' in"
+        "line": "25",
+        "rule": "setStack: not awaited"
       },
       "count": 1
-    }
-  ],
-  "cornerstone3d-6-review": [
+    },
     {
       "cardinality": {
         "file": "input.tsx",
-        "line": "25",
-        "rule": "setStack: not awaited, a next viewport has no view before its mount"
+        "line": "29",
+        "rule": "'setStack' in"
       },
       "count": 1
     }

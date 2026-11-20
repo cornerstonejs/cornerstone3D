@@ -108,9 +108,11 @@ as `viewport` alone, a `let`, a `var` and a container type such as
 - `setVideo(imageId, frameNumber)` becomes
   `setDisplaySets({ displaySetId: imageId, options: { frameNumber } })`, and
   `setEcg(imageId)` `setDisplaySets({ displaySetId: imageId })`.
-- The new mount of `setStack` and `setVolumes` waits (`await`) when the old
-  call waited or when its function is `async`, so code after it sees the
-  view. `setVolumesForViewports` is rewritten only when it was awaited.
+- Each of these calls is rewritten only where the code waits for it, and the
+  new mount is waited for in the same way: `setStack`, `setVolumes` and
+  `setVolumesForViewports` as an `await` statement; `setVideo` and `setEcg`
+  under `await`, as the value of a `return` or as the body of an arrow
+  function (the caller gets the promise).
 - Statements that replace the single-statement body of an `if`, an `else`, a
   loop or a `case` go in a block.
 - `utilities` and `Enums` come from the existing core import, or under a
@@ -119,8 +121,18 @@ as `viewport` alone, a `let`, a `var` and a container type such as
 
 ## Reported
 
-- Review: a mount in a function that is not `async` (a next viewport has no
-  view before its mount).
+- Manual, with the reason `not awaited`: a `setStack`, `setVolumes`,
+  `setVideo` or `setEcg` that the code does not wait for, in any function,
+  `async` or not; for `setVideo` and `setEcg` also a call under `void`, with
+  `.then(...)`, held in a variable or passed as an argument (also to
+  `Promise.all`). The 5.x call set part of the view before its
+  promise (the image ids and the index of a stack, the image id, frame count
+  and source of a video, the image id of an ECG; a volume viewport had a
+  camera before its data), so the code after it saw that part. A 6.0
+  viewport shows nothing before its mount ends: `await` would change when
+  the code after runs, and a mount without `await` would leave that code an
+  empty viewport (`stackPrefetch.enable` right after `setStack` finds no
+  images). Which one the code needs is for the reader.
 - Manual, with the reason: a `setStack` that is not a statement, is an
   optional call (`viewport?.setStack`), has a spread argument, or whose
   viewport is a call; a `setVolumes` input with `callback`, `blendMode`,

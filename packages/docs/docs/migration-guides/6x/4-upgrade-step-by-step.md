@@ -124,8 +124,10 @@ named in brackets are left to you, in the list. It changes:
   the viewport was mounted before it (an empty viewport has no mode);
 - `setStack`, `setVolumes` and `setVolumesForViewports` in their common shape,
   `setVideo` and `setEcg` (step 3): a registered display set and
-  `setDisplaySets`, awaited (a `setVolumesForViewports` that was not awaited
-  is left to you);
+  `setDisplaySets`, awaited. A call that the code did not wait for is left to
+  you: the 5.x call set part of the view before its promise, such as the
+  image ids of a stack, and a 6.0 viewport shows nothing before its mount
+  ends, so only you know whether the code after it needs `await`;
 - `setProperties` of presentation keys after a mount of the same viewport in
   the same function, `resetCamera` and the other members with one fixed call
   (steps 4 to 8 and 10);
@@ -145,8 +147,8 @@ entry names a rule, a file and a line.
 
 Then run your formatter and your type checker, and do the steps of this page:
 their searches find what is left. On the 5.x examples of this repository the
-codemod rewrote seven of ten uses of a removed name, rewrote none wrongly, and
-reported every one it left. Its
+codemod rewrote almost two of three uses of a removed name, rewrote none
+wrongly, and reported every one it left. Its
 [README](https://github.com/cornerstonejs/cornerstone3D/blob/main/packages/codemods/registry/cornerstone3d/6/README.md)
 lists each package with what it changes and what it reports.
 

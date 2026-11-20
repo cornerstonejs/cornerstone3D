@@ -1,4 +1,3 @@
-import { utilities } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 interface History<T> {
@@ -19,11 +18,5 @@ export function cast(value: unknown) {
 }
 
 export function optional(viewport: Types.IStackViewport | undefined) {
-  const displaySetId = JSON.stringify([viewport.renderingEngineId, viewport.id, 'optional']);
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-    kind: 'planar',
-    imageIds: ['optional'],
-    initialImageIdIndex: 0,
-  });
-  viewport!.setDisplaySets({ displaySetId });
+  viewport!.setStack(['optional']);
 }
