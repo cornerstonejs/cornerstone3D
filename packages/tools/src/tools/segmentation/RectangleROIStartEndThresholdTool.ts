@@ -377,14 +377,33 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     const direction = vec3.create();
     vec3.subtract(direction, endWorld, startWorld);
 
-    const distance = vec3.length(direction);
+    // startWorld and endWorld differ only on the projection axis. Take the
+    // distance from the double precision coordinates rather than from the
+    // float32 vectors.
+    const distance = Math.abs(endCoordinate - startCoordinate);
 
     // Normalize the direction vector to get a unit vector for scaling.
     vec3.normalize(direction, direction);
 
     const newProjectionPoints = [];
 
-    for (let dist = 0; dist < distance; dist += spacingInNormal) {
+    // Include the end slice (and the single slice when start === end). The
+    // coordinates can come from float32 vectors (see _getEndCoordinate), whose
+    // rounding error grows with the coordinate magnitude, so the tolerance
+    // covers a few float32 ulps at that magnitude plus a small fraction of the
+    // slice spacing. It is capped at a quarter of the spacing so that it can
+    // never add a slice beyond the end.
+    const coordinateMagnitude = Math.max(
+      Math.abs(startCoordinate),
+      Math.abs(endCoordinate)
+    );
+    const tolerance = Math.min(
+      spacingInNormal * 1e-3 + coordinateMagnitude * 2 ** -21,
+      spacingInNormal / 4
+    );
+    const numberOfSteps = Math.floor((distance + tolerance) / spacingInNormal);
+    for (let step = 0; step <= numberOfSteps; step++) {
+      const dist = step * spacingInNormal;
       newProjectionPoints.push(
         points.map((point) => {
           const newPoint = vec3.create();
@@ -395,6 +414,18 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     }
 
     data.cachedStats.projectionPoints = newProjectionPoints;
+    // Contour export reads one image id per projection, so keep both arrays
+    // the same length. A projection that is not aligned with the acquisition
+    // planes, or that lies outside the volume, has no matching image and gets
+    // undefined.
+    data.cachedStats.projectionPointsImageIds = newProjectionPoints.map(
+      (projection) =>
+        csUtils.getClosestImageId(
+          imageVolume,
+          projection[0] as Types.Point3,
+          viewPlaneNormal
+        )
+    );
   }
 
   //This function return all the points inside the ROI and calculate statistics for every slices between startCoordinate and endCoordinate
@@ -794,8 +825,10 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     const numSlicesToPropagate = this.configuration.numSlicesToPropagate;
 
     // get end position by moving from worldPos in the direction of viewplaneNormal
-    // with amount of numSlicesToPropagate * spacingInNormal
-    const endPos = vec3.create();
+    // with amount of numSlicesToPropagate * spacingInNormal. Use a plain
+    // (double precision) array: a float32 vec3 rounds large coordinates by
+    // more than a small slice spacing.
+    const endPos = [0, 0, 0] as Types.Point3;
     vec3.scaleAndAdd(
       endPos,
       worldPos,
