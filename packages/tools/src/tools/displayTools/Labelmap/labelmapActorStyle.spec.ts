@@ -303,6 +303,17 @@ describe('setLabelmapColorAndOpacity', () => {
       expect(entry.preLoad).toHaveBeenCalledTimes(4);
     });
 
+    it('fills the labels once the viewport gives the actor another blend mode', () => {
+      const entry = createEdgeProjectionEntry();
+
+      setStyle({ fillAlpha: 0.2, outlineOpacity: 0.8 });
+      expect(render(entry)[1]).toBeCloseTo(0.8);
+
+      // What a crosshair slab drag does to the actor's mapper.
+      entry.mapper.getBlendMode = () => MAXIMUM_INTENSITY_BLEND;
+      expect(render(entry)[1]).toBeCloseTo(0.2);
+    });
+
     it('hands the transfer functions to the combined actor through preLoad', () => {
       const entry = createEdgeProjectionEntry();
 
