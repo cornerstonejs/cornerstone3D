@@ -80,6 +80,8 @@ function getImageOrientation(
  * frame of reference, the provider no longer gives it, so the next
  * synchronization works it out again.
  *
+ * The current images are the reference, so the user can scroll both viewports
+ * to matching anatomy before the registration is calculated.
  *
  * @param viewport1 - The first stack viewport
  * @param viewport2 - The second stack viewport

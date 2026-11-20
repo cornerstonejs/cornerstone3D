@@ -2,12 +2,14 @@ import { vec3 } from 'gl-matrix';
 import { ActorRenderMode } from '../../../types';
 import type {
   ICamera,
+  IDynamicImageVolume,
   Point3,
   ReferenceCompatibleOptions,
   ViewReference,
   ViewReferenceSpecifier,
 } from '../../../types';
 import type { PlaneRestriction } from '../../../types/IViewport';
+import cache from '../../../cache/cache';
 import getClosestImageId from '../../../utilities/getClosestImageId';
 import { calculateMinimalDistanceForStackViewport } from '../../../utilities/getClosestStackImageIndexForPoint';
 import calculateSpacingBetweenImageIds from '../../../utilities/calculateSpacingBetweenImageIds';
@@ -193,6 +195,8 @@ class PlanarViewReferenceController {
       return;
     }
 
+    this.selectDimensionGroup(viewRef);
+
     const targetContext = this.resolveViewReferenceContext(viewRef);
 
     if (!targetContext) {
@@ -207,6 +211,33 @@ class PlanarViewReferenceController {
     if (didActivateBinding && !didApplyReference) {
       this.host.render();
     }
+  }
+
+  /**
+   * Selects the time point of a reference on the dynamic volume that it
+   * names, or on the volume on display when it names none: the time point
+   * belongs to the referenced volume, for example the PET of a fusion. As on
+   * the legacy volume viewport, the reference must be in the frame of
+   * reference of the viewport and its time point one of the volume. A stack
+   * shows no volume, so it selects nothing.
+   */
+  private selectDimensionGroup(viewRef: ViewReference): void {
+    const { dimensionGroupNumber, FrameOfReferenceUID } = viewRef;
+    const volumeId = this.getVolumeId({ volumeId: viewRef.volumeId });
+    const volume = volumeId
+      ? (cache.getVolume(volumeId) as IDynamicImageVolume | undefined)
+      : undefined;
+
+    if (
+      !volume?.isDynamicVolume?.() ||
+      !dimensionGroupNumber ||
+      dimensionGroupNumber > volume.numDimensionGroups ||
+      FrameOfReferenceUID !== this.getFrameOfReferenceUID()
+    ) {
+      return;
+    }
+
+    volume.dimensionGroupNumber = dimensionGroupNumber;
   }
 
   getFrameOfReferenceUID(): string {

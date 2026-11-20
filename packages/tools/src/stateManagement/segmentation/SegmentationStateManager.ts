@@ -33,6 +33,8 @@ import { triggerSegmentationAdded } from './events/triggerSegmentationAdded';
 import { triggerSegmentationRepresentationAdded } from './events/triggerSegmentationRepresentationAdded';
 import {
   ensureLabelmapState,
+  getOrCreateDynamicLabelmapVolume,
+  hasMultipleLabelmapImagesPerReferencedImageId,
   LabelmapImageReferenceResolver,
   syncLegacyLabelmapData,
 } from './labelmapModel';
@@ -1039,20 +1041,63 @@ async function internalConvertStackToVolumeLabelmap({
     removeOriginal?: boolean;
   };
 }): Promise<void> {
-  const segmentation =
+  const sourceSegmentation =
     defaultSegmentationStateManager.getSegmentation(segmentationId);
+  const sourceLabelmapState = ensureLabelmapState(sourceSegmentation);
+  const sourcePrimaryLayer =
+    sourceLabelmapState?.labelmaps[sourceLabelmapState.primaryLabelmapId];
 
-  const data = segmentation.representationData
+  // An overlapping SEG flattened into one layer holds several labelmap images
+  // per referenced image, so its imageIds do not form a valid volume. Leave it
+  // on the merged-volume path that getOrCreateLabelmapVolume builds instead.
+  if (
+    sourcePrimaryLayer &&
+    hasMultipleLabelmapImagesPerReferencedImageId(sourcePrimaryLayer)
+  ) {
+    return;
+  }
+
+  const data = sourceSegmentation.representationData
     .Labelmap as LabelmapSegmentationDataStack;
+
+  // A 4D labelmap already is one volume of the current time point. A volume of
+  // the images of every time point has the wrong depth. Its layer tracks that
+  // volume as geometryVolumeId and stays stack-backed, so the primary layer
+  // must not take it as volumeId below.
+  const dynamicVolume = getOrCreateDynamicLabelmapVolume(sourceSegmentation);
+  if (dynamicVolume) {
+    (data as unknown as LabelmapSegmentationDataVolume).volumeId =
+      dynamicVolume.volumeId;
+    return;
+  }
 
   const { volumeId } = await internalComputeVolumeLabelmapFromStack({
     imageIds: data.imageIds,
     options,
   });
 
-  (
-    segmentation.representationData.Labelmap as LabelmapSegmentationDataVolume
-  ).volumeId = volumeId;
+  // Re-read after the await: updateState() deep-clones the state, so the
+  // segmentation fetched before the await may no longer be the live one.
+  const segmentation =
+    defaultSegmentationStateManager.getSegmentation(segmentationId);
+
+  if (!segmentation) {
+    return;
+  }
+
+  // The primary layer is the source of truth; the top-level volumeId is a
+  // legacy mirror that syncLegacyLabelmapData overwrites on every update.
+  // Writing only the mirror would lose the volumeId at the next update.
+  const labelmapState = ensureLabelmapState(segmentation);
+  const primaryLayer =
+    labelmapState?.labelmaps[labelmapState.primaryLabelmapId];
+
+  if (primaryLayer) {
+    primaryLayer.volumeId = volumeId;
+    primaryLayer.storageKind = 'volume';
+  }
+
+  syncLegacyLabelmapData(segmentation);
 }
 
 function getDefaultRenderingConfig(type: string): RenderingConfig {

@@ -5,12 +5,12 @@ viewports, branch `feat/slice-first-step-1`) found along the way. Each row says 
 seen, how (measured or read), where, and what to do; the State column says what became
 of it. The list was started on 17 November 2026 and closed on 20 November 2026.
 
-State on 20 November 2026, 98 rows:
+State on 20 November 2026, 99 rows:
 - fixed (81): each with a test that failed first; the commit or package is named in the row;
 - decided or documented (4): left as they are on purpose (5.x did the same, or
   the 6.0 API does it by design), with a line in the 6.0 migration guide where an
   application sees it;
-- open (13): rows 8, 9, 15, 36, 39, 46, 86, 88, 89, 90, 91, 96, 97. None of them blocks 6.0.
+- open (14): rows 8, 9, 15, 36, 39, 46, 86, 88, 89, 90, 91, 96, 97, 99. None of them blocks 6.0.
   Rows 86, 88, 89 and 90 are left as they are for 6.0 because 5.x behaved the same or the
   next API does it by design (their vitest pins name them).
 
@@ -171,6 +171,7 @@ not run.
 | 96 | `BaseRenderingEngine.renderFrameOfReference` is unreachable from the public `RenderingEngine` since 3.x and maps the other viewports to `undefined` (it should filter), so it would pass `undefined` ids to `renderViewports`. Dead code; nothing calls it. | Read by lane T49 (20 November) | `BaseRenderingEngine.ts` | Delete it, or make it filter and expose it with a guide line |
 | 97 | The other picture tests of `volumeViewport_gpu_render_test.js` still compare with 1.x baselines that have a 15 px margin and pass only through the 15 % threshold; the sagittal nearest test would pass with its bar missing (as 5.x draws it). Test quality only. | Read by lane T49 (20 November) | `volumeViewport_gpu_render_test.js` | Check pixels against the volume data, as T49 did for the axial tests |
 | 98 | An overlay given a colormap with a per-value opacity list (`opacity: [{ value: 0, opacity: 0 }, { value: 255, opacity: 0.6 }]`) drew nothing on a GPU planar viewport (vtkSampledSlice path, voxels 0 or 255); a single opacity value drew. `planarSharpeningSmoothing_test.js` uses such a colormap and checks its GPU fusion only by its render passes, so a missing overlay would not fail it. | Fixed by package O7 (20 November): a list in `colormap.opacity` is read as data values, as the 5.x legacy volume viewport read it (6.0 read it as a fraction of the window); the fusion test checks the GPU and CPU pixels against a hand-computed fusion | the overlay opacity of a planar layer | Measure on 5.x; if 5.x drew it, fix 6.0 and make the fusion test check the overlay's pixels |
+| 99 | A view reference with a time point (`dimensionGroupNumber`) that names no data, only a frame of reference, a plane and a focal point, is not viewable on a planar viewport that shows a static volume of that frame of reference, with or without navigation; the same reference without the time point is. The legacy volume viewport of 5.19.4, whose view reference carries the time point since 5.19.0 (main `77e0eec90`), checks the time point only when it shows a dynamic volume, so it takes such a reference. The next viewports of 5.19.4 do as 6.0. A reference from `getViewReference()` names its display set and an image, so it is not viewable on another series before the time point is checked. | Open. Measured by lane M1 (merge of 5.19.4): a karma probe on the set-up of `planarDynamicVolumeTimePoint_test.js` (static and dynamic volume in one frame of reference); the legacy side read in `BaseVolumeViewport.isReferenceViewable` of 5.19.4 | `isDimensionGroupCompatible` in `packages/core/src/RenderingEngine/GenericViewport/genericViewportReferenceCompatibility.ts`, shared by every next viewport | Decide: take a time point as met by a context without time points, as the legacy class, or keep it and say so in the guide. The video viewport reads its frame number from the same key, so a change must keep its checks. |
 | 42 | Three pages still name `useGenericViewport`: `packages/docs/docs/concepts/cornerstone-core/generic-viewport/generic-viewport-code-design.md`, `docs/OHIF_DOWNSTREAM_FAILURE_INVESTIGATION.md`, `VOLUME_TEST_SLICE_LIMIT_PLAN.md`. | Fixed by package Q (19 November, `51600e7d3`), checked by package S6B of stage 6: the docs page (its path is `specs/core/generic-viewport-code-design.md`) names no removed API; the files at the root of the repository are the owner's and stay | | Rewrite the first. The other two are records. |
 
 ## Gone with the legacy viewports and the adapters

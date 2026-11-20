@@ -81,7 +81,10 @@ class TiledRenderingEngine extends BaseRenderingEngine {
     if (!this.offscreenMultiRenderWindow) {
       this.offscreenMultiRenderWindow =
         vtkOffscreenMultiRenderWindow.newInstance();
-      this.offScreenCanvasContainer = document.createElement('div');
+      this.offScreenCanvasContainer = Object.assign(
+        document.createElement('div'),
+        { width: 0, height: 0 }
+      );
       this.offscreenMultiRenderWindow.setContainer(
         this.offScreenCanvasContainer
       );
@@ -584,9 +587,7 @@ class TiledRenderingEngine extends BaseRenderingEngine {
       offScreenCanvasWidth += canvas.width;
     });
 
-    // @ts-expect-error
     offScreenCanvasContainer.width = offScreenCanvasWidth;
-    // @ts-expect-error
     offScreenCanvasContainer.height = offScreenCanvasHeight;
 
     // 3. Resize command

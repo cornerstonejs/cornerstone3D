@@ -261,4 +261,80 @@ describe('imageSliceSyncCallback', () => {
 
     expect(utilities.jumpToSlice).not.toHaveBeenCalled();
   });
+
+  it('recalculates the registration when the target shows a different frame of reference', async () => {
+    const coreMetaData = jest.requireActual('../../core/src/metaData');
+    const renderingEngineCache = jest.requireActual(
+      '../../core/src/RenderingEngine/renderingEngineCache'
+    ).default;
+    const actualProvider = jest.requireActual(
+      '../../core/src/utilities/spatialRegistrationMetadataProvider'
+    ).default;
+    const actualCalculate = jest.requireActual(
+      '../../core/src/utilities/calculateViewportsSpatialRegistration'
+    ).default;
+    const {
+      calculateViewportsSpatialRegistration,
+      spatialRegistrationMetadataProvider,
+    } = utilities;
+    const sourceViewport = Object.assign(createSourceViewport('image:2'), {
+      id: 'source',
+      renderingEngineId: 'rendering-engine',
+    });
+    const targetViewport = Object.assign(createTargetViewport(), {
+      id: 'target',
+      renderingEngineId: 'rendering-engine',
+      getCurrentImageId: jest.fn(() => 'image:0'),
+    });
+    const renderingEngine = {
+      id: 'rendering-engine',
+      getViewport: (viewportId) =>
+        viewportId === 'source' ? sourceViewport : targetViewport,
+    };
+    const imagePlaneProvider = (type, imageId) =>
+      type === 'imagePlaneModule' && imagePositions.has(imageId)
+        ? {
+            imagePositionPatient: imagePositions.get(imageId),
+            imageOrientationPatient: [1, 0, 0, 0, 1, 0],
+          }
+        : undefined;
+
+    targetViewport.getFrameOfReferenceUID.mockReturnValue('other-for-1');
+    getRenderingEngine.mockReturnValue(renderingEngine);
+    renderingEngineCache.set(renderingEngine);
+    coreMetaData.addProvider(imagePlaneProvider, 10000);
+    calculateViewportsSpatialRegistration.mockImplementation(actualCalculate);
+    spatialRegistrationMetadataProvider.get.mockImplementation(
+      actualProvider.get
+    );
+
+    const sync = () =>
+      imageSliceSyncCallback(
+        createSynchronizerInstance(),
+        { renderingEngineId: 'rendering-engine', viewportId: 'source' },
+        { renderingEngineId: 'rendering-engine', viewportId: 'target' }
+      );
+
+    try {
+      await sync();
+      await sync();
+      expect(calculateViewportsSpatialRegistration).toHaveBeenCalledTimes(1);
+      expect(utilities.jumpToSlice).not.toHaveBeenCalled();
+
+      targetViewport.getFrameOfReferenceUID.mockReturnValue('other-for-2');
+      targetViewport.getCurrentImageId.mockReturnValue('image:3');
+      await sync();
+
+      expect(calculateViewportsSpatialRegistration).toHaveBeenCalledTimes(2);
+      expect(utilities.jumpToSlice).toHaveBeenCalledWith(
+        targetViewport.element,
+        { imageIndex: 3 }
+      );
+    } finally {
+      coreMetaData.removeProvider(imagePlaneProvider);
+      renderingEngineCache.delete('rendering-engine');
+      calculateViewportsSpatialRegistration.mockReset();
+      spatialRegistrationMetadataProvider.get.mockReset();
+    }
+  });
 });

@@ -398,6 +398,36 @@ Steps 2 and 3 go through `viewportProjection.withPresentation`. The camera
 position synchronizer copies the view reference, the zoom and the pan as they
 are, so between viewports of other data it gives another size.
 
+## The time point of a dynamic volume
+
+5.19.0 put the time point of a dynamic (4D) volume into the view reference of
+the legacy volume viewport. A planar viewport that shows a dynamic volume
+does the same:
+
+- **`getViewReference()` has `dimensionGroupNumber`,** the time point on
+  display, from 1. With `{ volumeId }` it is the time point of that volume,
+  for example the PET overlay of a fusion. A static volume gives none.
+- **`isReferenceViewable(viewRef)` is false for another time point.** With
+  `{ withNavigation: true }` it is true when the volume has that time point.
+- **`setViewReference(viewRef)` selects the time point of the reference**
+  on the dynamic volume that the reference names, else on the volume on
+  display, as `volume.dimensionGroupNumber = viewRef.dimensionGroupNumber`
+  does. As in 5.19, the reference must be in the frame of reference of the
+  viewport and its time point one of the volume; else the time point stays.
+- **A reference with a time point is not viewable on a static volume.**
+  The legacy volume viewport of 5.19 checked the time point only when it
+  showed a dynamic volume. A planar viewport that shows a static volume
+  does not take a reference with a time point, with or without navigation,
+  as the next viewports of 5.19 did. A reference that `getViewReference()`
+  gives names its display set and an image, so another series does not
+  take it anyway.
+
+The labelmap of a 4D series follows the time point as the 5.x guide says
+under "Labelmaps of a 4D series follow the time point". Read its stack
+viewport as a planar viewport in stack mode, and its volume viewport as a
+planar viewport in volume mode: an edit in stack mode first selects the time
+point of the image on display.
+
 ## Events and image loading of a planar viewport
 
 - **The events of new data fire.** `VOLUME_VIEWPORT_NEW_VOLUME` when a volume
@@ -1281,10 +1311,11 @@ legacy picture within two levels of 255.
   (`getCurrentImageId()`) and adds the translation from one to the other.
   So the image slice synchronizer, which calculates it at its first move
   for a target in another frame of reference that has no registration,
-  keeps the offset that the two viewports had then. In 5.x it read the
-  slice index of each viewport as an image id, found no image plane and
-  added nothing: such a target did not move unless the application had
-  added a registration. The orientation of an image is its
+  keeps the offset that the two viewports had then. 5.19.1 reads the image
+  on display too. Before 5.19.1 it read the slice index of each viewport as
+  an image id, found no image plane and added nothing: such a target did
+  not move unless the application had added a registration. The
+  orientation of an image is its
   `imageOrientationPatient`, else its `rowCosines` and `columnCosines`; an
   image with no orientation or no position gives no registration, and the
   call does not throw.
@@ -1299,7 +1330,12 @@ legacy picture within two levels of 255.
   also for `get` with the viewport ids alone. A registration that the
   application added with `add` stays until the application replaces it,
   also when its matrix is one that `get` gave for a calculated registration.
-  In 5.x a calculated registration stayed with the viewport ids for good.
+  Before 5.19.1 a calculated registration stayed with the viewport ids for
+  good. From 5.19.1 the image slice synchronizer removes a registration
+  that it calculated, with
+  `spatialRegistrationMetadataProvider.add([viewportId1, viewportId2], undefined)`,
+  once a viewport shows another frame of reference. In 6.0 the provider
+  drops it for every caller, and the synchronizer makes no such call.
 - **A registration replaces the one of the other direction.**
   `spatialRegistrationMetadataProvider.add([viewportId1, viewportId2, ...], matrix)`
   removes the registration from `viewportId2` to `viewportId1` added with

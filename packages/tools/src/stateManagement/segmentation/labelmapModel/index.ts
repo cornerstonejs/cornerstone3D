@@ -13,11 +13,13 @@ export {
   getLabelmapForVolumeId,
   getLabelmapIds,
   getLabelmaps,
+  getOrCreateDynamicLabelmapVolume,
   getOrCreateLabelmapVolume,
   getScalarArrayLengthFromLabelmap,
   registerLabelmap,
   removeLabelmap,
 } from './labelmapLayerStore';
+export { hasMultipleLabelmapImagesPerReferencedImageId } from './labelmapImageIdMapping';
 export {
   getReferencedImageIdToCurrentImageIdMap,
   syncLegacyLabelmapData,
