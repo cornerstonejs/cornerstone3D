@@ -1207,9 +1207,10 @@ legacy picture within two levels of 255.
 - **`suppressEvents`** in the options silences `CAMERA_MODIFIED` and
   `CAMERA_RESET`.
 - **A labelmap over a video** is not available. It is not available on the
-  legacy viewport either: both throw. No 5.x release showed one, from 5.0.0
-  to 5.18.2: the legacy video viewport throws when the labelmap is mounted.
-  Contour segmentations show.
+  legacy viewport either. No 5.x release showed one, from 5.0.0 to 5.18.2.
+  `addSegmentationRepresentations` adds no labelmap to a video viewport, in
+  5.x and in 6.0: it logs a warning that the viewport is not a compatible
+  destination and goes on. Contour segmentations show.
 
 ## Tools on the next viewports
 
