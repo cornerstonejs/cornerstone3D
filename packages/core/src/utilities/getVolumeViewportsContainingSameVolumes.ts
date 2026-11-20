@@ -6,6 +6,16 @@ import {
   viewportSupportsVolumeActors,
   type VolumeActorViewport,
 } from './viewportCapabilities';
+import type { ActorEntry } from '../types';
+
+/**
+ * The data that an actor entry shows: its referenced id (the volume id of a
+ * volume), else its uid. A planar viewport gives each mounted actor a uid of
+ * its own, so two viewports of one volume share the referenced id only.
+ */
+function shownDataOf({ referencedId, uid }: ActorEntry): string {
+  return referencedId ?? uid;
+}
 
 /**
  * Returns the viewports containing the same volume actors (all actors) the same
@@ -47,8 +57,10 @@ function getVolumeViewportsContainingSameVolumes(
       }
 
       // every targetActors should be in the vpActors
-      const sameVolumes = targetActors.every(({ uid }) =>
-        vpActors.find((vpActor) => uid === vpActor.uid)
+      const sameVolumes = targetActors.every((targetActor) =>
+        vpActors.find(
+          (vpActor) => shownDataOf(targetActor) === shownDataOf(vpActor)
+        )
       );
 
       if (sameVolumes) {

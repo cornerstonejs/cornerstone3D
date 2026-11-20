@@ -12,8 +12,10 @@ import init from '../src/init';
  * it is the case that catches a decoder taking signedness from its codec rather
  * than from the data set - JPEG XL and JPEG-LS both always report unsigned.
  *
- * `pnpm test:decoders` runs this suite alone, in about one minute rather than
- * the several minutes of a full `pnpm test`. That script also takes
+ * This suite has its own karma run, karma.decoders.conf.js; `pnpm test` does
+ * not include it, and `pnpm test:ci` and scripts/run-karma.sh run it after the
+ * main suite. `pnpm test:decoders` runs it alone, in about one minute. That
+ * script also takes
  * `--jpeg-lossless-build <path>`, which replaces
  * @cornerstonejs/jpeg-lossless-decoder-js with a different build of that
  * decoder, so you can test a decoder fix before its release. See
@@ -141,10 +143,12 @@ const lossyTransferSyntaxes = {
 const base = 'CTImage.dcm';
 const colorBase = 'ColorImage.dcm';
 const grayBase = 'GrayImage.dcm';
-// Karma serves the repository under /base, so this is the real path to the
-// fixtures.
-const url =
-  'dicomweb://localhost:9876/base/packages/dicomImageLoader/testImages/';
+/**
+ * Karma serves the repository under /base, so this is the real path to the
+ * fixtures, on the host and port of this karma run: a second run on another
+ * port reads its own files.
+ */
+const url = `dicomweb://${window.location.host}/base/packages/dicomImageLoader/testImages/`;
 
 /**
  * Loads an image the way an application does - through the registered image

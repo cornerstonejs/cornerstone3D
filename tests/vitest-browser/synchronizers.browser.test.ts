@@ -446,6 +446,7 @@ describe('synchronizers', () => {
     // GenericViewports, unlike the legacy `setCamera(camera)` path this
     // synchronizer was built to replace (which carried the full camera,
     // including viewUp/rotation, for non-Generic viewports).
+    // Open issue: a camera position synchronizer does not carry the rotation (5.x did, through setCamera).
     test.fails(
       'does NOT sync rotation (ViewPresentation selector used by cameraSyncCallback excludes it)',
       async () => {

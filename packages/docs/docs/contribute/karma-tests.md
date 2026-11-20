@@ -33,6 +33,8 @@ For local review, use the repository wrapper instead of reading terminal output 
 
 The wrapper runs `npx karma start --single-run`, captures the log, and generates timestamped output under `reports/`.
 
+The transfer syntax decode tests (`packages/dicomImageLoader/test/decoders_test.ts`) have their own Karma run, `karma.decoders.conf.js`, because their wasm codecs need longer timeouts than the main suite. The wrapper runs it after the main suite, except with `--cpu` or when `KARMA_GREP` or `KARMA_PACKAGE` narrows the run. `pnpm test:ci` runs both too, and `pnpm test:decoders` runs the decoders alone.
+
 Examples:
 
 ```bash

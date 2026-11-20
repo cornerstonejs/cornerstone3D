@@ -380,7 +380,12 @@ describe('annotationToolsMatrix', () => {
 
       expect(stats.mean).toBe(10);
       expect(stats.stdDev).toBe(0);
-      expect(stats.area).toBeCloseTo(200, 2);
+
+      const expectedArea =
+        Math.abs(expectedP2[0] - expectedP1[0]) *
+        Math.abs(expectedP2[1] - expectedP1[1]);
+      expect(stats.area).toBeCloseTo(expectedArea, 2);
+      expect(Math.abs(stats.area - 200) / 200).toBeLessThan(0.02);
     });
   });
 
@@ -495,53 +500,60 @@ describe('annotationToolsMatrix', () => {
   });
 
   describe('CircleROITool', () => {
-    // COMPATIBILITY FINDING (see final report): CircleROITool cannot
-    // complete its render pass on a direct (non-legacy-adapter)
-    // GenericViewport/PlanarViewport, so ANNOTATION_RENDERED never fires and
-    // this hangs until timeout. Root cause: CircleROITool.renderAnnotation
-    // (packages/tools/src/tools/annotation/CircleROITool.ts:827) calls
-    // getEllipseWorldCoordinates (packages/tools/src/utilities/
-    // getEllipseWorldCoordinates.ts:31), which unconditionally calls
-    // `viewport.getCamera()`. `getCamera` is NOT part of PlanarViewport's
-    // API (packages/core/src/RenderingEngine/GenericViewport/Planar/
-    // PlanarViewport.ts) -- it exists only on the separate
-    // PlanarViewportLegacyAdapter subclass
-    // (.../Planar/PlanarViewportLegacyAdapter.ts:49), which this harness
-    // deliberately does not use (it opens ViewportType.PLANAR
-    // directly, the architecture under test for this whole campaign). The
-    // resulting uncaught `TypeError: viewport.getCamera is not a function`
-    // is thrown from inside the RAF-driven AnnotationRenderingEngine render
-    // pass (see the "Unhandled Errors" section of a run of this file),
-    // aborting that render pass before ANNOTATION_RENDERED fires -- observed
-    // directly via a 5s timeout on `waitForAnnotationRendered` below,
-    // shortened to 2s here since the outcome is already known. No other
-    // tool in this matrix hits getEllipseWorldCoordinates (EllipticalROITool
-    // uses its own, getCamera-free, center+offset formula), so this is
-    // narrowly a CircleROITool-on-GenericViewport-Next incompatibility, not
-    // a broader GenericViewport gap.
-    test.fails(
-      'circle drawn to a 10mm radius crashes the render pass via viewport.getCamera',
-      async () => {
-        const ctx = await setupTools({
-          tools: [CircleROITool],
-          activeTool: CircleROITool.toolName,
-          viewport: { width: 400, height: 400 },
-        });
-        active = ctx;
-        const { viewport, element } = ctx;
+    test('circle drawn to a 10mm radius in the background reports its radius, area and mean', async () => {
+      const ctx = await setupTools({
+        tools: [CircleROITool],
+        activeTool: CircleROITool.toolName,
+        viewport: { width: 400, height: 400 },
+      });
+      active = ctx;
+      const { viewport, element, imageIds } = ctx;
 
-        const centerWorld: Types.Point3 = [45, 32, 0];
-        const edgeWorld: Types.Point3 = [55, 32, 0];
-        const centerCanvas = round2(viewport.worldToCanvas(centerWorld));
-        const edgeCanvas = round2(viewport.worldToCanvas(edgeWorld));
+      const centerWorld: Types.Point3 = [45, 32, 0];
+      const edgeWorld: Types.Point3 = [55, 32, 0];
+      const centerCanvas = round2(viewport.worldToCanvas(centerWorld));
+      const edgeCanvas = round2(viewport.worldToCanvas(edgeWorld));
 
-        const rendered = waitForAnnotationRendered(element, {
-          timeoutMs: 2000,
-        });
-        mouseDrag(element, centerCanvas, edgeCanvas);
-        await rendered;
+      const rendered = waitForAnnotationRendered(element);
+      mouseDrag(element, centerCanvas, edgeCanvas);
+      await rendered;
+
+      const annotations = annotation.state.getAnnotations(
+        CircleROITool.toolName,
+        element
+      );
+      expect(annotations.length).toBe(1);
+
+      const circleAnnotation = annotations[0];
+      expect(circleAnnotation.metadata.toolName).toBe(CircleROITool.toolName);
+      expect(circleAnnotation.metadata.referencedImageId).toBe(imageIds[0]);
+
+      const expectedCenter = viewport.canvasToWorld(centerCanvas);
+      const expectedEdge = viewport.canvasToWorld(edgeCanvas);
+      const handlePoints = circleAnnotation.data.handles.points;
+      expect(handlePoints.length).toBe(2);
+
+      for (let i = 0; i < 3; i++) {
+        expect(handlePoints[0][i]).toBeCloseTo(expectedCenter[i], 2);
+        expect(handlePoints[1][i]).toBeCloseTo(expectedEdge[i], 2);
       }
-    );
+
+      const expectedRadius = worldDistance(expectedCenter, expectedEdge);
+      expect(Math.abs(expectedRadius - 10) / 10).toBeLessThan(0.02);
+
+      const cachedStats = circleAnnotation.data.cachedStats;
+      const targetIds = Object.keys(cachedStats);
+      expect(targetIds.length).toBe(1);
+      const stats = cachedStats[targetIds[0]];
+
+      expect(stats.radius).toBeCloseTo(expectedRadius, 2);
+      expect(stats.area).toBeCloseTo(
+        Math.PI * expectedRadius * expectedRadius,
+        1
+      );
+      expect(stats.mean).toBe(10);
+      expect(stats.stdDev).toBe(0);
+    });
   });
 
   describe('LengthTool handle manipulation (extends toolMeasurements coverage)', () => {

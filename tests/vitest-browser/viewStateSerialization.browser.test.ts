@@ -280,6 +280,7 @@ describe('viewStateSerialization', () => {
   // fixes both cases (round6 folds the near-zero trig noise to exactly 0 via
   // its `|| 0` step and rounds the float32 world coordinates to 6 decimals),
   // so the rest of this suite restores from a genuinely stable JSON string.
+  // Open issue: the view reference carries float32 and trigonometric round-off noise.
   test.fails('1. public state payload is JSON-safe', async () => {
     const ctx = await createNavigatedViewport({ renderMode: 'vtkImage' });
 
@@ -477,6 +478,7 @@ describe('viewStateSerialization', () => {
   // GenericViewport.ts setViewState and Planar/PlanarViewport.ts
   // setViewState). So a second restore with byte-identical viewState still
   // emits one CAMERA_MODIFIED event; a true no-op restore would emit zero.
+  // Open issue: a view state write equal to the current state fires CAMERA_MODIFIED (5.x setCamera did the same).
   test.fails(
     '5b. a second identical restore does not emit CAMERA_MODIFIED (no-op detection)',
     async () => {

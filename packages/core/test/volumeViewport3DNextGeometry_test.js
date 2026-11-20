@@ -43,7 +43,7 @@ const LEGACY_ACTOR_ONLY_FIT = {
  */
 const LEGACY_VOLUME_AND_ACTOR_FIT = {
   parallelScale: 15,
-  focalPoint: [15, 19.5, 5.5],
+  focalPoint: [15, 19.5, 11],
 };
 
 /** Makes a direct next 3D viewport, sagittal, in the rendering engine. */

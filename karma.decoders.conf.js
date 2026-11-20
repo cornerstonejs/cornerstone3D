@@ -103,11 +103,20 @@ module.exports = function (config) {
     captureTimeout: 120000,
     browsers: ['ChromeHeadlessNoSandbox'],
     singleRun: true,
-    reporters: ['spec'],
+    reporters: ['junit', 'spec'],
+    /**
+     * `pnpm test:ci` runs this configuration after `karma.conf.js`, so its
+     * results go to a file of their own beside the results of that run.
+     */
+    junitReporter: {
+      outputDir: 'junit',
+      outputFile: 'decoders-results.xml',
+    },
     plugins: [
       'karma-webpack',
       'karma-jasmine',
       'karma-chrome-launcher',
+      'karma-junit-reporter',
       'karma-spec-reporter',
     ],
     webpack: {

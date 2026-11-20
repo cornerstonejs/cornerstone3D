@@ -114,11 +114,10 @@ module.exports = function (config) {
       ...(process.env.KARMA_PACKAGE === 'tools'
         ? []
         : ['packages/core/test/**/*_test.js']),
-      // Named individually rather than globbed: the rest of
-      // packages/dicomImageLoader/test predates the move to jasmine and still
-      // uses mocha's before()/chai, so a glob would switch on suites that
-      // cannot run.
-      'packages/dicomImageLoader/test/decoders_test.ts',
+      // packages/dicomImageLoader/test/decoders_test.ts has its own karma run,
+      // karma.decoders.conf.js, with the long timeouts its wasm codecs need.
+      // In this run the browser was sometimes lost in that block.
+      // `pnpm test:ci` and scripts/run-karma.sh run it after this suite.
       // Serve dicomImageLoad test images
       {
         pattern: 'packages/dicomImageLoader/testImages/**/*',

@@ -6,6 +6,27 @@ import {
 } from '../../utilities/viewportPresentation';
 
 /**
+ * The fields of a presentation that a selector names, or the whole
+ * presentation without a selector. The 3D family gives every field whatever
+ * the selector, its camera too, and a camera in a patch replaces the camera
+ * of the target.
+ */
+function selectedFieldsOf(
+  presentation: unknown,
+  selector?: Types.ViewPresentationSelector
+): unknown {
+  if (!selector || !presentation || typeof presentation !== 'object') {
+    return presentation;
+  }
+
+  return Object.fromEntries(
+    Object.entries(presentation).filter(
+      ([key]) => selector[key as keyof Types.ViewPresentationSelector]
+    )
+  );
+}
+
+/**
  * Synchronizer callback to synchronize the camera. Synchronization
  *
  * targetViewport.options.syncZoom set to false to not sync the zoom
@@ -17,13 +38,15 @@ import {
  * @param sourceViewport - The list of IDs defining the source viewport.
  * @param targetViewport - The list of IDs defining the target viewport, different
  *   from sourceViewport
+ * @param options - The options of the synchronizer: `viewPresentation` is the
+ *   selector of the presentation to copy, all of it when not given.
  */
 export default function presentationViewSyncCallback(
   _synchronizerInstance,
   sourceViewport: Types.IViewportId,
   targetViewport: Types.IViewportId,
   _sourceEvent,
-  options?: Types.ViewPresentationSelector
+  options?: { viewPresentation?: Types.ViewPresentationSelector }
 ): void {
   const renderingEngine = getRenderingEngine(targetViewport.renderingEngineId);
   if (!renderingEngine) {
@@ -37,7 +60,11 @@ export default function presentationViewSyncCallback(
     sourceViewport.renderingEngineId
   )?.getViewport(sourceViewport.viewportId);
 
-  const presentationView = getViewportPresentation(sViewport, options);
+  const selector = options?.viewPresentation;
+  const presentationView = selectedFieldsOf(
+    getViewportPresentation(sViewport, selector),
+    selector
+  );
 
   if (!applyViewportPresentation(tViewport, presentationView)) {
     return;

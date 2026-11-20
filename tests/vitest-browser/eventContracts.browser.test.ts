@@ -472,6 +472,7 @@ test('setDisplaySetPresentation with a new voiRange fires VOI_MODIFIED with the 
 // a no-op. This is marked `test.fails` per shared-context rule 5 rather than
 // weakened, so a future fix that makes the no-op case silent will flip this
 // test to failing-when-it-should-pass and be caught.
+// Open issue: setting the same VOI range again fires VOI_MODIFIED (5.x did the same).
 test.fails(
   'setting the same voiRange again is a no-op and must not fire VOI_MODIFIED (known divergence)',
   async () => {

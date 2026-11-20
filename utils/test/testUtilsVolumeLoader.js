@@ -32,6 +32,10 @@ import { decodeVolumeIdInfo, colors, encodeImageIdInfo } from './testUtils';
  *
  * If rgb is true, then the volume will be created with RGB values.
  *
+ * The volume has the spacing that the id asks for; a spacing that the id leaves
+ * out is 1. Slice i lies at z = i * zSpacing, and the image position of its
+ * image says the same.
+ *
  * Note: fakeVolumeLoader should be registered for each test
  *
  * @example
@@ -60,6 +64,7 @@ const fakeVolumeLoader = (volumeId) => {
   } = volumeInfo;
 
   const dimensions = [rows, columns, slices];
+  const spacing = [x_spacing ?? 1, y_spacing ?? 1, z_spacing ?? 1];
 
   const photometricInterpretation = rgb ? 'RGB' : 'MONOCHROME2';
 
@@ -74,6 +79,7 @@ const fakeVolumeLoader = (volumeId) => {
       ySpacing: y_spacing,
       rgb: rgb ? 1 : 0,
       sliceIndex: i,
+      ...(spacing[2] === 1 ? {} : { ipp: [0, 0, i * spacing[2]] }),
     })
   );
 
@@ -157,7 +163,7 @@ const fakeVolumeLoader = (volumeId) => {
     metadata: volumeMetadata,
     dimensions: dimensions,
     voxelManager: volumeVoxelManager,
-    spacing: [1, 1, 1],
+    spacing,
     origin: [0, 0, 0],
     direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
     numberOfComponents,

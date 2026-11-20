@@ -64,10 +64,14 @@ function teardown(ctx: PlanarViewportContext): void {
 /**
  * Canonical 6-step scenario from plan 01. Captures a snapshot after each
  * step (render + wait for IMAGE_RENDERED where the step does not itself
- * render synchronously before its promise resolves).
+ * render synchronously before its promise resolves). `scrollDelta` is the
+ * scroll of step 2: 2 moves a stack from its first image to its third; a
+ * volume counts slices along the view direction, so on this axial view it
+ * needs -2 to reach the same image.
  */
 async function runCanonicalScenario(
-  ctx: PlanarViewportContext
+  ctx: PlanarViewportContext,
+  scrollDelta = 2
 ): Promise<ViewportStateSnapshot[]> {
   const { viewport, element, displaySetId } = ctx;
   const snapshots: ViewportStateSnapshot[] = [];
@@ -78,7 +82,7 @@ async function runCanonicalScenario(
   // Step 2: scroll(2). setImageIdIndex settles the view state and renders
   // synchronously within the returned promise, so no extra render/wait step
   // is needed here.
-  await viewport.scroll(2);
+  await viewport.scroll(scrollDelta);
   snapshots.push(captureViewportState(viewport, displaySetId));
 
   // Step 3: setZoom(2) then render.
@@ -111,10 +115,12 @@ async function runCanonicalScenario(
  * scenario under a shared displaySetId (so viewReference.dataId and the
  * presentation lookup key line up across the two runs and do not pollute
  * the diff with an incidental id mismatch), tearing each context down before
- * the next is created.
+ * the next is created. `targetScrollDelta` is the scroll of step 2 for the
+ * target mode.
  */
 async function collectBaselineAndTargetSnapshots(
-  mode: PlanarRenderMode
+  mode: PlanarRenderMode,
+  targetScrollDelta = 2
 ): Promise<{
   baseline: ViewportStateSnapshot[];
   target: ViewportStateSnapshot[];
@@ -126,10 +132,43 @@ async function collectBaselineAndTargetSnapshots(
   teardown(baselineCtx);
 
   const targetCtx = await setupMode(mode, displaySetId);
-  const target = await runCanonicalScenario(targetCtx);
+  const target = await runCanonicalScenario(targetCtx, targetScrollDelta);
   teardown(targetCtx);
 
   return { baseline, target };
+}
+
+/**
+ * The core state of a snapshot without the fields of the volume content mode:
+ * the mode name, the slice indices counted along the view direction, the
+ * slice of the view state, and the volume id of the view reference.
+ */
+function withoutVolumeContentMode(
+  core: ViewportStateSnapshot['core']
+): Record<string, unknown> {
+  const {
+    currentMode: _currentMode,
+    sliceIndex: _sliceIndex,
+    currentImageIdIndex: _currentImageIdIndex,
+    viewState,
+    viewReference,
+    ...rest
+  } = core;
+  const { slice: _slice, ...viewStateRest } = viewState as Record<
+    string,
+    unknown
+  >;
+  const {
+    volumeId: _volumeId,
+    sliceIndex: _referenceSliceIndex,
+    ...viewReferenceRest
+  } = viewReference as Record<string, unknown>;
+
+  return {
+    ...rest,
+    viewState: viewStateRest,
+    viewReference: viewReferenceRest,
+  };
 }
 
 describe('renderPathParity', () => {
@@ -245,38 +284,17 @@ describe('renderPathParity', () => {
   //    silently excluded, since the plan explicitly calls out viewReference
   //    as NOT legitimately path-specific.
   //
-  // 2. A genuine, isolated bug found ONLY at step 0 (the initial render,
-  //    before any explicit slice navigation): with the planar display set
-  //    registered with `initialImageIdIndex: 0`, the volume-backed render
-  //    paths resolve the initial slice to world Z = 4 (the LAST of the 5
-  //    fake-stack slices, imageId sliceIndex 4), while the baseline resolves
-  //    it to world Z = 0 (sliceIndex 0) as requested. Observed step-0 values
-  //    (5-slice stack, 1 mm z-spacing, slices at z=0..4):
-  //      - core.viewState.slice: baseline
-  //          { kind: 'stackIndex', imageIdIndex: 0 }
-  //        vs vtkVolumeSlice/cpuVolume
-  //          { kind: 'volumePoint', sliceWorldPoint: [31.5, 31.5, 4] }
-  //      - core.viewReference.cameraFocalPoint[2] / planeRestriction.point[2]:
-  //        0 (baseline) vs 4 (volume-backed)
-  //      - core.viewReference.referencedImageId / referencedImageURI: encode
-  //        sliceIndex 0 (baseline) vs sliceIndex 4 (volume-backed)
-  //      - core.worldProbes[*].world[2]: 0 (baseline) vs 4 (volume-backed),
-  //        for all 3 probe canvas points
-  //    getCurrentImageIdIndex()/getSliceIndex() mask this: both report "0"
-  //    for every mode at step 0, even though the volume-backed modes are
-  //    actually showing the opposite end of the stack. Root cause traced to
-  //    PlanarViewport.createInitialVolumeSliceState (packages/core/src/
-  //    RenderingEngine/GenericViewport/Planar/PlanarViewport.ts), which
-  //    builds the initial volumePoint slice basis independently of the
-  //    stack-backed imageIdIndex path.
-  //
-  //    Critically, this is a step-0-only divergence: after ANY explicit
-  //    slice navigation (step 2 here, `scroll(2)`), the volume-backed modes
-  //    realign with the baseline and stay aligned for the remaining steps
-  //    (confirmed: baseline imageIdIndex=2 after scroll(2) matches
-  //    sliceWorldPoint z=2 for vtkVolumeSlice/cpuVolume at steps 2 through 6,
-  //    with zoom/pan/rotation/VOI changes in between having no further
-  //    effect on slice alignment).
+  // 2. The volume-backed modes count slices along the view direction, as the
+  //    5.x volume viewport did in `getSliceIndex` and
+  //    `getCurrentImageIdIndex`: on this axial view the first image (z = 0)
+  //    is slice 4 of 5, in `core.sliceIndex`, `core.currentImageIdIndex`
+  //    and `core.viewReference.sliceIndex`, and `core.viewState.slice` is a
+  //    `volumePoint`. A scroll moves along the view direction too, so the
+  //    volume-backed run scrolls by -2 where the stack scrolls by 2 to reach
+  //    the same image. Everything else, the shown plane included, equals the
+  //    baseline at every step. An earlier pin here showed the volume-backed
+  //    modes opening on the last image (z = 4); they open on the first image
+  //    now.
   // ------------------------------------------------------------------------
   // vtkVolumeSliceFrames: a reduced volume draws the acquired frames in the
   // acquisition plane. A one-pixel bar on a 512 x 512 stack shows the
@@ -365,21 +383,35 @@ describe('renderPathParity', () => {
   describe.each(VOLUME_BACKED_NON_BASELINE_MODES)(
     '%s vs vtkImage baseline core-state parity',
     (mode) => {
-      test.fails(
-        'core state matches the vtkImage baseline across the canonical scenario',
-        async () => {
-          const { baseline, target } =
-            await collectBaselineAndTargetSnapshots(mode);
+      test('core state matches the vtkImage baseline across the canonical scenario, apart from the volume content mode', async () => {
+        const { baseline, target } = await collectBaselineAndTargetSnapshots(
+          mode,
+          -2
+        );
 
-          expect(target.length).toBe(baseline.length);
+        expect(target.length).toBe(baseline.length);
 
-          for (let step = 0; step < baseline.length; step++) {
-            expect(target[step].core, `mode=${mode} step=${step}`).toEqual(
-              baseline[step].core
-            );
-          }
+        for (let step = 0; step < baseline.length; step++) {
+          const label = `mode=${mode} step=${step}`;
+          const base = baseline[step].core;
+          const core = target[step].core;
+          const reference = core.viewReference as Record<string, unknown>;
+          const slice = (core.viewState as { slice: { kind: string } }).slice;
+          const sliceAlongView =
+            base.numberOfSlices - 1 - base.currentImageIdIndex;
+
+          expect(base.currentMode, label).toBe('stack');
+          expect(core.currentMode, label).toBe('volume');
+          expect(core.currentImageIdIndex, label).toBe(sliceAlongView);
+          expect(core.sliceIndex, label).toBe(sliceAlongView);
+          expect(reference.sliceIndex, label).toBe(sliceAlongView);
+          expect(reference.volumeId, label).toBeDefined();
+          expect(slice.kind, label).toBe('volumePoint');
+          expect(withoutVolumeContentMode(core), label).toEqual(
+            withoutVolumeContentMode(base)
+          );
         }
-      );
+      });
     }
   );
 });

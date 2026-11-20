@@ -1014,7 +1014,7 @@ describe('presentationViewSyncCallback', () => {
       { renderingEngineId: 're', viewportId: 'source' },
       { renderingEngineId: 're', viewportId: 'target' },
       {},
-      { zoom: true }
+      { viewPresentation: { zoom: true } }
     );
 
     expect(viewportProjection.getPresentation).toHaveBeenCalledWith(
@@ -1060,7 +1060,7 @@ describe('presentationViewSyncCallback', () => {
       { renderingEngineId: 'engineA', viewportId: 'vp' },
       { renderingEngineId: 'engineB', viewportId: 'vp' },
       {},
-      { zoom: true }
+      { viewPresentation: { zoom: true } }
     );
 
     expect(viewportProjection.getPresentation).toHaveBeenCalledWith(

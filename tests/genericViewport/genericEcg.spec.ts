@@ -46,6 +46,10 @@ test.describe('ECG GenericViewport', () => {
   });
 
   test('should render ECG waveform', async ({ page }) => {
+    test.fail(
+      process.platform === 'darwin',
+      'The lead labels use the font monospace: Courier on macOS, DejaVu Sans Mono on the Linux machine of the baseline and of CI. The waveform and grid match; only the label rows differ.'
+    );
     // The ECG viewport draws its lead labels and waveform straight onto the
     // canvas (not the SVG annotation layer), so there is no text node to hide.
     // Two environment-dependent sources remain: glyph rasterization of the

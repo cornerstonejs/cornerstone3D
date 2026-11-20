@@ -22,8 +22,8 @@ const LEGACY_PERSPECTIVE_CAMERA = {
   parallelProjection: false,
   parallelScale: 15,
   viewAngle: 90,
-  focalPoint: [15, 19.5, 5.5],
-  position: [272.0992026436488, 19.5, 5.5],
+  focalPoint: [15, 19.5, 11],
+  position: [292.308492477241, 19.5, 11],
   viewPlaneNormal: [1, 0, 0],
   viewUp: [0, 0, 1],
 };
@@ -35,22 +35,22 @@ const LEGACY_PERSPECTIVE_CAMERA = {
  */
 const LEGACY_PERSPECTIVE_TRANSFORMS = [
   {
-    canvasPoint: [189.250244, 153.031982],
-    worldPoint: [14.999984, 1.074974, 0.303198],
+    canvasPoint: [189.993448, 155.644721],
+    worldPoint: [15.000007, 1.000655, 0.564472],
   },
   {
-    canvasPoint: [187.967875, 153.393676],
-    worldPoint: [14.999984, -1.123, -0.316743],
+    canvasPoint: [188.891357, 156.266414],
+    worldPoint: [15.000007, -1.036807, -0.584865],
   },
   {
-    canvasPoint: [210.749756, 146.968018],
-    worldPoint: [14.999984, 37.925026, 10.696802],
+    canvasPoint: [210.006552, 144.355279],
+    worldPoint: [15.000007, 37.999345, 21.435528],
   },
   {
-    canvasPoint: [212.032125, 146.606324],
-    worldPoint: [14.999984, 40.123, 11.316743],
+    canvasPoint: [211.108643, 143.733586],
+    worldPoint: [15.000007, 40.036807, 22.584865],
   },
-  { canvasPoint: [200, 150], worldPoint: [14.999984, 19.5, 5.5] },
+  { canvasPoint: [200, 150], worldPoint: [15.000007, 19.5, 11] },
 ];
 
 /**
@@ -59,22 +59,22 @@ const LEGACY_PERSPECTIVE_TRANSFORMS = [
  */
 const LEGACY_PERSPECTIVE_DOLLY_TRANSFORMS = [
   {
-    canvasPoint: [163.103029, 160.406838],
-    worldPoint: [14.999998, 3.689696, 1.040684],
+    canvasPoint: [165.313651, 169.566658],
+    worldPoint: [15, 3.468634, 1.956666],
   },
   {
-    canvasPoint: [141.819759, 166.409811],
-    worldPoint: [14.999998, -5.430157, -1.531583],
+    canvasPoint: [147.132621, 179.822624],
+    worldPoint: [15, -4.934289, -2.783445],
   },
   {
-    canvasPoint: [236.896971, 139.593162],
-    worldPoint: [14.999998, 35.310304, 9.959316],
+    canvasPoint: [234.686349, 130.433342],
+    worldPoint: [15, 35.531366, 20.043334],
   },
   {
-    canvasPoint: [258.180241, 133.590189],
-    worldPoint: [14.999998, 44.430157, 12.531583],
+    canvasPoint: [252.867379, 120.177376],
+    worldPoint: [15, 43.934289, 24.783445],
   },
-  { canvasPoint: [200, 150], worldPoint: [14.999998, 19.5, 5.5] },
+  { canvasPoint: [200, 150], worldPoint: [15, 19.5, 11] },
 ];
 
 /**

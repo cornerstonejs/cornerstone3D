@@ -34,7 +34,7 @@ const LEGACY_RENDER_PASSES = legacyValues.renderPasses;
  */
 const LEGACY_FIT_CAMERA = {
   parallelScale: 15,
-  focalPoint: [15, 19.5, 5.5],
+  focalPoint: [15, 19.5, 11],
 };
 
 /**
@@ -56,7 +56,7 @@ const LEGACY_SPHERE_CAMERA = {
  * [10, 20, 30].
  */
 const LEGACY_BOUNDS = {
-  volume: [-0.5, 29.5, -0.5, 39.5, -0.5, 11.5],
+  volume: [-0.5, 29.5, -0.5, 39.5, -1, 23],
   volumeAndSphere: [
     -98.48077392578125, 98.48077392578125, -93.66078186035156,
     93.66078186035156, -100, 100,
@@ -247,7 +247,7 @@ const LEGACY_ZOOM_AND_PAN = {
   zoom: 2,
   parallelScale: 7.5,
   pan: [20, -10],
-  focalPoint: [15, 18.5, 5],
+  focalPoint: [15, 18.5, 10.5],
 };
 
 /**
@@ -272,7 +272,7 @@ const LEGACY_VOLUME_MEMBERS = {
   missingVolumeId: undefined,
   otherImageData: {
     dimensions: [20, 24, 6],
-    spacing: [1, 1, 1],
+    spacing: [1.5, 1.5, 3],
     origin: [0, 0, 0],
   },
   dimensions: [30, 40, 12],

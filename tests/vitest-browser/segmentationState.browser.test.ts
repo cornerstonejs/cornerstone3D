@@ -782,6 +782,7 @@ describe('segmentationState', () => {
   // Observed: REPRESENTATION_ADDED never recorded. Expected (per the plan and
   // the enum's own name): it should fire once when a representation is first
   // added to a viewport.
+  // Open issue: SEGMENTATION_REPRESENTATION_ADDED is never fired (5.x did the same).
   test.fails(
     'events contract: SEGMENTATION_REPRESENTATION_ADDED never fires (engine bug)',
     async () => {

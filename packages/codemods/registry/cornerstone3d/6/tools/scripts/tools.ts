@@ -53,6 +53,18 @@ const REMOVED_NAMES: Record<string, string[] | '*'> = {
   [`${TOOLS_PACKAGE}/utilities/spatial/rotateViewportAroundWorldPoint`]: '*',
 };
 
+/** The module of the tools that 6.0 deletes; the core exports two of its checks. */
+const CAPABILITIES_MODULE = `${TOOLS_PACKAGE}/utilities/viewportCapabilities`;
+
+/** The entry point of the core that exports those checks by the same names. */
+const CORE_UTILITIES_MODULE = '@cornerstonejs/core/utilities';
+
+/** The checks of the deleted module that the core exports. */
+const CORE_CHECKS = [
+  'viewportSupportsImageSlices',
+  'viewportSupportsStackCalibration',
+];
+
 /**
  * The state of one run of the transform on a file.
  */
@@ -262,6 +274,99 @@ function reportRemoved(run: Run, statement: Node, names: string[] | '*'): void {
   }
 }
 
+/** Tells whether a statement is `import type` or `export type`. */
+function isTypeOnly(statement: Node): boolean {
+  return statement.children().some((child) => child.kind() === 'type');
+}
+
+/**
+ * Tells whether import or export specifiers name only the checks that the
+ * core exports, each as a value.
+ */
+function namesOnlyCoreChecks(specifiers: Node[]): boolean {
+  return (
+    specifiers.length > 0 &&
+    specifiers.every(
+      (specifier) =>
+        CORE_CHECKS.includes(specifier.field('name')?.text() ?? '') &&
+        !specifier.children().some((child) => child.kind() === 'type')
+    )
+  );
+}
+
+/**
+ * Tells whether specifiers take a name of the deleted capabilities module
+ * that 6.0 does not just remove: a check that moved to the core, or a type.
+ */
+function takesMoreThanRemoved(specifiers: Node[] | undefined): boolean {
+  const removed = REMOVED_NAMES[CAPABILITIES_MODULE] as string[];
+
+  return Boolean(
+    specifiers?.some(
+      (specifier) => !removed.includes(specifier.field('name')?.text() ?? '')
+    )
+  );
+}
+
+/** Points the source of an import or a re-export at another module. */
+function moveSource(run: Run, statement: Node, path: string): void {
+  const source = statement.field('source');
+  const quote = source.text()[0];
+
+  run.edits.add(source.replace(`${quote}${path}${quote}`));
+}
+
+/**
+ * Moves a plain named import of the checks of
+ * `utilities/viewportCapabilities` of the tools to `@cornerstonejs/core/utilities`,
+ * which exports them by the same names. Any other import of the module
+ * reports its removed names, and the statement when it takes anything else.
+ */
+function moveCapabilityImport(run: Run, statement: Node): void {
+  const specifiers = namedSpecifiers(statement);
+
+  if (specifiers && !isTypeOnly(statement) && namesOnlyCoreChecks(specifiers)) {
+    moveSource(run, statement, CORE_UTILITIES_MODULE);
+
+    return;
+  }
+
+  reportRemoved(run, statement, REMOVED_NAMES[CAPABILITIES_MODULE]);
+
+  if (takesMoreThanRemoved(specifiers)) {
+    manual.increment(
+      site(run.root, `import of ${CAPABILITIES_MODULE}`, statement)
+    );
+  }
+}
+
+/**
+ * Moves a plain re-export of the checks of `utilities/viewportCapabilities`
+ * of the tools to `@cornerstonejs/core/utilities`. Any other re-export of the
+ * module reports its removed names, and the statement when it takes anything
+ * else.
+ */
+function moveCapabilityReExport(run: Run, statement: Node): void {
+  const clause = statement
+    .children()
+    .find((child) => child.kind() === 'export_clause');
+  const specifiers = clause?.findAll({ rule: { kind: 'export_specifier' } });
+
+  if (specifiers && !isTypeOnly(statement) && namesOnlyCoreChecks(specifiers)) {
+    moveSource(run, statement, CORE_UTILITIES_MODULE);
+
+    return;
+  }
+
+  reportRemovedReExport(run, statement, REMOVED_NAMES[CAPABILITIES_MODULE]);
+
+  if (takesMoreThanRemoved(specifiers)) {
+    manual.increment(
+      site(run.root, `export of ${CAPABILITIES_MODULE}`, statement)
+    );
+  }
+}
+
 /**
  * Tells whether an identifier is the `utilities` of the tools, or the
  * namespace import of the tools.
@@ -326,8 +431,9 @@ function reportRotateViewport(run: Run): void {
 /**
  * Moves the two modules of the tools that 6.0 renames to their new paths
  * (`labelmapRenderPlan/legacyVolumePlan` and
- * `labelmapModel/labelmapLegacyAdapter`), and reports the names of the tools
- * that 6.0 removes.
+ * `labelmapModel/labelmapLegacyAdapter`), moves the checks of the deleted
+ * `utilities/viewportCapabilities` to the core, and reports the names of the
+ * tools that 6.0 removes.
  */
 const codemod: Codemod<TSX> = (root) => {
   const rootNode = root.root();
@@ -338,7 +444,9 @@ const codemod: Codemod<TSX> = (root) => {
     .filter((child) => child.kind() === 'import_statement')) {
     const source = importSource(statement) ?? '';
 
-    if (MOVED_MODULES[source]) {
+    if (source === CAPABILITIES_MODULE) {
+      moveCapabilityImport(run, statement);
+    } else if (MOVED_MODULES[source]) {
       moveImport(run, statement, MOVED_MODULES[source]);
     } else if (REMOVED_NAMES[source]) {
       reportRemoved(run, statement, REMOVED_NAMES[source]);
@@ -350,7 +458,9 @@ const codemod: Codemod<TSX> = (root) => {
     .filter((child) => child.kind() === 'export_statement')) {
     const source = importSource(statement) ?? '';
 
-    if (MOVED_MODULES[source]) {
+    if (source === CAPABILITIES_MODULE) {
+      moveCapabilityReExport(run, statement);
+    } else if (MOVED_MODULES[source]) {
       moveReExport(run, statement, MOVED_MODULES[source]);
     } else if (REMOVED_NAMES[source]) {
       reportRemovedReExport(run, statement, REMOVED_NAMES[source]);

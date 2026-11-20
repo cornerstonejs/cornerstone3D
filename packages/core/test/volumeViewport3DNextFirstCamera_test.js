@@ -15,10 +15,10 @@ const renderingEngineId = utilities.uuidv4();
  */
 const LEGACY_CORONAL_CAMERA = {
   parallelProjection: true,
-  parallelScale: 11.25,
+  parallelScale: 12,
   viewAngle: 90,
-  focalPoint: [14.5, 20, 5.5],
-  position: [14.5, -237.0992, 5.5],
+  focalPoint: [14.5, 20, 11],
+  position: [14.5, -257.3085, 11],
   viewPlaneNormal: [0, -1, 0],
   viewUp: [0, 0, 1],
 };

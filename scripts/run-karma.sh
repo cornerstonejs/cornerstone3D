@@ -88,8 +88,28 @@ node -e "
 REPORT_NAME="$RUN_SLUG-$TIMESTAMP"
 node "$ROOT_DIR/scripts/generate-karma-html-report.js" "$LOG_FILE" "" "$REPORT_NAME" || true
 
+# The decoder tests have their own karma run, karma.decoders.conf.js. They
+# draw nothing, so the CPU pass skips them, and so does a run narrowed with
+# KARMA_GREP or KARMA_PACKAGE.
+DECODERS_EXIT_CODE=0
+if [[ "$FORCE_CPU_RENDERING" != "true" && -z "${KARMA_GREP:-}" && -z "${KARMA_PACKAGE:-}" ]]; then
+  echo
+  echo "Suite: karma decoders"
+  echo
+
+  set +e
+  npx karma start ./karma.decoders.conf.js 2>&1 | tee "$RUN_DIR/$RUN_SLUG-decoders.log"
+  DECODERS_EXIT_CODE=${PIPESTATUS[0]}
+  set -e
+
+  if [[ "$KARMA_EXIT_CODE" -eq 0 ]]; then
+    KARMA_EXIT_CODE=$DECODERS_EXIT_CODE
+  fi
+fi
+
 echo
 echo "CPU rendering forced: $FORCE_CPU_RENDERING"
+echo "Decoders exit code: $DECODERS_EXIT_CODE"
 echo "Run directory: $RUN_DIR"
 echo "Image report: $ROOT_DIR/reports/$REPORT_NAME/index.html"
 

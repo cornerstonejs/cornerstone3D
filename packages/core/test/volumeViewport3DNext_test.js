@@ -12,8 +12,8 @@ const renderingEngineId = utilities.uuidv4();
  */
 const LEGACY_FIT_CAMERA = {
   parallelScale: 15,
-  focalPoint: [15, 19.5, 5.5],
-  position: [272.0992026436488, 19.5, 5.5],
+  focalPoint: [15, 19.5, 11],
+  position: [292.308492477241, 19.5, 11],
   viewPlaneNormal: [1, 0, 0],
   viewUp: [0, 0, 1],
 };

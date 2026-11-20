@@ -24,6 +24,11 @@ npx codemod @cornerstonejs/cornerstone3d-6-tools
 - A re-export (`export { ... } from`) of these modules moves the same way; a
   renamed name keeps its public name
   (`export { createVolumeLabelmapPlan as createLegacyVolumeLabelmapPlan }`).
+- A plain named import or re-export of `viewportSupportsImageSlices` and
+  `viewportSupportsStackCalibration` from the deleted
+  `@cornerstonejs/tools/utilities/viewportCapabilities` comes from
+  `@cornerstonejs/core/utilities`, which exports both by the same names
+  (`utilities.viewportSupportsImageSlices` of the core).
 
 ## Reported
 
@@ -32,7 +37,10 @@ name, and an `export *` of one; the module
 `tools/displayTools/Labelmap/addVolumesAsIndependentComponents`;
 `removeVolumeLabelmapImageMapperActors`; `getSlabThicknessOrDefault`;
 `viewportSupportsStackCompatibility` and `StackCompatibilityViewport` of the
-tools; `utilities.spatial.rotateViewportAroundWorldPoint`.
+tools; any other import or re-export of
+`@cornerstonejs/tools/utilities/viewportCapabilities` (a type of it, a default
+or namespace import, `export *`, or the checks with another name);
+`utilities.spatial.rotateViewportAroundWorldPoint`.
 
 ## Development
 

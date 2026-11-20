@@ -75,12 +75,12 @@ const LEGACY_CROPPING_SCENE_ACTOR_COUNT = 26;
  * 3D viewport with the cropping tool active on the volume of the tests.
  */
 const LEGACY_CLIPPING_PLANE_ORIGINS = [
-  [2.4, 20, 6],
-  [27.6, 20, 6],
-  [15, 3.2, 6],
-  [15, 36.8, 6],
-  [15, 20, 0.96],
-  [15, 20, 11.04],
+  [2.4, 20, 12],
+  [27.6, 20, 12],
+  [15, 3.2, 12],
+  [15, 36.8, 12],
+  [15, 20, 1.92],
+  [15, 20, 22.08],
 ];
 
 /**

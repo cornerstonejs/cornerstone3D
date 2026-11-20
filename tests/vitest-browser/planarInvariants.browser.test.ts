@@ -467,6 +467,7 @@ describe('planarInvariants: presentation round trip', () => {
   // get/set Properties"), but it is still a real behavioral divergence from
   // a literal "reset restores defaults" contract, so it is kept here as a
   // documented test.fails rather than silently dropped or narrowed away.
+  // Open issue: resetDisplaySetPresentation drops the visible flag of the mount.
   test.fails(
     'resetDisplaySetPresentation does not restore the full pre-mutation presentation snapshot (visible flag is lost)',
     async () => {

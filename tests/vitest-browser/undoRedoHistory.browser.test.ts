@@ -489,6 +489,7 @@ describe('undoRedoHistory', () => {
     // call created. Kept as its own `test.fails` (not folded into the
     // byte-exact voxel test above, which passes cleanly) so the genuine
     // engine behavior is documented without weakening either assertion.
+    // Open issue: getUniqueSegmentIndices keeps a segment whose voxels an undo removed (5.x did the same).
     test.fails(
       'getUniqueSegmentIndices reflects actual voxel presence after undo (observed: does not)',
       async () => {

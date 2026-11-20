@@ -51,7 +51,7 @@
     "test:firefox": "karma start ./karma.conf.js --browsers Firefox",
     "test:chrome": "karma start ./karma.conf.js --browsers Chrome",
     "test:dev": "karma start",
-    "test:ci": "karma start --single-run",
+    "test:ci": "karma start --single-run && karma start ./karma.decoders.conf.js",
     "test:unit:ci": "pnpm run test:unit && pnpm run test:ci",
     "test": "karma start",
     "test:unit": "jest --collectCoverage",

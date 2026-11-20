@@ -18,7 +18,8 @@ const renderingEngineId = utilities.uuidv4();
 
 /**
  * The camera clipping range of the legacy 3D viewport of 400 by 300 pixels,
- * sagittal, with the volume of the tests, read on commit 58914567b. The legacy
+ * sagittal, with the volume of the tests, read on commit 58914567b with the
+ * test volume loader that honours the spacing of the volume id. The legacy
  * viewport fitted the range to the bounds of its visible props after
  * `setVolumes` and after each `setCamera` and `resetCamera`. Each step starts
  * from the camera of the step before: `zoom` halves the parallel scale, `pan`
@@ -30,20 +31,20 @@ const renderingEngineId = utilities.uuidv4();
  */
 const LEGACY_RANGES = {
   parallel: {
-    mount: [238.67321061721233, 277.0214942714071],
-    zoom: [238.67321061721233, 277.0214942714071],
-    pan: [238.67321061721233, 277.0214942714071],
-    rotate: [232.18796448193237, 291.21709330157694],
-    dolly: [41.29180651902316, 96.36803509802161],
-    reset: [227.99061408105052, 286.9328280691617],
+    mount: [258.6804075524686, 297.442981648252],
+    zoom: [258.6804075524686, 297.442981648252],
+    pan: [258.6804075524686, 297.442981648252],
+    rotate: [252.19516141718861, 311.6385806784218],
+    dolly: [46.293605752837216, 101.47340694223281],
+    reset: [247.99781101630663, 307.35431544600647],
   },
   perspective: {
-    mount: [225.30989752905458, 290.68517540604176],
-    zoom: [225.30989752905458, 290.68517540604176],
-    pan: [225.30989752905458, 290.68517540604176],
-    rotate: [227.58585575743535, 295.9226439194228],
-    dolly: [41.29180651902316, 96.36803509802161],
-    reset: [223.85063787543848, 291.16585878581736],
+    mount: [243.1142818724493, 313.35898813484044],
+    zoom: [243.1142818724493, 313.35898813484044],
+    pan: [243.1142818724493, 313.35898813484044],
+    rotate: [245.39024010083006, 318.5964566482214],
+    dolly: [46.293605752837216, 101.47340694223281],
+    reset: [241.65502221883304, 313.8396715146159],
   },
 };
 
@@ -54,12 +55,12 @@ const LEGACY_RANGES = {
  * of its picture that are not the background.
  */
 const LEGACY_PERSPECTIVE_DOLLY = {
-  clippingRange: [47.777052654303084, 82.17243606785179],
-  shownPixels: 4320,
+  clippingRange: [52.77885188811714, 87.27780791206301],
+  shownPixels: 7260,
 };
 
 /** The number of pixels of the legacy picture in perspective at the mount. */
-const LEGACY_PERSPECTIVE_SHOWN_PIXELS = 192;
+const LEGACY_PERSPECTIVE_SHOWN_PIXELS = 308;
 
 /**
  * The legacy 3D viewport in perspective with the red box of the tests as its

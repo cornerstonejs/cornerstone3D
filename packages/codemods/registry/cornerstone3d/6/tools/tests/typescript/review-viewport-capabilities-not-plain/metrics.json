@@ -1,0 +1,60 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "1",
+        "rule": "import of @cornerstonejs/tools/utilities/viewportCapabilities"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "11",
+        "rule": "export of @cornerstonejs/tools/utilities/viewportCapabilities"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "15",
+        "rule": "export of @cornerstonejs/tools/utilities/viewportCapabilities"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "2",
+        "rule": "import of @cornerstonejs/tools/utilities/viewportCapabilities"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "3",
+        "rule": "import of @cornerstonejs/tools/utilities/viewportCapabilities"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "5",
+        "rule": "viewportSupportsStackCompatibility"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "7",
+        "rule": "import of @cornerstonejs/tools/utilities/viewportCapabilities"
+      },
+      "count": 1
+    }
+  ]
+}
