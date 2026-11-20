@@ -1,4 +1,4 @@
-import { ActorRenderMode, type Types } from '@cornerstonejs/core';
+import { ActorRenderMode, Enums, type Types } from '@cornerstonejs/core';
 import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
 import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import type vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
@@ -115,6 +115,14 @@ function setLabelmapColorAndOpacity(
 
   const labelmapActor = labelmapActorEntry.actor as vtkVolume | vtkImageSlice;
 
+  // On a MIP, vtk.js's LABELMAP_EDGE_PROJECTION_BLEND draws only each
+  // segment's projected outline, as wide as its labelOutlineThickness, with
+  // the color and the opacity of the label's transfer functions: there is no
+  // fill, and labelOutlineOpacity is not used. The opacity built below is then
+  // the outline's. The mode is read from the mapper the actor draws with, as
+  // the viewport may set another one on it after the labelmap is mounted.
+  const drawsProjectedOutline = isEdgeProjectionActor(labelmapActor);
+
   // sharpness=1.0 gives sharp/step-like transitions between adjacent label
   // values; sharpness=0 would interpolate opacities between labels, which for
   // a discrete labelmap means the volume raycaster gets reduced effective
@@ -137,7 +145,11 @@ function setLabelmapColorAndOpacity(
       segmentIndex,
     });
 
-    const { fillAlpha, renderFill } = getLabelmapConfig(
+    const {
+      fillAlpha,
+      renderFill,
+      outlineOpacity: segmentOutlineOpacity,
+    } = getLabelmapConfig(
       labelmapStyle as LabelmapStyle,
       isActiveLabelmap,
       perSegmentStyle
@@ -152,7 +164,19 @@ function setLabelmapColorAndOpacity(
       sharpness: 1.0,
     });
 
-    if (renderFill) {
+    if (drawsProjectedOutline) {
+      // A hidden segment and renderOutline off get no outline: their
+      // thickness is 0 below, which is what keeps vtk.js from drawing them,
+      // and their opacity says the same.
+      const outlineVisible = renderOutline && !segmentsHidden.has(segmentIndex);
+
+      opacityNodes.push({
+        x: labelValue,
+        y: outlineVisible ? (segmentColor[3] / 255) * segmentOutlineOpacity : 0,
+        midpoint: 0.5,
+        sharpness: 1.0,
+      });
+    } else if (renderFill) {
       const segmentOpacity = segmentsHidden.has(segmentIndex)
         ? 0
         : (segmentColor[3] / 255) * fillAlpha;
@@ -282,6 +306,18 @@ function setLabelmapColorAndOpacity(
   } else {
     lastAppliedLabelmapStyle.delete(labelmapActor);
   }
+}
+
+function isEdgeProjectionActor(actor: vtkVolume | vtkImageSlice): boolean {
+  const mapper = actor.getMapper?.() as
+    | { getBlendMode?: () => number }
+    | null
+    | undefined;
+
+  return (
+    mapper?.getBlendMode?.() ===
+    (Enums.BlendModes.LABELMAP_EDGE_PROJECTION_BLEND as number)
+  );
 }
 
 function getOrCreateTransferFunctions(
