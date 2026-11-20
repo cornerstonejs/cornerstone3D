@@ -1,4 +1,8 @@
-import type { VolumeViewport3D, Types } from '@cornerstonejs/core';
+import type {
+  PlanarViewport,
+  VolumeViewport3D,
+  Types,
+} from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
@@ -27,6 +31,7 @@ const {
   PanTool,
   StackScrollTool,
   TrackballRotateTool,
+  SegmentationIntersectionTool,
 } = cornerstoneTools;
 const { MouseBindings } = csToolsEnums;
 const { ViewportType, GeometryType } = Enums;
@@ -35,14 +40,16 @@ const { ViewportType, GeometryType } = Enums;
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
+const toolGroupId = 'MY_TOOLGROUP_ID';
 const toolGroupId3d = 'MY_TOOLGROUP_ID_3d';
 const segmentationId = 'MY_SEGMENTATION_ID';
 const displaySetId = 'surfaceRendering:ct';
+const axialDisplaySetId = 'surfaceRendering:ct:axial';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Surface Segmentation Representation for Volume Viewports',
-  'This example first downloads the surface data. In this demonstration, we will show you how to render surfaces. There is a 3D viewport. When you interact with the images, the intersection between the surfaces and the underlying volume is calculated. Please note that this calculation may be slow during the initial visit, but we have implemented caching to significantly improve speed in subsequent visits. In the future, we plan to enhance the user experience by introducing off-thread pre-calculation of all surfaces.'
+  'This example first downloads the surface data. In this demonstration, we will show you how to render surfaces. On the left side there is an axial viewport, and on the right side a 3D viewport that shows the surfaces. On the axial viewport, the SegmentationIntersectionTool draws the lines where the surfaces cut the slice on display, and the lines follow when you scroll. The lines of a slice are calculated on its first visit and kept for the next ones.'
 );
 
 const size = '512px';
@@ -53,21 +60,31 @@ viewportGrid.style.display = 'flex';
 viewportGrid.style.display = 'flex';
 viewportGrid.style.flexDirection = 'row';
 
+const element1 = document.createElement('div');
+element1.oncontextmenu = () => false;
+
+element1.style.width = size;
+element1.style.height = size;
+
 const element2 = document.createElement('div');
 element2.oncontextmenu = () => false;
 
 element2.style.width = size;
 element2.style.height = size;
 
+viewportGrid.appendChild(element1);
 viewportGrid.appendChild(element2);
 
 content.appendChild(viewportGrid);
 let renderingEngine;
 const instructions = document.createElement('p');
+instructions.innerText =
+  'Axial viewport: mouse wheel to scroll, right drag to zoom. 3D viewport: left drag to rotate, right drag to zoom.';
 content.append(instructions);
 // ============================= //
 
 // Create the viewports
+const viewportId1 = 'CT_AXIAL';
 const viewportId2 = 'CT_3D';
 
 let surfaces;
@@ -103,6 +120,28 @@ async function run() {
   cornerstoneTools.addTool(ZoomTool);
   cornerstoneTools.addTool(StackScrollTool);
   cornerstoneTools.addTool(TrackballRotateTool);
+  cornerstoneTools.addTool(SegmentationIntersectionTool);
+
+  const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+
+  toolGroup.addTool(StackScrollTool.toolName);
+  toolGroup.addTool(ZoomTool.toolName);
+  toolGroup.addTool(SegmentationIntersectionTool.toolName);
+
+  toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Wheel,
+      },
+    ],
+  });
+  toolGroup.setToolActive(ZoomTool.toolName, {
+    bindings: [
+      {
+        mouseButton: MouseBindings.Secondary,
+      },
+    ],
+  });
 
   const toolGroup3d = ToolGroupManager.createToolGroup(toolGroupId3d);
 
@@ -150,6 +189,15 @@ async function run() {
 
   const viewportInputArray = [
     {
+      viewportId: viewportId1,
+      type: ViewportType.PLANAR,
+      element: element1,
+      defaultOptions: {
+        orientation: Enums.OrientationAxis.AXIAL,
+        background: <Types.Point3>[0.2, 0, 0.2],
+      },
+    },
+    {
       viewportId: viewportId2,
       type: ViewportType.VOLUME_3D,
       element: element2,
@@ -161,6 +209,7 @@ async function run() {
 
   renderingEngine.setViewports(viewportInputArray);
 
+  toolGroup.addViewport(viewportId1, renderingEngineId);
   toolGroup3d.addViewport(viewportId2, renderingEngineId);
 
   // Set the volume to load
@@ -171,6 +220,16 @@ async function run() {
     imageIds,
     volumeId,
   });
+  utilities.genericViewportDisplaySetMetadataProvider.add(axialDisplaySetId, {
+    kind: 'planar',
+    imageIds,
+    volumeId,
+  });
+
+  const axialViewport: PlanarViewport =
+    renderingEngine.getViewport(viewportId1);
+
+  await axialViewport.setDisplaySets({ displaySetId: axialDisplaySetId });
 
   const viewport3d: VolumeViewport3D = renderingEngine.getViewport(viewportId2);
 
@@ -190,6 +249,8 @@ async function run() {
       segmentationId,
     },
   ]);
+
+  toolGroup.setToolEnabled(SegmentationIntersectionTool.toolName);
 
   // Render the image
   renderingEngine.render();

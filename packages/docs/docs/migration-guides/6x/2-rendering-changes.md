@@ -1277,6 +1277,18 @@ legacy picture within two levels of 255.
   paths. A viewport class of the application, registered with
   `registerViewportType`, that has only the legacy members gets nothing
   from these tools.
+- **`SegmentationIntersectionTool` draws its lines.** On each planar
+  viewport of its tool group it draws the closed lines where the surfaces of
+  segmentations cut the slice on display, filled with its `opacity`, in the
+  colour of each segment, and the lines follow a scroll. The surfaces are
+  those that the viewports of the same frame of reference show as their
+  Surface representation, such as a 3D viewport beside the planar viewports
+  of an MPR, of a visible representation and segment. The cut of a slice is
+  made on its first draw and made again when a surface gets other points or
+  polys arrays, or arrays of another length. A 3D viewport of the tool group
+  gets no line. In 5.x the tool read `clippingFilter` of each actor entry,
+  which nothing set, and drew no line. The example `surfaceRendering` shows
+  it.
 
 ## The viewport type that a tool gets
 

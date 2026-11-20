@@ -1,5 +1,12 @@
-import { getRenderingEngine } from '@cornerstonejs/core';
+import {
+  cache,
+  getEnabledElements,
+  getRenderingEngine,
+} from '@cornerstonejs/core';
 import type { Types, PlanarViewport } from '@cornerstonejs/core';
+import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
+import vtkCutter from '@kitware/vtk.js/Filters/Core/Cutter';
+import vtkContourLoopExtraction from '@kitware/vtk.js/Filters/General/ContourLoopExtraction';
 
 import {
   addAnnotation,
@@ -14,19 +21,32 @@ import type {
   SVGDrawingHelper,
   Annotation,
 } from '../types';
+import type { SegmentationRepresentation } from '../types/SegmentationStateTypes';
 import AnnotationDisplayTool from './base/AnnotationDisplayTool';
 import { distanceToPoint } from '../utilities/math/point';
 import { pointToString } from '../utilities/pointToString';
 import { polyDataUtils } from '../utilities';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+import SegmentationRepresentations from '../enums/SegmentationRepresentations';
+import { getSegmentationRepresentations } from '../stateManagement/segmentation/getSegmentationRepresentation';
+import { getSegmentation } from '../stateManagement/segmentation/getSegmentation';
+import { getColorLUT } from '../stateManagement/segmentation/getColorLUT';
+import { internalGetHiddenSegmentIndices } from '../stateManagement/segmentation/helpers/internalGetHiddenSegmentIndices';
+import { getSurfaceRepresentationUID } from '../stateManagement/segmentation/helpers/getSegmentationActor';
+import { createSurfacePolyData } from './displayTools/Surface/surfaceActor';
 
 const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
   'tools.SegmentationIntersectionTool'
 );
 
+/**
+ * The outline of a surface on one slice of a viewport: the closed polylines
+ * where the surface cuts the slice, in world coordinates, and the colour of
+ * its segment as an SVG colour.
+ */
 export type WorldPointSet = {
-  worldPointsSet;
-  color;
+  worldPointsSet: Types.Point3[][];
+  color: string;
 };
 
 export type SegmentationIntersectionAnnotation = Annotation & {
@@ -35,6 +55,42 @@ export type SegmentationIntersectionAnnotation = Annotation & {
   };
 };
 
+/**
+ * A surface of a segment that a viewport shows as its Surface
+ * representation, with the colour of the segment there as an SVG colour.
+ */
+type ShownSurface = {
+  surface: Types.ISurface;
+  color: string;
+};
+
+/**
+ * The points and the polys arrays of a surface, with their lengths, that the
+ * outlines of the surface were cut from. The arrays can change in place, so
+ * their lengths are kept apart from them.
+ */
+type CutSurfaceData = {
+  points: number[];
+  polys: number[];
+  pointsLength: number;
+  polysLength: number;
+};
+
+/** The surface data that each map of outlines of a surface was cut from. */
+const cutSurfaceDataByOutlines = new WeakMap<
+  Map<string, WorldPointSet>,
+  CutSurfaceData
+>();
+
+/**
+ * Draws on each slice viewport of its tool group the lines where the surfaces
+ * of segmentations cut the slice on display, filled with the `opacity` of its
+ * configuration. The surfaces are those that the viewports of the same frame
+ * of reference show as their Surface representation, as a 3D viewport does
+ * next to the planar viewports of an MPR. Each line has the colour of its
+ * segment. The lines of a slice are cut once, and again when the surface
+ * gets new data.
+ */
 class SegmentationIntersectionTool extends AnnotationDisplayTool {
   static toolName;
 
@@ -50,8 +106,9 @@ class SegmentationIntersectionTool extends AnnotationDisplayTool {
   }
 
   /**
-   * Initialize the annotation data and calculates surface intersections
-   * @returns
+   * Adds the annotation of the tool in the frame of reference of the first
+   * viewport of its tool group, with no outline yet, and draws the viewports
+   * of the group. Each viewport cuts the outlines of its slice as it draws.
    */
   _init = (): void => {
     const viewportsInfo = getToolGroup(this.toolGroupId).viewportsInfo;
@@ -72,11 +129,10 @@ class SegmentationIntersectionTool extends AnnotationDisplayTool {
     const annotations = getAnnotations(this.getToolName(), frameOfReferenceUID);
 
     if (!annotations?.length) {
-      const actorsWorldPointsMap = new Map();
-      calculateSurfaceSegmentationIntersections(
-        actorsWorldPointsMap,
-        viewportsInfo
-      );
+      const actorsWorldPointsMap = new Map<
+        string,
+        Map<string, WorldPointSet>
+      >();
       const newAnnotation: SegmentationIntersectionAnnotation = {
         highlighted: true,
         invalidated: true,
@@ -107,10 +163,15 @@ class SegmentationIntersectionTool extends AnnotationDisplayTool {
   };
 
   /**
-   * Renders the surface intersections
+   * Draws on a viewport the outlines of the surfaces that the viewports of
+   * its frame of reference show, where they cut the slice on display. The
+   * outlines of a slice are cut on its first draw. A viewport without a slice,
+   * as a 3D viewport, draws nothing.
    *
    * @param enabledElement - The Cornerstone's enabledElement.
    * @param svgDrawingHelper - The svgDrawingHelper providing the context for drawing.
+   * @returns Whether the frame of reference of the viewport has the
+   * annotation of the tool.
    */
   renderAnnotation = (
     enabledElement: Types.IEnabledElement,
@@ -119,164 +180,290 @@ class SegmentationIntersectionTool extends AnnotationDisplayTool {
     const { FrameOfReferenceUID } = enabledElement;
     const viewport = enabledElement.viewport as PlanarViewport;
 
-    let renderStatus = false;
-
     const annotations = getAnnotations(this.getToolName(), FrameOfReferenceUID);
+
     if (!annotations?.length) {
-      return renderStatus;
+      return false;
+    }
+
+    const cacheId = getCacheId(viewport);
+
+    if (!cacheId) {
+      return true;
     }
     const annotation = annotations[0];
     const { annotationUID } = annotation;
     const actorsWorldPointsMap = (<SegmentationIntersectionAnnotation>(
       annotation
     )).data.actorsWorldPointsMap;
+    const shownSurfaces = getShownSurfaces(FrameOfReferenceUID);
 
     calculateSurfaceSegmentationIntersectionsForViewport(
       actorsWorldPointsMap,
-      viewport
+      viewport,
+      shownSurfaces
     );
 
-    const actorEntries = viewport.getActors();
-    const cacheId = getCacheId(viewport);
+    for (const representationUID of shownSurfaces.keys()) {
+      const outline = actorsWorldPointsMap.get(representationUID)?.get(cacheId);
 
-    actorEntries.forEach((actorEntry) => {
-      if (!actorEntry?.clippingFilter) {
-        return;
+      if (!outline) {
+        continue;
       }
-      const actorWorldPointMap = actorsWorldPointsMap.get(actorEntry.uid);
-      if (!actorWorldPointMap) {
-        return;
-      }
-      if (!actorWorldPointMap.get(cacheId)) {
-        return;
-      }
-      let polyLineIdx = 1;
-      const { worldPointsSet, color } = actorWorldPointMap.get(cacheId);
-      for (let i = 0; i < worldPointsSet.length; i++) {
-        const worldPoints = worldPointsSet[i];
+      const { worldPointsSet, color } = outline;
+
+      worldPointsSet.forEach((worldPoints, index) => {
         const canvasPoints = worldPoints.map((point) =>
           viewport.worldToCanvas(point)
         );
 
-        const options = {
-          color: color,
-          fillColor: color,
-          fillOpacity: this.configuration.opacity,
-          closePath: true,
-          lineWidth: 2,
-        };
-
-        const polyLineUID = actorEntry.uid + '#' + polyLineIdx;
         drawPath(
           svgDrawingHelper,
           annotationUID,
-          polyLineUID,
+          `${representationUID}#${index + 1}`,
           canvasPoints,
-          options
+          {
+            color,
+            fillColor: color,
+            fillOpacity: this.configuration.opacity,
+            closePath: true,
+            lineWidth: 2,
+          }
         );
-        polyLineIdx++;
-      }
-    });
+      });
+    }
 
-    renderStatus = true;
-    return renderStatus;
+    return true;
   };
 }
 
 /**
- * Calculates surface intersections points for all surface actors in a list of viewports
- * @param actorWorldPointsMap
- * @param viewportsInfo
+ * The surfaces of the segments that the viewports of a frame of reference
+ * show as their Surface representation, by the representation UID of each
+ * segment: of a visible representation, and not hidden on that viewport. A
+ * surface that several viewports show takes the colour of the first one.
+ *
+ * @param frameOfReferenceUID - The frame of reference.
+ * @returns The shown surfaces, with the colour of their segment.
  */
-function calculateSurfaceSegmentationIntersections(
-  actorsWorldPointsMap,
-  viewportsInfo
-) {
-  viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
-    const viewport =
-      getRenderingEngine(renderingEngineId)?.getViewport(viewportId);
-    calculateSurfaceSegmentationIntersectionsForViewport(
-      actorsWorldPointsMap,
-      viewport
+function getShownSurfaces(
+  frameOfReferenceUID: string
+): Map<string, ShownSurface> {
+  const shownSurfaces = new Map<string, ShownSurface>();
+
+  getEnabledElements().forEach(({ viewport }) => {
+    if (viewport.getFrameOfReferenceUID() !== frameOfReferenceUID) {
+      return;
+    }
+
+    getSegmentationRepresentations(viewport.id, {
+      type: SegmentationRepresentations.Surface,
+    }).forEach((representation) => {
+      addShownSurfaces(shownSurfaces, viewport.id, representation);
+    });
+  });
+
+  return shownSurfaces;
+}
+
+/**
+ * Adds the surfaces of the visible segments of a Surface representation of a
+ * viewport, with the colour of each segment in the colour LUT of the
+ * representation, as the surface display gives it.
+ */
+function addShownSurfaces(
+  shownSurfaces: Map<string, ShownSurface>,
+  viewportId: string,
+  representation: SegmentationRepresentation
+): void {
+  const { segmentationId, type, visible, colorLUTIndex } = representation;
+  const geometryIds =
+    getSegmentation(segmentationId)?.representationData[
+      SegmentationRepresentations.Surface
+    ]?.geometryIds;
+
+  if (!visible || !geometryIds) {
+    return;
+  }
+
+  const hiddenSegmentIndices = internalGetHiddenSegmentIndices(viewportId, {
+    segmentationId,
+    type,
+  });
+  const colorLUT = getColorLUT(colorLUTIndex);
+
+  geometryIds.forEach((geometryId) => {
+    const surface = cache.getGeometry(geometryId)?.data as
+      | Types.ISurface
+      | undefined;
+
+    if (!surface?.points?.length) {
+      return;
+    }
+
+    const { segmentIndex } = surface;
+    const representationUID = getSurfaceRepresentationUID(
+      segmentationId,
+      segmentIndex
     );
+
+    if (
+      shownSurfaces.has(representationUID) ||
+      hiddenSegmentIndices.has(segmentIndex)
+    ) {
+      return;
+    }
+
+    const [r, g, b] = colorLUT?.[segmentIndex] ?? surface.color;
+
+    shownSurfaces.set(representationUID, {
+      surface,
+      color: `rgb(${r}, ${g}, ${b})`,
+    });
   });
 }
 
 /**
- * Calculates surface intersections points for all surface actors in a viewport
- * generating a set of polyline points for each actor
- * @param actorWorldPointsMap
- * @param viewport
+ * Cuts the outlines of the shown surfaces on the slice that a viewport
+ * shows, for each surface that has none on that slice yet. A surface whose
+ * points or polys changed since its outlines were cut drops them first. An
+ * outline that is kept takes the colour of the segment now.
+ *
+ * @param actorsWorldPointsMap - The outlines of each surface, by
+ * representation UID, then by viewport and slice.
+ * @param viewport - The viewport.
+ * @param shownSurfaces - The surfaces to cut.
  */
 function calculateSurfaceSegmentationIntersectionsForViewport(
-  actorsWorldPointsMap,
-  viewport
-) {
-  const actorEntries = viewport.getActors();
-
-  // we should not use the focalPoint here, since the pan and zoom updates it,
-  // imageIndex is reliable enough
+  actorsWorldPointsMap: Map<string, Map<string, WorldPointSet>>,
+  viewport: PlanarViewport,
+  shownSurfaces: Map<string, ShownSurface>
+): void {
   const cacheId = getCacheId(viewport);
 
-  actorEntries.forEach((actorEntry) => {
-    if (!actorEntry?.clippingFilter) {
+  if (!cacheId) {
+    return;
+  }
+
+  const { cameraFocalPoint, viewPlaneNormal } = viewport.getViewReference();
+
+  shownSurfaces.forEach(({ surface, color }, representationUID) => {
+    let outlines = actorsWorldPointsMap.get(representationUID);
+
+    if (!outlines || !isCutFrom(outlines, surface)) {
+      outlines = new Map();
+      actorsWorldPointsMap.set(representationUID, outlines);
+      cutSurfaceDataByOutlines.set(outlines, {
+        points: surface.points,
+        polys: surface.polys,
+        pointsLength: surface.points.length,
+        polysLength: surface.polys.length,
+      });
+    }
+
+    const outline = outlines.get(cacheId);
+
+    if (outline) {
+      outline.color = color;
       return;
     }
 
-    let actorWorldPointsMap = actorsWorldPointsMap.get(actorEntry.uid);
-    if (!actorWorldPointsMap) {
-      actorWorldPointsMap = new Map();
-      actorsWorldPointsMap.set(actorEntry.uid, actorWorldPointsMap);
-    }
-    if (!actorWorldPointsMap.get(cacheId)) {
-      const polyData = actorEntry.clippingFilter.getOutputData();
-      const worldPointsSet = polyDataUtils.getPolyDataPoints(polyData);
-      if (!worldPointsSet) {
-        return;
-      }
-
-      // worldPointsSet = removeExtraPoints(viewport, worldPointsSet);
-      const colorArray = actorEntry.actor.getProperty().getColor();
-      const color = colorToString(colorArray);
-      actorWorldPointsMap.set(cacheId, { worldPointsSet, color });
-    }
+    outlines.set(cacheId, {
+      worldPointsSet: cutSurface(surface, cameraFocalPoint, viewPlaneNormal),
+      color,
+    });
   });
+}
+
+/**
+ * Whether the outlines of a surface were cut from its points and polys as
+ * they are now.
+ */
+function isCutFrom(
+  outlines: Map<string, WorldPointSet>,
+  surface: Types.ISurface
+): boolean {
+  const cutSurfaceData = cutSurfaceDataByOutlines.get(outlines);
+
+  return (
+    cutSurfaceData?.points === surface.points &&
+    cutSurfaceData.polys === surface.polys &&
+    cutSurfaceData.pointsLength === surface.points.length &&
+    cutSurfaceData.polysLength === surface.polys.length
+  );
+}
+
+/**
+ * The closed polylines where a surface cuts a plane, in world coordinates:
+ * the loops of the vtk.js cutter, as the polySeg add-on cuts a surface into
+ * the contours of a slice. None when the plane misses the surface.
+ *
+ * @param surface - The surface.
+ * @param origin - A point of the plane.
+ * @param normal - The normal of the plane.
+ * @returns The polylines, each without its first point repeated at its end.
+ */
+function cutSurface(
+  surface: Types.ISurface,
+  origin: Types.Point3,
+  normal: Types.Point3
+): Types.Point3[][] {
+  const cutter = vtkCutter.newInstance();
+
+  cutter.setCutFunction(
+    vtkPlane.newInstance({ origin: [...origin], normal: [...normal] })
+  );
+  cutter.setInputData(createSurfacePolyData(surface));
+  cutter.update();
+
+  const cut = cutter.getOutputData();
+
+  if (!cut?.getPoints().getNumberOfPoints()) {
+    return [];
+  }
+
+  cut.buildLinks();
+
+  const loopExtraction = vtkContourLoopExtraction.newInstance();
+
+  loopExtraction.setInputData(cut);
+  loopExtraction.update();
+
+  const loops = loopExtraction.getOutputData();
+  const points = loops.getPoints().getData();
+  const lines = loops.getLines().getData();
+  const polylines: Types.Point3[][] = [];
+
+  for (let index = 0; index < lines.length; index += lines[index] + 1) {
+    const pointIds = Array.from(
+      lines.slice(index + 1, index + 1 + lines[index])
+    );
+
+    if (pointIds.length > 1 && pointIds[0] === pointIds[pointIds.length - 1]) {
+      pointIds.pop();
+    }
+
+    polylines.push(
+      pointIds.map((pointId) => polyDataUtils.getPoint(points, pointId))
+    );
+  }
+
+  return polylines;
 }
 
 /**
  * The key under which the outlines of a viewport are kept: its id, its view
- * plane normal and its slice, from its view reference. A 3D viewport has no
- * slice. A viewport that shows nothing has no view, and no key.
+ * plane normal and its slice, from its view reference. A viewport that shows
+ * nothing has no view, and a 3D viewport has no slice: neither has a key.
  */
 function getCacheId(viewport): string | undefined {
   const { viewPlaneNormal, sliceIndex } = viewport.getViewReference();
 
-  if (!viewPlaneNormal) {
+  if (!viewPlaneNormal || sliceIndex === undefined) {
     return;
   }
 
   return `${viewport.id}-${pointToString(viewPlaneNormal)}-${sliceIndex}`;
-}
-
-/**
- * Transform a color array into a string
- * @param colorArray
- * @returns
- */
-function colorToString(colorArray): string {
-  function colorComponentToString(component) {
-    let componentString = Math.floor(component * 255).toString(16);
-    if (componentString.length === 1) {
-      componentString = '0' + componentString;
-    }
-    return componentString;
-  }
-  return (
-    '#' +
-    colorComponentToString(colorArray[0]) +
-    colorComponentToString(colorArray[1]) +
-    colorComponentToString(colorArray[2])
-  );
 }
 
 /**

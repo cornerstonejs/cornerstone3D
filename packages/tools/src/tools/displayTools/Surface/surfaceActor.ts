@@ -107,4 +107,4 @@ function updateSurfaceActorData(
   return true;
 }
 
-export { createSurfaceActor, updateSurfaceActorData };
+export { createSurfaceActor, createSurfacePolyData, updateSurfaceActorData };
