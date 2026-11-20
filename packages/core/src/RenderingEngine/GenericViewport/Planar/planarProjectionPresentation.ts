@@ -3,6 +3,7 @@ import type { ViewPresentationSelector } from '../../../types/IViewport';
 import type { ProjectionWriteOptions } from '../ViewportProjectionTypes';
 import { normalizePlanarScale } from './planarCameraScale';
 import { getPlanarProjectionFallbackViewStateWithPan } from './planarProjectionFallback';
+import { derivePlanarPresentation } from './planarRenderCamera';
 import {
   getPlanarProjectionPan,
   getPlanarProjectionScale,
@@ -48,7 +49,7 @@ function hasOwn<T extends object, K extends PropertyKey>(
  * Keeps what a patch clears as own undefined properties after the
  * normalization, because `setViewState` merges patches: the display area
  * that the patch takes away, and the world anchor that a display area of the
- * patch replaces.
+ * patch replaces, or that a view resolved without one leaves out.
  */
 function preserveClears(
   viewState: PlanarViewState,
@@ -72,6 +73,39 @@ function getPlanarScaleForZoom(zoom: number, currentScale: Point2): Point2 {
   const [nextScaleY] = normalizePlanarScale(zoom);
 
   return normalizePlanarScale([(nextScaleY * scaleX) / scaleY, nextScaleY]);
+}
+
+/**
+ * The scale of a view state that shows its display area at `scale` against
+ * the fit. A display area resolves to a scale of its own on the slice, and
+ * the scale of the view state multiplies it. A scale (`perAxis`) is divided
+ * axis by axis; a zoom keeps the ratio of the two axes that the display area
+ * gives. Without a display area, or without a slice to resolve it on, the
+ * scale is taken as it is.
+ */
+function getScaleNextToDisplayArea(
+  snapshot: PlanarProjectionSnapshot,
+  viewState: PlanarViewState,
+  scale: Point2,
+  perAxis: boolean
+): Point2 {
+  const sliceBasis = snapshot.resolvedView?.getSliceBasis?.();
+
+  if (!viewState.displayArea || !sliceBasis) {
+    return scale;
+  }
+
+  const [areaScaleX, areaScaleY] = derivePlanarPresentation({
+    sliceBasis,
+    camera: { ...viewState, scale: [1, 1] },
+    canvasWidth: snapshot.canvasWidth,
+    canvasHeight: snapshot.canvasHeight,
+  }).scale;
+
+  return normalizePlanarScale([
+    scale[0] / (perAxis ? areaScaleX : areaScaleY),
+    scale[1] / areaScaleY,
+  ]);
 }
 
 /**
@@ -152,19 +186,25 @@ export function getPlanarProjectionPresentation(
  * Converts a Planar view-presentation patch back into normalized semantic
  * PlanarViewState.
  *
- * A zoom in the patch is the new vertical scale and keeps the ratio of the
- * two axes, so a stretched view stays stretched. A scale in the patch is
- * taken as it is, and wins over a zoom. With a display area in the patch, a
- * zoom is the scale of both axes against that area.
+ * A zoom in the patch is the new vertical scale against the fit and keeps
+ * the ratio of the two axes, so a stretched view stays stretched. A scale in
+ * the patch is taken as it is, and wins over a zoom. Next to a display area
+ * in the patch, a zoom and a scale are against the fit too, as
+ * `getPlanarProjectionPresentation` reads them, so writing back a
+ * presentation that was read gives the same view.
  *
  * A pan in the patch is the place of the centre of the slice. The view
  * state it gives holds no world anchor, so a pan after a zoom at a canvas
- * point is right at the new scale and rotation.
+ * point is right at the new scale and rotation. A pan decides where the
+ * picture is, so a display area in the same patch gives way to it.
  *
  * With `options.anchorCanvas`, a patch that has a zoom or a scale keeps the
  * world point under that canvas point under it, in one view state. A pan or
  * a display area in the patch decides where the picture is, so the anchor is
- * not used then, and not for a view that shows no data.
+ * not used then, and not for a view that shows no data. With no anchor and
+ * no pan, a zoom or a scale is about the centre of the canvas, as the legacy
+ * viewports zoomed about the focal point. A world anchor of the view state
+ * stays, at its canvas point moved by the zoom.
  *
  * A display area in the view state decides the zoom and the pan while it is
  * there. A patch with a pan, a zoom or a scale and no display area takes it
@@ -191,10 +231,10 @@ export function withPlanarProjectionPresentation(
   const viewState = snapshot.viewState ?? {};
   const hasZoom = hasOwn(presentation, 'zoom');
   const hasScale = hasOwn(presentation, 'scale');
-  const hasDisplayArea = hasOwn(presentation, 'displayArea');
+  const hasDisplayArea = hasOwn(presentation, 'displayArea') && !pan;
   const dropsDisplayArea =
     !hasDisplayArea &&
-    Boolean(viewState.displayArea) &&
+    (Boolean(viewState.displayArea) || hasOwn(presentation, 'displayArea')) &&
     (Boolean(pan) || hasZoom || hasScale);
   const currentScale = snapshot.presentation.scaleVector;
   const nextScale = hasScale
@@ -214,8 +254,16 @@ export function withPlanarProjectionPresentation(
     nextCamera.anchorCanvas = [0.5, 0.5];
     nextCamera.anchorWorld = undefined;
     nextCamera.displayArea = displayArea;
-    nextCamera.scale = hasZoom || hasScale ? nextScale : [1, 1];
     nextCamera.scaleMode = displayArea?.scaleMode ?? 'fit';
+    nextCamera.scale =
+      hasZoom || hasScale
+        ? getScaleNextToDisplayArea(
+            snapshot,
+            { ...viewState, ...nextCamera },
+            nextScale,
+            hasScale
+          )
+        : [1, 1];
   } else if (
     hasZoom ||
     hasScale ||
@@ -255,20 +303,14 @@ export function withPlanarProjectionPresentation(
       );
 
     return preserveClears(nextViewState, {
-      displayArea:
-        dropsDisplayArea ||
-        (hasDisplayArea && presentation.displayArea === undefined),
+      displayArea: dropsDisplayArea,
+      anchorWorld: !nextViewState.anchorWorld,
     });
   }
 
-  const anchorCanvas =
-    options.anchorCanvas ??
-    (dropsDisplayArea
-      ? ([snapshot.canvasWidth / 2, snapshot.canvasHeight / 2] as Point2)
-      : undefined);
   const anchoredView =
-    anchorCanvas && !hasDisplayArea && (hasZoom || hasScale)
-      ? snapshot.resolvedView?.withScale?.(nextScale, anchorCanvas)
+    !hasDisplayArea && (hasZoom || hasScale)
+      ? snapshot.resolvedView?.withScale?.(nextScale, options.anchorCanvas)
       : undefined;
 
   if (anchoredView) {
@@ -279,7 +321,10 @@ export function withPlanarProjectionPresentation(
         flipVertical,
         rotation,
       }),
-      { displayArea: dropsDisplayArea }
+      {
+        displayArea: dropsDisplayArea,
+        anchorWorld: !anchoredView.state.viewState.anchorWorld,
+      }
     );
   }
 

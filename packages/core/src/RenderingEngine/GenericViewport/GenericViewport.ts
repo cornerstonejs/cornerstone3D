@@ -543,10 +543,9 @@ abstract class GenericViewport<
   }
 
   /**
-   * Returns the current axis-based stretch as `[scaleX, scaleY]`. The new
-   * generic viewport pipeline does not apply axis-based stretching for now, so this
-   * defaults to `[1, 1]`. Subclasses that support aspect-ratio stretching
-   * should override.
+   * Returns the current axis-based stretch as `[scaleX, scaleY]`. This
+   * defaults to `[1, 1]`. A planar viewport overrides it with the stretch of
+   * its scale pair; the other families do not stretch.
    */
   getAspectRatio(): Point2 {
     return [1, 1];

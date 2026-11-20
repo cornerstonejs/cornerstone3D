@@ -217,7 +217,6 @@ function applyDisplayAreaScaleMode(
         },
         scaleMode,
       },
-      scale: [1, 1],
     });
     viewport.render();
   }

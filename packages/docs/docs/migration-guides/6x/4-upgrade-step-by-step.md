@@ -561,6 +561,9 @@ viewport.resetViewState();
 
 To zoom about a canvas point, give it as the fourth argument:
 `viewportProjection.withPresentation(viewport, { zoom }, undefined, { anchorCanvas: canvasPoint })`.
+Without it the zoom is about the centre of the canvas, also after a pan, as
+the legacy `setZoom(zoom)` was. `setZoom(zoom)` of a planar viewport without
+a canvas point is too.
 
 To read a camera in the legacy shape, use
 `viewport.getResolvedView()?.toICamera()`. It is for reading only.
@@ -595,9 +598,9 @@ the presentation gives zoom 1 and pan `[0, 0]`.
 - A camera that was set to move through slices is step 6.
 - A display area in the options of a viewport is not applied by itself. Call
   `viewport.setViewState({ displayArea })` after the mount.
-- A stretch is `viewport.setViewState({ scale: [x, y] })`. Do not read it from
-  `getAspectRatio()`, which always returns `[1, 1]`. The legacy
-  `setAspectRatio([w, h], { fit: true })` is
+- A stretch is `viewport.setViewState({ scale: [x, y] })`. `getAspectRatio()`
+  of a planar viewport reads it back as the pair divided by its smaller
+  number, as in 5.x. The legacy `setAspectRatio([w, h], { fit: true })` is
   `viewport.setViewState({ scale: [w / h, 1], scaleMode: 'fitAspect' })`.
 - `setCamera({ viewPlaneNormal, viewUp })` becomes
   `viewport.setViewState({ orientation: { viewPlaneNormal, viewUp } })`, and

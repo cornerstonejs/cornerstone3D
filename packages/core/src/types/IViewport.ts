@@ -603,7 +603,11 @@ interface IViewport<
   canvasToWorld(canvasPos: Point2): Point3;
   /** A world point in canvas coordinates. It throws while no data is mounted. */
   worldToCanvas(worldPos: Point3): Point2;
-  /** The stretch of the axes of the base class: `[1, 1]`. */
+  /**
+   * The stretch of the axes, divided by the smaller one: `[2, 1]` for a
+   * planar view twice as wide as the fit, `[1, 1]` for a view that is not
+   * stretched and for the families that do not stretch.
+   */
   getAspectRatio(): Point2;
 
   /** The rendering engine that owns the viewport. */

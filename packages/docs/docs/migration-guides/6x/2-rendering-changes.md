@@ -288,7 +288,22 @@ leave the canvas. Against the legacy volume viewport:
   work this way, in stack mode and in volume mode. Before this change the
   display area stayed: a pan did nothing and a zoom was multiplied by the
   zoom of the display area. To set a display area again, call
-  `viewport.setDisplayArea(displayArea)`.
+  `viewport.setDisplayArea(displayArea)`. `setPan(pan)` and `setZoom(zoom)`
+  of a planar viewport work the same way, so `setPan(getPan())` and
+  `setZoom(getZoom())` keep the picture, as on a legacy viewport. Before this
+  change `setPan` dropped the zoom back to the fit and `setZoom` lost the pan.
+- **A zoom next to a display area is against the fit.** In
+  `viewportProjection.withPresentation(viewport, { displayArea, zoom })` the
+  `zoom`, and a `scale`, are measured against the fit, as `getPresentation`
+  reads them: the display area places the picture, at that zoom. A patch
+  with a display area and no `zoom` and no `scale` shows the display area at
+  its own size. So writing back a presentation that was read gives the same
+  view, as the legacy
+  `setViewPresentation(getViewPresentation())` did. A `pan` in the same patch
+  decides where the picture is, and the display area gives way to it: after
+  it `viewport.getViewState().displayArea` is undefined. Before this change a
+  zoom in the patch multiplied the zoom of the display area, so a
+  presentation of zoom 2 written back gave zoom 4.
 - **`setViewState({ displayArea })` merges.** A scale that the view state
   already has stays and multiplies the display area.
   `setDisplayArea(displayArea)` resets the scale first.
@@ -313,9 +328,11 @@ leave the canvas. Against the legacy volume viewport:
   resize. Without the fit, `setAspectRatio([w, h])` kept the horizontal
   scale: `setViewState({ scale: [x, (x * h) / w], scaleMode: 'fit' })`, with
   `x` the first number of the `scale` that `viewportProjection` gives.
-- **`getAspectRatio()` always returns `[1, 1]`.** Every next viewport still
-  has the member from 5.x. It does not follow the scale pair, so do not read
-  the stretch from it.
+- **`getAspectRatio()` follows the scale pair.** A planar viewport answers
+  the pair divided by its smaller number: `[2, 1]` after
+  `viewport.setViewState({ scale: [2, 1] })`, as the legacy stack viewport
+  answered after `setAspectRatio([2, 1])`. The other families do not stretch
+  and answer `[1, 1]`.
 
 ## A copy of the view between viewports
 

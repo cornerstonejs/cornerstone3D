@@ -6,6 +6,7 @@ import type {
   ProjectionSnapshot,
 } from '../ViewportProjectionTypes';
 import type { PlanarScaleInput } from './planarCameraScale';
+import type { PlanarSliceBasis } from './planarSliceBasis';
 import type {
   PlanarDisplayArea,
   PlanarResolvedICamera,
@@ -32,12 +33,14 @@ export type PlanarResolvedViewLike = {
   withPan(pan: Point2): { state: { viewState: PlanarViewState } };
   /**
    * The view at another scale. With a canvas point, the world point under it
-   * stays under it.
+   * stays under it. Without one, the zoom is about the centre of the canvas.
    */
   withScale?(
     scale: PlanarScaleInput,
     canvasPoint?: Point2
   ): { state: { viewState: PlanarViewState } };
+  /** The geometry of the slice that the view shows. */
+  getSliceBasis?(): PlanarSliceBasis;
 };
 
 export type PlanarProjectionViewport = {

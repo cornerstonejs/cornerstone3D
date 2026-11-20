@@ -130,6 +130,13 @@ abstract class BasePlanarResolvedView<
     return this.withScale(zoom, canvasPoint);
   }
 
+  /**
+   * The view at another scale. With a canvas point, the world point under it
+   * stays under it. Without one, the zoom is about the centre of the canvas,
+   * as the legacy `setZoom` kept the focal point. A display area gives way to
+   * the scale and the pan that it resolved to first, so the zoom starts from
+   * the picture on the screen.
+   */
   withScale(
     scale: PlanarScaleInput,
     canvasPoint?: Point2
@@ -137,9 +144,16 @@ abstract class BasePlanarResolvedView<
     const nextScale = normalizePlanarScale(scale);
 
     if (!canvasPoint) {
+      const viewState = this.getViewStateWithoutDisplayArea();
+      const [scaleX, scaleY] = this.scale;
+      const [anchorX, anchorY] = viewState.anchorCanvas ?? [0.5, 0.5];
+
       return this.cloneWithViewState({
-        ...this.state.viewState,
-        displayArea: undefined,
+        ...viewState,
+        anchorCanvas: [
+          0.5 + ((anchorX - 0.5) * nextScale[0]) / scaleX,
+          0.5 + ((anchorY - 0.5) * nextScale[1]) / scaleY,
+        ],
         scale: nextScale,
         scaleMode: 'fit',
       });
@@ -160,12 +174,18 @@ abstract class BasePlanarResolvedView<
     });
   }
 
+  /**
+   * The view with the centre of the slice `pan` canvas pixels from the centre
+   * of the canvas. A display area gives way to the scale and the pan that it
+   * resolved to first, so the pan keeps the zoom on the screen.
+   */
   withPan(pan: Point2): BasePlanarResolvedView<TState> {
+    const viewState = this.getViewStateWithoutDisplayArea();
     const currentPan = this.pan;
-    const [anchorX, anchorY] = this.state.viewState.anchorCanvas ?? [0.5, 0.5];
+    const [anchorX, anchorY] = viewState.anchorCanvas ?? [0.5, 0.5];
 
     return this.cloneWithViewState({
-      ...this.state.viewState,
+      ...viewState,
       anchorCanvas: [
         anchorX +
           (pan[0] - currentPan[0]) / Math.max(this.state.canvasWidth, 1),
@@ -201,6 +221,34 @@ abstract class BasePlanarResolvedView<
       canvasWidth: this.state.canvasWidth,
       sliceBasis: this.getSliceBasis(),
     });
+  }
+
+  /**
+   * The view state of this view with its display area replaced by the scale
+   * and the pan that the display area resolved to: the same picture, with no
+   * display area and no world anchor. A view with no display area keeps its
+   * view state.
+   */
+  private getViewStateWithoutDisplayArea(): PlanarViewState {
+    const { canvasHeight, canvasWidth, viewState } = this.state;
+
+    if (!viewState.displayArea) {
+      return viewState;
+    }
+
+    const [panX, panY] = this.pan;
+
+    return {
+      ...viewState,
+      anchorCanvas: [
+        0.5 + panX / Math.max(canvasWidth, 1),
+        0.5 + panY / Math.max(canvasHeight, 1),
+      ],
+      anchorWorld: undefined,
+      displayArea: undefined,
+      scale: this.scale,
+      scaleMode: 'fit',
+    };
   }
 
   protected getPresentation() {

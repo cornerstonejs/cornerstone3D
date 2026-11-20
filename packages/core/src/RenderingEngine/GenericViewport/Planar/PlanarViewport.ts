@@ -43,6 +43,7 @@ import type ViewportInputOptions from '../../../types/ViewportInputOptions';
 import { deepClone } from '../../../utilities/deepClone';
 import imageIdToURI from '../../../utilities/imageIdToURI';
 import { getImageDataMetadata } from '../../../utilities/getImageDataMetadata';
+import { getNormalizedAspectRatio } from '../../../utilities/getNormalizedAspectRatio';
 import genericViewportDisplaySetMetadataProvider from '../../../utilities/genericViewportDisplaySetMetadataProvider';
 import triggerEvent from '../../../utilities/triggerEvent';
 import eventTarget from '../../../eventTarget';
@@ -1876,6 +1877,15 @@ class PlanarViewport extends GenericViewport<
    */
   getScale(): Point2 {
     return getPlanarProjectionScale(this.getProjectionSnapshot());
+  }
+
+  /**
+   * The stretch of the axes: the scale pair of the view divided by its
+   * smaller value, `[2, 1]` for a picture twice as wide as the fit, as the
+   * legacy `getAspectRatio()` gave after `setAspectRatio([2, 1])`.
+   */
+  override getAspectRatio(): Point2 {
+    return getNormalizedAspectRatio(this.getScale());
   }
 
   /** @deprecated Legacy shim for `setZoom(...)`. */
