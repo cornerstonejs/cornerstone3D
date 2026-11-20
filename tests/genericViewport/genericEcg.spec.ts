@@ -9,6 +9,18 @@ import {
 const EXAMPLE = 'genericEcg';
 const SETTLE_MS = 5000;
 
+/**
+ * The share of the 540,000 pixels of the picture that may differ from the
+ * baseline on macOS. The lead labels use the font monospace: Courier on
+ * macOS, DejaVu Sans Mono on the Linux machine of the baseline and of CI.
+ * Measured on macOS with the comparator of this test: the picture differs in
+ * 1,693 pixels, all in the rows of the labels; with the first lead hidden it
+ * differs in 2,550, with a trace too thin to see in 11,513, without the grid
+ * in 37,119, and with twice the sensitivity in 121,724. This budget, 1,836
+ * pixels, takes the labels and none of those.
+ */
+const MACOS_LABEL_FONT_MAX_DIFF_PIXEL_RATIO = 0.0034;
+
 function navigateToExample(params?: Record<string, string>) {
   return async ({ page }) => {
     const url = createExampleUrl(EXAMPLE + '.html');
@@ -46,10 +58,6 @@ test.describe('ECG GenericViewport', () => {
   });
 
   test('should render ECG waveform', async ({ page }) => {
-    test.fail(
-      process.platform === 'darwin',
-      'The lead labels use the font monospace: Courier on macOS, DejaVu Sans Mono on the Linux machine of the baseline and of CI. The waveform and grid match; only the label rows differ.'
-    );
     // The ECG viewport draws its lead labels and waveform straight onto the
     // canvas (not the SVG annotation layer), so there is no text node to hide.
     // Two environment-dependent sources remain: glyph rasterization of the
@@ -62,7 +70,12 @@ test.describe('ECG GenericViewport', () => {
       '',
       screenShotPaths.ecgNext.viewport,
       0,
-      { maxDiffPixelRatio: 0.003 }
+      {
+        maxDiffPixelRatio:
+          process.platform === 'darwin'
+            ? MACOS_LABEL_FONT_MAX_DIFF_PIXEL_RATIO
+            : 0.003,
+      }
     );
   });
 

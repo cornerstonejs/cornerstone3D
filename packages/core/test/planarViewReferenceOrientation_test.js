@@ -477,4 +477,27 @@ describe('A stack of images in two orientations on a direct next planar viewport
       );
     }
   });
+
+  it('takes a reference of the image on display without options whatever plane it names, as the legacy stack viewport', async function () {
+    const axial = await createSeries({ id: 'imageOnDisplay' });
+    const stack = createNextViewport(renderingEngine, 'imageOnDisplay');
+
+    await showStack(stack, axial, 0);
+
+    expect(stack.getCurrentImageId()).toBe(axial.imageIds[0]);
+
+    const ofShown = imageReferences(axial, 0, [1, 0, 0], SAGITTAL_IN_PLANE);
+    const ofNext = imageReferences(axial, 1, [1, 0, 0], SAGITTAL_IN_PLANE);
+
+    for (const name of ['imageOnly', 'withPlane', 'withNormalOnly']) {
+      expect(answers(stack, ofShown[name])).toEqual({
+        plain: true,
+        withNavigation: true,
+        withOrientation: true,
+        withOrientationAndNavigation: true,
+      });
+    }
+
+    expect(stack.isReferenceViewable({ ...ofNext.withNormalOnly })).toBe(false);
+  });
 });

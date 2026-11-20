@@ -2,6 +2,7 @@ import * as cornerstone3D from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
 import {
   createNextViewport,
+  createSeries,
   renderAndWait,
   waitFor,
 } from './utils/planarSeriesBothModes';
@@ -379,6 +380,70 @@ describe('A display set of a direct next planar viewport whose registration goes
     ]);
     expect(viewport.getImageIds()).toEqual(sourceImageIds);
     expect(viewport.getCurrentImageId()).toBe(sourceImageIds[0]);
+  });
+
+  it('names the volume that it mounted in its VOI events when the registration names another volume meanwhile', async function () {
+    const seriesA = await createSeries({ id: 'voiRegistrationA' });
+    const seriesB = await createSeries({ id: 'voiRegistrationB' });
+    const overlayImageIds = createImageIds('voiRegistrationOverlay');
+    const overlay = createGate();
+    const overlayRequested = createGate();
+    const options = { orientation: OrientationAxis.ACQUISITION };
+
+    imageLoader.registerImageLoader('fakeImageLoader', (imageId, options) => {
+      if (overlayImageIds.includes(imageId)) {
+        overlayRequested.open();
+
+        return {
+          promise: overlay.promise.then(
+            () => testUtils.fakeImageLoader(imageId, options).promise
+          ),
+        };
+      }
+
+      return testUtils.fakeImageLoader(imageId, options);
+    });
+    utilities.genericViewportDisplaySetMetadataProvider.add('voi:scan', {
+      imageIds: seriesA.imageIds,
+      volumeId: seriesA.volumeId,
+    });
+    utilities.genericViewportDisplaySetMetadataProvider.add('voi:overlay', {
+      imageIds: overlayImageIds,
+      kind: 'planar',
+      initialImageIdIndex: 0,
+    });
+
+    const viewport = createNextViewport(renderingEngine, 'stagedVOI');
+    const events = [];
+    const listener = (evt) => events.push(evt.detail);
+
+    viewport.element.addEventListener(Events.VOI_MODIFIED, listener);
+
+    const mount = viewport.setDisplaySets(
+      { displaySetId: 'voi:scan', options },
+      { displaySetId: 'voi:overlay', options }
+    );
+
+    await overlayRequested.promise;
+    utilities.genericViewportDisplaySetMetadataProvider.add('voi:scan', {
+      imageIds: seriesB.imageIds,
+      volumeId: seriesB.volumeId,
+    });
+    overlay.open();
+    await mount;
+
+    expect(viewport.getVolumeId()).toBe(seriesA.volumeId);
+    expect(events.length).toBeGreaterThan(0);
+    expect(events[0].volumeId).toBe(seriesA.volumeId);
+
+    events.length = 0;
+    viewport.setDisplaySetPresentation('voi:scan', {
+      voiRange: { lower: 10, upper: 90 },
+    });
+
+    expect(events.length).toBe(1);
+    expect(events[0].volumeId).toBe(seriesA.volumeId);
+    viewport.element.removeEventListener(Events.VOI_MODIFIED, listener);
   });
 });
 

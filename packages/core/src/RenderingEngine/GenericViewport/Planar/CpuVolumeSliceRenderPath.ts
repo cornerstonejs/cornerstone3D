@@ -139,6 +139,7 @@ export class CpuVolumeSliceRenderPath
       keepFractions: !compositeActor,
       maxSliceSize: MAX_CPU_CANVAS_SLICE_SIZE,
       sampleSlabsInSteps: true,
+      outsideValue: compositeActor ? 0 : undefined,
     });
     const draw = new PlanarSampledSliceCanvas(
       payload.imageVolume,

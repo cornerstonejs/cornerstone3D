@@ -1,6 +1,10 @@
 import { vec3, mat4 } from 'gl-matrix';
 import type PlanarViewport from '../RenderingEngine/GenericViewport/Planar/PlanarViewport';
-import spatialRegistrationMetadataProvider from './spatialRegistrationMetadataProvider';
+import type { ImagePlaneModule } from '../types';
+import {
+  addCalculatedRegistration,
+  type CalculatedRegistrationViewport,
+} from './spatialRegistrationMetadataProvider';
 import { get } from '../metaData';
 import { coreLog } from './logger';
 
@@ -18,6 +22,47 @@ const log = coreLog.getLogger(
 const ALLOWED_DELTA = 0.05;
 
 /**
+ * Whether a value is an array or a typed array that starts with `length`
+ * finite numbers.
+ */
+function isFiniteList(
+  value: unknown,
+  length: number
+): value is ArrayLike<number> {
+  const list = value as ArrayLike<number> | undefined;
+
+  return (
+    typeof list?.length === 'number' &&
+    list.length >= length &&
+    Array.from(list).slice(0, length).every(Number.isFinite)
+  );
+}
+
+/**
+ * The orientation of an image plane module as the six numbers of the image
+ * orientation: `imageOrientationPatient`, else the row cosines followed by
+ * the column cosines, which a metadata provider may give in its place.
+ * Undefined when neither is there.
+ */
+function getImageOrientation(
+  imagePlaneModule: ImagePlaneModule
+): number[] | undefined {
+  const { imageOrientationPatient, rowCosines, columnCosines } =
+    imagePlaneModule;
+
+  if (isFiniteList(imageOrientationPatient, 6)) {
+    return Array.from(imageOrientationPatient).slice(0, 6);
+  }
+
+  if (isFiniteList(rowCosines, 3) && isFiniteList(columnCosines, 3)) {
+    return [
+      ...Array.from(rowCosines).slice(0, 3),
+      ...Array.from(columnCosines).slice(0, 3),
+    ];
+  }
+}
+
+/**
  * It calculates the registration matrix between two viewports (currently only
  * translation is supported)
  * It uses the image plane of the image on display of each viewport
@@ -27,6 +72,13 @@ const ALLOWED_DELTA = 0.05;
  * metadata provider, for the viewport ids and the rendering engine ids of the
  * two viewports. A lookup with other rendering engine ids does not find it; a
  * lookup with the viewport ids alone does, as in 5.x
+ *
+ * The orientation of an image is its `imageOrientationPatient`, else its
+ * `rowCosines` and `columnCosines`. An image without an orientation or a
+ * position gives no registration. The registration is for the frames of
+ * reference that the viewports show now: once one of them shows another
+ * frame of reference, the provider no longer gives it, so the next
+ * synchronization works it out again.
  *
  *
  * @param viewport1 - The first stack viewport
@@ -46,38 +98,50 @@ function calculateViewportsSpatialRegistration(
     log.info('Viewport spatial registration requires image plane module');
     return;
   }
-  const { imageOrientationPatient: iop2 } = imagePlaneModule2;
-  const isSameImagePlane = imagePlaneModule1.imageOrientationPatient.every(
-    (v, i) => Math.abs(v - iop2[i]) < ALLOWED_DELTA
+
+  const orientation1 = getImageOrientation(imagePlaneModule1);
+  const orientation2 = getImageOrientation(imagePlaneModule2);
+  const imagePositionPatient1 = imagePlaneModule1.imagePositionPatient;
+  const imagePositionPatient2 = imagePlaneModule2.imagePositionPatient;
+
+  if (
+    !orientation1 ||
+    !orientation2 ||
+    !isFiniteList(imagePositionPatient1, 3) ||
+    !isFiniteList(imagePositionPatient2, 3)
+  ) {
+    log.info(
+      'Viewport spatial registration requires the orientation and the position of both images'
+    );
+    return;
+  }
+
+  const isSameImagePlane = orientation1.every(
+    (v, i) => Math.abs(v - orientation2[i]) < ALLOWED_DELTA
   );
 
   if (!isSameImagePlane) {
     log.info(
       'Viewport spatial registration only supported for same orientation (hence translation only) for now',
-      imagePlaneModule1?.imageOrientationPatient,
-      imagePlaneModule2?.imageOrientationPatient
+      orientation1,
+      orientation2
     );
     return;
   }
 
-  const imagePositionPatient1 = imagePlaneModule1.imagePositionPatient;
-  const imagePositionPatient2 = imagePlaneModule2.imagePositionPatient;
-
   const translation = vec3.subtract(
     vec3.create(),
-    imagePositionPatient1,
-    imagePositionPatient2
+    imagePositionPatient1 as unknown as vec3,
+    imagePositionPatient2 as unknown as vec3
   );
 
-  const mat = mat4.fromTranslation(mat4.create(), translation);
-  spatialRegistrationMetadataProvider.add(
-    [
-      viewport1.id,
-      viewport2.id,
-      viewport1.renderingEngineId,
-      viewport2.renderingEngineId,
-    ],
-    mat
+  addCalculatedRegistration(
+    [viewport1, viewport2].map((viewport) => ({
+      viewportId: viewport.id,
+      renderingEngineId: viewport.renderingEngineId,
+      frameOfReferenceUID: viewport.getFrameOfReferenceUID?.(),
+    })) as [CalculatedRegistrationViewport, CalculatedRegistrationViewport],
+    mat4.fromTranslation(mat4.create(), translation)
   );
 }
 

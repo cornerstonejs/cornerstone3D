@@ -27,6 +27,16 @@ const DISPLAY_AREA = {
   imageCanvasPoint: { imagePoint: [0.25, 0.75], canvasPoint: [0.5, 0.5] },
 };
 
+/**
+ * A display area of type SCALE: twice the fit, with an image point that is
+ * not its centre at the centre of the canvas.
+ */
+const SCALE_AREA = {
+  type: 'SCALE',
+  scale: 2,
+  imageCanvasPoint: { imagePoint: [0.25, 0.75], canvasPoint: [0.5, 0.5] },
+};
+
 /** A direct next planar viewport in each content mode. */
 const MODES = [
   ['stack', showStack],
@@ -226,6 +236,52 @@ describe('A planar view answers a zoom, a pan and a stretch as the legacy viewpo
       expect(pictureOf(next, series).size / fit.size).toBeCloseTo(2.5, 3);
       expect(viewportProjection.getPresentation(next).zoom).toBeCloseTo(2.5, 4);
       expect(next.getViewState().displayArea).toEqual(DISPLAY_AREA);
+    }, 20000);
+
+    it(`takes a zoom and a scale next to a display area of type SCALE in a patch against the fit, ${where}`, async function () {
+      await show(next, series, SLICE);
+
+      const fit = pictureOf(next, series);
+
+      next.setDisplayArea(SCALE_AREA);
+      await settle(next);
+
+      const areaPan = viewportProjection.getPresentation(next).pan;
+
+      expect(pictureOf(next, series).size / fit.size).toBeCloseTo(2, 3);
+
+      next.setViewState(
+        viewportProjection.withPresentation(next, {
+          displayArea: SCALE_AREA,
+          zoom: 3,
+        })
+      );
+      await settle(next);
+
+      const zoomed = viewportProjection.getPresentation(next);
+
+      expect(pictureOf(next, series).size / fit.size).toBeCloseTo(3, 3);
+      expect(zoomed.zoom).toBeCloseTo(3, 4);
+      expect(zoomed.pan[0]).toBeCloseTo(areaPan[0], 3);
+      expect(zoomed.pan[1]).toBeCloseTo(areaPan[1], 3);
+      expect(next.getViewState().displayArea).toEqual(SCALE_AREA);
+
+      next.setViewState(
+        viewportProjection.withPresentation(next, {
+          displayArea: SCALE_AREA,
+          scale: [3, 1.5],
+        })
+      );
+      await settle(next);
+
+      const scaled = viewportProjection.getPresentation(next);
+
+      expect(scaled.scale[0]).toBeCloseTo(3, 4);
+      expect(scaled.scale[1]).toBeCloseTo(1.5, 4);
+      expect(scaled.zoom).toBeCloseTo(1.5, 4);
+      expect(scaled.pan[0]).toBeCloseTo(areaPan[0], 3);
+      expect(scaled.pan[1]).toBeCloseTo(areaPan[1], 3);
+      expect(next.getViewState().displayArea).toEqual(SCALE_AREA);
     }, 20000);
 
     it(`zooms by a patch with no anchor about the centre of the canvas after a pan and after a zoom at a point, ${where}`, async function () {

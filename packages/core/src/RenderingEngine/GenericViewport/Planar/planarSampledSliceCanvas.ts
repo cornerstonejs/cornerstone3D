@@ -11,6 +11,8 @@ import type {
   VOIRange,
 } from '../../../types';
 import VoxelManager from '../../../utilities/VoxelManager';
+import { sampleVolumeGrid } from '../../../utilities/sampleVolumeGrid';
+import { transformWorldToIndexContinuous } from '../../../utilities/transformWorldToIndex';
 import { getExactSliceAxis } from '../../../utilities/volumeSliceGeometry';
 import { createCanvas } from '../../helpers/getOrCreateCanvas';
 import drawImageSync from '../../helpers/cpuFallback/drawImageSync';
@@ -412,7 +414,14 @@ export class PlanarSampledSliceCanvas {
 
       if (!slice.insideVolume) {
         this.clipPlanes ||= getVolumeClipPlanes(this.volume);
-        edges = clearOutsideVolume(slice, this.clipPlanes, pixels, edgeSamples);
+        edges = clearOutsideVolume(
+          slice,
+          this.clipPlanes,
+          pixels,
+          edgeSamples,
+          this.volume,
+          tables
+        );
       }
 
       sliceContext.putImageData(this.sliceImageData, 0, 0);
@@ -1190,30 +1199,82 @@ function getInsideRun(
 }
 
 /**
- * The neighbours of a pixel, as steps of column and row, in the order in
- * which one is taken: the four beside it first, then the four at its corners.
- */
-const NEIGHBOUR_STEPS: Point2[] = [
-  [0, -1],
-  [0, 1],
-  [-1, 0],
-  [1, 0],
-  [-1, -1],
-  [1, -1],
-  [-1, 1],
-  [1, 1],
-];
-
-/**
  * The pixels of a slice on an edge that the slice covers in part: the index
- * of each pixel, the share of it that the slice covers, and the index of the
- * pixel whose value it shows.
+ * of each pixel, the share of it that the slice covers, and the values that
+ * it shows, `numberOfComponents` of the slice for each pixel.
  */
 type PlanarSliceEdgePixels = {
   indices: number[];
   coverage: number[];
-  sources: number[];
+  values: Float64Array;
 };
+
+/**
+ * The values that the GPU shows on the pixels of a slice whose centre lies
+ * outside the faces, kept for each slice and pixel index: they do not change
+ * with the colours.
+ */
+const valuesOnVoxelCentres = new WeakMap<
+  PlanarSampledSlice,
+  Map<number, Float64Array>
+>();
+
+/**
+ * The values of a pixel of a slice whose centre lies outside the faces of the
+ * volume, as the GPU shows them on a pixel of the multisampled edge of its
+ * quad: it reads the texture at the centre of the pixel, and the texture is
+ * clamped to its edge, so it reads the point that the centre gives once moved
+ * onto the range of the voxel centres, with the interpolation of the slice.
+ * Along a face this point moves with the pixel, unlike the centre of a
+ * neighbour pixel inside.
+ */
+function getValuesOnVoxelCentres(
+  volume: IImageVolume,
+  slice: PlanarSampledSlice,
+  index: number
+): Float64Array {
+  let kept = valuesOnVoxelCentres.get(slice);
+
+  if (!kept) {
+    kept = new Map();
+    valuesOnVoxelCentres.set(slice, kept);
+  }
+
+  let values = kept.get(index);
+
+  if (values) {
+    return values;
+  }
+
+  const { width, origin, xDirection, yDirection, spacing } = slice;
+  const column = index % width;
+  const row = (index - column) / width;
+  const centre = [0, 1, 2].map(
+    (axis) =>
+      origin[axis] +
+      xDirection[axis] * spacing[0] * column +
+      yDirection[axis] * spacing[1] * row
+  ) as Point3;
+  const voxelIndex = transformWorldToIndexContinuous(volume.imageData, centre);
+
+  values = new Float64Array(slice.numberOfComponents ?? 1);
+  sampleVolumeGrid({
+    volume,
+    pixelData: values,
+    numberOfComponents: values.length,
+    width: 1,
+    height: 1,
+    startIndex: [0, 1, 2].map((axis) =>
+      Math.min(Math.max(voxelIndex[axis], 0), volume.dimensions[axis] - 1)
+    ) as Point3,
+    columnStep: [0, 0, 0],
+    rowStep: [0, 0, 0],
+    interpolationType: slice.sampledFor.interpolationType,
+  });
+  kept.set(index, values);
+
+  return values;
+}
 
 /**
  * Clears the pixels of a slice that lie outside the faces of the volume as
@@ -1223,8 +1284,9 @@ type PlanarSliceEdgePixels = {
  * inside is cleared, and a pixel with some of them inside keeps that share of
  * its alpha, as a multisampled edge of a quad on the GPU. The GPU colours
  * such a pixel at its centre from a texture clamped to its edge, so a pixel
- * whose centre lies outside shows the colour of a neighbour whose centre lies
- * inside.
+ * whose centre lies outside shows the colour of the values at its centre
+ * moved onto the voxel centres (`getValuesOnVoxelCentres`), coloured with
+ * the tables of the slice.
  *
  * @returns the pixels that the slice covers in part, or undefined for none
  */
@@ -1232,9 +1294,12 @@ function clearOutsideVolume(
   slice: PlanarSampledSlice,
   planes: PlanarSliceClipPlane[],
   pixels: Uint32Array,
-  samples: Point2[]
+  samples: Point2[],
+  volume: IImageVolume,
+  tables: PlanarSliceColourTables
 ): PlanarSliceEdgePixels | undefined {
-  const { width, height } = slice;
+  const { width, height, pixelData } = slice;
+  const numberOfComponents = slice.numberOfComponents ?? 1;
   const centreRuns = Array.from({ length: height }, (_, row) =>
     getInsideRun(slice, planes, row, CENTRE_SAMPLE[0])
   );
@@ -1243,11 +1308,11 @@ function clearOutsideVolume(
     row < height &&
     column >= centreRuns[row][0] &&
     column <= centreRuns[row][1];
-  const edges: PlanarSliceEdgePixels = {
+  const edges: Omit<PlanarSliceEdgePixels, 'values'> = {
     indices: [],
     coverage: [],
-    sources: [],
   };
+  const centreInside: boolean[] = [];
 
   for (let row = 0; row < height; row++) {
     const runs =
@@ -1282,19 +1347,9 @@ function clearOutsideVolume(
         continue;
       }
 
-      const neighbour = isCentreInside(column, row)
-        ? undefined
-        : NEIGHBOUR_STEPS.find(([columnStep, rowStep]) =>
-            isCentreInside(column + columnStep, row + rowStep)
-          );
-
       edges.indices.push(rowStart + column);
       edges.coverage.push(inside / samples.length);
-      edges.sources.push(
-        neighbour
-          ? (row + neighbour[1]) * width + column + neighbour[0]
-          : rowStart + column
-      );
+      centreInside.push(isCentreInside(column, row));
     }
   }
 
@@ -1302,16 +1357,34 @@ function clearOutsideVolume(
     return;
   }
 
+  const values = new Float64Array(edges.indices.length * numberOfComponents);
+  const colours = new Uint32Array(edges.indices.length);
+
   edges.indices.forEach((index, entry) => {
-    pixels[index] = pixels[edges.sources[entry]];
-  });
-  edges.indices.forEach((index, entry) => {
-    pixels[index] =
-      (pixels[index] & 0xffffff) |
-      (Math.round((pixels[index] >>> 24) * edges.coverage[entry]) << 24);
+    values.set(
+      centreInside[entry]
+        ? pixelData.subarray(
+            index * numberOfComponents,
+            (index + 1) * numberOfComponents
+          )
+        : getValuesOnVoxelCentres(volume, slice, index),
+      entry * numberOfComponents
+    );
   });
 
-  return edges;
+  if (numberOfComponents > 1) {
+    colourChannels(values, colours, tables, numberOfComponents);
+  } else {
+    colourSlice(values, colours, tables);
+  }
+
+  edges.indices.forEach((index, entry) => {
+    pixels[index] =
+      (colours[entry] & 0xffffff) |
+      (Math.round((colours[entry] >>> 24) * edges.coverage[entry]) << 24);
+  });
+
+  return { ...edges, values };
 }
 
 /**
@@ -1330,12 +1403,12 @@ function getSliceAlphas(
   const { alphaFractions, alphaScale, alphaOffset, opacity } = tables;
   const lastAlpha = alphaFractions.length - 1;
   const alphas = new Float32Array(slice.width * slice.height);
-  const alphaAt = (index: number) => {
+  const alphaOf = (value: number) => {
     if (manyComponents) {
       return opacity;
     }
 
-    let step = pixelData[index] * alphaScale + alphaOffset;
+    let step = value * alphaScale + alphaOffset;
 
     step = step > 0 ? (step < lastAlpha ? step : lastAlpha) : 0;
 
@@ -1343,11 +1416,11 @@ function getSliceAlphas(
   };
 
   for (let index = 0; index < alphas.length; index++) {
-    alphas[index] = alphaAt(index);
+    alphas[index] = alphaOf(pixelData[index]);
   }
 
   edges?.indices.forEach((index, entry) => {
-    alphas[index] = alphaAt(edges.sources[entry]) * edges.coverage[entry];
+    alphas[index] = alphaOf(edges.values[entry]) * edges.coverage[entry];
   });
 
   return alphas;

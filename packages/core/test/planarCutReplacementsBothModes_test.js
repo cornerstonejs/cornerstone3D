@@ -147,6 +147,36 @@ describe('What a caller uses in place of cut planar members, in stack mode and i
       expect(volume.getVolumeId({ volumeId: 'anotherVolume' })).toBeUndefined();
       expect(stack.getVolumeId({ volumeId: 'anotherVolume' })).toBeUndefined();
     });
+
+    it('find the URI of every volume on display with hasVolumeURI, also of an overlay, as the legacy volume viewport', async function () {
+      const source = await createSeries({ id: 'uriSource' });
+      const overlay = await createSeries({ id: 'uriOverlay' });
+      const fused = createNextViewport(renderingEngine, 'fused');
+      const empty = createNextViewport(renderingEngine, 'emptyURI');
+      const options = { orientation: OrientationAxis.ACQUISITION };
+
+      [
+        ['uri:source', source],
+        ['uri:overlay', overlay],
+      ].forEach(([displaySetId, series]) =>
+        utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+          imageIds: series.imageIds,
+          volumeId: series.volumeId,
+        })
+      );
+      await fused.setDisplaySets(
+        { displaySetId: 'uri:source', options },
+        { displaySetId: 'uri:overlay', options }
+      );
+      await renderAndWait(fused);
+
+      expect(fused.getCurrentMode()).toBe('volume');
+      expect(fused.getVolumeId()).toBe(source.volumeId);
+      expect(fused.hasVolumeURI('uriSource')).toBe(true);
+      expect(fused.hasVolumeURI('uriOverlay')).toBe(true);
+      expect(fused.hasVolumeURI('anotherVolume')).toBe(false);
+      expect(empty.hasVolumeURI('')).toBe(false);
+    });
   });
 
   describe('getCurrentVolumeViewportSlice(viewport).scalarData, in place of getCurrentSlicePixelData', () => {

@@ -1,5 +1,11 @@
 import type { Types } from '@cornerstonejs/core';
-import { cache, Enums, geometryLoader, metaData } from '@cornerstonejs/core';
+import {
+  cache,
+  Enums,
+  geometryLoader,
+  metaData,
+  utilities,
+} from '@cornerstonejs/core';
 import type { RawSurfacesData } from './surfaceComputationStrategies';
 import type { PolySegConversionOptions } from '../types';
 import * as cornerstoneTools from '@cornerstonejs/tools';
@@ -52,6 +58,13 @@ function getFrameOfReferenceUID(
         return frameOfReferenceUID;
       }
     }
+
+    const sourceImagesFrameOfReferenceUID =
+      getSourceImagesFrameOfReferenceUID(labelmap);
+
+    if (sourceImagesFrameOfReferenceUID) {
+      return sourceImagesFrameOfReferenceUID;
+    }
   }
 
   if (source === SegmentationRepresentations.Contour) {
@@ -67,6 +80,28 @@ function getFrameOfReferenceUID(
   }
 
   return viewport?.getFrameOfReferenceUID();
+}
+
+/**
+ * The frame of reference that core makes up for the images that a labelmap
+ * was made from (`utilities.getImagesFrameOfReferenceUID`), for images that
+ * have none: the images of the volume that the labelmap volume references,
+ * else the images that the labelmap references. A planar viewport of those
+ * images has that frame of reference, so the surface lies in its frame.
+ */
+function getSourceImagesFrameOfReferenceUID(
+  labelmap: ToolsTypes.LabelmapSegmentationData | undefined
+): string | undefined {
+  const referencedVolumeId =
+    labelmap?.volumeId &&
+    cache.getVolume(labelmap.volumeId)?.referencedVolumeId;
+  const imageIds =
+    (referencedVolumeId && cache.getVolume(referencedVolumeId)?.imageIds) ||
+    labelmap?.referencedImageIds;
+
+  return imageIds?.length
+    ? utilities.getImagesFrameOfReferenceUID(imageIds)
+    : undefined;
 }
 
 /**

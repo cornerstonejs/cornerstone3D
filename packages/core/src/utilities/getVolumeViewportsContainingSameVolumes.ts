@@ -18,6 +18,15 @@ function shownDataOf({ referencedId, uid }: ActorEntry): string {
 }
 
 /**
+ * The data that the actors of a viewport show, sorted, each as often as an
+ * actor shows it: two lists are equal when the viewports show the same data
+ * the same number of times.
+ */
+function sortedShownData(actors: ActorEntry[]): string[] {
+  return actors.map(shownDataOf).sort();
+}
+
+/**
  * Returns the viewports containing the same volume actors (all actors) the same
  * as the target viewport. If renderingEngineId is provided, it will only return
  * viewports that are associated with the renderingEngineId; otherwise, it will
@@ -44,24 +53,16 @@ function getVolumeViewportsContainingSameVolumes(
   const sameVolumesViewports: VolumeActorViewport[] = [];
 
   renderingEngines.forEach((renderingEngine) => {
-    const targetActors = targetViewport.getActors();
+    const targetData = sortedShownData(targetViewport.getActors());
     const viewports = renderingEngine
       .getViewports()
       .filter(viewportSupportsVolumeActors);
 
     for (const vp of viewports) {
-      const vpActors = vp.getActors();
-
-      if (vpActors.length !== targetActors.length) {
-        continue;
-      }
-
-      // every targetActors should be in the vpActors
-      const sameVolumes = targetActors.every((targetActor) =>
-        vpActors.find(
-          (vpActor) => shownDataOf(targetActor) === shownDataOf(vpActor)
-        )
-      );
+      const vpData = sortedShownData(vp.getActors());
+      const sameVolumes =
+        vpData.length === targetData.length &&
+        vpData.every((data, index) => data === targetData[index]);
 
       if (sameVolumes) {
         sameVolumesViewports.push(vp);

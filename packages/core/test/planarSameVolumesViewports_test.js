@@ -65,4 +65,48 @@ describe('utilities.getVolumeViewportsContainingSameVolumes on direct next plana
       idsOf(utilities.getVolumeViewportsContainingSameVolumes(otherVolume))
     ).toEqual(['otherVolume']);
   });
+
+  it('counts each volume as often as it is shown, so two display sets of one volume are not that volume and another', async function () {
+    const series = await createSeries({ id: 'sameVolumesTwice' });
+    const other = await createSeries({ id: 'sameVolumesOther' });
+    const options = { orientation: OrientationAxis.ACQUISITION };
+    const twice = createNextViewport(renderingEngine, 'twice');
+    const twiceToo = createNextViewport(renderingEngine, 'twiceToo');
+    const mixed = createNextViewport(renderingEngine, 'mixed');
+
+    [
+      ['twice:first', series],
+      ['twice:second', series],
+      ['twice:other', other],
+    ].forEach(([displaySetId, { imageIds, volumeId }]) =>
+      utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+        imageIds,
+        volumeId,
+      })
+    );
+    await twice.setDisplaySets(
+      { displaySetId: 'twice:first', options },
+      { displaySetId: 'twice:second', options }
+    );
+    await twiceToo.setDisplaySets(
+      { displaySetId: 'twice:first', options },
+      { displaySetId: 'twice:second', options }
+    );
+    await mixed.setDisplaySets(
+      { displaySetId: 'twice:first', options },
+      { displaySetId: 'twice:other', options }
+    );
+
+    expect(twice.getActors().map(({ referencedId }) => referencedId)).toEqual([
+      series.volumeId,
+      series.volumeId,
+    ]);
+    expect(mixed.getActors().length).toBe(2);
+    expect(
+      idsOf(utilities.getVolumeViewportsContainingSameVolumes(twice))
+    ).toEqual(['twice', 'twiceToo']);
+    expect(
+      idsOf(utilities.getVolumeViewportsContainingSameVolumes(mixed))
+    ).toEqual(['mixed']);
+  });
 });

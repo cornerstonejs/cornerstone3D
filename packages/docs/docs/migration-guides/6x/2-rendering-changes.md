@@ -315,7 +315,12 @@ leave the canvas. Against the legacy volume viewport:
   the options while none is set in the view state.
 - **A display area of `type: 'SCALE'` reads its `scale` against the fit.** A
   scale of 1 is the fit of the picture. On a legacy viewport 1 meant one
-  image pixel on one screen pixel.
+  image pixel on one screen pixel. The scale of the view state multiplies
+  it, as it multiplies any other display area, so a `zoom` or a `scale` next
+  to it in a patch is the zoom that you read back. Before this change the
+  `scale` of the display area won, and
+  `withPresentation(viewport, { displayArea, zoom: 3 })` read back the
+  scale of the display area.
 - **A pan or a zoom through `viewportProjection` takes the display area
   away.** `viewport.setViewState(viewportProjection.withPresentation(viewport, { pan }))`,
   and the same with `zoom` or `scale`, starts from the picture that the
@@ -474,7 +479,10 @@ are, so between viewports of other data it gives another size.
   fires for a change of the invert or of the VOI function when no window was
   set yet, and at the mount. The detail of a planar viewport has no
   `invertStateChanged`: a listener compares `detail.invert` with the last
-  value.
+  value. Its `volumeId` is the volume that the display set draws, none for a
+  display set drawn as images. It stays the volume that the mount drew when
+  the registration of the display set names another volume while the mount
+  loads.
 - **`suppressEvents` in the options of a planar viewport is honoured.** No
   call takes a `suppressEvents` argument.
 - **`isReferenceViewable` honours `asOverlay`,** so a labelmap image that is
@@ -518,7 +526,9 @@ are, so between viewports of other data it gives another size.
   reference of an image of another orientation, also with the
   `viewPlaneNormal` or the `planeRestriction` of that image. In 5.x the next
   planar viewport checked that plane against the plane on display and
-  answered false.
+  answered false. A reference whose `referencedImageId` is the image on
+  display is viewable with no options at all, whatever plane it names, as
+  on the legacy stack viewport.
 - **A volume goes where the legacy volume went for a part of a reference.**
   In volume mode, `setViewReference` uses a `sliceIndex` only with the
   `volumeId` of the volume and a `viewPlaneNormal`; a slice index without
@@ -557,23 +567,62 @@ are, so between viewports of other data it gives another size.
   call too, or the annotations of that image are not worked out again.
 - **`getFrameOfReferenceUID()` always returns a string.** It takes no slice
   index. For images without a frame of reference it is a name made from the
-  set of their images, `noFrameOfReference-<number of images>-<hash>`, where
-  the legacy viewport returned undefined. So every planar viewport and
-  every display set of the same images has the same frame of reference, as
-  on the legacy viewports: each takes the view references of the others,
-  and an annotation drawn on
-  one of them is in the group of the others and shows on each viewport of
-  its image. Other images without a frame of reference have another one:
-  their annotations are in another group, where the legacy viewports put
-  the annotations of all such images in one group (`undefined`), and
-  `getAnnotations(toolName, element)` gave them all. In 5.x the next planar
-  viewport made up a frame of reference for each viewport, so two viewports
-  of the same images did not share annotations or view references. A
-  viewport with no data still gives the 5.x name made of the type and the
-  id of the viewport (`planarNext-viewport-<viewportId>`). An application
-  that restores stored annotations of such images adds them with
-  `annotation.state.addAnnotation(annotation, element)`, which takes the
-  frame of reference of the viewport.
+  set of their images, `noFrameOfReference-<number of images>-<digest>`, where
+  the legacy viewport returned undefined. The digest is the SHA-256 of the
+  sorted URIs of the images (`utilities.imageIdToURI`) as a JSON array, read
+  as UTF-16 code units of two bytes, the high byte first, in 64 hexadecimal
+  digits, so two different sets of images do not get one name.
+  `utilities.getImagesFrameOfReferenceUID(imageIds)` gives that name, and a
+  surface that polySeg converts from a labelmap of such images takes it, so
+  `SegmentationIntersectionTool` draws its cut on the planar viewports of
+  the images. So every planar viewport and every display set of the same
+  images has the same frame of reference, as on the legacy viewports: each
+  takes the view references of the others, and an annotation drawn on one of
+  them is in the group of the others and shows on each viewport of its
+  image. Other images
+  without a frame of reference have another one: their annotations are in
+  another group, where the legacy viewports put the annotations of all such
+  images in one group (`undefined`), and `getAnnotations(toolName, element)`
+  gave them all. In 5.x the next planar viewport made up a frame of
+  reference for each viewport, so two viewports of the same images did not
+  share annotations or view references. Only a viewport with no data still
+  gives the 5.x name made of the type and the id of the viewport
+  (`planarNext-viewport-<viewportId>`).
+- **Stored annotations of images without a frame of reference take the new
+  name.** An annotation stored from 5.x, or from a 5.x next viewport, holds
+  `undefined` or `planarNext-viewport-<viewportId>` in
+  `metadata.FrameOfReferenceUID`, and in `metadata.planeRestriction` when
+  it has one. `annotation.state.addAnnotation(annotation, element)` puts it
+  in the group of the viewport, but its metadata keeps the old name, which
+  `viewport.isReferenceViewable` compares with the frame of reference of
+  the viewport, so the annotation tools can leave it out. Show the images of
+  the annotation (its `metadata.referencedImageId`) on the viewport first,
+  then write the frame of reference of the viewport into both places and
+  add it:
+
+  ```ts
+  import type { PlanarViewport } from '@cornerstonejs/core';
+  import { annotation, type Types } from '@cornerstonejs/tools';
+
+  function restoreAnnotation(
+    stored: Types.Annotation,
+    viewport: PlanarViewport
+  ): void {
+    const frameOfReferenceUID = viewport.getFrameOfReferenceUID();
+    const { metadata } = stored;
+
+    if (metadata) {
+      metadata.FrameOfReferenceUID = frameOfReferenceUID;
+
+      if (metadata.planeRestriction) {
+        metadata.planeRestriction.FrameOfReferenceUID = frameOfReferenceUID;
+      }
+    }
+
+    annotation.state.addAnnotation(stored, viewport.element);
+  }
+  ```
+
 - **`getImageData()` of a stack gives a plain object as `imageData`,** not a
   vtk.js image data. It has `getDirection`, `getDimensions`, `getSpacing`,
   `getBounds`, `worldToIndex` and `indexToWorld`, on the GPU and on the CPU.
@@ -1215,7 +1264,25 @@ legacy picture within two levels of 255.
   keeps the offset that the two viewports had then. In 5.x it read the
   slice index of each viewport as an image id, found no image plane and
   added nothing: such a target did not move unless the application had
-  added a registration.
+  added a registration. The orientation of an image is its
+  `imageOrientationPatient`, else its `rowCosines` and `columnCosines`; an
+  image with no orientation or no position gives no registration, and the
+  call does not throw.
+- **A calculated registration holds for the frames of reference it was
+  calculated for.** `utilities.spatialRegistrationMetadataProvider` gives
+  the registration of `calculateViewportsSpatialRegistration` only while
+  both viewports show the frame of reference that they showed then. After
+  a viewport gets the data of another study, the image slice synchronizer
+  takes the identity for two viewports of one frame of reference, or
+  calculates the registration again. A registration that the application
+  added with `add` stays until the application replaces it. In 5.x a
+  calculated registration stayed with the viewport ids for good.
+- **A registration replaces the one of the other direction.**
+  `spatialRegistrationMetadataProvider.add([viewportId1, viewportId2, ...], matrix)`
+  removes the registration from `viewportId2` to `viewportId1` added with
+  the same kind of query, so `get` gives `matrix` one way and its inverse
+  the other way. In 5.x a direct registration went before the inverse of a
+  newer one of the other direction.
 - **`utilities.getImageLegacy(element)` of the core is gone.** Use
   `cache.getImage(viewport.getCurrentImageId())`.
 - **`AdvancedMagnifyTool` resets on a stack of images of several sizes.** It

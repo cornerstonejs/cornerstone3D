@@ -1419,15 +1419,7 @@ class PlanarViewport extends GenericViewport<
     }
 
     const presentation = this.getDisplaySetPresentation(displaySetId);
-    // Use the modified display set's own volume id so VOI/colormap changes on an
-    // overlay/fusion display set do not emit the active source's volumeId (which
-    // would make downstream synchronizers update the wrong actor). Fall back to
-    // the active source volume id only when the modified set is the source.
-    const volumeId =
-      this.getDataSet(displaySetId)?.volumeId ??
-      (displaySetId === this.getSourceDataId()
-        ? this.getVolumeId()
-        : undefined);
+    const volumeId = this.getPresentationEventVolumeId(displaySetId);
 
     if (voiTouched) {
       const range =
@@ -1454,6 +1446,34 @@ class PlanarViewport extends GenericViewport<
         volumeId,
       });
     }
+  }
+
+  /**
+   * The volume id that a presentation event of a display set names, so that
+   * a VOI or colormap change of an overlay does not name the volume of the
+   * source. A mounted display set names the volume that its binding draws,
+   * and none when the binding draws images: the binding keeps what the mount
+   * drew, so a registration that names another volume after the load does
+   * not count. A display set that is not mounted names the volume of its
+   * registration, or the volume of the source when it is the source.
+   */
+  private getPresentationEventVolumeId(
+    displaySetId: string
+  ): string | undefined {
+    const binding = this.getBinding(displaySetId);
+
+    if (!binding) {
+      return (
+        this.getDataSet(displaySetId)?.volumeId ??
+        (displaySetId === this.getSourceDataId()
+          ? this.getVolumeId()
+          : undefined)
+      );
+    }
+
+    return isImageRenderMode(binding.rendering.renderMode)
+      ? undefined
+      : (binding.data as LoadedData<PlanarPayload>).volumeId;
   }
 
   /**
@@ -2153,15 +2173,27 @@ class PlanarViewport extends GenericViewport<
   }
 
   /**
-   * Returns whether the active dataset references a volume whose id contains
-   * the given URI fragment.
+   * Returns whether a volume on display has an id that contains the given URI
+   * fragment: the volume of the source or of any overlay, as the legacy volume
+   * viewport looked through all its volumes. A display set drawn as images
+   * shows no volume, so a viewport in stack mode or with no data has none.
    *
-   * @param volumeURI - Volume URI substring to compare against the active
-   * dataset volume id.
-   * @returns `true` when the active dataset references the given volume URI.
+   * @param volumeURI - Volume URI substring to compare against the volume ids.
+   * @returns `true` when a volume on display has the given volume URI.
    */
   hasVolumeURI(volumeURI: string): boolean {
-    return String(this.getVolumeId() || '').includes(volumeURI);
+    for (const binding of this.bindings.values()) {
+      const { volumeId } = binding.data as LoadedData<PlanarPayload>;
+
+      if (
+        volumeId?.includes(volumeURI) &&
+        !isImageRenderMode(binding.rendering.renderMode)
+      ) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   /**
@@ -2209,6 +2241,10 @@ class PlanarViewport extends GenericViewport<
    * viewport: the stack shows each image in its own plane, also in a stack
    * of images in several orientations.
    *
+   * In stack mode a reference that names the image on display by its image
+   * id is viewable with any options and whatever plane it names, as on the
+   * legacy stack viewport.
+   *
    * @param viewRef - View reference to test.
    * @param options - Optional compatibility flags for the spatial check.
    * @returns `true` when the reference can be viewed in this viewport state.
@@ -2219,6 +2255,15 @@ class PlanarViewport extends GenericViewport<
   ): boolean {
     const reference = getPlanarReferenceForViewableCheck(viewRef);
     const isStack = this.getCurrentMode() === 'stack';
+
+    if (
+      isStack &&
+      viewRef?.referencedImageId &&
+      viewRef.referencedImageId === this.getCurrentImageId()
+    ) {
+      return true;
+    }
+
     const checkOptions = isStack
       ? { ...options, withOrientation: options.asVolume }
       : options;

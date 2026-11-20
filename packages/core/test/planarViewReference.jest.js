@@ -7,6 +7,7 @@ import { OrientationAxis } from '../src/enums';
 import { ActorRenderMode } from '../src/types';
 import * as metaData from '../src/metaData';
 import imageIdToURI from '../src/utilities/imageIdToURI';
+import fnv1aHash from '../src/utilities/fnv1aHash';
 import getVolumeViewReferenceId from '../src/utilities/getVolumeViewReferenceId';
 import {
   getPlanarReferencedImageId,
@@ -1097,6 +1098,37 @@ describe('PlanarViewReferenceController', () => {
 
       expect(emptyHarness.controller.getFrameOfReferenceUID()).toBe(
         'planarNext-viewport-viewport-1'
+      );
+    });
+
+    it('makes up other frames of reference for other images without one, also when a 32-bit hash of their URIs is the same', () => {
+      const frameOfImages = (imageIds) => {
+        const harness = createControllerHarness([
+          [
+            'source',
+            createStackBinding({
+              dataId: 'source',
+              frameOfReferenceUID: null,
+              imageIds,
+              role: 'source',
+            }),
+          ],
+        ]);
+
+        harness.mountedData.promoteSourceDataId('source');
+
+        return harness.controller.getFrameOfReferenceUID();
+      };
+      const first = frameOfImages(['local:scan-1bz7ogg']);
+
+      expect(fnv1aHash('local:scan-1bz7ogg')).toBe(
+        fnv1aHash('local:scan-5lf1d5')
+      );
+      expect(first).toMatch(/^noFrameOfReference-1-/);
+      expect(frameOfImages(['local:scan-1bz7ogg'])).toBe(first);
+      expect(frameOfImages(['local:scan-5lf1d5'])).not.toBe(first);
+      expect(frameOfImages(['local:scan-5lf1d5', 'local:scan-1bz7ogg'])).toBe(
+        frameOfImages(['local:scan-1bz7ogg', 'local:scan-5lf1d5'])
       );
     });
 

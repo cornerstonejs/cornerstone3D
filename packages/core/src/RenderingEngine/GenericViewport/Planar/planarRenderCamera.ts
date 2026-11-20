@@ -93,6 +93,12 @@ function getSliceCanvasDimensionsAtFit(args: {
   ];
 }
 
+/**
+ * The pan, zoom and scale that a display area gives on the slice. The scale
+ * of the view state multiplies the scale that the display area resolves to,
+ * for an area of type SCALE as for an image area, so a zoom next to a
+ * display area is against the fit.
+ */
 function deriveDisplayAreaPresentation(args: {
   sliceBasis: PlanarSliceBasis;
   camera?: PlanarViewState;
@@ -117,7 +123,9 @@ function deriveDisplayAreaPresentation(args: {
   let resolvedScale = [...scale] as Point2;
 
   if (displayArea.type === 'SCALE' && displayArea.scale !== undefined) {
-    resolvedScale = normalizePlanarScale(displayArea.scale);
+    const [areaScaleX, areaScaleY] = normalizePlanarScale(displayArea.scale);
+
+    resolvedScale = [areaScaleX * scale[0], areaScaleY * scale[1]];
   } else if (displayArea.imageArea) {
     const [areaX, areaY] = displayArea.imageArea;
     const safeAreaX = Math.max(Math.abs(areaX), MIN_DISPLAY_AREA_VALUE);

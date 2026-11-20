@@ -12,6 +12,7 @@ import hasOwn from './hasOwn';
 import getRuntimeId from './getRuntimeId';
 import getVOIRangeFromWindowLevel from './getVOIRangeFromWindowLevel';
 import imageIdToURI from './imageIdToURI';
+import getImagesFrameOfReferenceUID from './getImagesFrameOfReferenceUID';
 import calibratedPixelSpacingMetadataProvider from './calibratedPixelSpacingMetadataProvider';
 import clamp from './clamp';
 import isOpposite from './isOpposite';
@@ -201,6 +202,7 @@ export {
   scaleRgbTransferFunction,
   triggerEvent,
   imageIdToURI,
+  getImagesFrameOfReferenceUID,
   fnv1aHash,
   calibratedPixelSpacingMetadataProvider,
   clamp,

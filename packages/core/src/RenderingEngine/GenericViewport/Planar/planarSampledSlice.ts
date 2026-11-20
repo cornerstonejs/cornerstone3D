@@ -270,6 +270,13 @@ export type PlanarSliceSamplerOptions = {
    * every slab is sampled at once.
    */
   sampleSlabsInSteps?: boolean;
+  /**
+   * The value of a pixel outside the faces of the volume. Default: the lowest
+   * value of the volume (`getOutsideValue`), which the clip planes of the
+   * draw step hide. A labelmap takes 0, no label, as the GPU samples its
+   * slice, so a draw step that has no clip planes shows no label there.
+   */
+  outsideValue?: number;
 };
 
 /**
@@ -398,6 +405,7 @@ export class PlanarSliceSampler {
   private readonly maxSliceSize: number;
   private readonly canFilterFloatTextures: () => boolean;
   private readonly sampleSlabsInSteps: boolean;
+  private readonly outsideValue?: number;
   private entries: CachedSlice[] = [];
   private current?: CachedSlice;
   private fine?: CachedSlice;
@@ -421,6 +429,7 @@ export class PlanarSliceSampler {
     this.canFilterFloatTextures =
       options.canFilterFloatTextures ?? filtersFloatTextures;
     this.sampleSlabsInSteps = options.sampleSlabsInSteps ?? false;
+    this.outsideValue = options.outsideValue;
   }
 
   /**
@@ -1108,7 +1117,7 @@ export class PlanarSliceSampler {
         inputs.interpolationType === InterpolationType.NEAREST
           ? InterpolationType.NEAREST
           : InterpolationType.LINEAR,
-      outsideValue: getOutsideValue(volume),
+      outsideValue: this.outsideValue ?? getOutsideValue(volume),
       slab: inputs.slab,
       keepFractions: this.keepFractions,
     };
