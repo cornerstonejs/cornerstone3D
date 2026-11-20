@@ -33,6 +33,7 @@ import type {
   VOIRange,
 } from '../../../types';
 import type { MountedRendering } from '../ViewportArchitectureTypes';
+import type { VolumeStrategyState } from '../../helpers/volumeStrategyLifecycle';
 import type {
   PlanarViewState,
   PlanarDataPresentation,
@@ -156,7 +157,13 @@ export type PlanarVolumeSliceRendering = MountedRendering<{
   dataPresentation?: PlanarDataPresentation;
   isSegmentationOverlay?: boolean;
   removeStreamingSubscriptions?: () => void;
-}>;
+  /**
+   * The internal render path state: true while the acquired frame shows in
+   * place of this slice (see `withAcquiredFrames`).
+   */
+  showsAcquiredFrame?: boolean;
+}> &
+  VolumeStrategyState;
 
 /**
  * Discriminated union of all planar rendering states.

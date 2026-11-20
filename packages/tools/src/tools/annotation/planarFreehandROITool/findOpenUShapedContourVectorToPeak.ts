@@ -1,6 +1,11 @@
 import type { Types } from '@cornerstonejs/core';
 import type { PlanarFreehandROIAnnotation } from '../../../types/ToolSpecificAnnotationTypes';
 import { vec2 } from 'gl-matrix';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.annotation.planarFreehandROITool.findOpenUShapedContourVectorToPeak'
+);
 
 /**
  * Finds the length of the longest line from the midpoint of the line
@@ -172,7 +177,9 @@ function findOpenUShapedContourVectorToPeakOrthogonal(
   }
 
   if (!orthogonalPoint) {
-    console.warn('No orthogonal intersection found for open U-shaped contour');
+    cs3dLogger.warn(
+      'No orthogonal intersection found for open U-shaped contour'
+    );
     return null;
   }
 

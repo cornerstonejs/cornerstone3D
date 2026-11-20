@@ -35,7 +35,6 @@ function findIndexOfString(
 
   for (let i = offset; i < data.length; i++) {
     if (token[0] === data[i]) {
-      // console.log('match @', i);
       if (checkToken(token, data, i)) {
         return i;
       }

@@ -3,6 +3,11 @@ import { Enums } from '@cornerstonejs/core';
 import vtkCellArray from '@kitware/vtk.js/Common/Core/CellArray';
 import vtkPoints from '@kitware/vtk.js/Common/Core/Points';
 import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.displayTools.Contour.contourHandler.utils'
+);
 
 /**
  * takes a geometry object as an argument
@@ -23,7 +28,7 @@ export function validateGeometry(geometry: Types.IGeometry): void {
   }
 
   if (!geometry.data) {
-    console.warn(
+    cs3dLogger.warn(
       `No contours found for geometryId ${geometryId}. Skipping render.`
     );
     return;

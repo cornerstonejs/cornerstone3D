@@ -5,6 +5,9 @@ import type { SurfaceSegmentationData } from './types/SurfaceTypes';
 import type SegmentationRepresentations from './enums/SegmentationRepresentations';
 import { eventTarget, triggerEvent } from '@cornerstonejs/core';
 import Events from './enums/Events';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger('config');
 
 export type SurfacesInfo = {
   id: string;
@@ -100,6 +103,10 @@ type SegmentationConfig = {
    * - all: erase all other unlocked segments under the edit footprint
    * - visible: erase only visible unlocked segments
    * - none: do not erase other segments, allowing overlap
+   *
+   * A segment that is not overwritten keeps its voxels: when a stroke would
+   * overwrite it, the edited segment moves to a new labelmap layer. A locked
+   * segment never causes that move; the brush skips its voxels.
    */
   overwriteMode?: 'all' | 'visible' | 'none';
 };
@@ -144,7 +151,7 @@ let polysegInitialized = false;
  */
 export function getPolySeg() {
   if (!config.addons?.polySeg) {
-    console.warn(
+    cs3dLogger.warn(
       'PolySeg add-on not configured. This will prevent automatic conversion between segmentation representations (labelmap, contour, surface). To enable these features, install @cornerstonejs/polymorphic-segmentation and register it during initialization: cornerstoneTools.init({ addons: { polySeg } }).'
     );
 

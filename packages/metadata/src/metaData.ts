@@ -3,6 +3,9 @@
 
 import type { MetadataModuleType } from './types';
 import { getAddModuleType } from './enums';
+import { logging as cornerstoneLogging } from '@cornerstonejs/utils';
+
+const cs3dLogger = cornerstoneLogging.metadataLog.getLogger('metaData');
 
 const providers = [];
 
@@ -349,7 +352,7 @@ export function getNormalized(
         Object.assign(result, capitalizedData);
       }
     } catch (error) {
-      console.error(`Error retrieving ${t} data:`, error);
+      cs3dLogger.error(`Error retrieving ${t} data:`, error);
     }
   }
 

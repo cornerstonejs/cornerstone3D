@@ -7,13 +7,19 @@ export const {
   metadataLog,
   coreLog,
   toolsLog,
+  adaptersLog,
   loaderLog,
+  niftiVolumeLoaderLog,
+  polySegLog,
+  labelmapInterpolationLog,
   aiLog,
   examplesLog,
-  workerLog,
   dicomConsistencyLog,
   imageConsistencyLog,
   log,
 } = logging;
+
+/** @deprecated Worker files now use their package-specific loggers. */
+export const { workerLog } = logging;
 
 export type Logger = logging.Logger;

@@ -2,6 +2,7 @@ import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
+  CONSTANTS,
   getRenderingEngine,
   utilities,
 } from '@cornerstonejs/core';
@@ -10,6 +11,8 @@ import {
   createImageIdsAndCacheMetaData,
   setTitleAndDescription,
   addManipulationBindings,
+  addSliderToToolbar,
+  addToggleButtonToToolbar,
   ctVoiRange,
   getLocalUrl,
 } from '../../../../utils/demo/helpers';
@@ -27,7 +30,8 @@ const {
 } = cornerstoneTools;
 
 const { MouseBindings } = csToolsEnums;
-const { ViewportType, OrientationAxis } = Enums;
+const { ViewportType, OrientationAxis, BlendModes } = Enums;
+const { MINIMUM_SLAB_THICKNESS } = CONSTANTS.RENDERING_DEFAULTS;
 
 const volumeId = 'cornerstoneStreamingImageVolume:SLICE_INTERSECTION_CT';
 const mprDataId = 'sliceIntersections:ct-mpr';
@@ -70,9 +74,66 @@ instructions.innerText = `
   - Drag an intersection line to scroll that plane (every viewport showing it follows).
   - Hover a line and drag its round handles (quarter points) to rotate the plane.
   - Drag the hollow handles near the line end to change the slab thickness (dashed boundary lines).
+  - The slider sets the slab thickness of all three viewports without the handles.
+  - Rotate a line in one viewport, then look at that same line in the third
+    viewport: the plane is oblique there, and the hollow handles must stay on
+    the dashed boundary lines.
+  - Turn the slab thickness handles off: the dashed lines still render, but no
+    handle sits on them, and hovering a dashed line must not select the line.
   `;
 
 content.append(instructions);
+
+/**
+ * Sets the slab thickness of every viewport through its display-set
+ * presentation, which is the same path the SliceIntersectionTool uses for the
+ * slab handles.
+ */
+function setSlabThickness(slabThickness: number) {
+  const renderingEngine = getRenderingEngine(renderingEngineId);
+  if (!renderingEngine) {
+    return;
+  }
+
+  viewportIds.forEach((viewportId) => {
+    const viewport = renderingEngine.getViewport(viewportId) as PlanarViewport;
+    viewport.setDisplaySetPresentation(mprDataId, {
+      slabThickness,
+      blendMode:
+        slabThickness > MINIMUM_SLAB_THICKNESS
+          ? BlendModes.MAXIMUM_INTENSITY_BLEND
+          : BlendModes.COMPOSITE,
+    });
+    viewport.render();
+  });
+}
+
+addSliderToToolbar({
+  id: 'slabThickness',
+  title: 'Slab thickness',
+  range: [MINIMUM_SLAB_THICKNESS, 100],
+  step: 0.5,
+  defaultValue: MINIMUM_SLAB_THICKNESS,
+  onSelectedValueChange: (value) => setSlabThickness(Number(value)),
+  updateLabelOnChange: (value, label) => {
+    label.innerText = `Slab thickness: ${Number(value).toFixed(1)} mm`;
+  },
+});
+
+const slabHandlesButton = addToggleButtonToToolbar({
+  id: 'slabThicknessControls',
+  title: 'Slab thickness handles: ON',
+  defaultToggle: true,
+  onClick: (toggle) => {
+    slabHandlesButton.innerHTML = `Slab thickness handles: ${
+      toggle ? 'ON' : 'OFF'
+    }`;
+    ToolGroupManager.getToolGroup(toolGroupId)?.setToolConfiguration(
+      SliceIntersectionTool.toolName,
+      { slabThicknessControls: toggle }
+    );
+  },
+});
 
 /**
  * Runs the demo

@@ -78,14 +78,6 @@ function extendedVtkCamera(publicAPI, model) {
 
     return matrix;
   };
-
-  publicAPI.getAspectRatio = () => {
-    return model.aspectRatio;
-  };
-
-  publicAPI.setAspectRatio = (aspectRatio) => {
-    model.aspectRatio = aspectRatio;
-  };
 }
 
 // ----------------------------------------------------------------------------
@@ -103,6 +95,7 @@ export function extend(publicAPI, model, initialValues = {}) {
 
   vtkCamera.extend(publicAPI, model, initialValues);
 
+  // Register the aspect ratio set/get methods here.
   macro.setGet(publicAPI, model, ['aspectRatio']);
 
   // Object methods

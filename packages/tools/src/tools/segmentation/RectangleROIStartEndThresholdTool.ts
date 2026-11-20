@@ -1,6 +1,5 @@
 import {
   getEnabledElement,
-  cache,
   StackViewport,
   utilities as csUtils,
 } from '@cornerstonejs/core';
@@ -50,6 +49,11 @@ import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScale
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 import { filterAnnotationsWithinSamePlane } from '../../utilities/planar';
 import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.segmentation.RectangleROIStartEndThresholdTool'
+);
 
 const { transformWorldToIndex } = csUtils;
 
@@ -135,10 +139,14 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
    * the edit data for the tool.
    *
    * @param evt -  EventTypes.NormalizedMouseEventType
-   * @returns The annotation object.
+   * @returns The annotation object, or `null` when there is nothing to
+   *   measure on this viewport because a configured `targetsFilter` selects
+   *   no target on it (eg a PT only filter on a CT viewport).
    *
    */
-  addNewAnnotation = (evt: EventTypes.InteractionEventType) => {
+  addNewAnnotation = (
+    evt: EventTypes.InteractionEventType
+  ): Annotation | null => {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;
@@ -146,24 +154,30 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     const enabledElement = getEnabledElement(element);
     const { viewport, renderingEngine } = enabledElement;
 
-    this.isDrawing = true;
-
     const camera = viewport.getCamera();
     const { viewPlaneNormal, viewUp } = camera;
 
-    let referencedImageId, imageVolume, volumeId;
     if (viewport instanceof StackViewport) {
       throw new Error('Stack Viewport Not implemented');
-    } else {
-      const targetId = this.getTargetId(viewport);
-      volumeId = csUtils.getVolumeId(targetId);
-      imageVolume = cache.getVolume(volumeId);
-      referencedImageId = csUtils.getClosestImageId(
-        imageVolume,
-        worldPos,
-        viewPlaneNormal
-      );
     }
+
+    // Resolve the target before any drawing state is set, so that a viewport
+    // with nothing to measure leaves the tool untouched rather than stuck
+    // mid-draw with no editData for cancel() to unwind.
+    const target = this.getTargetVolume(viewport);
+    if (!target) {
+      return null;
+    }
+
+    const volumeId = csUtils.getVolumeId(target.targetId);
+    const imageVolume = target.imageVolume;
+    const referencedImageId = csUtils.getClosestImageId(
+      imageVolume,
+      worldPos,
+      viewPlaneNormal
+    );
+
+    this.isDrawing = true;
 
     const spacingInNormal = csUtils.getSpacingInNormalDirection(
       imageVolume,
@@ -294,19 +308,20 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       removeAnnotation(annotation.annotationUID);
     }
 
-    const targetId = this.getTargetId(enabledElement.viewport);
-    const imageVolume = cache.getVolume(targetId.split(/volumeId:|\?/)[1]);
+    const target = this.getTargetVolume(enabledElement.viewport);
 
-    this._computeProjectionPoints(
-      annotation as RectangleROIStartEndThresholdAnnotation,
-      imageVolume
-    );
-    this._computePointsInsideVolume(
-      annotation,
-      targetId,
-      imageVolume,
-      enabledElement
-    );
+    if (target) {
+      this._computeProjectionPoints(
+        annotation as RectangleROIStartEndThresholdAnnotation,
+        target.imageVolume
+      );
+      this._computePointsInsideVolume(
+        annotation,
+        target.targetId,
+        target.imageVolume,
+        enabledElement
+      );
+    }
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
@@ -407,7 +422,16 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       worldPos1,
       worldPos2
     );
-    const measureInfo = getCalibratedLengthUnitsAndScale(image, data.habdles);
+    // The calibration compares the handles against the pixel bounds of the
+    // ultrasound regions of the image, so it reads index coordinates, as the
+    // other ROI tools pass.
+    const indexCoordinates = data.handles.points.map((point) =>
+      image.imageData.worldToIndex(point)
+    );
+    const measureInfo = getCalibratedLengthUnitsAndScale(
+      image,
+      indexCoordinates
+    );
 
     const area =
       Math.abs(worldWidth * worldHeight) /
@@ -423,8 +447,13 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       ),
     };
 
+    // The modality has to come from the volume being measured - the
+    // annotation metadata has no Modality, so reading it from there left PT
+    // statistics unitless instead of SUV.
+    const modality = imageVolume?.metadata?.Modality;
+
     const modalityUnit = getPixelValueUnits(
-      metadata.Modality,
+      modality,
       annotation.metadata.referencedImageId,
       modalityUnitOptions
     );
@@ -502,7 +531,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     const stats = this.configuration.statsCalculator.getStatistics();
     data.cachedStats.pointsInVolume = pointsInsideVolume;
     data.cachedStats.statistics = {
-      Modality: metadata.Modality,
+      Modality: modality,
       area,
       mean: stats.mean?.value,
       stdDev: stats.stdDev?.value,
@@ -518,8 +547,17 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     const { viewport } = enabledElement;
 
     const { cachedStats } = data;
-    const targetId = this.getTargetId(viewport);
-    const imageVolume = cache.getVolume(targetId.split(/volumeId:|\?/)[1]);
+    const target = this.getTargetVolume(viewport);
+
+    if (!target) {
+      // Clear the flag although no statistics were computed. The render
+      // callback calls this method for every invalidated annotation, so a
+      // flag that stays set repeats this work on every frame.
+      annotation.invalidated = false;
+      return cachedStats;
+    }
+
+    const { targetId, imageVolume } = target;
 
     // Todo: this shouldn't be here, this is a performance issue
     // Since we are extending the RectangleROI class, we need to
@@ -631,20 +669,17 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
       }
 
       // WE HAVE TO CACHE STATS BEFORE FETCHING TEXT
-      const iteratorVolumeIDs =
-        // @ts-ignore
-        annotationEnabledElement.viewport?.volumeIds.values();
+      const annotationViewport =
+        annotationEnabledElement?.viewport as Types.IVolumeViewport;
 
-      for (const volumeId of iteratorVolumeIDs) {
-        if (
-          annotation.invalidated &&
-          annotation.metadata.volumeId === volumeId
-        ) {
-          this._throttledCalculateCachedStats(
-            annotation,
-            annotationEnabledElement
-          );
-        }
+      if (
+        annotation.invalidated &&
+        annotationViewport?.hasVolumeId?.(metadata.volumeId)
+      ) {
+        this._throttledCalculateCachedStats(
+          annotation,
+          annotationEnabledElement
+        );
       }
 
       // if it is inside the start/end slice, but not exactly the first or
@@ -659,7 +694,7 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
 
       // If rendering engine has been destroyed while rendering
       if (!viewport.getRenderingEngine()) {
-        console.warn('Rendering Engine has been destroyed');
+        cs3dLogger.warn('Rendering Engine has been destroyed');
         return renderStatus;
       }
 

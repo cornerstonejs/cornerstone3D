@@ -21,6 +21,11 @@ import {
   BooleanOp,
   type PolygonWithHoles,
 } from './clipperBooleanOps';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'utilities.contourSegmentation.sharedOperations'
+);
 
 const TOLERANCE = 1e-10; // Very small tolerance for floating point comparison
 
@@ -183,7 +188,7 @@ export function combinePolylines(
   sourcePolyline: Types.Point2[]
 ): void {
   if (!hasToolByName(DEFAULT_CONTOUR_SEG_TOOL_NAME)) {
-    console.warn(
+    cs3dLogger.warn(
       `${DEFAULT_CONTOUR_SEG_TOOL_NAME} is not registered in cornerstone. Cannot combine polylines.`
     );
     return;

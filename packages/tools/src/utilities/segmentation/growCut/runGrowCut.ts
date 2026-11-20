@@ -1,6 +1,11 @@
 import { cache } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import shaderCode from './growCutShader';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'utilities.segmentation.growCut.runGrowCut'
+);
 
 const GB = 1024 * 1024 * 1024;
 const WEBGPU_MEMORY_LIMIT = 1.99 * GB;
@@ -138,6 +143,12 @@ async function runGrowCut(
 
   const labelmapData =
     labelmap.voxelManager.getCompleteScalarDataArray() as Types.PixelDataTypedArray;
+  // A 4D labelmap can change its time point during the GPU work below.
+  const getTimePoint = () =>
+    (
+      labelmap.voxelManager as { getCurrentDimensionGroupNumber?: () => number }
+    ).getCurrentDimensionGroupNumber?.();
+  const startTimePoint = getTimePoint();
 
   let volumePixelData =
     volume.voxelManager.getCompleteScalarDataArray() as Types.PixelDataTypedArray;
@@ -475,7 +486,9 @@ async function runGrowCut(
     }
 
     if (limitProcessingTime && performance.now() > limitProcessingTime) {
-      console.warn(`Exceeded processing time limit (${maxProcessingTime})ms`);
+      cs3dLogger.warn(
+        `Exceeded processing time limit (${maxProcessingTime})ms`
+      );
       break;
     }
   }
@@ -555,6 +568,11 @@ async function runGrowCut(
   const maxX = boundsResult[3];
   const maxY = boundsResult[4];
   const maxZ = boundsResult[5];
+
+  if (getTimePoint() !== startTimePoint) {
+    // The result belongs to a different time point; discard it.
+    return;
+  }
 
   // update the voxel manager with the new labelmap data
   labelmap.voxelManager.setCompleteScalarDataArray(labelmapData);

@@ -1,6 +1,11 @@
 import { setElementCursor } from './elementCursor';
 import MouseCursor from './MouseCursor';
 import SVGMouseCursor from './SVGMouseCursor';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'cursors.setCursorForElement'
+);
 
 /**
  * Set the cursor for an HTML element. cursorNames can be either
@@ -21,7 +26,7 @@ function setCursorForElement(
   }
 
   if (!cursor) {
-    console.log(
+    cs3dLogger.info(
       `Cursor ${cursorName} is not defined either as SVG or as a standard cursor.`
     );
     cursor = MouseCursor.getDefinedCursor(cursorName);

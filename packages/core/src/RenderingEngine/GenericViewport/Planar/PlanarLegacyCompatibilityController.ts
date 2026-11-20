@@ -66,6 +66,9 @@ export type PlanarLegacyCompatibilityHost = {
 
 class PlanarLegacyCompatibilityController {
   private readonly managedDataIds = new Set<string>();
+  // The data ids that a mount is currently applying to the viewport. See
+  // mountVolumes and removeData.
+  private readonly mountingDataIds = new Set<string>();
   private readonly volumeDataIds = new Map<string, string>();
   private stackSetRequestId = 0;
   private readonly properties = new Map<
@@ -409,6 +412,15 @@ class PlanarLegacyCompatibilityController {
   }
 
   removeData(dataId: string): void {
+    // A mount that is in progress keeps its registration. The viewport removes
+    // every binding that it holds before the viewport mounts the new bindings,
+    // and the mount then reads the registration of each data id back. A volume
+    // that the caller mounts again therefore keeps the metadata that
+    // mountVolumes wrote for it.
+    if (this.mountingDataIds.has(dataId)) {
+      return;
+    }
+
     if (!this.managedDataIds.delete(dataId)) {
       return;
     }
@@ -507,22 +519,34 @@ class PlanarLegacyCompatibilityController {
       };
       const existingSourceDataId = this.host.getActiveDataId();
 
-      await this.host.setDisplaySets(
-        ...dataIds.map((dataId, index) => {
-          const shouldMountAsSource =
-            index === 0 && (replaceExisting || !existingSourceDataId);
+      // setDisplaySets removes every binding that the viewport holds before it
+      // mounts the new bindings. A volume that this call mounts again is still
+      // bound at that moment, so the teardown must not remove the registration
+      // that the loop above wrote for that volume. removeData reads this set.
+      dataIds.forEach((dataId) => this.mountingDataIds.add(dataId));
 
-          return {
-            displaySetId: dataId,
-            options: {
-              ...sharedOptions,
-              role: shouldMountAsSource
-                ? ('source' as const)
-                : ('overlay' as const),
-            },
-          };
-        })
-      );
+      try {
+        await this.host.setDisplaySets(
+          ...dataIds.map((dataId, index) => {
+            const shouldMountAsSource =
+              index === 0 && (replaceExisting || !existingSourceDataId);
+
+            return {
+              displaySetId: dataId,
+              options: {
+                ...sharedOptions,
+                role: shouldMountAsSource
+                  ? ('source' as const)
+                  : ('overlay' as const),
+              },
+            };
+          })
+        );
+      } finally {
+        // The catch of this method removes the data of a failed mount, so the
+        // set must be clear before that cleanup runs.
+        dataIds.forEach((dataId) => this.mountingDataIds.delete(dataId));
+      }
 
       volumeInputArray.forEach((volumeInput, index) => {
         const dataId = dataIds[index];

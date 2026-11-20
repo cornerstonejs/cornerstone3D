@@ -31,6 +31,11 @@ import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnota
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { getCanvasCircleRadius } from '../../utilities/math/circle';
 import { vec3 } from 'gl-matrix';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.annotation.ETDRSGridTool'
+);
 
 const CROSSHAIR_SIZE = 5;
 
@@ -546,7 +551,7 @@ class ETDRSGridTool extends AnnotationTool {
       const center = canvasCoordinates[0];
       // If rendering engine has been destroyed while rendering
       if (!viewport.getRenderingEngine()) {
-        console.warn('Rendering Engine has been destroyed');
+        cs3dLogger.warn('Rendering Engine has been destroyed');
         return renderStatus;
       }
 

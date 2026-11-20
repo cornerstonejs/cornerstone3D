@@ -10,6 +10,11 @@ import {
   getViewportsAssociatedToSegmentation,
   getViewportWithMatchingViewPlaneNormal,
 } from './getViewportAssociatedToSegmentation';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'stateManagement.segmentation.utilities.decimateContours'
+);
 
 /**
  * Decimates contour polylines for a given segmentation and segment using the Ramer-Douglas-Peucker algorithm.
@@ -27,18 +32,18 @@ export default function decimateContours(
 ) {
   const segmentation = getSegmentation(segmentationId);
   if (!segmentation) {
-    console.warn(`Invalid segmentation given ${segmentationId}`);
+    cs3dLogger.warn(`Invalid segmentation given ${segmentationId}`);
     return;
   }
   if (!segmentation.representationData.Contour) {
-    console.warn(
+    cs3dLogger.warn(
       `No contour representation found for segmentation ${segmentationId}`
     );
     return;
   }
   const viewports = getViewportsAssociatedToSegmentation(segmentationId);
   if (!viewports) {
-    console.warn('No viewport associated to the segmentation found');
+    cs3dLogger.warn('No viewport associated to the segmentation found');
     return;
   }
 
@@ -47,7 +52,7 @@ export default function decimateContours(
     segmentIndex
   );
   if (!polylinesCanvasMap) {
-    console.warn(
+    cs3dLogger.warn(
       `Error extracting contour data from segment ${segmentIndex} in segmentation ${segmentationId}`
     );
     return;

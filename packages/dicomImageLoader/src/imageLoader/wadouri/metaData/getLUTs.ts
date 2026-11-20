@@ -20,7 +20,6 @@ function getLUT(pixelRepresentation: number, lutDataSet: DataSet): LutType {
     firstValueMapped = lutDataSet.int16('x00283002', 1);
   }
   const numBitsPerEntry = lutDataSet.uint16('x00283002', 2);
-  // console.log('LUT(', numLUTEntries, ',', firstValueMapped, ',', numBitsPerEntry, ')');
   const lut = {
     id: '1',
     firstValueMapped,
