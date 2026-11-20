@@ -113,7 +113,7 @@ describe('What a caller uses in place of cut planar members, in stack mode and i
 
       expect(stack.getCurrentMode()).toBe('stack');
       expect(stack.hasVolumeId(series.volumeId)).toBe(false);
-      expect(cache.getVolume(stack.getVolumeId())).toBeUndefined();
+      expect(stack.getVolumeId()).toBeUndefined();
 
       expect(volume.getCurrentMode()).toBe('volume');
       expect(volume.getVolumeId()).toBe(series.volumeId);
@@ -123,6 +123,29 @@ describe('What a caller uses in place of cut planar members, in stack mode and i
       expect(empty.getCurrentMode()).toBe('empty');
       expect(empty.getVolumeId()).toBeUndefined();
       expect(empty.hasVolumeId(series.volumeId)).toBe(false);
+    });
+
+    it('claim no volume in stack mode, also not the id that the images would get as a volume', async function () {
+      const series = await createSeries();
+      const { stack } = await showBothModes(renderingEngine, series);
+      const idOfTheImages = cache.generateVolumeId(series.imageIds);
+
+      expect(stack.getCurrentMode()).toBe('stack');
+      expect(stack.getVolumeId()).toBeUndefined();
+      expect(stack.hasVolumeId(idOfTheImages)).toBe(false);
+      expect(stack.hasVolumeURI(idOfTheImages)).toBe(false);
+      expect(cache.getVolume(idOfTheImages)).toBeUndefined();
+    });
+
+    it('give the volume id asked for only when the viewport shows that volume, as the legacy volume viewport', async function () {
+      const series = await createSeries();
+      const { stack, volume } = await showBothModes(renderingEngine, series);
+
+      expect(volume.getVolumeId({ volumeId: series.volumeId })).toBe(
+        series.volumeId
+      );
+      expect(volume.getVolumeId({ volumeId: 'anotherVolume' })).toBeUndefined();
+      expect(stack.getVolumeId({ volumeId: 'anotherVolume' })).toBeUndefined();
     });
   });
 

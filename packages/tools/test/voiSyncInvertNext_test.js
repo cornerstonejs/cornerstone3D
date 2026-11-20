@@ -179,4 +179,56 @@ describe('VOI synchronizer on direct next planar viewports -- ', () => {
       upper: 90,
     });
   });
+
+  it('gives a stack of other images the window of the source stack, as the legacy stack viewport', async function () {
+    const [source, target] = createNextViewports(renderingEngine);
+    const sourceDisplaySetId = registerStack();
+    const targetDisplaySetId = 'voiSyncOtherStack';
+
+    utilities.genericViewportDisplaySetMetadataProvider.add(
+      targetDisplaySetId,
+      {
+        imageIds: Array.from({ length: 4 }, (_, sliceIndex) =>
+          testUtils.encodeImageIdInfo({
+            loader: 'fakeImageLoader',
+            name: 'imageURI',
+            id: targetDisplaySetId,
+            rows: 64,
+            columns: 64,
+            barStart: 20,
+            barWidth: 5,
+            xSpacing: 1,
+            ySpacing: 1,
+            sliceIndex,
+          })
+        ),
+        kind: 'planar',
+        initialImageIdIndex: 0,
+      }
+    );
+
+    const synchronizer = synchronizers.createVOISynchronizer(synchronizerId, {
+      syncInvertState: true,
+      syncColormap: true,
+    });
+
+    await source.setDisplaySets({ displaySetId: sourceDisplaySetId });
+    await renderAndWait(source);
+    await target.setDisplaySets({ displaySetId: targetDisplaySetId });
+    await renderAndWait(target);
+    synchronizer.addSource({ renderingEngineId, viewportId: source.id });
+    synchronizer.addTarget({ renderingEngineId, viewportId: target.id });
+
+    source.setDisplaySetPresentation(sourceDisplaySetId, {
+      voiRange: { lower: 10, upper: 90 },
+    });
+
+    expect(target.getCurrentMode()).toBe('stack');
+    expect(
+      target.getDisplaySetPresentation(targetDisplaySetId).voiRange
+    ).toEqual({
+      lower: 10,
+      upper: 90,
+    });
+  });
 });

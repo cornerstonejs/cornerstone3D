@@ -116,13 +116,29 @@ export type PlanarViewReferenceHost = {
 class PlanarViewReferenceController {
   constructor(private readonly host: PlanarViewReferenceHost) {}
 
+  /**
+   * The volume id of the binding that shows the volume of
+   * `viewRefSpecifier.volumeId`, and undefined when no binding shows it, as
+   * the legacy volume viewport. Without a volume id, that of the current
+   * binding. A binding in an image render mode (a stack) shows no volume,
+   * so it gives undefined, though its data keeps the id that its images
+   * would get as a volume.
+   */
   getVolumeId(
     viewRefSpecifier: ViewReferenceSpecifier = {}
   ): string | undefined {
-    return (
-      this.getPlanarReferenceContext(viewRefSpecifier)?.data.volumeId ??
-      this.getCurrentPlanarReferenceContext()?.data.volumeId
-    );
+    const referenceContext = viewRefSpecifier.volumeId
+      ? this.findPlanarReferenceContextByVolumeId(viewRefSpecifier.volumeId)
+      : this.getCurrentPlanarReferenceContext();
+
+    if (
+      !referenceContext ||
+      isImageRenderMode(referenceContext.rendering?.renderMode)
+    ) {
+      return;
+    }
+
+    return referenceContext.data.volumeId;
   }
 
   getCurrentImageId(

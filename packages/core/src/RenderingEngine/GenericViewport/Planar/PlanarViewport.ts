@@ -135,7 +135,10 @@ import {
   isSameRenderPlanLayer,
 } from './planarRenderPlan';
 import PlanarViewReferenceController from './PlanarViewReferenceController';
-import { getPlanarReferenceForViewableCheck } from './planarViewReference';
+import {
+  getPlanarImageReferenceForStack,
+  getPlanarReferenceForViewableCheck,
+} from './planarViewReference';
 import { applyCanvasSharpeningSmoothing } from './planarCanvasSharpeningSmoothing';
 import { createSharpeningSmoothingRenderPasses } from '../../renderPasses/createSharpeningSmoothingRenderPasses';
 export type { PlanarReferenceContext } from './PlanarViewReferenceController';
@@ -1320,16 +1323,16 @@ class PlanarViewport extends GenericViewport<
 
   /**
    * Returns the current volume id when the active dataset is volume-backed.
+   * With a `volumeId` in the specifier it is that volume id when a dataset of
+   * the viewport shows that volume, and undefined otherwise, as the legacy
+   * volume viewport. In stack mode it is undefined: no volume is mounted.
    *
    * @returns The volume id for the active dataset, if one exists.
    */
   getVolumeId(
     viewRefSpecifier: ViewReferenceSpecifier = {}
   ): string | undefined {
-    return (
-      this.viewReferences.getVolumeId(viewRefSpecifier) ??
-      this.getPlanarData()?.volumeId
-    );
+    return this.viewReferences.getVolumeId(viewRefSpecifier);
   }
 
   getSourceDataId(): string | undefined {
@@ -2120,13 +2123,20 @@ class PlanarViewport extends GenericViewport<
   }
 
   /**
-   * Returns whether any bound dataset references the given volume id.
+   * Returns whether any bound dataset shows the given volume id. A dataset
+   * in stack mode shows no volume, so it does not count for the id that its
+   * images would get as a volume.
    *
    * @param volumeId - Volume id to compare against the bound datasets.
-   * @returns `true` when a source or overlay binding references the volume id.
+   * @returns `true` when a source or overlay binding shows the volume id.
    */
   hasVolumeId(volumeId: string): boolean {
-    return this.findDataIdByVolumeId(volumeId) !== undefined;
+    const dataId = this.findDataIdByVolumeId(volumeId);
+
+    return (
+      dataId !== undefined &&
+      !isImageRenderMode(this.getBinding(dataId)?.rendering.renderMode)
+    );
   }
 
   /**
@@ -2181,6 +2191,11 @@ class PlanarViewport extends GenericViewport<
    * reference of another plane needs `asVolume`, as on the legacy stack
    * viewport. In volume mode `asVolume` has no effect.
    *
+   * In stack mode with `withNavigation` a reference that names an image of
+   * the stack is viewable whatever plane it names, as on the legacy stack
+   * viewport: the stack shows each image in its own plane, also in a stack
+   * of images in several orientations.
+   *
    * @param viewRef - View reference to test.
    * @param options - Optional compatibility flags for the spatial check.
    * @returns `true` when the reference can be viewed in this viewport state.
@@ -2191,10 +2206,19 @@ class PlanarViewport extends GenericViewport<
   ): boolean {
     const reference = getPlanarReferenceForViewableCheck(viewRef);
     const isStack = this.getCurrentMode() === 'stack';
-    const isViewable = super.isReferenceViewable(
-      reference,
-      isStack ? { ...options, withOrientation: options.asVolume } : options
-    );
+    const checkOptions = isStack
+      ? { ...options, withOrientation: options.asVolume }
+      : options;
+    const imageReference =
+      isStack && options.withNavigation
+        ? getPlanarImageReferenceForStack(reference)
+        : undefined;
+    const isViewable =
+      super.isReferenceViewable(reference, checkOptions) ||
+      Boolean(
+        imageReference &&
+          super.isReferenceViewable(imageReference, checkOptions)
+      );
 
     if (!isViewable && options.asVolume && isStack) {
       return isGenericViewportReferenceViewableAsVolume(
@@ -3574,7 +3598,8 @@ class PlanarViewport extends GenericViewport<
     const isVolumePath = isVolumeRenderMode(selectedPath.renderMode);
     const orientation = normalizePlanarOrientation(
       resolvedOrientation,
-      selectedPath.acquisitionOrientation
+      selectedPath.acquisitionOrientation,
+      isVolumePath ? planarData.imageVolume : undefined
     );
     const slice = isVolumePath
       ? this.createInitialVolumeSliceState(

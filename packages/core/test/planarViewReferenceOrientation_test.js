@@ -356,3 +356,125 @@ describe('The option asVolume of a direct next planar viewport in stack mode -- 
     });
   });
 });
+
+/**
+ * References of one image, alone, with the plane of the image (its normal
+ * and a plane restriction through it), and with its normal only.
+ */
+function imageReferences(series, imageIndex, viewPlaneNormal, inPlaneVectors) {
+  const imageOnly = {
+    FrameOfReferenceUID: 'bothModesFrame',
+    referencedImageId: series.imageIds[imageIndex],
+  };
+
+  return {
+    imageOnly,
+    withPlane: {
+      ...imageOnly,
+      viewPlaneNormal,
+      planeRestriction: {
+        FrameOfReferenceUID: 'bothModesFrame',
+        point: worldOfVoxel(series, [4, 4, imageIndex]),
+        inPlaneVector1: inPlaneVectors[0],
+        inPlaneVector2: inPlaneVectors[1],
+      },
+    },
+    withNormalOnly: { ...imageOnly, viewPlaneNormal },
+  };
+}
+
+const SAGITTAL_IMAGES = {
+  origin: [-10, 5, 20],
+  rowCosines: [0, 1, 0],
+  columnCosines: [0, 0, -1],
+};
+const SAGITTAL_IN_PLANE = [
+  [0, 1, 0],
+  [0, 0, -1],
+];
+const AXIAL_IN_PLANE = [
+  [1, 0, 0],
+  [0, 1, 0],
+];
+
+/**
+ * A stack of 8 axial and then 8 sagittal images, on its first axial image.
+ * The legacy stack viewport of commit 58914567b, in the same scene, gave the
+ * answers that the tests state: a reference that names an image of the stack
+ * is decided by that image first, whatever plane it names.
+ */
+describe('A stack of images in two orientations on a direct next planar viewport -- ', () => {
+  let renderingEngine;
+
+  beforeEach(function () {
+    renderingEngine = testUtils.setupTestEnvironment({
+      renderingEngineId,
+    }).renderingEngine;
+  });
+
+  afterEach(function () {
+    testUtils.cleanupTestEnvironment({ renderingEngineId });
+  });
+
+  it('takes a reference of one of its images in the other orientation with navigation, also with the plane of that image', async function () {
+    const axial = await createSeries({ id: 'twoOrientationsAxial' });
+    const sagittal = await createSeries({
+      id: 'twoOrientationsSagittal',
+      plane: SAGITTAL_IMAGES,
+    });
+    const otherSagittal = await createSeries({
+      id: 'twoOrientationsOther',
+      plane: SAGITTAL_IMAGES,
+    });
+    const stack = createNextViewport(renderingEngine, 'twoOrientations');
+    const displaySetId = 'twoOrientationsStack';
+
+    utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+      imageIds: [...axial.imageIds, ...sagittal.imageIds],
+      kind: 'planar',
+      initialImageIdIndex: 0,
+    });
+    await stack.setDisplaySets({
+      displaySetId,
+      options: { orientation: OrientationAxis.ACQUISITION },
+    });
+    await renderAndWait(stack);
+
+    expect(stack.getCurrentMode()).toBe('stack');
+    expect(stack.getCurrentImageId()).toBe(axial.imageIds[0]);
+
+    const legacyAnswersOfAnImage = {
+      plain: false,
+      withNavigation: true,
+      withOrientation: false,
+      withOrientationAndNavigation: true,
+    };
+    const legacyAnswersOfAnotherImage = {
+      plain: false,
+      withNavigation: false,
+      withOrientation: false,
+      withOrientationAndNavigation: false,
+    };
+    const ofSagittal = imageReferences(
+      sagittal,
+      2,
+      [-1, 0, 0],
+      SAGITTAL_IN_PLANE
+    );
+    const ofAxial = imageReferences(axial, 5, [0, 0, 1], AXIAL_IN_PLANE);
+    const ofOther = imageReferences(
+      otherSagittal,
+      2,
+      [-1, 0, 0],
+      SAGITTAL_IN_PLANE
+    );
+
+    for (const name of ['imageOnly', 'withPlane', 'withNormalOnly']) {
+      expect(answers(stack, ofSagittal[name])).toEqual(legacyAnswersOfAnImage);
+      expect(answers(stack, ofAxial[name])).toEqual(legacyAnswersOfAnImage);
+      expect(answers(stack, ofOther[name])).toEqual(
+        legacyAnswersOfAnotherImage
+      );
+    }
+  });
+});

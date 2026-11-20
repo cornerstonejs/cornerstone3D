@@ -331,6 +331,34 @@ export function getPlanarReferenceForViewableCheck(
 }
 
 /**
+ * The reference that a stack checks with navigation for a reference that
+ * names an image: that reference without its plane (`viewPlaneNormal` and
+ * `planeRestriction`). The legacy stack viewport decided such a reference by
+ * the image first, and a stack shows each of its images in the plane of that
+ * image, so a stack of images in several orientations takes an image of
+ * another orientation. Undefined for a reference that names no image or no
+ * plane.
+ */
+export function getPlanarImageReferenceForStack(
+  viewRef: ViewReference
+): ViewReference | undefined {
+  if (
+    (!viewRef?.referencedImageId && !viewRef?.referencedImageURI) ||
+    (!viewRef.viewPlaneNormal && !viewRef.planeRestriction)
+  ) {
+    return;
+  }
+
+  const {
+    viewPlaneNormal: _viewPlaneNormal,
+    planeRestriction: _planeRestriction,
+    ...reference
+  } = viewRef;
+
+  return reference;
+}
+
+/**
  * Tests whether a given plane (defined by a PlaneRestriction) is viewable
  * in this viewport's current orientation.
  *

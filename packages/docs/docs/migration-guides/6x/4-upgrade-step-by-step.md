@@ -730,8 +730,9 @@ point of that slice.
 - `cache.getImage(viewport.getCurrentImageId())` gives an image for a volume
   only in its acquisition orientation. On another plane the id is undefined
   and `cache.getImage(undefined)` throws, so check the id, as above.
-- `viewport.getVolumeId()` gives an id in stack mode too, though no volume is
-  mounted. Ask `viewport.getCurrentMode() === 'volume'` first.
+- `viewport.getVolumeId()` is undefined in stack mode, where no volume is
+  mounted, and `cache.getVolume(undefined)` throws, so check the id. The next
+  viewport of 5.x gave the id that the images would get as a volume there.
 - The search for `.modality` and `.scaling` also finds display sets and
   images of the application. Change only the reads on a viewport.
 

@@ -97,6 +97,16 @@ leave the canvas. Against the legacy volume viewport:
   the acquisition. The next viewport of 5.x opened a tilted series on its
   acquisition plane when the closest axis was asked for. A series that is not
   tilted is not affected: there the axis is a slice of the acquisition.
+- **A requested axis has the camera of its name.** `AXIAL`, `SAGITTAL` or
+  `CORONAL` at the mount of a volume gives the camera of `MPR_CAMERA_VALUES`,
+  also on a series whose images face another way (rows or columns that run
+  against the patient axis, slices in the other direction), as the legacy
+  volume viewport does. The next viewport of 5.x gave the acquisition camera
+  when the axis was the axis of the acquisition, so such a series showed
+  mirrored or turned. Where the two cameras are the same,
+  `getViewState().orientation` is `acquisition` after the mount, as in 5.x;
+  otherwise it keeps the name. A stack shows its images in their own plane
+  whatever the name, as the legacy stack viewport does.
 - **A planar viewport without an orientation opens a volume in its
   acquisition plane.** A legacy `ORTHOGRAPHIC` viewport without options opened
   in `AXIAL`. Pass the orientation in `defaultOptions` or in the options of
@@ -473,6 +483,15 @@ are, so between viewports of other data it gives another size.
   slice index of such a reference, which counts in the other series. In
   volume mode a reference of another series in the same frame of reference
   still moves the view to its plane, as on the legacy volume viewport.
+- **A stack decides a reference of one of its images by the image.** In
+  stack mode `isReferenceViewable(viewRef, { withNavigation: true })` is
+  true for a reference that names an image of the stack whatever plane it
+  names, as on the legacy stack viewport, because the stack shows each image
+  in its own plane. So a stack of images in several orientations takes a
+  reference of an image of another orientation, also with the
+  `viewPlaneNormal` or the `planeRestriction` of that image. In 5.x the next
+  planar viewport checked that plane against the plane on display and
+  answered false.
 - **A volume goes where the legacy volume went for a part of a reference.**
   In volume mode, `setViewReference` uses a `sliceIndex` only with the
   `volumeId` of the volume and a `viewPlaneNormal`; a slice index without
