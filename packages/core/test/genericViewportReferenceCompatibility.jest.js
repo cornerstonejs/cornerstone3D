@@ -312,4 +312,38 @@ describe('GenericViewport reference compatibility', () => {
       numDimensionGroups: 4,
     });
   });
+
+  it('reads a dynamic volume of one time point as a static volume, as 5.19.4', () => {
+    const oneTimePoint = {
+      dimensionGroupNumber: 1,
+      numDimensionGroups: 1,
+      isDynamicVolume: () => false,
+    };
+    const viewRef = {
+      FrameOfReferenceUID: 'for-1',
+      viewPlaneNormal: [0, 0, 1],
+      cameraFocalPoint: [0, 0, 5],
+      dimensionGroupNumber: 2,
+    };
+
+    expect(getDimensionGroupReferenceContext(oneTimePoint)).toEqual({
+      dimensionGroupNumber: undefined,
+      numDimensionGroups: undefined,
+    });
+    expect(
+      isGenericViewportReferenceViewable(viewRef, [
+        { ...baseContext, ...getDimensionGroupReferenceContext(oneTimePoint) },
+      ])
+    ).toBe(true);
+    expect(
+      getDimensionGroupReferenceContext({
+        dimensionGroupNumber: 2,
+        numDimensionGroups: 4,
+        isDynamicVolume: () => true,
+      })
+    ).toEqual({
+      dimensionGroupNumber: 2,
+      numDimensionGroups: 4,
+    });
+  });
 });

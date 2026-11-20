@@ -94,6 +94,11 @@ export function isGenericViewportReferenceViewableAsVolume(
   );
 }
 
+/**
+ * The time point on display and the number of time points of a dynamic
+ * volume or a video. A volume that says it is not dynamic, as a dynamic
+ * volume of one time point does, has none, as on the 5.x volume viewport.
+ */
 export function getDimensionGroupReferenceContext(
   value: unknown
 ): Pick<
@@ -104,8 +109,15 @@ export function getDimensionGroupReferenceContext(
     | {
         dimensionGroupNumber?: unknown;
         numDimensionGroups?: unknown;
+        isDynamicVolume?: () => boolean;
       }
     | undefined;
+  if (candidate?.isDynamicVolume?.() === false) {
+    return {
+      dimensionGroupNumber: undefined,
+      numDimensionGroups: undefined,
+    };
+  }
   const dimensionGroupNumber = toPositiveInteger(
     candidate?.dimensionGroupNumber
   );

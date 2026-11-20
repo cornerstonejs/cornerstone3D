@@ -417,7 +417,8 @@ does the same:
 - **A viewport whose data has no time point takes a reference with a time
   point as if it had none,** with or without navigation (a static volume,
   a stack, a whole slide or an ECG), as the legacy viewports of 5.19
-  did.
+  did. A dynamic volume of one time point counts as a static volume, as
+  in 5.19: its view reference has no time point.
 
 The labelmap of a 4D series follows the time point as the 5.x guide says
 under "Labelmaps of a 4D series follow the time point". Read its stack
