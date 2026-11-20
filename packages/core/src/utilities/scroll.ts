@@ -1,4 +1,5 @@
 import { Events } from '../enums';
+import { SpeedUnit } from '../enums/VideoEnums';
 import type {
   ActorSliceRange,
   ScrollOptions,
@@ -113,16 +114,29 @@ export default function scroll(
 
 /**
  * The frames that one scroll step moves: the scroll step of the view state
- * on a video, one image on any other viewport.
+ * on a video, one image on any other viewport. The frame rate is read only
+ * for a step in seconds, and only from a viewport that has `getFrameRate`,
+ * which a registered video viewport need not have: without it a step in
+ * seconds is one frame.
  */
 function framesPerScrollStep(viewport: IViewport): number {
   if (getViewportContentMode(viewport) !== 'video') {
     return 1;
   }
 
-  const video = viewport as unknown as VideoViewport;
+  const video = viewport as unknown as Pick<VideoViewport, 'getViewState'> &
+    Partial<Pick<VideoViewport, 'getFrameRate'>>;
+  const viewState = video.getViewState();
 
-  return getVideoScrollStepFrames(video.getViewState(), video.getFrameRate());
+  if (viewState.scrollStep?.unit !== SpeedUnit.SECOND) {
+    return getVideoScrollStepFrames(viewState, undefined);
+  }
+
+  if (typeof video.getFrameRate !== 'function') {
+    return 1;
+  }
+
+  return getVideoScrollStepFrames(viewState, video.getFrameRate());
 }
 
 /**

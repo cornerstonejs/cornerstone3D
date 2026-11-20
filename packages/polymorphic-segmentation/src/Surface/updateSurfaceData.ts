@@ -120,23 +120,6 @@ async function updateSurfaceDataOnce(segmentationId: string) {
 
   const segmentation = getSegmentation(segmentationId);
   const indices = getUniqueSegmentIndices(segmentationId);
-
-  if (!indices.length) {
-    // means all segments were removed so we need to empty out
-    // the geometry data
-    const geometryIds = segmentation.representationData.Surface.geometryIds;
-    geometryIds.forEach((geometryId) => {
-      const geometry = cache.getGeometry(geometryId);
-      const surface = geometry.data as Types.ISurface;
-      surface.points = [];
-      surface.polys = [];
-    });
-
-    triggerSegmentationModified(segmentationId);
-
-    return;
-  }
-
   const viewportIds = getViewportIdsWithSegmentation(segmentationId);
 
   // if new surfaceObj does not have the same segment indices as the previous one,

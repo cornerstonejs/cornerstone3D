@@ -515,10 +515,11 @@ are, so between viewports of other data it gives another size.
   as on the legacy viewports: the entry has the prop as `actor` and the
   representation UID of the surface as `representationUID` and as `uid`.
   Differs: the prop draws new points and polys of a surface when they are
-  other arrays, also of the same lengths, and the prop of a segment that the
-  labelmap no longer has goes at the next update of the surfaces. The legacy
-  viewports kept the old mesh when the lengths were the same, and kept the
-  surface of a removed segment.
+  other arrays, also of the same lengths, or the same arrays with another
+  length (a face appended in place), and the prop of a segment that the
+  labelmap no longer has, the last one too, goes at the next update of the
+  surfaces. The legacy viewports kept the old mesh when the lengths were the
+  same, and kept the surface of a removed segment.
 
 ## vtk.js actors and widgets of the application in a planar viewport
 

@@ -21,7 +21,9 @@ Some specific use cases for this are:
   - Uses `isReferenceViewable` to determine which of a set of viewports is best suited to navigating to an image
   - Uses `setViewReference(viewRef)` to navigate to the specified image
 - Restoring an earlier view or showing a stack as a volume or vice-versa
-  - Uses `ViewReference` and `ViewPresentation` to store the image information
+  - Uses `ViewReference` and `ViewPresentation` to store the image information,
+    and `getDisplaySetPresentation` to store the VOI, which the view
+    presentation does not hold
 - Applying interpolation to image sets
   - Uses `getViewReference` with a specific image position to get references to
     images in between or related to nearby annotations to interpolate
@@ -132,15 +134,22 @@ future (to allow lines and points to appear on view other than original).
 
 ## View Presentation
 
-The view presentation specifies the pan, zoom and VOI information for a viewport.
+The view presentation specifies the pan, zoom, rotation, flips and display
+area of a viewport: the camera. `viewportProjection.getPresentation(viewport)`
+reads it, and `viewportProjection.withPresentation(viewport, presentation)`
+gives the view state that applies it.
 The pan and zoom are specified as percentage values relative to the viewport size
 and the original display area (which is included if specified). This allows
 applying the same view presentation to a variety of viewport sizes that may
 or may not display the same image instance.
 
-The VOI is relative to the base LUT specified in the image data. That is, it
-excludes modality and presentation LUT transforms. Currently only window width/center
-is specified, although full lookup tables may be allowed later.
+The view presentation holds no VOI. The VOI (`voiRange`, the lower and upper
+values of the window), the VOI LUT function (`voiLUTFunction`), `invert` and
+the colormap belong to the presentation of a display set:
+`viewport.getDisplaySetPresentation(displaySetId)` reads them and
+`viewport.setDisplaySetPresentation(displaySetId, props)` applies them. To show
+an image again as it was, keep both (see "Remember a view and show it again"
+below).
 
 Some typical uses cases for view presentation are:
 
@@ -159,6 +168,7 @@ viewport has no member that applies a presentation directly (the
 `setViewPresentation` of the 5.x legacy viewports is gone in 6.0); use
 `viewportProjection.withPresentation(...)` to translate a presentation patch to
 the viewport family's native `ViewState`, then call `viewport.setViewState(...)`.
+The VOI is not part of it: apply it with `viewport.setDisplaySetPresentation(...)`.
 If both reference and presentation are being applied, then the view reference
 must be applied first. A render is required afterwards to complete the view
 change since multiple parts of the view may be affected.
@@ -182,8 +192,26 @@ if (viewport.isReferenceViewable(metadata, { withNavigation: true })) {
 
 ### Finding the best viewport for displaying an annotation
 
-```javascript
-function findViewportForAnnotation(annotation, viewports) {
+A stack shows its images in their acquisition plane only, so in stack mode
+`isReferenceViewable` is false for a reference in another plane, whatever the
+options (`asVolume` is not read). A reference in another plane comes from a
+volume: it names that volume (`volumeId`) and the display set it was made on
+(`dataId`), and no image, so only a viewport that shows that display set
+takes it. To show
+such a reference on a stack, choose a stack that shows the images of the
+volume, and mount the display set of the reference there. The function then
+resolves with the viewport, and `viewport.setViewReference(metadata)` turns it
+to the plane of the reference.
+
+```ts
+import { cache, PlanarViewport } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
+import type { Types as ToolsTypes } from '@cornerstonejs/tools';
+
+async function findViewportForAnnotation(
+  annotation: ToolsTypes.Annotation,
+  viewports: Types.IViewport[]
+): Promise<Types.IViewport | undefined> {
   const { metadata } = annotation;
 
   // If there is a viewport already displaying this, then just return it.
@@ -198,28 +226,80 @@ function findViewportForAnnotation(annotation, viewports) {
   );
   if (navigateViewport) return navigateViewport;
 
-  // If there is a viewport showing the volume that could have orientation changed, use it
+  // If there is a viewport showing the volume that could show it after a
+  // change of orientation and a move to its slice, use it.
   const orientationViewport = viewports.find((viewport) =>
-    viewport.isReferenceViewable(metadata, { withOrientation: true })
+    viewport.isReferenceViewable(metadata, {
+      withOrientation: true,
+      withNavigation: true,
+    })
   );
   if (orientationViewport) return orientationViewport;
 
-  // If there is a viewport showing a stack that could show it as a volume, then do so
-  const stackAsVolumeViewport = viewports.find((viewport) =>
-    viewport.isReferenceViewable(metadata, {
-      withOrientation: true,
-      asVolume: true,
-    })
-  );
-  if (stackAsVolumeViewport) {
-    // show the display set again with a volumeId here (setDisplaySets)
-    return stackAsVolumeViewport;
+  // If there is a viewport showing a stack of the images of the volume of
+  // the reference, show the display set of the reference there as a volume.
+  const volumeImageIds = metadata.volumeId
+    ? cache.getVolume(metadata.volumeId)?.imageIds
+    : undefined;
+
+  if (metadata.dataId && volumeImageIds) {
+    const stackViewport = viewports.find(
+      (viewport): viewport is PlanarViewport =>
+        viewport instanceof PlanarViewport &&
+        viewport.getCurrentMode() === 'stack' &&
+        viewport
+          .getImageIds()
+          .some((imageId) => volumeImageIds.includes(imageId))
+    );
+
+    if (stackViewport) {
+      await stackViewport.setDisplaySets({ displaySetId: metadata.dataId });
+      return stackViewport;
+    }
   }
 
   // Might also look for viewport showing same frame of reference, but different volume
 
   // Find the set of image ids or volumeId from the metadata and apply that
   // to the viewport at position 0 and display it.
+  return undefined;
+}
+```
+
+### Remember a view and show it again
+
+The view reference keeps the image, the view presentation keeps the camera,
+and the presentation of the display set keeps the VOI.
+
+```ts
+import { viewportProjection } from '@cornerstonejs/core';
+import type { PlanarViewport } from '@cornerstonejs/core';
+
+function rememberView(viewport: PlanarViewport, displaySetId: string) {
+  const viewRef = viewport.getViewReference();
+  const viewPres = viewportProjection.getPresentation(viewport);
+  const displaySetPresentation =
+    viewport.getDisplaySetPresentation(displaySetId);
+
+  return function showAgain() {
+    viewport.setViewReference(viewRef);
+
+    const nextViewState = viewportProjection.withPresentation(
+      viewport,
+      viewPres
+    );
+
+    if (nextViewState) {
+      viewport.setViewState(nextViewState);
+    }
+
+    viewport.setDisplaySetPresentation(displaySetId, {
+      voiRange: displaySetPresentation?.voiRange,
+      voiLUTFunction: displaySetPresentation?.voiLUTFunction,
+      invert: displaySetPresentation?.invert,
+    });
+    viewport.render();
+  };
 }
 ```
 

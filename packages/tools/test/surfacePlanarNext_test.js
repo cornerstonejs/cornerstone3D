@@ -395,6 +395,66 @@ describe('A Surface representation on a direct next planar viewport -- ', () => 
     expect(Math.max(...radii)).toBeLessThan(cutRadius + 1);
   });
 
+  it('draws a face appended in place to the points and the polys of the surface, in stack mode', async function () {
+    const series = await createSeries({
+      id: 'surfacePlanarAppended',
+      size: SIZE,
+    });
+    const viewport = createNextViewport(renderingEngine, 'surfaceAppended');
+
+    await showStack(viewport, series, 10);
+    await showSurface(viewport);
+
+    const before = pictureOf(viewport);
+    const surface = cache.getGeometry(geometryId).data;
+    const { viewPlaneNormal } = viewport.getViewReference();
+    const corners = [
+      [26, 2, 10],
+      [36, 2, 10],
+      [36, 12, 10],
+    ].map((voxel) =>
+      worldOfVoxel(series, voxel).map(
+        (value, axis) => value + 2 * viewPlaneNormal[axis]
+      )
+    );
+    const firstPoint = surface.points.length / 3;
+    const rendered = new Promise((resolve) => {
+      eventTarget.addEventListenerOnce(
+        csToolsEnums.Events.SEGMENTATION_RENDERED,
+        resolve
+      );
+    });
+
+    surface.points.push(...corners.flat());
+    surface.polys.push(3, firstPoint, firstPoint + 1, firstPoint + 2);
+    segmentation.triggerSegmentationEvents.triggerSegmentationModified(
+      segmentationId
+    );
+    await rendered;
+    await renderAndWait(viewport);
+
+    const millimetre = pixelsPerMillimetre(viewport, series);
+    const { points, scale } = changedPixels(viewport, before);
+    const area = 50 * (millimetre * scale) ** 2;
+    const canvasCorners = corners.map((corner) =>
+      viewport.worldToCanvas(corner)
+    );
+    const xs = canvasCorners.map(([x]) => x);
+    const ys = canvasCorners.map(([, y]) => y);
+
+    const outside = points.filter(
+      ([x, y]) =>
+        x < Math.min(...xs) - millimetre ||
+        x > Math.max(...xs) + millimetre ||
+        y < Math.min(...ys) - millimetre ||
+        y > Math.max(...ys) + millimetre
+    );
+
+    expect(points.length).toBeGreaterThan(area * (1 - AREA_TOLERANCE));
+    expect(points.length).toBeLessThan(area * (1 + AREA_TOLERANCE));
+    expect(outside.length).toBe(0);
+  });
+
   it('takes the surface out of the renderer when the representation is removed', async function () {
     const series = await createSeries({
       id: 'surfacePlanarRemove',
@@ -624,5 +684,63 @@ describe('A Surface representation that the polySeg add-on computes from a label
     expect(surfaceProps(viewport)[0]).toBe(propOfSegment1);
     expect(propOf(1).actor).toBe(propOfSegment1);
     expect(segmentIndicesOfSurface()).toEqual([1]);
+  }, 30000);
+
+  it('takes the surface of the last segment off the viewport, with its geometry map entry and its cached geometry, when the last segment is erased', async function () {
+    const series = await createSeries({
+      id: 'surfacePlanarEraseAll',
+      size: SIZE,
+    });
+    const viewport = createNextViewport(renderingEngine, 'surfaceEraseAll');
+
+    await showVolume(viewport, series, 10);
+    volumeLoader.createAndCacheDerivedLabelmapVolume(series.volumeId, {
+      volumeId: labelmapSegmentationId,
+    });
+
+    const { voxelManager } = cache.getVolume(labelmapSegmentationId);
+
+    fillSegmentBlock(voxelManager, 1, 1);
+    fillSegmentBlock(voxelManager, 2, 2);
+    segmentation.addSegmentations([
+      {
+        segmentationId: labelmapSegmentationId,
+        representation: {
+          type: Labelmap,
+          data: { volumeId: labelmapSegmentationId },
+        },
+        config: { segments: { 1: {}, 2: {} } },
+      },
+    ]);
+    segmentation.addSegmentationRepresentations(viewport.id, [
+      { segmentationId: labelmapSegmentationId, type: Surface },
+    ]);
+    await waitFor(() => surfaceProps(viewport).length === 2, 5000);
+
+    const geometryMap = () =>
+      segmentation.state.getSegmentation(labelmapSegmentationId)
+        .representationData.Surface.geometryIds;
+    const geometryIds = [...geometryMap().values()];
+
+    expect(geometryIds.length).toBe(2);
+    geometryIds.forEach((geometryId) => {
+      expect(cache.getGeometry(geometryId)).toBeDefined();
+    });
+
+    segmentation.removeSegment(labelmapSegmentationId, 2);
+    await waitFor(() => surfaceProps(viewport).length === 1, 3000);
+    segmentation.removeSegment(labelmapSegmentationId, 1);
+    await waitFor(() => surfaceProps(viewport).length === 0, 3000).catch(
+      () => undefined
+    );
+
+    expect(surfaceProps(viewport).length).toBe(0);
+    expect(
+      getSurfaceActorEntry(viewport.id, labelmapSegmentationId, 1)?.uid
+    ).toBeUndefined();
+    expect([...geometryMap().keys()]).toEqual([]);
+    geometryIds.forEach((geometryId) => {
+      expect(cache.getGeometry(geometryId)).toBeUndefined();
+    });
   }, 30000);
 });

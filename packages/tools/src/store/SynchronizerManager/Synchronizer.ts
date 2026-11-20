@@ -277,6 +277,8 @@ class Synchronizer {
       for (let i = 0; i < this._targetViewports.length; i++) {
         const targetViewport = this._targetViewports[i];
         const targetIsSource =
+          sourceViewport.renderingEngineId ===
+            targetViewport.renderingEngineId &&
           sourceViewport.viewportId === targetViewport.viewportId;
 
         if (targetIsSource) {
