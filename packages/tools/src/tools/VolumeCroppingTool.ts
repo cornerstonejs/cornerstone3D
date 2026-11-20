@@ -790,6 +790,11 @@ class VolumeCroppingTool extends BaseTool {
    *   viewports all other actors (for example a fusion volume) are cropped to
    *   the rectangle. Contour segmentations in 2D are SVG annotations, not
    *   actors, so they are not split.
+   * - Labelmaps that render as image slices (vtkImageMapper) and surface
+   *   segmentations in the 2D viewports ignore the shader replacements, so
+   *   they still overlap the image inside the crop rectangle.
+   * - The split applies only while the VolumeCroppingControlTool of a 2D
+   *   viewport is not disabled.
    * - The 3D segmentation uses the crop planes in world coordinates, so it
    *   assumes an identity user matrix on the actors.
    *

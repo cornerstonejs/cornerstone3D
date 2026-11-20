@@ -30,7 +30,7 @@ import {
   drawLine as drawLineSvg,
 } from '../drawingSvg';
 import { state } from '../store/state';
-import { Events } from '../enums';
+import { Events, ToolModes } from '../enums';
 import { getViewportIdsWithToolToRender } from '../utilities/viewportFilters';
 import {
   resetElementCursor,
@@ -507,6 +507,8 @@ class VolumeCroppingControlTool extends AnnotationTool {
     }
 
     this.clippingPlanes = copyClippingPlanes(originalClippingPlanes);
+    // A disabled control tool does not track the camera, so it must not split.
+    disjointSegmentation &&= this.mode !== ToolModes.Disabled;
 
     const viewportsInfo = this._getViewportsInfo();
     viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
