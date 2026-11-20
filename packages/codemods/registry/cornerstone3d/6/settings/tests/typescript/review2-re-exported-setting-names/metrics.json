@@ -1,0 +1,20 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "1",
+        "rule": "getShouldUseCPURendering"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "1",
+        "rule": "setUseCPURendering"
+      },
+      "count": 1
+    }
+  ]
+}

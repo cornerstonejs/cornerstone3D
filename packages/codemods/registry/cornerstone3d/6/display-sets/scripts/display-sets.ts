@@ -6,22 +6,25 @@ import {
   EditSet,
   asPrimary,
   bindsAt,
+  bracketKey,
   coreImportOf,
+  coreReExports,
   coreSpecifiers,
-  declarationNodeOf,
   enclosingFunction,
   isAsyncFunction,
   isCoreExport,
   isCoreNamespace,
   isOptionalCall,
-  isPure,
+  isPlainValue,
   isRepeatable,
   methodCall,
   objectEntries,
   referencesOf,
   replaceStatement,
   site,
+  stableBinding,
   statementOfCall,
+  statementsBefore,
   unwrap,
   viewportEvidence,
 } from './lib.ts';
@@ -47,6 +50,25 @@ const REPORTED_FUNCTIONS = new Set([
   'addVolumesToViewports',
   'convertStackToVolumeViewport',
   'convertVolumeToStackViewport',
+]);
+
+/**
+ * The nodes between a call and its statement through which the call runs
+ * whenever the statement runs.
+ */
+const UNCONDITIONAL_KINDS = new Set([
+  'expression_statement',
+  'lexical_declaration',
+  'variable_declaration',
+  'variable_declarator',
+  'await_expression',
+  'parenthesized_expression',
+  'as_expression',
+  'non_null_expression',
+  'arguments',
+  'array',
+  'call_expression',
+  'member_expression',
 ]);
 
 /** The members whose presence a legacy check tests with `in`. */
@@ -79,22 +101,23 @@ function argumentsOf(call: Node): Node[] {
 }
 
 /**
- * Tells whether an expression can be written three times: a repeatable
- * expression, or a string without substitutions.
+ * Returns what identifies the value of a volume id at a node: the text of a
+ * string, or the declaration of a name whose binding holds one value. Two
+ * volume ids with one key have one value. Returns undefined for any other
+ * expression.
  */
-function isStableValue(node: Node): boolean {
-  if (
-    node.kind() === 'string' ||
+function volumeIdKey(node: Node): string | undefined {
+  if (node.kind() === 'string') {
+    return `string:${node.text().slice(1, -1)}`;
+  }
+
+  const binding =
+    node.kind() === 'identifier' ||
     node.kind() === 'shorthand_property_identifier'
-  ) {
-    return true;
-  }
+      ? stableBinding(node)
+      : undefined;
 
-  if (node.kind() === 'template_string') {
-    return node.findAll({ rule: { kind: 'call_expression' } }).length === 0;
-  }
-
-  return isRepeatable(node);
+  return binding ? `binding:${binding.range().start.index}` : undefined;
 }
 
 /**
@@ -131,9 +154,9 @@ function singleVolumeId(list: Node | undefined): {
         .find((child) => child.kind() === 'shorthand_property_identifier')
     : pairs.get('volumeId').field('value');
 
-  return isStableValue(volumeId)
+  return volumeIdKey(volumeId)
     ? { volumeId }
-    : { reason: 'the volume id is not a name or a string' };
+    : { reason: 'the volume id is not a const name or a string' };
 }
 
 /**
@@ -154,52 +177,54 @@ function isCoreVolumeCreation(call: Node): boolean {
 }
 
 /**
- * Returns the image ids expression of the volume that the file creates with
- * `createAndCacheVolume(volumeId, { imageIds })` before the target, in a
- * scope that the target sees, or undefined.
+ * Returns the image ids expression of the volume that the function of the
+ * target creates with `createAndCacheVolume(volumeId, { imageIds })` on
+ * every path to the target, or undefined. The volume id of the creation has
+ * the value of the volume id at the target (one string, or one binding that
+ * holds one value), and the image ids are a name whose binding holds one
+ * value and is seen at the target.
  */
 function imageIdsOfVolume(
   run: Run,
   volumeId: Node,
   target: Node
 ): string | undefined {
+  const key = volumeIdKey(volumeId);
   const found = new Set<string>();
+  const creations = statementsBefore(target).flatMap((statement) =>
+    statement
+      .findAll({ rule: { kind: 'call_expression' } })
+      .filter((call) => isCoreVolumeCreation(call) && runsWith(call, statement))
+  );
 
-  for (const call of run.rootNode.findAll({
-    rule: { kind: 'call_expression' },
-  })) {
-    if (!isCoreVolumeCreation(call)) {
-      continue;
-    }
-
+  for (const call of creations) {
     const [id, options] = argumentsOf(call);
 
-    if (id?.text() !== volumeId.text() || options?.kind() !== 'object') {
+    if (!id || volumeIdKey(id) !== key) {
       continue;
     }
 
-    if (call.range().start.index > target.range().start.index) {
-      continue;
+    if (options?.kind() !== 'object' || objectEntries(options).hasSpread) {
+      return undefined;
     }
 
     const { pairs, shorthand } = objectEntries(options);
     const imageIds = shorthand.has('imageIds')
       ? options
           .children()
-          .find((child) => child.kind() === 'shorthand_property_identifier')
+          .find(
+            (child) =>
+              child.kind() === 'shorthand_property_identifier' &&
+              child.text() === 'imageIds'
+          )
       : pairs.get('imageIds')?.field('value');
+    const binding =
+      imageIds?.kind() === 'identifier' ||
+      imageIds?.kind() === 'shorthand_property_identifier'
+        ? stableBinding(imageIds)
+        : undefined;
 
-    if (
-      !imageIds ||
-      (imageIds.kind() !== 'identifier' &&
-        imageIds.kind() !== 'shorthand_property_identifier')
-    ) {
-      return undefined;
-    }
-
-    const declaration = declarationNodeOf(imageIds);
-
-    if (!declaration || !bindsAt(run.rootNode, declaration, target)) {
+    if (!binding || !bindsAt(run.rootNode, binding, target)) {
       return undefined;
     }
 
@@ -207,6 +232,29 @@ function imageIdsOfVolume(
   }
 
   return found.size === 1 ? [...found][0] : undefined;
+}
+
+/**
+ * Tells whether a call runs whenever its statement runs: the nodes between
+ * them are declarations, `await`, parentheses, casts, arrays, arguments and
+ * the calls and member reads that hold them, never a condition, a loop or a
+ * function.
+ */
+function runsWith(call: Node, statement: Node): boolean {
+  for (const ancestor of call.ancestors()) {
+    if (ancestor.id() === statement.id()) {
+      return true;
+    }
+
+    if (
+      !UNCONDITIONAL_KINDS.has(ancestor.kind()) ||
+      ancestor.children().some((child) => child.kind() === 'optional_chain')
+    ) {
+      return false;
+    }
+  }
+
+  return false;
 }
 
 /**
@@ -277,12 +325,12 @@ function statementReason(call: Node): string | undefined {
 }
 
 /**
- * Returns `viewportId`, or `viewportId2` and so on: the first that is none
- * of the names.
+ * Returns `base`, or `base2`, `base3` and so on: the first that is none of
+ * the names.
  */
-function callbackParameter(taken: Set<string>): string {
+function freshAmong(base: string, taken: Set<string>): string {
   for (let index = 1; ; index += 1) {
-    const name = index === 1 ? 'viewportId' : `viewportId${index}`;
+    const name = index === 1 ? base : `${base}${index}`;
 
     if (!taken.has(name)) {
       return name;
@@ -291,10 +339,20 @@ function callbackParameter(taken: Set<string>): string {
 }
 
 /**
+ * Returns `viewportId`, or `viewportId2` and so on: the first that is none
+ * of the names.
+ */
+function callbackParameter(taken: Set<string>): string {
+  return freshAmong('viewportId', taken);
+}
+
+/**
  * Rewrites `viewport.setStack(imageIds, index)` in a statement to the
- * registration of a display set and its mount. The display set id names the
- * rendering engine, the viewport and the first image, so another series gets
- * another id and two engines never share one.
+ * registration of a display set and its mount. The display set id is the
+ * JSON of the rendering engine id, the viewport id and the first image id,
+ * so another series gets another id, two engines never share one, and no
+ * two of these tuples give one text. An image list that is not a plain value
+ * is read once into a `const`, as the old call read it once.
  */
 function rewriteSetStack(
   run: Run,
@@ -307,11 +365,11 @@ function rewriteSetStack(
     statementReason(call) ??
     (!isRepeatable(object)
       ? 'the viewport is not a name'
-      : args.length < 1 ||
-          args.length > 2 ||
-          args.some((arg) => arg.kind() === 'spread_element')
-        ? 'the arguments'
-        : undefined);
+      : args.some((arg) => arg.kind() === 'spread_element')
+        ? 'a spread argument'
+        : args.length < 1 || args.length > 2
+          ? 'the arguments'
+          : undefined);
   const utilities = reason
     ? undefined
     : run.imports.ensure('utilities', { at: call });
@@ -331,7 +389,9 @@ function rewriteSetStack(
   const { statement, awaited } = statementInfo;
   const receiver = unwrap(object).text();
   const [list, indexArg] = args;
-  const listLocal = isPure(list) ? undefined : run.imports.fresh('imageIds');
+  const listLocal = isPlainValue(list)
+    ? undefined
+    : run.imports.fresh('imageIds');
   const firstElement =
     list.kind() === 'array'
       ? list
@@ -347,7 +407,7 @@ function rewriteSetStack(
   const wait = awaitPrefix(run, call, awaited, 'setStack');
   const edit = replaceStatement(run.rootNode, statement, (indent) => [
     ...(listLocal ? [`const ${listLocal} = ${list.text()};`] : []),
-    `const ${idLocal} = \`\${${receiver}.renderingEngineId}:\${${receiver}.id}:\${${first}}\`;`,
+    `const ${idLocal} = JSON.stringify([${receiver}.renderingEngineId, ${receiver}.id, ${first}]);`,
     registration(
       utilities,
       idLocal,
@@ -423,20 +483,32 @@ function rewriteSetVolumes(
 
 /**
  * Rewrites `setVolumesForViewports(engine, [{ volumeId }], viewportIds)` in a
- * statement to the registration and a mount on each viewport. An engine that
- * is not a name is read once into a local first, as the call read it once.
+ * statement to the registration and a mount on each viewport. As in 5.x,
+ * every viewport is looked up before any mount starts, and a missing one
+ * throws before the registration. An engine that is not a name is read once
+ * into a local first, as the call read it once. A call that its function
+ * does not wait for is reported: 5.x rejected its promise where the new
+ * statements throw.
  */
 function rewriteSetVolumesForViewports(run: Run, call: Node): boolean {
   const args = argumentsOf(call);
   const statementInfo = statementOfCall(call);
   const { volumeId, reason: inputReason } = singleVolumeId(args[1]);
   const imageIds = volumeId ? imageIdsOfVolume(run, volumeId, call) : undefined;
+  const awaits =
+    statementInfo?.awaited || isAsyncFunction(enclosingFunction(call));
   const reason =
     statementReason(call) ??
-    (args.length !== 3
-      ? 'the arguments'
-      : (inputReason ??
-        (!imageIds ? 'the image ids of the volume are not known' : undefined)));
+    (args.some((arg) => arg.kind() === 'spread_element')
+      ? 'a spread argument'
+      : args.length !== 3
+        ? 'the arguments'
+        : (inputReason ??
+          (!imageIds
+            ? 'the image ids of the volume are not known'
+            : !awaits
+              ? 'not awaited'
+              : undefined)));
   const utilities = reason
     ? undefined
     : run.imports.ensure('utilities', { at: call });
@@ -453,26 +525,42 @@ function rewriteSetVolumesForViewports(run: Run, call: Node): boolean {
     return false;
   }
 
-  const { statement, awaited } = statementInfo;
+  const { statement } = statementInfo;
   const [engine, , list] = args;
   const id = volumeId.text();
-  const engineLocal = isRepeatable(engine)
-    ? undefined
-    : run.imports.fresh('renderingEngine');
+  const engineLocal =
+    engine.kind() === 'identifier'
+      ? undefined
+      : run.imports.fresh('renderingEngine');
   const engineText = engineLocal ?? engine.text();
-  const parameter = callbackParameter(
-    new Set(
-      [engine, volumeId]
-        .flatMap((node) => [
-          node,
-          ...node.findAll({ rule: { kind: 'identifier' } }),
-        ])
-        .map((node) => node.text())
-    )
+  const taken = new Set(
+    [engine, volumeId]
+      .flatMap((node) => [
+        node,
+        ...node.findAll({ rule: { kind: 'identifier' } }),
+      ])
+      .map((node) => node.text())
   );
-  const wait = awaitPrefix(run, call, awaited, 'setVolumesForViewports');
+  const parameter = callbackParameter(taken);
+  const element = freshAmong(
+    'viewport',
+    new Set([...taken, parameter, engineText])
+  );
+  const viewports = run.imports.fresh('viewports');
   const edit = replaceStatement(run.rootNode, statement, (indent) => [
     ...(engineLocal ? [`const ${engineLocal} = ${engine.text()};`] : []),
+    [
+      `const ${viewports} = ${asPrimary(list)}.map((${parameter}) => {`,
+      `${indent}  const ${element} = ${engineText}.getViewport(${parameter});`,
+      '',
+      `${indent}  if (!${element}) {`,
+      `${indent}    throw new Error(\`Viewport with Id \${${parameter}} does not exist\`);`,
+      `${indent}  }`,
+      '',
+      `${indent}  return ${element};`,
+      `${indent}});`,
+    ].join('\n'),
+    '',
     registration(
       utilities,
       id,
@@ -484,10 +572,8 @@ function rewriteSetVolumesForViewports(run: Run, call: Node): boolean {
     ),
     '',
     [
-      `${wait}Promise.all(`,
-      `${indent}  ${asPrimary(list)}.map((${parameter}) =>`,
-      `${indent}    ${engineText}.getViewport(${parameter}).setDisplaySets({ displaySetId: ${id} })`,
-      `${indent}  )`,
+      'await Promise.all(',
+      `${indent}  ${viewports}.map((${element}) => ${element}.setDisplaySets({ displaySetId: ${id} }))`,
       `${indent});`,
     ].join('\n'),
   ]);
@@ -658,6 +744,45 @@ function rewriteFunctions(run: Run): void {
       run.imports.remove(name, local.text());
     }
   }
+
+  for (const { specifier, name } of coreReExports(run.rootNode)) {
+    if (name === 'setVolumesForViewports' || REPORTED_FUNCTIONS.has(name)) {
+      manual.increment(site(run.root, name, specifier));
+    }
+  }
+}
+
+/**
+ * Reports a bracket access with a string key to a data member, such as
+ * `viewport['setStack'](imageIds)`: it names the member that
+ * `viewport.setStack` names.
+ */
+function reportBracketMembers(run: Run): void {
+  const names = new Set([
+    'setStack',
+    'setVolumes',
+    'setVideo',
+    'setEcg',
+    ...REPORTED_MEMBERS,
+    ...PRESENCE_CHECKS,
+  ]);
+
+  for (const node of run.rootNode.findAll({
+    rule: { kind: 'subscript_expression' },
+  })) {
+    const name = bracketKey(node);
+    const parent = node.parent();
+
+    if (!name || !names.has(name)) {
+      continue;
+    }
+
+    const isCall =
+      parent?.kind() === 'call_expression' &&
+      parent.field('function')?.id() === node.id();
+
+    manual.increment(site(run.root, isCall ? name : `${name} read`, node));
+  }
 }
 
 /**
@@ -725,6 +850,7 @@ const codemod: Codemod<TSX> = (root) => {
   rewriteMembers(run);
   rewriteFunctions(run);
   reportPresenceChecks(run);
+  reportBracketMembers(run);
 
   const importEdits = run.imports.edits();
 

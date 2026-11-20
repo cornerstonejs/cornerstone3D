@@ -1,0 +1,36 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "15",
+        "rule": "setStack"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "22",
+        "rule": "setStack"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "28",
+        "rule": "setStack"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "33",
+        "rule": "setStack"
+      },
+      "count": 1
+    }
+  ]
+}

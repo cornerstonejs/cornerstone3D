@@ -9,7 +9,7 @@ const renderingEngine = new RenderingEngine('engine');
 export async function show(ids: string[], utilities: string) {
   const viewport = renderingEngine.getViewport('CT');
 
-  const displaySetId = `${viewport.renderingEngineId}:${viewport.id}:${ids[0]}`;
+  const displaySetId = JSON.stringify([viewport.renderingEngineId, viewport.id, ids[0]]);
   coreUtilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
     kind: 'planar',
     imageIds: ids,

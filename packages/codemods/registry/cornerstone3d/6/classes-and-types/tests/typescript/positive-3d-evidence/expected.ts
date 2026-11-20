@@ -23,7 +23,7 @@ function applyPreset(
   viewportType: Enums.ViewportType
 ) {
   if (viewportType === ViewportType.VOLUME_3D) {
-    (viewport as VolumeViewport3D).setProperties({ preset: 'CT-Bone' });
+    (viewport as Types.IVolumeViewport).setProperties({ preset: 'CT-Bone' });
   }
 }
 

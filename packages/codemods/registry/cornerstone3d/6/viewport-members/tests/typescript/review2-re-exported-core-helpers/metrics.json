@@ -1,0 +1,20 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "2",
+        "rule": "getVolumeViewportScrollInfo"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "5",
+        "rule": "scrollVolume"
+      },
+      "count": 1
+    }
+  ]
+}

@@ -19,13 +19,18 @@ npx codemod @cornerstonejs/cornerstone3d-6-classes-and-types
   as a type import of `@cornerstonejs/core`.
 - `Types.IVolumeViewport`, `Types.IBaseVolumeViewport` and
   `BaseVolumeViewport` become `VolumeViewport3D` where the file shows a 3D
-  viewport: the viewport input with the id of the `getViewport` call has the
-  type `VOLUME_3D`, or the node runs only when the type of that viewport
-  equals `VOLUME_3D` (an enclosing `if`, `else` or `case` that compares
-  `<viewport>.type` or a name such as `viewportType`, without a negation or
-  `||`, and a `case` that no case falls into). Applications cast 3D viewports
-  to `IVolumeViewport` in 5.x. Where a test of `VOLUME_3D` encloses the node
-  and decides nothing, the type stays and is reported.
+  viewport: the viewport input with the id of the `getViewport` call (the
+  same string, or the same `const`) has the type `VOLUME_3D`, or the node
+  runs only when the type of that viewport equals `VOLUME_3D` (an enclosing
+  `if`, `else` or `case` of the same function that compares
+  `<viewport>.type`, or a `const` that holds it such as
+  `const { type } = viewport`, where `<viewport>` is the binding that the
+  cast casts; without a negation or `||`, and a `case` that no case falls
+  into). Applications cast 3D viewports to `IVolumeViewport` in 5.x. Where a
+  test of `VOLUME_3D` encloses the node and decides nothing (a test of
+  another value such as a parameter `type` or a `cardType`, of a shadowing
+  name, or outside the function of the node), the type stays and is
+  reported.
 - A cast of `getViewport` on a typed rendering engine becomes its type
   argument: `renderingEngine.getViewport(id) as Types.IStackViewport` becomes
   `renderingEngine.getViewport<PlanarViewport>(id)`. On an untyped engine the
@@ -38,9 +43,10 @@ npx codemod @cornerstonejs/cornerstone3d-6-classes-and-types
   `VolumeViewport` `(utilities.getViewportContentMode(x) === 'volume')` (in
   parentheses where the comparison would bind otherwise),
   `BaseVolumeViewport` `utilities.viewportIsInVolumeMode(x)`. Only after an
-  awaited mount of `x` (`await x.setStack(...)` and its kin) earlier in the
-  same function: before its first mount a viewport is in the mode `empty`,
-  where a 5.x instance check was already true.
+  awaited mount of the same binding of `x` (`await x.setStack(...)` and its
+  kin) that runs before it in the same function, where `x` is a `const` or a
+  parameter that the file never writes: before its first mount a viewport is
+  in the mode `empty`, where a 5.x instance check was already true.
 - `GenericVolumeViewport3D`, `VideoGenericViewport`, `WSIGenericViewport`,
   `ECGGenericViewport` and the legacy `LegacyVolumeViewport3D` become
   `VolumeViewport3D`, `VideoViewport`, `WSIViewport` and `ECGViewport`, in
@@ -55,7 +61,8 @@ npx codemod @cornerstonejs/cornerstone3d-6-classes-and-types
 - Manual: an `instanceof` before a mount
   (`the viewport may not show its data yet`), a legacy class used as a value
   (`new StackViewport(...)`, a shorthand property, an export or a re-export
-  of the core; its import stays), an `IVolumeViewport` under a test of
+  of the core; its import stays), a class in brackets on the core namespace
+  (`cs['StackViewport']`), an `IVolumeViewport` under a test of
   `VOLUME_3D` that does not show the family, the
   removed `Types.*ViewportProperties`, `Types.IVolumeInput`,
   `Types.VolumeInputCallback`, `Types.SetAspectRatioOptions` and

@@ -1,0 +1,44 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "10",
+        "rule": "setStack"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "12",
+        "rule": "setVolumes read"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "18",
+        "rule": "setStack: a spread argument"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "3",
+        "rule": "addVolumesToViewports"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "3",
+        "rule": "setVolumesForViewports"
+      },
+      "count": 1
+    }
+  ]
+}

@@ -14,16 +14,21 @@ npx codemod @cornerstonejs/cornerstone3d-6-display-sets
 
 Only on a viewport that the file shows to come from Cornerstone: a call of
 `getViewport` on a rendering engine made with `new RenderingEngine` or got
-with `getRenderingEngine`, the `viewport` of `getEnabledElement`, a cast,
-annotation or type argument of a Cornerstone viewport type, or a variable
-that holds one of these (every `=` assignment of a `let` counts). A name such
-as `viewport` alone is reported.
+with `getRenderingEngine`, the `viewport` of `getEnabledElement`, a cast or
+annotation whose top type is a Cornerstone viewport type, or a `const` (or a
+parameter that the file never writes) that holds one of these. A name such
+as `viewport` alone, a `let`, a `var` and a container type such as
+`History<Types.IViewport>` are reported.
 
 - `viewport.setStack(imageIds, index)` as a statement, on a viewport that is
   a name or a member chain, becomes:
 
   ```ts
-  const displaySetId = `${viewport.renderingEngineId}:${viewport.id}:${imageIds[0]}`;
+  const displaySetId = JSON.stringify([
+    viewport.renderingEngineId,
+    viewport.id,
+    imageIds[0],
+  ]);
   utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
     kind: 'planar',
     imageIds,
@@ -32,23 +37,56 @@ as `viewport` alone is reported.
   await viewport.setDisplaySets({ displaySetId });
   ```
 
-  The id names the rendering engine, the viewport and the first image:
-  another series gets another id, so the viewport drops the segmentation
-  overlays of the series before, and two engines with a viewport of one id
-  never share a registration. The index is 0 when the call had none, as in
-  5.x. An image list that is not a name, a literal or an index of those is
-  read once into a fresh local first.
+  The id is the JSON of the rendering engine id, the viewport id and the
+  first image id: another series gets another id, so the viewport drops the
+  segmentation overlays of the series before, and two engines with a
+  viewport of one id never share a registration. JSON keeps the three parts
+  apart, so engine `'a:b'` with viewport `'c'` and engine `'a'` with viewport
+  `'b:c'` get two ids. The index is 0 when the call had none, as in 5.x. An
+  image list that is not a name, a literal or an array of those (a property
+  read, an index, a call) is read once into a fresh `const` first, as the
+  old call read it once.
 
 - `viewport.setVolumes([{ volumeId }])` and
   `setVolumesForViewports(renderingEngine, [{ volumeId }], viewportIds)` as
   statements become a registration under the volume id and
   `setDisplaySets({ displaySetId: volumeId })` on each viewport, when the
-  file creates that volume with
-  `volumeLoader.createAndCacheVolume(volumeId, { imageIds })` before the call,
-  where the same `imageIds` binding is in scope. An engine that is not a name
-  is read once into a fresh local, a list of viewport ids that is not a name
-  goes in parentheses, and the callback parameter takes a name that the call
-  does not use.
+  function of the call creates that volume with
+  `volumeLoader.createAndCacheVolume(volumeId, { imageIds })` in a statement
+  that runs before the call on every path. The volume id is a string or a
+  `const` (or an unwritten parameter), the same binding at the creation and
+  at the call, and `imageIds` is such a name in scope at the call.
+- `setVolumesForViewports` looks up every viewport first and throws, as 5.x
+  did, before the registration and before any mount when one is missing:
+
+  ```ts
+  const viewports = viewportIds.map((viewportId) => {
+    const viewport = renderingEngine.getViewport(viewportId);
+
+    if (!viewport) {
+      throw new Error(`Viewport with Id ${viewportId} does not exist`);
+    }
+
+    return viewport;
+  });
+
+  utilities.genericViewportDisplaySetMetadataProvider.add(volumeId, {
+    kind: 'planar',
+    imageIds,
+    volumeId,
+  });
+
+  await Promise.all(
+    viewports.map((viewport) =>
+      viewport.setDisplaySets({ displaySetId: volumeId })
+    )
+  );
+  ```
+
+  An engine that is not a name is read once into a fresh local, a list of
+  viewport ids that is not a name goes in parentheses, and the callback
+  names are names that the call does not use.
+
 - `setVideo(imageId, frameNumber)` becomes
   `setDisplaySets({ displaySetId: imageId, options: { frameNumber } })`, and
   `setEcg(imageId)` `setDisplaySets({ displaySetId: imageId })`.
@@ -65,10 +103,15 @@ as `viewport` alone is reported.
 - Review: a mount in a function that is not `async` (a next viewport has no
   view before its mount).
 - Manual, with the reason: a `setStack` that is not a statement, is an
-  optional call (`viewport?.setStack`), or whose viewport is a call; a
-  `setVolumes` input with `callback`, `blendMode`, `slabThickness`,
-  `visibility` or `actorUID`, with more volumes, or whose image ids are not
-  known; `addVolumes`, `addVolumesToViewports`,
+  optional call (`viewport?.setStack`), has a spread argument, or whose
+  viewport is a call; a `setVolumes` input with `callback`, `blendMode`,
+  `slabThickness`, `visibility` or `actorUID`, with more volumes, a volume
+  id that is not a string or a `const`, or whose image ids are not known (no
+  creation of the same volume id on every path before it in its function);
+  a `setVolumesForViewports` that its function does not wait for (5.x
+  rejected its promise where the new statements throw); a data member in
+  brackets (`viewport['setStack']`); an `export { ... } from` of a removed
+  data function; `addVolumes`, `addVolumesToViewports`,
   `convertStackToVolumeViewport`, `convertVolumeToStackViewport`,
   `removeVolumeActors`, `setWSI`, `setDataIds`, `setDataList`; a data call
   on something that the file does not show to be a Cornerstone viewport

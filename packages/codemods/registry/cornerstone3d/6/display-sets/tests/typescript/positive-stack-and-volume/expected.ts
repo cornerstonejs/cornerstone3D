@@ -6,7 +6,7 @@ async function run(imageIds: string[]) {
   const viewport = renderingEngine.getViewport<PlanarViewport>('CT_STACK');
   const stack = [imageIds[0]];
 
-  const displaySetId = `${viewport.renderingEngineId}:${viewport.id}:${stack[0]}`;
+  const displaySetId = JSON.stringify([viewport.renderingEngineId, viewport.id, stack[0]]);
   utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
     kind: 'planar',
     imageIds: stack,
@@ -18,7 +18,7 @@ async function run(imageIds: string[]) {
   const secondViewport =
     renderingEngine.getViewport<PlanarViewport>('CT_STACK_2');
 
-  const displaySetId2 = `${secondViewport.renderingEngineId}:${secondViewport.id}:${imageIds[0]}`;
+  const displaySetId2 = JSON.stringify([secondViewport.renderingEngineId, secondViewport.id, imageIds[0]]);
   utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId2, {
     kind: 'planar',
     imageIds,

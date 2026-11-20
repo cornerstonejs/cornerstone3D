@@ -21,10 +21,14 @@ npx codemod @cornerstonejs/cornerstone3d-6-tools
 - `@cornerstonejs/tools/segmentation/labelmapModel/labelmapLegacyAdapter`
   becomes `.../labelmapModel/labelmapPrimaryLayerFields`, with the same two
   functions.
+- A re-export (`export { ... } from`) of these modules moves the same way; a
+  renamed name keeps its public name
+  (`export { createVolumeLabelmapPlan as createLegacyVolumeLabelmapPlan }`).
 
 ## Reported
 
-All manual: an import of one of these modules with another name; the module
+All manual: an import or a re-export of one of these modules with another
+name, and an `export *` of one; the module
 `tools/displayTools/Labelmap/addVolumesAsIndependentComponents`;
 `removeVolumeLabelmapImageMapperActors`; `getSlabThicknessOrDefault`;
 `viewportSupportsStackCompatibility` and `StackCompatibilityViewport` of the

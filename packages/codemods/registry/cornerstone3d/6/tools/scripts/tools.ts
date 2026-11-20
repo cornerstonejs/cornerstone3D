@@ -148,6 +148,92 @@ function moveImport(
 }
 
 /**
+ * Moves a re-export of a module of the tools to its 6.0 path. A renamed name
+ * keeps its public name through `as`. Reports `export *`, which takes every
+ * name of the module, and a statement with a name the move does not know.
+ */
+function moveReExport(
+  run: Run,
+  statement: Node,
+  move: { path: string; names: Record<string, string> }
+): void {
+  const clause = statement
+    .children()
+    .find((child) => child.kind() === 'export_clause');
+  const specifiers =
+    clause?.findAll({ rule: { kind: 'export_specifier' } }) ?? [];
+  const unknown = specifiers.find(
+    (specifier) => !move.names[specifier.field('name')?.text() ?? '']
+  );
+
+  if (!clause || unknown) {
+    manual.increment(
+      site(
+        run.root,
+        `export of ${importSource(statement)}`,
+        unknown ?? statement
+      )
+    );
+
+    return;
+  }
+
+  const source = statement.field('source');
+  const quote = source.text()[0];
+
+  run.edits.add(source.replace(`${quote}${move.path}${quote}`));
+
+  for (const specifier of specifiers) {
+    const nameNode = specifier.field('name');
+    const name = nameNode.text();
+    const newName = move.names[name];
+
+    if (newName === name) {
+      continue;
+    }
+
+    run.edits.add(
+      specifier.field('alias')
+        ? nameNode.replace(newName)
+        : specifier.replace(`${newName} as ${name}`)
+    );
+  }
+}
+
+/**
+ * Reports a re-export of a module of the tools whose names 6.0 removes:
+ * each removed name, or the statement for `export *` and a module that
+ * 6.0 removes whole.
+ */
+function reportRemovedReExport(
+  run: Run,
+  statement: Node,
+  names: string[] | '*'
+): void {
+  const clause = statement
+    .children()
+    .find((child) => child.kind() === 'export_clause');
+
+  if (names === '*' || !clause) {
+    manual.increment(
+      site(run.root, `export of ${importSource(statement)}`, statement)
+    );
+
+    return;
+  }
+
+  for (const specifier of clause.findAll({
+    rule: { kind: 'export_specifier' },
+  })) {
+    const name = specifier.field('name')?.text() ?? '';
+
+    if (names.includes(name)) {
+      manual.increment(site(run.root, name, specifier));
+    }
+  }
+}
+
+/**
  * Reports an import of a module of the tools whose names 6.0 removes.
  */
 function reportRemoved(run: Run, statement: Node, names: string[] | '*'): void {
@@ -256,6 +342,18 @@ const codemod: Codemod<TSX> = (root) => {
       moveImport(run, statement, MOVED_MODULES[source]);
     } else if (REMOVED_NAMES[source]) {
       reportRemoved(run, statement, REMOVED_NAMES[source]);
+    }
+  }
+
+  for (const statement of rootNode
+    .children()
+    .filter((child) => child.kind() === 'export_statement')) {
+    const source = importSource(statement) ?? '';
+
+    if (MOVED_MODULES[source]) {
+      moveReExport(run, statement, MOVED_MODULES[source]);
+    } else if (REMOVED_NAMES[source]) {
+      reportRemovedReExport(run, statement, REMOVED_NAMES[source]);
     }
   }
 

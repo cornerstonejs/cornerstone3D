@@ -6,7 +6,7 @@ export async function show(ok: boolean, ids: string[], fallback: () => void) {
   const viewport = renderingEngine.getViewport('CT');
 
   if (ok) {
-    const displaySetId = `${viewport.renderingEngineId}:${viewport.id}:${ids[0]}`;
+    const displaySetId = JSON.stringify([viewport.renderingEngineId, viewport.id, ids[0]]);
     utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
       kind: 'planar',
       imageIds: ids,
@@ -17,7 +17,7 @@ export async function show(ok: boolean, ids: string[], fallback: () => void) {
   else fallback();
 
   for (const id of ids) {
-    const displaySetId2 = `${viewport.renderingEngineId}:${viewport.id}:${id}`;
+    const displaySetId2 = JSON.stringify([viewport.renderingEngineId, viewport.id, id]);
     utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId2, {
       kind: 'planar',
       imageIds: [id],

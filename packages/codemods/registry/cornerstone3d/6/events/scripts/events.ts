@@ -1,9 +1,10 @@
-import type { Codemod, SgRoot } from 'codemod:ast-grep';
+import type { Codemod, Edit, SgRoot } from 'codemod:ast-grep';
 import type TSX from 'codemod:ast-grep/langs/tsx';
 import { useMetricAtom } from 'codemod:metrics';
 import {
   EditSet,
   bindsAt,
+  bracketKey,
   coreImportOf,
   isCoreEnum,
   isCoreNamespace,
@@ -11,6 +12,7 @@ import {
   referencesOf,
   removeProperty,
   site,
+  staticKeyName,
 } from './lib.ts';
 import type { Node } from './lib.ts';
 
@@ -90,27 +92,41 @@ interface Run {
   root: SgRoot<TSX>;
   rootNode: Node;
   edits: EditSet;
+  handled: Set<number>;
 }
 
 /**
  * Rewrites `Events.STACK_NEW_IMAGE` and its kin, read as a member of the core
- * `Enums.Events`.
+ * `Enums.Events`, and `Events['STACK_NEW_IMAGE']`, whose string keeps its
+ * quotes.
  */
 function rewriteMembers(run: Run): void {
   const names = [...Object.keys(RENAMED_EVENTS), ...REPORTED_EVENTS].join('|');
   const members = run.rootNode.findAll({
     rule: {
-      kind: 'member_expression',
-      has: { field: 'property', regex: `^(${names})$` },
+      any: [
+        {
+          kind: 'member_expression',
+          has: { field: 'property', regex: `^(${names})$` },
+        },
+        {
+          kind: 'subscript_expression',
+          has: { field: 'index', regex: `^['"](${names})['"]$` },
+        },
+      ],
     },
   });
 
   for (const node of members) {
-    const name = node.field('property').text();
+    const isBracket = node.kind() === 'subscript_expression';
+    const key = isBracket ? node.field('index') : node.field('property');
+    const name = isBracket ? bracketKey(node) : key.text();
 
     if (!isCoreEnum(node.field('object'), 'Events')) {
       continue;
     }
+
+    run.handled.add(key.range().start.index);
 
     if (REPORTED_EVENTS.has(name)) {
       manual.increment(site(run.root, `Events.${name}`, node));
@@ -118,8 +134,9 @@ function rewriteMembers(run: Run): void {
     }
 
     const { name: newName, note } = RENAMED_EVENTS[name];
+    const quote = isBracket ? key.text()[0] : '';
 
-    if (run.edits.add(node.field('property').replace(newName))) {
+    if (run.edits.add(key.replace(`${quote}${newName}${quote}`))) {
       review.increment(site(run.root, `Events.${name}: ${note}`, node));
     }
   }
@@ -136,31 +153,58 @@ interface PatternLocal {
 }
 
 /**
- * Returns the local names of a destructuring pattern by key.
+ * Returns the local names of a destructuring pattern by key, with the names
+ * that take a default value.
  */
 function patternLocals(pattern: Node): Map<string, PatternLocal> {
   const locals = new Map<string, PatternLocal>();
 
   for (const child of pattern.children()) {
-    if (child.kind() === 'shorthand_property_identifier_pattern') {
-      locals.set(child.text(), {
-        node: child,
-        name: child.text(),
+    const shorthand =
+      child.kind() === 'object_assignment_pattern'
+        ? child.field('left')
+        : child;
+
+    if (shorthand?.kind() === 'shorthand_property_identifier_pattern') {
+      locals.set(shorthand.text(), {
+        node: shorthand,
+        name: shorthand.text(),
         renamed: false,
       });
     } else if (child.kind() === 'pair_pattern') {
-      const key = child.field('key');
+      const name = staticKeyName(child.field('key'));
       const value = child.field('value');
-      const name =
-        key?.kind() === 'string' ? key.text().slice(1, -1) : key?.text();
+      const local =
+        value?.kind() === 'assignment_pattern' ? value.field('left') : value;
 
-      if (name && value?.kind() === 'identifier') {
-        locals.set(name, { node: value, name: value.text(), renamed: false });
+      if (name && local?.kind() === 'identifier') {
+        locals.set(name, { node: local, name: local.text(), renamed: false });
       }
     }
   }
 
   return locals;
+}
+
+/**
+ * Returns the edit that gives the key of a pair of a pattern a new name. A
+ * string key and a string in brackets keep their quotes.
+ */
+function renameKey(keyNode: Node, newName: string): Edit {
+  const string =
+    keyNode.kind() === 'computed_property_name'
+      ? keyNode.children().find((child) => child.kind() === 'string')
+      : keyNode.kind() === 'string'
+        ? keyNode
+        : undefined;
+
+  if (string) {
+    const quote = string.text()[0];
+
+    return string.replace(`${quote}${newName}${quote}`);
+  }
+
+  return keyNode.replace(newName);
 }
 
 /**
@@ -212,7 +256,10 @@ function rewriteShorthand(
 /**
  * Rewrites the names that a file takes out of the core `Enums.Events` with a
  * destructuring pattern, and their uses. An entry with a local name keeps
- * it, and only its key changes.
+ * it, and only its key changes; a quoted key and a key in brackets keep
+ * their quotes, and a shorthand with a default value gets the new key and
+ * keeps its local name. A key computed from code and a rest element can
+ * take any event, so they are reported.
  */
 function rewriteDestructured(run: Run): void {
   const patterns = run.rootNode.findAll({ rule: { kind: 'object_pattern' } });
@@ -231,14 +278,33 @@ function rewriteDestructured(run: Run): void {
     const locals = patternLocals(pattern);
 
     for (const entry of pattern.children()) {
-      const isShorthand =
-        entry.kind() === 'shorthand_property_identifier_pattern';
-      const keyNode = isShorthand
-        ? entry
-        : entry.kind() === 'pair_pattern'
-          ? entry.field('key')
-          : undefined;
-      const name = keyNode?.text() ?? '';
+      const kind = entry.kind();
+      const keyNode =
+        kind === 'shorthand_property_identifier_pattern'
+          ? entry
+          : kind === 'object_assignment_pattern'
+            ? entry.field('left')
+            : kind === 'pair_pattern'
+              ? entry.field('key')
+              : undefined;
+      const name = staticKeyName(keyNode);
+
+      if (kind === 'rest_pattern') {
+        manual.increment(site(run.root, 'Events: a rest pattern', entry));
+        continue;
+      }
+
+      if (keyNode && !name) {
+        manual.increment(site(run.root, 'Events: a computed key', entry));
+        continue;
+      }
+
+      if (keyNode) {
+        run.handled.add(keyNode.range().start.index);
+        keyNode
+          .findAll({ rule: { kind: 'string' } })
+          .forEach((string) => run.handled.add(string.range().start.index));
+      }
 
       if (REPORTED_EVENTS.has(name)) {
         manual.increment(site(run.root, `Events.${name}`, entry));
@@ -251,10 +317,12 @@ function rewriteDestructured(run: Run): void {
 
       const { name: newName, note } = RENAMED_EVENTS[name];
 
-      if (isShorthand) {
+      if (kind === 'shorthand_property_identifier_pattern') {
         rewriteShorthand(run, entry, newName, locals);
+      } else if (kind === 'object_assignment_pattern') {
+        run.edits.add(keyNode.replace(`${newName}: ${name}`));
       } else {
-        run.edits.add(keyNode.replace(newName));
+        run.edits.add(renameKey(keyNode, newName));
       }
 
       review.increment(site(run.root, `Events.${name}: ${note}`, entry));
@@ -314,7 +382,8 @@ function rewriteEventTypes(run: Run): void {
 
 /**
  * Reports a string that names a removed event: a listener of it compiles and
- * never runs.
+ * never runs. A string that is a key of `Enums.Events`, which the passes
+ * before rewrote or reported, is not reported again.
  */
 function reportEventStrings(run: Run): void {
   const strings = run.rootNode.findAll({
@@ -325,7 +394,9 @@ function reportEventStrings(run: Run): void {
   });
 
   for (const node of strings) {
-    manual.increment(site(run.root, `'${node.text().slice(1, -1)}'`, node));
+    if (!run.handled.has(node.range().start.index)) {
+      manual.increment(site(run.root, `'${node.text().slice(1, -1)}'`, node));
+    }
   }
 }
 
@@ -338,7 +409,12 @@ function reportEventStrings(run: Run): void {
  */
 const codemod: Codemod<TSX> = (root) => {
   const rootNode = root.root();
-  const run: Run = { root, rootNode, edits: new EditSet() };
+  const run: Run = {
+    root,
+    rootNode,
+    edits: new EditSet(),
+    handled: new Set(),
+  };
 
   rewriteMembers(run);
   rewriteDestructured(run);

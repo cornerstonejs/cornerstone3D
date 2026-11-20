@@ -1,18 +1,19 @@
-import type { Codemod, SgRoot } from 'codemod:ast-grep';
+import type { Codemod, Edit, SgRoot } from 'codemod:ast-grep';
 import type TSX from 'codemod:ast-grep/langs/tsx';
 import { useMetricAtom } from 'codemod:metrics';
 import {
   CoreImports,
   EditSet,
+  bracketKey,
   comparisonAt,
   coreImportOf,
+  coreReExports,
   coreSpecifiers,
   isCoreExport,
   isCoreNamespace,
   isPure,
   objectEntries,
   referencesOf,
-  removeProperty,
   site,
 } from './lib.ts';
 import type { Node } from './lib.ts';
@@ -54,6 +55,23 @@ interface Run {
   edits: EditSet;
 }
 
+/** A pair of the configuration to remove, with the pair that holds it. */
+interface Removal {
+  pair: Node;
+  holder: Node;
+  rule: string;
+}
+
+/**
+ * The pairs to remove from one object literal; `outer` when they are pairs
+ * that hold objects which lose every key.
+ */
+interface RemovalGroup {
+  objectNode: Node;
+  pairs: Node[];
+  outer: boolean;
+}
+
 /**
  * Returns the key of a pair, without quotes.
  */
@@ -79,38 +97,145 @@ function holderPair(pair: Node, name: string): Node | undefined {
 }
 
 /**
- * Removes a pair from its object; when it was the only key, removes the pair
- * that holds the object too.
+ * Returns the edits that remove entries of an object literal, each run of
+ * neighbouring entries in one edit with its commas, so that two removals
+ * never share a comma.
  */
-function removeSetting(run: Run, pair: Node, holder: Node): boolean {
-  const { keys, hasSpread } = objectEntries(pair.parent());
+function removeEntries(objectNode: Node, removed: Node[]): Edit[] {
+  const ids = new Set(removed.map((entry) => entry.id()));
+  const entries = objectNode
+    .children()
+    .filter((child) => child.isNamed() && child.kind() !== 'comment');
+  const edits: Edit[] = [];
+  let index = 0;
 
-  if (keys.length !== 1 || hasSpread) {
-    return run.edits.add(removeProperty(pair));
+  while (index < entries.length) {
+    if (!ids.has(entries[index].id())) {
+      index += 1;
+      continue;
+    }
+
+    const first = index;
+
+    while (index < entries.length && ids.has(entries[index].id())) {
+      index += 1;
+    }
+
+    const last = entries[index - 1];
+    const next = entries[index];
+    const previous = entries[first - 1];
+
+    if (next) {
+      edits.push({
+        startPos: entries[first].range().start.index,
+        endPos: next.range().start.index,
+        insertedText: '',
+      });
+    } else if (previous) {
+      const comma = previous.next();
+
+      edits.push({
+        startPos:
+          comma?.kind() === ','
+            ? comma.range().start.index
+            : previous.range().end.index,
+        endPos: last.range().end.index,
+        insertedText: '',
+      });
+    } else {
+      edits.push({
+        startPos: entries[first].range().start.index,
+        endPos: last.range().end.index,
+        insertedText: '',
+      });
+    }
   }
 
-  const outer = holder.parent();
-  const outerEntries = objectEntries(outer);
+  return edits;
+}
 
-  if (outerEntries.keys.length !== 1 || outerEntries.hasSpread) {
-    return run.edits.add(removeProperty(holder));
-  }
-
-  const args = outer.parent();
+/**
+ * Tells whether an object literal is the one argument of the core `init`.
+ */
+function isInitArgument(objectNode: Node): boolean {
+  const args = objectNode.parent();
   const call = args?.parent();
   const namedArgs = args?.children().filter((child) => child.isNamed()) ?? [];
   const callee =
     call?.kind() === 'call_expression' ? call.field('function') : undefined;
-  const isInit =
-    args?.kind() === 'arguments' &&
-    namedArgs.length === 1 &&
-    callee &&
-    (coreImportOf(callee)?.name === 'init' ||
-      (callee.kind() === 'member_expression' &&
-        callee.field('property')?.text() === 'init' &&
-        isCoreNamespace(callee.field('object'))));
 
-  return run.edits.add(isInit ? args.replace('()') : outer.replace('{}'));
+  return Boolean(
+    args?.kind() === 'arguments' &&
+      namedArgs.length === 1 &&
+      callee &&
+      (coreImportOf(callee)?.name === 'init' ||
+        (callee.kind() === 'member_expression' &&
+          callee.field('property')?.text() === 'init' &&
+          isCoreNamespace(callee.field('object'))))
+  );
+}
+
+/**
+ * Removes the obsolete pairs of the configuration, each object in one set
+ * of edits. An object that loses every key goes with the pair that holds
+ * it; an outer object that loses every key becomes `{}`, and `init({})`
+ * becomes `init()`. A removal that another edit overlaps is reported.
+ */
+function removeSettings(run: Run, removals: Removal[]): void {
+  const groups = new Map<number, RemovalGroup>();
+  const addTo = (objectNode: Node, pair: Node, outer: boolean) => {
+    const group = groups.get(objectNode.id()) ?? {
+      objectNode,
+      pairs: [],
+      outer,
+    };
+
+    group.pairs.push(pair);
+    group.outer ||= outer;
+    groups.set(objectNode.id(), group);
+  };
+  const isEmptied = ({ objectNode, pairs }: RemovalGroup) => {
+    const { keys, hasSpread } = objectEntries(objectNode);
+
+    return !hasSpread && keys.length === pairs.length;
+  };
+
+  for (const { pair } of removals) {
+    addTo(pair.parent(), pair, false);
+  }
+
+  for (const group of [...groups.values()].filter(isEmptied)) {
+    const holder = removals.find(
+      ({ pair }) => pair.id() === group.pairs[0].id()
+    ).holder;
+
+    groups.delete(group.objectNode.id());
+    addTo(holder.parent(), holder, true);
+  }
+
+  const failed = new Set<number>();
+
+  for (const group of groups.values()) {
+    const { objectNode, pairs } = group;
+    const edits =
+      group.outer && isEmptied(group)
+        ? [
+            isInitArgument(objectNode)
+              ? objectNode.parent().replace('()')
+              : objectNode.replace('{}'),
+          ]
+        : removeEntries(objectNode, pairs);
+
+    if (!run.edits.add(...edits)) {
+      pairs.forEach((pair) => failed.add(pair.id()));
+    }
+  }
+
+  for (const { pair, holder, rule } of removals) {
+    if (failed.has(pair.id()) || failed.has(holder.id())) {
+      manual.increment(site(run.root, rule, pair));
+    }
+  }
 }
 
 /**
@@ -194,6 +319,8 @@ function rewriteConfiguration(run: Run): void {
     },
   });
 
+  const removals: Removal[] = [];
+
   for (const pair of pairs) {
     const key = keyOf(pair);
     const holderName =
@@ -213,6 +340,17 @@ function rewriteConfiguration(run: Run): void {
       continue;
     }
 
+    if (value && callsSettingFunction(value)) {
+      manual.increment(
+        site(
+          run.root,
+          `${rule}: its value calls a removed setting function`,
+          pair
+        )
+      );
+      continue;
+    }
+
     const removes = key !== 'useCPURendering' || value?.text() === 'false';
 
     if (removes && (!value || !isPure(value))) {
@@ -221,7 +359,7 @@ function rewriteConfiguration(run: Run): void {
     }
 
     if (removes) {
-      removeSetting(run, pair, holder);
+      removals.push({ pair, holder, rule });
       continue;
     }
 
@@ -245,8 +383,39 @@ function rewriteConfiguration(run: Run): void {
           pair
         )
       );
+    } else {
+      manual.increment(site(run.root, rule, pair));
     }
   }
+
+  removeSettings(run, removals);
+}
+
+/**
+ * Tells whether an expression refers to a removed setting function of the
+ * core, which the function pass rewrites: the pair that holds it is
+ * reported, so the two rewrites never replace the same text.
+ */
+function callsSettingFunction(value: Node): boolean {
+  return [
+    value,
+    ...value.findAll({
+      rule: { any: [{ kind: 'identifier' }, { kind: 'member_expression' }] },
+    }),
+  ].some((node) => {
+    if (node.kind() === 'identifier') {
+      return SETTING_FUNCTIONS.has(coreImportOf(node)?.name ?? '');
+    }
+
+    const object = node.field('object');
+
+    return Boolean(
+      node.kind() === 'member_expression' &&
+        SETTING_FUNCTIONS.has(node.field('property')?.text() ?? '') &&
+        object?.kind() === 'identifier' &&
+        isCoreNamespace(object)
+    );
+  });
 }
 
 /**
@@ -268,7 +437,8 @@ function functionRef(
 
 /**
  * Rewrites one call of a removed setting function. Returns whether the call
- * changed.
+ * changed. A spread argument, and a call inside text that another rewrite
+ * replaces, are reported.
  */
 function rewriteCall(
   run: Run,
@@ -281,11 +451,23 @@ function rewriteCall(
     .children()
     .filter((child) => child.isNamed() && child.kind() !== 'comment');
 
+  if (args.some((arg) => arg.kind() === 'spread_element')) {
+    manual.increment(site(run.root, `${name}: a spread argument`, call));
+
+    return false;
+  }
+
   if (
     name === 'getUseGenericViewport' ||
     (name === 'setUseCPURendering' && args.length !== 1)
   ) {
     manual.increment(site(run.root, `${name}()`, call));
+
+    return false;
+  }
+
+  if (run.edits.covers(call)) {
+    manual.increment(site(run.root, name, call));
 
     return false;
   }
@@ -396,6 +578,27 @@ function rewriteFunctions(run: Run): void {
 
     if (object?.kind() === 'identifier' && isCoreNamespace(object)) {
       rewriteReference(run, member, member.field('property').text());
+    }
+  }
+
+  for (const { specifier, name } of coreReExports(run.rootNode)) {
+    if (SETTING_FUNCTIONS.has(name)) {
+      manual.increment(site(run.root, name, specifier));
+    }
+  }
+
+  for (const node of run.rootNode.findAll({
+    rule: { kind: 'subscript_expression' },
+  })) {
+    const name = bracketKey(node) ?? '';
+    const object = node.field('object');
+
+    if (
+      SETTING_FUNCTIONS.has(name) &&
+      object?.kind() === 'identifier' &&
+      isCoreNamespace(object)
+    ) {
+      manual.increment(site(run.root, name, node));
     }
   }
 }

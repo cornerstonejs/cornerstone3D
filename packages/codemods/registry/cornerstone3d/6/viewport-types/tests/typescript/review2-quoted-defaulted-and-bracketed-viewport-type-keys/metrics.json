@@ -1,0 +1,36 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "5",
+        "rule": "ViewportType.STACK"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "6",
+        "rule": "ViewportType: a rest or computed key"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "7",
+        "rule": "ViewportType.ORTHOGRAPHIC"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "8",
+        "rule": "ViewportType.VIDEO_NEXT"
+      },
+      "count": 1
+    }
+  ]
+}

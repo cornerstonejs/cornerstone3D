@@ -1,0 +1,12 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "3",
+        "rule": "rendering.useCPURendering: its value calls a removed setting function"
+      },
+      "count": 1
+    }
+  ]
+}

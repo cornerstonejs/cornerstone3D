@@ -22,7 +22,7 @@ export function Viewer({ engine, imageIds, volumeId }) {
   const canStack = typeof viewport.setStack === 'function';
 
   function legacyLoad() {
-    const displaySetId = `${viewport.renderingEngineId}:${viewport.id}:${imageIds[0]}`;
+    const displaySetId = JSON.stringify([viewport.renderingEngineId, viewport.id, imageIds[0]]);
     csUtils.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
       kind: 'planar',
       imageIds,

@@ -7,6 +7,14 @@
         "rule": "Types.IVolumeViewport: a test of a 3D type here does not show the family"
       },
       "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "8",
+        "rule": "Types.IVolumeViewport: a test of a 3D type here does not show the family"
+      },
+      "count": 1
     }
   ]
 }

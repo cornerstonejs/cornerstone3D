@@ -24,14 +24,17 @@ an alias of `Enums`, the namespace import, or `const { ViewportType } = Enums`.
   `viewport.getCurrentMode() === 'stack'`, `ORTHOGRAPHIC` `'volume'`; the
   same for `!==` and for the strings `'stack'` and `'orthographic'`. Only on
   a viewport that the file shows to come from Cornerstone, and only after an
-  awaited mount of it (`await viewport.setStack(...)` and its kin) earlier
-  in the same function: before its first mount a viewport is in the mode
-  `empty`, where its 5.x type was already set. `viewport?.type` keeps its
-  `?.`.
+  awaited mount of the same binding (`await viewport.setStack(...)` and its
+  kin) that runs before it in the same function: the viewport is a `const`
+  or a parameter that the file never writes, so a shadowing `viewport` or a
+  reassigned one proves nothing. Before its first mount a viewport is in the
+  mode `empty`, where its 5.x type was already set. `viewport?.type` keeps
+  its `?.`.
 - `PLANAR_NEXT`, `VOLUME_3D_NEXT`, `VIDEO_NEXT`, `WHOLE_SLIDE_NEXT` and
   `ECG_NEXT` become `PLANAR`, `VOLUME_3D`, `VIDEO`, `WHOLE_SLIDE` and `ECG`,
   also as keys of `const { PLANAR_NEXT } = Enums.ViewportType`, which keep
-  their local names (`{ PLANAR: PLANAR_NEXT }`).
+  their local names (`{ PLANAR: PLANAR_NEXT }`), a quoted key its quotes and
+  a key with a default its default.
 - The strings `'stack'`, `'orthographic'` and `'*Next'` become their 6.0
   strings in a viewport input that the file passes to `enableElement` or
   `setViewports` of a Cornerstone rendering engine (directly, in an array,
@@ -46,8 +49,10 @@ an alias of `Enums`, the namespace import, or `const { ViewportType } = Enums`.
   in 3D, a decision of the guide); `STACK` or `ORTHOGRAPHIC` in another place,
   such as a `switch` or a comparison with `viewportInput.type`; a comparison
   before a mount (`the viewport may not show its data yet`) or on a viewport
-  known by its name only; `STACK`, `ORTHOGRAPHIC` and `PERSPECTIVE` taken
-  out of `Enums.ViewportType` by a pattern; an object with the keys of a
+  known by its name only (a `let` among them); `STACK`, `ORTHOGRAPHIC` and
+  `PERSPECTIVE` taken out of `Enums.ViewportType` by a pattern, and a rest
+  element or a computed key of such a pattern; a removed or deprecated
+  member in brackets (`Enums.ViewportType['STACK']`); an object with the keys of a
   viewport input that the file does not pass to the engine
   (`not shown to be a viewport input`); a stored
   `'*Next'` string; `defaultOptions.displayArea` and

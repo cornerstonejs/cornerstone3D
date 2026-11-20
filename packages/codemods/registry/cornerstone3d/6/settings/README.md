@@ -18,7 +18,7 @@ core namespace.
 
 - `rendering.useGenericViewport` is removed from a configuration object; an
   empty `rendering` goes too, and `init({ rendering: { useGenericViewport: true } })`
-  becomes `init()`.
+  becomes `init()`. Neighbouring keys that go are removed in one edit.
 - `rendering.useCPURendering: true` becomes
   `planar: { renderBackend: 'cpu' }`, `false` is removed, another value `x`
   becomes `planar: { renderBackend: x ? 'cpu' : 'auto' }`.
@@ -38,11 +38,16 @@ reference to it changed, the new ones come in, under a fresh alias such as
 - Review: each `setUseCPURendering` call (it also marked the library
   initialized; call `init()` first) and each `useCPURendering` key (a 3D
   viewport stays on the GPU).
-- Manual: `getUseGenericViewport()`, `setUseCPURendering` with two arguments,
-  a setting function used as a value (a shorthand property, an export; its
-  import stays), and `useCPURendering` next to a `planar` key.
-- Manual: a key of an object that the file does not pass to `init`, and a
-  removed key whose value runs code, such as `useGenericViewport: read()`.
+- Manual: `getUseGenericViewport()`, `setUseCPURendering` with two arguments
+  or a spread argument (`setUseCPURendering(...tuple)`), a setting function
+  used as a value (a shorthand property, an export; its import stays), in
+  brackets on the namespace or in an `export { ... } from` of the core, and
+  `useCPURendering` next to a `planar` key.
+- Manual: a key of an object that the file does not pass to `init`, a
+  removed key whose value runs code, such as `useGenericViewport: read()`,
+  and a key whose value calls a setting function, such as
+  `useCPURendering: getShouldUseCPURendering()` (the call is rewritten, the
+  key stays for the reader).
 - `viewport.setUseCPURendering()`, the member of a stack viewport, is
   reported by `@cornerstonejs/cornerstone3d-6-viewport-members`.
 

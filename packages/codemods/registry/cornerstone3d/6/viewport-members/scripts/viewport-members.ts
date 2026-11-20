@@ -4,7 +4,9 @@ import { useMetricAtom } from 'codemod:metrics';
 import {
   CoreImports,
   EditSet,
+  bracketKey,
   coreImportOf,
+  coreReExports,
   enclosingFunction,
   isCoreExport,
   isRepeatable,
@@ -637,6 +639,31 @@ function reportCoreNames(run: Run): void {
       reportSite(run, name, node);
     }
   }
+
+  for (const { specifier, name } of coreReExports(run.rootNode)) {
+    if (REPORTED_CORE_NAMES.has(name)) {
+      reportSite(run, name, specifier);
+    }
+  }
+}
+
+/**
+ * Reports a bracket access with a string key to a legacy member on a
+ * viewport, such as `viewport['getProperties']()`: it names the member that
+ * `viewport.getProperties` names, so it is reported where the dot form is
+ * rewritten or reported.
+ */
+function reportBracketMembers(run: Run, names: Set<string>): void {
+  for (const node of run.rootNode.findAll({
+    rule: { kind: 'subscript_expression' },
+  })) {
+    const name = bracketKey(node);
+    const object = node.field('object');
+
+    if (name && names.has(name) && object && viewportEvidence(object)) {
+      reportSite(run, name, node);
+    }
+  }
 }
 
 /**
@@ -666,14 +693,14 @@ const codemod: Codemod<TSX> = (root) => {
     'getCornerstoneImage',
     'setAverageWhite',
     'setFrameRange',
-  ].join('|');
+  ];
   const calls = rootNode.findAll({
     rule: {
       kind: 'call_expression',
       has: {
         field: 'function',
         kind: 'member_expression',
-        has: { field: 'property', regex: `^(${methodNames})$` },
+        has: { field: 'property', regex: `^(${methodNames.join('|')})$` },
       },
     },
   });
@@ -686,11 +713,11 @@ const codemod: Codemod<TSX> = (root) => {
     ...Object.keys(RENAMED_PROPERTIES),
     ...REPORTED_PROPERTIES,
     'modality',
-  ].join('|');
+  ];
   const members = rootNode.findAll({
     rule: {
       kind: 'member_expression',
-      has: { field: 'property', regex: `^(${propertyNames})$` },
+      has: { field: 'property', regex: `^(${propertyNames.join('|')})$` },
     },
   });
 
@@ -698,6 +725,7 @@ const codemod: Codemod<TSX> = (root) => {
     rewriteProperty(run, member);
   }
 
+  reportBracketMembers(run, new Set([...methodNames, ...propertyNames]));
   reportCoreNames(run);
 
   const importEdits = run.imports.edits();

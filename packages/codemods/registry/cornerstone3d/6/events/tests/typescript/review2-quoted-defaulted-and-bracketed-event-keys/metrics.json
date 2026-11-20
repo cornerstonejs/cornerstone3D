@@ -1,0 +1,62 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "14",
+        "rule": "Events.STACK_VIEWPORT_SCROLL"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "5",
+        "rule": "Events.PRE_STACK_NEW_IMAGE"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "7",
+        "rule": "Events: a rest pattern"
+      },
+      "count": 1
+    }
+  ],
+  "cornerstone3d-6-review": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "13",
+        "rule": "Events.STACK_NEW_IMAGE: NEW_IMAGE also fires for each slice of a volume"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "3",
+        "rule": "Events.STACK_NEW_IMAGE: NEW_IMAGE also fires for each slice of a volume"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "4",
+        "rule": "Events.VOLUME_NEW_IMAGE: detail.imageIndex is detail.imageIdIndex"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "6",
+        "rule": "Events.IMAGE_LOAD_ERROR: the detail has no imageIdIndex, a failed prefetch fires it too"
+      },
+      "count": 1
+    }
+  ]
+}

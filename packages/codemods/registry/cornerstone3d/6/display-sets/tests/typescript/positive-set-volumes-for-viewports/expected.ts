@@ -19,6 +19,16 @@ async function run() {
 
   volume.load();
 
+  const viewports = viewportIds.map((viewportId) => {
+    const viewport = renderingEngine.getViewport(viewportId);
+
+    if (!viewport) {
+      throw new Error(`Viewport with Id ${viewportId} does not exist`);
+    }
+
+    return viewport;
+  });
+
   utilities.genericViewportDisplaySetMetadataProvider.add(volumeId, {
     kind: 'planar',
     imageIds,
@@ -26,9 +36,7 @@ async function run() {
   });
 
   await Promise.all(
-    viewportIds.map((viewportId) =>
-      renderingEngine.getViewport(viewportId).setDisplaySets({ displaySetId: volumeId })
-    )
+    viewports.map((viewport) => viewport.setDisplaySets({ displaySetId: volumeId }))
   );
 
   renderingEngine.renderViewports(viewportIds);

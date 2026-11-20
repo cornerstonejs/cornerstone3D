@@ -14,10 +14,12 @@ npx codemod @cornerstonejs/cornerstone3d-6-viewport-members
 
 Only on a viewport that the file shows to come from Cornerstone: a call of
 `getViewport` on a rendering engine made with `new RenderingEngine` or got
-with `getRenderingEngine`, the `viewport` of `getEnabledElement`, a cast,
-annotation or type argument of a Cornerstone viewport type, or a variable
-that holds one of these. A legacy member on a name such as `viewport` alone
-is reported by its name. A `renderer.resetCamera()` of vtk.js stays.
+with `getRenderingEngine`, the `viewport` of `getEnabledElement`, a cast or
+annotation whose top type is a Cornerstone viewport type, or a `const` (or a
+parameter that the file never writes) that holds one of these. A legacy
+member on a name such as `viewport` alone, a `let` or a `var` is reported by
+its name, and so is a legacy member in brackets
+(`viewport['getProperties']()`). A `renderer.resetCamera()` of vtk.js stays.
 
 - `resetCamera()` and `resetCamera({ resetPan, resetZoom, resetOrientation })`
   become `resetViewState(...)`.
@@ -62,7 +64,8 @@ of a
 renamed property, the properties `requestedType`, `options`, `scaling` and
 the others of the map, and the removed helpers of the core
 (`viewportSupportsStackCompatibility`, `getImageLegacy`, `scrollVolume`,
-`getVolumeViewportScrollInfo` and the others).
+`getVolumeViewportScrollInfo` and the others), also in an
+`export { ... } from '@cornerstonejs/core'`.
 
 ## Development
 

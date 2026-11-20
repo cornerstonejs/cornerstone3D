@@ -5,8 +5,10 @@ import {
   CORE_PACKAGE,
   CoreImports,
   EditSet,
+  bracketKey,
   comparisonAt,
   coreImportOf,
+  enclosingFunction,
   importSource,
   isCoreExport,
   isCoreNamespace,
@@ -14,6 +16,8 @@ import {
   methodCall,
   objectEntries,
   site,
+  stableBinding,
+  staticKeyName,
   unwrap,
 } from './lib.ts';
 import type { Node } from './lib.ts';
@@ -184,70 +188,123 @@ function isTypedEngine(node: Node): boolean {
 }
 
 /**
- * Returns the texts that name the viewport a type node types: the expression
- * of its cast and the variable that the cast or the annotation declares.
+ * Returns the key of the binding that a name refers to, when that binding
+ * holds one value for its whole scope, or undefined.
+ */
+function bindingKey(node: Node | null | undefined): string | undefined {
+  const inner = node ? unwrap(node) : undefined;
+  const kind = inner?.kind() ?? '';
+  const binding =
+    kind === 'identifier' || kind === 'shorthand_property_identifier'
+      ? stableBinding(inner)
+      : undefined;
+
+  return binding ? `binding:${binding.range().start.index}` : undefined;
+}
+
+/**
+ * Returns what identifies the value of a viewport id: the text of a string,
+ * or the binding of a name that holds one value; undefined otherwise.
+ */
+function viewportIdKey(node: Node): string | undefined {
+  const inner = unwrap(node);
+
+  return inner.kind() === 'string'
+    ? `string:${inner.text().slice(1, -1)}`
+    : bindingKey(inner);
+}
+
+/**
+ * Returns the bindings of the viewport that a type node types: the name that
+ * its cast casts, or the name that an annotated declaration starts with.
+ * Each binding holds one value for its whole scope.
  */
 function receiversOf(typeNode: Node): Set<string> {
   const receivers = new Set<string>();
   const holder = typeNode
     .ancestors()
     .find((ancestor) =>
-      [
-        'as_expression',
-        'type_assertion',
-        'variable_declarator',
-        'required_parameter',
-        'optional_parameter',
-      ].includes(ancestor.kind())
+      ['as_expression', 'type_assertion', 'variable_declarator'].includes(
+        ancestor.kind()
+      )
     );
-
-  if (!holder) {
-    return receivers;
-  }
-
-  const named = holder.children().filter((child) => child.isNamed());
+  const named = holder?.children().filter((child) => child.isNamed()) ?? [];
   const expression =
-    holder.kind() === 'as_expression'
+    holder?.kind() === 'as_expression'
       ? named[0]
-      : holder.kind() === 'type_assertion'
+      : holder?.kind() === 'type_assertion'
         ? named[named.length - 1]
-        : undefined;
-  const declarator =
-    holder.kind() === 'variable_declarator'
-      ? holder
-      : holder.parent()?.kind() === 'variable_declarator'
-        ? holder.parent()
-        : undefined;
+        : holder?.field('value');
+  const key = bindingKey(expression);
 
-  if (expression) {
-    receivers.add(unwrap(expression).text());
-  }
-
-  for (const name of [declarator?.field('name'), holder.field('pattern')]) {
-    if (name?.kind() === 'identifier') {
-      receivers.add(name.text());
-    }
+  if (key) {
+    receivers.add(key);
   }
 
   return receivers;
 }
 
 /**
+ * Returns the expression whose `type` a `const` holds: `<viewport>` for
+ * `const type = viewport.type`, `const { type } = viewport` or
+ * `const { type: viewportType } = viewport`, or undefined.
+ */
+function typeSourceOf(identifier: Node): Node | undefined {
+  const declaration = stableBinding(identifier);
+  const parent = declaration?.parent();
+
+  if (
+    parent?.kind() === 'variable_declarator' &&
+    parent.field('name')?.id() === declaration.id()
+  ) {
+    const value = parent.field('value');
+    const inner = value ? unwrap(value) : undefined;
+
+    return inner?.kind() === 'member_expression' &&
+      inner.field('property')?.text() === 'type'
+      ? inner.field('object')
+      : undefined;
+  }
+
+  const key =
+    declaration?.kind() === 'shorthand_property_identifier_pattern'
+      ? declaration.text()
+      : parent?.kind() === 'pair_pattern' &&
+          parent.field('value')?.id() === declaration.id()
+        ? staticKeyName(parent.field('key'))
+        : undefined;
+  const pattern =
+    declaration?.kind() === 'shorthand_property_identifier_pattern'
+      ? parent
+      : parent?.parent();
+  const declarator = pattern?.parent();
+
+  return key === 'type' &&
+    pattern?.kind() === 'object_pattern' &&
+    declarator?.kind() === 'variable_declarator' &&
+    declarator.field('name')?.id() === pattern.id()
+    ? (declarator.field('value') ?? undefined)
+    : undefined;
+}
+
+/**
  * Tells whether a tested value is the type of the viewport that a type node
- * types: `<receiver>.type`, or a name such as `type` or `viewportType`.
+ * types: `<receiver>.type`, or a `const` that holds it, where the receiver
+ * is the binding of the viewport. Any other value, such as a parameter
+ * `type` or the type of another object, tells nothing about the viewport.
  */
 function isTiedValue(value: Node, receivers: Set<string>): boolean {
   const inner = unwrap(value);
-
-  if (inner.kind() === 'identifier') {
-    return true;
-  }
-
-  return (
+  const source =
     inner.kind() === 'member_expression' &&
-    inner.field('property')?.text() === 'type' &&
-    receivers.has(unwrap(inner.field('object')).text())
-  );
+    inner.field('property')?.text() === 'type'
+      ? inner.field('object')
+      : inner.kind() === 'identifier'
+        ? typeSourceOf(inner)
+        : undefined;
+  const key = bindingKey(source);
+
+  return Boolean(key && receivers.has(key));
 }
 
 /**
@@ -357,16 +414,20 @@ function caseFamily(caseNode: Node, receivers: Set<string>): Decision {
 
 /**
  * Returns the family that the file shows for a type node: '3d' or 'planar'
- * when an enclosing `if`, `else` or `case` runs only for that family of the
- * viewport it types, or when the viewport inputs of the file with the id of
- * the `getViewport` call that the type casts all have one family;
- * 'ambiguous' when an enclosing test names a viewport type and decides
- * nothing; undefined otherwise.
+ * when an enclosing `if`, `else` or `case` of the same function runs only
+ * for that family of the viewport it types, or when the viewport inputs of
+ * the file with the id of the `getViewport` call that the type casts all
+ * have one family; 'ambiguous' when an enclosing test names a 3D type and
+ * decides nothing, or decides outside the function of the node, where the
+ * viewport can be another by the time the function runs; undefined
+ * otherwise.
  */
 function familyEvidence(run: Run, typeNode: Node): Decision {
   const receivers = receiversOf(typeNode);
+  const fn = enclosingFunction(typeNode);
   let child = typeNode;
   let ambiguous = false;
+  let outside = false;
 
   for (const ancestor of typeNode.ancestors()) {
     const inConsequence =
@@ -375,18 +436,27 @@ function familyEvidence(run: Run, typeNode: Node): Decision {
     const inAlternative =
       ancestor.kind() === 'if_statement' &&
       ancestor.field('alternative')?.id() === child.id();
+    const condition =
+      inConsequence || inAlternative
+        ? ancestor.field('condition')
+        : ancestor.kind() === 'switch_case'
+          ? ancestor.field('value')
+          : undefined;
     const decision =
       inConsequence || inAlternative
-        ? decidedFamily(ancestor.field('condition'), inConsequence, receivers)
+        ? decidedFamily(condition, inConsequence, receivers)
         : ancestor.kind() === 'switch_case'
           ? caseFamily(ancestor, receivers)
           : undefined;
 
-    if (decision === '3d' || decision === 'planar') {
+    if (!outside && (decision === '3d' || decision === 'planar')) {
       return decision;
     }
 
-    ambiguous ||= decision === 'ambiguous';
+    ambiguous ||=
+      decision === 'ambiguous' ||
+      Boolean(decision && condition && THREE_D_TYPE.test(condition.text()));
+    outside ||= ancestor.id() === fn?.id();
     child = ancestor;
   }
 
@@ -418,17 +488,27 @@ function inputFamily(run: Run, typeNode: Node): '3d' | 'planar' | undefined {
     return undefined;
   }
 
-  const id = call.args[0].text();
+  const id = viewportIdKey(call.args[0]);
   const families = new Set<string>();
 
+  if (!id) {
+    return undefined;
+  }
+
   for (const objectNode of run.rootNode.findAll({ rule: { kind: 'object' } })) {
-    const { pairs, shorthand } = objectEntries(objectNode);
-    const idText =
-      pairs.get('viewportId')?.field('value')?.text() ??
-      (shorthand.has('viewportId') ? 'viewportId' : undefined);
+    const { pairs } = objectEntries(objectNode);
+    const idNode =
+      pairs.get('viewportId')?.field('value') ??
+      objectNode
+        .children()
+        .find(
+          (child) =>
+            child.kind() === 'shorthand_property_identifier' &&
+            child.text() === 'viewportId'
+        );
     const typeText = pairs.get('type')?.field('value')?.text();
 
-    if (idText !== id || !typeText) {
+    if (!idNode || viewportIdKey(idNode) !== id || !typeText) {
       continue;
     }
 
@@ -570,7 +650,7 @@ function rewriteInstanceof(run: Run, binary: Node, name: string): boolean {
   const test = INSTANCEOF_TEST[name];
   const left = binary.field('left');
 
-  if (test && !isMountedBefore(binary, unwrap(left).text())) {
+  if (test && !isMountedBefore(binary, left)) {
     manual.increment(
       site(
         run.root,
@@ -852,6 +932,27 @@ function rewriteNamespaceValues(run: Run): void {
 }
 
 /**
+ * Reports a bracket access with a string key to a removed or renamed class
+ * on the core namespace, such as `cs['StackViewport']`.
+ */
+function reportBracketClasses(run: Run): void {
+  for (const node of run.rootNode.findAll({
+    rule: { kind: 'subscript_expression' },
+  })) {
+    const name = bracketKey(node) ?? '';
+    const object = node.field('object');
+
+    if (
+      (LEGACY_CLASS_TYPE[name] || RENAMED_CLASS[name]) &&
+      object?.kind() === 'identifier' &&
+      isCoreNamespace(object)
+    ) {
+      manual.increment(site(run.root, name, node));
+    }
+  }
+}
+
+/**
  * Reports `utilities.isGenericViewport(viewport)`: deprecated, true for every
  * viewport, so its check goes and its true branch stays.
  */
@@ -910,6 +1011,7 @@ const codemod: Codemod<TSX> = (root) => {
   rewriteNestedTypes(run);
   rewriteNamespaceValues(run);
   rewriteReExports(run);
+  reportBracketClasses(run);
   reportIsGenericViewport(run);
 
   const importEdits = run.imports.edits();

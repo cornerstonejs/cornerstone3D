@@ -4,6 +4,7 @@ import { useMetricAtom } from 'codemod:metrics';
 import {
   CoreImports,
   EditSet,
+  bracketKey,
   declarationNodeOf,
   indentOf,
   isCoreEnum,
@@ -13,6 +14,7 @@ import {
   objectEntries,
   referencesOf,
   site,
+  staticKeyName,
   unwrap,
   viewportEvidence,
 } from './lib.ts';
@@ -235,10 +237,10 @@ function comparedViewport(node: Node):
 
 /**
  * Rewrites a comparison of the type of a viewport with a removed type to a
- * test of its content mode, when an awaited mount of that viewport comes
- * before it: the type of a viewport is known from its creation, its mode only
- * from its first mount. Reports the comparison otherwise. `?.type` keeps its
- * `?.`.
+ * test of its content mode, when an awaited mount of the same binding of the
+ * viewport runs before it in its function: the type of a viewport is known
+ * from its creation, its mode only from its first mount. Reports the
+ * comparison otherwise. `?.type` keeps its `?.`.
  */
 function rewriteModeTest(
   run: Run,
@@ -247,9 +249,7 @@ function rewriteModeTest(
   rule: string,
   node: Node
 ): void {
-  const receiver = unwrap(comparison.viewport).text();
-
-  if (!isMountedBefore(comparison.binary, receiver)) {
+  if (!isMountedBefore(comparison.binary, comparison.viewport)) {
     manual.increment(
       site(run.root, `${rule}: the viewport may not show its data yet`, node)
     );
@@ -573,7 +573,10 @@ function reportInputOptions(run: Run, typePair: Node): void {
 /**
  * Rewrites the keys that a pattern takes out of the core
  * `Enums.ViewportType`: a `_NEXT` key gets its plain name and keeps its local
- * name, and a removed key is reported.
+ * name (a quoted key keeps its quotes, a shorthand with a default value
+ * keeps its local name and its default), and a removed key is reported. A
+ * key computed from code and a rest element can take any member, so they
+ * are reported.
  */
 function rewriteDestructured(run: Run): void {
   for (const pattern of run.rootNode.findAll({
@@ -591,24 +594,56 @@ function rewriteDestructured(run: Run): void {
     }
 
     for (const entry of pattern.children()) {
-      const isShorthand =
-        entry.kind() === 'shorthand_property_identifier_pattern';
-      const keyNode = isShorthand
-        ? entry
-        : entry.kind() === 'pair_pattern'
-          ? entry.field('key')
-          : undefined;
-      const member = keyNode?.text() ?? '';
+      const kind = entry.kind();
+      const keyNode =
+        kind === 'shorthand_property_identifier_pattern'
+          ? entry
+          : kind === 'object_assignment_pattern'
+            ? entry.field('left')
+            : kind === 'pair_pattern'
+              ? entry.field('key')
+              : undefined;
+      const member = staticKeyName(keyNode);
 
-      if (NEXT_MEMBERS[member]) {
-        run.edits.add(
-          isShorthand
-            ? entry.replace(`${NEXT_MEMBERS[member]}: ${member}`)
-            : keyNode.replace(NEXT_MEMBERS[member])
+      if (kind === 'rest_pattern' || (keyNode && !member)) {
+        manual.increment(
+          site(run.root, 'ViewportType: a rest or computed key', entry)
         );
-      } else if (/^(STACK|ORTHOGRAPHIC|PERSPECTIVE)$/.test(member)) {
+      } else if (NEXT_MEMBERS[member] && kind === 'pair_pattern') {
+        const string =
+          keyNode.kind() === 'string'
+            ? keyNode
+            : keyNode.find({ rule: { kind: 'string' } });
+        const quote = string ? string.text()[0] : '';
+
+        run.edits.add(
+          (string ?? keyNode).replace(`${quote}${NEXT_MEMBERS[member]}${quote}`)
+        );
+      } else if (NEXT_MEMBERS[member]) {
+        run.edits.add(keyNode.replace(`${NEXT_MEMBERS[member]}: ${member}`));
+      } else if (/^(STACK|ORTHOGRAPHIC|PERSPECTIVE)$/.test(member ?? '')) {
         manual.increment(site(run.root, `ViewportType.${member}`, entry));
       }
+    }
+  }
+}
+
+/**
+ * Reports a bracket access with a string key to a removed or deprecated
+ * member of the core `Enums.ViewportType`, such as
+ * `Enums.ViewportType['STACK']`.
+ */
+function reportBracketMembers(run: Run): void {
+  for (const node of run.rootNode.findAll({
+    rule: { kind: 'subscript_expression' },
+  })) {
+    const member = bracketKey(node);
+    const isMember =
+      Boolean(member && NEXT_MEMBERS[member]) ||
+      /^(STACK|ORTHOGRAPHIC|PERSPECTIVE)$/.test(member ?? '');
+
+    if (isMember && isCoreEnum(node.field('object'), 'ViewportType')) {
+      manual.increment(site(run.root, `ViewportType.${member}`, node));
     }
   }
 }
@@ -667,6 +702,7 @@ const codemod: Codemod<TSX> = (root) => {
   }
 
   rewriteDestructured(run);
+  reportBracketMembers(run);
 
   if (!run.edits.all().length) {
     return null;

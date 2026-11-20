@@ -11,7 +11,7 @@ async function run(element, imageIds) {
 
   const viewport = renderingEngine.getViewport('stack');
 
-  const displaySetId = `${viewport.renderingEngineId}:${viewport.id}:${imageIds[0]}`;
+  const displaySetId = JSON.stringify([viewport.renderingEngineId, viewport.id, imageIds[0]]);
   utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
     kind: 'planar',
     imageIds,

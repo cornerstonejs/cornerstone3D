@@ -1,0 +1,38 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "13",
+        "rule": "setStack"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "17",
+        "rule": "setStack"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "9",
+        "rule": "setStack"
+      },
+      "count": 1
+    }
+  ],
+  "cornerstone3d-6-review": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "21",
+        "rule": "setStack: not awaited, a next viewport has no view before its mount"
+      },
+      "count": 1
+    }
+  ]
+}

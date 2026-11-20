@@ -109,7 +109,10 @@ file shows that it is Cornerstone's: a name bound to an import of
 `@cornerstonejs/*`, a viewport got from a rendering engine, an enabled
 element or a Cornerstone type, a viewport input or a configuration that
 reaches a Cornerstone call. A variable named `viewport` alone puts the site
-in the list of what it left. It changes:
+in the list of what it left. It rewrites a site only when every input has a
+shape it fully understands: a viewport or an engine in a `let` or a `var`, a
+test of the viewport in another function or of another value, and a member
+named in brackets are left to you, in the list. It changes:
 
 - the viewport types (step 1): `STACK` and `ORTHOGRAPHIC` in a viewport input
   become `PLANAR`, with the 5.x default orientation `AXIAL` written out where
@@ -326,9 +329,20 @@ The id names the data, such as the series instance UID. Give another series
 another id: when the new source of a viewport has the id of the source it
 shows, `setDisplaySets` keeps the segmentation overlays of that source. The
 registration is global, so an application with two rendering engines whose
-viewports share ids puts the engine in the id too. The codemod registers a
-stack under `` `${viewport.renderingEngineId}:${viewport.id}:${imageIds[0]}` ``:
-one registration for each engine, viewport and series.
+viewports share ids puts the engine in the id too, in a form that keeps the
+parts apart: joined with `:`, engine `a:b` with viewport `c` and engine `a`
+with viewport `b:c` give one id, and the second registration replaces the
+first. The codemod registers a stack under the JSON of the three parts, one
+registration for each engine, viewport and series:
+
+```ts
+const displaySetId = JSON.stringify([
+  viewport.renderingEngineId,
+  viewport.id,
+  imageIds[0],
+]);
+```
+
 [A display set is registered once](./1-next-viewports-only.md#a-display-set-is-registered-once)
 says what each family registers, and how a fusion is shown.
 
@@ -378,15 +392,22 @@ await viewport.setDisplaySets({
 The viewport takes the volume from the cache. When the volume is not there,
 the viewport makes it from the image ids and starts its load.
 
-`setVolumesForViewports` becomes a loop over the viewports:
+`setVolumesForViewports` becomes a loop over the viewports. Find every
+viewport first, as the 5.x helper did, so that a missing one changes none:
 
 ```ts
+const viewports = viewportIds.map((viewportId) => {
+  const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
+
+  if (!viewport) {
+    throw new Error(`No viewport ${viewportId}`);
+  }
+
+  return viewport;
+});
+
 await Promise.all(
-  viewportIds.map((viewportId) =>
-    renderingEngine
-      .getViewport<PlanarViewport>(viewportId)
-      .setDisplaySets({ displaySetId })
-  )
+  viewports.map((viewport) => viewport.setDisplaySets({ displaySetId }))
 );
 ```
 

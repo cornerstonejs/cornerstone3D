@@ -1,15 +1,11 @@
-import type {
-  Types,
-  PlanarViewport,
-  VolumeViewport3D,
-} from '@cornerstonejs/core';
+import type { Types, VolumeViewport3D } from '@cornerstonejs/core';
 import { Enums, RenderingEngine } from '@cornerstonejs/core';
 
 const engine = new RenderingEngine('engine');
 
 export function planarOnly(id: string, type: Enums.ViewportType) {
   if (type !== Enums.ViewportType.VOLUME_3D) {
-    return engine.getViewport<PlanarViewport>(id);
+    return engine.getViewport(id) as Types.IVolumeViewport;
   }
 }
 

@@ -1,0 +1,28 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "4",
+        "rule": "export of @cornerstonejs/tools/segmentation/labelmapModel/labelmapLegacyAdapter"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "5",
+        "rule": "getSlabThicknessOrDefault"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "6",
+        "rule": "export of @cornerstonejs/tools/utilities/spatial/rotateViewportAroundWorldPoint"
+      },
+      "count": 1
+    }
+  ]
+}

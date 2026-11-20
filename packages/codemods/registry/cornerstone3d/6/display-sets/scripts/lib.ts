@@ -1050,6 +1050,63 @@ export function coreSpecifiers(
 }
 
 /**
+ * Returns the specifiers of the statements that re-export names of
+ * `@cornerstonejs/core` (`export { name } from '@cornerstonejs/core'`), each
+ * with the name that it takes from the core.
+ */
+export function coreReExports(
+  rootNode: Node
+): Array<{ specifier: Node; name: string }> {
+  return rootNode
+    .children()
+    .filter(
+      (child) =>
+        child.kind() === 'export_statement' &&
+        importSource(child) === CORE_PACKAGE
+    )
+    .flatMap((statement) =>
+      statement.findAll({ rule: { kind: 'export_specifier' } })
+    )
+    .map((specifier) => ({
+      specifier,
+      name: specifier.field('name')?.text() ?? '',
+    }));
+}
+
+/**
+ * Returns the name of a key that does not change: a name, a string, or a
+ * string in brackets. Returns undefined for a key computed from code.
+ */
+export function staticKeyName(
+  key: Node | null | undefined
+): string | undefined {
+  const kind = key?.kind() ?? '';
+
+  if (kind === 'string') {
+    return key.text().slice(1, -1);
+  }
+
+  if (kind === 'computed_property_name') {
+    const inner = key.children().find((child) => child.isNamed());
+
+    return inner?.kind() === 'string' ? inner.text().slice(1, -1) : undefined;
+  }
+
+  return /identifier/.test(kind) ? key.text() : undefined;
+}
+
+/**
+ * Returns the string key of a bracket access such as `object['name']`, or
+ * undefined.
+ */
+export function bracketKey(node: Node): string | undefined {
+  const index =
+    node.kind() === 'subscript_expression' ? node.field('index') : undefined;
+
+  return index?.kind() === 'string' ? index.text().slice(1, -1) : undefined;
+}
+
+/**
  * Returns the import specifier that an identifier refers to, when it is a
  * named import of `@cornerstonejs/core` (or of a path under it when
  * `subpaths` is true), with the imported name.
@@ -1162,7 +1219,11 @@ export function isCoreEnum(node: Node, member: string): boolean {
 
   const definition = definitionOf(node);
 
-  if (!definition || definition.kind !== 'local') {
+  if (
+    !definition ||
+    definition.kind !== 'local' ||
+    !isStableBinding(definition.node)
+  ) {
     return false;
   }
 
@@ -1270,22 +1331,50 @@ function isCoreType(identifier: Node): boolean {
 }
 
 /**
- * Returns the names of the core types in a type node.
+ * Returns the names of the core types that a type node names at its top: the
+ * type itself, or each member of a union of core types with `null` and
+ * `undefined`. A type argument of a generic type, an array type or an object
+ * type names none, as the value is a container of the type, not the type.
  */
-function coreTypeNamesIn(typeNode: Node): string[] {
-  const identifiers =
-    typeNode.kind() === 'type_identifier'
-      ? [typeNode]
-      : typeNode.findAll({ rule: { kind: 'type_identifier' } });
+export function topLevelCoreTypes(typeNode: Node | null | undefined): string[] {
+  const kind = typeNode?.kind() ?? '';
 
-  return identifiers
-    .filter((identifier) => isCoreType(identifier))
-    .map((identifier) => identifier.text());
+  if (kind === 'type_annotation' || kind === 'parenthesized_type') {
+    return topLevelCoreTypes(
+      typeNode.children().find((child) => child.isNamed())
+    );
+  }
+
+  if (kind === 'type_identifier') {
+    return isCoreType(typeNode) ? [typeNode.text()] : [];
+  }
+
+  if (kind === 'nested_type_identifier') {
+    const named = typeNode.children().filter((child) => child.isNamed());
+    const last = named[named.length - 1];
+
+    return last?.kind() === 'type_identifier' && isCoreType(last)
+      ? [last.text()]
+      : [];
+  }
+
+  if (kind !== 'union_type') {
+    return [];
+  }
+
+  const members = typeNode
+    .children()
+    .filter(
+      (child) => child.isNamed() && !/^(null|undefined)$/.test(child.text())
+    );
+  const names = members.map((member) => topLevelCoreTypes(member));
+
+  return names.every((found) => found.length) ? names.flat() : [];
 }
 
 /**
- * Returns the names of the core types that a cast, an annotation or a type
- * argument puts on an expression, without following variables.
+ * Returns the names of the core types that a cast puts on an expression at
+ * its top, without following variables.
  */
 function castCoreTypes(node: Node | null | undefined): string[] {
   const names: string[] = [];
@@ -1302,18 +1391,12 @@ function castCoreTypes(node: Node | null | undefined): string[] {
       const typeNode = current
         .children()
         .find((child) => child.isNamed() && /type/.test(child.kind()));
+      const typed =
+        typeNode?.kind() === 'type_arguments'
+          ? typeNode.children().find((child) => child.isNamed())
+          : typeNode;
 
-      if (typeNode) {
-        names.push(...coreTypeNamesIn(typeNode));
-      }
-    }
-
-    if (kind === 'call_expression') {
-      const typeArguments = current.field('type_arguments');
-
-      if (typeArguments) {
-        names.push(...coreTypeNamesIn(typeArguments));
-      }
+      names.push(...topLevelCoreTypes(typed));
     }
 
     if (
@@ -1340,9 +1423,118 @@ function castCoreTypes(node: Node | null | undefined): string[] {
 }
 
 /**
+ * Returns the node that holds a declared name through its destructuring
+ * patterns: a declarator, a parameter, an import specifier.
+ */
+function bindingHolder(declaration: Node): Node | undefined {
+  let parent = declaration.parent();
+
+  while (parent && PATTERN_KINDS.has(parent.kind())) {
+    parent = parent.parent();
+  }
+
+  return parent ?? undefined;
+}
+
+/**
+ * Tells whether a reference to a name writes it: the left side of `=`, of an
+ * operator assignment or of a `for in`/`for of` without a declaration, a
+ * destructuring target of those, or `++` and `--`.
+ */
+function isWrite(reference: Node): boolean {
+  let child = reference;
+  let parent = reference.parent();
+
+  while (
+    parent &&
+    (PATTERN_KINDS.has(parent.kind()) ||
+      parent.kind() === 'parenthesized_expression')
+  ) {
+    child = parent;
+    parent = parent.parent();
+  }
+
+  const kind = parent?.kind() ?? '';
+
+  if (kind === 'update_expression') {
+    return true;
+  }
+
+  return (
+    (kind === 'assignment_expression' ||
+      kind === 'augmented_assignment_expression' ||
+      kind === 'for_in_statement') &&
+    parent.field('left')?.id() === child.id()
+  );
+}
+
+/**
+ * Tells whether a declared name holds one value for its whole scope: a
+ * `const`, an import, or a parameter that the file never writes. A `let`, a
+ * `var` or a written parameter can hold another value at a later node.
+ */
+export function isStableBinding(declaration: Node): boolean {
+  const holder = bindingHolder(declaration);
+  const kind = holder?.kind() ?? '';
+
+  if (kind === 'variable_declarator') {
+    const statement = holder.parent();
+
+    return (
+      statement?.kind() === 'lexical_declaration' &&
+      statement.children()[0]?.text() === 'const'
+    );
+  }
+
+  if (
+    kind === 'import_specifier' ||
+    kind === 'import_clause' ||
+    kind === 'namespace_import'
+  ) {
+    return true;
+  }
+
+  if (
+    kind === 'required_parameter' ||
+    kind === 'optional_parameter' ||
+    kind === 'formal_parameters' ||
+    kind === 'arrow_function'
+  ) {
+    return !referencesOf(declaration).some(isWrite);
+  }
+
+  return false;
+}
+
+/**
+ * Returns the declaration of the binding that an identifier refers to when
+ * that binding holds one value for its whole scope, or undefined.
+ */
+export function stableBinding(identifier: Node): Node | undefined {
+  const declaration = declarationNodeOf(identifier);
+
+  return declaration && isStableBinding(declaration) ? declaration : undefined;
+}
+
+/**
+ * Tells whether an expression is a name that refers to a declaration.
+ */
+export function isBoundTo(node: Node, declaration: Node): boolean {
+  const kind = node.kind();
+
+  return (
+    (kind === 'identifier' || kind === 'shorthand_property_identifier') &&
+    declarationNodeOf(node)?.range().start.index ===
+      declaration.range().start.index
+  );
+}
+
+/**
  * Returns what a declaration gives to the binding that an identifier refers
- * to: the core types of its annotation, the value it starts with, and for a
- * destructured name its key and the object it comes from.
+ * to, when that binding holds one value for its whole scope: the core types
+ * at the top of its annotation, the value it starts with, and for a
+ * destructured name its key and the object it comes from. A `let`, a `var`,
+ * a written parameter and an assignment give nothing.
  */
 function declarationOf(identifier: Node):
   | {
@@ -1364,14 +1556,23 @@ function declarationOf(identifier: Node):
     target.kind() === 'required_parameter' ||
     target.kind() === 'optional_parameter'
   ) {
+    const pattern = target.field('pattern');
     const annotation = target
       .children()
       .find((child) => child.kind() === 'type_annotation');
 
+    if (pattern?.kind() !== 'identifier' || !isStableBinding(pattern)) {
+      return undefined;
+    }
+
     return {
-      typeNames: annotation ? coreTypeNamesIn(annotation) : [],
+      typeNames: topLevelCoreTypes(annotation),
       value: undefined,
     };
+  }
+
+  if (!isStableBinding(target)) {
+    return undefined;
   }
 
   const parent = target.parent();
@@ -1417,49 +1618,9 @@ function declarationOf(identifier: Node):
     .find((child) => child.kind() === 'type_annotation');
 
   return {
-    typeNames: annotation ? coreTypeNamesIn(annotation) : [],
+    typeNames: topLevelCoreTypes(annotation),
     value: parent.field('value') ?? undefined,
   };
-}
-
-/**
- * Returns the values that the file assigns with `=` to a variable that its
- * declaration leaves without a value and a type, such as `let viewport;`.
- */
-function assignedValues(identifier: Node): Node[] {
-  const declaration = declarationNodeOf(identifier);
-
-  if (declaration?.kind() !== 'identifier') {
-    return [];
-  }
-
-  return referencesOf(declaration)
-    .map((reference) => ({ reference, parent: reference.parent() }))
-    .filter(
-      ({ reference, parent }) =>
-        parent?.kind() === 'assignment_expression' &&
-        parent.field('left')?.id() === reference.id()
-    )
-    .map(({ parent }) => parent.field('right'))
-    .filter(Boolean);
-}
-
-/**
- * Tells whether a variable without a value and a type gets values with `=`,
- * each of which passes a check.
- */
-function everyAssignment(
-  identifier: Node,
-  declaration: { typeNames: string[]; value: Node | undefined },
-  check: (value: Node) => boolean
-): boolean {
-  if (declaration.value || declaration.typeNames.length) {
-    return false;
-  }
-
-  const values = assignedValues(identifier);
-
-  return values.length > 0 && values.every(check);
 }
 
 /**
@@ -1513,7 +1674,8 @@ function isEnabledElement(
 /**
  * Tells whether an expression is a rendering engine of the core: made with
  * `new RenderingEngine`, got with `getRenderingEngine`, read from an enabled
- * element, or a variable that holds one or is typed as one.
+ * element, or a `const` or a parameter that the file never writes that holds
+ * one or is typed as one.
  */
 export function isRenderingEngine(
   node: Node | null | undefined,
@@ -1579,12 +1741,7 @@ export function isRenderingEngine(
     return isEnabledElement(declaration.source, depth + 1);
   }
 
-  return (
-    isRenderingEngine(declaration.value, depth + 1) ||
-    everyAssignment(inner, declaration, (value) =>
-      isRenderingEngine(value, depth + 1)
-    )
-  );
+  return isRenderingEngine(declaration.value, depth + 1);
 }
 
 /**
@@ -1617,11 +1774,13 @@ function isViewportList(node: Node | null | undefined, depth: number): boolean {
 
 /**
  * Returns what shows that an expression is a Cornerstone viewport: `core` for
- * a cast, an annotation or a type argument of a core viewport type, a call
- * of `getViewport` on a rendering engine of the core, the `viewport` of an
- * enabled element, an entry of `engine.getViewports()`, or a variable that
- * holds one of these; `name` for a name such as `viewport` or `ctViewport`
- * alone, or `getViewport` on something else; undefined otherwise.
+ * a cast or an annotation whose top type is a core viewport type, a call of
+ * `getViewport` on a rendering engine of the core, the `viewport` of an
+ * enabled element, an entry of `engine.getViewports()`, or a `const` or a
+ * parameter that the file never writes that holds one of these; `name` for a
+ * name such as `viewport` or `ctViewport` alone (a `let`, a `var` or a
+ * written parameter among them), or `getViewport` on something else;
+ * undefined otherwise. A type argument of another type is no evidence.
  */
 export function viewportEvidence(
   node: Node | null | undefined,
@@ -1647,15 +1806,7 @@ export function viewportEvidence(
       fromValue === 'core' ||
       Boolean(declaration?.typeNames.some(isViewportTypeName)) ||
       (declaration?.key === 'viewport' &&
-        isEnabledElement(declaration.source, depth + 1)) ||
-      Boolean(
-        declaration &&
-          everyAssignment(
-            inner,
-            declaration,
-            (value) => viewportEvidence(value, depth + 1) === 'core'
-          )
-      );
+        isEnabledElement(declaration.source, depth + 1));
 
     if (isCore) {
       return 'core';
@@ -1711,8 +1862,20 @@ export function viewportEvidence(
 }
 
 /**
- * Returns the family of a viewport expression when a cast, an annotation or a
- * type argument of a core type names it, or undefined.
+ * Returns the family that core type names give together, when they give one.
+ */
+function familyOfTypes(names: string[]): ViewportFamily | undefined {
+  const families = new Set(
+    names.map((name) => FAMILY_OF_TYPE[name]).filter(Boolean)
+  );
+
+  return families.size === 1 ? [...families][0] : undefined;
+}
+
+/**
+ * Returns the family of a viewport expression when the top type of a cast or
+ * an annotation names it, or the type argument of `getViewport` on a core
+ * rendering engine, or undefined.
  */
 export function viewportFamily(
   node: Node,
@@ -1722,15 +1885,29 @@ export function viewportFamily(
     return undefined;
   }
 
-  const fromCast = castCoreTypes(node)
-    .map((name) => FAMILY_OF_TYPE[name])
-    .find(Boolean);
+  const fromCast = familyOfTypes(castCoreTypes(node));
 
   if (fromCast) {
     return fromCast;
   }
 
   const inner = unwrap(node);
+  const call = methodCall(inner);
+  const typeArguments = call ? inner.field('type_arguments') : undefined;
+
+  if (
+    call?.method === 'getViewport' &&
+    typeArguments &&
+    isRenderingEngine(call.object, depth + 1)
+  ) {
+    const argument = typeArguments
+      .children()
+      .filter((child) => child.isNamed());
+
+    return argument.length === 1
+      ? familyOfTypes(topLevelCoreTypes(argument[0]))
+      : undefined;
+  }
 
   if (inner.kind() !== 'identifier') {
     return undefined;
@@ -1742,9 +1919,7 @@ export function viewportFamily(
     return undefined;
   }
 
-  const fromType = declaration.typeNames
-    .map((name) => FAMILY_OF_TYPE[name])
-    .find(Boolean);
+  const fromType = familyOfTypes(declaration.typeNames);
 
   if (fromType) {
     return fromType;
@@ -1823,6 +1998,34 @@ export function isPure(node: Node): boolean {
   }
 
   return isRepeatable(node);
+}
+
+/**
+ * Tells whether an expression gives the same value when it is read twice in
+ * a row: a name, a literal, a template without substitutions, or an array
+ * literal of those. A property read, a call, a spread or a conditional can
+ * give another value or run code, so a rewrite reads it once into a `const`.
+ */
+export function isPlainValue(node: Node): boolean {
+  const kind = node.kind();
+
+  if (kind === 'identifier' || LITERAL_KINDS.has(kind)) {
+    return true;
+  }
+
+  if (kind === 'template_string') {
+    return !node
+      .children()
+      .some((child) => child.kind() === 'template_substitution');
+  }
+
+  return (
+    kind === 'array' &&
+    node
+      .children()
+      .filter((child) => child.isNamed() && child.kind() !== 'comment')
+      .every((child) => isPlainValue(child))
+  );
 }
 
 /**
@@ -1916,10 +2119,10 @@ export function enclosingFunction(node: Node): Node | undefined {
 }
 
 /**
- * Tells whether a statement awaits a mount call on a receiver:
- * `await viewport.setStack(...)` and its kin.
+ * Tells whether a statement awaits a mount call on a receiver that refers to
+ * a declaration: `await viewport.setStack(...)` and its kin.
  */
-function isAwaitedMount(statement: Node, receiver: string): boolean {
+function isAwaitedMount(statement: Node, binding: Node): boolean {
   const expression =
     statement.kind() === 'expression_statement'
       ? statement.children().find((child) => child.isNamed())
@@ -1933,18 +2136,16 @@ function isAwaitedMount(statement: Node, receiver: string): boolean {
   return Boolean(
     parts &&
       MOUNT_METHODS.has(parts.method) &&
-      unwrap(parts.object).text() === receiver
+      isBoundTo(unwrap(parts.object), binding)
   );
 }
 
 /**
- * Tells whether a viewport shows data at a node, so that its content mode
- * answers what its 5.x type or class did: in the function of the node, a
- * statement that awaits a mount call on the same receiver comes before the
- * node, directly in a block that holds the node. Before its first mount a
- * planar viewport is in the mode `empty`.
+ * Returns the statements that run before a node on every path to it in its
+ * function: the statements before it in each block of the function that
+ * holds it.
  */
-export function isMountedBefore(node: Node, receiver: string): boolean {
+export function statementsBefore(node: Node): Node[] {
   const fn = enclosingFunction(node);
   const start = node.range().start.index;
 
@@ -1956,15 +2157,31 @@ export function isMountedBefore(node: Node, receiver: string): boolean {
           ancestor.kind() === 'program') &&
         (!fn || contains(fn, ancestor))
     )
-    .some((block) =>
+    .flatMap((block) =>
       block
         .children()
-        .some(
-          (statement) =>
-            statement.range().end.index <= start &&
-            isAwaitedMount(statement, receiver)
-        )
+        .filter((statement) => statement.range().end.index <= start)
     );
+}
+
+/**
+ * Tells whether a viewport shows data at a node, so that its content mode
+ * answers what its 5.x type or class did: the receiver is a name whose
+ * binding holds one value, and a statement that awaits a mount call on the
+ * same binding runs before the node in its function. Before its first mount
+ * a planar viewport is in the mode `empty`.
+ */
+export function isMountedBefore(node: Node, receiver: Node): boolean {
+  const target = unwrap(receiver);
+  const binding =
+    target.kind() === 'identifier' ? stableBinding(target) : undefined;
+
+  return Boolean(
+    binding &&
+      statementsBefore(node).some((statement) =>
+        isAwaitedMount(statement, binding)
+      )
+  );
 }
 
 /**

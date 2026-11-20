@@ -24,7 +24,11 @@ An event is found through the core `Enums.Events`: `Enums.Events.X`,
   new name is taken in the file, or a use is not a plain name, the entry
   becomes `NEW_IMAGE: STACK_NEW_IMAGE`. An entry with a local name keeps it
   and only its key changes: `{ STACK_NEW_IMAGE: onImage }` becomes
-  `{ NEW_IMAGE: onImage }`.
+  `{ NEW_IMAGE: onImage }`; a quoted key (`'STACK_NEW_IMAGE'`) and a string
+  in brackets (`['STACK_NEW_IMAGE']`) keep their quotes, and a shorthand
+  with a default value keeps its local name
+  (`{ NEW_IMAGE: STACK_NEW_IMAGE = fallback }`).
+- `Enums.Events['STACK_NEW_IMAGE']` becomes `Enums.Events['NEW_IMAGE']`.
 - `Types.EventTypes.StackNewImageEvent` and `VolumeNewImageEvent` become
   `NewImageEvent`, their `Detail` types `NewImageEventDetail`.
 
@@ -36,7 +40,9 @@ An event is found through the core `Enums.Events`: `Enums.Events.X`,
   failed prefetch too.
 - Manual: `PRE_STACK_NEW_IMAGE`, `STACK_VIEWPORT_SCROLL`, `PRESET_MODIFIED`,
   `ACTORS_CHANGED`, `CLIPPING_PLANES_UPDATED`, the two
-  `DYNAMIC_VOLUME_TIME_POINT_*` events, their event types, and a string
+  `DYNAMIC_VOLUME_TIME_POINT_*` events (also quoted, with a default or in
+  brackets), their event types, a rest element or a key computed from code
+  in a pattern of `Enums.Events`, and a string
   such as `'CORNERSTONE_STACK_NEW_IMAGE'`,
   `'DYNAMIC_VOLUME_TIME_POINT_LOADED'` or `'IMAGE_LOAD_ERROR'` (a listener
   of it compiles and never runs; a planar viewport no longer fires

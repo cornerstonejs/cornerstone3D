@@ -13,6 +13,23 @@ engine, an enabled element or a Cornerstone type, a viewport input or a
 configuration that reaches a Cornerstone call. A variable named `viewport`
 alone puts the site in the report. A CommonJS module gets no `import`.
 
+They rewrite a site only when every input it depends on has a shape they
+fully understand, and report it otherwise:
+
+- A receiver or an engine is shown by a `const`, or by a parameter that the
+  file never writes, whose value or top type is Cornerstone's. A `let`, a
+  `var`, an assignment and a type argument (`History<Types.IViewport>`) show
+  nothing.
+- A mount, a type or a family holds only for the same binding in the same
+  function: a shadowing name, a closure, or a test of another value (a
+  parameter `type`, a `cardType`) proves nothing.
+- An argument that a rewrite reads twice is read once into a `const` when it
+  is not a name, a literal or an array of those; a spread argument is
+  reported.
+- A quoted key, a key with a default, a string in brackets and an
+  `export { ... } from` name the same member as the plain form: each is
+  rewritten or reported.
+
 ## Usage
 
 Start from the latest 5.x, on a clean branch.
