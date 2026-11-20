@@ -839,6 +839,11 @@ legacy picture within two levels of 255.
 - **An image without a window starts at its pixel range.** It was 0 to 255.
 - **A volume without window metadata** starts at the window its layer draws
   with.
+- **`invert` inverts a colour (RGB) volume.** The legacy volume viewport
+  inverted the transfer function of an RGB volume, which vtk.js ignores for
+  three dependent components, so `invert: true` left its colours as they
+  were. In 6.0 the colours are inverted, as for a grey volume; leave `invert`
+  out to keep the 5.x picture.
 
 ## Whole slide viewports
 

@@ -8,17 +8,14 @@ import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import * as sphere_default_sagittal from './groundTruth/sphere_default_sagittal.png';
 
 // nearest neighbor interpolation
-import * as volumeURI_100_100_10_1_1_1_0_axial_nearest from './groundTruth/volumeURI_100_100_10_1_1_1_0_axial_nearest.png';
 import * as volumeURI_100_100_10_1_1_1_0_sagittal_nearest from './groundTruth/volumeURI_100_100_10_1_1_1_0_sagittal_nearest.png';
 import * as volumeURI_100_100_10_1_1_1_0_coronal_nearest from './groundTruth/volumeURI_100_100_10_1_1_1_0_coronal_nearest.png';
 import * as volumeURI_100_100_10_1_1_1_1_color_coronal_nearest from './groundTruth/volumeURI_100_100_10_1_1_1_1_color_coronal_nearest.png';
 
 // linear interpolation
-import * as volumeURI_100_100_10_1_1_1_0_axial_linear from './groundTruth/volumeURI_100_100_10_1_1_1_0_axial_linear.png';
 import * as volumeURI_100_100_10_1_1_1_0_sagittal_linear from './groundTruth/volumeURI_100_100_10_1_1_1_0_sagittal_linear.png';
 import * as volumeURI_100_100_10_1_1_1_0_coronal_linear from './groundTruth/volumeURI_100_100_10_1_1_1_0_coronal_linear.png';
 import * as volumeURI_100_100_10_1_1_1_1_color_coronal_linear from './groundTruth/volumeURI_100_100_10_1_1_1_1_color_coronal_linear.png';
-import * as volumeURI_100_100_10_1_1_1_1_color_axial_linear from './groundTruth/volumeURI_100_100_10_1_1_1_1_color_axial_linear.png';
 
 const { imageLoader, Enums, volumeLoader, utilities, CONSTANTS } =
   cornerstone3D;
@@ -27,6 +24,143 @@ const { ViewportType, Events, InterpolationType } = Enums;
 
 const renderingEngineId = utilities.uuidv4();
 const viewportId = 'VIEWPORT';
+
+/** The value of the voxels of the bar of a slice of the bar volume. */
+const BAR_VALUE = 255;
+
+/**
+ * The grey levels by which a pixel of a linear picture may differ from the
+ * interpolation of the voxels: the GPU rounds its weights and the grey to
+ * bytes.
+ */
+const LINEAR_ROUNDING_LEVELS = 1;
+
+/**
+ * The middle slice of an axial view of the bar volume: the slice that the
+ * view of a volume of 10 or 11 slices shows.
+ */
+const MIDDLE_SLICE = 5;
+
+/** The frame of reference of the fake volumes. */
+const VOLUME_FRAME_OF_REFERENCE = 'Volume_Frame_Of_Reference';
+
+/**
+ * The value of a voxel column of a slice of the bar volume of 100 columns:
+ * slice k has its bar on the columns k * w to (k + 1) * w - 1, where w is
+ * floor(100 / slices).
+ */
+function barVolumeValue(column, slice, slices) {
+  const barWidth = Math.floor(100 / slices);
+  const start = slice * barWidth;
+
+  return column >= start && column < start + barWidth ? BAR_VALUE : 0;
+}
+
+/**
+ * The value of a row of the bar volume with linear interpolation, at a
+ * place given in voxels: voxel i has its centre at i.
+ */
+function linearBarVolumeValue(place, slice, slices) {
+  const left = Math.floor(place);
+  const weight = place - left;
+
+  return (
+    (1 - weight) * barVolumeValue(left, slice, slices) +
+    weight * barVolumeValue(left + 1, slice, slices)
+  );
+}
+
+/**
+ * The colour of a pixel of an axial view of the bar volume on a square
+ * canvas, by its column. The 100 voxels of a row fill the width of the
+ * canvas and the view shows the middle slice. With nearest interpolation a
+ * pixel takes the voxel that its centre lies in, with linear interpolation
+ * the two voxels on either side of its centre, by distance.
+ */
+function axialBarColorOf(width, slices, interpolationType) {
+  const pixelsPerVoxel = width / 100;
+
+  return (x) => {
+    const place = (x + 0.5) / pixelsPerVoxel - 0.5;
+    const grey =
+      interpolationType === InterpolationType.NEAREST
+        ? barVolumeValue(Math.round(place), MIDDLE_SLICE, slices)
+        : linearBarVolumeValue(place, MIDDLE_SLICE, slices);
+
+    return [grey, grey, grey];
+  };
+}
+
+/**
+ * The pixels of a picture whose colour differs from the colour that
+ * `colorOf(x, y)` gives by more than `levels` in a channel, or that are not
+ * opaque, each with its place, its colour and the expected colour. It lists
+ * at most ten.
+ */
+function pixelsOff(picture, colorOf, levels = 0) {
+  const { data, width, height } = picture;
+  const off = [];
+
+  for (let y = 0; y < height && off.length < 10; y++) {
+    for (let x = 0; x < width && off.length < 10; x++) {
+      const index = (y * width + x) * 4;
+      const color = Array.from(data.slice(index, index + 4));
+      const expected = colorOf(x, y);
+
+      if (
+        color[3] !== 255 ||
+        expected.some(
+          (value, channel) => Math.abs(color[channel] - value) > levels
+        )
+      ) {
+        off.push({ x, y, color, expected });
+      }
+    }
+  }
+
+  return off;
+}
+
+/** The pixels of the canvas of a viewport, as RGBA bytes. */
+function readPicture(viewport) {
+  const canvas = viewport.getCanvas();
+
+  return canvas
+    .getContext('2d')
+    .getImageData(0, 0, canvas.width, canvas.height);
+}
+
+/**
+ * The picture of a viewport on the offscreen canvas of the rendering engine,
+ * as a data URL. The engine draws the viewport at the bottom left of that
+ * canvas and copies it from there to the canvas of the viewport.
+ */
+function offscreenPicture(renderingEngine, viewport) {
+  const offscreenCanvas = renderingEngine
+    .getOffscreenMultiRenderWindow(viewport.id)
+    .getOpenGLRenderWindow()
+    .getCanvas();
+  const { width, height } = viewport.getCanvas();
+  const picture = document.createElement('canvas');
+
+  picture.width = width;
+  picture.height = height;
+  picture
+    .getContext('2d')
+    .drawImage(
+      offscreenCanvas,
+      0,
+      offscreenCanvas.height - height,
+      width,
+      height,
+      0,
+      0,
+      width,
+      height
+    );
+
+  return picture.toDataURL('image/png');
+}
 
 describe('Volume Viewport GPU -- ', () => {
   let renderingEngine;
@@ -101,7 +235,7 @@ describe('Volume Viewport GPU -- ', () => {
     });
   });
 
-  xdescribe('Volume Viewport Axial Nearest Neighbor and Linear Interpolation --- ', function () {
+  describe('Volume Viewport Axial Nearest Neighbor and Linear Interpolation --- ', function () {
     it('should successfully load a volume: nearest', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
@@ -111,31 +245,34 @@ describe('Volume Viewport GPU -- ', () => {
         height: 500,
       });
 
+      const slices = 11;
       const volumeId = testUtils.encodeVolumeIdInfo({
         loader: 'fakeVolumeLoader',
         name: 'volumeURI',
         rows: 100,
         columns: 100,
-        slices: 11,
+        slices,
         xSpacing: 1,
         ySpacing: 1,
         zSpacing: 1,
       });
       const vp = renderingEngine.getViewport(viewportId);
 
-      element.addEventListener(Events.IMAGE_RENDERED, () => {
-        const canvas = vp.getCanvas();
-        const image = canvas.toDataURL('image/png');
-        setTimeout(() => {
-          testUtils
-            .compareImages(
-              image,
-              volumeURI_100_100_10_1_1_1_0_axial_nearest,
-              'volumeURI_100_100_10_1_1_1_0_axial_nearest'
+      element.addEventListener(
+        Events.IMAGE_RENDERED,
+        () => {
+          const picture = readPicture(vp);
+
+          expect(
+            pixelsOff(
+              picture,
+              axialBarColorOf(picture.width, slices, InterpolationType.NEAREST)
             )
-            .then(done, done.fail);
-        }, 1000);
-      });
+          ).toEqual([]);
+          done();
+        },
+        { once: true }
+      );
 
       try {
         volumeLoader
@@ -145,8 +282,8 @@ describe('Volume Viewport GPU -- ', () => {
               vp.setDisplaySetPresentation({
                 interpolationType: InterpolationType.NEAREST,
               });
+              vp.render();
             });
-            vp.render();
           })
           .catch((e) => {
             done(e);
@@ -163,31 +300,35 @@ describe('Volume Viewport GPU -- ', () => {
         viewportType: ViewportType.PLANAR,
       });
 
+      const slices = 10;
       const volumeId = testUtils.encodeVolumeIdInfo({
         loader: 'fakeVolumeLoader',
         name: 'volumeURI',
         rows: 100,
         columns: 100,
-        slices: 10,
+        slices,
         xSpacing: 1,
         ySpacing: 1,
         zSpacing: 1,
       });
       const vp = renderingEngine.getViewport(viewportId);
 
-      element.addEventListener(Events.IMAGE_RENDERED, () => {
-        const canvas = vp.getCanvas();
-        const image = canvas.toDataURL('image/png');
-        setTimeout(() => {
-          testUtils
-            .compareImages(
-              image,
-              volumeURI_100_100_10_1_1_1_0_axial_linear,
-              'volumeURI_100_100_10_1_1_1_0_axial_linear'
+      element.addEventListener(
+        Events.IMAGE_RENDERED,
+        () => {
+          const picture = readPicture(vp);
+
+          expect(
+            pixelsOff(
+              picture,
+              axialBarColorOf(picture.width, slices, InterpolationType.LINEAR),
+              LINEAR_ROUNDING_LEVELS
             )
-            .then(done, done.fail);
-        }, 200);
-      });
+          ).toEqual([]);
+          done();
+        },
+        { once: true }
+      );
 
       try {
         volumeLoader
@@ -202,7 +343,7 @@ describe('Volume Viewport GPU -- ', () => {
     });
   }, 2000);
 
-  xdescribe('Volume Viewport Sagittal Nearest Neighbor and Linear Interpolation --- ', function () {
+  describe('Volume Viewport Sagittal Nearest Neighbor and Linear Interpolation --- ', function () {
     it('should successfully load a volume: nearest', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
@@ -304,7 +445,7 @@ describe('Volume Viewport GPU -- ', () => {
     });
   });
 
-  xdescribe('Volume Viewport Sagittal Coronal Neighbor and Linear Interpolation --- ', function () {
+  describe('Volume Viewport Sagittal Coronal Neighbor and Linear Interpolation --- ', function () {
     it('should successfully load a volume: nearest', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
@@ -408,7 +549,7 @@ describe('Volume Viewport GPU -- ', () => {
     });
   });
 
-  xdescribe('Rendering API', function () {
+  describe('Rendering API', function () {
     it('should successfully use setVolumesForViewports API to load image', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
@@ -640,7 +781,7 @@ describe('Volume Viewport GPU -- ', () => {
       element.addEventListener(Events.IMAGE_RENDERED, () => {
         const canvas = vp.getCanvas();
         const image = canvas.toDataURL('image/png');
-        const offScreen = renderingEngine._debugRender();
+        const offScreen = offscreenPicture(renderingEngine, vp);
         expect(offScreen).toEqual(image);
         done();
       });
@@ -705,9 +846,17 @@ describe('Volume Viewport GPU -- ', () => {
               vp.setDisplaySetPresentation({
                 interpolationType: InterpolationType.NEAREST,
               });
-              renderingEngine.renderFrameOfReference(
-                'Volume_Frame_Of_Reference'
-              );
+              const viewportIds = renderingEngine
+                .getViewports()
+                .filter(
+                  (viewport) =>
+                    viewport.getFrameOfReferenceUID() ===
+                    VOLUME_FRAME_OF_REFERENCE
+                )
+                .map((viewport) => viewport.id);
+
+              expect(viewportIds).toEqual([viewportId]);
+              renderingEngine.renderViewports(viewportIds);
             });
           })
           .catch((e) => {
@@ -719,7 +868,7 @@ describe('Volume Viewport GPU -- ', () => {
     });
   });
 
-  xdescribe('Volume Viewport Color images Neighbor and Linear Interpolation --- ', function () {
+  describe('Volume Viewport Color images Neighbor and Linear Interpolation --- ', function () {
     it('should successfully load a color volume: nearest', function (done) {
       const element = testUtils.createViewports(renderingEngine, {
         viewportId,
@@ -844,19 +993,16 @@ describe('Volume Viewport GPU -- ', () => {
         rgb: 1,
       });
       const vp = renderingEngine.getViewport(viewportId);
-      element.addEventListener(Events.IMAGE_RENDERED, () => {
-        const canvas = vp.getCanvas();
-        const image = canvas.toDataURL('image/png');
-        setTimeout(() => {
-          testUtils
-            .compareImages(
-              image,
-              volumeURI_100_100_10_1_1_1_1_color_axial_linear,
-              'volumeURI_100_100_10_1_1_1_1_color_axial_linear'
-            )
-            .then(done, done.fail);
-        }, 200);
-      });
+      element.addEventListener(
+        Events.IMAGE_RENDERED,
+        () => {
+          expect(
+            pixelsOff(readPicture(vp), () => testUtils.colors[MIDDLE_SLICE])
+          ).toEqual([]);
+          done();
+        },
+        { once: true }
+      );
 
       try {
         volumeLoader

@@ -1,16 +1,61 @@
 import * as cornerstone3D from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
 
-// linear interpolation
-import * as volumeURI_32_32_10_1_1_1_0 from './groundTruth/volumeURI_32_32_10_1_1_1_0.png';
-
 const { cache, RenderingEngine, Enums, volumeLoader } = cornerstone3D;
 
 const { Events } = Enums;
 
 const viewportId = 'VIEWPORT';
 
-xdescribe('Volume Viewport SetProperties -- ', () => {
+/** The window of the test. */
+const VOI_RANGE = { lower: 50, upper: 100 };
+
+/** The number of slices of the colour volume of the test. */
+const SLICES = 10;
+
+/**
+ * The colour that a voxel colour of the colour bar volume takes with the
+ * window of the test and the invert, channel by channel.
+ */
+function windowedInvertedColor(color) {
+  const width = VOI_RANGE.upper - VOI_RANGE.lower;
+
+  return color.map(
+    (value) =>
+      255 -
+      Math.round(
+        (255 * Math.min(Math.max(value - VOI_RANGE.lower, 0), width)) / width
+      )
+  );
+}
+
+/**
+ * A world point at the centre of a slice of the colour volume, 32 voxels
+ * wide, on the coronal slice that the view shows: voxel i has its centre at
+ * i, and the slices are 1 apart from 0.
+ */
+function sliceCentre(slice) {
+  return [15.5, 16, slice];
+}
+
+/**
+ * The colour of the canvas of a viewport at the canvas point of a world
+ * point.
+ */
+function colorAtWorld(viewport, worldPoint) {
+  const canvas = viewport.getCanvas();
+  const scale = canvas.width / canvas.clientWidth;
+  const [x, y] = viewport.worldToCanvas(worldPoint);
+
+  return Array.from(
+    canvas
+      .getContext('2d')
+      .getImageData(Math.floor(x * scale), Math.floor(y * scale), 1, 1)
+      .data.slice(0, 3)
+  );
+}
+
+describe('Volume Viewport SetProperties -- ', () => {
   let renderingEngine;
 
   beforeEach(function () {
@@ -40,24 +85,24 @@ xdescribe('Volume Viewport SetProperties -- ', () => {
       name: 'volumeURI',
       rows: 32,
       columns: 32,
-      slices: 10,
+      slices: SLICES,
       xSpacing: 1,
       ySpacing: 1,
       rgb: 1,
     });
     const vp = renderingEngine.getViewport(viewportId);
+    const sliceColors = testUtils.colors.slice(0, SLICES);
 
-    element.addEventListener(Events.IMAGE_RENDERED, () => {
-      const canvas = vp.getCanvas();
-      const image = canvas.toDataURL('image/png');
-      testUtils
-        .compareImages(
-          image,
-          volumeURI_32_32_10_1_1_1_0,
-          'volumeURI_32_32_10_1_1_1_0'
-        )
-        .then(done, done.fail);
-    });
+    element.addEventListener(
+      Events.IMAGE_RENDERED,
+      () => {
+        expect(
+          sliceColors.map((_, slice) => colorAtWorld(vp, sliceCentre(slice)))
+        ).toEqual(sliceColors.map(windowedInvertedColor));
+        done();
+      },
+      { once: true }
+    );
 
     try {
       volumeLoader
@@ -65,10 +110,7 @@ xdescribe('Volume Viewport SetProperties -- ', () => {
         .then(() => {
           testUtils.setVolumesOnNextViewport(vp, [volumeId]).then(() => {
             vp.setDisplaySetPresentation({
-              voiRange: {
-                lower: 50,
-                upper: 100,
-              },
+              voiRange: VOI_RANGE,
               invert: true,
             });
             vp.render();
