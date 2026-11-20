@@ -353,6 +353,33 @@ function pathsChangedFrom(viewport, pathData, timeout = REDRAW_TIMEOUT) {
   );
 }
 
+/**
+ * Listens for the next draw of a Surface representation on a viewport and
+ * returns a function whose promise resolves once that draw has happened, or
+ * rejects after `timeout` ms. The renderer reports the draw at the next
+ * render of the viewport, so a test that waits for it before it enables the
+ * tool starts from a scene where no draw of the tool is still to come.
+ */
+function listenForSurfaceRender(viewportId, timeout = REDRAW_TIMEOUT) {
+  let rendered = false;
+  const onRendered = ({ detail }) => {
+    rendered ||= detail.viewportId === viewportId && detail.type === Surface;
+  };
+
+  cornerstone3D.eventTarget.addEventListener(
+    csToolsEvents.SEGMENTATION_RENDERED,
+    onRendered
+  );
+
+  return () =>
+    waitFor(() => rendered, timeout).finally(() =>
+      cornerstone3D.eventTarget.removeEventListener(
+        csToolsEvents.SEGMENTATION_RENDERED,
+        onRendered
+      )
+    );
+}
+
 /** Asks for a draw of the annotations of a viewport and waits for it. */
 function renderAnnotationsAndWait(viewport) {
   const rendered = waitForAnnotationsRendered(viewport.element);
@@ -360,6 +387,23 @@ function renderAnnotationsAndWait(viewport) {
   csTools3d.utilities.triggerAnnotationRenderForViewportIds([viewport.id]);
 
   return rendered;
+}
+
+/**
+ * Sets the tool enabled on the tool group and resolves once the viewport has
+ * drawn the image that the tool group asks for and then its annotations, so
+ * that no draw of the viewport is still to come.
+ */
+async function enableToolAndWaitForIdle(viewport) {
+  const imageRendered = new Promise((resolve) => {
+    viewport.element.addEventListener(Enums.Events.IMAGE_RENDERED, resolve, {
+      once: true,
+    });
+  });
+
+  await enableToolAndWaitForRender(viewport.element);
+  await imageRendered;
+  await renderAnnotationsAndWait(viewport);
 }
 
 /** Scrolls the viewport and resolves when its annotations are drawn again. */
@@ -646,6 +690,42 @@ describe('SegmentationIntersectionTool with the surface of a segmentation on a 3
 
     expect(drawnPaths(viewport).length).toBe(0);
   }, 10000);
+
+  it('draws nothing on an idle planar viewport when the Surface representation is removed from the 3D viewport, with no other draw request', async function () {
+    const series = await createSeries({
+      id: 'segmentationIntersectionNextRemoved',
+      size: SIZE,
+    });
+    const viewport = createNextViewport(renderingEngine, viewportId);
+    const surfaceRendered = listenForSurfaceRender(viewport3DId);
+
+    await showVolume(viewport, series, 10, {
+      orientation: OrientationAxis.AXIAL,
+    });
+    await showSphereOn3DViewport(renderingEngine);
+    await surfaceRendered();
+    await enableToolAndWaitForIdle(viewport);
+
+    const pathData = drawnPathData(viewport);
+
+    expect(drawnPaths(viewport).length).toBe(1);
+
+    segmentation.removeSegmentationRepresentation(viewport3DId, {
+      segmentationId,
+      type: Surface,
+    });
+    await pathsChangedFrom(viewport, pathData);
+
+    expect(
+      segmentation.state.getSegmentationRepresentations(viewport3DId, {
+        segmentationId,
+      }).length
+    ).toBe(0);
+    expect(getSurfaceActorEntry(viewport3DId, segmentationId, 1)).toBe(
+      undefined
+    );
+    expect(drawnPaths(viewport).length).toBe(0);
+  });
 });
 
 describe('SegmentationIntersectionTool with the surface that the polySeg add-on converts from a labelmap -- ', () => {

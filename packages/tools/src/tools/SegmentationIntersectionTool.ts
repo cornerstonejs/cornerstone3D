@@ -23,7 +23,10 @@ import type {
   Annotation,
 } from '../types';
 import type { SegmentationRepresentation } from '../types/SegmentationStateTypes';
-import type { SegmentationRenderedEventType } from '../types/EventTypes';
+import type {
+  SegmentationRenderedEventType,
+  SegmentationRepresentationRemovedEventType,
+} from '../types/EventTypes';
 import { Events } from '../enums';
 import AnnotationDisplayTool from './base/AnnotationDisplayTool';
 import { distanceToPoint } from '../utilities/math/point';
@@ -78,6 +81,15 @@ type CutSurfaceData = {
   pointsLength: number;
   polysLength: number;
 };
+
+/**
+ * The events after which the lines of the tool can change: a viewport drew a
+ * Surface representation, or a representation left a viewport.
+ */
+const SURFACE_CHANGE_EVENTS = [
+  Events.SEGMENTATION_RENDERED,
+  Events.SEGMENTATION_REPRESENTATION_REMOVED,
+];
 
 /** The surface data that each map of outlines of a surface was cut from. */
 const cutSurfaceDataByOutlines = new WeakMap<
@@ -158,36 +170,34 @@ class SegmentationIntersectionTool extends AnnotationDisplayTool {
   };
 
   onSetToolEnabled = (): void => {
-    eventTarget.addEventListener(
-      Events.SEGMENTATION_RENDERED,
-      this._onSegmentationRendered
+    SURFACE_CHANGE_EVENTS.forEach((eventName) =>
+      eventTarget.addEventListener(eventName, this._onSurfaceChanged)
     );
     this._init();
   };
 
   onSetToolDisabled = (): void => {
-    eventTarget.removeEventListener(
-      Events.SEGMENTATION_RENDERED,
-      this._onSegmentationRendered
+    SURFACE_CHANGE_EVENTS.forEach((eventName) =>
+      eventTarget.removeEventListener(eventName, this._onSurfaceChanged)
     );
   };
 
   /**
    * Draws the viewports of the tool group again when a viewport has drawn a
    * Surface representation, as after new surface data or a change of its
-   * visibility, so that the lines follow the surfaces. A tool that its group
+   * visibility, and when a Surface representation is removed from a
+   * viewport, so that the lines follow the surfaces. A tool that its group
    * no longer holds stops listening.
    */
-  private _onSegmentationRendered = ((
-    evt: SegmentationRenderedEventType
+  private _onSurfaceChanged = ((
+    evt:
+      | SegmentationRenderedEventType
+      | SegmentationRepresentationRemovedEventType
   ): void => {
     const toolGroup = getToolGroup(this.toolGroupId);
 
     if (toolGroup?.getToolInstances()[this.getToolName()] !== this) {
-      eventTarget.removeEventListener(
-        Events.SEGMENTATION_RENDERED,
-        this._onSegmentationRendered
-      );
+      this.onSetToolDisabled();
       return;
     }
 

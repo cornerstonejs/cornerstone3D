@@ -1303,7 +1303,9 @@ legacy picture within two levels of 255.
   polys arrays, or arrays of another length. When a viewport draws a Surface
   representation, as after new surface data or a change of its visibility,
   the viewports of the tool group draw their lines again, with no other
-  draw request. A 3D viewport of the tool group gets no line. In 5.x the
+  draw request. They do the same when a Surface representation is removed
+  from a viewport, so the lines of a surface that no viewport shows any
+  more go. A 3D viewport of the tool group gets no line. In 5.x the
   tool read `clippingFilter` of each actor entry, which nothing set, and
   drew no line. The example `surfaceRendering` shows it.
 
