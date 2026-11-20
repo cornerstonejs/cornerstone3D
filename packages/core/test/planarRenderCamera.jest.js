@@ -448,14 +448,15 @@ describe('resolvePlanarICamera', () => {
     expectPoint3Close(resolved.position, [10, 20, 530]);
   });
 
-  it('composes rotation (pre-flip frame) with a horizontal flip and an off-plane anchorWorld', () => {
-    // rotation=90 about normal=[0,0,1]: rotatedViewUp = [1,0,0] (as above).
+  it('composes a horizontal flip with a rotation after it, as the 5.x viewports did, and an off-plane anchorWorld', () => {
     // flipHorizontal=true (flipVertical=false) => shouldFlipNormal = true
     // (true !== false), so viewPlaneNormal negates to [0,0,-1]; viewUp is
-    // NOT negated (that only happens when flipVertical is true), so
-    // flippedViewUp stays [1,0,0].
+    // NOT negated (that only happens when flipVertical is true), so the
+    // flipped viewUp stays [0,-1,0].
+    // rotation=90 then turns it about the flipped normal [0,0,-1], as the
+    // 5.x viewports turned the flipped camera: flippedViewUp = [-1,0,0].
     //
-    // right = cross(flippedViewUp=[1,0,0], flippedNormal=[0,0,-1]) = [0,1,0]
+    // right = cross(flippedViewUp=[-1,0,0], flippedNormal=[0,0,-1]) = [0,-1,0]
     //
     // anchorWorld=[10,25,30] is already on the slice plane (z=30 matches
     // sliceCenterWorld.z and the plane normal is along z), so
@@ -463,10 +464,10 @@ describe('resolvePlanarICamera', () => {
     //
     // deltaWorld = sliceCenterWorld - effectiveAnchorWorld = [0,-5,0]
     // panFromAnchorWorld.x = dot(deltaWorld,right)*canvasWidth/effectiveWorldWidth
-    //                      = dot([0,-5,0],[0,1,0])*200/200 = -5
+    //                      = dot([0,-5,0],[0,-1,0])*200/200 = 5
     // panFromAnchorWorld.y = -dot(deltaWorld,flippedViewUp)*canvasHeight/worldHeight
-    //                      = -dot([0,-5,0],[1,0,0])*100/100 = 0
-    // => presentation.pan = [-5, 0]
+    //                      = -dot([0,-5,0],[-1,0,0])*100/100 = 0
+    // => presentation.pan = [5, 0]
     //
     // Because anchorCanvas is centered and scale is 1, resolving that pan
     // back into world space is the exact inverse of the above, so the
@@ -478,7 +479,7 @@ describe('resolvePlanarICamera', () => {
       ...CANVAS_A,
     });
 
-    expectPoint2Close(presentation.pan, [-5, 0]);
+    expectPoint2Close(presentation.pan, [5, 0]);
 
     const resolved = resolvePlanarICamera({
       sliceBasis: createSliceBasisA(),
@@ -487,7 +488,7 @@ describe('resolvePlanarICamera', () => {
     });
 
     expectPoint3Close(resolved.focalPoint, [10, 25, 30]);
-    expectPoint3Close(resolved.viewUp, [1, 0, 0]);
+    expectPoint3Close(resolved.viewUp, [-1, 0, 0]);
     expectPoint3Close(resolved.viewPlaneNormal, [0, 0, -1]);
     expectPoint3Close(resolved.position, [10, 25, -470]);
   });

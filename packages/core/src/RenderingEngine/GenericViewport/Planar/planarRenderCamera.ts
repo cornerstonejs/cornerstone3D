@@ -29,6 +29,7 @@ import { RENDERING_DEFAULTS } from '../../../constants';
 import type { ICamera, Point2, Point3 } from '../../../types';
 import {
   applyPlanarViewFlip,
+  getPlanarRotationBeforeFlips,
   normalizePlanarRotation,
   rotatePlanarViewUp,
 } from './planarViewPresentation';
@@ -284,7 +285,11 @@ export function derivePlanarPresentation(args: {
   );
   const rotatedViewUp = normalizePoint3(
     rotatePlanarViewUp({
-      rotation,
+      rotation: getPlanarRotationBeforeFlips({
+        rotation,
+        flipHorizontal: camera?.flipHorizontal,
+        flipVertical: camera?.flipVertical,
+      }),
       viewPlaneNormal,
       viewUp: sliceBasis.viewUp,
     }) as Point3,
@@ -397,7 +402,11 @@ function getResolvedPanOffset(args: {
   const viewPlaneNormal = normalizePoint3(sliceBasis.viewPlaneNormal);
   const rotatedViewUp = normalizePoint3(
     rotatePlanarViewUp({
-      rotation,
+      rotation: getPlanarRotationBeforeFlips({
+        rotation,
+        flipHorizontal,
+        flipVertical,
+      }),
       viewPlaneNormal,
       viewUp: sliceBasis.viewUp,
     }) as Point3

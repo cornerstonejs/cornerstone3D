@@ -85,7 +85,10 @@ import {
 } from './planarRenderPathSelector';
 import type { SelectedPlanarRenderPath } from './planarRenderPathSelector';
 import { clonePlanarOrientation } from './planarOrientationAndScaling';
-import { normalizePlanarRotation } from './planarViewPresentation';
+import {
+  getPlanarRotationAfterFlips,
+  normalizePlanarRotation,
+} from './planarViewPresentation';
 import {
   cloneDisplayArea,
   createDefaultPlanarViewState,
@@ -1598,6 +1601,12 @@ class PlanarViewport extends GenericViewport<
 
   /**
    * Merges partial Planar view-state updates into the viewport state.
+   *
+   * The flips apply first and the rotation after, about the normal of the
+   * flipped view, as on the 5.x viewports. A patch that changes a flip and
+   * has no `rotation` mirrors the picture on the screen, as the 5.x flip and
+   * `setCamera` did: the rotation becomes 360 minus the rotation for each
+   * flip that changes.
    */
   public override setViewState(viewStatePatch: Partial<PlanarViewState>): void {
     if (this.isDestroyed) {
@@ -1617,6 +1626,10 @@ class PlanarViewport extends GenericViewport<
       ...this.viewState,
       ...viewStatePatch,
     };
+
+    if (!Object.prototype.hasOwnProperty.call(viewStatePatch, 'rotation')) {
+      next.rotation = getPlanarRotationAfterFlips(this.viewState, next);
+    }
 
     if (Object.prototype.hasOwnProperty.call(viewStatePatch, 'orientation')) {
       next.orientation = this.resolveNextOrientation(

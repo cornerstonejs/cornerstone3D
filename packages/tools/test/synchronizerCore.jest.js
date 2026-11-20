@@ -753,7 +753,7 @@ describe('cameraSyncCallback', () => {
         {
           viewReference: {
             viewPlaneNormal: [0, 0, 1],
-            viewUp: [-0.5, -Math.sqrt(0.75), 0],
+            viewUp: [0.5, -Math.sqrt(0.75), 0],
           },
           presentation: { ...UNTURNED, rotation: 30, flipHorizontal: true },
         },

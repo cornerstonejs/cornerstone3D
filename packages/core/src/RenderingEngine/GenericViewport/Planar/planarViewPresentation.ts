@@ -54,3 +54,51 @@ export function applyPlanarViewFlip(args: {
       : ([...viewUp] as Point3),
   };
 }
+
+/**
+ * The rotation about the view plane normal of a planar view before its flips
+ * (`rotatePlanarViewUp`, then `applyPlanarViewFlip`) that gives the view up
+ * of the 5.x viewports, which flipped first and then turned about the normal
+ * of the flipped view. With exactly one flip that normal points the other
+ * way, so the rotation is 360 minus the rotation. So a positive rotation
+ * turns the picture clockwise on the screen with any flips, and the rotation
+ * of a view is measured about the normal that it shows.
+ */
+export function getPlanarRotationBeforeFlips(args: {
+  rotation?: number;
+  flipHorizontal?: boolean;
+  flipVertical?: boolean;
+}): number {
+  const rotation = normalizePlanarRotation(args.rotation ?? 0);
+
+  return Boolean(args.flipHorizontal) !== Boolean(args.flipVertical)
+    ? normalizePlanarRotation(-rotation)
+    : rotation;
+}
+
+/**
+ * The rotation of a planar view after a change of its flips that comes
+ * without a rotation, so that the picture is mirrored on the screen, as the
+ * 5.x flip, `setCamera` and `setViewPresentation` mirrored it: each flip that
+ * changes turns the rotation to 360 minus the rotation.
+ *
+ * @param current - The rotation and the flips of the view now.
+ * @param next - The flips of the view after the change.
+ */
+export function getPlanarRotationAfterFlips(
+  current: {
+    rotation?: number;
+    flipHorizontal?: boolean;
+    flipVertical?: boolean;
+  },
+  next: { flipHorizontal?: boolean; flipVertical?: boolean }
+): number {
+  const rotation = normalizePlanarRotation(current.rotation ?? 0);
+  const changes =
+    Number(
+      (current.flipHorizontal === true) !== (next.flipHorizontal === true)
+    ) +
+    Number((current.flipVertical === true) !== (next.flipVertical === true));
+
+  return changes % 2 ? normalizePlanarRotation(-rotation) : rotation;
+}

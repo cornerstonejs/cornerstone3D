@@ -33,13 +33,16 @@ function negated(vector: Types.Point3): Types.Point3 {
  * view plane normal of a planar source, as the 5.x `setCamera` of the
  * target did. The vertical flip is the one of the source, and the
  * horizontal one also turns the target to the side of the plane that the
- * source looks from. The rotation turns the view up of the target to the one
- * of the source, about the normal that a rotation of the target turns
- * about. A target whose view before its rotation is the one of the source,
- * within 1e-4 degrees as float32 vectors of a view reference allow, takes
- * the rotation of the source as it is. Undefined when one of the two
- * is not planar, or when they do not show parallel planes, as a target of
- * another plane that its view reference could not turn.
+ * source looks from. A planar view flips first and turns after, about the
+ * normal that it shows, so the rotation turns the view up of the target,
+ * negated when its vertical flip changes, to the one of the source about
+ * the normal of the source; the rotation of the target counts the other way
+ * when its normal is the opposite of the one of the source. A target whose
+ * view before its rotation is the one of the source, within 1e-4 degrees as
+ * float32 vectors of a view reference allow, takes the rotation of the
+ * source as it is. Undefined when one of the two is not planar, or when they
+ * do not show parallel planes, as a target of another plane that its view
+ * reference could not turn.
  *
  * @param sourceViewReference - The view reference of the source.
  */
@@ -78,31 +81,30 @@ function getPlanarViewUpPresentation(
     return;
   }
 
-  const rotationAxis =
-    Boolean(target.flipHorizontal) !== Boolean(target.flipVertical)
-      ? negated(targetNormal)
-      : targetNormal;
+  const opposite = utilities.isOpposite(targetNormal, sourceNormal);
 
-  if (
-    !utilities.isEqual(rotationAxis, sourceNormal) &&
-    !utilities.isOpposite(rotationAxis, sourceNormal)
-  ) {
+  if (!opposite && !utilities.isEqual(targetNormal, sourceNormal)) {
     return;
   }
 
   const flipVertical = Boolean(source.flipVertical);
   const flipHorizontal =
-    flipVertical !== utilities.isOpposite(rotationAxis, sourceNormal);
-  const from = target.flipVertical ? negated(targetViewUp) : targetViewUp;
-  const to = flipVertical ? negated(sourceViewUp) : sourceViewUp;
+    flipVertical !==
+    (opposite !==
+      (Boolean(target.flipHorizontal) !== Boolean(target.flipVertical)));
+  const from =
+    flipVertical !== Boolean(target.flipVertical)
+      ? negated(targetViewUp)
+      : targetViewUp;
   const turn =
     (Math.atan2(
-      vec3.dot(vec3.cross(vec3.create(), from, to), rotationAxis),
-      vec3.dot(from, to)
+      vec3.dot(vec3.cross(vec3.create(), from, sourceViewUp), sourceNormal),
+      vec3.dot(from, sourceViewUp)
     ) *
       180) /
     Math.PI;
-  const rotation = (target.rotation ?? 0) + turn;
+  const rotation =
+    (opposite ? -(target.rotation ?? 0) : (target.rotation ?? 0)) + turn;
   const sourceRotation = source.rotation ?? 0;
   const offset = ((((rotation - sourceRotation) % 360) + 540) % 360) - 180;
 

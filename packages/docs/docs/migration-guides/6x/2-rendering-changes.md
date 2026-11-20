@@ -158,6 +158,21 @@ leave the canvas. Against the legacy volume viewport:
   by moving its camera to the other side of the slice, so its view plane
   normal turned around. A next viewport keeps `flipHorizontal` and
   `flipVertical` in the view state and mirrors the picture.
+- **A flip comes before the rotation, as on the legacy viewports.** A view
+  with a rotation and a flip shows the image flipped, then turned by the
+  rotation, clockwise on the screen. So
+  `setViewState({ rotation: 30, flipHorizontal: true })` gives the view up
+  `[0.5, -0.866, 0]` of the legacy
+  `setViewPresentation({ rotation: 30, flipHorizontal: true })` on an axial
+  view, and reads back rotation 30. A flip written alone, by `setViewState`
+  or by `viewportProjection.withPresentation`, mirrors the picture on the
+  screen, as the legacy `flip`, `setCamera` and `setViewPresentation` did:
+  on a turned view the rotation becomes 360 minus the rotation for each flip
+  that changes, so rotation 30 and then `flipHorizontal: true` reads
+  rotation 330. In 5.x a next viewport turned first and flipped after, and
+  kept the rotation on a flip: a view state with a rotation and one flip now
+  shows the picture turned the other way. To show such a stored view state
+  as 5.x did, write `360 - rotation` with it.
 
 ## Slabs and scrolling
 

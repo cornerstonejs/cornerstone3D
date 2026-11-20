@@ -37,11 +37,12 @@ const COLOUR_TOLERANCE = 8;
  * What the legacy loupe of `MagnifyTool` showed, measured on the legacy tree
  * of 58914567b with `magnifySize` 4, a loupe of 250 by 250 pixels and a source
  * of 400 by 300 pixels. In stack mode the source is a legacy stack viewport
- * with rotation 270 and `flipHorizontal`, which shows the same picture as a
- * next viewport with rotation 90 and `flipHorizontal` (the same world point
- * under each canvas point, the same colours). In volume mode the source is a
- * next viewport with rotation 180 and `flipVertical`, which a legacy viewport
- * shows the same way, and the loupe is the legacy stack viewport that the
+ * with rotation 270 and `flipHorizontal` in one `setViewPresentation`, which
+ * shows the same picture as a next viewport with the same rotation and flip
+ * (the same world point under each canvas point, the same colours). In
+ * volume mode the source is a next viewport with rotation 180 and
+ * `flipVertical`, which a legacy viewport shows the same way, and the loupe
+ * is the legacy stack viewport that the
  * tool made there. `world` gives the world points at the centre of the loupe,
  * 50 pixels to its right and 50 pixels below it; `pixels` the colours at the
  * offsets of `PIXEL_STEPS`, row by row. `dragged` is after a drag of the
@@ -281,7 +282,7 @@ const LEGACY_ADVANCED_MAGNIFY = {
   },
 };
 
-const STACK_VIEW = { rotation: 90, flipHorizontal: true };
+const STACK_VIEW = { rotation: 270, flipHorizontal: true };
 const AXIAL_VIEW = { rotation: 180, flipVertical: true };
 const SAGITTAL_VIEW = { flipHorizontal: true };
 

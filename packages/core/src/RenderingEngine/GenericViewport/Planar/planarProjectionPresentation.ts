@@ -10,6 +10,7 @@ import {
   getPlanarProjectionZoom,
 } from './planarProjectionSnapshot';
 import type { PlanarProjectionSnapshot } from './PlanarProjectionTypes';
+import { getPlanarRotationAfterFlips } from './planarViewPresentation';
 import { cloneDisplayArea, normalizePlanarViewState } from './planarViewState';
 import type {
   PlanarViewPresentation,
@@ -193,6 +194,11 @@ export function getPlanarProjectionPresentation(
  * `getPlanarProjectionPresentation` reads them, so writing back a
  * presentation that was read gives the same view.
  *
+ * A rotation and flips in one patch flip the view first and turn it after,
+ * as the 5.x `setViewPresentation` did. A patch that changes a flip and has
+ * no rotation mirrors the picture on the screen, as 5.x did too: the
+ * rotation becomes 360 minus the rotation for each flip that changes.
+ *
  * A pan in the patch is the place of the centre of the slice. The view
  * state it gives holds no world anchor, so a pan after a zoom at a canvas
  * point is right at the new scale and rotation. A pan decides where the
@@ -224,10 +230,19 @@ export function withPlanarProjectionPresentation(
 ): PlanarViewState {
   const {
     pan,
-    rotation = snapshot.presentation.rotation,
     flipHorizontal = snapshot.viewState?.flipHorizontal ?? false,
     flipVertical = snapshot.viewState?.flipVertical ?? false,
   } = presentation;
+  const rotation = hasOwn(presentation, 'rotation')
+    ? (presentation.rotation ?? snapshot.presentation.rotation)
+    : getPlanarRotationAfterFlips(
+        {
+          rotation: snapshot.presentation.rotation,
+          flipHorizontal: snapshot.viewState?.flipHorizontal,
+          flipVertical: snapshot.viewState?.flipVertical,
+        },
+        { flipHorizontal, flipVertical }
+      );
   const viewState = snapshot.viewState ?? {};
   const hasZoom = hasOwn(presentation, 'zoom');
   const hasScale = hasOwn(presentation, 'scale');

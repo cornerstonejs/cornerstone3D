@@ -24,6 +24,7 @@ import {
   createDefaultPlanarViewState,
   normalizePlanarViewState,
 } from './planarViewState';
+import { getPlanarRotationAfterFlips } from './planarViewPresentation';
 import {
   normalizePlanarScale,
   type PlanarScaleInput,
@@ -196,17 +197,39 @@ abstract class BasePlanarResolvedView<
     });
   }
 
+  /**
+   * The view mirrored left to right on the screen. On a turned view the
+   * rotation becomes 360 minus the rotation, as `setViewState` gives it.
+   */
   flipHorizontal(): BasePlanarResolvedView<TState> {
+    const { viewState } = this.state;
+    const flips = {
+      flipHorizontal: !viewState.flipHorizontal,
+      flipVertical: viewState.flipVertical,
+    };
+
     return this.cloneWithViewState({
-      ...this.state.viewState,
-      flipHorizontal: !this.state.viewState.flipHorizontal,
+      ...viewState,
+      ...flips,
+      rotation: getPlanarRotationAfterFlips(viewState, flips),
     });
   }
 
+  /**
+   * The view mirrored top to bottom on the screen. On a turned view the
+   * rotation becomes 360 minus the rotation, as `setViewState` gives it.
+   */
   flipVertical(): BasePlanarResolvedView<TState> {
+    const { viewState } = this.state;
+    const flips = {
+      flipHorizontal: viewState.flipHorizontal,
+      flipVertical: !viewState.flipVertical,
+    };
+
     return this.cloneWithViewState({
-      ...this.state.viewState,
-      flipVertical: !this.state.viewState.flipVertical,
+      ...viewState,
+      ...flips,
+      rotation: getPlanarRotationAfterFlips(viewState, flips),
     });
   }
 
