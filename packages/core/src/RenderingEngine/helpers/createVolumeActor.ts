@@ -1,6 +1,7 @@
 import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
 import type { VolumeActor } from './../../types/IActor';
+import type IImageVolume from './../../types/IImageVolume';
 import type { VoiModifiedEventDetail } from './../../types/EventTypes';
 import { loadVolume } from '../../loaders/volumeLoader';
 import createVolumeMapper from './createVolumeMapper';
@@ -43,9 +44,7 @@ async function createVolumeActor(
   viewportId: string,
   suppressEvents = false
 ): Promise<VolumeActor> {
-  const { volumeId, callback, blendMode } = props;
-
-  const imageVolume = await loadVolume(volumeId);
+  const imageVolume = await loadVolume(props.volumeId);
 
   if (!imageVolume) {
     throw new Error(
@@ -53,6 +52,29 @@ async function createVolumeActor(
     );
   }
 
+  return createVolumeActorOfVolume(
+    imageVolume,
+    props,
+    element,
+    viewportId,
+    suppressEvents
+  );
+}
+
+/**
+ * Creates the volume actor of an image volume that the caller has, as
+ * `createVolumeActor` does for the volume of `props.volumeId` that it loads.
+ * A render path that staged its volume passes it, so a volume that left the
+ * cache meanwhile is not loaded again. Not exported from the package.
+ */
+export async function createVolumeActorOfVolume(
+  imageVolume: IImageVolume,
+  props: createVolumeActorInterface,
+  element: HTMLDivElement,
+  viewportId: string,
+  suppressEvents = false
+): Promise<VolumeActor> {
+  const { volumeId, callback, blendMode } = props;
   const { imageData } = imageVolume;
   // The strategies decide which grid this actor draws. A legacy viewport has no
   // render path, so this one choice is what gives it the reduction that the

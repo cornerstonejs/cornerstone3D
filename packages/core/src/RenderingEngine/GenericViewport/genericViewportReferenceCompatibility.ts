@@ -66,6 +66,8 @@ export function isGenericViewportReferenceViewable(
  * a reference that names no image is viewable when it names a volume or a
  * frame of reference and is in the frame of reference of the stack. Its
  * plane and its slice index are not asked: a volume turns and moves to them.
+ * A reference that names an image by its URI only is viewable so when the
+ * stack has that image.
  */
 export function isGenericViewportReferenceViewableAsVolume(
   viewRef: ViewReference,
@@ -82,6 +84,8 @@ export function isGenericViewportReferenceViewableAsVolume(
   return contexts.some(
     (context) =>
       isFrameOfReferenceCompatible(viewRef, context) &&
+      (!viewRef.referencedImageURI ||
+        hasReferencedImage(viewRef, context.imageIds, context.imageURIs)) &&
       (!viewRef.planeRestriction ||
         isPlaneRestrictionViewable(viewRef.planeRestriction, context, {
           withOrientation: true,

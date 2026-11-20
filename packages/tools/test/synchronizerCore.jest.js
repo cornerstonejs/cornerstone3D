@@ -7,6 +7,7 @@ jest.mock('@cornerstonejs/core', () => {
     },
     eventTarget: new EventTarget(),
     getRenderingEngine: jest.fn(),
+    getRenderingEngines: jest.fn(),
     getEnabledElement: jest.fn(),
     getEnabledElementByViewportId: jest.fn(),
     utilities: {
@@ -43,6 +44,7 @@ jest.mock('@cornerstonejs/core', () => {
 
 import {
   getRenderingEngine,
+  getRenderingEngines,
   getEnabledElement,
   getEnabledElementByViewportId,
   eventTarget,
@@ -83,6 +85,7 @@ function createWorld() {
     if (!engine) {
       const viewportMap = new Map();
       engine = {
+        id: renderingEngineId,
         __viewportMap: viewportMap,
         getViewport: jest.fn((id) => viewportMap.get(id)),
       };
@@ -95,6 +98,7 @@ function createWorld() {
   }
 
   getRenderingEngine.mockImplementation((id) => engines.get(id));
+  getRenderingEngines.mockImplementation(() => [...engines.values()]);
   getEnabledElement.mockImplementation((el) => elementToViewportInfo.get(el));
 
   return { addViewport };
@@ -350,6 +354,74 @@ describe('Synchronizer', () => {
     );
 
     expect(callback).not.toHaveBeenCalled();
+  });
+
+  describe('with the eventTarget event source and two rendering engines that have a viewport with the same id', () => {
+    let callback;
+    let sync;
+
+    beforeEach(() => {
+      callback = jest.fn();
+      sync = new Synchronizer('sync-h3', 'my-event', callback, {
+        eventSource: 'eventTarget',
+      });
+      world.addViewport('re1', 'vp');
+      world.addViewport('re2', 'vp');
+      world.addViewport('re1', 'vp-other');
+      getEnabledElementByViewportId.mockImplementation((viewportId) => ({
+        renderingEngineId: 're1',
+        viewportId,
+      }));
+    });
+
+    afterEach(() => {
+      sync.destroy();
+    });
+
+    it('takes the source from the rendering engine id of the event', () => {
+      sync.add({ renderingEngineId: 're1', viewportId: 'vp' });
+      sync.add({ renderingEngineId: 're2', viewportId: 'vp' });
+
+      eventTarget.dispatchEvent(
+        new CustomEvent('my-event', {
+          detail: { viewportId: 'vp', renderingEngineId: 're2' },
+        })
+      );
+
+      expect(callback).toHaveBeenCalledTimes(1);
+      expect(callback.mock.calls[0][1]).toEqual({
+        renderingEngineId: 're2',
+        viewportId: 'vp',
+      });
+      expect(callback.mock.calls[0][2]).toEqual({
+        renderingEngineId: 're1',
+        viewportId: 'vp',
+      });
+    });
+
+    it('ignores an event of a viewport that is not a source, though a source of another rendering engine has its id', () => {
+      sync.addSource({ renderingEngineId: 're1', viewportId: 'vp' });
+      sync.addTarget({ renderingEngineId: 're1', viewportId: 'vp-other' });
+
+      eventTarget.dispatchEvent(
+        new CustomEvent('my-event', {
+          detail: { viewportId: 'vp', renderingEngineId: 're2' },
+        })
+      );
+
+      expect(callback).not.toHaveBeenCalled();
+    });
+
+    it('ignores an event that gives the viewport id alone', () => {
+      sync.add({ renderingEngineId: 're1', viewportId: 'vp' });
+      sync.add({ renderingEngineId: 're2', viewportId: 'vp' });
+
+      eventTarget.dispatchEvent(
+        new CustomEvent('my-event', { detail: { viewportId: 'vp' } })
+      );
+
+      expect(callback).not.toHaveBeenCalled();
+    });
   });
 
   it('listens for auxiliary events in addition to the main event', () => {
@@ -956,6 +1028,46 @@ describe('presentationViewSyncCallback', () => {
       undefined
     );
     expect(targetViewport.setViewState).toHaveBeenCalledWith(nextViewState);
+    expect(targetViewport.render).toHaveBeenCalledTimes(1);
+  });
+
+  it('reads the source from its own rendering engine when the target is a viewport with the same id in another one', () => {
+    const presentation = { zoom: 2 };
+    viewportProjection.getPresentation.mockImplementation((viewport) =>
+      viewport === sourceViewport ? presentation : { zoom: 1 }
+    );
+    viewportProjection.withPresentation.mockImplementation(
+      (_viewport, appliedPresentation) => ({ ...appliedPresentation })
+    );
+
+    const sourceViewport = {};
+    const targetViewport = {
+      setViewState: jest.fn(),
+      render: jest.fn(),
+    };
+    const engines = {
+      engineA: {
+        getViewport: (id) => (id === 'vp' ? sourceViewport : undefined),
+      },
+      engineB: {
+        getViewport: (id) => (id === 'vp' ? targetViewport : undefined),
+      },
+    };
+
+    getRenderingEngine.mockImplementation((id) => engines[id]);
+    presentationViewSyncCallback(
+      {},
+      { renderingEngineId: 'engineA', viewportId: 'vp' },
+      { renderingEngineId: 'engineB', viewportId: 'vp' },
+      {},
+      { zoom: true }
+    );
+
+    expect(viewportProjection.getPresentation).toHaveBeenCalledWith(
+      sourceViewport,
+      { selector: { zoom: true } }
+    );
+    expect(targetViewport.setViewState).toHaveBeenCalledWith({ zoom: 2 });
     expect(targetViewport.render).toHaveBeenCalledTimes(1);
   });
 

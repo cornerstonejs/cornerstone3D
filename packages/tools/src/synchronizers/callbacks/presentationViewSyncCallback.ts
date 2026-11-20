@@ -10,6 +10,8 @@ import {
  *
  * targetViewport.options.syncZoom set to false to not sync the zoom
  * targetViewport.options.syncPan set to false to not sync the pan
+ *
+ * Each viewport is read from its own rendering engine.
 
  * @param synchronizerInstance - The Instance of the Synchronizer
  * @param sourceViewport - The list of IDs defining the source viewport.
@@ -31,7 +33,9 @@ export default function presentationViewSyncCallback(
   }
 
   const tViewport = renderingEngine.getViewport(targetViewport.viewportId);
-  const sViewport = renderingEngine.getViewport(sourceViewport.viewportId);
+  const sViewport = getRenderingEngine(
+    sourceViewport.renderingEngineId
+  )?.getViewport(sourceViewport.viewportId);
 
   const presentationView = getViewportPresentation(sViewport, options);
 

@@ -4,6 +4,13 @@ import { addProvider } from '../metaData';
 const state = {};
 
 /**
+ * The last registration added for two viewport ids, with or without the
+ * rendering engine ids. A lookup by the viewport ids alone reads it, as the
+ * one shared key of 5.x.
+ */
+const lastByViewportIds = {};
+
+/**
  * The key of the registration from one viewport to another: by their
  * viewport ids, or by their rendering engine ids and viewport ids when both
  * rendering engine ids are given.
@@ -27,16 +34,20 @@ function getEntryId(
 }
 
 /**
- * The registration under a key, or the inverse of the one under the reverse
- * key.
+ * The registration of a store under a key, or the inverse of the one under
+ * the reverse key.
  */
-function getRegistration(entryId: string, entryIdReverse: string): mat4 {
-  if (state[entryId]) {
-    return state[entryId];
+function getRegistration(
+  registrations: Record<string, mat4>,
+  entryId: string,
+  entryIdReverse: string
+): mat4 {
+  if (registrations[entryId]) {
+    return registrations[entryId];
   }
 
-  if (state[entryIdReverse]) {
-    return mat4.invert(mat4.create(), state[entryIdReverse]);
+  if (registrations[entryIdReverse]) {
+    return mat4.invert(mat4.create(), registrations[entryIdReverse]);
   }
 }
 
@@ -47,8 +58,11 @@ function getRegistration(entryId: string, entryIdReverse: string): mat4 {
  * or for the viewports of two rendering engines,
  * `[viewportId1, viewportId2, renderingEngineId1, renderingEngineId2]`. Asked
  * with the rendering engine ids, the provider gives the registration of those
- * viewports first, then the one of the viewport ids alone, so two rendering
- * engines whose viewports have the same ids keep their registrations apart.
+ * viewports first, then the one added for the viewport ids alone, so two
+ * rendering engines whose viewports have the same ids keep their
+ * registrations apart. Asked with the viewport ids alone, it gives the last
+ * registration added for them, with or without rendering engine ids, as in
+ * 5.x.
  */
 const spatialRegistrationMetadataProvider = {
   /* Adding a new entry to the state object. */
@@ -67,6 +81,7 @@ const spatialRegistrationMetadataProvider = {
     }
 
     state[entryId] = payload;
+    lastByViewportIds[getEntryId(viewportId1, viewportId2)] = payload;
   },
 
   get: (
@@ -80,28 +95,36 @@ const spatialRegistrationMetadataProvider = {
       return;
     }
 
-    if (renderingEngineId1 !== undefined && renderingEngineId2 !== undefined) {
-      const registration = getRegistration(
-        getEntryId(
-          viewportId1,
-          viewportId2,
-          renderingEngineId1,
-          renderingEngineId2
-        ),
-        getEntryId(
-          viewportId2,
-          viewportId1,
-          renderingEngineId2,
-          renderingEngineId1
-        )
+    if (renderingEngineId1 === undefined || renderingEngineId2 === undefined) {
+      return getRegistration(
+        lastByViewportIds,
+        getEntryId(viewportId1, viewportId2),
+        getEntryId(viewportId2, viewportId1)
       );
+    }
 
-      if (registration) {
-        return registration;
-      }
+    const registration = getRegistration(
+      state,
+      getEntryId(
+        viewportId1,
+        viewportId2,
+        renderingEngineId1,
+        renderingEngineId2
+      ),
+      getEntryId(
+        viewportId2,
+        viewportId1,
+        renderingEngineId2,
+        renderingEngineId1
+      )
+    );
+
+    if (registration) {
+      return registration;
     }
 
     return getRegistration(
+      state,
       getEntryId(viewportId1, viewportId2),
       getEntryId(viewportId2, viewportId1)
     );

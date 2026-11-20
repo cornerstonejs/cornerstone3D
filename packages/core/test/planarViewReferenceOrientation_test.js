@@ -225,6 +225,72 @@ describe('The option asVolume of a direct next planar viewport in stack mode -- 
     expect(stack.isReferenceViewable(sagittalRef16)).toBe(true);
   });
 
+  it('keeps the plane of its images without asVolume for a reference of another plane that names no data', async function () {
+    const { series, sagittalRef16 } = await showSagittalAndAxial(
+      renderingEngine,
+      'as-volume-plane'
+    );
+    const stack = createNextViewport(renderingEngine, 'asVolumeStack');
+    const frameOnly = { ...sagittalRef16 };
+
+    delete frameOnly.dataId;
+    delete frameOnly.volumeId;
+    await showStack(stack, series, 3);
+
+    expect(frameOnly.FrameOfReferenceUID).toBe(stack.getFrameOfReferenceUID());
+    expect(frameOnly.sliceIndex).toBe(16);
+    expect(stack.getCurrentImageIdIndex()).toBe(3);
+    expect(answers(stack, frameOnly)).toEqual({
+      plain: false,
+      withNavigation: false,
+      withOrientation: false,
+      withOrientationAndNavigation: false,
+    });
+    expect(answers(stack, { ...frameOnly, sliceIndex: 3 })).toEqual({
+      plain: false,
+      withNavigation: false,
+      withOrientation: false,
+      withOrientationAndNavigation: false,
+    });
+    expect(answersAsVolume(stack, frameOnly)).toEqual({
+      asVolume: true,
+      withNavigation: true,
+      withOrientation: true,
+      withOrientationAndNavigation: true,
+    });
+  });
+
+  it('takes a reference that names an image by its URI with asVolume only when the stack has that image', async function () {
+    const series = await createSeries({ id: 'as-volume-uri' });
+    const stack = createNextViewport(renderingEngine, 'asVolumeStack');
+
+    await showStack(stack, series, 3);
+    const FrameOfReferenceUID = stack.getFrameOfReferenceUID();
+
+    expect(
+      answersAsVolume(stack, {
+        FrameOfReferenceUID,
+        referencedImageURI: 'other-series/image',
+      })
+    ).toEqual({
+      asVolume: false,
+      withNavigation: false,
+      withOrientation: false,
+      withOrientationAndNavigation: false,
+    });
+    expect(
+      answersAsVolume(stack, {
+        FrameOfReferenceUID,
+        referencedImageURI: utilities.imageIdToURI(series.imageIds[5]),
+      })
+    ).toEqual({
+      asVolume: true,
+      withNavigation: true,
+      withOrientation: true,
+      withOrientationAndNavigation: true,
+    });
+  });
+
   it('gives the answer without asVolume for a reference that names an image, and in volume mode', async function () {
     const { series, axial, sagittalRef16 } = await showSagittalAndAxial(
       renderingEngine,

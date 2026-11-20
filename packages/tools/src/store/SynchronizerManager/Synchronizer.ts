@@ -1,10 +1,10 @@
 import type { Types } from '@cornerstonejs/core';
 import {
   getRenderingEngine,
+  getRenderingEngines,
   getEnabledElement,
   eventTarget,
   Enums,
-  getEnabledElementByViewportId,
 } from '@cornerstonejs/core';
 
 import type { ISynchronizerEventHandler } from '../../types';
@@ -375,9 +375,7 @@ class Synchronizer {
     const enabledElement =
       this._eventSource === 'element'
         ? getEnabledElement(evt.currentTarget as HTMLDivElement)
-        : getEnabledElementByViewportId(
-            (evt as CustomEvent).detail?.viewportId
-          );
+        : _getEventTargetViewport((evt as CustomEvent).detail);
 
     if (!enabledElement) {
       return;
@@ -387,7 +385,12 @@ class Synchronizer {
 
     // If the viewport has been removed from the synchronizer before the event is
     // fired, then return immediately.
-    if (!this._sourceViewports.find((s) => s.viewportId === viewportId)) {
+    if (
+      !_containsViewport(this._sourceViewports, {
+        renderingEngineId,
+        viewportId,
+      })
+    ) {
       return;
     }
 
@@ -485,6 +488,40 @@ function _getViewportIndex(
       vp.renderingEngineId === ar.renderingEngineId &&
       vp.viewportId === ar.viewportId
   );
+}
+
+/**
+ * The viewport of an event of the global event target: the one of the
+ * rendering engine id and the viewport id of the event, or, for an event with
+ * a viewport id alone, the viewport of the one rendering engine that has that
+ * id. An event whose viewport id is in several rendering engines gives none,
+ * as its source is unknown.
+ */
+function _getEventTargetViewport(detail?: {
+  viewportId?: string;
+  renderingEngineId?: string;
+}): Types.IViewportId | undefined {
+  const { viewportId, renderingEngineId } = detail ?? {};
+
+  if (!viewportId) {
+    return;
+  }
+
+  if (renderingEngineId) {
+    return getRenderingEngine(renderingEngineId)?.getViewport(viewportId)
+      ? { renderingEngineId, viewportId }
+      : undefined;
+  }
+
+  const renderingEngines = (getRenderingEngines() ?? []).filter(
+    (renderingEngine) => renderingEngine.getViewport(viewportId)
+  );
+
+  if (renderingEngines.length !== 1) {
+    return;
+  }
+
+  return { renderingEngineId: renderingEngines[0].id, viewportId };
 }
 
 function _containsViewport(

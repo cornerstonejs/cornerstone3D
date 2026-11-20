@@ -3,6 +3,7 @@ import * as testUtils from '../../../utils/test/testUtils';
 import {
   createNextViewport,
   renderAndWait,
+  waitFor,
 } from './utils/planarSeriesBothModes';
 
 const {
@@ -11,6 +12,7 @@ const {
   imageLoader,
   metaData,
   eventTarget,
+  cache,
   getRenderBackend,
   setRenderBackend,
 } = cornerstone3D;
@@ -217,7 +219,167 @@ describe('A stack of a direct next planar viewport whose final image stage comes
         shownValueOfPixel(viewport, [1, 8])
       );
     });
+
+    it(`draws the final image on the ${renderBackend.toUpperCase()} when it comes just after the commit looks for the best cached image`, async function () {
+      const sourceImageIds = createImageIds(`commitSource${renderBackend}`);
+      const overlayImageIds = createImageIds(`commitOverlay${renderBackend}`);
+      const finalStage = createGate();
+      const overlay = createGate();
+      const overlayRequested = createGate();
+      const options = {
+        orientation: OrientationAxis.ACQUISITION,
+        renderBackend,
+      };
+
+      registerStagedImageLoader({
+        sourceImageId: sourceImageIds[0],
+        overlayImageIds,
+        finalStage,
+        overlay,
+        overlayRequested,
+      });
+      utilities.genericViewportDisplaySetMetadataProvider.add('commit:source', {
+        imageIds: sourceImageIds,
+        kind: 'planar',
+        initialImageIdIndex: 0,
+      });
+      utilities.genericViewportDisplaySetMetadataProvider.add(
+        'commit:overlay',
+        { imageIds: overlayImageIds, kind: 'planar', initialImageIdIndex: 0 }
+      );
+
+      const viewport = createNextViewport(renderingEngine, 'stagedCommit');
+      const finalLoaded = finalImageLoaded(sourceImageIds[0]);
+      const mount = viewport.setDisplaySets(
+        { displaySetId: 'commit:source', options },
+        { displaySetId: 'commit:overlay', options }
+      );
+
+      await overlayRequested.promise;
+      const previewImage = cache.getImage(sourceImageIds[0]);
+
+      finalStage.open();
+      await finalLoaded;
+      const finalImage = cache.getImage(sourceImageIds[0]);
+      const getImage = cache.getImage.bind(cache);
+      let armed = false;
+      let published = false;
+
+      expect(previewImage.imageQualityStatus).toBe(ImageQualityStatus.LOSSY);
+      expect(finalImage.imageQualityStatus).toBe(
+        ImageQualityStatus.FULL_RESOLUTION
+      );
+      spyOn(cache, 'getImage').and.callFake((imageId) => {
+        if (imageId !== sourceImageIds[0] || published) {
+          return getImage(imageId);
+        }
+
+        if (armed) {
+          armed = false;
+          queueMicrotask(() => {
+            published = true;
+            utilities.triggerEvent(eventTarget, Events.IMAGE_LOADED, {
+              image: finalImage,
+            });
+          });
+        }
+
+        return previewImage;
+      });
+      armed = true;
+      overlay.open();
+      await mount;
+
+      expect(published).toBe(true);
+      await waitFor(() => largestSourceValue(viewport) > 0, 1000).catch(
+        () => undefined
+      );
+      expect(largestSourceValue(viewport)).toBeGreaterThan(0);
+
+      viewport.setDisplaySetPresentation('commit:overlay', { visible: false });
+      await renderAndWait(viewport);
+
+      expect(shownValueOfPixel(viewport, [8, 8])).toBeGreaterThan(
+        shownValueOfPixel(viewport, [1, 8])
+      );
+    });
   }
+});
+
+describe('A display set of a direct next planar viewport whose registration goes while a later display set of the same mount loads -- ', () => {
+  let renderingEngine;
+
+  beforeEach(function () {
+    renderingEngine = testUtils.setupTestEnvironment({
+      renderingEngineId,
+    }).renderingEngine;
+  });
+
+  afterEach(function () {
+    utilities.genericViewportDisplaySetMetadataProvider.clear();
+    testUtils.cleanupTestEnvironment({ renderingEngineId });
+  });
+
+  it('mounts the display set with the registration that it loaded', async function () {
+    const shownImageIds = createImageIds('registrationShown');
+    const sourceImageIds = createImageIds('registrationSource');
+    const overlayImageIds = createImageIds('registrationOverlay');
+    const overlay = createGate();
+    const overlayRequested = createGate();
+    const options = { orientation: OrientationAxis.ACQUISITION };
+
+    imageLoader.registerImageLoader('fakeImageLoader', (imageId, options) => {
+      if (overlayImageIds.includes(imageId)) {
+        overlayRequested.open();
+
+        return {
+          promise: overlay.promise.then(
+            () => testUtils.fakeImageLoader(imageId, options).promise
+          ),
+        };
+      }
+
+      return testUtils.fakeImageLoader(imageId, options);
+    });
+    [
+      ['registration:shown', shownImageIds],
+      ['registration:source', sourceImageIds],
+      ['registration:overlay', overlayImageIds],
+    ].forEach(([displaySetId, imageIds]) =>
+      utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+        imageIds,
+        kind: 'planar',
+        initialImageIdIndex: 0,
+      })
+    );
+
+    const viewport = createNextViewport(renderingEngine, 'stagedRegistration');
+
+    await viewport.setDisplaySets({
+      displaySetId: 'registration:shown',
+      options,
+    });
+    await renderAndWait(viewport);
+
+    const mount = viewport.setDisplaySets(
+      { displaySetId: 'registration:source', options },
+      { displaySetId: 'registration:overlay', options }
+    );
+
+    await overlayRequested.promise;
+    utilities.genericViewportDisplaySetMetadataProvider.remove(
+      'registration:source'
+    );
+    overlay.open();
+    await mount;
+
+    expect(viewport.getRenderPlan().map(({ dataId }) => dataId)).toEqual([
+      'registration:source',
+      'registration:overlay',
+    ]);
+    expect(viewport.getImageIds()).toEqual(sourceImageIds);
+    expect(viewport.getCurrentImageId()).toBe(sourceImageIds[0]);
+  });
 });
 
 describe('A stack of a direct next planar viewport whose render backend changes while a later display set of the same mount loads -- ', () => {

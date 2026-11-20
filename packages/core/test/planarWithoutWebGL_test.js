@@ -274,6 +274,27 @@ describe('A planar viewport on a device without WebGL -- ', () => {
       expect(webGL.counter.webGLContexts).toBe(0);
     });
 
+    it(`draws again when a one-shot IMAGE_RENDERED listener asks ${name} for a render`, async () => {
+      engine = new Engine(`withoutWebGLListener:${Engine.name}`);
+
+      const element = await showStackWithoutWebGL(engine);
+      let renderedEvents = 0;
+
+      element.addEventListener(Events.IMAGE_RENDERED, () => {
+        renderedEvents++;
+      });
+      element.addEventListener(
+        Events.IMAGE_RENDERED,
+        () => engine.renderViewport('withoutWebGL'),
+        { once: true }
+      );
+      engine.renderViewport('withoutWebGL');
+      await waitForDraws();
+
+      expect(renderedEvents).toBe(2);
+      expect(webGL.counter.webGLContexts).toBe(0);
+    });
+
     it(`draws the picture again in the frame of ${name} after it resizes the viewport`, async () => {
       engine = new Engine(`withoutWebGLResize:${Engine.name}`);
 

@@ -115,8 +115,10 @@ function removeGeometriesOfRemovedSegments(
  * takes the surfaces of the segments that it no longer has away, and gives
  * the others their new points and polys. A segment that the labelmap lost
  * while the pass converted gets no geometry again, and a new segment without
- * voxels gets none: an empty surface is not cached. The pass waits for the
- * surfaces that it caches before it fires SEGMENTATION_MODIFIED.
+ * voxels gets none: an empty surface is not cached. The geometry id of a new
+ * segment goes into the geometry map once its surface is cached, so a surface
+ * that fails to be cached leaves no id of a missing geometry. The pass waits
+ * for the surfaces that it caches before it fires SEGMENTATION_MODIFIED.
  */
 async function updateSurfaceDataOnce(segmentationId: string) {
   const surfacesObj =
@@ -199,11 +201,6 @@ async function updateSurfaceDataOnce(segmentationId: string) {
         }
 
         return [surfaceRepresentation].map((surfaceRepresentation) => {
-          segmentation.representationData.Surface.geometryIds.set(
-            segmentIndex,
-            geometryId
-          );
-
           const enabledElement = getEnabledElementByViewportId(viewportId);
 
           return createAndCacheSurfacesFromRaw(
@@ -213,7 +210,12 @@ async function updateSurfaceDataOnce(segmentationId: string) {
               segmentationId: surfaceRepresentation.segmentationId,
               viewport: enabledElement.viewport,
             }
-          );
+          ).then(() => {
+            segmentation.representationData.Surface.geometryIds.set(
+              segmentIndex,
+              geometryId
+            );
+          });
         });
       });
     } else if (indices.includes(segmentIndex)) {

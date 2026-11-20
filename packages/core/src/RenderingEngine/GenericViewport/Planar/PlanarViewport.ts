@@ -307,11 +307,13 @@ function getSlabPresentation(
 }
 
 /**
- * What `loadPlanarData` gives for a display set: its loaded data, the render
- * path decision, the inputs of that decision and the backend that the
- * configuration gave for it, and the orientation that the options ask for.
+ * What `loadPlanarData` gives for a display set: its registration and its
+ * loaded data, the render path decision, the inputs of that decision and the
+ * backend that the configuration gave for it, and the orientation that the
+ * options ask for.
  */
 type PlanarDataLoad = {
+  dataSet: PlanarRegisteredDataSet;
   data: LoadedData<PlanarPayload>;
   selectedPath: SelectedPlanarRenderPath;
   resolvedOrientation: PlanarViewState['orientation'];
@@ -668,8 +670,9 @@ class PlanarViewport extends GenericViewport<
    * then takes that data, and that render path decision when its inputs are
    * the same, so a stack loads its first image once. The newest call holds
    * the draws of a CPU path from its start to its end, also while the shown
-   * scene waits for the loads, and at its end, also when it rejects, draws
-   * once when a draw was asked for meanwhile.
+   * scene waits for the loads, and a commit holds them while it runs. When
+   * both have ended, also when a call rejects, the viewport draws once when
+   * a draw was asked for meanwhile.
    *
    * A newer call stops an older one while the older one loads. Once a call
    * has loaded, its commit (the removal of the shown display sets and the
@@ -738,8 +741,8 @@ class PlanarViewport extends GenericViewport<
   /**
    * The commit of `mountDisplaySets`: removes the shown display sets and
    * mounts the new ones with the data that the call loaded, a stack with the
-   * best stage of its image that came meanwhile. A newer call does not stop
-   * it.
+   * best stage of its image that came meanwhile (`addDisplaySetInternal`).
+   * A newer call does not stop it.
    */
   private async commitDisplaySets(
     entries: Array<{ displaySetId: string; options?: PlanarSetDataOptions }>,
@@ -750,11 +753,7 @@ class PlanarViewport extends GenericViewport<
     this.removeReplaceableData(entries);
 
     for (const [index, { displaySetId, options }] of mounts.entries()) {
-      await this.addDisplaySetInternal(
-        displaySetId,
-        options,
-        withBestCachedImage(loaded[index])
-      );
+      await this.addDisplaySetInternal(displaySetId, options, loaded[index]);
     }
   }
 
@@ -836,6 +835,12 @@ class PlanarViewport extends GenericViewport<
     this.clearResolvedViewCache();
   }
 
+  /**
+   * Mounts a display set. With `loaded`, what `setDisplaySets` loaded for it,
+   * it takes the best stage of the image of a stack that the cache has, after
+   * its last wait and in the same task as the render path that listens for
+   * the later stages, so no stage comes between the two.
+   */
   private async addDisplaySetInternal(
     dataId: string,
     options: PlanarSetDataOptions = {},
@@ -846,8 +851,14 @@ class PlanarViewport extends GenericViewport<
       ...options,
       role,
     };
-    const { data, resolvedOrientation, selectedPath } =
-      await this.loadPlanarData(dataId, resolvedOptions, loaded);
+    const planarLoad = await this.loadPlanarData(
+      dataId,
+      resolvedOptions,
+      loaded
+    );
+    const { data, resolvedOrientation, selectedPath } = loaded
+      ? withBestCachedImage(planarLoad)
+      : planarLoad;
 
     if (role === 'source') {
       this.mountedData.promoteSourceDataId(dataId);
@@ -2127,8 +2138,11 @@ class PlanarViewport extends GenericViewport<
    * In stack mode `asVolume` takes a reference that names no image as
    * viewable when it names a volume or a frame of reference and is in the
    * frame of reference of the stack, whatever its plane and slice, as the
-   * legacy stack viewport does: the stack could show it as a volume. In
-   * volume mode `asVolume` has no effect.
+   * legacy stack viewport does: the stack could show it as a volume. A
+   * reference that names an image by its URI only is taken so when the
+   * stack has that image. In stack mode `withOrientation` is not read: a
+   * reference of another plane needs `asVolume`, as on the legacy stack
+   * viewport. In volume mode `asVolume` has no effect.
    *
    * @param viewRef - View reference to test.
    * @param options - Optional compatibility flags for the spatial check.
@@ -2139,9 +2153,13 @@ class PlanarViewport extends GenericViewport<
     options: ReferenceCompatibleOptions = {}
   ): boolean {
     const reference = getPlanarReferenceForViewableCheck(viewRef);
-    const isViewable = super.isReferenceViewable(reference, options);
+    const isStack = this.getCurrentMode() === 'stack';
+    const isViewable = super.isReferenceViewable(
+      reference,
+      isStack ? { ...options, withOrientation: options.asVolume } : options
+    );
 
-    if (!isViewable && options.asVolume && this.getCurrentMode() === 'stack') {
+    if (!isViewable && options.asVolume && isStack) {
       return isGenericViewportReferenceViewableAsVolume(
         reference,
         this.getReferenceViewContexts()
@@ -3019,12 +3037,13 @@ class PlanarViewport extends GenericViewport<
   }
 
   /**
-   * Whether a mount holds the draw of a CPU path. A draw asked for meanwhile
-   * is marked and done once when the newest mount ends.
+   * Whether a mount holds the draw of a CPU path: the newest mount, and the
+   * commit that runs, which a newer mount does not stop. A draw asked for
+   * meanwhile is marked and done once when both have ended.
    */
   private holdsCpuDrawForMount(): boolean {
     if (
-      this.mountCpuDrawHoldRequestId === undefined ||
+      (this.mountCpuDrawHoldRequestId === undefined && !this.mountCommit) ||
       getRenderSurfaceForRenderMode(
         this.renderContext.renderPath.renderMode
       ) !== 'cpu'
@@ -3040,17 +3059,21 @@ class PlanarViewport extends GenericViewport<
 
   /**
    * Ends the CPU draw hold of the mount of `requestId`, when that mount still
-   * holds it, and draws once when a draw was asked for meanwhile. A mount
-   * that a newer one replaced ends without a change.
+   * holds it, and draws once when a draw was asked for meanwhile and neither
+   * a newer mount nor a commit holds the draw. A mount that a newer one
+   * replaced ends without a change. The mount of a commit calls this after
+   * its commit, so the draw comes when the last hold ends.
    */
   private releaseMountCpuDrawHold(requestId: number): void {
-    if (requestId !== this.mountCpuDrawHoldRequestId) {
-      return;
+    if (requestId === this.mountCpuDrawHoldRequestId) {
+      this.mountCpuDrawHoldRequestId = undefined;
     }
 
-    this.mountCpuDrawHoldRequestId = undefined;
-
-    if (!this.cpuDrawHeldByMount) {
+    if (
+      this.mountCpuDrawHoldRequestId !== undefined ||
+      this.mountCommit ||
+      !this.cpuDrawHeldByMount
+    ) {
       return;
     }
 
@@ -3409,14 +3432,16 @@ class PlanarViewport extends GenericViewport<
    * Else it decides again and takes the loaded data with the render mode of
    * the new decision in place of a load: only the render mode can change, as
    * whether the display set takes the volume path depends on the display set
-   * and the orientation alone.
+   * and the orientation alone. With `loaded` it reads the registration that
+   * the load had, so a registration that goes or changes after the load does
+   * not count.
    */
   private async loadPlanarData(
     dataId: string,
     options: PlanarSetDataOptions,
     loaded?: PlanarDataLoad
   ): Promise<PlanarDataLoad> {
-    const dataSet = this.getDataSet(dataId);
+    const dataSet = loaded?.dataSet ?? this.getDataSet(dataId);
 
     if (!dataSet) {
       throw new Error(
@@ -3464,6 +3489,7 @@ class PlanarViewport extends GenericViewport<
 
     if (renderMode === selectedPath.renderMode) {
       return {
+        dataSet,
         data,
         selectedPath: { ...selectedPath, reason },
         resolvedOrientation,
@@ -3473,6 +3499,7 @@ class PlanarViewport extends GenericViewport<
     }
 
     return {
+      dataSet,
       data: { ...data, renderMode },
       selectedPath: { ...selectedPath, renderMode, reason },
       resolvedOrientation,

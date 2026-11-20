@@ -24,6 +24,7 @@ jest.mock('../src/RenderingEngine/helpers/createVolumeSliceActor', () => ({
 jest.mock('../src/RenderingEngine/helpers/createVolumeActor', () => ({
   __esModule: true,
   default: jest.fn(async () => mockFakeActor()),
+  createVolumeActorOfVolume: jest.fn(async () => mockFakeActor()),
 }));
 jest.mock(
   '../src/RenderingEngine/GenericViewport/setVtkCameraClippingRange',

@@ -57,6 +57,7 @@ import type {
   Volume3DRendering,
   Volume3DSetDataOptions,
   Volume3DViewportRenderContext,
+  Volume3DVolumePayload,
   Volume3DVolumeRendering,
   ViewportWidget,
   VolumeViewport3DInput,
@@ -72,6 +73,20 @@ const log = coreLog.getLogger('RenderingEngine', 'VolumeViewport3D');
 interface Volume3DStagedLoad {
   data: LoadedData;
   renderMode: 'vtkVolume3d' | 'vtkGeometry3d';
+}
+
+/**
+ * Whether a staged load is a volume that the cache removed after the load.
+ * The cache deletes the image data of a volume that it removes, so nothing
+ * can draw that volume any more.
+ */
+function isRemovedVolume({ data }: Volume3DStagedLoad): boolean {
+  const { imageVolume } = data as unknown as Partial<Volume3DVolumePayload>;
+
+  return (
+    Boolean(imageVolume) &&
+    (!imageVolume.imageData || imageVolume.imageData.isDeleted())
+  );
 }
 
 class VolumeViewport3D extends GenericViewport<
@@ -224,8 +239,10 @@ class VolumeViewport3D extends GenericViewport<
    * shown display sets go, so an entry without data, or with data that no
    * render path draws (a contour), rejects and leaves the shown scene as it
    * was, as the legacy `setVolumes` did for a volume that was not in the
-   * cache. The mount then takes that data and the render mode it was loaded
-   * for, so each display set loads once.
+   * cache. A volume that the cache removed after its load rejects in the
+   * same way. The mount then takes that data and the render mode it was
+   * loaded for, so each display set loads once, and the actor of a volume
+   * draws the volume that was loaded.
    *
    * A newer call stops an older one while the older one loads. Once a call
    * has loaded, its commit (the removal of the shown display sets and the
@@ -267,6 +284,14 @@ class VolumeViewport3D extends GenericViewport<
       if (isStale()) {
         return;
       }
+    }
+
+    const removedIndex = staged.findIndex(isRemovedVolume);
+
+    if (removedIndex !== -1) {
+      throw new Error(
+        `[VolumeViewport3D] The volume of ${entries[removedIndex].displaySetId} left the cache while setDisplaySets loaded`
+      );
     }
 
     const commit = this.commitDisplaySets(entries, staged);

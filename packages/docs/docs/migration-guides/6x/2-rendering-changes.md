@@ -432,8 +432,12 @@ are, so between viewports of other data it gives another size.
   whether the stack could show the reference as a volume. A reference that
   names no image is viewable with it when it names a volume or a frame of
   reference and is in the frame of reference of the stack, in any plane and
-  at any slice, as on the legacy stack viewport. In 5.x the next planar
-  viewport did not read the option. In volume mode it has no effect.
+  at any slice, as on the legacy stack viewport. A reference that names an
+  image by `referencedImageURI` alone is viewable so only when the stack has
+  that image. In stack mode `withOrientation` is not read: a reference of
+  another plane needs `asVolume`, as on the legacy stack viewport. In 5.x the
+  next planar viewport did not read `asVolume`. In volume mode it has no
+  effect.
 - **A view reference crosses between a stack and a volume of the same
   images.** A next view reference names its display set (`dataId`). A planar
   viewport of another display set that has the image that the reference
@@ -530,7 +534,10 @@ are, so between viewports of other data it gives another size.
   length (a face appended in place), and the prop of a segment that the
   labelmap no longer has, the last one too, goes at the next update of the
   surfaces. The legacy viewports kept the old mesh when the lengths were the
-  same, and kept the surface of a removed segment.
+  same, and kept the surface of a removed segment. Values changed in place,
+  in the same arrays with the same lengths, do not show, as on the legacy
+  viewports: give the surface new arrays (`surface.points = movedPoints`)
+  before the segmentation modified event.
 
 ## vtk.js actors and widgets of the application in a planar viewport
 
@@ -834,6 +841,8 @@ legacy picture within two levels of 255.
   or the same arrays with another length (a face appended in place). The
   legacy viewport kept the old mesh when the lengths were the same. In 5.x
   the next 3D viewport drew other arrays only, not a face appended in place.
+  Values changed in place, in the same arrays with the same lengths, do not
+  show, as on the legacy viewport: give the surface new arrays.
 - **A viewport that shows only surfaces says `'empty'`.** The tools mount a
   surface as an overlay, and `getCurrentMode()` answers for the source
   display set.
@@ -1051,10 +1060,18 @@ legacy picture within two levels of 255.
   `get('spatialRegistrationModule', ...query)` gives it before the one
   added for the viewport ids alone. The image slice synchronizer asks so,
   and `utilities.calculateViewportsSpatialRegistration` adds its
-  registration both with the rendering engine ids and, as in 5.x, for the
-  viewport ids alone. In 5.x two
+  registration with the rendering engine ids only, so a pair of other
+  rendering engines does not take it and calculates its own. Asked with the
+  viewport ids alone, `get` gives the last registration added for them, with
+  or without rendering engine ids, as in 5.x. In 5.x two
   rendering engines whose viewports had the same id shared the options and
-  the registrations.
+  the registrations. A synchronizer with `eventSource: 'eventTarget'` takes
+  the source of an event from its `renderingEngineId` and `viewportId`; an
+  event with a `viewportId` alone that several rendering engines have is
+  ignored. In 5.x such an event came from the first rendering engine with
+  that viewport id. The presentation view synchronizer reads the source
+  viewport from its own rendering engine; in 5.x it read it from the
+  rendering engine of the target.
 - **`utilities.getImageLegacy(element)` of the core is gone.** Use
   `cache.getImage(viewport.getCurrentImageId())`.
 - **`AdvancedMagnifyTool` resets on a stack of images of several sizes.** It

@@ -585,4 +585,75 @@ describe('A replacement of the display sets of a 3D viewport and its loads -- ',
     });
     expect(newVolumeEvents).toEqual([[volumeIds.first, volumeIds.second]]);
   });
+
+  it('rejects and keeps the shown scene when the volume that it loaded leaves the cache while the second loads', async function () {
+    const newVolumeEvents = [];
+
+    viewport.element.addEventListener(
+      Events.VOLUME_VIEWPORT_NEW_VOLUME,
+      (event) => {
+        newVolumeEvents.push(event.detail.volumeActors.length);
+      }
+    );
+    const shownScene = sceneOf(viewport);
+
+    provider.hold('replacement3D:second');
+
+    const replacement = viewport.setDisplaySets(
+      volumeEntry('replacement3D:first'),
+      volumeEntry('replacement3D:second')
+    );
+
+    await provider.reached('replacement3D:second');
+    cache.removeVolumeLoadObject(volumeIds.first);
+    expect(cache.getVolume(volumeIds.first)).toBeUndefined();
+    provider.release('replacement3D:second');
+
+    let error;
+
+    try {
+      await replacement;
+    } catch (caught) {
+      error = caught;
+    }
+
+    expect(error).toBeDefined();
+    expect(sceneOf(viewport)).toEqual(shownScene);
+    expect(newVolumeEvents).toEqual([]);
+  });
+
+  it('draws the volume that it loaded with the actor, not one that the cache gives for its id at the mount', async function () {
+    const firstVolume = cache.getVolume(volumeIds.first);
+    const getVolume = cache.getVolume.bind(cache);
+    const getVolumeLoadObject = cache.getVolumeLoadObject.bind(cache);
+
+    provider.hold('replacement3D:second');
+
+    const replacement = viewport.setDisplaySets(
+      volumeEntry('replacement3D:first'),
+      volumeEntry('replacement3D:second')
+    );
+
+    await provider.reached('replacement3D:second');
+    const otherVolume = cache.getVolume(volumeIds.shown);
+    spyOn(cache, 'getVolume').and.callFake((volumeId) =>
+      volumeId === volumeIds.first ? otherVolume : getVolume(volumeId)
+    );
+    spyOn(cache, 'getVolumeLoadObject').and.callFake((volumeId) =>
+      volumeId === volumeIds.first
+        ? { promise: Promise.resolve(otherVolume) }
+        : getVolumeLoadObject(volumeId)
+    );
+    provider.release('replacement3D:second');
+    await replacement;
+
+    expect(sceneOf(viewport).displaySets).toEqual([
+      { displaySetId: 'replacement3D:first', options: { role: 'source' } },
+      { displaySetId: 'replacement3D:second', options: { role: 'overlay' } },
+    ]);
+    expect(
+      viewport.getActors()[0].actor.getMapper().getInputData() ===
+        firstVolume.imageData
+    ).toBe(true);
+  });
 });

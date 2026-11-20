@@ -3,7 +3,7 @@ import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 import { ViewportType } from '../../../enums';
 import type { IImageData, IImageVolume, Point2, Point3 } from '../../../types';
 import uuidv4 from '../../../utilities/uuidv4';
-import createVolumeActor from '../../helpers/createVolumeActor';
+import { createVolumeActorOfVolume } from '../../helpers/createVolumeActor';
 import {
   idleSampleDistanceMultiplierOf,
   sampleDistanceOf,
@@ -81,7 +81,8 @@ export class VtkVolume3DRenderPath
     const payload: Volume3DVolumePayload =
       data as unknown as LoadedData<Volume3DVolumePayload>;
     const hadVolume = ctx.vtk.renderer.getVolumes().length > 0;
-    const actor = await createVolumeActor(
+    const actor = await createVolumeActorOfVolume(
+      payload.imageVolume,
       { volumeId: payload.volumeId, ...this.hooks },
       ctx.viewport.element,
       ctx.viewportId,

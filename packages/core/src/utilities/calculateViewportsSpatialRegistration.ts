@@ -24,7 +24,8 @@ const ALLOWED_DELTA = 0.05;
  * but otherwise it will use the current image's metadata to calculate the
  * translation between the two viewports and adds it to the spatialRegistrationModule
  * metadata provider, for the viewport ids and the rendering engine ids of the
- * two viewports
+ * two viewports. A lookup with other rendering engine ids does not find it; a
+ * lookup with the viewport ids alone does, as in 5.x
  *
  *
  * @param viewport1 - The first stack viewport
@@ -68,7 +69,6 @@ function calculateViewportsSpatialRegistration(
   );
 
   const mat = mat4.fromTranslation(mat4.create(), translation);
-  spatialRegistrationMetadataProvider.add([viewport1.id, viewport2.id], mat);
   spatialRegistrationMetadataProvider.add(
     [
       viewport1.id,

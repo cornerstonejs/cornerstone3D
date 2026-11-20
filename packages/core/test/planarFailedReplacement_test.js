@@ -358,4 +358,66 @@ describe('A replacement of the display sets of a direct next planar viewport who
       expect(pictureOf(viewport)).toBe(replacementPicture);
     });
   }
+
+  it('draws a source and an overlay on the CPU once, with both, when a NEW_IMAGE listener of the mount starts a replacement that rejects at once', async function () {
+    const shown = await createSeries({ id: 'shownHold' });
+    const next = await createSeries({ id: 'nextHold' });
+    const overlay = await createSeries({ id: 'overlayHold' });
+    const viewport = createNextViewport(renderingEngine, 'replacement');
+    const options = {
+      orientation: OrientationAxis.ACQUISITION,
+      renderBackend: 'cpu',
+    };
+    const provider = utilities.genericViewportDisplaySetMetadataProvider;
+    const renderedScenes = [];
+    let failingMount;
+    let counting = false;
+
+    await showStack(viewport, shown, SHOWN_SLICE, options);
+    provider.add('replacement:next', {
+      imageIds: next.imageIds,
+      kind: 'planar',
+      initialImageIdIndex: 0,
+    });
+    provider.add('replacement:overlay', {
+      imageIds: overlay.imageIds,
+      kind: 'planar',
+      initialImageIdIndex: 0,
+    });
+    viewport.element.addEventListener(Events.IMAGE_RENDERED, () => {
+      if (counting) {
+        renderedScenes.push(
+          viewport.getDisplaySets().map(({ displaySetId }) => displaySetId)
+        );
+      }
+    });
+    viewport.element.addEventListener(Events.NEW_IMAGE, (event) => {
+      if (!failingMount && next.imageIds.includes(event.detail.imageId)) {
+        failingMount = viewport.setDisplaySets({
+          displaySetId: 'replacement:unregistered',
+          options,
+        });
+      }
+    });
+
+    counting = true;
+    await viewport.setDisplaySets(
+      { displaySetId: 'replacement:next', options },
+      { displaySetId: 'replacement:overlay', options }
+    );
+    counting = false;
+
+    let error;
+
+    try {
+      await failingMount;
+    } catch (caught) {
+      error = caught;
+    }
+
+    expect(error).toBeDefined();
+    expect(renderedScenes).toEqual([
+      ['replacement:next', 'replacement:overlay'],
+    ]);
+  });
 });
