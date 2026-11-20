@@ -1,0 +1,28 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "5",
+        "rule": "setAverageWhite: the viewport may not show its data yet"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "6",
+        "rule": "setProperties: the viewport may not show its data yet"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "9",
+        "rule": "setProperties: the viewport may not show its data yet"
+      },
+      "count": 1
+    }
+  ]
+}

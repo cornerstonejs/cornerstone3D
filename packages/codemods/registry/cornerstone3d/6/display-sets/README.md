@@ -42,10 +42,13 @@ as `viewport` alone, a `let`, a `var` and a container type such as
   segmentation overlays of the series before, and two engines with a
   viewport of one id never share a registration. JSON keeps the three parts
   apart, so engine `'a:b'` with viewport `'c'` and engine `'a'` with viewport
-  `'b:c'` get two ids. The index is 0 when the call had none, as in 5.x. An
-  image list that is not a name, a literal or an array of those (a property
-  read, an index, a call) is read once into a fresh `const` first, as the
-  old call read it once.
+  `'b:c'` get two ids. The index is 0 when the call had none, as in 5.x. A
+  viewport that is a member chain (`holder.viewport`, `this.viewport`, the
+  `viewport` of an enabled element), which can be a getter, is read once
+  into a fresh `const` first, and an image list that is not a name, a
+  literal or an array of those (a property read, an index, a call) is read
+  once into a fresh `const` after it, as the old call read each once and in
+  that order.
 
 - `viewport.setVolumes([{ volumeId }])` and
   `setVolumesForViewports(renderingEngine, [{ volumeId }], viewportIds)` as
@@ -53,11 +56,17 @@ as `viewport` alone, a `let`, a `var` and a container type such as
   `setDisplaySets({ displaySetId: volumeId })` on each viewport, when the
   function of the call creates that volume with
   `volumeLoader.createAndCacheVolume(volumeId, { imageIds })` in a statement
-  that runs before the call on every path. The volume id is a string or a
-  `const` (or an unwritten parameter), the same binding at the creation and
-  at the call, and `imageIds` is such a name in scope at the call.
-- `setVolumesForViewports` looks up every viewport first and throws, as 5.x
-  did, before the registration and before any mount when one is missing:
+  that runs before the call on every path: an expression statement or a
+  declaration, not a part of a loop or of an `if` (the increment of a `for`
+  that its body leaves with `break` never runs). The volume id is a string
+  or a `const` (or an unwritten parameter), the same binding at the creation
+  and at the call, and `imageIds` is such a name in scope at the call. The
+  options of the creation have no computed key (`['imageIds']`, `[key]`)
+  and one `imageIds` only: the loader takes the last entry.
+- `setVolumesForViewports` looks up and checks every viewport first and
+  throws, as 5.x did, before the registration and before any mount when one
+  is missing or is not planar or 3D (5.x took only viewports with
+  `setVolumes`):
 
   ```ts
   const viewports = viewportIds.map((viewportId) => {
@@ -65,6 +74,15 @@ as `viewport` alone, a `let`, a `var` and a container type such as
 
     if (!viewport) {
       throw new Error(`Viewport with Id ${viewportId} does not exist`);
+    }
+
+    if (
+      viewport.type !== Enums.ViewportType.PLANAR &&
+      viewport.type !== Enums.ViewportType.VOLUME_3D
+    ) {
+      throw new Error(
+        'setVolumesForViewports only supports viewports that implement setVolumes'
+      );
     }
 
     return viewport;
@@ -90,13 +108,14 @@ as `viewport` alone, a `let`, a `var` and a container type such as
 - `setVideo(imageId, frameNumber)` becomes
   `setDisplaySets({ displaySetId: imageId, options: { frameNumber } })`, and
   `setEcg(imageId)` `setDisplaySets({ displaySetId: imageId })`.
-- The new mount waits (`await`) when the old call waited or when its function
-  is `async`, so code after it sees the view.
+- The new mount of `setStack` and `setVolumes` waits (`await`) when the old
+  call waited or when its function is `async`, so code after it sees the
+  view. `setVolumesForViewports` is rewritten only when it was awaited.
 - Statements that replace the single-statement body of an `if`, an `else`, a
   loop or a `case` go in a block.
-- `utilities` comes from the existing core import, or under a fresh alias
-  such as `coreUtilities` when a local name hides it at the call. An import
-  with comments is edited in place.
+- `utilities` and `Enums` come from the existing core import, or under a
+  fresh alias such as `coreUtilities` when a local name hides them at the
+  call. An import with comments is edited in place.
 
 ## Reported
 
@@ -107,9 +126,11 @@ as `viewport` alone, a `let`, a `var` and a container type such as
   viewport is a call; a `setVolumes` input with `callback`, `blendMode`,
   `slabThickness`, `visibility` or `actorUID`, with more volumes, a volume
   id that is not a string or a `const`, or whose image ids are not known (no
-  creation of the same volume id on every path before it in its function);
-  a `setVolumesForViewports` that its function does not wait for (5.x
-  rejected its promise where the new statements throw); a data member in
+  creation of the same volume id on every path before it in its function,
+  or options with a computed key or two `imageIds`); a
+  `setVolumesForViewports` that is not awaited (5.x gave a promise that the
+  code did not wait for, so the code after it ran before the mounts, and
+  the new statements would wait for every mount or throw); a data member in
   brackets (`viewport['setStack']`); an `export { ... } from` of a removed
   data function; `addVolumes`, `addVolumesToViewports`,
   `convertStackToVolumeViewport`, `convertVolumeToStackViewport`,

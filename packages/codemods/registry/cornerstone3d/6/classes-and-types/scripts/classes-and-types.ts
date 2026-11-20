@@ -10,6 +10,7 @@ import {
   coreImportOf,
   enclosingFunction,
   importSource,
+  isCoreEnum,
   isCoreExport,
   isCoreNamespace,
   isMountedBefore,
@@ -119,8 +120,12 @@ const CASE_ENDS = new Set([
   'continue_statement',
 ]);
 
-/** What a test of the viewport type tells about the family of a node. */
-type Decision = '3d' | 'planar' | 'ambiguous' | undefined;
+/**
+ * What a test of the viewport type tells about the family of a node;
+ * `mixed` when the viewport inputs of its id give a 3D type with another, or
+ * a type that only the running code resolves.
+ */
+type Decision = '3d' | 'planar' | 'ambiguous' | 'mixed' | undefined;
 
 /**
  * The state of one run of the transform on a file.
@@ -464,10 +469,36 @@ function familyEvidence(run: Run, typeNode: Node): Decision {
 }
 
 /**
- * Returns the family of the viewport inputs of the file with the id of the
- * `getViewport` call that a type node casts, when they all have one.
+ * Returns the family that a viewport type value names when it is resolved
+ * without running code: a member of the core `Enums.ViewportType`, or a
+ * string. Returns 'other' for another resolved type, and undefined for any
+ * other expression, such as a condition, a name or a call.
  */
-function inputFamily(run: Run, typeNode: Node): '3d' | 'planar' | undefined {
+function staticTypeFamily(value: Node): '3d' | 'planar' | 'other' | undefined {
+  const inner = unwrap(value);
+
+  if (inner.kind() === 'string') {
+    return familyOfTypeText(inner.text()) ?? 'other';
+  }
+
+  const object =
+    inner.kind() === 'member_expression' ? inner.field('object') : undefined;
+
+  if (!object || !isCoreEnum(object, 'ViewportType')) {
+    return undefined;
+  }
+
+  return familyOfTypeText(inner.field('property')?.text() ?? '') ?? 'other';
+}
+
+/**
+ * Returns the family of the viewport inputs of the file with the id of the
+ * `getViewport` call that a type node casts, when they all give one type
+ * that is resolved without running code. Returns `mixed` when one gives a 3D
+ * type and another gives another type, or when one gives a type that only
+ * the running code resolves, such as `flag ? VOLUME_3D : PLANAR`.
+ */
+function inputFamily(run: Run, typeNode: Node): Decision {
   const holder = typeNode
     .ancestors()
     .find((ancestor) =>
@@ -496,7 +527,7 @@ function inputFamily(run: Run, typeNode: Node): '3d' | 'planar' | undefined {
   }
 
   for (const objectNode of run.rootNode.findAll({ rule: { kind: 'object' } })) {
-    const { pairs } = objectEntries(objectNode);
+    const { pairs, shorthand } = objectEntries(objectNode);
     const idNode =
       pairs.get('viewportId')?.field('value') ??
       objectNode
@@ -506,19 +537,21 @@ function inputFamily(run: Run, typeNode: Node): '3d' | 'planar' | undefined {
             child.kind() === 'shorthand_property_identifier' &&
             child.text() === 'viewportId'
         );
-    const typeText = pairs.get('type')?.field('value')?.text();
+    const typeValue = pairs.get('type')?.field('value');
 
-    if (!idNode || viewportIdKey(idNode) !== id || !typeText) {
+    if (
+      !idNode ||
+      viewportIdKey(idNode) !== id ||
+      (!typeValue && !shorthand.has('type'))
+    ) {
       continue;
     }
 
-    families.add(
-      THREE_D_TYPE.test(typeText)
-        ? '3d'
-        : PLANAR_TYPE.test(typeText)
-          ? 'planar'
-          : 'other'
-    );
+    families.add((typeValue && staticTypeFamily(typeValue)) ?? 'dynamic');
+  }
+
+  if (families.has('dynamic') || (families.has('3d') && families.size > 1)) {
+    return 'mixed';
   }
 
   return families.size === 1 && !families.has('other')
@@ -546,14 +579,13 @@ function classFor(
 
   const family = familyEvidence(run, typeNode);
 
-  if (family === 'ambiguous') {
-    manual.increment(
-      site(
-        run.root,
-        `${label}: a test of a 3D type here does not show the family`,
-        typeNode
-      )
-    );
+  if (family === 'ambiguous' || family === 'mixed') {
+    const reason =
+      family === 'mixed'
+        ? 'the inputs of this viewport id do not give one static type'
+        : 'a test of a 3D type here does not show the family';
+
+    manual.increment(site(run.root, `${label}: ${reason}`, typeNode));
 
     return undefined;
   }

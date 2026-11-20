@@ -3,6 +3,22 @@
     {
       "cardinality": {
         "file": "input.ts",
+        "line": "4",
+        "rule": "setProperties: the viewport may not show its data yet"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "5",
+        "rule": "setProperties: the viewport may not show its data yet"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
         "line": "8",
         "rule": "setProperties: the key preset"
       },

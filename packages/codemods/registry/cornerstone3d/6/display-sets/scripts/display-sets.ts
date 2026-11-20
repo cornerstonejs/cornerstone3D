@@ -71,6 +71,17 @@ const UNCONDITIONAL_KINDS = new Set([
   'member_expression',
 ]);
 
+/**
+ * The statements that run every part of their expression whenever they run:
+ * an expression statement and a declaration, never a loop, an `if` or a
+ * `return`.
+ */
+const PLAIN_STATEMENTS = new Set([
+  'expression_statement',
+  'lexical_declaration',
+  'variable_declaration',
+]);
+
 /** The members whose presence a legacy check tests with `in`. */
 const PRESENCE_CHECKS = new Set([
   'setStack',
@@ -177,12 +188,28 @@ function isCoreVolumeCreation(call: Node): boolean {
 }
 
 /**
+ * Tells whether an object literal has a key computed in brackets, such as
+ * `['imageIds']` or `[key]`: it can name a key that another entry names, and
+ * the later entry wins.
+ */
+function hasComputedKey(objectNode: Node): boolean {
+  return objectNode
+    .children()
+    .some(
+      (child) =>
+        child.kind() === 'pair' &&
+        child.field('key')?.kind() === 'computed_property_name'
+    );
+}
+
+/**
  * Returns the image ids expression of the volume that the function of the
  * target creates with `createAndCacheVolume(volumeId, { imageIds })` on
  * every path to the target, or undefined. The volume id of the creation has
  * the value of the volume id at the target (one string, or one binding that
  * holds one value), and the image ids are a name whose binding holds one
- * value and is seen at the target.
+ * value and is seen at the target. Options with a computed key, or with
+ * `imageIds` twice, give no image ids: the loader takes the last entry.
  */
 function imageIdsOfVolume(
   run: Run,
@@ -204,11 +231,20 @@ function imageIdsOfVolume(
       continue;
     }
 
-    if (options?.kind() !== 'object' || objectEntries(options).hasSpread) {
+    if (options?.kind() !== 'object') {
       return undefined;
     }
 
-    const { pairs, shorthand } = objectEntries(options);
+    const { pairs, shorthand, hasSpread, keys } = objectEntries(options);
+
+    if (
+      hasSpread ||
+      hasComputedKey(options) ||
+      keys.filter((name) => name === 'imageIds').length > 1
+    ) {
+      return undefined;
+    }
+
     const imageIds = shorthand.has('imageIds')
       ? options
           .children()
@@ -235,15 +271,17 @@ function imageIdsOfVolume(
 }
 
 /**
- * Tells whether a call runs whenever its statement runs: the nodes between
- * them are declarations, `await`, parentheses, casts, arrays, arguments and
- * the calls and member reads that hold them, never a condition, a loop or a
- * function.
+ * Tells whether a call runs whenever its statement runs: the statement is an
+ * expression statement or a declaration, and the nodes between them are
+ * declarations, `await`, parentheses, casts, arrays, arguments and the calls
+ * and member reads that hold them, never a condition, a loop or a function.
+ * A call in a part of a loop or of an `if`, such as the increment of a `for`
+ * that its body leaves with `break`, proves nothing.
  */
 function runsWith(call: Node, statement: Node): boolean {
   for (const ancestor of call.ancestors()) {
     if (ancestor.id() === statement.id()) {
-      return true;
+      return PLAIN_STATEMENTS.has(statement.kind());
     }
 
     if (
@@ -347,12 +385,35 @@ function callbackParameter(taken: Set<string>): string {
 }
 
 /**
+ * Returns an expression without the parentheses around it.
+ */
+function withoutParentheses(node: Node): Node {
+  let current = node;
+
+  while (current.kind() === 'parenthesized_expression') {
+    const inner = current
+      .children()
+      .find((child) => child.isNamed() && child.kind() !== 'comment');
+
+    if (!inner) {
+      return current;
+    }
+
+    current = inner;
+  }
+
+  return current;
+}
+
+/**
  * Rewrites `viewport.setStack(imageIds, index)` in a statement to the
  * registration of a display set and its mount. The display set id is the
  * JSON of the rendering engine id, the viewport id and the first image id,
  * so another series gets another id, two engines never share one, and no
- * two of these tuples give one text. An image list that is not a plain value
- * is read once into a `const`, as the old call read it once.
+ * two of these tuples give one text. A viewport that is a property read,
+ * such as a getter, is read once into a `const` before the image list, and
+ * an image list that is not a plain value is read once into a `const`, as
+ * the old call read each once and in that order.
  */
 function rewriteSetStack(
   run: Run,
@@ -387,7 +448,12 @@ function rewriteSetStack(
   }
 
   const { statement, awaited } = statementInfo;
-  const receiver = unwrap(object).text();
+  const target = unwrap(object);
+  const viewportLocal =
+    target.kind() === 'identifier' || target.kind() === 'this'
+      ? undefined
+      : run.imports.fresh('viewport');
+  const receiver = viewportLocal ?? target.text();
   const [list, indexArg] = args;
   const listLocal = isPlainValue(list)
     ? undefined
@@ -406,6 +472,9 @@ function rewriteSetStack(
   const index = indexArg?.text() ?? '0';
   const wait = awaitPrefix(run, call, awaited, 'setStack');
   const edit = replaceStatement(run.rootNode, statement, (indent) => [
+    ...(viewportLocal
+      ? [`const ${viewportLocal} = ${withoutParentheses(object).text()};`]
+      : []),
     ...(listLocal ? [`const ${listLocal} = ${list.text()};`] : []),
     `const ${idLocal} = JSON.stringify([${receiver}.renderingEngineId, ${receiver}.id, ${first}]);`,
     registration(
@@ -417,7 +486,7 @@ function rewriteSetStack(
       ],
       indent
     ),
-    mountCall(wait, object.text(), idLocal),
+    mountCall(wait, viewportLocal ?? object.text(), idLocal),
   ]);
 
   if (!run.edits.add(edit)) {
@@ -484,19 +553,19 @@ function rewriteSetVolumes(
 /**
  * Rewrites `setVolumesForViewports(engine, [{ volumeId }], viewportIds)` in a
  * statement to the registration and a mount on each viewport. As in 5.x,
- * every viewport is looked up before any mount starts, and a missing one
- * throws before the registration. An engine that is not a name is read once
- * into a local first, as the call read it once. A call that its function
- * does not wait for is reported: 5.x rejected its promise where the new
- * statements throw.
+ * every viewport is looked up and checked before any mount starts: a
+ * missing one, or one that is not planar or 3D (5.x took only viewports with
+ * `setVolumes`), throws before the registration. An engine that is not a
+ * name is read once into a local first, as the call read it once. A call
+ * that is not awaited is reported: 5.x gave a promise that the code did not
+ * wait for, where the new statements wait for every mount or throw.
  */
 function rewriteSetVolumesForViewports(run: Run, call: Node): boolean {
   const args = argumentsOf(call);
   const statementInfo = statementOfCall(call);
   const { volumeId, reason: inputReason } = singleVolumeId(args[1]);
   const imageIds = volumeId ? imageIdsOfVolume(run, volumeId, call) : undefined;
-  const awaits =
-    statementInfo?.awaited || isAsyncFunction(enclosingFunction(call));
+  const awaits = statementInfo?.awaited;
   const reason =
     statementReason(call) ??
     (args.some((arg) => arg.kind() === 'spread_element')
@@ -512,12 +581,17 @@ function rewriteSetVolumesForViewports(run: Run, call: Node): boolean {
   const utilities = reason
     ? undefined
     : run.imports.ensure('utilities', { at: call });
+  const enums = utilities
+    ? run.imports.ensure('Enums', { at: call })
+    : undefined;
 
-  if (reason || !utilities) {
+  if (reason || !utilities || !enums) {
+    const missing = utilities ? 'Enums' : 'utilities';
+
     manual.increment(
       site(
         run.root,
-        `setVolumesForViewports: ${reason ?? 'utilities cannot be imported'}`,
+        `setVolumesForViewports: ${reason ?? `${missing} cannot be imported`}`,
         call
       )
     );
@@ -555,6 +629,15 @@ function rewriteSetVolumesForViewports(run: Run, call: Node): boolean {
       '',
       `${indent}  if (!${element}) {`,
       `${indent}    throw new Error(\`Viewport with Id \${${parameter}} does not exist\`);`,
+      `${indent}  }`,
+      '',
+      `${indent}  if (`,
+      `${indent}    ${element}.type !== ${enums}.ViewportType.PLANAR &&`,
+      `${indent}    ${element}.type !== ${enums}.ViewportType.VOLUME_3D`,
+      `${indent}  ) {`,
+      `${indent}    throw new Error(`,
+      `${indent}      'setVolumesForViewports only supports viewports that implement setVolumes'`,
+      `${indent}    );`,
       `${indent}  }`,
       '',
       `${indent}  return ${element};`,

@@ -45,6 +45,15 @@ its name, and so is a legacy member in brackets
   `getFrameRate()` and `getNumberOfFrames()`.
 - `setFrameRange(range)` and `setAverageWhite(value)` become `setViewState`
   and `setDisplaySetPresentation`.
+- `setDisplaySetPresentation` sets the display set that the viewport shows,
+  and does nothing before the first mount, where 5.x kept the properties.
+  So `setProperties` of presentation keys and `setAverageWhite` change only
+  on a viewport that is a name whose binding holds one value (a `const`, an
+  unwritten parameter), after a statement of the same function that awaits
+  a mount on that binding (`await viewport.setDisplaySets(...)`,
+  `await viewport.setStack(...)` and their kin), with no mount on it after
+  the call or before it without `await`. A mount under an `if` or in
+  another function proves nothing.
 - On a viewport typed as a planar viewport: `setCamera({ flipHorizontal })`
   becomes `setViewState(...)`.
 
@@ -53,6 +62,7 @@ its name, and so is a legacy member in brackets
 All manual, with the rule name: `setProperties` with a second argument, a
 variable, a spread, or a key without a twin (`slabThickness`, `preset`,
 `isComputedVOI` and the others), or before the viewport shows its data;
+`setAverageWhite` before the viewport shows its data;
 `resetCamera` with `resetToCenter` or `storeAsInitialCamera`; `getCamera`,
 `setCamera` of other keys, `getProperties`, `resetProperties`, the default
 properties, the view presentation, the actor members, `getSliceViewInfo`,

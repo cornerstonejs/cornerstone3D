@@ -124,9 +124,11 @@ named in brackets are left to you, in the list. It changes:
   the viewport was mounted before it (an empty viewport has no mode);
 - `setStack`, `setVolumes` and `setVolumesForViewports` in their common shape,
   `setVideo` and `setEcg` (step 3): a registered display set and
-  `setDisplaySets`, awaited;
-- `setProperties` of presentation keys, `resetCamera` and the other members
-  with one fixed call (steps 4 to 8 and 10);
+  `setDisplaySets`, awaited (a `setVolumesForViewports` that was not awaited
+  is left to you);
+- `setProperties` of presentation keys after a mount of the same viewport in
+  the same function, `resetCamera` and the other members with one fixed call
+  (steps 4 to 8 and 10);
 - the events that have one event in their place (step 9), the settings
   (step 12) and two moved modules of the tools (step 11).
 
@@ -143,7 +145,7 @@ entry names a rule, a file and a line.
 
 Then run your formatter and your type checker, and do the steps of this page:
 their searches find what is left. On the 5.x examples of this repository the
-codemod rewrote three of four uses of a removed name, rewrote none wrongly, and
+codemod rewrote seven of ten uses of a removed name, rewrote none wrongly, and
 reported every one it left. Its
 [README](https://github.com/cornerstonejs/cornerstone3D/blob/main/packages/codemods/registry/cornerstone3d/6/README.md)
 lists each package with what it changes and what it reports.
@@ -392,15 +394,24 @@ await viewport.setDisplaySets({
 The viewport takes the volume from the cache. When the volume is not there,
 the viewport makes it from the image ids and starts its load.
 
-`setVolumesForViewports` becomes a loop over the viewports. Find every
-viewport first, as the 5.x helper did, so that a missing one changes none:
+`setVolumesForViewports` becomes a loop over the viewports. Find and check
+every viewport first, as the 5.x helper did, so that a missing one, or one
+that cannot show a volume (5.x took only viewports with `setVolumes`),
+changes none:
 
 ```ts
 const viewports = viewportIds.map((viewportId) => {
-  const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
+  const viewport = renderingEngine.getViewport(viewportId);
 
   if (!viewport) {
     throw new Error(`No viewport ${viewportId}`);
+  }
+
+  if (
+    viewport.type !== Enums.ViewportType.PLANAR &&
+    viewport.type !== Enums.ViewportType.VOLUME_3D
+  ) {
+    throw new Error(`Viewport ${viewportId} cannot show a volume`);
   }
 
   return viewport;

@@ -1,0 +1,36 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "1",
+        "rule": "import of @cornerstonejs/tools/utilities/viewportCapabilities"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "2",
+        "rule": "import of @cornerstonejs/tools/utilities/viewportCapabilities"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "5",
+        "rule": "import of @cornerstonejs/tools/utilities/viewportCapabilities"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "9",
+        "rule": "import of @cornerstonejs/tools/utilities/spatial/rotateViewportAroundWorldPoint"
+      },
+      "count": 1
+    }
+  ]
+}

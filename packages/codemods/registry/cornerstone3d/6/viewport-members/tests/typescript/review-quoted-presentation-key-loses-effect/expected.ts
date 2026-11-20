@@ -7,6 +7,6 @@ export function show(mode: Enums.VOILUTFunctionType, value: string) {
   const planar = engine.getViewport<PlanarViewport>('CT');
   const ecg = engine.getViewport<ECGViewport>('ECG');
 
-  planar.setDisplaySetPresentation({ 'voiLUTFunction': mode });
+  planar.setProperties({ 'VOILUTFunction': mode });
   ecg.setViewState({ "traceLayout": value });
 }

@@ -3,6 +3,7 @@ import {
   setVolumesForViewports as setVolumes,
   volumeLoader,
   utilities,
+  Enums,
 } from '@cornerstonejs/core';
 
 const renderingEngine = new RenderingEngine('engine');
@@ -19,6 +20,15 @@ export async function show(imageIds: string[], viewportIds: string[]) {
 
     if (!viewport) {
       throw new Error(`Viewport with Id ${viewportId} does not exist`);
+    }
+
+    if (
+      viewport.type !== Enums.ViewportType.PLANAR &&
+      viewport.type !== Enums.ViewportType.VOLUME_3D
+    ) {
+      throw new Error(
+        'setVolumesForViewports only supports viewports that implement setVolumes'
+      );
     }
 
     return viewport;

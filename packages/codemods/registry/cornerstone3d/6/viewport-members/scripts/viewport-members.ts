@@ -8,12 +8,15 @@ import {
   coreImportOf,
   coreReExports,
   enclosingFunction,
+  isBoundTo,
   isCoreExport,
+  isMountedBefore,
   isRepeatable,
   viewportEvidence,
   methodCall,
   objectEntries,
   site,
+  stableBinding,
   unwrap,
   viewportFamily,
 } from './lib.ts';
@@ -241,10 +244,22 @@ function literalKeys(arg: Node | undefined): string[] | undefined {
 
 /**
  * Tells whether the presentation of the source display set can be set at a
- * call: no mount of the same viewport comes after it in its function, and no
- * mount before it runs without `await`.
+ * call: the receiver is a name whose binding holds one value, a statement
+ * that awaits a mount on that binding runs before the call in its function,
+ * and no mount on that binding comes after the call in its function or runs
+ * before it without `await`. A mount under a condition or in another
+ * function proves nothing: 6.0 drops a presentation that is set before the
+ * first mount, where 5.x kept it.
  */
-function isMountedAt(run: Run, call: Node, receiver: string): boolean {
+function isMountedAt(run: Run, call: Node, receiver: Node): boolean {
+  const target = unwrap(receiver);
+  const binding =
+    target.kind() === 'identifier' ? stableBinding(target) : undefined;
+
+  if (!binding || !isMountedBefore(call, receiver)) {
+    return false;
+  }
+
   const scope = enclosingFunction(call) ?? run.rootNode;
   const start = call.range().start.index;
 
@@ -253,7 +268,7 @@ function isMountedAt(run: Run, call: Node, receiver: string): boolean {
 
     if (
       !parts ||
-      parts.object.text() !== receiver ||
+      !isBoundTo(unwrap(parts.object), binding) ||
       !MOUNT_CALL.test(`.${parts.method}(`)
     ) {
       continue;
@@ -361,7 +376,7 @@ function rewriteSetProperties(
     return reportSite(run, `setProperties: the key ${key}`, call);
   }
 
-  if (isPresentation && !isMountedAt(run, call, object.text())) {
+  if (isPresentation && !isMountedAt(run, call, object)) {
     return reportSite(
       run,
       'setProperties: the viewport may not show its data yet',
@@ -517,7 +532,13 @@ function rewriteCall(run: Run, call: Node): void {
     }
 
     case 'setAverageWhite':
-      if (args.length === 1) {
+      if (args.length === 1 && !isMountedAt(run, call, object)) {
+        reportSite(
+          run,
+          'setAverageWhite: the viewport may not show its data yet',
+          call
+        );
+      } else if (args.length === 1) {
         run.edits.add(
           property.replace('setDisplaySetPresentation'),
           call.field('arguments').replace(`({ averageWhite: ${argTexts[0]} })`)

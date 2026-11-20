@@ -32,6 +32,10 @@ const SETTING_FUNCTIONS = new Set([
   'getUseGenericViewport',
 ]);
 
+/** The keys of the configuration that 6.0 removes, as a regular expression. */
+const REMOVED_KEYS =
+  'useGenericViewport|useCPURendering|useViewportSamplingForLinear';
+
 /** The core functions that take the configuration. */
 const CONFIGURATION_FUNCTIONS = ['init', 'setConfiguration'];
 
@@ -305,29 +309,38 @@ function configurationOf(pair: Node): Node {
 /**
  * Rewrites the removed keys of the `rendering` configuration of an object
  * that the file passes to `init` or `setConfiguration`. A key of another
- * object, or a key whose value runs code, is reported.
+ * object, or a key whose value runs code, is reported. A shorthand entry,
+ * such as `{ useCPURendering }`, is a key whose value is the name it reads.
  */
 function rewriteConfiguration(run: Run): void {
   const pairs = run.rootNode.findAll({
     rule: {
-      kind: 'pair',
-      has: {
-        field: 'key',
-        regex:
-          '^[\'"]?(useGenericViewport|useCPURendering|useViewportSamplingForLinear)[\'"]?$',
-      },
+      any: [
+        {
+          kind: 'pair',
+          has: {
+            field: 'key',
+            regex: `^['"]?(${REMOVED_KEYS})['"]?$`,
+          },
+        },
+        {
+          kind: 'shorthand_property_identifier',
+          regex: `^(${REMOVED_KEYS})$`,
+        },
+      ],
     },
   });
 
   const removals: Removal[] = [];
 
   for (const pair of pairs) {
-    const key = keyOf(pair);
+    const isShorthand = pair.kind() === 'shorthand_property_identifier';
+    const key = isShorthand ? pair.text() : keyOf(pair);
     const holderName =
       key === 'useViewportSamplingForLinear' ? 'cpuVolume' : 'rendering';
     const holder = holderPair(pair, holderName);
     const rule = `${holderName}.${key}`;
-    const value = pair.field('value');
+    const value = isShorthand ? pair : pair.field('value');
 
     if (!holder) {
       continue;
@@ -353,7 +366,7 @@ function rewriteConfiguration(run: Run): void {
 
     const removes = key !== 'useCPURendering' || value?.text() === 'false';
 
-    if (removes && (!value || !isPure(value))) {
+    if (removes && (!value || !(isShorthand || isPure(value)))) {
       manual.increment(site(run.root, `${rule}: its value has effects`, pair));
       continue;
     }

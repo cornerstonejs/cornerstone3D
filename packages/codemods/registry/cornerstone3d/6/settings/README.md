@@ -23,6 +23,10 @@ core namespace.
   `planar: { renderBackend: 'cpu' }`, `false` is removed, another value `x`
   becomes `planar: { renderBackend: x ? 'cpu' : 'auto' }`.
 - `rendering.planar.cpuVolume.useViewportSamplingForLinear` is removed.
+- A shorthand key, such as `rendering: { useCPURendering }`, is a key whose
+  value is the name it reads: `useCPURendering` becomes
+  `planar: { renderBackend: useCPURendering ? 'cpu' : 'auto' }`, and the
+  other two are removed.
 - `setUseCPURendering(true)` becomes `setRenderBackend('cpu')`, `false`
   `setRenderBackend('auto')`, another value `x`
   `setRenderBackend(x ? 'cpu' : 'auto')`.

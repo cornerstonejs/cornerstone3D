@@ -19,8 +19,9 @@ npx codemod @cornerstonejs/cornerstone3d-6-classes-and-types
   as a type import of `@cornerstonejs/core`.
 - `Types.IVolumeViewport`, `Types.IBaseVolumeViewport` and
   `BaseVolumeViewport` become `VolumeViewport3D` where the file shows a 3D
-  viewport: the viewport input with the id of the `getViewport` call (the
-  same string, or the same `const`) has the type `VOLUME_3D`, or the node
+  viewport: every viewport input with the id of the `getViewport` call (the
+  same string, or the same `const`) has the type `VOLUME_3D`, as a member
+  of the core `Enums.ViewportType` or the string `'volume3d'`, or the node
   runs only when the type of that viewport equals `VOLUME_3D` (an enclosing
   `if`, `else` or `case` of the same function that compares
   `<viewport>.type`, or a `const` that holds it such as
@@ -63,7 +64,10 @@ npx codemod @cornerstonejs/cornerstone3d-6-classes-and-types
   (`new StackViewport(...)`, a shorthand property, an export or a re-export
   of the core; its import stays), a class in brackets on the core namespace
   (`cs['StackViewport']`), an `IVolumeViewport` under a test of
-  `VOLUME_3D` that does not show the family, the
+  `VOLUME_3D` that does not show the family, an `IVolumeViewport` whose
+  viewport inputs give `VOLUME_3D` and another type, or a type that only
+  the running code resolves (`type: flag ? VOLUME_3D : PLANAR`, a name, a
+  call), the
   removed `Types.*ViewportProperties`, `Types.IVolumeInput`,
   `Types.VolumeInputCallback`, `Types.SetAspectRatioOptions` and
   `Types.ImageSetOptions`, and `utilities.isGenericViewport(...)`

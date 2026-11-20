@@ -39,7 +39,10 @@ name, and an `export *` of one; the module
 `viewportSupportsStackCompatibility` and `StackCompatibilityViewport` of the
 tools; any other import or re-export of
 `@cornerstonejs/tools/utilities/viewportCapabilities` (a type of it, a default
-or namespace import, `export *`, or the checks with another name);
+or namespace import, `export *`, the checks with another name, an import for
+its side effects, `import {} from` and `export {} from`: the module no
+longer resolves); a dynamic `import()` or a `require()` of a module that
+6.0 moves or deletes whole;
 `utilities.spatial.rotateViewportAroundWorldPoint`.
 
 ## Development

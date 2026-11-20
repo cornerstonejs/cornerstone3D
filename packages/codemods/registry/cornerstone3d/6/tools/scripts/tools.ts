@@ -295,16 +295,22 @@ function namesOnlyCoreChecks(specifiers: Node[]): boolean {
 }
 
 /**
- * Tells whether specifiers take a name of the deleted capabilities module
- * that 6.0 does not just remove: a check that moved to the core, or a type.
+ * Tells whether a statement with these specifiers keeps the deleted
+ * capabilities module in the file once its removed names are reported: no
+ * specifier at all (`import {} from`, `export {} from`, or an import for its
+ * side effects), or a name that 6.0 does not just remove, such as a check
+ * that moved to the core, or a type.
  */
-function takesMoreThanRemoved(specifiers: Node[] | undefined): boolean {
+function keepsDeletedModule(specifiers: Node[] | undefined): boolean {
   const removed = REMOVED_NAMES[CAPABILITIES_MODULE] as string[];
 
   return Boolean(
-    specifiers?.some(
-      (specifier) => !removed.includes(specifier.field('name')?.text() ?? '')
-    )
+    specifiers &&
+      (!specifiers.length ||
+        specifiers.some(
+          (specifier) =>
+            !removed.includes(specifier.field('name')?.text() ?? '')
+        ))
   );
 }
 
@@ -333,7 +339,7 @@ function moveCapabilityImport(run: Run, statement: Node): void {
 
   reportRemoved(run, statement, REMOVED_NAMES[CAPABILITIES_MODULE]);
 
-  if (takesMoreThanRemoved(specifiers)) {
+  if (keepsDeletedModule(specifiers)) {
     manual.increment(
       site(run.root, `import of ${CAPABILITIES_MODULE}`, statement)
     );
@@ -360,7 +366,7 @@ function moveCapabilityReExport(run: Run, statement: Node): void {
 
   reportRemovedReExport(run, statement, REMOVED_NAMES[CAPABILITIES_MODULE]);
 
-  if (takesMoreThanRemoved(specifiers)) {
+  if (keepsDeletedModule(specifiers)) {
     manual.increment(
       site(run.root, `export of ${CAPABILITIES_MODULE}`, statement)
     );
@@ -429,6 +435,37 @@ function reportRotateViewport(run: Run): void {
 }
 
 /**
+ * Reports a dynamic `import()` or a `require()` of a module of the tools that
+ * 6.0 moves or deletes whole: its path no longer resolves, and the names that
+ * the code reads from it cannot be followed.
+ */
+function reportDynamicImports(run: Run): void {
+  for (const call of run.rootNode.findAll({
+    rule: { kind: 'call_expression' },
+  })) {
+    const callee = call.field('function');
+    const [argument] =
+      call
+        .field('arguments')
+        ?.children()
+        .filter((child) => child.isNamed() && child.kind() !== 'comment') ?? [];
+    const isLoader =
+      callee?.kind() === 'import' ||
+      (callee?.kind() === 'identifier' && callee.text() === 'require');
+    const path =
+      argument?.kind() === 'string' ? argument.text().slice(1, -1) : '';
+    const isGone =
+      path === CAPABILITIES_MODULE ||
+      REMOVED_NAMES[path] === '*' ||
+      Boolean(MOVED_MODULES[path]);
+
+    if (isLoader && isGone) {
+      manual.increment(site(run.root, `import of ${path}`, call));
+    }
+  }
+}
+
+/**
  * Moves the two modules of the tools that 6.0 renames to their new paths
  * (`labelmapRenderPlan/legacyVolumePlan` and
  * `labelmapModel/labelmapLegacyAdapter`), moves the checks of the deleted
@@ -468,6 +505,7 @@ const codemod: Codemod<TSX> = (root) => {
   }
 
   reportRotateViewport(run);
+  reportDynamicImports(run);
 
   if (!run.edits.all().length) {
     return null;

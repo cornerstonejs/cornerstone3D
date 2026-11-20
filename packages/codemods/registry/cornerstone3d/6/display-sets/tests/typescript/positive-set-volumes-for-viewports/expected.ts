@@ -1,7 +1,7 @@
 import {
   RenderingEngine,
+  setVolumesForViewports,
   volumeLoader,
-  utilities,
 } from '@cornerstonejs/core';
 
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume';
@@ -19,25 +19,7 @@ async function run() {
 
   volume.load();
 
-  const viewports = viewportIds.map((viewportId) => {
-    const viewport = renderingEngine.getViewport(viewportId);
-
-    if (!viewport) {
-      throw new Error(`Viewport with Id ${viewportId} does not exist`);
-    }
-
-    return viewport;
-  });
-
-  utilities.genericViewportDisplaySetMetadataProvider.add(volumeId, {
-    kind: 'planar',
-    imageIds,
-    volumeId,
-  });
-
-  await Promise.all(
-    viewports.map((viewport) => viewport.setDisplaySets({ displaySetId: volumeId }))
-  );
+  setVolumesForViewports(renderingEngine, [{ volumeId }], viewportIds);
 
   renderingEngine.renderViewports(viewportIds);
 }

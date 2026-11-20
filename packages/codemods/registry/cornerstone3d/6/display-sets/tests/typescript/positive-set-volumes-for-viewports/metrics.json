@@ -1,0 +1,12 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "22",
+        "rule": "setVolumesForViewports: not awaited"
+      },
+      "count": 1
+    }
+  ]
+}
