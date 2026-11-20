@@ -1,5 +1,6 @@
 import { geometryLoader } from '@cornerstonejs/core';
 import { createAndCacheSurfacesFromRaw } from './createAndCacheSurfacesFromRaw';
+import { computeSurfaceData } from './surfaceComputationStrategies';
 
 /** The segmentation that the conversion reads. */
 let mockSegmentation;
@@ -19,6 +20,9 @@ const mockAnnotations = {
   contour: { metadata: { FrameOfReferenceUID: 'contourFrame' } },
 };
 
+/** The raw surface that each conversion gives. */
+const mockRawSurface = { points: [0, 0, 0], polys: [1, 0] };
+
 jest.mock('@cornerstonejs/core', () => ({
   cache: { getVolume: (volumeId) => mockVolumes[volumeId] },
   metaData: {
@@ -27,8 +31,16 @@ jest.mock('@cornerstonejs/core', () => ({
   },
   geometryLoader: { createAndCacheGeometry: jest.fn() },
   Enums: { GeometryType: { SURFACE: 'Surface' } },
+  utilities: {
+    logger: {
+      polySegLog: { getLogger: () => ({ warn: jest.fn(), error: jest.fn() }) },
+    },
+  },
 }));
 jest.mock('@cornerstonejs/tools', () => ({
+  utilities: {
+    segmentation: { getUniqueSegmentIndices: () => [1] },
+  },
   segmentation: {
     state: { getSegmentation: () => mockSegmentation },
     config: { color: { getSegmentIndexColor: () => [10, 20, 30, 255] } },
@@ -36,28 +48,64 @@ jest.mock('@cornerstonejs/tools', () => ({
   annotation: {
     state: { getAnnotation: (annotationUID) => mockAnnotations[annotationUID] },
   },
+  Enums: {
+    SegmentationRepresentations: {
+      Labelmap: 'Labelmap',
+      Contour: 'Contour',
+      Surface: 'Surface',
+    },
+  },
+}));
+jest.mock('./convertContourToSurface', () => ({
+  convertContourToSurface: async () => mockRawSurface,
+}));
+jest.mock('./convertLabelmapToSurface', () => ({
+  convertLabelmapToSurfaces: async (labelmap, segmentIndices) =>
+    segmentIndices.map(() => mockRawSurface),
 }));
 
+/** The viewport of the conversion. */
+const viewport = {
+  id: 'viewport',
+  getFrameOfReferenceUID: () => 'viewportFrame',
+};
+
 /** The frame of reference of the surface that the conversion cached. */
-async function frameOfReferenceOfConvertedSurface(representationData) {
-  mockSegmentation = { segmentationId: 'seg', representationData };
-
-  await createAndCacheSurfacesFromRaw(
-    'seg',
-    [{ segmentIndex: 1, data: { points: [0, 0, 0], polys: [1, 0] } }],
-    {
-      viewport: {
-        id: 'viewport',
-        getFrameOfReferenceUID: () => 'viewportFrame',
-      },
-    }
-  );
-
+function frameOfReferenceOfCachedSurface() {
   const [[, { geometryData }]] = (
     geometryLoader.createAndCacheGeometry as jest.Mock
   ).mock.calls;
 
   return geometryData.frameOfReferenceUID;
+}
+
+/**
+ * The frame of reference of the surface that the conversion cached, for a
+ * conversion from `source`: the one representation of `representationData`
+ * when no source is given.
+ */
+async function frameOfReferenceOfConvertedSurface(
+  representationData,
+  source = Object.keys(representationData)[0]
+) {
+  mockSegmentation = { segmentationId: 'seg', representationData };
+
+  await createAndCacheSurfacesFromRaw(
+    'seg',
+    [{ segmentIndex: 1, data: { points: [0, 0, 0], polys: [1, 0] } }],
+    { viewport },
+    source
+  );
+
+  return frameOfReferenceOfCachedSurface();
+}
+
+/** A segmentation with contours and a labelmap of other frames. */
+function contoursAndLabelmap() {
+  return {
+    Labelmap: { volumeId: 'labelmapVolume' },
+    Contour: { annotationUIDsMap: new Map([[1, new Set(['contour'])]]) },
+  };
 }
 
 describe('createAndCacheSurfacesFromRaw', () => {
@@ -95,5 +143,22 @@ describe('createAndCacheSurfacesFromRaw', () => {
         Labelmap: { volumeId: 'volumeNotInCache' },
       })
     ).resolves.toBe('viewportFrame');
+  });
+
+  it('gives the surface converted from the labelmap of a segmentation that also has contours the frame of reference of the labelmap', async () => {
+    await expect(
+      frameOfReferenceOfConvertedSurface(contoursAndLabelmap(), 'Labelmap')
+    ).resolves.toBe('labelmapFrame');
+  });
+
+  it('gives the surface that computeSurfaceData converts from the contours of a segmentation that also has a labelmap the frame of reference of the contours', async () => {
+    mockSegmentation = {
+      segmentationId: 'seg',
+      representationData: contoursAndLabelmap(),
+    };
+
+    await computeSurfaceData('seg', { segmentIndices: [1], viewport });
+
+    expect(frameOfReferenceOfCachedSurface()).toBe('contourFrame');
   });
 });

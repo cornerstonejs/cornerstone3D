@@ -5,17 +5,20 @@ import {
   getRenderingEngine,
 } from '@cornerstonejs/core';
 import type { Types, PlanarViewport } from '@cornerstonejs/core';
+import { vec3 } from 'gl-matrix';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import vtkCutter from '@kitware/vtk.js/Filters/Core/Cutter';
 import vtkContourLoopExtraction from '@kitware/vtk.js/Filters/General/ContourLoopExtraction';
 
 import {
   addAnnotation,
+  getAllAnnotations,
   getAnnotations,
 } from '../stateManagement/annotation/annotationState';
 import { drawPath } from '../drawingSvg';
+import _getHash from '../drawingSvg/_getHash';
 import { getToolGroup } from '../store/ToolGroupManager';
-import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
+import triggerAnnotationRender from '../utilities/triggerAnnotationRender';
 import type {
   PublicToolProps,
   ToolProps,
@@ -71,11 +74,12 @@ type ShownSurface = {
 };
 
 /**
- * The points and the polys arrays of a surface, with their lengths, that the
- * outlines of the surface were cut from. The arrays can change in place, so
+ * The surface, and its points and polys arrays with their lengths, that the
+ * outlines of a surface were cut from. The arrays can change in place, so
  * their lengths are kept apart from them.
  */
 type CutSurfaceData = {
+  surface: Types.ISurface;
   points: number[];
   polys: number[];
   pointsLength: number;
@@ -91,6 +95,12 @@ const SURFACE_CHANGE_EVENTS = [
   Events.SEGMENTATION_REPRESENTATION_REMOVED,
 ];
 
+/**
+ * The decimals, in mm, of the offset of a plane in the key of its outlines:
+ * planes closer than a micrometre share their outlines.
+ */
+const PLANE_OFFSET_DECIMALS = 3;
+
 /** The surface data that each map of outlines of a surface was cut from. */
 const cutSurfaceDataByOutlines = new WeakMap<
   Map<string, WorldPointSet>,
@@ -100,11 +110,11 @@ const cutSurfaceDataByOutlines = new WeakMap<
 /**
  * Draws on each slice viewport of its tool group the lines where the surfaces
  * of segmentations cut the slice on display, filled with the `opacity` of its
- * configuration. The surfaces are those that the viewports of the same frame
- * of reference show as their Surface representation, as a 3D viewport does
- * next to the planar viewports of an MPR. Each line has the colour of its
- * segment. The lines of a slice are cut once, and again when the surface
- * gets new data.
+ * configuration. The surfaces are those of the frame of reference of the
+ * slice viewport that the viewports show as their Surface representation,
+ * as a 3D viewport does next to the planar viewports of an MPR. Each line has
+ * the colour of its segment. The lines of a plane are cut once, and again
+ * when the surface gets new data.
  */
 class SegmentationIntersectionTool extends AnnotationDisplayTool {
   static toolName;
@@ -121,9 +131,10 @@ class SegmentationIntersectionTool extends AnnotationDisplayTool {
   }
 
   /**
-   * Adds the annotation of the tool in the frame of reference of the first
-   * viewport of its tool group, with no outline yet, and draws the viewports
-   * of the group. Each viewport cuts the outlines of its slice as it draws.
+   * Adds the annotation of the tool, with no outline yet, in each frame of
+   * reference of the viewports of its tool group that has none, and draws
+   * the viewports of the group. Each viewport cuts the outlines of its slice
+   * as it draws.
    */
   _init = (): void => {
     const viewportsInfo = getToolGroup(this.toolGroupId).viewportsInfo;
@@ -133,40 +144,12 @@ class SegmentationIntersectionTool extends AnnotationDisplayTool {
       return;
     }
 
-    const firstViewport = getRenderingEngine(
-      viewportsInfo[0].renderingEngineId
-    )?.getViewport(viewportsInfo[0].viewportId);
+    const viewports = getViewports(viewportsInfo);
 
-    if (!firstViewport) {
-      return;
-    }
-    const frameOfReferenceUID = firstViewport.getFrameOfReferenceUID();
-    const annotations = getAnnotations(this.getToolName(), frameOfReferenceUID);
-
-    if (!annotations?.length) {
-      const actorsWorldPointsMap = new Map<
-        string,
-        Map<string, WorldPointSet>
-      >();
-      const newAnnotation: SegmentationIntersectionAnnotation = {
-        highlighted: true,
-        invalidated: true,
-        metadata: {
-          toolName: this.getToolName(),
-          FrameOfReferenceUID: frameOfReferenceUID,
-          referencedImageId: null,
-        },
-        data: {
-          actorsWorldPointsMap,
-        },
-      };
-
-      addAnnotation(newAnnotation, frameOfReferenceUID);
-    }
-
-    triggerAnnotationRenderForViewportIds(
-      viewportsInfo.map(({ viewportId }) => viewportId)
+    viewports.forEach((viewport) =>
+      addFrameAnnotation(this.getToolName(), viewport.getFrameOfReferenceUID())
     );
+    viewports.forEach(({ element }) => triggerAnnotationRender(element));
   };
 
   onSetToolEnabled = (): void => {
@@ -205,8 +188,12 @@ class SegmentationIntersectionTool extends AnnotationDisplayTool {
       return;
     }
 
-    triggerAnnotationRenderForViewportIds(
-      toolGroup.viewportsInfo.map(({ viewportId }) => viewportId)
+    if (evt.type === Events.SEGMENTATION_REPRESENTATION_REMOVED) {
+      dropOutlinesOfUnshownSurfaces(this.getToolName());
+    }
+
+    getViewports(toolGroup.viewportsInfo).forEach(({ element }) =>
+      triggerAnnotationRender(element)
     );
   }) as EventListener;
 
@@ -217,7 +204,9 @@ class SegmentationIntersectionTool extends AnnotationDisplayTool {
   /**
    * Draws on a viewport the outlines of the surfaces that the viewports of
    * its frame of reference show, where they cut the slice on display. The
-   * outlines of a slice are cut on its first draw. A viewport without a slice,
+   * outlines of a slice are cut on its first draw. The lines of a surface
+   * are one path, filled with the even-odd rule: a line inside another bounds
+   * a hole, as the cavity of a hollow segment. A viewport without a slice,
    * as a 3D viewport, draws nothing.
    *
    * @param enabledElement - The Cornerstone's enabledElement.
@@ -264,25 +253,28 @@ class SegmentationIntersectionTool extends AnnotationDisplayTool {
       }
       const { worldPointsSet, color } = outline;
 
-      worldPointsSet.forEach((worldPoints, index) => {
-        const canvasPoints = worldPoints.map((point) =>
-          viewport.worldToCanvas(point)
-        );
+      if (!worldPointsSet.length) {
+        continue;
+      }
 
-        drawPath(
-          svgDrawingHelper,
-          annotationUID,
-          `${representationUID}#${index + 1}`,
-          canvasPoints,
-          {
-            color,
-            fillColor: color,
-            fillOpacity: this.configuration.opacity,
-            closePath: true,
-            lineWidth: 2,
-          }
-        );
-      });
+      drawPath(
+        svgDrawingHelper,
+        annotationUID,
+        representationUID,
+        worldPointsSet.map((worldPoints) =>
+          worldPoints.map((point) => viewport.worldToCanvas(point))
+        ),
+        {
+          color,
+          fillColor: color,
+          fillOpacity: this.configuration.opacity,
+          closePath: true,
+          lineWidth: 2,
+        }
+      );
+      svgDrawingHelper
+        .getSvgNode(_getHash(annotationUID, 'path', representationUID))
+        ?.setAttribute('fill-rule', 'evenodd');
     }
 
     return true;
@@ -290,10 +282,79 @@ class SegmentationIntersectionTool extends AnnotationDisplayTool {
 }
 
 /**
- * The surfaces of the segments that the viewports of a frame of reference
- * show as their Surface representation, by the representation UID of each
- * segment: of a visible representation, and not hidden on that viewport. A
- * surface that several viewports show takes the colour of the first one.
+ * The viewports of a tool group that exist, each found by its rendering
+ * engine and its id: viewports of several rendering engines can have the
+ * same id.
+ */
+function getViewports(viewportsInfo: Types.IViewportId[]): Types.IViewport[] {
+  return viewportsInfo
+    .map(({ renderingEngineId, viewportId }) =>
+      getRenderingEngine(renderingEngineId)?.getViewport(viewportId)
+    )
+    .filter(Boolean);
+}
+
+/**
+ * Adds the annotation of the tool in a frame of reference that has none,
+ * with no outline yet.
+ */
+function addFrameAnnotation(
+  toolName: string,
+  frameOfReferenceUID: string
+): void {
+  if (getAnnotations(toolName, frameOfReferenceUID)?.length) {
+    return;
+  }
+
+  const newAnnotation: SegmentationIntersectionAnnotation = {
+    highlighted: true,
+    invalidated: true,
+    metadata: {
+      toolName,
+      FrameOfReferenceUID: frameOfReferenceUID,
+      referencedImageId: null,
+    },
+    data: {
+      actorsWorldPointsMap: new Map<string, Map<string, WorldPointSet>>(),
+    },
+  };
+
+  addAnnotation(newAnnotation, frameOfReferenceUID);
+}
+
+/**
+ * Drops from each annotation of the tool the outlines of the surfaces that
+ * no viewport shows in its frame of reference any more, as after the removal
+ * of a Surface representation, so that the annotation does not keep a
+ * removed surface and the outlines of its slices alive. A surface that is
+ * shown again is cut again.
+ */
+function dropOutlinesOfUnshownSurfaces(toolName: string): void {
+  getAllAnnotations()
+    .filter(({ metadata }) => metadata?.toolName === toolName)
+    .forEach((annotation) => {
+      const { actorsWorldPointsMap } = (
+        annotation as SegmentationIntersectionAnnotation
+      ).data;
+      const shownSurfaces = getShownSurfaces(
+        annotation.metadata.FrameOfReferenceUID
+      );
+
+      [...actorsWorldPointsMap.keys()].forEach((representationUID) => {
+        if (!shownSurfaces.has(representationUID)) {
+          actorsWorldPointsMap.delete(representationUID);
+        }
+      });
+    });
+}
+
+/**
+ * The surfaces of a frame of reference that the viewports show as their
+ * Surface representation, by the representation UID of each segment: of a
+ * visible representation, and not hidden on that viewport. A surface is of
+ * the frame of reference of its geometry; a geometry without one is of the
+ * frame of reference of the viewport that shows it. A surface that several
+ * viewports show takes the colour of the first one.
  *
  * @param frameOfReferenceUID - The frame of reference.
  * @returns The shown surfaces, with the colour of their segment.
@@ -304,14 +365,15 @@ function getShownSurfaces(
   const shownSurfaces = new Map<string, ShownSurface>();
 
   getEnabledElements().forEach(({ viewport }) => {
-    if (viewport.getFrameOfReferenceUID() !== frameOfReferenceUID) {
-      return;
-    }
-
     getSegmentationRepresentations(viewport.id, {
       type: SegmentationRepresentations.Surface,
     }).forEach((representation) => {
-      addShownSurfaces(shownSurfaces, viewport.id, representation);
+      addShownSurfaces(
+        shownSurfaces,
+        frameOfReferenceUID,
+        viewport,
+        representation
+      );
     });
   });
 
@@ -319,13 +381,14 @@ function getShownSurfaces(
 }
 
 /**
- * Adds the surfaces of the visible segments of a Surface representation of a
- * viewport, with the colour of each segment in the colour LUT of the
- * representation, as the surface display gives it.
+ * Adds the surfaces of the frame of reference among the visible segments of
+ * a Surface representation of a viewport, with the colour of each segment in
+ * the colour LUT of the representation, as the surface display gives it.
  */
 function addShownSurfaces(
   shownSurfaces: Map<string, ShownSurface>,
-  viewportId: string,
+  frameOfReferenceUID: string,
+  viewport: Types.IViewport,
   representation: SegmentationRepresentation
 ): void {
   const { segmentationId, type, visible, colorLUTIndex } = representation;
@@ -338,7 +401,7 @@ function addShownSurfaces(
     return;
   }
 
-  const hiddenSegmentIndices = internalGetHiddenSegmentIndices(viewportId, {
+  const hiddenSegmentIndices = internalGetHiddenSegmentIndices(viewport.id, {
     segmentationId,
     type,
   });
@@ -349,7 +412,11 @@ function addShownSurfaces(
       | Types.ISurface
       | undefined;
 
-    if (!surface?.points?.length) {
+    if (
+      !surface?.points?.length ||
+      (surface.frameOfReferenceUID || viewport.getFrameOfReferenceUID()) !==
+        frameOfReferenceUID
+    ) {
       return;
     }
 
@@ -382,7 +449,7 @@ function addShownSurfaces(
  * outline that is kept takes the colour of the segment now.
  *
  * @param actorsWorldPointsMap - The outlines of each surface, by
- * representation UID, then by viewport and slice.
+ * representation UID, then by plane (`getCacheId`).
  * @param viewport - The viewport.
  * @param shownSurfaces - The surfaces to cut.
  */
@@ -406,6 +473,7 @@ function calculateSurfaceSegmentationIntersectionsForViewport(
       outlines = new Map();
       actorsWorldPointsMap.set(representationUID, outlines);
       cutSurfaceDataByOutlines.set(outlines, {
+        surface,
         points: surface.points,
         polys: surface.polys,
         pointsLength: surface.points.length,
@@ -428,8 +496,8 @@ function calculateSurfaceSegmentationIntersectionsForViewport(
 }
 
 /**
- * Whether the outlines of a surface were cut from its points and polys as
- * they are now.
+ * Whether the outlines of a surface were cut from this surface, with its
+ * points and polys as they are now.
  */
 function isCutFrom(
   outlines: Map<string, WorldPointSet>,
@@ -438,7 +506,8 @@ function isCutFrom(
   const cutSurfaceData = cutSurfaceDataByOutlines.get(outlines);
 
   return (
-    cutSurfaceData?.points === surface.points &&
+    cutSurfaceData?.surface === surface &&
+    cutSurfaceData.points === surface.points &&
     cutSurfaceData.polys === surface.polys &&
     cutSurfaceData.pointsLength === surface.points.length &&
     cutSurfaceData.polysLength === surface.polys.length
@@ -504,18 +573,27 @@ function cutSurface(
 }
 
 /**
- * The key under which the outlines of a viewport are kept: its id, its view
- * plane normal and its slice, from its view reference. A viewport that shows
- * nothing has no view, and a 3D viewport has no slice: neither has a key.
+ * The key under which the outlines of the slice of a viewport are kept: the
+ * plane of the slice, by its view plane normal and its offset along that
+ * normal (`normal . focalPoint`, in mm, to `PLANE_OFFSET_DECIMALS`), from the
+ * view reference of the viewport. Viewports of the frame of reference that
+ * show the same plane share its outlines, whatever their id, rendering
+ * engine, series or slice index. A viewport that shows nothing has no view,
+ * and a 3D viewport has no slice: neither has a key.
  */
-function getCacheId(viewport): string | undefined {
-  const { viewPlaneNormal, sliceIndex } = viewport.getViewReference();
+function getCacheId(viewport: PlanarViewport): string | undefined {
+  const { viewPlaneNormal, cameraFocalPoint, sliceIndex } =
+    viewport.getViewReference();
 
-  if (!viewPlaneNormal || sliceIndex === undefined) {
+  if (!viewPlaneNormal || !cameraFocalPoint || sliceIndex === undefined) {
     return;
   }
 
-  return `${viewport.id}-${pointToString(viewPlaneNormal)}-${sliceIndex}`;
+  const offset = vec3.dot(viewPlaneNormal, cameraFocalPoint);
+
+  return `${pointToString(viewPlaneNormal)}${offset.toFixed(
+    PLANE_OFFSET_DECIMALS
+  )}`;
 }
 
 /**

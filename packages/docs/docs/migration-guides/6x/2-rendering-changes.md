@@ -1310,19 +1310,30 @@ legacy picture within two levels of 255.
 - **`SegmentationIntersectionTool` draws its lines.** On each planar
   viewport of its tool group it draws the closed lines where the surfaces of
   segmentations cut the slice on display, filled with its `opacity`, in the
-  colour of each segment, and the lines follow a scroll. The surfaces are
-  those that the viewports of the same frame of reference show as their
-  Surface representation, such as a 3D viewport beside the planar viewports
-  of an MPR, of a visible representation and segment. The cut of a slice is
-  made on its first draw and made again when a surface gets other points or
-  polys arrays, or arrays of another length. When a viewport draws a Surface
-  representation, as after new surface data or a change of its visibility,
-  the viewports of the tool group draw their lines again, with no other
-  draw request. They do the same when a Surface representation is removed
-  from a viewport, so the lines of a surface that no viewport shows any
-  more go. A 3D viewport of the tool group gets no line. In 5.x the
-  tool read `clippingFilter` of each actor entry, which nothing set, and
-  drew no line. The example `surfaceRendering` shows it.
+  colour of each segment, and the lines follow a scroll. The lines of a
+  segment are one SVG path filled with the even-odd rule, so the cavity of a
+  hollow segment is not filled. The surfaces are those of the frame of
+  reference of the planar viewport that a viewport shows as its Surface
+  representation, such as a 3D viewport beside the planar viewports of an
+  MPR, of a visible representation and segment. A surface is of the frame
+  of reference of its geometry (`frameOfReferenceUID` of
+  `cache.getGeometry(geometryId).data`), or, when the geometry has none, of
+  the viewport that shows it; a surface of another frame of reference is
+  not cut. A tool group whose viewports have several frames of reference
+  gets lines in each of them (one annotation of the tool for each frame).
+  The cut of a plane is made on its first draw and made again when a
+  surface gets other points or polys arrays, or arrays of another length.
+  It is kept by the plane (its normal and its position along the normal),
+  so a viewport that shows another series of the same frame of reference
+  at the same slice index gets the cut of its own plane. When a viewport
+  draws a Surface representation, as after new surface data or a change of
+  its visibility, the viewports of the tool group draw their lines again,
+  with no other draw request. They do the same when a Surface
+  representation is removed from a viewport, so the lines of a surface that
+  no viewport shows any more go, and the tool drops the cuts it kept for
+  it. A 3D viewport of the tool group gets no line. In 5.x the tool read
+  `clippingFilter` of each actor entry, which nothing set, and drew no line.
+  The example `surfaceRendering` shows it.
 
 ## The viewport type that a tool gets
 
@@ -1408,7 +1419,12 @@ and is deprecated.
   series.** A surface converted from a labelmap gets the frame of reference
   of the labelmap: of its volume or its images, or of the volume or the
   images that it references. A surface converted from contours gets the
-  frame of reference of their annotations. The `frameOfReferenceUID` of the
+  frame of reference of their annotations. It is the frame of reference of
+  the representation that polySeg converts: a segmentation with contours
+  and a labelmap has its surfaces converted from the contours, so they take
+  the frame of reference of the contours, and a surface that the update
+  after an edit of the labelmap adds takes the one of the labelmap. The
+  `frameOfReferenceUID` of the
   surface (`cache.getGeometry(geometryId).data`) names it. A 3D viewport
   that shows only such surfaces takes it, so it matches the planar
   viewports of the series, and `SegmentationIntersectionTool` cuts its

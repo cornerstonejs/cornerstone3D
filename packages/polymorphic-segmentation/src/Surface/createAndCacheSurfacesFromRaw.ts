@@ -3,56 +3,65 @@ import { cache, Enums, geometryLoader, metaData } from '@cornerstonejs/core';
 import type { RawSurfacesData } from './surfaceComputationStrategies';
 import type { PolySegConversionOptions } from '../types';
 import * as cornerstoneTools from '@cornerstonejs/tools';
-import type { Types as ToolsTypes } from '@cornerstonejs/tools';
+import type {
+  Enums as ToolsEnums,
+  Types as ToolsTypes,
+} from '@cornerstonejs/tools';
 
 const { getSegmentation } = cornerstoneTools.segmentation.state;
 const { getSegmentIndexColor } = cornerstoneTools.segmentation.config.color;
 const { getAnnotation } = cornerstoneTools.annotation.state;
+const { SegmentationRepresentations } = cornerstoneTools.Enums;
 
 /**
- * The frame of reference of the data that a segmentation is converted from:
- * of its labelmap volume or the volume that it references, else of the
- * images of its labelmap or the images that it references, else of the
- * annotations of its contours. The viewport of the conversion gives it when
- * none of them does.
+ * The frame of reference of the data that a segmentation is converted from,
+ * the representation `source`: for a labelmap, of its volume or the volume
+ * that it references, else of its images or the images that it references;
+ * for contours, of their annotations. The viewport of the conversion gives
+ * it when the source has none.
  */
 function getFrameOfReferenceUID(
   segmentation: ToolsTypes.Segmentation,
+  source: ToolsEnums.SegmentationRepresentations,
   viewport?: Types.IViewport
 ): string | undefined {
   const { Labelmap: labelmap, Contour: contour } =
     segmentation.representationData;
 
-  for (const volumeId of [labelmap?.volumeId, labelmap?.referencedVolumeId]) {
-    const frameOfReferenceUID =
-      volumeId && cache.getVolume(volumeId)?.metadata?.FrameOfReferenceUID;
-    if (frameOfReferenceUID) {
-      return frameOfReferenceUID;
-    }
-  }
-
-  for (const imageId of [
-    labelmap?.imageIds?.[0],
-    labelmap?.referencedImageIds?.[0],
-  ]) {
-    const frameOfReferenceUID =
-      imageId &&
-      (
-        metaData.get('imagePlaneModule', imageId) as
-          | Types.ImagePlaneModule
-          | undefined
-      )?.frameOfReferenceUID;
-    if (frameOfReferenceUID) {
-      return frameOfReferenceUID;
-    }
-  }
-
-  for (const annotationUIDs of contour?.annotationUIDsMap?.values() ?? []) {
-    for (const annotationUID of annotationUIDs) {
+  if (source === SegmentationRepresentations.Labelmap) {
+    for (const volumeId of [labelmap?.volumeId, labelmap?.referencedVolumeId]) {
       const frameOfReferenceUID =
-        getAnnotation(annotationUID)?.metadata?.FrameOfReferenceUID;
+        volumeId && cache.getVolume(volumeId)?.metadata?.FrameOfReferenceUID;
       if (frameOfReferenceUID) {
         return frameOfReferenceUID;
+      }
+    }
+
+    for (const imageId of [
+      labelmap?.imageIds?.[0],
+      labelmap?.referencedImageIds?.[0],
+    ]) {
+      const frameOfReferenceUID =
+        imageId &&
+        (
+          metaData.get('imagePlaneModule', imageId) as
+            | Types.ImagePlaneModule
+            | undefined
+        )?.frameOfReferenceUID;
+      if (frameOfReferenceUID) {
+        return frameOfReferenceUID;
+      }
+    }
+  }
+
+  if (source === SegmentationRepresentations.Contour) {
+    for (const annotationUIDs of contour?.annotationUIDsMap?.values() ?? []) {
+      for (const annotationUID of annotationUIDs) {
+        const frameOfReferenceUID =
+          getAnnotation(annotationUID)?.metadata?.FrameOfReferenceUID;
+        if (frameOfReferenceUID) {
+          return frameOfReferenceUID;
+        }
       }
     }
   }
@@ -66,18 +75,22 @@ function getFrameOfReferenceUID(
  * @param segmentationId - The id of the segmentation
  * @param rawSurfacesData - The raw surface data
  * @param options - Optional parameters for creating and caching surfaces
+ * @param source - The representation that the raw surfaces were converted
+ * from, Labelmap or Contour, whose frame of reference the surfaces take
  * @returns An object containing the IDs of the created surfaces
  */
 export async function createAndCacheSurfacesFromRaw(
   segmentationId: string,
   rawSurfacesData: RawSurfacesData,
-  options: PolySegConversionOptions = {}
+  options: PolySegConversionOptions,
+  source: ToolsEnums.SegmentationRepresentations
 ) {
   // Initialize segmentationRepresentation and toolGroupId if a representation UID is provided
 
   const segmentation = getSegmentation(segmentationId);
   const frameOfReferenceUID = getFrameOfReferenceUID(
     segmentation,
+    source,
     options.viewport
   );
 

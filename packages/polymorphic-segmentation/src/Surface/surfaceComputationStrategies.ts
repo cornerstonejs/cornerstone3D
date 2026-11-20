@@ -5,7 +5,10 @@ import * as cornerstoneTools from '@cornerstonejs/tools';
 import { convertContourToSurface } from './convertContourToSurface';
 import { createAndCacheSurfacesFromRaw } from './createAndCacheSurfacesFromRaw';
 import { convertLabelmapToSurfaces } from './convertLabelmapToSurface';
-import type { Types as ToolsTypes } from '@cornerstonejs/tools';
+import type {
+  Enums as ToolsEnums,
+  Types as ToolsTypes,
+} from '@cornerstonejs/tools';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
 const cs3dLogger = cornerstoneUtilities.logger.polySegLog.getLogger(
@@ -14,6 +17,7 @@ const cs3dLogger = cornerstoneUtilities.logger.polySegLog.getLogger(
 
 const { getUniqueSegmentIndices } = cornerstoneTools.utilities.segmentation;
 const { getSegmentation } = cornerstoneTools.segmentation.state;
+const { SegmentationRepresentations } = cornerstoneTools.Enums;
 
 export type RawSurfacesData = {
   segmentIndex: number;
@@ -39,11 +43,13 @@ export async function computeSurfaceData(
     : getUniqueSegmentIndices(segmentationId);
 
   let rawSurfacesData: RawSurfacesData;
+  let source: ToolsEnums.SegmentationRepresentations;
   const segmentation = getSegmentation(segmentationId);
   const representationData = segmentation.representationData;
 
   try {
     if (representationData.Contour) {
+      source = SegmentationRepresentations.Contour;
       rawSurfacesData = await computeSurfaceFromContourSegmentation(
         segmentationId,
         {
@@ -54,6 +60,7 @@ export async function computeSurfaceData(
     } else if (
       representationData.Labelmap as ToolsTypes.LabelmapSegmentationData
     ) {
+      source = SegmentationRepresentations.Labelmap;
       // convert volume labelmap to surface
       rawSurfacesData = await computeSurfaceFromLabelmapSegmentation(
         segmentation.segmentationId,
@@ -77,7 +84,8 @@ export async function computeSurfaceData(
   const surfacesData = await createAndCacheSurfacesFromRaw(
     segmentationId,
     rawSurfacesData.filter(({ data }) => data.points?.length),
-    options
+    options,
+    source
   );
 
   return surfacesData;

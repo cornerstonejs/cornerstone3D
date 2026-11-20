@@ -7,6 +7,7 @@ import { getConfig, setConfig } from '../src/config';
 import { getSurfaceActorEntry } from '../src/stateManagement/segmentation/helpers';
 import { createNextPlanarViewport } from './nextLabelmapScenes';
 import {
+  STRAIGHT_PLANE,
   createNextViewport,
   createSeries,
   showVolume,
@@ -52,8 +53,18 @@ const RADIUS = 8;
 /** The shift along x, in mm, of the points of the sphere in an edit. */
 const MOVE_X = 10;
 
+/**
+ * The plane of a series of the same frame of reference as the test series,
+ * 10 mm lower: its slice 10 is at z = 20, which the sphere does not reach,
+ * where slice 10 of the test series is at z = 30, through the centre.
+ */
+const LOWER_PLANE = { ...STRAIGHT_PLANE, origin: [-10, 5, 10] };
+
 /** The size of a voxel of the series, in mm. */
 const VOXEL = 1;
+
+/** A frame of reference other than the one of the test series. */
+const OTHER_FRAME = 'segmentationIntersectionNextOtherFrame';
 
 /**
  * The scrolls of the planar viewport from the slice at z = 30, through the
@@ -99,6 +110,19 @@ const FIRST_CONVERSION_TIMEOUT = 5000;
 
 /** The longest wait, in ms, for a new conversion of the labelmap by polySeg. */
 const CONVERSION_TIMEOUT = 3000;
+
+/**
+ * Makes a test series whose volume is in the frame of reference `OTHER_FRAME`
+ * (the images keep theirs): a planar viewport that shows the volume takes the
+ * frame of reference of the volume.
+ */
+async function createSeriesOfOtherFrame(id) {
+  const series = await createSeries({ id, size: SIZE });
+
+  cache.getVolume(series.volumeId).metadata.FrameOfReferenceUID = OTHER_FRAME;
+
+  return series;
+}
 
 /** Makes a volume of 64 by 64 voxels of 1 mm and 10 slices in the cache. */
 async function createVolume() {
@@ -149,14 +173,17 @@ function getIntersectionAnnotations(viewport) {
   );
 }
 
+/** The ids of the geometries that the tests put in the cache. */
+const cachedGeometryIds = new Set([geometryId]);
+
 /**
- * Adds a segmentation whose Surface representation is a closed sphere of
- * radius `RADIUS` around `CENTER`, in the frame of the test series.
+ * The points and the polys of a closed sphere of radius `radius` around
+ * `CENTER`, as the geometry cache takes them.
  */
-function addSphereSegmentation() {
+function sphereSurfaceData(radius = RADIUS) {
   const sphere = vtkSphereSource.newInstance({
     center: CENTER,
-    radius: RADIUS,
+    radius,
     phiResolution: 24,
     thetaResolution: 24,
   });
@@ -165,23 +192,76 @@ function addSphereSegmentation() {
 
   const polyData = sphere.getOutputData();
 
-  geometryLoader.createAndCacheGeometry(geometryId, {
+  return {
+    points: Array.from(polyData.getPoints().getData()),
+    polys: Array.from(polyData.getPolys().getData()),
+  };
+}
+
+/**
+ * The points and the polys of a hollow sphere around `CENTER`: the closed
+ * sphere of radius `radius` and, inside it, the closed sphere of radius
+ * `innerRadius`, as one surface.
+ */
+function hollowSphereSurfaceData(radius, innerRadius) {
+  const outer = sphereSurfaceData(radius);
+  const inner = sphereSurfaceData(innerRadius);
+  const firstInnerPoint = outer.points.length / 3;
+  const innerPolys = [];
+
+  for (
+    let index = 0;
+    index < inner.polys.length;
+    index += inner.polys[index] + 1
+  ) {
+    const count = inner.polys[index];
+
+    innerPolys.push(
+      count,
+      ...inner.polys
+        .slice(index + 1, index + 1 + count)
+        .map((pointId) => pointId + firstInnerPoint)
+    );
+  }
+
+  return {
+    points: [...outer.points, ...inner.points],
+    polys: [...outer.polys, ...innerPolys],
+  };
+}
+
+/**
+ * Adds a segmentation whose Surface representation is a closed sphere of
+ * radius `RADIUS` around `CENTER`, in the frame of the test series. The
+ * options give another segmentation, geometry, frame of reference or
+ * radius, or the radius of a cavity that makes the sphere hollow.
+ */
+function addSphereSegmentation({
+  id = segmentationId,
+  surfaceGeometryId = geometryId,
+  frameOfReferenceUID = 'bothModesFrame',
+  radius = RADIUS,
+  innerRadius,
+} = {}) {
+  cachedGeometryIds.add(surfaceGeometryId);
+  geometryLoader.createAndCacheGeometry(surfaceGeometryId, {
     type: GeometryType.SURFACE,
     geometryData: {
-      id: geometryId,
+      id: surfaceGeometryId,
       color: [255, 0, 0],
-      frameOfReferenceUID: 'bothModesFrame',
-      points: Array.from(polyData.getPoints().getData()),
-      polys: Array.from(polyData.getPolys().getData()),
+      frameOfReferenceUID,
+      ...(innerRadius
+        ? hollowSphereSurfaceData(radius, innerRadius)
+        : sphereSurfaceData(radius)),
       segmentIndex: 1,
     },
   });
   segmentation.addSegmentations([
     {
-      segmentationId,
+      segmentationId: id,
       representation: {
         type: Surface,
-        data: { geometryIds: new Map([[1, geometryId]]) },
+        data: { geometryIds: new Map([[1, surfaceGeometryId]]) },
       },
     },
   ]);
@@ -190,9 +270,10 @@ function addSphereSegmentation() {
 /**
  * Makes a next 3D viewport outside the tool group of the tool, shows the
  * sphere on it as a Surface representation and resolves when its actor is
- * mounted.
+ * mounted. `sphereOptions` are those of `addSphereSegmentation`, without
+ * another segmentation id.
  */
-async function showSphereOn3DViewport(renderingEngine) {
+async function showSphereOn3DViewport(renderingEngine, sphereOptions = {}) {
   testUtils.createViewports(renderingEngine, {
     viewportType: ViewportType.VOLUME_3D,
     viewportId: viewport3DId,
@@ -201,13 +282,44 @@ async function showSphereOn3DViewport(renderingEngine) {
     height: 300,
     useEnableElement: true,
   });
-  addSphereSegmentation();
+  addSphereSegmentation(sphereOptions);
   segmentation.addSegmentationRepresentations(viewport3DId, [
     { segmentationId, type: Surface },
   ]);
   await waitFor(() => getSurfaceActorEntry(viewport3DId, segmentationId, 1));
 
   return renderingEngine.getViewport(viewport3DId);
+}
+
+/**
+ * Makes a next 3D viewport outside the tool group of the tool and shows the
+ * volume of a series on it, so that the viewport has the frame of reference
+ * of the series whatever surfaces it shows.
+ */
+async function showVolumeOn3DViewport(renderingEngine, series) {
+  const displaySetId = `volume:${viewport3DId}`;
+
+  testUtils.createViewports(renderingEngine, {
+    viewportType: ViewportType.VOLUME_3D,
+    viewportId: viewport3DId,
+    orientation: OrientationAxis.CORONAL,
+    width: 300,
+    height: 300,
+    useEnableElement: true,
+  });
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    imageIds: series.imageIds,
+    volumeId: series.volumeId,
+  });
+
+  const viewport3D = renderingEngine.getViewport(viewport3DId);
+
+  await viewport3D.setDisplaySets({
+    displaySetId,
+    options: { renderMode: 'vtkVolume3d' },
+  });
+
+  return viewport3D;
 }
 
 /**
@@ -384,7 +496,7 @@ function listenForSurfaceRender(viewportId, timeout = REDRAW_TIMEOUT) {
 function renderAnnotationsAndWait(viewport) {
   const rendered = waitForAnnotationsRendered(viewport.element);
 
-  csTools3d.utilities.triggerAnnotationRenderForViewportIds([viewport.id]);
+  csTools3d.utilities.triggerAnnotationRender(viewport.element);
 
   return rendered;
 }
@@ -520,9 +632,11 @@ describe('SegmentationIntersectionTool with the surface of a segmentation on a 3
 
   afterEach(function () {
     setConfig(config);
-    if (cache.getGeometry(geometryId)) {
-      cache.removeGeometryLoadObject(geometryId);
-    }
+    cachedGeometryIds.forEach((id) => {
+      if (cache.getGeometry(id)) {
+        cache.removeGeometryLoadObject(id);
+      }
+    });
     testUtils.cleanupTestEnvironment({
       renderingEngineId,
       toolGroupIds: [toolGroupId],
@@ -639,10 +753,15 @@ describe('SegmentationIntersectionTool with the surface of a segmentation on a 3
     expect(drawnPaths(viewport).length).toBe(0);
   });
 
-  it('draws again on an idle planar viewport when the surface data changes and when its segment is hidden on the 3D viewport, with no other draw request', async function () {
+  it('cuts the slice of another series of the same frame of reference that the viewport shows at the same slice index, and draws nothing where that slice misses the sphere', async function () {
     const series = await createSeries({
-      id: 'segmentationIntersectionNextIdle',
+      id: 'segmentationIntersectionNextSwapped',
       size: SIZE,
+    });
+    const lowerSeries = await createSeries({
+      id: 'segmentationIntersectionNextLower',
+      size: SIZE,
+      plane: LOWER_PLANE,
     });
     const viewport = createNextViewport(renderingEngine, viewportId);
 
@@ -651,6 +770,183 @@ describe('SegmentationIntersectionTool with the surface of a segmentation on a 3
     });
     await showSphereOn3DViewport(renderingEngine);
     await enableToolAndWaitForRender(viewport.element);
+
+    const sliceIndex = viewport.getSliceIndex();
+
+    expect(heightOfCenter(viewport)).toBeCloseTo(0, 3);
+    expect(drawnPaths(viewport).length).toBe(1);
+
+    await showVolume(viewport, lowerSeries, 10, {
+      orientation: OrientationAxis.AXIAL,
+    });
+    await renderAnnotationsAndWait(viewport);
+
+    expect(viewport.getVolumeId()).toBe(lowerSeries.volumeId);
+    expect(viewport.getFrameOfReferenceUID()).toBe('bothModesFrame');
+    expect(viewport.getSliceIndex()).toBe(sliceIndex);
+    expect(Math.abs(heightOfCenter(viewport))).toBeCloseTo(10, 3);
+    expect(drawnPaths(viewport).length).toBe(0);
+  });
+
+  it('cuts the surface of its frame of reference that a 3D viewport of that frame shows, and not the surface of another frame at the same coordinates there', async function () {
+    const sameFrameSegmentationId = `${segmentationId}SameFrame`;
+    const series = await createSeries({
+      id: 'segmentationIntersectionNextFrames',
+      size: SIZE,
+    });
+    const viewport = createNextViewport(renderingEngine, viewportId);
+
+    await showVolume(viewport, series, 10, {
+      orientation: OrientationAxis.AXIAL,
+    });
+
+    const viewport3D = await showVolumeOn3DViewport(renderingEngine, series);
+
+    addSphereSegmentation({ frameOfReferenceUID: OTHER_FRAME });
+    addSphereSegmentation({
+      id: sameFrameSegmentationId,
+      surfaceGeometryId: `${geometryId}SameFrame`,
+      radius: RADIUS / 2,
+    });
+    segmentation.addSegmentationRepresentations(viewport3DId, [
+      { segmentationId, type: Surface },
+      { segmentationId: sameFrameSegmentationId, type: Surface },
+    ]);
+    await waitFor(
+      () =>
+        getSurfaceActorEntry(viewport3DId, segmentationId, 1) &&
+        getSurfaceActorEntry(viewport3DId, sameFrameSegmentationId, 1)
+    );
+
+    expect(viewport3D.getFrameOfReferenceUID()).toBe('bothModesFrame');
+
+    await enableToolAndWaitForRender(viewport.element);
+
+    const paths = drawnPaths(viewport);
+
+    expect(heightOfCenter(viewport)).toBeCloseTo(0, 3);
+    expect(paths.length).toBe(1);
+    (paths[0]?.points || []).forEach((point) => {
+      expect(
+        Math.abs(radiusOnSlice(viewport, point, 0) - RADIUS / 2)
+      ).toBeLessThan(VOXEL);
+    });
+  });
+
+  it('fills the cut of a hollow sphere between its outer and inner lines, and not in the cavity', async function () {
+    const series = await createSeries({
+      id: 'segmentationIntersectionNextHollow',
+      size: SIZE,
+    });
+    const viewport = createNextViewport(renderingEngine, viewportId);
+
+    await showVolume(viewport, series, 10, {
+      orientation: OrientationAxis.AXIAL,
+    });
+    await showSphereOn3DViewport(renderingEngine, { innerRadius: RADIUS / 2 });
+    await enableToolAndWaitForRender(viewport.element);
+
+    const paths = [...viewport.element.querySelectorAll('svg path')];
+    const isFilledAt = (world) => {
+      const point = paths[0].ownerSVGElement.createSVGPoint();
+
+      [point.x, point.y] = viewport.worldToCanvas(world);
+
+      return paths.some((path) => path.isPointInFill(point));
+    };
+    const ringRadius = (RADIUS + RADIUS / 2) / 2;
+
+    expect(heightOfCenter(viewport)).toBeCloseTo(0, 3);
+    expect(paths.length).toBeGreaterThan(0);
+    paths.forEach((path) => {
+      expect(Number(path.getAttribute('fill-opacity'))).toBeGreaterThan(0);
+    });
+    expect(isFilledAt([CENTER[0] + ringRadius, CENTER[1], CENTER[2]])).toBe(
+      true
+    );
+    expect(isFilledAt([CENTER[0], CENTER[1] - ringRadius, CENTER[2]])).toBe(
+      true
+    );
+    expect(isFilledAt(CENTER)).toBe(false);
+    expect(isFilledAt([CENTER[0] + 1, CENTER[1] + 1, CENTER[2]])).toBe(false);
+  });
+
+  it('draws on each planar viewport of a tool group with two frames of reference the cut of the surface of its own frame', async function () {
+    const otherFrameViewportId = `${viewportId}OtherFrame`;
+    const otherFrameSegmentationId = `${segmentationId}OtherFrame`;
+    const series = await createSeries({
+      id: 'segmentationIntersectionNextTwoFrames',
+      size: SIZE,
+    });
+    const otherFrameSeries = await createSeriesOfOtherFrame(
+      'segmentationIntersectionNextTwoFramesOther'
+    );
+    const viewport = createNextViewport(renderingEngine, viewportId);
+    const otherFrameViewport = createNextViewport(
+      renderingEngine,
+      otherFrameViewportId
+    );
+
+    ToolGroupManager.getToolGroup(toolGroupId).addViewport(
+      otherFrameViewportId,
+      renderingEngineId
+    );
+    await showVolume(viewport, series, 10, {
+      orientation: OrientationAxis.AXIAL,
+    });
+    await showVolume(otherFrameViewport, otherFrameSeries, 10, {
+      orientation: OrientationAxis.AXIAL,
+    });
+    await showSphereOn3DViewport(renderingEngine);
+    addSphereSegmentation({
+      id: otherFrameSegmentationId,
+      surfaceGeometryId: `${geometryId}OtherFrame`,
+      frameOfReferenceUID: OTHER_FRAME,
+      radius: RADIUS / 2,
+    });
+    segmentation.addSegmentationRepresentations(viewport3DId, [
+      { segmentationId: otherFrameSegmentationId, type: Surface },
+    ]);
+    await waitFor(() =>
+      getSurfaceActorEntry(viewport3DId, otherFrameSegmentationId, 1)
+    );
+    await enableToolAndWaitForRender(viewport.element);
+    await pathsChangedFrom(otherFrameViewport, '');
+
+    expect(viewport.getFrameOfReferenceUID()).toBe('bothModesFrame');
+    expect(otherFrameViewport.getFrameOfReferenceUID()).toBe(OTHER_FRAME);
+    expect(getIntersectionAnnotations(otherFrameViewport).length).toBe(1);
+
+    [
+      [viewport, RADIUS],
+      [otherFrameViewport, RADIUS / 2],
+    ].forEach(([shown, radius]) => {
+      const paths = drawnPaths(shown);
+
+      expect(heightOfCenter(shown)).toBeCloseTo(0, 3);
+      expect(paths.length).toBe(1);
+      (paths[0]?.points || []).forEach((point) => {
+        expect(Math.abs(radiusOnSlice(shown, point, 0) - radius)).toBeLessThan(
+          VOXEL
+        );
+      });
+    });
+  });
+
+  it('draws again on an idle planar viewport when the surface data changes and when its segment is hidden on the 3D viewport, with no other draw request', async function () {
+    const series = await createSeries({
+      id: 'segmentationIntersectionNextIdle',
+      size: SIZE,
+    });
+    const viewport = createNextViewport(renderingEngine, viewportId);
+    const surfaceRendered = listenForSurfaceRender(viewport3DId);
+
+    await showVolume(viewport, series, 10, {
+      orientation: OrientationAxis.AXIAL,
+    });
+    await showSphereOn3DViewport(renderingEngine);
+    await surfaceRendered();
+    await enableToolAndWaitForIdle(viewport);
 
     const surface = cache.getGeometry(geometryId).data;
     const movedCenter = [CENTER[0] + MOVE_X, CENTER[1], CENTER[2]];
@@ -724,6 +1020,98 @@ describe('SegmentationIntersectionTool with the surface of a segmentation on a 3
     expect(getSurfaceActorEntry(viewport3DId, segmentationId, 1)).toBe(
       undefined
     );
+    expect(drawnPaths(viewport).length).toBe(0);
+  });
+
+  it('keeps the cut lines of a surface while a viewport shows it, and drops them when the last viewport that shows it loses its Surface representation', async function () {
+    const secondViewport3DId = `${viewport3DId}Second`;
+    const representationUID = `${segmentationId}-Surface-1`;
+    const series = await createSeries({
+      id: 'segmentationIntersectionNextDropped',
+      size: SIZE,
+    });
+    const viewport = createNextViewport(renderingEngine, viewportId);
+
+    await showVolume(viewport, series, 10, {
+      orientation: OrientationAxis.AXIAL,
+    });
+    await showSphereOn3DViewport(renderingEngine);
+    testUtils.createViewports(renderingEngine, {
+      viewportType: ViewportType.VOLUME_3D,
+      viewportId: secondViewport3DId,
+      orientation: OrientationAxis.CORONAL,
+      width: 300,
+      height: 300,
+      useEnableElement: true,
+    });
+    segmentation.addSegmentationRepresentations(secondViewport3DId, [
+      { segmentationId, type: Surface },
+    ]);
+    await waitFor(() =>
+      getSurfaceActorEntry(secondViewport3DId, segmentationId, 1)
+    );
+    await enableToolAndWaitForRender(viewport.element);
+
+    const [{ data }] = getIntersectionAnnotations(viewport);
+
+    expect(data.actorsWorldPointsMap.get(representationUID)?.size).toBe(1);
+
+    segmentation.removeSegmentationRepresentation(viewport3DId, {
+      segmentationId,
+      type: Surface,
+    });
+    await renderAnnotationsAndWait(viewport);
+
+    expect(drawnPaths(viewport).length).toBe(1);
+    expect(data.actorsWorldPointsMap.get(representationUID)?.size).toBe(1);
+
+    segmentation.removeSegmentationRepresentation(secondViewport3DId, {
+      segmentationId,
+      type: Surface,
+    });
+    await renderAnnotationsAndWait(viewport);
+
+    expect(drawnPaths(viewport).length).toBe(0);
+    expect(data.actorsWorldPointsMap.has(representationUID)).toBe(false);
+  });
+
+  it('draws nothing on an idle planar viewport of a second rendering engine when the Surface representation is removed, where the first engine has a viewport of the same id', async function () {
+    const secondRenderingEngine = new cornerstone3D.RenderingEngine(
+      `${renderingEngineId}Second`
+    );
+    const series = await createSeries({
+      id: 'segmentationIntersectionNextSecondEngine',
+      size: SIZE,
+    });
+    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+
+    createNextViewport(renderingEngine, viewportId);
+
+    const viewport = createNextViewport(secondRenderingEngine, viewportId);
+    const surfaceRendered = listenForSurfaceRender(viewport3DId);
+
+    toolGroup.removeViewports(renderingEngineId, viewportId);
+    toolGroup.addViewport(viewportId, secondRenderingEngine.id);
+    await showVolume(viewport, series, 10, {
+      orientation: OrientationAxis.AXIAL,
+    });
+    await showSphereOn3DViewport(secondRenderingEngine);
+    await surfaceRendered();
+    await enableToolAndWaitForIdle(viewport);
+
+    const pathData = drawnPathData(viewport);
+
+    expect(
+      cornerstone3D.getEnabledElementByViewportId(viewportId).renderingEngineId
+    ).toBe(renderingEngineId);
+    expect(drawnPaths(viewport).length).toBe(1);
+
+    segmentation.removeSegmentationRepresentation(viewport3DId, {
+      segmentationId,
+      type: Surface,
+    });
+    await pathsChangedFrom(viewport, pathData);
+
     expect(drawnPaths(viewport).length).toBe(0);
   });
 });
@@ -845,11 +1233,13 @@ describe('SegmentationIntersectionTool with the surface that the polySeg add-on 
   }, 30000);
 
   it('draws on an idle planar viewport the new cut of the surface that polySeg converts again after an edit of the labelmap', async function () {
+    const surfaceRendered = listenForSurfaceRender(viewport3DId);
     const { viewport, voxelManager } = await showConvertedSurface(
       'segmentationIntersectionNextEdited'
     );
 
-    await enableToolAndWaitForRender(viewport.element);
+    await surfaceRendered();
+    await enableToolAndWaitForIdle(viewport);
 
     const firstPathData = drawnPathData(viewport);
 

@@ -209,7 +209,8 @@ async function updateSurfaceDataOnce(segmentationId: string) {
             {
               segmentationId: surfaceRepresentation.segmentationId,
               viewport: enabledElement.viewport,
-            }
+            },
+            SegmentationRepresentations.Labelmap
           ).then(() => {
             segmentation.representationData.Surface.geometryIds.set(
               segmentIndex,

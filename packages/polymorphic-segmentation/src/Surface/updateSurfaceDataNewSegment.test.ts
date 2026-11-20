@@ -43,7 +43,9 @@ jest.mock('@cornerstonejs/tools', () => ({
     },
     triggerSegmentationEvents: { triggerSegmentationModified: jest.fn() },
   },
-  Enums: { SegmentationRepresentations: { Surface: 'Surface' } },
+  Enums: {
+    SegmentationRepresentations: { Surface: 'Surface', Labelmap: 'Labelmap' },
+  },
 }));
 
 describe('updateSurfaceData with a new segment', () => {
@@ -82,5 +84,19 @@ describe('updateSurfaceData with a new segment', () => {
 
     expect(cached).toBe(true);
     expect(mockGeometryIds.get(2)).toBe('segmentation_seg_surface_2');
+  });
+
+  it('caches the surface of the new segment as a surface converted from the labelmap', async () => {
+    (createAndCacheSurfacesFromRaw as jest.Mock).mockReset();
+    (createAndCacheSurfacesFromRaw as jest.Mock).mockResolvedValue(undefined);
+
+    await updateSurfaceData('seg');
+
+    expect(createAndCacheSurfacesFromRaw).toHaveBeenCalledWith(
+      'seg',
+      [{ segmentIndex: 2, data: { points: [1, 1, 1], polys: [] } }],
+      expect.anything(),
+      'Labelmap'
+    );
   });
 });
