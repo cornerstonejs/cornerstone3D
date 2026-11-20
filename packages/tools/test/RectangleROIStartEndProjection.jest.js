@@ -178,4 +178,23 @@ describe('RectangleROIStartEndThresholdTool projection points', () => {
     // Contour Image Sequence is optional (Type 3), so it is left out.
     expect(contours[1]).not.toHaveProperty('ContourImageSequence');
   });
+
+  it('keeps every propagated slice at a large coordinate with a tiny spacing', () => {
+    // The end coordinate comes from _getEndCoordinate. Built in a float32
+    // vec3, 10000 + 11 * 0.001 rounds to 10000.0107421875 and the last slice
+    // is lost; in double precision all 12 slices are kept.
+    const tool = new RectangleROIStartEndThresholdTool({
+      configuration: { numSlicesToPropagate: 11 },
+    });
+    const endCoordinate = tool._getEndCoordinate(
+      [10, 10, 10000],
+      0.001,
+      [0, 0, 1]
+    );
+    expect(endCoordinate).toBeCloseTo(10000.011, 9);
+
+    const annotation = createAnnotation(10000, endCoordinate, 0.001);
+    tool._computeProjectionPoints(annotation, imageVolume);
+    expect(annotation.data.cachedStats.projectionPoints).toHaveLength(12);
+  });
 });

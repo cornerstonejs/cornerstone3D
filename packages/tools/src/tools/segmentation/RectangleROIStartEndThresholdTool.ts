@@ -825,8 +825,10 @@ class RectangleROIStartEndThresholdTool extends RectangleROITool {
     const numSlicesToPropagate = this.configuration.numSlicesToPropagate;
 
     // get end position by moving from worldPos in the direction of viewplaneNormal
-    // with amount of numSlicesToPropagate * spacingInNormal
-    const endPos = vec3.create();
+    // with amount of numSlicesToPropagate * spacingInNormal. Use a plain
+    // (double precision) array: a float32 vec3 rounds large coordinates by
+    // more than a small slice spacing.
+    const endPos = [0, 0, 0] as Types.Point3;
     vec3.scaleAndAdd(
       endPos,
       worldPos,
