@@ -1147,6 +1147,21 @@ legacy picture within two levels of 255.
   and each viewport is read from its own rendering engine.
 - **The camera position synchronizer copies a view reference.** On a next
   target it sets the view reference of the source, and its zoom and pan.
+  Between two planar viewports of parallel planes it also gives the target
+  the view up and the view plane normal of the source, through the rotation
+  and the flips of its presentation, as the 5.x `setCamera` did. Two
+  viewports with the same view before their rotation get the same rotation
+  and flips. A target of another plane turns to the plane and the view up
+  of the source with the view reference, and its rotation is then counted
+  from that view up: 0 for a sagittal target of an axial source turned by
+  45, where 5.x read 90, the angle from the view up of its first plane.
+- **`SEGMENTATION_REPRESENTATION_ADDED` fires.** `addSegmentationRepresentations`
+  and the add functions of each representation type fire it on the
+  `eventTarget` once for each representation that is new to the viewport,
+  with the detail `{ segmentationId, type, viewportId }`, before
+  `SEGMENTATION_REPRESENTATION_MODIFIED`, which still fires for each call. A
+  representation that the viewport already has fires no second one. 5.x
+  declared the event and listened to it, but never fired it.
 - **A synchronizer keeps apart the options of two rendering engines whose
   viewports have the same id.** `setOptions` and `getOptions` of a
   synchronizer take the id of the rendering engine as a last argument,

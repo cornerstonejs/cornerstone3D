@@ -1,5 +1,6 @@
+import { vec3 } from 'gl-matrix';
 import type { Types } from '@cornerstonejs/core';
-import { getRenderingEngine } from '@cornerstonejs/core';
+import { Enums, getRenderingEngine, utilities } from '@cornerstonejs/core';
 import type { Synchronizer } from '../../store';
 import {
   applyViewportPresentation,
@@ -14,6 +15,104 @@ const ZOOM_PAN_SELECTOR: Types.ViewPresentationSelector = {
   pan: true,
   zoom: true,
 };
+
+/** The fields of a planar presentation that turn and flip the view. */
+const ROTATION_FLIP_SELECTOR: Types.ViewPresentationSelector = {
+  rotation: true,
+  flipHorizontal: true,
+  flipVertical: true,
+};
+
+/** The vector that points the other way. */
+function negated(vector: Types.Point3): Types.Point3 {
+  return [-vector[0], -vector[1], -vector[2]];
+}
+
+/**
+ * The rotation and the flips that give a planar target the view up and the
+ * view plane normal of a planar source, as the 5.x `setCamera` of the
+ * target did. The vertical flip is the one of the source, and the
+ * horizontal one also turns the target to the side of the plane that the
+ * source looks from. The rotation turns the view up of the target to the one
+ * of the source, about the normal that a rotation of the target turns
+ * about. A target whose view before its rotation is the one of the source,
+ * within 1e-4 degrees as float32 vectors of a view reference allow, takes
+ * the rotation of the source as it is. Undefined when one of the two
+ * is not planar, or when they do not show parallel planes, as a target of
+ * another plane that its view reference could not turn.
+ *
+ * @param sourceViewReference - The view reference of the source.
+ */
+function getPlanarViewUpPresentation(
+  sViewport: Types.IViewport,
+  tViewport: Types.IViewport,
+  sourceViewReference: Types.ViewReference | undefined
+): Types.ViewPresentation | undefined {
+  if (
+    sViewport.type !== Enums.ViewportType.PLANAR ||
+    tViewport.type !== Enums.ViewportType.PLANAR
+  ) {
+    return;
+  }
+
+  const source = getViewportPresentation(sViewport, ROTATION_FLIP_SELECTOR) as
+    | Types.ViewPresentation
+    | undefined;
+  const target = getViewportPresentation(tViewport, ROTATION_FLIP_SELECTOR) as
+    | Types.ViewPresentation
+    | undefined;
+  const sourceViewUp = sourceViewReference?.viewUp;
+  const sourceNormal = sourceViewReference?.viewPlaneNormal;
+  const targetViewReference = tViewport.getViewReference();
+  const targetViewUp = targetViewReference?.viewUp;
+  const targetNormal = targetViewReference?.viewPlaneNormal;
+
+  if (
+    !source ||
+    !target ||
+    !sourceViewUp ||
+    !sourceNormal ||
+    !targetViewUp ||
+    !targetNormal
+  ) {
+    return;
+  }
+
+  const rotationAxis =
+    Boolean(target.flipHorizontal) !== Boolean(target.flipVertical)
+      ? negated(targetNormal)
+      : targetNormal;
+
+  if (
+    !utilities.isEqual(rotationAxis, sourceNormal) &&
+    !utilities.isOpposite(rotationAxis, sourceNormal)
+  ) {
+    return;
+  }
+
+  const flipVertical = Boolean(source.flipVertical);
+  const flipHorizontal =
+    flipVertical !== utilities.isOpposite(rotationAxis, sourceNormal);
+  const from = target.flipVertical ? negated(targetViewUp) : targetViewUp;
+  const to = flipVertical ? negated(sourceViewUp) : sourceViewUp;
+  const turn =
+    (Math.atan2(
+      vec3.dot(vec3.cross(vec3.create(), from, to), rotationAxis),
+      vec3.dot(from, to)
+    ) *
+      180) /
+    Math.PI;
+  const rotation = (target.rotation ?? 0) + turn;
+  const sourceRotation = source.rotation ?? 0;
+  const offset = ((((rotation - sourceRotation) % 360) + 540) % 360) - 180;
+
+  return {
+    flipHorizontal,
+    flipVertical,
+    rotation:
+      Math.abs(offset) < 1e-4 ? sourceRotation : ((rotation % 360) + 360) % 360,
+  };
+}
 
 /**
  * Synchronizer callback to synchronize the camera by updating all camera
@@ -59,17 +158,33 @@ export default function cameraSyncCallback(
   if (!sViewport) {
     return;
   }
-  tViewport.setViewReference(sViewport.getViewReference());
+  const viewReference = sViewport.getViewReference();
+  tViewport.setViewReference(viewReference);
 
   // Slice/orientation come from the view reference above; copy zoom + pan
-  // explicitly so they stay in lockstep like the legacy full-camera copy did.
-  // applyViewportPresentation is a no-op for targets without a projection
-  // adapter, so this is safe for any next-viewport family.
+  // (and, between planar viewports of parallel planes, the view up and the
+  // normal through the rotation and the flips) explicitly so they stay in
+  // lockstep like the legacy full-camera copy did. applyViewportPresentation
+  // is a no-op for targets without a projection adapter, so this is safe for
+  // any next-viewport family.
   const zoomPanPresentation = getViewportPresentation(
     sViewport,
     ZOOM_PAN_SELECTOR
   );
-  applyViewportPresentation(tViewport, zoomPanPresentation);
+  const viewUpPresentation = getPlanarViewUpPresentation(
+    sViewport,
+    tViewport,
+    viewReference
+  );
+  applyViewportPresentation(
+    tViewport,
+    viewUpPresentation
+      ? {
+          ...(zoomPanPresentation as Types.ViewPresentation),
+          ...viewUpPresentation,
+        }
+      : zoomPanPresentation
+  );
 
   tViewport.render();
 }

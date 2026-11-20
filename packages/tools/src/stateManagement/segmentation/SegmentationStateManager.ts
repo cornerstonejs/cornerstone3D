@@ -30,6 +30,7 @@ import {
 } from './triggerSegmentationEvents';
 import { segmentationStyle } from './SegmentationStyle';
 import { triggerSegmentationAdded } from './events/triggerSegmentationAdded';
+import { triggerSegmentationRepresentationAdded } from './events/triggerSegmentationRepresentationAdded';
 import {
   ensureLabelmapState,
   LabelmapImageReferenceResolver,
@@ -312,6 +313,13 @@ export default class SegmentationStateManager {
         );
       }
     });
+
+    if (
+      this.getSegmentationRepresentations(viewportId, { type, segmentationId })
+        .length
+    ) {
+      triggerSegmentationRepresentationAdded(viewportId, segmentationId, type);
+    }
 
     triggerSegmentationRepresentationModified(viewportId, segmentationId, type);
   }

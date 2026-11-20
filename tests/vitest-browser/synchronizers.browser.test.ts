@@ -436,35 +436,25 @@ describe('synchronizers', () => {
       expect(snapB.core.worldProbes).toEqual(snapA.core.worldProbes);
     });
 
-    // GAP (observed / traced in source): cameraSyncCallback's GenericViewport
-    // branch (packages/tools/src/synchronizers/callbacks/cameraSyncCallback.ts)
-    // copies the source's ViewReference (spatial reference only -- carries no
-    // rotation; rotation lives on ViewPresentation, see
-    // packages/core/src/types/IViewport.ts) plus a zoom/pan-only
-    // ViewPresentationSelector (`ZOOM_PAN_SELECTOR = { pan: true, zoom: true }`).
-    // Rotation is therefore never transported to the target on
-    // GenericViewports, unlike the legacy `setCamera(camera)` path this
-    // synchronizer was built to replace (which carried the full camera,
-    // including viewUp/rotation, for non-Generic viewports).
-    // Open issue: a camera position synchronizer does not carry the rotation (5.x did, through setCamera).
-    test.fails(
-      'does NOT sync rotation (ViewPresentation selector used by cameraSyncCallback excludes it)',
-      async () => {
-        const { a, b } = await setupPair('camera-rotation');
-        const syncId = trackSynchronizer(
-          uniqueId('camera-position-rotation-sync')
-        );
-        const sync = createCameraPositionSynchronizer(syncId);
-        sync.add(toViewportId(a));
-        sync.add(toViewportId(b));
+    // The 5.x synchronizer called setCamera(camera) on the target, which
+    // carried the view up and so the rotation. Between planar viewports of
+    // parallel planes, cameraSyncCallback copies the rotation and the flips
+    // of the presentation with the zoom and the pan (open issue 84, fixed).
+    test('syncs the rotation, as the 5.x camera did', async () => {
+      const { a, b } = await setupPair('camera-rotation');
+      const syncId = trackSynchronizer(
+        uniqueId('camera-position-rotation-sync')
+      );
+      const sync = createCameraPositionSynchronizer(syncId);
+      sync.add(toViewportId(a));
+      sync.add(toViewportId(b));
 
-        const rendered = waitForEventOn(b.element, Events.IMAGE_RENDERED);
-        a.viewport.setViewState({ rotation: 45 });
-        await rendered;
+      const rendered = waitForEventOn(b.element, Events.IMAGE_RENDERED);
+      a.viewport.setViewState({ rotation: 45 });
+      await rendered;
 
-        expect(round6(b.viewport.getRotation())).toBe(round6(45));
-      }
-    );
+      expect(round6(b.viewport.getRotation())).toBe(round6(45));
+    });
   });
 
   // -------------------------------------------------------------------------

@@ -4,6 +4,9 @@ jest.mock('@cornerstonejs/core', () => {
       Events: {
         ELEMENT_DISABLED: 'CORNERSTONE_ELEMENT_DISABLED',
       },
+      ViewportType: {
+        PLANAR: 'planar',
+      },
     },
     eventTarget: new EventTarget(),
     getRenderingEngine: jest.fn(),
@@ -23,6 +26,12 @@ jest.mock('@cornerstonejs/core', () => {
         },
       },
       clonePoint3: jest.fn((point) => (point ? [...point] : undefined)),
+      isEqual: jest.fn((v1, v2) =>
+        v1.every((value, index) => Math.abs(value - v2[index]) < 1e-5)
+      ),
+      isOpposite: jest.fn((v1, v2) =>
+        v1.every((value, index) => Math.abs(value + v2[index]) < 1e-5)
+      ),
       getViewportContentMode: jest.fn((viewport) =>
         viewport?.getCurrentMode?.()
       ),
@@ -652,6 +661,147 @@ describe('cameraSyncCallback', () => {
 
     expect(targetViewport.setViewReference).not.toHaveBeenCalled();
     expect(targetViewport.render).not.toHaveBeenCalled();
+  });
+
+  const SQRT_HALF = Math.sqrt(0.5);
+  const ZOOM_PAN = { zoom: 2, pan: [3, 4] };
+  const UNTURNED = { rotation: 0, flipHorizontal: false, flipVertical: false };
+
+  /**
+   * Runs the callback from a planar source to a planar target, each with
+   * the view reference and the rotation and flips given, and gives the
+   * presentation written to the target, or undefined when none is.
+   */
+  function presentationWrittenToTarget(source, target) {
+    const sourceViewport = {
+      type: 'planar',
+      getViewReference: jest.fn(() => source.viewReference),
+    };
+    const targetViewport = {
+      type: 'planar',
+      getViewReference: jest.fn(() => target.viewReference),
+      setViewReference: jest.fn(),
+      setViewState: jest.fn(),
+      render: jest.fn(),
+    };
+
+    viewportProjection.getPresentation.mockImplementation(
+      (viewport, { selector }) => {
+        if (!selector.rotation) {
+          return viewport === sourceViewport ? ZOOM_PAN : undefined;
+        }
+
+        return viewport === sourceViewport
+          ? source.presentation
+          : target.presentation;
+      }
+    );
+    viewportProjection.withPresentation.mockImplementation(
+      (_viewport, presentation) => ({ presentation })
+    );
+    getRenderingEngine.mockImplementation((id) =>
+      id === 're-source'
+        ? { getViewport: jest.fn(() => sourceViewport) }
+        : { getViewport: jest.fn(() => targetViewport) }
+    );
+
+    cameraSyncCallback(
+      {},
+      { renderingEngineId: 're-source', viewportId: 'source' },
+      { renderingEngineId: 're-target', viewportId: 'target' },
+      { detail: { camera: {} } }
+    );
+
+    expect(targetViewport.setViewReference).toHaveBeenCalledWith(
+      source.viewReference
+    );
+
+    return targetViewport.setViewState.mock.calls[0]?.[0].presentation;
+  }
+
+  afterEach(() => {
+    viewportProjection.getPresentation.mockImplementation(() => undefined);
+    viewportProjection.withPresentation.mockImplementation(() => undefined);
+  });
+
+  it('gives a planar target of the same view the rotation of the source, with the zoom and the pan', () => {
+    expect(
+      presentationWrittenToTarget(
+        {
+          viewReference: {
+            viewPlaneNormal: [0, 0, -1],
+            viewUp: [-SQRT_HALF, -SQRT_HALF, 0],
+          },
+          presentation: { ...UNTURNED, rotation: 45 },
+        },
+        {
+          viewReference: { viewPlaneNormal: [0, 0, -1], viewUp: [0, -1, 0] },
+          presentation: UNTURNED,
+        }
+      )
+    ).toEqual({
+      ...ZOOM_PAN,
+      rotation: 45,
+      flipHorizontal: false,
+      flipVertical: false,
+    });
+  });
+
+  it('gives a planar target the flips and the rotation of a flipped source', () => {
+    expect(
+      presentationWrittenToTarget(
+        {
+          viewReference: {
+            viewPlaneNormal: [0, 0, 1],
+            viewUp: [-0.5, -Math.sqrt(0.75), 0],
+          },
+          presentation: { ...UNTURNED, rotation: 30, flipHorizontal: true },
+        },
+        {
+          viewReference: { viewPlaneNormal: [0, 0, -1], viewUp: [0, -1, 0] },
+          presentation: UNTURNED,
+        }
+      )
+    ).toEqual({
+      ...ZOOM_PAN,
+      rotation: 30,
+      flipHorizontal: true,
+      flipVertical: false,
+    });
+  });
+
+  it('does not turn again a planar target that the view reference turned to the view up of the source', () => {
+    const viewReference = {
+      viewPlaneNormal: [0, 0, -1],
+      viewUp: [-SQRT_HALF, -SQRT_HALF, 0],
+    };
+
+    expect(
+      presentationWrittenToTarget(
+        { viewReference, presentation: { ...UNTURNED, rotation: 45 } },
+        { viewReference, presentation: UNTURNED }
+      )
+    ).toEqual({
+      ...ZOOM_PAN,
+      rotation: 0,
+      flipHorizontal: false,
+      flipVertical: false,
+    });
+  });
+
+  it('copies only the zoom and the pan to a planar target of another plane', () => {
+    expect(
+      presentationWrittenToTarget(
+        {
+          viewReference: { viewPlaneNormal: [0, 0, -1], viewUp: [0, -1, 0] },
+          presentation: UNTURNED,
+        },
+        {
+          viewReference: { viewPlaneNormal: [1, 0, 0], viewUp: [0, 0, 1] },
+          presentation: UNTURNED,
+        }
+      )
+    ).toEqual(ZOOM_PAN);
   });
 });
 

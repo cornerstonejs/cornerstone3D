@@ -36,10 +36,10 @@
 //     on the viewport element -- confirmed by reading every
 //     stateManagement/segmentation/events/trigger*.ts source file.
 //   - Events.SEGMENTATION_REPRESENTATION_ADDED is declared in the Events enum
-//     and listened for internally (packages/tools/src/init.ts), but no
-//     production code path ever triggers it -- addSegmentationRepresentations
-//     only triggers SEGMENTATION_REPRESENTATION_MODIFIED and
-//     SEGMENTATION_MODIFIED. Documented as a dedicated test.fails below.
+//     and listened for internally (packages/tools/src/init.ts).
+//     addSegmentationRepresentations fires it for a representation that is
+//     new to the viewport, then SEGMENTATION_REPRESENTATION_MODIFIED and
+//     SEGMENTATION_MODIFIED. A dedicated test below checks it.
 //   - A synthetic mousedown+mouseup at the same point (mouseClick) is held by
 //     mouseDownListener.ts's double-click disambiguation timer for up to 400ms
 //     (real setTimeout, real wall-clock time in this real-browser test) before
@@ -770,53 +770,50 @@ describe('segmentationState', () => {
     }
   });
 
-  // Genuine engine finding, not a test mistake: Events.SEGMENTATION_REPRESENTATION_ADDED
-  // is declared in packages/tools/src/enums/Events.ts and is subscribed to
-  // internally in packages/tools/src/init.ts (lines ~168, ~230), but no
-  // production code path anywhere in packages/tools/src ever triggers it --
-  // there is no `triggerEvent(..., Events.SEGMENTATION_REPRESENTATION_ADDED,
-  // ...)` call in the entire source tree. Adding a segmentation representation
-  // to a viewport instead triggers SEGMENTATION_REPRESENTATION_MODIFIED (from
-  // SegmentationStateManager.addSegmentationRepresentation) and
-  // SEGMENTATION_MODIFIED (from internalAddSegmentationRepresentation).
-  // Observed: REPRESENTATION_ADDED never recorded. Expected (per the plan and
-  // the enum's own name): it should fire once when a representation is first
-  // added to a viewport.
-  // Open issue: SEGMENTATION_REPRESENTATION_ADDED is never fired (5.x did the same).
-  test.fails(
-    'events contract: SEGMENTATION_REPRESENTATION_ADDED never fires (engine bug)',
-    async () => {
-      const ctx = await setupSegmentationHarness();
-      active = ctx;
+  // Events.SEGMENTATION_REPRESENTATION_ADDED was declared and listened to in
+  // packages/tools/src/init.ts, but nothing fired it, in 5.x too (open issue
+  // 87, fixed). SegmentationStateManager.addSegmentationRepresentation fires
+  // it once for a representation that is new to the viewport, before
+  // SEGMENTATION_REPRESENTATION_MODIFIED.
+  test('events contract: SEGMENTATION_REPRESENTATION_ADDED fires when a representation is added', async () => {
+    const ctx = await setupSegmentationHarness();
+    active = ctx;
 
-      // Settle immediately (via .then's two handlers, attached in the same
-      // microtask the promise is created in) rather than awaiting the raw
-      // promise directly. createLabelmapSegmentation's own render wait can
-      // take several seconds in this environment (see file header), which is
-      // longer than this wait's 2000ms timeout -- if the timeout's rejection
-      // fires while control is still inside that other await, Vitest's
-      // browser runtime flags it as an unhandled rejection (a real error,
-      // separate from -- and reported even though -- this test's expected
-      // failure) before this function ever reaches a bare `await
-      // representationAdded`. Attaching both handlers up front avoids that.
-      const representationAddedSettled: Promise<Error | undefined> =
-        waitForToolsEvent(
-          eventTarget,
-          ToolsEvents.SEGMENTATION_REPRESENTATION_ADDED,
-          { timeoutMs: 2000 }
-        ).then(
-          () => undefined,
-          (err: Error) => err
-        );
+    // Settle immediately (via .then's two handlers, attached in the same
+    // microtask the promise is created in) rather than awaiting the raw
+    // promise directly. createLabelmapSegmentation's own render wait can
+    // take several seconds in this environment (see file header), which is
+    // longer than this wait's 2000ms timeout -- if the timeout's rejection
+    // fires while control is still inside that other await, Vitest's
+    // browser runtime flags it as an unhandled rejection (a real error,
+    // separate from the failure of this test) before this function ever
+    // reaches a bare `await representationAdded`. Attaching both handlers
+    // up front avoids that.
+    const representationAddedSettled: Promise<CustomEvent | Error> =
+      waitForToolsEvent(
+        eventTarget,
+        ToolsEvents.SEGMENTATION_REPRESENTATION_ADDED,
+        { timeoutMs: 2000 }
+      ).then(
+        (evt) => evt,
+        (err: Error) => err
+      );
 
-      await createLabelmapSegmentation(ctx, 'vitest-seg-representation-added');
+    const { segmentationId } = await createLabelmapSegmentation(
+      ctx,
+      'vitest-seg-representation-added'
+    );
 
-      const settledError = await representationAddedSettled;
-      if (settledError) {
-        throw settledError;
-      }
+    const settled = await representationAddedSettled;
+    if (settled instanceof Error) {
+      throw settled;
     }
-  );
+    expect(settled.detail).toEqual({
+      segmentationId,
+      type: LABELMAP,
+      viewportId: ctx.viewportId,
+    });
+  });
 
   test('exact statistics on synthetic data: mean/min/max/voxelCount inside the bar', async () => {
     const ctx = await setupSegmentationHarness();
