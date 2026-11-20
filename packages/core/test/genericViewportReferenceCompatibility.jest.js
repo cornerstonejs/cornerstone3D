@@ -279,6 +279,28 @@ describe('GenericViewport reference compatibility', () => {
     ).toBe(false);
   });
 
+  it('takes a time point on a context without time points, as a static volume or a stack', () => {
+    const viewRef = {
+      FrameOfReferenceUID: 'for-1',
+      viewPlaneNormal: [0, 0, 1],
+      cameraFocalPoint: [0, 0, 5],
+      dimensionGroupNumber: 2,
+    };
+
+    expect(getDimensionGroupReferenceContext({})).toEqual({
+      dimensionGroupNumber: undefined,
+      numDimensionGroups: undefined,
+    });
+    expect(isGenericViewportReferenceViewable(viewRef, [baseContext])).toBe(
+      true
+    );
+    expect(
+      isGenericViewportReferenceViewable(viewRef, [baseContext], {
+        withNavigation: true,
+      })
+    ).toBe(true);
+  });
+
   it('extracts dimension group context from dynamic volumes', () => {
     expect(
       getDimensionGroupReferenceContext({

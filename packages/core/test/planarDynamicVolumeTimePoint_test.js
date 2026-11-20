@@ -104,6 +104,22 @@ async function show(viewport, ...displaySetIds) {
   await renderAndWait(viewport);
 }
 
+/**
+ * A reference of a time point that names no data: the frame of reference,
+ * the view plane normal and the focal point of the view on a viewport.
+ */
+function planeOnlyReference(viewport, dimensionGroupNumber) {
+  const { FrameOfReferenceUID, viewPlaneNormal, cameraFocalPoint } =
+    viewport.getViewReference();
+
+  return {
+    FrameOfReferenceUID,
+    viewPlaneNormal,
+    cameraFocalPoint,
+    dimensionGroupNumber,
+  };
+}
+
 describe('A planar viewport in volume mode on a dynamic volume -- ', () => {
   let renderingEngine;
 
@@ -237,5 +253,72 @@ describe('A planar viewport in volume mode on a dynamic volume -- ', () => {
     viewport.setViewReference({ ...viewRef, dimensionGroupNumber: 2 });
 
     expect(volume.dimensionGroupNumber).toBe(2);
+  });
+
+  it('takes a reference of a time point that names only a frame of reference, a plane and a focal point on a static volume', async function () {
+    const viewport = createNextViewport(renderingEngine, 'timePointStatic');
+
+    await show(viewport, 'static');
+
+    const viewRef = planeOnlyReference(viewport, 2);
+
+    expect(viewport.getCurrentMode()).toBe('volume');
+    expect(viewRef.FrameOfReferenceUID).toBe(FRAME_OF_REFERENCE);
+    expect(viewport.isReferenceViewable(viewRef)).toBe(true);
+    expect(
+      viewport.isReferenceViewable(viewRef, { withNavigation: true })
+    ).toBe(true);
+  });
+
+  it('takes a reference of a time point that names only a frame of reference, a plane and a focal point on a stack', async function () {
+    const viewport = createNextViewport(renderingEngine, 'timePointStack');
+
+    utilities.genericViewportDisplaySetMetadataProvider.add('staticStack', {
+      imageIds: seriesImageIds('static', 1),
+      kind: 'planar',
+      initialImageIdIndex: 0,
+    });
+    await viewport.setDisplaySets({
+      displaySetId: 'staticStack',
+      options: { orientation: OrientationAxis.ACQUISITION },
+    });
+    await frames();
+    await renderAndWait(viewport);
+
+    const viewRef = planeOnlyReference(viewport, 2);
+
+    expect(viewport.getCurrentMode()).toBe('stack');
+    expect(viewRef.FrameOfReferenceUID).toBe(FRAME_OF_REFERENCE);
+    expect(viewport.isReferenceViewable(viewRef)).toBe(true);
+    expect(
+      viewport.isReferenceViewable(viewRef, { withNavigation: true })
+    ).toBe(true);
+  });
+
+  it('takes such a reference of another time point on the dynamic volume only with navigation', async function () {
+    const viewport = createNextViewport(renderingEngine, 'timePointPlane');
+
+    await show(viewport, 'dynamic');
+
+    expect(cache.getVolume(dynamicVolumeId).dimensionGroupNumber).toBe(1);
+    expect(viewport.isReferenceViewable(planeOnlyReference(viewport, 1))).toBe(
+      true
+    );
+    expect(viewport.isReferenceViewable(planeOnlyReference(viewport, 2))).toBe(
+      false
+    );
+    expect(
+      viewport.isReferenceViewable(planeOnlyReference(viewport, 2), {
+        withNavigation: true,
+      })
+    ).toBe(true);
+    expect(
+      viewport.isReferenceViewable(
+        planeOnlyReference(viewport, TIME_POINTS + 1),
+        {
+          withNavigation: true,
+        }
+      )
+    ).toBe(false);
   });
 });

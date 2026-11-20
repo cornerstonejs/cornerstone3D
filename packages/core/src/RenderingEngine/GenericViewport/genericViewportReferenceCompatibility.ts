@@ -474,6 +474,13 @@ function isReferencedImageCompatible(
   return currentImageIdIndex === foundSliceIndex;
 }
 
+/**
+ * Whether the time point (dimension group) of a reference is the one on
+ * display, or one that navigation reaches. A context without a time point,
+ * as a static volume or a stack, takes the reference as if it had none, as
+ * the legacy viewports of 5.x did: the volume viewport checked the time
+ * point only on a dynamic volume.
+ */
 function isDimensionGroupCompatible(
   viewRef: ViewReference,
   context: GenericViewportReferenceContext,
@@ -483,7 +490,10 @@ function isDimensionGroupCompatible(
     typeof viewRef.dimensionGroupNumber !== 'undefined';
   const dimensionGroupNumber = toPositiveInteger(viewRef.dimensionGroupNumber);
 
-  if (!hasDimensionGroupRestriction) {
+  if (
+    !hasDimensionGroupRestriction ||
+    typeof context.dimensionGroupNumber !== 'number'
+  ) {
     return true;
   }
 
@@ -502,7 +512,6 @@ function isDimensionGroupCompatible(
 
   if (
     rangeEndDimensionGroupNumber !== undefined &&
-    typeof context.dimensionGroupNumber === 'number' &&
     dimensionGroupNumber <= context.dimensionGroupNumber &&
     context.dimensionGroupNumber <= rangeEndDimensionGroupNumber
   ) {

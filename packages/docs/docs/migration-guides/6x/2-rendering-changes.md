@@ -414,13 +414,10 @@ does the same:
   display, as `volume.dimensionGroupNumber = viewRef.dimensionGroupNumber`
   does. As in 5.19, the reference must be in the frame of reference of the
   viewport and its time point one of the volume; else the time point stays.
-- **A reference with a time point is not viewable on a static volume.**
-  The legacy volume viewport of 5.19 checked the time point only when it
-  showed a dynamic volume. A planar viewport that shows a static volume
-  does not take a reference with a time point, with or without navigation,
-  as the next viewports of 5.19 did. A reference that `getViewReference()`
-  gives names its display set and an image, so another series does not
-  take it anyway.
+- **A viewport whose data has no time point takes a reference with a time
+  point as if it had none,** with or without navigation (a static volume,
+  a stack, a whole slide or an ECG), as the legacy viewports of 5.19
+  did.
 
 The labelmap of a 4D series follows the time point as the 5.x guide says
 under "Labelmaps of a 4D series follow the time point". Read its stack
