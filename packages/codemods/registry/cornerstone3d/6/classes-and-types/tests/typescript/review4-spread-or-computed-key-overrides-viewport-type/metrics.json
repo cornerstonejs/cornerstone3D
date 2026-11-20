@@ -1,0 +1,36 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "16",
+        "rule": "Types.IVolumeViewport: the inputs of this viewport id do not give one static type"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "31",
+        "rule": "Types.IVolumeViewport: the inputs of this viewport id do not give one static type"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "45",
+        "rule": "Types.IVolumeViewport: the inputs of this viewport id do not give one static type"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "60",
+        "rule": "Types.IVolumeViewport: the inputs of this viewport id do not give one static type"
+      },
+      "count": 1
+    }
+  ]
+}

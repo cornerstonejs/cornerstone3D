@@ -21,9 +21,14 @@ npx codemod @cornerstonejs/cornerstone3d-6-classes-and-types
   `BaseVolumeViewport` become `VolumeViewport3D` where the file shows a 3D
   viewport: every viewport input with the id of the `getViewport` call (the
   same string, or the same `const`) has the type `VOLUME_3D`, as a member
-  of the core `Enums.ViewportType` or the string `'volume3d'`, or the node
-  runs only when the type of that viewport equals `VOLUME_3D` (an enclosing
-  `if`, `else` or `case` of the same function that compares
+  of the core `Enums.ViewportType` or the string `'volume3d'`, and one of
+  them is given to the engine of the call (`enableElement(input)`, or
+  `setViewports` of an array literal that holds it, also through a `const`;
+  the same engine is the same binding, or `new RenderingEngine(id)` and
+  `getRenderingEngine(id)` with the same id, also through a `let` whose
+  every value is that engine), or the node runs only when the type of that
+  viewport equals `VOLUME_3D` (an enclosing `if`, `else` or `case` of the
+  same function that compares
   `<viewport>.type`, or a `const` that holds it such as
   `const { type } = viewport`, where `<viewport>` is the binding that the
   cast casts; without a negation or `||`, and a `case` that no case falls
@@ -31,7 +36,10 @@ npx codemod @cornerstonejs/cornerstone3d-6-classes-and-types
   test of `VOLUME_3D` encloses the node and decides nothing (a test of
   another value such as a parameter `type` or a `cardType`, of a shadowing
   name, or outside the function of the node), the type stays and is
-  reported.
+  reported. An input counts with its last `viewportId` and `type` entries
+  (`['type']` too). An input given to an engine of another string id
+  (`new RenderingEngine('a')` against `getRenderingEngine('b')`) does not
+  count: viewport ids belong to one engine.
 - A cast of `getViewport` on a typed rendering engine becomes its type
   argument: `renderingEngine.getViewport(id) as Types.IStackViewport` becomes
   `renderingEngine.getViewport<PlanarViewport>(id)`. On an untyped engine the
@@ -67,7 +75,11 @@ npx codemod @cornerstonejs/cornerstone3d-6-classes-and-types
   `VOLUME_3D` that does not show the family, an `IVolumeViewport` whose
   viewport inputs give `VOLUME_3D` and another type, or a type that only
   the running code resolves (`type: flag ? VOLUME_3D : PLANAR`, a name, a
-  call), the
+  call, or a `viewportId` or `type` that a spread, a computed key such as
+  `[key]: value` or a getter after it can replace, or a type that a spread
+  can give: `{ ...base, viewportId }`), an `IVolumeViewport` whose
+  `VOLUME_3D` input is not shown on the engine of the call (another engine
+  binding, an input from a helper or `push`, `this.renderingEngine`), the
   removed `Types.*ViewportProperties`, `Types.IVolumeInput`,
   `Types.VolumeInputCallback`, `Types.SetAspectRatioOptions` and
   `Types.ImageSetOptions`, and `utilities.isGenericViewport(...)`

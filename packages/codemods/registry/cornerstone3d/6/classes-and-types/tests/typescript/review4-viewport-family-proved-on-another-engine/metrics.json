@@ -1,0 +1,20 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "23",
+        "rule": "Types.IVolumeViewport: the 3D input of this viewport id is not tied to the engine of this call"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "55",
+        "rule": "Types.IVolumeViewport: the 3D input of this viewport id is not tied to the engine of this call"
+      },
+      "count": 1
+    }
+  ]
+}

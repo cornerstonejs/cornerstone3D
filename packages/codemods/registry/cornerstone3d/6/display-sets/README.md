@@ -45,10 +45,13 @@ as `viewport` alone, a `let`, a `var` and a container type such as
   `'b:c'` get two ids. The index is 0 when the call had none, as in 5.x. A
   viewport that is a member chain (`holder.viewport`, `this.viewport`, the
   `viewport` of an enabled element), which can be a getter, is read once
-  into a fresh `const` first, and an image list that is not a name, a
-  literal or an array of those (a property read, an index, a call) is read
-  once into a fresh `const` after it, as the old call read each once and in
-  that order.
+  into a fresh `const` first, and so is a name that a write can change (a
+  `let`, a `var`, a written parameter) when an argument is not a name, a
+  literal or an array of those: a getter or a call in it can assign the
+  name, and the old call had read the viewport before its arguments. An
+  image list that is not a name, a literal or an array of those (a property
+  read, an index, a call) is read once into a fresh `const` after it, as
+  the old call read each once and in that order.
 
 - `viewport.setVolumes([{ volumeId }])` and
   `setVolumesForViewports(renderingEngine, [{ volumeId }], viewportIds)` as

@@ -8,14 +8,16 @@ import {
   bracketKey,
   comparisonAt,
   coreImportOf,
+  declarationNodeOf,
   enclosingFunction,
   importSource,
   isCoreEnum,
   isCoreExport,
   isCoreNamespace,
   isMountedBefore,
+  isStableBinding,
   methodCall,
-  objectEntries,
+  referencesOf as declarationReferences,
   site,
   stableBinding,
   staticKeyName,
@@ -121,11 +123,56 @@ const CASE_ENDS = new Set([
 ]);
 
 /**
+ * The engine method that takes a viewport input object, and the one that
+ * takes an array literal of them.
+ */
+const INPUT_METHOD: Record<string, string> = {
+  object: 'enableElement',
+  array: 'setViewports',
+};
+
+/**
+ * The expressions around a value that keep it: parentheses, casts and
+ * non-null assertions.
+ */
+const KEEPING_KINDS = new Set([
+  'parenthesized_expression',
+  'as_expression',
+  'satisfies_expression',
+  'non_null_expression',
+  'type_assertion',
+]);
+
+/**
+ * The parents of a name that write it in another way than `name = value`:
+ * an operator assignment, `++` or `--`, a `for in` or `for of`, or a
+ * destructuring target.
+ */
+const OTHER_WRITES = new Set([
+  'augmented_assignment_expression',
+  'update_expression',
+  'for_in_statement',
+  'object_pattern',
+  'array_pattern',
+  'pair_pattern',
+  'assignment_pattern',
+  'object_assignment_pattern',
+  'rest_pattern',
+]);
+
+/**
  * What a test of the viewport type tells about the family of a node;
  * `mixed` when the viewport inputs of its id give a 3D type with another, or
- * a type that only the running code resolves.
+ * a type that only the running code resolves; `unlinked` when they give a 3D
+ * type and none of them is shown on the engine of the `getViewport` call.
  */
-type Decision = '3d' | 'planar' | 'ambiguous' | 'mixed' | undefined;
+type Decision =
+  | '3d'
+  | 'planar'
+  | 'ambiguous'
+  | 'mixed'
+  | 'unlinked'
+  | undefined;
 
 /**
  * The state of one run of the transform on a file.
@@ -422,7 +469,8 @@ function caseFamily(caseNode: Node, receivers: Set<string>): Decision {
  * when an enclosing `if`, `else` or `case` of the same function runs only
  * for that family of the viewport it types, or when the viewport inputs of
  * the file with the id of the `getViewport` call that the type casts all
- * have one family; 'ambiguous' when an enclosing test names a 3D type and
+ * have one family; 'mixed' or 'unlinked' when those inputs do not show it
+ * (`inputFamily`); 'ambiguous' when an enclosing test names a 3D type and
  * decides nothing, or decides outside the function of the node, where the
  * viewport can be another by the time the function runs; undefined
  * otherwise.
@@ -492,11 +540,244 @@ function staticTypeFamily(value: Node): '3d' | 'planar' | 'other' | undefined {
 }
 
 /**
+ * Returns the last `viewportId` and `type` entries of an object literal (the
+ * value of a pair, a shorthand name, or a method of that name), and whether
+ * each holds the final value: a spread, a key computed from code or a
+ * method of a computed name after it can replace it. A missing type is not
+ * final when such an entry exists, as it can give the type.
+ */
+function inputEntries(objectNode: Node): {
+  id?: Node;
+  type?: Node;
+  idFinal: boolean;
+  typeFinal: boolean;
+  open: boolean;
+} {
+  const entries = objectNode
+    .children()
+    .filter((child) => child.isNamed() && child.kind() !== 'comment');
+  let id: Node | undefined;
+  let type: Node | undefined;
+  let idIndex = -1;
+  let typeIndex = -1;
+  let openIndex = -1;
+
+  entries.forEach((entry, index) => {
+    const kind = entry.kind();
+    const name =
+      kind === 'pair'
+        ? staticKeyName(entry.field('key'))
+        : kind === 'shorthand_property_identifier'
+          ? entry.text()
+          : kind === 'method_definition'
+            ? staticKeyName(entry.field('name'))
+            : undefined;
+    const value = kind === 'pair' ? (entry.field('value') ?? entry) : entry;
+
+    if (name === undefined) {
+      openIndex = index;
+    } else if (name === 'viewportId') {
+      id = value;
+      idIndex = index;
+    } else if (name === 'type') {
+      type = value;
+      typeIndex = index;
+    }
+  });
+
+  return {
+    id,
+    type,
+    idFinal: idIndex > openIndex,
+    typeFinal: typeIndex > openIndex,
+    open: openIndex >= 0,
+  };
+}
+
+/**
+ * Returns the outermost expression that keeps the value of a node through
+ * parentheses, casts and non-null assertions.
+ */
+function keptValue(node: Node): Node {
+  let current = node;
+  let parent = node.parent();
+
+  while (parent && KEEPING_KINDS.has(parent.kind())) {
+    current = parent;
+    parent = parent.parent();
+  }
+
+  return current;
+}
+
+/**
+ * Returns the values that a declared name gets: the value of its declaration
+ * and the value of each `name = value`. Undefined when the file writes the
+ * name in another way, such as `+=` or a destructuring.
+ */
+function writtenValues(declaration: Node): Node[] | undefined {
+  const holder = declaration.parent();
+  const initial =
+    holder?.kind() === 'variable_declarator' &&
+    holder.field('name')?.id() === declaration.id()
+      ? holder.field('value')
+      : undefined;
+  const values = initial ? [initial] : [];
+
+  for (const reference of declarationReferences(declaration)) {
+    let child = reference;
+    let parent = reference.parent();
+
+    while (parent?.kind() === 'parenthesized_expression') {
+      child = parent;
+      parent = parent.parent();
+    }
+
+    const kind = parent?.kind() ?? '';
+    const right =
+      kind === 'assignment_expression' &&
+      parent.field('left')?.id() === child.id()
+        ? parent.field('right')
+        : undefined;
+
+    if (right) {
+      values.push(right);
+    } else if (OTHER_WRITES.has(kind)) {
+      return undefined;
+    }
+  }
+
+  return values;
+}
+
+/**
+ * Returns what identifies the rendering engine that an expression gives:
+ * `engine:` with the id of `new RenderingEngine(id)` or
+ * `getRenderingEngine(id)` of the core, when the id is a string or a name
+ * that holds one value, also through a name whose every value is such an
+ * engine; `binding:` with the declaration of another name that holds one
+ * value for its whole scope. Undefined when the engine is not known.
+ */
+function engineKey(
+  node: Node | null | undefined,
+  depth = 0
+): string | undefined {
+  const inner = node ? unwrap(node) : undefined;
+  const kind = inner?.kind() ?? '';
+
+  if (!inner || depth > 4) {
+    return undefined;
+  }
+
+  if (kind === 'new_expression' || kind === 'call_expression') {
+    const callee = inner.field(
+      kind === 'new_expression' ? 'constructor' : 'function'
+    );
+    const factory =
+      kind === 'new_expression' ? 'RenderingEngine' : 'getRenderingEngine';
+    const [engineId] =
+      inner
+        .field('arguments')
+        ?.children()
+        .filter((child) => child.isNamed() && child.kind() !== 'comment') ?? [];
+    const key =
+      callee && engineId && isCoreExport(callee, factory)
+        ? viewportIdKey(engineId)
+        : undefined;
+
+    return key ? `engine:${key}` : undefined;
+  }
+
+  const declaration =
+    kind === 'identifier' ? declarationNodeOf(inner) : undefined;
+  const values = declaration ? writtenValues(declaration) : undefined;
+
+  if (!values) {
+    return undefined;
+  }
+
+  if (isStableBinding(declaration)) {
+    return (
+      (values[0] && engineKey(values[0], depth + 1)) ??
+      `binding:${declaration.range().start.index}`
+    );
+  }
+
+  const keys = new Set(values.map((value) => engineKey(value, depth + 1)));
+
+  return keys.size === 1 ? [...keys][0] : undefined;
+}
+
+/**
+ * Tells whether two engine keys name two engines: both are engines of a
+ * string id, and the ids differ.
+ */
+function isOtherEngine(key: string | undefined, other: string): boolean {
+  return Boolean(
+    key?.startsWith('engine:string:') &&
+      other.startsWith('engine:string:') &&
+      key !== other
+  );
+}
+
+/**
+ * Returns the engines, by `engineKey`, that a viewport input object is given
+ * to, and whether every use of it is known: the object is the argument of
+ * `enableElement` on an engine, or an entry of an array literal that is the
+ * argument of `setViewports`, directly or through a `const` that holds it.
+ */
+function inputEngines(objectNode: Node): {
+  engines: Set<string | undefined>;
+  complete: boolean;
+} {
+  const outer = keptValue(objectNode);
+  const holder = outer.parent()?.kind() === 'array' ? outer.parent() : outer;
+  const method = INPUT_METHOD[holder.kind()] ?? INPUT_METHOD.object;
+  const value = keptValue(holder);
+  const declarator = value.parent();
+  const name =
+    declarator?.kind() === 'variable_declarator' &&
+    declarator.field('value')?.id() === value.id()
+      ? declarator.field('name')
+      : undefined;
+  const engines = new Set<string | undefined>();
+
+  if (name && (name.kind() !== 'identifier' || !isStableBinding(name))) {
+    return { engines, complete: false };
+  }
+
+  const uses = name
+    ? declarationReferences(name).map((reference) => keptValue(reference))
+    : [value];
+  let complete = true;
+
+  for (const use of uses) {
+    const args = use.parent();
+    const callNode = args?.kind() === 'arguments' ? args.parent() : undefined;
+    const call = callNode ? methodCall(callNode) : undefined;
+
+    if (call?.method === method && call.args[0]?.id() === use.id()) {
+      engines.add(engineKey(call.object));
+    } else {
+      complete = false;
+    }
+  }
+
+  return { engines, complete };
+}
+
+/**
  * Returns the family of the viewport inputs of the file with the id of the
  * `getViewport` call that a type node casts, when they all give one type
- * that is resolved without running code. Returns `mixed` when one gives a 3D
- * type and another gives another type, or when one gives a type that only
- * the running code resolves, such as `flag ? VOLUME_3D : PLANAR`.
+ * that is resolved without running code. An input given to an engine of
+ * another string id than the engine of the call does not count. Returns
+ * `mixed` when one gives a 3D type and another gives another type, or when
+ * one gives a type that only the running code resolves: such as
+ * `flag ? VOLUME_3D : PLANAR`, a type that a spread, a computed key or a
+ * method after it can replace, or the type of an input whose id they can
+ * replace. Returns `unlinked` when they give a 3D type and none of them is
+ * given to the engine of the call: the same id can name a planar viewport
+ * there.
  */
 function inputFamily(run: Run, typeNode: Node): Decision {
   const holder = typeNode
@@ -520,43 +801,56 @@ function inputFamily(run: Run, typeNode: Node): Decision {
   }
 
   const id = viewportIdKey(call.args[0]);
+  const engine = engineKey(call.object);
   const families = new Set<string>();
+  let shownOnEngine = false;
 
   if (!id) {
     return undefined;
   }
 
   for (const objectNode of run.rootNode.findAll({ rule: { kind: 'object' } })) {
-    const { pairs, shorthand } = objectEntries(objectNode);
-    const idNode =
-      pairs.get('viewportId')?.field('value') ??
-      objectNode
-        .children()
-        .find(
-          (child) =>
-            child.kind() === 'shorthand_property_identifier' &&
-            child.text() === 'viewportId'
-        );
-    const typeValue = pairs.get('type')?.field('value');
+    const entries = inputEntries(objectNode);
 
     if (
-      !idNode ||
-      viewportIdKey(idNode) !== id ||
-      (!typeValue && !shorthand.has('type'))
+      !entries.id ||
+      viewportIdKey(entries.id) !== id ||
+      (!entries.type && !entries.open)
     ) {
       continue;
     }
 
-    families.add((typeValue && staticTypeFamily(typeValue)) ?? 'dynamic');
+    const { engines, complete } = inputEngines(objectNode);
+    const linked = Boolean(engine && engines.has(engine));
+
+    if (
+      engine &&
+      !linked &&
+      complete &&
+      engines.size > 0 &&
+      [...engines].every((key) => isOtherEngine(key, engine))
+    ) {
+      continue;
+    }
+
+    const family =
+      entries.idFinal && entries.typeFinal
+        ? (staticTypeFamily(entries.type) ?? 'dynamic')
+        : 'dynamic';
+
+    families.add(family);
+    shownOnEngine ||= family === '3d' && linked;
   }
 
   if (families.has('dynamic') || (families.has('3d') && families.size > 1)) {
     return 'mixed';
   }
 
-  return families.size === 1 && !families.has('other')
-    ? ([...families][0] as '3d' | 'planar')
-    : undefined;
+  if (families.has('3d')) {
+    return shownOnEngine ? '3d' : 'unlinked';
+  }
+
+  return families.size === 1 && families.has('planar') ? 'planar' : undefined;
 }
 
 /**
@@ -579,11 +873,13 @@ function classFor(
 
   const family = familyEvidence(run, typeNode);
 
-  if (family === 'ambiguous' || family === 'mixed') {
+  if (family === 'ambiguous' || family === 'mixed' || family === 'unlinked') {
     const reason =
       family === 'mixed'
         ? 'the inputs of this viewport id do not give one static type'
-        : 'a test of a 3D type here does not show the family';
+        : family === 'unlinked'
+          ? 'the 3D input of this viewport id is not tied to the engine of this call'
+          : 'a test of a 3D type here does not show the family';
 
     manual.increment(site(run.root, `${label}: ${reason}`, typeNode));
 

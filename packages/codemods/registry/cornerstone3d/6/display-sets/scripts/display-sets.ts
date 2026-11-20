@@ -407,11 +407,14 @@ function withoutParentheses(node: Node): Node {
  * so another series gets another id, two engines never share one, and no
  * two of these tuples give one text. A viewport that is a property read,
  * such as a getter, is read once into a `const` before the image list, and
- * an image list that is not a plain value is read once into a `const`, as
- * the old call read each once and in that order. A call that is not awaited
- * is reported: 5.x set the image ids and the index before its promise, so
- * the code after it saw them, where a 6.0 viewport shows nothing before its
- * mount ends, and only the reader knows which of the two the code needs.
+ * so is a name that a write can change (a `let`, a `var`, a written
+ * parameter) when an argument can run code, such as a getter that assigns
+ * it; an image list that is not a plain value is read once into a `const`,
+ * as the old call read each once and in that order. A call that is not
+ * awaited is reported: 5.x set the image ids and the index before its
+ * promise, so the code after it saw them, where a 6.0 viewport shows nothing
+ * before its mount ends, and only the reader knows which of the two the code
+ * needs.
  */
 function rewriteSetStack(
   run: Run,
@@ -450,7 +453,9 @@ function rewriteSetStack(
   const { statement } = statementInfo;
   const target = unwrap(object);
   const viewportLocal =
-    target.kind() === 'identifier' || target.kind() === 'this'
+    target.kind() === 'this' ||
+    (target.kind() === 'identifier' &&
+      (stableBinding(target) || args.every((arg) => isPlainValue(arg))))
       ? undefined
       : run.imports.fresh('viewport');
   const receiver = viewportLocal ?? target.text();
