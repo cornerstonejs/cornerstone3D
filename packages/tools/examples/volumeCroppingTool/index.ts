@@ -1,10 +1,5 @@
 import type { LegacyVolumeViewport3D, Types } from '@cornerstonejs/core';
-import {
-  RenderingEngine,
-  Enums,
-  setVolumesForViewports,
-  volumeLoader,
-} from '@cornerstonejs/core';
+import * as cornerstone from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -15,6 +10,7 @@ import {
   addToggleButtonToToolbar,
   addSliderToToolbar,
 } from '../../../../utils/demo/helpers';
+import { fillVolumeLabelmapWithMockData } from '../../../../utils/test/testUtils';
 
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -35,8 +31,11 @@ const {
   OrientationControllerTool,
   StackScrollTool,
   CrosshairsTool,
+  segmentation,
 } = cornerstoneTools;
 
+const { RenderingEngine, Enums, setVolumesForViewports, volumeLoader } =
+  cornerstone;
 const { MouseBindings, KeyboardBindings } = csToolsEnums;
 const { ViewportType } = Enums;
 
@@ -44,6 +43,7 @@ const { ViewportType } = Enums;
 const volumeName = 'CT_VOLUME_ID'; // Id of the volume less loader prefix
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
 const volumeId = `${volumeLoaderScheme}:${volumeName}`; // VolumeId with loader id + volume id
+const segmentationId = 'CROP_SEGMENTATION_ID';
 const toolGroupId = 'MY_TOOLGROUP_ID';
 const toolGroupIdVRT = 'MY_TOOLGROUP_VRT_ID';
 
@@ -171,6 +171,7 @@ instructions.innerText = `
   - Rotate, pan or zoom the 3D viewport using the mouse.
   - Use the scroll wheel to scroll through the slices in the orthographic viewports.
   - Toggle the clipping planes, handles, and rotate clipping planes on drag.
+  - With the clipping planes on, toggle the disjoint segmentation: the volume shows inside the crop box and the segmentation shows only outside it.
   - Click on the faces/edges/corners of the beveled cube orientation widget to change the orientation.
   URL params: numViewports=1|2|3
   `;
@@ -260,6 +261,21 @@ addToggleButtonToToolbar({
       const currentState = croppingTool.getRotatePlanesOnDrag();
       croppingTool.setRotatePlanesOnDrag(!currentState);
     }
+  },
+});
+
+addToggleButtonToToolbar({
+  title: 'Toggle Disjoint Segmentation',
+  defaultToggle: false,
+  container: planesRow,
+  onClick: () => {
+    const croppingTool =
+      cornerstoneTools.ToolGroupManager.getToolGroup(
+        toolGroupIdVRT
+      ).getToolInstance('VolumeCropping');
+    croppingTool?.setDisjointSegmentation(
+      !croppingTool.getDisjointSegmentation()
+    );
   },
 });
 
@@ -728,6 +744,31 @@ async function run(numViewports = getNumViewportsFromUrl()) {
     croppingTool.setHandlesVisible(false);
   }
   updateRotateHintVisibility();
+
+  // A labelmap that crosses the +X face of the initial crop box, to show the disjoint segmentation
+  await volumeLoader.createAndCacheDerivedLabelmapVolume(volumeId, {
+    volumeId: segmentationId,
+  });
+  fillVolumeLabelmapWithMockData({
+    volumeId: segmentationId,
+    cornerstone,
+    centerOffset: [volume.dimensions[0] * 0.3, 0, 0],
+  });
+  segmentation.addSegmentations([
+    {
+      segmentationId,
+      representation: {
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+        data: { volumeId: segmentationId },
+      },
+    },
+  ]);
+  await segmentation.addLabelmapRepresentationToViewportMap(
+    Object.fromEntries(
+      activeViewportIds.map((id) => [id, [{ segmentationId }]])
+    )
+  );
+
   // Clipping off on load; user enables via Toggle Clipping Planes button
   renderingEngine.renderViewports(activeViewportIds);
 }

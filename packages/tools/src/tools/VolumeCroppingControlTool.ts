@@ -60,6 +60,8 @@ import {
   getOrientationFromNormal,
   computePlanePlaneIntersection,
   findLineBoundsIntersection,
+  getViewCropPlanes,
+  setCropClippingPlanes,
 } from '../utilities/volumeCropping';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
@@ -183,6 +185,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
   static toolName;
   seriesInstanceUID?: string;
   clippingPlanes: ClippingPlane[] = [];
+  disjointSegmentation = false;
   _getReferenceLineColor?: (viewportId: string) => string;
   _getReferenceLineControllable?: (viewportId: string) => boolean;
   constructor(
@@ -404,6 +407,16 @@ class VolumeCroppingControlTool extends AnnotationTool {
     const viewportsInfo = this._getViewportsInfo();
 
     this._unsubscribeToViewportNewVolumeSet(viewportsInfo);
+    viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
+      const enabledElement = getEnabledElementByIds(
+        viewportId,
+        renderingEngineId
+      );
+      if (enabledElement) {
+        this._updateDisjointSegmentation(enabledElement.viewport, false);
+      }
+    });
+    this.disjointSegmentation = false;
 
     eventTarget.removeEventListener(
       Events.VOLUMECROPPING_TOOL_CHANGED,
@@ -482,7 +495,10 @@ class VolumeCroppingControlTool extends AnnotationTool {
       viewportsInfo.map(({ viewportId }) => viewportId)
     );
   };
-  _syncWithVolumeCroppingTool(originalClippingPlanes: ClippingPlane[]) {
+  _syncWithVolumeCroppingTool(
+    originalClippingPlanes: ClippingPlane[],
+    disjointSegmentation = false
+  ) {
     if (
       !originalClippingPlanes ||
       originalClippingPlanes.length < NUM_CLIPPING_PLANES
@@ -507,13 +523,71 @@ class VolumeCroppingControlTool extends AnnotationTool {
             );
           }
         });
+        this._updateDisjointSegmentation(
+          enabledElement.viewport,
+          disjointSegmentation
+        );
       }
     });
+    this.disjointSegmentation = disjointSegmentation;
 
     triggerAnnotationRenderForViewportIds(
       viewportsInfo.map(({ viewportId }) => viewportId)
     );
   }
+
+  /**
+   * Shows the other actors inside the crop rectangle and the segmentation
+   * actors (the actors with a `representationUID`) outside it, or restores
+   * both. A slice outside the crop box depth shows only the segmentation.
+   * The crop planes go after the two slab planes of the volume mappers.
+   *
+   * The depth test uses the slice centre (the focal point). For a crop box that
+   * crosses an oblique slice, an exact split needs 2 slab and 6 crop planes,
+   * more than the vtk.js limit of 6.
+   */
+  _updateDisjointSegmentation(viewport: Types.IViewport, enabled: boolean) {
+    if (
+      (!enabled && !this.disjointSegmentation) ||
+      viewport.type === Enums.ViewportType.VOLUME_3D ||
+      this.clippingPlanes.length < NUM_CLIPPING_PLANES
+    ) {
+      return;
+    }
+    const { viewPlaneNormal, focalPoint } = getViewportICamera(viewport);
+    const { inPlane, depth } = getViewCropPlanes(
+      this.clippingPlanes,
+      viewPlaneNormal
+    );
+    const excludingPlane = depth.find(
+      ({ origin, normal }) =>
+        vtkMath.dot(vtkMath.subtract(focalPoint, origin, [0, 0, 0]), normal) < 0
+    );
+    viewport.getActors().forEach(({ actor, representationUID }) => {
+      let planes = null;
+      if (enabled && representationUID) {
+        planes = excludingPlane ? null : inPlane;
+      } else if (enabled) {
+        // The slab lies on the clipped side of the plane: no image on this slice.
+        planes = excludingPlane ? [excludingPlane] : inPlane;
+      }
+      setCropClippingPlanes(actor, planes, {
+        keepCount: 2,
+        invert: !!representationUID,
+      });
+    });
+    viewport.render();
+  }
+
+  onCameraModified = (evt) => {
+    const element = evt.detail?.element ?? evt.currentTarget;
+    const { viewport } = getEnabledElement(element) || {};
+    if (viewport) {
+      this._updateDisjointSegmentation(viewport, this.disjointSegmentation);
+    }
+  };
+
+  _onActorsChanged = (evt) => this.onCameraModified(evt);
 
   /**
    * addNewAnnotation is called when the user clicks on the image.
@@ -1006,7 +1080,10 @@ class VolumeCroppingControlTool extends AnnotationTool {
 
   _onSphereMoved = (evt) => {
     if (evt.detail.originalClippingPlanes) {
-      this._syncWithVolumeCroppingTool(evt.detail.originalClippingPlanes);
+      this._syncWithVolumeCroppingTool(
+        evt.detail.originalClippingPlanes,
+        !!evt.detail.disjointSegmentation
+      );
     } else {
       if (evt.detail.seriesInstanceUID !== this.seriesInstanceUID) {
         return;
@@ -1056,6 +1133,10 @@ class VolumeCroppingControlTool extends AnnotationTool {
         Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME,
         this._onNewVolume
       );
+      element.removeEventListener(
+        Enums.Events.ACTORS_CHANGED,
+        this._onActorsChanged
+      );
     });
   }
 
@@ -1070,6 +1151,11 @@ class VolumeCroppingControlTool extends AnnotationTool {
       element.addEventListener(
         Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME,
         this._onNewVolume
+      );
+      // A segmentation that is added or re-created later gets the split.
+      element.addEventListener(
+        Enums.Events.ACTORS_CHANGED,
+        this._onActorsChanged
       );
     });
   }
