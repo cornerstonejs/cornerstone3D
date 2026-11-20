@@ -12,6 +12,7 @@ import {
   ECGGenericViewport,
   Enums,
   GenericVolumeViewport3D,
+  init,
   maybeAttachFidelityIndicator,
   utilities,
   VideoGenericViewport,
@@ -243,6 +244,14 @@ export function functionsOfTheGuide() {
     utilities.viewportIsInStackMode(planar),
     utilities.viewportIsInVolumeMode(planar),
   ];
+}
+
+/**
+ * `init` takes a configuration with only the keys that the application sets,
+ * as the guide passes `rendering.planar.renderBackend`.
+ */
+export function initWithOneKey() {
+  return init({ rendering: { planar: { renderBackend: 'cpu' } } });
 }
 
 /** The fidelity indicator takes a viewport of any family. */

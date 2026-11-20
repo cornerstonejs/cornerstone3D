@@ -2,7 +2,11 @@ import type { Point2, ViewPresentation } from '../../../types';
 import type { ViewPresentationSelector } from '../../../types/IViewport';
 import type { ProjectionWriteOptions } from '../ViewportProjectionTypes';
 import { normalizeVideoViewState } from './videoViewportCamera';
-import type { VideoProjectionSnapshot } from './VideoProjectionTypes';
+import type {
+  VideoProjectionSnapshot,
+  VideoResolvedViewLike,
+} from './VideoProjectionTypes';
+import VideoResolvedView from './VideoResolvedView';
 import type { VideoViewState } from './VideoViewportTypes';
 
 const DEFAULT_SELECTOR: Required<
@@ -55,8 +59,31 @@ export function getVideoProjectionPresentation(
 }
 
 /**
+ * The resolved view turned to a rotation, so that the zoom and the pan of the
+ * same patch are measured on the turned view. A resolved view that is not a
+ * `VideoResolvedView` stays as it is.
+ */
+function withRotation(
+  resolvedView: VideoResolvedViewLike,
+  rotation: number
+): VideoResolvedViewLike {
+  if (!(resolvedView instanceof VideoResolvedView)) {
+    return resolvedView;
+  }
+
+  return new VideoResolvedView({
+    ...resolvedView.state,
+    viewState: normalizeVideoViewState({
+      ...resolvedView.state.viewState,
+      rotation,
+    }),
+  });
+}
+
+/**
  * Converts a Video view-presentation patch back into semantic Video view state.
- * The zoom applies first, and the pan then at the new zoom, on the screen.
+ * A new rotation applies first, then the zoom, and the pan then at the new
+ * rotation and zoom, on the screen.
  */
 export function withVideoProjectionPresentation(
   snapshot: VideoProjectionSnapshot,
@@ -71,7 +98,10 @@ export function withVideoProjectionPresentation(
     presentation.zoom ?? snapshot.presentation.zoom ?? viewState.scale ?? 1,
     0.001
   );
-  let resolvedView = snapshot.resolvedView;
+  let resolvedView =
+    hasRotation && snapshot.resolvedView
+      ? withRotation(snapshot.resolvedView, presentation.rotation ?? 0)
+      : snapshot.resolvedView;
   let nextViewState: VideoViewState = normalizeVideoViewState({
     ...viewState,
     ...(hasRotation ? { rotation: presentation.rotation ?? 0 } : {}),

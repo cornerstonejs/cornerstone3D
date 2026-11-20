@@ -49,7 +49,6 @@ async function addOrUpdateSurfaceDisplaySet(
   }
 
   utilities.genericViewportDisplaySetMetadataProvider.add(geometryId, {
-    imageIds: [],
     geometryId,
     reference: {
       kind: 'segmentation',

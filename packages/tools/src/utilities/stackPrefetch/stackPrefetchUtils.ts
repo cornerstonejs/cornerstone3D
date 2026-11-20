@@ -5,7 +5,6 @@ import {
   cache,
 } from '@cornerstonejs/core';
 import { getToolState } from './state';
-import { viewportSupportsImageSlices } from '../viewportCapabilities';
 
 export const requestType = Enums.RequestType.Prefetch;
 export const priority = 0;
@@ -58,7 +57,7 @@ export function getStackData(element) {
   const { viewport } = enabledElement;
 
   if (
-    !viewportSupportsImageSlices(viewport) ||
+    !utilities.viewportSupportsImageSlices(viewport) ||
     utilities.viewportIsInVolumeMode(viewport)
   ) {
     // we shouldn't throw error here, since the viewport might have

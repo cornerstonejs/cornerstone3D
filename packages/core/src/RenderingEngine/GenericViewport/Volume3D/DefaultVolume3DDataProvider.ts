@@ -5,6 +5,7 @@ import resolveViewportVolumeId from '../../helpers/resolveViewportVolumeId';
 import type { LoadedData } from '../ViewportArchitectureTypes';
 import {
   getGenericViewportImageDisplaySet,
+  getGenericViewportRegisteredDisplaySet,
   isGenericViewportImageDisplaySet,
 } from '../genericViewportDisplaySetAccess';
 import type {
@@ -68,8 +69,14 @@ export class DefaultVolume3DDataProvider implements Volume3DDataProvider {
     };
   }
 
+  /**
+   * The registered display set of `dataId`: one with image ids, or a
+   * geometry display set with a `geometryId` and no image ids.
+   */
   private getDataSet(dataId: string): Volume3DRegisteredDataSet | undefined {
-    const dataSet = getGenericViewportImageDisplaySet(dataId);
+    const dataSet =
+      getGenericViewportImageDisplaySet(dataId) ??
+      getGenericViewportRegisteredDisplaySet(dataId);
 
     if (!isVolume3DRegisteredDataSet(dataSet)) {
       return;
@@ -79,10 +86,14 @@ export class DefaultVolume3DDataProvider implements Volume3DDataProvider {
   }
 }
 
+/**
+ * Whether a registered value is a display set that a 3D viewport loads: a
+ * record with image ids, or a record with a `geometryId` and no image ids.
+ */
 function isVolume3DRegisteredDataSet(
   value: unknown
 ): value is Volume3DRegisteredDataSet {
-  if (!isGenericViewportImageDisplaySet(value)) {
+  if (!isGenericViewportImageDisplaySet(value) && !isGeometryDataSet(value)) {
     return false;
   }
 
@@ -92,5 +103,18 @@ function isVolume3DRegisteredDataSet(
     (value.geometryLoadOptions === undefined ||
       (typeof value.geometryLoadOptions === 'object' &&
         !Array.isArray(value.geometryLoadOptions)))
+  );
+}
+
+/** Whether a registered value is a record that names a geometry and no images. */
+function isGeometryDataSet(
+  value: unknown
+): value is Record<string, unknown> & { geometryId: string } {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    !Array.isArray(value) &&
+    typeof (value as Record<string, unknown>).geometryId === 'string' &&
+    (value as Record<string, unknown>).imageIds === undefined
   );
 }

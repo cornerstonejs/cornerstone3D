@@ -203,7 +203,7 @@ interface Cornerstone3DConfig {
     labelmapVoxelRepresentation?: VoxelManagerEnum | `${VoxelManagerEnum}`;
   };
 
-  debug: {
+  debug?: {
     /**
      * Wether or not to show the stats overlay for debugging purposes, stats include:
      * - FPS Frames rendered in the last second. The higher the number the better.

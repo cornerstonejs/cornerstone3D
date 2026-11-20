@@ -272,6 +272,24 @@ describe('Direct next video viewport -- ', () => {
     expect(events.stack).toEqual([]);
   });
 
+  it('tells whether it plays with isPlaying, where the legacy viewport answered from togglePlayPause', async function () {
+    const answers = [next.isPlaying()];
+
+    await next.play();
+    answers.push(next.isPlaying(), nextVideoElement(next).paused);
+    next.pause();
+    answers.push(next.isPlaying(), nextVideoElement(next).paused);
+
+    expect(answers).toEqual([false, true, false, false, true]);
+    expect(
+      createViewport(
+        renderingEngine,
+        'emptyNextVideo',
+        ViewportType.VIDEO
+      ).isPlaying()
+    ).toBe(false);
+  });
+
   it('fires IMAGE_RENDERED while it plays, not more often than the legacy viewport', async function () {
     const nextRendered = countImageRendered(next.element);
 

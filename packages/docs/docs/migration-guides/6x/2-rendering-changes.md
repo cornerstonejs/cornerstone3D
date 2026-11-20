@@ -201,6 +201,13 @@ leave the canvas. Against the legacy volume viewport:
   stack mode and in volume mode. The legacy volume viewport ignored `loop`.
   `StackScrollTool` passes its `loop` configuration on, so a tool that is set
   to loop wraps a volume too.
+- **`jumpToSlice` with a `volumeId` counts the slices of that volume.**
+  `utilities.jumpToSlice(element, { imageIndex, volumeId })`, with the id of
+  another volume that the viewport shows in volume mode, goes to slice
+  `imageIndex` of that volume along the view, and clips the index to its
+  slices. In 5.x the index counted the slices of the source volume while
+  each step went by the spacing of the named volume, so the jump landed
+  elsewhere.
 
 ## Sharpening and smoothing
 
@@ -878,6 +885,13 @@ legacy picture within two levels of 255.
   gives the actors of the display sets.
   [The 3D viewport](./3-api-map.md#the-3d-viewport) has the call for each
   member.
+- **A geometry display set needs no image ids.** Register it as
+  `{ geometryId, reference }` with
+  `utilities.genericViewportDisplaySetMetadataProvider.add`, and
+  `addDisplaySet(displaySetId)` mounts the geometry `geometryId`, with the
+  representation UID of the reference on its actor entry. In 5.x such a
+  registration needed `imageIds: []`: without it the mount loaded the display
+  set id as a geometry id and rejected.
 - **A surface shown first is fitted as a reset fits it.** When a surface is
   the first thing that a 3D viewport shows, the mount fits the camera with
   the fit and the view angle of 90 degrees of `resetViewState()`, as the
@@ -1042,8 +1056,11 @@ legacy picture within two levels of 255.
   `{ withNavigation: true }` each of the three is viewable on every frame,
   which is the answer of the legacy `hasImageURI()`.
 - **Frame range and playback.** Frame numbers start at 1. `play()` and
-  `pause()` are on the viewport, and there is no `togglePlayPause()`: the
-  application keeps whether the video plays. The frame range is the view
+  `pause()` are on the viewport, and there is no `togglePlayPause()`:
+  `viewport.isPlaying()` tells whether the video plays, also after a tool
+  started it or the video ended. In 5.x `isPlaying` was a private field of
+  the legacy viewport; code that read it as a field gets a method now. The
+  frame range is the view
   state key `frameRange`: `viewport.setViewState({ frameRange: [5, 10] })`.
   Playback stays in the range, and a reset and a mount clear it. There is no
   `setFrameRange()` and no `getFrameRange()`. A change of the range is a view
@@ -1083,6 +1100,11 @@ legacy picture within two levels of 255.
 - **`getPan()` and `setPan()` are in canvas pixels on the screen,** `[0, 0]` at
   the fit, as on the other next viewports, and a drag of the pan tool moves
   the picture with the mouse at any rotation.
+- **A presentation patch with a new rotation turns first.**
+  `viewportProjection.withPresentation(viewport, { rotation, zoom, pan })` on
+  a video applies the rotation, then the zoom, then the pan, so the pan
+  reads back as written, as with two patches. In 5.x the pan of such a patch
+  was measured at the old rotation and read back turned.
 - **`suppressEvents`** in the options silences `CAMERA_MODIFIED` and
   `CAMERA_RESET`.
 - **A labelmap over a video** is not available. It is not available on the
@@ -1300,5 +1322,20 @@ and is deprecated.
   update after it gets voxels. In 5.x one such segment made the whole
   conversion reject ("Surface must have non-empty points array"), so no
   segment showed a surface.
+- **A Surface representation works without polySeg.** Without the polySeg
+  add-on, a change of the data of a segmentation that has a Surface
+  representation with surfaces of the application leaves those surfaces as
+  they are. In 5.x it threw an uncaught `TypeError` about 300 ms after
+  `SEGMENTATION_DATA_MODIFIED`.
+- **`cache.purgeCache()` keeps the geometries, as in 5.x.** It removes the
+  images and the volumes. A surface or a contour geometry stays until
+  `cache.removeGeometryLoadObject(geometryId)` removes it, which fires
+  `GEOMETRY_CACHE_GEOMETRY_REMOVED`. No member lists the geometries of the
+  cache. The `geometryIds` of the Surface and Contour data of a segmentation
+  name those that it uses.
+- **`init` takes only the keys that the application sets, in TypeScript.**
+  `debug` is optional in the configuration type, so
+  `init({ rendering: { planar: { renderBackend: 'cpu' } } })` compiles. In
+  5.x the type required `debug`, and such a call did not compile.
 - **New:** `utilities.runDrawSelfTest()` draws a known image and reads it
   back, to tell whether the device draws 16-bit data right.

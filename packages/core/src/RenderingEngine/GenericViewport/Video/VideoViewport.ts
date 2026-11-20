@@ -539,6 +539,15 @@ class VideoViewport extends GenericViewport<
   }
 
   /**
+   * Whether the video plays: true from `play()` on, also when a tool started
+   * it, and false with no video, after `pause()`, and when a video without
+   * `loop` ends. The legacy `togglePlayPause()` returned this state.
+   */
+  isPlaying(): boolean {
+    return this.getVideoElement()?.paused === false;
+  }
+
+  /**
    * The 1-based first and last frame that playback stays in: the frame range
    * of the view state, or else every frame of the video.
    */

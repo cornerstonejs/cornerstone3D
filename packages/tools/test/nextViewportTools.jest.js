@@ -13,10 +13,6 @@ jest.mock('@cornerstonejs/core', () => {
 import { cache, Enums, utilities } from '@cornerstonejs/core';
 import { moveAnnotationToViewPlane } from '../src/utilities/moveAnnotationToViewPlane';
 import AnnotationMultiSlice from '../src/utilities/AnnotationMultiSlice';
-import {
-  viewportSupportsImageSlices,
-  viewportSupportsStackCalibration,
-} from '../src/utilities/viewportCapabilities';
 import WholeBodySegmentTool from '../src/tools/annotation/WholeBodySegmentTool';
 
 /**
@@ -165,7 +161,7 @@ describe('AnnotationMultiSlice.setViewportFrameRange', () => {
   });
 });
 
-describe('The image slice checks of the tools', () => {
+describe('The image slice checks of core that the tools use', () => {
   /** The image slice members of a next video viewport: no `hasImageURI`. */
   function makeImageSliceViewport(extra = {}) {
     return {
@@ -176,20 +172,17 @@ describe('The image slice checks of the tools', () => {
     };
   }
 
-  it('take a viewport without hasImageURI, as the checks of core do', () => {
+  it('take a viewport without hasImageURI', () => {
     const slices = makeImageSliceViewport();
     const calibrated = makeImageSliceViewport({ calibrateSpacing: jest.fn() });
 
-    expect(viewportSupportsImageSlices(slices)).toBe(true);
-    expect(viewportSupportsStackCalibration(calibrated)).toBe(true);
+    expect(utilities.viewportSupportsImageSlices(slices)).toBe(true);
+    expect(utilities.viewportSupportsStackCalibration(calibrated)).toBe(true);
+    expect(utilities.viewportSupportsStackCalibration(slices)).toBe(false);
 
-    for (const viewport of [slices, calibrated, {}, null]) {
-      expect(viewportSupportsImageSlices(viewport)).toBe(
-        utilities.viewportSupportsImageSlices(viewport)
-      );
-      expect(viewportSupportsStackCalibration(viewport)).toBe(
-        utilities.viewportSupportsStackCalibration(viewport)
-      );
+    for (const viewport of [{}, null]) {
+      expect(utilities.viewportSupportsImageSlices(viewport)).toBe(false);
+      expect(utilities.viewportSupportsStackCalibration(viewport)).toBe(false);
     }
   });
 
@@ -197,6 +190,6 @@ describe('The image slice checks of the tools', () => {
     const { getImageIds: _getImageIds, ...noImageIds } =
       makeImageSliceViewport();
 
-    expect(viewportSupportsImageSlices(noImageIds)).toBe(false);
+    expect(utilities.viewportSupportsImageSlices(noImageIds)).toBe(false);
   });
 });

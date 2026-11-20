@@ -1,7 +1,10 @@
 import clip from './clip';
 import type { ImageSliceData, IViewport, JumpToSliceOptions } from '../types';
 import type PlanarViewport from '../RenderingEngine/GenericViewport/Planar/PlanarViewport';
-import scroll from './scroll';
+import scroll, {
+  countPlanarVolumeScrollSteps,
+  getPlanarVolumeScrollSteps,
+} from './scroll';
 import getEnabledElement from '../getEnabledElement';
 import { getViewportContentMode } from './viewportCapabilities';
 /**
@@ -9,6 +12,9 @@ import { getViewportContentMode } from './viewportCapabilities';
  * It works in stack mode and in volume mode. In volume mode, the imageIndex
  * should be given with respect to the index in the 3D image in the view direction
  * (i.e. the index of the slice in Axial, Sagittal, Coronal, or Oblique).
+ * With the `volumeId` of another volume that a planar viewport shows in
+ * volume mode, the imageIndex counts the slices of that volume along the
+ * view, as `utilities.scroll` steps with that `volumeId`.
  *
  * @param element - the HTML Div element scrolling inside
  * @param options - the options used for jumping to a slice
@@ -27,8 +33,10 @@ async function jumpToSlice(
 
   const { viewport } = enabledElement;
 
-  const { imageIndex: currentImageIndex, numberOfSlices } =
-    _getImageSliceData(viewport);
+  const { imageIndex: currentImageIndex, numberOfSlices } = _getImageSliceData(
+    viewport,
+    volumeId
+  );
 
   const imageIndexToJump = _getImageIndexToJump(numberOfSlices, imageIndex);
   const delta = imageIndexToJump - currentImageIndex;
@@ -44,12 +52,32 @@ async function jumpToSlice(
  * of the image that is drawn while that image loads. Another viewport gives
  * its slice index. A viewport that has no `getNumberOfSlices`, as an ECG
  * viewport, has one slice: a jump on it moves nothing.
+ *
+ * With the `volumeId` of another volume that a planar viewport shows in
+ * volume mode, the slices are those of that volume along the view, counted
+ * as `utilities.scroll` counts its steps.
  */
-function _getImageSliceData(viewport: IViewport): ImageSliceData {
+function _getImageSliceData(
+  viewport: IViewport,
+  volumeId?: string
+): ImageSliceData {
   const mode = getViewportContentMode(viewport);
 
   if (mode === 'stack' || mode === 'volume') {
     const planarViewport = viewport as PlanarViewport;
+    const steps = volumeId
+      ? getPlanarVolumeScrollSteps(planarViewport, { volumeId })
+      : undefined;
+
+    if (steps) {
+      const { numScrollSteps, currentStepIndex } =
+        countPlanarVolumeScrollSteps(steps);
+
+      return {
+        numberOfSlices: numScrollSteps + 1,
+        imageIndex: currentStepIndex,
+      };
+    }
 
     return {
       numberOfSlices: planarViewport.getNumberOfSlices(),

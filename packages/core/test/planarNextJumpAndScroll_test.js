@@ -202,6 +202,33 @@ describe('Jump and scroll on a direct next planar viewport -- ', () => {
 
       expect(viewport.getCurrentImageIdIndex()).toBe(11);
     });
+
+    it('counts the index in the slices of another volume with its volumeId in volume mode', async function () {
+      const viewport = createNextViewport(renderingEngine);
+      const coarseVolumeId = await showTwoVolumes(viewport);
+
+      await utilities.jumpToSlice(viewport.element, { imageIndex: 3 });
+      await utilities.jumpToSlice(viewport.element, {
+        imageIndex: 2,
+        volumeId: coarseVolumeId,
+      });
+
+      expect(viewport.getCurrentImageIdIndex()).toBe(6);
+
+      await utilities.jumpToSlice(viewport.element, {
+        imageIndex: 1,
+        volumeId: coarseVolumeId,
+      });
+
+      expect(viewport.getCurrentImageIdIndex()).toBe(3);
+
+      await utilities.jumpToSlice(viewport.element, {
+        imageIndex: 40,
+        volumeId: coarseVolumeId,
+      });
+
+      expect(viewport.getCurrentImageIdIndex()).toBe(12);
+    });
   });
 
   describe('utilities.scroll', () => {

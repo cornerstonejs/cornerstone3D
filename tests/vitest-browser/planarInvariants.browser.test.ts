@@ -372,7 +372,7 @@ describe('planarInvariants: cross-viewport reference (same frame of reference)',
 
     const refA = a.viewport.getViewReference();
 
-    // Read isPlanarReferenceViewable / isPlanarPlaneViewable
+    // Read isPlanarPlaneViewable
     // (Planar/planarViewReference.ts): a resolved planar view reference always
     // carries a `planeRestriction` populated from the CURRENT camera focal
     // point, so without `withNavigation: true` the check answers "is this

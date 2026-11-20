@@ -233,6 +233,28 @@ describe('Direct next 3D viewport, a geometry display set -- ', () => {
     expect(next.getActors()[0].representationUID).toBeUndefined();
   });
 
+  it('mounts a geometry display set that is registered with a reference and no imageIds', async function () {
+    const next = createNextViewport(renderingEngine);
+
+    await showVolume(next);
+    createSurfaceGeometry('surface1', [0, 0, 0], [30, 20, 10]);
+    utilities.genericViewportDisplaySetMetadataProvider.add('surfaceSet1', {
+      geometryId: 'surface1',
+      reference: {
+        kind: 'segmentation',
+        segmentationId: 'segmentation1',
+        representationUID: 'segmentation1-Surface-1',
+      },
+    });
+    await next.addDisplaySet('surfaceSet1', { role: 'overlay' });
+
+    const entry = geometryEntryOf(next, 'surface1');
+
+    expect(entry.representationUID).toBe('segmentation1-Surface-1');
+    expect(pointCountOf(entry.actor)).toBe(8);
+    expect(entry.actor.getBounds()).toEqual([0, 30, 0, 20, 0, 10]);
+  });
+
   it('shows colour, opacity and visibility of the presentation of the display set', async function () {
     const next = createNextViewport(renderingEngine);
 

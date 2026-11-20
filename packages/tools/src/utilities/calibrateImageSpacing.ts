@@ -1,6 +1,5 @@
 import { utilities, Enums } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
-import { viewportSupportsStackCalibration } from './viewportCapabilities';
 
 const { calibratedPixelSpacingMetadataProvider } = utilities;
 
@@ -30,7 +29,7 @@ export default function calibrateImageSpacing(
   // 2. Update any viewport that is currently displaying the calibrated image.
   const viewports = renderingEngine
     .getViewports()
-    .filter(viewportSupportsStackCalibration);
+    .filter(utilities.viewportSupportsStackCalibration);
 
   // 2.1 If imageId is already being used in a stackViewport -> update actor
   viewports.forEach((viewport) => {

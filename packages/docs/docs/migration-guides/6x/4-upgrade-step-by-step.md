@@ -643,6 +643,17 @@ import { utilities as csToolsUtilities } from '@cornerstonejs/tools';
 csToolsUtilities.navigatePlanarViewportToPoint(viewport, point);
 ```
 
+Without the tools, a stack goes to the image closest to the point. The index
+is `null` for a stack without images:
+
+```ts
+const sliceIndex = utilities.getClosestStackImageIndexForPoint(point, viewport);
+
+if (sliceIndex !== null) {
+  viewport.setViewReference({ sliceIndex });
+}
+```
+
 These calls keep their names and work in both modes:
 `viewport.setImageIdIndex(index)`, `viewport.scroll(delta)`,
 `viewport.getCurrentImageIdIndex()`, `viewport.getNumberOfSlices()`,
@@ -704,8 +715,14 @@ const image = viewport.getCornerstoneImage();
 After:
 
 ```ts
-const { imageData, voxelManager } = viewport.getImageData();
-const bounds = imageData.getBounds();
+const data = viewport.getImageData();
+
+if (!data) {
+  return;
+}
+
+const { imageData, voxelManager } = data;
+const bounds = imageData.getBounds?.();
 const value = voxelManager?.getAtIJKPoint(
   utilities.transformWorldToIndex(imageData, point)
 );
@@ -724,7 +741,8 @@ point of that slice.
   you read `imageData`.
 - `getImageData().imageData` of a stack is a plain object, not a vtk.js image
   data. It has `getBounds`, `getDimensions`, `getSpacing`, `getDirection`,
-  `worldToIndex` and `indexToWorld`.
+  `worldToIndex` and `indexToWorld`. Its type declares `getBounds` optional,
+  so with `strictNullChecks` the sample calls it with `?.`.
 - `utilities.getCurrentVolumeViewportSlice(viewport)` throws for an oblique
   and for a rotated view.
 - `cache.getImage(viewport.getCurrentImageId())` gives an image for a volume
@@ -942,13 +960,11 @@ await viewport.setDisplaySets({
   options: { frameNumber: 1 },
 });
 
-if (playing) {
+if (viewport.isPlaying()) {
   viewport.pause();
 } else {
   viewport.play();
 }
-
-playing = !playing;
 
 viewport.setViewState({ frameRange: [5, 10] });
 ```

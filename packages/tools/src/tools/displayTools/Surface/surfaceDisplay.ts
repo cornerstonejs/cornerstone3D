@@ -186,10 +186,21 @@ async function render(
   viewport.render();
 }
 
+/**
+ * The function that updates the surfaces of a segmentation on the viewport
+ * when its data changes: polySeg converts the data again. Undefined without
+ * the polySeg add-on, so a data change leaves the surfaces of the
+ * application as they are.
+ */
 function getUpdateFunction(
   viewport: Types.IViewport
-): (segmentationId: string) => Promise<void> {
+): ((segmentationId: string) => Promise<void>) | undefined {
   const polySeg = getPolySeg();
+
+  if (!polySeg) {
+    return;
+  }
+
   return (segmentationId: string) =>
     polySeg.updateSurfaceData(segmentationId, { viewport });
 }

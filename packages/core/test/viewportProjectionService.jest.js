@@ -254,6 +254,54 @@ describe('ViewportProjectionService', () => {
     expect(nextViewState.anchorWorld).toHaveLength(2);
   });
 
+  it('gives a Video patch with a pan and a new rotation the pan of two patches', () => {
+    const element = document.createElement('div');
+    const videoViewport = (viewState) => ({
+      element,
+      type: ViewportType.VIDEO,
+      getFrameOfReferenceUID: () => 'video-frame',
+      getResolvedView: () => createVideoResolvedView(viewState),
+      getViewState: () => viewState,
+    });
+    const start = {
+      currentTimeSeconds: 0,
+      anchorCanvas: [0.5, 0.5],
+      scale: 1,
+      scaleMode: 'fit',
+      rotation: 0,
+    };
+
+    setElementSize(element, 200, 100);
+
+    const read = (viewState) =>
+      viewportProjection.getPresentation(videoViewport(viewState));
+    const together = viewportProjection.withPresentation(videoViewport(start), {
+      rotation: 90,
+      pan: [20, 0],
+    });
+    const turned = viewportProjection.withPresentation(videoViewport(start), {
+      rotation: 90,
+    });
+    const twoSteps = viewportProjection.withPresentation(
+      videoViewport(turned),
+      { pan: [20, 0] }
+    );
+    const zoomedTogether = viewportProjection.withPresentation(
+      videoViewport(start),
+      { rotation: 90, zoom: 2, pan: [20, -10] }
+    );
+
+    expect(read(together).rotation).toBe(90);
+    expect(read(together).pan[0]).toBeCloseTo(20, 4);
+    expect(read(together).pan[1]).toBeCloseTo(0, 4);
+    expect(read(twoSteps).pan[0]).toBeCloseTo(20, 4);
+    expect(read(twoSteps).pan[1]).toBeCloseTo(0, 4);
+    expect(read(zoomedTogether).rotation).toBe(90);
+    expect(read(zoomedTogether).zoom).toBeCloseTo(2, 4);
+    expect(read(zoomedTogether).pan[0]).toBeCloseTo(20, 4);
+    expect(read(zoomedTogether).pan[1]).toBeCloseTo(-10, 4);
+  });
+
   it('references the ECG source imageId, not the display set id', () => {
     genericViewportDisplaySetMetadataProvider.add('ecg-display-set', {
       kind: 'ecg',
