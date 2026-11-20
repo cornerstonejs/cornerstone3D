@@ -88,11 +88,13 @@ const viewportId1 = 'CT_AXIAL';
 const viewportId2 = 'CT_3D';
 
 let surfaces;
-async function addSegmentationsToState() {
+async function addSegmentationsToState(frameOfReferenceUID: string) {
   // Download the surface data. Please note that this is a large file
   // and may take a while to download
 
-  const geometriesInfo = await createAndCacheGeometriesFromSurfaces();
+  const geometriesInfo = await createAndCacheGeometriesFromSurfaces({
+    frameOfReferenceUID,
+  });
 
   // Add the segmentations to state
   segmentation.addSegmentations([
@@ -181,7 +183,7 @@ async function run() {
   });
 
   // Add some segmentations based on the source data volume
-  await addSegmentationsToState();
+  await addSegmentationsToState(volume.metadata.FrameOfReferenceUID);
 
   // Instantiate a rendering engine
   const renderingEngineId = 'myRenderingEngine';

@@ -14,8 +14,15 @@ import type { SurfaceData } from '@cornerstonejs/core/types';
  * - id
  * - segmentIndex
  * - frameOfReferenceUID
+ *
+ * A given frameOfReferenceUID replaces the one of the downloaded data, whose
+ * surfaces carry a placeholder frame of reference.
  */
-function createAndCacheGeometry(surface: any, index: number): [number, string] {
+function createAndCacheGeometry(
+  surface: any,
+  index: number,
+  frameOfReferenceUID?: string
+): [number, string] {
   const geometryId = surface.closedSurface.id;
   geometryLoader.createAndCacheGeometry(geometryId, {
     type: Enums.GeometryType.SURFACE,
@@ -24,7 +31,8 @@ function createAndCacheGeometry(surface: any, index: number): [number, string] {
       polys: surface.closedSurface.data.polys,
       id: surface.closedSurface.id,
       segmentIndex: index + 1,
-      frameOfReferenceUID: surface.closedSurface.frameOfReferenceUID,
+      frameOfReferenceUID:
+        frameOfReferenceUID ?? surface.closedSurface.frameOfReferenceUID,
     } as SurfaceData,
   });
 
@@ -33,20 +41,31 @@ function createAndCacheGeometry(surface: any, index: number): [number, string] {
 }
 
 async function processGeometries(
-  surfaces: any[]
+  surfaces: any[],
+  frameOfReferenceUID?: string
 ): Promise<Map<number, string>> {
   return surfaces.reduce((acc: Map<number, string>, surface, index) => {
-    const [segmentIndex, geometryId] = createAndCacheGeometry(surface, index);
+    const [segmentIndex, geometryId] = createAndCacheGeometry(
+      surface,
+      index,
+      frameOfReferenceUID
+    );
     acc.set(segmentIndex, geometryId);
     return acc;
   }, new Map());
 }
 
-export async function createAndCacheGeometriesFromSurfaces(): Promise<
-  Map<number, string>
-> {
+/**
+ * Downloads the demo surfaces and caches them as geometries. With
+ * `options.frameOfReferenceUID`, the surfaces take that frame of reference,
+ * the one of the series they were made from, so that tools that match
+ * frames of reference (SegmentationIntersectionTool) find them.
+ */
+export async function createAndCacheGeometriesFromSurfaces(options?: {
+  frameOfReferenceUID?: string;
+}): Promise<Map<number, string>> {
   const surfaces = await downloadSurfaces();
-  return processGeometries(surfaces);
+  return processGeometries(surfaces, options?.frameOfReferenceUID);
 }
 
 export async function createAndCacheGeometriesFromOneSurface(): Promise<
