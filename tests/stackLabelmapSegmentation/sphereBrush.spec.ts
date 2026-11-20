@@ -5,8 +5,6 @@ import {
   screenShotPaths,
   simulateDrawPath,
   getVisibleViewportCanvas,
-  CPU_LABELMAP_OUTLINE_ISSUE,
-  isCompatibilityMode,
 } from '../utils/index';
 import { rightArmBoneContour } from './utils/constants';
 import pause from '../utils/pause';
@@ -21,8 +19,6 @@ test('Stack Segmentation - Sphere Brush Tool', async ({
   page,
   browserName,
 }) => {
-  test.fail(isCompatibilityMode(), CPU_LABELMAP_OUTLINE_ISSUE);
-
   await page.getByRole('combobox').first().selectOption('SphereBrush');
 
   const canvas = getVisibleViewportCanvas(page, 0);

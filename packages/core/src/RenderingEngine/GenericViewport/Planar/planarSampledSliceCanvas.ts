@@ -28,6 +28,10 @@ import type {
   PlanarSliceClipPlane,
 } from './planarSampledSlice';
 import { PlanarSampledSliceActor } from './planarSampledSliceActor';
+import {
+  resetCanvasLabelmapComposition,
+  setOutlineAtImageEdges,
+} from '../../CanvasActor/canvasLabelmapLayer';
 
 /**
  * The largest distance, in device pixels, by which a transform may miss the
@@ -127,11 +131,12 @@ export type PlanarSliceCanvasTransform = [
  * clip planes of the GPU draw step leave them. The coloured slice is drawn
  * over the layers below it with its alpha, as the GPU blends a layer.
  *
- * A labelmap is coloured by its `CanvasActor`, and a slice of a colour volume
- * becomes an `IImage` that the CPU fallback pipeline (`drawImageSync`) turns
- * into colours one to one. That picture is drawn on the layer canvas of the
- * display set and composed on the canvas of the viewport with the opacity of
- * the presentation.
+ * A labelmap is drawn by its `CanvasActor` on the canvas of the viewport, in
+ * canvas pixels with its outline, as the GPU draws a labelmap slice. A slice
+ * of a colour volume becomes an `IImage` that the CPU fallback pipeline
+ * (`drawImageSync`) turns into colours one to one. That picture is drawn on
+ * the layer canvas of the display set and composed on the canvas of the
+ * viewport with the opacity of the presentation.
  *
  * Either picture is placed with the transform from the slice to the canvas
  * (`getSliceCanvasTransform`), so any pan, zoom, rotation and flip of the
@@ -202,10 +207,11 @@ export class PlanarSampledSliceCanvas {
   }
 
   /**
-   * Draws the slice set last. A slice of one value per pixel is drawn over
-   * the canvas of the viewport with the colours of the GPU draw step
-   * (`drawWithTransferFunctions`); a labelmap or a colour slice is drawn on
-   * the layer canvas, which is composed on the canvas of the viewport.
+   * Draws the slice set last. A labelmap is drawn by its actor
+   * (`drawWithCanvasActor`); a slice of one value per pixel is drawn over the
+   * canvas of the viewport with the colours of the GPU draw step
+   * (`drawWithTransferFunctions`); a colour slice is drawn on the layer
+   * canvas, which is composed on the canvas of the viewport.
    *
    * @param args.target - The canvas of the viewport.
    * @param args.camera - The camera of the view, which places the slice.
@@ -230,11 +236,21 @@ export class PlanarSampledSliceCanvas {
       return;
     }
 
+    if (canvasActor) {
+      this.drawWithCanvasActor(
+        canvasActor,
+        target,
+        camera,
+        presentation?.opacity ?? 1
+      );
+      return;
+    }
+
     resizeCanvas(this.sliceCanvas, slice.width, slice.height);
 
     if (
-      !canvasActor &&
-      ((slice.numberOfComponents ?? 1) === 1 || this.presentationOf === 'image')
+      (slice.numberOfComponents ?? 1) === 1 ||
+      this.presentationOf === 'image'
     ) {
       this.drawWithTransferFunctions(args);
       return;
@@ -248,11 +264,7 @@ export class PlanarSampledSliceCanvas {
       args.defaultVOIRange
     );
 
-    if (canvasActor) {
-      this.drawWithCanvasActor(canvasActor);
-    } else {
-      drawImageSync(enabledElement, args.invalidated);
-    }
+    drawImageSync(enabledElement, args.invalidated);
 
     const layerContext = this.layerCanvas.getContext('2d');
 
@@ -268,7 +280,7 @@ export class PlanarSampledSliceCanvas {
       this.layerCanvas.height
     );
 
-    if (!canvasActor && !enabledElement.viewport.colormap) {
+    if (!enabledElement.viewport.colormap) {
       layerContext.fillStyle = 'black';
       layerContext.fillRect(
         0,
@@ -467,17 +479,34 @@ export class PlanarSampledSliceCanvas {
     return this.enabledElement;
   }
 
-  /** Colours the slice of a labelmap with its actor, one to one. */
-  private drawWithCanvasActor(canvasActor: ICanvasActor): void {
-    const context = this.sliceCanvas.getContext('2d');
+  /**
+   * Draws the slice of a labelmap with its actor on the canvas of the
+   * viewport, placed with the transform from the slice to the canvas, with
+   * the opacity of the presentation. The actor draws in canvas pixels, with
+   * the outline, and composes with the other labelmaps of the pass. A slice
+   * inside the volume ends on its faces, which get an outline, as the GPU
+   * draws a labelmap slice of a volume.
+   */
+  private drawWithCanvasActor(
+    canvasActor: ICanvasActor,
+    target: PlanarCanvasTarget,
+    camera: PlanarScreenCamera,
+    opacity: number
+  ): void {
+    const { slice } = this;
 
-    if (!context) {
+    if (!(opacity > 0)) {
       return;
     }
 
-    context.setTransform(1, 0, 0, 1, 0, 0);
-    context.clearRect(0, 0, this.sliceCanvas.width, this.sliceCanvas.height);
-    canvasActor.render(undefined as never, context);
+    setOutlineAtImageEdges(canvasActor, slice.insideVolume);
+    target.context.save();
+    target.context.setTransform(
+      ...getSliceCanvasTransform(slice, camera, target.canvas)
+    );
+    target.context.globalAlpha = opacity;
+    canvasActor.render(undefined as never, target.context);
+    target.context.restore();
   }
 
   /**
@@ -665,6 +694,7 @@ export function beginPlanarCanvasPass(target: PlanarCanvasTarget): void {
   context.clearRect(0, 0, canvas.width, canvas.height);
   context.fillStyle = getBackgroundFillStyle(target);
   context.fillRect(0, 0, canvas.width, canvas.height);
+  resetCanvasLabelmapComposition(canvas);
   composition.clearedRenderPassId = composition.renderPassId;
 }
 

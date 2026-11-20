@@ -1,13 +1,43 @@
 import type CanvasActor from '.';
 
 /**
- * Properties for rendering on a labelmap canvas actor.
- * Mostly a no-op right now, but the transfer function settings are live.
+ * The label outline settings of the properties of a canvas actor, as the
+ * vtk.js image property keeps them: whether the outline is drawn, its
+ * thickness in pixels per label value (index label - 1, the first entry for a
+ * label past the end) and its opacity, one number or one per label value.
+ */
+export type CanvasLabelOutline = {
+  use: boolean;
+  thickness: number[];
+  opacity: number | number[];
+};
+
+const labelOutlines = new WeakMap<CanvasProperties, CanvasLabelOutline>();
+
+/**
+ * The label outline settings of the properties of a canvas actor, for its
+ * CPU drawing. The defaults are those of the vtk.js image property.
+ */
+export function getCanvasLabelOutline(
+  properties: CanvasProperties
+): CanvasLabelOutline {
+  let outline = labelOutlines.get(properties);
+
+  if (!outline) {
+    outline = { use: false, thickness: [1], opacity: 1 };
+    labelOutlines.set(properties, outline);
+  }
+
+  return outline;
+}
+
+/**
+ * Properties for rendering on a labelmap canvas actor: the colour and
+ * opacity transfer functions and the label outline settings.
  */
 export default class CanvasProperties {
   private actor: CanvasActor;
   private opacity = 0.4;
-  private outlineOpacity = 0.4;
   private transferFunction = [];
   private scalarOpacityFunction;
   private colorCache = new Map<number, [number, number, number, number]>();
@@ -56,16 +86,26 @@ export default class CanvasProperties {
     // No-op
   }
 
-  public setUseLabelOutline() {
-    // No-op - not implemented
+  /** Turns the outline of the labels on or off. */
+  public setUseLabelOutline(useLabelOutline: boolean) {
+    getCanvasLabelOutline(this).use = !!useLabelOutline;
+    this.actor.modified();
   }
 
-  public setLabelOutlineOpacity(opacity) {
-    this.outlineOpacity = opacity;
+  /** Sets the outline opacity, one number or one per label value. */
+  public setLabelOutlineOpacity(opacity: number | number[]) {
+    getCanvasLabelOutline(this).opacity = Array.isArray(opacity)
+      ? [...opacity]
+      : opacity;
+    this.actor.modified();
   }
 
-  public setLabelOutlineThickness() {
-    // No-op - requires outline to be implemented first
+  /** Sets the outline thickness in pixels, one per label value. */
+  public setLabelOutlineThickness(thickness: number | number[]) {
+    getCanvasLabelOutline(this).thickness = Array.isArray(thickness)
+      ? [...thickness]
+      : [thickness];
+    this.actor.modified();
   }
 
   public modified() {

@@ -715,8 +715,27 @@ through one CPU draw step that follows the GPU:
   the image shown before. In 5.x a next viewport first drew the image shown
   before, so a scroll fired `IMAGE_RENDERED` up to three times.
 
-Not equal yet: the outline of a labelmap is not drawn on the CPU, and a slab
-through the whole volume is not drawn on the CPU.
+- **A labelmap is drawn with its outline.** The CPU draws the outline as the
+  GPU does, in screen pixels: the outline width of the style, wider for the
+  active segment by `activeSegmentOutlineWidthDelta`, the inactive styles
+  (`outlineWidthInactive`, `fillAlphaInactive`, `outlineOpacityInactive`),
+  and the outline and fill alphas. The labelmap of a volume gets an outline at
+  the faces of the volume, as on the GPU; the labelmap of a stack none at the
+  edges of the image. The legacy CPU stack viewport drew no labelmap at all,
+  so a segmentation now looks the same after a move to the CPU. On the CPU a
+  labelmap is read with nearest, as on the GPU, also when its display set has
+  a linear interpolation. With a slab, the GPU volume path measures the
+  outline in voxels; the CPU stays in screen pixels.
+- **Labelmaps that overlap blend as on the GPU.** The GPU blends the
+  translucent layers of a view without an order (vtk.js order independent
+  translucency): where two labelmaps overlap, the colour is the mean of their
+  colours weighted by their alphas, and it covers the image with the alpha
+  `1 - (1 - a1) (1 - a2)`. The CPU now does the same, so the order in which
+  the segmentation representations were added does not change the picture on
+  either path. In 5.x a next viewport on the CPU drew the labelmap added last
+  on top.
+
+Not equal yet: a slab through the whole volume is not drawn on the CPU.
 
 ## A labelmap fill is drawn with the configured alpha
 
@@ -1199,6 +1218,18 @@ legacy picture within two levels of 255.
 - **A brush on a stretched view fills a shape that looks round on the
   screen,** in stack mode and in volume mode. The brush strategies read the
   scale pair of the view state.
+- **A dynamic threshold brush on a CPU viewport takes its range over the
+  whole stroke.** On the CPU (and with `segmentation.overwriteMode` set) the
+  brush fills a stroke in one call at mouse up. The range of the dynamic
+  threshold is now the one a stroke on the GPU reaches at its end: the values
+  around the first drag point, within `dynamicRadius`, and the value under
+  every later point. In 5.x, on the legacy CPU stack viewport as on a next
+  viewport, it was the range around the last point only, so a stroke that
+  crossed into tissue of other values filled less on the CPU than on the GPU
+  (6,848 pixels in place of 15,323 for the stroke of the stack labelmap
+  example). The GPU fills each step of the stroke with the range reached at
+  that step, so early steps can leave holes that the CPU fills: the same
+  stroke now fills 16,004 pixels on the CPU.
 - **`utilities.AnnotationMultiSlice` of the tools** sets a range of images
   of a stack, a range of slices of a volume in its acquisition orientation,
   and a range of frames of a video, on the next viewports. An annotation over

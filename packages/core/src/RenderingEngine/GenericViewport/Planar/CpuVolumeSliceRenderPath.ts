@@ -1,6 +1,11 @@
 import { buildPlanarActorEntry } from './buildPlanarActorEntry';
 import CanvasActor from '../../CanvasActor';
-import { Events, ViewportStatus, ViewportType } from '../../../enums';
+import {
+  Events,
+  InterpolationType,
+  ViewportStatus,
+  ViewportType,
+} from '../../../enums';
 import eventTarget from '../../../eventTarget';
 import { ActorRenderMode } from '../../../types';
 import type { IImageVolume } from '../../../types';
@@ -585,15 +590,22 @@ export class CpuVolumeSliceRenderPath
  * The sampling inputs of a CPU volume slice: those of the sampled slice path
  * (`getPlanarSampledSliceInputs`). The sampler samples a large slab in steps
  * (`PlanarSliceSamplerOptions.sampleSlabsInSteps`), as for the sampled slice
- * path, and shows the plain slice of the plane until the slab is done.
+ * path, and shows the plain slice of the plane until the slab is done. A
+ * labelmap is sampled with NEAREST, as the GPU reads a labelmap, so a slice
+ * along a volume axis stays the slice of its voxels and a pixel never mixes
+ * two labels.
  */
 function getCpuSliceInputs(
   rendering: PlanarCpuVolumeRendering
 ): PlanarSampledSliceInputs {
-  return getPlanarSampledSliceInputs(
+  const inputs = getPlanarSampledSliceInputs(
     rendering.imageVolume,
     rendering.dataPresentation
   );
+
+  return rendering.compositeActor
+    ? { ...inputs, interpolationType: InterpolationType.NEAREST }
+    : inputs;
 }
 
 /**

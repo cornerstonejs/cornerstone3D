@@ -9,12 +9,14 @@ export function isCompatibilityMode(): boolean {
 }
 
 /**
- * The reason of the labelmap pictures that fail under `--cpu` on purpose:
- * the CPU path draws a labelmap without its outline, so the picture is not
- * the GPU baseline. They stay red until the CPU draws outlines.
+ * The reason of the dynamic threshold pictures that fail under `--cpu` on
+ * purpose: on the CPU the brush fills a stroke in one call at mouse up with
+ * the range of the whole stroke, where the GPU fills each step with the range
+ * reached at that step and leaves holes, so the CPU fills more (16,004 pixels
+ * against 15,323 for the stroke of the spec).
  */
-export const CPU_LABELMAP_OUTLINE_ISSUE =
-  'Open issue 69: the CPU path draws no labelmap outline, so the picture differs from the GPU baseline';
+export const CPU_DYNAMIC_THRESHOLD_STROKE_ISSUE =
+  'Open issue 71: the CPU fills a dynamic threshold stroke at once with the range of the whole stroke, so it fills the holes that the GPU stroke leaves';
 
 const pagesWatchedForErrors = new WeakSet<Page>();
 

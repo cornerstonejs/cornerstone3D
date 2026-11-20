@@ -3,8 +3,6 @@ import {
   checkForCanvasSnapshot,
   visitExample,
   screenShotPaths,
-  CPU_LABELMAP_OUTLINE_ISSUE,
-  isCompatibilityMode,
 } from './utils/index';
 
 async function setRangeValue(page, selector: string, value: string) {
@@ -28,8 +26,6 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.describe('Labelmap Global Configuration', async () => {
-  test.fail(isCompatibilityMode(), CPU_LABELMAP_OUTLINE_ISSUE);
-
   test.describe('when no changes are made', async () => {
     test('should render the segmentations using the default global configuration', async ({
       page,

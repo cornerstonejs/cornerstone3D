@@ -4,8 +4,6 @@ import {
   visitExample,
   screenShotPaths,
   getVisibleViewportCanvas,
-  CPU_LABELMAP_OUTLINE_ISSUE,
-  isCompatibilityMode,
 } from '../utils/index';
 import { drawRectangleScissor } from './utils/helpers';
 
@@ -19,8 +17,6 @@ test('Stack Segmentation - Rectangle Scissor Tool with segmentation 2', async ({
   page,
   browserName,
 }) => {
-  test.fail(isCompatibilityMode(), CPU_LABELMAP_OUTLINE_ISSUE);
-
   await page.getByRole('combobox').first().selectOption('RectangleScissor');
 
   const canvas = getVisibleViewportCanvas(page, 0);

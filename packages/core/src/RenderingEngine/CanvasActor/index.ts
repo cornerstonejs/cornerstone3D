@@ -1,14 +1,26 @@
 import type { IViewport } from '../../types/IViewport';
 
-import CanvasProperties from './CanvasProperties';
+import CanvasProperties, { getCanvasLabelOutline } from './CanvasProperties';
 import CanvasMapper from './CanvasMapper';
+import {
+  composeCanvasLabelmapLayer,
+  drawCanvasLabelmapLayer,
+  findLabelBounds,
+  hasOutlineAtImageEdges,
+} from './canvasLabelmapLayer';
+import type {
+  CanvasLabelBounds,
+  CanvasLabelmapLayer,
+} from './canvasLabelmapLayer';
 
 /**
  * Handles canvas rendering of derived image data, typically label maps.
- * This class will update the canvas from the given viewport with a
- * derived image.  The derived image can be a standard Cornerstone labelmap
- * or be an RLE based one.  The RLE based ones are significantly faster to
- * render as they only render the area actually relevant.
+ * This class draws a derived image, a standard Cornerstone labelmap or an
+ * RLE based one, on the canvas of a viewport, as the GPU image mapper draws
+ * a labelmap: in the pixels of the canvas, through the transform of the
+ * context from the pixels of the image, with the outline of its properties
+ * (`canvasLabelmapLayer`). The labelmaps drawn on one canvas in one render
+ * pass are composed as the GPU composes them, whatever their order.
  */
 export default class CanvasActor {
   private image;
@@ -18,8 +30,10 @@ export default class CanvasActor {
   private mapper = new CanvasMapper(this);
   private viewport;
   private rasterDirty = true;
-  private hasCachedRaster = false;
-  private cachedImageData?: ImageData;
+  private runLabels?: Int32Array;
+  private labelBounds?: CanvasLabelBounds;
+  private layer?: CanvasLabelmapLayer;
+  private layerKey?: string;
   protected className = 'CanvasActor';
   protected canvas;
 
@@ -29,83 +43,109 @@ export default class CanvasActor {
   }
 
   /**
-   * Renders an RLE representation of the viewport data.  This is optimized to
-   * avoid iterating over any data not actually containing data.
+   * Renders an RLE representation of the viewport data. The runs are written
+   * into one label per pixel when the data changed, and drawn as a dense
+   * labelmap.
    */
   protected renderRLE(viewport, context, voxelManager) {
     const { width, height } = this.image;
-    let { canvas } = this;
-    if (!canvas || canvas.width !== width || canvas.height !== height) {
-      this.canvas = canvas = new window.OffscreenCanvas(width, height);
-      this.cachedImageData = undefined;
-      this.rasterDirty = true;
-    }
 
-    if (!this.rasterDirty) {
-      if (this.hasCachedRaster) {
-        context.drawImage(canvas, 0, 0);
-      }
+    if (
+      this.rasterDirty ||
+      !this.runLabels ||
+      this.runLabels.length !== width * height
+    ) {
+      const labels =
+        this.runLabels?.length === width * height
+          ? this.runLabels
+          : new Int32Array(width * height);
+      const { map } = voxelManager;
 
-      return;
-    }
+      labels.fill(0);
 
-    const localContext = canvas.getContext('2d');
-    let imageData = this.cachedImageData;
+      for (let y = 0; y < height; y++) {
+        const row = map.getRun(y, 0);
 
-    if (!imageData) {
-      imageData = localContext.createImageData(width, height);
-      this.cachedImageData = imageData;
-    }
-
-    const { data: imageArray } = imageData;
-    imageArray.fill(0);
-    const { map } = voxelManager;
-    let hasVisiblePixels = false;
-
-    for (let y = 0; y < height; y++) {
-      const row = map.getRun(y, 0);
-      if (!row) {
-        continue;
-      }
-
-      const baseOffset = (y * width) << 2;
-      for (const run of row) {
-        const { start, end, value: segmentIndex } = run;
-        if (segmentIndex === 0) {
+        if (!row) {
           continue;
         }
 
-        hasVisiblePixels = true;
-        let startOffset = baseOffset + (start << 2);
-
-        for (let i = start; i < end; i++) {
-          this.canvasProperties.getColorBytes(
-            segmentIndex,
-            imageArray,
-            startOffset
-          );
-          startOffset += 4;
+        for (const { start, end, value } of row) {
+          labels.fill(value, y * width + start, y * width + end);
         }
       }
+
+      this.runLabels = labels;
     }
 
-    if (!hasVisiblePixels) {
-      localContext.clearRect(0, 0, width, height);
-      this.hasCachedRaster = false;
+    this.drawLabels(context, this.runLabels, width, height);
+  }
+
+  /**
+   * Draws labels on the canvas of the context. The layer of the canvas
+   * pixels is made again when the data, the colours, the outline, the
+   * transform or the canvas size changed, else the last one is composed.
+   */
+  private drawLabels(
+    context: CanvasRenderingContext2D,
+    labels: ArrayLike<number>,
+    width: number,
+    height: number
+  ): void {
+    const transform = context.getTransform();
+    const { canvas } = context;
+    const outlineAtImageEdges = hasOutlineAtImageEdges(this);
+    const layerKey = [
+      transform.a,
+      transform.b,
+      transform.c,
+      transform.d,
+      transform.e,
+      transform.f,
+      canvas.width,
+      canvas.height,
+      width,
+      height,
+      outlineAtImageEdges,
+    ].join(',');
+
+    if (this.rasterDirty || !this.layer || layerKey !== this.layerKey) {
+      if (this.rasterDirty || !this.layer) {
+        this.labelBounds = findLabelBounds(labels, width, height);
+      }
+
+      this.layer = drawCanvasLabelmapLayer(
+        {
+          labels,
+          width,
+          height,
+          labelBounds: this.labelBounds,
+          getColor: (label) => this.canvasProperties.getColorBytes(label),
+          outline: getCanvasLabelOutline(this.canvasProperties),
+          outlineAtImageEdges,
+        },
+        transform,
+        canvas.width,
+        canvas.height,
+        this.layer
+      );
+      this.layerKey = layerKey;
+      this.canvas = this.layer.canvas;
       this.rasterDirty = false;
-      return;
     }
 
-    localContext.putImageData(imageData, 0, 0);
-    this.hasCachedRaster = true;
-    this.rasterDirty = false;
-    context.drawImage(canvas, 0, 0);
+    composeCanvasLabelmapLayer(context, this.layer, context.globalAlpha);
   }
 
   public setMapper(mapper: CanvasMapper) {
     this.mapper = mapper;
   }
 
+  /**
+   * Draws the labelmap on the canvas of the context, placed by the transform
+   * of the context from the pixels of the image to the pixels of the canvas,
+   * with the opacity of the context.
+   */
   public render(viewport: IViewport, context: CanvasRenderingContext2D): void {
     if (!this.visibility) {
       return;
@@ -123,61 +163,8 @@ export default class CanvasActor {
       this.renderRLE(viewport, context, voxelManager);
       return;
     }
-    let { canvas } = this;
-    if (!canvas || canvas.width !== width || canvas.height !== height) {
-      this.canvas = canvas = new window.OffscreenCanvas(width, height);
-      this.cachedImageData = undefined;
-      this.rasterDirty = true;
-    }
 
-    if (!this.rasterDirty) {
-      if (this.hasCachedRaster) {
-        context.drawImage(canvas, 0, 0);
-      }
-
-      return;
-    }
-
-    const localContext = canvas.getContext('2d');
-    let imageData = this.cachedImageData;
-
-    if (!imageData) {
-      imageData = localContext.createImageData(width, height);
-      this.cachedImageData = imageData;
-    }
-
-    const { data: imageArray } = imageData;
-    imageArray.fill(0);
-    let offset = 0;
-    let destOffset = 0;
-    let hasVisiblePixels = false;
-
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        const segmentIndex = data[offset++];
-        if (segmentIndex) {
-          hasVisiblePixels = true;
-          this.canvasProperties.getColorBytes(
-            segmentIndex,
-            imageArray,
-            destOffset
-          );
-        }
-        destOffset += 4;
-      }
-    }
-
-    if (!hasVisiblePixels) {
-      localContext.clearRect(0, 0, width, height);
-      this.hasCachedRaster = false;
-      this.rasterDirty = false;
-      return;
-    }
-
-    localContext.putImageData(imageData, 0, 0);
-    this.hasCachedRaster = true;
-    this.rasterDirty = false;
-    context.drawImage(canvas, 0, 0);
+    this.drawLabels(context, data, width, height);
   }
 
   public getClassName() {

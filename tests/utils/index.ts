@@ -22,7 +22,7 @@ export {
   waitForRenderSettled,
 } from './waitForViewportsRendered';
 export {
-  CPU_LABELMAP_OUTLINE_ISSUE,
+  CPU_DYNAMIC_THRESHOLD_STROKE_ISSUE,
   isCompatibilityMode,
   validateCompatibilityRuntime,
 } from './compatibilityMode';

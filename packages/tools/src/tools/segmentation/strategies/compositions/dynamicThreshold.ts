@@ -1,9 +1,38 @@
 import { vec3 } from 'gl-matrix';
-import type { Types, PlanarViewport } from '@cornerstonejs/core';
+import {
+  utilities,
+  type Types,
+  type PlanarViewport,
+} from '@cornerstonejs/core';
 import type { InitializedOperationData } from '../BrushStrategy';
 import type BoundsIJK from '../../../../types/BoundsIJK';
 import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
 import getViewportICamera from '../../../../utilities/getViewportICamera';
+
+/**
+ * The centres of a whole stroke filled in one call, in IJK: the stroke of a
+ * lazy edit (`shouldUseLazyLabelmapEditing`), which holds the mouse down point
+ * and every drag point. An eager stroke fills one segment of two points per
+ * call and gives none.
+ */
+function getWholeStrokeCentersIJK(
+  operationData: InitializedOperationData
+): Types.Point3[] {
+  const { strokePointsWorld, segmentationImageData } = operationData;
+
+  if (!strokePointsWorld || strokePointsWorld.length <= 2) {
+    return [];
+  }
+
+  return strokePointsWorld.map((point) =>
+    utilities.transformWorldToIndex(segmentationImageData, point)
+  );
+}
+
+/** The grey value of a voxel: its value, or the length of a colour. */
+function getGray(value: number | Types.RGB): number {
+  return Array.isArray(value) ? vec3.len(value) : value;
+}
 
 /**
  * Initializes the threshold values for the dynamic threshold.
@@ -12,18 +41,25 @@ import getViewportICamera from '../../../../utilities/getViewportICamera';
  * and taking the range of those pixel values.
  * If the threshold is already set, then the range will be extended by just the
  * center voxel at centerIJK.
+ *
+ * A whole stroke filled in one call (a lazy edit, as on a CPU viewport) takes
+ * the range that the strokes filled one segment per call reach at their end:
+ * the area around its first drag point, the first centre of an eager stroke,
+ * extended by the centre voxel of every later point. So one stroke fills on
+ * the CPU what it fills on the GPU.
  */
 export default {
   [StrategyCallbacks.Initialize]: (operationData: InitializedOperationData) => {
     const {
       operationName,
-      centerIJK,
       segmentationVoxelManager,
       imageVoxelManager,
       configuration,
       segmentIndex,
       viewport,
     } = operationData;
+    const strokeCentersIJK = getWholeStrokeCentersIJK(operationData);
+    const centerIJK = strokeCentersIJK[1] ?? operationData.centerIJK;
 
     if (!configuration?.threshold?.isDynamic || !centerIJK || !segmentIndex) {
       return;
@@ -76,6 +112,21 @@ export default {
       threshold[1] = Math.max(gray, threshold[1]);
     };
     imageVoxelManager.forEach(callback, { boundsIJK: nestedBounds });
+
+    strokeCentersIJK.slice(2).forEach((strokeCenterIJK) => {
+      if (
+        strokeCenterIJK.some(
+          (value, axis) =>
+            value < boundsIJK[axis][0] || value > boundsIJK[axis][1]
+        )
+      ) {
+        return;
+      }
+
+      const gray = getGray(imageVoxelManager.getAtIJKPoint(strokeCenterIJK));
+      threshold[0] = Math.min(gray, threshold[0]);
+      threshold[1] = Math.max(gray, threshold[1]);
+    });
 
     configuration.threshold.range = threshold;
   },
