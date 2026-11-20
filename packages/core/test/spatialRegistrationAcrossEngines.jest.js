@@ -4,8 +4,8 @@ import spatialRegistrationMetadataProvider from '../src/utilities/spatialRegistr
 import calculateViewportsSpatialRegistration from '../src/utilities/calculateViewportsSpatialRegistration';
 
 /**
- * The image plane of each stand-in slice. The calculator reads the image
- * plane of the slice index of a viewport, so each slice index here names a
+ * The image plane of each stand-in image. The calculator reads the image
+ * plane of the image on display of a viewport, so each image id here names a
  * plane.
  */
 const imagePlanes = {
@@ -27,9 +27,13 @@ function imagePlaneProvider(type, imageId) {
   };
 }
 
-/** A planar viewport stand-in at a slice index of the table above. */
-function makeViewport(id, renderingEngineId, sliceIndex) {
-  return { id, renderingEngineId, getSliceIndex: () => sliceIndex };
+/** A planar viewport stand-in that shows an image of the table above. */
+function makeViewport(id, renderingEngineId, imageId) {
+  return {
+    id,
+    renderingEngineId,
+    getCurrentImageId: () => String(imageId),
+  };
 }
 
 /** The translation in z of a registration matrix. */

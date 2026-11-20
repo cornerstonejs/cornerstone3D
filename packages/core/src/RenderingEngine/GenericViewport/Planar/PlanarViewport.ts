@@ -342,6 +342,20 @@ function withBestCachedImage(loaded: PlanarDataLoad): PlanarDataLoad {
 }
 
 /**
+ * Whether the volume that `setDisplaySets` loaded for a display set left the
+ * cache since: the cache deletes the image data of a volume that it removes,
+ * so that volume can no longer be drawn.
+ */
+function isRemovedVolume({ data }: PlanarDataLoad): boolean {
+  const { imageVolume } = data;
+
+  return (
+    Boolean(imageVolume) &&
+    (!imageVolume.imageData || imageVolume.imageData.isDeleted())
+  );
+}
+
+/**
  * Whether two render path decisions of one display set have the same inputs
  * from the display sets that are mounted: the backend that an overlay takes
  * from the source, and the slab of the stored presentation. The other inputs
@@ -666,9 +680,11 @@ class PlanarViewport extends GenericViewport<
    *
    * The data of every entry is loaded before the shown display sets go, so an
    * entry without data rejects and leaves the shown scene as it was, as the
-   * legacy `setVolumes` did for a volume that was not in the cache. The mount
-   * then takes that data, and that render path decision when its inputs are
-   * the same, so a stack loads its first image once. The newest call holds
+   * legacy `setVolumes` did for a volume that was not in the cache. A loaded
+   * volume that leaves the cache before the shown display sets go rejects the
+   * call there too, as the cache deletes its image data. The mount then takes
+   * that data, and that render path decision when its inputs are the same,
+   * so a stack loads its first image once. The newest call holds
    * the draws of a CPU path from its start to its end, also while the shown
    * scene waits for the loads, and a commit holds them while it runs. When
    * both have ended, also when a call rejects, the viewport draws once when
@@ -718,6 +734,14 @@ class PlanarViewport extends GenericViewport<
         if (isStale()) {
           return;
         }
+      }
+
+      const removedIndex = loaded.findIndex(isRemovedVolume);
+
+      if (removedIndex !== -1) {
+        throw new Error(
+          `[PlanarViewport] The volume of ${mounts[removedIndex].displaySetId} left the cache while setDisplaySets loaded`
+        );
       }
 
       const commit = this.commitDisplaySets(entries, mounts, loaded);
@@ -2054,7 +2078,10 @@ class PlanarViewport extends GenericViewport<
 
   /**
    * Returns the frame of reference UID from the resolved view,
-   * resolving against the active binding's spatial metadata.
+   * resolving against the active binding's spatial metadata. Images without
+   * one get one made from the set of the images, the same on every viewport
+   * of those images; a viewport without data gets
+   * `planarNext-viewport-<id>`.
    */
   override getFrameOfReferenceUID(): string {
     return this.viewReferences.getFrameOfReferenceUID();

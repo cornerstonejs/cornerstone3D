@@ -40,7 +40,9 @@ export function resolveDeprecatedViewportType(type: string): string {
  * The frame of reference UID that a viewport makes up when its data has
  * none: `<type>-viewport-<viewport id>`. A built-in type writes its 5.x
  * string (`planarNext-viewport-<id>`), so that annotations stored on such
- * data in 5.x still match in 6.x.
+ * data in 5.x still match in 6.x. A planar viewport uses it only when it has
+ * no data: it makes up the frame of reference of images without one from
+ * the images.
  */
 export function getViewportLocalFrameOfReferenceUID(
   viewportType: string,

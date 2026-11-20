@@ -237,6 +237,12 @@ function isFrameOfReferenceCompatible(
   );
 }
 
+/**
+ * Whether a reference names the data of a context: its display set, or its
+ * volume under another display set id. Two display sets of one volume show
+ * the same voxels, so the plane and the slice index of the reference count in
+ * both, as on the legacy volume viewport, which had no display set id.
+ */
 function isDataIdCompatible(
   viewRef: ViewReference,
   context: GenericViewportReferenceContext
@@ -245,7 +251,13 @@ function isDataIdCompatible(
     return true;
   }
 
-  return getContextDataIds(context).includes(viewRef.dataId);
+  return (
+    getContextDataIds(context).includes(viewRef.dataId) ||
+    Boolean(
+      viewRef.volumeId &&
+        getContextVolumeIds(context).includes(viewRef.volumeId)
+    )
+  );
 }
 
 function isVolumeIdCompatible(

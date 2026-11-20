@@ -6,7 +6,7 @@ import {
 } from './utils/planarSeriesBothModes';
 
 const { Enums, utilities, cache, imageLoader } = cornerstone3D;
-const { Events, OrientationAxis } = Enums;
+const { Events, OrientationAxis, InterpolationType } = Enums;
 
 const renderingEngineId = utilities.uuidv4();
 
@@ -77,8 +77,18 @@ function addStack(displaySetId, series) {
   });
 }
 
-/** Mounts a stack display set on the CPU. */
+/**
+ * Mounts a stack display set on the CPU, with the nearest interpolation. With
+ * the default one the CPU path draws the image once more about 100 ms after
+ * the view comes to rest, finer, on the grid of the screen. That draw is not
+ * one of the mounts that the tests count, and whether it fell inside the
+ * frames that a test waits depended on how fast the frames came.
+ */
 function mountCpu(viewport, displaySetId) {
+  viewport.setDisplaySetPresentation(displaySetId, {
+    interpolationType: InterpolationType.NEAREST,
+  });
+
   return viewport.setDisplaySets({
     displaySetId,
     options: {
@@ -150,6 +160,7 @@ describe('A mount of a direct next planar viewport on the CPU that a newer mount
     const thirdMount = mountCpu(viewport, 'lateThirdStack');
 
     await frames();
+    viewport.render();
     first.release();
     await firstMount;
     await frames();

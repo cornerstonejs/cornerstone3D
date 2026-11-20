@@ -22,6 +22,9 @@ export type RawSurfacesData = {
 
 /**
  * Computes surface data for a given segmentation.
+ * A segment without voxels gets no surface and no entry in the geometry map:
+ * an empty surface is not cached, as in `updateSurfaceData`, which adds the
+ * surface of that segment once it has voxels.
  * @param segmentationId - The ID of the segmentation.
  * @param options - Additional options for surface computation.
  * @returns A promise that resolves to the computed surface data.
@@ -73,7 +76,7 @@ export async function computeSurfaceData(
 
   const surfacesData = await createAndCacheSurfacesFromRaw(
     segmentationId,
-    rawSurfacesData,
+    rawSurfacesData.filter(({ data }) => data.points?.length),
     options
   );
 

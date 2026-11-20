@@ -20,9 +20,10 @@ const ALLOWED_DELTA = 0.05;
 /**
  * It calculates the registration matrix between two viewports (currently only
  * translation is supported)
- * If the viewports are in the same frame of reference, it will return early,
- * but otherwise it will use the current image's metadata to calculate the
- * translation between the two viewports and adds it to the spatialRegistrationModule
+ * It uses the image plane of the image on display of each viewport
+ * (`getCurrentImageId()`), which it takes as the same place in both, to
+ * calculate the translation between the two viewports and adds it to the
+ * spatialRegistrationModule
  * metadata provider, for the viewport ids and the rendering engine ids of the
  * two viewports. A lookup with other rendering engine ids does not find it; a
  * lookup with the viewport ids alone does, as in 5.x
@@ -35,11 +36,11 @@ function calculateViewportsSpatialRegistration(
   viewport1: PlanarViewport,
   viewport2: PlanarViewport
 ): void {
-  const imageId1 = viewport1.getSliceIndex();
-  const imageId2 = viewport2.getSliceIndex();
+  const imageId1 = viewport1.getCurrentImageId();
+  const imageId2 = viewport2.getCurrentImageId();
 
-  const imagePlaneModule1 = get('imagePlaneModule', imageId1.toString());
-  const imagePlaneModule2 = get('imagePlaneModule', imageId2.toString());
+  const imagePlaneModule1 = imageId1 && get('imagePlaneModule', imageId1);
+  const imagePlaneModule2 = imageId2 && get('imagePlaneModule', imageId2);
 
   if (!imagePlaneModule1 || !imagePlaneModule2) {
     log.info('Viewport spatial registration requires image plane module');

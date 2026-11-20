@@ -135,6 +135,46 @@ describe('A view reference of another orientation of a volume on a direct next p
     });
   });
 
+  it('takes a reference of its volume that names another display set id as a reference of its own display set', async function () {
+    const { series, axial, sagittalRef16, sagittalRef4 } =
+      await showSagittalAndAxial(renderingEngine, 'orientation-other-id');
+    const axialOther = createNextViewport(renderingEngine, 'orientationOther');
+
+    await showVolume(axialOther, series, 3, {
+      orientation: OrientationAxis.AXIAL,
+    });
+    await moveTo(axialOther, worldOfVoxel(series, [16, 12, 3]));
+    const axialRef5 = axial.getViewReference({ sliceIndex: 5 });
+
+    expect(axialOther.getViewReference().dataId).not.toBe(sagittalRef16.dataId);
+    expect(axialOther.getViewReference().volumeId).toBe(sagittalRef16.volumeId);
+    expect(axialOther.getSliceIndex()).toBe(4);
+    expect(answers(axialOther, sagittalRef16)).toEqual({
+      plain: false,
+      withNavigation: false,
+      withOrientation: false,
+      withOrientationAndNavigation: true,
+    });
+    expect(answers(axialOther, sagittalRef4)).toEqual({
+      plain: false,
+      withNavigation: false,
+      withOrientation: true,
+      withOrientationAndNavigation: true,
+    });
+    expect(answers(axialOther, axialRef5)).toEqual({
+      plain: false,
+      withNavigation: true,
+      withOrientation: false,
+      withOrientationAndNavigation: true,
+    });
+    expect(answers(axialOther, axial.getViewReference())).toEqual({
+      plain: true,
+      withNavigation: true,
+      withOrientation: true,
+      withOrientationAndNavigation: true,
+    });
+  });
+
   it('still checks the slice index of a reference of its own plane against its slices', async function () {
     const { axial } = await showSagittalAndAxial(
       renderingEngine,

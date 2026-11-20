@@ -479,15 +479,38 @@ are, so between viewports of other data it gives another size.
   the slices of its own plane, as on the legacy volume viewport. In 5.x the
   next planar viewport checked it against the slices of the view, so an axial
   view of 8 slices refused a sagittal reference at slice 16.
+- **A reference of a volume is viewable on every display set of that
+  volume.** Two display sets that register the same `volumeId` show the same
+  voxels, so a viewport of one takes a reference that names the other as its
+  `dataId` and that volume as its `volumeId` as its own reference: its plane
+  and its slice index count, as on the legacy volume viewport, which had no
+  display set id. In 5.x the next viewports refused such a reference that
+  names no image (a sagittal or a coronal one) with every option.
 - **`IMAGE_SPACING_CALIBRATED` fires from `calibrateSpacing(imageId)`,** and
   its detail has `worldToIndex` and `scale`. It does not fire by itself when
   a newly shown image has another calibration, as it did on the legacy stack
   viewport. `utilities.calibrateImageSpacing` of the tools makes the call. An
   application that writes a calibration into the metadata itself makes the
   call too, or the annotations of that image are not worked out again.
-- **`getFrameOfReferenceUID()` always returns a string.** Without a frame of
-  reference it is a name made of the type and the id of the viewport, where
-  the legacy viewport returned undefined. It takes no slice index.
+- **`getFrameOfReferenceUID()` always returns a string.** It takes no slice
+  index. For images without a frame of reference it is a name made from the
+  set of their images, `noFrameOfReference-<number of images>-<hash>`, where
+  the legacy viewport returned undefined. So every planar viewport and
+  every display set of the same images has the same frame of reference, as
+  on the legacy viewports: each takes the view references of the others,
+  and an annotation drawn on
+  one of them is in the group of the others and shows on each viewport of
+  its image. Other images without a frame of reference have another one:
+  their annotations are in another group, where the legacy viewports put
+  the annotations of all such images in one group (`undefined`), and
+  `getAnnotations(toolName, element)` gave them all. In 5.x the next planar
+  viewport made up a frame of reference for each viewport, so two viewports
+  of the same images did not share annotations or view references. A
+  viewport with no data still gives the 5.x name made of the type and the
+  id of the viewport (`planarNext-viewport-<viewportId>`). An application
+  that restores stored annotations of such images adds them with
+  `annotation.state.addAnnotation(annotation, element)`, which takes the
+  frame of reference of the viewport.
 - **`getImageData()` of a stack gives a plain object as `imageData`,** not a
   vtk.js image data. It has `getDirection`, `getDimensions`, `getSpacing`,
   `getBounds`, `worldToIndex` and `indexToWorld`, on the GPU and on the CPU.
@@ -1072,6 +1095,15 @@ legacy picture within two levels of 255.
   that viewport id. The presentation view synchronizer reads the source
   viewport from its own rendering engine; in 5.x it read it from the
   rendering engine of the target.
+- **`utilities.calculateViewportsSpatialRegistration` adds a registration.**
+  It reads the image plane of the image on display of each viewport
+  (`getCurrentImageId()`) and adds the translation from one to the other.
+  So the image slice synchronizer, which calculates it at its first move
+  for a target in another frame of reference that has no registration,
+  keeps the offset that the two viewports had then. In 5.x it read the
+  slice index of each viewport as an image id, found no image plane and
+  added nothing: such a target did not move unless the application had
+  added a registration.
 - **`utilities.getImageLegacy(element)` of the core is gone.** Use
   `cache.getImage(viewport.getCurrentImageId())`.
 - **`AdvancedMagnifyTool` resets on a stack of images of several sizes.** It
@@ -1225,5 +1257,12 @@ and is deprecated.
   two numbers where the viewport takes an array.
 - **`rendering.planar.cpuVolume.useViewportSamplingForLinear`** has no effect.
   There is one sampler for the CPU and the GPU.
+- **A segment without voxels does not stop the first surface conversion.**
+  polySeg makes the surface of each segment of a labelmap that has voxels,
+  and none for a listed segment without voxels: no geometry and no entry in
+  the geometry map of the Surface representation. Its surface comes at the
+  update after it gets voxels. In 5.x one such segment made the whole
+  conversion reject ("Surface must have non-empty points array"), so no
+  segment showed a surface.
 - **New:** `utilities.runDrawSelfTest()` draws a known image and reads it
   back, to tell whether the device draws 16-bit data right.

@@ -8,7 +8,7 @@ import {
   showVolume,
 } from './utils/planarSeriesBothModes';
 
-const { Enums, utilities, imageLoader, volumeLoader } = cornerstone3D;
+const { Enums, utilities, imageLoader, volumeLoader, cache } = cornerstone3D;
 const { Events, OrientationAxis } = Enums;
 
 const renderingEngineId = utilities.uuidv4();
@@ -420,4 +420,123 @@ describe('A replacement of the display sets of a direct next planar viewport who
       ['replacement:next', 'replacement:overlay'],
     ]);
   });
+});
+
+/**
+ * Puts a data provider around the one of the viewport. `hold` keeps the loads
+ * of a display set waiting until `release`, and `reached` resolves when a held
+ * load waits.
+ */
+function holdDataProvider(viewport) {
+  const provider = viewport.dataProvider;
+  const gates = new Map();
+
+  viewport.dataProvider = {
+    load: async (displaySetId, options) => {
+      const gate = gates.get(displaySetId);
+
+      if (gate) {
+        gate.markReached();
+        await gate.promise;
+      }
+
+      return provider.load(displaySetId, options);
+    },
+  };
+
+  return {
+    hold(displaySetId) {
+      const gate = {};
+
+      gate.promise = new Promise((resolve) => {
+        gate.release = resolve;
+      });
+      gate.reached = new Promise((resolve) => {
+        gate.markReached = resolve;
+      });
+      gates.set(displaySetId, gate);
+    },
+    reached(displaySetId) {
+      return gates.get(displaySetId).reached;
+    },
+    release(displaySetId) {
+      gates.get(displaySetId).release();
+      gates.delete(displaySetId);
+    },
+  };
+}
+
+describe('A replacement of the display sets of a direct next planar viewport whose volume leaves the cache while a later display set loads -- ', () => {
+  let renderingEngine;
+
+  beforeEach(function () {
+    renderingEngine = testUtils.setupTestEnvironment({
+      renderingEngineId,
+    }).renderingEngine;
+  });
+
+  afterEach(function () {
+    utilities.genericViewportDisplaySetMetadataProvider.clear();
+    testUtils.cleanupTestEnvironment({ renderingEngineId });
+  });
+
+  for (const renderBackend of ['gpu', 'cpu']) {
+    it(`rejects and keeps the shown volume on the ${renderBackend.toUpperCase()}`, async function () {
+      const shown = await createSeries({ id: `evictedShown${renderBackend}` });
+      const first = await createSeries({ id: `evictedFirst${renderBackend}` });
+      const second = await createSeries({
+        id: `evictedSecond${renderBackend}`,
+      });
+      const viewport = createNextViewport(renderingEngine, 'evicted');
+      const options = {
+        orientation: OrientationAxis.ACQUISITION,
+        renderBackend,
+      };
+
+      await showVolume(viewport, shown, SHOWN_SLICE, options);
+      [
+        ['evicted:first', first],
+        ['evicted:second', second],
+      ].forEach(([displaySetId, series]) =>
+        utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+          imageIds: series.imageIds,
+          volumeId: series.volumeId,
+        })
+      );
+
+      const provider = holdDataProvider(viewport);
+      const shownScene = sceneOf(viewport);
+      const shownPicture = pictureOf(viewport);
+      const newData = countNewDataEvents(viewport);
+
+      provider.hold('evicted:second');
+
+      const replacement = viewport.setDisplaySets(
+        { displaySetId: 'evicted:first', options },
+        { displaySetId: 'evicted:second', options }
+      );
+
+      await provider.reached('evicted:second');
+      cache.removeVolumeLoadObject(first.volumeId);
+      expect(cache.getVolume(first.volumeId)).toBeUndefined();
+      provider.release('evicted:second');
+
+      let error;
+
+      try {
+        await replacement;
+      } catch (caught) {
+        error = caught;
+      }
+
+      expect(error).toBeDefined();
+      expect(sceneOf(viewport)).toEqual(shownScene);
+      expect(newData).toEqual({ newImageSet: 0, newVolume: 0 });
+
+      await renderAndWait(viewport);
+
+      expect(sceneOf(viewport)).toEqual(shownScene);
+      expect(pictureOf(viewport)).toBe(shownPicture);
+    });
+  }
 });

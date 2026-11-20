@@ -15,6 +15,7 @@ import * as metaData from '../../../metaData';
 import { MetadataModules } from '../../../enums';
 import imageIdToURI from '../../../utilities/imageIdToURI';
 import isEqual from '../../../utilities/isEqual';
+import fnv1aHash from '../../../utilities/fnv1aHash';
 import getViewSlabDepth from '../../../utilities/getViewSlabDepth';
 import {
   isImageRenderMode,
@@ -48,6 +49,33 @@ const PARALLEL_COSINE = 0.99;
 
 /** The image ids of a volume in the reverse order, one list for each. */
 const reversedImageIds = new WeakMap<string[], string[]>();
+
+/** The frame of reference made up for each list of image ids, one for each. */
+const imagesFrameOfReferenceUIDs = new WeakMap<string[], string>();
+
+/**
+ * The frame of reference that a planar viewport makes up for images that
+ * have none: `noFrameOfReference-<number of images>-<hash of their URIs>`.
+ * It comes from the set of images, not from the viewport or the display set,
+ * so every viewport and every display set of the same images has the same
+ * one: they take the view references of each other and share their
+ * annotations, as the legacy stack viewports of 5.x did with no frame of
+ * reference at all. Other images get another one.
+ */
+function getImagesFrameOfReferenceUID(imageIds: string[]): string {
+  let frameOfReferenceUID = imagesFrameOfReferenceUIDs.get(imageIds);
+
+  if (!frameOfReferenceUID) {
+    const imageURIs = [...new Set(imageIds.map(imageIdToURI))].sort();
+
+    frameOfReferenceUID = `noFrameOfReference-${imageURIs.length}-${fnv1aHash(
+      imageURIs.join('\n')
+    )}`;
+    imagesFrameOfReferenceUIDs.set(imageIds, frameOfReferenceUID);
+  }
+
+  return frameOfReferenceUID;
+}
 
 export type PlanarReferenceContext = {
   dataId: string;
@@ -207,11 +235,28 @@ class PlanarViewReferenceController {
 
     return (
       binding?.getFrameOfReferenceUID() ??
-      getViewportLocalFrameOfReferenceUID(
-        this.host.viewportType,
-        this.host.viewportId
+      this.getMadeUpFrameOfReferenceUID(
+        binding?.data as LoadedData<PlanarPayload> | undefined
       )
     );
+  }
+
+  /**
+   * The frame of reference of data without one: the one of its images
+   * (`getImagesFrameOfReferenceUID`), or, without data or images, the one of
+   * the viewport, `<5.x type string>-viewport-<id>`.
+   */
+  private getMadeUpFrameOfReferenceUID(
+    data: LoadedData<PlanarPayload> | undefined
+  ): string {
+    const imageIds = data?.imageVolume?.imageIds || data?.imageIds;
+
+    return imageIds?.length
+      ? getImagesFrameOfReferenceUID(imageIds)
+      : getViewportLocalFrameOfReferenceUID(
+          this.host.viewportType,
+          this.host.viewportId
+        );
   }
 
   isPlaneViewable(
@@ -283,15 +328,14 @@ class PlanarViewReferenceController {
       return;
     }
 
+    const data = binding.data as LoadedData<PlanarPayload>;
+
     return {
       dataId,
-      data: binding.data as LoadedData<PlanarPayload>,
+      data,
       frameOfReferenceUID:
         binding.getFrameOfReferenceUID() ??
-        getViewportLocalFrameOfReferenceUID(
-          this.host.viewportType,
-          this.host.viewportId
-        ),
+        this.getMadeUpFrameOfReferenceUID(data),
       rendering: binding.rendering as PlanarRendering,
     };
   }
