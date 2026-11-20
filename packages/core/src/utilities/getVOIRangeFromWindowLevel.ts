@@ -5,7 +5,7 @@ import { toLowHighRange } from './windowLevel';
 export default function getVOIRangeFromWindowLevel(
   windowWidth: number | number[] | undefined,
   windowCenter: number | number[] | undefined,
-  voiLUTFunction: VOILUTFunctionType = VOILUTFunctionType.LINEAR
+  voiLUTFunction: VOILUTFunctionType | string = VOILUTFunctionType.LINEAR
 ): VOIRange | undefined {
   let center: number | undefined;
   let width: number | undefined;

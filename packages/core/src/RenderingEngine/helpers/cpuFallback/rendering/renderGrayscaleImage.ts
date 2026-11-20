@@ -9,6 +9,7 @@ import initializeRenderCanvas from './initializeRenderCanvas';
 import saveLastRendered from './saveLastRendered';
 import type { IImage, CPUFallbackEnabledElement } from '../../../../types';
 import { createCanvas } from '../../getOrCreateCanvas';
+import { toLowHighRange } from '../../../../utilities/windowLevel';
 
 /**
  * Returns an appropriate canvas to render the Image. If the canvas available in the cache is appropriate
@@ -69,9 +70,13 @@ function getRenderCanvas(
   // we use a mapping function to get the voiLUT from the values by applying
   // the windowLevel and windowWidth.
   if (viewport.modality === 'PT' && image.isPreScaled) {
-    const { windowWidth, windowCenter } = viewport.voi;
-    const minimum = windowCenter - windowWidth / 2;
-    const maximum = windowCenter + windowWidth / 2;
+    const { windowWidth, windowCenter, voiLUTFunction } = viewport.voi;
+    // The exact inverse of toWindowLevel, so that the window shows the range that made it.
+    const { lower: minimum, upper: maximum } = toLowHighRange(
+      windowWidth,
+      windowCenter,
+      voiLUTFunction
+    );
     const range = maximum - minimum;
     const collectedMultiplierTerms = 255.0 / range;
 

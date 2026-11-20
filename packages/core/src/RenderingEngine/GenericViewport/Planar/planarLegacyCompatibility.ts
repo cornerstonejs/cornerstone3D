@@ -189,6 +189,15 @@ export function mergePlanarLegacyProperties(
 
   Object.assign(merged, next);
 
+  if (
+    next.VOILUTFunction !== undefined &&
+    next.voiLUTFunctionSetByUser === undefined
+  ) {
+    // A VOILUTFunction passed to setProperties is an application choice.
+    // getProperties returns false when the value came from image metadata.
+    merged.voiLUTFunctionSetByUser = true;
+  }
+
   if (next.colormap) {
     merged.colormap = mergePlanarColormap(current.colormap, next.colormap);
   }
@@ -207,6 +216,20 @@ export function toPlanarDataPresentation(
 
   if (properties.voiRange) {
     presentation.voiRange = cloneVOIRange(properties.voiRange);
+  }
+
+  // The legacy name of the VOI LUT Function (0028,1056) is VOILUTFunction. The
+  // presentation had no path for it, so a request for SIGMOID or for
+  // LINEAR_EXACT on a compatibility viewport did nothing.
+  if (
+    properties.VOILUTFunction !== undefined &&
+    properties.voiLUTFunctionSetByUser !== false
+  ) {
+    presentation.voiLUTFunction = properties.VOILUTFunction;
+  }
+
+  if (properties.useVOILUTSequence !== undefined) {
+    presentation.useVOILUTSequence = properties.useVOILUTSequence;
   }
 
   if (properties.invert !== undefined) {

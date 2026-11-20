@@ -13,6 +13,7 @@ import type {
   CPUFallbackEnabledElement,
 } from '../../../../types';
 import { clamp } from '../../../../utilities/clamp';
+import { toLowHighRange } from '../../../../utilities/windowLevel';
 import { createCanvas } from '../../getOrCreateCanvas';
 import { coreLog } from '../../../../utilities/logger';
 
@@ -105,9 +106,13 @@ function getRenderCanvas(
   const colorLUT = enabledElement.renderingTools.colorLUT;
 
   if (viewport.modality === 'PT') {
-    const { windowWidth, windowCenter } = viewport.voi;
-    const minimum = windowCenter - windowWidth / 2;
-    const maximum = windowCenter + windowWidth / 2;
+    const { windowWidth, windowCenter, voiLUTFunction } = viewport.voi;
+    // The exact inverse of toWindowLevel, so that the window shows the range that made it.
+    const { lower: minimum, upper: maximum } = toLowHighRange(
+      windowWidth,
+      windowCenter,
+      voiLUTFunction
+    );
     const range = maximum - minimum;
     const collectedMultiplierTerms = 255.0 / range;
 

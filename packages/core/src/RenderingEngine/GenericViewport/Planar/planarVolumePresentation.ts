@@ -1,8 +1,12 @@
 import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
 import type vtkImageResliceMapper from '@kitware/vtk.js/Rendering/Core/ImageResliceMapper';
 import type vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
-import type { ColormapPublic, VOIRange } from '../../../types';
-import { createPlanarRGBTransferFunction } from '../../helpers/planarImageRendering';
+import type { VOILUTFunctionType } from '../../../enums';
+import type { ColormapPublic, CPUFallbackLUT, VOIRange } from '../../../types';
+import {
+  createPlanarRGBTransferFunction,
+  resolveVOILUTSequenceToApply,
+} from '../../helpers/planarImageRendering';
 import type { PlanarDataPresentation } from './PlanarViewportTypes';
 import {
   mapBlendModeToSlabType,
@@ -13,9 +17,20 @@ export function applyPlanarVolumePresentation(args: {
   actor: vtkImageSlice;
   mapper: vtkImageResliceMapper;
   defaultVOIRange?: VOIRange;
+  /** VOI LUT Function (0028,1056) of the file of the volume. */
+  defaultVOILUTFunction?: VOILUTFunctionType;
+  /** VOI LUT Sequence (0028,3010) of the file of the volume. */
+  defaultVOILUT?: CPUFallbackLUT;
   props?: PlanarDataPresentation;
 }): void {
-  const { actor, defaultVOIRange, mapper, props } = args;
+  const {
+    actor,
+    defaultVOIRange,
+    defaultVOILUTFunction,
+    defaultVOILUT,
+    mapper,
+    props,
+  } = args;
   const property = actor.getProperty();
   const voiRange = props?.voiRange ?? defaultVOIRange;
 
@@ -55,6 +70,12 @@ export function applyPlanarVolumePresentation(args: {
     colormap: props?.colormap,
     invert: props?.invert,
     voiRange,
+    voiLUTFunction: props?.voiLUTFunction ?? defaultVOILUTFunction,
+    voiLUT: resolveVOILUTSequenceToApply({
+      defaultVOILUT,
+      defaultVOILUTFunction,
+      props,
+    }),
   });
 
   property.setUseLookupTableScalarRange(true);
