@@ -28,9 +28,14 @@ What changes for an application:
 - **The render mode of a plain volume slice is `vtkSampledSlice`**, not
   `vtkVolumeSlice`. Code that compares render mode names should read
   `viewport.getRenderPlan()` instead.
-- **The outline of a tilted slice can differ by one pixel.** The GPU volume
-  path paints an edge pixel that the slice only half covers with the
-  background. The sampled slice gives it its value.
+- **The edge pixels of a slice can differ between the two GPU paths.** The
+  GPU volume path leaves an edge pixel whose centre lies outside the volume
+  with the background, and shows a pixel that the slice covers in part with
+  a part of its value. The sampled slice, on the GPU and on the CPU, clips a
+  tilted slice at the pixel centre, and shows an edge pixel of a slice along
+  a volume axis with the share of it that the slice covers (the CPU takes the
+  4 samples of a 4x multisampled GPU picture, so a GPU without multisampling
+  can differ from it there by one pixel).
 - **Float data stays float on devices that cannot filter float textures.**
   `canRenderFloatTextures()` returns true while slice first is on, so a PET
   volume keeps its float values there. Where such a layer does go to a float

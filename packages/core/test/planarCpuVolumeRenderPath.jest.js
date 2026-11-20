@@ -900,6 +900,64 @@ describe('PlanarSampledSliceCanvas', () => {
     expect(nearest.transform[4]).toBeLessThan(e);
   });
 
+  it('blends a translucent slice of the screen grid with its alpha before rounding, as the GPU blends a layer', () => {
+    const camera = axialCamera(1);
+    const screen = getScreenSliceGeometry({
+      camera,
+      canvasWidth: 4,
+      canvasHeight: 4,
+    });
+    const values = new Float32Array(16).fill(0);
+
+    values[0] = 255;
+    values[1] = 1;
+
+    const canvas = new PlanarSampledSliceCanvas(createTestVolume(), 4, 4);
+    const target = createCanvas(4, 4);
+    const context = target.getContext('2d');
+    const below = context.createImageData(4, 4);
+
+    below.data.forEach((_, index) => {
+      below.data[index] = index % 4 === 3 ? 255 : 128;
+    });
+    jest.spyOn(context, 'getImageData').mockReturnValue(below);
+
+    const putImageData = jest.spyOn(context, 'putImageData');
+
+    canvas.setSlice(slice(values, { ...screen, zDirection: [0, 0, 1] }));
+    canvas.draw({
+      target: {
+        canvas: target,
+        context,
+        composition: { clearedRenderPassId: -1, renderPassId: 1 },
+      },
+      camera,
+      presentation: {
+        voiRange: { lower: 0, upper: 255 },
+        colormap: {
+          name: 'hsv',
+          opacity: [
+            { value: 0, opacity: 0 },
+            { value: 1, opacity: 0.6 },
+          ],
+        },
+      },
+      invalidated: true,
+    });
+
+    const call = putImageData.mock.calls.find(([data]) => data === below);
+    const pixel = (index) =>
+      Array.from(below.data.slice(index * 4, index * 4 + 4));
+
+    expect(getSliceCanvasTransform(screen, camera, target)).toEqual([
+      1, 0, 0, 1, 0, 0,
+    ]);
+    expect(call).toBeDefined();
+    expect(pixel(0)).toEqual([204, 51, 51, 255]);
+    expect(pixel(1)).toEqual([128, 128, 128, 255]);
+    expect(pixel(2)).toEqual([128, 128, 128, 255]);
+  });
+
   it('makes the image again only for another slice', () => {
     const canvas = new PlanarSampledSliceCanvas(createTestVolume(), 4, 4);
     const first = slice(new Int16Array([1, 2]));

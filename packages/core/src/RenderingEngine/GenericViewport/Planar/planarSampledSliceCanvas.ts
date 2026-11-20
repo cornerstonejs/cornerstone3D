@@ -11,6 +11,7 @@ import type {
   VOIRange,
 } from '../../../types';
 import VoxelManager from '../../../utilities/VoxelManager';
+import { getExactSliceAxis } from '../../../utilities/volumeSliceGeometry';
 import { createCanvas } from '../../helpers/getOrCreateCanvas';
 import drawImageSync from '../../helpers/cpuFallback/drawImageSync';
 import { resolveCPUFallbackColormap } from '../../helpers/cpuFallback/colors';
@@ -66,12 +67,35 @@ const NEAREST_TIE_SHIFT = 1 / 8192;
 const MAX_VALUE_TABLE_SIZE = 65536;
 
 /**
+ * The point of a canvas pixel, from its top left corner in pixels, at which
+ * a slice clipped by planes is tested: its centre, where the clip planes of
+ * the GPU draw step test a pixel.
+ */
+const CENTRE_SAMPLE: Point2[] = [[0.5, 0.5]];
+
+/**
+ * The four sample points of a canvas pixel in a 4x multisampled WebGL
+ * picture, from its top left corner in pixels. The GPU draws a slice along a
+ * volume axis, and an image, as a quad whose edges lie on the faces, and a
+ * pixel on such an edge shows the slice in the share of these points that
+ * lie inside. They are tested on a slice that maps to the canvas one to one,
+ * whose pixels are the canvas pixels.
+ */
+const EDGE_SAMPLES: Point2[] = [
+  [0.375, 0.875],
+  [0.875, 0.625],
+  [0.125, 0.375],
+  [0.625, 0.125],
+];
+
+/**
  * The colour and opacity of one layer as the GPU draw step gives them, as
  * tables over the value of a pixel: `colours` holds the packed red, green and
- * blue of a step and `alphas` its alpha, 0 to 255. A value v reads the step
- * `v * scale + offset` of each table, clamped to the table. `colourTexels`
- * and `opacityTexels` are the texels of the textures of the GPU draw step
- * that the steps were made from.
+ * blue of a step and `alphas` its alpha, 0 to 255. `alphaFractions` holds
+ * the same alpha from 0 to 1 before any rounding, the alpha that the GPU
+ * blends with. A value v reads the step `v * scale + offset` of each table,
+ * clamped to the table. `colourTexels` and `opacityTexels` are the texels of
+ * the textures of the GPU draw step that the steps were made from.
  *
  * @internal
  */
@@ -82,6 +106,7 @@ export type PlanarSliceColourTables = {
   colourScale: number;
   colourOffset: number;
   alphas: Uint8ClampedArray;
+  alphaFractions: Float32Array;
   alphaScale: number;
   alphaOffset: number;
   nearest: boolean;
@@ -128,8 +153,13 @@ export type PlanarSliceCanvasTransform = [
  * is never drawn, and its colour and opacity functions become the tables of
  * the vtk.js image mapper (`getColourTables`), read the way its shader reads
  * them. The pixels outside the faces of the volume are left clear, as the
- * clip planes of the GPU draw step leave them. The coloured slice is drawn
- * over the layers below it with its alpha, as the GPU blends a layer.
+ * clip planes of the GPU draw step leave them; on a slice along a volume axis
+ * that maps to the canvas one to one, a pixel on a face shows the slice in
+ * the share of it that the slice covers, as the multisampled edge of the quad
+ * that the GPU draws (`clearOutsideVolume`). The coloured slice is drawn over
+ * the layers below it with its alpha, as the GPU blends a layer; a
+ * translucent slice that maps one to one or is drawn NEAREST is blended with
+ * its alpha before any rounding (`blendSlice`).
  *
  * A labelmap is drawn by its `CanvasActor` on the canvas of the viewport, in
  * canvas pixels with its outline, as the GPU draws a labelmap slice. A slice
@@ -160,6 +190,8 @@ export class PlanarSampledSliceCanvas {
   private sliceImageData?: ImageData;
   private colouredSlice?: PlanarSampledSlice;
   private colouredTables?: PlanarSliceColourTables;
+  private colouredEdgeSamples?: Point2[];
+  private colouredAlphas?: Float32Array;
 
   constructor(
     private volume: IImageVolume,
@@ -312,6 +344,8 @@ export class PlanarSampledSliceCanvas {
     this.sliceImageData = undefined;
     this.colouredSlice = undefined;
     this.colouredTables = undefined;
+    this.colouredEdgeSamples = undefined;
+    this.colouredAlphas = undefined;
   }
 
   /**
@@ -338,10 +372,18 @@ export class PlanarSampledSliceCanvas {
       return;
     }
 
+    const transform = getSliceCanvasTransform(slice, camera, target.canvas);
+    const edgeSamples =
+      isIdentityTransform(transform) &&
+      getExactSliceAxis(this.volume, slice.zDirection) !== undefined
+        ? EDGE_SAMPLES
+        : CENTRE_SAMPLE;
+
     if (
       args.invalidated ||
       slice !== this.colouredSlice ||
-      tables !== this.colouredTables
+      tables !== this.colouredTables ||
+      edgeSamples !== this.colouredEdgeSamples
     ) {
       if (
         this.sliceImageData?.width !== slice.width ||
@@ -366,17 +408,35 @@ export class PlanarSampledSliceCanvas {
         colourSlice(slice.pixelData, pixels, tables);
       }
 
+      let edges: PlanarSliceEdgePixels | undefined;
+
       if (!slice.insideVolume) {
         this.clipPlanes ||= getVolumeClipPlanes(this.volume);
-        clearOutsideVolume(slice, this.clipPlanes, pixels);
+        edges = clearOutsideVolume(slice, this.clipPlanes, pixels, edgeSamples);
       }
 
       sliceContext.putImageData(this.sliceImageData, 0, 0);
       this.colouredSlice = slice;
       this.colouredTables = tables;
+      this.colouredEdgeSamples = edgeSamples;
+      this.colouredAlphas = hasTranslucentPixel(pixels)
+        ? getSliceAlphas(slice, tables, edges)
+        : undefined;
     }
 
-    const transform = getSliceCanvasTransform(slice, camera, target.canvas);
+    if (
+      this.colouredAlphas &&
+      (tables.nearest || isIdentityTransform(transform))
+    ) {
+      blendSlice(
+        target,
+        slice,
+        this.sliceImageData,
+        this.colouredAlphas,
+        transform
+      );
+      return;
+    }
 
     if (tables.nearest) {
       transform[4] -= (transform[0] + transform[2]) * NEAREST_TIE_SHIFT;
@@ -823,6 +883,13 @@ export function getColourTables(
   );
 
   const sameFilter = previous?.nearest === nearest;
+  const sameAlphas =
+    sameFilter &&
+    previous.opacity === opacity &&
+    isSameArray(previous.opacityTexels, opacityTexels);
+  const alphaSteps = sameAlphas
+    ? previous
+    : getAlphaSteps(opacityTexels, opacity, nearest);
 
   return {
     colourTexels,
@@ -833,12 +900,8 @@ export function getColourTables(
         : getColourSteps(colourTexels, nearest),
     colourScale,
     colourOffset,
-    alphas:
-      sameFilter &&
-      previous.opacity === opacity &&
-      isSameArray(previous.opacityTexels, opacityTexels)
-        ? previous.alphas
-        : getAlphaSteps(opacityTexels, opacity, nearest),
+    alphas: alphaSteps.alphas,
+    alphaFractions: alphaSteps.alphaFractions,
     alphaScale,
     alphaOffset,
     nearest,
@@ -932,20 +995,25 @@ function getColourSteps(
   return steps;
 }
 
-/** The alpha, 0 to 255, of each step of an opacity table. */
+/**
+ * The alpha of each step of an opacity table, 0 to 255 and rounded, and 0 to
+ * 1 before any rounding.
+ */
 function getAlphaSteps(
   texels: Float32Array,
   opacity: number,
   nearest: boolean
-): Uint8ClampedArray {
+): Pick<PlanarSliceColourTables, 'alphas' | 'alphaFractions'> {
   const values = getTextureSteps(texels, 1, 0, nearest);
-  const steps = new Uint8ClampedArray(values.length);
+  const alphas = new Uint8ClampedArray(values.length);
+  const alphaFractions = new Float32Array(values.length);
 
-  for (let step = 0; step < steps.length; step++) {
-    steps[step] = 255 * opacity * values[step];
+  for (let step = 0; step < alphas.length; step++) {
+    alphas[step] = 255 * opacity * values[step];
+    alphaFractions[step] = opacity * values[step];
   }
 
-  return steps;
+  return { alphas, alphaFractions };
 }
 
 /**
@@ -1077,44 +1145,119 @@ export function colourChannels(
 }
 
 /**
- * Clears the pixels of a slice whose centre lies outside one of the faces of
- * the volume, which is what the clip planes of the GPU draw step discard.
- * Each row keeps one run of pixels, found from the distance of its first
- * pixel to each plane and the change of that distance along the row.
+ * The first and the last column of a row of a slice whose point at `sample`
+ * of the pixel, from its top left corner, lies inside every plane. The run is
+ * found from the distance of that point of the first pixel to each plane and
+ * the change of that distance along the row; it is empty when the first is
+ * after the last.
+ */
+function getInsideRun(
+  slice: PlanarSampledSlice,
+  planes: PlanarSliceClipPlane[],
+  row: number,
+  sample: Point2
+): Point2 {
+  const { width, origin, xDirection, yDirection, spacing } = slice;
+  const column = sample[0] - 0.5;
+  const rowPosition = row + sample[1] - 0.5;
+  let first = 0;
+  let last = width - 1;
+
+  for (const plane of planes) {
+    let distance = 0;
+    let step = 0;
+
+    for (let axis = 0; axis < 3; axis++) {
+      distance +=
+        (origin[axis] +
+          xDirection[axis] * spacing[0] * column +
+          yDirection[axis] * spacing[1] * rowPosition -
+          plane.origin[axis]) *
+        plane.normal[axis];
+      step += xDirection[axis] * spacing[0] * plane.normal[axis];
+    }
+
+    if (step > 0) {
+      first = Math.max(first, Math.ceil(-distance / step - 1e-6));
+    } else if (step < 0) {
+      last = Math.min(last, Math.floor(-distance / step + 1e-6));
+    } else if (distance < 0) {
+      first = width;
+    }
+  }
+
+  return [first, last];
+}
+
+/**
+ * The neighbours of a pixel, as steps of column and row, in the order in
+ * which one is taken: the four beside it first, then the four at its corners.
+ */
+const NEIGHBOUR_STEPS: Point2[] = [
+  [0, -1],
+  [0, 1],
+  [-1, 0],
+  [1, 0],
+  [-1, -1],
+  [1, -1],
+  [-1, 1],
+  [1, 1],
+];
+
+/**
+ * The pixels of a slice on an edge that the slice covers in part: the index
+ * of each pixel, the share of it that the slice covers, and the index of the
+ * pixel whose value it shows.
+ */
+type PlanarSliceEdgePixels = {
+  indices: number[];
+  coverage: number[];
+  sources: number[];
+};
+
+/**
+ * Clears the pixels of a slice that lie outside the faces of the volume as
+ * the GPU draw step leaves them. With CENTRE_SAMPLE, a pixel whose centre
+ * lies outside one face is cleared, which is what the clip planes of the GPU
+ * draw step discard. With EDGE_SAMPLES, a pixel with none of its sample points
+ * inside is cleared, and a pixel with some of them inside keeps that share of
+ * its alpha, as a multisampled edge of a quad on the GPU. The GPU colours
+ * such a pixel at its centre from a texture clamped to its edge, so a pixel
+ * whose centre lies outside shows the colour of a neighbour whose centre lies
+ * inside.
+ *
+ * @returns the pixels that the slice covers in part, or undefined for none
  */
 function clearOutsideVolume(
   slice: PlanarSampledSlice,
   planes: PlanarSliceClipPlane[],
-  pixels: Uint32Array
-): void {
-  const { width, height, origin, xDirection, yDirection, spacing } = slice;
+  pixels: Uint32Array,
+  samples: Point2[]
+): PlanarSliceEdgePixels | undefined {
+  const { width, height } = slice;
+  const centreRuns = Array.from({ length: height }, (_, row) =>
+    getInsideRun(slice, planes, row, CENTRE_SAMPLE[0])
+  );
+  const isCentreInside = (column: number, row: number) =>
+    row >= 0 &&
+    row < height &&
+    column >= centreRuns[row][0] &&
+    column <= centreRuns[row][1];
+  const edges: PlanarSliceEdgePixels = {
+    indices: [],
+    coverage: [],
+    sources: [],
+  };
 
   for (let row = 0; row < height; row++) {
-    let first = 0;
-    let last = width - 1;
-
-    for (const plane of planes) {
-      let distance = 0;
-      let step = 0;
-
-      for (let axis = 0; axis < 3; axis++) {
-        distance +=
-          (origin[axis] +
-            yDirection[axis] * spacing[1] * row -
-            plane.origin[axis]) *
-          plane.normal[axis];
-        step += xDirection[axis] * spacing[0] * plane.normal[axis];
-      }
-
-      if (step > 0) {
-        first = Math.max(first, Math.ceil(-distance / step - 1e-6));
-      } else if (step < 0) {
-        last = Math.min(last, Math.floor(-distance / step + 1e-6));
-      } else if (distance < 0) {
-        first = width;
-      }
-    }
-
+    const runs =
+      samples === CENTRE_SAMPLE
+        ? [centreRuns[row]]
+        : samples.map((sample) => getInsideRun(slice, planes, row, sample));
+    const first = Math.min(...runs.map(([start]) => start));
+    const last = Math.max(...runs.map(([, end]) => end));
+    const wholeFirst = Math.max(...runs.map(([start]) => start));
+    const wholeLast = Math.min(...runs.map(([, end]) => end));
     const rowStart = row * width;
 
     if (first > last) {
@@ -1124,7 +1267,174 @@ function clearOutsideVolume(
 
     pixels.fill(0, rowStart, rowStart + first);
     pixels.fill(0, rowStart + last + 1, rowStart + width);
+
+    for (let column = first; column <= last; column++) {
+      if (column === wholeFirst && wholeFirst <= wholeLast) {
+        column = wholeLast;
+        continue;
+      }
+
+      const inside = runs.filter(
+        ([start, end]) => column >= start && column <= end
+      ).length;
+
+      if (inside === samples.length) {
+        continue;
+      }
+
+      const neighbour = isCentreInside(column, row)
+        ? undefined
+        : NEIGHBOUR_STEPS.find(([columnStep, rowStep]) =>
+            isCentreInside(column + columnStep, row + rowStep)
+          );
+
+      edges.indices.push(rowStart + column);
+      edges.coverage.push(inside / samples.length);
+      edges.sources.push(
+        neighbour
+          ? (row + neighbour[1]) * width + column + neighbour[0]
+          : rowStart + column
+      );
+    }
   }
+
+  if (!edges.indices.length) {
+    return;
+  }
+
+  edges.indices.forEach((index, entry) => {
+    pixels[index] = pixels[edges.sources[entry]];
+  });
+  edges.indices.forEach((index, entry) => {
+    pixels[index] =
+      (pixels[index] & 0xffffff) |
+      (Math.round((pixels[index] >>> 24) * edges.coverage[entry]) << 24);
+  });
+
+  return edges;
+}
+
+/**
+ * The alpha of each pixel of a coloured slice, from 0 to 1 before any
+ * rounding, which the GPU blends with: the alpha of the opacity table at its
+ * value, or the opacity of the presentation for a colour slice, times the
+ * share of the pixel that the slice covers for a pixel on an edge.
+ */
+function getSliceAlphas(
+  slice: PlanarSampledSlice,
+  tables: PlanarSliceColourTables,
+  edges: PlanarSliceEdgePixels | undefined
+): Float32Array {
+  const { pixelData } = slice;
+  const manyComponents = (slice.numberOfComponents ?? 1) > 1;
+  const { alphaFractions, alphaScale, alphaOffset, opacity } = tables;
+  const lastAlpha = alphaFractions.length - 1;
+  const alphas = new Float32Array(slice.width * slice.height);
+  const alphaAt = (index: number) => {
+    if (manyComponents) {
+      return opacity;
+    }
+
+    let step = pixelData[index] * alphaScale + alphaOffset;
+
+    step = step > 0 ? (step < lastAlpha ? step : lastAlpha) : 0;
+
+    return alphaFractions[(step + 0.5) | 0];
+  };
+
+  for (let index = 0; index < alphas.length; index++) {
+    alphas[index] = alphaAt(index);
+  }
+
+  edges?.indices.forEach((index, entry) => {
+    alphas[index] = alphaAt(edges.sources[entry]) * edges.coverage[entry];
+  });
+
+  return alphas;
+}
+
+/**
+ * Whether a coloured slice has a pixel that is neither clear nor opaque. Only
+ * such a pixel moves when the canvas blends it with its alpha of 8 bits.
+ */
+function hasTranslucentPixel(pixels: Uint32Array): boolean {
+  for (let index = 0; index < pixels.length; index++) {
+    const alpha = pixels[index] >>> 24;
+
+    if (alpha && alpha !== 255) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/** Whether a transform of `getSliceCanvasTransform` is the identity. */
+function isIdentityTransform(transform: PlanarSliceCanvasTransform): boolean {
+  return [1, 0, 0, 1, 0, 0].every((value, index) => transform[index] === value);
+}
+
+/**
+ * Draws a coloured slice over the canvas of the viewport as the GPU blends a
+ * layer: each canvas pixel becomes `colour * alpha + below * (1 - alpha)`,
+ * rounded once, with the alpha of `getSliceAlphas`. The canvas keeps an alpha
+ * of 8 bits per pixel, which moves a pixel under a translucent layer by a
+ * level from the GPU picture: an alpha of 0.0024 is kept as 1 / 255. Each
+ * canvas pixel takes the slice pixel under its centre, as a nearest texture
+ * read of the GPU, so a slice drawn one to one or with NEAREST interpolation
+ * is drawn here. A clear pixel of the slice, such as one outside the faces of
+ * the volume, leaves the canvas as it is.
+ */
+function blendSlice(
+  target: PlanarCanvasTarget,
+  slice: Pick<PlanarSampledSlice, 'width' | 'height'>,
+  sliceImageData: ImageData,
+  alphas: Float32Array,
+  transform: PlanarSliceCanvasTransform
+): void {
+  const { canvas, context } = target;
+  const { width, height } = slice;
+  const colours = sliceImageData.data;
+  const [a, b, c, d, e, f] = transform;
+  const determinant = a * d - b * c;
+
+  if (!determinant) {
+    return;
+  }
+
+  const below = context.getImageData(0, 0, canvas.width, canvas.height);
+  const blended = below.data;
+
+  for (let y = 0; y < canvas.height; y++) {
+    for (let x = 0; x < canvas.width; x++) {
+      const dx = x + 0.5 - e;
+      const dy = y + 0.5 - f;
+      const column = Math.floor((d * dx - c * dy) / determinant);
+      const row = Math.floor((a * dy - b * dx) / determinant);
+
+      if (column < 0 || row < 0 || column >= width || row >= height) {
+        continue;
+      }
+
+      const index = row * width + column;
+
+      if (!colours[index * 4 + 3]) {
+        continue;
+      }
+
+      const alpha = alphas[index];
+      const out = (y * canvas.width + x) * 4;
+
+      for (let channel = 0; channel < 3; channel++) {
+        blended[out + channel] = Math.round(
+          colours[index * 4 + channel] * alpha +
+            blended[out + channel] * (1 - alpha)
+        );
+      }
+    }
+  }
+
+  context.putImageData(below, 0, 0);
 }
 
 function composeLayer(
