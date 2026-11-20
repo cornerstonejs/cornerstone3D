@@ -23,7 +23,8 @@ const ALLOWED_DELTA = 0.05;
  * If the viewports are in the same frame of reference, it will return early,
  * but otherwise it will use the current image's metadata to calculate the
  * translation between the two viewports and adds it to the spatialRegistrationModule
- * metadata provider
+ * metadata provider, for the viewport ids and the rendering engine ids of the
+ * two viewports
  *
  *
  * @param viewport1 - The first stack viewport
@@ -68,6 +69,15 @@ function calculateViewportsSpatialRegistration(
 
   const mat = mat4.fromTranslation(mat4.create(), translation);
   spatialRegistrationMetadataProvider.add([viewport1.id, viewport2.id], mat);
+  spatialRegistrationMetadataProvider.add(
+    [
+      viewport1.id,
+      viewport2.id,
+      viewport1.renderingEngineId,
+      viewport2.renderingEngineId,
+    ],
+    mat
+  );
 }
 
 export default calculateViewportsSpatialRegistration;

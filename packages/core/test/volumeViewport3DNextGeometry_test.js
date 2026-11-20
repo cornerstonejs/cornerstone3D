@@ -301,6 +301,38 @@ describe('Direct next 3D viewport, a geometry display set -- ', () => {
     ).toEqual([3, 0, 1, 2]);
   });
 
+  it('draws a face appended in place to the points and the polys of the surface at the next render, with the same actor', async function () {
+    const next = createNextViewport(renderingEngine);
+
+    await showVolume(next);
+
+    const surface = createSurfaceGeometry(
+      'surface1',
+      [0, 0, 0],
+      [30, 20, 10]
+    ).data;
+
+    await next.addDisplaySet('surface1', { renderMode: 'vtkGeometry3d' });
+
+    const { actor, uid } = geometryEntryOf(next, 'surface1');
+    const { points, polys } = surface;
+
+    next.render();
+    points.push(0, 0, 0, 30, 0, 0, 30, 20, 15);
+    polys.push(3, 8, 9, 10);
+    next.render();
+
+    expect(surface.points).toBe(points);
+    expect(surface.polys).toBe(polys);
+    expect(geometryEntryOf(next, 'surface1').actor).toBe(actor);
+    expect(geometryEntryOf(next, 'surface1').uid).toBe(uid);
+    expect(pointCountOf(actor)).toBe(11);
+    expect(actor.getBounds()).toEqual([0, 30, 0, 20, 0, 15]);
+    expect(
+      Array.from(actor.getMapper().getInputData().getPolys().getData())
+    ).toEqual([4, 0, 1, 2, 3, 4, 4, 5, 6, 7, 3, 8, 9, 10]);
+  });
+
   it('draws a surface that was emptied as nothing, and fits the volume then', async function () {
     const next = createNextViewport(renderingEngine);
 

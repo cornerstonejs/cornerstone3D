@@ -68,10 +68,7 @@ export class VtkGeometry3DRenderPath
       renderMode: 'vtkGeometry3d',
       actors,
       frameOfReferenceUID: surface?.frameOfReferenceUID,
-      shownSurface: surface && {
-        points: surface.points,
-        polys: surface.polys,
-      },
+      shownSurface: surface && getShownSurface(surface),
     };
 
     return {
@@ -144,7 +141,8 @@ export class VtkGeometry3DRenderPath
 
   /**
    * Asks for a render. A surface is drawn as it is in its geometry now: when
-   * its points or its polys are other arrays than at the last render, the
+   * its points or its polys are other arrays than at the last render, or the
+   * same arrays with another length, as after a face appended in place, the
    * actor gets new poly data first, and keeps its place in the scene.
    */
   private render(
@@ -159,15 +157,14 @@ export class VtkGeometry3DRenderPath
       surface &&
       shownSurface &&
       (shownSurface.points !== surface.points ||
-        shownSurface.polys !== surface.polys)
+        shownSurface.polys !== surface.polys ||
+        shownSurface.pointsLength !== surface.points.length ||
+        shownSurface.polysLength !== surface.polys.length)
     ) {
       (rendering.actors[0].actor as vtkActor)
         .getMapper()
         .setInputData(createSurfacePolyData(surface));
-      rendering.shownSurface = {
-        points: surface.points,
-        polys: surface.polys,
-      };
+      rendering.shownSurface = getShownSurface(surface);
       ctx.vtk.renderer.resetCameraClippingRange();
     }
 
@@ -238,6 +235,22 @@ function getSurface(geometry: IGeometry): ISurface | undefined {
   return geometry.type === GeometryType.SURFACE
     ? (geometry.data as ISurface)
     : undefined;
+}
+
+/**
+ * The record of the points and the polys of a surface that an actor draws,
+ * with their number of values. The arrays can change in place, so their
+ * lengths are kept apart from them.
+ */
+function getShownSurface(
+  surface: ISurface
+): Volume3DGeometryRendering['shownSurface'] {
+  return {
+    points: surface.points,
+    polys: surface.polys,
+    pointsLength: surface.points.length,
+    polysLength: surface.polys.length,
+  };
 }
 
 /** The poly data of the points and the polys of a surface. */

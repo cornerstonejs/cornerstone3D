@@ -193,9 +193,11 @@ if (viewport.isReferenceViewable(metadata, { withNavigation: true })) {
 ### Finding the best viewport for displaying an annotation
 
 A stack shows its images in their acquisition plane only, so in stack mode
-`isReferenceViewable` is false for a reference in another plane, whatever the
-options (`asVolume` is not read). A reference in another plane comes from a
-volume: it names that volume (`volumeId`) and the display set it was made on
+`isReferenceViewable` is false for a reference in another plane, unless the
+option `asVolume` asks whether the stack could show it as a volume: then a
+reference that names no image is viewable when it is in the frame of
+reference of the stack, as on the legacy stack viewport. A reference in
+another plane comes from a volume: it names that volume (`volumeId`) and the display set it was made on
 (`dataId`), and no image, so only a viewport that shows that display set
 takes it. To show
 such a reference on a stack, choose a stack that shows the images of the

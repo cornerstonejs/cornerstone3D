@@ -95,6 +95,9 @@ function syncProjectionZoomPan(
  *
  * targetViewport.options.syncZoom set to false to not sync the zoom
  * targetViewport.options.syncPan set to false to not sync the pan
+ *
+ * Each viewport is read from its own rendering engine, and a disabled source
+ * or target does nothing.
 
  * @param synchronizerInstance - The Instance of the Synchronizer
  * @param sourceViewport - The list of IDs defining the source viewport.
@@ -113,10 +116,20 @@ export default function zoomPanSyncCallback(
     );
   }
 
-  const options = synchronizerInstance.getOptions(targetViewport.viewportId);
+  const options = synchronizerInstance.getOptions(
+    targetViewport.viewportId,
+    targetViewport.renderingEngineId
+  );
 
   const tViewport = renderingEngine.getViewport(targetViewport.viewportId);
-  const sViewport = renderingEngine.getViewport(sourceViewport.viewportId);
+  const sViewport = getRenderingEngine(
+    sourceViewport.renderingEngineId
+  )?.getViewport(sourceViewport.viewportId);
+
+  if (!sViewport || !tViewport) {
+    return;
+  }
+
   const syncedByProjection = syncProjectionZoomPan(
     sViewport,
     tViewport,

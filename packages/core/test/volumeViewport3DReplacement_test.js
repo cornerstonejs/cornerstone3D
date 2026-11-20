@@ -364,6 +364,144 @@ describe('Two replacements of the display sets of a 3D viewport, one after the o
   });
 });
 
+describe('A replacement of the display sets of a 3D viewport that a newer call comes between two of its mounts -- ', () => {
+  let renderingEngine;
+  let viewport;
+  let volumeIds;
+  let newVolumeEvents;
+
+  beforeEach(async function () {
+    renderingEngine = testUtils.setupTestEnvironment({
+      renderingEngineId,
+    }).renderingEngine;
+    viewport = createViewport(renderingEngine);
+    volumeIds = {};
+
+    for (const name of ['shown', 'olderSource', 'olderOverlay', 'newer']) {
+      volumeIds[name] = await registerVolume(`replacement3D:${name}`, {
+        rows: 10,
+        columns: 10,
+        slices: 4,
+      });
+    }
+
+    await viewport.setDisplaySets(volumeEntry('replacement3D:shown'));
+    newVolumeEvents = [];
+    viewport.element.addEventListener(
+      Events.VOLUME_VIEWPORT_NEW_VOLUME,
+      (event) => {
+        newVolumeEvents.push({
+          volumeActors: event.detail.volumeActors.map(
+            ({ referencedId }) => referencedId
+          ),
+          scene: sceneOf(viewport),
+        });
+      }
+    );
+  });
+
+  afterEach(function () {
+    testUtils.cleanupTestEnvironment({ renderingEngineId });
+    utilities.genericViewportDisplaySetMetadataProvider.clear?.();
+  });
+
+  /**
+   * Replaces the shown scene with the older source and overlay, and starts
+   * the newer call in the VOI_MODIFIED listener of the mount of the older
+   * source, before the mount of the older overlay. Resolves with both calls.
+   */
+  function replaceWithNewerBetweenMounts(newerDisplaySetId) {
+    let newer;
+
+    viewport.element.addEventListener(Events.VOI_MODIFIED, (event) => {
+      if (!newer && event.detail.volumeId === volumeIds.olderSource) {
+        newer = viewport.setDisplaySets(volumeEntry(newerDisplaySetId));
+      }
+    });
+
+    const older = viewport.setDisplaySets(
+      volumeEntry('replacement3D:olderSource'),
+      volumeEntry('replacement3D:olderOverlay')
+    );
+
+    return { older, newer: () => newer };
+  }
+
+  it('completes the swap of the older call, which fires its event, and ends with exactly the newer scene', async function () {
+    const calls = replaceWithNewerBetweenMounts('replacement3D:newer');
+
+    await calls.older;
+    expect(calls.newer()).toBeDefined();
+    await calls.newer();
+
+    const olderScene = {
+      displaySets: [
+        {
+          displaySetId: 'replacement3D:olderSource',
+          options: { role: 'source' },
+        },
+        {
+          displaySetId: 'replacement3D:olderOverlay',
+          options: { role: 'overlay' },
+        },
+      ],
+      actors: [volumeIds.olderSource, volumeIds.olderOverlay],
+    };
+    const newerScene = {
+      displaySets: [
+        { displaySetId: 'replacement3D:newer', options: { role: 'source' } },
+      ],
+      actors: [volumeIds.newer],
+    };
+
+    expect(sceneOf(viewport)).toEqual(newerScene);
+    expect(newVolumeEvents).toEqual([
+      {
+        volumeActors: [volumeIds.olderSource, volumeIds.olderOverlay],
+        scene: olderScene,
+      },
+      { volumeActors: [volumeIds.newer], scene: newerScene },
+    ]);
+  });
+
+  it('keeps the complete scene of the older call when the newer call rejects', async function () {
+    const calls = replaceWithNewerBetweenMounts('replacement3D:missing');
+    let error;
+
+    await calls.older;
+    expect(calls.newer()).toBeDefined();
+
+    try {
+      await calls.newer();
+    } catch (caught) {
+      error = caught;
+    }
+
+    const olderScene = {
+      displaySets: [
+        {
+          displaySetId: 'replacement3D:olderSource',
+          options: { role: 'source' },
+        },
+        {
+          displaySetId: 'replacement3D:olderOverlay',
+          options: { role: 'overlay' },
+        },
+      ],
+      actors: [volumeIds.olderSource, volumeIds.olderOverlay],
+    };
+
+    expect(error).toBeDefined();
+    expect(sceneOf(viewport)).toEqual(olderScene);
+    expect(newVolumeEvents).toEqual([
+      {
+        volumeActors: [volumeIds.olderSource, volumeIds.olderOverlay],
+        scene: olderScene,
+      },
+    ]);
+  });
+});
+
 describe('A replacement of the display sets of a 3D viewport and its loads -- ', () => {
   let renderingEngine;
   let viewport;

@@ -1,3 +1,4 @@
+import { mat4 } from 'gl-matrix';
 import * as cornerstone3D from '@cornerstonejs/core';
 import * as csTools3d from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
@@ -108,5 +109,108 @@ describe('The synchronizers between two rendering engines whose viewports have t
 
     expect(slabOf(first)).toBe(5);
     expect(slabOf(second)).toBe(5);
+  });
+
+  it('keeps the options of the image slice synchronizer apart for the viewport of each rendering engine', async function () {
+    const series = await createSeries({ id: 'sliceSyncOptionsAcrossEngines' });
+    const first = createNextViewport(firstRenderingEngine, VIEWPORT_ID);
+    const second = createNextViewport(secondRenderingEngine, VIEWPORT_ID);
+    const synchronizer =
+      synchronizers.createImageSliceSynchronizer(synchronizerId);
+
+    await showStack(first, series, 2);
+    await showStack(second, series, 2);
+    synchronizeBoth(synchronizer);
+    synchronizer.setOptions(VIEWPORT_ID, {}, firstRenderingEngineId);
+    synchronizer.setOptions(
+      VIEWPORT_ID,
+      { disabled: true },
+      secondRenderingEngineId
+    );
+
+    expect(
+      synchronizer.getOptions(VIEWPORT_ID, firstRenderingEngineId)
+    ).toEqual({});
+    expect(
+      synchronizer.getOptions(VIEWPORT_ID, secondRenderingEngineId)
+    ).toEqual({ disabled: true });
+
+    await first.setImageIdIndex(5);
+    await waitFor(() => first.getCurrentImageIdIndex() === 5);
+    await frames();
+    await frames();
+
+    expect(second.getCurrentImageIdIndex()).toBe(2);
+
+    await second.setImageIdIndex(6);
+    await waitFor(() => first.getCurrentImageIdIndex() === 6).catch(
+      () => undefined
+    );
+
+    expect(second.getCurrentImageIdIndex()).toBe(6);
+    expect(first.getCurrentImageId()).toBe(series.imageIds[6]);
+  });
+
+  it('moves the target of each rendering engine by the spatial registration of its own rendering engine with the image slice synchronizer', async function () {
+    const series = await createSeries({ id: 'sliceSyncRegistrations' });
+    const sourceId = 'registrationSource';
+    const targetId = 'registrationTarget';
+    const engines = [
+      {
+        renderingEngine: firstRenderingEngine,
+        renderingEngineId: firstRenderingEngineId,
+        shift: 2,
+      },
+      {
+        renderingEngine: secondRenderingEngine,
+        renderingEngineId: secondRenderingEngineId,
+        shift: 6,
+      },
+    ];
+
+    for (const engine of engines) {
+      engine.source = createNextViewport(engine.renderingEngine, sourceId);
+      engine.target = createNextViewport(engine.renderingEngine, targetId);
+      await showStack(engine.source, series, 0);
+      await showStack(engine.target, series, 0);
+      utilities.spatialRegistrationMetadataProvider.add(
+        [
+          targetId,
+          sourceId,
+          engine.renderingEngineId,
+          engine.renderingEngineId,
+        ],
+        mat4.fromTranslation(mat4.create(), [0, 0, engine.shift])
+      );
+      engine.synchronizer = synchronizers.createImageSliceSynchronizer(
+        `${synchronizerId}:${engine.renderingEngineId}`
+      );
+      engine.synchronizer.addSource({
+        renderingEngineId: engine.renderingEngineId,
+        viewportId: sourceId,
+      });
+      engine.synchronizer.addTarget({
+        renderingEngineId: engine.renderingEngineId,
+        viewportId: targetId,
+      });
+    }
+
+    try {
+      for (const engine of engines) {
+        await engine.source.setImageIdIndex(1);
+        await waitFor(
+          () => engine.target.getCurrentImageIdIndex() === 1 + engine.shift / 2
+        ).catch(() => undefined);
+      }
+
+      expect(engines[0].target.getCurrentImageId()).toBe(series.imageIds[2]);
+      expect(engines[1].target.getCurrentImageId()).toBe(series.imageIds[4]);
+    } finally {
+      engines.forEach(({ renderingEngineId }) =>
+        SynchronizerManager.destroySynchronizer(
+          `${synchronizerId}:${renderingEngineId}`
+        )
+      );
+    }
   });
 });

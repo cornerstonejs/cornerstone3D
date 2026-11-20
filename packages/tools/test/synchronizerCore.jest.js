@@ -374,6 +374,23 @@ describe('Synchronizer', () => {
     expect(sync.getOptions('vp1')).toEqual({ foo: 'bar' });
   });
 
+  it('keeps the options of one viewport id apart for each rendering engine, and gives the options set without one to every rendering engine', () => {
+    const sync = new Synchronizer('sync-j2', 'my-event', jest.fn());
+
+    sync.setOptions('vp1', { foo: 'all' });
+    sync.setOptions('vp1', { foo: 're2' }, 're2');
+
+    expect(sync.getOptions('vp1')).toEqual({ foo: 'all' });
+    expect(sync.getOptions('vp1', 're1')).toEqual({ foo: 'all' });
+    expect(sync.getOptions('vp1', 're2')).toEqual({ foo: 're2' });
+
+    sync.setOptions('vp1', { foo: 're1' }, 're1');
+
+    expect(sync.getOptions('vp1', 're1')).toEqual({ foo: 're1' });
+    expect(sync.getOptions('vp1', 're2')).toEqual({ foo: 're2' });
+    expect(sync.getOptions('vp1')).toEqual({ foo: 'all' });
+  });
+
   it('does not fire while there are no target viewports at all', () => {
     const callback = jest.fn();
     const sync = new Synchronizer('sync-k', 'my-event', callback);

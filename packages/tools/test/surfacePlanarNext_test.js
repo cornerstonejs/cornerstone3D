@@ -189,6 +189,13 @@ async function moveTo(viewport, imageIdIndex) {
   await renderAndWait(viewport);
 }
 
+/** Resolves after two animation frames. */
+function twoFrames() {
+  return new Promise((resolve) =>
+    requestAnimationFrame(() => requestAnimationFrame(resolve))
+  );
+}
+
 /** Takes a picture of each slice that the test visits, before the surface. */
 async function picturesBefore(viewport, visits) {
   const pictures = {};
@@ -742,5 +749,85 @@ describe('A Surface representation that the polySeg add-on computes from a label
     geometryIds.forEach((geometryId) => {
       expect(cache.getGeometry(geometryId)).toBeUndefined();
     });
+  }, 30000);
+
+  it('caches no empty surface and keeps no entry of the last segment when the last segment is erased while an update of the surfaces computes', async function () {
+    const rejections = [];
+    const recordRejection = (event) => {
+      rejections.push(String(event.reason?.message ?? event.reason));
+    };
+
+    window.addEventListener('unhandledrejection', recordRejection);
+
+    try {
+      const series = await createSeries({
+        id: 'surfacePlanarEraseDuringUpdate',
+        size: SIZE,
+      });
+      const viewport = createNextViewport(
+        renderingEngine,
+        'surfaceEraseDuringUpdate'
+      );
+
+      await showVolume(viewport, series, 10);
+      volumeLoader.createAndCacheDerivedLabelmapVolume(series.volumeId, {
+        volumeId: labelmapSegmentationId,
+      });
+
+      const { voxelManager } = cache.getVolume(labelmapSegmentationId);
+
+      fillSegmentBlock(voxelManager, 1, 1);
+      fillSegmentBlock(voxelManager, 2, 2);
+      segmentation.addSegmentations([
+        {
+          segmentationId: labelmapSegmentationId,
+          representation: {
+            type: Labelmap,
+            data: { volumeId: labelmapSegmentationId },
+          },
+          config: { segments: { 1: {}, 2: {} } },
+        },
+      ]);
+      segmentation.addSegmentationRepresentations(viewport.id, [
+        { segmentationId: labelmapSegmentationId, type: Surface },
+      ]);
+      await waitFor(() => surfaceProps(viewport).length === 2, 5000);
+
+      const geometryMap = () =>
+        segmentation.state.getSegmentation(labelmapSegmentationId)
+          .representationData.Surface.geometryIds;
+      const geometryIds = [...geometryMap().values()];
+
+      segmentation.removeSegment(labelmapSegmentationId, 2);
+      await waitFor(() => surfaceProps(viewport).length === 1, 3000);
+      await polySeg.updateSurfaceData(labelmapSegmentationId);
+
+      expect([...geometryMap().keys()]).toEqual([1]);
+
+      const update = polySeg.updateSurfaceData(labelmapSegmentationId);
+
+      segmentation.removeSegment(labelmapSegmentationId, 1);
+      await update;
+      await twoFrames();
+
+      expect(rejections).toEqual([]);
+      expect([...geometryMap().keys()]).toEqual([]);
+      geometryIds.forEach((geometryId) => {
+        expect(cache.getGeometry(geometryId)).toBeUndefined();
+      });
+
+      await waitFor(() => surfaceProps(viewport).length === 0, 3000).catch(
+        () => undefined
+      );
+
+      expect(surfaceProps(viewport).length).toBe(0);
+      expect(
+        getSurfaceActorEntry(viewport.id, labelmapSegmentationId, 1)?.uid
+      ).toBeUndefined();
+      expect([...geometryMap().keys()]).toEqual([]);
+      expect(rejections).toEqual([]);
+    } finally {
+      window.removeEventListener('unhandledrejection', recordRejection);
+    }
   }, 30000);
 });

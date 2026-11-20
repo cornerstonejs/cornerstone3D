@@ -207,10 +207,15 @@ export type Volume3DGeometryRendering = MountedRendering<{
   actors: ActorEntry[];
   frameOfReferenceUID?: string;
   /**
-   * The points and the polys of the surface that the actor draws. A render
-   * builds the poly data of the actor anew when the surface has other ones.
+   * The points and the polys of the surface that the actor draws, with
+   * their number of values when the actor took them. A render builds the
+   * poly data of the actor anew when the surface has other arrays, or arrays
+   * of another length, as after a face appended in place.
    */
-  shownSurface?: Pick<ISurface, 'points' | 'polys'>;
+  shownSurface?: Pick<ISurface, 'points' | 'polys'> & {
+    pointsLength: number;
+    polysLength: number;
+  };
 }>;
 
 /** @internal */

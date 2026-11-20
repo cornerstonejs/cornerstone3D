@@ -9,11 +9,21 @@ import {
 import type { Synchronizer } from '../../store';
 import areViewportsCoplanar from './areViewportsCoplanar';
 
-const getSpatialRegistration = (targetId, sourceId) =>
+/**
+ * The spatial registration from the source viewport to the target viewport:
+ * the one added for the viewports of their rendering engines, else the one
+ * added for their viewport ids alone.
+ */
+const getSpatialRegistration = (
+  targetViewport: Types.IViewportId,
+  sourceViewport: Types.IViewportId
+) =>
   utilities.spatialRegistrationMetadataProvider.get(
     'spatialRegistrationModule',
-    targetId,
-    sourceId
+    targetViewport.viewportId,
+    sourceViewport.viewportId,
+    targetViewport.renderingEngineId,
+    sourceViewport.renderingEngineId
   );
 
 function isVolumeSliceViewport(viewport: PlanarViewport): boolean {
@@ -54,6 +64,12 @@ function isVolumeSliceViewport(viewport: PlanarViewport): boolean {
  * the user has actually manually scrolled the target viewport to the correct
  * slice before initiating the synchronization 3) using some other method
  *
+ * A registration added with the rendering engine ids of the two viewports
+ * goes before one added with their viewport ids alone, so two rendering
+ * engines whose viewports have the same ids keep their registrations apart.
+ * The options of the target are read for the viewport of its rendering
+ * engine.
+ *
  * Each viewport is read from its own rendering engine, and a disabled source
  * or target does nothing.
  *
@@ -79,7 +95,10 @@ export default async function imageSliceSyncCallback(
     sourceViewport.renderingEngineId
   )?.getViewport(sourceViewport.viewportId) as PlanarViewport;
 
-  const options = synchronizerInstance.getOptions(targetViewport.viewportId);
+  const options = synchronizerInstance.getOptions(
+    targetViewport.viewportId,
+    targetViewport.renderingEngineId
+  );
 
   if (options?.disabled) {
     return;
@@ -107,8 +126,8 @@ export default async function imageSliceSyncCallback(
   // and add that to the imagePositionPatient of the source viewport to get the
   // imagePositionPatient of the target viewport's closest image in its stack
   let registrationMatrixMat4 = getSpatialRegistration(
-    targetViewport.viewportId,
-    sourceViewport.viewportId
+    targetViewport,
+    sourceViewport
   );
 
   if (!registrationMatrixMat4) {
@@ -122,8 +141,8 @@ export default async function imageSliceSyncCallback(
     } else {
       utilities.calculateViewportsSpatialRegistration(sViewport, tViewport);
       registrationMatrixMat4 = getSpatialRegistration(
-        targetViewport.viewportId,
-        sourceViewport.viewportId
+        targetViewport,
+        sourceViewport
       );
     }
     if (!registrationMatrixMat4) {

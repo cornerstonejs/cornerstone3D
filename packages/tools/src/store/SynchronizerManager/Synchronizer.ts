@@ -47,6 +47,14 @@ class Synchronizer {
   private _sourceViewports: Array<Types.IViewportId>;
   private _targetViewports: Array<Types.IViewportId>;
   private _viewportOptions: Record<string, Record<string, unknown>> = {};
+  /**
+   * The options of the viewport of one rendering engine, by rendering engine
+   * id and viewport id. They go before the options of the viewport id alone.
+   */
+  private _renderingEngineViewportOptions = new Map<
+    string,
+    Map<string, Record<string, unknown>>
+  >();
   private _options: SynchronizerOptions;
   public id: string;
 
@@ -84,12 +92,34 @@ class Synchronizer {
    * provide configuration on a viewport basis for things like offsets
    * to the general synchronization, or turn `on/off` synchronization of certain
    * attributes.
+   *
+   * Without a rendering engine id the options are those of the viewport with
+   * this id in every rendering engine. With one they are those of the
+   * viewport of that rendering engine only, and go before the others, so two
+   * rendering engines whose viewports have the same id keep their options
+   * apart.
+   *
+   * @param viewportId - The id of the viewport.
+   * @param options - The options of the viewport.
+   * @param renderingEngineId - The id of the rendering engine of the viewport.
    */
   public setOptions(
     viewportId: string,
-    options: Record<string, unknown> = {}
+    options: Record<string, unknown> = {},
+    renderingEngineId?: string
   ): void {
-    this._viewportOptions[viewportId] = options;
+    if (renderingEngineId === undefined) {
+      this._viewportOptions[viewportId] = options;
+      return;
+    }
+
+    if (!this._renderingEngineViewportOptions.has(renderingEngineId)) {
+      this._renderingEngineViewportOptions.set(renderingEngineId, new Map());
+    }
+
+    this._renderingEngineViewportOptions
+      .get(renderingEngineId)
+      .set(viewportId, options);
   }
 
   /**
@@ -99,9 +129,26 @@ class Synchronizer {
     this._enabled = enabled;
   }
 
-  /** Gets the options for the given viewport id */
-  public getOptions(viewportId: string): Record<string, unknown> | undefined {
-    return this._viewportOptions[viewportId];
+  /**
+   * Gets the options for the given viewport id: with a rendering engine id,
+   * the options set for the viewport of that rendering engine, else those set
+   * for the viewport id alone.
+   *
+   * @param viewportId - The id of the viewport.
+   * @param renderingEngineId - The id of the rendering engine of the viewport.
+   * @returns The options, or undefined when none were set.
+   */
+  public getOptions(
+    viewportId: string,
+    renderingEngineId?: string
+  ): Record<string, unknown> | undefined {
+    return (
+      (renderingEngineId === undefined
+        ? undefined
+        : this._renderingEngineViewportOptions
+            .get(renderingEngineId)
+            ?.get(viewportId)) ?? this._viewportOptions[viewportId]
+    );
   }
 
   /**

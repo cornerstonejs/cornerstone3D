@@ -91,10 +91,16 @@ class VolumeViewport3D extends GenericViewport<
   private primaryDataId?: string;
   /**
    * The number of the newest `setDisplaySets` call. An older call that is
-   * still loading or mounting stops at its next step and leaves the viewport
-   * to the newer one.
+   * still loading stops after its load and leaves the viewport to the newer
+   * one.
    */
   private setDataRequestId = 0;
+  /**
+   * The commit of a `setDisplaySets` call while it runs: the removal of the
+   * shown display sets and the mount of the new ones. A newer call does not
+   * stop it; it waits for its end before it removes anything.
+   */
+  private mountCommit?: Promise<void>;
   /**
    * The presentation of each display set after its mount, which
    * `resetDisplaySetPresentation` goes back to.
@@ -221,8 +227,12 @@ class VolumeViewport3D extends GenericViewport<
    * cache. The mount then takes that data and the render mode it was loaded
    * for, so each display set loads once.
    *
-   * A newer call replaces an older one that has not ended: the older call
-   * then removes, mounts and fires nothing more, as the planar viewport.
+   * A newer call stops an older one while the older one loads. Once a call
+   * has loaded, its commit (the removal of the shown display sets and the
+   * mounts) runs to its end and the call fires its event, and a newer call
+   * waits for it before it removes anything, as on the planar viewport. So a
+   * listener of an event of the commit, as VOI_MODIFIED, that starts a call
+   * that rejects leaves the complete new scene.
    *
    * @param entries - Display sets to mount, each with its own render-mode options.
    */
@@ -251,13 +261,44 @@ class VolumeViewport3D extends GenericViewport<
       staged.push({ data, renderMode });
     }
 
-    this.removeAllData();
+    if (this.mountCommit) {
+      await this.mountCommit.catch(() => undefined);
 
-    for (const [index, { displaySetId, options = {} }] of entries.entries()) {
       if (isStale()) {
         return;
       }
+    }
 
+    const commit = this.commitDisplaySets(entries, staged);
+
+    this.mountCommit = commit;
+
+    try {
+      await commit;
+    } finally {
+      if (this.mountCommit === commit) {
+        this.mountCommit = undefined;
+      }
+    }
+
+    this.triggerNewVolume(entries.map(({ displaySetId }) => displaySetId));
+  }
+
+  /**
+   * The commit of `setDisplaySets`: removes the shown display sets and
+   * mounts the new ones with the data and the render modes that the call
+   * loaded. A newer call does not stop it.
+   */
+  private async commitDisplaySets(
+    entries: Array<{
+      displaySetId: string;
+      options?: Volume3DSetDataOptions;
+    }>,
+    staged: Volume3DStagedLoad[]
+  ): Promise<void> {
+    this.removeAllData();
+
+    for (const [index, { displaySetId, options = {} }] of entries.entries()) {
       await this.mountDisplaySet(
         displaySetId,
         {
@@ -265,16 +306,9 @@ class VolumeViewport3D extends GenericViewport<
           role: options.role ?? (index === 0 ? 'source' : 'overlay'),
         },
         false,
-        isStale,
         staged[index]
       );
     }
-
-    if (isStale()) {
-      return;
-    }
-
-    this.triggerNewVolume(entries.map(({ displaySetId }) => displaySetId));
   }
 
   /**
@@ -305,16 +339,14 @@ class VolumeViewport3D extends GenericViewport<
   /**
    * Mounts one 3D display set, as `addDisplaySet` describes. It takes the
    * data and the render mode that `setDisplaySets` loaded (`staged`), and
-   * loads them without it. A mount of a `setDisplaySets` call that a newer
-   * call replaced (`shouldIgnore`) stops without a change. A source fires
-   * VOLUME_VIEWPORT_NEW_VOLUME here only when `notifiesNewVolume` is set:
-   * `setDisplaySets` fires it once for all its display sets.
+   * loads them without it. A source fires VOLUME_VIEWPORT_NEW_VOLUME here
+   * only when `notifiesNewVolume` is set: `setDisplaySets` fires it once for
+   * all its display sets.
    */
   private async mountDisplaySet(
     displaySetId: string,
     volumeOptions: Volume3DSetDataOptions,
     notifiesNewVolume: boolean,
-    shouldIgnore?: () => boolean,
     staged?: Volume3DStagedLoad
   ): Promise<void> {
     if (this.isDestroyed) {
@@ -339,12 +371,7 @@ class VolumeViewport3D extends GenericViewport<
     };
     const data =
       staged?.data ?? (await this.dataProvider.load(displaySetId, dataOptions));
-    const added = await this.addLoadedData(
-      displaySetId,
-      data,
-      dataOptions,
-      shouldIgnore
-    );
+    const added = await this.addLoadedData(displaySetId, data, dataOptions);
 
     if (!added) {
       return;

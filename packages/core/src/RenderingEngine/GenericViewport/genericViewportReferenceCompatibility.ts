@@ -60,6 +60,35 @@ export function isGenericViewportReferenceViewable(
   );
 }
 
+/**
+ * Whether a stack could show a view reference if it showed its images as a
+ * volume, which the option `asVolume` asks. As on the legacy stack viewport,
+ * a reference that names no image is viewable when it names a volume or a
+ * frame of reference and is in the frame of reference of the stack. Its
+ * plane and its slice index are not asked: a volume turns and moves to them.
+ */
+export function isGenericViewportReferenceViewableAsVolume(
+  viewRef: ViewReference,
+  contexts: GenericViewportReferenceContext[]
+): boolean {
+  if (
+    !viewRef ||
+    viewRef.referencedImageId ||
+    !(viewRef.volumeId || viewRef.FrameOfReferenceUID)
+  ) {
+    return false;
+  }
+
+  return contexts.some(
+    (context) =>
+      isFrameOfReferenceCompatible(viewRef, context) &&
+      (!viewRef.planeRestriction ||
+        isPlaneRestrictionViewable(viewRef.planeRestriction, context, {
+          withOrientation: true,
+        }))
+  );
+}
+
 export function getDimensionGroupReferenceContext(
   value: unknown
 ): Pick<
@@ -252,12 +281,25 @@ function isPlaneCompatible(
   }
 
   return (
-    isEqual(viewRef.viewPlaneNormal, viewPlaneNormal) ||
+    isAlongViewPlaneNormal(viewRef.viewPlaneNormal, viewPlaneNormal) ||
+    Boolean(options.withOrientation)
+  );
+}
+
+/**
+ * Whether a normal is the view plane normal or its opposite, so that a
+ * reference with that normal lies in the planes of the view.
+ */
+function isAlongViewPlaneNormal(
+  normal: Point3,
+  viewPlaneNormal: Point3
+): boolean {
+  return (
+    isEqual(normal, viewPlaneNormal) ||
     isEqual(
       vec3.negate(vec3.create(), viewPlaneNormal as unknown as vec3) as Point3,
-      viewRef.viewPlaneNormal
-    ) ||
-    Boolean(options.withOrientation)
+      normal
+    )
   );
 }
 
@@ -449,6 +491,13 @@ function isDimensionGroupCompatible(
   );
 }
 
+/**
+ * Whether the slice index of a reference is the slice of the view, or one
+ * that navigation reaches. The slice index of a reference in another plane
+ * counts in the slices of that plane: with orientation and navigation the
+ * view turns to that plane and goes to that slice, so the index is not
+ * checked against the slices of the view, as on the legacy volume viewport.
+ */
 function isSliceIndexCompatible(
   viewRef: ViewReference,
   context: GenericViewportReferenceContext,
@@ -460,6 +509,16 @@ function isSliceIndexCompatible(
     | undefined;
 
   if (sliceIndex === undefined) {
+    return true;
+  }
+
+  if (
+    options.withOrientation &&
+    options.withNavigation &&
+    viewRef.viewPlaneNormal &&
+    context.viewPlaneNormal &&
+    !isAlongViewPlaneNormal(viewRef.viewPlaneNormal, context.viewPlaneNormal)
+  ) {
     return true;
   }
 

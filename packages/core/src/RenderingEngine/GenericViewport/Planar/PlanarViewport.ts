@@ -62,7 +62,10 @@ import GenericViewport from '../GenericViewport';
 import { disableViewportWidgets } from '../viewportWidgets';
 import type { ViewportWidget } from '../Volume3D/viewport3DTypes';
 import type { GenericViewportReferenceContext } from '../genericViewportReferenceCompatibility';
-import { isPointNearImagePlane } from '../genericViewportReferenceCompatibility';
+import {
+  isGenericViewportReferenceViewableAsVolume,
+  isPointNearImagePlane,
+} from '../genericViewportReferenceCompatibility';
 import {
   getGenericViewportImageDisplaySet,
   isGenericViewportImageDisplaySet,
@@ -2121,6 +2124,12 @@ class PlanarViewport extends GenericViewport<
    * only as viewable when the point lies within half a slice spacing of the
    * image shown, as the legacy stack viewport does.
    *
+   * In stack mode `asVolume` takes a reference that names no image as
+   * viewable when it names a volume or a frame of reference and is in the
+   * frame of reference of the stack, whatever its plane and slice, as the
+   * legacy stack viewport does: the stack could show it as a volume. In
+   * volume mode `asVolume` has no effect.
+   *
    * @param viewRef - View reference to test.
    * @param options - Optional compatibility flags for the spatial check.
    * @returns `true` when the reference can be viewed in this viewport state.
@@ -2129,10 +2138,15 @@ class PlanarViewport extends GenericViewport<
     viewRef: ViewReference,
     options: ReferenceCompatibleOptions = {}
   ): boolean {
-    const isViewable = super.isReferenceViewable(
-      getPlanarReferenceForViewableCheck(viewRef),
-      options
-    );
+    const reference = getPlanarReferenceForViewableCheck(viewRef);
+    const isViewable = super.isReferenceViewable(reference, options);
+
+    if (!isViewable && options.asVolume && this.getCurrentMode() === 'stack') {
+      return isGenericViewportReferenceViewableAsVolume(
+        reference,
+        this.getReferenceViewContexts()
+      );
+    }
 
     if (
       !isViewable ||

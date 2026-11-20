@@ -110,6 +110,14 @@ function removeGeometriesOfRemovedSegments(
   });
 }
 
+/**
+ * One pass of `updateSurfaceData`: converts the segments of the labelmap,
+ * takes the surfaces of the segments that it no longer has away, and gives
+ * the others their new points and polys. A segment that the labelmap lost
+ * while the pass converted gets no geometry again, and a new segment without
+ * voxels gets none: an empty surface is not cached. The pass waits for the
+ * surfaces that it caches before it fires SEGMENTATION_MODIFIED.
+ */
 async function updateSurfaceDataOnce(segmentationId: string) {
   const surfacesObj =
     await computeSurfaceFromLabelmapSegmentation(segmentationId);
@@ -170,6 +178,10 @@ async function updateSurfaceDataOnce(segmentationId: string) {
     const geometry = cache.getGeometry(geometryId) as Types.IGeometry;
 
     if (!geometry) {
+      if (!indices.includes(segmentIndex) || !data.points?.length) {
+        return;
+      }
+
       // means it is a new segment getting added while we were
       // listening to the segmentation data modified event
 
@@ -217,7 +229,7 @@ async function updateSurfaceDataOnce(segmentationId: string) {
     }
   });
 
-  await Promise.all(promises);
+  await Promise.all(promises.flat(2));
 
   triggerSegmentationModified(segmentationId);
 }

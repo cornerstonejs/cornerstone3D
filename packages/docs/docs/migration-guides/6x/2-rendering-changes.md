@@ -428,6 +428,12 @@ are, so between viewports of other data it gives another size.
   With `asNearbyProjection` a reference by a focal point only shows in stack
   mode when the point lies within half a slice spacing of the image on
   display, as on the legacy stack viewport.
+- **`isReferenceViewable` honours `asVolume` in stack mode,** which asks
+  whether the stack could show the reference as a volume. A reference that
+  names no image is viewable with it when it names a volume or a frame of
+  reference and is in the frame of reference of the stack, in any plane and
+  at any slice, as on the legacy stack viewport. In 5.x the next planar
+  viewport did not read the option. In volume mode it has no effect.
 - **A view reference crosses between a stack and a volume of the same
   images.** A next view reference names its display set (`dataId`). A planar
   viewport of another display set that has the image that the reference
@@ -463,7 +469,12 @@ are, so between viewports of other data it gives another size.
   viewport counted it against the number of images, so
   `isReferenceViewable(viewRef, { withNavigation: true })` answered false for
   most sagittal and coronal slices of a CT, and a viewport that copied
-  another only after that check stayed on its slice.
+  another only after that check stayed on its slice. With
+  `{ withOrientation: true, withNavigation: true }` a reference of another
+  plane of the volume is viewable whatever its slice index, which counts in
+  the slices of its own plane, as on the legacy volume viewport. In 5.x the
+  next planar viewport checked it against the slices of the view, so an axial
+  view of 8 slices refused a sagittal reference at slice 16.
 - **`IMAGE_SPACING_CALIBRATED` fires from `calibrateSpacing(imageId)`,** and
   its detail has `worldToIndex` and `scale`. It does not fire by itself when
   a newly shown image has another calibration, as it did on the legacy stack
@@ -818,6 +829,11 @@ legacy picture within two levels of 255.
   representation of a segmentation mounts the surface of each segment as a
   display set, and the colour is its presentation. On the legacy viewport the
   colour of a surface that was in the scene did not change.
+- **New points and polys of a surface show at the next render.** A 3D
+  viewport draws them when they are other arrays, also of the same lengths,
+  or the same arrays with another length (a face appended in place). The
+  legacy viewport kept the old mesh when the lengths were the same. In 5.x
+  the next 3D viewport drew other arrays only, not a face appended in place.
 - **A viewport that shows only surfaces says `'empty'`.** The tools mount a
   surface as an overlay, and `getCurrentMode()` answers for the source
   display set.
@@ -1017,6 +1033,28 @@ legacy picture within two levels of 255.
   and each viewport is read from its own rendering engine.
 - **The camera position synchronizer copies a view reference.** On a next
   target it sets the view reference of the source, and its zoom and pan.
+- **A synchronizer keeps apart the options of two rendering engines whose
+  viewports have the same id.** `setOptions` and `getOptions` of a
+  synchronizer take the id of the rendering engine as a last argument,
+  which can be left out:
+  `synchronizer.setOptions(viewportId, options, renderingEngineId)` and
+  `synchronizer.getOptions(viewportId, renderingEngineId)`. Options set
+  with it are those of the viewport of that rendering engine and go before
+  the options set without it, which are those of the viewport id in every
+  rendering engine, as in 5.x. The image slice and the zoom and pan
+  synchronizers read the options of a target with its rendering engine id.
+  In the same way `utilities.spatialRegistrationMetadataProvider` takes
+  the rendering engine ids after the viewport ids: `add(query, matrix)`
+  with the query
+  `[viewportId1, viewportId2, renderingEngineId1, renderingEngineId2]`
+  adds a registration for the viewports of two rendering engines, and
+  `get('spatialRegistrationModule', ...query)` gives it before the one
+  added for the viewport ids alone. The image slice synchronizer asks so,
+  and `utilities.calculateViewportsSpatialRegistration` adds its
+  registration both with the rendering engine ids and, as in 5.x, for the
+  viewport ids alone. In 5.x two
+  rendering engines whose viewports had the same id shared the options and
+  the registrations.
 - **`utilities.getImageLegacy(element)` of the core is gone.** Use
   `cache.getImage(viewport.getCurrentImageId())`.
 - **`AdvancedMagnifyTool` resets on a stack of images of several sizes.** It

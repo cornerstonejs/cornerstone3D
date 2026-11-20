@@ -150,4 +150,61 @@ describe('zoomPanSyncCallback', () => {
     expect(targetViewport.setPan).toHaveBeenCalledWith([4, -2]);
     expect(targetViewport.render).toHaveBeenCalledTimes(1);
   });
+
+  it('reads the source from its own rendering engine when the target is in another one with a viewport of the same id', () => {
+    const sourceViewport = { id: 'axial-of-engine-a' };
+    const sameIdViewportOfEngineB = { id: 'axial-of-engine-b' };
+    const targetViewport = {
+      render: jest.fn(),
+      setViewState: jest.fn(),
+    };
+    const engines = {
+      a: { getViewport: jest.fn(() => sourceViewport) },
+      b: {
+        getViewport: jest.fn((viewportId) =>
+          viewportId === 'axial' ? sameIdViewportOfEngineB : targetViewport
+        ),
+      },
+    };
+
+    getRenderingEngine.mockImplementation((id) => engines[id]);
+    viewportProjection.getPresentation.mockReturnValue({
+      pan: [1, 2],
+      zoom: 2,
+    });
+    viewportProjection.withPresentation.mockReturnValue({ scale: [2, 2] });
+
+    zoomPanSyncCallback(
+      createSynchronizerInstance(),
+      { renderingEngineId: 'a', viewportId: 'axial' },
+      { renderingEngineId: 'b', viewportId: 'target' }
+    );
+
+    expect(viewportProjection.getPresentation).toHaveBeenCalledWith(
+      sourceViewport,
+      expect.anything()
+    );
+  });
+
+  it('does nothing when the source is disabled', () => {
+    const targetViewport = {
+      render: jest.fn(),
+      setViewState: jest.fn(),
+    };
+    const engines = {
+      a: { getViewport: jest.fn(() => undefined) },
+      b: { getViewport: jest.fn(() => targetViewport) },
+    };
+
+    getRenderingEngine.mockImplementation((id) => engines[id]);
+
+    zoomPanSyncCallback(
+      createSynchronizerInstance(),
+      { renderingEngineId: 'a', viewportId: 'axial' },
+      { renderingEngineId: 'b', viewportId: 'target' }
+    );
+
+    expect(viewportProjection.getPresentation).not.toHaveBeenCalled();
+    expect(targetViewport.render).not.toHaveBeenCalled();
+  });
 });
