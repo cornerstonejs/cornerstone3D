@@ -1,5 +1,6 @@
 import {
   cache,
+  eventTarget,
   getEnabledElements,
   getRenderingEngine,
 } from '@cornerstonejs/core';
@@ -22,6 +23,8 @@ import type {
   Annotation,
 } from '../types';
 import type { SegmentationRepresentation } from '../types/SegmentationStateTypes';
+import type { SegmentationRenderedEventType } from '../types/EventTypes';
+import { Events } from '../enums';
 import AnnotationDisplayTool from './base/AnnotationDisplayTool';
 import { distanceToPoint } from '../utilities/math/point';
 import { pointToString } from '../utilities/pointToString';
@@ -155,8 +158,47 @@ class SegmentationIntersectionTool extends AnnotationDisplayTool {
   };
 
   onSetToolEnabled = (): void => {
+    eventTarget.addEventListener(
+      Events.SEGMENTATION_RENDERED,
+      this._onSegmentationRendered
+    );
     this._init();
   };
+
+  onSetToolDisabled = (): void => {
+    eventTarget.removeEventListener(
+      Events.SEGMENTATION_RENDERED,
+      this._onSegmentationRendered
+    );
+  };
+
+  /**
+   * Draws the viewports of the tool group again when a viewport has drawn a
+   * Surface representation, as after new surface data or a change of its
+   * visibility, so that the lines follow the surfaces. A tool that its group
+   * no longer holds stops listening.
+   */
+  private _onSegmentationRendered = ((
+    evt: SegmentationRenderedEventType
+  ): void => {
+    const toolGroup = getToolGroup(this.toolGroupId);
+
+    if (toolGroup?.getToolInstances()[this.getToolName()] !== this) {
+      eventTarget.removeEventListener(
+        Events.SEGMENTATION_RENDERED,
+        this._onSegmentationRendered
+      );
+      return;
+    }
+
+    if (evt.detail.type !== SegmentationRepresentations.Surface) {
+      return;
+    }
+
+    triggerAnnotationRenderForViewportIds(
+      toolGroup.viewportsInfo.map(({ viewportId }) => viewportId)
+    );
+  }) as EventListener;
 
   onCameraModified = (evt: Types.EventTypes.CameraModifiedEvent): void => {
     this._init();

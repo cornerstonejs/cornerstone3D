@@ -1,6 +1,7 @@
 import * as cornerstone3D from '@cornerstonejs/core';
 import vtkSphereSource from '@kitware/vtk.js/Filters/Sources/SphereSource';
 import * as csTools3d from '../src/index';
+import * as polySeg from '../../polymorphic-segmentation/src/index';
 import * as testUtils from '../../../utils/test/testUtils';
 import { getConfig, setConfig } from '../src/config';
 import { getSurfaceActorEntry } from '../src/stateManagement/segmentation/helpers';
@@ -22,7 +23,9 @@ const {
   Enums: csToolsEnums,
 } = csTools3d;
 const { Events: csToolsEvents } = csToolsEnums;
-const { Surface } = csToolsEnums.SegmentationRepresentations;
+const { Surface, Labelmap } = csToolsEnums.SegmentationRepresentations;
+const { triggerSegmentationDataModified } =
+  segmentation.triggerSegmentationEvents;
 
 const renderingEngineId = utilities.uuidv4();
 const toolGroupId = 'segmentationIntersectionNext';
@@ -60,6 +63,42 @@ const VOXEL = 1;
  * away.
  */
 const SCROLLS = [5, -10, 14];
+
+/**
+ * The voxel block of segment 1 of the labelmap that polySeg converts, as
+ * [first, last] index on each axis: x from 4 to 16 mm, y from 19 to 31 mm and
+ * z from 25 to 35 mm. Its faces lie half a voxel outside these voxels.
+ */
+const LABELMAP_BLOCK = [
+  [14, 26],
+  [14, 26],
+  [5, 15],
+];
+
+/** The shift along x, in voxels of 1 mm, of the block in an edit of the labelmap. */
+const BLOCK_MOVE = 8;
+
+/**
+ * The scroll from the slice at z = 30 to a slice at z = 21 or z = 39, which
+ * the block does not reach.
+ */
+const SCROLL_OUT_OF_BLOCK = 9;
+
+/**
+ * The longest wait, in ms, for a draw that follows a change of a surface.
+ * Karma drops a browser that sends nothing for 6 s, so a test that fails
+ * still ends within that.
+ */
+const REDRAW_TIMEOUT = 1500;
+
+/**
+ * The longest wait, in ms, for the first conversion of the labelmap by
+ * polySeg, which starts its worker.
+ */
+const FIRST_CONVERSION_TIMEOUT = 5000;
+
+/** The longest wait, in ms, for a new conversion of the labelmap by polySeg. */
+const CONVERSION_TIMEOUT = 3000;
 
 /** Makes a volume of 64 by 64 voxels of 1 mm and 10 slices in the cache. */
 async function createVolume() {
@@ -233,6 +272,85 @@ function radiusOnSlice(viewport, canvasPoint, height, center = CENTER) {
   );
 
   return Math.sqrt(Math.max(squared - height * height, 0));
+}
+
+/**
+ * The bounds in world x and y of the points of a path that an axial viewport
+ * drew, as [xMin, xMax, yMin, yMax].
+ */
+function worldBoundsOfPath(viewport, path) {
+  const worldPoints = path.points.map((point) => viewport.canvasToWorld(point));
+  const xs = worldPoints.map((point) => point[0]);
+  const ys = worldPoints.map((point) => point[1]);
+
+  return [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+}
+
+/**
+ * The bounds in world x and y of the faces of a voxel block of the series,
+ * as [xMin, xMax, yMin, yMax]. The series starts at x = -10 and y = 5, with
+ * voxels of 1 mm.
+ */
+function worldBoundsOfBlock([[i0, i1], [j0, j1]]) {
+  return [-10 + i0 - 0.5, -10 + i1 + 0.5, 5 + j0 - 0.5, 5 + j1 + 0.5];
+}
+
+/** Gives each voxel of a block of a labelmap the value `value`. */
+function fillBlock(voxelManager, [[i0, i1], [j0, j1], [k0, k1]], value) {
+  for (let k = k0; k <= k1; k++) {
+    for (let j = j0; j <= j1; j++) {
+      for (let i = i0; i <= i1; i++) {
+        voxelManager.setAtIJK(i, j, k, value);
+      }
+    }
+  }
+}
+
+/** The block of segment 1 moved by `BLOCK_MOVE` voxels along x. */
+function movedBlock() {
+  const [[i0, i1], ...others] = LABELMAP_BLOCK;
+
+  return [[i0 + BLOCK_MOVE, i1 + BLOCK_MOVE], ...others];
+}
+
+/**
+ * Expects one closed path on an axial viewport, in the colour `stroke`, whose
+ * bounds are those of the faces of the block within one voxel and a half.
+ */
+function expectCutOfBlock(viewport, stroke, block) {
+  const paths = drawnPaths(viewport);
+
+  expect(paths.length).toBe(1);
+  expect(paths[0]?.closed).toBe(true);
+  expect(paths[0]?.stroke).toBe(stroke);
+  expect(paths[0]?.points.length).toBeGreaterThan(3);
+
+  if (!paths[0]) {
+    return;
+  }
+
+  const bounds = worldBoundsOfPath(viewport, paths[0]);
+
+  worldBoundsOfBlock(block).forEach((value, index) => {
+    expect(Math.abs(bounds[index] - value)).toBeLessThan(1.5 * VOXEL);
+  });
+}
+
+/** The SVG path data that the tools drew on a viewport, joined. */
+function drawnPathData(viewport) {
+  return [...viewport.element.querySelectorAll('svg path')]
+    .map((path) => path.getAttribute('d'))
+    .join('|');
+}
+
+/**
+ * Resolves when the SVG path data of a viewport differs from `pathData`, or
+ * after `timeout` ms. The test then checks what is drawn.
+ */
+function pathsChangedFrom(viewport, pathData, timeout = REDRAW_TIMEOUT) {
+  return waitFor(() => drawnPathData(viewport) !== pathData, timeout).catch(
+    () => undefined
+  );
 }
 
 /** Asks for a draw of the annotations of a viewport and waits for it. */
@@ -476,4 +594,192 @@ describe('SegmentationIntersectionTool with the surface of a segmentation on a 3
 
     expect(drawnPaths(viewport).length).toBe(0);
   });
+
+  it('draws again on an idle planar viewport when the surface data changes and when its segment is hidden on the 3D viewport, with no other draw request', async function () {
+    const series = await createSeries({
+      id: 'segmentationIntersectionNextIdle',
+      size: SIZE,
+    });
+    const viewport = createNextViewport(renderingEngine, viewportId);
+
+    await showVolume(viewport, series, 10, {
+      orientation: OrientationAxis.AXIAL,
+    });
+    await showSphereOn3DViewport(renderingEngine);
+    await enableToolAndWaitForRender(viewport.element);
+
+    const surface = cache.getGeometry(geometryId).data;
+    const movedCenter = [CENTER[0] + MOVE_X, CENTER[1], CENTER[2]];
+    const height = heightOfCenter(viewport);
+    const cutRadius = Math.sqrt(RADIUS * RADIUS - height * height);
+    const firstPathData = drawnPathData(viewport);
+
+    expect(drawnPaths(viewport).length).toBe(1);
+
+    surface.points = surface.points.map((value, index) =>
+      index % 3 === 0 ? value + MOVE_X : value
+    );
+    triggerSegmentationDataModified(segmentationId);
+    await pathsChangedFrom(viewport, firstPathData);
+
+    const moved = drawnPaths(viewport);
+
+    expect(moved.length).toBe(1);
+    expect(moved[0]?.closed).toBe(true);
+    (moved[0]?.points || []).forEach((point) => {
+      expect(
+        Math.abs(
+          radiusOnSlice(viewport, point, height, movedCenter) - cutRadius
+        )
+      ).toBeLessThan(VOXEL);
+    });
+
+    const movedPathData = drawnPathData(viewport);
+
+    segmentation.config.visibility.setSegmentIndexVisibility(
+      viewport3DId,
+      { segmentationId, type: Surface },
+      1,
+      false
+    );
+    await pathsChangedFrom(viewport, movedPathData);
+
+    expect(drawnPaths(viewport).length).toBe(0);
+  }, 10000);
+});
+
+describe('SegmentationIntersectionTool with the surface that the polySeg add-on converts from a labelmap -- ', () => {
+  const labelmapSegmentationId = 'segmentationIntersectionNextLabelmap';
+  let renderingEngine;
+  let config;
+
+  beforeEach(function () {
+    renderingEngine = testUtils.setupTestEnvironment({
+      renderingEngineId,
+      toolGroupIds: [toolGroupId],
+      tools: [SegmentationIntersectionTool],
+      viewportIds: [viewportId],
+    }).renderingEngine;
+    config = getConfig();
+    polySeg.init();
+    setConfig({ ...config, addons: { ...config.addons, polySeg } });
+  });
+
+  afterEach(function () {
+    setConfig(config);
+    testUtils.cleanupTestEnvironment({
+      renderingEngineId,
+      toolGroupIds: [toolGroupId],
+    });
+    utilities.genericViewportDisplaySetMetadataProvider.clear?.();
+  });
+
+  /**
+   * Shows the series on an axial planar viewport of the tool group at the
+   * slice at z = 30, makes a labelmap of the series whose segment 1 is the
+   * block `LABELMAP_BLOCK`, and shows that segmentation as a Surface
+   * representation on a next 3D viewport outside the tool group, with no
+   * volume. Resolves when polySeg has converted the surface and the 3D
+   * viewport shows it, with the planar viewport, the 3D viewport and the
+   * voxel manager of the labelmap.
+   */
+  async function showConvertedSurface(id) {
+    const series = await createSeries({ id, size: SIZE });
+    const viewport = createNextViewport(renderingEngine, viewportId);
+
+    await showVolume(viewport, series, 10, {
+      orientation: OrientationAxis.AXIAL,
+    });
+    volumeLoader.createAndCacheDerivedLabelmapVolume(series.volumeId, {
+      volumeId: labelmapSegmentationId,
+    });
+
+    const { voxelManager } = cache.getVolume(labelmapSegmentationId);
+
+    fillBlock(voxelManager, LABELMAP_BLOCK, 1);
+    segmentation.addSegmentations([
+      {
+        segmentationId: labelmapSegmentationId,
+        representation: {
+          type: Labelmap,
+          data: { volumeId: labelmapSegmentationId },
+        },
+        config: { segments: { 1: {} } },
+      },
+    ]);
+    testUtils.createViewports(renderingEngine, {
+      viewportType: ViewportType.VOLUME_3D,
+      viewportId: viewport3DId,
+      orientation: OrientationAxis.CORONAL,
+      width: 300,
+      height: 300,
+      useEnableElement: true,
+    });
+    segmentation.addSegmentationRepresentations(viewport3DId, [
+      { segmentationId: labelmapSegmentationId, type: Surface },
+    ]);
+    await waitFor(
+      () => getSurfaceActorEntry(viewport3DId, labelmapSegmentationId, 1),
+      FIRST_CONVERSION_TIMEOUT
+    );
+
+    return {
+      viewport,
+      viewport3D: renderingEngine.getViewport(viewport3DId),
+      voxelManager,
+    };
+  }
+
+  /** The colour of segment 1 on the 3D viewport, as an SVG colour. */
+  function segmentStroke() {
+    const color = segmentation.config.color.getSegmentIndexColor(
+      viewport3DId,
+      labelmapSegmentationId,
+      1
+    );
+
+    return `rgb(${color.slice(0, 3).join(', ')})`;
+  }
+
+  it('gives the converted surface the frame of reference of the series, so a 3D viewport without a volume takes it and the tool draws the cut of the surface on a planar viewport of the series', async function () {
+    const { viewport, viewport3D } = await showConvertedSurface(
+      'segmentationIntersectionNextConverted'
+    );
+    const geometryIdOfSegment = segmentation.state
+      .getSegmentation(labelmapSegmentationId)
+      .representationData.Surface.geometryIds.get(1);
+
+    expect(viewport.getFrameOfReferenceUID()).toBe('bothModesFrame');
+    expect(
+      cache.getGeometry(geometryIdOfSegment).data.frameOfReferenceUID
+    ).toBe('bothModesFrame');
+    expect(viewport3D.getFrameOfReferenceUID()).toBe('bothModesFrame');
+
+    await enableToolAndWaitForRender(viewport.element);
+
+    expectCutOfBlock(viewport, segmentStroke(), LABELMAP_BLOCK);
+
+    await scrollAndWaitForRender(viewport, SCROLL_OUT_OF_BLOCK);
+
+    expect(drawnPaths(viewport).length).toBe(0);
+  }, 30000);
+
+  it('draws on an idle planar viewport the new cut of the surface that polySeg converts again after an edit of the labelmap', async function () {
+    const { viewport, voxelManager } = await showConvertedSurface(
+      'segmentationIntersectionNextEdited'
+    );
+
+    await enableToolAndWaitForRender(viewport.element);
+
+    const firstPathData = drawnPathData(viewport);
+
+    expectCutOfBlock(viewport, segmentStroke(), LABELMAP_BLOCK);
+
+    fillBlock(voxelManager, LABELMAP_BLOCK, 0);
+    fillBlock(voxelManager, movedBlock(), 1);
+    triggerSegmentationDataModified(labelmapSegmentationId);
+    await pathsChangedFrom(viewport, firstPathData, CONVERSION_TIMEOUT);
+
+    expectCutOfBlock(viewport, segmentStroke(), movedBlock());
+  }, 30000);
 });

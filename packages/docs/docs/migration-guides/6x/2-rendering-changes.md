@@ -1285,10 +1285,12 @@ legacy picture within two levels of 255.
   Surface representation, such as a 3D viewport beside the planar viewports
   of an MPR, of a visible representation and segment. The cut of a slice is
   made on its first draw and made again when a surface gets other points or
-  polys arrays, or arrays of another length. A 3D viewport of the tool group
-  gets no line. In 5.x the tool read `clippingFilter` of each actor entry,
-  which nothing set, and drew no line. The example `surfaceRendering` shows
-  it.
+  polys arrays, or arrays of another length. When a viewport draws a Surface
+  representation, as after new surface data or a change of its visibility,
+  the viewports of the tool group draw their lines again, with no other
+  draw request. A 3D viewport of the tool group gets no line. In 5.x the
+  tool read `clippingFilter` of each actor entry, which nothing set, and
+  drew no line. The example `surfaceRendering` shows it.
 
 ## The viewport type that a tool gets
 
@@ -1370,6 +1372,16 @@ and is deprecated.
   update after it gets voxels. In 5.x one such segment made the whole
   conversion reject ("Surface must have non-empty points array"), so no
   segment showed a surface.
+- **A surface that polySeg converts has the frame of reference of the
+  series.** A surface converted from a labelmap gets the frame of reference
+  of the labelmap: of its volume or its images, or of the volume or the
+  images that it references. A surface converted from contours gets the
+  frame of reference of their annotations. The `frameOfReferenceUID` of the
+  surface (`cache.getGeometry(geometryId).data`) names it. A 3D viewport
+  that shows only such surfaces takes it, so it matches the planar
+  viewports of the series, and `SegmentationIntersectionTool` cuts its
+  surfaces. In 5.x every converted surface had the frame of reference
+  `'test-frameOfReferenceUID'`.
 - **A Surface representation works without polySeg.** Without the polySeg
   add-on, a change of the data of a segmentation that has a Surface
   representation with surfaces of the application leaves those surfaces as
