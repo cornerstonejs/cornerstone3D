@@ -56,15 +56,15 @@ const ptVoiRange = { lower: 0, upper: 5 };
 /**
  * The PT look of the fusion viewport: hsv over 0 to 5, clear at 0, faint for
  * low uptake so that the CT stays visible, and stronger for high uptake. The
- * values are parts of the VOI range.
+ * values are PT values.
  */
 const ptColormap = {
   name: 'hsv',
   opacity: [
     { value: 0, opacity: 0 },
-    { value: 0.1, opacity: 0.25 },
-    { value: 0.5, opacity: 0.6 },
-    { value: 1, opacity: 0.8 },
+    { value: 0.5, opacity: 0.25 },
+    { value: 2.5, opacity: 0.6 },
+    { value: 5, opacity: 0.8 },
   ],
 };
 const defaultSlabThickness = 10;

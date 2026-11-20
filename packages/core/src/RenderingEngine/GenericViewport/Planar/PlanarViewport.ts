@@ -1397,10 +1397,16 @@ class PlanarViewport extends GenericViewport<
    * A change of the slab thickness fires `CAMERA_MODIFIED`, with the camera
    * as the previous camera, as the legacy volume viewport did when its slab
    * changed. The slab thickness synchronizer listens to it.
+   *
+   * In stack mode a change that leaves the VOI as it was fires no
+   * `VOI_MODIFIED` (`keepsStackVOI`), as the legacy stack viewport. Volume
+   * mode fires it for every change that names the VOI, as the legacy volume
+   * viewport.
    */
   protected notifyDataPresentationModified(
     displaySetId: string,
-    props: Partial<PlanarDataPresentation>
+    props: Partial<PlanarDataPresentation>,
+    previousPresentation?: PlanarDataPresentation
   ): void {
     if (this.suppressEvents) {
       return;
@@ -1427,7 +1433,10 @@ class PlanarViewport extends GenericViewport<
         presentation?.voiRange ??
         this.getDefaultVOIRange(displaySetId);
 
-      if (range) {
+      if (
+        range &&
+        !this.keepsStackVOI(displaySetId, presentation, previousPresentation)
+      ) {
         triggerEvent(this.element, Events.VOI_MODIFIED, {
           viewportId: this.id,
           range,
@@ -1446,6 +1455,34 @@ class PlanarViewport extends GenericViewport<
         volumeId,
       });
     }
+  }
+
+  /**
+   * Whether a presentation change of a display set in stack mode leaves its
+   * VOI as it was: the same range, where the default range stands for none,
+   * the same VOI LUT function and the same invert. The legacy stack viewport
+   * fired no `VOI_MODIFIED` when the same range was set again. False in
+   * volume mode, and when the presentation before the change is not known.
+   */
+  private keepsStackVOI(
+    displaySetId: string,
+    presentation: PlanarDataPresentation | undefined,
+    previousPresentation: PlanarDataPresentation | undefined
+  ): boolean {
+    if (!previousPresentation || this.getCurrentMode() !== 'stack') {
+      return false;
+    }
+
+    const defaultRange = this.getDefaultVOIRange(displaySetId);
+    const range = presentation?.voiRange ?? defaultRange;
+    const previousRange = previousPresentation.voiRange ?? defaultRange;
+
+    return (
+      range?.lower === previousRange?.lower &&
+      range?.upper === previousRange?.upper &&
+      presentation?.voiLUTFunction === previousPresentation.voiLUTFunction &&
+      presentation?.invert === previousPresentation.invert
+    );
   }
 
   /**

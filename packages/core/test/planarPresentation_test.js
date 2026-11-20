@@ -7,6 +7,7 @@ import {
 } from '../../../utils/demo/helpers/volumePresentationRecipes';
 import perfusionColorMap from '../../tools/examples/rectangleROIThreshold/preset';
 import { readStoredPicture } from './utils/storedPicture';
+import { SAMPLED_SLICE_REST_DELAY_MS } from '../src/RenderingEngine/GenericViewport/Planar/planarSampledSliceRest';
 import * as legacySigmoidPicture from './groundTruth/planarPresentation_legacy_sigmoid.png';
 import * as adapterCtCallbackPicture from './groundTruth/planarPresentation_adapter_callback_ct.png';
 import * as adapterPetCallbackPicture from './groundTruth/planarPresentation_adapter_callback_pet.png';
@@ -129,6 +130,20 @@ function renderAndWait(viewport) {
     viewport.element.addEventListener(Events.IMAGE_RENDERED, finish);
     viewport.render();
   });
+}
+
+/**
+ * Waits for the draw of the CPU path at rest, which samples the slice once
+ * more on the screen grid, and for the frames of the rendering engine.
+ */
+async function waitForDraws() {
+  await new Promise((resolve) =>
+    setTimeout(resolve, 3 * SAMPLED_SLICE_REST_DELAY_MS)
+  );
+
+  for (let frame = 0; frame < 3; frame++) {
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+  }
 }
 
 /** The pixels of the canvas of the viewport, as RGBA bytes. */
@@ -384,8 +399,8 @@ const OPACITY_LIST = [
  * The points of the scalar opacity function that the legacy volume viewport
  * class of 5.x made for a colormap with `OPACITY_LIST` as its opacity: value
  * and opacity of each point. The values were read from that class before it
- * was deleted. The planar legacy adapter measures the list in the window, as
- * a direct next viewport does: its points are 0, 0, 25.2 and 0.8.
+ * was deleted. A next planar viewport of 5.x and its legacy adapter measured
+ * the list in the window: their points were 0, 0, 25.2 and 0.8.
  */
 const LEGACY_OPACITY_LIST_POINTS = [0, 0, 0.1, 0.8];
 
@@ -430,41 +445,10 @@ describe('Planar presentation, a list of opacities in a colormap -- ', () => {
     cleanupEngine();
   });
 
-  it('reads an opacityMapping as the legacy volume viewport reads a list of opacities, and measures a list in opacity', async function () {
-    const [next, mapped] = createViewports(renderingEngine, ['next', 'mapped']);
+  it('reads a list of opacities in opacity as an opacityMapping, as the legacy volume viewport, on every next draw path', async function () {
     const sourceId = await createFlatVolume('opacityListSource', 0);
     const overlayId = await createRampVolume('opacityListOverlay');
-    const overlayColormap = () => ({
-      name: 'Grayscale',
-      opacity: OPACITY_LIST.map((point) => ({ ...point })),
-    });
     const overlayWindow = { lower: 0, upper: 252 };
-
-    for (const [viewport, colormap] of [
-      [next, overlayColormap()],
-      [mapped, { name: 'Grayscale', opacityMapping: OPACITY_LIST }],
-    ]) {
-      const sourceDataId = await showVolumeOnNext(viewport, sourceId);
-      const overlayDataId = `presentation:${viewport.id}:${overlayId}`;
-
-      utilities.genericViewportDisplaySetMetadataProvider.add(overlayDataId, {
-        imageIds: cache.getVolume(overlayId).imageIds,
-        volumeId: overlayId,
-      });
-      await viewport.addDisplaySet(overlayDataId);
-      viewport.setDisplaySetPresentation(sourceDataId, {
-        voiRange: { lower: 0, upper: 252 },
-      });
-      viewport.setDisplaySetPresentation(overlayDataId, {
-        voiRange: overlayWindow,
-        colormap,
-      });
-    }
-
-    for (const viewport of [next, mapped]) {
-      await renderAndWait(viewport);
-    }
-
     const opacityPointsOf = (viewport) =>
       Array.from(
         viewport
@@ -473,24 +457,83 @@ describe('Planar presentation, a list of opacities in a colormap -- ', () => {
           .getScalarOpacity(0)
           .getDataPointer()
       );
-    const largestToMapping = getLargestDifference(
-      readPixels(next),
-      readPixels(mapped)
-    );
+    const rows = [];
+
+    for (const path of NEXT_PATHS) {
+      const viewports = createViewports(renderingEngine, [
+        `${path.viewportId}List`,
+        `${path.viewportId}Mapping`,
+      ]);
+      const colormaps = [
+        {
+          name: 'Grayscale',
+          opacity: OPACITY_LIST.map((point) => ({ ...point })),
+        },
+        {
+          name: 'Grayscale',
+          opacityMapping: OPACITY_LIST.map((point) => ({ ...point })),
+        },
+      ];
+
+      for (const [index, viewport] of viewports.entries()) {
+        const sourceDataId = await showVolumeOnNext(
+          viewport,
+          sourceId,
+          path.options
+        );
+        const overlayDataId = `presentation:${viewport.id}:${overlayId}`;
+
+        utilities.genericViewportDisplaySetMetadataProvider.add(overlayDataId, {
+          imageIds: cache.getVolume(overlayId).imageIds,
+          volumeId: overlayId,
+        });
+        await viewport.addDisplaySet(overlayDataId, path.options);
+        viewport.setDisplaySetPresentation(sourceDataId, {
+          voiRange: { lower: 0, upper: 252 },
+        });
+        viewport.setDisplaySetPresentation(overlayDataId, {
+          voiRange: overlayWindow,
+          colormap: colormaps[index],
+        });
+        await renderAndWait(viewport);
+      }
+
+      await waitForDraws();
+
+      const [listed, mapped] = viewports;
+      const drawsWithVtk = path.renderMode.startsWith('vtk');
+
+      rows.push({
+        path: path.viewportId,
+        renderMode: listed.getRenderPlan()[0].renderMode,
+        listed: middleRow(readPixels(listed)).filter((_, x) => x % 4 === 0),
+        listedPoints: drawsWithVtk ? opacityPointsOf(listed) : null,
+        mappedPoints: drawsWithVtk ? opacityPointsOf(mapped) : null,
+        largestToMapping: getLargestDifference(
+          readPixels(listed),
+          readPixels(mapped)
+        ),
+      });
+    }
 
     console.log(
       `[PLANAR_OPACITY_LIST]${JSON.stringify({
         legacy: LEGACY_OPACITY_LIST_MIDDLE_ROW,
-        next: middleRow(readPixels(next)).filter((_, x) => x % 4 === 0),
-        mapped: middleRow(readPixels(mapped)).filter((_, x) => x % 4 === 0),
         legacyPoints: LEGACY_OPACITY_LIST_POINTS,
-        nextPoints: opacityPointsOf(next),
-        mappedPoints: opacityPointsOf(mapped),
-        largestToMapping,
+        rows,
       })}`
     );
-    expect(opacityPointsOf(mapped)).toEqual(LEGACY_OPACITY_LIST_POINTS);
-    expect(largestToMapping).toBeGreaterThan(1);
+
+    rows.forEach((row, index) => {
+      expect(row.renderMode).toBe(NEXT_PATHS[index].renderMode);
+
+      if (row.listedPoints) {
+        expect(row.listedPoints).toEqual(LEGACY_OPACITY_LIST_POINTS);
+        expect(row.mappedPoints).toEqual(LEGACY_OPACITY_LIST_POINTS);
+      }
+
+      expect(row.largestToMapping).toBe(0);
+    });
   }, 60000);
 });
 

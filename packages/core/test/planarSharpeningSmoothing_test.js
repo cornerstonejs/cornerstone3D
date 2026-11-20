@@ -144,6 +144,38 @@ function bandValue(x, y) {
   return (y >= 50 && y < 54) || (y >= 110 && y < 112) || x === 64 ? 255 : 0;
 }
 
+/**
+ * The opacity of a band of the fusion: what the list of `FUSION_COLORMAP`
+ * gives at the band value 255, read as a value of the data as the legacy
+ * volume viewport read it. Measured on the legacy volume viewport of 5.x: the
+ * list drew as the number 0.6, and as the list 0 to 0 and 1 to 0.6.
+ */
+const FUSION_BAND_OPACITY = 0.6;
+
+/**
+ * The plain fusion, computed by hand, as RGBA bytes: the grey of the pattern,
+ * and over a band the colour of the top of the hsv colormap, red, with
+ * `FUSION_BAND_OPACITY`. Where the bands are 0 the list gives no opacity.
+ */
+function computeFusionPicture() {
+  const pixels = new Uint8ClampedArray(SIZE * SIZE * 4);
+
+  for (let y = 0; y < SIZE; y++) {
+    for (let x = 0; x < SIZE; x++) {
+      const grey = patternValue(x, y);
+      const alpha = (FUSION_BAND_OPACITY * bandValue(x, y)) / 255;
+      const index = (y * SIZE + x) * 4;
+
+      pixels[index] = Math.round(grey * (1 - alpha) + 255 * alpha);
+      pixels[index + 1] = Math.round(grey * (1 - alpha));
+      pixels[index + 2] = Math.round(grey * (1 - alpha));
+      pixels[index + 3] = 255;
+    }
+  }
+
+  return pixels;
+}
+
 function fill(voxelManager, value, slices = 1) {
   for (let k = 0; k < slices; k++) {
     for (let y = 0; y < SIZE; y++) {
@@ -405,10 +437,12 @@ async function showNextVolume(
  * pictures are the expected pictures and the plain picture, with the render
  * passes of the legacy viewport, or for the fusion the next viewport on the
  * GPU. The plain fusion of the next viewport differs from the legacy one
- * before any sharpening (the colormap with an opacity mapping draws
- * brighter), so a fusion on the CPU is compared with the fusion of the next
- * viewport on the GPU, and a fusion on the GPU only by its render passes.
- * `apply` takes a setting of `CASES`, or the setting with both at 0.
+ * before any sharpening (the legacy volume viewport drew the opacity of the
+ * bands weaker, see the migration guide), so a fusion on the CPU is compared
+ * with the fusion of the next viewport on the GPU, and a fusion on the GPU by
+ * its render passes. Both plain fusions are also compared with the fusion
+ * computed by hand. `apply` takes a setting of `CASES`, or the setting with
+ * both at 0.
  */
 async function showReference(renderingEngine, referenceName) {
   if (referenceName === 'nextFusion') {
@@ -575,6 +609,13 @@ describe('Sharpening and smoothing of the planar viewports -- ', () => {
 
         if (comparesPicture) {
           expect(plain.over).toBe(0);
+        }
+
+        if (/fusion/i.test(referenceName)) {
+          expect(compareInside(computeFusionPicture(), plainNext)).toEqual({
+            max: 0,
+            over: 0,
+          });
         }
 
         expect(next.getRenderPasses()).toBe(null);

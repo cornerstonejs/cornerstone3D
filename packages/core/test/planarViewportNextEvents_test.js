@@ -195,6 +195,20 @@ const LEGACY_CALIBRATION_EVENTS = [1, 1].map((imageIdIndex) => ({
   worldToIndexOfPoint: [10, 4],
 }));
 
+/**
+ * How many VOI_MODIFIED events the legacy stack viewport of 5.x fired on the
+ * GPU for each range that `countVOIEvents` sets: the range on display, a new
+ * range three times, then another range. None for a range that was already
+ * on display. Measured on that class. On the CPU it fired one for each.
+ */
+const LEGACY_STACK_VOI_EVENTS = [0, 1, 0, 0, 1];
+
+/**
+ * The same for the legacy volume viewport of 5.x: one for each range, also
+ * for a range that was already on display.
+ */
+const LEGACY_VOLUME_VOI_EVENTS = [1, 1, 1, 1, 1];
+
 /** Makes and caches a volume of the fake volume loader. */
 async function createVolume(name = 'volumeURI') {
   const volumeId = testUtils.encodeVolumeIdInfo({
@@ -229,6 +243,47 @@ async function frames(count = 3) {
   for (let index = 0; index < count; index++) {
     await new Promise((resolve) => requestAnimationFrame(resolve));
   }
+}
+
+/**
+ * Sets on the source display set of a direct next viewport the range on
+ * display, the range 0 to 100 three times and the range 20 to 120, and
+ * counts the VOI_MODIFIED events of each.
+ */
+async function countVOIEvents(viewport) {
+  const displaySetId = viewport.getSourceDataId();
+  const shownRange =
+    viewport.getDisplaySetPresentation(displaySetId)?.voiRange ??
+    viewport.getDefaultVOIRange(displaySetId);
+  const ranges = [
+    shownRange,
+    { lower: 0, upper: 100 },
+    { lower: 0, upper: 100 },
+    { lower: 0, upper: 100 },
+    { lower: 20, upper: 120 },
+  ];
+  const counts = [];
+  let count = 0;
+  const listener = () => {
+    count += 1;
+  };
+
+  await frames();
+  viewport.element.addEventListener(Events.VOI_MODIFIED, listener);
+
+  for (const range of ranges) {
+    count = 0;
+    viewport.setDisplaySetPresentation(displaySetId, {
+      voiRange: { ...range },
+    });
+    viewport.render();
+    await frames();
+    counts.push(count);
+  }
+
+  viewport.element.removeEventListener(Events.VOI_MODIFIED, listener);
+
+  return counts;
 }
 
 /** Shows a volume on a direct next viewport. */
@@ -445,6 +500,46 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
       csTools3d.SynchronizerManager.destroySynchronizer('voi:next');
 
       expect(invert).toBe(LEGACY_SYNCED_INVERT);
+    });
+
+    it('fires in stack mode only when the range changes, on the GPU and on the CPU, as the legacy stack viewport on the GPU', async function () {
+      const series = await createSeries({ id: 'voiEventsStack' });
+      const counts = [];
+
+      for (const options of [{}, { renderBackend: 'cpu' }]) {
+        const viewport = createNextViewport(
+          renderingEngine,
+          `voiStack${counts.length}`
+        );
+
+        await showSeriesStack(viewport, series, 0, options);
+        counts.push(await countVOIEvents(viewport));
+      }
+
+      expect(counts).toEqual([
+        LEGACY_STACK_VOI_EVENTS,
+        LEGACY_STACK_VOI_EVENTS,
+      ]);
+    });
+
+    it('fires in volume mode for each range that is set, also for the range on display, on the GPU and on the CPU, as the legacy volume viewport', async function () {
+      const series = await createSeries({ id: 'voiEventsVolume' });
+      const counts = [];
+
+      for (const options of [{}, { renderBackend: 'cpu' }]) {
+        const viewport = createNextViewport(
+          renderingEngine,
+          `voiVolume${counts.length}`
+        );
+
+        await showSeriesVolume(viewport, series, 0, options);
+        counts.push(await countVOIEvents(viewport));
+      }
+
+      expect(counts).toEqual([
+        LEGACY_VOLUME_VOI_EVENTS,
+        LEGACY_VOLUME_VOI_EVENTS,
+      ]);
     });
   });
 

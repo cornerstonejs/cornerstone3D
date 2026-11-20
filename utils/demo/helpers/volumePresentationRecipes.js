@@ -101,8 +101,7 @@ export function petPresentation() {
  * viewport: a colormap over SUV 0 to 5 with the opacities of
  * `petColorMapOpacity`, which are weaker than the numbers of the callback.
  * They go in `opacityMapping`, whose values are values of the data, as in
- * the callback; a list in `opacity` is read as parts of the window on a next
- * viewport. The overall `opacity` is 1, so that `COLORMAP_MODIFIED` carries a
+ * the callback. The overall `opacity` is 1, so that `COLORMAP_MODIFIED` carries a
  * number as it did on a legacy viewport. Without a registration the colormap
  * is hsv, as in the callback. A registration, as the `preset` that some
  * examples give the callback, is registered under its name first.

@@ -263,11 +263,13 @@ leave the canvas. Against the legacy volume viewport:
   On a legacy volume viewport `setProperties({ colormap: { opacity } })` threw
   the points of a callback away and kept one opacity, so the same two steps
   give another picture.
-- **A list of opacities is read over the window.** A list in
-  `colormap.opacity` runs from 0 at the lower end of the window to 1 at its
-  upper end on a next planar viewport. The legacy volume viewport read the
-  values as values of the data. Give such a list as `colormap.opacityMapping`:
-  its values are values of the data, and a change of the window keeps them.
+- **A list of opacities holds values of the data.** A list in
+  `colormap.opacity` is read as `colormap.opacityMapping`, as on the legacy
+  volume viewport: its values are values of the data, on the GPU and on the
+  CPU, and a change of the window keeps them. In 5.x a next planar viewport
+  read such a list over the window, from 0 at its lower end to 1 at its upper
+  end: a list that gave 0.6 at the value 255 drew almost nothing over a
+  window of 0 to 255.
 - **No default properties.** `setDefaultProperties`, `getDefaultProperties`,
   `clearDefaultProperties` and `resetToDefaultProperties` have no twin. An
   application keeps its own default and sets it with
@@ -483,6 +485,12 @@ are, so between viewports of other data it gives another size.
   display set drawn as images. It stays the volume that the mount drew when
   the registration of the display set names another volume while the mount
   loads.
+- **In stack mode `VOI_MODIFIED` fires only for a change.** A
+  `setDisplaySetPresentation` call that leaves the window, the VOI function
+  and the invert of a stack as they were fires none, as the legacy stack
+  viewport on the GPU. In volume mode each such call fires it, as the legacy
+  volume viewport. In 5.x a next planar viewport, and the legacy stack
+  viewport on the CPU, fired it for each call.
 - **`suppressEvents` in the options of a planar viewport is honoured.** No
   call takes a `suppressEvents` argument.
 - **`isReferenceViewable` honours `asOverlay`,** so a labelmap image that is

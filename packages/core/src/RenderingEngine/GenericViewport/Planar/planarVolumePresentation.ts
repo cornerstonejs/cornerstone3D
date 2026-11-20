@@ -139,10 +139,9 @@ function applyColormapOpacity(args: {
   // A `threshold` is an ABSOLUTE scalar value (SUV / pixel value) spanning the
   // full voxel data range, matching the legacy volume path
   // (updateOpacityWithThreshold, which clamps to voxelManager.getRange()) and
-  // OHIF's ThresholdMenu (slider bounds = voxel range). An opacity ARRAY's
-  // normalized [0,1] values instead map over the VOI range (round-2 fusion
-  // behavior). Pick the domain accordingly so a threshold of e.g. 15 SUV is not
-  // clamped to a narrow VOI upper (which made everything transparent).
+  // OHIF's ThresholdMenu (slider bounds = voxel range). A single opacity spans
+  // the VOI range. Pick the domain accordingly so a threshold of e.g. 15 SUV is
+  // not clamped to a narrow VOI upper (which made everything transparent).
   const range =
     colormap.threshold !== undefined
       ? (getActorScalarRange(actor) ??
@@ -163,23 +162,24 @@ function applyColormapOpacity(args: {
 }
 
 /**
- * The opacity points of a colormap that gives an `opacityMapping` and no
- * opacity array, or undefined otherwise. As on the legacy volume viewport
- * (`applyOpacitySpec` in `utilities/colormap`), the values of the mapping are
- * absolute scalar values, each opacity is scaled by a numeric `opacity`, and a
- * threshold makes everything below it transparent. The points do not depend
- * on the VOI range, so a window level change keeps them.
+ * The opacity points of a colormap that gives a list of opacities, in
+ * `opacity` or in `opacityMapping`, or undefined otherwise. A list in
+ * `opacity` is the mapping, as on the legacy volume viewport
+ * (`_applyColormapOpacity` and `applyOpacitySpec` in `utilities/colormap` of
+ * 5.x): the values of the mapping are values of the data, each opacity is
+ * scaled by a numeric `opacity`, and a threshold makes everything below it
+ * transparent. The points do not depend on the VOI range, so a window level
+ * change keeps them.
  */
 function buildOpacityMappingPoints(
   colormap: ColormapPublic
 ): Array<[number, number]> | undefined {
-  const { opacityMapping } = colormap;
+  const opacityMapping =
+    Array.isArray(colormap.opacity) && colormap.opacity.length
+      ? colormap.opacity
+      : colormap.opacityMapping;
 
-  if (
-    !Array.isArray(opacityMapping) ||
-    !opacityMapping.length ||
-    Array.isArray(colormap.opacity)
-  ) {
+  if (!Array.isArray(opacityMapping) || !opacityMapping.length) {
     return;
   }
 
@@ -215,66 +215,14 @@ function buildColormapOpacityPoints(args: {
   const { colormap, range, fallbackOpacity } = args;
   const span = range.upper - range.lower;
   const delta = Math.max(Math.abs(span) * 0.001, 1e-3);
-  // An opacity ARRAY's `value`s (OpacityMapping.value) are normalized [0,1]
-  // fractions of the VOI range (see ColormapPublic docs: the minimum value maps
-  // to 0 opacity and the maximum value to 1 opacity). Map them onto the actual
-  // scalar range so an overlay opacity array (e.g. a PT/CT fusion colormap)
-  // attenuates by scalar value like the numeric opacity path (applyVolumeOpacity),
-  // which already spans the VOI range. Without this the points land at raw scalars
-  // (0.1 -> 0.1 SUV), making essentially all tissue opaque and hiding the
-  // underlying source slice in a fusion.
-  const toScalar = (normalized: number) => range.lower + normalized * span;
-  // `colormap.threshold`, by contrast, is an ABSOLUTE scalar value (SUV / pixel
-  // value): the legacy volume path (updateOpacityWithThreshold) clamps it straight
-  // to the voxel range, and OHIF's ThresholdMenu emits values in pixel units. So
-  // it is clamped to the range directly, NOT passed through toScalar.
+  // `colormap.threshold` is an ABSOLUTE scalar value (SUV / pixel value): the
+  // legacy volume path (updateOpacityWithThreshold) clamps it straight to the
+  // voxel range, and OHIF's ThresholdMenu emits values in pixel units. So it is
+  // clamped to the range directly.
   const threshold =
     colormap.threshold !== undefined
       ? Math.max(range.lower, Math.min(range.upper, colormap.threshold))
       : undefined;
-
-  if (Array.isArray(colormap.opacity) && colormap.opacity.length) {
-    const sortedPoints = colormap.opacity
-      .map(({ opacity, value }) => ({
-        opacity: clampToUnit(opacity),
-        value: toScalar(value),
-      }))
-      .sort((a, b) => a.value - b.value);
-
-    if (threshold === undefined) {
-      return dedupeOpacityPoints(
-        sortedPoints.map(({ value, opacity }) => [value, opacity])
-      );
-    }
-
-    const thresholdOpacity = resolvePointOpacityAtValue(
-      threshold,
-      sortedPoints,
-      fallbackOpacity
-    );
-    const points: Array<[number, number]> = [
-      [range.lower, 0],
-      [Math.max(range.lower, threshold - delta), 0],
-      [threshold, thresholdOpacity],
-    ];
-
-    sortedPoints.forEach(({ value, opacity }) => {
-      if (value > threshold) {
-        points.push([value, opacity]);
-      }
-    });
-
-    if (threshold < range.upper) {
-      const lastOpacity = points[points.length - 1][1];
-
-      if (points[points.length - 1][0] < range.upper) {
-        points.push([range.upper, lastOpacity]);
-      }
-    }
-
-    return dedupeOpacityPoints(points);
-  }
-
   const opacity =
     colormap.opacity !== undefined
       ? clampToUnit(colormap.opacity as number)
@@ -300,56 +248,6 @@ function buildColormapOpacityPoints(args: {
     [threshold, opacity],
     [range.upper, opacity],
   ];
-}
-
-function resolvePointOpacityAtValue(
-  scalarValue: number,
-  opacityPoints: Array<{ value: number; opacity: number }>,
-  fallbackOpacity: number
-): number {
-  if (!opacityPoints.length) {
-    return clampToUnit(fallbackOpacity);
-  }
-
-  if (scalarValue <= opacityPoints[0].value) {
-    return opacityPoints[0].opacity;
-  }
-
-  for (let i = 1; i < opacityPoints.length; i++) {
-    const previous = opacityPoints[i - 1];
-    const current = opacityPoints[i];
-
-    if (scalarValue <= current.value) {
-      const pointRange = current.value - previous.value;
-      const t =
-        pointRange > 0 ? (scalarValue - previous.value) / pointRange : 0;
-
-      return clampToUnit(
-        previous.opacity + (current.opacity - previous.opacity) * t
-      );
-    }
-  }
-
-  return opacityPoints[opacityPoints.length - 1].opacity;
-}
-
-function dedupeOpacityPoints(
-  points: Array<[number, number]>
-): Array<[number, number]> {
-  const deduped: Array<[number, number]> = [];
-
-  points.forEach(([value, opacity]) => {
-    const lastPoint = deduped[deduped.length - 1];
-
-    if (lastPoint && lastPoint[0] === value) {
-      lastPoint[1] = opacity;
-      return;
-    }
-
-    deduped.push([value, opacity]);
-  });
-
-  return deduped;
 }
 
 function getCurrentMaxOpacity(actor: vtkImageSlice): number {

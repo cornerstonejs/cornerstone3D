@@ -29,9 +29,10 @@
 //   pure zoom/pan/rotation call.
 // - VOI_MODIFIED is triggered by `PlanarViewport.notifyDataPresentationModified`
 //   whenever a `setDisplaySetPresentation` call touches `voiRange`/`invert`/
-//   `voiLUTFunction` AND resolves a non-undefined range -- this happens on
-//   every touching call with no old-vs-new diff, including a no-op repeat
-//   (see test 6, marked `test.fails`).
+//   `voiLUTFunction` AND resolves a non-undefined range. In stack mode a call
+//   that leaves the range, the VOI LUT function and the invert as they were
+//   fires none, as the legacy stack viewport (see test 6); in volume mode
+//   every touching call fires, as the legacy volume viewport.
 //
 // CustomEvents here are created via `triggerEvent` with no `bubbles: true`,
 // so they do not bubble; the recorder is always attached directly to the
@@ -464,41 +465,30 @@ test('setDisplaySetPresentation with a new voiRange fires VOI_MODIFIED with the 
   );
 });
 
-// Finding: `GenericViewport.mergeDataPresentation` -> `notifyDataPresentationModified`
-// fires VOI_MODIFIED whenever the merged props touch `voiRange` (see
-// PlanarViewport.ts around the `notifyDataPresentationModified` override), with
-// no comparison against the previously-stored value. Setting the exact same
-// VOI range a second time therefore fires VOI_MODIFIED again instead of being
-// a no-op. This is marked `test.fails` per shared-context rule 5 rather than
-// weakened, so a future fix that makes the no-op case silent will flip this
-// test to failing-when-it-should-pass and be caught.
-// Open issue: setting the same VOI range again fires VOI_MODIFIED (5.x did the same).
-test.fails(
-  'setting the same voiRange again is a no-op and must not fire VOI_MODIFIED (known divergence)',
-  async () => {
-    const ctx = await setupViewport();
-    const { viewport, element, displaySetId } = ctx;
+// The viewport of `setupViewport` shows a stack. `notifyDataPresentationModified`
+// compares the VOI with the stored presentation before the change, so setting
+// the same VOI range a second time fires no VOI_MODIFIED, as the legacy stack
+// viewport on the GPU (it returned early from `setVOIGPU` on an equal range).
+test('setting the same voiRange again in stack mode does not fire VOI_MODIFIED, as the legacy stack viewport', async () => {
+  const ctx = await setupViewport();
+  const { viewport, element, displaySetId } = ctx;
 
-    const recorder = recordEvents(element, ALL_TRACKED_EVENTS);
-    track(recorder.stop);
+  const recorder = recordEvents(element, ALL_TRACKED_EVENTS);
+  track(recorder.stop);
 
-    const sameRange = { lower: 0, upper: 100 };
-    viewport.setDisplaySetPresentation(displaySetId, { voiRange: sameRange });
-    viewport.render();
-    await waitForQuiescence(recorder);
+  const sameRange = { lower: 0, upper: 100 };
+  viewport.setDisplaySetPresentation(displaySetId, { voiRange: sameRange });
+  viewport.render();
+  await waitForQuiescence(recorder);
 
-    recorder.clear();
+  recorder.clear();
 
-    // Re-apply the exact same range: observed behavior fires VOI_MODIFIED
-    // again (count becomes 1, not 0), which is the divergence this test
-    // documents.
-    viewport.setDisplaySetPresentation(displaySetId, { voiRange: sameRange });
-    viewport.render();
-    await waitForQuiescence(recorder);
+  viewport.setDisplaySetPresentation(displaySetId, { voiRange: sameRange });
+  viewport.render();
+  await waitForQuiescence(recorder);
 
-    expect(recorder.count(Events.VOI_MODIFIED)).toBe(0);
-  }
-);
+  expect(recorder.count(Events.VOI_MODIFIED)).toBe(0);
+});
 
 // ==========================================================================
 // 7. Silence after destroy

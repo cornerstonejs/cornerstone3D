@@ -899,11 +899,9 @@ abstract class GenericViewport<
     displaySetId: DisplaySetId,
     props: Partial<TDataPresentation>
   ): TDataPresentation {
+    const previousPresentation = this.getDataPresentationState(displaySetId);
     const nextPresentation = {
-      ...((this.getDataPresentationState(displaySetId) || {}) as Record<
-        string,
-        unknown
-      >),
+      ...((previousPresentation || {}) as Record<string, unknown>),
       ...(props as Record<string, unknown>),
     } as TDataPresentation;
 
@@ -912,7 +910,11 @@ abstract class GenericViewport<
     // Notify only when the change targets a mounted dataset so that listeners
     // (VOI/colormap UI, synchronizers) react to applied presentation changes.
     if (this.bindings.has(displaySetId)) {
-      this.notifyDataPresentationModified(displaySetId, props);
+      this.notifyDataPresentationModified(
+        displaySetId,
+        props,
+        previousPresentation
+      );
     }
 
     return nextPresentation;
@@ -924,11 +926,14 @@ abstract class GenericViewport<
    * mounted. Concrete viewport families override this to emit their
    * presentation-modified events (e.g. `VOI_MODIFIED`, `COLORMAP_MODIFIED`) so
    * application UI and synchronizers can react to programmatic and tool-driven
-   * presentation changes. The base implementation is intentionally a no-op.
+   * presentation changes. `_previousPresentation` is the stored presentation
+   * before the change, when the change came through that path. The base
+   * implementation is intentionally a no-op.
    */
   protected notifyDataPresentationModified(
     _displaySetId: DisplaySetId,
-    _props: Partial<TDataPresentation>
+    _props: Partial<TDataPresentation>,
+    _previousPresentation?: TDataPresentation
   ): void {
     // Subclasses emit presentation-modified events; base viewports do not.
   }
