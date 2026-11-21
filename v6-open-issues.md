@@ -5,7 +5,7 @@ viewports, branch `feat/slice-first-step-1`) found along the way. Each row says 
 seen, how (measured or read), where, and what to do; the State column says what became
 of it. The list was started on 17 November 2026 and closed on 21 November 2026.
 
-State on 21 November 2026, 113 rows:
+State on 21 November 2026, 114 rows:
 - fixed (103): each with a test that failed first; the commit or package is named in
   the row; rows 8, 9, 39, 46, 90, 91, 96 and 97 by the owner's decisions of 20
   November, rows 101 to 109 from the external review of 20 November, row 112 from
@@ -14,8 +14,9 @@ State on 21 November 2026, 113 rows:
   6.0 API does it by design, or the owner decided so), with a line in the 6.0
   migration guide where an application sees it; rows 15, 36, 86, 88 and 89 by the
   owner's decisions of 20 November;
-- open (1): row 111, statistics on a labelmap over a video, which nothing had
-  before 6.0. It does not block 6.0.
+- open (2): row 111, statistics on a labelmap over a video, which nothing had
+  before 6.0; row 114, repository paths in the built declaration files, as in 5.x.
+  Neither blocks 6.0.
 
 ## The owner's decisions of 20 November
 
@@ -222,6 +223,7 @@ not run.
 | 111 | `utilities.segmentation.getStatistics` on a labelmap over a video viewport (row 39) throws in its worker: it reads the pixels of each frame as an image of the cache, and a video frame is never one; the video gives only the pixels of the frame on display. 5.x had no labelmap over a video at all. | Open. Found by package Q3 (20 November); the guide says it is not available | `getStatistics` and the video viewport | Give the statistics the frame pixels of the video (decode the frames of the labelmap's frames), if statistics on a video are wanted |
 | 112 | The video examples (`videoNavigation`, `videoSegmentation`) show no video in Safari on the iOS 18.3 simulator: the viewport keeps its background. The same at `cf4a6773e`, before the labelmap over a video, so it is not from that work; Chrome on the Android 15 emulator plays the same video, with the labelmap over it. 6.0 sets `playsInline` and `muted` on the video (the 5.x legacy viewport did not set `playsInline`). Not measured on 5.x or on a real iPhone. | Fixed (21 November). Found on the owner's iPhone: `videoNavigation` played after a tap on play, `videoSegmentation` (no play button) stayed black. Measured with a state overlay in Safari on the iOS simulator: Safari loads the metadata and then suspends with no frame (`readyState` 1), so the mount waited for ever for the first frame and the example never added its labelmap. When the element has stopped loading with no frame, the viewport plays it muted and pauses it at once (allowed without a tap); its own `muted` comes back. Both examples open on their first frame in the simulator, the labelmap over the video; jest test that failed first in `videoViewportNext.jest.js` | the video viewport in Safari on iOS | Find why: the video's codec in the simulator, the server's answer to the range requests Safari makes for a video, or the element; check on a real iPhone |
 | 113 | An application whose babel runs the regenerator plugin without the nullish coalescing transform cannot load `@cornerstonejs/core` 6.0.0-beta.1: `viewport3D.js` has `staged?.data ?? (await ...)`, and the regenerator stops with `'??' !== '||'`. OHIF's jest is such a set-up: 33 of its 153 suites did not run. 5.x had no such expression. | Fixed (21 November). Found by running OHIF's jest on 6.0.0-beta.1; the expression is a conditional now, and `noAwaitInNullishCoalescing.jest.js` (failed first) keeps an `await` out of every `??` of the published sources | `packages/core/src/RenderingEngine/GenericViewport/Volume3D/viewport3D.ts` | Keep `await` out of `??` in published code |
+| 114 | The built declaration files of core, tools, adapters, ai and the DICOM image loader hold types such as `import("packages/tools/dist/esm/types")`, a path that resolves only inside this repository, so an application's `tsc` reports errors inside the packages' own `.d.ts` files when it checks them (seen from OHIF with linked packages). The published 5.18.3 packages have the same (core 3 files, tools 2, adapters 14, ai 1, the image loader 5). | Open, from 5.x. Found by the OHIF upgrade (21 November); not a gap from 5.x | the declaration build (`tsc` with `paths`, then `tsc-alias`) | Make the declaration build write relative or package paths for inferred types (annotate the exported values, or let `tsc-alias` rewrite `import()` types) |
 
 ## Gone with the legacy viewports and the adapters
 
