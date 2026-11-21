@@ -394,8 +394,9 @@ class VolumeViewport3D extends GenericViewport<
       renderMode,
       role: volumeOptions.role,
     };
-    const data =
-      staged?.data ?? (await this.dataProvider.load(displaySetId, dataOptions));
+    const data = staged?.data
+      ? staged.data
+      : await this.dataProvider.load(displaySetId, dataOptions);
     const added = await this.addLoadedData(displaySetId, data, dataOptions);
 
     if (!added) {
