@@ -511,3 +511,88 @@ describe('Image plane metadata and frames of a video image', () => {
     }
   });
 });
+
+/**
+ * Gives a jsdom video element what Safari on iOS gives a video that has not
+ * played: its metadata and no frame, and a network that stopped
+ * (`suspend`). Only a muted `play()` loads the frame, as Safari allows
+ * without a tap; an unmuted one is refused.
+ */
+function stubSafariVideoElement(video) {
+  let paused = true;
+  let readyState = 1;
+
+  Object.defineProperty(video, 'videoWidth', { value: VIDEO_WIDTH });
+  Object.defineProperty(video, 'videoHeight', { value: VIDEO_HEIGHT });
+  Object.defineProperty(video, 'duration', { value: FRAMES / FPS });
+  Object.defineProperty(video, 'readyState', { get: () => readyState });
+  Object.defineProperty(video, 'networkState', { get: () => 1 });
+  Object.defineProperty(video, 'currentTime', { value: 0, writable: true });
+  Object.defineProperty(video, 'paused', { get: () => paused });
+  video.play = jest.fn(() => {
+    if (!video.muted) {
+      return Promise.reject(new DOMException('no tap', 'NotAllowedError'));
+    }
+    paused = false;
+    readyState = 4;
+    video.dispatchEvent(new Event('loadeddata'));
+
+    return Promise.resolve();
+  });
+  video.pause = jest.fn(() => {
+    paused = true;
+  });
+}
+
+describe('Next video viewport in Safari on iOS', () => {
+  it('opens on its first frame although Safari loads only the metadata of a video that has not played', async () => {
+    const element = document.createElement('div');
+
+    Object.defineProperty(element, 'clientWidth', { value: WIDTH });
+    Object.defineProperty(element, 'clientHeight', { value: HEIGHT });
+    document.body.appendChild(element);
+
+    const viewport = new VideoViewport({
+      id: 'video-safari',
+      element,
+      renderingEngineId: 'renderingEngine',
+      dataProvider: {
+        load: async (id) => ({
+          id,
+          type: 'video',
+          renderedUrl: 'https://server/video.mp4',
+          fps: FPS,
+          numberOfFrames: FRAMES,
+          frameRange: [1, FRAMES],
+          modality: 'XC',
+          metadata,
+        }),
+      },
+    });
+
+    try {
+      const mounted = viewport.setDisplaySets({ displaySetId: VIDEO_ID });
+
+      await flush();
+
+      const video = element.querySelector('video');
+
+      video.muted = false;
+      stubSafariVideoElement(video);
+      video.dispatchEvent(new Event('loadedmetadata'));
+
+      const outcome = await Promise.race([
+        mounted.then(() => 'mounted'),
+        new Promise((resolve) => setTimeout(() => resolve('stuck'), 500)),
+      ]);
+
+      expect(outcome).toBe('mounted');
+      expect(video.play).toHaveBeenCalled();
+      expect(video.paused).toBe(true);
+      expect(viewport.getFrameNumber()).toBe(1);
+    } finally {
+      viewport.destroy();
+      element.remove();
+    }
+  });
+});

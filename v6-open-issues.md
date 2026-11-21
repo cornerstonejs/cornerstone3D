@@ -6,16 +6,16 @@ seen, how (measured or read), where, and what to do; the State column says what 
 of it. The list was started on 17 November 2026 and closed on 21 November 2026.
 
 State on 21 November 2026, 112 rows:
-- fixed (101): each with a test that failed first; the commit or package is named in
+- fixed (102): each with a test that failed first; the commit or package is named in
   the row; rows 8, 9, 39, 46, 90, 91, 96 and 97 by the owner's decisions of 20
-  November, rows 101 to 109 from the external review of 20 November;
+  November, rows 101 to 109 from the external review of 20 November, row 112 from
+  the owner's iPhone;
 - decided or documented (9): left as they are on purpose (5.x did the same, the
   6.0 API does it by design, or the owner decided so), with a line in the 6.0
   migration guide where an application sees it; rows 15, 36, 86, 88 and 89 by the
   owner's decisions of 20 November;
-- open (2): row 111, statistics on a labelmap over a video, which nothing had
-  before 6.0; row 112, a video that does not play in Safari on the iOS simulator,
-  as before this work. Neither blocks 6.0.
+- open (1): row 111, statistics on a labelmap over a video, which nothing had
+  before 6.0. It does not block 6.0.
 
 ## The owner's decisions of 20 November
 
@@ -220,7 +220,7 @@ not run.
 | 109 | External review, 9: `removeSurfaceDisplaySets` removed the registration of a surface that another 3D viewport still showed (a mount of the display sets there then lost the segmentation of the surface); `addOrUpdateSurfaceDisplaySet` looked for the surface by the viewport id in any rendering engine (not reachable through the segmentation state, which is keyed by viewport id too); `cameraSyncCallback` did not check the target viewport (5.x threw too). | Fixed by package R1 (20 November): the registration goes when no viewport shows the surface; the lookup reads the actors of the viewport given; the callback bails out without a target; tests `surfaceDisplaySetViewportsNext_test.js` and a new test in `synchronizerCore.jest.js` (failed first) | `surfaceDisplaySet.ts`, `cameraSyncCallback.ts` | Keep the registration while it is shown; read the given viewport; guard the target |
 | 110 | A core jest worker died with SIGSEGV in about 1 of 5 full core jest runs on this Mac (Node 24.15.0), in a different file each time (`vtkStreamingOpenGLTexture.jest.js`, `renderHoldDeferral.jest.js`, `planarCanvasSharpeningSmoothing.jest.js`, `loadAndCacheRejection.jest.js`, `imageVolumeTextureSets.jest.js`); jest then counted 3 to 10 tests fewer and exited 1, and a rerun passed. The macOS crash report of each worker shows a V8 bug, not a test: a full garbage collection, started by a stack guard interrupt in `Builtins_BaselineOutOfLinePrologue` (Sparkplug), crashes in `ClearStaleLeftTrimmedPointerVisitor::VisitRootPointers` at 0x6 or 0xe (nodejs/node#62393, reported on 24.10 to 24.21, open). | Fixed by package Q4 (20 November): `jest.config.base.js` adds `--no-sparkplug` to `process.execArgv`, which jest-worker gives each worker (NODE_OPTIONS refuses the flag); every package config extends it. Before: 3 of 15 full core runs crashed; after: 0 of 15, 1820 passed each, 11 to 12 s a run as before. A run of one file runs in band in the jest process, which keeps Sparkplug | `jest.config.base.js` | Drop the flag once a Node 24 release carries the V8 fix |
 | 111 | `utilities.segmentation.getStatistics` on a labelmap over a video viewport (row 39) throws in its worker: it reads the pixels of each frame as an image of the cache, and a video frame is never one; the video gives only the pixels of the frame on display. 5.x had no labelmap over a video at all. | Open. Found by package Q3 (20 November); the guide says it is not available | `getStatistics` and the video viewport | Give the statistics the frame pixels of the video (decode the frames of the labelmap's frames), if statistics on a video are wanted |
-| 112 | The video examples (`videoNavigation`, `videoSegmentation`) show no video in Safari on the iOS 18.3 simulator: the viewport keeps its background. The same at `cf4a6773e`, before the labelmap over a video, so it is not from that work; Chrome on the Android 15 emulator plays the same video, with the labelmap over it. 6.0 sets `playsInline` and `muted` on the video (the 5.x legacy viewport did not set `playsInline`). Not measured on 5.x or on a real iPhone. | Open. Seen in the device check of 21 November | the video viewport in Safari on iOS | Find why: the video's codec in the simulator, the server's answer to the range requests Safari makes for a video, or the element; check on a real iPhone |
+| 112 | The video examples (`videoNavigation`, `videoSegmentation`) show no video in Safari on the iOS 18.3 simulator: the viewport keeps its background. The same at `cf4a6773e`, before the labelmap over a video, so it is not from that work; Chrome on the Android 15 emulator plays the same video, with the labelmap over it. 6.0 sets `playsInline` and `muted` on the video (the 5.x legacy viewport did not set `playsInline`). Not measured on 5.x or on a real iPhone. | Fixed (21 November). Found on the owner's iPhone: `videoNavigation` played after a tap on play, `videoSegmentation` (no play button) stayed black. Measured with a state overlay in Safari on the iOS simulator: Safari loads the metadata and then suspends with no frame (`readyState` 1), so the mount waited for ever for the first frame and the example never added its labelmap. When the element has stopped loading with no frame, the viewport plays it muted and pauses it at once (allowed without a tap); its own `muted` comes back. Both examples open on their first frame in the simulator, the labelmap over the video; jest test that failed first in `videoViewportNext.jest.js` | the video viewport in Safari on iOS | Find why: the video's codec in the simulator, the server's answer to the range requests Safari makes for a video, or the element; check on a real iPhone |
 
 ## Gone with the legacy viewports and the adapters
 
