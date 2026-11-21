@@ -1,5 +1,6 @@
 import * as cornerstone3D from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
+import { SAMPLED_SLICE_REST_DELAY_MS } from '../src/RenderingEngine/GenericViewport/Planar/planarSampledSliceRest';
 import {
   createNextViewport,
   createSeries,
@@ -10,13 +11,21 @@ import {
 } from './utils/planarSeriesBothModes';
 
 const { Enums, utilities } = cornerstone3D;
-const { OrientationAxis } = Enums;
+const { OrientationAxis, Events } = Enums;
 
 const renderingEngineId = utilities.uuidv4();
 const WIDTH = 400;
 
 /** The voxel of each slice whose grey on the canvas tells the slices apart. */
 const PROBE_VOXEL = [20, 9];
+
+/**
+ * The time a test may take that reads the canvas of 24 views at rest. On the
+ * CPU each view waits for the work at rest, which took a test about 5 s with
+ * the Intel build of Chromium on a loaded machine, the 5 s that jasmine gives
+ * a test by default.
+ */
+const READ_AT_REST_TIMEOUT = 15000;
 
 /** The images of the series in an order that leaves no slice by one step. */
 const JUMP_ORDER = [5, 0, 7, 2, 3, 1, 6, 4];
@@ -64,6 +73,39 @@ async function frames(count = 3) {
 /** Waits until what the viewport was asked for is drawn. */
 async function settle(viewport) {
   await frames();
+  await renderAndWait(viewport);
+}
+
+/**
+ * Makes a change of the view and waits until the viewport shows the picture
+ * of the new view at rest, for a read of the canvas. The first draw of a new
+ * slice starts the work at rest just before its IMAGE_RENDERED, and on the CPU
+ * a LINEAR slice is drawn once more by that work, sampled on the screen grid,
+ * SAMPLED_SLICE_REST_DELAY_MS later: one grey level up at the probe voxel. A
+ * read three frames after the change came before that draw on an idle machine
+ * and after it under load. A timer that ends that delay after the first
+ * IMAGE_RENDERED fires after the work at rest at any load, and the render
+ * after it waits for what that work asked for.
+ */
+async function changeAndSettleAtRest(viewport, change) {
+  let firstDrawAt;
+  const onRendered = () => {
+    firstDrawAt ??= performance.now();
+  };
+
+  viewport.element.addEventListener(Events.IMAGE_RENDERED, onRendered);
+  change();
+  await settle(viewport);
+  viewport.element.removeEventListener(Events.IMAGE_RENDERED, onRendered);
+  await new Promise((resolve) =>
+    setTimeout(
+      resolve,
+      Math.max(
+        0,
+        Math.ceil(firstDrawAt + SAMPLED_SLICE_REST_DELAY_MS - performance.now())
+      ) + 1
+    )
+  );
   await renderAndWait(viewport);
 }
 
@@ -134,16 +176,17 @@ async function greysByPlace(viewport, series) {
   const greys = [];
 
   for (let k = 0; k < series.imageIds.length; k++) {
-    viewport.setViewState({
-      slice:
-        viewport.getCurrentMode() === 'volume'
-          ? {
-              kind: 'volumePoint',
-              sliceWorldPoint: worldOfVoxel(series, [...PROBE_VOXEL, k]),
-            }
-          : { kind: 'stackIndex', imageIdIndex: k },
-    });
-    await settle(viewport);
+    await changeAndSettleAtRest(viewport, () =>
+      viewport.setViewState({
+        slice:
+          viewport.getCurrentMode() === 'volume'
+            ? {
+                kind: 'volumePoint',
+                sliceWorldPoint: worldOfVoxel(series, [...PROBE_VOXEL, k]),
+              }
+            : { kind: 'stackIndex', imageIdIndex: k },
+      })
+    );
     greys.push(greyOfImage(viewport, series, k));
   }
 
@@ -159,8 +202,9 @@ async function jumpToEachImage(viewport, series, referenceOf) {
   const landed = [];
 
   for (const k of JUMP_ORDER) {
-    viewport.setViewReference(referenceOf(series.imageIds[k]));
-    await settle(viewport);
+    await changeAndSettleAtRest(viewport, () =>
+      viewport.setViewReference(referenceOf(series.imageIds[k]))
+    );
     landed.push({
       asked: k,
       currentImage: series.imageIds.indexOf(viewport.getCurrentImageId()),
@@ -205,39 +249,75 @@ describe('A jump to an image by a view reference on a direct next planar viewpor
 
   for (const [order, orientation, imageOfSlice] of VOLUMES) {
     for (const [path, pathOptions, renderMode] of VOLUME_PATHS) {
-      it(`lands on the image of a referencedImageId and of a referencedImageURI in volume mode ${path}, for a volume whose slices run ${order}`, async function () {
+      it(
+        `lands on the image of a referencedImageId and of a referencedImageURI in volume mode ${path}, for a volume whose slices run ${order}`,
+        async function () {
+          const series = await createSeries({ id: `jump-${renderMode}` });
+          const viewport = createNextViewport(renderingEngine, 'nextJump');
+          const count = series.imageIds.length;
+
+          await showVolume(viewport, series, 2, {
+            orientation,
+            ...pathOptions,
+          });
+
+          expect(viewport.getCurrentMode()).toBe('volume');
+          expect(viewport.getRenderPlan()[0].renderMode).toBe(renderMode);
+
+          await viewport.setImageIdIndex(1);
+          await settle(viewport);
+
+          expect(viewport.getCurrentImageIdIndex()).toBe(1);
+          expect(series.imageIds.indexOf(viewport.getCurrentImageId())).toBe(
+            imageOfSlice(1, count)
+          );
+
+          for (let sliceIndex = 0; sliceIndex < count; sliceIndex++) {
+            const imageOfTheSlice =
+              series.imageIds[imageOfSlice(sliceIndex, count)];
+
+            expect(viewport.getCurrentImageId({ sliceIndex })).toBe(
+              imageOfTheSlice
+            );
+            expect(
+              viewport.getViewReference({ sliceIndex }).referencedImageId
+            ).toBe(imageOfTheSlice);
+          }
+
+          const greys = await greysByPlace(viewport, series);
+
+          expect(new Set(greys).size).toBe(count);
+          expect(
+            await jumpToEachImage(viewport, series, (imageId) => ({
+              referencedImageId: imageId,
+            }))
+          ).toEqual(landedOnEachImage(series, greys));
+          expect(
+            await jumpToEachImage(viewport, series, (imageId) => ({
+              referencedImageURI: utilities.imageIdToURI(imageId),
+            }))
+          ).toEqual(landedOnEachImage(series, greys));
+        },
+        READ_AT_REST_TIMEOUT
+      );
+    }
+  }
+
+  for (const [path, pathOptions, renderMode] of STACK_PATHS) {
+    it(
+      `lands on the image of a referencedImageId and of a referencedImageURI in stack mode ${path}`,
+      async function () {
         const series = await createSeries({ id: `jump-${renderMode}` });
         const viewport = createNextViewport(renderingEngine, 'nextJump');
-        const count = series.imageIds.length;
 
-        await showVolume(viewport, series, 2, { orientation, ...pathOptions });
+        await showStack(viewport, series, 2, pathOptions);
 
-        expect(viewport.getCurrentMode()).toBe('volume');
+        expect(viewport.getCurrentMode()).toBe('stack');
         expect(viewport.getRenderPlan()[0].renderMode).toBe(renderMode);
-
-        await viewport.setImageIdIndex(1);
-        await settle(viewport);
-
-        expect(viewport.getCurrentImageIdIndex()).toBe(1);
-        expect(series.imageIds.indexOf(viewport.getCurrentImageId())).toBe(
-          imageOfSlice(1, count)
-        );
-
-        for (let sliceIndex = 0; sliceIndex < count; sliceIndex++) {
-          const imageOfTheSlice =
-            series.imageIds[imageOfSlice(sliceIndex, count)];
-
-          expect(viewport.getCurrentImageId({ sliceIndex })).toBe(
-            imageOfTheSlice
-          );
-          expect(
-            viewport.getViewReference({ sliceIndex }).referencedImageId
-          ).toBe(imageOfTheSlice);
-        }
 
         const greys = await greysByPlace(viewport, series);
 
-        expect(new Set(greys).size).toBe(count);
+        expect(new Set(greys).size).toBe(series.imageIds.length);
         expect(
           await jumpToEachImage(viewport, series, (imageId) => ({
             referencedImageId: imageId,
@@ -248,34 +328,9 @@ describe('A jump to an image by a view reference on a direct next planar viewpor
             referencedImageURI: utilities.imageIdToURI(imageId),
           }))
         ).toEqual(landedOnEachImage(series, greys));
-      });
-    }
-  }
-
-  for (const [path, pathOptions, renderMode] of STACK_PATHS) {
-    it(`lands on the image of a referencedImageId and of a referencedImageURI in stack mode ${path}`, async function () {
-      const series = await createSeries({ id: `jump-${renderMode}` });
-      const viewport = createNextViewport(renderingEngine, 'nextJump');
-
-      await showStack(viewport, series, 2, pathOptions);
-
-      expect(viewport.getCurrentMode()).toBe('stack');
-      expect(viewport.getRenderPlan()[0].renderMode).toBe(renderMode);
-
-      const greys = await greysByPlace(viewport, series);
-
-      expect(new Set(greys).size).toBe(series.imageIds.length);
-      expect(
-        await jumpToEachImage(viewport, series, (imageId) => ({
-          referencedImageId: imageId,
-        }))
-      ).toEqual(landedOnEachImage(series, greys));
-      expect(
-        await jumpToEachImage(viewport, series, (imageId) => ({
-          referencedImageURI: utilities.imageIdToURI(imageId),
-        }))
-      ).toEqual(landedOnEachImage(series, greys));
-    });
+      },
+      READ_AT_REST_TIMEOUT
+    );
   }
 
   for (const [order, orientation] of VOLUMES) {

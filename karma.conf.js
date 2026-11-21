@@ -2,6 +2,103 @@
 const path = require('path');
 const os = require('os');
 const fs = require('fs');
+const { execFileSync } = require('child_process');
+
+/**
+ * Downloads the arm64 build of a Chromium revision into a folder. The build is
+ * unpacked into a folder of its own that is renamed when complete, so a karma
+ * run that starts meanwhile never finds half a browser. A failure leaves
+ * nothing behind.
+ *
+ * @param {string} revision - the Chromium revision of puppeteer
+ * @param {string} folder - the folder of the build
+ */
+function downloadAppleSiliconChromium(revision, folder) {
+  const host =
+    process.env.PUPPETEER_DOWNLOAD_HOST || 'https://storage.googleapis.com';
+  const url = `${host}/chromium-browser-snapshots/Mac_Arm/${revision}/chrome-mac.zip`;
+  const partial = `${folder}.partial-${process.pid}`;
+  const archive = `${partial}.zip`;
+
+  console.log(
+    `[karma.conf.js] downloading the arm64 build of Chromium ${revision} from ${url}`
+  );
+
+  try {
+    execFileSync(
+      '/usr/bin/curl',
+      [
+        '--fail',
+        '--silent',
+        '--show-error',
+        '--location',
+        '--output',
+        archive,
+        url,
+      ],
+      { stdio: 'inherit' }
+    );
+    execFileSync('/usr/bin/ditto', ['-x', '-k', archive, partial]);
+    if (!fs.existsSync(folder)) {
+      fs.renameSync(partial, folder);
+    }
+  } catch (error) {
+    console.warn(
+      `[karma.conf.js] the arm64 build of Chromium ${revision} could not be downloaded, so karma runs the Intel build under Rosetta 2: ${error.message}`
+    );
+  } finally {
+    fs.rmSync(archive, { force: true });
+    fs.rmSync(partial, { recursive: true, force: true });
+  }
+}
+
+/**
+ * The arm64 build of the Chromium that puppeteer runs, on a Mac with Apple
+ * silicon; undefined anywhere else.
+ *
+ * puppeteer 13.7 downloads the Intel build of its Chromium on every Mac
+ * (`mac-<revision>`), so on Apple silicon karma ran it under Rosetta 2. There
+ * its renderer died with SIGBUS (BUS_ADRERR) in 3 of 15 decoder runs, at a
+ * different codec each time, and karma lost the browser (open issue 91); the
+ * arm64 build of the same revision lost it in none of 15. The arm64 build
+ * comes from the snapshot host that puppeteer downloads from, into
+ * `mac_arm-<revision>` beside the Intel build, on the first run that needs
+ * it. If the download fails, karma runs the Intel build as before.
+ *
+ * @param {string} puppeteerChrome - the path that puppeteer gives
+ * @returns {string | undefined} the path of the arm64 build
+ */
+function appleSiliconChromium(puppeteerChrome) {
+  if (os.platform() !== 'darwin' || os.arch() !== 'arm64') {
+    return undefined;
+  }
+
+  const intelBuild =
+    /^(.*)[\\/]mac-(\d+)[\\/]chrome-mac[\\/]Chromium\.app[\\/]Contents[\\/]MacOS[\\/]Chromium$/.exec(
+      puppeteerChrome || ''
+    );
+
+  if (!intelBuild) {
+    return undefined;
+  }
+
+  const [, downloads, revision] = intelBuild;
+  const folder = path.join(downloads, `mac_arm-${revision}`);
+  const executable = path.join(
+    folder,
+    'chrome-mac',
+    'Chromium.app',
+    'Contents',
+    'MacOS',
+    'Chromium'
+  );
+
+  if (!fs.existsSync(executable)) {
+    downloadAppleSiliconChromium(revision, folder);
+  }
+
+  return fs.existsSync(executable) ? executable : undefined;
+}
 
 /**
  * Resolve the Chrome/Chromium binary that karma-chrome-launcher should use.
@@ -13,15 +110,20 @@ const fs = require('fs');
  * Can not find the binary ...". To stay robust:
  *   1. Honor a CHROME_BIN already provided by the environment (e.g. a system
  *      Chrome installed by CI).
- *   2. Otherwise fall back to puppeteer's Chromium, but only if it actually
+ *   2. On a Mac with Apple silicon, use the arm64 build of puppeteer's
+ *      Chromium revision (`appleSiliconChromium`).
+ *   3. Otherwise fall back to puppeteer's Chromium, but only if it actually
  *      exists on disk.
- *   3. Otherwise leave CHROME_BIN unset so karma-chrome-launcher can auto-detect
+ *   4. Otherwise leave CHROME_BIN unset so karma-chrome-launcher can auto-detect
  *      an installed Chrome.
  */
 if (!process.env.CHROME_BIN) {
   try {
     const puppeteerChrome = require('puppeteer').executablePath();
-    if (puppeteerChrome && fs.existsSync(puppeteerChrome)) {
+    const nativeChrome = appleSiliconChromium(puppeteerChrome);
+    if (nativeChrome) {
+      process.env.CHROME_BIN = nativeChrome;
+    } else if (puppeteerChrome && fs.existsSync(puppeteerChrome)) {
       process.env.CHROME_BIN = puppeteerChrome;
     }
   } catch (err) {
@@ -156,8 +258,15 @@ module.exports = function (config) {
       type: 'html',
       dir: 'coverage/',
     },
-    // The default of 2 seconds is a bit short for some tests
-    browserNoActivityTimeout: 6000,
+    /**
+     * How long the browser may stay silent before karma drops it: the
+     * default of karma, 30 s. At 6 s a loaded machine lost the browser in the
+     * middle of a test that was still working, with "Disconnected, because no
+     * message in 6000 ms" (open issue 46). A test that hangs still fails by
+     * the timeout of jasmine, which reports to karma.
+     */
+    browserNoActivityTimeout: 30000,
+    /** How long karma waits for a lost browser to come back (default 2 s). */
     browserDisconnectTimeout: 6000,
 
     /*webpackMiddleware: {

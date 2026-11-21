@@ -87,6 +87,13 @@ const LEGACY_RANGE_END_IMAGE_ID = TEST_VIDEO.imageId.replace(
 const LEGACY_CONTENT_MODE = 'video';
 const LEGACY_IS_IN_ACQUISITION_PLANE = true;
 
+/**
+ * How long a mount may take to end its seek, within the 30 s of the test that
+ * waits for it. On a loaded machine a seek of the test video took more than
+ * the 5 s that `waitFor` gives by default.
+ */
+const SEEK_TIMEOUT = 20000;
+
 /** Makes a viewport of a video type of the size of the tests. */
 function createViewport(renderingEngine, viewportId, viewportType) {
   testUtils.createViewports(renderingEngine, {
@@ -295,6 +302,7 @@ describe('Direct next video viewport -- ', () => {
 
     await next.play();
     await new Promise((resolve) => setTimeout(resolve, 700));
+    await waitFor(() => nextRendered.count > 0, 3000);
     next.pause();
 
     expect(nextRendered.count).toBeGreaterThan(0);
@@ -428,12 +436,18 @@ describe('Direct next video viewport -- ', () => {
     expect(nextVideoElement(next).paused).toBe(false);
 
     const start = performance.now();
+    const loopedBack = () =>
+      samples.next.some((frame, index) => frame < samples.next[index - 1]);
 
     await waitFor(() => {
       samples.next.push(next.getFrameNumber());
 
-      return performance.now() - start > 1500;
-    }, 3000);
+      return (
+        performance.now() - start > 1500 &&
+        Math.max(...samples.next) >= 9 &&
+        loopedBack()
+      );
+    }, 4000);
 
     next.pause();
     expect(nextVideoElement(next).paused).toBe(true);
@@ -694,7 +708,7 @@ describe('Direct next video viewport at mount -- ', () => {
         options: { frameNumber },
       });
       states.push(frameState(next, nextVideoElement(next)));
-      await waitFor(() => !nextVideoElement(next).seeking);
+      await waitFor(() => !nextVideoElement(next).seeking, SEEK_TIMEOUT);
       await animationFrames(3);
       states.push(frameState(next, nextVideoElement(next)));
     }

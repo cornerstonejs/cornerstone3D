@@ -88,6 +88,22 @@ const tests = [
  *   (7FE0,0010) / (7FE0,0008) so paramap and paramap-float work on the default path.
  */
 describe('dicomImageLoader - WADO-URI', () => {
+  /**
+   * Does the first load of the page once, before the tests. The first load
+   * and decode of a run is cold: 3 s for the first test under load where the
+   * same test took 70 ms after it, and more than the 5 s of a test in a loaded
+   * run. Each test then waits only for its own load.
+   */
+  beforeAll(async () => {
+    wadouri.register();
+    dicomImageLoaderInit();
+    await imageLoader.loadImage(CtLittleEndian_1_2_840_10008_1_2.wadouri);
+    wadouri.dataSetCacheManager.purge();
+    cache.purgeCache();
+    imageLoader.unregisterAllImageLoaders();
+    metaData.removeAllProviders();
+  }, 25000);
+
   beforeEach(() => {
     // Suppress "Worker type 'dicomImageLoader' is already registered" in tests
     utilities.logger.coreLog
