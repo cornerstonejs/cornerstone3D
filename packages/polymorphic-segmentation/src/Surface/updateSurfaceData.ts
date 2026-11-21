@@ -124,11 +124,11 @@ async function updateSurfaceDataOnce(segmentationId: string) {
   const surfacesObj =
     await computeSurfaceFromLabelmapSegmentation(segmentationId);
 
-  if (!surfacesObj) {
+  const segmentation = getSegmentation(segmentationId);
+  if (!surfacesObj || !segmentation) {
     return;
   }
 
-  const segmentation = getSegmentation(segmentationId);
   const indices = getUniqueSegmentIndices(segmentationId);
   const viewportIds = getViewportIdsWithSegmentation(segmentationId);
 
