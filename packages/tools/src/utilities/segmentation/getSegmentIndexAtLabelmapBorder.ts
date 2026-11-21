@@ -105,6 +105,11 @@ export function getSegmentIndexAtLabelmapBorder(
   const indexIJK = utilities.transformWorldToIndex(imageData, worldPoint);
 
   const dimensions = imageData.getDimensions();
+
+  if (indexIJK.some((value, axis) => value < 0 || value >= dimensions[axis])) {
+    return;
+  }
+
   const voxelManager = (imageData.voxelManager ||
     utilities.VoxelManager.createScalarVolumeVoxelManager({
       dimensions,
@@ -117,7 +122,8 @@ export function getSegmentIndexAtLabelmapBorder(
     indexIJK as Types.Point3,
     dimensions,
     voxelManager,
-    labelValue
+    labelValue,
+    searchRadius
   );
 
   if (!onEdge || !labelValue) {
@@ -192,6 +198,14 @@ function isSegmentOnEdgeIJK(
       indexIJK[1] + deltaJ,
       indexIJK[2] + deltaK,
     ];
+
+    // Neighbors outside the labelmap have no value; reading them would wrap
+    // to another row of the flat scalar array.
+    if (
+      neighborIJK.some((value, axis) => value < 0 || value >= dimensions[axis])
+    ) {
+      return undefined;
+    }
 
     return voxelManager.getAtIJK(
       neighborIJK[0],
