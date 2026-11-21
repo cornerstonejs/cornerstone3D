@@ -530,7 +530,17 @@ point of the image on display.
   and the invert of a stack as they were fires none, as the legacy stack
   viewport on the GPU. In volume mode each such call fires it, as the legacy
   volume viewport. In 5.x a next planar viewport, and the legacy stack
-  viewport on the CPU, fired it for each call.
+  viewport on the CPU, fired it for each call. A scroll is a change when no
+  window is set and the new image has another default window: the event
+  fires once, with the window of the new image, as on the legacy stack
+  viewport on the GPU. It fires on the CPU too, where each image shows with
+  its own window. While a window is set a scroll fires none.
+- **`VOI_MODIFIED` reports the source and a volume over it.** A labelmap
+  fires none, as on the legacy viewports. A display set that is drawn as
+  images over the source of a stack fires none either: the detail names a
+  volume and no display set, so its event would read as the window of the
+  source. Read its window with `getDisplaySetPresentation(displaySetId)`.
+  No event has a range whose upper end is below its lower end.
 - **`suppressEvents` in the options of a planar viewport is honoured.** No
   call takes a `suppressEvents` argument.
 - **`isReferenceViewable` honours `asOverlay`,** so a labelmap image that is

@@ -342,6 +342,15 @@ export interface PlanarViewportRenderContext extends BaseViewportRenderContext {
     element: HTMLDivElement;
     getActiveDataId(): string | undefined;
     invalidateResolvedView(): void;
+    /**
+     * Tells the viewport that a stack path shows a new image of `dataId`,
+     * whose default window was `previousRange` before. The viewport fires
+     * `VOI_MODIFIED` when the window on display changed with it.
+     */
+    notifyDefaultVOIRangeOfNewImage?(
+      dataId: string,
+      previousRange: VOIRange | undefined
+    ): void;
     getViewState(): PlanarViewState;
     isCurrentDataId(dataId: string): boolean;
     getOverlayActors(): ActorEntry[];

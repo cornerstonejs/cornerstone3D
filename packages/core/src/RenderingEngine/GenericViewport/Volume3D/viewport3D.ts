@@ -949,15 +949,13 @@ class VolumeViewport3D extends GenericViewport<
   }
 
   /**
-   * Updates cached size state and notifies active render bindings.
+   * Notifies the active render bindings of a new size. The rendering engine
+   * sets `sWidth` and `sHeight`, the size that it draws the viewport at.
    */
   resize(): void {
     if (this.isDestroyed) {
       return;
     }
-
-    this.sWidth = this.canvas.width;
-    this.sHeight = this.canvas.height;
 
     this.resizeBindings();
   }
