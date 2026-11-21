@@ -135,7 +135,8 @@ export function metadataForDataset(
       pixelSpacing: extractSpacingFromDataset(dataSet),
       numberOfFrames: dataSet.uint16('x00280008'),
       isNMReconstructable:
-        isNMReconstructable(imageSubType) && modality.includes('NM'),
+        isNMReconstructable(imageSubType) &&
+        (modality?.includes('NM') ?? false),
     };
   }
 
