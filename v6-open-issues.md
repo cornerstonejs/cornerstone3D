@@ -43,6 +43,9 @@ On the release:
 - The codemod `@cornerstonejs/cornerstone3d-6` is run on OHIF Viewers (a dry run)
   first, and published before the 6.0 docs go live.
 
+On the 22 decisions made during the work (the review page, `v6-review/`): all 22
+approved, none flagged.
+
 ## How to work on one of these
 
 1. Write a test that fails on the code as it is. For the planar viewport: one test in
