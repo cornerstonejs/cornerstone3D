@@ -39,7 +39,11 @@ npx codemod @cornerstonejs/cornerstone3d-6-classes-and-types
   reported. An input counts with its last `viewportId` and `type` entries
   (`['type']` too). An input given to an engine of another string id
   (`new RenderingEngine('a')` against `getRenderingEngine('b')`) does not
-  count: viewport ids belong to one engine.
+  count: viewport ids belong to one engine. A cast of an object literal
+  takes the family of the last `type` entry of the object, when no spread
+  or computed key after it can replace it:
+  `{ ...base, type: Enums.ViewportType.VOLUME_3D } as Types.IVolumeViewport`
+  becomes `VolumeViewport3D`.
 - A cast of `getViewport` on a typed rendering engine becomes its type
   argument: `renderingEngine.getViewport(id) as Types.IStackViewport` becomes
   `renderingEngine.getViewport<PlanarViewport>(id)`. On an untyped engine the
@@ -72,7 +76,11 @@ npx codemod @cornerstonejs/cornerstone3d-6-classes-and-types
   (`new StackViewport(...)`, a shorthand property, an export or a re-export
   of the core; its import stays), a class in brackets on the core namespace
   (`cs['StackViewport']`), an `IVolumeViewport` under a test of
-  `VOLUME_3D` that does not show the family, an `IVolumeViewport` whose
+  `VOLUME_3D` that does not show the family, the type of a type predicate
+  (`viewport is Types.IVolumeViewport`) whose function names `VOLUME_3D` in
+  its body (the body decides when it holds, and a 3D viewport is a
+  `VolumeViewport3D`), a cast of an object that names `VOLUME_3D` in
+  another place than a last `type` entry, an `IVolumeViewport` whose
   viewport inputs give `VOLUME_3D` and another type, or a type that only
   the running code resolves (`type: flag ? VOLUME_3D : PLANAR`, a name, a
   call, or a `viewportId` or `type` that a spread, a computed key such as
@@ -82,7 +90,13 @@ npx codemod @cornerstonejs/cornerstone3d-6-classes-and-types
   binding, an input from a helper or `push`, `this.renderingEngine`), the
   removed `Types.*ViewportProperties`, `Types.IVolumeInput`,
   `Types.VolumeInputCallback`, `Types.SetAspectRatioOptions` and
-  `Types.ImageSetOptions`, and `utilities.isGenericViewport(...)`
+  `Types.ImageSetOptions`, a removed or renamed `Types` name
+  (`IStackViewport` and its kin, `IGenericViewport`, and the removed names
+  above) that a file imports or re-exports from the subpath
+  `@cornerstonejs/core/types`, such as
+  `import { IStackViewport } from '@cornerstonejs/core/types'` (reported by
+  its `Types` name: the rewrites read `Types.X` only), and
+  `utilities.isGenericViewport(...)`
   (deprecated: drop the check and keep its true branch).
 
 ## Development

@@ -1,0 +1,36 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "16",
+        "rule": "Types.IVolumeViewport: a test of a 3D type here does not show the family"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "22",
+        "rule": "Types.IBaseVolumeViewport: a test of a 3D type here does not show the family"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "29",
+        "rule": "Types.IVolumeViewport: a test of a 3D type here does not show the family"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "50",
+        "rule": "Types.IVolumeViewport: a test of a 3D type here does not show the family"
+      },
+      "count": 1
+    }
+  ]
+}

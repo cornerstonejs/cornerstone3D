@@ -14,7 +14,10 @@ npx codemod @cornerstonejs/cornerstone3d-6-events
 
 An event is found through the core `Enums.Events`: `Enums.Events.X`,
 `const { Events } = Enums`, or a name taken out with
-`const { STACK_NEW_IMAGE } = Enums.Events`.
+`const { STACK_NEW_IMAGE } = Enums.Events`; and through the core export
+`EVENTS`, which is the same enum: `EVENTS.X` of `import { EVENTS }` (also
+under an alias), `cornerstone.EVENTS.X` of the namespace, or
+`const { STACK_NEW_IMAGE } = EVENTS`.
 
 - `STACK_NEW_IMAGE` and `VOLUME_NEW_IMAGE` become `NEW_IMAGE`.
 - `IMAGE_LOAD_ERROR` becomes `IMAGE_LOAD_FAILED`.

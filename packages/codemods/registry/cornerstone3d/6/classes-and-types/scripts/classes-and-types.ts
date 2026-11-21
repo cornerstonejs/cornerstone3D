@@ -465,17 +465,83 @@ function caseFamily(caseNode: Node, receivers: Set<string>): Decision {
 }
 
 /**
- * Returns the family that the file shows for a type node: '3d' or 'planar'
- * when an enclosing `if`, `else` or `case` of the same function runs only
- * for that family of the viewport it types, or when the viewport inputs of
- * the file with the id of the `getViewport` call that the type casts all
- * have one family; 'mixed' or 'unlinked' when those inputs do not show it
- * (`inputFamily`); 'ambiguous' when an enclosing test names a 3D type and
- * decides nothing, or decides outside the function of the node, where the
- * viewport can be another by the time the function runs; undefined
- * otherwise.
+ * Returns what a type node shows by itself about the family of the viewport
+ * that it types. The type of a type predicate (`viewport is
+ * Types.IVolumeViewport`) holds when the body of its function says so, so a
+ * body that names a 3D type leaves it 'ambiguous'. A cast of an object
+ * literal (`{ ...base, type } as Types.IVolumeViewport`) has the family of
+ * the last `type` entry of the object when nothing after it can replace it
+ * and its value is resolved without running code; an object that names a 3D
+ * type otherwise is 'ambiguous'. Undefined for any other node.
+ */
+function ownFamily(typeNode: Node): Decision {
+  const predicate = typeNode
+    .ancestors()
+    .find((ancestor) => ancestor.kind() === 'type_predicate');
+
+  if (predicate) {
+    const body = enclosingFunction(predicate)?.field('body');
+    const inSignature =
+      body &&
+      !predicate.ancestors().some((ancestor) => ancestor.id() === body.id());
+
+    return inSignature && THREE_D_TYPE.test(body.text())
+      ? 'ambiguous'
+      : undefined;
+  }
+
+  const parent = typeNode.parent();
+  const cast =
+    parent?.kind() === 'type_arguments' &&
+    parent.parent()?.kind() === 'type_assertion'
+      ? parent.parent()
+      : parent;
+
+  if (cast?.kind() !== 'as_expression' && cast?.kind() !== 'type_assertion') {
+    return undefined;
+  }
+
+  const named = cast.children().filter((child) => child.isNamed());
+  const expression =
+    cast.kind() === 'as_expression' ? named[0] : named[named.length - 1];
+  const value = expression ? unwrap(expression) : undefined;
+
+  if (value?.kind() !== 'object') {
+    return undefined;
+  }
+
+  const entries = inputEntries(value);
+  const family =
+    entries.type && entries.typeFinal
+      ? staticTypeFamily(entries.type)
+      : undefined;
+
+  if (family === '3d' || family === 'planar') {
+    return family;
+  }
+
+  return THREE_D_TYPE.test(value.text()) ? 'ambiguous' : undefined;
+}
+
+/**
+ * Returns the family that the file shows for a type node: the family that
+ * the node shows by itself (`ownFamily`), or '3d' or 'planar' when an
+ * enclosing `if`, `else` or `case` of the same function runs only for that
+ * family of the viewport it types, or when the viewport inputs of the file
+ * with the id of the `getViewport` call that the type casts all have one
+ * family; 'mixed' or 'unlinked' when those inputs do not show it
+ * (`inputFamily`); 'ambiguous' when the node itself or an enclosing test
+ * names a 3D type and decides nothing, or when the test decides outside the
+ * function of the node, where the viewport can be another by the time the
+ * function runs; undefined otherwise.
  */
 function familyEvidence(run: Run, typeNode: Node): Decision {
+  const own = ownFamily(typeNode);
+
+  if (own === '3d' || own === 'planar') {
+    return own;
+  }
+
   const receivers = receiversOf(typeNode);
   const fn = enclosingFunction(typeNode);
   let child = typeNode;
@@ -513,7 +579,10 @@ function familyEvidence(run: Run, typeNode: Node): Decision {
     child = ancestor;
   }
 
-  return inputFamily(run, typeNode) ?? (ambiguous ? 'ambiguous' : undefined);
+  return (
+    inputFamily(run, typeNode) ??
+    (ambiguous || own === 'ambiguous' ? 'ambiguous' : undefined)
+  );
 }
 
 /**
@@ -1297,6 +1366,43 @@ function reportIsGenericViewport(run: Run): void {
 }
 
 /**
+ * Reports the removed and renamed `Types` names that a file imports or
+ * re-exports from the subpath `@cornerstonejs/core/types`
+ * (`import { IStackViewport } from '@cornerstonejs/core/types'`). The
+ * rewrites read `Types.X` of the core only, so each name is left to the
+ * reader, by its `Types` name.
+ */
+function reportTypesSubpath(run: Run): void {
+  const typesPath = `${CORE_PACKAGE}/types`;
+
+  for (const statement of run.rootNode.findAll({
+    rule: { any: [{ kind: 'import_statement' }, { kind: 'export_statement' }] },
+  })) {
+    const source = importSource(statement);
+
+    if (source !== typesPath && !source?.startsWith(`${typesPath}/`)) {
+      continue;
+    }
+
+    for (const specifier of statement.findAll({
+      rule: {
+        any: [{ kind: 'import_specifier' }, { kind: 'export_specifier' }],
+      },
+    })) {
+      const name = specifier.field('name')?.text() ?? '';
+
+      if (
+        TYPES_TO_CLASS[name] ||
+        TYPES_RENAMED[name] ||
+        TYPES_REPORTED.has(name)
+      ) {
+        manual.increment(site(run.root, `Types.${name}`, specifier));
+      }
+    }
+  }
+}
+
+/**
  * Rewrites the classes and the TypeScript types that Cornerstone3D 6.0
  * removes or renames: the legacy viewport classes become `PlanarViewport` in
  * a type and a test of the content mode after `instanceof`, the deprecated
@@ -1341,6 +1447,7 @@ const codemod: Codemod<TSX> = (root) => {
   rewriteReExports(run);
   reportBracketClasses(run);
   reportIsGenericViewport(run);
+  reportTypesSubpath(run);
 
   const importEdits = run.imports.edits();
 

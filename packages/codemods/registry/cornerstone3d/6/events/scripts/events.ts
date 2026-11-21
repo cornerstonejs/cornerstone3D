@@ -7,6 +7,7 @@ import {
   bracketKey,
   coreImportOf,
   isCoreEnum,
+  isCoreExport,
   isCoreNamespace,
   isNameTaken,
   referencesOf,
@@ -96,9 +97,18 @@ interface Run {
 }
 
 /**
+ * Tells whether an expression is the core `Enums.Events`, also as the core
+ * export `EVENTS`, which is the same enum (`import { EVENTS }` or
+ * `cornerstone.EVENTS`).
+ */
+function isCoreEvents(node: Node): boolean {
+  return isCoreEnum(node, 'Events') || isCoreExport(node, 'EVENTS');
+}
+
+/**
  * Rewrites `Events.STACK_NEW_IMAGE` and its kin, read as a member of the core
- * `Enums.Events`, and `Events['STACK_NEW_IMAGE']`, whose string keeps its
- * quotes.
+ * `Enums.Events` or of `EVENTS`, and `Events['STACK_NEW_IMAGE']`, whose
+ * string keeps its quotes.
  */
 function rewriteMembers(run: Run): void {
   const names = [...Object.keys(RENAMED_EVENTS), ...REPORTED_EVENTS].join('|');
@@ -122,7 +132,7 @@ function rewriteMembers(run: Run): void {
     const key = isBracket ? node.field('index') : node.field('property');
     const name = isBracket ? bracketKey(node) : key.text();
 
-    if (!isCoreEnum(node.field('object'), 'Events')) {
+    if (!isCoreEvents(node.field('object'))) {
       continue;
     }
 
@@ -254,8 +264,9 @@ function rewriteShorthand(
 }
 
 /**
- * Rewrites the names that a file takes out of the core `Enums.Events` with a
- * destructuring pattern, and their uses. An entry with a local name keeps
+ * Rewrites the names that a file takes out of the core `Enums.Events` or
+ * `EVENTS` with a destructuring pattern, and their uses. An entry with a
+ * local name keeps
  * it, and only its key changes; a quoted key and a key in brackets keep
  * their quotes, and a shorthand with a default value gets the new key and
  * keeps its local name. A key computed from code and a rest element can
@@ -271,7 +282,7 @@ function rewriteDestructured(run: Run): void {
         ? declarator.field('value')
         : undefined;
 
-    if (!value || !isCoreEnum(value, 'Events')) {
+    if (!value || !isCoreEvents(value)) {
       continue;
     }
 
