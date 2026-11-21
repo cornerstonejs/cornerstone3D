@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1002" height="455" viewBox="0 0 1002 455">
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#5f6368"/></marker></defs>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="16.0" y="31.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="17" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">Order of a replacement: 5.x and 6.0</text>
+<text x="16.0" y="50.4" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#5f6368" text-anchor="start" xml:space="preserve">Rows 1 to 3 as measured by the karma probe zzV2CoreProbe_test.js (see the picture); rows 4 and 5 as the code of PlanarViewport.setDisplaySets at</text>
+<text x="16.0" y="66.3" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#5f6368" text-anchor="start" xml:space="preserve">797b4d670 and the tests of packages/core/test/planarFailedReplacement_test.js (RF3) state them.</text>
+<text x="16.0" y="102.6" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">5.x setStack(ids)</text>
+<rect x="226.0" y="84.1" width="168.0" height="50.0" rx="6" fill="#f3f3f0" stroke="#b8b5ab" stroke-width="1"/>
+<text x="232.0" y="99.6" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">switch image ids at once</text>
+<line x1="396.0" y1="109.1" x2="414.0" y2="109.1" stroke="#5f6368" stroke-width="1.2" marker-end="url(#arrow)"/>
+<rect x="416.0" y="84.1" width="168.0" height="50.0" rx="6" fill="#f3f3f0" stroke="#b8b5ab" stroke-width="1"/>
+<text x="422.0" y="99.6" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">the first image fails to</text>
+<text x="422.0" y="113.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">load</text>
+<line x1="586.0" y1="109.1" x2="604.0" y2="109.1" stroke="#5f6368" stroke-width="1.2" marker-end="url(#arrow)"/>
+<rect x="606.0" y="84.1" width="168.0" height="50.0" rx="6" fill="#fbe4e4" stroke="#b8b5ab" stroke-width="1"/>
+<text x="612.0" y="99.6" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">the call resolves; the</text>
+<text x="612.0" y="113.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">viewport holds the</text>
+<text x="612.0" y="127.3" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">failing ids</text>
+<line x1="776.0" y1="109.1" x2="794.0" y2="109.1" stroke="#5f6368" stroke-width="1.2" marker-end="url(#arrow)"/>
+<rect x="796.0" y="84.1" width="168.0" height="50.0" rx="6" fill="#f3f3f0" stroke="#b8b5ab" stroke-width="1"/>
+<text x="802.0" y="99.6" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">old picture drawn again</text>
+<text x="16.0" y="170.6" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">5.x next / 6.0 before</text>
+<text x="16.0" y="187.1" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">RF3: setDisplaySets(a, b)</text>
+<rect x="226.0" y="152.1" width="168.0" height="50.0" rx="6" fill="#fff1d6" stroke="#b8b5ab" stroke-width="1"/>
+<text x="232.0" y="167.6" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">remove the shown scene</text>
+<line x1="396.0" y1="177.1" x2="414.0" y2="177.1" stroke="#5f6368" stroke-width="1.2" marker-end="url(#arrow)"/>
+<rect x="416.0" y="152.1" width="168.0" height="50.0" rx="6" fill="#f3f3f0" stroke="#b8b5ab" stroke-width="1"/>
+<text x="422.0" y="167.6" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">load and mount the entries</text>
+<line x1="586.0" y1="177.1" x2="604.0" y2="177.1" stroke="#5f6368" stroke-width="1.2" marker-end="url(#arrow)"/>
+<rect x="606.0" y="152.1" width="168.0" height="50.0" rx="6" fill="#f3f3f0" stroke="#b8b5ab" stroke-width="1"/>
+<text x="612.0" y="167.6" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">b fails to load</text>
+<line x1="776.0" y1="177.1" x2="794.0" y2="177.1" stroke="#5f6368" stroke-width="1.2" marker-end="url(#arrow)"/>
+<rect x="796.0" y="152.1" width="168.0" height="50.0" rx="6" fill="#fbe4e4" stroke="#b8b5ab" stroke-width="1"/>
+<text x="802.0" y="167.6" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">call rejects: half</text>
+<text x="802.0" y="181.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">mounted (a), old scene</text>
+<text x="802.0" y="195.3" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">gone</text>
+<text x="16.0" y="238.6" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">6.0 now:</text>
+<text x="16.0" y="255.1" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">setDisplaySets(a, b)</text>
+<rect x="226.0" y="220.1" width="168.0" height="50.0" rx="6" fill="#eef2f7" stroke="#b8b5ab" stroke-width="1"/>
+<text x="232.0" y="235.6" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">load a and b (scene</text>
+<text x="232.0" y="249.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">kept)</text>
+<line x1="396.0" y1="245.1" x2="414.0" y2="245.1" stroke="#5f6368" stroke-width="1.2" marker-end="url(#arrow)"/>
+<rect x="416.0" y="220.1" width="168.0" height="50.0" rx="6" fill="#f3f3f0" stroke="#b8b5ab" stroke-width="1"/>
+<text x="422.0" y="235.6" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">b fails</text>
+<line x1="586.0" y1="245.1" x2="604.0" y2="245.1" stroke="#5f6368" stroke-width="1.2" marker-end="url(#arrow)"/>
+<rect x="606.0" y="220.1" width="168.0" height="50.0" rx="6" fill="#f3f3f0" stroke="#b8b5ab" stroke-width="1"/>
+<text x="612.0" y="235.6" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">call rejects</text>
+<line x1="776.0" y1="245.1" x2="794.0" y2="245.1" stroke="#5f6368" stroke-width="1.2" marker-end="url(#arrow)"/>
+<rect x="796.0" y="220.1" width="168.0" height="50.0" rx="6" fill="#e3f4e8" stroke="#b8b5ab" stroke-width="1"/>
+<text x="802.0" y="235.6" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">shown scene, slice and</text>
+<text x="802.0" y="249.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">camera stay</text>
+<text x="16.0" y="306.6" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">6.0 now:</text>
+<text x="16.0" y="323.1" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">setDisplaySets(a, b)</text>
+<rect x="226.0" y="288.1" width="168.0" height="50.0" rx="6" fill="#eef2f7" stroke="#b8b5ab" stroke-width="1"/>
+<text x="232.0" y="303.6" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">load a and b (scene</text>
+<text x="232.0" y="317.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">kept)</text>
+<line x1="396.0" y1="313.1" x2="414.0" y2="313.1" stroke="#5f6368" stroke-width="1.2" marker-end="url(#arrow)"/>
+<rect x="416.0" y="288.1" width="168.0" height="50.0" rx="6" fill="#f3f3f0" stroke="#b8b5ab" stroke-width="1"/>
+<text x="422.0" y="303.6" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">all loaded</text>
+<line x1="586.0" y1="313.1" x2="604.0" y2="313.1" stroke="#5f6368" stroke-width="1.2" marker-end="url(#arrow)"/>
+<rect x="606.0" y="288.1" width="168.0" height="50.0" rx="6" fill="#f3f3f0" stroke="#b8b5ab" stroke-width="1"/>
+<text x="612.0" y="303.6" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">remove the shown scene,</text>
+<text x="612.0" y="317.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">mount a and b</text>
+<line x1="776.0" y1="313.1" x2="794.0" y2="313.1" stroke="#5f6368" stroke-width="1.2" marker-end="url(#arrow)"/>
+<rect x="796.0" y="288.1" width="168.0" height="50.0" rx="6" fill="#e3f4e8" stroke="#b8b5ab" stroke-width="1"/>
+<text x="802.0" y="303.6" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">resolves; one new-data</text>
+<text x="802.0" y="317.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">event</text>
+<text x="16.0" y="374.6" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">6.0 now: two calls</text>
+<rect x="226.0" y="356.1" width="168.0" height="50.0" rx="6" fill="#f3f3f0" stroke="#b8b5ab" stroke-width="1"/>
+<text x="232.0" y="371.6" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">call 1 has loaded</text>
+<line x1="396.0" y1="381.1" x2="414.0" y2="381.1" stroke="#5f6368" stroke-width="1.2" marker-end="url(#arrow)"/>
+<rect x="416.0" y="356.1" width="168.0" height="50.0" rx="6" fill="#f3f3f0" stroke="#b8b5ab" stroke-width="1"/>
+<text x="422.0" y="371.6" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">call 2 starts</text>
+<line x1="586.0" y1="381.1" x2="604.0" y2="381.1" stroke="#5f6368" stroke-width="1.2" marker-end="url(#arrow)"/>
+<rect x="606.0" y="356.1" width="168.0" height="50.0" rx="6" fill="#f3f3f0" stroke="#b8b5ab" stroke-width="1"/>
+<text x="612.0" y="371.6" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">call 2 waits for call 1's</text>
+<text x="612.0" y="385.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">swap</text>
+<line x1="776.0" y1="381.1" x2="794.0" y2="381.1" stroke="#5f6368" stroke-width="1.2" marker-end="url(#arrow)"/>
+<rect x="796.0" y="356.1" width="168.0" height="50.0" rx="6" fill="#e3f4e8" stroke="#b8b5ab" stroke-width="1"/>
+<text x="802.0" y="371.6" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">call 2 swaps after</text>
+<text x="16.0" y="435.6" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="normal" fill="#5f6368" text-anchor="start" xml:space="preserve">The 3D viewport's setDisplaySets follows the same order (volumeViewport3DReplacement_test.js).</text>
+</svg>

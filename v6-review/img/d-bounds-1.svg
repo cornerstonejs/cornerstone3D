@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="982" height="282" viewBox="0 0 982 282">
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#5f6368"/></marker></defs>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="16.0" y="31.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="17" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">Which CPU image data has getBounds</text>
+<text x="16.0" y="50.4" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#5f6368" text-anchor="start" xml:space="preserve">Read in the source at 797b4d670 (packages/core/src). An application calls getBounds?.() as the 6.0 guide samples do.</text>
+<rect x="16.0" y="64.3" width="240.0" height="29.8" rx="0" fill="#eef2f7" stroke="#d9d6cc" stroke-width="1"/>
+<text x="23.0" y="81.3" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">getImageData() of</text>
+<rect x="256.0" y="64.3" width="150.0" height="29.8" rx="0" fill="#eef2f7" stroke="#d9d6cc" stroke-width="1"/>
+<text x="263.0" y="81.3" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">getBounds</text>
+<rect x="406.0" y="64.3" width="560.0" height="29.8" rx="0" fill="#eef2f7" stroke="#d9d6cc" stroke-width="1"/>
+<text x="413.0" y="81.3" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">Where</text>
+<rect x="16.0" y="94.1" width="240.0" height="29.8" rx="0" fill="#ffffff" stroke="#d9d6cc" stroke-width="1"/>
+<text x="23.0" y="111.1" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">Planar viewport (stack or volume)</text>
+<rect x="256.0" y="94.1" width="150.0" height="29.8" rx="0" fill="#e3f4e8" stroke="#d9d6cc" stroke-width="1"/>
+<text x="263.0" y="111.1" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">yes</text>
+<rect x="406.0" y="94.1" width="560.0" height="29.8" rx="0" fill="#ffffff" stroke="#d9d6cc" stroke-width="1"/>
+<text x="413.0" y="110.6" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">planarImageData.ts:54, getBounds: () =&gt; getPlanarImageBounds(metadata)</text>
+<rect x="16.0" y="124.0" width="240.0" height="29.8" rx="0" fill="#ffffff" stroke="#d9d6cc" stroke-width="1"/>
+<text x="23.0" y="141.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">Video viewport</text>
+<rect x="256.0" y="124.0" width="150.0" height="29.8" rx="0" fill="#fff1d6" stroke="#d9d6cc" stroke-width="1"/>
+<text x="263.0" y="141.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">no</text>
+<rect x="406.0" y="124.0" width="560.0" height="29.8" rx="0" fill="#ffffff" stroke="#d9d6cc" stroke-width="1"/>
+<text x="413.0" y="140.5" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">VideoViewport.ts:350, getImageData() returns no getBounds</text>
+<rect x="16.0" y="153.8" width="240.0" height="29.8" rx="0" fill="#ffffff" stroke="#d9d6cc" stroke-width="1"/>
+<text x="23.0" y="170.8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">ECG viewport</text>
+<rect x="256.0" y="153.8" width="150.0" height="29.8" rx="0" fill="#fff1d6" stroke="#d9d6cc" stroke-width="1"/>
+<text x="263.0" y="170.8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">no</text>
+<rect x="406.0" y="153.8" width="560.0" height="29.8" rx="0" fill="#ffffff" stroke="#d9d6cc" stroke-width="1"/>
+<text x="413.0" y="170.3" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">ECGViewport.ts:653, getImageData() returns no getBounds</text>
+<rect x="16.0" y="183.6" width="240.0" height="29.8" rx="0" fill="#ffffff" stroke="#d9d6cc" stroke-width="1"/>
+<text x="23.0" y="200.6" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">Whole slide viewport</text>
+<rect x="256.0" y="183.6" width="150.0" height="29.8" rx="0" fill="#fff1d6" stroke="#d9d6cc" stroke-width="1"/>
+<text x="263.0" y="200.6" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">no</text>
+<rect x="406.0" y="183.6" width="560.0" height="29.8" rx="0" fill="#ffffff" stroke="#d9d6cc" stroke-width="1"/>
+<text x="413.0" y="200.1" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">WSIViewport.ts:182, buildWSIImageData has no getBounds</text>
+<rect x="16.0" y="213.5" width="240.0" height="29.8" rx="0" fill="#ffffff" stroke="#d9d6cc" stroke-width="1"/>
+<text x="23.0" y="230.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">The type CPUIImageData</text>
+<rect x="256.0" y="213.5" width="150.0" height="29.8" rx="0" fill="#eef2f7" stroke="#d9d6cc" stroke-width="1"/>
+<text x="263.0" y="230.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">getBounds?: optional</text>
+<rect x="406.0" y="213.5" width="560.0" height="29.8" rx="0" fill="#ffffff" stroke="#d9d6cc" stroke-width="1"/>
+<text x="413.0" y="230.0" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">types/CPUIImageData.ts:23, the same line at 58914567b (5.x) and 797b4d670</text>
+<text x="16.0" y="262.8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="normal" fill="#5f6368" text-anchor="start" xml:space="preserve">Open issue 26. No change: 5.x typed it optional too.</text>
+</svg>

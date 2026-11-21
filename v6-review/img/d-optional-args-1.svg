@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="940" height="411" viewBox="0 0 940 411">
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#5f6368"/></marker></defs>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="16.0" y="31.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="17" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">Synchronizer options of two rendering engines with the same viewport id</text>
+<text x="16.0" y="50.4" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#5f6368" text-anchor="start" xml:space="preserve">Karma probe zzV2ToolsProbe_test.js: engines A and B each have a viewport 'CT', both in one VOI synchronizer. setOptions('CT', { owner: 'engine</text>
+<text x="16.0" y="66.3" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#5f6368" text-anchor="start" xml:space="preserve">A' }, A), then setOptions('CT', { owner: 'engine B' }, B), then getOptions.</text>
+<rect x="16.0" y="80.1" width="440.0" height="250.0" rx="8" fill="#fafaf7" stroke="#d9d6cc" stroke-width="1"/>
+<text x="28.0" y="102.1" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">5.x (58914567b)</text>
+<text x="28.0" y="121.6" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#5f6368" text-anchor="start" xml:space="preserve">setOptions(viewportId, options): the third argument does</text>
+<text x="28.0" y="136.8" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#5f6368" text-anchor="start" xml:space="preserve">not exist</text>
+<rect x="32.0" y="150.1" width="190.0" height="60.0" rx="6" fill="#eef2f7" stroke="#9fb3c8" stroke-width="1"/>
+<text x="42.0" y="170.1" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">rendering engine A</text>
+<text x="42.0" y="192.1" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">viewport 'CT'</text>
+<rect x="242.0" y="150.1" width="190.0" height="60.0" rx="6" fill="#eef2f7" stroke="#9fb3c8" stroke-width="1"/>
+<text x="252.0" y="170.1" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">rendering engine B</text>
+<text x="252.0" y="192.1" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">viewport 'CT'</text>
+<rect x="28.0" y="230.1" width="416.0" height="26.0" rx="4" fill="#fbe4e4" stroke="none" stroke-width="1"/>
+<text x="36.0" y="247.1" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">getOptions('CT', A) → {"owner": "engine B"}</text>
+<rect x="28.0" y="260.1" width="416.0" height="26.0" rx="4" fill="#e3f4e8" stroke="none" stroke-width="1"/>
+<text x="36.0" y="277.1" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">getOptions('CT', B) → {"owner": "engine B"}</text>
+<rect x="28.0" y="290.1" width="416.0" height="26.0" rx="4" fill="#eef2f7" stroke="none" stroke-width="1"/>
+<text x="36.0" y="307.1" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">getOptions('CT') → {"owner": "engine B"}</text>
+<rect x="484.0" y="80.1" width="440.0" height="250.0" rx="8" fill="#fafaf7" stroke="#d9d6cc" stroke-width="1"/>
+<text x="496.0" y="102.1" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">6.0 (797b4d670)</text>
+<text x="496.0" y="121.6" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#5f6368" text-anchor="start" xml:space="preserve">setOptions(viewportId, options, renderingEngineId?)</text>
+<rect x="500.0" y="150.1" width="190.0" height="60.0" rx="6" fill="#eef2f7" stroke="#9fb3c8" stroke-width="1"/>
+<text x="510.0" y="170.1" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">rendering engine A</text>
+<text x="510.0" y="192.1" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">viewport 'CT'</text>
+<rect x="710.0" y="150.1" width="190.0" height="60.0" rx="6" fill="#eef2f7" stroke="#9fb3c8" stroke-width="1"/>
+<text x="720.0" y="170.1" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">rendering engine B</text>
+<text x="720.0" y="192.1" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">viewport 'CT'</text>
+<rect x="496.0" y="230.1" width="416.0" height="26.0" rx="4" fill="#e3f4e8" stroke="none" stroke-width="1"/>
+<text x="504.0" y="247.1" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">getOptions('CT', A) → {"owner": "engine A"}</text>
+<rect x="496.0" y="260.1" width="416.0" height="26.0" rx="4" fill="#e3f4e8" stroke="none" stroke-width="1"/>
+<text x="504.0" y="277.1" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">getOptions('CT', B) → {"owner": "engine B"}</text>
+<rect x="496.0" y="290.1" width="416.0" height="26.0" rx="4" fill="#eef2f7" stroke="none" stroke-width="1"/>
+<text x="504.0" y="307.1" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">getOptions('CT') → undefined</text>
+<text x="16.0" y="361.6" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="normal" fill="#5f6368" text-anchor="start" xml:space="preserve">In 5.x the second write replaced the first: both engines read engine B's options (one slot per viewport id). In 6.0 each engine pair keeps its own;</text>
+<text x="16.0" y="376.8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="normal" fill="#5f6368" text-anchor="start" xml:space="preserve">without an engine id the call works as in 5.x when the id is unique. spatialRegistrationMetadataProvider takes the two engine ids the same way (not</text>
+<text x="16.0" y="392.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="normal" fill="#5f6368" text-anchor="start" xml:space="preserve">measured here).</text>
+</svg>

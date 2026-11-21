@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="905" height="494" viewBox="0 0 905 494">
+<rect width="905" height="494" fill="#ffffff"/>
+<text x="16" y="28" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="19" font-weight="700" fill="#1d1d1f">Row 89: CAMERA_MODIFIED when the view state is written unchanged</text>
+<text x="16" y="50" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="13" fill="#5f6368">Events counted on the element between one call and the next (each call followed by render and 200 ms).</text>
+<text x="16" y="68" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="13" fill="#5f6368">Measured by karma probes on real viewports; 6.0 at HEAD 797b4d670, 5.x at 58914567b. Zoom 1.5 set before.</text>
+<rect x="332" y="92" width="181" height="332" fill="#fff3e6" rx="6"/>
+<text x="422.5" y="108" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="13" font-weight="700" fill="#1d1d1f" text-anchor="middle">write the current state</text>
+<rect x="517" y="92" width="181" height="332" fill="#fff3e6" rx="6"/>
+<text x="607.5" y="108" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="13" font-weight="700" fill="#1d1d1f" text-anchor="middle">write it again</text>
+<text x="792.5" y="108" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="13" font-weight="700" fill="#1d1d1f" text-anchor="middle">a change: setZoom(2)</text>
+<line x1="16" y1="118" x2="889" y2="118" stroke="#e3e1da"/>
+<text x="16" y="140" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="13" font-weight="700" fill="#1d1d1f">6.0 PlanarViewport, stack</text>
+<text x="16" y="158" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="11" fill="#5f6368">setViewState(getViewState())</text>
+<circle cx="360" cy="146" r="9" fill="#d96c00"/>
+<text x="376" y="144" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="13" fill="#1d1d1f">CAMERA_MODIFIED x1</text>
+<text x="376" y="160" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">2.8 ms after the call</text>
+<circle cx="545" cy="146" r="9" fill="#d96c00"/>
+<text x="561" y="144" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="13" fill="#1d1d1f">CAMERA_MODIFIED x1</text>
+<text x="561" y="160" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">2.2 ms after the call</text>
+<circle cx="730" cy="146" r="9" fill="#d96c00"/>
+<text x="746" y="144" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="13" fill="#1d1d1f">CAMERA_MODIFIED x1</text>
+<text x="746" y="160" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">2.0 ms after the call</text>
+<line x1="16" y1="180" x2="889" y2="180" stroke="#e3e1da"/>
+<text x="16" y="202" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="13" font-weight="700" fill="#1d1d1f">6.0 PlanarViewport, volume</text>
+<text x="16" y="220" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="11" fill="#5f6368">setViewState(getViewState())</text>
+<circle cx="360" cy="208" r="9" fill="#d96c00"/>
+<text x="376" y="206" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="13" fill="#1d1d1f">CAMERA_MODIFIED x1</text>
+<text x="376" y="222" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">3.9 ms after the call</text>
+<circle cx="545" cy="208" r="9" fill="#d96c00"/>
+<text x="561" y="206" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="13" fill="#1d1d1f">CAMERA_MODIFIED x1</text>
+<text x="561" y="222" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">3.8 ms after the call</text>
+<circle cx="730" cy="208" r="9" fill="#d96c00"/>
+<text x="746" y="206" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="13" fill="#1d1d1f">CAMERA_MODIFIED x1</text>
+<text x="746" y="222" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">4.5 ms after the call</text>
+<line x1="16" y1="242" x2="889" y2="242" stroke="#e3e1da"/>
+<text x="16" y="264" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="13" font-weight="700" fill="#1d1d1f">5.x legacy StackViewport</text>
+<text x="16" y="282" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="11" fill="#5f6368">setCamera(getCamera())</text>
+<circle cx="360" cy="270" r="9" fill="#d96c00"/>
+<text x="376" y="268" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="13" fill="#1d1d1f">CAMERA_MODIFIED x1</text>
+<text x="376" y="284" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">0.3 ms after the call</text>
+<circle cx="545" cy="270" r="9" fill="#d96c00"/>
+<text x="561" y="268" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="13" fill="#1d1d1f">CAMERA_MODIFIED x1</text>
+<text x="561" y="284" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">0.2 ms after the call</text>
+<circle cx="730" cy="270" r="9" fill="#d96c00"/>
+<text x="746" y="268" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="13" fill="#1d1d1f">CAMERA_MODIFIED x1</text>
+<text x="746" y="284" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">0.4 ms after the call</text>
+<line x1="16" y1="304" x2="889" y2="304" stroke="#e3e1da"/>
+<text x="16" y="326" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="13" font-weight="700" fill="#1d1d1f">5.x legacy VolumeViewport</text>
+<text x="16" y="344" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="11" fill="#5f6368">setCamera(getCamera())</text>
+<circle cx="360" cy="332" r="9" fill="#d96c00"/>
+<text x="376" y="330" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="13" fill="#1d1d1f">CAMERA_MODIFIED x1</text>
+<text x="376" y="346" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">2.8 ms after the call</text>
+<circle cx="545" cy="332" r="9" fill="#d96c00"/>
+<text x="561" y="330" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="13" fill="#1d1d1f">CAMERA_MODIFIED x1</text>
+<text x="561" y="346" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">3.8 ms after the call</text>
+<circle cx="730" cy="332" r="9" fill="#d96c00"/>
+<text x="746" y="330" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="13" fill="#1d1d1f">CAMERA_MODIFIED x1</text>
+<text x="746" y="346" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">3.5 ms after the call</text>
+<line x1="16" y1="366" x2="889" y2="366" stroke="#e3e1da"/>
+<text x="16" y="388" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="13" font-weight="700" fill="#1d1d1f">5.x next PlanarViewport</text>
+<text x="16" y="406" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="11" fill="#5f6368">setViewState(getViewState())</text>
+<circle cx="360" cy="394" r="9" fill="#d96c00"/>
+<text x="376" y="392" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="13" fill="#1d1d1f">CAMERA_MODIFIED x1</text>
+<text x="376" y="408" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">4.8 ms after the call</text>
+<circle cx="545" cy="394" r="9" fill="#d96c00"/>
+<text x="561" y="392" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="13" fill="#1d1d1f">CAMERA_MODIFIED x1</text>
+<text x="561" y="408" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">8.0 ms after the call</text>
+<circle cx="730" cy="394" r="9" fill="#d96c00"/>
+<text x="746" y="392" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="13" fill="#1d1d1f">CAMERA_MODIFIED x1</text>
+<text x="746" y="408" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">6.6 ms after the call</text>
+<text x="16" y="450" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" fill="#5f6368">Probes zzV1CoreProbe_test.js (stack rows) and zzV1EventsProbe_test.js (volume and 5.x next rows);</text>
+<text x="16" y="468" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" fill="#5f6368">logs laneV1/karma/core-cur.log, core-legacy.log, events-cur.log, events-legacy.log.</text>
+</svg>

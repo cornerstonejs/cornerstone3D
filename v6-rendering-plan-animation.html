@@ -1,0 +1,1563 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cornerstone 6 rendering plan, animated</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --x-fg: var(--foreground, #1f2328);
+    --x-muted: var(--muted-foreground, #59636e);
+    --x-border: var(--border, #d1d9e0);
+    --x-card: var(--card, #f6f8fa);
+    --x-bg: var(--background, #ffffff);
+    --x-cpu: var(--chart-2, #1a7f37);
+    --x-gpu: var(--chart-1, #0969da);
+    --x-bad: var(--destructive, #cf222e);
+    --x-warn: var(--warning, #9a6700);
+    --x-good: var(--success, #1a7f37);
+    --x-sans: var(--font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif);
+    --x-mono: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --x-fg: var(--foreground, #e6edf3);
+      --x-muted: var(--muted-foreground, #9198a1);
+      --x-border: var(--border, #30363d);
+      --x-card: var(--card, #161b22);
+      --x-bg: var(--background, #121212);
+      --x-cpu: var(--chart-2, #3fb950);
+      --x-gpu: var(--chart-1, #4493f8);
+      --x-bad: var(--destructive, #f85149);
+      --x-warn: var(--warning, #d29922);
+      --x-good: var(--success, #3fb950);
+    }
+  }
+  .anim {
+    font-family: var(--x-sans);
+    color: var(--x-fg);
+    font-size: 14px;
+    line-height: 1.5;
+    max-width: 960px;
+    margin: 0 auto;
+    display: grid;
+    gap: 10px;
+    position: relative;
+  }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chips button {
+    font: inherit;
+    font-size: 12.5px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--x-border);
+    background: transparent;
+    color: var(--x-muted);
+    cursor: pointer;
+  }
+  .chips button[aria-selected="true"] {
+    color: var(--x-fg);
+    border-color: var(--x-gpu);
+    background: color-mix(in srgb, var(--x-gpu) 16%, transparent);
+  }
+  .stage { border: 1px solid var(--x-border); border-radius: var(--radius, 10px); overflow: hidden; }
+  .stage canvas { display: block; width: 100%; aspect-ratio: 720 / 392; }
+  .bar { height: 3px; background: var(--x-border); border-radius: 2px; overflow: hidden; }
+  .fill { height: 100%; width: 0; background: var(--x-gpu); }
+  .caption { margin: 0; min-height: 4.5em; }
+  .caption b { font-weight: 600; }
+  .controls { display: flex; gap: 8px; align-items: center; }
+  .controls button {
+    font: inherit;
+    font-size: 13px;
+    padding: 4px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--x-border);
+    background: var(--x-card);
+    color: var(--x-fg);
+    cursor: pointer;
+  }
+  .count { color: var(--x-muted); font-size: 13px; margin-left: auto; font-variant-numeric: tabular-nums; }
+  .probe { position: absolute; width: 0; height: 0; overflow: hidden; visibility: hidden; }
+  @media (max-width: 520px) {
+    .caption { min-height: 9em; }
+  }
+</style>
+</head>
+<body>
+<div class="anim" id="v6anim">
+  <div class="chips" role="tablist" aria-label="Steps of the plan"></div>
+  <div class="stage"><canvas aria-label="Animation of how a slice reaches the screen today and in version 6"></canvas></div>
+  <div class="bar"><div class="fill"></div></div>
+  <p class="caption" aria-live="polite"></p>
+  <div class="controls">
+    <button type="button" data-act="prev">Back</button>
+    <button type="button" data-act="play">Pause</button>
+    <button type="button" data-act="next">Next</button>
+    <span class="count"></span>
+  </div>
+  <span class="probe" aria-hidden="true"></span>
+</div>
+<script>
+(() => {
+  const W = 720;
+  const H = 392;
+  const root = document.getElementById('v6anim');
+  const canvas = root.querySelector('canvas');
+  const ctx = canvas.getContext('2d');
+  const captionEl = root.querySelector('.caption');
+  const chipsEl = root.querySelector('.chips');
+  const fillEl = root.querySelector('.fill');
+  const playBtn = root.querySelector('[data-act="play"]');
+  const countEl = root.querySelector('.count');
+  const probe = root.querySelector('.probe');
+
+  const C = {};
+  let TK = 1;
+  let GA = 1;
+  let scale = 1;
+  let dpr = 1;
+
+  const CPU = { x: 10, y: 54, w: 226, h: 246 };
+  const GPU = { x: 254, y: 54, w: 200, h: 246 };
+  const SCR = { x: 472, y: 54, w: 238, h: 246 };
+  const CD = { x: CPU.x + 30, y: CPU.y + 226 };
+  const GD = { x: GPU.x + 34, y: GPU.y + 190 };
+  const VIEW = { x: SCR.x + 30, y: SCR.y + 46, s: 178 };
+  const GT = { x: GPU.x + 72, y: GPU.y + 84, s: 56 };
+  const EX = [88, 0];
+  const EY = [34, -22];
+  const EZ = 118;
+  const DECK_N = 16;
+  const SOFT = [40, 400];
+  const LUNG = [-600, 1500];
+  const MIPWIN = [260, 820];
+  const STATUS_Y = 320;
+
+  const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
+  const seg = (t, a, b) => clamp01((t - a) / (b - a));
+  const ease = (p) => {
+    const q = clamp01(p);
+    return q * q * (3 - 2 * q);
+  };
+  const lerp = (a, b, p) => a + (b - a) * p;
+  const zOf = (k) => lerp(-0.78, 0.86, k / (DECK_N - 1));
+
+  /** Reads one CSS colour through a hidden element, so the canvas follows the theme. */
+  function cssColor(name) {
+    probe.style.color = `var(${name})`;
+    return getComputedStyle(probe).color;
+  }
+
+  /** Loads the colours and fonts of the current theme. */
+  function readTheme() {
+    C.fg = cssColor('--x-fg');
+    C.muted = cssColor('--x-muted');
+    C.border = cssColor('--x-border');
+    C.card = cssColor('--x-card');
+    C.bg = cssColor('--x-bg');
+    C.cpu = cssColor('--x-cpu');
+    C.gpu = cssColor('--x-gpu');
+    C.bad = cssColor('--x-bad');
+    C.warn = cssColor('--x-warn');
+    C.good = cssColor('--x-good');
+    C.sans = getComputedStyle(root).fontFamily;
+    probe.style.fontFamily = 'var(--x-mono)';
+    C.mono = getComputedStyle(probe).fontFamily;
+  }
+
+  /** Sizes the canvas bitmap to its box and the device pixel ratio. */
+  function resize() {
+    const cssW = canvas.clientWidth || W;
+    dpr = Math.min(window.devicePixelRatio || 1, 3);
+    scale = cssW / W;
+    TK = Math.min(1.45, Math.max(1, 520 / cssW));
+    canvas.width = Math.round(cssW * dpr);
+    canvas.height = Math.round(cssW * (H / W) * dpr);
+  }
+
+  function alpha(a) {
+    ctx.globalAlpha = GA * a;
+  }
+
+  function txt(s, x, y, o = {}) {
+    ctx.font = `${o.weight || 400} ${(o.size || 12) * TK}px ${o.mono ? C.mono : C.sans}`;
+    ctx.fillStyle = o.color || C.fg;
+    ctx.textAlign = o.align || 'left';
+    ctx.textBaseline = o.base || 'alphabetic';
+    alpha(o.alpha === undefined ? 1 : o.alpha);
+    ctx.fillText(s, x, y);
+    alpha(1);
+  }
+
+  function textWidth(s, o = {}) {
+    ctx.font = `${o.weight || 400} ${(o.size || 12) * TK}px ${o.mono ? C.mono : C.sans}`;
+    return ctx.measureText(s).width;
+  }
+
+  function roundRect(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.roundRect(x, y, w, h, r);
+  }
+
+  /** Draws one of the three boxes of the stage with its title. */
+  function box(b, title, sub, o = {}) {
+    roundRect(b.x, b.y, b.w, b.h, 10);
+    alpha(0.55);
+    ctx.fillStyle = C.card;
+    ctx.fill();
+    alpha(1);
+    ctx.lineWidth = o.active ? 2 : 1;
+    ctx.strokeStyle = o.active ? o.tone : C.border;
+    ctx.setLineDash(o.dashed ? [5, 4] : []);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    txt(title, b.x + 12, b.y + 22, { weight: 600, size: 13 });
+    if (sub) {
+      txt(sub, b.x + 12, b.y + 38, { size: 11, color: o.subColor || C.muted });
+    }
+  }
+
+  /** Draws a rounded label centred on cx. */
+  function pill(s, cx, y, tone, a = 1) {
+    if (a <= 0) {
+      return;
+    }
+    const size = 11.5;
+    const w = textWidth(s, { size, weight: 600 }) + 18;
+    const h = 20 * Math.min(TK, 1.25);
+    alpha(a);
+    roundRect(cx - w / 2, y - h / 2, w, h, h / 2);
+    ctx.fillStyle = C.bg;
+    ctx.fill();
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = tone;
+    ctx.stroke();
+    txt(s, cx, y + 0.5, { size, weight: 600, color: tone, align: 'center', base: 'middle', alpha: a });
+    alpha(1);
+  }
+
+  function status(b, s, tone) {
+    if (s) {
+      txt(s, b.x + 12, STATUS_Y, { size: 11.5, color: tone || C.muted });
+    }
+  }
+
+  function chevron(x, y, active, tone) {
+    ctx.beginPath();
+    ctx.moveTo(x - 3, y - 6);
+    ctx.lineTo(x + 3, y);
+    ctx.lineTo(x - 3, y + 6);
+    ctx.lineWidth = active ? 2.2 : 1.2;
+    ctx.strokeStyle = active ? tone : C.border;
+    ctx.stroke();
+  }
+
+  function project(o, s, x, y, z) {
+    return [
+      o.x + s * (x * EX[0] + y * EY[0]),
+      o.y + s * (x * EX[1] + y * EY[1] - z * EZ),
+    ];
+  }
+
+  function tracePolygon(points) {
+    ctx.beginPath();
+    ctx.moveTo(points[0][0], points[0][1]);
+    for (let i = 1; i < points.length; i++) {
+      ctx.lineTo(points[i][0], points[i][1]);
+    }
+    ctx.closePath();
+  }
+
+  function cardPoints(o, s, z) {
+    return [
+      project(o, s, 0, 0, z),
+      project(o, s, 1, 0, z),
+      project(o, s, 1, 1, z),
+      project(o, s, 0, 1, z),
+    ];
+  }
+
+  function cardCenter(o, s, k) {
+    return project(o, s, 0.5, 0.5, k / (DECK_N - 1));
+  }
+
+  /** Draws the stack of frames. `hi` marks the frame that is cut. */
+  function deck(o, s, opts = {}) {
+    const count = opts.count === undefined ? DECK_N : opts.count;
+    const hi = opts.hi === undefined ? -1 : opts.hi;
+    const fade = opts.fade === undefined ? 1 : opts.fade;
+
+    for (let k = 0; k < count; k++) {
+      const marked = k === hi;
+      const above = opts.dimAbove && hi >= 0 && k > hi;
+      tracePolygon(cardPoints(o, s, k / (DECK_N - 1)));
+      alpha(fade * (above ? 0.2 : 1));
+      ctx.fillStyle = marked ? opts.tone : C.bg;
+      ctx.fill();
+      ctx.lineWidth = marked ? 1.6 : 1;
+      ctx.strokeStyle = marked ? opts.tone : C.muted;
+      alpha(fade * (above ? 0.2 : marked ? 1 : 0.75));
+      ctx.stroke();
+    }
+    alpha(1);
+  }
+
+  function arcPoint(a, b, p, lift) {
+    return [lerp(a[0], b[0], p), lerp(a[1], b[1], p) - Math.sin(Math.PI * p) * lift];
+  }
+
+  /** Draws one frame of the stack while it moves from one box to another. */
+  function flyCard(a, b, p, s0, s1, tone) {
+    const e = ease(p);
+    const [x, y] = arcPoint(a, b, e, 26);
+    const s = lerp(s0, s1, e);
+    const c = project({ x: 0, y: 0 }, s, 0.5, 0.5, 0);
+    tracePolygon(cardPoints({ x: x - c[0], y: y - c[1] }, s, 0));
+    alpha(0.9);
+    ctx.fillStyle = C.bg;
+    ctx.fill();
+    ctx.lineWidth = 1.4;
+    ctx.strokeStyle = tone;
+    ctx.stroke();
+    alpha(1);
+  }
+
+  function tile(image, x, y, s, tone, a = 1) {
+    alpha(a);
+    ctx.imageSmoothingEnabled = true;
+    ctx.fillStyle = '#000';
+    ctx.fillRect(x, y, s, s);
+    ctx.drawImage(image, x, y, s, s);
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = tone;
+    ctx.strokeRect(x, y, s, s);
+    alpha(1);
+  }
+
+  /** Draws one small image while it moves from one box to another. */
+  function flyTile(image, a, b, p, s0, s1, tone, lift = 26) {
+    const e = ease(p);
+    const [x, y] = arcPoint(a, b, e, lift);
+    const s = lerp(s0, s1, e);
+    tile(image, x - s / 2, y - s / 2, s, tone);
+  }
+
+  const tileCenter = (r) => [r.x + r.s / 2, r.y + r.s / 2];
+
+  /** Draws the GPU memory bar. `limit` is the line that a small device cannot pass. */
+  function meter(mib, o = {}) {
+    const tx = GPU.x + 14;
+    const tw = GPU.w - 28;
+    const ty = GPU.y + GPU.h - 40;
+    const full = 200;
+    roundRect(tx, ty, tw, 8, 4);
+    alpha(0.7);
+    ctx.fillStyle = C.border;
+    ctx.fill();
+    alpha(1);
+    if (mib > 0) {
+      const fw = Math.max(2, tw * Math.min(1, mib / full));
+      roundRect(tx, ty, fw, 8, 4);
+      ctx.fillStyle = o.bad ? C.bad : C.gpu;
+      ctx.fill();
+    }
+    if (o.limit) {
+      const lx = tx + (tw * o.limit) / full;
+      ctx.beginPath();
+      ctx.moveTo(lx, ty - 6);
+      ctx.lineTo(lx, ty + 14);
+      ctx.lineWidth = 1.6;
+      ctx.strokeStyle = C.warn;
+      ctx.stroke();
+      txt('limit', lx + 5, ty - 4, { size: 10.5, color: C.warn });
+    }
+    const label = mib <= 0 ? '0 MiB' : mib < 10 ? `${mib.toFixed(1)} MiB` : `${Math.round(mib)} MiB`;
+    txt(label, tx, ty + 26, { size: 12, weight: 600, color: o.bad ? C.bad : C.fg });
+  }
+
+  /** The Hounsfield value of the made-up body at one point. */
+  function hu(x, y, z, beat) {
+    const body = (x * x) / 0.7396 + (y * y) / 0.36;
+    if (body > 1 || z < -1 || z > 1) {
+      return -1000;
+    }
+    let v = body > 0.86 ? -90 : 45;
+    const sy = y - 0.36;
+    const spine = x * x + sy * sy;
+    if (spine < 0.012) {
+      return spine < 0.0016 ? 25 : 620;
+    }
+    if (z > -0.3) {
+      for (let side = -1; side <= 1; side += 2) {
+        const lx = (x - side * 0.4) / 0.27;
+        const ly = (y + 0.04) / 0.36;
+        const lz = (z - 0.3) / 0.58;
+        if (lx * lx + ly * ly + lz * lz < 1) {
+          v = Math.sin(x * 43 + z * 17) * Math.sin(y * 47 - z * 13) > 0.8 ? -420 : -830;
+        }
+      }
+    }
+    const hr = 0.22 * (1 + 0.16 * beat);
+    const hx = (x - 0.1) / hr;
+    const hy = (y + 0.12) / (hr * 0.95);
+    const hz = (z - 0.12) / (hr * 1.15);
+    if (hx * hx + hy * hy + hz * hz < 1) {
+      v = 70;
+    }
+    const qx = (x + 0.34) / 0.36;
+    const qy = (y + 0.04) / 0.34;
+    const qz = (z + 0.5) / 0.3;
+    if (qx * qx + qy * qy + qz * qz < 1) {
+      v = 95;
+    }
+    if (lesionDistance(x, y, z) < 0.011) {
+      v = 55;
+    }
+    const ax = x - 0.1;
+    const ay = y - 0.17;
+    if (ax * ax + ay * ay < 0.0036) {
+      v = 170;
+    }
+    return v;
+  }
+
+  function lesionDistance(x, y, z) {
+    const dx = x + 0.36;
+    const dy = y + 0.08;
+    const dz = z + 0.5;
+    return dx * dx + dy * dy + dz * dz;
+  }
+
+  /** The tracer uptake of the made-up body at one point, for the PT layer. */
+  function uptake(x, y, z) {
+    const body = (x * x) / 0.7396 + (y * y) / 0.36;
+    if (body > 1 || z < -1 || z > 1) {
+      return 0;
+    }
+    let s = 0.6;
+    const hx = (x - 0.1) / 0.22;
+    const hy = (y + 0.12) / 0.21;
+    const hz = (z - 0.12) / 0.25;
+    if (hx * hx + hy * hy + hz * hz < 1) {
+      s = 3.4;
+    }
+    const qx = (x + 0.34) / 0.36;
+    const qy = (y + 0.04) / 0.34;
+    const qz = (z + 0.5) / 0.3;
+    if (qx * qx + qy * qy + qz * qz < 1) {
+      s = 2.1;
+    }
+    if (lesionDistance(x, y, z) < 0.013) {
+      s = 9;
+    }
+    return s;
+  }
+
+  const axial = (z) => ({ o: [0, 0, z], a: [1, 0, 0], b: [0, 1, 0] });
+  const coronal = (y) => ({ o: [0, y, 0], a: [1, 0, 0], b: [0, 0, -1] });
+  const sagittal = (x) => ({ o: [x, 0, 0], a: [0, 1, 0], b: [0, 0, -1] });
+
+  /** A plane between axial (0) and coronal (a quarter turn). */
+  function tilted(theta, zAxial, yCoronal) {
+    const f = theta / (Math.PI / 2);
+    return {
+      o: [0, yCoronal * f, zAxial * (1 - f)],
+      a: [1, 0, 0],
+      b: [0, Math.cos(theta), -Math.sin(theta)],
+    };
+  }
+
+  const buffers = {};
+
+  function buffer(name, n) {
+    let b = buffers[name];
+    if (!b) {
+      const c = document.createElement('canvas');
+      c.width = n;
+      c.height = n;
+      const g = c.getContext('2d');
+      b = buffers[name] = { c, g, im: g.createImageData(n, n), n, key: '' };
+    }
+    return b;
+  }
+
+  /** Cuts one grey slice out of the made-up body. */
+  function ct(name, pl, win, beat = 0) {
+    const b = buffer(name, 96);
+    const key = `${pl.o}|${pl.b}|${win}|${beat}`;
+    if (b.key === key) {
+      return b.c;
+    }
+    b.key = key;
+    const { n } = b;
+    const d = b.im.data;
+    const low = win[0] - win[1] / 2;
+    for (let j = 0; j < n; j++) {
+      const v = ((j + 0.5) / n) * 2 - 1;
+      for (let i = 0; i < n; i++) {
+        const u = ((i + 0.5) / n) * 2 - 1;
+        const value = hu(
+          pl.o[0] + pl.a[0] * u + pl.b[0] * v,
+          pl.o[1] + pl.a[1] * u + pl.b[1] * v,
+          pl.o[2] + pl.a[2] * u + pl.b[2] * v,
+          beat
+        );
+        const g = 255 * clamp01((value - low) / win[1]);
+        const p = (j * n + i) * 4;
+        d[p] = g;
+        d[p + 1] = g;
+        d[p + 2] = g;
+        d[p + 3] = 255;
+      }
+    }
+    b.g.putImageData(b.im, 0, 0);
+    return b.c;
+  }
+
+  /** Cuts one PT slice at a lower resolution and colours it. */
+  function pt(name, pl) {
+    const b = buffer(name, 32);
+    const key = `${pl.o}|${pl.b}`;
+    if (b.key === key) {
+      return b.c;
+    }
+    b.key = key;
+    const { n } = b;
+    const d = b.im.data;
+    for (let j = 0; j < n; j++) {
+      const v = ((j + 0.5) / n) * 2 - 1;
+      for (let i = 0; i < n; i++) {
+        const u = ((i + 0.5) / n) * 2 - 1;
+        const s = uptake(
+          pl.o[0] + pl.a[0] * u + pl.b[0] * v,
+          pl.o[1] + pl.a[1] * u + pl.b[1] * v,
+          pl.o[2] + pl.a[2] * u + pl.b[2] * v
+        );
+        const q = clamp01(s / 9);
+        const p = (j * n + i) * 4;
+        d[p] = 255 * clamp01(q * 3);
+        d[p + 1] = 255 * clamp01(q * 3 - 1);
+        d[p + 2] = 255 * clamp01(q * 3 - 2);
+        d[p + 3] = 255 * clamp01(q * 1.7) * 0.85;
+      }
+    }
+    b.g.putImageData(b.im, 0, 0);
+    return b.c;
+  }
+
+  /** Cuts one labelmap slice: a fill with an outline. */
+  function labelmap(name, pl) {
+    const b = buffer(name, 96);
+    const key = `${pl.o}|${pl.b}`;
+    if (b.key === key) {
+      return b.c;
+    }
+    b.key = key;
+    const { n } = b;
+    const d = b.im.data;
+    const mask = new Uint8Array(n * n);
+    for (let j = 0; j < n; j++) {
+      const v = ((j + 0.5) / n) * 2 - 1;
+      for (let i = 0; i < n; i++) {
+        const u = ((i + 0.5) / n) * 2 - 1;
+        const inside =
+          lesionDistance(
+            pl.o[0] + pl.a[0] * u + pl.b[0] * v,
+            pl.o[1] + pl.a[1] * u + pl.b[1] * v,
+            pl.o[2] + pl.a[2] * u + pl.b[2] * v
+          ) < 0.02;
+        mask[j * n + i] = inside ? 1 : 0;
+      }
+    }
+    for (let j = 0; j < n; j++) {
+      for (let i = 0; i < n; i++) {
+        const p = (j * n + i) * 4;
+        const m = mask[j * n + i];
+        const edge =
+          m &&
+          (!mask[j * n + i - 1] || !mask[j * n + i + 1] || !mask[(j - 1) * n + i] || !mask[(j + 1) * n + i]);
+        d[p] = 70;
+        d[p + 1] = 230;
+        d[p + 2] = 120;
+        d[p + 3] = edge ? 255 : m ? 95 : 0;
+      }
+    }
+    b.g.putImageData(b.im, 0, 0);
+    return b.c;
+  }
+
+  /** The brightest value along the front-to-back direction, seen from the front. */
+  function mip(name) {
+    const b = buffer(name, 96);
+    if (b.key) {
+      return b.c;
+    }
+    b.key = 'done';
+    const { n } = b;
+    const d = b.im.data;
+    const low = MIPWIN[0] - MIPWIN[1] / 2;
+    for (let j = 0; j < n; j++) {
+      const v = ((j + 0.5) / n) * 2 - 1;
+      for (let i = 0; i < n; i++) {
+        const u = ((i + 0.5) / n) * 2 - 1;
+        let best = -1000;
+        for (let k = 0; k < 28; k++) {
+          best = Math.max(best, hu(u, -0.62 + (k / 27) * 1.24, -v, 0));
+        }
+        const g = 255 * clamp01((best - low) / MIPWIN[1]);
+        const p = (j * n + i) * 4;
+        d[p] = g;
+        d[p + 1] = g;
+        d[p + 2] = g;
+        d[p + 3] = 255;
+      }
+    }
+    b.g.putImageData(b.im, 0, 0);
+    return b.c;
+  }
+
+  /** Draws the image of a viewport from its layers, in order. */
+  function view(r, layers, o = {}) {
+    const z = o.zoom || 1;
+    const dx = r.x + r.s / 2 - (r.s * z) / 2 + (o.panX || 0);
+    const dy = r.y + r.s / 2 - (r.s * z) / 2 + (o.panY || 0);
+    ctx.save();
+    roundRect(r.x, r.y, r.s, r.s, 6);
+    ctx.clip();
+    ctx.fillStyle = '#000';
+    ctx.fillRect(r.x, r.y, r.s, r.s);
+    for (const layer of layers) {
+      if (!layer || layer.alpha <= 0) {
+        continue;
+      }
+      ctx.save();
+      if (layer.bands) {
+        ctx.beginPath();
+        for (const [top, height] of layer.bands) {
+          ctx.rect(r.x, r.y + top * r.s, r.s, height * r.s);
+        }
+        ctx.clip();
+      }
+      alpha(layer.alpha === undefined ? 1 : layer.alpha);
+      ctx.imageSmoothingEnabled = layer.smooth !== false;
+      ctx.drawImage(layer.c, dx, dy, r.s * z, r.s * z);
+      ctx.restore();
+    }
+    if (o.grey) {
+      alpha(o.grey);
+      ctx.fillStyle = '#7b7b7b';
+      ctx.fillRect(r.x, r.y, r.s, r.s);
+    }
+    ctx.restore();
+    alpha(1);
+    roundRect(r.x, r.y, r.s, r.s, 6);
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = C.border;
+    ctx.stroke();
+    if (o.label) {
+      txt(o.label, r.x + r.s / 2, r.y + r.s / 2, {
+        size: o.labelSize || 13,
+        weight: 600,
+        color: '#ffffff',
+        align: 'center',
+        base: 'middle',
+      });
+    }
+    if (o.corner) {
+      txt(o.corner, r.x + 6, r.y + 14, { size: 10, weight: 600, color: '#ffffff' });
+    }
+  }
+
+  /** Draws the three boxes, the device label and the two arrows between the boxes. */
+  function base(o = {}) {
+    box(CPU, o.cpuTitle || 'CPU memory', o.cpuSub, { active: o.cpuActive, tone: C.cpu, dashed: o.cpuDashed });
+    box(GPU, 'GPU memory', o.gpuSub, {
+      active: o.gpuActive || o.gpuBad,
+      tone: o.gpuBad ? C.bad : C.gpu,
+      subColor: o.gpuBad ? C.bad : C.muted,
+    });
+    box(SCR, 'Screen', o.scrSub, {});
+    if (o.device) {
+      pill(`device: ${o.device}`, 62 * Math.min(TK, 1.2), 26, C.muted);
+    }
+    chevron(CPU.x + CPU.w + 9, CPU.y + CPU.h / 2, o.flowA, C.cpu);
+    chevron(GPU.x + GPU.w + 9, GPU.y + GPU.h / 2, o.flowB, C.gpu);
+    legend();
+  }
+
+  /** Says what the two colours of the stage mean. */
+  function legend() {
+    const y = 384;
+    const first = 'CPU at work';
+    const second = 'GPU at work';
+    const x2 = 28 + textWidth(first, { size: 10.5 }) + 18;
+    ctx.beginPath();
+    ctx.arc(18, y - 4, 4, 0, Math.PI * 2);
+    ctx.fillStyle = C.cpu;
+    ctx.fill();
+    txt(first, 28, y, { size: 10.5, color: C.muted });
+    ctx.beginPath();
+    ctx.arc(x2, y - 4, 4, 0, Math.PI * 2);
+    ctx.fillStyle = C.gpu;
+    ctx.fill();
+    txt(second, x2 + 10, y, { size: 10.5, color: C.muted });
+  }
+
+  function copySchedule(t, start, gap, flight, lastCard) {
+    let arrived = 0;
+    let filled = 0;
+    const flying = [];
+    for (let k = 0; k <= lastCard; k++) {
+      const p = seg(t, start + k * gap, start + k * gap + flight);
+      if (p >= 1) {
+        arrived++;
+      } else if (p > 0) {
+        flying.push([k, p]);
+      }
+      filled += seg(t, start + k * gap + flight - 0.2, start + k * gap + flight);
+    }
+    return { arrived, filled, flying };
+  }
+
+  function sceneToday(t) {
+    const copy = copySchedule(t, 0.8, 0.2, 0.6, DECK_N - 1);
+    const copying = t > 0.8 && copy.arrived < DECK_N;
+    const shown = seg(t, 5.5, 6.4);
+    base({
+      device: 'desktop',
+      cpuSub: '311 frames of one CT',
+      gpuSub: copy.arrived ? 'one 3D texture' : 'empty',
+      cpuActive: copying,
+      gpuActive: t > 0.8,
+      flowA: copying,
+      flowB: t > 5.2 && t < 6.6,
+    });
+    deck(CD, 1, { tone: C.cpu });
+    deck(GD, 0.82, { count: copy.arrived, hi: t > 4.7 ? 8 : -1, dimAbove: true, tone: C.gpu });
+    for (const [k, p] of copy.flying) {
+      flyCard(cardCenter(CD, 1, k), cardCenter(GD, 0.82, k), p, 1, 0.82, C.cpu);
+    }
+    meter((155 * copy.filled) / DECK_N);
+    view(VIEW, [{ c: ct('main', axial(zOf(8)), SOFT), alpha: ease(shown) }]);
+    status(CPU, copying ? 'copies every frame' : t < 0.8 ? 'holds the frames' : 'keeps its own copy too');
+    status(GPU, copy.arrived === DECK_N ? '155 MiB to show one slice' : '', C.gpu);
+    status(SCR, shown > 0 ? 'one slice' : '');
+  }
+
+  function sceneFails(t) {
+    const failCard = 6;
+    const failAt = 0.8 + failCard * 0.2 + 0.6;
+    const failed = t >= failAt;
+    const lost = t >= failAt + 0.9;
+    const copy = copySchedule(Math.min(t, failAt), 0.8, 0.2, 0.6, failCard);
+    const shake = failed && !lost ? Math.sin(t * 70) * 3 * (1 - seg(t, failAt, failAt + 0.9)) : 0;
+    base({
+      device: 'phone',
+      cpuSub: '311 frames of one CT',
+      gpuSub: lost ? 'context lost' : failed ? 'out of memory' : copy.arrived ? 'one 3D texture' : 'empty',
+      gpuBad: failed,
+      gpuActive: t > 0.8,
+      cpuActive: t > 0.8 && !failed,
+      flowA: t > 0.8 && !failed,
+    });
+    deck(CD, 1, { tone: C.cpu });
+    if (!lost) {
+      deck({ x: GD.x + shake, y: GD.y }, 0.82, { count: copy.arrived, tone: C.gpu });
+    }
+    if (!failed) {
+      for (const [k, p] of copy.flying) {
+        flyCard(cardCenter(CD, 1, k), cardCenter(GD, 0.82, k), p, 1, 0.82, C.cpu);
+      }
+    }
+    meter(lost ? 0 : Math.min((155 * copy.filled) / DECK_N, 66), { limit: 62, bad: failed });
+    view(VIEW, [], lost ? { grey: 1, label: 'grey view' } : {});
+    status(CPU, failed ? 'still holds every frame' : t > 0.8 ? 'copies every frame' : 'holds the frames');
+    status(GPU, lost ? 'no event tells the app why' : failed ? 'over the limit of this GPU' : '', C.bad);
+    status(SCR, lost ? 'nothing to look at' : '');
+  }
+
+  function sceneSliceFirst(t) {
+    const cut = 7;
+    const sweep = seg(t, 0.9, 2.1);
+    const hi = t < 0.9 ? -1 : Math.round(lerp(DECK_N - 1, cut, ease(sweep)));
+    const fly = seg(t, 2.2, 3.3);
+    const onGpu = t >= 3.3;
+    const shown = seg(t, 3.5, 4.3);
+    const image = ct('main', axial(zOf(cut)), SOFT);
+    base({
+      device: 'phone',
+      cpuSub: '311 frames of one CT',
+      gpuSub: onGpu ? 'one small 2D image' : 'empty',
+      cpuActive: t > 0.9 && t < 3.3,
+      gpuActive: onGpu,
+      flowA: fly > 0 && fly < 1,
+      flowB: t > 3.3 && t < 4.5,
+    });
+    deck(CD, 1, { hi, dimAbove: true, tone: C.cpu });
+    if (fly > 0 && fly < 1) {
+      flyTile(image, cardCenter(CD, 1, cut), tileCenter(GT), fly, 30, GT.s, C.cpu);
+    }
+    if (onGpu) {
+      tile(image, GT.x, GT.y, GT.s, C.gpu);
+    }
+    meter(onGpu ? 0.5 : 0, { limit: 62 });
+    view(VIEW, [{ c: image, alpha: ease(shown) }]);
+    status(
+      CPU,
+      t < 0.9 ? 'holds the frames' : t < 2.2 ? 'takes one frame: no work' : t < 3.3 ? 'sends one small image' : 'idle',
+      t > 0.9 && t < 3.3 ? C.cpu : C.muted
+    );
+    status(GPU, onGpu ? '0.5 MiB, far under the limit' : '', C.gpu);
+    status(SCR, shown > 0 ? 'the same picture' : '');
+  }
+
+  function sceneScroll(t) {
+    const steps = 5;
+    let started = 0;
+    let arrived = 0;
+    let fly = 0;
+    for (let i = 0; i < steps; i++) {
+      const at = 0.5 + i * 0.8;
+      if (t >= at) {
+        started++;
+      }
+      if (t >= at + 0.5) {
+        arrived++;
+      }
+      const p = seg(t, at + 0.1, at + 0.5);
+      if (p > 0 && p < 1) {
+        fly = p;
+      }
+    }
+    const hi = 7 + started;
+    const shownCard = 7 + arrived;
+    const swing = ease(seg(t, 5.0, 6.2)) - ease(seg(t, 7.0, 8.0));
+    const win = [lerp(SOFT[0], LUNG[0], swing), lerp(SOFT[1], LUNG[1], swing)];
+    const back = ease(seg(t, 11.0, 11.8));
+    const zoom = 1 + 0.9 * (ease(seg(t, 8.6, 9.6)) - back);
+    const pan = ease(seg(t, 9.7, 10.5)) * (1 - back);
+    const phase = t < 4.6 ? 'scroll' : t < 8.3 ? 'window' : 'zoom and pan';
+    const scrolling = phase === 'scroll';
+    const raw = ct('raw', axial(zOf(shownCard)), SOFT);
+    const image = ct('main', axial(zOf(shownCard)), win);
+    base({
+      device: 'phone',
+      cpuSub: '311 frames of one CT',
+      gpuSub: 'one small 2D image',
+      cpuActive: scrolling && fly > 0,
+      gpuActive: !scrolling || fly > 0.8,
+      flowA: scrolling && fly > 0,
+      flowB: true,
+    });
+    deck(CD, 1, { hi, dimAbove: true, tone: C.cpu });
+    tile(raw, GT.x, GT.y, GT.s, C.gpu);
+    if (fly > 0) {
+      flyTile(ct('next', axial(zOf(hi)), SOFT), cardCenter(CD, 1, hi), tileCenter(GT), fly, 30, GT.s, C.cpu);
+    }
+    meter(0.5, { limit: 62 });
+    view(VIEW, [{ c: image }], { zoom, panX: -34 * pan, panY: 22 * pan });
+    pill(phase, 360, 26, scrolling ? C.cpu : C.gpu);
+    status(CPU, scrolling ? 'takes the next frame: no work' : 'idle: 0 ms', scrolling ? C.cpu : C.muted);
+    status(GPU, scrolling ? 'takes the new image: 0.07 ms' : 'redraws the same image', C.gpu);
+    status(
+      SCR,
+      phase === 'window'
+        ? `window ${Math.round(win[1])}, level ${Math.round(win[0])}`
+        : phase === 'scroll'
+          ? `slice ${shownCard - 6} of 6`
+          : `zoom ${zoom.toFixed(1)}x`
+    );
+  }
+
+  function planePoints(o, s, theta, zc) {
+    const c = Math.cos(theta) * 0.5;
+    const d = Math.sin(theta) * 0.5;
+    return [
+      project(o, s, 0, 0.5 - c, zc + d),
+      project(o, s, 1, 0.5 - c, zc + d),
+      project(o, s, 1, 0.5 + c, zc - d),
+      project(o, s, 0, 0.5 + c, zc - d),
+    ];
+  }
+
+  function sceneAnyPlane(t) {
+    const degrees = 35 * ease(seg(t, 1.0, 2.8)) + 55 * ease(seg(t, 4.2, 6.2));
+    const theta = (degrees * Math.PI) / 180;
+    const f = degrees / 90;
+    const zc = lerp(7 / (DECK_N - 1), 0.5, f);
+    const image = ct('main', tilted(theta, zOf(7), -0.08), SOFT);
+    const moving = (t > 1.0 && t < 2.8) || (t > 4.2 && t < 6.2);
+    const name = degrees < 2 ? 'axial' : degrees > 88 ? 'coronal' : 'oblique';
+    base({
+      device: 'phone',
+      cpuSub: '311 frames of one CT',
+      gpuSub: 'one small 2D image',
+      cpuActive: moving,
+      gpuActive: true,
+      flowA: moving,
+      flowB: true,
+    });
+    deck(CD, 1, { fade: 0.5, tone: C.cpu });
+    const points = planePoints(CD, 1, theta, zc);
+    tracePolygon(points);
+    alpha(0.5);
+    ctx.fillStyle = C.cpu;
+    ctx.fill();
+    alpha(1);
+    ctx.lineWidth = 1.6;
+    ctx.strokeStyle = C.cpu;
+    ctx.stroke();
+    tile(image, GT.x, GT.y, GT.s, C.gpu);
+    const origin = project(CD, 1, 0.5, 0.5, zc);
+    for (let i = 0; i < 10; i++) {
+      const at = (i < 5 ? 1.0 : 4.2) + (i % 5) * 0.4;
+      const p = seg(t, at, at + 0.45);
+      if (p > 0 && p < 1) {
+        flyTile(image, origin, tileCenter(GT), p, 26, GT.s, C.cpu);
+      }
+    }
+    meter(0.5, { limit: 62 });
+    view(VIEW, [{ c: image }]);
+    pill(name, 360, 26, C.cpu);
+    status(
+      CPU,
+      moving ? 'tilted cut: 2 to 12 ms' : degrees > 88 ? 'coronal: a copy, under 0.1 ms' : 'idle',
+      moving ? C.cpu : C.muted
+    );
+    status(GPU, 'still one small image', C.gpu);
+    status(SCR, `${name} view`);
+  }
+
+  function sceneLayers(t) {
+    const pl = axial(-0.5);
+    const images = [ct('main', pl, SOFT), pt('pt', pl), labelmap('seg', pl)];
+    const names = ['CT', 'PT', 'label'];
+    const sources = [
+      { x: CPU.x + 160, y: CPU.y + 78, s: 44 },
+      { x: CPU.x + 168, y: CPU.y + 136, s: 28 },
+      { x: CPU.x + 160, y: CPU.y + 178, s: 44 },
+    ];
+    const slots = [
+      { x: GPU.x + 16, y: GPU.y + 92, s: 52 },
+      { x: GPU.x + 85, y: GPU.y + 103, s: 30 },
+      { x: GPU.x + 132, y: GPU.y + 92, s: 52 },
+    ];
+    const shows = [seg(t, 3.9, 4.5), seg(t, 4.8, 5.4), seg(t, 5.7, 6.3)];
+    let landed = 0;
+    base({
+      device: 'phone',
+      cpuSub: 'frames of CT, PT, labelmap',
+      gpuSub: 'three small 2D images',
+      cpuActive: t > 1.2 && t < 3.5,
+      gpuActive: t > 2.1,
+      flowA: t > 1.2 && t < 3.5,
+      flowB: t > 3.7 && t < 6.4,
+    });
+    deck(CD, 1, { hi: 3, dimAbove: true, tone: C.cpu });
+    for (let i = 0; i < 3; i++) {
+      const from = 1.2 + i * 0.7;
+      const p = seg(t, from, from + 0.9);
+      const appear = ease(seg(t, 0.3 + i * 0.25, 0.7 + i * 0.25));
+      tile(images[i], sources[i].x, sources[i].y, sources[i].s, C.cpu, appear);
+      if (p >= 1) {
+        landed++;
+        tile(images[i], slots[i].x, slots[i].y, slots[i].s, C.gpu);
+        txt(names[i], slots[i].x + slots[i].s / 2, GPU.y + 162, { size: 10.5, color: C.muted, align: 'center' });
+      } else if (p > 0) {
+        flyTile(images[i], tileCenter(sources[i]), tileCenter(slots[i]), p, sources[i].s, slots[i].s, C.cpu);
+      }
+    }
+    meter([0, 0.5, 0.55, 0.6][landed], { limit: 62 });
+    view(VIEW, [
+      { c: images[0], alpha: ease(shows[0]) },
+      { c: images[1], alpha: ease(shows[1]) },
+      { c: images[2], alpha: ease(shows[2]), smooth: false },
+    ]);
+    const order = ['1 CT', '2 PT', '3 labelmap'].filter((_, i) => shows[i] > 0).join('   ');
+    status(CPU, t > 1.2 && t < 3.5 ? 'cuts one slice of each' : 'holds the frames', t > 1.2 && t < 3.5 ? C.cpu : C.muted);
+    status(GPU, landed === 3 ? 'each at its own resolution' : '', C.gpu);
+    status(SCR, order ? `drawn in order: ${order}` : '');
+  }
+
+  function workers(progress) {
+    txt('4 workers', CPU.x + 158, CPU.y + 78, { size: 10.5, color: C.cpu });
+    for (let i = 0; i < 4; i++) {
+      const y = CPU.y + 88 + i * 16;
+      roundRect(CPU.x + 158, y, 56, 7, 3);
+      alpha(0.7);
+      ctx.fillStyle = C.border;
+      ctx.fill();
+      alpha(1);
+      if (progress > 0) {
+        roundRect(CPU.x + 158, y, Math.max(2, 56 * progress), 7, 3);
+        ctx.fillStyle = C.cpu;
+        ctx.fill();
+      }
+    }
+  }
+
+  function sceneSlab(t) {
+    const first = t < 6.5;
+    const thick = mip('mip');
+    const thin = ct('thin', coronal(-0.08), MIPWIN);
+    pill('view wants: thick MIP', SCR.x + SCR.w / 2, 26, C.fg, ease(seg(t, 0.3, 0.7)));
+    if (first) {
+      const copy = copySchedule(t, 2.2, 0.09, 0.4, DECK_N - 1);
+      const gone = 1 - ease(seg(t, 6.0, 6.4));
+      const shown = ease(seg(t, 4.2, 5.0)) * gone;
+      const copying = t > 2.2 && copy.arrived < DECK_N;
+      base({
+        device: 'desktop',
+        cpuSub: '311 frames of one CT',
+        gpuSub: copy.arrived ? 'one 3D texture' : 'empty',
+        cpuActive: copying,
+        gpuActive: t > 2.2,
+        flowA: copying,
+        flowB: t > 4.0 && t < 5.2,
+      });
+      deck(CD, 1, { tone: C.cpu });
+      deck(GD, 0.82, { count: copy.arrived, fade: gone, tone: C.gpu });
+      for (const [k, p] of copy.flying) {
+        flyCard(cardCenter(CD, 1, k), cardCenter(GD, 0.82, k), p, 1, 0.82, C.cpu);
+      }
+      meter(((155 * copy.filled) / DECK_N) * gone);
+      view(VIEW, [{ c: thick, alpha: shown }]);
+      if (t < 1.9) {
+        pill('router: does the volume fit?', 300, 26, C.fg, ease(seg(t, 0.9, 1.3)));
+      } else {
+        pill('fits: GPU volume texture', 300, 26, C.good);
+      }
+      status(CPU, copying ? 'copies every frame' : 'holds the frames');
+      status(GPU, copy.arrived === DECK_N ? 'the slab is computed on the GPU' : '', C.gpu);
+      status(SCR, shown > 0.5 ? 'MIP' : '');
+      return;
+    }
+    const thinFly = seg(t, 7.4, 8.0);
+    const work = seg(t, 8.1, 10.3);
+    const lastFly = seg(t, 10.3, 10.9);
+    const bands = [[0, work]];
+    base({
+      device: 'phone',
+      cpuSub: '311 frames of one CT',
+      gpuSub: t >= 8.0 ? 'one small 2D image' : 'empty',
+      cpuActive: t > 7.2 && t < 10.9,
+      gpuActive: t >= 8.0,
+      flowA: (thinFly > 0 && thinFly < 1) || (lastFly > 0 && lastFly < 1),
+      flowB: t >= 8.0,
+    });
+    deck(CD, 1, { fade: work > 0 && work < 1 ? 0.6 : 1, tone: C.cpu });
+    workers(work);
+    if (thinFly > 0 && thinFly < 1) {
+      flyTile(thin, cardCenter(CD, 1, 8), tileCenter(GT), thinFly, 30, GT.s, C.cpu);
+    }
+    if (lastFly > 0 && lastFly < 1) {
+      flyTile(thick, cardCenter(CD, 1, 8), tileCenter(GT), lastFly, 30, GT.s, C.cpu);
+    }
+    if (t >= 8.0) {
+      tile(t >= 10.9 ? thick : thin, GT.x, GT.y, GT.s, C.gpu);
+    }
+    meter(t >= 8.0 ? 0.5 : 0, { limit: 62 });
+    view(VIEW, [
+      { c: thin, alpha: t >= 8.0 ? 1 : 0 },
+      { c: thick, alpha: work > 0 ? 1 : 0, bands },
+    ]);
+    if (work > 0 && work < 1) {
+      ctx.beginPath();
+      ctx.moveTo(VIEW.x, VIEW.y + work * VIEW.s);
+      ctx.lineTo(VIEW.x + VIEW.s, VIEW.y + work * VIEW.s);
+      ctx.lineWidth = 1.6;
+      ctx.strokeStyle = C.cpu;
+      ctx.stroke();
+    }
+    pill(
+      t < 7.2 ? 'router: does the volume fit?' : 'no room: CPU computes the slab',
+      300,
+      26,
+      t < 7.2 ? C.fg : C.warn
+    );
+    status(CPU, work > 0 && work < 1 ? 'computes the slab in workers' : work >= 1 ? 'done' : 'cuts the thin slice first', C.cpu);
+    status(GPU, t >= 8.0 ? 'still 0.5 MiB' : '', C.gpu);
+    status(SCR, work >= 1 ? 'MIP: same pixels, slower' : t >= 8.0 ? 'thin slice first, then the slab' : '');
+  }
+
+  function sceneGpuFails(t) {
+    const image = ct('main', axial(zOf(7)), SOFT);
+    const lost = t >= 2.0 && t < 5.6;
+    const cpuFly = seg(t, 2.4, 3.3);
+    const backFly = seg(t, 5.8, 6.6);
+    const onGpu = t < 2.0 || t >= 6.6;
+    const dim = lost ? lerp(0.3, 1, ease(seg(t, 3.1, 3.5))) : 1;
+    const onCpu = t >= 2.0 && t < 6.6;
+    base({
+      device: 'phone',
+      cpuSub: '311 frames of one CT',
+      gpuSub: lost ? 'context lost' : t >= 5.6 && t < 6.6 ? 'context restored' : 'one small 2D image',
+      gpuBad: lost,
+      gpuActive: !lost,
+      cpuActive: onCpu,
+      flowA: backFly > 0 && backFly < 1,
+      flowB: onGpu,
+    });
+    deck(CD, 1, { hi: 7, dimAbove: true, tone: C.cpu });
+    if (lost) {
+      ctx.beginPath();
+      ctx.moveTo(GPU.x + 60, GPU.y + 80);
+      ctx.lineTo(GPU.x + 140, GPU.y + 160);
+      ctx.moveTo(GPU.x + 140, GPU.y + 80);
+      ctx.lineTo(GPU.x + 60, GPU.y + 160);
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = C.bad;
+      alpha(0.8);
+      ctx.stroke();
+      alpha(1);
+    }
+    if (onGpu) {
+      tile(image, GT.x, GT.y, GT.s, C.gpu);
+    }
+    if (backFly > 0 && backFly < 1) {
+      flyTile(image, cardCenter(CD, 1, 7), tileCenter(GT), backFly, 30, GT.s, C.cpu);
+    }
+    meter(onGpu ? 0.5 : 0, { limit: 62 });
+    view(VIEW, [{ c: image, alpha: dim }]);
+    if (onCpu) {
+      const from = [CPU.x + CPU.w / 2, CPU.y + CPU.h + 6];
+      const to = [VIEW.x + VIEW.s / 2, SCR.y + SCR.h + 6];
+      ctx.beginPath();
+      ctx.moveTo(from[0], from[1]);
+      ctx.quadraticCurveTo((from[0] + to[0]) / 2, from[1] + 92, to[0], to[1]);
+      ctx.setLineDash([5, 4]);
+      ctx.lineWidth = 1.6;
+      ctx.strokeStyle = C.cpu;
+      ctx.stroke();
+      ctx.setLineDash([]);
+      txt('drawn on the CPU, Canvas2D', (from[0] + to[0]) / 2, from[1] + 72, { size: 11.5, color: C.cpu, align: 'center' });
+      if (cpuFly > 0 && cpuFly < 1) {
+        flyTile(image, from, to, cpuFly, 30, 30, C.cpu, -46);
+      }
+    }
+    pill(onCpu ? 'draw step: CPU' : 'draw step: GPU', 360, 26, onCpu ? C.cpu : C.gpu);
+    status(CPU, onCpu ? '' : 'holds the frames');
+    status(GPU, lost ? 'lost one small image only' : t >= 6.6 ? 'rebuilt in milliseconds' : '', lost ? C.bad : C.gpu);
+    if (onCpu && t >= 3.4) {
+      pill('same pixels', SCR.x + SCR.w - 58, SCR.y + 19, C.good);
+    }
+  }
+
+  function sceneTime(t) {
+    const frames = 8;
+    const firstLoop = t < 7.0;
+    let k = 0;
+    let cached = 0;
+    const flights = [];
+    if (firstLoop) {
+      k = Math.min(frames - 1, Math.max(0, Math.floor((t - 0.6) / 0.72)));
+      for (let i = 0; i < frames; i++) {
+        const at = 0.6 + i * 0.72;
+        if (t >= at + 0.5) {
+          cached++;
+        }
+        for (let row = 0; row < 3; row++) {
+          const p = seg(t, at + row * 0.06, at + row * 0.06 + 0.4);
+          if (p > 0 && p < 1) {
+            flights.push([i, row, p]);
+          }
+        }
+      }
+    } else {
+      k = Math.floor((t - 7.0) / 0.36) % frames;
+      cached = frames;
+    }
+    const beat = Math.sin((2 * Math.PI * k) / frames);
+    const images = [
+      ct('ax', axial(0.12), SOFT, beat),
+      ct('co', coronal(-0.12), SOFT, beat),
+      ct('sa', sagittal(0.1), SOFT, beat),
+    ];
+    const cuts = firstLoop && t > 0.6 && t < 6.5;
+    base({
+      device: 'phone',
+      cpuSub: '8 time points of frames',
+      gpuSub: 'cache of small images',
+      cpuActive: cuts,
+      gpuActive: t > 1.0,
+      flowA: cuts,
+      flowB: true,
+    });
+    for (let i = 0; i < frames; i++) {
+      roundRect(CPU.x + 70 + i * 18, CPU.y + 52, 14, 10, 2);
+      ctx.fillStyle = i === k ? C.cpu : C.bg;
+      ctx.fill();
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = i === k ? C.cpu : C.muted;
+      ctx.stroke();
+    }
+    txt('time', CPU.x + 12, CPU.y + 61, { size: 10.5, color: C.muted });
+    deck(CD, 1, { hi: cuts ? 8 : -1, dimAbove: true, tone: C.cpu });
+    const cell = (i, row) => ({ x: GPU.x + 26 + i * 19, y: GPU.y + 86 + row * 21, s: 15 });
+    for (let i = 0; i < frames; i++) {
+      for (let row = 0; row < 3; row++) {
+        const r = cell(i, row);
+        roundRect(r.x, r.y, r.s, r.s, 2);
+        if (i < cached) {
+          ctx.fillStyle = i === k ? C.gpu : C.muted;
+          alpha(i === k ? 1 : 0.55);
+          ctx.fill();
+          alpha(1);
+        }
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = i === k ? C.gpu : C.border;
+        ctx.stroke();
+      }
+    }
+    for (const [i, row, p] of flights) {
+      flyTile(images[row], cardCenter(CD, 1, 8), tileCenter(cell(i, row)), p, 20, 15, C.cpu, 18);
+    }
+    meter((6 * cached) / frames, { limit: 62 });
+    const tiles = [
+      { x: SCR.x + 22, y: SCR.y + 44, s: 92 },
+      { x: SCR.x + 124, y: SCR.y + 44, s: 92 },
+      { x: SCR.x + 22, y: SCR.y + 146, s: 92 },
+    ];
+    const names = ['axial', 'coronal', 'sagittal'];
+    for (let i = 0; i < 3; i++) {
+      view(tiles[i], [{ c: images[i] }], { corner: names[i] });
+    }
+    txt('time point', SCR.x + 170, SCR.y + 178, { size: 11, color: C.muted, align: 'center' });
+    txt(`${k + 1} of ${frames}`, SCR.x + 170, SCR.y + 204, { size: 19, weight: 700, align: 'center' });
+    pill(firstLoop ? 'first loop: the CPU cuts' : 'next loop: only swaps', 360, 26, firstLoop ? C.cpu : C.gpu);
+    status(CPU, cuts ? 'cuts 3 slices per time point' : 'idle: 0 ms', cuts ? C.cpu : C.muted);
+    status(GPU, firstLoop ? `keeps ${cached * 3} of 24 slices` : 'swaps the cached images', C.gpu);
+    const y = 362;
+    ctx.beginPath();
+    ctx.moveTo(60, y);
+    ctx.lineTo(660, y);
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = C.border;
+    ctx.stroke();
+    for (let i = 0; i < frames; i++) {
+      const x = 60 + (i * 600) / (frames - 1);
+      ctx.beginPath();
+      ctx.arc(x, y, i === k ? 6 : 3.5, 0, Math.PI * 2);
+      ctx.fillStyle = i === k ? (firstLoop ? C.cpu : C.gpu) : C.muted;
+      ctx.fill();
+    }
+  }
+
+  function sceneServer(t) {
+    const cut = 9;
+    const ask = seg(t, 0.6, 1.8);
+    const sweep = seg(t, 1.8, 2.6);
+    const hi = t < 1.8 ? -1 : Math.round(lerp(DECK_N - 1, cut, ease(sweep)));
+    const fly = seg(t, 2.7, 3.8);
+    const onGpu = t >= 3.8;
+    const shown = seg(t, 3.9, 4.5);
+    const swing = ease(seg(t, 4.9, 5.9)) - ease(seg(t, 6.6, 7.5));
+    const win = [lerp(SOFT[0], LUNG[0], swing), lerp(SOFT[1], LUNG[1], swing)];
+    const zoom = 1 + 0.5 * (ease(seg(t, 7.6, 8.3)) - ease(seg(t, 8.5, 8.9)));
+    const raw = ct('raw', axial(zOf(cut)), SOFT);
+    const image = ct('main', axial(zOf(cut)), win);
+    const local = t >= 4.7;
+    base({
+      device: 'phone',
+      cpuTitle: 'Server, later',
+      cpuSub: 'holds the frames',
+      cpuDashed: true,
+      gpuSub: onGpu ? 'one small 2D image' : 'empty',
+      cpuActive: t > 1.8 && t < 3.8,
+      gpuActive: onGpu,
+      flowA: fly > 0 && fly < 1,
+      flowB: onGpu,
+    });
+    deck(CD, 1, { hi, dimAbove: true, tone: C.cpu });
+    if (fly > 0 && fly < 1) {
+      flyTile(raw, cardCenter(CD, 1, cut), tileCenter(GT), fly, 30, GT.s, C.cpu);
+    }
+    if (onGpu) {
+      tile(raw, GT.x, GT.y, GT.s, C.gpu);
+    }
+    meter(onGpu ? 0.5 : 0, { limit: 62 });
+    view(VIEW, [{ c: image, alpha: ease(shown) }], { zoom });
+    if (local) {
+      pill('window, zoom, pan: local, instant', 360, 26, C.gpu);
+    } else {
+      pill('asks for: plane, time point, slab', lerp(560, 150, ease(ask)), 26, C.cpu, t < 0.6 ? ease(seg(t, 0.2, 0.6)) : 1);
+    }
+    status(CPU, t < 1.8 ? 'waits for a request' : t < 2.7 ? 'cuts one slice' : local ? 'idle' : 'sends raw values, lossless', t > 1.8 && !local ? C.cpu : C.muted);
+    status(GPU, local ? 'redraws the same image' : '', C.gpu);
+    status(SCR, local ? `window ${Math.round(win[1])}, level ${Math.round(win[0])}` : '');
+  }
+
+  const GOES = [
+    'global renderBackend',
+    'preferSizeOverAccuracy',
+    'cpuVolume tuning',
+    'reducedTextureFill',
+    'GPU presets',
+    'texture budget',
+  ];
+  const GOES_SETTINGS = [1, 1, 2, 1, 0, 0];
+  const LEGACY = [
+    'useCPURendering',
+    'isMobile',
+    'webGlContextCount',
+    'renderingEngineMode',
+    'useLegacyCameraFOV',
+    'legacy viewports',
+    'old engines',
+  ];
+  const LEGACY_SETTINGS = [1, 1, 1, 1, 1, 0, 0];
+  const STAYS = ['useGenericViewport', 'lossyDownsampling', 'fidelity indicator'];
+
+  function chip(s, x, y, o = {}) {
+    const size = 11.5;
+    const w = textWidth(s, { size, mono: true }) + 16;
+    const h = 22 * Math.min(TK, 1.25);
+    alpha(o.alpha === undefined ? 1 : o.alpha);
+    roundRect(x, y, w, h, 6);
+    ctx.fillStyle = C.bg;
+    ctx.fill();
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = o.tone || C.border;
+    ctx.stroke();
+    txt(s, x + 8, y + h / 2 + 0.5, { size, mono: true, base: 'middle', color: o.color || C.fg, alpha: o.alpha });
+    if (o.strike > 0) {
+      ctx.beginPath();
+      ctx.moveTo(x + 6, y + h / 2);
+      ctx.lineTo(x + 6 + (w - 12) * o.strike, y + h / 2);
+      ctx.lineWidth = 1.6;
+      ctx.strokeStyle = C.bad;
+      alpha(1);
+      ctx.stroke();
+    }
+    alpha(1);
+    return w;
+  }
+
+  /**
+   * Lays chips out in rows from the left edge and returns the y below the
+   * last row. draw gets the label, its place and its index.
+   */
+  function flowChips(items, top, draw) {
+    const rowHeight = 30 * Math.min(TK, 1.25);
+    let x = 20;
+    let y = top;
+    for (let i = 0; i < items.length; i++) {
+      const w = textWidth(items[i], { size: 11.5, mono: true }) + 16;
+      if (x + w > 706) {
+        x = 20;
+        y += rowHeight;
+      }
+      draw(items[i], x, y, i);
+      x += w + 8;
+    }
+    return y + rowHeight;
+  }
+
+  function sceneGoes(t) {
+    const unit = Math.min(TK, 1.25);
+    const pad = 12 * unit;
+    const head = 14 * unit;
+    let retired = 0;
+    txt('Goes', 20, 30, { size: 13, weight: 700, color: C.bad });
+    let y = flowChips(GOES, 30 + pad, (label, x, top, i) => {
+      const strike = ease(seg(t, 1.4 + i * 0.35, 1.7 + i * 0.35));
+      if (strike >= 1) {
+        retired += GOES_SETTINGS[i];
+      }
+      chip(label, x, top, {
+        alpha: ease(seg(t, 0.1 + i * 0.05, 0.5 + i * 0.05)) * lerp(1, 0.45, strike),
+        strike,
+        tone: strike > 0 ? C.bad : C.border,
+      });
+    });
+    txt('Kept for the legacy viewports only', 20, y + head, { size: 13, weight: 700, color: C.warn });
+    y = flowChips(LEGACY, y + head + pad, (label, x, top, i) => {
+      const off = ease(seg(t, 3.7 + i * 0.25, 4.0 + i * 0.25));
+      if (off >= 1) {
+        retired += LEGACY_SETTINGS[i];
+      }
+      chip(label, x, top, {
+        alpha: ease(seg(t, 0.3 + i * 0.05, 0.7 + i * 0.05)) * lerp(1, 0.6, off),
+        tone: off > 0 ? C.warn : C.border,
+      });
+    });
+    txt('Stays', 20, y + head, { size: 13, weight: 700, color: C.good });
+    flowChips(STAYS, y + head + pad, (label, x, top, i) => {
+      chip(label, x, top, {
+        alpha: ease(seg(t, 0.5 + i * 0.1, 1.0 + i * 0.1)),
+        tone: C.good,
+      });
+    });
+    const lines = Math.round(15100 * ease(seg(t, 5.4, 6.9)));
+    txt('settings read by default', 20, 322, { size: 12, color: C.muted });
+    txt(String(22 - retired), 20, 366, { size: 40, weight: 700 });
+    txt('of 22', 76 * Math.min(TK, 1.2), 366, { size: 14, color: C.muted });
+    txt('lines of legacy code kept, off the default path', 250, 322, { size: 12, color: C.muted });
+    txt(lines >= 15100 ? 'about 15,100' : lines.toLocaleString('en-US'), 250, 366, { size: 40, weight: 700 });
+  }
+
+  const scenes = [
+    {
+      label: 'Today',
+      dur: 9,
+      draw: sceneToday,
+      text: 'To show one slice, every frame of the volume is copied into one big 3D texture on the GPU. For this CT that is 155 MiB.',
+    },
+    {
+      label: 'Why it fails',
+      dur: 8,
+      draw: sceneFails,
+      text: 'A small GPU cannot hold that texture. The view turns grey or black, or the browser drops the WebGL context. No event tells the app why.',
+    },
+    {
+      label: 'Slice first',
+      dur: 9,
+      draw: sceneSliceFirst,
+      text: 'The CPU hands over one slice of the frames it already holds. In this plane the slice is one frame, so there is nothing to compute. Only that small image goes to the GPU, so the same phone is fine.',
+    },
+    {
+      label: 'Scroll, window, zoom',
+      dur: 12,
+      draw: sceneScroll,
+      text: 'A scroll takes the next frame. Window, zoom and pan only redraw the small image on the GPU. The CPU does nothing for them.',
+    },
+    {
+      label: 'Any plane',
+      dur: 9,
+      draw: sceneAnyPlane,
+      text: 'Coronal, sagittal or oblique: only the cut changes. A straight cut is a copy and takes under 1 ms. A tilted cut takes 2 to 12 ms. Today these planes need the 3D texture.',
+    },
+    {
+      label: 'Layers',
+      dur: 9,
+      draw: sceneLayers,
+      text: 'A fusion overlay and a labelmap are more small images, each at its own resolution. The GPU draws them in order, so a layer can never end up behind the image.',
+    },
+    {
+      label: 'Slab and 3D',
+      dur: 12,
+      draw: sceneSlab,
+      text: 'A thick slab and 3D are the only views that need the big texture. The router checks the size first. If it does not fit, the CPU computes the slab: the same pixels, only slower. 3D with no room sends an event to the app.',
+    },
+    {
+      label: 'When the GPU fails',
+      dur: 9,
+      draw: sceneGpuFails,
+      text: 'If WebGL is missing or the context is lost, the same small image is drawn on the CPU. Cornerstone switches by itself, because the picture is the same. A reduced picture is never automatic.',
+    },
+    {
+      label: '4D',
+      dur: 12,
+      draw: sceneTime,
+      text: 'A new time point is three small cuts, not a new volume upload. The cuts are kept. The next loop only swaps small images, and the CPU is idle.',
+    },
+    {
+      label: 'Server, later',
+      dur: 9,
+      draw: sceneServer,
+      text: 'Later, a server can make the cut and send the same small image of raw values. The client still draws, so window, zoom and pan stay instant. v6 only has to keep this door open.',
+    },
+    {
+      label: 'What goes, what stays',
+      dur: 9,
+      draw: sceneGoes,
+      text: 'The app stops describing the device. The default viewports stop reading 10 of the 22 settings. The legacy viewports stay in the code with their engines, but they are no longer the default.',
+    },
+  ];
+
+  let current = 0;
+  let time = 0;
+  let playing = !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let last = performance.now();
+  let themeAge = 0;
+
+  /** Shows one step from its start. */
+  function show(index) {
+    current = (index + scenes.length) % scenes.length;
+    time = 0;
+    const scene = scenes[current];
+    captionEl.innerHTML = '';
+    const lead = document.createElement('b');
+    lead.textContent = `${current + 1}. ${scene.label}. `;
+    captionEl.append(lead, scene.text);
+    countEl.textContent = `${current + 1} of ${scenes.length}`;
+    [...chipsEl.children].forEach((button, i) => {
+      button.setAttribute('aria-selected', i === current ? 'true' : 'false');
+    });
+  }
+
+  function setPlaying(value) {
+    playing = value;
+    playBtn.textContent = playing ? 'Pause' : 'Play';
+  }
+
+  function render() {
+    ctx.setTransform(scale * dpr, 0, 0, scale * dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    GA = playing ? ease(seg(time, 0, 0.25)) : 1;
+    alpha(1);
+    scenes[current].draw(time);
+    fillEl.style.width = `${(100 * time) / scenes[current].dur}%`;
+  }
+
+  function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    themeAge += dt;
+    if (themeAge > 0.5) {
+      themeAge = 0;
+      readTheme();
+    }
+    if (playing) {
+      time += dt;
+      if (time >= scenes[current].dur) {
+        show(current + 1);
+      }
+    }
+    render();
+    requestAnimationFrame(frame);
+  }
+
+  scenes.forEach((scene, i) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.setAttribute('role', 'tab');
+    button.textContent = `${i + 1} ${scene.label}`;
+    button.addEventListener('click', () => {
+      show(i);
+      setPlaying(true);
+    });
+    chipsEl.append(button);
+  });
+
+  root.querySelector('[data-act="prev"]').addEventListener('click', () => show(current - 1));
+  root.querySelector('[data-act="next"]').addEventListener('click', () => show(current + 1));
+  playBtn.addEventListener('click', () => setPlaying(!playing));
+  window.addEventListener('keydown', (event) => {
+    if (event.key === 'ArrowRight') {
+      show(current + 1);
+    } else if (event.key === 'ArrowLeft') {
+      show(current - 1);
+    }
+  });
+
+  /** Jumps to a step and a time and holds there. For checks of single frames. */
+  window.__v6seek = (index, seconds) => {
+    show(index);
+    time = seconds;
+    setPlaying(false);
+    render();
+  };
+
+  new ResizeObserver(resize).observe(canvas);
+  readTheme();
+  resize();
+  show(0);
+  setPlaying(playing);
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

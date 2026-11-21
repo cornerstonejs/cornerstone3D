@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040.0" height="646" viewBox="0 0 1040.0 646">
+<rect width="1040.0" height="646" fill="#ffffff"/>
+<text x="16" y="28" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="18" font-weight="700" fill="#0b0b0b">Row 97: mismatch of each picture compare of volumeViewport_gpu_render_test.js</text>
+<text x="16" y="50" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="13" fill="#52514e">Per compare, the resemble.js mismatch with its 1.x baseline, as the test logs it. A compare above 15 % fails.</text>
+<rect x="16" y="62" width="12" height="12" rx="2" fill="#2a78d6"/><text x="34" y="73" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" fill="#0b0b0b">6.0, HEAD 797b4d670</text>
+<rect x="170" y="62" width="12" height="12" rx="2" fill="#eb6834"/><text x="188" y="73" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" fill="#0b0b0b">5.x, 58914567b (xdescribe blocks turned on)</text>
+<line x1="330.0" y1="110" x2="330.0" y2="536" stroke="#e6e4de"/>
+<text x="330.0" y="552" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#52514e" text-anchor="middle">0 %</text>
+<line x1="420.0" y1="110" x2="420.0" y2="536" stroke="#e6e4de"/>
+<text x="420.0" y="552" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#52514e" text-anchor="middle">15 %</text>
+<line x1="480.0" y1="110" x2="480.0" y2="536" stroke="#e6e4de"/>
+<text x="480.0" y="552" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#52514e" text-anchor="middle">25 %</text>
+<line x1="630.0" y1="110" x2="630.0" y2="536" stroke="#e6e4de"/>
+<text x="630.0" y="552" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#52514e" text-anchor="middle">50 %</text>
+<line x1="780.0" y1="110" x2="780.0" y2="536" stroke="#e6e4de"/>
+<text x="780.0" y="552" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#52514e" text-anchor="middle">75 %</text>
+<line x1="930.0" y1="110" x2="930.0" y2="536" stroke="#e6e4de"/>
+<text x="930.0" y="552" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#52514e" text-anchor="middle">100 %</text>
+<line x1="420.0" y1="102" x2="420.0" y2="536" stroke="#0b0b0b" stroke-width="1.5" stroke-dasharray="4 3"/>
+<text x="424.0" y="100" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#0b0b0b">15 % threshold</text>
+<text x="320" y="129" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#0b0b0b" text-anchor="end">sphere (polydata)  (render a sphere source)</text>
+<rect x="330" y="116" width="1.5" height="9" rx="2" fill="#2a78d6"><title>sphere_default_sagittal cur: 0.0 % passed</title></rect>
+<text x="335.5" y="124" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#0b0b0b">0.00 %</text>
+<rect x="330" y="127" width="1.5" height="9" rx="2" fill="#eb6834"><title>sphere_default_sagittal legacy: 0.0 % passed</title></rect>
+<text x="335.5" y="135" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#0b0b0b">0.00 %</text>
+<text x="320" y="159" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#0b0b0b" text-anchor="end">sagittal_nearest  (nearest)</text>
+<rect x="330" y="146" width="16.080000000000002" height="9" rx="2" fill="#2a78d6"><title>volumeURI_100_100_10_1_1_1_0_sagittal_nearest cur: 2.68 % passed</title></rect>
+<text x="350.08" y="154" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#0b0b0b">2.68 %</text>
+<rect x="330" y="157" width="16.080000000000002" height="9" rx="2" fill="#eb6834"><title>volumeURI_100_100_10_1_1_1_0_sagittal_nearest legacy: 2.68 % passed</title></rect>
+<text x="350.08" y="165" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#0b0b0b">2.68 %</text>
+<text x="320" y="189" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#0b0b0b" text-anchor="end">sagittal_linear  (linear)</text>
+<rect x="330" y="176" width="22.919999999999998" height="9" rx="2" fill="#2a78d6"><title>volumeURI_100_100_10_1_1_1_0_sagittal_linear cur: 3.82 % passed</title></rect>
+<text x="356.92" y="184" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#0b0b0b">3.82 %</text>
+<rect x="330" y="187" width="18.84" height="9" rx="2" fill="#eb6834"><title>volumeURI_100_100_10_1_1_1_0_sagittal_linear legacy: 3.14 % passed</title></rect>
+<text x="352.84" y="195" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#0b0b0b">3.14 %</text>
+<text x="320" y="219" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#0b0b0b" text-anchor="end">coronal_nearest  (nearest)</text>
+<rect x="330" y="206" width="15.48" height="9" rx="2" fill="#2a78d6"><title>volumeURI_100_100_10_1_1_1_0_coronal_nearest cur: 2.58 % passed</title></rect>
+<text x="349.48" y="214" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#0b0b0b">2.58 %</text>
+<rect x="330" y="217" width="15.54" height="9" rx="2" fill="#eb6834"><title>volumeURI_100_100_10_1_1_1_0_coronal_nearest legacy: 2.59 % passed</title></rect>
+<text x="349.54" y="225" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#0b0b0b">2.59 %</text>
+<text x="320" y="249" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#0b0b0b" text-anchor="end">coronal_linear  (linear)</text>
+<rect x="330" y="236" width="21.84" height="9" rx="2" fill="#2a78d6"><title>volumeURI_100_100_10_1_1_1_0_coronal_linear cur: 3.64 % passed</title></rect>
+<text x="355.84" y="244" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#0b0b0b">3.64 %</text>
+<rect x="330" y="247" width="19.56" height="9" rx="2" fill="#eb6834"><title>volumeURI_100_100_10_1_1_1_0_coronal_linear legacy: 3.26 % passed</title></rect>
+<text x="353.56" y="255" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#0b0b0b">3.26 %</text>
+<text x="320" y="279" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#0b0b0b" text-anchor="end">coronal_nearest  (use setVolumesForViewports API)</text>
+<rect x="330" y="266" width="15.48" height="9" rx="2" fill="#2a78d6"><title>volumeURI_100_100_10_1_1_1_0_coronal_nearest cur: 2.58 % passed</title></rect>
+<text x="349.48" y="274" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#0b0b0b">2.58 %</text>
+<rect x="330" y="277" width="15.54" height="9" rx="2" fill="#eb6834"><title>volumeURI_100_100_10_1_1_1_0_coronal_nearest legacy: 2.59 % passed</title></rect>
+<text x="349.54" y="285" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#0b0b0b">2.59 %</text>
+<text x="320" y="309" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#0b0b0b" text-anchor="end">coronal_nearest  (use renderViewports API)</text>
+<rect x="330" y="296" width="15.48" height="9" rx="2" fill="#2a78d6"><title>volumeURI_100_100_10_1_1_1_0_coronal_nearest cur: 2.58 % passed</title></rect>
+<text x="349.48" y="304" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#0b0b0b">2.58 %</text>
+<rect x="330" y="307" width="15.54" height="9" rx="2" fill="#eb6834"><title>volumeURI_100_100_10_1_1_1_0_coronal_nearest legacy: 2.59 % passed</title></rect>
+<text x="349.54" y="315" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#0b0b0b">2.59 %</text>
+<text x="320" y="339" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#0b0b0b" text-anchor="end">coronal_nearest  (use renderViewport API)</text>
+<rect x="330" y="326" width="15.48" height="9" rx="2" fill="#2a78d6"><title>volumeURI_100_100_10_1_1_1_0_coronal_nearest cur: 2.58 % passed</title></rect>
+<text x="349.48" y="334" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#0b0b0b">2.58 %</text>
+<rect x="330" y="337" width="15.54" height="9" rx="2" fill="#eb6834"><title>volumeURI_100_100_10_1_1_1_0_coronal_nearest legacy: 2.59 % passed</title></rect>
+<text x="349.54" y="345" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#0b0b0b">2.59 %</text>
+<text x="320" y="369" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#0b0b0b" text-anchor="end">coronal_nearest  (render frameOfReference)</text>
+<rect x="330" y="356" width="15.48" height="9" rx="2" fill="#2a78d6"><title>volumeURI_100_100_10_1_1_1_0_coronal_nearest cur: 2.58 % passed</title></rect>
+<text x="349.48" y="364" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#0b0b0b">2.58 %</text>
+<text x="334" y="375" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#52514e">no compare: the test throws before it (renderFrameOfReference is not on the engine)</text>
+<text x="320" y="399" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#0b0b0b" text-anchor="end">colour coronal_nearest  (nearest)</text>
+<rect x="330" y="386" width="32.04" height="9" rx="2" fill="#2a78d6"><title>volumeURI_100_100_10_1_1_1_1_color_coronal_nearest cur: 5.34 % passed</title></rect>
+<text x="366.04" y="394" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#0b0b0b">5.34 %</text>
+<rect x="330" y="397" width="58.62" height="9" rx="2" fill="#eb6834"><title>volumeURI_100_100_10_1_1_1_1_color_coronal_nearest legacy: 9.77 % passed</title></rect>
+<text x="392.62" y="405" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#0b0b0b">9.77 %</text>
+<text x="320" y="429" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#0b0b0b" text-anchor="end">colour coronal_linear  (linear)</text>
+<rect x="330" y="416" width="52.86" height="9" rx="2" fill="#2a78d6"><title>volumeURI_100_100_10_1_1_1_1_color_coronal_linear cur: 8.81 % passed</title></rect>
+<text x="386.86" y="424" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#0b0b0b">8.81 %</text>
+<rect x="330" y="427" width="58.62" height="9" rx="2" fill="#eb6834"><title>volumeURI_100_100_10_1_1_1_1_color_coronal_linear legacy: 9.77 % passed</title></rect>
+<text x="392.62" y="435" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#0b0b0b">9.77 %</text>
+<text x="320" y="459" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#0b0b0b" text-anchor="end">axial_nearest  (nearest)</text>
+<text x="334" y="454" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#52514e">not compared: now a pixel check (T49)</text>
+<rect x="330" y="457" width="347.04" height="9" rx="2" fill="#eb6834"><title>volumeURI_100_100_10_1_1_1_0_axial_nearest legacy: 57.84 % failed</title></rect>
+<text x="681.04" y="465" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#0b0b0b">57.84 % fails</text>
+<text x="320" y="489" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#0b0b0b" text-anchor="end">axial_linear  (linear)</text>
+<text x="334" y="484" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#52514e">not compared: now a pixel check (T49)</text>
+<rect x="330" y="487" width="158.04" height="9" rx="2" fill="#eb6834"><title>volumeURI_100_100_10_1_1_1_0_axial_linear legacy: 26.34 % failed</title></rect>
+<text x="492.03999999999996" y="495" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#0b0b0b">26.34 % fails</text>
+<text x="320" y="519" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#0b0b0b" text-anchor="end">colour axial_linear  (linear)</text>
+<text x="334" y="514" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#52514e">not compared: now a pixel check (T49)</text>
+<rect x="330" y="517" width="600.0" height="9" rx="2" fill="#eb6834"><title>volumeURI_100_100_10_1_1_1_1_color_axial_linear legacy: 100.0 % failed</title></rect>
+<text x="934.0" y="525" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" fill="#0b0b0b">100.00 % fails</text>
+<text x="16" y="576" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" fill="#52514e">Every compare that still runs at HEAD passes at 2.6 to 8.8 %. Much of it is the 15 px margin of the 1.x baselines (see the first picture);</text>
+<text x="16" y="594" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" fill="#52514e">a coronal nearest picture is compared five times (one per Rendering API test). Logs laneV1/karma/r97-cur.log and r97-legacy.log.</text>
+</svg>

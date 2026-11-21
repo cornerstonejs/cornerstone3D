@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>v6 viewports: plan, done, left</title>
+<style>
+  :root {
+    --bg: #fbfbf9; --panel: #ffffff; --ink: #1c1d1f; --muted: #5d6168; --line: #e2e3e0;
+    --accent: #1f5fbf; --src: #2f6fd0; --adapter: #d9822b; --test: #9aa0a8; --doc: #3f9a6b;
+    --warn-bg: #fff6e0; --warn-line: #e9c46a; --ok-bg: #eaf5ee; --ok-line: #8fc7a5; --bad-bg: #fdecea; --bad-line: #e5a39b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #15171a; --panel: #1c1f23; --ink: #e8e9eb; --muted: #a0a5ad; --line: #2e3238;
+      --accent: #7fb0ff; --src: #5b93e6; --adapter: #e09a4f; --test: #6f757e; --doc: #5fb98a;
+      --warn-bg: #3a3018; --warn-line: #8a6d1f; --ok-bg: #183226; --ok-line: #2f6b4b; --bad-bg: #3b1f1c; --bad-line: #7d3b34;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; }
+  main { max-width: 980px; margin: 0 auto; padding: 28px 16px 80px; }
+  h1 { font-size: 28px; line-height: 1.2; margin: 0 0 6px; }
+  h2 { font-size: 21px; margin: 44px 0 10px; padding-top: 14px; border-top: 1px solid var(--line); }
+  h3 { font-size: 17px; margin: 24px 0 6px; }
+  p { margin: 8px 0; }
+  .sub { color: var(--muted); margin: 0 0 18px; }
+  a { color: var(--accent); }
+  code { font: 13.5px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; background: color-mix(in srgb, var(--line) 55%, transparent); padding: 1px 5px; border-radius: 4px; }
+  .box { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; margin: 14px 0; }
+  .box.ok { background: var(--ok-bg); border-color: var(--ok-line); }
+  .box.warn { background: var(--warn-bg); border-color: var(--warn-line); }
+  .box.bad { background: var(--bad-bg); border-color: var(--bad-line); }
+  .box ul { margin: 6px 0; padding-left: 20px; }
+  .box li { margin: 5px 0; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin: 14px 0; }
+  .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+  .stat b { display: block; font-size: 26px; line-height: 1.15; }
+  .stat span { color: var(--muted); font-size: 14px; }
+  .scroll { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 15px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 13px; color: var(--muted); font-weight: 600; white-space: nowrap; }
+  td.n, th.n { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .bars { margin: 14px 0 6px; }
+  .bar-row { display: grid; grid-template-columns: 210px 1fr 86px; gap: 10px; align-items: center; margin: 9px 0; }
+  .bar-row .name { font-size: 14.5px; }
+  .bar-row .total { text-align: right; font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .bar { display: flex; height: 22px; border-radius: 5px; overflow: hidden; background: color-mix(in srgb, var(--line) 50%, transparent); }
+  .bar i { display: block; height: 100%; }
+  .src { background: var(--src); } .adapter { background: var(--adapter); } .test { background: var(--test); } .doc { background: var(--doc); }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13.5px; color: var(--muted); margin: 4px 0 0; }
+  .legend i { display: inline-block; width: 11px; height: 11px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+  .timeline { list-style: none; padding: 0; margin: 12px 0; }
+  .timeline li { position: relative; padding: 0 0 16px 22px; border-left: 2px solid var(--line); margin-left: 6px; }
+  .timeline li::before { content: ""; position: absolute; left: -7px; top: 5px; width: 12px; height: 12px; border-radius: 50%; background: var(--accent); }
+  .timeline li.turn::before { background: var(--adapter); }
+  .timeline time { display: block; font-size: 13px; color: var(--muted); }
+  .q { font-style: italic; }
+  .tag { display: inline-block; font-size: 12px; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+  .tag.done { background: var(--ok-bg); border-color: var(--ok-line); color: var(--ink); }
+  .tag.part { background: var(--warn-bg); border-color: var(--warn-line); color: var(--ink); }
+  .tag.none { background: var(--bad-bg); border-color: var(--bad-line); color: var(--ink); }
+  details { margin: 10px 0; }
+  summary { cursor: pointer; color: var(--accent); }
+  .links a { display: block; margin: 6px 0; word-break: break-all; }
+  @media (max-width: 640px) {
+    .bar-row { grid-template-columns: 1fr; gap: 4px; }
+    .bar-row .total { text-align: left; }
+    h1 { font-size: 23px; }
+  }
+</style>
+</head>
+<body>
+<main>
+
+<h1>v6 viewports: what was planned, what is done, what is left</h1>
+<p class="sub">Branch <code>feat/slice-first-step-1</code>, 48 commits, nothing pushed. Updated on 17 November 2026 in the afternoon, after the cut of the gap work was finished. No work is running.</p>
+
+<div class="box warn">
+  <b>Where it stands, in four lines</b>
+  <ul>
+    <li><b>Slice first is done, and you accepted it.</b> A planar viewport draws a slice on any device with no device flag. It is on by default.</li>
+    <li><b>The adapter bridge is done, and you accepted it as scaffolding.</b> The adapters carry the old API on top of the new viewports until the old tests and examples have moved. Then they go.</li>
+    <li><b>The gap work was audited and cut. The cut is finished.</b> Of the 40 rows of the audit that were to leave, 38 are cut and 2 are cut in part, each by a decision that changed. The five new classes have 357 public members: 342 before the gap work, 447 after it. Every replacement on a planar viewport works for a 2D stack and for a volume, each with a test. The <a href="v6-gap-audit.html">audit page</a> has every row as it was built.</li>
+    <li><b>The 6.0 migration guide is complete for what is in the code.</b> A map of 301 rows from every legacy name to its 6.0 call, the upgrade in twelve steps, a table of the changes where a person must decide, and rules for a coding agent. Scripts check that no legacy name is missing and that every call it names exists and compiles.</li>
+    <li><b>The removal itself has not started.</b> No legacy viewport class and no adapter is deleted yet.</li>
+  </ul>
+</div>
+
+<div class="grid">
+  <div class="stat"><b>48</b><span>commits, none pushed</span></div>
+  <div class="stat"><b>+71,267</b><span>lines added, -5,986 removed, in 455 files</span></div>
+  <div class="stat"><b>-2,073</b><span>lines on the six new class files against the end of the gap work (11,203 then, 9,130 now, 6,954 in 5.x)</span></div>
+  <div class="stat"><b>19,351</b><span>lines that 6.0 is meant to delete (8 legacy classes with 13,370 and the adapters with 5,981), none deleted yet</span></div>
+</div>
+
+<h2>1. The plan, and how it changed</h2>
+<p>The plan changed four times. Each change came from something you said. One of them I stretched.</p>
+<ul class="timeline">
+  <li>
+    <time>Start, 14 to 15 November</time>
+    <b>Goal: rendering that works on any device, with no device flags.</b>
+    A planar viewport cuts its slice on the CPU and draws a 2D image ("slice first"). A 3D texture only for slabs and 3D. A router picks the path for each layer and gives the reason. A viewport on the CPU shows the GPU picture.
+  </li>
+  <li class="turn">
+    <time>15 November, evening</time>
+    <b>First idea for removing the legacy viewports: a bridge.</b>
+    Keep the legacy API alive through adapters on top of the next viewports, so that old tests and examples keep running. This was my plan, before you decided otherwise.
+  </li>
+  <li>
+    <time>16 November, morning. Your words:</time>
+    <span class="q">"get rid of usegenericviewport ... it means removing the adapter and removing the legacy, only keeping the new viewports ... our new viewports have all the legacy tests"</span>
+    <br>So: 6.0 keeps only the next viewports. No adapters, no legacy API. Old tests go only after the new viewports pass the same tests. Breaking changes go into a migration guide. I wrote six stages: delete legacy classes, move tools, move tests, move examples, delete adapters, docs.
+  </li>
+  <li class="turn">
+    <time>16 November, midday. Your words:</time>
+    <span class="q">"add them don't want any gap"</span> (about sharpening, smoothing and perspective)
+    <br><b>I put a new stage in front of all deletion: "close the gaps".</b> I applied your sentence to every member, option and event of the legacy viewports: 144 rows. That wider reading was mine. It is where most of today went.
+  </li>
+  <li>
+    <time>16 November, evening. Your words:</time>
+    <span class="q">"i am just worried it would add much of the hunk in the old viewports that made them worst to the new ones"</span>
+    <br>You stopped the work. The first version of this report and the tours were the result.
+  </li>
+  <li>
+    <time>16 November, night. Your words:</time>
+    <span class="q">"first to tours is ok, the slice first and adapter bridge though we will deprecate adapter ... lets audit the new methods that are getting added ... is it worth it bringing the old way? or we can just achieve it more cleanly with the new set off apis ... the codebase is yours be bold"</span>
+    <br><b>Slice first and the bridge stay. The gap work is audited and cut.</b> I checked each added member against four rules (section 3) and started taking out what the new API already covers.
+  </li>
+</ul>
+
+<h2>2. What is done</h2>
+<p>The 36 commits fall into four parts. The bars show lines added, by kind, for the three parts that add code. Part D only removes.</p>
+
+<div class="bars">
+  <div class="bar-row">
+    <div class="name"><b>A. Slice first</b><br><span class="tag done">the first goal, done</span></div>
+    <div class="bar"><i class="src" style="width:40.4%"></i><i class="adapter" style="width:1.9%"></i><i class="test" style="width:53.3%"></i><i class="doc" style="width:4.4%"></i></div>
+    <div class="total">+33,754</div>
+  </div>
+  <div class="bar-row">
+    <div class="name"><b>B. The adapter bridge</b><br><span class="tag part">scaffolding, to be deleted</span></div>
+    <div class="bar" style="width:31.5%"><i class="src" style="width:29%"></i><i class="adapter" style="width:26.6%"></i><i class="test" style="width:44.4%"></i></div>
+    <div class="total">+10,627</div>
+  </div>
+  <div class="bar-row">
+    <div class="name"><b>C. The gap work</b><br><span class="tag part">audited, being cut</span></div>
+    <div class="bar" style="width:50.2%"><i class="src" style="width:35.2%"></i><i class="adapter" style="width:2%"></i><i class="test" style="width:60.2%"></i><i class="doc" style="width:2.6%"></i></div>
+    <div class="total">+16,961</div>
+  </div>
+</div>
+<div class="legend">
+  <span><i class="src"></i>Source of the library</span>
+  <span><i class="adapter"></i>Adapters (deleted in 6.0)</span>
+  <span><i class="test"></i>Tests</span>
+  <span><i class="doc"></i>Examples and docs</span>
+</div>
+
+<div class="scroll">
+<table>
+  <thead><tr><th>Part</th><th class="n">Commits</th><th class="n">Source</th><th class="n">Adapters</th><th class="n">Tests</th><th>What it gave</th></tr></thead>
+  <tbody>
+    <tr>
+      <td><b>A. Slice first</b></td><td class="n">11</td><td class="n">+13,629<br>-4,454</td><td class="n">+648</td><td class="n">+17,975</td>
+      <td>The slice is cut on the CPU and drawn as a 2D image. A render plan with a reason for each layer. A viewport on the CPU shows the GPU picture. On by default.</td>
+    </tr>
+    <tr>
+      <td><b>B. The adapter bridge</b></td><td class="n">10</td><td class="n">+3,082</td><td class="n">+2,822</td><td class="n">+4,723</td>
+      <td>Legacy API on top of the next viewports. No class checks on legacy viewports left in the tools. Public types became interfaces. Real defects of the next viewports found and fixed.</td>
+    </tr>
+    <tr>
+      <td><b>C. The gap work</b></td><td class="n">11</td><td class="n">+5,964</td><td class="n">+338<br>-1,431</td><td class="n">+10,205</td>
+      <td>The direct next classes can do what the legacy ones can: 112 of 144 rows closed, 24 were no gap, 8 open. 105 old members added to the five new classes.</td>
+    </tr>
+    <tr>
+      <td><b>D. The cut</b></td><td class="n">3</td><td class="n">+449<br>-1,689</td><td class="n">+406<br>-229</td><td class="n">+20<br>-1,358</td>
+      <td>43 of those 105 members are off the new classes again and back on the adapters. The tools that used them call the new API. 51 tests that only checked a removed member went with it.</td>
+    </tr>
+    <tr>
+      <td><b>Migration guide</b></td><td class="n">1</td><td class="n"></td><td class="n"></td><td class="n"></td>
+      <td>A 6.0 guide in the docs, kept up to date with each change, the cut included.</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+<p class="sub">The parts add up to more than the net number because some lines were added and changed again later.</p>
+
+<h3>The three commits of the cut</h3>
+<div class="scroll">
+<table>
+  <thead><tr><th>Commit</th><th>What left the new classes</th><th>What was kept</th></tr></thead>
+  <tbody>
+    <tr><td><code>cd31e09a2</code></td><td>Display area and aspect ratio on the 3D viewport. Default presentations on every family. The preset key and its event on a slice viewport.</td><td>The sigmoid window on a volume slice. A colormap update keeps what it does not name. Perspective on 3D through the view state.</td></tr>
+    <tr><td><code>b6ca5e444</code></td><td>Twelve old members of the planar class: <code>jumpToWorld</code>, <code>getBounds</code>, <code>getIntensityFromWorld</code>, <code>getSliceViewInfo</code>, <code>getCurrentSlicePixelData</code>, <code>getSlicePlaneCoordinates</code>, <code>getSlicesClippingPlanes</code>, <code>isInAcquisitionPlane</code>, <code>getCornerstoneImage</code>, <code>scaling</code>, <code>stackActorReInitialized</code>, <code>getAllVolumeIds</code>.</td><td>Eight tools and helpers now ask the new API. Two functions replace members: <code>utilities.getVolumeSlicesClippingPlanes</code> and <code>getVolumeSliceViewInfo</code>.</td></tr>
+    <tr><td><code>190038c68</code></td><td><code>options</code>, <code>setOptions</code> and <code>reset</code> on the base, 3D, video, whole slide and ECG classes.</td><td><code>defaultOptions</code>: the options a viewport was made with, which do not change. The planar class keeps its own three from 5.x.</td></tr>
+  </tbody>
+</table>
+</div>
+<p>Each removed name still works on its adapter, so the old tests and the 183 examples run as before.</p>
+
+<h3>What works today</h3>
+<div class="scroll">
+<table>
+  <thead><tr><th>Check</th><th>Result at the last commit (<code>58914567b</code>)</th></tr></thead>
+  <tbody>
+    <tr><td>Unit tests</td><td>core 1,900 passed, tools 1,004, polymorphic-segmentation 12, ai 9. Lint 0 errors.</td></tr>
+    <tr><td>Karma, on legacy classes</td><td>618 passed, 0 failed.</td></tr>
+    <tr><td>Karma, on adapters</td><td>615 passed, 3 failed. Each of the 3 is a difference you accepted (labelmap fill, CPU background, slice centre).</td></tr>
+    <tr><td>Playwright, legacy</td><td>128 passed, 2 failed. This Mac has the same 2 failures on main.</td></tr>
+    <tr><td>Playwright, adapters</td><td>130 passed, 0 failed.</td></tr>
+    <tr><td>Playwright, next</td><td>154 passed, 1 failed. Main has the same failure (the ECG example).</td></tr>
+    <tr><td>Browser suite</td><td>105 passed, 2 failed. Both are the known failures of the annotation tools matrix.</td></tr>
+    <tr><td>Real devices</td><td>None. All numbers are from this Mac and its simulators.</td></tr>
+  </tbody>
+</table>
+</div>
+<p class="sub">The test counts grew with the cut: each replacement has a test on a direct new viewport, in stack mode and in volume mode where it is about a planar viewport. No test of a legacy viewport or of an adapter changed what it expects.</p>
+
+<h2>3. The gap work: what the audit decided</h2>
+
+<div class="box">
+  <b>The bridge (part B).</b> About 5,000 lines of adapter code. You accepted it on 16 November as scaffolding: the adapters keep the old API alive while tests and examples move, and are deprecated after that.
+</div>
+
+<div class="box bad">
+  <b>The gap work (part C) grew the new classes before anything was removed.</b> The cut has taken most of it back.
+  <div class="scroll">
+  <table>
+    <thead><tr><th></th><th class="n">Before the gap work</th><th class="n">After the gap work</th><th class="n">After three cuts</th><th class="n">Now, after the cut</th></tr></thead>
+    <tbody>
+      <tr><td>All new viewport code, without adapters</td><td class="n">31,492 lines</td><td class="n">36,753</td><td class="n">35,189</td><td class="n">35,255</td></tr>
+      <tr><td><code>PlanarViewport.ts</code></td><td class="n">3,533</td><td class="n">4,905</td><td class="n">4,324</td><td class="n">3,945</td></tr>
+      <tr><td>The new 3D class</td><td class="n">930</td><td class="n">2,000</td><td class="n">1,550</td><td class="n">1,308</td></tr>
+      <tr><td>The base class</td><td class="n"></td><td class="n">1,363</td><td class="n">1,237</td><td class="n">1,187</td></tr>
+      <tr><td>Public members on the five new classes</td><td class="n">342</td><td class="n">447</td><td class="n">404</td><td class="n">357</td></tr>
+    </tbody>
+  </table>
+  </div>
+  The audit read every one of the 105 added members. Its finding: most were moved up from the adapters as they were, because tools ask a viewport for an old name (<code>typeof viewport.jumpToWorld === 'function'</code>). About 2,460 of the 3,400 added lines can leave. <b>After the cut:</b> the class files lost what the table shows. The whole folder of the new viewports is only 1,498 lines under its size after the gap work, because the cut also built things in the new shape: zoom and pan of a 3D viewport in the projection service, a surface as a display set, the slice questions for a stack, one resolver for orientations.
+</div>
+
+<div class="box ok">
+  <b>The four rules I decided by</b>
+  <ul>
+    <li><b>A viewport holds four things:</b> its display sets, a presentation for each, a view state, and view references. Nothing else is a member.</li>
+    <li><b>A question that public state and data can answer is a function,</b> not a member (the slice of the view, the clipping planes, the intensity at a point).</li>
+    <li><b>Navigation is a view state change.</b> Zoom and pan go through the projection service for every family.</li>
+    <li><b>A tool that needs an old name is changed.</b> The old name lives only on the adapter, until the adapters go.</li>
+  </ul>
+  The full list, member by member, is on the <a href="v6-gap-audit.html">audit page</a>.
+</div>
+
+<div class="box ok">
+  <b>What in parts B and C was not a sidetrack.</b> Real defects of the next viewports, found by comparing with legacy, and fixed:
+  <ul>
+    <li>A MONOCHROME1 image did not start inverted.</li>
+    <li>A next video viewport never fired <code>IMAGE_RENDERED</code>, so annotations did not follow a pan or zoom, and it gave no pixels for statistics.</li>
+    <li>A preset on a next 3D viewport was lost at the next change of the window.</li>
+    <li>A failed image load was not caught and not retried.</li>
+    <li>A sigmoid window on a volume was stored and drawn as linear.</li>
+    <li>A whole slide showed turned by a quarter, with world points outside the slide.</li>
+    <li>A viewport asked for AXIAL on a tilted series opened on the tilted plane.</li>
+  </ul>
+  And the three things you named are in: sharpening, smoothing, and perspective (on the 3D viewport).
+</div>
+
+<div class="box">
+  <b>What was kept out of the new classes.</b> <code>setProperties</code>, <code>getProperties</code>, <code>getCamera</code>, <code>setCamera</code>, <code>resetCamera</code>, <code>setStack</code>, <code>setVolumes</code> and callbacks are not on a next viewport. Old quirks were documented as breaking changes, not copied (the labelmap fill at half strength, the weak opacity of a thin slab, <code>setOrientation</code> that re-centres).
+</div>
+
+<h2>4. What is left</h2>
+
+<h3>Done on 17 November: the rest of the cut</h3>
+<div class="scroll">
+<table>
+  <thead><tr><th>Step</th><th>What</th><th>Kind</th><th>State</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td><b>The rest of the planar list.</b> Legacy events that nothing listens to on a new viewport. The slab and loop options of <code>scroll</code>, into <code>utilities.scroll</code>. The legacy input forms of <code>setOrientation</code>. The aspect ratio and display area options.</td><td>Removal. It changes how scrolling and events reach the tools.</td><td><span class="tag done">done</span> <code>682471a1e</code> <code>944dc9aba</code></td></tr>
+    <tr><td>2</td><td><b>Small old members on the other classes.</b> On the base: <code>isDisabled</code>, the widget registry, the <code>suppressEvents</code> fields. On video, whole slide, ECG and 3D: <code>getCanvas</code>, <code>togglePlayPause</code>, <code>hasImageURI</code>, <code>addActors</code>, <code>getActor</code> and the like.</td><td>Removal</td><td><span class="tag done">done</span> <code>f5c114711</code> <code>c4d630ecf</code></td></tr>
+    <tr><td>3</td><td><b>Zoom and pan through the projection service</b> for 3D, whole slide and video. Today the service does nothing on a 3D viewport, which is why <code>getZoom</code>, <code>setZoom</code>, <code>getPan</code> and <code>setPan</code> were added. With the service finished, they leave.</td><td>Development, with tests of the pan and zoom tools</td><td><span class="tag done">done</span> <code>c4d630ecf</code></td></tr>
+    <tr><td>4</td><td><b>A surface as a display set.</b> The geometry render path exists since 5.0 and is unused. It takes the place of <code>addActor</code>, <code>setActors</code>, <code>removeActors</code> and the actor registry on the 3D class.</td><td>Development</td><td><span class="tag done">done</span> <code>c41c1fd78</code></td></tr>
+    <tr><td>5</td><td><b>Every replacement answers for a 2D stack and for a volume.</b> You asked for it when you read the audit. Bounds, the value at a point, the slice on display, the clipping planes, the acquisition plane, the jump to a point, scroll with its options.</td><td>Development, with a test in both modes for each</td><td><span class="tag done">done</span> <code>88ec26951</code> <code>944dc9aba</code></td></tr>
+    <tr><td>6</td><td><b>What the cut found on the planar viewport.</b> One view state change for a zoom at the mouse. A zoom keeps a stretch. <code>STACK_NEW_IMAGE</code> names the image on display in volume mode. A slice range shows on its whole range in stack mode. One pair of new image events at a mount. Pan and zoom on a view with a display area.</td><td>Fixes, each with a test that failed first</td><td><span class="tag done">done</span> <code>c3214951b</code> <code>58914567b</code></td></tr>
+    <tr><td>7</td><td><b>Types.</b> TypeScript accepts a new viewport where the library takes a viewport. The public type of a new viewport no longer extends the legacy one.</td><td>Types only. The built JavaScript is the same, file by file.</td><td><span class="tag done">done</span> <code>4f73c11fd</code></td></tr>
+    <tr><td>8</td><td><b>The migration guide.</b> The map of every legacy name, the upgrade step by step, rules for a coding agent, and a last pass against the code.</td><td>Docs</td><td><span class="tag done">done</span> <code>e8d7cb0ac</code> <code>e66fbf3af</code> <code>4be725d2c</code></td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>Left: the removal, as planned on 16 November. Not started.</h3>
+<div class="scroll">
+<table>
+  <thead><tr><th>Stage</th><th>What</th><th>Size</th><th>State</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>Delete the 8 legacy viewport classes and <code>useGenericViewport</code></td><td>13,370 lines to delete. About 170 tests compare with a live legacy viewport and need their legacy answers recorded first.</td><td><span class="tag part">recording was half done when stopped</span></td></tr>
+    <tr><td>2</td><td>Tools and core call only the next API</td><td>150 places in 66 files of core and tools still call a member that only a legacy viewport or an adapter has. They are the legacy branches of code that already has a path for a new viewport (<code>getCamera</code> 35 times, <code>setCamera</code> 20). The tools are still typed with the legacy interfaces: widening the type of an enabled element gives 170 errors in 73 files.</td><td><span class="tag part">the new paths exist, the legacy branches are not removed</span></td></tr>
+    <tr><td>3</td><td>The old tests move to the next API</td><td>About 150 karma tests in 38 files, the adapter tests, the browser suite into CI</td><td><span class="tag part">a first package was half done when stopped</span></td></tr>
+    <tr><td>4</td><td>The examples move</td><td>183 examples, 158 of them without a test</td><td><span class="tag none">not started</span></td></tr>
+    <tr><td>5</td><td>Delete the adapters, the legacy types and interfaces. Plain names (<code>PLANAR</code>, <code>VOLUME_3D</code> and so on)</td><td>About 5,000 lines of adapters to delete</td><td><span class="tag none">not started</span></td></tr>
+    <tr><td>6</td><td>Docs complete, a codemod</td><td>The guide is complete for what is in the code. 16 marks are left in it, all for this removal.</td><td><span class="tag part">guide done, no codemod</span></td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="box">
+  <b>Not building.</b> The last gap package, vtk.js actors of the application in a slice viewport. It was the largest package, and it brings an old way into the new class.
+</div>
+
+<div class="box ok">
+  <b>Defects the audit found by reading: all five are fixed.</b> Each was first shown by a test that failed.
+  <ul>
+    <li>The zoom tool passes a canvas point to the 3D <code>setZoom</code>, which expects something else in that place.</li>
+    <li>The zoom and pan synchronizer reports success for a 3D target while nothing moves.</li>
+    <li>The window synchronizer applies nothing to a new 3D target when the event names a volume.</li>
+    <li>The surface update skips a new 3D viewport (<code>updateSurfaceData.ts:106</code>).</li>
+    <li>The magnify tool reads <code>stackActorReInitialized</code>, which a new viewport does not have.</li>
+  </ul>
+  The first three with step 3 (<code>c4d630ecf</code>), the surface update with step 4 (<code>c41c1fd78</code>), the magnify tool with step 1 (<code>682471a1e</code>). What the agents found on the way and did not fix is on the <a href="v6-gap-audit.html">audit page</a>, in its last section.
+</div>
+
+<h2>5. Decisions</h2>
+
+<div class="box ok">
+  <b>Decided</b>
+  <ul>
+    <li>6.0 keeps only the new viewports. Breaking changes are documented, not avoided.</li>
+    <li>Slice first stays as it is.</li>
+    <li>The adapter bridge stays for now, and the adapters are deprecated.</li>
+    <li>The gap work is cut wherever the new API can do the job. You gave me the call on each member.</li>
+    <li>The application that uses the library (OHIF) comes later.</li>
+  </ul>
+</div>
+
+<div class="box warn">
+  <b>Open, for you.</b> Nothing is blocked by these.
+  <ul>
+    <li><b>One event for "new data is shown"?</b> Today a new viewport fires two legacy events for it (<code>VOLUME_VIEWPORT_NEW_VOLUME</code>, <code>VIEWPORT_NEW_IMAGE_SET</code>), and six tools listen. I kept them, because a replacement needs a new name.</li>
+    <li><b>Which name does the type of a viewport have in 6.0?</b> I did the first half without waiting for you: <code>Types.IGenericViewport</code> is the interface of a new viewport and no longer extends the legacy <code>Types.IViewport</code>, and the public functions take both. When the legacy interface is deleted, one name is left. You said plain names for the viewport types. If the same holds here, <code>IViewport</code> becomes the new interface.</li>
+    <li><b><code>setPan</code> and <code>setZoom</code> without a point on a view with a display area.</b> <code>setPan</code> drops the zoom back to the fit and <code>setZoom(zoom)</code> loses the pan, on the new viewport and on the adapter. The legacy stack viewport keeps both. The fix is small. I left it because it changes two members that are from 5.x.</li>
+    <li><b>What does a zoom beside a display area mean?</b> Reading the whole presentation of such a view and writing it back turns zoom 2 into zoom 4. It was so before the cut.</li>
+    <li><b>The migration guide has 11 smaller questions for you</b> (the names of the exported classes, whether three legacy types stay, a codemod, and others). They are in the notes of the agent that wrote it.</li>
+    <li><b>Send slice first to review as its own pull request?</b> It does not need the removal. I recommended it on 16 November, and you have not said yes or no.</li>
+  </ul>
+</div>
+
+<h2>6. What was stopped, and where it is</h2>
+<div class="scroll">
+<table>
+  <thead><tr><th>Work</th><th>State</th><th>Where</th></tr></thead>
+  <tbody>
+    <tr><td>Recording the legacy answers for the side by side tests</td><td>Stopped part way. 17 files changed, a helper written. Not merged, not checked by me.</td><td><code>~/.t3/worktrees/cornerstone3D/t3-17e06c90-6468ed47307badcb</code></td></tr>
+    <tr><td>Moving the annotation tool tests onto next viewports</td><td>Stopped part way. 24 files changed. Not merged, not checked by me.</td><td><code>~/.t3/worktrees/cornerstone3D/t3-35832d07-9dafce6ed0a489fe</code></td></tr>
+    <tr><td>Checks on the last commit</td><td>All done: unit tests, karma both ways, the three Playwright suites and the browser suite.</td><td>main checkout, clean at <code>58914567b</code></td></tr>
+    <tr><td>Older checkouts of finished packages</td><td>All merged. They take 23 GB and can be removed.</td><td><code>~/.t3/worktrees/cornerstone3D/</code></td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2>7. Read the changes</h2>
+<div class="box links">
+  <b>The whole diff, on GitHub</b>
+  <a href="https://github.com/cornerstonejs/cornerstone3D/compare/28df2b2b5...58914567b">28df2b2b5...58914567b</a>
+  <b>Only the cut (the last three commits), on GitHub</b>
+  <a href="https://github.com/cornerstonejs/cornerstone3D/compare/b267b60dd...58914567b">b267b60dd...58914567b</a>
+  <b>The audit, member by member</b>
+  <a href="v6-gap-audit.html">v6-gap-audit.html</a>
+  <b>Guided tours, in reading order (they were in Diffity on the Mac and are not kept)</b>
+  <span>Tour 1. Slice first rendering (the first goal, 10 steps)</span>
+  <span>Tour 2. The adapter bridge (9 steps)</span>
+  <span>Tour 3. Gap work on the new viewports (15 steps). Written before the cut: some highlights point at lines that moved or are gone.</span>
+</div>
+<p class="sub">During the work these links went to Diffity on the Mac; the diffs now go to GitHub.</p>
+
+<details>
+  <summary>All 36 commits</summary>
+  <div class="scroll">
+  <table>
+    <thead><tr><th>Part</th><th>Commit</th><th>Subject</th></tr></thead>
+    <tbody>
+      <tr><td>A</td><td><code>74c2ac96f</code></td><td>slice first for next planar viewports, opt-in</td></tr>
+      <tr><td>A</td><td><code>770ca2897</code></td><td>slabs, draw order and the debug panel after the first try-out</td></tr>
+      <tr><td>A</td><td><code>f0fcaff3c</code></td><td>float layers on devices that cannot filter float textures</td></tr>
+      <tr><td>A</td><td><code>f7a9b5fac</code></td><td>findings of the first code review</td></tr>
+      <tr><td>A</td><td><code>42c3a1213</code></td><td>a render plan per layer, with a reason and an exact CPU fallback</td></tr>
+      <tr><td>A</td><td><code>fb5e1ed84</code></td><td>the CPU draw step draws the GPU picture for volume slices</td></tr>
+      <tr><td>A</td><td><code>26dd7acc9</code></td><td>the next suite holds with slice first on and off</td></tr>
+      <tr><td>A</td><td><code>0c783c2a7</code></td><td>stack images on the CPU go through the same CPU draw step</td></tr>
+      <tr><td>B</td><td><code>f4c39ea1c</code></td><td>no instanceof checks on the legacy viewport classes</td></tr>
+      <tr><td>B</td><td><code>ae1b9fd9b</code></td><td>the public viewport types are interfaces</td></tr>
+      <tr><td>B</td><td><code>71ffe73fc</code></td><td>legacy members, stack events and scroll options on the planar legacy adapter</td></tr>
+      <tr><td>B</td><td><code>b58826c4f</code></td><td>the karma tests pass on the legacy adapters</td></tr>
+      <tr><td>A</td><td><code>9eaac60d0</code></td><td>MONOCHROME1 images start inverted on next planar viewports</td></tr>
+      <tr><td>B</td><td><code>701dcf3e0</code></td><td>the 3D legacy adapter fits, adds volumes and follows view references</td></tr>
+      <tr><td>B</td><td><code>5ced0a116</code></td><td>legacy members on the video, WSI and ECG legacy adapters</td></tr>
+      <tr><td>B</td><td><code>04257706c</code></td><td>defects of the direct next viewports</td></tr>
+      <tr><td>A</td><td><code>7627e7a6d</code></td><td>CPU baselines of next viewports follow the GPU picture</td></tr>
+      <tr><td>A</td><td><code>470d1449c</code></td><td>slice first is on by default</td></tr>
+      <tr><td>B</td><td><code>54ff35c17</code></td><td>the next whole slide viewport maps the canvas right at any device pixel ratio</td></tr>
+      <tr><td>B</td><td><code>fd3a3ac8d</code></td><td>the next whole slide viewport shows the slide as the legacy viewport does</td></tr>
+      <tr><td>Guide</td><td><code>ac9e4cd93</code></td><td>a 6.0 migration guide, first version</td></tr>
+      <tr><td>B</td><td><code>ca01b04af</code></td><td>the browser suite runs on the next viewports again</td></tr>
+      <tr><td>C</td><td><code>65a129c0a</code></td><td>the next whole slide and ECG viewports do what the legacy ones do</td></tr>
+      <tr><td>C</td><td><code>98f7aebb2</code></td><td>a requested axis is the true axis, and a slab scrolls as on the legacy viewport</td></tr>
+      <tr><td>C</td><td><code>c57375cb9</code></td><td>the next 3D viewport does what the legacy one does</td></tr>
+      <tr><td>C</td><td><code>a753d8b0e</code></td><td>the next video viewport does what the legacy one does</td></tr>
+      <tr><td>C</td><td><code>ec4638a30</code></td><td>the next planar viewport has the members that only its adapter had</td></tr>
+      <tr><td>C</td><td><code>80591ebe6</code></td><td>options on every next viewport, and what the first gap work left open</td></tr>
+      <tr><td>C</td><td><code>dd40a33fb</code></td><td>the next planar viewport fires the legacy events and loads images as the legacy stack does</td></tr>
+      <tr><td>C</td><td><code>97808fae6</code></td><td>the MPR pictures of the adapter run and one stale reference picture are replaced</td></tr>
+      <tr><td>C</td><td><code>4df602cf4</code></td><td>sharpening and smoothing on the next planar viewport, on the GPU and on the CPU</td></tr>
+      <tr><td>C</td><td><code>6dc471670</code></td><td>display area, aspect ratio and perspective on the next 3D viewport</td></tr>
+      <tr><td>C</td><td><code>b267b60dd</code></td><td>presets, a sigmoid window and default presentations on the next viewports</td></tr>
+      <tr><td>D</td><td><code>cd31e09a2</code></td><td>take legacy additions back out of the next viewports, part 1</td></tr>
+      <tr><td>D</td><td><code>b6ca5e444</code></td><td>tools use the next API, and the old member names leave the planar class</td></tr>
+      <tr><td>D</td><td><code>190038c68</code></td><td>no mutable options on the next viewports</td></tr>
+    </tbody>
+  </table>
+  </div>
+</details>
+
+</main>
+</body>
+</html>

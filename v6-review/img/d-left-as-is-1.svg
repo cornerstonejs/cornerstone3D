@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1018" height="423" viewBox="0 0 1018 423">
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#5f6368"/></marker></defs>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="16.0" y="31.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="17" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">Left as in 5.x for 6.0</text>
+<text x="16.0" y="50.4" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#5f6368" text-anchor="start" xml:space="preserve">Measured by lane P-F (vitest browser pins, lanePF/STATUS.md rows of the vitest run) and listed in v6-open-issues.md rows 85 to 90.</text>
+<rect x="16.0" y="64.3" width="56.0" height="29.8" rx="0" fill="#eef2f7" stroke="#d9d6cc" stroke-width="1"/>
+<text x="23.0" y="81.3" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">Issue</text>
+<rect x="72.0" y="64.3" width="360.0" height="29.8" rx="0" fill="#eef2f7" stroke="#d9d6cc" stroke-width="1"/>
+<text x="79.0" y="81.3" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">What 6.0 does</text>
+<rect x="432.0" y="64.3" width="250.0" height="29.8" rx="0" fill="#eef2f7" stroke="#d9d6cc" stroke-width="1"/>
+<text x="439.0" y="81.3" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">5.x</text>
+<rect x="682.0" y="64.3" width="320.0" height="29.8" rx="0" fill="#eef2f7" stroke="#d9d6cc" stroke-width="1"/>
+<text x="689.0" y="81.3" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">Pinned by (tests/vitest-browser/)</text>
+<rect x="16.0" y="94.1" width="56.0" height="45.7" rx="0" fill="#ffffff" stroke="#d9d6cc" stroke-width="1"/>
+<text x="23.0" y="111.1" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">85</text>
+<rect x="72.0" y="94.1" width="360.0" height="45.7" rx="0" fill="#ffffff" stroke="#d9d6cc" stroke-width="1"/>
+<text x="79.0" y="111.1" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">Setting the same VOI range again fires VOI_MODIFIED</text>
+<rect x="432.0" y="94.1" width="250.0" height="45.7" rx="0" fill="#e3f4e8" stroke="#d9d6cc" stroke-width="1"/>
+<text x="439.0" y="111.1" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">the same: StackViewport.setVOI fired</text>
+<text x="439.0" y="127.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">on every call</text>
+<rect x="682.0" y="94.1" width="320.0" height="45.7" rx="0" fill="#ffffff" stroke="#d9d6cc" stroke-width="1"/>
+<text x="689.0" y="110.6" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">eventContracts.browser.test.ts</text>
+<rect x="16.0" y="139.8" width="56.0" height="45.7" rx="0" fill="#ffffff" stroke="#d9d6cc" stroke-width="1"/>
+<text x="23.0" y="156.8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">86</text>
+<rect x="72.0" y="139.8" width="360.0" height="45.7" rx="0" fill="#ffffff" stroke="#d9d6cc" stroke-width="1"/>
+<text x="79.0" y="156.8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">resetDisplaySetPresentation drops the visible flag of</text>
+<text x="79.0" y="172.6" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">the mount ({ visible: true } becomes {})</text>
+<rect x="432.0" y="139.8" width="250.0" height="45.7" rx="0" fill="#fff1d6" stroke="#d9d6cc" stroke-width="1"/>
+<text x="439.0" y="156.8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">no counterpart (next-only API); its</text>
+<text x="439.0" y="172.6" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">doc comment calls it intended</text>
+<rect x="682.0" y="139.8" width="320.0" height="45.7" rx="0" fill="#ffffff" stroke="#d9d6cc" stroke-width="1"/>
+<text x="689.0" y="156.3" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">planarInvariants.browser.test.ts</text>
+<rect x="16.0" y="185.5" width="56.0" height="61.5" rx="0" fill="#ffffff" stroke="#d9d6cc" stroke-width="1"/>
+<text x="23.0" y="202.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">88</text>
+<rect x="72.0" y="185.5" width="360.0" height="61.5" rx="0" fill="#ffffff" stroke="#d9d6cc" stroke-width="1"/>
+<text x="79.0" y="202.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">View references carry float32 values and round-off</text>
+<text x="79.0" y="218.3" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">(32.2529411315918, -6.12e-17), so their JSON is not</text>
+<text x="79.0" y="234.2" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">stable</text>
+<rect x="432.0" y="185.5" width="250.0" height="61.5" rx="0" fill="#fff1d6" stroke="#d9d6cc" stroke-width="1"/>
+<text x="439.0" y="202.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">the next API's contract</text>
+<rect x="682.0" y="185.5" width="320.0" height="61.5" rx="0" fill="#ffffff" stroke="#d9d6cc" stroke-width="1"/>
+<text x="689.0" y="202.0" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">viewStateSerialization.browser.test.ts, pin</text>
+<text x="689.0" y="217.2" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">1</text>
+<rect x="16.0" y="247.0" width="56.0" height="61.5" rx="0" fill="#ffffff" stroke="#d9d6cc" stroke-width="1"/>
+<text x="23.0" y="264.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">89</text>
+<rect x="72.0" y="247.0" width="360.0" height="61.5" rx="0" fill="#ffffff" stroke="#d9d6cc" stroke-width="1"/>
+<text x="79.0" y="264.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">A view state write equal to the current state fires</text>
+<text x="79.0" y="279.8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">CAMERA_MODIFIED</text>
+<rect x="432.0" y="247.0" width="250.0" height="61.5" rx="0" fill="#e3f4e8" stroke="#d9d6cc" stroke-width="1"/>
+<text x="439.0" y="264.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">the same:</text>
+<text x="439.0" y="279.8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">triggerCameraModifiedEventIfNecessary</text>
+<text x="439.0" y="295.7" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">fired on every setCamera</text>
+<rect x="682.0" y="247.0" width="320.0" height="61.5" rx="0" fill="#ffffff" stroke="#d9d6cc" stroke-width="1"/>
+<text x="689.0" y="263.5" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">viewStateSerialization.browser.test.ts, pin</text>
+<text x="689.0" y="278.7" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">5b</text>
+<rect x="16.0" y="308.5" width="56.0" height="45.7" rx="0" fill="#ffffff" stroke="#d9d6cc" stroke-width="1"/>
+<text x="23.0" y="325.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">90</text>
+<rect x="72.0" y="308.5" width="360.0" height="45.7" rx="0" fill="#ffffff" stroke="#d9d6cc" stroke-width="1"/>
+<text x="79.0" y="325.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">getUniqueSegmentIndices keeps a segment whose voxels</text>
+<text x="79.0" y="341.4" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">an undo removed ([1, 2] for [1])</text>
+<rect x="432.0" y="308.5" width="250.0" height="45.7" rx="0" fill="#e3f4e8" stroke="#d9d6cc" stroke-width="1"/>
+<text x="439.0" y="325.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">the same: it reads the segment list</text>
+<rect x="682.0" y="308.5" width="320.0" height="45.7" rx="0" fill="#ffffff" stroke="#d9d6cc" stroke-width="1"/>
+<text x="689.0" y="325.0" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">undoRedoHistory.browser.test.ts</text>
+<text x="16.0" y="373.7" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="normal" fill="#5f6368" text-anchor="start" xml:space="preserve">Green: 5.x behaved the same. Amber: no 5.x counterpart or a contract of the next API. Each pin is a test.fails: it states the improvement and is expected to fail</text>
+<text x="16.0" y="388.9" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="normal" fill="#5f6368" text-anchor="start" xml:space="preserve">while 6.0 keeps the behaviour; they are the 5 expected fails of the parent's vitest run at 797b4d670 (int-g1/v1: 113 passed, 5 expected fail). Fixing one turns</text>
+<text x="16.0" y="404.1" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="normal" fill="#5f6368" text-anchor="start" xml:space="preserve">its pin into a failure, which forces a decision.</text>
+</svg>

@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1211" height="440" viewBox="0 0 1211 440">
+<rect width="1211" height="440" fill="#ffffff"/>
+<text x="16" y="28" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="18" font-weight="700" fill="#0b0b0b" text-anchor="start">Row 46: the parent's full karma runs on the main checkout, one column per run, in time order</text>
+<text x="16" y="50" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="13" font-weight="400" fill="#52514e" text-anchor="start">49 runs from 18 to 20 November (int-*/v1/karma-N.log of the scratchpad; a run that lost its browser was started again as karma-N+1).</text>
+<text x="16" y="68" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="13" font-weight="400" fill="#52514e" text-anchor="start">A mark means the run had it. Each extra failure is a different test, in 3 runs of 49; none of them repeats in a later run.</text>
+<line x1="244" y1="110" x2="1191" y2="110" stroke="#e6e4de"/>
+<text x="238" y="114" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#0b0b0b" text-anchor="end">known failure (CPU fusion picture)</text>
+<line x1="244" y1="140" x2="1191" y2="140" stroke="#e6e4de"/>
+<text x="238" y="144" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#0b0b0b" text-anchor="end">extra failure</text>
+<line x1="244" y1="170" x2="1191" y2="170" stroke="#e6e4de"/>
+<text x="238" y="174" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#0b0b0b" text-anchor="end">browser lost, run again</text>
+<rect x="254.5" y="105" width="10" height="10" rx="2" fill="#8a8f98"><title>int-g4/v1/karma-1.log: known failure</title></rect>
+<path d="M254.5 165 l10 10 m0 -10 l-10 10" stroke="#0b0b0b" stroke-width="2"/>
+<text x="263.5" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="end" transform="rotate(-60 263.5 192)">g4</text>
+<rect x="273.5" y="105" width="10" height="10" rx="2" fill="#8a8f98"><title>int-g4/v1/karma-2.log: known failure</title></rect>
+<text x="282.5" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="end" transform="rotate(-60 282.5 192)">g4 #2</text>
+<rect x="292.5" y="105" width="10" height="10" rx="2" fill="#8a8f98"><title>int-g3/v1/karma-1.log: known failure</title></rect>
+<text x="301.5" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="end" transform="rotate(-60 301.5 192)">g3</text>
+<rect x="311.5" y="105" width="10" height="10" rx="2" fill="#8a8f98"><title>int-g5/v1/karma-1.log: known failure</title></rect>
+<text x="320.5" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="end" transform="rotate(-60 320.5 192)">g5</text>
+<rect x="330.5" y="105" width="10" height="10" rx="2" fill="#8a8f98"><title>int-s5c/v1/karma-1.log: known failure</title></rect>
+<text x="339.5" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="end" transform="rotate(-60 339.5 192)">s5c</text>
+<rect x="349.5" y="105" width="10" height="10" rx="2" fill="#8a8f98"><title>int-s5a/v1/karma-1.log: known failure</title></rect>
+<text x="358.5" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="end" transform="rotate(-60 358.5 192)">s5a</text>
+<rect x="368.5" y="105" width="10" height="10" rx="2" fill="#8a8f98"><title>int-s5d/v1/karma-1.log: known failure</title></rect>
+<text x="377.5" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="end" transform="rotate(-60 377.5 192)">s5d</text>
+<rect x="387.5" y="105" width="10" height="10" rx="2" fill="#8a8f98"><title>int-s5bj/v1/karma-1.log: known failure</title></rect>
+<text x="396.5" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="end" transform="rotate(-60 396.5 192)">s5bj</text>
+<rect x="406.5" y="105" width="10" height="10" rx="2" fill="#8a8f98"><title>int-s5e/v1/karma-1.log: known failure</title></rect>
+<path d="M406.5 165 l10 10 m0 -10 l-10 10" stroke="#0b0b0b" stroke-width="2"/>
+<text x="415.5" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="end" transform="rotate(-60 415.5 192)">s5e</text>
+<rect x="425.5" y="105" width="10" height="10" rx="2" fill="#8a8f98"><title>int-s5e/v1/karma-2.log: known failure</title></rect>
+<text x="434.5" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="end" transform="rotate(-60 434.5 192)">s5e #2</text>
+<rect x="444.5" y="105" width="10" height="10" rx="2" fill="#8a8f98"><title>int-g6/v1/karma-1.log: known failure</title></rect>
+<text x="453.5" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="end" transform="rotate(-60 453.5 192)">g6</text>
+<rect x="463.5" y="105" width="10" height="10" rx="2" fill="#8a8f98"><title>int-s5k/v1/karma-1.log: known failure</title></rect>
+<text x="472.5" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="end" transform="rotate(-60 472.5 192)">s5k</text>
+<rect x="482.5" y="105" width="10" height="10" rx="2" fill="#8a8f98"><title>int-s5i/v1/karma-1.log: known failure</title></rect>
+<text x="491.5" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="end" transform="rotate(-60 491.5 192)">s5i</text>
+<rect x="501.5" y="105" width="10" height="10" rx="2" fill="#8a8f98"><title>int-s5fr/v1/karma-1.log: known failure</title></rect>
+<text x="510.5" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="end" transform="rotate(-60 510.5 192)">s5fr</text>
+<rect x="520.5" y="105" width="10" height="10" rx="2" fill="#8a8f98"><title>int-s5h/v1/karma-1.log: known failure</title></rect>
+<path d="M520.5 165 l10 10 m0 -10 l-10 10" stroke="#0b0b0b" stroke-width="2"/>
+<text x="529.5" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="end" transform="rotate(-60 529.5 192)">s5h</text>
+<rect x="539.5" y="105" width="10" height="10" rx="2" fill="#8a8f98"><title>int-s5h/v1/karma-2.log: known failure</title></rect>
+<path d="M539.5 165 l10 10 m0 -10 l-10 10" stroke="#0b0b0b" stroke-width="2"/>
+<text x="548.5" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="end" transform="rotate(-60 548.5 192)">s5h #2</text>
+<rect x="558.5" y="105" width="10" height="10" rx="2" fill="#8a8f98"><title>int-s5h/v1/karma-3.log: known failure</title></rect>
+<text x="567.5" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="end" transform="rotate(-60 567.5 192)">s5h #3</text>
+<rect x="577.5" y="105" width="10" height="10" rx="2" fill="#8a8f98"><title>int-s5g/v1/karma-1.log: known failure</title></rect>
+<text x="586.5" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="end" transform="rotate(-60 586.5 192)">s5g</text>
+<rect x="596.5" y="105" width="10" height="10" rx="2" fill="#8a8f98"><title>int-s5lm/v1/karma-1.log: known failure</title></rect>
+<circle cx="601.5" cy="140" r="6" fill="#eb6834"><title>int-s5lm/v1/karma-1.log: should allow customising the http request with beforeSend</title></circle>
+<text x="601.5" y="130" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" font-weight="700" fill="#0b0b0b" text-anchor="middle">1</text>
+<text x="605.5" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="end" transform="rotate(-60 605.5 192)">s5lm</text>
+<rect x="615.5" y="105" width="10" height="10" rx="2" fill="#8a8f98"><title>int-g7/v1/karma-1.log: known failure</title></rect>
+<text x="624.5" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="end" transform="rotate(-60 624.5 192)">g7</text>
+<rect x="634.5" y="105" width="10" height="10" rx="2" fill="#8a8f98"><title>int-s5n/v1/karma-1.log: known failure</title></rect>
+<text x="643.5" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="end" transform="rotate(-60 643.5 192)">s5n</text>
+<rect x="653.5" y="105" width="10" height="10" rx="2" fill="#8a8f98"><title>int-g8/v1/karma-1.log: known failure</title></rect>
+<text x="662.5" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="end" transform="rotate(-60 662.5 192)">g8</text>
+<rect x="672.5" y="105" width="10" height="10" rx="2" fill="#8a8f98"><title>int-s5op/v1/karma-1.log: known failure</title></rect>
+<text x="681.5" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="end" transform="rotate(-60 681.5 192)">s5op</text>
+<rect x="691.5" y="105" width="10" height="10" rx="2" fill="#8a8f98"><title>int-g9/v1/karma-1.log: known failure</title></rect>
+<text x="700.5" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="end" transform="rotate(-60 700.5 192)">g9</text>
+<rect x="710.5" y="105" width="10" height="10" rx="2" fill="#8a8f98"><title>int-rf1/v1/karma-1.log: known failure</title></rect>
+<text x="719.5" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="end" transform="rotate(-60 719.5 192)">rf1</text>
+<rect x="729.5" y="105" width="10" height="10" rx="2" fill="#8a8f98"><title>int-rf2a/v1/karma-1.log: known failure</title></rect>
+<text x="738.5" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="end" transform="rotate(-60 738.5 192)">rf2a</text>
+<rect x="748.5" y="105" width="10" height="10" rx="2" fill="#8a8f98"><title>int-rf2b/v1/karma-1.log: known failure</title></rect>
+<text x="757.5" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="end" transform="rotate(-60 757.5 192)">rf2b</text>
+<rect x="767.5" y="105" width="10" height="10" rx="2" fill="#8a8f98"><title>int-rf3/v1/karma-1.log: known failure</title></rect>
+<path d="M767.5 165 l10 10 m0 -10 l-10 10" stroke="#0b0b0b" stroke-width="2"/>
+<text x="776.5" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="end" transform="rotate(-60 776.5 192)">rf3</text>
+<rect x="786.5" y="105" width="10" height="10" rx="2" fill="#8a8f98"><title>int-rf3/v1/karma-2.log: known failure</title></rect>
+<text x="795.5" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="end" transform="rotate(-60 795.5 192)">rf3 #2</text>
+<rect x="805.5" y="105" width="10" height="10" rx="2" fill="#8a8f98"><title>int-rf4/v1/karma-1.log: known failure</title></rect>
+<text x="814.5" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="end" transform="rotate(-60 814.5 192)">rf4</text>
+<rect x="824.5" y="105" width="10" height="10" rx="2" fill="#8a8f98"><title>int-rf5/v1/karma-1.log: known failure</title></rect>
+<circle cx="829.5" cy="140" r="6" fill="#eb6834"><title>int-rf5/v1/karma-1.log: takes the surface of the last segment off the viewport, with its geometry map entry and its cached geometry, when the last segment is erased</title></circle>
+<text x="829.5" y="130" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" font-weight="700" fill="#0b0b0b" text-anchor="middle">2</text>
+<text x="833.5" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="end" transform="rotate(-60 833.5 192)">rf5</text>
+<rect x="843.5" y="105" width="10" height="10" rx="2" fill="#8a8f98"><title>int-rf6/v1/karma-1.log: known failure</title></rect>
+<text x="852.5" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="end" transform="rotate(-60 852.5 192)">rf6</text>
+<rect x="862.5" y="105" width="10" height="10" rx="2" fill="#8a8f98"><title>int-rf7/v1/karma-1.log: known failure</title></rect>
+<circle cx="867.5" cy="140" r="6" fill="#eb6834"><title>int-rf7/v1/karma-1.log: draws the newer mount once, and its late end neither draws nor frees the hold of a later mount</title></circle>
+<text x="867.5" y="130" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" font-weight="700" fill="#0b0b0b" text-anchor="middle">3</text>
+<text x="871.5" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="end" transform="rotate(-60 871.5 192)">rf7</text>
+<rect x="881.5" y="105" width="10" height="10" rx="2" fill="#8a8f98"><title>int-o2/v1/karma-1.log: known failure</title></rect>
+<text x="890.5" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="end" transform="rotate(-60 890.5 192)">o2</text>
+<rect x="900.5" y="105" width="10" height="10" rx="2" fill="#8a8f98"><title>int-pa/v1/karma-1.log: known failure</title></rect>
+<text x="909.5" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="end" transform="rotate(-60 909.5 192)">pa</text>
+<rect x="919.5" y="105" width="10" height="10" rx="2" fill="#8a8f98"><title>int-pb/v1/karma-1.log: known failure</title></rect>
+<text x="928.5" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="end" transform="rotate(-60 928.5 192)">pb</text>
+<rect x="938.5" y="105" width="10" height="10" rx="2" fill="#8a8f98"><title>int-pc/v1/karma-1.log: known failure</title></rect>
+<text x="947.5" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="end" transform="rotate(-60 947.5 192)">pc</text>
+<rect x="957.5" y="105" width="10" height="10" rx="2" fill="#8a8f98"><title>int-pd/v1/karma-1.log: known failure</title></rect>
+<text x="966.5" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="end" transform="rotate(-60 966.5 192)">pd</text>
+<text x="985.5" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="end" transform="rotate(-60 985.5 192)">pe</text>
+<text x="1004.5" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="end" transform="rotate(-60 1004.5 192)">p19</text>
+<text x="1023.5" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="end" transform="rotate(-60 1023.5 192)">pf</text>
+<text x="1042.5" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="end" transform="rotate(-60 1042.5 192)">o3</text>
+<text x="1061.5" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="end" transform="rotate(-60 1061.5 192)">o4</text>
+<text x="1080.5" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="end" transform="rotate(-60 1080.5 192)">o5</text>
+<text x="1099.5" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="end" transform="rotate(-60 1099.5 192)">o6</text>
+<text x="1118.5" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="end" transform="rotate(-60 1118.5 192)">f1</text>
+<text x="1137.5" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="end" transform="rotate(-60 1137.5 192)">f2</text>
+<text x="1156.5" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="end" transform="rotate(-60 1156.5 192)">t49</text>
+<text x="1175.5" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="end" transform="rotate(-60 1175.5 192)">g1</text>
+<text x="16" y="290" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#0b0b0b" text-anchor="start">Extra failures (all passed in the next run of the parent):</text>
+<text x="16" y="308" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#52514e" text-anchor="start">1. int-s5lm/v1/karma-1.log: "should allow customising the http request with beforeSend" (core/test/dicomImageLoader_wadouri_test.js)</text>
+<text x="16" y="326" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#52514e" text-anchor="start">2. int-rf5/v1/karma-1.log: "takes the surface of the last segment off the viewport, with its geometry map entry and its cac" (tools/test/surfacePlanarNext_test.js)</text>
+<text x="16" y="344" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#52514e" text-anchor="start">3. int-rf7/v1/karma-1.log: "draws the newer mount once, and its late end neither draws nor frees the hold of a later mount" (core/test/planarCpuSupersededMount_test.js)</text>
+<text x="16" y="370" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#52514e" text-anchor="start">Of the two files named in the item, planarJumpToImage_test.js failed in two lane start runs (laneS5A, laneS5C), videoViewportNext_test.js in none of the 138 parsed full runs (parent and lanes). Source: laneV1/data/karma-runs*.json.</text>
+</svg>

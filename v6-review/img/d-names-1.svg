@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1002" height="622" viewBox="0 0 1002 622">
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#5f6368"/></marker></defs>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="16.0" y="31.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="17" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">Viewport names: 5.x and 6.0</text>
+<text x="16.0" y="50.4" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#5f6368" text-anchor="start" xml:space="preserve">Read in the source: enums/ViewportType.ts at 58914567b (5.x) and 797b4d670, helpers/viewportTypeToViewportClass.ts (the thrown messages and the</text>
+<text x="16.0" y="66.3" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#5f6368" text-anchor="start" xml:space="preserve">registered aliases), GenericViewport/deprecatedViewportClassNames.ts, types/index.ts.</text>
+<rect x="16.0" y="80.1" width="300.0" height="29.8" rx="0" fill="#eef2f7" stroke="#d9d6cc" stroke-width="1"/>
+<text x="23.0" y="97.1" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">5.x name</text>
+<rect x="316.0" y="80.1" width="250.0" height="29.8" rx="0" fill="#eef2f7" stroke="#d9d6cc" stroke-width="1"/>
+<text x="323.0" y="97.1" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">6.0 name</text>
+<rect x="566.0" y="80.1" width="420.0" height="29.8" rx="0" fill="#eef2f7" stroke="#d9d6cc" stroke-width="1"/>
+<text x="573.0" y="97.1" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">What 6.0 does with the 5.x name</text>
+<rect x="16.0" y="110.0" width="300.0" height="61.5" rx="0" fill="#ffffff" stroke="#d9d6cc" stroke-width="1"/>
+<text x="23.0" y="126.5" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">ViewportType.STACK, 'stack'</text>
+<rect x="316.0" y="110.0" width="250.0" height="61.5" rx="0" fill="#fbe4e4" stroke="#d9d6cc" stroke-width="1"/>
+<text x="323.0" y="126.5" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">removed</text>
+<rect x="566.0" y="110.0" width="420.0" height="61.5" rx="0" fill="#ffffff" stroke="#d9d6cc" stroke-width="1"/>
+<text x="573.0" y="127.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">enableElement and setViewports throw: "ViewportType 'stack' was</text>
+<text x="573.0" y="142.8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">removed in Cornerstone3D 6.0: use ViewportType.PLANAR (a planar</text>
+<text x="573.0" y="158.6" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">viewport shows a stack or a volume)"</text>
+<rect x="16.0" y="171.5" width="300.0" height="45.7" rx="0" fill="#ffffff" stroke="#d9d6cc" stroke-width="1"/>
+<text x="23.0" y="188.0" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">ViewportType.ORTHOGRAPHIC,</text>
+<text x="23.0" y="203.2" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">'orthographic'</text>
+<rect x="316.0" y="171.5" width="250.0" height="45.7" rx="0" fill="#fbe4e4" stroke="#d9d6cc" stroke-width="1"/>
+<text x="323.0" y="188.0" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">removed</text>
+<rect x="566.0" y="171.5" width="420.0" height="45.7" rx="0" fill="#ffffff" stroke="#d9d6cc" stroke-width="1"/>
+<text x="573.0" y="188.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">throws: "... use ViewportType.PLANAR with an orientation in</text>
+<text x="573.0" y="204.3" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">defaultOptions, for example OrientationAxis.AXIAL"</text>
+<rect x="16.0" y="217.2" width="300.0" height="45.7" rx="0" fill="#ffffff" stroke="#d9d6cc" stroke-width="1"/>
+<text x="23.0" y="233.7" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">ViewportType.PERSPECTIVE, 'perspective'</text>
+<rect x="316.0" y="217.2" width="250.0" height="45.7" rx="0" fill="#fbe4e4" stroke="#d9d6cc" stroke-width="1"/>
+<text x="323.0" y="233.7" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">removed</text>
+<rect x="566.0" y="217.2" width="420.0" height="45.7" rx="0" fill="#ffffff" stroke="#d9d6cc" stroke-width="1"/>
+<text x="573.0" y="234.2" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">throws: "... use ViewportType.VOLUME_3D with</text>
+<text x="573.0" y="250.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">parallelProjection: false in defaultOptions"</text>
+<rect x="16.0" y="262.8" width="300.0" height="45.7" rx="0" fill="#ffffff" stroke="#d9d6cc" stroke-width="1"/>
+<text x="23.0" y="279.3" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">ViewportType.PLANAR_NEXT, 'planarNext'</text>
+<rect x="316.0" y="262.8" width="250.0" height="45.7" rx="0" fill="#e3f4e8" stroke="#d9d6cc" stroke-width="1"/>
+<text x="323.0" y="279.3" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">ViewportType.PLANAR, 'planar'</text>
+<rect x="566.0" y="262.8" width="420.0" height="45.7" rx="0" fill="#ffffff" stroke="#d9d6cc" stroke-width="1"/>
+<text x="573.0" y="279.8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">PLANAR_NEXT stays as a deprecated member equal to 'planar';</text>
+<text x="573.0" y="295.7" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">the string 'planarNext' is registered as an alias</text>
+<rect x="16.0" y="308.5" width="300.0" height="45.7" rx="0" fill="#ffffff" stroke="#d9d6cc" stroke-width="1"/>
+<text x="23.0" y="325.0" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">ViewportType.VOLUME_3D_NEXT,</text>
+<text x="23.0" y="340.2" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">'volume3dNext'</text>
+<rect x="316.0" y="308.5" width="250.0" height="45.7" rx="0" fill="#e3f4e8" stroke="#d9d6cc" stroke-width="1"/>
+<text x="323.0" y="325.0" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">ViewportType.VOLUME_3D,</text>
+<text x="323.0" y="340.2" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">'volume3d'</text>
+<rect x="566.0" y="308.5" width="420.0" height="45.7" rx="0" fill="#ffffff" stroke="#d9d6cc" stroke-width="1"/>
+<text x="573.0" y="325.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">the same pattern; 'volume3d' was the legacy 3D viewport in 5.x</text>
+<text x="573.0" y="341.4" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">and is the next one now</text>
+<rect x="16.0" y="354.2" width="300.0" height="61.5" rx="0" fill="#ffffff" stroke="#d9d6cc" stroke-width="1"/>
+<text x="23.0" y="370.7" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">VIDEO_NEXT, WHOLE_SLIDE_NEXT, ECG_</text>
+<text x="23.0" y="385.9" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">NEXT ('videoNext', 'wholeSlideNext',</text>
+<text x="23.0" y="401.1" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">'ecgNext')</text>
+<rect x="316.0" y="354.2" width="250.0" height="61.5" rx="0" fill="#e3f4e8" stroke="#d9d6cc" stroke-width="1"/>
+<text x="323.0" y="370.7" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">VIDEO, WHOLE_SLIDE, ECG</text>
+<text x="323.0" y="385.9" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">('video', 'wholeSlide', 'ecg')</text>
+<rect x="566.0" y="354.2" width="420.0" height="61.5" rx="0" fill="#ffffff" stroke="#d9d6cc" stroke-width="1"/>
+<text x="573.0" y="371.2" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">the same pattern</text>
+<rect x="16.0" y="415.7" width="300.0" height="45.7" rx="0" fill="#ffffff" stroke="#d9d6cc" stroke-width="1"/>
+<text x="23.0" y="432.2" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">classes StackViewport, VolumeViewport</text>
+<text x="23.0" y="447.4" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">(legacy)</text>
+<rect x="316.0" y="415.7" width="250.0" height="45.7" rx="0" fill="#e3f4e8" stroke="#d9d6cc" stroke-width="1"/>
+<text x="323.0" y="432.2" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">PlanarViewport</text>
+<rect x="566.0" y="415.7" width="420.0" height="45.7" rx="0" fill="#ffffff" stroke="#d9d6cc" stroke-width="1"/>
+<text x="573.0" y="432.7" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">removed; one planar class shows stacks and volumes</text>
+<rect x="16.0" y="461.4" width="300.0" height="61.5" rx="0" fill="#ffffff" stroke="#d9d6cc" stroke-width="1"/>
+<text x="23.0" y="477.9" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">GenericVolumeViewport3D,</text>
+<text x="23.0" y="493.1" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">VideoGenericViewport,</text>
+<text x="23.0" y="508.3" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">WSIGenericViewport, ECGGenericViewport</text>
+<rect x="316.0" y="461.4" width="250.0" height="61.5" rx="0" fill="#e3f4e8" stroke="#d9d6cc" stroke-width="1"/>
+<text x="323.0" y="477.9" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">VolumeViewport3D, VideoViewport,</text>
+<text x="323.0" y="493.1" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">WSIViewport, ECGViewport</text>
+<rect x="566.0" y="461.4" width="420.0" height="61.5" rx="0" fill="#ffffff" stroke="#d9d6cc" stroke-width="1"/>
+<text x="573.0" y="478.4" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">the Generic names stay as deprecated aliases</text>
+<text x="573.0" y="494.2" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">(deprecatedViewportClassNames.ts)</text>
+<rect x="16.0" y="522.9" width="300.0" height="45.7" rx="0" fill="#ffffff" stroke="#d9d6cc" stroke-width="1"/>
+<text x="23.0" y="539.4" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">Types.IGenericViewport</text>
+<rect x="316.0" y="522.9" width="250.0" height="45.7" rx="0" fill="#e3f4e8" stroke="#d9d6cc" stroke-width="1"/>
+<text x="323.0" y="539.4" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">Types.IViewport</text>
+<rect x="566.0" y="522.9" width="420.0" height="45.7" rx="0" fill="#ffffff" stroke="#d9d6cc" stroke-width="1"/>
+<text x="573.0" y="539.9" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">IViewport is the next interface; IGenericViewport is a</text>
+<text x="573.0" y="555.8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">deprecated alias</text>
+<text x="16.0" y="588.1" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="normal" fill="#5f6368" text-anchor="start" xml:space="preserve">Green: the plain name of 6.0, with the 5.x next name kept as a deprecated alias for 6.x. Red: removed; the call throws with a message that names the</text>
+<text x="16.0" y="603.3" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="normal" fill="#5f6368" text-anchor="start" xml:space="preserve">replacement (pinned by packages/core/test/viewportTypeRegistry.jest.js).</text>
+</svg>

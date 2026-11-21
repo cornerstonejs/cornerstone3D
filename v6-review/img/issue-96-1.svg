@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="520" viewBox="0 0 1180 520">
+<rect width="1180" height="520" fill="#ffffff"/>
+<text x="16" y="28" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="19" font-weight="700" fill="#1d1d1f" text-anchor="start" xml:space="preserve">Row 96: renderFrameOfReference is not on the public engine, and it maps other viewports to undefined</text>
+<text x="16" y="50" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="13" font-weight="400" fill="#5f6368" text-anchor="start" xml:space="preserve">Code at HEAD 797b4d670 (unchanged since 3.x), and what a karma probe saw when it called the method on the engine behind the facade.</text>
+<rect x="16" y="70" width="360" height="300" rx="8" fill="#f7f6f2" stroke="#9aa0a6"/>
+<text x="28" y="92" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#1d1d1f" text-anchor="start" xml:space="preserve">RenderingEngine (public facade)</text>
+<text x="28" y="114" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="400" fill="#1d1d1f" text-anchor="start" xml:space="preserve">enableElement(input)</text>
+<text x="28" y="131" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="400" fill="#1d1d1f" text-anchor="start" xml:space="preserve">disableElement(id)</text>
+<text x="28" y="148" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="400" fill="#1d1d1f" text-anchor="start" xml:space="preserve">setViewports(inputs)</text>
+<text x="28" y="165" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="400" fill="#1d1d1f" text-anchor="start" xml:space="preserve">getViewport(id) / getViewports()</text>
+<text x="28" y="182" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="400" fill="#1d1d1f" text-anchor="start" xml:space="preserve">render()</text>
+<text x="28" y="199" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="400" fill="#1d1d1f" text-anchor="start" xml:space="preserve">renderViewports(ids)</text>
+<text x="28" y="216" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="400" fill="#1d1d1f" text-anchor="start" xml:space="preserve">renderViewport(id)</text>
+<text x="28" y="233" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="400" fill="#1d1d1f" text-anchor="start" xml:space="preserve">resize() / destroy() ...</text>
+<text x="28" y="250" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="400" fill="#1d1d1f" text-anchor="start" xml:space="preserve"></text>
+<text x="28" y="267" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="700" fill="#c45f00" text-anchor="start" xml:space="preserve">renderFrameOfReference: not here</text>
+<text x="28" y="284" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="400" fill="#1d1d1f" text-anchor="start" xml:space="preserve"></text>
+<text x="28" y="301" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="400" fill="#1d1d1f" text-anchor="start" xml:space="preserve">probe: typeof engine.renderFrameOfReference</text>
+<text x="28" y="318" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="400" fill="#1d1d1f" text-anchor="start" xml:space="preserve">  6.0: undefined   5.x: undefined</text>
+<line x1="376" y1="160" x2="440" y2="160" stroke="#9aa0a6" stroke-width="2" stroke-dasharray="5 4"/>
+<text x="408" y="178" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" font-weight="400" fill="#5f6368" text-anchor="middle" xml:space="preserve">holds</text>
+<rect x="440" y="70" width="720" height="220" rx="8" fill="#f7f6f2" stroke="#9aa0a6"/>
+<text x="452" y="92" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="14" font-weight="700" fill="#1d1d1f" text-anchor="start" xml:space="preserve">BaseRenderingEngine (ContextPoolRenderingEngine), BaseRenderingEngine.ts:383</text>
+<text x="452" y="114" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="400" fill="#1d1d1f" text-anchor="start" xml:space="preserve">public renderFrameOfReference = (FrameOfReferenceUID: string): void =&gt; {</text>
+<text x="452" y="131" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="400" fill="#1d1d1f" text-anchor="start" xml:space="preserve">  const viewports = this._getViewportsAsArray();</text>
+<text x="452" y="148" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="700" fill="#c45f00" text-anchor="start" xml:space="preserve">  const viewportIdsWithSameFrameOfReferenceUID = viewports.map((vp) =&gt; {</text>
+<text x="452" y="165" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="400" fill="#1d1d1f" text-anchor="start" xml:space="preserve">    if (vp.getFrameOfReferenceUID() === FrameOfReferenceUID) {</text>
+<text x="452" y="182" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="400" fill="#1d1d1f" text-anchor="start" xml:space="preserve">      return vp.id;</text>
+<text x="452" y="199" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="400" fill="#1d1d1f" text-anchor="start" xml:space="preserve">    }</text>
+<text x="452" y="216" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="400" fill="#1d1d1f" text-anchor="start" xml:space="preserve">  });</text>
+<text x="452" y="233" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="400" fill="#1d1d1f" text-anchor="start" xml:space="preserve">  this.renderViewports(viewportIdsWithSameFrameOfReferenceUID);</text>
+<text x="452" y="250" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="12" font-weight="400" fill="#1d1d1f" text-anchor="start" xml:space="preserve">};</text>
+<text x="452" y="280" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#5f6368" text-anchor="start" xml:space="preserve">map keeps one entry per viewport: a viewport of another frame of reference gives undefined (a filter would drop it).</text>
+<rect x="440" y="310" width="720" height="140" rx="8" fill="#fff3e6" stroke="#e8b27a"/>
+<text x="452" y="332" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="13" font-weight="700" fill="#1d1d1f" text-anchor="start" xml:space="preserve">Probe: two viewports, A shows a series of frame bothModesFrame, B an image of another frame.</text>
+<text x="452" y="350" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#5f6368" text-anchor="start" xml:space="preserve">engine._implementation.renderFrameOfReference('bothModesFrame'), with renderViewports wrapped to record its argument:</text>
+<text x="452" y="378" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="13" font-weight="700" fill="#1d1d1f" text-anchor="start" xml:space="preserve">6.0 HEAD 797b4d670:</text>
+<text x="620" y="378" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="13" font-weight="700" fill="#c45f00" text-anchor="start" xml:space="preserve">renderViewports([v1ForA, undefined])</text>
+<text x="452" y="404" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="13" font-weight="700" fill="#1d1d1f" text-anchor="start" xml:space="preserve">5.x 58914567b:</text>
+<text x="620" y="404" font-family="SFMono-Regular, Menlo, Consolas, monospace" font-size="13" font-weight="700" fill="#c45f00" text-anchor="start" xml:space="preserve">renderViewports([v1ForA, undefined])</text>
+<text x="452" y="434" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#5f6368" text-anchor="start" xml:space="preserve">No error was thrown in the 4 animation frames after the call.</text>
+<text x="16" y="480" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#5f6368" text-anchor="start" xml:space="preserve">Callers: git grep at HEAD finds only the definition (packages, utils, tests). The public facade exposes renderViewports(ids), which an application uses instead.</text>
+<text x="16" y="498" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#5f6368" text-anchor="start" xml:space="preserve">Probe zzV1CoreProbe_test.js "row 96"; logs laneV1/karma/core-cur.log and core-legacy.log.</text>
+</svg>

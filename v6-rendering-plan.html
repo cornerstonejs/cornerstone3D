@@ -1,0 +1,811 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cornerstone 6 rendering plan: slice first</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #1f2328;
+    --muted: #59636e;
+    --border: #d1d9e0;
+    --head: #f6f8fa;
+    --soft: #f6f8fa;
+    --accent: #0969da;
+    --accent-soft: #eef6ff;
+    --good: #1a7f37;
+    --good-soft: #eaf7ee;
+    --warn: #9a6700;
+    --warn-soft: #fff8e1;
+    --bad: #cf222e;
+    --bad-soft: #ffeef0;
+    --later: #8250df;
+    --code: #eff2f5;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0d1117;
+      --fg: #e6edf3;
+      --muted: #9198a1;
+      --border: #30363d;
+      --head: #161b22;
+      --soft: #161b22;
+      --accent: #4493f8;
+      --accent-soft: #0f2236;
+      --good: #3fb950;
+      --good-soft: #0f2a17;
+      --warn: #d29922;
+      --warn-soft: #2b2208;
+      --bad: #f85149;
+      --bad-soft: #33141a;
+      --later: #ab7df8;
+      --code: #1f242c;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  }
+  main { max-width: 1080px; margin: 0 auto; padding: 32px 24px 80px; }
+  h1 { font-size: 26px; line-height: 1.25; margin: 0 0 6px; }
+  h2 { font-size: 20px; margin: 48px 0 10px; padding-top: 16px; border-top: 1px solid var(--border); }
+  h3 { font-size: 16px; margin: 28px 0 8px; }
+  p { margin: 8px 0; }
+  .sub { color: var(--muted); margin: 0 0 22px; }
+  .note { color: var(--muted); font-size: 13.5px; }
+  ul, ol { margin: 8px 0; padding-left: 22px; }
+  li { margin: 5px 0; }
+  code {
+    font: 12.5px ui-monospace, SFMono-Regular, Menlo, monospace;
+    background: var(--code);
+    padding: 1px 5px;
+    border-radius: 4px;
+    overflow-wrap: anywhere;
+  }
+  pre {
+    background: var(--code);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    overflow-x: auto;
+    font: 12.5px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  .scroll { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; margin: 10px 0 14px; font-size: 14px; }
+  th, td { border: 1px solid var(--border); padding: 8px 10px; vertical-align: top; text-align: left; }
+  thead th { background: var(--head); font-size: 13px; }
+  td.k { font-weight: 600; }
+  td.k code { overflow-wrap: normal; white-space: nowrap; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .tag {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 0 8px;
+    border-radius: 999px;
+    border: 1px solid currentColor;
+    white-space: nowrap;
+  }
+  .remove { color: var(--bad); }
+  .keep { color: var(--good); }
+  .change { color: var(--warn); }
+  .new { color: var(--accent); }
+  .laterc { color: var(--later); }
+  .answer {
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    background: var(--accent-soft);
+    border-radius: 8px;
+    padding: 14px 18px;
+  }
+  .answer li { margin: 8px 0; }
+  .review { border-left-color: var(--good); background: var(--good-soft); margin: 0 0 14px; }
+  .review h3 { margin: 0 0 4px; font-size: 15px; }
+  .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 16px 0 6px; }
+  .tile { border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; background: var(--soft); }
+  .tile .big { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .tile .lbl { color: var(--muted); font-size: 13px; margin-top: 2px; }
+  .pipe { display: grid; grid-template-columns: 1fr 44px 1fr; gap: 0; align-items: stretch; margin: 14px 0; }
+  .step { border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; background: var(--soft); }
+  .step h4 { margin: 0 0 4px; font-size: 15px; }
+  .step .what { color: var(--muted); font-size: 13.5px; margin-bottom: 10px; }
+  .arrow { display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 22px; }
+  .opt { display: flex; gap: 8px; align-items: baseline; border-top: 1px dashed var(--border); padding: 7px 0 6px; font-size: 14px; }
+  .opt b { min-width: 150px; }
+  .opt span { color: var(--muted); }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .box { border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; }
+  .box h3 { margin: 0 0 6px; font-size: 15px; }
+  .phase { border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; margin: 10px 0; }
+  .phase h3 { margin: 0 0 4px; font-size: 15px; }
+  .phase .when { color: var(--muted); font-size: 13px; margin-bottom: 6px; }
+  .toc { columns: 2; font-size: 14px; padding-left: 20px; }
+  a { color: var(--accent); }
+  @media (max-width: 820px) {
+    .tiles { grid-template-columns: 1fr 1fr; }
+    .pipe { grid-template-columns: 1fr; }
+    .arrow { transform: rotate(90deg); padding: 6px 0; }
+    .cols { grid-template-columns: 1fr; }
+    .toc { columns: 1; }
+  }
+</style>
+</head>
+<body>
+<main>
+
+<h1>Cornerstone 6 rendering plan: slice first</h1>
+<p class="sub">An audit of the rendering switches and device checks on main (5.18.3), and a plan for a breaking v6 on the next viewports. Written 2026-11-14. Every number is from one Mac (Apple M2 Ultra, Chrome 157) unless its row says otherwise. I measured no phone and no tablet.</p>
+
+<div class="answer review" id="status">
+  <h3>Status on 2026-11-16</h3>
+  <ul>
+    <li><b>Step 1, slice first for the source image:</b> built, and on by default since 2026-11-16 (your decision). <code>rendering.planar.sliceFirst: false</code> turns it off.</li>
+    <li><b>Step 2, the draw step made safe:</b> built. Texture probes that compare values, the 16-bit scale fix, context restore, one sampler for both draw steps, a self-test page.</li>
+    <li><b>Step 3, the router:</b> built, per layer. <code>viewport.getRenderPlan()</code> gives the path and the reason of each layer. A layer leaves the 3D texture only when the device cannot draw it exactly there, and then gets an exact slab from the CPU in small steps.</li>
+    <li><b>One CPU draw step that draws the GPU picture:</b> built. Volume slices and stack images go through the same CPU draw step, which uses the GPU's own colour tables and clears to the background colour of the viewport. So a viewport that moves to the CPU by itself (no WebGL2, or a lost context that does not come back) keeps its picture. Away from the one-pixel outline of the image, no pixel differs by more than 8 levels on the two iPhone simulators and the Android emulator, for plain slices, a rotated view, a 10 mm slab and a stack image.</li>
+    <li><b>Not equal yet:</b> the outline of a labelmap is not drawn on the CPU (it never was), a slab through the whole volume is too much work for the CPU without workers, and the one-pixel outline of the image is smoothed by the GPU and not by the CPU.</li>
+    <li><b>Checked on:</b> Chrome on this Mac, two iPhone simulators (iOS 18.3 and 27.2) and two Android emulators (Chrome 124 and 145). No real phone yet.</li>
+    <li><b>Reviewed by:</b> GPT-6.1 Sol (9 findings, all fixed) and DeepSeek (6 findings: 4 fixed, 1 skipped, 1 refuted by measurement).</li>
+    <li><b>Decided on 2026-11-16:</b> the 11 CPU test pictures and the 5 pictures of the slice first default are replaced, and the next whole slide viewport is fixed for screens with device pixel ratio 2.</li>
+    <li><b>Decided later on 2026-11-16: only the next viewports stay in v6.</b> The legacy classes, the legacy adapters, the legacy API and <code>useGenericViewport</code> all go, with no way back. The old tests go only after the next viewports pass the same tests. Every breaking change goes into the 6.0 migration guide. <a href="#delete">Section 6</a> is rewritten for this: what goes, the test rule and the stages.</li>
+    <li><b>Your three answers on 2026-11-16:</b> the types get plain names; sharpening, smoothing and perspective come to the next viewports, with no gap left; slices on voxel centres are fine and go into the guide. So a stage 0 comes first: close the gaps while the legacy viewports still exist to compare with.</li>
+    <li><b>Committed:</b> one commit per stage on the branch <code>feat/slice-first-step-1</code>. Nothing is pushed.</li>
+    <li><b>Done on 2026-11-16:</b> the next whole slide viewport shows the slide as the legacy viewport does (it was turned by a quarter), and the 6.0 migration guide is in the docs. Both are committed.</li>
+    <li><b>Stage 0, ten packages done and committed:</b> whole slide and ECG (<code>65a129c0a</code>), planar slabs and orientation (<code>98f7aebb2</code>), 3D (<code>c57375cb9</code>), video (<code>a753d8b0e</code>), planar members (<code>ec4638a30</code>), leftovers and viewport options (<code>80591ebe6</code>), planar events and image loading (<code>dd40a33fb</code>), planar sharpening and smoothing (<code>4df602cf4</code>), the last 3D rows (<code>6dc471670</code>: display area, aspect ratio, perspective), the planar presentation (<code>b267b60dd</code>: presets and a sigmoid window on a slice, default presentations). Of the 144 rows to close, 112 are closed, 24 turned out to be no gap (the legacy viewport cannot do it either), and 8 are open: the application actors in a planar viewport.</li>
+    <li><b>Decided on 2026-11-16, evening:</b> <code>setOrientation</code> keeps the point in view; the three adapter pictures of the MPR test and the stale vitest reference picture are replaced (<code>97808fae6</code>). You said to continue until all stages are done.</li>
+    <li><b>Not done yet:</b> no legacy code is deleted. In work: the first part of stage 1 (the tests that compare with a live legacy viewport get the legacy answers recorded, so that they keep their reference when the classes go), and the first package of the test move (the old karma tests of the annotation tools run on direct next viewports, in place, with every check unchanged; a test that fails then shows tool code that still needs the legacy API). Then application actors in a planar viewport, the last package of stage 0, and the deletion of the legacy classes. Five packages at once hit the rate limit of the API, so at most two run at a time now. <a href="#gaps">Section 6.4</a> has the gap table: 784 rows, 73 gaps and 71 things that only an adapter can do.</li>
+  </ul>
+</div>
+
+<div class="answer review" id="review">
+  <h3>Changed after the review of 2026-11-14</h3>
+  <ul>
+    <li><b>Accepted as written:</b> the five rules, "the app says what it wants to see", and bricks kept for the server side.</li>
+    <li><b>Rule 3 is accepted on one condition:</b> the change of path must be proper and stable. <a href="#switch">Section 3.3</a> now says what that means.</li>
+    <li><b>The legacy viewports, the adapters and the legacy API are deleted.</b> On 2026-11-14 the legacy viewports were to stay, on 2026-11-15 they could go, and on 2026-11-16 the adapters and the legacy API go as well. <a href="#delete">Section 6</a> has what goes and in which order.</li>
+    <li><b>No global CPU or GPU setting.</b> The router decides for each viewport. <a href="#config">Section 3.7</a> changed.</li>
+    <li><b>New: slices ready before the scroll.</b> <a href="#ready">Section 3.8</a>, from the idea of a worker that prepares the previous and the next slices.</li>
+    <li><b>Changed on 2026-11-15:</b> the router decides for each layer of a viewport, not for the viewport, and it reads the result of the startup probe. A slab of any kind is drawn by the GPU volume path, unless the device cannot draw that layer there. Stats live in the debug modal. Steps 1 and 2 are built and run on two iPhone simulators and two Android emulators.</li>
+    <li><b>New numbers: a straight cut is a copy.</b> A sagittal cut takes 0.5 ms and a coronal cut under 0.1 ms. Sections <a href="#steps">3.2</a> and <a href="#numbers">9</a>.</li>
+    <li><b>The vtk.js image mapper stays.</b> It is not replaced. The draw step sits behind a seam, so that it can be replaced later. Sections <a href="#draw">3.5</a> and <a href="#order">7</a> changed.</li>
+  </ul>
+</div>
+
+<div class="answer">
+  <ul>
+    <li><b>One design choice causes almost all of the device problems.</b> To show one slice of a volume, we put the whole volume in a 3D texture. A texture that is too big, memory that runs out, a lost context and a texture format that lies all come from that.</li>
+    <li><b>v6 should make the 2D image the unit of rendering.</b> The CPU cuts one slice out of the frames it already holds. A sagittal or coronal cut is a copy: 0.5 ms or less for a 311 slice CT. A tilted cut takes 2 to 12 ms. The GPU draws that small image and does the window, the colour, the zoom and the pan. We already ship this for labelmaps (#3066, and #3077 is open).</li>
+    <li><b>The 3D texture stays for the two views that need it:</b> thick slabs such as a MIP, and 3D. It is made on demand and checked before use. It is never the only way to get a picture.</li>
+    <li><b>One router picks the path for each viewport.</b> It looks at what the view needs and at what the device has proved it can do. It changes the path by itself only when the new path draws the same pixels. A reduced image stays opt-in, as today.</li>
+    <li><b>The app stops describing the device.</b> The default viewports stop reading 10 of the 22 config settings. The GPU presets and the texture budget go. The legacy viewports and their API go too: v6 has the next viewports only.</li>
+  </ul>
+</div>
+
+<div class="tiles">
+  <div class="tile"><div class="big">180 → 22 MiB</div><div class="lbl">GPU textures of the TMTV layout. 180 is measured, 22 is computed from the same sizes.</div></div>
+  <div class="tile"><div class="big">750 → 7 MiB</div><div class="lbl">A 1,500 slice CT as one 3D texture against six 2D slices. By arithmetic.</div></div>
+  <div class="tile"><div class="big">0 of 65,536</div><div class="lbl">16-bit values drawn wrong with core WebGL2 only and no extension. Measured. An option for later.</div></div>
+  <div class="tile"><div class="big">0.5 ms</div><div class="lbl">To cut a sagittal slice of a 311 slice CT on the CPU, as a plain copy. A tilted 512 x 512 cut takes 2 to 4 ms. Measured.</div></div>
+</div>
+
+<ol class="toc">
+  <li><a href="#fail">Why devices fail today</a></li>
+  <li><a href="#audit">Audit: what main does today</a></li>
+  <li><a href="#design">The v6 design</a></li>
+  <li><a href="#four-d">4D</a></li>
+  <li><a href="#server">Server side, later</a></li>
+  <li><a href="#delete">Only the next viewports stay</a></li>
+  <li><a href="#order">Order of work</a></li>
+  <li><a href="#risks">Risks and open questions</a></li>
+  <li><a href="#numbers">The numbers behind the plan</a></li>
+</ol>
+
+<h2 id="fail">1. Why devices fail today</h2>
+<p>Issue #3020 names four kinds of GPU failure. Each one has the same cause on our side.</p>
+<div class="scroll">
+<table>
+  <thead>
+    <tr><th style="width:21%">Failure</th><th style="width:19%">What the user sees</th><th style="width:30%">Why it happens on main</th><th style="width:30%">With slice first</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="k">1. A texture edge is too large</td>
+      <td>A grey or black viewport. No event.</td>
+      <td>The 3D texture has the size of the volume. <code>MAX_3D_TEXTURE_SIZE</code> is never read, and some devices report a limit they cannot draw.</td>
+      <td>A 2D view holds a 2D image. Its edge is a slice edge. An image above the 2D limit is split into tiles, which loses nothing.</td>
+    </tr>
+    <tr>
+      <td class="k">2. The context runs out of memory</td>
+      <td>The WebGL context is lost.</td>
+      <td>Each volume on screen is on the GPU in full: 2 bytes per voxel with norm16, 4 bytes without it.</td>
+      <td>About 0.1 to 1.5 MiB for each layer of each viewport.</td>
+    </tr>
+    <tr>
+      <td class="k">3. The browser runs out of GPU memory</td>
+      <td>The tab or the GPU process dies. No event.</td>
+      <td>The same textures, plus 7 WebGL contexts made at start.</td>
+      <td>One context. The big texture exists only for a slab or 3D, after a check.</td>
+    </tr>
+    <tr>
+      <td class="k">4. A texture format lies</td>
+      <td>A wrong image. No event.</td>
+      <td>16-bit data needs <code>EXT_texture_norm16</code> or float filtering. The probe checks "not black" and the 2D path does not use the probe.</td>
+      <td>Only formats that every WebGL2 device must have. One draw program, tested with exact values at start.</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+<p class="note">Issues in this family: #2029 (Samsung A series), #1759 and #2212 (Android grey and black images), #1133 (iPhone SE), #2653 (iOS 18 volume rendering), #2530, #2153 and #453 (lost contexts), #1360 and #119 (texture size), #978 (big images on small devices), #805 and #839 (memory), #1397 (wrong Hounsfield values with norm16), #3020 and #3034 (automatic limits and budgets).</p>
+
+<h2 id="audit">2. Audit: what main does today</h2>
+
+<h3>2.1 The four render paths of the planar viewport</h3>
+<p>Each path does two jobs in one piece of code: it finds the pixels of the slice, and it draws them. That is why the paths do not have the same features.</p>
+<div class="scroll">
+<table>
+  <thead>
+    <tr><th>Path</th><th>Planes</th><th>Slab, MIP</th><th>Fusion overlay</th><th>Slice labelmap</th><th>On the GPU</th><th>Notes</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="k"><code>vtkImage</code></td><td>Acquisition plane only</td><td>No</td><td>Yes</td><td>Yes</td><td>One 2D image, about 0.5 MiB</td>
+      <td>vtk.js picks the texture format by itself. The image is uploaded again on every change, and the actor keeps a second CPU copy.</td>
+    </tr>
+    <tr>
+      <td class="k"><code>vtkVolumeSlice</code></td><td>Any</td><td>Max, min, mean</td><td>Yes</td><td>Yes</td><td>The whole volume</td>
+      <td>No size check before the upload and no error check after it.</td>
+    </tr>
+    <tr>
+      <td class="k"><code>cpuImage</code></td><td>Acquisition plane only</td><td>No</td><td>No. Only label overlays draw.</td><td>Label only</td><td>Nothing</td>
+      <td>Canvas2D with a lookup table.</td>
+    </tr>
+    <tr>
+      <td class="k"><code>cpuVolume</code></td><td>Any</td><td>No. The slab thickness is dropped.</td><td>Yes</td><td>No. <code>addImages</code> returns without mounting.</td><td>Nothing</td>
+      <td>Samples on the main thread at canvas size times the pixel ratio. An axis-aligned view builds a full second copy of the volume.</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<h3>2.2 How a path is chosen</h3>
+<ul>
+  <li><b>Two inputs only.</b> Does the data have a volume, or is the view off the acquisition plane? And is the backend <code>gpu</code> or <code>cpu</code>? That is all <code>PlanarRenderPathDecisionService</code> reads.</li>
+  <li><b>What it does not read:</b> the size of the data, the limits of the device, the slab thickness, or whether the GPU path worked last time.</li>
+  <li><b><code>auto</code> means GPU</b> unless no WebGL2 context can be made.</li>
+  <li><b>No automatic change.</b> The code says "Cornerstone never switches render backends on its own". The app must listen for a lost context and call <code>setRenderBackend('cpu')</code>.</li>
+</ul>
+
+<h3>2.3 What the library knows about the device</h3>
+<ul>
+  <li><b><code>getRenderingCapabilities()</code></b> probes six texture formats one time and stores the result per GPU name. The code uses only <code>webgl</code>, <code>norm16</code> together with <code>norm16Linear</code>, and <code>floatLinear</code>.</li>
+  <li><b>The probe is weak.</b> It draws a 5 x 1 texture and passes when the pixel is grey and not black. It does not compare values, and it tests no 3D texture and no size.</li>
+  <li><b>The 2D path skips it.</b> <code>VtkImageMapperRenderPath</code> lets vtk.js turn norm16 on from the extension alone. The comment says the gate is "intentionally not wired in here".</li>
+  <li><b>No GPU tier.</b> <code>detect-gpu</code> is gone from the code. Only the 2.x migration guide still shows <code>gpuTier</code>.</li>
+  <li><b>GPU presets do not look at the device.</b> <code>setGpuSettingsPreset</code> has <code>low-tablet</code>, <code>low</code>, <code>medium</code> and <code>high</code>. The app must pick one, and they apply only when <code>lossyDownsampling.final</code> is on.</li>
+</ul>
+
+<h3>2.4 Rendering engines and canvases</h3>
+<ul>
+  <li><b>Two engine modes.</b> <code>contextPool</code> (default) and <code>tiled</code>.</li>
+  <li><b>Seven contexts at start.</b> The pool makes all of them in its constructor. Next planar and 3D viewports all draw on context 0, because a volume texture cannot be shared between contexts. So on next the other six give nothing.</li>
+  <li><b><code>isMobile</code> is manual.</b> It only sets the pool to one context, and nothing detects it. A comment in the <code>touchAllTools</code> example says iOS evicts pages that hold several live contexts.</li>
+  <li><b>No size guard.</b> Nothing clamps <code>devicePixelRatio</code> or the canvas size. <code>maxTextureSize</code> is probed and never read.</li>
+  <li><b>One canvas shows at a time.</b> A next planar viewport has a GPU canvas and a hidden CPU canvas. It cannot draw a GPU layer and a CPU layer together.</li>
+</ul>
+
+<h3>2.5 4D today</h3>
+<ul>
+  <li><b>CPU memory:</b> every time point is requested and stays decoded. The only bound is the cache, 3 GB by default.</li>
+  <li><b>GPU:</b> one 3D texture the size of one time point. A change of time point uploads the whole texture again, slice by slice, on the main thread.</li>
+  <li><b>Next GPU path:</b> by my reading of the code it uploads the whole time point on every rebuild of the mapper, so on a scroll or a window change too. The dynamic branch of <code>update3DFromRaw</code> has no dirty check. I did not run this.</li>
+  <li><b>Next CPU path:</b> it does not redraw when the time point changes.</li>
+  <li><b>Cine:</b> <code>playClip</code> plays time only for the legacy <code>VolumeViewport</code>. On a next viewport it scrolls slices. Nothing preloads for playback.</li>
+</ul>
+
+<h3 id="switches">2.6 The switches, and what v6 does with each</h3>
+<p><span class="tag laterc">With legacy</span> means: only the legacy viewport classes or the legacy adapters read the setting. It is removed with them (section 6, stages 1 and 5). Changed on 2026-11-16, when you decided that only the next viewports stay.</p>
+<div class="scroll">
+<table>
+  <thead>
+    <tr><th style="width:31%">Switch</th><th style="width:36%">What it does today</th><th style="width:33%">v6</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><code>rendering.useCPURendering</code>, <code>setUseCPURendering</code>, <code>resetUseCPURendering</code>, <code>getShouldUseCPURendering</code></td><td>CPU for the legacy stack viewport. Also feeds <code>auto</code>. Legacy volume viewports throw with it.</td><td><span class="tag laterc">With legacy</span> The router does not read it. Removed with the legacy stack viewport.</td></tr>
+    <tr><td><code>rendering.planar.renderBackend</code>, <code>setRenderBackend</code>, per-mount <code>renderBackend</code></td><td>Pins <code>gpu</code> or <code>cpu</code> for next planar viewports.</td><td><span class="tag remove">Remove</span> the global setting and <code>setRenderBackend</code>. The router decides for each viewport. The pin on one viewport stays, for tests.</td></tr>
+    <tr><td><code>rendering.preferSizeOverAccuracy</code>, <code>setPreferSizeOverAccuracy</code></td><td>Half float textures. Only the stock vtk.js volume mapper reads it. No effect on streaming textures or 2D images.</td><td><span class="tag remove">Remove</span></td></tr>
+    <tr><td><code>getCanUseNorm16Texture</code>, <code>canRenderFloatTextures</code></td><td>Pick texture formats. The second one also changes the data type the loader stores.</td><td><span class="tag remove">Remove</span> Formats are internal. The loader stops looking at the GPU.</td></tr>
+    <tr><td><code>isMobile</code></td><td>Sets the context pool to 1.</td><td><span class="tag laterc">With legacy</span> It goes with the pool.</td></tr>
+    <tr><td><code>rendering.webGlContextCount</code></td><td>Pool size, 7.</td><td><span class="tag laterc">With legacy</span> The next viewports draw with one context. Only legacy stack viewports are spread over the pool.</td></tr>
+    <tr><td><code>rendering.renderingEngineMode</code></td><td><code>contextPool</code> or <code>tiled</code>.</td><td><span class="tag change">Decide</span> Both engines also draw the next viewports. Pick one for them and drop the switch, or keep both.</td></tr>
+    <tr><td><code>rendering.useGenericViewport</code></td><td>Maps legacy viewport types to next. Off by default.</td><td><span class="tag remove">Remove</span> At stage 1 of section 6. There is no way back to the legacy viewports.</td></tr>
+    <tr><td><code>rendering.useLegacyCameraFOV</code></td><td>Old inset of 1.1.</td><td><span class="tag laterc">With legacy</span></td></tr>
+    <tr><td><code>rendering.planar.cpuVolume.useViewportSamplingForLinear</code>, <code>.volumeModifiedThrottleMs</code></td><td>Tuning of the CPU volume path.</td><td><span class="tag remove">Remove</span> One sampler. The throttle is internal.</td></tr>
+    <tr><td><code>rendering.reducedTextureFill</code></td><td>Work per render to fill a reduced texture.</td><td><span class="tag remove">Remove</span> Internal.</td></tr>
+    <tr><td><code>setGpuSettingsPreset</code> and its five presets, <code>ImageVolume.setTextureBudget</code></td><td>The app states the class of the device.</td><td><span class="tag remove">Remove</span> The fit is checked where the texture is made, and failures are remembered.</td></tr>
+    <tr><td><code>?labelmapImageMapper</code> in library code, <code>useSliceRendering</code> per representation</td><td>Turn on slice rendering of labelmaps.</td><td><span class="tag remove">Remove</span> It is the only planar labelmap path.</td></tr>
+    <tr><td>Render mode names: <code>vtkImage</code>, <code>vtkVolumeSlice</code>, <code>cpuImage</code>, <code>cpuVolume</code>, and the dead <code>webgl2d</code> and <code>vtkVolume</code></td><td>Name the fused paths. 18 files in core and tools check for <code>vtkVolumeSlice</code>.</td><td><span class="tag change">Replace</span> <code>viewport.getRenderPlan()</code>.</td></tr>
+    <tr><td><code>registerRenderBackend</code> (experimental)</td><td>A custom backend that must draw on one of two canvases.</td><td><span class="tag change">Reshape</span> Register a place to sample or a place to draw.</td></tr>
+    <tr><td><code>rendering.sliceStepMeasure</code> (experimental)</td><td><code>l1</code> or <code>l2</code> step between oblique slices.</td><td><span class="tag change">Decide</span> Pick one before v6 and drop the switch.</td></tr>
+    <tr><td><code>rendering.lossyDownsampling.final</code></td><td>Lets a volume texture be reduced. Off by default.</td><td><span class="tag keep">Keep</span> Off by default. It now matters only for slabs and 3D.</td></tr>
+    <tr><td><code>.interactive</code>, <code>.interleavedLoading</code></td><td>Lower detail while the user interacts or while frames load.</td><td><span class="tag keep">Keep</span></td></tr>
+    <tr><td><code>dangerouslyDisableFidelityIndicator</code>, <code>debug.statsOverlay</code>, <code>debug.fidelityIndicatorDebug</code></td><td>The fidelity label and the debug overlays.</td><td><span class="tag keep">Keep</span></td></tr>
+    <tr><td><code>rendering.volumeRendering.sampleDistanceMultiplier</code></td><td>Ray step of 3D.</td><td><span class="tag keep">Keep</span></td></tr>
+    <tr><td><code>rendering.strictZSpacingForVolumeViewport</code></td><td>Allows a fallback when slice spacing is missing.</td><td><span class="tag keep">Keep</span> It is about the data, not the device.</td></tr>
+    <tr><td><code>segmentation.labelmapVoxelRepresentation</code>, <code>cache.setMaxCacheSize</code>, <code>peerImport</code></td><td>Labelmap storage, CPU cache size, module import.</td><td><span class="tag keep">Keep</span></td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>2.7 Defects I found that are worth fixing on main whatever we decide</h3>
+<p class="note">All from reading the code. I ran none of them on a device that fails.</p>
+<ol>
+  <li><b>The 2D image path of next does not use the capability probe.</b> A device with a broken norm16 extension can still get it. <code>GenericViewport/Planar/VtkImageMapperRenderPath.ts</code>, the comment above the mapper.</li>
+  <li><b>The probe passes on "grey and not black".</b> <code>utilities/textureSupport.ts</code>, <code>return r === g &amp;&amp; g === b &amp;&amp; r !== 0</code>.</li>
+  <li><b>No limit is checked and no error is read.</b> <code>MAX_3D_TEXTURE_SIZE</code> has no reader. There is no <code>gl.getError()</code> in <code>packages/*/src</code>. A texture that fails gives a grey or black view with no event.</li>
+  <li><b>Nothing recovers from a lost context.</b> The events are forwarded and no code listens. vtk.js rebuilds no texture when the context comes back.</li>
+  <li><b>Seven contexts are made at start,</b> and next viewports use one.</li>
+  <li><b>A 16-bit volume without usable norm16 goes up as 32-bit float.</b> That is twice the GPU memory, and each slice is copied to a <code>Float32Array</code> first.</li>
+  <li><b>A GPU capability changes what the loader stores.</b> <code>canRenderFloatTextures()</code> picks Float32 or integer voxels and can turn prescaling off (<code>dicomImageLoader/src/imageLoader/createImage.ts</code>, <code>utilities/generateVolumePropsFromImageIds.ts</code>). The loader should not depend on the GPU.</li>
+  <li><b>The CPU volume path keeps a full copy of the volume</b> for an axis-aligned view (<code>PlanarCPUScalarViewportSampler.ts</code>). On a weak device that is the wrong place to double the memory.</li>
+  <li><b>4D uploads far too much.</b> See 2.5.</li>
+  <li><b><code>volumeModifiedThrottleMs</code> is 5000 in <code>init.ts</code></b> and the type comment says 50.</li>
+  <li><b>Dead names:</b> the render modes <code>webgl2d</code> and <code>vtkVolume</code>, <code>PlanarRenderPathDecisionOptions.useSliceRendering</code>, the loader option <code>progressiveRendering</code>, and the capability fields <code>maxTextureSize</code>, <code>float</code>, <code>halfFloat</code>, <code>halfFloatLinear</code>.</li>
+  <li><b>Stale docs:</b> <code>concepts/cornerstone-core/renderingEngine.md</code> shows config names that no longer exist.</li>
+</ol>
+
+<h2 id="design">3. The v6 design</h2>
+
+<h3>3.1 Five rules</h3>
+<ol>
+  <li><b>A 2D view needs a 2D image.</b> The GPU holds what the view shows. It holds a volume only when the view asks for a thick slab or 3D.</li>
+  <li><b>The pixels are exact by default on every device.</b> A reduced image is opt-in and always labelled. This is the rule of today and it does not change.</li>
+  <li><b>Cornerstone changes the path by itself only when the new path draws the same pixels.</b> This replaces "never switches on its own". A change that loses nothing needs no question to the user. The rules that keep such a change stable are in <a href="#switch">3.3</a>.</li>
+  <li><b>Believe what was measured, not what the device says.</b> Check where the resource is made, and remember what failed.</li>
+  <li><b>The app says what it wants to see, not how to render it.</b> Orientation, slab, blend mode and time point are the inputs. There are no device flags.</li>
+</ol>
+
+<h3 id="steps">3.2 Two steps: sample, then draw</h3>
+<p>Today each render path does both steps, so there are four paths with four feature sets. In v6 the steps are separate and any way to sample works with any way to draw.</p>
+<div class="pipe">
+  <div class="step">
+    <h4>Step 1. Sample</h4>
+    <div class="what">Make one 2D image of raw values for the view plane and the time point. Runs on a scroll, a tilt or a change of time point.</div>
+    <div class="opt"><b>The acquired frame</b><span>No work. The frame is the image.</span></div>
+    <div class="opt"><b>CPU sampler</b><span>Any plane, thin slabs, 4D. A straight cut is a copy, 0.5 ms or less. A tilted cut is 2 to 12 ms. This is <code>sampleVolumeGrid</code>.</span></div>
+    <div class="opt"><b>GPU volume texture</b><span>Thick slabs and 3D only. Checked before use.</span></div>
+    <div class="opt"><b>Later</b><span>Bricks. A server.</span></div>
+  </div>
+  <div class="arrow">&rarr;</div>
+  <div class="step">
+    <h4>Step 2. Draw</h4>
+    <div class="what">Put the 2D images of all layers on the canvas. Window, colour map, opacity, blend, labelmap fill and outline, zoom, pan, rotate, flip. These never run step 1.</div>
+    <div class="opt"><b>GPU</b><span>The vtk.js image mapper, behind a seam.</span></div>
+    <div class="opt"><b>CPU</b><span>Canvas2D. Same inputs, same features.</span></div>
+    <div class="opt"><b>Later</b><span>An own WebGL2 or WebGPU program, if wanted. The seam allows it.</span></div>
+  </div>
+</div>
+<ul>
+  <li><b>A straight cut is a copy.</b> A sagittal or coronal plane lies on a row or a column of voxels, so no value has to be computed. The sampler of today has no short path for that. It runs its general loop and takes 1 to 2.5 ms. A plain copy gives the same values in 0.5 ms for sagittal and in under 0.1 ms for coronal, on a 311 slice CT. v6 adds that short path inside <code>sampleVolumeGrid</code>. The numbers are in <a href="#numbers">section 9</a>.</li>
+  <li><b>What this fixes at once:</b> the CPU path gets slabs, fusion and slice labelmaps, because those live in step 1 and in a small shared draw contract. Today each of the four paths has to build them again.</li>
+  <li><b>Layers:</b> the source, a fusion overlay and a labelmap are each one 2D image with its own place in the view plane. Each keeps its own resolution. They are drawn in order, so there is no depth test and no depth offset. The bug of #3077 cannot happen.</li>
+  <li><b>World coordinates:</b> unchanged. They come from the camera. Probe and ROI values come from the CPU data, as they do on the stack path today.</li>
+</ul>
+
+<h3>3.3 The router</h3>
+<p>For each viewport the router reads what the view needs and picks the two steps. Every row but the last always gives an exact image.</p>
+<div class="scroll">
+<table>
+  <thead>
+    <tr><th style="width:22%">The view needs</th><th style="width:26%">Sample</th><th style="width:16%">Draw</th><th style="width:36%">When that cannot work</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="k">A frame in its own plane</td><td>None. The frame is the image.</td><td>GPU, else CPU</td><td>Always works.</td></tr>
+    <tr><td class="k">One slice in another plane: sagittal, coronal, oblique, MPR, crosshairs</td><td>CPU sampler</td><td>GPU, else CPU</td><td>Always works.</td></tr>
+    <tr><td class="k">A thin slab</td><td>CPU sampler with a slab mode. The thin slice shows first, the slab follows.</td><td>GPU, else CPU</td><td>Always works. A 10 mm MIP slab on CT took 17 to 48 ms.</td></tr>
+    <tr><td class="k">A thick slab or a full MIP</td><td>GPU volume texture, if it fits and passed its check</td><td>GPU</td><td>CPU, in workers, shown as it refines and cached per angle. Exact but slower. A PET MIP is 31 ms on one thread. A CT MIP is about 0.5 s.</td></tr>
+    <tr><td class="k">A labelmap or a fusion overlay</td><td>The same rule as the data it shows</td><td>Same pass as the source</td><td>Same as its row above.</td></tr>
+    <tr><td class="k">A new time point (4D)</td><td>The same sampler with a time index</td><td>Same</td><td>Always works. See section 4.</td></tr>
+    <tr><td class="k">3D</td><td>GPU volume texture, if it fits and passed its check</td><td>GPU</td><td>An event that says 3D is not available here. A reduced texture only if the app opted in. Later, a server.</td></tr>
+  </tbody>
+</table>
+</div>
+<div class="cols">
+  <div class="box">
+    <h3>When to draw on the CPU</h3>
+    <ul>
+      <li>No WebGL2 context.</li>
+      <li>The self-test of the draw program fails.</li>
+      <li>The context is lost and does not come back.</li>
+      <li>A test pins it on one viewport.</li>
+    </ul>
+  </div>
+  <div class="box">
+    <h3>When to mix CPU sampling and GPU drawing</h3>
+    <ul>
+      <li>Always, for every slice that is not an acquired frame.</li>
+      <li>It is the default path on every device, not a fallback.</li>
+      <li>A thin slab uses it too. The router estimates the CPU time from the slab depth and the image size and stays on the CPU under about 50 ms.</li>
+    </ul>
+  </div>
+</div>
+<p><b>When to sample on the GPU:</b> only for a thick slab and for 3D, and only after the check in 3.4. I would not add "use the GPU volume to speed up plain slices" in 6.0. Both ways are exact, so the router can add it later if the device numbers ask for it.</p>
+
+<p id="switch"><b>How a change of path stays stable.</b> Rule 3 is only acceptable if the change is proper and stable. These are the rules for it:</p>
+<ul>
+  <li><b>Same pixels only.</b> The router changes a path by itself only when the new path draws the same pixels. The picture does not change. Only the speed can.</li>
+  <li><b>Down, and it stays down.</b> A failure moves the viewport one step down. It does not go back up by itself in that session, so a path cannot flip back and forth. A new page load, or a call from the app, tries the upper path again.</li>
+  <li><b>No empty frame.</b> The image on screen stays until the new path has drawn.</li>
+  <li><b>Only at known moments.</b> When data is added, when the view asks for something else (a slab, 3D), and when something fails. Never on each frame.</li>
+  <li><b>For each viewport.</b> There is no global CPU or GPU mode. Two viewports of one layout can be on different paths: a plain slice next to a MIP. One viewport that moves down leaves the others alone, unless they share the cause, as with a lost context.</li>
+  <li><b>One event for each change,</b> with the reason. <code>getRenderPlan()</code> gives the same answer at any time.</li>
+  <li><b>The change is tested.</b> The test suite forces each failure and compares the picture before and after: a lost context through the <code>WEBGL_lose_context</code> extension, a self-test that fails, and a texture that is refused.</li>
+</ul>
+
+<h3>3.4 How the router knows the device</h3>
+<ul>
+  <li><b>For drawing: one self-test.</b> At start, draw a known 16-bit pattern through the real draw path, read it back, and compare the exact values. A failure means CPU drawing. Here it took about 0.1 s the first time, almost all of it the shader compile that the page needs anyway. The result is stored per GPU name and browser version.</li>
+  <li><b>For the GPU volume texture: check where it is made.</b>
+    <ul>
+      <li>Before: each edge against the largest edge that this device has drawn correctly. A thin probe texture extends that record when a bigger edge is needed, as #3020 proposes.</li>
+      <li>After: read the GL error, and read back one known value.</li>
+      <li>A marker in browser storage is written before a big allocation and cleared after it. If the page starts and finds the marker, the last attempt killed the tab. That size is recorded as failed. This catches failure 3, which sends no event.</li>
+    </ul>
+  </li>
+  <li><b>What is stored:</b> the largest size that worked and the smallest that failed, per GPU name and browser version. No presets and no app input.</li>
+  <li><b>A wrong guess costs speed, not correctness.</b> The step below on the ladder is exact. This is why learning by failure is safe here and was not safe when the only fallback was a reduced image.</li>
+  <li><b>A lost context:</b> the draw step makes its program again and uploads the visible 2D images again from the CPU cache. That is a few milliseconds and needs no app code. A GPU volume texture is tried one more time, then the view moves down the ladder.</li>
+</ul>
+
+<h3 id="draw">3.5 The draw step: the vtk.js image mapper, behind a seam</h3>
+<p>Decided in the review: the vtk.js image mapper stays as the draw step. It is not replaced. The design keeps a narrow seam, so that it can be replaced later if you want that.</p>
+<ul>
+  <li><b>The seam:</b> the sample step hands over a plain object, a typed array of raw values with its place in the world. It holds no vtk.js type. One file draws it with the image mapper. A new draw step replaces that one file and nothing else.</li>
+  <li><b>The same seam serves the CPU draw step.</b> Canvas2D takes the same sampled slice.</li>
+</ul>
+<p><b>What the image mapper leaves open, and what we do about it:</b></p>
+<ul>
+  <li><b>It picks the 16-bit format by itself, from what the device lists.</b> Norm16, if the device lists that extension. If not, 32-bit float, which a device can smooth only when it lists a second extension. If that one is missing too, half float, but only when the values fit, because half float holds whole numbers only up to 2,048.</li>
+  <li><b>Its one check does not compare values.</b> For norm16 it draws a texture of two pixels and passes when the pixel it reads is not black. A device that returns a wrong value passes. Our own probe is not used on this path.</li>
+  <li><b>The safe format cannot go through it.</b> An integer texture needs no extension and is exact on every WebGL2 device. It needs a shader that reads whole numbers and blends them itself. The shader of the image mapper lets the hardware blend, so it cannot read one.</li>
+  <li><b>Each layer is an actor in a 3D scene.</b> The image, the fusion overlay and the labelmap are sorted by depth. #3077 is a bug of that kind. A 2D program draws the layers in order.</li>
+  <li><b>What we do now:</b> use our own probe on this path, and make the probe compare values. That closes the norm16 case. The other two formats stay as vtk.js picks them.</li>
+</ul>
+<p><b>If the draw step is replaced one day,</b> this is what an own WebGL2 program would give. It is not planned.</p>
+<ul>
+  <li><b>Formats that every WebGL2 device must have:</b> 16-bit data goes into an integer texture (<code>R16I</code>, <code>R16UI</code>). The shader reads the four neighbours with <code>texelFetch</code> and blends them itself. No extension is involved.</li>
+  <li><b>Measured here:</b> 0 of 65,536 values wrong, and the blended image equals a CPU reference in every pixel. Half float, the only core 16-bit format that the hardware can filter, got 53,247 of 65,536 values wrong and 512 values inside the CT range. The cost to draw was too small to measure on this GPU.</li>
+  <li><b>We can only test what we control.</b> One program means one self-test covers every 2D view. vtk.js builds its shaders from many parts.</li>
+  <li><b>No copies:</b> the texture is filled from the cached frame and reused. Today the image mapper makes the texture again on each change and the actor keeps a second copy of the pixels.</li>
+  <li><b>One WebGL2 context draws every 2D view of a rendering engine.</b> The vtk.js context is made only when a view needs a thick slab or 3D, or when a legacy viewport is enabled. The pool of seven is no longer made at start.</li>
+  <li><b>Device limits handled inside:</b> an image above <code>MAX_TEXTURE_SIZE</code> is drawn as tiles. The canvas size is clamped to what the device allows.</li>
+  <li><b>WebGPU later</b> is one more small program on the same inputs. It does not wait for vtk.js or vtk-wasm.</li>
+</ul>
+
+<h3>3.6 The GPU volume path becomes a module</h3>
+<ul>
+  <li><b>What it keeps:</b> the streaming 3D texture, the reslice mapper for slabs and the volume mapper for 3D, all on vtk.js as today.</li>
+  <li><b>When it loads:</b> only when a view needs a thick slab or 3D.</li>
+  <li><b>What stays from the multi-resolution work (#2931):</b> the reduced textures, the fidelity record and the indicator. They now apply to slabs and 3D only. The acquired-frames path is no longer needed, because every plane is exact, not only the acquisition plane.</li>
+  <li><b>It fits #2894.</b> That issue asks for rendering as a separate package so that vtk-wasm can replace vtk.js. With slice first the part that must be replaced is much smaller.</li>
+</ul>
+
+<h3 id="config">3.7 What the app sets and what it can read</h3>
+<p>There is no global CPU or GPU setting. The router decides for each viewport.</p>
+<pre>init({
+  rendering: {
+    lossyDownsampling: { final: false, interactive: true, interleavedLoading: true },
+  },
+});
+
+viewport.getRenderPlan();
+// { need: 'slice', sample: 'cpu',       draw: 'gpu', exact: true, reason: 'default' }
+// { need: 'slab',  sample: 'gpuVolume', draw: 'gpu', exact: true, reason: 'fits, 155 MiB' }
+// { need: 'slab',  sample: 'cpu',       draw: 'gpu', exact: true, reason: 'gpu volume failed its check' }</pre>
+<ul>
+  <li><b>One new event,</b> <code>RENDER_PLAN_CHANGED</code>, with the old plan, the new plan and the reason. The fidelity events stay as they are.</li>
+  <li><b>A debug overlay</b> shows the plan in the corner of the viewport, next to the badge for next viewports.</li>
+  <li><b>A pin on one viewport</b> stays, so that the test suite can run every path. An app does not need it.</li>
+</ul>
+
+<h3 id="ready">3.8 Slices ready before the scroll</h3>
+<p>The idea from the review: prepare the previous and the next slices, so that a scroll never waits. I agree. I would build it as a cache first and put the worker behind it second.</p>
+<ul>
+  <li><b>What it is:</b> a small cache of sampled slices for each viewport. It holds the slice on screen, a few slices before and after it, and for 4D the same slice of the next time points. Step 1 looks there first.</li>
+  <li><b>What it costs:</b> a sagittal slice of a 311 slice CT is 0.3 MiB. Five slices on each side are about 3 MiB for a viewport.</li>
+  <li><b>Where it helps:</b> tilted planes, thin slabs, 4D playback and slow devices. A straight sagittal or coronal cut is already under 1 ms here, so on a desktop there is nothing to wait for.</li>
+  <li><b>Where the work runs first:</b> on the main thread, in idle time, in the direction of the scroll.</li>
+  <li><b>Why not a worker from the start:</b> a worker cannot read the frames today. They live on the main thread and core uses no shared memory. A copy of the volume for the worker doubles the memory, which is what a phone has least of. Shared memory needs a page that is cross-origin isolated, and many deployments cannot set that.</li>
+  <li><b>When a worker does it:</b> on a page that is cross-origin isolated, where the frames can sit in shared memory. And for slabs on any page, where one cut takes tens of milliseconds and only the frames of the slab have to be sent.</li>
+  <li><b>It is the same cache that a server needs.</b> A sampler that answers late, such as a worker, bricks or a server, is usable only if the neighbours are asked for early. So step 1 is asynchronous from the start, and this cache is part of the design and not an extra.</li>
+  <li><b>What clears a slice:</b> an edit of the voxels, such as a labelmap brush. A frame that arrives late. A new plane.</li>
+</ul>
+
+<h2 id="four-d">4. 4D</h2>
+<p>In v6 time is one more input of step 1. Nothing else changes.</p>
+<ul>
+  <li><b>A change of time point costs three small samples, not one volume upload.</b> The axial view takes the frame itself. The sagittal and coronal views copy one row or column out of each frame of that time point. That is an exact copy of a few hundred kilobytes.</li>
+  <li><b>Any plane works,</b> oblique too, because it is the same sampler.</li>
+  <li><b>Smooth playback:</b> keep the sampled slices of each time point for the planes on screen. For 30 time points and three planes that is about 12 to 45 MiB. Playing is then only a texture swap. The cache fills ahead of the playhead.</li>
+  <li><b>Memory with a bound:</b> keep decoded frames only for the time points near the playhead. Once the slice cache is full, playback at a fixed position needs no decoded volume at all. A move to a new slice position needs the current time point first, and the others refill.</li>
+  <li><b>An example:</b> a 4D CT with 10 phases of 300 slices is 1.5 GB decoded today. With a window of three phases it is about 450 MB plus the slice cache.</li>
+  <li><b>Work that is needed either way:</b> a dynamic context of <code>playClip</code> for next viewports, a redraw on a time point change, and frames that wait for their time point to load.</li>
+  <li><b>One more, found in this review:</b> the sampler reads a 4D volume one voxel at a time today, because the voxel manager of a 4D volume does not hand out whole frames. It needs the same direct read that a plain volume has. I did not time it.</li>
+  <li><b>The slices of the next time points</b> come from the cache of <a href="#ready">3.8</a>.</li>
+</ul>
+
+<h2 id="server">5. Server side, later</h2>
+<p>I would not design it now. v6 only has to leave the right opening, and step 1 is that opening.</p>
+<ul>
+  <li><b>The question a server answers</b> is the same one the CPU sampler answers: "give me the 2D image for this plane, this time point and this slab".</li>
+  <li><b>The client still draws.</b> The server sends raw values, lossless, not a picture of the screen. Window, zoom and pan stay local and instant. A request is needed only when the slice changes.</li>
+  <li><b>3D from a server</b> is a colour image into the same draw step.</li>
+  <li><b>Bricks use the same opening on the client.</b> A volume made of bricks answers the sampler with only the bricks that the plane cuts. That is the reslicer that the brick loader design asks for.</li>
+  <li><b>What v6 must do now to keep this open:</b>
+    <ul>
+      <li>Step 1 can be asynchronous and can be cancelled.</li>
+      <li>Step 2 accepts an image that arrives late, or a coarse one first.</li>
+      <li>Tools never read pixels from the GPU. Values come from the data source.</li>
+      <li>The view state stays on the client.</li>
+    </ul>
+  </li>
+  <li><b>Not in this plan:</b> connections, protocols, sessions and cost.</li>
+</ul>
+
+<h2 id="delete">6. Only the next viewports stay</h2>
+<p><b>Changed on 2026-11-16, your decision.</b> v6 keeps the next viewports and their API, and nothing else. The legacy viewport classes go. The legacy adapters go. The legacy API goes with them (<code>setStack</code>, <code>setVolumes</code>, <code>setProperties</code>, <code>getCamera</code> and the rest). <code>rendering.useGenericViewport</code> goes: there is nothing to switch back to. An application that does not want to move stays on v5. The 5.x migration guide already says that the adapters are temporary and will be removed in a later breaking release, so this is the announced direction.</p>
+<p>This replaces what stood here before: "keep the adapters for 6.0, so that an application that calls the legacy API keeps running". OHIF moves after Cornerstone is done. It is not part of this plan.</p>
+
+<h3>What goes</h3>
+<p class="note">Counted on the commit <code>54ff35c17</code>.</p>
+<div class="scroll">
+<table>
+  <thead><tr><th>What</th><th class="num">Size today</th><th>In v6</th></tr></thead>
+  <tbody>
+    <tr><td>Legacy viewport classes: <code>Viewport</code>, <code>StackViewport</code>, <code>BaseVolumeViewport</code>, <code>VolumeViewport</code>, <code>VolumeViewport3D</code>, and the legacy video, whole slide and ECG viewports</td><td class="num">8 files, 13,370 lines</td><td><span class="tag remove">Deleted</span> with the code that only they use. Stage 1.</td></tr>
+    <tr><td>Legacy adapters: planar (with its compatibility controller), 3D, video, whole slide, ECG</td><td class="num">7 files, 5,885 lines</td><td><span class="tag remove">Deleted</span> last. Until then they are scaffolding: see "Why the adapters go last".</td></tr>
+    <tr><td><code>rendering.useGenericViewport</code> and the map from legacy types to next types</td><td></td><td><span class="tag remove">Deleted</span> The option at stage 1, the map with the adapters.</td></tr>
+    <tr><td>Legacy viewport types: <code>STACK</code>, <code>ORTHOGRAPHIC</code>, <code>PERSPECTIVE</code>, and <code>VOLUME_3D</code>, <code>VIDEO</code>, <code>WHOLE_SLIDE</code>, <code>ECG</code> in their legacy meaning</td><td></td><td><span class="tag remove">Deleted</span> The names of the remaining types are an open question (below).</td></tr>
+    <tr><td>Legacy interfaces: <code>IStackViewport</code>, <code>IVolumeViewport</code>, <code>IBaseVolumeViewport</code>, and the legacy shape of <code>IViewport</code>, <code>IVideoViewport</code>, <code>IWSIViewport</code>, <code>IECGViewport</code></td><td class="num">in 7 files, 2,333 lines</td><td><span class="tag change">Replaced</span> by interfaces of the next viewports. The other types in those files stay.</td></tr>
+    <tr><td>Helpers that exist for the legacy API: <code>setVolumesForViewports</code>, <code>addVolumesToViewports</code>, <code>convertStackToVolumeViewport</code>, <code>convertVolumeToStackViewport</code>, the guards <code>viewportSupportsStackCompatibility</code> and <code>viewportSupportsVolumeCompatibility</code></td><td></td><td><span class="tag remove">Deleted</span> A planar viewport shows a stack or a volume. There is nothing to convert.</td></tr>
+    <tr><td>Settings that only legacy code reads: the <code>useCPURendering</code> family, <code>useLegacyCameraFOV</code>, and the rows of 2.6 marked "With legacy"</td><td></td><td><span class="tag remove">Deleted</span> with the adapters.</td></tr>
+    <tr><td>Next viewport classes, the next API, the router, both rendering engines, the tools</td><td></td><td><span class="tag keep">Kept</span></td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3>What has to move first</h3>
+<p>I let the compiler list every use of a member of the legacy interfaces outside the legacy files, and checked each member against the next viewport classes. The examples and the karma tests are counted by search, because much of their code is untyped.</p>
+<div class="scroll">
+<table>
+  <thead><tr><th>Where</th><th>What uses the legacy API today</th><th>Work</th></tr></thead>
+  <tbody>
+    <tr><td class="k">Tools</td><td>1,122 uses of legacy interface members in 168 files. 997 of them use a member that the next viewport has under the same name. <b>125 uses in 50 files</b> need a member that no next viewport has: <code>getCamera</code> 31, <code>setCamera</code> 15, <code>getRenderer</code> 11, <code>setProperties</code> 8, <code>addActor</code> 6, <code>getProperties</code> 6, <code>isOrientationChangeable</code> 6, <code>removeActors</code> 5, and 22 others.</td><td>Move the 125 to the next API. Remove the legacy side of 74 branches on <code>isGenericViewport</code>. Rename about 210 type references.</td></tr>
+    <tr><td class="k">Core, outside the legacy files</td><td>51 uses in 18 files. 24 of them are in the two rendering engines. The rest are utilities built on a legacy viewport (<code>renderToCanvasGPU</code>, <code>jumpToSlice</code>, <code>scroll</code>, <code>getImageLegacy</code>).</td><td>The engines lose their legacy code. Each utility moves to the next API or goes.</td></tr>
+    <tr><td class="k">Other packages</td><td>4 uses in 3 files, all in polymorphic-segmentation.</td><td>Small.</td></tr>
+    <tr><td class="k">Examples</td><td><b>183 examples on the legacy API</b> (63,029 lines), 30 on the next API. About 480 legacy calls: <code>setStack</code> 118, <code>setVolumesForViewports</code> 100, <code>setProperties</code> 80, <code>setVolumes</code> 46, <code>resetCamera</code> 36, <code>getCamera</code> 30, <code>setCamera</code> 26. 150 examples have three such calls or fewer, 25 have four to eight, 8 have more. 15 have a next twin already.</td><td>Each is converted in place. The largest mechanical part.</td></tr>
+    <tr><td class="k">Karma tests</td><td>56 files, 269 tests. 41 files create viewports through the legacy API (209 legacy calls, and 161 calls of one helper that creates the viewports). 15 files do not touch a viewport.</td><td>Convert the 41 in place.</td></tr>
+    <tr><td class="k">Playwright</td><td>37 specs (133 tests in a run) open 25 legacy examples, and run twice today: on the legacy classes and on the adapters. 26 specs (157 tests in a run) are on the next API.</td><td>The 37 specs stay as they are. The examples under them are converted.</td></tr>
+    <tr><td class="k">Jest</td><td>257 suites, 3,777 tests. 12 files hold tests of the adapters or of the switch (160 tests in those files). 3 more import a legacy class.</td><td>A next test or a reason for each adapter test.</td></tr>
+    <tr><td class="k">Browser tests in vitest</td><td>13 files that already use the next API (annotation tools, synchronizers, segmentation state, undo and redo). CI does not run them, and they had stopped passing: 87 passed and 18 failed on the base of this branch. 15 of the 18 came from one renamed enum in three test files. My slice first default had broken 2 more without my seeing it, because the harness asked for the volume texture path and silently got the sampled slice. Fixed on 2026-11-16: 103 pass and 3 fail.</td><td>The 3 that are left fail on main too: one stored picture that has the image 4 pixels left of where the legacy, adapter and next viewports all draw it today (yours to approve), one test that pins a crash of the circle tool that is fixed, one rectangle area that is off by 0.8%. Then add the suite to CI.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3 id="parity">The test rule</h3>
+<div class="answer">
+  <ul>
+    <li><b>No old test is deleted before the same scenario passes on a next viewport, through the next API, with the same check.</b></li>
+    <li><b>One table holds every old test.</b> Each legacy and adapter test has one row: the new test that covers it, or the reason it is gone. A script counts the rows against the tests of the commit <code>54ff35c17</code>. A stage is not done while one old test has no row.</li>
+    <li><b>"Gone" needs a reason that the thing itself is gone.</b> For example a test of the map behind <code>useGenericViewport</code>, or of how an adapter stores a legacy callback. A test of a behaviour (a window level, a scroll, a measurement, a picture) is never "gone": it moves.</li>
+    <li><b>A picture that changes is shown to you first.</b> The expected pictures stay the same files. Where a next viewport draws another picture for a reason you accepted (the stronger labelmap fill, the background colour of the CPU picture), the picture is replaced and listed with before and after.</li>
+  </ul>
+</div>
+<div class="scroll">
+<table>
+  <thead><tr><th>Suite</th><th>How it moves</th><th>Done when</th></tr></thead>
+  <tbody>
+    <tr><td class="k">Karma</td><td>Converted in place: same file, same test name, same expected picture, the calls changed to the next API. So the row of the table is "same test".</td><td>269 pass. Today 266 pass on the adapters with the legacy pictures, so the pictures already agree. The 3 that differ are settled in stage 1.</td></tr>
+    <tr><td class="k">Playwright, the 37 legacy specs</td><td>The spec does not change. Its example is converted to the next API. The baseline is the picture that passes on the adapter today.</td><td>All their tests pass on the converted examples.</td></tr>
+    <tr><td class="k">Playwright, the 26 next specs</td><td>Stay.</td><td>They pass as today (154, and <code>genericEcg</code> fails on main too).</td></tr>
+    <tr><td class="k">Jest, adapter tests</td><td>For each test: the next test that checks the same behaviour on a direct next viewport (written if it does not exist), or "gone" with its reason.</td><td>Every adapter test has its row.</td></tr>
+    <tr><td class="k">Examples without a spec</td><td>158 legacy examples have no Playwright spec. A script opens each one before and after its conversion, waits for the picture and compares the canvases. A difference needs a reason.</td><td>183 examples load, draw, and match or have a reason.</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3 id="stages">Stages</h3>
+<p>Each stage ends with every suite passing and one commit. Nothing is pushed.</p>
+<ol start="0">
+  <li><b>Close the gaps.</b> Added on 2026-11-16, after "add them, don't want any gap". Everything a legacy viewport can do and a next viewport cannot comes to the next viewports, while the legacy viewports are still in the tree to compare with. First a table of every member, property key, option and event of the legacy viewports, each with its next equivalent or the word "gap". Then each gap is closed with a test that puts a legacy viewport and a next viewport side by side. Known so far: sharpening and smoothing, the perspective type, vtk.js actors and widgets of the application in a planar viewport (the orientation marker and the surface display use them), <code>setAspectRatio</code>, a labelmap over a video, and the display area on the 3D, video, whole slide and ECG viewports. <b>Done when:</b> the table has no "gap" left, and each closed gap has its test.</li>
+  <li><b>The legacy classes go.</b> First, a part of its own: about 170 tests of stage 0 compare a next viewport with a live legacy viewport. Each legacy answer they read is recorded once, from the legacy viewport, through one small helper, so that these tests keep their reference after the classes are deleted. Then: a legacy viewport type always gives a next viewport with its adapter, and the option <code>useGenericViewport</code> is removed. The 8 class files and the code only they use are deleted. The legacy Playwright run ends: its 37 specs run on the adapters, as the compat run does today, and the 50 compat pictures become the baselines. Before that the 3 karma differences are settled: the labelmap picture of the rectangle scissor and the CPU picture with the background colour are replaced (both accepted), and the crosshair test expects the centre of the closest slice (30) where it expected the exact point (29.97): accepted on 2026-11-16. <b>Done when:</b> jest, karma, both Playwright runs and the type checks pass with no legacy class in the tree.</li>
+  <li><b>Tools, core and the other packages call the next API only.</b> After stage 0 the compiler finds 78 places in tools and 36 in core that call a member no next class has (it was 125, 51 and 4 in polymorphic-segmentation). They move, and the branches for legacy viewports are removed. This stage runs together with the next one, package by package: an old test that is moved onto a direct next viewport and then fails shows the tool code that still needs the legacy API. <b>Done when:</b> the same suites pass, and the compiler finds no caller of a legacy member inside the packages.</li>
+  <li><b>The tests move.</b> The 41 karma files and the adapter tests in jest, by the rule above. The browser tests in vitest join the checks. The world crosshair and the slice intersection tools get browser tests of their own: today they have jest tests only. <b>Done when:</b> the table has a row for every old test, and no test calls the legacy API.</li>
+  <li><b>The examples move.</b> 183 examples, in place, in batches by kind (stack, volume, fusion, segmentation, 3D, video, whole slide). The 15 that have a next twin are merged with it. <b>Done when:</b> no example asks for a legacy type or calls the legacy API, the 37 specs pass, and the before and after check is clean.</li>
+  <li><b>The adapters and the legacy API go.</b> The 7 adapter files, the legacy viewport types, the legacy interfaces, the helpers and the settings of the table above, the compat machinery of the tests. The public types become interfaces of the next viewports. The types get their plain names here: <code>PLANAR</code>, <code>VOLUME_3D</code>, <code>VIDEO</code>, <code>WHOLE_SLIDE</code>, <code>ECG</code>, and "generic" and "next" leave the names of classes, helpers and examples. <b>Done when:</b> everything passes and a search finds no legacy name in the packages.</li>
+  <li><b>Docs.</b> The 6.0 migration guide is complete: every breaking change, and a table from each legacy call to its next calls. A codemod for the mechanical part (the <code>codemods</code> package exists). The concept pages and the API pages that describe stack and volume viewports are rewritten.</li>
+</ol>
+<p><b>Why the adapters go last.</b> They keep the old tests and the 183 examples running on the next viewports while those are moved one at a time, so the tree passes after every step. And each adapter method is the written recipe from a legacy call to the next calls. The migration table and the codemod are made from them before they are deleted.</p>
+
+<h3 id="guide">6.1 The migration guide</h3>
+<p>You asked that every breaking change of v6 is documented. The guide is in the docs, next to the guides of the earlier versions: <code>packages/docs/docs/migration-guides/6x/</code>. It holds the changes that are in the code today, and a section for what is decided and not in the code yet. A stage is not done until its changes are in the guide. The changes in it today:</p>
+<ul>
+  <li><b>Slice first is on by default</b> for next planar viewports, and what <code>getRenderPlan()</code> tells.</li>
+  <li><b>The CPU picture is the GPU picture:</b> same colours and opacity, the background colour of the viewport around the image (it was black), and no VOI lookup table of the image (the GPU never applied it).</li>
+  <li><b>The labelmap fill is drawn as configured.</b> A legacy volume viewport drew it at about half the configured alpha (0.5 looked like 0.26). Accepted on 2026-11-16.</li>
+  <li><b>Image defaults:</b> a MONOCHROME1 image starts inverted, an image without a window gets its pixel range (it was 0 to 255).</li>
+  <li><b>Whole slide:</b> world points follow the coordinate system of the slide, and canvas points are right at any device pixel ratio.</li>
+  <li><b>3D:</b> a reset fits like the first mount, and <code>setViewReference</code> moves the camera.</li>
+  <li><b>Video:</b> view references carry the camera, <code>STACK_NEW_IMAGE</code> fires for each frame, <code>options.frameNumber</code> is honoured.</li>
+  <li><b>Float data on iOS:</b> PT stays in floats and is drawn with nearest filtering where the device cannot filter float textures.</li>
+  <li><b>Small ones:</b> <code>utilities.getViewportContentMode</code> answers for every viewport, <code>AnnotationMultiSlice.setViewportFrameRange</code> really sets the range, the 16-bit texture scale fix.</li>
+</ul>
+
+<h3 id="open-defects">6.2 Known and not fixed</h3>
+<ul>
+  <li><b>Fixed on 2026-11-16:</b> a next whole slide viewport showed the slide turned by 90 degrees against the legacy viewport. It keeps the rotation that the microscopy viewer takes from the slide now. Left for the whole slide package of stage 0: its view state takes the rotation in radians where a planar viewport takes degrees, so the rotate tool would turn a slide far too much.</li>
+  <li><b>Legacy only today, closed in stage 0:</b> the sharpening and smoothing passes (a vtk.js convolution over the drawn frame; no test covers them), the <code>PERSPECTIVE</code> type (a legacy volume viewport whose camera starts in perspective; its own comment says "not implemented yet", and no example uses it; the next 3D viewport already has a perspective camera through <code>parallelProjection: false</code>), vtk.js actors and widgets of the application in a planar viewport (<code>addActor</code>, <code>setActors</code>, <code>getRenderer</code>, <code>addWidget</code>), <code>setAspectRatio</code>, and a labelmap over a video.</li>
+  <li><b>Found and fixed on 2026-11-16</b> (<code>80591ebe6</code>): in an ECG trace layout with several columns a point of an annotation was drawn in the cell of another lead; <code>scroll()</code> of the next whole slide viewport did nothing; a next video viewport could open on its second frame and panned by the wrong amount.</li>
+  <li>The outline of a labelmap is not drawn on the CPU canvas. It never was.</li>
+  <li><b>Accepted, not a defect:</b> a next viewport puts a volume slice on voxel centres, so a crosshair drag lands on 30 where the legacy viewport keeps 29.97. It is in the guide. The world crosshair tool is built for this: it keeps the exact world point by itself, each viewport shows its closest slice, and the point counts as off the slice only beyond half the slice spacing.</li>
+  <li>A slab through the whole volume is too much work for the CPU without workers.</li>
+  <li>Slope and intercept of an image that is not prescaled: both next paths follow the legacy GPU, which draws raw values.</li>
+</ul>
+
+<h3 id="questions">6.3 Decided on 2026-11-16</h3>
+<ol>
+  <li><b>Names: plain.</b> "yeah just call them plain names". <code>PLANAR_NEXT</code>, <code>VOLUME_3D_NEXT</code>, <code>VIDEO_NEXT</code>, <code>WHOLE_SLIDE_NEXT</code> and <code>ECG_NEXT</code> become <code>PLANAR</code>, <code>VOLUME_3D</code>, <code>VIDEO</code>, <code>WHOLE_SLIDE</code> and <code>ECG</code>, as the last mechanical step of stage 5. The codemod renames them in applications.</li>
+  <li><b>No gap.</b> "add them don't want any gap". Sharpening, smoothing and perspective come to the next viewports. I read it as the rule for everything a legacy viewport can do, so the other legacy-only features of 6.2 come too. This is stage 0.</li>
+  <li><b>Slices on voxel centres: fine.</b> "i think it is fine put it in migration guides". It is in the guide, with the world crosshair as the tool to use for an exact reference point.</li>
+</ol>
+<p><b>The two crosshairs.</b> <code>CrosshairsTool</code> is the legacy design: one centre that every camera has to follow exactly. <code>WorldCrosshairTool</code> with <code>SliceIntersectionTool</code> is the design for the next viewports: a world point that no camera owns, and the lines of the planes as a tool of their own. My default: <code>CrosshairsTool</code> stays in 6.0 and moves to the next API in stage 2, because of "no gap", and the guide recommends the new pair. Tell me if you want the old tool removed in 6.0 instead.</p>
+
+<h3 id="gaps">6.4 Stage 0 in numbers: the gap table</h3>
+<p>Made on 2026-11-16 by four agents that only read: every member, property key, option and event of the legacy viewports, each compared with the next class used directly (not through an adapter). The rows are claims from reading the code. Each one is checked by a failing test before it is fixed.</p>
+<div class="scroll">
+<table>
+  <thead><tr><th>Family</th><th class="num">Rows</th><th class="num">Same or renamed</th><th class="num">Gap</th><th class="num">Only in the adapter</th><th class="num">Behaves differently</th><th class="num">Internal or gone with the concept</th></tr></thead>
+  <tbody>
+    <tr><td>Planar, as a stack</td><td class="num">162</td><td class="num">67</td><td class="num">16</td><td class="num">11</td><td class="num">42</td><td class="num">26</td></tr>
+    <tr><td>Planar, as a volume (rows not in the stack table)</td><td class="num">103</td><td class="num">39</td><td class="num">13</td><td class="num">9</td><td class="num">36</td><td class="num">6</td></tr>
+    <tr><td>3D</td><td class="num">127</td><td class="num">39</td><td class="num">17</td><td class="num">21</td><td class="num">28</td><td class="num">22</td></tr>
+    <tr><td>Video, whole slide, ECG</td><td class="num">392</td><td class="num">157</td><td class="num">27</td><td class="num">30</td><td class="num">67</td><td class="num">111</td></tr>
+    <tr><td><b>All</b></td><td class="num"><b>784</b></td><td class="num"><b>302</b></td><td class="num"><b>73</b></td><td class="num"><b>71</b></td><td class="num"><b>173</b></td><td class="num"><b>165</b></td></tr>
+  </tbody>
+</table>
+</div>
+<p>"Only in the adapter" is a gap too, once the adapters go: the adapter does it with logic of its own, and the next class cannot. So stage 0 has 144 rows to close. Many are one small method each. The larger ones are below.</p>
+<div class="scroll">
+<table>
+  <thead><tr><th>Work package</th><th>What it closes</th><th>State</th></tr></thead>
+  <tbody>
+    <tr><td class="k">3D viewport</td><td>A preset was lost at the next window or opacity change: fixed, and presets, colormaps, sigmoid, opacity mapping, threshold, blend mode, sharpening and smoothing are presentation keys. Actors of the application on the class (the surface display and the cropping handles threw). Widgets (the orientation marker shows). <code>VOI_MODIFIED</code>, <code>COLORMAP_MODIFIED</code>, <code>PRESET_MODIFIED</code> and the new volume event fire. Zoom and pan. A labelmap in 3D (it drew nothing).</td><td><b>Done and committed</b> (<code>c57375cb9</code>), 25 new tests next to a legacy 3D viewport.</td></tr>
+    <tr><td class="k">Video viewport</td><td><code>IMAGE_RENDERED</code> never fired, so annotations did not follow a pan or a zoom: fixed. Frame pixels for annotation statistics. Frame range and play toggle. Annotations over a range of frames show on every frame of the range. The rotation turns about the centre and the canvas transforms follow it. <code>invert</code> is applied. A canvas with the frame. A labelmap over a video is not a gap: the legacy viewport cannot show one either, both throw.</td><td><b>Done and committed</b> (<code>a753d8b0e</code>), 18 new tests on a real video.</td></tr>
+    <tr><td class="k">Whole slide and ECG</td><td>Whole slide: pan, the rotation in degrees as on a planar viewport, the start view that the microscopy viewer fits, annotations saved on a legacy viewport, <code>CAMERA_RESET</code>, the canvas, the web client fallback. ECG: annotations saved on legacy, <code>getNumberOfSlices</code>. The world coordinates of the two ECG viewports agree (samples and raw amplitude on both; the 150 against 94.5 was only a layout unit).</td><td><b>Done and committed</b> (<code>65a129c0a</code>), 26 new tests.</td></tr>
+    <tr><td class="k">Planar: members</td><td><code>jumpToWorld</code>, <code>getBounds</code>, <code>getIntensityFromWorld</code>, <code>getSliceViewInfo</code>, <code>isInAcquisitionPlane</code>, <code>getSlicesClippingPlanes</code> (surfaces as contours did nothing on a direct next viewport), the image on display (the adapter kept giving the first image after a scroll), the volumes of a fusion.</td><td><b>Done and committed</b> (<code>ec4638a30</code>), 35 new tests next to a legacy viewport.</td></tr>
+    <tr><td class="k">Planar: events, loading, references</td><td>The events that only the adapter fired (new volume, new image set, stack scroll, before a new image), <code>IMAGE_LOAD_ERROR</code> (a failed image load was not caught and not retried), <code>setImageIdIndex</code> resolves when the image is shown, labelmap images that do not reference the stack images, the display area and aspect ratio options, staged loading of a stack.</td><td><b>Done and committed</b> (<code>dd40a33fb</code>), 19 new tests.</td></tr>
+    <tr><td class="k">Planar: slabs, scrolling and orientation</td><td>What a slab thickness means (measured: the same on legacy, adapter and next), scrolling by slab steps on the class, a requested axis on a tilted acquisition, reformat names in the options, <code>setOrientation</code> with vectors as on legacy, the number of slices on the adapter.</td><td><b>Done and committed</b> (<code>98f7aebb2</code>). Two adapter test pictures of the MPR example change and wait for you.</td></tr>
+    <tr><td class="k">Planar: presentation</td><td>Sigmoid window on a volume (stored, not drawn), presets on a slice viewport, a default presentation with reset (the legacy default properties), a colormap update that drops the name when only the opacity is set, opacity given as a list of values, and presentation recipes for what the volume callbacks of the examples do.</td><td><b>Done and committed</b> (<code>b267b60dd</code>), 14 new tests next to a legacy viewport. A list of opacities stays read over the window on a next viewport (<code>opacityMapping</code> holds values of the data, as the legacy list did): documented, not changed.</td></tr>
+    <tr><td class="k">Planar: sharpening and smoothing</td><td>The two filters as presentation keys. On the GPU the picture equals the legacy picture pixel for pixel. On the CPU draw step it is equal for the sharpening and within one grey level for the smoothing. Found on the way: with both above 0 the legacy viewport shows the sharpening only, and the tiled engine draws neither.</td><td><b>Done and committed</b> (<code>4df602cf4</code>), 15 expected pictures drawn by the legacy viewport.</td></tr>
+    <tr><td class="k">Leftovers and viewport options</td><td><code>options</code>, <code>setOptions</code> and <code>reset</code> on every next viewport. The scroll of the whole slide viewport. ECG annotations in layouts with several columns. The first frame and the pan of a video.</td><td><b>Done and committed</b> (<code>80591ebe6</code>).</td></tr>
+    <tr><td class="k">3D: display area, aspect ratio, perspective</td><td><code>setDisplayArea</code> and <code>setAspectRatio</code> with their options and view state keys, equal to the legacy 3D viewport in numbers and pictures. Perspective is the 3D viewport with <code>parallelProjection: false</code>: it draws, zooms and maps points as a legacy 3D viewport made with that option, with no code change. <code>suppressEvents</code> on the direct whole slide, video and ECG viewports. <code>getImageActor(displaySetId)</code> in place of an actor UID. Three callbacks of the examples as presentations with the same picture.</td><td><b>Done and committed</b> (<code>6dc471670</code>), 18 new tests next to a legacy viewport and 7 unit tests.</td></tr>
+    <tr><td class="k">Planar: actors of the application</td><td><code>addActor</code>, <code>setActors</code>, <code>getRenderer</code> in a slice viewport, cut by the slice: surfaces, 3D lines, the orientation marker. The largest one.</td><td>Last of stage 0.</td></tr>
+  </tbody>
+</table>
+</div>
+<p><b>How I decide a row that "behaves differently".</b> Fix it when the next viewport loses something or is wrong by the data. Document it in the guide when the next behaviour is a deliberate design and the legacy one was a quirk. The ones that change what a user sees:</p>
+<ul>
+  <li><b>Slab thickness: no difference. I was wrong here.</b> I had written that a legacy viewport draws twice the number and a next viewport the number itself. I had checked only the legacy half in the code. The pixel test of 2026-11-16 (a bright plane 7 mm from the slice, maximum intensity and average slabs, on legacy, adapter and next) shows the same reach for the same number on all three: the reslice mapper of vtk.js also reaches about the given thickness on each side. So nothing changes and nothing is doubled. Two small differences are left: next starts to show a plane about 1 mm later, and a slab with the composite blend mode draws as an average on next, where legacy casts rays.</li>
+  <li><b>A tilted acquisition: fixed, and its three test pictures are replaced with your agreement.</b> A viewport asked for AXIAL on a series that was acquired tilted opened on the tilted plane on next, where legacy shows the true axial plane. Now AXIAL gives axial and ACQUISITION gives the tilted plane. The MPR test on an oblique MR shows it: its adapter picture at the start differed from the legacy picture in 230,216 pixels and that had been stored as its own baseline; now it differs in 60,828. The picture after a change of orientation got further from legacy (5,048 to 152,510 pixels): it shows the neighbouring slice, because a next viewport keeps the point in view on <code>setOrientation</code> where the legacy viewport goes back to the middle of the volume.</li>
+  <li><b>Legacy callbacks on a volume input</b> (60 example files edit the vtk.js actor in a callback). My default: no callback in the next API. The examples move to presentation keys (window, colormap, opacity), and a custom transfer function gets a presentation key.</li>
+  <li><b>The events only the adapters fire.</b> My default: the next viewports fire the same events under the same names. No new event names.</li>
+  <li><b>ECG.</b> The next default layout is 3x4+1 where legacy always draws 12x1, and the world scale differs by 0.63. My default: keep the next layout and document it.</li>
+  <li><b>The perspective type.</b> On legacy it is a thin slice seen through a perspective camera with a 90 degree view angle, zoom has no effect on it, and nothing uses it. A perspective 3D picture exists on the next 3D viewport (<code>parallelProjection: false</code>). My default: that is the perspective of v6, with a test and a line in the guide, and the perspective slice viewport is not rebuilt. Tell me if you want it rebuilt.</li>
+</ul>
+<p class="note">The four tables with the evidence for every row are in the session scratchpad (<code>step6/gaps/</code>). They move into the repo or into the guide when you want them.</p>
+
+<h2 id="order">7. Order of work</h2>
+<div class="phase">
+  <h3>Step 0. Measure, and fix what is cheap</h3>
+  <div class="when">5.x, no API change</div>
+  <ul>
+    <li><b>Show the path:</b> the plan readout and the overlay, with timings for sample, upload and draw, and the GPU bytes.</li>
+    <li><b>A device set:</b> the phones, tablets and laptops from the issues above. For example an older iPad, an iPhone SE, a Samsung A series, a low-end Android with a Mali GPU, and a Windows laptop with Intel graphics. One bench page that prints its numbers.</li>
+    <li><b>Fixes from 2.7:</b> use the probe on the 2D path, make the probe compare values, read the 3D limit and send an event before an upload, rebuild after a restored context, and make one context when all viewports are next.</li>
+  </ul>
+</div>
+<div class="phase">
+  <h3>Step 1. Slice first for the source image</h3>
+  <div class="when">5.x, opt-in for each display set, then the default under <code>?type=next</code></div>
+  <ul>
+    <li><b>The new mode:</b> the CPU sampler for the pixels and today's image mapper to draw them. This is what the labelmap path does, so little rendering code is new.</li>
+    <li><b>With it:</b> a slab mode and the short path for straight cuts in <code>sampleVolumeGrid</code>, the time index, and <code>playClip</code> for 4D on next.</li>
+    <li><b>And the cache of neighbour slices</b> of <a href="#ready">3.8</a>, filled in idle time on the main thread.</li>
+    <li><b>Done when:</b> the screenshots match the GPU volume path in the next test suite, the TMTV GPU memory is measured near 22 MiB, and scrolling holds 30 frames per second on the weakest device of the set.</li>
+  </ul>
+</div>
+<div class="phase">
+  <h3>Step 2. Make the draw step safe, and keep it replaceable</h3>
+  <div class="when">6.0 alpha</div>
+  <ul>
+    <li><b>Keep:</b> the vtk.js image mapper.</li>
+    <li><b>Fix:</b> our probe on the 2D path, a probe that compares values, and the rebuild after a lost context.</li>
+    <li><b>Seam:</b> the sampled slice is plain data and one file draws it.</li>
+    <li><b>Merge:</b> the CPU draw step takes the same sampled slice, and the second CPU sampler is deleted.</li>
+    <li><b>Done when:</b> a 16-bit test image reads back with the right values on every device of the set.</li>
+  </ul>
+</div>
+<div class="phase">
+  <h3>Step 3. The router and the new default</h3>
+  <div class="when">6.0</div>
+  <ul>
+    <li><b>Router:</b> the table of 3.3, the rules for a stable change, the checks of 3.4, and the plan event.</li>
+    <li><b>Only the next viewports:</b> the legacy classes, the adapters and the legacy API are deleted, in the six stages of section 6. There is no default to switch.</li>
+    <li><b>Tests first:</b> an old test goes only after the same test passes on a next viewport.</li>
+    <li><b>Ship the migration guide</b> with every breaking change.</li>
+  </ul>
+</div>
+<div class="phase">
+  <h3>Step 4. After 6.0</h3>
+  <div class="when">6.x</div>
+  <ul>
+    <li>CPU MIP in workers, with cached frames per angle.</li>
+    <li>Workers that fill the cache of neighbour slices, on pages that allow shared memory.</li>
+    <li>The 4D window of decoded frames.</li>
+    <li>The GPU volume path as a module that loads on demand.</li>
+    <li>A WebGPU draw program. A sampler for bricks. A sampler that asks a server.</li>
+  </ul>
+</div>
+
+<h2 id="risks">8. Risks and open questions</h2>
+<ol>
+  <li><b>Sampling on the main thread of a slow phone.</b> I have no number for it. The cache of neighbour slices in 3.8 is the first answer. If it is still too slow, the choices are workers, a coarser sample while the user moves (the <code>interactive</code> setting already allows that), or the GPU volume as a speed-up where it fits.</li>
+  <li><b>How an oblique slice looks.</b> A slice sampled at voxel size and enlarged by the GPU is slightly softer than today's per-pixel sampling. The fix is to sample at screen size when the view is idle, capped at 2048. That took 12 to 46 ms here.</li>
+  <li><b>Tools that hold vtk.js actors.</b> 44 files in tools import vtk.js. 18 files in core and tools check for the volume slice mode. Labelmap styling has to move to the draw contract.</li>
+  <li><b>The formats that vtk.js picks.</b> The image mapper stays, so half float and 32-bit float stay possible on a device with no norm16. The probe fix covers norm16 only. The device set of step 0 has to show whether the other two cause wrong pictures.</li>
+  <li><b>OHIF.</b> It calls the legacy API today, so it cannot take 6.0 until it has moved to the next API. You said OHIF comes after Cornerstone is done. Until then it stays on 5.x.</li>
+  <li><b>3D on a weak device is not solved on the client.</b> It is a reduced image by opt-in, or a server.</li>
+  <li><b>CPU memory is the next limit.</b> The decoded frames stay in RAM, 3 GB by default, which is more than a phone gives a page. The 4D window is the first tool for that. A default that fits the device is an open question.</li>
+  <li><b>Uneven slice spacing.</b> A CPU sampler can read frames at their real positions, so it could later remove the need for a regular volume. I did not look into it.</li>
+  <li><b>Overlap with open work.</b> #3034 (budgets per display set) and #3022 (automatic limits) solve the same failures by reducing textures. With slice first they are needed only for slabs and 3D. That should be agreed before more of it lands.</li>
+</ol>
+
+<h2 id="numbers">9. The numbers behind the plan</h2>
+<div class="scroll">
+<table>
+  <thead><tr><th>What</th><th>Value</th><th>How</th></tr></thead>
+  <tbody>
+    <tr><td>GPU textures of the TMTV layout</td><td>180 MiB today. About 22 MiB with the CT as slices.</td><td>Measured on the <code>tmtv</code> example. The second number is computed.</td></tr>
+    <tr><td>Share of the CT texture in that</td><td>155.5 MiB</td><td>Measured.</td></tr>
+    <tr><td>A 1,500 slice CT at 1 mm</td><td>750 MiB as a texture. About 7 MiB as six slices.</td><td>Arithmetic.</td></tr>
+    <tr><td>Cut one CT slice on the CPU at 512 x 512, nearest and linear</td><td>2.1 and 3.0 ms</td><td><code>sampleVolumeGrid</code> in Chrome, from PR #3066.</td></tr>
+    <tr><td>The same at 1024 x 1024</td><td>8.0 and 11.6 ms</td><td>Same.</td></tr>
+    <tr><td>The same at 2048 x 2048</td><td>31.8 and 46.2 ms</td><td>Same.</td></tr>
+    <tr><td>Sagittal cut of a 311 slice CT (512 x 311 values), the sampler of today, nearest and linear</td><td>1.1 and 2.1 ms</td><td><code>sampleVolumeGrid</code> in Chrome 157, one array per frame, median of 200 runs. Measured in the review.</td></tr>
+    <tr><td>The same cut as a plain copy</td><td>0.5 ms. Every value equal.</td><td>Same.</td></tr>
+    <tr><td>Coronal cut of the same CT, sampler against plain copy</td><td>0.8 to 2.4 ms against under 0.1 ms</td><td>Same. The copy took 0.02 ms in Node 24, where the clock is finer.</td></tr>
+    <tr><td>Sagittal cut between two columns of voxels, sampler against a mix of two values</td><td>2.6 against 0.9 ms. Every value equal.</td><td>Same.</td></tr>
+    <tr><td>Sagittal cut of a 1,500 slice CT (512 x 1,500 values), sampler against plain copy</td><td>7.2 to 9.2 ms against 3.9 ms</td><td>Same, 60 runs. It reads one column out of each of 1,500 frames.</td></tr>
+    <tr><td>Coronal cut of the 1,500 slice CT, sampler against plain copy</td><td>3.9 to 8.5 ms against 0.3 ms</td><td>Same.</td></tr>
+    <tr><td>The first call of the sampler in a page, before the browser has optimised it</td><td>5 to 34 ms</td><td>Same. Later calls take the times above.</td></tr>
+    <tr><td>Upload one 512 x 512 16-bit image</td><td>0.07 ms</td><td>Measured today.</td></tr>
+    <tr><td>Upload at a new size against the same size</td><td>0.15 against 0.09 ms</td><td>Earlier bench in this work.</td></tr>
+    <tr><td>10 mm MIP slab on CT, CPU, one thread</td><td>17 to 48 ms</td><td>Node 24, made-up volume content.</td></tr>
+    <tr><td>MIP of a whole PET volume, CPU, one thread</td><td>31 ms</td><td>Same.</td></tr>
+    <tr><td>MIP of a whole CT volume, CPU, one thread</td><td>about 0.5 s</td><td>Same.</td></tr>
+    <tr><td>Integer texture and blending in the shader, no extension</td><td>0 of 65,536 values wrong. Blended image equal to the CPU reference.</td><td>Measured today.</td></tr>
+    <tr><td>Half float with hardware filtering</td><td>53,247 of 65,536 values wrong, 512 inside the CT range, largest error 8</td><td>Measured today.</td></tr>
+    <tr><td>norm16 with hardware filtering, needs the extension</td><td>1 of 65,536 wrong (the value -32768)</td><td>Measured today.</td></tr>
+    <tr><td>Self-test: compile, draw, read back, compare</td><td>about 0.1 s the first time</td><td>Measured today.</td></tr>
+    <tr><td>Limits this Mac reports</td><td>2D edge 16,384. 3D edge 2,048.</td><td>Measured today.</td></tr>
+  </tbody>
+</table>
+</div>
+<p class="note">Not measured: any phone, tablet, Windows machine or integrated GPU. The draw time of the shader that blends by itself was under 0.01 ms here, which is too small to compare. Step 0 exists to get these numbers.</p>
+
+</main>
+</body>
+</html>

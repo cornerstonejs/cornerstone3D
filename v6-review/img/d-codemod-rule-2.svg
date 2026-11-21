@@ -1,0 +1,169 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="988" height="799" viewBox="0 0 988 799">
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#5f6368"/></marker></defs>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="16.0" y="31.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="17" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">One fixture of the codemod: what it rewrites and what it reports</text>
+<text x="16.0" y="50.4" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#5f6368" text-anchor="start" xml:space="preserve">packages/codemods/registry/cornerstone3d/6/display-sets/tests/typescript/positive-stack-and-volume (input.ts, expected.ts, metrics.json) at 797b4d670.</text>
+<text x="16.0" y="66.3" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#5f6368" text-anchor="start" xml:space="preserve">The codemod tests pass at 797b4d670: 111 passed, 0 failed (node scripts/test-registry-packages.mjs, laneV2/codemod-test-head.log).</text>
+<text x="16.0" y="93.1" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">input.ts (5.x code)</text>
+<rect x="16.0" y="101.3" width="470.0" height="528.9" rx="0" fill="#fafaf7" stroke="#d9d6cc" stroke-width="1"/>
+<text x="22.0" y="119.4" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve"> 1</text>
+<text x="46.0" y="119.4" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">import type { PlanarViewport } from '@cornerstonejs/core';</text>
+<text x="22.0" y="136.0" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve"> 2</text>
+<text x="46.0" y="136.0" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">import { RenderingEngine, volumeLoader } from '@cornerstonejs…</text>
+<text x="22.0" y="152.7" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve"> 3</text>
+<text x="46.0" y="152.7" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve"></text>
+<text x="22.0" y="169.4" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve"> 4</text>
+<text x="46.0" y="169.4" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">async function run(imageIds: string[]) {</text>
+<text x="22.0" y="186.1" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve"> 5</text>
+<text x="46.0" y="186.1" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">  const renderingEngine = new RenderingEngine('engine');</text>
+<text x="22.0" y="202.7" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve"> 6</text>
+<text x="46.0" y="202.7" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">  const viewport = renderingEngine.getViewport&lt;PlanarViewport…</text>
+<text x="22.0" y="219.4" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve"> 7</text>
+<text x="46.0" y="219.4" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">  const stack = [imageIds[0]];</text>
+<text x="22.0" y="236.1" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve"> 8</text>
+<text x="46.0" y="236.1" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve"></text>
+<rect x="17.0" y="240.7" width="468.0" height="16.7" rx="0" fill="#e3f4e8" stroke="none" stroke-width="1"/>
+<text x="22.0" y="252.8" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve"> 9</text>
+<text x="46.0" y="252.8" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">  await viewport.setStack(stack);</text>
+<text x="480.0" y="252.8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.0" font-weight="bold" fill="#1e7846" text-anchor="end" xml:space="preserve">awaited: rewritten</text>
+<text x="22.0" y="269.4" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve">10</text>
+<text x="46.0" y="269.4" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">  viewport.render();</text>
+<text x="22.0" y="286.1" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve">11</text>
+<text x="46.0" y="286.1" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve"></text>
+<text x="22.0" y="302.8" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve">12</text>
+<text x="46.0" y="302.8" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">  const secondViewport =</text>
+<text x="22.0" y="319.5" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve">13</text>
+<text x="46.0" y="319.5" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">    renderingEngine.getViewport&lt;PlanarViewport&gt;('CT_STACK_2');</text>
+<text x="22.0" y="336.1" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve">14</text>
+<text x="46.0" y="336.1" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve"></text>
+<rect x="17.0" y="340.7" width="468.0" height="16.7" rx="0" fill="#fff1d6" stroke="none" stroke-width="1"/>
+<text x="22.0" y="352.8" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve">15</text>
+<text x="46.0" y="352.8" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">  secondViewport.setStack(imageIds, 50);</text>
+<text x="480.0" y="352.8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.0" font-weight="bold" fill="#b02020" text-anchor="end" xml:space="preserve">not awaited: reported</text>
+<text x="22.0" y="369.5" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve">16</text>
+<text x="46.0" y="369.5" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve"></text>
+<text x="22.0" y="386.2" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve">17</text>
+<text x="46.0" y="386.2" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">  const volumeId = 'cornerstoneStreamingImageVolume:CT';</text>
+<text x="22.0" y="402.8" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve">18</text>
+<text x="46.0" y="402.8" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">  const volume = await volumeLoader.createAndCacheVolume(volu…</text>
+<text x="22.0" y="419.5" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve">19</text>
+<text x="46.0" y="419.5" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">    imageIds,</text>
+<text x="22.0" y="436.2" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve">20</text>
+<text x="46.0" y="436.2" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">  });</text>
+<text x="22.0" y="452.9" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve">21</text>
+<text x="46.0" y="452.9" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve"></text>
+<text x="22.0" y="469.5" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve">22</text>
+<text x="46.0" y="469.5" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">  volume.load();</text>
+<text x="22.0" y="486.2" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve">23</text>
+<text x="46.0" y="486.2" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve"></text>
+<text x="22.0" y="502.9" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve">24</text>
+<text x="46.0" y="502.9" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">  const volumeViewport =</text>
+<text x="22.0" y="519.6" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve">25</text>
+<text x="46.0" y="519.6" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">    renderingEngine.getViewport&lt;PlanarViewport&gt;('CT_AXIAL');</text>
+<text x="22.0" y="536.2" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve">26</text>
+<text x="46.0" y="536.2" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve"></text>
+<rect x="17.0" y="540.8" width="468.0" height="16.7" rx="0" fill="#fff1d6" stroke="none" stroke-width="1"/>
+<text x="22.0" y="552.9" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve">27</text>
+<text x="46.0" y="552.9" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">  volumeViewport.setVolumes([{ volumeId }]);</text>
+<text x="480.0" y="552.9" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.0" font-weight="bold" fill="#b02020" text-anchor="end" xml:space="preserve">not awaited: reported</text>
+<text x="22.0" y="569.6" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve">28</text>
+<text x="46.0" y="569.6" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">  volumeViewport.render();</text>
+<text x="22.0" y="586.3" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve">29</text>
+<text x="46.0" y="586.3" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">}</text>
+<text x="22.0" y="602.9" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve">30</text>
+<text x="46.0" y="602.9" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve"></text>
+<text x="22.0" y="619.6" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve">31</text>
+<text x="46.0" y="619.6" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">run(['a', 'b']);</text>
+<text x="502.0" y="93.1" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">expected.ts (what the codemod writes)</text>
+<rect x="502.0" y="101.3" width="470.0" height="629.0" rx="0" fill="#fafaf7" stroke="#d9d6cc" stroke-width="1"/>
+<text x="508.0" y="119.4" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve"> 1</text>
+<text x="532.0" y="119.4" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">import type { PlanarViewport } from '@cornerstonejs/core';</text>
+<rect x="503.0" y="124.0" width="468.0" height="16.7" rx="0" fill="#e3f4e8" stroke="none" stroke-width="1"/>
+<text x="508.0" y="136.0" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve"> 2</text>
+<text x="532.0" y="136.0" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">import { RenderingEngine, volumeLoader, utilities } from '@co…</text>
+<text x="508.0" y="152.7" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve"> 3</text>
+<text x="532.0" y="152.7" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve"></text>
+<text x="508.0" y="169.4" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve"> 4</text>
+<text x="532.0" y="169.4" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">async function run(imageIds: string[]) {</text>
+<text x="508.0" y="186.1" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve"> 5</text>
+<text x="532.0" y="186.1" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">  const renderingEngine = new RenderingEngine('engine');</text>
+<text x="508.0" y="202.7" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve"> 6</text>
+<text x="532.0" y="202.7" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">  const viewport = renderingEngine.getViewport&lt;PlanarViewport…</text>
+<text x="508.0" y="219.4" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve"> 7</text>
+<text x="532.0" y="219.4" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">  const stack = [imageIds[0]];</text>
+<text x="508.0" y="236.1" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve"> 8</text>
+<text x="532.0" y="236.1" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve"></text>
+<rect x="503.0" y="240.7" width="468.0" height="16.7" rx="0" fill="#e3f4e8" stroke="none" stroke-width="1"/>
+<text x="508.0" y="252.8" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve"> 9</text>
+<text x="532.0" y="252.8" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">  const displaySetId = JSON.stringify([viewport.renderingEngi…</text>
+<rect x="503.0" y="257.4" width="468.0" height="16.7" rx="0" fill="#e3f4e8" stroke="none" stroke-width="1"/>
+<text x="508.0" y="269.4" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve">10</text>
+<text x="532.0" y="269.4" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">  utilities.genericViewportDisplaySetMetadataProvider.add(dis…</text>
+<rect x="503.0" y="274.0" width="468.0" height="16.7" rx="0" fill="#e3f4e8" stroke="none" stroke-width="1"/>
+<text x="508.0" y="286.1" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve">11</text>
+<text x="532.0" y="286.1" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">    kind: 'planar',</text>
+<rect x="503.0" y="290.7" width="468.0" height="16.7" rx="0" fill="#e3f4e8" stroke="none" stroke-width="1"/>
+<text x="508.0" y="302.8" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve">12</text>
+<text x="532.0" y="302.8" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">    imageIds: stack,</text>
+<rect x="503.0" y="307.4" width="468.0" height="16.7" rx="0" fill="#e3f4e8" stroke="none" stroke-width="1"/>
+<text x="508.0" y="319.5" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve">13</text>
+<text x="532.0" y="319.5" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">    initialImageIdIndex: 0,</text>
+<rect x="503.0" y="324.1" width="468.0" height="16.7" rx="0" fill="#e3f4e8" stroke="none" stroke-width="1"/>
+<text x="508.0" y="336.1" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve">14</text>
+<text x="532.0" y="336.1" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">  });</text>
+<rect x="503.0" y="340.7" width="468.0" height="16.7" rx="0" fill="#e3f4e8" stroke="none" stroke-width="1"/>
+<text x="508.0" y="352.8" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve">15</text>
+<text x="532.0" y="352.8" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">  await viewport.setDisplaySets({ displaySetId });</text>
+<text x="966.0" y="352.8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.0" font-weight="bold" fill="#1e7846" text-anchor="end" xml:space="preserve">rewritten</text>
+<text x="508.0" y="369.5" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve">16</text>
+<text x="532.0" y="369.5" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">  viewport.render();</text>
+<text x="508.0" y="386.2" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve">17</text>
+<text x="532.0" y="386.2" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve"></text>
+<text x="508.0" y="402.8" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve">18</text>
+<text x="532.0" y="402.8" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">  const secondViewport =</text>
+<text x="508.0" y="419.5" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve">19</text>
+<text x="532.0" y="419.5" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">    renderingEngine.getViewport&lt;PlanarViewport&gt;('CT_STACK_2');</text>
+<text x="508.0" y="436.2" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve">20</text>
+<text x="532.0" y="436.2" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve"></text>
+<rect x="503.0" y="440.8" width="468.0" height="16.7" rx="0" fill="#fff1d6" stroke="none" stroke-width="1"/>
+<text x="508.0" y="452.9" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve">21</text>
+<text x="532.0" y="452.9" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">  secondViewport.setStack(imageIds, 50);</text>
+<text x="966.0" y="452.9" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.0" font-weight="bold" fill="#b02020" text-anchor="end" xml:space="preserve">unchanged</text>
+<text x="508.0" y="469.5" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve">22</text>
+<text x="532.0" y="469.5" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve"></text>
+<text x="508.0" y="486.2" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve">23</text>
+<text x="532.0" y="486.2" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">  const volumeId = 'cornerstoneStreamingImageVolume:CT';</text>
+<text x="508.0" y="502.9" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve">24</text>
+<text x="532.0" y="502.9" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">  const volume = await volumeLoader.createAndCacheVolume(volu…</text>
+<text x="508.0" y="519.6" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve">25</text>
+<text x="532.0" y="519.6" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">    imageIds,</text>
+<text x="508.0" y="536.2" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve">26</text>
+<text x="532.0" y="536.2" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">  });</text>
+<text x="508.0" y="552.9" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve">27</text>
+<text x="532.0" y="552.9" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve"></text>
+<text x="508.0" y="569.6" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve">28</text>
+<text x="532.0" y="569.6" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">  volume.load();</text>
+<text x="508.0" y="586.3" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve">29</text>
+<text x="532.0" y="586.3" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve"></text>
+<text x="508.0" y="602.9" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve">30</text>
+<text x="532.0" y="602.9" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">  const volumeViewport =</text>
+<text x="508.0" y="619.6" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve">31</text>
+<text x="532.0" y="619.6" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">    renderingEngine.getViewport&lt;PlanarViewport&gt;('CT_AXIAL');</text>
+<text x="508.0" y="636.3" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve">32</text>
+<text x="532.0" y="636.3" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve"></text>
+<rect x="503.0" y="640.9" width="468.0" height="16.7" rx="0" fill="#fff1d6" stroke="none" stroke-width="1"/>
+<text x="508.0" y="653.0" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve">33</text>
+<text x="532.0" y="653.0" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">  volumeViewport.setVolumes([{ volumeId }]);</text>
+<text x="966.0" y="653.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.0" font-weight="bold" fill="#b02020" text-anchor="end" xml:space="preserve">unchanged</text>
+<text x="508.0" y="669.6" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve">34</text>
+<text x="532.0" y="669.6" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">  volumeViewport.render();</text>
+<text x="508.0" y="686.3" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve">35</text>
+<text x="532.0" y="686.3" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">}</text>
+<text x="508.0" y="703.0" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve">36</text>
+<text x="532.0" y="703.0" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve"></text>
+<text x="508.0" y="719.7" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="10.5" font-weight="normal" fill="#9aa0a6" text-anchor="start" xml:space="preserve">37</text>
+<text x="532.0" y="719.7" font-family="'SF Mono', Menlo, Consolas, monospace" font-size="11.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">run(['a', 'b']);</text>
+<text x="16.0" y="749.8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="normal" fill="#5f6368" text-anchor="start" xml:space="preserve">Green: written by the codemod (line 2: the utilities import it needs). metrics.json of the fixture: cornerstone3d-6-manual lists input.ts line 15 'setStack:</text>
+<text x="16.0" y="764.9" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="normal" fill="#5f6368" text-anchor="start" xml:space="preserve">not awaited' and line 27 'setVolumes: not awaited'. Nothing is written into the user's code as a comment. The stack is registered as</text>
+<text x="16.0" y="780.1" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="normal" fill="#5f6368" text-anchor="start" xml:space="preserve">JSON.stringify([engineId, viewportId, firstImageId]).</text>
+</svg>

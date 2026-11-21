@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1040.0" height="460" viewBox="0 0 1040.0 460">
+<rect width="1040.0" height="460" fill="#ffffff"/>
+<text x="16" y="28" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="18" font-weight="700" fill="#0b0b0b">Row 36: time until the CPU picture of a slab is finished, by slab thickness</text>
+<text x="16" y="50" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="13" fill="#52514e">Same volume and view as the pictures (512 x 512 x 120, axial, MIP). Time from setDisplaySetPresentation to the last change of the CPU canvas,</text>
+<text x="16" y="68" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="13" fill="#52514e">measured by the karma probe on HEAD 797b4d670. The GPU picture was final at its first render for every thickness.</text>
+<line x1="150.0" y1="102" x2="150.0" y2="342" stroke="#e6e4de"/>
+<text x="150.0" y="358" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#52514e" text-anchor="middle">0 s</text>
+<line x1="230.0" y1="102" x2="230.0" y2="342" stroke="#e6e4de"/>
+<text x="230.0" y="358" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#52514e" text-anchor="middle">2 s</text>
+<line x1="310.0" y1="102" x2="310.0" y2="342" stroke="#e6e4de"/>
+<text x="310.0" y="358" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#52514e" text-anchor="middle">4 s</text>
+<line x1="390.0" y1="102" x2="390.0" y2="342" stroke="#e6e4de"/>
+<text x="390.0" y="358" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#52514e" text-anchor="middle">6 s</text>
+<line x1="470.0" y1="102" x2="470.0" y2="342" stroke="#e6e4de"/>
+<text x="470.0" y="358" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#52514e" text-anchor="middle">8 s</text>
+<line x1="550.0" y1="102" x2="550.0" y2="342" stroke="#e6e4de"/>
+<text x="550.0" y="358" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#52514e" text-anchor="middle">10 s</text>
+<line x1="630.0" y1="102" x2="630.0" y2="342" stroke="#e6e4de"/>
+<text x="630.0" y="358" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#52514e" text-anchor="middle">12 s</text>
+<text x="730.0" y="96" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" font-weight="700" fill="#0b0b0b">voxel samples (code formula)</text>
+<text x="140" y="122" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">10 mm</text>
+<rect x="150" y="110" width="48.879999999999995" height="16" rx="3" fill="#2a78d6"><title>10 mm: 1.2 s</title></rect>
+<text x="204.88" y="122" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" fill="#0b0b0b">1.2 s</text>
+<text x="730.0" y="122" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#52514e">8 M</text>
+<text x="140" y="152" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">50 mm</text>
+<rect x="150" y="140" width="162.04000000000002" height="16" rx="3" fill="#2a78d6"><title>50 mm: 4.1 s</title></rect>
+<text x="318.04" y="152" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" fill="#0b0b0b">4.1 s</text>
+<text x="730.0" y="152" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#52514e">37 M</text>
+<text x="140" y="182" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">100 mm</text>
+<rect x="150" y="170" width="302.88" height="16" rx="3" fill="#2a78d6"><title>100 mm: 7.6 s</title></rect>
+<text x="458.88" y="182" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" fill="#0b0b0b">7.6 s</text>
+<text x="730.0" y="182" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#52514e">75 M</text>
+<text x="140" y="212" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">150 mm</text>
+<rect x="150" y="200" width="449.36" height="16" rx="3" fill="#2a78d6"><title>150 mm: 11.2 s</title></rect>
+<text x="605.36" y="212" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" fill="#0b0b0b">11.2 s</text>
+<text x="730.0" y="212" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#52514e">112 M</text>
+<text x="140" y="242" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">200 mm</text>
+<rect x="150" y="230" width="437.40000000000003" height="16" rx="3" fill="#2a78d6"><title>200 mm: 10.9 s</title></rect>
+<text x="593.4000000000001" y="242" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" fill="#0b0b0b">10.9 s</text>
+<text x="730.0" y="242" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#52514e">150 M</text>
+<text x="140" y="272" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">250 mm</text>
+<rect x="150" y="260" width="438.08" height="16" rx="3" fill="#2a78d6"><title>250 mm: 11.0 s</title></rect>
+<text x="594.0799999999999" y="272" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" fill="#0b0b0b">11.0 s</text>
+<text x="730.0" y="272" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#52514e">187 M</text>
+<text x="140" y="302" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">280 mm</text>
+<rect x="150" y="290" width="540.0" height="16" rx="3" fill="none" stroke="#eb6834" stroke-width="2" stroke-dasharray="5 3"/>
+<text x="160" y="302" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#0b0b0b">refused (slabTooLarge): the CPU shows the plain slice</text>
+<text x="730.0" y="302" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#0b0b0b">210 M > 200 M limit</text>
+<text x="140" y="332" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" fill="#0b0b0b" text-anchor="end">300 mm (whole)</text>
+<rect x="150" y="320" width="540.0" height="16" rx="3" fill="none" stroke="#eb6834" stroke-width="2" stroke-dasharray="5 3"/>
+<text x="160" y="332" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#0b0b0b">refused (slabTooLarge): the CPU shows the plain slice</text>
+<text x="730.0" y="332" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#0b0b0b">225 M > 200 M limit</text>
+<text x="16" y="384" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" fill="#52514e">Samples = 512 x 512 voxels of the slice x the samples through the slab (getSlabSampleOffsets: one every 0.35 mm, half the smallest spacing);</text>
+<text x="16" y="402" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" fill="#52514e">MAX_CPU_SLAB_SAMPLES is 200 million (planarSampledSlice.ts). The CPU slab equals the GPU slab pixel for pixel at 50 and 250 mm.</text>
+<text x="16" y="420" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" fill="#52514e">Probe zzV1SlabProbe_test.js "row 36", log laneV1/karma/slab-cur.log.</text>
+</svg>

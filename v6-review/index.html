@@ -1,0 +1,782 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cornerstone3D 6.0 decisions</title>
+<style>
+  :root {
+    --bg: #f7f6f2; --card: #ffffff; --ink: #1d1d1f; --muted: #5f6368; --line: #e3e1da;
+    --accent: #2f5d8a; --tag: #eef2f7; --done: #2e7d4f; --todo: #a35c00; --progress: #6b4fa0;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141518; --card: #1d1f23; --ink: #ececec; --muted: #a0a4ab; --line: #2e3137;
+      --accent: #8ab4e8; --tag: #262a31; --done: #6fcf97; --todo: #f2b45c; --progress: #b79cf0;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 1280px; margin: 0 auto; padding: 24px 16px 80px; }
+  h1 { font-size: 26px; margin: 0 0 6px; }
+  h2 { font-size: 19px; margin: 36px 0 6px; }
+  p.lead, p.note { color: var(--muted); margin: 0 0 12px; }
+  nav { display: flex; gap: 14px; flex-wrap: wrap; margin: 14px 0 0; }
+  nav a { color: var(--accent); text-decoration: none; }
+  .item { background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    padding: 14px 16px; margin: 12px 0; }
+  .item h3 { font-size: 16px; margin: 0 0 6px; }
+  .meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+  .tag { background: var(--tag); border-radius: 999px; padding: 1px 10px; font-size: 12px; color: var(--muted); }
+  .state-done { color: var(--done); } .state-todo { color: var(--todo); } .state-progress { color: var(--progress); }
+  dl { margin: 0; display: grid; grid-template-columns: 110px 1fr; gap: 4px 12px; }
+  dt { color: var(--muted); font-size: 13px; } dd { margin: 0; }
+  code { background: var(--tag); padding: 0 4px; border-radius: 4px; font-size: 13px; }
+  .count { color: var(--muted); font-size: 13px; }
+  .visuals { display: flex; flex-direction: column; gap: 18px; margin: 16px 0 6px; }
+  figure { margin: 0; background: var(--tag); border-radius: 8px; padding: 10px; }
+  figure img { width: 100%; height: auto; display: block; border-radius: 4px; cursor: zoom-in; background: #000; }
+  figure img[src$=".svg"] { background: #fff; }
+  figcaption { font-size: 14px; color: var(--muted); margin-top: 8px; }
+  .lightbox { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; align-items: center;
+    justify-content: center; flex-direction: column; padding: 16px; z-index: 10; cursor: zoom-out; }
+  .lightbox.open { display: flex; }
+  .lightbox img { max-width: 100%; max-height: 88vh; background: #fff; }
+  .lightbox p { color: #eee; max-width: 900px; text-align: center; }
+  @media (max-width: 560px) { dl { grid-template-columns: 1fr; } dt { margin-top: 6px; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Cornerstone3D 6.0: decisions and open issues</h1>
+  <p class="lead">Branch <code>feat/slice-first-step-1</code>. The decisions made during the 6.0 work, the
+    findings of the last review (all fixed), and the logged issues left open. This is a copy of the review
+    page that was served during the work; the full list of issues is in <code>v6-open-issues.md</code>.
+    Click a picture to enlarge it.</p>
+  <nav>
+    <a href="#decisions">Decisions</a>
+    <a href="#pending">Last review findings</a>
+    <a href="#open">Open issues not fixed</a>
+    <a href="https://github.com/cornerstonejs/cornerstone3D/compare/main...feat/slice-first-step-1">The diff to main</a>
+  </nav>
+
+  <h2 id="decisions">Decisions <span class="count" id="decisions-count"></span></h2>
+  <p class="note">Each is written in the 6.0 migration guide where an application sees it.</p>
+  <div id="decisions-list"></div>
+
+  <h2 id="pending">Last review findings <span class="count" id="pending-count"></span></h2>
+  <p class="note">Findings of the last review and the disabled tests, all fixed.</p>
+  <div id="pending-list"></div>
+
+  <h2 id="open">Open issues logged but not fixed <span class="count" id="open-count"></span></h2>
+  <p class="note">From <code>v6-open-issues.md</code>. These are left by choice: 5.x behaved the same, the next API
+    does it on purpose, nobody needs it for 6.0, or it is test infrastructure.</p>
+  <div id="open-list"></div>
+</main>
+<div class="lightbox" id="lightbox"><img alt=""><p></p></div>
+<script type="application/json" id="page-data">{
+ "decisions": [
+  {
+   "id": "d-names",
+   "area": "Public API",
+   "title": "Plain viewport names; the 5.x next names stay as deprecated aliases",
+   "decision": "ViewportType.PLANAR / VOLUME_3D / VIDEO / WHOLE_SLIDE / ECG and the classes PlanarViewport, VolumeViewport3D, VideoViewport, WSIViewport, ECGViewport. The *_NEXT members and the *Next strings stay as deprecated aliases for 6.x; 'stack', 'orthographic' and 'perspective' throw with a message that names the replacement. Types.IViewport is the next interface; IGenericViewport is a deprecated alias.",
+   "why": "No legacy name on a next class, while stored 5.x-next viewport inputs keep working.",
+   "where": "6x guide, 1-next-viewports-only.md and 3-api-map.md"
+  },
+  {
+   "id": "d-new-public",
+   "area": "Public API",
+   "title": "Two new public names",
+   "decision": "VideoViewport.isPlaying() (5.x had only a private field) and utilities.getImagesFrameOfReferenceUID(imageIds) (the made-up frame of reference of images without one, so polySeg can put converted surfaces in the planar viewport's frame).",
+   "why": "Each closes an open issue that needs a public read; no other new public names were added.",
+   "where": "6x guide, 3-api-map.md"
+  },
+  {
+   "id": "d-optional-args",
+   "area": "Public API",
+   "title": "Optional rendering engine ids on synchronizer options and spatial registrations",
+   "decision": "synchronizer.setOptions(viewportId, options, renderingEngineId?) and getOptions(viewportId, renderingEngineId?); spatialRegistrationMetadataProvider takes the two rendering engine ids after the viewport ids. Without them the calls work as in 5.x. Automatic registrations are kept per engine pair and dropped when the viewports show data of other frames of reference.",
+   "why": "Two rendering engines with the same viewport id shared options and registrations.",
+   "where": "6x guide, 2-rendering-changes.md"
+  },
+  {
+   "id": "d-noframe",
+   "area": "Behaviour",
+   "title": "Images without a frame of reference get a made-up one per image set",
+   "decision": "noFrameOfReference-<n>-<SHA-256 of the sorted image URIs>, the same for every viewport and display set of those images; a viewport without data keeps planarNext-viewport-<id>.",
+   "why": "5.x legacy stacks shared references and annotations of such images (they had no frame at all); one made-up frame per viewport broke that. A 32-bit hash collided, so SHA-256. Annotations of different image sets are no longer in one undefined group.",
+   "where": "6x guide, 2-rendering-changes.md (with restore instructions for stored annotations)"
+  },
+  {
+   "id": "d-flip-rotate",
+   "area": "Behaviour",
+   "title": "A planar view flips first, then rotates, as 5.x did",
+   "decision": "Rotation and flips compose in the 5.x order; a flip written alone on a turned view mirrors the screen, so the rotation reads 360 minus the rotation.",
+   "why": "A gap from 5.x (rotation 30 with a horizontal flip gave another view up). A view state stored on a 5.x NEXT viewport with a rotation and one flip now shows turned the other way: write 360 minus the rotation to keep it.",
+   "where": "6x guide, 2-rendering-changes.md"
+  },
+  {
+   "id": "d-zoom-area",
+   "area": "Behaviour",
+   "title": "A zoom next to a display area is a factor against the fit",
+   "decision": "As 5.x: setPan/setZoom keep the display area's zoom and pan, a zoom without an anchor is about the canvas centre, writing back a presentation that was read gives the same picture. A SCALE display area with a zoom reads back the zoom.",
+   "why": "Open issues 1, 2 and 4; the example genericViewportScale lost its scale: [1, 1].",
+   "where": "6x guide, 2-rendering-changes.md and 4-upgrade-step-by-step.md"
+  },
+  {
+   "id": "d-camsync",
+   "area": "Behaviour",
+   "title": "The camera synchronizer carries rotation; another-plane targets read rotation 0",
+   "decision": "Between parallel planar viewports the target takes the source view up and normal as vectors. A target in another plane reads rotation 0 where 5.x read 90; its view up is the 5.x one.",
+   "why": "A 6.0 regression (open issue 84).",
+   "where": "6x guide, 2-rendering-changes.md"
+  },
+  {
+   "id": "d-staged",
+   "area": "Behaviour",
+   "title": "Staged replacements keep the shown scene",
+   "decision": "setDisplaySets (planar and 3D) loads every entry before it removes the shown scene; a failing call rejects and keeps it; a call that has loaded completes its swap and a newer call waits for it.",
+   "why": "A failed or superseded replacement left an empty or half-mounted viewport. 5.x setVolumes checked the cache first; 5.x setStack switched its image ids at once.",
+   "where": "6x guide, 3-api-map.md"
+  },
+  {
+   "id": "d-nowebgl",
+   "area": "Behaviour",
+   "title": "Without WebGL a planar viewport draws itself on the CPU",
+   "decision": "It takes the custom rendering pipeline and makes no WebGL context; engine renders, resize and IMAGE_RENDERED work. A 3D viewport on such a device still fails, as before.",
+   "why": "The guide promised CPU-only devices could show stacks.",
+   "where": "6x guide, 1-next-viewports-only.md"
+  },
+  {
+   "id": "d-cpu-labelmap",
+   "area": "Pictures",
+   "title": "The CPU labelmap looks like the GPU one",
+   "decision": "Outlines in screen pixels on both CPU paths; overlapping labelmaps blend as on the GPU (no draw order); the dynamic threshold of a CPU stroke takes the whole stroke's range and fills the holes the GPU's step-by-step fill leaves (2 --cpu pictures keep an expected-failure mark for that).",
+   "why": "Open issues 69/35, 70, 71. 5.x drew no labelmap on the CPU at all. A CPU pan costs 7.0 ms instead of 2.9 ms on a 512 x 512 stack.",
+   "where": "6x guide, 2-rendering-changes.md"
+  },
+  {
+   "id": "d-edge",
+   "area": "Pictures",
+   "title": "CPU edge pixels follow the default GPU path",
+   "decision": "An axis-aligned slice's edge pixels show the share the slice covers (the 4 samples of this Mac's 4x multisampled GPU); tilted slices clip at the pixel centre. The vtk.js slab sampling beyond the thickness stays (5.x the same).",
+   "why": "Open issues 37 and 38. A GPU without multisampling can differ by one pixel there.",
+   "where": "6x guide, 2-rendering-changes.md"
+  },
+  {
+   "id": "d-bounds",
+   "area": "Public API",
+   "title": "getBounds stays optional on the CPU image data",
+   "decision": "No change; the guide calls getBounds?.().",
+   "why": "Video, ECG and whole slide image data have no bounds; 5.x typed it optional too (open issue 26).",
+   "where": "6x guide samples"
+  },
+  {
+   "id": "d-purge",
+   "area": "Behaviour",
+   "title": "cache.purgeCache() keeps geometries",
+   "decision": "No change.",
+   "why": "5.x kept them too (open issue 17).",
+   "where": "6x guide"
+  },
+  {
+   "id": "d-intersection",
+   "area": "Tools",
+   "title": "SegmentationIntersectionTool fixed, not deprecated",
+   "decision": "It cuts the visible surfaces of the same frame at each slice plane and draws closed paths (even-odd fill), redraws on surface changes and removal. polySeg gives converted surfaces the frame of their source.",
+   "why": "It drew nothing in 5.x or 6.0 (open issue 19). The example surfaceRendering got an axial viewport with the tool.",
+   "where": "6x guide, 2-rendering-changes.md"
+  },
+  {
+   "id": "d-events",
+   "area": "Behaviour",
+   "title": "SEGMENTATION_REPRESENTATION_ADDED fires",
+   "decision": "Once per representation new to a viewport, before SEGMENTATION_REPRESENTATION_MODIFIED.",
+   "why": "Declared and listened to, never fired (5.x too; open issue 87). No new event name.",
+   "where": "6x guide, 2-rendering-changes.md"
+  },
+  {
+   "id": "d-left-as-is",
+   "area": "Behaviour",
+   "title": "Left as in 5.x for 6.0",
+   "decision": "Same-value view state writes fire CAMERA_MODIFIED; resetDisplaySetPresentation drops visible; view references carry float32 round-off; getUniqueSegmentIndices keeps a segment an undo emptied. (Same-value VOI writes: a stack fires VOI_MODIFIED only on a change since O7, as the 5.x stack viewport did; a volume fires on every call, as the 5.x volume viewport did.)",
+   "why": "5.x behaved the same or it is the next API's contract (open issues 86, 88, 89, 90). Their vitest pins name them.",
+   "where": "v6-open-issues.md"
+  },
+  {
+   "id": "d-codemod-rule",
+   "area": "Codemod",
+   "title": "The codemod rewrites only what it fully understands",
+   "decision": "Evidence only through const bindings, imports or unwritten parameters; same-binding proofs; everything else is reported (cornerstone3d-6-manual / -review lists), nothing is written into user code as comments. Unawaited mounts are reported, not awaited. A stack is registered as JSON.stringify([engineId, viewportId, firstImageId]).",
+   "why": "Three review rounds found new holes in each looser rule. Measured on the 251 example files: 860 of 1,335 sites rewritten, none wrongly.",
+   "where": "packages/codemods/registry/cornerstone3d/6/README.md and the guide's codemod section"
+  },
+  {
+   "id": "d-tests",
+   "area": "Tests",
+   "title": "Test infrastructure",
+   "decision": "The decoders have their own karma run (karma.decoders.conf.js). genericEcg keeps its Linux baseline; on macOS it allows 1,836 differing pixels (the label font differs in 1,693; a hidden lead in 2,550). The test volume loader honours its spacing, and 20 legacy values were re-read on 5.x. A root .prettierignore keeps prettier off the codemod fixtures.",
+   "why": "Open issues 30-33; CI runs on Linux.",
+   "where": "karma.conf.js, tests/genericViewport/genericEcg.spec.ts"
+  },
+  {
+   "id": "d-context",
+   "area": "Performance",
+   "title": "One WebGL context for all planar viewports",
+   "decision": "Kept (R9).",
+   "why": "Spreading planar viewports over several contexts doubled the render time when measured.",
+   "where": "stage 5 notes"
+  },
+  {
+   "id": "d-main-merge",
+   "area": "Process",
+   "title": "main 5.19.4 is merged into the 6.0 branch, the examples badge left out",
+   "decision": "Main moved 12 commits (5.18.4 to 5.19.4) while the branch was built. They are merged (a merge commit, not a rebase, so the 125 checked commits stay as they were): the 4D labelmap volume, the stack labelmap volumeId, slice sync over different frames of reference, the cache's unhandled rejections, the context pool's canvas shrink. The 'Next viewports' badge of the examples (#3075) is left out, since 6.0 has no `?type=next` switch; its 3 Playwright tests are parity rows (gone).",
+   "why": "No gap from 5.19.4. A rebase would have rewritten every verified commit for the same final tree.",
+   "where": "merge commit message; 6x guide, 2-rendering-changes.md"
+  },
+  {
+   "id": "d-timepoint",
+   "area": "Behaviour",
+   "title": "The time point of a dynamic volume, as 5.19.4",
+   "decision": "A planar viewport in volume mode writes `dimensionGroupNumber` into its view reference, refuses another time point without navigation, and selects the time point on setViewReference (the volume the reference names, for example the PET of a fusion). A viewport whose data has no time points (a static volume, a stack, a whole slide, an ECG) takes a reference with a time point as if it had none (open issue 99), and a dynamic volume of one time point counts as static (row 100), both as the 5.19.4 volume viewport did. A dynamic volume and a video keep their checks.",
+   "why": "Main added this to the 5.x volume viewport in 5.19.0; without it a frame-of-reference annotation drawn on a dynamic PET would not show on the CT of the same frame in 6.0.",
+   "where": "6x guide, 2-rendering-changes.md; commits a44d6c4dd and b7c11c1ae"
+  },
+  {
+   "id": "d-reviewers",
+   "area": "Process",
+   "title": "AI reviews ended",
+   "decision": "GPT 6.1 Sol and GPT 6.2 Astra reviewed each stage; DeepSeek was replaced by Astra at your request; on 20 November you asked for no more AI reviews. Findings already written are being fixed.",
+   "why": "Your call.",
+   "where": "-"
+  }
+ ],
+ "pending": [
+  {
+   "id": "pending-1",
+   "by": "GPT 6.1 Sol",
+   "severity": "Medium",
+   "title": "The new CPU edge sampler drops the slab",
+   "state": "Done: fixed by lane G1"
+  },
+  {
+   "id": "pending-2",
+   "by": "GPT 6.1 Sol",
+   "severity": "Medium",
+   "title": "A viewport type overridden by a spread or computed key is still treated as static",
+   "state": "Done: fixed by lane F5 (codemod)"
+  },
+  {
+   "id": "pending-3",
+   "by": "GPT 6.1 Sol",
+   "severity": "Medium",
+   "title": "The viewport-family proof can come from a different rendering engine",
+   "state": "Done: fixed by lane F5 (codemod)"
+  },
+  {
+   "id": "pending-4",
+   "by": "GPT 6.1 Sol",
+   "severity": "Medium",
+   "title": "An argument getter can still redirect the stack mount to another viewport",
+   "state": "Done: fixed by lane F5 (codemod)"
+  },
+  {
+   "id": "pending-5",
+   "by": "GPT 6.2 Astra",
+   "severity": "Medium",
+   "title": "Reusing an image ID array returns another series’ frame",
+   "state": "Done: fixed by lane G1"
+  },
+  {
+   "id": "pending-6",
+   "by": "GPT 6.2 Astra",
+   "severity": "Medium",
+   "title": "A reverse-key deletion erases a registration between identically named viewports",
+   "state": "Done: fixed by lane G1"
+  },
+  {
+   "id": "pending-7",
+   "by": "GPT 6.2 Astra",
+   "severity": "Medium",
+   "title": "polySeg overlooks source references carried by supported labelmaps",
+   "state": "Done: fixed by lane G1"
+  },
+  {
+   "id": "pending-8",
+   "by": "GPT 6.2 Astra",
+   "severity": "Medium",
+   "title": "Saved references from before the hash change cannot restore a view",
+   "state": "Done: fixed by lane G1"
+  },
+  {
+   "id": "pending-9",
+   "by": "GPT 6.2 Astra",
+   "severity": "Medium",
+   "title": "An application registration can inherit another pair’s expiry",
+   "state": "Done: fixed by lane G1"
+  },
+  {
+   "id": "pending-10",
+   "by": "GPT 6.2 Astra",
+   "severity": "Medium",
+   "title": "Disabling the original viewports leaves their calculated offset available by ID",
+   "state": "Done: fixed by lane G1"
+  },
+  {
+   "id": "pending-11",
+   "by": "GPT 6.2 Astra",
+   "severity": "Medium",
+   "title": "CPU slab edge pixels use a single slice’s value",
+   "state": "Done: fixed by lane G1"
+  },
+  {
+   "id": "pending-12",
+   "by": "GPT 6.2 Astra",
+   "severity": "Medium",
+   "title": "Removing a surface while intersections are disabled misses eviction",
+   "state": "Done: fixed by lane G1"
+  },
+  {
+   "id": "pending-13",
+   "by": "GPT 6.2 Astra",
+   "severity": "Medium",
+   "title": "A contour-derived mesh can take its frame from an unconverted segment",
+   "state": "Done: fixed by lane G1"
+  },
+  {
+   "id": "pending-t49",
+   "by": "open issue 49",
+   "severity": "-",
+   "title": "17 old volume tests disabled before this work",
+   "state": "Done: all 17 run and pass (11 as they were, 6 changed to check through the 6.0 API; no library defect)"
+  }
+ ],
+ "issues": [
+  {
+   "id": "issue-8",
+   "row": 8,
+   "issue": "`getDisplayArea()` answers with the option of creation while the view state has none, and a new viewport does not apply that option.",
+   "state": "Measured, from 5.x",
+   "where": "`Planar/planarProjectionSnapshot.ts`, near line 104",
+   "proposal": "Answer from the view state only."
+  },
+  {
+   "id": "issue-9",
+   "row": 9,
+   "issue": "A slice range of an annotation has no effect on the screen in volume mode. The legacy volume viewport is the same.",
+   "state": "Measured",
+   "where": "`packages/tools/src/utilities/planar/filterAnnotationsForDisplay.ts`",
+   "proposal": "The tools draw an annotation on a volume by where it lies. Read the range there too, if ranges on a volume are wanted."
+  },
+  {
+   "id": "issue-15",
+   "row": 15,
+   "issue": "`setViewState({ displayArea })` merges: a scale that the view state already has multiplies the display area. `setDisplayArea(displayArea)` resets the scale first.",
+   "state": "Measured, in the guide",
+   "where": "",
+   "proposal": "Nothing, unless the merge is not wanted."
+  },
+  {
+   "id": "issue-36",
+   "row": 36,
+   "issue": "A full-thickness slab on the CPU is refused (`slabTooLarge`).",
+   "state": "Measured",
+   "where": "",
+   "proposal": "Sample it in steps, as the thin slab."
+  },
+  {
+   "id": "issue-39",
+   "row": 39,
+   "issue": "A labelmap over a video is not shown. The legacy viewport cannot do it either.",
+   "state": "Measured",
+   "where": "",
+   "proposal": "Build it if wanted."
+  },
+  {
+   "id": "issue-46",
+   "row": 46,
+   "issue": "The full karma run on this Mac has one extra failure in some runs, a different test each time (`planarJumpToImage_test.js`, `videoViewportNext_test.js`). Each passes alone. It shows when other agents load the machine.",
+   "state": "Measured",
+   "where": "the karma run",
+   "proposal": "Run the failing file alone. If it should not depend on timing, find the wait that is too short."
+  },
+  {
+   "id": "issue-86",
+   "row": 86,
+   "issue": "`resetDisplaySetPresentation` drops the `visible` flag of the mount (a next-only API; its doc comment calls it intended).",
+   "state": "Measured by lane P-F",
+   "where": "`resetDisplaySetPresentation`",
+   "proposal": "Decide: defect or contract; pin in `planarInvariants.browser.test.ts`"
+  },
+  {
+   "id": "issue-88",
+   "row": 88,
+   "issue": "The view reference of a planar viewport carries float32 values and trigonometric round-off (`32.2529411315918`, `-6.12e-17`), so its JSON is not stable.",
+   "state": "Measured by lane P-F",
+   "where": "view references",
+   "proposal": "Round to float64 of the source values and snap round-off to 0; pin 1 in `viewStateSerialization.browser.test.ts`"
+  },
+  {
+   "id": "issue-89",
+   "row": 89,
+   "issue": "A view state write equal to the current state fires `CAMERA_MODIFIED` (5.x `setCamera` the same).",
+   "state": "Measured by lane P-F",
+   "where": "the view state setter",
+   "proposal": "Improvement: fire only on a change; pin 5b in `viewStateSerialization.browser.test.ts`"
+  },
+  {
+   "id": "issue-90",
+   "row": 90,
+   "issue": "`getUniqueSegmentIndices` keeps a segment whose voxels an undo removed (5.x the same; it reads the segment list).",
+   "state": "Measured by lane P-F",
+   "where": "`getUniqueSegmentIndices` after undo",
+   "proposal": "Decide: count voxels or keep the list contract; pin in `undoRedoHistory.browser.test.ts`"
+  },
+  {
+   "id": "issue-91",
+   "row": 91,
+   "issue": "The dicomImageLoader decoder karma run (its own run since package P-F) still loses its headless Chrome 101 in about 2 of 6 runs, at different codecs.",
+   "state": "Measured by lane P-F",
+   "where": "`karma.decoders.conf.js`",
+   "proposal": "Find why the browser goes (memory of the WASM codecs, Chrome 101); rerun on Disconnected meanwhile"
+  },
+  {
+   "id": "issue-96",
+   "row": 96,
+   "issue": "`BaseRenderingEngine.renderFrameOfReference` is unreachable from the public `RenderingEngine` since 3.x and maps the other viewports to `undefined` (it should filter), so it would pass `undefined` ids to `renderViewports`. Dead code; nothing calls it.",
+   "state": "Read by lane T49 (20 November)",
+   "where": "`BaseRenderingEngine.ts`",
+   "proposal": "Delete it, or make it filter and expose it with a guide line"
+  },
+  {
+   "id": "issue-97",
+   "row": 97,
+   "issue": "The other picture tests of `volumeViewport_gpu_render_test.js` still compare with 1.x baselines that have a 15 px margin and pass only through the 15 % threshold; the sagittal nearest test would pass with its bar missing (as 5.x draws it). Test quality only.",
+   "state": "Read by lane T49 (20 November)",
+   "where": "`volumeViewport_gpu_render_test.js`",
+   "proposal": "Check pixels against the volume data, as T49 did for the axial tests"
+  }
+ ],
+ "issueVisuals": {
+  "issue-8": [
+   {
+    "src": "img/issue-8-1.png",
+    "caption": "6.0 and 5.x side by side. A `displayArea` in the options of `enableElement` is not applied on either (the image keeps the fit, 200.7 px), yet `getDisplayArea()` returns it on both. `setDisplayArea()` after the mount applies it (401.4 px); there 6.0 returns it and 5.x returns undefined. Canvas of real viewports from the karma probe `zzV1CoreProbe_test.js`, 6.0 at HEAD `797b4d670` (PlanarViewport), 5.x at `58914567b` (legacy StackViewport)."
+   }
+  ],
+  "issue-9": [
+   {
+    "src": "img/issue-9-1.png",
+    "caption": "A ProbeTool annotation made on slice 2 and given the range 2 to 8 (`AnnotationMultiSlice.setRange`), seen on slices 1, 2, 5, 8 and 9. Stack mode draws it on the whole range on 6.0 and 5.x. Volume mode draws it on slice 2 only, on 6.0 (PlanarViewport, although `isReferenceViewable` says true on 5 and 8) and on 5.x (legacy VolumeViewport, which said false). Canvas plus the tools' SVG layer, karma probe `zzV1ToolsProbe_test.js`, HEAD `797b4d670` and `58914567b`."
+   }
+  ],
+  "issue-15": [
+   {
+    "src": "img/issue-15-1.png",
+    "caption": "Steps on one viewport. 6.0: after `setViewState({ scale: [2, 2] })`, `setViewState({ displayArea })` gives 4.0x (the scale stays and multiplies the display area); `setDisplayArea()` from the same 2x state gives 2.0x. 5.x: `setZoom(2)` then `setDisplayArea()` gives 2.0x. Zoom measured with `worldToCanvas`. Karma probe `zzV1CoreProbe_test.js`, 6.0 at HEAD `797b4d670`, 5.x at `58914567b`."
+   }
+  ],
+  "issue-36": [
+   {
+    "src": "img/issue-36-1.png",
+    "caption": "MIP slabs of 50, 250 and 300 mm on a 512 x 512 x 120 volume where each slice holds one bar. 6.0 GPU draws them all; 6.0 CPU draws 50 and 250 mm with the same pixels as the GPU (0 differ) but refuses the whole volume (render plan reason `slabTooLarge`) and shows the plain middle slice, one bar. 5.x drew it on the GPU only. Canvas of real viewports, karma probe `zzV1SlabProbe_test.js`, HEAD `797b4d670` and `58914567b`."
+   },
+   {
+    "src": "img/issue-36-2.svg",
+    "caption": "Time until the CPU picture is finished, per slab thickness, measured by the same probe on HEAD `797b4d670` (log `laneV1/karma/slab-cur.log`): 1.2 s at 10 mm, 7.6 s at 100 mm, about 11 s from 150 to 250 mm; 280 and 300 mm are refused. Right column: the voxel samples by the code's own formula; the limit `MAX_CPU_SLAB_SAMPLES` is 200 million, which a 280 mm slab of this volume passes."
+   }
+  ],
+  "issue-39": [
+   {
+    "src": "img/issue-39-1.png",
+    "caption": "The same labelmap added with `addSegmentationRepresentations` to a video viewport: 6.0 (HEAD `797b4d670`) and 5.x (`58914567b`) both skip it with the console warning \"the viewport is not a compatible destination\", draw nothing and throw nothing; a planar viewport draws the same labelmap. Note: the migration guide says both throw; through this call neither did. Karma probe `zzV1ToolsProbe_test.js`, the video element's frame with the SVG layer over it."
+   }
+  ],
+  "issue-46": [
+   {
+    "src": "img/issue-46-1.svg",
+    "caption": "The 49 full karma runs of the parent (logs `int-*/v1/karma-N.log`, 18 to 20 November) in time order. The known CPU fusion failure is in every run until package PE fixed it; an extra failure shows in 3 runs, a different test each time (wadouri `beforeSend`, `surfacePlanarNext`, `planarCpuSupersededMount`), and none repeats; 5 runs lost the browser and were started again. Parsed by `laneV1/scripts/karma_runs.py`."
+   },
+   {
+    "src": "img/issue-46-2.svg",
+    "caption": "The two files named in the item and the three that failed in the parent's runs, each run alone at HEAD `797b4d670`, three times (15 karma runs, `laneV1/alone-runs.sh`): every run passed every test. `planarJumpToImage_test.js` failed only in two lane start runs (S5A, S5C); `videoViewportNext_test.js` failed in none of the 138 full runs in the scratchpad logs."
+   }
+  ],
+  "issue-85": [
+   {
+    "src": "img/issue-85-1.svg",
+    "caption": "Events on the element after each call, measured by karma probes on real viewports (`zzV1CoreProbe_test.js`, `zzV1EventsProbe_test.js`). 6.0 (HEAD `797b4d670`) fires `VOI_MODIFIED` for every equal range, in stack and volume mode. In 5.x (`58914567b`) the legacy VolumeViewport and the next PlanarViewport did the same, but the legacy StackViewport did not: its `setVOIGPU` returns early on an equal range. So \"5.x the same\" holds for volumes, not for the 5.x stack."
+   }
+  ],
+  "issue-86": [
+   {
+    "src": "img/issue-86-1.png",
+    "caption": "A fusion on one PlanarViewport (GPU). 1: the overlay with an hsv colormap at opacity 0.6. 2: `setDisplaySetPresentation(overlay, { visible: false })` hides it. 3: `resetDisplaySetPresentation(overlay)` stores `{}`, so the visible flag is gone and the hidden overlay shows again, in grey because the colormap is reset too. After the mount the stored presentation was `{ visible: true }`. Canvas captured by the karma probe `zzV1SlabProbe_test.js` on HEAD `797b4d670`; 5.x has no counterpart."
+   }
+  ],
+  "issue-88": [
+   {
+    "src": "img/issue-88-1.svg",
+    "caption": "`JSON.stringify(getViewReference())` of the same navigated view (slice 3, zoom 1.7, pan, rotation 90, flip), 6.0 (HEAD `797b4d670`) beside 5.x (`58914567b`), from the karma probe `zzV1CoreProbe_test.js`. Orange: values that are exactly float32 (the digits after about 7 are noise). Blue: cos 90 degrees round-off (1.8e-16, 6.1e-17) where 0 is meant. 5.x was worse: it also wrote a Float32Array as an object `{\"0\":..}`."
+   }
+  ],
+  "issue-89": [
+   {
+    "src": "img/issue-89-1.svg",
+    "caption": "Events on the element after each call, measured by karma probes on real viewports (`zzV1CoreProbe_test.js`, `zzV1EventsProbe_test.js`). Writing the current view state back fires `CAMERA_MODIFIED` every time on 6.0 (HEAD `797b4d670`, stack and volume) and on every 5.x viewport (`58914567b`: legacy stack and volume with `setCamera(getCamera())`, next planar with `setViewState`). The item's \"5.x the same\" holds."
+   }
+  ],
+  "issue-90": [
+   {
+    "src": "img/issue-90-1.png",
+    "caption": "Two brush strokes (segment 1, then segment 2), then `DefaultHistoryMemo.undo()`. The undo removes the 27 voxels of segment 2 from the picture and the labelmap, but `getUniqueSegmentIndices` still answers [1, 2], on 6.0 (HEAD `797b4d670`) and on 5.x (`58914567b`, its next PlanarViewport). Before any stroke it already answered [1] with no voxel: it lists the segments of the segmentation, not the voxels. Vitest browser probe (a copy of `undoRedoHistory.browser.test.ts` with one added test)."
+   }
+  ],
+  "issue-91": [
+   {
+    "src": "img/issue-91-1.svg",
+    "caption": "Every decoder karma run in the scratchpad logs (33 runs, 19 to 20 November, after package P-F gave the decoders their own run): the headless Chrome 101 was lost in 10, before JPEG-LS (5 times), JPEG XL (2), HTJ2K (2) or the lossy JPEG (1). No spec failed by its check, and in each folder a later run passed all 18. Parsed by `laneV1/scripts/karma_runs.py`."
+   }
+  ],
+  "issue-96": [
+   {
+    "src": "img/issue-96-1.svg",
+    "caption": "The public `RenderingEngine` has no `renderFrameOfReference` (probe: `typeof` is undefined on 6.0 and 5.x). Called on the engine behind the facade with two viewports of different frames, it passed `[v1ForA, undefined]` to `renderViewports` on both HEAD `797b4d670` and `58914567b`, as the `map` without a filter says. `git grep` at HEAD finds no caller. Karma probe `zzV1CoreProbe_test.js`."
+   }
+  ],
+  "issue-97": [
+   {
+    "src": "img/issue-97-1.png",
+    "caption": "The test's own pictures of \"Sagittal: nearest\" (from its karma log): the 1.x baseline with its 15 px margin, the 6.0 canvas (HEAD `797b4d670`) and the 5.x canvas (`58914567b`), whose white bar is missing. Both differ from the baseline in exactly 4,288 pixels (2.68 %), so both pass the 15 % threshold: the compare cannot tell a missing bar from a right picture."
+   },
+   {
+    "src": "img/issue-97-2.svg",
+    "caption": "Mismatch of every picture compare of `volumeViewport_gpu_render_test.js` against its 1.x baseline, from the karma logs of one run per tree (`laneV1/karma/r97-cur.log`, `r97-legacy.log`; the 5.x file run with its `xdescribe` blocks on). At HEAD every compare passes between 2.6 and 8.8 %; the three axial ones are pixel checks since T49. 5.x fails the axial ones (57.8, 26.3, 100 %)."
+   }
+  ]
+ },
+ "decisionVisuals": {
+  "d-names": [
+   {
+    "src": "img/d-names-1.svg",
+    "caption": "Each 5.x viewport name and what 6.0 does with it: removed and throwing with the replacement in the message (red), or the plain 6.0 name with the 5.x next name kept as a deprecated alias (green). Read in the source at 58914567b and 797b4d670 (ViewportType.ts, viewportTypeToViewportClass.ts, deprecatedViewportClassNames.ts); the throws are pinned by viewportTypeRegistry.jest.js."
+   }
+  ],
+  "d-new-public": [
+   {
+    "src": "img/d-new-public-1.svg",
+    "caption": "5.x against 6.0 code for the two new names. Measured at 797b4d670: getImagesFrameOfReferenceUID(imageIds) gives the same string the planar viewports of those images read (karma probe zzV2ToolsProbe_test.js, laneV2/karma/tools-head2.log); the karma test 'tells whether it plays with isPlaying' passes (false, then true while playing, false after pause)."
+   }
+  ],
+  "d-optional-args": [
+   {
+    "src": "img/d-optional-args-1.svg",
+    "caption": "Two rendering engines with a viewport 'CT' each in one VOI synchronizer, options written per engine. 5.x kept one slot per viewport id: engine A read engine B's options. 6.0 (797b4d670) keeps them per engine; getOptions without an engine id finds none when the id is not unique. Measured: karma probe zzV2ToolsProbe_test.js on both trees. The spatial registration provider was not measured."
+   }
+  ],
+  "d-noframe": [
+   {
+    "src": "img/d-noframe-1.png",
+    "caption": "Images without a frame of reference: a Length annotation made on viewport 1, read on a viewport of the same images (another display set) and on one of other images. 5.x legacy shared it (no frame, one undefined group); the 5.x next viewport and 6.0 before (aae6592b4) made one frame per viewport and lost it; 6.0 now (797b4d670) shows it on both viewports of the same images and not on the other. Measured: karma probe zzV2ToolsProbe_test.js, canvas with the SVG layer."
+   },
+   {
+    "src": "img/d-noframe-2.svg",
+    "caption": "The frame each viewport reported in the same probe run: none (5.x legacy), planarNext-viewport-<id> (5.x next and 6.0 before), noFrameOfReference-3-<SHA-256 of the sorted URIs> (6.0 now, equal for the same images). A viewport without data keeps planarNext-viewport-<id>."
+   }
+  ],
+  "d-flip-rotate": [
+   {
+    "src": "img/d-flip-rotate-1.png",
+    "caption": "One image (an F) with rotation 30 or 90 and a horizontal flip, on the 5.x legacy StackViewport, the 5.x next viewport, 6.0 before the fix (aae6592b4) and 6.0 now (797b4d670, GPU and CPU). 6.0 now shows the 5.x legacy picture; a flip written alone mirrors the screen and the rotation reads 330, as 5.x. Measured: karma probe zzV2CoreProbe_test.js, viewport canvases, logs laneV2/karma/core-{t5,tb,head}1.log."
+   },
+   {
+    "src": "img/d-flip-rotate-2.png",
+    "caption": "Difference images against the 5.x legacy picture of the same step (red: more than 16 levels). 6.0 now differs only on a few antialiased edge pixels; the 5.x next viewport and 6.0 before the fix show the flipped picture turned the other way. Same probe run."
+   }
+  ],
+  "d-zoom-area": [
+   {
+    "src": "img/d-zoom-area-1.png",
+    "caption": "setDisplayArea (zoom 2), then setPan(getPan()), setZoom(getZoom()), writing back the presentation that was read, and a zoom 2 with no anchor after a pan, on 5.x legacy, 6.0 before the fix (aae6592b4) and 6.0 now (797b4d670, GPU and CPU). 6.0 before lost the pan and zoom (open issues 1, 2 and 4); 6.0 now keeps the picture as 5.x did. Measured: karma probe zzV2CoreProbe_test.js, canvases and worldToCanvas numbers. The genericViewportScale example has nothing to show for this (its scale is [1, 1] with no display area)."
+   }
+  ],
+  "d-camsync": [
+   {
+    "src": "img/d-camsync-1.png",
+    "caption": "Three viewports in one camera position synchronizer; the axial source gets rotation 45. 5.x legacy and 6.0 now (797b4d670) turn the same-plane target with it; the 5.x next viewport and 6.0 before (aae6592b4) did not (open issue 84). The target opened sagittal turns into the source plane in every version; it reads rotation 0 in 6.0 where 5.x read 90, and keeps its own zoom where 5.x copied the parallel scale. Measured: karma probe zzV2ToolsProbe_test.js."
+   }
+  ],
+  "d-staged": [
+   {
+    "src": "img/d-staged-1.png",
+    "caption": "A replacement whose images fail to load. 5.x setStack resolved and held the failing ids; the 5.x next viewport (the code before the fix bbb770840) dropped the shown scene, and with two entries mounted the one that loaded although the call rejected. 6.0 now (797b4d670, GPU and CPU) rejects and keeps the shown display set. Measured: karma probe zzV2CoreProbe_test.js, logs laneV2/karma/core-{t5,head}{1,2}.log."
+   },
+   {
+    "src": "img/d-staged-2.svg",
+    "caption": "The order of the steps. Rows 1 to 3 as measured above; rows 4 and 5 (a replacement that loads, two calls in a row) as the code of PlanarViewport.setDisplaySets at 797b4d670 and planarFailedReplacement_test.js state them, not measured here."
+   }
+  ],
+  "d-nowebgl": [
+   {
+    "src": "img/d-nowebgl-1.png",
+    "caption": "A device without WebGL (getContext answers null for every WebGL type, init() run again). The 5.x legacy StackViewport drew on the CPU; the 5.x next planar viewport threw at enableElement; 6.0 (fixed in RF2a, so already in aae6592b4) and 6.0 now (797b4d670) draw on the CPU with no WebGL context asked. Measured: karma probe zzV2NoWebGLProbe_test.js. A 3D viewport without WebGL was not tried."
+   }
+  ],
+  "d-cpu-labelmap": [
+   {
+    "src": "img/d-cpu-labelmap-1.png",
+    "caption": "Labelmaps on CPU planar viewports against the 6.0 now GPU picture: outlines (top) and two overlapping labelmaps (bottom). 5.x legacy CPU drew no labelmap (12 errors per scene); the 5.x next and 6.0 before (aae6592b4) CPU drew a smoothed fill with no outline and put the last labelmap on top; 6.0 now (797b4d670) differs from the GPU in 0 pixels. Measured: karma probe zzV2ToolsProbe_test.js (the scenes of cpuLabelmapLikeGpu_test.js); the GPU here is SwiftShader."
+   },
+   {
+    "src": "img/d-cpu-labelmap-2.svg",
+    "caption": "The price: a CPU pan of a 512 x 512 stack with a large labelmap went from 2.9 ms to 7.0 ms. Numbers of lane P-D (lanePD/STATUS.md 'Cost', perf-example.js on the production example build), not measured again at 797b4d670."
+   }
+  ],
+  "d-edge": [
+   {
+    "src": "img/d-edge-1.png",
+    "caption": "Edge pixels of a slice of a 32^3 cube, GPU sampled slice against the CPU, before (aae6592b4) and now (797b4d670), with enlarged crops and difference images. Along an axis the CPU now shows the covered share of each edge pixel (16 pixels differ by one sample of 50 levels; before, 288 by up to 100); a tilted slice was and is clipped at the pixel centre (0 pixels differ). Measured: karma probe zzV2CoreProbe_test.js (lane PE's scene), SwiftShader with 4x multisampling."
+   }
+  ],
+  "d-bounds": [
+   {
+    "src": "img/d-bounds-1.svg",
+    "caption": "Which getImageData() results have getBounds: only the planar viewport's; video, ECG and whole slide image data have none, and the type marks it optional in 5.x and 6.0 alike. Read in the source at 797b4d670 and 58914567b, not measured."
+   }
+  ],
+  "d-purge": [
+   {
+    "src": "img/d-purge-1.svg",
+    "caption": "Cache contents before and after cache.purgeCache() with 3 images, 1 volume and 1 surface geometry: images and volumes go, the geometry stays, in 5.x (58914567b), 6.0 before (aae6592b4) and 6.0 now (797b4d670). Measured: karma probe zzV2CoreProbe_test.js."
+   }
+  ],
+  "d-intersection": [
+   {
+    "src": "img/d-intersection-1.png",
+    "caption": "SegmentationIntersectionTool on an axial planar viewport, slice through a sphere surface shown on a 3D viewport. 5.x: the tool throws on a next viewport (viewport.getCamera is not a function); 6.0 before (aae6592b4): no line; 6.0 now (797b4d670): one closed path, the cut of the sphere. Measured: karma probe zzV2ToolsProbe_test.js, canvas with the SVG layer."
+   },
+   {
+    "src": "img/d-intersection-2.png",
+    "caption": "Found while making these: the surfaceRendering example at 797b4d670 draws no line on its axial viewport (0 SVG paths after 3 minutes and after two scrolls). Its downloaded surfaces carry the frame 'test-frameOfReferenceUID', not the CT's, and the tool cuts only surfaces of the viewport's frame; lane 19 saw 7 lines at 0bce929b0, before that rule. Measured: Playwright on the example built at 797b4d670 (zzV2Examples.spec.ts, zzV2Surface.spec.ts)."
+   }
+  ],
+  "d-events": [
+   {
+    "src": "img/d-events-1.svg",
+    "caption": "The segmentation events after addSegmentationRepresentations, in the order they fired: 5.x (legacy and next) and 6.0 before (aae6592b4) never fire SEGMENTATION_REPRESENTATION_ADDED; 6.0 now (797b4d670) fires it once, before SEGMENTATION_REPRESENTATION_MODIFIED. Measured: karma probe zzV2ToolsProbe_test.js."
+   }
+  ],
+  "d-left-as-is": [
+   {
+    "src": "img/d-left-as-is-1.svg",
+    "caption": "The five behaviours left as in 5.x, what 5.x did, and the vitest pin of each. Measurements of lane P-F; the pins are test.fails, the 5 expected fails of the parent's vitest run at 797b4d670 (int-g1/v1). Not run again here."
+   }
+  ],
+  "d-codemod-rule": [
+   {
+    "src": "img/d-codemod-rule-1.svg",
+    "caption": "Codemod coverage per round: sites rewritten in the 251 example files fell from 1,021 to 860 of 1,335 while the sites reported for a person rose from 299 to 466; on the 20 hand-converted examples 118 of 177 are rewritten and none wrongly. Numbers of each lane's MEASURE.md (S6A to F5)."
+   },
+   {
+    "src": "img/d-codemod-rule-2.svg",
+    "caption": "One fixture at 797b4d670: the awaited setStack is rewritten to a registered display set; the unawaited setStack and setVolumes are left and listed in the manual report. The codemod tests pass at 797b4d670: 111 passed, 0 failed (laneV2/codemod-test-head.log)."
+   }
+  ],
+  "d-tests": [
+   {
+    "src": "img/d-tests-1.png",
+    "caption": "genericEcg on macOS against the Linux baseline: 1,693 pixels differ, all in the lead labels (Courier here, DejaVu Sans Mono on Linux); the macOS budget is 1,836. Measured: Playwright on the example built at 797b4d670, Playwright's comparator at threshold 0.005 (laneV2/ecg-diff.cjs)."
+   },
+   {
+    "src": "img/d-tests-2.svg",
+    "caption": "Test counts over the stage 7 commits, from the parent's integration runs (int-<lane>/v<n>): karma 847 to 966 passed with no failure since P-E, core jest 1,810, tools jest 1,001, polySeg 22 to 33; the macOS genericEcg failure went at P-F. Read by laneV2/test_counts.py."
+   }
+  ],
+  "d-context": [
+   {
+    "src": "img/d-context-1.svg",
+    "caption": "Render times with planar viewports spread over WebGL contexts against one context: a shared volume took 423.5 ms spread against 214.3 ms in one context; stacks lost nothing in one context. Numbers of lane S5E (karma probes, SwiftShader, one run each), not measured again at 797b4d670."
+   }
+  ],
+  "d-reviewers": [
+   {
+    "src": "img/d-reviewers-1.svg",
+    "caption": "Findings per review and reviewer (GPT 6.1 Sol, GPT 6.2 Astra) at each stage, by severity, counted from the review files review-s5 to review-s7b. The 13 findings of the last round are fixed (pending.json)."
+   }
+  ]
+ }
+}</script>
+<script>
+  function el(tag, attrs = {}, children = []) {
+    const node = document.createElement(tag);
+    for (const [key, value] of Object.entries(attrs)) {
+      if (key === 'text') node.textContent = value; else node.setAttribute(key, value);
+    }
+    for (const child of children) node.append(child);
+    return node;
+  }
+
+  function withCode(text) {
+    const span = el('span');
+    String(text).split(/(`[^`]+`)/).forEach((part) => {
+      span.append(part.startsWith('`') && part.endsWith('`') ? el('code', { text: part.slice(1, -1) }) : part);
+    });
+    return span;
+  }
+
+  function stateClass(state) {
+    if (/to do/i.test(state)) return 'state-todo';
+    if (/being/i.test(state)) return 'state-progress';
+    return 'state-done';
+  }
+
+  const lightbox = document.getElementById('lightbox');
+  lightbox.addEventListener('click', () => lightbox.classList.remove('open'));
+
+  function gallery(visuals) {
+    if (!visuals || !visuals.length) return '';
+    return el('div', { class: 'visuals' }, visuals.map((v) => {
+      const img = el('img', { src: v.src, alt: v.caption || '', loading: 'lazy' });
+      img.addEventListener('click', () => {
+        lightbox.querySelector('img').src = v.src;
+        lightbox.querySelector('p').textContent = v.caption || '';
+        lightbox.classList.add('open');
+      });
+      return el('figure', {}, [img, el('figcaption', {}, [withCode(v.caption || '')])]);
+    }));
+  }
+
+  function card(id, title, tags, fields, visuals) {
+    const dl = el('dl');
+    for (const [label, value] of fields) {
+      if (!value) continue;
+      dl.append(el('dt', { text: label }), el('dd', {}, [withCode(value)]));
+    }
+    return el('div', { class: 'item', id }, [
+      el('h3', {}, [withCode(title)]),
+      el('div', { class: 'meta' }, tags.map(([text, cls]) => el('span', { class: 'tag ' + (cls || ''), text }))),
+      dl,
+      gallery(visuals),
+    ]);
+  }
+
+  const { decisions, pending, issues, issueVisuals, decisionVisuals } =
+    JSON.parse(document.getElementById('page-data').textContent);
+
+  document.getElementById('decisions-count').textContent = `(${decisions.length})`;
+  document.getElementById('decisions-list').replaceChildren(...decisions.map((d) =>
+    card(d.id, d.title, [[d.area]], [['Decision', d.decision], ['Why', d.why], ['Written in', d.where]], decisionVisuals[d.id])));
+
+  document.getElementById('pending-count').textContent = `(${pending.length})`;
+  document.getElementById('pending-list').replaceChildren(...pending.map((p) =>
+    card(p.id, p.title, [[p.state, stateClass(p.state)], [p.by], [p.severity]], [])));
+
+  document.getElementById('open-count').textContent = `(${issues.length})`;
+  document.getElementById('open-list').replaceChildren(...issues.map((i) =>
+    card(i.id, `Row ${i.row}: ${i.issue}`, [[i.state]], [['Where', i.where], ['What to do', i.proposal]], issueVisuals[i.id])));
+</script>
+</body>
+</html>

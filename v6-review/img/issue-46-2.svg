@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="340" viewBox="0 0 820 340">
+<rect width="820" height="340" fill="#ffffff"/>
+<text x="16" y="28" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="18" font-weight="700" fill="#0b0b0b">Row 46: each file run alone at HEAD 797b4d670, three times</text>
+<text x="16" y="50" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="13" fill="#52514e">One karma run per file and per try (laneV1/alone-runs.sh), on 20 November, partly while other karma runs of this lane ran.</text>
+<text x="490.0" y="86" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#0b0b0b" text-anchor="middle">run 1</text>
+<text x="610.0" y="86" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#0b0b0b" text-anchor="middle">run 2</text>
+<text x="730.0" y="86" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="700" fill="#0b0b0b" text-anchor="middle">run 3</text>
+<text x="16" y="116" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="13" fill="#0b0b0b">planarJumpToImage_test.js</text>
+<text x="418" y="116" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#52514e" text-anchor="end">core: named in the item</text>
+<rect x="436" y="100" width="108" height="24" rx="4" fill="#2a78d6"/>
+<text x="490.0" y="116" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle">12 passed</text>
+<rect x="556" y="100" width="108" height="24" rx="4" fill="#2a78d6"/>
+<text x="610.0" y="116" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle">12 passed</text>
+<rect x="676" y="100" width="108" height="24" rx="4" fill="#2a78d6"/>
+<text x="730.0" y="116" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle">12 passed</text>
+<text x="16" y="150" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="13" fill="#0b0b0b">videoViewportNext_test.js</text>
+<text x="418" y="150" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#52514e" text-anchor="end">core: named in the item</text>
+<rect x="436" y="134" width="108" height="24" rx="4" fill="#2a78d6"/>
+<text x="490.0" y="150" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle">21 passed</text>
+<rect x="556" y="134" width="108" height="24" rx="4" fill="#2a78d6"/>
+<text x="610.0" y="150" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle">21 passed</text>
+<rect x="676" y="134" width="108" height="24" rx="4" fill="#2a78d6"/>
+<text x="730.0" y="150" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle">21 passed</text>
+<text x="16" y="184" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="13" fill="#0b0b0b">dicomImageLoader_wadouri_test.js</text>
+<text x="418" y="184" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#52514e" text-anchor="end">core: extra failure in int-s5lm</text>
+<rect x="436" y="168" width="108" height="24" rx="4" fill="#2a78d6"/>
+<text x="490.0" y="184" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle">30 passed</text>
+<rect x="556" y="168" width="108" height="24" rx="4" fill="#2a78d6"/>
+<text x="610.0" y="184" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle">30 passed</text>
+<rect x="676" y="168" width="108" height="24" rx="4" fill="#2a78d6"/>
+<text x="730.0" y="184" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle">30 passed</text>
+<text x="16" y="218" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="13" fill="#0b0b0b">surfacePlanarNext_test.js</text>
+<text x="418" y="218" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#52514e" text-anchor="end">tools: extra failure in int-rf5</text>
+<rect x="436" y="202" width="108" height="24" rx="4" fill="#2a78d6"/>
+<text x="490.0" y="218" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle">12 passed</text>
+<rect x="556" y="202" width="108" height="24" rx="4" fill="#2a78d6"/>
+<text x="610.0" y="218" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle">12 passed</text>
+<rect x="676" y="202" width="108" height="24" rx="4" fill="#2a78d6"/>
+<text x="730.0" y="218" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle">12 passed</text>
+<text x="16" y="252" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="13" fill="#0b0b0b">planarCpuSupersededMount_test.js</text>
+<text x="418" y="252" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="11" fill="#52514e" text-anchor="end">core: extra failure in int-rf7</text>
+<rect x="436" y="236" width="108" height="24" rx="4" fill="#2a78d6"/>
+<text x="490.0" y="252" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle">2 passed</text>
+<rect x="556" y="236" width="108" height="24" rx="4" fill="#2a78d6"/>
+<text x="610.0" y="252" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle">2 passed</text>
+<rect x="676" y="236" width="108" height="24" rx="4" fill="#2a78d6"/>
+<text x="730.0" y="252" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle">2 passed</text>
+<text x="16" y="294" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" fill="#52514e">All 15 runs passed every test of the file. Logs laneV1/karma/alone-&lt;file&gt;-&lt;run&gt;.log; summary laneV1/alone-runs.out.</text>
+</svg>

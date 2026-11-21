@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1382" height="386" viewBox="0 0 1382 386">
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#5f6368"/></marker></defs>
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="16.0" y="31.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="17" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">Events after adding a labelmap representation to a viewport</text>
+<text x="16.0" y="50.4" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12" font-weight="normal" fill="#5f6368" text-anchor="start" xml:space="preserve">Karma probe zzV2ToolsProbe_test.js: listeners on eventTarget for the segmentation events, then segmentation.addSegmentationRepresentations(viewportId, [{ segmentationId, type: Labelmap }]). Order as logged.</text>
+<text x="16.0" y="86.8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">5.x StackViewport</text>
+<text x="16.0" y="103.3" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">(legacy)</text>
+<rect x="226.0" y="68.3" width="168.0" height="50.0" rx="6" fill="#f3efe6" stroke="#b8b5ab" stroke-width="1"/>
+<text x="232.0" y="83.8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">addSegmentationRepresen</text>
+<text x="232.0" y="97.6" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">tations()</text>
+<line x1="396.0" y1="93.3" x2="414.0" y2="93.3" stroke="#5f6368" stroke-width="1.2" marker-end="url(#arrow)"/>
+<rect x="416.0" y="68.3" width="168.0" height="50.0" rx="6" fill="#eef2f7" stroke="#b8b5ab" stroke-width="1"/>
+<text x="422.0" y="83.8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">SEGMENTATION_</text>
+<text x="422.0" y="97.6" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">REPRESENTATION_</text>
+<text x="422.0" y="111.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">MODIFIED</text>
+<line x1="586.0" y1="93.3" x2="604.0" y2="93.3" stroke="#5f6368" stroke-width="1.2" marker-end="url(#arrow)"/>
+<rect x="606.0" y="68.3" width="168.0" height="50.0" rx="6" fill="#f3f3f0" stroke="#b8b5ab" stroke-width="1"/>
+<text x="612.0" y="83.8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">SEGMENTATION_MODIFIED</text>
+<line x1="776.0" y1="93.3" x2="794.0" y2="93.3" stroke="#5f6368" stroke-width="1.2" marker-end="url(#arrow)"/>
+<rect x="796.0" y="68.3" width="168.0" height="50.0" rx="6" fill="#f3f3f0" stroke="#b8b5ab" stroke-width="1"/>
+<text x="802.0" y="83.8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">promise resolves</text>
+<line x1="966.0" y1="93.3" x2="984.0" y2="93.3" stroke="#5f6368" stroke-width="1.2" marker-end="url(#arrow)"/>
+<rect x="986.0" y="68.3" width="168.0" height="50.0" rx="6" fill="#f3f3f0" stroke="#b8b5ab" stroke-width="1"/>
+<text x="992.0" y="83.8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">SEGMENTATION_RENDERED</text>
+<text x="16.0" y="154.8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">5.x next planar viewport</text>
+<rect x="226.0" y="136.3" width="168.0" height="50.0" rx="6" fill="#f3efe6" stroke="#b8b5ab" stroke-width="1"/>
+<text x="232.0" y="151.8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">addSegmentationRepresen</text>
+<text x="232.0" y="165.6" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">tations()</text>
+<line x1="396.0" y1="161.3" x2="414.0" y2="161.3" stroke="#5f6368" stroke-width="1.2" marker-end="url(#arrow)"/>
+<rect x="416.0" y="136.3" width="168.0" height="50.0" rx="6" fill="#eef2f7" stroke="#b8b5ab" stroke-width="1"/>
+<text x="422.0" y="151.8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">SEGMENTATION_</text>
+<text x="422.0" y="165.6" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">REPRESENTATION_</text>
+<text x="422.0" y="179.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">MODIFIED</text>
+<line x1="586.0" y1="161.3" x2="604.0" y2="161.3" stroke="#5f6368" stroke-width="1.2" marker-end="url(#arrow)"/>
+<rect x="606.0" y="136.3" width="168.0" height="50.0" rx="6" fill="#f3f3f0" stroke="#b8b5ab" stroke-width="1"/>
+<text x="612.0" y="151.8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">SEGMENTATION_MODIFIED</text>
+<line x1="776.0" y1="161.3" x2="794.0" y2="161.3" stroke="#5f6368" stroke-width="1.2" marker-end="url(#arrow)"/>
+<rect x="796.0" y="136.3" width="168.0" height="50.0" rx="6" fill="#f3f3f0" stroke="#b8b5ab" stroke-width="1"/>
+<text x="802.0" y="151.8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">promise resolves</text>
+<line x1="966.0" y1="161.3" x2="984.0" y2="161.3" stroke="#5f6368" stroke-width="1.2" marker-end="url(#arrow)"/>
+<rect x="986.0" y="136.3" width="168.0" height="50.0" rx="6" fill="#f3f3f0" stroke="#b8b5ab" stroke-width="1"/>
+<text x="992.0" y="151.8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">SEGMENTATION_RENDERED</text>
+<text x="16.0" y="222.8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">6.0 before (aae6592b4)</text>
+<rect x="226.0" y="204.3" width="168.0" height="50.0" rx="6" fill="#f3efe6" stroke="#b8b5ab" stroke-width="1"/>
+<text x="232.0" y="219.8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">addSegmentationRepresen</text>
+<text x="232.0" y="233.6" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">tations()</text>
+<line x1="396.0" y1="229.3" x2="414.0" y2="229.3" stroke="#5f6368" stroke-width="1.2" marker-end="url(#arrow)"/>
+<rect x="416.0" y="204.3" width="168.0" height="50.0" rx="6" fill="#eef2f7" stroke="#b8b5ab" stroke-width="1"/>
+<text x="422.0" y="219.8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">SEGMENTATION_</text>
+<text x="422.0" y="233.6" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">REPRESENTATION_</text>
+<text x="422.0" y="247.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">MODIFIED</text>
+<line x1="586.0" y1="229.3" x2="604.0" y2="229.3" stroke="#5f6368" stroke-width="1.2" marker-end="url(#arrow)"/>
+<rect x="606.0" y="204.3" width="168.0" height="50.0" rx="6" fill="#f3f3f0" stroke="#b8b5ab" stroke-width="1"/>
+<text x="612.0" y="219.8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">SEGMENTATION_MODIFIED</text>
+<line x1="776.0" y1="229.3" x2="794.0" y2="229.3" stroke="#5f6368" stroke-width="1.2" marker-end="url(#arrow)"/>
+<rect x="796.0" y="204.3" width="168.0" height="50.0" rx="6" fill="#f3f3f0" stroke="#b8b5ab" stroke-width="1"/>
+<text x="802.0" y="219.8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">promise resolves</text>
+<line x1="966.0" y1="229.3" x2="984.0" y2="229.3" stroke="#5f6368" stroke-width="1.2" marker-end="url(#arrow)"/>
+<rect x="986.0" y="204.3" width="168.0" height="50.0" rx="6" fill="#f3f3f0" stroke="#b8b5ab" stroke-width="1"/>
+<text x="992.0" y="219.8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">SEGMENTATION_RENDERED</text>
+<text x="16.0" y="290.8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="12.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">6.0 now (797b4d670)</text>
+<rect x="226.0" y="272.3" width="168.0" height="50.0" rx="6" fill="#f3efe6" stroke="#b8b5ab" stroke-width="1"/>
+<text x="232.0" y="287.8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">addSegmentationRepresen</text>
+<text x="232.0" y="301.6" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">tations()</text>
+<line x1="396.0" y1="297.3" x2="414.0" y2="297.3" stroke="#5f6368" stroke-width="1.2" marker-end="url(#arrow)"/>
+<rect x="416.0" y="272.3" width="168.0" height="50.0" rx="6" fill="#e3f4e8" stroke="#b8b5ab" stroke-width="1"/>
+<text x="422.0" y="287.8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">SEGMENTATION_</text>
+<text x="422.0" y="301.6" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">REPRESENTATION_ADDED</text>
+<line x1="586.0" y1="297.3" x2="604.0" y2="297.3" stroke="#5f6368" stroke-width="1.2" marker-end="url(#arrow)"/>
+<rect x="606.0" y="272.3" width="168.0" height="50.0" rx="6" fill="#eef2f7" stroke="#b8b5ab" stroke-width="1"/>
+<text x="612.0" y="287.8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">SEGMENTATION_</text>
+<text x="612.0" y="301.6" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">REPRESENTATION_</text>
+<text x="612.0" y="315.5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="bold" fill="#1d1d1f" text-anchor="start" xml:space="preserve">MODIFIED</text>
+<line x1="776.0" y1="297.3" x2="794.0" y2="297.3" stroke="#5f6368" stroke-width="1.2" marker-end="url(#arrow)"/>
+<rect x="796.0" y="272.3" width="168.0" height="50.0" rx="6" fill="#f3f3f0" stroke="#b8b5ab" stroke-width="1"/>
+<text x="802.0" y="287.8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">SEGMENTATION_MODIFIED</text>
+<line x1="966.0" y1="297.3" x2="984.0" y2="297.3" stroke="#5f6368" stroke-width="1.2" marker-end="url(#arrow)"/>
+<rect x="986.0" y="272.3" width="168.0" height="50.0" rx="6" fill="#f3f3f0" stroke="#b8b5ab" stroke-width="1"/>
+<text x="992.0" y="287.8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">promise resolves</text>
+<line x1="1156.0" y1="297.3" x2="1174.0" y2="297.3" stroke="#5f6368" stroke-width="1.2" marker-end="url(#arrow)"/>
+<rect x="1176.0" y="272.3" width="168.0" height="50.0" rx="6" fill="#f3f3f0" stroke="#b8b5ab" stroke-width="1"/>
+<text x="1182.0" y="287.8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="10.5" font-weight="normal" fill="#1d1d1f" text-anchor="start" xml:space="preserve">SEGMENTATION_RENDERED</text>
+<text x="16.0" y="351.8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="normal" fill="#5f6368" text-anchor="start" xml:space="preserve">SEGMENTATION_REPRESENTATION_ADDED was declared and listened to but never fired in 5.x and 6.0 before O4 (open issue 87). Now it fires once per representation new to a viewport, before SEGMENTATION_REPRESENTATION_</text>
+<text x="16.0" y="367.0" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="11.5" font-weight="normal" fill="#5f6368" text-anchor="start" xml:space="preserve">MODIFIED. Repeated SEGMENTATION_RENDERED shown once.</text>
+</svg>

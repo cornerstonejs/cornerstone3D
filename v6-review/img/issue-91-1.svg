@@ -1,0 +1,692 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="792" height="778" viewBox="0 0 792 778">
+<rect width="792" height="778" fill="#ffffff"/>
+<text x="16" y="28" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="18" font-weight="700" fill="#0b0b0b" text-anchor="start">Row 91: the decoder karma run lost its headless Chrome 101 in 10 of 33 runs</text>
+<text x="16" y="50" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="13" font-weight="400" fill="#52514e" text-anchor="start">One row per run (every decoder log of the scratchpad, 19 to 20 November, time order); one column per spec, in run order.</text>
+<rect x="16" y="60" width="12" height="12" rx="2" fill="#2a78d6"/>
+<text x="34" y="70" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#0b0b0b" text-anchor="start">passed</text>
+<rect x="96" y="60" width="12" height="12" rx="2" fill="#eb6834"/>
+<text x="114" y="70" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#0b0b0b" text-anchor="start">browser lost before this spec ("Disconnected")</text>
+<rect x="400" y="60" width="12" height="12" rx="2" fill="#e6e4de"/>
+<text x="418" y="70" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#0b0b0b" text-anchor="start">not run</text>
+<text x="265.0" y="142" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="start" transform="rotate(-55 265.0 142)">LE implicit</text>
+<text x="289.0" y="142" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="start" transform="rotate(-55 289.0 142)">LE explicit</text>
+<text x="313.0" y="142" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="start" transform="rotate(-55 313.0 142)">BE explicit</text>
+<text x="337.0" y="142" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="start" transform="rotate(-55 337.0 142)">JPEG 14</text>
+<text x="361.0" y="142" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="start" transform="rotate(-55 361.0 142)">JPEG 14 SV1</text>
+<text x="385.0" y="142" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="start" transform="rotate(-55 385.0 142)">JPEG-LS</text>
+<text x="409.0" y="142" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="start" transform="rotate(-55 409.0 142)">J2K lossless</text>
+<text x="433.0" y="142" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="start" transform="rotate(-55 433.0 142)">HTJ2K</text>
+<text x="457.0" y="142" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="start" transform="rotate(-55 457.0 142)">RLE</text>
+<text x="481.0" y="142" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="start" transform="rotate(-55 481.0 142)">Encaps. uncompr.</text>
+<text x="505.0" y="142" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="start" transform="rotate(-55 505.0 142)">Deflated</text>
+<text x="529.0" y="142" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="start" transform="rotate(-55 529.0 142)">JPEG XL</text>
+<text x="553.0" y="142" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="start" transform="rotate(-55 553.0 142)">colour Deflated</text>
+<text x="577.0" y="142" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="start" transform="rotate(-55 577.0 142)">colour JPEG 14</text>
+<text x="601.0" y="142" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="start" transform="rotate(-55 601.0 142)">colour JPEG-LS</text>
+<text x="625.0" y="142" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="start" transform="rotate(-55 625.0 142)">colour HTJ2K</text>
+<text x="649.0" y="142" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="start" transform="rotate(-55 649.0 142)">colour JPEG XL</text>
+<text x="673.0" y="142" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="start" transform="rotate(-55 673.0 142)">JPEG 1 (lossy)</text>
+<text x="240" y="160" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#0b0b0b" text-anchor="end">lanePF/karma/decoders-alone2</text>
+<rect x="251" y="150" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-alone2.log: LE implicit</title></rect>
+<rect x="275" y="150" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-alone2.log: LE explicit</title></rect>
+<rect x="299" y="150" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-alone2.log: BE explicit</title></rect>
+<rect x="323" y="150" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-alone2.log: JPEG 14</title></rect>
+<rect x="347" y="150" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-alone2.log: JPEG 14 SV1</title></rect>
+<rect x="371" y="150" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-alone2.log: JPEG-LS</title></rect>
+<rect x="395" y="150" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-alone2.log: J2K lossless</title></rect>
+<rect x="419" y="150" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-alone2.log: HTJ2K</title></rect>
+<rect x="443" y="150" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-alone2.log: RLE</title></rect>
+<rect x="467" y="150" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-alone2.log: Encaps. uncompr.</title></rect>
+<rect x="491" y="150" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-alone2.log: Deflated</title></rect>
+<rect x="515" y="150" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-alone2.log: JPEG XL</title></rect>
+<rect x="539" y="150" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-alone2.log: colour Deflated</title></rect>
+<rect x="563" y="150" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-alone2.log: colour JPEG 14</title></rect>
+<rect x="587" y="150" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-alone2.log: colour JPEG-LS</title></rect>
+<rect x="611" y="150" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-alone2.log: colour HTJ2K</title></rect>
+<rect x="635" y="150" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-alone2.log: colour JPEG XL</title></rect>
+<rect x="659" y="150" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-alone2.log: JPEG 1 (lossy)</title></rect>
+<text x="690" y="160" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="start">18/18</text>
+<text x="240" y="176" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#0b0b0b" text-anchor="end">lanePF/end/</text>
+<rect x="251" y="166" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/end/karma-decoders.log: LE implicit</title></rect>
+<rect x="275" y="166" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/end/karma-decoders.log: LE explicit</title></rect>
+<rect x="299" y="166" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/end/karma-decoders.log: BE explicit</title></rect>
+<rect x="323" y="166" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/end/karma-decoders.log: JPEG 14</title></rect>
+<rect x="347" y="166" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/end/karma-decoders.log: JPEG 14 SV1</title></rect>
+<rect x="371" y="166" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/end/karma-decoders.log: JPEG-LS</title></rect>
+<rect x="395" y="166" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/end/karma-decoders.log: J2K lossless</title></rect>
+<rect x="419" y="166" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/end/karma-decoders.log: HTJ2K</title></rect>
+<rect x="443" y="166" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/end/karma-decoders.log: RLE</title></rect>
+<rect x="467" y="166" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/end/karma-decoders.log: Encaps. uncompr.</title></rect>
+<rect x="491" y="166" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/end/karma-decoders.log: Deflated</title></rect>
+<rect x="515" y="166" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/end/karma-decoders.log: JPEG XL</title></rect>
+<rect x="539" y="166" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/end/karma-decoders.log: colour Deflated</title></rect>
+<rect x="563" y="166" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/end/karma-decoders.log: colour JPEG 14</title></rect>
+<rect x="587" y="166" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/end/karma-decoders.log: colour JPEG-LS</title></rect>
+<rect x="611" y="166" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/end/karma-decoders.log: colour HTJ2K</title></rect>
+<rect x="635" y="166" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/end/karma-decoders.log: colour JPEG XL</title></rect>
+<rect x="659" y="166" width="22" height="13" rx="2" fill="#eb6834"><title>lanePF/end/karma-decoders.log: JPEG 1 (lossy)</title></rect>
+<text x="690" y="176" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="700" fill="#0b0b0b" text-anchor="start">17/18  lost</text>
+<text x="240" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#0b0b0b" text-anchor="end">lanePF/karma/decoders-rerun-1</text>
+<rect x="251" y="182" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-rerun-1.log: LE implicit</title></rect>
+<rect x="275" y="182" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-rerun-1.log: LE explicit</title></rect>
+<rect x="299" y="182" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-rerun-1.log: BE explicit</title></rect>
+<rect x="323" y="182" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-rerun-1.log: JPEG 14</title></rect>
+<rect x="347" y="182" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-rerun-1.log: JPEG 14 SV1</title></rect>
+<rect x="371" y="182" width="22" height="13" rx="2" fill="#eb6834"><title>lanePF/karma/decoders-rerun-1.log: JPEG-LS</title></rect>
+<rect x="395" y="182" width="22" height="13" rx="2" fill="#e6e4de"><title>lanePF/karma/decoders-rerun-1.log: J2K lossless</title></rect>
+<rect x="419" y="182" width="22" height="13" rx="2" fill="#e6e4de"><title>lanePF/karma/decoders-rerun-1.log: HTJ2K</title></rect>
+<rect x="443" y="182" width="22" height="13" rx="2" fill="#e6e4de"><title>lanePF/karma/decoders-rerun-1.log: RLE</title></rect>
+<rect x="467" y="182" width="22" height="13" rx="2" fill="#e6e4de"><title>lanePF/karma/decoders-rerun-1.log: Encaps. uncompr.</title></rect>
+<rect x="491" y="182" width="22" height="13" rx="2" fill="#e6e4de"><title>lanePF/karma/decoders-rerun-1.log: Deflated</title></rect>
+<rect x="515" y="182" width="22" height="13" rx="2" fill="#e6e4de"><title>lanePF/karma/decoders-rerun-1.log: JPEG XL</title></rect>
+<rect x="539" y="182" width="22" height="13" rx="2" fill="#e6e4de"><title>lanePF/karma/decoders-rerun-1.log: colour Deflated</title></rect>
+<rect x="563" y="182" width="22" height="13" rx="2" fill="#e6e4de"><title>lanePF/karma/decoders-rerun-1.log: colour JPEG 14</title></rect>
+<rect x="587" y="182" width="22" height="13" rx="2" fill="#e6e4de"><title>lanePF/karma/decoders-rerun-1.log: colour JPEG-LS</title></rect>
+<rect x="611" y="182" width="22" height="13" rx="2" fill="#e6e4de"><title>lanePF/karma/decoders-rerun-1.log: colour HTJ2K</title></rect>
+<rect x="635" y="182" width="22" height="13" rx="2" fill="#e6e4de"><title>lanePF/karma/decoders-rerun-1.log: colour JPEG XL</title></rect>
+<rect x="659" y="182" width="22" height="13" rx="2" fill="#e6e4de"><title>lanePF/karma/decoders-rerun-1.log: JPEG 1 (lossy)</title></rect>
+<text x="690" y="192" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="700" fill="#0b0b0b" text-anchor="start">5/18  lost</text>
+<text x="240" y="208" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#0b0b0b" text-anchor="end">lanePF/karma/decoders-rerun-2</text>
+<rect x="251" y="198" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-rerun-2.log: LE implicit</title></rect>
+<rect x="275" y="198" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-rerun-2.log: LE explicit</title></rect>
+<rect x="299" y="198" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-rerun-2.log: BE explicit</title></rect>
+<rect x="323" y="198" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-rerun-2.log: JPEG 14</title></rect>
+<rect x="347" y="198" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-rerun-2.log: JPEG 14 SV1</title></rect>
+<rect x="371" y="198" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-rerun-2.log: JPEG-LS</title></rect>
+<rect x="395" y="198" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-rerun-2.log: J2K lossless</title></rect>
+<rect x="419" y="198" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-rerun-2.log: HTJ2K</title></rect>
+<rect x="443" y="198" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-rerun-2.log: RLE</title></rect>
+<rect x="467" y="198" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-rerun-2.log: Encaps. uncompr.</title></rect>
+<rect x="491" y="198" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-rerun-2.log: Deflated</title></rect>
+<rect x="515" y="198" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-rerun-2.log: JPEG XL</title></rect>
+<rect x="539" y="198" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-rerun-2.log: colour Deflated</title></rect>
+<rect x="563" y="198" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-rerun-2.log: colour JPEG 14</title></rect>
+<rect x="587" y="198" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-rerun-2.log: colour JPEG-LS</title></rect>
+<rect x="611" y="198" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-rerun-2.log: colour HTJ2K</title></rect>
+<rect x="635" y="198" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-rerun-2.log: colour JPEG XL</title></rect>
+<rect x="659" y="198" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-rerun-2.log: JPEG 1 (lossy)</title></rect>
+<text x="690" y="208" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="start">18/18</text>
+<text x="240" y="224" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#0b0b0b" text-anchor="end">lanePF/karma/decoders-rerun-3</text>
+<rect x="251" y="214" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-rerun-3.log: LE implicit</title></rect>
+<rect x="275" y="214" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-rerun-3.log: LE explicit</title></rect>
+<rect x="299" y="214" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-rerun-3.log: BE explicit</title></rect>
+<rect x="323" y="214" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-rerun-3.log: JPEG 14</title></rect>
+<rect x="347" y="214" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-rerun-3.log: JPEG 14 SV1</title></rect>
+<rect x="371" y="214" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-rerun-3.log: JPEG-LS</title></rect>
+<rect x="395" y="214" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-rerun-3.log: J2K lossless</title></rect>
+<rect x="419" y="214" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-rerun-3.log: HTJ2K</title></rect>
+<rect x="443" y="214" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-rerun-3.log: RLE</title></rect>
+<rect x="467" y="214" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-rerun-3.log: Encaps. uncompr.</title></rect>
+<rect x="491" y="214" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-rerun-3.log: Deflated</title></rect>
+<rect x="515" y="214" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-rerun-3.log: JPEG XL</title></rect>
+<rect x="539" y="214" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-rerun-3.log: colour Deflated</title></rect>
+<rect x="563" y="214" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-rerun-3.log: colour JPEG 14</title></rect>
+<rect x="587" y="214" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-rerun-3.log: colour JPEG-LS</title></rect>
+<rect x="611" y="214" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-rerun-3.log: colour HTJ2K</title></rect>
+<rect x="635" y="214" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-rerun-3.log: colour JPEG XL</title></rect>
+<rect x="659" y="214" width="22" height="13" rx="2" fill="#2a78d6"><title>lanePF/karma/decoders-rerun-3.log: JPEG 1 (lossy)</title></rect>
+<text x="690" y="224" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="start">18/18</text>
+<text x="240" y="240" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#0b0b0b" text-anchor="end">int-pf/v1/decoders-1</text>
+<rect x="251" y="230" width="22" height="13" rx="2" fill="#2a78d6"><title>int-pf/v1/decoders-1.log: LE implicit</title></rect>
+<rect x="275" y="230" width="22" height="13" rx="2" fill="#2a78d6"><title>int-pf/v1/decoders-1.log: LE explicit</title></rect>
+<rect x="299" y="230" width="22" height="13" rx="2" fill="#2a78d6"><title>int-pf/v1/decoders-1.log: BE explicit</title></rect>
+<rect x="323" y="230" width="22" height="13" rx="2" fill="#2a78d6"><title>int-pf/v1/decoders-1.log: JPEG 14</title></rect>
+<rect x="347" y="230" width="22" height="13" rx="2" fill="#2a78d6"><title>int-pf/v1/decoders-1.log: JPEG 14 SV1</title></rect>
+<rect x="371" y="230" width="22" height="13" rx="2" fill="#2a78d6"><title>int-pf/v1/decoders-1.log: JPEG-LS</title></rect>
+<rect x="395" y="230" width="22" height="13" rx="2" fill="#2a78d6"><title>int-pf/v1/decoders-1.log: J2K lossless</title></rect>
+<rect x="419" y="230" width="22" height="13" rx="2" fill="#2a78d6"><title>int-pf/v1/decoders-1.log: HTJ2K</title></rect>
+<rect x="443" y="230" width="22" height="13" rx="2" fill="#2a78d6"><title>int-pf/v1/decoders-1.log: RLE</title></rect>
+<rect x="467" y="230" width="22" height="13" rx="2" fill="#2a78d6"><title>int-pf/v1/decoders-1.log: Encaps. uncompr.</title></rect>
+<rect x="491" y="230" width="22" height="13" rx="2" fill="#2a78d6"><title>int-pf/v1/decoders-1.log: Deflated</title></rect>
+<rect x="515" y="230" width="22" height="13" rx="2" fill="#2a78d6"><title>int-pf/v1/decoders-1.log: JPEG XL</title></rect>
+<rect x="539" y="230" width="22" height="13" rx="2" fill="#2a78d6"><title>int-pf/v1/decoders-1.log: colour Deflated</title></rect>
+<rect x="563" y="230" width="22" height="13" rx="2" fill="#2a78d6"><title>int-pf/v1/decoders-1.log: colour JPEG 14</title></rect>
+<rect x="587" y="230" width="22" height="13" rx="2" fill="#2a78d6"><title>int-pf/v1/decoders-1.log: colour JPEG-LS</title></rect>
+<rect x="611" y="230" width="22" height="13" rx="2" fill="#2a78d6"><title>int-pf/v1/decoders-1.log: colour HTJ2K</title></rect>
+<rect x="635" y="230" width="22" height="13" rx="2" fill="#2a78d6"><title>int-pf/v1/decoders-1.log: colour JPEG XL</title></rect>
+<rect x="659" y="230" width="22" height="13" rx="2" fill="#2a78d6"><title>int-pf/v1/decoders-1.log: JPEG 1 (lossy)</title></rect>
+<text x="690" y="240" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="start">18/18</text>
+<text x="240" y="256" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#0b0b0b" text-anchor="end">int-o3/v1/decoders-1</text>
+<rect x="251" y="246" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o3/v1/decoders-1.log: LE implicit</title></rect>
+<rect x="275" y="246" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o3/v1/decoders-1.log: LE explicit</title></rect>
+<rect x="299" y="246" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o3/v1/decoders-1.log: BE explicit</title></rect>
+<rect x="323" y="246" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o3/v1/decoders-1.log: JPEG 14</title></rect>
+<rect x="347" y="246" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o3/v1/decoders-1.log: JPEG 14 SV1</title></rect>
+<rect x="371" y="246" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o3/v1/decoders-1.log: JPEG-LS</title></rect>
+<rect x="395" y="246" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o3/v1/decoders-1.log: J2K lossless</title></rect>
+<rect x="419" y="246" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o3/v1/decoders-1.log: HTJ2K</title></rect>
+<rect x="443" y="246" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o3/v1/decoders-1.log: RLE</title></rect>
+<rect x="467" y="246" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o3/v1/decoders-1.log: Encaps. uncompr.</title></rect>
+<rect x="491" y="246" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o3/v1/decoders-1.log: Deflated</title></rect>
+<rect x="515" y="246" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o3/v1/decoders-1.log: JPEG XL</title></rect>
+<rect x="539" y="246" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o3/v1/decoders-1.log: colour Deflated</title></rect>
+<rect x="563" y="246" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o3/v1/decoders-1.log: colour JPEG 14</title></rect>
+<rect x="587" y="246" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o3/v1/decoders-1.log: colour JPEG-LS</title></rect>
+<rect x="611" y="246" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o3/v1/decoders-1.log: colour HTJ2K</title></rect>
+<rect x="635" y="246" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o3/v1/decoders-1.log: colour JPEG XL</title></rect>
+<rect x="659" y="246" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o3/v1/decoders-1.log: JPEG 1 (lossy)</title></rect>
+<text x="690" y="256" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="start">18/18</text>
+<text x="240" y="272" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#0b0b0b" text-anchor="end">laneO5/start/decoders-1</text>
+<rect x="251" y="262" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO5/start/decoders-1.log: LE implicit</title></rect>
+<rect x="275" y="262" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO5/start/decoders-1.log: LE explicit</title></rect>
+<rect x="299" y="262" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO5/start/decoders-1.log: BE explicit</title></rect>
+<rect x="323" y="262" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO5/start/decoders-1.log: JPEG 14</title></rect>
+<rect x="347" y="262" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO5/start/decoders-1.log: JPEG 14 SV1</title></rect>
+<rect x="371" y="262" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO5/start/decoders-1.log: JPEG-LS</title></rect>
+<rect x="395" y="262" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO5/start/decoders-1.log: J2K lossless</title></rect>
+<rect x="419" y="262" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO5/start/decoders-1.log: HTJ2K</title></rect>
+<rect x="443" y="262" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO5/start/decoders-1.log: RLE</title></rect>
+<rect x="467" y="262" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO5/start/decoders-1.log: Encaps. uncompr.</title></rect>
+<rect x="491" y="262" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO5/start/decoders-1.log: Deflated</title></rect>
+<rect x="515" y="262" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO5/start/decoders-1.log: JPEG XL</title></rect>
+<rect x="539" y="262" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO5/start/decoders-1.log: colour Deflated</title></rect>
+<rect x="563" y="262" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO5/start/decoders-1.log: colour JPEG 14</title></rect>
+<rect x="587" y="262" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO5/start/decoders-1.log: colour JPEG-LS</title></rect>
+<rect x="611" y="262" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO5/start/decoders-1.log: colour HTJ2K</title></rect>
+<rect x="635" y="262" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO5/start/decoders-1.log: colour JPEG XL</title></rect>
+<rect x="659" y="262" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO5/start/decoders-1.log: JPEG 1 (lossy)</title></rect>
+<text x="690" y="272" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="start">18/18</text>
+<text x="240" y="288" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#0b0b0b" text-anchor="end">laneO4/end/</text>
+<rect x="251" y="278" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO4/end/karma-decoders.log: LE implicit</title></rect>
+<rect x="275" y="278" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO4/end/karma-decoders.log: LE explicit</title></rect>
+<rect x="299" y="278" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO4/end/karma-decoders.log: BE explicit</title></rect>
+<rect x="323" y="278" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO4/end/karma-decoders.log: JPEG 14</title></rect>
+<rect x="347" y="278" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO4/end/karma-decoders.log: JPEG 14 SV1</title></rect>
+<rect x="371" y="278" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO4/end/karma-decoders.log: JPEG-LS</title></rect>
+<rect x="395" y="278" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO4/end/karma-decoders.log: J2K lossless</title></rect>
+<rect x="419" y="278" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO4/end/karma-decoders.log: HTJ2K</title></rect>
+<rect x="443" y="278" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO4/end/karma-decoders.log: RLE</title></rect>
+<rect x="467" y="278" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO4/end/karma-decoders.log: Encaps. uncompr.</title></rect>
+<rect x="491" y="278" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO4/end/karma-decoders.log: Deflated</title></rect>
+<rect x="515" y="278" width="22" height="13" rx="2" fill="#eb6834"><title>laneO4/end/karma-decoders.log: JPEG XL</title></rect>
+<rect x="539" y="278" width="22" height="13" rx="2" fill="#e6e4de"><title>laneO4/end/karma-decoders.log: colour Deflated</title></rect>
+<rect x="563" y="278" width="22" height="13" rx="2" fill="#e6e4de"><title>laneO4/end/karma-decoders.log: colour JPEG 14</title></rect>
+<rect x="587" y="278" width="22" height="13" rx="2" fill="#e6e4de"><title>laneO4/end/karma-decoders.log: colour JPEG-LS</title></rect>
+<rect x="611" y="278" width="22" height="13" rx="2" fill="#e6e4de"><title>laneO4/end/karma-decoders.log: colour HTJ2K</title></rect>
+<rect x="635" y="278" width="22" height="13" rx="2" fill="#e6e4de"><title>laneO4/end/karma-decoders.log: colour JPEG XL</title></rect>
+<rect x="659" y="278" width="22" height="13" rx="2" fill="#e6e4de"><title>laneO4/end/karma-decoders.log: JPEG 1 (lossy)</title></rect>
+<text x="690" y="288" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="700" fill="#0b0b0b" text-anchor="start">11/18  lost</text>
+<text x="240" y="304" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#0b0b0b" text-anchor="end">laneO4/end/-2</text>
+<rect x="251" y="294" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO4/end/karma-decoders-2.log: LE implicit</title></rect>
+<rect x="275" y="294" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO4/end/karma-decoders-2.log: LE explicit</title></rect>
+<rect x="299" y="294" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO4/end/karma-decoders-2.log: BE explicit</title></rect>
+<rect x="323" y="294" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO4/end/karma-decoders-2.log: JPEG 14</title></rect>
+<rect x="347" y="294" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO4/end/karma-decoders-2.log: JPEG 14 SV1</title></rect>
+<rect x="371" y="294" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO4/end/karma-decoders-2.log: JPEG-LS</title></rect>
+<rect x="395" y="294" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO4/end/karma-decoders-2.log: J2K lossless</title></rect>
+<rect x="419" y="294" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO4/end/karma-decoders-2.log: HTJ2K</title></rect>
+<rect x="443" y="294" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO4/end/karma-decoders-2.log: RLE</title></rect>
+<rect x="467" y="294" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO4/end/karma-decoders-2.log: Encaps. uncompr.</title></rect>
+<rect x="491" y="294" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO4/end/karma-decoders-2.log: Deflated</title></rect>
+<rect x="515" y="294" width="22" height="13" rx="2" fill="#eb6834"><title>laneO4/end/karma-decoders-2.log: JPEG XL</title></rect>
+<rect x="539" y="294" width="22" height="13" rx="2" fill="#e6e4de"><title>laneO4/end/karma-decoders-2.log: colour Deflated</title></rect>
+<rect x="563" y="294" width="22" height="13" rx="2" fill="#e6e4de"><title>laneO4/end/karma-decoders-2.log: colour JPEG 14</title></rect>
+<rect x="587" y="294" width="22" height="13" rx="2" fill="#e6e4de"><title>laneO4/end/karma-decoders-2.log: colour JPEG-LS</title></rect>
+<rect x="611" y="294" width="22" height="13" rx="2" fill="#e6e4de"><title>laneO4/end/karma-decoders-2.log: colour HTJ2K</title></rect>
+<rect x="635" y="294" width="22" height="13" rx="2" fill="#e6e4de"><title>laneO4/end/karma-decoders-2.log: colour JPEG XL</title></rect>
+<rect x="659" y="294" width="22" height="13" rx="2" fill="#e6e4de"><title>laneO4/end/karma-decoders-2.log: JPEG 1 (lossy)</title></rect>
+<text x="690" y="304" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="700" fill="#0b0b0b" text-anchor="start">11/18  lost</text>
+<text x="240" y="320" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#0b0b0b" text-anchor="end">laneO4/end/-3</text>
+<rect x="251" y="310" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO4/end/karma-decoders-3.log: LE implicit</title></rect>
+<rect x="275" y="310" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO4/end/karma-decoders-3.log: LE explicit</title></rect>
+<rect x="299" y="310" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO4/end/karma-decoders-3.log: BE explicit</title></rect>
+<rect x="323" y="310" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO4/end/karma-decoders-3.log: JPEG 14</title></rect>
+<rect x="347" y="310" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO4/end/karma-decoders-3.log: JPEG 14 SV1</title></rect>
+<rect x="371" y="310" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO4/end/karma-decoders-3.log: JPEG-LS</title></rect>
+<rect x="395" y="310" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO4/end/karma-decoders-3.log: J2K lossless</title></rect>
+<rect x="419" y="310" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO4/end/karma-decoders-3.log: HTJ2K</title></rect>
+<rect x="443" y="310" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO4/end/karma-decoders-3.log: RLE</title></rect>
+<rect x="467" y="310" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO4/end/karma-decoders-3.log: Encaps. uncompr.</title></rect>
+<rect x="491" y="310" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO4/end/karma-decoders-3.log: Deflated</title></rect>
+<rect x="515" y="310" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO4/end/karma-decoders-3.log: JPEG XL</title></rect>
+<rect x="539" y="310" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO4/end/karma-decoders-3.log: colour Deflated</title></rect>
+<rect x="563" y="310" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO4/end/karma-decoders-3.log: colour JPEG 14</title></rect>
+<rect x="587" y="310" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO4/end/karma-decoders-3.log: colour JPEG-LS</title></rect>
+<rect x="611" y="310" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO4/end/karma-decoders-3.log: colour HTJ2K</title></rect>
+<rect x="635" y="310" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO4/end/karma-decoders-3.log: colour JPEG XL</title></rect>
+<rect x="659" y="310" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO4/end/karma-decoders-3.log: JPEG 1 (lossy)</title></rect>
+<text x="690" y="320" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="start">18/18</text>
+<text x="240" y="336" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#0b0b0b" text-anchor="end">int-o4/v1/decoders-1</text>
+<rect x="251" y="326" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o4/v1/decoders-1.log: LE implicit</title></rect>
+<rect x="275" y="326" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o4/v1/decoders-1.log: LE explicit</title></rect>
+<rect x="299" y="326" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o4/v1/decoders-1.log: BE explicit</title></rect>
+<rect x="323" y="326" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o4/v1/decoders-1.log: JPEG 14</title></rect>
+<rect x="347" y="326" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o4/v1/decoders-1.log: JPEG 14 SV1</title></rect>
+<rect x="371" y="326" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o4/v1/decoders-1.log: JPEG-LS</title></rect>
+<rect x="395" y="326" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o4/v1/decoders-1.log: J2K lossless</title></rect>
+<rect x="419" y="326" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o4/v1/decoders-1.log: HTJ2K</title></rect>
+<rect x="443" y="326" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o4/v1/decoders-1.log: RLE</title></rect>
+<rect x="467" y="326" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o4/v1/decoders-1.log: Encaps. uncompr.</title></rect>
+<rect x="491" y="326" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o4/v1/decoders-1.log: Deflated</title></rect>
+<rect x="515" y="326" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o4/v1/decoders-1.log: JPEG XL</title></rect>
+<rect x="539" y="326" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o4/v1/decoders-1.log: colour Deflated</title></rect>
+<rect x="563" y="326" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o4/v1/decoders-1.log: colour JPEG 14</title></rect>
+<rect x="587" y="326" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o4/v1/decoders-1.log: colour JPEG-LS</title></rect>
+<rect x="611" y="326" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o4/v1/decoders-1.log: colour HTJ2K</title></rect>
+<rect x="635" y="326" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o4/v1/decoders-1.log: colour JPEG XL</title></rect>
+<rect x="659" y="326" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o4/v1/decoders-1.log: JPEG 1 (lossy)</title></rect>
+<text x="690" y="336" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="start">18/18</text>
+<text x="240" y="352" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#0b0b0b" text-anchor="end">laneO5/final/decoders-1</text>
+<rect x="251" y="342" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO5/final/decoders-1.log: LE implicit</title></rect>
+<rect x="275" y="342" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO5/final/decoders-1.log: LE explicit</title></rect>
+<rect x="299" y="342" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO5/final/decoders-1.log: BE explicit</title></rect>
+<rect x="323" y="342" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO5/final/decoders-1.log: JPEG 14</title></rect>
+<rect x="347" y="342" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO5/final/decoders-1.log: JPEG 14 SV1</title></rect>
+<rect x="371" y="342" width="22" height="13" rx="2" fill="#eb6834"><title>laneO5/final/decoders-1.log: JPEG-LS</title></rect>
+<rect x="395" y="342" width="22" height="13" rx="2" fill="#e6e4de"><title>laneO5/final/decoders-1.log: J2K lossless</title></rect>
+<rect x="419" y="342" width="22" height="13" rx="2" fill="#e6e4de"><title>laneO5/final/decoders-1.log: HTJ2K</title></rect>
+<rect x="443" y="342" width="22" height="13" rx="2" fill="#e6e4de"><title>laneO5/final/decoders-1.log: RLE</title></rect>
+<rect x="467" y="342" width="22" height="13" rx="2" fill="#e6e4de"><title>laneO5/final/decoders-1.log: Encaps. uncompr.</title></rect>
+<rect x="491" y="342" width="22" height="13" rx="2" fill="#e6e4de"><title>laneO5/final/decoders-1.log: Deflated</title></rect>
+<rect x="515" y="342" width="22" height="13" rx="2" fill="#e6e4de"><title>laneO5/final/decoders-1.log: JPEG XL</title></rect>
+<rect x="539" y="342" width="22" height="13" rx="2" fill="#e6e4de"><title>laneO5/final/decoders-1.log: colour Deflated</title></rect>
+<rect x="563" y="342" width="22" height="13" rx="2" fill="#e6e4de"><title>laneO5/final/decoders-1.log: colour JPEG 14</title></rect>
+<rect x="587" y="342" width="22" height="13" rx="2" fill="#e6e4de"><title>laneO5/final/decoders-1.log: colour JPEG-LS</title></rect>
+<rect x="611" y="342" width="22" height="13" rx="2" fill="#e6e4de"><title>laneO5/final/decoders-1.log: colour HTJ2K</title></rect>
+<rect x="635" y="342" width="22" height="13" rx="2" fill="#e6e4de"><title>laneO5/final/decoders-1.log: colour JPEG XL</title></rect>
+<rect x="659" y="342" width="22" height="13" rx="2" fill="#e6e4de"><title>laneO5/final/decoders-1.log: JPEG 1 (lossy)</title></rect>
+<text x="690" y="352" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="700" fill="#0b0b0b" text-anchor="start">5/18  lost</text>
+<text x="240" y="368" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#0b0b0b" text-anchor="end">laneO5/final/decoders-2</text>
+<rect x="251" y="358" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO5/final/decoders-2.log: LE implicit</title></rect>
+<rect x="275" y="358" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO5/final/decoders-2.log: LE explicit</title></rect>
+<rect x="299" y="358" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO5/final/decoders-2.log: BE explicit</title></rect>
+<rect x="323" y="358" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO5/final/decoders-2.log: JPEG 14</title></rect>
+<rect x="347" y="358" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO5/final/decoders-2.log: JPEG 14 SV1</title></rect>
+<rect x="371" y="358" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO5/final/decoders-2.log: JPEG-LS</title></rect>
+<rect x="395" y="358" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO5/final/decoders-2.log: J2K lossless</title></rect>
+<rect x="419" y="358" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO5/final/decoders-2.log: HTJ2K</title></rect>
+<rect x="443" y="358" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO5/final/decoders-2.log: RLE</title></rect>
+<rect x="467" y="358" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO5/final/decoders-2.log: Encaps. uncompr.</title></rect>
+<rect x="491" y="358" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO5/final/decoders-2.log: Deflated</title></rect>
+<rect x="515" y="358" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO5/final/decoders-2.log: JPEG XL</title></rect>
+<rect x="539" y="358" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO5/final/decoders-2.log: colour Deflated</title></rect>
+<rect x="563" y="358" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO5/final/decoders-2.log: colour JPEG 14</title></rect>
+<rect x="587" y="358" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO5/final/decoders-2.log: colour JPEG-LS</title></rect>
+<rect x="611" y="358" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO5/final/decoders-2.log: colour HTJ2K</title></rect>
+<rect x="635" y="358" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO5/final/decoders-2.log: colour JPEG XL</title></rect>
+<rect x="659" y="358" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO5/final/decoders-2.log: JPEG 1 (lossy)</title></rect>
+<text x="690" y="368" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="start">18/18</text>
+<text x="240" y="384" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#0b0b0b" text-anchor="end">int-o5/v1/decoders-1</text>
+<rect x="251" y="374" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o5/v1/decoders-1.log: LE implicit</title></rect>
+<rect x="275" y="374" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o5/v1/decoders-1.log: LE explicit</title></rect>
+<rect x="299" y="374" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o5/v1/decoders-1.log: BE explicit</title></rect>
+<rect x="323" y="374" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o5/v1/decoders-1.log: JPEG 14</title></rect>
+<rect x="347" y="374" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o5/v1/decoders-1.log: JPEG 14 SV1</title></rect>
+<rect x="371" y="374" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o5/v1/decoders-1.log: JPEG-LS</title></rect>
+<rect x="395" y="374" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o5/v1/decoders-1.log: J2K lossless</title></rect>
+<rect x="419" y="374" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o5/v1/decoders-1.log: HTJ2K</title></rect>
+<rect x="443" y="374" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o5/v1/decoders-1.log: RLE</title></rect>
+<rect x="467" y="374" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o5/v1/decoders-1.log: Encaps. uncompr.</title></rect>
+<rect x="491" y="374" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o5/v1/decoders-1.log: Deflated</title></rect>
+<rect x="515" y="374" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o5/v1/decoders-1.log: JPEG XL</title></rect>
+<rect x="539" y="374" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o5/v1/decoders-1.log: colour Deflated</title></rect>
+<rect x="563" y="374" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o5/v1/decoders-1.log: colour JPEG 14</title></rect>
+<rect x="587" y="374" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o5/v1/decoders-1.log: colour JPEG-LS</title></rect>
+<rect x="611" y="374" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o5/v1/decoders-1.log: colour HTJ2K</title></rect>
+<rect x="635" y="374" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o5/v1/decoders-1.log: colour JPEG XL</title></rect>
+<rect x="659" y="374" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o5/v1/decoders-1.log: JPEG 1 (lossy)</title></rect>
+<text x="690" y="384" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="start">18/18</text>
+<text x="240" y="400" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#0b0b0b" text-anchor="end">laneO6/end/</text>
+<rect x="251" y="390" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO6/end/karma-decoders.log: LE implicit</title></rect>
+<rect x="275" y="390" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO6/end/karma-decoders.log: LE explicit</title></rect>
+<rect x="299" y="390" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO6/end/karma-decoders.log: BE explicit</title></rect>
+<rect x="323" y="390" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO6/end/karma-decoders.log: JPEG 14</title></rect>
+<rect x="347" y="390" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO6/end/karma-decoders.log: JPEG 14 SV1</title></rect>
+<rect x="371" y="390" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO6/end/karma-decoders.log: JPEG-LS</title></rect>
+<rect x="395" y="390" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO6/end/karma-decoders.log: J2K lossless</title></rect>
+<rect x="419" y="390" width="22" height="13" rx="2" fill="#eb6834"><title>laneO6/end/karma-decoders.log: HTJ2K</title></rect>
+<rect x="443" y="390" width="22" height="13" rx="2" fill="#e6e4de"><title>laneO6/end/karma-decoders.log: RLE</title></rect>
+<rect x="467" y="390" width="22" height="13" rx="2" fill="#e6e4de"><title>laneO6/end/karma-decoders.log: Encaps. uncompr.</title></rect>
+<rect x="491" y="390" width="22" height="13" rx="2" fill="#e6e4de"><title>laneO6/end/karma-decoders.log: Deflated</title></rect>
+<rect x="515" y="390" width="22" height="13" rx="2" fill="#e6e4de"><title>laneO6/end/karma-decoders.log: JPEG XL</title></rect>
+<rect x="539" y="390" width="22" height="13" rx="2" fill="#e6e4de"><title>laneO6/end/karma-decoders.log: colour Deflated</title></rect>
+<rect x="563" y="390" width="22" height="13" rx="2" fill="#e6e4de"><title>laneO6/end/karma-decoders.log: colour JPEG 14</title></rect>
+<rect x="587" y="390" width="22" height="13" rx="2" fill="#e6e4de"><title>laneO6/end/karma-decoders.log: colour JPEG-LS</title></rect>
+<rect x="611" y="390" width="22" height="13" rx="2" fill="#e6e4de"><title>laneO6/end/karma-decoders.log: colour HTJ2K</title></rect>
+<rect x="635" y="390" width="22" height="13" rx="2" fill="#e6e4de"><title>laneO6/end/karma-decoders.log: colour JPEG XL</title></rect>
+<rect x="659" y="390" width="22" height="13" rx="2" fill="#e6e4de"><title>laneO6/end/karma-decoders.log: JPEG 1 (lossy)</title></rect>
+<text x="690" y="400" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="700" fill="#0b0b0b" text-anchor="start">7/18  lost</text>
+<text x="240" y="416" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#0b0b0b" text-anchor="end">laneO6/end/-2</text>
+<rect x="251" y="406" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO6/end/karma-decoders-2.log: LE implicit</title></rect>
+<rect x="275" y="406" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO6/end/karma-decoders-2.log: LE explicit</title></rect>
+<rect x="299" y="406" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO6/end/karma-decoders-2.log: BE explicit</title></rect>
+<rect x="323" y="406" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO6/end/karma-decoders-2.log: JPEG 14</title></rect>
+<rect x="347" y="406" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO6/end/karma-decoders-2.log: JPEG 14 SV1</title></rect>
+<rect x="371" y="406" width="22" height="13" rx="2" fill="#eb6834"><title>laneO6/end/karma-decoders-2.log: JPEG-LS</title></rect>
+<rect x="395" y="406" width="22" height="13" rx="2" fill="#e6e4de"><title>laneO6/end/karma-decoders-2.log: J2K lossless</title></rect>
+<rect x="419" y="406" width="22" height="13" rx="2" fill="#e6e4de"><title>laneO6/end/karma-decoders-2.log: HTJ2K</title></rect>
+<rect x="443" y="406" width="22" height="13" rx="2" fill="#e6e4de"><title>laneO6/end/karma-decoders-2.log: RLE</title></rect>
+<rect x="467" y="406" width="22" height="13" rx="2" fill="#e6e4de"><title>laneO6/end/karma-decoders-2.log: Encaps. uncompr.</title></rect>
+<rect x="491" y="406" width="22" height="13" rx="2" fill="#e6e4de"><title>laneO6/end/karma-decoders-2.log: Deflated</title></rect>
+<rect x="515" y="406" width="22" height="13" rx="2" fill="#e6e4de"><title>laneO6/end/karma-decoders-2.log: JPEG XL</title></rect>
+<rect x="539" y="406" width="22" height="13" rx="2" fill="#e6e4de"><title>laneO6/end/karma-decoders-2.log: colour Deflated</title></rect>
+<rect x="563" y="406" width="22" height="13" rx="2" fill="#e6e4de"><title>laneO6/end/karma-decoders-2.log: colour JPEG 14</title></rect>
+<rect x="587" y="406" width="22" height="13" rx="2" fill="#e6e4de"><title>laneO6/end/karma-decoders-2.log: colour JPEG-LS</title></rect>
+<rect x="611" y="406" width="22" height="13" rx="2" fill="#e6e4de"><title>laneO6/end/karma-decoders-2.log: colour HTJ2K</title></rect>
+<rect x="635" y="406" width="22" height="13" rx="2" fill="#e6e4de"><title>laneO6/end/karma-decoders-2.log: colour JPEG XL</title></rect>
+<rect x="659" y="406" width="22" height="13" rx="2" fill="#e6e4de"><title>laneO6/end/karma-decoders-2.log: JPEG 1 (lossy)</title></rect>
+<text x="690" y="416" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="700" fill="#0b0b0b" text-anchor="start">5/18  lost</text>
+<text x="240" y="432" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#0b0b0b" text-anchor="end">laneO6/end/-3</text>
+<rect x="251" y="422" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO6/end/karma-decoders-3.log: LE implicit</title></rect>
+<rect x="275" y="422" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO6/end/karma-decoders-3.log: LE explicit</title></rect>
+<rect x="299" y="422" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO6/end/karma-decoders-3.log: BE explicit</title></rect>
+<rect x="323" y="422" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO6/end/karma-decoders-3.log: JPEG 14</title></rect>
+<rect x="347" y="422" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO6/end/karma-decoders-3.log: JPEG 14 SV1</title></rect>
+<rect x="371" y="422" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO6/end/karma-decoders-3.log: JPEG-LS</title></rect>
+<rect x="395" y="422" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO6/end/karma-decoders-3.log: J2K lossless</title></rect>
+<rect x="419" y="422" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO6/end/karma-decoders-3.log: HTJ2K</title></rect>
+<rect x="443" y="422" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO6/end/karma-decoders-3.log: RLE</title></rect>
+<rect x="467" y="422" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO6/end/karma-decoders-3.log: Encaps. uncompr.</title></rect>
+<rect x="491" y="422" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO6/end/karma-decoders-3.log: Deflated</title></rect>
+<rect x="515" y="422" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO6/end/karma-decoders-3.log: JPEG XL</title></rect>
+<rect x="539" y="422" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO6/end/karma-decoders-3.log: colour Deflated</title></rect>
+<rect x="563" y="422" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO6/end/karma-decoders-3.log: colour JPEG 14</title></rect>
+<rect x="587" y="422" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO6/end/karma-decoders-3.log: colour JPEG-LS</title></rect>
+<rect x="611" y="422" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO6/end/karma-decoders-3.log: colour HTJ2K</title></rect>
+<rect x="635" y="422" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO6/end/karma-decoders-3.log: colour JPEG XL</title></rect>
+<rect x="659" y="422" width="22" height="13" rx="2" fill="#2a78d6"><title>laneO6/end/karma-decoders-3.log: JPEG 1 (lossy)</title></rect>
+<text x="690" y="432" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="start">18/18</text>
+<text x="240" y="448" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#0b0b0b" text-anchor="end">int-o6/v1/decoders-1</text>
+<rect x="251" y="438" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o6/v1/decoders-1.log: LE implicit</title></rect>
+<rect x="275" y="438" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o6/v1/decoders-1.log: LE explicit</title></rect>
+<rect x="299" y="438" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o6/v1/decoders-1.log: BE explicit</title></rect>
+<rect x="323" y="438" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o6/v1/decoders-1.log: JPEG 14</title></rect>
+<rect x="347" y="438" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o6/v1/decoders-1.log: JPEG 14 SV1</title></rect>
+<rect x="371" y="438" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o6/v1/decoders-1.log: JPEG-LS</title></rect>
+<rect x="395" y="438" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o6/v1/decoders-1.log: J2K lossless</title></rect>
+<rect x="419" y="438" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o6/v1/decoders-1.log: HTJ2K</title></rect>
+<rect x="443" y="438" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o6/v1/decoders-1.log: RLE</title></rect>
+<rect x="467" y="438" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o6/v1/decoders-1.log: Encaps. uncompr.</title></rect>
+<rect x="491" y="438" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o6/v1/decoders-1.log: Deflated</title></rect>
+<rect x="515" y="438" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o6/v1/decoders-1.log: JPEG XL</title></rect>
+<rect x="539" y="438" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o6/v1/decoders-1.log: colour Deflated</title></rect>
+<rect x="563" y="438" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o6/v1/decoders-1.log: colour JPEG 14</title></rect>
+<rect x="587" y="438" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o6/v1/decoders-1.log: colour JPEG-LS</title></rect>
+<rect x="611" y="438" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o6/v1/decoders-1.log: colour HTJ2K</title></rect>
+<rect x="635" y="438" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o6/v1/decoders-1.log: colour JPEG XL</title></rect>
+<rect x="659" y="438" width="22" height="13" rx="2" fill="#2a78d6"><title>int-o6/v1/decoders-1.log: JPEG 1 (lossy)</title></rect>
+<text x="690" y="448" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="start">18/18</text>
+<text x="240" y="464" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#0b0b0b" text-anchor="end">laneF1/start/decoders-1</text>
+<rect x="251" y="454" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF1/start/decoders-1.log: LE implicit</title></rect>
+<rect x="275" y="454" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF1/start/decoders-1.log: LE explicit</title></rect>
+<rect x="299" y="454" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF1/start/decoders-1.log: BE explicit</title></rect>
+<rect x="323" y="454" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF1/start/decoders-1.log: JPEG 14</title></rect>
+<rect x="347" y="454" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF1/start/decoders-1.log: JPEG 14 SV1</title></rect>
+<rect x="371" y="454" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF1/start/decoders-1.log: JPEG-LS</title></rect>
+<rect x="395" y="454" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF1/start/decoders-1.log: J2K lossless</title></rect>
+<rect x="419" y="454" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF1/start/decoders-1.log: HTJ2K</title></rect>
+<rect x="443" y="454" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF1/start/decoders-1.log: RLE</title></rect>
+<rect x="467" y="454" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF1/start/decoders-1.log: Encaps. uncompr.</title></rect>
+<rect x="491" y="454" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF1/start/decoders-1.log: Deflated</title></rect>
+<rect x="515" y="454" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF1/start/decoders-1.log: JPEG XL</title></rect>
+<rect x="539" y="454" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF1/start/decoders-1.log: colour Deflated</title></rect>
+<rect x="563" y="454" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF1/start/decoders-1.log: colour JPEG 14</title></rect>
+<rect x="587" y="454" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF1/start/decoders-1.log: colour JPEG-LS</title></rect>
+<rect x="611" y="454" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF1/start/decoders-1.log: colour HTJ2K</title></rect>
+<rect x="635" y="454" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF1/start/decoders-1.log: colour JPEG XL</title></rect>
+<rect x="659" y="454" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF1/start/decoders-1.log: JPEG 1 (lossy)</title></rect>
+<text x="690" y="464" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="start">18/18</text>
+<text x="240" y="480" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#0b0b0b" text-anchor="end">laneF1/final/decoders-1</text>
+<rect x="251" y="470" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF1/final/decoders-1.log: LE implicit</title></rect>
+<rect x="275" y="470" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF1/final/decoders-1.log: LE explicit</title></rect>
+<rect x="299" y="470" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF1/final/decoders-1.log: BE explicit</title></rect>
+<rect x="323" y="470" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF1/final/decoders-1.log: JPEG 14</title></rect>
+<rect x="347" y="470" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF1/final/decoders-1.log: JPEG 14 SV1</title></rect>
+<rect x="371" y="470" width="22" height="13" rx="2" fill="#eb6834"><title>laneF1/final/decoders-1.log: JPEG-LS</title></rect>
+<rect x="395" y="470" width="22" height="13" rx="2" fill="#e6e4de"><title>laneF1/final/decoders-1.log: J2K lossless</title></rect>
+<rect x="419" y="470" width="22" height="13" rx="2" fill="#e6e4de"><title>laneF1/final/decoders-1.log: HTJ2K</title></rect>
+<rect x="443" y="470" width="22" height="13" rx="2" fill="#e6e4de"><title>laneF1/final/decoders-1.log: RLE</title></rect>
+<rect x="467" y="470" width="22" height="13" rx="2" fill="#e6e4de"><title>laneF1/final/decoders-1.log: Encaps. uncompr.</title></rect>
+<rect x="491" y="470" width="22" height="13" rx="2" fill="#e6e4de"><title>laneF1/final/decoders-1.log: Deflated</title></rect>
+<rect x="515" y="470" width="22" height="13" rx="2" fill="#e6e4de"><title>laneF1/final/decoders-1.log: JPEG XL</title></rect>
+<rect x="539" y="470" width="22" height="13" rx="2" fill="#e6e4de"><title>laneF1/final/decoders-1.log: colour Deflated</title></rect>
+<rect x="563" y="470" width="22" height="13" rx="2" fill="#e6e4de"><title>laneF1/final/decoders-1.log: colour JPEG 14</title></rect>
+<rect x="587" y="470" width="22" height="13" rx="2" fill="#e6e4de"><title>laneF1/final/decoders-1.log: colour JPEG-LS</title></rect>
+<rect x="611" y="470" width="22" height="13" rx="2" fill="#e6e4de"><title>laneF1/final/decoders-1.log: colour HTJ2K</title></rect>
+<rect x="635" y="470" width="22" height="13" rx="2" fill="#e6e4de"><title>laneF1/final/decoders-1.log: colour JPEG XL</title></rect>
+<rect x="659" y="470" width="22" height="13" rx="2" fill="#e6e4de"><title>laneF1/final/decoders-1.log: JPEG 1 (lossy)</title></rect>
+<text x="690" y="480" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="700" fill="#0b0b0b" text-anchor="start">5/18  lost</text>
+<text x="240" y="496" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#0b0b0b" text-anchor="end">laneF1/final/decoders-2</text>
+<rect x="251" y="486" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF1/final/decoders-2.log: LE implicit</title></rect>
+<rect x="275" y="486" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF1/final/decoders-2.log: LE explicit</title></rect>
+<rect x="299" y="486" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF1/final/decoders-2.log: BE explicit</title></rect>
+<rect x="323" y="486" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF1/final/decoders-2.log: JPEG 14</title></rect>
+<rect x="347" y="486" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF1/final/decoders-2.log: JPEG 14 SV1</title></rect>
+<rect x="371" y="486" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF1/final/decoders-2.log: JPEG-LS</title></rect>
+<rect x="395" y="486" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF1/final/decoders-2.log: J2K lossless</title></rect>
+<rect x="419" y="486" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF1/final/decoders-2.log: HTJ2K</title></rect>
+<rect x="443" y="486" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF1/final/decoders-2.log: RLE</title></rect>
+<rect x="467" y="486" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF1/final/decoders-2.log: Encaps. uncompr.</title></rect>
+<rect x="491" y="486" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF1/final/decoders-2.log: Deflated</title></rect>
+<rect x="515" y="486" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF1/final/decoders-2.log: JPEG XL</title></rect>
+<rect x="539" y="486" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF1/final/decoders-2.log: colour Deflated</title></rect>
+<rect x="563" y="486" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF1/final/decoders-2.log: colour JPEG 14</title></rect>
+<rect x="587" y="486" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF1/final/decoders-2.log: colour JPEG-LS</title></rect>
+<rect x="611" y="486" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF1/final/decoders-2.log: colour HTJ2K</title></rect>
+<rect x="635" y="486" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF1/final/decoders-2.log: colour JPEG XL</title></rect>
+<rect x="659" y="486" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF1/final/decoders-2.log: JPEG 1 (lossy)</title></rect>
+<text x="690" y="496" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="start">18/18</text>
+<text x="240" y="512" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#0b0b0b" text-anchor="end">int-f1/v1/decoders-1</text>
+<rect x="251" y="502" width="22" height="13" rx="2" fill="#2a78d6"><title>int-f1/v1/decoders-1.log: LE implicit</title></rect>
+<rect x="275" y="502" width="22" height="13" rx="2" fill="#2a78d6"><title>int-f1/v1/decoders-1.log: LE explicit</title></rect>
+<rect x="299" y="502" width="22" height="13" rx="2" fill="#2a78d6"><title>int-f1/v1/decoders-1.log: BE explicit</title></rect>
+<rect x="323" y="502" width="22" height="13" rx="2" fill="#2a78d6"><title>int-f1/v1/decoders-1.log: JPEG 14</title></rect>
+<rect x="347" y="502" width="22" height="13" rx="2" fill="#2a78d6"><title>int-f1/v1/decoders-1.log: JPEG 14 SV1</title></rect>
+<rect x="371" y="502" width="22" height="13" rx="2" fill="#2a78d6"><title>int-f1/v1/decoders-1.log: JPEG-LS</title></rect>
+<rect x="395" y="502" width="22" height="13" rx="2" fill="#2a78d6"><title>int-f1/v1/decoders-1.log: J2K lossless</title></rect>
+<rect x="419" y="502" width="22" height="13" rx="2" fill="#2a78d6"><title>int-f1/v1/decoders-1.log: HTJ2K</title></rect>
+<rect x="443" y="502" width="22" height="13" rx="2" fill="#2a78d6"><title>int-f1/v1/decoders-1.log: RLE</title></rect>
+<rect x="467" y="502" width="22" height="13" rx="2" fill="#2a78d6"><title>int-f1/v1/decoders-1.log: Encaps. uncompr.</title></rect>
+<rect x="491" y="502" width="22" height="13" rx="2" fill="#2a78d6"><title>int-f1/v1/decoders-1.log: Deflated</title></rect>
+<rect x="515" y="502" width="22" height="13" rx="2" fill="#2a78d6"><title>int-f1/v1/decoders-1.log: JPEG XL</title></rect>
+<rect x="539" y="502" width="22" height="13" rx="2" fill="#2a78d6"><title>int-f1/v1/decoders-1.log: colour Deflated</title></rect>
+<rect x="563" y="502" width="22" height="13" rx="2" fill="#2a78d6"><title>int-f1/v1/decoders-1.log: colour JPEG 14</title></rect>
+<rect x="587" y="502" width="22" height="13" rx="2" fill="#2a78d6"><title>int-f1/v1/decoders-1.log: colour JPEG-LS</title></rect>
+<rect x="611" y="502" width="22" height="13" rx="2" fill="#2a78d6"><title>int-f1/v1/decoders-1.log: colour HTJ2K</title></rect>
+<rect x="635" y="502" width="22" height="13" rx="2" fill="#2a78d6"><title>int-f1/v1/decoders-1.log: colour JPEG XL</title></rect>
+<rect x="659" y="502" width="22" height="13" rx="2" fill="#2a78d6"><title>int-f1/v1/decoders-1.log: JPEG 1 (lossy)</title></rect>
+<text x="690" y="512" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="start">18/18</text>
+<text x="240" y="528" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#0b0b0b" text-anchor="end">laneF2/end/</text>
+<rect x="251" y="518" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF2/end/karma-decoders.log: LE implicit</title></rect>
+<rect x="275" y="518" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF2/end/karma-decoders.log: LE explicit</title></rect>
+<rect x="299" y="518" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF2/end/karma-decoders.log: BE explicit</title></rect>
+<rect x="323" y="518" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF2/end/karma-decoders.log: JPEG 14</title></rect>
+<rect x="347" y="518" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF2/end/karma-decoders.log: JPEG 14 SV1</title></rect>
+<rect x="371" y="518" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF2/end/karma-decoders.log: JPEG-LS</title></rect>
+<rect x="395" y="518" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF2/end/karma-decoders.log: J2K lossless</title></rect>
+<rect x="419" y="518" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF2/end/karma-decoders.log: HTJ2K</title></rect>
+<rect x="443" y="518" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF2/end/karma-decoders.log: RLE</title></rect>
+<rect x="467" y="518" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF2/end/karma-decoders.log: Encaps. uncompr.</title></rect>
+<rect x="491" y="518" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF2/end/karma-decoders.log: Deflated</title></rect>
+<rect x="515" y="518" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF2/end/karma-decoders.log: JPEG XL</title></rect>
+<rect x="539" y="518" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF2/end/karma-decoders.log: colour Deflated</title></rect>
+<rect x="563" y="518" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF2/end/karma-decoders.log: colour JPEG 14</title></rect>
+<rect x="587" y="518" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF2/end/karma-decoders.log: colour JPEG-LS</title></rect>
+<rect x="611" y="518" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF2/end/karma-decoders.log: colour HTJ2K</title></rect>
+<rect x="635" y="518" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF2/end/karma-decoders.log: colour JPEG XL</title></rect>
+<rect x="659" y="518" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF2/end/karma-decoders.log: JPEG 1 (lossy)</title></rect>
+<text x="690" y="528" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="start">18/18</text>
+<text x="240" y="544" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#0b0b0b" text-anchor="end">laneF2/end2/</text>
+<rect x="251" y="534" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF2/end2/karma-decoders.log: LE implicit</title></rect>
+<rect x="275" y="534" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF2/end2/karma-decoders.log: LE explicit</title></rect>
+<rect x="299" y="534" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF2/end2/karma-decoders.log: BE explicit</title></rect>
+<rect x="323" y="534" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF2/end2/karma-decoders.log: JPEG 14</title></rect>
+<rect x="347" y="534" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF2/end2/karma-decoders.log: JPEG 14 SV1</title></rect>
+<rect x="371" y="534" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF2/end2/karma-decoders.log: JPEG-LS</title></rect>
+<rect x="395" y="534" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF2/end2/karma-decoders.log: J2K lossless</title></rect>
+<rect x="419" y="534" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF2/end2/karma-decoders.log: HTJ2K</title></rect>
+<rect x="443" y="534" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF2/end2/karma-decoders.log: RLE</title></rect>
+<rect x="467" y="534" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF2/end2/karma-decoders.log: Encaps. uncompr.</title></rect>
+<rect x="491" y="534" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF2/end2/karma-decoders.log: Deflated</title></rect>
+<rect x="515" y="534" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF2/end2/karma-decoders.log: JPEG XL</title></rect>
+<rect x="539" y="534" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF2/end2/karma-decoders.log: colour Deflated</title></rect>
+<rect x="563" y="534" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF2/end2/karma-decoders.log: colour JPEG 14</title></rect>
+<rect x="587" y="534" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF2/end2/karma-decoders.log: colour JPEG-LS</title></rect>
+<rect x="611" y="534" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF2/end2/karma-decoders.log: colour HTJ2K</title></rect>
+<rect x="635" y="534" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF2/end2/karma-decoders.log: colour JPEG XL</title></rect>
+<rect x="659" y="534" width="22" height="13" rx="2" fill="#2a78d6"><title>laneF2/end2/karma-decoders.log: JPEG 1 (lossy)</title></rect>
+<text x="690" y="544" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="start">18/18</text>
+<text x="240" y="560" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#0b0b0b" text-anchor="end">int-f2/v1/decoders-1</text>
+<rect x="251" y="550" width="22" height="13" rx="2" fill="#2a78d6"><title>int-f2/v1/decoders-1.log: LE implicit</title></rect>
+<rect x="275" y="550" width="22" height="13" rx="2" fill="#2a78d6"><title>int-f2/v1/decoders-1.log: LE explicit</title></rect>
+<rect x="299" y="550" width="22" height="13" rx="2" fill="#2a78d6"><title>int-f2/v1/decoders-1.log: BE explicit</title></rect>
+<rect x="323" y="550" width="22" height="13" rx="2" fill="#2a78d6"><title>int-f2/v1/decoders-1.log: JPEG 14</title></rect>
+<rect x="347" y="550" width="22" height="13" rx="2" fill="#2a78d6"><title>int-f2/v1/decoders-1.log: JPEG 14 SV1</title></rect>
+<rect x="371" y="550" width="22" height="13" rx="2" fill="#eb6834"><title>int-f2/v1/decoders-1.log: JPEG-LS</title></rect>
+<rect x="395" y="550" width="22" height="13" rx="2" fill="#e6e4de"><title>int-f2/v1/decoders-1.log: J2K lossless</title></rect>
+<rect x="419" y="550" width="22" height="13" rx="2" fill="#e6e4de"><title>int-f2/v1/decoders-1.log: HTJ2K</title></rect>
+<rect x="443" y="550" width="22" height="13" rx="2" fill="#e6e4de"><title>int-f2/v1/decoders-1.log: RLE</title></rect>
+<rect x="467" y="550" width="22" height="13" rx="2" fill="#e6e4de"><title>int-f2/v1/decoders-1.log: Encaps. uncompr.</title></rect>
+<rect x="491" y="550" width="22" height="13" rx="2" fill="#e6e4de"><title>int-f2/v1/decoders-1.log: Deflated</title></rect>
+<rect x="515" y="550" width="22" height="13" rx="2" fill="#e6e4de"><title>int-f2/v1/decoders-1.log: JPEG XL</title></rect>
+<rect x="539" y="550" width="22" height="13" rx="2" fill="#e6e4de"><title>int-f2/v1/decoders-1.log: colour Deflated</title></rect>
+<rect x="563" y="550" width="22" height="13" rx="2" fill="#e6e4de"><title>int-f2/v1/decoders-1.log: colour JPEG 14</title></rect>
+<rect x="587" y="550" width="22" height="13" rx="2" fill="#e6e4de"><title>int-f2/v1/decoders-1.log: colour JPEG-LS</title></rect>
+<rect x="611" y="550" width="22" height="13" rx="2" fill="#e6e4de"><title>int-f2/v1/decoders-1.log: colour HTJ2K</title></rect>
+<rect x="635" y="550" width="22" height="13" rx="2" fill="#e6e4de"><title>int-f2/v1/decoders-1.log: colour JPEG XL</title></rect>
+<rect x="659" y="550" width="22" height="13" rx="2" fill="#e6e4de"><title>int-f2/v1/decoders-1.log: JPEG 1 (lossy)</title></rect>
+<text x="690" y="560" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="700" fill="#0b0b0b" text-anchor="start">5/18  lost</text>
+<text x="240" y="576" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#0b0b0b" text-anchor="end">int-f2/v1/decoders-2</text>
+<rect x="251" y="566" width="22" height="13" rx="2" fill="#2a78d6"><title>int-f2/v1/decoders-2.log: LE implicit</title></rect>
+<rect x="275" y="566" width="22" height="13" rx="2" fill="#2a78d6"><title>int-f2/v1/decoders-2.log: LE explicit</title></rect>
+<rect x="299" y="566" width="22" height="13" rx="2" fill="#2a78d6"><title>int-f2/v1/decoders-2.log: BE explicit</title></rect>
+<rect x="323" y="566" width="22" height="13" rx="2" fill="#2a78d6"><title>int-f2/v1/decoders-2.log: JPEG 14</title></rect>
+<rect x="347" y="566" width="22" height="13" rx="2" fill="#2a78d6"><title>int-f2/v1/decoders-2.log: JPEG 14 SV1</title></rect>
+<rect x="371" y="566" width="22" height="13" rx="2" fill="#2a78d6"><title>int-f2/v1/decoders-2.log: JPEG-LS</title></rect>
+<rect x="395" y="566" width="22" height="13" rx="2" fill="#2a78d6"><title>int-f2/v1/decoders-2.log: J2K lossless</title></rect>
+<rect x="419" y="566" width="22" height="13" rx="2" fill="#2a78d6"><title>int-f2/v1/decoders-2.log: HTJ2K</title></rect>
+<rect x="443" y="566" width="22" height="13" rx="2" fill="#2a78d6"><title>int-f2/v1/decoders-2.log: RLE</title></rect>
+<rect x="467" y="566" width="22" height="13" rx="2" fill="#2a78d6"><title>int-f2/v1/decoders-2.log: Encaps. uncompr.</title></rect>
+<rect x="491" y="566" width="22" height="13" rx="2" fill="#2a78d6"><title>int-f2/v1/decoders-2.log: Deflated</title></rect>
+<rect x="515" y="566" width="22" height="13" rx="2" fill="#2a78d6"><title>int-f2/v1/decoders-2.log: JPEG XL</title></rect>
+<rect x="539" y="566" width="22" height="13" rx="2" fill="#2a78d6"><title>int-f2/v1/decoders-2.log: colour Deflated</title></rect>
+<rect x="563" y="566" width="22" height="13" rx="2" fill="#2a78d6"><title>int-f2/v1/decoders-2.log: colour JPEG 14</title></rect>
+<rect x="587" y="566" width="22" height="13" rx="2" fill="#2a78d6"><title>int-f2/v1/decoders-2.log: colour JPEG-LS</title></rect>
+<rect x="611" y="566" width="22" height="13" rx="2" fill="#2a78d6"><title>int-f2/v1/decoders-2.log: colour HTJ2K</title></rect>
+<rect x="635" y="566" width="22" height="13" rx="2" fill="#2a78d6"><title>int-f2/v1/decoders-2.log: colour JPEG XL</title></rect>
+<rect x="659" y="566" width="22" height="13" rx="2" fill="#2a78d6"><title>int-f2/v1/decoders-2.log: JPEG 1 (lossy)</title></rect>
+<text x="690" y="576" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="start">18/18</text>
+<text x="240" y="592" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#0b0b0b" text-anchor="end">laneT49/end/</text>
+<rect x="251" y="582" width="22" height="13" rx="2" fill="#2a78d6"><title>laneT49/end/karma-decoders.log: LE implicit</title></rect>
+<rect x="275" y="582" width="22" height="13" rx="2" fill="#2a78d6"><title>laneT49/end/karma-decoders.log: LE explicit</title></rect>
+<rect x="299" y="582" width="22" height="13" rx="2" fill="#2a78d6"><title>laneT49/end/karma-decoders.log: BE explicit</title></rect>
+<rect x="323" y="582" width="22" height="13" rx="2" fill="#2a78d6"><title>laneT49/end/karma-decoders.log: JPEG 14</title></rect>
+<rect x="347" y="582" width="22" height="13" rx="2" fill="#2a78d6"><title>laneT49/end/karma-decoders.log: JPEG 14 SV1</title></rect>
+<rect x="371" y="582" width="22" height="13" rx="2" fill="#2a78d6"><title>laneT49/end/karma-decoders.log: JPEG-LS</title></rect>
+<rect x="395" y="582" width="22" height="13" rx="2" fill="#2a78d6"><title>laneT49/end/karma-decoders.log: J2K lossless</title></rect>
+<rect x="419" y="582" width="22" height="13" rx="2" fill="#2a78d6"><title>laneT49/end/karma-decoders.log: HTJ2K</title></rect>
+<rect x="443" y="582" width="22" height="13" rx="2" fill="#2a78d6"><title>laneT49/end/karma-decoders.log: RLE</title></rect>
+<rect x="467" y="582" width="22" height="13" rx="2" fill="#2a78d6"><title>laneT49/end/karma-decoders.log: Encaps. uncompr.</title></rect>
+<rect x="491" y="582" width="22" height="13" rx="2" fill="#2a78d6"><title>laneT49/end/karma-decoders.log: Deflated</title></rect>
+<rect x="515" y="582" width="22" height="13" rx="2" fill="#2a78d6"><title>laneT49/end/karma-decoders.log: JPEG XL</title></rect>
+<rect x="539" y="582" width="22" height="13" rx="2" fill="#2a78d6"><title>laneT49/end/karma-decoders.log: colour Deflated</title></rect>
+<rect x="563" y="582" width="22" height="13" rx="2" fill="#2a78d6"><title>laneT49/end/karma-decoders.log: colour JPEG 14</title></rect>
+<rect x="587" y="582" width="22" height="13" rx="2" fill="#2a78d6"><title>laneT49/end/karma-decoders.log: colour JPEG-LS</title></rect>
+<rect x="611" y="582" width="22" height="13" rx="2" fill="#2a78d6"><title>laneT49/end/karma-decoders.log: colour HTJ2K</title></rect>
+<rect x="635" y="582" width="22" height="13" rx="2" fill="#2a78d6"><title>laneT49/end/karma-decoders.log: colour JPEG XL</title></rect>
+<rect x="659" y="582" width="22" height="13" rx="2" fill="#2a78d6"><title>laneT49/end/karma-decoders.log: JPEG 1 (lossy)</title></rect>
+<text x="690" y="592" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="start">18/18</text>
+<text x="240" y="608" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#0b0b0b" text-anchor="end">int-t49/v1/decoders-1</text>
+<rect x="251" y="598" width="22" height="13" rx="2" fill="#2a78d6"><title>int-t49/v1/decoders-1.log: LE implicit</title></rect>
+<rect x="275" y="598" width="22" height="13" rx="2" fill="#2a78d6"><title>int-t49/v1/decoders-1.log: LE explicit</title></rect>
+<rect x="299" y="598" width="22" height="13" rx="2" fill="#2a78d6"><title>int-t49/v1/decoders-1.log: BE explicit</title></rect>
+<rect x="323" y="598" width="22" height="13" rx="2" fill="#2a78d6"><title>int-t49/v1/decoders-1.log: JPEG 14</title></rect>
+<rect x="347" y="598" width="22" height="13" rx="2" fill="#2a78d6"><title>int-t49/v1/decoders-1.log: JPEG 14 SV1</title></rect>
+<rect x="371" y="598" width="22" height="13" rx="2" fill="#2a78d6"><title>int-t49/v1/decoders-1.log: JPEG-LS</title></rect>
+<rect x="395" y="598" width="22" height="13" rx="2" fill="#2a78d6"><title>int-t49/v1/decoders-1.log: J2K lossless</title></rect>
+<rect x="419" y="598" width="22" height="13" rx="2" fill="#2a78d6"><title>int-t49/v1/decoders-1.log: HTJ2K</title></rect>
+<rect x="443" y="598" width="22" height="13" rx="2" fill="#2a78d6"><title>int-t49/v1/decoders-1.log: RLE</title></rect>
+<rect x="467" y="598" width="22" height="13" rx="2" fill="#2a78d6"><title>int-t49/v1/decoders-1.log: Encaps. uncompr.</title></rect>
+<rect x="491" y="598" width="22" height="13" rx="2" fill="#2a78d6"><title>int-t49/v1/decoders-1.log: Deflated</title></rect>
+<rect x="515" y="598" width="22" height="13" rx="2" fill="#2a78d6"><title>int-t49/v1/decoders-1.log: JPEG XL</title></rect>
+<rect x="539" y="598" width="22" height="13" rx="2" fill="#2a78d6"><title>int-t49/v1/decoders-1.log: colour Deflated</title></rect>
+<rect x="563" y="598" width="22" height="13" rx="2" fill="#2a78d6"><title>int-t49/v1/decoders-1.log: colour JPEG 14</title></rect>
+<rect x="587" y="598" width="22" height="13" rx="2" fill="#2a78d6"><title>int-t49/v1/decoders-1.log: colour JPEG-LS</title></rect>
+<rect x="611" y="598" width="22" height="13" rx="2" fill="#2a78d6"><title>int-t49/v1/decoders-1.log: colour HTJ2K</title></rect>
+<rect x="635" y="598" width="22" height="13" rx="2" fill="#2a78d6"><title>int-t49/v1/decoders-1.log: colour JPEG XL</title></rect>
+<rect x="659" y="598" width="22" height="13" rx="2" fill="#2a78d6"><title>int-t49/v1/decoders-1.log: JPEG 1 (lossy)</title></rect>
+<text x="690" y="608" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="start">18/18</text>
+<text x="240" y="624" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#0b0b0b" text-anchor="end">laneG1/start/</text>
+<rect x="251" y="614" width="22" height="13" rx="2" fill="#2a78d6"><title>laneG1/start/karma-decoders.log: LE implicit</title></rect>
+<rect x="275" y="614" width="22" height="13" rx="2" fill="#2a78d6"><title>laneG1/start/karma-decoders.log: LE explicit</title></rect>
+<rect x="299" y="614" width="22" height="13" rx="2" fill="#2a78d6"><title>laneG1/start/karma-decoders.log: BE explicit</title></rect>
+<rect x="323" y="614" width="22" height="13" rx="2" fill="#2a78d6"><title>laneG1/start/karma-decoders.log: JPEG 14</title></rect>
+<rect x="347" y="614" width="22" height="13" rx="2" fill="#2a78d6"><title>laneG1/start/karma-decoders.log: JPEG 14 SV1</title></rect>
+<rect x="371" y="614" width="22" height="13" rx="2" fill="#2a78d6"><title>laneG1/start/karma-decoders.log: JPEG-LS</title></rect>
+<rect x="395" y="614" width="22" height="13" rx="2" fill="#2a78d6"><title>laneG1/start/karma-decoders.log: J2K lossless</title></rect>
+<rect x="419" y="614" width="22" height="13" rx="2" fill="#2a78d6"><title>laneG1/start/karma-decoders.log: HTJ2K</title></rect>
+<rect x="443" y="614" width="22" height="13" rx="2" fill="#2a78d6"><title>laneG1/start/karma-decoders.log: RLE</title></rect>
+<rect x="467" y="614" width="22" height="13" rx="2" fill="#2a78d6"><title>laneG1/start/karma-decoders.log: Encaps. uncompr.</title></rect>
+<rect x="491" y="614" width="22" height="13" rx="2" fill="#2a78d6"><title>laneG1/start/karma-decoders.log: Deflated</title></rect>
+<rect x="515" y="614" width="22" height="13" rx="2" fill="#2a78d6"><title>laneG1/start/karma-decoders.log: JPEG XL</title></rect>
+<rect x="539" y="614" width="22" height="13" rx="2" fill="#2a78d6"><title>laneG1/start/karma-decoders.log: colour Deflated</title></rect>
+<rect x="563" y="614" width="22" height="13" rx="2" fill="#2a78d6"><title>laneG1/start/karma-decoders.log: colour JPEG 14</title></rect>
+<rect x="587" y="614" width="22" height="13" rx="2" fill="#2a78d6"><title>laneG1/start/karma-decoders.log: colour JPEG-LS</title></rect>
+<rect x="611" y="614" width="22" height="13" rx="2" fill="#2a78d6"><title>laneG1/start/karma-decoders.log: colour HTJ2K</title></rect>
+<rect x="635" y="614" width="22" height="13" rx="2" fill="#2a78d6"><title>laneG1/start/karma-decoders.log: colour JPEG XL</title></rect>
+<rect x="659" y="614" width="22" height="13" rx="2" fill="#2a78d6"><title>laneG1/start/karma-decoders.log: JPEG 1 (lossy)</title></rect>
+<text x="690" y="624" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="start">18/18</text>
+<text x="240" y="640" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#0b0b0b" text-anchor="end">laneG1/start-karma2/</text>
+<rect x="251" y="630" width="22" height="13" rx="2" fill="#2a78d6"><title>laneG1/start-karma2/karma-decoders.log: LE implicit</title></rect>
+<rect x="275" y="630" width="22" height="13" rx="2" fill="#2a78d6"><title>laneG1/start-karma2/karma-decoders.log: LE explicit</title></rect>
+<rect x="299" y="630" width="22" height="13" rx="2" fill="#2a78d6"><title>laneG1/start-karma2/karma-decoders.log: BE explicit</title></rect>
+<rect x="323" y="630" width="22" height="13" rx="2" fill="#2a78d6"><title>laneG1/start-karma2/karma-decoders.log: JPEG 14</title></rect>
+<rect x="347" y="630" width="22" height="13" rx="2" fill="#2a78d6"><title>laneG1/start-karma2/karma-decoders.log: JPEG 14 SV1</title></rect>
+<rect x="371" y="630" width="22" height="13" rx="2" fill="#2a78d6"><title>laneG1/start-karma2/karma-decoders.log: JPEG-LS</title></rect>
+<rect x="395" y="630" width="22" height="13" rx="2" fill="#2a78d6"><title>laneG1/start-karma2/karma-decoders.log: J2K lossless</title></rect>
+<rect x="419" y="630" width="22" height="13" rx="2" fill="#eb6834"><title>laneG1/start-karma2/karma-decoders.log: HTJ2K</title></rect>
+<rect x="443" y="630" width="22" height="13" rx="2" fill="#e6e4de"><title>laneG1/start-karma2/karma-decoders.log: RLE</title></rect>
+<rect x="467" y="630" width="22" height="13" rx="2" fill="#e6e4de"><title>laneG1/start-karma2/karma-decoders.log: Encaps. uncompr.</title></rect>
+<rect x="491" y="630" width="22" height="13" rx="2" fill="#e6e4de"><title>laneG1/start-karma2/karma-decoders.log: Deflated</title></rect>
+<rect x="515" y="630" width="22" height="13" rx="2" fill="#e6e4de"><title>laneG1/start-karma2/karma-decoders.log: JPEG XL</title></rect>
+<rect x="539" y="630" width="22" height="13" rx="2" fill="#e6e4de"><title>laneG1/start-karma2/karma-decoders.log: colour Deflated</title></rect>
+<rect x="563" y="630" width="22" height="13" rx="2" fill="#e6e4de"><title>laneG1/start-karma2/karma-decoders.log: colour JPEG 14</title></rect>
+<rect x="587" y="630" width="22" height="13" rx="2" fill="#e6e4de"><title>laneG1/start-karma2/karma-decoders.log: colour JPEG-LS</title></rect>
+<rect x="611" y="630" width="22" height="13" rx="2" fill="#e6e4de"><title>laneG1/start-karma2/karma-decoders.log: colour HTJ2K</title></rect>
+<rect x="635" y="630" width="22" height="13" rx="2" fill="#e6e4de"><title>laneG1/start-karma2/karma-decoders.log: colour JPEG XL</title></rect>
+<rect x="659" y="630" width="22" height="13" rx="2" fill="#e6e4de"><title>laneG1/start-karma2/karma-decoders.log: JPEG 1 (lossy)</title></rect>
+<text x="690" y="640" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="700" fill="#0b0b0b" text-anchor="start">7/18  lost</text>
+<text x="240" y="656" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#0b0b0b" text-anchor="end">laneG1/end/</text>
+<rect x="251" y="646" width="22" height="13" rx="2" fill="#2a78d6"><title>laneG1/end/karma-decoders.log: LE implicit</title></rect>
+<rect x="275" y="646" width="22" height="13" rx="2" fill="#2a78d6"><title>laneG1/end/karma-decoders.log: LE explicit</title></rect>
+<rect x="299" y="646" width="22" height="13" rx="2" fill="#2a78d6"><title>laneG1/end/karma-decoders.log: BE explicit</title></rect>
+<rect x="323" y="646" width="22" height="13" rx="2" fill="#2a78d6"><title>laneG1/end/karma-decoders.log: JPEG 14</title></rect>
+<rect x="347" y="646" width="22" height="13" rx="2" fill="#2a78d6"><title>laneG1/end/karma-decoders.log: JPEG 14 SV1</title></rect>
+<rect x="371" y="646" width="22" height="13" rx="2" fill="#2a78d6"><title>laneG1/end/karma-decoders.log: JPEG-LS</title></rect>
+<rect x="395" y="646" width="22" height="13" rx="2" fill="#2a78d6"><title>laneG1/end/karma-decoders.log: J2K lossless</title></rect>
+<rect x="419" y="646" width="22" height="13" rx="2" fill="#2a78d6"><title>laneG1/end/karma-decoders.log: HTJ2K</title></rect>
+<rect x="443" y="646" width="22" height="13" rx="2" fill="#2a78d6"><title>laneG1/end/karma-decoders.log: RLE</title></rect>
+<rect x="467" y="646" width="22" height="13" rx="2" fill="#2a78d6"><title>laneG1/end/karma-decoders.log: Encaps. uncompr.</title></rect>
+<rect x="491" y="646" width="22" height="13" rx="2" fill="#2a78d6"><title>laneG1/end/karma-decoders.log: Deflated</title></rect>
+<rect x="515" y="646" width="22" height="13" rx="2" fill="#2a78d6"><title>laneG1/end/karma-decoders.log: JPEG XL</title></rect>
+<rect x="539" y="646" width="22" height="13" rx="2" fill="#2a78d6"><title>laneG1/end/karma-decoders.log: colour Deflated</title></rect>
+<rect x="563" y="646" width="22" height="13" rx="2" fill="#2a78d6"><title>laneG1/end/karma-decoders.log: colour JPEG 14</title></rect>
+<rect x="587" y="646" width="22" height="13" rx="2" fill="#2a78d6"><title>laneG1/end/karma-decoders.log: colour JPEG-LS</title></rect>
+<rect x="611" y="646" width="22" height="13" rx="2" fill="#2a78d6"><title>laneG1/end/karma-decoders.log: colour HTJ2K</title></rect>
+<rect x="635" y="646" width="22" height="13" rx="2" fill="#2a78d6"><title>laneG1/end/karma-decoders.log: colour JPEG XL</title></rect>
+<rect x="659" y="646" width="22" height="13" rx="2" fill="#2a78d6"><title>laneG1/end/karma-decoders.log: JPEG 1 (lossy)</title></rect>
+<text x="690" y="656" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="start">18/18</text>
+<text x="240" y="672" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#0b0b0b" text-anchor="end">int-g1/v1/decoders-1</text>
+<rect x="251" y="662" width="22" height="13" rx="2" fill="#2a78d6"><title>int-g1/v1/decoders-1.log: LE implicit</title></rect>
+<rect x="275" y="662" width="22" height="13" rx="2" fill="#2a78d6"><title>int-g1/v1/decoders-1.log: LE explicit</title></rect>
+<rect x="299" y="662" width="22" height="13" rx="2" fill="#2a78d6"><title>int-g1/v1/decoders-1.log: BE explicit</title></rect>
+<rect x="323" y="662" width="22" height="13" rx="2" fill="#2a78d6"><title>int-g1/v1/decoders-1.log: JPEG 14</title></rect>
+<rect x="347" y="662" width="22" height="13" rx="2" fill="#2a78d6"><title>int-g1/v1/decoders-1.log: JPEG 14 SV1</title></rect>
+<rect x="371" y="662" width="22" height="13" rx="2" fill="#2a78d6"><title>int-g1/v1/decoders-1.log: JPEG-LS</title></rect>
+<rect x="395" y="662" width="22" height="13" rx="2" fill="#2a78d6"><title>int-g1/v1/decoders-1.log: J2K lossless</title></rect>
+<rect x="419" y="662" width="22" height="13" rx="2" fill="#2a78d6"><title>int-g1/v1/decoders-1.log: HTJ2K</title></rect>
+<rect x="443" y="662" width="22" height="13" rx="2" fill="#2a78d6"><title>int-g1/v1/decoders-1.log: RLE</title></rect>
+<rect x="467" y="662" width="22" height="13" rx="2" fill="#2a78d6"><title>int-g1/v1/decoders-1.log: Encaps. uncompr.</title></rect>
+<rect x="491" y="662" width="22" height="13" rx="2" fill="#2a78d6"><title>int-g1/v1/decoders-1.log: Deflated</title></rect>
+<rect x="515" y="662" width="22" height="13" rx="2" fill="#2a78d6"><title>int-g1/v1/decoders-1.log: JPEG XL</title></rect>
+<rect x="539" y="662" width="22" height="13" rx="2" fill="#2a78d6"><title>int-g1/v1/decoders-1.log: colour Deflated</title></rect>
+<rect x="563" y="662" width="22" height="13" rx="2" fill="#2a78d6"><title>int-g1/v1/decoders-1.log: colour JPEG 14</title></rect>
+<rect x="587" y="662" width="22" height="13" rx="2" fill="#2a78d6"><title>int-g1/v1/decoders-1.log: colour JPEG-LS</title></rect>
+<rect x="611" y="662" width="22" height="13" rx="2" fill="#2a78d6"><title>int-g1/v1/decoders-1.log: colour HTJ2K</title></rect>
+<rect x="635" y="662" width="22" height="13" rx="2" fill="#2a78d6"><title>int-g1/v1/decoders-1.log: colour JPEG XL</title></rect>
+<rect x="659" y="662" width="22" height="13" rx="2" fill="#2a78d6"><title>int-g1/v1/decoders-1.log: JPEG 1 (lossy)</title></rect>
+<text x="690" y="672" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="10" font-weight="400" fill="#52514e" text-anchor="start">18/18</text>
+<text x="16" y="702" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#52514e" text-anchor="start">Lost before: JPEG-LS 5x, JPEG XL 2x, HTJ2K 2x, JPEG 1 (lossy) 1x. No spec failed by its check in these runs; in each folder a later run passed all 18.</text>
+<text x="16" y="720" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#52514e" text-anchor="start">Excluded: lanePF/karma/decoders-alone.log (0 passed, 19 failed: the fixture URL bug that lane P-F fixed, not a lost browser).</text>
+<text x="16" y="738" font-family="Roboto, Helvetica, Arial, sans-serif" font-size="12" font-weight="400" fill="#52514e" text-anchor="start">Source: the decoder logs named on the left (decoders-N.log of int-*, karma-decoders*.log of the lanes), parsed by laneV1/scripts/karma_runs.py.</text>
+</svg>
