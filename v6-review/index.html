@@ -556,6 +556,16 @@
    "proposal": "Give the statistics the frame pixels of the video, if statistics on a video are wanted.",
    "decision": "",
    "outcome": "Found by Q3 while building row 39. 5.x had no labelmap over a video; the guide says statistics on it are not available."
+  },
+  {
+   "id": "issue-112",
+   "row": 112,
+   "issue": "The video examples (`videoNavigation`, `videoSegmentation`) show no video in Safari on the iOS 18.3 simulator; Chrome on the Android 15 emulator plays the same video, with the labelmap over it.",
+   "state": "Open",
+   "where": "the video viewport in Safari on iOS",
+   "proposal": "Find why (the codec in the simulator, the server's answer to Safari's range requests, or the element) and check on a real iPhone.",
+   "decision": "",
+   "outcome": "Seen in the device check of 21 November; the same before the labelmap work (cf4a6773e), so not from it. 6.0 sets playsInline and muted on the video."
   }
  ],
  "issueVisuals": {
