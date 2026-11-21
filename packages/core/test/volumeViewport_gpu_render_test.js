@@ -3,21 +3,12 @@ import * as testUtils from '../../../utils/test/testUtils';
 import vtkActor from '@kitware/vtk.js/Rendering/Core/Actor';
 import vtkSphereSource from '@kitware/vtk.js/Filters/Sources/SphereSource';
 import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
+import { vec3 } from 'gl-matrix';
 
 // poly data
 import * as sphere_default_sagittal from './groundTruth/sphere_default_sagittal.png';
 
-// nearest neighbor interpolation
-import * as volumeURI_100_100_10_1_1_1_0_sagittal_nearest from './groundTruth/volumeURI_100_100_10_1_1_1_0_sagittal_nearest.png';
-import * as volumeURI_100_100_10_1_1_1_0_coronal_nearest from './groundTruth/volumeURI_100_100_10_1_1_1_0_coronal_nearest.png';
-import * as volumeURI_100_100_10_1_1_1_1_color_coronal_nearest from './groundTruth/volumeURI_100_100_10_1_1_1_1_color_coronal_nearest.png';
-
-// linear interpolation
-import * as volumeURI_100_100_10_1_1_1_0_sagittal_linear from './groundTruth/volumeURI_100_100_10_1_1_1_0_sagittal_linear.png';
-import * as volumeURI_100_100_10_1_1_1_0_coronal_linear from './groundTruth/volumeURI_100_100_10_1_1_1_0_coronal_linear.png';
-import * as volumeURI_100_100_10_1_1_1_1_color_coronal_linear from './groundTruth/volumeURI_100_100_10_1_1_1_1_color_coronal_linear.png';
-
-const { imageLoader, Enums, volumeLoader, utilities, CONSTANTS } =
+const { imageLoader, Enums, volumeLoader, utilities, CONSTANTS, cache } =
   cornerstone3D;
 
 const { ViewportType, Events, InterpolationType } = Enums;
@@ -160,6 +151,154 @@ function offscreenPicture(renderingEngine, viewport) {
     );
 
   return picture.toDataURL('image/png');
+}
+
+/** The background colour of the test viewports: magenta. */
+const BACKGROUND_COLOR = [255, 0, 255];
+
+/**
+ * The length in millimetres of the longer side of a bar volume in the plane
+ * of a sagittal or a coronal view: 100 voxels of 1 mm. It fills the width of
+ * the canvas.
+ */
+const VOLUME_SIDE = 100;
+
+/**
+ * The colour of a voxel of a volume: its three components for a colour
+ * volume, its value three times for a grey volume (the window of the bar
+ * volumes is 0 to 255).
+ */
+function voxelColor(volume, i, j, k) {
+  const value = volume.voxelManager.getAtIJK(i, j, k);
+
+  return typeof value === 'number'
+    ? [value, value, value]
+    : Array.from(value).slice(0, 3);
+}
+
+/**
+ * The colour of a volume at a continuous voxel index: the colour of the
+ * nearest voxel, or the trilinear interpolation of the eight voxel centres
+ * around the index. An index between the last voxel centre and the edge of
+ * the volume takes the edge voxel, as the texture of the GPU does.
+ */
+function volumeColorAt(volume, index, interpolationType) {
+  const { dimensions } = volume;
+  const clamped = index.map((value, axis) =>
+    Math.min(Math.max(value, 0), dimensions[axis] - 1)
+  );
+
+  if (interpolationType === InterpolationType.NEAREST) {
+    return voxelColor(volume, ...clamped.map((value) => Math.round(value)));
+  }
+
+  const low = clamped.map(Math.floor);
+  const weights = clamped.map((value, axis) => value - low[axis]);
+  const color = [0, 0, 0];
+
+  for (let corner = 0; corner < 8; corner++) {
+    const offsets = [corner & 1, (corner >> 1) & 1, (corner >> 2) & 1];
+    const weight = offsets.reduce(
+      (product, offset, axis) =>
+        product * (offset ? weights[axis] : 1 - weights[axis]),
+      1
+    );
+    const ijk = low.map((value, axis) =>
+      Math.min(value + offsets[axis], dimensions[axis] - 1)
+    );
+
+    voxelColor(volume, ...ijk).forEach((value, channel) => {
+      color[channel] += weight * value;
+    });
+  }
+
+  return color;
+}
+
+/**
+ * The colour that a canvas pixel of a viewport should show of a volume, by
+ * its column and row: the colour of the volume at the world point of the
+ * centre of the pixel, or the background outside the volume. The view is a
+ * parallel projection, so the world points of three pixel centres give the
+ * others.
+ */
+function volumeColorOf(viewport, volume, interpolationType) {
+  const origin = viewport.canvasToWorld([0.5, 0.5]);
+  const right = vec3.subtract([], viewport.canvasToWorld([1.5, 0.5]), origin);
+  const down = vec3.subtract([], viewport.canvasToWorld([0.5, 1.5]), origin);
+  const { dimensions, imageData } = volume;
+
+  return (x, y) => {
+    const world = origin.map(
+      (value, axis) => value + x * right[axis] + y * down[axis]
+    );
+    const index = utilities.transformWorldToIndexContinuous(imageData, world);
+
+    if (
+      index.some(
+        (value, axis) => value < -0.5 || value > dimensions[axis] - 0.5
+      )
+    ) {
+      return BACKGROUND_COLOR;
+    }
+
+    return volumeColorAt(volume, index, interpolationType);
+  };
+}
+
+/**
+ * Expects a view of a volume to show the volume fitted and centred: its
+ * longer side in the plane fills the width of the canvas, the centre of the
+ * canvas shows the centre of the volume in the plane, and the plane is
+ * within half a voxel of the middle of the volume.
+ */
+function expectFittedAndCentred(viewport, volume) {
+  const { width, height } = viewport.getCanvas();
+  const across = vec3.subtract(
+    [],
+    viewport.canvasToWorld([width, height / 2]),
+    viewport.canvasToWorld([0, height / 2])
+  );
+  const down = vec3.subtract(
+    [],
+    viewport.canvasToWorld([width / 2, height]),
+    viewport.canvasToWorld([width / 2, 0])
+  );
+  const normal = vec3.normalize([], vec3.cross([], across, down));
+  const offset = vec3.subtract(
+    [],
+    viewport.canvasToWorld([width / 2, height / 2]),
+    utilities.transformIndexToWorld(
+      volume.imageData,
+      volume.dimensions.map((size) => (size - 1) / 2)
+    )
+  );
+
+  expect(vec3.length(across)).toBeCloseTo(VOLUME_SIDE, 3);
+  expect(vec3.dot(offset, across) / vec3.length(across)).toBeCloseTo(0, 3);
+  expect(vec3.dot(offset, down) / vec3.length(down)).toBeCloseTo(0, 3);
+  expect(Math.abs(vec3.dot(offset, normal))).toBeLessThanOrEqual(0.5 + 1e-6);
+}
+
+/**
+ * Expects the canvas of a viewport to show a volume as its voxels give it:
+ * fitted and centred, and each pixel the colour of the volume at the centre
+ * of the pixel, exactly with nearest interpolation and within
+ * `LINEAR_ROUNDING_LEVELS` with linear interpolation.
+ */
+function expectVolumePicture(viewport, volumeId, interpolationType) {
+  const volume = cache.getVolume(volumeId);
+
+  expectFittedAndCentred(viewport, volume);
+  expect(
+    pixelsOff(
+      readPicture(viewport),
+      volumeColorOf(viewport, volume, interpolationType),
+      interpolationType === InterpolationType.NEAREST
+        ? 0
+        : LINEAR_ROUNDING_LEVELS
+    )
+  ).toEqual([]);
 }
 
 describe('Volume Viewport GPU -- ', () => {
@@ -363,19 +502,14 @@ describe('Volume Viewport GPU -- ', () => {
       });
       const vp = renderingEngine.getViewport(viewportId);
 
-      element.addEventListener(Events.IMAGE_RENDERED, () => {
-        const canvas = vp.getCanvas();
-        const image = canvas.toDataURL('image/png');
-        setTimeout(() => {
-          testUtils
-            .compareImages(
-              image,
-              volumeURI_100_100_10_1_1_1_0_sagittal_nearest,
-              'volumeURI_100_100_10_1_1_1_0_sagittal_nearest'
-            )
-            .then(done, done.fail);
-        }, 200);
-      });
+      element.addEventListener(
+        Events.IMAGE_RENDERED,
+        () => {
+          expectVolumePicture(vp, volumeId, InterpolationType.NEAREST);
+          done();
+        },
+        { once: true }
+      );
 
       try {
         volumeLoader
@@ -385,8 +519,8 @@ describe('Volume Viewport GPU -- ', () => {
               vp.setDisplaySetPresentation({
                 interpolationType: InterpolationType.NEAREST,
               });
+              vp.render();
             });
-            vp.render();
           })
           .catch((e) => {
             done(e);
@@ -415,19 +549,14 @@ describe('Volume Viewport GPU -- ', () => {
       });
       const vp = renderingEngine.getViewport(viewportId);
 
-      element.addEventListener(Events.IMAGE_RENDERED, () => {
-        const canvas = vp.getCanvas();
-        const image = canvas.toDataURL('image/png');
-        setTimeout(() => {
-          testUtils
-            .compareImages(
-              image,
-              volumeURI_100_100_10_1_1_1_0_sagittal_linear,
-              'volumeURI_100_100_10_1_1_1_0_sagittal_linear'
-            )
-            .then(done, done.fail);
-        }, 200);
-      });
+      element.addEventListener(
+        Events.IMAGE_RENDERED,
+        () => {
+          expectVolumePicture(vp, volumeId, InterpolationType.LINEAR);
+          done();
+        },
+        { once: true }
+      );
 
       try {
         volumeLoader
@@ -465,19 +594,14 @@ describe('Volume Viewport GPU -- ', () => {
       });
       const vp = renderingEngine.getViewport(viewportId);
 
-      element.addEventListener(Events.IMAGE_RENDERED, () => {
-        const canvas = vp.getCanvas();
-        const image = canvas.toDataURL('image/png');
-        setTimeout(() => {
-          testUtils
-            .compareImages(
-              image,
-              volumeURI_100_100_10_1_1_1_0_coronal_nearest,
-              'volumeURI_100_100_10_1_1_1_0_coronal_nearest'
-            )
-            .then(done, done.fail);
-        }, 200);
-      });
+      element.addEventListener(
+        Events.IMAGE_RENDERED,
+        () => {
+          expectVolumePicture(vp, volumeId, InterpolationType.NEAREST);
+          done();
+        },
+        { once: true }
+      );
 
       try {
         // we don't set imageIds as we are mocking the imageVolume to
@@ -489,8 +613,8 @@ describe('Volume Viewport GPU -- ', () => {
               vp.setDisplaySetPresentation({
                 interpolationType: InterpolationType.NEAREST,
               });
+              vp.render();
             });
-            vp.render();
           })
           .catch((e) => {
             done(e);
@@ -519,19 +643,14 @@ describe('Volume Viewport GPU -- ', () => {
       });
       const vp = renderingEngine.getViewport(viewportId);
 
-      element.addEventListener(Events.IMAGE_RENDERED, () => {
-        const canvas = vp.getCanvas();
-        const image = canvas.toDataURL('image/png');
-        setTimeout(() => {
-          testUtils
-            .compareImages(
-              image,
-              volumeURI_100_100_10_1_1_1_0_coronal_linear,
-              'volumeURI_100_100_10_1_1_1_0_coronal_linear'
-            )
-            .then(done, done.fail);
-        }, 200);
-      });
+      element.addEventListener(
+        Events.IMAGE_RENDERED,
+        () => {
+          expectVolumePicture(vp, volumeId, InterpolationType.LINEAR);
+          done();
+        },
+        { once: true }
+      );
 
       try {
         volumeLoader
@@ -569,19 +688,14 @@ describe('Volume Viewport GPU -- ', () => {
       });
       const vp = renderingEngine.getViewport(viewportId);
 
-      element.addEventListener(Events.IMAGE_RENDERED, () => {
-        const canvas = vp.getCanvas();
-        const image = canvas.toDataURL('image/png');
-        setTimeout(() => {
-          testUtils
-            .compareImages(
-              image,
-              volumeURI_100_100_10_1_1_1_0_coronal_nearest,
-              'volumeURI_100_100_10_1_1_1_0_coronal_nearest'
-            )
-            .then(done, done.fail);
-        }, 200);
-      });
+      element.addEventListener(
+        Events.IMAGE_RENDERED,
+        () => {
+          expectVolumePicture(vp, volumeId, InterpolationType.NEAREST);
+          done();
+        },
+        { once: true }
+      );
 
       try {
         volumeLoader
@@ -591,8 +705,8 @@ describe('Volume Viewport GPU -- ', () => {
               vp.setDisplaySetPresentation({
                 interpolationType: InterpolationType.NEAREST,
               });
+              vp.render();
             });
-            vp.render();
           })
           .catch((e) => {
             done(e);
@@ -662,7 +776,6 @@ describe('Volume Viewport GPU -- ', () => {
       });
 
       const vp = renderingEngine.getViewport(viewportId);
-      const canvas = vp.getCanvas();
 
       const volumeId = testUtils.encodeVolumeIdInfo({
         loader: 'fakeVolumeLoader',
@@ -675,18 +788,14 @@ describe('Volume Viewport GPU -- ', () => {
         zSpacing: 1,
       });
 
-      element.addEventListener(Events.IMAGE_RENDERED, () => {
-        const image = canvas.toDataURL('image/png');
-        setTimeout(() => {
-          testUtils
-            .compareImages(
-              image,
-              volumeURI_100_100_10_1_1_1_0_coronal_nearest,
-              'volumeURI_100_100_10_1_1_1_0_coronal_nearest'
-            )
-            .then(done, done.fail);
-        }, 200);
-      });
+      element.addEventListener(
+        Events.IMAGE_RENDERED,
+        () => {
+          expectVolumePicture(vp, volumeId, InterpolationType.NEAREST);
+          done();
+        },
+        { once: true }
+      );
 
       try {
         volumeLoader
@@ -696,8 +805,8 @@ describe('Volume Viewport GPU -- ', () => {
               vp.setDisplaySetPresentation({
                 interpolationType: InterpolationType.NEAREST,
               });
+              vp.render();
             });
-            vp.render();
           })
           .catch((e) => {
             done(e);
@@ -726,19 +835,14 @@ describe('Volume Viewport GPU -- ', () => {
       });
       const vp = renderingEngine.getViewport(viewportId);
 
-      element.addEventListener(Events.IMAGE_RENDERED, () => {
-        const canvas = vp.getCanvas();
-        const image = canvas.toDataURL('image/png');
-        setTimeout(() => {
-          testUtils
-            .compareImages(
-              image,
-              volumeURI_100_100_10_1_1_1_0_coronal_nearest,
-              'volumeURI_100_100_10_1_1_1_0_coronal_nearest'
-            )
-            .then(done, done.fail);
-        }, 200);
-      });
+      element.addEventListener(
+        Events.IMAGE_RENDERED,
+        () => {
+          expectVolumePicture(vp, volumeId, InterpolationType.NEAREST);
+          done();
+        },
+        { once: true }
+      );
 
       try {
         volumeLoader
@@ -748,8 +852,8 @@ describe('Volume Viewport GPU -- ', () => {
               vp.setDisplaySetPresentation({
                 interpolationType: InterpolationType.NEAREST,
               });
+              vp.render();
             });
-            vp.render();
           })
           .catch((e) => {
             done(e);
@@ -824,19 +928,14 @@ describe('Volume Viewport GPU -- ', () => {
       });
       const vp = renderingEngine.getViewport(viewportId);
 
-      element.addEventListener(Events.IMAGE_RENDERED, () => {
-        const canvas = vp.getCanvas();
-        const image = canvas.toDataURL('image/png');
-        setTimeout(() => {
-          testUtils
-            .compareImages(
-              image,
-              volumeURI_100_100_10_1_1_1_0_coronal_nearest,
-              'volumeURI_100_100_10_1_1_1_0_coronal_nearest'
-            )
-            .then(done, done.fail);
-        }, 200);
-      });
+      element.addEventListener(
+        Events.IMAGE_RENDERED,
+        () => {
+          expectVolumePicture(vp, volumeId, InterpolationType.NEAREST);
+          done();
+        },
+        { once: true }
+      );
 
       try {
         volumeLoader
@@ -889,19 +988,14 @@ describe('Volume Viewport GPU -- ', () => {
       });
       const vp = renderingEngine.getViewport(viewportId);
 
-      element.addEventListener(Events.IMAGE_RENDERED, () => {
-        const canvas = vp.getCanvas();
-        const image = canvas.toDataURL('image/png');
-        setTimeout(() => {
-          testUtils
-            .compareImages(
-              image,
-              volumeURI_100_100_10_1_1_1_1_color_coronal_nearest,
-              'volumeURI_100_100_10_1_1_1_1_color_coronal_nearest'
-            )
-            .then(done, done.fail);
-        }, 200);
-      });
+      element.addEventListener(
+        Events.IMAGE_RENDERED,
+        () => {
+          expectVolumePicture(vp, volumeId, InterpolationType.NEAREST);
+          done();
+        },
+        { once: true }
+      );
 
       try {
         volumeLoader
@@ -911,8 +1005,8 @@ describe('Volume Viewport GPU -- ', () => {
               vp.setDisplaySetPresentation({
                 interpolationType: InterpolationType.NEAREST,
               });
+              vp.render();
             });
-            vp.render();
           })
           .catch((e) => {
             done(e);
@@ -941,19 +1035,14 @@ describe('Volume Viewport GPU -- ', () => {
         rgb: 1,
       });
       const vp = renderingEngine.getViewport(viewportId);
-      element.addEventListener(Events.IMAGE_RENDERED, () => {
-        const canvas = vp.getCanvas();
-        const image = canvas.toDataURL('image/png');
-        setTimeout(() => {
-          testUtils
-            .compareImages(
-              image,
-              volumeURI_100_100_10_1_1_1_1_color_coronal_linear,
-              'volumeURI_100_100_10_1_1_1_1_color_coronal_linear'
-            )
-            .then(done, done.fail);
-        }, 200);
-      });
+      element.addEventListener(
+        Events.IMAGE_RENDERED,
+        () => {
+          expectVolumePicture(vp, volumeId, InterpolationType.LINEAR);
+          done();
+        },
+        { once: true }
+      );
 
       try {
         volumeLoader
@@ -963,8 +1052,8 @@ describe('Volume Viewport GPU -- ', () => {
               vp.setDisplaySetPresentation({
                 interpolationType: InterpolationType.LINEAR,
               });
+              vp.render();
             });
-            vp.render();
           })
           .catch((e) => {
             done(e);

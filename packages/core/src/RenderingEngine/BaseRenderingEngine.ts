@@ -378,23 +378,6 @@ abstract class BaseRenderingEngine {
   }
 
   /**
-   * Renders any viewports viewing the given Frame Of Reference.
-   *
-   * @param FrameOfReferenceUID - The unique identifier of the
-   * Frame Of Reference.
-   */
-  public renderFrameOfReference = (FrameOfReferenceUID: string): void => {
-    const viewports = this._getViewportsAsArray();
-    const viewportIdsWithSameFrameOfReferenceUID = viewports.map((vp) => {
-      if (vp.getFrameOfReferenceUID() === FrameOfReferenceUID) {
-        return vp.id;
-      }
-    });
-
-    this.renderViewports(viewportIdsWithSameFrameOfReferenceUID);
-  };
-
-  /**
    * Renders the provided Viewport IDs.
    *
    */

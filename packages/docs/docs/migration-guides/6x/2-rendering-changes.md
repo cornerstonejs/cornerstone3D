@@ -283,6 +283,11 @@ leave the canvas. Against the legacy volume viewport:
 - **A reset of the presentation does not move the camera.**
   `resetDisplaySetPresentation(displaySetId)` also clears the slab, the blend
   mode, the opacity and the visibility. `resetViewState()` resets the view.
+- **A reset of the presentation clears it to `{}`.** After
+  `resetDisplaySetPresentation(displaySetId)`,
+  `getDisplaySetPresentation(displaySetId)` gives `{}`: the `visible: true`
+  that the mount stored goes too, and a hidden display set shows again. To
+  keep a display set hidden, set `{ visible: false }` again after the reset.
 - **An edit of an actor does not last.** The next presentation update writes
   the look of the actor again. Set the look through the presentation.
 - **No preset on a slice.** A preset is a look of a 3D viewport. For a slice,
@@ -313,8 +318,15 @@ leave the canvas. Against the legacy volume viewport:
   `DISPLAY_AREA_MODIFIED`.
 - **A `displayArea` in the options of a viewport is not applied by itself.**
   The picture follows the view state only, at the mount and after
-  `resetViewState()`. `getDisplayArea()` still returns the display area of
-  the options while none is set in the view state.
+  `resetViewState()`.
+- **`getDisplayArea()` answers from the view state only.** It is undefined
+  until a display area is set in the view state, even when the options of
+  the viewport have one, and so is the `displayArea` of
+  `viewportProjection.getPresentation(viewport)`. On a 5.x viewport it
+  returned the display area of the options. The display area given at
+  `enableElement` is still there as `viewport.defaultOptions.displayArea`:
+  to show it, call `viewport.setDisplayArea(viewport.defaultOptions.displayArea)`
+  after the mount.
 - **A display area of `type: 'SCALE'` reads its `scale` against the fit.** A
   scale of 1 is the fit of the picture. On a legacy viewport 1 meant one
   image pixel on one screen pixel. The scale of the view state multiplies

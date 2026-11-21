@@ -75,7 +75,9 @@ renamed property, the properties `requestedType`, `options`, `scaling` and
 the others of the map, and the removed helpers of the core
 (`viewportSupportsStackCompatibility`, `getImageLegacy`, `scrollVolume`,
 `getVolumeViewportScrollInfo` and the others), also in an
-`export { ... } from '@cornerstonejs/core'`.
+`export { ... } from '@cornerstonejs/core'`, and
+`renderFrameOfReference` on a rendering engine (also in brackets): call
+`renderViewports` with the ids of the viewports of that frame of reference.
 
 ## Development
 

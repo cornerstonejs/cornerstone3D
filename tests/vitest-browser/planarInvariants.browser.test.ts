@@ -20,7 +20,8 @@ import {
   type PlanarViewportContext,
 } from './harness';
 
-const { InterpolationType, OrientationAxis, RenderBackends, ViewportType } = Enums;
+const { InterpolationType, OrientationAxis, RenderBackends, ViewportType } =
+  Enums;
 
 // Per shared-context rule 6: canvas-px comparisons use ~1e-2 epsilon (we use
 // 0.5px, matching the plan's explicit "within 0.5 canvas px" wording for the
@@ -421,9 +422,8 @@ describe('planarInvariants: presentation round trip', () => {
     const ctx = track(await createPlanarViewport());
     const { viewport, element, displaySetId } = ctx;
 
-    const defaultsBeforeMutation = viewport.getDisplaySetPresentation(
-      displaySetId
-    );
+    const defaultsBeforeMutation =
+      viewport.getDisplaySetPresentation(displaySetId);
 
     // Defaults captured right after mount: only the load-time `visible: true`
     // default is stored; interpolationType/voiRange overrides are unset
@@ -453,44 +453,26 @@ describe('planarInvariants: presentation round trip', () => {
     expect(afterReset?.voiRange).toEqual(defaultsBeforeMutation?.voiRange);
   });
 
-  // Divergence found while implementing the above test: resetDisplaySetPresentation
-  // (Planar/PlanarViewport.ts:1511) replaces the ENTIRE stored presentation
-  // object with `{}` rather than restoring the pre-mutation snapshot. The
-  // interpolationType/voiRange fields do return to their (undefined) default,
-  // which is what the test above verifies, but any other field captured in
-  // the pre-mutation snapshot -- notably `visible: true`, set once at mount
-  // time via setDefaultDataPresentation -- is dropped too, so
-  // getDisplaySetPresentation(displaySetId) does NOT deep-equal the
-  // pre-mutation snapshot as a whole. Observed: defaultsBeforeMutation is
-  // `{ visible: true }`; afterReset is `{}`. The method's own doc comment
-  // frames this as intentional ("the next viewport intentionally has no
-  // get/set Properties"), but it is still a real behavioral divergence from
-  // a literal "reset restores defaults" contract, so it is kept here as a
-  // documented test.fails rather than silently dropped or narrowed away.
-  // Open issue: resetDisplaySetPresentation drops the visible flag of the mount.
-  test.fails(
-    'resetDisplaySetPresentation does not restore the full pre-mutation presentation snapshot (visible flag is lost)',
-    async () => {
-      const ctx = track(await createPlanarViewport());
-      const { viewport, element, displaySetId } = ctx;
+  test('resetDisplaySetPresentation clears the presentation to {}, the visible flag of the mount too', async () => {
+    const ctx = track(await createPlanarViewport());
+    const { viewport, element, displaySetId } = ctx;
 
-      const defaultsBeforeMutation = viewport.getDisplaySetPresentation(
-        displaySetId
-      );
+    expect(viewport.getDisplaySetPresentation(displaySetId)).toStrictEqual({
+      visible: true,
+    });
 
-      viewport.setDisplaySetPresentation(displaySetId, {
-        interpolationType: InterpolationType.NEAREST,
-        voiRange: { upper: 300, lower: -100 },
-      });
-      await renderAndWait(element, viewport);
+    viewport.setDisplaySetPresentation(displaySetId, {
+      interpolationType: InterpolationType.NEAREST,
+      voiRange: { upper: 300, lower: -100 },
+      visible: false,
+    });
+    await renderAndWait(element, viewport);
 
-      viewport.resetDisplaySetPresentation(displaySetId);
-      await renderAndWait(element, viewport);
+    viewport.resetDisplaySetPresentation(displaySetId);
+    await renderAndWait(element, viewport);
 
-      const afterReset = viewport.getDisplaySetPresentation(displaySetId);
-      expect(afterReset).toEqual(defaultsBeforeMutation);
-    }
-  );
+    expect(viewport.getDisplaySetPresentation(displaySetId)).toStrictEqual({});
+  });
 });
 
 describe('planarInvariants: view state round trip', () => {

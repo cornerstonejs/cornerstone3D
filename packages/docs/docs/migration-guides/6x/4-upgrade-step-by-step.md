@@ -610,7 +610,9 @@ the presentation gives zoom 1 and pan `[0, 0]`.
   to true.
 - A camera that was set to move through slices is step 6.
 - A display area in the options of a viewport is not applied by itself. Call
-  `viewport.setViewState({ displayArea })` after the mount.
+  `viewport.setViewState({ displayArea })` after the mount. `getDisplayArea()`
+  reads the view state only; code that read the option back through it reads
+  `viewport.defaultOptions.displayArea`.
 - A stretch is `viewport.setViewState({ scale: [x, y] })`. `getAspectRatio()`
   of a planar viewport reads it back as the pair divided by its smaller
   number, as in 5.x. The legacy `setAspectRatio([w, h], { fit: true })` is

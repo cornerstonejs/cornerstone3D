@@ -11,6 +11,7 @@ import {
   isBoundTo,
   isCoreExport,
   isMountedBefore,
+  isRenderingEngine,
   isRepeatable,
   viewportEvidence,
   methodCall,
@@ -153,6 +154,9 @@ const REPORTED_CORE_NAMES = new Set([
   'ECGUtilities',
   'scrollVolume',
 ]);
+
+/** The removed members of a rendering engine that the transform reports. */
+const REPORTED_ENGINE_MEMBERS = new Set(['renderFrameOfReference']);
 
 /** The keys of `setProperties` that are keys of the presentation too. */
 const PRESENTATION_KEYS = new Set([
@@ -669,6 +673,40 @@ function reportCoreNames(run: Run): void {
 }
 
 /**
+ * Reports the removed members of a rendering engine of the core, such as
+ * `renderingEngine.renderFrameOfReference(frameOfReferenceUID)`, also in
+ * brackets.
+ */
+function reportEngineMembers(run: Run): void {
+  const names = [...REPORTED_ENGINE_MEMBERS].join('|');
+
+  for (const node of run.rootNode.findAll({
+    rule: {
+      any: [
+        {
+          kind: 'member_expression',
+          has: { field: 'property', regex: `^(${names})$` },
+        },
+        { kind: 'subscript_expression' },
+      ],
+    },
+  })) {
+    const name =
+      node.kind() === 'member_expression'
+        ? node.field('property')?.text()
+        : bracketKey(node);
+
+    if (
+      name &&
+      REPORTED_ENGINE_MEMBERS.has(name) &&
+      isRenderingEngine(node.field('object'))
+    ) {
+      reportSite(run, name, node);
+    }
+  }
+}
+
+/**
  * Reports a bracket access with a string key to a legacy member on a
  * viewport, such as `viewport['getProperties']()`: it names the member that
  * `viewport.getProperties` names, so it is reported where the dot form is
@@ -692,7 +730,8 @@ function reportBracketMembers(run: Run, names: Set<string>): void {
  * `resetCamera`, `setProperties` of presentation keys, the actor reads, the
  * questions that became functions of `utilities`, and the renamed
  * properties. Every other legacy member on a viewport is reported, and so
- * are the removed helpers of the core.
+ * are the removed helpers of the core and the removed members of a
+ * rendering engine.
  */
 const codemod: Codemod<TSX> = (root) => {
   const rootNode = root.root();
@@ -748,6 +787,7 @@ const codemod: Codemod<TSX> = (root) => {
 
   reportBracketMembers(run, new Set([...methodNames, ...propertyNames]));
   reportCoreNames(run);
+  reportEngineMembers(run);
 
   const importEdits = run.imports.edits();
 

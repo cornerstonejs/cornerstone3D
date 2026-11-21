@@ -1899,12 +1899,12 @@ class PlanarViewport extends GenericViewport<
   }
 
   /**
-   * Returns the current display-area declaration, if any.
+   * Returns the display area of the view state, if any. A display area in
+   * the options of the viewport is not read: the one given at creation stays
+   * in `defaultOptions.displayArea`.
    */
   getDisplayArea(): PlanarDisplayArea | undefined {
-    return cloneDisplayArea(
-      this.viewState.displayArea ?? this.options.displayArea
-    );
+    return cloneDisplayArea(this.viewState.displayArea);
   }
 
   /**
@@ -2545,17 +2545,15 @@ class PlanarViewport extends GenericViewport<
   }
 
   /**
-   * Resets the stored per-display-set presentation (VOI / window level,
-   * colormap and inversion) back to the computed defaults for a single display
-   * set. This is the reset counterpart to `setDisplaySetPresentation` /
-   * `getDisplaySetPresentation`; the next viewport intentionally has no
-   * get/set Properties, so it does not use the legacy `*Properties` naming.
-   *
-   * Clearing the stored presentation override makes the render path fall back
-   * to its defaults on the next apply (default VOI, no colormap, no inversion).
-   * "Reset View" relies on it (view/camera state is reset separately by
-   * `resetViewState`); without it, "Reset View" left the window level at the
-   * user-modified value on direct generic viewports.
+   * Clears the stored presentation of one display set to `{}`. This is the
+   * contract: every key goes, the `visible: true` that the mount stored too,
+   * so `getDisplaySetPresentation(dataId)` then gives `{}` and a hidden
+   * display set shows again. The render path then draws its defaults (the
+   * default VOI, no colormap, no inversion, no slab, the default blend mode
+   * and opacity) and `VOI_MODIFIED` reports the default VOI range, unless
+   * the viewport suppresses events. The view state does not change:
+   * `resetViewState` resets it. "Reset View" calls both, so that it also
+   * resets a window level that the user changed.
    *
    * @param dataId - Optional display set id; defaults to the active source.
    */
