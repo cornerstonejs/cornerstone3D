@@ -204,6 +204,13 @@ written on 5.x with `PLANAR_NEXT` runs on 6.0 too.
   [a decision](#changes-that-need-a-decision-by-a-person).
 - A viewport of a next type has no legacy members. Its screen runs again when
   steps 2 to 8 are done for it.
+- An application can use `ViewportType.STACK` and `ORTHOGRAPHIC` as its own
+  marker of the data: it stores the value in its state and compares it later
+  to tell a stack from a volume. Both are `PLANAR` now, so the marker says
+  nothing, and the codemod also rewrites the function that makes it (a
+  function that returned `STACK` or `ORTHOGRAPHIC` returns `PLANAR` on both
+  paths). Give the application its own values for the shape of its data, and
+  ask `viewport.getCurrentMode()` for a live viewport.
 
 ## Step 2. Class checks and TypeScript types
 
