@@ -145,6 +145,31 @@ entry names a rule, a file and a line.
   `AXIAL` orientation it wrote, a `STACK_NEW_IMAGE` listener that now hears
   `NEW_IMAGE` for the slices of a volume too, a `setUseCPURendering` call.
 
+Two review entries are about a rewrite that is right name by name and still
+changes what the code says:
+
+- A rule that starts with
+  `ViewportType.PLANAR: one function returned STACK and ORTHOGRAPHIC`. A
+  function returned `STACK` on one path and `ORTHOGRAPHIC` on another, and
+  returns `PLANAR` on both now. The entry names the line of the function.
+  Read its callers. Where the answer is the `type` of a viewport input,
+  there is nothing to do. Where the application stores it or compares it to
+  tell a stack from a volume, the answer is lost: give the application its
+  own values for the shape of its data, and ask `viewport.getCurrentMode()`
+  for a live viewport ([step 1](#step-1-the-viewport-types)).
+- A rule such as
+  `ViewportType.VOLUME_3D: two operands of one || are the same now`, also
+  for `&&`, for two `case` labels of one `switch`, for two entries of a list
+  used with `includes`, and for a renamed class such as `VolumeViewport3D`.
+  Two tests that named a legacy and a next name in 5.x, such as
+  `type === VOLUME_3D || type === VOLUME_3D_NEXT`, are one test now. The
+  entry names the line of the second one. Where the code meant "any 3D
+  viewport", delete one of the two. Where it told a legacy viewport from a
+  next one, the test is true for every viewport of that type in 6.0: delete
+  the branch for the legacy viewport, and read the other tests of that type
+  near it ([Viewport types](./3-api-map.md#viewport-types)). Of two equal
+  `case` labels only the first runs.
+
 Then run your formatter and your type checker, and do the steps of this page:
 their searches find what is left. On the 5.x examples of this repository the
 codemod rewrote almost two of three uses of a removed name, rewrote none

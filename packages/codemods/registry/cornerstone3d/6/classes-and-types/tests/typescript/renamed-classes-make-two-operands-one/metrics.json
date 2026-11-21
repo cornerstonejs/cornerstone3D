@@ -1,0 +1,36 @@
+{
+  "cornerstone3d-6-review": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "17",
+        "rule": "VolumeViewport3D: two operands of one || are the same now, read what each tested in 5.x"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "24",
+        "rule": "VideoViewport: two operands of one && are the same now, read what each tested in 5.x"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "28",
+        "rule": "ECGViewport: two entries of one list used with includes are the same now, read what each named in 5.x"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "38",
+        "rule": "VideoViewport: two case labels of one switch are the same now, read what each chose in 5.x"
+      },
+      "count": 1
+    }
+  ]
+}

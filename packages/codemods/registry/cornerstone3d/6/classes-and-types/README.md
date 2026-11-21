@@ -71,6 +71,18 @@ npx codemod @cornerstonejs/cornerstone3d-6-classes-and-types
 ## Reported
 
 - Review: each `instanceof` rewrite.
+- Review: two operands that a class rename makes the same expression
+  (`VolumeViewport3D: two operands of one || are the same now, read what each tested in 5.x`,
+  at the line of the second one): in a chain of `||` or of `&&`, as `case`
+  labels of one `switch`, or as entries of an array literal used with
+  `includes`, directly or through a `const`.
+  `viewport instanceof VolumeViewport3D || viewport instanceof GenericVolumeViewport3D`
+  told a legacy viewport from a next one in 5.x and is one test after the
+  rename: delete one operand, or the branch for the legacy viewport. Of two
+  equal `case` labels only the first runs. Operands are compared without
+  comments, casts and white space, so two casts of one value
+  (`(viewport as Types.IStackViewport).id || (viewport as Types.IVolumeViewport).id`)
+  have no entry.
 - Manual: an `instanceof` before a mount
   (`the viewport may not show its data yet`), a legacy class used as a value
   (`new StackViewport(...)`, a shorthand property, an export or a re-export

@@ -6,17 +6,22 @@ import {
   EditSet,
   bracketKey,
   declarationNodeOf,
+  enclosingFunction,
   indentOf,
   isCoreEnum,
   isMountedBefore,
   isRenderingEngine,
+  isStableBinding,
+  mergedOperands,
   methodCall,
   objectEntries,
   referencesOf,
   site,
   staticKeyName,
+  textAfterEdits,
   unwrap,
   viewportEvidence,
+  writtenValues,
 } from './lib.ts';
 import type { Node, ViewportEvidence } from './lib.ts';
 
@@ -63,6 +68,9 @@ const INPUT_KEYS = ['viewportId', 'element'];
 
 /** The methods of a rendering engine that take viewport inputs. */
 const INPUT_METHODS = new Set(['enableElement', 'setViewports']);
+
+/** The longest chain of names that a returned value is followed through. */
+const MAX_NAME_DEPTH = 4;
 
 /** The parents through which a viewport input keeps flowing to a call. */
 const FLOW_KINDS = new Set([
@@ -649,11 +657,187 @@ function reportBracketMembers(run: Run): void {
 }
 
 /**
+ * Returns the values that a name holds: the value of a `const`, or every
+ * value of a `let` or a `var` that the file writes only as `name = value`.
+ * A parameter, a destructured name and a name written in another way give
+ * nothing.
+ */
+function valuesOfName(identifier: Node): Node[] {
+  const declaration = declarationNodeOf(identifier);
+  const holder = declaration?.parent();
+
+  if (
+    !declaration ||
+    holder?.kind() !== 'variable_declarator' ||
+    holder.field('name')?.id() !== declaration.id()
+  ) {
+    return [];
+  }
+
+  if (!isStableBinding(declaration)) {
+    return writtenValues(declaration) ?? [];
+  }
+
+  const value = holder.field('value');
+
+  return value ? [value] : [];
+}
+
+/**
+ * Returns the members of the core `ViewportType` that an expression can
+ * give: the member itself, each branch of a conditional, and each value of
+ * a name. Any other expression gives nothing.
+ */
+function typeMembersOf(expression: Node, depth = 0): Node[] {
+  const value = unwrap(expression);
+  const kind = value.kind();
+
+  if (kind === 'member_expression') {
+    return isCoreEnum(value.field('object'), 'ViewportType') ? [value] : [];
+  }
+
+  if (kind === 'ternary_expression') {
+    return ['consequence', 'alternative'].flatMap((branch) => {
+      const node = value.field(branch);
+
+      return node ? typeMembersOf(node, depth) : [];
+    });
+  }
+
+  if (kind !== 'identifier' || depth >= MAX_NAME_DEPTH) {
+    return [];
+  }
+
+  return valuesOfName(value).flatMap((node) => typeMembersOf(node, depth + 1));
+}
+
+/**
+ * Reports a function in which the rewrites turn the returns of two removed
+ * types into one 6.0 type: it returned `STACK` on one path and
+ * `ORTHOGRAPHIC` on another, and now returns `PLANAR` on both. That is right
+ * for a viewport type, and an application that read the answer as "a stack
+ * or a volume" has lost it. A return counts directly, in a branch of a
+ * conditional, and through a name whose values the file shows.
+ */
+function reportMergedReturns(run: Run): void {
+  const edits = run.edits.all();
+
+  if (!edits.length) {
+    return;
+  }
+
+  const order = Object.keys(MODE_OF_LEGACY);
+  const returned = new Map<number, { fn: Node; members: Node[] }>();
+  const values = [
+    ...run.rootNode
+      .findAll({ rule: { kind: 'return_statement' } })
+      .map((statement) =>
+        statement
+          .children()
+          .find((child) => child.isNamed() && child.kind() !== 'comment')
+      ),
+    ...run.rootNode
+      .findAll({ rule: { kind: 'arrow_function' } })
+      .map((arrow) => arrow.field('body'))
+      .filter((body) => body?.kind() !== 'statement_block'),
+  ];
+
+  for (const value of values) {
+    const fn = value ? enclosingFunction(value) : undefined;
+
+    if (!fn) {
+      continue;
+    }
+
+    const entry = returned.get(fn.id()) ?? { fn, members: [] };
+
+    entry.members.push(...typeMembersOf(value));
+    returned.set(fn.id(), entry);
+  }
+
+  for (const { fn, members } of returned.values()) {
+    const removed = new Map<string, string[]>();
+
+    for (const member of members) {
+      const property = member.field('property');
+      const before = property?.text() ?? '';
+      const after = property ? textAfterEdits(property, edits) : undefined;
+
+      if (!after || after === before || NEXT_MEMBERS[before]) {
+        continue;
+      }
+
+      const names = removed.get(after) ?? [];
+
+      if (!names.includes(before)) {
+        names.push(before);
+      }
+
+      removed.set(after, names);
+    }
+
+    for (const [after, names] of removed) {
+      if (names.length > 1) {
+        const list = names
+          .sort((a, b) => order.indexOf(a) - order.indexOf(b))
+          .join(' and ');
+
+        review.increment(
+          site(
+            run.root,
+            `ViewportType.${after}: one function returned ${list}, read what its callers do with the answer`,
+            fn
+          )
+        );
+      }
+    }
+  }
+}
+
+/**
+ * Returns the name of a rule for two operands that became the same: the
+ * member or the string that the rewrite wrote. Undefined for another
+ * rewrite, such as two tests of the content mode: a member and its string
+ * meant the same in 5.x.
+ */
+function mergedLabel(inserted: string[]): string | undefined {
+  for (const text of inserted) {
+    if (/^[A-Z][A-Z0-9_]*$/.test(text)) {
+      return `ViewportType.${text}`;
+    }
+
+    if (/^['"]\w+['"]$/.test(text)) {
+      return `'${text.slice(1, -1)}'`;
+    }
+  }
+
+  return undefined;
+}
+
+/**
+ * Reports two operands that the rewrites make the same expression: in a
+ * chain of `||` or of `&&`, as `case` labels of one `switch`, or as entries
+ * of a list used with `includes`. A test of `VOLUME_3D` beside a test of
+ * `VOLUME_3D_NEXT` told a legacy viewport from a next one in 5.x, and the
+ * two are one test in 6.0.
+ */
+function reportMergedOperands(run: Run): void {
+  for (const merged of mergedOperands(run.rootNode, run.edits.all())) {
+    const label = mergedLabel(merged.inserted);
+
+    if (label) {
+      review.increment(site(run.root, `${label}: ${merged.note}`, merged.node));
+    }
+  }
+}
+
+/**
  * Rewrites the removed and deprecated viewport types of Cornerstone3D 5.x:
  * `STACK` and `ORTHOGRAPHIC` in a viewport input become `PLANAR`, a comparison
  * with `viewport.type` asks for the content mode, the `_NEXT` members and
  * the `*Next` strings get their plain names. `PERSPECTIVE` and every other
- * site are reported.
+ * site are reported. A function that now returns one type where it returned
+ * two, and two operands that are now the same, are reported for review.
  */
 const codemod: Codemod<TSX> = (root) => {
   const rootNode = root.root();
@@ -703,6 +887,8 @@ const codemod: Codemod<TSX> = (root) => {
 
   rewriteDestructured(run);
   reportBracketMembers(run);
+  reportMergedReturns(run);
+  reportMergedOperands(run);
 
   if (!run.edits.all().length) {
     return null;

@@ -60,6 +60,30 @@ file and a line.
   `NEW_IMAGE` for the slices of a volume too, or an `ORTHOGRAPHIC` viewport
   that got the 5.x default orientation `AXIAL` written out.
 
+Two review rules are about a rewrite that is right name by name and still
+changes what the code says:
+
+- A rule that starts with
+  `ViewportType.PLANAR: one function returned STACK and ORTHOGRAPHIC`, at
+  the line of the function. It returned `STACK` on one path and
+  `ORTHOGRAPHIC` on another, and returns `PLANAR` on both now. Read its
+  callers. Where a caller passes the answer to a viewport input, there is
+  nothing to do. Where the application stores or compares it to tell a stack
+  from a volume, the answer is lost: give the application its own values for
+  the shape of its data, and ask `viewport.getCurrentMode()` for a live
+  viewport.
+- A rule such as
+  `ViewportType.VOLUME_3D: two operands of one || are the same now`, at the
+  line of the second operand; also for `&&`, for two `case` labels of one
+  `switch`, for two entries of a list used with `includes`, and for a
+  renamed class such as `VolumeViewport3D`.
+  `type === VOLUME_3D || type === VOLUME_3D_NEXT` is one test after the
+  rename. Where the code meant "any 3D viewport", delete one of the two.
+  Where it told a legacy viewport from a next one, the test is true for
+  every viewport of that type in 6.0: delete the branch for the legacy
+  viewport, and read the other tests of that type near it. Of two equal
+  `case` labels only the first runs.
+
 ## Included Migrations
 
 In the order in which they run:

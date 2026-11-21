@@ -178,6 +178,74 @@ const LOOSE_PARENTS = new Set([
   'ternary_expression',
 ]);
 
+/**
+ * The expressions around a value that keep it: parentheses, casts and
+ * non-null assertions.
+ */
+const KEEPING_KINDS = new Set([
+  'parenthesized_expression',
+  'as_expression',
+  'satisfies_expression',
+  'non_null_expression',
+  'type_assertion',
+]);
+
+/**
+ * The parents of a name that write it in another way than `name = value`:
+ * an operator assignment, `++` or `--`, a `for in` or `for of`, or a
+ * destructuring target.
+ */
+const OTHER_WRITES = new Set([
+  'augmented_assignment_expression',
+  'update_expression',
+  'for_in_statement',
+  'object_pattern',
+  'array_pattern',
+  'pair_pattern',
+  'assignment_pattern',
+  'object_assignment_pattern',
+  'rest_pattern',
+]);
+
+/** The operators whose operands a chain of tests joins. */
+const CHAIN_OPERATORS = new Set(['||', '&&']);
+
+/** The nodes whose text is compared as one token. */
+const TOKEN_KINDS = new Set(['string', 'template_string', 'regex', 'number']);
+
+/** The nodes that only TypeScript reads, wherever they stand. */
+const TYPE_PART_KINDS = new Set(['type_arguments', 'type_annotation']);
+
+/** What to read at two operands that a run makes the same, by their place. */
+const MERGED_NOTES: Record<MergedPlace, string> = {
+  '||': 'two operands of one || are the same now, read what each tested in 5.x',
+  '&&': 'two operands of one && are the same now, read what each tested in 5.x',
+  case: 'two case labels of one switch are the same now, read what each chose in 5.x',
+  includes:
+    'two entries of one list used with includes are the same now, read what each named in 5.x',
+};
+
+/**
+ * Where two operands stand: in a chain of `||` or of `&&`, as `case` labels
+ * of one `switch`, or as entries of an array read with `includes`.
+ */
+export type MergedPlace = '||' | '&&' | 'case' | 'includes';
+
+/**
+ * An operand that the edits of a run make the same expression as an operand
+ * before it in the same place, where the two differed.
+ */
+export interface MergedOperand {
+  /** The later of the two operands. */
+  node: Node;
+  /** Where the two operands stand. */
+  place: MergedPlace;
+  /** What a person reads there, for the rule of the report. */
+  note: string;
+  /** The texts that the edits write into the two operands. */
+  inserted: string[];
+}
+
 /** One named specifier of an import statement. */
 interface ImportSpecifierInfo {
   name: string;
@@ -1530,6 +1598,62 @@ export function isBoundTo(node: Node, declaration: Node): boolean {
 }
 
 /**
+ * Returns the outermost expression that keeps the value of a node through
+ * parentheses, casts and non-null assertions.
+ */
+export function keptValue(node: Node): Node {
+  let current = node;
+  let parent = node.parent();
+
+  while (parent && KEEPING_KINDS.has(parent.kind())) {
+    current = parent;
+    parent = parent.parent();
+  }
+
+  return current;
+}
+
+/**
+ * Returns the values that a declared name gets: the value of its declaration
+ * and the value of each `name = value`. Undefined when the file writes the
+ * name in another way, such as `+=` or a destructuring.
+ */
+export function writtenValues(declaration: Node): Node[] | undefined {
+  const holder = declaration.parent();
+  const initial =
+    holder?.kind() === 'variable_declarator' &&
+    holder.field('name')?.id() === declaration.id()
+      ? holder.field('value')
+      : undefined;
+  const values = initial ? [initial] : [];
+
+  for (const reference of referencesOf(declaration)) {
+    let child = reference;
+    let parent = reference.parent();
+
+    while (parent?.kind() === 'parenthesized_expression') {
+      child = parent;
+      parent = parent.parent();
+    }
+
+    const kind = parent?.kind() ?? '';
+    const right =
+      kind === 'assignment_expression' &&
+      parent.field('left')?.id() === child.id()
+        ? parent.field('right')
+        : undefined;
+
+    if (right) {
+      values.push(right);
+    } else if (OTHER_WRITES.has(kind)) {
+      return undefined;
+    }
+  }
+
+  return values;
+}
+
+/**
  * Returns what a declaration gives to the binding that an identifier refers
  * to, when that binding holds one value for its whole scope: the core types
  * at the top of its annotation, the value it starts with, and for a
@@ -2383,4 +2507,314 @@ export class EditSet {
   all(): Edit[] {
     return this.list;
   }
+}
+
+/**
+ * Tells whether an edit lies inside a node.
+ */
+function isEditInside(node: Node, edit: Edit): boolean {
+  const { start, end } = node.range();
+
+  return start.index <= edit.startPos && edit.endPos <= end.index;
+}
+
+/**
+ * Returns the tokens of the value of a node: its leaves, where a string, a
+ * template, a regular expression and a number are one token each. The
+ * comments and the parts that only TypeScript reads (the type of a cast, a
+ * non-null `!`, type arguments, a type annotation, and the parentheses
+ * around a cast of a name, a member or a call) are not tokens: they go to
+ * `skipped`.
+ */
+function tokensOf(node: Node, skipped: Node[]): Node[] {
+  const kind = node.kind();
+
+  if (kind === 'comment' || TYPE_PART_KINDS.has(kind)) {
+    skipped.push(node);
+
+    return [];
+  }
+
+  const children = node.children();
+
+  if (!children.length || TOKEN_KINDS.has(kind)) {
+    return [node];
+  }
+
+  const named = children.filter(
+    (child) => child.isNamed() && child.kind() !== 'comment'
+  );
+  const isCastInParentheses =
+    kind === 'parenthesized_expression' &&
+    KEEPING_KINDS.has(named[0]?.kind() ?? '') &&
+    named[0].kind() !== kind &&
+    PRIMARY_KINDS.has(unwrap(named[0]).kind());
+
+  if (
+    !KEEPING_KINDS.has(kind) ||
+    (kind === 'parenthesized_expression' && !isCastInParentheses)
+  ) {
+    return children.flatMap((child) => tokensOf(child, skipped));
+  }
+
+  const value = kind === 'type_assertion' ? named[named.length - 1] : named[0];
+
+  skipped.push(...children.filter((child) => child.id() !== value?.id()));
+
+  return value ? tokensOf(value, skipped) : [];
+}
+
+/**
+ * A node as a list of edits leaves it: the text of its value, to compare
+ * two nodes, and the texts that the edits write into that value.
+ */
+interface EditedText {
+  text: string;
+  inserted: string[];
+}
+
+/**
+ * Returns the value of a node as a list of edits leaves it: its text without
+ * comments, without the parts that only TypeScript reads and without the
+ * white space around its punctuation. Undefined when an edit crosses the
+ * border of the node or of one of its tokens.
+ */
+function editedText(node: Node, edits: Edit[]): EditedText | undefined {
+  const { start, end } = node.range();
+  const pieces: { at: number; order: number; text: string }[] = [];
+  const inside: Edit[] = [];
+  const skipped: Node[] = [];
+  const tokens = tokensOf(node, skipped);
+
+  for (const edit of edits) {
+    const isApart =
+      edit.startPos === edit.endPos
+        ? !isEditInside(node, edit)
+        : edit.endPos <= start.index || end.index <= edit.startPos;
+
+    if (isApart || skipped.some((part) => isEditInside(part, edit))) {
+      continue;
+    }
+
+    if (!isEditInside(node, edit)) {
+      return undefined;
+    }
+
+    inside.push(edit);
+    pieces.push({ at: edit.startPos, order: 0, text: edit.insertedText });
+  }
+
+  for (const token of tokens) {
+    const range = token.range();
+    const over = inside.filter(
+      (edit) =>
+        edit.startPos < range.end.index && range.start.index < edit.endPos
+    );
+
+    if (
+      over.some(
+        (edit) =>
+          edit.startPos > range.start.index || edit.endPos < range.end.index
+      )
+    ) {
+      return undefined;
+    }
+
+    if (!over.length) {
+      pieces.push({ at: range.start.index, order: 1, text: token.text() });
+    }
+  }
+
+  return {
+    text: pieces
+      .sort((a, b) => a.at - b.at || a.order - b.order)
+      .map((piece) => piece.text)
+      .join(' ')
+      .replace(/\s+/g, ' ')
+      .replace(/ ?([^\w$ ]) ?/g, '$1')
+      .trim(),
+    inserted: inside.map((edit) => edit.insertedText),
+  };
+}
+
+/**
+ * Returns the text of the value of a node as a list of edits leaves it,
+ * without comments, without the parts that only TypeScript reads and
+ * without the white space around its punctuation, so that two nodes can be
+ * compared. Undefined when an edit crosses the border of the node or of one
+ * of its tokens.
+ */
+export function textAfterEdits(node: Node, edits: Edit[]): string | undefined {
+  return editedText(node, edits)?.text;
+}
+
+/**
+ * Tells whether a node is a test that joins two operands with an operator.
+ */
+function isChain(node: Node | null | undefined, operator: string): boolean {
+  return (
+    node?.kind() === 'binary_expression' &&
+    node.field('operator')?.text() === operator
+  );
+}
+
+/**
+ * Returns the operands of a chain of one operator, through parentheses and
+ * casts: `a || (b || c)` gives `a`, `b` and `c`.
+ */
+function chainOperands(binary: Node, operator: string): Node[] {
+  return ['left', 'right'].flatMap((side) => {
+    const operand = binary.field(side);
+
+    if (!operand) {
+      return [];
+    }
+
+    const inner = unwrap(operand);
+
+    return isChain(inner, operator)
+      ? chainOperands(inner, operator)
+      : [operand];
+  });
+}
+
+/**
+ * Tells whether a node is the object of a read of `includes`, through
+ * parentheses and casts.
+ */
+function isIncludesObject(node: Node): boolean {
+  const value = keptValue(node);
+  const parent = value.parent();
+
+  return (
+    parent?.kind() === 'member_expression' &&
+    parent.field('object')?.id() === value.id() &&
+    parent.field('property')?.text() === 'includes'
+  );
+}
+
+/**
+ * Tells whether an array literal is read with `includes`: directly, or
+ * through a `const` that holds it.
+ */
+function isReadWithIncludes(array: Node): boolean {
+  if (isIncludesObject(array)) {
+    return true;
+  }
+
+  const value = keptValue(array);
+  const declarator = value.parent();
+  const name =
+    declarator?.kind() === 'variable_declarator' &&
+    declarator.field('value')?.id() === value.id()
+      ? declarator.field('name')
+      : undefined;
+
+  return Boolean(
+    name?.kind() === 'identifier' &&
+      isStableBinding(name) &&
+      referencesOf(name).some(isIncludesObject)
+  );
+}
+
+/**
+ * Returns the operands of a file that stand in one place, place by place:
+ * the operands of each chain of `||` or of `&&`, the `case` labels of each
+ * `switch`, and the entries of each array literal read with `includes`.
+ */
+function operandGroups(
+  rootNode: Node
+): { place: MergedPlace; operands: Node[] }[] {
+  const groups: { place: MergedPlace; operands: Node[] }[] = [];
+
+  for (const binary of rootNode.findAll({
+    rule: { kind: 'binary_expression' },
+  })) {
+    const operator = binary.field('operator')?.text() ?? '';
+
+    if (
+      CHAIN_OPERATORS.has(operator) &&
+      !isChain(keptValue(binary).parent(), operator)
+    ) {
+      groups.push({
+        place: operator as MergedPlace,
+        operands: chainOperands(binary, operator),
+      });
+    }
+  }
+
+  for (const body of rootNode.findAll({ rule: { kind: 'switch_body' } })) {
+    groups.push({
+      place: 'case',
+      operands: body
+        .children()
+        .filter((child) => child.kind() === 'switch_case')
+        .flatMap((child) => child.field('value') ?? []),
+    });
+  }
+
+  for (const array of rootNode.findAll({ rule: { kind: 'array' } })) {
+    if (isReadWithIncludes(array)) {
+      groups.push({
+        place: 'includes',
+        operands: array
+          .children()
+          .filter((child) => child.isNamed() && child.kind() !== 'comment'),
+      });
+    }
+  }
+
+  return groups;
+}
+
+/**
+ * Returns each operand that a list of edits makes the same expression as an
+ * operand before it in the same place, where the two differed: in a chain
+ * of `||` or of `&&`, among the `case` labels of one `switch`, or among the
+ * entries of an array literal read with `includes`. Such a rewrite is right
+ * name by name, and what the two tests told apart in 5.x is gone.
+ */
+export function mergedOperands(rootNode: Node, edits: Edit[]): MergedOperand[] {
+  if (!edits.length) {
+    return [];
+  }
+
+  const found: MergedOperand[] = [];
+
+  for (const { place, operands } of operandGroups(rootNode)) {
+    const isEdited = operands.some((operand) =>
+      edits.some((edit) => isEditInside(operand, edit))
+    );
+
+    if (!isEdited) {
+      continue;
+    }
+
+    const texts = operands.map((operand) => ({
+      before: textAfterEdits(unwrap(operand), []),
+      after: editedText(unwrap(operand), edits),
+    }));
+
+    operands.forEach((operand, index) => {
+      const { before, after } = texts[index];
+      const twin = texts.find(
+        (other, at) =>
+          at < index &&
+          after !== undefined &&
+          other.after?.text === after.text &&
+          other.before !== before
+      );
+
+      if (after && twin?.after) {
+        found.push({
+          node: operand,
+          place,
+          note: MERGED_NOTES[place],
+          inserted: [...after.inserted, ...twin.after.inserted],
+        });
+      }
+    });
+  }
+
+  return found;
 }

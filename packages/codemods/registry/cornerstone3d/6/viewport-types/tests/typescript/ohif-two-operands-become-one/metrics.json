@@ -1,0 +1,78 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "84",
+        "rule": "ViewportType.ORTHOGRAPHIC"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "84",
+        "rule": "ViewportType.STACK"
+      },
+      "count": 1
+    }
+  ],
+  "cornerstone3d-6-review": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "101",
+        "rule": "ViewportType.WHOLE_SLIDE: two operands of one || are the same now, read what each tested in 5.x"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "18",
+        "rule": "ViewportType.VOLUME_3D: two operands of one || are the same now, read what each tested in 5.x"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "22",
+        "rule": "ViewportType.VIDEO: two operands of one && are the same now, read what each tested in 5.x"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "29",
+        "rule": "ViewportType.ECG: two operands of one || are the same now, read what each tested in 5.x"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "37",
+        "rule": "ViewportType.ECG: two case labels of one switch are the same now, read what each chose in 5.x"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "48",
+        "rule": "ViewportType.VIDEO: two entries of one list used with includes are the same now, read what each named in 5.x"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "53",
+        "rule": "ViewportType.VOLUME_3D: two entries of one list used with includes are the same now, read what each named in 5.x"
+      },
+      "count": 1
+    }
+  ]
+}

@@ -16,12 +16,15 @@ import {
   isCoreNamespace,
   isMountedBefore,
   isStableBinding,
+  keptValue,
+  mergedOperands,
   methodCall,
   referencesOf as declarationReferences,
   site,
   stableBinding,
   staticKeyName,
   unwrap,
+  writtenValues,
 } from './lib.ts';
 import type { Node } from './lib.ts';
 
@@ -130,35 +133,6 @@ const INPUT_METHOD: Record<string, string> = {
   object: 'enableElement',
   array: 'setViewports',
 };
-
-/**
- * The expressions around a value that keep it: parentheses, casts and
- * non-null assertions.
- */
-const KEEPING_KINDS = new Set([
-  'parenthesized_expression',
-  'as_expression',
-  'satisfies_expression',
-  'non_null_expression',
-  'type_assertion',
-]);
-
-/**
- * The parents of a name that write it in another way than `name = value`:
- * an operator assignment, `++` or `--`, a `for in` or `for of`, or a
- * destructuring target.
- */
-const OTHER_WRITES = new Set([
-  'augmented_assignment_expression',
-  'update_expression',
-  'for_in_statement',
-  'object_pattern',
-  'array_pattern',
-  'pair_pattern',
-  'assignment_pattern',
-  'object_assignment_pattern',
-  'rest_pattern',
-]);
 
 /**
  * What a test of the viewport type tells about the family of a node;
@@ -661,62 +635,6 @@ function inputEntries(objectNode: Node): {
     typeFinal: typeIndex > openIndex,
     open: openIndex >= 0,
   };
-}
-
-/**
- * Returns the outermost expression that keeps the value of a node through
- * parentheses, casts and non-null assertions.
- */
-function keptValue(node: Node): Node {
-  let current = node;
-  let parent = node.parent();
-
-  while (parent && KEEPING_KINDS.has(parent.kind())) {
-    current = parent;
-    parent = parent.parent();
-  }
-
-  return current;
-}
-
-/**
- * Returns the values that a declared name gets: the value of its declaration
- * and the value of each `name = value`. Undefined when the file writes the
- * name in another way, such as `+=` or a destructuring.
- */
-function writtenValues(declaration: Node): Node[] | undefined {
-  const holder = declaration.parent();
-  const initial =
-    holder?.kind() === 'variable_declarator' &&
-    holder.field('name')?.id() === declaration.id()
-      ? holder.field('value')
-      : undefined;
-  const values = initial ? [initial] : [];
-
-  for (const reference of declarationReferences(declaration)) {
-    let child = reference;
-    let parent = reference.parent();
-
-    while (parent?.kind() === 'parenthesized_expression') {
-      child = parent;
-      parent = parent.parent();
-    }
-
-    const kind = parent?.kind() ?? '';
-    const right =
-      kind === 'assignment_expression' &&
-      parent.field('left')?.id() === child.id()
-        ? parent.field('right')
-        : undefined;
-
-    if (right) {
-      values.push(right);
-    } else if (OTHER_WRITES.has(kind)) {
-      return undefined;
-    }
-  }
-
-  return values;
 }
 
 /**
@@ -1403,12 +1321,32 @@ function reportTypesSubpath(run: Run): void {
 }
 
 /**
+ * Reports two operands that the renames make the same expression: in a
+ * chain of `||` or of `&&`, as `case` labels of one `switch`, or as entries
+ * of a list used with `includes`. An `instanceof VolumeViewport3D` beside an
+ * `instanceof GenericVolumeViewport3D` told a legacy viewport from a next
+ * one in 5.x, and the two are one test in 6.0.
+ */
+function reportMergedOperands(run: Run): void {
+  for (const merged of mergedOperands(run.rootNode, run.edits.all())) {
+    const name = merged.inserted.find((text) =>
+      /^[A-Za-z_$][\w$]*$/.test(text)
+    );
+
+    if (name) {
+      review.increment(site(run.root, `${name}: ${merged.note}`, merged.node));
+    }
+  }
+}
+
+/**
  * Rewrites the classes and the TypeScript types that Cornerstone3D 6.0
  * removes or renames: the legacy viewport classes become `PlanarViewport` in
  * a type and a test of the content mode after `instanceof`, the deprecated
  * class aliases get their plain names, `Types.IStackViewport` and its kin
  * become the class of their family, and a cast of `getViewport` becomes its
- * type argument.
+ * type argument. Two operands that the renames make the same are reported
+ * for review.
  */
 const codemod: Codemod<TSX> = (root) => {
   const rootNode = root.root();
@@ -1448,6 +1386,7 @@ const codemod: Codemod<TSX> = (root) => {
   reportBracketClasses(run);
   reportIsGenericViewport(run);
   reportTypesSubpath(run);
+  reportMergedOperands(run);
 
   const importEdits = run.imports.edits();
 
