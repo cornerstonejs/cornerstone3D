@@ -322,8 +322,13 @@ class Cache {
       return bytesAvailable;
     }
 
+    // An image that is still loading counts no bytes, so removing it frees
+    // nothing. It would cancel the load, and the image being put could remove
+    // its own entry and leave its bytes counted with no entry.
     const cachedImages = Array.from(this._imageCache.values()).filter(
-      (cachedImage) => !cachedImage.sharedCacheKey
+      (cachedImage) =>
+        !cachedImage.sharedCacheKey &&
+        (cachedImage.loaded || !cachedImage.imageLoadObject)
     );
 
     // Cache size has been exceeded, create list of images sorted by timeStamp
