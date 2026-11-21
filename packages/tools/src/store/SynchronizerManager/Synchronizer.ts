@@ -181,8 +181,9 @@ class Synchronizer {
   }
 
   public destroy(): void {
-    this._sourceViewports.forEach((s) => this.removeSource(s));
-    this._targetViewports.forEach((t) => this.removeTarget(t));
+    // removeSource/removeTarget splice these arrays, so iterate over copies
+    [...this._sourceViewports].forEach((s) => this.removeSource(s));
+    [...this._targetViewports].forEach((t) => this.removeTarget(t));
   }
 
   /**

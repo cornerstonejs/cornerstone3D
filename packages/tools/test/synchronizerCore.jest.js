@@ -302,6 +302,28 @@ describe('Synchronizer', () => {
     expect(callback).not.toHaveBeenCalled();
   });
 
+  it('destroy removes every viewport when several were added', () => {
+    const callback = jest.fn();
+    const sync = new Synchronizer('sync-g2', 'my-event', callback);
+    const viewports = ['vp1', 'vp2', 'vp3', 'vp4'].map((id) =>
+      world.addViewport('re1', id)
+    );
+
+    viewports.forEach(({ renderingEngineId, viewportId }) =>
+      sync.add({ renderingEngineId, viewportId })
+    );
+
+    sync.destroy();
+
+    expect(sync.getSourceViewports()).toHaveLength(0);
+    expect(sync.getTargetViewports()).toHaveLength(0);
+
+    viewports.forEach(({ element }) =>
+      element.dispatchEvent(new CustomEvent('my-event'))
+    );
+    expect(callback).not.toHaveBeenCalled();
+  });
+
   it('supports the eventTarget event source option', () => {
     const callback = jest.fn();
     const sync = new Synchronizer('sync-h', 'my-event', callback, {
@@ -417,6 +439,24 @@ describe('SynchronizerManager', () => {
 
     expect(destroySpy).toHaveBeenCalledTimes(1);
     expect(getSynchronizer('sync-y')).toBeUndefined();
+  });
+
+  it('a destroyed synchronizer no longer syncs any of its viewports', () => {
+    const world = createWorld();
+    const handler = jest.fn();
+    const sync = createSynchronizer('sync-y2', 'evt', handler);
+    const viewports = ['vp1', 'vp2', 'vp3', 'vp4'].map((id) =>
+      world.addViewport('re1', id)
+    );
+    viewports.forEach(({ renderingEngineId, viewportId }) =>
+      sync.add({ renderingEngineId, viewportId })
+    );
+
+    destroySynchronizer('sync-y2');
+
+    viewports[1].element.dispatchEvent(new CustomEvent('evt'));
+
+    expect(handler).not.toHaveBeenCalled();
   });
 
   it('destroySynchronizer is a no-op for an unknown id', () => {
