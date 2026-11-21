@@ -1,10 +1,5 @@
 import type { VideoViewport } from '@cornerstonejs/core';
-import {
-  Enums,
-  RenderingEngine,
-  imageLoader,
-  utilities as csUtils,
-} from '@cornerstonejs/core';
+import { Enums, RenderingEngine, imageLoader } from '@cornerstonejs/core';
 import * as cornerstone from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
@@ -45,7 +40,7 @@ const toolGroupId = 'TOOL_GROUP_ID';
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Segmentation in VideoViewport',
-  'Here we demonstrate how to render a labelmap based segmentation on a VideoViewport'
+  'A labelmap over a video: one labelmap image for each frame of the video, made with imageLoader.createAndCacheDerivedLabelmapImages(viewport.getImageIds()). The labelmap of the frame on display shows over the video, and the brush paints into it. The first frame has a mock segmentation.'
 );
 
 const size = '1920px';
@@ -220,26 +215,19 @@ async function run() {
   toolGroup.addViewport(viewportId, renderingEngineId);
   viewport = renderingEngine.getViewport(viewportId);
 
-  const imageIdsArray = [videoId];
-
   await viewport.setDisplaySets({ displaySetId: videoId });
   addVideoTime(viewportGrid, viewport);
-  // We need the map on all image ids
-  const allImageIds = viewport.getImageIds();
-  const firstImage = allImageIds[0];
-  const segImages = await imageLoader.createAndCacheDerivedImages(
-    [firstImage],
-    {
-      skipCreateBuffer: true,
-      onCacheAdd: csUtils.VoxelManager.addInstanceToImage,
-    }
-  );
 
-  const segmentationImageIds = segImages.map((it) => it.imageId);
+  const frameImageIds = viewport.getImageIds();
+  const segmentationImageIds = imageLoader
+    .createAndCacheDerivedLabelmapImages(frameImageIds, {
+      voxelRepresentation: Enums.VoxelManagerEnum.RLE,
+    })
+    .map((image) => image.imageId);
 
   fillStackSegmentationWithMockData({
-    imageIds: imageIdsArray,
-    segmentationImageIds,
+    imageIds: [frameImageIds[0]],
+    segmentationImageIds: [segmentationImageIds[0]],
     cornerstone,
   });
 

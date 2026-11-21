@@ -75,6 +75,12 @@ export type VideoGenericViewportInput = VideoViewportInput;
 export interface VideoElementRenderContext extends BaseViewportRenderContext {
   type: 'video';
   element: HTMLDivElement;
+  /**
+   * The canvas of the viewport. The video element is put just above it, so
+   * that the canvas background shows around the video and the layers of the
+   * tools draw over the video.
+   */
+  canvas?: HTMLCanvasElement;
 }
 
 /** @internal */

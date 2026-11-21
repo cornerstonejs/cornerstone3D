@@ -1,8 +1,12 @@
 import GenericViewport from '../GenericViewport';
 import type {
+  ActorEntry,
   CPUIImageData,
   EventTypes,
+  IStackInput,
+  IViewport,
   IVoxelManager,
+  ImageActor,
   Point2,
   Point3,
   ReferenceCompatibleOptions,
@@ -11,7 +15,11 @@ import type {
   ViewReferenceSpecifier,
   ViewportContentMode,
 } from '../../../types';
+import { ActorRenderMode } from '../../../types';
 import { Events, ViewportType } from '../../../enums';
+import cache from '../../../cache/cache';
+import CanvasActor from '../../CanvasActor';
+import { resetCanvasLabelmapComposition } from '../../CanvasActor/canvasLabelmapLayer';
 import triggerEvent from '../../../utilities/triggerEvent';
 import {
   frameNumberToTimeSeconds,
@@ -84,6 +92,22 @@ class VideoViewport extends GenericViewport<
   /** The pixels of the frame that `getImageData` read last. */
   private frameScalarData?: FrameScalarData;
 
+  /**
+   * The images drawn over the video, one canvas actor each, in the order
+   * they were added: the labelmap image of the frame on display.
+   */
+  private overlayActors: ActorEntry[] = [];
+
+  /** The canvas just above the video that the overlay actors draw on. */
+  private overlayLayer?: HTMLCanvasElement;
+
+  /** The frame image ids that `getImageIds` gave last, and for which video. */
+  private frameImageIds?: {
+    dataId: string;
+    numberOfFrames: number;
+    imageIds: string[];
+  };
+
   // ── Static ───────────────────────────────────────────────────────────
 
   static get useCustomRenderingPipeline(): boolean {
@@ -107,6 +131,7 @@ class VideoViewport extends GenericViewport<
       renderingEngineId: this.renderingEngineId,
       type: 'video',
       element: this.element,
+      canvas: this.canvas,
     };
     this.viewState = createDefaultVideoViewState();
 
@@ -138,6 +163,7 @@ class VideoViewport extends GenericViewport<
     }>
   ): Promise<void> {
     this.removeAllData();
+    this.overlayActors = [];
     this.frameScalarData = undefined;
     this.lastFrameEventNumber = undefined;
 
@@ -205,10 +231,21 @@ class VideoViewport extends GenericViewport<
 
   /**
    * Removes a video dataset and rebinds tracking if the primary video changed.
+   * An id of an image drawn over the video (`addImages`) removes that image.
    *
    * @param dataId - Logical dataset id to remove.
    */
   removeData(dataId: string): void {
+    const overlayActors = this.overlayActors.filter(
+      (actorEntry) => actorEntry.uid !== dataId
+    );
+
+    if (overlayActors.length !== this.overlayActors.length) {
+      this.overlayActors = overlayActors;
+      this.render();
+      return;
+    }
+
     const firstDataId = this.getFirstBinding()?.data.id;
 
     super.removeData(dataId);
@@ -383,6 +420,74 @@ class VideoViewport extends GenericViewport<
         scaled: false,
       },
     };
+  }
+
+  /**
+   * The actor entries of the images drawn over the video, in the order they
+   * were added. The labelmap of a segmentation is one of them: the labelmap
+   * image of the frame on display. The video itself has no actor.
+   */
+  getActors(): ActorEntry[] {
+    return [...this.overlayActors];
+  }
+
+  /**
+   * Draws images over the video, as the legacy video viewport did. Each image
+   * is a canvas actor in the pixels of the video, drawn on a canvas just above
+   * the video with the zoom, the pan and the rotation of the view, as the
+   * planar viewport draws a labelmap on the CPU. The id of an image is its
+   * `dataId`, else its `representationUID`, else its image id, as on the
+   * planar viewport. An input with the id of an image that is drawn already
+   * replaces it, and `removeData` with that id takes it away. The labelmap
+   * display of the tools adds the labelmap image of the frame on display.
+   *
+   * @param stackInputs - The images, by the image id of an image in the
+   * cache. `representationUID`, `reference` and `excludeFromFidelity` go on
+   * the actor entry, and `callback` is called with the actor.
+   */
+  addImages(stackInputs: IStackInput[]): void {
+    for (const stackInput of stackInputs) {
+      const image = cache.getImage(stackInput.imageId);
+
+      if (!image) {
+        continue;
+      }
+
+      const actor = new CanvasActor(
+        {
+          getImageData: () => this.getOverlayGeometry(),
+        } as unknown as IViewport,
+        image
+      );
+      const uid =
+        (stackInput.dataId as string | undefined) ??
+        (stackInput.representationUID as string | undefined) ??
+        stackInput.imageId;
+
+      actor.setVisibility(stackInput.visibility !== false);
+      this.overlayActors = [
+        ...this.overlayActors.filter((actorEntry) => actorEntry.uid !== uid),
+        {
+          uid,
+          actor,
+          actorMapper: {
+            actor,
+            mapper: actor.getMapper(),
+            renderMode: ActorRenderMode.CPU_IMAGE,
+          },
+          referencedId: stackInput.imageId,
+          representationUID: stackInput.representationUID,
+          reference: stackInput.reference,
+          excludeFromFidelity: stackInput.excludeFromFidelity === true,
+        },
+      ];
+      stackInput.callback?.({
+        imageActor: actor as unknown as ImageActor,
+        imageId: stackInput.imageId,
+      });
+    }
+
+    this.render();
   }
 
   // ====================================================================
@@ -733,7 +838,11 @@ class VideoViewport extends GenericViewport<
   }
 
   /**
-   * Returns generated frame image ids for the active video dataset.
+   * Returns generated frame image ids for the active video dataset. The same
+   * array comes back while the video stays the same, as a planar viewport
+   * gives the same array for its stack: the reference checks keep what they
+   * work out for an array, so a check per labelmap image of a long video
+   * does not make the ids of every frame again.
    */
   getImageIds(): string[] {
     const dataId = this.getFirstBinding()?.data.id;
@@ -743,23 +852,31 @@ class VideoViewport extends GenericViewport<
       return [];
     }
 
-    const sourceDataId = getGenericViewportSourceDataId(dataId);
-    const imageIds = Array<string>(videoData.numberOfFrames);
+    const { numberOfFrames } = videoData;
 
-    for (
-      let frameNumber = 1;
-      frameNumber <= videoData.numberOfFrames;
-      frameNumber++
+    if (
+      this.frameImageIds?.dataId === dataId &&
+      this.frameImageIds.numberOfFrames === numberOfFrames
     ) {
+      return this.frameImageIds.imageIds;
+    }
+
+    const sourceDataId = getGenericViewportSourceDataId(dataId);
+    let imageIds = Array<string>(numberOfFrames);
+
+    for (let frameNumber = 1; frameNumber <= numberOfFrames; frameNumber++) {
       try {
         imageIds[frameNumber - 1] = generateFrameImageId(
           sourceDataId,
           frameNumber
         );
       } catch {
-        return [sourceDataId];
+        imageIds = [sourceDataId];
+        break;
       }
     }
+
+    this.frameImageIds = { dataId, numberOfFrames, imageIds };
 
     return imageIds;
   }
@@ -882,6 +999,9 @@ class VideoViewport extends GenericViewport<
     }
 
     this.untrackVideoElement();
+    this.overlayActors = [];
+    this.overlayLayer?.remove();
+    this.overlayLayer = undefined;
   }
 
   /**
@@ -937,9 +1057,10 @@ class VideoViewport extends GenericViewport<
   }
 
   /**
-   * Fires IMAGE_RENDERED for the frame on display, with the detail of the
-   * legacy video viewport: the 0-based frame index, the number of frames, and
-   * the time and the duration of the video in seconds.
+   * Draws the images over the video, then fires IMAGE_RENDERED for the frame
+   * on display, with the detail of the legacy video viewport: the 0-based
+   * frame index, the number of frames, and the time and the duration of the
+   * video in seconds.
    */
   protected triggerImageRendered(): void {
     const element = this.getVideoElement();
@@ -948,6 +1069,7 @@ class VideoViewport extends GenericViewport<
       return;
     }
 
+    this.drawOverlayActors(element);
     this.setRendered();
     triggerEvent(this.element, Events.IMAGE_RENDERED, {
       element: this.element,
@@ -1121,6 +1243,132 @@ class VideoViewport extends GenericViewport<
       numberOfComponents: 4,
       id: `videoFrame:${this.id}:${scalarData.frameNumber}`,
     });
+  }
+
+  /**
+   * The geometry of the video that a canvas actor over it reads: its size,
+   * spacing, origin and direction, and the index of a world point, which is
+   * the point itself, as `getImageData` gives it. It reads no pixels.
+   */
+  private getOverlayGeometry():
+    | (Pick<
+        CPUIImageData,
+        'dimensions' | 'spacing' | 'origin' | 'direction'
+      > & {
+        imageData: Pick<
+          CPUIImageData['imageData'],
+          'worldToIndex' | 'indexToWorld'
+        >;
+      })
+    | undefined {
+    const metadata = this.getVideoData()?.metadata;
+
+    if (!metadata) {
+      return;
+    }
+
+    const worldToIndex = (point: Point3): Point3 => [point[0], point[1], 0];
+
+    return {
+      dimensions: metadata.dimensions,
+      spacing: metadata.spacing,
+      origin: metadata.origin,
+      direction: metadata.direction as CPUIImageData['direction'],
+      imageData: {
+        worldToIndex,
+        indexToWorld: worldToIndex,
+      },
+    };
+  }
+
+  /**
+   * Draws the overlay actors on the overlay layer, which is cleared first:
+   * each visible actor through the transform from the pixels of the video to
+   * the pixels of the layer, which the view gives (`worldToCanvas`), as the
+   * planar viewport draws a labelmap on its CPU canvas. The layer is made on
+   * the first draw with an actor, sized to the element in device pixels, and
+   * kept just above the video element.
+   */
+  private drawOverlayActors(videoElement: HTMLVideoElement): void {
+    if (!this.overlayActors.length && !this.overlayLayer) {
+      return;
+    }
+
+    const layer = this.getOverlayLayer(videoElement);
+    const context = layer.getContext('2d');
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    const width = Math.max(
+      1,
+      Math.round(this.element.clientWidth * devicePixelRatio)
+    );
+    const height = Math.max(
+      1,
+      Math.round(this.element.clientHeight * devicePixelRatio)
+    );
+
+    if (layer.width !== width || layer.height !== height) {
+      layer.width = width;
+      layer.height = height;
+    }
+
+    context.setTransform(1, 0, 0, 1, 0, 0);
+    context.clearRect(0, 0, width, height);
+    resetCanvasLabelmapComposition(layer);
+
+    const resolvedView = this.getResolvedView();
+
+    if (!resolvedView || !this.overlayActors.length) {
+      return;
+    }
+
+    const scale = width / Math.max(this.element.clientWidth, 1);
+    const origin = resolvedView.worldToCanvas([0, 0, 0]);
+    const column = resolvedView.worldToCanvas([1, 0, 0]);
+    const row = resolvedView.worldToCanvas([0, 1, 0]);
+
+    context.setTransform(
+      (column[0] - origin[0]) * scale,
+      (column[1] - origin[1]) * scale,
+      (row[0] - origin[0]) * scale,
+      (row[1] - origin[1]) * scale,
+      origin[0] * scale,
+      origin[1] * scale
+    );
+
+    for (const { actor } of this.overlayActors) {
+      (actor as CanvasActor).render(this as unknown as IViewport, context);
+    }
+
+    context.setTransform(1, 0, 0, 1, 0, 0);
+  }
+
+  /**
+   * The canvas of the overlay actors, made once, and put just after the video
+   * elements: over the videos and under the SVG layer of the tools.
+   */
+  private getOverlayLayer(videoElement: HTMLVideoElement): HTMLCanvasElement {
+    if (!this.overlayLayer) {
+      const layer = document.createElement('canvas');
+
+      layer.style.position = 'absolute';
+      layer.style.inset = '0';
+      layer.style.width = '100%';
+      layer.style.height = '100%';
+      layer.style.pointerEvents = 'none';
+      this.overlayLayer = layer;
+    }
+
+    let lastVideo: Element = videoElement;
+
+    while (lastVideo.nextElementSibling instanceof HTMLVideoElement) {
+      lastVideo = lastVideo.nextElementSibling;
+    }
+
+    if (lastVideo.nextElementSibling !== this.overlayLayer) {
+      lastVideo.after(this.overlayLayer);
+    }
+
+    return this.overlayLayer;
   }
 
   /**

@@ -52,7 +52,7 @@ export class HtmlVideoRenderPath
       };
 
       element.addEventListener('loadedmetadata', onLoadedMetadata);
-      ctx.element.appendChild(element);
+      mountVideoElement(ctx, element);
     });
 
     const playbackInfo = normalizeVideoPlaybackInfo({
@@ -210,6 +210,32 @@ export class HtmlVideoRenderPath
     element.pause();
     element.remove();
   }
+}
+
+/**
+ * Puts a video element in the layer of the viewport canvas, after the canvas
+ * and the videos mounted before it, and under the layers that come after
+ * them: the labelmap layer of the viewport and the SVG layer of the tools.
+ * Without a canvas in a layer the video goes at the end of the element.
+ */
+function mountVideoElement(
+  ctx: VideoElementRenderContext,
+  element: HTMLVideoElement
+): void {
+  const layer = ctx.canvas?.parentElement;
+
+  if (!layer) {
+    ctx.element.appendChild(element);
+    return;
+  }
+
+  let before = ctx.canvas.nextSibling;
+
+  while (before instanceof HTMLVideoElement) {
+    before = before.nextSibling;
+  }
+
+  layer.insertBefore(element, before);
 }
 
 /** @internal */

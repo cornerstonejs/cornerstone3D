@@ -1254,11 +1254,71 @@ legacy picture within two levels of 255.
   was measured at the old rotation and read back turned.
 - **`suppressEvents`** in the options silences `CAMERA_MODIFIED` and
   `CAMERA_RESET`.
-- **A labelmap over a video** is not available. It is not available on the
-  legacy viewport either. No 5.x release showed one, from 5.0.0 to 5.18.2.
-  `addSegmentationRepresentations` adds no labelmap to a video viewport, in
-  5.x and in 6.0: it logs a warning that the viewport is not a compatible
-  destination and goes on. Contour segmentations show.
+- **A labelmap over a video.** A video viewport shows a labelmap segmentation,
+  and the brush, the eraser and the threshold brush paint into it. No 5.x
+  release showed one, from 5.0.0 to 5.18.2. The labelmap is a stack labelmap
+  with one labelmap image for each frame of the video, derived from the image
+  ids of the frames (`.../frames/1`, `.../frames/2`, and so on):
+
+  ```js
+  const labelmapImageIds = imageLoader
+    .createAndCacheDerivedLabelmapImages(viewport.getImageIds(), {
+      voxelRepresentation: Enums.VoxelManagerEnum.RLE,
+    })
+    .map((image) => image.imageId);
+
+  segmentation.addSegmentations([
+    {
+      segmentationId,
+      representation: {
+        type: csToolsEnums.SegmentationRepresentations.Labelmap,
+        data: { imageIds: labelmapImageIds },
+      },
+    },
+  ]);
+  segmentation.addSegmentationRepresentations(viewport.id, [
+    { segmentationId, type: csToolsEnums.SegmentationRepresentations.Labelmap },
+  ]);
+  ```
+
+  The RLE representation keeps a long video small: a frame without labels
+  takes almost no memory, where a full buffer takes one byte per pixel of
+  each frame. The labelmap image of the frame on display is drawn over the
+  video, in the pixels of the video, with the zoom, the pan and the rotation
+  of the view, and it changes with the frame, also while the video plays. It
+  is drawn as the planar viewport draws a labelmap on the CPU: the segment
+  colours, the fill alpha, the outline and the visibility of the segmentation
+  style apply, with the GPU or the CPU setting alike. Undo takes a brush
+  stroke back, `SEGMENTATION_DATA_MODIFIED` and `SEGMENTATION_RENDERED` fire
+  as on a planar viewport, and `getSegmentIndexAtWorldPoint` reads the
+  labelmap of the frame on display. `utilities.segmentation.getStatistics`
+  gives no statistics for it: it reads the pixels of each frame as an image
+  in the cache, and the frames of a video are not images in the cache (the
+  video element gives the pixels of the frame on display only). A video has
+  no flip, so there is none to follow.
+
+- **`getActors()` and `addImages()`** are on the video viewport again, as on
+  the legacy one. `getActors()` lists the images drawn over the video (the
+  labelmap image of the frame on display), and
+  `addImages([{ imageId, dataId }])` draws an image of the cache over the
+  video as a labelmap; `removeData(dataId)` takes it away. The labelmap
+  display of the tools calls them. The id of an image is its `dataId`, else
+  its `representationUID`, else its image id, as on a planar viewport; an
+  `actorUID` is not read.
+- **Annotations draw over the video.** The video element sits in the layer
+  of the viewport canvas, just above the canvas: the canvas background shows
+  around the video, and the labelmap and the SVG layer of the tools draw over
+  it. Before, the video element was the last child of the viewport element
+  and covered the SVG layer, so an annotation, a contour segmentation and the
+  brush cursor did not show over a video (measured: a contour drawn on the
+  `videoContourSegmentation` example changed no pixel on the screen).
+- **`getImageIds()` gives the same array** while the video stays the same, as
+  a planar viewport gives the same array for its stack. With a new array on
+  each call, a reference check of each labelmap image worked out the ids of
+  every frame again, so a frame change of a video of 3,360 frames with its
+  labelmap took 2.4 s; with the same array, and with the labelmap display
+  not scanning every labelmap image on a video, it takes 2 ms. Do not change
+  the array that it gives.
 
 ## Tools on the next viewports
 

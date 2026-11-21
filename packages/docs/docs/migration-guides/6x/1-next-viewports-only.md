@@ -277,7 +277,9 @@ Carried over, in the new shape:
   viewport;
 - a stretched picture, as the scale pair of the view state of a planar
   viewport;
-- the frame range of a video, as a key of its view state.
+- the frame range of a video, as a key of its view state;
+- the images over a video (`addImages`), which now draw a labelmap over the
+  video, frame by frame: no 5.x release showed one.
 
 Not carried over:
 
@@ -287,8 +289,6 @@ Not carried over:
 - a display area and an aspect ratio on a 3D viewport;
 - options that change after creation (`setOptions`, `reset`) on the 3D, video,
   whole slide and ECG viewports;
-- a stored initial camera (`storeAsInitialCamera`);
-- a labelmap over a video, which the legacy video viewport did not have
-  either.
+- a stored initial camera (`storeAsInitialCamera`).
 
 [Rendering changes](./2-rendering-changes.md) has the call for each one.

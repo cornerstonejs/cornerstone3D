@@ -4,6 +4,7 @@ import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunc
 import {
   ActorRenderMode,
   cache,
+  Enums,
   utilities,
   type Types,
 } from '@cornerstonejs/core';
@@ -15,7 +16,10 @@ import { updateLabelmapSegmentationImageReferences } from '../../../stateManagem
 import { getCurrentLabelmapImageIdsForViewport } from '../../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
 import { getLabelmapActorEntries } from '../../../stateManagement/segmentation/helpers/getSegmentationActor';
 import getViewportLabelmapRenderMode from '../../../stateManagement/segmentation/helpers/getViewportLabelmapRenderMode';
+import { getSegmentationRepresentations } from '../../../stateManagement/segmentation/getSegmentationRepresentation';
+import type { LabelmapRepresentation } from '../../../types/SegmentationStateTypes';
 import { createLabelmapRepresentationUID } from './labelmapRepresentationUID';
+import { setLabelmapColorAndOpacity } from './labelmapActorStyle';
 import removeLabelmapRepresentationData from './removeLabelmapRepresentationData';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
@@ -23,6 +27,15 @@ const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
   'tools.displayTools.Labelmap.syncStackLabelmapActors'
 );
 
+/**
+ * Mounts the labelmap images of the image on display of a stack viewport, or
+ * of the frame on display of a video viewport, removes the others and renders.
+ * A video does not run the reference scan of
+ * `updateLabelmapSegmentationImageReferences`: each labelmap image of a video
+ * lies on the plane of every frame, so the scan matched all of them on each
+ * frame, at a cost that grows with the square of the number of frames, and
+ * nothing here reads its result.
+ */
 export function syncStackLabelmapActors(
   viewport: PlanarViewport,
   segmentationId: string
@@ -56,7 +69,12 @@ export function syncStackLabelmapActors(
     return;
   }
 
-  updateLabelmapSegmentationImageReferences(viewport.id, segmentationId);
+  const isVideo =
+    (viewport as Types.IViewport).type === Enums.ViewportType.VIDEO;
+
+  if (!isVideo) {
+    updateLabelmapSegmentationImageReferences(viewport.id, segmentationId);
+  }
 
   const derivedImageIds =
     getCurrentLabelmapImageIdsForViewport(viewport.id, segmentationId) ?? [];
@@ -88,14 +106,20 @@ export function syncStackLabelmapActors(
   }
 
   const renderMode = getViewportLabelmapRenderMode(viewport);
-  const defaultActorRenderMode = viewport.getDefaultActor()?.actorMapper
+  const defaultActorRenderMode = viewport.getDefaultActor?.()?.actorMapper
     ?.renderMode as Types.ActorRenderMode | undefined;
+  const drawsOnCanvas =
+    isVideo ||
+    (renderMode === 'image' &&
+      defaultActorRenderMode === ActorRenderMode.CPU_IMAGE);
   const currentImage =
     cache.getImage(currentImageId) ||
     ({
       imageId: currentImageId,
     } as Types.IImage);
-  const { origin: currentOrigin } = viewport.getImageDataMetadata(currentImage);
+  const currentOrigin = drawsOnCanvas
+    ? undefined
+    : viewport.getImageDataMetadata(currentImage).origin;
 
   derivedImageIds.forEach((derivedImageId) => {
     const derivedImage = cache.getImage(derivedImageId);
@@ -119,10 +143,7 @@ export function syncStackLabelmapActors(
         referencedId: derivedImage.imageId,
       });
 
-      if (
-        renderMode === 'image' &&
-        defaultActorRenderMode === ActorRenderMode.CPU_IMAGE
-      ) {
+      if (drawsOnCanvas) {
         viewport.addImages([
           {
             dataId: representationUID,
@@ -215,6 +236,10 @@ export function syncStackLabelmapActors(
     shouldRenderViewport = true;
   });
 
+  if (isVideo && shouldTriggerSegmentationRender) {
+    styleVideoLabelmapActors(viewport, segmentationId);
+  }
+
   if (shouldTriggerSegmentationRender) {
     triggerSegmentationRender(viewport.id);
   }
@@ -222,6 +247,32 @@ export function syncStackLabelmapActors(
   if (shouldRenderViewport) {
     viewport.render();
   }
+}
+
+/**
+ * Gives the labelmap actors of a video viewport the style of their
+ * representation at once. A video gets a new actor for each frame while it
+ * plays; without this, each frame would first show without its labelmap,
+ * until the next segmentation render styles the new actor.
+ */
+function styleVideoLabelmapActors(
+  viewport: Types.IViewport,
+  segmentationId: string
+): void {
+  const representation = getSegmentationRepresentations(viewport.id, {
+    segmentationId,
+    type: SegmentationRepresentations.Labelmap,
+  })[0] as LabelmapRepresentation | undefined;
+
+  if (!representation) {
+    return;
+  }
+
+  getLabelmapActorEntries(viewport.id, segmentationId)?.forEach(
+    (actorEntry) => {
+      setLabelmapColorAndOpacity(viewport.id, actorEntry, representation);
+    }
+  );
 }
 
 /**

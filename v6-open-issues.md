@@ -139,7 +139,7 @@ not run.
 | 36 | A full-thickness slab on the CPU is refused (`slabTooLarge`). | Decided by the owner (20 November): the 200 million sample cap and the `slabTooLarge` fallback stay for 6.0 | Sample it in steps, as the thin slab. |
 | 37 | The edge pixel of an image differs between the canvas and the GPU. | Fixed by package P-E (20 November, `c7e64f855`): the CPU follows the default GPU's edge coverage | Decide which one is right by the data. |
 | 38 | The vtk.js reslice slab samples further out than the slab thickness asks. The CPU slab copies it on purpose, for the same picture. | Decided (20 November): stays, as 5.x; the CPU copies the vtk.js reslice slab on purpose | Fix both together, with new pictures. |
-| 39 | A labelmap over a video is not shown. The legacy viewport cannot do it either. | Measured | Build it if wanted. |
+| 39 | A labelmap over a video is not shown. The legacy viewport cannot do it either. | Fixed by package Q3 (20 November): built by the owner's decision. A stack labelmap with one image per frame (`imageLoader.createAndCacheDerivedLabelmapImages(viewport.getImageIds())`) draws over the video with the planar CPU labelmap drawing (`CanvasActor`), follows the frame, zoom, pan and rotation; the brush, the eraser, the threshold brush and undo paint the frame on display. The video now sits under the SVG layer, so annotations show over it too. `getStatistics` is not available for it (the frames are not images in the cache). Tests: `videoViewportNextOverlay_test.js`, `videoLabelmapNext_test.js`, `videoSegmentation.spec.ts` | Build it if wanted. |
 
 ## Found when the legacy classes were deleted (stage 1)
 

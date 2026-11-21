@@ -52,6 +52,13 @@ const enable = function (element: HTMLDivElement): void {
     return;
   }
 
+  if (viewport.type === Enums.ViewportType.VIDEO) {
+    element.addEventListener(
+      Enums.Events.NEW_IMAGE,
+      _imageChangeEventListener as EventListener
+    );
+  }
+
   // this listener handles the segmentation modifications
   // we only listen to the image_rendered once and then remove it
   // the main event to listen here is the camera_modified of a planar viewport
@@ -70,6 +77,10 @@ const disable = function (element: HTMLDivElement): void {
   );
   element.removeEventListener(
     Enums.Events.CAMERA_MODIFIED,
+    _imageChangeEventListener as EventListener
+  );
+  element.removeEventListener(
+    Enums.Events.NEW_IMAGE,
     _imageChangeEventListener as EventListener
   );
   element.removeEventListener(

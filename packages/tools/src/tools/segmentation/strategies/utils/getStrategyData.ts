@@ -184,8 +184,11 @@ function getStrategyDataForStackViewport({
     // VERY IMPORTANT
     // This is the pixel data of the image that is being segmented in the cache
     // and we need to use this to for the modification
-    imageScalarData = image?.getPixelData() || imageData.getScalarData();
-    imageVoxelManager = image?.voxelManager;
+    imageScalarData =
+      image?.getPixelData() ||
+      imageData?.scalarData ||
+      imageData?.getScalarData?.();
+    imageVoxelManager = image?.voxelManager ?? imageData?.voxelManager;
   }
 
   return {
