@@ -29,8 +29,20 @@ export const combineFrameInstance = (frame, instance) => {
   instance.ImageType = dicomSplit(ImageType);
   const frameNumber = Number.parseInt(frame || 1);
 
+  // Type 2: may be present with zero items
+  const detectorInformation = instance.DetectorInformationSequence?.[0];
+  // Type 2 inside the item: may be empty, so use them only when complete
+  const detectorImageOrientationPatient =
+    detectorInformation?.ImageOrientationPatient?.length === 6
+      ? detectorInformation.ImageOrientationPatient
+      : undefined;
+  const detectorImagePositionPatient =
+    detectorInformation?.ImagePositionPatient?.length === 3
+      ? detectorInformation.ImagePositionPatient
+      : undefined;
+
   const hasDetectorButMissingSpatialInfo =
-    instance.DetectorInformationSequence &&
+    detectorInformation &&
     (!instance.ImagePositionPatient || !instance.ImageOrientationPatient);
 
   if (
@@ -39,23 +51,15 @@ export const combineFrameInstance = (frame, instance) => {
   ) {
     // this is to fix NM multiframe datasets with position and orientation
     // information inside DetectorInformationSequence
-    if (
-      !instance.ImageOrientationPatient &&
-      instance.DetectorInformationSequence
-    ) {
-      instance.ImageOrientationPatient =
-        instance.DetectorInformationSequence[0].ImageOrientationPatient;
+    if (!instance.ImageOrientationPatient && detectorImageOrientationPatient) {
+      instance.ImageOrientationPatient = detectorImageOrientationPatient;
     }
 
     const rootImagePositionPatient = instance.ImagePositionPatient;
     let detectorDerivedImagePositionPatient;
 
-    if (
-      !instance.ImagePositionPatient &&
-      instance.DetectorInformationSequence
-    ) {
-      let imagePositionPatient =
-        instance.DetectorInformationSequence[0].ImagePositionPatient;
+    if (!instance.ImagePositionPatient && detectorInformation) {
+      let imagePositionPatient = detectorImagePositionPatient;
       let imageOrientationPatient = instance.ImageOrientationPatient;
 
       imagePositionPatient = imagePositionPatient?.map((it) => Number(it));
@@ -65,7 +69,11 @@ export const combineFrameInstance = (frame, instance) => {
       const SpacingBetweenSlices = Number(instance.SpacingBetweenSlices);
 
       // Calculate the position for the current frame
-      if (imageOrientationPatient && SpacingBetweenSlices) {
+      if (
+        imagePositionPatient &&
+        imageOrientationPatient?.length === 6 &&
+        SpacingBetweenSlices
+      ) {
         const rowOrientation = vec3.fromValues(
           imageOrientationPatient[0],
           imageOrientationPatient[1],
