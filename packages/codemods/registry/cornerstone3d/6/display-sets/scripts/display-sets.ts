@@ -4,6 +4,8 @@ import { useMetricAtom } from 'codemod:metrics';
 import {
   CoreImports,
   EditSet,
+  HeldMetric,
+  analysed,
   asPrimary,
   bindsAt,
   bracketKey,
@@ -29,7 +31,7 @@ import {
 import type { Node } from './lib.ts';
 
 /** Sites that the reader changes. */
-const manual = useMetricAtom('cornerstone3d-6-manual');
+const manual = new HeldMetric(useMetricAtom('cornerstone3d-6-manual'));
 
 /** The data members of the legacy viewports that the transform reports. */
 const REPORTED_MEMBERS = new Set([
@@ -962,4 +964,4 @@ const codemod: Codemod<TSX> = (root) => {
   return rootNode.commitEdits([...run.edits.all(), ...importEdits]);
 };
 
-export default codemod;
+export default analysed(codemod, manual);

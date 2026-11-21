@@ -87,6 +87,11 @@ lists the actors of labelmaps, surfaces and the images of a stack, whose
 `referencedId` is not a volume id or is undefined. Keep the ids that
 `viewport.hasVolumeId(id)` takes where only the volumes count.
 
+- Manual, at line 1: `the file was not analysed:` with the reason, for a
+  file whose names cannot be looked up (the tool cannot read it, or a name
+  is declared twice in one scope). The file stays as it is. See the README
+  of `@cornerstonejs/cornerstone3d-6`.
+
 ## Development
 
 From `packages/codemods`:

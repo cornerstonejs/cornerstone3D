@@ -1,4 +1,5 @@
 import { cache } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
 import type {
   LabelmapSegmentationDataStack,
@@ -17,7 +18,9 @@ import getOrCreateImageVolume from './getOrCreateImageVolume';
  * @returns The reference volume if found, or null if the segmentation volume
  * doesn't exist or no reference volume could be determined
  */
-export function getReferenceVolumeForSegmentation(segmentationId: string) {
+export function getReferenceVolumeForSegmentation(
+  segmentationId: string
+): Types.IImageVolume | Types.IBaseStreamingImageVolume {
   const segmentation = getSegmentation(segmentationId);
   if (!segmentation) {
     return null;

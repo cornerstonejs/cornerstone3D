@@ -3,6 +3,8 @@ import type TSX from 'codemod:ast-grep/langs/tsx';
 import { useMetricAtom } from 'codemod:metrics';
 import {
   EditSet,
+  HeldMetric,
+  analysed,
   bindsAt,
   bracketKey,
   coreImportOf,
@@ -18,10 +20,10 @@ import {
 import type { Node } from './lib.ts';
 
 /** Sites that the reader changes. */
-const manual = useMetricAtom('cornerstone3d-6-manual');
+const manual = new HeldMetric(useMetricAtom('cornerstone3d-6-manual'));
 
 /** Rewrites at a decision of the migration guide. */
-const review = useMetricAtom('cornerstone3d-6-review');
+const review = new HeldMetric(useMetricAtom('cornerstone3d-6-review'));
 
 /** The removed events that have one event in their place, and why to review. */
 const RENAMED_EVENTS: Record<string, { name: string; note: string }> = {
@@ -439,4 +441,4 @@ const codemod: Codemod<TSX> = (root) => {
   return rootNode.commitEdits(run.edits.all());
 };
 
-export default codemod;
+export default analysed(codemod, manual, review);

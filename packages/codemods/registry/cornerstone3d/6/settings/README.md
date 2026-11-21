@@ -54,6 +54,10 @@ reference to it changed, the new ones come in, under a fresh alias such as
   key stays for the reader).
 - `viewport.setUseCPURendering()`, the member of a stack viewport, is
   reported by `@cornerstonejs/cornerstone3d-6-viewport-members`.
+- Manual, at line 1: `the file was not analysed:` with the reason, for a
+  file whose names cannot be looked up (the tool cannot read it, or a name
+  is declared twice in one scope). The file stays as it is. See the README
+  of `@cornerstonejs/cornerstone3d-6`.
 
 ## Development
 

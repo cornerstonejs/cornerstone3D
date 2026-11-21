@@ -50,6 +50,10 @@ under an alias), `cornerstone.EVENTS.X` of the namespace, or
   `'DYNAMIC_VOLUME_TIME_POINT_LOADED'` or `'IMAGE_LOAD_ERROR'` (a listener
   of it compiles and never runs; a planar viewport no longer fires
   `IMAGE_LOAD_ERROR`).
+- Manual, at line 1: `the file was not analysed:` with the reason, for a
+  file whose names cannot be looked up (the tool cannot read it, or a name
+  is declared twice in one scope). The file stays as it is. See the README
+  of `@cornerstonejs/cornerstone3d-6`.
 
 ## Development
 

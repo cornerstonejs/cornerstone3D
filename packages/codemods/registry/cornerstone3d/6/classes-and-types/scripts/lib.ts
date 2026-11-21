@@ -1,4 +1,4 @@
-import type { Edit, SgNode, SgRoot } from 'codemod:ast-grep';
+import type { Codemod, Edit, SgNode, SgRoot } from 'codemod:ast-grep';
 import type TSX from 'codemod:ast-grep/langs/tsx';
 
 /**
@@ -12,6 +12,51 @@ export type Node = SgNode<TSX>;
 
 /** The package whose names the transforms rewrite. */
 export const CORE_PACKAGE = '@cornerstonejs/core';
+
+/** The extensions of the files that hold JavaScript without types. */
+const JAVASCRIPT_FILE = /\.(js|jsx|mjs|cjs)$/;
+
+/** The part of an error of the tool's semantic analysis before its reason. */
+const PARSE_FAILURE = /^[^]*Failed to parse file '[^]*?': /;
+
+/** The node kinds of a name that can refer to a binding. */
+const REFERENCE_KINDS = [
+  'identifier',
+  'shorthand_property_identifier',
+  'shorthand_property_identifier_pattern',
+  'type_identifier',
+];
+
+/** The node kinds of a name that can declare a binding. */
+const BINDING_KINDS = [
+  'identifier',
+  'shorthand_property_identifier_pattern',
+  'type_identifier',
+];
+
+/** The node kinds of a JSX tag, whose lower-case name is an element. */
+const JSX_TAG_KINDS = new Set([
+  'jsx_opening_element',
+  'jsx_closing_element',
+  'jsx_self_closing_element',
+]);
+
+/** The node kinds that hold the name of a parameter. */
+const PARAMETER_KINDS = new Set([
+  'required_parameter',
+  'optional_parameter',
+  'formal_parameters',
+  'arrow_function',
+]);
+
+/**
+ * The files of this run that the tool's semantic analysis could not read.
+ * Their names are looked up on the syntax tree.
+ */
+const syntaxFiles = new Set<string>();
+
+/** The declarations of each name of the file in work, by file and name. */
+const bindingsByName = new Map<string, Declaration[]>();
 
 /** The longest line that a regenerated import statement keeps on one line. */
 const IMPORT_LINE_LENGTH = 80;
@@ -278,6 +323,17 @@ interface ImportAddition {
 interface Declaration {
   node: Node;
   scope: Node;
+}
+
+/** The declaration that a name refers to, as the tool answers it. */
+export interface Definition {
+  kind: string;
+  node: Node;
+}
+
+/** A metric of the tool, as the transforms use it. */
+interface Metric {
+  increment(cardinality?: Record<string, string>): void;
 }
 
 /**
@@ -1026,13 +1082,298 @@ export function bindsAt(rootNode: Node, declaration: Node, at: Node): boolean {
 }
 
 /**
+ * Returns the reason of an error without the path of the file, in one line.
+ */
+function failureReason(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+
+  return message.replace(PARSE_FAILURE, '').split('\n')[0].trim();
+}
+
+/**
+ * Notes that the tool's semantic analysis could not read a file. The names
+ * of a JavaScript file are looked up on the syntax tree from then on. Any
+ * other file is not analysed: the error goes on to `analysed`.
+ */
+function leaveTool(file: string, error: unknown): void {
+  if (!JAVASCRIPT_FILE.test(file)) {
+    throw new Error(failureReason(error));
+  }
+
+  syntaxFiles.add(file);
+}
+
+/**
+ * Returns the outermost node that covers the same text as a node. The tool
+ * answers with this node: the import specifier of a name without an alias,
+ * the parameter of a plain name, the export specifier of an exported name.
+ */
+function outermost(node: Node): Node {
+  let current = node;
+  let parent = current.parent();
+
+  while (parent && contains(current, parent)) {
+    current = parent;
+    parent = current.parent();
+  }
+
+  return current;
+}
+
+/**
+ * Returns the node that bounds the scope of a name that a node declares, as
+ * `declarationScope` does. The left side of a `for in` or a `for of` without
+ * `const`, `let` or `var` writes a name and declares none.
+ */
+function bindingScope(node: Node): Node | undefined {
+  const holder = bindingHolder(node);
+
+  if (holder?.kind() === 'for_in_statement' && !holder.field('kind')) {
+    return undefined;
+  }
+
+  return declarationScope(node);
+}
+
+/**
+ * Returns the declarations of a name in a file, each with its scope, with
+ * the names of classes. The answer is kept for the file in work.
+ */
+function bindingsOf(rootNode: Node, name: string): Declaration[] {
+  const key = `${rootNode.getRoot().filename()}\n${name}`;
+  const kept = bindingsByName.get(key);
+
+  if (kept) {
+    return kept;
+  }
+
+  const found: Declaration[] = [];
+
+  for (const node of rootNode.findAll({
+    rule: {
+      any: BINDING_KINDS.map((kind) => ({ kind })),
+      regex: `^${escapeName(name)}$`,
+    },
+  })) {
+    const scope = bindingScope(node);
+
+    if (scope) {
+      found.push({ node, scope });
+    }
+  }
+
+  bindingsByName.set(key, found);
+
+  return found;
+}
+
+/**
+ * Tells whether a declaration may repeat a name of its scope: a `var`, a
+ * function declaration or a parameter.
+ */
+function mayRepeat(declaration: Node): boolean {
+  const holder = bindingHolder(declaration);
+  const kind = holder?.kind() ?? '';
+
+  return (
+    PARAMETER_KINDS.has(kind) ||
+    kind === 'function_declaration' ||
+    kind === 'generator_function_declaration' ||
+    (kind === 'variable_declarator' &&
+      holder.parent()?.kind() === 'variable_declaration')
+  );
+}
+
+/**
+ * Tells whether a name stands where JavaScript reads a binding. The alias of
+ * an export, a name of an export from another module and the lower-case
+ * name of a JSX tag do not.
+ */
+function readsBinding(node: Node): boolean {
+  const parent = node.parent();
+  const kind = parent?.kind() ?? '';
+
+  if (JSX_TAG_KINDS.has(kind)) {
+    return !/^[a-z]/.test(node.text());
+  }
+
+  if (kind !== 'export_specifier' && kind !== 'namespace_export') {
+    return true;
+  }
+
+  const statement = parent
+    .ancestors()
+    .find((ancestor) => ancestor.kind() === 'export_statement');
+
+  return (
+    kind === 'export_specifier' &&
+    parent.field('alias')?.id() !== node.id() &&
+    !statement?.field('source')
+  );
+}
+
+/**
+ * Returns the declared name that a name refers to at its place, read from
+ * the syntax tree: the declaration of the innermost scope that holds the
+ * node. The name of a function expression gives way to a parameter or a
+ * variable of that function. Throws when two declarations of one scope
+ * cannot both stand, as the binding is then unknown.
+ */
+function bindingAt(node: Node): Node | undefined {
+  const name = node.text();
+  const ownScope = bindingScope(node);
+
+  if (ownScope && NAMED_EXPRESSION_KINDS.has(node.parent()?.kind() ?? '')) {
+    return node;
+  }
+
+  const inScope = bindingsOf(node.getRoot().root(), name).filter(({ scope }) =>
+    contains(scope, node)
+  );
+  const innermost = inScope.find(({ scope }) =>
+    ownScope
+      ? scope.id() === ownScope.id()
+      : inScope.every((other) => contains(other.scope, scope))
+  );
+
+  if (!innermost) {
+    return undefined;
+  }
+
+  const sameScope = inScope.filter(
+    ({ scope }) => scope.id() === innermost.scope.id()
+  );
+  const own = sameScope.filter(
+    ({ node: declaration }) =>
+      !NAMED_EXPRESSION_KINDS.has(declaration.parent()?.kind() ?? '')
+  );
+  const candidates = own.length ? own : sameScope;
+
+  if (
+    candidates.length > 1 &&
+    !candidates.every(({ node: declaration }) => mayRepeat(declaration))
+  ) {
+    throw new Error(`${name} is declared twice in one scope`);
+  }
+
+  return candidates[0].node;
+}
+
+/**
+ * Returns the definition of a name read from the syntax tree, in the shape
+ * of the tool's answer: a name of an import statement gives its specifier
+ * with the kind `import`, any other name its declaration with the kind
+ * `local`. A second declaration of a name gives nothing.
+ */
+function syntaxDefinition(node: Node): Definition | undefined {
+  const ancestors = node.ancestors();
+
+  if (ancestors.some((ancestor) => ancestor.kind() === 'import_statement')) {
+    const specifier = ancestors.find(
+      (ancestor) =>
+        ancestor.kind() === 'import_specifier' ||
+        ancestor.kind() === 'namespace_import'
+    );
+
+    return { kind: 'import', node: outermost(specifier ?? node) };
+  }
+
+  if (!readsBinding(node)) {
+    return undefined;
+  }
+
+  const binding = bindingAt(node);
+
+  if (!binding || (bindingScope(node) && binding.id() !== node.id())) {
+    return undefined;
+  }
+
+  return { kind: 'local', node: outermost(binding) };
+}
+
+/**
+ * Returns the nodes of the file that refer to a declared name, read from the
+ * syntax tree, in the shape of the tool's answer. A node that is not the
+ * declaration of its name gives none.
+ */
+function syntaxReferences(declaration: Node): Node[] {
+  if (!bindingScope(declaration)) {
+    return [];
+  }
+
+  if (bindingAt(declaration)?.id() !== declaration.id()) {
+    return [];
+  }
+
+  return declaration
+    .getRoot()
+    .root()
+    .findAll({
+      rule: {
+        any: REFERENCE_KINDS.map((kind) => ({ kind })),
+        regex: `^${escapeName(declaration.text())}$`,
+      },
+    })
+    .filter(
+      (node) =>
+        !bindingScope(node) &&
+        readsBinding(node) &&
+        !node
+          .ancestors()
+          .some((ancestor) => ancestor.kind() === 'import_statement') &&
+        bindingAt(node)?.id() === declaration.id()
+    )
+    .map(outermost);
+}
+
+/**
+ * Returns the definition of a name: the answer of the tool's semantic
+ * analysis, or the one read from the syntax tree when the tool cannot read
+ * a JavaScript file (it reads JSX only in `.jsx` and `.tsx` files).
+ */
+export function definitionAt(node: Node): Definition | undefined {
+  const file = node.getRoot().filename();
+
+  if (!syntaxFiles.has(file)) {
+    try {
+      return node.definition() ?? undefined;
+    } catch (error) {
+      leaveTool(file, error);
+    }
+  }
+
+  return syntaxDefinition(node);
+}
+
+/**
+ * Returns the nodes of the file that refer to a declared name, from the tool
+ * or from the syntax tree as `definitionAt` does.
+ */
+function referencesAt(declaration: Node): Node[] {
+  const file = declaration.getRoot().filename();
+
+  if (!syntaxFiles.has(file)) {
+    try {
+      return declaration
+        .references()
+        .filter((entry) => entry.root.filename() === file)
+        .flatMap((entry) => entry.nodes);
+    } catch (error) {
+      leaveTool(file, error);
+    }
+  }
+
+  return syntaxReferences(declaration);
+}
+
+/**
  * Returns the definition of an identifier, with the kind of the definition.
  * A declarator with a type annotation comes back as its name, as one without.
  */
 function definitionOf(
   identifier: Node
 ): { kind: string; node: Node } | undefined {
-  const definition = identifier.definition();
+  const definition = definitionAt(identifier);
 
   if (!definition) {
     return undefined;
@@ -1076,20 +1417,15 @@ export function declarationNodeOf(identifier: Node): Node | undefined {
  * the import statements.
  */
 export function referencesOf(declaration: Node): Node[] {
-  const file = declaration.getRoot().filename();
   const start = declaration.range().start.index;
 
-  return declaration
-    .references()
-    .filter((entry) => entry.root.filename() === file)
-    .flatMap((entry) => entry.nodes)
-    .filter(
-      (node) =>
-        node.range().start.index !== start &&
-        !node
-          .ancestors()
-          .some((ancestor) => ancestor.kind() === 'import_statement')
-    );
+  return referencesAt(declaration).filter(
+    (node) =>
+      node.range().start.index !== start &&
+      !node
+        .ancestors()
+        .some((ancestor) => ancestor.kind() === 'import_statement')
+  );
 }
 
 /**
@@ -1183,7 +1519,7 @@ export function coreImportOf(
   identifier: Node,
   subpaths = false
 ): { name: string; specifier: Node } | undefined {
-  const definition = identifier.definition();
+  const definition = definitionAt(identifier);
   const target = definition?.node;
   const specifier = target?.kind() === 'identifier' ? target.parent() : target;
 
@@ -1214,7 +1550,7 @@ export function coreImportOf(
  * Tells whether an identifier is the namespace import of `@cornerstonejs/core`.
  */
 export function isCoreNamespace(identifier: Node): boolean {
-  const definition = identifier.definition();
+  const definition = definitionAt(identifier);
 
   if (!definition) {
     return false;
@@ -2456,6 +2792,84 @@ export function site(
     rule,
     file: root.relativeFilename?.() || root.filename(),
     line: String(node.range().start.line + 1),
+  };
+}
+
+/**
+ * Holds the entries of a metric until the transform of a file is done, so
+ * that a file that could not be analysed leaves none of them.
+ */
+export class HeldMetric {
+  private readonly metric: Metric;
+
+  private held: Record<string, string>[] = [];
+
+  constructor(metric: Metric) {
+    this.metric = metric;
+  }
+
+  /**
+   * Keeps one entry.
+   */
+  increment(cardinality: Record<string, string>): void {
+    this.held.push(cardinality);
+  }
+
+  /**
+   * Gives the kept entries to the metric, in their order.
+   */
+  release(): void {
+    for (const cardinality of this.held) {
+      this.metric.increment(cardinality);
+    }
+
+    this.held = [];
+  }
+
+  /**
+   * Forgets the kept entries.
+   */
+  drop(): void {
+    this.held = [];
+  }
+}
+
+/**
+ * Wraps the transform of a step so that it never fails on a file. When the
+ * transform throws (the tool could not read a TypeScript file, or a name is
+ * declared twice in one scope), the file stays as it is, the entries of the
+ * file are dropped, and the file is reported once in `manual` with the
+ * reason.
+ */
+export function analysed(
+  transform: Codemod<TSX>,
+  manual: HeldMetric,
+  ...others: HeldMetric[]
+): Codemod<TSX> {
+  return (root, options) => {
+    const metrics = [manual, ...others];
+
+    bindingsByName.clear();
+
+    try {
+      const result = transform(root, options);
+
+      metrics.forEach((metric) => metric.release());
+
+      return result;
+    } catch (error) {
+      metrics.forEach((metric) => metric.drop());
+      manual.increment(
+        site(
+          root,
+          `the file was not analysed: ${failureReason(error)}`,
+          root.root()
+        )
+      );
+      manual.release();
+
+      return null;
+    }
   };
 }
 

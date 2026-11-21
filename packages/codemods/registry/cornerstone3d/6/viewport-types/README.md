@@ -89,6 +89,10 @@ an alias of `Enums`, the namespace import, or `const { ViewportType } = Enums`.
   `'*Next'` string; `defaultOptions.displayArea` and
   `defaultOptions.aspectRatio` of a viewport input, which a planar viewport
   does not apply by itself.
+- Manual, at line 1: `the file was not analysed:` with the reason, for a
+  file whose names cannot be looked up (the tool cannot read it, or a name
+  is declared twice in one scope). The file stays as it is. See the README
+  of `@cornerstonejs/cornerstone3d-6`.
 
 ## Development
 

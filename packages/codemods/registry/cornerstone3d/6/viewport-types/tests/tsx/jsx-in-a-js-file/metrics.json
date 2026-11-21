@@ -1,0 +1,102 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.js",
+        "line": "11",
+        "rule": "ViewportType.STACK"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.js",
+        "line": "16",
+        "rule": "ViewportType.ORTHOGRAPHIC"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.js",
+        "line": "31",
+        "rule": "ViewportType.PERSPECTIVE"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.js",
+        "line": "36",
+        "rule": "ViewportType.ORTHOGRAPHIC: orientation"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.js",
+        "line": "42",
+        "rule": "'perspective'"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.js",
+        "line": "43",
+        "rule": "defaultOptions.displayArea"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.js",
+        "line": "48",
+        "rule": "'planarNext'"
+      },
+      "count": 1
+    }
+  ],
+  "cornerstone3d-6-review": [
+    {
+      "cardinality": {
+        "file": "input.js",
+        "line": "26",
+        "rule": "ViewportType.ORTHOGRAPHIC: orientation"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.js",
+        "line": "58",
+        "rule": "ViewportType.PLANAR: one function returned STACK and ORTHOGRAPHIC, read what its callers do with the answer"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.js",
+        "line": "63",
+        "rule": "ViewportType.ORTHOGRAPHIC: orientation"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.js",
+        "line": "68",
+        "rule": "ViewportType.VOLUME_3D: two operands of one || are the same now, read what each tested in 5.x"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.js",
+        "line": "74",
+        "rule": "ViewportType.ECG: two operands of one || are the same now, read what each tested in 5.x"
+      },
+      "count": 1
+    }
+  ]
+}

@@ -45,6 +45,11 @@ longer resolves); a dynamic `import()` or a `require()` of a module that
 6.0 moves or deletes whole;
 `utilities.spatial.rotateViewportAroundWorldPoint`.
 
+Also manual, at line 1: `the file was not analysed:` with the reason, for a
+file whose names cannot be looked up (the tool cannot read it, or a name is
+declared twice in one scope). The file stays as it is. See the README of
+`@cornerstonejs/cornerstone3d-6`.
+
 ## Development
 
 From `packages/codemods`:

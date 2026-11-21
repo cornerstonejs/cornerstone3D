@@ -60,7 +60,7 @@ export default [
         lib: ['ES2022', 'dom'],
         target: 'ES2022',
         module: 'esnext',
-        moduleResolution: 'node',
+        moduleResolution: 'bundler',
         sourceMap: false,
         exclude: ['node_modules', 'dist', 'examples/', 'old-examples'],
       }),

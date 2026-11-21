@@ -36,10 +36,8 @@ import { getShapeIndexBounds } from '../../../../utilities/sampleAreaAnnotationV
  * Diagnostics for a brush fill. Call `brushFillLog.setLevel('debug')` to see
  * the depth spread of the voxels that a fill writes.
  */
-export const brushFillLog = csUtils.logger.toolsLog.getLogger(
-  'segmentation',
-  'brushVoxelSlab'
-);
+export const brushFillLog: csUtils.logger.Logger =
+  csUtils.logger.toolsLog.getLogger('segmentation', 'brushVoxelSlab');
 
 const {
   createEllipseShape,

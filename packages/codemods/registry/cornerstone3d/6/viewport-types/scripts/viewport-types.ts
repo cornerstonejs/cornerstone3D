@@ -4,6 +4,8 @@ import { useMetricAtom } from 'codemod:metrics';
 import {
   CoreImports,
   EditSet,
+  HeldMetric,
+  analysed,
   bracketKey,
   declarationNodeOf,
   enclosingFunction,
@@ -26,10 +28,10 @@ import {
 import type { Node, ViewportEvidence } from './lib.ts';
 
 /** Sites that the reader changes. */
-const manual = useMetricAtom('cornerstone3d-6-manual');
+const manual = new HeldMetric(useMetricAtom('cornerstone3d-6-manual'));
 
 /** Rewrites at a decision of the migration guide. */
-const review = useMetricAtom('cornerstone3d-6-review');
+const review = new HeldMetric(useMetricAtom('cornerstone3d-6-review'));
 
 /** The deprecated `_NEXT` members and their plain names. */
 const NEXT_MEMBERS: Record<string, string> = {
@@ -897,4 +899,4 @@ const codemod: Codemod<TSX> = (root) => {
   return rootNode.commitEdits([...run.edits.all(), ...run.imports.edits()]);
 };
 
-export default codemod;
+export default analysed(codemod, manual, review);

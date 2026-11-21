@@ -5,10 +5,13 @@ import {
   CORE_PACKAGE,
   CoreImports,
   EditSet,
+  HeldMetric,
+  analysed,
   bracketKey,
   comparisonAt,
   coreImportOf,
   declarationNodeOf,
+  definitionAt,
   enclosingFunction,
   importSource,
   isCoreEnum,
@@ -29,10 +32,10 @@ import {
 import type { Node } from './lib.ts';
 
 /** Sites that the reader changes. */
-const manual = useMetricAtom('cornerstone3d-6-manual');
+const manual = new HeldMetric(useMetricAtom('cornerstone3d-6-manual'));
 
 /** Rewrites at a decision of the migration guide. */
-const review = useMetricAtom('cornerstone3d-6-review');
+const review = new HeldMetric(useMetricAtom('cornerstone3d-6-review'));
 
 /** The legacy classes and the class that types the same viewport in 6.0. */
 const LEGACY_CLASS_TYPE: Record<string, string> = {
@@ -188,7 +191,7 @@ function isTypedEngine(node: Node): boolean {
     return false;
   }
 
-  const definition = inner.definition();
+  const definition = definitionAt(inner);
   const target = definition?.node;
 
   if (!target || definition.kind !== 'local') {
@@ -1397,4 +1400,4 @@ const codemod: Codemod<TSX> = (root) => {
   return rootNode.commitEdits([...run.edits.all(), ...importEdits]);
 };
 
-export default codemod;
+export default analysed(codemod, manual, review);

@@ -8,12 +8,18 @@
 //    root-level config files stay CJS.
 // 2. Rewrites emitted runtime imports from dependency subpaths that native Node
 //    ESM cannot resolve while extensionless.
+// 3. Fails when a declaration file holds a module path that resolves only
+//    inside this repository (see `check-dist-esm-declarations.js`).
 //
 // See https://github.com/cornerstonejs/cornerstone3D/issues/2763
 
 const fs = require('fs');
 const path = require('path');
 const ts = require('typescript');
+const {
+  findRepositoryOnlyPaths,
+  describeRepositoryOnlyPaths,
+} = require('./check-dist-esm-declarations.js');
 
 const args = process.argv.slice(2);
 const watchMode = args.includes('--watch');
@@ -52,6 +58,12 @@ function finalizeDistEsm() {
   ]);
   if (rewritten) {
     console.log(`Rewrote ${rewritten} native-Node runtime import specifier(s)`);
+  }
+
+  const repositoryOnlyPaths = findRepositoryOnlyPaths(distEsmDir);
+  if (repositoryOnlyPaths.length) {
+    console.error(describeRepositoryOnlyPaths(repositoryOnlyPaths, distEsmDir));
+    return false;
   }
   return true;
 }

@@ -145,6 +145,13 @@ entry names a rule, a file and a line.
   `AXIAL` orientation it wrote, a `STACK_NEW_IMAGE` listener that now hears
   `NEW_IMAGE` for the slices of a volume too, a `setUseCPURendering` call.
 
+A JavaScript file with JSX is read as a `.jsx` file is, whatever its
+extension. The codemod never stops on a file: a file that it cannot analyse
+(the tool cannot read it, or a name it looks up is declared twice in one
+scope) stays as it is and has one entry in `cornerstone3d-6-manual` at line
+1, with a rule that starts with `the file was not analysed:`. Fix the file
+and run the codemod again, or do the steps of this page on it by hand.
+
 Two review entries are about a rewrite that is right name by name and still
 changes what the code says:
 

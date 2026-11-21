@@ -1,0 +1,46 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.js",
+        "line": "11",
+        "rule": "setUseCPURendering"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.js",
+        "line": "14",
+        "rule": "setUseCPURendering()"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.js",
+        "line": "15",
+        "rule": "getUseGenericViewport()"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.js",
+        "line": "7",
+        "rule": "rendering.useCPURendering"
+      },
+      "count": 1
+    }
+  ],
+  "cornerstone3d-6-review": [
+    {
+      "cardinality": {
+        "file": "input.js",
+        "line": "5",
+        "rule": "setUseCPURendering: it marked the library initialized, call init() first"
+      },
+      "count": 1
+    }
+  ]
+}

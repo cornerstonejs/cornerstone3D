@@ -84,6 +84,28 @@ changes what the code says:
   viewport, and read the other tests of that type near it. Of two equal
   `case` labels only the first runs.
 
+## JavaScript files, and a file that is not analysed
+
+To know what a name refers to, the codemods ask the semantic analysis of the
+Codemod tool. It reads JSX only in `.jsx` and `.tsx` files. Where it cannot
+read a `.js`, `.mjs` or `.cjs` file (JSX is the common reason), the codemods
+look the names up themselves on the syntax tree: imports, variables,
+parameters, functions, classes and `catch` clauses, each with its scope. Such
+a file is rewritten and reported as the same code in a `.jsx` file is.
+
+A step never stops on a file. A file that cannot be analysed stays as it is
+and has one entry in `cornerstone3d-6-manual`, at line 1. Its rule starts
+with `the file was not analysed:` and gives the reason:
+
+- a TypeScript file that the tool cannot read, for example
+  ``the file was not analysed: Identifier `x` has already been declared``;
+- a JavaScript file with JSX where a name that the codemod looks up is
+  declared twice in one scope:
+  `the file was not analysed: x is declared twice in one scope`.
+
+The step reports nothing else in that file. Fix the file and run the codemod
+again, or do the file by hand with the guide.
+
 ## Included Migrations
 
 In the order in which they run:
