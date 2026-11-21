@@ -79,8 +79,19 @@ function handleLabelmapSegmentation(segmentation: Segmentation): number[] {
     );
   });
 
+  if (!segmentation.segments?.[PREVIEW_SEGMENT_INDEX]) {
+    segmentIndices.delete(PREVIEW_SEGMENT_INDEX);
+  }
+
   return Array.from(segmentIndices).sort((a, b) => a - b);
 }
+
+/**
+ * The value that a labelmap tool writes for its preview (the preview colour of
+ * the colour LUT). Its voxels are not a segment unless the segmentation has a
+ * segment of that index.
+ */
+const PREVIEW_SEGMENT_INDEX = 255;
 
 /**
  * The voxel managers that hold the voxels of one labelmap layer: those of its

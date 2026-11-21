@@ -131,6 +131,21 @@ describe('getUniqueSegmentIndices', () => {
     expect(getUniqueSegmentIndices('seg-loaded')).toEqual([7]);
   });
 
+  it('leaves out the voxels of a brush preview, unless 255 is a segment', () => {
+    cacheLabelmapImages(ids('lm'), ids('ref'));
+    addStackSegmentation('seg-preview', ids('lm'), ids('ref'));
+    setActiveSegmentIndex('seg-preview', 1);
+    voxels('lm:0:0').setAtIndex(0, 1);
+    voxels('lm:0:1').setAtIndex(3, 255);
+    triggerSegmentationDataModified('seg-preview');
+
+    expect(getUniqueSegmentIndices('seg-preview')).toEqual([1]);
+
+    setActiveSegmentIndex('seg-preview', 255);
+
+    expect(getUniqueSegmentIndices('seg-preview')).toEqual([1, 255]);
+  });
+
   it('drops a segment after an erase and gives it back after a new stroke', () => {
     cacheLabelmapImages(ids('lm'), ids('ref'));
     addStackSegmentation('seg-erase', ids('lm'), ids('ref'));

@@ -1648,8 +1648,9 @@ and is deprecated.
   `clearSegmentValue` took its last voxel, a segment came as soon as it was
   made active, and a labelmap added without a segment list gave none. A 5.x
   application that read a segment from this call after an undo now finds it
-  gone; read `segmentation.segments` for the list. While a brush shows a
-  preview, its voxels count under the preview index, 255. Each call reads
+  gone; read `segmentation.segments` for the list. The voxels of a brush
+  preview (index 255) are left out unless the segmentation has a segment 255,
+  as in 5.x. Each call reads
   the voxels, also after a write that fired no `SEGMENTATION_DATA_MODIFIED`:
   about 20 ms for a labelmap of 512 x 512 x 300 voxels, where 5.x kept the
   answer until the next `SEGMENTATION_DATA_MODIFIED`. Keep the answer for a
