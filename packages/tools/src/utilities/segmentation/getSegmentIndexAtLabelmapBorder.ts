@@ -214,7 +214,11 @@ function isSegmentOnEdgeIJK(
     );
   };
 
-  return isSegmentOnEdge(getNeighborIndex, segmentIndex, searchRadius);
+  // Voxel neighbors are whole-pixel offsets: a fractional radius would give
+  // fractional indices, which read no value or the wrong voxel.
+  const voxelSearchRadius = Math.max(1, Math.floor(searchRadius ?? 1));
+
+  return isSegmentOnEdge(getNeighborIndex, segmentIndex, voxelSearchRadius);
 }
 
 function isSegmentOnEdgeCanvas(

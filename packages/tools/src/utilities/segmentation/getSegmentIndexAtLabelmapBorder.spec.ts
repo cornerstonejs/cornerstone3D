@@ -114,6 +114,36 @@ describe('getSegmentIndexAtLabelmapBorder (stack labelmap)', () => {
     ).toBeUndefined();
   });
 
+  it('uses whole-pixel neighbor offsets for a non-integer searchRadius', () => {
+    // Segment 1 is the square i, j in [5, 14]. The background at i = 15 is
+    // 2 pixels from (13, 10) and 1 pixel from (14, 10).
+    setupStackLabelmap((i, j) =>
+      i >= 5 && i <= 14 && j >= 5 && j <= 14 ? 1 : 0
+    );
+
+    expect(
+      getSegmentIndexAtLabelmapBorder('seg', [13, 10, 0], {
+        viewport,
+        searchRadius: 2.5,
+      })
+    ).toBe(1);
+
+    expect(
+      getSegmentIndexAtLabelmapBorder('seg', [12, 10, 0], {
+        viewport,
+        searchRadius: 2.5,
+      })
+    ).toBeUndefined();
+
+    // A radius below 1 still checks the direct neighbors
+    expect(
+      getSegmentIndexAtLabelmapBorder('seg', [14, 10, 0], {
+        viewport,
+        searchRadius: 0.5,
+      })
+    ).toBe(1);
+  });
+
   it('does not wrap a neighbor left of column 0 to the end of the previous row', () => {
     // Segment 1 fills the left half of the image (columns 0..9). The point
     // (0, 5) is 10 columns away from the segment border at column 10, but the
