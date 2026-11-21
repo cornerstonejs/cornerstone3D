@@ -441,19 +441,23 @@ describe('wadors metaDataProvider', () => {
   });
 
   describe('OVERLAY_PLANE', () => {
-    it('returns an empty overlays array for standard-format wadors tags (no x60xx-prefixed keys present)', () => {
-      // getOverlayPlaneModule looks up keys like `x60003000`, which is the
-      // dicom-parser (wadouri) tag-key convention, not the plain 8-hex-digit
-      // uppercase tag convention ('60003000') used everywhere else in the
-      // wadors metaData object shape. See suspected-bug note in the final
-      // report: this means overlay data coming from a real WADO-RS server
-      // (keyed the normal way) will never be found here.
-      const metadata = buildCTMetadata();
-      metadata['60003000'] = {
-        vr: 'OW',
-        Value: [{ dataOffset: 0, length: 1 }],
-      };
-      metaDataManager.add(CT_IMAGE_ID, metadata as any);
+    // DICOMweb JSON keys tags as 8 uppercase hex digits ('60003000'), and
+    // carries the OW Overlay Data as InlineBinary (base64) or BulkDataURI.
+    function addOverlayGroup(metadata: any, group: string, overlayData: any) {
+      metadata[`${group}0010`] = { vr: 'US', Value: [2] };
+      metadata[`${group}0011`] = { vr: 'US', Value: [4] };
+      metadata[`${group}0040`] = { vr: 'CS', Value: ['G'] };
+      metadata[`${group}0050`] = { vr: 'SS', Value: [3, 5] };
+      metadata[`${group}0022`] = { vr: 'LO', Value: ['a description'] };
+      metadata[`${group}1500`] = { vr: 'LO', Value: ['a label'] };
+      metadata[`${group}1301`] = { vr: 'IS', Value: [10] };
+      metadata[`${group}1302`] = { vr: 'DS', Value: [5] };
+      metadata[`${group}1303`] = { vr: 'DS', Value: [1] };
+      metadata[`${group}3000`] = { vr: 'OW', ...overlayData };
+    }
+
+    it('returns an empty overlays array when no overlay group is present', () => {
+      metaDataManager.add(CT_IMAGE_ID, buildCTMetadata() as any);
 
       const result = metaDataProvider(
         MetadataModules.OVERLAY_PLANE,
@@ -462,20 +466,39 @@ describe('wadors metaDataProvider', () => {
       expect(result).toEqual({ overlays: [] });
     });
 
-    it('decodes overlay bit-packed pixel data when the internal x60xx-style keys are used', () => {
+    it('reads a DICOMweb-keyed overlay and decodes InlineBinary overlay data', () => {
       const metadata: any = buildCTMetadata();
-      metadata['x60000010'] = { Value: [8] };
-      metadata['x60000011'] = { Value: [8] };
-      metadata['x60000040'] = { Value: ['G'] };
-      metadata['x60000050'] = { Value: [1, 1] };
-      metadata['x60000022'] = { Value: ['a description'] };
-      metadata['x60001500'] = { Value: ['a label'] };
-      metadata['x60001301'] = { Value: [10] };
-      metadata['x60001302'] = { Value: [5] };
-      metadata['x60001303'] = { Value: [1] };
-      metadata['x60003000'] = { Value: [{ dataOffset: 0, length: 1 }] };
-      // getOverlayPlaneModule reads raw bytes off metaData.Value directly.
-      metadata.Value = [0b00000101];
+      // bytes [0b00000101, 0x00] -> base64 'BQA='
+      addOverlayGroup(metadata, '6000', { InlineBinary: 'BQA=' });
+      metaDataManager.add(CT_IMAGE_ID, metadata);
+
+      const result = metaDataProvider(
+        MetadataModules.OVERLAY_PLANE,
+        CT_IMAGE_ID
+      );
+      expect(result.overlays).toEqual([
+        {
+          rows: 2,
+          columns: 4,
+          type: 'G',
+          x: 4, // Overlay Origin column (5) - 1
+          y: 2, // Overlay Origin row (3) - 1
+          // bits unpacked LSB-first, 8 per byte
+          pixelData: [1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+          description: 'a description',
+          label: 'a label',
+          roiArea: 10,
+          roiMean: 5,
+          roiStandardDeviation: 1,
+        },
+      ]);
+    });
+
+    it('decodes overlay data that was already retrieved into Value', () => {
+      const metadata: any = buildCTMetadata();
+      addOverlayGroup(metadata, '6000', {
+        Value: [new Uint8Array([0b10000001, 0x00]).buffer],
+      });
       metaDataManager.add(CT_IMAGE_ID, metadata);
 
       const result = metaDataProvider(
@@ -483,19 +506,64 @@ describe('wadors metaDataProvider', () => {
         CT_IMAGE_ID
       );
       expect(result.overlays.length).toBe(1);
-      const overlay = result.overlays[0];
-      expect(overlay.rows).toBe(8);
-      expect(overlay.columns).toBe(8);
-      expect(overlay.type).toBe('G');
-      expect(overlay.x).toBe(0); // getNumberValue(..., 1) - 1 = 1 - 1
-      expect(overlay.y).toBe(0); // getNumberValue(..., 0) - 1 = 1 - 1
-      expect(overlay.description).toBe('a description');
-      expect(overlay.label).toBe('a label');
-      expect(overlay.roiArea).toBe(10);
-      expect(overlay.roiMean).toBe(5);
-      expect(overlay.roiStandardDeviation).toBe(1);
-      // 0b00000101 unpacked LSB-first across 8 bits.
-      expect(overlay.pixelData).toEqual([1, 0, 1, 0, 0, 0, 0, 0]);
+      expect(result.overlays[0].pixelData).toEqual([
+        1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0,
+      ]);
+    });
+
+    it('decodes overlay data that was already retrieved into a bare ArrayBuffer Value', () => {
+      const metadata: any = buildCTMetadata();
+      addOverlayGroup(metadata, '6000', {
+        Value: new Uint8Array([0b00000011, 0x00]).buffer,
+      });
+      metaDataManager.add(CT_IMAGE_ID, metadata);
+
+      const result = metaDataProvider(
+        MetadataModules.OVERLAY_PLANE,
+        CT_IMAGE_ID
+      );
+      expect(result.overlays.length).toBe(1);
+      expect(result.overlays[0].pixelData).toEqual([
+        1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      ]);
+    });
+
+    it('returns the overlay attributes with empty pixelData when the overlay data is only a BulkDataURI', () => {
+      const metadata: any = buildCTMetadata();
+      addOverlayGroup(metadata, '6000', {
+        BulkDataURI: 'https://server/bulkdata/60003000',
+      });
+      metaDataManager.add(CT_IMAGE_ID, metadata);
+
+      const result = metaDataProvider(
+        MetadataModules.OVERLAY_PLANE,
+        CT_IMAGE_ID
+      );
+      expect(result.overlays.length).toBe(1);
+      expect(result.overlays[0]).toMatchObject({
+        rows: 2,
+        columns: 4,
+        type: 'G',
+        x: 4,
+        y: 2,
+        pixelData: [],
+        description: 'a description',
+      });
+    });
+
+    it('finds every overlay group, including groups with hex letters (600A)', () => {
+      const metadata: any = buildCTMetadata();
+      addOverlayGroup(metadata, '6002', { InlineBinary: 'AQA=' });
+      addOverlayGroup(metadata, '600A', { InlineBinary: 'AgA=' });
+      metaDataManager.add(CT_IMAGE_ID, metadata);
+
+      const result = metaDataProvider(
+        MetadataModules.OVERLAY_PLANE,
+        CT_IMAGE_ID
+      );
+      expect(result.overlays.length).toBe(2);
+      expect(result.overlays[0].pixelData.slice(0, 2)).toEqual([1, 0]);
+      expect(result.overlays[1].pixelData.slice(0, 2)).toEqual([0, 1]);
     });
   });
 
