@@ -687,10 +687,11 @@ export default class ONNXSegmentationController {
    * image for a view of a volume that names no single image. The image ids
    * come from the volume of the cache, so `getImageIds` gets no argument,
    * which a next viewport does not take. A viewport whose volume is not in
-   * the cache gives its own first image id.
+   * the cache, or that gives no volume id, gives its own first image id.
    */
   protected getVolumeSampleImageId(viewport): string | undefined {
-    const volume = cache.getVolume(viewport.getVolumeId?.());
+    const volumeId = viewport.getVolumeId?.();
+    const volume = volumeId ? cache.getVolume(volumeId) : undefined;
 
     return volume?.imageIds?.[0] ?? viewport.getImageIds()[0];
   }

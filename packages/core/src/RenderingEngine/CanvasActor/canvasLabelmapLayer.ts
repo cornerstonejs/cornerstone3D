@@ -16,8 +16,11 @@ type CanvasPixelBounds = {
 export type CanvasLabelmapLayer = {
   /** One RGBA per canvas pixel, not premultiplied. */
   imageData: ImageData;
-  /** The same pixels on a canvas of their own, for a layer drawn alone. */
-  canvas: OffscreenCanvas;
+  /**
+   * The same pixels on a canvas of their own, for a layer drawn alone: a
+   * canvas element where the browser has no `OffscreenCanvas`.
+   */
+  canvas: OffscreenCanvas | HTMLCanvasElement;
   /** The smallest rectangle that holds every drawn pixel, or undefined. */
   bounds?: CanvasPixelBounds;
 };
@@ -155,7 +158,10 @@ function ensureScratch(length: number, withDistances: boolean): void {
 function createLayer(width: number, height: number): CanvasLabelmapLayer {
   return {
     imageData: new ImageData(width, height),
-    canvas: new OffscreenCanvas(width, height),
+    canvas:
+      typeof OffscreenCanvas === 'undefined'
+        ? Object.assign(document.createElement('canvas'), { width, height })
+        : new OffscreenCanvas(width, height),
   };
 }
 
@@ -566,7 +572,8 @@ export function composeCanvasLabelmapLayer(
 
   if (
     composition.layerCount > 0 &&
-    composition.firstLayer?.imageData.width !== canvas.width
+    (composition.firstLayer?.imageData.width !== canvas.width ||
+      composition.firstLayer?.imageData.height !== canvas.height)
   ) {
     resetCanvasLabelmapComposition(canvas);
   }

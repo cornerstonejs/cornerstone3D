@@ -978,6 +978,47 @@ describe('The glass of AdvancedMagnifyTool on a next planar viewport -- ', () =>
     expectColoursOfSource(glass, source);
   }, 20000);
 
+  it('drops the presentation of its source when the source resets it, as the source does', async function () {
+    const source = createSource(renderingEngine);
+
+    ToolGroupManager.getToolGroup(toolGroupId).setToolPassive(
+      AdvancedMagnifyTool.toolName
+    );
+    await showStack(source);
+
+    const glass = await addGlass(source, [230, 120]);
+    const displaySetId = source.getSourceDataId();
+
+    expectPresentationOfSource(glass, source);
+
+    const glassRendered = waitForRender(glass);
+
+    source.resetDisplaySetPresentation(displaySetId);
+    await renderAndWait(source);
+    await glassRendered;
+
+    expect(source.getDisplaySetPresentation(displaySetId)).toEqual({});
+    expect(glass.getDisplaySetPresentation(displaySetId)).toEqual({});
+    expectColoursOfSource(glass, source);
+
+    const resets = spyOn(
+      glass,
+      'resetDisplaySetPresentation'
+    ).and.callThrough();
+    const glassRenderedAgain = waitForRender(glass);
+
+    source.setDisplaySetPresentation(displaySetId, {
+      voiRange: PRESENTATION.voiRange,
+    });
+    await renderAndWait(source);
+    await glassRenderedAgain;
+
+    expect(glass.getDisplaySetPresentation(displaySetId)).toEqual({
+      voiRange: PRESENTATION.voiRange,
+    });
+    expect(resets).not.toHaveBeenCalled();
+  }, 20000);
+
   it('shows the slice under it magnified, turned and flipped as its source in volume mode', async function () {
     const source = createSource(renderingEngine);
 

@@ -1109,14 +1109,26 @@ class PlanarViewport extends GenericViewport<
    * legacy `Viewport.getDefaultImageData`. Tools (e.g. the ONNX auto-pilot
    * segmentation controller) call this directly on the viewport; native
    * PLANAR viewports previously threw
-   * `getDefaultImageData is not a function`. Returns undefined when no VTK image
-   * actor is mounted (e.g. CPU render paths).
+   * `getDefaultImageData is not a function`.
+   *
+   * A volume sampled for the slice (`vtkSampledSlice`, or on the CPU) gives
+   * the image data of the volume. A stack drawn on the CPU has no vtk image
+   * data: it gives the image data of the image on display
+   * (`getImageData().imageData`), which has `worldToIndex` and
+   * `indexToWorld` as well. Undefined while nothing is shown.
    */
   getDefaultImageData() {
     const rendering = this.getCurrentPlanarRendering();
 
-    if (rendering?.renderMode === ActorRenderMode.VTK_SAMPLED_SLICE) {
+    if (
+      rendering?.renderMode === ActorRenderMode.VTK_SAMPLED_SLICE ||
+      rendering?.renderMode === ActorRenderMode.CPU_VOLUME
+    ) {
       return rendering.imageVolume.imageData;
+    }
+
+    if (rendering?.renderMode === ActorRenderMode.CPU_IMAGE) {
+      return this.getImageData()?.imageData;
     }
 
     return this.getImageActor()?.getMapper().getInputData();

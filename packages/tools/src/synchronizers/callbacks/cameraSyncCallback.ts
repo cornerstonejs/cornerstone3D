@@ -157,7 +157,7 @@ export default function cameraSyncCallback(
   const sViewport = sourceRenderingEngine?.getViewport(
     sourceViewport.viewportId
   );
-  if (!sViewport) {
+  if (!sViewport || !tViewport) {
     return;
   }
   const viewReference = sViewport.getViewReference();

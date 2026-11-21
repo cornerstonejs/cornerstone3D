@@ -644,6 +644,26 @@ describe('cameraSyncCallback', () => {
     expect(targetViewport.render).toHaveBeenCalledTimes(1);
   });
 
+  it('bails out when the target viewport cannot be resolved', () => {
+    const sourceViewport = { getViewReference: jest.fn(() => ({})) };
+
+    getRenderingEngine.mockImplementation((id) =>
+      id === 're-source'
+        ? { getViewport: jest.fn(() => sourceViewport) }
+        : { getViewport: jest.fn(() => undefined) }
+    );
+
+    expect(() =>
+      cameraSyncCallback(
+        {},
+        { renderingEngineId: 're-source', viewportId: 'source' },
+        { renderingEngineId: 're-target', viewportId: 'target' },
+        { detail: { camera: {} } }
+      )
+    ).not.toThrow();
+    expect(sourceViewport.getViewReference).not.toHaveBeenCalled();
+  });
+
   it('bails out for Generic viewports when the source viewport cannot be resolved', () => {
     const targetViewport = { setViewReference: jest.fn(), render: jest.fn() };
     getRenderingEngine.mockImplementation((id) =>

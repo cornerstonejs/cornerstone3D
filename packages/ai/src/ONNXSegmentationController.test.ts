@@ -156,6 +156,15 @@ describe('ONNXSegmentationController sample image of a volume view', () => {
     );
   });
 
+  it('takes the first image id of the viewport when the viewport gives no volume id', () => {
+    viewport.getVolumeId = () => undefined;
+
+    controller.initViewport(viewport);
+    internals.viewportRenderedListener();
+
+    expect(internals.desiredImage.sampleImageId).toBe('source:0');
+  });
+
   it('takes the first image id of the viewport when the volume is not in the cache', () => {
     jest.spyOn(cache, 'getVolume').mockReturnValue(undefined as never);
 

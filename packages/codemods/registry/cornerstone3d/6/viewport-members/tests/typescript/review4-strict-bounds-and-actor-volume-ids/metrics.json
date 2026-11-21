@@ -1,0 +1,12 @@
+{
+  "cornerstone3d-6-review": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "15",
+        "rule": "getAllVolumeIds: getActors() also lists labelmaps, surfaces and stack images, keep the ids that viewport.hasVolumeId(id) takes"
+      },
+      "count": 1
+    }
+  ]
+}

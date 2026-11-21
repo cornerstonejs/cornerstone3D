@@ -207,8 +207,23 @@ class SegmentationIntersectionTool extends AnnotationDisplayTool {
     );
   }) as EventListener;
 
+  /**
+   * Adds the annotation of the tool in the frame of reference of the viewport
+   * whose camera changed, when that frame has none, and draws that viewport
+   * again. The lines of another viewport follow its own slice, not this
+   * camera, so the other viewports of the group are not drawn again.
+   */
   onCameraModified = (evt: Types.EventTypes.CameraModifiedEvent): void => {
-    this._init();
+    const { renderingEngineId, viewportId } = evt.detail;
+    const viewport =
+      getRenderingEngine(renderingEngineId)?.getViewport(viewportId);
+
+    if (!viewport) {
+      return;
+    }
+
+    addFrameAnnotation(this.getToolName(), viewport.getFrameOfReferenceUID());
+    triggerAnnotationRender(viewport.element);
   };
 
   /**

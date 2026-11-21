@@ -51,7 +51,9 @@ async function jumpToSlice(
  * volume mode: the index of the last request, which on a stack can be ahead
  * of the image that is drawn while that image loads. Another viewport gives
  * its slice index. A viewport that has no `getNumberOfSlices`, as an ECG
- * viewport, has one slice: a jump on it moves nothing.
+ * viewport, has one slice: a jump on it moves nothing. A viewport that has no
+ * `getSliceIndex`, as a 3D viewport, is at slice 0, as the 5.x 3D viewport
+ * with its one slice: a jump on it moves nothing either.
  *
  * With the `volumeId` of another volume that a planar viewport shows in
  * volume mode, the slices are those of that volume along the view, counted
@@ -87,12 +89,12 @@ function _getImageSliceData(
 
   const sliceViewport = viewport as IViewport & {
     getNumberOfSlices?(): number;
-    getSliceIndex(): number;
+    getSliceIndex?(): number;
   };
 
   return {
     numberOfSlices: sliceViewport.getNumberOfSlices?.() ?? 1,
-    imageIndex: sliceViewport.getSliceIndex(),
+    imageIndex: sliceViewport.getSliceIndex?.() ?? 0,
   };
 }
 

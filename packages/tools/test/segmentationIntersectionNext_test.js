@@ -102,6 +102,12 @@ const SCROLL_OUT_OF_BLOCK = 9;
  */
 const REDRAW_TIMEOUT = 1500;
 
+/** The camera changes that the test of the draws on a camera change makes. */
+const CAMERA_STEPS = 20;
+
+/** A second planar viewport of the tool group, sagittal. */
+const sagittalViewportId = 'segmentationIntersectionNextSagittal';
+
 /**
  * The longest wait, in ms, for the first conversion of the labelmap by
  * polySeg, which starts its worker.
@@ -490,6 +496,82 @@ function listenForSurfaceRender(viewportId, timeout = REDRAW_TIMEOUT) {
         onRendered
       )
     );
+}
+
+/**
+ * Counts the draws of a tool on each of some viewports and the milliseconds
+ * that they take. `take` gives the counts since the last `take` and starts
+ * again; `stop` gives the tool its own draw back.
+ */
+function measureDraws(tool, viewportIds) {
+  const renderAnnotation = tool.renderAnnotation;
+  const empty = () =>
+    Object.fromEntries(viewportIds.map((id) => [id, { count: 0, ms: 0 }]));
+  let draws = empty();
+
+  tool.renderAnnotation = (enabledElement, svgDrawingHelper) => {
+    const start = performance.now();
+    const drawn = renderAnnotation(enabledElement, svgDrawingHelper);
+    const entry = draws[enabledElement.viewport.id];
+
+    if (entry) {
+      entry.count += 1;
+      entry.ms += performance.now() - start;
+    }
+
+    return drawn;
+  };
+
+  return {
+    take() {
+      const taken = draws;
+
+      draws = empty();
+
+      return taken;
+    },
+    stop() {
+      tool.renderAnnotation = renderAnnotation;
+    },
+  };
+}
+
+/**
+ * Resolves after some animation frames, so that the draws that are asked for
+ * are done.
+ */
+async function waitForFrames(count = 10) {
+  for (let frame = 0; frame < count; frame++) {
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+  }
+}
+
+/**
+ * Turns the camera of a 3D viewport about its view up through its focal
+ * point by an angle in radians, as one step of an orbit.
+ */
+function orbit(viewport3D, angle) {
+  const { focalPoint, position, viewUp } = viewport3D.getViewState();
+  const offset = position.map((value, axis) => value - focalPoint[axis]);
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+  const along = offset.reduce(
+    (sum, value, axis) => sum + value * viewUp[axis],
+    0
+  );
+  const cross = [
+    viewUp[1] * offset[2] - viewUp[2] * offset[1],
+    viewUp[2] * offset[0] - viewUp[0] * offset[2],
+    viewUp[0] * offset[1] - viewUp[1] * offset[0],
+  ];
+  const turned = offset.map(
+    (value, axis) =>
+      value * cos + cross[axis] * sin + viewUp[axis] * along * (1 - cos)
+  );
+
+  viewport3D.setViewState({
+    position: turned.map((value, axis) => focalPoint[axis] + value),
+  });
 }
 
 /** Asks for a draw of the annotations of a viewport and waits for it. */
@@ -1150,6 +1232,108 @@ describe('SegmentationIntersectionTool with the surface of a segmentation on a 3
     await pathsChangedFrom(viewport, pathData);
 
     expect(drawnPaths(viewport).length).toBe(0);
+  });
+
+  it('draws again on a camera change of a viewport of its group that viewport only, not the other viewports of the group', async function () {
+    const series = await createSeries({
+      id: 'segmentationIntersectionNextCamera',
+      size: SIZE,
+    });
+    const viewport = createNextViewport(renderingEngine, viewportId);
+    const sagittal = createNextViewport(renderingEngine, sagittalViewportId);
+    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+
+    toolGroup.addViewport(sagittalViewportId, renderingEngineId);
+    await showVolume(viewport, series, 10, {
+      orientation: OrientationAxis.AXIAL,
+    });
+    await showVolume(sagittal, series, 10, {
+      orientation: OrientationAxis.SAGITTAL,
+    });
+
+    const viewport3D = await showSphereOn3DViewport(renderingEngine);
+
+    toolGroup.addViewport(viewport3DId, renderingEngineId);
+    await enableToolAndWaitForIdle(viewport);
+    await renderAnnotationsAndWait(sagittal);
+    await waitForFrames();
+
+    const sagittalPaths = drawnPaths(sagittal);
+    const draws = measureDraws(toolGroup.getToolInstance(toolName), [
+      viewportId,
+      sagittalViewportId,
+      viewport3DId,
+    ]);
+    let surfaceRenders = 0;
+    const countSurfaceRender = () => {
+      surfaceRenders += 1;
+    };
+    const takeSurfaceRenders = () => {
+      const taken = surfaceRenders;
+
+      surfaceRenders = 0;
+
+      return taken;
+    };
+
+    cornerstone3D.eventTarget.addEventListener(
+      csToolsEvents.SEGMENTATION_RENDERED,
+      countSurfaceRender
+    );
+
+    for (let step = 1; step <= CAMERA_STEPS; step++) {
+      const rendered = waitForAnnotationsRendered(viewport.element);
+
+      viewport.setZoom(1 + step / 50);
+      await rendered;
+    }
+
+    await waitForFrames();
+
+    const zoom = draws.take();
+    const zoomSurfaceRenders = takeSurfaceRenders();
+
+    for (let step = 1; step <= CAMERA_STEPS; step++) {
+      const rendered = waitForAnnotationsRendered(viewport3D.element);
+
+      orbit(viewport3D, Math.PI / 90);
+      viewport3D.render();
+      await rendered;
+    }
+
+    await waitForFrames();
+
+    const orbits = draws.take();
+    const orbitSurfaceRenders = takeSurfaceRenders();
+
+    draws.stop();
+    cornerstone3D.eventTarget.removeEventListener(
+      csToolsEvents.SEGMENTATION_RENDERED,
+      countSurfaceRender
+    );
+    console.log(
+      'R1MEASURE',
+      JSON.stringify({
+        steps: CAMERA_STEPS,
+        zoom,
+        zoomSurfaceRenders,
+        orbits,
+        orbitSurfaceRenders,
+      })
+    );
+
+    expect(sagittalPaths.length).toBe(1);
+    expect(zoom[viewportId].count).toBeGreaterThan(0);
+    expect(zoom[sagittalViewportId].count).toBeLessThanOrEqual(
+      zoomSurfaceRenders
+    );
+    expect(zoom[viewport3DId].count).toBeLessThanOrEqual(zoomSurfaceRenders);
+    expect(orbits[viewportId].count).toBeLessThanOrEqual(orbitSurfaceRenders);
+    expect(orbits[sagittalViewportId].count).toBeLessThanOrEqual(
+      orbitSurfaceRenders
+    );
+    expect(zoomSurfaceRenders + orbitSurfaceRenders).toBeLessThan(CAMERA_STEPS);
+    expect(drawnPaths(sagittal)).toEqual(sagittalPaths);
   });
 });
 

@@ -88,7 +88,7 @@ export function isGenericViewportReferenceViewableAsVolume(
       (!viewRef.referencedImageURI ||
         hasReferencedImage(viewRef, context.imageIds, context.imageURIs)) &&
       (!viewRef.planeRestriction ||
-        isPlaneRestrictionViewable(viewRef.planeRestriction, context, {
+        isPlaneRestrictionViewable(viewRef.planeRestriction, viewRef, context, {
           withOrientation: true,
         }))
   );
@@ -242,9 +242,7 @@ function hasReferencedImage(
 
 /**
  * Whether a reference is in the frame of reference of a context: it names
- * none, or the same, or the name made up for the images of the context
- * before that name took a SHA-256 digest, when it names one of those images
- * (`isEarlierImagesFrameOfReferenceUID`), as a reference saved then.
+ * none, or one that `isFrameOfReferenceUIDOfContext` takes.
  */
 function isFrameOfReferenceCompatible(
   viewRef: ViewReference,
@@ -252,9 +250,30 @@ function isFrameOfReferenceCompatible(
 ): boolean {
   return (
     !viewRef.FrameOfReferenceUID ||
-    viewRef.FrameOfReferenceUID === context.frameOfReferenceUID ||
-    (isEarlierImagesFrameOfReferenceUID(
+    isFrameOfReferenceUIDOfContext(
       viewRef.FrameOfReferenceUID,
+      viewRef,
+      context
+    )
+  );
+}
+
+/**
+ * Whether a frame of reference that a reference names, at its top or in its
+ * plane restriction, is that of a context: the same, or the name made up for
+ * the images of the context before that name took a SHA-256 digest, when the
+ * reference names one of those images (`isEarlierImagesFrameOfReferenceUID`),
+ * as a reference saved then.
+ */
+function isFrameOfReferenceUIDOfContext(
+  frameOfReferenceUID: string | undefined,
+  viewRef: ViewReference,
+  context: GenericViewportReferenceContext
+): boolean {
+  return (
+    frameOfReferenceUID === context.frameOfReferenceUID ||
+    (isEarlierImagesFrameOfReferenceUID(
+      frameOfReferenceUID,
       context.imageIds
     ) &&
       hasReferencedImage(viewRef, context.imageIds))
@@ -305,7 +324,12 @@ function isPlaneCompatible(
   // what one point gives, therefore does not make every view compatible.
   if (
     viewRef.planeRestriction &&
-    !isPlaneRestrictionViewable(viewRef.planeRestriction, context, options)
+    !isPlaneRestrictionViewable(
+      viewRef.planeRestriction,
+      viewRef,
+      context,
+      options
+    )
   ) {
     return false;
   }
@@ -343,12 +367,24 @@ function isAlongViewPlaneNormal(
   );
 }
 
+/**
+ * Whether the plane restriction of a reference is viewable in a context: in
+ * its frame of reference (`isFrameOfReferenceUIDOfContext`), then along the
+ * view and, without `withNavigation`, through its focal point.
+ */
 function isPlaneRestrictionViewable(
   planeRestriction: PlaneRestriction,
+  viewRef: ViewReference,
   context: GenericViewportReferenceContext,
   options: ReferenceCompatibleOptions
 ): boolean {
-  if (planeRestriction.FrameOfReferenceUID !== context.frameOfReferenceUID) {
+  if (
+    !isFrameOfReferenceUIDOfContext(
+      planeRestriction.FrameOfReferenceUID,
+      viewRef,
+      context
+    )
+  ) {
     return false;
   }
 

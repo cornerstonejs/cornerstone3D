@@ -11,7 +11,7 @@ function describe(viewportId: string, imageId: string, canvasPoint: number[]) {
     getRenderingEngine('engine').getViewport<PlanarViewport>(viewportId);
 
   return {
-    bounds: viewport.getImageData().imageData.getBounds(),
+    bounds: viewport.getImageData()?.imageData.getBounds?.(),
     inPlane: utilities.isInAcquisitionPlane(viewport),
     planes: utilities.getSlicesClippingPlanes(viewport),
     pixels: utilities.getCurrentVolumeViewportSlice(viewport).scalarData,

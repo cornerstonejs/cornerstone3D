@@ -26,6 +26,9 @@ import type { Node } from './lib.ts';
 /** Sites that the reader changes. */
 const manual = useMetricAtom('cornerstone3d-6-manual');
 
+/** Rewrites that the reader checks. */
+const review = useMetricAtom('cornerstone3d-6-review');
+
 /** The members whose call keeps its arguments under a new name. */
 const RENAMED_METHODS: Record<string, string> = {
   resetCameraForResize: 'resetViewStateForResize',
@@ -45,7 +48,16 @@ const ACTOR_READS: Record<string, (args: string[]) => string | undefined> = {
   getActorUIDByIndex: (args) =>
     args.length === 1 ? `getActors()[${args[0]}]?.uid` : undefined,
   getBounds: (args) =>
-    args.length === 0 ? 'getImageData().imageData.getBounds()' : undefined,
+    args.length === 0 ? 'getImageData()?.imageData.getBounds?.()' : undefined,
+};
+
+/**
+ * The review note of a rewritten read of `getActors()` whose answer can hold
+ * more than the legacy member gave.
+ */
+const ACTOR_READ_REVIEWS: Record<string, string> = {
+  getAllVolumeIds:
+    'getAllVolumeIds: getActors() also lists labelmaps, surfaces and stack images, keep the ids that viewport.hasVolumeId(id) takes',
 };
 
 /** The members whose call becomes a function of the core `utilities`. */
@@ -429,6 +441,8 @@ function rewriteCall(run: Run, call: Node): void {
 
     if (!text || !run.edits.add(replaceFromProperty(call, property, text))) {
       reportSite(run, method, call);
+    } else if (ACTOR_READ_REVIEWS[method]) {
+      review.increment(site(run.root, ACTOR_READ_REVIEWS[method], call));
     }
 
     return;

@@ -34,7 +34,8 @@ its name, and so is a legacy member in brackets
   `getTargetImageIdIndex()` `getCurrentImageIdIndex()`.
 - `getActorUIDs()`, `getAllVolumeIds()`, `getActorByIndex(i)` and
   `getActorUIDByIndex(i)` become reads of `getActors()`; `getBounds()`
-  becomes `getImageData().imageData.getBounds()`.
+  becomes `getImageData()?.imageData.getBounds?.()`, which passes
+  `strictNullChecks` and gives undefined while the viewport shows nothing.
 - `isInAcquisitionPlane()`, `getSlicesClippingPlanes()`,
   `getVtkDisplayCoords(point)` and `getCurrentSlicePixelData()` become
   functions of the core `utilities`; `getCornerstoneImage()` becomes
@@ -78,6 +79,13 @@ the others of the map, and the removed helpers of the core
 `export { ... } from '@cornerstonejs/core'`, and
 `renderFrameOfReference` on a rendering engine (also in brackets): call
 `renderViewports` with the ids of the viewports of that frame of reference.
+
+## Review
+
+The rewrite of `getAllVolumeIds()` is listed for review: `getActors()` also
+lists the actors of labelmaps, surfaces and the images of a stack, whose
+`referencedId` is not a volume id or is undefined. Keep the ids that
+`viewport.hasVolumeId(id)` takes where only the volumes count.
 
 ## Development
 

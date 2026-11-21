@@ -58,14 +58,8 @@ const ptVolumeName = 'PT_VOLUME_ID';
 const ptVolumeId = `${volumeLoaderScheme}:${ptVolumeName}`;
 
 const ctStackDisplaySetId = 'advancedColorbar:ct-stack';
-
-/**
- * A volume is registered under the id of its volume. The colorbar names its
- * data by one id: it sets the window of the display set with that id, and it
- * follows the window and colormap events of the volume with that id.
- */
-const ctVolumeDisplaySetId = ctVolumeId;
-const ptVolumeDisplaySetId = ptVolumeId;
+const ctVolumeDisplaySetId = 'advancedColorbar:ct-volume';
+const ptVolumeDisplaySetId = 'advancedColorbar:pt-volume';
 
 // Convert all VTK colormaps to the one supported by the colorbar which actualy
 // have almost the same properties.

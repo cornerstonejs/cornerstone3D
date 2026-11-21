@@ -639,8 +639,9 @@ point of the image on display.
   with a 32-bit hash in place of the digest (the FNV-1a hash of the sorted
   URIs joined by new lines, `utilities.fnv1aHash`). A view reference saved
   with that earlier name still restores: `setViewReference` and
-  `isReferenceViewable` take it in place of the new name when it names one
-  of the images of the viewport, and `getViewReference` gives the new name.
+  `isReferenceViewable` take it in place of the new name, at the top of the
+  reference and in its plane restriction, when it names one of the images of
+  the viewport, and `getViewReference` gives the new name.
 - **Stored annotations of images without a frame of reference take the new
   name.** An annotation stored from 5.x, or from a 5.x next viewport, holds
   `undefined` or `planarNext-viewport-<viewportId>` in
@@ -649,7 +650,9 @@ point of the image on display.
   earlier name of the images, which is not the name of their group either. `annotation.state.addAnnotation(annotation, element)` puts it
   in the group of the viewport, but its metadata keeps the old name, which
   `viewport.isReferenceViewable` compares with the frame of reference of
-  the viewport, so the annotation tools can leave it out. Show the images of
+  the viewport, so the annotation tools can leave it out. The earlier name of
+  6.0 passes that check when the annotation names one of the images of the
+  viewport; the 5.x names do not. Show the images of
   the annotation (its `metadata.referencedImageId`) on the viewport first,
   then write the frame of reference of the viewport into both places and
   add it:
@@ -684,6 +687,12 @@ point of the image on display.
   stack and for a volume, see the rows `getBounds()` and
   `getIntensityFromWorld()` of
   [the map](./3-api-map.md#members-of-the-volume-viewport-only).
+- **`getDefaultImageData()` of a planar viewport answers on the CPU too.** For
+  a volume drawn on the CPU it gives the vtk.js image data of the volume, as
+  for a sampled slice. For a stack drawn on the CPU it gives the `imageData`
+  of `getImageData()`, the plain object above. The 5.x next planar viewport
+  gave undefined for both, so the ONNX segmentation controller of
+  `@cornerstonejs/ai` threw on a CPU viewport.
 
 ## Surfaces in a planar viewport
 
@@ -1530,7 +1539,10 @@ legacy picture within two levels of 255.
   no viewport shows any more go, and the tool drops the cuts it kept for
   it. Once no tool group has the tool enabled, it drops every cut it kept,
   and cuts again when it is enabled. A 3D viewport of the tool group gets no
-  line. In 5.x the tool read
+  line. A camera change of a viewport of the group (a pan, a zoom, an orbit
+  of a 3D viewport) draws that viewport again and not the others, whose
+  lines follow their own slices; 5.x asked every viewport of the group for
+  a draw on each camera change. In 5.x the tool read
   `clippingFilter` of each actor entry, which nothing set, and drew no line.
   The example `surfaceRendering` shows it.
 

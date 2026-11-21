@@ -43,6 +43,38 @@ function earlierFrameOfReferenceOf(imageIds) {
   )}`;
 }
 
+/**
+ * A view reference as an earlier build saved it with another frame of
+ * reference: the frame of reference at the top and in its plane restriction,
+ * as `getViewReference` writes both.
+ */
+function withFrameOfReference(viewRef, FrameOfReferenceUID) {
+  return {
+    ...viewRef,
+    FrameOfReferenceUID,
+    planeRestriction: viewRef.planeRestriction && {
+      ...viewRef.planeRestriction,
+      FrameOfReferenceUID,
+    },
+  };
+}
+
+/** The option sets of `isReferenceViewable` that a parity check asks. */
+const VIEWABLE_OPTIONS = [
+  {},
+  { withNavigation: true },
+  { withOrientation: true },
+  { asVolume: true },
+  { asVolume: true, withNavigation: true },
+];
+
+/** The answers of `isReferenceViewable` for each of `VIEWABLE_OPTIONS`. */
+function answersForEachOption(viewport, viewRef) {
+  return VIEWABLE_OPTIONS.map((options) =>
+    viewport.isReferenceViewable({ ...viewRef }, options)
+  );
+}
+
 /** The answers of `isReferenceViewable` without options and with navigation. */
 function answers(viewport, viewRef) {
   return {
@@ -272,14 +304,15 @@ describe('Images without a frame of reference on direct next planar viewports --
     );
     await showStackAt(stack, 'noFrame:earlier', imageIds, 4);
 
-    const saved = {
-      ...stack.getViewReference(),
-      FrameOfReferenceUID: earlierFrameOfReferenceOf(imageIds),
-    };
-    const savedOfOtherImages = {
-      ...saved,
-      FrameOfReferenceUID: earlierFrameOfReferenceOf(otherIds),
-    };
+    const current = stack.getViewReference();
+    const saved = withFrameOfReference(
+      current,
+      earlierFrameOfReferenceOf(imageIds)
+    );
+    const savedOfOtherImages = withFrameOfReference(
+      saved,
+      earlierFrameOfReferenceOf(otherIds)
+    );
 
     await showStackAt(stack, 'noFrame:earlier', imageIds, 1);
     await volume.setDisplaySets({
@@ -289,10 +322,20 @@ describe('Images without a frame of reference on direct next planar viewports --
     await renderAndWait(volume);
 
     expect(saved.FrameOfReferenceUID).not.toBe(stack.getFrameOfReferenceUID());
+    expect(saved.planeRestriction.FrameOfReferenceUID).toBe(
+      saved.FrameOfReferenceUID
+    );
     expect(saved.referencedImageId).toBe(imageIds[4]);
     expect(answers(stack, saved).withNavigation).toBe(true);
     expect(answers(volume, saved).withNavigation).toBe(true);
+    expect(answersForEachOption(stack, saved)).toEqual(
+      answersForEachOption(stack, current)
+    );
+    expect(answersForEachOption(volume, saved)).toEqual(
+      answersForEachOption(volume, current)
+    );
     expect(answers(stack, savedOfOtherImages).withNavigation).toBe(false);
+    expect(answers(volume, savedOfOtherImages).withNavigation).toBe(false);
 
     stack.setViewReference(savedOfOtherImages);
     await renderAndWait(stack);
@@ -306,5 +349,15 @@ describe('Images without a frame of reference on direct next planar viewports --
 
     expect(stack.getCurrentImageIdIndex()).toBe(4);
     expect(volume.getCurrentImageId()).toBe(imageIds[4]);
+    expect(answers(volume, saved)).toEqual({
+      plain: true,
+      withNavigation: true,
+    });
+    expect(answersForEachOption(stack, saved)).toEqual(
+      answersForEachOption(stack, current)
+    );
+    expect(answersForEachOption(volume, saved)).toEqual(
+      answersForEachOption(volume, current)
+    );
   });
 });

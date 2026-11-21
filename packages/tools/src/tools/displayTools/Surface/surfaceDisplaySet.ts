@@ -1,10 +1,12 @@
-import { Enums, utilities, type Types } from '@cornerstonejs/core';
+import {
+  Enums,
+  getEnabledElements,
+  utilities,
+  type Types,
+} from '@cornerstonejs/core';
 import type { VolumeViewport3D } from '@cornerstonejs/core';
 import SegmentationRepresentations from '../../../enums/SegmentationRepresentations';
-import {
-  getSurfaceActorEntry,
-  getSurfaceRepresentationUID,
-} from '../../../stateManagement/segmentation/helpers/getSegmentationActor';
+import { getSurfaceRepresentationUID } from '../../../stateManagement/segmentation/helpers/getSegmentationActor';
 import { resetViewportCamera } from '../../../utilities/setViewportCamera';
 
 /**
@@ -20,11 +22,12 @@ function showsSurfacesAsDisplaySets(
 /**
  * Shows a surface of a segmentation on a next 3D viewport as a geometry
  * display set, under the id of its geometry. The colour and the visibility of
- * the surface are the presentation of the display set. The first call mounts
- * the display set, registered with its segmentation so that its actor entry
- * carries the representation UID, and fits the camera, as the legacy viewport
- * does for a new surface. A later call sets the presentation only: the display
- * set draws the points and the polys of its geometry at each render.
+ * the surface are the presentation of the display set. The first call on a
+ * viewport, whose actors have no entry of the surface, mounts the display
+ * set, registered with its segmentation so that its actor entry carries the
+ * representation UID, and fits the camera, as the legacy viewport does for a
+ * new surface. A later call sets the presentation only: the display set draws
+ * the points and the polys of its geometry at each render.
  *
  * @param viewport - The next 3D viewport.
  * @param geometryId - The id of the cached geometry of the surface.
@@ -37,14 +40,21 @@ async function addOrUpdateSurfaceDisplaySet(
   surface: Types.ISurface,
   segmentationId: string
 ): Promise<void> {
-  const { segmentIndex } = surface;
+  const representationUID = getSurfaceRepresentationUID(
+    segmentationId,
+    surface.segmentIndex
+  );
 
   viewport.setDisplaySetPresentation(geometryId, {
     color: surface.color,
     visible: surface.visible !== false,
   });
 
-  if (getSurfaceActorEntry(viewport.id, segmentationId, segmentIndex)) {
+  if (
+    viewport
+      .getActors()
+      .some((entry) => entry.representationUID === representationUID)
+  ) {
     return;
   }
 
@@ -53,10 +63,7 @@ async function addOrUpdateSurfaceDisplaySet(
     reference: {
       kind: 'segmentation',
       segmentationId,
-      representationUID: getSurfaceRepresentationUID(
-        segmentationId,
-        segmentIndex
-      ),
+      representationUID,
     },
   });
   await viewport.addDisplaySet(geometryId, {
@@ -67,9 +74,20 @@ async function addOrUpdateSurfaceDisplaySet(
 }
 
 /**
+ * Whether a viewport of any rendering engine shows the display set of an id.
+ */
+function isShownOnAViewport(displaySetId: string): boolean {
+  return getEnabledElements().some(({ viewport }) =>
+    (viewport as Partial<VolumeViewport3D>)
+      .getActors?.()
+      .some(({ referencedId }) => referencedId === displaySetId)
+  );
+}
+
+/**
  * Takes the surfaces of a segmentation off a next 3D viewport: every geometry
  * display set whose actor entry carries a Surface representation UID of the
- * segmentation, with its registration.
+ * segmentation, with its registration when no other viewport shows it.
  *
  * @param viewport - The next 3D viewport.
  * @param segmentationId - The id of the segmentation.
@@ -89,8 +107,11 @@ function removeSurfaceDisplaySets(
       return;
     }
 
-    utilities.genericViewportDisplaySetMetadataProvider.remove(referencedId);
     viewport.removeData(referencedId);
+
+    if (!isShownOnAViewport(referencedId)) {
+      utilities.genericViewportDisplaySetMetadataProvider.remove(referencedId);
+    }
   });
 }
 

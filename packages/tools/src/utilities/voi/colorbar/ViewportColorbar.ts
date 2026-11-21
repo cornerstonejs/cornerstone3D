@@ -30,8 +30,23 @@ function isSampledSliceActor(viewport, actor): boolean {
 }
 
 /**
+ * The display set id of the data that a colorbar names by `volumeId`: the
+ * display set of a planar viewport that shows the volume of that id, else the
+ * id itself, which then is a display set id.
+ */
+function getDisplaySetId(viewport: Types.IViewport, volumeId: string): string {
+  return (
+    (viewport as PlanarViewport).findDataIdByVolumeId?.(volumeId) ?? volumeId
+  );
+}
+
+/**
  * A colorbar associated with a viewport that updates automatically when the
  * viewport VOI changes or when the stack/volume are updated..
+ *
+ * Its `volumeId` names the data of the colorbar on the viewport: a volume id,
+ * or the id of the display set that shows the volume. The colorbar sets the
+ * window of that display set, and follows the events that name its volume.
  */
 class ViewportColorbar extends Colorbar {
   private _element: HTMLDivElement;
@@ -71,13 +86,15 @@ class ViewportColorbar extends Colorbar {
     const viewport: Types.IViewport = this.enabledElement.viewport;
 
     // Direct Generic ("next") viewports have no setProperties; VOI is applied
-    // through the display-set presentation. _volumeId is the bound dataId when
-    // known (multi-volume/fusion); otherwise the single-argument overload
+    // through the display-set presentation. _volumeId names the bound data
+    // when known (multi-volume/fusion); otherwise the single-argument overload
     // targets the viewport's default binding.
-    const { _volumeId: dataId } = this;
+    const { _volumeId: volumeId } = this;
 
-    if (dataId) {
-      viewport.setDisplaySetPresentation(dataId, { voiRange });
+    if (volumeId) {
+      viewport.setDisplaySetPresentation(getDisplaySetId(viewport, volumeId), {
+        voiRange,
+      });
     } else {
       viewport.setDisplaySetPresentation({ voiRange });
     }
@@ -170,8 +187,30 @@ class ViewportColorbar extends Colorbar {
     this.autoHideTicks();
   }
 
+  /**
+   * Whether the volume id of an event names the data of the colorbar: it is
+   * the `volumeId` of the colorbar, or the volume of the display set that the
+   * `volumeId` of the colorbar names.
+   */
+  private _namesOwnData(volumeId: string | undefined): boolean {
+    if (volumeId === this._volumeId) {
+      return true;
+    }
+
+    const viewport = this.enabledElement?.viewport;
+
+    return Boolean(
+      volumeId &&
+        viewport &&
+        getDisplaySetId(viewport, volumeId) === this._volumeId
+    );
+  }
+
   private _newImageCallback = () => {
-    this.imageRange = ViewportColorbar._getImageRange(this._element);
+    this.imageRange = ViewportColorbar._getImageRange(
+      this._element,
+      this._volumeId
+    );
   };
 
   private _imageVolumeModifiedCallback = (
@@ -179,7 +218,7 @@ class ViewportColorbar extends Colorbar {
   ) => {
     const { volumeId } = evt.detail;
 
-    if (volumeId !== this._volumeId) {
+    if (!this._namesOwnData(volumeId)) {
       return;
     }
 
@@ -192,7 +231,7 @@ class ViewportColorbar extends Colorbar {
   ) => {
     const { viewportId, volumeId, range: voiRange, colormap } = evt.detail;
     const { viewport } = this.enabledElement;
-    if (viewportId !== viewport.id || volumeId !== this._volumeId) {
+    if (viewportId !== viewport.id || !this._namesOwnData(volumeId)) {
       return;
     }
 
@@ -210,7 +249,7 @@ class ViewportColorbar extends Colorbar {
     const { viewportId, colormap, volumeId } = evt.detail;
     const { viewport } = this.enabledElement;
 
-    if (viewportId !== viewport.id || volumeId !== this._volumeId) {
+    if (viewportId !== viewport.id || !this._namesOwnData(volumeId)) {
       return;
     }
 
