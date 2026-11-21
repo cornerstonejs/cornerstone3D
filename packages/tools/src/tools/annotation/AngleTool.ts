@@ -827,7 +827,9 @@ class AngleTool extends AnnotationTool {
         });
       }
 
-      if (!data.cachedStats[targetId]?.angle) {
+      // An angle of 0 is a valid measurement, only skip a missing or NaN one
+      const cachedAngle = data.cachedStats[targetId]?.angle;
+      if (cachedAngle == null || Number.isNaN(cachedAngle)) {
         continue;
       }
 
