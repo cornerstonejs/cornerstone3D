@@ -57,7 +57,7 @@
   <nav>
     <a href="#decisions">Decisions</a>
     <a href="#pending">Last review findings</a>
-    <a href="#open">Open issues not fixed</a>
+    <a href="#open">Your decisions on the issues</a>
     <a href="https://github.com/cornerstonejs/cornerstone3D/compare/main...feat/slice-first-step-1">The diff to main</a>
   </nav>
 
@@ -69,9 +69,9 @@
   <p class="note">Findings of the last review and the disabled tests, all fixed.</p>
   <div id="pending-list"></div>
 
-  <h2 id="open">Open issues logged but not fixed <span class="count" id="open-count"></span></h2>
-  <p class="note">From <code>v6-open-issues.md</code>. These are left by choice: 5.x behaved the same, the next API
-    does it on purpose, nobody needs it for 6.0, or it is test infrastructure.</p>
+  <h2 id="open">The issues you decided, and what was done <span class="count" id="open-count"></span></h2>
+  <p class="note">From <code>v6-open-issues.md</code>: the 13 rows you decided on 20 November, each with the
+    commit that did it, and the one row still open.</p>
   <div id="open-list"></div>
 </main>
 <div class="lightbox" id="lightbox"><img alt=""><p></p></div>
@@ -83,7 +83,8 @@
    "title": "Plain viewport names; the 5.x next names stay as deprecated aliases",
    "decision": "ViewportType.PLANAR / VOLUME_3D / VIDEO / WHOLE_SLIDE / ECG and the classes PlanarViewport, VolumeViewport3D, VideoViewport, WSIViewport, ECGViewport. The *_NEXT members and the *Next strings stay as deprecated aliases for 6.x; 'stack', 'orthographic' and 'perspective' throw with a message that names the replacement. Types.IViewport is the next interface; IGenericViewport is a deprecated alias.",
    "why": "No legacy name on a next class, while stored 5.x-next viewport inputs keep working.",
-   "where": "6x guide, 1-next-viewports-only.md and 3-api-map.md"
+   "where": "6x guide, 1-next-viewports-only.md and 3-api-map.md",
+   "approved": true
   },
   {
    "id": "d-new-public",
@@ -91,7 +92,8 @@
    "title": "Two new public names",
    "decision": "VideoViewport.isPlaying() (5.x had only a private field) and utilities.getImagesFrameOfReferenceUID(imageIds) (the made-up frame of reference of images without one, so polySeg can put converted surfaces in the planar viewport's frame).",
    "why": "Each closes an open issue that needs a public read; no other new public names were added.",
-   "where": "6x guide, 3-api-map.md"
+   "where": "6x guide, 3-api-map.md",
+   "approved": true
   },
   {
    "id": "d-optional-args",
@@ -99,7 +101,8 @@
    "title": "Optional rendering engine ids on synchronizer options and spatial registrations",
    "decision": "synchronizer.setOptions(viewportId, options, renderingEngineId?) and getOptions(viewportId, renderingEngineId?); spatialRegistrationMetadataProvider takes the two rendering engine ids after the viewport ids. Without them the calls work as in 5.x. Automatic registrations are kept per engine pair and dropped when the viewports show data of other frames of reference.",
    "why": "Two rendering engines with the same viewport id shared options and registrations.",
-   "where": "6x guide, 2-rendering-changes.md"
+   "where": "6x guide, 2-rendering-changes.md",
+   "approved": true
   },
   {
    "id": "d-noframe",
@@ -107,7 +110,8 @@
    "title": "Images without a frame of reference get a made-up one per image set",
    "decision": "noFrameOfReference-<n>-<SHA-256 of the sorted image URIs>, the same for every viewport and display set of those images; a viewport without data keeps planarNext-viewport-<id>.",
    "why": "5.x legacy stacks shared references and annotations of such images (they had no frame at all); one made-up frame per viewport broke that. A 32-bit hash collided, so SHA-256. Annotations of different image sets are no longer in one undefined group.",
-   "where": "6x guide, 2-rendering-changes.md (with restore instructions for stored annotations)"
+   "where": "6x guide, 2-rendering-changes.md (with restore instructions for stored annotations)",
+   "approved": true
   },
   {
    "id": "d-flip-rotate",
@@ -115,7 +119,8 @@
    "title": "A planar view flips first, then rotates, as 5.x did",
    "decision": "Rotation and flips compose in the 5.x order; a flip written alone on a turned view mirrors the screen, so the rotation reads 360 minus the rotation.",
    "why": "A gap from 5.x (rotation 30 with a horizontal flip gave another view up). A view state stored on a 5.x NEXT viewport with a rotation and one flip now shows turned the other way: write 360 minus the rotation to keep it.",
-   "where": "6x guide, 2-rendering-changes.md"
+   "where": "6x guide, 2-rendering-changes.md",
+   "approved": true
   },
   {
    "id": "d-zoom-area",
@@ -123,7 +128,8 @@
    "title": "A zoom next to a display area is a factor against the fit",
    "decision": "As 5.x: setPan/setZoom keep the display area's zoom and pan, a zoom without an anchor is about the canvas centre, writing back a presentation that was read gives the same picture. A SCALE display area with a zoom reads back the zoom.",
    "why": "Open issues 1, 2 and 4; the example genericViewportScale lost its scale: [1, 1].",
-   "where": "6x guide, 2-rendering-changes.md and 4-upgrade-step-by-step.md"
+   "where": "6x guide, 2-rendering-changes.md and 4-upgrade-step-by-step.md",
+   "approved": true
   },
   {
    "id": "d-camsync",
@@ -131,7 +137,8 @@
    "title": "The camera synchronizer carries rotation; another-plane targets read rotation 0",
    "decision": "Between parallel planar viewports the target takes the source view up and normal as vectors. A target in another plane reads rotation 0 where 5.x read 90; its view up is the 5.x one.",
    "why": "A 6.0 regression (open issue 84).",
-   "where": "6x guide, 2-rendering-changes.md"
+   "where": "6x guide, 2-rendering-changes.md",
+   "approved": true
   },
   {
    "id": "d-staged",
@@ -139,7 +146,8 @@
    "title": "Staged replacements keep the shown scene",
    "decision": "setDisplaySets (planar and 3D) loads every entry before it removes the shown scene; a failing call rejects and keeps it; a call that has loaded completes its swap and a newer call waits for it.",
    "why": "A failed or superseded replacement left an empty or half-mounted viewport. 5.x setVolumes checked the cache first; 5.x setStack switched its image ids at once.",
-   "where": "6x guide, 3-api-map.md"
+   "where": "6x guide, 3-api-map.md",
+   "approved": true
   },
   {
    "id": "d-nowebgl",
@@ -147,7 +155,8 @@
    "title": "Without WebGL a planar viewport draws itself on the CPU",
    "decision": "It takes the custom rendering pipeline and makes no WebGL context; engine renders, resize and IMAGE_RENDERED work. A 3D viewport on such a device still fails, as before.",
    "why": "The guide promised CPU-only devices could show stacks.",
-   "where": "6x guide, 1-next-viewports-only.md"
+   "where": "6x guide, 1-next-viewports-only.md",
+   "approved": true
   },
   {
    "id": "d-cpu-labelmap",
@@ -155,7 +164,8 @@
    "title": "The CPU labelmap looks like the GPU one",
    "decision": "Outlines in screen pixels on both CPU paths; overlapping labelmaps blend as on the GPU (no draw order); the dynamic threshold of a CPU stroke takes the whole stroke's range and fills the holes the GPU's step-by-step fill leaves (2 --cpu pictures keep an expected-failure mark for that).",
    "why": "Open issues 69/35, 70, 71. 5.x drew no labelmap on the CPU at all. A CPU pan costs 7.0 ms instead of 2.9 ms on a 512 x 512 stack.",
-   "where": "6x guide, 2-rendering-changes.md"
+   "where": "6x guide, 2-rendering-changes.md",
+   "approved": true
   },
   {
    "id": "d-edge",
@@ -163,7 +173,8 @@
    "title": "CPU edge pixels follow the default GPU path",
    "decision": "An axis-aligned slice's edge pixels show the share the slice covers (the 4 samples of this Mac's 4x multisampled GPU); tilted slices clip at the pixel centre. The vtk.js slab sampling beyond the thickness stays (5.x the same).",
    "why": "Open issues 37 and 38. A GPU without multisampling can differ by one pixel there.",
-   "where": "6x guide, 2-rendering-changes.md"
+   "where": "6x guide, 2-rendering-changes.md",
+   "approved": true
   },
   {
    "id": "d-bounds",
@@ -171,7 +182,8 @@
    "title": "getBounds stays optional on the CPU image data",
    "decision": "No change; the guide calls getBounds?.().",
    "why": "Video, ECG and whole slide image data have no bounds; 5.x typed it optional too (open issue 26).",
-   "where": "6x guide samples"
+   "where": "6x guide samples",
+   "approved": true
   },
   {
    "id": "d-purge",
@@ -179,7 +191,8 @@
    "title": "cache.purgeCache() keeps geometries",
    "decision": "No change.",
    "why": "5.x kept them too (open issue 17).",
-   "where": "6x guide"
+   "where": "6x guide",
+   "approved": true
   },
   {
    "id": "d-intersection",
@@ -187,7 +200,8 @@
    "title": "SegmentationIntersectionTool fixed, not deprecated",
    "decision": "It cuts the visible surfaces of the same frame at each slice plane and draws closed paths (even-odd fill), redraws on surface changes and removal. polySeg gives converted surfaces the frame of their source.",
    "why": "It drew nothing in 5.x or 6.0 (open issue 19). The example surfaceRendering got an axial viewport with the tool.",
-   "where": "6x guide, 2-rendering-changes.md"
+   "where": "6x guide, 2-rendering-changes.md",
+   "approved": true
   },
   {
    "id": "d-events",
@@ -195,7 +209,8 @@
    "title": "SEGMENTATION_REPRESENTATION_ADDED fires",
    "decision": "Once per representation new to a viewport, before SEGMENTATION_REPRESENTATION_MODIFIED.",
    "why": "Declared and listened to, never fired (5.x too; open issue 87). No new event name.",
-   "where": "6x guide, 2-rendering-changes.md"
+   "where": "6x guide, 2-rendering-changes.md",
+   "approved": true
   },
   {
    "id": "d-left-as-is",
@@ -203,7 +218,8 @@
    "title": "Left as in 5.x for 6.0",
    "decision": "Same-value view state writes fire CAMERA_MODIFIED; resetDisplaySetPresentation drops visible; view references carry float32 round-off; getUniqueSegmentIndices keeps a segment an undo emptied. (Same-value VOI writes: a stack fires VOI_MODIFIED only on a change since O7, as the 5.x stack viewport did; a volume fires on every call, as the 5.x volume viewport did.)",
    "why": "5.x behaved the same or it is the next API's contract (open issues 86, 88, 89, 90). Their vitest pins name them.",
-   "where": "v6-open-issues.md"
+   "where": "v6-open-issues.md",
+   "approved": true
   },
   {
    "id": "d-codemod-rule",
@@ -211,7 +227,8 @@
    "title": "The codemod rewrites only what it fully understands",
    "decision": "Evidence only through const bindings, imports or unwritten parameters; same-binding proofs; everything else is reported (cornerstone3d-6-manual / -review lists), nothing is written into user code as comments. Unawaited mounts are reported, not awaited. A stack is registered as JSON.stringify([engineId, viewportId, firstImageId]).",
    "why": "Three review rounds found new holes in each looser rule. Measured on the 251 example files: 860 of 1,335 sites rewritten, none wrongly.",
-   "where": "packages/codemods/registry/cornerstone3d/6/README.md and the guide's codemod section"
+   "where": "packages/codemods/registry/cornerstone3d/6/README.md and the guide's codemod section",
+   "approved": true
   },
   {
    "id": "d-tests",
@@ -219,7 +236,8 @@
    "title": "Test infrastructure",
    "decision": "The decoders have their own karma run (karma.decoders.conf.js). genericEcg keeps its Linux baseline; on macOS it allows 1,836 differing pixels (the label font differs in 1,693; a hidden lead in 2,550). The test volume loader honours its spacing, and 20 legacy values were re-read on 5.x. A root .prettierignore keeps prettier off the codemod fixtures.",
    "why": "Open issues 30-33; CI runs on Linux.",
-   "where": "karma.conf.js, tests/genericViewport/genericEcg.spec.ts"
+   "where": "karma.conf.js, tests/genericViewport/genericEcg.spec.ts",
+   "approved": true
   },
   {
    "id": "d-context",
@@ -227,7 +245,8 @@
    "title": "One WebGL context for all planar viewports",
    "decision": "Kept (R9).",
    "why": "Spreading planar viewports over several contexts doubled the render time when measured.",
-   "where": "stage 5 notes"
+   "where": "stage 5 notes",
+   "approved": true
   },
   {
    "id": "d-main-merge",
@@ -235,7 +254,8 @@
    "title": "main 5.19.4 is merged into the 6.0 branch, the examples badge left out",
    "decision": "Main moved 12 commits (5.18.4 to 5.19.4) while the branch was built. They are merged (a merge commit, not a rebase, so the 125 checked commits stay as they were): the 4D labelmap volume, the stack labelmap volumeId, slice sync over different frames of reference, the cache's unhandled rejections, the context pool's canvas shrink. The 'Next viewports' badge of the examples (#3075) is left out, since 6.0 has no `?type=next` switch; its 3 Playwright tests are parity rows (gone).",
    "why": "No gap from 5.19.4. A rebase would have rewritten every verified commit for the same final tree.",
-   "where": "merge commit message; 6x guide, 2-rendering-changes.md"
+   "where": "merge commit message; 6x guide, 2-rendering-changes.md",
+   "approved": true
   },
   {
    "id": "d-timepoint",
@@ -243,7 +263,48 @@
    "title": "The time point of a dynamic volume, as 5.19.4",
    "decision": "A planar viewport in volume mode writes `dimensionGroupNumber` into its view reference, refuses another time point without navigation, and selects the time point on setViewReference (the volume the reference names, for example the PET of a fusion). A viewport whose data has no time points (a static volume, a stack, a whole slide, an ECG) takes a reference with a time point as if it had none (open issue 99), and a dynamic volume of one time point counts as static (row 100), both as the 5.19.4 volume viewport did. A dynamic volume and a video keep their checks.",
    "why": "Main added this to the 5.x volume viewport in 5.19.0; without it a frame-of-reference annotation drawn on a dynamic PET would not show on the CT of the same frame in 6.0.",
-   "where": "6x guide, 2-rendering-changes.md; commits a44d6c4dd and b7c11c1ae"
+   "where": "6x guide, 2-rendering-changes.md; commits a44d6c4dd and b7c11c1ae",
+   "approved": true
+  },
+  {
+   "id": "d-video-members",
+   "area": "Public API",
+   "title": "Two members on the video viewport, as 5.x had them",
+   "decision": "`VideoViewport.getActors()` and `VideoViewport.addImages(stackInputs)` (the labelmap images drawn over the video), with the names of the 5.x video viewport and of `PlanarViewport`; `removeData(id)` removes an image drawn over the video.",
+   "why": "The labelmap over a video (your decision on row 39) needs them; they close a 5.x name gap rather than add a new concept.",
+   "where": "6x guide, 2-rendering-changes.md (video section) and 3-api-map.md"
+  },
+  {
+   "id": "d-beta-workflow",
+   "area": "Release",
+   "title": "A push to beta publishes a pre-release",
+   "decision": "publish.yml runs for main and beta (the tip check and the version push use the branch of the run); a `[BUMP BETA MAJOR]` commit on beta gives `6.0.0-beta.0` (it gave -beta.1); a beta goes under the npm tag `beta`, main stays on `latest`. Checked on a throwaway local branch named beta: 5.19.4 gives 6.0.0-beta.0.",
+   "why": "Your decision to publish 6.0 as a beta first; the publish workflow ran for main only. The push that publishes is not done: origin/beta is a June branch with 38 other commits, so it needs your yes for a force push.",
+   "where": "commit bc5048d50"
+  },
+  {
+   "id": "d-preview-255",
+   "area": "Behaviour",
+   "title": "getUniqueSegmentIndices leaves out a brush preview",
+   "decision": "The voxels of the value 255 (the preview of the labelmap tools, the preview colour of the LUT) are not a segment unless the segmentation has a segment 255.",
+   "why": "After your decision on row 90 the call reads the voxels, so a preview showed up as segment 255 and polySeg would build a surface for it. 5.x read the segment list, which had no 255.",
+   "where": "6x guide, 2-rendering-changes.md; commit 6703d302b"
+  },
+  {
+   "id": "d-karma-arm64",
+   "area": "Tests",
+   "title": "karma uses the arm64 Chromium on Apple silicon",
+   "decision": "karma.conf.js downloads the arm64 build of puppeteer's Chromium revision once (118 MB, from puppeteer's host) and uses it on Apple silicon Macs; CHROME_BIN still wins; without the download karma runs the Intel build as before; Linux CI and Intel Macs are unchanged.",
+   "why": "Your decision on row 91: the Intel build under Rosetta 2 lost the browser in 3 of 15 decoder runs (SIGBUS), the arm64 build in 0 of 15.",
+   "where": "karma.conf.js; commit c5c515fed"
+  },
+  {
+   "id": "d-jest-sparkplug",
+   "area": "Tests",
+   "title": "jest workers run without Sparkplug",
+   "decision": "jest.config.base.js starts the jest workers with `--no-sparkplug`.",
+   "why": "A V8 garbage-collector crash of Node 24 (nodejs/node#62393) killed a worker in about 1 of 5 full core runs; 0 of 15 with the flag, same run time.",
+   "where": "jest.config.base.js; commit c5c515fed"
   },
   {
    "id": "d-reviewers",
@@ -251,7 +312,8 @@
    "title": "AI reviews ended",
    "decision": "GPT 6.1 Sol and GPT 6.2 Astra reviewed each stage; DeepSeek was replaced by Astra at your request; on 20 November you asked for no more AI reviews. Findings already written are being fixed.",
    "why": "Your call.",
-   "where": "-"
+   "where": "-",
+   "approved": true
   }
  ],
  "pending": [
@@ -359,105 +421,141 @@
    "id": "issue-8",
    "row": 8,
    "issue": "`getDisplayArea()` answers with the option of creation while the view state has none, and a new viewport does not apply that option.",
-   "state": "Measured, from 5.x",
+   "state": "Decided by you, 20 November",
    "where": "`Planar/planarProjectionSnapshot.ts`, near line 104",
-   "proposal": "Answer from the view state only."
+   "proposal": "Answer from the view state only.",
+   "decision": "[A] Read from the view state only (fix for 6.0)",
+   "outcome": "Fixed in cf4a6773e (Q1): getDisplayArea() answers from the view state; the creation option is read from `viewport.defaultOptions.displayArea`."
   },
   {
    "id": "issue-9",
    "row": 9,
    "issue": "A slice range of an annotation has no effect on the screen in volume mode. The legacy volume viewport is the same.",
-   "state": "Measured",
+   "state": "Decided by you, 20 November",
    "where": "`packages/tools/src/utilities/planar/filterAnnotationsForDisplay.ts`",
-   "proposal": "The tools draw an annotation on a volume by where it lies. Read the range there too, if ranges on a volume are wanted."
+   "proposal": "The tools draw an annotation on a volume by where it lies. Read the range there too, if ranges on a volume are wanted.",
+   "decision": "[B] Honor multi-slice ranges in volume mode too",
+   "outcome": "Fixed in 47bf39b8d (Q2): a ranged annotation shows on the slices of its range in volume mode too, also in other planes; the stackRange example has a stack / volume selector."
   },
   {
    "id": "issue-15",
    "row": 15,
    "issue": "`setViewState({ displayArea })` merges: a scale that the view state already has multiplies the display area. `setDisplayArea(displayArea)` resets the scale first.",
-   "state": "Measured, in the guide",
+   "state": "Decided by you, 20 November",
    "where": "",
-   "proposal": "Nothing, unless the merge is not wanted."
+   "proposal": "Nothing, unless the merge is not wanted.",
+   "decision": "[A] Keep the merge semantics",
+   "outcome": "Kept, as the guide says."
   },
   {
    "id": "issue-36",
    "row": 36,
    "issue": "A full-thickness slab on the CPU is refused (`slabTooLarge`).",
-   "state": "Measured",
+   "state": "Decided by you, 20 November",
    "where": "",
-   "proposal": "Sample it in steps, as the thin slab."
+   "proposal": "Sample it in steps, as the thin slab.",
+   "decision": "[A] Keep the 200M cap and the slabTooLarge fallback for 6.0",
+   "outcome": "Kept for 6.0."
   },
   {
    "id": "issue-39",
    "row": 39,
    "issue": "A labelmap over a video is not shown. The legacy viewport cannot do it either.",
-   "state": "Measured",
+   "state": "Decided by you, 20 November",
    "where": "",
-   "proposal": "Build it if wanted."
+   "proposal": "Build it if wanted.",
+   "decision": "[B] Build labelmap rendering on VideoViewport",
+   "outcome": "Built in 5a93d8ecc (Q3): one labelmap image per frame over the video, the brushes and undo; the videoSegmentation example works. Statistics on it are not available (row 111)."
   },
   {
    "id": "issue-46",
    "row": 46,
    "issue": "The full karma run on this Mac has one extra failure in some runs, a different test each time (`planarJumpToImage_test.js`, `videoViewportNext_test.js`). Each passes alone. It shows when other agents load the machine.",
-   "state": "Measured",
+   "state": "Decided by you, 20 November",
    "where": "the karma run",
-   "proposal": "Run the failing file alone. If it should not depend on timing, find the wait that is too short."
+   "proposal": "Run the failing file alone. If it should not depend on timing, find the wait that is too short.",
+   "decision": "[B] Audit and harden the waits now",
+   "outcome": "Fixed in c5c515fed (Q4): planarJumpToImage, wadouri and three video tests wait for what they check; 10 of 10 loaded runs pass."
   },
   {
    "id": "issue-86",
    "row": 86,
    "issue": "`resetDisplaySetPresentation` drops the `visible` flag of the mount (a next-only API; its doc comment calls it intended).",
-   "state": "Measured by lane P-F",
+   "state": "Decided by you, 20 November",
    "where": "`resetDisplaySetPresentation`",
-   "proposal": "Decide: defect or contract; pin in `planarInvariants.browser.test.ts`"
+   "proposal": "Decide: defect or contract; pin in `planarInvariants.browser.test.ts`",
+   "decision": "[A] Keep the {} contract and convert the pin into a contract test",
+   "outcome": "Done in cf4a6773e (Q1): the contract is written in the doc comment and the guide; the pin is a plain test."
   },
   {
    "id": "issue-88",
    "row": 88,
    "issue": "The view reference of a planar viewport carries float32 values and trigonometric round-off (`32.2529411315918`, `-6.12e-17`), so its JSON is not stable.",
-   "state": "Measured by lane P-F",
+   "state": "Decided by you, 20 November",
    "where": "view references",
-   "proposal": "Round to float64 of the source values and snap round-off to 0; pin 1 in `viewStateSerialization.browser.test.ts`"
+   "proposal": "Round to float64 of the source values and snap round-off to 0; pin 1 in `viewStateSerialization.browser.test.ts`",
+   "decision": "[A] Leave the raw floats for 6.0",
+   "outcome": "Kept for 6.0; a clean-up can come in 6.x."
   },
   {
    "id": "issue-89",
    "row": 89,
    "issue": "A view state write equal to the current state fires `CAMERA_MODIFIED` (5.x `setCamera` the same).",
-   "state": "Measured by lane P-F",
+   "state": "Decided by you, 20 November",
    "where": "the view state setter",
-   "proposal": "Improvement: fire only on a change; pin 5b in `viewStateSerialization.browser.test.ts`"
+   "proposal": "Improvement: fire only on a change; pin 5b in `viewStateSerialization.browser.test.ts`",
+   "decision": "[A] Keep firing on every write",
+   "outcome": "Kept, as the 5.x setCamera."
   },
   {
    "id": "issue-90",
    "row": 90,
    "issue": "`getUniqueSegmentIndices` keeps a segment whose voxels an undo removed (5.x the same; it reads the segment list).",
-   "state": "Measured by lane P-F",
+   "state": "Decided by you, 20 November",
    "where": "`getUniqueSegmentIndices` after undo",
-   "proposal": "Decide: count voxels or keep the list contract; pin in `undoRedoHistory.browser.test.ts`"
+   "proposal": "Decide: count voxels or keep the list contract; pin in `undoRedoHistory.browser.test.ts`",
+   "decision": "[B] Reflect the voxels there are",
+   "outcome": "Fixed in 47bf39b8d (Q2): the segments that have voxels (about 20 ms on 512 x 512 x 300, read on each call); 6703d302b leaves out the brush preview's 255; da25b0573 stops a polySeg surface update whose segmentation is gone."
   },
   {
    "id": "issue-91",
    "row": 91,
    "issue": "The dicomImageLoader decoder karma run (its own run since package P-F) still loses its headless Chrome 101 in about 2 of 6 runs, at different codecs.",
-   "state": "Measured by lane P-F",
+   "state": "Decided by you, 20 November",
    "where": "`karma.decoders.conf.js`",
-   "proposal": "Find why the browser goes (memory of the WASM codecs, Chrome 101); rerun on Disconnected meanwhile"
+   "proposal": "Find why the browser goes (memory of the WASM codecs, Chrome 101); rerun on Disconnected meanwhile",
+   "decision": "[B] Stabilize the decoder karma run before merging",
+   "outcome": "Fixed in c5c515fed (Q4): the Intel Chromium under Rosetta 2 crashed (SIGBUS); karma uses the arm64 build of the same revision on Apple silicon: 15 of 15 runs kept the browser."
   },
   {
    "id": "issue-96",
    "row": 96,
    "issue": "`BaseRenderingEngine.renderFrameOfReference` is unreachable from the public `RenderingEngine` since 3.x and maps the other viewports to `undefined` (it should filter), so it would pass `undefined` ids to `renderViewports`. Dead code; nothing calls it.",
-   "state": "Read by lane T49 (20 November)",
+   "state": "Decided by you, 20 November",
    "where": "`BaseRenderingEngine.ts`",
-   "proposal": "Delete it, or make it filter and expose it with a guide line"
+   "proposal": "Delete it, or make it filter and expose it with a guide line",
+   "decision": "[A] Delete renderFrameOfReference() before 6.0",
+   "outcome": "Deleted in cf4a6773e (Q1); the API map names renderViewports(viewportIds); the codemod reports a call."
   },
   {
    "id": "issue-97",
    "row": 97,
    "issue": "The other picture tests of `volumeViewport_gpu_render_test.js` still compare with 1.x baselines that have a 15 px margin and pass only through the 15 % threshold; the sagittal nearest test would pass with its bar missing (as 5.x draws it). Test quality only.",
-   "state": "Read by lane T49 (20 November)",
+   "state": "Decided by you, 20 November",
    "where": "`volumeViewport_gpu_render_test.js`",
-   "proposal": "Check pixels against the volume data, as T49 did for the axial tests"
+   "proposal": "Check pixels against the volume data, as T49 did for the axial tests",
+   "decision": "[B] Convert the remaining tests to pixel-data assertions now",
+   "outcome": "Done in cf4a6773e (Q1): ten tests check every pixel against the voxel at its world point; six 1.x baselines are deleted."
+  },
+  {
+   "id": "issue-111",
+   "row": 111,
+   "issue": "`utilities.segmentation.getStatistics` on a labelmap over a video viewport throws in its worker: it reads each frame's pixels as an image of the cache, and a video frame is never one.",
+   "state": "Open",
+   "where": "`getStatistics` and the video viewport",
+   "proposal": "Give the statistics the frame pixels of the video, if statistics on a video are wanted.",
+   "decision": "",
+   "outcome": "Found by Q3 while building row 39. 5.x had no labelmap over a video; the guide says statistics on it are not available."
   }
  ],
  "issueVisuals": {
@@ -768,7 +866,7 @@
 
   document.getElementById('decisions-count').textContent = `(${decisions.length})`;
   document.getElementById('decisions-list').replaceChildren(...decisions.map((d) =>
-    card(d.id, d.title, [[d.area]], [['Decision', d.decision], ['Why', d.why], ['Written in', d.where]], decisionVisuals[d.id])));
+    card(d.id, d.title, [[d.area], ...(d.approved ? [['Approved by the owner', 'state-done']] : [])], [['Decision', d.decision], ['Why', d.why], ['Written in', d.where]], decisionVisuals[d.id])));
 
   document.getElementById('pending-count').textContent = `(${pending.length})`;
   document.getElementById('pending-list').replaceChildren(...pending.map((p) =>
@@ -776,7 +874,7 @@
 
   document.getElementById('open-count').textContent = `(${issues.length})`;
   document.getElementById('open-list').replaceChildren(...issues.map((i) =>
-    card(i.id, `Row ${i.row}: ${i.issue}`, [[i.state]], [['Where', i.where], ['What to do', i.proposal]], issueVisuals[i.id])));
+    card(i.id, `Row ${i.row}: ${i.issue}`, [[i.state, /^Open/.test(i.state) ? 'state-todo' : 'state-done']], [['Where', i.where], ['Your decision', i.decision], ['Outcome', i.outcome], ['What to do', i.decision ? '' : i.proposal]], issueVisuals[i.id])));
 </script>
 </body>
 </html>
