@@ -38,6 +38,10 @@ import {
   syncLegacyLabelmapData,
 } from './labelmapModel';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+import {
+  clearAllCachedSegmentIndices,
+  clearCachedSegmentIndices,
+} from '../../utilities/segmentation/utilities';
 
 const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
   'stateManagement.segmentation.SegmentationStateManager'
@@ -111,6 +115,7 @@ export default class SegmentationStateManager {
    */
   resetState(): void {
     this.labelmapImageReferenceResolver.reset();
+    clearAllCachedSegmentIndices();
     this.state = Object.freeze(
       csUtils.deepClone(initialDefaultState) as SegmentationState
     );
@@ -228,6 +233,7 @@ export default class SegmentationStateManager {
     // Purge cached image-id reference entries so stale labelmaps don't
     // accumulate across reloads.
     this.labelmapImageReferenceResolver.removeSegmentation(segmentationId);
+    clearCachedSegmentIndices(segmentationId);
 
     this.updateState((state) => {
       // Use Array.prototype.filter to create a new array instead of reassigning
