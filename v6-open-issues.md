@@ -7,12 +7,41 @@ of it. The list was started on 17 November 2026 and closed on 20 November 2026.
 
 State on 20 November 2026, 100 rows:
 - fixed (83): each with a test that failed first; the commit or package is named in the row;
-- decided or documented (4): left as they are on purpose (5.x did the same, or
-  the 6.0 API does it by design), with a line in the 6.0 migration guide where an
-  application sees it;
-- open (13): rows 8, 9, 15, 36, 39, 46, 86, 88, 89, 90, 91, 96, 97. None of them blocks 6.0.
-  Rows 86, 88, 89 and 90 are left as they are for 6.0 because 5.x behaved the same or the
-  next API does it by design (their vitest pins name them).
+- decided or documented (8): left as they are on purpose (5.x did the same, the
+  6.0 API does it by design, or the owner decided so), with a line in the 6.0
+  migration guide where an application sees it; rows 15, 36, 88 and 89 by the
+  owner's decisions of 20 November;
+- open (9): rows 8, 9, 39, 46, 86, 90, 91, 96, 97, each being done by the owner's
+  decision below.
+
+## The owner's decisions of 20 November
+
+On the open rows:
+
+| Row | Decision |
+|---|---|
+| 8 | Fix for 6.0: `getDisplayArea()` answers from the view state only. |
+| 9 | Fix: the slice range of an annotation also counts in volume mode. |
+| 15 | Keep: `setViewState({ displayArea })` merges with the scale (in the guide). |
+| 36 | Keep the 200 million sample cap and the `slabTooLarge` fallback for 6.0. |
+| 39 | Build: a labelmap over a video viewport. |
+| 46 | Fix now: find and harden the waits of the files that fail under load. |
+| 86 | Keep `{}` as the contract of `resetDisplaySetPresentation`; the vitest pin becomes a contract test. |
+| 88 | Keep the raw floats for 6.0; a clean-up can come in 6.x. |
+| 89 | Keep: a view state write fires `CAMERA_MODIFIED` every time, as 5.x `setCamera`. |
+| 90 | Fix: `getUniqueSegmentIndices` reflects the voxels there are. |
+| 91 | Fix before 6.0 merges: the decoder karma run keeps its browser. |
+| 96 | Delete `BaseRenderingEngine.renderFrameOfReference()` before 6.0. |
+| 97 | Fix now: the other pictures of `volumeViewport_gpu_render_test.js` are checked against the volume data. |
+
+On the release:
+
+- The `v6-*` files and `v6-review/` stay at the root while the pull request is
+  reviewed and during the beta; before 6.0.0 they move to `docs/v6-records/` or go.
+- 6.0 is published as a beta first (6.0.0-beta), and the OHIF migration is tested
+  on it before 6.0.0 is cut.
+- The codemod `@cornerstonejs/cornerstone3d-6` is run on OHIF Viewers (a dry run)
+  first, and published before the 6.0 docs go live.
 
 ## How to work on one of these
 
@@ -58,7 +87,7 @@ not run.
 | 12 | `isPlanarReferenceViewable` is dead: only a jest test calls it. | Fixed by package P-C (20 November, `724a7aa21`) | `Planar/planarViewReference.ts` | Delete it with its test. |
 | 13 | A failed image of a volume: `IMAGE_LOAD_FAILED` in volume mode is not shown by a test, and a streaming volume with one failing image ends in an unhandled rejection of the loader. | Done by package P-F (20 November): the probe is a karma test; no defect | the volume loader | Write the test first. |
 | 14 | No fit for a stretched image: `scaleMode: 'fitAspect'` is declared and acts as `fit`. | Fixed (`41c60dacf`), found by the triage O1 on 19 November | `Planar/` | Build it, or take the value out of the type. |
-| 15 | `setViewState({ displayArea })` merges: a scale that the view state already has multiplies the display area. `setDisplayArea(displayArea)` resets the scale first. | Measured, in the guide | | Nothing, unless the merge is not wanted. |
+| 15 | `setViewState({ displayArea })` merges: a scale that the view state already has multiplies the display area. `setDisplayArea(displayArea)` resets the scale first. | Decided by the owner (20 November): the merge stays, as the guide says | | Nothing, unless the merge is not wanted. |
 
 ## 3D viewport and surfaces
 
@@ -104,7 +133,7 @@ not run.
 | # | Issue | State | What to do |
 |---|---|---|---|
 | 35 | No labelmap outline on the CPU canvas, so a segmentation looks different after a move to the CPU. | Fixed by package P-D (20 November, `576e50db6`) | Draw the outline in the CPU draw step. |
-| 36 | A full-thickness slab on the CPU is refused (`slabTooLarge`). | Measured | Sample it in steps, as the thin slab. |
+| 36 | A full-thickness slab on the CPU is refused (`slabTooLarge`). | Decided by the owner (20 November): the 200 million sample cap and the `slabTooLarge` fallback stay for 6.0 | Sample it in steps, as the thin slab. |
 | 37 | The edge pixel of an image differs between the canvas and the GPU. | Fixed by package P-E (20 November, `c7e64f855`): the CPU follows the default GPU's edge coverage | Decide which one is right by the data. |
 | 38 | The vtk.js reslice slab samples further out than the slab thickness asks. The CPU slab copies it on purpose, for the same picture. | Decided (20 November): stays, as 5.x; the CPU copies the vtk.js reslice slab on purpose | Fix both together, with new pictures. |
 | 39 | A labelmap over a video is not shown. The legacy viewport cannot do it either. | Measured | Build it if wanted. |
@@ -160,8 +189,8 @@ not run.
 | 85 | Setting the same VOI range again fires `VOI_MODIFIED`. Measured by lane V1 (20 November): the 5.x volume and next viewports fire it too, but the 5.x legacy StackViewport on the GPU did not, so for a stack it is a small gap. | Fixed by package O7 (20 November): stack mode fires `VOI_MODIFIED` only on a change, as the 5.x legacy stack viewport on the GPU did; volume mode fires on every call, as the 5.x volume viewport did | the VOI setters | Improvement: fire only on a change; pin in `eventContracts.browser.test.ts` |
 | 86 | `resetDisplaySetPresentation` drops the `visible` flag of the mount (a next-only API; its doc comment calls it intended). | Measured by lane P-F | `resetDisplaySetPresentation` | Decide: defect or contract; pin in `planarInvariants.browser.test.ts` |
 | 87 | `SEGMENTATION_REPRESENTATION_ADDED` is declared and listened to but never fired (5.x the same). | Fixed by package O4 (20 November, `7ca1e6dba`) | segmentation events | Fire it when a representation is added, or remove the event with a guide line; pin in `segmentationState.browser.test.ts` |
-| 88 | The view reference of a planar viewport carries float32 values and trigonometric round-off (`32.2529411315918`, `-6.12e-17`), so its JSON is not stable. | Measured by lane P-F | view references | Round to float64 of the source values and snap round-off to 0; pin 1 in `viewStateSerialization.browser.test.ts` |
-| 89 | A view state write equal to the current state fires `CAMERA_MODIFIED` (5.x `setCamera` the same). | Measured by lane P-F | the view state setter | Improvement: fire only on a change; pin 5b in `viewStateSerialization.browser.test.ts` |
+| 88 | The view reference of a planar viewport carries float32 values and trigonometric round-off (`32.2529411315918`, `-6.12e-17`), so its JSON is not stable. | Decided by the owner (20 November): the raw floats stay for 6.0; a clean-up can come in 6.x | view references | Round to float64 of the source values and snap round-off to 0; pin 1 in `viewStateSerialization.browser.test.ts` |
+| 89 | A view state write equal to the current state fires `CAMERA_MODIFIED` (5.x `setCamera` the same). | Decided by the owner (20 November): a write fires `CAMERA_MODIFIED` every time, as the 5.x `setCamera` | the view state setter | Improvement: fire only on a change; pin 5b in `viewStateSerialization.browser.test.ts` |
 | 90 | `getUniqueSegmentIndices` keeps a segment whose voxels an undo removed (5.x the same; it reads the segment list). | Measured by lane P-F | `getUniqueSegmentIndices` after undo | Decide: count voxels or keep the list contract; pin in `undoRedoHistory.browser.test.ts` |
 | 91 | The dicomImageLoader decoder karma run (its own run since package P-F) still loses its headless Chrome 101 in about 2 of 6 runs, at different codecs. | Measured by lane P-F | `karma.decoders.conf.js` | Find why the browser goes (memory of the WASM codecs, Chrome 101); rerun on Disconnected meanwhile |
 | 92 | Removing a Surface representation fires no `SEGMENTATION_RENDERED`, so the lines of `SegmentationIntersectionTool` stay on a planar viewport until its next draw (read in the code by lane O3, not run). | Fixed by package O5 (20 November, `bbf4a5099`) | the tool's redraw on representation removal | Redraw the tool group's viewports when a Surface representation is removed (an event the removal already fires, or SEGMENTATION_REPRESENTATION_REMOVED); test it |
