@@ -48,7 +48,7 @@ async function run() {
 
     if (isBumpBetaMajor) {
       console.log('Bumping major version for beta release');
-      nextVersion = `${semver.major(currentVersion) + 1}.0.0-beta.1`;
+      nextVersion = `${semver.major(currentVersion) + 1}.0.0-beta.0`;
     } else if (
       prereleaseComponents &&
       prereleaseComponents.includes('beta') &&

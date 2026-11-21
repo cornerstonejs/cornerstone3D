@@ -1,7 +1,9 @@
 name: Publish to npm
 
 # Publishes the workspace packages when a change lands on main, and creates the
-# GitHub Release for the tag.
+# GitHub Release for the tag. A change that lands on beta publishes a
+# pre-release under the npm tag `beta` (version.mjs and publish-package.mjs
+# read the branch).
 #
 # npm trusted publishing (OIDC) authenticates the publish, so the repository
 # holds no npm token. Each package names this repository and this workflow file
@@ -25,6 +27,7 @@ on:
   push:
     branches:
       - main
+      - beta
   workflow_dispatch:
 
 # One publish at a time. A second run computes the same next version.
@@ -40,8 +43,8 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     # A manual run can name any ref, and npm trusted publishing does not limit
-    # the branch. Only main publishes.
-    if: github.ref == 'refs/heads/main'
+    # the branch. Only main and beta publish.
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/beta'
     # A healthy release run takes about 8 minutes. The default of 360 minutes
     # let one blocked step hold the `publish-to-npm` concurrency group for 6
     # hours, and every merge to main queued behind that step. This timeout ends
@@ -78,15 +81,15 @@ jobs:
       # A run holds `github.sha`, and main has moved past it when a second
       # change lands first. The run that holds the tip releases, and it carries
       # the changes of this one, so this one does nothing at all.
-      - name: Check that this run holds the tip of main
+      - name: Check that this run holds the tip of its branch
         id: tip
         run: |
-          git fetch --no-tags origin main
+          git fetch --no-tags origin "${GITHUB_REF_NAME}"
           if [ "$(git rev-parse HEAD)" = "$(git rev-parse FETCH_HEAD)" ]; then
             echo 'proceed=true' >> "$GITHUB_OUTPUT"
           else
             echo 'proceed=false' >> "$GITHUB_OUTPUT"
-            echo "::notice::main moved past ${GITHUB_SHA}. The run that holds the tip releases."
+            echo "::notice::${GITHUB_REF_NAME} moved past ${GITHUB_SHA}. The run that holds the tip releases."
           fi
 
       - name: Setup pnpm
@@ -185,11 +188,11 @@ jobs:
 
           # One push for both refs. GitHub takes both refs, or it takes neither,
           # so main never carries a release commit that no tag names.
-          if git push --atomic "$REMOTE" HEAD:main "$TAG"; then
+          if git push --atomic "$REMOTE" "HEAD:${GITHUB_REF_NAME}" "$TAG"; then
             exit 0
           fi
 
-          echo "::error::A change landed on main during this run, so git rejected the push of ${TAG}. npm holds nothing for this version, and nothing is stranded. The run for the next merge releases these changes."
+          echo "::error::A change landed on ${GITHUB_REF_NAME} during this run, so git rejected the push of ${TAG}. npm holds nothing for this version, and nothing is stranded. The run for the next merge releases these changes."
           exit 1
 
       - name: Publish to npm

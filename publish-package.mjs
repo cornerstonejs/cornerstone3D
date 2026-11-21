@@ -16,9 +16,9 @@ async function run() {
     '--abbrev-ref',
     'HEAD',
   ]);
-  // `beta` is unreachable while the publish workflow runs for the branch main
-  // only. The branch stays here, and the beta arm of version.mjs stays as well,
-  // for the beta release that CircleCI also held ready but never ran.
+  // The publish workflow runs for main and for beta. A version from beta is a
+  // pre-release, and it goes under the `beta` tag so that `latest` stays on
+  // the last release of main.
   const distTag = branchName === 'main' ? 'latest' : 'beta';
 
   console.log(`Publishing from ${branchName} under the "${distTag}" tag`);
