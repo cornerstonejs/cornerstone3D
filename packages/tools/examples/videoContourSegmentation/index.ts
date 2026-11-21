@@ -87,22 +87,27 @@ createInfoSection(content, { ordered: true })
   .addInstruction('Change the style for the segmentation')
   .addInstruction('Confirm the style is applied properly');
 
+const contourStyleSpecifier = {
+  segmentationId,
+  type: csToolsEnums.SegmentationRepresentations.Contour,
+} as const;
+
 function updateInputsForCurrentSegmentation() {
-  // We can use any toolGroupId because they are all configured in the same way
-  const segmentationConfig = getSegmentationConfig(toolGroupId);
-  const contourConfig = segmentationConfig.Contour;
+  const contourStyle = segmentation.config.style.getStyle(
+    contourStyleSpecifier
+  );
 
   (document.getElementById('outlineWidth') as HTMLInputElement).value = String(
-    contourConfig.outlineWidth ?? DEFAULT_SEGMENTATION_CONFIG.outlineWidth
+    contourStyle.outlineWidth ?? DEFAULT_SEGMENTATION_CONFIG.outlineWidth
   );
 
   (document.getElementById('outlineOpacity') as HTMLInputElement).value =
     String(
-      contourConfig.outlineOpacity ?? DEFAULT_SEGMENTATION_CONFIG.outlineOpacity
+      contourStyle.outlineOpacity ?? DEFAULT_SEGMENTATION_CONFIG.outlineOpacity
     );
 
   (document.getElementById('fillAlpha') as HTMLInputElement).value = String(
-    contourConfig.fillAlpha ?? DEFAULT_SEGMENTATION_CONFIG.fillAlpha
+    contourStyle.fillAlpha ?? DEFAULT_SEGMENTATION_CONFIG.fillAlpha
   );
 }
 
@@ -117,32 +122,8 @@ function getSegmentsVisibilityState() {
   return segmentsVisibility;
 }
 
-function getSegmentationConfig(
-  toolGroupId: string
-): cstTypes.RepresentationConfig {
-  const segmentationConfig =
-    segmentation.config.getSegmentationRepresentationConfig(
-      segmentationRepresentationUID
-    ) ?? {};
-
-  // Add Contour object because it
-  // can return an empty object
-  if (!segmentationConfig.Contour) {
-    segmentationConfig.Contour = {};
-  }
-
-  return segmentationConfig;
-}
-
-function updateSegmentationConfig(config) {
-  const segmentationConfig = getSegmentationConfig(toolGroupId);
-
-  Object.assign(segmentationConfig.Contour, config);
-
-  segmentation.config.setSegmentationRepresentationConfig(
-    segmentationRepresentationUID,
-    segmentationConfig
-  );
+function updateSegmentationConfig(config: cstTypes.ContourStyle) {
+  segmentation.config.style.setStyle(contourStyleSpecifier, config);
 }
 
 // ============================= //
@@ -304,16 +285,12 @@ async function run() {
   ]);
 
   // Create a segmentation representation associated to the viewportId
-  const segmentationRepresentationUIDs =
-    await segmentation.addSegmentationRepresentations(viewportId, [
-      {
-        segmentationId,
-        type: csToolsEnums.SegmentationRepresentations.Contour,
-      },
-    ]);
-
-  // Store the segmentation representation that was just created
-  [segmentationRepresentationUID] = segmentationRepresentationUIDs;
+  await segmentation.addSegmentationRepresentations(viewportId, [
+    {
+      segmentationId,
+      type: csToolsEnums.SegmentationRepresentations.Contour,
+    },
+  ]);
 
   updateInputsForCurrentSegmentation();
 }

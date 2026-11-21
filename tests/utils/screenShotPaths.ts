@@ -302,6 +302,9 @@ const screenShotPaths = {
   videoSegmentationNext: {
     brush: 'brush.png',
   },
+  videoContourSegmentationNext: {
+    contour: 'contour.png',
+  },
   ecgNext: {
     viewport: 'viewport.png',
   },

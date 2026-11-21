@@ -1472,12 +1472,25 @@ legacy picture within two levels of 255.
   that step, so early steps can leave holes that the CPU fills: the same
   stroke now fills 16,004 pixels on the CPU.
 - **`utilities.AnnotationMultiSlice` of the tools** sets a range of images
-  of a stack, a range of slices of a volume in its acquisition orientation,
-  and a range of frames of a video, on the next viewports. An annotation over
-  a range of images of a stack shows on every image of the range, as on the
-  legacy stack viewport. On a volume the tools draw an annotation by where it
-  lies, so a range does not spread it over the slices, as on the legacy
-  volume viewport.
+  of a stack, a range of slices of a volume in its acquisition orientation
+  or in another orientation, and a range of frames of a video, on the next
+  viewports. An annotation over a range of images of a stack shows on every
+  image of the range, as on the legacy stack viewport.
+- **A range of slices also counts in volume mode.** An annotation with a
+  range (a `multiSliceReference` in its metadata, which `AnnotationMultiSlice`
+  sets, or a view reference made with `rangeEndSliceIndex`) shows on the
+  slices of its range and not on the others, in volume mode as in stack mode.
+  A range of images shows on the slices that show those images, in a stack or
+  in a volume of the series. A range of slices of a volume in another plane
+  names no images: it counts in the slices of that plane of that volume, so
+  it shows on those slices of a viewport that shows the volume in that plane,
+  and in no other plane. The viewport decides such an annotation by its
+  reference, as in stack mode, so it needs the frame of reference of the
+  viewport. An annotation without a range is still drawn on a volume by where
+  it lies. In 5.x the tools drew every annotation on a volume by where it
+  lies, on the legacy volume viewport as on a next viewport in volume mode,
+  so a range did not spread it over the slices: it showed only on the slice
+  where it lies.
 - **The zoom and pan tools go through `viewportProjection`** on a next
   viewport. On a 3D viewport the zoom limits of the zoom tool apply and the
   zoom goes to the mouse, the zoom and pan synchronizer moves a 3D target,
@@ -1626,6 +1639,22 @@ and is deprecated.
   update after it gets voxels. In 5.x one such segment made the whole
   conversion reject ("Surface must have non-empty points array"), so no
   segment showed a surface.
+- **`utilities.segmentation.getUniqueSegmentIndices` of the tools reads the
+  voxels of a labelmap.** For a labelmap segmentation it gives the segments
+  that have at least one voxel, in every labelmap of the segmentation, for a
+  stack and for a volume labelmap. A 4D labelmap gives the segments of the
+  time point on display. In 5.x it gave the segment list
+  (`segmentation.segments`): a segment stayed after an undo, an erase or
+  `clearSegmentValue` took its last voxel, a segment came as soon as it was
+  made active, and a labelmap added without a segment list gave none. A 5.x
+  application that read a segment from this call after an undo now finds it
+  gone; read `segmentation.segments` for the list. While a brush shows a
+  preview, its voxels count under the preview index, 255. Each call reads
+  the voxels, also after a write that fired no `SEGMENTATION_DATA_MODIFIED`:
+  about 20 ms for a labelmap of 512 x 512 x 300 voxels, where 5.x kept the
+  answer until the next `SEGMENTATION_DATA_MODIFIED`. Keep the answer for a
+  loop rather than calling it on each step. A brush stroke costs what it
+  did.
 - **A surface that polySeg converts has the frame of reference of the
   series.** A surface converted from a labelmap gets the frame of reference
   of the labelmap: of its volume or its images, or of the images that it

@@ -4,6 +4,7 @@ import {
   Enums,
   eventTarget,
   utilities,
+  volumeLoader,
 } from '@cornerstonejs/core';
 import {
   addButtonToToolbar,
@@ -34,7 +35,7 @@ const {
 
 const { AnnotationMultiSlice } = cornerstoneTools.utilities;
 
-const { ViewportType } = Enums;
+const { ViewportType, OrientationAxis } = Enums;
 const { MouseBindings, KeyboardBindings, Events: toolsEvents } = csToolsEnums;
 
 const toolGroupId = 'STACK_GROUP_ID';
@@ -42,7 +43,7 @@ const toolGroupId = 'STACK_GROUP_ID';
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Stack Range and Key Images Examples',
-  'Show a stack viewport with controls to allow it to specify ranges and key images'
+  'Show a planar viewport, as a stack or as a volume, with controls to allow it to specify ranges and key images'
 );
 
 const content = document.getElementById('content');
@@ -70,6 +71,7 @@ instructions.innerText = `Clear Frame Range clears and selected from range on pl
 Click the viewer to apply a key image (range if playing, frame if still).
 Annotation navigation will choose next/previous annotation in the group
 Select start/remove range/end range to set the start of the range and the end range, as well as to remove the range (make the key image apply to the current frame only)
+The view selector shows the series as a stack or as a volume. An annotation with a range shows on the slices of its range in both.
 `;
 
 content.append(instructions);
@@ -78,8 +80,49 @@ content.append(instructions);
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'viewportId';
 const displaySetId = 'stackRange:ct';
+const volumeDisplaySetId = 'stackRange:ctVolume';
+const volumeId = 'cornerstoneStreamingImageVolume:stackRangeVolume';
+
+const views: Record<string, Enums.OrientationAxis | undefined> = {
+  Stack: undefined,
+  'Volume, axial': OrientationAxis.AXIAL,
+  'Volume, sagittal': OrientationAxis.SAGITTAL,
+  'Volume, coronal': OrientationAxis.CORONAL,
+};
 
 let viewport;
+let imageIds: string[];
+let volumeRegistered = false;
+
+/**
+ * Shows the series as a stack, or as a volume in an orientation. The volume
+ * is made and loaded the first time that it is shown.
+ */
+async function showView(view: string) {
+  const orientation = views[view];
+
+  if (!orientation) {
+    await viewport.setDisplaySets({ displaySetId });
+    return;
+  }
+
+  if (!volumeRegistered) {
+    const volume = await volumeLoader.createAndCacheVolume(volumeId, {
+      imageIds,
+    });
+    volume.load();
+    utilities.genericViewportDisplaySetMetadataProvider.add(
+      volumeDisplaySetId,
+      { kind: 'planar', imageIds, volumeId }
+    );
+    volumeRegistered = true;
+  }
+
+  await viewport.setDisplaySets({
+    displaySetId: volumeDisplaySetId,
+    options: { orientation },
+  });
+}
 
 addButtonToToolbar({
   id: 'CreateKey',
@@ -119,6 +162,14 @@ addDropdownToToolbar({
     toolGroup.setToolPassive(selectedToolName);
 
     selectedToolName = <string>newSelectedToolName;
+  },
+});
+
+addDropdownToToolbar({
+  id: 'View',
+  options: { values: Object.keys(views), defaultValue: 'Stack' },
+  onSelectedValueChange: (view) => {
+    showView(String(view));
   },
 });
 
@@ -279,7 +330,7 @@ async function run() {
   await initDemo();
 
   // Get Cornerstone imageIds and fetch metadata into RAM
-  const imageIds = await createImageIdsAndCacheMetaData({
+  imageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID:
       '1.3.6.1.4.1.14519.5.2.1.7009.2403.334240657131972136850343327463',
     SeriesInstanceUID:

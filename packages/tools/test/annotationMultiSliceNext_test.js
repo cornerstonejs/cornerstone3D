@@ -74,7 +74,12 @@ async function showNextStack(viewport, imageIds) {
 }
 
 /** Shows the series as a volume on a direct next planar viewport. */
-async function showNextVolume(viewport, volumeId, imageIds) {
+async function showNextVolume(
+  viewport,
+  volumeId,
+  imageIds,
+  orientation = OrientationAxis.AXIAL
+) {
   const displaySetId = `volume:${viewport.id}`;
 
   utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
@@ -83,9 +88,55 @@ async function showNextVolume(viewport, volumeId, imageIds) {
   });
   await viewport.setDisplaySets({
     displaySetId,
-    options: { orientation: OrientationAxis.AXIAL },
+    options: { orientation },
   });
   await renderAndWait(viewport);
+}
+
+/**
+ * Makes the annotation of a probe at the centre of a slice, as the probe
+ * tool makes it, and gives it a range of slices of the viewport.
+ */
+async function createToolAnnotationWithRange(viewport, start, end) {
+  await goToSlice(viewport, start);
+
+  const annotation = ProbeTool.createAnnotationForViewport(viewport, {
+    data: { handles: { points: [viewport.canvasToWorld([150, 150])] } },
+  });
+
+  AnnotationMultiSlice.setRange(viewport, annotation, start, end);
+
+  return annotation;
+}
+
+/**
+ * Gives an annotation the frame of reference of a viewport. The fake image
+ * loader and the fake volume loader give the one series of these tests two
+ * frames of reference, where a DICOM series has one, so an annotation made on
+ * the stack names another frame of reference than the volume.
+ */
+function inFrameOfReferenceOf(annotation, viewport) {
+  annotation.metadata.FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
+
+  return annotation;
+}
+
+/**
+ * The slices of a viewport on which the tools draw an annotation, and the
+ * index among the images of the series of the image that each slice shows.
+ */
+async function drawnOnSlices(viewport, annotation, sliceIndices, imageIds) {
+  const drawn = {};
+  const images = {};
+
+  for (const sliceIndex of sliceIndices) {
+    await goToSlice(viewport, sliceIndex);
+    drawn[sliceIndex] =
+      filterAnnotationsForDisplay(viewport, [annotation]).length === 1;
+    images[sliceIndex] = imageIds.indexOf(viewport.getCurrentImageId());
+  }
+
+  return { drawn, images };
 }
 
 /** Goes to a slice of the viewport and waits until it shows it. */
@@ -354,7 +405,7 @@ describe('AnnotationMultiSlice on a direct next planar viewport -- ', () => {
     expect(LEGACY_STACK_TOOL_ANNOTATION_RANGE).toEqual(nextResult);
   });
 
-  it('calls the reference of a tool annotation with a plane restriction viewable on its range of slices in volume mode, as the same series does as a stack', async function () {
+  it('calls the reference of a tool annotation with a plane restriction viewable on its range of slices in volume mode, and the tools draw it there, as the same series does as a stack', async function () {
     const { imageIds, volumeId } = series;
     const stack = enableViewport(
       renderingEngine,
@@ -388,10 +439,116 @@ describe('AnnotationMultiSlice on a direct next planar viewport -- ', () => {
     expect(volumeResult.drawn).toEqual({
       1: false,
       2: true,
-      5: false,
-      8: false,
+      5: true,
+      8: true,
       9: false,
     });
+    expect(volumeResult.drawn).toEqual(stackResult.drawn);
+  });
+
+  it('draws the annotation that a stack gave a range of images on the slices of the volume that show those images', async function () {
+    const { imageIds, volumeId } = series;
+    const stack = enableViewport(
+      renderingEngine,
+      'nextStack',
+      ViewportType.PLANAR,
+      true
+    );
+    const volume = enableViewport(
+      renderingEngine,
+      'nextVolume',
+      ViewportType.PLANAR,
+      true
+    );
+
+    await showNextStack(stack, imageIds);
+    await showNextVolume(volume, volumeId, imageIds);
+
+    const annotation = inFrameOfReferenceOf(
+      await createToolAnnotationWithRange(stack, 2, 8),
+      volume
+    );
+    const result = await drawnOnSlices(
+      volume,
+      annotation,
+      [1, 2, 3, 6, 9, 10],
+      imageIds
+    );
+
+    expect(volume.getCurrentMode()).toBe('volume');
+    expect(result.images).toEqual({ 1: 10, 2: 9, 3: 8, 6: 5, 9: 2, 10: 1 });
+    expect(result.drawn).toEqual({
+      1: false,
+      2: false,
+      3: true,
+      6: true,
+      9: true,
+      10: false,
+    });
+  });
+
+  it('draws the annotation of a range of sagittal slices on those slices of the volume, and not in another plane or on the stack', async function () {
+    const { imageIds, volumeId } = series;
+    const sagittal = enableViewport(
+      renderingEngine,
+      'nextSagittal',
+      ViewportType.PLANAR,
+      true
+    );
+    const axial = enableViewport(
+      renderingEngine,
+      'nextAxial',
+      ViewportType.PLANAR,
+      true
+    );
+    const stack = enableViewport(
+      renderingEngine,
+      'nextStack',
+      ViewportType.PLANAR,
+      true
+    );
+
+    await showNextVolume(
+      sagittal,
+      volumeId,
+      imageIds,
+      OrientationAxis.SAGITTAL
+    );
+    await showNextVolume(axial, volumeId, imageIds);
+    await showNextStack(stack, imageIds);
+
+    const annotation = await createToolAnnotationWithRange(sagittal, 10, 20);
+
+    expect(annotation.metadata.referencedImageId).toBeUndefined();
+    expect(annotation.metadata.multiSliceReference.sliceIndex).toBe(20);
+    expect(AnnotationMultiSlice.getFrameRange(annotation)).toEqual([11, 21]);
+
+    const onSagittal = await drawnOnSlices(
+      sagittal,
+      annotation,
+      [9, 10, 15, 20, 21],
+      imageIds
+    );
+    const onAxial = await drawnOnSlices(axial, annotation, [2, 5, 9], imageIds);
+    const onStack = await drawnOnSlices(
+      stack,
+      inFrameOfReferenceOf(
+        { ...annotation, metadata: { ...annotation.metadata } },
+        stack
+      ),
+      [2, 5, 9],
+      imageIds
+    );
+
+    expect(onSagittal.drawn).toEqual({
+      9: false,
+      10: true,
+      15: true,
+      20: true,
+      21: false,
+    });
+    expect(onAxial.drawn).toEqual({ 2: false, 5: false, 9: false });
+    expect(onStack.drawn).toEqual({ 2: false, 5: false, 9: false });
   });
 
   it('calls a reference to one image viewable on the slice that shows the image, in stack mode and in volume mode where the slices run against the order of the images', async function () {

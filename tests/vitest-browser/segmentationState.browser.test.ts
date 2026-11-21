@@ -45,10 +45,8 @@
 //     (real setTimeout, real wall-clock time in this real-browser test) before
 //     MOUSE_CLICK actually dispatches. Every wait in this file uses a timeout
 //     comfortably above that.
-//   - getUniqueSegmentIndices reads the segmentation's `segments` bookkeeping
-//     map (populated by setActiveSegmentIndex), not a live voxel scan -- an
-//     index shows up the moment it becomes active, whether or not any voxel
-//     has been painted with it yet.
+//   - getUniqueSegmentIndices reads the voxels of a labelmap (open issue 90):
+//     an index shows up once a voxel holds it, not when it becomes active.
 //   - The first SEGMENTATION_RENDERED after adding a representation is
 //     RAF-gated (SegmentationRenderingEngine schedules it via
 //     window.requestAnimationFrame) and its latency is highly variable in

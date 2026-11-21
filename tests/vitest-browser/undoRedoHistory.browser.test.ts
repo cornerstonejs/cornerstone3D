@@ -477,54 +477,51 @@ describe('undoRedoHistory', () => {
 
     // `getUniqueSegmentIndices` (packages/tools/src/utilities/segmentation/
     // getUniqueSegmentIndices.ts, exposed publicly as
-    // `cornerstoneTools.utilities.segmentation.getUniqueSegmentIndices`) is
-    // METADATA-driven for Labelmap segmentations: it returns
-    // `Object.keys(segmentation.segments)`, a dict of segment entries created
-    // by `setActiveSegmentIndex` (see stateManagement/segmentation/
-    // segmentIndex.ts), never by an actual voxel scan and never pruned by
-    // undo. This is a divergence from the plan's expectation ("[1] after
-    // undo, [1,2] after redo") -- undoing away segment 2's only voxels does
-    // NOT remove 2 from this list, because nothing deletes the
-    // `segments[2]` metadata entry the earlier `setActiveSegmentIndex(id, 2)`
-    // call created. Kept as its own `test.fails` (not folded into the
-    // byte-exact voxel test above, which passes cleanly) so the genuine
-    // engine behavior is documented without weakening either assertion.
-    // Open issue: getUniqueSegmentIndices keeps a segment whose voxels an undo removed (5.x did the same).
-    test.fails(
-      'getUniqueSegmentIndices reflects actual voxel presence after undo (observed: does not)',
-      async () => {
-        const ctx = await setupLabelmapHistoryTest();
-        active = ctx;
-        const { segmentationId } = ctx;
+    // `cornerstoneTools.utilities.segmentation.getUniqueSegmentIndices`)
+    // reads the voxels of a Labelmap segmentation (open issue 90): undoing
+    // away segment 2's only voxels removes 2 from the answer, and the redo
+    // gives it back.
+    test('getUniqueSegmentIndices reflects actual voxel presence after undo and redo', async () => {
+      const ctx = await setupLabelmapHistoryTest();
+      active = ctx;
+      const { segmentationId } = ctx;
 
-        await paintAt(ctx, [10, 10]);
-        segmentation.segmentIndex.setActiveSegmentIndex(segmentationId, 2);
-        await paintAt(ctx, [50, 50]);
+      await paintAt(ctx, [10, 10]);
+      segmentation.segmentIndex.setActiveSegmentIndex(segmentationId, 2);
+      await paintAt(ctx, [50, 50]);
 
-        const indicesAfterPaint =
-          cornerstoneTools.utilities.segmentation.getUniqueSegmentIndices(
-            segmentationId
-          );
-        expect(indicesAfterPaint).toEqual([1, 2]);
-
-        const undone = waitForToolsEvent(
-          eventTarget,
-          ToolsEvents.SEGMENTATION_DATA_MODIFIED
+      const indicesAfterPaint =
+        cornerstoneTools.utilities.segmentation.getUniqueSegmentIndices(
+          segmentationId
         );
-        DefaultHistoryMemo.undo();
-        await undone;
+      expect(indicesAfterPaint).toEqual([1, 2]);
 
-        // Expected (per plan 11): segment 2's voxels are gone, so the unique
-        // segment list should shrink back to [1]. Observed: it stays [1, 2]
-        // because getUniqueSegmentIndices never scans voxel data -- see
-        // comment above.
-        const indicesAfterUndo =
-          cornerstoneTools.utilities.segmentation.getUniqueSegmentIndices(
-            segmentationId
-          );
-        expect(indicesAfterUndo).toEqual([1]);
-      }
-    );
+      const undone = waitForToolsEvent(
+        eventTarget,
+        ToolsEvents.SEGMENTATION_DATA_MODIFIED
+      );
+      DefaultHistoryMemo.undo();
+      await undone;
+
+      const indicesAfterUndo =
+        cornerstoneTools.utilities.segmentation.getUniqueSegmentIndices(
+          segmentationId
+        );
+      expect(indicesAfterUndo).toEqual([1]);
+
+      const redone = waitForToolsEvent(
+        eventTarget,
+        ToolsEvents.SEGMENTATION_DATA_MODIFIED
+      );
+      DefaultHistoryMemo.redo();
+      await redone;
+
+      const indicesAfterRedo =
+        cornerstoneTools.utilities.segmentation.getUniqueSegmentIndices(
+          segmentationId
+        );
+      expect(indicesAfterRedo).toEqual([1, 2]);
+    });
 
     test('HISTORY_UNDO/HISTORY_REDO fire on the core eventTarget with the expected payload', async () => {
       const ctx = await setupLabelmapHistoryTest();
