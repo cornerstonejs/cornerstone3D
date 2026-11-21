@@ -331,6 +331,13 @@ are the work list of steps 3 to 8.
   `viewport.type === 'stack'` with a string is false too. Neither fails: the
   code takes its other branch for every viewport. The last search of the
   step finds both kinds. Ask for the mode in their place.
+- An optional call of a removed member, such as
+  `viewport.getAllVolumeIds?.()`, `viewport?.getBlendMode?.() === 1` or a
+  guard `if (!viewport?.getCamera) return`, does not fail either. It gives
+  `undefined` for every viewport, in JavaScript and in TypeScript on a
+  viewport without a type, so the code behind it never runs. The codemod
+  reports each removed name: read every reported optional call, and do not
+  take a screen that still opens as proof that it still does its work.
 - `utilities.getViewportContentMode(viewport)` says `'empty'` before the
   mount. A guard that ran before `setStack` and asked whether the viewport
   can take a stack has no twin: drop it.
