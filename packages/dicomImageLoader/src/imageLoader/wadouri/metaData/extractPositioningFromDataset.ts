@@ -34,7 +34,7 @@ function extractOrientationFromNMMultiframeDataset(dataSet: DataSet) {
     const imageSubType = getImageTypeSubItemFromDataset(dataSet, 2);
 
     if (imageSubType && isNMReconstructable(imageSubType)) {
-      if (dataSet.elements.x00540022) {
+      if (dataSet.elements.x00540022?.items?.[0]?.dataSet) {
         imageOrientationPatient = getNumberValues(
           dataSet.elements.x00540022.items[0].dataSet,
           'x00200037',
@@ -61,7 +61,7 @@ function extractPositionFromNMMultiframeDataset(dataSet: DataSet) {
     const imageSubType = getImageTypeSubItemFromDataset(dataSet, 2);
 
     if (imageSubType && isNMReconstructable(imageSubType)) {
-      if (dataSet.elements.x00540022) {
+      if (dataSet.elements.x00540022?.items?.[0]?.dataSet) {
         imagePositionPatient = getNumberValues(
           dataSet.elements.x00540022.items[0].dataSet,
           'x00200032',
