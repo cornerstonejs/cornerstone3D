@@ -1488,14 +1488,46 @@ async function waitForVideoReady(element: HTMLVideoElement): Promise<void> {
       cleanup();
       resolve();
     };
+    const onSuspend = () => {
+      if (element.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
+        element.removeEventListener('suspend', onSuspend);
+        playMutedForFrameData(element);
+      }
+    };
     const cleanup = () => {
       element.removeEventListener('loadeddata', onReady);
       element.removeEventListener('canplay', onReady);
+      element.removeEventListener('suspend', onSuspend);
     };
 
     element.addEventListener('loadeddata', onReady, { once: true });
     element.addEventListener('canplay', onReady, { once: true });
+    element.addEventListener('suspend', onSuspend);
+
+    if (element.networkState === HTMLMediaElement.NETWORK_IDLE) {
+      onSuspend();
+    }
   });
+}
+
+/**
+ * Makes Safari on iOS load the frame of a paused video. Safari loads only the
+ * metadata of a video that has not played and then stops (`suspend`), so the
+ * first frame never comes. A muted video may play there without a tap: it
+ * plays muted and pauses at once, and its own `muted` comes back. The caller
+ * then seeks to the frame to show. Other browsers load the frame without it.
+ */
+function playMutedForFrameData(element: HTMLVideoElement): void {
+  const { muted } = element;
+
+  element.muted = true;
+  element
+    .play()
+    .then(() => element.pause())
+    .catch(() => undefined)
+    .finally(() => {
+      element.muted = muted;
+    });
 }
 
 async function seekVideoElement(

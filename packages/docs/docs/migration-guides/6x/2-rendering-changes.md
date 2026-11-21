@@ -1253,6 +1253,10 @@ legacy picture within two levels of 255.
   pixels of the frame come from `getImageData()`.
 - **A video opens on its first frame,** or on `options.frameNumber`, and
   does not play to get there. In 5.x it could open on the second frame.
+  Safari on iOS loads only the metadata of a video that has not played, so
+  there the viewport plays the video muted and pauses it at once to get the
+  frame (its element fires one `play` and one `pause` at mount); a video's own
+  `muted` comes back after.
 - **`getPan()` and `setPan()` are in canvas pixels on the screen,** `[0, 0]` at
   the fit, as on the other next viewports, and a drag of the pan tool moves
   the picture with the mouse at any rotation.
