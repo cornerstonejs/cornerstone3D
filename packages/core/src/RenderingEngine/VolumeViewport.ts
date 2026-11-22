@@ -29,6 +29,7 @@ import { transformCanvasToIJK } from '../utilities/transformCanvasToIJK';
 import { transformIJKToCanvas } from '../utilities/transformIJKToCanvas';
 import type vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import getVolumeViewportScrollInfo from '../utilities/getVolumeViewportScrollInfo';
+import getCurrentSliceStorageLocation from './helpers/getCurrentSliceStorageLocation';
 import {
   calculateCameraPosition,
   getCameraVectors,
@@ -759,7 +760,12 @@ class VolumeViewport extends BaseVolumeViewport {
   public getCurrentSlicePixelData() {
     const { voxelManager } = this.getImageData();
 
-    const sliceData = voxelManager.getSliceData(this.getSliceViewInfo());
+    // Called for its check, which throws for an oblique view
+    this.getSliceViewInfo();
+
+    const sliceData = voxelManager.getSliceData(
+      getCurrentSliceStorageLocation(this)
+    );
     return sliceData;
   }
 
