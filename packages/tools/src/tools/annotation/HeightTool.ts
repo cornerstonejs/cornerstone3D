@@ -300,8 +300,13 @@ class HeightTool extends AnnotationTool {
     const eventDetail = evt.detail;
     const { element } = eventDetail;
 
-    const { annotation, viewportIdsToRender, newAnnotation, hasMoved } =
-      this.editData;
+    const {
+      annotation,
+      viewportIdsToRender,
+      newAnnotation,
+      hasMoved,
+      movingTextBox,
+    } = this.editData;
     const { data } = annotation;
 
     if (newAnnotation && !hasMoved) {
@@ -319,11 +324,22 @@ class HeightTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     const { renderingEngine } = enabledElement;
 
-    if (
-      this.isHandleOutsideImage &&
-      this.configuration.preventHandleOutsideImage
-    ) {
-      removeAnnotation(annotation.annotationUID);
+    // hasMoved is also set when only the text box moves
+    const handlesMoved = hasMoved && !movingTextBox;
+
+    if (this.configuration.preventHandleOutsideImage && handlesMoved) {
+      // The flag is shared by all annotations of the tool and the stats are
+      // throttled, so update it from the current handles of this annotation
+      this.isHandleOutsideImage = false;
+      // Released before the first render, which adds the target
+      if (!Object.keys(data.cachedStats).length) {
+        data.cachedStats[this.getTargetId(enabledElement.viewport)] = {};
+      }
+      this._calculateCachedStats(annotation, renderingEngine, enabledElement);
+
+      if (this.isHandleOutsideImage) {
+        removeAnnotation(annotation.annotationUID);
+      }
     }
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
@@ -763,7 +779,7 @@ class HeightTool extends AnnotationTool {
 
       const height = this._calculateHeight(worldPos1, worldPos2) / scale;
 
-      const outside = this._isInsideVolume(index1, index2, dimensions);
+      const outside = !this._isInsideVolume(index1, index2, dimensions);
       this.isHandleOutsideImage = outside;
 
       // TODO -> Do we instead want to clip to the bounds of the volume and only include that portion?
