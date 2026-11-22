@@ -636,21 +636,26 @@ the presentation gives zoom 1 and pan `[0, 0]`.
   the result before `setViewState`.
 - Zoom 1 and pan `[0, 0]` are always the fit. There is no stored initial
   camera, so `storeAsInitialCamera` and `resetToCenter` have no twin.
-- A planar, a video and an ECG viewport still have `getZoom`, `setZoom`,
-  `getPan` and `setPan` from 5.x. The second argument of `setZoom` is a canvas
-  point there, not `storeAsInitialCamera`. On a legacy video viewport
-  `setZoom` did not zoom and `getZoom` always gave 1; a video viewport now
-  zooms. New code uses `viewportProjection`.
-- A 3D viewport has none of the four members, and a whole slide viewport has
-  no `getPan` and no `setPan`. Use `viewportProjection` there, as in the
-  sample above.
+- A planar, a 3D, a video and an ECG viewport still have `getZoom`,
+  `setZoom`, `getPan` and `setPan` from 5.x. The second argument of `setZoom`
+  is a canvas point there, not `storeAsInitialCamera`. On a legacy video
+  viewport `setZoom` did not zoom and `getZoom` always gave 1; a video
+  viewport now zooms. New code uses `viewportProjection`.
+- The four members of a 3D viewport call `viewportProjection`, so
+  `viewport.setZoom(zoom)` writes the camera that `withPresentation` with
+  `{ zoom }` gives in the sample above. `getZoom()` of a 3D viewport that
+  shows nothing gives 1 and `getPan()` gives `[0, 0]`, where its
+  presentation has no zoom and no pan.
+- A whole slide viewport has no `getPan` and no `setPan`. Use
+  `viewportProjection` there, as in the sample above.
 - The `pan` of a presentation is in canvas pixels at zoom 1. The legacy
   `getPan()` gave canvas pixels on the screen, which is `pan * zoom`. So a
   value that went to `setPan` is divided by the zoom.
 - The zoom of a 3D viewport is measured against the fit for the direction of
-  the camera now. The zoom of a whole slide viewport in `viewportProjection`
-  is a factor against the fit too; its `getZoom()` and `setZoom()` keep the
-  zoom level of the map.
+  the camera now, in `viewportProjection` and in `getZoom()` and `setZoom()`
+  alike, and its pan is measured from that fit. The zoom of a whole slide
+  viewport in `viewportProjection` is a factor against the fit too; its
+  `getZoom()` and `setZoom()` keep the zoom level of the map.
 - `resetViewState()` keeps the slice. It takes
   `{ resetPan, resetZoom, resetOrientation, resetFlip }`, and each defaults
   to true.
@@ -1198,7 +1203,7 @@ decides. A coding agent stops here and asks.
 | `ViewportType.PERSPECTIVE`                          | The legacy type drew a thin slab of the volume. A 3D viewport with `parallelProjection: false` draws the volume in 3D                                                            | What the screen shows                                                                                                                                   |
 | The zoom and the pan of a video and an ECG viewport | `getPan()` gives canvas pixels from the fit. The legacy viewport gave world units, and the legacy video viewport did not zoom                                                    | What code that stores a pan does with stored values                                                                                                     |
 | The pan of a whole slide viewport                   | It is measured from the centre of the slide. The legacy `getPan()` measured from the view at mount, and `setPan(pan, true)` stored a new origin                                  | What code that stores a pan does with stored values                                                                                                     |
-| The zoom of a 3D viewport                           | It is measured against the fit for the direction of the camera now. The legacy `getZoom()` measured against the camera of the last reset                                         | What code that stores or compares a zoom does                                                                                                           |
+| The zoom of a 3D viewport                           | `getZoom()` and `viewportProjection` measure it against the fit for the direction of the camera now. The legacy `getZoom()` measured against the camera of the last reset        | What code that stores or compares a zoom does                                                                                                           |
 | Playback of a video                                 | `setPlaybackRate()` does not start or pause playback                                                                                                                             | Where the application calls `play()` and `pause()`                                                                                                      |
 | World points of a whole slide viewport              | World points follow the coordinate system of the slide, and the rotation is in degrees. Points saved from a next whole slide viewport of 5.x show shifted                        | What happens to saved points and rotations                                                                                                              |
 | The trace layout of an ECG                          | The legacy viewport drew twelve rows of one lead. The next viewport picks a layout by the record                                                                                 | Which `traceLayout` the application sets                                                                                                                |

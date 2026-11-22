@@ -33,17 +33,19 @@ function viewportHasViewStateSetter(
 
 /**
  * Synchronizes zoom and pan through the viewport projection service when both
- * viewports expose projection adapters.
+ * viewports expose projection adapters. A source that the projection service
+ * knows and that has no zoom and no pan, as a 3D viewport that shows nothing,
+ * has nothing to give: the target stays, and its zoom and pan members are
+ * not asked.
+ *
+ * @returns False when the projection service does not do the
+ *   synchronization, so the zoom and pan members of the viewports do it.
  */
 function syncProjectionZoomPan(
   sourceViewport: unknown,
   targetViewport: unknown,
   options: { syncPan?: boolean; syncZoom?: boolean } | undefined
 ): boolean {
-  if (!viewportHasViewStateSetter(targetViewport)) {
-    return false;
-  }
-
   const sourcePresentation =
     viewportProjection.getPresentation<ZoomPanProjectionPresentation>(
       sourceViewport,
@@ -53,6 +55,14 @@ function syncProjectionZoomPan(
     );
 
   if (!sourcePresentation) {
+    return false;
+  }
+
+  if (typeof sourcePresentation.zoom !== 'number' && !sourcePresentation.pan) {
+    return true;
+  }
+
+  if (!viewportHasViewStateSetter(targetViewport)) {
     return false;
   }
 

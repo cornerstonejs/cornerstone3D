@@ -151,6 +151,35 @@ describe('zoomPanSyncCallback', () => {
     expect(targetViewport.render).toHaveBeenCalledTimes(1);
   });
 
+  it('leaves the target when the projection service knows the source and gives no zoom and no pan for it, as for a 3D viewport that shows nothing', () => {
+    const sourceViewport = {
+      getPan: jest.fn(() => [0, 0]),
+      getZoom: jest.fn(() => 1),
+    };
+    const targetViewport = {
+      render: jest.fn(),
+      setPan: jest.fn(),
+      setViewState: jest.fn(),
+      setZoom: jest.fn(),
+    };
+
+    mockRenderingEngine(sourceViewport, targetViewport);
+    viewportProjection.getPresentation.mockReturnValue({ camera: {} });
+    viewportHasZoom.mockReturnValue(true);
+    viewportHasPan.mockReturnValue(true);
+
+    zoomPanSyncCallback(
+      createSynchronizerInstance(),
+      sourceDescriptor,
+      targetDescriptor
+    );
+
+    expect(viewportProjection.withPresentation).not.toHaveBeenCalled();
+    expect(targetViewport.setViewState).not.toHaveBeenCalled();
+    expect(targetViewport.setZoom).not.toHaveBeenCalled();
+    expect(targetViewport.setPan).not.toHaveBeenCalled();
+  });
+
   it('reads the source from its own rendering engine when the target is in another one with a viewport of the same id', () => {
     const sourceViewport = { id: 'axial-of-engine-a' };
     const sameIdViewportOfEngineB = { id: 'axial-of-engine-b' };

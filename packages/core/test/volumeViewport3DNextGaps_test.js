@@ -760,7 +760,7 @@ describe('Direct next 3D viewport, the camera -- ', () => {
     });
   });
 
-  it('gives and sets the zoom and the pan through viewportProjection with the result of the legacy members, from the fit of the mount and of a reset', async function () {
+  it('gives and sets the zoom and the pan through viewportProjection and through its four members with the result of the legacy members, from the fit of the mount and of a reset', async function () {
     const [next] = createViewports(renderingEngine, { nextIds: ['next3D'] });
     const volumeId = await createVolume();
     const zoomPan = () => viewportProjection.getPresentation(next);
@@ -771,10 +771,8 @@ describe('Direct next 3D viewport, the camera -- ', () => {
 
     await showVolume(next, volumeId);
 
-    for (const member of ['getZoom', 'setZoom', 'getPan', 'setPan']) {
-      expect(next[member]).toBeUndefined();
-    }
-
+    expect(next.getZoom()).toBeCloseTo(1, 6);
+    expectPointsClose(next.getPan(), [0, 0]);
     expect(zoomPan().zoom).toBeCloseTo(1, 6);
     expectPointsClose(zoomPan().pan, [0, 0]);
 
@@ -802,6 +800,25 @@ describe('Direct next 3D viewport, the camera -- ', () => {
 
     expect(zoomPan().zoom).toBeCloseTo(1, 6);
     expectPointsClose(zoomPan().pan, [0, 0]);
+
+    next.setZoom(LEGACY_ZOOM_AND_PAN.zoom);
+    next.setPan(LEGACY_ZOOM_AND_PAN.pan);
+
+    expect(next.getZoom()).toBeCloseTo(LEGACY_ZOOM_AND_PAN.zoom, 6);
+    expect(next.getViewState().parallelScale).toBeCloseTo(
+      LEGACY_ZOOM_AND_PAN.parallelScale,
+      4
+    );
+    expectPointsClose(next.getPan(), LEGACY_ZOOM_AND_PAN.pan, 3);
+    expectPointsClose(
+      next.getViewState().focalPoint,
+      LEGACY_ZOOM_AND_PAN.focalPoint
+    );
+
+    next.resetViewState();
+
+    expect(next.getZoom()).toBeCloseTo(1, 6);
+    expectPointsClose(next.getPan(), [0, 0]);
   });
 
   it('has no getProjectionSnapshot of its own, which nothing called', function () {

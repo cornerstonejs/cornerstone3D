@@ -12,6 +12,7 @@ import {
 const { Enums, utilities, viewportProjection } = cornerstone3D;
 const { ViewportType, OrientationAxis, Events } = Enums;
 const {
+  BaseTool,
   PanTool,
   ZoomTool,
   ToolGroupManager,
@@ -352,6 +353,56 @@ describe('Synchronizers with a direct next 3D target -- ', () => {
     expect(shift[0]).toBeCloseTo(30, 1);
     expect(shift[1]).toBeCloseTo(-20, 1);
   }, 15000);
+
+  it('keeps the zoom and the pan of a planar viewport that a zoom and pan synchronizer joins with a 3D viewport that shows nothing', async function () {
+    const empty = createNext3DViewport(renderingEngine, 'next3DEmpty');
+    const synchronizer = synchronizers.createZoomPanSynchronizer('zoomPanNext');
+
+    synchronizer.add({ renderingEngineId, viewportId: planar.id });
+    synchronizer.add({ renderingEngineId, viewportId: empty.id });
+
+    expect(zoomPanOf(empty).zoom).toBeUndefined();
+
+    planar.setViewState(
+      viewportProjection.withPresentation(planar, { zoom: 2, pan: [15, -10] })
+    );
+    await frames(3);
+
+    expect(zoomPanOf(planar).zoom).toBeCloseTo(2, 4);
+    expect(zoomPanOf(planar).pan[0]).toBeCloseTo(15, 3);
+    expect(zoomPanOf(planar).pan[1]).toBeCloseTo(-10, 3);
+
+    empty.setViewState({
+      parallelScale: empty.getViewState().parallelScale * 2,
+    });
+    await frames(3);
+
+    expect(zoomPanOf(planar).zoom).toBeCloseTo(2, 4);
+    expect(zoomPanOf(planar).pan[0]).toBeCloseTo(15, 3);
+    expect(zoomPanOf(planar).pan[1]).toBeCloseTo(-10, 3);
+  }, 15000);
+
+  it('makes a zoom and pan memo for a 3D viewport that shows a volume, and none for one that shows nothing', function () {
+    const empty = createNext3DViewport(renderingEngine, 'next3DEmpty');
+
+    expect(BaseTool.createZoomPanMemo(empty)).toBeUndefined();
+
+    const memo = BaseTool.createZoomPanMemo(next);
+
+    next.setZoom(2);
+    next.setPan([30, -20]);
+    memo.restoreMemo();
+
+    expect(next.getZoom()).toBeCloseTo(1, 4);
+    expect(next.getPan()[0]).toBeCloseTo(0, 3);
+    expect(next.getPan()[1]).toBeCloseTo(0, 3);
+
+    memo.restoreMemo();
+
+    expect(next.getZoom()).toBeCloseTo(2, 4);
+    expect(next.getPan()[0]).toBeCloseTo(30, 3);
+    expect(next.getPan()[1]).toBeCloseTo(-20, 3);
+  });
 
   it('gives the window of a planar source to the 3D target of a VOI synchronizer', async function () {
     const synchronizer = synchronizers.createVOISynchronizer('voiNext', {

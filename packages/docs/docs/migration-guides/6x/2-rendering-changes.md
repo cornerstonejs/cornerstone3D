@@ -1107,8 +1107,13 @@ legacy picture within two levels of 255.
   a volume labelmap from contours or surfaces on a 3D viewport with a mounted
   volume. In 5.x it made a stack labelmap of the images of the volume there.
 - **Zoom and pan.** Zoom 1 and pan `[0, 0]` are the fit of a reset. They are
-  read and written through `viewportProjection`, as on every next viewport,
-  and a 3D viewport has no `getZoom`, `setZoom`, `getPan` and `setPan`. The
+  read and written through `viewportProjection`, as on every next viewport.
+  A 3D viewport also has `getZoom`, `setZoom`, `getPan` and `setPan`, as the
+  legacy 3D viewport had. They call `viewportProjection`: `getZoom()` is the
+  zoom of the presentation, `getPan()` is its pan in canvas pixels on the
+  screen (`pan * zoom`), and `setZoom(zoom, canvasPoint)` and `setPan(pan)`
+  are one view state change each. The second argument of `setZoom` is a
+  canvas point that the picture stays under, not `storeAsInitialCamera`. The
   zoom is measured against the fit for the direction of the camera now. So
   it changes when the camera turns to a side where the content has another
   extent. The legacy members measured against the camera of the last reset.
