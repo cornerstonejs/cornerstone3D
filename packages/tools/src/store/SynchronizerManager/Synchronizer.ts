@@ -213,17 +213,18 @@ class Synchronizer {
 
     this._sourceViewports.splice(index, 1);
 
-    eventSource.removeEventListener(this._eventName, this._eventListener);
+    // The element is null when the viewport has already been disabled
+    eventSource?.removeEventListener(this._eventName, this._eventListener);
 
     this._auxiliaryEvents.forEach(({ name, source = 'element' }) => {
       const target =
         source === 'element'
           ? this.getViewportElement(viewportInfo)
           : eventTarget;
-      target.removeEventListener(name, this._eventListener);
+      target?.removeEventListener(name, this._eventListener);
     });
 
-    this._updateDisableHandlers();
+    this._removeDisableHandler(viewportInfo);
   }
 
   /**
@@ -240,7 +241,7 @@ class Synchronizer {
     }
 
     this._targetViewports.splice(index, 1);
-    this._updateDisableHandlers();
+    this._removeDisableHandler(viewportInfo);
   }
 
   public hasSourceViewport(
@@ -356,15 +357,16 @@ class Synchronizer {
     return this._sourceViewports.length !== 0;
   }
 
+  // One function per synchronizer, so that removeEventListener can match it
+  private _disableHandler = (evt: Event): void => {
+    this.remove((evt as CustomEvent).detail.element);
+  };
+
   private _updateDisableHandlers(): void {
     const viewports = _getUniqueViewports(
       this._sourceViewports,
       this._targetViewports
     );
-    const _remove = this.remove.bind(this);
-    const disableHandler = (elementDisabledEvent) => {
-      _remove(elementDisabledEvent.detail.element);
-    };
 
     viewports.forEach((vp) => {
       const eventSource = this.getEventSource(vp);
@@ -373,15 +375,32 @@ class Synchronizer {
         return;
       }
 
-      eventSource.removeEventListener(
-        Enums.Events.ELEMENT_DISABLED,
-        disableHandler
-      );
       eventSource.addEventListener(
         Enums.Events.ELEMENT_DISABLED,
-        disableHandler
+        this._disableHandler
       );
     });
+  }
+
+  private _removeDisableHandler(viewportInfo: Types.IViewportId): void {
+    const viewports = _getUniqueViewports(
+      this._sourceViewports,
+      this._targetViewports
+    );
+    // With the eventTarget source, all viewports share the one listener
+    const isStillUsed =
+      this._eventSource === 'element'
+        ? _containsViewport(viewports, viewportInfo)
+        : viewports.length > 0;
+
+    if (isStillUsed) {
+      return;
+    }
+
+    this.getEventSource(viewportInfo)?.removeEventListener(
+      Enums.Events.ELEMENT_DISABLED,
+      this._disableHandler
+    );
   }
 
   private getEventSource(viewportInfo: Types.IViewportId): EventTarget {
