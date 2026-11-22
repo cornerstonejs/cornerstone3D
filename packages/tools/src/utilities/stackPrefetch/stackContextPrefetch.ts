@@ -42,6 +42,7 @@ let resetPrefetchTimeout;
 const resetPrefetchDelay = 5;
 
 const priorities = {};
+const promiseRemovedHandlers = new WeakMap<HTMLDivElement, EventListener>();
 
 /**
  * Call this to enable stack context sensitive prefetch.  Should be called
@@ -93,12 +94,9 @@ const enable = (element, priority = 0): void => {
   element.removeEventListener(Enums.Events.STACK_NEW_IMAGE, onImageUpdated);
   element.addEventListener(Enums.Events.STACK_NEW_IMAGE, onImageUpdated);
 
+  removePromiseRemovedHandler(element);
   const promiseRemovedHandler = getPromiseRemovedHandler(element);
-
-  eventTarget.removeEventListener(
-    Enums.Events.IMAGE_CACHE_IMAGE_REMOVED,
-    promiseRemovedHandler
-  );
+  promiseRemovedHandlers.set(element, promiseRemovedHandler);
   eventTarget.addEventListener(
     Enums.Events.IMAGE_CACHE_IMAGE_REMOVED,
     promiseRemovedHandler
@@ -204,7 +202,10 @@ function prefetch(element, priority = 0) {
     }
 
     if (!stackPrefetch.indicesToRequest.length) {
-      if (image?.sizeInBytes) {
+      // A request that was running at disable must not start the cache fill.
+      // stackPrefetch.enabled is also false when nothing is left to request,
+      // so check for the handler, which only disable removes.
+      if (promiseRemovedHandlers.has(element) && image?.sizeInBytes) {
         const { sizeInBytes } = image;
         const usage = cache.getMaxCacheSize() / 4 / sizeInBytes;
         if (!stackPrefetch.cacheFill) {
@@ -371,16 +372,19 @@ const updateToolState = (element, usage?: number) => {
   addToolState(element, stackPrefetchData);
 };
 
+function removePromiseRemovedHandler(element: HTMLDivElement) {
+  eventTarget.removeEventListener(
+    Enums.Events.IMAGE_CACHE_IMAGE_REMOVED,
+    promiseRemovedHandlers.get(element)
+  );
+  promiseRemovedHandlers.delete(element);
+}
+
 function disable(element) {
   clearTimeout(resetPrefetchTimeout);
   element.removeEventListener(Enums.Events.STACK_NEW_IMAGE, onImageUpdated);
 
-  const promiseRemovedHandler = getPromiseRemovedHandler(element);
-
-  eventTarget.removeEventListener(
-    Enums.Events.IMAGE_CACHE_IMAGE_REMOVED,
-    promiseRemovedHandler
-  );
+  removePromiseRemovedHandler(element);
 
   const stackPrefetchData = getToolState(element);
   // If there is actually something to disable, disable it

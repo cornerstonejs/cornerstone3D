@@ -42,6 +42,7 @@ let configuration = {
 let resetPrefetchTimeout;
 const resetPrefetchDelay = 10;
 const loadingCancelledHandlers = new WeakMap<HTMLDivElement, EventListener>();
+const promiseRemovedHandlers = new WeakMap<HTMLDivElement, EventListener>();
 
 /**
  * Prefetches again when a volume of the images of the stack cancels its load,
@@ -292,12 +293,9 @@ function enable(element) {
   element.removeEventListener(Enums.Events.STACK_NEW_IMAGE, onImageUpdated);
   element.addEventListener(Enums.Events.STACK_NEW_IMAGE, onImageUpdated);
 
+  removePromiseRemovedHandler(element);
   const promiseRemovedHandler = getPromiseRemovedHandler(element);
-
-  eventTarget.removeEventListener(
-    Enums.Events.IMAGE_CACHE_IMAGE_REMOVED,
-    promiseRemovedHandler
-  );
+  promiseRemovedHandlers.set(element, promiseRemovedHandler);
   eventTarget.addEventListener(
     Enums.Events.IMAGE_CACHE_IMAGE_REMOVED,
     promiseRemovedHandler
@@ -320,16 +318,19 @@ function removeLoadingCancelledHandler(element: HTMLDivElement) {
   loadingCancelledHandlers.delete(element);
 }
 
+function removePromiseRemovedHandler(element: HTMLDivElement) {
+  eventTarget.removeEventListener(
+    Enums.Events.IMAGE_CACHE_IMAGE_REMOVED,
+    promiseRemovedHandlers.get(element)
+  );
+  promiseRemovedHandlers.delete(element);
+}
+
 function disable(element) {
   clearTimeout(resetPrefetchTimeout);
   element.removeEventListener(Enums.Events.STACK_NEW_IMAGE, onImageUpdated);
 
-  const promiseRemovedHandler = getPromiseRemovedHandler(element);
-
-  eventTarget.removeEventListener(
-    Enums.Events.IMAGE_CACHE_IMAGE_REMOVED,
-    promiseRemovedHandler
-  );
+  removePromiseRemovedHandler(element);
   removeLoadingCancelledHandler(element);
 
   const stackPrefetchData = getToolState(element);
