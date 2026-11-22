@@ -596,8 +596,24 @@ point of the image on display.
   next viewport went to a bare slice index in the order of the view, and to
   the focal point before the image. For a reference of another frame of
   reference, or of none, the legacy volume viewport threw "Incompatible view
-  refs"; a planar viewport moves nothing and does not throw. A
+  refs"; a planar viewport moves nothing and does not throw, except for a
+  reference that names an image of the volume (next line). A
   `cameraFocalPoint` without a frame of reference still moves it.
+- **In volume mode a reference of an image needs a frame of reference to be
+  viewable.** A reference that names an image (`referencedImageId` or
+  `referencedImageURI`) and no `FrameOfReferenceUID` is not viewable in
+  volume mode with any option, as on the legacy volume viewport. Add the
+  frame of reference of the viewport to have it viewable. Only `asOverlay`,
+  which the legacy volume viewport did not read, still takes an image that
+  lies on the slice on display. In 5.x the next planar viewport took such a
+  reference with navigation. `setViewReference` with such a reference still
+  goes to the image when the volume has it, where the legacy volume viewport
+  threw "Incompatible view refs". In stack mode the image decides,
+  as on the legacy stack viewport. Without `withNavigation` a volume decides
+  a reference of an image by that image: it is viewable when the slice on
+  display shows it. The legacy volume viewport did not read the image there,
+  and answered true for any image of its frame of reference when the
+  reference had no `sliceIndex`.
 - **A reference of a sagittal or a coronal slice is viewable with navigation
   on every slice of that view.** Its slice index counts in the slices along
   the view, as on the legacy volume viewport. In 5.x the next planar
@@ -1374,6 +1390,20 @@ legacy picture within two levels of 255.
   `SEGMENTATION_REPRESENTATION_MODIFIED`, which still fires for each call. A
   representation that the viewport already has fires no second one. 5.x
   declared the event and listened to it, but never fired it.
+- **A contour of a contour set has the plane of its points.** The Contour
+  representation makes an annotation for each contour of a contour set
+  (`PlanarFreehandContourSegmentationTool`). Its `metadata.viewPlaneNormal`
+  is now the normal of the plane of the points of that contour, and its
+  `referencedImageId` the image nearest along that normal. The sign follows
+  the nearest of the axial (`[0, 0, -1]`), sagittal (`[1, 0, 0]`) and
+  coronal (`[0, -1, 0]`) view plane normals, and a contour that lies in one
+  of those planes takes that normal as it is. In 5.x every annotation of a
+  contour set had the view plane normal of the viewport that drew the set
+  first: the first one that was given the representation, when the
+  viewports had not drawn their frame yet. So the contours of an RTSTRUCT,
+  which lie in axial planes, showed only in the sagittal pane of an MPR when
+  the RTSTRUCT was added there first. A contour whose points span no plane
+  still takes the normal of that viewport.
 - **A synchronizer keeps apart the options of two rendering engines whose
   viewports have the same id.** `setOptions` and `getOptions` of a
   synchronizer take the id of the rendering engine as a last argument,
@@ -1641,6 +1671,18 @@ and is deprecated.
   modes. See [the map](./3-api-map.md#members-of-the-volume-viewport-only).
 - **A resize keeps the view** of a video and an ECG viewport. The legacy
   viewports fitted the picture again.
+- **`renderingEngine.resize(immediate, keepCamera)` reads `keepCamera` for
+  the planar and the 3D viewports.** With `keepCamera` false each of them
+  fits its view to its new size (`resetViewStateForResize()`), as the
+  legacy viewports did; in 5.x the next viewports kept their view. A planar
+  viewport resets as `resetViewState()` does and keeps its slice: the
+  legacy volume viewport also went to its middle slice and kept its
+  rotation. With `keepCamera` true, the default, a 3D viewport keeps its
+  camera and its parallel scale, as the legacy 3D viewport did, and a
+  planar viewport keeps its zoom and its pan against the fit of the new
+  size. The legacy stack and volume viewports kept the parallel scale
+  there: the image kept its size in pixels and the zoom against the new fit
+  changed.
 - **`isReferenceViewable` takes the points of an annotation** in the option
   `points`, and the annotation filter of the tools passes the handle points
   of each annotation. A viewport that shows a part of its world in several
@@ -1705,6 +1747,11 @@ and is deprecated.
   `GEOMETRY_CACHE_GEOMETRY_REMOVED`. No member lists the geometries of the
   cache. The `geometryIds` of the Surface and Contour data of a segmentation
   name those that it uses.
+- **`segmentation.getLabelmapImageIds(segmentationId)` is typed
+  `string[] | undefined`,** what it gives: the labelmap image ids, or
+  undefined for a segmentation without a labelmap. In 5.x it was declared
+  `string | undefined` and gave the array too, so code that typed the result
+  as a string compiles no more and needs no other change.
 - **`init` takes only the keys that the application sets, in TypeScript.**
   `debug` is optional in the configuration type, so
   `init({ rendering: { planar: { renderBackend: 'cpu' } } })` compiles. In

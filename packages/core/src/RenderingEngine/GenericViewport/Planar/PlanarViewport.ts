@@ -142,6 +142,7 @@ import PlanarViewReferenceController from './PlanarViewReferenceController';
 import {
   getPlanarImageReferenceForStack,
   getPlanarReferenceForViewableCheck,
+  namesImageWithoutFrameOfReference,
 } from './planarViewReference';
 import { applyCanvasSharpeningSmoothing } from './planarCanvasSharpeningSmoothing';
 import { createSharpeningSmoothingRenderPasses } from '../../renderPasses/createSharpeningSmoothingRenderPasses';
@@ -2362,6 +2363,11 @@ class PlanarViewport extends GenericViewport<
    * id is viewable with any options and whatever plane it names, as on the
    * legacy stack viewport.
    *
+   * In volume mode a reference that names an image and no frame of reference
+   * is not viewable with any option, as on the legacy volume viewport; only
+   * `asOverlay`, which that viewport did not read, still takes an image that
+   * lies on the slice on display.
+   *
    * @param viewRef - View reference to test.
    * @param options - Optional compatibility flags for the spatial check.
    * @returns `true` when the reference can be viewed in this viewport state.
@@ -2379,6 +2385,14 @@ class PlanarViewport extends GenericViewport<
       viewRef.referencedImageId === this.getCurrentImageId()
     ) {
       return true;
+    }
+
+    if (
+      this.getCurrentMode() === 'volume' &&
+      !options.asOverlay &&
+      namesImageWithoutFrameOfReference(viewRef)
+    ) {
+      return false;
     }
 
     const checkOptions = isStack

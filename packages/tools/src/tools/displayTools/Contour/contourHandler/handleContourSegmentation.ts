@@ -1,10 +1,12 @@
+import { vec3 } from 'gl-matrix';
 import { addAnnotation } from '../../../../stateManagement/annotation/annotationState';
 import type { Types, PlanarViewport } from '@cornerstonejs/core';
-import { cache, utilities } from '@cornerstonejs/core';
+import { cache, CONSTANTS, utilities } from '@cornerstonejs/core';
 import { getClosestImageIdForStackViewport } from '../../../../utilities/annotationHydration';
 
 import { addContourSegmentationAnnotation } from '../../../../utilities/contourSegmentation';
 import getViewportICamera from '../../../../utilities/getViewportICamera';
+import getNormal3 from '../../../../utilities/math/polyline/getNormal3';
 
 import { validateGeometry } from './utils';
 import type { ContourRepresentation } from '../../../../types/SegmentationStateTypes';
@@ -60,10 +62,11 @@ function addContourSetsToElement(
     });
 
     const contourSet = geometry.data as Types.IContourSet;
-    const viewPlaneNormal = getViewportICamera(viewport).viewPlaneNormal;
+    const viewportNormal = getViewportICamera(viewport).viewPlaneNormal;
 
     contourSet.contours.forEach((contour) => {
       const { points, color, id } = contour;
+      const viewPlaneNormal = getContourViewPlaneNormal(points, viewportNormal);
 
       const referencedImageId = getClosestImageIdForStackViewport(
         viewport as PlanarViewport,
@@ -112,6 +115,44 @@ function addContourSetsToElement(
   });
 
   viewport.render();
+}
+
+/**
+ * The view plane normal of the annotation of a contour: the normal of the
+ * plane of its points, whichever viewport draws the contour set first. Its
+ * sign follows the nearest of the axial, sagittal and coronal view plane
+ * normals, and a contour that lies in one of those planes takes that normal
+ * as it is, as it got when the viewport of that plane drew first. A contour
+ * whose points span no plane takes the normal of the viewport.
+ */
+function getContourViewPlaneNormal(
+  points: Types.Point3[],
+  viewportNormal: Types.Point3
+): Types.Point3 {
+  const [x, y, z] = points.length >= 3 ? getNormal3(points) : [0, 0, 0];
+  const normal: Types.Point3 = [x, y, z];
+
+  if (!vec3.length(normal)) {
+    return viewportNormal;
+  }
+
+  const nearest = ['axial', 'sagittal', 'coronal']
+    .map(
+      (orientation): Types.Point3 =>
+        CONSTANTS.MPR_CAMERA_VALUES[orientation].viewPlaneNormal
+    )
+    .reduce((best, candidate) =>
+      Math.abs(vec3.dot(candidate, normal)) > Math.abs(vec3.dot(best, normal))
+        ? candidate
+        : best
+    );
+  const alignment = vec3.dot(nearest, normal);
+
+  if (Math.abs(alignment) > 1 - CONSTANTS.EPSILON) {
+    return [...nearest] as Types.Point3;
+  }
+
+  return alignment < 0 ? [-x, -y, -z] : normal;
 }
 
 export { handleContourSegmentation, addContourSetsToElement };

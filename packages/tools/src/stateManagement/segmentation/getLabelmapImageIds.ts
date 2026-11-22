@@ -4,11 +4,12 @@ import { defaultSegmentationStateManager } from './SegmentationStateManager';
 /**
  * Retrieves the labelmap image IDs for a given segmentation.
  * @param segmentationId - The ID of the segmentation.
- * @returns An array of labelmap image IDs.
+ * @returns An array of labelmap image IDs, or undefined for a segmentation
+ * without a labelmap.
  */
 export function getLabelmapImageIds(
   segmentationId: string
-): string | undefined {
+): string[] | undefined {
   const segmentationStateManager = defaultSegmentationStateManager;
   const segmentation = getSegmentation(segmentationId);
   return segmentationStateManager.getLabelmapImageIds(

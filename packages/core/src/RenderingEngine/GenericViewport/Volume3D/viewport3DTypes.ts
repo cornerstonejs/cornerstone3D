@@ -151,6 +151,14 @@ export interface Volume3DViewportRenderContext
   viewport: {
     element: HTMLDivElement;
     options: Pick<ViewportInputOptions, 'orientation' | 'parallelProjection'>;
+    /**
+     * The size, in device pixels, that the rendering engine draws the
+     * viewport at since its last resize. The context pool engine sizes the
+     * canvas only when it copies the next frame onto it, so until then the
+     * canvas still has the old size. Unset before the first resize, when the
+     * canvas has that size.
+     */
+    renderedSize?: { width: number; height: number };
   };
   display: {
     requestRender(): void;
