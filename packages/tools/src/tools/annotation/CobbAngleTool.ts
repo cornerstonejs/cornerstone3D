@@ -341,18 +341,22 @@ class CobbAngleTool extends AnnotationTool {
       // This is the mouse down for the second point of the first segment.
       // The mouse up takes care of adding the first point of the second segment.
       data.handles.points[1] = worldPos;
-      this.editData.hasMoved =
-        data.handles.points[1][0] !== data.handles.points[0][0] ||
-        data.handles.points[1][1] !== data.handles.points[0][0];
+      // Compare all three components: on sagittal and coronal planes z is in-plane
+      this.editData.hasMoved = !vec3.exactEquals(
+        data.handles.points[1],
+        data.handles.points[0]
+      );
       return;
     }
 
     if (handleIndex === 3) {
       // This is the mouse down for the second point of the second segment (i.e. the last point)
       data.handles.points[3] = worldPos;
-      this.editData.hasMoved =
-        data.handles.points[3][0] !== data.handles.points[2][0] ||
-        data.handles.points[3][1] !== data.handles.points[2][0];
+      annotation.invalidated = true;
+      this.editData.hasMoved = !vec3.exactEquals(
+        data.handles.points[3],
+        data.handles.points[2]
+      );
 
       this.angleStartedNotYetCompleted = false;
       return;
