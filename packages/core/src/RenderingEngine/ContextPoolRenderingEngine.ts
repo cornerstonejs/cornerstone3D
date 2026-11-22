@@ -276,8 +276,13 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
    * Only updates the VTK offscreen size when the displayed size (canvas client size in device pixels)
    * differs from the current rendered size (canvas.width/height). The on-screen canvas dimensions
    * are updated only when the VTK render result is copied in _copyToOnscreenCanvas, avoiding
-   * flicker during resize. If a render is already scheduled, resize is deferred until the next
-   * resize() call.
+   * flicker during resize. If a render is already scheduled, that frame draws the viewports at
+   * their new size, so the viewports whose size changed are told of it now: their `resize()`
+   * runs, and what they keep by the size of the canvas (the canvas size of a planar viewport,
+   * its CPU canvas) follows. The next resize() call finds the canvas at its new size.
+   * With `keepCamera` false each viewport that is told of the new size then fits its view to
+   * it (`resetViewStateForResize`), as the legacy viewports did; with `keepCamera` true it
+   * keeps its view.
    */
   protected _resizeVTKViewports(
     vtkDrivenViewports: EngineViewport[],
@@ -319,6 +324,13 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     }
 
     if (this._animationFrameSet) {
+      viewportsNeedingResize.forEach((vp) => {
+        vp.resize?.();
+
+        if (!keepCamera) {
+          vp.resetViewStateForResize?.();
+        }
+      });
       return;
     }
 
@@ -328,6 +340,10 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
 
     vtkDrivenViewports.forEach((vp) => {
       vp.resize?.();
+
+      if (!keepCamera) {
+        vp.resetViewStateForResize?.();
+      }
     });
 
     if (immediate) {

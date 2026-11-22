@@ -329,7 +329,10 @@ class TiledRenderingEngine extends BaseRenderingEngine {
   }
 
   /**
-   * Resizes viewports that use VTK.js for rendering.
+   * Resizes viewports that use VTK.js for rendering. With `keepCamera` false
+   * each viewport then fits its view to its new size
+   * (`resetViewStateForResize`), as the legacy viewports did; with
+   * `keepCamera` true it keeps its view.
    */
   protected _resizeVTKViewports(
     vtkDrivenViewports: EngineViewport[],
@@ -365,6 +368,10 @@ class TiledRenderingEngine extends BaseRenderingEngine {
 
     vtkDrivenViewports.forEach((vp) => {
       vp.resize?.();
+
+      if (!keepCamera) {
+        vp.resetViewStateForResize?.();
+      }
     });
 
     // 4. If render is immediate: Render all

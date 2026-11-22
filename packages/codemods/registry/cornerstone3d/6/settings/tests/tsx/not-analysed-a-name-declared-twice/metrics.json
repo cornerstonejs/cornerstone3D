@@ -1,0 +1,12 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.tsx",
+        "line": "1",
+        "rule": "the file was not analysed: Identifier `twice` has already been declared"
+      },
+      "count": 1
+    }
+  ]
+}

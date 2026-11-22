@@ -4,6 +4,8 @@ import { useMetricAtom } from 'codemod:metrics';
 import {
   CoreImports,
   EditSet,
+  HeldMetric,
+  analysed,
   bracketKey,
   comparisonAt,
   coreImportOf,
@@ -19,10 +21,10 @@ import {
 import type { Node } from './lib.ts';
 
 /** Sites that the reader changes. */
-const manual = useMetricAtom('cornerstone3d-6-manual');
+const manual = new HeldMetric(useMetricAtom('cornerstone3d-6-manual'));
 
 /** Rewrites at a decision of the migration guide. */
-const review = useMetricAtom('cornerstone3d-6-review');
+const review = new HeldMetric(useMetricAtom('cornerstone3d-6-review'));
 
 /** The removed functions of the CPU switch and of the generic switch. */
 const SETTING_FUNCTIONS = new Set([
@@ -644,4 +646,4 @@ const codemod: Codemod<TSX> = (root) => {
   return rootNode.commitEdits([...run.edits.all(), ...importEdits]);
 };
 
-export default codemod;
+export default analysed(codemod, manual, review);

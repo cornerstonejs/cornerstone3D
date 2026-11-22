@@ -1,0 +1,46 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.js",
+        "line": "11",
+        "rule": "instanceof VolumeViewport: the viewport may not show its data yet"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.js",
+        "line": "12",
+        "rule": "isGenericViewport"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.js",
+        "line": "31",
+        "rule": "StackViewport"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.js",
+        "line": "7",
+        "rule": "StackViewport"
+      },
+      "count": 1
+    }
+  ],
+  "cornerstone3d-6-review": [
+    {
+      "cardinality": {
+        "file": "input.js",
+        "line": "27",
+        "rule": "VolumeViewport3D: two operands of one || are the same now, read what each tested in 5.x"
+      },
+      "count": 1
+    }
+  ]
+}

@@ -45,6 +45,37 @@ an alias of `Enums`, the namespace import, or `const { ViewportType } = Enums`.
 - Review: each `AXIAL` written for an `ORTHOGRAPHIC` viewport, and an
   `ORTHOGRAPHIC` whose orientation the codemod cannot see (a conditional
   type, a variable).
+- Review: a function (a declaration, an arrow, a method) in which the
+  rewrite turns a return of `STACK` and a return of `ORTHOGRAPHIC` into
+  `PLANAR`
+  (`ViewportType.PLANAR: one function returned STACK and ORTHOGRAPHIC, read what its callers do with the answer`,
+  at the line of the function). The rewrite is right for a viewport type.
+  An application that stored or compared the answer to tell a stack from a
+  volume has lost it: give it its own values, and ask
+  `viewport.getCurrentMode()` for a live viewport. A return counts directly
+  (also in each `case` of a `switch`), in a branch of a conditional, and
+  through a name: a `const` with its value, a `let` or a `var` with every
+  value when the file writes it only as `name = value`. A name written in
+  another way, a parameter and a call show nothing, so there is no entry. A
+  `STACK` that the codemod does not rewrite (in `type = ViewportType.STACK`,
+  or in a conditional) is in the manual report, and the function has no
+  entry. A function that returned a plain and a `_NEXT` name of one type
+  (`VOLUME_3D` and `VOLUME_3D_NEXT`) has no entry: 6.0 has one viewport of
+  that type.
+- Review: two operands that the rewrite makes the same expression
+  (`ViewportType.VOLUME_3D: two operands of one || are the same now, read what each tested in 5.x`,
+  at the line of the second one): in a chain of `||` or of `&&`, as `case`
+  labels of one `switch`, or as entries of an array literal used with
+  `includes`, directly or through a `const`.
+  `type === ViewportType.VOLUME_3D || type === ViewportType.VOLUME_3D_NEXT`
+  told a legacy viewport from a next one in 5.x and is one test after the
+  rename. Where the code meant "any 3D viewport", delete one operand; where
+  it meant "a legacy 3D viewport", the test is true for every 3D viewport in
+  6.0, so delete that branch. Of two equal `case` labels only the first
+  runs. Operands are compared without comments, casts and white space. Two
+  operands that were the same before, and a member with its own string
+  (`viewport.type === ViewportType.STACK || viewport.type === 'stack'`),
+  have no entry.
 - Manual: `PERSPECTIVE` and `'perspective'` (a 3D viewport draws the volume
   in 3D, a decision of the guide); `STACK` or `ORTHOGRAPHIC` in another place,
   such as a `switch` or a comparison with `viewportInput.type`; a comparison
@@ -58,6 +89,10 @@ an alias of `Enums`, the namespace import, or `const { ViewportType } = Enums`.
   `'*Next'` string; `defaultOptions.displayArea` and
   `defaultOptions.aspectRatio` of a viewport input, which a planar viewport
   does not apply by itself.
+- Manual, at line 1: `the file was not analysed:` with the reason, for a
+  file whose names cannot be looked up (the tool cannot read it, or a name
+  is declared twice in one scope). The file stays as it is. See the README
+  of `@cornerstonejs/cornerstone3d-6`.
 
 ## Development
 

@@ -1,0 +1,166 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "100",
+        "rule": "ViewportType.ORTHOGRAPHIC"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "110",
+        "rule": "ViewportType.ORTHOGRAPHIC"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "126",
+        "rule": "ViewportType.ORTHOGRAPHIC"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "126",
+        "rule": "ViewportType.STACK"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "98",
+        "rule": "ViewportType.STACK"
+      },
+      "count": 1
+    }
+  ],
+  "cornerstone3d-6-review": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "118",
+        "rule": "ViewportType.ORTHOGRAPHIC: orientation"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "148",
+        "rule": "ViewportType.ORTHOGRAPHIC: orientation"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "161",
+        "rule": "ViewportType.ORTHOGRAPHIC: orientation"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "39",
+        "rule": "ViewportType.ORTHOGRAPHIC: orientation"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "49",
+        "rule": "ViewportType.PLANAR: one function returned STACK and ORTHOGRAPHIC, read what its callers do with the answer"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "54",
+        "rule": "ViewportType.ORTHOGRAPHIC: orientation"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "60",
+        "rule": "ViewportType.PLANAR: one function returned STACK and ORTHOGRAPHIC, read what its callers do with the answer"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "62",
+        "rule": "ViewportType.ORTHOGRAPHIC: orientation"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "72",
+        "rule": "ViewportType.ORTHOGRAPHIC: orientation"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "74",
+        "rule": "ViewportType.PLANAR: one function returned STACK and ORTHOGRAPHIC, read what its callers do with the answer"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "77",
+        "rule": "ViewportType.PLANAR: one function returned STACK and ORTHOGRAPHIC, read what its callers do with the answer"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "79",
+        "rule": "ViewportType.ORTHOGRAPHIC: orientation"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "85",
+        "rule": "ViewportType.PLANAR: one function returned STACK and ORTHOGRAPHIC, read what its callers do with the answer"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "9",
+        "rule": "ViewportType.PLANAR: one function returned STACK and ORTHOGRAPHIC, read what its callers do with the answer"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "90",
+        "rule": "ViewportType.ORTHOGRAPHIC: orientation"
+      },
+      "count": 1
+    }
+  ]
+}

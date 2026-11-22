@@ -1028,6 +1028,9 @@ async function updateRenderedImage(args: {
   };
 
   rendering.currentImageIdIndex = imageIdIndex;
+
+  const previousDefaultVOIRange = rendering.defaultVOIRange;
+
   rendering.defaultVOIRange = getDefaultImageVOIRange(image);
   rendering.defaultInvert = getDefaultImageInvert(image);
   rendering.fitScale = getCPUFallbackScalarScale(defaultViewport.scale);
@@ -1054,6 +1057,10 @@ async function updateRenderedImage(args: {
     );
   }
 
+  ctx.viewport.notifyDefaultVOIRangeOfNewImage?.(
+    dataId,
+    previousDefaultVOIRange
+  );
   triggerPlanarNewImage(ctx, { image, imageIdIndex, numberOfSlices });
   // cpuImage is drawn by the Planar viewport itself, not by the rendering
   // engine's VTK pass. The image swap therefore needs an immediate viewport

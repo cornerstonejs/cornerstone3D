@@ -65,7 +65,8 @@ export function getInitialVolume3DCamera(
 /**
  * The camera that fits content in the canvas, as the legacy viewports fit it
  * in `resetCamera`. The extent of the content along the view up and the view
- * right fills the canvas, and the camera stands ten bounding radii away along
+ * right fills the canvas at the size that the rendering engine draws the
+ * viewport at (`renderedSize`), and the camera stands ten bounding radii away along
  * the view plane normal. With image data the extent is that of the image cube
  * and the focal point is its centre voxel. Without image data the extent and
  * the centre are those of the bounds.
@@ -105,10 +106,17 @@ export function getVolume3DFitCamera(
     ? getCubeSizeInView(imageData, viewPlaneNormal, viewUp)
     : getBoundsSizeInView(bounds, viewPlaneNormal, viewUp);
 
+  const { renderedSize } = ctx.viewport;
   const canvasWidth =
-    ctx.vtk.canvas.width || ctx.viewport.element.clientWidth || 1;
+    renderedSize?.width ||
+    ctx.vtk.canvas.width ||
+    ctx.viewport.element.clientWidth ||
+    1;
   const canvasHeight =
-    ctx.vtk.canvas.height || ctx.viewport.element.clientHeight || 1;
+    renderedSize?.height ||
+    ctx.vtk.canvas.height ||
+    ctx.viewport.element.clientHeight ||
+    1;
   const boundsAspectRatio = widthWorld / heightWorld;
   const canvasAspectRatio = canvasWidth / canvasHeight;
   const scaleFactor = boundsAspectRatio / canvasAspectRatio;

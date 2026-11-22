@@ -463,6 +463,9 @@ async function updateRenderedImage(args: {
   rendering.imageData = imageData;
   rendering.newImageData = newImageData;
   rendering.currentImageIdIndex = imageIdIndex;
+
+  const previousDefaultVOIRange = rendering.defaultVOIRange;
+
   rendering.defaultVOIRange = getDefaultImageVOIRange(image);
   rendering.defaultInvert = getDefaultImageInvert(image);
   ctx.viewport.invalidateResolvedView();
@@ -500,6 +503,11 @@ async function updateRenderedImage(args: {
       });
     }
   }
+
+  ctx.viewport.notifyDefaultVOIRangeOfNewImage?.(
+    dataId,
+    previousDefaultVOIRange
+  );
 
   // Only the source binding's slice change should drive the slice scrollbar; an
   // overlay (segmentation) slice update must not emit NEW_IMAGE.

@@ -358,6 +358,23 @@ export function getPlanarImageReferenceForStack(
 }
 
 /**
+ * Whether a reference names an image, by its image id or its URI, and no
+ * frame of reference. The legacy volume viewport took no reference without a
+ * frame of reference: it was not viewable with any option, and
+ * `setViewReference` threw "Incompatible view refs". The legacy stack
+ * viewport decided such a reference by the image.
+ */
+export function namesImageWithoutFrameOfReference(
+  viewRef: ViewReference
+): boolean {
+  return Boolean(
+    viewRef &&
+      (viewRef.referencedImageId || viewRef.referencedImageURI) &&
+      !viewRef.FrameOfReferenceUID
+  );
+}
+
+/**
  * Tests whether a given plane (defined by a PlaneRestriction) is viewable
  * in this viewport's current orientation.
  *

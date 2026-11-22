@@ -132,6 +132,12 @@ class LabelmapImageReferenceResolver {
     return getReferencedImageIdToCurrentImageIdMap(segmentation).get(imageId);
   }
 
+  /**
+   * Finds the labelmap image of the image on display of a viewport and keeps
+   * it as the reference of that image. A viewport without an image on
+   * display, as a 3D viewport, has none: the answer is undefined, as on the
+   * legacy 3D viewport, whose scan found no image.
+   */
   updateLabelmapSegmentationImageReferences(
     viewportId: string,
     segmentationId: string
@@ -152,7 +158,12 @@ class LabelmapImageReferenceResolver {
 
     const labelmapImageIds = this.getLabelmapImageIds(representationData);
     const enabledElement = getEnabledElementByViewportId(viewportId);
-    if (!enabledElement || !labelmapImageIds?.length) {
+    if (
+      !enabledElement ||
+      !labelmapImageIds?.length ||
+      typeof (enabledElement.viewport as PlanarViewport).getCurrentImageId !==
+        'function'
+    ) {
       return;
     }
 

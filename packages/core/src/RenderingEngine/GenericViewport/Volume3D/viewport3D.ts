@@ -7,6 +7,7 @@ import type {
   ActorEntry,
   ICamera,
   IImageData,
+  Point2,
   Point3,
   ResetCameraOptions,
   ViewReference,
@@ -26,6 +27,7 @@ import type {
   ViewportDataBinding,
 } from '../ViewportArchitectureTypes';
 import GenericViewport from '../GenericViewport';
+import { viewportProjection } from '../viewportProjection';
 import { disableViewportWidgets } from '../viewportWidgets';
 import {
   getDimensionGroupReferenceContext,
@@ -40,7 +42,11 @@ import { createVolume3DRenderPathResolver } from './Volume3DRenderPathResolver';
 import Volume3DResolvedView from './Volume3DResolvedView';
 import applyVolume3DCamera from './applyVolume3DCamera';
 import { getVolume3DColormap } from './applyVolume3DPresentation';
-import type { Volume3DProjectionFit } from './Volume3DProjectionTypes';
+import {
+  VOLUME3D_PROJECTION_ID,
+  type Volume3DProjectionFit,
+  type Volume3DProjectionPresentation,
+} from './Volume3DProjectionTypes';
 import { setVolume3DZeroRotationViewUp } from './volume3DProjectionSnapshot';
 import {
   VOLUME_3D_FIT_VIEW_ANGLE,
@@ -394,8 +400,9 @@ class VolumeViewport3D extends GenericViewport<
       renderMode,
       role: volumeOptions.role,
     };
-    const data =
-      staged?.data ?? (await this.dataProvider.load(displaySetId, dataOptions));
+    const data = staged?.data
+      ? staged.data
+      : await this.dataProvider.load(displaySetId, dataOptions);
     const added = await this.addLoadedData(displaySetId, data, dataOptions);
 
     if (!added) {
@@ -582,6 +589,106 @@ class VolumeViewport3D extends GenericViewport<
     applyVolume3DCamera(this.renderContext, viewStatePatch);
     this.viewState = this.getRuntimeCamera();
     this.modified(previousCamera);
+  }
+
+  /**
+   * The zoom of the view, the `zoom` that `viewportProjection.getPresentation`
+   * gives: 1 for the fit that `resetViewState` gives for the direction of the
+   * camera now, 2 when the picture is twice as large. The fit is computed at
+   * each read, so the zoom changes when the camera turns to a side where the
+   * content has another extent. With a perspective camera it is the size of
+   * what lies at the focal point. 1 when the viewport shows nothing to fit.
+   *
+   * @returns The zoom against the fit.
+   */
+  getZoom(): number {
+    return this.getProjectionPresentation()?.zoom ?? 1;
+  }
+
+  /**
+   * Sets the zoom, as one write of the view state of
+   * `viewportProjection.withPresentation(viewport, { zoom })`: it renders and
+   * fires CAMERA_MODIFIED. A parallel camera gets the parallel scale of the
+   * zoom. A perspective camera moves along its view plane normal and keeps
+   * its view angle.
+   *
+   * Without a canvas point the focal point stays, so the picture grows about
+   * the centre of the canvas. With one, the world point that shows under it
+   * in the plane of the focal point stays under it, as `anchorCanvas` of the
+   * projection service does, and the pan changes with it. A viewport that
+   * shows nothing to fit keeps its camera.
+   *
+   * @param zoom - The zoom against the fit, 1 for the fit.
+   * @param canvasPoint - The canvas point that the picture stays under.
+   */
+  setZoom(zoom: number, canvasPoint?: Point2): void {
+    this.applyProjectionPresentation({ zoom }, canvasPoint);
+  }
+
+  /**
+   * The pan of the view in canvas pixels on the screen, as on the planar
+   * viewport: `[0, 0]` for the fit of the direction of the camera now, and
+   * how far the centre of that fit shows from the centre of the canvas after
+   * that, at any zoom. It is `pan * zoom` of the presentation of
+   * `viewportProjection`. `[0, 0]` when the viewport shows nothing to fit.
+   *
+   * @returns The pan in canvas pixels.
+   */
+  getPan(): Point2 {
+    const { zoom, pan } = this.getProjectionPresentation() ?? {};
+
+    return zoom && pan ? [pan[0] * zoom, pan[1] * zoom] : [0, 0];
+  }
+
+  /**
+   * Moves the picture so that `getPan` gives this pan, as one write of the
+   * view state of `viewportProjection.withPresentation(viewport, { pan })`
+   * with the pan divided by the zoom: it renders and fires CAMERA_MODIFIED.
+   * A canvas delta added to `getPan` moves the picture by that delta on the
+   * screen. The focal point and the position move in the plane of the view,
+   * and the zoom stays. A viewport that shows nothing to fit keeps its
+   * camera.
+   *
+   * @param pan - The pan in canvas pixels on the screen.
+   */
+  setPan(pan: Point2): void {
+    const zoom = this.getZoom();
+
+    this.applyProjectionPresentation({
+      pan: [pan[0] / zoom, pan[1] / zoom],
+    });
+  }
+
+  /** The presentation that the projection service gives for this viewport. */
+  private getProjectionPresentation():
+    | Volume3DProjectionPresentation
+    | undefined {
+    return viewportProjection.getPresentation(this, {
+      kind: VOLUME3D_PROJECTION_ID,
+    });
+  }
+
+  /**
+   * Writes the view state that the projection service gives for a zoom or a
+   * pan against the fit.
+   *
+   * @param presentation - The zoom, or the pan in canvas pixels at zoom 1.
+   * @param anchorCanvas - The canvas point that a zoom keeps.
+   */
+  private applyProjectionPresentation(
+    presentation: Pick<Volume3DProjectionPresentation, 'zoom' | 'pan'>,
+    anchorCanvas?: Point2
+  ): void {
+    const viewState = viewportProjection.withPresentation(
+      this,
+      presentation,
+      { kind: VOLUME3D_PROJECTION_ID },
+      { anchorCanvas }
+    );
+
+    if (viewState) {
+      this.setViewState(viewState);
+    }
   }
 
   protected getRuntimeCamera(): Volume3DCamera & ICamera {
@@ -948,15 +1055,22 @@ class VolumeViewport3D extends GenericViewport<
   }
 
   /**
-   * Updates cached size state and notifies active render bindings.
+   * Notifies the active render bindings of a new size. The rendering engine
+   * sets `sWidth` and `sHeight`, the size that it draws the viewport at, and
+   * the fit of the view follows that size from now on, as the fit of the
+   * legacy viewports did, also before the canvas takes it.
    */
   resize(): void {
     if (this.isDestroyed) {
       return;
     }
 
-    this.sWidth = this.canvas.width;
-    this.sHeight = this.canvas.height;
+    if (this.sWidth > 0 && this.sHeight > 0) {
+      this.renderContext.viewport.renderedSize = {
+        width: this.sWidth,
+        height: this.sHeight,
+      };
+    }
 
     this.resizeBindings();
   }

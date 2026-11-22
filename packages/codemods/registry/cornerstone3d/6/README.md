@@ -60,6 +60,52 @@ file and a line.
   `NEW_IMAGE` for the slices of a volume too, or an `ORTHOGRAPHIC` viewport
   that got the 5.x default orientation `AXIAL` written out.
 
+Two review rules are about a rewrite that is right name by name and still
+changes what the code says:
+
+- A rule that starts with
+  `ViewportType.PLANAR: one function returned STACK and ORTHOGRAPHIC`, at
+  the line of the function. It returned `STACK` on one path and
+  `ORTHOGRAPHIC` on another, and returns `PLANAR` on both now. Read its
+  callers. Where a caller passes the answer to a viewport input, there is
+  nothing to do. Where the application stores or compares it to tell a stack
+  from a volume, the answer is lost: give the application its own values for
+  the shape of its data, and ask `viewport.getCurrentMode()` for a live
+  viewport.
+- A rule such as
+  `ViewportType.VOLUME_3D: two operands of one || are the same now`, at the
+  line of the second operand; also for `&&`, for two `case` labels of one
+  `switch`, for two entries of a list used with `includes`, and for a
+  renamed class such as `VolumeViewport3D`.
+  `type === VOLUME_3D || type === VOLUME_3D_NEXT` is one test after the
+  rename. Where the code meant "any 3D viewport", delete one of the two.
+  Where it told a legacy viewport from a next one, the test is true for
+  every viewport of that type in 6.0: delete the branch for the legacy
+  viewport, and read the other tests of that type near it. Of two equal
+  `case` labels only the first runs.
+
+## JavaScript files, and a file that is not analysed
+
+To know what a name refers to, the codemods ask the semantic analysis of the
+Codemod tool. It reads JSX only in `.jsx` and `.tsx` files. Where it cannot
+read a `.js`, `.mjs` or `.cjs` file (JSX is the common reason), the codemods
+look the names up themselves on the syntax tree: imports, variables,
+parameters, functions, classes and `catch` clauses, each with its scope. Such
+a file is rewritten and reported as the same code in a `.jsx` file is.
+
+A step never stops on a file. A file that cannot be analysed stays as it is
+and has one entry in `cornerstone3d-6-manual`, at line 1. Its rule starts
+with `the file was not analysed:` and gives the reason:
+
+- a TypeScript file that the tool cannot read, for example
+  ``the file was not analysed: Identifier `x` has already been declared``;
+- a JavaScript file with JSX where a name that the codemod looks up is
+  declared twice in one scope:
+  `the file was not analysed: x is declared twice in one scope`.
+
+The step reports nothing else in that file. Fix the file and run the codemod
+again, or do the file by hand with the guide.
+
 ## Included Migrations
 
 In the order in which they run:

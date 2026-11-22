@@ -37,6 +37,11 @@ interface EngineViewport extends IViewport {
   getWidgets?(): ViewportWidget[];
   /** The render passes of the viewport, or null for the default ones. */
   getRenderPasses?(): unknown[] | null;
+  /**
+   * Fits the view to the new size of the canvas, which a resize with
+   * `keepCamera` false asks for, as the legacy `resetCameraForResize` did.
+   */
+  resetViewStateForResize?(): boolean;
 }
 
 export type { EngineViewport as default };

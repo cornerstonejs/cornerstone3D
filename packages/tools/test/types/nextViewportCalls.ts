@@ -14,7 +14,7 @@ import type {
   VideoViewport,
   WSIViewport,
 } from '@cornerstonejs/core';
-import { utilities } from '../../src';
+import { segmentation, utilities } from '../../src';
 import type { Types as ToolTypes } from '../../src';
 
 declare const planar: PlanarViewport;
@@ -111,4 +111,17 @@ export function functionsOfThePlanarFamily() {
       (_intensity, linePoint) => linePoint
     ),
   ];
+}
+
+declare const segmentationId: string;
+
+/**
+ * The calls of the segmentation state that an application makes around a
+ * labelmap. `getLabelmapImageIds` gives the labelmap image ids, an array.
+ */
+export function segmentationStateCalls(): string[] {
+  const labelmapImageIds: string[] | undefined =
+    segmentation.getLabelmapImageIds(segmentationId);
+
+  return labelmapImageIds?.filter((imageId) => imageId.length) ?? [];
 }

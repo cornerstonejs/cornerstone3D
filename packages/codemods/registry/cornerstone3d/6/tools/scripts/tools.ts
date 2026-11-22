@@ -3,6 +3,9 @@ import type TSX from 'codemod:ast-grep/langs/tsx';
 import { useMetricAtom } from 'codemod:metrics';
 import {
   EditSet,
+  HeldMetric,
+  analysed,
+  definitionAt,
   importSource,
   isNameTaken,
   referencesOf,
@@ -11,7 +14,7 @@ import {
 import type { Node } from './lib.ts';
 
 /** Sites that the reader changes. */
-const manual = useMetricAtom('cornerstone3d-6-manual');
+const manual = new HeldMetric(useMetricAtom('cornerstone3d-6-manual'));
 
 /** The package of the tools. */
 const TOOLS_PACKAGE = '@cornerstonejs/tools';
@@ -378,7 +381,7 @@ function moveCapabilityReExport(run: Run, statement: Node): void {
  * namespace import of the tools.
  */
 function isToolsBinding(identifier: Node, name: string): boolean {
-  const target = identifier.definition()?.node;
+  const target = definitionAt(identifier)?.node;
   const holder = target?.kind() === 'identifier' ? target.parent() : target;
   const statement = holder
     ?.ancestors()
@@ -514,4 +517,4 @@ const codemod: Codemod<TSX> = (root) => {
   return rootNode.commitEdits(run.edits.all());
 };
 
-export default codemod;
+export default analysed(codemod, manual);

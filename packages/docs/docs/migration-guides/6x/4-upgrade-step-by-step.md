@@ -145,6 +145,38 @@ entry names a rule, a file and a line.
   `AXIAL` orientation it wrote, a `STACK_NEW_IMAGE` listener that now hears
   `NEW_IMAGE` for the slices of a volume too, a `setUseCPURendering` call.
 
+A JavaScript file with JSX is read as a `.jsx` file is, whatever its
+extension. The codemod never stops on a file: a file that it cannot analyse
+(the tool cannot read it, or a name it looks up is declared twice in one
+scope) stays as it is and has one entry in `cornerstone3d-6-manual` at line
+1, with a rule that starts with `the file was not analysed:`. Fix the file
+and run the codemod again, or do the steps of this page on it by hand.
+
+Two review entries are about a rewrite that is right name by name and still
+changes what the code says:
+
+- A rule that starts with
+  `ViewportType.PLANAR: one function returned STACK and ORTHOGRAPHIC`. A
+  function returned `STACK` on one path and `ORTHOGRAPHIC` on another, and
+  returns `PLANAR` on both now. The entry names the line of the function.
+  Read its callers. Where the answer is the `type` of a viewport input,
+  there is nothing to do. Where the application stores it or compares it to
+  tell a stack from a volume, the answer is lost: give the application its
+  own values for the shape of its data, and ask `viewport.getCurrentMode()`
+  for a live viewport ([step 1](#step-1-the-viewport-types)).
+- A rule such as
+  `ViewportType.VOLUME_3D: two operands of one || are the same now`, also
+  for `&&`, for two `case` labels of one `switch`, for two entries of a list
+  used with `includes`, and for a renamed class such as `VolumeViewport3D`.
+  Two tests that named a legacy and a next name in 5.x, such as
+  `type === VOLUME_3D || type === VOLUME_3D_NEXT`, are one test now. The
+  entry names the line of the second one. Where the code meant "any 3D
+  viewport", delete one of the two. Where it told a legacy viewport from a
+  next one, the test is true for every viewport of that type in 6.0: delete
+  the branch for the legacy viewport, and read the other tests of that type
+  near it ([Viewport types](./3-api-map.md#viewport-types)). Of two equal
+  `case` labels only the first runs.
+
 Then run your formatter and your type checker, and do the steps of this page:
 their searches find what is left. On the 5.x examples of this repository the
 codemod rewrote almost two of three uses of a removed name, rewrote none
@@ -204,6 +236,13 @@ written on 5.x with `PLANAR_NEXT` runs on 6.0 too.
   [a decision](#changes-that-need-a-decision-by-a-person).
 - A viewport of a next type has no legacy members. Its screen runs again when
   steps 2 to 8 are done for it.
+- An application can use `ViewportType.STACK` and `ORTHOGRAPHIC` as its own
+  marker of the data: it stores the value in its state and compares it later
+  to tell a stack from a volume. Both are `PLANAR` now, so the marker says
+  nothing, and the codemod also rewrites the function that makes it (a
+  function that returned `STACK` or `ORTHOGRAPHIC` returns `PLANAR` on both
+  paths). Give the application its own values for the shape of its data, and
+  ask `viewport.getCurrentMode()` for a live viewport.
 
 ## Step 2. Class checks and TypeScript types
 
@@ -299,6 +338,13 @@ are the work list of steps 3 to 8.
   `viewport.type === 'stack'` with a string is false too. Neither fails: the
   code takes its other branch for every viewport. The last search of the
   step finds both kinds. Ask for the mode in their place.
+- An optional call of a removed member, such as
+  `viewport.getAllVolumeIds?.()`, `viewport?.getBlendMode?.() === 1` or a
+  guard `if (!viewport?.getCamera) return`, does not fail either. It gives
+  `undefined` for every viewport, in JavaScript and in TypeScript on a
+  viewport without a type, so the code behind it never runs. The codemod
+  reports each removed name: read every reported optional call, and do not
+  take a screen that still opens as proof that it still does its work.
 - `utilities.getViewportContentMode(viewport)` says `'empty'` before the
   mount. A guard that ran before `setStack` and asked whether the viewport
   can take a stack has no twin: drop it.
@@ -590,21 +636,26 @@ the presentation gives zoom 1 and pan `[0, 0]`.
   the result before `setViewState`.
 - Zoom 1 and pan `[0, 0]` are always the fit. There is no stored initial
   camera, so `storeAsInitialCamera` and `resetToCenter` have no twin.
-- A planar, a video and an ECG viewport still have `getZoom`, `setZoom`,
-  `getPan` and `setPan` from 5.x. The second argument of `setZoom` is a canvas
-  point there, not `storeAsInitialCamera`. On a legacy video viewport
-  `setZoom` did not zoom and `getZoom` always gave 1; a video viewport now
-  zooms. New code uses `viewportProjection`.
-- A 3D viewport has none of the four members, and a whole slide viewport has
-  no `getPan` and no `setPan`. Use `viewportProjection` there, as in the
-  sample above.
+- A planar, a 3D, a video and an ECG viewport still have `getZoom`,
+  `setZoom`, `getPan` and `setPan` from 5.x. The second argument of `setZoom`
+  is a canvas point there, not `storeAsInitialCamera`. On a legacy video
+  viewport `setZoom` did not zoom and `getZoom` always gave 1; a video
+  viewport now zooms. New code uses `viewportProjection`.
+- The four members of a 3D viewport call `viewportProjection`, so
+  `viewport.setZoom(zoom)` writes the camera that `withPresentation` with
+  `{ zoom }` gives in the sample above. `getZoom()` of a 3D viewport that
+  shows nothing gives 1 and `getPan()` gives `[0, 0]`, where its
+  presentation has no zoom and no pan.
+- A whole slide viewport has no `getPan` and no `setPan`. Use
+  `viewportProjection` there, as in the sample above.
 - The `pan` of a presentation is in canvas pixels at zoom 1. The legacy
   `getPan()` gave canvas pixels on the screen, which is `pan * zoom`. So a
   value that went to `setPan` is divided by the zoom.
 - The zoom of a 3D viewport is measured against the fit for the direction of
-  the camera now. The zoom of a whole slide viewport in `viewportProjection`
-  is a factor against the fit too; its `getZoom()` and `setZoom()` keep the
-  zoom level of the map.
+  the camera now, in `viewportProjection` and in `getZoom()` and `setZoom()`
+  alike, and its pan is measured from that fit. The zoom of a whole slide
+  viewport in `viewportProjection` is a factor against the fit too; its
+  `getZoom()` and `setZoom()` keep the zoom level of the map.
 - `resetViewState()` keeps the slice. It takes
   `{ resetPan, resetZoom, resetOrientation, resetFlip }`, and each defaults
   to true.
@@ -1152,7 +1203,7 @@ decides. A coding agent stops here and asks.
 | `ViewportType.PERSPECTIVE`                          | The legacy type drew a thin slab of the volume. A 3D viewport with `parallelProjection: false` draws the volume in 3D                                                            | What the screen shows                                                                                                                                   |
 | The zoom and the pan of a video and an ECG viewport | `getPan()` gives canvas pixels from the fit. The legacy viewport gave world units, and the legacy video viewport did not zoom                                                    | What code that stores a pan does with stored values                                                                                                     |
 | The pan of a whole slide viewport                   | It is measured from the centre of the slide. The legacy `getPan()` measured from the view at mount, and `setPan(pan, true)` stored a new origin                                  | What code that stores a pan does with stored values                                                                                                     |
-| The zoom of a 3D viewport                           | It is measured against the fit for the direction of the camera now. The legacy `getZoom()` measured against the camera of the last reset                                         | What code that stores or compares a zoom does                                                                                                           |
+| The zoom of a 3D viewport                           | `getZoom()` and `viewportProjection` measure it against the fit for the direction of the camera now. The legacy `getZoom()` measured against the camera of the last reset        | What code that stores or compares a zoom does                                                                                                           |
 | Playback of a video                                 | `setPlaybackRate()` does not start or pause playback                                                                                                                             | Where the application calls `play()` and `pause()`                                                                                                      |
 | World points of a whole slide viewport              | World points follow the coordinate system of the slide, and the rotation is in degrees. Points saved from a next whole slide viewport of 5.x show shifted                        | What happens to saved points and rotations                                                                                                              |
 | The trace layout of an ECG                          | The legacy viewport drew twelve rows of one lead. The next viewport picks a layout by the record                                                                                 | Which `traceLayout` the application sets                                                                                                                |

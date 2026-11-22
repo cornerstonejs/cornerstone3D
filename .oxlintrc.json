@@ -3,6 +3,7 @@
   "ignorePatterns": [
     "utils/**",
     "**/examples/**",
+    "packages/codemods/registry/**/tests/**/not-analysed-*/**",
     "packages/dicomImageLoader/src/types/codec*"
   ],
   "rules": {

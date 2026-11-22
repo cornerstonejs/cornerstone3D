@@ -61,6 +61,7 @@ import type {
 } from '../ViewportArchitectureTypes';
 import GenericViewport from '../GenericViewport';
 import { disableViewportWidgets } from '../viewportWidgets';
+import { isSegmentationOverlayData } from '../renderingFidelity';
 import type { ViewportWidget } from '../Volume3D/viewport3DTypes';
 import type { GenericViewportReferenceContext } from '../genericViewportReferenceCompatibility';
 import {
@@ -141,6 +142,7 @@ import PlanarViewReferenceController from './PlanarViewReferenceController';
 import {
   getPlanarImageReferenceForStack,
   getPlanarReferenceForViewableCheck,
+  namesImageWithoutFrameOfReference,
 } from './planarViewReference';
 import { applyCanvasSharpeningSmoothing } from './planarCanvasSharpeningSmoothing';
 import { createSharpeningSmoothingRenderPasses } from '../../renderPasses/createSharpeningSmoothingRenderPasses';
@@ -598,6 +600,8 @@ class PlanarViewport extends GenericViewport<
         element: this.element,
         getActiveDataId: () => this.mountedData.getActiveDataId(),
         invalidateResolvedView: () => this.clearResolvedViewCache(),
+        notifyDefaultVOIRangeOfNewImage: (dataId, previousRange) =>
+          this.notifyDefaultVOIRangeOfNewImage(dataId, previousRange),
         getViewState: () => this.getViewState(),
         isCurrentDataId: (dataId) =>
           this.getCurrentBinding()?.data.id === dataId,
@@ -1447,6 +1451,7 @@ class PlanarViewport extends GenericViewport<
 
       if (
         range &&
+        this.reportsVOI(displaySetId, range, volumeId) &&
         !this.keepsStackVOI(displaySetId, presentation, previousPresentation)
       ) {
         triggerEvent(this.element, Events.VOI_MODIFIED, {
@@ -1467,6 +1472,70 @@ class PlanarViewport extends GenericViewport<
         volumeId,
       });
     }
+  }
+
+  /**
+   * Whether `VOI_MODIFIED` reports the window of a display set. The detail
+   * of the event names a volume and no display set, so a listener takes an
+   * event without a volume as the window of the source. Not reported:
+   * - a range whose upper end is below its lower end, as the range of a
+   *   labelmap image, which has no window;
+   * - the labelmap of a segmentation: the legacy viewports fired no
+   *   `VOI_MODIFIED` for a labelmap;
+   * - an overlay that is drawn as images, which names no volume and would
+   *   read as the source.
+   */
+  private reportsVOI(
+    displaySetId: string,
+    range: VOIRange,
+    volumeId: string | undefined
+  ): boolean {
+    if (range.upper < range.lower) {
+      return false;
+    }
+
+    const binding = this.getBinding(displaySetId);
+
+    if (!binding) {
+      return true;
+    }
+
+    if (
+      isSegmentationOverlayData(binding.data as LoadedData<PlanarPayload>, {
+        renderMode: binding.rendering.renderMode,
+        role: binding.role,
+      })
+    ) {
+      return false;
+    }
+
+    return volumeId !== undefined || binding.role === 'source';
+  }
+
+  /**
+   * Fires `VOI_MODIFIED` when a new image of a stack changed the window on
+   * display: no window is set for the display set, and the default window of
+   * the new image is another than `previousRange`, that of the image before.
+   * The legacy stack viewport fired it then. A window that is set stays on
+   * display over a scroll, so nothing fires, and nothing fires for a new
+   * image with the same window.
+   */
+  private notifyDefaultVOIRangeOfNewImage(
+    displaySetId: string,
+    previousRange: VOIRange | undefined
+  ): void {
+    const range = this.getDefaultVOIRange(displaySetId);
+
+    if (
+      !range ||
+      this.getDisplaySetPresentation(displaySetId)?.voiRange ||
+      (range.lower === previousRange?.lower &&
+        range.upper === previousRange?.upper)
+    ) {
+      return;
+    }
+
+    this.notifyDataPresentationModified(displaySetId, { voiRange: range });
   }
 
   /**
@@ -2294,6 +2363,11 @@ class PlanarViewport extends GenericViewport<
    * id is viewable with any options and whatever plane it names, as on the
    * legacy stack viewport.
    *
+   * In volume mode a reference that names an image and no frame of reference
+   * is not viewable with any option, as on the legacy volume viewport; only
+   * `asOverlay`, which that viewport did not read, still takes an image that
+   * lies on the slice on display.
+   *
    * @param viewRef - View reference to test.
    * @param options - Optional compatibility flags for the spatial check.
    * @returns `true` when the reference can be viewed in this viewport state.
@@ -2311,6 +2385,14 @@ class PlanarViewport extends GenericViewport<
       viewRef.referencedImageId === this.getCurrentImageId()
     ) {
       return true;
+    }
+
+    if (
+      this.getCurrentMode() === 'volume' &&
+      !options.asOverlay &&
+      namesImageWithoutFrameOfReference(viewRef)
+    ) {
+      return false;
     }
 
     const checkOptions = isStack

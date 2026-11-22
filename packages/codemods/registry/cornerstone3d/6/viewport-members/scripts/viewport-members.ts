@@ -4,6 +4,8 @@ import { useMetricAtom } from 'codemod:metrics';
 import {
   CoreImports,
   EditSet,
+  HeldMetric,
+  analysed,
   bracketKey,
   coreImportOf,
   coreReExports,
@@ -24,10 +26,10 @@ import {
 import type { Node } from './lib.ts';
 
 /** Sites that the reader changes. */
-const manual = useMetricAtom('cornerstone3d-6-manual');
+const manual = new HeldMetric(useMetricAtom('cornerstone3d-6-manual'));
 
 /** Rewrites that the reader checks. */
-const review = useMetricAtom('cornerstone3d-6-review');
+const review = new HeldMetric(useMetricAtom('cornerstone3d-6-review'));
 
 /** The members whose call keeps its arguments under a new name. */
 const RENAMED_METHODS: Record<string, string> = {
@@ -812,4 +814,4 @@ const codemod: Codemod<TSX> = (root) => {
   return rootNode.commitEdits([...run.edits.all(), ...importEdits]);
 };
 
-export default codemod;
+export default analysed(codemod, manual, review);

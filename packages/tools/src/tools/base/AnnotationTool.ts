@@ -4,7 +4,7 @@ import {
   metaData,
   utilities as csUtils,
 } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 
 import { vec2 } from 'gl-matrix';
 
@@ -920,9 +920,13 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
       finalViewPlaneNormal = undefined;
       finalViewUp = undefined;
     } else {
-      referencedImageId = viewport.getViewReference({
-        points: [points[0]],
-      })?.referencedImageId;
+      referencedImageId = AnnotationTool.getImageIdOfPoint(
+        instance,
+        viewport,
+        points[0],
+        viewPlaneNormal,
+        viewUp
+      );
     }
 
     return {
@@ -933,6 +937,46 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
       instance,
       viewport,
     };
+  }
+
+  /**
+   * The image that an annotation hydrated at a world point references: the
+   * image of the stack whose plane is closest to the point, or the image of
+   * the volume closest to it, as on 5.x. It is not the image on display when
+   * the point is on another slice: `getViewReference({ points })` keeps the
+   * image on display and takes only its plane restriction from the points. A
+   * viewport that shows neither a stack nor a volume gives the image of its
+   * view reference.
+   */
+  private static getImageIdOfPoint(
+    instance: AnnotationTool,
+    viewport: Types.IViewport,
+    point: Types.Point3,
+    viewPlaneNormal: Types.Point3,
+    viewUp: Types.Point3
+  ): string | undefined {
+    if (csUtils.viewportIsInVolumeMode(viewport) && viewPlaneNormal) {
+      return instance.getReferencedImageId(
+        viewport,
+        point,
+        viewPlaneNormal,
+        viewUp
+      );
+    }
+
+    if (csUtils.viewportIsInStackMode(viewport)) {
+      const stackViewport = viewport as PlanarViewport;
+      const closestImageIndex = csUtils.getClosestStackImageIndexForPoint(
+        point,
+        stackViewport
+      );
+
+      if (closestImageIndex !== null) {
+        return stackViewport.getImageIds()[closestImageIndex];
+      }
+    }
+
+    return viewport.getViewReference({ points: [point] })?.referencedImageId;
   }
 }
 

@@ -1,4 +1,4 @@
-import type { Edit, SgNode, SgRoot } from 'codemod:ast-grep';
+import type { Codemod, Edit, SgNode, SgRoot } from 'codemod:ast-grep';
 import type TSX from 'codemod:ast-grep/langs/tsx';
 
 /**
@@ -12,6 +12,51 @@ export type Node = SgNode<TSX>;
 
 /** The package whose names the transforms rewrite. */
 export const CORE_PACKAGE = '@cornerstonejs/core';
+
+/** The extensions of the files that hold JavaScript without types. */
+const JAVASCRIPT_FILE = /\.(js|jsx|mjs|cjs)$/;
+
+/** The part of an error of the tool's semantic analysis before its reason. */
+const PARSE_FAILURE = /^[^]*Failed to parse file '[^]*?': /;
+
+/** The node kinds of a name that can refer to a binding. */
+const REFERENCE_KINDS = [
+  'identifier',
+  'shorthand_property_identifier',
+  'shorthand_property_identifier_pattern',
+  'type_identifier',
+];
+
+/** The node kinds of a name that can declare a binding. */
+const BINDING_KINDS = [
+  'identifier',
+  'shorthand_property_identifier_pattern',
+  'type_identifier',
+];
+
+/** The node kinds of a JSX tag, whose lower-case name is an element. */
+const JSX_TAG_KINDS = new Set([
+  'jsx_opening_element',
+  'jsx_closing_element',
+  'jsx_self_closing_element',
+]);
+
+/** The node kinds that hold the name of a parameter. */
+const PARAMETER_KINDS = new Set([
+  'required_parameter',
+  'optional_parameter',
+  'formal_parameters',
+  'arrow_function',
+]);
+
+/**
+ * The files of this run that the tool's semantic analysis could not read.
+ * Their names are looked up on the syntax tree.
+ */
+const syntaxFiles = new Set<string>();
+
+/** The declarations of each name of the file in work, by file and name. */
+const bindingsByName = new Map<string, Declaration[]>();
 
 /** The longest line that a regenerated import statement keeps on one line. */
 const IMPORT_LINE_LENGTH = 80;
@@ -178,6 +223,74 @@ const LOOSE_PARENTS = new Set([
   'ternary_expression',
 ]);
 
+/**
+ * The expressions around a value that keep it: parentheses, casts and
+ * non-null assertions.
+ */
+const KEEPING_KINDS = new Set([
+  'parenthesized_expression',
+  'as_expression',
+  'satisfies_expression',
+  'non_null_expression',
+  'type_assertion',
+]);
+
+/**
+ * The parents of a name that write it in another way than `name = value`:
+ * an operator assignment, `++` or `--`, a `for in` or `for of`, or a
+ * destructuring target.
+ */
+const OTHER_WRITES = new Set([
+  'augmented_assignment_expression',
+  'update_expression',
+  'for_in_statement',
+  'object_pattern',
+  'array_pattern',
+  'pair_pattern',
+  'assignment_pattern',
+  'object_assignment_pattern',
+  'rest_pattern',
+]);
+
+/** The operators whose operands a chain of tests joins. */
+const CHAIN_OPERATORS = new Set(['||', '&&']);
+
+/** The nodes whose text is compared as one token. */
+const TOKEN_KINDS = new Set(['string', 'template_string', 'regex', 'number']);
+
+/** The nodes that only TypeScript reads, wherever they stand. */
+const TYPE_PART_KINDS = new Set(['type_arguments', 'type_annotation']);
+
+/** What to read at two operands that a run makes the same, by their place. */
+const MERGED_NOTES: Record<MergedPlace, string> = {
+  '||': 'two operands of one || are the same now, read what each tested in 5.x',
+  '&&': 'two operands of one && are the same now, read what each tested in 5.x',
+  case: 'two case labels of one switch are the same now, read what each chose in 5.x',
+  includes:
+    'two entries of one list used with includes are the same now, read what each named in 5.x',
+};
+
+/**
+ * Where two operands stand: in a chain of `||` or of `&&`, as `case` labels
+ * of one `switch`, or as entries of an array read with `includes`.
+ */
+export type MergedPlace = '||' | '&&' | 'case' | 'includes';
+
+/**
+ * An operand that the edits of a run make the same expression as an operand
+ * before it in the same place, where the two differed.
+ */
+export interface MergedOperand {
+  /** The later of the two operands. */
+  node: Node;
+  /** Where the two operands stand. */
+  place: MergedPlace;
+  /** What a person reads there, for the rule of the report. */
+  note: string;
+  /** The texts that the edits write into the two operands. */
+  inserted: string[];
+}
+
 /** One named specifier of an import statement. */
 interface ImportSpecifierInfo {
   name: string;
@@ -210,6 +323,17 @@ interface ImportAddition {
 interface Declaration {
   node: Node;
   scope: Node;
+}
+
+/** The declaration that a name refers to, as the tool answers it. */
+export interface Definition {
+  kind: string;
+  node: Node;
+}
+
+/** A metric of the tool, as the transforms use it. */
+interface Metric {
+  increment(cardinality?: Record<string, string>): void;
 }
 
 /**
@@ -958,13 +1082,298 @@ export function bindsAt(rootNode: Node, declaration: Node, at: Node): boolean {
 }
 
 /**
+ * Returns the reason of an error without the path of the file, in one line.
+ */
+function failureReason(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+
+  return message.replace(PARSE_FAILURE, '').split('\n')[0].trim();
+}
+
+/**
+ * Notes that the tool's semantic analysis could not read a file. The names
+ * of a JavaScript file are looked up on the syntax tree from then on. Any
+ * other file is not analysed: the error goes on to `analysed`.
+ */
+function leaveTool(file: string, error: unknown): void {
+  if (!JAVASCRIPT_FILE.test(file)) {
+    throw new Error(failureReason(error));
+  }
+
+  syntaxFiles.add(file);
+}
+
+/**
+ * Returns the outermost node that covers the same text as a node. The tool
+ * answers with this node: the import specifier of a name without an alias,
+ * the parameter of a plain name, the export specifier of an exported name.
+ */
+function outermost(node: Node): Node {
+  let current = node;
+  let parent = current.parent();
+
+  while (parent && contains(current, parent)) {
+    current = parent;
+    parent = current.parent();
+  }
+
+  return current;
+}
+
+/**
+ * Returns the node that bounds the scope of a name that a node declares, as
+ * `declarationScope` does. The left side of a `for in` or a `for of` without
+ * `const`, `let` or `var` writes a name and declares none.
+ */
+function bindingScope(node: Node): Node | undefined {
+  const holder = bindingHolder(node);
+
+  if (holder?.kind() === 'for_in_statement' && !holder.field('kind')) {
+    return undefined;
+  }
+
+  return declarationScope(node);
+}
+
+/**
+ * Returns the declarations of a name in a file, each with its scope, with
+ * the names of classes. The answer is kept for the file in work.
+ */
+function bindingsOf(rootNode: Node, name: string): Declaration[] {
+  const key = `${rootNode.getRoot().filename()}\n${name}`;
+  const kept = bindingsByName.get(key);
+
+  if (kept) {
+    return kept;
+  }
+
+  const found: Declaration[] = [];
+
+  for (const node of rootNode.findAll({
+    rule: {
+      any: BINDING_KINDS.map((kind) => ({ kind })),
+      regex: `^${escapeName(name)}$`,
+    },
+  })) {
+    const scope = bindingScope(node);
+
+    if (scope) {
+      found.push({ node, scope });
+    }
+  }
+
+  bindingsByName.set(key, found);
+
+  return found;
+}
+
+/**
+ * Tells whether a declaration may repeat a name of its scope: a `var`, a
+ * function declaration or a parameter.
+ */
+function mayRepeat(declaration: Node): boolean {
+  const holder = bindingHolder(declaration);
+  const kind = holder?.kind() ?? '';
+
+  return (
+    PARAMETER_KINDS.has(kind) ||
+    kind === 'function_declaration' ||
+    kind === 'generator_function_declaration' ||
+    (kind === 'variable_declarator' &&
+      holder.parent()?.kind() === 'variable_declaration')
+  );
+}
+
+/**
+ * Tells whether a name stands where JavaScript reads a binding. The alias of
+ * an export, a name of an export from another module and the lower-case
+ * name of a JSX tag do not.
+ */
+function readsBinding(node: Node): boolean {
+  const parent = node.parent();
+  const kind = parent?.kind() ?? '';
+
+  if (JSX_TAG_KINDS.has(kind)) {
+    return !/^[a-z]/.test(node.text());
+  }
+
+  if (kind !== 'export_specifier' && kind !== 'namespace_export') {
+    return true;
+  }
+
+  const statement = parent
+    .ancestors()
+    .find((ancestor) => ancestor.kind() === 'export_statement');
+
+  return (
+    kind === 'export_specifier' &&
+    parent.field('alias')?.id() !== node.id() &&
+    !statement?.field('source')
+  );
+}
+
+/**
+ * Returns the declared name that a name refers to at its place, read from
+ * the syntax tree: the declaration of the innermost scope that holds the
+ * node. The name of a function expression gives way to a parameter or a
+ * variable of that function. Throws when two declarations of one scope
+ * cannot both stand, as the binding is then unknown.
+ */
+function bindingAt(node: Node): Node | undefined {
+  const name = node.text();
+  const ownScope = bindingScope(node);
+
+  if (ownScope && NAMED_EXPRESSION_KINDS.has(node.parent()?.kind() ?? '')) {
+    return node;
+  }
+
+  const inScope = bindingsOf(node.getRoot().root(), name).filter(({ scope }) =>
+    contains(scope, node)
+  );
+  const innermost = inScope.find(({ scope }) =>
+    ownScope
+      ? scope.id() === ownScope.id()
+      : inScope.every((other) => contains(other.scope, scope))
+  );
+
+  if (!innermost) {
+    return undefined;
+  }
+
+  const sameScope = inScope.filter(
+    ({ scope }) => scope.id() === innermost.scope.id()
+  );
+  const own = sameScope.filter(
+    ({ node: declaration }) =>
+      !NAMED_EXPRESSION_KINDS.has(declaration.parent()?.kind() ?? '')
+  );
+  const candidates = own.length ? own : sameScope;
+
+  if (
+    candidates.length > 1 &&
+    !candidates.every(({ node: declaration }) => mayRepeat(declaration))
+  ) {
+    throw new Error(`${name} is declared twice in one scope`);
+  }
+
+  return candidates[0].node;
+}
+
+/**
+ * Returns the definition of a name read from the syntax tree, in the shape
+ * of the tool's answer: a name of an import statement gives its specifier
+ * with the kind `import`, any other name its declaration with the kind
+ * `local`. A second declaration of a name gives nothing.
+ */
+function syntaxDefinition(node: Node): Definition | undefined {
+  const ancestors = node.ancestors();
+
+  if (ancestors.some((ancestor) => ancestor.kind() === 'import_statement')) {
+    const specifier = ancestors.find(
+      (ancestor) =>
+        ancestor.kind() === 'import_specifier' ||
+        ancestor.kind() === 'namespace_import'
+    );
+
+    return { kind: 'import', node: outermost(specifier ?? node) };
+  }
+
+  if (!readsBinding(node)) {
+    return undefined;
+  }
+
+  const binding = bindingAt(node);
+
+  if (!binding || (bindingScope(node) && binding.id() !== node.id())) {
+    return undefined;
+  }
+
+  return { kind: 'local', node: outermost(binding) };
+}
+
+/**
+ * Returns the nodes of the file that refer to a declared name, read from the
+ * syntax tree, in the shape of the tool's answer. A node that is not the
+ * declaration of its name gives none.
+ */
+function syntaxReferences(declaration: Node): Node[] {
+  if (!bindingScope(declaration)) {
+    return [];
+  }
+
+  if (bindingAt(declaration)?.id() !== declaration.id()) {
+    return [];
+  }
+
+  return declaration
+    .getRoot()
+    .root()
+    .findAll({
+      rule: {
+        any: REFERENCE_KINDS.map((kind) => ({ kind })),
+        regex: `^${escapeName(declaration.text())}$`,
+      },
+    })
+    .filter(
+      (node) =>
+        !bindingScope(node) &&
+        readsBinding(node) &&
+        !node
+          .ancestors()
+          .some((ancestor) => ancestor.kind() === 'import_statement') &&
+        bindingAt(node)?.id() === declaration.id()
+    )
+    .map(outermost);
+}
+
+/**
+ * Returns the definition of a name: the answer of the tool's semantic
+ * analysis, or the one read from the syntax tree when the tool cannot read
+ * a JavaScript file (it reads JSX only in `.jsx` and `.tsx` files).
+ */
+export function definitionAt(node: Node): Definition | undefined {
+  const file = node.getRoot().filename();
+
+  if (!syntaxFiles.has(file)) {
+    try {
+      return node.definition() ?? undefined;
+    } catch (error) {
+      leaveTool(file, error);
+    }
+  }
+
+  return syntaxDefinition(node);
+}
+
+/**
+ * Returns the nodes of the file that refer to a declared name, from the tool
+ * or from the syntax tree as `definitionAt` does.
+ */
+function referencesAt(declaration: Node): Node[] {
+  const file = declaration.getRoot().filename();
+
+  if (!syntaxFiles.has(file)) {
+    try {
+      return declaration
+        .references()
+        .filter((entry) => entry.root.filename() === file)
+        .flatMap((entry) => entry.nodes);
+    } catch (error) {
+      leaveTool(file, error);
+    }
+  }
+
+  return syntaxReferences(declaration);
+}
+
+/**
  * Returns the definition of an identifier, with the kind of the definition.
  * A declarator with a type annotation comes back as its name, as one without.
  */
 function definitionOf(
   identifier: Node
 ): { kind: string; node: Node } | undefined {
-  const definition = identifier.definition();
+  const definition = definitionAt(identifier);
 
   if (!definition) {
     return undefined;
@@ -1008,20 +1417,15 @@ export function declarationNodeOf(identifier: Node): Node | undefined {
  * the import statements.
  */
 export function referencesOf(declaration: Node): Node[] {
-  const file = declaration.getRoot().filename();
   const start = declaration.range().start.index;
 
-  return declaration
-    .references()
-    .filter((entry) => entry.root.filename() === file)
-    .flatMap((entry) => entry.nodes)
-    .filter(
-      (node) =>
-        node.range().start.index !== start &&
-        !node
-          .ancestors()
-          .some((ancestor) => ancestor.kind() === 'import_statement')
-    );
+  return referencesAt(declaration).filter(
+    (node) =>
+      node.range().start.index !== start &&
+      !node
+        .ancestors()
+        .some((ancestor) => ancestor.kind() === 'import_statement')
+  );
 }
 
 /**
@@ -1115,7 +1519,7 @@ export function coreImportOf(
   identifier: Node,
   subpaths = false
 ): { name: string; specifier: Node } | undefined {
-  const definition = identifier.definition();
+  const definition = definitionAt(identifier);
   const target = definition?.node;
   const specifier = target?.kind() === 'identifier' ? target.parent() : target;
 
@@ -1146,7 +1550,7 @@ export function coreImportOf(
  * Tells whether an identifier is the namespace import of `@cornerstonejs/core`.
  */
 export function isCoreNamespace(identifier: Node): boolean {
-  const definition = identifier.definition();
+  const definition = definitionAt(identifier);
 
   if (!definition) {
     return false;
@@ -1527,6 +1931,62 @@ export function isBoundTo(node: Node, declaration: Node): boolean {
     declarationNodeOf(node)?.range().start.index ===
       declaration.range().start.index
   );
+}
+
+/**
+ * Returns the outermost expression that keeps the value of a node through
+ * parentheses, casts and non-null assertions.
+ */
+export function keptValue(node: Node): Node {
+  let current = node;
+  let parent = node.parent();
+
+  while (parent && KEEPING_KINDS.has(parent.kind())) {
+    current = parent;
+    parent = parent.parent();
+  }
+
+  return current;
+}
+
+/**
+ * Returns the values that a declared name gets: the value of its declaration
+ * and the value of each `name = value`. Undefined when the file writes the
+ * name in another way, such as `+=` or a destructuring.
+ */
+export function writtenValues(declaration: Node): Node[] | undefined {
+  const holder = declaration.parent();
+  const initial =
+    holder?.kind() === 'variable_declarator' &&
+    holder.field('name')?.id() === declaration.id()
+      ? holder.field('value')
+      : undefined;
+  const values = initial ? [initial] : [];
+
+  for (const reference of referencesOf(declaration)) {
+    let child = reference;
+    let parent = reference.parent();
+
+    while (parent?.kind() === 'parenthesized_expression') {
+      child = parent;
+      parent = parent.parent();
+    }
+
+    const kind = parent?.kind() ?? '';
+    const right =
+      kind === 'assignment_expression' &&
+      parent.field('left')?.id() === child.id()
+        ? parent.field('right')
+        : undefined;
+
+    if (right) {
+      values.push(right);
+    } else if (OTHER_WRITES.has(kind)) {
+      return undefined;
+    }
+  }
+
+  return values;
 }
 
 /**
@@ -2336,6 +2796,84 @@ export function site(
 }
 
 /**
+ * Holds the entries of a metric until the transform of a file is done, so
+ * that a file that could not be analysed leaves none of them.
+ */
+export class HeldMetric {
+  private readonly metric: Metric;
+
+  private held: Record<string, string>[] = [];
+
+  constructor(metric: Metric) {
+    this.metric = metric;
+  }
+
+  /**
+   * Keeps one entry.
+   */
+  increment(cardinality: Record<string, string>): void {
+    this.held.push(cardinality);
+  }
+
+  /**
+   * Gives the kept entries to the metric, in their order.
+   */
+  release(): void {
+    for (const cardinality of this.held) {
+      this.metric.increment(cardinality);
+    }
+
+    this.held = [];
+  }
+
+  /**
+   * Forgets the kept entries.
+   */
+  drop(): void {
+    this.held = [];
+  }
+}
+
+/**
+ * Wraps the transform of a step so that it never fails on a file. When the
+ * transform throws (the tool could not read a TypeScript file, or a name is
+ * declared twice in one scope), the file stays as it is, the entries of the
+ * file are dropped, and the file is reported once in `manual` with the
+ * reason.
+ */
+export function analysed(
+  transform: Codemod<TSX>,
+  manual: HeldMetric,
+  ...others: HeldMetric[]
+): Codemod<TSX> {
+  return (root, options) => {
+    const metrics = [manual, ...others];
+
+    bindingsByName.clear();
+
+    try {
+      const result = transform(root, options);
+
+      metrics.forEach((metric) => metric.release());
+
+      return result;
+    } catch (error) {
+      metrics.forEach((metric) => metric.drop());
+      manual.increment(
+        site(
+          root,
+          `the file was not analysed: ${failureReason(error)}`,
+          root.root()
+        )
+      );
+      manual.release();
+
+      return null;
+    }
+  };
+}
+
+/**
  * Keeps edits that do not overlap, so a transform can skip a site that
  * another rewrite of the same run touches.
  */
@@ -2383,4 +2921,314 @@ export class EditSet {
   all(): Edit[] {
     return this.list;
   }
+}
+
+/**
+ * Tells whether an edit lies inside a node.
+ */
+function isEditInside(node: Node, edit: Edit): boolean {
+  const { start, end } = node.range();
+
+  return start.index <= edit.startPos && edit.endPos <= end.index;
+}
+
+/**
+ * Returns the tokens of the value of a node: its leaves, where a string, a
+ * template, a regular expression and a number are one token each. The
+ * comments and the parts that only TypeScript reads (the type of a cast, a
+ * non-null `!`, type arguments, a type annotation, and the parentheses
+ * around a cast of a name, a member or a call) are not tokens: they go to
+ * `skipped`.
+ */
+function tokensOf(node: Node, skipped: Node[]): Node[] {
+  const kind = node.kind();
+
+  if (kind === 'comment' || TYPE_PART_KINDS.has(kind)) {
+    skipped.push(node);
+
+    return [];
+  }
+
+  const children = node.children();
+
+  if (!children.length || TOKEN_KINDS.has(kind)) {
+    return [node];
+  }
+
+  const named = children.filter(
+    (child) => child.isNamed() && child.kind() !== 'comment'
+  );
+  const isCastInParentheses =
+    kind === 'parenthesized_expression' &&
+    KEEPING_KINDS.has(named[0]?.kind() ?? '') &&
+    named[0].kind() !== kind &&
+    PRIMARY_KINDS.has(unwrap(named[0]).kind());
+
+  if (
+    !KEEPING_KINDS.has(kind) ||
+    (kind === 'parenthesized_expression' && !isCastInParentheses)
+  ) {
+    return children.flatMap((child) => tokensOf(child, skipped));
+  }
+
+  const value = kind === 'type_assertion' ? named[named.length - 1] : named[0];
+
+  skipped.push(...children.filter((child) => child.id() !== value?.id()));
+
+  return value ? tokensOf(value, skipped) : [];
+}
+
+/**
+ * A node as a list of edits leaves it: the text of its value, to compare
+ * two nodes, and the texts that the edits write into that value.
+ */
+interface EditedText {
+  text: string;
+  inserted: string[];
+}
+
+/**
+ * Returns the value of a node as a list of edits leaves it: its text without
+ * comments, without the parts that only TypeScript reads and without the
+ * white space around its punctuation. Undefined when an edit crosses the
+ * border of the node or of one of its tokens.
+ */
+function editedText(node: Node, edits: Edit[]): EditedText | undefined {
+  const { start, end } = node.range();
+  const pieces: { at: number; order: number; text: string }[] = [];
+  const inside: Edit[] = [];
+  const skipped: Node[] = [];
+  const tokens = tokensOf(node, skipped);
+
+  for (const edit of edits) {
+    const isApart =
+      edit.startPos === edit.endPos
+        ? !isEditInside(node, edit)
+        : edit.endPos <= start.index || end.index <= edit.startPos;
+
+    if (isApart || skipped.some((part) => isEditInside(part, edit))) {
+      continue;
+    }
+
+    if (!isEditInside(node, edit)) {
+      return undefined;
+    }
+
+    inside.push(edit);
+    pieces.push({ at: edit.startPos, order: 0, text: edit.insertedText });
+  }
+
+  for (const token of tokens) {
+    const range = token.range();
+    const over = inside.filter(
+      (edit) =>
+        edit.startPos < range.end.index && range.start.index < edit.endPos
+    );
+
+    if (
+      over.some(
+        (edit) =>
+          edit.startPos > range.start.index || edit.endPos < range.end.index
+      )
+    ) {
+      return undefined;
+    }
+
+    if (!over.length) {
+      pieces.push({ at: range.start.index, order: 1, text: token.text() });
+    }
+  }
+
+  return {
+    text: pieces
+      .sort((a, b) => a.at - b.at || a.order - b.order)
+      .map((piece) => piece.text)
+      .join(' ')
+      .replace(/\s+/g, ' ')
+      .replace(/ ?([^\w$ ]) ?/g, '$1')
+      .trim(),
+    inserted: inside.map((edit) => edit.insertedText),
+  };
+}
+
+/**
+ * Returns the text of the value of a node as a list of edits leaves it,
+ * without comments, without the parts that only TypeScript reads and
+ * without the white space around its punctuation, so that two nodes can be
+ * compared. Undefined when an edit crosses the border of the node or of one
+ * of its tokens.
+ */
+export function textAfterEdits(node: Node, edits: Edit[]): string | undefined {
+  return editedText(node, edits)?.text;
+}
+
+/**
+ * Tells whether a node is a test that joins two operands with an operator.
+ */
+function isChain(node: Node | null | undefined, operator: string): boolean {
+  return (
+    node?.kind() === 'binary_expression' &&
+    node.field('operator')?.text() === operator
+  );
+}
+
+/**
+ * Returns the operands of a chain of one operator, through parentheses and
+ * casts: `a || (b || c)` gives `a`, `b` and `c`.
+ */
+function chainOperands(binary: Node, operator: string): Node[] {
+  return ['left', 'right'].flatMap((side) => {
+    const operand = binary.field(side);
+
+    if (!operand) {
+      return [];
+    }
+
+    const inner = unwrap(operand);
+
+    return isChain(inner, operator)
+      ? chainOperands(inner, operator)
+      : [operand];
+  });
+}
+
+/**
+ * Tells whether a node is the object of a read of `includes`, through
+ * parentheses and casts.
+ */
+function isIncludesObject(node: Node): boolean {
+  const value = keptValue(node);
+  const parent = value.parent();
+
+  return (
+    parent?.kind() === 'member_expression' &&
+    parent.field('object')?.id() === value.id() &&
+    parent.field('property')?.text() === 'includes'
+  );
+}
+
+/**
+ * Tells whether an array literal is read with `includes`: directly, or
+ * through a `const` that holds it.
+ */
+function isReadWithIncludes(array: Node): boolean {
+  if (isIncludesObject(array)) {
+    return true;
+  }
+
+  const value = keptValue(array);
+  const declarator = value.parent();
+  const name =
+    declarator?.kind() === 'variable_declarator' &&
+    declarator.field('value')?.id() === value.id()
+      ? declarator.field('name')
+      : undefined;
+
+  return Boolean(
+    name?.kind() === 'identifier' &&
+      isStableBinding(name) &&
+      referencesOf(name).some(isIncludesObject)
+  );
+}
+
+/**
+ * Returns the operands of a file that stand in one place, place by place:
+ * the operands of each chain of `||` or of `&&`, the `case` labels of each
+ * `switch`, and the entries of each array literal read with `includes`.
+ */
+function operandGroups(
+  rootNode: Node
+): { place: MergedPlace; operands: Node[] }[] {
+  const groups: { place: MergedPlace; operands: Node[] }[] = [];
+
+  for (const binary of rootNode.findAll({
+    rule: { kind: 'binary_expression' },
+  })) {
+    const operator = binary.field('operator')?.text() ?? '';
+
+    if (
+      CHAIN_OPERATORS.has(operator) &&
+      !isChain(keptValue(binary).parent(), operator)
+    ) {
+      groups.push({
+        place: operator as MergedPlace,
+        operands: chainOperands(binary, operator),
+      });
+    }
+  }
+
+  for (const body of rootNode.findAll({ rule: { kind: 'switch_body' } })) {
+    groups.push({
+      place: 'case',
+      operands: body
+        .children()
+        .filter((child) => child.kind() === 'switch_case')
+        .flatMap((child) => child.field('value') ?? []),
+    });
+  }
+
+  for (const array of rootNode.findAll({ rule: { kind: 'array' } })) {
+    if (isReadWithIncludes(array)) {
+      groups.push({
+        place: 'includes',
+        operands: array
+          .children()
+          .filter((child) => child.isNamed() && child.kind() !== 'comment'),
+      });
+    }
+  }
+
+  return groups;
+}
+
+/**
+ * Returns each operand that a list of edits makes the same expression as an
+ * operand before it in the same place, where the two differed: in a chain
+ * of `||` or of `&&`, among the `case` labels of one `switch`, or among the
+ * entries of an array literal read with `includes`. Such a rewrite is right
+ * name by name, and what the two tests told apart in 5.x is gone.
+ */
+export function mergedOperands(rootNode: Node, edits: Edit[]): MergedOperand[] {
+  if (!edits.length) {
+    return [];
+  }
+
+  const found: MergedOperand[] = [];
+
+  for (const { place, operands } of operandGroups(rootNode)) {
+    const isEdited = operands.some((operand) =>
+      edits.some((edit) => isEditInside(operand, edit))
+    );
+
+    if (!isEdited) {
+      continue;
+    }
+
+    const texts = operands.map((operand) => ({
+      before: textAfterEdits(unwrap(operand), []),
+      after: editedText(unwrap(operand), edits),
+    }));
+
+    operands.forEach((operand, index) => {
+      const { before, after } = texts[index];
+      const twin = texts.find(
+        (other, at) =>
+          at < index &&
+          after !== undefined &&
+          other.after?.text === after.text &&
+          other.before !== before
+      );
+
+      if (after && twin?.after) {
+        found.push({
+          node: operand,
+          place,
+          note: MERGED_NOTES[place],
+          inserted: [...after.inserted, ...twin.after.inserted],
+        });
+      }
+    });
+  }
+
+  return found;
 }

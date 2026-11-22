@@ -24,5 +24,15 @@
       },
       "count": 1
     }
+  ],
+  "cornerstone3d-6-review": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "33",
+        "rule": "ECGViewport: two operands of one || are the same now, read what each tested in 5.x"
+      },
+      "count": 1
+    }
   ]
 }

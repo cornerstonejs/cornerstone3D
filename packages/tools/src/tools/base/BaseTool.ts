@@ -17,6 +17,7 @@ import {
 import measurementTargetFilters from './measurementTargetFilters';
 import {
   applyViewportPresentation,
+  getViewportPresentation,
   getViewportZoomPan,
 } from '../../utilities/viewportPresentation';
 import type StrategyCallbacks from '../../enums/StrategyCallbacks';
@@ -727,7 +728,10 @@ abstract class BaseTool {
   /**
    * Creates a zoom/pan memo that remembers the original zoom/pan position for
    * the given viewport. A viewport of any family is read and restored
-   * through the projection service.
+   * through the projection service. A viewport that the projection service
+   * knows and that has no zoom there, as a 3D viewport that shows nothing,
+   * gets no memo. The zoom and pan members are for a viewport that the
+   * projection service does not know.
    */
   public static createZoomPanMemo(viewport) {
     const zoomPan = getViewportZoomPan(viewport);
@@ -750,7 +754,11 @@ abstract class BaseTool {
       return zoomPanMemo;
     }
 
-    if (!viewportHasPan(viewport) || !viewportHasZoom(viewport)) {
+    if (
+      getViewportPresentation(viewport) ||
+      !viewportHasPan(viewport) ||
+      !viewportHasZoom(viewport)
+    ) {
       return;
     }
 

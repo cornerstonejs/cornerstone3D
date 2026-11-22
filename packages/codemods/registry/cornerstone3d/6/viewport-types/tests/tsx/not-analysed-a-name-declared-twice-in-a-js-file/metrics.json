@@ -1,0 +1,12 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.js",
+        "line": "1",
+        "rule": "the file was not analysed: ViewportType is declared twice in one scope"
+      },
+      "count": 1
+    }
+  ]
+}
