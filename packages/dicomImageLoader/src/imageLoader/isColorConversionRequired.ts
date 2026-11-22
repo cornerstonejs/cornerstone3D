@@ -30,6 +30,15 @@ export default function isColorConversionRequired(imageFrame) {
     return true;
   }
 
+  // Native YBR_FULL_422 stores Y1 Y2 Cb Cr, 2 bytes per pixel (PS3.3
+  // C.7.6.3.1.2). A decoder that already converted to RGB gives 3 per pixel.
+  if (
+    photometricInterpretation === 'YBR_FULL_422' &&
+    pixelDataLength === 2 * columns * rows
+  ) {
+    return true;
+  }
+
   if (photometricInterpretation.endsWith('420')) {
     return (
       pixelDataLength ===
