@@ -77,4 +77,21 @@ describe('volume viewport preset and interpolation type', () => {
 
     expect(interpolationOf(volumeActor)).toBe(InterpolationType.FAST_LINEAR);
   });
+
+  it('applies the default interpolation type when resetting to the default properties', () => {
+    const { viewport, volumeActor } = createViewport();
+    viewport.setDefaultProperties({
+      preset: PRESET,
+      interpolationType: InterpolationType.FAST_LINEAR,
+    });
+
+    viewport.setInterpolationType(InterpolationType.NEAREST);
+    viewport.resetToDefaultProperties('volume');
+
+    expect(interpolationOf(volumeActor)).toBe(InterpolationType.FAST_LINEAR);
+    expect(viewport.viewportProperties.interpolationType).toBe(
+      InterpolationType.FAST_LINEAR
+    );
+    expect(viewport.viewportProperties.preset).toBe(PRESET);
+  });
 });

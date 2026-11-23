@@ -1253,6 +1253,10 @@ abstract class BaseVolumeViewport extends Viewport {
       this.setSampleDistanceMultiplier(properties.sampleDistanceMultiplier);
     }
 
+    if (properties.interpolationType !== undefined) {
+      this.setInterpolationType(properties.interpolationType, volumeId);
+    }
+
     if (properties.preset !== undefined) {
       this.setPreset(properties.preset, volumeId, false);
     }
