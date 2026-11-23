@@ -915,50 +915,68 @@ export function findReferenceSourceImageId(
   const {
     FrameOfReferenceUID,
     PerFrameFunctionalGroupsSequence,
+    SharedFunctionalGroupsSequence,
     SourceImageSequence,
     ReferencedSeriesSequence,
   } = multiframe;
 
-  if (
-    !PerFrameFunctionalGroupsSequence ||
-    PerFrameFunctionalGroupsSequence.length === 0
-  ) {
-    return imageId;
-  }
-
   const PerFrameFunctionalGroup =
-    PerFrameFunctionalGroupsSequence[frameSegment];
+    PerFrameFunctionalGroupsSequence?.[frameSegment];
 
-  if (!PerFrameFunctionalGroup) {
-    return imageId;
+  let frameSourceImageSequence;
+
+  const getSourceImageSequenceItem = (
+    functionalGroup,
+    sourceImageIndex = 0
+  ) => {
+    if (!functionalGroup) {
+      return undefined;
+    }
+
+    let derivationImageSequence = functionalGroup?.DerivationImageSequence;
+
+    if (Array.isArray(derivationImageSequence)) {
+      derivationImageSequence = derivationImageSequence[0];
+    }
+
+    // fallback to functionalGroup.sourceImageSequence for backward compatiability
+    let sourceImageSequence =
+      derivationImageSequence?.SourceImageSequence ??
+      functionalGroup?.SourceImageSequence;
+    if (sourceImageSequence) {
+      if (Array.isArray(sourceImageSequence)) {
+        sourceImageSequence = sourceImageSequence[sourceImageIndex];
+      }
+
+      return sourceImageSequence;
+    }
+
+    return undefined;
+  };
+
+  // 1. Per-frame DerivationImageSequence / SourceImageSequence
+  if (PerFrameFunctionalGroup) {
+    frameSourceImageSequence = getSourceImageSequenceItem(
+      PerFrameFunctionalGroup
+    );
   }
 
-  let frameSourceImageSequence = undefined;
-  if (PerFrameFunctionalGroup.DerivationImageSequence) {
-    let DerivationImageSequence =
-      PerFrameFunctionalGroup.DerivationImageSequence;
-    if (Array.isArray(DerivationImageSequence)) {
-      if (DerivationImageSequence.length !== 0) {
-        DerivationImageSequence = DerivationImageSequence[0];
-      } else {
-        DerivationImageSequence = undefined;
-      }
-    }
+  // 2. SharedFunctionalGroupsSequence DerivationImageSequence / SourceImageSequence
+  if (!frameSourceImageSequence && SharedFunctionalGroupsSequence) {
+    console.warn('Using SharedFunctionalGroupsSequence SourceImageSequence.');
 
-    if (DerivationImageSequence) {
-      frameSourceImageSequence = DerivationImageSequence.SourceImageSequence;
-      if (Array.isArray(frameSourceImageSequence)) {
-        if (frameSourceImageSequence.length !== 0) {
-          frameSourceImageSequence = frameSourceImageSequence[0];
-        } else {
-          frameSourceImageSequence = undefined;
-        }
-      }
-    }
-  } else if (SourceImageSequence && SourceImageSequence.length !== 0) {
-    cs3dLogger.warn(
-      'DerivationImageSequence not present, using SourceImageSequence assuming SEG has the same geometry as the source image.'
+    frameSourceImageSequence = getSourceImageSequenceItem(
+      SharedFunctionalGroupsSequence,
+      frameSegment
     );
+  }
+
+  // 3. Top-level SourceImageSequence (legacy fallback)
+  if (!frameSourceImageSequence && SourceImageSequence?.length) {
+    console.warn(
+      'DerivationImageSequence not present, using top-level SourceImageSequence assuming SEG has the same geometry as the source image.'
+    );
+
     frameSourceImageSequence = SourceImageSequence[frameSegment];
   }
 
@@ -969,7 +987,11 @@ export function findReferenceSourceImageId(
     );
   }
 
-  if (imageId === undefined && ReferencedSeriesSequence) {
+  if (
+    imageId === undefined &&
+    ReferencedSeriesSequence &&
+    PerFrameFunctionalGroup
+  ) {
     const referencedSeriesSequence = Array.isArray(ReferencedSeriesSequence)
       ? ReferencedSeriesSequence[0]
       : ReferencedSeriesSequence;
