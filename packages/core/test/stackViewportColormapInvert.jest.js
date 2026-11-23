@@ -1,6 +1,7 @@
 import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import StackViewport from '../src/RenderingEngine/StackViewport';
+import getDefaultViewport from '../src/RenderingEngine/helpers/cpuFallback/rendering/getDefaultViewport';
 
 const COLORMAP = { name: 'Grayscale' };
 
@@ -96,5 +97,86 @@ describe('StackViewport colormap and invert', () => {
     expect(viewport.invert).toBe(false);
     expect(grayAt(0)).toBeCloseTo(0);
     expect(grayAt(255)).toBeCloseTo(1);
+  });
+});
+
+/**
+ * A CPU stack viewport after it displayed an image, with the CPU viewport
+ * built by getDefaultViewport as _updateToDisplayImageCPU does. The CPU
+ * viewport takes its invert from image.invert (true for MONOCHROME1 in
+ * dicomImageLoader's createImage); the stack viewport's own `invert` field is
+ * not updated by that path.
+ */
+function createCPUViewport({ imageInvert }) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 256;
+  const image = {
+    width: 256,
+    height: 256,
+    columns: 256,
+    rows: 256,
+    columnPixelSpacing: 1,
+    rowPixelSpacing: 1,
+    windowCenter: 128,
+    windowWidth: 256,
+    invert: imageInvert,
+  };
+
+  const viewport = Object.create(StackViewport.prototype);
+  Object.assign(viewport, {
+    id: 'viewport',
+    element: document.createElement('div'),
+    csImage: image,
+    globalDefaultProperties: {},
+    invert: false,
+    useCPURendering: true,
+    _cpuFallbackEnabledElement: {
+      viewport: getDefaultViewport(canvas, image),
+    },
+    fillWithBackgroundColor: jest.fn(),
+    render: jest.fn(),
+  });
+  // The CPU/GPU dispatchers are set up in the constructor.
+  viewport.setColormap = StackViewport.prototype.setColormapCPU;
+  viewport.setInvertColor = StackViewport.prototype.setInvertColorCPU;
+
+  const cpuInvert = () => viewport._cpuFallbackEnabledElement.viewport.invert;
+
+  return { viewport, cpuInvert };
+}
+
+describe('StackViewport colormap and invert on CPU rendering', () => {
+  it('keeps the invert of a MONOCHROME1 image when a colormap is applied', () => {
+    const { viewport, cpuInvert } = createCPUViewport({ imageInvert: true });
+    expect(cpuInvert()).toBe(true);
+
+    viewport.setProperties({ colormap: COLORMAP });
+
+    expect(cpuInvert()).toBe(true);
+  });
+
+  it('still applies an explicit invert passed with the colormap', () => {
+    const { viewport, cpuInvert } = createCPUViewport({ imageInvert: true });
+
+    viewport.setProperties({ colormap: COLORMAP, invert: false });
+
+    expect(cpuInvert()).toBe(false);
+    expect(viewport.invert).toBe(false);
+
+    viewport.setProperties({ colormap: COLORMAP, invert: true });
+
+    expect(cpuInvert()).toBe(true);
+    expect(viewport.invert).toBe(true);
+  });
+
+  it('keeps an inverted CPU viewport inverted when a colormap is applied later', () => {
+    const { viewport, cpuInvert } = createCPUViewport({ imageInvert: false });
+    viewport.setProperties({ invert: true });
+
+    viewport.setProperties({ colormap: COLORMAP });
+
+    expect(cpuInvert()).toBe(true);
+    expect(viewport.invert).toBe(true);
   });
 });

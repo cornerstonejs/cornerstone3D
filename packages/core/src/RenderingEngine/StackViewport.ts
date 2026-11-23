@@ -798,13 +798,19 @@ class StackViewport extends Viewport {
     // The inversion to apply once the colormap is set. setColormap rebuilds
     // the RGB transfer function in its default, non-inverted state, so an
     // inverted viewport has to be inverted again even when this call does not
-    // set invert (the same convention as _setPropertiesFromCache).
+    // set invert (the same convention as _setPropertiesFromCache). The CPU
+    // path keeps the invert on its fallback viewport, separate from the
+    // colormap, so it is left as it is there.
     let invertToApply = invert;
 
     if (typeof colormap !== 'undefined') {
-      invertToApply ??= this.invert;
-      this.setColormap(colormap);
-      this.invert = false;
+      if (this.useCPURendering) {
+        this.setColormap(colormap);
+      } else {
+        invertToApply ??= this.invert;
+        this.setColormap(colormap);
+        this.invert = false;
+      }
     }
     // if voi is not applied for the first time, run the setVOI function
     // which will apply the default voi based on the range
