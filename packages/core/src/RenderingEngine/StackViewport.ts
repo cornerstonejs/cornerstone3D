@@ -3051,10 +3051,8 @@ class StackViewport extends Viewport {
    * the function of the image does not stop the sequence. This includes the
    * LINEAR value that an absent (0028,1056) gives.
    *
-   * The generic viewports use the same rule in
-   * `applyPlanarImagePresentation`. They do not have a `useVOILUTSequence`
-   * override. Thus the test for an equal or a different function is the full
-   * rule there.
+   * The generic viewports use the same rule, with the same `useVOILUTSequence`
+   * property, in `resolveVOILUTSequenceToApply`.
    */
   private _getVOILUTSequenceToApply(image: IImage = this.csImage) {
     if (this.useVOILUTSequence === false) {
