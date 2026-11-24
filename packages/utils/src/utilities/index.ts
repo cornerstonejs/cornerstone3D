@@ -14,5 +14,6 @@ export {
   isNumber,
   DEFAULT_EPSILON,
   areNumbersEqualWithTolerance,
+  formatDecimal,
 } from './math';
 export type { Logger } from './logging';
