@@ -1,0 +1,12 @@
+{
+  "cornerstone3d-6-review": [
+    {
+      "cardinality": {
+        "file": "input.js",
+        "line": "7",
+        "rule": "Events.SAMPLE_OLD_EVENT: the detail has a cause"
+      },
+      "count": 1
+    }
+  ]
+}

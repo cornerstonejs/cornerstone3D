@@ -1,0 +1,70 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "10",
+        "rule": "Events: a rest element"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "13",
+        "rule": "'CORNERSTONE_SAMPLE_OLD_EVENT'"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "14",
+        "rule": "utilities.sampleOldProvider.add: the key sampleKind: its value runs code"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "2",
+        "rule": "SampleOldClass: imported from @cornerstonejs/core/types"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "6",
+        "rule": "sampleRemovedFunction: call sampleOther"
+      },
+      "count": 1
+    }
+  ],
+  "cornerstone3d-6-review": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "10",
+        "rule": "Events.SAMPLE_OLD_EVENT: the detail has a cause"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "17",
+        "rule": "Events.SAMPLE_OLD_EVENT: the detail has a cause"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "18",
+        "rule": "SAMPLE_NEW_EVENT: two operands of one || are the same now, read what each tested before the rename"
+      },
+      "count": 1
+    }
+  ]
+}

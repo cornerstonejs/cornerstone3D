@@ -1,0 +1,28 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "13",
+        "rule": "getSampleOld"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "14",
+        "rule": "sampleRemovedMember: read sampleOther"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "30",
+        "rule": "setDisplaySets: the key sampleRemovedKey: give it to the registry"
+      },
+      "count": 1
+    }
+  ]
+}

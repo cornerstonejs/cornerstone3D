@@ -104,6 +104,13 @@ npx codemod @cornerstonejs/cornerstone3d-6 --dry-run
 npx codemod @cornerstonejs/cornerstone3d-6
 ```
 
+Code that is on a 6.0 beta already needs only its last step, the names that
+changed after 6.0.0-beta.2:
+
+```sh
+npx codemod @cornerstonejs/cornerstone3d-6-api-names
+```
+
 It reads `.ts`, `.tsx` and JavaScript files. It changes code only where the
 file shows that it is Cornerstone's: a name bound to an import of
 `@cornerstonejs/*`, a viewport got from a rendering engine, an enabled

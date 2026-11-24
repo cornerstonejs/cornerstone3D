@@ -1,0 +1,54 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "32",
+        "rule": "sampleRemovedFunction: call sampleOther"
+      },
+      "count": 1
+    }
+  ],
+  "cornerstone3d-6-review": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "15",
+        "rule": "Events.SAMPLE_OLD_EVENT: the detail has a cause"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "25",
+        "rule": "Events.SAMPLE_OLD_EVENT: the detail has a cause"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "26",
+        "rule": "Events.SAMPLE_OLD_EVENT: the detail has a cause"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "27",
+        "rule": "Events.SAMPLE_OLD_EVENT: the detail has a cause"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "28",
+        "rule": "Events.SAMPLE_OLD_EVENT: the detail has a cause"
+      },
+      "count": 1
+    }
+  ]
+}

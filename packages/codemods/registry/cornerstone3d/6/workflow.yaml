@@ -24,3 +24,6 @@ nodes:
       - name: Rewrite the tools modules
         codemod:
           source: '@cornerstonejs/cornerstone3d-6-tools'
+      - name: Rewrite the names that changed after 6.0.0-beta.2
+        codemod:
+          source: '@cornerstonejs/cornerstone3d-6-api-names'

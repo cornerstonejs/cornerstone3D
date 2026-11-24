@@ -1,0 +1,29 @@
+version: '1'
+nodes:
+  - id: api-names
+    name: Cornerstone3D 6.0 names after 6.0.0-beta.2
+    steps:
+      - name: Rewrite the names in TypeScript files
+        js-ast-grep:
+          js_file: scripts/api-names.ts
+          language: typescript
+          base_path: .
+          semantic_analysis: file
+          include:
+            - '**/*.{ts,mts,cts}'
+          exclude:
+            - '**/node_modules/**'
+            - '**/dist/**'
+            - '**/build/**'
+      - name: Rewrite the names in TSX and JavaScript files
+        js-ast-grep:
+          js_file: scripts/api-names.ts
+          language: tsx
+          base_path: .
+          semantic_analysis: file
+          include:
+            - '**/*.{tsx,js,jsx,mjs,cjs}'
+          exclude:
+            - '**/node_modules/**'
+            - '**/dist/**'
+            - '**/build/**'

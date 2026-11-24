@@ -124,10 +124,12 @@ In the order in which they run:
    a fixed 6.0 call, such as `resetCamera` and `setProperties`.
 7. `@cornerstonejs/cornerstone3d-6-tools`: two moved modules of the tools,
    and the removed names of the tools.
+8. `@cornerstonejs/cornerstone3d-6-api-names`: the names that changed after
+   6.0.0-beta.2. On code that is on a 6.0 beta already, run it alone.
 
 Each package has a README with what it changes and what it reports.
 
 ## Publishing
 
-Publish the seven child packages before this aggregate package. The workflow
+Publish the eight child packages before this aggregate package. The workflow
 resolves them from the Codemod registry at runtime.
