@@ -61,7 +61,7 @@ export type SeriesInfo = {
  * A compiled data-form rule keeps one entry here, `displaySetContext`: the values of
  * the display set context for the series, computed at the first read and kept
  * in a cache (see `displaySetContext.ts`). A rule in code can add its own
- * entries with its `series` hook. **The first rule, in priority order, that
+ * entries with its `series` hook. **The first rule, in rule order, that
  * computes a name wins**: a later rule that gives the same name reads the
  * earlier value.
  */
@@ -74,7 +74,7 @@ export type SeriesFacts = Record<string, unknown>;
 export type SeriesContext = {
   instances: NaturalizedInstance[];
   /**
-   * The facts computed so far, by the rules before this one in priority order.
+   * The facts computed so far, by the rules before this one in rule order.
    * Read only. The engine always passes it; optional so that a direct call
    * with `{ instances }` alone stays valid.
    */
@@ -148,7 +148,7 @@ export type SplitRuleOptions = {
 
 export type SplitRule = {
   /**
-   * Stable identifier for this rule: its key in the {@link SplitRuleSet}. It
+   * Stable identifier for this rule: unique in the {@link SplitRuleSet}. It
    * namespaces every bucket key the rule produces (see
    * {@link InstanceGroup.splitKey}), so reordering rules, or inserting one,
    * leaves the other rules' keys untouched.
@@ -178,7 +178,7 @@ export type SplitRule = {
    */
   viewportTypes?: readonly string[];
   /**
-   * Optional. Runs once per split operation, before matching, in priority
+   * Optional. Runs once per split operation, before matching, in rule
    * order, and returns facts that extend the shared series context - read back
    * by every rule's `matches`, `groupBy` and `compareInstances`
    * through `context.series`. A name that an earlier rule already computed
@@ -232,50 +232,15 @@ export type SplitRule = {
 };
 
 /**
- * One entry of a {@link SplitRuleSet}: a split rule plus the priority that
- * places it in evaluation order.
- */
-export type SplitRuleSetEntry = Omit<SplitRule, 'id'> & {
-  /**
-   * The rule's id. Optional, because the entry's key in the rule set is the id.
-   * When present it must equal that key.
-   */
-  id?: string;
-  /**
-   * Where this rule is evaluated. Rules run in ascending priority, and the first
-   * matching rule wins, so a lower number runs earlier. Equal priorities run in
-   * id order, so the order is deterministic.
-   *
-   * `null` excludes the rule. That is how a customization turns a default rule
-   * off without having to remove its key.
-   *
-   * The default rules use the priorities `1..n`, in their documented order, and
-   * the catch-all `unsupported` runs last, at `Number.MAX_SAFE_INTEGER`. A
-   * priority below `0` therefore runs before every default rule, and a priority
-   * above {@link DEFAULT_SPLIT_RULE_PRIORITY_LIMIT} runs after every other
-   * default rule and before `unsupported`.
-   */
-  priority: number | null;
-};
-
-/**
- * Split rules keyed by id, with an explicit {@link SplitRuleSetEntry.priority}.
- * This is the only form the split engine takes.
+ * The split rules in evaluation order, each with a unique `id`. This is the
+ * only form the split engine takes; the first rule that matches an instance
+ * claims it.
  *
- * Keyed because a rule set is usually built by merging layers - the defaults,
- * then a deployment's overrides, then a mode's. A key cannot occur twice, so a
- * later layer replaces or edits a rule instead of adding a second copy, and
- * the priority lets a layer move or exclude a rule by id.
+ * A host builds the list from a registry and an order list of ids with
+ * `materializeSplitRules`, so a customization edits the rules by id and the
+ * split code gets only the result.
  */
-export type SplitRuleSet = Record<string, SplitRuleSetEntry>;
-
-/**
- * The highest priority the default rules may use, except the catch-all
- * `unsupported`, which runs last at `Number.MAX_SAFE_INTEGER`. A rule with a
- * priority above this value runs after every other default rule, and before
- * `unsupported`, so it sees the instances that no other default claims.
- */
-export const DEFAULT_SPLIT_RULE_PRIORITY_LIMIT = 10000;
+export type SplitRuleSet = SplitRule[];
 
 /**
  * What a sort hook is told about the instances it is ordering.

@@ -2,6 +2,52 @@ import macro from '@kitware/vtk.js/macros';
 import vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
 import cache from '../../cache/cache';
 import { getConstructorFromType } from '../../utilities/getBufferConfiguration';
+import VoxelManager from '../../utilities/VoxelManager';
+import { voxelGridsEqual } from '../../utilities/voxelGrid';
+import { requireVoxelStatistic } from '../../utilities/voxelGrid/voxelStatistics';
+import { spanOfBox, weightInSpan } from '../../utilities/voxelGrid/boxSpan';
+import VoxelStatistics from '../../enums/VoxelStatistics';
+import ImageQualityStatus from '../../enums/ImageQualityStatus';
+import autoLoad from '../../utilities/autoLoad';
+import { getConfiguration } from '../../init';
+
+const DEFAULT_MAX_SLICES_PER_RENDER = 16;
+const DEFAULT_MAX_MILLISECONDS_PER_RENDER = 8;
+
+/**
+ * The smallest allocation that waits on a storage fence. A 256^3 int16
+ * texture (32 MB) clears in about 30 ms, and the blocking clear that the fence
+ * avoids is the one of about 1 GB, so a smaller texture keeps the direct path.
+ */
+const INIT_FENCE_MIN_BYTES = 256 * 1024 * 1024;
+
+/**
+ * The longest wait on a storage fence. A clear of about 1 GB takes 150-300 ms
+ * on an integrated GPU, so 3 s is ten times that. After it the texture stops
+ * the wait and takes the blocking path, so a fence that never signals cannot
+ * leave the volume undrawn.
+ */
+const INIT_FENCE_DEADLINE_MS = 3000;
+
+const INIT_FENCE_POLL_MS = 16;
+
+/**
+ * The work that one render does to fill a reduced texture. See
+ * `rendering.reducedTextureFill` in `Cornerstone3DConfig`.
+ */
+function reducedTextureFillBudget() {
+  const budget = getConfiguration()?.rendering?.reducedTextureFill;
+
+  return {
+    // A budget of 0 slices would request renders that never fill.
+    maxSlicesPerRender: Math.max(
+      1,
+      budget?.maxSlicesPerRender ?? DEFAULT_MAX_SLICES_PER_RENDER
+    ),
+    maxMillisecondsPerRender:
+      budget?.maxMillisecondsPerRender ?? DEFAULT_MAX_MILLISECONDS_PER_RENDER,
+  };
+}
 
 /**
  * Converts the input data array to the specified data type
@@ -30,6 +76,17 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
 
   model.updatedFrames = [];
   model.volumeId = null;
+  // The slice where the next fill of a reduced texture starts.
+  model.fillCursor = 0;
+  model.remainingFillScheduled = false;
+  // The grid that this texture holds, set by the texture store. A texture of
+  // any grid other than the grid of the volume reads the composite, because
+  // no cached image holds a reduced voxel.
+  model.grid = null;
+  // The statistic that this texture holds (set at provision with the grid).
+  // Fidelity reads it so the record matches the voxels in the texture
+  // (FIDELITY-RECORD-3), not a later `volume.reductionStatistic`.
+  model.statistic = null;
 
   const superCreate3DFilterableFromRaw = publicAPI.create3DFilterableFromRaw;
 
@@ -56,6 +113,197 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     });
   };
 
+  const superCreate3DFromRaw = publicAPI.create3DFromRaw;
+
+  /**
+   * The mappers allocate with `data: null`, which leaves the GPU storage empty,
+   * so every slice needs a fill. `modified()` no longer implies that, and a
+   * re-allocation after the first fill would otherwise stay black.
+   */
+  publicAPI.create3DFromRaw = (options) => {
+    const created = superCreate3DFromRaw(options);
+
+    if (created && !options.data) {
+      // New storage reads 0, so a slice with no data needs no upload until a
+      // slice with data was written there.
+      model.writtenSlices = new Uint8Array(options.depth);
+      startStorageInit(options.dataType, options.numComps);
+      publicAPI.markAllFramesUpdated();
+    }
+
+    return created;
+  };
+
+  /**
+   * Starts the zero-initialisation of new storage, and does not wait for it.
+   *
+   * A browser allocates `texStorage3D` storage lazily and clears the whole
+   * level at its first use. For a large volume the clear takes seconds of GPU
+   * time, and an upload or a draw that samples the texture then blocks the main
+   * thread until the clear ends. A 1x1x1 upload starts the clear now, and a
+   * fence tells when it ends. Until then the texture skips its uploads and the
+   * mappers skip the draw of the actor (see {@link isInitializing}).
+   *
+   * Without WebGL2 fences, or for an allocation below
+   * `INIT_FENCE_MIN_BYTES`, the texture keeps the blocking behaviour. The wait
+   * ends after `INIT_FENCE_DEADLINE_MS` at the latest.
+   */
+  function startStorageInit(dataType, numComps) {
+    releaseInitFence();
+
+    const gl = model.context;
+
+    if (
+      typeof gl?.fenceSync !== 'function' ||
+      !(model.allocatedGPUMemoryInBytes >= INIT_FENCE_MIN_BYTES)
+    ) {
+      return;
+    }
+
+    let pixData;
+
+    try {
+      const Constructor = getConstructorFromType(dataType, false);
+      [pixData] = publicAPI.updateArrayDataTypeForGL(dataType, [
+        new Constructor(numComps || 1),
+      ]);
+    } catch {
+      return;
+    }
+
+    model._openGLRenderWindow.activateTexture(publicAPI);
+    publicAPI.bind();
+    gl.texSubImage3D(
+      model.target,
+      0,
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      model.format,
+      model.openGLDataType,
+      pixData
+    );
+    publicAPI.deactivate();
+
+    const sync = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
+
+    if (!sync) {
+      return;
+    }
+
+    const fence = {
+      gl,
+      sync,
+      deadline: performance.now() + INIT_FENCE_DEADLINE_MS,
+    };
+
+    model.initFence = fence;
+    gl.flush();
+    model.initFenceTimer = setTimeout(
+      () => pollInitFence(fence),
+      INIT_FENCE_POLL_MS
+    );
+  }
+
+  /**
+   * Deletes the fence. `keepPoll` leaves a pending poll to run, so that a
+   * fence that a render saw end still marks the texture modified and renders
+   * the volume, because that render skipped the uploads.
+   */
+  function releaseInitFence(keepPoll = false) {
+    const fence = model.initFence;
+
+    if (!keepPoll) {
+      clearTimeout(model.initFenceTimer);
+      model.initFenceTimer = null;
+    }
+    model.initFence = null;
+
+    if (fence && !fence.gl.isContextLost()) {
+      fence.gl.deleteSync(fence.sync);
+    }
+  }
+
+  /**
+   * Polls the fence of {@link startStorageInit} from a timer, never with a
+   * blocking wait, and renders the viewports of the volume when it signals.
+   * A poll of a deleted texture or of a replaced fence does nothing.
+   */
+  function pollInitFence(fence) {
+    if (model.deleted || (model.initFence && model.initFence !== fence)) {
+      return;
+    }
+
+    if (publicAPI.isInitializing()) {
+      model.initFenceTimer = setTimeout(
+        () => pollInitFence(fence),
+        INIT_FENCE_POLL_MS
+      );
+      return;
+    }
+
+    publicAPI.modified();
+
+    if (model.volumeId) {
+      autoLoad(model.volumeId);
+    }
+  }
+
+  /**
+   * Whether the browser still clears the storage of this allocation. A mapper
+   * must not draw an actor that samples this texture while this is true: the
+   * draw would wait for the clear, and a readback of the context then blocks
+   * the main thread. A lost context, and the deadline, count as done.
+   */
+  publicAPI.isInitializing = () => {
+    const fence = model.initFence;
+
+    if (!fence) {
+      return false;
+    }
+
+    const { gl, sync, deadline } = fence;
+
+    if (
+      !gl.isContextLost() &&
+      performance.now() < deadline &&
+      gl.getSyncParameter(sync, gl.SYNC_STATUS) !== gl.SIGNALED
+    ) {
+      return true;
+    }
+
+    releaseInitFence(true);
+
+    return false;
+  };
+
+  const superReleaseGraphicsResources = publicAPI.releaseGraphicsResources;
+
+  /**
+   * vtk.js deletes the GL texture only when it gets a render window. The
+   * texture store and `setOpenGLRenderWindow` call this with none, so the
+   * texture defaults to its own window, which created the handle. A deleted
+   * window has no context to delete in.
+   */
+  publicAPI.releaseGraphicsResources = (rwin) => {
+    const window = model._openGLRenderWindow;
+
+    releaseInitFence();
+    superReleaseGraphicsResources(
+      rwin ?? (window?.isDeleted?.() ? undefined : window)
+    );
+  };
+
+  const superDelete = publicAPI.delete;
+
+  publicAPI.delete = () => {
+    releaseInitFence();
+    superDelete();
+  };
+
   const superUpdate = publicAPI.updateVolumeInfoForGL;
 
   publicAPI.updateVolumeInfoForGL = (dataType, numComps) => {
@@ -79,7 +327,8 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
 
     const volume = cache.getVolume(volumeId);
 
-    if (!volume) {
+    // The slices stay marked, and the fence poll renders again.
+    if (!volume || publicAPI.isInitializing()) {
       return;
     }
 
@@ -92,36 +341,484 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
       return;
     }
 
+    if (model.grid && !isGridOfVolume(volume, model.grid)) {
+      return publicAPI.hasUpdatedFrames() && updateTextureFromComposite(volume);
+    }
+
     return (
       publicAPI.hasUpdatedFrames() && updateTextureImagesUsingVoxelManager()
     );
   };
 
+  /** States whether the grid of this texture is the grid of the volume. */
+  function isGridOfVolume(volume, grid) {
+    return volume.voxelGrid ? voxelGridsEqual(volume.voxelGrid, grid) : true;
+  }
+
+  /**
+   * The size of the box on each axis that takes the grid of the volume to the
+   * grid of this texture, when the two share their axes.
+   *
+   * The texture spans the full-resolution extent, so texel j of an axis of N
+   * source voxels and M texels covers the source `[j * N / M, (j + 1) * N / M)`.
+   * The factor is therefore `N / M`, which can hold a fraction, and a ratio of
+   * the spacing within 1e-6 of that value gives exactly that value.
+   *
+   * A grid that this does not describe, such as an oblique slab, returns
+   * nothing, and the fill then reads the composite voxel by voxel.
+   */
+  function boxFactorsOf(volume, grid) {
+    const volumeGrid = volume.voxelGrid;
+
+    if (!volumeGrid) {
+      return null;
+    }
+
+    const factors = [];
+
+    for (let axis = 0; axis < 3; axis++) {
+      for (let index = 0; index < 3; index++) {
+        if (
+          Math.abs(
+            grid.direction[axis * 3 + index] -
+              volumeGrid.direction[axis * 3 + index]
+          ) > 1e-6
+        ) {
+          return null;
+        }
+      }
+
+      const ratio = grid.spacing[axis] / volumeGrid.spacing[axis];
+      const extentRatio = volumeGrid.dimensions[axis] / grid.dimensions[axis];
+
+      if (!(ratio > 1 - 1e-6)) {
+        return null;
+      }
+
+      factors.push(
+        Math.abs(ratio - extentRatio) <= 1e-6 * extentRatio
+          ? extentRatio
+          : ratio
+      );
+    }
+
+    return factors;
+  }
+
+  /**
+   * Reads the frames of the volume that one reduced slice covers, in k order.
+   *
+   * The scalar data of the cached image is the frame itself, and reading it
+   * costs nothing. `getSliceData` of a volume voxel manager composes the slice
+   * one voxel at a time, which a profile showed as the cost of a fill, so it
+   * serves only as the fallback.
+   *
+   * A frame that has not arrived is left out, because it holds no data and
+   * would pull the value towards 0. A replicate is a copy of another frame,
+   * so the slice reads replicates only when no frame of the box has arrived,
+   * and then only the one nearest to the centre.
+   *
+   * A fractional `factorK` cuts the two end frames of the box, and each frame
+   * then counts with the part of it that lies inside the box.
+   *
+   * @returns the frames and the weight of each one, or null when the volume
+   * has no slice reader or the slice lies past the end of the volume
+   */
+  function framesOfSlice(volume, factorK, slice) {
+    const [sourceWidth, sourceHeight, sourceDepth] = volume.dimensions;
+    const voxelManager = volume.voxelManager;
+    const span = spanOfBox(0, factorK, sourceDepth, slice);
+    const firstK = span.first;
+
+    if (!voxelManager?.getSliceData || firstK >= sourceDepth) {
+      return null;
+    }
+
+    const lastK = span.end;
+    const centre = (firstK + lastK - 1) / 2;
+    const loaded = [];
+    const replicates = [];
+
+    for (let k = firstK; k < lastK; k++) {
+      const quality = volume.getImageQuality
+        ? volume.getImageQuality(k)
+        : ImageQualityStatus.FULL_RESOLUTION;
+
+      if (quality >= ImageQualityStatus.SUBRESOLUTION) {
+        loaded.push(k);
+      } else if (quality) {
+        replicates.push(k);
+      }
+    }
+
+    const indices = loaded.length ? loaded : nearestTo(centre, replicates);
+    const frameLength = sourceWidth * sourceHeight;
+    const frames = [];
+    const weights = [];
+
+    for (const k of indices) {
+      const frame = readFrame(volume, k, frameLength);
+
+      if (frame) {
+        frames.push(frame);
+        weights.push(weightInSpan(span, k));
+      }
+    }
+
+    return { frames, weights };
+  }
+
+  /** The indices at the smallest distance from `centre`: one, or two on a tie. */
+  function nearestTo(centre, indices) {
+    let best = Infinity;
+
+    for (const index of indices) {
+      best = Math.min(best, Math.abs(index - centre));
+    }
+
+    return indices.filter((index) => Math.abs(index - centre) === best);
+  }
+
+  /** One frame of the volume, or null when its image is not in the cache. */
+  function readFrame(volume, k, frameLength) {
+    const imageId = volume.imageIds?.[k];
+    const image = imageId ? cache.getImage(imageId) : undefined;
+
+    if (imageId && !image) {
+      return null;
+    }
+
+    let frame = image?.voxelManager?.getScalarData();
+
+    // A reduced image of a progressive load holds fewer voxels than the
+    // frame. `getSliceData` scales it to the frame, so it can still count.
+    if (!frame || frame.length < frameLength) {
+      try {
+        frame = volume.voxelManager.getSliceData({
+          sliceIndex: k,
+          slicePlane: 2,
+        });
+      } catch {
+        frame = null;
+      }
+    }
+
+    return frame && frame.length >= frameLength ? frame : null;
+  }
+
+  /** The statistic that this texture holds, else the one of the volume. */
+  function statisticOf(volume) {
+    return (
+      model.statistic ?? volume.reductionStatistic ?? VoxelStatistics.Average
+    );
+  }
+
+  /**
+   * Fills one reduced slice with the `fillPlane` of the statistic of the
+   * texture, read straight from the frames that the slice covers.
+   *
+   * @returns false when the statistic has no `fillPlane` or this slice holds no
+   * data yet, so a caller can fall back
+   * @throws when nothing registered the statistic
+   */
+  function fillSliceByBoxStatistic(volume, grid, factors, slice, target) {
+    const { fillPlane } = requireVoxelStatistic(statisticOf(volume));
+
+    if (!fillPlane) {
+      return false;
+    }
+
+    const [factorI, factorJ, factorK] = factors;
+    const { frames, weights } = framesOfSlice(volume, factorK, slice) ?? {};
+
+    if (!frames?.length) {
+      return false;
+    }
+
+    fillPlane(
+      frames,
+      [volume.dimensions[0], volume.dimensions[1]],
+      [grid.dimensions[0], grid.dimensions[1]],
+      [factorI, factorJ],
+      target.getScalarData(),
+      weights
+    );
+
+    return true;
+  }
+
+  /**
+   * Reads one slice of the representation that the composite holds at this
+   * exact grid.
+   *
+   * A loader adds such a representation with `acceptData`. When the
+   * representation states one image of the cache for each slice, this reads
+   * those images and copies nothing. A representation that keeps an array of
+   * its own gives a view of that array instead.
+   *
+   * @returns a function that gives the voxels of one slice, or nothing when the
+   * composite holds no such representation, and the caller then computes the
+   * values itself
+   */
+  function derivedSliceReaderOf(composite, grid, statistic) {
+    const representation = composite.getRepresentation(
+      grid,
+      statistic ?? VoxelStatistics.Average
+    );
+    const [width, height, depth] = grid.dimensions;
+    const frameLength = width * height;
+
+    if (!representation) {
+      return null;
+    }
+
+    const { imageIds } = representation;
+
+    if (imageIds?.length === depth) {
+      // A slice that the cache has evicted gives nothing, and the caller then
+      // computes that one slice. The other slices still read the cache.
+      return (slice) =>
+        cache.getImage(imageIds[slice])?.voxelManager?.getScalarData();
+    }
+
+    const voxels = representation.voxelManager?.getWritableScalarData?.();
+
+    if (voxels?.length !== frameLength * depth) {
+      return null;
+    }
+
+    return (slice) =>
+      voxels.subarray(slice * frameLength, (slice + 1) * frameLength);
+  }
+
+  /**
+   * Requests one more render of the viewports of this volume after the
+   * current render, so the slices that the budget left dirty get their fill.
+   * The request runs outside the render, because the mapper rebuilds only when
+   * the texture changed after its last build.
+   */
+  function scheduleRemainingFill() {
+    if (model.remainingFillScheduled) {
+      return;
+    }
+
+    model.remainingFillScheduled = true;
+
+    setTimeout(() => {
+      model.remainingFillScheduled = false;
+
+      if (!model.volumeId || !publicAPI.hasUpdatedFrames()) {
+        return;
+      }
+
+      publicAPI.modified();
+      autoLoad(model.volumeId);
+    }, 0);
+  }
+
+  function markWritten(slice) {
+    if (model.writtenSlices) {
+      model.writtenSlices[slice] = 1;
+    }
+  }
+
+  /**
+   * Fills a texture whose grid is not the grid of the volume.
+   *
+   * The composite computes which sub voxel managers fill this texture, and
+   * `fillGrid` reads the best sources that it holds. A fill is many to one:
+   * several representations can cover one region between them, which is the
+   * brick case, so this function states no single source.
+   *
+   * The fill computes every voxel of the grid, because `fillGrid` takes no
+   * region. The upload stays partial: the function uploads the slices that a
+   * delivery marked, and it leaves the others.
+   *
+   * A slice whose data has not arrived uploads nothing while the storage of
+   * this allocation still reads 0, and it costs no budget. A slice that held
+   * data before, such as after the volume reset its composite, uploads the
+   * cleared slab. The volume marks that slice again when its frames arrive. A fill of every slice of a new texture from the data would stall
+   * the first render: a volume of 512 x 512 x 1232 took about 17 seconds.
+   */
+  function updateTextureFromComposite(volume) {
+    const { grid } = model;
+    const [width, height, depth] = grid.dimensions;
+    // The slab must hold the type that the volume declares, because the upload
+    // below states that type to GL. `isVolumeBuffer` would widen an Int16Array
+    // to a Float32Array, and the upload would then read the bytes of one type
+    // as another.
+    const Constructor = getConstructorFromType(volume.dataType, false);
+    const frameLength = width * height;
+    const composite = volume.compositeVoxelManager;
+    const gl = model.context;
+    const statistic = statisticOf(volume);
+    const derivedSliceOf = derivedSliceReaderOf(composite, grid, statistic);
+    // The factors serve the slices that the composite cannot give, so they are
+    // computed even when a derived representation exists: the image cache can
+    // evict one reduced slice, and the fill of that one slice falls back.
+    const factors = boxFactorsOf(volume, grid);
+    // One slice of this grid. A fill of the whole grid would read every voxel
+    // of the volume on every refill, and a delivery changes one slice of it.
+    const slab = VoxelManager.createScalarVolumeVoxelManager({
+      dimensions: [width, height, 1],
+      scalarData: new Constructor(frameLength),
+      numberOfComponents: 1,
+    });
+
+    const { maxSlicesPerRender, maxMillisecondsPerRender } =
+      reducedTextureFillBudget();
+    const startTime = performance.now();
+    let slicesHandled = 0;
+    let slicesWithData = 0;
+    let stoppedEarly = false;
+
+    // The fill starts where the last render stopped, so every dirty slice
+    // gets its turn while new frames keep arriving.
+    for (let step = 0; step < depth; step++) {
+      const slice = (model.fillCursor + step) % depth;
+
+      if (!model.updatedFrames[slice]) {
+        continue;
+      }
+
+      if (
+        slicesWithData >= maxSlicesPerRender ||
+        (slicesHandled &&
+          performance.now() - startTime >= maxMillisecondsPerRender)
+      ) {
+        model.fillCursor = slice;
+        stoppedEarly = true;
+        break;
+      }
+
+      let data = derivedSliceOf?.(slice);
+      let hasData = !!data;
+
+      if (!data) {
+        // `fillGrid` leaves a voxel untouched where the composite holds no
+        // value, and this slab serves every slice, so a voxel that one slice
+        // does not fill would keep the value that an earlier slice wrote.
+        slab.getScalarData().fill(0);
+
+        const filled =
+          factors &&
+          fillSliceByBoxStatistic(volume, grid, factors, slice, slab);
+
+        hasData = !!filled || !factors;
+
+        if (!filled && !factors) {
+          // The grid is not a box of the grid of the volume, such as an oblique
+          // slab, and the composite covers a grid of any shape. Its origin
+          // moves along the k axis by the spacing of one voxel of the grid, so
+          // it reads the voxels that this slice covers and no others.
+          composite.fillGrid(
+            {
+              dimensions: [width, height, 1],
+              spacing: grid.spacing,
+              direction: grid.direction,
+              origin: [
+                grid.origin[0] + grid.direction[6] * grid.spacing[2] * slice,
+                grid.origin[1] + grid.direction[7] * grid.spacing[2] * slice,
+                grid.origin[2] + grid.direction[8] * grid.spacing[2] * slice,
+              ],
+            },
+            slab,
+            statistic
+          );
+        }
+
+        data = slab.getScalarData();
+      }
+
+      if (!hasData && model.writtenSlices && !model.writtenSlices[slice]) {
+        model.updatedFrames[slice] = null;
+        continue;
+      }
+
+      if (volume.dataType !== data.constructor.name) {
+        data = convertDataType(data, volume.dataType);
+      }
+
+      const [pixData] = publicAPI.updateArrayDataTypeForGL(volume.dataType, [
+        data,
+      ]);
+
+      publicAPI.bind();
+
+      gl.texSubImage3D(
+        model.target, // target
+        0, // level
+        0, // xoffset
+        0, // yoffset
+        slice, // zoffset
+        width, // width
+        height, // height
+        1, // depth (1 slice)
+        model.format, // format
+        model.openGLDataType, // type
+        pixData // data
+      );
+
+      publicAPI.deactivate();
+      model.updatedFrames[slice] = null;
+      markWritten(slice);
+      slicesHandled++;
+
+      // A slice with no data uploads zeros, which costs almost nothing, so
+      // only a slice with data counts against the number of slices.
+      if (hasData) {
+        slicesWithData++;
+      }
+    }
+
+    if (stoppedEarly) {
+      scheduleRemainingFill();
+    }
+
+    if (model.generateMipmap) {
+      model.context.generateMipmap(model.target);
+    }
+
+    publicAPI.deactivate();
+
+    return true;
+  }
+
   /**
    * Called when a frame is loaded so that on next render we know which data to load in.
    * @param {number} frameIndex The frame to load in.
    */
-  const superModified = publicAPI.modified;
   publicAPI.setUpdatedFrame = (frameIndex) => {
     model.updatedFrames[frameIndex] = true;
-    superModified();
+    publicAPI.modified();
   };
 
-  publicAPI.modified = () => {
-    superModified();
-
-    // this is really not efficient, but it works for now
+  /**
+   * Marks every slice of this texture for a refill on the next render.
+   *
+   * Prefer {@link setUpdatedFrame} when only some slices changed. Do not put
+   * this behaviour on `modified()`: VTK property setters (filters, extensions)
+   * call `modified()` and would then re-upload the whole volume.
+   */
+  publicAPI.markAllFramesUpdated = () => {
     const volume = cache.getVolume(model.volumeId);
 
     if (!volume) {
       return;
     }
 
-    const imageIds = volume.imageIds;
+    // The number of slices of this texture, and not the number of images of the
+    // volume. A texture of a reduced grid holds fewer slices than the volume
+    // holds images.
+    const slices = model.grid
+      ? model.grid.dimensions[2]
+      : volume.imageIds.length;
 
-    for (let i = 0; i < imageIds.length; i++) {
+    for (let i = 0; i < slices; i++) {
       model.updatedFrames[i] = true;
     }
+
+    publicAPI.modified();
   };
 
   function updateTextureImagesUsingVoxelManager() {
@@ -137,6 +834,27 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
 
         let data = image.voxelManager.getScalarData();
         const gl = model.context;
+
+        // A progressive loader can cache a reduced image, which holds fewer
+        // voxels than a slice of the texture. The voxel manager of the volume
+        // scales that image to the slice.
+        if (
+          data.length !==
+          model.width * model.height * (model.components || 1)
+        ) {
+          try {
+            data = volume.voxelManager.getSliceData({
+              sliceIndex: i,
+              slicePlane: 2,
+            });
+          } catch {
+            data = null;
+          }
+
+          if (!data) {
+            continue;
+          }
+        }
 
         if (volume.dataType !== data.constructor.name) {
           data = convertDataType(data, volume.dataType);
@@ -200,6 +918,9 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
       const image = cache.getImage(imageId);
 
       let data;
+      if (!image && model.writtenSlices && !model.writtenSlices[i]) {
+        continue;
+      }
       if (!image) {
         // if there is no data we should set zero
         constructor = getConstructorFromType(volume.dataType, true);
@@ -243,7 +964,7 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
 
       // Unbind the texture
       publicAPI.deactivate();
-      // Reset the updated flag
+      markWritten(i);
     }
 
     if (model.generateMipmap) {
@@ -257,6 +978,36 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
   publicAPI.hasUpdatedFrames = () =>
     !model.updatedFrames.length || model.updatedFrames.some((frame) => frame);
 
+  /**
+   * Sets the slice at which the next fill of a reduced texture starts, so a
+   * slice view fills the slice that it shows first. The fill goes on from that
+   * slice and wraps around. A slice outside the texture is clamped to it.
+   */
+  publicAPI.setFillHint = (slice) => {
+    const depth = model.grid?.dimensions[2];
+
+    if (depth && Number.isFinite(slice)) {
+      model.fillCursor = Math.min(depth - 1, Math.max(0, Math.round(slice)));
+    }
+  };
+
+  /**
+   * Whether slices of this reduced texture wait for the budgeted fill, and so
+   * show 0. A texture of the grid of the volume, or of a dynamic volume,
+   * uploads its slices with no budget, so it never waits.
+   */
+  publicAPI.isFillPending = () => {
+    const volume = model.volumeId ? cache.getVolume(model.volumeId) : null;
+
+    return (
+      !!volume &&
+      !!model.grid &&
+      !volume.isDynamicVolume?.() &&
+      !isGridOfVolume(volume, model.grid) &&
+      model.updatedFrames.some((frame) => frame)
+    );
+  };
+
   publicAPI.getUpdatedFrames = () => model.updatedFrames;
 
   publicAPI.setVolumeId = (volumeId) => {
@@ -264,6 +1015,35 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
   };
 
   publicAPI.getVolumeId = () => model.volumeId;
+
+  /**
+   * States the grid that this texture holds. The texture pool of `ImageVolume`
+   * calls this member when it builds the texture.
+   */
+  publicAPI.setGrid = (grid) => {
+    model.grid = grid;
+  };
+
+  /**
+   * The grid that this texture holds, which a mapper reads to get the
+   * dimensions of the allocation. A texture that states no grid holds the grid
+   * of its volume.
+   */
+  publicAPI.getGrid = () => model.grid;
+
+  /**
+   * States the statistic that this texture holds. The texture pool of
+   * `ImageVolume` calls this when it builds the texture.
+   */
+  publicAPI.setStatistic = (statistic) => {
+    model.statistic = statistic;
+  };
+
+  /**
+   * The statistic that this texture holds. A texture that states none falls
+   * back to `volume.reductionStatistic` for fidelity.
+   */
+  publicAPI.getStatistic = () => model.statistic;
 
   publicAPI.setTextureParameters = ({
     width,

@@ -185,7 +185,6 @@ function _imageChangeEventListener(evt) {
 
   labelmapRepresentations.forEach((representation) => {
     const { segmentationId } = representation;
-    syncStackLabelmapActors(stackViewport, segmentationId);
 
     // if one or more actors were added to the viewport
     // we need to trigger a segmentation render
@@ -193,12 +192,17 @@ function _imageChangeEventListener(evt) {
     // for the initial image as well after that we don't need it since
     // stack new image is called when changing slices
     if (evt.type === Enums.Events.IMAGE_RENDERED) {
-      // unsubscribe after the initial render
+      // unsubscribe after the initial render, and before the sync below:
+      // the sync renders the viewport, and a CPU render path draws
+      // synchronously and fires IMAGE_RENDERED again inside that call,
+      // which would re-enter this listener until the stack overflows
       stackViewport.element.removeEventListener(
         Enums.Events.IMAGE_RENDERED,
         _imageChangeEventListener as EventListener
       );
     }
+
+    syncStackLabelmapActors(stackViewport, segmentationId);
   });
 }
 

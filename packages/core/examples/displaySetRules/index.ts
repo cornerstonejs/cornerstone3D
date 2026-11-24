@@ -11,9 +11,12 @@ import {
   createDisplaySetSplitRules,
   Enums as metadataEnums,
   displaySetRules,
+  displaySetRuleOrder,
+  materializeSplitRules,
   type IDisplaySet,
   type NaturalizedInstance,
   type DisplaySetRules,
+  type DisplaySetRuleOrder,
   type RawSplitRule,
   type SplitRuleSet,
 } from '@cornerstonejs/metadata';
@@ -66,7 +69,7 @@ setTitleAndDescription(
     'code, so they can be inspected, toggled and extended at runtime — and the ' +
     'same rules can be used by a server. Untick a rule to see what the ' +
     'series splits into without it, add your own rules as JSON (keyed by rule ' +
-    'id, with a priority: below 0 runs before the standard rules), or load a rule ' +
+    'id: a new id goes first in the rule order), or load a rule ' +
     'set the server hosts. Upload local DICOM files or a study folder to split ' +
     'your own data: each series in the upload is added to the Series list. ' +
     'Every rule shown is read from the rules themselves, ' +
@@ -148,6 +151,30 @@ const SOURCE_SERIES: SourceSeries[] = [
       '1.3.6.1.4.1.14519.5.2.1.1239.1759.115060983843511037348481244160',
     wadoRsRoot: LOCAL_ROOT,
   },
+  {
+    // Multi-frame clips whose UID order is not the InstanceNumber order.
+    label: 'US — LiverUS-06, clips in InstanceNumber order',
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.1188.2803.137585363493444318569098508293',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.1188.2803.699272945123913604672897602509',
+  },
+  {
+    // Optional rule dwiByBValue: b=0 and b=800.
+    label: 'MR — DWI, DTI_high_iso SENSE (2380 images)',
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.4792.2001.921758700577562664959693695481',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.4792.2001.168514320643150242908573671981',
+  },
+  {
+    // Optional rule multiEchoByEchoTime: EchoTime 2.39 and 4.77.
+    label: 'MR — DIXON, two echoes',
+    StudyInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.99.1071.21255249241959598781018667405790',
+    SeriesInstanceUID:
+      '1.3.6.1.4.1.14519.5.2.1.99.1071.17388172878860580544764140390086',
+  },
 ];
 
 // ======== The display set context of this example ======== //
@@ -176,8 +203,11 @@ function firstItem(sequence: unknown): Record<string, unknown> | undefined {
  * works only where the host registers the same entry.
  */
 const DEMO_CONTEXT = {
-  /** A localizer / scout / survey series, by description. */
-  isLocalizer:
+  /**
+   * A localizer / scout / survey series, by description. The default
+   * `localizer` rule reads `ImageType` instead.
+   */
+  isLocalizerByDescription:
     "contains(lower(SeriesDescription), 'localizer') || " +
     "contains(lower(SeriesDescription), 'scout') || " +
     "contains(lower(SeriesDescription), 'survey')",
@@ -202,43 +232,14 @@ const DEMO_CONTEXT = {
 };
 
 const SAMPLE_SNIPPETS: Record<string, string> = {
-  'A single new rule (localizers first)': JSON.stringify(
+  'A single new rule (localizers by description)': JSON.stringify(
     {
-      localizer: {
-        priority: -1,
+      localizerByDescription: {
         description:
           'Split scout / localizer images off into their own stack so they do ' +
           'not join the volume.',
-        matches: { isLocalizer: true },
+        matches: { isLocalizerByDescription: true },
         groupBy: ['SeriesInstanceUID'],
-      },
-    },
-    null,
-    2
-  ),
-  'US: one display set for each sweep': JSON.stringify(
-    {
-      usTimeClusters: {
-        priority: -1,
-        description:
-          'Ultrasound: a gap of more than 20 seconds between frames starts a ' +
-          'new sweep, and each sweep becomes a display set. The gap applies to ' +
-          'this rule only.',
-        context: { timeClustersMaxGap: 20 },
-        matches: {
-          isImage: true,
-          Modality: 'US',
-          isMultiFrame: false,
-          sweepCount: { greaterThan: 1 },
-          sweepStart: { notNull: true },
-        },
-        groupBy: ['SeriesInstanceUID', 'sweepStart'],
-        sortBy: ['acquisitionSeconds'],
-        attributes: {
-          SeriesDescription: {
-            template: '{SeriesDescription} +{sweepOffset} s',
-          },
-        },
       },
     },
     null,
@@ -247,7 +248,6 @@ const SAMPLE_SNIPPETS: Record<string, string> = {
   'Mammo: one series into RCC / RMLO / LCC / LMLO': JSON.stringify(
     {
       mammoViewSplit: {
-        priority: -1,
         description:
           'Mammography: a screening exam that arrives as a single series still ' +
           'holds four distinct views. Split it by laterality and view so each ' +
@@ -275,7 +275,6 @@ const SAMPLE_SNIPPETS: Record<string, string> = {
   'Mammo: the same split, views named (code entries)': JSON.stringify(
     {
       mammoViewSplit: {
-        priority: -1,
         description:
           'As above, but each display set is also labelled with its view — ' +
           'mammoView "CC"/"MLO", descriptionName "RCC"/"RMLO"/"LCC"/"LMLO" — ' +
@@ -300,64 +299,79 @@ const SAMPLE_SNIPPETS: Record<string, string> = {
     null,
     2
   ),
-  // The data form of OHIF's `dwiByBValue` URL customization
-  // (platform/app/public/customizations/split/dwiByBValue.jsonc), without the
-  // customization `$merge` wrapper.
-  'DWI: one display set per b-value': JSON.stringify(
+  'Customization command (change a rule by id)': JSON.stringify(
     {
-      dwiByBValue: {
-        priority: -1,
-        description:
-          'Diffusion MR: one display set for each b-value. Images without ' +
-          'DiffusionBValue (a b=0 set that carries its b-value only in a ' +
-          'private tag, or a trace / ADC set) fall through to the standard ' +
-          'rules and form a display set of their own.',
-        context: {
-          bValue: 'Number(DiffusionBValue)',
-          // A series value: one instance has a b-value above 0. Some scanners
-          // write DiffusionBValue = 0 into every MR series.
-          isDiffusion: 'series.instances.max(bValue) > 0',
-        },
-        matches: {
-          Modality: 'MR',
-          isDiffusion: true,
-          isImage: true,
-          DiffusionBValue: { notNull: true },
-        },
-        groupBy: ['SeriesInstanceUID', 'bValue'],
-        sortBy: ['SliceLocation'],
-        attributes: {
-          SeriesDescription: {
-            template: '{SeriesDescription} b={DiffusionBValue}',
-          },
-        },
+      displaySetRules: {
+        volume3d: { $merge: { groupBy: ['SeriesInstanceUID', 'EchoNumbers'] } },
       },
     },
     null,
     2
   ),
-  'Customization merge command ($merge by key)': JSON.stringify(
-    { volume3d: { $merge: { groupBy: ['SeriesInstanceUID', 'EchoNumbers'] } } },
-    null,
-    2
-  ),
-  'Customization merge command (exclude a rule)': JSON.stringify(
-    { singleImageModality: { priority: { $set: null } } },
+  'Customization command (remove a rule from the order)': JSON.stringify(
+    { displaySetRuleOrder: { $spliceById: [['localizer', 1]] } },
     null,
     2
   ),
 };
 
+// ======== The optional rule files of @cornerstonejs/metadata ======== //
+
+/** Removes the line and block comments of a JSONC text, and keeps the strings. */
+const stripJsonComments = (text: string) =>
+  text.replace(
+    /("(?:\\.|[^"\\])*")|\/\/[^\n]*|\/\*[\s\S]*?\*\//g,
+    (_, string) => string ?? ''
+  );
+
+/**
+ * Every `rules/optional/*.jsonc` file of the metadata package, as text (the
+ * `asset/source` rule of the example build). A new file shows in the list
+ * with no change to this example.
+ */
+const optionalRuleFiles = import.meta.webpackContext(
+  '../../../metadata/rules/optional',
+  { recursive: false, regExp: /\.jsonc$/ }
+);
+
+type RuleState = {
+  displaySetRules: DisplaySetRules;
+  displaySetRuleOrder: DisplaySetRuleOrder;
+};
+
+type OptionalFile = {
+  /** The first comment line of the file. */
+  title: string;
+  /** An immutability-helper spec over a {@link RuleState}. */
+  spec: { displaySetRules?: Record<string, unknown> };
+};
+
+/** The optional files, keyed by file name. Off until the user ticks one. */
+const optionalFiles: Record<string, OptionalFile> = Object.fromEntries(
+  optionalRuleFiles.keys().map((key) => {
+    const text = optionalRuleFiles(key) as string;
+    return [
+      key.replace(/^.*\//, '').replace(/\.jsonc$/, ''),
+      {
+        title: /^\/\/\s*(.*)$/m.exec(text)?.[1] ?? '',
+        spec: JSON.parse(stripJsonComments(text)),
+      },
+    ];
+  })
+);
+
 // ======== State ======== //
 
-/** Rule ids the user unticked. Ids come from the rules, never hard-coded. */
+/** The optional files that the user ticked. */
+const enabledFiles = new Set<string>();
+/** Rule ids that the user unticked: they stay in the list, out of the order. */
 const disabledRuleIds = new Set<string>();
 /**
- * Rules the user added or the server supplied, keyed by rule id. Merged over the
- * standard ones by key, so an added rule with a standard id replaces that rule.
+ * Rules the user added or the server supplied, keyed by rule id. A new id goes
+ * first in the rule order; a standard id replaces that rule in its place.
  */
 let addedRules: DisplaySetRules = {};
-/** Customization merge commands applied on top, in order. */
+/** Customization commands over the rule state, applied in order. */
 const mergeCommands: unknown[] = [];
 
 let renderingEngine: RenderingEngine;
@@ -415,63 +429,42 @@ function setStatus(message: string, isError = false) {
 
 // ======== The rule set, assembled from user state ======== //
 
-/** The standard rules with the user/server rules merged over them by key. */
-function mergedRules(): DisplaySetRules {
-  return { ...displaySetRules, ...addedRules };
-}
-
 /**
- * The rule set as data: the standard rules with the user/server rules merged
- * over them by key, the unticked ids excluded (`priority: null`), then any
- * customization merge commands on top.
- *
- * The `unsupported` catch-all is never excluded here — without it the split
- * would silently discard everything no other rule claims, which is the failure
- * mode it exists to prevent. Its checkbox is disabled for the same reason.
+ * The registry and the order: the standard ones, the added rules, the ticked
+ * optional files (in file name order), then the customization commands - the
+ * same command vocabulary as an OHIF customization.
  */
-function buildRuleSet(): DisplaySetRules {
-  let ruleSet: DisplaySetRules = Object.fromEntries(
-    Object.entries(mergedRules()).map(([id, rule]) => [
-      id,
-      disabledRuleIds.has(id) ? { ...rule, priority: null } : rule,
-    ])
+function buildRuleState(): RuleState {
+  const newIds = Object.keys(addedRules).filter(
+    (id) => !(id in displaySetRules)
   );
-
-  // Applied the way OHIF's customization service merges a customization over an
-  // extension default: same command vocabulary, same order.
-  for (const command of mergeCommands) {
-    ruleSet = applyCustomizationUpdate(ruleSet, command);
+  let state: RuleState = {
+    displaySetRules: { ...displaySetRules, ...addedRules },
+    displaySetRuleOrder: [...newIds, ...displaySetRuleOrder],
+  };
+  for (const name of Object.keys(optionalFiles).sort()) {
+    if (enabledFiles.has(name)) {
+      state = applyCustomizationUpdate(state, optionalFiles[name].spec);
+    }
   }
+  for (const command of mergeCommands) {
+    state = applyCustomizationUpdate(state, command);
+  }
+  return state;
+}
 
-  return ruleSet;
+/** The order without the unticked rules. */
+function activeOrder(state: RuleState): string[] {
+  return state.displaySetRuleOrder.filter((id) => !disabledRuleIds.has(id));
 }
 
 /**
- * The rules of a rule set in evaluation order: ascending priority, equal
- * priorities by id. Excluded rules (`priority: null`) come last, so the list
- * still shows them.
- */
-function rulesInOrder(ruleSet: DisplaySetRules): [string, RawSplitRule][] {
-  const rank = (rule: RawSplitRule) =>
-    typeof rule.priority === 'number' ? rule.priority : Infinity;
-  return Object.entries(ruleSet).sort(
-    ([aId, a], [bId, b]) =>
-      rank(a) - rank(b) || (aId < bId ? -1 : aId > bId ? 1 : 0)
-  );
-}
-
-/**
- * Turns pasted or fetched JSON into keyed rules.
- *
- * Accepts rules keyed by rule id, or a single rule object with an `id`,
- * which becomes `{ [id]: { ...rule, priority: -1 } }` (it runs before the
- * standard rules) unless it states its own priority.
+ * Turns pasted or fetched JSON into keyed rules: rules keyed by rule id, or a
+ * single rule object with an `id`.
  */
 function toKeyedRules(parsed: unknown): DisplaySetRules {
   if (Array.isArray(parsed)) {
-    throw new Error(
-      'the array form is not supported: key the rules by id, each with a priority'
-    );
+    throw new Error('the array form is not supported: key the rules by id');
   }
   if (!parsed || typeof parsed !== 'object') {
     throw new Error(
@@ -480,21 +473,17 @@ function toKeyedRules(parsed: unknown): DisplaySetRules {
   }
   const record = parsed as Record<string, unknown>;
   if (typeof record.id === 'string') {
-    const rule = record as RawSplitRule & { id: string };
-    return {
-      [rule.id]: {
-        ...rule,
-        priority: rule.priority === undefined ? -1 : rule.priority,
-      },
-    };
+    return { [record.id]: record as RawSplitRule };
   }
   return record as DisplaySetRules;
 }
 
 function compileRuleSet(): SplitRuleSet {
-  return createDisplaySetSplitRules(buildRuleSet(), {
-    context: DEMO_CONTEXT,
-  });
+  const state = buildRuleState();
+  return createDisplaySetSplitRules(
+    materializeSplitRules(state.displaySetRules, activeOrder(state)),
+    { context: DEMO_CONTEXT }
+  );
 }
 
 // ======== Rule list ======== //
@@ -509,10 +498,10 @@ function describeGroupBy(rule: RawSplitRule): string {
     .join(' / ');
 }
 
-function ruleRow(
-  id: string,
-  rule: RawSplitRule,
-  origin: 'standard' | 'added' | 'replaced'
+function checkboxRow(
+  checked: boolean,
+  title: string,
+  onToggle: (checked: boolean) => void
 ) {
   const row = document.createElement('div');
   row.style.display = 'flex';
@@ -522,79 +511,121 @@ function ruleRow(
 
   const checkbox = document.createElement('input');
   checkbox.type = 'checkbox';
-  const isExcluded = rule.priority === null;
-  checkbox.checked = !isExcluded && !disabledRuleIds.has(id);
+  checkbox.checked = checked;
   checkbox.style.marginTop = '3px';
-  const isCatchAll = !rule.matches;
-  checkbox.disabled = isCatchAll || isExcluded;
-  checkbox.title = isCatchAll
-    ? 'The catch-all cannot be disabled: without it, unmatched objects are dropped.'
-    : isExcluded
-      ? `The "${id}" rule is excluded by its priority: null.`
-      : `Toggle the "${id}" rule`;
+  checkbox.title = title;
   checkbox.onchange = () => {
-    if (checkbox.checked) {
-      disabledRuleIds.delete(id);
-    } else {
-      disabledRuleIds.add(id);
-    }
+    onToggle(checkbox.checked);
+    renderRules();
     void resplit();
   };
   row.appendChild(checkbox);
+  return row;
+}
 
+function textBlock(id: string, meta: string[], description: string) {
   const text = document.createElement('div');
-
   const title = document.createElement('div');
   const idLabel = document.createElement('strong');
   idLabel.textContent = id;
   title.appendChild(idLabel);
+  const metaEl = document.createElement('span');
+  metaEl.style.color = '#7f8c8d';
+  metaEl.textContent = meta.length ? ` — ${meta.join(' · ')}` : '';
+  title.appendChild(metaEl);
+  text.appendChild(title);
+
+  const descriptionEl = document.createElement('div');
+  descriptionEl.style.color = '#bdc3c7';
+  descriptionEl.style.fontSize = '0.9em';
+  descriptionEl.textContent = description;
+  text.appendChild(descriptionEl);
+  return text;
+}
+
+function ruleRow(id: string, rule: RawSplitRule, position: number | null) {
+  const row = checkboxRow(
+    position !== null,
+    !rule.matches
+      ? 'Without the catch-all, an object that no other rule claims gets no display set.'
+      : `Toggle the "${id}" rule`,
+    (checked) => {
+      if (checked) {
+        disabledRuleIds.delete(id);
+      } else {
+        disabledRuleIds.add(id);
+      }
+    }
+  );
 
   // Everything below is read off the rule data itself.
   const meta: string[] = [
-    `priority: ${
-      rule.priority === null
-        ? 'null (excluded)'
-        : rule.priority === Number.MAX_SAFE_INTEGER
-          ? 'last (Number.MAX_SAFE_INTEGER)'
-          : rule.priority
-    }`,
+    position === null ? 'not in the order' : `position ${position}`,
   ];
   if (rule.handler) {
     meta.push(`handler: ${rule.handler}`);
   }
   meta.push(`groupBy: ${describeGroupBy(rule)}`);
+  if (rule.sortBy?.length) {
+    meta.push(`sortBy: ${rule.sortBy.map(String).join(' / ')}`);
+  }
   if (rule.context && Object.keys(rule.context).length) {
     meta.push(`context: ${Object.keys(rule.context).join(', ')}`);
   }
-  if (origin !== 'standard') {
-    meta.push(origin === 'added' ? 'added' : 'replaces the standard rule');
+  if (id in addedRules) {
+    meta.push(id in displaySetRules ? 'replaces the standard rule' : 'added');
+  } else if (!(id in displaySetRules)) {
+    meta.push('optional (rules/optional)');
   }
-  const metaEl = document.createElement('span');
-  metaEl.style.color = '#7f8c8d';
-  metaEl.textContent = ` — ${meta.join(' · ')}`;
-  title.appendChild(metaEl);
-  text.appendChild(title);
+  row.appendChild(
+    textBlock(id, meta, rule.description ?? '(no description in the rule)')
+  );
+  return row;
+}
 
-  const description = document.createElement('div');
-  description.style.color = '#bdc3c7';
-  description.style.fontSize = '0.9em';
-  description.textContent = rule.description ?? '(no description in the rule)';
-  text.appendChild(description);
-
-  row.appendChild(text);
+function optionalFileRow(name: string, file: OptionalFile) {
+  const row = checkboxRow(
+    enabledFiles.has(name),
+    `Apply rules/optional/${name}.jsonc`,
+    (checked) => {
+      if (checked) {
+        enabledFiles.add(name);
+      } else {
+        enabledFiles.delete(name);
+      }
+    }
+  );
+  const registrySpec = (file.spec.displaySetRules ?? {}) as Record<
+    string,
+    object
+  >;
+  const changes = Object.keys(registrySpec).flatMap((key) =>
+    key === '$merge'
+      ? Object.keys(registrySpec.$merge).map((id) => `adds ${id}`)
+      : [`changes ${key}`]
+  );
+  row.appendChild(textBlock(name, changes, file.title));
   return row;
 }
 
 function renderRules() {
-  rulesList.replaceChildren();
-  for (const [id, rule] of rulesInOrder(mergedRules())) {
-    const origin = !(id in addedRules)
-      ? 'standard'
-      : id in displaySetRules
-        ? 'replaced'
-        : 'added';
-    rulesList.appendChild(ruleRow(id, rule, origin));
-  }
+  optionalList.replaceChildren(
+    ...Object.entries(optionalFiles).map(([name, file]) =>
+      optionalFileRow(name, file)
+    )
+  );
+
+  const state = buildRuleState();
+  const active = activeOrder(state);
+  rulesList.replaceChildren(
+    ...state.displaySetRuleOrder.map((id) =>
+      ruleRow(
+        id,
+        state.displaySetRules[id],
+        disabledRuleIds.has(id) ? null : active.indexOf(id) + 1
+      )
+    )
+  );
 }
 
 // ======== Controls ======== //
@@ -808,9 +839,16 @@ serverGroup.style.gap = '4px';
 serverGroup.append(serverPathInput, serverLoadButton);
 sourceRow.appendChild(labelled('Server-side rule set', serverGroup));
 
+const optionalHeader = document.createElement('h4');
+optionalHeader.textContent = 'Optional rule files (rules/optional)';
+optionalHeader.style.margin = '12px 0 4px';
+rulesPanel.appendChild(optionalHeader);
+
+const optionalList = document.createElement('div');
+rulesPanel.appendChild(optionalList);
+
 const rulesHeader = document.createElement('h4');
-rulesHeader.textContent =
-  'Split rules (by ascending priority, first match wins)';
+rulesHeader.textContent = 'Split rules (in rule order, first match wins)';
 rulesHeader.style.margin = '12px 0 4px';
 rulesPanel.appendChild(rulesHeader);
 
@@ -826,10 +864,10 @@ const editorHint = document.createElement('div');
 editorHint.style.color = '#bdc3c7';
 editorHint.style.fontSize = '0.9em';
 editorHint.innerText =
-  'Paste rules keyed by rule id, each with a priority (below 0 runs before ' +
-  'the standard rules; null excludes a rule), one rule with an "id" (it gets ' +
-  'priority -1), or a customization merge command keyed by rule id ' +
-  '($set / $merge / $unset). A rule reads DICOM keywords and the names of ' +
+  'Paste rules keyed by rule id (a new id goes first in the rule order, a ' +
+  'standard id replaces that rule in its place), one rule with an "id", or a ' +
+  'customization command over { displaySetRules, displaySetRuleOrder } ' +
+  '($set / $merge / $unset / $splice / $spliceById). A rule reads DICOM keywords and the names of ' +
   'the display set context; this example adds ' +
   `${Object.keys(DEMO_CONTEXT)
     .map((name) => `"${name}"`)
@@ -911,8 +949,8 @@ for (const step of [
     'folder, not the whole study: the example reads and decodes every file ' +
     'when you upload it.',
   'Look at the display sets that the standard rules make.',
-  'Pick the "DWI: one display set per b-value" sample above and press "Add ' +
-    'rule". Expect one display set for each DiffusionBValue (b=1000: 32 images, ' +
+  'Tick the optional file "dwiByBValue" in the list. Expect one ' +
+    'display set for each DiffusionBValue (b=1000: 32 images, ' +
     'in SliceLocation order), and one more display set for the images without ' +
     'DiffusionBValue.',
   'Untick "dwiByBValue" to compare with the standard split again.',
@@ -1001,14 +1039,20 @@ addButton('Reset', () => {
   addedRules = {};
   mergeCommands.length = 0;
   disabledRuleIds.clear();
+  enabledFiles.clear();
   layoutBySplitKey.clear();
   renderRules();
-  setStatus('Back to the standard rules.');
+  setStatus('Back to the standard rules, with the optional rules off.');
   void resplit();
 });
 
 addButton('Copy rules JSON', async () => {
-  const json = JSON.stringify(buildRuleSet(), null, 2);
+  const state = buildRuleState();
+  const json = JSON.stringify(
+    { ...state, displaySetRuleOrder: activeOrder(state) },
+    null,
+    2
+  );
   try {
     await navigator.clipboard.writeText(json);
     setStatus('Rules JSON copied — this is what a server would read.');

@@ -11,7 +11,11 @@ export {
   orderInstancesForRule,
 } from './groupInstancesBySplitRules';
 export type { PlaneGeometry, TimeClusters } from './seriesFunctions';
-export { resolveSplitRuleSet } from './splitRuleSet';
+export {
+  materializeSplitRules,
+  resolveSplitRuleSet,
+  spliceById,
+} from './splitRuleSet';
 export {
   compare,
   compareInstanceNumber,
@@ -31,7 +35,11 @@ export {
   compiledDisplaySetRules,
   defaultDisplaySetSplitRules,
 } from './compiledDisplaySetRules';
-export { displaySetRules, createDisplaySetSplitRules } from './displaySetRules';
+export {
+  displaySetRules,
+  displaySetRuleOrder,
+  createDisplaySetSplitRules,
+} from './displaySetRules';
 export { defaultMetadataContext } from './displaySetContext';
 export {
   setMetadataContext,
@@ -70,6 +78,7 @@ export type {
   RawSortKey,
   RawSplitRule,
   DisplaySetRules,
+  DisplaySetRuleOrder,
   CreateDisplaySetSplitRulesOptions,
 } from './displaySetRulesTypes';
 export { createDisplaySetFromGroup } from './createDisplaySetFromGroup';
@@ -79,10 +88,7 @@ export { isVideoInstance } from './isVideoInstance';
 export { isEcgInstance } from './isEcgInstance';
 export { isWsiInstance } from './isWsiInstance';
 export { isReconstructableInstances } from './isReconstructableInstances';
-export {
-  DEFAULT_SPLIT_RULE_PRIORITY_LIMIT,
-  DISPLAY_SET_HANDLER_NAMES,
-} from './types';
+export { DISPLAY_SET_HANDLER_NAMES } from './types';
 export type {
   NaturalizedInstance,
   SeriesInfo,
@@ -101,6 +107,5 @@ export type {
   SortInstances,
   GroupInstancesOptions,
   SplitRuleSet,
-  SplitRuleSetEntry,
   OrderInstancesOptions,
 } from './types';

@@ -11,6 +11,7 @@ import {
   metaSRAnnotation,
   metaRTSSContour,
 } from '../adapters/Cornerstone3D/constants';
+import { getWriterHeader } from './getWriterHeader';
 
 const { DicomMetaDictionary } = dcmjs.data;
 const { MetadataModules } = Enums;
@@ -225,7 +226,7 @@ export const metadataProvider = {
       OperatorsName: '',
       ReferringPhysicianName: '',
       SpecificCharacterSet: 'ISO_IR 192',
-      Manufacturer: 'cs3d',
+      ...getWriterHeader(),
       SOPInstanceUID: DicomMetaDictionary.uid(),
       SeriesInstanceUID: DicomMetaDictionary.uid(),
     };
