@@ -476,18 +476,20 @@ abstract class BaseVolumeViewport extends Viewport {
    * @param VOILUTFunction - Sets the voi mode (LINEAR or SAMPLED_SIGMOID)
    * @param volumeId - The volume id to set the properties for (if `undefined`, the first volume)
    * @param suppressEvents - If `true`, the viewport will not emit events
+   * @param voiRange - The window to keep, read before a change of
+   *   `useVOILUTSequence`. Default: the current window of the viewport.
    */
   private setVOILUTFunction(
     voiLUTFunction: VOILUTFunctionType,
     volumeId?: string,
-    suppressEvents?: boolean
+    suppressEvents?: boolean,
+    voiRange = this.getProperties(volumeId)?.voiRange
   ): void {
     // Normalize rather than test for a member of the enum: the value reaches us
     // as a padded, lower case or single element array attribute from the
     // providers as well as from an application, and an unknown value must
     // become LINEAR rather than break the render.
     const newVOILUTFunction = getValidVOILUTFunction(voiLUTFunction);
-    const { voiRange } = this.getProperties(volumeId) ?? {};
 
     // Only a function that is different from the function of the volume stops
     // the use of the VOI LUT Sequence. An absent (0028,1056) becomes LINEAR,
@@ -1441,6 +1443,7 @@ abstract class BaseVolumeViewport extends Viewport {
       this.setDefaultProperties({
         voiRange,
         VOILUTFunction,
+        useVOILUTSequence,
         invert,
         colormap,
         preset,
@@ -1467,6 +1470,13 @@ abstract class BaseVolumeViewport extends Viewport {
       this.setThreshold(colormap, volumeId);
     }
 
+    // Read the window before the sequence setting changes how getProperties
+    // decodes it: a sigmoid read as a sequence gives its wide node domain.
+    const currentVOIRange =
+      useVOILUTSequence !== undefined && voiRange === undefined
+        ? this.getProperties(volumeId)?.voiRange
+        : undefined;
+
     if (useVOILUTSequence !== undefined) {
       this.useVOILUTSequence = useVOILUTSequence;
     }
@@ -1480,7 +1490,12 @@ abstract class BaseVolumeViewport extends Viewport {
     }
 
     if (VOILUTFunction !== undefined) {
-      this.setVOILUTFunction(VOILUTFunction, volumeId, suppressEvents);
+      this.setVOILUTFunction(
+        VOILUTFunction,
+        volumeId,
+        suppressEvents,
+        currentVOIRange
+      );
     } else if (useVOILUTSequence !== undefined && voiRange === undefined) {
       // A change of useVOILUTSequence changes the transfer function, but it
       // does not change the VOI LUT Function or the range. Thus set the current
@@ -1488,7 +1503,8 @@ abstract class BaseVolumeViewport extends Viewport {
       this.setVOILUTFunction(
         this._getVOILUTFunctionToApply(volumeId),
         volumeId,
-        suppressEvents
+        suppressEvents,
+        currentVOIRange
       );
     }
 
@@ -1681,6 +1697,8 @@ abstract class BaseVolumeViewport extends Viewport {
     }
 
     applyPreset(volumeActor, viewportPreset);
+    // The preset replaces the transfer function, as a colormap does.
+    this.volumeVOICurveApplied.set(applicableVolumeActorInfo.volumeId, false);
 
     this.viewportProperties.preset = viewportPreset.name;
     this.render();

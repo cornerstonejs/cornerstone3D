@@ -432,6 +432,35 @@ describe('PlanarCPUVolumeSampler resampling decisions', () => {
     getMetadata.mockRestore();
   });
 
+  it('reads the volume VOI shape again when the volume load completes', () => {
+    const sampler = new PlanarCPUVolumeSampler();
+    const volume = {
+      ...createTestVolume(),
+      loadStatus: { loaded: false },
+    };
+    const sampleArgs = {
+      volume,
+      width: 1,
+      height: 1,
+      camera: createCoronalCamera([1.5, 1.5, 1.5]),
+    };
+
+    expect(sampler.sampleSliceImage(sampleArgs).image.voiLUTFunction).toBe(
+      VOILUTFunctionType.LINEAR
+    );
+
+    volume.metadata = {
+      voiLut: [
+        { windowWidth: 400, windowCenter: 40, voiLUTFunction: 'SIGMOID' },
+      ],
+    };
+    volume.loadStatus.loaded = true;
+
+    expect(sampler.sampleSliceImage(sampleArgs).image.voiLUTFunction).toBe(
+      VOILUTFunctionType.SAMPLED_SIGMOID
+    );
+  });
+
   it('converts the CPU window with the selected VOI LUT function', () => {
     const sampler = new PlanarCPUVolumeSampler();
     const sampledSliceState = createSampledSliceState({

@@ -176,7 +176,10 @@ function worldVectorToContinuousIndexDelta(
 
 export default class PlanarCPUVolumeSampler {
   private sampleSequence = 0;
-  private volumeVOIShapes = new WeakMap<IImageVolume, VolumeVOIShape>();
+  private volumeVOIShapes = new WeakMap<
+    IImageVolume,
+    { shape: VolumeVOIShape; loaded: boolean }
+  >();
   private scalarViewportSampler = new PlanarCPUScalarViewportSampler();
   private scalarRangeCache = new WeakMap<
     NonNullable<IImageVolume['voxelManager']>,
@@ -1239,14 +1242,17 @@ export default class PlanarCPUVolumeSampler {
     // The slice is a synthetic image, but the VOI transformation is a property
     // of the file. Thus the slice keeps the VOI LUT Function and the VOI LUT
     // Sequence of the volume.
-    let volumeVOIShape = this.volumeVOIShapes.get(volume);
+    // Keep the shape only after the load, as BaseVolumeViewport does: a shape
+    // read during the load can be empty.
+    const loaded = !!volume.loadStatus?.loaded;
+    let cached = this.volumeVOIShapes.get(volume);
 
-    if (!volumeVOIShape) {
-      volumeVOIShape = getVolumeVOIShape(volume);
-      this.volumeVOIShapes.set(volume, volumeVOIShape);
+    if (!cached || (!cached.loaded && loaded)) {
+      cached = { shape: getVolumeVOIShape(volume), loaded };
+      this.volumeVOIShapes.set(volume, cached);
     }
 
-    const { voiLUT, voiLUTFunction } = volumeVOIShape;
+    const { voiLUT, voiLUTFunction } = cached.shape;
     const { windowCenter, windowWidth } = toWindowLevel(
       resolvedVOI.lower,
       resolvedVOI.upper,
