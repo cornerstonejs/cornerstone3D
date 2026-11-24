@@ -5,6 +5,7 @@ import {
 } from '../src/RenderingEngine/helpers/fidelityIndicator/buildViewportFidelityState';
 import { fidelityDetailsTextOf } from '../src/RenderingEngine/helpers/fidelityIndicator/fidelityDetailsText';
 import { notifyFidelityStateChanged } from '../src/RenderingEngine/helpers/fidelityIndicator/notifyFidelityStateChanged';
+import { fidelityLineFromStackImage } from '../src/RenderingEngine/helpers/fidelityIndicator/collectFidelityLines';
 import Events from '../src/enums/Events';
 import ImageQualityStatus from '../src/enums/ImageQualityStatus';
 import VoxelReductions from '../src/enums/VoxelReductions';
@@ -328,5 +329,37 @@ describe('notifyFidelityStateChanged (FIDELITY-EVENT-4)', () => {
     notifyFidelityStateChanged(viewport, [line()]);
 
     expect(viewport.events).toHaveLength(0);
+  });
+});
+
+describe('display issues (FIDELITY-STATE-13)', () => {
+  // The user must see Low Fidelity, with the issue, for an image that the
+  // display cannot show as its metadata specifies.
+  it('shows lossy for an unknown VOI LUT function, and lists the issue', () => {
+    const lines = fidelityLineFromStackImage({ voiLUTFunction: 'BOGUS' });
+    const state = buildViewportFidelityState(lines);
+
+    expect(state).toMatchObject({
+      shownState: 'lossy',
+      lossy: true,
+      cause: 'displayIssue',
+      transient: false,
+    });
+    expect(state.issues.map((issue) => issue.code)).toEqual([
+      'unknownVOILUTFunction',
+    ]);
+    expect(fidelityDetailsTextOf(state, lines)).toContain(
+      'Unknown VOI LUT function "BOGUS". The display uses LINEAR.'
+    );
+  });
+
+  it('shows no indicator for a known VOI LUT function', () => {
+    for (const voiLUTFunction of ['SIGMOID', undefined]) {
+      const state = buildViewportFidelityState(
+        fidelityLineFromStackImage({ voiLUTFunction })
+      );
+      expect(state.shownState).toBe('done');
+      expect(state.issues).toBeUndefined();
+    }
   });
 });

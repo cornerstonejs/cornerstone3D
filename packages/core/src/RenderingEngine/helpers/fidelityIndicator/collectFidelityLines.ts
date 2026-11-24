@@ -3,6 +3,7 @@ import ImageQualityStatus from '../../../enums/ImageQualityStatus';
 import ViewportType from '../../../enums/ViewportType';
 import type {
   ActorEntry,
+  FidelityIssue,
   IImage,
   Point3,
   ViewportFidelityCause,
@@ -25,6 +26,10 @@ import {
   fidelityDisplayOfCamera,
 } from './displaySpacingOfViewport';
 import { isLabelmapActorEntry } from './isLabelmapActorEntry';
+import {
+  fidelityIssuesOfImage,
+  fidelityIssuesOfVolume,
+} from './fidelityIssues';
 import {
   type FidelityLine,
   isReduced,
@@ -68,6 +73,7 @@ export type BindingFidelitySource = {
   imageQualityStatus?: ImageQualityStatus;
   qualityPending?: boolean;
   reductionCause?: ViewportFidelityCause;
+  issues?: FidelityIssue[];
   label?: string;
   skip?: boolean;
 };
@@ -97,6 +103,7 @@ export function fidelityLinesFromBindings(
           ),
           label: source.label ?? 'Image',
           interactiveReduction: source.interactiveReduction,
+          issues: source.issues,
         });
       }
       continue;
@@ -127,6 +134,7 @@ export function fidelityLinesFromBindings(
       interactiveReduction: source.interactiveReduction,
       qualityPending: source.qualityPending,
       reductionCause: source.reductionCause,
+      issues: source.issues,
     });
   }
 
@@ -213,6 +221,7 @@ export function fidelityLinesFromVolumeActors(
       reductionCause: fullResolution
         ? undefined
         : reductionCauseOf(volume, gpuSettingsForRender()),
+      issues: fidelityIssuesOfVolume(volume),
     });
   }
 
@@ -253,10 +262,13 @@ export function fidelityLineFromStackImage(
   }
 
   return [
-    fidelityLineFromImageQuality(
-      imageQualityStatusOf(image),
-      image.imageQualityPending
-    ),
+    {
+      ...fidelityLineFromImageQuality(
+        imageQualityStatusOf(image),
+        image.imageQualityPending
+      ),
+      issues: fidelityIssuesOfImage(image),
+    },
   ];
 }
 
