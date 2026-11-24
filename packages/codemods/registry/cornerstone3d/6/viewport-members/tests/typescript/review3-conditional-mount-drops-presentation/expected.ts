@@ -14,7 +14,7 @@ export async function mountedFirst(
   imageIds: string[]
 ) {
   await viewport.setStack(imageIds);
-  viewport.setDisplaySetPresentation({ invert: true });
+  viewport.setDisplaySetAppearance({ invert: true });
 }
 
 export function videoWithoutMount(viewport: Types.IVideoViewport) {
@@ -26,7 +26,7 @@ export async function videoMounted(
   imageId: string
 ) {
   await viewport.setVideo(imageId);
-  viewport.setDisplaySetPresentation({ averageWhite: [255, 255, 255] });
+  viewport.setDisplaySetAppearance({ averageWhite: [255, 255, 255] });
 }
 
 export async function mountedThreeD(
@@ -34,7 +34,7 @@ export async function mountedThreeD(
   displaySetId: string
 ) {
   await viewport.setDisplaySets({ displaySetId });
-  viewport.setDisplaySetPresentation({ preset: 'CT-Bone', sampleDistanceMultiplier: 2 });
+  viewport.setDisplaySetAppearance({ preset: 'CT-Bone', sampleDistanceMultiplier: 2 });
 }
 
 export async function mountedQuotedKey(
@@ -43,7 +43,7 @@ export async function mountedQuotedKey(
   mode: Enums.VOILUTFunctionType
 ) {
   await viewport.setStack(imageIds);
-  viewport.setDisplaySetPresentation({ 'voiLUTFunction': mode });
+  viewport.setDisplaySetAppearance({ 'voiLUTFunction': mode });
 }
 
 export async function mountedVideoAndEcg(
@@ -52,7 +52,7 @@ export async function mountedVideoAndEcg(
   imageId: string
 ) {
   await video.setVideo(imageId);
-  video.setDisplaySetPresentation({ loop: true, muted: true });
+  video.setDisplaySetAppearance({ loop: true, muted: true });
   await ecg.setEcg(imageId);
-  ecg.setDisplaySetPresentation({ showAmplitudeLabels: true });
+  ecg.setDisplaySetAppearance({ showAmplitudeLabels: true });
 }

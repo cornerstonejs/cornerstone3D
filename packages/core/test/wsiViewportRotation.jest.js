@@ -351,12 +351,12 @@ describe.each(SLIDE_ROTATIONS)(
       viewport.setViewState({ rotation: degrees(0.25) });
 
       const before = readView(view);
-      const presentation = viewportProjection.getPresentation(viewport);
+      const presentation = viewportProjection.getFraming(viewport);
 
       expect(presentation.rotation).toBeCloseTo(degrees(0.25), 12);
 
       viewport.setViewState(
-        viewportProjection.withPresentation(viewport, presentation)
+        viewportProjection.withFraming(viewport, presentation)
       );
 
       const after = readView(view);

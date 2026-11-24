@@ -4,10 +4,7 @@ import type {
   Types,
 } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
-import {
-  applyViewportPresentation,
-  getViewportZoomPan,
-} from './viewportPresentation';
+import { applyViewportFraming, getViewportZoomPan } from './viewportFraming';
 
 /**
  * The world distance between two canvas points one pixel apart along the
@@ -82,10 +79,10 @@ export async function mountLoupeSource(
 /**
  * Makes a loupe show what its source viewport shows around a world point.
  *
- * Each display set of the loupe takes the presentation that it has on the
+ * Each display set of the loupe takes the appearance that it has on the
  * source (window, invert, colormap, opacity and the rest); a key that the
- * source no longer has, as after `resetDisplaySetPresentation` of the source,
- * resets the presentation of the loupe first, since a set merges. The loupe
+ * source no longer has, as after `resetDisplaySetAppearance` of the source,
+ * resets the appearance of the loupe first, since a set merges. The loupe
  * takes from the view state of the source the orientation, the slice, the
  * rotation and the flips, and the stretch: the ratio of the horizontal to the
  * vertical scale that the source resolves to, from its `scale`, its scale
@@ -108,20 +105,20 @@ export function syncLoupeWithSource(
   }
 
   getMagnifiedDisplaySets(loupeViewport).forEach(({ displaySetId }) => {
-    const presentation = sourceViewport.getDisplaySetPresentation(displaySetId);
+    const appearance = sourceViewport.getDisplaySetAppearance(displaySetId);
 
-    if (!presentation) {
+    if (!appearance) {
       return;
     }
 
-    const loupePresentation =
-      loupeViewport.getDisplaySetPresentation(displaySetId) ?? {};
+    const loupeAppearance =
+      loupeViewport.getDisplaySetAppearance(displaySetId) ?? {};
 
-    if (Object.keys(loupePresentation).some((key) => !(key in presentation))) {
-      loupeViewport.resetDisplaySetPresentation(displaySetId);
+    if (Object.keys(loupeAppearance).some((key) => !(key in appearance))) {
+      loupeViewport.resetDisplaySetAppearance(displaySetId);
     }
 
-    loupeViewport.setDisplaySetPresentation(displaySetId, presentation);
+    loupeViewport.setDisplaySetAppearance(displaySetId, appearance);
   });
 
   const { orientation, slice, rotation, flipHorizontal, flipVertical } =
@@ -152,7 +149,7 @@ export function syncLoupeWithSource(
     return;
   }
 
-  applyViewportPresentation(loupeViewport, {
+  applyViewportFraming(loupeViewport, {
     zoom: (zoomPan.zoom * currentWorldPerPixel) / worldPerPixel,
   });
 }

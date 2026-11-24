@@ -6,12 +6,12 @@
  *   PlanarViewState (user model) -> PlanarSliceBasis (geometric basis) -> ICamera (render camera)
  *
  * Key concepts:
- *   - `derivePlanarPresentation`: extracts canvas-space pan/zoom/rotation from
+ *   - `derivePlanarFraming`: extracts canvas-space pan/zoom/rotation from
  *     a sliceBasis + PlanarViewState pair. Used by CPU render paths that apply
- *     presentation via their own transform pipeline.
+ *     framing via their own transform pipeline.
  *   - `resolvePlanarICamera`: produces a complete ICamera (focalPoint,
  *     position, viewUp, parallelScale) ready for a VTK renderer. Internally
- *     calls `derivePlanarPresentation` then converts the canvas-space pan back
+ *     calls `derivePlanarFraming` then converts the canvas-space pan back
  *     to a world-space focal-point offset.
  *   - `applyPlanarICameraToRenderer`: pushes the resolved ICamera onto
  *     a vtkRenderer's active camera.
@@ -32,7 +32,7 @@ import {
   getPlanarRotationBeforeFlips,
   normalizePlanarRotation,
   rotatePlanarViewUp,
-} from './planarViewPresentation';
+} from './planarViewFraming';
 import { getSafeCanvasDimension, normalizePoint3 } from './planarMath';
 import type {
   PlanarViewState,
@@ -51,11 +51,11 @@ import {
 } from './planarCameraScale';
 
 /**
- * Canvas-space presentation values derived from a semantic camera and a
+ * Canvas-space framing values derived from a semantic camera and a
  * section basis. CPU render paths consume these directly; VTK paths use
  * them as an intermediate step inside `resolvePlanarICamera`.
  */
-export interface DerivedPlanarPresentation {
+export interface DerivedPlanarFraming {
   pan: Point2;
   zoom: number;
   scale: Point2;
@@ -99,13 +99,13 @@ function getSliceCanvasDimensionsAtFit(args: {
  * for an area of type SCALE as for an image area, so a zoom next to a
  * display area is against the fit.
  */
-function deriveDisplayAreaPresentation(args: {
+function deriveDisplayAreaFraming(args: {
   sliceBasis: PlanarSliceBasis;
   camera?: PlanarViewState;
   canvasWidth: number;
   canvasHeight: number;
   scale: PlanarScale;
-}): Pick<DerivedPlanarPresentation, 'pan' | 'zoom' | 'scale'> | undefined {
+}): Pick<DerivedPlanarFraming, 'pan' | 'zoom' | 'scale'> | undefined {
   const { canvasHeight, canvasWidth, camera, scale, sliceBasis } = args;
   const displayArea = camera?.displayArea;
 
@@ -254,7 +254,7 @@ export function projectAnchorWorldToCurrentPlane(
 }
 
 /**
- * Derives canvas-space presentation values (pan, zoom, rotation) from a
+ * Derives canvas-space framing values (pan, zoom, rotation) from a
  * semantic PlanarViewState and a PlanarSliceBasis.
  *
  * Pan is computed in two parts:
@@ -273,12 +273,12 @@ export function projectAnchorWorldToCurrentPlane(
  * @param args.canvasHeight - Current canvas height in CSS pixels.
  * @returns Derived pan (pixels), zoom (scale factor), and rotation (degrees).
  */
-export function derivePlanarPresentation(args: {
+export function derivePlanarFraming(args: {
   sliceBasis: PlanarSliceBasis;
   camera?: PlanarViewState;
   canvasWidth: number;
   canvasHeight: number;
-}): DerivedPlanarPresentation {
+}): DerivedPlanarFraming {
   const { sliceBasis, camera, canvasHeight, canvasWidth } = args;
   const scale = resolveViewStateScale(args);
   const rotation = normalizePlanarRotation(camera?.rotation ?? 0);
@@ -336,7 +336,7 @@ export function derivePlanarPresentation(args: {
   const worldHeight = parallelScale * 2;
   const worldWidth = worldHeight * (safeCanvasWidth / safeCanvasHeight);
   const effectiveWorldWidth = worldWidth * (scaleY / scaleX);
-  const displayAreaPresentation = deriveDisplayAreaPresentation({
+  const displayAreaFraming = deriveDisplayAreaFraming({
     sliceBasis,
     camera,
     canvasWidth,
@@ -366,7 +366,7 @@ export function derivePlanarPresentation(args: {
     (anchorCanvas[1] - 0.5) * safeCanvasHeight,
   ];
 
-  const pan: Point2 = displayAreaPresentation?.pan ?? [
+  const pan: Point2 = displayAreaFraming?.pan ?? [
     panFromAnchorWorld[0] + panFromAnchorCanvas[0],
     panFromAnchorWorld[1] + panFromAnchorCanvas[1],
   ];
@@ -375,8 +375,8 @@ export function derivePlanarPresentation(args: {
     pan,
     flipHorizontal: camera?.flipHorizontal === true,
     flipVertical: camera?.flipVertical === true,
-    scale: displayAreaPresentation?.scale ?? scale,
-    zoom: displayAreaPresentation?.zoom ?? scale[1],
+    scale: displayAreaFraming?.scale ?? scale,
+    zoom: displayAreaFraming?.zoom ?? scale[1],
     rotation,
   };
 }
@@ -385,7 +385,7 @@ export function derivePlanarPresentation(args: {
  * Converts canvas-space pan (pixels) back into a world-space offset vector
  * that can be subtracted from sliceCenterWorld to get the final focalPoint.
  *
- * This is the inverse of the pan->canvas mapping in `derivePlanarPresentation`.
+ * This is the inverse of the pan->canvas mapping in `derivePlanarFraming`.
  */
 function getResolvedPanOffset(args: {
   sliceBasis: PlanarSliceBasis;
@@ -464,7 +464,7 @@ function getResolvedPanOffset(args: {
   return {
     deltaWorld: deltaWorld as Point3,
     parallelScale,
-    presentationScale: [scaleX, scaleY] as Point2,
+    framingScale: [scaleX, scaleY] as Point2,
     viewPlaneNormal: flippedViewPlaneNormal,
     viewUp: flippedViewUp,
   };
@@ -476,7 +476,7 @@ function getResolvedPanOffset(args: {
  * that need to set up a vtkRenderer camera.
  *
  * The pipeline:
- *   1. `derivePlanarPresentation` extracts pan/zoom/rotation.
+ *   1. `derivePlanarFraming` extracts pan/zoom/rotation.
  *   2. `getResolvedPanOffset` converts canvas-space pan back to world offset.
  *   3. `focalPoint = sliceCenterWorld - worldOffset`.
  *   4. `position = focalPoint + viewPlaneNormal * cameraDistance`.
@@ -498,28 +498,23 @@ export function resolvePlanarICamera(args: {
   canvasHeight: number;
 }): PlanarResolvedICamera {
   const { sliceBasis, camera, canvasHeight, canvasWidth } = args;
-  const presentation = derivePlanarPresentation({
+  const framing = derivePlanarFraming({
     sliceBasis,
     camera,
     canvasWidth,
     canvasHeight,
   });
-  const {
-    deltaWorld,
-    parallelScale,
-    presentationScale,
-    viewPlaneNormal,
-    viewUp,
-  } = getResolvedPanOffset({
-    sliceBasis,
-    canvasWidth,
-    canvasHeight,
-    flipHorizontal: presentation.flipHorizontal,
-    flipVertical: presentation.flipVertical,
-    pan: presentation.pan,
-    rotation: presentation.rotation,
-    scale: presentation.scale,
-  });
+  const { deltaWorld, parallelScale, framingScale, viewPlaneNormal, viewUp } =
+    getResolvedPanOffset({
+      sliceBasis,
+      canvasWidth,
+      canvasHeight,
+      flipHorizontal: framing.flipHorizontal,
+      flipVertical: framing.flipVertical,
+      pan: framing.pan,
+      rotation: framing.rotation,
+      scale: framing.scale,
+    });
   const focalPoint = vec3.subtract(
     vec3.create(),
     sliceBasis.sliceCenterWorld as unknown as vec3,
@@ -530,8 +525,8 @@ export function resolvePlanarICamera(args: {
     focalPoint,
     parallelProjection: true,
     parallelScale,
-    presentationScale,
-    scale: presentation.scale,
+    framingScale,
+    scale: framing.scale,
     scaleMode: fitsStretchedSlice(camera)
       ? 'fit'
       : normalizePlanarScaleMode(camera?.scaleMode),
@@ -541,8 +536,8 @@ export function resolvePlanarICamera(args: {
       viewPlaneNormal as unknown as vec3,
       sliceBasis.cameraDistance
     ) as Point3,
-    flipHorizontal: presentation.flipHorizontal,
-    flipVertical: presentation.flipVertical,
+    flipHorizontal: framing.flipHorizontal,
+    flipVertical: framing.flipVertical,
     viewPlaneNormal,
     viewUp,
   };
@@ -618,10 +613,10 @@ function getPlanarICameraRight(
   return vec3.normalize(vec3.create(), right) as Point3;
 }
 
-export function createPlanarPresentationScaleMatrix(
+export function createPlanarFramingScaleMatrix(
   activeSourceICamera?: Pick<
     PlanarResolvedICamera,
-    'focalPoint' | 'presentationScale' | 'viewPlaneNormal' | 'viewUp'
+    'focalPoint' | 'framingScale' | 'viewPlaneNormal' | 'viewUp'
   >
 ): mat4 {
   const matrix = mat4.create();
@@ -635,7 +630,7 @@ export function createPlanarPresentationScaleMatrix(
   }
 
   const [scaleX, scaleY] = normalizePlanarScale(
-    activeSourceICamera.presentationScale
+    activeSourceICamera.framingScale
   );
   const ratioX = Math.max(scaleX / scaleY, MIN_PLANAR_SCALE);
 
@@ -686,9 +681,7 @@ export function applyPlanarICameraToActor(args: {
 }): void {
   const { actor, activeSourceICamera } = args;
 
-  actor?.setUserMatrix?.(
-    createPlanarPresentationScaleMatrix(activeSourceICamera)
-  );
+  actor?.setUserMatrix?.(createPlanarFramingScaleMatrix(activeSourceICamera));
 }
 
 /**

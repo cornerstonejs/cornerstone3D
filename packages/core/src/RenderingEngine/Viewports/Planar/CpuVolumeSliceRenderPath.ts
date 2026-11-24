@@ -24,7 +24,7 @@ import type {
 } from '../ViewportArchitectureTypes';
 import type {
   PlanarViewState,
-  PlanarDataPresentation,
+  PlanarDisplaySetAppearance,
   PlanarCpuVolumeAdapterContext,
   PlanarPayload,
   PlanarViewportRenderContext,
@@ -121,7 +121,7 @@ export class CpuVolumeSliceRenderPath
     ctx: PlanarCpuVolumeAdapterContext,
     data: LoadedData,
     options: DataAddOptions
-  ): Promise<RenderPathAttachment<PlanarDataPresentation>> {
+  ): Promise<RenderPathAttachment<PlanarDisplaySetAppearance>> {
     const payload: PlanarPayload = data as unknown as LoadedData<PlanarPayload>;
 
     if (!payload.imageVolume) {
@@ -192,8 +192,8 @@ export class CpuVolumeSliceRenderPath
 
     return {
       rendering,
-      updateDataPresentation: (props) => {
-        this.updateDataPresentation(mount, props);
+      updateAppearance: (props) => {
+        this.updateAppearance(mount, props);
       },
       applyViewState: (camera) => {
         ctx.display.activateRenderMode(ActorRenderMode.CPU_VOLUME);
@@ -363,25 +363,17 @@ export class CpuVolumeSliceRenderPath
     };
   }
 
-  private updateDataPresentation(
-    mount: CpuVolumeSliceMount,
-    props: unknown
-  ): void {
+  private updateAppearance(mount: CpuVolumeSliceMount, props: unknown): void {
     const { ctx, rendering } = mount;
-    const previousInterpolationType =
-      rendering.dataPresentation?.interpolationType;
-    const dataPresentation =
-      (props as PlanarDataPresentation | undefined) || {};
+    const previousInterpolationType = rendering.appearance?.interpolationType;
+    const appearance = (props as PlanarDisplaySetAppearance | undefined) || {};
 
-    rendering.dataPresentation = Object.keys(dataPresentation).length
-      ? dataPresentation
+    rendering.appearance = Object.keys(appearance).length
+      ? appearance
       : undefined;
     rendering.renderingInvalidated = true;
 
-    if (
-      previousInterpolationType !==
-      rendering.dataPresentation?.interpolationType
-    ) {
+    if (previousInterpolationType !== rendering.appearance?.interpolationType) {
       this.syncRenderCamera(mount, ctx.viewport.getViewState());
     }
   }
@@ -436,7 +428,7 @@ export class CpuVolumeSliceRenderPath
     ctx.cpu.canvas.style.display = '';
     ctx.cpu.canvas.style.opacity = '1';
 
-    if (rendering.dataPresentation?.visible === false) {
+    if (rendering.appearance?.visible === false) {
       beginPlanarCanvasPass(ctx.cpu);
       return;
     }
@@ -513,7 +505,7 @@ export class CpuVolumeSliceRenderPath
     draw.draw({
       target: ctx.cpu,
       camera,
-      presentation: rendering.dataPresentation,
+      appearance: rendering.appearance,
       defaultVOIRange: rendering.defaultVOIRange,
       invalidated: rendering.renderingInvalidated,
       canvasActor: rendering.compositeActor
@@ -521,7 +513,7 @@ export class CpuVolumeSliceRenderPath
         : undefined,
     });
     rendering.defaultVOIRange ||= getResolvedVOIRange(
-      rendering.dataPresentation?.voiRange,
+      rendering.appearance?.voiRange,
       image.minPixelValue ?? 0,
       image.maxPixelValue ?? 1
     );
@@ -601,7 +593,7 @@ function getCpuSliceInputs(
 ): PlanarSampledSliceInputs {
   const inputs = getPlanarSampledSliceInputs(
     rendering.imageVolume,
-    rendering.dataPresentation
+    rendering.appearance
   );
 
   return rendering.compositeActor

@@ -31,7 +31,7 @@ function fitResolution(slideRotation) {
 
 /** The zoom and the pan of a viewport from the projection service. */
 function zoomPanOf(viewport) {
-  return viewportProjection.getPresentation(viewport, {
+  return viewportProjection.getFraming(viewport, {
     selector: { zoom: true, pan: true },
   });
 }
@@ -39,12 +39,7 @@ function zoomPanOf(viewport) {
 /** Applies a presentation patch through the projection service. */
 function present(viewport, presentation, options) {
   viewport.setViewState(
-    viewportProjection.withPresentation(
-      viewport,
-      presentation,
-      undefined,
-      options
-    )
+    viewportProjection.withFraming(viewport, presentation, undefined, options)
   );
 }
 

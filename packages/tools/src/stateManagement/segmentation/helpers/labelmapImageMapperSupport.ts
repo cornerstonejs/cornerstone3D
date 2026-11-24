@@ -25,7 +25,7 @@ type ViewportLabelmapImageMapperCompatibilityViewport = Types.IViewport<
   getDisplaySetRole?: (
     displaySetId: string
   ) => 'source' | 'overlay' | undefined;
-  getDisplaySetPresentation?: (displaySetId: string) => {
+  getDisplaySetAppearance?: (displaySetId: string) => {
     blendMode?: Enums.BlendModes;
     slabThickness?: number;
   };
@@ -224,29 +224,29 @@ function isPoint3Like(value: unknown): value is ArrayLike<number> {
   );
 }
 
-function getPlanarVolumeDataPresentation(
+function getPlanarVolumeAppearance(
   viewport: ViewportLabelmapImageMapperCompatibilityViewport
 ) {
-  if (!viewport.getDisplaySetPresentation) {
+  if (!viewport.getDisplaySetAppearance) {
     return;
   }
 
   const primaryDisplaySetId = getPlanarPrimaryDisplaySetId(viewport);
 
   return primaryDisplaySetId
-    ? viewport.getDisplaySetPresentation(primaryDisplaySetId)
+    ? viewport.getDisplaySetAppearance(primaryDisplaySetId)
     : undefined;
 }
 
 /**
  * The slab thickness that a viewport shows. A viewport that samples its slice
- * on the CPU keeps the slab only in the presentation of its source, since its
+ * on the CPU keeps the slab only in the appearance of its source, since its
  * image mapper has no slab.
  */
 function getCompatibilitySlabThickness(viewport: Types.IViewport): number {
   if (isPlanarSampledSliceViewport(viewport)) {
     return (
-      getPlanarVolumeDataPresentation(viewport)?.slabThickness ??
+      getPlanarVolumeAppearance(viewport)?.slabThickness ??
       MINIMUM_SLAB_THICKNESS
     );
   }
@@ -263,8 +263,7 @@ function getCompatibilitySlabThickness(viewport: Types.IViewport): number {
   }
 
   return (
-    getPlanarVolumeDataPresentation(viewport)?.slabThickness ??
-    MINIMUM_SLAB_THICKNESS
+    getPlanarVolumeAppearance(viewport)?.slabThickness ?? MINIMUM_SLAB_THICKNESS
   );
 }
 

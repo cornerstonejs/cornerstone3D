@@ -87,11 +87,11 @@ describe('The slab depth of a direct next planar viewport, as a brush reads it -
     expect(viewport.getCurrentMode()).toBe('volume');
     expect(getViewSlabDepthOfViewport(viewport)).toBeUndefined();
 
-    viewport.setDisplaySetPresentation({ slabThickness: 5 });
+    viewport.setDisplaySetAppearance({ slabThickness: 5 });
 
     expect(getViewSlabDepthOfViewport(viewport)).toBe(10);
 
-    viewport.setDisplaySetPresentation({ slabThickness: undefined });
+    viewport.setDisplaySetAppearance({ slabThickness: undefined });
 
     expect(getViewSlabDepthOfViewport(viewport)).toBeUndefined();
   });
@@ -131,13 +131,13 @@ describe('The slab depth of a direct next planar viewport, as a brush reads it -
     });
 
     await testUtils.setStackOnNextViewport(viewport, [imageId], 0);
-    viewport.setDisplaySetPresentation(viewport.getSourceDisplaySetId(), {
+    viewport.setDisplaySetAppearance(viewport.getSourceDisplaySetId(), {
       slabThickness: 5,
     });
 
     expect(viewport.getCurrentMode()).toBe('stack');
     expect(
-      viewport.getDisplaySetPresentation(viewport.getSourceDisplaySetId())
+      viewport.getDisplaySetAppearance(viewport.getSourceDisplaySetId())
         .slabThickness
     ).toBe(5);
     expect(getViewSlabDepthOfViewport(viewport)).toBeUndefined();
@@ -340,7 +340,7 @@ describe('The depth of a brush and of the statistics in a slab of a direct next 
       const legacy = LEGACY_SLAB_DEPTH[slab];
 
       if (slab) {
-        viewport.setDisplaySetPresentation(viewport.getSourceDisplaySetId(), {
+        viewport.setDisplaySetAppearance(viewport.getSourceDisplaySetId(), {
           slabThickness: slab,
         });
       }

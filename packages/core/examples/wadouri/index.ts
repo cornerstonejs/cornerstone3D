@@ -112,7 +112,7 @@ async function run() {
   await viewport.setDisplaySets({ displaySetId: ctDisplaySetId });
 
   // Set the VOI of the stack
-  viewport.setDisplaySetPresentation(ctDisplaySetId, { voiRange: ctVoiRange });
+  viewport.setDisplaySetAppearance(ctDisplaySetId, { voiRange: ctVoiRange });
 
   // Render the image
   viewport.render();

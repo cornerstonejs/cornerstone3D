@@ -9,7 +9,7 @@ import type { Point2, Point3 } from '../../../types';
 import ViewportType from '../../../enums/ViewportType';
 import type {
   VideoViewState,
-  VideoDataPresentation,
+  VideoDisplaySetAppearance,
   VideoElementRenderContext,
   VideoElementRendering,
   VideoProperties,
@@ -30,7 +30,7 @@ export class HtmlVideoRenderPath
     ctx: VideoElementRenderContext,
     data: LoadedData,
     options: DataAddOptions
-  ): Promise<RenderPathAttachment<VideoDataPresentation>> {
+  ): Promise<RenderPathAttachment<VideoDisplaySetAppearance>> {
     const videoData = data as unknown as LoadedData<VideoStreamPayload>;
     const payload: VideoStreamPayload = videoData;
     const element = document.createElement('video');
@@ -76,8 +76,8 @@ export class HtmlVideoRenderPath
 
     return {
       rendering,
-      updateDataPresentation: (props) => {
-        this.updateDataPresentation(rendering, props);
+      updateAppearance: (props) => {
+        this.updateAppearance(rendering, props);
       },
       applyViewState: (camera) => {
         this.applyViewState(rendering, camera, videoData);
@@ -91,11 +91,11 @@ export class HtmlVideoRenderPath
     };
   }
 
-  private updateDataPresentation(
+  private updateAppearance(
     rendering: VideoElementRendering,
     props: unknown
   ): void {
-    const videoProps = props as VideoDataPresentation | undefined;
+    const videoProps = props as VideoDisplaySetAppearance | undefined;
     const { element } = rendering;
 
     element.style.display = videoProps?.visible === false ? 'none' : '';

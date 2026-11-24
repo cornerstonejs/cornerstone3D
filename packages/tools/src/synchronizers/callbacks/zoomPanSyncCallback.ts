@@ -7,7 +7,7 @@ import {
 } from '@cornerstonejs/core';
 import type { Synchronizer } from '../../store';
 
-type ZoomPanProjectionPresentation = {
+type ZoomPanProjectionFraming = {
   pan?: Types.Point2;
   zoom?: number;
 };
@@ -46,19 +46,18 @@ function syncProjectionZoomPan(
   targetViewport: unknown,
   options: { syncPan?: boolean; syncZoom?: boolean } | undefined
 ): boolean {
-  const sourcePresentation =
-    viewportProjection.getPresentation<ZoomPanProjectionPresentation>(
-      sourceViewport,
-      {
-        selector: zoomPanProjectionSelector,
-      }
-    );
+  const sourceFraming = viewportProjection.getFraming<ZoomPanProjectionFraming>(
+    sourceViewport,
+    {
+      selector: zoomPanProjectionSelector,
+    }
+  );
 
-  if (!sourcePresentation) {
+  if (!sourceFraming) {
     return false;
   }
 
-  if (typeof sourcePresentation.zoom !== 'number' && !sourcePresentation.pan) {
+  if (typeof sourceFraming.zoom !== 'number' && !sourceFraming.pan) {
     return true;
   }
 
@@ -66,30 +65,24 @@ function syncProjectionZoomPan(
     return false;
   }
 
-  const presentationPatch: ZoomPanProjectionPresentation = {};
+  const framingPatch: ZoomPanProjectionFraming = {};
 
-  if (
-    options?.syncZoom !== false &&
-    typeof sourcePresentation.zoom === 'number'
-  ) {
-    presentationPatch.zoom = sourcePresentation.zoom;
+  if (options?.syncZoom !== false && typeof sourceFraming.zoom === 'number') {
+    framingPatch.zoom = sourceFraming.zoom;
   }
 
-  if (options?.syncPan !== false && sourcePresentation.pan) {
-    presentationPatch.pan = sourcePresentation.pan;
+  if (options?.syncPan !== false && sourceFraming.pan) {
+    framingPatch.pan = sourceFraming.pan;
   }
 
-  if (
-    presentationPatch.zoom === undefined &&
-    presentationPatch.pan === undefined
-  ) {
+  if (framingPatch.zoom === undefined && framingPatch.pan === undefined) {
     return false;
   }
 
-  const nextViewState = viewportProjection.withPresentation<
+  const nextViewState = viewportProjection.withFraming<
     unknown,
-    ZoomPanProjectionPresentation
-  >(targetViewport, presentationPatch);
+    ZoomPanProjectionFraming
+  >(targetViewport, framingPatch);
 
   if (!nextViewState) {
     return false;

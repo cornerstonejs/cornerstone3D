@@ -3,7 +3,7 @@ import { vec3 } from 'gl-matrix';
 
 /**
  * A random zoom and pan for a next planar viewport, as the patch that
- * `viewportProjection.withPresentation` takes. It draws the numbers that
+ * `viewportProjection.withFraming` takes. It draws the numbers that
  * `getRandomlyTranslatedAndZoomedCameraProperties` draws for a legacy camera:
  * a factor on the parallel scale, and a move of the focal point of up to
  * `maxTranslateInMM` along each axis of the view. The move in mm becomes a

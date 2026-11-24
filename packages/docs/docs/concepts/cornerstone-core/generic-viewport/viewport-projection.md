@@ -1,13 +1,13 @@
 ---
 id: viewport-projection
 title: Viewport Projection
-summary: How the viewports expose cross-viewport presentation, transforms, and renderer-camera output without making ICamera universal
+summary: How the viewports expose cross-viewport framing, transforms, and renderer-camera output without making ICamera universal
 ---
 
 # Viewport Projection
 
 Viewport Projection is the construct of the viewports for asking how a
-viewport's semantic state maps into presentation, coordinate transforms, and
+viewport's semantic state maps into framing, coordinate transforms, and
 renderer output.
 
 It exists because `zoom`, `scale`, `pan`, and camera fields do not mean the same
@@ -20,7 +20,7 @@ output when a renderer needs it.
 ## What "projection" means here
 
 In this codebase, "projection" is the mathematical sense — the act of
-_projecting_ a viewport's semantic state onto a presentation, a set of
+_projecting_ a viewport's semantic state onto a framing, a set of
 coordinate transforms, and (when applicable) a renderer camera. A `Projection`
 is the adaptation seam between a viewport's internal model and the cross-family
 surface that synchronizers and tools consume.
@@ -52,7 +52,7 @@ types:
 - `ViewportProjectionService`
 - `ViewportProjectionTypes.ts`
 - `ProjectionSnapshot`
-- `ProjectionPresentation`
+- `ProjectionFraming`
 - `ProjectionScale`
 - `ProjectionPosition`
 - `ViewportProjectionAdapter`
@@ -69,28 +69,27 @@ Use those namespaces when building a custom synchronizer, tool, test, or new
 viewport family that needs lower-level snapshot or renderer-camera behavior.
 They are a tier below the core viewport methods and may change while the
 viewport API is still settling. Application code should prefer
-`viewportProjection.getPresentation()` and
-`viewportProjection.withPresentation()` for presentation reads and writes.
-Viewport instances intentionally do not expose
-`getViewPresentation()` or `setViewPresentation()`.
+`viewportProjection.getFraming()` and
+`viewportProjection.withFraming()`, or `viewport.getViewFraming()` and
+`viewport.setViewFraming()`, for framing reads and writes.
 
 ## Core Types
 
 The projection interface lives in `ViewportProjectionTypes.ts`.
 
 ```ts
-interface ViewportProjectionAdapter<TViewState, TPresentation> {
+interface ViewportProjectionAdapter<TViewState, TFraming> {
   id: string;
   viewportTypes: string[];
 
   getSnapshot(request: ProjectionRequest): ProjectionSnapshot | undefined;
-  getPresentation(
+  getFraming(
     snapshot: ProjectionSnapshot,
-    selector?: ViewPresentationSelector
-  ): TPresentation;
-  withPresentation(
+    selector?: ViewFramingSelector
+  ): TFraming;
+  withFraming(
     snapshot: ProjectionSnapshot,
-    presentation: Partial<TPresentation>,
+    framing: Partial<TFraming>,
     options?: ProjectionWriteOptions
   ): TViewState;
   applyToRenderer?(snapshot: ProjectionSnapshot, target: unknown): void;
@@ -116,7 +115,7 @@ interface ProjectionSnapshot {
     worldToCanvas?(point: Point3): Point2;
   };
 
-  presentation: ProjectionPresentation;
+  framing: ProjectionFraming;
   rendererCamera?: ICamera;
 }
 ```
@@ -157,7 +156,7 @@ type ProjectionPosition =
   | { kind: 'focalPoint'; worldPoint: Point3 };
 ```
 
-Do not treat `presentation.zoom`, `presentation.scale`, or `presentation.pan`
+Do not treat `framing.zoom`, `framing.scale`, or `framing.pan`
 as universal values. Use the tag first, then branch on the semantics your
 tool or synchronizer supports.
 
@@ -182,13 +181,13 @@ for downstream code:
 
 ```ts
 import type {
-  ProjectionPresentationForKind,
+  ProjectionFramingForKind,
   ProjectionSnapshotForKind,
   ProjectionViewStateForKind,
 } from '@cornerstonejs/core';
 
 type PlanarSnapshot = ProjectionSnapshotForKind<'planar'>;
-type PlanarPresentation = ProjectionPresentationForKind<'planar'>;
+type PlanarFraming = ProjectionFramingForKind<'planar'>;
 type PlanarViewState = ProjectionViewStateForKind<'planar'>;
 ```
 
@@ -208,7 +207,7 @@ The advanced namespaces expose lower-level helpers for code that intentionally
 works below the core viewport API.
 
 `createZoomPanSynchronizer` in `@cornerstonejs/tools` uses the service for
-every viewport, and so do `ZoomTool`, `PanTool` and the presentation view and
+every viewport, and so do `ZoomTool`, `PanTool` and the view framing and
 camera position synchronizers.
 
 ## When To Care
@@ -217,7 +216,7 @@ Most application code should use `setViewState` for native viewport mutation,
 `resetViewState` for the viewport family's default navigation reset,
 `getViewReference` / `setViewReference` for spatial navigation, and
 `canvasToWorld` / `worldToCanvas` for coordinate conversion. Use projection when
-code needs a portable presentation layer across viewport families.
+code needs a portable framing layer across viewport families.
 
 Use Viewport Projection when you are writing:
 
@@ -241,7 +240,7 @@ if (projection?.spaces.canvas && projection.spaces.world) {
 Check scale and position semantics before applying them:
 
 ```ts
-const scale = projection?.presentation.scale;
+const scale = projection?.framing.scale;
 
 if (scale?.kind === 'displayArea') {
   syncDisplayArea(scale.area);
@@ -252,13 +251,13 @@ if (scale?.kind === 'physical') {
 }
 ```
 
-## Writing Presentation
+## Writing Framing
 
-Use `withPresentation` when you need the adapter to translate a presentation
+Use `withFraming` when you need the adapter to translate a framing
 patch back into semantic state:
 
 ```ts
-const nextState = viewportProjection.withPresentation(viewport, {
+const nextState = viewportProjection.withFraming(viewport, {
   zoom: 2,
   pan: [10, -5],
 });
@@ -268,25 +267,25 @@ if (nextState) {
 }
 ```
 
-Viewports intentionally do not expose `setViewPresentation`. The
-projection service is the portable write layer, and `setViewState` remains the
-only viewport mutation primitive. They also do not expose
-`getViewPresentation`; use `viewportProjection.getPresentation(viewport,
-{ selector })` instead. The legacy viewports of 5.x and their compatibility
-adapters had both members; 6.0 removed them.
+A viewport reads and writes its framing with `viewport.getViewFraming(selector)`
+and `viewport.setViewFraming(framing)`, which call
+`viewportProjection.getFraming` and `viewportProjection.withFraming` and write
+the result with `setViewState`, the only viewport mutation primitive. The
+`getViewPresentation` and `setViewPresentation` of the 5.x legacy viewports are
+gone; the codemod rewrites them to the framing calls.
 
 A zoom by a factor of two:
 
 ```ts
-const presentation = viewportProjection.getPresentation(viewport, {
+const framing = viewportProjection.getFraming(viewport, {
   selector: {
     pan: true,
     zoom: true,
   },
 });
 
-const nextViewState = viewportProjection.withPresentation(viewport, {
-  zoom: (presentation?.zoom ?? 1) * 2,
+const nextViewState = viewportProjection.withFraming(viewport, {
+  zoom: (framing?.zoom ?? 1) * 2,
 });
 
 if (nextViewState) {
@@ -301,14 +300,14 @@ native view state and let the caller decide whether to call `setViewState`.
 
 For a new viewport family:
 
-1. Define the family-specific snapshot and presentation types.
+1. Define the family-specific snapshot and framing types.
 2. Implement `getSnapshot` from current semantic state and resolved geometry.
-3. Implement `getPresentation` for the existing public view-presentation shape.
-4. Implement `withPresentation` as a pure translation back to semantic state.
+3. Implement `getFraming` for the existing public framing shape.
+4. Implement `withFraming` as a pure translation back to semantic state.
 5. Implement `applyToRenderer` only if the viewport can produce renderer output.
 6. Register the adapter in the viewport projection setup.
 
-The adapter should not mutate the viewport in `withPresentation`. Return the
+The adapter should not mutate the viewport in `withFraming`. Return the
 next semantic state and let the viewport decide how to apply it.
 
 ## Current Adapters

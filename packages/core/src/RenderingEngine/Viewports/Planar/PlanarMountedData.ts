@@ -5,12 +5,12 @@ import type {
   ViewportDataBinding,
 } from '../ViewportArchitectureTypes';
 import type {
-  PlanarDataPresentation,
+  PlanarDisplaySetAppearance,
   PlanarPayload,
   PlanarSetDataOptions,
 } from './PlanarViewportTypes';
 
-export type PlanarDataBinding = ViewportDataBinding<PlanarDataPresentation>;
+export type PlanarDataBinding = ViewportDataBinding<PlanarDisplaySetAppearance>;
 
 export type PlanarMountedDataHost = {
   getBinding(displaySetId: string): PlanarDataBinding | undefined;

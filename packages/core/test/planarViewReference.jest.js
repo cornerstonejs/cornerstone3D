@@ -837,7 +837,7 @@ function createStackBinding({
     }),
     getFrameOfReferenceUID: () => frameOfReferenceUID,
     removeData: jest.fn(),
-    updateDataPresentation: jest.fn(),
+    updateAppearance: jest.fn(),
   };
 }
 
@@ -868,7 +868,7 @@ function createVolumeBinding({
     }),
     getFrameOfReferenceUID: () => volume.metadata.FrameOfReferenceUID,
     removeData: jest.fn(),
-    updateDataPresentation: jest.fn(),
+    updateAppearance: jest.fn(),
   };
 }
 
@@ -910,7 +910,7 @@ function createControllerHarness(bindingEntries) {
     getBinding: (displaySetId) => bindings.get(displaySetId),
     getBindings: () => bindings.entries(),
     getCurrentBinding: () => mountedData.getCurrentBinding(),
-    getDisplaySetPresentation: () => undefined,
+    getDisplaySetAppearance: () => undefined,
     getRenderContext: () => renderContext,
     getResolvedView: (args = {}) => {
       const binding = mountedData.getCurrentBinding();

@@ -224,7 +224,7 @@ async function renderNextStackViewport() {
     },
   });
 
-  viewport.setDisplaySetPresentation(stackDisplaySetId, {
+  viewport.setDisplaySetAppearance(stackDisplaySetId, {
     interpolationType: InterpolationType.NEAREST,
   });
 

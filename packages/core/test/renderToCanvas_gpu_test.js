@@ -124,7 +124,7 @@ describe('renderToCanvas -- GPU', () => {
         })
         .then(() => {
           testUtils.setStackOnNextViewport(vp, [imageId], 0).then(() => {
-            vp.setDisplaySetPresentation({
+            vp.setDisplaySetAppearance({
               interpolationType: InterpolationType.NEAREST,
             });
             vp.render();
@@ -198,7 +198,7 @@ describe('renderToCanvas -- GPU', () => {
         })
         .then(() => {
           testUtils.setStackOnNextViewport(vp, [imageId], 0).then(() => {
-            vp.setDisplaySetPresentation({
+            vp.setDisplaySetAppearance({
               interpolationType: InterpolationType.NEAREST,
             });
             vp.render();

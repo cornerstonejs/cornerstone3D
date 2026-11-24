@@ -129,7 +129,7 @@ function setViewportColormap(colormapName: string) {
   // Get the volume viewport
   const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-  viewport.setDisplaySetPresentation(displaySetId, {
+  viewport.setDisplaySetAppearance(displaySetId, {
     colormap: { name: colormapName },
   });
   viewport.render();

@@ -36,7 +36,7 @@ type TestViewport = {
   scroll: (delta: number) => Promise<string>;
   getZoom: () => number;
   setZoom: (zoom: number) => void;
-  setDisplaySetPresentation: (
+  setDisplaySetAppearance: (
     displaySetId: string,
     props: { slabThickness?: number; blendMode?: number }
   ) => void;
@@ -249,7 +249,7 @@ async function setSlab(
         .getRenderingEngine(engineId)
         .getViewport(viewportId);
 
-      viewport?.setDisplaySetPresentation(displaySetId, {
+      viewport?.setDisplaySetAppearance(displaySetId, {
         slabThickness,
         blendMode: cornerstone.Enums.BlendModes[blendModeName],
       });

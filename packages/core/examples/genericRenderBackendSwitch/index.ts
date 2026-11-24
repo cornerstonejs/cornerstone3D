@@ -518,7 +518,7 @@ addButtonToToolbar({
 
     for (const [viewportId, displaySetId] of targets) {
       const viewport = getViewport(viewportId);
-      viewport?.setDisplaySetPresentation(displaySetId, {
+      viewport?.setDisplaySetAppearance(displaySetId, {
         voiRange: { lower: -1500, upper: 2500 },
       });
       viewport?.render();
@@ -618,7 +618,7 @@ async function run() {
     displaySetId: stackDisplaySetId,
     options: {},
   });
-  stackViewport.setDisplaySetPresentation(stackDisplaySetId, {
+  stackViewport.setDisplaySetAppearance(stackDisplaySetId, {
     voiRange: ctVoiRange,
   });
 
@@ -627,7 +627,7 @@ async function run() {
     displaySetId: volumeDisplaySetId,
     options: { orientation: OrientationAxis.SAGITTAL },
   });
-  mprViewport.setDisplaySetPresentation(volumeDisplaySetId, {
+  mprViewport.setDisplaySetAppearance(volumeDisplaySetId, {
     voiRange: ctVoiRange,
   });
 

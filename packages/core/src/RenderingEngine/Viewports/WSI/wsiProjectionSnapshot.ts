@@ -91,7 +91,7 @@ function getZoomAgainstFit(
 
 /**
  * Builds the WSI projection snapshot for a viewport-like object. The zoom of
- * its presentation is a factor against the fit, see `getZoomAgainstFit`.
+ * its framing is a factor against the fit, see `getZoomAgainstFit`.
  */
 export function getWSIProjectionSnapshot(
   request: WSIProjectionRequest
@@ -133,7 +133,7 @@ export function getWSIProjectionSnapshot(
     canvasWidth,
     displaySetId: request.displaySetId,
     frameOfReferenceUID,
-    presentation: {
+    framing: {
       position: {
         kind: 'anchor',
         worldPoint,

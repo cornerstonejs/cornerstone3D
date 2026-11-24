@@ -132,11 +132,11 @@ addButtonToToolbar({
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     const invert =
-      viewport.getDisplaySetPresentation(stackDisplaySetId)?.invert ??
+      viewport.getDisplaySetAppearance(stackDisplaySetId)?.invert ??
       viewport.getDefaultInvert(stackDisplaySetId) ??
       false;
 
-    viewport.setDisplaySetPresentation(stackDisplaySetId, { invert: !invert });
+    viewport.setDisplaySetAppearance(stackDisplaySetId, { invert: !invert });
 
     viewport.render();
   },

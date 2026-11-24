@@ -82,7 +82,7 @@ export function membersOfTheInterface() {
   viewport.setViewState({});
   viewport.updateViewState(() => ({}));
   viewport.setViewReference(reference);
-  viewport.setDisplaySetPresentation(displaySetId, {});
+  viewport.setDisplaySetAppearance(displaySetId, {});
   viewport.removeDisplaySet(displaySetId);
   viewport.resize();
   viewport.render();
@@ -101,7 +101,7 @@ export function membersOfTheInterface() {
     element,
     destroyed,
     didReset,
-    viewport.getDisplaySetPresentation(displaySetId),
+    viewport.getDisplaySetAppearance(displaySetId),
     viewport.setDisplaySets({ displaySetId }),
     viewport.id,
     viewport.type,
@@ -206,20 +206,23 @@ export function fidelityIndicator() {
 
 /** The selector of `viewportProjection` takes the keys of each family. */
 export function selectorsOfTheProjection() {
-  const planarScale: Types.Point2 | undefined =
-    viewportProjection.getPresentation(planar, {
+  const planarScale: Types.Point2 | undefined = viewportProjection.getFraming(
+    planar,
+    {
       selector: { scale: true, zoom: true, pan: true },
-    })?.scale;
-  const planarByKind: Types.Point2 | undefined =
-    viewportProjection.getPresentation(viewport, {
+    }
+  )?.scale;
+  const planarByKind: Types.Point2 | undefined = viewportProjection.getFraming(
+    viewport,
+    {
       kind: 'planar',
       selector: { scale: true },
-    })?.scale;
-  const zoom: number | undefined = viewportProjection.getPresentation(
-    volume3D,
-    { selector: { zoom: true, pan: true, rotation: true } }
-  )?.zoom;
-  const zoomed = viewportProjection.withPresentation(planar, { zoom: 2 });
+    }
+  )?.scale;
+  const zoom: number | undefined = viewportProjection.getFraming(volume3D, {
+    selector: { zoom: true, pan: true, rotation: true },
+  })?.zoom;
+  const zoomed = viewportProjection.withFraming(planar, { zoom: 2 });
 
   if (zoomed) {
     planar.setViewState(zoomed);
@@ -229,9 +232,9 @@ export function selectorsOfTheProjection() {
     planarScale,
     planarByKind,
     zoom,
-    viewportProjection.getPresentation(video, { selector: { zoom: true } }),
-    viewportProjection.getPresentation(wholeSlide, { selector: { pan: true } }),
-    viewportProjection.getPresentation(ecg, { selector: { zoom: true } }),
+    viewportProjection.getFraming(video, { selector: { zoom: true } }),
+    viewportProjection.getFraming(wholeSlide, { selector: { pan: true } }),
+    viewportProjection.getFraming(ecg, { selector: { zoom: true } }),
   ];
 }
 
@@ -240,7 +243,7 @@ export function selectorsOfTheProjection() {
  * or comes from the rendering engine typed with its class.
  */
 export function guards() {
-  if (utilities.viewportSupportsDisplaySetPresentation(viewport)) {
+  if (utilities.viewportSupportsDisplaySetAppearance(viewport)) {
     viewport.getDefaultVOIRange(viewport.getSourceDisplaySetId());
   }
 
@@ -258,7 +261,7 @@ export function guards() {
     renderingEngine.getViewport<PlanarViewport>(viewportId);
 
   planarOfTheEngine.setViewState({ rotation: 90 });
-  enabledElement.viewport.setDisplaySetPresentation(displaySetId, {});
+  enabledElement.viewport.setDisplaySetAppearance(displaySetId, {});
 
   return utilities.getViewportContentMode(enabledElement.viewport) === 'stack';
 }

@@ -16,8 +16,7 @@ This migration guide is local to the viewport architecture. It is not a
 general Cornerstone migration guide.
 
 The goal is to move application code from viewport-class-specific behavior to
-logical data ids, inferred render paths, bindings, view state, and data
-presentation.
+logical data ids, inferred render paths, bindings, view state, and the appearance of each display set.
 
 If you need to add custom viewport types from extensions, use `Enums.ViewportTypes`
 (register with `registerViewportType`, then `Enums.ViewportTypes.<NAME>`) as
@@ -87,7 +86,7 @@ await viewport.setDisplaySets({
   displaySetId,
 });
 
-viewport.setDisplaySetPresentation(displaySetId, {
+viewport.setDisplaySetAppearance(displaySetId, {
   voiRange: { lower: -1500, upper: 2500 },
 });
 viewport.render();
@@ -126,7 +125,7 @@ await viewport.setDisplaySets({
   },
 });
 
-viewport.setDisplaySetPresentation(displaySetId, {
+viewport.setDisplaySetAppearance(displaySetId, {
   voiRange,
   colormap,
 });
@@ -173,7 +172,7 @@ await viewport.setDisplaySets(
   }
 );
 
-viewport.setDisplaySetPresentation(ptDisplaySetId, {
+viewport.setDisplaySetAppearance(ptDisplaySetId, {
   colormap: {
     name: 'hsv',
     opacity: 0.4,
@@ -189,7 +188,7 @@ Before:
 viewport.addImages([{ imageId }]);
 ```
 
-Now, prefer registering overlay data and using data presentation:
+Now, prefer registering overlay data and setting the appearance of each display set:
 
 ```ts
 displaySetRegistry.add(overlayDisplaySetId, {
@@ -201,7 +200,7 @@ await viewport.addDisplaySet(overlayDisplaySetId, {
   role: 'overlay',
 });
 
-viewport.setDisplaySetPresentation(overlayDisplaySetId, {
+viewport.setDisplaySetAppearance(overlayDisplaySetId, {
   opacity: 0.5,
   visible: true,
 });
@@ -225,7 +224,7 @@ viewport.setProperties({
 Now:
 
 ```ts
-viewport.setDisplaySetPresentation(displaySetId, {
+viewport.setDisplaySetAppearance(displaySetId, {
   voiRange,
   colormap,
   invert: true,
@@ -233,7 +232,7 @@ viewport.setDisplaySetPresentation(displaySetId, {
 });
 ```
 
-This makes presentation explicitly per display set binding, which matters when
+This makes the appearance explicitly per display set binding, which matters when
 the viewport has both source and overlay display sets.
 
 ## Pan, Zoom, Rotation, And Flips
@@ -259,7 +258,7 @@ viewport.updateViewState(({ rotation = 0 }) => ({
   rotation: rotation + 30,
 }));
 
-const nextViewState = viewportProjection.withPresentation(viewport, {
+const nextViewState = viewportProjection.withFraming(viewport, {
   rotation: 90,
 });
 
@@ -272,9 +271,9 @@ viewport.render();
 ```
 
 The legacy adapters of 5.x ran camera-style calls on these viewports. 6.0
-removed them: code uses view state and viewport projection APIs, and a viewport
-has no `getViewPresentation()`, `setViewPresentation()`, `getCamera()` or
-`setCamera()`.
+removed them: code uses view state and viewport projection APIs, a viewport has
+no `getCamera()` or `setCamera()`, and `getViewPresentation()` and
+`setViewPresentation()` are `getViewFraming()` and `setViewFraming()`.
 
 Before:
 
@@ -290,14 +289,11 @@ viewport.setViewPresentation({
 Now:
 
 ```ts
-const presentation = viewportProjection.getPresentation(viewport);
-const nextViewState = viewportProjection.withPresentation(viewport, {
-  zoom: (presentation?.zoom ?? 1) * 2,
-});
+const framing = viewport.getViewFraming();
 
-if (nextViewState) {
-  viewport.setViewState(nextViewState);
-}
+viewport.setViewFraming({
+  zoom: (framing?.zoom ?? 1) * 2,
+});
 ```
 
 Before:
@@ -309,7 +305,7 @@ viewport.setCamera({
 });
 ```
 
-Now, use a view reference for spatial navigation or a presentation patch for
+Now, use a view reference for spatial navigation or a framing patch for
 display navigation:
 
 ```ts
@@ -318,7 +314,7 @@ targetViewport.render();
 ```
 
 ```ts
-const nextViewState = viewportProjection.withPresentation(viewport, {
+const nextViewState = viewportProjection.withFraming(viewport, {
   zoom: 1.5,
 });
 
@@ -410,7 +406,7 @@ binding, instead of requiring a separate volume-rendering overlay path.
 3. Replace `setStack()` and `setVolumes()` with `setDisplaySets()` or
    `addDisplaySet()`.
 4. Move VOI, colormap, opacity, blend mode, and visibility to
-   `setDisplaySetPresentation(displaySetId, ...)`.
+   `setDisplaySetAppearance(displaySetId, ...)`.
 5. Replace clean-code camera patches with view state, viewport projection, pan,
    zoom, and view reference APIs.
 6. Enable `useSliceRendering` for labelmap segmentation overlays that should

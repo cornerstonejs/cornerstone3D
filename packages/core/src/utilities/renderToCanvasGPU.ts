@@ -200,7 +200,7 @@ export default function renderToCanvasGPU(
       }
 
       if (modality === 'PT' && !isPTPrescaledWithSUV(image)) {
-        viewport.setDisplaySetPresentation({
+        viewport.setDisplaySetAppearance({
           voiRange: {
             lower: image.minPixelValue,
             upper: image.maxPixelValue,

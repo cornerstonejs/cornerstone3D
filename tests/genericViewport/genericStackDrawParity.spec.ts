@@ -288,7 +288,7 @@ type TestViewport = {
   getImageIds: () => string[];
   getRenderPlan: () => Array<{ draw: string; renderMode: string }>;
   setDisplaySets: (...entries: unknown[]) => Promise<void>;
-  setDisplaySetPresentation: (
+  setDisplaySetAppearance: (
     displaySetId: string,
     props: Record<string, unknown>
   ) => void;
@@ -703,14 +703,14 @@ async function openExample(page: Page): Promise<string> {
           await viewport.setDisplaySets(...entries);
 
           if (stackCase.presentation) {
-            viewport.setDisplaySetPresentation(
+            viewport.setDisplaySetAppearance(
               sourceId,
               stackCase.presentation
             );
           }
 
           if (stackCase.overlay?.presentation) {
-            viewport.setDisplaySetPresentation(
+            viewport.setDisplaySetAppearance(
               overlayId,
               stackCase.overlay.presentation
             );

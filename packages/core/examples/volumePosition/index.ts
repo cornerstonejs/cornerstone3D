@@ -76,7 +76,7 @@ element.addEventListener(Events.CAMERA_MODIFIED, () => {
 
   const { flipHorizontal = false } = viewport.getViewState();
   const { rotation = 0 } =
-    viewportProjection.getPresentation(viewport, {
+    viewportProjection.getFraming(viewport, {
       selector: { rotation: true },
     }) ?? {};
 
@@ -171,7 +171,7 @@ addDropdownToToolbar({
     viewport.setDisplayArea(area);
     viewport.setViewState({ flipHorizontal });
 
-    const viewState = viewportProjection.withPresentation(viewport, {
+    const viewState = viewportProjection.withFraming(viewport, {
       rotation,
     });
 
@@ -201,10 +201,10 @@ addButtonToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
     const { rotation = 0 } =
-      viewportProjection.getPresentation(viewport, {
+      viewportProjection.getFraming(viewport, {
         selector: { rotation: true },
       }) ?? {};
-    const viewState = viewportProjection.withPresentation(viewport, {
+    const viewState = viewportProjection.withFraming(viewport, {
       rotation: rotation + 30,
     });
 
@@ -222,7 +222,7 @@ addButtonToToolbar({
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     viewport.resetViewState();
-    viewport.resetDisplaySetPresentation(displaySetId);
+    viewport.resetDisplaySetAppearance(displaySetId);
     viewport.setOrientation(Enums.OrientationAxis.SAGITTAL);
     viewport.render();
   },
@@ -314,10 +314,10 @@ async function run() {
   });
 
   await viewport.setDisplaySets({ displaySetId });
-  viewport.setDisplaySetPresentation(displaySetId, ctPresentation());
+  viewport.setDisplaySetAppearance(displaySetId, ctPresentation());
 
   viewport.setOrientation(Enums.OrientationAxis.SAGITTAL);
-  viewport.setDisplaySetPresentation(displaySetId, {
+  viewport.setDisplaySetAppearance(displaySetId, {
     voiRange: { lower: -160, upper: 240 },
     voiLUTFunction: Enums.VOILUTFunctionType.LINEAR,
     colormap: { name: 'Grayscale' },

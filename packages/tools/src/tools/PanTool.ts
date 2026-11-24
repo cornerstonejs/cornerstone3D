@@ -6,7 +6,7 @@ import type { EventTypes, PublicToolProps, ToolProps } from '../types';
 import {
   getViewportZoomPan,
   panViewportByCanvasDelta,
-} from '../utilities/viewportPresentation';
+} from '../utilities/viewportFraming';
 
 /**
  * What the pan tool reads from a viewport: the world and canvas transforms,

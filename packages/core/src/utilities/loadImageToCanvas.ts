@@ -1,6 +1,6 @@
 import type {
   IImage,
-  ViewPresentation,
+  ViewFraming,
   ViewReference,
   ViewportInputOptions,
   Point3,
@@ -28,11 +28,11 @@ export interface StackLoadImageOptions {
 
 /**
  * The full image load options allows specifying more parameters for both the
- * presentation and the view so that a specific view can be referenced/displayed.
+ * framing and the view so that a specific view can be referenced/displayed.
  */
 export interface FullImageLoadOptions {
   viewReference: ViewReference;
-  viewPresentation: ViewPresentation;
+  viewFraming: ViewFraming;
   imageId: undefined;
 }
 
@@ -68,7 +68,7 @@ export type LoadImageOptions = {
   // requirements in mix in types.
   imageId?: string;
   viewReference?: ViewReference;
-  viewPresentation?: ViewPresentation;
+  viewFraming?: ViewFraming;
   requestType?: RequestType;
   priority?: number;
   renderingEngineId?: string;

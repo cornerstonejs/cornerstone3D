@@ -296,7 +296,7 @@ async function run() {
   [viewportIdAxial, viewportIdCoronal, viewportIdSagittal].forEach(
     (viewportId) => {
       const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
-      viewport.setDisplaySetPresentation(displaySetId, {
+      viewport.setDisplaySetAppearance(displaySetId, {
         interpolationType: InterpolationType.NEAREST,
       });
     }

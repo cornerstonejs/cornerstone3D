@@ -39,6 +39,14 @@
         "rule": "getActiveDataId: a member of a type of the application on a Cornerstone type, never public: on a planar or an ECG viewport getSourceDisplaySetId() gives the same id, and the slide that a whole slide viewport shows has no public getter"
       },
       "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "9",
+        "rule": "setDisplaySetPresentation: a member of a type of the application on a Cornerstone type, its name in 6.0 is setDisplaySetAppearance"
+      },
+      "count": 1
     }
   ]
 }

@@ -101,7 +101,7 @@ const perViewportImageMapperSupport = new Map<string, boolean>();
  * Renders the labelmaps of a planar next viewport again when the viewport
  * starts or stops being able to draw them as labelmap slice images, so that
  * the labelmap plan is chosen again. A slab change made through the
- * presentation of a display set fires no camera event, and it fires no
+ * appearance of a display set fires no camera event, and it fires no
  * rendering pipeline event while the source stays on its render path (a
  * sampled slice with a thin slab, or the GPU volume slice path), so this
  * runs after each render of the viewport and costs one check of the

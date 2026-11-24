@@ -13,7 +13,7 @@ import { ActorRenderMode } from '../../../types';
 import type { CPUIImageData, IImage, Point3 } from '../../../types';
 import type { Point2 } from '../../../types';
 import {
-  applyPlanarImagePresentation,
+  applyPlanarImageAppearance,
   createVTKImageDataFromImage,
   getDefaultImageInvert,
   getDefaultImageVOIRange,
@@ -28,7 +28,7 @@ import type {
 } from '../ViewportArchitectureTypes';
 import type {
   PlanarViewState,
-  PlanarDataPresentation,
+  PlanarDisplaySetAppearance,
   PlanarPayload,
   PlanarResolvedICamera,
   PlanarViewportRenderContext,
@@ -64,7 +64,7 @@ export class VtkImageMapperRenderPath
     ctx: PlanarVtkImageAdapterContext,
     data: LoadedData,
     options: DataAddOptions
-  ): Promise<RenderPathAttachment<PlanarDataPresentation>> {
+  ): Promise<RenderPathAttachment<PlanarDisplaySetAppearance>> {
     const payload: PlanarPayload = data as unknown as LoadedData<PlanarPayload>;
 
     if (!payload.image) {
@@ -109,7 +109,7 @@ export class VtkImageMapperRenderPath
       currentImageIdIndex: payload.initialImageIdIndex ?? 0,
       defaultVOIRange: getDefaultImageVOIRange(payload.image),
       defaultInvert: getDefaultImageInvert(payload.image),
-      dataPresentation: undefined,
+      appearance: undefined,
       loadRequestId: 0,
       refreshFidelity: () => {
         rendering.qualityPending = rendering.currentImage.imageQualityPending;
@@ -126,7 +126,7 @@ export class VtkImageMapperRenderPath
           rendering,
           imageIdIndex: rendering.currentImageIdIndex,
           numberOfSlices: payload.imageIds.length,
-          dataPresentation: rendering.dataPresentation,
+          appearance: rendering.appearance,
         })
     );
 
@@ -144,8 +144,8 @@ export class VtkImageMapperRenderPath
 
     return {
       rendering,
-      updateDataPresentation: (props) => {
-        this.updateDataPresentation(rendering, props);
+      updateAppearance: (props) => {
+        this.updateAppearance(rendering, props);
       },
       applyViewState: (camera) => {
         this.applyViewState(ctx, rendering, data.id, camera, payload.imageIds);
@@ -175,21 +175,21 @@ export class VtkImageMapperRenderPath
     };
   }
 
-  private updateDataPresentation(
+  private updateAppearance(
     rendering: PlanarImageMapperRendering,
     props: unknown
   ): void {
-    const dataPresentation = props as PlanarDataPresentation | undefined;
+    const appearance = props as PlanarDisplaySetAppearance | undefined;
 
-    rendering.dataPresentation = dataPresentation;
-    applyPlanarImagePresentation({
+    rendering.appearance = appearance;
+    applyPlanarImageAppearance({
       actor: rendering.actor,
       defaultVOIRange: rendering.defaultVOIRange,
       defaultVOILUTFunction: rendering.currentImage?.voiLUTFunction,
       defaultInvert: rendering.defaultInvert,
       props: {
         interpolationType: InterpolationType.LINEAR,
-        ...dataPresentation,
+        ...appearance,
       },
     });
   }
@@ -274,7 +274,7 @@ export class VtkImageMapperRenderPath
           rendering,
           imageIdIndex: nextImageIdIndex,
           numberOfSlices: imageIds.length,
-          dataPresentation: rendering.dataPresentation,
+          appearance: rendering.appearance,
         });
       },
       onError: () => {
@@ -419,7 +419,7 @@ async function updateRenderedImage(args: {
   rendering: PlanarImageMapperRendering;
   imageIdIndex: number;
   numberOfSlices: number;
-  dataPresentation?: PlanarDataPresentation;
+  appearance?: PlanarDisplaySetAppearance;
 }): Promise<void> {
   const {
     ctx,
@@ -428,7 +428,7 @@ async function updateRenderedImage(args: {
     rendering,
     imageIdIndex,
     numberOfSlices,
-    dataPresentation,
+    appearance,
   } = args;
   const camera = ctx.viewport.getViewState();
   const { actor, mapper } = rendering;
@@ -474,15 +474,15 @@ async function updateRenderedImage(args: {
     actor.getProperty().setIndependentComponents(false);
   }
 
-  applyPlanarImagePresentation({
+  applyPlanarImageAppearance({
     actor,
     defaultVOIRange: rendering.defaultVOIRange,
     defaultVOILUTFunction: image.voiLUTFunction,
     defaultInvert: rendering.defaultInvert,
     props: {
       interpolationType:
-        dataPresentation?.interpolationType ?? InterpolationType.LINEAR,
-      ...dataPresentation,
+        appearance?.interpolationType ?? InterpolationType.LINEAR,
+      ...appearance,
     },
   });
 

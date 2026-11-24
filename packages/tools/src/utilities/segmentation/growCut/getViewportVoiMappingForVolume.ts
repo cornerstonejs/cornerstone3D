@@ -8,7 +8,7 @@ export type ViewportVoiMappingForTool = {
   invert?: boolean;
 };
 
-type PlanarVoiPresentation = {
+type PlanarVoiAppearance = {
   voiRange?: { lower: number; upper: number };
   voiLUTFunction?: string;
   invert?: boolean;
@@ -18,15 +18,15 @@ type PlanarVoiPresentation = {
  * Reads the VOI range, the VOI LUT function and the invert flag that a planar
  * viewport shows, for intensity mapping: those of the display set of a
  * volume, or of the source when no volume id is given or the viewport does
- * not show that volume. They come from the presentation of the display set,
- * and from the defaults of its data where the presentation does not set them.
+ * not show that volume. They come from the appearance of the display set,
+ * and from the defaults of its data where the appearance does not set them.
  * Null for a viewport that keeps no VOI of a display set, as a 3D viewport.
  */
 export function getViewportVoiMappingForVolume(
   viewport: Types.IViewport,
   volumeId?: string
 ): ViewportVoiMappingForTool | null {
-  if (!csUtils.viewportSupportsDisplaySetPresentation(viewport)) {
+  if (!csUtils.viewportSupportsDisplaySetAppearance(viewport)) {
     return null;
   }
 
@@ -40,11 +40,11 @@ export function getViewportVoiMappingForVolume(
     return null;
   }
 
-  const presentation = viewport.getDisplaySetPresentation(displaySetId) as
-    | PlanarVoiPresentation
+  const appearance = viewport.getDisplaySetAppearance(displaySetId) as
+    | PlanarVoiAppearance
     | undefined;
   const voiRange =
-    presentation?.voiRange ?? viewport.getDefaultVOIRange(displaySetId);
+    appearance?.voiRange ?? viewport.getDefaultVOIRange(displaySetId);
 
   if (
     typeof voiRange?.lower !== 'number' ||
@@ -55,9 +55,9 @@ export function getViewportVoiMappingForVolume(
 
   return {
     voiRange: { lower: voiRange.lower, upper: voiRange.upper },
-    VOILUTFunction: presentation?.voiLUTFunction,
+    VOILUTFunction: appearance?.voiLUTFunction,
     invert:
-      (presentation?.invert ??
-        planarViewport.getDefaultInvert(displaySetId)) === true,
+      (appearance?.invert ?? planarViewport.getDefaultInvert(displaySetId)) ===
+      true,
   };
 }

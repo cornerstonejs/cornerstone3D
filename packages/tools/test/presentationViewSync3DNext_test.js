@@ -52,7 +52,7 @@ async function show3D(viewport, series) {
 
 /** The zoom and the pan of a viewport through the projection service. */
 function zoomPanOf(viewport) {
-  const { zoom, pan } = viewportProjection.getPresentation(viewport, {
+  const { zoom, pan } = viewportProjection.getFraming(viewport, {
     selector: ZOOM_PAN,
   });
 
@@ -91,7 +91,7 @@ describe('The presentation view synchronizer with a direct next 3D viewport as i
     await show3D(source, series);
     await show3D(target, series);
 
-    const synchronizer = synchronizers.createPresentationViewSynchronizer(
+    const synchronizer = synchronizers.createViewFramingSynchronizer(
       synchronizerId,
       ZOOM_PAN
     );
@@ -101,7 +101,7 @@ describe('The presentation view synchronizer with a direct next 3D viewport as i
     expectZoomPan(target, 1, [0, 0]);
 
     source.setViewState(
-      viewportProjection.withPresentation(source, { zoom: 2, pan: [20, -10] })
+      viewportProjection.withFraming(source, { zoom: 2, pan: [20, -10] })
     );
     await frames();
 
@@ -117,7 +117,7 @@ describe('The presentation view synchronizer with a direct next 3D viewport as i
     await show3D(source, series);
     await show3D(target, series);
 
-    const synchronizer = synchronizers.createPresentationViewSynchronizer(
+    const synchronizer = synchronizers.createViewFramingSynchronizer(
       synchronizerId,
       { zoom: true }
     );
@@ -126,7 +126,7 @@ describe('The presentation view synchronizer with a direct next 3D viewport as i
     synchronizer.add({ renderingEngineId, viewportId: target.id });
 
     source.setViewState(
-      viewportProjection.withPresentation(source, { zoom: 2, pan: [20, -10] })
+      viewportProjection.withFraming(source, { zoom: 2, pan: [20, -10] })
     );
     await frames();
 
@@ -142,7 +142,7 @@ describe('The presentation view synchronizer with a direct next 3D viewport as i
     await showVolume(source, series, 2);
     await show3D(target, series);
 
-    const synchronizer = synchronizers.createPresentationViewSynchronizer(
+    const synchronizer = synchronizers.createViewFramingSynchronizer(
       synchronizerId,
       ZOOM_PAN
     );
@@ -151,7 +151,7 @@ describe('The presentation view synchronizer with a direct next 3D viewport as i
     synchronizer.add({ renderingEngineId, viewportId: target.id });
 
     source.setViewState(
-      viewportProjection.withPresentation(source, { zoom: 3, pan: [-15, 5] })
+      viewportProjection.withFraming(source, { zoom: 3, pan: [-15, 5] })
     );
     await frames();
 

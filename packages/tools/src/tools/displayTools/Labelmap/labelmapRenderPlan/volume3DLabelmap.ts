@@ -17,7 +17,7 @@ type Volume3DViewport = Types.IViewport & {
   ) => Promise<void>;
   getActors: () => Types.ActorEntry[];
   render: () => void;
-  setDisplaySetPresentation: (
+  setDisplaySetAppearance: (
     displaySetId: string,
     props: {
       blendMode?: Enums.BlendModes;
@@ -36,7 +36,7 @@ function isVolume3DViewport(
   return (
     nextViewport.type === Enums.ViewportType.VOLUME_3D &&
     typeof nextViewport.addDisplaySet === 'function' &&
-    typeof nextViewport.setDisplaySetPresentation === 'function'
+    typeof nextViewport.setDisplaySetAppearance === 'function'
   );
 }
 
@@ -87,7 +87,7 @@ async function addLabelmapToVolume3DViewport(args: {
       renderMode: 'vtkVolume3d',
       role: 'overlay',
     });
-    viewport.setDisplaySetPresentation(representationUID, {
+    viewport.setDisplaySetAppearance(representationUID, {
       blendMode,
       visible: visibility,
     });

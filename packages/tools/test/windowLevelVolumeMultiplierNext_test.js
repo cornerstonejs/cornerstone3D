@@ -35,7 +35,7 @@ const CASES = [
 function windowOf(viewport) {
   const displaySetId = viewport.getSourceDisplaySetId();
   const voiRange =
-    viewport.getDisplaySetPresentation(displaySetId)?.voiRange ??
+    viewport.getDisplaySetAppearance(displaySetId)?.voiRange ??
     viewport.getDefaultVOIRange(displaySetId);
 
   return utilities.windowLevel.toWindowLevel(voiRange.lower, voiRange.upper);

@@ -1,6 +1,6 @@
 import type { ICamera, Point2, Point3 } from '../../types';
 import type DisplayArea from '../../types/displayArea';
-import type { ViewPresentationSelector } from '../../types/IViewport';
+import type { ViewFramingSelector } from '../../types/IViewport';
 import type ViewportType from '../../enums/ViewportType';
 
 /**
@@ -43,13 +43,13 @@ export type ProjectionPosition =
   | { kind: 'focalPoint'; worldPoint: Point3 };
 
 /**
- * Cross-viewport presentation fields shared by projection adapters.
+ * Cross-viewport framing fields shared by projection adapters.
  *
- * Adapter-specific presentations may extend this shape with compatibility
+ * Adapter-specific framings may extend this shape with compatibility
  * fields, but scale and position should remain tagged so their semantics stay
  * explicit at call sites.
  */
-export interface ProjectionPresentation<TDisplayArea = DisplayArea> {
+export interface ProjectionFraming<TDisplayArea = DisplayArea> {
   rotation?: number;
   displayArea?: TDisplayArea;
   zoom?: number;
@@ -82,13 +82,12 @@ export interface ProjectionTransforms {
 }
 
 /**
- * Resolved mapping from a viewport's semantic state to presentation,
+ * Resolved mapping from a viewport's semantic state to framing,
  * coordinate transforms, and optional renderer-camera output.
  */
 export interface ProjectionSnapshot<
   TViewState = unknown,
-  TProjectionPresentation extends
-    ProjectionPresentation<unknown> = ProjectionPresentation,
+  TProjectionFraming extends ProjectionFraming<unknown> = ProjectionFraming,
 > {
   kind: string;
   adapterId: string;
@@ -97,7 +96,7 @@ export interface ProjectionSnapshot<
   frameOfReferenceUID?: string;
   spaces: ProjectionSpaces;
   transforms?: ProjectionTransforms;
-  presentation: TProjectionPresentation;
+  framing: TProjectionFraming;
   rendererCamera?: ICamera<unknown>;
   viewState?: TViewState;
 }
@@ -111,11 +110,11 @@ export interface ProjectionRequest<TViewport = unknown> {
   kind?: string;
   displaySetId?: string;
   viewportType?: ViewportType | string;
-  selector?: ViewPresentationSelector;
+  selector?: ViewFramingSelector;
 }
 
 /**
- * Options that can influence reverse projection from presentation back to
+ * Options that can influence reverse projection from framing back to
  * semantic viewport state.
  */
 export interface ProjectionWriteOptions {
@@ -128,10 +127,10 @@ export interface ProjectionWriteOptions {
  */
 export interface ViewportProjectionAdapter<
   TViewState = unknown,
-  TPresentation = unknown,
+  TFraming = unknown,
   TSnapshot extends ProjectionSnapshot<
     TViewState,
-    ProjectionPresentation<unknown>
+    ProjectionFraming<unknown>
   > = ProjectionSnapshot<TViewState>,
 > {
   id: string;
@@ -144,21 +143,18 @@ export interface ViewportProjectionAdapter<
   getSnapshot(request: ProjectionRequest): TSnapshot | undefined;
 
   /**
-   * Convert a snapshot into the viewport family's public view-presentation
-   * shape, honoring the selector when the presentation supports one.
+   * Convert a snapshot into the viewport family's public view-framing
+   * shape, honoring the selector when the framing supports one.
    */
-  getPresentation(
-    snapshot: TSnapshot,
-    selector?: ViewPresentationSelector
-  ): TPresentation;
+  getFraming(snapshot: TSnapshot, selector?: ViewFramingSelector): TFraming;
 
   /**
-   * Apply presentation changes to a snapshot and return the next semantic
+   * Apply framing changes to a snapshot and return the next semantic
    * viewport state without mutating the viewport directly.
    */
-  withPresentation(
+  withFraming(
     snapshot: TSnapshot,
-    presentation: Partial<TPresentation>,
+    framing: Partial<TFraming>,
     options?: ProjectionWriteOptions
   ): TViewState;
 

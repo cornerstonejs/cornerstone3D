@@ -34,7 +34,7 @@ import type { MountedRendering } from '../ViewportArchitectureTypes';
 import type { VolumeStrategyState } from '../../helpers/volumeStrategyLifecycle';
 import type {
   PlanarViewState,
-  PlanarDataPresentation,
+  PlanarDisplaySetAppearance,
 } from './PlanarViewportTypes';
 import type { PlanarSliceCacheStatistics } from './planarSampledSlice';
 
@@ -64,7 +64,7 @@ export type PlanarImageMapperRendering = MountedRendering<{
   defaultVOIRange?: VOIRange;
   /** Whether the image shown starts inverted, as a MONOCHROME1 image does. */
   defaultInvert?: boolean;
-  dataPresentation?: PlanarDataPresentation;
+  appearance?: PlanarDisplaySetAppearance;
   loadRequestId: number;
   // Target index of the most recent applyViewState request. Used by the
   // dedup check to avoid re-loading on no-op camera changes while still
@@ -96,7 +96,7 @@ export type PlanarCpuImageRendering = MountedRendering<{
   defaultVOIRange?: VOIRange;
   /** Whether the image shown starts inverted, as a MONOCHROME1 image does. */
   defaultInvert?: boolean;
-  dataPresentation?: PlanarDataPresentation;
+  appearance?: PlanarDisplaySetAppearance;
   fitScale: number;
   loadRequestId: number;
   renderingInvalidated: boolean;
@@ -119,7 +119,7 @@ export type PlanarCpuImageRendering = MountedRendering<{
  * it on the 2D canvas with `PlanarSampledSliceCanvas`, which uses the CPU
  * fallback pipeline for VOI, colormap and invert, and `CanvasActor` for a
  * labelmap. The sampler keeps the slice on screen and its neighbours, so a
- * change of the presentation, a pan or a zoom does not sample again.
+ * change of the appearance, a pan or a zoom does not sample again.
  */
 export type PlanarCpuVolumeRendering = MountedRendering<{
   renderMode: ActorRenderMode.CPU_VOLUME;
@@ -132,7 +132,7 @@ export type PlanarCpuVolumeRendering = MountedRendering<{
   maxImageIdIndex: number;
   defaultVOIRange?: VOIRange;
   renderingInvalidated: boolean;
-  dataPresentation?: PlanarDataPresentation;
+  appearance?: PlanarDisplaySetAppearance;
   compositeActor?: boolean;
   pendingVolumeLoadCallback?: boolean;
   removeStreamingSubscriptions?: () => void;
@@ -168,7 +168,7 @@ export type PlanarVolumeSliceRendering = MountedRendering<{
   currentImageIdIndex: number;
   maxImageIdIndex: number;
   defaultVOIRange?: VOIRange;
-  dataPresentation?: PlanarDataPresentation;
+  appearance?: PlanarDisplaySetAppearance;
   isSegmentationOverlay?: boolean;
   removeStreamingSubscriptions?: () => void;
   /**
@@ -198,7 +198,7 @@ export type PlanarSampledSliceRendering = MountedRendering<{
   currentImageIdIndex: number;
   maxImageIdIndex: number;
   defaultVOIRange?: VOIRange;
-  dataPresentation?: PlanarDataPresentation;
+  appearance?: PlanarDisplaySetAppearance;
   isSegmentationOverlay?: boolean;
   removeStreamingSubscriptions?: () => void;
   /**

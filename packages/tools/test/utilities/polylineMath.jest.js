@@ -673,7 +673,7 @@ describe('getSubPixelSpacingAndXYDirections', () => {
     // voxel along i,j,k). Axial view: normal along +k, up along -y.
     const viewport = {
       setDisplaySets: () => undefined,
-      setDisplaySetPresentation: () => undefined,
+      setDisplaySetAppearance: () => undefined,
       setViewState: () => undefined,
       getCurrentMode: () => 'volume',
       getImageData: () => ({

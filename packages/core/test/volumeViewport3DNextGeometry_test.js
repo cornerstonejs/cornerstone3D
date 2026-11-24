@@ -208,7 +208,7 @@ describe('Direct next 3D viewport, a geometry display set -- ', () => {
     expect(geometryEntryOf(next, 'surface1')).toBeUndefined();
     expect(next.getActors().length).toBe(1);
     expect(next.getRenderer().getActors()).not.toContain(entry.actor);
-    expect(next.getDisplaySetPresentation('surface1')).toBeUndefined();
+    expect(next.getDisplaySetAppearance('surface1')).toBeUndefined();
   });
 
   it('gives the actor entry the representation UID of the reference of the registered display set', async function () {
@@ -260,7 +260,7 @@ describe('Direct next 3D viewport, a geometry display set -- ', () => {
 
     await showVolume(next);
     createSurfaceGeometry('surface1', [0, 0, 0], [30, 20, 10]);
-    next.setDisplaySetPresentation('surface1', { color: [0, 0, 255] });
+    next.setDisplaySetAppearance('surface1', { color: [0, 0, 255] });
     await next.addDisplaySet('surface1', { renderMode: 'vtkGeometry3d' });
 
     const { actor } = geometryEntryOf(next, 'surface1');
@@ -269,7 +269,7 @@ describe('Direct next 3D viewport, a geometry display set -- ', () => {
     expect(actor.getVisibility()).toBe(true);
     expect(actor.getProperty().getOpacity()).toBe(1);
 
-    next.setDisplaySetPresentation('surface1', {
+    next.setDisplaySetAppearance('surface1', {
       color: [0, 255, 0],
       opacity: 0.5,
       visible: false,
@@ -278,13 +278,13 @@ describe('Direct next 3D viewport, a geometry display set -- ', () => {
     expect(actor.getProperty().getColor()).toEqual([0, 1, 0]);
     expect(actor.getProperty().getOpacity()).toBe(0.5);
     expect(actor.getVisibility()).toBe(false);
-    expect(next.getDisplaySetPresentation('surface1')).toEqual({
+    expect(next.getDisplaySetAppearance('surface1')).toEqual({
       color: [0, 255, 0],
       opacity: 0.5,
       visible: false,
     });
 
-    next.setDisplaySetPresentation('surface1', { visible: true });
+    next.setDisplaySetAppearance('surface1', { visible: true });
 
     expect(actor.getVisibility()).toBe(true);
     expect(actor.getProperty().getColor()).toEqual([0, 1, 0]);
@@ -409,7 +409,7 @@ describe('Direct next 3D viewport, a geometry display set -- ', () => {
     expectPointsClose(nextCamera.focalPoint, legacyCamera.focalPoint);
     expectPointsClose(nextCamera.focalPoint, [50, 35, 150]);
     expectBoxInsideCanvas(next, min, max);
-    expect(viewportProjection.getPresentation(next).zoom).toBeCloseTo(1, 6);
+    expect(viewportProjection.getFraming(next).zoom).toBeCloseTo(1, 6);
   });
 
   it('keeps the fit of the volume for a surface inside the volume, as the legacy viewport', async function () {
@@ -446,10 +446,10 @@ describe('Direct next 3D viewport, a geometry display set -- ', () => {
     expect(next.getViewState().parallelScale).toBeGreaterThan(
       volumeFit.parallelScale
     );
-    expect(viewportProjection.getPresentation(next).zoom).toBeCloseTo(1, 6);
-    expectPointsClose(viewportProjection.getPresentation(next).pan, [0, 0]);
+    expect(viewportProjection.getFraming(next).zoom).toBeCloseTo(1, 6);
+    expectPointsClose(viewportProjection.getFraming(next).pan, [0, 0]);
 
-    next.setDisplaySetPresentation('surface1', { visible: false });
+    next.setDisplaySetAppearance('surface1', { visible: false });
     next.resetViewState();
 
     expect(next.getViewState().parallelScale).toBeCloseTo(

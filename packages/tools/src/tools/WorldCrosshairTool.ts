@@ -1359,7 +1359,7 @@ class WorldCrosshairTool extends AnnotationTool {
    * viewport has none (legacy viewports, stacks, plain slices).
    */
   private _getSourceSlabThicknessMm(viewport: Types.IViewport): number {
-    if (!csUtils.viewportSupportsDisplaySetPresentation(viewport)) {
+    if (!csUtils.viewportSupportsDisplaySetAppearance(viewport)) {
       return 0;
     }
 
@@ -1368,12 +1368,12 @@ class WorldCrosshairTool extends AnnotationTool {
       return 0;
     }
 
-    const presentation = (
+    const appearance = (
       viewport as unknown as Types.IViewport
-    ).getDisplaySetPresentation(displaySetId) as
+    ).getDisplaySetAppearance(displaySetId) as
       | { slabThickness?: number }
       | undefined;
-    const slabThickness = presentation?.slabThickness;
+    const slabThickness = appearance?.slabThickness;
 
     return Number.isFinite(slabThickness) && slabThickness > 0
       ? slabThickness

@@ -2,7 +2,7 @@ import { ViewportType } from '../../../enums';
 import type { ICamera, Point2, Point3 } from '../../../types';
 import type ViewportInputOptions from '../../../types/ViewportInputOptions';
 import type {
-  ProjectionPresentation,
+  ProjectionFraming,
   ProjectionRequest,
   ProjectionSnapshot,
 } from '../ViewportProjectionTypes';
@@ -52,7 +52,7 @@ export type Volume3DProjectionViewport = {
 export type Volume3DRenderTarget = Pick<Volume3DViewportRenderContext, 'vtk'>;
 
 /**
- * The presentation of a 3D viewport. `zoom` and `pan` have the meaning of the
+ * The framing of a 3D viewport. `zoom` and `pan` have the meaning of the
  * planar viewport, measured against the fit that `resetViewState` gives for
  * the direction of the camera now:
  *
@@ -68,14 +68,14 @@ export type Volume3DRenderTarget = Pick<Volume3DViewportRenderContext, 'vtk'>;
  *
  * Both are missing when the viewport shows nothing to fit.
  */
-export interface Volume3DProjectionPresentation extends ProjectionPresentation {
+export interface Volume3DProjectionFraming extends ProjectionFraming {
   camera: Volume3DCamera & ICamera;
   /** The pan in canvas pixels on the screen, not divided by the zoom. */
   rawPan?: Point2;
 }
 
 export interface Volume3DProjectionSnapshot
-  extends ProjectionSnapshot<Volume3DCamera, Volume3DProjectionPresentation> {
+  extends ProjectionSnapshot<Volume3DCamera, Volume3DProjectionFraming> {
   canvasHeight: number;
   canvasWidth: number;
   fit?: Volume3DProjectionFit;

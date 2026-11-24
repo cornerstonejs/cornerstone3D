@@ -59,11 +59,11 @@ export default function setViewportCamera(
 
     // A PlanarViewport re-fits the parallel scale to the reformatted slice
     // extent for each orientation, so re-aiming the view reference would change
-    // the absolute on-screen scale even though the zoom presentation is
+    // the absolute on-screen scale even though the zoom framing is
     // unchanged - the rotation appears to zoom in/out. Legacy setCamera kept
     // parallelScale fixed during a rotation; mirror that by capturing the
     // resolved scale before the rotation and restoring it through the zoom
-    // presentation afterward (zoom compensates for the per-orientation refit).
+    // framing afterward (zoom compensates for the per-orientation refit).
     const rotatingVp = viewport as Types.IViewport & {
       getResolvedView?: () => {
         toICamera?: () => { parallelScale?: number };

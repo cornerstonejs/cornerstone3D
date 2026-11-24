@@ -296,7 +296,7 @@ export default WindowLevelTool;
  */
 function getVolumeIdOnDisplay(viewport: Types.IViewport): string | undefined {
   if (
-    !utilities.viewportSupportsDisplaySetPresentation(viewport) ||
+    !utilities.viewportSupportsDisplaySetAppearance(viewport) ||
     utilities.getViewportContentMode(viewport) !== 'volume'
   ) {
     return;
@@ -310,12 +310,12 @@ type ViewportVOIProperties = {
   voiLUTFunction?: unknown;
 };
 
-type ViewportWithDataPresentation = {
+type ViewportWithAppearance = {
   getSourceDisplaySetId?: () => string | undefined;
-  getDisplaySetPresentation?: (
+  getDisplaySetAppearance?: (
     displaySetId: string
   ) => ViewportVOIProperties | undefined;
-  setDisplaySetPresentation?: (
+  setDisplaySetAppearance?: (
     displaySetId: string,
     props: Partial<ViewportVOIProperties>
   ) => void;
@@ -323,13 +323,13 @@ type ViewportWithDataPresentation = {
 };
 
 function getViewportVOIProperties(viewport): ViewportVOIProperties | undefined {
-  const target = getDataPresentationTarget(viewport);
+  const target = getAppearanceTarget(viewport);
 
   if (!target) {
     return;
   }
 
-  const dataPresentation = target.viewport.getDisplaySetPresentation?.(
+  const appearance = target.viewport.getDisplaySetAppearance?.(
     target.displaySetId
   );
   const defaultVOIRange = target.viewport.getDefaultVOIRange?.(
@@ -337,8 +337,8 @@ function getViewportVOIProperties(viewport): ViewportVOIProperties | undefined {
   );
 
   return {
-    ...(dataPresentation || {}),
-    voiRange: dataPresentation?.voiRange ?? defaultVOIRange,
+    ...(appearance || {}),
+    voiRange: appearance?.voiRange ?? defaultVOIRange,
   };
 }
 
@@ -346,34 +346,34 @@ function setViewportVOIProperties(
   viewport,
   props: ViewportVOIProperties
 ): void {
-  const target = getDataPresentationTarget(viewport);
+  const target = getAppearanceTarget(viewport);
 
   if (!target) {
     return;
   }
 
-  target.viewport.setDisplaySetPresentation?.(target.displaySetId, props);
+  target.viewport.setDisplaySetAppearance?.(target.displaySetId, props);
 }
 
-function getDataPresentationTarget(viewport):
+function getAppearanceTarget(viewport):
   | {
-      viewport: ViewportWithDataPresentation;
+      viewport: ViewportWithAppearance;
       displaySetId: string;
     }
   | undefined {
-  const presentationViewport = viewport as ViewportWithDataPresentation;
-  const displaySetId = presentationViewport.getSourceDisplaySetId?.();
+  const appearanceViewport = viewport as ViewportWithAppearance;
+  const displaySetId = appearanceViewport.getSourceDisplaySetId?.();
 
   if (
     !displaySetId ||
-    typeof presentationViewport.getDisplaySetPresentation !== 'function' ||
-    typeof presentationViewport.setDisplaySetPresentation !== 'function'
+    typeof appearanceViewport.getDisplaySetAppearance !== 'function' ||
+    typeof appearanceViewport.setDisplaySetAppearance !== 'function'
   ) {
     return;
   }
 
   return {
-    viewport: presentationViewport,
+    viewport: appearanceViewport,
     displaySetId,
   };
 }

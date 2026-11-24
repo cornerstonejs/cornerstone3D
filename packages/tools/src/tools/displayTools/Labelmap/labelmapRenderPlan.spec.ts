@@ -182,7 +182,7 @@ function createPlanarVolumeViewport(labelmapId: string) {
     getViewState: jest.fn(() => ({ orientation: 'axial' })),
     getVolumeId: jest.fn(() => 'source-volume-id'),
     render: jest.fn(),
-    setDisplaySetPresentation: jest.fn(),
+    setDisplaySetAppearance: jest.fn(),
     setViewReference: jest.fn(),
   };
 }
@@ -317,7 +317,7 @@ describe('labelmapRenderPlan', () => {
       getViewState: jest.fn(() => ({ orientation: 'axial' })),
       getVolumeId: jest.fn(() => 'source-volume-id'),
       render: jest.fn(),
-      setDisplaySetPresentation: jest.fn(),
+      setDisplaySetAppearance: jest.fn(),
       setViewReference: jest.fn(),
     };
     const segmentation = {
@@ -369,7 +369,7 @@ describe('labelmapRenderPlan', () => {
         role: 'overlay',
       }
     );
-    expect(viewport.setDisplaySetPresentation).toHaveBeenCalledWith(
+    expect(viewport.setDisplaySetAppearance).toHaveBeenCalledWith(
       'segmentation-id-Labelmap-stack-layer-id',
       {
         blendMode: 1,
@@ -473,7 +473,7 @@ describe('labelmapRenderPlan', () => {
       labelMapData: segmentation.representationData.Labelmap as never,
     });
 
-    expect(viewport.setDisplaySetPresentation).toHaveBeenCalledWith(
+    expect(viewport.setDisplaySetAppearance).toHaveBeenCalledWith(
       'segmentation-id-Labelmap-volume-layer-id',
       { blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND, visible: true }
     );

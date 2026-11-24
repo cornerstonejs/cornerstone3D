@@ -84,7 +84,7 @@ async function mountCpuStack(
   });
 
   if (interpolationType !== undefined) {
-    viewport.setDisplaySetPresentation({ interpolationType });
+    viewport.setDisplaySetAppearance({ interpolationType });
   }
 
   await wait(REST_MS);

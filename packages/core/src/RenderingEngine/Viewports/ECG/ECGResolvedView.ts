@@ -26,7 +26,7 @@ import {
 import type {
   ECGViewState,
   ECGChannelData,
-  ECGDataPresentation,
+  ECGDisplaySetAppearance,
   ECGTraceLayoutDefinition,
   ECGWaveformPayload,
 } from './ECGViewportTypes';
@@ -34,7 +34,7 @@ import type {
 type ECGResolvedViewState = {
   viewState: ECGViewState;
   canvas: HTMLCanvasElement;
-  dataPresentation?: ECGDataPresentation;
+  appearance?: ECGDisplaySetAppearance;
   frameOfReferenceUID: string;
   waveform: ECGWaveformPayload;
   /**

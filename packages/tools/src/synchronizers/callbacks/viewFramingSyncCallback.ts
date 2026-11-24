@@ -1,27 +1,27 @@
 import type { Types } from '@cornerstonejs/core';
 import { getRenderingEngine } from '@cornerstonejs/core';
 import {
-  applyViewportPresentation,
-  getViewportPresentation,
-} from '../../utilities/viewportPresentation';
+  applyViewportFraming,
+  getViewportFraming,
+} from '../../utilities/viewportFraming';
 
 /**
- * The fields of a presentation that a selector names, or the whole
- * presentation without a selector. The 3D family gives every field whatever
+ * The fields of a framing that a selector names, or the whole
+ * framing without a selector. The 3D family gives every field whatever
  * the selector, its camera too, and a camera in a patch replaces the camera
  * of the target.
  */
 function selectedFieldsOf(
-  presentation: unknown,
-  selector?: Types.ViewPresentationSelector
+  framing: unknown,
+  selector?: Types.ViewFramingSelector
 ): unknown {
-  if (!selector || !presentation || typeof presentation !== 'object') {
-    return presentation;
+  if (!selector || !framing || typeof framing !== 'object') {
+    return framing;
   }
 
   return Object.fromEntries(
-    Object.entries(presentation).filter(
-      ([key]) => selector[key as keyof Types.ViewPresentationSelector]
+    Object.entries(framing).filter(
+      ([key]) => selector[key as keyof Types.ViewFramingSelector]
     )
   );
 }
@@ -38,15 +38,15 @@ function selectedFieldsOf(
  * @param sourceViewport - The list of IDs defining the source viewport.
  * @param targetViewport - The list of IDs defining the target viewport, different
  *   from sourceViewport
- * @param options - The options of the synchronizer: `viewPresentation` is the
- *   selector of the presentation to copy, all of it when not given.
+ * @param options - The options of the synchronizer: `viewFraming` is the
+ *   selector of the framing to copy, all of it when not given.
  */
-export default function presentationViewSyncCallback(
+export default function viewFramingSyncCallback(
   _synchronizerInstance,
   sourceViewport: Types.IViewportId,
   targetViewport: Types.IViewportId,
   _sourceEvent,
-  options?: { viewPresentation?: Types.ViewPresentationSelector }
+  options?: { viewFraming?: Types.ViewFramingSelector }
 ): void {
   const renderingEngine = getRenderingEngine(targetViewport.renderingEngineId);
   if (!renderingEngine) {
@@ -60,13 +60,13 @@ export default function presentationViewSyncCallback(
     sourceViewport.renderingEngineId
   )?.getViewport(sourceViewport.viewportId);
 
-  const selector = options?.viewPresentation;
-  const presentationView = selectedFieldsOf(
-    getViewportPresentation(sViewport, selector),
+  const selector = options?.viewFraming;
+  const viewFraming = selectedFieldsOf(
+    getViewportFraming(sViewport, selector),
     selector
   );
 
-  if (!applyViewportPresentation(tViewport, presentationView)) {
+  if (!applyViewportFraming(tViewport, viewFraming)) {
     return;
   }
 

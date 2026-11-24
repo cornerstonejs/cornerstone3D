@@ -31,7 +31,7 @@ function makeNextPlanar(mode, extra = {}) {
     type: 'planar',
     element: document.createElement('div'),
     setDisplaySets: jest.fn(),
-    setDisplaySetPresentation: jest.fn(),
+    setDisplaySetAppearance: jest.fn(),
     setViewState: jest.fn(),
     getCurrentMode: () => mode,
     getResolvedView: () => ({ toICamera: () => camera }),

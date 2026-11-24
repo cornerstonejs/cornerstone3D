@@ -61,7 +61,7 @@ type TestWindow = typeof window & {
         | {
             getActors: () => unknown[];
             getRenderPlan: () => PlanLayer[];
-            setDisplaySetPresentation: (
+            setDisplaySetAppearance: (
               displaySetId: string,
               props: { slabThickness?: number; blendMode?: number }
             ) => void;
@@ -214,7 +214,7 @@ async function setCoronalSlab(
       const { BlendModes } = cornerstone.Enums;
 
       for (const displaySetId of displaySetIds) {
-        viewport.setDisplaySetPresentation(displaySetId, {
+        viewport.setDisplaySetAppearance(displaySetId, {
           slabThickness,
           blendMode: slabThickness
             ? BlendModes.MAXIMUM_INTENSITY_BLEND

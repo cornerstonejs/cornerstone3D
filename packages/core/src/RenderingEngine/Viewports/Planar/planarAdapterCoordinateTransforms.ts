@@ -22,7 +22,7 @@ type PlanarResolvedView = Pick<
   Required<ICamera>,
   'focalPoint' | 'parallelScale' | 'viewPlaneNormal' | 'viewUp'
 > & {
-  presentationScale?: PlanarScaleInput;
+  framingScale?: PlanarScaleInput;
 };
 
 function getPlanarViewStateBasis(camera: PlanarResolvedView) {
@@ -65,7 +65,7 @@ export function canvasToWorldPlanarViewState(args: {
   const worldWidth =
     worldHeight *
     (safeCanvasWidth / safeCanvasHeight) *
-    (1 / getPlanarScaleRatio(camera.presentationScale));
+    (1 / getPlanarScaleRatio(camera.framingScale));
   const xOffset = (canvasPos[0] / safeCanvasWidth - 0.5) * worldWidth;
   const yOffset = (0.5 - canvasPos[1] / safeCanvasHeight) * worldHeight;
   const worldPos = [...camera.focalPoint] as Point3;
@@ -100,7 +100,7 @@ export function worldToCanvasPlanarViewState(args: {
   const worldWidth =
     worldHeight *
     (safeCanvasWidth / safeCanvasHeight) *
-    (1 / getPlanarScaleRatio(camera.presentationScale));
+    (1 / getPlanarScaleRatio(camera.framingScale));
   const delta = vec3.subtract(
     vec3.create(),
     worldPos as unknown as vec3,

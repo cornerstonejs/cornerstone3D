@@ -1,5 +1,5 @@
 import createCameraPositionSynchronizer from './createCameraPositionSynchronizer';
-import createPresentationViewSynchronizer from './createPresentationViewSynchronizer';
+import createViewFramingSynchronizer from './createViewFramingSynchronizer';
 import createVOISynchronizer from './createVOISynchronizer';
 import createZoomPanSynchronizer from './createZoomPanSynchronizer';
 import createImageSliceSynchronizer from './createImageSliceSynchronizer';
@@ -8,7 +8,7 @@ import createImageSliceSynchronizer from './createImageSliceSynchronizer';
 const createStackImageSynchronizer = createImageSliceSynchronizer;
 export {
   createCameraPositionSynchronizer,
-  createPresentationViewSynchronizer,
+  createViewFramingSynchronizer,
   createVOISynchronizer,
   createZoomPanSynchronizer,
   createImageSliceSynchronizer,

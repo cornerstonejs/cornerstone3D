@@ -160,7 +160,7 @@ async function showDisplaySetInPlace(
   const renderingEngine = getRenderingEngine(renderingEngineId);
   const viewReference = viewport.getViewReference();
   const viewPresentation = options.keepPresentation
-    ? viewportProjection.getPresentation(viewport)
+    ? viewportProjection.getFraming(viewport)
     : undefined;
 
   renderingEngine.enableElement({
@@ -176,7 +176,7 @@ async function showDisplaySetInPlace(
 
   const viewState =
     viewPresentation &&
-    viewportProjection.withPresentation(newViewport, viewPresentation);
+    viewportProjection.withFraming(newViewport, viewPresentation);
 
   if (viewState) {
     newViewport.setViewState(viewState);

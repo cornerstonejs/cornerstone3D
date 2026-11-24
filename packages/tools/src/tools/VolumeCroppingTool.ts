@@ -45,9 +45,9 @@ import {
 import { addToolProp, removeToolProp } from '../utilities/draw3D/toolProps';
 import { isDragOwnedBy } from '../utilities/interactionDragCoordinator';
 import {
-  applyViewportPresentation,
-  getViewportPresentation,
-} from '../utilities/viewportPresentation';
+  applyViewportFraming,
+  getViewportFraming,
+} from '../utilities/viewportFraming';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
 const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
@@ -301,9 +301,9 @@ class VolumeCroppingTool extends BaseTool {
               return;
             }
             const { viewport } = element;
-            const viewPresentation = getViewportPresentation(viewport);
+            const viewFraming = getViewportFraming(viewport);
             resetViewportCamera(viewport);
-            applyViewportPresentation(viewport, viewPresentation);
+            applyViewportFraming(viewport, viewFraming);
             viewport.render();
           });
           resizeObserver.observe(element);

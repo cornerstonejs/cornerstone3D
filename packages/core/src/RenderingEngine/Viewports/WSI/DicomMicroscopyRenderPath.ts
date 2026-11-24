@@ -9,7 +9,7 @@ import type {
   RenderPath,
 } from '../ViewportArchitectureTypes';
 import type {
-  WSIDataPresentation,
+  WSIDisplaySetAppearance,
   WSIRendering,
   WSIPayload,
   WSIViewState,
@@ -26,7 +26,7 @@ export class DicomMicroscopyRenderPath
     ctx: WSIViewportRenderContext,
     data: LoadedData,
     options: DataAddOptions
-  ): Promise<RenderPathAttachment<WSIDataPresentation>> {
+  ): Promise<RenderPathAttachment<WSIDisplaySetAppearance>> {
     const payload: WSIPayload = data as unknown as LoadedData<WSIPayload>;
     const DicomMicroscopyViewer = await getDicomMicroscopyViewer();
     const microscopyElement = document.createElement('div');
@@ -86,8 +86,8 @@ export class DicomMicroscopyRenderPath
 
     return {
       rendering,
-      updateDataPresentation: (props) => {
-        this.updateDataPresentation(rendering, props);
+      updateAppearance: (props) => {
+        this.updateAppearance(rendering, props);
       },
       applyViewState: (camera) => {
         this.applyViewState(rendering, camera);
@@ -108,11 +108,8 @@ export class DicomMicroscopyRenderPath
     };
   }
 
-  private updateDataPresentation(
-    rendering: WSIRendering,
-    props: unknown
-  ): void {
-    const wsiProps = props as WSIDataPresentation | undefined;
+  private updateAppearance(rendering: WSIRendering, props: unknown): void {
+    const wsiProps = props as WSIDisplaySetAppearance | undefined;
     const { microscopyElement } = rendering;
 
     microscopyElement.style.display = wsiProps?.visible === false ? 'none' : '';

@@ -39,7 +39,7 @@ import { getDisplaySetImageId } from '../displaySetAccess';
 import type { ViewReferenceContext } from '../viewReferenceCompatibility';
 import type {
   VideoViewState,
-  VideoDataPresentation,
+  VideoDisplaySetAppearance,
   VideoElementRenderContext,
   VideoElementRendering,
   VideoStreamPayload,
@@ -61,7 +61,7 @@ type FrameScalarData = Uint8ClampedArray & {
 
 class VideoViewport extends BaseViewport<
   VideoViewState,
-  VideoDataPresentation,
+  VideoDisplaySetAppearance,
   VideoElementRenderContext
 > {
   // ── Fields ───────────────────────────────────────────────────────────
@@ -178,7 +178,7 @@ class VideoViewport extends BaseViewport<
         continue;
       }
 
-      this.setDefaultDataPresentation(displaySetId, {
+      this.setDefaultAppearance(displaySetId, {
         visible: true,
         opacity: 1,
         playbackRate: 1,
@@ -574,7 +574,7 @@ class VideoViewport extends BaseViewport<
         )?.frameOfReferenceUID || videoData.renderedUrl,
       intrinsicHeight: videoElement.videoHeight || this.element.clientHeight,
       intrinsicWidth: videoElement.videoWidth || this.element.clientWidth,
-      objectFit: this.getDisplaySetPresentation(videoData.id)?.objectFit,
+      objectFit: this.getDisplaySetAppearance(videoData.id)?.objectFit,
       payload: videoData,
     });
   }
@@ -696,7 +696,7 @@ class VideoViewport extends BaseViewport<
   }
 
   /**
-   * Updates playback rate through per-data presentation state.
+   * Updates playback rate through the appearance of the display set.
    *
    * @param playbackRate - Playback rate to apply to the active dataset.
    */
@@ -707,7 +707,7 @@ class VideoViewport extends BaseViewport<
       return;
     }
 
-    this.setDisplaySetPresentation(displaySetId, {
+    this.setDisplaySetAppearance(displaySetId, {
       playbackRate,
     });
   }
@@ -1103,7 +1103,7 @@ class VideoViewport extends BaseViewport<
   }
 
   private getVideoDataFromBinding(
-    binding: ViewportDataBinding<VideoDataPresentation>
+    binding: ViewportDataBinding<VideoDisplaySetAppearance>
   ): LoadedData<VideoStreamPayload> | undefined {
     if (!isVideoStreamData(binding.data)) {
       return;

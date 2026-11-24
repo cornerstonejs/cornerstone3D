@@ -179,7 +179,7 @@ function setViewportColormap(viewportId, displaySetId, colormapName) {
   // Get the volume viewport
   const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-  viewport.setDisplaySetPresentation(displaySetId, {
+  viewport.setDisplaySetAppearance(displaySetId, {
     colormap: { name: colormapName },
   });
   viewport.render();
@@ -229,7 +229,7 @@ async function initializeVolumeViewport(
 
   // Set the volume on the viewport
   await viewport.setDisplaySets(...displaySets);
-  viewport.setDisplaySetPresentation(ctVolumeDisplaySetId, ctPresentation());
+  viewport.setDisplaySetAppearance(ctVolumeDisplaySetId, ctPresentation());
 
   // Apply initial CT colormap
   setViewportColormap(
@@ -240,7 +240,7 @@ async function initializeVolumeViewport(
 
   // Apply initial PT colormap on fusion viewports
   if (fusion) {
-    viewport.setDisplaySetPresentation(
+    viewport.setDisplaySetAppearance(
       ptVolumeDisplaySetId,
       petColorMapPresentation()
     );

@@ -100,7 +100,7 @@ describe('The window level that the one click segmentation reads from a direct n
     expect(defaultMapping?.voiRange).toEqual(defaultRange);
     expect(defaultMapping?.invert).toBe(false);
 
-    viewport.setDisplaySetPresentation({
+    viewport.setDisplaySetAppearance({
       voiRange: { lower: 10, upper: 200 },
       invert: true,
     });
@@ -133,7 +133,7 @@ describe('The window level that the one click segmentation reads from a direct n
 
     await testUtils.setStackOnNextViewport(viewport, [imageId], 0);
     expect(viewport.getCurrentMode()).toBe('stack');
-    viewport.setDisplaySetPresentation({ voiRange: { lower: 20, upper: 120 } });
+    viewport.setDisplaySetAppearance({ voiRange: { lower: 20, upper: 120 } });
 
     expect(getViewportVoiMappingForVolume(viewport)?.voiRange).toEqual({
       lower: 20,

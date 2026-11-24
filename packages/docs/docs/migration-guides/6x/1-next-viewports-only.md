@@ -86,7 +86,7 @@ are temporary.
 - **Events that no viewport fires:** `STACK_NEW_IMAGE` and `VOLUME_NEW_IMAGE`
   (listen to `NEW_IMAGE`), `PRE_STACK_NEW_IMAGE` and `STACK_VIEWPORT_SCROLL`
   (listen to `CAMERA_MODIFIED`), and `PRESET_MODIFIED` (read the `preset` key
-  of the presentation), with their detail types.
+  of the appearance), with their detail types.
   [Events](./3-api-map.md#events) has the row of each.
 - **The CPU rendering setting:** `rendering.useCPURendering` with
   `setUseCPURendering`, `resetUseCPURendering` and
@@ -295,7 +295,7 @@ await viewport.setDisplaySets(
   { displaySetId: ptId }
 );
 
-viewport.setDisplaySetPresentation(ptId, {
+viewport.setDisplaySetAppearance(ptId, {
   colormap: { name: 'hsv', opacity: 0.4 },
 });
 ```
@@ -311,28 +311,44 @@ show these with code before and after.
 
 A next viewport holds four things. Each legacy call maps to one of them.
 
-| What            | Calls                                                                                   | Replaces                                                 |
-| --------------- | --------------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| Display sets    | `setDisplaySets`, `addDisplaySet`, `removeDisplaySet`, `getDisplaySets`                 | `setStack`, `setVolumes`, `addVolumes`, `setVideo`       |
-| A presentation  | `setDisplaySetPresentation`, `getDisplaySetPresentation`, `resetDisplaySetPresentation` | `setProperties`, `getProperties`, `resetProperties`      |
-| A view state    | `setViewState`, `updateViewState`, `getViewState`, `resetViewState`                     | `setCamera`, `getCamera`, `resetCamera`, `flip`          |
-| View references | `getViewReference`, `setViewReference`, `isReferenceViewable`                           | A camera focal point that was set to move through slices |
+| What            | Calls                                                                             | Replaces                                                 |
+| --------------- | --------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| Display sets    | `setDisplaySets`, `addDisplaySet`, `removeDisplaySet`, `getDisplaySets`           | `setStack`, `setVolumes`, `addVolumes`, `setVideo`       |
+| An appearance   | `setDisplaySetAppearance`, `getDisplaySetAppearance`, `resetDisplaySetAppearance` | `setProperties`, `getProperties`, `resetProperties`      |
+| A view state    | `setViewState`, `updateViewState`, `getViewState`, `resetViewState`               | `setCamera`, `getCamera`, `resetCamera`, `flip`          |
+| View references | `getViewReference`, `setViewReference`, `isReferenceViewable`                     | A camera focal point that was set to move through slices |
 
-Zoom and pan are read and written through `viewportProjection`, in one form
+Zoom and pan are read and written as the framing of the view, in one form
 for every family. A question that the state and the data can answer is a
 function of `utilities`, not a member of the viewport.
+
+### View state, framing and appearance
+
+Three words name what a viewport keeps of a view. The **view state**
+(`getViewState`, `setViewState`) is the navigation and the layout in the terms
+of the family: the slice, the orientation, the anchors, the scale, the rotation
+and the flips. The **framing** (`getViewFraming`, `setViewFraming`, and
+`viewportProjection.getFraming` and `withFraming`) is the camera part of the
+view that another viewport of any size can take: pan, zoom, rotation, flips and
+display area, against the fit; setting it writes the view state. The
+**appearance** (`setDisplaySetAppearance`, `getDisplaySetAppearance`,
+`resetDisplaySetAppearance`) is the look of one display set in one viewport:
+the window, the colormap, the opacity, the slab, the interpolation, the
+visibility. 6.0.0-beta.2 called the last two the view presentation and the
+presentation of a display set; see
+[Appearance and framing of 6.0.0-beta.2](./3-api-map.md#appearance-and-framing-of-600-beta2).
 
 ## What comes over and what does not
 
 The new viewports do not rebuild the legacy API. A feature comes over when it
-fits the new shape: a key of a presentation or of the view state.
+fits the new shape: a key of an appearance or of the view state.
 
 Carried over, in the new shape:
 
 - the sharpening and smoothing of the stack and volume viewports, as the
-  `sharpening` and `smoothing` keys of a presentation;
+  `sharpening` and `smoothing` keys of an appearance;
 - a preset, a colormap and a blend mode of a 3D viewport, as keys of its
-  presentation;
+  appearance;
 - a perspective camera, on a 3D viewport with `parallelProjection: false`;
 - a surface in a 3D viewport, as a display set;
 - vtk.js actors and widgets of the application in a slice viewport, as props

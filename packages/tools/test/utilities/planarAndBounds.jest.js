@@ -29,7 +29,7 @@ jest.mock('@cornerstonejs/core', () => {
 
 const nextViewportApi = () => ({
   setDisplaySets: jest.fn(),
-  setDisplaySetPresentation: jest.fn(),
+  setDisplaySetAppearance: jest.fn(),
   setViewState: jest.fn(),
 });
 

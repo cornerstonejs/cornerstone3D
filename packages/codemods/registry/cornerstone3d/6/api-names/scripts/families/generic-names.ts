@@ -58,11 +58,26 @@ export const rules: Rules = {
 };
 
 /**
+ * Names that a subpath of a package exports, by subpath, with the name to
+ * use instead.
+ */
+export type SubpathNames = Record<string, Record<string, string>>;
+
+/**
+ * Modules of a subpath of a package that 6.0 renamed, by their path, with
+ * their new path and the names in them that changed.
+ */
+export type MovedModules = Record<
+  string,
+  { to: string; names: Record<string, string> }
+>;
+
+/**
  * The names of this family that a subpath of the core exports, with the
  * name to use instead. The tables read the members of `Types` and
  * `utilities` on the top of the core only.
  */
-const SUBPATH_NAMES: Record<string, Record<string, string>> = {
+const SUBPATH_NAMES: SubpathNames = {
   [`${CORE_PACKAGE}/types`]: { IGenericViewport: 'use Types.IViewport' },
   [`${CORE_PACKAGE}/utilities`]: {
     isGenericViewport: IS_GENERIC_VIEWPORT,
@@ -76,10 +91,7 @@ const SUBPATH_NAMES: Record<string, Record<string, string>> = {
  * `@cornerstonejs/tools/utilities/*` and `@cornerstonejs/tools/tools/*` are
  * entry points of the packages).
  */
-const MOVED_MODULES: Record<
-  string,
-  { to: string; names: Record<string, string> }
-> = {
+const MOVED_MODULES: MovedModules = {
   [`${CORE_PACKAGE}/utilities/resolveGenericViewportVolumeId`]: {
     to: `${CORE_PACKAGE}/utilities/resolveViewportVolumeId`,
     names: { resolveGenericViewportVolumeId: 'resolveViewportVolumeId' },
@@ -138,19 +150,23 @@ function modulePath(statement: Node): string {
  * A namespace import of a module whose names changed is reported. Reports
  * each import of a deleted module. Gives the statements that it took.
  */
-function rewriteModulePaths(run: Run): Set<number> {
+export function rewriteModulePaths(
+  run: Run,
+  movedModules: MovedModules = MOVED_MODULES,
+  deletedModules: Record<string, string> = DELETED_MODULES
+): Set<number> {
   const taken = new Set<number>();
 
   for (const statement of moduleStatements(run)) {
     const path = modulePath(statement);
-    const moved = MOVED_MODULES[path];
+    const moved = movedModules[path];
 
-    if (DELETED_MODULES[path]) {
+    if (deletedModules[path]) {
       taken.add(statement.id());
       report(
         run,
         'manual',
-        `${path}: the module is deleted, ${DELETED_MODULES[path]}`,
+        `${path}: the module is deleted, ${deletedModules[path]}`,
         statement
       );
       continue;
@@ -214,10 +230,14 @@ function rewriteModulePaths(run: Run): Set<number> {
  * '@cornerstonejs/core/types'`), with the name to use instead. A statement
  * that `rewriteModulePaths` took is left.
  */
-function reportSubpathNames(run: Run, taken: Set<number>): void {
+export function reportSubpathNames(
+  run: Run,
+  taken: Set<number>,
+  subpathNames: SubpathNames = SUBPATH_NAMES
+): void {
   for (const statement of moduleStatements(run)) {
     const source = importSource(statement) ?? '';
-    const subpath = Object.keys(SUBPATH_NAMES).find(
+    const subpath = Object.keys(subpathNames).find(
       (path) => source === path || source.startsWith(`${path}/`)
     );
 
@@ -231,7 +251,7 @@ function reportSubpathNames(run: Run, taken: Set<number>): void {
       },
     })) {
       const name = specifier.field('name')?.text() ?? '';
-      const instead = SUBPATH_NAMES[subpath][name];
+      const instead = subpathNames[subpath][name];
 
       if (instead) {
         report(

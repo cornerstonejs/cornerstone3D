@@ -476,9 +476,9 @@ async function run() {
       vrtViewport.setDisplaySets({ displaySetId: currentVolumeId }),
     ]);
     planarViewports.forEach((viewport) =>
-      viewport.setDisplaySetPresentation(currentVolumeId, ctPresentation())
+      viewport.setDisplaySetAppearance(currentVolumeId, ctPresentation())
     );
-    vrtViewport.setDisplaySetPresentation(currentVolumeId, ctPresentation());
+    vrtViewport.setDisplaySetAppearance(currentVolumeId, ctPresentation());
 
     // Set up the stack viewport separately with axial images
     const stackViewport =
@@ -491,7 +491,7 @@ async function run() {
     });
     await stackViewport.setDisplaySets({ displaySetId: stackDisplaySetId }); // Start at center slice
 
-    vrtViewport.setDisplaySetPresentation(currentVolumeId, {
+    vrtViewport.setDisplaySetAppearance(currentVolumeId, {
       preset: 'CT-Bone',
       interpolationType: Enums.InterpolationType.NEAREST,
       // Not seeing a difference between LINEAR and NEAREST.

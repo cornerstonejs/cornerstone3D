@@ -10,7 +10,7 @@ import {
   resolvePlanarViewportView,
   type PlanarViewResolutionRenderContext,
 } from './PlanarResolvedView';
-import type { DerivedPlanarPresentation } from './planarRenderCamera';
+import type { DerivedPlanarFraming } from './planarRenderCamera';
 import type {
   PlanarActiveViewRuntime,
   PlanarPayload,
@@ -43,7 +43,7 @@ export interface PlanarRenderPathProjection {
   currentImageIdIndex: number;
   isSourceBinding: boolean;
   maxImageIdIndex: number;
-  presentation: DerivedPlanarPresentation;
+  framing: DerivedPlanarFraming;
   resolvedICamera: PlanarResolvedICamera;
   resolvedView: PlanarProjectionResolvedView;
 }
@@ -183,15 +183,15 @@ export function resolvePlanarRenderPathProjection(args: {
     currentImageIdIndex: resolvedView.state.currentImageIdIndex,
     isSourceBinding,
     maxImageIdIndex: resolvedView.state.maxImageIdIndex,
-    presentation: getPlanarResolvedViewPresentation(resolvedView),
+    framing: getPlanarResolvedViewFraming(resolvedView),
     resolvedICamera,
     resolvedView,
   };
 }
 
-function getPlanarResolvedViewPresentation(
+function getPlanarResolvedViewFraming(
   resolvedView: PlanarProjectionResolvedView
-): DerivedPlanarPresentation {
+): DerivedPlanarFraming {
   return {
     pan: resolvedView.pan,
     zoom: resolvedView.zoom,

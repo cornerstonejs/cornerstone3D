@@ -1,18 +1,18 @@
 import { utilities as csUtils, type Types } from '@cornerstonejs/core';
 import type { PlanarViewport } from '@cornerstonejs/core';
-import { getViewportPresentation } from './viewportPresentation';
+import { getViewportFraming } from './viewportFraming';
 
 /**
  * The full depth in mm that a viewport's slab shows, or undefined when the
  * viewport shows no slab of its own.
  *
- * A next planar viewport keeps the slab in the presentation of its source
+ * A next planar viewport keeps the slab in the appearance of its source
  * display set. A `slabThickness` of `T` shows the slices within about `T` of
  * the plane on each side, as the legacy `setSlabThickness(T)` did, so the
  * depth is twice the value, as the legacy helper gave twice
  * `getSlabThickness()`. A stack has no slab, and a viewport without display
- * set presentations gives undefined. A stack gives undefined also with a
- * `slabThickness` in its presentation, which it does not draw, as the core
+ * set appearances gives undefined. A stack gives undefined also with a
+ * `slabThickness` in its appearance, which it does not draw, as the core
  * reference controller does: the slab is read only for volume content.
  *
  * A caller that needs a depth, such as a brush fill, must use this function
@@ -24,15 +24,15 @@ export function getViewSlabDepthOfViewport(
 ): number | undefined {
   if (
     csUtils.viewportIsInVolumeMode(viewport) &&
-    csUtils.viewportSupportsDisplaySetPresentation(viewport)
+    csUtils.viewportSupportsDisplaySetAppearance(viewport)
   ) {
     const sourceDisplaySetId = viewport.getSourceDisplaySetId();
-    const presentation = sourceDisplaySetId
-      ? (viewport.getDisplaySetPresentation(sourceDisplaySetId) as
+    const appearance = sourceDisplaySetId
+      ? (viewport.getDisplaySetAppearance(sourceDisplaySetId) as
           | { slabThickness?: number }
           | undefined)
       : undefined;
-    const slabThickness = presentation?.slabThickness;
+    const slabThickness = appearance?.slabThickness;
 
     return typeof slabThickness === 'number'
       ? csUtils.getViewSlabDepth(slabThickness * 2)
@@ -122,7 +122,7 @@ export function navigatePlanarViewportToPoint(
 }
 
 export interface NativeSourceProperties {
-  /** VOI/LUT properties read via getDisplaySetPresentation. */
+  /** VOI/LUT properties read via getDisplaySetAppearance. */
   properties: Record<string, unknown>;
   rotation?: number;
   flipHorizontal?: boolean;
@@ -131,20 +131,20 @@ export interface NativeSourceProperties {
 }
 
 /**
- * Reads the VOI/LUT properties, rotation/flip presentation and current image id
- * from a source viewport, which exposes none of the legacy
- * getProperties/getViewPresentation/getCamera APIs.
+ * Reads the VOI/LUT properties, the rotation and flips of the framing and the
+ * current image id from a source viewport, which has none of the legacy
+ * getProperties and getCamera calls.
  */
 export function getNativeSourceProperties(
   viewport: Types.IViewport
 ): NativeSourceProperties {
-  if (!csUtils.viewportSupportsDisplaySetPresentation(viewport)) {
+  if (!csUtils.viewportSupportsDisplaySetAppearance(viewport)) {
     return { properties: {} };
   }
   const sourceDisplaySetId = viewport.getSourceDisplaySetId();
   const properties = {
     ...((sourceDisplaySetId
-      ? (viewport.getDisplaySetPresentation(sourceDisplaySetId) as Record<
+      ? (viewport.getDisplaySetAppearance(sourceDisplaySetId) as Record<
           string,
           unknown
         >)
@@ -158,16 +158,16 @@ export function getNativeSourceProperties(
   if (voiLUTFunction !== undefined) {
     properties.VOILUTFunction = voiLUTFunction;
   }
-  const presentation = (getViewportPresentation(viewport) ?? {}) as {
+  const framing = (getViewportFraming(viewport) ?? {}) as {
     rotation?: number;
     flipHorizontal?: boolean;
     flipVertical?: boolean;
   };
   return {
     properties,
-    rotation: presentation.rotation,
-    flipHorizontal: presentation.flipHorizontal,
-    flipVertical: presentation.flipVertical,
+    rotation: framing.rotation,
+    flipHorizontal: framing.flipHorizontal,
+    flipVertical: framing.flipVertical,
     currentImageId: viewport.getCurrentImageId(),
   };
 }

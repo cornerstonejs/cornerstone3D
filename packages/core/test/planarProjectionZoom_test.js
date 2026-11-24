@@ -87,14 +87,14 @@ describe('The anchor of a zoom in the planar projection -- ', () => {
       const events = countCameraEvents(next);
 
       next.setViewState(
-        viewportProjection.withPresentation(next, { zoom: 1.8 }, undefined, {
+        viewportProjection.withFraming(next, { zoom: 1.8 }, undefined, {
           anchorCanvas: ANCHOR,
         })
       );
       await renderAndWait(next);
 
       const shown = next.worldToCanvas(world);
-      const presentation = viewportProjection.getPresentation(next);
+      const presentation = viewportProjection.getFraming(next);
 
       expect(next.getCurrentMode()).toBe(mode);
       expect(next.getRenderPlan()[0].renderMode).toBe(renderMode);
@@ -113,24 +113,15 @@ describe('The anchor of a zoom in the planar projection -- ', () => {
       const world = next.canvasToWorld(ANCHOR);
 
       next.setViewState(
-        viewportProjection.withPresentation(
-          next,
-          { scale: [1.6, 1.2] },
-          undefined,
-          { anchorCanvas: ANCHOR }
-        )
+        viewportProjection.withFraming(next, { scale: [1.6, 1.2] }, undefined, {
+          anchorCanvas: ANCHOR,
+        })
       );
 
       const stretched = next.worldToCanvas(world);
 
-      expect(viewportProjection.getPresentation(next).scale[0]).toBeCloseTo(
-        1.6,
-        6
-      );
-      expect(viewportProjection.getPresentation(next).scale[1]).toBeCloseTo(
-        1.2,
-        6
-      );
+      expect(viewportProjection.getFraming(next).scale[0]).toBeCloseTo(1.6, 6);
+      expect(viewportProjection.getFraming(next).scale[1]).toBeCloseTo(1.2, 6);
       expect(stretched[0]).toBeCloseTo(ANCHOR[0], 4);
       expect(stretched[1]).toBeCloseTo(ANCHOR[1], 4);
 
@@ -139,7 +130,7 @@ describe('The anchor of a zoom in the planar projection -- ', () => {
       const worldAfterReset = next.canvasToWorld(ANCHOR);
 
       next.setViewState(
-        viewportProjection.withPresentation(
+        viewportProjection.withFraming(
           next,
           { zoom: 1.5, rotation: 90 },
           undefined,
@@ -149,8 +140,8 @@ describe('The anchor of a zoom in the planar projection -- ', () => {
 
       const turned = next.worldToCanvas(worldAfterReset);
 
-      expect(viewportProjection.getPresentation(next).rotation).toBe(90);
-      expect(viewportProjection.getPresentation(next).zoom).toBeCloseTo(1.5, 6);
+      expect(viewportProjection.getFraming(next).rotation).toBe(90);
+      expect(viewportProjection.getFraming(next).zoom).toBeCloseTo(1.5, 6);
       expect(turned[0]).toBeCloseTo(ANCHOR[0], 4);
       expect(turned[1]).toBeCloseTo(ANCHOR[1], 4);
     }, 15000);
@@ -161,7 +152,7 @@ describe('The anchor of a zoom in the planar projection -- ', () => {
       for (const zoomAtPoint of [
         () =>
           next.setViewState(
-            viewportProjection.withPresentation(next, { zoom: 2 }, undefined, {
+            viewportProjection.withFraming(next, { zoom: 2 }, undefined, {
               anchorCanvas: ANCHOR,
             })
           ),
@@ -170,17 +161,17 @@ describe('The anchor of a zoom in the planar projection -- ', () => {
         next.resetViewState();
         zoomAtPoint();
 
-        const before = viewportProjection.getPresentation(next);
+        const before = viewportProjection.getFraming(next);
         const point = [200, 150];
         const world = next.canvasToWorld(point);
 
         next.setViewState(
-          viewportProjection.withPresentation(next, {
+          viewportProjection.withFraming(next, {
             pan: [before.pan[0] + 10, before.pan[1] - 5],
           })
         );
 
-        const after = viewportProjection.getPresentation(next);
+        const after = viewportProjection.getFraming(next);
         const shown = next.worldToCanvas(world);
 
         expect(after.zoom).toBeCloseTo(2, 6);
@@ -190,14 +181,14 @@ describe('The anchor of a zoom in the planar projection -- ', () => {
         expect(shown[1]).toBeCloseTo(point[1] - 10, 4);
 
         next.setViewState(
-          viewportProjection.withPresentation(next, {
+          viewportProjection.withFraming(next, {
             pan: [7, 3],
             rotation: 90,
             zoom: 1.5,
           })
         );
 
-        const turned = viewportProjection.getPresentation(next);
+        const turned = viewportProjection.getFraming(next);
 
         expect(turned.rotation).toBe(90);
         expect(turned.zoom).toBeCloseTo(1.5, 6);
@@ -210,20 +201,20 @@ describe('The anchor of a zoom in the planar projection -- ', () => {
       await show(next, series, 2, options);
 
       const centreWorld = next.canvasToWorld([WIDTH / 2, HEIGHT / 2]);
-      const withAnchor = viewportProjection.withPresentation(
+      const withAnchor = viewportProjection.withFraming(
         next,
         { zoom: 2, pan: [10, -5] },
         undefined,
         { anchorCanvas: ANCHOR }
       );
-      const withoutAnchor = viewportProjection.withPresentation(next, {
+      const withoutAnchor = viewportProjection.withFraming(next, {
         zoom: 2,
         pan: [10, -5],
       });
 
       expect(withAnchor).toEqual(withoutAnchor);
 
-      next.setViewState(viewportProjection.withPresentation(next, { zoom: 2 }));
+      next.setViewState(viewportProjection.withFraming(next, { zoom: 2 }));
 
       const centre = next.worldToCanvas(centreWorld);
 
@@ -256,7 +247,7 @@ describe('A zoom of the planar projection on a stretched view -- ', () => {
 
   /** The scale of each axis of the view, from the projection service. */
   function scaleOf(viewport) {
-    return viewportProjection.getPresentation(viewport).scale;
+    return viewportProjection.getFraming(viewport).scale;
   }
 
   for (const [mode, backend, show, options, renderMode] of CASES) {
@@ -266,28 +257,28 @@ describe('A zoom of the planar projection on a stretched view -- ', () => {
       await show(next, series, 2, options);
       next.setViewState({ scale: [1.5, 1] });
 
-      const read = viewportProjection.getPresentation(next);
+      const read = viewportProjection.getFraming(next);
 
       expect(next.getRenderPlan()[0].renderMode).toBe(renderMode);
       expect(read.zoom).toBeCloseTo(1, 6);
       expect(read.scale).toEqual([1.5, 1]);
 
       next.setViewState(
-        viewportProjection.withPresentation(next, { zoom: read.zoom })
+        viewportProjection.withFraming(next, { zoom: read.zoom })
       );
 
       expect(scaleOf(next)).toEqual([1.5, 1]);
 
-      next.setViewState(viewportProjection.withPresentation(next, { zoom: 2 }));
+      next.setViewState(viewportProjection.withFraming(next, { zoom: 2 }));
 
       expect(scaleOf(next)[0]).toBeCloseTo(3, 6);
       expect(scaleOf(next)[1]).toBeCloseTo(2, 6);
-      expect(viewportProjection.getPresentation(next).zoom).toBeCloseTo(2, 6);
+      expect(viewportProjection.getFraming(next).zoom).toBeCloseTo(2, 6);
 
       const world = next.canvasToWorld(ANCHOR);
 
       next.setViewState(
-        viewportProjection.withPresentation(next, { zoom: 3 }, undefined, {
+        viewportProjection.withFraming(next, { zoom: 3 }, undefined, {
           anchorCanvas: ANCHOR,
         })
       );
@@ -300,10 +291,10 @@ describe('A zoom of the planar projection on a stretched view -- ', () => {
       expect(shown[1]).toBeCloseTo(ANCHOR[1], 4);
 
       next.setViewState(
-        viewportProjection.withPresentation(next, { zoom: 2, pan: [10, -5] })
+        viewportProjection.withFraming(next, { zoom: 2, pan: [10, -5] })
       );
 
-      const panned = viewportProjection.getPresentation(next);
+      const panned = viewportProjection.getFraming(next);
 
       expect(panned.scale[0]).toBeCloseTo(3, 6);
       expect(panned.scale[1]).toBeCloseTo(2, 6);
@@ -316,15 +307,13 @@ describe('A zoom of the planar projection on a stretched view -- ', () => {
       next.setViewState({ scale: [1.5, 1] });
 
       next.setViewState(
-        viewportProjection.withPresentation(next, { zoom: 4, scale: [2, 2] })
+        viewportProjection.withFraming(next, { zoom: 4, scale: [2, 2] })
       );
 
       expect(scaleOf(next)).toEqual([2, 2]);
 
       next.setViewState({ scale: [1.5, 1] });
-      next.setViewState(
-        viewportProjection.withPresentation(next, { scale: 3 })
-      );
+      next.setViewState(viewportProjection.withFraming(next, { scale: 3 }));
 
       expect(scaleOf(next)).toEqual([3, 3]);
 

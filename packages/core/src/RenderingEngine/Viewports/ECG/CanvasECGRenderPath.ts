@@ -16,7 +16,7 @@ import type {
 import type {
   ECGCanvasRenderContext,
   ECGCanvasRendering,
-  ECGDataPresentation,
+  ECGDisplaySetAppearance,
 } from './ECGViewportTypes';
 import type ECGResolvedView from './ECGResolvedView';
 
@@ -44,7 +44,7 @@ export class CanvasECGRenderPath implements RenderPath<ECGCanvasRenderContext> {
     ctx: ECGCanvasRenderContext,
     _data: LoadedData,
     _options: DataAddOptions
-  ): Promise<RenderPathAttachment<ECGDataPresentation>> {
+  ): Promise<RenderPathAttachment<ECGDisplaySetAppearance>> {
     const rendering: ECGCanvasRendering = {
       renderMode: 'signal2d',
       canvas: ctx.canvas,
@@ -53,8 +53,8 @@ export class CanvasECGRenderPath implements RenderPath<ECGCanvasRenderContext> {
 
     return {
       rendering,
-      updateDataPresentation: () => {
-        // The viewport stores the presentation, and the resolved view reads it.
+      updateAppearance: () => {
+        // The viewport stores the appearance, and the resolved view reads it.
         // A copy here would be a second source of truth for the geometry.
       },
       applyViewState: () => {
@@ -109,7 +109,7 @@ function drawFrame(ecgCtx: ECGCanvasRenderContext): void {
   }
 
   const viewState = resolvedView.state.viewState;
-  const dataPresentation = resolvedView.state.dataPresentation;
+  const appearance = resolvedView.state.appearance;
   const metrics = resolvedView.metrics;
   const layouts = resolvedView.channelLayouts;
   const { effectiveRatio, xOffset, yOffset } = resolvedView.canvasTransform;
@@ -119,11 +119,11 @@ function drawFrame(ecgCtx: ECGCanvasRenderContext): void {
   canvasContext.fillStyle = '#000000';
   canvasContext.fillRect(0, 0, canvas.width, canvas.height);
 
-  if (dataPresentation?.visible === false) {
+  if (appearance?.visible === false) {
     return;
   }
 
-  canvasContext.globalAlpha = dataPresentation?.opacity ?? 1;
+  canvasContext.globalAlpha = appearance?.opacity ?? 1;
 
   canvasContext.setTransform(
     effectiveRatio * dpr,
@@ -141,10 +141,10 @@ function drawFrame(ecgCtx: ECGCanvasRenderContext): void {
       // that produced it, so the grid and the trace width stay in agreement.
       ...metrics,
       sensitivityMmMv: viewState.sensitivityMmMv,
-      showAmplitudeLabels: dataPresentation?.showAmplitudeLabels,
+      showAmplitudeLabels: appearance?.showAmplitudeLabels,
     },
     {
-      showGrid: dataPresentation?.showGrid,
+      showGrid: appearance?.showGrid,
       bounds: resolvedView.canvasBounds,
     },
     layouts
@@ -152,7 +152,7 @@ function drawFrame(ecgCtx: ECGCanvasRenderContext): void {
   drawECGTraces({
     ctx: canvasContext,
     layouts,
-    lineWidth: dataPresentation?.lineWidth,
+    lineWidth: appearance?.lineWidth,
     amplitudeScale: resolvedView.amplitudeScale,
   });
 

@@ -158,7 +158,7 @@ async function drawnBoxOf(viewport) {
 
 /** The zoom and the pan of the viewport from the projection service. */
 function presentationOf(viewport) {
-  const { zoom, pan } = viewportProjection.getPresentation(viewport, {
+  const { zoom, pan } = viewportProjection.getFraming(viewport, {
     selector: { zoom: true, pan: true },
   });
 
@@ -168,12 +168,7 @@ function presentationOf(viewport) {
 /** Applies a presentation patch through the projection service. */
 function present(viewport, presentation, options) {
   viewport.setViewState(
-    viewportProjection.withPresentation(
-      viewport,
-      presentation,
-      undefined,
-      options
-    )
+    viewportProjection.withFraming(viewport, presentation, undefined, options)
   );
 }
 
@@ -482,7 +477,7 @@ describe('getZoom, setZoom, getPan and setPan of a 3D viewport -- ', () => {
     const events = recordEvents(viewport, Events.CAMERA_MODIFIED);
 
     viewport.setViewState(
-      viewportProjection.withPresentation(viewport, { zoom: 2 })
+      viewportProjection.withFraming(viewport, { zoom: 2 })
     );
 
     const perViewStateWrite = events.length;

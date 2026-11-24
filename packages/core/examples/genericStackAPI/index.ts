@@ -100,7 +100,7 @@ addToolbarButton({
     const renderingEngine = getRenderingEngine(renderingEngineId);
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-    viewport.setDisplaySetPresentation(stackDisplaySetId, {
+    viewport.setDisplaySetAppearance(stackDisplaySetId, {
       voiRange: { upper: 2500, lower: -1500 },
     });
     viewport.render();
@@ -201,9 +201,9 @@ addToolbarButton({
     const renderingEngine = getRenderingEngine(renderingEngineId);
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
     const { invert = false } =
-      viewport.getDisplaySetPresentation(stackDisplaySetId) || {};
+      viewport.getDisplaySetAppearance(stackDisplaySetId) || {};
 
-    viewport.setDisplaySetPresentation(stackDisplaySetId, {
+    viewport.setDisplaySetAppearance(stackDisplaySetId, {
       invert: !invert,
     });
     viewport.render();
@@ -229,7 +229,7 @@ addToolbarButton({
     const renderingEngine = getRenderingEngine(renderingEngineId);
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-    viewport.setDisplaySetPresentation(stackDisplaySetId, {
+    viewport.setDisplaySetAppearance(stackDisplaySetId, {
       colormap: { name: 'hsv' },
     });
     viewport.render();
@@ -243,7 +243,7 @@ addToolbarButton({
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     viewport.resetViewState();
-    viewport.setDisplaySetPresentation(stackDisplaySetId, {
+    viewport.setDisplaySetAppearance(stackDisplaySetId, {
       colormap: undefined,
       invert: false,
       voiRange: ctVoiRange,
@@ -286,7 +286,7 @@ async function run() {
     displaySetId: stackDisplaySetId,
     options: {},
   });
-  viewport.setDisplaySetPresentation(stackDisplaySetId, {
+  viewport.setDisplaySetAppearance(stackDisplaySetId, {
     voiRange: ctVoiRange,
   });
   viewport.render();

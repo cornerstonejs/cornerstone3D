@@ -70,8 +70,7 @@ A review follows four steps:
 
 The three questions that find the most defects, in order:
 
-- Does a new option change the world geometry, and does it sit in the data
-  presentation? See GENVIEW-STATE-1 and GENVIEW-STATE-3.
+- Does a new option change the world geometry, and does it sit in the appearance? See GENVIEW-STATE-1 and GENVIEW-STATE-3.
 - Does a second module compute geometry that the resolved view already owns? See
   GENVIEW-VIEW-6 and GENVIEW-PATH-2.
 - Does the code answer "what is this viewport" with `instanceof`, or with a list
@@ -107,13 +106,13 @@ The contract in
 [ViewportArchitectureTypes.ts:10-22](https://github.com/cornerstonejs/cornerstone3D/blob/main/packages/core/src/RenderingEngine/GenericViewport/ViewportArchitectureTypes.ts#L10-L22)
 states the contract, and this specification repeats it:
 
-| Record             | Owner                                    | Holds                                                                     | Persisted                              |
-| ------------------ | ---------------------------------------- | ------------------------------------------------------------------------- | -------------------------------------- |
-| `ViewState`        | The family viewport class                | The navigation and the layout                                             | No, but a presentation derives from it |
-| `ViewPresentation` | The projection adapter                   | The pan, the zoom or the scale, the rotation, the flips, the display area | Yes                                    |
-| `ViewReference`    | The family viewport class                | The frame of reference, the data identity, the slice locator              | Yes                                    |
-| `DataPresentation` | One binding                              | The VOI, the opacity, the colormap, the interpolation, the visibility     | Yes                                    |
-| `ResolvedView`     | The family viewport class, for one frame | The world geometry and the world/canvas transforms                        | Never                                  |
+| Record                 | Owner                                    | Holds                                                                     | Persisted                         |
+| ---------------------- | ---------------------------------------- | ------------------------------------------------------------------------- | --------------------------------- |
+| `ViewState`            | The family viewport class                | The navigation and the layout                                             | No, but a framing derives from it |
+| `ViewFraming`          | The projection adapter                   | The pan, the zoom or the scale, the rotation, the flips, the display area | Yes                               |
+| `ViewReference`        | The family viewport class                | The frame of reference, the data identity, the slice locator              | Yes                               |
+| `DisplaySetAppearance` | One binding                              | The VOI, the opacity, the colormap, the interpolation, the visibility     | Yes                               |
+| `ResolvedView`         | The family viewport class, for one frame | The world geometry and the world/canvas transforms                        | Never                             |
 
 ## User requirements
 
@@ -127,8 +126,8 @@ states the contract, and this specification repeats it:
   `getViewState()`, `setViewState()` and `updateViewState()`. The developer
   reads and writes the persistable look state through `viewportProjection`.
 - **GENVIEW-API-3** The developer reads and writes the appearance of one mounted
-  data set through `getDisplaySetPresentation()` and
-  `setDisplaySetPresentation()`. A change of the appearance of an overlay does
+  data set through `getDisplaySetAppearance()` and
+  `setDisplaySetAppearance()`. A change of the appearance of an overlay does
   not change the source, and does not move the view.
 - **GENVIEW-API-4** The developer converts between canvas space and world space
   with `canvasToWorld()` and `worldToCanvas()`. The two methods answer with the
@@ -174,7 +173,7 @@ states the contract, and this specification repeats it:
   the waveform, and every name with no `supports`. The registry is the only
   source of layout names.
 - **GENVIEW-ECG-3** The view state keeps `traceLayout` as the caller gave it,
-  so a saved presentation keeps a name as a name.
+  so a saved view keeps a name as a name.
 - **GENVIEW-ECG-4** A trace region names its lead by a channel index, or by the
   lead code value from `ChannelSourceSequence`. The code meaning depends on the
   language of the device, so a lead matches by its code meaning only when the
@@ -209,7 +208,7 @@ states the contract, and this specification repeats it:
 
 `packages/core/src/RenderingEngine/Viewports/BaseViewport.ts`
 
-- **GENVIEW-BASE-1** The base class owns the bindings, the data presentation
+- **GENVIEW-BASE-1** The base class owns the bindings, the appearance
   map, the view state field, the destroy lifecycle and the events. The base
   class holds no knowledge of CPU, of VTK, of DOM, of an image, of a volume or
   of a medium.
@@ -239,7 +238,7 @@ For example `Planar/PlanarViewport.ts`.
   binding keeps a second copy.
 - **GENVIEW-FAMILY-3** The family class builds the resolved view in
   `getResolvedView()`, from the data, the canvas geometry, the view state and
-  the data presentation. The method builds a new instance for each call, or it
+  the appearance. The method builds a new instance for each call, or it
   caches one instance for each state. The method never reads a value that a
   render path wrote during a draw.
 - **GENVIEW-FAMILY-4** The family class holds no drawing code. A call to
@@ -256,7 +255,7 @@ For example `Planar/PlanarViewport.ts`.
   the family in the constructor, and it puts the element on the render context.
   A render path receives the element, and it does not create one.
 
-### The view state, and the data presentation (GENVIEW-STATE)
+### The view state, and the appearance (GENVIEW-STATE)
 
 For example `Planar/PlanarViewportTypes.ts`.
 
@@ -265,16 +264,16 @@ For example `Planar/PlanarViewportTypes.ts`.
   position, a reformat orientation, a cell layout, a time window and an
   amplitude scale each change the geometry, so each one is view state.
 - **GENVIEW-STATE-2** An option that changes the appearance only belongs to the
-  data presentation: the VOI, the opacity, the colormap, the blend mode, the
+  appearance: the VOI, the opacity, the colormap, the blend mode, the
   interpolation, the visibility, the line width.
 - **GENVIEW-STATE-3** The test for GENVIEW-STATE-1 is one question. Does a
   change of the option move a world point on the canvas? An answer of yes puts
   the option in the view state, because the view state path fires
-  `CAMERA_MODIFIED`, and the presentation path does not.
+  `CAMERA_MODIFIED`, and the appearance path does not.
 - **GENVIEW-STATE-4** The view state extends `ViewportCameraBase`. The family
   adds only the fields that the family needs.
 - **GENVIEW-STATE-5** The family declares four types in one file,
-  `<Family>ViewportTypes.ts`: the view state, the data presentation, the render
+  `<Family>ViewportTypes.ts`: the view state, the appearance, the render
   context and the mounted rendering. A second declaration of the same shape in
   another file is a defect. A shared shape becomes a type alias, and not a copy.
 
@@ -285,13 +284,12 @@ For example `Planar/PlanarResolvedView.ts`. Each one extends `ResolvedViewportVi
 - **GENVIEW-VIEW-1** The resolved view owns the world geometry of one frame and
   the transforms between world space and canvas space.
 - **GENVIEW-VIEW-2** The resolved view derives every value from three inputs:
-  the loaded data, the canvas geometry, and the view state with the data
-  presentation. It reads no value that a render path produced.
+  the loaded data, the canvas geometry, and the view state with the appearance. It reads no value that a render path produced.
 - **GENVIEW-VIEW-3** The resolved view is immutable. The constructor freezes the
   state. A derived value is cached inside the instance, because one instance
   describes one frame.
 - **GENVIEW-VIEW-4** The resolved view is never persisted, and it never appears
-  in a presentation or in a reference.
+  in a framing or in a reference.
 - **GENVIEW-VIEW-5** The resolved view implements `buildICamera()`, which gives
   the legacy `ICamera` shape for the tools that still need it. The `ICamera`
   shape is an output of the resolved view, and it is not an input.
@@ -357,14 +355,14 @@ For example `Planar/DefaultPlanarDataProvider.ts`.
 
 Each family holds four files:
 `<family>ProjectionAdapter.ts`, `<Family>ProjectionTypes.ts`,
-`<family>ProjectionSnapshot.ts` and `<family>ProjectionPresentation.ts`.
+`<family>ProjectionSnapshot.ts` and `<family>ProjectionFraming.ts`.
 
 - **GENVIEW-PROJ-1** The snapshot file reads the viewport and returns a
   `ProjectionSnapshot`. The snapshot declares the spaces that the family
   supports, and it omits a space that the family does not support. A no-op
   transform in place of an omitted space is a defect.
-- **GENVIEW-PROJ-2** The presentation file converts between the snapshot and the
-  public presentation shape of the family. `withPresentation()` returns the next
+- **GENVIEW-PROJ-2** The framing file converts between the snapshot and the
+  public framing shape of the family. `withFraming()` returns the next
   view state, and it does not mutate the viewport.
 - **GENVIEW-PROJ-3** The adapter file joins the two, declares the identifier and
   the viewport types, and exports one constant.
@@ -436,7 +434,7 @@ group says which part of a viewport owns each piece of the fidelity.
   record, and the viewport then reports no degradation. A video, an ECG and a
   stack of images at full quality are examples.
 - **GENVIEW-FIDELITY-6** The fidelity configuration is global configuration.
-  It is not view state and not data presentation. See GENVIEW-STATE-1 and
+  It is not view state and not appearance. See GENVIEW-STATE-1 and
   GENVIEW-STATE-2.
 - **GENVIEW-FIDELITY-7** A user interface that shows the fidelity is a consumer
   of the event. It is not part of the family class, the render path or the
@@ -481,7 +479,7 @@ group says which part of a viewport owns each piece of the fidelity.
 | Does the code call a drawing API?                                                    | The render path                                    |
 | Does the code convert between world space and canvas space, or compute a world size? | The resolved view                                  |
 | Does the code change what the user navigates to?                                     | The view state, on the family class                |
-| Does the code change how a mounted data set looks?                                   | The data presentation, on the binding              |
+| Does the code change how a mounted data set looks?                                   | The appearance, on the binding                     |
 | Does the code persist or restore the look of the view?                               | The projection adapter                             |
 | Does the code record or report the fidelity of the frame?                            | See GENVIEW-FIDELITY                               |
 | Do two or more families need the same code?                                          | The base class, or a shared module in `Viewports/` |
@@ -521,8 +519,8 @@ The § Known deviations section holds what is open.
 | Defect                                                                                                                                                                                                                                                                     | Fixed in                                                          | Requirement                                                   |
 | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------- |
 | The ECG resolved view read the render metrics that the last draw left on the mounted rendering, and the render path computed its own time window. A transform was one frame old, and a click in a `12x1` row mapped to the wrong sample after a change of the time window. | [#2899](https://github.com/cornerstonejs/cornerstone3D/pull/2899) | GENVIEW-VIEW-2, GENVIEW-VIEW-6, GENVIEW-PATH-2, GENVIEW-API-4 |
-| `amplitudeScale` was in the ECG data presentation. It scaled the drawn trace and not the transform, and a change fired no `CAMERA_MODIFIED`.                                                                                                                               | [#2899](https://github.com/cornerstonejs/cornerstone3D/pull/2899) | GENVIEW-STATE-1, GENVIEW-API-5                                |
-| `sweepSpeed` was declared on the ECG data presentation and never read. It is now in `ECGViewState`, with `sensitivityMmMv`, `visibleChannels` and `traceLayout`.                                                                                                           | [#2899](https://github.com/cornerstonejs/cornerstone3D/pull/2899) | GENVIEW-STATE-1, GENVIEW-STATE-3                              |
+| `amplitudeScale` was in the ECG appearance. It scaled the drawn trace and not the transform, and a change fired no `CAMERA_MODIFIED`.                                                                                                                                      | [#2899](https://github.com/cornerstonejs/cornerstone3D/pull/2899) | GENVIEW-STATE-1, GENVIEW-API-5                                |
+| `sweepSpeed` was declared on the ECG appearance and never read. It is now in `ECGViewState`, with `sensitivityMmMv`, `visibleChannels` and `traceLayout`.                                                                                                                  | [#2899](https://github.com/cornerstonejs/cornerstone3D/pull/2899) | GENVIEW-STATE-1, GENVIEW-STATE-3                              |
 | `RenderWindowMetrics` and `ECGRenderMetrics` were two declarations of one shape, joined by a cast, and the deprecated class declared its own `ChannelLayout`. `ECGRenderMetrics` and `ECGChannelLayout` are now the only declarations.                                     | [#2899](https://github.com/cornerstonejs/cornerstone3D/pull/2899) | GENVIEW-STATE-5                                               |
 | The ECG family answered `getCurrentMode()` with `'unknown'`.                                                                                                                                                                                                               | [#2899](https://github.com/cornerstonejs/cornerstone3D/pull/2899) | GENVIEW-FAMILY-5, GENVIEW-API-6                               |
 | The video and whole slide families answered `getCurrentMode()` with `'unknown'`, and `UltrasoundDirectionalTool` told the families apart with `instanceof` tests. Every family answers the mode now, and the tool tests no class.                                          | the 6.0 branch                                                    | GENVIEW-FAMILY-5, GENVIEW-API-6                               |

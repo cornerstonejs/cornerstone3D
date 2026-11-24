@@ -19,7 +19,7 @@
 //     viewport element. Verified empirically in the first A2 test below by
 //     recording on both targets simultaneously.
 //   - VOI_MODIFIED fires on the viewport `element` (PlanarViewport's
-//     `notifyDataPresentationModified` calls `triggerEvent(this.element, ...)`).
+//     `notifyAppearanceModified` calls `triggerEvent(this.element, ...)`).
 //   - IMAGE_RENDERED / NEW_IMAGE fire on the viewport `element`.
 import { afterEach, describe, expect, test } from 'vitest';
 import { Enums, eventTarget, utilities } from '@cornerstonejs/core';
@@ -569,17 +569,17 @@ describe('Manipulation tools with exact viewport-state values', () => {
     activeCleanup = ctx.cleanup;
     const { viewport, element, displaySetId } = ctx;
 
-    // getDisplaySetPresentation(displaySetId).voiRange is only populated once
+    // getDisplaySetAppearance(displaySetId).voiRange is only populated once
     // something has explicitly written it (e.g. a WindowLevel drag calling
-    // setDisplaySetPresentation). Before the first drag, the presentation
+    // setDisplaySetAppearance). Before the first drag, the presentation
     // store only holds `{ visible: true }` (set by the mount-time
-    // setDefaultDataPresentation call) -- the mounted default VOI is
+    // setDefaultAppearance call) -- the mounted default VOI is
     // observable only via getDefaultVOIRange, never through
-    // getDisplaySetPresentation, until it is written for real. This mirrors
+    // getDisplaySetAppearance, until it is written for real. This mirrors
     // WindowLevelTool's own getViewportVOIProperties helper, which reads
-    // `dataPresentation?.voiRange ?? defaultVOIRange`.
+    // `appearance?.voiRange ?? defaultVOIRange`.
     function getVoiRange() {
-      const presentation = viewport.getDisplaySetPresentation(displaySetId) as
+      const presentation = viewport.getDisplaySetAppearance(displaySetId) as
         | { voiRange?: { lower: number; upper: number } }
         | undefined;
       const voiRange =

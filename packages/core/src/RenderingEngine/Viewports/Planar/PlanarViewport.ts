@@ -86,7 +86,7 @@ import { clonePlanarOrientation } from './planarOrientationAndScaling';
 import {
   getPlanarRotationAfterFlips,
   normalizePlanarRotation,
-} from './planarViewPresentation';
+} from './planarViewFraming';
 import {
   cloneDisplayArea,
   createDefaultPlanarViewState,
@@ -99,7 +99,7 @@ import {
 } from './planarCameraScale';
 import {
   fitPlanarCameraClippingRange,
-  type DerivedPlanarPresentation,
+  type DerivedPlanarFraming,
 } from './planarRenderCamera';
 import {
   getPlanarProjectionPan,
@@ -148,7 +148,7 @@ import { createSharpeningSmoothingRenderPasses } from '../../renderPasses/create
 export type { PlanarReferenceContext } from './PlanarViewReferenceController';
 import type {
   PlanarViewState,
-  PlanarDataPresentation,
+  PlanarDisplaySetAppearance,
   PlanarDataProvider,
   PlanarDisplayArea,
   PlanarEffectiveRenderMode,
@@ -197,8 +197,8 @@ const log = coreLog.getLogger('RenderingEngine', 'PlanarViewport');
  */
 const CANVAS_CSS_CLASS = 'cornerstone-canvas';
 
-type PlanarSlabPresentation = Pick<
-  PlanarDataPresentation,
+type PlanarSlabAppearance = Pick<
+  PlanarDisplaySetAppearance,
   'slabThickness' | 'blendMode'
 >;
 
@@ -291,7 +291,7 @@ function applyViewPropOrder(
 
 /** The vtk actors of the actor entries of a binding. */
 function getBindingActors(
-  binding: ViewportDataBinding<PlanarDataPresentation> | undefined
+  binding: ViewportDataBinding<PlanarDisplaySetAppearance> | undefined
 ): unknown[] {
   if (!binding) {
     return [];
@@ -304,10 +304,10 @@ function getBindingActors(
   return entries.map((entry) => entry.actor);
 }
 
-/** The slab thickness and the blend mode of a presentation. */
-function getSlabPresentation(
-  props: PlanarDataPresentation | undefined
-): PlanarSlabPresentation {
+/** The slab thickness and the blend mode of an appearance. */
+function getSlabAppearance(
+  props: PlanarDisplaySetAppearance | undefined
+): PlanarSlabAppearance {
   return {
     slabThickness: props?.slabThickness,
     blendMode: props?.blendMode,
@@ -366,7 +366,7 @@ function isRemovedVolume({ data }: PlanarDataLoad): boolean {
 /**
  * Whether two render path decisions of one display set have the same inputs
  * from the display sets that are mounted: the backend that an overlay takes
- * from the source, and the slab of the stored presentation. The other inputs
+ * from the source, and the slab of the stored appearance. The other inputs
  * come from the options and the orientation of the display set.
  */
 function hasSameMountInputs(
@@ -390,7 +390,7 @@ type PlanarStackImageLoads = {
 
 class PlanarViewport extends BaseViewport<
   PlanarViewState,
-  PlanarDataPresentation,
+  PlanarDisplaySetAppearance,
   PlanarViewportRenderContext
 > {
   readonly type = ViewportType.PLANAR;
@@ -469,11 +469,11 @@ class PlanarViewport extends BaseViewport<
   >();
   /**
    * The slab that a mounted binding draws while its display set waits for a
-   * remount to the render mode of a new slab (`setDataPresentationState`).
+   * remount to the render mode of a new slab (`setAppearanceState`).
    */
   private readonly withheldSlabByBinding = new WeakMap<
     object,
-    PlanarSlabPresentation
+    PlanarSlabAppearance
   >();
   /** The reason of the decision behind the mounted render mode of each display set. */
   private readonly renderPlanReasonByDisplaySetId = new Map<
@@ -528,8 +528,8 @@ class PlanarViewport extends BaseViewport<
       getBinding: (displaySetId) => this.getBinding(displaySetId),
       getBindings: () => this.bindings.entries(),
       getCurrentBinding: () => this.getCurrentBinding(),
-      getDisplaySetPresentation: (displaySetId) =>
-        this.getDisplaySetPresentation(displaySetId),
+      getDisplaySetAppearance: (displaySetId) =>
+        this.getDisplaySetAppearance(displaySetId),
       getRenderContext: () => this.renderContext,
       getResolvedView: (viewArgs) => this.getResolvedView(viewArgs),
       getViewState: () => this.viewState,
@@ -919,24 +919,24 @@ class PlanarViewport extends BaseViewport<
     this.updateRenderPlan(displaySetId, selectedPath.reason);
     this.mountOptionsByDisplaySetId.set(displaySetId, resolvedOptions);
     this.clearResolvedViewCache();
-    this.setDefaultDataPresentation(displaySetId, {
+    this.setDefaultAppearance(displaySetId, {
       visible: true,
     });
 
-    // `setDefaultDataPresentation` -> `setDataPresentationState` does not emit
+    // `setDefaultAppearance` -> `setAppearanceState` does not emit
     // (only the public merge path notifies), so a freshly-mounted display set
     // never surfaced its default VOI. Legacy Stack/Volume viewports emit
     // VOI_MODIFIED at load; mirror that here so OHIF's window-level readout,
     // the colorbar, and VOI synchronizers update when the display set changes.
     // Runs per binding (source and each overlay) with that binding's own displaySetId,
-    // and `notifyDataPresentationModified` resolves the matching volumeId/event
-    // internally. Mirrors the `resetDisplaySetPresentation` precedent below.
-    const mountedPresentation = this.getDisplaySetPresentation(displaySetId);
+    // and `notifyAppearanceModified` resolves the matching volumeId/event
+    // internally. Mirrors the `resetDisplaySetAppearance` precedent below.
+    const mountedAppearance = this.getDisplaySetAppearance(displaySetId);
     const voiRange =
-      mountedPresentation?.voiRange ?? this.getDefaultVOIRange(displaySetId);
+      mountedAppearance?.voiRange ?? this.getDefaultVOIRange(displaySetId);
 
     if (voiRange) {
-      this.notifyDataPresentationModified(displaySetId, { voiRange });
+      this.notifyAppearanceModified(displaySetId, { voiRange });
     }
 
     if (role === 'source') {
@@ -1104,7 +1104,7 @@ class PlanarViewport extends BaseViewport<
     if (volumeId) {
       // Match by actor referencedId first (e.g. the prefixed volume id
       // "cornerstoneStreamingImageVolume:<uid>"). VOI/colorbar tooling, however,
-      // identifies a layer by its display-set id (the presentation displaySetId, a bare
+      // identifies a layer by its display-set id (the appearance displaySetId, a bare
       // uid), which is not the referencedId. Fall back to resolving that displaySetId
       // through the binding so a fused viewport's per-layer colorbar reads the
       // correct actor (e.g. the PT layer) instead of defaulting to the source.
@@ -1201,7 +1201,7 @@ class PlanarViewport extends BaseViewport<
 
     try {
       return createSharpeningSmoothingRenderPasses(
-        this.getDisplaySetPresentation(binding.data.id) || {}
+        this.getDisplaySetAppearance(binding.data.id) || {}
       );
     } catch (error) {
       log.warn('Failed to create custom render passes:', error);
@@ -1413,14 +1413,14 @@ class PlanarViewport extends BaseViewport<
   }
 
   /**
-   * Emits the legacy-named presentation events (`VOI_MODIFIED`,
-   * `COLORMAP_MODIFIED`) when a per-display-set presentation update changes the
+   * Emits the legacy-named appearance events (`VOI_MODIFIED`,
+   * `COLORMAP_MODIFIED`) when a per-display-set appearance update changes the
    * VOI, invert, or colormap of a mounted dataset.
    *
-   * The native presentation write path previously emitted no event, so OHIF's
+   * The native appearance write path previously emitted no event, so OHIF's
    * VOI sliders, colorbar, window-level readout, and VOI/colormap
    * synchronizers went stale after any programmatic or tool-driven
-   * `setDisplaySetPresentation` change on a direct `PLANAR` viewport.
+   * `setDisplaySetAppearance` change on a direct `PLANAR` viewport.
    *
    * A change of the slab thickness fires `CAMERA_MODIFIED`, with the camera
    * as the previous camera, as the legacy volume viewport did when its slab
@@ -1431,10 +1431,10 @@ class PlanarViewport extends BaseViewport<
    * mode fires it for every change that names the VOI, as the legacy volume
    * viewport.
    */
-  protected notifyDataPresentationModified(
+  protected notifyAppearanceModified(
     displaySetId: string,
-    props: Partial<PlanarDataPresentation>,
-    previousPresentation?: PlanarDataPresentation
+    props: Partial<PlanarDisplaySetAppearance>,
+    previousAppearance?: PlanarDisplaySetAppearance
   ): void {
     if (this.suppressEvents) {
       return;
@@ -1452,27 +1452,27 @@ class PlanarViewport extends BaseViewport<
       return;
     }
 
-    const presentation = this.getDisplaySetPresentation(displaySetId);
-    const volumeId = this.getPresentationEventVolumeId(displaySetId);
+    const appearance = this.getDisplaySetAppearance(displaySetId);
+    const volumeId = this.getAppearanceEventVolumeId(displaySetId);
 
     if (voiTouched) {
       const range =
         props.voiRange ??
-        presentation?.voiRange ??
+        appearance?.voiRange ??
         this.getDefaultVOIRange(displaySetId);
 
       if (
         range &&
         this.reportsVOI(displaySetId, range, volumeId) &&
-        !this.keepsStackVOI(displaySetId, presentation, previousPresentation)
+        !this.keepsStackVOI(displaySetId, appearance, previousAppearance)
       ) {
         triggerEvent(this.element, Events.VOI_MODIFIED, {
           viewportId: this.id,
           range,
           volumeId,
-          VOILUTFunction: props.voiLUTFunction ?? presentation?.voiLUTFunction,
-          invert: props.invert ?? presentation?.invert,
-          colormap: presentation?.colormap,
+          VOILUTFunction: props.voiLUTFunction ?? appearance?.voiLUTFunction,
+          invert: props.invert ?? appearance?.invert,
+          colormap: appearance?.colormap,
         });
       }
     }
@@ -1480,7 +1480,7 @@ class PlanarViewport extends BaseViewport<
     if (colormapTouched && props.colormap) {
       triggerEvent(this.element, Events.COLORMAP_MODIFIED, {
         viewportId: this.id,
-        colormap: presentation?.colormap ?? props.colormap,
+        colormap: appearance?.colormap ?? props.colormap,
         volumeId,
       });
     }
@@ -1540,46 +1540,46 @@ class PlanarViewport extends BaseViewport<
 
     if (
       !range ||
-      this.getDisplaySetPresentation(displaySetId)?.voiRange ||
+      this.getDisplaySetAppearance(displaySetId)?.voiRange ||
       (range.lower === previousRange?.lower &&
         range.upper === previousRange?.upper)
     ) {
       return;
     }
 
-    this.notifyDataPresentationModified(displaySetId, { voiRange: range });
+    this.notifyAppearanceModified(displaySetId, { voiRange: range });
   }
 
   /**
-   * Whether a presentation change of a display set in stack mode leaves its
+   * Whether an appearance change of a display set in stack mode leaves its
    * VOI as it was: the same range, where the default range stands for none,
    * the same VOI LUT function and the same invert. The legacy stack viewport
    * fired no `VOI_MODIFIED` when the same range was set again. False in
-   * volume mode, and when the presentation before the change is not known.
+   * volume mode, and when the appearance before the change is not known.
    */
   private keepsStackVOI(
     displaySetId: string,
-    presentation: PlanarDataPresentation | undefined,
-    previousPresentation: PlanarDataPresentation | undefined
+    appearance: PlanarDisplaySetAppearance | undefined,
+    previousAppearance: PlanarDisplaySetAppearance | undefined
   ): boolean {
-    if (!previousPresentation || this.getCurrentMode() !== 'stack') {
+    if (!previousAppearance || this.getCurrentMode() !== 'stack') {
       return false;
     }
 
     const defaultRange = this.getDefaultVOIRange(displaySetId);
-    const range = presentation?.voiRange ?? defaultRange;
-    const previousRange = previousPresentation.voiRange ?? defaultRange;
+    const range = appearance?.voiRange ?? defaultRange;
+    const previousRange = previousAppearance.voiRange ?? defaultRange;
 
     return (
       range?.lower === previousRange?.lower &&
       range?.upper === previousRange?.upper &&
-      presentation?.voiLUTFunction === previousPresentation.voiLUTFunction &&
-      presentation?.invert === previousPresentation.invert
+      appearance?.voiLUTFunction === previousAppearance.voiLUTFunction &&
+      appearance?.invert === previousAppearance.invert
     );
   }
 
   /**
-   * The volume id that a presentation event of a display set names, so that
+   * The volume id that an appearance event of a display set names, so that
    * a VOI or colormap change of an overlay does not name the volume of the
    * source. A mounted display set names the volume that its binding draws,
    * and none when the binding draws images: the binding keeps what the mount
@@ -1587,9 +1587,7 @@ class PlanarViewport extends BaseViewport<
    * not count. A display set that is not mounted names the volume of its
    * registration, or the volume of the source when it is the source.
    */
-  private getPresentationEventVolumeId(
-    displaySetId: string
-  ): string | undefined {
+  private getAppearanceEventVolumeId(displaySetId: string): string | undefined {
     const binding = this.getBinding(displaySetId);
 
     if (!binding) {
@@ -1607,23 +1605,22 @@ class PlanarViewport extends BaseViewport<
   }
 
   /**
-   * Merges a presentation change as the base class does, with `colormap`
+   * Merges an appearance change as the base class does, with `colormap`
    * merged one level deep: a colormap that names only some of its fields
    * keeps the stored others, so the name stays when only the opacity
    * changes.
    */
-  protected override mergeDataPresentation(
+  protected override mergeAppearance(
     displaySetId: string,
-    changes: Partial<PlanarDataPresentation>
-  ): PlanarDataPresentation {
-    const storedColormap =
-      this.getDisplaySetPresentation(displaySetId)?.colormap;
+    changes: Partial<PlanarDisplaySetAppearance>
+  ): PlanarDisplaySetAppearance {
+    const storedColormap = this.getDisplaySetAppearance(displaySetId)?.colormap;
     const props =
       changes.colormap && storedColormap
         ? { ...changes, colormap: { ...storedColormap, ...changes.colormap } }
         : changes;
 
-    return super.mergeDataPresentation(displaySetId, props);
+    return super.mergeAppearance(displaySetId, props);
   }
 
   getDefaultVOIRange(displaySetId?: string): VOIRange | undefined {
@@ -1632,7 +1629,7 @@ class PlanarViewport extends BaseViewport<
 
   /**
    * Whether the image of a display set is drawn inverted when its
-   * presentation does not set `invert`: true for a MONOCHROME1 image. It is
+   * appearance does not set `invert`: true for a MONOCHROME1 image. It is
    * undefined for data that has no such default, as a volume.
    *
    * @param displaySetId - Optional display set id; defaults to the active source.
@@ -1792,42 +1789,42 @@ class PlanarViewport extends BaseViewport<
     this.modified(previousCamera);
   }
 
-  setDisplaySetPresentation(props: Partial<PlanarDataPresentation>): void;
-  setDisplaySetPresentation(
+  setDisplaySetAppearance(props: Partial<PlanarDisplaySetAppearance>): void;
+  setDisplaySetAppearance(
     displaySetId: string,
-    props: Partial<PlanarDataPresentation>
+    props: Partial<PlanarDisplaySetAppearance>
   ): void;
-  setDisplaySetPresentation(
-    displaySetIdOrProps: string | Partial<PlanarDataPresentation>,
-    maybeProps?: Partial<PlanarDataPresentation>
+  setDisplaySetAppearance(
+    displaySetIdOrProps: string | Partial<PlanarDisplaySetAppearance>,
+    maybeProps?: Partial<PlanarDisplaySetAppearance>
   ): void {
     this.clearResolvedViewCache();
 
     if (typeof displaySetIdOrProps === 'string') {
-      super.setDisplaySetPresentation(displaySetIdOrProps, maybeProps ?? {});
+      super.setDisplaySetAppearance(displaySetIdOrProps, maybeProps ?? {});
       return;
     }
 
-    super.setDisplaySetPresentation(displaySetIdOrProps);
+    super.setDisplaySetAppearance(displaySetIdOrProps);
   }
 
   /**
-   * Stores the presentation of a display set and gives it to the mounted
+   * Stores the appearance of a display set and gives it to the mounted
    * binding. When the new slab needs another render mode than the mounted one
-   * (`getRenderModeForPresentation`), the mounted binding keeps the slab
+   * (`getRenderModeForAppearance`), the mounted binding keeps the slab
    * thickness and the blend mode that it draws, so it does no work for a slab
    * that is about to move, and gets every other field at once. The stored
-   * presentation is the new one, and the remounted binding gets it. When the
+   * appearance is the new one, and the remounted binding gets it. When the
    * change starts a remount, the render that it asks for is held with the
    * renders of the remount (`applyRenderingPipelineUpdate`).
    */
-  protected override setDataPresentationState(
+  protected override setAppearanceState(
     displaySetId: string,
-    props: PlanarDataPresentation
+    props: PlanarDisplaySetAppearance
   ): void {
-    const previousProps = this.getDataPresentationState(displaySetId);
+    const previousProps = this.getAppearanceState(displaySetId);
     const binding = this.bindings.get(displaySetId);
-    const decision = this.getRenderModeForPresentation(
+    const decision = this.getRenderModeForAppearance(
       displaySetId,
       previousProps,
       props
@@ -1854,15 +1851,15 @@ class PlanarViewport extends BaseViewport<
         this.withheldSlabByBinding.delete(binding);
       }
 
-      super.setDataPresentationState(displaySetId, props);
+      super.setAppearanceState(displaySetId, props);
     } else {
       const mountedSlab =
         this.withheldSlabByBinding.get(binding) ??
-        getSlabPresentation(previousProps);
+        getSlabAppearance(previousProps);
 
       this.withheldSlabByBinding.set(binding, mountedSlab);
-      this.dataPresentation.set(displaySetId, props);
-      binding.updateDataPresentation({ ...props, ...mountedSlab });
+      this.displaySetAppearances.set(displaySetId, props);
+      binding.updateAppearance({ ...props, ...mountedSlab });
       this.render();
     }
 
@@ -1876,19 +1873,19 @@ class PlanarViewport extends BaseViewport<
 
   /**
    * The render mode, and its reason, that a mounted volume display set needs
-   * for a new presentation, when it may change: a slab moves a sampled slice
+   * for a new appearance, when it may change: a slab moves a sampled slice
    * to the GPU volume path, and back. Only a change of the slab thickness or
    * the blend mode runs the decision, so a window level change costs nothing.
    * Returns undefined when the decision does not run. The caller starts the
    * remount (`applyRenderingPipelineUpdate`) when the mode differs from the
    * mounted one, and also while a pass is pending, because the pending pass
-   * may mount the mode that an older presentation chose. Otherwise it stores
+   * may mount the mode that an older appearance chose. Otherwise it stores
    * the reason in the render plan.
    */
-  private getRenderModeForPresentation(
+  private getRenderModeForAppearance(
     displaySetId: string,
-    previousProps: PlanarDataPresentation | undefined,
-    props: PlanarDataPresentation | undefined
+    previousProps: PlanarDisplaySetAppearance | undefined,
+    props: PlanarDisplaySetAppearance | undefined
   ): PlanarRenderModeDecision | undefined {
     if (
       previousProps?.slabThickness === props?.slabThickness &&
@@ -2602,7 +2599,7 @@ class PlanarViewport extends BaseViewport<
   }
 
   /**
-   * Resets view state presentation back to the viewport defaults.
+   * Resets the view state back to the viewport defaults.
    *
    * Navigation state such as the current slice remains unchanged.
    *
@@ -2659,9 +2656,9 @@ class PlanarViewport extends BaseViewport<
   }
 
   /**
-   * Clears the stored presentation of one display set to `{}`. This is the
+   * Clears the stored appearance of one display set to `{}`. This is the
    * contract: every key goes, the `visible: true` that the mount stored too,
-   * so `getDisplaySetPresentation(displaySetId)` then gives `{}` and a hidden
+   * so `getDisplaySetAppearance(displaySetId)` then gives `{}` and a hidden
    * display set shows again. The render path then draws its defaults (the
    * default VOI, no colormap, no inversion, no slab, the default blend mode
    * and opacity) and `VOI_MODIFIED` reports the default VOI range, unless
@@ -2671,7 +2668,7 @@ class PlanarViewport extends BaseViewport<
    *
    * @param displaySetId - Optional display set id; defaults to the active source.
    */
-  resetDisplaySetPresentation(displaySetId?: string): void {
+  resetDisplaySetAppearance(displaySetId?: string): void {
     if (this.isDestroyed) {
       return;
     }
@@ -2682,20 +2679,20 @@ class PlanarViewport extends BaseViewport<
       return;
     }
 
-    // Drop the stored override so the render path's `updateDataPresentation`
+    // Drop the stored override so the render path's `updateAppearance`
     // reapplies its defaults.
-    this.setDataPresentationState(
+    this.setAppearanceState(
       targetDisplaySetId,
-      {} as PlanarDataPresentation
+      {} as PlanarDisplaySetAppearance
     );
 
-    // `setDataPresentationState` does not emit (only the public merge path
+    // `setAppearanceState` does not emit (only the public merge path
     // notifies), so surface the now-default VOI to OHIF's window-level readout,
     // colorbar, sliders, and VOI synchronizers.
     const defaultVOIRange = this.getDefaultVOIRange(targetDisplaySetId);
 
     if (defaultVOIRange) {
-      this.notifyDataPresentationModified(targetDisplaySetId, {
+      this.notifyAppearanceModified(targetDisplaySetId, {
         voiRange: defaultVOIRange,
       });
     }
@@ -2894,7 +2891,7 @@ class PlanarViewport extends BaseViewport<
       applyCanvasSharpeningSmoothing(
         canvas,
         context,
-        this.getDisplaySetPresentation(binding.data.id)
+        this.getDisplaySetAppearance(binding.data.id)
       );
     }
   }
@@ -3021,7 +3018,7 @@ class PlanarViewport extends BaseViewport<
     let renderedByAdapter = false;
     const sourceBinding = this.getCurrentBinding();
     const renderBinding = (
-      binding: ViewportDataBinding<PlanarDataPresentation>,
+      binding: ViewportDataBinding<PlanarDisplaySetAppearance>,
       displaySetId: string
     ) => {
       if (!binding.render) {
@@ -3057,8 +3054,8 @@ class PlanarViewport extends BaseViewport<
    * Live render-backend switch: re-runs the render-path decision for every
    * mounted display set and remounts, in place, the ones whose effective
    * render mode changed. The viewport instance, its id, mounted data, view
-   * state (slice/zoom/pan), per-display-set presentation, and tool
-   * annotations all survive -- addLoadedData re-applies presentation and view
+   * state (slice/zoom/pan), per-display-set appearance, and tool
+   * annotations all survive -- addLoadedData re-applies appearance and view
    * state to the rebuilt binding. Display sets pinned via a per-mount
    * renderBackend re-resolve to the same path and are effectively skipped.
    *
@@ -3073,9 +3070,9 @@ class PlanarViewport extends BaseViewport<
    * Starts a pass of `applyRenderingPipelineUpdate` and keeps it as the
    * pending pass (`pendingRenderPipelineUpdate`, the pass that has not settled
    * yet) until it settles. A pass decides the render mode of a display
-   * set before it awaits the data and mounts after, so a presentation change
+   * set before it awaits the data and mounts after, so an appearance change
    * while a pass is pending starts a new pass, which makes the pending one
-   * stale and decides again for the final presentation.
+   * stale and decides again for the final appearance.
    */
   private startRenderingPipelineUpdate(): void {
     const update = this.applyRenderingPipelineUpdate();
@@ -3092,7 +3089,7 @@ class PlanarViewport extends BaseViewport<
    * One pass of the live remount. The pass first decides and loads the data
    * of every binding, then mounts the bindings whose render mode changes,
    * one after the other. A binding whose decision, load or mount throws
-   * keeps its render path and gets the stored presentation
+   * keeps its render path and gets the stored appearance
    * (`releaseWithheldSlabAfterError`). From its start to its end it holds the renders of
    * this viewport (`holdsRenderForRemount`), so no frame shows the new source
    * with the old overlays while a mount waits for its data. An overlay that
@@ -3100,7 +3097,7 @@ class PlanarViewport extends BaseViewport<
    * pass chose for the source, as it follows the mounted source otherwise.
    * Each remounted binding keeps the place of the one it replaces in the draw
    * order (`keepViewPropPlace`). A binding whose render mode stays gets the
-   * stored presentation when it drew a withheld slab.
+   * stored appearance when it drew a withheld slab.
    */
   private async applyRenderingPipelineUpdate(): Promise<void> {
     if (this.isDestroyed) {
@@ -3159,7 +3156,7 @@ class PlanarViewport extends BaseViewport<
     ];
     const mounts: Array<{
       displaySetId: string;
-      binding: ViewportDataBinding<PlanarDataPresentation>;
+      binding: ViewportDataBinding<PlanarDisplaySetAppearance>;
       data: LoadedData<PlanarPayload>;
       renderMode: PlanarEffectiveRenderMode;
       reason: RenderPlanReason;
@@ -3272,12 +3269,12 @@ class PlanarViewport extends BaseViewport<
   }
 
   /**
-   * Gives a binding the stored presentation when it drew a withheld slab
-   * (`setDataPresentationState`) and keeps its render mode after all.
+   * Gives a binding the stored appearance when it drew a withheld slab
+   * (`setAppearanceState`) and keeps its render mode after all.
    */
   private releaseWithheldSlab(
     displaySetId: string,
-    binding: ViewportDataBinding<PlanarDataPresentation>
+    binding: ViewportDataBinding<PlanarDisplaySetAppearance>
   ): void {
     if (!this.withheldSlabByBinding.has(binding)) {
       return;
@@ -3285,22 +3282,22 @@ class PlanarViewport extends BaseViewport<
 
     this.withheldSlabByBinding.delete(binding);
 
-    const props = this.getDataPresentationState(displaySetId);
+    const props = this.getAppearanceState(displaySetId);
 
     if (props !== undefined) {
-      binding.updateDataPresentation(props);
+      binding.updateAppearance(props);
       this.render();
     }
   }
 
   /**
-   * Gives the mounted binding of a display set the stored presentation after
+   * Gives the mounted binding of a display set the stored appearance after
    * its remount failed, so the render path that works draws the new slab and
    * no binding keeps a withheld slab.
    */
   private releaseWithheldSlabAfterError(
     displaySetId: string,
-    binding: ViewportDataBinding<PlanarDataPresentation>
+    binding: ViewportDataBinding<PlanarDisplaySetAppearance>
   ): void {
     if (!this.isDestroyed && this.bindings.get(displaySetId) === binding) {
       this.releaseWithheldSlab(displaySetId, binding);
@@ -3324,7 +3321,7 @@ class PlanarViewport extends BaseViewport<
    */
   private keepViewPropPlace(
     propsBefore: unknown[],
-    binding: ViewportDataBinding<PlanarDataPresentation> | undefined
+    binding: ViewportDataBinding<PlanarDisplaySetAppearance> | undefined
   ): void {
     const order = getRemountedViewPropOrder(
       propsBefore,
@@ -3487,7 +3484,7 @@ class PlanarViewport extends BaseViewport<
   /**
    * Whether the volume slice path of `displaySetId` may draw the acquired frames
    * (`PlanarRenderPathDecisionService.canDrawAcquiredFrames`). The render path
-   * reads this at each change of the view or the presentation.
+   * reads this at each change of the view or the appearance.
    */
   private canDrawAcquiredFrames(displaySetId: string): boolean {
     const binding = this.bindings.get(displaySetId);
@@ -3512,7 +3509,7 @@ class PlanarViewport extends BaseViewport<
 
   /**
    * The inputs of the render-path decision for one display set, with the
-   * stored presentation of the display set, or the given one.
+   * stored appearance of the display set, or the given one.
    *
    * Only the source may draw the acquired frames of a reduced volume.
    */
@@ -3520,7 +3517,7 @@ class PlanarViewport extends BaseViewport<
     displaySetId: string,
     options: PlanarSetDataOptions,
     orientation: PlanarViewState['orientation'],
-    presentation = this.getDataPresentationState(displaySetId)
+    appearance = this.getAppearanceState(displaySetId)
   ): PlanarRenderPathDecisionOptions {
     return {
       orientation,
@@ -3531,8 +3528,8 @@ class PlanarViewport extends BaseViewport<
         options.renderBackend ??
         this.getInheritedOverlayRenderBackend(options.role),
       preferAcquiredFrames: options.role === 'source',
-      slabThickness: presentation?.slabThickness,
-      blendMode: presentation?.blendMode,
+      slabThickness: appearance?.slabThickness,
+      blendMode: appearance?.blendMode,
       sliceFirst: options.sliceFirst,
       role: options.role,
     };
@@ -4410,7 +4407,7 @@ class PlanarViewport extends BaseViewport<
     return this.getViewState() as unknown as ICamera;
   }
 
-  private getCurrentPresentation(): DerivedPlanarPresentation | undefined {
+  private getCurrentFraming(): DerivedPlanarFraming | undefined {
     const resolvedView = this.getResolvedView();
 
     if (!resolvedView) {

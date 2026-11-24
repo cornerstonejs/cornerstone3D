@@ -86,17 +86,17 @@ class ViewportColorbar extends Colorbar {
     const viewport: Types.IViewport = this.enabledElement.viewport;
 
     // Viewports have no setProperties; VOI is applied
-    // through the display-set presentation. _volumeId names the bound data
+    // through the display-set appearance. _volumeId names the bound data
     // when known (multi-volume/fusion); otherwise the single-argument overload
     // targets the viewport's default binding.
     const { _volumeId: volumeId } = this;
 
     if (volumeId) {
-      viewport.setDisplaySetPresentation(getDisplaySetId(viewport, volumeId), {
+      viewport.setDisplaySetAppearance(getDisplaySetId(viewport, volumeId), {
         voiRange,
       });
     } else {
-      viewport.setDisplaySetPresentation({ voiRange });
+      viewport.setDisplaySetAppearance({ voiRange });
     }
     viewport.render();
   }

@@ -163,7 +163,7 @@ function isPlanarViewport(viewport: unknown): viewport is PlanarViewport {
 /**
  * The steps of a scroll of a planar viewport when a step is not one slice of
  * its source, as the legacy volume viewport steps:
- * - with `scrollSlabs`, while the presentation of the source has a slab, a
+ * - with `scrollSlabs`, while the appearance of the source has a slab, a
  *   step is the slab thickness;
  * - with a `volumeId` of another volume that the viewport shows, a step is
  *   the spacing of that volume along the view.
@@ -183,7 +183,7 @@ export function getPlanarVolumeScrollSteps(
   const sourceDisplaySetId = viewport.getSourceDisplaySetId();
   const slabThickness = resolveSlabThickness(
     sourceDisplaySetId
-      ? viewport.getDisplaySetPresentation(sourceDisplaySetId)?.slabThickness
+      ? viewport.getDisplaySetAppearance(sourceDisplaySetId)?.slabThickness
       : undefined
   );
   const stepsBySlab = Boolean(scrollSlabs) && slabThickness > 0;

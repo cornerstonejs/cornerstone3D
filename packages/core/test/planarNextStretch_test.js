@@ -135,7 +135,7 @@ function getDrawnBox(viewport) {
 
 /** The scale pair of the view, read through the projection. */
 function getScale(viewport) {
-  return viewportProjection.getPresentation(viewport, {
+  return viewportProjection.getFraming(viewport, {
     selector: { scale: true },
   }).scale;
 }

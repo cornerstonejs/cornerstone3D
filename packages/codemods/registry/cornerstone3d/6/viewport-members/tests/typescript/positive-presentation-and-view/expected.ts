@@ -7,11 +7,11 @@ const viewport = renderingEngine.getViewport<PlanarViewport>('CT');
 async function show(displaySetId: string) {
   await viewport.setDisplaySets({ displaySetId });
 
-  viewport.setDisplaySetPresentation({
+  viewport.setDisplaySetAppearance({
     voiRange: { lower: -160, upper: 240 },
     invert: true,
   });
-  viewport.setDisplaySetPresentation({
+  viewport.setDisplaySetAppearance({
     voiLUTFunction: Enums.VOILUTFunctionType.SAMPLED_SIGMOID,
     colormap: { name: 'hsv' },
   });

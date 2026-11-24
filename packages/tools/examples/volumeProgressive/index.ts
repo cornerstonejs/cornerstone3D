@@ -782,7 +782,7 @@ async function run() {
     const viewport3D =
       renderingEngine.getViewport<VolumeViewport3D>(viewportId3D);
 
-    viewport3D?.setDisplaySetPresentation(volumeId, { preset: 'CT-Bone' });
+    viewport3D?.setDisplaySetAppearance(volumeId, { preset: 'CT-Bone' });
 
     // Render the image
     renderingEngine.renderViewports(viewportIds);
@@ -1051,7 +1051,7 @@ async function run() {
 
     await viewport.setDisplaySets({ displaySetId: segVolumeId });
 
-    viewport.setDisplaySetPresentation(segVolumeId, {
+    viewport.setDisplaySetAppearance(segVolumeId, {
       interpolationType: Enums.InterpolationType.NEAREST,
       preset: {
         name: 'segmentLabels',

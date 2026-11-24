@@ -313,7 +313,7 @@ addDropdownToToolbar({
       const renderingEngine = getRenderingEngine(renderingEngineId);
       const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-      viewport.setDisplaySetPresentation(displaySetId, {
+      viewport.setDisplaySetAppearance(displaySetId, {
         blendMode: slabBlendMode,
       });
       viewport.render();
@@ -447,7 +447,7 @@ async function run() {
       const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
       await viewport.setDisplaySets({ displaySetId });
-      viewport.setDisplaySetPresentation(displaySetId, {
+      viewport.setDisplaySetAppearance(displaySetId, {
         ...ctPresentation(),
         blendMode: slabBlendMode,
       });
@@ -500,7 +500,7 @@ async function run() {
   // Render the image
   const viewport = renderingEngine.getViewport<VolumeViewport3D>(viewportId4);
   renderingEngine.renderViewports(viewportIds);
-  viewport.setDisplaySetPresentation(displaySetId, {
+  viewport.setDisplaySetAppearance(displaySetId, {
     preset: 'CT-Bone',
   });
   const defaultActor = viewport.getDefaultActor();

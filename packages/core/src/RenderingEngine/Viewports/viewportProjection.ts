@@ -1,24 +1,24 @@
 import type {
-  ProjectionPresentation,
+  ProjectionFraming,
   ProjectionRequest,
   ProjectionSnapshot,
   ProjectionWriteOptions,
   ViewportProjectionAdapter,
 } from './ViewportProjectionTypes';
 import { ViewportType } from '../../enums';
-import type { ViewPresentation, ViewPresentationSelector } from '../../types';
+import type { ViewFraming, ViewFramingSelector } from '../../types';
 import { planarProjectionAdapter } from './Planar/planarProjectionAdapter';
 import type {
   PlanarProjectionRequest,
   PlanarProjectionSnapshot,
 } from './Planar/PlanarProjectionTypes';
 import type {
-  PlanarViewPresentation,
+  PlanarViewFraming,
   PlanarViewState,
 } from './Planar/PlanarViewportTypes';
 import { volume3DProjectionAdapter } from './Volume3D/volume3DProjectionAdapter';
 import type {
-  Volume3DProjectionPresentation,
+  Volume3DProjectionFraming,
   Volume3DProjectionRequest,
   Volume3DProjectionSnapshot,
 } from './Volume3D/Volume3DProjectionTypes';
@@ -49,40 +49,40 @@ type ViewportLike = {
 type RegisteredProjectionAdapter = ViewportProjectionAdapter<
   unknown,
   unknown,
-  ProjectionSnapshot<unknown, ProjectionPresentation<unknown>>
+  ProjectionSnapshot<unknown, ProjectionFraming<unknown>>
 >;
 
 export type BuiltInViewportProjectionByKind = {
   planar: {
-    presentation: PlanarViewPresentation;
+    framing: PlanarViewFraming;
     request: PlanarProjectionRequest;
     snapshot: PlanarProjectionSnapshot;
     viewState: PlanarViewState;
     viewportType: ViewportType.PLANAR;
   };
   volume3d: {
-    presentation: Volume3DProjectionPresentation;
+    framing: Volume3DProjectionFraming;
     request: Volume3DProjectionRequest;
     snapshot: Volume3DProjectionSnapshot;
     viewState: Volume3DCamera;
     viewportType: ViewportType.VOLUME_3D;
   };
   video: {
-    presentation: ViewPresentation;
+    framing: ViewFraming;
     request: VideoProjectionRequest;
     snapshot: VideoProjectionSnapshot;
     viewState: VideoViewState;
     viewportType: ViewportType.VIDEO;
   };
   ecg: {
-    presentation: ViewPresentation;
+    framing: ViewFraming;
     request: ECGProjectionRequest;
     snapshot: ECGProjectionSnapshot;
     viewState: ECGViewState;
     viewportType: ViewportType.ECG;
   };
   wsi: {
-    presentation: ViewPresentation;
+    framing: ViewFraming;
     request: WSIProjectionRequest;
     snapshot: WSIProjectionSnapshot;
     viewState: WSIViewState;
@@ -108,9 +108,9 @@ export type ProjectionSnapshotForKind<
   TKind extends BuiltInViewportProjectionKind,
 > = BuiltInViewportProjectionByKind[TKind]['snapshot'];
 
-export type ProjectionPresentationForKind<
+export type ProjectionFramingForKind<
   TKind extends BuiltInViewportProjectionKind,
-> = BuiltInViewportProjectionByKind[TKind]['presentation'];
+> = BuiltInViewportProjectionByKind[TKind]['framing'];
 
 export type ProjectionViewStateForKind<
   TKind extends BuiltInViewportProjectionKind,
@@ -120,9 +120,9 @@ export type ProjectionSnapshotForViewportType<
   TViewportType extends BuiltInViewportProjectionType,
 > = BuiltInViewportProjectionByType[TViewportType]['snapshot'];
 
-export type ProjectionPresentationForViewportType<
+export type ProjectionFramingForViewportType<
   TViewportType extends BuiltInViewportProjectionType,
-> = BuiltInViewportProjectionByType[TViewportType]['presentation'];
+> = BuiltInViewportProjectionByType[TViewportType]['framing'];
 
 export type ProjectionViewStateForViewportType<
   TViewportType extends BuiltInViewportProjectionType,
@@ -143,7 +143,7 @@ type ProjectionForViewport<TViewport> = TViewport extends {
 /**
  * The request for a family that is named by `kind`. Its selector takes the
  * keys of the legacy selector and one boolean for every other key of the
- * presentation of the family, such as `scale` of the planar viewport.
+ * framing of the family, such as `scale` of the planar viewport.
  */
 type ProjectionRequestForKind<TKind extends BuiltInViewportProjectionKind> =
   Omit<
@@ -151,10 +151,10 @@ type ProjectionRequestForKind<TKind extends BuiltInViewportProjectionKind> =
     'viewport' | 'selector'
   > & {
     kind: TKind;
-    selector?: ViewPresentationSelector & {
+    selector?: ViewFramingSelector & {
       [TKey in Exclude<
-        keyof BuiltInViewportProjectionByKind[TKind]['presentation'],
-        keyof ViewPresentationSelector
+        keyof BuiltInViewportProjectionByKind[TKind]['framing'],
+        keyof ViewFramingSelector
       >]?: boolean;
     };
   };
@@ -162,14 +162,14 @@ type ProjectionRequestForKind<TKind extends BuiltInViewportProjectionKind> =
 /**
  * The request for the family of a viewport, taken from its `type`. Its
  * selector takes the keys of the legacy selector and one boolean for every
- * other key of the presentation of the family.
+ * other key of the framing of the family.
  */
 type ProjectionRequestForViewport<TViewport extends BuiltInProjectionViewport> =
   Omit<ProjectionForViewport<TViewport>['request'], 'viewport' | 'selector'> & {
-    selector?: ViewPresentationSelector & {
+    selector?: ViewFramingSelector & {
       [TKey in Exclude<
-        keyof ProjectionForViewport<TViewport>['presentation'],
-        keyof ViewPresentationSelector
+        keyof ProjectionForViewport<TViewport>['framing'],
+        keyof ViewFramingSelector
       >]?: boolean;
     };
   };
@@ -178,9 +178,9 @@ export type ProjectionSnapshotForViewport<
   TViewport extends BuiltInProjectionViewport,
 > = ProjectionForViewport<TViewport>['snapshot'];
 
-export type ProjectionPresentationForViewport<
+export type ProjectionFramingForViewport<
   TViewport extends BuiltInProjectionViewport,
-> = ProjectionForViewport<TViewport>['presentation'];
+> = ProjectionForViewport<TViewport>['framing'];
 
 export type ProjectionViewStateForViewport<
   TViewport extends BuiltInProjectionViewport,
@@ -214,14 +214,12 @@ class ViewportProjectionService {
    */
   register<
     TViewState,
-    TPresentation,
+    TFraming,
     TSnapshot extends ProjectionSnapshot<
       TViewState,
-      ProjectionPresentation<unknown>
+      ProjectionFraming<unknown>
     >,
-  >(
-    adapter: ViewportProjectionAdapter<TViewState, TPresentation, TSnapshot>
-  ): void {
+  >(adapter: ViewportProjectionAdapter<TViewState, TFraming, TSnapshot>): void {
     this.adapters.set(
       adapter.id,
       adapter as unknown as RegisteredProjectionAdapter
@@ -293,24 +291,24 @@ class ViewportProjectionService {
 
   /**
    * Resolve a projection snapshot and convert it to the adapter's public
-   * view-presentation shape.
+   * view-framing shape.
    */
-  getPresentation<TKind extends BuiltInViewportProjectionKind>(
+  getFraming<TKind extends BuiltInViewportProjectionKind>(
     viewport: unknown,
     request: ProjectionRequestForKind<TKind>
-  ): ProjectionPresentationForKind<TKind> | undefined;
-  getPresentation<TViewport extends BuiltInProjectionViewport>(
+  ): ProjectionFramingForKind<TKind> | undefined;
+  getFraming<TViewport extends BuiltInProjectionViewport>(
     viewport: TViewport,
     request?: ProjectionRequestForViewport<TViewport>
-  ): ProjectionPresentationForViewport<TViewport> | undefined;
-  getPresentation<TPresentation = unknown>(
+  ): ProjectionFramingForViewport<TViewport> | undefined;
+  getFraming<TFraming = unknown>(
     viewport: unknown,
     request?: Omit<ProjectionRequest, 'viewport'>
-  ): TPresentation | undefined;
-  getPresentation<TPresentation = unknown>(
+  ): TFraming | undefined;
+  getFraming<TFraming = unknown>(
     viewport: unknown,
     request: Omit<ProjectionRequest, 'viewport'> = {}
-  ): TPresentation | undefined {
+  ): TFraming | undefined {
     const adapter = this.getAdapter(viewport, request);
     const snapshot = adapter?.getSnapshot({
       ...request,
@@ -321,34 +319,34 @@ class ViewportProjectionService {
       return;
     }
 
-    return adapter.getPresentation(snapshot, request.selector) as TPresentation;
+    return adapter.getFraming(snapshot, request.selector) as TFraming;
   }
 
   /**
    * Resolve a projection snapshot and calculate the next semantic view state
-   * for the requested presentation patch.
+   * for the requested framing patch.
    */
-  withPresentation<TKind extends BuiltInViewportProjectionKind>(
+  withFraming<TKind extends BuiltInViewportProjectionKind>(
     viewport: unknown,
-    presentation: Partial<ProjectionPresentationForKind<TKind>>,
+    framing: Partial<ProjectionFramingForKind<TKind>>,
     request: ProjectionRequestForKind<TKind>,
     options?: ProjectionWriteOptions
   ): ProjectionViewStateForKind<TKind> | undefined;
-  withPresentation<TViewport extends BuiltInProjectionViewport>(
+  withFraming<TViewport extends BuiltInProjectionViewport>(
     viewport: TViewport,
-    presentation: Partial<ProjectionPresentationForViewport<TViewport>>,
+    framing: Partial<ProjectionFramingForViewport<TViewport>>,
     request?: ProjectionRequestForViewport<TViewport>,
     options?: ProjectionWriteOptions
   ): ProjectionViewStateForViewport<TViewport> | undefined;
-  withPresentation<TViewState = unknown, TPresentation = unknown>(
+  withFraming<TViewState = unknown, TFraming = unknown>(
     viewport: unknown,
-    presentation: Partial<TPresentation>,
+    framing: Partial<TFraming>,
     request?: Omit<ProjectionRequest, 'viewport'>,
     options?: ProjectionWriteOptions
   ): TViewState | undefined;
-  withPresentation<TViewState = unknown, TPresentation = unknown>(
+  withFraming<TViewState = unknown, TFraming = unknown>(
     viewport: unknown,
-    presentation: Partial<TPresentation>,
+    framing: Partial<TFraming>,
     request: Omit<ProjectionRequest, 'viewport'> = {},
     options?: ProjectionWriteOptions
   ): TViewState | undefined {
@@ -362,7 +360,7 @@ class ViewportProjectionService {
       return;
     }
 
-    return adapter.withPresentation(snapshot, presentation, options) as
+    return adapter.withFraming(snapshot, framing, options) as
       | TViewState
       | undefined;
   }

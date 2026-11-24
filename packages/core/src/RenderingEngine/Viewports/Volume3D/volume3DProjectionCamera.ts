@@ -222,7 +222,7 @@ function getCanvasAxes(camera: Volume3DCamera & ICamera): {
 
 /**
  * The zoom of a 3D camera against its fit: 1 for the fit, 2 when the picture
- * is twice as large. See `Volume3DProjectionPresentation`.
+ * is twice as large. See `Volume3DProjectionFraming`.
  */
 export function getVolume3DProjectionZoom(
   camera: Volume3DCamera & ICamera,

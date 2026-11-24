@@ -223,7 +223,7 @@ describe('Cornerstone Tools Scroll Wheel:', () => {
 
     try {
       testUtils.setStackOnNextViewport(vp, [imageId1, imageId2], 0).then(() => {
-        vp.setDisplaySetPresentation({
+        vp.setDisplaySetAppearance({
           interpolationType: InterpolationType.NEAREST,
         });
         vp.render();
@@ -396,7 +396,7 @@ describe('Cornerstone Tools Scroll Wheel:', () => {
 
     try {
       testUtils.setStackOnNextViewport(vp, [imageId1, imageId2], 0).then(() => {
-        vp.setDisplaySetPresentation({
+        vp.setDisplaySetAppearance({
           interpolationType: InterpolationType.NEAREST,
         });
         vp.render();

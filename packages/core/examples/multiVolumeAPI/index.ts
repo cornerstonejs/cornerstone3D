@@ -99,7 +99,7 @@ addSliderToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-    viewport.setDisplaySetPresentation(ptDisplaySetId, {
+    viewport.setDisplaySetAppearance(ptDisplaySetId, {
       colormap: { opacity: Number(value) },
     });
     viewport.render();
@@ -118,7 +118,7 @@ addSliderToToolbar({
 
     const threshold = Number(value);
 
-    viewport.setDisplaySetPresentation(
+    viewport.setDisplaySetAppearance(
       ptDisplaySetId,
       threshold > 0 ? { colormap: { threshold } } : { colormap: {} }
     );
@@ -136,7 +136,7 @@ addButtonToToolbar({
     // Get the stack viewport
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-    viewport.setDisplaySetPresentation(ctDisplaySetId, {
+    viewport.setDisplaySetAppearance(ctDisplaySetId, {
       voiRange: { lower: -1500, upper: 2500 },
     });
     viewport.render();
@@ -170,11 +170,8 @@ addButtonToToolbar({
     // Get the volume viewport
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
     await viewport.addDisplaySet(ptDisplaySetId, { role: 'overlay' });
-    viewport.resetDisplaySetPresentation(ptDisplaySetId);
-    viewport.setDisplaySetPresentation(
-      ptDisplaySetId,
-      petColorMapPresentation()
-    );
+    viewport.resetDisplaySetAppearance(ptDisplaySetId);
+    viewport.setDisplaySetAppearance(ptDisplaySetId, petColorMapPresentation());
     viewport.render();
   },
 });
@@ -371,7 +368,7 @@ async function run() {
     { displaySetId: ctDisplaySetId },
     { displaySetId: ptDisplaySetId }
   );
-  viewport.setDisplaySetPresentation(ptDisplaySetId, {
+  viewport.setDisplaySetAppearance(ptDisplaySetId, {
     voiRange: petColorMapPresentation().voiRange,
     colormap: {
       name: 'hsv',

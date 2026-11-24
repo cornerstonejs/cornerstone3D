@@ -1,0 +1,20 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "52",
+        "rule": "a projection adapter of the application: its methods are getFraming and withFraming, and the presentation of each snapshot it reads or makes is framing"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "60",
+        "rule": "a projection adapter of the application: its methods are getFraming and withFraming, and the presentation of each snapshot it reads or makes is framing"
+      },
+      "count": 1
+    }
+  ]
+}

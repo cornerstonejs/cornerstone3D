@@ -30,12 +30,12 @@ function expectClose(actual, expected, precision = 3) {
  * screen, through the projection service.
  */
 function panByCanvasDelta(viewport, delta) {
-  const { pan, zoom } = viewportProjection.getPresentation(viewport, {
+  const { pan, zoom } = viewportProjection.getFraming(viewport, {
     selector: { zoom: true, pan: true },
   });
 
   viewport.setViewState(
-    viewportProjection.withPresentation(viewport, {
+    viewportProjection.withFraming(viewport, {
       pan: [pan[0] + delta[0] / zoom, pan[1] + delta[1] / zoom],
     })
   );
@@ -125,7 +125,7 @@ describe('Whole slide stand-in', () => {
 describe('Pan on the direct next whole slide viewport', () => {
   /** The zoom and the pan of a viewport from the projection service. */
   function zoomPanOf(viewport) {
-    return viewportProjection.getPresentation(viewport, {
+    return viewportProjection.getFraming(viewport, {
       selector: { zoom: true, pan: true },
     });
   }
@@ -133,7 +133,7 @@ describe('Pan on the direct next whole slide viewport', () => {
   /** Applies a presentation patch through the projection service. */
   function present(viewport, presentation) {
     viewport.setViewState(
-      viewportProjection.withPresentation(viewport, presentation)
+      viewportProjection.withFraming(viewport, presentation)
     );
   }
 
@@ -191,7 +191,7 @@ describe('Pan on the direct next whole slide viewport', () => {
       ],
     });
 
-    const presentation = viewportProjection.getPresentation(viewport);
+    const presentation = viewportProjection.getFraming(viewport);
     const center = view.getCenter();
 
     expectClose(presentation.pan, [
@@ -217,10 +217,7 @@ describe('Pan on the direct next whole slide viewport', () => {
     source.viewport.setZoom(source.viewport.getZoom() + 1, [50, 60]);
     present(source.viewport, { pan: [pan[0] + 5, pan[1] + 7] });
 
-    present(
-      target.viewport,
-      viewportProjection.getPresentation(source.viewport)
-    );
+    present(target.viewport, viewportProjection.getFraming(source.viewport));
 
     expect(target.view.getZoom()).toBeCloseTo(source.view.getZoom(), 9);
     expectClose(zoomPanOf(target.viewport).pan, zoomPanOf(source.viewport).pan);
@@ -237,10 +234,7 @@ describe('Rotation of the direct next whole slide viewport', () => {
     expect(view.getRotation()).toBeCloseTo(0.4 + Math.PI / 2, 12);
     expect(viewport.getViewState().rotation).toBeCloseTo(90, 9);
     expect(viewport.getRotation()).toBeCloseTo(90, 9);
-    expect(viewportProjection.getPresentation(viewport).rotation).toBeCloseTo(
-      90,
-      9
-    );
+    expect(viewportProjection.getFraming(viewport).rotation).toBeCloseTo(90, 9);
   });
 
   it('gives the rotation of the map less the slide rotation in degrees', async () => {
@@ -258,10 +252,10 @@ describe('Rotation of the direct next whole slide viewport', () => {
     const { viewport, view } = await track(mountNext(WSIViewport, 0.4));
     const center = view.getCenter();
     const turn = (angle) => {
-      const { rotation = 0 } = viewportProjection.getPresentation(viewport);
+      const { rotation = 0 } = viewportProjection.getFraming(viewport);
 
       viewport.setViewState(
-        viewportProjection.withPresentation(viewport, {
+        viewportProjection.withFraming(viewport, {
           rotation: (rotation + angle + 360) % 360,
         })
       );
@@ -480,7 +474,7 @@ describe('Zoom at mount of the direct next whole slide viewport', () => {
   it('fits a slide mounted again, as the legacy viewport fits each slide', async () => {
     const next = await track(mountNext(WSIViewport, 0.4));
     const fitResolution = next.view.getResolution();
-    const fitPan = viewportProjection.getPresentation(next.viewport).pan;
+    const fitPan = viewportProjection.getFraming(next.viewport).pan;
 
     next.viewport.setZoom(next.viewport.getZoom() + 2, [30, 40]);
     panByCanvasDelta(next.viewport, [25, 10]);
@@ -488,7 +482,7 @@ describe('Zoom at mount of the direct next whole slide viewport', () => {
 
     expect(view).not.toBe(next.view);
     expect(view.getResolution()).toBeCloseTo(fitResolution, 12);
-    expectClose(viewportProjection.getPresentation(next.viewport).pan, fitPan);
+    expectClose(viewportProjection.getFraming(next.viewport).pan, fitPan);
   });
 });
 

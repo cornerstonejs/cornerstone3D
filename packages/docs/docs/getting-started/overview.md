@@ -94,8 +94,8 @@ are two implemented synchronizers and we are working on more.
 - Camera synchronizer: synchronizes the camera of the source and target viewports
 
 For viewport integrations, camera-style synchronization is modeled
-as `ViewState` plus viewport projection: tools can read portable presentation
-with `viewportProjection.getPresentation(...)` and apply the translated native
+as `ViewState` plus viewport projection: tools can read the portable framing
+with `viewportProjection.getFraming(...)` and apply the translated native
 state through `setViewState(...)`.
 
 ## About this documentation

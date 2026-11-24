@@ -20,7 +20,7 @@ export {
  * channel index.
  *
  * @experimental Advanced helper namespace; prefer `viewportProjection` for
- * stable application-level presentation reads and writes.
+ * stable application-level framing reads and writes.
  */
 export const ecgProjection = {
   adapter: ecgProjectionAdapter,
@@ -33,16 +33,16 @@ export {
   type ECGClinicalSensitivity,
 } from './ecgWaveform';
 export type {
-  ECGProjectionPresentation,
+  ECGProjectionFraming,
   ECGProjectionRequest,
   ECGProjectionSnapshot,
 } from './ecgProjectionAdapter';
 export { default } from './ECGViewport';
 export type {
   ECGViewState,
-  ECGDataPresentation,
+  ECGDisplaySetAppearance,
   ECGChannelData,
-  ECGPresentationProps,
+  ECGAppearanceProps,
   ECGProperties,
   ECGViewportInput,
   ECGTraceLayout,

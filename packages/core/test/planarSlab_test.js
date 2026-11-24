@@ -115,7 +115,7 @@ async function showVolumeOnNext(viewport, volumeId) {
     displaySetId,
     options: { orientation: OrientationAxis.AXIAL },
   });
-  viewport.setDisplaySetPresentation(displaySetId, { voiRange: VOI_RANGE });
+  viewport.setDisplaySetAppearance(displaySetId, { voiRange: VOI_RANGE });
 
   return displaySetId;
 }
@@ -187,7 +187,7 @@ function getLargestDifference(first, second) {
  * middle pixel.
  */
 async function drawNextSlab(viewport, displaySetId, blendMode, slabThickness) {
-  viewport.setDisplaySetPresentation(displaySetId, {
+  viewport.setDisplaySetAppearance(displaySetId, {
     blendMode,
     slabThickness,
   });

@@ -24,7 +24,7 @@ function frames() {
 
 /** The slab thickness of the presentation of the source of a viewport. */
 function slabOf(viewport) {
-  return viewport.getDisplaySetPresentation(viewport.getSourceDisplaySetId())
+  return viewport.getDisplaySetAppearance(viewport.getSourceDisplaySetId())
     ?.slabThickness;
 }
 
@@ -59,7 +59,7 @@ describe('The slab thickness synchronizer on direct next planar viewports -- ', 
 
     await showStack(stack, series, 3);
     await showVolume(volume, series, 3);
-    volume.setDisplaySetPresentation(volume.getSourceDisplaySetId(), {
+    volume.setDisplaySetAppearance(volume.getSourceDisplaySetId(), {
       slabThickness: 5,
     });
     synchronize(stack, volume);
@@ -83,14 +83,14 @@ describe('The slab thickness synchronizer on direct next planar viewports -- ', 
     await showVolume(target, series, 3);
     synchronize(source, target);
 
-    source.setDisplaySetPresentation(source.getSourceDisplaySetId(), {
+    source.setDisplaySetAppearance(source.getSourceDisplaySetId(), {
       slabThickness: 5,
     });
     await frames();
 
     expect(slabOf(target)).toBe(5);
 
-    source.setDisplaySetPresentation(source.getSourceDisplaySetId(), {
+    source.setDisplaySetAppearance(source.getSourceDisplaySetId(), {
       slabThickness: undefined,
     });
     await frames();

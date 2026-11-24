@@ -22,9 +22,9 @@ import setViewportCamera, {
   resetViewportCamera,
 } from '../utilities/setViewportCamera';
 import {
-  applyViewportPresentation,
-  getViewportPresentation,
-} from '../utilities/viewportPresentation';
+  applyViewportFraming,
+  getViewportFraming,
+} from '../utilities/viewportFraming';
 
 /**
  * The reset of the resize of an element. A legacy `resetCamera()` kept the
@@ -147,11 +147,11 @@ class TrackballRotateTool extends BaseTool {
             }
             const { viewport } = element;
 
-            const viewPresentation = getViewportPresentation(viewport);
+            const viewFraming = getViewportFraming(viewport);
 
             resetViewportCamera(viewport, KEEP_ORIENTATION);
 
-            applyViewportPresentation(viewport, viewPresentation);
+            applyViewportFraming(viewport, viewFraming);
             viewport.render();
           });
 

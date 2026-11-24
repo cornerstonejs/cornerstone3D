@@ -60,8 +60,8 @@ const viewport = renderingEngine.getViewport(viewportId);
 
 await viewport.setDisplaySets({ displaySetId: 'ctVolume' });
 
-// The look of the data is the presentation of its display set
-viewport.setDisplaySetPresentation('ctVolume', {
+// The look of the data is the appearance of its display set
+viewport.setDisplaySetAppearance('ctVolume', {
   voiRange: { lower: -160, upper: 240 },
 });
 

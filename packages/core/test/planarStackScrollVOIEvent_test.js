@@ -118,7 +118,7 @@ describe('A stack on a direct next planar viewport whose images have their own w
         ...options,
       });
       await renderAndWait(viewport);
-      viewport.setDisplaySetPresentation(overlayId, {
+      viewport.setDisplaySetAppearance(overlayId, {
         voiRange: { lower: 5, upper: 50 },
       });
       await renderAndWait(viewport);
@@ -127,13 +127,13 @@ describe('A stack on a direct next planar viewport whose images have their own w
       expect(
         viewport.getDisplaySets().map(({ displaySetId }) => displaySetId)
       ).toEqual([sourceId, overlayId]);
-      expect(viewport.getDisplaySetPresentation(overlayId).voiRange).toEqual({
+      expect(viewport.getDisplaySetAppearance(overlayId).voiRange).toEqual({
         lower: 5,
         upper: 50,
       });
       expect(ranges).toEqual([]);
 
-      viewport.setDisplaySetPresentation(sourceId, {
+      viewport.setDisplaySetAppearance(sourceId, {
         voiRange: { lower: 0, upper: 100 },
       });
       await renderAndWait(viewport);
@@ -157,7 +157,7 @@ describe('A stack on a direct next planar viewport whose images have their own w
       expect(ranges).toEqual([OTHER_RANGE]);
       expect(viewport.getDefaultVOIRange(displaySetId)).toEqual(OTHER_RANGE);
       expect(
-        viewport.getDisplaySetPresentation(displaySetId)?.voiRange
+        viewport.getDisplaySetAppearance(displaySetId)?.voiRange
       ).toBeUndefined();
 
       await scrollTo(viewport, series, 5);
@@ -175,7 +175,7 @@ describe('A stack on a direct next planar viewport whose images have their own w
 
       const displaySetId = viewport.getSourceDisplaySetId();
 
-      viewport.setDisplaySetPresentation(displaySetId, {
+      viewport.setDisplaySetAppearance(displaySetId, {
         voiRange: { lower: 0, upper: 100 },
       });
       await renderAndWait(viewport);
@@ -186,9 +186,10 @@ describe('A stack on a direct next planar viewport whose images have their own w
       await scrollTo(viewport, series, 0);
 
       expect(ranges).toEqual([]);
-      expect(viewport.getDisplaySetPresentation(displaySetId).voiRange).toEqual(
-        { lower: 0, upper: 100 }
-      );
+      expect(viewport.getDisplaySetAppearance(displaySetId).voiRange).toEqual({
+        lower: 0,
+        upper: 100,
+      });
     });
   }
 });

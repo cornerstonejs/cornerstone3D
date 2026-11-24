@@ -414,7 +414,7 @@ async function run() {
   await volumeCoronalViewport.setDisplaySets({
     displaySetId: volumeDisplaySetId,
   });
-  volumeCoronalViewport.setDisplaySetPresentation(
+  volumeCoronalViewport.setDisplaySetAppearance(
     volumeDisplaySetId,
     ctPresentation()
   );
@@ -447,7 +447,7 @@ async function run() {
   await volumeSagittalViewport.setDisplaySets({
     displaySetId: volumeDisplaySetId,
   });
-  volumeSagittalViewport.setDisplaySetPresentation(
+  volumeSagittalViewport.setDisplaySetAppearance(
     volumeDisplaySetId,
     ctPresentation()
   );

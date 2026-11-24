@@ -20,13 +20,10 @@ import type {
 } from '../../../types';
 import type { ViewportInput } from '../../../types/IViewport';
 import type ViewportInputOptions from '../../../types/ViewportInputOptions';
-import type {
-  ViewPresentation,
-  ViewPresentationSelector,
-} from '../../../types';
+import type { ViewFraming, ViewFramingSelector } from '../../../types';
 import type {
   BaseViewportRenderContext,
-  BasePresentationProps,
+  BaseAppearanceProps,
   BindingRole,
   DataProvider,
   LoadedData,
@@ -241,7 +238,7 @@ export interface PlanarPayload {
   reference?: ViewportDataReference;
 }
 
-export interface PlanarPresentationProps extends BasePresentationProps {
+export interface PlanarAppearanceProps extends BaseAppearanceProps {
   colormap?: ColormapPublic;
   voiRange?: VOIRange;
   voiLUTFunction?: VOILUTFunctionType;
@@ -260,14 +257,12 @@ export type PlanarViewportInputOptions = Omit<
   displayArea?: PlanarDisplayArea;
 };
 
-export interface PlanarViewPresentation
-  extends Omit<ViewPresentation, 'displayArea'> {
+export interface PlanarViewFraming extends Omit<ViewFraming, 'displayArea'> {
   displayArea?: PlanarDisplayArea;
   scale?: Point2;
 }
 
-export interface PlanarViewPresentationSelector
-  extends ViewPresentationSelector {
+export interface PlanarViewFramingSelector extends ViewFramingSelector {
   scale?: boolean;
 }
 
@@ -289,7 +284,7 @@ export interface PlanarViewState {
 }
 
 export interface PlanarResolvedICamera extends ICamera<PlanarScaleInput> {
-  presentationScale?: Point2;
+  framingScale?: Point2;
   scaleMode?: CameraScaleMode;
 }
 
@@ -312,7 +307,8 @@ export interface PlanarProperties {
   smoothing?: number;
 }
 
-export type PlanarDataPresentation = PlanarPresentationProps & PlanarProperties;
+export type PlanarDisplaySetAppearance = PlanarAppearanceProps &
+  PlanarProperties;
 
 /** @internal */
 export interface PlanarRenderPathRuntime {

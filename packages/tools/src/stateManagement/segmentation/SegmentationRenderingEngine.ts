@@ -325,12 +325,12 @@ function isProjectionHeavySegmentationViewport(
   const planarViewport = viewport as Partial<{
     getActors: () => Types.ActorEntry[];
     getSourceDisplaySetId: () => string | undefined;
-    getDisplaySetPresentation: (
+    getDisplaySetAppearance: (
       displaySetId: string
     ) => { slabThickness?: number } | undefined;
   }>;
 
-  if (typeof planarViewport.getDisplaySetPresentation !== 'function') {
+  if (typeof planarViewport.getDisplaySetAppearance !== 'function') {
     return false;
   }
 
@@ -349,7 +349,7 @@ function isProjectionHeavySegmentationViewport(
 
   return displaySetIds.some(
     (displaySetId) =>
-      (planarViewport.getDisplaySetPresentation(displaySetId)?.slabThickness ??
+      (planarViewport.getDisplaySetAppearance(displaySetId)?.slabThickness ??
         0) > 0
   );
 }

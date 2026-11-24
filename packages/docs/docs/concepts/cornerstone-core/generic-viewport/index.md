@@ -19,7 +19,7 @@ each of their calls.
 
 The old model worked, but the ownership boundaries were not clear enough.
 Stack and volume viewports each had their own loading path, camera path,
-presentation path, actor path, and overlay path. CPU stack image rendering,
+properties path, actor path, and overlay path. CPU stack image rendering,
 GPU image rendering, GPU volume rendering, and volume slice rendering solved
 similar problems in different places. As features were added, behavior became
 spread across viewport classes, mapper helpers, synchronizers, segmentation
@@ -50,7 +50,7 @@ logical data id
   -> DataProvider
   -> RenderPath
   -> ViewportDataBinding
-  -> viewState + DataPresentation
+  -> viewState + DisplaySetAppearance
   -> renderer command
 ```
 
@@ -88,14 +88,22 @@ paths and state models.
 The important rule is that render paths do not own viewport navigation. They
 receive state from the viewport and project it into renderer-specific commands.
 
-## Presentation Split
+## View State, Framing and Appearance
 
-The architecture separates two kinds of presentation:
+Three words name what a viewport keeps:
 
-- View presentation: pan, zoom or scale, rotation, flips, and display area.
-  Every viewport reads and writes this through `viewportProjection`.
-- Data presentation: VOI, opacity, colormap, blend mode, interpolation, and
-  visibility for one mounted dataset.
+- The view state (`getViewState()`, `setViewState()`) is the navigation and
+  the layout of the viewport in the terms of its family: the slice, the
+  orientation, the anchors, the scale, the rotation and the flips.
+- The framing (`getViewFraming()`, `setViewFraming()`, or
+  `viewportProjection.getFraming()` and `withFraming()`) is the camera part
+  of the view that another viewport can take: pan, zoom or scale, rotation,
+  flips, and display area, measured against the fit. Setting a framing
+  writes the view state.
+- The appearance (`getDisplaySetAppearance()`, `setDisplaySetAppearance()`,
+  `resetDisplaySetAppearance()`) is the look of one display set in one
+  viewport: VOI, opacity, colormap, blend mode, slab, interpolation, and
+  visibility.
 
 This is what makes a CT source and PET overlay share the same view while still
 having independent VOI, color, and opacity.

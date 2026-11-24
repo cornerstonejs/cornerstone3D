@@ -204,21 +204,18 @@ describe('A vtk.js prop of the application in a direct next planar viewport -- '
       const before = redPixels(viewport);
 
       viewport.setViewState(
-        viewportProjection.withPresentation(viewport, { zoom: 2 })
+        viewportProjection.withFraming(viewport, { zoom: 2 })
       );
       await renderAndWait(viewport);
 
       const zoomed = redPixels(viewport);
 
-      expect(viewportProjection.getPresentation(viewport).zoom).toBeCloseTo(
-        2,
-        6
-      );
+      expect(viewportProjection.getFraming(viewport).zoom).toBeCloseTo(2, 6);
       expectArea(zoomed.count, before.count * 4);
       expectArea(zoomed.count, diskArea(viewport, series, zoomed.scale));
 
       viewport.setViewState(
-        viewportProjection.withPresentation(viewport, { pan: [40, -25] })
+        viewportProjection.withFraming(viewport, { pan: [40, -25] })
       );
       await renderAndWait(viewport);
 

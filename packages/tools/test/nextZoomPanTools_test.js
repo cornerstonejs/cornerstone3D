@@ -154,7 +154,7 @@ function pictureOf(viewport, series) {
  * canvas pixels from its fitted place.
  */
 function expectPresentationOnScreen(viewport, series, fit) {
-  const { zoom, pan, scale } = viewportProjection.getPresentation(viewport, {
+  const { zoom, pan, scale } = viewportProjection.getFraming(viewport, {
     selector: { zoom: true, pan: true, scale: true },
   });
   const { a, size } = pictureOf(viewport, series);
@@ -172,7 +172,7 @@ function expectPresentationOnScreen(viewport, series, fit) {
 
 /** The zoom and the pan of a next viewport from the projection service. */
 function zoomPanOf(viewport) {
-  return viewportProjection.getPresentation(viewport, {
+  return viewportProjection.getFraming(viewport, {
     selector: { zoom: true, pan: true },
   });
 }
@@ -342,7 +342,7 @@ describe('Synchronizers with a direct next 3D target -- ', () => {
     synchronizer.add({ renderingEngineId, viewportId: next.id });
 
     planar.setViewState(
-      viewportProjection.withPresentation(planar, { zoom: 2, pan: [15, -10] })
+      viewportProjection.withFraming(planar, { zoom: 2, pan: [15, -10] })
     );
     await frames(3);
 
@@ -364,7 +364,7 @@ describe('Synchronizers with a direct next 3D target -- ', () => {
     expect(zoomPanOf(empty).zoom).toBeUndefined();
 
     planar.setViewState(
-      viewportProjection.withPresentation(planar, { zoom: 2, pan: [15, -10] })
+      viewportProjection.withFraming(planar, { zoom: 2, pan: [15, -10] })
     );
     await frames(3);
 
@@ -414,13 +414,13 @@ describe('Synchronizers with a direct next 3D target -- ', () => {
     synchronizer.add({ renderingEngineId, viewportId: planar.id });
     synchronizer.add({ renderingEngineId, viewportId: next.id });
 
-    planar.setDisplaySetPresentation({ voiRange });
+    planar.setDisplaySetAppearance({ voiRange });
     await frames(3);
 
     expect(
-      planar.getDisplaySetPresentation(`volume:${planar.id}`).voiRange
+      planar.getDisplaySetAppearance(`volume:${planar.id}`).voiRange
     ).toEqual(voiRange);
-    expect(next.getDisplaySetPresentation(displaySetId)?.voiRange).toEqual(
+    expect(next.getDisplaySetAppearance(displaySetId)?.voiRange).toEqual(
       voiRange
     );
   }, 15000);
@@ -613,7 +613,7 @@ describe('Zoom and pan tools on a direct next planar viewport -- ', () => {
 
       const mouse = [260, 110];
       const underMouse = next.canvasToWorld(mouse);
-      const scaleOf = () => viewportProjection.getPresentation(next).scale;
+      const scaleOf = () => viewportProjection.getFraming(next).scale;
 
       await wheel(next.element, mouse, 2);
 
@@ -645,9 +645,7 @@ describe('Zoom and pan tools on a direct next planar viewport -- ', () => {
       activatePan(toolGroup);
 
       for (const presentation of [{}, { zoom: 1.7 }, { rotation: 90 }]) {
-        next.setViewState(
-          viewportProjection.withPresentation(next, presentation)
-        );
+        next.setViewState(viewportProjection.withFraming(next, presentation));
         await frames();
 
         const from = [150, 120];

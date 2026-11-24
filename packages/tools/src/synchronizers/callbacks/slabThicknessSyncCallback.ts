@@ -2,14 +2,14 @@ import type { Types } from '@cornerstonejs/core';
 import { getRenderingEngine, utilities } from '@cornerstonejs/core';
 
 /**
- * The slab thickness of the presentation of a display set of a next viewport.
+ * The slab thickness of the appearance of a display set of a next viewport.
  */
-function getPresentationSlabThickness(
+function getAppearanceSlabThickness(
   viewport: Types.IViewport,
   displaySetId: string
 ): number | undefined {
   return (
-    viewport.getDisplaySetPresentation(displaySetId) as
+    viewport.getDisplaySetAppearance(displaySetId) as
       | { slabThickness?: number }
       | undefined
   )?.slabThickness;
@@ -18,7 +18,7 @@ function getPresentationSlabThickness(
 /**
  * Synchronizer callback to synchronize the slab thickness.
  *
- * It gives the slab thickness of the presentation of the source display set
+ * It gives the slab thickness of the appearance of the source display set
  * of the source viewport to each display set of the target viewport whose
  * slab differs, as the legacy synchronizer gave it to every volume of the
  * target. A planar viewport fires CAMERA_MODIFIED when a slab changes, as the
@@ -48,8 +48,8 @@ export default function slabThicknessSyncCallback(
 
   if (
     !utilities.viewportIsInVolumeMode(sViewport) ||
-    !utilities.viewportSupportsDisplaySetPresentation(sViewport) ||
-    !utilities.viewportSupportsDisplaySetPresentation(tViewport)
+    !utilities.viewportSupportsDisplaySetAppearance(sViewport) ||
+    !utilities.viewportSupportsDisplaySetAppearance(tViewport)
   ) {
     return;
   }
@@ -60,7 +60,7 @@ export default function slabThicknessSyncCallback(
     return;
   }
 
-  const slabThickness = getPresentationSlabThickness(
+  const slabThickness = getAppearanceSlabThickness(
     sViewport,
     sourceDisplaySetId
   );
@@ -69,7 +69,7 @@ export default function slabThicknessSyncCallback(
     .map(({ displaySetId }) => displaySetId)
     .filter(
       (displaySetId) =>
-        getPresentationSlabThickness(tViewport, displaySetId) !== slabThickness
+        getAppearanceSlabThickness(tViewport, displaySetId) !== slabThickness
     );
 
   if (!targetDisplaySetIds.length) {
@@ -77,7 +77,7 @@ export default function slabThicknessSyncCallback(
   }
 
   targetDisplaySetIds.forEach((displaySetId) => {
-    tViewport.setDisplaySetPresentation(displaySetId, { slabThickness });
+    tViewport.setDisplaySetAppearance(displaySetId, { slabThickness });
   });
   tViewport.render();
 }

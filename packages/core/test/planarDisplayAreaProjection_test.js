@@ -90,7 +90,7 @@ function pictureOf(viewport, series) {
 
 /** The zoom, the pan and the scale that the projection service gives. */
 function presentationOf(viewport) {
-  return viewportProjection.getPresentation(viewport, {
+  return viewportProjection.getFraming(viewport, {
     selector: { zoom: true, pan: true, scale: true },
   });
 }
@@ -173,7 +173,7 @@ describe('The projection service on a planar view with a display area -- ', () =
       expectPresentationOnScreen(next, series, fit);
 
       next.setViewState(
-        viewportProjection.withPresentation(next, {
+        viewportProjection.withFraming(next, {
           pan: [pan[0] + 20, pan[1] - 15],
         })
       );
@@ -203,7 +203,7 @@ describe('The projection service on a planar view with a display area -- ', () =
       const underMouse = next.canvasToWorld(MOUSE);
 
       next.setViewState(
-        viewportProjection.withPresentation(next, { zoom: 2.5 }, undefined, {
+        viewportProjection.withFraming(next, { zoom: 2.5 }, undefined, {
           anchorCanvas: MOUSE,
         })
       );
@@ -220,7 +220,7 @@ describe('The projection service on a planar view with a display area -- ', () =
       expectPresentationOnScreen(next, series, fit);
 
       next.setViewState(
-        viewportProjection.withPresentation(next, { displayArea: DISPLAY_AREA })
+        viewportProjection.withFraming(next, { displayArea: DISPLAY_AREA })
       );
       await settle(next);
       next.setZoom(2.5, MOUSE);
@@ -233,7 +233,7 @@ describe('The projection service on a planar view with a display area -- ', () =
       expect(byTheClass.size).toBeCloseTo(anchored.size, 3);
 
       next.setViewState(
-        viewportProjection.withPresentation(next, { displayArea: DISPLAY_AREA })
+        viewportProjection.withFraming(next, { displayArea: DISPLAY_AREA })
       );
       await settle(next);
 
@@ -244,7 +244,7 @@ describe('The projection service on a planar view with a display area -- ', () =
       expect(back.a[1]).toBeCloseTo(area.a[1], 2);
       expect(back.size).toBeCloseTo(area.size, 3);
 
-      next.setViewState(viewportProjection.withPresentation(next, { zoom: 3 }));
+      next.setViewState(viewportProjection.withFraming(next, { zoom: 3 }));
       await settle(next);
 
       const grown = pictureOf(next, series);
@@ -269,7 +269,7 @@ describe('The projection service on a planar view with a display area -- ', () =
       expect(next.getViewState().anchorWorld).toBeDefined();
 
       next.setViewState(
-        viewportProjection.withPresentation(next, {
+        viewportProjection.withFraming(next, {
           displayArea: DISPLAY_AREA,
         })
       );

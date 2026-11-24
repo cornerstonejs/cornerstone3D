@@ -400,8 +400,8 @@ async function run() {
         { displaySetId: ctDisplaySetId },
         { displaySetId: ptDisplaySetId }
       );
-      viewport.setDisplaySetPresentation(ctDisplaySetId, ctPresentation());
-      viewport.setDisplaySetPresentation(
+      viewport.setDisplaySetAppearance(ctDisplaySetId, ctPresentation());
+      viewport.setDisplaySetAppearance(
         ptDisplaySetId,
         petColorMapPresentation(perfusionColorMap)
       );

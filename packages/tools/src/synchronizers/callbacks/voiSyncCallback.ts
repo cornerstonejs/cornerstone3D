@@ -79,7 +79,7 @@ export default function voiSyncCallback(
     tProperties.colormap = colormap;
   }
 
-  // Viewports expose presentation per display set
+  // Viewports expose appearance per display set
   // rather than setProperties. Map the source change's volumeId to THIS
   // viewport's binding so a fusion overlay (e.g. PT) update lands on the PT
   // binding and not the default source (CT) - the next analogue of the legacy
@@ -89,7 +89,7 @@ export default function voiSyncCallback(
   const displaySetViewport = tViewport as typeof tViewport & {
     findDataIdByVolumeId?: (volumeId: string) => string | undefined;
     getDisplaySets(): Array<{ displaySetId: string }>;
-    setDisplaySetPresentation: (
+    setDisplaySetAppearance: (
       displaySetIdOrProps: string | typeof tProperties,
       props?: typeof tProperties
     ) => void;
@@ -101,11 +101,11 @@ export default function voiSyncCallback(
       : getDisplaySetIdOfVolume(displaySetViewport, volumeId);
 
   if (displaySetId) {
-    displaySetViewport.setDisplaySetPresentation(displaySetId, tProperties);
+    displaySetViewport.setDisplaySetAppearance(displaySetId, tProperties);
   } else if (!volumeId) {
     // No source volume id (e.g. a stack VOI change) - apply to the default
     // binding.
-    displaySetViewport.setDisplaySetPresentation(tProperties);
+    displaySetViewport.setDisplaySetAppearance(tProperties);
   }
   // else: the source change names a volume this viewport does not have bound
   // (e.g. a fusion-overlay colormap sync that arrives before the overlay is

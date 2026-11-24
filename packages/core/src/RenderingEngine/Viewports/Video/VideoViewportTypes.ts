@@ -1,6 +1,6 @@
 import type {
   BaseViewportRenderContext,
-  BasePresentationProps,
+  BaseAppearanceProps,
   DataProvider,
   MountedRendering,
   RenderPathResolver,
@@ -22,7 +22,7 @@ export interface VideoStreamPayload {
   metadata: VideoImageMetadata;
 }
 
-export interface VideoPresentationProps extends BasePresentationProps {}
+export interface VideoAppearanceProps extends BaseAppearanceProps {}
 
 export interface VideoViewState extends ViewportCameraBase<[number, number]> {
   currentTimeSeconds?: number;
@@ -54,7 +54,7 @@ export interface VideoProperties {
   averageWhite?: [number, number, number];
 }
 
-export type VideoDataPresentation = VideoPresentationProps & VideoProperties;
+export type VideoDisplaySetAppearance = VideoAppearanceProps & VideoProperties;
 
 export interface VideoViewportInput {
   id: string;

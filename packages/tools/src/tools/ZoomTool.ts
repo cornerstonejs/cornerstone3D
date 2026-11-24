@@ -6,7 +6,7 @@ import {
   getViewportZoomPan,
   panViewportByCanvasDelta,
   zoomViewportAtCanvasPoint,
-} from '../utilities/viewportPresentation';
+} from '../utilities/viewportFraming';
 
 /**
  * ZoomTool tool manipulates the camera zoom applied to a viewport. It

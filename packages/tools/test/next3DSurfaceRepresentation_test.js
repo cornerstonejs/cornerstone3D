@@ -299,7 +299,7 @@ describe('A Surface representation on a direct next 3D viewport -- ', () => {
 
     [1, 2].forEach((segmentIndex) => {
       const { actor, referencedId } = surfaceEntriesOf(next)[segmentIndex - 1];
-      const presentation = next.getDisplaySetPresentation(
+      const presentation = next.getDisplaySetAppearance(
         geometryIdOf(segmentIndex)
       );
 

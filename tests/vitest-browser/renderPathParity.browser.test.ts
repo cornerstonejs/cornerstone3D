@@ -100,8 +100,8 @@ async function runCanonicalScenario(
   await renderAndWait(element, viewport);
   snapshots.push(captureViewportState(viewport, displaySetId));
 
-  // Step 6: set a VOI via setDisplaySetPresentation then render.
-  viewport.setDisplaySetPresentation(displaySetId, {
+  // Step 6: set a VOI via setDisplaySetAppearance then render.
+  viewport.setDisplaySetAppearance(displaySetId, {
     voiRange: { lower: 0, upper: 200 },
   });
   await renderAndWait(element, viewport);

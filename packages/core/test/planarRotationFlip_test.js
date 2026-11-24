@@ -170,9 +170,7 @@ async function showSeries(renderingEngine, id, show) {
 
 /** Writes a presentation through the projection service and renders. */
 async function writePresentation(viewport, presentation) {
-  viewport.setViewState(
-    viewportProjection.withPresentation(viewport, presentation)
-  );
+  viewport.setViewState(viewportProjection.withFraming(viewport, presentation));
   await renderAndWait(viewport);
 }
 
@@ -212,7 +210,7 @@ function expectView(viewport, expected) {
 
 /** Checks the rotation and the flips that a view reads back. */
 function expectPresentation(viewport, expected) {
-  const presentation = viewportProjection.getPresentation(viewport);
+  const presentation = viewportProjection.getFraming(viewport);
 
   expect(presentation.rotation).toBeCloseTo(expected.rotation, 6);
   expect(presentation.flipHorizontal).toBe(expected.flipHorizontal);
@@ -266,7 +264,7 @@ describe('A planar view turns and flips as the 5.x viewports did -- ', () => {
 
           await writePresentation(
             viewport,
-            viewportProjection.getPresentation(viewport)
+            viewportProjection.getFraming(viewport)
           );
 
           expectLegacy(viewport, expected);
@@ -389,7 +387,7 @@ async function showStackWithBackend(
   const viewport = renderingEngine.getViewport(viewportId);
 
   await showStack(viewport, series, 2, { renderBackend: backend });
-  viewport.setDisplaySetPresentation(`stack:${viewportId}`, {
+  viewport.setDisplaySetAppearance(`stack:${viewportId}`, {
     voiRange: { lower: 0, upper: 255 },
     interpolationType: Enums.InterpolationType.NEAREST,
   });

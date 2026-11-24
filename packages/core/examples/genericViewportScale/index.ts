@@ -51,11 +51,11 @@ const viewportInfo = new Map<string, HTMLDivElement>();
  */
 function applyPlanarProjectionPresentation(
   viewport: PlanarViewport,
-  presentation: Types.ViewPresentation
+  presentation: Types.ViewFraming
 ): void {
-  const nextViewState = viewportProjection.withPresentation<
+  const nextViewState = viewportProjection.withFraming<
     Parameters<PlanarViewport['setViewState']>[0],
-    Types.ViewPresentation
+    Types.ViewFraming
   >(viewport, presentation);
 
   if (nextViewState) {
@@ -444,10 +444,10 @@ async function run() {
     }),
   ]);
 
-  stackViewport.setDisplaySetPresentation(stackDisplaySetId, {
+  stackViewport.setDisplaySetAppearance(stackDisplaySetId, {
     voiRange: ctVoiRange,
   });
-  volumeViewport.setDisplaySetPresentation(volumeDisplaySetId, {
+  volumeViewport.setDisplaySetAppearance(volumeDisplaySetId, {
     voiRange: ctVoiRange,
   });
 

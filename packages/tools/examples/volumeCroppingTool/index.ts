@@ -431,7 +431,7 @@ async function run(numViewports = getNumViewportsFromUrl()) {
     ...orthographicViewports.map(async ({ viewportId }) => {
       const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
       await viewport.setDisplaySets({ displaySetId });
-      viewport.setDisplaySetPresentation(displaySetId, ctPresentation());
+      viewport.setDisplaySetAppearance(displaySetId, ctPresentation());
     }),
     renderingEngine
       .getViewport<VolumeViewport3D>(viewportId4)
@@ -688,14 +688,14 @@ async function run(numViewports = getNumViewportsFromUrl()) {
 
   const viewport = renderingEngine.getViewport<VolumeViewport3D>(viewportId4);
 
-  viewport.setDisplaySetPresentation(displaySetId, {
+  viewport.setDisplaySetAppearance(displaySetId, {
     preset: 'CT-Bone',
   });
 
   toolGroupVRT.addViewport(viewportId4, renderingEngineId);
 
   viewport.resetViewState();
-  const zoomedViewState = viewportProjection.withPresentation(viewport, {
+  const zoomedViewState = viewportProjection.withFraming(viewport, {
     zoom: 1.2,
   });
 

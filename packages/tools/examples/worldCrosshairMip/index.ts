@@ -270,14 +270,14 @@ async function run() {
     if (spec.isMip) {
       // The MIP: maximum intensity blending through a slab covering the
       // whole PT volume, displayed as classic inverted-gray PET.
-      viewport.setDisplaySetPresentation(ptMipDisplaySetId, {
+      viewport.setDisplaySetAppearance(ptMipDisplaySetId, {
         voiRange: ptVoiRange,
         invert: true,
         blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
         slabThickness: computeFullVolumeSlabThickness(ptVolumeId),
       });
     } else {
-      viewport.setDisplaySetPresentation(ctMprDisplaySetId, {
+      viewport.setDisplaySetAppearance(ctMprDisplaySetId, {
         voiRange: ctVoiRange,
       });
     }

@@ -160,7 +160,7 @@ export default function getTargetVolumeAndSpacingInNormalDir(
 
 /**
  * The step of a volume along the view normal. With `useSlabThickness`, a slab
- * in the presentation of the source display set of the viewport is the step,
+ * in the appearance of the source display set of the viewport is the step,
  * as `utilities.scroll` reads it; otherwise, and without a slab, the spacing
  * of the volume along the normal.
  */
@@ -171,11 +171,11 @@ function getSpacingInNormal(
   useSlabThickness = false
 ): number {
   const planarViewport = viewport as Partial<
-    Pick<PlanarViewport, 'getSourceDisplaySetId' | 'getDisplaySetPresentation'>
+    Pick<PlanarViewport, 'getSourceDisplaySetId' | 'getDisplaySetAppearance'>
   >;
   const sourceDisplaySetId = planarViewport.getSourceDisplaySetId?.();
   const slabThickness = sourceDisplaySetId
-    ? planarViewport.getDisplaySetPresentation?.(sourceDisplaySetId)
+    ? planarViewport.getDisplaySetAppearance?.(sourceDisplaySetId)
         ?.slabThickness
     : undefined;
 

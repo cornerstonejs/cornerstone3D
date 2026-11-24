@@ -13,7 +13,7 @@ describe('getEllipseWorldCoordinates', () => {
       }),
       getViewReference: () => ({}),
       setDisplaySets: jest.fn(),
-      setDisplaySetPresentation: jest.fn(),
+      setDisplaySetAppearance: jest.fn(),
       setViewState: jest.fn(),
     };
 

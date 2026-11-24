@@ -139,7 +139,7 @@ export function loadAndViewImagesSingle(imageIds, viewportInfo?) {
 
   viewport.setDisplaySets({ displaySetId }).then(() => {
     // Set the VOI of the stack
-    // viewport.setDisplaySetPresentation(displaySetId, { voiRange: ctVoiRange });
+    // viewport.setDisplaySetAppearance(displaySetId, { voiRange: ctVoiRange });
     // Render the image
     viewport.render();
 

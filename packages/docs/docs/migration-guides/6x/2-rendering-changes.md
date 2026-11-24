@@ -1,7 +1,7 @@
 ---
 id: rendering-changes
 title: Rendering changes
-summary: What a 6.0 viewport draws and answers differently from 5.x - slice first, the render plan, the CPU picture, orientation, slabs, presentation, events, labelmap fill, image defaults, and the whole slide, ECG, 3D and video viewports
+summary: What a 6.0 viewport draws and answers differently from 5.x - slice first, the render plan, the CPU picture, orientation, slabs, appearance, events, labelmap fill, image defaults, and the whole slide, ECG, 3D and video viewports
 ---
 
 # Rendering changes
@@ -75,11 +75,11 @@ and thickens them. Together they are the crosshair for the next viewports.
 through the slices, with its centre on a slice centre. Its rotation handles
 turn the planes of the other viewports about the centre, through the
 orientation of the view state, and a pixel keeps its size in mm. Its slab
-handles set `slabThickness` in the presentation of the other viewports, and
+handles set `slabThickness` in the appearance of the other viewports, and
 the slab lines show it. With `autoPan` it pans a viewport whose centre would
 leave the canvas. Against the legacy volume viewport:
 
-- The tool sets no blend mode. Set `blendMode` in the presentation of each
+- The tool sets no blend mode. Set `blendMode` in the appearance of each
   display set, for example `Enums.BlendModes.MAXIMUM_INTENSITY_BLEND` for a
   MIP slab. The configuration `slabThicknessBlendMode` is gone.
 - A slab handle writes the number that the legacy tool gave
@@ -165,7 +165,7 @@ leave the canvas. Against the legacy volume viewport:
   `[0.5, -0.866, 0]` of the legacy
   `setViewPresentation({ rotation: 30, flipHorizontal: true })` on an axial
   view, and reads back rotation 30. A flip written alone, by `setViewState`
-  or by `viewportProjection.withPresentation`, mirrors the picture on the
+  or by `viewportProjection.withFraming`, mirrors the picture on the
   screen, as the legacy `flip`, `setCamera` and `setViewPresentation` did:
   on a turned view the rotation becomes 360 minus the rotation for each flip
   that changes, so rotation 30 and then `flipHorizontal: true` reads
@@ -189,9 +189,9 @@ leave the canvas. Against the legacy volume viewport:
   `getCurrentImageIdIndex()` and `getNumberOfSlices()` take no arguments and
   count slices. No member counts the slab steps.
 - **A slab is set for each display set.** `slabThickness` and `blendMode` are
-  keys of the presentation of one display set. The legacy `setSlabThickness`
+  keys of the appearance of one display set. The legacy `setSlabThickness`
   set all actors. A change of `slabThickness` fires `CAMERA_MODIFIED`, as the
-  legacy member did. Other presentation changes fire no camera event.
+  legacy member did. Other appearance changes fire no camera event.
 - **A brush and a new annotation take the depth of the slab shown.** A
   `slabThickness` of `T` shows the slices within about `T` of the plane, so
   the depth is `2T`, as on the legacy volume viewport.
@@ -203,14 +203,14 @@ leave the canvas. Against the legacy volume viewport:
 - **A slab is the step of `getTargetVolumeAndSpacingInNormalDir`.** With a
   `volumeId` and `useSlabThickness`, the step that
   `utilities.getTargetVolumeAndSpacingInNormalDir` gives is the
-  `slabThickness` of the presentation of the source display set, as the
+  `slabThickness` of the appearance of the source display set, as the
   legacy `getProperties().slabThickness` was. In 5.x a next viewport gave the
   spacing of the volume. Without a `volumeId` (`targetId` undefined), the
   volume is still the one with the finest spacing, and `useSlabThickness`
   gives the slab as well. In 5.x that call gave the spacing of the volume on
   every viewport, the legacy volume viewport too.
 - **An average slab shows in the fidelity.** An average slab in the
-  presentation of the source display set sets the display resolution of
+  appearance of the source display set sets the display resolution of
   `getFidelityState()` along the view normal to the slab thickness, as the
   slab of the legacy volume viewport did: a reduction along the normal that
   the slab averages away is not reported. A maximum or minimum intensity slab
@@ -231,10 +231,10 @@ leave the canvas. Against the legacy volume viewport:
 
 ## Sharpening and smoothing
 
-- **`sharpening` and `smoothing` are keys of the presentation** of the source
+- **`sharpening` and `smoothing` are keys of the appearance** of the source
   display set of a planar or a 3D viewport, with the numbers that the legacy
   `setProperties` takes:
-  `viewport.setDisplaySetPresentation(displaySetId, { sharpening: 1 })`. The
+  `viewport.setDisplaySetAppearance(displaySetId, { sharpening: 1 })`. The
   picture is the picture of the legacy viewport. In 5.x the next viewports had
   neither.
 - **A viewport that draws on the CPU sharpens and smooths too.** The legacy CPU
@@ -245,14 +245,14 @@ leave the canvas. Against the legacy volume viewport:
   legacy viewports and on the next ones alike: that engine does not ask a
   viewport for its render passes.
 
-## The presentation of a display set
+## The appearance of a display set
 
 - **A sigmoid window on a volume is drawn.**
-  `setDisplaySetPresentation(displaySetId, { voiLUTFunction })` with
+  `setDisplaySetAppearance(displaySetId, { voiLUTFunction })` with
   `SAMPLED_SIGMOID` draws the sigmoid on every path of a planar viewport, on
   the GPU and on the CPU. In 5.x a next planar viewport stored the key and drew
   a linear window for a volume.
-- **The key is `voiLUTFunction`** on the planar and on the 3D presentation. The
+- **The key is `voiLUTFunction`** on the planar and on the 3D appearance. The
   legacy properties and the detail of `VOI_MODIFIED` spell it `VOILUTFunction`.
 - **A colormap update keeps what it does not name.**
   `{ colormap: { opacity: 0.5 } }` keeps the stored name, opacity mapping and
@@ -273,29 +273,29 @@ leave the canvas. Against the legacy volume viewport:
 - **No default properties.** `setDefaultProperties`, `getDefaultProperties`,
   `clearDefaultProperties` and `resetToDefaultProperties` have no twin. An
   application keeps its own default and sets it with
-  `setDisplaySetPresentation`. `resetDisplaySetPresentation(displaySetId)`
+  `setDisplaySetAppearance`. `resetDisplaySetAppearance(displaySetId)`
   goes back to the look of the data.
-- **A presentation is what was set.** `getDisplaySetPresentation(displaySetId)`
+- **An appearance is what was set.** `getDisplaySetAppearance(displaySetId)`
   gives the stored keys. A key that was never set is undefined, where the
   legacy `getProperties()` read the value back from the actor.
   `getDefaultVOIRange(displaySetId)` gives the window that the data starts
   with.
-- **A reset of the presentation does not move the camera.**
-  `resetDisplaySetPresentation(displaySetId)` also clears the slab, the blend
+- **A reset of the appearance does not move the camera.**
+  `resetDisplaySetAppearance(displaySetId)` also clears the slab, the blend
   mode, the opacity and the visibility. `resetViewState()` resets the view.
-- **A reset of the presentation clears it to `{}`.** After
-  `resetDisplaySetPresentation(displaySetId)`,
-  `getDisplaySetPresentation(displaySetId)` gives `{}`: the `visible: true`
+- **A reset of the appearance clears it to `{}`.** After
+  `resetDisplaySetAppearance(displaySetId)`,
+  `getDisplaySetAppearance(displaySetId)` gives `{}`: the `visible: true`
   that the mount stored goes too, and a hidden display set shows again. To
   keep a display set hidden, set `{ visible: false }` again after the reset.
-- **An edit of an actor does not last.** The next presentation update writes
-  the look of the actor again. Set the look through the presentation.
+- **An edit of an actor does not last.** The next appearance update writes
+  the look of the actor again. Set the look through the appearance.
 - **No preset on a slice.** A preset is a look of a 3D viewport. For a slice,
   register a colormap and set `colormap: { name, opacityMapping }`.
-- **No `callback` on a display set.** These presentations draw what the
+- **No `callback` on a display set.** These appearances draw what the
   callbacks of the examples drew on a slice viewport:
 
-  | The callback set                             | Presentation                                                               |
+  | The callback set                             | Appearance                                                                 |
   | -------------------------------------------- | -------------------------------------------------------------------------- |
   | A CT window of -160 to 240                   | `{ voiRange: { lower: -160, upper: 240 } }`                                |
   | A PET window of 0 to 5, inverted             | `{ voiRange: { lower: 0, upper: 5 }, invert: true }`                       |
@@ -322,7 +322,7 @@ leave the canvas. Against the legacy volume viewport:
 - **`getDisplayArea()` answers from the view state only.** It is undefined
   until a display area is set in the view state, even when the options of
   the viewport have one, and so is the `displayArea` of
-  `viewportProjection.getPresentation(viewport)`. On a 5.x viewport it
+  `viewportProjection.getFraming(viewport)`. On a 5.x viewport it
   returned the display area of the options. The display area given at
   `enableElement` is still there as `viewport.defaultOptions.displayArea`:
   to show it, call `viewport.setDisplayArea(viewport.defaultOptions.displayArea)`
@@ -333,10 +333,10 @@ leave the canvas. Against the legacy volume viewport:
   it, as it multiplies any other display area, so a `zoom` or a `scale` next
   to it in a patch is the zoom that you read back. Before this change the
   `scale` of the display area won, and
-  `withPresentation(viewport, { displayArea, zoom: 3 })` read back the
+  `withFraming(viewport, { displayArea, zoom: 3 })` read back the
   scale of the display area.
 - **A pan or a zoom through `viewportProjection` takes the display area
-  away.** `viewport.setViewState(viewportProjection.withPresentation(viewport, { pan }))`,
+  away.** `viewport.setViewState(viewportProjection.withFraming(viewport, { pan }))`,
   and the same with `zoom` or `scale`, starts from the picture that the
   display area gave and moves or grows it. A zoom with no `anchorCanvas` is
   about the centre of the canvas. After it `viewport.getViewState().displayArea`
@@ -349,22 +349,22 @@ leave the canvas. Against the legacy volume viewport:
   `setZoom(getZoom())` keep the picture, as on a legacy viewport. Before this
   change `setPan` dropped the zoom back to the fit and `setZoom` lost the pan.
 - **A zoom next to a display area is against the fit.** In
-  `viewportProjection.withPresentation(viewport, { displayArea, zoom })` the
-  `zoom`, and a `scale`, are measured against the fit, as `getPresentation`
+  `viewportProjection.withFraming(viewport, { displayArea, zoom })` the
+  `zoom`, and a `scale`, are measured against the fit, as `getFraming`
   reads them: the display area places the picture, at that zoom. A patch
   with a display area and no `zoom` and no `scale` shows the display area at
-  its own size. So writing back a presentation that was read gives the same
+  its own size. So writing back a framing that was read gives the same
   view, as the legacy
   `setViewPresentation(getViewPresentation())` did. A `pan` in the same patch
   decides where the picture is, and the display area gives way to it: after
   it `viewport.getViewState().displayArea` is undefined. Before this change a
   zoom in the patch multiplied the zoom of the display area, so a
-  presentation of zoom 2 written back gave zoom 4.
+  framing of zoom 2 written back gave zoom 4.
 - **`setViewState({ displayArea })` merges.** A scale that the view state
   already has stays and multiplies the display area.
   `setDisplayArea(displayArea)` resets the scale first.
 - **A turn after a pan turns the picture about its own centre.** A pan set
-  through `viewportProjection.withPresentation(viewport, { zoom, pan })` stays
+  through `viewportProjection.withFraming(viewport, { zoom, pan })` stays
   through a later rotation, so the picture turns about its own centre. The
   legacy `setCamera({ focalPoint, position, parallelScale })` kept a world
   point at the centre of the canvas, so a later rotation turned the picture
@@ -374,7 +374,7 @@ leave the canvas. Against the legacy volume viewport:
 - **A stretch is the scale pair of the view state.**
   `viewport.setViewState({ scale: [x, y] })` stretches the picture, in stack
   mode and in volume mode, on the GPU and on the CPU.
-  `viewportProjection.getPresentation(viewport, { selector: { scale: true } })`
+  `viewportProjection.getFraming(viewport, { selector: { scale: true } })`
   returns the pair in its `scale`. A planar viewport has no `setAspectRatio()`,
   and the `aspectRatio` option is not applied.
 - **A stretched picture can fit the canvas.** With `scaleMode: 'fitAspect'`
@@ -406,7 +406,7 @@ another size and another place. These calls give the legacy picture:
    canvas: with `point = tViewport.worldToCanvas(sourceFocalPoint)`, the pan
    is `pan + (centre - point) / zoom`.
 
-Steps 2 and 3 go through `viewportProjection.withPresentation`. The camera
+Steps 2 and 3 go through `viewportProjection.withFraming`. The camera
 position synchronizer copies the view reference, the zoom and the pan as they
 are, so between viewports of other data it gives another size.
 
@@ -526,7 +526,7 @@ point of the image on display.
   the registration of the display set names another volume while the mount
   loads.
 - **In stack mode `VOI_MODIFIED` fires only for a change.** A
-  `setDisplaySetPresentation` call that leaves the window, the VOI function
+  `setDisplaySetAppearance` call that leaves the window, the VOI function
   and the invert of a stack as they were fires none, as the legacy stack
   viewport on the GPU. In volume mode each such call fires it, as the legacy
   volume viewport. In 5.x a next planar viewport, and the legacy stack
@@ -539,7 +539,7 @@ point of the image on display.
   fires none, as on the legacy viewports. A display set that is drawn as
   images over the source of a stack fires none either: the detail names a
   volume and no display set, so its event would read as the window of the
-  source. Read its window with `getDisplaySetPresentation(displaySetId)`.
+  source. Read its window with `getDisplaySetAppearance(displaySetId)`.
   No event has a range whose upper end is below its lower end.
 - **`suppressEvents` in the options of a planar viewport is honoured.** No
   call takes a `suppressEvents` argument.
@@ -936,7 +936,7 @@ of other bounds (the same weaker opacity as above, applied to an opacity of
 of the window, as the legacy stack viewport did, so a CT shown as a volume is
 a little brighter than in 5.x, alone and under the PET layer of a fusion. To
 get the old look, give the CT `colormap: { opacity: 0.925 }` in its
-presentation (`0.726` for the other bounds); with it a fusion matched the
+appearance (`0.726` for the other bounds); with it a fusion matched the
 legacy picture within two levels of 255.
 
 ## Image defaults
@@ -970,7 +970,7 @@ legacy picture within two levels of 255.
   to 0, keeps the zoom and the centre, and fires `CAMERA_RESET`.
 - **The rotation is in degrees,** as on a planar viewport. It was in radians.
   This holds for `setViewState({ rotation })`, for the `rotation` of a view
-  presentation and for `getRotation()`, which now gives the rotation of the
+  framing and for `getRotation()`, which now gives the rotation of the
   view state and no longer always 0.
 - **The slide starts at the view that the microscopy viewer fits to the
   canvas,** as on the legacy viewport. The next viewport of 5.x wrote zoom 1,
@@ -978,8 +978,8 @@ legacy picture within two levels of 255.
   square or on a canvas of another size. `getViewState().zoom` is undefined
   until a slide is mounted. A slide mounted in place of another one starts at
   its own fit and keeps the rotation.
-- **Pan.** A view presentation carries `pan`:
-  `viewportProjection.withPresentation(viewport, { pan })` returns the view
+- **Pan.** A framing carries `pan`:
+  `viewportProjection.withFraming(viewport, { pan })` returns the view
   state for a new pan, and `setViewState({ centerIndex })` moves the view in
   pixels of the slide. The viewport has no `getPan()` and no `setPan()`. The
   pan is measured from the centre of the slide: it is `[0, 0]` when the
@@ -1054,30 +1054,30 @@ legacy picture within two levels of 255.
   legacy viewport.
 - **`setViewReference()` moves the camera.** It did nothing, so a camera
   synchronizer between two 3D viewports did nothing.
-- **A preset is a key of the presentation, and it stays.**
-  `setDisplaySetPresentation(displaySetId, { preset: 'CT-Bone' })` applies a
+- **A preset is a key of the appearance, and it stays.**
+  `setDisplaySetAppearance(displaySetId, { preset: 'CT-Bone' })` applies a
   preset. A later change of the window, of
   `invert` or of the opacity rescales the colours that are there. In 5.x each
-  presentation update rebuilt a grey ramp, so a preset was lost at the next
+  appearance update rebuilt a grey ramp, so a preset was lost at the next
   change of the window.
-- **The colour keys of the legacy `setProperties` are presentation keys:**
+- **The colour keys of the legacy `setProperties` are appearance keys:**
   `voiLUTFunction` (the legacy `VOILUTFunction`), `colormap` (with `name`,
   `opacityMapping` and `threshold`), `blendMode`, `sharpening` and
   `smoothing`.
-- **`resetDisplaySetPresentation(displaySetId)`** goes back to what the volume
+- **`resetDisplaySetAppearance(displaySetId)`** goes back to what the volume
   showed after its mount. It does not move the camera: `resetViewState()`
   does.
 - **Events.** `VOI_MODIFIED` and `COLORMAP_MODIFIED` fire from a 3D viewport,
   `VOI_MODIFIED` also when a volume is mounted, and
   `VOLUME_VIEWPORT_NEW_VOLUME` fires on a mount. None of them fired in 5.x.
   `PRESET_MODIFIED` does not fire, nothing listened to it. Read the preset
-  with `getDisplaySetPresentation(displaySetId)?.preset`. The detail of
+  with `getDisplaySetAppearance(displaySetId)?.preset`. The detail of
   `VOI_MODIFIED` has `invert` and no `invertStateChanged`, as on a planar
   viewport.
 - **A surface is a display set.**
   `viewport.addDisplaySet(geometryId, { renderMode: 'vtkGeometry3d' })` mounts
   the surface of a geometry of the cache, `viewport.removeDisplaySet(geometryId)`
-  removes it, and its colour, opacity and visibility are its presentation.
+  removes it, and its colour, opacity and visibility are its appearance.
   `geometryId` is the key that was given to
   `geometryLoader.loadAndCacheGeometry`, not `geometry.id`: for a mesh loaded
   from a URL the two differ, and `addDisplaySet(geometry.id)` throws. A
@@ -1108,7 +1108,7 @@ legacy picture within two levels of 255.
   before.
 - **A new colour of a segment shows on its surface.** The Surface
   representation of a segmentation mounts the surface of each segment as a
-  display set, and the colour is its presentation. On the legacy viewport the
+  display set, and the colour is its appearance. On the legacy viewport the
   colour of a surface that was in the scene did not change.
 - **New points and polys of a surface show at the next render.** A 3D
   viewport draws them when they are other arrays, also of the same lengths,
@@ -1145,7 +1145,7 @@ legacy picture within two levels of 255.
   read and written through `viewportProjection`, as on every next viewport.
   A 3D viewport also has `getZoom`, `setZoom`, `getPan` and `setPan`, as the
   legacy 3D viewport had. They call `viewportProjection`: `getZoom()` is the
-  zoom of the presentation, `getPan()` is its pan in canvas pixels on the
+  zoom of the framing, `getPan()` is its pan in canvas pixels on the
   screen (`pan * zoom`), and `setZoom(zoom, canvasPoint)` and `setPan(pan)`
   are one view state change each. The second argument of `setZoom` is a
   canvas point that the picture stays under, not `storeAsInitialCamera`. The
@@ -1162,7 +1162,7 @@ legacy picture within two levels of 255.
   keeps its value on that orbit, and the same rotation twice gives the same
   view.
 - **`suppressEvents`** in the options of a 3D viewport silences its camera
-  and presentation events, as on the legacy viewport.
+  and appearance events, as on the legacy viewport.
 - **No display area and no aspect ratio on a 3D viewport.** `setDisplayArea`,
   `getDisplayArea`, `setAspectRatio` and the `displayArea` and `aspectRatio`
   options are not carried over to the 3D viewport. Set the parallel scale and
@@ -1193,11 +1193,11 @@ legacy picture within two levels of 255.
   option. `getActors()` gives the actor entries, and each one names its volume
   in `referencedId`.
 - **No `callback` on a display set.** A legacy volume input could carry a
-  `callback` that edited the actor. The presentation of the display set says
+  `callback` that edited the actor. The appearance of the display set says
   how the data looks. These give the picture of the callbacks that the
   examples used:
 
-  | The callback set                                            | Presentation                                                                             |
+  | The callback set                                            | Appearance                                                                               |
   | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
   | A CT window of -160 to 240                                  | `{ voiRange: { lower: -160, upper: 240 } }`                                              |
   | A PET window of 0 to 5, inverted, as a MIP                  | `{ voiRange: { lower: 0, upper: 5 }, invert: true, blendMode: MAXIMUM_INTENSITY_BLEND }` |
@@ -1241,7 +1241,7 @@ legacy picture within two levels of 255.
   resize or a render: listen to `CAMERA_MODIFIED` for a pan or a zoom, and to
   `IMAGE_RENDERED` for a draw.
 - **`options.frameNumber` of `setDisplaySets` is honoured.**
-- **`voiRange` and `averageWhite` of the presentation are applied.**
+- **`voiRange` and `averageWhite` of the appearance are applied.**
 - **`IMAGE_RENDERED` fires.** A next video viewport fires it when what it shows
   changes: a new frame, a seek, a pan, a zoom, a resize or a call of
   `render()`, at most once for each animation frame. The next video viewport
@@ -1297,7 +1297,7 @@ legacy picture within two levels of 255.
   `canvasToWorld` and `worldToCanvas` follow the rotation. In 5.x the video
   turned about its top left corner and the two transforms ignored the
   rotation, so annotations landed beside the picture.
-- **`invert`** of the presentation is applied.
+- **`invert`** of the appearance is applied.
 - **`canvas`** is a canvas of the size of the viewport. It is a plain field
   that holds no pixels of the frame, and there is no `getCanvas()`. The
   pixels of the frame come from `getImageData()`.
@@ -1310,8 +1310,8 @@ legacy picture within two levels of 255.
 - **`getPan()` and `setPan()` are in canvas pixels on the screen,** `[0, 0]` at
   the fit, as on the other next viewports, and a drag of the pan tool moves
   the picture with the mouse at any rotation.
-- **A presentation patch with a new rotation turns first.**
-  `viewportProjection.withPresentation(viewport, { rotation, zoom, pan })` on
+- **A framing patch with a new rotation turns first.**
+  `viewportProjection.withFraming(viewport, { rotation, zoom, pan })` on
   a video applies the rotation, then the zoom, then the pan, so the pan
   reads back as written, as with two patches. In 5.x the pan of such a patch
   was measured at the old rotation and read back turned.
@@ -1385,8 +1385,8 @@ legacy picture within two levels of 255.
 
 ## Tools on the next viewports
 
-- **The slab thickness synchronizer reads the presentation.** A change of
-  `slabThickness` in the presentation of a next planar viewport fires
+- **The slab thickness synchronizer reads the appearance.** A change of
+  `slabThickness` in the appearance of a next planar viewport fires
   `CAMERA_MODIFIED`, as a slab change of the legacy volume viewport did. The
   synchronizer then gives the slab of the source display set of the source
   viewport to every display set of each target. A source that shows a stack
@@ -1396,7 +1396,7 @@ legacy picture within two levels of 255.
   target it sets the view reference of the source, and its zoom and pan.
   Between two planar viewports of parallel planes it also gives the target
   the view up and the view plane normal of the source, through the rotation
-  and the flips of its presentation, as the 5.x `setCamera` did. Two
+  and the flips of its framing, as the 5.x `setCamera` did. Two
   viewports with the same view before their rotation get the same rotation
   and flips. A target of another plane turns to the plane and the view up
   of the source with the view reference, and its rotation is then counted
@@ -1450,7 +1450,7 @@ legacy picture within two levels of 255.
   the source of an event from its `renderingEngineId` and `viewportId`; an
   event with a `viewportId` alone that several rendering engines have is
   ignored. In 5.x such an event came from the first rendering engine with
-  that viewport id. The presentation view synchronizer reads the source
+  that viewport id. The view framing synchronizer reads the source
   viewport from its own rendering engine; in 5.x it read it from the
   rendering engine of the target.
 - **`utilities.calculateViewportsSpatialRegistration` adds a registration.**
@@ -1498,7 +1498,7 @@ legacy picture within two levels of 255.
 - **The magnifying glasses show their viewport as it is drawn.** The loupe
   of `MagnifyTool` and each glass of `AdvancedMagnifyTool` are next planar
   viewports with the display sets of their viewport, overlays too, each
-  with its presentation, and with the slice, the orientation, the rotation
+  with its appearance, and with the slice, the orientation, the rotation
   and the flips of the view. A glass also shows the labelmaps. The zoom and
   the place are as before: the loupe spans `1 / magnifySize` of the world
   height of the viewport, and a glass `1 / zoomFactor` of the width of the
@@ -1506,7 +1506,7 @@ legacy picture within two levels of 255.
   flip with its viewport (measured on a legacy stack viewport turned and
   flipped, it showed the image unturned and unflipped; on a legacy volume
   viewport it took the rotation and not the flips), and it gave the
-  presentation of the first volume only (read in the code). The legacy loupe
+  appearance of the first volume only (read in the code). The legacy loupe
   showed the image of a stack alone, without the overlays of a fusion. The
   loupe and the glasses keep the stretch of their viewport (a `scale` of two
   different values, a `fitAspect` scale mode or a display area that
@@ -1582,10 +1582,10 @@ legacy picture within two levels of 255.
   both axes.
 - **The tools no longer fall back to the legacy members of a viewport.**
   `ZoomTool` zooms and pans only through `viewportProjection` (no
-  `getCamera` or `setCamera`). The presentation view, camera position and
+  `getCamera` or `setCamera`). The view framing, camera position and
   zoom and pan synchronizers read and write only through
   `viewportProjection` (no `getViewPresentation` or `setViewPresentation`).
-  The slab thickness synchronizer reads and writes only the presentation of
+  The slab thickness synchronizer reads and writes only the appearance of
   display sets (no `getSlabThickness` or `setSlabThickness`). A labelmap on
   a viewport that shows a volume is mounted only as an overlay display set
   (no `addVolumes`, and edge projection no longer puts the labelmap into the
@@ -1642,7 +1642,7 @@ error. Narrow first:
 ```ts
 const { viewport } = enabledElement;
 
-if (utilities.viewportSupportsDisplaySetPresentation(viewport)) {
+if (utilities.viewportSupportsDisplaySetAppearance(viewport)) {
   const displaySetId = viewport.getSourceDisplaySetId();
 }
 
@@ -1674,7 +1674,7 @@ is one, see [Functions of the core package](./3-api-map.md#functions-of-the-core
 - **No `setOptions()` and no `reset()`** on the 3D, video, whole slide and ECG
   viewports. The options that a viewport was made with are in
   `defaultOptions`, and they do not change. Change the view through the view
-  state, and the look through the presentation. A planar viewport still has
+  state, and the look through the appearance. A planar viewport still has
   `options`, `setOptions()` and `reset()` from 5.x. Do not use them in new
   code.
 - **`isDestroyed` in place of `isDisabled`.** `viewport.isDestroyed` is true

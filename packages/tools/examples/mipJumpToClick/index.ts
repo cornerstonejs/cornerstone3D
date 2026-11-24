@@ -227,10 +227,10 @@ async function run() {
   await ctViewport.setDisplaySets({ displaySetId: ctDisplaySetId });
 
   await ptViewport.setDisplaySets({ displaySetId: ptDisplaySetId });
-  ptViewport.setDisplaySetPresentation(ptDisplaySetId, petPresentation());
+  ptViewport.setDisplaySetAppearance(ptDisplaySetId, petPresentation());
 
   await mipViewport.setDisplaySets({ displaySetId: ptDisplaySetId });
-  mipViewport.setDisplaySetPresentation(ptDisplaySetId, {
+  mipViewport.setDisplaySetAppearance(ptDisplaySetId, {
     ...petPresentation(),
     blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
     slabThickness,

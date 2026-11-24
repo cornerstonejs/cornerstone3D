@@ -161,7 +161,7 @@ async function run() {
     const viewport = getRenderingEngine(renderingEngineId).getViewport(
       viewportId
     ) as PlanarViewport;
-    viewport.setDisplaySetPresentation(mprDisplaySetId, {
+    viewport.setDisplaySetAppearance(mprDisplaySetId, {
       voiRange: ctVoiRange,
     });
   });

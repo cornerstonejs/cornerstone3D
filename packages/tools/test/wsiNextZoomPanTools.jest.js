@@ -34,7 +34,7 @@ const FIT_RESOLUTION = Math.max(
 
 /** The zoom and the pan of the viewport from the projection service. */
 function zoomPanOf(viewport) {
-  return viewportProjection.getPresentation(viewport, {
+  return viewportProjection.getFraming(viewport, {
     selector: { zoom: true, pan: true },
   });
 }
@@ -230,7 +230,7 @@ describe('Zoom and pan tools on a direct next whole slide viewport', () => {
     const memo = BaseTool.createZoomPanMemo(viewport);
 
     viewport.setViewState(
-      viewportProjection.withPresentation(viewport, {
+      viewportProjection.withFraming(viewport, {
         zoom: atMount.zoom + 1,
         pan: [12, -8],
       })

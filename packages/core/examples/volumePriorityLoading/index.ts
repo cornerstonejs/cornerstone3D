@@ -162,8 +162,8 @@ async function run() {
     { displaySetId: ctDisplaySetId },
     { displaySetId: ptDisplaySetId }
   );
-  viewport.setDisplaySetPresentation(ctDisplaySetId, ctPresentation());
-  viewport.setDisplaySetPresentation(ptDisplaySetId, petColorMapPresentation());
+  viewport.setDisplaySetAppearance(ctDisplaySetId, ctPresentation());
+  viewport.setDisplaySetAppearance(ptDisplaySetId, petColorMapPresentation());
 
   const ctRequests = ctVolume.getImageLoadRequests();
   const ptRequests = ptVolume.getImageLoadRequests();

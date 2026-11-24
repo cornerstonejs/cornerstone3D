@@ -1,5 +1,5 @@
-import type { Point2, ViewPresentation } from '../../../types';
-import type { ViewPresentationSelector } from '../../../types/IViewport';
+import type { Point2, ViewFraming } from '../../../types';
+import type { ViewFramingSelector } from '../../../types/IViewport';
 import type { ProjectionWriteOptions } from '../ViewportProjectionTypes';
 import { normalizeVideoViewState } from './videoViewportCamera';
 import type {
@@ -10,7 +10,7 @@ import VideoResolvedView from './VideoResolvedView';
 import type { VideoViewState } from './VideoViewportTypes';
 
 const DEFAULT_SELECTOR: Required<
-  Pick<ViewPresentationSelector, 'rotation' | 'zoom' | 'pan'>
+  Pick<ViewFramingSelector, 'rotation' | 'zoom' | 'pan'>
 > = {
   rotation: true,
   zoom: true,
@@ -18,7 +18,7 @@ const DEFAULT_SELECTOR: Required<
 };
 
 /**
- * Narrows a presentation patch to fields explicitly provided by the caller.
+ * Narrows a framing patch to fields explicitly provided by the caller.
  */
 function hasOwn<T extends object, K extends PropertyKey>(
   obj: T,
@@ -28,21 +28,21 @@ function hasOwn<T extends object, K extends PropertyKey>(
 }
 
 /**
- * Converts a Video projection snapshot to the public view-presentation shape.
+ * Converts a Video projection snapshot to the public view-framing shape.
  * The pan is the pan of `getPan` of the viewport divided by the zoom: canvas
  * pixels on the screen at zoom 1, `[0, 0]` for the fitted view, at any
  * rotation.
  */
-export function getVideoProjectionPresentation(
+export function getVideoProjectionFraming(
   snapshot: VideoProjectionSnapshot,
-  selector: ViewPresentationSelector | undefined
-): ViewPresentation {
-  const target: ViewPresentation = {};
+  selector: ViewFramingSelector | undefined
+): ViewFraming {
+  const target: ViewFraming = {};
   const videoSelector = selector ?? DEFAULT_SELECTOR;
-  const zoom = snapshot.presentation.zoom ?? 1;
+  const zoom = snapshot.framing.zoom ?? 1;
 
   if (videoSelector.rotation) {
-    target.rotation = snapshot.presentation.rotation ?? 0;
+    target.rotation = snapshot.framing.rotation ?? 0;
   }
 
   if (videoSelector.zoom) {
@@ -50,7 +50,7 @@ export function getVideoProjectionPresentation(
   }
 
   if (videoSelector.pan) {
-    const pan = snapshot.presentation.rawPan;
+    const pan = snapshot.framing.rawPan;
 
     target.pan = [pan[0] / zoom, pan[1] / zoom];
   }
@@ -81,30 +81,30 @@ function withRotation(
 }
 
 /**
- * Converts a Video view-presentation patch back into semantic Video view state.
+ * Converts a Video view-framing patch back into semantic Video view state.
  * A new rotation applies first, then the zoom, and the pan then at the new
  * rotation and zoom, on the screen.
  */
-export function withVideoProjectionPresentation(
+export function withVideoProjectionFraming(
   snapshot: VideoProjectionSnapshot,
-  presentation: Partial<ViewPresentation>,
+  framing: Partial<ViewFraming>,
   options: ProjectionWriteOptions = {}
 ): VideoViewState {
   const viewState = snapshot.viewState ?? {};
-  const hasZoom = hasOwn(presentation, 'zoom');
-  const hasPan = hasOwn(presentation, 'pan');
-  const hasRotation = hasOwn(presentation, 'rotation');
+  const hasZoom = hasOwn(framing, 'zoom');
+  const hasPan = hasOwn(framing, 'pan');
+  const hasRotation = hasOwn(framing, 'rotation');
   const nextZoom = Math.max(
-    presentation.zoom ?? snapshot.presentation.zoom ?? viewState.scale ?? 1,
+    framing.zoom ?? snapshot.framing.zoom ?? viewState.scale ?? 1,
     0.001
   );
   let resolvedView =
     hasRotation && snapshot.resolvedView
-      ? withRotation(snapshot.resolvedView, presentation.rotation ?? 0)
+      ? withRotation(snapshot.resolvedView, framing.rotation ?? 0)
       : snapshot.resolvedView;
   let nextViewState: VideoViewState = normalizeVideoViewState({
     ...viewState,
-    ...(hasRotation ? { rotation: presentation.rotation ?? 0 } : {}),
+    ...(hasRotation ? { rotation: framing.rotation ?? 0 } : {}),
   });
 
   if (hasZoom) {
@@ -112,7 +112,7 @@ export function withVideoProjectionPresentation(
       resolvedView = resolvedView.withZoom(nextZoom, options.anchorCanvas);
       nextViewState = normalizeVideoViewState({
         ...resolvedView.state?.viewState,
-        ...(hasRotation ? { rotation: presentation.rotation ?? 0 } : {}),
+        ...(hasRotation ? { rotation: framing.rotation ?? 0 } : {}),
       });
     } else {
       nextViewState = normalizeVideoViewState({
@@ -123,10 +123,10 @@ export function withVideoProjectionPresentation(
     }
   }
 
-  if (hasPan && presentation.pan) {
+  if (hasPan && framing.pan) {
     const targetPan: Point2 = [
-      presentation.pan[0] * nextZoom,
-      presentation.pan[1] * nextZoom,
+      framing.pan[0] * nextZoom,
+      framing.pan[1] * nextZoom,
     ];
 
     if (resolvedView) {
@@ -136,7 +136,7 @@ export function withVideoProjectionPresentation(
 
       nextViewState = normalizeVideoViewState({
         ...pannedView.state?.viewState,
-        ...(hasRotation ? { rotation: presentation.rotation ?? 0 } : {}),
+        ...(hasRotation ? { rotation: framing.rotation ?? 0 } : {}),
       });
     }
   }

@@ -458,7 +458,7 @@ async function run() {
     displaySetId: acqDisplaySetId,
     options: {},
   });
-  acqViewport.setDisplaySetPresentation(acqDisplaySetId, {
+  acqViewport.setDisplaySetAppearance(acqDisplaySetId, {
     voiRange: ctVoiRange,
   });
   acqViewport.render();
@@ -480,7 +480,7 @@ async function run() {
     }),
   ]);
   getMprViewports().forEach((viewport) => {
-    viewport.setDisplaySetPresentation(mprDisplaySetId, {
+    viewport.setDisplaySetAppearance(mprDisplaySetId, {
       voiRange: ctVoiRange,
     });
     viewport.render();
@@ -492,7 +492,7 @@ async function run() {
     displaySetId: volume3dDisplaySetId,
     options: { renderMode: 'vtkVolume3d' },
   });
-  volume3dViewport.setDisplaySetPresentation(volume3dDisplaySetId, {
+  volume3dViewport.setDisplaySetAppearance(volume3dDisplaySetId, {
     sampleDistanceMultiplier: 1,
   });
   applyVolumeRenderingPreset(defaultPresetName);

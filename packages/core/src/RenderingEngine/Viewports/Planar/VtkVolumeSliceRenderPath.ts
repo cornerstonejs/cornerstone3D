@@ -27,7 +27,7 @@ import type {
 } from '../ViewportArchitectureTypes';
 import type {
   PlanarViewState,
-  PlanarDataPresentation,
+  PlanarDisplaySetAppearance,
   PlanarPayload,
   PlanarResolvedICamera,
   PlanarViewportRenderContext,
@@ -48,7 +48,7 @@ import {
   getPlanarRenderPathActiveSourceICamera,
   resolvePlanarRenderPathProjection,
 } from './planarRenderPathProjection';
-import { applyPlanarVolumePresentation } from './planarVolumePresentation';
+import { applyPlanarVolumeAppearance } from './planarVolumeAppearance';
 import {
   acquiredFrameActors,
   withAcquiredFrames,
@@ -88,7 +88,7 @@ export class VtkVolumeSliceRenderPath
     ctx: PlanarVtkVolumeAdapterContext,
     data: LoadedData,
     options: DataAddOptions
-  ): Promise<RenderPathAttachment<PlanarDataPresentation>> {
+  ): Promise<RenderPathAttachment<PlanarDisplaySetAppearance>> {
     const payload: PlanarPayload = data as unknown as LoadedData<PlanarPayload>;
     const imageVolume = payload.imageVolume;
     const isSegmentationOverlay = isSegmentationOverlayData(payload, options);
@@ -126,7 +126,7 @@ export class VtkVolumeSliceRenderPath
       defaultVOIRange: defaultRange
         ? { lower: defaultRange[0], upper: defaultRange[1] }
         : undefined,
-      dataPresentation: undefined,
+      appearance: undefined,
       isSegmentationOverlay,
       viewportId: ctx.viewportId,
       excludeFromFidelity: isSegmentationOverlay,
@@ -154,7 +154,7 @@ export class VtkVolumeSliceRenderPath
 
         const isProjectingOverlay =
           rendering.isSegmentationOverlay &&
-          (rendering.dataPresentation?.slabThickness ?? 0) > 0;
+          (rendering.appearance?.slabThickness ?? 0) > 0;
 
         if (!isProjectingOverlay) {
           ctx.display.requestRender();
@@ -185,10 +185,10 @@ export class VtkVolumeSliceRenderPath
       ctx.display.requestRender();
     });
 
-    const attachment: RenderPathAttachment<PlanarDataPresentation> = {
+    const attachment: RenderPathAttachment<PlanarDisplaySetAppearance> = {
       rendering,
-      updateDataPresentation: (props) => {
-        this.updateDataPresentation(ctx, rendering, props, data.id);
+      updateAppearance: (props) => {
+        this.updateAppearance(ctx, rendering, props, data.id);
       },
       applyViewState: (camera) => {
         this.applyViewState(ctx, rendering, data.id, camera);
@@ -226,25 +226,25 @@ export class VtkVolumeSliceRenderPath
       : withAcquiredFrames(ctx, data as LoadedData<PlanarPayload>, attachment);
   }
 
-  private updateDataPresentation(
+  private updateAppearance(
     ctx: PlanarVtkVolumeAdapterContext,
     rendering: PlanarVolumeSliceRendering,
     props: unknown,
     displaySetId: string
   ): void {
-    rendering.dataPresentation = props as PlanarDataPresentation | undefined;
+    rendering.appearance = props as PlanarDisplaySetAppearance | undefined;
     // Segmentation overlays get their color/opacity transfer functions from
     // the segmentation styling (setLabelmapColorAndOpacity); rebuilding them
     // here from a VOI range would overwrite the label colors with a grayscale
-    // ramp. Dropping the default VOI keeps the presentation application to
+    // ramp. Dropping the default VOI keeps the appearance application to
     // blend/slab/visibility for those actors.
-    applyPlanarVolumePresentation({
+    applyPlanarVolumeAppearance({
       actor: rendering.actor,
       defaultVOIRange: rendering.isSegmentationOverlay
         ? undefined
         : rendering.defaultVOIRange,
       mapper: rendering.mapper,
-      props: rendering.dataPresentation,
+      props: rendering.appearance,
     });
     const activeSourceICamera = getPlanarRenderPathActiveSourceICamera(ctx);
 

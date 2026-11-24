@@ -27,8 +27,8 @@
 //   (`resolvePlanarRenderPathCurrentImageIdIndex` dedups against the last
 //   *requested* index) -- so it fires on scroll/setImageIdIndex but not on a
 //   pure zoom/pan/rotation call.
-// - VOI_MODIFIED is triggered by `PlanarViewport.notifyDataPresentationModified`
-//   whenever a `setDisplaySetPresentation` call touches `voiRange`/`invert`/
+// - VOI_MODIFIED is triggered by `PlanarViewport.notifyAppearanceModified`
+//   whenever a `setDisplaySetAppearance` call touches `voiRange`/`invert`/
 //   `voiLUTFunction` AND resolves a non-undefined range. In stack mode a call
 //   that leaves the range, the VOI LUT function and the invert as they were
 //   fires none, as the legacy stack viewport (see test 6); in volume mode
@@ -355,7 +355,7 @@ test('golden event sequence for load -> scroll -> zoom', async () => {
   //           initial slice synchronously while building the binding),
   //           then VOI_MODIFIED (addDisplaySetInternal mirrors legacy
   //           StackViewport by emitting the resolved default VOI right
-  //           after `setDefaultDataPresentation`), then CAMERA_MODIFIED
+  //           after `setDefaultAppearance`), then CAMERA_MODIFIED
   //           (the source-binding's initial camera, emitted directly by
   //           addDisplaySetInternal), then IMAGE_RENDERED (the RAF
   //           callback fires after the mount's render() request).
@@ -435,7 +435,7 @@ test('scroll fires exactly one new-image event whose imageId matches the resolve
 // 6. VOI event
 // ==========================================================================
 
-test('setDisplaySetPresentation with a new voiRange fires VOI_MODIFIED with the new range', async () => {
+test('setDisplaySetAppearance with a new voiRange fires VOI_MODIFIED with the new range', async () => {
   const ctx = await setupViewport();
   const { viewport, element, displaySetId } = ctx;
 
@@ -446,7 +446,7 @@ test('setDisplaySetPresentation with a new voiRange fires VOI_MODIFIED with the 
   recorder.clear();
 
   const nextRange = { lower: 0, upper: 100 };
-  viewport.setDisplaySetPresentation(displaySetId, { voiRange: nextRange });
+  viewport.setDisplaySetAppearance(displaySetId, { voiRange: nextRange });
   viewport.render();
   await waitForQuiescence(recorder);
 
@@ -459,12 +459,12 @@ test('setDisplaySetPresentation with a new voiRange fires VOI_MODIFIED with the 
 
   expect(detail?.viewportId).toBe(ctx.viewportId);
   expect(detail?.range).toEqual(nextRange);
-  expect(viewport.getDisplaySetPresentation(displaySetId)?.voiRange).toEqual(
+  expect(viewport.getDisplaySetAppearance(displaySetId)?.voiRange).toEqual(
     nextRange
   );
 });
 
-// The viewport of `setupViewport` shows a stack. `notifyDataPresentationModified`
+// The viewport of `setupViewport` shows a stack. `notifyAppearanceModified`
 // compares the VOI with the stored presentation before the change, so setting
 // the same VOI range a second time fires no VOI_MODIFIED, as the legacy stack
 // viewport on the GPU (it returned early from `setVOIGPU` on an equal range).
@@ -476,13 +476,13 @@ test('setting the same voiRange again in stack mode does not fire VOI_MODIFIED, 
   track(recorder.stop);
 
   const sameRange = { lower: 0, upper: 100 };
-  viewport.setDisplaySetPresentation(displaySetId, { voiRange: sameRange });
+  viewport.setDisplaySetAppearance(displaySetId, { voiRange: sameRange });
   viewport.render();
   await waitForQuiescence(recorder);
 
   recorder.clear();
 
-  viewport.setDisplaySetPresentation(displaySetId, { voiRange: sameRange });
+  viewport.setDisplaySetAppearance(displaySetId, { voiRange: sameRange });
   viewport.render();
   await waitForQuiescence(recorder);
 

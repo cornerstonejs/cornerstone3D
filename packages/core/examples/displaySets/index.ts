@@ -258,11 +258,11 @@ async function mountRow(row: Row) {
     await viewport.setDisplaySets({ displaySetId: row.displaySetId, options });
 
     if (row.hint === 'volume') {
-      viewport.setDisplaySetPresentation(row.displaySetId, ctPresentation());
+      viewport.setDisplaySetAppearance(row.displaySetId, ctPresentation());
     }
     if (row.hint === 'volume3d') {
       // 3D needs a preset to be visible; setDisplaySets already loaded the volume.
-      viewport.setDisplaySetPresentation(row.displaySetId, {
+      viewport.setDisplaySetAppearance(row.displaySetId, {
         preset: 'CT-Bone',
       });
     }

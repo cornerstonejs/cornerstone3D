@@ -14,21 +14,21 @@ export type FidelityDisplay = {
   averageSlabThickness?: number;
 };
 
-/** The slab of a presentation: its blend mode and its thickness. */
-export type SlabPresentation = {
+/** The slab of an appearance: its blend mode and its thickness. */
+export type SlabAppearance = {
   blendMode?: BlendModes;
   slabThickness?: number;
 };
 
 /**
- * The slab thickness of a presentation that averages its slab. A MIP or a
+ * The slab thickness of an appearance that averages its slab. A MIP or a
  * MinIP slab picks one sample, so it gets undefined.
  */
 export function averageSlabThicknessOf(
-  presentation: SlabPresentation | undefined
+  appearance: SlabAppearance | undefined
 ): number | undefined {
-  return presentation?.blendMode === BlendModes.AVERAGE_INTENSITY_BLEND
-    ? presentation.slabThickness
+  return appearance?.blendMode === BlendModes.AVERAGE_INTENSITY_BLEND
+    ? appearance.slabThickness
     : undefined;
 }
 

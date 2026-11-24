@@ -445,12 +445,12 @@ describe('Zoom and pan of the next ECG viewport in the projection service', () =
 
     byMembers.setZoom(2, anchorCanvas);
     byService.setViewState(
-      viewportProjection.withPresentation(byService, { zoom: 2 }, undefined, {
+      viewportProjection.withFraming(byService, { zoom: 2 }, undefined, {
         anchorCanvas,
       })
     );
 
-    const { pan, zoom } = viewportProjection.getPresentation(byService, {
+    const { pan, zoom } = viewportProjection.getFraming(byService, {
       selector: { zoom: true, pan: true },
     });
 
@@ -459,7 +459,7 @@ describe('Zoom and pan of the next ECG viewport in the projection service', () =
 
     byMembers.setPan([byMembers.getPan()[0] + 12, byMembers.getPan()[1] - 7]);
     byService.setViewState(
-      viewportProjection.withPresentation(byService, {
+      viewportProjection.withFraming(byService, {
         pan: [pan[0] + 12 / zoom, pan[1] - 7 / zoom],
       })
     );

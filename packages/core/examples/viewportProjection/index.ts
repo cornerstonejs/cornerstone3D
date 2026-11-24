@@ -220,7 +220,7 @@ function getCenterWorld(
  * Converts a projection snapshot into the compact text shown below a viewport.
  */
 function formatSnapshot(label: string, snapshot?: ProjectionSnapshot): string {
-  const presentation = snapshot?.presentation;
+  const presentation = snapshot?.framing;
 
   return [
     label,
@@ -284,7 +284,7 @@ function updateProjectionInfo(action = 'manual snapshot refresh'): void {
  */
 function applyPlanarProjectionPatch(): void {
   const viewport = getPlanarViewport();
-  const nextViewState = viewportProjection.withPresentation<
+  const nextViewState = viewportProjection.withFraming<
     Parameters<PlanarViewport['setViewState']>[0],
     PlanarProjectionPatch
   >(viewport, {
@@ -314,7 +314,7 @@ function applyVolumeProjectionPatch(): void {
     return;
   }
 
-  const nextViewState = viewportProjection.withPresentation<
+  const nextViewState = viewportProjection.withFraming<
     Parameters<VolumeViewport3D['setViewState']>[0],
     Volume3DProjectionPatch
   >(viewport, {
@@ -447,10 +447,10 @@ async function run() {
     }),
   ]);
 
-  planarViewport.setDisplaySetPresentation(planarDisplaySetId, {
+  planarViewport.setDisplaySetAppearance(planarDisplaySetId, {
     voiRange: ctVoiRange,
   });
-  volumeViewport.setDisplaySetPresentation(volumeDisplaySetId, {
+  volumeViewport.setDisplaySetAppearance(volumeDisplaySetId, {
     sampleDistanceMultiplier: 1,
   });
   applyVolumeRenderingPreset(volumeViewport);

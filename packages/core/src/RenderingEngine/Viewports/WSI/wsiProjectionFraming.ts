@@ -1,11 +1,11 @@
-import type { Point2, ViewPresentation } from '../../../types';
-import type { ViewPresentationSelector } from '../../../types/IViewport';
+import type { Point2, ViewFraming } from '../../../types';
+import type { ViewFramingSelector } from '../../../types/IViewport';
 import type { ProjectionWriteOptions } from '../ViewportProjectionTypes';
 import type { WSIProjectionSnapshot } from './WSIProjectionTypes';
 import type { WSIViewState } from './WSIViewportTypes';
 
 const DEFAULT_SELECTOR: Required<
-  Pick<ViewPresentationSelector, 'rotation' | 'zoom' | 'pan'>
+  Pick<ViewFramingSelector, 'rotation' | 'zoom' | 'pan'>
 > = {
   rotation: true,
   zoom: true,
@@ -13,7 +13,7 @@ const DEFAULT_SELECTOR: Required<
 };
 
 /**
- * Narrows a presentation patch to fields explicitly provided by the caller.
+ * Narrows a framing patch to fields explicitly provided by the caller.
  */
 function hasOwn<T extends object, K extends PropertyKey>(
   obj: T,
@@ -23,28 +23,28 @@ function hasOwn<T extends object, K extends PropertyKey>(
 }
 
 /**
- * Converts a WSI projection snapshot to the public view-presentation shape.
+ * Converts a WSI projection snapshot to the public view-framing shape.
  * The zoom is a factor against the fit of the microscopy viewer, and the pan
  * is in canvas pixels divided by the zoom, as on the other families.
  */
-export function getWSIProjectionPresentation(
+export function getWSIProjectionFraming(
   snapshot: WSIProjectionSnapshot,
-  selector: ViewPresentationSelector | undefined
-): ViewPresentation {
-  const target: ViewPresentation = {};
+  selector: ViewFramingSelector | undefined
+): ViewFraming {
+  const target: ViewFraming = {};
   const wsiSelector = selector ?? DEFAULT_SELECTOR;
 
   if (wsiSelector.zoom) {
-    target.zoom = snapshot.presentation.zoom;
+    target.zoom = snapshot.framing.zoom;
   }
 
   if (wsiSelector.rotation) {
-    target.rotation = snapshot.presentation.rotation;
+    target.rotation = snapshot.framing.rotation;
   }
 
   if (wsiSelector.pan) {
-    const zoom = snapshot.presentation.zoom ?? 1;
-    const pan = snapshot.presentation.rawPan;
+    const zoom = snapshot.framing.zoom ?? 1;
+    const pan = snapshot.framing.rawPan;
 
     target.pan = [pan[0] / zoom, pan[1] / zoom];
   }
@@ -53,24 +53,21 @@ export function getWSIProjectionPresentation(
 }
 
 /**
- * Converts a WSI view-presentation patch back into semantic WSI view state.
+ * Converts a WSI view-framing patch back into semantic WSI view state.
  * The zoom applies first, and the pan then at the new zoom. A zoom is a
  * factor against the fit: the map gets the resolution of the fit divided by
  * the zoom, about `options.anchorCanvas` when given. A zoom does nothing
  * when the viewport shows nothing to fit.
  */
-export function withWSIProjectionPresentation(
+export function withWSIProjectionFraming(
   snapshot: WSIProjectionSnapshot,
-  presentation: Partial<ViewPresentation>,
+  framing: Partial<ViewFraming>,
   options: ProjectionWriteOptions = {}
 ): WSIViewState {
-  const hasZoom = hasOwn(presentation, 'zoom');
-  const hasRotation = hasOwn(presentation, 'rotation');
-  const hasPan = hasOwn(presentation, 'pan');
-  const nextZoom = Math.max(
-    presentation.zoom ?? snapshot.presentation.zoom ?? 1,
-    0.001
-  );
+  const hasZoom = hasOwn(framing, 'zoom');
+  const hasRotation = hasOwn(framing, 'rotation');
+  const hasPan = hasOwn(framing, 'pan');
+  const nextZoom = Math.max(framing.zoom ?? snapshot.framing.zoom ?? 1, 0.001);
   let nextViewState: WSIViewState = {
     ...snapshot.viewState,
     centerIndex: snapshot.viewState.centerIndex
@@ -89,17 +86,17 @@ export function withWSIProjectionPresentation(
     nextViewState = { ...resolvedView.state.viewState };
   }
 
-  if (hasPan && presentation.pan && resolvedView?.withPan) {
+  if (hasPan && framing.pan && resolvedView?.withPan) {
     const targetPan: Point2 = [
-      presentation.pan[0] * nextZoom,
-      presentation.pan[1] * nextZoom,
+      framing.pan[0] * nextZoom,
+      framing.pan[1] * nextZoom,
     ];
 
     nextViewState = { ...resolvedView.withPan(targetPan).state.viewState };
   }
 
   if (hasRotation) {
-    nextViewState.rotation = presentation.rotation ?? 0;
+    nextViewState.rotation = framing.rotation ?? 0;
   }
 
   return nextViewState;

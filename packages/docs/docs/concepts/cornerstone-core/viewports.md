@@ -16,8 +16,8 @@ In `Cornerstone3D` viewports are created from HTML elements, and the consumer sh
 pass the `element` for which the viewport should be created. For example, a CT series can be
 viewed via 4 viewports in a “4-up” view: Axial MPR, Sagittal MPR, Coronal MPR, A 3D perspective volume render.
 
-See [Viewport Reference and Presentation](./viewportReferencePresentation.md) for more details on the reference
-and presentation details that select which image and how that image is presented.
+See [Viewport Reference and Framing](./viewportReferencePresentation.md) for more details on the reference
+and the framing that select which image and how that image is presented.
 
 Every viewport uses a semantic `ViewState` as its mutation source of truth. Code that needs cross-viewport pan, zoom, rotation,
 scale, or renderer-camera output should use
@@ -53,7 +53,7 @@ images or a slice of a volume. What it shows decides how it behaves, and
 
 - Suitable for actual 3D rendering of a volumetric data.
 - For having different types of presets such as Bone, Soft Tissue, Lung, etc.,
-  as the `preset` key of the presentation.
+  as the `preset` key of the appearance.
 - A surface is a geometry display set of a 3D viewport.
 
 :::note

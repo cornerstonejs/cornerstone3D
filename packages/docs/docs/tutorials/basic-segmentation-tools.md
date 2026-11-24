@@ -203,7 +203,7 @@ await Promise.all(
     const viewport = renderingEngine.getViewport(viewportId);
 
     await viewport.setDisplaySets({ displaySetId });
-    viewport.setDisplaySetPresentation(displaySetId, {
+    viewport.setDisplaySetAppearance(displaySetId, {
       voiRange: { lower: -180, upper: 220 },
     });
   })
@@ -411,7 +411,7 @@ async function run() {
       const viewport = renderingEngine.getViewport(viewportId);
 
       await viewport.setDisplaySets({ displaySetId });
-      viewport.setDisplaySetPresentation(displaySetId, {
+      viewport.setDisplaySetAppearance(displaySetId, {
         voiRange: { lower: -180, upper: 220 },
       });
     })

@@ -76,7 +76,7 @@ const VOLUME_TARGET_ID =
 function nextApi() {
   return {
     setDisplaySets: jest.fn(),
-    setDisplaySetPresentation: jest.fn(),
+    setDisplaySetAppearance: jest.fn(),
     setViewState: jest.fn(),
   };
 }

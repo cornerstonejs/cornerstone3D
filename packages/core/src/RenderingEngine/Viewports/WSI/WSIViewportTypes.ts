@@ -1,6 +1,6 @@
 import type {
   BaseViewportRenderContext,
-  BasePresentationProps,
+  BaseAppearanceProps,
   DataProvider,
   LoadedData,
   MountedRendering,
@@ -48,7 +48,7 @@ export interface WSIPayload {
   imageURISet: Set<string>;
 }
 
-export interface WSIPresentationProps extends BasePresentationProps {}
+export interface WSIAppearanceProps extends BaseAppearanceProps {}
 
 export interface WSIViewState extends ViewportCameraBase<[number, number]> {
   centerIndex?: [number, number];
@@ -69,7 +69,7 @@ export interface WSIProperties {
   averageWhite?: [number, number, number];
 }
 
-export type WSIDataPresentation = WSIPresentationProps & WSIProperties;
+export type WSIDisplaySetAppearance = WSIAppearanceProps & WSIProperties;
 
 /** @internal */
 export interface WSIDataProvider extends DataProvider {

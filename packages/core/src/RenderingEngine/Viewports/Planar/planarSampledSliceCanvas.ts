@@ -18,10 +18,10 @@ import { createCanvas } from '../../helpers/getOrCreateCanvas';
 import drawImageSync from '../../helpers/cpuFallback/drawImageSync';
 import { resolveCPUFallbackColormap } from '../../helpers/cpuFallback/colors';
 import getDefaultViewport from '../../helpers/cpuFallback/rendering/getDefaultViewport';
-import { applyPlanarImagePresentation } from '../../helpers/planarImageRendering';
+import { applyPlanarImageAppearance } from '../../helpers/planarImageRendering';
 import { worldToCanvasPlanarViewState } from './planarAdapterCoordinateTransforms';
 import type {
-  PlanarDataPresentation,
+  PlanarDisplaySetAppearance,
   PlanarViewportRenderContext,
 } from './PlanarViewportTypes';
 import { getVolumeClipPlanes } from './planarSampledSlice';
@@ -122,13 +122,13 @@ export type PlanarCanvasTarget = PlanarViewportRenderContext['cpu'];
 /**
  * The GPU draw step whose picture a `PlanarSampledSliceCanvas` draws.
  * `volume`, the default, is the slice of a volume drawn by
- * `PlanarSampledSliceActor`, with the presentation of a volume slice. `image`
+ * `PlanarSampledSliceActor`, with the appearance of a volume slice. `image`
  * is an acquired image of a stack drawn by `VtkImageMapperRenderPath`: the
- * presentation of an image (`applyPlanarImagePresentation`), and a colour
+ * appearance of an image (`applyPlanarImageAppearance`), and a colour
  * image whose red, green and blue each read the colour table, as the vtk.js
  * image mapper reads an image of three dependent components.
  */
-export type PlanarSliceCanvasPresentation = 'volume' | 'image';
+export type PlanarSliceCanvasAppearance = 'volume' | 'image';
 
 /**
  * A 2D affine transform from the pixel space of a slice image (pixel i, j
@@ -151,8 +151,8 @@ export type PlanarSliceCanvasTransform = [
  * the vtk.js path.
  *
  * A slice of one value per pixel is coloured as the GPU draw step colours
- * it, so that both draw steps give the same picture: the presentation is
- * applied with `PlanarSampledSliceActor.applyPresentation` to an actor that
+ * it, so that both draw steps give the same picture: the appearance is
+ * applied with `PlanarSampledSliceActor.applyAppearance` to an actor that
  * is never drawn, and its colour and opacity functions become the tables of
  * the vtk.js image mapper (`getColourTables`), read the way its shader reads
  * them. The pixels outside the faces of the volume are left clear, as the
@@ -169,12 +169,12 @@ export type PlanarSliceCanvasTransform = [
  * of a colour volume becomes an `IImage` that the CPU fallback pipeline
  * (`drawImageSync`) turns into colours one to one. That picture is drawn on
  * the layer canvas of the display set and composed on the canvas of the
- * viewport with the opacity of the presentation.
+ * viewport with the opacity of the appearance.
  *
  * Either picture is placed with the transform from the slice to the canvas
  * (`getSliceCanvasTransform`), so any pan, zoom, rotation and flip of the
  * camera places it. A slice of voxel size is enlarged by the canvas, with
- * image smoothing unless the presentation asks for NEAREST. A slice of the
+ * image smoothing unless the appearance asks for NEAREST. A slice of the
  * screen grid maps to the canvas one to one and is copied unchanged.
  */
 export class PlanarSampledSliceCanvas {
@@ -186,8 +186,8 @@ export class PlanarSampledSliceCanvas {
   private image?: IImage;
   private roundedPixelData?: Int32Array;
   private sequence = 0;
-  private presentationActor?: PlanarSampledSliceActor;
-  private presentationKey?: string;
+  private appearanceActor?: PlanarSampledSliceActor;
+  private appearanceKey?: string;
   private colourTables?: PlanarSliceColourTables;
   private clipPlanes?: PlanarSliceClipPlane[];
   private sliceImageData?: ImageData;
@@ -200,7 +200,7 @@ export class PlanarSampledSliceCanvas {
     private volume: IImageVolume,
     width: number,
     height: number,
-    private readonly presentationOf: PlanarSliceCanvasPresentation = 'volume'
+    private readonly appearanceOf: PlanarSliceCanvasAppearance = 'volume'
   ) {
     this.layerCanvas = createCanvas(null, width, height);
     this.sliceCanvas = createCanvas(null, 1, 1);
@@ -250,8 +250,8 @@ export class PlanarSampledSliceCanvas {
    *
    * @param args.target - The canvas of the viewport.
    * @param args.camera - The camera of the view, which places the slice.
-   * @param args.presentation - VOI, colormap, invert, interpolation, opacity.
-   * @param args.defaultVOIRange - The VOI when the presentation has none.
+   * @param args.appearance - VOI, colormap, invert, interpolation, opacity.
+   * @param args.defaultVOIRange - The VOI when the appearance has none.
    * @param args.invalidated - True when the colours must be made again.
    * @param args.canvasActor - The actor that colours a labelmap; when given,
    *   the slice is drawn by the actor and not by the VOI pipeline.
@@ -259,12 +259,12 @@ export class PlanarSampledSliceCanvas {
   draw(args: {
     target: PlanarCanvasTarget;
     camera: PlanarScreenCamera;
-    presentation?: PlanarDataPresentation;
+    appearance?: PlanarDisplaySetAppearance;
     defaultVOIRange?: VOIRange;
     invalidated: boolean;
     canvasActor?: ICanvasActor;
   }): void {
-    const { target, camera, presentation, canvasActor } = args;
+    const { target, camera, appearance, canvasActor } = args;
     const { slice, image } = this;
 
     if (!slice || !image) {
@@ -276,7 +276,7 @@ export class PlanarSampledSliceCanvas {
         canvasActor,
         target,
         camera,
-        presentation?.opacity ?? 1
+        appearance?.opacity ?? 1
       );
       return;
     }
@@ -285,7 +285,7 @@ export class PlanarSampledSliceCanvas {
 
     if (
       (slice.numberOfComponents ?? 1) === 1 ||
-      this.presentationOf === 'image'
+      this.appearanceOf === 'image'
     ) {
       this.drawWithTransferFunctions(args);
       return;
@@ -295,7 +295,7 @@ export class PlanarSampledSliceCanvas {
 
     const enabledElement = this.updateEnabledElement(
       image,
-      presentation,
+      appearance,
       args.defaultVOIRange
     );
 
@@ -332,7 +332,7 @@ export class PlanarSampledSliceCanvas {
     );
     layerContext.drawImage(this.sliceCanvas, 0, 0);
     layerContext.setTransform(1, 0, 0, 1, 0, 0);
-    composeLayer(target, this.layerCanvas, presentation?.opacity ?? 1);
+    composeLayer(target, this.layerCanvas, appearance?.opacity ?? 1);
   }
 
   /** Drops the slice and its image. */
@@ -341,8 +341,8 @@ export class PlanarSampledSliceCanvas {
     this.image = undefined;
     this.enabledElement = undefined;
     this.roundedPixelData = undefined;
-    this.presentationActor = undefined;
-    this.presentationKey = undefined;
+    this.appearanceActor = undefined;
+    this.appearanceKey = undefined;
     this.colourTables = undefined;
     this.sliceImageData = undefined;
     this.colouredSlice = undefined;
@@ -359,16 +359,13 @@ export class PlanarSampledSliceCanvas {
   private drawWithTransferFunctions(args: {
     target: PlanarCanvasTarget;
     camera: PlanarScreenCamera;
-    presentation?: PlanarDataPresentation;
+    appearance?: PlanarDisplaySetAppearance;
     defaultVOIRange?: VOIRange;
     invalidated: boolean;
   }): void {
     const { target, camera } = args;
     const { slice } = this;
-    const tables = this.getColourTables(
-      args.presentation,
-      args.defaultVOIRange
-    );
+    const tables = this.getColourTables(args.appearance, args.defaultVOIRange);
     const sliceContext = this.sliceCanvas.getContext('2d');
 
     if (!sliceContext || tables.opacity <= 0) {
@@ -461,40 +458,40 @@ export class PlanarSampledSliceCanvas {
   }
 
   /**
-   * The colour tables of the presentation. The presentation is applied to the
+   * The colour tables of the appearance. The appearance is applied to the
    * actor of the GPU draw step (`PlanarSampledSliceActor`), which is never
    * drawn here, only when it changed, as the GPU draw step applies it; the
-   * tables are then read from that actor. For the `image` presentation the
-   * presentation of an image is applied to that actor, as
+   * tables are then read from that actor. For the `image` appearance the
+   * appearance of an image is applied to that actor, as
    * `VtkImageMapperRenderPath` applies it to its own.
    */
   private getColourTables(
-    presentation: PlanarDataPresentation | undefined,
+    appearance: PlanarDisplaySetAppearance | undefined,
     defaultVOIRange: VOIRange | undefined
   ): PlanarSliceColourTables {
-    const key = JSON.stringify([presentation ?? null, defaultVOIRange ?? null]);
+    const key = JSON.stringify([appearance ?? null, defaultVOIRange ?? null]);
 
-    if (this.colourTables && key === this.presentationKey) {
+    if (this.colourTables && key === this.appearanceKey) {
       return this.colourTables;
     }
 
-    this.presentationActor ||= new PlanarSampledSliceActor({
+    this.appearanceActor ||= new PlanarSampledSliceActor({
       voxelManager: this.volume.voxelManager,
     });
 
-    if (this.presentationOf === 'image') {
-      applyPlanarImagePresentation({
-        actor: this.presentationActor.actor,
+    if (this.appearanceOf === 'image') {
+      applyPlanarImageAppearance({
+        actor: this.appearanceActor.actor,
         defaultVOIRange,
-        props: presentation,
+        props: appearance,
       });
     } else {
-      this.presentationActor.applyPresentation(presentation, defaultVOIRange);
+      this.appearanceActor.applyAppearance(appearance, defaultVOIRange);
     }
 
-    this.presentationKey = key;
+    this.appearanceKey = key;
     this.colourTables = getColourTables(
-      this.presentationActor,
+      this.appearanceActor,
       this.colourTables
     );
 
@@ -505,16 +502,16 @@ export class PlanarSampledSliceCanvas {
    * Points the CPU fallback element at the slice canvas and sets its viewport
    * so that the image maps to that canvas one to one: an explicit scale of 1
    * along both axes, no pan, rotation or flip. The VOI, colormap, invert and
-   * interpolation come from the presentation, as for a stack image.
+   * interpolation come from the appearance, as for a stack image.
    */
   private updateEnabledElement(
     image: IImage,
-    presentation: PlanarDataPresentation | undefined,
+    appearance: PlanarDisplaySetAppearance | undefined,
     defaultVOIRange: VOIRange | undefined
   ): CPUFallbackEnabledElement {
     const modality = this.volume.metadata?.Modality;
     const resolvedVOI = getResolvedVOIRange(
-      presentation?.voiRange ?? defaultVOIRange,
+      appearance?.voiRange ?? defaultVOIRange,
       image.minPixelValue ?? 0,
       image.maxPixelValue ?? 1
     );
@@ -522,13 +519,13 @@ export class PlanarSampledSliceCanvas {
 
     (viewport as { scale?: number | Point2 }).scale = [1, 1];
     viewport.colormap = resolveCPUFallbackColormap(
-      presentation?.colormap,
+      appearance?.colormap,
       image.colormap,
       { voiRange: resolvedVOI }
     );
-    viewport.invert = presentation?.invert ?? false;
+    viewport.invert = appearance?.invert ?? false;
     viewport.pixelReplication =
-      presentation?.interpolationType === InterpolationType.NEAREST;
+      appearance?.interpolationType === InterpolationType.NEAREST;
     viewport.voi = {
       windowCenter: (resolvedVOI.lower + resolvedVOI.upper) / 2,
       windowWidth: Math.max(resolvedVOI.upper - resolvedVOI.lower, 1),
@@ -552,7 +549,7 @@ export class PlanarSampledSliceCanvas {
   /**
    * Draws the slice of a labelmap with its actor on the canvas of the
    * viewport, placed with the transform from the slice to the canvas, with
-   * the opacity of the presentation. The actor draws in canvas pixels, with
+   * the opacity of the appearance. The actor draws in canvas pixels, with
    * the outline, and composes with the other labelmaps of the pass. A slice
    * inside the volume ends on its faces, which get an outline, as the GPU
    * draws a labelmap slice of a volume.
@@ -673,7 +670,7 @@ export class PlanarSampledSliceCanvas {
  * canvas, for a camera. Each corner of the slice is placed with
  * `worldToCanvasPlanarViewState`, the world to canvas function of the planar
  * viewports, so the slice lands where tools find its voxels, for any pan,
- * zoom, rotation, flip and presentation scale. The steps along a row and a
+ * zoom, rotation, flip and framing scale. The steps along a row and a
  * column are measured over the whole slice, which keeps the rounding of that
  * function small. A transform within IDENTITY_TOLERANCE of the identity, as
  * that of a slice of the screen grid, is the identity.
@@ -795,7 +792,7 @@ export function getResolvedVOIRange(
 
 /**
  * The colour and opacity tables of the vtk.js image mapper for the
- * presentation of an actor, as `PlanarSliceColourTables`. They follow its
+ * appearance of an actor, as `PlanarSliceColourTables`. They follow its
  * OpenGL mapper: the colour function becomes a table of
  * `colorTextureWidth` texels of 8-bit red, green and blue over its range, the
  * opacity function a table of `opacityTextureWidth` float texels over its own
@@ -817,17 +814,17 @@ export function getResolvedVOIRange(
  * @internal
  */
 export function getColourTables(
-  presentationActor: Pick<PlanarSampledSliceActor, 'actor' | 'mapper'>,
+  appearanceActor: Pick<PlanarSampledSliceActor, 'actor' | 'mapper'>,
   previous?: PlanarSliceColourTables
 ): PlanarSliceColourTables {
-  const property = presentationActor.actor.getProperty();
+  const property = appearanceActor.actor.getProperty();
   const nearest =
     property.getInterpolationType() ===
     (InterpolationType.NEAREST as unknown as ReturnType<
       typeof property.getInterpolationType
     >);
   const opacity = property.getOpacity();
-  const colourWidth = presentationActor.mapper.getColorTextureWidth();
+  const colourWidth = appearanceActor.mapper.getColorTextureWidth();
   const colourTexels = new Uint8ClampedArray(colourWidth * 3);
   const colourFunction = property.getRGBTransferFunction(0);
   let window = property.getColorWindow();
@@ -867,7 +864,7 @@ export function getColourTables(
     }
   }
 
-  const opacityWidth = presentationActor.mapper.getOpacityTextureWidth();
+  const opacityWidth = appearanceActor.mapper.getOpacityTextureWidth();
   const opacityTexels = new Float32Array(opacityWidth).fill(1);
   const opacityFunction = property.getPiecewiseFunction(0);
   let opacityWindow = 1;
@@ -1399,7 +1396,7 @@ function clearOutsideVolume(
 /**
  * The alpha of each pixel of a coloured slice, from 0 to 1 before any
  * rounding, which the GPU blends with: the alpha of the opacity table at its
- * value, or the opacity of the presentation for a colour slice, times the
+ * value, or the opacity of the appearance for a colour slice, times the
  * share of the pixel that the slice covers for a pixel on an edge.
  */
 function getSliceAlphas(

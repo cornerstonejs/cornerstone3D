@@ -78,7 +78,7 @@ const petColorMapOpacity = [
  * callback `setCtTransferFunctionForVolumeActor` draws: a grey window of
  * width 400 and centre 40.
  *
- * @returns The presentation for `setDisplaySetPresentation`.
+ * @returns The presentation for `setDisplaySetAppearance`.
  */
 export function ctPresentation() {
   return { voiRange: { ...ctVoiRange } };
@@ -89,7 +89,7 @@ export function ctPresentation() {
  * `setPetTransferFunctionForVolumeActor` draws: SUV 0 to 5, inverted, so a
  * high uptake is dark.
  *
- * @returns The presentation for `setDisplaySetPresentation`.
+ * @returns The presentation for `setDisplaySetAppearance`.
  */
 export function petPresentation() {
   return { voiRange: { ...petVoiRange }, invert: true };
@@ -117,7 +117,7 @@ export function petPresentation() {
  *
  * @param [colormapRegistration] - The colormap of the callback's `preset`, if any.
  * @param [legacySliceOpacityExponent] - The exponent of the legacy look, 0.125 by default.
- * @returns The presentation for `setDisplaySetPresentation`.
+ * @returns The presentation for `setDisplaySetAppearance`.
  */
 export function petColorMapPresentation(
   colormapRegistration,

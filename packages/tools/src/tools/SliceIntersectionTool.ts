@@ -253,7 +253,7 @@ type EditData = {
    */
   memberStartPlanePoints?: Map<string, Types.Point3>;
   /**
-   * Each member's presentation scale at drag start, re-asserted after every
+   * Each member's framing scale at drag start, re-asserted after every
    * orientation write so fit-based scaling does not pulse the zoom while
    * rotating.
    */
@@ -884,7 +884,7 @@ class SliceIntersectionTool extends AnnotationTool {
   /**
    * Slab thickness rendering: two dashed lines at +/- slabThickness / 2
    * relative to the leader slice plane. The slab thickness itself is read
-   * from the viewport display-set presentation and never stored on this
+   * from the viewport display-set appearance and never stored on this
    * tool.
    */
   private _appendSlabGeometry(
@@ -1702,7 +1702,7 @@ class SliceIntersectionTool extends AnnotationTool {
   /**
    * Dragging a slab handle sets the slab thickness (twice the distance of
    * the cursor from the leader slice plane) on every volume-backed member of
-   * the plane group, through the display-set presentation API. No slab state
+   * the plane group, through the display-set appearance API. No slab state
    * is stored on the tool.
    */
   private _applySlabThickness(
@@ -1744,7 +1744,7 @@ class SliceIntersectionTool extends AnnotationTool {
 
   /**
    * Writes the slab thickness of one volume-backed member through its
-   * display-set presentation. Returns true when a change was applied.
+   * display-set appearance. Returns true when a change was applied.
    */
   private _setViewportSlabThickness(
     viewport: Types.IViewport,
@@ -1769,7 +1769,7 @@ class SliceIntersectionTool extends AnnotationTool {
       blendMode = Enums.BlendModes.COMPOSITE;
     }
 
-    (viewport as Types.IViewport).setDisplaySetPresentation(displaySetId, {
+    (viewport as Types.IViewport).setDisplaySetAppearance(displaySetId, {
       slabThickness,
       blendMode,
     });
@@ -1809,14 +1809,14 @@ class SliceIntersectionTool extends AnnotationTool {
   private _getSourceDisplaySetId(
     viewport: Types.IViewport
   ): string | undefined {
-    if (!csUtils.viewportSupportsDisplaySetPresentation(viewport)) {
+    if (!csUtils.viewportSupportsDisplaySetAppearance(viewport)) {
       return undefined;
     }
     return viewport.getSourceDisplaySetId();
   }
 
   /**
-   * Reads the viewport slab thickness from its display-set presentation;
+   * Reads the viewport slab thickness from its display-set appearance;
    * defaults to the minimum slab thickness.
    */
   private _getSourceSlabThickness(viewport: Types.IViewport): number {
@@ -1825,12 +1825,10 @@ class SliceIntersectionTool extends AnnotationTool {
       return RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS;
     }
 
-    const presentation = (
-      viewport as Types.IViewport
-    ).getDisplaySetPresentation(displaySetId) as
-      | { slabThickness?: number }
-      | undefined;
-    const slabThickness = presentation?.slabThickness;
+    const appearance = (viewport as Types.IViewport).getDisplaySetAppearance(
+      displaySetId
+    ) as { slabThickness?: number } | undefined;
+    const slabThickness = appearance?.slabThickness;
 
     return Number.isFinite(slabThickness) && slabThickness > 0
       ? slabThickness

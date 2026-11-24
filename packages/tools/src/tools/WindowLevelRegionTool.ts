@@ -370,18 +370,19 @@ class WindowLevelRegionTool extends AnnotationTool {
     const windowCenter = minMaxMean.mean;
 
     // Native ("next") viewports expose no get/setProperties; the VOI lives in the
-    // per-display-set presentation. Bridge both read (VOI LUT function) and write
+    // per-display-set appearance. Bridge both read (VOI LUT function) and write
     // (the computed VOI range) so the region tool applies the window level on
     // native viewports.
-    const presentationViewport =
-      utilities.viewportSupportsDisplaySetPresentation(viewport)
-        ? viewport
-        : undefined;
-    const sourceDisplaySetId = presentationViewport?.getSourceDisplaySetId();
+    const appearanceViewport = utilities.viewportSupportsDisplaySetAppearance(
+      viewport
+    )
+      ? viewport
+      : undefined;
+    const sourceDisplaySetId = appearanceViewport?.getSourceDisplaySetId();
 
     const voiLutFunction = sourceDisplaySetId
       ? (
-          presentationViewport.getDisplaySetPresentation(sourceDisplaySetId) as
+          appearanceViewport.getDisplaySetAppearance(sourceDisplaySetId) as
             | { voiLUTFunction?: unknown }
             | undefined
         )?.voiLUTFunction
@@ -395,9 +396,9 @@ class WindowLevelRegionTool extends AnnotationTool {
       >[2]
     );
 
-    if (presentationViewport) {
+    if (appearanceViewport) {
       if (sourceDisplaySetId) {
-        presentationViewport.setDisplaySetPresentation(sourceDisplaySetId, {
+        appearanceViewport.setDisplaySetAppearance(sourceDisplaySetId, {
           voiRange,
         });
       } else {
@@ -405,7 +406,7 @@ class WindowLevelRegionTool extends AnnotationTool {
         // The single-argument form targets the current binding, so the window
         // level is applied rather than silently dropped; it is a no-op only when
         // the viewport has no bound data at all.
-        presentationViewport.setDisplaySetPresentation({ voiRange });
+        appearanceViewport.setDisplaySetAppearance({ voiRange });
       }
     }
     viewport.render();

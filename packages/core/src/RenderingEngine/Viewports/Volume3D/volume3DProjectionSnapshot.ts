@@ -122,7 +122,7 @@ export function getVolume3DProjectionSnapshot(
     displaySetId: request.displaySetId,
     fit,
     frameOfReferenceUID,
-    presentation: {
+    framing: {
       camera: cloneVolume3DCamera(camera),
       pan: rawPan,
       position: getVolume3DProjectionPosition(camera),

@@ -4,8 +4,8 @@ type ViewStateViewport = {
   setViewState?(viewState: unknown): void;
 };
 
-/** What a presentation patch keeps in place while it is applied. */
-type ViewportPresentationWriteOptions = {
+/** What a framing patch keeps in place while it is applied. */
+type ViewportFramingWriteOptions = {
   /** The canvas point whose world point a zoom keeps under it. */
   anchorCanvas?: Types.Point2;
 };
@@ -31,38 +31,38 @@ const zoomPanSelector = {
   zoom: true,
   pan: true,
   scale: true,
-} as Types.ViewPresentationSelector;
+} as Types.ViewFramingSelector;
 
 /**
- * Reads the presentation of a viewport of any family through the projection
+ * Reads the framing of a viewport of any family through the projection
  * service.
  */
-export function getViewportPresentation(
+export function getViewportFraming(
   viewport: unknown,
-  selector?: Types.ViewPresentationSelector
+  selector?: Types.ViewFramingSelector
 ): unknown {
-  return viewportProjection.getPresentation(viewport, { selector });
+  return viewportProjection.getFraming(viewport, { selector });
 }
 
 /**
- * Applies a presentation object to a viewport without making the projection
+ * Applies a framing object to a viewport without making the projection
  * registry mutate viewport state.
  *
  * @param options - For a next viewport: the canvas point that a zoom keeps.
  */
-export function applyViewportPresentation(
+export function applyViewportFraming(
   viewport: unknown,
-  presentation: unknown,
-  options?: ViewportPresentationWriteOptions
+  framing: unknown,
+  options?: ViewportFramingWriteOptions
 ): boolean {
-  if (!presentation) {
+  if (!framing) {
     return false;
   }
 
   const target = viewport as ViewStateViewport;
-  const nextViewState = viewportProjection.withPresentation(
+  const nextViewState = viewportProjection.withFraming(
     viewport,
-    presentation,
+    framing,
     undefined,
     options
   );
@@ -83,17 +83,17 @@ export function applyViewportPresentation(
 export function getViewportZoomPan(
   viewport: unknown
 ): ViewportZoomPan | undefined {
-  const presentation = viewportProjection.getPresentation<{
+  const framing = viewportProjection.getFraming<{
     zoom?: number;
     pan?: Types.Point2;
     scale?: unknown;
   }>(viewport, { selector: zoomPanSelector });
 
-  if (typeof presentation?.zoom !== 'number' || !presentation.pan) {
+  if (typeof framing?.zoom !== 'number' || !framing.pan) {
     return;
   }
 
-  const { zoom, pan, scale } = presentation;
+  const { zoom, pan, scale } = framing;
 
   return {
     zoom,
@@ -120,7 +120,7 @@ export function panViewportByCanvasDelta(
 
   const { pan, scale } = zoomPan;
 
-  return applyViewportPresentation(viewport, {
+  return applyViewportFraming(viewport, {
     pan: [pan[0] + delta[0] / scale[0], pan[1] + delta[1] / scale[1]],
   });
 }
@@ -141,7 +141,7 @@ export function zoomViewportAtCanvasPoint(
     return false;
   }
 
-  return applyViewportPresentation(
+  return applyViewportFraming(
     viewport,
     { zoom },
     { anchorCanvas: canvasPoint }

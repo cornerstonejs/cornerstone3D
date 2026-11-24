@@ -438,7 +438,7 @@ states map to the states of this specification: transiently lossy is
   text badge in the top-left corner, for a developer. The badge is not for a
   clinician.
 - **FIDELITY-CONF-3** The configuration of the fidelity is global
-  configuration. It is not view state, and it is not data presentation,
+  configuration. It is not view state, and it is not the appearance of a display set,
   because it moves no world point and it changes the look of no data.
 - **FIDELITY-CONF-4** The documentation of `dangerouslyDisableFidelityIndicator`
   states the consequence. The user then sees lossy pixels with no disclosure,

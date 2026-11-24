@@ -1,6 +1,6 @@
 import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import { ViewportType } from '../../../enums';
-import type { ViewPresentationSelector } from '../../../types/IViewport';
+import type { ViewFramingSelector } from '../../../types/IViewport';
 import type {
   ProjectionWriteOptions,
   ViewportProjectionAdapter,
@@ -11,9 +11,9 @@ import type {
 } from './PlanarViewportTypes';
 import { applyPlanarICameraToRenderer } from './planarRenderCamera';
 import {
-  getPlanarProjectionPresentation,
-  withPlanarProjectionPresentation,
-} from './planarProjectionPresentation';
+  getPlanarProjectionFraming,
+  withPlanarProjectionFraming,
+} from './planarProjectionFraming';
 import {
   getPlanarProjectionPan,
   getPlanarProjectionScale,
@@ -24,7 +24,7 @@ import {
   PLANAR_PROJECTION_ID,
   type PlanarProjectionRequest,
   type PlanarProjectionSnapshot,
-  type PlanarProjectionAdapterPresentation,
+  type PlanarProjectionAdapterFraming,
 } from './PlanarProjectionTypes';
 
 export {
@@ -34,7 +34,7 @@ export {
   getPlanarProjectionZoom,
 };
 export type {
-  PlanarProjectionPresentation,
+  PlanarProjectionFraming,
   PlanarProjectionRequest,
   PlanarProjectionSnapshot,
 } from './PlanarProjectionTypes';
@@ -54,26 +54,26 @@ function isVtkRenderer(target: unknown): target is vtkRenderer {
 /**
  * Planar projection adapter.
  *
- * Snapshot construction, presentation compatibility, and reverse projection
+ * Snapshot construction, framing compatibility, and reverse projection
  * are intentionally delegated to focused modules so this file remains the
  * adapter seam rather than the full implementation.
  */
 export const planarProjectionAdapter: ViewportProjectionAdapter<
   PlanarViewState,
-  PlanarProjectionAdapterPresentation,
+  PlanarProjectionAdapterFraming,
   PlanarProjectionSnapshot
 > = {
   id: PLANAR_PROJECTION_ID,
   viewportTypes: [ViewportType.PLANAR],
   getSnapshot: (request) =>
     getPlanarProjectionSnapshot(request as PlanarProjectionRequest),
-  getPresentation: (snapshot, selector?: ViewPresentationSelector) =>
-    getPlanarProjectionPresentation(snapshot, selector),
-  withPresentation: (
+  getFraming: (snapshot, selector?: ViewFramingSelector) =>
+    getPlanarProjectionFraming(snapshot, selector),
+  withFraming: (
     snapshot,
-    presentation: Partial<PlanarProjectionAdapterPresentation>,
+    framing: Partial<PlanarProjectionAdapterFraming>,
     options?: ProjectionWriteOptions
-  ) => withPlanarProjectionPresentation(snapshot, presentation, options),
+  ) => withPlanarProjectionFraming(snapshot, framing, options),
   applyToRenderer: (snapshot, target) => {
     if (!isVtkRenderer(target)) {
       return;

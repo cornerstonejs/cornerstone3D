@@ -116,7 +116,7 @@ addButtonToToolbar({
   onClick() {
     currentWhite = (1 + currentWhite) % whiteValues.length;
     const white = whiteValues[currentWhite];
-    viewport.setDisplaySetPresentation(videoId, { averageWhite: white });
+    viewport.setDisplaySetAppearance(videoId, { averageWhite: white });
     document.getElementById('Color Correct').innerText = `Color: ${white.join(
       ','
     )}`;
@@ -148,7 +148,7 @@ addButtonToToolbar({
       viewport.getImageData().imageData.getScalarData()
     );
     console.log('White=', white);
-    viewport.setDisplaySetPresentation(videoId, { averageWhite: white });
+    viewport.setDisplaySetAppearance(videoId, { averageWhite: white });
     document.getElementById('Color Correct').innerText =
       `Avg Color: ${white.join(',')}`;
     currentWhite = -1;
@@ -177,7 +177,7 @@ addDropdownToToolbar({
   onSelectedValueChange: (newWLText) => {
     const index = windowLevelNames.indexOf(newWLText) % windowLevels.length;
     const newWL = windowLevels[index];
-    viewport.setDisplaySetPresentation(videoId, {
+    viewport.setDisplaySetAppearance(videoId, {
       voiRange: {
         lower: newWL.windowCenter - newWL.windowWidth / 2,
         upper: newWL.windowCenter + newWL.windowWidth / 2 - 1,

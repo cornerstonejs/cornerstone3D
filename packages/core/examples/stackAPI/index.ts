@@ -67,7 +67,7 @@ element.addEventListener(Events.CAMERA_MODIFIED, (_) => {
   const { flipHorizontal = false, flipVertical = false } =
     viewport.getViewState();
   const { rotation = 0 } =
-    viewportProjection.getPresentation(viewport, {
+    viewportProjection.getFraming(viewport, {
       selector: { rotation: true },
     }) ?? {};
 
@@ -86,7 +86,7 @@ addButtonToToolbar({
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     // Set a range to highlight bones
-    viewport.setDisplaySetPresentation(displaySetId, {
+    viewport.setDisplaySetAppearance(displaySetId, {
       voiRange: { upper: 2500, lower: -1500 },
     });
 
@@ -183,7 +183,7 @@ addButtonToToolbar({
 
     const rotation = Math.random() * 360;
 
-    const viewState = viewportProjection.withPresentation(viewport, {
+    const viewState = viewportProjection.withFraming(viewport, {
       rotation,
     });
 
@@ -204,7 +204,7 @@ addButtonToToolbar({
     // Get the stack viewport
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-    const viewState = viewportProjection.withPresentation(viewport, {
+    const viewState = viewportProjection.withFraming(viewport, {
       rotation: 150,
     });
 
@@ -226,10 +226,10 @@ addButtonToToolbar({
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     const { rotation = 0 } =
-      viewportProjection.getPresentation(viewport, {
+      viewportProjection.getFraming(viewport, {
         selector: { rotation: true },
       }) ?? {};
-    const viewState = viewportProjection.withPresentation(viewport, {
+    const viewState = viewportProjection.withFraming(viewport, {
       rotation: rotation + 30,
     });
 
@@ -251,10 +251,10 @@ addButtonToToolbar({
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     const invert =
-      viewport.getDisplaySetPresentation(displaySetId)?.invert ??
+      viewport.getDisplaySetAppearance(displaySetId)?.invert ??
       viewport.getDefaultInvert(displaySetId) ??
       false;
-    viewport.setDisplaySetPresentation(displaySetId, { invert: !invert });
+    viewport.setDisplaySetAppearance(displaySetId, { invert: !invert });
 
     viewport.render();
   },
@@ -278,8 +278,7 @@ addButtonToToolbar({
       50
     );
     const viewState =
-      presentation &&
-      viewportProjection.withPresentation(viewport, presentation);
+      presentation && viewportProjection.withFraming(viewport, presentation);
 
     if (viewState) {
       viewport.setViewState(viewState);
@@ -297,7 +296,7 @@ addButtonToToolbar({
     // Get the stack viewport
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-    viewport.setDisplaySetPresentation(displaySetId, {
+    viewport.setDisplaySetAppearance(displaySetId, {
       colormap: { name: 'hsv' },
     });
     viewport.render();
@@ -316,7 +315,7 @@ addButtonToToolbar({
     // Resets the viewport's camera
     viewport.resetViewState();
     // Resets the viewport's properties
-    viewport.resetDisplaySetPresentation(displaySetId);
+    viewport.resetDisplaySetAppearance(displaySetId);
 
     viewport.render();
   },
@@ -369,7 +368,7 @@ async function run() {
   await viewport.setDisplaySets({ displaySetId });
 
   // Set the VOI of the stack
-  viewport.setDisplaySetPresentation(displaySetId, { voiRange: ctVoiRange });
+  viewport.setDisplaySetAppearance(displaySetId, { voiRange: ctVoiRange });
 
   // Render the image
   viewport.render();

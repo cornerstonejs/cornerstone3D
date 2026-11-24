@@ -9,8 +9,8 @@ import { PlanarVolumeResolvedView } from '../src/RenderingEngine/Viewports/Plana
 import {
   applyPlanarICameraToActor,
   applyPlanarICameraToRenderer,
-  createPlanarPresentationScaleMatrix,
-  derivePlanarPresentation,
+  createPlanarFramingScaleMatrix,
+  derivePlanarFraming,
   projectAnchorWorldToCurrentPlane,
   resolvePlanarICamera,
   setPlanarVolumeCameraClippingRange,
@@ -151,9 +151,9 @@ describe('projectAnchorWorldToCurrentPlane', () => {
   });
 });
 
-describe('derivePlanarPresentation', () => {
+describe('derivePlanarFraming', () => {
   it('resolves default pan/zoom/rotation for an undefined camera', () => {
-    const presentation = derivePlanarPresentation({
+    const presentation = derivePlanarFraming({
       sliceBasis: createSliceBasisA(),
       camera: undefined,
       ...CANVAS_A,
@@ -171,7 +171,7 @@ describe('derivePlanarPresentation', () => {
     // anchorCanvas [0.6, 0.3] on a 200x100 canvas shifts by
     // (0.6-0.5)*200 = 20 horizontally and (0.3-0.5)*100 = -20 vertically.
     // anchorWorld is not set, so panFromAnchorWorld is zero.
-    const presentation = derivePlanarPresentation({
+    const presentation = derivePlanarFraming({
       sliceBasis: createSliceBasisA(),
       camera: { anchorCanvas: [0.6, 0.3] },
       ...CANVAS_A,
@@ -184,21 +184,21 @@ describe('derivePlanarPresentation', () => {
     const basis = createSliceBasisA();
 
     expect(
-      derivePlanarPresentation({
+      derivePlanarFraming({
         sliceBasis: basis,
         camera: undefined,
         ...CANVAS_A,
       }).rotation
     ).toBe(0);
     expect(
-      derivePlanarPresentation({
+      derivePlanarFraming({
         sliceBasis: basis,
         camera: { rotation: 450 },
         ...CANVAS_A,
       }).rotation
     ).toBeCloseTo(90, 10);
     expect(
-      derivePlanarPresentation({
+      derivePlanarFraming({
         sliceBasis: basis,
         camera: { rotation: -90 },
         ...CANVAS_A,
@@ -209,7 +209,7 @@ describe('derivePlanarPresentation', () => {
   it('only treats a strict boolean true as an active flip flag', () => {
     // flipHorizontal is compared with `=== true`, so a truthy non-boolean
     // value must resolve to false.
-    const presentation = derivePlanarPresentation({
+    const presentation = derivePlanarFraming({
       sliceBasis: createSliceBasisA(),
       camera: { flipHorizontal: 'yes' },
       ...CANVAS_A,
@@ -219,7 +219,7 @@ describe('derivePlanarPresentation', () => {
   });
 
   it('produces finite values for a degenerate (zero-size) canvas', () => {
-    const presentation = derivePlanarPresentation({
+    const presentation = derivePlanarFraming({
       sliceBasis: createSliceBasisA(),
       camera: { anchorCanvas: [0.75, 0.5] },
       canvasWidth: 0,
@@ -243,7 +243,7 @@ describe('derivePlanarPresentation', () => {
     // which keeps the derivations below simple.
 
     it('type SCALE uses the explicit scale and zero pan without imageCanvasPoint', () => {
-      const presentation = derivePlanarPresentation({
+      const presentation = derivePlanarFraming({
         sliceBasis: createSliceBasisA(),
         camera: { displayArea: { type: 'SCALE', scale: [3, 4] } },
         ...CANVAS_A,
@@ -265,7 +265,7 @@ describe('derivePlanarPresentation', () => {
       //       = 2*200*(0.5-0.2) + 200*(0.3-0.5) = 120 - 40 = 80
       // pan.y = resolvedScale.y*imageHeightAtFit*(0.5-imageY) + canvasHeight*(canvasY-0.5)
       //       = 2*100*(0.5-0.8) + 100*(0.4-0.5) = -60 - 10 = -70
-      const presentation = derivePlanarPresentation({
+      const presentation = derivePlanarFraming({
         sliceBasis: createSliceBasisA(),
         camera: {
           displayArea: {
@@ -295,7 +295,7 @@ describe('derivePlanarPresentation', () => {
     ])(
       'scaleMode %s resolves the expected non-uniform/uniform scale',
       (scaleMode, inputScale, expectedScale) => {
-        const presentation = derivePlanarPresentation({
+        const presentation = derivePlanarFraming({
           sliceBasis: createSliceBasisA(),
           camera: {
             scale: inputScale,
@@ -473,7 +473,7 @@ describe('resolvePlanarICamera', () => {
     // back into world space is the exact inverse of the above, so the
     // resolved focalPoint must land back on effectiveAnchorWorld -- this is
     // the "zoom/pan to anchor" invariant.
-    const presentation = derivePlanarPresentation({
+    const presentation = derivePlanarFraming({
       sliceBasis: createSliceBasisA(),
       camera: { rotation: 90, flipHorizontal: true, anchorWorld: [10, 25, 30] },
       ...CANVAS_A,
@@ -497,7 +497,7 @@ describe('resolvePlanarICamera', () => {
     // Degenerate basis: viewUp colinear with viewPlaneNormal means
     // cross(viewUp, viewPlaneNormal) is the zero vector, which triggers the
     // hard-coded [1,0,0] fallback for `right` inside both
-    // derivePlanarPresentation and getResolvedPanOffset. Since both call
+    // derivePlanarFraming and getResolvedPanOffset. Since both call
     // sites recompute the same fallback, the anchor invariant (focalPoint
     // lands on the projected anchorWorld when anchorCanvas is centered and
     // scale is 1) must still hold, and no NaNs should appear.
@@ -632,11 +632,11 @@ describe('setPlanarVolumeCameraClippingRange', () => {
   });
 });
 
-describe('createPlanarPresentationScaleMatrix / applyPlanarICameraToActor', () => {
-  it('returns an identity matrix when presentationScale is uniform (ratio 1)', () => {
-    const matrix = createPlanarPresentationScaleMatrix({
+describe('createPlanarFramingScaleMatrix / applyPlanarICameraToActor', () => {
+  it('returns an identity matrix when framingScale is uniform (ratio 1)', () => {
+    const matrix = createPlanarFramingScaleMatrix({
       focalPoint: [13.5, 29, 48],
-      presentationScale: [1, 1],
+      framingScale: [1, 1],
       viewPlaneNormal: [0, 0, -1],
       viewUp: [0, -1, 0],
     });
@@ -647,13 +647,13 @@ describe('createPlanarPresentationScaleMatrix / applyPlanarICameraToActor', () =
   });
 
   it('returns an identity matrix when the camera is missing required fields', () => {
-    expect(Array.from(createPlanarPresentationScaleMatrix(undefined))).toEqual([
+    expect(Array.from(createPlanarFramingScaleMatrix(undefined))).toEqual([
       1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1,
     ]);
     expect(
       Array.from(
-        createPlanarPresentationScaleMatrix({
-          presentationScale: [2, 1],
+        createPlanarFramingScaleMatrix({
+          framingScale: [2, 1],
           viewPlaneNormal: [0, 0, -1],
           // viewUp missing
         })
@@ -661,16 +661,16 @@ describe('createPlanarPresentationScaleMatrix / applyPlanarICameraToActor', () =
     ).toEqual([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
   });
 
-  it('builds a non-uniform in-plane scale matrix for an anisotropic presentationScale', () => {
-    // presentationScale [2,1] -> ratioX = 2/1 = 2, ratioDelta = 1.
+  it('builds a non-uniform in-plane scale matrix for an anisotropic framingScale', () => {
+    // framingScale [2,1] -> ratioX = 2/1 = 2, ratioDelta = 1.
     // right = cross(viewUp=[0,-1,0], viewPlaneNormal=[0,0,-1]) = [1,0,0]
     // (rx,ry,rz) = (1,0,0), so the linear part is a pure scale-by-2 along x:
     //   linear = [2,0,0, 0,1,0, 0,0,1]
     // transformedCenter = linear * focalPoint(13.5,29,48) = (27,29,48)
     // translation = focalPoint - transformedCenter = (-13.5, 0, 0)
-    const matrix = createPlanarPresentationScaleMatrix({
+    const matrix = createPlanarFramingScaleMatrix({
       focalPoint: [13.5, 29, 48],
-      presentationScale: [2, 1],
+      framingScale: [2, 1],
       viewPlaneNormal: [0, 0, -1],
       viewUp: [0, -1, 0],
     });
@@ -693,13 +693,13 @@ describe('createPlanarPresentationScaleMatrix / applyPlanarICameraToActor', () =
   it('falls back to a [1,0,0] right vector when viewUp is parallel to viewPlaneNormal', () => {
     // Degenerate axis: cross(viewUp, viewPlaneNormal) is zero when they are
     // colinear, so getPlanarICameraRight falls back to [1,0,0]. With
-    // presentationScale [2,1] the resulting linear part is still a pure
+    // framingScale [2,1] the resulting linear part is still a pure
     // scale-by-2 along x (same shape as the non-degenerate case above),
     // computed around focalPoint (5,5,5):
     //   transformedCenter = (10,5,5); translation = (5-10,0,0) = (-5,0,0)
-    const matrix = createPlanarPresentationScaleMatrix({
+    const matrix = createPlanarFramingScaleMatrix({
       focalPoint: [5, 5, 5],
-      presentationScale: [2, 1],
+      framingScale: [2, 1],
       viewPlaneNormal: [0, 0, 1],
       viewUp: [0, 0, 1],
     });
@@ -716,7 +716,7 @@ describe('createPlanarPresentationScaleMatrix / applyPlanarICameraToActor', () =
     const actor = { setUserMatrix: jest.fn() };
     const activeSourceICamera = {
       focalPoint: [13.5, 29, 48],
-      presentationScale: [2, 1],
+      framingScale: [2, 1],
       viewPlaneNormal: [0, 0, -1],
       viewUp: [0, -1, 0],
     };

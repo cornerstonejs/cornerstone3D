@@ -69,7 +69,7 @@ function createRenderPathResolver() {
               },
               postrenderHandler() {},
             },
-            updateDataPresentation() {},
+            updateAppearance() {},
             applyViewState() {},
             getFrameOfReferenceUID: () => '1.2.3',
             render() {},

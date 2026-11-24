@@ -15,7 +15,7 @@ function createViewport(mode) {
     element: document.createElement('div'),
     getCurrentMode: () => mode,
     setDisplaySets() {},
-    setDisplaySetPresentation() {},
+    setDisplaySetAppearance() {},
     setViewState() {},
     getCurrentImageIdIndex: () => 1,
     getNumberOfSlices: () => 3,

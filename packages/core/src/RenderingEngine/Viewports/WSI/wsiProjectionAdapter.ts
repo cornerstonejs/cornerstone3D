@@ -1,13 +1,13 @@
 import { ViewportType } from '../../../enums';
-import type { ViewPresentation } from '../../../types';
+import type { ViewFraming } from '../../../types';
 import type {
   ProjectionWriteOptions,
   ViewportProjectionAdapter,
 } from '../ViewportProjectionTypes';
 import {
-  getWSIProjectionPresentation,
-  withWSIProjectionPresentation,
-} from './wsiProjectionPresentation';
+  getWSIProjectionFraming,
+  withWSIProjectionFraming,
+} from './wsiProjectionFraming';
 import { getWSIProjectionSnapshot } from './wsiProjectionSnapshot';
 import {
   WSI_PROJECTION_ID,
@@ -18,7 +18,7 @@ import type { WSIViewState } from './WSIViewportTypes';
 
 export { getWSIProjectionSnapshot };
 export type {
-  WSIProjectionPresentation,
+  WSIProjectionFraming,
   WSIProjectionRequest,
   WSIProjectionSnapshot,
 } from './WSIProjectionTypes';
@@ -26,23 +26,20 @@ export type {
 /**
  * WSI projection adapter.
  *
- * WSI exposes slide/world coordinates and keeps zoom/rotation presentation
+ * WSI exposes slide/world coordinates and keeps zoom/rotation framing
  * round trips in the projection service rather than on the viewport instance.
  */
 export const wsiProjectionAdapter: ViewportProjectionAdapter<
   WSIViewState,
-  ViewPresentation,
+  ViewFraming,
   WSIProjectionSnapshot
 > = {
   id: WSI_PROJECTION_ID,
   viewportTypes: [ViewportType.WHOLE_SLIDE],
   getSnapshot: (request) =>
     getWSIProjectionSnapshot(request as WSIProjectionRequest),
-  getPresentation: (snapshot, selector) =>
-    getWSIProjectionPresentation(snapshot, selector),
-  withPresentation: (
-    snapshot,
-    presentation,
-    options?: ProjectionWriteOptions
-  ) => withWSIProjectionPresentation(snapshot, presentation, options),
+  getFraming: (snapshot, selector) =>
+    getWSIProjectionFraming(snapshot, selector),
+  withFraming: (snapshot, framing, options?: ProjectionWriteOptions) =>
+    withWSIProjectionFraming(snapshot, framing, options),
 };

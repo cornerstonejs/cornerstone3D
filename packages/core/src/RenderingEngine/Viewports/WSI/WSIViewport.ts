@@ -22,7 +22,7 @@ import type { ViewReferenceContext } from '../viewReferenceCompatibility';
 import { DefaultWSIDataProvider } from './DefaultWSIDataProvider';
 import { createWSIRenderPathResolver } from './WSIRenderPathResolver';
 import type {
-  WSIDataPresentation,
+  WSIDisplaySetAppearance,
   WSIPayload,
   WSIViewState,
   WSIViewportRenderContext,
@@ -40,7 +40,7 @@ import WSIResolvedView from './WSIResolvedView';
 
 export default class WSIViewport extends BaseViewport<
   WSIViewState,
-  WSIDataPresentation,
+  WSIDisplaySetAppearance,
   WSIViewportRenderContext
 > {
   readonly type = ViewportType.WHOLE_SLIDE;
@@ -139,7 +139,7 @@ export default class WSIViewport extends BaseViewport<
         role: index === 0 ? 'source' : 'overlay',
       });
 
-      this.setDefaultDataPresentation(displaySetId, {
+      this.setDefaultAppearance(displaySetId, {
         visible: true,
         opacity: 1,
       });
@@ -150,17 +150,17 @@ export default class WSIViewport extends BaseViewport<
     this.applyVOIToRendering();
   }
 
-  setDisplaySetPresentation(props: Partial<WSIDataPresentation>): void;
-  setDisplaySetPresentation(
+  setDisplaySetAppearance(props: Partial<WSIDisplaySetAppearance>): void;
+  setDisplaySetAppearance(
     displaySetId: string,
-    props: Partial<WSIDataPresentation>
+    props: Partial<WSIDisplaySetAppearance>
   ): void;
-  setDisplaySetPresentation(
-    displaySetIdOrProps: string | Partial<WSIDataPresentation>,
-    maybeProps?: Partial<WSIDataPresentation>
+  setDisplaySetAppearance(
+    displaySetIdOrProps: string | Partial<WSIDisplaySetAppearance>,
+    maybeProps?: Partial<WSIDisplaySetAppearance>
   ): void {
     if (typeof displaySetIdOrProps === 'string') {
-      super.setDisplaySetPresentation(displaySetIdOrProps, maybeProps ?? {});
+      super.setDisplaySetAppearance(displaySetIdOrProps, maybeProps ?? {});
 
       if (displaySetIdOrProps === this.getActiveDisplaySetId()) {
         this.applyVOIToRendering();
@@ -168,7 +168,7 @@ export default class WSIViewport extends BaseViewport<
       return;
     }
 
-    super.setDisplaySetPresentation(displaySetIdOrProps);
+    super.setDisplaySetAppearance(displaySetIdOrProps);
 
     if (this.getActiveDisplaySetId()) {
       this.applyVOIToRendering();
@@ -528,7 +528,7 @@ export default class WSIViewport extends BaseViewport<
   }
 
   protected getCurrentBinding():
-    | ViewportDataBinding<WSIDataPresentation>
+    | ViewportDataBinding<WSIDisplaySetAppearance>
     | undefined {
     return (
       (this.activeDisplaySetId
@@ -574,15 +574,15 @@ export default class WSIViewport extends BaseViewport<
 
   private applyVOIToRendering(): void {
     const activeDisplaySetId = this.getActiveDisplaySetId();
-    const dataPresentation = activeDisplaySetId
-      ? this.getDisplaySetPresentation(activeDisplaySetId)
+    const appearance = activeDisplaySetId
+      ? this.getDisplaySetAppearance(activeDisplaySetId)
       : undefined;
     const filter = buildWSIColorTransform(
-      dataPresentation?.voiRange || {
+      appearance?.voiRange || {
         lower: 0,
         upper: 255,
       },
-      dataPresentation?.averageWhite
+      appearance?.averageWhite
     );
     const viewport = this.getMap()?.getViewport();
 

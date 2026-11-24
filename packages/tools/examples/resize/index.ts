@@ -28,7 +28,7 @@ console.warn(
 
 const { ToolGroupManager, synchronizers } = cornerstoneTools;
 
-const { createPresentationViewSynchronizer } = synchronizers;
+const { createViewFramingSynchronizer } = synchronizers;
 
 const { ViewportType } = Enums;
 
@@ -57,7 +57,7 @@ const synchronizerId = 'SLAB_THICKNESS_SYNCHRONIZER_ID';
 const volumeDisplaySetId = 'resize:ct:volume';
 const ctStackDisplaySetId = 'resize:ct:stack';
 const testStackDisplaySetId = 'resize:test:stack';
-const synchronizerOptions: Types.ViewPresentationSelector = {
+const synchronizerOptions: Types.ViewFramingSelector = {
   rotation: true,
   pan: true,
   zoom: true,
@@ -267,7 +267,7 @@ addDropdownToToolbar({
     defaultValue: rotations[0],
   },
   onSelectedValueChange: (value) => {
-    const viewState = viewportProjection.withPresentation(viewport, {
+    const viewState = viewportProjection.withFraming(viewport, {
       rotation: Number(value),
     });
 
@@ -288,7 +288,7 @@ addDropdownToToolbar({
   },
   onSelectedValueChange: (value) => {
     const aspect = (value as string).split(':').map((it) => Number(it));
-    const [scaleX] = viewportProjection.getPresentation(viewport, {
+    const [scaleX] = viewportProjection.getFraming(viewport, {
       selector: { scale: true },
     })?.scale ?? [1, 1];
 
@@ -379,7 +379,7 @@ addDropdownToToolbar({
 });
 
 function setUpSynchronizers() {
-  const synchronizer = createPresentationViewSynchronizer(
+  const synchronizer = createViewFramingSynchronizer(
     synchronizerId,
     synchronizerOptions
   );
@@ -407,11 +407,11 @@ function resize() {
 
   if (renderingEngine) {
     const presentations = viewports.map((viewport) =>
-      viewportProjection.getPresentation(viewport)
+      viewportProjection.getFraming(viewport)
     );
     renderingEngine.resize(true, false);
     viewports.forEach((viewport, idx) => {
-      const viewState = viewportProjection.withPresentation(
+      const viewState = viewportProjection.withFraming(
         viewport,
         presentations[idx]
       );
@@ -526,7 +526,7 @@ async function run() {
         renderingEngine.getViewport<PlanarViewport>(viewportId);
 
       await volumeViewport.setDisplaySets({ displaySetId: volumeDisplaySetId });
-      volumeViewport.setDisplaySetPresentation(
+      volumeViewport.setDisplaySetAppearance(
         volumeDisplaySetId,
         ctPresentation()
       );

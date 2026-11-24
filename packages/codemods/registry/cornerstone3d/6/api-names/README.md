@@ -108,7 +108,80 @@ that has no entry yet changes nothing.
 
 ### Appearance and framing
 
-None yet.
+The look of one display set in one viewport is its appearance; the camera
+part of a view that another viewport can take is its framing.
+
+- `setDisplaySetPresentation`, `getDisplaySetPresentation` and
+  `resetDisplaySetPresentation` become `setDisplaySetAppearance`,
+  `getDisplaySetAppearance` and `resetDisplaySetAppearance` on a viewport
+  that the file shows, also in brackets, in an `in` test, in a destructuring
+  pattern (which keeps the local name) and as the key of an indexed type of
+  a viewport type (`PlanarViewport['getDisplaySetPresentation']`). For these
+  three methods the step also takes the types of the file as evidence: a
+  name declared with a viewport type (also a `let` or a parameter that the
+  file writes), `getViewport<PlanarViewport>(...)`, a `getViewport` of a name
+  declared `RenderingEngine`, and a function of the file declared to give a
+  viewport type.
+- `utilities.viewportSupportsDisplaySetPresentation` becomes
+  `utilities.viewportSupportsDisplaySetAppearance`.
+- The types `ProjectionPresentation`, `ProjectionPresentationForKind`,
+  `ProjectionPresentationForViewport`, `ProjectionPresentationForViewportType`,
+  `PlanarProjectionPresentation`, `Volume3DProjectionPresentation`,
+  `VideoProjectionPresentation`, `ECGProjectionPresentation`,
+  `WSIProjectionPresentation`, `PlanarViewPresentation` and
+  `PlanarViewPresentationSelector` become `ProjectionFraming`,
+  `ProjectionFramingForKind`, `ProjectionFramingForViewport`,
+  `ProjectionFramingForViewportType`, `PlanarProjectionFraming`,
+  `Volume3DProjectionFraming`, `VideoProjectionFraming`,
+  `ECGProjectionFraming`, `WSIProjectionFraming`, `PlanarViewFraming` and
+  `PlanarViewFramingSelector`; `Types.ViewPresentation` and
+  `Types.ViewPresentationSelector` become `Types.ViewFraming` and
+  `Types.ViewFramingSelector`.
+- `viewportProjection.getPresentation` and `withPresentation` become
+  `getFraming` and `withFraming`, also on the `adapter` of `planarProjection`,
+  `volume3DProjection`, `videoProjection`, `ecgProjection` and
+  `wsiProjection`, and as keys of an adapter given to
+  `viewportProjection.register` or typed `ViewportProjectionAdapter`;
+  `planarProjection.derivePresentation` becomes `deriveFraming`.
+- `presentation` of a projection snapshot becomes `framing`: on a value
+  typed with a snapshot type, and on the result of `viewportProjection.get`
+  or of the `getSnapshot` of a projection namespace (the call, or a name
+  whose every value is one). `{ presentation }` becomes
+  `{ framing: presentation }`. `presentationScale` of a value typed
+  `PlanarResolvedICamera` becomes `framingScale`.
+- The option `viewPresentation` of `utilities.loadImageToCanvas` becomes
+  `viewFraming`.
+- `synchronizers.createPresentationViewSynchronizer` of the tools becomes
+  `createViewFramingSynchronizer`; the module
+  `@cornerstonejs/tools/utilities/viewportPresentation` becomes
+  `@cornerstonejs/tools/utilities/viewportFraming`, where
+  `getViewportPresentation` and `applyViewportPresentation` become
+  `getViewportFraming` and `applyViewportFraming` (an import keeps its local
+  name through `as`).
+- The `viewport-members` step rewrites the 5.x `getViewPresentation` and
+  `setViewPresentation` to `getViewFraming` and `setViewFraming`, and
+  `setProperties` to `setDisplaySetAppearance`.
+- Reported, manual: a method of the look on a receiver known by its name
+  only, on a receiver that the file gives a type of the application (a cast
+  such as `viewport as unknown as { setDisplaySetPresentation(): void }`, or
+  a name declared with such a type: that type declares the method), or on an
+  object that the file does not show to be a viewport in a file that imports
+  Cornerstone; another string that names one of the three
+  methods (`jest.spyOn(viewport, 'setDisplaySetPresentation')`); a member `setDisplaySetPresentation`,
+  `getDisplaySetPresentation` or `resetDisplaySetPresentation` that a type of
+  the application declares on top of a viewport type; the key `presentation`
+  in the options of a `setDisplaySets` entry or of `addDisplaySet`
+  (Cornerstone never had such a mount option); a projection adapter of the
+  application (its snapshots carry `framing`); `ViewPresentation`,
+  `ViewPresentationSelector` and `viewportSupportsDisplaySetPresentation`
+  imported from `@cornerstonejs/core/types` or `@cornerstonejs/core/utilities`,
+  and a namespace import of the renamed tools module.
+- Left: names of the application, such as OHIF's `PositionPresentation`,
+  `LutPresentation`, `SegmentationPresentation`, `presentationIds`,
+  `usePositionPresentationStore`, `getPresentations` and `setPresentations`,
+  a `getPresentation` of its own services, a type named `ViewPresentation`
+  that it declares, and an object with a `presentation` key that is not a
+  mount entry.
 
 ### Events
 

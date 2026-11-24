@@ -32,10 +32,14 @@ import type ViewportType from '../../enums/ViewportType';
 import type ResolvedViewportView from './ResolvedViewportView';
 import type {
   ReferenceCompatibleOptions,
+  ViewFraming,
+  ViewFramingSelector,
   ViewReference,
   ViewReferenceSpecifier,
   RenderingEngineResizeOptions,
 } from '../../types/IViewport';
+import type { ProjectionWriteOptions } from './ViewportProjectionTypes';
+import { viewportProjection } from './viewportProjection';
 import {
   isViewReferenceViewable,
   type ViewReferenceContext,
@@ -48,7 +52,7 @@ import type {
 import { buildViewportFidelityState } from '../helpers/fidelityIndicator/buildViewportFidelityState';
 import {
   type FidelityDisplay,
-  type SlabPresentation,
+  type SlabAppearance,
   averageSlabThicknessOf,
   displaySpacingOfDisplay,
   pixelSpacingOfCanvasToWorld,
@@ -94,12 +98,12 @@ export type BaseViewportOptions = Omit<ViewportInputOptions, 'displayArea'> & {
  */
 abstract class BaseViewport<
     TViewState extends object,
-    TDataPresentation = unknown,
+    TAppearance = unknown,
     TContext extends BaseViewportRenderContext = BaseViewportRenderContext,
   >
   implements
-    IViewport<TViewState, TDataPresentation>,
-    ViewportController<TViewState, TDataPresentation>,
+    IViewport<TViewState, TAppearance>,
+    ViewportController<TViewState, TAppearance>,
     IViewportFidelity
 {
   // ── Abstract fields ──────────────────────────────────────────────────
@@ -118,9 +122,9 @@ abstract class BaseViewport<
 
   protected bindings = new Map<
     DisplaySetId,
-    ViewportDataBinding<TDataPresentation>
+    ViewportDataBinding<TAppearance>
   >();
-  protected dataPresentation = new Map<DisplaySetId, TDataPresentation>();
+  protected displaySetAppearances = new Map<DisplaySetId, TAppearance>();
   protected viewState!: TViewState;
   private destroyed = false;
 
@@ -231,7 +235,7 @@ abstract class BaseViewport<
   }
 
   /**
-   * Removes a dataset binding and its stored presentation state, then
+   * Removes a dataset binding and its stored appearance, then
    * triggers a re-render so the viewport reflects the removal.
    */
   removeDisplaySet(displaySetId: DisplaySetId): void {
@@ -243,7 +247,7 @@ abstract class BaseViewport<
 
     binding.removeData();
     this.bindings.delete(displaySetId);
-    this.dataPresentation.delete(displaySetId);
+    this.displaySetAppearances.delete(displaySetId);
     delete this._debug.renderModes[displaySetId];
 
     if (!this.isDestroyed) {
@@ -252,21 +256,21 @@ abstract class BaseViewport<
   }
 
   /**
-   * Updates the stored per-display-set presentation state. When called with
+   * Updates the stored appearance of a display set. When called with
    * just `props`, the update is applied to the current (source) binding. When
    * called with an explicit `displaySetId`, the update targets that binding.
    */
-  setDisplaySetPresentation(props: Partial<TDataPresentation>): void;
-  setDisplaySetPresentation(
+  setDisplaySetAppearance(props: Partial<TAppearance>): void;
+  setDisplaySetAppearance(
     displaySetId: DisplaySetId,
-    props: Partial<TDataPresentation>
+    props: Partial<TAppearance>
   ): void;
-  setDisplaySetPresentation(
-    displaySetIdOrProps: DisplaySetId | Partial<TDataPresentation>,
-    maybeProps?: Partial<TDataPresentation>
+  setDisplaySetAppearance(
+    displaySetIdOrProps: DisplaySetId | Partial<TAppearance>,
+    maybeProps?: Partial<TAppearance>
   ): void {
     if (typeof displaySetIdOrProps === 'string') {
-      this.mergeDataPresentation(displaySetIdOrProps, maybeProps ?? {});
+      this.mergeAppearance(displaySetIdOrProps, maybeProps ?? {});
       return;
     }
 
@@ -276,16 +280,14 @@ abstract class BaseViewport<
       return;
     }
 
-    this.mergeDataPresentation(defaultId, displaySetIdOrProps);
+    this.mergeAppearance(defaultId, displaySetIdOrProps);
   }
 
   /**
-   * Returns the stored presentation state for a specific dataset.
+   * Returns the stored appearance of a specific dataset.
    */
-  getDisplaySetPresentation(
-    displaySetId: DisplaySetId
-  ): TDataPresentation | undefined {
-    return this.getDataPresentationState(displaySetId);
+  getDisplaySetAppearance(displaySetId: DisplaySetId): TAppearance | undefined {
+    return this.getAppearanceState(displaySetId);
   }
 
   /**
@@ -366,7 +368,7 @@ abstract class BaseViewport<
   /**
    * The display of this viewport from the resolved view (GENVIEW-FIDELITY-3):
    * the world size of one device pixel and the view plane normal. An average
-   * slab in the presentation of the source display set gives its thickness,
+   * slab in the appearance of the source display set gives its thickness,
    * as the slab of the legacy volume viewport did.
    */
   private getFidelityDisplay(): FidelityDisplay | undefined {
@@ -395,7 +397,7 @@ abstract class BaseViewport<
       volume3D: this.isFidelityView3D(),
       averageSlabThickness: averageSlabThicknessOf(
         sourceId
-          ? (this.getDataPresentationState(sourceId) as SlabPresentation)
+          ? (this.getAppearanceState(sourceId) as SlabAppearance)
           : undefined
       ),
     };
@@ -598,6 +600,40 @@ abstract class BaseViewport<
     this.setViewState(patch);
   }
 
+  /**
+   * The framing of the view: zoom, pan, rotation, flips and display area
+   * against the fit, which another viewport of any size can take. It is what
+   * `viewportProjection.getFraming(viewport, { selector })` gives. Undefined
+   * while the viewport shows nothing.
+   *
+   * @param selector - The keys to read; every key when not given.
+   */
+  getViewFraming(selector?: ViewFramingSelector): ViewFraming | undefined {
+    return viewportProjection.getFraming<ViewFraming>(this, { selector });
+  }
+
+  /**
+   * Sets the framing of the view as one change of the view state, the one
+   * that `viewportProjection.withFraming(viewport, framing)` gives. Does
+   * nothing while the viewport shows nothing.
+   *
+   * @param framing - The keys of the framing to change.
+   * @param options - The canvas point that a zoom keeps.
+   */
+  setViewFraming(
+    framing: Partial<ViewFraming>,
+    options?: ProjectionWriteOptions
+  ): void {
+    const viewState = viewportProjection.withFraming<
+      Partial<TViewState>,
+      ViewFraming
+    >(this, framing, undefined, options);
+
+    if (viewState) {
+      this.setViewState(viewState);
+    }
+  }
+
   // ====================================================================
   // Public API -- lifecycle
   // ====================================================================
@@ -632,7 +668,7 @@ abstract class BaseViewport<
     this.destroyBindings();
     this.onDestroy();
     this.bindings.clear();
-    this.dataPresentation.clear();
+    this.displaySetAppearances.clear();
 
     for (const key of Object.keys(this._debug.renderModes)) {
       delete this._debug.renderModes[key];
@@ -734,7 +770,7 @@ abstract class BaseViewport<
   }
 
   // ====================================================================
-  // Protected -- data loading & presentation
+  // Protected -- data loading & appearance
   // ====================================================================
 
   /**
@@ -815,9 +851,9 @@ abstract class BaseViewport<
       throw new Error(`Failed to bind rendering for ${displaySetId}`);
     }
 
-    const props = this.dataPresentation.get(displaySetId);
+    const props = this.displaySetAppearances.get(displaySetId);
     if (props !== undefined) {
-      binding.updateDataPresentation(props);
+      binding.updateAppearance(props);
     }
 
     binding.applyViewState(this.viewState);
@@ -838,22 +874,22 @@ abstract class BaseViewport<
    * Stores per-dataset render state and forwards it immediately when
    * that dataset is already added.
    */
-  protected setDataPresentationState(
+  protected setAppearanceState(
     displaySetId: DisplaySetId,
-    props: TDataPresentation
+    props: TAppearance
   ): void {
     if (this.isDestroyed) {
       return;
     }
 
-    this.dataPresentation.set(displaySetId, props);
+    this.displaySetAppearances.set(displaySetId, props);
     const binding = this.bindings.get(displaySetId);
 
     if (!binding) {
       return;
     }
 
-    binding.updateDataPresentation(props);
+    binding.updateAppearance(props);
     this.render();
   }
 
@@ -861,78 +897,74 @@ abstract class BaseViewport<
    * Returns the last render state stored for a display set, even if that
    * display set is not currently mounted.
    */
-  protected getDataPresentationState(
+  protected getAppearanceState(
     displaySetId: DisplaySetId
-  ): TDataPresentation | undefined {
-    return this.dataPresentation.get(displaySetId);
+  ): TAppearance | undefined {
+    return this.displaySetAppearances.get(displaySetId);
   }
 
   /**
    * Stores object-like defaults for a display set without clobbering any values
    * already tracked for that display set.
    */
-  protected setDefaultDataPresentation(
+  protected setDefaultAppearance(
     displaySetId: DisplaySetId,
-    defaults: TDataPresentation
-  ): TDataPresentation {
-    const nextPresentation = {
+    defaults: TAppearance
+  ): TAppearance {
+    const nextAppearance = {
       ...(defaults as Record<string, unknown>),
-      ...((this.getDataPresentationState(displaySetId) || {}) as Record<
+      ...((this.getAppearanceState(displaySetId) || {}) as Record<
         string,
         unknown
       >),
-    } as TDataPresentation;
+    } as TAppearance;
 
-    this.setDataPresentationState(displaySetId, nextPresentation);
+    this.setAppearanceState(displaySetId, nextAppearance);
 
-    return nextPresentation;
+    return nextAppearance;
   }
 
   /**
    * Merges object-like updates into the stored per-display-set render state and
    * forwards the result immediately when mounted.
    */
-  protected mergeDataPresentation(
+  protected mergeAppearance(
     displaySetId: DisplaySetId,
-    props: Partial<TDataPresentation>
-  ): TDataPresentation {
-    const previousPresentation = this.getDataPresentationState(displaySetId);
-    const nextPresentation = {
-      ...((previousPresentation || {}) as Record<string, unknown>),
+    props: Partial<TAppearance>
+  ): TAppearance {
+    const previousAppearance = this.getAppearanceState(displaySetId);
+    const nextAppearance = {
+      ...((previousAppearance || {}) as Record<string, unknown>),
       ...(props as Record<string, unknown>),
-    } as TDataPresentation;
+    } as TAppearance;
 
-    this.setDataPresentationState(displaySetId, nextPresentation);
+    this.setAppearanceState(displaySetId, nextAppearance);
 
     // Notify only when the change targets a mounted dataset so that listeners
-    // (VOI/colormap UI, synchronizers) react to applied presentation changes.
+    // (VOI/colormap UI, synchronizers) react to applied appearance changes.
     if (this.bindings.has(displaySetId)) {
-      this.notifyDataPresentationModified(
-        displaySetId,
-        props,
-        previousPresentation
-      );
+      this.notifyAppearanceModified(displaySetId, props, previousAppearance);
     }
 
-    return nextPresentation;
+    return nextAppearance;
   }
 
   /**
-   * Hook invoked after a per-display-set presentation update is applied through
-   * the public `setDisplaySetPresentation` path and the target display set is
+   * Hook invoked after a per-display-set appearance update is applied through
+   * the public `setDisplaySetAppearance` path and the target display set is
    * mounted. Concrete viewport families override this to emit their
-   * presentation-modified events (e.g. `VOI_MODIFIED`, `COLORMAP_MODIFIED`) so
+   * appearance-modified events (e.g. `VOI_MODIFIED`, `COLORMAP_MODIFIED`) so
    * application UI and synchronizers can react to programmatic and tool-driven
-   * presentation changes. `_previousPresentation` is the stored presentation
+   * appearance changes. `_previousAppearance` is the stored appearance
    * before the change, when the change came through that path. The base
    * implementation is intentionally a no-op.
    */
-  protected notifyDataPresentationModified(
+  protected notifyAppearanceModified(
     _displaySetId: DisplaySetId,
-    _props: Partial<TDataPresentation>,
-    _previousPresentation?: TDataPresentation
+    _props: Partial<TAppearance>,
+    _previousAppearance?: TAppearance
   ): void {
-    // Subclasses emit presentation-modified events; base viewports do not.
+    // Subclasses emit appearance-modified events; base viewports do not.
   }
 
   // ====================================================================
@@ -1026,7 +1058,7 @@ abstract class BaseViewport<
    */
   protected getBinding(
     displaySetId: DisplaySetId
-  ): ViewportDataBinding<TDataPresentation> | undefined {
+  ): ViewportDataBinding<TAppearance> | undefined {
     return this.bindings.get(displaySetId);
   }
 
@@ -1054,9 +1086,7 @@ abstract class BaseViewport<
    * Returns the first mounted binding when a viewport family does not have a
    * stronger notion of "current" selection.
    */
-  protected getFirstBinding():
-    | ViewportDataBinding<TDataPresentation>
-    | undefined {
+  protected getFirstBinding(): ViewportDataBinding<TAppearance> | undefined {
     return this.bindings.values().next().value;
   }
 
@@ -1065,9 +1095,7 @@ abstract class BaseViewport<
    * falling back to the first mounted binding when no explicit `source` role is
    * present. Used for content-mode classification and source-scoped queries.
    */
-  protected getSourceBinding():
-    | ViewportDataBinding<TDataPresentation>
-    | undefined {
+  protected getSourceBinding(): ViewportDataBinding<TAppearance> | undefined {
     for (const binding of this.bindings.values()) {
       if (binding.role === 'source') {
         return binding;
@@ -1080,9 +1108,7 @@ abstract class BaseViewport<
    * Returns the binding used for generic transform and frame-of-reference
    * queries when a viewport family does not override the selection logic.
    */
-  protected getCurrentBinding():
-    | ViewportDataBinding<TDataPresentation>
-    | undefined {
+  protected getCurrentBinding(): ViewportDataBinding<TAppearance> | undefined {
     return this.getFirstBinding();
   }
 
@@ -1091,7 +1117,7 @@ abstract class BaseViewport<
    * subclasses.
    */
   protected forEachBinding(
-    visitor: (binding: ViewportDataBinding<TDataPresentation>) => void
+    visitor: (binding: ViewportDataBinding<TAppearance>) => void
   ): void {
     for (const binding of this.bindings.values()) {
       visitor(binding);

@@ -27,7 +27,7 @@ function createFakePlanarViewport({
   orientation = 'axial' as Orientation,
   focalPoint = [0, 0, 0],
   frameOfReferenceUID = 'FOR1',
-  sourcePresentation = undefined as
+  sourceAppearance = undefined as
     | { blendMode?: unknown; slabThickness?: number }
     | undefined,
   volumeId = undefined as string | undefined,
@@ -60,8 +60,8 @@ function createFakePlanarViewport({
     getFrameOfReferenceUID: () => frameOfReferenceUID,
     // --- Viewport surface ---
     setDisplaySets: async () => undefined,
-    setDisplaySetPresentation: jest.fn(),
-    getDisplaySetPresentation: () => sourcePresentation,
+    setDisplaySetAppearance: jest.fn(),
+    getDisplaySetAppearance: () => sourceAppearance,
     getSourceDisplaySetId: () => 'fake-source-data',
     getDefaultVOIRange: () => undefined,
     getVolumeId: () => volumeId,
@@ -451,7 +451,7 @@ describe('WorldCrosshairTool', () => {
   });
 
   describe('intensity-projection (MIP) slab viewports', () => {
-    const mipPresentation = {
+    const mipAppearance = {
       blendMode: csCoreEnums.BlendModes.MAXIMUM_INTENSITY_BLEND,
       slabThickness: 20,
     };
@@ -486,7 +486,7 @@ describe('WorldCrosshairTool', () => {
         id: 'mip',
         orientation: 'axial',
         focalPoint: [0, 0, 0],
-        sourcePresentation: mipPresentation,
+        sourceAppearance: mipAppearance,
         volumeId: 'mipVolume',
       });
       const tool = createTool({ viewports: [mip] });
@@ -511,7 +511,7 @@ describe('WorldCrosshairTool', () => {
         id: 'mip',
         orientation: 'axial',
         focalPoint: [0, 0, 0],
-        sourcePresentation: mipPresentation,
+        sourceAppearance: mipAppearance,
         volumeId: 'mipVolume',
       });
 
@@ -553,7 +553,7 @@ describe('WorldCrosshairTool', () => {
         id: 'mip',
         orientation: 'axial',
         focalPoint: [0, 0, 0],
-        sourcePresentation: {
+        sourceAppearance: {
           blendMode: csCoreEnums.BlendModes.MAXIMUM_INTENSITY_BLEND,
           slabThickness: 100,
         },

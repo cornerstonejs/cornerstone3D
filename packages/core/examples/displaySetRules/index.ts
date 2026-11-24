@@ -1372,13 +1372,10 @@ async function mountViewport(
   });
 
   if (viewportType === ViewportType.PLANAR && orientation) {
-    viewport.setDisplaySetPresentation(
-      displaySet.displaySetId,
-      ctPresentation()
-    );
+    viewport.setDisplaySetAppearance(displaySet.displaySetId, ctPresentation());
   }
   if (viewportType === ViewportType.VOLUME_3D) {
-    viewport.setDisplaySetPresentation(displaySet.displaySetId, {
+    viewport.setDisplaySetAppearance(displaySet.displaySetId, {
       preset: 'CT-Bone',
     });
   }

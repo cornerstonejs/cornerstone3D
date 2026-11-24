@@ -1,7 +1,7 @@
 ---
 id: camera
 title: Camera Model
-summary: Comprehensive ownership model for view state, presentation, references, resolved views, and what replaces the legacy camera
+summary: Comprehensive ownership model for view state, framing, appearance, references, resolved views, and what replaces the legacy camera
 ---
 
 # Camera Model
@@ -23,13 +23,14 @@ computed snapshot for the current canvas, data, and state. Renderer projections
 are commands sent to VTK, CPU canvas, DOM, OpenLayers, or another runtime.
 Runtime engine state is private to that renderer.
 
-Viewports do not expose `getViewPresentation()` or
-`setViewPresentation()`. Presentation is a projection-service concern:
+The framing of a view (pan, zoom, rotation, flips and display area against
+the fit) is read and written through the projection service, or with
+`viewport.getViewFraming()` and `viewport.setViewFraming()`, which call it:
 
 ```ts
 import { viewportProjection } from '@cornerstonejs/core';
 
-const presentation = viewportProjection.getPresentation(viewport, {
+const framing = viewportProjection.getFraming(viewport, {
   selector: {
     pan: true,
     zoom: true,
@@ -37,7 +38,7 @@ const presentation = viewportProjection.getPresentation(viewport, {
   },
 });
 
-const nextViewState = viewportProjection.withPresentation(viewport, {
+const nextViewState = viewportProjection.withFraming(viewport, {
   zoom: 2,
   pan: [20, -10],
 });
@@ -47,7 +48,7 @@ if (nextViewState) {
 }
 ```
 
-`viewportProjection.withPresentation()` is pure. It translates the presentation
+`viewportProjection.withFraming()` is pure. It translates the framing
 patch into the viewport family's native `ViewState`, but it does not mutate the
 viewport and it does not render. `setViewState()` and `updateViewState()` remain
 the paths for arbitrary view-state changes; `resetViewState()` is the
@@ -60,7 +61,7 @@ and optional renderer-camera output. See
 [Viewport Projection](./viewport-projection.md).
 
 > **Naming note.** "Viewport Projection" uses _projection_ in the mathematical
-> sense — projecting semantic viewport state onto presentation, transforms, and
+> sense — projecting semantic viewport state onto framing, transforms, and
 > renderer output. It is distinct from VTK's parallel-vs-perspective projection
 > (`parallelProjection`), which is a renderer-matrix setting carried on the
 > resolved `ICamera`. The two concepts coexist in the same code paths but
@@ -68,13 +69,13 @@ and optional renderer-camera output. See
 
 ## Contract Matrix
 
-| Concept            | Owns                                                                                                                 | Does Not Own                                              |
-| ------------------ | -------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| `ViewState`        | Mutable viewport-local navigation and layout source of truth.                                                        | Cross-viewport persistence by itself.                     |
-| `ViewPresentation` | Persistable look state: pan, zoom or scale, rotation, flips, and display area.                                       | Data identity, slice identity, VOI, opacity, or colormap. |
-| `ViewReference`    | Persistable spatial pointer: frame of reference, data id, volume id, image id, slice locator, and plane restriction. | Pan, zoom, rotation, flips, VOI, opacity, or colormap.    |
-| `ResolvedView`     | Ephemeral world/canvas transforms, resolved presentation, and renderer geometry.                                     | Durable state or persistence.                             |
-| `DataPresentation` | Per-binding appearance such as VOI, opacity, colormap, interpolation, and visibility.                                | Viewport navigation.                                      |
+| Concept                | Owns                                                                                                                 | Does Not Own                                              |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| `ViewState`            | Mutable viewport-local navigation and layout source of truth.                                                        | Cross-viewport persistence by itself.                     |
+| `ViewFraming`          | Persistable look state: pan, zoom or scale, rotation, flips, and display area.                                       | Data identity, slice identity, VOI, opacity, or colormap. |
+| `ViewReference`        | Persistable spatial pointer: frame of reference, data id, volume id, image id, slice locator, and plane restriction. | Pan, zoom, rotation, flips, VOI, opacity, or colormap.    |
+| `ResolvedView`         | Ephemeral world/canvas transforms, resolved framing, and renderer geometry.                                          | Durable state or persistence.                             |
+| `DisplaySetAppearance` | Per-binding appearance such as VOI, opacity, colormap, interpolation, and visibility.                                | Viewport navigation.                                      |
 
 ## Planar View State
 
@@ -109,7 +110,7 @@ stores a `volumePoint` slice locator. Crosshairs and navigation tools should use
 
 Planar render code derives VTK-compatible fields from the resolved view. This
 includes the focal point, position, parallel scale, view plane normal, view up,
-presentation scale, and slice metadata needed by CPU and VTK paths.
+framing scale, and slice metadata needed by CPU and VTK paths.
 
 Those fields are renderer projection data. They are not copied back into
 `PlanarViewState` as durable truth.
@@ -170,7 +171,7 @@ viewport.updateViewState((viewState) => ({
 ```
 
 ```ts
-const nextViewState = viewportProjection.withPresentation(viewport, {
+const nextViewState = viewportProjection.withFraming(viewport, {
   zoom: 2,
 });
 
@@ -196,8 +197,8 @@ anchors, slice locators, and scale, not durable renderer position.
 5.x ran the legacy camera API (`getCamera`, `setCamera`, `resetCamera`,
 `getViewPresentation`, `setViewPresentation`) on these viewports through
 compatibility adapters. 6.0 removed the adapters and that API. Viewports expose
-`getViewState()`, `setViewState()`, `updateViewState()`, `resetViewState()`, and
-`getResolvedView()`.
+`getViewState()`, `setViewState()`, `updateViewState()`, `resetViewState()`,
+`getViewFraming()`, `setViewFraming()` and `getResolvedView()`.
 
 Code that needs an `ICamera`-compatible shape reads
 `viewport.getResolvedView()?.toICamera()`. It is for reading only: a write goes

@@ -177,7 +177,7 @@ describe('loadImageToCanvas -- GPU', () => {
 
     const defaultWindow = await renderAndCapture(viewport, element);
 
-    viewport.setDisplaySetPresentation({ voiRange: { lower: 0, upper: 255 } });
+    viewport.setDisplaySetAppearance({ voiRange: { lower: 0, upper: 255 } });
 
     const pixelRangeWindow = await renderAndCapture(viewport, element);
     const canvas = createCanvas();

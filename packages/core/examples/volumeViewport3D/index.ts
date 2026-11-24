@@ -77,7 +77,7 @@ addButtonToToolbar({
     const viewport = renderingEngine.getViewport<VolumeViewport3D>(viewportId);
 
     // Apply the rotation to the camera of the viewport
-    const viewState = viewportProjection.withPresentation(viewport, {
+    const viewState = viewportProjection.withFraming(viewport, {
       rotation: Math.random() * 360,
     });
 
@@ -95,7 +95,7 @@ addDropdownToToolbar({
   onSelectedValueChange: (presetName) => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
     const viewport = renderingEngine.getViewport<VolumeViewport3D>(viewportId);
-    viewport.setDisplaySetPresentation(displaySetId, {
+    viewport.setDisplaySetAppearance(displaySetId, {
       preset: presetName as string,
     });
     viewport.render();
@@ -110,7 +110,7 @@ addDropdownToToolbar({
   onSelectedValueChange: (sampleDistanceMultiplier) => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
     const viewport = renderingEngine.getViewport<VolumeViewport3D>(viewportId);
-    viewport.setDisplaySetPresentation(displaySetId, {
+    viewport.setDisplaySetAppearance(displaySetId, {
       sampleDistanceMultiplier: Number(sampleDistanceMultiplier),
     });
     viewport.render();
@@ -183,7 +183,7 @@ async function run() {
   });
 
   await viewport.setDisplaySets({ displaySetId });
-  viewport.setDisplaySetPresentation(displaySetId, {
+  viewport.setDisplaySetAppearance(displaySetId, {
     preset: 'CT-Bone',
   });
   viewport.render();

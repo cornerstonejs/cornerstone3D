@@ -55,11 +55,11 @@ function makePlanarViewport(opts: {
     getSourceDisplaySetId: () => 'src',
     getDataRole: (id: string) => (id === 'src' ? 'source' : 'overlay'),
     getDataRenderMode: () => renderMode,
-    getDataPresentation: () => ({
+    getAppearance: () => ({
       blendMode: opts.blendMode,
       slabThickness: opts.slabThickness,
     }),
-    getDisplaySetPresentation: () => ({
+    getDisplaySetAppearance: () => ({
       blendMode: opts.blendMode,
       slabThickness: opts.slabThickness,
     }),
@@ -277,7 +277,7 @@ describe('canRenderVolumeViewportLabelmapAsImage', () => {
     const viewport = {
       ...makePlanarViewport({ renderMode: 'VTK_VOLUME_SLICE' }),
       setDisplaySets: jest.fn(),
-      setDisplaySetPresentation: jest.fn(),
+      setDisplaySetAppearance: jest.fn(),
       setViewState: jest.fn(),
       getCurrentMode: () => 'volume',
       getBlendMode,

@@ -418,7 +418,7 @@ describe('Volume Viewport GPU -- ', () => {
           .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
             testUtils.setVolumesOnNextViewport(vp, [volumeId]).then(() => {
-              vp.setDisplaySetPresentation({
+              vp.setDisplaySetAppearance({
                 interpolationType: InterpolationType.NEAREST,
               });
               vp.render();
@@ -516,7 +516,7 @@ describe('Volume Viewport GPU -- ', () => {
           .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
             testUtils.setVolumesOnNextViewport(vp, [volumeId]).then(() => {
-              vp.setDisplaySetPresentation({
+              vp.setDisplaySetAppearance({
                 interpolationType: InterpolationType.NEAREST,
               });
               vp.render();
@@ -610,7 +610,7 @@ describe('Volume Viewport GPU -- ', () => {
           .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
             testUtils.setVolumesOnNextViewport(vp, [volumeId]).then(() => {
-              vp.setDisplaySetPresentation({
+              vp.setDisplaySetAppearance({
                 interpolationType: InterpolationType.NEAREST,
               });
               vp.render();
@@ -702,7 +702,7 @@ describe('Volume Viewport GPU -- ', () => {
           .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
             testUtils.setVolumesOnNextViewport(vp, [volumeId]).then(() => {
-              vp.setDisplaySetPresentation({
+              vp.setDisplaySetAppearance({
                 interpolationType: InterpolationType.NEAREST,
               });
               vp.render();
@@ -754,7 +754,7 @@ describe('Volume Viewport GPU -- ', () => {
           .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
             testUtils.setVolumesOnNextViewport(vp, [volumeId]).then(() => {
-              vp.setDisplaySetPresentation({
+              vp.setDisplaySetAppearance({
                 interpolationType: InterpolationType.NEAREST,
               });
             });
@@ -802,7 +802,7 @@ describe('Volume Viewport GPU -- ', () => {
           .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
             testUtils.setVolumesOnNextViewport(vp, [volumeId]).then(() => {
-              vp.setDisplaySetPresentation({
+              vp.setDisplaySetAppearance({
                 interpolationType: InterpolationType.NEAREST,
               });
               vp.render();
@@ -849,7 +849,7 @@ describe('Volume Viewport GPU -- ', () => {
           .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
             testUtils.setVolumesOnNextViewport(vp, [volumeId]).then(() => {
-              vp.setDisplaySetPresentation({
+              vp.setDisplaySetAppearance({
                 interpolationType: InterpolationType.NEAREST,
               });
               vp.render();
@@ -895,7 +895,7 @@ describe('Volume Viewport GPU -- ', () => {
           .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
             testUtils.setVolumesOnNextViewport(vp, [volumeId]).then(() => {
-              vp.setDisplaySetPresentation({
+              vp.setDisplaySetAppearance({
                 interpolationType: InterpolationType.NEAREST,
               });
             });
@@ -942,7 +942,7 @@ describe('Volume Viewport GPU -- ', () => {
           .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
             testUtils.setVolumesOnNextViewport(vp, [volumeId]).then(() => {
-              vp.setDisplaySetPresentation({
+              vp.setDisplaySetAppearance({
                 interpolationType: InterpolationType.NEAREST,
               });
               const viewportIds = renderingEngine
@@ -1002,7 +1002,7 @@ describe('Volume Viewport GPU -- ', () => {
           .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
             testUtils.setVolumesOnNextViewport(vp, [volumeId]).then(() => {
-              vp.setDisplaySetPresentation({
+              vp.setDisplaySetAppearance({
                 interpolationType: InterpolationType.NEAREST,
               });
               vp.render();
@@ -1049,7 +1049,7 @@ describe('Volume Viewport GPU -- ', () => {
           .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
             testUtils.setVolumesOnNextViewport(vp, [volumeId]).then(() => {
-              vp.setDisplaySetPresentation({
+              vp.setDisplaySetAppearance({
                 interpolationType: InterpolationType.LINEAR,
               });
               vp.render();
@@ -1098,7 +1098,7 @@ describe('Volume Viewport GPU -- ', () => {
           .createAndCacheVolume(volumeId, { imageIds: [] })
           .then(() => {
             testUtils.setVolumesOnNextViewport(vp, [volumeId]).then(() => {
-              vp.setDisplaySetPresentation({
+              vp.setDisplaySetAppearance({
                 interpolationType: InterpolationType.LINEAR,
               });
             });

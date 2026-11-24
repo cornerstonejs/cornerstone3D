@@ -24,7 +24,7 @@ import type {
   SampleVolumeSliceOptions,
   VolumeSliceSlab,
 } from '../../../utilities/sampleVolumeSlice';
-import type { PlanarDataPresentation } from './PlanarViewportTypes';
+import type { PlanarDisplaySetAppearance } from './PlanarViewportTypes';
 import { resolveSlabThickness } from './planarVolumeSliceBlendMode';
 import { canvasToWorldPlanarViewState } from './planarAdapterCoordinateTransforms';
 import { MAX_CPU_SLICE_SAMPLES } from './PlanarRenderPathDecisionService';
@@ -195,7 +195,7 @@ type SliceCamera = Pick<ICamera, 'focalPoint' | 'viewPlaneNormal' | 'viewUp'>;
 
 /**
  * The camera that places the screen grid: the camera of the renderer, with
- * its parallel scale and its presentation scale.
+ * its parallel scale and its framing scale.
  */
 export type PlanarScreenCamera = Parameters<
   typeof canvasToWorldPlanarViewState
@@ -205,7 +205,7 @@ export type PlanarScreenCamera = Parameters<
  * The counts of a sampler, for tests and for an example page. A hit is a
  * request for a new slice on screen that the cache served; a miss is one that
  * had to sample. A request for the slice already on screen (zoom, pan,
- * presentation) counts as neither.
+ * appearance) counts as neither.
  */
 export type PlanarSliceCacheStatistics = {
   hits: number;
@@ -382,7 +382,7 @@ type CachedSlice = {
  * normal, at most SAMPLED_SLICE_CACHE_SIZE slices. A slice is kept for its
  * plane and its sampling inputs. A request whose plane and inputs match a kept
  * slice, with pixels as fine or finer, returns that slice and does not sample,
- * so a change of zoom, pan or presentation costs nothing, and a scroll to a
+ * so a change of zoom, pan or appearance costs nothing, and a scroll to a
  * prefetched neighbour costs nothing either. A change of the view normal or of
  * the inputs drops the kept slices; `invalidate` drops them for new voxel
  * data. When the cache is full, the slice farthest from the slice on screen
@@ -438,7 +438,7 @@ export class PlanarSliceSampler {
    * have about the size of a voxel. When the kept slice of the screen grid
    * was sampled for the same plane, inputs and screen grid (`screen`, see
    * `getScreenSliceGeometry`), that slice is returned in its place, so a
-   * change of the presentation keeps the finer picture. A view that moved
+   * change of the appearance keeps the finer picture. A view that moved
    * gets the voxel-size slice, which the GPU places for any pan, zoom and
    * rotation. A sampler that samples slabs in steps returns the plain slice
    * of the plane for a large slab that it does not keep yet, and starts the
@@ -1225,7 +1225,7 @@ function getSliceGeometry(
  *
  * Every field comes from `canvasToWorldPlanarViewState`, the canvas to world
  * function of the planar viewports, so flips, rotation, pan, zoom and an
- * anisotropic presentation scale need no case of their own. That function
+ * anisotropic framing scale need no case of their own. That function
  * takes the canvas size and the canvas position in the same unit and puts
  * canvas position (0, 0) at the top left corner of the canvas, so the centre
  * of device pixel (i, j) is canvas position (i + 0.5, j + 0.5) with the size
@@ -1476,7 +1476,7 @@ function isSamePlane(
 }
 
 /**
- * The sampling inputs that a presentation gives. NEAREST samples the nearest
+ * The sampling inputs that an appearance gives. NEAREST samples the nearest
  * voxel and puts an axis-aligned slice on the centre of its slice of voxels;
  * any other interpolation type samples linearly on the plane of the focal
  * point, as the GPU volume path does, whose default is linear.
@@ -1487,13 +1487,13 @@ function isSamePlane(
  */
 export function getPlanarSampledSliceInputs(
   volume: IImageVolume,
-  presentation: PlanarDataPresentation | undefined
+  appearance: PlanarDisplaySetAppearance | undefined
 ): PlanarSampledSliceInputs {
-  const thickness = resolveSlabThickness(presentation?.slabThickness);
+  const thickness = resolveSlabThickness(appearance?.slabThickness);
 
   return {
     interpolationType:
-      presentation?.interpolationType === InterpolationType.NEAREST
+      appearance?.interpolationType === InterpolationType.NEAREST
         ? InterpolationType.NEAREST
         : InterpolationType.LINEAR,
     slab:
@@ -1501,7 +1501,7 @@ export function getPlanarSampledSliceInputs(
         ? {
             thickness,
             blendMode:
-              presentation?.blendMode ?? BlendModes.AVERAGE_INTENSITY_BLEND,
+              appearance?.blendMode ?? BlendModes.AVERAGE_INTENSITY_BLEND,
           }
         : undefined,
     timePoint: getActiveTimePoint(volume),

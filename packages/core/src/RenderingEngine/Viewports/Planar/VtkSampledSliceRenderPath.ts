@@ -15,7 +15,7 @@ import type {
 } from '../ViewportArchitectureTypes';
 import type {
   PlanarViewState,
-  PlanarDataPresentation,
+  PlanarDisplaySetAppearance,
   PlanarPayload,
   PlanarResolvedICamera,
   PlanarViewportRenderContext,
@@ -84,7 +84,7 @@ type SampledSliceMount = PlanarSlicePlaneMoves & {
  *
  * It wires two steps: the sample step (`PlanarSliceSampler`, plain data) and
  * the draw step (`PlanarSampledSliceActor`, the only part that knows vtk.js
- * image classes). Navigation, events, presentation and depth order follow
+ * image classes). Navigation, events, appearance and depth order follow
  * `VtkVolumeSliceRenderPath`.
  *
  * It draws one value per voxel, so it refuses a volume of several components
@@ -104,7 +104,7 @@ export class VtkSampledSliceRenderPath
     ctx: PlanarVtkVolumeAdapterContext,
     data: LoadedData,
     options: DataAddOptions
-  ): Promise<RenderPathAttachment<PlanarDataPresentation>> {
+  ): Promise<RenderPathAttachment<PlanarDisplaySetAppearance>> {
     const payload: PlanarPayload = data as unknown as LoadedData<PlanarPayload>;
     const imageVolume = payload.imageVolume;
     const isSegmentationOverlay = isSegmentationOverlayData(payload, options);
@@ -150,7 +150,7 @@ export class VtkSampledSliceRenderPath
       currentImageIdIndex: payload.initialImageIdIndex ?? 0,
       maxImageIdIndex: payload.imageIds.length - 1,
       defaultVOIRange,
-      dataPresentation: undefined,
+      appearance: undefined,
       isSegmentationOverlay,
       excludeFromFidelity: isSegmentationOverlay,
       fullGrid: imageVolume.voxelGrid,
@@ -176,8 +176,8 @@ export class VtkSampledSliceRenderPath
 
     return {
       rendering,
-      updateDataPresentation: (props) => {
-        this.updateDataPresentation(mount, props);
+      updateAppearance: (props) => {
+        this.updateAppearance(mount, props);
       },
       applyViewState: (camera) => {
         this.applyViewState(mount, camera);
@@ -291,15 +291,12 @@ export class VtkSampledSliceRenderPath
     };
   }
 
-  private updateDataPresentation(
-    mount: SampledSliceMount,
-    props: unknown
-  ): void {
+  private updateAppearance(mount: SampledSliceMount, props: unknown): void {
     const { ctx, draw, rendering } = mount;
 
-    rendering.dataPresentation = props as PlanarDataPresentation | undefined;
-    draw.applyPresentation(
-      rendering.dataPresentation,
+    rendering.appearance = props as PlanarDisplaySetAppearance | undefined;
+    draw.applyAppearance(
+      rendering.appearance,
       rendering.isSegmentationOverlay ? undefined : rendering.defaultVOIRange
     );
     this.updateSlice(mount, getPlanarRenderPathActiveSourceICamera(ctx));
@@ -371,7 +368,7 @@ export class VtkSampledSliceRenderPath
    * inputs changed, with pixels of about the voxel size so that a move stays
    * fast, and places the actor for the camera. The kept slice of the screen
    * grid is drawn instead when the screen grid did not move (a change of the
-   * presentation). Each call is a change of the view: it cancels the work at
+   * appearance). Each call is a change of the view: it cancels the work at
    * rest and starts the rest timer again.
    */
   private updateSlice(
@@ -390,7 +387,7 @@ export class VtkSampledSliceRenderPath
         camera,
         getPlanarSampledSliceInputs(
           rendering.imageVolume,
-          rendering.dataPresentation
+          rendering.appearance
         ),
         getCanvasScreenSliceGeometry(
           mount.ctx.vtk.canvas,
@@ -443,7 +440,7 @@ export class VtkSampledSliceRenderPath
       getInputs: () =>
         getPlanarSampledSliceInputs(
           rendering.imageVolume,
-          rendering.dataPresentation
+          rendering.appearance
         ),
       getScreen: (camera) =>
         getCanvasScreenSliceGeometry(

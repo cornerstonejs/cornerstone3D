@@ -273,7 +273,7 @@ describe('Tools on a next 3D viewport whose only content is a prop of its render
       await renderAndWait(viewport);
 
       const pixelsBefore = spherePixelCount(viewport);
-      const zoomBefore = viewportProjection.getPresentation(viewport).zoom;
+      const zoomBefore = viewportProjection.getFraming(viewport).zoom;
       const errors = await dragOnCanvas(
         viewport.element,
         CANVAS_CENTER,
@@ -284,7 +284,7 @@ describe('Tools on a next 3D viewport whose only content is a prop of its render
 
       await renderAndWait(viewport);
 
-      const zoomAfter = viewportProjection.getPresentation(viewport).zoom;
+      const zoomAfter = viewportProjection.getFraming(viewport).zoom;
       const camera = viewport.getVtkActiveCamera();
       const distance = vec3.distance(camera.getPosition(), [0, 0, 0]);
       const [near, far] = camera.getClippingRange();

@@ -44,8 +44,8 @@ const imagePresentations = new Map<string, typeof defaultPresentation>();
  * with the default of the example when that image has none.
  */
 function showDefaultPresentation(viewport: PlanarViewport) {
-  viewport.resetDisplaySetPresentation(displaySetId);
-  viewport.setDisplaySetPresentation(
+  viewport.resetDisplaySetAppearance(displaySetId);
+  viewport.setDisplaySetAppearance(
     displaySetId,
     imagePresentations.get(viewport.getCurrentImageId()) ?? defaultPresentation
   );
@@ -141,7 +141,7 @@ addButtonToToolbar({
     };
 
     imagePresentations.set(viewport.getCurrentImageId(), presentation);
-    viewport.setDisplaySetPresentation(displaySetId, presentation);
+    viewport.setDisplaySetAppearance(displaySetId, presentation);
   },
 });
 
@@ -188,7 +188,7 @@ addButtonToToolbar({
     // Resets the viewport's camera
     viewport.resetViewState();
     // Resets the viewport's properties to image metadata
-    viewport.resetDisplaySetPresentation(displaySetId);
+    viewport.resetDisplaySetAppearance(displaySetId);
     viewport.render();
   },
 });
@@ -240,14 +240,14 @@ async function run() {
   await viewport.setDisplaySets({ displaySetId });
 
   // Set the default properties of the viewport
-  viewport.setDisplaySetPresentation(displaySetId, defaultPresentation);
+  viewport.setDisplaySetAppearance(displaySetId, defaultPresentation);
 
   element.addEventListener(Events.NEW_IMAGE, () => {
     if (imagePresentations.size === 0) {
       return;
     }
 
-    viewport.setDisplaySetPresentation(
+    viewport.setDisplaySetAppearance(
       displaySetId,
       imagePresentations.get(viewport.getCurrentImageId()) ??
         defaultPresentation

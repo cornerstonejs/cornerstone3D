@@ -19,7 +19,7 @@ const RIGHT_VIEWPORT_ID = 'PROJECTION_SYNC_RIGHT';
 const LEFT_DATA_ID = 'viewport-projection-sync:left';
 const RIGHT_DATA_ID = 'viewport-projection-sync:right';
 
-type ProjectionPresentation = {
+type ProjectionFraming = {
   pan?: [number, number];
   rotation?: number;
   zoom?: number;
@@ -55,11 +55,11 @@ async function clickProjectionButton(page: Page, name: string) {
   await page.getByRole('button', { name, exact: true }).click();
 }
 
-async function getPresentation(
+async function getFraming(
   page: Page,
   renderingEngineId: string,
   viewportId: string
-): Promise<ProjectionPresentation | undefined> {
+): Promise<ProjectionFraming | undefined> {
   return page.evaluate(
     ({ renderingEngineId, selector, viewportId }) => {
       const cornerstone = (window as any).cornerstone;
@@ -69,7 +69,7 @@ async function getPresentation(
           ?.getViewport?.(viewportId);
 
       return viewport
-        ? cornerstone?.viewportProjection?.getPresentation(viewport, {
+        ? cornerstone?.viewportProjection?.getFraming(viewport, {
             selector,
           })
         : undefined;
@@ -86,7 +86,7 @@ async function patchPresentation(
   page: Page,
   renderingEngineId: string,
   viewportId: string,
-  presentation: ProjectionPresentation
+  presentation: ProjectionFraming
 ) {
   await page.evaluate(
     ({ presentation, renderingEngineId, viewportId }) => {
@@ -97,7 +97,7 @@ async function patchPresentation(
           ?.getViewport?.(viewportId);
       const nextViewState =
         viewport &&
-        cornerstone?.viewportProjection?.withPresentation(
+        cornerstone?.viewportProjection?.withFraming(
           viewport,
           presentation
         );
@@ -136,7 +136,7 @@ async function runPlanarProjectionWorkload(page: Page) {
       const iterations = 180;
       const start = performance.now();
       let canvasPoint: number[] | undefined;
-      let presentation: ProjectionPresentation | undefined;
+      let presentation: ProjectionFraming | undefined;
 
       for (let index = 0; index < iterations; index++) {
         const canvasA = [160 + (index % 40), 180 + (index % 30)];
@@ -145,11 +145,11 @@ async function runPlanarProjectionWorkload(page: Page) {
 
         viewport.canvasToWorld(canvasB);
         canvasPoint = viewport.worldToCanvas(worldA);
-        presentation = projectionService.getPresentation(viewport, {
+        presentation = projectionService.getFraming(viewport, {
           selector,
         });
 
-        projectionService.withPresentation(viewport, {
+        projectionService.withFraming(viewport, {
           pan: [
             (presentation?.pan?.[0] ?? 0) + 0.01,
             (presentation?.pan?.[1] ?? 0) - 0.01,
@@ -175,8 +175,8 @@ async function runPlanarProjectionWorkload(page: Page) {
 }
 
 function expectPresentationsClose(
-  actual: ProjectionPresentation | undefined,
-  expected: ProjectionPresentation | undefined
+  actual: ProjectionFraming | undefined,
+  expected: ProjectionFraming | undefined
 ) {
   expect(actual).toBeDefined();
   expect(expected).toBeDefined();
@@ -334,12 +334,12 @@ test.describe('Viewport Projection Synchronizer example', () => {
   test('copies presentation left-to-right, right-to-left, and respects off mode', async ({
     page,
   }) => {
-    const initialLeft = await getPresentation(
+    const initialLeft = await getFraming(
       page,
       SYNC_ENGINE_ID,
       LEFT_VIEWPORT_ID
     );
-    const initialRight = await getPresentation(
+    const initialRight = await getFraming(
       page,
       SYNC_ENGINE_ID,
       RIGHT_VIEWPORT_ID
@@ -349,7 +349,7 @@ test.describe('Viewport Projection Synchronizer example', () => {
 
     await clickProjectionButton(page, 'Copy Projection Once');
 
-    const copiedRight = await getPresentation(
+    const copiedRight = await getFraming(
       page,
       SYNC_ENGINE_ID,
       RIGHT_VIEWPORT_ID
@@ -365,12 +365,12 @@ test.describe('Viewport Projection Synchronizer example', () => {
       .locator('#demo-toolbar select')
       .selectOption({ label: 'right to left' });
 
-    const rightToLeftSource = await getPresentation(
+    const rightToLeftSource = await getFraming(
       page,
       SYNC_ENGINE_ID,
       RIGHT_VIEWPORT_ID
     );
-    const rightToLeftTarget = await getPresentation(
+    const rightToLeftTarget = await getFraming(
       page,
       SYNC_ENGINE_ID,
       LEFT_VIEWPORT_ID
@@ -385,7 +385,7 @@ test.describe('Viewport Projection Synchronizer example', () => {
     });
     await clickProjectionButton(page, 'Copy Projection Once');
 
-    const offModeRight = await getPresentation(
+    const offModeRight = await getFraming(
       page,
       SYNC_ENGINE_ID,
       RIGHT_VIEWPORT_ID

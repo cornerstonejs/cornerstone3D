@@ -97,7 +97,7 @@ function setSlabThickness(slabThickness: number) {
 
   viewportIds.forEach((viewportId) => {
     const viewport = renderingEngine.getViewport(viewportId) as PlanarViewport;
-    viewport.setDisplaySetPresentation(mprDisplaySetId, {
+    viewport.setDisplaySetAppearance(mprDisplaySetId, {
       slabThickness,
       blendMode:
         slabThickness > MINIMUM_SLAB_THICKNESS
@@ -189,7 +189,7 @@ async function run() {
     const viewport = getRenderingEngine(renderingEngineId).getViewport(
       viewportId
     ) as PlanarViewport;
-    viewport.setDisplaySetPresentation(mprDisplaySetId, {
+    viewport.setDisplaySetAppearance(mprDisplaySetId, {
       voiRange: ctVoiRange,
     });
   });

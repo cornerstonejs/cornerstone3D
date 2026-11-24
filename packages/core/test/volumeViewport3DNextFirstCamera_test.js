@@ -140,13 +140,11 @@ describe('The first camera of a direct next 3D viewport -- ', () => {
   it('fits the mount in the orientation of the options after a reset and a view state written while it showed nothing, as the legacy 3D viewport', async function () {
     const volumeId = await createVolume('firstCameraAfterEmptyWrite');
     const next = createNextViewport(renderingEngine);
-    const presentation = viewportProjection.getPresentation(next);
+    const presentation = viewportProjection.getFraming(next);
 
     next.resetViewState();
     if (presentation) {
-      next.setViewState(
-        viewportProjection.withPresentation(next, presentation)
-      );
+      next.setViewState(viewportProjection.withFraming(next, presentation));
     }
     next.setViewState(next.getViewState());
 

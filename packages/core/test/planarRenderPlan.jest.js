@@ -453,7 +453,7 @@ describe('PlanarViewport render plan', () => {
                 currentImageIdIndex: 0,
                 maxImageIdIndex: volumeOf[data.id].imageIds.length - 1,
               },
-              updateDataPresentation: jest.fn(),
+              updateAppearance: jest.fn(),
               applyViewState: jest.fn(),
               getFrameOfReferenceUID: () => 'plan-frame',
               getActorEntry: () => ({ uid: `${data.id}-actor`, actor }),
@@ -497,8 +497,8 @@ describe('PlanarViewport render plan', () => {
   }
 
   async function setSlab(props) {
-    viewport.setDisplaySetPresentation(ctId, props);
-    viewport.setDisplaySetPresentation(ptId, props);
+    viewport.setDisplaySetAppearance(ctId, props);
+    viewport.setDisplaySetAppearance(ptId, props);
     await flush();
   }
 
@@ -630,7 +630,7 @@ describe('PlanarViewport render plan', () => {
     await setSlab(mip10);
 
     const ct = viewport.bindings.get(ctId);
-    const lastProps = ct.updateDataPresentation.mock.calls.at(-1)[0];
+    const lastProps = ct.updateAppearance.mock.calls.at(-1)[0];
 
     expect(ct.rendering.renderMode).toBe(ActorRenderMode.VTK_SAMPLED_SLICE);
     expect(lastProps.slabThickness).toBe(10);
@@ -648,9 +648,7 @@ describe('PlanarViewport render plan', () => {
     const ct = viewport.bindings.get(ctId);
 
     expect(ct.rendering.renderMode).toBe(ActorRenderMode.VTK_SAMPLED_SLICE);
-    expect(ct.updateDataPresentation.mock.calls.at(-1)[0].slabThickness).toBe(
-      10
-    );
+    expect(ct.updateAppearance.mock.calls.at(-1)[0].slabThickness).toBe(10);
     expect(viewport.withheldSlabByBinding.has(ct)).toBe(false);
   });
 

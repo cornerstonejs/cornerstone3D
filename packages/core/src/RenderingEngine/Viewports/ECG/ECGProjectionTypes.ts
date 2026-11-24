@@ -1,7 +1,7 @@
 import { ViewportType } from '../../../enums';
 import type { ICamera, Point2, Point3 } from '../../../types';
 import type {
-  ProjectionPresentation,
+  ProjectionFraming,
   ProjectionRequest,
   ProjectionSnapshot,
 } from '../ViewportProjectionTypes';
@@ -33,13 +33,12 @@ export type ECGProjectionViewport = {
   getViewState?(): ECGViewState;
 };
 
-export interface ECGProjectionPresentation
-  extends ProjectionPresentation<never> {
+export interface ECGProjectionFraming extends ProjectionFraming<never> {
   rawPan: Point2;
 }
 
 export interface ECGProjectionSnapshot
-  extends ProjectionSnapshot<ECGViewState, ECGProjectionPresentation> {
+  extends ProjectionSnapshot<ECGViewState, ECGProjectionFraming> {
   canvasHeight: number;
   canvasWidth: number;
   resolvedView?: ECGResolvedViewLike;

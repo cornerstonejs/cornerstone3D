@@ -283,7 +283,7 @@ async function setUpDisplay() {
   await Promise.all(
     ptViewports.map(async (viewport) => {
       await viewport.setDisplaySets({ displaySetId: ptDisplaySetId });
-      viewport.setDisplaySetPresentation(ptDisplaySetId, petPresentation());
+      viewport.setDisplaySetAppearance(ptDisplaySetId, petPresentation());
     })
   );
 

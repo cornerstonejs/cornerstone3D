@@ -79,7 +79,7 @@ let ctImageIds, ptImageIds;
 addButtonToToolbar({
   title: 'Stack to Volume',
   onClick: async () => {
-    const viewPresentation = viewportProjection.getPresentation(viewport);
+    const viewPresentation = viewportProjection.getFraming(viewport);
     const viewReference = viewport.getViewReference();
 
     await convertStackToFusionVolume();
@@ -93,7 +93,7 @@ addButtonToToolbar({
       viewReference
     );
 
-    const viewState = viewportProjection.withPresentation(
+    const viewState = viewportProjection.withFraming(
       viewport,
       viewPresentation
     );
@@ -198,7 +198,7 @@ async function run() {
   viewport.render();
 
   const zoom = 2.4;
-  const viewState = viewportProjection.withPresentation(viewport, {
+  const viewState = viewportProjection.withFraming(viewport, {
     zoom,
     pan: [-100 / zoom, -100 / zoom],
   });
@@ -237,8 +237,8 @@ async function convertStackToFusionVolume() {
     { displaySetId: ctDisplaySetId },
     { displaySetId: ptDisplaySetId }
   );
-  viewport.setDisplaySetPresentation(ctDisplaySetId, ctPresentation());
-  viewport.setDisplaySetPresentation(ptDisplaySetId, petColorMapPresentation());
+  viewport.setDisplaySetAppearance(ctDisplaySetId, ctPresentation());
+  viewport.setDisplaySetAppearance(ptDisplaySetId, petColorMapPresentation());
 }
 
 /**
@@ -280,7 +280,7 @@ async function convertStackToVolumeWithLabelmap() {
 
   // Set the volume on the viewport
   await viewport.setDisplaySets({ displaySetId: ctDisplaySetId });
-  viewport.setDisplaySetPresentation(ctDisplaySetId, ctPresentation());
+  viewport.setDisplaySetAppearance(ctDisplaySetId, ctPresentation());
 
   // Add the segmentation representation to the viewport
   const segmentationRepresentation = {

@@ -317,7 +317,7 @@ describe('Direct next 3D viewport, colour and presets -- ', () => {
     );
 
     utilities.applyPreset(volumeActorOf(next), preset);
-    next.setDisplaySetPresentation({ voiRange: { lower: 20, upper: 200 } });
+    next.setDisplaySetAppearance({ voiRange: { lower: 20, upper: 200 } });
 
     expectSameTransferFunctions(
       next,
@@ -330,12 +330,12 @@ describe('Direct next 3D viewport, colour and presets -- ', () => {
     const volumeId = await createVolume();
     const displaySetId = await showVolume(next, volumeId);
 
-    next.setDisplaySetPresentation(displaySetId, { preset: 'CT-Bone' });
+    next.setDisplaySetAppearance(displaySetId, { preset: 'CT-Bone' });
 
     expectSameTransferFunctions(next, LEGACY_TRANSFER_FUNCTIONS.presetCtBone);
-    expect(next.getDisplaySetPresentation(displaySetId).preset).toBe('CT-Bone');
+    expect(next.getDisplaySetAppearance(displaySetId).preset).toBe('CT-Bone');
 
-    next.setDisplaySetPresentation(displaySetId, {
+    next.setDisplaySetAppearance(displaySetId, {
       voiRange: { lower: 20, upper: 200 },
     });
 
@@ -344,7 +344,7 @@ describe('Direct next 3D viewport, colour and presets -- ', () => {
       LEGACY_TRANSFER_FUNCTIONS.presetCtBoneVoiRange
     );
 
-    next.setDisplaySetPresentation(displaySetId, { invert: true });
+    next.setDisplaySetAppearance(displaySetId, { invert: true });
 
     expectSameTransferFunctions(
       next,
@@ -363,7 +363,7 @@ describe('Direct next 3D viewport, colour and presets -- ', () => {
       'CORNERSTONE_VIEWPORT_RENDERING_PRESET_MODIFIED'
     );
 
-    next.setDisplaySetPresentation({ preset: 'CT-Bone' });
+    next.setDisplaySetAppearance({ preset: 'CT-Bone' });
 
     expect(nextDetails.length).toBe(0);
     expectSameTransferFunctions(next, LEGACY_TRANSFER_FUNCTIONS.presetCtBone);
@@ -375,11 +375,11 @@ describe('Direct next 3D viewport, colour and presets -- ', () => {
 
     await showVolume(next, volumeId);
 
-    next.setDisplaySetPresentation({ colormap: { name: 'hsv' } });
+    next.setDisplaySetAppearance({ colormap: { name: 'hsv' } });
 
     expectSameTransferFunctions(next, LEGACY_TRANSFER_FUNCTIONS.colormapHsv);
 
-    next.setDisplaySetPresentation({ voiRange: { lower: 50, upper: 150 } });
+    next.setDisplaySetAppearance({ voiRange: { lower: 50, upper: 150 } });
 
     expectSameTransferFunctions(
       next,
@@ -398,11 +398,11 @@ describe('Direct next 3D viewport, colour and presets -- ', () => {
 
     await showVolume(next, volumeId);
 
-    next.setDisplaySetPresentation({ colormap: { opacityMapping } });
+    next.setDisplaySetAppearance({ colormap: { opacityMapping } });
 
     expectSameTransferFunctions(next, LEGACY_TRANSFER_FUNCTIONS.opacityMapping);
 
-    next.setDisplaySetPresentation({ colormap: { threshold: 120 } });
+    next.setDisplaySetAppearance({ colormap: { threshold: 120 } });
 
     expectSameTransferFunctions(
       next,
@@ -416,8 +416,8 @@ describe('Direct next 3D viewport, colour and presets -- ', () => {
 
     await showVolume(next, volumeId);
 
-    next.setDisplaySetPresentation({ voiLUTFunction: 'SAMPLED_SIGMOID' });
-    next.setDisplaySetPresentation({ voiRange: { lower: 40, upper: 160 } });
+    next.setDisplaySetAppearance({ voiLUTFunction: 'SAMPLED_SIGMOID' });
+    next.setDisplaySetAppearance({ voiRange: { lower: 40, upper: 160 } });
 
     expectSameTransferFunctions(next, LEGACY_TRANSFER_FUNCTIONS.sampledSigmoid);
   });
@@ -427,7 +427,7 @@ describe('Direct next 3D viewport, colour and presets -- ', () => {
     const volumeId = await createVolume();
 
     await showVolume(next, volumeId);
-    next.setDisplaySetPresentation({
+    next.setDisplaySetAppearance({
       blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
     });
 
@@ -447,7 +447,7 @@ describe('Direct next 3D viewport, colour and presets -- ', () => {
     const sampleDistance = mapper.getSampleDistance();
 
     rendering.defaultVOIRange = undefined;
-    next.setDisplaySetPresentation({
+    next.setDisplaySetAppearance({
       interpolationType: Enums.InterpolationType.NEAREST,
       sampleDistanceMultiplier: 4,
     });
@@ -467,8 +467,8 @@ describe('Direct next 3D viewport, colour and presets -- ', () => {
     const legacyDetails = legacyVoiModifiedDetails(volumeId);
     const nextDetails = recordEvents(next, Events.VOI_MODIFIED);
 
-    next.setDisplaySetPresentation({ voiRange: { lower: 30, upper: 90 } });
-    next.setDisplaySetPresentation({ invert: true });
+    next.setDisplaySetAppearance({ voiRange: { lower: 30, upper: 90 } });
+    next.setDisplaySetAppearance({ invert: true });
 
     expect(nextDetails.length).toBe(2);
     expect(nextDetails.length).toBe(legacyDetails.length);
@@ -498,8 +498,8 @@ describe('Direct next 3D viewport, colour and presets -- ', () => {
     const legacyColormap = LEGACY_COLORMAP_MODIFIED_DETAILS;
     const nextColormap = recordEvents(next, Events.COLORMAP_MODIFIED);
 
-    next.setDisplaySetPresentation({ colormap: { name: 'hsv' } });
-    next.setDisplaySetPresentation({ colormap: { threshold: 100 } });
+    next.setDisplaySetAppearance({ colormap: { name: 'hsv' } });
+    next.setDisplaySetAppearance({ colormap: { threshold: 100 } });
 
     expect(nextVOI.length).toBe(LEGACY_VOI_MODIFIED_COUNT_ON_COLORMAP);
     expect(nextColormap.length).toBe(2);
@@ -523,19 +523,19 @@ describe('Direct next 3D viewport, colour and presets -- ', () => {
     const details = recordEvents(next, Events.VOI_MODIFIED);
 
     next.suppressEvents = true;
-    next.setDisplaySetPresentation({ voiRange: { lower: 30, upper: 90 } });
+    next.setDisplaySetAppearance({ voiRange: { lower: 30, upper: 90 } });
 
     expect(details.length).toBe(0);
   });
 
-  it('goes back to the presentation of the first mount on resetDisplaySetPresentation, and keeps the camera', async function () {
+  it('goes back to the presentation of the first mount on resetDisplaySetAppearance, and keeps the camera', async function () {
     const [next] = createViewports(renderingEngine, { nextIds: ['next3D'] });
     const volumeId = await createVolume();
     const displaySetId = await showVolume(next, volumeId);
     const mountedColours = sampledColoursOf(next);
     const mountedOpacity = sampledOpacitiesOf(next);
 
-    next.setDisplaySetPresentation(displaySetId, {
+    next.setDisplaySetAppearance(displaySetId, {
       preset: 'CT-Bone',
       voiRange: { lower: 20, upper: 60 },
       invert: true,
@@ -548,11 +548,11 @@ describe('Direct next 3D viewport, colour and presets -- ', () => {
 
     const details = recordEvents(next, Events.VOI_MODIFIED);
 
-    next.resetDisplaySetPresentation(displaySetId);
+    next.resetDisplaySetAppearance(displaySetId);
 
     expectPointsClose(sampledColoursOf(next), mountedColours);
     expectPointsClose(sampledOpacitiesOf(next), mountedOpacity);
-    expect(next.getDisplaySetPresentation(displaySetId).preset).toBe(undefined);
+    expect(next.getDisplaySetAppearance(displaySetId).preset).toBe(undefined);
     expect(next.getViewState().parallelScale).toBeCloseTo(
       camera.parallelScale / 2,
       6
@@ -763,11 +763,9 @@ describe('Direct next 3D viewport, the camera -- ', () => {
   it('gives and sets the zoom and the pan through viewportProjection and through its four members with the result of the legacy members, from the fit of the mount and of a reset', async function () {
     const [next] = createViewports(renderingEngine, { nextIds: ['next3D'] });
     const volumeId = await createVolume();
-    const zoomPan = () => viewportProjection.getPresentation(next);
+    const zoomPan = () => viewportProjection.getFraming(next);
     const present = (presentation) =>
-      next.setViewState(
-        viewportProjection.withPresentation(next, presentation)
-      );
+      next.setViewState(viewportProjection.withFraming(next, presentation));
 
     await showVolume(next, volumeId);
 
@@ -825,7 +823,7 @@ describe('Direct next 3D viewport, the camera -- ', () => {
     const [next] = createViewports(renderingEngine, { nextIds: ['next3D'] });
 
     expect(next.getProjectionSnapshot).toBeUndefined();
-    expect(viewportProjection.getPresentation(next)).toBeDefined();
+    expect(viewportProjection.getFraming(next)).toBeDefined();
   });
 
   it('takes no storeAsInitialCamera in resetViewState: the zoom stays against the fit', async function () {
@@ -838,7 +836,7 @@ describe('Direct next 3D viewport, the camera -- ', () => {
     });
     next.resetViewState({ resetZoom: false, storeAsInitialCamera: true });
 
-    expect(viewportProjection.getPresentation(next).zoom).toBeCloseTo(2, 6);
+    expect(viewportProjection.getFraming(next).zoom).toBeCloseTo(2, 6);
     expect('initialCamera' in next).toBe(false);
   });
 
@@ -1013,7 +1011,7 @@ describe('Direct next 3D viewport, sharpening and smoothing -- ', () => {
     expect(renderPassesOf(next)).toEqual(null);
     expect(renderPassesOf(next)).toBe(null);
 
-    next.setDisplaySetPresentation(displaySetId, {
+    next.setDisplaySetAppearance(displaySetId, {
       sharpening: 0.5,
       smoothing: 2,
     });
@@ -1022,9 +1020,9 @@ describe('Direct next 3D viewport, sharpening and smoothing -- ', () => {
     expect(renderPassesOf(next)).toEqual(
       LEGACY_RENDER_PASSES.sharpeningAndSmoothing
     );
-    expect(next.getDisplaySetPresentation(displaySetId).sharpening).toBe(0.5);
+    expect(next.getDisplaySetAppearance(displaySetId).sharpening).toBe(0.5);
 
-    next.setDisplaySetPresentation(displaySetId, { smoothing: 0 });
+    next.setDisplaySetAppearance(displaySetId, { smoothing: 0 });
 
     expect(renderPassesOf(next)).toEqual(LEGACY_RENDER_PASSES.sharpening);
   });

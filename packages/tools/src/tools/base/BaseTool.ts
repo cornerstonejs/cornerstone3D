@@ -17,10 +17,10 @@ import {
 } from '../../utilities/touch/constants';
 import measurementTargetFilters from './measurementTargetFilters';
 import {
-  applyViewportPresentation,
-  getViewportPresentation,
+  applyViewportFraming,
+  getViewportFraming,
   getViewportZoomPan,
-} from '../../utilities/viewportPresentation';
+} from '../../utilities/viewportFraming';
 import type StrategyCallbacks from '../../enums/StrategyCallbacks';
 import type {
   EventTypes,
@@ -737,7 +737,7 @@ abstract class BaseTool {
         restoreMemo: () => {
           const { pan, zoom } = getViewportZoomPan(viewport);
 
-          applyViewportPresentation(viewport, state);
+          applyViewportFraming(viewport, state);
           viewport.render?.();
           state.pan = pan;
           state.zoom = zoom;
@@ -750,7 +750,7 @@ abstract class BaseTool {
     }
 
     if (
-      getViewportPresentation(viewport) ||
+      getViewportFraming(viewport) ||
       !viewportHasPan(viewport) ||
       !viewportHasZoom(viewport)
     ) {

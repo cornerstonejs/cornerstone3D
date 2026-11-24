@@ -6,7 +6,7 @@ import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import { mat3, mat4, vec3 } from 'gl-matrix';
 import type { Point3, VOIRange } from '../../../types';
 import type {
-  PlanarDataPresentation,
+  PlanarDisplaySetAppearance,
   PlanarResolvedICamera,
 } from './PlanarViewportTypes';
 import type {
@@ -14,7 +14,7 @@ import type {
   PlanarSliceClipPlane,
 } from './planarSampledSlice';
 import { applyPlanarICameraToActor } from './planarRenderCamera';
-import { applyPlanarVolumePresentation } from './planarVolumePresentation';
+import { applyPlanarVolumeAppearance } from './planarVolumeAppearance';
 import { updateVolumeSliceActorDepthOffset } from './VtkVolumeSliceRenderPath';
 
 /** Returns an empty vector that holds double precision numbers. */
@@ -38,7 +38,7 @@ function createVector(): vec3 {
  * The mapper clips the slice to the faces of the volume, so that the pixels
  * of an oblique slice outside the volume are not drawn, as with the GPU volume
  * path, which draws the cut of its slice plane with the faces and nothing
- * outside them. The planes follow the transform of the actor (presentation
+ * outside them. The planes follow the transform of the actor (appearance
  * scale and depth offset), because vtk.js compares them with the transformed
  * slice. A slice that lies inside the volume (`insideVolume`) is drawn
  * without clip planes: its image already ends on the faces, and the edges of
@@ -53,7 +53,7 @@ export class PlanarSampledSliceActor {
   private volumeClipPlanes: PlanarSliceClipPlane[] = [];
   private clipping = false;
   private slice?: PlanarSampledSlice;
-  private presentationVisible = true;
+  private appearanceVisible = true;
 
   constructor(options: { voxelManager?: unknown; viewportId?: string } = {}) {
     this.imageData = vtkImageData.newInstance();
@@ -146,26 +146,26 @@ export class PlanarSampledSliceActor {
   }
 
   /**
-   * Applies the presentation (VOI, colormap with its opacity table, invert,
-   * opacity, visibility, interpolation) with the presentation function of the
+   * Applies the appearance (VOI, colormap with its opacity table, invert,
+   * opacity, visibility, interpolation) with the appearance function of the
    * volume path.
    */
-  applyPresentation(
-    props: PlanarDataPresentation | undefined,
+  applyAppearance(
+    props: PlanarDisplaySetAppearance | undefined,
     defaultVOIRange: VOIRange | undefined
   ): void {
-    applyPlanarVolumePresentation({
+    applyPlanarVolumeAppearance({
       actor: this.actor,
       mapper: this.mapper,
       defaultVOIRange,
       props,
     });
-    this.presentationVisible = props?.visible !== false;
+    this.appearanceVisible = props?.visible !== false;
     this.updateVisibility();
   }
 
   /**
-   * Places the actor for the camera of the source: the presentation scale,
+   * Places the actor for the camera of the source: the framing scale,
    * then a move along the view normal that puts the slice on the view plane
    * and in front of the slice actors drawn before it (`overlayOrder`).
    */
@@ -290,6 +290,6 @@ export class PlanarSampledSliceActor {
   }
 
   private updateVisibility(): void {
-    this.actor.setVisibility(this.presentationVisible && !!this.slice);
+    this.actor.setVisibility(this.appearanceVisible && !!this.slice);
   }
 }

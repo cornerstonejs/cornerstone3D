@@ -181,7 +181,7 @@ async function run() {
   const viewport2: PlanarViewport = renderingEngine.getViewport(viewportId2);
 
   await viewport2.setDisplaySets({ displaySetId: volumeDisplaySetId });
-  viewport2.setDisplaySetPresentation(volumeDisplaySetId, ctPresentation());
+  viewport2.setDisplaySetAppearance(volumeDisplaySetId, ctPresentation());
 
   const viewport1: PlanarViewport = renderingEngine.getViewport(viewportId1);
 

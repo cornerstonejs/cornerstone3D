@@ -67,7 +67,7 @@ describe('The display area option of a direct next planar viewport -- ', () => {
 
       await show(next, series, 2);
 
-      const presentation = viewportProjection.getPresentation(next);
+      const presentation = viewportProjection.getFraming(next);
 
       expect(next.getCurrentMode()).toBe(mode);
       expect(next.getViewState().displayArea).toBeUndefined();
@@ -91,7 +91,7 @@ describe('The display area option of a direct next planar viewport -- ', () => {
 
       expect(next.getViewState().displayArea).toEqual(displayArea);
       expect(next.getDisplayArea()).toEqual(displayArea);
-      expect(viewportProjection.getPresentation(next).zoom).toBeCloseTo(4, 6);
+      expect(viewportProjection.getFraming(next).zoom).toBeCloseTo(4, 6);
     }, 15000);
 
     it(`answers undefined again once the view state has none, after reset brought the options back, in ${mode} mode`, async function () {
@@ -102,16 +102,12 @@ describe('The display area option of a direct next planar viewport -- ', () => {
 
       await show(next, series, 2);
       next.setViewState({ displayArea: { imageArea: [0.25, 0.25] } });
-      next.setViewState(
-        viewportProjection.withPresentation(next, { pan: [10, 0] })
-      );
+      next.setViewState(viewportProjection.withFraming(next, { pan: [10, 0] }));
       next.reset();
 
       expect(next.getViewState().displayArea).toBeUndefined();
       expect(next.getDisplayArea()).toBeUndefined();
-      expect(
-        viewportProjection.getPresentation(next).displayArea
-      ).toBeUndefined();
+      expect(viewportProjection.getFraming(next).displayArea).toBeUndefined();
     }, 15000);
   }
 });

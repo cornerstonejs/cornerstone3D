@@ -261,7 +261,7 @@ async function run() {
           orientation,
         },
       });
-      viewport.setDisplaySetPresentation(displaySetId, {
+      viewport.setDisplaySetAppearance(displaySetId, {
         voiRange: ctVoiRange,
       });
     })

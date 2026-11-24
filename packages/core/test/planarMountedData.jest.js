@@ -32,7 +32,7 @@ function createBinding({
     }),
     getFrameOfReferenceUID: () => frameOfReferenceUID,
     removeData: jest.fn(),
-    updateDataPresentation: jest.fn(),
+    updateAppearance: jest.fn(),
   };
 }
 

@@ -1,19 +1,17 @@
-import type { Point2, ViewPresentation } from '../../../types';
-import type { ViewPresentationSelector } from '../../../types/IViewport';
+import type { Point2, ViewFraming } from '../../../types';
+import type { ViewFramingSelector } from '../../../types/IViewport';
 import type { ProjectionWriteOptions } from '../ViewportProjectionTypes';
 import { normalizeECGViewState } from './ecgViewportCamera';
 import type { ECGProjectionSnapshot } from './ECGProjectionTypes';
 import type { ECGViewState } from './ECGViewportTypes';
 
-const DEFAULT_SELECTOR: Required<
-  Pick<ViewPresentationSelector, 'zoom' | 'pan'>
-> = {
+const DEFAULT_SELECTOR: Required<Pick<ViewFramingSelector, 'zoom' | 'pan'>> = {
   zoom: true,
   pan: true,
 };
 
 /**
- * Narrows a presentation patch to fields explicitly provided by the caller.
+ * Narrows a framing patch to fields explicitly provided by the caller.
  */
 function hasOwn<T extends object, K extends PropertyKey>(
   obj: T,
@@ -23,22 +21,22 @@ function hasOwn<T extends object, K extends PropertyKey>(
 }
 
 /**
- * Converts an ECG projection snapshot to the public view-presentation shape.
+ * Converts an ECG projection snapshot to the public view-framing shape.
  */
-export function getECGProjectionPresentation(
+export function getECGProjectionFraming(
   snapshot: ECGProjectionSnapshot,
-  selector: ViewPresentationSelector | undefined
-): ViewPresentation {
-  const target: ViewPresentation = {};
+  selector: ViewFramingSelector | undefined
+): ViewFraming {
+  const target: ViewFraming = {};
   const ecgSelector = selector ?? DEFAULT_SELECTOR;
-  const zoom = snapshot.presentation.zoom ?? 1;
+  const zoom = snapshot.framing.zoom ?? 1;
 
   if (ecgSelector.zoom) {
     target.zoom = zoom;
   }
 
   if (ecgSelector.pan) {
-    const pan = snapshot.presentation.rawPan;
+    const pan = snapshot.framing.rawPan;
 
     target.pan = [pan[0] / zoom, pan[1] / zoom];
   }
@@ -47,18 +45,18 @@ export function getECGProjectionPresentation(
 }
 
 /**
- * Converts an ECG view-presentation patch back into semantic ECG view state.
+ * Converts an ECG view-framing patch back into semantic ECG view state.
  */
-export function withECGProjectionPresentation(
+export function withECGProjectionFraming(
   snapshot: ECGProjectionSnapshot,
-  presentation: Partial<ViewPresentation>,
+  framing: Partial<ViewFraming>,
   options: ProjectionWriteOptions = {}
 ): ECGViewState {
   const viewState = snapshot.viewState;
-  const hasZoom = hasOwn(presentation, 'zoom');
-  const hasPan = hasOwn(presentation, 'pan');
+  const hasZoom = hasOwn(framing, 'zoom');
+  const hasPan = hasOwn(framing, 'pan');
   const nextZoom = Math.max(
-    presentation.zoom ?? snapshot.presentation.zoom ?? viewState.scale ?? 1,
+    framing.zoom ?? snapshot.framing.zoom ?? viewState.scale ?? 1,
     0.001
   );
   let resolvedView = snapshot.resolvedView;
@@ -77,10 +75,10 @@ export function withECGProjectionPresentation(
     }
   }
 
-  if (hasPan && presentation.pan) {
+  if (hasPan && framing.pan) {
     const targetPan: Point2 = [
-      presentation.pan[0] * nextZoom,
-      presentation.pan[1] * nextZoom,
+      framing.pan[0] * nextZoom,
+      framing.pan[1] * nextZoom,
     ];
 
     if (resolvedView) {

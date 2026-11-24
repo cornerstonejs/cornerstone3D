@@ -69,7 +69,7 @@ addButtonToToolbar({
     } else {
       await viewport.addDisplaySet(ptDisplaySetId, { role: 'overlay' });
 
-      viewport.setDisplaySetPresentation(ptDisplaySetId, {
+      viewport.setDisplaySetAppearance(ptDisplaySetId, {
         colormap: {
           name: 'hsv',
           opacity: opacity,
@@ -95,7 +95,7 @@ addButtonToToolbar({
     const colormapName = vtkColorMaps.rgbPresetNames[randomIndex];
 
     // Set the colormap of the fusion viewport by specifying the desired colormap name using the 'name' property inside the 'colormap' object.
-    viewport.setDisplaySetPresentation(ptDisplaySetId, {
+    viewport.setDisplaySetAppearance(ptDisplaySetId, {
       colormap: {
         name: colormapName,
       },
@@ -112,7 +112,7 @@ addSliderToToolbar({
     opacity = Number(value) / 255;
 
     // Adjust the opacity of the colormap by specifying the desired opacity value and passing it inside the 'colormap' object.
-    viewport.setDisplaySetPresentation(ptDisplaySetId, {
+    viewport.setDisplaySetAppearance(ptDisplaySetId, {
       colormap: {
         opacity: opacity,
       },
@@ -196,7 +196,7 @@ async function run() {
   });
 
   await viewport.setDisplaySets({ displaySetId: ctDisplaySetId });
-  viewport.setDisplaySetPresentation(ctDisplaySetId, ctPresentation());
+  viewport.setDisplaySetAppearance(ctDisplaySetId, ctPresentation());
 
   // Render the image
   renderingEngine.render();

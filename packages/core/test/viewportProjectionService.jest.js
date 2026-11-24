@@ -9,6 +9,7 @@ import ECGViewport from '../src/RenderingEngine/Viewports/ECG/ECGViewport';
 import ECGResolvedView from '../src/RenderingEngine/Viewports/ECG/ECGResolvedView';
 import WSIViewport from '../src/RenderingEngine/Viewports/WSI/WSIViewport';
 import VolumeViewport3D from '../src/RenderingEngine/Viewports/Volume3D/viewport3D';
+import BaseViewport from '../src/RenderingEngine/Viewports/BaseViewport';
 import displaySetRegistry from '../src/RenderingEngine/Viewports/displaySetRegistry';
 
 function createAdapter(id, viewportTypes = ['testViewport']) {
@@ -18,19 +19,19 @@ function createAdapter(id, viewportTypes = ['testViewport']) {
     getSnapshot: jest.fn((request) => ({
       adapterId: id,
       kind: id,
-      presentation: {
+      framing: {
         requestedDisplaySetId: request.displaySetId,
       },
       spaces: {},
       viewportType: request.viewportType ?? request.viewport?.type,
     })),
-    getPresentation: jest.fn((snapshot) => ({
+    getFraming: jest.fn((snapshot) => ({
       adapterId: snapshot.adapterId,
-      requestedDisplaySetId: snapshot.presentation.requestedDisplaySetId,
+      requestedDisplaySetId: snapshot.framing.requestedDisplaySetId,
     })),
-    withPresentation: jest.fn((_snapshot, presentation) => ({
+    withFraming: jest.fn((_snapshot, framing) => ({
       adapterId: id,
-      presentation,
+      framing,
     })),
   };
 }
@@ -67,7 +68,7 @@ function createECGResolvedView(viewState, canvas) {
   return new ECGResolvedView({
     viewState,
     canvas,
-    dataPresentation: undefined,
+    appearance: undefined,
     frameOfReferenceUID: 'ecg-frame',
     waveform: {
       channels: [
@@ -184,6 +185,22 @@ describe('ViewportProjectionService', () => {
     expect(VolumeViewport3D.prototype.resetViewState).toBeInstanceOf(Function);
   });
 
+  it('gives every viewport family the framing methods of the base viewport', () => {
+    for (const Family of [
+      VideoViewport,
+      ECGViewport,
+      WSIViewport,
+      VolumeViewport3D,
+    ]) {
+      expect(Family.prototype.getViewFraming).toBe(
+        BaseViewport.prototype.getViewFraming
+      );
+      expect(Family.prototype.setViewFraming).toBe(
+        BaseViewport.prototype.setViewFraming
+      );
+    }
+  });
+
   it('exposes Video projections in media-pixel space', () => {
     const element = document.createElement('div');
     const viewState = {
@@ -205,8 +222,8 @@ describe('ViewportProjectionService', () => {
     setElementSize(element, 200, 100);
 
     const snapshot = viewportProjection.get(viewport);
-    const presentation = viewportProjection.getPresentation(viewport);
-    const nextViewState = viewportProjection.withPresentation(
+    const framing = viewportProjection.getFraming(viewport);
+    const nextViewState = viewportProjection.withFraming(
       viewport,
       {
         zoom: 2,
@@ -221,12 +238,12 @@ describe('ViewportProjectionService', () => {
     expect(snapshot.kind).toBe('video');
     expect(snapshot.adapterId).toBe('video');
     expect(snapshot.frameOfReferenceUID).toBe('video-frame');
-    expect(snapshot.presentation.position).toEqual({
+    expect(snapshot.framing.position).toEqual({
       kind: 'mediaPoint',
       mediaPoint: [50, 25],
       canvasPoint: [100, 50],
     });
-    expect(snapshot.presentation.scale).toEqual({
+    expect(snapshot.framing.scale).toEqual({
       kind: 'nativePixel',
       pixelsPerCanvasPixel: 0.5,
     });
@@ -246,9 +263,9 @@ describe('ViewportProjectionService', () => {
     expect(world[2]).toBe(0);
     expect(canvas[0]).toBeCloseTo(100 - 80 * cos + 40 * sin, 6);
     expect(canvas[1]).toBeCloseTo(50 - 80 * sin - 40 * cos, 6);
-    expect(presentation.zoom).toBeCloseTo(1, 5);
-    expect(presentation.pan).toEqual([0, 0]);
-    expect(presentation.rotation).toBe(15);
+    expect(framing.zoom).toBeCloseTo(1, 5);
+    expect(framing.pan).toEqual([0, 0]);
+    expect(framing.rotation).toBe(15);
     expect(viewState.scale).toBe(1);
     expect(nextViewState.scale).toBe(2);
     expect(nextViewState.anchorWorld).toHaveLength(2);
@@ -274,19 +291,18 @@ describe('ViewportProjectionService', () => {
     setElementSize(element, 200, 100);
 
     const read = (viewState) =>
-      viewportProjection.getPresentation(videoViewport(viewState));
-    const together = viewportProjection.withPresentation(videoViewport(start), {
+      viewportProjection.getFraming(videoViewport(viewState));
+    const together = viewportProjection.withFraming(videoViewport(start), {
       rotation: 90,
       pan: [20, 0],
     });
-    const turned = viewportProjection.withPresentation(videoViewport(start), {
+    const turned = viewportProjection.withFraming(videoViewport(start), {
       rotation: 90,
     });
-    const twoSteps = viewportProjection.withPresentation(
-      videoViewport(turned),
-      { pan: [20, 0] }
-    );
-    const zoomedTogether = viewportProjection.withPresentation(
+    const twoSteps = viewportProjection.withFraming(videoViewport(turned), {
+      pan: [20, 0],
+    });
+    const zoomedTogether = viewportProjection.withFraming(
       videoViewport(start),
       { rotation: 90, zoom: 2, pan: [20, -10] }
     );
@@ -352,8 +368,8 @@ describe('ViewportProjectionService', () => {
     setElementSize(canvas, 200, 100);
 
     const snapshot = viewportProjection.get(viewport);
-    const presentation = viewportProjection.getPresentation(viewport);
-    const nextViewState = viewportProjection.withPresentation(
+    const framing = viewportProjection.getFraming(viewport);
+    const nextViewState = viewportProjection.withFraming(
       viewport,
       {
         zoom: 2,
@@ -371,24 +387,24 @@ describe('ViewportProjectionService', () => {
     const centreWorld = resolvedView.canvasToWorld([100, 50]);
     const { effectiveRatio } = resolvedView.canvasTransform;
 
-    expect(snapshot.presentation.position.kind).toBe('signalPoint');
+    expect(snapshot.framing.position.kind).toBe('signalPoint');
     // The visible window is the first 1000 ms of a 2000 ms signal sampled at
     // 500 Hz, so the centre of the canvas sits at sample 500.
-    expect(snapshot.presentation.position.sampleIndex).toBeCloseTo(500, 5);
-    expect(snapshot.presentation.position.value).toBeCloseTo(centreWorld[1], 5);
-    expect(snapshot.presentation.position.channelIndex).toBe(0);
-    expect(snapshot.presentation.position.canvasPoint).toEqual([100, 50]);
-    expect(snapshot.presentation.scale.kind).toBe('signal');
+    expect(snapshot.framing.position.sampleIndex).toBeCloseTo(500, 5);
+    expect(snapshot.framing.position.value).toBeCloseTo(centreWorld[1], 5);
+    expect(snapshot.framing.position.channelIndex).toBe(0);
+    expect(snapshot.framing.position.canvasPoint).toEqual([100, 50]);
+    expect(snapshot.framing.scale.kind).toBe('signal');
 
     // One canvas pixel covers this many samples, and this many amplitude units.
     // Both follow from the geometry that the resolved view computed.
-    expect(snapshot.presentation.scale.samplesPerCanvasPixel).toBeCloseTo(
+    expect(snapshot.framing.scale.samplesPerCanvasPixel).toBeCloseTo(
       resolvedView.channelLayouts[0].endSample /
         resolvedView.metrics.ecgWidth /
         effectiveRatio,
       5
     );
-    expect(snapshot.presentation.scale.valueUnitsPerCanvasPixel).toBeCloseTo(
+    expect(snapshot.framing.scale.valueUnitsPerCanvasPixel).toBeCloseTo(
       1 / (resolvedView.metrics.channelScale * effectiveRatio),
       5
     );
@@ -408,8 +424,8 @@ describe('ViewportProjectionService', () => {
       50,
       5
     );
-    expect(presentation.zoom).toBeCloseTo(1, 5);
-    expect(presentation.pan).toEqual([0, 0]);
+    expect(framing.zoom).toBeCloseTo(1, 5);
+    expect(framing.pan).toEqual([0, 0]);
     expect(viewState.scale).toBe(1);
     expect(nextViewState.scale).toBe(2);
     expect(nextViewState.timeRange).toEqual([0, 2000]);
@@ -436,8 +452,8 @@ describe('ViewportProjectionService', () => {
     setElementSize(element, 200, 100);
 
     const snapshot = viewportProjection.get(viewport);
-    const presentation = viewportProjection.getPresentation(viewport);
-    const nextViewState = viewportProjection.withPresentation(viewport, {
+    const framing = viewportProjection.getFraming(viewport);
+    const nextViewState = viewportProjection.withFraming(viewport, {
       rotation: 0.5,
       zoom: 2,
     });
@@ -445,12 +461,12 @@ describe('ViewportProjectionService', () => {
     expect(snapshot.kind).toBe('wsi');
     expect(snapshot.adapterId).toBe('wsi');
     expect(snapshot.frameOfReferenceUID).toBe('wsi-frame');
-    expect(snapshot.presentation.position).toEqual({
+    expect(snapshot.framing.position).toEqual({
       kind: 'anchor',
       worldPoint: [1, 2, 0],
       canvasPoint: [100, 50],
     });
-    expect(snapshot.presentation.scale).toEqual({
+    expect(snapshot.framing.scale).toEqual({
       kind: 'physical',
       mmPerCanvasPixel: 1,
     });
@@ -462,8 +478,8 @@ describe('ViewportProjectionService', () => {
     });
     expect(snapshot.transforms.canvasToWorld([100, 50])).toEqual([1, 2, 0]);
     expect(snapshot.transforms.worldToCanvas([1, 2, 0])).toEqual([100, 50]);
-    expect(presentation.zoom).toBe(1);
-    expect(presentation.rotation).toBe(0.25);
+    expect(framing.zoom).toBe(1);
+    expect(framing.rotation).toBe(0.25);
     expect(viewState.zoom).toBe(1);
     expect(nextViewState.resolution).toBe(0.5);
     expect(nextViewState.zoom).toBeUndefined();
@@ -549,7 +565,7 @@ describe('ViewportProjectionService', () => {
     service.register(adapter);
 
     expect(
-      service.getPresentation(viewport, {
+      service.getFraming(viewport, {
         displaySetId: 'presentation-data',
       })
     ).toEqual({
@@ -557,12 +573,12 @@ describe('ViewportProjectionService', () => {
       requestedDisplaySetId: 'presentation-data',
     });
     expect(
-      service.withPresentation(viewport, {
+      service.withFraming(viewport, {
         zoom: 2,
       })
     ).toEqual({
       adapterId: 'stateProjection',
-      presentation: {
+      framing: {
         zoom: 2,
       },
     });
@@ -595,26 +611,26 @@ describe('ViewportProjectionService', () => {
       getSnapshot: jest.fn(({ viewport }) => ({
         adapterId: 'syncProjection',
         kind: 'syncProjection',
-        presentation: { ...viewport.viewState },
+        framing: { ...viewport.viewState },
         spaces: {},
         viewState: { ...viewport.viewState },
         viewportType: viewport.type,
       })),
-      getPresentation: jest.fn((snapshot) => ({
-        pan: [...snapshot.presentation.pan],
-        rotation: snapshot.presentation.rotation,
-        zoom: snapshot.presentation.zoom,
+      getFraming: jest.fn((snapshot) => ({
+        pan: [...snapshot.framing.pan],
+        rotation: snapshot.framing.rotation,
+        zoom: snapshot.framing.zoom,
       })),
-      withPresentation: jest.fn((snapshot, presentation) => ({
+      withFraming: jest.fn((snapshot, framing) => ({
         ...snapshot.viewState,
-        ...presentation,
+        ...framing,
       })),
     };
 
     service.register(adapter);
 
-    const sourcePresentation = service.getPresentation(sourceViewport);
-    const nextTargetState = service.withPresentation(
+    const sourcePresentation = service.getFraming(sourceViewport);
+    const nextTargetState = service.withFraming(
       targetViewport,
       sourcePresentation
     );

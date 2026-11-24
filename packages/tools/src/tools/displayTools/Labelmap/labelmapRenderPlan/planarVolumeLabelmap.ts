@@ -37,13 +37,13 @@ type PlanarVolumeViewport = Types.IViewport<
     }
   ) => Promise<void>;
   getSourceDisplaySetId?: () => string | undefined;
-  getDisplaySetPresentation?: (displaySetId: string) =>
+  getDisplaySetAppearance?: (displaySetId: string) =>
     | {
         blendMode?: Enums.BlendModes;
         slabThickness?: number;
       }
     | undefined;
-  setDisplaySetPresentation: (
+  setDisplaySetAppearance: (
     displaySetId: string,
     props: {
       blendMode?: Enums.BlendModes;
@@ -66,7 +66,7 @@ function isPlanarVolumeViewport(
     typeof candidate.getViewReference === 'function' &&
     typeof candidate.getViewState === 'function' &&
     typeof candidate.addDisplaySet === 'function' &&
-    typeof candidate.setDisplaySetPresentation === 'function' &&
+    typeof candidate.setDisplaySetAppearance === 'function' &&
     typeof candidate.setViewReference === 'function'
   );
 }
@@ -100,7 +100,7 @@ async function addLabelmapToPlanarVolumeViewport(args: {
   // reflect the current slice and misalign with what the user sees.
   const sourceDisplaySetId = viewport.getSourceDisplaySetId?.();
   const sourceSlabThickness = sourceDisplaySetId
-    ? viewport.getDisplaySetPresentation?.(sourceDisplaySetId)?.slabThickness
+    ? viewport.getDisplaySetAppearance?.(sourceDisplaySetId)?.slabThickness
     : undefined;
   const currentImageIdIndex = Math.max(
     0,
@@ -146,7 +146,7 @@ async function addLabelmapToPlanarVolumeViewport(args: {
       orientation: requestedOrientation,
       role: 'overlay',
     });
-    viewport.setDisplaySetPresentation(displaySetId, {
+    viewport.setDisplaySetAppearance(displaySetId, {
       blendMode,
       visible: visibility,
       ...(sourceSlabThickness !== undefined

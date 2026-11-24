@@ -1,7 +1,7 @@
 import { ViewportType } from '../../../enums';
 import type { ICamera, Point2, Point3 } from '../../../types';
 import type {
-  ProjectionPresentation,
+  ProjectionFraming,
   ProjectionRequest,
   ProjectionSnapshot,
 } from '../ViewportProjectionTypes';
@@ -46,14 +46,13 @@ export type VideoProjectionViewport = {
   getViewState?(): VideoViewState;
 };
 
-export interface VideoProjectionPresentation
-  extends ProjectionPresentation<never> {
+export interface VideoProjectionFraming extends ProjectionFraming<never> {
   /** The pan in canvas pixels on the screen, not divided by the zoom. */
   rawPan: Point2;
 }
 
 export interface VideoProjectionSnapshot
-  extends ProjectionSnapshot<VideoViewState, VideoProjectionPresentation> {
+  extends ProjectionSnapshot<VideoViewState, VideoProjectionFraming> {
   canvasHeight: number;
   canvasWidth: number;
   resolvedView?: VideoResolvedViewLike;

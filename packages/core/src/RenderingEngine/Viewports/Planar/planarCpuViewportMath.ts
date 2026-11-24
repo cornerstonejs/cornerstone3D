@@ -29,18 +29,18 @@ export function resolvePlanarCpuViewportScale(args: {
   parallelScale?: number;
   rowPixelSpacing: number;
   columnPixelSpacing: number;
-  presentationScale?: PlanarScaleInput;
+  framingScale?: PlanarScaleInput;
 }): number | Point2 {
   const {
     canvas,
     columnPixelSpacing,
     parallelScale,
-    presentationScale,
+    framingScale,
     rowPixelSpacing,
   } = args;
   const worldHeight = Math.max((parallelScale ?? 1) * 2, EPSILON);
   const worldToCanvasScale = canvas.height / worldHeight;
-  const scaleRatio = getPlanarScaleRatio(presentationScale);
+  const scaleRatio = getPlanarScaleRatio(framingScale);
 
   if (Math.abs(scaleRatio - 1) > EPSILON) {
     const safeCanvasHeight = Math.max(canvas.height, 1);

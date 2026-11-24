@@ -1,0 +1,54 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "23",
+        "rule": "setViewPresentation"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "27",
+        "rule": "setViewPresentation"
+      },
+      "count": 1
+    }
+  ],
+  "cornerstone3d-6-review": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "10",
+        "rule": "setViewFraming: zoom and pan are against the fit, and a slab thickness or a window in the framing does nothing (set them with setDisplaySetAppearance)"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "11",
+        "rule": "setViewFraming: zoom and pan are against the fit, and a slab thickness or a window in the framing does nothing (set them with setDisplaySetAppearance)"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "13",
+        "rule": "getViewFraming: zoom and pan are against the fit, the framing has no slab thickness and no window (read them with getDisplaySetAppearance), and it is undefined while the viewport shows nothing"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "8",
+        "rule": "getViewFraming: zoom and pan are against the fit, the framing has no slab thickness and no window (read them with getDisplaySetAppearance), and it is undefined while the viewport shows nothing"
+      },
+      "count": 1
+    }
+  ]
+}

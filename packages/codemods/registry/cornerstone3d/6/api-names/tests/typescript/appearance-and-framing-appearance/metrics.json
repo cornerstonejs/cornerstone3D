@@ -1,0 +1,60 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "14",
+        "rule": "setDisplaySetPresentation: a member of a type of the application on a Cornerstone type, its name in 6.0 is setDisplaySetAppearance"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "15",
+        "rule": "getDisplaySetPresentation: a member of a type of the application on a Cornerstone type, its name in 6.0 is getDisplaySetAppearance"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "26",
+        "rule": "setDisplaySets: the key options.presentation: Cornerstone has no mount option presentation and never read it: set the look after the mount with viewport.setDisplaySetAppearance(displaySetId, appearance)"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "28",
+        "rule": "addDisplaySet: the key presentation: Cornerstone has no mount option presentation and never read it: set the look after the mount with viewport.setDisplaySetAppearance(displaySetId, appearance)"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "43",
+        "rule": "setDisplaySetPresentation: the object has a type of the application, which declares the method: rename the method there and here, its name in 6.0 is setDisplaySetAppearance"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "52",
+        "rule": "setDisplaySetPresentation: its name in 6.0 is setDisplaySetAppearance"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "54",
+        "rule": "getDisplaySetPresentation: its name in 6.0 is getDisplaySetAppearance"
+      },
+      "count": 1
+    }
+  ]
+}

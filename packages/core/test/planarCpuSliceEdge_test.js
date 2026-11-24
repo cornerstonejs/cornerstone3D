@@ -170,7 +170,7 @@ async function showVolume(renderingEngine, viewportId, volumeId, options) {
     displaySetId,
     options: { ...options, orientation: OrientationAxis.AXIAL },
   });
-  viewport.setDisplaySetPresentation(displaySetId, { voiRange: VOI_RANGE });
+  viewport.setDisplaySetAppearance(displaySetId, { voiRange: VOI_RANGE });
   await renderAndWait(viewport);
 
   return viewport;
@@ -189,7 +189,7 @@ async function showStack(renderingEngine, viewportId, imageIds, options) {
     displaySetId,
     options: { ...options, orientation: OrientationAxis.ACQUISITION },
   });
-  viewport.setDisplaySetPresentation(displaySetId, { voiRange: VOI_RANGE });
+  viewport.setDisplaySetAppearance(displaySetId, { voiRange: VOI_RANGE });
   await renderAndWait(viewport);
 
   return viewport;
@@ -318,7 +318,7 @@ function stripes(x) {
  * more than a tenth of VALUE, none after it.
  */
 function showStripedEdges(viewport) {
-  viewport.setDisplaySetPresentation(viewport.getRenderPlan()[0].displaySetId, {
+  viewport.setDisplaySetAppearance(viewport.getRenderPlan()[0].displaySetId, {
     interpolationType: InterpolationType.LINEAR,
   });
   viewport.setViewState({ rotation: 45, scale: [0.33, 0.33] });
@@ -339,7 +339,7 @@ function isMiddleLayer(k) {
  * more than a tenth of VALUE, up to half of VALUE.
  */
 function showStripedSlabEdges(viewport) {
-  viewport.setDisplaySetPresentation(viewport.getRenderPlan()[0].displaySetId, {
+  viewport.setDisplaySetAppearance(viewport.getRenderPlan()[0].displaySetId, {
     interpolationType: InterpolationType.LINEAR,
     slabThickness: 4,
     blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,

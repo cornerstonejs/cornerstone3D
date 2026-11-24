@@ -513,7 +513,7 @@ function applySlab(): void {
   const isOff = slabState.blendMode === 'off';
 
   for (const displaySetId of [ctDisplaySetId, ptDisplaySetId]) {
-    viewport.setDisplaySetPresentation(displaySetId, {
+    viewport.setDisplaySetAppearance(displaySetId, {
       blendMode: blendModesByName[slabState.blendMode],
       slabThickness: isOff ? 0 : slabState.thickness,
     });
@@ -574,7 +574,7 @@ function applyInterpolation(name: string): void {
     }
 
     for (const displaySetId of getDisplaySetIds(spec)) {
-      viewport.setDisplaySetPresentation(displaySetId, { interpolationType });
+      viewport.setDisplaySetAppearance(displaySetId, { interpolationType });
     }
 
     viewport.render();
@@ -886,10 +886,10 @@ async function mountViewport(spec: ViewportSpec): Promise<void> {
     ...getDisplaySetIds(spec).map((displaySetId) => ({ displaySetId, options }))
   );
 
-  viewport.setDisplaySetPresentation(ctDisplaySetId, { voiRange: ctVoiRange });
+  viewport.setDisplaySetAppearance(ctDisplaySetId, { voiRange: ctVoiRange });
 
   if (spec.withPet) {
-    viewport.setDisplaySetPresentation(ptDisplaySetId, {
+    viewport.setDisplaySetAppearance(ptDisplaySetId, {
       voiRange: ptVoiRange,
       colormap: ptColormap,
     });

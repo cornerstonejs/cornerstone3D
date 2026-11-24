@@ -140,7 +140,7 @@ export function captureViewportState(
       frameOfReferenceUID: viewport.getFrameOfReferenceUID(),
       viewState: normalize(viewport.getViewState()),
       viewReference: normalize(viewport.getViewReference()),
-      presentation: normalize(viewport.getDisplaySetPresentation(displaySetId)),
+      presentation: normalize(viewport.getDisplaySetAppearance(displaySetId)),
       worldProbes,
       actorCount: actors.length,
     },

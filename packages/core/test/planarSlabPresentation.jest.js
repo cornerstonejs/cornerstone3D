@@ -118,7 +118,7 @@ describe('Direct next planar viewport and the fidelity of a slab', () => {
       });
 
       if (SLABS[slab]) {
-        viewport.setDisplaySetPresentation(displaySetId, SLABS[slab]);
+        viewport.setDisplaySetAppearance(displaySetId, SLABS[slab]);
       }
 
       expect(viewport.getFidelityState().displayResolution.spacing).toEqual(
@@ -170,7 +170,7 @@ describe('Direct next planar viewport and the slab step of getTargetVolumeAndSpa
       });
 
       if (SLABS[slab]) {
-        viewport.setDisplaySetPresentation(displaySetId, SLABS[slab]);
+        viewport.setDisplaySetAppearance(displaySetId, SLABS[slab]);
       }
 
       const camera = viewport.getResolvedView().toICamera();
@@ -207,7 +207,7 @@ describe('Direct next planar viewport and the slab step of getTargetVolumeAndSpa
       });
 
       if (SLABS[slab]) {
-        viewport.setDisplaySetPresentation(displaySetId, SLABS[slab]);
+        viewport.setDisplaySetAppearance(displaySetId, SLABS[slab]);
       }
 
       const camera = viewport.getResolvedView().toICamera();

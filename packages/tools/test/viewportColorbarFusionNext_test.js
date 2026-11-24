@@ -133,16 +133,16 @@ describe('The colorbar of an overlay of a fusion on a direct next planar viewpor
       const viewport = createNextViewport(renderingEngine, 'colorbarFusion');
       const { pt } = await showFusion(viewport);
       const ctWindow =
-        viewport.getDisplaySetPresentation(CT_DISPLAY_SET_ID)?.voiRange;
+        viewport.getDisplaySetAppearance(CT_DISPLAY_SET_ID)?.voiRange;
       const colorbar = colorbarOf(viewport, idOf(pt));
 
       colorbar.voiRange = { lower: 10, upper: 90 };
 
       expect(
-        viewport.getDisplaySetPresentation(PT_DISPLAY_SET_ID).voiRange
+        viewport.getDisplaySetAppearance(PT_DISPLAY_SET_ID).voiRange
       ).toEqual({ lower: 10, upper: 90 });
       expect(
-        viewport.getDisplaySetPresentation(CT_DISPLAY_SET_ID)?.voiRange
+        viewport.getDisplaySetAppearance(CT_DISPLAY_SET_ID)?.voiRange
       ).toEqual(ctWindow);
     });
 
@@ -151,19 +151,19 @@ describe('The colorbar of an overlay of a fusion on a direct next planar viewpor
       const { pt } = await showFusion(viewport);
       const colorbar = colorbarOf(viewport, idOf(pt));
 
-      viewport.setDisplaySetPresentation(PT_DISPLAY_SET_ID, {
+      viewport.setDisplaySetAppearance(PT_DISPLAY_SET_ID, {
         voiRange: { lower: 20, upper: 80 },
       });
 
       expect(colorbar.voiRange).toEqual({ lower: 20, upper: 80 });
 
-      viewport.setDisplaySetPresentation(CT_DISPLAY_SET_ID, {
+      viewport.setDisplaySetAppearance(CT_DISPLAY_SET_ID, {
         voiRange: { lower: 30, upper: 70 },
       });
 
       expect(colorbar.voiRange).toEqual({ lower: 20, upper: 80 });
 
-      viewport.setDisplaySetPresentation(PT_DISPLAY_SET_ID, {
+      viewport.setDisplaySetAppearance(PT_DISPLAY_SET_ID, {
         colormap: { name: 'hsv' },
       });
 

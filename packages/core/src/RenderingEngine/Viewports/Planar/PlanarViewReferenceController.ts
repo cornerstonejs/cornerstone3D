@@ -43,7 +43,7 @@ import {
 import { resolvePlanarViewportView } from './PlanarResolvedView';
 import type { PlanarDataBinding } from './PlanarMountedData';
 import type {
-  PlanarDataPresentation,
+  PlanarDisplaySetAppearance,
   PlanarPayload,
   PlanarViewportRenderContext,
   PlanarViewState,
@@ -74,9 +74,9 @@ export type PlanarViewReferenceHost = {
   getBinding(displaySetId: string): PlanarDataBinding | undefined;
   getBindings(): Iterable<[string, PlanarDataBinding]>;
   getCurrentBinding(): PlanarDataBinding | undefined;
-  getDisplaySetPresentation(
+  getDisplaySetAppearance(
     displaySetId: string
-  ): PlanarDataPresentation | undefined;
+  ): PlanarDisplaySetAppearance | undefined;
   getRenderContext(): PlanarViewportRenderContext;
   getResolvedView(args?: {
     frameOfReferenceUID?: string;
@@ -156,7 +156,7 @@ class PlanarViewReferenceController {
 
   /**
    * The depth in mm that a new annotation of the view takes as its
-   * `referencePlaneThickness`: twice the `slabThickness` of the presentation
+   * `referencePlaneThickness`: twice the `slabThickness` of the appearance
    * of the display set of the reference, because a slab of `T` shows the
    * slices within about `T` of the plane, as the legacy volume viewport
    * doubled its slab. Undefined in stack mode and without a slab.
@@ -171,7 +171,7 @@ class PlanarViewReferenceController {
       return;
     }
 
-    const slabThickness = this.host.getDisplaySetPresentation(
+    const slabThickness = this.host.getDisplaySetAppearance(
       referenceContext.displaySetId
     )?.slabThickness;
 

@@ -276,7 +276,7 @@ describe('Pan of the next video viewport', () => {
 
   /** The zoom and the pan of the viewport from the projection service. */
   function zoomPan() {
-    return viewportProjection.getPresentation(viewport, {
+    return viewportProjection.getFraming(viewport, {
       selector: { zoom: true, pan: true },
     });
   }
@@ -313,7 +313,7 @@ describe('Pan of the next video viewport', () => {
       const memberPan = viewport.getPan();
 
       viewport.setViewState(
-        viewportProjection.withPresentation(viewport, {
+        viewportProjection.withFraming(viewport, {
           pan: [pan[0] + delta[0] / zoom, pan[1] + delta[1] / zoom],
         })
       );
@@ -328,7 +328,7 @@ describe('Pan of the next video viewport', () => {
   it('sets a zoom and a pan of the projection service in one patch', () => {
     viewport.setViewState({ rotation: 30 });
     viewport.setViewState(
-      viewportProjection.withPresentation(viewport, { zoom: 2, pan: [8, -4] })
+      viewportProjection.withFraming(viewport, { zoom: 2, pan: [8, -4] })
     );
 
     expect(zoomPan().zoom).toBeCloseTo(2, 6);

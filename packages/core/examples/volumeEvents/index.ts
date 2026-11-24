@@ -116,7 +116,7 @@ addButtonToToolbar({
     // Get the stack viewport
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-    viewport.setDisplaySetPresentation(displaySetId, {
+    viewport.setDisplaySetAppearance(displaySetId, {
       voiRange: { lower: -1500, upper: 2500 },
     });
     viewport.render();
@@ -141,8 +141,7 @@ addButtonToToolbar({
       50
     );
     const viewState =
-      presentation &&
-      viewportProjection.withPresentation(viewport, presentation);
+      presentation && viewportProjection.withFraming(viewport, presentation);
 
     if (viewState) {
       viewport.setViewState(viewState);
@@ -218,7 +217,7 @@ async function run() {
   });
 
   await viewport.setDisplaySets({ displaySetId });
-  viewport.setDisplaySetPresentation(displaySetId, ctPresentation());
+  viewport.setDisplaySetAppearance(displaySetId, ctPresentation());
 
   // Render the image
   viewport.render();

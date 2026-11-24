@@ -24,7 +24,7 @@ type auxiliaryEvent = {
 export type SynchronizerOptions = {
   auxiliaryEvents?: auxiliaryEvent[];
   eventSource?: eventSource;
-  viewPresentation?: Types.ViewPresentationSelector;
+  viewFraming?: Types.ViewFramingSelector;
   syncInvertState?: boolean;
   syncColormap?: boolean;
 };

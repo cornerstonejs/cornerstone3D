@@ -27,7 +27,7 @@ export interface PlanarCameraState {
   viewUp: Point3;
 }
 
-export interface PlanarImagePresentation {
+export interface PlanarImageAppearance {
   visible?: boolean;
   opacity?: number;
   interpolationType?: InterpolationType;
@@ -200,12 +200,12 @@ export function getPlanarCameraState(renderer: vtkRenderer): PlanarCameraState {
   };
 }
 
-export function applyPlanarImagePresentation(args: {
+export function applyPlanarImageAppearance(args: {
   actor: vtkImageSlice;
   defaultVOIRange?: VOIRange;
   defaultVOILUTFunction?: VOILUTFunctionType;
   defaultInvert?: boolean;
-  props?: PlanarImagePresentation;
+  props?: PlanarImageAppearance;
 }): void {
   const {
     actor,

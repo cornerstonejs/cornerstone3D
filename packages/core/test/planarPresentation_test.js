@@ -239,7 +239,7 @@ describe('Planar presentation, a sigmoid window on a volume -- ', () => {
       const path = NEXT_PATHS[index];
       const displaySetId = await showVolumeOnNext(next, volumeId, path.options);
 
-      next.setDisplaySetPresentation(displaySetId, { voiRange: VOI_RANGE });
+      next.setDisplaySetAppearance(displaySetId, { voiRange: VOI_RANGE });
       await renderAndWait(next);
 
       const linearDifference = getLargestDifference(
@@ -247,7 +247,7 @@ describe('Planar presentation, a sigmoid window on a volume -- ', () => {
         readPixels(next)
       );
 
-      next.setDisplaySetPresentation(displaySetId, {
+      next.setDisplaySetAppearance(displaySetId, {
         voiLUTFunction: VOILUTFunctionType.SAMPLED_SIGMOID,
       });
       await renderAndWait(next);
@@ -316,8 +316,8 @@ describe('Planar presentation, a colormap update keeps what it does not name -- 
     volumeId = await createRampVolume();
     stepwiseId = await showVolumeOnNext(stepwise, volumeId);
     atOnceId = await showVolumeOnNext(atOnce, volumeId);
-    stepwise.setDisplaySetPresentation(stepwiseId, { voiRange: VOI_RANGE });
-    atOnce.setDisplaySetPresentation(atOnceId, { voiRange: VOI_RANGE });
+    stepwise.setDisplaySetAppearance(stepwiseId, { voiRange: VOI_RANGE });
+    atOnce.setDisplaySetAppearance(atOnceId, { voiRange: VOI_RANGE });
   });
 
   afterEach(function () {
@@ -327,13 +327,13 @@ describe('Planar presentation, a colormap update keeps what it does not name -- 
   it('keeps the name when only the opacity changes, and sends the whole colormap', async function () {
     const nextEvents = collectColormapEvents(stepwise);
 
-    stepwise.setDisplaySetPresentation(stepwiseId, {
+    stepwise.setDisplaySetAppearance(stepwiseId, {
       colormap: { name: 'hsv' },
     });
-    stepwise.setDisplaySetPresentation(stepwiseId, {
+    stepwise.setDisplaySetAppearance(stepwiseId, {
       colormap: { opacity: 0.5 },
     });
-    atOnce.setDisplaySetPresentation(atOnceId, {
+    atOnce.setDisplaySetAppearance(atOnceId, {
       colormap: { name: 'hsv', opacity: 0.5 },
     });
     await renderAndWait(stepwise);
@@ -354,7 +354,7 @@ describe('Planar presentation, a colormap update keeps what it does not name -- 
       })}`
     );
     expect(difference).toBeLessThanOrEqual(1);
-    expect(stepwise.getDisplaySetPresentation(stepwiseId).colormap).toEqual({
+    expect(stepwise.getDisplaySetAppearance(stepwiseId).colormap).toEqual({
       name: 'hsv',
       opacity: 0.5,
     });
@@ -363,13 +363,13 @@ describe('Planar presentation, a colormap update keeps what it does not name -- 
   }, 60000);
 
   it('keeps the opacity and the threshold when only the name changes', async function () {
-    stepwise.setDisplaySetPresentation(stepwiseId, {
+    stepwise.setDisplaySetAppearance(stepwiseId, {
       colormap: { name: 'hsv', opacity: 0.5, threshold: 100 },
     });
-    stepwise.setDisplaySetPresentation(stepwiseId, {
+    stepwise.setDisplaySetAppearance(stepwiseId, {
       colormap: { name: 'Grayscale' },
     });
-    atOnce.setDisplaySetPresentation(atOnceId, {
+    atOnce.setDisplaySetAppearance(atOnceId, {
       colormap: { name: 'Grayscale', opacity: 0.5, threshold: 100 },
     });
     await renderAndWait(stepwise);
@@ -382,7 +382,7 @@ describe('Planar presentation, a colormap update keeps what it does not name -- 
 
     console.log(`[PLANAR_COLORMAP_NAME]${JSON.stringify({ difference })}`);
     expect(difference).toBeLessThanOrEqual(1);
-    expect(stepwise.getDisplaySetPresentation(stepwiseId).colormap).toEqual({
+    expect(stepwise.getDisplaySetAppearance(stepwiseId).colormap).toEqual({
       name: 'Grayscale',
       opacity: 0.5,
       threshold: 100,
@@ -488,10 +488,10 @@ describe('Planar presentation, a list of opacities in a colormap -- ', () => {
           volumeId: overlayId,
         });
         await viewport.addDisplaySet(overlayDisplaySetId, path.options);
-        viewport.setDisplaySetPresentation(sourceDisplaySetId, {
+        viewport.setDisplaySetAppearance(sourceDisplaySetId, {
           voiRange: { lower: 0, upper: 252 },
         });
-        viewport.setDisplaySetPresentation(overlayDisplaySetId, {
+        viewport.setDisplaySetAppearance(overlayDisplaySetId, {
           voiRange: overlayWindow,
           colormap: colormaps[index],
         });
@@ -656,7 +656,7 @@ describe('Planar presentation, the callbacks of the examples as presentations --
       const presentation = callbackCase.presentation();
       const displaySetId = await showVolumeOnNext(next, volumeId);
 
-      next.setDisplaySetPresentation(displaySetId, presentation);
+      next.setDisplaySetAppearance(displaySetId, presentation);
       await renderAndWait(next);
 
       const adapterPicture = await readStoredPicture(

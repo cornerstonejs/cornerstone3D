@@ -91,10 +91,10 @@ const axialSync = createCameraPositionSynchronizer('axialSync')[
 Internally, upon camera modified event on the source viewport, `cameraSyncCallback` runs to synchronize all the target viewports. It copies the view reference of the source, and its zoom and pan.
 
 Synchronizers should avoid treating `ICamera` as a universal state object: a
-6.0 viewport has no `getCamera` and `setCamera`. Read portable presentation through
-`viewportProjection.getPresentation(sourceViewport, { selector })`, translate it
-for the target with `viewportProjection.withPresentation(targetViewport,
-presentation)`, and then apply the returned native state with
+6.0 viewport has no `getCamera` and `setCamera`. Read the portable framing through
+`viewportProjection.getFraming(sourceViewport, { selector })`, translate it
+for the target with `viewportProjection.withFraming(targetViewport,
+framing)`, and then apply the returned native state with
 `targetViewport.setViewState(nextViewState)`. The projection service is pure and
 does not mutate either viewport.
 

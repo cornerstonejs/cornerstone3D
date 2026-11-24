@@ -205,8 +205,8 @@ describe('PlanarViewport acquired frames in the volume path (user experience)', 
 
     return {
       rendering,
-      updateDataPresentation: (props) => {
-        rendering.dataPresentation = props;
+      updateAppearance: (props) => {
+        rendering.appearance = props;
         actor.setVisibility(props?.visible !== false);
       },
       applyViewState: (viewState) => {
@@ -525,7 +525,7 @@ describe('PlanarViewport acquired frames in the volume path (user experience)', 
       nodes(utilities.createLinearRGBTransferFunction(volumeVOI))
     );
 
-    viewport.setDisplaySetPresentation(displaySetId, {
+    viewport.setDisplaySetAppearance(displaySetId, {
       voiLUTFunction: VOILUTFunctionType.SAMPLED_SIGMOID,
     });
 
@@ -623,7 +623,7 @@ describe('PlanarViewport acquired frames in the volume path (user experience)', 
         currentImageIdIndex: 3,
       },
       role: 'source',
-      updateDataPresentation: jest.fn(),
+      updateAppearance: jest.fn(),
     });
     viewport.mountedData.promoteSourceDisplaySetId(displaySetId);
     return jest.spyOn(viewport, 'setImageIdIndex');

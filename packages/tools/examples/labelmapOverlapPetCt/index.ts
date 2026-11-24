@@ -394,7 +394,7 @@ async function run() {
       const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
       await viewport.setDisplaySets({ displaySetId: ctDisplaySetId });
-      viewport.setDisplaySetPresentation(ctDisplaySetId, ctPresentation());
+      viewport.setDisplaySetAppearance(ctDisplaySetId, ctPresentation());
     })
   );
 
@@ -414,7 +414,7 @@ async function run() {
       const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
       await viewport.setDisplaySets({ displaySetId: ptDisplaySetId });
-      viewport.setDisplaySetPresentation(ptDisplaySetId, petPresentation());
+      viewport.setDisplaySetAppearance(ptDisplaySetId, petPresentation());
     })
   );
 

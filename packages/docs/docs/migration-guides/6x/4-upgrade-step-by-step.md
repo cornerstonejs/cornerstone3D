@@ -49,11 +49,11 @@ next viewports side by side.
 | -------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- | ------- |
 | The legacy viewport types and the legacy API                                                                                                       | Work                   | Removed |
 | `rendering.useGenericViewport: true`: the legacy API on next viewports, through adapters                                                           | Works                  | Removed |
-| The next viewport types with `setDisplaySets`, `setDisplaySetPresentation`, `setViewState`, `viewportProjection` and view references               | Work                   | Work    |
+| The next viewport types with `setDisplaySets`, `setDisplaySetAppearance`, `setViewState`, `viewportProjection` and view references                 | Work                   | Work    |
 | `viewport.getRenderPlan()`, `viewport.isDestroyed`, `viewport.findDataIdByVolumeId()`, and `viewport.calibrateSpacing()` on a next planar viewport | Not there              | Work    |
 | `utilities.getSlicesClippingPlanes()`, `utilities.isInAcquisitionPlane()`, `utilities.navigatePlanarViewportToPoint()` of the tools                | Not there              | Work    |
 | `utilities.getCurrentVolumeViewportSlice()` for a stack on a next viewport                                                                         | Not there              | Works   |
-| The presentation keys `sharpening` and `smoothing`                                                                                                 | Not on a next viewport | Work    |
+| The appearance keys `sharpening` and `smoothing`                                                                                                   | Not on a next viewport | Work    |
 | Slice first, `setSliceFirst()`, `retryGpu()`, `RENDER_PLAN_CHANGED`                                                                                | Not there              | Work    |
 | Zoom and pan of a 3D viewport through `viewportProjection`, and a zoom of a planar viewport about a canvas point with `anchorCanvas`               | Not there              | Work    |
 | The view state key `frameRange` of a video viewport, and `loop` of `utilities.scroll` on a next planar viewport                                    | Not there              | Work    |
@@ -135,7 +135,7 @@ named in brackets are left to you, in the list. It changes:
   you: the 5.x call set part of the view before its promise, such as the
   image ids of a stack, and a 6.0 viewport shows nothing before its mount
   ends, so only you know whether the code after it needs `await`;
-- `setProperties` of presentation keys after a mount of the same viewport in
+- `setProperties` of appearance keys after a mount of the same viewport in
   the same function, `resetCamera` and the other members with one fixed call
   (steps 4 to 8 and 10);
 - the events that have one event in their place (step 9), the settings
@@ -502,10 +502,10 @@ shows. On 6.0 `VIEWPORT_NEW_IMAGE_SET` fires for a stack and
   `setDisplaySets` on the second viewport.
 - `addVolumes` of a volume that the viewport showed already made a new actor
   with the look of its callback. `addDisplaySet` of a display set that is
-  mounted keeps its presentation. For the look of the callback again call
-  `resetDisplaySetPresentation(displaySetId)`, then
-  `setDisplaySetPresentation`.
-- `convertStackToVolumeViewport` kept the view (the view presentation and
+  mounted keeps its appearance. For the look of the callback again call
+  `resetDisplaySetAppearance(displaySetId)`, then
+  `setDisplaySetAppearance`.
+- `convertStackToVolumeViewport` kept the view (the framing and
   the view reference), and `convertVolumeToStackViewport` kept the view
   reference. Read them before `setDisplaySets` and set them after it. Both
   took a `background`, which a next viewport takes only at `enableElement`:
@@ -514,7 +514,7 @@ shows. On 6.0 `VIEWPORT_NEW_IMAGE_SET` fires for a stack and
   asks `viewport.getCurrentMode()`.
 - An input of the legacy calls could carry a `callback`, an `actorUID`, a
   `blendMode`, a `slabThickness` and a `visibility`. A display set has none of
-  them. They are keys of the presentation, which is step 4.
+  them. They are keys of the appearance, which is step 4.
 - `addVolumes` hid the added volume unless its `visibility` was true. An added
   display set is visible.
 - `setVolumes` threw when the volumes did not share a frame of reference.
@@ -530,7 +530,7 @@ rg -n "\.(setBlendMode|getBlendMode|setSlabThickness|getSlabThickness|resetSlabT
 rg -n "\bVOILUTFunction\b|isComputedVOI|callback:|actorUID" src
 ```
 
-**Change.** The look of one display set is its presentation.
+**Change.** The look of one display set is its appearance.
 [The keys of setProperties](./3-api-map.md#the-keys-of-setproperties) has the
 key for each legacy key.
 
@@ -550,38 +550,38 @@ viewport.setSlabThickness(10);
 After:
 
 ```ts
-viewport.setDisplaySetPresentation(displaySetId, {
+viewport.setDisplaySetAppearance(displaySetId, {
   voiRange: { lower: -160, upper: 240 },
   invert: true,
 });
 
 const voiRange =
-  viewport.getDisplaySetPresentation(displaySetId)?.voiRange ??
+  viewport.getDisplaySetAppearance(displaySetId)?.voiRange ??
   viewport.getDefaultVOIRange(displaySetId);
 
-viewport.setDisplaySetPresentation(displaySetId, { slabThickness: 10 });
+viewport.setDisplaySetAppearance(displaySetId, { slabThickness: 10 });
 ```
 
 **Check.** `VOI_MODIFIED` fires on the element when the window or the invert
-changes. `viewport.getDisplaySetPresentation(displaySetId)` returns the keys
+changes. `viewport.getDisplaySetAppearance(displaySetId)` returns the keys
 that were set.
 
 **What can go wrong**
 
-- A presentation is what was set. A key that was never set is undefined, where
+- An appearance is what was set. A key that was never set is undefined, where
   `getProperties()` read the value back from the actor. The window that the
   data starts with is `viewport.getDefaultVOIRange(displaySetId)`.
 - The key is `voiLUTFunction`, with a lower case `voi`. The legacy key and the
   detail of `VOI_MODIFIED` spell it `VOILUTFunction`.
 - There are no default properties. The application keeps its own default and
   sets it.
-- `resetDisplaySetPresentation(displaySetId)` does not move the camera, and it
+- `resetDisplaySetAppearance(displaySetId)` does not move the camera, and it
   also clears the slab, the blend mode, the opacity and the visibility.
 - A slab is set for each display set. The legacy `setSlabThickness` set all
   actors, so a fusion needs one call for each display set.
 - A preset is a look of a 3D viewport. On a slice use
   `colormap: { name, opacityMapping }`.
-- Do not edit an actor to set a look. The next presentation update writes the
+- Do not edit an actor to set a look. The next appearance update writes the
   look of the actor again.
 
 ## Step 5. The view
@@ -595,7 +595,9 @@ rg -n "storeAsInitialCamera|resetToCenter|resetAspectRatio|parallelScale" src
 ```
 
 **Change.** A change of the look of the view is a view state change. Zoom and
-pan are read and written through `viewportProjection`.
+pan are read and written as the framing of the view: `viewport.getViewFraming()`
+and `viewport.setViewFraming()`, which call `viewportProjection`. The codemod
+rewrites `getViewPresentation` and `setViewPresentation` to them.
 
 Before:
 
@@ -608,23 +610,16 @@ viewport.resetCamera();
 After:
 
 ```ts
-const presentation = viewportProjection.getPresentation(viewport, {
-  selector: { zoom: true, pan: true },
-});
-const zoomed = viewportProjection.withPresentation(viewport, {
-  zoom: (presentation?.zoom ?? 1) * 1.2,
-});
+const framing = viewport.getViewFraming({ zoom: true, pan: true });
 
-if (zoomed) {
-  viewport.setViewState(zoomed);
-}
-
+viewport.setViewFraming({ zoom: (framing?.zoom ?? 1) * 1.2 });
 viewport.setViewState({ flipHorizontal: true });
 viewport.resetViewState();
 ```
 
-To zoom about a canvas point, give it as the fourth argument:
-`viewportProjection.withPresentation(viewport, { zoom }, undefined, { anchorCanvas: canvasPoint })`.
+To zoom about a canvas point, give it in the options:
+`viewport.setViewFraming({ zoom }, { anchorCanvas: canvasPoint })`, which is
+`viewportProjection.withFraming(viewport, { zoom }, undefined, { anchorCanvas: canvasPoint })`.
 Without it the zoom is about the centre of the canvas, also after a pan, as
 the legacy `setZoom(zoom)` was. `setZoom(zoom)` of a planar viewport without
 a canvas point is too.
@@ -633,12 +628,13 @@ To read a camera in the legacy shape, use
 `viewport.getResolvedView()?.toICamera()`. It is for reading only.
 
 **Check.** `CAMERA_MODIFIED` fires on each change. After `resetViewState()`
-the presentation gives zoom 1 and pan `[0, 0]`.
+the framing gives zoom 1 and pan `[0, 0]`.
 
 **What can go wrong**
 
-- `withPresentation` returns undefined while the viewport has no data. Check
-  the result before `setViewState`.
+- `getViewFraming` and `withFraming` give undefined while the viewport has no
+  data, and `setViewFraming` does nothing then. Check the result of
+  `withFraming` before `setViewState`.
 - Zoom 1 and pan `[0, 0]` are always the fit. There is no stored initial
   camera, so `storeAsInitialCamera` and `resetToCenter` have no twin.
 - A planar, a 3D, a video and an ECG viewport still have `getZoom`,
@@ -647,13 +643,13 @@ the presentation gives zoom 1 and pan `[0, 0]`.
   viewport `setZoom` did not zoom and `getZoom` always gave 1; a video
   viewport now zooms. New code uses `viewportProjection`.
 - The four members of a 3D viewport call `viewportProjection`, so
-  `viewport.setZoom(zoom)` writes the camera that `withPresentation` with
+  `viewport.setZoom(zoom)` writes the camera that `withFraming` with
   `{ zoom }` gives in the sample above. `getZoom()` of a 3D viewport that
   shows nothing gives 1 and `getPan()` gives `[0, 0]`, where its
-  presentation has no zoom and no pan.
+  framing has no zoom and no pan.
 - A whole slide viewport has no `getPan` and no `setPan`. Use
   `viewportProjection` there, as in the sample above.
-- The `pan` of a presentation is in canvas pixels at zoom 1. The legacy
+- The `pan` of a framing is in canvas pixels at zoom 1. The legacy
   `getPan()` gave canvas pixels on the screen, which is `pan * zoom`. So a
   value that went to `setPan` is divided by the zoom.
 - The zoom of a 3D viewport is measured against the fit for the direction of
@@ -835,7 +831,7 @@ rg -n "_actors" src
 ```
 
 **Change.** Most code that reads an actor wants to set a look. Set the look
-through the presentation.
+through the appearance.
 
 Before:
 
@@ -848,7 +844,7 @@ actor.getProperty().setInterpolationTypeToNearest();
 After:
 
 ```ts
-viewport.setDisplaySetPresentation(displaySetId, {
+viewport.setDisplaySetAppearance(displaySetId, {
   interpolationType: Enums.InterpolationType.NEAREST,
 });
 ```
@@ -857,7 +853,7 @@ viewport.setDisplaySetPresentation(displaySetId, {
 viewport, and each entry names its data in `referencedId`.
 
 A surface in a 3D viewport is a display set. Its id is the id of a geometry
-of the cache, and its look is its presentation.
+of the cache, and its look is its appearance.
 
 Before:
 
@@ -870,7 +866,7 @@ After:
 ```ts
 await viewport.addDisplaySet(geometryId, { renderMode: 'vtkGeometry3d' });
 
-viewport.setDisplaySetPresentation(geometryId, {
+viewport.setDisplaySetAppearance(geometryId, {
   color: [255, 0, 0],
   opacity: 0.5,
 });
@@ -972,9 +968,9 @@ a volume: scroll, change the window, reset. Compare with the table.
 - `CAMERA_MODIFIED` fires on each new image of a stack and once after the
   source mounts. `detail.previousCamera` can be undefined.
 - `CAMERA_RESET` fires in stack mode too, and only from `resetViewState()`.
-- A change of `slabThickness` in the presentation of a planar viewport
+- A change of `slabThickness` in the appearance of a planar viewport
   fires `CAMERA_MODIFIED`, as a slab change of the legacy volume viewport
-  did. Read the slab from the presentation.
+  did. Read the slab from the appearance.
 - `detail.invertStateChanged` of `VOI_MODIFIED` is not set by a next
   viewport. Compare `detail.invert` with the last value.
 - `IMAGE_LOAD_FAILED` fires on the `eventTarget`, as `IMAGE_LOAD_ERROR` did.
@@ -1090,12 +1086,12 @@ has the rows. Four need work:
   crosshair for the next viewports. `CrosshairsTool` still works on a planar
   viewport in volume mode: it moves through the slices, its rotation handles
   turn the planes, its slab handles set the slab thickness, and `autoPan`
-  pans. It sets no blend mode: set `blendMode` in the presentation of each
+  pans. It sets no blend mode: set `blendMode` in the appearance of each
   display set, for example `Enums.BlendModes.MAXIMUM_INTENSITY_BLEND` for a
   MIP slab. See
   [the crosshair](./2-rendering-changes.md#a-volume-slice-sits-on-a-slice-centre).
 - **The slab thickness synchronizer** copies `slabThickness` from the
-  presentation of the source display set of the source viewport to every
+  appearance of the source display set of the source viewport to every
   display set of each target.
 - **The fill of a labelmap** is drawn with the configured alpha, so it looks
   stronger than on a legacy volume viewport.
@@ -1202,7 +1198,7 @@ decides. A coding agent stops here and asks.
 | A display area of `type: 'SCALE'`                   | A scale of 1 is the fit of the picture. On a legacy viewport 1 meant one image pixel on one screen pixel                                                                         | The scale that gives the size the application wants                                                                                                     |
 | Listeners of a new image and of `CAMERA_MODIFIED`   | `NEW_IMAGE` replaces `STACK_NEW_IMAGE` and `VOLUME_NEW_IMAGE` and has no `image` for a volume. `CAMERA_MODIFIED` fires on each new image of a stack                              | Whether one listener serves stacks and volumes, and what each listener does in each mode                                                                |
 | A viewport on the CPU                               | The VOI lookup table and the modality lookup table of an image are not applied, as on the GPU. The area around the image has the background colour                               | Whether the application relied on the lookup tables on the CPU. See [the section](./2-rendering-changes.md#a-viewport-on-the-cpu-shows-the-gpu-picture) |
-| The crosshair                                       | `CrosshairsTool` sets no blend mode for its slab                                                                                                                                 | Set `blendMode` in the presentation. Or use `WorldCrosshairTool` with `SliceIntersectionTool`                                                           |
+| The crosshair                                       | `CrosshairsTool` sets no blend mode for its slab                                                                                                                                 | Set `blendMode` in the appearance. Or use `WorldCrosshairTool` with `SliceIntersectionTool`                                                             |
 | `ViewportType.PERSPECTIVE`                          | The legacy type drew a thin slab of the volume. A 3D viewport with `parallelProjection: false` draws the volume in 3D                                                            | What the screen shows                                                                                                                                   |
 | The zoom and the pan of a video and an ECG viewport | `getPan()` gives canvas pixels from the fit. The legacy viewport gave world units, and the legacy video viewport did not zoom                                                    | What code that stores a pan does with stored values                                                                                                     |
 | The pan of a whole slide viewport                   | It is measured from the centre of the slide. The legacy `getPan()` measured from the view at mount, and `setPan(pan, true)` stored a new origin                                  | What code that stores a pan does with stored values                                                                                                     |
@@ -1245,7 +1241,7 @@ first, and take its two lists as the start of the work.
    neither.
 6. **Do not keep a legacy call behind a cast.** No `as any` and no check for
    the presence of a legacy member to keep an old path alive.
-7. **Do not edit actors to set a look.** Use the presentation.
+7. **Do not edit actors to set a look.** Use the appearance.
 8. **Verify after each step.** The type checker passes. The tests of the
    application pass. The search of the step prints nothing, or only lines
    that you list with the reason. Then do the check of the step. A search

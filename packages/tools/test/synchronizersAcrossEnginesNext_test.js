@@ -29,7 +29,7 @@ function frames() {
 
 /** The slab thickness of the presentation of the source of a viewport. */
 function slabOf(viewport) {
-  return viewport.getDisplaySetPresentation(viewport.getSourceDisplaySetId())
+  return viewport.getDisplaySetAppearance(viewport.getSourceDisplaySetId())
     ?.slabThickness;
 }
 
@@ -102,7 +102,7 @@ describe('The synchronizers between two rendering engines whose viewports have t
 
     expect(slabOf(second)).toBeUndefined();
 
-    first.setDisplaySetPresentation(first.getSourceDisplaySetId(), {
+    first.setDisplaySetAppearance(first.getSourceDisplaySetId(), {
       slabThickness: 5,
     });
     await frames();

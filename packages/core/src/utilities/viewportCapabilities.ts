@@ -106,7 +106,7 @@ export function viewportSupportsVolumeActors(
 function viewportHasDisplaySetApi(viewport: unknown): viewport is IViewport {
   return (
     viewportHasMethod(viewport, 'setDisplaySets') &&
-    viewportHasMethod(viewport, 'setDisplaySetPresentation') &&
+    viewportHasMethod(viewport, 'setDisplaySetAppearance') &&
     viewportHasMethod(viewport, 'setViewState')
   );
 }
@@ -121,15 +121,15 @@ function viewportHasDisplaySetApi(viewport: unknown): viewport is IViewport {
  * `getCurrentImageId` is a member of the planar family too. The guard does
  * not test for it.
  */
-export type DisplaySetPresentationViewport = IViewport & {
+export type DisplaySetAppearanceViewport = IViewport & {
   getSourceDisplaySetId(): string | undefined;
   getDefaultVOIRange(displaySetId?: string): VOIRange | undefined;
   getCurrentImageId(): string | undefined;
 };
 
-export function viewportSupportsDisplaySetPresentation(
+export function viewportSupportsDisplaySetAppearance(
   viewport: unknown
-): viewport is DisplaySetPresentationViewport {
+): viewport is DisplaySetAppearanceViewport {
   return (
     viewportHasDisplaySetApi(viewport) &&
     viewportHasMethod(viewport, 'getSourceDisplaySetId') &&

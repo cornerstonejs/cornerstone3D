@@ -59,9 +59,9 @@ function updatePetColormap(patch: {
 }) {
   const viewport = getViewport();
   const currentColormap =
-    viewport.getDisplaySetPresentation(ptDisplaySetId)?.colormap || {};
+    viewport.getDisplaySetAppearance(ptDisplaySetId)?.colormap || {};
 
-  viewport.setDisplaySetPresentation(ptDisplaySetId, {
+  viewport.setDisplaySetAppearance(ptDisplaySetId, {
     colormap: {
       ...currentColormap,
       ...patch,
@@ -127,7 +127,7 @@ addButtonToToolbar({
   onClick: () => {
     const viewport = getViewport();
 
-    viewport.setDisplaySetPresentation(ctDisplaySetId, {
+    viewport.setDisplaySetAppearance(ctDisplaySetId, {
       voiRange: { lower: -1500, upper: 2500 },
     });
     viewport.render();
@@ -149,9 +149,9 @@ addButtonToToolbar({
   onClick: () => {
     const viewport = getViewport();
     const visible =
-      viewport.getDisplaySetPresentation(ptDisplaySetId)?.visible ?? true;
+      viewport.getDisplaySetAppearance(ptDisplaySetId)?.visible ?? true;
 
-    viewport.setDisplaySetPresentation(ptDisplaySetId, {
+    viewport.setDisplaySetAppearance(ptDisplaySetId, {
       visible: !visible,
     });
     viewport.render();
@@ -318,10 +318,10 @@ async function run() {
     }
   );
 
-  viewport.setDisplaySetPresentation(ctDisplaySetId, {
+  viewport.setDisplaySetAppearance(ctDisplaySetId, {
     voiRange: ctVoiRange,
   });
-  viewport.setDisplaySetPresentation(ptDisplaySetId, {
+  viewport.setDisplaySetAppearance(ptDisplaySetId, {
     colormap: {
       name: 'hsv',
       opacity: PET_DEFAULT_OPACITY,

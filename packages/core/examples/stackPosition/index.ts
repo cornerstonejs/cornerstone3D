@@ -81,7 +81,7 @@ element.addEventListener(Events.CAMERA_MODIFIED, (_) => {
 
   const { flipHorizontal = false } = viewport.getViewState();
   const { rotation = 0 } =
-    viewportProjection.getPresentation(viewport, {
+    viewportProjection.getFraming(viewport, {
       selector: { rotation: true },
     }) ?? {};
 
@@ -201,10 +201,10 @@ addButtonToToolbar({
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     const { rotation = 0 } =
-      viewportProjection.getPresentation(viewport, {
+      viewportProjection.getFraming(viewport, {
         selector: { rotation: true },
       }) ?? {};
-    const viewState = viewportProjection.withPresentation(viewport, {
+    const viewState = viewportProjection.withFraming(viewport, {
       rotation: rotation + 30,
     });
 
@@ -228,7 +228,7 @@ addButtonToToolbar({
     // Resets the viewport's camera
     viewport.resetViewState();
     // Resets the viewport's properties
-    viewport.resetDisplaySetPresentation(displaySetId);
+    viewport.resetDisplaySetAppearance(displaySetId);
     viewport.render();
   },
 });

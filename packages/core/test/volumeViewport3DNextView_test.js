@@ -533,7 +533,7 @@ async function showWithPresentation(next, volumeId, presentation) {
     displaySetId,
     options: { renderMode: 'vtkVolume3d' },
   });
-  next.setDisplaySetPresentation(displaySetId, presentation);
+  next.setDisplaySetAppearance(displaySetId, presentation);
 }
 
 describe('Presentations for the volume callbacks of the 3D examples -- ', () => {

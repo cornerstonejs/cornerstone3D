@@ -7,7 +7,7 @@ import type {
   PlanarSliceState,
   PlanarViewState,
 } from './PlanarViewportTypes';
-import { normalizePlanarRotation } from './planarViewPresentation';
+import { normalizePlanarRotation } from './planarViewFraming';
 import {
   clonePlanarScale,
   normalizePlanarScaleMode,

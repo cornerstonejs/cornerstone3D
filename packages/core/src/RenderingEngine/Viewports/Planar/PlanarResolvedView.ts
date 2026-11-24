@@ -8,7 +8,7 @@ import {
   worldToCanvasPlanarViewState,
 } from './planarAdapterCoordinateTransforms';
 import {
-  derivePlanarPresentation,
+  derivePlanarFraming,
   resolvePlanarICamera,
 } from './planarRenderCamera';
 import {
@@ -24,7 +24,7 @@ import {
   createDefaultPlanarViewState,
   normalizePlanarViewState,
 } from './planarViewState';
-import { getPlanarRotationAfterFlips } from './planarViewPresentation';
+import { getPlanarRotationAfterFlips } from './planarViewFraming';
 import {
   normalizePlanarScale,
   type PlanarScaleInput,
@@ -81,22 +81,22 @@ abstract class BasePlanarResolvedView<
   TState extends BasePlanarResolvedViewState,
 > extends ResolvedViewportView<TState, PlanarResolvedICamera> {
   protected cachedSliceBasis?: PlanarSliceBasis;
-  private cachedPresentation?: ReturnType<typeof derivePlanarPresentation>;
+  private cachedFraming?: ReturnType<typeof derivePlanarFraming>;
 
   get pan(): Point2 {
-    return clonePoint2(this.getPresentation().pan);
+    return clonePoint2(this.getFraming().pan);
   }
 
   get zoom(): number {
-    return this.getPresentation().zoom;
+    return this.getFraming().zoom;
   }
 
   get scale(): Point2 {
-    return clonePoint2(this.getPresentation().scale);
+    return clonePoint2(this.getFraming().scale);
   }
 
   get rotation(): number {
-    return this.getPresentation().rotation;
+    return this.getFraming().rotation;
   }
 
   getSliceBasis(): PlanarSliceBasis {
@@ -274,15 +274,15 @@ abstract class BasePlanarResolvedView<
     };
   }
 
-  protected getPresentation() {
-    this.cachedPresentation ||= derivePlanarPresentation({
+  protected getFraming() {
+    this.cachedFraming ||= derivePlanarFraming({
       camera: this.state.viewState,
       canvasHeight: this.state.canvasHeight,
       canvasWidth: this.state.canvasWidth,
       sliceBasis: this.getSliceBasis(),
     });
 
-    return this.cachedPresentation;
+    return this.cachedFraming;
   }
 
   protected requireResolvedICamera(): Required<
@@ -291,7 +291,7 @@ abstract class BasePlanarResolvedView<
       'focalPoint' | 'parallelScale' | 'viewPlaneNormal' | 'viewUp'
     >
   > &
-    Pick<PlanarResolvedICamera, 'presentationScale'> {
+    Pick<PlanarResolvedICamera, 'framingScale'> {
     const viewState = this.toICamera();
 
     if (
@@ -308,8 +308,8 @@ abstract class BasePlanarResolvedView<
     return {
       focalPoint: clonePoint3(viewState.focalPoint),
       parallelScale: viewState.parallelScale,
-      presentationScale: viewState.presentationScale
-        ? clonePoint2(viewState.presentationScale)
+      framingScale: viewState.framingScale
+        ? clonePoint2(viewState.framingScale)
         : undefined,
       viewPlaneNormal: clonePoint3(viewState.viewPlaneNormal),
       viewUp: clonePoint3(viewState.viewUp),
@@ -540,7 +540,7 @@ export function resolvePlanarViewportView(args: {
           }
         : requestedViewState;
     const createSliceBasis = shouldUsePlanarCpuVolumeSliceBasis(
-      rendering.dataPresentation?.interpolationType
+      rendering.appearance?.interpolationType
     )
       ? createPlanarCpuVolumeSliceBasis
       : createPlanarVolumeSliceBasis;
@@ -573,7 +573,7 @@ export function resolvePlanarViewportView(args: {
       usePixelGridCenter:
         rendering.renderMode === ActorRenderMode.CPU_VOLUME &&
         shouldUsePlanarCpuVolumeSliceBasis(
-          rendering.dataPresentation?.interpolationType
+          rendering.appearance?.interpolationType
         ),
     });
   }

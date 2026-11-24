@@ -192,7 +192,7 @@ function writeCamera(next, change) {
 
 /** Zooms through the projection service, as the zoom tool does. */
 function zoomBy(next, zoom) {
-  next.setViewState(viewportProjection.withPresentation(next, { zoom }));
+  next.setViewState(viewportProjection.withFraming(next, { zoom }));
 }
 
 /** A point turned about the z axis through a centre. */

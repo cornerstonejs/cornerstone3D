@@ -38,11 +38,11 @@ import { DefaultVolume3DDataProvider } from './DefaultVolume3DDataProvider';
 import { createVolume3DRenderPathResolver } from './Volume3DRenderPathResolver';
 import Volume3DResolvedView from './Volume3DResolvedView';
 import applyVolume3DCamera from './applyVolume3DCamera';
-import { getVolume3DColormap } from './applyVolume3DPresentation';
+import { getVolume3DColormap } from './applyVolume3DAppearance';
 import {
   VOLUME3D_PROJECTION_ID,
   type Volume3DProjectionFit,
-  type Volume3DProjectionPresentation,
+  type Volume3DProjectionFraming,
 } from './Volume3DProjectionTypes';
 import { setVolume3DZeroRotationViewUp } from './volume3DProjectionSnapshot';
 import {
@@ -55,7 +55,7 @@ import {
 import type {
   Volume3DCamera,
   Volume3DPayload,
-  Volume3DDataPresentation,
+  Volume3DDisplaySetAppearance,
   Volume3DDisplaySetDescriptor,
   Volume3DRendering,
   Volume3DSetDataOptions,
@@ -94,7 +94,7 @@ function isRemovedVolume({ data }: Volume3DStagedLoad): boolean {
 
 class VolumeViewport3D extends BaseViewport<
   Volume3DCamera,
-  Volume3DDataPresentation,
+  Volume3DDisplaySetAppearance,
   Volume3DViewportRenderContext
 > {
   readonly type = ViewportType.VOLUME_3D;
@@ -120,12 +120,12 @@ class VolumeViewport3D extends BaseViewport<
    */
   private mountCommit?: Promise<void>;
   /**
-   * The presentation of each display set after its mount, which
-   * `resetDisplaySetPresentation` goes back to.
+   * The appearance of each display set after its mount, which
+   * `resetDisplaySetAppearance` goes back to.
    */
-  private readonly mountedPresentations = new Map<
+  private readonly mountedAppearances = new Map<
     string,
-    Volume3DDataPresentation
+    Volume3DDisplaySetAppearance
   >();
   /** The widgets that tools keep on the viewport, by id. */
   protected readonly widgets = new Map<string, ViewportWidget>();
@@ -410,9 +410,9 @@ class VolumeViewport3D extends BaseViewport<
       this.primaryDisplaySetId = displaySetId;
     }
 
-    this.mountedPresentations.set(
+    this.mountedAppearances.set(
       displaySetId,
-      this.setDefaultDataPresentation(displaySetId, {
+      this.setDefaultAppearance(displaySetId, {
         visible: true,
         opacity: 1,
       })
@@ -435,7 +435,7 @@ class VolumeViewport3D extends BaseViewport<
   }
 
   /**
-   * Sets the presentation of a display set back to the one after its mount:
+   * Sets the appearance of a display set back to the one after its mount:
    * the default VOI range, and the preset, the colormap and the opacity that
    * it was mounted with. The transfer functions are built anew. The camera
    * stays: `resetViewState` resets it. Fires VOI_MODIFIED, as the legacy
@@ -443,7 +443,7 @@ class VolumeViewport3D extends BaseViewport<
    *
    * @param displaySetId - The display set; the current one when not given.
    */
-  resetDisplaySetPresentation(displaySetId?: string): void {
+  resetDisplaySetAppearance(displaySetId?: string): void {
     if (this.isDestroyed) {
       return;
     }
@@ -458,11 +458,11 @@ class VolumeViewport3D extends BaseViewport<
     }
 
     if (rendering) {
-      rendering.appliedPresentation = undefined;
+      rendering.appliedAppearance = undefined;
     }
 
-    this.setDataPresentationState(targetId, {
-      ...(this.mountedPresentations.get(targetId) ?? {
+    this.setAppearanceState(targetId, {
+      ...(this.mountedAppearances.get(targetId) ?? {
         visible: true,
         opacity: 1,
       }),
@@ -473,7 +473,7 @@ class VolumeViewport3D extends BaseViewport<
 
   removeDisplaySet(displaySetId: string): void {
     super.removeDisplaySet(displaySetId);
-    this.mountedPresentations.delete(displaySetId);
+    this.mountedAppearances.delete(displaySetId);
   }
 
   /**
@@ -589,7 +589,7 @@ class VolumeViewport3D extends BaseViewport<
   }
 
   /**
-   * The zoom of the view, the `zoom` that `viewportProjection.getPresentation`
+   * The zoom of the view, the `zoom` that `viewportProjection.getFraming`
    * gives: 1 for the fit that `resetViewState` gives for the direction of the
    * camera now, 2 when the picture is twice as large. The fit is computed at
    * each read, so the zoom changes when the camera turns to a side where the
@@ -599,12 +599,12 @@ class VolumeViewport3D extends BaseViewport<
    * @returns The zoom against the fit.
    */
   getZoom(): number {
-    return this.getProjectionPresentation()?.zoom ?? 1;
+    return this.getProjectionFraming()?.zoom ?? 1;
   }
 
   /**
    * Sets the zoom, as one write of the view state of
-   * `viewportProjection.withPresentation(viewport, { zoom })`: it renders and
+   * `viewportProjection.withFraming(viewport, { zoom })`: it renders and
    * fires CAMERA_MODIFIED. A parallel camera gets the parallel scale of the
    * zoom. A perspective camera moves along its view plane normal and keeps
    * its view angle.
@@ -619,27 +619,27 @@ class VolumeViewport3D extends BaseViewport<
    * @param canvasPoint - The canvas point that the picture stays under.
    */
   setZoom(zoom: number, canvasPoint?: Point2): void {
-    this.applyProjectionPresentation({ zoom }, canvasPoint);
+    this.applyProjectionFraming({ zoom }, canvasPoint);
   }
 
   /**
    * The pan of the view in canvas pixels on the screen, as on the planar
    * viewport: `[0, 0]` for the fit of the direction of the camera now, and
    * how far the centre of that fit shows from the centre of the canvas after
-   * that, at any zoom. It is `pan * zoom` of the presentation of
+   * that, at any zoom. It is `pan * zoom` of the framing of
    * `viewportProjection`. `[0, 0]` when the viewport shows nothing to fit.
    *
    * @returns The pan in canvas pixels.
    */
   getPan(): Point2 {
-    const { zoom, pan } = this.getProjectionPresentation() ?? {};
+    const { zoom, pan } = this.getProjectionFraming() ?? {};
 
     return zoom && pan ? [pan[0] * zoom, pan[1] * zoom] : [0, 0];
   }
 
   /**
    * Moves the picture so that `getPan` gives this pan, as one write of the
-   * view state of `viewportProjection.withPresentation(viewport, { pan })`
+   * view state of `viewportProjection.withFraming(viewport, { pan })`
    * with the pan divided by the zoom: it renders and fires CAMERA_MODIFIED.
    * A canvas delta added to `getPan` moves the picture by that delta on the
    * screen. The focal point and the position move in the plane of the view,
@@ -651,16 +651,14 @@ class VolumeViewport3D extends BaseViewport<
   setPan(pan: Point2): void {
     const zoom = this.getZoom();
 
-    this.applyProjectionPresentation({
+    this.applyProjectionFraming({
       pan: [pan[0] / zoom, pan[1] / zoom],
     });
   }
 
-  /** The presentation that the projection service gives for this viewport. */
-  private getProjectionPresentation():
-    | Volume3DProjectionPresentation
-    | undefined {
-    return viewportProjection.getPresentation(this, {
+  /** The framing that the projection service gives for this viewport. */
+  private getProjectionFraming(): Volume3DProjectionFraming | undefined {
+    return viewportProjection.getFraming(this, {
       kind: VOLUME3D_PROJECTION_ID,
     });
   }
@@ -669,16 +667,16 @@ class VolumeViewport3D extends BaseViewport<
    * Writes the view state that the projection service gives for a zoom or a
    * pan against the fit.
    *
-   * @param presentation - The zoom, or the pan in canvas pixels at zoom 1.
+   * @param framing - The zoom, or the pan in canvas pixels at zoom 1.
    * @param anchorCanvas - The canvas point that a zoom keeps.
    */
-  private applyProjectionPresentation(
-    presentation: Pick<Volume3DProjectionPresentation, 'zoom' | 'pan'>,
+  private applyProjectionFraming(
+    framing: Pick<Volume3DProjectionFraming, 'zoom' | 'pan'>,
     anchorCanvas?: Point2
   ): void {
-    const viewState = viewportProjection.withPresentation(
+    const viewState = viewportProjection.withFraming(
       this,
-      presentation,
+      framing,
       { kind: VOLUME3D_PROJECTION_ID },
       { anchorCanvas }
     );
@@ -1032,7 +1030,7 @@ class VolumeViewport3D extends BaseViewport<
 
     try {
       return createSharpeningSmoothingRenderPasses(
-        (binding && this.getDisplaySetPresentation(binding.data.id)) || {}
+        (binding && this.getDisplaySetAppearance(binding.data.id)) || {}
       );
     } catch (error) {
       log.warn('Failed to create custom render passes:', error);
@@ -1087,11 +1085,11 @@ class VolumeViewport3D extends BaseViewport<
 
   protected override onDestroy(): void {
     this.primaryDisplaySetId = undefined;
-    this.mountedPresentations.clear();
+    this.mountedAppearances.clear();
   }
 
   /**
-   * Fires the events of a presentation change with the detail of the legacy
+   * Fires the events of an appearance change with the detail of the legacy
    * viewport: COLORMAP_MODIFIED for a colormap, with VOI_MODIFIED too for a
    * colormap name; VOI_MODIFIED for invert, a VOI range or a VOI LUT
    * function. The detail carries the invert of the display set in `invert`,
@@ -1099,9 +1097,9 @@ class VolumeViewport3D extends BaseViewport<
    * fires with `suppressEvents` set, or for a display set that is not a
    * volume. A preset fires no event.
    */
-  protected override notifyDataPresentationModified(
+  protected override notifyAppearanceModified(
     displaySetId: string,
-    props: Partial<Volume3DDataPresentation>
+    props: Partial<Volume3DDisplaySetAppearance>
   ): void {
     const rendering = this.getVolumeRenderingOf(displaySetId);
 
@@ -1199,7 +1197,7 @@ class VolumeViewport3D extends BaseViewport<
     displaySetId: string,
     rendering: Volume3DVolumeRendering
   ): VoiModifiedEventDetail {
-    const presentation = this.getDisplaySetPresentation(displaySetId);
+    const appearance = this.getDisplaySetAppearance(displaySetId);
     const [lower, upper] = rendering.actor
       .getProperty()
       .getRGBTransferFunction(0)
@@ -1209,9 +1207,9 @@ class VolumeViewport3D extends BaseViewport<
       viewportId: this.id,
       range: { lower, upper },
       volumeId: rendering.imageVolume.volumeId,
-      VOILUTFunction: presentation?.voiLUTFunction,
+      VOILUTFunction: appearance?.voiLUTFunction,
       colormap: getVolume3DColormap(rendering.actor),
-      invert: presentation?.invert,
+      invert: appearance?.invert,
     };
   }
 
@@ -1246,7 +1244,7 @@ class VolumeViewport3D extends BaseViewport<
    */
   private getVolumeBinding(
     volumeId?: string
-  ): ViewportDataBinding<Volume3DDataPresentation> | undefined {
+  ): ViewportDataBinding<Volume3DDisplaySetAppearance> | undefined {
     if (!volumeId) {
       return this.getCurrentBinding();
     }
@@ -1349,7 +1347,7 @@ class VolumeViewport3D extends BaseViewport<
   }
 
   private getVolume3DPayload(
-    binding: ViewportDataBinding<Volume3DDataPresentation>
+    binding: ViewportDataBinding<Volume3DDisplaySetAppearance>
   ): LoadedData<Volume3DPayload> | undefined {
     if (!isVolume3DData(binding.data)) {
       return;
@@ -1382,7 +1380,7 @@ class VolumeViewport3D extends BaseViewport<
   }
 
   private getVolume3DRendering(
-    binding: ViewportDataBinding<Volume3DDataPresentation>
+    binding: ViewportDataBinding<Volume3DDisplaySetAppearance>
   ): Volume3DRendering {
     if (!isVolume3DRendering(binding.rendering)) {
       throw new Error(

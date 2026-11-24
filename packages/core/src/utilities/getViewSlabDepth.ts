@@ -4,7 +4,7 @@ import { RENDERING_DEFAULTS } from '../constants';
  * Resolves a slab depth in mm, and reports "no slab" as undefined.
  *
  * The caller supplies a **full** depth. The `slabThickness` of the
- * presentation of a planar viewport is a half thickness: a slab of `T` shows
+ * appearance of a planar viewport is a half thickness: a slab of `T` shows
  * the slices within about `T` of the plane on each side, as the legacy
  * `setSlabThickness(T)` did. Such a caller passes twice the value.
  *

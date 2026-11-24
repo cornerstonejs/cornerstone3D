@@ -847,7 +847,7 @@ async function run() {
     renderingEngine.getViewport<PlanarViewport>(viewportIdSagittal);
 
   await sagittalViewport.setDisplaySets({ displaySetId: volumeDisplaySetId });
-  sagittalViewport.setDisplaySetPresentation(
+  sagittalViewport.setDisplaySetAppearance(
     volumeDisplaySetId,
     ctPresentation()
   );
@@ -860,7 +860,7 @@ async function run() {
   const stackViewport =
     renderingEngine.getViewport<PlanarViewport>(viewportIdStack);
   await stackViewport.setDisplaySets({ displaySetId: stackDisplaySetId });
-  stackViewport.setDisplaySetPresentation(stackDisplaySetId, {
+  stackViewport.setDisplaySetAppearance(stackDisplaySetId, {
     voiRange: ctVoiRange,
   });
 

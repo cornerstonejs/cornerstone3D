@@ -373,7 +373,7 @@ async function showNextStack(renderingEngine, renderBackend) {
     displaySetId,
     options: { orientation: OrientationAxis.ACQUISITION, renderBackend },
   });
-  viewport.setDisplaySetPresentation(displaySetId, { voiRange: VOI_RANGE });
+  viewport.setDisplaySetAppearance(displaySetId, { voiRange: VOI_RANGE });
   await renderAndWait(viewport);
 
   return { viewport, displaySetId };
@@ -415,12 +415,12 @@ async function showNextVolume(
   });
 
   await viewport.setDisplaySets(...entries);
-  viewport.setDisplaySetPresentation(entries[0].displaySetId, {
+  viewport.setDisplaySetAppearance(entries[0].displaySetId, {
     voiRange: VOI_RANGE,
   });
 
   if (fusion) {
-    viewport.setDisplaySetPresentation(entries[1].displaySetId, {
+    viewport.setDisplaySetAppearance(entries[1].displaySetId, {
       voiRange: VOI_RANGE,
       colormap: FUSION_COLORMAP,
     });
@@ -454,7 +454,7 @@ async function showReference(renderingEngine, referenceName) {
 
     return {
       apply: (properties) =>
-        viewport.setDisplaySetPresentation(displaySetId, properties),
+        viewport.setDisplaySetAppearance(displaySetId, properties),
       render: () => renderAndWait(viewport),
       readPixels: () => readPixels(viewport),
       describeRenderPasses: () => describeRenderPasses(viewport),
@@ -574,7 +574,7 @@ describe('Sharpening and smoothing of the planar viewports -- ', () => {
       const { viewport, displaySetId } = await showNext(renderingEngine);
       const plain = readPixels(viewport);
 
-      viewport.setDisplaySetPresentation(displaySetId, {
+      viewport.setDisplaySetAppearance(displaySetId, {
         sharpening: 1,
         smoothing: 5,
       });
@@ -582,7 +582,7 @@ describe('Sharpening and smoothing of the planar viewports -- ', () => {
       const both = readPixels(viewport);
 
       expect(maxDifference(plain, both)).toBeGreaterThan(20);
-      viewport.setDisplaySetPresentation(displaySetId, {
+      viewport.setDisplaySetAppearance(displaySetId, {
         sharpening: 1,
         smoothing: 0,
       });
@@ -621,11 +621,11 @@ describe('Sharpening and smoothing of the planar viewports -- ', () => {
 
         for (const [index, [caseName, properties]] of CASES.entries()) {
           reference.apply(properties);
-          next.setDisplaySetPresentation(displaySetId, properties);
+          next.setDisplaySetAppearance(displaySetId, properties);
           await reference.render();
           await renderAndWait(next);
 
-          expect(next.getDisplaySetPresentation(displaySetId)).toEqual(
+          expect(next.getDisplaySetAppearance(displaySetId)).toEqual(
             jasmine.objectContaining(properties)
           );
 
@@ -658,7 +658,7 @@ describe('Sharpening and smoothing of the planar viewports -- ', () => {
           }
 
           reference.apply({ sharpening: 0, smoothing: 0 });
-          next.setDisplaySetPresentation(displaySetId, {
+          next.setDisplaySetAppearance(displaySetId, {
             sharpening: 0,
             smoothing: 0,
           });
@@ -674,7 +674,7 @@ describe('Sharpening and smoothing of the planar viewports -- ', () => {
     );
 
     expect(gpu.getRenderPasses()).toBe(null);
-    gpu.setDisplaySetPresentation(gpuId, { sharpening: 0, smoothing: 0 });
+    gpu.setDisplaySetAppearance(gpuId, { sharpening: 0, smoothing: 0 });
     expect(gpu.getRenderPasses()).toBe(null);
 
     testUtils.cleanupTestEnvironment({
@@ -694,15 +694,15 @@ describe('Sharpening and smoothing of the planar viewports -- ', () => {
     const context = getShownCanvas(cpu).getContext('2d');
     const getImageData = spyOn(context, 'getImageData').and.callThrough();
 
-    cpu.setDisplaySetPresentation(cpuId, { sharpening: 0, smoothing: 0 });
+    cpu.setDisplaySetAppearance(cpuId, { sharpening: 0, smoothing: 0 });
     await renderAndWait(cpu);
     expect(getImageData).not.toHaveBeenCalled();
 
-    cpu.setDisplaySetPresentation(cpuId, { sharpening: 1 });
+    cpu.setDisplaySetAppearance(cpuId, { sharpening: 1 });
     await renderAndWait(cpu);
     expect(getImageData).toHaveBeenCalled();
 
-    cpu.setDisplaySetPresentation(cpuId, { sharpening: 0 });
+    cpu.setDisplaySetAppearance(cpuId, { sharpening: 0 });
     await renderAndWait(cpu);
     expect(maxDifference(plain, readPixels(cpu))).toBe(0);
   });

@@ -250,7 +250,7 @@ async function run() {
     const viewport = renderingEngine.getViewport<VolumeViewport3D>(viewportId);
 
     viewport.setDisplaySets({ displaySetId: ctDisplaySetId }).then(() => {
-      viewport.setDisplaySetPresentation(ctDisplaySetId, {
+      viewport.setDisplaySetAppearance(ctDisplaySetId, {
         preset: 'CT-Bone',
       });
 
@@ -263,7 +263,7 @@ async function run() {
   );
 
   ptViewport.setDisplaySets({ displaySetId: ptDisplaySetId }).then(() => {
-    ptViewport.setDisplaySetPresentation(ptDisplaySetId, {
+    ptViewport.setDisplaySetAppearance(ptDisplaySetId, {
       ...petPresentation(),
       blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
       slabThickness: 300,

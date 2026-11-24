@@ -1,7 +1,7 @@
 import { ViewportType } from '../../../enums';
 import type { Point2, Point3 } from '../../../types';
 import type {
-  ProjectionPresentation,
+  ProjectionFraming,
   ProjectionRequest,
   ProjectionSnapshot,
 } from '../ViewportProjectionTypes';
@@ -10,7 +10,7 @@ import type { PlanarSliceBasis } from './planarSliceBasis';
 import type {
   PlanarDisplayArea,
   PlanarResolvedICamera,
-  PlanarViewPresentation,
+  PlanarViewFraming,
   PlanarViewState,
 } from './PlanarViewportTypes';
 
@@ -55,14 +55,14 @@ export type PlanarProjectionViewport = {
   getViewState?(): PlanarViewState;
 };
 
-export interface PlanarProjectionPresentation
-  extends ProjectionPresentation<PlanarDisplayArea> {
+export interface PlanarProjectionFraming
+  extends ProjectionFraming<PlanarDisplayArea> {
   rawPan: Point2;
   scaleVector: Point2;
 }
 
 export interface PlanarProjectionSnapshot
-  extends ProjectionSnapshot<PlanarViewState, PlanarProjectionPresentation> {
+  extends ProjectionSnapshot<PlanarViewState, PlanarProjectionFraming> {
   canvasHeight: number;
   canvasWidth: number;
   displayArea?: PlanarDisplayArea;
@@ -86,4 +86,4 @@ export interface PlanarProjectionRequest
   viewState?: PlanarViewState;
 }
 
-export type PlanarProjectionAdapterPresentation = PlanarViewPresentation;
+export type PlanarProjectionAdapterFraming = PlanarViewFraming;

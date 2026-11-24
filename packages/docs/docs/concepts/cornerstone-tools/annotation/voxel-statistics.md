@@ -238,7 +238,7 @@ never when it recalculates the statistics.
 ### Two conversions of the slab of a planar viewport
 
 The view reference of a planar viewport applies two conversions to the
-`slabThickness` of the presentation of its display set that a reader of the raw
+`slabThickness` of the appearance of its display set that a reader of the raw
 slab value would miss.
 
 **It doubles the value.** A `slabThickness` of `T` shows the slices within
@@ -258,9 +258,9 @@ undefined lets `T` fall back to one voxel along the normal.
 
 `utilities.getViewSlabDepth` holds the second conversion, and every caller
 that needs a depth uses it. The caller supplies a full depth, so a caller
-passes twice the `slabThickness` of the presentation. A brush fill reaches the
+passes twice the `slabThickness` of the appearance. A brush fill reaches the
 function through `getViewSlabDepthOfViewport` in the tools package, which reads
-the presentation of the source display set and gives the same depth as the view
+the appearance of the source display set and gives the same depth as the view
 reference. A caller that reads `slabThickness` and treats the value as a depth
 fills half of the depth that the user sees.
 

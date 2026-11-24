@@ -51,7 +51,7 @@ addButtonToToolbar({
     // Get the stack viewport
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-    const presentation = viewportProjection.getPresentation(viewport, {
+    const presentation = viewportProjection.getFraming(viewport, {
       selector: { zoom: true, pan: true },
     });
     const zoom = presentation?.zoom ?? 1;
@@ -59,7 +59,7 @@ addButtonToToolbar({
 
     console.log('Current pan', JSON.stringify([pan[0] * zoom, pan[1] * zoom]));
 
-    const panned = viewportProjection.withPresentation(viewport, {
+    const panned = viewportProjection.withFraming(viewport, {
       pan: [pan[0] + 5 / zoom, pan[1]],
     });
 
@@ -80,10 +80,10 @@ addButtonToToolbar({
     // Get the stack viewport
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-    const presentation = viewportProjection.getPresentation(viewport, {
+    const presentation = viewportProjection.getFraming(viewport, {
       selector: { zoom: true, pan: true },
     });
-    const zoomed = viewportProjection.withPresentation(viewport, {
+    const zoomed = viewportProjection.withFraming(viewport, {
       zoom: (presentation?.zoom ?? 1) * 1.05,
     });
 
@@ -266,7 +266,7 @@ async function run() {
   await viewport.setDisplaySets({ displaySetId });
 
   // Set the VOI of the stack
-  viewport.setDisplaySetPresentation(displaySetId, { voiRange: ctVoiRange });
+  viewport.setDisplaySetAppearance(displaySetId, { voiRange: ctVoiRange });
 
   // Render the image
   viewport.render();

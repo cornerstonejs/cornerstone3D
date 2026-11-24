@@ -163,7 +163,7 @@ addSliderToToolbar({
       renderingEngine.getViewport<PlanarViewport>(stackViewportId);
 
     if (stackViewport) {
-      stackViewport.setDisplaySetPresentation(stackDisplaySetId, {
+      stackViewport.setDisplaySetAppearance(stackDisplaySetId, {
         smoothing: value / 100, // Convert percentage to decimal
       });
       stackViewport.render();
@@ -174,7 +174,7 @@ addSliderToToolbar({
       renderingEngine.getViewport<PlanarViewport>(stackViewportId2);
 
     if (stackViewport2) {
-      stackViewport2.setDisplaySetPresentation(stackDisplaySetId2, {
+      stackViewport2.setDisplaySetAppearance(stackDisplaySetId2, {
         smoothing: value / 100, // Convert percentage to decimal
       });
       stackViewport2.render();
@@ -185,7 +185,7 @@ addSliderToToolbar({
       renderingEngine.getViewport<PlanarViewport>(stackViewportId3);
 
     if (stackViewport3) {
-      stackViewport3.setDisplaySetPresentation(stackDisplaySetId3, {
+      stackViewport3.setDisplaySetAppearance(stackDisplaySetId3, {
         smoothing: value / 100, // Convert percentage to decimal
       });
       stackViewport3.render();
@@ -196,7 +196,7 @@ addSliderToToolbar({
       renderingEngine.getViewport<PlanarViewport>(volumeViewportId);
 
     if (volumeViewport) {
-      volumeViewport.setDisplaySetPresentation(volumeDisplaySetId, {
+      volumeViewport.setDisplaySetAppearance(volumeDisplaySetId, {
         smoothing: value / 100, // Convert percentage to decimal
       });
       volumeViewport.render();
@@ -225,10 +225,10 @@ addButtonToToolbar({
       renderingEngine.getViewport<PlanarViewport>(stackViewportId);
 
     if (stackViewport) {
-      stackViewport.setDisplaySetPresentation(stackDisplaySetId, {
+      stackViewport.setDisplaySetAppearance(stackDisplaySetId, {
         smoothing: 0,
       });
-      stackViewport.resetDisplaySetPresentation(stackDisplaySetId);
+      stackViewport.resetDisplaySetAppearance(stackDisplaySetId);
       stackViewport.render();
     }
 
@@ -237,10 +237,10 @@ addButtonToToolbar({
       renderingEngine.getViewport<PlanarViewport>(stackViewportId2);
 
     if (stackViewport2) {
-      stackViewport2.setDisplaySetPresentation(stackDisplaySetId2, {
+      stackViewport2.setDisplaySetAppearance(stackDisplaySetId2, {
         smoothing: 0,
       });
-      stackViewport2.resetDisplaySetPresentation(stackDisplaySetId2);
+      stackViewport2.resetDisplaySetAppearance(stackDisplaySetId2);
       stackViewport2.render();
     }
 
@@ -249,10 +249,10 @@ addButtonToToolbar({
       renderingEngine.getViewport<PlanarViewport>(stackViewportId3);
 
     if (stackViewport3) {
-      stackViewport3.setDisplaySetPresentation(stackDisplaySetId3, {
+      stackViewport3.setDisplaySetAppearance(stackDisplaySetId3, {
         smoothing: 0,
       });
-      stackViewport3.resetDisplaySetPresentation(stackDisplaySetId3);
+      stackViewport3.resetDisplaySetAppearance(stackDisplaySetId3);
       stackViewport3.render();
     }
 
@@ -261,10 +261,10 @@ addButtonToToolbar({
       renderingEngine.getViewport<PlanarViewport>(volumeViewportId);
 
     if (volumeViewport) {
-      volumeViewport.setDisplaySetPresentation(volumeDisplaySetId, {
+      volumeViewport.setDisplaySetAppearance(volumeDisplaySetId, {
         smoothing: 0,
       });
-      volumeViewport.resetDisplaySetPresentation(volumeDisplaySetId);
+      volumeViewport.resetDisplaySetAppearance(volumeDisplaySetId);
       volumeViewport.render();
     }
 
@@ -370,7 +370,7 @@ async function run() {
   await stackViewport.setDisplaySets({ displaySetId: stackDisplaySetId });
 
   // Set the VOI range
-  stackViewport.setDisplaySetPresentation(stackDisplaySetId, {
+  stackViewport.setDisplaySetAppearance(stackDisplaySetId, {
     voiRange: ctVoiRange,
   });
 
@@ -390,7 +390,7 @@ async function run() {
   await stackViewport2.setDisplaySets({ displaySetId: stackDisplaySetId2 });
 
   // Set the VOI range with custom window/level for this viewport
-  stackViewport2.setDisplaySetPresentation(stackDisplaySetId2, {
+  stackViewport2.setDisplaySetAppearance(stackDisplaySetId2, {
     voiRange: {
       lower: 2000 - 4100 / 2, // Level - Window/2
       upper: 2000 + 4100 / 2, // Level + Window/2
@@ -413,7 +413,7 @@ async function run() {
   await stackViewport3.setDisplaySets({ displaySetId: stackDisplaySetId3 });
 
   // Set the VOI range with custom window/level for this viewport
-  stackViewport3.setDisplaySetPresentation(stackDisplaySetId3, {
+  stackViewport3.setDisplaySetAppearance(stackDisplaySetId3, {
     voiRange: {
       lower: 5393 - 1751 / 2, // Level - Window/2
       upper: 5393 + 1751 / 2, // Level + Window/2
@@ -447,10 +447,7 @@ async function run() {
   });
 
   await volumeViewport.setDisplaySets({ displaySetId: volumeDisplaySetId });
-  volumeViewport.setDisplaySetPresentation(
-    volumeDisplaySetId,
-    ctPresentation()
-  );
+  volumeViewport.setDisplaySetAppearance(volumeDisplaySetId, ctPresentation());
 
   // Render the volume viewport
   volumeViewport.render();

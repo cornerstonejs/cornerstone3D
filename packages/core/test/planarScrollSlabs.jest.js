@@ -151,7 +151,7 @@ describe('scrolling a slab on a planar viewport', () => {
         displaySetId,
         options: { orientation: OrientationAxis.AXIAL },
       });
-      viewport.setDisplaySetPresentation(displaySetId, {
+      viewport.setDisplaySetAppearance(displaySetId, {
         slabThickness: SLAB,
       });
     });

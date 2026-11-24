@@ -229,7 +229,7 @@ async function run() {
       const viewport: PlanarViewport = renderingEngine.getViewport(viewportId);
 
       await viewport.setDisplaySets({ displaySetId });
-      viewport.setDisplaySetPresentation(displaySetId, ctPresentation());
+      viewport.setDisplaySetAppearance(displaySetId, ctPresentation());
     })
   );
 

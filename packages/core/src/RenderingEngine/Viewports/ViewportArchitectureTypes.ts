@@ -22,14 +22,14 @@ import type ResolvedViewportView from './ResolvedViewportView';
  * View ownership contract:
  *
  * ViewState is the mutable viewport-local source of truth for navigation and
- * layout. ViewPresentation is persistable look state only: pan, zoom/scale,
+ * layout. ViewFraming is persistable look state only: pan, zoom/scale,
  * rotation, flips, and display area. ViewReference is a persistable spatial
  * pointer: frame of reference, data identity, slice locator, and plane
  * restriction; it does not contain pan, zoom, rotation, flips, VOI, or opacity.
  * ResolvedView is an ephemeral snapshot produced from data, canvas geometry,
  * and ViewState; it owns world/canvas transforms and renderer geometry and is
- * never persisted. DataPresentation is per-binding render appearance such as
- * VOI, opacity, colormap, interpolation, and visibility.
+ * never persisted. DisplaySetAppearance is the per-binding render appearance
+ * such as VOI, opacity, colormap, interpolation, and visibility.
  */
 
 export type ViewportId = string;
@@ -63,7 +63,7 @@ export interface DataAddOptions {
   role?: BindingRole;
 }
 
-export interface BasePresentationProps {
+export interface BaseAppearanceProps {
   visible?: boolean;
   opacity?: number;
 }
@@ -124,9 +124,9 @@ export type MountedRendering<
   TRendering extends { renderMode: string } = { renderMode: string },
 > = Omit<TRendering, 'id'> & RenderingFidelity;
 
-export interface RenderPathAttachment<TPresentation = unknown> {
+export interface RenderPathAttachment<TAppearance = unknown> {
   rendering: MountedRendering;
-  updateDataPresentation(props: TPresentation): void;
+  updateAppearance(props: TAppearance): void;
   applyViewState(viewState: unknown): void;
   getFrameOfReferenceUID(): string | undefined;
   getActorEntry?(data: LoadedData): ActorEntry | undefined;
@@ -206,15 +206,15 @@ export interface DataProvider<
   ): Promise<LoadedData<TData>>;
 }
 
-export interface ViewportDataBinding<TPresentation = unknown>
-  extends RenderPathAttachment<TPresentation> {
+export interface ViewportDataBinding<TAppearance = unknown>
+  extends RenderPathAttachment<TAppearance> {
   data: LoadedData;
   role: BindingRole;
 }
 
 export interface ViewportController<
   TViewState = unknown,
-  TDataPresentation = unknown,
+  TAppearance = unknown,
 > {
   readonly id: ViewportId;
   readonly type: ViewportType;
@@ -246,14 +246,12 @@ export interface ViewportController<
       | ((viewState: TViewState) => Partial<TViewState> | void)
   ): void;
   resetViewState(options?: unknown): boolean;
-  setDisplaySetPresentation(props: Partial<TDataPresentation>): void;
-  setDisplaySetPresentation(
+  setDisplaySetAppearance(props: Partial<TAppearance>): void;
+  setDisplaySetAppearance(
     displaySetId: DisplaySetId,
-    props: Partial<TDataPresentation>
+    props: Partial<TAppearance>
   ): void;
-  getDisplaySetPresentation(
-    displaySetId: DisplaySetId
-  ): TDataPresentation | undefined;
+  getDisplaySetAppearance(displaySetId: DisplaySetId): TAppearance | undefined;
   setViewReference(viewReference: ViewReference): void;
   getViewReference(specifier?: ViewReferenceSpecifier): ViewReference;
   getViewReferenceId(specifier?: ViewReferenceSpecifier): string;

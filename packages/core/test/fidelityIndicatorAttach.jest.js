@@ -409,7 +409,7 @@ describe('fidelityIndicator attach gates', () => {
                 rendering: renderings.shift(),
                 removeData: () => {},
                 applyViewState: () => {},
-                updateDataPresentation: () => {},
+                updateAppearance: () => {},
                 getFrameOfReferenceUID: () => '1.2.3',
               }),
             }),
@@ -436,7 +436,7 @@ describe('fidelityIndicator attach gates', () => {
         return viewState;
       }
 
-      notifyDataPresentationModified() {}
+      notifyAppearanceModified() {}
     }
 
     beforeEach(() => {

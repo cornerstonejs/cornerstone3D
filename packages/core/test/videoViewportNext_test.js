@@ -581,12 +581,12 @@ describe('Direct next video viewport -- ', () => {
   it('applies the invert of the presentation to the video', async function () {
     const displaySetId = TEST_VIDEO.imageId;
 
-    next.setDisplaySetPresentation(displaySetId, { invert: true });
+    next.setDisplaySetAppearance(displaySetId, { invert: true });
     expect(getComputedStyle(nextVideoElement(next)).filter).toContain(
       'invert(1)'
     );
 
-    next.setDisplaySetPresentation(displaySetId, {
+    next.setDisplaySetAppearance(displaySetId, {
       voiRange: { lower: 20, upper: 200 },
     });
     expect(getComputedStyle(nextVideoElement(next)).filter).toContain(
@@ -594,7 +594,7 @@ describe('Direct next video viewport -- ', () => {
     );
     expect(getComputedStyle(nextVideoElement(next)).filter).toContain('url(');
 
-    next.setDisplaySetPresentation(displaySetId, { invert: false });
+    next.setDisplaySetAppearance(displaySetId, { invert: false });
     expect(getComputedStyle(nextVideoElement(next)).filter).not.toContain(
       'invert'
     );

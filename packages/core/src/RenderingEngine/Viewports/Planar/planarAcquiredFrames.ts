@@ -8,7 +8,7 @@ import type {
   RenderPathAttachment,
 } from '../ViewportArchitectureTypes';
 import type {
-  PlanarDataPresentation,
+  PlanarDisplaySetAppearance,
   PlanarPayload,
   PlanarVtkVolumeAdapterContext,
 } from './PlanarViewportTypes';
@@ -114,18 +114,18 @@ export function acquiredFrameIndexOfVolumePoint(
  * is in the acquisition plane, `canDrawAcquiredFrames` holds, and the frame of
  * the current plane has loaded; otherwise the volume slice actor is visible.
  *
- * The frame uses the presentation of the volume, with the default VOI of the
+ * The frame uses the appearance of the volume, with the default VOI of the
  * volume. The hidden rendering is excluded from the fidelity, so the indicator
  * follows the visible path.
  */
 export function withAcquiredFrames(
   ctx: PlanarVtkVolumeAdapterContext,
   data: LoadedData<PlanarPayload>,
-  volume: RenderPathAttachment<PlanarDataPresentation>
-): RenderPathAttachment<PlanarDataPresentation> {
+  volume: RenderPathAttachment<PlanarDisplaySetAppearance>
+): RenderPathAttachment<PlanarDisplaySetAppearance> {
   const volumeRendering = volume.rendering as PlanarVolumeSliceRendering;
   const { imageVolume, imageIds } = volumeRendering;
-  let frame: RenderPathAttachment<PlanarDataPresentation> | undefined;
+  let frame: RenderPathAttachment<PlanarDisplaySetAppearance> | undefined;
   let mounting = false;
   let removed = false;
   let wantedIndex: number | undefined;
@@ -150,11 +150,10 @@ export function withAcquiredFrames(
   };
   // The frame draws the VOI and the VOI LUT function of the volume slice.
   // Limit: the frame has no colormap opacity table.
-  const framePresentation = (): PlanarDataPresentation => ({
-    ...volumeRendering.dataPresentation,
+  const frameAppearance = (): PlanarDisplaySetAppearance => ({
+    ...volumeRendering.appearance,
     voiRange:
-      volumeRendering.dataPresentation?.voiRange ??
-      volumeRendering.defaultVOIRange,
+      volumeRendering.appearance?.voiRange ?? volumeRendering.defaultVOIRange,
   });
 
   function updateVisibility(): void {
@@ -162,7 +161,7 @@ export function withAcquiredFrames(
     const showsFrame =
       wantedIndex !== undefined &&
       rendering?.currentImageIdIndex === wantedIndex;
-    const visible = volumeRendering.dataPresentation?.visible !== false;
+    const visible = volumeRendering.appearance?.visible !== false;
 
     volumeRendering.actor.setVisibility(visible && !showsFrame);
 
@@ -222,7 +221,7 @@ export function withAcquiredFrames(
 
       frame = attachment;
       acquiredFrameActors.add(frameRendering().actor);
-      frame.updateDataPresentation(framePresentation());
+      frame.updateAppearance(frameAppearance());
     } catch (error) {
       log.warn('The acquired frame did not load', error);
       return;
@@ -286,9 +285,9 @@ export function withAcquiredFrames(
 
   return {
     ...volume,
-    updateDataPresentation: (props) => {
-      volume.updateDataPresentation(props);
-      frame?.updateDataPresentation(framePresentation());
+    updateAppearance: (props) => {
+      volume.updateAppearance(props);
+      frame?.updateAppearance(frameAppearance());
       sync();
     },
     applyViewState: (viewState) => {

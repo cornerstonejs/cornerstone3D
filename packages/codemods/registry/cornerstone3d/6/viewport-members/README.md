@@ -23,8 +23,8 @@ its name, and so is a legacy member in brackets
 
 - `resetCamera()` and `resetCamera({ resetPan, resetZoom, resetOrientation })`
   become `resetViewState(...)`.
-- `setProperties({ ... })` with one object of presentation keys becomes
-  `setDisplaySetPresentation({ ... })`, which sets the source display set;
+- `setProperties({ ... })` with one object of appearance keys becomes
+  `setDisplaySetAppearance({ ... })`, which sets the source display set;
   `VOILUTFunction` becomes `voiLUTFunction`, also as a quoted key, which
   keeps its quotes. `preset` and
   `sampleDistanceMultiplier` count only on a viewport typed as a 3D viewport.
@@ -32,6 +32,15 @@ its name, and so is a legacy member in brackets
   becomes `traceLayout`).
 - `resetCameraForResize()` becomes `resetViewStateForResize()`,
   `getTargetImageIdIndex()` `getCurrentImageIdIndex()`.
+- `getViewPresentation(selector)` and `setViewPresentation(presentation)`
+  become `getViewFraming(selector)` and `setViewFraming(framing)`, each listed
+  for review: zoom and pan of the framing are against the fit, the framing
+  has no slab thickness and no window (they are keys of
+  `setDisplaySetAppearance`), and `getViewFraming` gives undefined while the
+  viewport shows nothing. On a receiver that the file gives a type of the
+  application (a cast such as `viewport as unknown as LegacyViewport`, or a
+  name declared with such a type) they are reported: that type declares
+  them.
 - `getActorUIDs()`, `getAllVolumeIds()`, `getActorByIndex(i)` and
   `getActorUIDByIndex(i)` become reads of `getActors()`; `getBounds()`
   becomes `getImageData()?.imageData.getBounds?.()`, which passes
@@ -45,10 +54,10 @@ its name, and so is a legacy member in brackets
   `utilities.getViewportModality(viewport)`, `isDestroyed`, `id`,
   `getFrameRate()` and `getNumberOfFrames()`.
 - `setFrameRange(range)` and `setAverageWhite(value)` become `setViewState`
-  and `setDisplaySetPresentation`.
-- `setDisplaySetPresentation` sets the display set that the viewport shows,
+  and `setDisplaySetAppearance`.
+- `setDisplaySetAppearance` sets the display set that the viewport shows,
   and does nothing before the first mount, where 5.x kept the properties.
-  So `setProperties` of presentation keys and `setAverageWhite` change only
+  So `setProperties` of appearance keys and `setAverageWhite` change only
   on a viewport that is a name whose binding holds one value (a `const`, an
   unwritten parameter), after a statement of the same function that awaits
   a mount on that binding (`await viewport.setDisplaySets(...)`,
@@ -66,7 +75,7 @@ variable, a spread, or a key without a twin (`slabThickness`, `preset`,
 `setAverageWhite` before the viewport shows its data;
 `resetCamera` with `resetToCenter` or `storeAsInitialCamera`; `getCamera`,
 `setCamera` of other keys, `getProperties`, `resetProperties`, the default
-properties, the view presentation, the actor members, `getSliceViewInfo`,
+properties, the actor members, `getSliceViewInfo`,
 `getIntensityFromWorld`, `jumpToWorld`, `flip`, `setBlendMode`,
 `setSlabThickness`, `togglePlayPause`, `setChannelVisibility`,
 `getSliceIndexForImage` (5.x took a view reference too and gave `undefined`
@@ -86,6 +95,9 @@ The rewrite of `getAllVolumeIds()` is listed for review: `getActors()` also
 lists the actors of labelmaps, surfaces and the images of a stack, whose
 `referencedId` is not a volume id or is undefined. Keep the ids that
 `viewport.hasVolumeId(id)` takes where only the volumes count.
+
+The rewrites of `getViewPresentation` and `setViewPresentation` are listed
+for review, with what the framing of 6.0 does differently.
 
 - Manual, at line 1: `the file was not analysed:` with the reason, for a
   file whose names cannot be looked up (the tool cannot read it, or a name

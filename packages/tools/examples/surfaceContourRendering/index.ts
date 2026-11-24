@@ -333,7 +333,7 @@ async function run() {
   const viewport3D: VolumeViewport3D =
     renderingEngine.getViewport(viewportId3D);
 
-  viewport3D.setDisplaySetPresentation(displaySetId, {
+  viewport3D.setDisplaySetAppearance(displaySetId, {
     preset: 'CT-Chest-Contrast-Enhanced',
   });
 

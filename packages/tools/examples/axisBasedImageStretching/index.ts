@@ -266,7 +266,7 @@ const applyAspectRatio = (vp: PlanarViewport, aspect: Types.Point2) => {
   if (isFitViewportAfterStretch) {
     vp.setViewState({ scale: [stretch, 1], scaleMode: 'fitAspect' });
   } else {
-    const [scaleX] = viewportProjection.getPresentation(vp, {
+    const [scaleX] = viewportProjection.getFraming(vp, {
       selector: { scale: true },
     })?.scale ?? [1, 1];
 
@@ -361,7 +361,7 @@ addDropdownToToolbar({
     const renderingEngine = getRenderingEngine(renderingEngineId);
     volumeViewportIds.forEach((id) => {
       const vp = renderingEngine.getViewport<PlanarViewport>(id);
-      const viewState = viewportProjection.withPresentation(vp, { rotation });
+      const viewState = viewportProjection.withFraming(vp, { rotation });
 
       if (viewState) {
         vp.setViewState(viewState);
@@ -567,10 +567,7 @@ async function run() {
           renderingEngine.getViewport<PlanarViewport>(viewportId);
 
         await viewport.setDisplaySets({ displaySetId: volumeDisplaySetId });
-        viewport.setDisplaySetPresentation(
-          volumeDisplaySetId,
-          ctPresentation()
-        );
+        viewport.setDisplaySetAppearance(volumeDisplaySetId, ctPresentation());
       })
     );
 

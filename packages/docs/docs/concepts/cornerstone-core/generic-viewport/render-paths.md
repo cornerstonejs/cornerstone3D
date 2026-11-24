@@ -8,7 +8,7 @@ summary: How viewport render paths select runtime implementations and project re
 
 A render path is the runtime implementation that knows how to draw one logical
 data type in one render mode. The viewport chooses a render path when data is
-added, then the binding returned by that path receives view and presentation
+added, then the binding returned by that path receives view and appearance
 updates from the viewport.
 
 Examples include:
@@ -75,6 +75,6 @@ When adding a new render path:
 - Keep persistent navigation state on the viewport.
 - Implement `applyViewState()` as a projection from semantic state to runtime
   commands.
-- Keep appearance settings in data presentation, not view state.
+- Keep appearance settings in the appearance of the display set, not view state.
 - Return cleanup through `removeData()` so runtime resources are owned by the
   binding that created them.

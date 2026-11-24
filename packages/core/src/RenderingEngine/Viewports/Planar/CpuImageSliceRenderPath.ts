@@ -43,14 +43,14 @@ import type {
 } from '../ViewportArchitectureTypes';
 import type {
   PlanarViewState,
-  PlanarDataPresentation,
+  PlanarDisplaySetAppearance,
   PlanarCpuImageAdapterContext,
   PlanarPayload,
   PlanarResolvedICamera,
   PlanarViewportRenderContext,
 } from './PlanarViewportTypes';
 import type { PlanarCpuImageRendering } from './planarRuntimeTypes';
-import type { DerivedPlanarPresentation } from './planarRenderCamera';
+import type { DerivedPlanarFraming } from './planarRenderCamera';
 import {
   resolvePlanarCpuImageDisplayedArea,
   resolvePlanarCpuViewportScale,
@@ -119,7 +119,7 @@ type CpuImageSliceMount = {
  * of the viewport.
  *
  * The image is drawn by the CPU draw step of the sampled slice
- * (`PlanarSampledSliceCanvas`, presentation `image`), so that the picture is
+ * (`PlanarSampledSliceCanvas`, appearance `image`), so that the picture is
  * the one of the GPU image path (`VtkImageMapperRenderPath`): the same colour
  * tables, the same blend with the background, the same placement. The image
  * is handed to it as a volume of one slice (`createImageSliceVolume`): along
@@ -136,7 +136,7 @@ export class CpuImageSliceRenderPath
     ctx: PlanarCpuImageAdapterContext,
     data: LoadedData,
     options: DataAddOptions
-  ): Promise<RenderPathAttachment<PlanarDataPresentation>> {
+  ): Promise<RenderPathAttachment<PlanarDisplaySetAppearance>> {
     const payload: PlanarPayload = data as unknown as LoadedData<PlanarPayload>;
 
     if (!payload.image) {
@@ -185,7 +185,7 @@ export class CpuImageSliceRenderPath
       currentImageIdIndex: payload.initialImageIdIndex ?? 0,
       defaultVOIRange: getDefaultImageVOIRange(payload.image),
       defaultInvert: getDefaultImageInvert(payload.image),
-      dataPresentation: undefined,
+      appearance: undefined,
       fitScale: getCPUFallbackScalarScale(enabledElement.viewport.scale),
       loadRequestId: 0,
       renderingInvalidated: true,
@@ -225,7 +225,7 @@ export class CpuImageSliceRenderPath
           image,
           imageIdIndex: rendering.currentImageIdIndex,
           numberOfSlices: payload.imageIds.length,
-          props: rendering.dataPresentation,
+          props: rendering.appearance,
           rendering,
         })
     );
@@ -238,8 +238,8 @@ export class CpuImageSliceRenderPath
 
     return {
       rendering,
-      updateDataPresentation: (props) => {
-        this.updateDataPresentation(rendering, props);
+      updateAppearance: (props) => {
+        this.updateAppearance(rendering, props);
       },
       applyViewState: (camera) => {
         this.applyViewState(ctx, rendering, data.id, camera, payload.imageIds);
@@ -272,12 +272,12 @@ export class CpuImageSliceRenderPath
     };
   }
 
-  private updateDataPresentation(
+  private updateAppearance(
     rendering: PlanarCpuImageRendering,
     props: unknown
   ): void {
-    rendering.dataPresentation = props as PlanarDataPresentation | undefined;
-    applyDataPresentation(rendering, rendering.dataPresentation);
+    rendering.appearance = props as PlanarDisplaySetAppearance | undefined;
+    applyAppearance(rendering, rendering.appearance);
   }
 
   private applyViewState(
@@ -308,9 +308,9 @@ export class CpuImageSliceRenderPath
     });
 
     if (projection) {
-      applyPresentationState(
+      applyAppearanceState(
         rendering,
-        projection.presentation,
+        projection.framing,
         projection.resolvedICamera
       );
     }
@@ -346,7 +346,7 @@ export class CpuImageSliceRenderPath
           image,
           imageIdIndex: nextImageIdIndex,
           numberOfSlices: imageIds.length,
-          props: rendering.dataPresentation,
+          props: rendering.appearance,
           rendering,
         });
       },
@@ -460,9 +460,9 @@ export class CpuImageSliceRenderPath
     rendering.renderingInvalidated = true;
 
     if (projection) {
-      applyPresentationState(
+      applyAppearanceState(
         rendering,
-        projection.presentation,
+        projection.framing,
         projection.resolvedICamera
       );
     }
@@ -503,7 +503,7 @@ export class CpuImageSliceRenderPath
       return;
     }
 
-    if (rendering.dataPresentation?.visible !== false) {
+    if (rendering.appearance?.visible !== false) {
       const screen = getCanvasScreenSliceGeometry(
         ctx.cpu.canvas,
         camera,
@@ -539,7 +539,7 @@ export class CpuImageSliceRenderPath
         draw.draw({
           target: ctx.cpu,
           camera,
-          presentation: getImageSlicePresentation(rendering),
+          appearance: getImageSliceAppearance(rendering),
           defaultVOIRange: rendering.defaultVOIRange,
           invalidated: rendering.renderingInvalidated,
         });
@@ -646,9 +646,9 @@ export class CpuImageSlicePath
   }
 }
 
-function applyDataPresentation(
+function applyAppearance(
   rendering: PlanarCpuImageRendering,
-  props?: PlanarDataPresentation
+  props?: PlanarDisplaySetAppearance
 ): void {
   const { enabledElement, defaultVOIRange } = rendering;
   const { viewport } = enabledElement;
@@ -685,9 +685,9 @@ function getCPUFallbackScalarScale(scale?: number | Point2): number {
   return Array.isArray(scale) ? scale[1] : (scale ?? 1);
 }
 
-function applyPresentationState(
+function applyAppearanceState(
   rendering: PlanarCpuImageRendering,
-  presentation?: DerivedPlanarPresentation,
+  framing?: DerivedPlanarFraming,
   activeSourceICamera?: PlanarResolvedICamera
 ): void {
   const { enabledElement, fitScale } = rendering;
@@ -697,22 +697,22 @@ function applyPresentationState(
   > & {
     scale?: number | Point2;
   };
-  const desiredPan = presentation?.pan ?? [0, 0];
-  const zoom = Math.max(presentation?.zoom ?? 1, 0.001);
+  const desiredPan = framing?.pan ?? [0, 0];
+  const zoom = Math.max(framing?.zoom ?? 1, 0.001);
 
-  viewport.hflip = presentation?.flipHorizontal ?? false;
-  viewport.vflip = presentation?.flipVertical ?? false;
-  viewport.rotation = presentation?.rotation ?? 0;
+  viewport.hflip = framing?.flipHorizontal ?? false;
+  viewport.vflip = framing?.flipVertical ?? false;
+  viewport.rotation = framing?.rotation ?? 0;
   viewport.scale =
     typeof activeSourceICamera?.parallelScale === 'number'
       ? resolvePlanarCpuViewportScale({
           canvas: enabledElement.canvas,
           parallelScale: activeSourceICamera.parallelScale,
-          presentationScale: activeSourceICamera.presentationScale,
+          framingScale: activeSourceICamera.framingScale,
           columnPixelSpacing: enabledElement.image?.columnPixelSpacing || 1,
           rowPixelSpacing: enabledElement.image?.rowPixelSpacing || 1,
         })
-      : [fitScale * (presentation?.scale?.[0] ?? zoom), fitScale * zoom];
+      : [fitScale * (framing?.scale?.[0] ?? zoom), fitScale * zoom];
   viewport.parallelScale = activeSourceICamera?.parallelScale;
   viewport.translation = activeSourceICamera?.focalPoint
     ? resolveCPUImageViewportTranslationFromFocalPoint(
@@ -931,7 +931,7 @@ function getImagePlaneCamera(
 
 /**
  * The sampling inputs of an image: its interpolation, LINEAR unless the
- * presentation asks for NEAREST, as on the GPU image path. An image has no
+ * appearance asks for NEAREST, as on the GPU image path. An image has no
  * slab and no time point.
  */
 function getImageSliceInputs(
@@ -939,29 +939,28 @@ function getImageSliceInputs(
 ): PlanarSampledSliceInputs {
   return {
     interpolationType:
-      rendering.dataPresentation?.interpolationType ===
-      InterpolationType.NEAREST
+      rendering.appearance?.interpolationType === InterpolationType.NEAREST
         ? InterpolationType.NEAREST
         : InterpolationType.LINEAR,
   };
 }
 
 /**
- * The presentation that the GPU image path applies: LINEAR interpolation
- * unless the presentation says otherwise, and the VOI LUT function and the
- * invert flag of the image unless the presentation gives them.
+ * The appearance that the GPU image path applies: LINEAR interpolation
+ * unless the appearance says otherwise, and the VOI LUT function and the
+ * invert flag of the image unless the appearance gives them.
  */
-function getImageSlicePresentation(
+function getImageSliceAppearance(
   rendering: PlanarCpuImageRendering
-): PlanarDataPresentation {
-  const { dataPresentation, enabledElement } = rendering;
+): PlanarDisplaySetAppearance {
+  const { appearance, enabledElement } = rendering;
 
   return {
     interpolationType: InterpolationType.LINEAR,
-    ...dataPresentation,
+    ...appearance,
     voiLUTFunction:
-      dataPresentation?.voiLUTFunction ?? enabledElement.image?.voiLUTFunction,
-    invert: dataPresentation?.invert ?? rendering.defaultInvert,
+      appearance?.voiLUTFunction ?? enabledElement.image?.voiLUTFunction,
+    invert: appearance?.invert ?? rendering.defaultInvert,
   };
 }
 
@@ -997,7 +996,7 @@ async function updateRenderedImage(args: {
   image: IImage;
   imageIdIndex: number;
   numberOfSlices: number;
-  props?: PlanarDataPresentation;
+  props?: PlanarDisplaySetAppearance;
   rendering: PlanarCpuImageRendering;
 }): Promise<void> {
   const {
@@ -1048,7 +1047,7 @@ async function updateRenderedImage(args: {
     .getInputData()
     .setDerivedImage(image);
 
-  applyDataPresentation(rendering, props);
+  applyAppearance(rendering, props);
   const projection = resolvePlanarRenderPathProjection({
     ctx,
     displaySetId,
@@ -1057,9 +1056,9 @@ async function updateRenderedImage(args: {
   });
 
   if (projection) {
-    applyPresentationState(
+    applyAppearanceState(
       rendering,
-      projection.presentation,
+      projection.framing,
       projection.resolvedICamera
     );
   }

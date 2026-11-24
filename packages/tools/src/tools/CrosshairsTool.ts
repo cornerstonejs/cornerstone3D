@@ -47,10 +47,10 @@ import liangBarksyClip from '../utilities/math/vec2/liangBarksyClip';
 import { jumpToFocalPoint } from '../utilities/viewportToolHelpers';
 import { isMobile } from '../utilities/touch';
 import {
-  applyViewportPresentation,
+  applyViewportFraming,
   getViewportZoomPan,
   panViewportByCanvasDelta,
-} from '../utilities/viewportPresentation';
+} from '../utilities/viewportFraming';
 
 import * as lineSegment from '../utilities/math/line';
 import type {
@@ -2538,7 +2538,7 @@ class CrosshairsTool extends AnnotationTool {
   /**
    * Sets the slab of the viewport of a line, as the slab handles do: each
    * display set of `_getSlabDisplaySetIds` gets the value as the slab
-   * thickness of its presentation. A next planar viewport draws a slab
+   * thickness of its appearance. A next planar viewport draws a slab
    * thickness as far from the plane as the legacy volume viewport drew the
    * same number, and the slab lines are drawn at that distance. The blend
    * mode is not changed.
@@ -2547,12 +2547,12 @@ class CrosshairsTool extends AnnotationTool {
    * @param slabThickness - The slab thickness, in mm.
    */
   setSlabThickness(viewport: Types.IViewport, slabThickness: number): void {
-    if (!csUtils.viewportSupportsDisplaySetPresentation(viewport)) {
+    if (!csUtils.viewportSupportsDisplaySetAppearance(viewport)) {
       return;
     }
 
     this._getSlabDisplaySetIds(viewport).forEach((displaySetId) => {
-      viewport.setDisplaySetPresentation(displaySetId, {
+      viewport.setDisplaySetAppearance(displaySetId, {
         slabThickness,
       });
     });
@@ -2567,20 +2567,20 @@ class CrosshairsTool extends AnnotationTool {
    * @param viewport - The viewport of the line.
    */
   private _getSlabThickness(viewport: Types.IViewport): number {
-    if (!csUtils.viewportSupportsDisplaySetPresentation(viewport)) {
+    if (!csUtils.viewportSupportsDisplaySetAppearance(viewport)) {
       return RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS;
     }
 
     return this._getSlabDisplaySetIds(viewport).reduce(
       (slabThickness, displaySetId) => {
-        const presentation = viewport.getDisplaySetPresentation(
-          displaySetId
-        ) as { slabThickness?: number } | undefined;
-        const presentationSlabThickness = presentation?.slabThickness;
+        const appearance = viewport.getDisplaySetAppearance(displaySetId) as
+          | { slabThickness?: number }
+          | undefined;
+        const appearanceSlabThickness = appearance?.slabThickness;
 
-        return Number.isFinite(presentationSlabThickness) &&
-          presentationSlabThickness > slabThickness
-          ? presentationSlabThickness
+        return Number.isFinite(appearanceSlabThickness) &&
+          appearanceSlabThickness > slabThickness
+          ? appearanceSlabThickness
           : slabThickness;
       },
       RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS
@@ -2594,17 +2594,17 @@ class CrosshairsTool extends AnnotationTool {
    * @param viewport - The viewport.
    */
   private _resetSlabThickness(viewport: Types.IViewport): void {
-    if (!csUtils.viewportSupportsDisplaySetPresentation(viewport)) {
+    if (!csUtils.viewportSupportsDisplaySetAppearance(viewport)) {
       return;
     }
 
     this._getSlabDisplaySetIds(viewport).forEach((displaySetId) => {
-      const presentation = viewport.getDisplaySetPresentation(displaySetId) as
+      const appearance = viewport.getDisplaySetAppearance(displaySetId) as
         | { slabThickness?: number }
         | undefined;
 
-      if (presentation?.slabThickness !== undefined) {
-        viewport.setDisplaySetPresentation(displaySetId, {
+      if (appearance?.slabThickness !== undefined) {
+        viewport.setDisplaySetAppearance(displaySetId, {
           slabThickness: undefined,
         });
       }
@@ -2617,7 +2617,7 @@ class CrosshairsTool extends AnnotationTool {
    * `filterActorUIDsToSetSlabThickness`, each display set of the viewport
    * whose display set id or volume id is in that list.
    *
-   * @param viewport - A viewport with display set presentations.
+   * @param viewport - A viewport with display set appearances.
    */
   private _getSlabDisplaySetIds(viewport: Types.IViewport): string[] {
     const filter: string[] =
@@ -2708,7 +2708,7 @@ class CrosshairsTool extends AnnotationTool {
       Math.abs(turnedParallelScale - camera.parallelScale) >
         camera.parallelScale * 1e-9
     ) {
-      applyViewportPresentation(viewport, {
+      applyViewportFraming(viewport, {
         zoom: (zoomPan.zoom * turnedParallelScale) / camera.parallelScale,
       });
     }

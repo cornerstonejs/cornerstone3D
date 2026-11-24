@@ -255,8 +255,8 @@ describe('Planar presentation, the PET colormap recipe on a fusion -- ', () => {
         { displaySetId: 'fusion-ct' },
         { displaySetId: 'fusion-pt' }
       );
-      viewport.setDisplaySetPresentation('fusion-ct', ctPresentation());
-      viewport.setDisplaySetPresentation(
+      viewport.setDisplaySetAppearance('fusion-ct', ctPresentation());
+      viewport.setDisplaySetAppearance(
         'fusion-pt',
         petColorMapPresentation(undefined, Number(exponent))
       );

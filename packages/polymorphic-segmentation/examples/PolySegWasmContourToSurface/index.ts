@@ -121,7 +121,7 @@ addToggleButtonToToolbar({
       renderingEngine.getViewport(viewportId2);
 
     const visibility = toggle;
-    viewport3.setDisplaySetPresentation(displaySetId, { visible: visibility });
+    viewport3.setDisplaySetAppearance(displaySetId, { visible: visibility });
 
     // seems like we should reset camera, most likely this is clipping planes
     // not critical but we should fix it later
@@ -246,14 +246,14 @@ async function run() {
   const viewport1: PlanarViewport = renderingEngine.getViewport(viewportId1);
 
   await viewport1.setDisplaySets({ displaySetId });
-  viewport1.setDisplaySetPresentation(displaySetId, ctPresentation());
+  viewport1.setDisplaySetAppearance(displaySetId, ctPresentation());
 
   const viewport3: VolumeViewport3D = renderingEngine.getViewport(viewportId2);
 
   await viewport3.setDisplaySets({ displaySetId });
 
   // set the anatomy at first invisible
-  viewport3.setDisplaySetPresentation(displaySetId, {
+  viewport3.setDisplaySetAppearance(displaySetId, {
     preset: 'CT-Bone',
     visible: false,
   });

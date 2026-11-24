@@ -253,7 +253,7 @@ async function frames(count = 3) {
 async function countVOIEvents(viewport) {
   const displaySetId = viewport.getSourceDisplaySetId();
   const shownRange =
-    viewport.getDisplaySetPresentation(displaySetId)?.voiRange ??
+    viewport.getDisplaySetAppearance(displaySetId)?.voiRange ??
     viewport.getDefaultVOIRange(displaySetId);
   const ranges = [
     shownRange,
@@ -273,7 +273,7 @@ async function countVOIEvents(viewport) {
 
   for (const range of ranges) {
     count = 0;
-    viewport.setDisplaySetPresentation(displaySetId, {
+    viewport.setDisplaySetAppearance(displaySetId, {
       voiRange: { ...range },
     });
     viewport.render();
@@ -305,7 +305,7 @@ function getVolumeDisplaySetId(viewport) {
 
 /** Sets the invert of a direct next viewport. */
 function setInvert(viewport, invert) {
-  viewport.setDisplaySetPresentation(getVolumeDisplaySetId(viewport), {
+  viewport.setDisplaySetAppearance(getVolumeDisplaySetId(viewport), {
     invert,
   });
 }
@@ -313,7 +313,7 @@ function setInvert(viewport, invert) {
 /** The invert that a direct next viewport shows. */
 function getInvert(viewport) {
   return Boolean(
-    viewport.getDisplaySetPresentation(getVolumeDisplaySetId(viewport))?.invert
+    viewport.getDisplaySetAppearance(getVolumeDisplaySetId(viewport))?.invert
   );
 }
 
@@ -556,13 +556,13 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
       viewport.element.addEventListener(Events.CAMERA_MODIFIED, (evt) =>
         details.push(evt.detail)
       );
-      viewport.setDisplaySetPresentation(getVolumeDisplaySetId(viewport), {
+      viewport.setDisplaySetAppearance(getVolumeDisplaySetId(viewport), {
         voiRange: { lower: 0, upper: 100 },
       });
 
       expect(details.length).toBe(0);
 
-      viewport.setDisplaySetPresentation(getVolumeDisplaySetId(viewport), {
+      viewport.setDisplaySetAppearance(getVolumeDisplaySetId(viewport), {
         slabThickness: 10,
       });
 
@@ -600,12 +600,12 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
         renderingEngineId: renderingEngine.id,
         viewportId: target.id,
       });
-      source.setDisplaySetPresentation(getVolumeDisplaySetId(source), {
+      source.setDisplaySetAppearance(getVolumeDisplaySetId(source), {
         slabThickness: 10,
       });
       await frames();
 
-      const slabThickness = target.getDisplaySetPresentation(
+      const slabThickness = target.getDisplaySetAppearance(
         getVolumeDisplaySetId(target)
       )?.slabThickness;
 
@@ -651,7 +651,7 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
         renderingEngineId: renderingEngine.id,
         viewportId: target.id,
       });
-      source.setDisplaySetPresentation(getVolumeDisplaySetId(source), {
+      source.setDisplaySetAppearance(getVolumeDisplaySetId(source), {
         slabThickness: 10,
       });
       await frames();
@@ -660,7 +660,7 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
         .getDisplaySets()
         .filter(
           ({ displaySetId }) =>
-            target.getDisplaySetPresentation(displaySetId)?.slabThickness === 10
+            target.getDisplaySetAppearance(displaySetId)?.slabThickness === 10
         ).length;
 
       csTools3d.SynchronizerManager.destroySynchronizer('slab:fusion');
@@ -750,7 +750,7 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
       const atMount = getImageCornersOnCanvas(viewport);
 
       viewport.setViewState(
-        cornerstone3D.viewportProjection.withPresentation(viewport, {
+        cornerstone3D.viewportProjection.withFraming(viewport, {
           zoom: 3,
           pan: [20, 10],
         })

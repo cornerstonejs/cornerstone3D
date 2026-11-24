@@ -4,22 +4,22 @@ import type vtkImageResliceMapper from '@kitware/vtk.js/Rendering/Core/ImageResl
 import type vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import type { ColormapPublic, VOIRange } from '../../../types';
 import { createPlanarRGBTransferFunction } from '../../helpers/planarImageRendering';
-import type { PlanarDataPresentation } from './PlanarViewportTypes';
+import type { PlanarDisplaySetAppearance } from './PlanarViewportTypes';
 import {
   mapBlendModeToSlabType,
   resolveSlabThickness,
 } from './planarVolumeSliceBlendMode';
 
 /**
- * Applies the presentation of a volume slice to its actor. With a
+ * Applies the appearance of a volume slice to its actor. With a
  * vtkImageMapper, which draws a slice that was already cut, the slab and the
  * blend mode are left out: the sampler applies them.
  */
-export function applyPlanarVolumePresentation(args: {
+export function applyPlanarVolumeAppearance(args: {
   actor: vtkImageSlice;
   mapper: vtkImageResliceMapper | vtkImageMapper;
   defaultVOIRange?: VOIRange;
-  props?: PlanarDataPresentation;
+  props?: PlanarDisplaySetAppearance;
 }): void {
   const { actor, defaultVOIRange, mapper, props } = args;
   const property = actor.getProperty();

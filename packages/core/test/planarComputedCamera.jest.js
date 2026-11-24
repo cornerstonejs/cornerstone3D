@@ -315,11 +315,11 @@ describe('Planar resolved cameras', () => {
       vtkProjection.resolvedICamera.parallelScale,
       5
     );
-    expect(cpuProjection.presentation.zoom).toBeCloseTo(
-      vtkProjection.presentation.zoom,
+    expect(cpuProjection.framing.zoom).toBeCloseTo(
+      vtkProjection.framing.zoom,
       5
     );
-    expect(cpuProjection.presentation.flipHorizontal).toBe(true);
+    expect(cpuProjection.framing.flipHorizontal).toBe(true);
   });
 
   it('preserves acquisition volume fallback index in render path cameras', () => {

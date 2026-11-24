@@ -8,7 +8,7 @@ import {
   type PlanarProjectionRequest,
   type PlanarProjectionSnapshot,
 } from './PlanarProjectionTypes';
-import { normalizePlanarRotation } from './planarViewPresentation';
+import { normalizePlanarRotation } from './planarViewFraming';
 import { cloneDisplayArea, normalizePlanarViewState } from './planarViewState';
 import type { PlanarDisplayArea, PlanarViewState } from './PlanarViewportTypes';
 
@@ -121,7 +121,7 @@ export function getPlanarProjectionSnapshot(
     displaySetId: request.displaySetId,
     displayArea: cloneDisplayArea(displayArea),
     frameOfReferenceUID,
-    presentation: {
+    framing: {
       displayArea: cloneDisplayArea(displayArea),
       flipHorizontal: viewState.flipHorizontal === true,
       flipVertical: viewState.flipVertical === true,
@@ -164,7 +164,7 @@ export function getPlanarProjectionSnapshot(
 export function getPlanarProjectionZoom(
   snapshot: PlanarProjectionSnapshot
 ): number {
-  return snapshot.presentation.zoom ?? 1;
+  return snapshot.framing.zoom ?? 1;
 }
 
 /**
@@ -173,7 +173,7 @@ export function getPlanarProjectionZoom(
 export function getPlanarProjectionScale(
   snapshot: PlanarProjectionSnapshot
 ): Point2 {
-  return clonePoint2(snapshot.presentation.scaleVector);
+  return clonePoint2(snapshot.framing.scaleVector);
 }
 
 /**
@@ -182,5 +182,5 @@ export function getPlanarProjectionScale(
 export function getPlanarProjectionPan(
   snapshot: PlanarProjectionSnapshot
 ): Point2 {
-  return clonePoint2(snapshot.presentation.rawPan);
+  return clonePoint2(snapshot.framing.rawPan);
 }

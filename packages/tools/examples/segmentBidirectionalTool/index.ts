@@ -418,7 +418,7 @@ async function run() {
   const viewport: PlanarViewport = renderingEngine.getViewport(viewportId1);
 
   await viewport.setDisplaySets({ displaySetId });
-  viewport.setDisplaySetPresentation(displaySetId, ctPresentation());
+  viewport.setDisplaySetAppearance(displaySetId, ctPresentation());
 
   // Add some segmentations based on the source data volume
   await addSegmentationsToState();

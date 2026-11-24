@@ -42,7 +42,7 @@ type TestViewport = {
     referencedId?: string;
     actorMapper?: { renderMode?: string };
   }>;
-  setDisplaySetPresentation: (
+  setDisplaySetAppearance: (
     displaySetId: string,
     props: { slabThickness?: number; blendMode?: number }
   ) => void;
@@ -167,7 +167,7 @@ async function setCoronalSlab(
         .getViewport(viewportId);
 
       for (const displaySetId of displaySetIds) {
-        viewport?.setDisplaySetPresentation(displaySetId, {
+        viewport?.setDisplaySetAppearance(displaySetId, {
           slabThickness,
           blendMode: cornerstone.Enums.BlendModes[blendModeName],
         });

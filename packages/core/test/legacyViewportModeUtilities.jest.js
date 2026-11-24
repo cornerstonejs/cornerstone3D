@@ -12,7 +12,7 @@ import getEnabledElement from '../src/getEnabledElement';
 function nextApi() {
   return {
     setDisplaySets: jest.fn(),
-    setDisplaySetPresentation: jest.fn(),
+    setDisplaySetAppearance: jest.fn(),
     setViewState: jest.fn(),
   };
 }

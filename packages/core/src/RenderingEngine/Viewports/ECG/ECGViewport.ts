@@ -26,7 +26,7 @@ import type { ViewReferenceContext } from '../viewReferenceCompatibility';
 import type {
   ECGViewState,
   ECGCanvasRenderContext,
-  ECGDataPresentation,
+  ECGDisplaySetAppearance,
   ECGViewportInput,
   ECGWaveformPayload,
   ECGResetViewStateOptions,
@@ -43,7 +43,7 @@ import ECGResolvedView from './ECGResolvedView';
 
 class ECGViewport extends BaseViewport<
   ECGViewState,
-  ECGDataPresentation,
+  ECGDisplaySetAppearance,
   ECGCanvasRenderContext
 > {
   readonly type = ViewportType.ECG;
@@ -90,7 +90,7 @@ class ECGViewport extends BaseViewport<
       canvas: this.canvas,
       canvasContext: this.canvasContext,
       // The render path reads the world geometry of the frame from here, so the
-      // viewport stays the single owner of the view state and the presentation.
+      // viewport stays the single owner of the view state and the appearance.
       getResolvedView: () => this.getResolvedView(),
     };
     this.viewState = createDefaultECGViewState({
@@ -154,7 +154,7 @@ class ECGViewport extends BaseViewport<
       const { traceLayout, sweepSpeed, sensitivityMmMv, amplitudeScale } =
         this.viewState;
 
-      this.setDefaultDataPresentation(displaySetId, {
+      this.setDefaultAppearance(displaySetId, {
         visible: true,
         opacity: 1,
         lineWidth: 1,
@@ -731,7 +731,7 @@ class ECGViewport extends BaseViewport<
 
   /**
    * Builds the resolved view of the current frame from the mounted waveform,
-   * the canvas geometry, the view state and the data presentation. It does not
+   * the canvas geometry, the view state and the data appearance. It does not
    * read the mounted rendering, so a transform is correct before the first
    * draw (GENVIEW-VIEW-2).
    */
@@ -745,7 +745,7 @@ class ECGViewport extends BaseViewport<
     return new ECGResolvedView({
       viewState: this.viewState,
       canvas: this.canvas,
-      dataPresentation: this.getDisplaySetPresentation(waveform.id),
+      appearance: this.getDisplaySetAppearance(waveform.id),
       frameOfReferenceUID: getECGFrameOfReferenceUID(this.getCurrentImageId()),
       waveform,
       preferredRegionIndex: this.clickedRegionIndex,

@@ -79,7 +79,7 @@ async function showVolume(viewport) {
  * the projection with the rotation, written with `setViewState`.
  */
 async function applyRotation(viewport, rotation) {
-  const viewState = viewportProjection.withPresentation(viewport, {
+  const viewState = viewportProjection.withFraming(viewport, {
     rotation,
   });
 
@@ -137,14 +137,11 @@ describe('Rotation of a 3D viewport through the projection -- ', () => {
     await showVolume(viewport);
     await applyRotation(viewport, 30);
 
-    expect(viewportProjection.getPresentation(viewport).rotation).toBeCloseTo(
-      30,
-      4
-    );
+    expect(viewportProjection.getFraming(viewport).rotation).toBeCloseTo(30, 4);
 
     await applyRotation(viewport, 300);
 
-    expect(viewportProjection.getPresentation(viewport).rotation).toBeCloseTo(
+    expect(viewportProjection.getFraming(viewport).rotation).toBeCloseTo(
       300,
       4
     );
@@ -171,7 +168,7 @@ describe('Rotation of a 3D viewport through the projection -- ', () => {
 
       expectVector(twice.viewUp, once.viewUp);
       expectVector(twice.viewPlaneNormal, before.viewPlaneNormal);
-      expect(viewportProjection.getPresentation(viewport).rotation).toBeCloseTo(
+      expect(viewportProjection.getFraming(viewport).rotation).toBeCloseTo(
         90,
         4
       );
@@ -188,11 +185,11 @@ describe('Rotation of a 3D viewport through the projection -- ', () => {
     await showVolume(viewport);
     await applyRotation(viewport, 90);
 
-    const presentation = viewportProjection.getPresentation(viewport);
+    const presentation = viewportProjection.getFraming(viewport);
 
     await applyRotation(viewport, 30);
     viewport.setViewState(
-      viewportProjection.withPresentation(viewport, presentation)
+      viewportProjection.withFraming(viewport, presentation)
     );
 
     expectVector(
@@ -229,7 +226,7 @@ describe('Rotation of a 3D viewport through the projection -- ', () => {
 
       const atThePole = viewport.getViewState();
       const rotationAtThePole =
-        viewportProjection.getPresentation(viewport).rotation;
+        viewportProjection.getFraming(viewport).rotation;
 
       expectVector(atThePole.viewPlaneNormal, mounted.viewUp);
       expect(Math.min(rotationAtThePole, 360 - rotationAtThePole)).toBeCloseTo(
@@ -247,7 +244,7 @@ describe('Rotation of a 3D viewport through the projection -- ', () => {
 
       expectVector(twice.viewUp, once.viewUp);
       expectVector(twice.viewPlaneNormal, mounted.viewUp);
-      expect(viewportProjection.getPresentation(viewport).rotation).toBeCloseTo(
+      expect(viewportProjection.getFraming(viewport).rotation).toBeCloseTo(
         30,
         4
       );

@@ -206,7 +206,7 @@ async function run() {
 
   // Render the MIP viewport with a full-volume slab and the PET transfer
   // function (VOI 0-5, inverted grayscale)
-  viewport2.setDisplaySetPresentation(sourceDisplaySetId, {
+  viewport2.setDisplaySetAppearance(sourceDisplaySetId, {
     blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
     slabThickness: 50000,
     voiRange: { lower: 0, upper: 5 },

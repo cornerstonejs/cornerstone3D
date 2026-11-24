@@ -201,7 +201,7 @@ async function mount({
   volume = createTestVolume(),
   canvas = createCanvas(),
   camera = coronalCamera([1.5, 1.5, 1.5]),
-  presentation,
+  appearance,
   reference,
 } = {}) {
   const ctx = createContext(canvas, camera);
@@ -222,8 +222,8 @@ async function mount({
 
   ctx.display.renderNow.mockImplementation(() => attachment.render());
 
-  if (presentation) {
-    attachment.updateDataPresentation(presentation);
+  if (appearance) {
+    attachment.updateAppearance(appearance);
   }
 
   return { ctx, attachment, volume, rendering: attachment.rendering };
@@ -352,7 +352,7 @@ describe('CpuVolumeSliceRenderPath', () => {
 
   it('keeps a NEAREST straight cut at voxel size, on the nearest slice, without smoothing', async () => {
     const { attachment, ctx, rendering } = await mount({
-      presentation: { interpolationType: InterpolationType.NEAREST },
+      appearance: { interpolationType: InterpolationType.NEAREST },
     });
     const smoothing = [];
 
@@ -374,7 +374,7 @@ describe('CpuVolumeSliceRenderPath', () => {
     const { attachment, rendering } = await mount({
       canvas: createCanvas(20, 10),
       camera: obliqueCamera(),
-      presentation: { interpolationType: InterpolationType.NEAREST },
+      appearance: { interpolationType: InterpolationType.NEAREST },
     });
 
     attachment.render();
@@ -394,7 +394,7 @@ describe('CpuVolumeSliceRenderPath', () => {
     const { attachment, ctx, rendering } = await mount({
       canvas: createCanvas(8, 8),
       camera,
-      presentation: { interpolationType: InterpolationType.NEAREST },
+      appearance: { interpolationType: InterpolationType.NEAREST },
     });
 
     attachment.render();
@@ -406,7 +406,7 @@ describe('CpuVolumeSliceRenderPath', () => {
       focalPoint: [1, 1, 1],
     };
     attachment.render();
-    attachment.updateDataPresentation({
+    attachment.updateAppearance({
       interpolationType: InterpolationType.NEAREST,
       voiRange: { lower: 0, upper: 100 },
     });
@@ -422,7 +422,7 @@ describe('CpuVolumeSliceRenderPath', () => {
     const { attachment, ctx, rendering } = await mount({
       canvas: createCanvas(8, 8),
       camera: axialCamera(1),
-      presentation: { interpolationType: InterpolationType.NEAREST },
+      appearance: { interpolationType: InterpolationType.NEAREST },
     });
 
     attachment.render();
@@ -450,7 +450,7 @@ describe('CpuVolumeSliceRenderPath', () => {
       const { attachment } = await mount({
         canvas: createCanvas(8, 8),
         camera: axialCamera(1),
-        presentation: {
+        appearance: {
           interpolationType: InterpolationType.NEAREST,
           slabThickness: 2,
           blendMode,
@@ -478,7 +478,7 @@ describe('CpuVolumeSliceRenderPath', () => {
     const { attachment, rendering } = await mount({
       canvas: createCanvas(8, 8),
       camera: axialCamera(1),
-      presentation: {
+      appearance: {
         interpolationType: InterpolationType.NEAREST,
         slabThickness: 2e5,
         blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
@@ -509,7 +509,7 @@ describe('CpuVolumeSliceRenderPath', () => {
       volume,
       canvas: createCanvas(8, 8),
       camera: axialCamera(1),
-      presentation: { interpolationType: InterpolationType.NEAREST },
+      appearance: { interpolationType: InterpolationType.NEAREST },
     });
 
     attachment.render();
@@ -652,7 +652,7 @@ describe('CpuVolumeSliceRenderPath', () => {
         volume: createColourVolume(numberOfComponents),
         canvas: createCanvas(8, 8),
         camera: axialCamera(1),
-        presentation: { interpolationType: InterpolationType.NEAREST },
+        appearance: { interpolationType: InterpolationType.NEAREST },
       });
 
       attachment.render();
@@ -712,7 +712,7 @@ describe('CpuVolumeSliceRenderPath', () => {
     const { attachment, rendering } = await mount({
       volume: createTestVolume({ ArrayType: Uint8Array }),
       reference: { kind: 'segmentation' },
-      presentation: { interpolationType: InterpolationType.NEAREST },
+      appearance: { interpolationType: InterpolationType.NEAREST },
     });
     const renderActor = jest
       .spyOn(rendering.compatibilityActor, 'render')
@@ -787,7 +787,7 @@ describe('PlanarSampledSliceCanvas', () => {
    * returns the RGBA bytes of the coloured slice and the transform it was
    * drawn with.
    */
-  const drawSlice = (volume, sliceToDraw, presentation) => {
+  const drawSlice = (volume, sliceToDraw, appearance) => {
     const canvas = new PlanarSampledSliceCanvas(volume, 4, 4);
     const target = createCanvas(4, 4);
     const context = target.getContext('2d');
@@ -810,7 +810,7 @@ describe('PlanarSampledSliceCanvas', () => {
         viewPlaneNormal: [0, 0, -1],
         viewUp: [0, -1, 0],
       },
-      presentation,
+      appearance,
       invalidated: true,
     });
 
@@ -886,11 +886,11 @@ describe('PlanarSampledSliceCanvas', () => {
   });
 
   it('moves a NEAREST slice back by a small part of a pixel, so that a tie shows the next pixel as the GPU does', () => {
-    const presentation = { voiRange: { lower: 0, upper: 400 } };
+    const appearance = { voiRange: { lower: 0, upper: 400 } };
     const values = new Float32Array([0, 400]);
-    const linear = drawSlice(createTestVolume(), slice(values), presentation);
+    const linear = drawSlice(createTestVolume(), slice(values), appearance);
     const nearest = drawSlice(createTestVolume(), slice(values), {
-      ...presentation,
+      ...appearance,
       interpolationType: InterpolationType.NEAREST,
     });
     const [a, b, c, d, e, f] = linear.transform;
@@ -932,7 +932,7 @@ describe('PlanarSampledSliceCanvas', () => {
         composition: { clearedRenderPassId: -1, renderPassId: 1 },
       },
       camera,
-      presentation: {
+      appearance: {
         voiRange: { lower: 0, upper: 255 },
         colormap: {
           name: 'hsv',

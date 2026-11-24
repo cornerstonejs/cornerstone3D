@@ -1,7 +1,7 @@
 ---
 id: stackViewport
 title: Stacks in a Planar Viewport
-summary: Cornerstone3D 6.0 has no stack viewport class. A planar viewport shows a stack of 2D images in stack mode, with scrolling, pan, zoom and the presentation of each image
+summary: Cornerstone3D 6.0 has no stack viewport class. A planar viewport shows a stack of 2D images in stack mode, with scrolling, pan, zoom and the appearance of each image
 ---
 
 # Stacks in a Planar Viewport

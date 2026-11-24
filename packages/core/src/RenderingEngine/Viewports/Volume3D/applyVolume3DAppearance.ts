@@ -28,13 +28,13 @@ import {
 } from '../../helpers/createVolumeMapper';
 import { isInvalidNumber } from '../../helpers/isInvalidNumber';
 import type {
-  Volume3DDataPresentation,
+  Volume3DDisplaySetAppearance,
   Volume3DVolumeRendering,
 } from './viewport3DTypes';
 
 /**
  * The lighting of a volume property that a preset sets. A reset of the
- * presentation puts back the values that the actor had at its mount.
+ * appearance puts back the values that the actor had at its mount.
  */
 interface Volume3DLook {
   ambient: number;
@@ -48,29 +48,29 @@ interface Volume3DLook {
 const mountedLooks = new WeakMap<VolumeActor, Volume3DLook>();
 
 /**
- * Applies a presentation to the volume of a 3D rendering, as the legacy
- * `setProperties` applies it. The first presentation, and the first after a
- * reset (`appliedPresentation` undefined), builds the transfer functions: a
+ * Applies an appearance to the volume of a 3D rendering, as the legacy
+ * `setProperties` applies it. The first appearance, and the first after a
+ * reset (`appliedAppearance` undefined), builds the transfer functions: a
  * grey ramp over the VOI range (or the default VOI range), inverted when
  * asked, a flat opacity, then the colormap and the preset. A later
- * presentation changes only what differs from the one before, the way the
+ * appearance changes only what differs from the one before, the way the
  * legacy viewport does: a VOI range rescales the colour function that is
  * there, invert inverts it, and an opacity scales the opacity function. So
  * a preset or a colormap keeps its colours. The interpolation type, the
  * sample distance and the blend mode are applied with or without a VOI range.
  */
-export function applyVolume3DPresentation(
+export function applyVolume3DAppearance(
   rendering: Volume3DVolumeRendering,
-  props: Volume3DDataPresentation = {}
+  props: Volume3DDisplaySetAppearance = {}
 ): void {
   const { actor, mapper } = rendering;
   const property = actor.getProperty();
-  const previous = rendering.appliedPresentation;
+  const previous = rendering.appliedAppearance;
 
   actor.setVisibility(props.visible !== false);
 
   if (previous) {
-    applyPresentationChanges(rendering, props, previous);
+    applyAppearanceChanges(rendering, props, previous);
   } else {
     buildTransferFunctions(rendering, props);
   }
@@ -93,7 +93,7 @@ export function applyVolume3DPresentation(
     );
   }
 
-  rendering.appliedPresentation = { ...props };
+  rendering.appliedAppearance = { ...props };
 }
 
 /**
@@ -110,12 +110,12 @@ export function resolveVolume3DPreset(
 }
 
 /**
- * The first presentation: transfer functions built from the presentation
+ * The first appearance: transfer functions built from the appearance
  * alone, with the lighting of the mount.
  */
 function buildTransferFunctions(
   rendering: Volume3DVolumeRendering,
-  props: Volume3DDataPresentation
+  props: Volume3DDisplaySetAppearance
 ): void {
   const { actor, defaultVOIRange } = rendering;
   const property = actor.getProperty();
@@ -159,11 +159,11 @@ function buildTransferFunctions(
   applyPresetOf(actor, props.preset);
 }
 
-/** A later presentation: only what differs from the one before. */
-function applyPresentationChanges(
+/** A later appearance: only what differs from the one before. */
+function applyAppearanceChanges(
   rendering: Volume3DVolumeRendering,
-  props: Volume3DDataPresentation,
-  previous: Volume3DDataPresentation
+  props: Volume3DDisplaySetAppearance,
+  previous: Volume3DDisplaySetAppearance
 ): void {
   const { actor } = rendering;
   const transferFunction = actor.getProperty().getRGBTransferFunction(0);
@@ -238,7 +238,7 @@ function applyVOIRange(
 /** The VOI range that the colour function shows now. */
 function currentVOIRange(
   transferFunction: vtkColorTransferFunction,
-  previous: Volume3DDataPresentation
+  previous: Volume3DDisplaySetAppearance
 ): VOIRange {
   const [lower, upper] =
     previous.voiLUTFunction === VOILUTFunctionType.SAMPLED_SIGMOID

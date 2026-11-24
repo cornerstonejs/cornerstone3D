@@ -135,7 +135,7 @@ toolGroup.setToolActive(BidirectionalTool.toolName, {
 ```
 
 Let's register the volume as a display set, show it in the viewports and set its
-window. The window is a key of the presentation of the display set.
+window. The window is a key of the appearance of the display set.
 
 ```js
 const displaySetId = 'ctVolume';
@@ -150,7 +150,7 @@ await Promise.all(
     const viewport = renderingEngine.getViewport(viewportId);
 
     await viewport.setDisplaySets({ displaySetId });
-    viewport.setDisplaySetPresentation(displaySetId, {
+    viewport.setDisplaySetAppearance(displaySetId, {
       voiRange: { lower: -180, upper: 220 },
     });
   })
@@ -283,7 +283,7 @@ async function run() {
       const viewport = renderingEngine.getViewport(viewportId);
 
       await viewport.setDisplaySets({ displaySetId });
-      viewport.setDisplaySetPresentation(displaySetId, {
+      viewport.setDisplaySetAppearance(displaySetId, {
         voiRange: { lower: -180, upper: 220 },
       });
     })

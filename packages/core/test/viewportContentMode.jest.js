@@ -10,7 +10,7 @@ const noop = () => undefined;
 const viewportWithDisplaySets = {
   setDisplaySets: noop,
   addDisplaySet: noop,
-  setDisplaySetPresentation: noop,
+  setDisplaySetAppearance: noop,
   setViewState: noop,
   getViewState: noop,
 };

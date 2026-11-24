@@ -109,7 +109,7 @@ describe('Volume Viewport SetProperties -- ', () => {
         .createAndCacheVolume(volumeId, { imageIds: [] })
         .then(() => {
           testUtils.setVolumesOnNextViewport(vp, [volumeId]).then(() => {
-            vp.setDisplaySetPresentation({
+            vp.setDisplaySetAppearance({
               voiRange: VOI_RANGE,
               invert: true,
             });

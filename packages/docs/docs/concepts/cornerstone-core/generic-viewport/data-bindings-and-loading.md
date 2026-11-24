@@ -1,7 +1,7 @@
 ---
 id: data-bindings-and-loading
 title: Data Bindings And Loading
-summary: How viewport data providers, bindings, and presentation state work together
+summary: How viewport data providers, bindings, and the appearance of each display set work together
 ---
 
 # Data Bindings And Loading
@@ -12,7 +12,7 @@ appearance.
 The viewport asks its `DataProvider` to load a logical data id. The loaded data
 is passed to the selected render path, and the render path returns a
 `ViewportDataBinding`. The binding contains the mounted runtime rendering plus
-callbacks for view state, data presentation, rendering, resize, and cleanup.
+callbacks for view state, appearance, rendering, resize, and cleanup.
 
 ## Data Provider
 
@@ -37,7 +37,7 @@ application code can update a single mounted display set without reaching into
 actors or mapper objects:
 
 ```ts
-viewport.setDisplaySetPresentation(petDisplaySetId, {
+viewport.setDisplaySetAppearance(petDisplaySetId, {
   visible: false,
 });
 
@@ -61,13 +61,13 @@ displaySetRegistry.add(labelmapDisplaySetId, {
 });
 ```
 
-## Presentation Split
+## View State and Appearance
 
-Viewport state and data presentation have different ownership:
+Viewport state and the appearance of a display set have different ownership:
 
 - `viewState` is local viewport navigation and layout state.
-- `DataPresentation` is per-binding appearance such as VOI, opacity, colormap,
-  interpolation, visibility, or playback presentation.
+- `DisplaySetAppearance` is the per-binding appearance such as VOI, opacity,
+  colormap, interpolation, visibility, or playback settings.
 
 This split lets one viewport pan, zoom, rotate, and navigate once while multiple
 bindings render with their own appearance settings.
@@ -116,7 +116,7 @@ The typical flow is:
 3. The render path resolver selects the runtime path for the loaded data.
 4. The render path mounts runtime resources and returns a binding.
 5. The viewport stores the binding with its data id and role.
-6. The viewport pushes current `viewState` and data presentation into the
+6. The viewport pushes current `viewState` and the appearance into the
    binding.
 7. The binding projects that state into renderer commands during render or
    resize.

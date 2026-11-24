@@ -410,7 +410,7 @@ async function showStack(source) {
     initialImageIdIndex: 1,
   });
   await source.setDisplaySets({ displaySetId: 'magnifyRamp' });
-  source.setDisplaySetPresentation('magnifyRamp', PRESENTATION);
+  source.setDisplaySetAppearance('magnifyRamp', PRESENTATION);
   source.setViewState(STACK_VIEW);
   source.setZoom(1.5);
   await renderAndWait(source);
@@ -432,7 +432,7 @@ async function showVolume(source, name, orientation, imageIdIndex, view) {
     options: { orientation },
   });
   await source.setImageIdIndex(imageIdIndex);
-  source.setDisplaySetPresentation(name, PRESENTATION);
+  source.setDisplaySetAppearance(name, PRESENTATION);
   source.setViewState(view);
   source.setZoom(1.2);
   await renderAndWait(source);
@@ -467,10 +467,10 @@ async function showFusion(source, name) {
     }
   );
   await source.setImageIdIndex(7);
-  source.setDisplaySetPresentation(displaySetIds[0], {
+  source.setDisplaySetAppearance(displaySetIds[0], {
     voiRange: PRESENTATION.voiRange,
   });
-  source.setDisplaySetPresentation(displaySetIds[1], {
+  source.setDisplaySetAppearance(displaySetIds[1], {
     voiRange: { lower: 0, upper: 160 },
     colormap: { name: 'hsv', opacity: 0.5 },
   });
@@ -658,7 +658,7 @@ function expectColoursOfSource(loupe, source) {
 /** Expects the presentation of the source display set on the loupe. */
 function expectPresentationOfSource(loupe, source) {
   const displaySetId = source.getSourceDisplaySetId();
-  const presentation = loupe.getDisplaySetPresentation(displaySetId);
+  const presentation = loupe.getDisplaySetAppearance(displaySetId);
 
   expect(presentation.voiRange.lower).toBeCloseTo(PRESENTATION.voiRange.lower);
   expect(presentation.voiRange.upper).toBeCloseTo(PRESENTATION.voiRange.upper);
@@ -992,27 +992,24 @@ describe('The glass of AdvancedMagnifyTool on a next planar viewport -- ', () =>
 
     const glassRendered = waitForRender(glass);
 
-    source.resetDisplaySetPresentation(displaySetId);
+    source.resetDisplaySetAppearance(displaySetId);
     await renderAndWait(source);
     await glassRendered;
 
-    expect(source.getDisplaySetPresentation(displaySetId)).toEqual({});
-    expect(glass.getDisplaySetPresentation(displaySetId)).toEqual({});
+    expect(source.getDisplaySetAppearance(displaySetId)).toEqual({});
+    expect(glass.getDisplaySetAppearance(displaySetId)).toEqual({});
     expectColoursOfSource(glass, source);
 
-    const resets = spyOn(
-      glass,
-      'resetDisplaySetPresentation'
-    ).and.callThrough();
+    const resets = spyOn(glass, 'resetDisplaySetAppearance').and.callThrough();
     const glassRenderedAgain = waitForRender(glass);
 
-    source.setDisplaySetPresentation(displaySetId, {
+    source.setDisplaySetAppearance(displaySetId, {
       voiRange: PRESENTATION.voiRange,
     });
     await renderAndWait(source);
     await glassRenderedAgain;
 
-    expect(glass.getDisplaySetPresentation(displaySetId)).toEqual({
+    expect(glass.getDisplaySetAppearance(displaySetId)).toEqual({
       voiRange: PRESENTATION.voiRange,
     });
     expect(resets).not.toHaveBeenCalled();

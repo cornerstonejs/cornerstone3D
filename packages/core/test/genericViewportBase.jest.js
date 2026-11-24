@@ -63,7 +63,7 @@ class TestViewport extends BaseViewport {
       : viewState;
   }
 
-  notifyDataPresentationModified(displaySetId, props) {
+  notifyAppearanceModified(displaySetId, props) {
     this.notifyDataPresentationModifiedSpy(displaySetId, props);
   }
 
@@ -79,7 +79,7 @@ function createAttachment(overrides = {}) {
     rendering: { renderMode: 'fake' },
     removeData: jest.fn(),
     applyViewState: jest.fn(),
-    updateDataPresentation: jest.fn(),
+    updateAppearance: jest.fn(),
     getFrameOfReferenceUID: () => '1.2.3',
     render: jest.fn(),
     resize: jest.fn(),
@@ -232,11 +232,11 @@ describe('BaseViewport', () => {
       );
 
       // Presentation stored before the display set is ever mounted.
-      viewport.setDisplaySetPresentation('ds-1', { opacity: 0.5 });
+      viewport.setDisplaySetAppearance('ds-1', { opacity: 0.5 });
 
       await viewport.addDisplaySet('ds-1', { renderMode: 'fake' });
 
-      expect(attachment.updateDataPresentation).toHaveBeenCalledWith({
+      expect(attachment.updateAppearance).toHaveBeenCalledWith({
         opacity: 0.5,
       });
       expect(attachment.applyViewState).toHaveBeenCalledWith({ zoom: 1 });
@@ -381,7 +381,7 @@ describe('BaseViewport', () => {
       const { viewport } = createHarness();
 
       await mountDisplaySet(viewport, 'ds-1');
-      viewport.setDisplaySetPresentation('ds-1', { opacity: 0.4 });
+      viewport.setDisplaySetAppearance('ds-1', { opacity: 0.4 });
       const attachment = viewport.bindings.get('ds-1');
       const renderCountBefore = viewport.renderCount;
 
@@ -389,7 +389,7 @@ describe('BaseViewport', () => {
 
       expect(attachment.removeData).toHaveBeenCalledTimes(1);
       expect(viewport.getDisplaySets()).toEqual([]);
-      expect(viewport.getDisplaySetPresentation('ds-1')).toBeUndefined();
+      expect(viewport.getDisplaySetAppearance('ds-1')).toBeUndefined();
       expect(viewport._debug.renderModes['ds-1']).toBeUndefined();
       expect(viewport.renderCount).toBeGreaterThan(renderCountBefore);
     });
@@ -417,19 +417,19 @@ describe('BaseViewport', () => {
     });
   });
 
-  describe('setDisplaySetPresentation / getDisplaySetPresentation', () => {
+  describe('setDisplaySetAppearance / getDisplaySetAppearance', () => {
     it('targets the first mounted binding when called with props only', async () => {
       const { viewport } = createHarness();
 
       await mountDisplaySet(viewport, 'ds-1', { role: 'source' });
       await mountDisplaySet(viewport, 'ds-2', { role: 'overlay' });
 
-      viewport.setDisplaySetPresentation({ opacity: 0.3 });
+      viewport.setDisplaySetAppearance({ opacity: 0.3 });
 
-      expect(viewport.getDisplaySetPresentation('ds-1')).toEqual({
+      expect(viewport.getDisplaySetAppearance('ds-1')).toEqual({
         opacity: 0.3,
       });
-      expect(viewport.getDisplaySetPresentation('ds-2')).toBeUndefined();
+      expect(viewport.getDisplaySetAppearance('ds-2')).toBeUndefined();
     });
 
     it('targets an explicit display set id when provided', async () => {
@@ -438,10 +438,10 @@ describe('BaseViewport', () => {
       await mountDisplaySet(viewport, 'ds-1', { role: 'source' });
       await mountDisplaySet(viewport, 'ds-2', { role: 'overlay' });
 
-      viewport.setDisplaySetPresentation('ds-2', { opacity: 0.7 });
+      viewport.setDisplaySetAppearance('ds-2', { opacity: 0.7 });
 
-      expect(viewport.getDisplaySetPresentation('ds-1')).toBeUndefined();
-      expect(viewport.getDisplaySetPresentation('ds-2')).toEqual({
+      expect(viewport.getDisplaySetAppearance('ds-1')).toBeUndefined();
+      expect(viewport.getDisplaySetAppearance('ds-2')).toEqual({
         opacity: 0.7,
       });
     });
@@ -449,13 +449,13 @@ describe('BaseViewport', () => {
     it('merges new keys with previously stored keys', () => {
       const { viewport } = createHarness();
 
-      viewport.setDisplaySetPresentation('ds-1', {
+      viewport.setDisplaySetAppearance('ds-1', {
         opacity: 0.5,
         visible: true,
       });
-      viewport.setDisplaySetPresentation('ds-1', { opacity: 0.8 });
+      viewport.setDisplaySetAppearance('ds-1', { opacity: 0.8 });
 
-      expect(viewport.getDisplaySetPresentation('ds-1')).toEqual({
+      expect(viewport.getDisplaySetAppearance('ds-1')).toEqual({
         opacity: 0.8,
         visible: true,
       });
@@ -466,7 +466,7 @@ describe('BaseViewport', () => {
       const renderCountBefore = viewport.renderCount;
 
       expect(() =>
-        viewport.setDisplaySetPresentation({ opacity: 0.5 })
+        viewport.setDisplaySetAppearance({ opacity: 0.5 })
       ).not.toThrow();
       expect(viewport.renderCount).toBe(renderCountBefore);
     });
@@ -474,23 +474,23 @@ describe('BaseViewport', () => {
     it('returns stored presentation for a display set that was never mounted', () => {
       const { viewport } = createHarness();
 
-      viewport.setDisplaySetPresentation('never-mounted', { opacity: 0.1 });
+      viewport.setDisplaySetAppearance('never-mounted', { opacity: 0.1 });
 
-      expect(viewport.getDisplaySetPresentation('never-mounted')).toEqual({
+      expect(viewport.getDisplaySetAppearance('never-mounted')).toEqual({
         opacity: 0.1,
       });
     });
   });
 
-  describe('notifyDataPresentationModified hook', () => {
+  describe('notifyAppearanceModified hook', () => {
     it('is only invoked when the target display set is mounted', async () => {
       const { viewport } = createHarness();
 
-      viewport.setDisplaySetPresentation('unmounted-ds', { opacity: 0.2 });
+      viewport.setDisplaySetAppearance('unmounted-ds', { opacity: 0.2 });
       expect(viewport.notifyDataPresentationModifiedSpy).not.toHaveBeenCalled();
 
       await mountDisplaySet(viewport, 'ds-1');
-      viewport.setDisplaySetPresentation('ds-1', { opacity: 0.9 });
+      viewport.setDisplaySetAppearance('ds-1', { opacity: 0.9 });
 
       expect(viewport.notifyDataPresentationModifiedSpy).toHaveBeenCalledWith(
         'ds-1',
@@ -621,7 +621,7 @@ describe('BaseViewport', () => {
 
       await mountDisplaySet(viewport, 'ds-1');
       await mountDisplaySet(viewport, 'ds-2');
-      viewport.setDisplaySetPresentation('ds-1', { opacity: 0.4 });
+      viewport.setDisplaySetAppearance('ds-1', { opacity: 0.4 });
 
       const first = viewport.bindings.get('ds-1');
       const second = viewport.bindings.get('ds-2');
@@ -631,7 +631,7 @@ describe('BaseViewport', () => {
       expect(first.removeData).toHaveBeenCalledTimes(1);
       expect(second.removeData).toHaveBeenCalledTimes(1);
       expect(viewport.getDisplaySets()).toEqual([]);
-      expect(viewport.getDisplaySetPresentation('ds-1')).toBeUndefined();
+      expect(viewport.getDisplaySetAppearance('ds-1')).toBeUndefined();
       expect(Object.keys(viewport._debug.renderModes)).toHaveLength(0);
       expect(element.hasAttribute('data-viewport-uid')).toBe(false);
       expect(element.hasAttribute('data-rendering-engine-uid')).toBe(false);

@@ -1,13 +1,13 @@
 ---
 id: viewportReferencePresentation
-title: Viewport Image Selection Reference and Presentation
+title: Viewport Image Selection Reference and Framing
 summary: System for specifying which image a viewport displays and how it is presented, enabling transfer of views between viewports and navigation to specific images
 ---
 
-# Viewport Image Selection Reference and Presentation
+# Viewport Image Selection Reference and Framing
 
-The reference and presentation information for a viewport specify what image a viewport
-is displaying, and the presentation of the image. These are specified in several ways
+The reference and the framing of a viewport specify what image a viewport
+is displaying, and how the image is framed. These are specified in several ways
 so that a view can be transfered from one viewport to another, or can be remembered in order
 to restore a view later. Getting a reference can be done either for the current image,
 or a specific image in the stack, ordered/numbered in the same way that the scrolling positions
@@ -21,17 +21,16 @@ Some specific use cases for this are:
   - Uses `isReferenceViewable` to determine which of a set of viewports is best suited to navigating to an image
   - Uses `setViewReference(viewRef)` to navigate to the specified image
 - Restoring an earlier view or showing a stack as a volume or vice-versa
-  - Uses `ViewReference` and `ViewPresentation` to store the image information,
-    and `getDisplaySetPresentation` to store the VOI, which the view
-    presentation does not hold
+  - Uses `ViewReference` and `ViewFraming` to store the image information,
+    and `getDisplaySetAppearance` to store the VOI, which the framing
+    does not hold
 - Applying interpolation to image sets
   - Uses `getViewReference` with a specific image position to get references to
     images in between or related to nearby annotations to interpolate
-- Resizing and sync display presentation
-  - Viewports read presentation with
-    `viewportProjection.getPresentation(viewport)` and apply the returned
-    native view state from `viewportProjection.withPresentation(...)` with
-    `viewport.setViewState(...)`
+- Resizing and sync display framing
+  - Viewports read the framing with `viewport.getViewFraming()` and apply it
+    with `viewport.setViewFraming(...)`, which calls
+    `viewportProjection.withFraming(...)` and `viewport.setViewState(...)`
 
 ## View Reference
 
@@ -132,50 +131,51 @@ normal.
 Specific additional behaviour for detecting 1d and 2d points maybe added in the
 future (to allow lines and points to appear on view other than original).
 
-## View Presentation
+## View Framing
 
-The view presentation specifies the pan, zoom, rotation, flips and display
-area of a viewport: the camera. `viewportProjection.getPresentation(viewport)`
-reads it, and `viewportProjection.withPresentation(viewport, presentation)`
-gives the view state that applies it.
+The framing specifies the pan, zoom, rotation, flips and display
+area of a viewport: the camera. `viewport.getViewFraming()` or
+`viewportProjection.getFraming(viewport)` reads it, and
+`viewport.setViewFraming(framing)` applies it (`viewportProjection.withFraming(viewport, framing)`
+gives the view state that applies it).
 The pan and zoom are specified as percentage values relative to the viewport size
 and the original display area (which is included if specified). This allows
-applying the same view presentation to a variety of viewport sizes that may
+applying the same framing to a variety of viewport sizes that may
 or may not display the same image instance.
 
-The view presentation holds no VOI. The VOI (`voiRange`, the lower and upper
+The framing holds no VOI. The VOI (`voiRange`, the lower and upper
 values of the window), the VOI LUT function (`voiLUTFunction`), `invert` and
-the colormap belong to the presentation of a display set:
-`viewport.getDisplaySetPresentation(displaySetId)` reads them and
-`viewport.setDisplaySetPresentation(displaySetId, props)` applies them. To show
+the colormap belong to the appearance of a display set:
+`viewport.getDisplaySetAppearance(displaySetId)` reads them and
+`viewport.setDisplaySetAppearance(displaySetId, props)` applies them. To show
 an image again as it was, keep both (see "Remember a view and show it again"
 below).
 
-Some typical uses cases for view presentation are:
+Some typical uses cases for the framing are:
 
-- Remembering how an image is presented to allow displaying the same presentation later,
+- Remembering how an image is presented to allow displaying the same framing later,
   e.g., when a viewport is used to display another stack and then is returned to
   the original stack.
-- Syncing similar but not identical viewports, for example, syncing some or all presentation
+- Syncing similar but not identical viewports, for example, syncing some or all framing
   attributes between different CT views.
 - Resizing of viewports, used to remember the relative positions so that the
   image remains in the same "relative" position.
 
-## `setViewReference` and View Presentation
+## `setViewReference` and View Framing
 
-The `viewport.setViewReference` API navigates to the specified reference. A
-viewport has no member that applies a presentation directly (the
-`setViewPresentation` of the 5.x legacy viewports is gone in 6.0); use
-`viewportProjection.withPresentation(...)` to translate a presentation patch to
-the viewport family's native `ViewState`, then call `viewport.setViewState(...)`.
-The VOI is not part of it: apply it with `viewport.setDisplaySetPresentation(...)`.
-If both reference and presentation are being applied, then the view reference
+The `viewport.setViewReference` API navigates to the specified reference.
+`viewport.setViewFraming(...)` applies a framing (it is the
+`setViewPresentation` of the 5.x legacy viewports); it calls
+`viewportProjection.withFraming(...)`, which translates a framing patch to the
+viewport family's native `ViewState`, and `viewport.setViewState(...)`.
+The VOI is not part of it: apply it with `viewport.setDisplaySetAppearance(...)`.
+If both reference and framing are being applied, then the view reference
 must be applied first. A render is required afterwards to complete the view
 change since multiple parts of the view may be affected.
 
 Some example code is shown below for various uses. This assumes that
 `viewports` is an array of viewports of various types, and that `viewport` is
-a specific one to apply a change to. The reference and presentation are
+a specific one to apply a change to. The reference and the framing are
 in `viewRef` and `viewPres` respectively.
 
 ### Navigate to a given annotation
@@ -272,8 +272,8 @@ async function findViewportForAnnotation(
 
 ### Remember a view and show it again
 
-The view reference keeps the image, the view presentation keeps the camera,
-and the presentation of the display set keeps the VOI.
+The view reference keeps the image, the framing keeps the camera,
+and the appearance of the display set keeps the VOI.
 
 ```ts
 import { viewportProjection } from '@cornerstonejs/core';
@@ -281,26 +281,22 @@ import type { PlanarViewport } from '@cornerstonejs/core';
 
 function rememberView(viewport: PlanarViewport, displaySetId: string) {
   const viewRef = viewport.getViewReference();
-  const viewPres = viewportProjection.getPresentation(viewport);
-  const displaySetPresentation =
-    viewport.getDisplaySetPresentation(displaySetId);
+  const viewPres = viewportProjection.getFraming(viewport);
+  const displaySetAppearance = viewport.getDisplaySetAppearance(displaySetId);
 
   return function showAgain() {
     viewport.setViewReference(viewRef);
 
-    const nextViewState = viewportProjection.withPresentation(
-      viewport,
-      viewPres
-    );
+    const nextViewState = viewportProjection.withFraming(viewport, viewPres);
 
     if (nextViewState) {
       viewport.setViewState(nextViewState);
     }
 
-    viewport.setDisplaySetPresentation(displaySetId, {
-      voiRange: displaySetPresentation?.voiRange,
-      voiLUTFunction: displaySetPresentation?.voiLUTFunction,
-      invert: displaySetPresentation?.invert,
+    viewport.setDisplaySetAppearance(displaySetId, {
+      voiRange: displaySetAppearance?.voiRange,
+      voiLUTFunction: displaySetAppearance?.voiLUTFunction,
+      invert: displaySetAppearance?.invert,
     });
     viewport.render();
   };
@@ -322,24 +318,17 @@ function resize() {
   const renderingEngine = getRenderingEngine(renderingEngineId);
 
   if (renderingEngine) {
-    // Store the presentation from before for after.
-    const presentations = viewports.map((viewport) =>
-      viewportProjection.getPresentation(viewport)
-    );
+    // Store the framing from before for after.
+    const framings = viewports.map((viewport) => viewport.getViewFraming());
 
     // Apply the resize
     renderingEngine.resize(true, false);
 
-    // Restore the presentations as this will reset the relative positions
+    // Restore the framings as this will reset the relative positions
     // rather than resetting to null.
     viewports.forEach((viewport, index) => {
-      const nextViewState = viewportProjection.withPresentation(
-        viewport,
-        presentations[index]
-      );
-
-      if (nextViewState) {
-        viewport.setViewState(nextViewState);
+      if (framings[index]) {
+        viewport.setViewFraming(framings[index]);
       }
     });
   }
@@ -348,5 +337,4 @@ function resize() {
 resizeObserver.observe(viewportGrid);
 ```
 
-The presentation reads and writes stay on the projection service, which works
-for every viewport family.
+The framing reads and writes work for every viewport family.

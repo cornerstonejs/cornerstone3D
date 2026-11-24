@@ -28,7 +28,7 @@ type FractionPoint = number | [number, number];
 type DisplayAreaSize = number | [number, number];
 
 let viewport: PlanarViewport;
-let displayArea: Types.ViewPresentation | 'none' = 'none';
+let displayArea: Types.ViewFraming | 'none' = 'none';
 
 /**
  * Applies portable presentation edits through projection, then mutates the
@@ -36,11 +36,11 @@ let displayArea: Types.ViewPresentation | 'none' = 'none';
  */
 function applyPlanarProjectionPresentation(
   viewport: PlanarViewport,
-  presentation: Types.ViewPresentation
+  presentation: Types.ViewFraming
 ): void {
-  const nextViewState = viewportProjection.withPresentation<
+  const nextViewState = viewportProjection.withFraming<
     Parameters<PlanarViewport['setViewState']>[0],
-    Types.ViewPresentation
+    Types.ViewFraming
   >(viewport, presentation);
 
   if (nextViewState) {
@@ -98,7 +98,7 @@ function createDisplayArea(
   canvasValue: FractionPoint | undefined = pointValue,
   rotation = 0,
   flipHorizontal = false
-): Types.ViewPresentation {
+): Types.ViewFraming {
   const resolvedCanvasValue = canvasValue ?? pointValue;
 
   return {
@@ -114,7 +114,7 @@ function createDisplayArea(
   };
 }
 
-const displayAreas = new Map<string, Types.ViewPresentation>();
+const displayAreas = new Map<string, Types.ViewFraming>();
 displayAreas.set('Center Full', createDisplayArea(1, 0.5));
 displayAreas.set('Center with border', createDisplayArea(1.1, 0.5));
 displayAreas.set('Center Half', createDisplayArea(2, 0.5));
@@ -203,7 +203,7 @@ addButtonToToolbar({
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     viewport.resetViewState();
-    viewport.setDisplaySetPresentation(stackDisplaySetId, {
+    viewport.setDisplaySetAppearance(stackDisplaySetId, {
       colormap: undefined,
       invert: false,
     });

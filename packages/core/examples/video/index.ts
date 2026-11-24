@@ -55,7 +55,7 @@ element.addEventListener(Events.CAMERA_MODIFIED, (_) => {
   }
 
   const { rotation = 0 } =
-    viewportProjection.getPresentation(viewport, {
+    viewportProjection.getFraming(viewport, {
       selector: { rotation: true },
     }) ?? {};
 

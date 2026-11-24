@@ -146,8 +146,8 @@ async function run() {
     { displaySetId: ctDisplaySetId },
     { displaySetId: ptDisplaySetId }
   );
-  viewport.setDisplaySetPresentation(ctDisplaySetId, ctPresentation());
-  viewport.setDisplaySetPresentation(ptDisplaySetId, petColorMapPresentation());
+  viewport.setDisplaySetAppearance(ctDisplaySetId, ctPresentation());
+  viewport.setDisplaySetAppearance(ptDisplaySetId, petColorMapPresentation());
 
   // Render the image
   viewport.render();

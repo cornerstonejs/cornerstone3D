@@ -418,60 +418,60 @@ describe('planarInvariants: scroll clamping at stack bounds', () => {
 });
 
 describe('planarInvariants: presentation round trip', () => {
-  test('setDisplaySetPresentation round-trips interpolationType and voiRange', async () => {
+  test('setDisplaySetAppearance round-trips interpolationType and voiRange', async () => {
     const ctx = track(await createPlanarViewport());
     const { viewport, element, displaySetId } = ctx;
 
     const defaultsBeforeMutation =
-      viewport.getDisplaySetPresentation(displaySetId);
+      viewport.getDisplaySetAppearance(displaySetId);
 
     // Defaults captured right after mount: only the load-time `visible: true`
     // default is stored; interpolationType/voiRange overrides are unset
-    // until explicitly requested (see BaseViewport.setDefaultDataPresentation
+    // until explicitly requested (see BaseViewport.setDefaultAppearance
     // call in PlanarViewport.ts around line 441).
     expect(defaultsBeforeMutation?.interpolationType).toBeUndefined();
     expect(defaultsBeforeMutation?.voiRange).toBeUndefined();
 
     const nextVoiRange = { upper: 300, lower: -100 };
-    viewport.setDisplaySetPresentation(displaySetId, {
+    viewport.setDisplaySetAppearance(displaySetId, {
       interpolationType: InterpolationType.NEAREST,
       voiRange: nextVoiRange,
     });
     await renderAndWait(element, viewport);
 
-    const mutated = viewport.getDisplaySetPresentation(displaySetId);
+    const mutated = viewport.getDisplaySetAppearance(displaySetId);
     expect(mutated?.interpolationType).toBe(InterpolationType.NEAREST);
     expect(mutated?.voiRange).toEqual(nextVoiRange);
 
-    viewport.resetDisplaySetPresentation(displaySetId);
+    viewport.resetDisplaySetAppearance(displaySetId);
     await renderAndWait(element, viewport);
 
-    const afterReset = viewport.getDisplaySetPresentation(displaySetId);
+    const afterReset = viewport.getDisplaySetAppearance(displaySetId);
     expect(afterReset?.interpolationType).toBe(
       defaultsBeforeMutation?.interpolationType
     );
     expect(afterReset?.voiRange).toEqual(defaultsBeforeMutation?.voiRange);
   });
 
-  test('resetDisplaySetPresentation clears the presentation to {}, the visible flag of the mount too', async () => {
+  test('resetDisplaySetAppearance clears the presentation to {}, the visible flag of the mount too', async () => {
     const ctx = track(await createPlanarViewport());
     const { viewport, element, displaySetId } = ctx;
 
-    expect(viewport.getDisplaySetPresentation(displaySetId)).toStrictEqual({
+    expect(viewport.getDisplaySetAppearance(displaySetId)).toStrictEqual({
       visible: true,
     });
 
-    viewport.setDisplaySetPresentation(displaySetId, {
+    viewport.setDisplaySetAppearance(displaySetId, {
       interpolationType: InterpolationType.NEAREST,
       voiRange: { upper: 300, lower: -100 },
       visible: false,
     });
     await renderAndWait(element, viewport);
 
-    viewport.resetDisplaySetPresentation(displaySetId);
+    viewport.resetDisplaySetAppearance(displaySetId);
     await renderAndWait(element, viewport);
 
-    expect(viewport.getDisplaySetPresentation(displaySetId)).toStrictEqual({});
+    expect(viewport.getDisplaySetAppearance(displaySetId)).toStrictEqual({});
   });
 });
 

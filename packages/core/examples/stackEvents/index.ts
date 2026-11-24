@@ -108,7 +108,7 @@ addButtonToToolbar({
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     // Set a range to highlight bones
-    viewport.setDisplaySetPresentation(displaySetId, {
+    viewport.setDisplaySetAppearance(displaySetId, {
       voiRange: { upper: 2500, lower: -1500 },
     });
 
@@ -179,8 +179,7 @@ addButtonToToolbar({
       50
     );
     const viewState =
-      presentation &&
-      viewportProjection.withPresentation(viewport, presentation);
+      presentation && viewportProjection.withFraming(viewport, presentation);
 
     if (viewState) {
       viewport.setViewState(viewState);
@@ -201,7 +200,7 @@ addButtonToToolbar({
     // Resets the viewport's camera
     viewport.resetViewState();
     // Resets the viewport's properties
-    viewport.resetDisplaySetPresentation(displaySetId);
+    viewport.resetDisplaySetAppearance(displaySetId);
     viewport.render();
   },
 });
@@ -253,7 +252,7 @@ async function run() {
   await viewport.setDisplaySets({ displaySetId });
 
   // Set the VOI of the stack
-  viewport.setDisplaySetPresentation(displaySetId, { voiRange: ctVoiRange });
+  viewport.setDisplaySetAppearance(displaySetId, { voiRange: ctVoiRange });
 
   // Render the image
   viewport.render();

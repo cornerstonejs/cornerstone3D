@@ -14,22 +14,22 @@ export {
  * patient space.
  *
  * @experimental Advanced helper namespace; prefer `viewportProjection` for
- * stable application-level presentation reads and writes.
+ * stable application-level framing reads and writes.
  */
 export const videoProjection = {
   adapter: videoProjectionAdapter,
   getSnapshot: getVideoProjectionSnapshot,
 };
 export type {
-  VideoProjectionPresentation,
+  VideoProjectionFraming,
   VideoProjectionRequest,
   VideoProjectionSnapshot,
 } from './videoProjectionAdapter';
 export { default } from './VideoViewport';
 export type {
   VideoViewState,
-  VideoDataPresentation,
-  VideoPresentationProps,
+  VideoDisplaySetAppearance,
+  VideoAppearanceProps,
   VideoProperties,
   VideoViewportInput,
 } from './VideoViewportTypes';

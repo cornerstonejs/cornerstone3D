@@ -923,10 +923,10 @@ function initCameraSynchronization(
   }
 
   const { zoom = 1 } =
-    viewportProjection.getPresentation(tViewport, {
+    viewportProjection.getFraming(tViewport, {
       selector: { zoom: true },
     }) ?? {};
-  const zoomed = viewportProjection.withPresentation(tViewport, {
+  const zoomed = viewportProjection.withFraming(tViewport, {
     zoom: (zoom * targetCamera.parallelScale) / sourceCamera.parallelScale,
   });
 
@@ -935,12 +935,12 @@ function initCameraSynchronization(
   }
 
   const { pan = [0, 0], zoom: targetZoom = 1 } =
-    viewportProjection.getPresentation(tViewport, {
+    viewportProjection.getFraming(tViewport, {
       selector: { zoom: true, pan: true },
     }) ?? {};
   const [x, y] = tViewport.worldToCanvas(sourceCamera.focalPoint);
   const { clientWidth, clientHeight } = tViewport.canvas;
-  const panned = viewportProjection.withPresentation(tViewport, {
+  const panned = viewportProjection.withFraming(tViewport, {
     pan: [
       pan[0] + (clientWidth / 2 - x) / targetZoom,
       pan[1] + (clientHeight / 2 - y) / targetZoom,
@@ -968,7 +968,7 @@ async function showDisplaySets(
         ...entries.map(({ displaySetId }) => ({ displaySetId }))
       );
       entries.forEach(({ displaySetId, presentation }) => {
-        viewport.setDisplaySetPresentation(displaySetId, presentation);
+        viewport.setDisplaySetAppearance(displaySetId, presentation);
       });
     })
   );

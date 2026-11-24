@@ -403,7 +403,7 @@ async function run() {
   stackViewport.setDisplayArea({
     imageArea: [0.9, 0.9],
   });
-  stackViewport.setDisplaySetPresentation(stackDisplaySetId, {
+  stackViewport.setDisplaySetAppearance(stackDisplaySetId, {
     interpolationType: InterpolationType.NEAREST,
   });
 

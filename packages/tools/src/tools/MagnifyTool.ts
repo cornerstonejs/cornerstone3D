@@ -135,7 +135,7 @@ class MagnifyTool extends BaseTool {
 
   /**
    * Makes the loupe: a next planar viewport in an element over the source
-   * viewport. It shows the source display set with the presentation, the
+   * viewport. It shows the source display set with the appearance, the
    * slice, the orientation, the rotation and the flips of the source, with
    * the world point under the pointer at its centre. Its canvas spans
    * `1 / magnifySize` of the world height that the source canvas spans. The

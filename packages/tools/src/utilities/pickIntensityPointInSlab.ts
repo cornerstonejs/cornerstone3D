@@ -21,7 +21,7 @@ const MAX_SAMPLES = 2001;
 
 export type SlabIntensityPickMode = 'max' | 'min';
 
-type PresentationWithSlab = {
+type AppearanceWithSlab = {
   blendMode?: Enums.BlendModes;
   slabThickness?: number;
 };
@@ -29,7 +29,7 @@ type PresentationWithSlab = {
 /**
  * Resolves how (and whether) intensity picking applies to a viewport: the
  * viewport must be a planar viewport in volume mode whose source
- * display-set presentation renders an intensity-projection slab (MIP or
+ * display-set appearance renders an intensity-projection slab (MIP or
  * MinIP with a real slab thickness).
  *
  * Returns the pick mode ('max' for MIP, 'min' for MinIP) and the slab
@@ -46,7 +46,7 @@ export function getSlabIntensityPickContext(
     return null;
   }
 
-  if (!csUtils.viewportSupportsDisplaySetPresentation(viewport)) {
+  if (!csUtils.viewportSupportsDisplaySetAppearance(viewport)) {
     return null;
   }
 
@@ -55,11 +55,11 @@ export function getSlabIntensityPickContext(
     return null;
   }
 
-  const presentation = (
+  const appearance = (
     viewport as unknown as Types.IViewport
-  ).getDisplaySetPresentation(displaySetId) as PresentationWithSlab | undefined;
+  ).getDisplaySetAppearance(displaySetId) as AppearanceWithSlab | undefined;
 
-  const { blendMode, slabThickness } = presentation ?? {};
+  const { blendMode, slabThickness } = appearance ?? {};
 
   let mode: SlabIntensityPickMode;
   if (blendMode === Enums.BlendModes.MAXIMUM_INTENSITY_BLEND) {
@@ -93,7 +93,7 @@ export function getSlabIntensityPickContext(
  * projection actually displayed.
  *
  * Works exclusively through the viewport surface: the slab
- * and blend mode are read from the source display-set presentation and the
+ * and blend mode are read from the source display-set appearance and the
  * volume is sampled directly from the cache (no legacy viewport APIs).
  *
  * On equal intensities the sample closest to the central plane wins, so

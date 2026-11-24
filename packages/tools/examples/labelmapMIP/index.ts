@@ -193,7 +193,7 @@ async function run() {
   await viewport1.setDisplaySets({ displaySetId });
 
   await viewport2.setDisplaySets({ displaySetId });
-  viewport2.setDisplaySetPresentation(displaySetId, {
+  viewport2.setDisplaySetAppearance(displaySetId, {
     ...petPresentation(),
     blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
     slabThickness: 50000,

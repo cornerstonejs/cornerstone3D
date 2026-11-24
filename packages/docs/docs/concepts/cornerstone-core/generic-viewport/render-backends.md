@@ -30,7 +30,7 @@ The backend used for a mounted dataset is resolved with this precedence:
    GPU otherwise.
 
 `setRenderBackend(backend, reason?)` live-switches all mounted viewports in
-place — viewport ids, mounted data, cameras, presentation state, and tool
+place — viewport ids, mounted data, cameras, the appearance of each display set, and tool
 annotations are preserved; only the render paths are rebuilt. It emits
 `RENDER_BACKEND_CHANGED` on the eventTarget. Cornerstone never switches
 backends on its own: applications listening to degradation events

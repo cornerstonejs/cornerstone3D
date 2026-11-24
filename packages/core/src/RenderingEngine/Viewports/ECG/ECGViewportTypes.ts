@@ -1,7 +1,7 @@
 import type { AABB2, ViewportInputOptions } from '../../../types';
 import type {
   BaseViewportRenderContext,
-  BasePresentationProps,
+  BaseAppearanceProps,
   DataProvider,
   MountedRendering,
   RenderPathResolver,
@@ -110,7 +110,7 @@ export interface ECGWaveformPayload {
   calibration?: unknown;
 }
 
-export type ECGPresentationProps = BasePresentationProps;
+export type ECGAppearanceProps = BaseAppearanceProps;
 
 /**
  * Navigation and layout of the ECG viewport.
@@ -167,7 +167,7 @@ export interface ECGProperties {
   showAmplitudeLabels?: boolean;
 }
 
-export type ECGDataPresentation = ECGPresentationProps & ECGProperties;
+export type ECGDisplaySetAppearance = ECGAppearanceProps & ECGProperties;
 
 export interface ECGViewportInput {
   id: string;

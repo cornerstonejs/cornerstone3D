@@ -45,7 +45,7 @@ function createFakeAxialViewport({
     renderingEngineId: 'fakeRenderingEngine',
     element: { clientWidth: canvasSize, clientHeight: canvasSize },
     setDisplaySets: () => undefined,
-    setDisplaySetPresentation: () => undefined,
+    setDisplaySetAppearance: () => undefined,
     setViewState: () => undefined,
     getCurrentMode: () => 'volume',
     getFrameOfReferenceUID: () => frameOfReferenceUID,

@@ -225,7 +225,7 @@ async function initViewports(volume, elements) {
       const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
       await viewport.setDisplaySets({ displaySetId });
-      viewport.setDisplaySetPresentation(displaySetId, petPresentation());
+      viewport.setDisplaySetAppearance(displaySetId, petPresentation());
     })
   );
 

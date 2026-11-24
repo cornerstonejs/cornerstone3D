@@ -96,7 +96,7 @@ async function run() {
   });
 
   await viewport.setDisplaySets({ displaySetId });
-  viewport.setDisplaySetPresentation(displaySetId, ctPresentation());
+  viewport.setDisplaySetAppearance(displaySetId, ctPresentation());
 
   // Render the image
   viewport.render();

@@ -76,7 +76,7 @@ function getScale(
 function getSignalPosition(
   worldPoint: Point3 | undefined,
   canvasPoint: Point2
-): ECGProjectionSnapshot['presentation']['position'] | undefined {
+): ECGProjectionSnapshot['framing']['position'] | undefined {
   if (!worldPoint) {
     return;
   }
@@ -134,7 +134,7 @@ export function getECGProjectionSnapshot(
     canvasWidth,
     displaySetId: request.displaySetId,
     frameOfReferenceUID,
-    presentation: {
+    framing: {
       pan: clonePoint2(rawPan),
       position: getSignalPosition(signalPoint, canvasPoint),
       rawPan: clonePoint2(rawPan),

@@ -275,7 +275,7 @@ addDropdownToToolbar({
     defaultValue: rotations[0],
   },
   onSelectedValueChange: (value) => {
-    const viewState = viewportProjection.withPresentation(viewport, {
+    const viewState = viewportProjection.withFraming(viewport, {
       rotation: Number(value),
     });
 
@@ -324,13 +324,13 @@ function resize() {
 
   if (renderingEngine) {
     const presentations = viewports.map((viewport) =>
-      viewportProjection.getPresentation(viewport)
+      viewportProjection.getFraming(viewport)
     );
     renderingEngine.resize(true, false);
     viewports.forEach((viewport, idx) => {
       const viewState =
         presentations[idx] &&
-        viewportProjection.withPresentation(viewport, presentations[idx]);
+        viewportProjection.withFraming(viewport, presentations[idx]);
 
       if (viewState) {
         viewport.setViewState(viewState);
@@ -351,7 +351,7 @@ function resize() {
  * applied additionally.
  *
  * The presentation is read after the view reference is set:
- * `viewportProjection.withPresentation` gives the whole view state, with the
+ * `viewportProjection.withFraming` gives the whole view state, with the
  * slice that the viewport shows at that time.
  */
 function viewportRenderedListener(event) {
@@ -359,7 +359,7 @@ function viewportRenderedListener(event) {
   const renderedViewport = getPlanarViewport(element);
   viewport = renderedViewport;
   const viewRef = renderedViewport.getViewReference();
-  const viewPres = viewportProjection.getPresentation(renderedViewport);
+  const viewPres = viewportProjection.getFraming(renderedViewport);
   for (const destElement of setViewElements) {
     const destViewport = getPlanarViewport(destElement);
     const isViewable = destViewport.isReferenceViewable(viewRef, {
@@ -374,7 +374,7 @@ function viewportRenderedListener(event) {
       destViewport.setViewReference(viewRef);
     }
     const destViewState =
-      viewPres && viewportProjection.withPresentation(destViewport, viewPres);
+      viewPres && viewportProjection.withFraming(destViewport, viewPres);
     if (destViewState) {
       destViewport.setViewState(destViewState);
     }
@@ -500,10 +500,7 @@ async function run() {
         const volumeViewport =
           renderingEngine.getViewport<PlanarViewport>(viewportId);
         await volumeViewport.setDisplaySets({ displaySetId });
-        volumeViewport.setDisplaySetPresentation(
-          displaySetId,
-          ctPresentation()
-        );
+        volumeViewport.setDisplaySetAppearance(displaySetId, ctPresentation());
       })
   );
 

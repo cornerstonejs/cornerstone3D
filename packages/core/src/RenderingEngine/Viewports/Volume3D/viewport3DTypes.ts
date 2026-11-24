@@ -24,7 +24,7 @@ import type {
 } from '../../../enums';
 import type {
   BaseViewportRenderContext,
-  BasePresentationProps,
+  BaseAppearanceProps,
   BindingRole,
   DataProvider,
   LoadedData,
@@ -87,7 +87,7 @@ export interface Volume3DGeometryPayload {
 /** @internal */
 export type Volume3DPayload = Volume3DVolumePayload | Volume3DGeometryPayload;
 
-export interface Volume3DPresentationProps extends BasePresentationProps {
+export interface Volume3DAppearanceProps extends BaseAppearanceProps {
   color?: RGB;
   invert?: boolean;
   voiRange?: VOIRange;
@@ -99,7 +99,7 @@ export interface Volume3DPresentationProps extends BasePresentationProps {
   preset?: string | ViewportPreset;
   /**
    * The VOI LUT function, LINEAR or SAMPLED_SIGMOID, under the name it has
-   * on the planar presentation. The legacy properties call it
+   * on the planar appearance. The legacy properties call it
    * `VOILUTFunction`.
    */
   voiLUTFunction?: VOILUTFunctionType;
@@ -130,7 +130,7 @@ export interface Volume3DProperties {
   sampleDistanceMultiplier?: number;
 }
 
-export type Volume3DDataPresentation = Volume3DPresentationProps &
+export type Volume3DDisplaySetAppearance = Volume3DAppearanceProps &
   Volume3DProperties;
 
 export interface Volume3DCamera extends ICamera, ViewportCameraBase<Point3> {}
@@ -207,11 +207,11 @@ export type Volume3DVolumeRendering = MountedRendering<{
   mapper: vtkVolumeMapper;
   removeStreamingSubscriptions?: () => void;
   /**
-   * The presentation that the actor shows now. A later presentation changes
+   * The appearance that the actor shows now. A later appearance changes
    * only what differs from it. Undefined before the first one, and after a
-   * reset, when the next presentation builds the transfer functions anew.
+   * reset, when the next appearance builds the transfer functions anew.
    */
-  appliedPresentation?: Volume3DDataPresentation;
+  appliedAppearance?: Volume3DDisplaySetAppearance;
 }> &
   VolumeStrategyState;
 

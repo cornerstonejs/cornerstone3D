@@ -2,7 +2,7 @@ import { describe, it, expect, jest, beforeAll, afterAll } from '@jest/globals';
 import { InterpolationType } from '../src/enums';
 import * as metaData from '../src/metaData';
 import VoxelManager from '../src/utilities/VoxelManager';
-import { applyPlanarImagePresentation } from '../src/RenderingEngine/helpers/planarImageRendering';
+import { applyPlanarImageAppearance } from '../src/RenderingEngine/helpers/planarImageRendering';
 import { PlanarSampledSliceActor } from '../src/RenderingEngine/Viewports/Planar/planarSampledSliceActor';
 import {
   PlanarSampledSliceCanvas,
@@ -21,13 +21,13 @@ import {
  * The colour tables that the CPU draw step reads for a presentation, applied
  * as the image path (`image`) or the volume path (`volume`) applies it.
  */
-function tablesFor(presentation, kind = 'image', previous) {
+function tablesFor(appearance, kind = 'image', previous) {
   const actor = new PlanarSampledSliceActor();
 
   if (kind === 'image') {
-    applyPlanarImagePresentation({ actor: actor.actor, props: presentation });
+    applyPlanarImageAppearance({ actor: actor.actor, props: appearance });
   } else {
-    actor.applyPresentation(presentation, undefined);
+    actor.applyAppearance(appearance, undefined);
   }
 
   return getColourTables(actor, previous);
@@ -72,9 +72,9 @@ describe('colourWholeNumbers', () => {
   ];
 
   arrays.forEach(([arrayName, ArrayType, lowest, highest]) => {
-    Object.entries(PRESENTATIONS).forEach(([lookName, presentation]) => {
+    Object.entries(PRESENTATIONS).forEach(([lookName, appearance]) => {
       it(`gives the pixels of colourSlice: ${arrayName}, ${lookName}`, () => {
-        const tables = tablesFor(presentation);
+        const tables = tablesFor(appearance);
         const pixelData = wholeValues(ArrayType, lowest, highest, 6000);
         const pixels = new Uint32Array(pixelData.length);
 
@@ -139,7 +139,7 @@ describe('colourWholeNumbers', () => {
     const volume = createImageSliceVolume(createImage('lying-range'));
     const canvas = new PlanarSampledSliceCanvas(volume, 4, 4, 'image');
     const target = document.createElement('canvas');
-    const presentation = PRESENTATIONS['wide window'];
+    const appearance = PRESENTATIONS['wide window'];
 
     target.width = 4;
     target.height = 4;
@@ -173,7 +173,7 @@ describe('colourWholeNumbers', () => {
         viewPlaneNormal: [0, 0, -1],
         viewUp: [0, -1, 0],
       },
-      presentation,
+      appearance,
       invalidated: true,
     });
 
@@ -182,12 +182,12 @@ describe('colourWholeNumbers', () => {
     );
 
     putImageData.mockRestore();
-    expect(drawn).toEqual(colouredBySlice(pixelData, tablesFor(presentation)));
+    expect(drawn).toEqual(colouredBySlice(pixelData, tablesFor(appearance)));
   });
 });
 
 describe('colourChannels', () => {
-  const presentation = { voiRange: { lower: 50, upper: 200 }, opacity: 0.5 };
+  const appearance = { voiRange: { lower: 50, upper: 200 }, opacity: 0.5 };
   const rgb = [
     [0, 60, 255],
     [120, 199, 51],
@@ -214,7 +214,7 @@ describe('colourChannels', () => {
   };
 
   it('colours each channel of an RGB slice through the colour table', () => {
-    const tables = tablesFor(presentation);
+    const tables = tablesFor(appearance);
     const pixels = new Uint32Array(rgb.length);
 
     colourChannels(Uint8Array.from(rgb.flat()), pixels, tables, 3);
@@ -223,7 +223,7 @@ describe('colourChannels', () => {
   });
 
   it('leaves the fourth channel of an RGBA slice out', () => {
-    const tables = tablesFor(presentation);
+    const tables = tablesFor(appearance);
     const pixels = new Uint32Array(rgb.length);
 
     colourChannels(
@@ -505,7 +505,7 @@ describe('the image as a volume of one slice', () => {
 
 describe('CpuImageSliceRenderPath on the canvas', () => {
   /** Mounts an image on the CPU image path of a canvas with a background. */
-  async function mountImage(presentation) {
+  async function mountImage(appearance) {
     const canvas = document.createElement('canvas');
 
     canvas.width = 12;
@@ -572,7 +572,7 @@ describe('CpuImageSliceRenderPath on the canvas', () => {
       { role: 'source' }
     );
 
-    attachment.updateDataPresentation(presentation);
+    attachment.updateAppearance(appearance);
 
     return { attachment, context, fills };
   }

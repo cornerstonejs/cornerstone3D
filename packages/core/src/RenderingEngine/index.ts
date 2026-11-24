@@ -46,11 +46,11 @@ export type {
   BuiltInViewportProjectionByType,
   BuiltInViewportProjectionKind,
   BuiltInViewportProjectionType,
-  ProjectionPresentationForKind,
-  ProjectionPresentationForViewport,
-  ProjectionPresentationForViewportType,
+  ProjectionFramingForKind,
+  ProjectionFramingForViewport,
+  ProjectionFramingForViewportType,
   ProjectionPosition,
-  ProjectionPresentation,
+  ProjectionFraming,
   ProjectionRequest,
   ProjectionScale,
   ProjectionSnapshotForKind,
@@ -66,35 +66,35 @@ export type {
   ViewportProjectionAdapter,
 } from './Viewports';
 export type {
-  ECGProjectionPresentation,
+  ECGProjectionFraming,
   ECGProjectionRequest,
   ECGProjectionSnapshot,
   ECGViewState,
 } from './Viewports/ECG';
 export type {
-  VideoProjectionPresentation,
+  VideoProjectionFraming,
   VideoProjectionRequest,
   VideoProjectionSnapshot,
   VideoViewState,
 } from './Viewports/Video';
 export type {
   PlanarDisplayArea,
-  PlanarProjectionPresentation,
+  PlanarProjectionFraming,
   PlanarProjectionRequest,
   PlanarProjectionSnapshot,
-  PlanarViewPresentation,
-  PlanarViewPresentationSelector,
+  PlanarViewFraming,
+  PlanarViewFramingSelector,
   PlanarViewState,
 } from './Viewports/Planar';
 export type {
-  WSIProjectionPresentation,
+  WSIProjectionFraming,
   WSIProjectionRequest,
   WSIProjectionSnapshot,
   WSIViewState,
 } from './Viewports/WSI';
 export type {
   Volume3DCamera,
-  Volume3DProjectionPresentation,
+  Volume3DProjectionFraming,
   Volume3DProjectionRequest,
   Volume3DProjectionSnapshot,
 } from './Viewports/Volume3D';

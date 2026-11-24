@@ -100,7 +100,7 @@ async function readDrawnInvert(viewport, drawSpy) {
 
   const calls = drawSpy.mock.calls;
 
-  return calls[calls.length - 1][0].presentation.invert;
+  return calls[calls.length - 1][0].appearance.invert;
 }
 
 describe('Direct next planar viewport and the default invert of an image', () => {
@@ -151,7 +151,7 @@ describe('Direct next planar viewport and the default invert of an image', () =>
     );
     expect(steps[0]).toBe(LEGACY_MIXED_STACK_INVERTS.cpu[0]);
     expect(steps[2]).toBe(false);
-    expect(viewport.getDisplaySetPresentation('mixed').invert).toBeUndefined();
+    expect(viewport.getDisplaySetAppearance('mixed').invert).toBeUndefined();
   });
 
   it('starts a display set of a direct planar viewport inverted and keeps what the application sets', async () => {
@@ -168,17 +168,17 @@ describe('Direct next planar viewport and the default invert of an image', () =>
 
     await viewport.setDisplaySets({ displaySetId: 'xray' });
 
-    expect(viewport.getDisplaySetPresentation('xray').invert).toBeUndefined();
+    expect(viewport.getDisplaySetAppearance('xray').invert).toBeUndefined();
     expect(viewport.getDefaultInvert('xray')).toBe(true);
     expect(await readDrawnInvert(viewport, drawSpy)).toBe(true);
 
-    viewport.setDisplaySetPresentation('xray', { invert: false });
+    viewport.setDisplaySetAppearance('xray', { invert: false });
 
     expect(await readDrawnInvert(viewport, drawSpy)).toBe(false);
 
-    viewport.resetDisplaySetPresentation('xray');
+    viewport.resetDisplaySetAppearance('xray');
 
-    expect(viewport.getDisplaySetPresentation('xray').invert).toBeUndefined();
+    expect(viewport.getDisplaySetAppearance('xray').invert).toBeUndefined();
     expect(await readDrawnInvert(viewport, drawSpy)).toBe(true);
   });
 });

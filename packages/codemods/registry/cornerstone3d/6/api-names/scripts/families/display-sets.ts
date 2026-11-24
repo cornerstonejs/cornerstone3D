@@ -183,10 +183,16 @@ const VIEWPORT_TYPES = new Set([
 ]);
 
 /**
+ * Members that a family renames, by name, with the core types that have them
+ * and the text of their report.
+ */
+export type TypeMembers = Record<string, { types: Set<string>; text: string }>;
+
+/**
  * The members that this family renames, with the core types that have them
  * and their name in 6.0.
  */
-const TYPE_MEMBERS: Record<string, { types: Set<string>; text: string }> = {
+const TYPE_MEMBERS: TypeMembers = {
   getSourceDataId: {
     types: VIEWPORT_TYPES,
     text: 'its name in 6.0 is getSourceDisplaySetId',
@@ -211,6 +217,15 @@ const TYPE_MEMBERS: Record<string, { types: Set<string>; text: string }> = {
  * application's and stays as it is.
  */
 function reportTypeMembers(run: Run): void {
+  reportMembersOfTypes(run, TYPE_MEMBERS);
+}
+
+/**
+ * Reports each member of a table that a type of the application declares on
+ * top of a Cornerstone type, as `reportTypeMembers` does for this family.
+ * Other families call it with their own table.
+ */
+export function reportMembersOfTypes(run: Run, table: TypeMembers): void {
   for (const body of run.rootNode.findAll({
     rule: { any: [{ kind: 'object_type' }, { kind: 'interface_body' }] },
   })) {
@@ -230,8 +245,8 @@ function reportTypeMembers(run: Run): void {
 
       const nameNode = member.field('name');
       const name = staticKeyName(nameNode) ?? '';
-      const entry = Object.prototype.hasOwnProperty.call(TYPE_MEMBERS, name)
-        ? TYPE_MEMBERS[name]
+      const entry = Object.prototype.hasOwnProperty.call(table, name)
+        ? table[name]
         : undefined;
 
       if (
@@ -335,7 +350,7 @@ function reportRegistryModules(run: Run): void {
  * Tells whether a file imports a package of Cornerstone, so that a name in
  * it can be Cornerstone's.
  */
-function importsCornerstone(run: Run): boolean {
+export function importsCornerstone(run: Run): boolean {
   const isCornerstone = (source: string | undefined) =>
     Boolean(source?.startsWith('@cornerstonejs/'));
 
@@ -1135,8 +1150,11 @@ function argumentEvidence(node: Node): Evidence {
   if (
     (index === 1 &&
       (calleePath === 'viewportProjection.get' ||
-        calleePath === 'viewportProjection.getPresentation')) ||
-    (index === 2 && calleePath === 'viewportProjection.withPresentation')
+        calleePath === 'viewportProjection.getPresentation' ||
+        calleePath === 'viewportProjection.getFraming')) ||
+    (index === 2 &&
+      (calleePath === 'viewportProjection.withPresentation' ||
+        calleePath === 'viewportProjection.withFraming'))
   ) {
     return 'proven';
   }

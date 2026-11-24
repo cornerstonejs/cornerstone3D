@@ -69,7 +69,7 @@ function makeViewport(options: {
     id: options.id,
     element: document.createElement('div'),
     setDisplaySets: jest.fn(),
-    setDisplaySetPresentation: jest.fn(),
+    setDisplaySetAppearance: jest.fn(),
     setViewState: jest.fn(),
     getCurrentMode: jest.fn(() => options.mode ?? 'volume'),
     getVolumeId: jest.fn(() => options.volumeId),

@@ -303,7 +303,7 @@ describe('Jump and scroll on a direct next planar viewport -- ', () => {
         const displaySetId = await show(viewport);
 
         await utilities.jumpToSlice(viewport.element, { imageIndex: 6 });
-        viewport.setDisplaySetPresentation(displaySetId, { slabThickness: 4 });
+        viewport.setDisplaySetAppearance(displaySetId, { slabThickness: 4 });
 
         expect(viewport.getNumberOfSlices()).toBe(slices);
         expect(viewport.getNumberOfSlices(undefined, true)).toBe(slices);
@@ -321,7 +321,7 @@ describe('Jump and scroll on a direct next planar viewport -- ', () => {
       );
 
       await utilities.jumpToSlice(viewport.element, { imageIndex: 4 });
-      viewport.setDisplaySetPresentation(displaySetId, { slabThickness: 4 });
+      viewport.setDisplaySetAppearance(displaySetId, { slabThickness: 4 });
 
       expect(
         scrollAndMeasure(viewport, { delta: 1, scrollSlabs: true })
@@ -343,7 +343,7 @@ describe('Jump and scroll on a direct next planar viewport -- ', () => {
         13
       );
 
-      viewport.setDisplaySetPresentation(displaySetId, { slabThickness: 4 });
+      viewport.setDisplaySetAppearance(displaySetId, { slabThickness: 4 });
       await utilities.jumpToSlice(viewport.element, { imageIndex: 0 });
 
       const indices = [-1, 1, 2, 3].map((delta) => {

@@ -128,7 +128,7 @@ addButtonToToolbar({
     const viewport: PlanarViewport =
       renderingEngine.getViewport(activeViewportId);
 
-    viewport.setDisplaySetPresentation(displaySetId, {
+    viewport.setDisplaySetAppearance(displaySetId, {
       slabThickness: targetSlabThickness,
       blendMode: Enums.BlendModes.AVERAGE_INTENSITY_BLEND,
     });
@@ -142,7 +142,7 @@ addButtonToToolbar({
     const viewport: PlanarViewport =
       renderingEngine.getViewport(activeViewportId);
 
-    viewport.resetDisplaySetPresentation(displaySetId);
+    viewport.resetDisplaySetAppearance(displaySetId);
     viewport.render();
   },
 });

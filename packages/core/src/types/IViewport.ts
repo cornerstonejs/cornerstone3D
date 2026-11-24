@@ -11,6 +11,7 @@ import type { FidelityLine } from '../RenderingEngine/helpers/fidelityIndicator/
 import type { ViewportFidelityState } from './ViewportFidelity';
 import type { BaseViewportOptions } from '../RenderingEngine/Viewports/BaseViewport';
 import type ResolvedViewportView from '../RenderingEngine/Viewports/ResolvedViewportView';
+import type { ProjectionWriteOptions } from '../RenderingEngine/Viewports/ViewportProjectionTypes';
 /**
  * Specifies what view to get a reference for.
  * This set of options allows a Viewport to return a reference for an image
@@ -307,7 +308,7 @@ export interface ViewReference {
   /**
    * The focal point of the camera in world space.
    * The focal point is used for to define the stack positioning, but not the
-   * zoom/pan (which is defined by the view presentation
+   * zoom/pan (which is defined by the view framing
    * object.)
    *
    * Single point objects (probe etc) should use the probe point as the camera
@@ -368,14 +369,14 @@ export interface ViewReference {
 }
 
 /**
- * A view presentation stores information about how the view is presented to the
+ * A view framing stores information about how the view is presented to the
  * user, such as rotation, the displayed area, pan/zoom etc.  This is represented
  * as values which are independent of the view type or size as much as possible,
  * by normalizing the values to the type of view presented.  This allows
  * remember or synchronizing values in a much wider variety of places than
  * using the raw/underlying view data such as camera position.
  */
-export interface ViewPresentation {
+export interface ViewFraming {
   /**
    * The slice thickness - in frames(true/default) it will be 1 for a frame distance of
    * 1 pixel thickness, while for mm will be in mm distance.
@@ -427,11 +428,11 @@ export interface ViewPresentation {
 }
 
 /**
- * A view presentation selector allows choosing what view attributes should be
- * returned by `viewportProjection.getPresentation(viewport, { selector })`.  This allows a shared selection
- * object to be used to specify which presentation attributes are to be used.
+ * A view framing selector allows choosing what view attributes should be
+ * returned by `viewportProjection.getFraming(viewport, { selector })`.  This allows a shared selection
+ * object to be used to specify which framing attributes are to be used.
  *
- * For example, a synchronizer might choose to use a presentation selector
+ * For example, a synchronizer might choose to use a framing selector
  * so that multiple viewports could specify to synchronizer, say slabThickness
  * and windowLevel across one set, while a different synchronizer would choose
  * to apply zoom and pan.
@@ -446,7 +447,7 @@ export interface ViewPresentation {
  * which call the particular get/set functions, but that makes it more work to
  * share particular sets for different uses.
  */
-export interface ViewPresentationSelector {
+export interface ViewFramingSelector {
   slabThickness?: number;
   // Camera relative parameters
   rotation?: boolean;
@@ -503,18 +504,15 @@ type ViewportContentMode =
  * the variable with the class when the family is
  * known, for instance with
  * `renderingEngine.getViewport<PlanarViewport>(viewportId)`, or narrow with
- * `utilities.viewportSupportsDisplaySetPresentation` and
+ * `utilities.viewportSupportsDisplaySetAppearance` and
  * `utilities.getViewportContentMode(viewport) === 'stack'`.
  *
  * @typeParam TViewState - The view state of the family. The bare name takes
  * any object.
- * @typeParam TDataPresentation - The presentation of a display set of the
+ * @typeParam TAppearance - The appearance of a display set of the
  * family.
  */
-interface IViewport<
-  TViewState extends object = object,
-  TDataPresentation = unknown,
-> {
+interface IViewport<TViewState extends object = object, TAppearance = unknown> {
   /** The id of the viewport in its rendering engine. */
   readonly id: string;
   /** The element that the viewport draws in. */
@@ -548,19 +546,17 @@ interface IViewport<
   addDisplaySet(displaySetId: string, options: unknown): Promise<void>;
   /** The mounted display sets, the source first. */
   getDisplaySets(): Array<{ displaySetId: string; options?: unknown }>;
-  /** Removes a display set and its presentation, and draws again. */
+  /** Removes a display set and its appearance, and draws again. */
   removeDisplaySet(displaySetId: string): void;
-  /** Changes the presentation of the source display set. */
-  setDisplaySetPresentation(props: Partial<TDataPresentation>): void;
-  /** Changes the presentation of one display set, for overlays and fusion. */
-  setDisplaySetPresentation(
+  /** Changes the appearance of the source display set. */
+  setDisplaySetAppearance(props: Partial<TAppearance>): void;
+  /** Changes the appearance of one display set, for overlays and fusion. */
+  setDisplaySetAppearance(
     displaySetId: string,
-    props: Partial<TDataPresentation>
+    props: Partial<TAppearance>
   ): void;
-  /** The presentation of one display set, or undefined when it is not mounted. */
-  getDisplaySetPresentation(
-    displaySetId: string
-  ): TDataPresentation | undefined;
+  /** The appearance of one display set, or undefined when it is not mounted. */
+  getDisplaySetAppearance(displaySetId: string): TAppearance | undefined;
   /** What the viewport shows now. See {@link ViewportContentMode}. */
   getCurrentMode(): ViewportContentMode;
 
@@ -576,6 +572,17 @@ interface IViewport<
   ): void;
   /** Resets the navigation. False when the family has nothing to reset. */
   resetViewState(options?: unknown): boolean;
+  /**
+   * The framing of the view: zoom, pan, rotation, flips and display area
+   * against the fit, which another viewport can take. Undefined while the
+   * viewport shows nothing.
+   */
+  getViewFraming(selector?: ViewFramingSelector): ViewFraming | undefined;
+  /** Sets the framing of the view as one change of the view state. */
+  setViewFraming(
+    framing: Partial<ViewFraming>,
+    options?: ProjectionWriteOptions
+  ): void;
 
   /** A reference to what the viewport shows now. */
   getViewReference(specifier?: ViewReferenceSpecifier): ViewReference;

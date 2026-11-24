@@ -1958,7 +1958,7 @@ class AdvancedMagnifyViewport {
 
   /**
    * Makes the glass show what the source shows around the world point under
-   * the centre of the glass: the same slice and presentation, turned and
+   * the centre of the glass: the same slice and appearance, turned and
    * flipped as the source, magnified by the zoom factor.
    */
   private _syncViewports() {

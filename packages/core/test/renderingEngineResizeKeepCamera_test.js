@@ -173,7 +173,7 @@ async function showPlanarViewport(renderingEngine, mode, name, options = {}) {
     await showVolume(viewport, series, 3, options);
   }
   viewport.setViewState(
-    viewportProjection.withPresentation(viewport, { zoom: 2, pan: [20, 10] })
+    viewportProjection.withFraming(viewport, { zoom: 2, pan: [20, 10] })
   );
   viewport.render();
   await frames(3);
@@ -253,10 +253,7 @@ describe('renderingEngine.resize(immediate, keepCamera) -- ', () => {
         before.viewPlaneNormal,
         'view plane normal'
       );
-      expect(viewportProjection.getPresentation(viewport).zoom).toBeCloseTo(
-        1,
-        6
-      );
+      expect(viewportProjection.getFraming(viewport).zoom).toBeCloseTo(1, 6);
     });
 
     it(`gives a 3D viewport the fit of the new canvas for a zoom read before a resize and written back after it on ${engineName}, as the legacy 3D viewport`, async () => {
@@ -270,13 +267,13 @@ describe('renderingEngine.resize(immediate, keepCamera) -- ', () => {
       viewport.resetViewState();
       await frames(2);
 
-      const { zoom, pan } = viewportProjection.getPresentation(viewport);
+      const { zoom, pan } = viewportProjection.getFraming(viewport);
 
       viewport.element.style.width = '317px';
       renderingEngine.resize(false);
       renderingEngine.render();
       viewport.setViewState(
-        viewportProjection.withPresentation(viewport, { zoom, pan })
+        viewportProjection.withFraming(viewport, { zoom, pan })
       );
       renderingEngine.resize(false);
       renderingEngine.render();
@@ -288,10 +285,7 @@ describe('renderingEngine.resize(immediate, keepCamera) -- ', () => {
       await frames(2);
 
       expect(restored).toBeCloseTo(viewport.getViewState().parallelScale, 6);
-      expect(viewportProjection.getPresentation(viewport).zoom).toBeCloseTo(
-        1,
-        6
-      );
+      expect(viewportProjection.getFraming(viewport).zoom).toBeCloseTo(1, 6);
     });
 
     ['stack', 'volume'].forEach((mode) => {
@@ -360,7 +354,7 @@ describe('renderingEngine.resize(immediate, keepCamera) -- ', () => {
         renderingEngine.resize(true, false);
         await frames(4);
 
-        const presentation = viewportProjection.getPresentation(viewport);
+        const presentation = viewportProjection.getFraming(viewport);
 
         expect(presentation.zoom).toBeCloseTo(1, 6);
         expect(presentation.pan[0]).toBeCloseTo(0, 6);

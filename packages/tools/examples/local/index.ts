@@ -173,7 +173,7 @@ async function loadAndViewImage(imageId) {
   // Set the stack on the viewport
   viewport.setDisplaySets({ displaySetId }).then(() => {
     // Set the VOI of the stack
-    // viewport.setDisplaySetPresentation(displaySetId, { voiRange: ctVoiRange });
+    // viewport.setDisplaySetAppearance(displaySetId, { voiRange: ctVoiRange });
     // Render the image
     viewport.render();
 

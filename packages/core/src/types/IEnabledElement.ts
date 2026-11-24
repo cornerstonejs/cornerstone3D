@@ -8,7 +8,7 @@ interface IEnabledElement {
   /**
    * The viewport of the element: a viewport of any family, typed with the
    * members that every family has. Code that needs the members of a family
-   * narrows: `utilities.viewportSupportsDisplaySetPresentation(viewport)` for
+   * narrows: `utilities.viewportSupportsDisplaySetAppearance(viewport)` for
    * a planar viewport, `utilities.getViewportContentMode(viewport) === 'stack'`
    * for what it shows, or `renderingEngine.getViewport<PlanarViewport>(id)`.
    */

@@ -237,10 +237,7 @@ async function run() {
   });
 
   await volumeViewport.setDisplaySets({ displaySetId: volumeDisplaySetId });
-  volumeViewport.setDisplaySetPresentation(
-    volumeDisplaySetId,
-    ctPresentation()
-  );
+  volumeViewport.setDisplaySetAppearance(volumeDisplaySetId, ctPresentation());
 
   toolGroup.addViewport(viewportIdVolume, renderingEngineId);
   toolGroup.addViewport(viewportIdStack, renderingEngineId);

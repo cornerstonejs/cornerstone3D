@@ -1,0 +1,28 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "1",
+        "rule": "ViewPresentation: imported from @cornerstonejs/core/types, use Types.ViewFraming"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "1",
+        "rule": "ViewPresentationSelector: imported from @cornerstonejs/core/types, use Types.ViewFramingSelector"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "10",
+        "rule": "@cornerstonejs/tools/utilities/viewportPresentation: a namespace import, getViewportPresentation is getViewportFraming, applyViewportPresentation is applyViewportFraming"
+      },
+      "count": 1
+    }
+  ]
+}

@@ -22,11 +22,11 @@ function showsSurfacesAsDisplaySets(
 /**
  * Shows a surface of a segmentation on a next 3D viewport as a geometry
  * display set, under the id of its geometry. The colour and the visibility of
- * the surface are the presentation of the display set. The first call on a
+ * the surface are the appearance of the display set. The first call on a
  * viewport, whose actors have no entry of the surface, mounts the display
  * set, registered with its segmentation so that its actor entry carries the
  * representation UID, and fits the camera, as the legacy viewport does for a
- * new surface. A later call sets the presentation only: the display set draws
+ * new surface. A later call sets the appearance only: the display set draws
  * the points and the polys of its geometry at each render.
  *
  * @param viewport - The next 3D viewport.
@@ -45,7 +45,7 @@ async function addOrUpdateSurfaceDisplaySet(
     surface.segmentIndex
   );
 
-  viewport.setDisplaySetPresentation(geometryId, {
+  viewport.setDisplaySetAppearance(geometryId, {
     color: surface.color,
     visible: surface.visible !== false,
   });

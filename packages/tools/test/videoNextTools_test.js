@@ -420,7 +420,7 @@ describe('ZoomTool on a direct next video viewport -- ', () => {
 
   /** The zoom of the viewport from the projection service. */
   function zoomOf(viewport) {
-    return cornerstone3D.viewportProjection.getPresentation(viewport, {
+    return cornerstone3D.viewportProjection.getFraming(viewport, {
       selector: { zoom: true },
     }).zoom;
   }

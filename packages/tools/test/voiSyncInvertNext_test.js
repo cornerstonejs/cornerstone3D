@@ -109,7 +109,7 @@ async function showAndLink(viewports, displaySetId) {
 
 /** The invert of the presentation of the source display set of a viewport. */
 function invertOf(viewport) {
-  return viewport.getDisplaySetPresentation(viewport.getSourceDisplaySetId())
+  return viewport.getDisplaySetAppearance(viewport.getSourceDisplaySetId())
     ?.invert;
 }
 
@@ -135,11 +135,11 @@ describe('VOI synchronizer on direct next planar viewports -- ', () => {
     expect(source.getCurrentMode()).toBe('stack');
     expect(Boolean(invertOf(target))).toBe(false);
 
-    source.setDisplaySetPresentation(displaySetId, { invert: true });
+    source.setDisplaySetAppearance(displaySetId, { invert: true });
 
     expect(invertOf(target)).toBe(true);
 
-    source.setDisplaySetPresentation(displaySetId, { invert: false });
+    source.setDisplaySetAppearance(displaySetId, { invert: false });
 
     expect(invertOf(target)).toBe(false);
   });
@@ -153,11 +153,11 @@ describe('VOI synchronizer on direct next planar viewports -- ', () => {
     expect(source.getCurrentMode()).toBe('volume');
     expect(Boolean(invertOf(target))).toBe(false);
 
-    source.setDisplaySetPresentation(displaySetId, { invert: true });
+    source.setDisplaySetAppearance(displaySetId, { invert: true });
 
     expect(invertOf(target)).toBe(true);
 
-    source.setDisplaySetPresentation(displaySetId, { invert: false });
+    source.setDisplaySetAppearance(displaySetId, { invert: false });
 
     expect(invertOf(target)).toBe(false);
   });
@@ -167,14 +167,14 @@ describe('VOI synchronizer on direct next planar viewports -- ', () => {
     const displaySetId = registerStack();
 
     await showAndLink([source, target], displaySetId);
-    target.setDisplaySetPresentation(displaySetId, { invert: true });
-    source.setDisplaySetPresentation(displaySetId, {
+    target.setDisplaySetAppearance(displaySetId, { invert: true });
+    source.setDisplaySetAppearance(displaySetId, {
       voiRange: { lower: 10, upper: 90 },
     });
 
     expect(invertOf(source)).toBeUndefined();
     expect(invertOf(target)).toBe(true);
-    expect(target.getDisplaySetPresentation(displaySetId).voiRange).toEqual({
+    expect(target.getDisplaySetAppearance(displaySetId).voiRange).toEqual({
       lower: 10,
       upper: 90,
     });
@@ -215,16 +215,16 @@ describe('VOI synchronizer on direct next planar viewports -- ', () => {
     synchronizer.addSource({ renderingEngineId, viewportId: source.id });
     synchronizer.addTarget({ renderingEngineId, viewportId: target.id });
 
-    source.setDisplaySetPresentation(sourceDisplaySetId, {
+    source.setDisplaySetAppearance(sourceDisplaySetId, {
       voiRange: { lower: 10, upper: 90 },
     });
 
     expect(target.getCurrentMode()).toBe('stack');
-    expect(
-      target.getDisplaySetPresentation(targetDisplaySetId).voiRange
-    ).toEqual({
-      lower: 10,
-      upper: 90,
-    });
+    expect(target.getDisplaySetAppearance(targetDisplaySetId).voiRange).toEqual(
+      {
+        lower: 10,
+        upper: 90,
+      }
+    );
   });
 });

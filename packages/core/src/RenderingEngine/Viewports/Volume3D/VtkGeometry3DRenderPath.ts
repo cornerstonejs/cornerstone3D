@@ -28,7 +28,7 @@ import type {
   Volume3DGeometryPayload,
   Volume3DGeometryRendering,
   Volume3DCamera,
-  Volume3DDataPresentation,
+  Volume3DDisplaySetAppearance,
   Volume3DViewportRenderContext,
   Volume3DVtkGeometryAdapterContext,
 } from './viewport3DTypes';
@@ -47,7 +47,7 @@ export class VtkGeometry3DRenderPath
     ctx: Volume3DVtkGeometryAdapterContext,
     data: LoadedData,
     options: DataAddOptions
-  ): Promise<RenderPathAttachment<Volume3DDataPresentation>> {
+  ): Promise<RenderPathAttachment<Volume3DDisplaySetAppearance>> {
     const payload: Volume3DGeometryPayload =
       data as unknown as LoadedData<Volume3DGeometryPayload>;
     const actors = createActorEntries(payload);
@@ -73,8 +73,8 @@ export class VtkGeometry3DRenderPath
 
     return {
       rendering,
-      updateDataPresentation: (props) => {
-        this.updateDataPresentation(rendering, props);
+      updateAppearance: (props) => {
+        this.updateAppearance(rendering, props);
       },
       applyViewState: (camera) => {
         this.applyViewState(ctx, camera);
@@ -94,13 +94,13 @@ export class VtkGeometry3DRenderPath
     };
   }
 
-  private updateDataPresentation(
+  private updateAppearance(
     rendering: Volume3DGeometryRendering,
     props: unknown
   ): void {
-    applyDataPresentation(
+    applyAppearance(
       rendering,
-      props as Volume3DDataPresentation | undefined
+      props as Volume3DDisplaySetAppearance | undefined
     );
   }
 
@@ -323,9 +323,9 @@ function createActorEntries(payload: Volume3DGeometryPayload): ActorEntry[] {
   );
 }
 
-function applyDataPresentation(
+function applyAppearance(
   rendering: Volume3DGeometryRendering,
-  props?: Volume3DDataPresentation
+  props?: Volume3DDisplaySetAppearance
 ): void {
   rendering.actors.forEach((actorEntry) => {
     const actor = actorEntry.actor as vtkActor;

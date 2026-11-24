@@ -33,7 +33,7 @@ import type {
 } from '../ViewportArchitectureTypes';
 import type {
   Volume3DCamera,
-  Volume3DDataPresentation,
+  Volume3DDisplaySetAppearance,
   Volume3DViewportRenderContext,
   Volume3DVolumePayload,
   Volume3DVolumeRendering,
@@ -42,7 +42,7 @@ import type {
 import applyVolume3DCamera, {
   fitVolume3DClippingRange,
 } from './applyVolume3DCamera';
-import { applyVolume3DPresentation } from './applyVolume3DPresentation';
+import { applyVolume3DAppearance } from './applyVolume3DAppearance';
 import { getInitialVolume3DCamera } from './vtkVolume3DInitialCamera';
 import { isSegmentationOverlayData } from '../renderingFidelity';
 
@@ -77,7 +77,7 @@ export class VtkVolume3DRenderPath
     ctx: Volume3DVtkVolumeAdapterContext,
     data: LoadedData,
     options: DataAddOptions
-  ): Promise<RenderPathAttachment<Volume3DDataPresentation>> {
+  ): Promise<RenderPathAttachment<Volume3DDisplaySetAppearance>> {
     const payload: Volume3DVolumePayload =
       data as unknown as LoadedData<Volume3DVolumePayload>;
     const hadVolume = ctx.vtk.renderer.getVolumes().length > 0;
@@ -135,8 +135,8 @@ export class VtkVolume3DRenderPath
 
     return {
       rendering,
-      updateDataPresentation: (props) => {
-        this.updateDataPresentation(rendering, props);
+      updateAppearance: (props) => {
+        this.updateAppearance(rendering, props);
       },
       applyViewState: (camera) => {
         this.applyViewState(ctx, camera);
@@ -159,13 +159,13 @@ export class VtkVolume3DRenderPath
     };
   }
 
-  private updateDataPresentation(
+  private updateAppearance(
     rendering: Volume3DVolumeRendering,
     props: unknown
   ): void {
-    applyVolume3DPresentation(
+    applyVolume3DAppearance(
       rendering,
-      props as Volume3DDataPresentation | undefined
+      props as Volume3DDisplaySetAppearance | undefined
     );
   }
 

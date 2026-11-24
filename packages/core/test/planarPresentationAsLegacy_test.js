@@ -188,16 +188,14 @@ describe('A planar view answers a zoom, a pan and a stretch as the legacy viewpo
 
     it(`gives the same view when it writes back the presentation that it read on a display area, ${where}`, async function () {
       const { area } = await showWithDisplayArea(next, series, show);
-      const presentation = viewportProjection.getPresentation(next);
+      const presentation = viewportProjection.getFraming(next);
 
       expect(presentation.zoom).toBeCloseTo(2, 4);
 
-      next.setViewState(
-        viewportProjection.withPresentation(next, presentation)
-      );
+      next.setViewState(viewportProjection.withFraming(next, presentation));
       await settle(next);
 
-      const back = viewportProjection.getPresentation(next);
+      const back = viewportProjection.getFraming(next);
 
       expectSamePicture(pictureOf(next, series), area);
       expect(back.zoom).toBeCloseTo(presentation.zoom, 4);
@@ -207,17 +205,17 @@ describe('A planar view answers a zoom, a pan and a stretch as the legacy viewpo
 
     it(`takes a zoom and a scale next to a display area in a patch against the fit, ${where}`, async function () {
       const { fit } = await showWithDisplayArea(next, series, show);
-      const areaPan = viewportProjection.getPresentation(next).pan;
+      const areaPan = viewportProjection.getFraming(next).pan;
 
       next.setViewState(
-        viewportProjection.withPresentation(next, {
+        viewportProjection.withFraming(next, {
           displayArea: DISPLAY_AREA,
           zoom: 3,
         })
       );
       await settle(next);
 
-      const zoomed = viewportProjection.getPresentation(next);
+      const zoomed = viewportProjection.getFraming(next);
 
       expect(pictureOf(next, series).size / fit.size).toBeCloseTo(3, 3);
       expect(zoomed.zoom).toBeCloseTo(3, 4);
@@ -226,7 +224,7 @@ describe('A planar view answers a zoom, a pan and a stretch as the legacy viewpo
       expect(next.getViewState().displayArea).toEqual(DISPLAY_AREA);
 
       next.setViewState(
-        viewportProjection.withPresentation(next, {
+        viewportProjection.withFraming(next, {
           displayArea: DISPLAY_AREA,
           scale: [2.5, 2.5],
         })
@@ -234,7 +232,7 @@ describe('A planar view answers a zoom, a pan and a stretch as the legacy viewpo
       await settle(next);
 
       expect(pictureOf(next, series).size / fit.size).toBeCloseTo(2.5, 3);
-      expect(viewportProjection.getPresentation(next).zoom).toBeCloseTo(2.5, 4);
+      expect(viewportProjection.getFraming(next).zoom).toBeCloseTo(2.5, 4);
       expect(next.getViewState().displayArea).toEqual(DISPLAY_AREA);
     }, 20000);
 
@@ -246,19 +244,19 @@ describe('A planar view answers a zoom, a pan and a stretch as the legacy viewpo
       next.setDisplayArea(SCALE_AREA);
       await settle(next);
 
-      const areaPan = viewportProjection.getPresentation(next).pan;
+      const areaPan = viewportProjection.getFraming(next).pan;
 
       expect(pictureOf(next, series).size / fit.size).toBeCloseTo(2, 3);
 
       next.setViewState(
-        viewportProjection.withPresentation(next, {
+        viewportProjection.withFraming(next, {
           displayArea: SCALE_AREA,
           zoom: 3,
         })
       );
       await settle(next);
 
-      const zoomed = viewportProjection.getPresentation(next);
+      const zoomed = viewportProjection.getFraming(next);
 
       expect(pictureOf(next, series).size / fit.size).toBeCloseTo(3, 3);
       expect(zoomed.zoom).toBeCloseTo(3, 4);
@@ -267,14 +265,14 @@ describe('A planar view answers a zoom, a pan and a stretch as the legacy viewpo
       expect(next.getViewState().displayArea).toEqual(SCALE_AREA);
 
       next.setViewState(
-        viewportProjection.withPresentation(next, {
+        viewportProjection.withFraming(next, {
           displayArea: SCALE_AREA,
           scale: [3, 1.5],
         })
       );
       await settle(next);
 
-      const scaled = viewportProjection.getPresentation(next);
+      const scaled = viewportProjection.getFraming(next);
 
       expect(scaled.scale[0]).toBeCloseTo(3, 4);
       expect(scaled.scale[1]).toBeCloseTo(1.5, 4);
@@ -287,20 +285,20 @@ describe('A planar view answers a zoom, a pan and a stretch as the legacy viewpo
     it(`zooms by a patch with no anchor about the centre of the canvas after a pan and after a zoom at a point, ${where}`, async function () {
       await show(next, series, SLICE);
       next.setViewState(
-        viewportProjection.withPresentation(next, { pan: [40, -30] })
+        viewportProjection.withFraming(next, { pan: [40, -30] })
       );
       await settle(next);
 
       const atCentre = next.canvasToWorld(CENTRE);
 
-      next.setViewState(viewportProjection.withPresentation(next, { zoom: 2 }));
+      next.setViewState(viewportProjection.withFraming(next, { zoom: 2 }));
       await settle(next);
 
-      expect(viewportProjection.getPresentation(next).zoom).toBeCloseTo(2, 4);
+      expect(viewportProjection.getFraming(next).zoom).toBeCloseTo(2, 4);
       expectAtCentre(next, atCentre);
 
       next.setViewState(
-        viewportProjection.withPresentation(next, { zoom: 2.5 }, undefined, {
+        viewportProjection.withFraming(next, { zoom: 2.5 }, undefined, {
           anchorCanvas: MOUSE,
         })
       );
@@ -308,10 +306,10 @@ describe('A planar view answers a zoom, a pan and a stretch as the legacy viewpo
 
       const atCentreAfterAnchor = next.canvasToWorld(CENTRE);
 
-      next.setViewState(viewportProjection.withPresentation(next, { zoom: 3 }));
+      next.setViewState(viewportProjection.withFraming(next, { zoom: 3 }));
       await settle(next);
 
-      expect(viewportProjection.getPresentation(next).zoom).toBeCloseTo(3, 4);
+      expect(viewportProjection.getFraming(next).zoom).toBeCloseTo(3, 4);
       expectAtCentre(next, atCentreAfterAnchor);
       expect(next.getViewState().anchorWorld).toBeDefined();
 
@@ -320,10 +318,10 @@ describe('A planar view answers a zoom, a pan and a stretch as the legacy viewpo
 
       const atCentreOfArea = next.canvasToWorld(CENTRE);
 
-      next.setViewState(viewportProjection.withPresentation(next, { zoom: 4 }));
+      next.setViewState(viewportProjection.withFraming(next, { zoom: 4 }));
       await settle(next);
 
-      expect(viewportProjection.getPresentation(next).zoom).toBeCloseTo(4, 4);
+      expect(viewportProjection.getFraming(next).zoom).toBeCloseTo(4, 4);
       expectAtCentre(next, atCentreOfArea);
       expect(next.getViewState().displayArea).toBeUndefined();
       expect(next.getViewState().anchorWorld).toBeUndefined();

@@ -191,7 +191,7 @@ function updateProjectionInfo(): void {
     const viewport = getViewport(viewportId);
     const snapshot = viewportProjection.get(viewport);
     const presentation =
-      viewportProjection.getPresentation<ProjectionSyncPresentation>(viewport, {
+      viewportProjection.getFraming<ProjectionSyncPresentation>(viewport, {
         selector: projectionSelector,
       });
     const info = projectionInfo.get(viewportId);
@@ -202,7 +202,7 @@ function updateProjectionInfo(): void {
 
     info.innerText = [
       `adapter: ${snapshot?.adapterId ?? 'none'}`,
-      `scale tag: ${formatScale(snapshot?.presentation.scale)}`,
+      `scale tag: ${formatScale(snapshot?.framing.scale)}`,
       `presentation zoom: ${formatNumber(presentation?.zoom)}`,
       `presentation pan: ${formatPoint(presentation?.pan)}`,
       `presentation rotation: ${formatNumber(presentation?.rotation)}`,
@@ -225,18 +225,15 @@ function syncProjection(
   const sourceViewport = getViewport(sourceViewportId);
   const targetViewport = getViewport(targetViewportId);
   const sourcePresentation =
-    viewportProjection.getPresentation<ProjectionSyncPresentation>(
-      sourceViewport,
-      {
-        selector: projectionSelector,
-      }
-    );
+    viewportProjection.getFraming<ProjectionSyncPresentation>(sourceViewport, {
+      selector: projectionSelector,
+    });
 
   if (!sourcePresentation) {
     return;
   }
 
-  const nextTargetState = viewportProjection.withPresentation<
+  const nextTargetState = viewportProjection.withFraming<
     Parameters<PlanarViewport['setViewState']>[0],
     ProjectionSyncPresentation
   >(targetViewport, sourcePresentation);
@@ -435,13 +432,13 @@ async function run() {
     }),
   ]);
 
-  leftViewport.setDisplaySetPresentation(leftDisplaySetId, {
+  leftViewport.setDisplaySetAppearance(leftDisplaySetId, {
     voiRange: ctVoiRange,
   });
-  rightViewport.setDisplaySetPresentation(rightDisplaySetId, {
+  rightViewport.setDisplaySetAppearance(rightDisplaySetId, {
     voiRange: ctVoiRange,
   });
-  const initialRightViewState = viewportProjection.withPresentation<
+  const initialRightViewState = viewportProjection.withFraming<
     Parameters<PlanarViewport['setViewState']>[0],
     ProjectionSyncPresentation
   >(rightViewport, {

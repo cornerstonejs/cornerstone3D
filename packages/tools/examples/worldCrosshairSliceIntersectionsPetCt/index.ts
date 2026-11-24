@@ -389,7 +389,7 @@ async function run() {
       displaySetId,
       options: spec.orientation ? { orientation: spec.orientation } : {},
     });
-    viewport.setDisplaySetPresentation(displaySetId, {
+    viewport.setDisplaySetAppearance(displaySetId, {
       voiRange,
       ...(invert ? { invert } : {}),
     });
@@ -424,7 +424,7 @@ async function run() {
     displaySetId: ct3dDisplaySetId,
     options: { renderMode: 'vtkVolume3d' },
   });
-  ct3dViewport.setDisplaySetPresentation(ct3dDisplaySetId, {
+  ct3dViewport.setDisplaySetAppearance(ct3dDisplaySetId, {
     sampleDistanceMultiplier: 1,
   });
 

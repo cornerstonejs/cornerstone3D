@@ -265,7 +265,7 @@ async function _handleVolumeViewports(volumeImageIds, renderingEngine) {
       const viewport: PlanarViewport = renderingEngine.getViewport(viewportId);
 
       await viewport.setDisplaySets({ displaySetId: volumeDisplaySetId });
-      viewport.setDisplaySetPresentation(volumeDisplaySetId, ctPresentation());
+      viewport.setDisplaySetAppearance(volumeDisplaySetId, ctPresentation());
     })
   );
 
@@ -488,7 +488,7 @@ async function _handleStackViewports(stackImageIds: string[]) {
 
   setTimeout(() => {
     [viewport1, viewport3].forEach((viewport) => {
-      const viewState = viewportProjection.withPresentation(viewport, {
+      const viewState = viewportProjection.withFraming(viewport, {
         zoom: 5,
       });
 

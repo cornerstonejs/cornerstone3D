@@ -130,7 +130,7 @@ describe('Segmentation State:', () => {
     try {
       createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
         testUtils.setVolumesOnNextViewport(vp, [volumeId]).then(() => {
-          vp.setDisplaySetPresentation({
+          vp.setDisplaySetAppearance({
             interpolationType: InterpolationType.NEAREST,
           });
         });
@@ -208,7 +208,7 @@ describe('Segmentation State:', () => {
     try {
       createAndCacheVolume(volumeId, { imageIds: [] }).then(() => {
         testUtils.setVolumesOnNextViewport(vp, [volumeId]).then(() => {
-          vp.setDisplaySetPresentation({
+          vp.setDisplaySetAppearance({
             interpolationType: InterpolationType.NEAREST,
           });
         });

@@ -70,7 +70,7 @@ function renderAndCapture(vp, element) {
  */
 function getStackProperties(vp) {
   const displaySetId = vp.getSourceDisplaySetId();
-  const presentation = vp.getDisplaySetPresentation(displaySetId) || {};
+  const presentation = vp.getDisplaySetAppearance(displaySetId) || {};
 
   return {
     ...presentation,
@@ -162,7 +162,7 @@ describe('renderingCore -- Stack', () => {
 
       try {
         testUtils.setStackOnNextViewport(vp, [imageId], 0).then(() => {
-          vp.setDisplaySetPresentation({
+          vp.setDisplaySetAppearance({
             interpolationType: InterpolationType.NEAREST,
           });
           vp.render();
@@ -206,7 +206,7 @@ describe('renderingCore -- Stack', () => {
 
       try {
         testUtils.setStackOnNextViewport(vp, [imageId], 0).then(() => {
-          vp.setDisplaySetPresentation({
+          vp.setDisplaySetAppearance({
             interpolationType: InterpolationType.NEAREST,
           });
           vp.render();
@@ -251,7 +251,7 @@ describe('renderingCore -- Stack', () => {
 
       try {
         testUtils.setStackOnNextViewport(vp, [imageId], 0).then(() => {
-          vp.setDisplaySetPresentation({
+          vp.setDisplaySetAppearance({
             interpolationType: InterpolationType.NEAREST,
           });
           vp.render();
@@ -305,7 +305,7 @@ describe('renderingCore -- Stack', () => {
 
       try {
         testUtils.setStackOnNextViewport(vp, [imageId], 0).then(() => {
-          vp.setDisplaySetPresentation({
+          vp.setDisplaySetAppearance({
             interpolationType: InterpolationType.NEAREST,
           });
           vp.render();
@@ -378,7 +378,7 @@ describe('renderingCore -- Stack', () => {
         testUtils
           .setStackOnNextViewport(vp, [imageId1, imageId2, imageId3], 0)
           .then(() => {
-            vp.setDisplaySetPresentation({
+            vp.setDisplaySetAppearance({
               interpolationType: InterpolationType.NEAREST,
             });
             vp.render();
@@ -451,7 +451,7 @@ describe('renderingCore -- Stack', () => {
         testUtils
           .setStackOnNextViewport(vp, [imageId1, imageId2, imageId3], 2)
           .then(() => {
-            vp.setDisplaySetPresentation({
+            vp.setDisplaySetAppearance({
               interpolationType: InterpolationType.NEAREST,
             });
             vp.render();
@@ -496,7 +496,7 @@ describe('renderingCore -- Stack', () => {
 
       try {
         testUtils.setStackOnNextViewport(vp, [imageId], 0).then(() => {
-          vp.setDisplaySetPresentation({
+          vp.setDisplaySetAppearance({
             voiRange: { lower: -160, upper: 240 },
             interpolationType: InterpolationType.NEAREST,
           });
@@ -558,7 +558,7 @@ describe('renderingCore -- Stack', () => {
         testUtils
           .setStackOnNextViewport(vp, [imageId1, imageId2], 0)
           .then(() => {
-            vp.setDisplaySetPresentation({
+            vp.setDisplaySetAppearance({
               interpolationType: InterpolationType.NEAREST,
             });
             vp.render();
@@ -618,7 +618,7 @@ describe('renderingCore -- Stack', () => {
         testUtils
           .setStackOnNextViewport(vp, [imageId1, imageId2], 1)
           .then(() => {
-            vp.setDisplaySetPresentation({
+            vp.setDisplaySetAppearance({
               interpolationType: InterpolationType.NEAREST,
             });
             vp.render();
@@ -662,7 +662,7 @@ describe('renderingCore -- Stack', () => {
       });
       try {
         testUtils.setStackOnNextViewport(vp, [imageId], 0).then(() => {
-          vp.setDisplaySetPresentation({
+          vp.setDisplaySetAppearance({
             voiRange: { lower: -160, upper: 240 },
           });
           vp.render();
@@ -811,7 +811,7 @@ describe('renderingCore -- Stack', () => {
 
       try {
         testUtils.setStackOnNextViewport(vp, [imageId], 0).then(() => {
-          vp.setDisplaySetPresentation({
+          vp.setDisplaySetAppearance({
             interpolationType: InterpolationType.NEAREST,
           });
           vp.render();
@@ -947,7 +947,7 @@ describe('renderingCore -- Stack', () => {
           const image = canvas.toDataURL('image/png');
 
           let props = getStackProperties(vp);
-          const rotation = viewportProjection.getPresentation(vp).rotation;
+          const rotation = viewportProjection.getFraming(vp).rotation;
           expect(rotation).toBe(90);
           expect(props.interpolationType).toBe(InterpolationType.NEAREST);
           expect(props.invert).toBe(true);
@@ -965,14 +965,12 @@ describe('renderingCore -- Stack', () => {
       try {
         testUtils.setStackOnNextViewport(vp, [imageId], 0).then(() => {
           subscribeToImageRendered();
-          vp.setDisplaySetPresentation({
+          vp.setDisplaySetAppearance({
             interpolationType: InterpolationType.NEAREST,
             voiRange: { lower: -260, upper: 140 },
             invert: true,
           });
-          vp.setViewState(
-            viewportProjection.withPresentation(vp, { rotation: 90 })
-          );
+          vp.setViewState(viewportProjection.withFraming(vp, { rotation: 90 }));
 
           vp.render();
         });
@@ -1021,7 +1019,7 @@ describe('renderingCore -- Stack', () => {
             .getDefaultActor()
             .actor.getMapper()
             .getInputData();
-          vp.setDisplaySetPresentation(vp.getSourceDisplaySetId(), {
+          vp.setDisplaySetAppearance(vp.getSourceDisplaySetId(), {
             colormap: expectedColormap,
             interpolationType: InterpolationType.NEAREST,
             voiRange: expectedVOIRange,
@@ -1083,8 +1081,8 @@ describe('renderingCore -- Stack', () => {
       testUtils
         .setStackOnNextViewport(vp, [imageId1, imageId2], 0)
         .then(() => {
-          vp.resetDisplaySetPresentation();
-          vp.setDisplaySetPresentation({ invert: true });
+          vp.resetDisplaySetAppearance();
+          vp.setDisplaySetAppearance({ invert: true });
 
           const invertedColors = getTransferFunctionColors();
 
@@ -1126,14 +1124,14 @@ describe('renderingCore -- Stack', () => {
         );
 
         let props = getStackProperties(vp);
-        const rotation = viewportProjection.getPresentation(vp).rotation;
+        const rotation = viewportProjection.getFraming(vp).rotation;
         expect(rotation).toBe(90);
         expect(props.interpolationType).toBe(InterpolationType.NEAREST);
         expect(props.invert).toBe(true);
 
         setTimeout(() => {
           console.log('reseting properties');
-          vp.resetDisplaySetPresentation();
+          vp.resetDisplaySetAppearance();
         });
 
         element.addEventListener(
@@ -1159,14 +1157,12 @@ describe('renderingCore -- Stack', () => {
 
       try {
         testUtils.setStackOnNextViewport(vp, [imageId], 0).then(() => {
-          vp.setDisplaySetPresentation({
+          vp.setDisplaySetAppearance({
             interpolationType: InterpolationType.NEAREST,
             voiRange: { lower: -260, upper: 140 },
             invert: true,
           });
-          vp.setViewState(
-            viewportProjection.withPresentation(vp, { rotation: 90 })
-          );
+          vp.setViewState(viewportProjection.withFraming(vp, { rotation: 90 }));
           vp.render();
         });
       } catch (e) {
@@ -1210,7 +1206,7 @@ describe('renderingCore -- Stack', () => {
 
       try {
         testUtils.setStackOnNextViewport(vp, [imageId], 0).then(() => {
-          vp.setDisplaySetPresentation({
+          vp.setDisplaySetAppearance({
             interpolationType: InterpolationType.NEAREST,
           });
 
@@ -1257,13 +1253,11 @@ describe('renderingCore -- Stack', () => {
 
       try {
         testUtils.setStackOnNextViewport(vp, [imageId], 0).then(() => {
-          vp.setDisplaySetPresentation({
+          vp.setDisplaySetAppearance({
             interpolationType: InterpolationType.NEAREST,
           });
 
-          vp.setViewState(
-            viewportProjection.withPresentation(vp, { rotation: 90 })
-          );
+          vp.setViewState(viewportProjection.withFraming(vp, { rotation: 90 }));
           vp.setViewState({ flipVertical: true });
           vp.render();
         });
@@ -1288,7 +1282,7 @@ describe('renderingCore -- Stack', () => {
 
       expect(getStackProperties(vp).invert).toBe(false);
 
-      vp.setDisplaySetPresentation({ invert: true });
+      vp.setDisplaySetAppearance({ invert: true });
       const inverted = await renderAndCapture(vp, element);
 
       expect(inverted).not.toEqual(notInverted);
@@ -1318,7 +1312,7 @@ describe('renderingCore -- Stack', () => {
         [monochrome1, monochrome1Next],
         0
       );
-      vp.setDisplaySetPresentation({ invert: false });
+      vp.setDisplaySetAppearance({ invert: false });
       const setByHand = await renderAndCapture(vp, element);
 
       expect(getStackProperties(vp).invert).toBe(false);
@@ -1338,7 +1332,7 @@ describe('renderingCore -- Stack', () => {
         'monochrome1_invert_false_scrolled'
       );
 
-      vp.resetDisplaySetPresentation();
+      vp.resetDisplaySetAppearance();
 
       expect(getStackProperties(vp).invert).toBe(true);
 

@@ -1,26 +1,26 @@
 import type { Point2 } from '../../../types';
-import type { ViewPresentationSelector } from '../../../types/IViewport';
+import type { ViewFramingSelector } from '../../../types/IViewport';
 import type { ProjectionWriteOptions } from '../ViewportProjectionTypes';
 import { normalizePlanarScale } from './planarCameraScale';
 import { getPlanarProjectionFallbackViewStateWithPan } from './planarProjectionFallback';
-import { derivePlanarPresentation } from './planarRenderCamera';
+import { derivePlanarFraming } from './planarRenderCamera';
 import {
   getPlanarProjectionPan,
   getPlanarProjectionScale,
   getPlanarProjectionZoom,
 } from './planarProjectionSnapshot';
 import type { PlanarProjectionSnapshot } from './PlanarProjectionTypes';
-import { getPlanarRotationAfterFlips } from './planarViewPresentation';
+import { getPlanarRotationAfterFlips } from './planarViewFraming';
 import { cloneDisplayArea, normalizePlanarViewState } from './planarViewState';
 import type {
-  PlanarViewPresentation,
-  PlanarViewPresentationSelector,
+  PlanarViewFraming,
+  PlanarViewFramingSelector,
   PlanarViewState,
 } from './PlanarViewportTypes';
 
 const DEFAULT_SELECTOR: Required<
   Pick<
-    PlanarViewPresentationSelector,
+    PlanarViewFramingSelector,
     | 'rotation'
     | 'displayArea'
     | 'zoom'
@@ -96,7 +96,7 @@ function getScaleNextToDisplayArea(
     return scale;
   }
 
-  const [areaScaleX, areaScaleY] = derivePlanarPresentation({
+  const [areaScaleX, areaScaleY] = derivePlanarFraming({
     sliceBasis,
     camera: { ...viewState, scale: [1, 1] },
     canvasWidth: snapshot.canvasWidth,
@@ -138,19 +138,18 @@ function getPlanarViewStateWithPanFromSliceCentre(
 
 /**
  * Converts a Planar projection snapshot to the existing public
- * PlanarViewPresentation compatibility shape.
+ * PlanarViewFraming compatibility shape.
  */
-export function getPlanarProjectionPresentation(
+export function getPlanarProjectionFraming(
   snapshot: PlanarProjectionSnapshot,
-  selector: ViewPresentationSelector | undefined
-): PlanarViewPresentation {
-  const target: PlanarViewPresentation = {};
+  selector: ViewFramingSelector | undefined
+): PlanarViewFraming {
+  const target: PlanarViewFraming = {};
   const planarSelector =
-    (selector as PlanarViewPresentationSelector | undefined) ??
-    DEFAULT_SELECTOR;
+    (selector as PlanarViewFramingSelector | undefined) ?? DEFAULT_SELECTOR;
 
   if (planarSelector.rotation) {
-    target.rotation = snapshot.presentation.rotation;
+    target.rotation = snapshot.framing.rotation;
   }
 
   if (planarSelector.displayArea) {
@@ -173,29 +172,29 @@ export function getPlanarProjectionPresentation(
   }
 
   if (planarSelector.flipHorizontal) {
-    target.flipHorizontal = snapshot.presentation.flipHorizontal ?? false;
+    target.flipHorizontal = snapshot.framing.flipHorizontal ?? false;
   }
 
   if (planarSelector.flipVertical) {
-    target.flipVertical = snapshot.presentation.flipVertical ?? false;
+    target.flipVertical = snapshot.framing.flipVertical ?? false;
   }
 
   return target;
 }
 
 /**
- * Converts a Planar view-presentation patch back into normalized semantic
+ * Converts a Planar view-framing patch back into normalized semantic
  * PlanarViewState.
  *
  * A zoom in the patch is the new vertical scale against the fit and keeps
  * the ratio of the two axes, so a stretched view stays stretched. A scale in
  * the patch is taken as it is, and wins over a zoom. Next to a display area
  * in the patch, a zoom and a scale are against the fit too, as
- * `getPlanarProjectionPresentation` reads them, so writing back a
- * presentation that was read gives the same view.
+ * `getPlanarProjectionFraming` reads them, so writing back a
+ * framing that was read gives the same view.
  *
  * A rotation and flips in one patch flip the view first and turn it after,
- * as the 5.x `setViewPresentation` did. A patch that changes a flip and has
+ * as the view setter of 5.x did. A patch that changes a flip and has
  * no rotation mirrors the picture on the screen, as 5.x did too: the
  * rotation becomes 360 minus the rotation for each flip that changes.
  *
@@ -223,40 +222,40 @@ export function getPlanarProjectionPresentation(
  * A display area in the patch replaces a world anchor of the view state,
  * which is cleared as an own undefined property too.
  */
-export function withPlanarProjectionPresentation(
+export function withPlanarProjectionFraming(
   snapshot: PlanarProjectionSnapshot,
-  presentation: Partial<PlanarViewPresentation>,
+  framing: Partial<PlanarViewFraming>,
   options: ProjectionWriteOptions = {}
 ): PlanarViewState {
   const {
     pan,
     flipHorizontal = snapshot.viewState?.flipHorizontal ?? false,
     flipVertical = snapshot.viewState?.flipVertical ?? false,
-  } = presentation;
-  const rotation = hasOwn(presentation, 'rotation')
-    ? (presentation.rotation ?? snapshot.presentation.rotation)
+  } = framing;
+  const rotation = hasOwn(framing, 'rotation')
+    ? (framing.rotation ?? snapshot.framing.rotation)
     : getPlanarRotationAfterFlips(
         {
-          rotation: snapshot.presentation.rotation,
+          rotation: snapshot.framing.rotation,
           flipHorizontal: snapshot.viewState?.flipHorizontal,
           flipVertical: snapshot.viewState?.flipVertical,
         },
         { flipHorizontal, flipVertical }
       );
   const viewState = snapshot.viewState ?? {};
-  const hasZoom = hasOwn(presentation, 'zoom');
-  const hasScale = hasOwn(presentation, 'scale');
-  const hasDisplayArea = hasOwn(presentation, 'displayArea') && !pan;
+  const hasZoom = hasOwn(framing, 'zoom');
+  const hasScale = hasOwn(framing, 'scale');
+  const hasDisplayArea = hasOwn(framing, 'displayArea') && !pan;
   const dropsDisplayArea =
     !hasDisplayArea &&
-    (Boolean(viewState.displayArea) || hasOwn(presentation, 'displayArea')) &&
+    (Boolean(viewState.displayArea) || hasOwn(framing, 'displayArea')) &&
     (Boolean(pan) || hasZoom || hasScale);
-  const currentScale = snapshot.presentation.scaleVector;
+  const currentScale = snapshot.framing.scaleVector;
   const nextScale = hasScale
-    ? normalizePlanarScale(presentation.scale)
-    : typeof presentation.zoom === 'number' && !hasDisplayArea
-      ? getPlanarScaleForZoom(presentation.zoom, currentScale)
-      : normalizePlanarScale(presentation.zoom ?? currentScale);
+    ? normalizePlanarScale(framing.scale)
+    : typeof framing.zoom === 'number' && !hasDisplayArea
+      ? getPlanarScaleForZoom(framing.zoom, currentScale)
+      : normalizePlanarScale(framing.zoom ?? currentScale);
   const nextCamera: Partial<PlanarViewState> = {
     flipHorizontal,
     flipVertical,
@@ -264,7 +263,7 @@ export function withPlanarProjectionPresentation(
   };
 
   if (hasDisplayArea) {
-    const displayArea = cloneDisplayArea(presentation.displayArea);
+    const displayArea = cloneDisplayArea(framing.displayArea);
 
     nextCamera.anchorCanvas = [0.5, 0.5];
     nextCamera.anchorWorld = undefined;
@@ -351,7 +350,7 @@ export function withPlanarProjectionPresentation(
     {
       displayArea:
         dropsDisplayArea ||
-        (hasDisplayArea && presentation.displayArea === undefined),
+        (hasDisplayArea && framing.displayArea === undefined),
       anchorWorld: hasDisplayArea,
     }
   );

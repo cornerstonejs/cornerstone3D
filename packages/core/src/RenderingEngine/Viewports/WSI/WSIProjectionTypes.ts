@@ -2,7 +2,7 @@ import { ViewportType } from '../../../enums';
 import type { ICamera, Point2, Point3 } from '../../../types';
 import type { WSIMapViewLike } from '../../../utilities/WSIUtilities';
 import type {
-  ProjectionPresentation,
+  ProjectionFraming,
   ProjectionRequest,
   ProjectionSnapshot,
 } from '../ViewportProjectionTypes';
@@ -41,8 +41,7 @@ export type WSIProjectionViewport = {
   getViewState?(): WSIViewState;
 };
 
-export interface WSIProjectionPresentation
-  extends ProjectionPresentation<never> {
+export interface WSIProjectionFraming extends ProjectionFraming<never> {
   /**
    * The pan in canvas pixels on the screen, not divided by the zoom: where
    * the centre of the slide shows, less the centre of the canvas.
@@ -51,7 +50,7 @@ export interface WSIProjectionPresentation
 }
 
 export interface WSIProjectionSnapshot
-  extends ProjectionSnapshot<WSIViewState, WSIProjectionPresentation> {
+  extends ProjectionSnapshot<WSIViewState, WSIProjectionFraming> {
   canvasHeight: number;
   canvasWidth: number;
   resolvedView?: WSIResolvedViewLike;

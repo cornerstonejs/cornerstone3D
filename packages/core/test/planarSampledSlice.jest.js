@@ -1016,7 +1016,7 @@ describe('screen grid', () => {
     expectPoint(flipped.zDirection, [0, 0, 1]);
 
     const scaled = getScreenSliceGeometry({
-      camera: camera({ parallelScale: 25, presentationScale: [2, 1] }),
+      camera: camera({ parallelScale: 25, framingScale: [2, 1] }),
       canvasWidth: 200,
       canvasHeight: 100,
     });
@@ -1377,7 +1377,7 @@ describe('draw step', () => {
     const draw = new PlanarSampledSliceActor();
 
     draw.setSlice(createSlice());
-    draw.applyPresentation(
+    draw.applyAppearance(
       { interpolationType: InterpolationType.NEAREST, invert: false },
       { lower: -100, upper: 300 }
     );
@@ -1387,7 +1387,7 @@ describe('draw step', () => {
     expect(property.getInterpolationType()).toBe(InterpolationType.NEAREST);
     expect(property.getRGBTransferFunction(0).getRange()).toEqual([-100, 300]);
 
-    draw.applyPresentation({ visible: false }, { lower: -100, upper: 300 });
+    draw.applyAppearance({ visible: false }, { lower: -100, upper: 300 });
 
     expect(draw.actor.getVisibility()).toBe(false);
   });
@@ -1791,7 +1791,7 @@ describe('PlanarViewport with slice first (render path)', () => {
         currentImageIdIndex: 0,
         maxImageIdIndex: sliceCount - 1,
       },
-      updateDataPresentation: jest.fn(),
+      updateAppearance: jest.fn(),
       applyViewState: jest.fn(),
       getFrameOfReferenceUID: () => 'sampled-slice-frame',
       removeData: jest.fn(),
@@ -1840,7 +1840,7 @@ describe('PlanarViewport with slice first (render path)', () => {
 
     viewport.setZoom(2);
     viewport.setPan([5, 3]);
-    viewport.setDisplaySetPresentation(displaySetId, {
+    viewport.setDisplaySetAppearance(displaySetId, {
       voiRange: { lower: 0, upper: 80 },
     });
 
@@ -1875,14 +1875,14 @@ describe('PlanarViewport with slice first (render path)', () => {
       .spyOn(viewport, 'applyRenderingPipelineUpdate')
       .mockResolvedValue(undefined);
 
-    viewport.setDisplaySetPresentation(displaySetId, {
+    viewport.setDisplaySetAppearance(displaySetId, {
       voiRange: { lower: 0, upper: 80 },
     });
-    viewport.setDisplaySetPresentation(displaySetId, { slabThickness: 0.8 });
+    viewport.setDisplaySetAppearance(displaySetId, { slabThickness: 0.8 });
 
     expect(remount).not.toHaveBeenCalled();
 
-    viewport.setDisplaySetPresentation(displaySetId, { slabThickness: 2 });
+    viewport.setDisplaySetAppearance(displaySetId, { slabThickness: 2 });
 
     expect(remount).toHaveBeenCalledTimes(1);
   });
@@ -2021,7 +2021,7 @@ describe('PlanarViewport with slice first (render path)', () => {
               createRenderPath: () => ({
                 addData: async () => ({
                   rendering: { renderMode: options.renderMode },
-                  updateDataPresentation: jest.fn(),
+                  updateAppearance: jest.fn(),
                   applyViewState: jest.fn(),
                   getFrameOfReferenceUID: () => 'sampled-slice-frame',
                   removeData: jest.fn(),
@@ -2058,7 +2058,7 @@ describe('PlanarViewport with slice first (render path)', () => {
       ActorRenderMode.VTK_VOLUME_SLICE
     );
 
-    viewport.setDisplaySetPresentation(displaySetId, { slabThickness: 1e6 });
+    viewport.setDisplaySetAppearance(displaySetId, { slabThickness: 1e6 });
 
     expect(remount).not.toHaveBeenCalled();
   });
@@ -2170,7 +2170,7 @@ describe('PlanarViewport with slice first (render path)', () => {
     expect(sampleSpy).toHaveBeenCalledTimes(2);
     expect(drawnSpacing()).toBeCloseTo(firstFineSpacing / 4);
 
-    viewport.setDisplaySetPresentation(displaySetId, {
+    viewport.setDisplaySetAppearance(displaySetId, {
       voiRange: { lower: 0, upper: 80 },
     });
     jest.advanceTimersByTime(10 * SAMPLED_SLICE_REST_DELAY_MS);

@@ -1,13 +1,13 @@
 import { ViewportType } from '../../../enums';
-import type { ViewPresentation } from '../../../types';
+import type { ViewFraming } from '../../../types';
 import type {
   ProjectionWriteOptions,
   ViewportProjectionAdapter,
 } from '../ViewportProjectionTypes';
 import {
-  getVideoProjectionPresentation,
-  withVideoProjectionPresentation,
-} from './videoProjectionPresentation';
+  getVideoProjectionFraming,
+  withVideoProjectionFraming,
+} from './videoProjectionFraming';
 import { getVideoProjectionSnapshot } from './videoProjectionSnapshot';
 import {
   VIDEO_PROJECTION_ID,
@@ -18,7 +18,7 @@ import type { VideoViewState } from './VideoViewportTypes';
 
 export { getVideoProjectionSnapshot };
 export type {
-  VideoProjectionPresentation,
+  VideoProjectionFraming,
   VideoProjectionRequest,
   VideoProjectionSnapshot,
 } from './VideoProjectionTypes';
@@ -27,22 +27,19 @@ export type {
  * Video projection adapter.
  *
  * Video exposes media-pixel space rather than DICOM patient space, while still
- * supporting portable pan/zoom/rotation presentation for tools.
+ * supporting portable pan/zoom/rotation framing for tools.
  */
 export const videoProjectionAdapter: ViewportProjectionAdapter<
   VideoViewState,
-  ViewPresentation,
+  ViewFraming,
   VideoProjectionSnapshot
 > = {
   id: VIDEO_PROJECTION_ID,
   viewportTypes: [ViewportType.VIDEO],
   getSnapshot: (request) =>
     getVideoProjectionSnapshot(request as VideoProjectionRequest),
-  getPresentation: (snapshot, selector) =>
-    getVideoProjectionPresentation(snapshot, selector),
-  withPresentation: (
-    snapshot,
-    presentation,
-    options?: ProjectionWriteOptions
-  ) => withVideoProjectionPresentation(snapshot, presentation, options),
+  getFraming: (snapshot, selector) =>
+    getVideoProjectionFraming(snapshot, selector),
+  withFraming: (snapshot, framing, options?: ProjectionWriteOptions) =>
+    withVideoProjectionFraming(snapshot, framing, options),
 };

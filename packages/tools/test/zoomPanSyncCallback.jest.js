@@ -3,8 +3,8 @@ jest.mock('@cornerstonejs/core', () => ({
   viewportHasPan: jest.fn(),
   viewportHasZoom: jest.fn(),
   viewportProjection: {
-    getPresentation: jest.fn(),
-    withPresentation: jest.fn(),
+    getFraming: jest.fn(),
+    withFraming: jest.fn(),
   },
 }));
 
@@ -58,11 +58,11 @@ describe('zoomPanSyncCallback', () => {
     };
 
     mockRenderingEngine(sourceViewport, targetViewport);
-    viewportProjection.getPresentation.mockReturnValue({
+    viewportProjection.getFraming.mockReturnValue({
       pan: [12, -6],
       zoom: 2,
     });
-    viewportProjection.withPresentation.mockReturnValue(nextViewState);
+    viewportProjection.withFraming.mockReturnValue(nextViewState);
 
     zoomPanSyncCallback(
       createSynchronizerInstance(),
@@ -70,16 +70,13 @@ describe('zoomPanSyncCallback', () => {
       targetDescriptor
     );
 
-    expect(viewportProjection.getPresentation).toHaveBeenCalledWith(
-      sourceViewport,
-      {
-        selector: {
-          pan: true,
-          zoom: true,
-        },
-      }
-    );
-    expect(viewportProjection.withPresentation).toHaveBeenCalledWith(
+    expect(viewportProjection.getFraming).toHaveBeenCalledWith(sourceViewport, {
+      selector: {
+        pan: true,
+        zoom: true,
+      },
+    });
+    expect(viewportProjection.withFraming).toHaveBeenCalledWith(
       targetViewport,
       {
         pan: [12, -6],
@@ -100,11 +97,11 @@ describe('zoomPanSyncCallback', () => {
     };
 
     mockRenderingEngine(sourceViewport, targetViewport);
-    viewportProjection.getPresentation.mockReturnValue({
+    viewportProjection.getFraming.mockReturnValue({
       pan: [12, -6],
       zoom: 2,
     });
-    viewportProjection.withPresentation.mockReturnValue({
+    viewportProjection.withFraming.mockReturnValue({
       anchorCanvas: [0.6, 0.4],
     });
 
@@ -116,7 +113,7 @@ describe('zoomPanSyncCallback', () => {
       targetDescriptor
     );
 
-    expect(viewportProjection.withPresentation).toHaveBeenCalledWith(
+    expect(viewportProjection.withFraming).toHaveBeenCalledWith(
       targetViewport,
       {
         pan: [12, -6],
@@ -136,7 +133,7 @@ describe('zoomPanSyncCallback', () => {
     };
 
     mockRenderingEngine(sourceViewport, targetViewport);
-    viewportProjection.getPresentation.mockReturnValue(undefined);
+    viewportProjection.getFraming.mockReturnValue(undefined);
     viewportHasZoom.mockReturnValue(true);
     viewportHasPan.mockReturnValue(true);
 
@@ -164,7 +161,7 @@ describe('zoomPanSyncCallback', () => {
     };
 
     mockRenderingEngine(sourceViewport, targetViewport);
-    viewportProjection.getPresentation.mockReturnValue({ camera: {} });
+    viewportProjection.getFraming.mockReturnValue({ camera: {} });
     viewportHasZoom.mockReturnValue(true);
     viewportHasPan.mockReturnValue(true);
 
@@ -174,7 +171,7 @@ describe('zoomPanSyncCallback', () => {
       targetDescriptor
     );
 
-    expect(viewportProjection.withPresentation).not.toHaveBeenCalled();
+    expect(viewportProjection.withFraming).not.toHaveBeenCalled();
     expect(targetViewport.setViewState).not.toHaveBeenCalled();
     expect(targetViewport.setZoom).not.toHaveBeenCalled();
     expect(targetViewport.setPan).not.toHaveBeenCalled();
@@ -197,11 +194,11 @@ describe('zoomPanSyncCallback', () => {
     };
 
     getRenderingEngine.mockImplementation((id) => engines[id]);
-    viewportProjection.getPresentation.mockReturnValue({
+    viewportProjection.getFraming.mockReturnValue({
       pan: [1, 2],
       zoom: 2,
     });
-    viewportProjection.withPresentation.mockReturnValue({ scale: [2, 2] });
+    viewportProjection.withFraming.mockReturnValue({ scale: [2, 2] });
 
     zoomPanSyncCallback(
       createSynchronizerInstance(),
@@ -209,7 +206,7 @@ describe('zoomPanSyncCallback', () => {
       { renderingEngineId: 'b', viewportId: 'target' }
     );
 
-    expect(viewportProjection.getPresentation).toHaveBeenCalledWith(
+    expect(viewportProjection.getFraming).toHaveBeenCalledWith(
       sourceViewport,
       expect.anything()
     );
@@ -233,7 +230,7 @@ describe('zoomPanSyncCallback', () => {
       { renderingEngineId: 'b', viewportId: 'target' }
     );
 
-    expect(viewportProjection.getPresentation).not.toHaveBeenCalled();
+    expect(viewportProjection.getFraming).not.toHaveBeenCalled();
     expect(targetViewport.render).not.toHaveBeenCalled();
   });
 });

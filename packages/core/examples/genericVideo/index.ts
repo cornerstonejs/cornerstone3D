@@ -72,7 +72,7 @@ element.addEventListener(Events.CAMERA_MODIFIED, () => {
   const { flipHorizontal = false, flipVertical = false } =
     viewport.getViewState();
   const { rotation, zoom } =
-    viewportProjection.getPresentation<Types.ViewPresentation>(viewport) || {};
+    viewportProjection.getFraming<Types.ViewFraming>(viewport) || {};
   const currentPan = viewport.getPan();
 
   rotationInfo.innerText = `Rotation: ${Math.round(rotation || 0)}`;

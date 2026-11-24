@@ -3,21 +3,21 @@ import type { Types } from '@cornerstonejs/core';
 import { Enums, getRenderingEngine, utilities } from '@cornerstonejs/core';
 import type { Synchronizer } from '../../store';
 import {
-  applyViewportPresentation,
-  getViewportPresentation,
-} from '../../utilities/viewportPresentation';
+  applyViewportFraming,
+  getViewportFraming,
+} from '../../utilities/viewportFraming';
 
 // A ViewReference deliberately excludes zoom/pan (see IViewport ViewReference
 // docs), so for viewports we transport them separately to match
 // the legacy setCamera(camera) path, which carried parallelScale (zoom) + the
 // in-plane focal point (pan). Mirrors zoomPanSyncCallback's selector.
-const ZOOM_PAN_SELECTOR: Types.ViewPresentationSelector = {
+const ZOOM_PAN_SELECTOR: Types.ViewFramingSelector = {
   pan: true,
   zoom: true,
 };
 
-/** The fields of a planar presentation that turn and flip the view. */
-const ROTATION_FLIP_SELECTOR: Types.ViewPresentationSelector = {
+/** The fields of a planar framing that turn and flip the view. */
+const ROTATION_FLIP_SELECTOR: Types.ViewFramingSelector = {
   rotation: true,
   flipHorizontal: true,
   flipVertical: true,
@@ -46,11 +46,11 @@ function negated(vector: Types.Point3): Types.Point3 {
  *
  * @param sourceViewReference - The view reference of the source.
  */
-function getPlanarViewUpPresentation(
+function getPlanarViewUpFraming(
   sViewport: Types.IViewport,
   tViewport: Types.IViewport,
   sourceViewReference: Types.ViewReference | undefined
-): Types.ViewPresentation | undefined {
+): Types.ViewFraming | undefined {
   if (
     sViewport.type !== Enums.ViewportType.PLANAR ||
     tViewport.type !== Enums.ViewportType.PLANAR
@@ -58,11 +58,11 @@ function getPlanarViewUpPresentation(
     return;
   }
 
-  const source = getViewportPresentation(sViewport, ROTATION_FLIP_SELECTOR) as
-    | Types.ViewPresentation
+  const source = getViewportFraming(sViewport, ROTATION_FLIP_SELECTOR) as
+    | Types.ViewFraming
     | undefined;
-  const target = getViewportPresentation(tViewport, ROTATION_FLIP_SELECTOR) as
-    | Types.ViewPresentation
+  const target = getViewportFraming(tViewport, ROTATION_FLIP_SELECTOR) as
+    | Types.ViewFraming
     | undefined;
   const sourceViewUp = sourceViewReference?.viewUp;
   const sourceNormal = sourceViewReference?.viewPlaneNormal;
@@ -166,26 +166,23 @@ export default function cameraSyncCallback(
   // Slice/orientation come from the view reference above; copy zoom + pan
   // (and, between planar viewports of parallel planes, the view up and the
   // normal through the rotation and the flips) explicitly so they stay in
-  // lockstep like the legacy full-camera copy did. applyViewportPresentation
+  // lockstep like the legacy full-camera copy did. applyViewportFraming
   // is a no-op for targets without a projection adapter, so this is safe for
   // any next-viewport family.
-  const zoomPanPresentation = getViewportPresentation(
-    sViewport,
-    ZOOM_PAN_SELECTOR
-  );
-  const viewUpPresentation = getPlanarViewUpPresentation(
+  const zoomPanFraming = getViewportFraming(sViewport, ZOOM_PAN_SELECTOR);
+  const viewUpFraming = getPlanarViewUpFraming(
     sViewport,
     tViewport,
     viewReference
   );
-  applyViewportPresentation(
+  applyViewportFraming(
     tViewport,
-    viewUpPresentation
+    viewUpFraming
       ? {
-          ...(zoomPanPresentation as Types.ViewPresentation),
-          ...viewUpPresentation,
+          ...(zoomPanFraming as Types.ViewFraming),
+          ...viewUpFraming,
         }
-      : zoomPanPresentation
+      : zoomPanFraming
   );
 
   tViewport.render();

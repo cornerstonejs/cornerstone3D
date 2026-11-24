@@ -204,7 +204,7 @@ async function run() {
   await viewport.setDisplaySets({ displaySetId });
 
   // Set the VOI of the stack
-  viewport.setDisplaySetPresentation(displaySetId, { voiRange: ctVoiRange });
+  viewport.setDisplaySetAppearance(displaySetId, { voiRange: ctVoiRange });
 
   utilities.stackContextPrefetch.enable(viewport.element);
 

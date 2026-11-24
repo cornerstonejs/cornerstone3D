@@ -79,11 +79,11 @@ export type {
   BuiltInViewportProjectionByType,
   BuiltInViewportProjectionKind,
   BuiltInViewportProjectionType,
-  ProjectionPresentationForKind,
-  ProjectionPresentationForViewport,
-  ProjectionPresentationForViewportType,
+  ProjectionFramingForKind,
+  ProjectionFramingForViewport,
+  ProjectionFramingForViewportType,
   ProjectionPosition,
-  ProjectionPresentation,
+  ProjectionFraming,
   ProjectionRequest,
   ProjectionScale,
   ProjectionSnapshotForKind,
@@ -101,7 +101,7 @@ export type {
 } from './RenderingEngine/Viewports';
 export type { DisplaySetDescriptor } from './types/DisplaySetDescriptor';
 export type {
-  ECGProjectionPresentation,
+  ECGProjectionFraming,
   ECGProjectionRequest,
   ECGProjectionSnapshot,
   ECGViewState,
@@ -109,7 +109,7 @@ export type {
   ECGClinicalSensitivity,
 } from './RenderingEngine/Viewports/ECG';
 export type {
-  VideoProjectionPresentation,
+  VideoProjectionFraming,
   VideoProjectionRequest,
   VideoProjectionSnapshot,
   VideoViewState,
@@ -118,25 +118,25 @@ export type {
   PlanarResolvedICamera,
   PlanarSliceBasis,
   PlanarDisplayArea,
-  PlanarProjectionPresentation,
+  PlanarProjectionFraming,
   PlanarProjectionRequest,
   PlanarProjectionSnapshot,
-  PlanarViewPresentation,
-  PlanarViewPresentationSelector,
+  PlanarViewFraming,
+  PlanarViewFramingSelector,
   PlanarViewState,
   RenderPlanChangedEventDetail,
   RenderPlanLayer,
   RenderPlanReason,
 } from './RenderingEngine/Viewports/Planar';
 export type {
-  WSIProjectionPresentation,
+  WSIProjectionFraming,
   WSIProjectionRequest,
   WSIProjectionSnapshot,
   WSIViewState,
 } from './RenderingEngine/Viewports/WSI';
 export type {
   Volume3DCamera,
-  Volume3DProjectionPresentation,
+  Volume3DProjectionFraming,
   Volume3DProjectionRequest,
   Volume3DProjectionSnapshot,
 } from './RenderingEngine/Viewports/Volume3D';

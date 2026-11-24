@@ -74,7 +74,7 @@ addButtonToToolbar({
       return;
     }
 
-    viewport.resetDisplaySetPresentation(
+    viewport.resetDisplaySetAppearance(
       isVolumeViewport ? volumeDisplaySetId : stackDisplaySetId
     );
 
@@ -128,9 +128,9 @@ const convertButton = addButtonToToolbar({
     });
 
     await viewport.setDisplaySets({ displaySetId: volumeDisplaySetId });
-    viewport.setDisplaySetPresentation(volumeDisplaySetId, ctPresentation());
+    viewport.setDisplaySetAppearance(volumeDisplaySetId, ctPresentation());
     // Set the VOI range
-    viewport.setDisplaySetPresentation(volumeDisplaySetId, {
+    viewport.setDisplaySetAppearance(volumeDisplaySetId, {
       voiRange: ctVoiRange,
     });
 
@@ -190,7 +190,7 @@ async function run() {
 
   await viewport.setDisplaySets({ displaySetId: stackDisplaySetId });
   // Set the VOI of the stack
-  viewport.setDisplaySetPresentation(stackDisplaySetId, {
+  viewport.setDisplaySetAppearance(stackDisplaySetId, {
     voiRange: ctVoiRange,
   });
 

@@ -38,15 +38,15 @@ jest.mock('@cornerstonejs/core', () => {
       viewportIsInVolumeMode: jest.fn((viewport) =>
         ['volume', 'volume3d'].includes(viewport?.getCurrentMode?.())
       ),
-      viewportSupportsDisplaySetPresentation: jest.fn(
+      viewportSupportsDisplaySetAppearance: jest.fn(
         (viewport) =>
           typeof viewport?.getSourceDisplaySetId === 'function' &&
           typeof viewport?.getDefaultVOIRange === 'function'
       ),
     },
     viewportProjection: {
-      getPresentation: jest.fn(() => undefined),
-      withPresentation: jest.fn(() => undefined),
+      getFraming: jest.fn(() => undefined),
+      withFraming: jest.fn(() => undefined),
     },
   };
 });
@@ -74,7 +74,7 @@ import { state } from '../src/store/state';
 import cameraSyncCallback from '../src/synchronizers/callbacks/cameraSyncCallback';
 import voiSyncCallback from '../src/synchronizers/callbacks/voiSyncCallback';
 import slabThicknessSyncCallback from '../src/synchronizers/callbacks/slabThicknessSyncCallback';
-import presentationViewSyncCallback from '../src/synchronizers/callbacks/presentationViewSyncCallback';
+import viewFramingSyncCallback from '../src/synchronizers/callbacks/viewFramingSyncCallback';
 import areViewportsCoplanar from '../src/synchronizers/callbacks/areViewportsCoplanar';
 
 /**
@@ -611,8 +611,8 @@ describe('cameraSyncCallback', () => {
       render: jest.fn(),
     };
 
-    viewportProjection.getPresentation.mockReturnValueOnce(zoomPanPresentation);
-    viewportProjection.withPresentation.mockReturnValueOnce(zoomPanViewState);
+    viewportProjection.getFraming.mockReturnValueOnce(zoomPanPresentation);
+    viewportProjection.withFraming.mockReturnValueOnce(zoomPanViewState);
 
     getRenderingEngine.mockImplementation((id) =>
       id === 're-source'
@@ -630,11 +630,10 @@ describe('cameraSyncCallback', () => {
     expect(targetViewport.setViewReference).toHaveBeenCalledWith(
       sourceViewReference
     );
-    expect(viewportProjection.getPresentation).toHaveBeenCalledWith(
-      sourceViewport,
-      { selector: { pan: true, zoom: true } }
-    );
-    expect(viewportProjection.withPresentation).toHaveBeenCalledWith(
+    expect(viewportProjection.getFraming).toHaveBeenCalledWith(sourceViewport, {
+      selector: { pan: true, zoom: true },
+    });
+    expect(viewportProjection.withFraming).toHaveBeenCalledWith(
       targetViewport,
       zoomPanPresentation,
       undefined,
@@ -705,7 +704,7 @@ describe('cameraSyncCallback', () => {
       render: jest.fn(),
     };
 
-    viewportProjection.getPresentation.mockImplementation(
+    viewportProjection.getFraming.mockImplementation(
       (viewport, { selector }) => {
         if (!selector.rotation) {
           return viewport === sourceViewport ? ZOOM_PAN : undefined;
@@ -716,7 +715,7 @@ describe('cameraSyncCallback', () => {
           : target.presentation;
       }
     );
-    viewportProjection.withPresentation.mockImplementation(
+    viewportProjection.withFraming.mockImplementation(
       (_viewport, presentation) => ({ presentation })
     );
     getRenderingEngine.mockImplementation((id) =>
@@ -740,8 +739,8 @@ describe('cameraSyncCallback', () => {
   }
 
   afterEach(() => {
-    viewportProjection.getPresentation.mockImplementation(() => undefined);
-    viewportProjection.withPresentation.mockImplementation(() => undefined);
+    viewportProjection.getFraming.mockImplementation(() => undefined);
+    viewportProjection.withFraming.mockImplementation(() => undefined);
   });
 
   it('gives a planar target of the same view the rotation of the source, with the zoom and the pan', () => {
@@ -832,7 +831,7 @@ describe('voiSyncCallback', () => {
 
   it('propagates invert and colormap to a next viewport only when the matching sync options are enabled', () => {
     const tViewport = {
-      setDisplaySetPresentation: jest.fn(),
+      setDisplaySetAppearance: jest.fn(),
       render: jest.fn(),
     };
     getRenderingEngine.mockReturnValue({
@@ -853,7 +852,7 @@ describe('voiSyncCallback', () => {
       { syncInvertState: true, syncColormap: true }
     );
 
-    expect(tViewport.setDisplaySetPresentation).toHaveBeenCalledWith({
+    expect(tViewport.setDisplaySetAppearance).toHaveBeenCalledWith({
       voiRange: { lower: 0, upper: 1 },
       invert: true,
       colormap: { name: 'hot' },
@@ -862,7 +861,7 @@ describe('voiSyncCallback', () => {
 
   it('does not propagate invert or colormap to a next viewport without the matching options', () => {
     const tViewport = {
-      setDisplaySetPresentation: jest.fn(),
+      setDisplaySetAppearance: jest.fn(),
       render: jest.fn(),
     };
     getRenderingEngine.mockReturnValue({
@@ -882,14 +881,14 @@ describe('voiSyncCallback', () => {
       }
     );
 
-    expect(tViewport.setDisplaySetPresentation).toHaveBeenCalledWith({
+    expect(tViewport.setDisplaySetAppearance).toHaveBeenCalledWith({
       voiRange: { lower: 0, upper: 1 },
     });
   });
 
   it('gives the target the invert of a next source viewport, which sets no invertStateChanged', () => {
     const tViewport = {
-      setDisplaySetPresentation: jest.fn(),
+      setDisplaySetAppearance: jest.fn(),
       render: jest.fn(),
     };
     getRenderingEngine.mockReturnValue({
@@ -911,7 +910,7 @@ describe('voiSyncCallback', () => {
       { syncInvertState: true }
     );
 
-    expect(tViewport.setDisplaySetPresentation.mock.calls).toEqual([
+    expect(tViewport.setDisplaySetAppearance.mock.calls).toEqual([
       [{ voiRange: { lower: 0, upper: 1 }, invert: false }],
       [{ voiRange: { lower: 0, upper: 1 } }],
     ]);
@@ -920,7 +919,7 @@ describe('voiSyncCallback', () => {
   it('routes to the matching display-set binding on Generic viewports', () => {
     const tViewport = {
       findDataIdByVolumeId: jest.fn(() => 'data-1'),
-      setDisplaySetPresentation: jest.fn(),
+      setDisplaySetAppearance: jest.fn(),
       render: jest.fn(),
     };
     getRenderingEngine.mockReturnValue({
@@ -934,7 +933,7 @@ describe('voiSyncCallback', () => {
       { detail: { volumeId: 'v1', range: { lower: 0, upper: 1 } } }
     );
 
-    expect(tViewport.setDisplaySetPresentation).toHaveBeenCalledWith('data-1', {
+    expect(tViewport.setDisplaySetAppearance).toHaveBeenCalledWith('data-1', {
       voiRange: { lower: 0, upper: 1 },
     });
     expect(tViewport.render).toHaveBeenCalledTimes(1);
@@ -942,7 +941,7 @@ describe('voiSyncCallback', () => {
 
   it('applies to the default binding on Generic viewports when there is no source volumeId', () => {
     const tViewport = {
-      setDisplaySetPresentation: jest.fn(),
+      setDisplaySetAppearance: jest.fn(),
       render: jest.fn(),
     };
     getRenderingEngine.mockReturnValue({
@@ -956,7 +955,7 @@ describe('voiSyncCallback', () => {
       { detail: { range: { lower: 0, upper: 1 } } }
     );
 
-    expect(tViewport.setDisplaySetPresentation).toHaveBeenCalledWith({
+    expect(tViewport.setDisplaySetAppearance).toHaveBeenCalledWith({
       voiRange: { lower: 0, upper: 1 },
     });
   });
@@ -964,7 +963,7 @@ describe('voiSyncCallback', () => {
   it('skips Generic viewports without a matching volume binding, but still renders', () => {
     const tViewport = {
       findDataIdByVolumeId: jest.fn(() => undefined),
-      setDisplaySetPresentation: jest.fn(),
+      setDisplaySetAppearance: jest.fn(),
       render: jest.fn(),
     };
     getRenderingEngine.mockReturnValue({
@@ -980,7 +979,7 @@ describe('voiSyncCallback', () => {
       }
     );
 
-    expect(tViewport.setDisplaySetPresentation).not.toHaveBeenCalled();
+    expect(tViewport.setDisplaySetAppearance).not.toHaveBeenCalled();
     expect(tViewport.render).toHaveBeenCalledTimes(1);
   });
 
@@ -1019,10 +1018,10 @@ describe('slabThicknessSyncCallback', () => {
       getDisplaySets: jest.fn(() =>
         Object.keys(slabThicknesses).map((displaySetId) => ({ displaySetId }))
       ),
-      getDisplaySetPresentation: jest.fn((displaySetId) =>
+      getDisplaySetAppearance: jest.fn((displaySetId) =>
         presentations.get(displaySetId)
       ),
-      setDisplaySetPresentation: jest.fn(),
+      setDisplaySetAppearance: jest.fn(),
       render: jest.fn(),
     };
   }
@@ -1051,7 +1050,7 @@ describe('slabThicknessSyncCallback', () => {
 
     syncSlab(sourceViewport, targetViewport);
 
-    expect(targetViewport.setDisplaySetPresentation.mock.calls).toEqual([
+    expect(targetViewport.setDisplaySetAppearance.mock.calls).toEqual([
       ['ct', { slabThickness: 5 }],
       ['seg', { slabThickness: 5 }],
     ]);
@@ -1064,7 +1063,7 @@ describe('slabThicknessSyncCallback', () => {
 
     syncSlab(sourceViewport, targetViewport);
 
-    expect(targetViewport.setDisplaySetPresentation).not.toHaveBeenCalled();
+    expect(targetViewport.setDisplaySetAppearance).not.toHaveBeenCalled();
     expect(targetViewport.render).not.toHaveBeenCalled();
   });
 
@@ -1074,7 +1073,7 @@ describe('slabThicknessSyncCallback', () => {
 
     syncSlab(sourceViewport, targetViewport);
 
-    expect(targetViewport.setDisplaySetPresentation).not.toHaveBeenCalled();
+    expect(targetViewport.setDisplaySetAppearance).not.toHaveBeenCalled();
     expect(targetViewport.render).not.toHaveBeenCalled();
   });
 
@@ -1084,7 +1083,7 @@ describe('slabThicknessSyncCallback', () => {
 
     syncSlab(sourceViewport, targetViewport);
 
-    expect(targetViewport.setDisplaySetPresentation.mock.calls).toEqual([
+    expect(targetViewport.setDisplaySetAppearance.mock.calls).toEqual([
       ['ct', { slabThickness: undefined }],
     ]);
   });
@@ -1094,7 +1093,7 @@ describe('slabThicknessSyncCallback', () => {
 
     syncSlab({ render: jest.fn() }, targetViewport);
 
-    expect(targetViewport.setDisplaySetPresentation).not.toHaveBeenCalled();
+    expect(targetViewport.setDisplaySetAppearance).not.toHaveBeenCalled();
     expect(targetViewport.render).not.toHaveBeenCalled();
   });
 
@@ -1126,8 +1125,8 @@ describe('slabThicknessSyncCallback', () => {
       { renderingEngineId: 'engineB', viewportId: 'target' }
     );
 
-    expect(sourceViewport.getDisplaySetPresentation).toHaveBeenCalled();
-    expect(targetViewport.setDisplaySetPresentation.mock.calls).toEqual([
+    expect(sourceViewport.getDisplaySetAppearance).toHaveBeenCalled();
+    expect(targetViewport.setDisplaySetAppearance.mock.calls).toEqual([
       ['ct', { slabThickness: 5 }],
     ]);
   });
@@ -1138,7 +1137,7 @@ describe('slabThicknessSyncCallback', () => {
 
     expect(() => syncSlab(undefined, targetViewport)).not.toThrow();
     expect(() => syncSlab(sourceViewport, undefined)).not.toThrow();
-    expect(targetViewport.setDisplaySetPresentation).not.toHaveBeenCalled();
+    expect(targetViewport.setDisplaySetAppearance).not.toHaveBeenCalled();
     expect(targetViewport.render).not.toHaveBeenCalled();
   });
 
@@ -1155,18 +1154,18 @@ describe('slabThicknessSyncCallback', () => {
   });
 });
 
-describe('presentationViewSyncCallback', () => {
+describe('viewFramingSyncCallback', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    viewportProjection.getPresentation.mockReturnValue(undefined);
-    viewportProjection.withPresentation.mockReturnValue(undefined);
+    viewportProjection.getFraming.mockReturnValue(undefined);
+    viewportProjection.withFraming.mockReturnValue(undefined);
   });
 
   it('applies the source presentation to the target and renders', () => {
     const presentation = { zoom: 1.5 };
     const nextViewState = { zoom: 1.5, resolved: true };
-    viewportProjection.getPresentation.mockReturnValue(presentation);
-    viewportProjection.withPresentation.mockReturnValue(nextViewState);
+    viewportProjection.getFraming.mockReturnValue(presentation);
+    viewportProjection.withFraming.mockReturnValue(nextViewState);
 
     const sourceViewport = {};
     const targetViewport = {
@@ -1179,19 +1178,18 @@ describe('presentationViewSyncCallback', () => {
       ),
     });
 
-    presentationViewSyncCallback(
+    viewFramingSyncCallback(
       {},
       { renderingEngineId: 're', viewportId: 'source' },
       { renderingEngineId: 're', viewportId: 'target' },
       {},
-      { viewPresentation: { zoom: true } }
+      { viewFraming: { zoom: true } }
     );
 
-    expect(viewportProjection.getPresentation).toHaveBeenCalledWith(
-      sourceViewport,
-      { selector: { zoom: true } }
-    );
-    expect(viewportProjection.withPresentation).toHaveBeenCalledWith(
+    expect(viewportProjection.getFraming).toHaveBeenCalledWith(sourceViewport, {
+      selector: { zoom: true },
+    });
+    expect(viewportProjection.withFraming).toHaveBeenCalledWith(
       targetViewport,
       presentation,
       undefined,
@@ -1203,10 +1201,10 @@ describe('presentationViewSyncCallback', () => {
 
   it('reads the source from its own rendering engine when the target is a viewport with the same id in another one', () => {
     const presentation = { zoom: 2 };
-    viewportProjection.getPresentation.mockImplementation((viewport) =>
+    viewportProjection.getFraming.mockImplementation((viewport) =>
       viewport === sourceViewport ? presentation : { zoom: 1 }
     );
-    viewportProjection.withPresentation.mockImplementation(
+    viewportProjection.withFraming.mockImplementation(
       (_viewport, appliedPresentation) => ({ ...appliedPresentation })
     );
 
@@ -1225,18 +1223,17 @@ describe('presentationViewSyncCallback', () => {
     };
 
     getRenderingEngine.mockImplementation((id) => engines[id]);
-    presentationViewSyncCallback(
+    viewFramingSyncCallback(
       {},
       { renderingEngineId: 'engineA', viewportId: 'vp' },
       { renderingEngineId: 'engineB', viewportId: 'vp' },
       {},
-      { viewPresentation: { zoom: true } }
+      { viewFraming: { zoom: true } }
     );
 
-    expect(viewportProjection.getPresentation).toHaveBeenCalledWith(
-      sourceViewport,
-      { selector: { zoom: true } }
-    );
+    expect(viewportProjection.getFraming).toHaveBeenCalledWith(sourceViewport, {
+      selector: { zoom: true },
+    });
     expect(targetViewport.setViewState).toHaveBeenCalledWith({ zoom: 2 });
     expect(targetViewport.render).toHaveBeenCalledTimes(1);
   });
@@ -1253,7 +1250,7 @@ describe('presentationViewSyncCallback', () => {
       ),
     });
 
-    presentationViewSyncCallback(
+    viewFramingSyncCallback(
       {},
       { renderingEngineId: 're', viewportId: 'source' },
       { renderingEngineId: 're', viewportId: 'target' }
@@ -1266,8 +1263,8 @@ describe('presentationViewSyncCallback', () => {
   it('uses setViewState when the projection registry resolves a Generic view state', () => {
     const presentation = { rotation: 90 };
     const nextViewState = { rotation: 90, resolved: true };
-    viewportProjection.getPresentation.mockReturnValue(presentation);
-    viewportProjection.withPresentation.mockReturnValue(nextViewState);
+    viewportProjection.getFraming.mockReturnValue(presentation);
+    viewportProjection.withFraming.mockReturnValue(nextViewState);
 
     const sourceViewport = {};
     const targetViewport = {
@@ -1280,7 +1277,7 @@ describe('presentationViewSyncCallback', () => {
       ),
     });
 
-    presentationViewSyncCallback(
+    viewFramingSyncCallback(
       {},
       { renderingEngineId: 're', viewportId: 'source' },
       { renderingEngineId: 're', viewportId: 'target' }
@@ -1294,7 +1291,7 @@ describe('presentationViewSyncCallback', () => {
     getRenderingEngine.mockReturnValue(undefined);
 
     expect(() =>
-      presentationViewSyncCallback(
+      viewFramingSyncCallback(
         {},
         { renderingEngineId: 're', viewportId: 'source' },
         { renderingEngineId: 're', viewportId: 'target' }

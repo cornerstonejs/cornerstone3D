@@ -382,7 +382,7 @@ describe('StackViewport CPU -- ', () => {
             renderBackend: 'cpu',
           })
           .then(() => {
-            vp.setDisplaySetPresentation({
+            vp.setDisplaySetAppearance({
               voiRange: { lower: 0, upper: 440 },
             });
             element.addEventListener(
@@ -545,7 +545,7 @@ describe('StackViewport CPU -- ', () => {
             renderBackend: 'cpu',
           })
           .then(() => {
-            vp.setDisplaySetPresentation({ invert: true });
+            vp.setDisplaySetAppearance({ invert: true });
             element.addEventListener(
               Events.IMAGE_RENDERED,
               compareOnImageRendered,
@@ -596,7 +596,7 @@ describe('StackViewport CPU -- ', () => {
           })
           .then(() => {
             vp.setViewState(
-              viewportProjection.withPresentation(vp, { rotation: 90 })
+              viewportProjection.withFraming(vp, { rotation: 90 })
             );
             element.addEventListener(
               Events.IMAGE_RENDERED,

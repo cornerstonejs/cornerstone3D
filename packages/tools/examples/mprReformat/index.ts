@@ -298,7 +298,7 @@ async function run() {
         getRenderingEngine(renderingEngineId).getViewport<PlanarViewport>(
           viewportId
         );
-      viewport.setDisplaySetPresentation(displaySetId, {
+      viewport.setDisplaySetAppearance(displaySetId, {
         voiRange,
         blendMode: slabBlendMode,
       });

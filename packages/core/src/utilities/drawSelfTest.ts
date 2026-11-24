@@ -5,7 +5,7 @@ import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import { vtkOffscreenMultiRenderWindow } from '../RenderingEngine/vtkClasses';
 import { getTextureFormatName } from '../RenderingEngine/vtkClasses/vtkStreamingOpenGLImageMapper';
 import copyWebGLCanvasToCanvas from '../RenderingEngine/helpers/copyWebGLCanvasToCanvas';
-import { applyPlanarVolumePresentation } from '../RenderingEngine/Viewports/Planar/planarVolumePresentation';
+import { applyPlanarVolumeAppearance } from '../RenderingEngine/Viewports/Planar/planarVolumeAppearance';
 import { InterpolationType } from '../enums';
 import { getCanUseNorm16Texture } from '../init';
 import type { VOIRange } from '../types';
@@ -417,7 +417,7 @@ function drawAndRead(
     mapper.setInputData(image.imageData);
   }
 
-  applyPlanarVolumePresentation({
+  applyPlanarVolumeAppearance({
     actor,
     mapper,
     props: { voiRange, interpolationType: InterpolationType.LINEAR },
@@ -731,7 +731,7 @@ function summarizeCase(
 /**
  * Draws known 16-bit and float test images through the classes that draw a
  * slice on the GPU (a `vtkImageData`, `vtkImageMapper`, `vtkImageSlice` with
- * the linear window of `applyPlanarVolumePresentation`, rendered by a
+ * the linear window of `applyPlanarVolumeAppearance`, rendered by a
  * cornerstone render window offscreen), reads the pixels back and compares
  * them with the grey levels that the values must give.
  *

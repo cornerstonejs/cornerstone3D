@@ -56,7 +56,7 @@ async function showVolume(viewport) {
 
 /** The zoom and the pan of the viewport from the projection service. */
 function zoomPanOf(viewport) {
-  const { zoom, pan } = viewportProjection.getPresentation(viewport, {
+  const { zoom, pan } = viewportProjection.getFraming(viewport, {
     selector: { zoom: true, pan: true },
   });
 
@@ -66,12 +66,7 @@ function zoomPanOf(viewport) {
 /** Applies a presentation patch through the projection service. */
 function present(viewport, presentation, options) {
   viewport.setViewState(
-    viewportProjection.withPresentation(
-      viewport,
-      presentation,
-      undefined,
-      options
-    )
+    viewportProjection.withFraming(viewport, presentation, undefined, options)
   );
 }
 
@@ -248,16 +243,16 @@ describe('Zoom and pan of a direct next 3D viewport through viewportProjection -
     expectClose(viewport.worldToCanvas(underAnchor), anchorCanvas, 1);
   });
 
-  it('does not move the viewport in withPresentation, and applies only the camera of a patch with a camera', function () {
+  it('does not move the viewport in withFraming, and applies only the camera of a patch with a camera', function () {
     const fit = viewport.getViewState();
-    const next = viewportProjection.withPresentation(viewport, { zoom: 2 });
+    const next = viewportProjection.withFraming(viewport, { zoom: 2 });
 
     expect(viewport.getViewState().parallelScale).toBe(fit.parallelScale);
     expect(next.parallelScale).toBeCloseTo(fit.parallelScale / 2, 6);
     expect('zoom' in next).toBe(false);
     expect('pan' in next).toBe(false);
 
-    const presentation = viewportProjection.getPresentation(viewport);
+    const presentation = viewportProjection.getFraming(viewport);
 
     expect(presentation.camera.parallelScale).toBe(fit.parallelScale);
     expect(presentation.zoom).toBeCloseTo(1, 6);
@@ -309,8 +304,8 @@ describe('Zoom and pan of an empty direct next 3D viewport through viewportProje
   it('gives no zoom and no pan, and keeps the camera for a zoom and a pan', function () {
     const viewport = createViewport(renderingEngine);
     const camera = viewport.getViewState();
-    const presentation = viewportProjection.getPresentation(viewport);
-    const next = viewportProjection.withPresentation(viewport, {
+    const presentation = viewportProjection.getFraming(viewport);
+    const next = viewportProjection.withFraming(viewport, {
       zoom: 2,
       pan: [5, 5],
     });

@@ -56,7 +56,7 @@ const toStack = convertContourToStackLabelmap as jest.Mock;
 function nextApi() {
   return {
     setDisplaySets: jest.fn(),
-    setDisplaySetPresentation: jest.fn(),
+    setDisplaySetAppearance: jest.fn(),
     setViewState: jest.fn(),
   };
 }

@@ -12,9 +12,9 @@ export type {
   BuiltInViewportProjectionByType,
   BuiltInViewportProjectionKind,
   BuiltInViewportProjectionType,
-  ProjectionPresentationForKind,
-  ProjectionPresentationForViewport,
-  ProjectionPresentationForViewportType,
+  ProjectionFramingForKind,
+  ProjectionFramingForViewport,
+  ProjectionFramingForViewportType,
   ProjectionSnapshotForKind,
   ProjectionSnapshotForViewport,
   ProjectionSnapshotForViewportType,
@@ -24,7 +24,7 @@ export type {
 } from './viewportProjection';
 export type {
   ProjectionPosition,
-  ProjectionPresentation,
+  ProjectionFraming,
   ProjectionRequest,
   ProjectionScale,
   ProjectionSnapshot,
@@ -42,7 +42,7 @@ export type {
 } from './ViewportCameraTypes';
 export type {
   BaseViewportRenderContext,
-  BasePresentationProps,
+  BaseAppearanceProps,
   DataAddOptions,
   DisplaySetId,
   DataProvider,
@@ -86,12 +86,12 @@ export type {
   ECGTraceLayoutName,
   ECGTraceRegion,
   ECGViewState,
-  ECGDataPresentation,
+  ECGDisplaySetAppearance,
   ECGChannelData,
-  ECGProjectionPresentation,
+  ECGProjectionFraming,
   ECGProjectionRequest,
   ECGProjectionSnapshot,
-  ECGPresentationProps,
+  ECGAppearanceProps,
   ECGProperties,
   ECGViewportInput,
 } from './ECG';
@@ -104,11 +104,11 @@ export {
 } from './Video';
 export type {
   VideoViewState,
-  VideoDataPresentation,
-  VideoProjectionPresentation,
+  VideoDisplaySetAppearance,
+  VideoProjectionFraming,
   VideoProjectionRequest,
   VideoProjectionSnapshot,
-  VideoPresentationProps,
+  VideoAppearanceProps,
   VideoProperties,
   VideoViewportInput,
 } from './Video';
@@ -121,9 +121,9 @@ export {
 } from './Planar';
 export type {
   PlanarViewState,
-  PlanarDataPresentation,
+  PlanarDisplaySetAppearance,
   PlanarOrientation,
-  PlanarPresentationProps,
+  PlanarAppearanceProps,
   PlanarProperties,
   PlanarRenderMode,
   PlanarSetDataOptions,
@@ -131,7 +131,7 @@ export type {
   PlanarViewportInput,
   PlanarViewportInputOptions,
   PlanarResolvedICamera,
-  PlanarProjectionPresentation,
+  PlanarProjectionFraming,
   PlanarProjectionRequest,
   PlanarProjectionSnapshot,
 } from './Planar';
@@ -144,12 +144,12 @@ export {
 } from './Volume3D';
 export type {
   Volume3DCamera,
-  Volume3DDataPresentation,
-  Volume3DPresentationProps,
+  Volume3DDisplaySetAppearance,
+  Volume3DAppearanceProps,
   Volume3DProperties,
   Volume3DRequestedRenderMode,
   Volume3DSetDataOptions,
-  Volume3DProjectionPresentation,
+  Volume3DProjectionFraming,
   Volume3DProjectionRequest,
   Volume3DProjectionSnapshot,
   VolumeViewport3DInput,
@@ -163,12 +163,12 @@ export {
 } from './WSI';
 export type {
   WSICamera,
-  WSIDataPresentation,
+  WSIDisplaySetAppearance,
   WSIDataSetOptions,
-  WSIProjectionPresentation,
+  WSIProjectionFraming,
   WSIProjectionRequest,
   WSIProjectionSnapshot,
-  WSIPresentationProps,
+  WSIAppearanceProps,
   WSIProperties,
   WSIViewState,
   WSIViewportInput,

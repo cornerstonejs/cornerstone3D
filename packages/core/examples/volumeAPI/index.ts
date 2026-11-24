@@ -72,7 +72,7 @@ addButtonToToolbar({
     // Get the stack viewport
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-    viewport.setDisplaySetPresentation(displaySetId, {
+    viewport.setDisplaySetAppearance(displaySetId, {
       voiRange: { lower: -1500, upper: 2500 },
     });
     viewport.render();
@@ -123,11 +123,11 @@ addButtonToToolbar({
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     const invert =
-      viewport.getDisplaySetPresentation(displaySetId)?.invert ??
+      viewport.getDisplaySetAppearance(displaySetId)?.invert ??
       viewport.getDefaultInvert(displaySetId) ??
       false;
 
-    viewport.setDisplaySetPresentation(displaySetId, { invert: !invert });
+    viewport.setDisplaySetAppearance(displaySetId, { invert: !invert });
 
     viewport.render();
   },
@@ -151,8 +151,7 @@ addButtonToToolbar({
       50
     );
     const viewState =
-      presentation &&
-      viewportProjection.withPresentation(viewport, presentation);
+      presentation && viewportProjection.withFraming(viewport, presentation);
 
     if (viewState) {
       viewport.setViewState(viewState);
@@ -171,7 +170,7 @@ addButtonToToolbar({
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     // Apply the rotation to the camera of the viewport
-    const viewState = viewportProjection.withPresentation(viewport, {
+    const viewState = viewportProjection.withFraming(viewport, {
       rotation: Math.random() * 360,
     });
 
@@ -192,7 +191,7 @@ addButtonToToolbar({
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     // Apply the colormap to the viewport
-    viewport.setDisplaySetPresentation(displaySetId, {
+    viewport.setDisplaySetAppearance(displaySetId, {
       colormap: { name: 'hsv' },
     });
 
@@ -209,7 +208,7 @@ addButtonToToolbar({
     // Get the volume viewport
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-    viewport.resetDisplaySetPresentation(displaySetId);
+    viewport.resetDisplaySetAppearance(displaySetId);
     viewport.render();
   },
 });
@@ -285,7 +284,7 @@ addSliderToToolbar({
     // Get the volume viewport
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-    viewport.setDisplaySetPresentation(displaySetId, {
+    viewport.setDisplaySetAppearance(displaySetId, {
       blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
       slabThickness: valueAsNumber,
     });
@@ -371,8 +370,8 @@ async function run() {
   });
 
   await viewport.setDisplaySets({ displaySetId });
-  viewport.setDisplaySetPresentation(displaySetId, ctPresentation());
-  viewport.setDisplaySetPresentation(displaySetId, {
+  viewport.setDisplaySetAppearance(displaySetId, ctPresentation());
+  viewport.setDisplaySetAppearance(displaySetId, {
     voiRange: { lower: -160, upper: 240 },
     voiLUTFunction: Enums.VOILUTFunctionType.LINEAR,
     colormap: { name: 'Grayscale' },

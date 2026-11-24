@@ -1,6 +1,6 @@
 import {
   applyPlanarICameraToRenderer,
-  derivePlanarPresentation,
+  derivePlanarFraming,
   resolvePlanarICamera,
 } from './planarRenderCamera';
 import {
@@ -28,7 +28,7 @@ export {
  * may change before 3.0 stable.
  *
  * @experimental Advanced helper namespace; prefer `viewportProjection` for
- * stable application-level presentation reads and writes.
+ * stable application-level framing reads and writes.
  */
 export const planarProjection = {
   adapter: planarProjectionAdapter,
@@ -37,13 +37,13 @@ export const planarProjection = {
   getScale: getPlanarProjectionScale,
   getPan: getPlanarProjectionPan,
   resolveICamera: resolvePlanarICamera,
-  derivePresentation: derivePlanarPresentation,
+  deriveFraming: derivePlanarFraming,
   applyToRenderer: applyPlanarICameraToRenderer,
   createImageSliceBasis: createPlanarImageSliceBasis,
   createVolumeSliceBasis: createPlanarVolumeSliceBasis,
 };
 export type {
-  PlanarProjectionPresentation,
+  PlanarProjectionFraming,
   PlanarProjectionRequest,
   PlanarProjectionSnapshot,
 } from './planarProjectionAdapter';
@@ -58,17 +58,17 @@ export { default, default as PlanarViewport } from './PlanarViewport';
 export type { PlanarSliceBasis } from './planarSliceBasis';
 export type {
   PlanarViewState,
-  PlanarDataPresentation,
+  PlanarDisplaySetAppearance,
   PlanarOrientation,
-  PlanarPresentationProps,
+  PlanarAppearanceProps,
   PlanarProperties,
   PlanarRenderMode,
   PlanarSetDataOptions,
   PlanarViewportInput,
   PlanarViewportInputOptions,
   PlanarDisplayArea,
-  PlanarViewPresentation,
-  PlanarViewPresentationSelector,
+  PlanarViewFraming,
+  PlanarViewFramingSelector,
   PlanarSliceState,
   PlanarResolvedICamera,
   RenderPlanChangedEventDetail,

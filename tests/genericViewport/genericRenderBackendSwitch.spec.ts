@@ -49,7 +49,7 @@ function getViewportState(page: Page) {
         imageIdIndex: viewport?.getCurrentImageIdIndex?.(),
         zoom: viewport?.getZoom?.(),
         pan: viewport?.getPan?.(),
-        voiRange: viewport?.getDisplaySetPresentation?.(displaySetId)?.voiRange,
+        voiRange: viewport?.getDisplaySetAppearance?.(displaySetId)?.voiRange,
         renderMode: viewport?.getDisplaySetRenderMode?.(displaySetId),
       };
     },

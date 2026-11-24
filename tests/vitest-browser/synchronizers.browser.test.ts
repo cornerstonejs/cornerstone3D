@@ -335,7 +335,7 @@ describe('synchronizers', () => {
       sync.add(toViewportId(a));
       sync.add(toViewportId(b));
 
-      const beforeRange = a.viewport.getDisplaySetPresentation(
+      const beforeRange = a.viewport.getDisplaySetAppearance(
         a.displaySetId
       )?.voiRange;
       const targetRange = { lower: 5, upper: 220 };
@@ -343,14 +343,14 @@ describe('synchronizers', () => {
       expect(targetRange).not.toEqual(beforeRange);
 
       const voiOnB = waitForEventOn(b.element, Events.VOI_MODIFIED);
-      a.viewport.setDisplaySetPresentation(a.displaySetId, {
+      a.viewport.setDisplaySetAppearance(a.displaySetId, {
         voiRange: targetRange,
       });
       await voiOnB;
 
-      const aRange = a.viewport.getDisplaySetPresentation(a.displaySetId)
+      const aRange = a.viewport.getDisplaySetAppearance(a.displaySetId)
         ?.voiRange;
-      const bRange = b.viewport.getDisplaySetPresentation(b.displaySetId)
+      const bRange = b.viewport.getDisplaySetAppearance(b.displaySetId)
         ?.voiRange;
 
       expect(bRange).toEqual(targetRange);
@@ -369,20 +369,20 @@ describe('synchronizers', () => {
         sync.add(toViewportId(a));
         sync.add(toViewportId(b));
 
-        const beforeInvertB = b.viewport.getDisplaySetPresentation(
+        const beforeInvertB = b.viewport.getDisplaySetAppearance(
           b.displaySetId
         )?.invert;
         expect(beforeInvertB).toBeFalsy();
 
         const voiOnB = waitForEventOn(b.element, Events.VOI_MODIFIED);
-        a.viewport.setDisplaySetPresentation(a.displaySetId, {
+        a.viewport.setDisplaySetAppearance(a.displaySetId, {
           voiRange: { lower: 1, upper: 2 },
           invert: true,
         });
         await voiOnB;
 
         expect(
-          b.viewport.getDisplaySetPresentation(b.displaySetId)?.invert
+          b.viewport.getDisplaySetAppearance(b.displaySetId)?.invert
         ).toBe(true);
       }
     );

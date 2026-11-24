@@ -379,7 +379,7 @@ describe('PlanarViewport remount after presentation changes', () => {
                 currentImageIdIndex: 0,
                 maxImageIdIndex: imageIds.length - 1,
               },
-              updateDataPresentation: jest.fn(),
+              updateAppearance: jest.fn(),
               applyViewState: jest.fn(),
               getFrameOfReferenceUID: () => 'routing-frame',
               getActorEntry: () => ({ uid: `${data.id}-actor`, actor }),
@@ -419,14 +419,14 @@ describe('PlanarViewport remount after presentation changes', () => {
     );
 
     deferLoads = true;
-    viewport.setDisplaySetPresentation(displaySetId, {
+    viewport.setDisplaySetAppearance(displaySetId, {
       blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
     });
-    viewport.setDisplaySetPresentation(displaySetId, { slabThickness: 1e6 });
+    viewport.setDisplaySetAppearance(displaySetId, { slabThickness: 1e6 });
 
     expect(pendingLoads.length).toBe(1);
 
-    viewport.setDisplaySetPresentation(displaySetId, {
+    viewport.setDisplaySetAppearance(displaySetId, {
       slabThickness: undefined,
     });
     await resolvePendingLoads();
@@ -444,8 +444,8 @@ describe('PlanarViewport remount after presentation changes', () => {
     await flush();
 
     deferLoads = true;
-    viewport.setDisplaySetPresentation(displaySetId, { slabThickness: 1e6 });
-    viewport.setDisplaySetPresentation(displaySetId, {
+    viewport.setDisplaySetAppearance(displaySetId, { slabThickness: 1e6 });
+    viewport.setDisplaySetAppearance(displaySetId, {
       blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
     });
     await resolvePendingLoads();
@@ -483,7 +483,7 @@ describe('PlanarViewport remount after presentation changes', () => {
       overlayId,
     ]);
 
-    viewport.setDisplaySetPresentation(displaySetId, mip10);
+    viewport.setDisplaySetAppearance(displaySetId, mip10);
     await flush();
 
     expect(binding().rendering.renderMode).toBe(
@@ -499,7 +499,7 @@ describe('PlanarViewport remount after presentation changes', () => {
       [overlayId, ActorRenderMode.VTK_SAMPLED_SLICE],
     ]);
 
-    viewport.setDisplaySetPresentation(displaySetId, { slabThickness: 0 });
+    viewport.setDisplaySetAppearance(displaySetId, { slabThickness: 0 });
     await flush();
 
     expect(
@@ -566,8 +566,8 @@ describe('PlanarViewport remount after presentation changes', () => {
     const rendersBefore = renderViewport.mock.calls.length;
 
     deferLoads = true;
-    viewport.setDisplaySetPresentation(displaySetId, mip10);
-    viewport.setDisplaySetPresentation(overlayId, mip10);
+    viewport.setDisplaySetAppearance(displaySetId, mip10);
+    viewport.setDisplaySetAppearance(overlayId, mip10);
     viewport.render();
     await flush();
 
@@ -590,8 +590,8 @@ describe('PlanarViewport remount after presentation changes', () => {
     const propsBefore = [...props];
 
     deferLoads = true;
-    viewport.setDisplaySetPresentation(displaySetId, mip10);
-    viewport.setDisplaySetPresentation(displaySetId, { slabThickness: 0 });
+    viewport.setDisplaySetAppearance(displaySetId, mip10);
+    viewport.setDisplaySetAppearance(displaySetId, { slabThickness: 0 });
     await resolvePendingLoads();
 
     expect(props).toEqual(propsBefore);
@@ -611,22 +611,22 @@ describe('PlanarViewport remount after presentation changes', () => {
     const voiRange = { lower: 0, upper: 100 };
 
     deferLoads = true;
-    viewport.setDisplaySetPresentation(displaySetId, { ...mip10, voiRange });
+    viewport.setDisplaySetAppearance(displaySetId, { ...mip10, voiRange });
 
-    expect(mounted.updateDataPresentation).toHaveBeenLastCalledWith(
+    expect(mounted.updateAppearance).toHaveBeenLastCalledWith(
       expect.objectContaining({
         voiRange,
         slabThickness: undefined,
         blendMode: undefined,
       })
     );
-    expect(viewport.getDisplaySetPresentation(displaySetId)).toEqual(
+    expect(viewport.getDisplaySetAppearance(displaySetId)).toEqual(
       expect.objectContaining({ ...mip10, voiRange })
     );
 
-    viewport.setDisplaySetPresentation(displaySetId, { opacity: 0.5 });
+    viewport.setDisplaySetAppearance(displaySetId, { opacity: 0.5 });
 
-    expect(mounted.updateDataPresentation).toHaveBeenLastCalledWith(
+    expect(mounted.updateAppearance).toHaveBeenLastCalledWith(
       expect.objectContaining({
         voiRange,
         opacity: 0.5,
@@ -641,7 +641,7 @@ describe('PlanarViewport remount after presentation changes', () => {
     expect(binding().rendering.renderMode).toBe(
       ActorRenderMode.VTK_VOLUME_SLICE
     );
-    expect(binding().updateDataPresentation).toHaveBeenLastCalledWith(
+    expect(binding().updateAppearance).toHaveBeenLastCalledWith(
       expect.objectContaining({ ...mip10, voiRange, opacity: 0.5 })
     );
   });
@@ -656,13 +656,13 @@ describe('PlanarViewport remount after presentation changes', () => {
     const mounted = binding();
 
     deferLoads = true;
-    viewport.setDisplaySetPresentation(displaySetId, mip10);
-    viewport.setDisplaySetPresentation(displaySetId, {
+    viewport.setDisplaySetAppearance(displaySetId, mip10);
+    viewport.setDisplaySetAppearance(displaySetId, {
       slabThickness: 0.9,
       blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
     });
 
-    expect(mounted.updateDataPresentation).toHaveBeenLastCalledWith(
+    expect(mounted.updateAppearance).toHaveBeenLastCalledWith(
       expect.objectContaining({
         slabThickness: 0.9,
         blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
@@ -683,11 +683,11 @@ describe('PlanarViewport remount after presentation changes', () => {
 
     const mounted = binding();
 
-    viewport.setDisplaySetPresentation(displaySetId, mip10);
+    viewport.setDisplaySetAppearance(displaySetId, mip10);
     await flush();
 
     expect(binding()).toBe(mounted);
-    expect(mounted.updateDataPresentation).toHaveBeenLastCalledWith(
+    expect(mounted.updateAppearance).toHaveBeenLastCalledWith(
       expect.objectContaining(mip10)
     );
   });

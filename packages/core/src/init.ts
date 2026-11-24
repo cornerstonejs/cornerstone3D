@@ -318,7 +318,7 @@ function getEffectiveRenderBackend(
 /**
  * Sets the global render backend for BaseViewport-based viewports and
  * live-switches all mounted viewports to the new backend in place: viewport
- * ids, mounted data, cameras, presentation state and tool annotations are
+ * ids, mounted data, cameras, the appearance of each display set and tool annotations are
  * preserved; only the render paths are rebuilt. The switch is reversible in
  * both directions at runtime.
  *

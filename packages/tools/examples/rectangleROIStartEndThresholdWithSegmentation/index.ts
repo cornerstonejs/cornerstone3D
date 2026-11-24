@@ -227,9 +227,9 @@ async function setViewMode(mode: string) {
           { displaySetId: ctDisplaySetId },
           { displaySetId: ptDisplaySetId }
         );
-        viewport.setDisplaySetPresentation(ctDisplaySetId, ctPresentation());
-        viewport.resetDisplaySetPresentation(ptDisplaySetId);
-        viewport.setDisplaySetPresentation(
+        viewport.setDisplaySetAppearance(ctDisplaySetId, ctPresentation());
+        viewport.resetDisplaySetAppearance(ptDisplaySetId);
+        viewport.setDisplaySetAppearance(
           ptDisplaySetId,
           petColorMapPresentation(
             perfusionColorMap,
@@ -245,8 +245,8 @@ async function setViewMode(mode: string) {
           renderingEngine.getViewport<PlanarViewport>(viewportId);
 
         await viewport.setDisplaySets({ displaySetId: ptDisplaySetId });
-        viewport.resetDisplaySetPresentation(ptDisplaySetId);
-        viewport.setDisplaySetPresentation(ptDisplaySetId, petPresentation());
+        viewport.resetDisplaySetAppearance(ptDisplaySetId);
+        viewport.setDisplaySetAppearance(ptDisplaySetId, petPresentation());
       })
     );
   }

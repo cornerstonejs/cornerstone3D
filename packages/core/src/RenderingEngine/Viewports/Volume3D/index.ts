@@ -14,22 +14,22 @@ export {
  * projection service settles.
  *
  * @experimental Advanced helper namespace; prefer `viewportProjection` for
- * stable application-level presentation reads and writes.
+ * stable application-level framing reads and writes.
  */
 export const volume3DProjection = {
   adapter: volume3DProjectionAdapter,
   getSnapshot: getVolume3DProjectionSnapshot,
 };
 export type {
-  Volume3DProjectionPresentation,
+  Volume3DProjectionFraming,
   Volume3DProjectionRequest,
   Volume3DProjectionSnapshot,
 } from './volume3DProjectionAdapter';
 export { default } from './viewport3D';
 export type {
   Volume3DCamera,
-  Volume3DDataPresentation,
-  Volume3DPresentationProps,
+  Volume3DDisplaySetAppearance,
+  Volume3DAppearanceProps,
   Volume3DProperties,
   Volume3DRequestedRenderMode,
   Volume3DSetDataOptions,

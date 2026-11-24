@@ -145,7 +145,7 @@ async function initializeVolumeViewport(
 
   // Set the volume on the viewport
   await viewport.setDisplaySets({ displaySetId: volumeDisplaySetId });
-  viewport.setDisplaySetPresentation(volumeDisplaySetId, ctPresentation());
+  viewport.setDisplaySetAppearance(volumeDisplaySetId, ctPresentation());
 
   return volume;
 }

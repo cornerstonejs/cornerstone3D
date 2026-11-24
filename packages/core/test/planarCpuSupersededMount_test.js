@@ -84,7 +84,7 @@ function addStack(displaySetId, series) {
  * frames that a test waits depended on how fast the frames came.
  */
 function mountCpu(viewport, displaySetId) {
-  viewport.setDisplaySetPresentation(displaySetId, {
+  viewport.setDisplaySetAppearance(displaySetId, {
     interpolationType: InterpolationType.NEAREST,
   });
 

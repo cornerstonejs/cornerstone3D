@@ -79,7 +79,7 @@ export function getPlanarRotationBeforeFlips(args: {
 /**
  * The rotation of a planar view after a change of its flips that comes
  * without a rotation, so that the picture is mirrored on the screen, as the
- * 5.x flip, `setCamera` and `setViewPresentation` mirrored it: each flip that
+ * 5.x flip, `setCamera` and view setter mirrored it: each flip that
  * changes turns the rotation to 360 minus the rotation.
  *
  * @param current - The rotation and the flips of the view now.

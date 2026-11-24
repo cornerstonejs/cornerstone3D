@@ -148,7 +148,7 @@ function mountStackBinding(viewport, images) {
     removeData: jest.fn(),
     rendering,
     role: 'source',
-    updateDataPresentation: jest.fn(),
+    updateAppearance: jest.fn(),
   };
 
   viewport.bindings.set(displaySetId, binding);
@@ -176,7 +176,7 @@ function mountVolumeBinding(
     removeData: jest.fn(),
     rendering,
     role,
-    updateDataPresentation: jest.fn(),
+    updateAppearance: jest.fn(),
   };
 
   viewport.bindings.set(displaySetId, binding);
@@ -210,11 +210,8 @@ describe('PlanarViewport view state', () => {
     return viewportContext;
   }
 
-  function applyProjectionPresentation(viewport, presentation) {
-    const nextViewState = viewportProjection.withPresentation(
-      viewport,
-      presentation
-    );
+  function applyProjectionPresentation(viewport, framing) {
+    const nextViewState = viewportProjection.withFraming(viewport, framing);
 
     expect(nextViewState).toBeDefined();
     viewport.setViewState(nextViewState);
@@ -320,12 +317,36 @@ describe('PlanarViewport view state', () => {
     });
 
     expect(renderingEngine.renderViewport).toHaveBeenCalledTimes(1);
-    const presentation = viewportProjection.getPresentation(viewport);
+    const framing = viewportProjection.getFraming(viewport);
 
-    expect(presentation.zoom).toBeCloseTo(2, 5);
-    expect(presentation.pan[0]).toBeCloseTo(10, 5);
-    expect(presentation.pan[1]).toBeCloseTo(-5, 5);
-    expect(presentation.rotation).toBe(15);
+    expect(framing.zoom).toBeCloseTo(2, 5);
+    expect(framing.pan[0]).toBeCloseTo(10, 5);
+    expect(framing.pan[1]).toBeCloseTo(-5, 5);
+    expect(framing.rotation).toBe(15);
+  });
+
+  it('reads and writes the framing of the view on the viewport, as the projection service does', () => {
+    const { renderingEngine, viewport } = track(createViewport());
+    const image = createPlanarImage('view-framing-image');
+
+    addPlanarImageMetadata([image.imageId]);
+    mountStackBinding(viewport, [image]);
+    renderingEngine.renderViewport.mockClear();
+
+    viewport.setViewFraming({ zoom: 2, pan: [10, -5], rotation: 15 });
+
+    expect(renderingEngine.renderViewport).toHaveBeenCalledTimes(1);
+
+    const framing = viewport.getViewFraming();
+
+    expect(framing).toEqual(viewportProjection.getFraming(viewport));
+    expect(framing.zoom).toBeCloseTo(2, 5);
+    expect(framing.pan[0]).toBeCloseTo(10, 5);
+    expect(framing.pan[1]).toBeCloseTo(-5, 5);
+    expect(framing.rotation).toBe(15);
+    expect(viewport.getViewFraming({ zoom: true })).toEqual(
+      viewportProjection.getFraming(viewport, { selector: { zoom: true } })
+    );
   });
 
   it('exposes the current planar camera through the projection service', () => {
@@ -338,18 +359,18 @@ describe('PlanarViewport view state', () => {
     });
 
     const snapshot = viewportProjection.get(viewport);
-    const presentation = planarProjection.adapter.getPresentation(snapshot);
-    const servicePresentation = viewportProjection.getPresentation(viewport);
+    const framing = planarProjection.adapter.getFraming(snapshot);
+    const servicePresentation = viewportProjection.getFraming(viewport);
 
     expect(snapshot.kind).toBe('planar');
     expect(snapshot.adapterId).toBe('planar');
-    expect(snapshot.presentation.scale.kind).toBe('fit');
-    expect(snapshot.presentation.position.kind).toBe('anchor');
+    expect(snapshot.framing.scale.kind).toBe('fit');
+    expect(snapshot.framing.position.kind).toBe('anchor');
     expect(servicePresentation.zoom).toBeCloseTo(2, 5);
-    expect(presentation.zoom).toBeCloseTo(2, 5);
-    expect(presentation.pan[0]).toBeCloseTo(10, 5);
-    expect(presentation.pan[1]).toBeCloseTo(-5, 5);
-    expect(presentation.rotation).toBe(15);
+    expect(framing.zoom).toBeCloseTo(2, 5);
+    expect(framing.pan[0]).toBeCloseTo(10, 5);
+    expect(framing.pan[1]).toBeCloseTo(-5, 5);
+    expect(framing.rotation).toBe(15);
   });
 
   it('exposes resolved planar projection capabilities and transforms', () => {
@@ -377,8 +398,8 @@ describe('PlanarViewport view state', () => {
       world: true,
     });
     expect(snapshot.frameOfReferenceUID).toBe('planar-test-frame');
-    expect(snapshot.presentation.scale.kind).toBe('fitWidth');
-    expect(snapshot.presentation.position).toEqual({
+    expect(snapshot.framing.scale.kind).toBe('fitWidth');
+    expect(snapshot.framing.position).toEqual({
       kind: 'anchor',
       worldPoint: [5, 4, 0],
       canvasPoint: [0.5, 0.5],
@@ -392,7 +413,7 @@ describe('PlanarViewport view state', () => {
     const { viewport } = track(createViewport());
     const initialState = viewport.getViewState();
 
-    const nextViewState = viewportProjection.withPresentation(viewport, {
+    const nextViewState = viewportProjection.withFraming(viewport, {
       zoom: 2,
       pan: [10, -5],
       rotation: 30,
@@ -402,12 +423,12 @@ describe('PlanarViewport view state', () => {
 
     viewport.setViewState(nextViewState);
 
-    const presentation = viewportProjection.getPresentation(viewport);
+    const framing = viewportProjection.getFraming(viewport);
 
-    expect(presentation.zoom).toBeCloseTo(2, 5);
-    expect(presentation.pan[0]).toBeCloseTo(10, 5);
-    expect(presentation.pan[1]).toBeCloseTo(-5, 5);
-    expect(presentation.rotation).toBe(30);
+    expect(framing.zoom).toBeCloseTo(2, 5);
+    expect(framing.pan[0]).toBeCloseTo(10, 5);
+    expect(framing.pan[1]).toBeCloseTo(-5, 5);
+    expect(framing.rotation).toBe(30);
   });
 
   it('can clear display area through view-presentation projection writes', () => {
@@ -461,7 +482,7 @@ describe('PlanarViewport view state', () => {
     });
 
     const snapshot = viewportProjection.get(viewport);
-    const nextCamera = viewportProjection.withPresentation(viewport, {
+    const nextCamera = viewportProjection.withFraming(viewport, {
       camera: { parallelScale: 25 },
     });
 
@@ -473,15 +494,15 @@ describe('PlanarViewport view state', () => {
       renderer: true,
       world: true,
     });
-    expect(snapshot.presentation.position).toEqual({
+    expect(snapshot.framing.position).toEqual({
       kind: 'focalPoint',
       worldPoint: [1, 2, 3],
     });
-    expect(snapshot.presentation.scale).toEqual({
+    expect(snapshot.framing.scale).toEqual({
       kind: 'physical',
       mmPerCanvasPixel: 1,
     });
-    expect(volume3DProjection.adapter.getPresentation(snapshot).camera).toEqual(
+    expect(volume3DProjection.adapter.getFraming(snapshot).camera).toEqual(
       expect.objectContaining(camera)
     );
     expect(snapshot.transforms.canvasToWorld([3, 4])).toEqual([3, 4, 7]);

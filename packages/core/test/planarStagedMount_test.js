@@ -212,7 +212,7 @@ describe('A stack of a direct next planar viewport whose final image stage comes
       expect(viewport.getCurrentImageId()).toBe(sourceImageIds[0]);
       expect(largestSourceValue(viewport)).toBeGreaterThan(0);
 
-      viewport.setDisplaySetPresentation('staged:overlay', { visible: false });
+      viewport.setDisplaySetAppearance('staged:overlay', { visible: false });
       await renderAndWait(viewport);
 
       expect(shownValueOfPixel(viewport, [8, 8])).toBeGreaterThan(
@@ -295,7 +295,7 @@ describe('A stack of a direct next planar viewport whose final image stage comes
       );
       expect(largestSourceValue(viewport)).toBeGreaterThan(0);
 
-      viewport.setDisplaySetPresentation('commit:overlay', { visible: false });
+      viewport.setDisplaySetAppearance('commit:overlay', { visible: false });
       await renderAndWait(viewport);
 
       expect(shownValueOfPixel(viewport, [8, 8])).toBeGreaterThan(
@@ -430,7 +430,7 @@ describe('A display set of a direct next planar viewport whose registration goes
     expect(events[0].volumeId).toBe(seriesA.volumeId);
 
     events.length = 0;
-    viewport.setDisplaySetPresentation('voi:scan', {
+    viewport.setDisplaySetAppearance('voi:scan', {
       voiRange: { lower: 10, upper: 90 },
     });
 
@@ -502,13 +502,11 @@ describe('A stack of a direct next planar viewport whose render backend changes 
     await mount;
 
     expect(
-      viewport
-        .getRenderPlan()
-        .map(({ displaySetId, draw, renderMode }) => ({
-          displaySetId,
-          draw,
-          renderMode,
-        }))
+      viewport.getRenderPlan().map(({ displaySetId, draw, renderMode }) => ({
+        displaySetId,
+        draw,
+        renderMode,
+      }))
     ).toEqual([
       { displaySetId: 'backend:source', draw: 'cpu', renderMode: 'cpuImage' },
       { displaySetId: 'backend:overlay', draw: 'cpu', renderMode: 'cpuImage' },

@@ -24,7 +24,7 @@ function createFakeVolume(
 
 /**
  * Minimal axial planar viewport: enough surface for the
- * viewportSupportsDisplaySetPresentation duck-typing,
+ * viewportSupportsDisplaySetAppearance duck-typing,
  * plus a camera looking along +z with its focal plane at z = focalPoint[2].
  */
 function createFakeMipViewport({
@@ -46,13 +46,13 @@ function createFakeMipViewport({
     id: 'mip',
     type: 'planar',
     setDisplaySets: async () => undefined,
-    setDisplaySetPresentation: () => undefined,
+    setDisplaySetAppearance: () => undefined,
     setViewState: () => undefined,
     getViewState: () => ({}),
     getCurrentMode: () => mode,
     getSourceDisplaySetId: () => 'fake-source-data',
     getDefaultVOIRange: () => undefined,
-    getDisplaySetPresentation: () => ({ blendMode, slabThickness }),
+    getDisplaySetAppearance: () => ({ blendMode, slabThickness }),
     getVolumeId: () => volumeId,
     getViewReference: () => ({
       cameraFocalPoint: [...camera.focalPoint],
@@ -159,7 +159,7 @@ describe('pickIntensityPointInSlab', () => {
     expect(pickIntensityPointInSlab(noVolume as never, [0, 0, 0])).toBeNull();
   });
 
-  it('resolves the pick context for a MIP presentation', () => {
+  it('resolves the pick context for a MIP appearance', () => {
     const viewport = createFakeMipViewport({ slabThickness: 123 });
 
     expect(getSlabIntensityPickContext(viewport as never)).toEqual({

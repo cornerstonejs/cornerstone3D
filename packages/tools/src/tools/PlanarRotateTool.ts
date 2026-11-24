@@ -6,9 +6,9 @@ import angleBetweenLines from '../utilities/math/angle/angleBetweenLines';
 import type { PublicToolProps, ToolProps, EventTypes } from '../types';
 import getViewportICamera from '../utilities/getViewportICamera';
 import {
-  applyViewportPresentation,
-  getViewportPresentation,
-} from '../utilities/viewportPresentation';
+  applyViewportFraming,
+  getViewportFraming,
+} from '../utilities/viewportFraming';
 
 /**
  * The PlanarRotateTool is a tool that allows the user to rotate
@@ -90,16 +90,16 @@ class PlanarRotateTool extends BaseTool {
       return;
     }
 
-    const presentation = getViewportPresentation(viewport) as
+    const framing = getViewportFraming(viewport) as
       | { rotation?: number }
       | undefined;
 
-    if (!presentation) {
+    if (!framing) {
       return;
     }
 
-    const { rotation = 0 } = presentation;
-    const didApply = applyViewportPresentation(viewport, {
+    const { rotation = 0 } = framing;
+    const didApply = applyViewportFraming(viewport, {
       rotation: (rotation + angle + 360) % 360,
     });
 

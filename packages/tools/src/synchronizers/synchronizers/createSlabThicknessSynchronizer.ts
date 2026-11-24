@@ -7,20 +7,20 @@ const { CAMERA_MODIFIED } = Enums.Events;
 
 /**
  * A helper that creates a new `Synchronizer` which listens to the `CAMERA_MODIFIED`
- * rendering event and calls the `cameraSyncCallback` based on presentation view
- * values and not based on absolute camera positions.
+ * rendering event and calls `slabThicknessSyncCallback`, which copies the slab
+ * thickness of the appearance of the source display set.
  *
  * @param synchronizerName - The name of the synchronizer.
  * @returns A new `Synchronizer` instance.
  */
-export default function createPresentationViewSynchronizer(
+export default function createSlabThicknessSynchronizer(
   synchronizerName: string
 ): Synchronizer {
-  const presentationView = createSynchronizer(
+  const slabThicknessSynchronizer = createSynchronizer(
     synchronizerName,
     CAMERA_MODIFIED,
     slabThicknessSyncCallback
   );
 
-  return presentationView;
+  return slabThicknessSynchronizer;
 }

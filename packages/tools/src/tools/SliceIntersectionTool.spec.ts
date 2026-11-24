@@ -28,7 +28,7 @@ function dot(a: number[], b: number[]): number {
 /**
  * Fake planar viewport. It intentionally has NO
  * legacy setCamera / setSlabThickness: manipulation must go through
- * setViewReference (navigation, reorientation) and setDisplaySetPresentation
+ * setViewReference (navigation, reorientation) and setDisplaySetAppearance
  * (slab thickness).
  */
 function createFakePlanarViewport({
@@ -53,10 +53,10 @@ function createFakePlanarViewport({
     position: focalPoint.map((v, i) => v + axes.normal[i] * 100),
     parallelScale: 100,
   };
-  const presentationScale: [number, number] = [1, 1];
+  const framingScale: [number, number] = [1, 1];
 
   const displaySetId = `${id}-data`;
-  const presentation: { slabThickness?: number; blendMode?: unknown } = {
+  const appearance: { slabThickness?: number; blendMode?: unknown } = {
     slabThickness,
   };
   const viewState: Record<string, unknown> = {};
@@ -78,12 +78,12 @@ function createFakePlanarViewport({
     getFrameOfReferenceUID: () => frameOfReferenceUID,
     // --- Viewport surface ---
     setDisplaySets: async () => undefined,
-    setDisplaySetPresentation: jest.fn(
+    setDisplaySetAppearance: jest.fn(
       (displaySetIdArg: string, props: Record<string, unknown>) => {
-        Object.assign(presentation, props);
+        Object.assign(appearance, props);
       }
     ),
-    getDisplaySetPresentation: () => ({ ...presentation }),
+    getDisplaySetAppearance: () => ({ ...appearance }),
     getSourceDisplaySetId: () => displaySetId,
     getDefaultVOIRange: () => undefined,
     setViewState: jest.fn((patch: Record<string, unknown>) => {
@@ -143,10 +143,10 @@ function createFakePlanarViewport({
         }
       }
     ),
-    getScale: () => [...presentationScale],
+    getScale: () => [...framingScale],
     setScale: jest.fn((scale: [number, number]) => {
-      presentationScale[0] = scale[0];
-      presentationScale[1] = scale[1];
+      framingScale[0] = scale[0];
+      framingScale[1] = scale[1];
     }),
     getResolvedView: () => ({
       toICamera: () => ({
@@ -176,7 +176,7 @@ function createFakePlanarViewport({
       ];
     },
     _camera: camera,
-    _presentation: presentation,
+    _appearance: appearance,
     _viewState: viewState,
     _displaySetId: displaySetId,
   };
@@ -679,7 +679,7 @@ describe('SliceIntersectionTool', () => {
     expect(axial.setViewReference).not.toHaveBeenCalled();
   });
 
-  it('slab handles modify the slab of every volume-backed member through the display-set presentation', () => {
+  it('slab handles modify the slab of every volume-backed member through the display-set appearance', () => {
     const axial = createFakePlanarViewport({
       id: 'axial',
       orientation: 'axial',
@@ -717,15 +717,15 @@ describe('SliceIntersectionTool', () => {
       }
     );
 
-    expect(ctSagittal.setDisplaySetPresentation).toHaveBeenCalledWith(
+    expect(ctSagittal.setDisplaySetAppearance).toHaveBeenCalledWith(
       ctSagittal._displaySetId,
       expect.objectContaining({ slabThickness: 14 })
     );
-    expect(ptSagittal.setDisplaySetPresentation).toHaveBeenCalledWith(
+    expect(ptSagittal.setDisplaySetAppearance).toHaveBeenCalledWith(
       ptSagittal._displaySetId,
       expect.objectContaining({ slabThickness: 14 })
     );
-    expect(axial.setDisplaySetPresentation).not.toHaveBeenCalled();
+    expect(axial.setDisplaySetAppearance).not.toHaveBeenCalled();
 
     // The tool reads/writes through the viewport API and stores no slab
     // state of its own.

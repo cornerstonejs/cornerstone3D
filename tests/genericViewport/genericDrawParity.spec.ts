@@ -292,8 +292,8 @@ type TestViewport = {
   getDebugBindings: () => Array<{
     rendering: { refreshFidelity?: () => void; qualityPending?: boolean };
   }>;
-  getDisplaySetPresentation: (displaySetId: string) => Presentation | undefined;
-  setDisplaySetPresentation: (displaySetId: string, props: Presentation) => void;
+  getDisplaySetAppearance: (displaySetId: string) => Presentation | undefined;
+  setDisplaySetAppearance: (displaySetId: string, props: Presentation) => void;
   getViewState: () => Record<string, unknown>;
   setViewState: (patch: Record<string, unknown>) => void;
   setZoom: (zoom: number) => void;
@@ -410,12 +410,12 @@ async function applyCase(page: Page, parityCase: ParityCase): Promise<void> {
       const { presentations = {}, slab, view } = parityCase;
 
       Object.entries(presentations).forEach(([displaySetId, props]) =>
-        viewport.setDisplaySetPresentation(displaySetId, props)
+        viewport.setDisplaySetAppearance(displaySetId, props)
       );
 
       if (slab) {
         viewport.getRenderPlan().forEach(({ displaySetId }) =>
-          viewport.setDisplaySetPresentation(displaySetId, {
+          viewport.setDisplaySetAppearance(displaySetId, {
             slabThickness: slab.thickness,
             blendMode: cornerstone.Enums.BlendModes[slab.blendMode],
           })
@@ -477,7 +477,7 @@ async function readCutOutline(
         );
 
       viewport.getRenderPlan().forEach(({ displaySetId }) => {
-        if (viewport.getDisplaySetPresentation(displaySetId)?.visible === false) {
+        if (viewport.getDisplaySetAppearance(displaySetId)?.visible === false) {
           return;
         }
 

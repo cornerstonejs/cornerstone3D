@@ -25,7 +25,7 @@ const { Events, InterpolationType } = Enums;
  */
 interface PersistedViewportState {
   viewState: ReturnType<PlanarViewport['getViewState']>;
-  presentation: ReturnType<PlanarViewport['getDisplaySetPresentation']>;
+  presentation: ReturnType<PlanarViewport['getDisplaySetAppearance']>;
   reference: ReturnType<PlanarViewport['getViewReference']>;
 }
 
@@ -71,7 +71,7 @@ function buildRawPayload(
 ): PersistedViewportState {
   return {
     viewState: viewport.getViewState(),
-    presentation: viewport.getDisplaySetPresentation(displaySetId),
+    presentation: viewport.getDisplaySetAppearance(displaySetId),
     reference: viewport.getViewReference(),
   };
 }
@@ -142,7 +142,7 @@ function persist(viewport: PlanarViewport, displaySetId: string): string {
 /**
  * Applies a persisted payload to a viewport.
  *
- * Only `setViewState` and `setDisplaySetPresentation` are used --
+ * Only `setViewState` and `setDisplaySetAppearance` are used --
  * `setViewReference` is intentionally NOT called on top of `setViewState`.
  *
  * Decision (verified empirically by the round-trip test below, and by
@@ -171,14 +171,14 @@ function restore(
   viewport.setViewState(payload.viewState);
 
   if (payload.presentation) {
-    viewport.setDisplaySetPresentation(displaySetId, payload.presentation);
+    viewport.setDisplaySetAppearance(displaySetId, payload.presentation);
   }
 }
 
 /**
  * Non-trivially navigates a viewport: slice 3 (of the default 5-slice
  * stack), zoom 1.7, pan [12, -8], rotation 90, flipHorizontal true, plus a
- * non-default interpolation type and VOI range via setDisplaySetPresentation.
+ * non-default interpolation type and VOI range via setDisplaySetAppearance.
  */
 async function applyNavigatedState(ctx: PlanarViewportContext): Promise<void> {
   const { viewport, element, displaySetId } = ctx;
@@ -187,7 +187,7 @@ async function applyNavigatedState(ctx: PlanarViewportContext): Promise<void> {
   viewport.setZoom(1.7);
   viewport.setPan([12, -8]);
   viewport.setViewState({ rotation: 90, flipHorizontal: true });
-  viewport.setDisplaySetPresentation(displaySetId, {
+  viewport.setDisplaySetAppearance(displaySetId, {
     interpolationType: InterpolationType.NEAREST,
     voiRange: { lower: 0, upper: 120 },
   });
@@ -417,7 +417,7 @@ describe('viewStateSerialization', () => {
       const payload = JSON.parse(json) as PersistedViewportState;
 
       if (payload.presentation) {
-        fresh.viewport.setDisplaySetPresentation(
+        fresh.viewport.setDisplaySetAppearance(
           displaySetId,
           payload.presentation
         );

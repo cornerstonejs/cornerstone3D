@@ -1,14 +1,14 @@
 import { utilities as csUtils, viewportProjection } from '@cornerstonejs/core';
 import type {
-  PlanarViewPresentation,
-  PlanarViewPresentationSelector,
+  PlanarViewFraming,
+  PlanarViewFramingSelector,
   Types,
 } from '@cornerstonejs/core';
 
 const { getNormalizedAspectRatio } = csUtils;
 
 /** The selector of the scale pair of a planar view. */
-const scaleSelector: PlanarViewPresentationSelector = { scale: true };
+const scaleSelector: PlanarViewFramingSelector = { scale: true };
 
 /**
  * The stretch of the view of a viewport as `[x, y]`, with the smaller of the
@@ -20,10 +20,9 @@ const scaleSelector: PlanarViewPresentationSelector = { scale: true };
  * stretched.
  */
 export function getViewStretch(viewport: Types.IViewport): Types.Point2 {
-  const scale = viewportProjection.getPresentation<PlanarViewPresentation>(
-    viewport,
-    { selector: scaleSelector }
-  )?.scale;
+  const scale = viewportProjection.getFraming<PlanarViewFraming>(viewport, {
+    selector: scaleSelector,
+  })?.scale;
 
   return getNormalizedAspectRatio(
     scale ?? viewport.getAspectRatio?.() ?? [1, 1]

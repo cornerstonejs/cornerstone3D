@@ -209,7 +209,7 @@ function getAxialCoronalSlabLineRows(element) {
 /** The presentation of the source display set of a next viewport. */
 function getSourcePresentation(viewport) {
   return (
-    viewport.getDisplaySetPresentation(viewport.getSourceDisplaySetId()) || {}
+    viewport.getDisplaySetAppearance(viewport.getSourceDisplaySetId()) || {}
   );
 }
 
@@ -572,14 +572,14 @@ describe('The handles of CrosshairsTool on direct next planar viewports in volum
         .getDisplaySets()
         .filter(
           ({ displaySetId }) =>
-            coronal.getDisplaySetPresentation(displaySetId)?.slabThickness === 5
+            coronal.getDisplaySetAppearance(displaySetId)?.slabThickness === 5
         ).length;
 
     crosshairs.setSlabThickness(coronal, 5);
     const unfiltered = countSlabbed();
 
     coronal.getDisplaySets().forEach(({ displaySetId }) => {
-      coronal.setDisplaySetPresentation(displaySetId, {
+      coronal.setDisplaySetAppearance(displaySetId, {
         slabThickness: undefined,
       });
     });
@@ -607,7 +607,7 @@ describe('The handles of CrosshairsTool on direct next planar viewports in volum
     const coronal = renderingEngine.getViewport('CORONAL');
 
     sagittal.setViewState(
-      viewportProjection.withPresentation(sagittal, {
+      viewportProjection.withFraming(sagittal, {
         zoom: legacy.autoPan.sagittalZoom,
       })
     );
@@ -647,7 +647,7 @@ describe('The handles of CrosshairsTool on direct next planar viewports in volum
     const sagittal = renderingEngine.getViewport('SAGITTAL');
 
     sagittal.setViewState(
-      viewportProjection.withPresentation(sagittal, {
+      viewportProjection.withFraming(sagittal, {
         zoom: legacy.autoPan.sagittalZoom,
       })
     );

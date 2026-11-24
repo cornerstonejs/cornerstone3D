@@ -9,12 +9,15 @@ import {
   bracketKey,
   coreImportOf,
   coreReExports,
+  declarationNodeOf,
   enclosingFunction,
   isBoundTo,
   isCoreExport,
   isMountedBefore,
   isRenderingEngine,
   isRepeatable,
+  isStableBinding,
+  topLevelCoreTypes,
   viewportEvidence,
   methodCall,
   objectEntries,
@@ -35,6 +38,92 @@ const review = new HeldMetric(useMetricAtom('cornerstone3d-6-review'));
 const RENAMED_METHODS: Record<string, string> = {
   resetCameraForResize: 'resetViewStateForResize',
   getTargetImageIdIndex: 'getCurrentImageIdIndex',
+  getViewPresentation: 'getViewFraming',
+  setViewPresentation: 'setViewFraming',
+};
+
+/** The renamed members whose receiver must not have a type of the application. */
+const TYPED_RENAMES = new Set(['getViewPresentation', 'setViewPresentation']);
+
+/** The type names that say nothing of a value. */
+const OPAQUE_TYPES = new Set(['unknown', 'any', 'object']);
+
+/**
+ * Tells whether a type node is a type of the application: not opaque
+ * (`unknown`, `any`) and with no core type at its top.
+ */
+function isApplicationType(typeNode: Node | null | undefined): boolean {
+  return Boolean(
+    typeNode &&
+      !OPAQUE_TYPES.has(typeNode.text()) &&
+      !topLevelCoreTypes(typeNode).length
+  );
+}
+
+/**
+ * Tells whether the file gives an expression a type of the application: a
+ * cast to such a type (`viewport as unknown as LegacyViewport`), or a name
+ * declared with one or that holds such a cast. A member of that type is the
+ * application's, whatever Cornerstone value is under the cast.
+ */
+function hasApplicationType(node: Node | null | undefined, depth = 0): boolean {
+  let current = node;
+
+  while (current && depth <= 4) {
+    const kind = current.kind();
+    const named = current.children().filter((child) => child.isNamed());
+
+    if (kind === 'parenthesized_expression' || kind === 'non_null_expression') {
+      current = named[0];
+    } else if (kind === 'as_expression' || kind === 'satisfies_expression') {
+      if (isApplicationType(named[named.length - 1])) {
+        return true;
+      }
+
+      current = named[0];
+    } else if (kind === 'type_assertion') {
+      const typeNode = named[0]?.children().find((child) => child.isNamed());
+
+      if (isApplicationType(typeNode)) {
+        return true;
+      }
+
+      current = named[named.length - 1];
+    } else {
+      break;
+    }
+  }
+
+  if (current?.kind() !== 'identifier') {
+    return false;
+  }
+
+  const declaration = declarationNodeOf(current);
+  const holder = declaration?.parent();
+  const annotation = holder
+    ?.children()
+    .find((child) => child.kind() === 'type_annotation');
+
+  if (annotation) {
+    return isApplicationType(
+      annotation.children().find((child) => child.isNamed())
+    );
+  }
+
+  return (
+    holder?.kind() === 'variable_declarator' &&
+    holder.field('name')?.id() === declaration.id() &&
+    isStableBinding(declaration) &&
+    hasApplicationType(holder.field('value'), depth + 1)
+  );
+}
+
+/** The review note of a renamed member whose 6.0 call answers differently. */
+const RENAMED_METHOD_REVIEWS: Record<string, string> = {
+  getViewPresentation:
+    'getViewFraming: zoom and pan are against the fit, the framing has no slab thickness and no window (read them with getDisplaySetAppearance), and it is undefined while the viewport shows nothing',
+  setViewPresentation:
+    'setViewFraming: zoom and pan are against the fit, and a slab thickness or a window in the framing does nothing (set them with setDisplaySetAppearance)',
 };
 
 /** The members whose call becomes a fixed read of `getActors()`. */
@@ -94,8 +183,6 @@ const REPORTED_METHODS = new Set([
   'clearDefaultProperties',
   'resetToDefaultProperties',
   'getCamera',
-  'getViewPresentation',
-  'setViewPresentation',
   'getActor',
   'addActor',
   'addActors',
@@ -172,8 +259,8 @@ const REPORTED_CORE_NAMES = new Set([
 /** The removed members of a rendering engine that the transform reports. */
 const REPORTED_ENGINE_MEMBERS = new Set(['renderFrameOfReference']);
 
-/** The keys of `setProperties` that are keys of the presentation too. */
-const PRESENTATION_KEYS = new Set([
+/** The keys of `setProperties` that are keys of the appearance too. */
+const APPEARANCE_KEYS = new Set([
   'voiRange',
   'invert',
   'colormap',
@@ -186,14 +273,11 @@ const PRESENTATION_KEYS = new Set([
   'showAmplitudeLabels',
 ]);
 
-/** The keys of `setProperties` that are keys of the presentation of a 3D viewport only. */
-const THREE_D_PRESENTATION_KEYS = new Set([
-  'preset',
-  'sampleDistanceMultiplier',
-]);
+/** The keys of `setProperties` that are keys of the appearance of a 3D viewport only. */
+const THREE_D_APPEARANCE_KEYS = new Set(['preset', 'sampleDistanceMultiplier']);
 
-/** The keys of `setProperties` that change their name in the presentation. */
-const RENAMED_PRESENTATION_KEYS: Record<string, string> = {
+/** The keys of `setProperties` that change their name in the appearance. */
+const RENAMED_APPEARANCE_KEYS: Record<string, string> = {
   VOILUTFunction: 'voiLUTFunction',
 };
 
@@ -261,12 +345,12 @@ function literalKeys(arg: Node | undefined): string[] | undefined {
 }
 
 /**
- * Tells whether the presentation of the source display set can be set at a
+ * Tells whether the appearance of the source display set can be set at a
  * call: the receiver is a name whose binding holds one value, a statement
  * that awaits a mount on that binding runs before the call in its function,
  * and no mount on that binding comes after the call in its function or runs
  * before it without `await`. A mount under a condition or in another
- * function proves nothing: 6.0 drops a presentation that is set before the
+ * function proves nothing: 6.0 drops an appearance that is set before the
  * first mount, where 5.x kept it.
  */
 function isMountedAt(run: Run, call: Node, receiver: Node): boolean {
@@ -361,7 +445,7 @@ function rewriteSetProperties(
       .some(
         (child) =>
           child.kind() === 'shorthand_property_identifier' &&
-          RENAMED_PRESENTATION_KEYS[child.text()]
+          RENAMED_APPEARANCE_KEYS[child.text()]
       )
   ) {
     return reportSite(
@@ -372,11 +456,11 @@ function rewriteSetProperties(
   }
 
   const isThreeD = viewportFamily(object) === '3d';
-  const isPresentationKey = (key: string) =>
-    PRESENTATION_KEYS.has(key) ||
-    Boolean(RENAMED_PRESENTATION_KEYS[key]) ||
-    (isThreeD && THREE_D_PRESENTATION_KEYS.has(key));
-  const isPresentation = keys.every(isPresentationKey);
+  const isAppearanceKey = (key: string) =>
+    APPEARANCE_KEYS.has(key) ||
+    Boolean(RENAMED_APPEARANCE_KEYS[key]) ||
+    (isThreeD && THREE_D_APPEARANCE_KEYS.has(key));
+  const isAppearance = keys.every(isAppearanceKey);
   const isEcgView =
     keys.length > 0 &&
     keys.every((key) => ECG_VIEW_KEYS[key]) &&
@@ -388,13 +472,13 @@ function rewriteSetProperties(
           child.text() === 'layoutType'
       );
 
-  if (!isPresentation && !isEcgView) {
-    const key = keys.find((name) => !isPresentationKey(name));
+  if (!isAppearance && !isEcgView) {
+    const key = keys.find((name) => !isAppearanceKey(name));
 
     return reportSite(run, `setProperties: the key ${key}`, call);
   }
 
-  if (isPresentation && !isMountedAt(run, call, object)) {
+  if (isAppearance && !isMountedAt(run, call, object)) {
     return reportSite(
       run,
       'setProperties: the viewport may not show its data yet',
@@ -402,8 +486,8 @@ function rewriteSetProperties(
     );
   }
 
-  const method = isEcgView ? 'setViewState' : 'setDisplaySetPresentation';
-  const names = isEcgView ? ECG_VIEW_KEYS : RENAMED_PRESENTATION_KEYS;
+  const method = isEcgView ? 'setViewState' : 'setDisplaySetAppearance';
+  const names = isEcgView ? ECG_VIEW_KEYS : RENAMED_APPEARANCE_KEYS;
 
   return run.edits.add(
     property.replace(method),
@@ -432,8 +516,18 @@ function rewriteCall(run: Run, call: Node): void {
   }
   const argTexts = args.map((arg) => arg.text());
 
+  if (TYPED_RENAMES.has(method) && hasApplicationType(object)) {
+    reportSite(run, method, call);
+
+    return;
+  }
+
   if (RENAMED_METHODS[method]) {
     run.edits.add(property.replace(RENAMED_METHODS[method]));
+
+    if (RENAMED_METHOD_REVIEWS[method]) {
+      review.increment(site(run.root, RENAMED_METHOD_REVIEWS[method], call));
+    }
 
     return;
   }
@@ -560,7 +654,7 @@ function rewriteCall(run: Run, call: Node): void {
         );
       } else if (args.length === 1) {
         run.edits.add(
-          property.replace('setDisplaySetPresentation'),
+          property.replace('setDisplaySetAppearance'),
           call.field('arguments').replace(`({ averageWhite: ${argTexts[0]} })`)
         );
       } else {
@@ -743,7 +837,7 @@ function reportBracketMembers(run: Run, names: Set<string>): void {
 
 /**
  * Rewrites the members of the legacy viewports that have a fixed 6.0 call:
- * `resetCamera`, `setProperties` of presentation keys, the actor reads, the
+ * `resetCamera`, `setProperties` of appearance keys, the actor reads, the
  * questions that became functions of `utilities`, and the renamed
  * properties. Every other legacy member on a viewport is reported, and so
  * are the removed helpers of the core and the removed members of a

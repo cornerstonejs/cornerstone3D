@@ -1,14 +1,14 @@
 ---
 id: api
 title: API
-summary: Practical viewport API examples for data, overlays, presentation, navigation, and segmentation slice rendering
+summary: Practical viewport API examples for data, overlays, appearance, framing, navigation, and segmentation slice rendering
 ---
 
 # API
 
 The viewport API is centered on logical display set ids. Register the
-display set once, mount it into a viewport, then update view state and data
-presentation independently.
+display set once, mount it into a viewport, then update view state and the appearance of
+each display set independently.
 
 ## Create A Planar Viewport
 
@@ -62,7 +62,7 @@ await viewport.setDisplaySets({
   displaySetId: stackDisplaySetId,
 });
 
-viewport.setDisplaySetPresentation(stackDisplaySetId, {
+viewport.setDisplaySetAppearance(stackDisplaySetId, {
   voiRange: { lower: -1500, upper: 2500 },
 });
 
@@ -74,7 +74,7 @@ unless a role is provided explicitly. Each call replaces all currently mounted
 display sets.
 
 `setDisplaySets()` and `addDisplaySet()` do not return runtime rendering ids.
-Use the `displaySetId` you provided for later presentation updates, removal,
+Use the `displaySetId` you provided for later appearance updates, removal,
 and view-reference operations.
 
 ## Add Volume Slice Data
@@ -106,7 +106,7 @@ with the data.
 ## Add An Overlay
 
 Overlays are additional data bindings mounted with `role: 'overlay'`. They use
-the same viewport view state as the source but keep their own data presentation.
+the same viewport view state as the source but keep their own appearance.
 
 ```ts
 const ptDisplaySetId = 'pt-volume-overlay';
@@ -122,7 +122,7 @@ await viewport.addDisplaySet(ptDisplaySetId, {
   role: 'overlay',
 });
 
-viewport.setDisplaySetPresentation(ptDisplaySetId, {
+viewport.setDisplaySetAppearance(ptDisplaySetId, {
   colormap: {
     name: 'hsv',
     opacity: 0.4,
@@ -191,12 +191,12 @@ viewport.updateViewState(({ rotation = 0 }) => ({
 viewport.resetViewState();
 ```
 
-Use viewport projection when the input is a portable presentation patch rather
+Use viewport projection when the input is a portable framing patch rather
 rather than native view state. The projection service is pure: it returns the
 next native `ViewState`, and the caller applies it.
 
 ```ts
-const nextViewState = viewportProjection.withPresentation(viewport, {
+const nextViewState = viewportProjection.withFraming(viewport, {
   zoom: 1.5,
   pan: [40, -20],
 });
@@ -207,10 +207,10 @@ if (nextViewState) {
 viewport.render();
 ```
 
-Read presentation through the same service:
+Read the framing through the same service:
 
 ```ts
-const presentation = viewportProjection.getPresentation(viewport, {
+const framing = viewportProjection.getFraming(viewport, {
   selector: {
     pan: true,
     zoom: true,
@@ -219,9 +219,10 @@ const presentation = viewportProjection.getPresentation(viewport, {
 });
 ```
 
-A viewport has no `getViewPresentation()` and no `setViewPresentation()`
-member: the legacy viewports of 5.x had them, and 6.0 removed them with those
-viewports. Read and write a view presentation through `viewportProjection`.
+`viewport.getViewFraming(selector)` and `viewport.setViewFraming(framing)`
+read and write the same framing on the viewport. They replace the
+`getViewPresentation()` and `setViewPresentation()` of the 5.x legacy
+viewports.
 
 Use `setImageIdIndex()` for index-style navigation. For volume-backed data,
 the viewport resolves the requested index into a volume slice point internally.
@@ -230,24 +231,24 @@ the viewport resolves the requested index into a volume slice point internally.
 await viewport.setImageIdIndex(viewport.getCurrentImageIdIndex() + 1);
 ```
 
-## Update Display Set Presentation
+## Update Display Set Appearance
 
-Display set presentation is scoped to one mounted display set id. Call
-`setDisplaySetPresentation` with just `props` to apply the update to the
+The appearance of a display set is scoped to one mounted display set id. Call
+`setDisplaySetAppearance` with just `props` to apply the update to the
 current source binding, or with an explicit `displaySetId` to target a
 specific binding.
 
 ```ts
-viewport.setDisplaySetPresentation(ctDisplaySetId, {
+viewport.setDisplaySetAppearance(ctDisplaySetId, {
   voiRange: { lower: -1500, upper: 2500 },
 });
 
-viewport.setDisplaySetPresentation(ptDisplaySetId, {
+viewport.setDisplaySetAppearance(ptDisplaySetId, {
   visible: false,
 });
 
 // Apply to the current source binding when the id is omitted.
-viewport.setDisplaySetPresentation({
+viewport.setDisplaySetAppearance({
   voiRange: { lower: -1000, upper: 1000 },
 });
 
@@ -310,7 +311,7 @@ await viewport.addDisplaySet(labelmapDisplaySetId, {
   role: 'overlay',
 });
 
-viewport.setDisplaySetPresentation(labelmapDisplaySetId, {
+viewport.setDisplaySetAppearance(labelmapDisplaySetId, {
   blendMode: Enums.BlendModes.COMPOSITE,
   visible: true,
 });
@@ -332,14 +333,14 @@ otherViewport.setViewReference(reference);
 otherViewport.render();
 ```
 
-Use projection presentation when only pan, zoom, rotation, flips, and display
-area should be copied between compatible viewport families. The presentation
+Use the framing when only pan, zoom, rotation, flips, and display
+area should be copied between compatible viewport families. The framing
 shape is adapter-specific, so this is appropriate for planar to planar. Do not treat it as a universal cross-family camera copy; use view
 references or a synchronizer that explicitly maps scale and position semantics
 for that case.
 
 ```ts
-const presentation = viewportProjection.getPresentation(viewport, {
+const framing = viewportProjection.getFraming(viewport, {
   selector: {
     displayArea: true,
     flipHorizontal: true,
@@ -350,16 +351,13 @@ const presentation = viewportProjection.getPresentation(viewport, {
   },
 });
 
-if (!presentation) {
+if (!framing) {
   return;
 }
 
-// `withPresentation` is pure: it translates the presentation for the target
+// `withFraming` is pure: it translates the framing for the target
 // viewport, but it does not mutate the target or schedule rendering.
-const nextViewState = viewportProjection.withPresentation(
-  otherViewport,
-  presentation
-);
+const nextViewState = viewportProjection.withFraming(otherViewport, framing);
 
 if (nextViewState) {
   // `setViewState` remains the single mutation path for viewports.
