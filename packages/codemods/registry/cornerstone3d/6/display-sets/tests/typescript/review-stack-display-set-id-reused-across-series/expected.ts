@@ -1,4 +1,4 @@
-import { RenderingEngine, utilities } from '@cornerstonejs/core';
+import { RenderingEngine, displaySetRegistry } from '@cornerstonejs/core';
 
 const engineA = new RenderingEngine('A');
 const engineB = new RenderingEngine('B');
@@ -8,30 +8,26 @@ export async function show(seriesA: string[], seriesB: string[]) {
   const twin = engineB.getViewport('axial');
 
   const displaySetId = JSON.stringify([viewport.renderingEngineId, viewport.id, seriesA[0]]);
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId, {
     imageIds: seriesA,
     initialImageIdIndex: 0,
   });
   await viewport.setDisplaySets({ displaySetId });
   const displaySetId2 = JSON.stringify([viewport.renderingEngineId, viewport.id, seriesB[0]]);
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId2, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId2, {
     imageIds: seriesB,
     initialImageIdIndex: 3,
   });
   await viewport.setDisplaySets({ displaySetId: displaySetId2 });
   const displaySetId3 = JSON.stringify([twin.renderingEngineId, twin.id, seriesA[0]]);
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId3, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId3, {
     imageIds: seriesA,
     initialImageIdIndex: 0,
   });
   await twin.setDisplaySets({ displaySetId: displaySetId3 });
   const imageIds = getSeries();
   const displaySetId4 = JSON.stringify([viewport.renderingEngineId, viewport.id, imageIds[0]]);
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId4, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId4, {
     imageIds,
     initialImageIdIndex: 1,
   });

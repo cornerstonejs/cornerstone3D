@@ -73,7 +73,7 @@ import {
 } from '../src/RenderingEngine/Viewports/Planar/VtkVolumeSliceRenderPath';
 import PlanarViewport from '../src/RenderingEngine/Viewports/Planar/PlanarViewport';
 import renderingEngineCache from '../src/RenderingEngine/renderingEngineCache';
-import genericViewportDisplaySetMetadataProvider from '../src/utilities/genericViewportDisplaySetMetadataProvider';
+import displaySetRegistry from '../src/RenderingEngine/Viewports/displaySetRegistry';
 
 const flush = async () => {
   for (let i = 0; i < 20; i++) {
@@ -1687,7 +1687,7 @@ describe('default VOI of a sampled slice', () => {
 });
 
 describe('PlanarViewport with slice first (render path)', () => {
-  const dataId = 'ct-display-set';
+  const displaySetId = 'ct-display-set';
   const volumeId = 'ct-volume';
   const engineId = 'sampled-slice-engine';
   const sliceCount = 10;
@@ -1698,7 +1698,7 @@ describe('PlanarViewport with slice first (render path)', () => {
   let volume;
   let sampleSpy;
 
-  const binding = () => viewport.bindings.get(dataId);
+  const binding = () => viewport.bindings.get(displaySetId);
 
   beforeEach(() => {
     const actors = [];
@@ -1748,8 +1748,7 @@ describe('PlanarViewport with slice first (render path)', () => {
       };
     };
     metaData.addProvider(provider, 10000);
-    genericViewportDisplaySetMetadataProvider.add(dataId, {
-      kind: 'planar',
+    displaySetRegistry.add(displaySetId, {
       imageIds,
       volumeId,
     });
@@ -1779,7 +1778,7 @@ describe('PlanarViewport with slice first (render path)', () => {
     renderingEngineCache.delete(engineId);
     setSliceFirst(false);
     metaData.removeProvider(provider);
-    genericViewportDisplaySetMetadataProvider.clear();
+    displaySetRegistry.clear();
     jest.restoreAllMocks();
   });
 
@@ -1801,7 +1800,7 @@ describe('PlanarViewport with slice first (render path)', () => {
 
   async function mount(options = {}) {
     await viewport.setDisplaySets({
-      displaySetId: dataId,
+      displaySetId: displaySetId,
       options: {
         orientation: OrientationAxis.AXIAL,
         sliceFirst: true,
@@ -1841,7 +1840,7 @@ describe('PlanarViewport with slice first (render path)', () => {
 
     viewport.setZoom(2);
     viewport.setPan([5, 3]);
-    viewport.setDisplaySetPresentation(dataId, {
+    viewport.setDisplaySetPresentation(displaySetId, {
       voiRange: { lower: 0, upper: 80 },
     });
 
@@ -1876,14 +1875,14 @@ describe('PlanarViewport with slice first (render path)', () => {
       .spyOn(viewport, 'applyRenderingPipelineUpdate')
       .mockResolvedValue(undefined);
 
-    viewport.setDisplaySetPresentation(dataId, {
+    viewport.setDisplaySetPresentation(displaySetId, {
       voiRange: { lower: 0, upper: 80 },
     });
-    viewport.setDisplaySetPresentation(dataId, { slabThickness: 0.8 });
+    viewport.setDisplaySetPresentation(displaySetId, { slabThickness: 0.8 });
 
     expect(remount).not.toHaveBeenCalled();
 
-    viewport.setDisplaySetPresentation(dataId, { slabThickness: 2 });
+    viewport.setDisplaySetPresentation(displaySetId, { slabThickness: 2 });
 
     expect(remount).toHaveBeenCalledTimes(1);
   });
@@ -1911,7 +1910,7 @@ describe('PlanarViewport with slice first (render path)', () => {
 
   it('removes its actor and listeners with the display set', async () => {
     await mount();
-    viewport.removeData(dataId);
+    viewport.removeDisplaySet(displaySetId);
     sampleSpy.mockClear();
 
     triggerEvent(eventTarget, Events.IMAGE_VOLUME_MODIFIED, { volumeId });
@@ -1958,8 +1957,7 @@ describe('PlanarViewport with slice first (render path)', () => {
     async (_name, registration, orientation) => {
       const volumes = new Map();
 
-      genericViewportDisplaySetMetadataProvider.add(dataId, {
-        kind: 'planar',
+      displaySetRegistry.add(displaySetId, {
         imageIds,
         ...registration,
       });
@@ -2005,8 +2003,7 @@ describe('PlanarViewport with slice first (render path)', () => {
     );
     let renderMode;
 
-    genericViewportDisplaySetMetadataProvider.add(stackId, {
-      kind: 'planar',
+    displaySetRegistry.add(stackId, {
       imageIds,
     });
     viewport.dataProvider.load.mockImplementation(async (id, options) => ({
@@ -2061,7 +2058,7 @@ describe('PlanarViewport with slice first (render path)', () => {
       ActorRenderMode.VTK_VOLUME_SLICE
     );
 
-    viewport.setDisplaySetPresentation(dataId, { slabThickness: 1e6 });
+    viewport.setDisplaySetPresentation(displaySetId, { slabThickness: 1e6 });
 
     expect(remount).not.toHaveBeenCalled();
   });
@@ -2173,7 +2170,7 @@ describe('PlanarViewport with slice first (render path)', () => {
     expect(sampleSpy).toHaveBeenCalledTimes(2);
     expect(drawnSpacing()).toBeCloseTo(firstFineSpacing / 4);
 
-    viewport.setDisplaySetPresentation(dataId, {
+    viewport.setDisplaySetPresentation(displaySetId, {
       voiRange: { lower: 0, upper: 80 },
     });
     jest.advanceTimersByTime(10 * SAMPLED_SLICE_REST_DELAY_MS);
@@ -2196,7 +2193,7 @@ describe('PlanarViewport with slice first (render path)', () => {
 
     expect(onLoad).toBeDefined();
 
-    viewport.removeData(dataId);
+    viewport.removeDisplaySet(displaySetId);
     sampleSpy.mockClear();
     onLoad();
     jest.advanceTimersByTime(10 * SAMPLED_SLICE_LOADING_UPDATE_MS);
@@ -2207,7 +2204,7 @@ describe('PlanarViewport with slice first (render path)', () => {
   it('cancels the work at rest when the display set is removed', async () => {
     useFakeTimers();
     await mount({ orientation: obliqueOrientation });
-    viewport.removeData(dataId);
+    viewport.removeDisplaySet(displaySetId);
     sampleSpy.mockClear();
     jest.advanceTimersByTime(10 * SAMPLED_SLICE_REST_DELAY_MS);
 
@@ -2299,8 +2296,7 @@ describe('PlanarViewport with slice first (render path)', () => {
       renderMode: options.renderMode,
       volumeId: id === overlayId ? 'pt-volume' : volumeId,
     }));
-    genericViewportDisplaySetMetadataProvider.add(overlayId, {
-      kind: 'planar',
+    displaySetRegistry.add(overlayId, {
       imageIds,
       volumeId: 'pt-volume',
     });
@@ -2322,7 +2318,7 @@ describe('PlanarViewport with slice first (render path)', () => {
     setSliceFirst(true);
     await viewport.setDisplaySets(
       {
-        displaySetId: dataId,
+        displaySetId: displaySetId,
         options: { orientation: OrientationAxis.AXIAL },
       },
       {

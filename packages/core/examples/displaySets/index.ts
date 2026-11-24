@@ -1,5 +1,9 @@
 import type { Types, VideoViewport } from '@cornerstonejs/core';
-import { RenderingEngine, Enums, utilities } from '@cornerstonejs/core';
+import {
+  RenderingEngine,
+  Enums,
+  displaySetRegistry,
+} from '@cornerstonejs/core';
 import dicomImageLoader from '@cornerstonejs/dicom-image-loader';
 import { api } from 'dicomweb-client';
 import {
@@ -149,33 +153,30 @@ function instanceField(displaySet: DisplaySet, key: string): string {
 function registerDisplaySetData(row: Row) {
   const { displaySetId, displaySet, hint, client } = row;
   const imageIds = [...displaySet.imageIds];
-  const provider = utilities.genericViewportDisplaySetMetadataProvider;
+  const provider = displaySetRegistry;
 
   switch (hint) {
     case 'video':
-      provider.add(displaySetId, { kind: 'video', sourceDataId: imageIds[0] });
+      provider.add(displaySetId, { imageId: imageIds[0] });
       break;
     case 'ecg':
-      provider.add(displaySetId, { kind: 'ecg', sourceDataId: imageIds[0] });
+      provider.add(displaySetId, { imageId: imageIds[0] });
       break;
     case 'wholeslide':
       provider.add(displaySetId, {
         imageIds,
-        kind: 'wsi',
         options: { webClient: client },
       });
       break;
     case 'stack':
       provider.add(displaySetId, {
         imageIds,
-        kind: 'planar',
         initialImageIdIndex: Math.floor(imageIds.length / 2),
       });
       break;
     case 'volume':
       provider.add(displaySetId, {
         imageIds,
-        kind: 'planar',
         volumeId: `cornerstoneStreamingImageVolume:${displaySetId}`,
       });
       break;

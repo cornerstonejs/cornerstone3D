@@ -7,7 +7,7 @@ import {
   RenderingEngine,
   Enums,
   volumeLoader,
-  utilities,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -218,12 +218,11 @@ async function run() {
   volume.load();
 
   // Set volumes on the viewports
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+  displaySetRegistry.add(displaySetId, {
     imageIds,
     volumeId,
   });
-  utilities.genericViewportDisplaySetMetadataProvider.add(axialDisplaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(axialDisplaySetId, {
     imageIds,
     volumeId,
   });

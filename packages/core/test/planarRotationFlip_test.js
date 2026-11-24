@@ -237,7 +237,7 @@ describe('A planar view turns and flips as the 5.x viewports did -- ', () => {
 
   afterEach(function () {
     testUtils.cleanupTestEnvironment({ renderingEngineId });
-    utilities.genericViewportDisplaySetMetadataProvider.clear?.();
+    cornerstone3D.displaySetRegistry.clear?.();
   });
 
   MODES.forEach(({ mode, show }) => {
@@ -437,7 +437,7 @@ describe('A turned and flipped stack on the CPU path -- ', () => {
 
   afterEach(function () {
     testUtils.cleanupTestEnvironment({ renderingEngineId });
-    utilities.genericViewportDisplaySetMetadataProvider.clear?.();
+    cornerstone3D.displaySetRegistry.clear?.();
   });
 
   FLIPS.filter(({ name }) => name === 'H' || name === 'V').forEach(

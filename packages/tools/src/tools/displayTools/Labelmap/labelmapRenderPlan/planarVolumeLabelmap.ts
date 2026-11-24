@@ -3,12 +3,12 @@ import {
   type Types,
   Enums,
   cache,
-  utilities,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import { createLabelmapRepresentationUID } from '../labelmapRepresentationUID';
 import type { LabelmapRenderPlanMountResult } from './types';
 
-type PlanarNextVolumeViewport = Types.IViewport<
+type PlanarVolumeViewport = Types.IViewport<
   { orientation?: unknown },
   { blendMode?: Enums.BlendModes; slabThickness?: number }
 > & {
@@ -36,15 +36,15 @@ type PlanarNextVolumeViewport = Types.IViewport<
       role?: 'source' | 'overlay';
     }
   ) => Promise<void>;
-  getSourceDataId?: () => string | undefined;
-  getDisplaySetPresentation?: (dataId: string) =>
+  getSourceDisplaySetId?: () => string | undefined;
+  getDisplaySetPresentation?: (displaySetId: string) =>
     | {
         blendMode?: Enums.BlendModes;
         slabThickness?: number;
       }
     | undefined;
   setDisplaySetPresentation: (
-    dataId: string,
+    displaySetId: string,
     props: {
       blendMode?: Enums.BlendModes;
       slabThickness?: number;
@@ -55,10 +55,10 @@ type PlanarNextVolumeViewport = Types.IViewport<
   type: string;
 };
 
-function isPlanarNextVolumeViewport(
+function isPlanarVolumeViewport(
   viewport: Types.IViewport
-): viewport is PlanarNextVolumeViewport {
-  const candidate = viewport as Partial<PlanarNextVolumeViewport>;
+): viewport is PlanarVolumeViewport {
+  const candidate = viewport as Partial<PlanarVolumeViewport>;
 
   return (
     candidate.type === Enums.ViewportType.PLANAR &&
@@ -79,12 +79,12 @@ async function addLabelmapToPlanarVolumeViewport(args: {
     volumeId?: string;
   }>;
   segmentationId: string;
-  viewport: PlanarNextVolumeViewport;
+  viewport: PlanarVolumeViewport;
   visibility: boolean;
 }): Promise<LabelmapRenderPlanMountResult> {
   const { blendMode, labelmapLayers, segmentationId, viewport, visibility } =
     args;
-  const sourceVolumeRenderMode = getPlanarNextVolumeRenderMode(viewport);
+  const sourceVolumeRenderMode = getPlanarVolumeRenderMode(viewport);
 
   if (!sourceVolumeRenderMode) {
     return;
@@ -98,9 +98,9 @@ async function addLabelmapToPlanarVolumeViewport(args: {
   // A slab-projected source (e.g. MIP) shows structures from the whole slab, so
   // the labelmap must project across the same slab or its labels will only
   // reflect the current slice and misalign with what the user sees.
-  const sourceDataId = viewport.getSourceDataId?.();
-  const sourceSlabThickness = sourceDataId
-    ? viewport.getDisplaySetPresentation?.(sourceDataId)?.slabThickness
+  const sourceDisplaySetId = viewport.getSourceDisplaySetId?.();
+  const sourceSlabThickness = sourceDisplaySetId
+    ? viewport.getDisplaySetPresentation?.(sourceDisplaySetId)?.slabThickness
     : undefined;
   const currentImageIdIndex = Math.max(
     0,
@@ -125,10 +125,9 @@ async function addLabelmapToPlanarVolumeViewport(args: {
       segmentationId,
       referencedId: layer.labelmapId,
     });
-    const dataId = representationUID;
+    const displaySetId = representationUID;
 
-    utilities.genericViewportDisplaySetMetadataProvider.add(dataId, {
-      kind: 'planar',
+    displaySetRegistry.add(displaySetId, {
       imageIds: volume.imageIds,
       initialImageIdIndex: Math.min(
         currentImageIdIndex,
@@ -143,11 +142,11 @@ async function addLabelmapToPlanarVolumeViewport(args: {
       volumeId: layer.volumeId,
     });
 
-    await viewport.addDisplaySet(dataId, {
+    await viewport.addDisplaySet(displaySetId, {
       orientation: requestedOrientation,
       role: 'overlay',
     });
-    viewport.setDisplaySetPresentation(dataId, {
+    viewport.setDisplaySetPresentation(displaySetId, {
       blendMode,
       visible: visibility,
       ...(sourceSlabThickness !== undefined
@@ -171,8 +170,8 @@ async function addLabelmapToPlanarVolumeViewport(args: {
   }
 }
 
-function getPlanarNextVolumeRenderMode(
-  viewport: PlanarNextVolumeViewport
+function getPlanarVolumeRenderMode(
+  viewport: PlanarVolumeViewport
 ):
   | Types.ActorRenderMode.CPU_VOLUME
   | Types.ActorRenderMode.VTK_VOLUME_SLICE
@@ -191,6 +190,6 @@ function getPlanarNextVolumeRenderMode(
 
 export {
   addLabelmapToPlanarVolumeViewport,
-  isPlanarNextVolumeViewport,
-  type PlanarNextVolumeViewport,
+  isPlanarVolumeViewport,
+  type PlanarVolumeViewport,
 };

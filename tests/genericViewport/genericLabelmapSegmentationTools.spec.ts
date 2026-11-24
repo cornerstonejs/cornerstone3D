@@ -248,7 +248,7 @@ test.describe('Labelmap Segmentation Tools - Next (GPU)', () => {
         viewportId: 'CT_AXIAL',
         constructorName: 'PlanarViewport',
         type: 'planar',
-        renderModesByDataId: {
+        renderModesByDisplaySetId: {
           'labelmap-segmentation-tools-next:source':
             getPlainVolumeSliceRenderMode(),
         },
@@ -258,7 +258,7 @@ test.describe('Labelmap Segmentation Tools - Next (GPU)', () => {
         viewportId: 'CT_SAGITTAL',
         constructorName: 'PlanarViewport',
         type: 'planar',
-        renderModesByDataId: {
+        renderModesByDisplaySetId: {
           'labelmap-segmentation-tools-next:source':
             getPlainVolumeSliceRenderMode(),
         },
@@ -268,7 +268,7 @@ test.describe('Labelmap Segmentation Tools - Next (GPU)', () => {
         viewportId: 'CT_CORONAL',
         constructorName: 'PlanarViewport',
         type: 'planar',
-        renderModesByDataId: {
+        renderModesByDisplaySetId: {
           'labelmap-segmentation-tools-next:source':
             getPlainVolumeSliceRenderMode(),
         },
@@ -319,7 +319,7 @@ test.describe('Labelmap Segmentation Tools - Next (CPU)', () => {
         viewportId: 'CT_AXIAL',
         constructorName: 'PlanarViewport',
         type: 'planar',
-        renderModesByDataId: {
+        renderModesByDisplaySetId: {
           'labelmap-segmentation-tools-next:source': 'cpuVolume',
         },
       },
@@ -328,7 +328,7 @@ test.describe('Labelmap Segmentation Tools - Next (CPU)', () => {
         viewportId: 'CT_SAGITTAL',
         constructorName: 'PlanarViewport',
         type: 'planar',
-        renderModesByDataId: {
+        renderModesByDisplaySetId: {
           'labelmap-segmentation-tools-next:source': 'cpuVolume',
         },
       },
@@ -337,7 +337,7 @@ test.describe('Labelmap Segmentation Tools - Next (CPU)', () => {
         viewportId: 'CT_CORONAL',
         constructorName: 'PlanarViewport',
         type: 'planar',
-        renderModesByDataId: {
+        renderModesByDisplaySetId: {
           'labelmap-segmentation-tools-next:source': 'cpuVolume',
         },
       },

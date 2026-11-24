@@ -4,7 +4,7 @@ import {
   Enums,
   cache,
   volumeLoader,
-  utilities,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 
 import {
@@ -245,13 +245,11 @@ async function run() {
     wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(stackDisplaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(stackDisplaySetId, {
     imageIds,
     initialImageIdIndex: 0,
   });
-  utilities.genericViewportDisplaySetMetadataProvider.add(volumeDisplaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(volumeDisplaySetId, {
     imageIds,
     volumeId,
   });

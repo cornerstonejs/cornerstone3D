@@ -39,7 +39,7 @@ const LOAD_TIMEOUT_MS = 180000;
 const SWITCH_TIMEOUT_MS = 30000;
 
 type PlanLayer = {
-  dataId: string;
+  displaySetId: string;
   role: string;
   slice: string;
   draw: string;
@@ -48,7 +48,7 @@ type PlanLayer = {
 };
 
 type PlanEvent = {
-  dataId: string;
+  displaySetId: string;
   previous?: PlanLayer;
   current: PlanLayer;
   reason: string;
@@ -62,7 +62,7 @@ type TestWindow = typeof window & {
             getActors: () => unknown[];
             getRenderPlan: () => PlanLayer[];
             setDisplaySetPresentation: (
-              dataId: string,
+              displaySetId: string,
               props: { slabThickness?: number; blendMode?: number }
             ) => void;
             render: () => void;
@@ -165,8 +165,8 @@ function getPlan(page: Page): Promise<PlanLayer[]> {
 async function getPlanSummary(page: Page): Promise<string[][]> {
   const plan = await getPlan(page);
 
-  return [CT_DATA_ID, PT_DATA_ID].map((dataId) => {
-    const layer = plan.find((entry) => entry.dataId === dataId);
+  return [CT_DATA_ID, PT_DATA_ID].map((displaySetId) => {
+    const layer = plan.find((entry) => entry.displaySetId === displaySetId);
 
     return layer
       ? [layer.slice, layer.draw, layer.renderMode, layer.reason]
@@ -206,15 +206,15 @@ async function setCoronalSlab(
   slabThickness: number
 ): Promise<void> {
   await page.evaluate(
-    ({ engineId, viewportId, dataIds, slabThickness }) => {
+    ({ engineId, viewportId, displaySetIds, slabThickness }) => {
       const { cornerstone } = window as TestWindow;
       const viewport = cornerstone
         .getRenderingEngine(engineId)
         .getViewport(viewportId);
       const { BlendModes } = cornerstone.Enums;
 
-      for (const dataId of dataIds) {
-        viewport.setDisplaySetPresentation(dataId, {
+      for (const displaySetId of displaySetIds) {
+        viewport.setDisplaySetPresentation(displaySetId, {
           slabThickness,
           blendMode: slabThickness
             ? BlendModes.MAXIMUM_INTENSITY_BLEND
@@ -227,7 +227,7 @@ async function setCoronalSlab(
     {
       engineId: ENGINE_ID,
       viewportId: CORONAL_VIEWPORT_ID,
-      dataIds: [CT_DATA_ID, PT_DATA_ID],
+      displaySetIds: [CT_DATA_ID, PT_DATA_ID],
       slabThickness,
     }
   );
@@ -395,7 +395,7 @@ async function getHealthyPicture(browser: Browser): Promise<ViewportPixels> {
  */
 async function expectStaysDown(
   page: Page,
-  movedDataId: string,
+  movedDisplaySetId: string,
   ct: string[],
   pt: string[]
 ): Promise<void> {
@@ -412,9 +412,9 @@ async function expectStaysDown(
 
   expect(
     events
-      .filter((event) => event.dataId === movedDataId)
+      .filter((event) => event.displaySetId === movedDisplaySetId)
       .map((event) => event.current.renderMode),
-    `${movedDataId}: render modes during a second slab on and off`
+    `${movedDisplaySetId}: render modes during a second slab on and off`
   ).not.toContain('vtkVolumeSlice');
 }
 
@@ -485,7 +485,7 @@ test.describe('Router: a layer leaves the GPU volume path when its 3D texture ca
       const events = await takePlanEvents(page);
 
       expect(
-        events.map((event) => [event.dataId, event.reason]).sort()
+        events.map((event) => [event.displaySetId, event.reason]).sort()
       ).toEqual([
         [CT_DATA_ID, ctPlan[3]],
         [PT_DATA_ID, 'floatFilter'],
@@ -540,7 +540,7 @@ test.describe('Router: a layer leaves the GPU volume path when its 3D texture ca
     expect(
       events
         .filter((event) => event.previous)
-        .map((event) => [event.dataId, event.reason])
+        .map((event) => [event.displaySetId, event.reason])
         .sort()
     ).toEqual([
       [CT_DATA_ID, 'textureSize'],
@@ -630,9 +630,9 @@ test.describe('Router: a layer leaves the GPU volume path when its 3D texture ca
     expect(
       events
         .filter((event) => event.reason === 'textureFailed')
-        .map((event) => [event.dataId, event.previous?.renderMode])
+        .map((event) => [event.displaySetId, event.previous?.renderMode])
     ).toEqual([[CT_DATA_ID, 'vtkVolumeSlice']]);
-    expect(events.filter((event) => event.dataId === PT_DATA_ID).length).toBe(
+    expect(events.filter((event) => event.displaySetId === PT_DATA_ID).length).toBe(
       1
     );
     expectHealthyPicture(
@@ -697,7 +697,7 @@ test.describe('Router: a layer leaves the GPU volume path when its 3D texture ca
 
     const events = await takePlanEvents(page);
 
-    expect(events.map((event) => [event.dataId, event.reason]).sort()).toEqual([
+    expect(events.map((event) => [event.displaySetId, event.reason]).sort()).toEqual([
       [CT_DATA_ID, 'contextLost'],
       [PT_DATA_ID, 'contextLost'],
     ]);
@@ -711,7 +711,7 @@ test.describe('Router: a layer leaves the GPU volume path when its 3D texture ca
   test('a stack image whose context does not come back is drawn by cpuImage with the GPU picture', async ({
     page,
   }) => {
-    const stackDataId = 'stack-api-next:primary';
+    const stackDisplaySetId = 'stack-api-next:primary';
     const viewportId = 'CT_STACK_GENERIC';
     const stackPlan = async () =>
       (
@@ -723,7 +723,7 @@ test.describe('Router: a layer leaves the GPU volume path when its 3D texture ca
               .getRenderPlan(),
           { engineId: ENGINE_ID, viewportId }
         )
-      ).map((layer) => [layer.dataId, layer.draw, layer.renderMode]);
+      ).map((layer) => [layer.displaySetId, layer.draw, layer.renderMode]);
     const url = createExampleUrl('genericStackAPI.html');
 
     url.searchParams.set('sliceFirst', '1');
@@ -758,14 +758,14 @@ test.describe('Router: a layer leaves the GPU volume path when its 3D texture ca
         }
       );
     }, viewportId);
-    expect(await stackPlan()).toEqual([[stackDataId, 'gpu', 'vtkImage']]);
+    expect(await stackPlan()).toEqual([[stackDisplaySetId, 'gpu', 'vtkImage']]);
 
     const gpu = await readViewportPixels(page, 0, { stableMs: 500 });
 
     expect(await loseWebGLContexts(page)).toBeGreaterThan(0);
     await expect
       .poll(stackPlan, { timeout: SWITCH_TIMEOUT_MS })
-      .toEqual([[stackDataId, 'cpu', 'cpuImage']]);
+      .toEqual([[stackDisplaySetId, 'cpu', 'cpuImage']]);
     await waitForRenderSettled(page, { quietMs: 800, timeout: 30000 });
 
     const events = await takePlanEvents(page);
@@ -779,12 +779,12 @@ test.describe('Router: a layer leaves the GPU volume path when its 3D texture ca
     );
     expect(
       events.map((event) => [
-        event.dataId,
+        event.displaySetId,
         event.previous?.renderMode,
         event.current.renderMode,
         event.reason,
       ])
-    ).toEqual([[stackDataId, 'vtkImage', 'cpuImage', 'contextLost']]);
+    ).toEqual([[stackDisplaySetId, 'vtkImage', 'cpuImage', 'contextLost']]);
     expect(
       countContentPixels(cpu),
       'pixels that are not background'

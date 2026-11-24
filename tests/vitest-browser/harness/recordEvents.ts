@@ -31,7 +31,6 @@ const INTERESTING_DETAIL_KEYS = [
   'previousImageIdIndex',
   'volumeId',
   'displaySetId',
-  'dataId',
   'range',
   'VOILUTFunction',
   'invert',

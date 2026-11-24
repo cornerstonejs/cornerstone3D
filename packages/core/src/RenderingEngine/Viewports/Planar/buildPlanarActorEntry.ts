@@ -7,7 +7,7 @@ import type { PlanarPayload } from './PlanarViewportTypes';
 
 /**
  * Builds an ActorEntry from a planar data payload and the render-path-specific
- * actor/mapper. Clean Next dataset identity lives on dataId and semantic
+ * actor/mapper. The display set id stays on the binding, and semantic
  * derived-data relationships live on `reference`; actor UID stays internal.
  */
 export function buildPlanarActorEntry(
@@ -80,7 +80,7 @@ function getActorEntryReferenceFields(
 function getReferenceId(reference: Exclude<ViewportDataReference, undefined>) {
   switch (reference.kind) {
     case 'data':
-      return reference.dataId;
+      return reference.displaySetId;
     case 'image':
       return reference.imageId;
     case 'volume':

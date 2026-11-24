@@ -116,17 +116,15 @@ function countNewDataEvents(viewport) {
  * volume does not load.
  */
 function registerReplacement(mode, next, failing) {
-  const provider = utilities.genericViewportDisplaySetMetadataProvider;
+  const provider = cornerstone3D.displaySetRegistry;
 
   if (mode === 'stack') {
     provider.add('replacement:next', {
       imageIds: next.imageIds,
-      kind: 'planar',
       initialImageIdIndex: 0,
     });
     provider.add('replacement:failing', {
       imageIds: failing,
-      kind: 'planar',
       initialImageIdIndex: 0,
     });
 
@@ -161,7 +159,7 @@ describe('A replacement of the display sets of a direct next planar viewport who
   afterEach(function () {
     failingImageIds.clear();
     stalls.clear();
-    utilities.genericViewportDisplaySetMetadataProvider.clear();
+    cornerstone3D.displaySetRegistry.clear();
     testUtils.cleanupTestEnvironment({ renderingEngineId });
   });
 
@@ -256,10 +254,10 @@ describe('A replacement of the display sets of a direct next planar viewport who
     );
     await showStack(viewport, shown, SHOWN_SLICE, options);
     registerReplacement('stack', next, failing);
-    utilities.genericViewportDisplaySetMetadataProvider.add(
-      'replacement:older',
-      { imageIds: older, kind: 'planar', initialImageIdIndex: 0 }
-    );
+    cornerstone3D.displaySetRegistry.add('replacement:older', {
+      imageIds: older,
+      initialImageIdIndex: 0,
+    });
 
     const shownScene = sceneOf(viewport);
     const shownPicture = pictureOf(viewport);
@@ -368,7 +366,7 @@ describe('A replacement of the display sets of a direct next planar viewport who
       orientation: OrientationAxis.ACQUISITION,
       renderBackend: 'cpu',
     };
-    const provider = utilities.genericViewportDisplaySetMetadataProvider;
+    const provider = cornerstone3D.displaySetRegistry;
     const renderedScenes = [];
     let failingMount;
     let counting = false;
@@ -376,12 +374,10 @@ describe('A replacement of the display sets of a direct next planar viewport who
     await showStack(viewport, shown, SHOWN_SLICE, options);
     provider.add('replacement:next', {
       imageIds: next.imageIds,
-      kind: 'planar',
       initialImageIdIndex: 0,
     });
     provider.add('replacement:overlay', {
       imageIds: overlay.imageIds,
-      kind: 'planar',
       initialImageIdIndex: 0,
     });
     viewport.element.addEventListener(Events.IMAGE_RENDERED, () => {
@@ -476,7 +472,7 @@ describe('A replacement of the display sets of a direct next planar viewport who
   });
 
   afterEach(function () {
-    utilities.genericViewportDisplaySetMetadataProvider.clear();
+    cornerstone3D.displaySetRegistry.clear();
     testUtils.cleanupTestEnvironment({ renderingEngineId });
   });
 
@@ -498,7 +494,7 @@ describe('A replacement of the display sets of a direct next planar viewport who
         ['evicted:first', first],
         ['evicted:second', second],
       ].forEach(([displaySetId, series]) =>
-        utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+        cornerstone3D.displaySetRegistry.add(displaySetId, {
           imageIds: series.imageIds,
           volumeId: series.volumeId,
         })

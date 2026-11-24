@@ -214,8 +214,8 @@ function _imageChangeEventListener(evt) {
 
     // A planar viewport fires CAMERA_MODIFIED when it scrolls, so the stack
     // labelmap is synced here.
-    const isPlanarNext = viewport.type === Enums.ViewportType.PLANAR;
-    if (!isPlanarNext) {
+    const isPlanar = viewport.type === Enums.ViewportType.PLANAR;
+    if (!isPlanar) {
       perViewportManualTriggers.delete(viewportId);
       return;
     }

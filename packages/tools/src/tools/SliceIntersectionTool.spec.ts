@@ -55,7 +55,7 @@ function createFakePlanarViewport({
   };
   const presentationScale: [number, number] = [1, 1];
 
-  const dataId = `${id}-data`;
+  const displaySetId = `${id}-data`;
   const presentation: { slabThickness?: number; blendMode?: unknown } = {
     slabThickness,
   };
@@ -79,12 +79,12 @@ function createFakePlanarViewport({
     // --- Viewport surface ---
     setDisplaySets: async () => undefined,
     setDisplaySetPresentation: jest.fn(
-      (dataIdArg: string, props: Record<string, unknown>) => {
+      (displaySetIdArg: string, props: Record<string, unknown>) => {
         Object.assign(presentation, props);
       }
     ),
     getDisplaySetPresentation: () => ({ ...presentation }),
-    getSourceDataId: () => dataId,
+    getSourceDisplaySetId: () => displaySetId,
     getDefaultVOIRange: () => undefined,
     setViewState: jest.fn((patch: Record<string, unknown>) => {
       Object.assign(viewState, patch);
@@ -178,7 +178,7 @@ function createFakePlanarViewport({
     _camera: camera,
     _presentation: presentation,
     _viewState: viewState,
-    _dataId: dataId,
+    _displaySetId: displaySetId,
   };
 
   return viewport;
@@ -718,11 +718,11 @@ describe('SliceIntersectionTool', () => {
     );
 
     expect(ctSagittal.setDisplaySetPresentation).toHaveBeenCalledWith(
-      ctSagittal._dataId,
+      ctSagittal._displaySetId,
       expect.objectContaining({ slabThickness: 14 })
     );
     expect(ptSagittal.setDisplaySetPresentation).toHaveBeenCalledWith(
-      ptSagittal._dataId,
+      ptSagittal._displaySetId,
       expect.objectContaining({ slabThickness: 14 })
     );
     expect(axial.setDisplaySetPresentation).not.toHaveBeenCalled();

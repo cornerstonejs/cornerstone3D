@@ -73,7 +73,7 @@ export const MAX_CPU_CANVAS_SLICE_SIZE = 16384;
 /** The parts of one mounted CPU volume slice. */
 type CpuVolumeSliceMount = PlanarSlicePlaneMoves & {
   ctx: PlanarCpuVolumeAdapterContext;
-  dataId: string;
+  displaySetId: string;
   rendering: PlanarCpuVolumeRendering;
   sampler: PlanarSliceSampler;
   draw: PlanarSampledSliceCanvas;
@@ -177,7 +177,7 @@ export class CpuVolumeSliceRenderPath
     };
     const mount: CpuVolumeSliceMount = {
       ctx,
-      dataId: data.id,
+      displaySetId: data.id,
       rendering,
       sampler,
       draw,
@@ -390,10 +390,10 @@ export class CpuVolumeSliceRenderPath
     mount: CpuVolumeSliceMount,
     camera: PlanarViewState | undefined
   ): void {
-    const { ctx, dataId, rendering } = mount;
+    const { ctx, displaySetId, rendering } = mount;
     const projection = resolvePlanarRenderPathProjection({
       ctx,
-      dataId,
+      displaySetId,
       rendering,
       viewState: camera,
     });
@@ -542,7 +542,7 @@ export class CpuVolumeSliceRenderPath
    * work again.
    */
   private restartRestWork(mount: CpuVolumeSliceMount): void {
-    const { ctx, dataId, rendering, sampler } = mount;
+    const { ctx, displaySetId, rendering, sampler } = mount;
 
     mount.cancelRestWork?.();
     mount.cancelRestWork = scheduleSampledSliceRestWork({
@@ -559,7 +559,7 @@ export class CpuVolumeSliceRenderPath
       getNeighbours: (camera) =>
         getNeighbourCameras({
           ctx,
-          dataId,
+          displaySetId,
           rendering,
           lastStep: mount.lastStep,
           camera,

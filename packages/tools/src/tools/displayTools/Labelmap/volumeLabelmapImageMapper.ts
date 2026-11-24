@@ -37,7 +37,7 @@ type PlanarSliceRenderingViewport = SliceRenderingViewport & {
   getActors: () => Types.ActorEntry[];
   addImages: (
     stackInputs: Array<{
-      dataId?: string;
+      displaySetId?: string;
       imageId: string;
       imageData?: vtkImageData;
       reference?: SegmentationReference;
@@ -227,7 +227,7 @@ async function addPlanarLabelmapImageMapperActors(args: {
 
     await viewport.addImages([
       {
-        dataId: representationUID,
+        displaySetId: representationUID,
         imageId: currentImageId,
         imageData: sliceData.imageData,
         reference: {

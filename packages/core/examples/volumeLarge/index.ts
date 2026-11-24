@@ -6,7 +6,7 @@ import {
   setConfiguration,
   getConfiguration,
   cache,
-  utilities,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -188,13 +188,11 @@ async function run() {
   volume.load();
 
   // Set the volume on the viewport
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId, {
     imageIds,
     volumeId,
   });
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId16, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId16, {
     imageIds,
     volumeId: volumeId16,
   });

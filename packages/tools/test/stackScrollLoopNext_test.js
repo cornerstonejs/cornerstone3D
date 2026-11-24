@@ -65,7 +65,7 @@ describe('StackScrollTool on a direct next planar viewport -- ', () => {
       renderingEngineId,
       toolGroupIds: [toolGroupId],
     });
-    utilities.genericViewportDisplaySetMetadataProvider.clear?.();
+    cornerstone3D.displaySetRegistry.clear?.();
   });
 
   const modes = [

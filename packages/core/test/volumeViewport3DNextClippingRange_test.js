@@ -146,7 +146,7 @@ async function showVolume(next) {
     }
   }
 
-  utilities.genericViewportDisplaySetMetadataProvider.add('next3DVolume', {
+  cornerstone3D.displaySetRegistry.add('next3DVolume', {
     imageIds: cache.getVolume(volumeId).imageIds,
     volumeId,
   });
@@ -327,7 +327,7 @@ describe('The clipping range of a direct next 3D viewport -- ', () => {
   });
 
   afterEach(function () {
-    utilities.genericViewportDisplaySetMetadataProvider.clear();
+    cornerstone3D.displaySetRegistry.clear();
 
     if (cache.getGeometry('clippingBox')) {
       cache.removeGeometryLoadObject('clippingBox');

@@ -5,7 +5,7 @@ import {
 } from '../../../utils/test/testUtilsImageLoader';
 import { describe, it, expect, afterEach } from '@jest/globals';
 import PlanarViewport from '../src/RenderingEngine/Viewports/Planar/PlanarViewport';
-import genericViewportDisplaySetMetadataProvider from '../src/utilities/genericViewportDisplaySetMetadataProvider';
+import displaySetRegistry from '../src/RenderingEngine/Viewports/displaySetRegistry';
 import renderingEngineCache from '../src/RenderingEngine/renderingEngineCache';
 import { MPR_CAMERA_VALUES } from '../src/constants';
 
@@ -134,7 +134,7 @@ async function showVolume(viewport, volume, options = {}) {
   const displaySetId = `orientation:${volume.volumeId}`;
 
   addImagePlaneProvider(volume);
-  genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+  displaySetRegistry.add(displaySetId, {
     imageIds: volume.imageIds,
     volumeId: volume.volumeId,
   });
@@ -467,8 +467,7 @@ describe('one rule for the orientation of a direct next planar viewport', () => 
 
     imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader);
     metaData.addProvider(fakeMetaDataProvider, 10000);
-    genericViewportDisplaySetMetadataProvider.add('orientation:stack', {
-      kind: 'planar',
+    displaySetRegistry.add('orientation:stack', {
       imageIds,
       initialImageIdIndex: 1,
     });

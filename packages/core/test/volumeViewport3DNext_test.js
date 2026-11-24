@@ -67,7 +67,7 @@ async function createVolume() {
 async function showVolume(viewport, volumeId) {
   const displaySetId = `next3D:${viewport.id}`;
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+  cornerstone3D.displaySetRegistry.add(displaySetId, {
     imageIds: cache.getVolume(volumeId).imageIds,
     volumeId,
   });

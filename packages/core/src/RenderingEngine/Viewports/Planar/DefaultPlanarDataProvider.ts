@@ -3,13 +3,13 @@ import { isVolumeRenderMode } from '../../helpers/renderBackendRegistry';
 import toCacheVolumeId from '../../helpers/toCacheVolumeId';
 import type { IImage } from '../../../types';
 import type { LoadedData } from '../ViewportArchitectureTypes';
-import { getPlanarDisplaySet } from '../displaySetAccess';
+import { displaySetShapeError, getImageDisplaySet } from '../displaySetAccess';
 import { coreLog } from '../../../utilities/logger';
 import type {
   PlanarDataProvider,
   PlanarDataLoadOptions,
   PlanarPayload,
-  PlanarRegisteredDataSet,
+  PlanarDisplaySetDescriptor,
 } from './PlanarViewportTypes';
 import { loadPlanarStackImage } from './planarStackImageLoad';
 
@@ -17,20 +17,18 @@ const log = coreLog.getLogger('RenderingEngine', 'DefaultPlanarDataProvider');
 
 export class DefaultPlanarDataProvider implements PlanarDataProvider {
   async load(
-    dataId: string,
+    displaySetId: string,
     options?: PlanarDataLoadOptions
   ): Promise<LoadedData<PlanarPayload>> {
-    const dataSet = this.getDataSet(dataId);
+    const dataSet = this.getDataSet(displaySetId);
 
     if (!dataSet) {
-      throw new Error(
-        `[PlanarViewport] No registered planar dataset for ${dataId}`
-      );
+      throw displaySetShapeError('PlanarViewport', displaySetId, 'imageIds');
     }
 
     if (!options) {
       throw new Error(
-        `[PlanarViewport] No load options were provided for ${dataId}`
+        `[PlanarViewport] No load options were provided for ${displaySetId}`
       );
     }
 
@@ -82,7 +80,7 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
       }
 
       return {
-        id: dataId,
+        id: displaySetId,
         type: 'image',
         imageIds,
         initialImageIdIndex: volumeInitialImageIdIndex,
@@ -103,7 +101,7 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
         : await loadFirstStackImage(dataSet.imageIds, clampedImageIdIndex);
 
     return {
-      id: dataId,
+      id: displaySetId,
       type: 'image',
       imageIds: dataSet.imageIds,
       image,
@@ -117,10 +115,12 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
     };
   }
 
-  private getDataSet(dataId: string): PlanarRegisteredDataSet | undefined {
-    const dataSet = getPlanarDisplaySet(dataId);
+  private getDataSet(
+    displaySetId: string
+  ): PlanarDisplaySetDescriptor | undefined {
+    const dataSet = getImageDisplaySet(displaySetId);
 
-    if (!isPlanarRegisteredDataSet(dataSet)) {
+    if (!isPlanarDisplaySetDescriptor(dataSet)) {
       return;
     }
 
@@ -128,19 +128,19 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
   }
 }
 
-function isPlanarRegisteredDataSet(
+function isPlanarDisplaySetDescriptor(
   value: unknown
-): value is PlanarRegisteredDataSet {
+): value is PlanarDisplaySetDescriptor {
   if (
     !value ||
     typeof value !== 'object' ||
-    !Array.isArray((value as PlanarRegisteredDataSet).imageIds) ||
-    (value as PlanarRegisteredDataSet).imageIds.length === 0
+    !Array.isArray((value as PlanarDisplaySetDescriptor).imageIds) ||
+    (value as PlanarDisplaySetDescriptor).imageIds.length === 0
   ) {
     return false;
   }
 
-  const dataSet = value as PlanarRegisteredDataSet;
+  const dataSet = value as PlanarDisplaySetDescriptor;
 
   return (
     (dataSet.initialImageIdIndex === undefined ||

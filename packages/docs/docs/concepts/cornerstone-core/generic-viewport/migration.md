@@ -78,8 +78,7 @@ Now:
 ```ts
 const displaySetId = 'ct-stack';
 
-utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-  kind: 'planar',
+displaySetRegistry.add(displaySetId, {
   imageIds,
   initialImageIdIndex: 0,
 });
@@ -114,8 +113,7 @@ Now:
 ```ts
 const displaySetId = 'ct-volume';
 
-utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-  kind: 'planar',
+displaySetRegistry.add(displaySetId, {
   imageIds,
   initialImageIdIndex: Math.floor(imageIds.length / 2),
   volumeId,
@@ -160,14 +158,14 @@ Now, source and overlay are explicit data bindings:
 ```ts
 await viewport.setDisplaySets(
   {
-    displaySetId: ctDataId,
+    displaySetId: ctDisplaySetId,
     options: {
       orientation: Enums.OrientationAxis.SAGITTAL,
       role: 'source',
     },
   },
   {
-    displaySetId: ptDataId,
+    displaySetId: ptDisplaySetId,
     options: {
       orientation: Enums.OrientationAxis.SAGITTAL,
       role: 'overlay',
@@ -175,7 +173,7 @@ await viewport.setDisplaySets(
   }
 );
 
-viewport.setDisplaySetPresentation(ptDataId, {
+viewport.setDisplaySetPresentation(ptDisplaySetId, {
   colormap: {
     name: 'hsv',
     opacity: 0.4,
@@ -194,17 +192,16 @@ viewport.addImages([{ imageId }]);
 Now, prefer registering overlay data and using data presentation:
 
 ```ts
-utilities.genericViewportDisplaySetMetadataProvider.add(overlayDataId, {
-  kind: 'planar',
+displaySetRegistry.add(overlayDisplaySetId, {
   imageIds: [imageId],
   initialImageIdIndex: 0,
 });
 
-await viewport.addDisplaySet(overlayDataId, {
+await viewport.addDisplaySet(overlayDisplaySetId, {
   role: 'overlay',
 });
 
-viewport.setDisplaySetPresentation(overlayDataId, {
+viewport.setDisplaySetPresentation(overlayDisplaySetId, {
   opacity: 0.5,
   visible: true,
 });

@@ -5,8 +5,8 @@ import {
   volumeLoader,
   getRenderingEngine,
   getEnabledElement,
-  utilities,
   viewportProjection,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -507,24 +507,18 @@ async function run() {
   volume.load();
 
   // Set volumes on the viewports
-  utilities.genericViewportDisplaySetMetadataProvider.add(volumeDisplaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(volumeDisplaySetId, {
     imageIds,
     volumeId,
   });
-  utilities.genericViewportDisplaySetMetadataProvider.add(ctStackDisplaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(ctStackDisplaySetId, {
     imageIds,
     initialImageIdIndex: 0,
   });
-  utilities.genericViewportDisplaySetMetadataProvider.add(
-    testStackDisplaySetId,
-    {
-      kind: 'planar',
-      imageIds: stackImageIds,
-      initialImageIdIndex: 0,
-    }
-  );
+  displaySetRegistry.add(testStackDisplaySetId, {
+    imageIds: stackImageIds,
+    initialImageIdIndex: 0,
+  });
 
   await Promise.all(
     [viewportId1, viewportId2, viewportId3].map(async (viewportId) => {

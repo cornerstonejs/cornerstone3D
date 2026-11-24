@@ -56,7 +56,7 @@ export default class WSIViewport extends BaseViewport<
 
   protected renderContext: WSIViewportRenderContext;
 
-  private activeDataId?: string;
+  private activeDisplaySetId?: string;
 
   static get useCustomRenderingPipeline(): boolean {
     return true;
@@ -143,7 +143,7 @@ export default class WSIViewport extends BaseViewport<
         visible: true,
         opacity: 1,
       });
-      this.activeDataId = displaySetId;
+      this.activeDisplaySetId = displaySetId;
     }
 
     this.syncCameraFromView();
@@ -162,7 +162,7 @@ export default class WSIViewport extends BaseViewport<
     if (typeof displaySetIdOrProps === 'string') {
       super.setDisplaySetPresentation(displaySetIdOrProps, maybeProps ?? {});
 
-      if (displaySetIdOrProps === this.getActiveDataId()) {
+      if (displaySetIdOrProps === this.getActiveDisplaySetId()) {
         this.applyVOIToRendering();
       }
       return;
@@ -170,7 +170,7 @@ export default class WSIViewport extends BaseViewport<
 
     super.setDisplaySetPresentation(displaySetIdOrProps);
 
-    if (this.getActiveDataId()) {
+    if (this.getActiveDisplaySetId()) {
       this.applyVOIToRendering();
     }
   }
@@ -306,11 +306,11 @@ export default class WSIViewport extends BaseViewport<
   }
 
   getViewReference(_specifier: ViewReferenceSpecifier = {}): ViewReference {
-    const dataId = this.getCurrentBinding()?.data.id;
+    const displaySetId = this.getCurrentBinding()?.data.id;
 
     return {
       FrameOfReferenceUID: this.getFrameOfReferenceUID(),
-      dataId,
+      displaySetId,
       referencedImageId: this.getCurrentImageId(),
       sliceIndex: 0,
     };
@@ -507,7 +507,7 @@ export default class WSIViewport extends BaseViewport<
   }
 
   protected override onDestroy(): void {
-    this.activeDataId = undefined;
+    this.activeDisplaySetId = undefined;
   }
 
   customRenderViewportToCanvas(): void {
@@ -518,11 +518,11 @@ export default class WSIViewport extends BaseViewport<
     // No-op for DOM-driven WSI rendering.
   }
 
-  removeData(dataId: string): void {
-    super.removeData(dataId);
+  removeDisplaySet(displaySetId: string): void {
+    super.removeDisplaySet(displaySetId);
 
-    if (this.activeDataId === dataId) {
-      this.activeDataId = this.bindings.keys().next().value;
+    if (this.activeDisplaySetId === displaySetId) {
+      this.activeDisplaySetId = this.bindings.keys().next().value;
       this.applyVOIToRendering();
     }
   }
@@ -531,13 +531,14 @@ export default class WSIViewport extends BaseViewport<
     | ViewportDataBinding<WSIDataPresentation>
     | undefined {
     return (
-      (this.activeDataId ? this.getBinding(this.activeDataId) : undefined) ??
-      this.getFirstBinding()
+      (this.activeDisplaySetId
+        ? this.getBinding(this.activeDisplaySetId)
+        : undefined) ?? this.getFirstBinding()
     );
   }
 
-  protected getActiveDataId(): string | undefined {
-    return this.activeDataId;
+  protected getActiveDisplaySetId(): string | undefined {
+    return this.activeDisplaySetId;
   }
 
   /**
@@ -560,8 +561,8 @@ export default class WSIViewport extends BaseViewport<
       {
         cameraFocalPoint: camera?.focalPoint,
         viewPlaneNormal: camera?.viewPlaneNormal,
-        dataId: binding.data.id,
-        dataIds: [binding.data.id],
+        displaySetId: binding.data.id,
+        displaySetIds: [binding.data.id],
         frameOfReferenceUID: data.frameOfReferenceUID ?? undefined,
         imageIds: data.imageIds,
         imageURIs: Array.from(data.imageURISet),
@@ -572,9 +573,9 @@ export default class WSIViewport extends BaseViewport<
   }
 
   private applyVOIToRendering(): void {
-    const activeDataId = this.getActiveDataId();
-    const dataPresentation = activeDataId
-      ? this.getDisplaySetPresentation(activeDataId)
+    const activeDisplaySetId = this.getActiveDisplaySetId();
+    const dataPresentation = activeDisplaySetId
+      ? this.getDisplaySetPresentation(activeDisplaySetId)
       : undefined;
     const filter = buildWSIColorTransform(
       dataPresentation?.voiRange || {

@@ -46,7 +46,7 @@ async function registerVolume(displaySetId, { rows, columns, slices }) {
   });
 
   await volumeLoader.createAndCacheVolume(volumeId, { imageIds: [] });
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+  cornerstone3D.displaySetRegistry.add(displaySetId, {
     imageIds: cache.getVolume(volumeId).imageIds,
     volumeId,
   });
@@ -132,7 +132,7 @@ describe('A failed replacement of the display sets of a 3D viewport -- ', () => 
 
   afterEach(function () {
     testUtils.cleanupTestEnvironment({ renderingEngineId });
-    utilities.genericViewportDisplaySetMetadataProvider.clear?.();
+    cornerstone3D.displaySetRegistry.clear?.();
   });
 
   it('rejects and keeps the scene that was shown, as the legacy setVolumes did when a volume was missing', async function () {
@@ -299,7 +299,7 @@ describe('Two replacements of the display sets of a 3D viewport, one after the o
 
   afterEach(function () {
     testUtils.cleanupTestEnvironment({ renderingEngineId });
-    utilities.genericViewportDisplaySetMetadataProvider.clear?.();
+    cornerstone3D.displaySetRegistry.clear?.();
   });
 
   it('keeps the newer scene when the older call loads after the newer call mounted', async function () {
@@ -402,7 +402,7 @@ describe('A replacement of the display sets of a 3D viewport that a newer call c
 
   afterEach(function () {
     testUtils.cleanupTestEnvironment({ renderingEngineId });
-    utilities.genericViewportDisplaySetMetadataProvider.clear?.();
+    cornerstone3D.displaySetRegistry.clear?.();
   });
 
   /**
@@ -529,7 +529,7 @@ describe('A replacement of the display sets of a 3D viewport and its loads -- ',
 
   afterEach(function () {
     testUtils.cleanupTestEnvironment({ renderingEngineId });
-    utilities.genericViewportDisplaySetMetadataProvider.clear?.();
+    cornerstone3D.displaySetRegistry.clear?.();
   });
 
   it('loads each display set once', async function () {
@@ -570,9 +570,7 @@ describe('A replacement of the display sets of a 3D viewport and its loads -- ',
     );
 
     await provider.reached('replacement3D:second');
-    utilities.genericViewportDisplaySetMetadataProvider.remove(
-      'replacement3D:first'
-    );
+    cornerstone3D.displaySetRegistry.remove('replacement3D:first');
     provider.release('replacement3D:second');
     await replacement;
 

@@ -13,9 +13,9 @@ jest.mock('@cornerstonejs/core', () => ({
     getGeometry: jest.fn(),
     removeGeometryLoadObject: jest.fn(),
   },
+  displaySetRegistry: { remove: jest.fn() },
   getEnabledElementByViewportId: jest.fn(),
   utilities: {
-    genericViewportDisplaySetMetadataProvider: { remove: jest.fn() },
     logger: {
       polySegLog: { getLogger: () => ({ warn: jest.fn() }) },
     },

@@ -6,7 +6,7 @@ import {
   metaData,
   getRenderingEngine,
   volumeLoader,
-  utilities,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import { LengthTool, ToolGroupManager } from '@cornerstonejs/tools';
 import {
@@ -206,12 +206,10 @@ async function run() {
 
   renderingEngine.setViewports(viewportInputArray);
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(stackDisplaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(stackDisplaySetId, {
     imageIds,
   });
-  utilities.genericViewportDisplaySetMetadataProvider.add(volumeDisplaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(volumeDisplaySetId, {
     imageIds,
     volumeId,
   });

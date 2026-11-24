@@ -132,7 +132,7 @@ export function getECGProjectionSnapshot(
     adapterId: ECG_PROJECTION_ID,
     canvasHeight,
     canvasWidth,
-    dataId: request.dataId,
+    displaySetId: request.displaySetId,
     frameOfReferenceUID,
     presentation: {
       pan: clonePoint2(rawPan),

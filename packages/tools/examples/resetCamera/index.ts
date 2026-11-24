@@ -4,7 +4,7 @@ import {
   Enums,
   volumeLoader,
   getRenderingEngine,
-  utilities,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
@@ -212,8 +212,7 @@ async function run() {
   const stackViewport =
     renderingEngine.getViewport<PlanarViewport>(viewportIdStack);
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(stackDisplaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(stackDisplaySetId, {
     imageIds: stackImageIds,
     initialImageIdIndex: 10,
   });
@@ -232,8 +231,7 @@ async function run() {
   volume.load();
 
   // Set the volume on the viewport
-  utilities.genericViewportDisplaySetMetadataProvider.add(volumeDisplaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(volumeDisplaySetId, {
     imageIds,
     volumeId,
   });

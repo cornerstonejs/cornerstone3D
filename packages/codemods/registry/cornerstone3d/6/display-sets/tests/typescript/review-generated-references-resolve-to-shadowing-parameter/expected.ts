@@ -1,7 +1,7 @@
 import {
   RenderingEngine,
   utilities,
-  utilities as coreUtilities,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 
 const renderingEngine = new RenderingEngine('engine');
@@ -10,8 +10,7 @@ export async function show(ids: string[], utilities: string) {
   const viewport = renderingEngine.getViewport('CT');
 
   const displaySetId = JSON.stringify([viewport.renderingEngineId, viewport.id, ids[0]]);
-  coreUtilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId, {
     imageIds: ids,
     initialImageIdIndex: 0,
   });

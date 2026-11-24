@@ -57,7 +57,7 @@ export async function expectPlanarLayersDrawOnCpu(
   }
 
   const layersNotOnCpu = await page.evaluate(() => {
-    type RenderPlanLayer = { dataId: string; draw: string; reason: string };
+    type RenderPlanLayer = { displaySetId: string; draw: string; reason: string };
     type PlanViewport = {
       id: string;
       getRenderPlan?: () => RenderPlanLayer[];
@@ -78,7 +78,7 @@ export async function expectPlanarLayersDrawOnCpu(
         .filter((layer) => layer.draw !== 'cpu')
         .map(
           (layer) =>
-            `${viewport.id}/${layer.dataId}: ${layer.draw} (${layer.reason})`
+            `${viewport.id}/${layer.displaySetId}: ${layer.draw} (${layer.reason})`
         )
     );
   });

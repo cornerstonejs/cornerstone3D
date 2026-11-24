@@ -268,7 +268,7 @@ export type RenderModePanelEntry = {
 
 export type RenderModePanelBinding = {
   actorUID?: string;
-  dataId: string;
+  displaySetId: string;
   referencedId?: string;
   renderMode: string;
   role: 'source' | 'overlay' | 'data';
@@ -349,7 +349,7 @@ function orderBindings(
       return roleDelta;
     }
 
-    return a.dataId.localeCompare(b.dataId);
+    return a.displaySetId.localeCompare(b.displaySetId);
   });
 }
 
@@ -452,15 +452,15 @@ function createBindingRow(binding: RenderModePanelBinding): HTMLDivElement {
     );
   }
 
-  appendField(fields, 'data', binding.dataId, 76);
+  appendField(fields, 'data', binding.displaySetId, 76);
 
-  if (binding.actorUID && binding.actorUID !== binding.dataId) {
+  if (binding.actorUID && binding.actorUID !== binding.displaySetId) {
     appendField(fields, 'actor', binding.actorUID, 76);
   }
 
   if (
     binding.referencedId &&
-    binding.referencedId !== binding.dataId &&
+    binding.referencedId !== binding.displaySetId &&
     binding.referencedId !== binding.actorUID
   ) {
     appendField(fields, 'reference', binding.referencedId, 76);

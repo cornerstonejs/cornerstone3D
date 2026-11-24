@@ -93,7 +93,7 @@ export interface ProjectionSnapshot<
   kind: string;
   adapterId: string;
   viewportType?: ViewportType | string;
-  dataId?: string;
+  displaySetId?: string;
   frameOfReferenceUID?: string;
   spaces: ProjectionSpaces;
   transforms?: ProjectionTransforms;
@@ -109,7 +109,7 @@ export interface ProjectionSnapshot<
 export interface ProjectionRequest<TViewport = unknown> {
   viewport: TViewport;
   kind?: string;
-  dataId?: string;
+  displaySetId?: string;
   viewportType?: ViewportType | string;
   selector?: ViewPresentationSelector;
 }

@@ -97,7 +97,7 @@ function createNext3DViewport(renderingEngine, viewportId, options = {}) {
 async function show3D(viewport, series) {
   const displaySetId = `volume3d:${viewport.id}`;
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+  cornerstone3D.displaySetRegistry.add(displaySetId, {
     imageIds: series.imageIds,
     volumeId: series.volumeId,
   });

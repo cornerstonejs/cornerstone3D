@@ -102,7 +102,7 @@ function createViewports(renderingEngine, nextIds) {
 async function showVolumeOnNext(viewport, volumeId, options = {}) {
   const displaySetId = `presentation:${viewport.id}:${volumeId}`;
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+  cornerstone3D.displaySetRegistry.add(displaySetId, {
     imageIds: cache.getVolume(volumeId).imageIds,
     volumeId,
   });
@@ -476,22 +476,22 @@ describe('Planar presentation, a list of opacities in a colormap -- ', () => {
       ];
 
       for (const [index, viewport] of viewports.entries()) {
-        const sourceDataId = await showVolumeOnNext(
+        const sourceDisplaySetId = await showVolumeOnNext(
           viewport,
           sourceId,
           path.options
         );
-        const overlayDataId = `presentation:${viewport.id}:${overlayId}`;
+        const overlayDisplaySetId = `presentation:${viewport.id}:${overlayId}`;
 
-        utilities.genericViewportDisplaySetMetadataProvider.add(overlayDataId, {
+        cornerstone3D.displaySetRegistry.add(overlayDisplaySetId, {
           imageIds: cache.getVolume(overlayId).imageIds,
           volumeId: overlayId,
         });
-        await viewport.addDisplaySet(overlayDataId, path.options);
-        viewport.setDisplaySetPresentation(sourceDataId, {
+        await viewport.addDisplaySet(overlayDisplaySetId, path.options);
+        viewport.setDisplaySetPresentation(sourceDisplaySetId, {
           voiRange: { lower: 0, upper: 252 },
         });
-        viewport.setDisplaySetPresentation(overlayDataId, {
+        viewport.setDisplaySetPresentation(overlayDisplaySetId, {
           voiRange: overlayWindow,
           colormap: colormaps[index],
         });

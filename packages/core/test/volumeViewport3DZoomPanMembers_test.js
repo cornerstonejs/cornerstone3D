@@ -84,7 +84,7 @@ async function showVolume(viewport) {
     }
   }
 
-  utilities.genericViewportDisplaySetMetadataProvider.add('zoomPanMembers3D', {
+  cornerstone3D.displaySetRegistry.add('zoomPanMembers3D', {
     imageIds,
     volumeId,
   });
@@ -295,7 +295,7 @@ describe('getZoom, setZoom, getPan and setPan of a 3D viewport -- ', () => {
   });
 
   afterEach(function () {
-    utilities.genericViewportDisplaySetMetadataProvider.clear();
+    cornerstone3D.displaySetRegistry.clear();
     testUtils.cleanupTestEnvironment({
       renderingEngineId,
       toolGroupIds: ['default'],

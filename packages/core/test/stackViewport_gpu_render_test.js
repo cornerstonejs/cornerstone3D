@@ -69,7 +69,7 @@ function renderAndCapture(vp, element) {
  * where the presentation does not set them.
  */
 function getStackProperties(vp) {
-  const displaySetId = vp.getSourceDataId();
+  const displaySetId = vp.getSourceDisplaySetId();
   const presentation = vp.getDisplaySetPresentation(displaySetId) || {};
 
   return {
@@ -1021,7 +1021,7 @@ describe('renderingCore -- Stack', () => {
             .getDefaultActor()
             .actor.getMapper()
             .getInputData();
-          vp.setDisplaySetPresentation(vp.getSourceDataId(), {
+          vp.setDisplaySetPresentation(vp.getSourceDisplaySetId(), {
             colormap: expectedColormap,
             interpolationType: InterpolationType.NEAREST,
             voiRange: expectedVOIRange,

@@ -170,7 +170,7 @@ import { viewportProjection } from '@cornerstonejs/core';
 
 const projection = viewportProjection.get(viewport, {
   kind: 'planar',
-  dataId,
+  displaySetId,
 });
 ```
 

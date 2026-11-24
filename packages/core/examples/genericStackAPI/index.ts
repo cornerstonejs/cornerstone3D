@@ -3,7 +3,7 @@ import {
   RenderingEngine,
   Enums,
   getRenderingEngine,
-  utilities,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -26,7 +26,7 @@ const { ViewportType, Events } = Enums;
 
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'CT_STACK_GENERIC';
-const stackDataId = 'stack-api-next:primary';
+const stackDisplaySetId = 'stack-api-next:primary';
 
 function parseStackReadyDelayMs(): number {
   const raw = getStringUrlParam('stackReadyDelayMs');
@@ -100,7 +100,7 @@ addToolbarButton({
     const renderingEngine = getRenderingEngine(renderingEngineId);
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-    viewport.setDisplaySetPresentation(stackDataId, {
+    viewport.setDisplaySetPresentation(stackDisplaySetId, {
       voiRange: { upper: 2500, lower: -1500 },
     });
     viewport.render();
@@ -201,9 +201,9 @@ addToolbarButton({
     const renderingEngine = getRenderingEngine(renderingEngineId);
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
     const { invert = false } =
-      viewport.getDisplaySetPresentation(stackDataId) || {};
+      viewport.getDisplaySetPresentation(stackDisplaySetId) || {};
 
-    viewport.setDisplaySetPresentation(stackDataId, {
+    viewport.setDisplaySetPresentation(stackDisplaySetId, {
       invert: !invert,
     });
     viewport.render();
@@ -229,7 +229,7 @@ addToolbarButton({
     const renderingEngine = getRenderingEngine(renderingEngineId);
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-    viewport.setDisplaySetPresentation(stackDataId, {
+    viewport.setDisplaySetPresentation(stackDisplaySetId, {
       colormap: { name: 'hsv' },
     });
     viewport.render();
@@ -243,7 +243,7 @@ addToolbarButton({
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     viewport.resetViewState();
-    viewport.setDisplaySetPresentation(stackDataId, {
+    viewport.setDisplaySetPresentation(stackDisplaySetId, {
       colormap: undefined,
       invert: false,
       voiRange: ctVoiRange,
@@ -277,17 +277,18 @@ async function run() {
   const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
   const stack = [imageIds[0], imageIds[1], imageIds[2]];
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(stackDataId, {
+  displaySetRegistry.add(stackDisplaySetId, {
     imageIds: stack,
-    kind: 'planar',
     initialImageIdIndex: 0,
   });
 
   await viewport.setDisplaySets({
-    displaySetId: stackDataId,
+    displaySetId: stackDisplaySetId,
     options: {},
   });
-  viewport.setDisplaySetPresentation(stackDataId, { voiRange: ctVoiRange });
+  viewport.setDisplaySetPresentation(stackDisplaySetId, {
+    voiRange: ctVoiRange,
+  });
   viewport.render();
 
   const delayMs = parseStackReadyDelayMs();

@@ -54,9 +54,8 @@ async function showStack(viewport) {
     })
   );
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+  cornerstone3D.displaySetRegistry.add(displaySetId, {
     imageIds,
-    kind: 'planar',
     initialImageIdIndex: 0,
   });
   await viewport.setDisplaySets({ displaySetId });
@@ -85,7 +84,7 @@ async function showVolume(viewport, orientation, slices = 12) {
 
   const { imageIds } = cache.getVolume(volumeId);
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+  cornerstone3D.displaySetRegistry.add(displaySetId, {
     imageIds,
     volumeId,
   });
@@ -172,7 +171,7 @@ describe('Scroll events of a planar viewport -- ', () => {
 
   afterEach(function () {
     testUtils.cleanupTestEnvironment({ renderingEngineId });
-    utilities.genericViewportDisplaySetMetadataProvider.clear?.();
+    cornerstone3D.displaySetRegistry.clear?.();
   });
 
   it('fires VOLUME_VIEWPORT_SCROLL inside the volume and VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS past an end in the acquisition plane', async function () {

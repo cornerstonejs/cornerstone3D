@@ -4,6 +4,7 @@ import {
   RenderingEngine,
   imageLoader,
   utilities,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
@@ -500,13 +501,11 @@ async function run() {
 
   const viewport2: PlanarViewport = renderingEngine.getViewport(viewportId2);
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(ctDisplaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(ctDisplaySetId, {
     imageIds: ctImageIds,
     initialImageIdIndex: 0,
   });
-  utilities.genericViewportDisplaySetMetadataProvider.add(mgDisplaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(mgDisplaySetId, {
     imageIds: [...mgImageIds, ctImageIds[2]],
     initialImageIdIndex: 0,
   });

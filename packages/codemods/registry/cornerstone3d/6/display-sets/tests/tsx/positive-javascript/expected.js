@@ -1,4 +1,8 @@
-import { RenderingEngine, Enums, utilities } from '@cornerstonejs/core';
+import {
+  RenderingEngine,
+  Enums,
+  displaySetRegistry,
+} from '@cornerstonejs/core';
 
 async function run(element, imageIds) {
   const renderingEngine = new RenderingEngine('engine');
@@ -12,8 +16,7 @@ async function run(element, imageIds) {
   const viewport = renderingEngine.getViewport('stack');
 
   const displaySetId = JSON.stringify([viewport.renderingEngineId, viewport.id, imageIds[0]]);
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId, {
     imageIds,
     initialImageIdIndex: 0,
   });

@@ -3,7 +3,7 @@ import { describe, it, expect, afterEach, beforeEach } from '@jest/globals';
 import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 import vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 import PlanarViewport from '../src/RenderingEngine/Viewports/Planar/PlanarViewport';
-import genericViewportDisplaySetMetadataProvider from '../src/utilities/genericViewportDisplaySetMetadataProvider';
+import displaySetRegistry from '../src/RenderingEngine/Viewports/displaySetRegistry';
 import renderingEngineCache from '../src/RenderingEngine/renderingEngineCache';
 import getSliceRange from '../src/utilities/getSliceRange';
 import snapFocalPointToSlice from '../src/utilities/snapFocalPointToSlice';
@@ -143,7 +143,7 @@ describe('scrolling a slab on a planar viewport', () => {
         'next'
       ));
       volume = createVolume('scroll-volume');
-      genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+      displaySetRegistry.add(displaySetId, {
         imageIds: volume.imageIds,
         volumeId: volume.volumeId,
       });
@@ -266,7 +266,7 @@ describe('the number of slices of a direct next planar viewport', () => {
         scalarData: new Float32Array(8 * 6 * 20),
       });
 
-      genericViewportDisplaySetMetadataProvider.add('slices', {
+      displaySetRegistry.add('slices', {
         imageIds: volume.imageIds,
         volumeId: volume.volumeId,
       });

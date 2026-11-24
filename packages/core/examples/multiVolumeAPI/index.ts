@@ -5,7 +5,7 @@ import {
   volumeLoader,
   getRenderingEngine,
   eventTarget,
-  utilities,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
@@ -358,13 +358,11 @@ async function run() {
   await ptVolume.load();
 
   // Set the volume on the viewport
-  utilities.genericViewportDisplaySetMetadataProvider.add(ctDisplaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(ctDisplaySetId, {
     imageIds: ctImageIds,
     volumeId: ctVolumeId,
   });
-  utilities.genericViewportDisplaySetMetadataProvider.add(ptDisplaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(ptDisplaySetId, {
     imageIds: ptImageIds,
     volumeId: ptVolumeId,
   });

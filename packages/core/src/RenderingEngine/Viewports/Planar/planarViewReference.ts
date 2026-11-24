@@ -141,7 +141,7 @@ export function getPlanarReferencedImageId(args: {
  */
 export function getPlanarViewReference(args: {
   viewState: PlanarViewState;
-  dataId?: string;
+  displaySetId?: string;
   frameOfReferenceUID: string;
   data?: PlanarPayload;
   rendering?: PlanarRendering;
@@ -176,7 +176,7 @@ export function getPlanarViewReference(args: {
       : undefined;
   const viewReference: ViewReference = {
     FrameOfReferenceUID: frameOfReferenceUID,
-    dataId: args.dataId,
+    displaySetId: args.displaySetId,
     dimensionGroupNumber,
     cameraFocalPoint,
     viewPlaneNormal,

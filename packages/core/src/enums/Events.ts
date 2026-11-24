@@ -321,7 +321,7 @@ enum Events {
    * Triggers on the eventTarget when a BaseViewport render path throws
    * while mounting or rendering data. Like WEBGL_CONTEXT_LOST this is a
    * degradation signal for applications; no automatic backend switch happens.
-   * Detail: `{ renderingEngineId, viewportId, dataId, error }`.
+   * Detail: `{ renderingEngineId, viewportId, displaySetId, error }`.
    */
   RENDER_PATH_ERROR = 'CORNERSTONE_RENDER_PATH_ERROR',
 
@@ -341,7 +341,7 @@ enum Events {
    * (`PlanarViewport.getRenderPlan`): how its slice is made, what draws it,
    * its render mode or the reason. It fires at most once for each layer in
    * one pass of the render path decision, and also for a layer that was just
-   * added. Detail: `{ renderingEngineId, viewportId, dataId, previous,
+   * added. Detail: `{ renderingEngineId, viewportId, displaySetId, previous,
    * current, reason }`.
    * @experimental
    */

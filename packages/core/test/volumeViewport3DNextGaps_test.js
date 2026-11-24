@@ -114,7 +114,7 @@ async function createVolume(name = 'volumeURI') {
 
 /** Registers a display set of the volume for a direct next 3D viewport. */
 function addVolumeDisplaySet(displaySetId, volumeId) {
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+  cornerstone3D.displaySetRegistry.add(displaySetId, {
     imageIds: cache.getVolume(volumeId).imageIds,
     volumeId,
   });

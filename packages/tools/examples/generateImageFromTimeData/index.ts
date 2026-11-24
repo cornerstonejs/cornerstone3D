@@ -4,7 +4,7 @@ import {
   Enums,
   volumeLoader,
   getRenderingEngine,
-  utilities,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -284,19 +284,14 @@ async function run() {
   addDimensionGroupSlider(volume);
 
   // Set the volume on the viewport
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId, {
     imageIds,
     volumeId,
   });
-  utilities.genericViewportDisplaySetMetadataProvider.add(
-    computedDisplaySetId,
-    {
-      kind: 'planar',
-      imageIds: computedVolume.imageIds,
-      volumeId: computedVolumeId,
-    }
-  );
+  displaySetRegistry.add(computedDisplaySetId, {
+    imageIds: computedVolume.imageIds,
+    volumeId: computedVolumeId,
+  });
 
   await viewport.setDisplaySets({ displaySetId });
 

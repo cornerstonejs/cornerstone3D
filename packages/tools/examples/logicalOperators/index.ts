@@ -4,7 +4,7 @@ import {
   Enums,
   getRenderingEngine,
   RenderingEngine,
-  utilities,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
@@ -442,8 +442,7 @@ async function run() {
   );
 
   // Set the stack on the viewport
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId, {
     imageIds: smallStackImageIds,
   });
 

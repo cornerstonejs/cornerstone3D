@@ -49,6 +49,12 @@ that has no entry yet changes nothing.
   `displayTools/Labelmap/labelmapRenderPlan/planarGenericVolumeLabelmap`
   becomes `planarVolumeLabelmap`. A renamed name in such an import keeps its
   local name (`import { resolveViewportVolumeId as resolveGenericViewportVolumeId }`).
+  The module `displayTools/Labelmap/labelmapRenderPlan/volume3DNextLabelmap`
+  becomes `volume3DLabelmap` (`addLabelmapToVolume3DNextViewport` and
+  `isVolume3DNextViewport` become `addLabelmapToVolume3DViewport` and
+  `isVolume3DViewport`), and `isPlanarNextVolumeViewport` and
+  `PlanarNextVolumeViewport` of `planarGenericVolumeLabelmap` become
+  `isPlanarVolumeViewport` and `PlanarVolumeViewport`.
 - Reported, manual: `utilities.isGenericViewport(...)` (true for every
   viewport in 6.0: delete the test and the branch for the other case),
   `renderingEngineExportsV2` (import each class and function by its own
@@ -60,7 +66,45 @@ that has no entry yet changes nothing.
 
 ### Display sets
 
-None yet.
+- `utilities.genericViewportDisplaySetMetadataProvider` becomes
+  `displaySetRegistry`, a top-level export of the core: each access, also
+  through an alias, a namespace or `const { genericViewportDisplaySetMetadataProvider } = utilities`,
+  and its import, which the step drops from `utilities` when nothing else
+  uses it.
+- `get(type, displaySetId)` of the registry becomes `get(displaySetId)`
+  where the type is `VIEWPORT_V2_DISPLAY_SET` or `'genericViewportDisplaySet'`.
+- In a literal that reaches `add` (also through a `const` that holds it):
+  `kind` is deleted and `sourceDataId` becomes `imageId`. A string or an
+  array of image ids as the descriptor becomes `{ imageId }` or
+  `{ imageIds }`.
+- `viewport.removeData(displaySetId)` becomes `removeDisplaySet`, and
+  `viewport.getSourceDataId()` becomes `getSourceDisplaySetId()`, on a
+  viewport that the file shows.
+- `dataId` becomes `displaySetId` where the file shows the object: the
+  value of `viewport.getViewReference()`, a value typed `ViewReference`,
+  `RenderPlanLayer`, `ActorEntry`, `IStackInput`,
+  `RenderPlanChangedEventDetail`, `ProjectionRequest` or
+  `ProjectionSnapshot`, an entry of `viewport.getRenderPlan()` (an index, a
+  `find`, a `for...of`, the first parameter of a callback), the detail of a
+  listener of `RENDER_PLAN_CHANGED` or `RENDER_PATH_ERROR` (and the
+  `rendering` of `IMAGE_RENDERED`), the argument of `addImages`,
+  `isReferenceViewable` and `setViewReference`, and the request and the
+  result of `viewportProjection.get`. A shorthand keeps its value:
+  `{ dataId }` becomes `{ displaySetId: dataId }`. Local names stay.
+- Reported, manual: a descriptor of `add` that is not a literal (`kind` and
+  `sourceDataId` may be in it), a registry in a name that the file writes,
+  a `get` with other arguments or handed on as a metadata provider,
+  `VIEWPORT_V2_DISPLAY_SET` and the string `'genericViewportDisplaySet'`
+  (as in `metaData.get('genericViewportDisplaySet', id)`), an import of
+  the registry from `@cornerstonejs/core/utilities` or of its deleted
+  module, `getActiveDataId()` (never public), `removeData` and
+  `getSourceDataId` on a receiver known by its name only, each other
+  `dataId` of an object in a file that imports Cornerstone, and a member
+  `getSourceDataId`, `removeData`, `getActiveDataId` or `dataId` that a type
+  of the application declares on top of a Cornerstone type (an object type
+  in an intersection with `Types.IViewport`, an interface that extends
+  `Types.ViewReference`): the step renames the uses, the declaration is the
+  application's.
 
 ### Appearance and framing
 

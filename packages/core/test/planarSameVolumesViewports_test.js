@@ -28,7 +28,7 @@ describe('utilities.getVolumeViewportsContainingSameVolumes on direct next plana
 
   afterEach(function () {
     testUtils.cleanupTestEnvironment({ renderingEngineId });
-    utilities.genericViewportDisplaySetMetadataProvider.clear();
+    cornerstone3D.displaySetRegistry.clear();
   });
 
   it('gives the planar viewports that show the same volume in any orientation, the target among them, as the 5.x volume viewports', async function () {
@@ -79,7 +79,7 @@ describe('utilities.getVolumeViewportsContainingSameVolumes on direct next plana
       ['twice:second', series],
       ['twice:other', other],
     ].forEach(([displaySetId, { imageIds, volumeId }]) =>
-      utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+      cornerstone3D.displaySetRegistry.add(displaySetId, {
         imageIds,
         volumeId,
       })

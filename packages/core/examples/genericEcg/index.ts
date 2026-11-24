@@ -1,5 +1,9 @@
 import type { Types, ECGViewport, ECGViewState } from '@cornerstonejs/core';
-import { RenderingEngine, Enums, utilities } from '@cornerstonejs/core';
+import {
+  RenderingEngine,
+  Enums,
+  displaySetRegistry,
+} from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
   initDemo,
@@ -23,7 +27,7 @@ const { ToolGroupManager } = cornerstoneTools;
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'ecgGenericViewport';
 const toolGroupId = 'ecgNextToolGroup';
-const ecgDataId = 'ecg-next:primary';
+const ecgDisplaySetId = 'ecg-next:primary';
 
 const StudyInstanceUID = '1.3.76.13.65829.2.20130125082826.1072139.2';
 const SeriesInstanceUID = '1.3.6.1.4.1.20029.40.20130125105919.5407.1';
@@ -118,11 +122,10 @@ async function run() {
 
   const viewport = renderingEngine.getViewport<ECGViewport>(viewportId);
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(ecgDataId, {
-    kind: 'ecg',
-    sourceDataId: ecgImageId,
+  displaySetRegistry.add(ecgDisplaySetId, {
+    imageId: ecgImageId,
   });
-  await viewport.setDisplaySets({ displaySetId: ecgDataId });
+  await viewport.setDisplaySets({ displaySetId: ecgDisplaySetId });
 
   let activeAnnotationTool: string | null = null;
 

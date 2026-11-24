@@ -4,7 +4,7 @@ import {
   Enums,
   imageLoader,
   eventTarget,
-  utilities,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
@@ -293,8 +293,7 @@ async function run() {
 
   renderingEngine.setViewports([viewportInput]);
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId, {
     imageIds: imageIdsArray,
     initialImageIdIndex: 0,
   });

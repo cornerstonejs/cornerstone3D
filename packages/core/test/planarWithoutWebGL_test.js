@@ -154,10 +154,10 @@ async function showStackWithoutWebGL(engine) {
     element.addEventListener(Events.IMAGE_RENDERED, resolve, { once: true });
   });
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(
-    'withoutWebGL:stack',
-    { kind: 'planar', imageIds: createImageIds(), initialImageIdIndex: 0 }
-  );
+  cornerstone3D.displaySetRegistry.add('withoutWebGL:stack', {
+    imageIds: createImageIds(),
+    initialImageIdIndex: 0,
+  });
   await viewport.setDisplaySets({ displaySetId: 'withoutWebGL:stack' });
   await mounted;
   await waitForDraws();
@@ -186,7 +186,7 @@ describe('A planar viewport on a device without WebGL -- ', () => {
   afterEach(() => {
     engine?.destroy();
     engine = undefined;
-    utilities.genericViewportDisplaySetMetadataProvider.clear();
+    cornerstone3D.displaySetRegistry.clear();
     cache.purgeCache();
     metaData.removeAllProviders();
     imageLoader.unregisterAllImageLoaders();
@@ -217,14 +217,10 @@ describe('A planar viewport on a device without WebGL -- ', () => {
         });
       });
 
-      utilities.genericViewportDisplaySetMetadataProvider.add(
-        'withoutWebGL:stack',
-        {
-          kind: 'planar',
-          imageIds: createImageIds(),
-          initialImageIdIndex: 0,
-        }
-      );
+      cornerstone3D.displaySetRegistry.add('withoutWebGL:stack', {
+        imageIds: createImageIds(),
+        initialImageIdIndex: 0,
+      });
       await viewport.setDisplaySets({ displaySetId: 'withoutWebGL:stack' });
       await rendered;
 

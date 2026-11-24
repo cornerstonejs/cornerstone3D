@@ -5,7 +5,7 @@ import {
   init as csRenderInit,
   metaData,
   setRenderBackend,
-  utilities,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import cornerstoneDICOMImageLoader from '@cornerstonejs/dicom-image-loader';
 import * as cornerstoneTools from '@cornerstonejs/tools';
@@ -168,8 +168,7 @@ function loadAndViewImage(imageId) {
   const stack = [imageId];
   const displaySetId = `localCPU:stack:${imageId}`;
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId, {
     imageIds: stack,
   });
 

@@ -6,7 +6,7 @@ type RuntimeExpectation = {
   viewportId: string;
   constructorName: string;
   type: string;
-  renderModesByDataId: Record<string, string>;
+  renderModesByDisplaySetId: Record<string, string>;
 };
 
 export async function expectViewportRuntime(
@@ -36,15 +36,15 @@ export async function expectViewportRuntime(
           viewportId: item.viewportId,
           constructorName: undefined,
           type: undefined,
-          renderModesByDataId: {},
+          renderModesByDisplaySetId: {},
           error: 'viewport-not-found',
         };
       }
 
-      const renderModesByDataId = Object.fromEntries(
-        Object.keys(item.renderModesByDataId).map((dataId) => [
-          dataId,
-          viewport.getDisplaySetRenderMode?.(dataId),
+      const renderModesByDisplaySetId = Object.fromEntries(
+        Object.keys(item.renderModesByDisplaySetId).map((displaySetId) => [
+          displaySetId,
+          viewport.getDisplaySetRenderMode?.(displaySetId),
         ])
       );
 
@@ -52,7 +52,7 @@ export async function expectViewportRuntime(
         viewportId: item.viewportId,
         constructorName: viewport.constructor?.name,
         type: viewport.type,
-        renderModesByDataId,
+        renderModesByDisplaySetId,
       };
     });
   }, expectations);
@@ -66,9 +66,9 @@ export async function expectViewportRuntime(
     );
     expect(result.type, `${expected.viewportId} type`).toBe(expected.type);
     expect(
-      result.renderModesByDataId,
+      result.renderModesByDisplaySetId,
       `${expected.viewportId} render modes`
-    ).toEqual(expected.renderModesByDataId);
+    ).toEqual(expected.renderModesByDisplaySetId);
   });
 }
 

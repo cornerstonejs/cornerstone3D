@@ -3,7 +3,7 @@ import {
   RenderingEngine,
   Enums,
   metaData,
-  utilities,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import cornerstoneDICOMImageLoader from '@cornerstonejs/dicom-image-loader';
 import * as cornerstoneTools from '@cornerstonejs/tools';
@@ -166,8 +166,7 @@ async function loadAndViewImage(imageId) {
   const stack = convertMultiframeImageIds([imageId]);
   const displaySetId = `local:stack:${imageId}`;
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId, {
     imageIds: stack,
   });
 

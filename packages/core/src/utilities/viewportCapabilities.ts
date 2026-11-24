@@ -116,14 +116,14 @@ function viewportHasDisplaySetApi(viewport: unknown): viewport is IViewport {
  * These live only on the `PlanarViewport` family (not video / WSI / ECG /
  * 3D), so they are gated by a focused guard rather than declared on
  * `IViewport`; narrowing to this lets the VOI-region / livewire tools read
- * the bound dataId and its default VOI without an inline cast.
+ * the bound displaySetId and its default VOI without an inline cast.
  *
  * `getCurrentImageId` is a member of the planar family too. The guard does
  * not test for it.
  */
 export type DisplaySetPresentationViewport = IViewport & {
-  getSourceDataId(): string | undefined;
-  getDefaultVOIRange(dataId?: string): VOIRange | undefined;
+  getSourceDisplaySetId(): string | undefined;
+  getDefaultVOIRange(displaySetId?: string): VOIRange | undefined;
   getCurrentImageId(): string | undefined;
 };
 
@@ -132,7 +132,7 @@ export function viewportSupportsDisplaySetPresentation(
 ): viewport is DisplaySetPresentationViewport {
   return (
     viewportHasDisplaySetApi(viewport) &&
-    viewportHasMethod(viewport, 'getSourceDataId') &&
+    viewportHasMethod(viewport, 'getSourceDisplaySetId') &&
     viewportHasMethod(viewport, 'getDefaultVOIRange')
   );
 }

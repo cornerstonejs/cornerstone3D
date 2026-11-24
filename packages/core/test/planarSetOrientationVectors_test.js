@@ -53,7 +53,7 @@ async function createVolume() {
 async function showVolumeOnNext(viewport, volumeId) {
   const displaySetId = `vectors:${viewport.id}`;
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+  cornerstone3D.displaySetRegistry.add(displaySetId, {
     imageIds: cache.getVolume(volumeId).imageIds,
     volumeId,
   });
@@ -90,7 +90,7 @@ describe('setOrientation with vectors against the legacy volume viewport -- ', (
       renderingEngineId,
       toolGroupIds: ['default'],
     });
-    utilities.genericViewportDisplaySetMetadataProvider.clear?.();
+    cornerstone3D.displaySetRegistry.clear?.();
   });
 
   it('gives on a direct next viewport the same view by setOrientation and by setViewState, for both vectors and for a normal alone', function () {
@@ -151,7 +151,7 @@ describe('One rule for the orientation of a direct next planar viewport -- ', ()
       renderingEngineId,
       toolGroupIds: ['default'],
     });
-    utilities.genericViewportDisplaySetMetadataProvider.clear?.();
+    cornerstone3D.displaySetRegistry.clear?.();
   });
 
   /** The view vectors of the view on display. */

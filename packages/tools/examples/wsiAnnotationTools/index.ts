@@ -1,5 +1,9 @@
 import type { Types, WSIViewport } from '@cornerstonejs/core';
-import { RenderingEngine, Enums, utilities } from '@cornerstonejs/core';
+import {
+  RenderingEngine,
+  Enums,
+  displaySetRegistry,
+} from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import dicomImageLoader from '@cornerstonejs/dicom-image-loader';
 import { api } from 'dicomweb-client';
@@ -182,13 +186,12 @@ async function run() {
   client.getDICOMwebMetadata = (imageId) => wadors.metaDataManager.get(imageId);
 
   // Register WSI data and set it on the viewport
-  const dataId = `wsi:${imageIds[0]}`;
-  utilities.genericViewportDisplaySetMetadataProvider.add(dataId, {
-    kind: 'wsi',
+  const displaySetId = `wsi:${imageIds[0]}`;
+  displaySetRegistry.add(displaySetId, {
     imageIds,
     options: { webClient: client },
   });
-  await viewport.setDisplaySets({ displaySetId: dataId });
+  await viewport.setDisplaySets({ displaySetId: displaySetId });
 
   toolGroup.addViewport(viewportId, renderingEngineId);
 }

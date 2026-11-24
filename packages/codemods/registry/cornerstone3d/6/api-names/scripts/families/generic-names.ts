@@ -93,6 +93,16 @@ const MOVED_MODULES: Record<
       to: `${TOOLS_PACKAGE}/tools/displayTools/Labelmap/labelmapRenderPlan/planarVolumeLabelmap`,
       names: {
         addLabelmapToPlanarGenericViewport: 'addLabelmapToPlanarVolumeViewport',
+        isPlanarNextVolumeViewport: 'isPlanarVolumeViewport',
+        PlanarNextVolumeViewport: 'PlanarVolumeViewport',
+      },
+    },
+  [`${TOOLS_PACKAGE}/tools/displayTools/Labelmap/labelmapRenderPlan/volume3DNextLabelmap`]:
+    {
+      to: `${TOOLS_PACKAGE}/tools/displayTools/Labelmap/labelmapRenderPlan/volume3DLabelmap`,
+      names: {
+        addLabelmapToVolume3DNextViewport: 'addLabelmapToVolume3DViewport',
+        isVolume3DNextViewport: 'isVolume3DViewport',
       },
     },
 };

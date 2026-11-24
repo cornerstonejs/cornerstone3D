@@ -35,12 +35,12 @@ jest.mock('@cornerstonejs/core', () => ({
       logger: { toolsLog: { getLogger: jest.fn(() => logger) } },
       voxelGrid: { voxelGridWithinLimits: jest.fn(() => true) },
       uuidv4: jest.fn(() => 'generated-volume-id'),
-      genericViewportDisplaySetMetadataProvider: {
-        add: jest.fn(),
-        remove: jest.fn(),
-      },
     };
   })(),
+  displaySetRegistry: {
+    add: jest.fn(),
+    remove: jest.fn(),
+  },
   volumeLoader: {
     createAndCacheVolumeFromImages: jest.fn(),
   },
@@ -252,7 +252,7 @@ describe('labelmapRenderPlan', () => {
     const viewport = {
       id: 'viewport-id',
       type: 'planar',
-      removeData: jest.fn(),
+      removeDisplaySet: jest.fn(),
     };
     const segmentation = {
       segmentationId: 'segmentation-id',
@@ -490,7 +490,7 @@ describe('labelmapRenderPlan', () => {
     const viewport = {
       id: 'viewport-id',
       type: 'planar',
-      removeData: jest.fn(),
+      removeDisplaySet: jest.fn(),
     };
     const segmentation = {
       segmentationId: 'segmentation-id',

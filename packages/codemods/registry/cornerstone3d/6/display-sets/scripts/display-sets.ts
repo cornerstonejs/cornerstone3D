@@ -324,7 +324,7 @@ function isWaitedFor(call: Node): boolean {
  * Formats the registration of a planar display set.
  */
 function registration(
-  utilities: string,
+  registry: string,
   idText: string,
   entries: Array<[string, string]>,
   indent: string
@@ -333,7 +333,7 @@ function registration(
     ([key, value]) => `${indent}  ${key === value ? key : `${key}: ${value}`},`
   );
 
-  return `${utilities}.genericViewportDisplaySetMetadataProvider.add(${idText}, {\n${indent}  kind: 'planar',\n${lines.join('\n')}\n${indent}});`;
+  return `${registry}.add(${idText}, {\n${lines.join('\n')}\n${indent}});`;
 }
 
 /**
@@ -436,15 +436,15 @@ function rewriteSetStack(
           : !statementInfo?.awaited
             ? 'not awaited'
             : undefined);
-  const utilities = reason
+  const registry = reason
     ? undefined
-    : run.imports.ensure('utilities', { at: call });
+    : run.imports.ensure('displaySetRegistry', { at: call });
 
-  if (reason || !utilities) {
+  if (reason || !registry) {
     manual.increment(
       site(
         run.root,
-        `setStack: ${reason ?? 'utilities cannot be imported'}`,
+        `setStack: ${reason ?? 'displaySetRegistry cannot be imported'}`,
         call
       )
     );
@@ -484,7 +484,7 @@ function rewriteSetStack(
     ...(listLocal ? [`const ${listLocal} = ${list.text()};`] : []),
     `const ${idLocal} = JSON.stringify([${receiver}.renderingEngineId, ${receiver}.id, ${first}]);`,
     registration(
-      utilities,
+      registry,
       idLocal,
       [
         ['imageIds', listLocal ?? list.text()],
@@ -525,15 +525,15 @@ function rewriteSetVolumes(
           : !statementInfo?.awaited
             ? 'not awaited'
             : undefined)));
-  const utilities = reason
+  const registry = reason
     ? undefined
-    : run.imports.ensure('utilities', { at: call });
+    : run.imports.ensure('displaySetRegistry', { at: call });
 
-  if (reason || !utilities) {
+  if (reason || !registry) {
     manual.increment(
       site(
         run.root,
-        `setVolumes: ${reason ?? 'utilities cannot be imported'}`,
+        `setVolumes: ${reason ?? 'displaySetRegistry cannot be imported'}`,
         call
       )
     );
@@ -545,7 +545,7 @@ function rewriteSetVolumes(
   const id = volumeId.text();
   const edit = replaceStatement(run.rootNode, statement, (indent) => [
     registration(
-      utilities,
+      registry,
       id,
       [
         ['imageIds', imageIds],
@@ -589,15 +589,15 @@ function rewriteSetVolumesForViewports(run: Run, call: Node): boolean {
             : !awaits
               ? 'not awaited'
               : undefined)));
-  const utilities = reason
+  const registry = reason
     ? undefined
-    : run.imports.ensure('utilities', { at: call });
-  const enums = utilities
+    : run.imports.ensure('displaySetRegistry', { at: call });
+  const enums = registry
     ? run.imports.ensure('Enums', { at: call })
     : undefined;
 
-  if (reason || !utilities || !enums) {
-    const missing = utilities ? 'Enums' : 'utilities';
+  if (reason || !registry || !enums) {
+    const missing = registry ? 'Enums' : 'displaySetRegistry';
 
     manual.increment(
       site(
@@ -656,7 +656,7 @@ function rewriteSetVolumesForViewports(run: Run, call: Node): boolean {
     ].join('\n'),
     '',
     registration(
-      utilities,
+      registry,
       id,
       [
         ['imageIds', imageIds],

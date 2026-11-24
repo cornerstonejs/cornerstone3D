@@ -71,9 +71,8 @@ async function mountCpuStack(
 
   const viewport = createNextViewport(renderingEngine, 'cpuScroll');
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(`${id}Stack`, {
+  cornerstone3D.displaySetRegistry.add(`${id}Stack`, {
     imageIds: series.imageIds,
-    kind: 'planar',
     initialImageIdIndex: 0,
   });
   await viewport.setDisplaySets({
@@ -104,7 +103,7 @@ describe('IMAGE_RENDERED of a scroll of a direct next planar viewport that draws
   });
 
   afterEach(function () {
-    utilities.genericViewportDisplaySetMetadataProvider.clear();
+    cornerstone3D.displaySetRegistry.clear();
     testUtils.cleanupTestEnvironment({
       renderingEngineId,
       toolGroupIds: ['default'],

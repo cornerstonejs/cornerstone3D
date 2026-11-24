@@ -118,7 +118,7 @@ export function getPlanarProjectionSnapshot(
     adapterId: PLANAR_PROJECTION_ID,
     canvasHeight,
     canvasWidth,
-    dataId: request.dataId,
+    displaySetId: request.displaySetId,
     displayArea: cloneDisplayArea(displayArea),
     frameOfReferenceUID,
     presentation: {

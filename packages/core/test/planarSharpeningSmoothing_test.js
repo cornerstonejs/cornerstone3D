@@ -365,9 +365,8 @@ async function showNextStack(renderingEngine, renderBackend) {
   );
   const displaySetId = `stack:${utilities.uuidv4()}`;
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+  cornerstone3D.displaySetRegistry.add(displaySetId, {
     imageIds: await createPatternImageIds('nextPattern'),
-    kind: 'planar',
     initialImageIdIndex: 0,
   });
   await viewport.setDisplaySets({
@@ -400,7 +399,7 @@ async function showNextVolume(
   const entries = volumeIds.map((volumeId, index) => {
     const displaySetId = `volume:${utilities.uuidv4()}`;
 
-    utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    cornerstone3D.displaySetRegistry.add(displaySetId, {
       imageIds: cornerstone3D.cache.getVolume(volumeId).imageIds,
       volumeId,
     });

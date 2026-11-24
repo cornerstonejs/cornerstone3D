@@ -311,15 +311,15 @@ type ViewportVOIProperties = {
 };
 
 type ViewportWithDataPresentation = {
-  getSourceDataId?: () => string | undefined;
+  getSourceDisplaySetId?: () => string | undefined;
   getDisplaySetPresentation?: (
-    dataId: string
+    displaySetId: string
   ) => ViewportVOIProperties | undefined;
   setDisplaySetPresentation?: (
-    dataId: string,
+    displaySetId: string,
     props: Partial<ViewportVOIProperties>
   ) => void;
-  getDefaultVOIRange?: (dataId?: string) => Types.VOIRange | undefined;
+  getDefaultVOIRange?: (displaySetId?: string) => Types.VOIRange | undefined;
 };
 
 function getViewportVOIProperties(viewport): ViewportVOIProperties | undefined {
@@ -330,9 +330,11 @@ function getViewportVOIProperties(viewport): ViewportVOIProperties | undefined {
   }
 
   const dataPresentation = target.viewport.getDisplaySetPresentation?.(
-    target.dataId
+    target.displaySetId
   );
-  const defaultVOIRange = target.viewport.getDefaultVOIRange?.(target.dataId);
+  const defaultVOIRange = target.viewport.getDefaultVOIRange?.(
+    target.displaySetId
+  );
 
   return {
     ...(dataPresentation || {}),
@@ -350,20 +352,20 @@ function setViewportVOIProperties(
     return;
   }
 
-  target.viewport.setDisplaySetPresentation?.(target.dataId, props);
+  target.viewport.setDisplaySetPresentation?.(target.displaySetId, props);
 }
 
 function getDataPresentationTarget(viewport):
   | {
       viewport: ViewportWithDataPresentation;
-      dataId: string;
+      displaySetId: string;
     }
   | undefined {
   const presentationViewport = viewport as ViewportWithDataPresentation;
-  const dataId = presentationViewport.getSourceDataId?.();
+  const displaySetId = presentationViewport.getSourceDisplaySetId?.();
 
   if (
-    !dataId ||
+    !displaySetId ||
     typeof presentationViewport.getDisplaySetPresentation !== 'function' ||
     typeof presentationViewport.setDisplaySetPresentation !== 'function'
   ) {
@@ -372,6 +374,6 @@ function getDataPresentationTarget(viewport):
 
   return {
     viewport: presentationViewport,
-    dataId,
+    displaySetId,
   };
 }

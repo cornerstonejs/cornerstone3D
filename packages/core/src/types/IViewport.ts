@@ -256,7 +256,7 @@ export interface ViewReference {
   /**
    * Logical dataset id for the referenced data.
    */
-  dataId?: string;
+  displaySetId?: string;
 
   /**
    * A referenced plane identifies one or more planes.
@@ -549,7 +549,7 @@ interface IViewport<
   /** The mounted display sets, the source first. */
   getDisplaySets(): Array<{ displaySetId: string; options?: unknown }>;
   /** Removes a display set and its presentation, and draws again. */
-  removeData(displaySetId: string): void;
+  removeDisplaySet(displaySetId: string): void;
   /** Changes the presentation of the source display set. */
   setDisplaySetPresentation(props: Partial<TDataPresentation>): void;
   /** Changes the presentation of one display set, for overlays and fusion. */

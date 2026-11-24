@@ -3,7 +3,6 @@ import {
   Enums,
   RenderingEngine,
   imageLoader,
-  utilities,
   viewportProjection,
 } from '@cornerstonejs/core';
 import * as cornerstone from '@cornerstonejs/core';
@@ -248,8 +247,7 @@ async function _handleVolumeViewports(volumeImageIds, renderingEngine) {
   await volume.load();
 
   // Set volumes on the viewports
-  utilities.genericViewportDisplaySetMetadataProvider.add(volumeDisplaySetId, {
-    kind: 'planar',
+  cornerstone.displaySetRegistry.add(volumeDisplaySetId, {
     imageIds: volumeImageIds,
     volumeId,
   });
@@ -342,8 +340,7 @@ async function _handleStackViewports(stackImageIds: string[]) {
 
   const segmentationImageIds = segImages.map((it) => it.imageId);
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(stackDisplaySetId, {
-    kind: 'planar',
+  cornerstone.displaySetRegistry.add(stackDisplaySetId, {
     imageIds: imageIdsArray,
     initialImageIdIndex: 0,
   });

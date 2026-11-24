@@ -1,5 +1,9 @@
 import type { PlanarViewport, Types } from '@cornerstonejs/core';
-import { RenderingEngine, Enums, utilities } from '@cornerstonejs/core';
+import {
+  RenderingEngine,
+  Enums,
+  displaySetRegistry,
+} from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -148,8 +152,7 @@ async function run() {
   const stack = [imageIds[0], imageIds[1], imageIds[2]];
 
   // Set the stack on the viewport
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId, {
     imageIds: stack,
     initialImageIdIndex: 0,
   });

@@ -79,7 +79,7 @@ async function show3DViewport(renderingEngine, volumeId) {
 
   const viewport = renderingEngine.getViewport(viewportId);
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+  cornerstone3D.displaySetRegistry.add(displaySetId, {
     imageIds: cache.getVolume(volumeId).imageIds,
     volumeId,
   });

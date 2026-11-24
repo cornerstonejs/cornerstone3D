@@ -131,7 +131,7 @@ export function getWSIProjectionSnapshot(
     adapterId: WSI_PROJECTION_ID,
     canvasHeight,
     canvasWidth,
-    dataId: request.dataId,
+    displaySetId: request.displaySetId,
     frameOfReferenceUID,
     presentation: {
       position: {

@@ -1,4 +1,8 @@
-import { getEnabledElement, type Types, utilities } from '@cornerstonejs/core';
+import {
+  getEnabledElement,
+  type Types,
+  displaySetRegistry,
+} from '@cornerstonejs/core';
 
 interface Holder {
   viewport: Types.IViewport;
@@ -9,8 +13,7 @@ export async function fromGetter(holder: Holder) {
   const viewport = holder.viewport as Types.IStackViewport;
   const imageIds = holder.images;
   const displaySetId = JSON.stringify([viewport.renderingEngineId, viewport.id, imageIds[0]]);
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId, {
     imageIds,
     initialImageIdIndex: 1,
   });
@@ -25,8 +28,7 @@ export async function fromEnabledElement(
 
   const viewport2 = enabledElement.viewport;
   const displaySetId2 = JSON.stringify([viewport2.renderingEngineId, viewport2.id, ids[0]]);
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId2, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId2, {
     imageIds: ids,
     initialImageIdIndex: 0,
   });

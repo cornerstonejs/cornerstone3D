@@ -3,8 +3,8 @@ import {
   RenderingEngine,
   Enums,
   getRenderingEngine,
-  utilities,
   eventTarget,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -33,7 +33,7 @@ const { MouseBindings } = csToolsEnums;
 const { ViewportType, OrientationAxis } = Enums;
 
 const volumeId = 'cornerstoneStreamingImageVolume:WORLD_CROSSHAIR_CT';
-const mprDataId = 'worldCrosshair:ct-mpr';
+const mprDisplaySetId = 'worldCrosshair:ct-mpr';
 const toolGroupId = 'WORLD_CROSSHAIR_TOOLGROUP_ID';
 const viewportIds = ['CT_AXIAL', 'CT_SAGITTAL', 'CT_CORONAL'];
 const orientations = [
@@ -184,9 +184,8 @@ async function run() {
   });
 
   // One shared volume display set across the three MPR viewports.
-  utilities.genericViewportDisplaySetMetadataProvider.add(mprDataId, {
+  displaySetRegistry.add(mprDisplaySetId, {
     imageIds,
-    kind: 'planar',
     volumeId,
     initialImageIdIndex: Math.floor(imageIds.length / 2),
   });
@@ -197,7 +196,7 @@ async function run() {
         viewportId
       ) as PlanarViewport;
       return viewport.setDisplaySets({
-        displaySetId: mprDataId,
+        displaySetId: mprDisplaySetId,
         options: { orientation: orientations[index] },
       });
     })
@@ -207,7 +206,9 @@ async function run() {
     const viewport = getRenderingEngine(renderingEngineId).getViewport(
       viewportId
     ) as PlanarViewport;
-    viewport.setDisplaySetPresentation(mprDataId, { voiRange: ctVoiRange });
+    viewport.setDisplaySetPresentation(mprDisplaySetId, {
+      voiRange: ctVoiRange,
+    });
   });
 
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);

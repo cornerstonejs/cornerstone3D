@@ -65,7 +65,9 @@ describe('shouldUseLazyLabelmapEditing', () => {
 
     expect(
       isCPUViewport({
-        getRenderPlan: () => [{ dataId: 'ct', role: 'source', draw: 'cpu' }],
+        getRenderPlan: () => [
+          { displaySetId: 'ct', role: 'source', draw: 'cpu' },
+        ],
       } as never)
     ).toBe(true);
   });
@@ -77,8 +79,8 @@ describe('shouldUseLazyLabelmapEditing', () => {
       isCPUViewport({
         ...createViewport(ActorRenderMode.VTK_IMAGE),
         getRenderPlan: () => [
-          { dataId: 'ct', role: 'source', draw: 'gpu' },
-          { dataId: 'pt', role: 'overlay', draw: 'cpu' },
+          { displaySetId: 'ct', role: 'source', draw: 'gpu' },
+          { displaySetId: 'pt', role: 'overlay', draw: 'cpu' },
         ],
       } as never)
     ).toBe(false);
@@ -92,7 +94,9 @@ describe('shouldUseLazyLabelmapEditing', () => {
         ...createViewport(ActorRenderMode.VTK_IMAGE),
         _cpuFallbackEnabledElement: {},
         useCPURendering: true,
-        getRenderPlan: () => [{ dataId: 'ct', role: 'source', draw: 'gpu' }],
+        getRenderPlan: () => [
+          { displaySetId: 'ct', role: 'source', draw: 'gpu' },
+        ],
       } as never)
     ).toBe(false);
   });

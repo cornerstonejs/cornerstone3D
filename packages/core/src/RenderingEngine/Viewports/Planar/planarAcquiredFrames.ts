@@ -132,13 +132,13 @@ export function withAcquiredFrames(
 
   const frameRendering = () =>
     frame?.rendering as PlanarImageMapperRendering | undefined;
-  const isSource = () => ctx.viewport.isCurrentDataId(data.id);
+  const isSource = () => ctx.viewport.isCurrentDisplaySetId(data.id);
   // The image path follows the volume camera, so it never drives the
   // renderer camera or the render mode of the viewport. As an overlay it sends
   // no NEW_IMAGE: the volume path sends the slice events of a scroll.
   const frameCtx = {
     ...ctx,
-    viewport: { ...ctx.viewport, isCurrentDataId: () => false },
+    viewport: { ...ctx.viewport, isCurrentDisplaySetId: () => false },
     display: {
       ...ctx.display,
       activateRenderMode: () => undefined,

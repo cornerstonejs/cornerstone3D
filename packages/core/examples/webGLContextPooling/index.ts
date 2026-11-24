@@ -4,7 +4,7 @@ import {
   Enums,
   init as csRenderInit,
   getRenderingEngine,
-  utilities,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import {
   createImageIdsAndCacheMetaData,
@@ -257,8 +257,7 @@ async function run() {
     toolGroup.addViewport(viewportId, renderingEngineId);
   });
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId, {
     imageIds,
   });
 

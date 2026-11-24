@@ -59,7 +59,7 @@ describe('IMAGE_RENDERED of a direct next planar viewport that draws a stack on 
   });
 
   afterEach(function () {
-    utilities.genericViewportDisplaySetMetadataProvider.clear();
+    cornerstone3D.displaySetRegistry.clear();
     testUtils.cleanupTestEnvironment({
       renderingEngineId,
       toolGroupIds: ['default'],
@@ -72,9 +72,8 @@ describe('IMAGE_RENDERED of a direct next planar viewport that draws a stack on 
       const viewport = createNextViewport(renderingEngine, 'cpuMount');
       const rendered = countRendered(viewport);
 
-      utilities.genericViewportDisplaySetMetadataProvider.add('cpuMountStack', {
+      cornerstone3D.displaySetRegistry.add('cpuMountStack', {
         imageIds: series.imageIds,
-        kind: 'planar',
         initialImageIdIndex: firstIndex,
       });
       await viewport.setDisplaySets({

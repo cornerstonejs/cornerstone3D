@@ -9,6 +9,7 @@ import {
   CONSTANTS,
   getRenderingEngine,
   utilities,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
@@ -61,10 +62,10 @@ const mprViewportIds = [axialViewportId, sagittalViewportId, coronalViewportId];
 
 // The three MPR viewports must share a single display-set id so the migrated
 // Crosshairs tool recognises them as "the same scene" (it compares the view
-// reference dataId, not a legacy actorUID).
-const acqDataId = 'next-showcase:acquisition';
-const mprDataId = 'next-showcase:volume-mpr';
-const volume3dDataId = 'next-showcase:volume-3d';
+// reference displaySetId, not a legacy actorUID).
+const acqDisplaySetId = 'next-showcase:acquisition';
+const mprDisplaySetId = 'next-showcase:volume-mpr';
+const volume3dDisplaySetId = 'next-showcase:volume-3d';
 
 const volumeId = 'cornerstoneStreamingImageVolume:NEXT_SHOWCASE_CT';
 
@@ -435,18 +436,16 @@ async function run() {
   // --------------------------------------------------------------------------
   // Register display-set metadata
   // --------------------------------------------------------------------------
-  utilities.genericViewportDisplaySetMetadataProvider.add(acqDataId, {
+  displaySetRegistry.add(acqDisplaySetId, {
     imageIds,
-    kind: 'planar',
     initialImageIdIndex: middleImageIndex,
   });
-  utilities.genericViewportDisplaySetMetadataProvider.add(mprDataId, {
+  displaySetRegistry.add(mprDisplaySetId, {
     imageIds,
-    kind: 'planar',
     volumeId,
     initialImageIdIndex: middleImageIndex,
   });
-  utilities.genericViewportDisplaySetMetadataProvider.add(volume3dDataId, {
+  displaySetRegistry.add(volume3dDisplaySetId, {
     imageIds,
     volumeId,
   });
@@ -456,40 +455,44 @@ async function run() {
   // --------------------------------------------------------------------------
   const acqViewport = getAcqViewport();
   await acqViewport.setDisplaySets({
-    displaySetId: acqDataId,
+    displaySetId: acqDisplaySetId,
     options: {},
   });
-  acqViewport.setDisplaySetPresentation(acqDataId, { voiRange: ctVoiRange });
+  acqViewport.setDisplaySetPresentation(acqDisplaySetId, {
+    voiRange: ctVoiRange,
+  });
   acqViewport.render();
   console.log(`${LOG} acquisition viewport mounted (stack render path)`);
 
   const [axialViewport, sagittalViewport, coronalViewport] = getMprViewports();
   await Promise.all([
     axialViewport.setDisplaySets({
-      displaySetId: mprDataId,
+      displaySetId: mprDisplaySetId,
       options: { orientation: OrientationAxis.AXIAL },
     }),
     sagittalViewport.setDisplaySets({
-      displaySetId: mprDataId,
+      displaySetId: mprDisplaySetId,
       options: { orientation: OrientationAxis.SAGITTAL },
     }),
     coronalViewport.setDisplaySets({
-      displaySetId: mprDataId,
+      displaySetId: mprDisplaySetId,
       options: { orientation: OrientationAxis.CORONAL },
     }),
   ]);
   getMprViewports().forEach((viewport) => {
-    viewport.setDisplaySetPresentation(mprDataId, { voiRange: ctVoiRange });
+    viewport.setDisplaySetPresentation(mprDisplaySetId, {
+      voiRange: ctVoiRange,
+    });
     viewport.render();
   });
   console.log(`${LOG} MPR viewports mounted (axial/sagittal/coronal volume)`);
 
   const volume3dViewport = getVolume3dViewport();
   await volume3dViewport.setDisplaySets({
-    displaySetId: volume3dDataId,
+    displaySetId: volume3dDisplaySetId,
     options: { renderMode: 'vtkVolume3d' },
   });
-  volume3dViewport.setDisplaySetPresentation(volume3dDataId, {
+  volume3dViewport.setDisplaySetPresentation(volume3dDisplaySetId, {
     sampleDistanceMultiplier: 1,
   });
   applyVolumeRenderingPreset(defaultPresetName);

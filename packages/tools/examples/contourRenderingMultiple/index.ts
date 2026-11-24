@@ -2,9 +2,9 @@ import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
-  utilities,
   volumeLoader,
   getRenderingEngine,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -211,8 +211,7 @@ async function run() {
   volume.load();
 
   // Set volumes on the viewports
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId, {
     imageIds,
     volumeId,
   });

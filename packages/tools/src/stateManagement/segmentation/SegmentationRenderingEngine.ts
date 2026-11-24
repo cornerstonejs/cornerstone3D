@@ -324,9 +324,9 @@ function isProjectionHeavySegmentationViewport(
   // overlay, which inherits the source's slab thickness).
   const planarViewport = viewport as Partial<{
     getActors: () => Types.ActorEntry[];
-    getSourceDataId: () => string | undefined;
+    getSourceDisplaySetId: () => string | undefined;
     getDisplaySetPresentation: (
-      dataId: string
+      displaySetId: string
     ) => { slabThickness?: number } | undefined;
   }>;
 
@@ -334,22 +334,23 @@ function isProjectionHeavySegmentationViewport(
     return false;
   }
 
-  const dataIds: string[] = [];
-  const sourceDataId = planarViewport.getSourceDataId?.();
+  const displaySetIds: string[] = [];
+  const sourceDisplaySetId = planarViewport.getSourceDisplaySetId?.();
 
-  if (sourceDataId) {
-    dataIds.push(sourceDataId);
+  if (sourceDisplaySetId) {
+    displaySetIds.push(sourceDisplaySetId);
   }
 
   planarViewport.getActors?.().forEach((actorEntry) => {
     if (actorEntry.representationUID) {
-      dataIds.push(String(actorEntry.representationUID));
+      displaySetIds.push(String(actorEntry.representationUID));
     }
   });
 
-  return dataIds.some(
-    (dataId) =>
-      (planarViewport.getDisplaySetPresentation(dataId)?.slabThickness ?? 0) > 0
+  return displaySetIds.some(
+    (displaySetId) =>
+      (planarViewport.getDisplaySetPresentation(displaySetId)?.slabThickness ??
+        0) > 0
   );
 }
 

@@ -559,7 +559,7 @@ point of the image on display.
   next planar viewport did not read `asVolume`. In volume mode it has no
   effect.
 - **A view reference crosses between a stack and a volume of the same
-  images.** A next view reference names its display set (`dataId`). A planar
+  images.** A next view reference names its display set (`displaySetId`). A planar
   viewport of another display set that has the image that the reference
   names takes it, as the legacy stack and volume viewports did:
   `isReferenceViewable(viewRef, { withNavigation: true })` is true, and
@@ -637,12 +637,12 @@ point of the image on display.
 - **A reference of a volume is viewable on every display set of that
   volume.** Two display sets that register the same `volumeId` show the same
   voxels, so a viewport of one takes a reference that names the other as its
-  `dataId` and that volume as its `volumeId` as its own reference: its plane
+  `displaySetId` and that volume as its `volumeId` as its own reference: its plane
   and its slice index count, as on the legacy volume viewport, which had no
   display set id. In 5.x the next viewports refused such a reference that
   names no image (a sagittal or a coronal one) with every option.
 - **A reference of an overlay moves the view and keeps the source.** When the
-  display set that a reference names (by `dataId`, `volumeId` or image) is
+  display set that a reference names (by `displaySetId`, `volumeId` or image) is
   an overlay of a planar viewport, as the PET of a fusion,
   `setViewReference` moves the view to the plane and the point of the
   reference, and the source and the order of the layers stay, as on the
@@ -835,7 +835,7 @@ viewport.getRenderPlan();
 ```ts
 [
   {
-    dataId: 'ct',
+    displaySetId: 'ct',
     role: 'source',
     slice: 'cpu',
     draw: 'gpu',
@@ -1076,7 +1076,7 @@ legacy picture within two levels of 255.
   viewport.
 - **A surface is a display set.**
   `viewport.addDisplaySet(geometryId, { renderMode: 'vtkGeometry3d' })` mounts
-  the surface of a geometry of the cache, `viewport.removeData(geometryId)`
+  the surface of a geometry of the cache, `viewport.removeDisplaySet(geometryId)`
   removes it, and its colour, opacity and visibility are its presentation.
   `geometryId` is the key that was given to
   `geometryLoader.loadAndCacheGeometry`, not `geometry.id`: for a mesh loaded
@@ -1088,7 +1088,7 @@ legacy picture within two levels of 255.
   member.
 - **A geometry display set needs no image ids.** Register it as
   `{ geometryId, reference }` with
-  `utilities.genericViewportDisplaySetMetadataProvider.add`, and
+  `displaySetRegistry.add`, and
   `addDisplaySet(displaySetId)` mounts the geometry `geometryId`, with the
   representation UID of the reference on its actor entry. In 5.x such a
   registration needed `imageIds: []`: without it the mount loaded the display
@@ -1363,9 +1363,9 @@ legacy picture within two levels of 255.
 - **`getActors()` and `addImages()`** are on the video viewport again, as on
   the legacy one. `getActors()` lists the images drawn over the video (the
   labelmap image of the frame on display), and
-  `addImages([{ imageId, dataId }])` draws an image of the cache over the
-  video as a labelmap; `removeData(dataId)` takes it away. The labelmap
-  display of the tools calls them. The id of an image is its `dataId`, else
+  `addImages([{ imageId, displaySetId }])` draws an image of the cache over the
+  video as a labelmap; `removeDisplaySet(displaySetId)` takes it away. The labelmap
+  display of the tools calls them. The id of an image is its `displaySetId`, else
   its `representationUID`, else its image id, as on a planar viewport; an
   `actorUID` is not read.
 - **Annotations draw over the video.** The video element sits in the layer
@@ -1590,7 +1590,7 @@ legacy picture within two levels of 255.
   a viewport that shows a volume is mounted only as an overlay display set
   (no `addVolumes`, and edge projection no longer puts the labelmap into the
   volume actor as a second component), and an old labelmap actor goes with
-  `removeData` (no `removeActors`). Every 6.0 viewport already took these
+  `removeDisplaySet` (no `removeActors`). Every 6.0 viewport already took these
   paths. A viewport class of the application, registered with
   `registerViewportType`, that has only the legacy members gets nothing
   from these tools.
@@ -1643,7 +1643,7 @@ error. Narrow first:
 const { viewport } = enabledElement;
 
 if (utilities.viewportSupportsDisplaySetPresentation(viewport)) {
-  const dataId = viewport.getSourceDataId();
+  const displaySetId = viewport.getSourceDisplaySetId();
 }
 
 if (utilities.viewportSupportsImageSlices(viewport)) {

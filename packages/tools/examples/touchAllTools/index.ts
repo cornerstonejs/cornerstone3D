@@ -2,10 +2,10 @@ import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
-  utilities,
   volumeLoader,
   getConfiguration,
   getRenderingCapabilities,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import {
   getBooleanUrlParam,
@@ -838,8 +838,7 @@ async function run() {
 
   volume.load();
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(volumeDisplaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(volumeDisplaySetId, {
     imageIds,
     volumeId,
   });
@@ -853,8 +852,7 @@ async function run() {
     ctPresentation()
   );
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(stackDisplaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(stackDisplaySetId, {
     imageIds,
     initialImageIdIndex: Math.floor(imageIds.length / 2),
   });

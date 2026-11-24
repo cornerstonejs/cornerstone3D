@@ -6,6 +6,7 @@ import {
   setRenderBackend,
   utilities,
   volumeLoader,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import {
   describe,
@@ -20,7 +21,7 @@ import renderingEngineCache from '../../core/src/RenderingEngine/renderingEngine
 import { createPlanarViewportOnStandInEngine } from '../../core/test/utils/planarViewportOnStandInEngine';
 import { resolveLabelmapRenderPlan } from '../src/tools/displayTools/Labelmap/labelmapRenderPlan';
 import { addLabelmapToPlanarVolumeViewport } from '../src/tools/displayTools/Labelmap/labelmapRenderPlan/planarVolumeLabelmap';
-import { addLabelmapToVolume3DNextViewport } from '../src/tools/displayTools/Labelmap/labelmapRenderPlan/volume3DNextLabelmap';
+import { addLabelmapToVolume3DViewport } from '../src/tools/displayTools/Labelmap/labelmapRenderPlan/volume3DLabelmap';
 
 jest.mock(
   '../src/tools/displayTools/Labelmap/labelmapRenderPlan/planarVolumeLabelmap',
@@ -39,16 +40,16 @@ jest.mock(
 );
 
 jest.mock(
-  '../src/tools/displayTools/Labelmap/labelmapRenderPlan/volume3DNextLabelmap',
+  '../src/tools/displayTools/Labelmap/labelmapRenderPlan/volume3DLabelmap',
   () => {
     const actual = jest.requireActual(
-      '../src/tools/displayTools/Labelmap/labelmapRenderPlan/volume3DNextLabelmap'
+      '../src/tools/displayTools/Labelmap/labelmapRenderPlan/volume3DLabelmap'
     );
 
     return {
       ...actual,
-      addLabelmapToVolume3DNextViewport: jest.fn(
-        actual.addLabelmapToVolume3DNextViewport
+      addLabelmapToVolume3DViewport: jest.fn(
+        actual.addLabelmapToVolume3DViewport
       ),
     };
   }
@@ -106,7 +107,7 @@ function createVolumes() {
 
   const displaySetId = `display-set:${sourceVolumeId}`;
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+  displaySetRegistry.add(displaySetId, {
     imageIds: cache.getVolume(sourceVolumeId).imageIds,
     volumeId: sourceVolumeId,
   });
@@ -189,7 +190,7 @@ describe('The volume labelmap mount on the next viewports', () => {
     renderingEngine = undefined;
     setRenderBackend('auto');
     cache.purgeCache();
-    utilities.genericViewportDisplaySetMetadataProvider.clear();
+    displaySetRegistry.clear();
     jest.clearAllMocks();
   });
 
@@ -231,7 +232,7 @@ describe('The volume labelmap mount on the next viewports', () => {
       expect(addLabelmapToPlanarVolumeViewport.mock.calls[0][0].blendMode).toBe(
         blendMode ?? BlendModes.MAXIMUM_INTENSITY_BLEND
       );
-      expect(addLabelmapToVolume3DNextViewport).not.toHaveBeenCalled();
+      expect(addLabelmapToVolume3DViewport).not.toHaveBeenCalled();
       expect(viewport.getDisplaySetRole(labelmapRepresentationUID)).toBe(
         'overlay'
       );
@@ -275,11 +276,11 @@ describe('The volume labelmap mount on the next viewports', () => {
 
       expect(renderPlan.renderMode).toBe('volume');
       expect(renderPlan.isVolumeImageMapper).toBe(false);
-      expect(addLabelmapToVolume3DNextViewport).toHaveBeenCalledTimes(1);
-      expect(addLabelmapToVolume3DNextViewport.mock.calls[0][0].viewport).toBe(
+      expect(addLabelmapToVolume3DViewport).toHaveBeenCalledTimes(1);
+      expect(addLabelmapToVolume3DViewport.mock.calls[0][0].viewport).toBe(
         viewport
       );
-      expect(addLabelmapToVolume3DNextViewport.mock.calls[0][0].blendMode).toBe(
+      expect(addLabelmapToVolume3DViewport.mock.calls[0][0].blendMode).toBe(
         BlendModes.MAXIMUM_INTENSITY_BLEND
       );
       expect(addLabelmapToPlanarVolumeViewport).not.toHaveBeenCalled();

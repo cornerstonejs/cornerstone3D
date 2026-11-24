@@ -10,7 +10,6 @@ import {
   imageLoader,
   setRenderBackend,
   triggerEvent,
-  utilities,
   volumeLoader,
 } from '@cornerstonejs/core';
 import {
@@ -47,9 +46,9 @@ const mprViewportId = 'MPR_AUTO';
 const petViewportId = 'PET_STACK_AUTO';
 const viewportIds = [stackViewportId, mprViewportId, petViewportId];
 
-const stackDataId = 'render-backend-switch:stack';
-const volumeDataId = 'render-backend-switch:volume';
-const petDataId = 'render-backend-switch:pet-stack';
+const stackDisplaySetId = 'render-backend-switch:stack';
+const volumeDisplaySetId = 'render-backend-switch:volume';
+const petDisplaySetId = 'render-backend-switch:pet-stack';
 
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume';
 const volumeId = `${volumeLoaderScheme}:RENDER_BACKEND_SWITCH_CT`;
@@ -393,14 +392,14 @@ async function addSegmentationOverlays(
   );
 }
 
-function describeViewport(viewportId: string, dataId: string): string {
+function describeViewport(viewportId: string, displaySetId: string): string {
   const viewport = getViewport(viewportId);
 
   if (!viewport) {
     return `${viewportId}: (not mounted)`;
   }
 
-  const renderMode = viewport._debug.renderModes[dataId];
+  const renderMode = viewport._debug.renderModes[displaySetId];
   const zoom = viewport.getZoom().toFixed(2);
   const imageIdIndex = viewport.getCurrentImageIdIndex();
 
@@ -411,9 +410,9 @@ function updateStatusPanel(): void {
   statusPanel.innerText = [
     `configured backend: ${getRenderBackend()}`,
     `effective backend:  ${getEffectiveRenderBackend()}`,
-    describeViewport(stackViewportId, stackDataId),
-    describeViewport(mprViewportId, volumeDataId),
-    describeViewport(petViewportId, petDataId),
+    describeViewport(stackViewportId, stackDisplaySetId),
+    describeViewport(mprViewportId, volumeDisplaySetId),
+    describeViewport(petViewportId, petDisplaySetId),
   ].join('\n');
 }
 
@@ -513,13 +512,13 @@ addButtonToToolbar({
   title: 'Set VOI Range',
   onClick: () => {
     const targets: Array<[string, string]> = [
-      [stackViewportId, stackDataId],
-      [mprViewportId, volumeDataId],
+      [stackViewportId, stackDisplaySetId],
+      [mprViewportId, volumeDisplaySetId],
     ];
 
-    for (const [viewportId, dataId] of targets) {
+    for (const [viewportId, displaySetId] of targets) {
       const viewport = getViewport(viewportId);
-      viewport?.setDisplaySetPresentation(dataId, {
+      viewport?.setDisplaySetPresentation(displaySetId, {
         voiRange: { lower: -1500, upper: 2500 },
       });
       viewport?.render();
@@ -600,44 +599,41 @@ async function run() {
 
   ctVolume.load();
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(stackDataId, {
+  cornerstone.displaySetRegistry.add(stackDisplaySetId, {
     imageIds: stack,
-    kind: 'planar',
     initialImageIdIndex: 0,
   });
-  utilities.genericViewportDisplaySetMetadataProvider.add(volumeDataId, {
+  cornerstone.displaySetRegistry.add(volumeDisplaySetId, {
     imageIds: ctImageIds,
-    kind: 'planar',
     initialImageIdIndex: Math.floor(ctImageIds.length / 2),
     volumeId,
   });
-  utilities.genericViewportDisplaySetMetadataProvider.add(petDataId, {
+  cornerstone.displaySetRegistry.add(petDisplaySetId, {
     imageIds: ptStack,
-    kind: 'planar',
     initialImageIdIndex: 0,
   });
 
   const stackViewport = getViewport(stackViewportId);
   await stackViewport.setDisplaySets({
-    displaySetId: stackDataId,
+    displaySetId: stackDisplaySetId,
     options: {},
   });
-  stackViewport.setDisplaySetPresentation(stackDataId, {
+  stackViewport.setDisplaySetPresentation(stackDisplaySetId, {
     voiRange: ctVoiRange,
   });
 
   const mprViewport = getViewport(mprViewportId);
   await mprViewport.setDisplaySets({
-    displaySetId: volumeDataId,
+    displaySetId: volumeDisplaySetId,
     options: { orientation: OrientationAxis.SAGITTAL },
   });
-  mprViewport.setDisplaySetPresentation(volumeDataId, {
+  mprViewport.setDisplaySetPresentation(volumeDisplaySetId, {
     voiRange: ctVoiRange,
   });
 
   const petViewport = getViewport(petViewportId);
   await petViewport.setDisplaySets({
-    displaySetId: petDataId,
+    displaySetId: petDisplaySetId,
     options: {},
   });
 

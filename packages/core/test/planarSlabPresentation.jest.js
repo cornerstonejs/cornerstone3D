@@ -1,6 +1,6 @@
 import * as cornerstone3D from '../src/index';
 import { describe, it, expect, afterEach } from '@jest/globals';
-import genericViewportDisplaySetMetadataProvider from '../src/utilities/genericViewportDisplaySetMetadataProvider';
+import displaySetRegistry from '../src/RenderingEngine/Viewports/displaySetRegistry';
 import { createPlanarViewportOnStandInEngine } from './utils/planarViewportOnStandInEngine';
 
 const { Enums, init, cache, volumeLoader, utilities } = cornerstone3D;
@@ -78,7 +78,7 @@ function createVolumeDisplaySet(volumeId) {
   });
   const displaySetId = `slab:${volumeId}`;
 
-  genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+  displaySetRegistry.add(displaySetId, {
     imageIds: volume.imageIds,
     volumeId,
   });
@@ -93,7 +93,7 @@ describe('Direct next planar viewport and the fidelity of a slab', () => {
     renderingEngine?.destroy();
     renderingEngine = undefined;
     cache.purgeCache();
-    genericViewportDisplaySetMetadataProvider.clear();
+    displaySetRegistry.clear();
   });
 
   const cases = Object.keys(LEGACY_DISPLAY_SPACING).flatMap((orientation) =>
@@ -148,7 +148,7 @@ describe('Direct next planar viewport and the slab step of getTargetVolumeAndSpa
     renderingEngine?.destroy();
     renderingEngine = undefined;
     cache.purgeCache();
-    genericViewportDisplaySetMetadataProvider.clear();
+    displaySetRegistry.clear();
   });
 
   it.each(Object.keys(LEGACY_SLAB_STEP))(

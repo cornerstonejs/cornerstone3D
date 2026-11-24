@@ -62,14 +62,14 @@ export interface ECGGridMetrics {
   channelScale: number;
 }
 
-export async function loadECGWaveform(dataId: string): Promise<{
+export async function loadECGWaveform(displaySetId: string): Promise<{
   waveform: ECGWaveformLike;
   calibration: unknown;
 }> {
-  const ecgModule = metaData.get(MetadataModules.ECG, dataId);
+  const ecgModule = metaData.get(MetadataModules.ECG, displaySetId);
 
   if (!ecgModule?.waveformData?.retrieveBulkData) {
-    throw new Error(`[ECG] No ECG waveform data for ${dataId}`);
+    throw new Error(`[ECG] No ECG waveform data for ${displaySetId}`);
   }
 
   const {
@@ -84,7 +84,7 @@ export async function loadECGWaveform(dataId: string): Promise<{
 
   const channelArrays: Int16Array[] =
     await ecgModule.waveformData.retrieveBulkData();
-  const calibration = metaData.get(MetadataModules.CALIBRATION, dataId);
+  const calibration = metaData.get(MetadataModules.CALIBRATION, displaySetId);
   const channels: ECGChannelLike[] = [];
 
   for (let index = 0; index < numberOfChannels; index++) {

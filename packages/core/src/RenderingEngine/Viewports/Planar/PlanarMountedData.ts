@@ -13,14 +13,14 @@ import type {
 export type PlanarDataBinding = ViewportDataBinding<PlanarDataPresentation>;
 
 export type PlanarMountedDataHost = {
-  getBinding(dataId: string): PlanarDataBinding | undefined;
+  getBinding(displaySetId: string): PlanarDataBinding | undefined;
   getFirstBinding(): PlanarDataBinding | undefined;
   getBindings(): Iterable<[string, PlanarDataBinding]>;
-  removeData(dataId: string): void;
+  removeDisplaySet(displaySetId: string): void;
 };
 
 class PlanarMountedData {
-  private sourceDataId?: string;
+  private sourceDisplaySetId?: string;
 
   constructor(private readonly host: PlanarMountedDataHost) {}
 
@@ -28,69 +28,74 @@ class PlanarMountedData {
     return options.role === 'source' ? 'source' : 'overlay';
   }
 
-  getActiveDataId(): string | undefined {
-    return this.sourceDataId;
+  getSourceDisplaySetId(): string | undefined {
+    return this.sourceDisplaySetId;
   }
 
-  clearActiveDataId(): void {
-    this.sourceDataId = undefined;
+  clearSourceDisplaySetId(): void {
+    this.sourceDisplaySetId = undefined;
   }
 
   getCurrentBinding(): PlanarDataBinding | undefined {
-    if (this.sourceDataId) {
+    if (this.sourceDisplaySetId) {
       return (
-        this.host.getBinding(this.sourceDataId) ?? this.host.getFirstBinding()
+        this.host.getBinding(this.sourceDisplaySetId) ??
+        this.host.getFirstBinding()
       );
     }
 
     return this.host.getFirstBinding();
   }
 
-  getFirstBoundDataId(): string | undefined {
-    for (const [dataId] of this.host.getBindings()) {
-      return dataId;
+  getFirstBoundDisplaySetId(): string | undefined {
+    for (const [displaySetId] of this.host.getBindings()) {
+      return displaySetId;
     }
   }
 
-  hasBinding(dataId: string): boolean {
-    return Boolean(this.host.getBinding(dataId));
+  hasBinding(displaySetId: string): boolean {
+    return Boolean(this.host.getBinding(displaySetId));
   }
 
-  promoteSourceDataId(dataId: string): void {
-    for (const [bindingDataId, binding] of this.host.getBindings()) {
-      binding.role = bindingDataId === dataId ? 'source' : 'overlay';
+  promoteSourceDisplaySetId(displaySetId: string): void {
+    for (const [bindingDisplaySetId, binding] of this.host.getBindings()) {
+      binding.role =
+        bindingDisplaySetId === displaySetId ? 'source' : 'overlay';
     }
 
-    this.sourceDataId = dataId;
+    this.sourceDisplaySetId = displaySetId;
   }
 
-  handleRemovedData(dataId: string): void {
-    if (this.sourceDataId !== dataId) {
+  handleRemovedData(displaySetId: string): void {
+    if (this.sourceDisplaySetId !== displaySetId) {
       return;
     }
 
-    this.sourceDataId = undefined;
+    this.sourceDisplaySetId = undefined;
     this.promoteFirstAvailableBindingToSource();
   }
 
-  removeBindingsExcept(keepDataIds: Set<string>): void {
-    const dataIds = Array.from(this.host.getBindings(), ([dataId]) => dataId);
+  removeBindingsExcept(keepDisplaySetIds: Set<string>): void {
+    const displaySetIds = Array.from(
+      this.host.getBindings(),
+      ([displaySetId]) => displaySetId
+    );
 
-    for (const dataId of dataIds) {
-      if (!keepDataIds.has(dataId)) {
-        this.host.removeData(dataId);
+    for (const displaySetId of displaySetIds) {
+      if (!keepDisplaySetIds.has(displaySetId)) {
+        this.host.removeDisplaySet(displaySetId);
       }
     }
   }
 
-  getActorForDataId(dataId: string): ActorEntry | undefined {
-    const binding = this.host.getBinding(dataId);
+  getActorForDisplaySetId(displaySetId: string): ActorEntry | undefined {
+    const binding = this.host.getBinding(displaySetId);
 
     return binding?.getActorEntry?.(binding.data);
   }
 
-  getBindingActor(dataId: string): unknown {
-    const rendering = this.host.getBinding(dataId)?.rendering as
+  getBindingActor(displaySetId: string): unknown {
+    const rendering = this.host.getBinding(displaySetId)?.rendering as
       | { actor?: unknown; compatibilityActor?: unknown }
       | undefined;
 
@@ -134,33 +139,37 @@ class PlanarMountedData {
     return actorEntries;
   }
 
-  findBindingDataIdByActorEntryUID(actorEntryUID: string): string | undefined {
-    for (const [dataId, binding] of this.host.getBindings()) {
+  findBindingDisplaySetIdByActorEntryUID(
+    actorEntryUID: string
+  ): string | undefined {
+    for (const [displaySetId, binding] of this.host.getBindings()) {
       const actorEntry = binding.getActorEntry?.(binding.data);
 
       if (actorEntry?.uid === actorEntryUID) {
-        return dataId;
+        return displaySetId;
       }
     }
   }
 
-  findDataIdByVolumeId(volumeId: string): string | undefined {
-    for (const [dataId, binding] of this.host.getBindings()) {
+  findDisplaySetIdByVolumeId(volumeId: string): string | undefined {
+    for (const [displaySetId, binding] of this.host.getBindings()) {
       const bindingVolumeId = (
         binding.data as LoadedData<PlanarPayload> | undefined
       )?.volumeId;
 
       if (bindingVolumeId === volumeId) {
-        return dataId;
+        return displaySetId;
       }
     }
   }
 
-  getDefaultVOIRange(dataId?: string): VOIRange | undefined {
-    const targetDataId =
-      dataId ?? this.sourceDataId ?? this.getCurrentBinding()?.data.id;
-    const rendering = targetDataId
-      ? (this.host.getBinding(targetDataId)?.rendering as
+  getDefaultVOIRange(displaySetId?: string): VOIRange | undefined {
+    const targetDisplaySetId =
+      displaySetId ??
+      this.sourceDisplaySetId ??
+      this.getCurrentBinding()?.data.id;
+    const rendering = targetDisplaySetId
+      ? (this.host.getBinding(targetDisplaySetId)?.rendering as
           | { defaultVOIRange?: VOIRange }
           | undefined)
       : undefined;
@@ -173,11 +182,13 @@ class PlanarMountedData {
    * The invert flag that the image of a display set starts with, from its
    * rendering, or undefined when the rendering has none.
    */
-  getDefaultInvert(dataId?: string): boolean | undefined {
-    const targetDataId =
-      dataId ?? this.sourceDataId ?? this.getCurrentBinding()?.data.id;
-    const rendering = targetDataId
-      ? (this.host.getBinding(targetDataId)?.rendering as
+  getDefaultInvert(displaySetId?: string): boolean | undefined {
+    const targetDisplaySetId =
+      displaySetId ??
+      this.sourceDisplaySetId ??
+      this.getCurrentBinding()?.data.id;
+    const rendering = targetDisplaySetId
+      ? (this.host.getBinding(targetDisplaySetId)?.rendering as
           | { defaultInvert?: boolean }
           | undefined)
       : undefined;
@@ -186,10 +197,10 @@ class PlanarMountedData {
   }
 
   private promoteFirstAvailableBindingToSource(): void {
-    const firstBindingDataId = this.getFirstBoundDataId();
+    const firstBindingDisplaySetId = this.getFirstBoundDisplaySetId();
 
-    if (firstBindingDataId) {
-      this.promoteSourceDataId(firstBindingDataId);
+    if (firstBindingDisplaySetId) {
+      this.promoteSourceDisplaySetId(firstBindingDisplaySetId);
     }
   }
 }

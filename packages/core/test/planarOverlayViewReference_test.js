@@ -73,24 +73,24 @@ async function createFusionSeries(name, mode) {
   const ctId = `${name}-ct-${mode}`;
   const ptId = `${name}-pt-${mode}`;
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(
+  cornerstone3D.displaySetRegistry.add(
     ctId,
     mode === 'volume'
       ? { imageIds: ct.imageIds, volumeId: ct.volumeId }
-      : { imageIds: ct.imageIds, kind: 'planar', initialImageIdIndex: 0 }
+      : { imageIds: ct.imageIds, initialImageIdIndex: 0 }
   );
-  utilities.genericViewportDisplaySetMetadataProvider.add(
+  cornerstone3D.displaySetRegistry.add(
     ptId,
     mode === 'volume'
       ? { imageIds: pt.imageIds, volumeId: pt.volumeId }
-      : { imageIds: pt.imageIds, kind: 'planar', initialImageIdIndex: 0 }
+      : { imageIds: pt.imageIds, initialImageIdIndex: 0 }
   );
 
   return { ct, pt, ctId, ptId };
 }
 
 /**
- * A view reference whose `dataId` names a display set that a planar viewport
+ * A view reference whose `displaySetId` names a display set that a planar viewport
  * shows as an overlay, as the PET of a fusion: the legacy volume viewport of
  * 5.18.3 moved its view to the plane and the point of such a reference (from
  * the PET viewport of OHIF's TMTV mode) and kept the CT as its source; its
@@ -111,7 +111,7 @@ describe('A view reference that names an overlay of a planar viewport -- ', () =
       renderingEngineId,
       toolGroupIds: ['default'],
     });
-    utilities.genericViewportDisplaySetMetadataProvider.clear();
+    cornerstone3D.displaySetRegistry.clear();
   });
 
   BACKENDS.forEach(({ name: backendName, options }) => {
@@ -147,7 +147,7 @@ describe('A view reference that names an overlay of a planar viewport -- ', () =
       const actorsBefore = actorOrder(fusion);
       const slicesBefore = fusion.getNumberOfSlices();
 
-      expect(reference.dataId).toBe(ptId);
+      expect(reference.displaySetId).toBe(ptId);
       expect(
         fusion.isReferenceViewable(reference, { withNavigation: true })
       ).toBe(true);
@@ -157,7 +157,7 @@ describe('A view reference that names an overlay of a planar viewport -- ', () =
 
       const focalPoint = fusion.getResolvedView().toICamera().focalPoint;
 
-      expect(fusion.getSourceDataId()).toBe(ctId);
+      expect(fusion.getSourceDisplaySetId()).toBe(ctId);
       expect(layers(fusion)).toEqual(layersBefore);
       expect(actorOrder(fusion)).toEqual(actorsBefore);
       expect(actorsBefore).toEqual([ct.volumeId, pt.volumeId]);
@@ -198,7 +198,7 @@ describe('A view reference that names an overlay of a planar viewport -- ', () =
       const reference = petViewport.getViewReference();
       const layersBefore = layers(fusion);
 
-      expect(reference.dataId).toBe(ptId);
+      expect(reference.displaySetId).toBe(ptId);
       expect(reference.referencedImageId).toBe(pt.imageIds[2]);
       expect(
         fusion.isReferenceViewable(reference, { withNavigation: true })
@@ -208,7 +208,7 @@ describe('A view reference that names an overlay of a planar viewport -- ', () =
       await waitFor(() => fusion.getCurrentImageId() === ct.imageIds[4]);
       await settle(fusion);
 
-      expect(fusion.getSourceDataId()).toBe(ctId);
+      expect(fusion.getSourceDisplaySetId()).toBe(ctId);
       expect(layers(fusion)).toEqual(layersBefore);
       expect(fusion.getImageIds()).toEqual(ct.imageIds);
       expect(fusion.getCurrentImageId()).toBe(ct.imageIds[4]);

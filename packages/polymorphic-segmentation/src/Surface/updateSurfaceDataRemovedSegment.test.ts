@@ -1,7 +1,7 @@
 import {
   cache,
+  displaySetRegistry,
   getEnabledElementByViewportId,
-  utilities,
 } from '@cornerstonejs/core';
 import { computeSurfaceFromLabelmapSegmentation } from './surfaceComputationStrategies';
 import { updateSurfaceData } from './updateSurfaceData';
@@ -17,9 +17,9 @@ jest.mock('@cornerstonejs/core', () => ({
     getGeometry: jest.fn(),
     removeGeometryLoadObject: jest.fn(),
   },
+  displaySetRegistry: { remove: jest.fn() },
   getEnabledElementByViewportId: jest.fn(),
   utilities: {
-    genericViewportDisplaySetMetadataProvider: { remove: jest.fn() },
     logger: {
       polySegLog: { getLogger: () => ({ warn: jest.fn() }) },
     },
@@ -56,13 +56,13 @@ describe('updateSurfaceData with a deleted segment', () => {
     const other = {
       type: 'volume3d',
       getActors: () => createSurfaceActorEntries('other3D'),
-      removeData: jest.fn(),
+      removeDisplaySet: jest.fn(),
       render: jest.fn(),
     };
     const next = {
       type: 'volume3d',
       getActors: () => createSurfaceActorEntries('next3D'),
-      removeData: jest.fn(),
+      removeDisplaySet: jest.fn(),
       render: jest.fn(),
     };
     const surface = { points: [0, 0, 0], polys: [1, 0] };
@@ -94,13 +94,17 @@ describe('updateSurfaceData with a deleted segment', () => {
 
     await updateSurfaceData('seg');
 
-    expect(other.removeData).toHaveBeenCalledTimes(1);
-    expect(other.removeData).toHaveBeenCalledWith('segmentation_seg_surface_2');
-    expect(next.removeData).toHaveBeenCalledTimes(1);
-    expect(next.removeData).toHaveBeenCalledWith('segmentation_seg_surface_2');
-    expect(
-      utilities.genericViewportDisplaySetMetadataProvider.remove
-    ).toHaveBeenCalledWith('segmentation_seg_surface_2');
+    expect(other.removeDisplaySet).toHaveBeenCalledTimes(1);
+    expect(other.removeDisplaySet).toHaveBeenCalledWith(
+      'segmentation_seg_surface_2'
+    );
+    expect(next.removeDisplaySet).toHaveBeenCalledTimes(1);
+    expect(next.removeDisplaySet).toHaveBeenCalledWith(
+      'segmentation_seg_surface_2'
+    );
+    expect(displaySetRegistry.remove).toHaveBeenCalledWith(
+      'segmentation_seg_surface_2'
+    );
     expect(next.render).toHaveBeenCalled();
     expect(cache.removeGeometryLoadObject).toHaveBeenCalledTimes(1);
     expect(cache.removeGeometryLoadObject).toHaveBeenCalledWith(

@@ -116,7 +116,7 @@ async function show3DViewport(renderingEngine, name) {
 
   const viewport = renderingEngine.getViewport('resizeKeepCamera3D');
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+  cornerstone3D.displaySetRegistry.add(displaySetId, {
     imageIds: cache.getVolume(volumeId).imageIds,
     volumeId,
   });
@@ -192,7 +192,7 @@ describe('renderingEngine.resize(immediate, keepCamera) -- ', () => {
   });
 
   afterEach(function () {
-    utilities.genericViewportDisplaySetMetadataProvider.clear();
+    cornerstone3D.displaySetRegistry.clear();
     renderingEngine?.destroy();
     renderingEngine = undefined;
     testUtils.cleanupTestEnvironment({

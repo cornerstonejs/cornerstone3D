@@ -173,10 +173,10 @@ async function run() {
   volume.load();
 
   // Set volumes on the viewports
-  cornerstone.utilities.genericViewportDisplaySetMetadataProvider.add(
-    volumeDisplaySetId,
-    { kind: 'planar', imageIds: volumeImageIds, volumeId }
-  );
+  cornerstone.displaySetRegistry.add(volumeDisplaySetId, {
+    imageIds: volumeImageIds,
+    volumeId,
+  });
 
   const viewport2: PlanarViewport = renderingEngine.getViewport(viewportId2);
 
@@ -185,10 +185,10 @@ async function run() {
 
   const viewport1: PlanarViewport = renderingEngine.getViewport(viewportId1);
 
-  cornerstone.utilities.genericViewportDisplaySetMetadataProvider.add(
-    stackDisplaySetId,
-    { kind: 'planar', imageIds: volumeImageIds, initialImageIdIndex: 67 }
-  );
+  cornerstone.displaySetRegistry.add(stackDisplaySetId, {
+    imageIds: volumeImageIds,
+    initialImageIdIndex: 67,
+  });
 
   await viewport1.setDisplaySets({ displaySetId: stackDisplaySetId });
   cornerstoneTools.utilities.stackContextPrefetch.enable(viewport1.element);

@@ -67,7 +67,7 @@ describe('A planar viewport in volume mode given a part of a view reference -- '
   });
 
   afterEach(function () {
-    utilities.genericViewportDisplaySetMetadataProvider.clear();
+    cornerstone3D.displaySetRegistry.clear();
     testUtils.cleanupTestEnvironment({
       renderingEngineId,
       toolGroupIds: ['default'],

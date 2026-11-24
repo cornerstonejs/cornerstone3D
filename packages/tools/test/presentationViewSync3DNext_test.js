@@ -40,7 +40,7 @@ function create3D(renderingEngine, viewportId) {
 async function show3D(viewport, series) {
   const displaySetId = `volume3D:${viewport.id}`;
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+  cornerstone3D.displaySetRegistry.add(displaySetId, {
     imageIds: series.imageIds,
     volumeId: series.volumeId,
   });
@@ -80,7 +80,7 @@ describe('The presentation view synchronizer with a direct next 3D viewport as i
   afterEach(function () {
     SynchronizerManager.destroySynchronizer(synchronizerId);
     testUtils.cleanupTestEnvironment({ renderingEngineId });
-    utilities.genericViewportDisplaySetMetadataProvider.clear();
+    cornerstone3D.displaySetRegistry.clear();
   });
 
   it('gives a 3D target the zoom and the pan of a 3D source', async function () {

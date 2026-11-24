@@ -1,6 +1,7 @@
 import type { Types, VolumeViewport3D } from '@cornerstonejs/core';
 import {
   cache,
+  displaySetRegistry,
   getEnabledElementByViewportId,
   utilities,
 } from '@cornerstonejs/core';
@@ -80,8 +81,8 @@ function removeSurfaceActors(
   actorEntries: Types.ActorEntry[]
 ): void {
   actorEntries.forEach(({ referencedId }) => {
-    utilities.genericViewportDisplaySetMetadataProvider.remove(referencedId);
-    (viewport as unknown as Types.IViewport).removeData(referencedId);
+    displaySetRegistry.remove(referencedId);
+    (viewport as unknown as Types.IViewport).removeDisplaySet(referencedId);
   });
 }
 

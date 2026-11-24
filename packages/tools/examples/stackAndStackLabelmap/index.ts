@@ -1,10 +1,5 @@
 import type { PlanarViewport } from '@cornerstonejs/core';
-import {
-  Enums,
-  RenderingEngine,
-  imageLoader,
-  utilities,
-} from '@cornerstonejs/core';
+import { Enums, RenderingEngine, imageLoader } from '@cornerstonejs/core';
 import * as cornerstone from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
@@ -191,13 +186,11 @@ async function run() {
   viewport1 = renderingEngine.getViewport(viewportId1);
   const viewport2: PlanarViewport = renderingEngine.getViewport(viewportId2);
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(ctDisplaySetId, {
-    kind: 'planar',
+  cornerstone.displaySetRegistry.add(ctDisplaySetId, {
     imageIds: ctImageIds,
     initialImageIdIndex: 0,
   });
-  utilities.genericViewportDisplaySetMetadataProvider.add(ptDisplaySetId, {
-    kind: 'planar',
+  cornerstone.displaySetRegistry.add(ptDisplaySetId, {
     imageIds: ptImageIds,
     initialImageIdIndex: 0,
   });

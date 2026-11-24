@@ -171,11 +171,12 @@ function getSpacingInNormal(
   useSlabThickness = false
 ): number {
   const planarViewport = viewport as Partial<
-    Pick<PlanarViewport, 'getSourceDataId' | 'getDisplaySetPresentation'>
+    Pick<PlanarViewport, 'getSourceDisplaySetId' | 'getDisplaySetPresentation'>
   >;
-  const sourceDataId = planarViewport.getSourceDataId?.();
-  const slabThickness = sourceDataId
-    ? planarViewport.getDisplaySetPresentation?.(sourceDataId)?.slabThickness
+  const sourceDisplaySetId = planarViewport.getSourceDisplaySetId?.();
+  const slabThickness = sourceDisplaySetId
+    ? planarViewport.getDisplaySetPresentation?.(sourceDisplaySetId)
+        ?.slabThickness
     : undefined;
 
   // See Cornerstone3DConfig.rendering.sliceStepMeasure.

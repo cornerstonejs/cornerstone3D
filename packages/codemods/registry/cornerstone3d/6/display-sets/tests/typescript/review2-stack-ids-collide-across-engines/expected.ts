@@ -1,4 +1,4 @@
-import { RenderingEngine, utilities } from '@cornerstonejs/core';
+import { RenderingEngine, displaySetRegistry } from '@cornerstonejs/core';
 
 const first = new RenderingEngine('a:b');
 const second = new RenderingEngine('a');
@@ -8,15 +8,13 @@ export async function show(imageIds: string[]) {
   const right = second.getViewport('b:c');
 
   const displaySetId = JSON.stringify([left.renderingEngineId, left.id, imageIds[0]]);
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId, {
     imageIds,
     initialImageIdIndex: 0,
   });
   await left.setDisplaySets({ displaySetId });
   const displaySetId2 = JSON.stringify([right.renderingEngineId, right.id, imageIds[0]]);
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId2, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId2, {
     imageIds,
     initialImageIdIndex: 5,
   });

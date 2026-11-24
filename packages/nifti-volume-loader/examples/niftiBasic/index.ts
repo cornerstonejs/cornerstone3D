@@ -3,7 +3,7 @@ import {
   RenderingEngine,
   Enums,
   imageLoader,
-  utilities,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import {
   cornerstoneNiftiImageLoader,
@@ -68,8 +68,7 @@ async function setup() {
 
   const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId1);
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId, {
     imageIds,
   });
 

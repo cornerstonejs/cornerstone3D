@@ -1,4 +1,4 @@
-import { utilities } from '@cornerstonejs/core';
+import { displaySetRegistry } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 export async function getterInTheList(
@@ -17,8 +17,7 @@ export async function getterInTheList(
   const viewport2 = viewport as Types.IStackViewport;
   const imageIds2 = holder.images;
   const displaySetId = JSON.stringify([viewport2.renderingEngineId, viewport2.id, imageIds2[0]]);
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId, {
     imageIds: imageIds2,
     initialImageIdIndex: 0,
   });
@@ -39,8 +38,7 @@ export async function callInTheIndex(
 
   const viewport3 = viewport as Types.IStackViewport;
   const displaySetId2 = JSON.stringify([viewport3.renderingEngineId, viewport3.id, imageIds[0]]);
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId2, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId2, {
     imageIds,
     initialImageIdIndex: pick(),
   });
@@ -54,8 +52,7 @@ export async function writtenParameter(
   const viewport4 = viewport as Types.IStackViewport;
   const imageIds3 = next();
   const displaySetId3 = JSON.stringify([viewport4.renderingEngineId, viewport4.id, imageIds3[0]]);
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId3, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId3, {
     imageIds: imageIds3,
     initialImageIdIndex: 0,
   });
@@ -70,8 +67,7 @@ export async function plainArguments(
   let viewport = first;
 
   const displaySetId4 = JSON.stringify([viewport.renderingEngineId, viewport.id, imageIds[0]]);
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId4, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId4, {
     imageIds,
     initialImageIdIndex: 2,
   });

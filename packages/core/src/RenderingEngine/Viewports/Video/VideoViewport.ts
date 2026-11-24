@@ -35,7 +35,7 @@ import type {
   LoadedData,
   ViewportDataBinding,
 } from '../ViewportArchitectureTypes';
-import { getDisplaySetSourceDataId } from '../displaySetAccess';
+import { getDisplaySetImageId } from '../displaySetAccess';
 import type { ViewReferenceContext } from '../viewReferenceCompatibility';
 import type {
   VideoViewState,
@@ -103,7 +103,7 @@ class VideoViewport extends BaseViewport<
 
   /** The frame image ids that `getImageIds` gave last, and for which video. */
   private frameImageIds?: {
-    dataId: string;
+    displaySetId: string;
     numberOfFrames: number;
     imageIds: string[];
   };
@@ -233,11 +233,11 @@ class VideoViewport extends BaseViewport<
    * Removes a video dataset and rebinds tracking if the primary video changed.
    * An id of an image drawn over the video (`addImages`) removes that image.
    *
-   * @param dataId - Logical dataset id to remove.
+   * @param displaySetId - Logical dataset id to remove.
    */
-  removeData(dataId: string): void {
+  removeDisplaySet(displaySetId: string): void {
     const overlayActors = this.overlayActors.filter(
-      (actorEntry) => actorEntry.uid !== dataId
+      (actorEntry) => actorEntry.uid !== displaySetId
     );
 
     if (overlayActors.length !== this.overlayActors.length) {
@@ -246,11 +246,11 @@ class VideoViewport extends BaseViewport<
       return;
     }
 
-    const firstDataId = this.getFirstBinding()?.data.id;
+    const firstDisplaySetId = this.getFirstBinding()?.data.id;
 
-    super.removeData(dataId);
+    super.removeDisplaySet(displaySetId);
 
-    if (firstDataId === dataId) {
+    if (firstDisplaySetId === displaySetId) {
       this.untrackVideoElement();
       this.trackVideoElement();
     }
@@ -298,12 +298,12 @@ class VideoViewport extends BaseViewport<
       typeof sliceIndex === 'number'
         ? this.getCurrentImageId(sliceIndex)
         : this.getCurrentImageId();
-    const dataId = this.getFirstBinding()?.data.id;
+    const displaySetId = this.getFirstBinding()?.data.id;
     const camera = this.getResolvedView()?.toICamera();
 
     return {
       FrameOfReferenceUID: this.getFrameOfReferenceUID(),
-      dataId,
+      displaySetId,
       dimensionGroupNumber: frameNumber,
       referencedImageId,
       sliceIndex,
@@ -322,15 +322,15 @@ class VideoViewport extends BaseViewport<
   }
 
   getCurrentImageId(index = this.getCurrentImageIdIndex()): string | undefined {
-    const sourceDataId = getDisplaySetSourceDataId(
+    const sourceImageId = getDisplaySetImageId(
       this.getFirstBinding()?.data.id || ''
     );
 
-    if (!sourceDataId) {
+    if (!sourceImageId) {
       return;
     }
 
-    return generateFrameImageId(sourceDataId, index + 1);
+    return generateFrameImageId(sourceImageId, index + 1);
   }
 
   getViewReferenceId(specifier: ViewReferenceSpecifier = {}): string {
@@ -436,9 +436,9 @@ class VideoViewport extends BaseViewport<
    * is a canvas actor in the pixels of the video, drawn on a canvas just above
    * the video with the zoom, the pan and the rotation of the view, as the
    * planar viewport draws a labelmap on the CPU. The id of an image is its
-   * `dataId`, else its `representationUID`, else its image id, as on the
+   * `displaySetId`, else its `representationUID`, else its image id, as on the
    * planar viewport. An input with the id of an image that is drawn already
-   * replaces it, and `removeData` with that id takes it away. The labelmap
+   * replaces it, and `removeDisplaySet` with that id takes it away. The labelmap
    * display of the tools adds the labelmap image of the frame on display.
    *
    * @param stackInputs - The images, by the image id of an image in the
@@ -460,7 +460,7 @@ class VideoViewport extends BaseViewport<
         image
       );
       const uid =
-        (stackInput.dataId as string | undefined) ??
+        stackInput.displaySetId ??
         (stackInput.representationUID as string | undefined) ??
         stackInput.imageId;
 
@@ -592,17 +592,18 @@ class VideoViewport extends BaseViewport<
       return super.getReferenceViewContexts();
     }
 
-    const sourceDataId = getDisplaySetSourceDataId(binding.data.id);
+    const sourceImageId =
+      getDisplaySetImageId(binding.data.id) ?? binding.data.id;
     const frameNumber = this.getFrameNumber();
     const camera = this.getResolvedView()?.toICamera();
 
     return [
       {
-        dataId: binding.data.id,
-        dataIds: [binding.data.id, sourceDataId],
+        displaySetId: binding.data.id,
+        displaySetIds: [binding.data.id, sourceImageId],
         frameOfReferenceUID: this.getFrameOfReferenceUID(),
         imageIds: this.getImageIds(),
-        imageURIs: [withoutFrames(imageIdToURI(sourceDataId))],
+        imageURIs: [withoutFrames(imageIdToURI(sourceImageId))],
         currentImageIdIndex: frameNumber - 1,
         dimensionGroupNumber: frameNumber,
         numDimensionGroups: videoData.numberOfFrames,
@@ -700,13 +701,13 @@ class VideoViewport extends BaseViewport<
    * @param playbackRate - Playback rate to apply to the active dataset.
    */
   setPlaybackRate(playbackRate: number): void {
-    const dataId = this.getFirstBinding()?.data.id;
+    const displaySetId = this.getFirstBinding()?.data.id;
 
-    if (!dataId) {
+    if (!displaySetId) {
       return;
     }
 
-    this.setDisplaySetPresentation(dataId, {
+    this.setDisplaySetPresentation(displaySetId, {
       playbackRate,
     });
   }
@@ -845,38 +846,38 @@ class VideoViewport extends BaseViewport<
    * does not make the ids of every frame again.
    */
   getImageIds(): string[] {
-    const dataId = this.getFirstBinding()?.data.id;
+    const displaySetId = this.getFirstBinding()?.data.id;
     const videoData = this.getVideoData();
 
-    if (!dataId || !videoData) {
+    if (!displaySetId || !videoData) {
       return [];
     }
 
     const { numberOfFrames } = videoData;
 
     if (
-      this.frameImageIds?.dataId === dataId &&
+      this.frameImageIds?.displaySetId === displaySetId &&
       this.frameImageIds.numberOfFrames === numberOfFrames
     ) {
       return this.frameImageIds.imageIds;
     }
 
-    const sourceDataId = getDisplaySetSourceDataId(dataId);
+    const sourceImageId = getDisplaySetImageId(displaySetId) ?? displaySetId;
     let imageIds = Array<string>(numberOfFrames);
 
     for (let frameNumber = 1; frameNumber <= numberOfFrames; frameNumber++) {
       try {
         imageIds[frameNumber - 1] = generateFrameImageId(
-          sourceDataId,
+          sourceImageId,
           frameNumber
         );
       } catch {
-        imageIds = [sourceDataId];
+        imageIds = [sourceImageId];
         break;
       }
     }
 
-    this.frameImageIds = { dataId, numberOfFrames, imageIds };
+    this.frameImageIds = { displaySetId, numberOfFrames, imageIds };
 
     return imageIds;
   }

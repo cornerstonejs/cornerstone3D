@@ -1,0 +1,44 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "14",
+        "rule": "dataId: a member of a type of the application on a Cornerstone type, its name in 6.0 is displaySetId"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "25",
+        "rule": "dataId: if this is a view reference, a render plan layer, an event detail, an actor entry, a stack input or a projection request of Cornerstone, the key is displaySetId"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "6",
+        "rule": "getSourceDataId: a member of a type of the application on a Cornerstone type, its name in 6.0 is getSourceDisplaySetId"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "7",
+        "rule": "removeData: a member of a type of the application on a Cornerstone type, its name in 6.0 is removeDisplaySet"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "8",
+        "rule": "getActiveDataId: a member of a type of the application on a Cornerstone type, never public: on a planar or an ECG viewport getSourceDisplaySetId() gives the same id, and the slide that a whole slide viewport shows has no public getter"
+      },
+      "count": 1
+    }
+  ]
+}

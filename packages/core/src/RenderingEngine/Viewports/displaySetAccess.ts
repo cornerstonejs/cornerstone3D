@@ -1,79 +1,37 @@
 import { Enums, metaData } from '@cornerstonejs/metadata';
-import type { IImage } from '../../types';
+import type { DisplaySetDescriptor } from '../../types/DisplaySetDescriptor';
 import type { WSIClientLike } from '../../utilities/WSIUtilities';
-import genericViewportDisplaySetMetadataProvider from '../../utilities/genericViewportDisplaySetMetadataProvider';
-import type { ViewportDataReference } from './ViewportArchitectureTypes';
+import displaySetRegistry from './displaySetRegistry';
+import type { WSIDisplaySetDescriptor } from './WSI/WSIViewportTypes';
 
-export interface ImageDisplaySet {
+/** A display set descriptor with the image ids that a viewport loads. */
+export interface ImageDisplaySetDescriptor extends DisplaySetDescriptor {
   imageIds: string[];
-  [key: string]: unknown;
-}
-
-export interface PlanarDisplaySet extends ImageDisplaySet {
-  kind?: 'planar';
-  initialImageIdIndex?: number;
-  volumeId?: string;
-  image?: IImage;
-  reference?: ViewportDataReference;
 }
 
 /**
- * A display set from the `DISPLAY_SET` metadata cache, in the shape that the
- * data providers read. `sourceDataId` is the image id of the object to show:
- * `instance.imageId`, else the first underlying image id, else the first image
- * id. `webClient` is the WSI client that the display set carries, if any.
+ * Finds the descriptor of `displaySetId` for a data provider. An entry of
+ * `displaySetRegistry` wins. Otherwise the descriptor comes from the
+ * `DISPLAY_SET` metadata cache, by its display set id.
  */
-export interface CachedDisplaySet extends ImageDisplaySet {
-  sourceDataId: string;
-  webClient?: unknown;
-}
-
-export interface SourceAliasDisplaySet {
-  kind: 'video' | 'ecg';
-  sourceDataId: string;
-}
-
-export interface WSIDisplaySet {
-  kind: 'wsi';
-  imageIds: string[];
-  options: {
-    miniNavigationOverlay?: boolean;
-    webClient: WSIClientLike;
-  };
-}
-
-export type RegisteredDisplaySet =
-  | string
-  | string[]
-  | PlanarDisplaySet
-  | CachedDisplaySet
-  | SourceAliasDisplaySet
-  | WSIDisplaySet;
-
-/**
- * Finds the display set of `displaySetId` for a data provider. An entry of
- * `genericViewportDisplaySetMetadataProvider` wins. Otherwise the display set
- * comes from the `DISPLAY_SET` metadata cache, by its display set id.
- */
-export function getRegisteredDisplaySet(
+export function getDisplaySetDescriptor(
   displaySetId: string
-): RegisteredDisplaySet | undefined {
+): DisplaySetDescriptor | undefined {
   return (
-    (genericViewportDisplaySetMetadataProvider.get(
-      genericViewportDisplaySetMetadataProvider.VIEWPORT_V2_DISPLAY_SET,
-      displaySetId
-    ) as RegisteredDisplaySet | undefined) ?? getCachedDisplaySet(displaySetId)
+    displaySetRegistry.get(displaySetId) ?? getCachedDisplaySet(displaySetId)
   );
 }
 
 /**
  * Reads the `DISPLAY_SET` cache. The cache also holds a display set under
  * each of its image ids, so the id of the display set must equal the key:
- * `displaySetId` (`IDisplaySet`) or `displaySetInstanceUID` (OHIF).
+ * `displaySetId` (`IDisplaySet`) or `displaySetInstanceUID` (OHIF). The
+ * `imageId` of the descriptor is the object to show: `instance.imageId`,
+ * else the first underlying image id, else the first image id.
  */
 function getCachedDisplaySet(
   displaySetId: string
-): CachedDisplaySet | undefined {
+): DisplaySetDescriptor | undefined {
   const displaySet: unknown = metaData.getTyped(
     Enums.MetadataModules.DISPLAY_SET,
     displaySetId
@@ -93,152 +51,112 @@ function getCachedDisplaySet(
   const underlyingImageIds = isStringArray(displaySet.underlyingImageIds)
     ? displaySet.underlyingImageIds
     : [];
-  // `instance` is the object to show for a video, an ECG or a SEG.
   const instanceImageId = isRecord(displaySet.instance)
     ? displaySet.instance.imageId
     : undefined;
-  const sourceDataId =
+  const imageId =
     (typeof instanceImageId === 'string' && instanceImageId) ||
     underlyingImageIds[0] ||
     imageIds[0];
 
-  return sourceDataId
-    ? { imageIds, sourceDataId, webClient: displaySet.webClient }
+  return imageId
+    ? {
+        imageIds,
+        imageId,
+        webClient: displaySet.webClient as WSIClientLike | undefined,
+      }
     : undefined;
 }
 
+/** The descriptor of `displaySetId` when it has image ids. */
 export function getImageDisplaySet(
   displaySetId: string
-): ImageDisplaySet | undefined {
-  const registered = getRegisteredDisplaySet(displaySetId);
+): ImageDisplaySetDescriptor | undefined {
+  const descriptor = getDisplaySetDescriptor(displaySetId);
 
-  if (isStringArray(registered)) {
-    return {
-      imageIds: registered,
-    };
-  }
-
-  if (!isImageDisplaySet(registered)) {
-    return;
-  }
-
-  return registered;
+  return isImageDisplaySet(descriptor) ? descriptor : undefined;
 }
 
-export function getPlanarDisplaySet(
-  displaySetId: string
-): PlanarDisplaySet | undefined {
-  const registered = getRegisteredDisplaySet(displaySetId);
-
-  if (isStringArray(registered)) {
-    return {
-      imageIds: registered,
-    };
-  }
-
-  if (!isImageDisplaySet(registered)) {
-    return;
-  }
-
-  if ('kind' in registered && registered.kind && registered.kind !== 'planar') {
-    return;
-  }
-
-  return registered as PlanarDisplaySet;
-}
-
+/**
+ * The descriptor of a slide: its image ids and the web client of the
+ * descriptor (`options.webClient`, else `webClient`), else the client that
+ * the application registered under `WADO_WEB_CLIENT` for the first image id.
+ */
 export function getWSIDisplaySet(
   displaySetId: string
-): WSIDisplaySet | undefined {
-  const registered = getRegisteredDisplaySet(displaySetId);
+): WSIDisplaySetDescriptor | undefined {
+  const descriptor = getDisplaySetDescriptor(displaySetId);
 
-  if (isWSIDisplaySet(registered)) {
-    return registered;
+  if (!isImageDisplaySet(descriptor) || !descriptor.imageIds.length) {
+    return;
   }
 
-  if (
-    isRecord(registered) &&
-    isStringArray(registered.imageIds) &&
-    isRecord(registered.options) &&
-    isWSIClientLike(registered.options.webClient)
-  ) {
-    return {
-      imageIds: registered.imageIds,
-      kind: 'wsi',
-      options: {
-        miniNavigationOverlay: registered.options.miniNavigationOverlay as
-          | boolean
-          | undefined,
-        webClient: registered.options.webClient as WSIClientLike,
-      },
-    };
+  const options = isRecord(descriptor.options) ? descriptor.options : {};
+  const webClient =
+    options.webClient ??
+    descriptor.webClient ??
+    metaData.get(Enums.MetadataModules.WADO_WEB_CLIENT, descriptor.imageIds[0]);
+
+  if (!isWSIClientLike(webClient)) {
+    return;
   }
 
-  // A cached display set: its own client, else the client that the
-  // application registered under `WADO_WEB_CLIENT` for the first image id.
-  if (
-    isRecord(registered) &&
-    typeof registered.sourceDataId === 'string' &&
-    isStringArray(registered.imageIds) &&
-    registered.imageIds.length
-  ) {
-    const webClient =
-      registered.webClient ??
-      metaData.get(
-        Enums.MetadataModules.WADO_WEB_CLIENT,
-        registered.imageIds[0]
-      );
-
-    if (isWSIClientLike(webClient)) {
-      return {
-        kind: 'wsi',
-        imageIds: registered.imageIds,
-        options: { webClient },
-      };
-    }
-  }
+  return {
+    imageIds: descriptor.imageIds,
+    options: {
+      miniNavigationOverlay: options.miniNavigationOverlay as
+        | boolean
+        | undefined,
+      webClient,
+    },
+  };
 }
 
-export function getDisplaySetSourceDataId(displaySetId: string): string {
-  const registered = getRegisteredDisplaySet(displaySetId);
+/**
+ * The image id of the object that a video or an ECG viewport shows: the
+ * `imageId` of the descriptor of `displaySetId`, the id itself when no
+ * display set is registered under it, and undefined when the descriptor
+ * has no `imageId`.
+ */
+export function getDisplaySetImageId(displaySetId: string): string | undefined {
+  const descriptor = getDisplaySetDescriptor(displaySetId);
 
-  if (typeof registered === 'string') {
-    return registered;
+  if (!descriptor) {
+    return displaySetId;
   }
 
-  if (isStringArray(registered) && registered[0]) {
-    return registered[0];
-  }
-
-  if (isRecord(registered) && typeof registered.sourceDataId === 'string') {
-    return registered.sourceDataId;
-  }
-
-  return displaySetId;
+  return typeof descriptor.imageId === 'string' && descriptor.imageId
+    ? descriptor.imageId
+    : undefined;
 }
 
-export function isImageDisplaySet(value: unknown): value is ImageDisplaySet {
-  return isRecord(value) && isStringArray(value.imageIds);
-}
+/**
+ * The error of a mount whose display set the viewport cannot load: nothing
+ * is registered under the id, or the descriptor has none of the fields that
+ * the viewport reads (`needs`).
+ */
+export function displaySetShapeError(
+  viewportName: string,
+  displaySetId: string,
+  needs: string
+): Error {
+  if (!getDisplaySetDescriptor(displaySetId)) {
+    return new Error(
+      `[${viewportName}] No display set is registered under "${displaySetId}": ` +
+        `register it with displaySetRegistry.add(displaySetId, descriptor)`
+    );
+  }
 
-export function isWSIDisplaySet(value: unknown): value is WSIDisplaySet {
-  return (
-    isRecord(value) &&
-    value.kind === 'wsi' &&
-    isStringArray(value.imageIds) &&
-    isRecord(value.options) &&
-    isWSIClientLike(value.options.webClient)
+  return new Error(
+    `[${viewportName}] The display set "${displaySetId}" has no ${needs}, ` +
+      `which a ${viewportName} needs to show it`
   );
 }
 
-export function isSourceAliasDisplaySet(
+export function isImageDisplaySet(
   value: unknown
-): value is SourceAliasDisplaySet {
-  return (
-    isRecord(value) &&
-    (value.kind === 'video' || value.kind === 'ecg') &&
-    typeof value.sourceDataId === 'string'
-  );
+): value is ImageDisplaySetDescriptor {
+  return isRecord(value) && isStringArray(value.imageIds);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

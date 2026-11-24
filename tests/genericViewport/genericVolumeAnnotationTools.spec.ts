@@ -188,7 +188,7 @@ test.describe('Volume Annotation - Next (GPU)', () => {
         viewportId: 'CT_AXIAL_STACK',
         constructorName: 'PlanarViewport',
         type: 'planar',
-        renderModesByDataId: {
+        renderModesByDisplaySetId: {
           'volume-annotation-tools-next:source':
             getPlainVolumeSliceRenderMode(),
         },
@@ -198,7 +198,7 @@ test.describe('Volume Annotation - Next (GPU)', () => {
         viewportId: 'CT_SAGITTAL_STACK',
         constructorName: 'PlanarViewport',
         type: 'planar',
-        renderModesByDataId: {
+        renderModesByDisplaySetId: {
           'volume-annotation-tools-next:source':
             getPlainVolumeSliceRenderMode(),
         },
@@ -208,7 +208,7 @@ test.describe('Volume Annotation - Next (GPU)', () => {
         viewportId: 'CT_OBLIQUE_STACK',
         constructorName: 'PlanarViewport',
         type: 'planar',
-        renderModesByDataId: {
+        renderModesByDisplaySetId: {
           'volume-annotation-tools-next:source':
             getPlainVolumeSliceRenderMode(),
         },
@@ -272,7 +272,7 @@ test.describe('Volume Annotation - Next (CPU)', () => {
         viewportId: 'CT_AXIAL_STACK',
         constructorName: 'PlanarViewport',
         type: 'planar',
-        renderModesByDataId: {
+        renderModesByDisplaySetId: {
           'volume-annotation-tools-next:source': 'cpuVolume',
         },
       },
@@ -281,7 +281,7 @@ test.describe('Volume Annotation - Next (CPU)', () => {
         viewportId: 'CT_SAGITTAL_STACK',
         constructorName: 'PlanarViewport',
         type: 'planar',
-        renderModesByDataId: {
+        renderModesByDisplaySetId: {
           'volume-annotation-tools-next:source': 'cpuVolume',
         },
       },
@@ -290,7 +290,7 @@ test.describe('Volume Annotation - Next (CPU)', () => {
         viewportId: 'CT_OBLIQUE_STACK',
         constructorName: 'PlanarViewport',
         type: 'planar',
-        renderModesByDataId: {
+        renderModesByDisplaySetId: {
           'volume-annotation-tools-next:source': 'cpuVolume',
         },
       },

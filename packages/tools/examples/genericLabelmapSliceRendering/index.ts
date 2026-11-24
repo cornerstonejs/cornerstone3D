@@ -1,10 +1,5 @@
 import type { PlanarViewport, Types } from '@cornerstonejs/core';
-import {
-  RenderingEngine,
-  Enums,
-  utilities,
-  volumeLoader,
-} from '@cornerstonejs/core';
+import { RenderingEngine, Enums, volumeLoader } from '@cornerstonejs/core';
 import * as cornerstone from '@cornerstonejs/core';
 import {
   initDemo,
@@ -29,7 +24,7 @@ const volumeLoaderScheme = 'cornerstoneStreamingImageVolume';
 const volumeId = `${volumeLoaderScheme}:${volumeName}`;
 const segmentationId = 'MY_SEGMENTATION_ID';
 const toolGroupId = 'MY_TOOLGROUP_ID';
-const dataId = 'labelmap-slice-rendering-next:source';
+const displaySetId = 'labelmap-slice-rendering-next:source';
 
 setTitleAndDescription(
   'Labelmap Slice Rendering (useSliceRendering)',
@@ -119,8 +114,7 @@ async function run() {
 
   volume.load();
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(dataId, {
-    kind: 'planar',
+  cornerstone.displaySetRegistry.add(displaySetId, {
     imageIds,
     initialImageIdIndex: Math.floor(imageIds.length / 2),
     volumeId,
@@ -133,7 +127,7 @@ async function run() {
       ) as PlanarViewport;
 
       await viewport.setDisplaySets({
-        displaySetId: dataId,
+        displaySetId: displaySetId,
         options: {
           orientation,
         },

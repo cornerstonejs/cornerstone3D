@@ -144,7 +144,7 @@ describe('A calibration of an image on a direct next planar viewport -- ', () =>
       renderingEngineId,
       toolGroupIds: [toolGroupId],
     });
-    utilities.genericViewportDisplaySetMetadataProvider.clear?.();
+    cornerstone3D.displaySetRegistry.clear?.();
   });
 
   /** Makes a direct next viewport with the length tool active on it. */

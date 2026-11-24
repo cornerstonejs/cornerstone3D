@@ -16,7 +16,7 @@ import {
   getDefaultImageInvert,
   getDefaultImageVOIRange,
 } from '../src/RenderingEngine/helpers/planarImageRendering';
-import genericViewportDisplaySetMetadataProvider from '../src/utilities/genericViewportDisplaySetMetadataProvider';
+import displaySetRegistry from '../src/RenderingEngine/Viewports/displaySetRegistry';
 import { createPlanarViewportOnStandInEngine } from './utils/planarViewportOnStandInEngine';
 
 const { setRenderBackend, imageLoader, metaData, init, cache } = cornerstone3D;
@@ -118,7 +118,7 @@ describe('Direct next planar viewport and the default invert of an image', () =>
     cache.purgeCache();
     metaData.removeAllProviders();
     imageLoader.unregisterAllImageLoaders();
-    genericViewportDisplaySetMetadataProvider.clear();
+    displaySetRegistry.clear();
     setRenderBackend('auto');
   });
 
@@ -130,8 +130,7 @@ describe('Direct next planar viewport and the default invert of an image', () =>
     const steps = [];
 
     renderingEngines.push(renderingEngine);
-    genericViewportDisplaySetMetadataProvider.add('mixed', {
-      kind: 'planar',
+    displaySetRegistry.add('mixed', {
       imageIds: createPhotometricImageIds([
         'MONOCHROME2',
         'MONOCHROME1',
@@ -162,8 +161,7 @@ describe('Direct next planar viewport and the default invert of an image', () =>
     );
 
     renderingEngines.push(renderingEngine);
-    genericViewportDisplaySetMetadataProvider.add('xray', {
-      kind: 'planar',
+    displaySetRegistry.add('xray', {
       imageIds: createPhotometricImageIds(['MONOCHROME1']),
       initialImageIdIndex: 0,
     });

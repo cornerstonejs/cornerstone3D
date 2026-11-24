@@ -1,5 +1,6 @@
 import {
   cache,
+  displaySetRegistry,
   metaData,
   utilities as csUtils,
   viewportHasPan,
@@ -591,15 +592,9 @@ abstract class BaseTool {
     if (!displaySets?.length) {
       return [];
     }
-    const provider = csUtils.genericViewportDisplaySetMetadataProvider;
     return displaySets.map(({ displaySetId }) => {
-      const registryEntry = provider.get(
-        provider.VIEWPORT_V2_DISPLAY_SET,
-        displaySetId
-      );
-      const registeredImageIds = Array.isArray(registryEntry)
-        ? (registryEntry as string[])
-        : (registryEntry as { imageIds?: string[] })?.imageIds;
+      const registryEntry = displaySetRegistry.get(displaySetId);
+      const registeredImageIds = registryEntry?.imageIds;
       // registerDisplaySetMetadata stores IDisplaySet metadata under image
       // ids, not the logical displaySetId used by BaseViewport. Resolve
       // the registry entry first to bridge those two identifiers.
@@ -630,7 +625,7 @@ abstract class BaseTool {
         // The typed IDisplaySet owns the rich metadata, while the registry
         // entry carries the volume binding used to match viewport
         // actors back to that display set.
-        volumeId: (registryEntry as { volumeId?: string })?.volumeId,
+        volumeId: registryEntry?.volumeId,
         modality:
           (instance?.Modality as string) ??
           (imageIds?.length

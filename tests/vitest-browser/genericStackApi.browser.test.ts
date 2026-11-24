@@ -12,13 +12,14 @@ import {
   utilities,
   type IImage,
   type Types,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 
 const { Events, InterpolationType, OrientationAxis, ViewportType } = Enums;
 
 const renderingEngineId = 'vitest-next-stack-rendering-engine';
 const viewportId = 'vitest-next-stack-viewport';
-const stackDataId = 'vitest-next-stack:primary';
+const stackDisplaySetId = 'vitest-next-stack:primary';
 const baselineName = 'next_imageURI_64_64_20_5_1_1_0_nearest';
 
 const imageInfo = {
@@ -211,20 +212,19 @@ async function renderNextStackViewport() {
   const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
   const imageId = encodeImageIdInfo(imageInfo);
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(stackDataId, {
+  displaySetRegistry.add(stackDisplaySetId, {
     imageIds: [imageId],
-    kind: 'planar',
     initialImageIdIndex: 0,
   });
 
   await viewport.setDisplaySets({
-    displaySetId: stackDataId,
+    displaySetId: stackDisplaySetId,
     options: {
       renderMode: 'vtkImage',
     },
   });
 
-  viewport.setDisplaySetPresentation(stackDataId, {
+  viewport.setDisplaySetPresentation(stackDisplaySetId, {
     interpolationType: InterpolationType.NEAREST,
   });
 
@@ -241,7 +241,7 @@ afterEach(() => {
   cache.purgeCache();
   metaData.removeProvider(fakeMetaDataProvider);
   imageLoader.unregisterAllImageLoaders();
-  utilities.genericViewportDisplaySetMetadataProvider.clear?.();
+  displaySetRegistry.clear?.();
 
   document.body.innerHTML = '';
 });

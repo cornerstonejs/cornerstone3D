@@ -470,7 +470,7 @@ export class StatsOverlay implements StatsInstance {
             (renderModes as Record<string, string> | undefined) ?? {}
           ).map((binding) => ({
             ...binding,
-            ...factsById.get(binding.dataId),
+            ...factsById.get(binding.displaySetId),
           })),
           volumes,
         });
@@ -493,20 +493,24 @@ export class StatsOverlay implements StatsInstance {
     renderModes: Record<string, string>
   ): RenderModePanelBinding[] {
     const actors = viewport.getActors?.() ?? [];
-    const sourceDataId = viewport.getSourceDataId?.();
+    const sourceDisplaySetId = viewport.getSourceDisplaySetId?.();
     const renderModeEntries = Object.entries(renderModes);
 
     if (renderModeEntries.length) {
-      return renderModeEntries.map(([dataId, renderMode]) => {
-        const role = resolveBindingRole(viewport, dataId, sourceDataId);
+      return renderModeEntries.map(([displaySetId, renderMode]) => {
+        const role = resolveBindingRole(
+          viewport,
+          displaySetId,
+          sourceDisplaySetId
+        );
         const actor =
           role === 'source'
             ? viewport.getDefaultActor?.()
-            : findActorForDataId(actors, dataId);
+            : findActorForDisplaySetId(actors, displaySetId);
 
         return {
           actorUID: actor?.uid,
-          dataId,
+          displaySetId,
           referencedId: actor?.referencedId,
           renderMode,
           role,
@@ -521,14 +525,14 @@ export class StatsOverlay implements StatsInstance {
     // (e.g. to compare whether a labelmap actor is reused or recreated across
     // slices) instead of an empty bindings panel.
     return actors.map((actor) => {
-      const dataId = actor.representationUID ?? actor.uid ?? '';
+      const displaySetId = actor.representationUID ?? actor.uid ?? '';
 
       return {
         actorUID: actor.uid,
-        dataId,
+        displaySetId,
         referencedId: actor.referencedId,
         renderMode: '-',
-        role: resolveBindingRole(viewport, dataId, sourceDataId),
+        role: resolveBindingRole(viewport, displaySetId, sourceDisplaySetId),
         ...getActorScalarInfo(actor),
       };
     });
@@ -555,7 +559,7 @@ export class StatsOverlay implements StatsInstance {
       ids.push(candidate);
     };
 
-    push(viewport.getSourceDataId?.());
+    push(viewport.getSourceDisplaySetId?.());
 
     for (const actor of viewport.getActors?.() ?? []) {
       push(actor.referencedId);
@@ -787,7 +791,7 @@ type DebugBindingsViewport = DebugBindingsSource & {
     displaySetId: string
   ) => RenderModePanelBinding['role'] | undefined;
   getDefaultActor?: () => DebugActorEntry | undefined;
-  getSourceDataId?: () => string | undefined;
+  getSourceDisplaySetId?: () => string | undefined;
 };
 
 /** The bytes of every 3D texture of one volume, or 0. Never throws. */
@@ -812,31 +816,31 @@ function readTotalVolumeTextureBytes(): number {
 
 function resolveBindingRole(
   viewport: DebugBindingsViewport,
-  dataId: string,
-  sourceDataId?: string
+  displaySetId: string,
+  sourceDisplaySetId?: string
 ): RenderModePanelBinding['role'] {
-  const role = viewport.getDisplaySetRole?.(dataId);
+  const role = viewport.getDisplaySetRole?.(displaySetId);
 
   if (role === 'source' || role === 'overlay') {
     return role;
   }
 
-  if (sourceDataId && dataId === sourceDataId) {
+  if (sourceDisplaySetId && displaySetId === sourceDisplaySetId) {
     return 'source';
   }
 
   return 'data';
 }
 
-function findActorForDataId(
+function findActorForDisplaySetId(
   actors: DebugActorEntry[],
-  dataId: string
+  displaySetId: string
 ): DebugActorEntry | undefined {
   return actors.find(
     (actor) =>
-      actor.uid === dataId ||
-      actor.representationUID === dataId ||
-      actor.referencedId === dataId
+      actor.uid === displaySetId ||
+      actor.representationUID === displaySetId ||
+      actor.referencedId === displaySetId
   );
 }
 

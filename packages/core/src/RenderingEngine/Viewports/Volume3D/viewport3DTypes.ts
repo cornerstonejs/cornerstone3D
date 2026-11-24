@@ -33,13 +33,19 @@ import type {
   ViewportDataReference,
 } from '../ViewportArchitectureTypes';
 import type { ViewportCameraBase } from '../ViewportCameraTypes';
+import type { DisplaySetDescriptor } from '../../../types/DisplaySetDescriptor';
 
 /** @internal */
 export type Volume3DRenderMode = 'vtkVolume3d' | 'vtkGeometry3d';
 export type Volume3DRequestedRenderMode = Volume3DRenderMode | 'auto';
 
-/** @internal */
-export interface Volume3DRegisteredDataSet {
+/**
+ * The descriptor of a display set as a 3D viewport reads it: image ids for a
+ * volume, a geometry id for a surface.
+ *
+ * @internal
+ */
+export interface Volume3DDisplaySetDescriptor extends DisplaySetDescriptor {
   geometryId?: string;
   geometryLoadOptions?: GeometryOptions;
   imageIds?: string[];
@@ -132,7 +138,7 @@ export interface Volume3DCamera extends ICamera, ViewportCameraBase<Point3> {}
 /** @internal */
 export interface Volume3DDataProvider extends DataProvider {
   load(
-    dataId: string,
+    displaySetId: string,
     options?: {
       renderMode: Volume3DRenderMode;
     }

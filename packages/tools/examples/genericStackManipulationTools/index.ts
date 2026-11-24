@@ -3,7 +3,7 @@ import {
   eventTarget,
   RenderingEngine,
   Enums,
-  utilities,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -33,7 +33,7 @@ const { ViewportType } = Enums;
 const { MouseBindings } = csToolsEnums;
 
 const toolGroupId = 'STACK_TOOL_GROUP_ID';
-const dataId = 'stack-manipulation-tools-next:primary';
+const displaySetId = 'stack-manipulation-tools-next:primary';
 const leftClickTools = [
   WindowLevelTool.toolName,
   PlanarRotateTool.toolName,
@@ -205,13 +205,12 @@ async function run() {
 
   const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(dataId, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId, {
     imageIds,
   });
 
   await viewport.setDisplaySets({
-    displaySetId: dataId,
+    displaySetId: displaySetId,
     options: {},
   });
 

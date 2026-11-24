@@ -5,6 +5,7 @@ import {
   ProgressiveRetrieveImages,
   utilities,
   volumeLoader,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -58,7 +59,7 @@ const segmentationId = 'MY_SEGMENTATION_ID';
 const toolGroupId = 'MY_TOOLGROUP_ID';
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume';
 const volumeId = `${volumeLoaderScheme}:${volumeName}`;
-const dataId = 'labelmap-segmentation-tools-next:source';
+const displaySetId = 'labelmap-segmentation-tools-next:source';
 const useSliceRendering =
   getBooleanUrlParam('useSliceRendering') ||
   getBooleanUrlParam('sliceRendering');
@@ -440,8 +441,7 @@ async function run() {
     toolGroup.addViewport(viewportId, renderingEngineId);
   });
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(dataId, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId, {
     imageIds,
     initialImageIdIndex: Math.floor(imageIds.length / 2),
     volumeId,
@@ -454,12 +454,14 @@ async function run() {
       ) as PlanarViewport;
 
       await viewport.setDisplaySets({
-        displaySetId: dataId,
+        displaySetId: displaySetId,
         options: {
           orientation,
         },
       });
-      viewport.setDisplaySetPresentation(dataId, { voiRange: ctVoiRange });
+      viewport.setDisplaySetPresentation(displaySetId, {
+        voiRange: ctVoiRange,
+      });
     })
   );
 

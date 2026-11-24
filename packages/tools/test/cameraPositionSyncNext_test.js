@@ -83,7 +83,7 @@ describe('The camera position synchronizer between direct next planar viewports 
   afterEach(function () {
     SynchronizerManager.destroySynchronizer(synchronizerId);
     testUtils.cleanupTestEnvironment({ renderingEngineId });
-    utilities.genericViewportDisplaySetMetadataProvider.clear?.();
+    cornerstone3D.displaySetRegistry.clear?.();
   });
 
   const modes = [

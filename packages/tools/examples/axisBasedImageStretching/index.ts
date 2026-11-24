@@ -9,6 +9,7 @@ import {
   getEffectiveRenderBackend,
   setRenderBackend,
   viewportProjection,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -543,8 +544,7 @@ async function run() {
     });
   }
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(stackDisplaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(stackDisplaySetId, {
     imageIds,
   });
 
@@ -559,10 +559,7 @@ async function run() {
     volume.load();
     await addSegmentationsToState();
 
-    utilities.genericViewportDisplaySetMetadataProvider.add(
-      volumeDisplaySetId,
-      { kind: 'planar', imageIds, volumeId }
-    );
+    displaySetRegistry.add(volumeDisplaySetId, { imageIds, volumeId });
 
     await Promise.all(
       volumeViewportIds.map(async (viewportId) => {

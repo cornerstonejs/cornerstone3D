@@ -20,8 +20,8 @@ export type ViewReferenceContext = {
   allowAnyImageReference?: boolean;
   cameraFocalPoint?: Point3;
   currentImageIdIndex?: number;
-  dataId?: string;
-  dataIds?: string[];
+  displaySetId?: string;
+  displaySetIds?: string[];
   dimensionGroupNumber?: number;
   frameOfReferenceUID?: string;
   imageIds?: string[];
@@ -136,7 +136,7 @@ function isReferenceViewableInContext(
   }
 
   if (
-    !isDataIdCompatible(viewRef, context) ||
+    !isDisplaySetIdCompatible(viewRef, context) ||
     !isVolumeIdCompatible(viewRef, context)
   ) {
     return isOtherDataReferenceViewable(viewRef, context, options);
@@ -180,7 +180,7 @@ function isOtherDataReferenceViewable(
   }
 
   const {
-    dataId: _dataId,
+    displaySetId: _displaySetId,
     volumeId: _volumeId,
     sliceIndex: _sliceIndex,
     ...reference
@@ -201,8 +201,8 @@ function isOtherDataReferenceViewable(
 function getReferenceDataImageIds(
   viewRef: ViewReference
 ): string[] | undefined {
-  if (viewRef.dataId) {
-    return getImageDisplaySet(viewRef.dataId)?.imageIds;
+  if (viewRef.displaySetId) {
+    return getImageDisplaySet(viewRef.displaySetId)?.imageIds;
   }
 
   return viewRef.volumeId
@@ -283,16 +283,16 @@ function isFrameOfReferenceUIDOfContext(
  * the same voxels, so the plane and the slice index of the reference count in
  * both, as on the legacy volume viewport, which had no display set id.
  */
-function isDataIdCompatible(
+function isDisplaySetIdCompatible(
   viewRef: ViewReference,
   context: ViewReferenceContext
 ): boolean {
-  if (!viewRef.dataId) {
+  if (!viewRef.displaySetId) {
     return true;
   }
 
   return (
-    getContextDataIds(context).includes(viewRef.dataId) ||
+    getContextDisplaySetIds(context).includes(viewRef.displaySetId) ||
     Boolean(
       viewRef.volumeId &&
         getContextVolumeIds(context).includes(viewRef.volumeId)
@@ -774,8 +774,11 @@ function imageURIEntryMatches(
   );
 }
 
-function getContextDataIds(context: ViewReferenceContext): string[] {
-  return uniqueStrings([context.dataId, ...(context.dataIds || [])]);
+function getContextDisplaySetIds(context: ViewReferenceContext): string[] {
+  return uniqueStrings([
+    context.displaySetId,
+    ...(context.displaySetIds || []),
+  ]);
 }
 
 function getContextVolumeIds(context: ViewReferenceContext): string[] {

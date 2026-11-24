@@ -4,6 +4,7 @@ import {
   volumeLoader,
   Enums,
   utilities as csUtils,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 // TODO -> A load of the utilities in cornerstone tools are just about the volumes and should be in core instead
 import {
@@ -132,13 +133,11 @@ async function run() {
   await ptVolume.load();
 
   // Set the volume on the viewport
-  csUtils.genericViewportDisplaySetMetadataProvider.add(ctDisplaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(ctDisplaySetId, {
     imageIds: ctImageIds,
     volumeId: ctVolumeId,
   });
-  csUtils.genericViewportDisplaySetMetadataProvider.add(ptDisplaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(ptDisplaySetId, {
     imageIds: ptImageIds,
     volumeId: ptVolumeId,
   });

@@ -6,7 +6,7 @@
 import * as cornerstone3D from '../../src/index';
 import * as testUtils from '../../../../utils/test/testUtils';
 
-const { Enums, volumeLoader, imageLoader, utilities, metaData } = cornerstone3D;
+const { Enums, volumeLoader, imageLoader, metaData } = cornerstone3D;
 const { ViewportType, OrientationAxis, Events } = Enums;
 
 /** The default size of a test series: 32 columns, 24 rows and 8 slices. */
@@ -208,9 +208,8 @@ export async function showStack(
 ) {
   const displaySetId = `stack:${viewport.id}`;
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+  cornerstone3D.displaySetRegistry.add(displaySetId, {
     imageIds: series.imageIds,
-    kind: 'planar',
     initialImageIdIndex: 0,
   });
   await viewport.setDisplaySets({
@@ -240,7 +239,7 @@ export async function showVolume(
 ) {
   const displaySetId = `volume:${viewport.id}`;
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+  cornerstone3D.displaySetRegistry.add(displaySetId, {
     imageIds: series.imageIds,
     volumeId: series.volumeId,
   });

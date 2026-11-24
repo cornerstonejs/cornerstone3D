@@ -268,22 +268,29 @@ function typecheckExamples(work, tree) {
  * the cast was rewritten, the `setStack` was left with a report.
  */
 function isAtLeftSite(error, hunk, beforeLines, rules) {
-  const names = [...error.message.matchAll(/'([A-Za-z_$][\w$]*)'/g)].map(
-    (match) => match[1]
-  );
+  const names = [
+    ...error.message.matchAll(
+      /'([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)'/g
+    ),
+  ].flatMap((match) => {
+    const parts = match[1].split('.');
+
+    return parts.length > 1 ? [match[1], parts[parts.length - 1]] : parts;
+  });
   const old = beforeLines
     .slice(hunk.oldStart - 1, hunk.oldStart - 1 + hunk.oldLines)
     .join('\n');
 
-  return names.some(
-    (name) =>
-      new RegExp(`\\b${name.replace(/\$/g, '\\$')}\\b`).test(old) &&
+  return names.some((name) => {
+    const escaped = name.replace(/[.$]/g, '\\$&');
+
+    return (
+      new RegExp(`(^|[^\\w$])${escaped}([^\\w$]|$)`, 'm').test(old) &&
       rules.some((rule) =>
-        new RegExp(`(^|[^\\w$])${name.replace(/\$/g, '\\$')}([^\\w$]|$)`).test(
-          rule
-        )
+        new RegExp(`(^|[^\\w$])${escaped}([^\\w$]|$)`).test(rule)
       )
-  );
+    );
+  });
 }
 
 /**

@@ -1,8 +1,13 @@
-import { type Types, Enums, cache, utilities } from '@cornerstonejs/core';
+import {
+  type Types,
+  Enums,
+  cache,
+  displaySetRegistry,
+} from '@cornerstonejs/core';
 import { createLabelmapRepresentationUID } from '../labelmapRepresentationUID';
 import type { LabelmapRenderPlanMountResult } from './types';
 
-type Volume3DNextViewport = Types.IViewport & {
+type Volume3DViewport = Types.IViewport & {
   addDisplaySet: (
     displaySetId: string,
     options: {
@@ -13,7 +18,7 @@ type Volume3DNextViewport = Types.IViewport & {
   getActors: () => Types.ActorEntry[];
   render: () => void;
   setDisplaySetPresentation: (
-    dataId: string,
+    displaySetId: string,
     props: {
       blendMode?: Enums.BlendModes;
       visible?: boolean;
@@ -23,10 +28,10 @@ type Volume3DNextViewport = Types.IViewport & {
 };
 
 /** Whether the viewport is a next 3D viewport, direct or through its adapter. */
-function isVolume3DNextViewport(
+function isVolume3DViewport(
   viewport: Types.IViewport
-): viewport is Volume3DNextViewport {
-  const nextViewport = viewport as Partial<Volume3DNextViewport>;
+): viewport is Volume3DViewport {
+  const nextViewport = viewport as Partial<Volume3DViewport>;
 
   return (
     nextViewport.type === Enums.ViewportType.VOLUME_3D &&
@@ -41,7 +46,7 @@ function isVolume3DNextViewport(
  * with the blend mode of the labelmap and the representation UID on its
  * actor entry, so that the labelmap style finds and colours it.
  */
-async function addLabelmapToVolume3DNextViewport(args: {
+async function addLabelmapToVolume3DViewport(args: {
   blendMode: Enums.BlendModes;
   labelmapLayers: Array<{
     imageIds?: string[];
@@ -49,7 +54,7 @@ async function addLabelmapToVolume3DNextViewport(args: {
     volumeId?: string;
   }>;
   segmentationId: string;
-  viewport: Volume3DNextViewport;
+  viewport: Volume3DViewport;
   visibility: boolean;
 }): Promise<LabelmapRenderPlanMountResult> {
   const { blendMode, labelmapLayers, segmentationId, viewport, visibility } =
@@ -68,7 +73,7 @@ async function addLabelmapToVolume3DNextViewport(args: {
       referencedId: layer.labelmapId,
     });
 
-    utilities.genericViewportDisplaySetMetadataProvider.add(representationUID, {
+    displaySetRegistry.add(representationUID, {
       imageIds: volume.imageIds,
       volumeId: volume.volumeId,
       reference: {
@@ -102,4 +107,4 @@ async function addLabelmapToVolume3DNextViewport(args: {
   }
 }
 
-export { addLabelmapToVolume3DNextViewport, isVolume3DNextViewport };
+export { addLabelmapToVolume3DViewport, isVolume3DViewport };

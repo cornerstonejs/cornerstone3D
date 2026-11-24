@@ -6,7 +6,7 @@ import {
   volumeLoader,
   eventTarget,
   imageLoader,
-  utilities,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
@@ -289,8 +289,7 @@ async function setup() {
 
   await volume.load();
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId, {
     imageIds,
     volumeId,
   });

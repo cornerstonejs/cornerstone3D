@@ -251,7 +251,7 @@ async function frames(count = 3) {
  * counts the VOI_MODIFIED events of each.
  */
 async function countVOIEvents(viewport) {
-  const displaySetId = viewport.getSourceDataId();
+  const displaySetId = viewport.getSourceDisplaySetId();
   const shownRange =
     viewport.getDisplaySetPresentation(displaySetId)?.voiRange ??
     viewport.getDefaultVOIRange(displaySetId);
@@ -290,7 +290,7 @@ async function countVOIEvents(viewport) {
 async function showVolume(viewport, volumeId, orientation) {
   const displaySetId = `volume:${viewport.id}:${volumeId}`;
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+  cornerstone3D.displaySetRegistry.add(displaySetId, {
     imageIds: cache.getVolume(volumeId).imageIds,
     volumeId,
   });
@@ -300,7 +300,7 @@ async function showVolume(viewport, volumeId, orientation) {
 
 /** The display set id of the volume that `showVolume` mounted last. */
 function getVolumeDisplaySetId(viewport) {
-  return viewport.getSourceDataId?.();
+  return viewport.getSourceDisplaySetId?.();
 }
 
 /** Sets the invert of a direct next viewport. */
@@ -338,8 +338,7 @@ function createStackImageIds(name = 'imageURI') {
 async function showStack(viewport, imageIds) {
   const displaySetId = `stack:${viewport.id}`;
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-    kind: 'planar',
+  cornerstone3D.displaySetRegistry.add(displaySetId, {
     imageIds,
     initialImageIdIndex: 0,
   });
@@ -386,7 +385,7 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
       renderingEngineId,
       toolGroupIds: ['default'],
     });
-    utilities.genericViewportDisplaySetMetadataProvider.clear?.();
+    cornerstone3D.displaySetRegistry.clear?.();
   });
 
   describe('new data', () => {
@@ -628,10 +627,10 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
 
       await showVolume(source, volumeId, OrientationAxis.AXIAL);
       [volumeId, secondVolumeId].forEach((id) => {
-        utilities.genericViewportDisplaySetMetadataProvider.add(
-          `volume:${target.id}:${id}`,
-          { imageIds: cache.getVolume(id).imageIds, volumeId: id }
-        );
+        cornerstone3D.displaySetRegistry.add(`volume:${target.id}:${id}`, {
+          imageIds: cache.getVolume(id).imageIds,
+          volumeId: id,
+        });
       });
       await target.setDisplaySets(
         ...[volumeId, secondVolumeId].map((id) => ({
@@ -703,8 +702,7 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
           cameraEvents.push(1)
         );
 
-        utilities.genericViewportDisplaySetMetadataProvider.add('stack', {
-          kind: 'planar',
+        cornerstone3D.displaySetRegistry.add('stack', {
           imageIds,
           initialImageIdIndex: 0,
         });
@@ -1122,7 +1120,7 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
         const events = recordSliceEvents(viewport.element);
         const displaySetId = 'volume:next';
 
-        utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+        cornerstone3D.displaySetRegistry.add(displaySetId, {
           imageIds: series.imageIds,
           volumeId: series.volumeId,
         });

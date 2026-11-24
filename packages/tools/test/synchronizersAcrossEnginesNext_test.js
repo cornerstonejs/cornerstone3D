@@ -29,7 +29,7 @@ function frames() {
 
 /** The slab thickness of the presentation of the source of a viewport. */
 function slabOf(viewport) {
-  return viewport.getDisplaySetPresentation(viewport.getSourceDataId())
+  return viewport.getDisplaySetPresentation(viewport.getSourceDisplaySetId())
     ?.slabThickness;
 }
 
@@ -64,7 +64,7 @@ describe('The synchronizers between two rendering engines whose viewports have t
     testUtils.cleanupTestEnvironment({
       renderingEngineId: firstRenderingEngineId,
     });
-    utilities.genericViewportDisplaySetMetadataProvider.clear?.();
+    cornerstone3D.displaySetRegistry.clear?.();
   });
 
   it('moves the stack of the other rendering engine to the image of the source with the image slice synchronizer', async function () {
@@ -102,7 +102,7 @@ describe('The synchronizers between two rendering engines whose viewports have t
 
     expect(slabOf(second)).toBeUndefined();
 
-    first.setDisplaySetPresentation(first.getSourceDataId(), {
+    first.setDisplaySetPresentation(first.getSourceDisplaySetId(), {
       slabThickness: 5,
     });
     await frames();

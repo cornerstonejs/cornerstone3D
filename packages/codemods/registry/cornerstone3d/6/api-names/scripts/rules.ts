@@ -1233,6 +1233,10 @@ function applyAccessRules(
       continue;
     }
 
+    if (run.handled.has(nameNode.range().start.index)) {
+      continue;
+    }
+
     const rule = ruleAt(rules, pathOf(node.field('object'), packageName), name);
 
     if (!rule) {
@@ -1341,7 +1345,7 @@ function applyPatternEntry(
 
   const rule = name ? ruleAt(rules, base, name) : undefined;
 
-  if (!rule || !keyNode) {
+  if (!rule || !keyNode || run.handled.has(keyNode.range().start.index)) {
     return;
   }
 

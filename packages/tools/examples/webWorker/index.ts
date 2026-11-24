@@ -3,7 +3,7 @@ import {
   RenderingEngine,
   Enums,
   getWebWorkerManager,
-  utilities as csUtilities,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
@@ -196,8 +196,7 @@ async function run() {
   // Define a stack containing a few images
 
   // Set the stack on the viewport
-  csUtilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId, {
     imageIds,
     initialImageIdIndex: 0,
   });

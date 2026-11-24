@@ -246,19 +246,14 @@ async function run() {
   // Get the stack viewport that was created
   const viewport: PlanarViewport = renderingEngine.getViewport(viewportIds[0]);
 
-  csUtilities.genericViewportDisplaySetMetadataProvider.add(stackDisplaySetId, {
-    kind: 'planar',
+  cornerstone.displaySetRegistry.add(stackDisplaySetId, {
     imageIds,
     initialImageIdIndex: 80,
   });
-  csUtilities.genericViewportDisplaySetMetadataProvider.add(
-    volumeDisplaySetId,
-    {
-      kind: 'planar',
-      imageIds,
-      volumeId,
-    }
-  );
+  cornerstone.displaySetRegistry.add(volumeDisplaySetId, {
+    imageIds,
+    volumeId,
+  });
 
   // Set the stack on the viewport
   await viewport.setDisplaySets({ displaySetId: stackDisplaySetId });

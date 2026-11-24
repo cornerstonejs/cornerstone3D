@@ -7,6 +7,7 @@ import {
   type PlanarViewport,
   type Types,
   type VideoViewport,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import dicomImageLoader from '@cornerstonejs/dicom-image-loader';
 import {
@@ -1194,7 +1195,7 @@ function initialImageIndex(count: number): number {
 
 function registerDisplaySetData(displaySet: IDisplaySet, layout: string) {
   const imageIds = [...displaySet.imageIds];
-  const provider = utilities.genericViewportDisplaySetMetadataProvider;
+  const provider = displaySetRegistry;
   const { displaySetId } = displaySet;
 
   if (
@@ -1218,15 +1219,14 @@ function registerDisplaySetData(displaySet: IDisplaySet, layout: string) {
 
   switch (layout) {
     case 'video':
-      provider.add(displaySetId, { kind: 'video', sourceDataId: imageIds[0] });
+      provider.add(displaySetId, { imageId: imageIds[0] });
       break;
     case 'ecg':
-      provider.add(displaySetId, { kind: 'ecg', sourceDataId: imageIds[0] });
+      provider.add(displaySetId, { imageId: imageIds[0] });
       break;
     default:
       provider.add(displaySetId, {
         imageIds,
-        kind: 'planar',
         initialImageIdIndex: initialImageIndex(imageIds.length),
       });
   }

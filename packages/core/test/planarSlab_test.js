@@ -107,7 +107,7 @@ function createViewport(renderingEngine, viewportId, viewportType) {
 async function showVolumeOnNext(viewport, volumeId) {
   const displaySetId = `slab:${viewport.id}`;
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+  cornerstone3D.displaySetRegistry.add(displaySetId, {
     imageIds: cache.getVolume(volumeId).imageIds,
     volumeId,
   });

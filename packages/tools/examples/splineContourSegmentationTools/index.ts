@@ -1,5 +1,9 @@
 import type { PlanarViewport, Types } from '@cornerstonejs/core';
-import { Enums, RenderingEngine, utilities } from '@cornerstonejs/core';
+import {
+  Enums,
+  RenderingEngine,
+  displaySetRegistry,
+} from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
   addButtonToToolbar,
@@ -329,8 +333,7 @@ async function run() {
   const stackViewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
   // Set the stack on the viewport
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId, {
     imageIds: imageIds.slice(0, 10),
     initialImageIdIndex: 0,
   });

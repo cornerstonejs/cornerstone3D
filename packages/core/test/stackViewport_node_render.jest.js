@@ -99,8 +99,7 @@ describe('stackViewport_node_render', function () {
         resolve(image);
       });
     });
-    utilities.genericViewportDisplaySetMetadataProvider.add('stack', {
-      kind: 'planar',
+    cornerstone3D.displaySetRegistry.add('stack', {
       imageIds: [imageId],
       initialImageIdIndex: 0,
     });

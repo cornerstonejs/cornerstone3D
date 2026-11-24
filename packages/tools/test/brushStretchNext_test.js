@@ -55,9 +55,8 @@ async function showStack(viewport) {
     })
   );
 
-  utilities.genericViewportDisplaySetMetadataProvider.add('brushStack', {
+  cornerstone3D.displaySetRegistry.add('brushStack', {
     imageIds,
-    kind: 'planar',
     initialImageIdIndex: 0,
   });
   await viewport.setDisplaySets({
@@ -87,7 +86,7 @@ async function showVolume(viewport) {
   });
 
   await volumeLoader.createAndCacheVolume(volumeId, { imageIds: [] });
-  utilities.genericViewportDisplaySetMetadataProvider.add('brushVolume', {
+  cornerstone3D.displaySetRegistry.add('brushVolume', {
     imageIds: cache.getVolume(volumeId).imageIds,
     volumeId,
   });

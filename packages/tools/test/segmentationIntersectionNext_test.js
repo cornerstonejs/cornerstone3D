@@ -313,7 +313,7 @@ async function showVolumeOn3DViewport(renderingEngine, series) {
     height: 300,
     useEnableElement: true,
   });
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+  cornerstone3D.displaySetRegistry.add(displaySetId, {
     imageIds: series.imageIds,
     volumeId: series.volumeId,
   });
@@ -683,10 +683,10 @@ describe('SegmentationIntersectionTool on a direct next viewport -- ', () => {
     const viewport = renderingEngine.getViewport(viewportId);
     const volumeId = await createVolume();
 
-    utilities.genericViewportDisplaySetMetadataProvider.add(
-      'segmentationIntersectionNext3D',
-      { imageIds: cache.getVolume(volumeId).imageIds, volumeId }
-    );
+    cornerstone3D.displaySetRegistry.add('segmentationIntersectionNext3D', {
+      imageIds: cache.getVolume(volumeId).imageIds,
+      volumeId,
+    });
     await viewport.setDisplaySets({
       displaySetId: 'segmentationIntersectionNext3D',
       options: { renderMode: 'vtkVolume3d' },
@@ -723,7 +723,7 @@ describe('SegmentationIntersectionTool with the surface of a segmentation on a 3
       renderingEngineId,
       toolGroupIds: [toolGroupId],
     });
-    utilities.genericViewportDisplaySetMetadataProvider.clear?.();
+    cornerstone3D.displaySetRegistry.clear?.();
   });
 
   it('draws on an axial planar viewport the closed line where the sphere cuts the slice, nothing on a slice outside the sphere, and the line follows a scroll', async function () {
@@ -1360,7 +1360,7 @@ describe('SegmentationIntersectionTool with the surface that the polySeg add-on 
       renderingEngineId,
       toolGroupIds: [toolGroupId],
     });
-    utilities.genericViewportDisplaySetMetadataProvider.clear?.();
+    cornerstone3D.displaySetRegistry.clear?.();
   });
 
   /**

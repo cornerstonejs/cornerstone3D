@@ -2,8 +2,8 @@ import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   Enums,
   RenderingEngine,
-  utilities,
   volumeLoader,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import {
   addButtonToToolbar,
@@ -62,7 +62,7 @@ addButtonToToolbar({
   title: 'toggle PET',
   onClick: async () => {
     if (fused) {
-      viewport.removeData(ptDisplaySetId);
+      viewport.removeDisplaySet(ptDisplaySetId);
       viewport.render();
 
       fused = false;
@@ -186,13 +186,11 @@ async function run() {
   ctVolume.load();
 
   // Set the volume on the viewport
-  utilities.genericViewportDisplaySetMetadataProvider.add(ctDisplaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(ctDisplaySetId, {
     imageIds: ctImageIds,
     volumeId: ctVolumeId,
   });
-  utilities.genericViewportDisplaySetMetadataProvider.add(ptDisplaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(ptDisplaySetId, {
     imageIds: ptImageIds,
     volumeId: ptVolumeId,
   });

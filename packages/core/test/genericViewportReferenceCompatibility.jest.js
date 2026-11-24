@@ -2,12 +2,12 @@ import {
   getDimensionGroupReferenceContext,
   isViewReferenceViewable,
 } from '../src/RenderingEngine/Viewports/viewReferenceCompatibility';
-import genericViewportDisplaySetMetadataProvider from '../src/utilities/genericViewportDisplaySetMetadataProvider';
+import displaySetRegistry from '../src/RenderingEngine/Viewports/displaySetRegistry';
 
 describe('BaseViewport reference compatibility', () => {
   const baseContext = {
     frameOfReferenceUID: 'for-1',
-    dataId: 'data-1',
+    displaySetId: 'data-1',
     imageIds: ['scheme:image-1', 'scheme:image-2', 'scheme:image-3'],
     currentImageIdIndex: 1,
     cameraFocalPoint: [0, 0, 5],
@@ -27,14 +27,14 @@ describe('BaseViewport reference compatibility', () => {
   it('rejects mismatched data ids unless the reference is FOR-only', () => {
     expect(
       isViewReferenceViewable(
-        { FrameOfReferenceUID: 'for-1', dataId: 'data-2' },
+        { FrameOfReferenceUID: 'for-1', displaySetId: 'data-2' },
         [baseContext]
       )
     ).toBe(false);
 
     expect(
       isViewReferenceViewable(
-        { FrameOfReferenceUID: 'for-1', dataId: 'data-1' },
+        { FrameOfReferenceUID: 'for-1', displaySetId: 'data-1' },
         [baseContext]
       )
     ).toBe(true);
@@ -43,13 +43,13 @@ describe('BaseViewport reference compatibility', () => {
   it('takes a reference of another display set of the same images by an image of the context', () => {
     const otherData = {
       FrameOfReferenceUID: 'for-1',
-      dataId: 'data-2',
+      displaySetId: 'data-2',
       volumeId: 'volume-2',
       sliceIndex: 0,
       viewPlaneNormal: [0, 0, -1],
     };
 
-    genericViewportDisplaySetMetadataProvider.add('data-2', {
+    displaySetRegistry.add('data-2', {
       imageIds: [...baseContext.imageIds].reverse(),
       volumeId: 'volume-2',
     });
@@ -58,7 +58,7 @@ describe('BaseViewport reference compatibility', () => {
       isViewReferenceViewable(
         {
           ...otherData,
-          dataId: 'data-unknown',
+          displaySetId: 'data-unknown',
           referencedImageId: 'scheme:image-2',
         },
         [baseContext],
@@ -103,7 +103,7 @@ describe('BaseViewport reference compatibility', () => {
       )
     ).toBe(false);
 
-    genericViewportDisplaySetMetadataProvider.remove('data-2');
+    displaySetRegistry.remove('data-2');
   });
 
   it('shows a reference to an image URI of the whole data on every slice', () => {

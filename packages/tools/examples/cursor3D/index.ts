@@ -10,6 +10,7 @@ import {
   getRenderingEngine,
   eventTarget,
   utilities,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import { Enums as toolsEnums } from '@cornerstonejs/tools';
 import {
@@ -387,8 +388,7 @@ async function run() {
   });
   volume.load();
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId, {
     imageIds,
     volumeId,
   });

@@ -4,15 +4,15 @@ import PlanarViewReferenceController from '../src/RenderingEngine/Viewports/Plan
 
 function createBinding({
   actorUID,
-  dataId,
+  displaySetId,
   frameOfReferenceUID = 'for-1',
-  imageIds = [`${dataId}-image`],
+  imageIds = [`${displaySetId}-image`],
   role = 'overlay',
   volumeId,
 } = {}) {
   return {
     data: {
-      id: dataId,
+      id: displaySetId,
       type: 'image',
       imageIds,
       initialImageIdIndex: 0,
@@ -27,7 +27,7 @@ function createBinding({
     applyViewState: jest.fn(),
     getActorEntry: () => ({
       actor: {},
-      referencedId: volumeId ?? dataId,
+      referencedId: volumeId ?? displaySetId,
       uid: actorUID,
     }),
     getFrameOfReferenceUID: () => frameOfReferenceUID,
@@ -38,10 +38,10 @@ function createBinding({
 
 function createMountedData(bindings) {
   return new PlanarMountedData({
-    getBinding: (dataId) => bindings.get(dataId),
+    getBinding: (displaySetId) => bindings.get(displaySetId),
     getFirstBinding: () => bindings.values().next().value,
     getBindings: () => bindings.entries(),
-    removeData: (dataId) => bindings.delete(dataId),
+    removeDisplaySet: (displaySetId) => bindings.delete(displaySetId),
   });
 }
 
@@ -52,7 +52,7 @@ describe('Planar mounted-data orchestration', () => {
         'source',
         createBinding({
           actorUID: 'source-actor',
-          dataId: 'source',
+          displaySetId: 'source',
           role: 'source',
         }),
       ],
@@ -60,13 +60,13 @@ describe('Planar mounted-data orchestration', () => {
         'overlay',
         createBinding({
           actorUID: 'overlay-actor',
-          dataId: 'overlay',
+          displaySetId: 'overlay',
         }),
       ],
     ]);
     const mountedData = createMountedData(bindings);
 
-    mountedData.promoteSourceDataId('overlay');
+    mountedData.promoteSourceDisplaySetId('overlay');
 
     expect(bindings.get('source').role).toBe('overlay');
     expect(bindings.get('overlay').role).toBe('source');
@@ -83,7 +83,7 @@ describe('Planar mounted-data orchestration', () => {
         'source',
         createBinding({
           actorUID: 'source-actor',
-          dataId: 'source',
+          displaySetId: 'source',
           role: 'source',
         }),
       ],
@@ -91,17 +91,17 @@ describe('Planar mounted-data orchestration', () => {
         'overlay',
         createBinding({
           actorUID: 'overlay-actor',
-          dataId: 'overlay',
+          displaySetId: 'overlay',
         }),
       ],
     ]);
     const mountedData = createMountedData(bindings);
 
-    mountedData.promoteSourceDataId('source');
+    mountedData.promoteSourceDisplaySetId('source');
     bindings.delete('source');
     mountedData.handleRemovedData('source');
 
-    expect(mountedData.getActiveDataId()).toBe('overlay');
+    expect(mountedData.getSourceDisplaySetId()).toBe('overlay');
     expect(bindings.get('overlay').role).toBe('source');
   });
 });
@@ -113,7 +113,7 @@ describe('Planar view-reference orchestration', () => {
         'source',
         createBinding({
           actorUID: 'source-actor',
-          dataId: 'source',
+          displaySetId: 'source',
           imageIds: ['image:source'],
           role: 'source',
         }),
@@ -122,7 +122,7 @@ describe('Planar view-reference orchestration', () => {
         'overlay',
         createBinding({
           actorUID: 'overlay-actor',
-          dataId: 'overlay',
+          displaySetId: 'overlay',
           imageIds: ['image:overlay'],
         }),
       ],
@@ -148,13 +148,13 @@ describe('Planar view-reference orchestration', () => {
     });
     const updateBindingsCameraState = jest.fn();
 
-    mountedData.promoteSourceDataId('source');
+    mountedData.promoteSourceDisplaySetId('source');
 
     const references = new PlanarViewReferenceController({
       viewportId: 'viewport-1',
       viewportType: 'planar',
-      getActiveDataId: () => mountedData.getActiveDataId(),
-      getBinding: (dataId) => bindings.get(dataId),
+      getSourceDisplaySetId: () => mountedData.getSourceDisplaySetId(),
+      getBinding: (displaySetId) => bindings.get(displaySetId),
       getBindings: () => bindings.entries(),
       getCurrentBinding: () => mountedData.getCurrentBinding(),
       getRenderContext: () => ({
@@ -163,12 +163,12 @@ describe('Planar view-reference orchestration', () => {
         type: 'planar',
         viewport: {
           element: document.createElement('div'),
-          getActiveDataId: () => mountedData.getActiveDataId(),
+          getSourceDisplaySetId: () => mountedData.getSourceDisplaySetId(),
           getOverlayActors: () =>
             mountedData.getProjectedActorEntries('overlay'),
           getViewState: () => viewState,
-          isCurrentDataId: (dataId) =>
-            mountedData.getCurrentBinding()?.data.id === dataId,
+          isCurrentDisplaySetId: (displaySetId) =>
+            mountedData.getCurrentBinding()?.data.id === displaySetId,
         },
         renderPath: {
           renderMode: ActorRenderMode.CPU_IMAGE,
@@ -209,7 +209,8 @@ describe('Planar view-reference orchestration', () => {
         0,
         imageIdIndex,
       ],
-      promoteSourceDataId: (dataId) => mountedData.promoteSourceDataId(dataId),
+      promoteSourceDisplaySetId: (displaySetId) =>
+        mountedData.promoteSourceDisplaySetId(displaySetId),
       render,
       setImageIdIndex,
       setViewState: (viewStatePatch) => {
@@ -226,7 +227,7 @@ describe('Planar view-reference orchestration', () => {
       referencedImageId: 'image:overlay',
     });
 
-    expect(mountedData.getActiveDataId()).toBe('source');
+    expect(mountedData.getSourceDisplaySetId()).toBe('source');
     expect(updateBindingsCameraState).not.toHaveBeenCalled();
     expect(setImageIdIndex).not.toHaveBeenCalled();
     expect(render).not.toHaveBeenCalled();

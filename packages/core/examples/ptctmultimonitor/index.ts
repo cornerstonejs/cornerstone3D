@@ -4,8 +4,8 @@ import {
   Enums,
   volumeLoader,
   getRenderingEngine,
-  utilities,
   viewportProjection,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -965,14 +965,14 @@ async function run() {
       { imageIds: ptImageIds }
     );
 
-    utilities.genericViewportDisplaySetMetadataProvider.add(
-      displaySetIds[studyKey].ct,
-      { kind: 'planar', imageIds: ctImageIds, volumeId: volumeIds[studyKey].ct }
-    );
-    utilities.genericViewportDisplaySetMetadataProvider.add(
-      displaySetIds[studyKey].pt,
-      { kind: 'planar', imageIds: ptImageIds, volumeId: volumeIds[studyKey].pt }
-    );
+    displaySetRegistry.add(displaySetIds[studyKey].ct, {
+      imageIds: ctImageIds,
+      volumeId: volumeIds[studyKey].ct,
+    });
+    displaySetRegistry.add(displaySetIds[studyKey].pt, {
+      imageIds: ptImageIds,
+      volumeId: volumeIds[studyKey].pt,
+    });
 
     // Load volumes
     volumes[studyKey].ct.load();

@@ -99,6 +99,7 @@ export type {
   ViewportDataReference,
   ViewportProjectionAdapter,
 } from './RenderingEngine/Viewports';
+export type { DisplaySetDescriptor } from './types/DisplaySetDescriptor';
 export type {
   ECGProjectionPresentation,
   ECGProjectionRequest,
@@ -201,6 +202,7 @@ import getEnabledElement, {
   getEnabledElements,
 } from './getEnabledElement';
 import * as metaData from './metaData';
+import displaySetRegistry from './RenderingEngine/Viewports/displaySetRegistry';
 import {
   init,
   isCornerstoneInitialized,
@@ -380,6 +382,7 @@ export {
   volumeLoader,
   //
   metaData,
+  displaySetRegistry,
   //
   utilities,
   addImageSlicesToViewports,

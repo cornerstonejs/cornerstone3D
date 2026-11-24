@@ -88,7 +88,9 @@ describe('A stack on a direct next planar viewport whose images have their own w
 
       await scrollTo(viewport, series, 3);
 
-      expect(viewport.getDefaultVOIRange(viewport.getSourceDataId())).toEqual({
+      expect(
+        viewport.getDefaultVOIRange(viewport.getSourceDisplaySetId())
+      ).toEqual({
         lower: 0,
         upper: -1,
       });
@@ -102,13 +104,12 @@ describe('A stack on a direct next planar viewport whose images have their own w
 
       await showStack(viewport, series, 0, options);
 
-      const sourceId = viewport.getSourceDataId();
+      const sourceId = viewport.getSourceDisplaySetId();
       const overlayId = 'overlayVOI:over';
       const ranges = recordVOIRanges(viewport);
 
-      utilities.genericViewportDisplaySetMetadataProvider.add(overlayId, {
+      cornerstone3D.displaySetRegistry.add(overlayId, {
         imageIds: overlay.imageIds,
-        kind: 'planar',
         initialImageIdIndex: 0,
       });
       await viewport.addDisplaySet(overlayId, {
@@ -122,7 +123,7 @@ describe('A stack on a direct next planar viewport whose images have their own w
       });
       await renderAndWait(viewport);
 
-      expect(viewport.getSourceDataId()).toBe(sourceId);
+      expect(viewport.getSourceDisplaySetId()).toBe(sourceId);
       expect(
         viewport.getDisplaySets().map(({ displaySetId }) => displaySetId)
       ).toEqual([sourceId, overlayId]);
@@ -146,7 +147,7 @@ describe('A stack on a direct next planar viewport whose images have their own w
 
       await showStack(viewport, series, 0, options);
 
-      const displaySetId = viewport.getSourceDataId();
+      const displaySetId = viewport.getSourceDisplaySetId();
       const ranges = recordVOIRanges(viewport);
 
       await scrollTo(viewport, series, 1);
@@ -172,7 +173,7 @@ describe('A stack on a direct next planar viewport whose images have their own w
 
       await showStack(viewport, series, 0, options);
 
-      const displaySetId = viewport.getSourceDataId();
+      const displaySetId = viewport.getSourceDisplaySetId();
 
       viewport.setDisplaySetPresentation(displaySetId, {
         voiRange: { lower: 0, upper: 100 },

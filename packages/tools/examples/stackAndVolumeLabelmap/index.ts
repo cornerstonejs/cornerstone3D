@@ -1,5 +1,5 @@
 import type { PlanarViewport } from '@cornerstonejs/core';
-import { Enums, RenderingEngine, utilities } from '@cornerstonejs/core';
+import { Enums, RenderingEngine } from '@cornerstonejs/core';
 import * as cornerstone from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
@@ -189,13 +189,11 @@ async function run() {
 
   await volume.load();
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(ptDisplaySetId, {
-    kind: 'planar',
+  cornerstone.displaySetRegistry.add(ptDisplaySetId, {
     imageIds: ptImageIds,
     initialImageIdIndex: 70,
   });
-  utilities.genericViewportDisplaySetMetadataProvider.add(ctDisplaySetId, {
-    kind: 'planar',
+  cornerstone.displaySetRegistry.add(ctDisplaySetId, {
     imageIds: ctImageIds,
     volumeId,
   });

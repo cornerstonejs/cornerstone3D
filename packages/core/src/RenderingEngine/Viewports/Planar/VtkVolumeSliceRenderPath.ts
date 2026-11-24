@@ -230,7 +230,7 @@ export class VtkVolumeSliceRenderPath
     ctx: PlanarVtkVolumeAdapterContext,
     rendering: PlanarVolumeSliceRendering,
     props: unknown,
-    dataId: string
+    displaySetId: string
   ): void {
     rendering.dataPresentation = props as PlanarDataPresentation | undefined;
     // Segmentation overlays get their color/opacity transfer functions from
@@ -255,7 +255,7 @@ export class VtkVolumeSliceRenderPath
     });
     rendering.overlayOrder = getSliceActorDepthOrder(
       ctx,
-      dataId,
+      displaySetId,
       rendering.actor
     );
     updateVolumeSliceActorDepthOffset(
@@ -270,25 +270,25 @@ export class VtkVolumeSliceRenderPath
   private applyViewState(
     ctx: PlanarVtkVolumeAdapterContext,
     rendering: PlanarVolumeSliceRendering,
-    dataId: string,
+    displaySetId: string,
     cameraInput: unknown
   ): void {
     const camera = cameraInput as PlanarViewState | undefined;
 
     ctx.display.activateRenderMode(ActorRenderMode.VTK_VOLUME_SLICE);
-    this.syncRenderCamera(ctx, rendering, dataId, camera, true);
+    this.syncRenderCamera(ctx, rendering, displaySetId, camera, true);
   }
 
   private syncRenderCamera(
     ctx: PlanarVtkVolumeAdapterContext,
     rendering: PlanarVolumeSliceRendering,
-    dataId: string,
+    displaySetId: string,
     camera: PlanarViewState | undefined,
     triggerImageEvent: boolean
   ): void {
     const projection = resolvePlanarRenderPathProjection({
       ctx,
-      dataId,
+      displaySetId,
       rendering,
       viewState: camera,
     });
@@ -323,7 +323,7 @@ export class VtkVolumeSliceRenderPath
     updateVolumeSlicePlane(rendering.mapper, projection.activeSourceICamera);
     rendering.overlayOrder = getSliceActorDepthOrder(
       ctx,
-      dataId,
+      displaySetId,
       rendering.actor
     );
     updateVolumeSliceActorDepthOffset(
@@ -411,11 +411,11 @@ export class VtkVolumeSliceRenderPath
   private resize(
     ctx: PlanarVtkVolumeAdapterContext,
     rendering: PlanarVolumeSliceRendering,
-    dataId: string
+    displaySetId: string
   ): void {
     const camera = ctx.viewport.getViewState();
 
-    this.syncRenderCamera(ctx, rendering, dataId, camera, false);
+    this.syncRenderCamera(ctx, rendering, displaySetId, camera, false);
     ctx.display.requestRender();
   }
 
@@ -581,10 +581,10 @@ export function getImageSliceOverlayOrder(
  */
 export function getSliceActorDepthOrder(
   ctx: Pick<PlanarVtkVolumeAdapterContext, 'viewport' | 'vtk'>,
-  dataId: string,
+  displaySetId: string,
   actor: PlanarVolumeSliceRendering['actor']
 ): number {
-  if (ctx.viewport.isCurrentDataId(dataId)) {
+  if (ctx.viewport.isCurrentDisplaySetId(displaySetId)) {
     return 0;
   }
 

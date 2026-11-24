@@ -4,7 +4,7 @@ import {
   Enums,
   getRenderingEngine,
   viewportProjection,
-  utilities,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
@@ -26,7 +26,7 @@ const { ToolGroupManager } = cornerstoneTools;
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'videoGenericViewport';
 const toolGroupId = 'videoNextToolGroup';
-const videoDataId = 'video-next:primary';
+const videoDisplaySetId = 'video-next:primary';
 
 setTitleAndDescription(
   'VideoViewport API',
@@ -165,12 +165,11 @@ async function run() {
 
   const viewport = renderingEngine.getViewport<VideoViewport>(viewportId);
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(videoDataId, {
-    kind: 'video',
-    sourceDataId: videoId,
+  displaySetRegistry.add(videoDisplaySetId, {
+    imageId: videoId,
   });
 
-  await viewport.setDisplaySets({ displaySetId: videoDataId });
+  await viewport.setDisplaySets({ displaySetId: videoDisplaySetId });
 }
 
 run();

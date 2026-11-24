@@ -208,7 +208,9 @@ function getAxialCoronalSlabLineRows(element) {
 
 /** The presentation of the source display set of a next viewport. */
 function getSourcePresentation(viewport) {
-  return viewport.getDisplaySetPresentation(viewport.getSourceDataId()) || {};
+  return (
+    viewport.getDisplaySetPresentation(viewport.getSourceDisplaySetId()) || {}
+  );
 }
 
 /**

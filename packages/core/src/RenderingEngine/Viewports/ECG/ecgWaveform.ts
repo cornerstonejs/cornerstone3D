@@ -109,21 +109,25 @@ export function getECGFrameOfReferenceUID(
 }
 
 /**
- * Loads the waveform of `dataId`. `options.multiplexGroupIndex` names the
+ * Loads the waveform of `displaySetId`. `options.multiplexGroupIndex` names the
  * multiplex group; undefined gives the default group. The ECG module and the
  * CALIBRATION get the same option, so they describe the same group.
  */
 export async function loadECGWaveform(
-  dataId: string,
+  displaySetId: string,
   options: { multiplexGroupIndex?: number } = {}
 ): Promise<{
   waveform: ECGWaveformLike;
   calibration: unknown;
 }> {
-  const ecgModule = metaData.getMetaData(MetadataModules.ECG, dataId, options);
+  const ecgModule = metaData.getMetaData(
+    MetadataModules.ECG,
+    displaySetId,
+    options
+  );
 
   if (!ecgModule?.waveformData?.retrieveBulkData) {
-    throw new Error(`[ECG] No ECG waveform data for ${dataId}`);
+    throw new Error(`[ECG] No ECG waveform data for ${displaySetId}`);
   }
 
   const {
@@ -142,7 +146,7 @@ export async function loadECGWaveform(
     await ecgModule.waveformData.retrieveBulkData();
   const calibration = metaData.getMetaData(
     MetadataModules.CALIBRATION,
-    dataId,
+    displaySetId,
     options
   );
   const channels: ECGChannelLike[] = [];

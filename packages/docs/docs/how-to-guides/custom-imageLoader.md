@@ -100,8 +100,7 @@ cornerstone.imageLoader.registerImageLoader('custom1', loadImage);
 
 ```js
 // Images shown as follows will be passed to our loadImage function:
-utilities.genericViewportDisplaySetMetadataProvider.add('customStack', {
-  kind: 'planar',
+displaySetRegistry.add('customStack', {
   imageIds: ['custom1://example.com/image.dcm'],
 });
 

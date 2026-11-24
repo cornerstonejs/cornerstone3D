@@ -91,7 +91,7 @@ function contourSetOf(series) {
 async function showVolumeIn(viewport, series, orientation) {
   const displaySetId = `volume:${viewport.id}`;
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+  cornerstone3D.displaySetRegistry.add(displaySetId, {
     imageIds: series.imageIds,
     volumeId: series.volumeId,
   });
@@ -127,7 +127,7 @@ describe('The contour annotations of a contour set on direct next planar viewpor
   });
 
   afterEach(function () {
-    utilities.genericViewportDisplaySetMetadataProvider.clear();
+    cornerstone3D.displaySetRegistry.clear();
     testUtils.cleanupTestEnvironment({
       renderingEngineId,
       toolGroupIds: [toolGroupId],

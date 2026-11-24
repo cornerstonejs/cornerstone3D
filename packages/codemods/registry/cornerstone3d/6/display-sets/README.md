@@ -29,8 +29,7 @@ as `viewport` alone, a `let`, a `var` and a container type such as
     viewport.id,
     imageIds[0],
   ]);
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId, {
     imageIds,
     initialImageIdIndex: index,
   });
@@ -91,8 +90,7 @@ as `viewport` alone, a `let`, a `var` and a container type such as
     return viewport;
   });
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(volumeId, {
-    kind: 'planar',
+  displaySetRegistry.add(volumeId, {
     imageIds,
     volumeId,
   });
@@ -118,9 +116,9 @@ as `viewport` alone, a `let`, a `var` and a container type such as
   function (the caller gets the promise).
 - Statements that replace the single-statement body of an `if`, an `else`, a
   loop or a `case` go in a block.
-- `utilities` and `Enums` come from the existing core import, or under a
-  fresh alias such as `coreUtilities` when a local name hides them at the
-  call. An import with comments is edited in place.
+- `displaySetRegistry` and `Enums` come from the existing core import, or
+  under a fresh alias such as `coreDisplaySetRegistry` when a local name
+  hides them at the call. An import with comments is edited in place.
 
 ## Reported
 

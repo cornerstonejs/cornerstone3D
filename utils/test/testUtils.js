@@ -20,6 +20,7 @@ import {
   getRenderBackend,
   setRenderBackend,
   getRenderingEngines,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import {
   init as initTools,
@@ -297,8 +298,7 @@ function setStackOnNextViewport(
 ) {
   const displaySetId = `stack:${viewport.id}`;
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId, {
     imageIds,
     initialImageIdIndex: imageIdIndex,
   });
@@ -325,8 +325,7 @@ function setVolumesOnNextViewport(viewport, volumeIds, options = {}) {
   const entries = volumeIds.map((volumeId) => {
     const displaySetId = `volume:${viewport.id}:${volumeId}`;
 
-    utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-      kind: 'planar',
+    displaySetRegistry.add(displaySetId, {
       imageIds: cache.getVolume(volumeId).imageIds,
       volumeId,
     });

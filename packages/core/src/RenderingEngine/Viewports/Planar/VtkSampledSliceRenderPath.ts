@@ -67,7 +67,7 @@ export const SAMPLED_SLICE_LOADING_UPDATE_MS = 100;
 /** The parts of one mounted sampled slice. */
 type SampledSliceMount = PlanarSlicePlaneMoves & {
   ctx: PlanarVtkVolumeAdapterContext;
-  dataId: string;
+  displaySetId: string;
   rendering: PlanarSampledSliceRendering;
   sampler: PlanarSliceSampler;
   draw: PlanarSampledSliceActor;
@@ -159,7 +159,7 @@ export class VtkSampledSliceRenderPath
     };
     const mount: SampledSliceMount = {
       ctx,
-      dataId: data.id,
+      displaySetId: data.id,
       rendering,
       sampler,
       draw,
@@ -321,10 +321,10 @@ export class VtkSampledSliceRenderPath
     camera: PlanarViewState | undefined,
     triggerImageEvent: boolean
   ): void {
-    const { ctx, dataId, rendering } = mount;
+    const { ctx, displaySetId, rendering } = mount;
     const projection = resolvePlanarRenderPathProjection({
       ctx,
-      dataId,
+      displaySetId,
       rendering,
       viewState: camera,
     });
@@ -413,10 +413,14 @@ export class VtkSampledSliceRenderPath
     camera: PlanarResolvedICamera | undefined,
     slice: PlanarSampledSlice | undefined
   ): void {
-    const { ctx, dataId, draw, rendering } = mount;
+    const { ctx, displaySetId, draw, rendering } = mount;
 
     draw.setSlice(slice);
-    rendering.overlayOrder = getSliceActorDepthOrder(ctx, dataId, draw.actor);
+    rendering.overlayOrder = getSliceActorDepthOrder(
+      ctx,
+      displaySetId,
+      draw.actor
+    );
     draw.followCamera(camera, rendering.overlayOrder);
   }
 
@@ -430,7 +434,7 @@ export class VtkSampledSliceRenderPath
    * stops it (`updateSlice`).
    */
   private scheduleRestWork(mount: SampledSliceMount): void {
-    const { ctx, dataId, rendering, sampler } = mount;
+    const { ctx, displaySetId, rendering, sampler } = mount;
 
     mount.cancelRestWork = scheduleSampledSliceRestWork({
       sampler,
@@ -450,7 +454,7 @@ export class VtkSampledSliceRenderPath
       getNeighbours: (camera) =>
         getNeighbourCameras({
           ctx,
-          dataId,
+          displaySetId,
           rendering,
           lastStep: mount.lastStep,
           camera,
@@ -495,12 +499,12 @@ function cancelRestWork(mount: SampledSliceMount): void {
  * debounced work of the tools about 100 ms after every move of the view.
  */
 export function reportSamplingState(
-  mount: Pick<SampledSliceMount, 'dataId' | 'sampler'> & {
+  mount: Pick<SampledSliceMount, 'displaySetId' | 'sampler'> & {
     ctx: Pick<SampledSliceMount['ctx'], 'viewport'>;
     rendering: { slabTooLarge?: boolean };
   }
 ): boolean {
-  const { ctx, dataId, rendering, sampler } = mount;
+  const { ctx, displaySetId, rendering, sampler } = mount;
   const slabTooLarge = sampler.isSlabTooLarge();
 
   if (!!rendering.slabTooLarge === slabTooLarge) {
@@ -508,7 +512,7 @@ export function reportSamplingState(
   }
 
   rendering.slabTooLarge = slabTooLarge;
-  ctx.viewport.refreshRenderPlan?.(dataId);
+  ctx.viewport.refreshRenderPlan?.(displaySetId);
 
   return true;
 }

@@ -223,7 +223,7 @@ describe('Planar presentation, the PET colormap recipe on a fusion -- ', () => {
       renderingEngineId,
       toolGroupIds: ['default'],
     });
-    utilities.genericViewportDisplaySetMetadataProvider.clear();
+    cornerstone3D.displaySetRegistry.clear();
   });
 
   Object.keys(LEGACY_PET_COLUMN).forEach((exponent) => {
@@ -243,11 +243,11 @@ describe('Planar presentation, the PET colormap recipe on a fusion -- ', () => {
       const viewport = renderingEngine.getViewport('fusion');
       const { ct, pt } = createFusion(exponent, Z_SPACING[exponent]);
 
-      utilities.genericViewportDisplaySetMetadataProvider.add('fusion-ct', {
+      cornerstone3D.displaySetRegistry.add('fusion-ct', {
         imageIds: ct.imageIds,
         volumeId: ct.volumeId,
       });
-      utilities.genericViewportDisplaySetMetadataProvider.add('fusion-pt', {
+      cornerstone3D.displaySetRegistry.add('fusion-pt', {
         imageIds: pt.imageIds,
         volumeId: pt.volumeId,
       });

@@ -1,5 +1,9 @@
 import type { PlanarViewport, Types } from '@cornerstonejs/core';
-import { RenderingEngine, Enums, utilities } from '@cornerstonejs/core';
+import {
+  RenderingEngine,
+  Enums,
+  displaySetRegistry,
+} from '@cornerstonejs/core';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -212,8 +216,7 @@ async function run() {
   const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
   const stack = [imageIds[0]];
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId, {
     imageIds: stack,
     initialImageIdIndex: 0,
   });
@@ -222,8 +225,7 @@ async function run() {
   const viewport2 = renderingEngine.getViewport<PlanarViewport>(viewportId2);
 
   const stack2 = [imageIds2[0]];
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId2, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId2, {
     imageIds: stack2,
     initialImageIdIndex: 0,
   });

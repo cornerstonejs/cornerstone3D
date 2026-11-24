@@ -31,7 +31,10 @@ export type DebugBinding = {
 /** A viewport that can list its display sets for the stats overlay. */
 export type DebugBindingsSource = {
   getDebugBindings?: () => ReadonlyArray<DebugBinding>;
-  getRenderPlan?: () => ReadonlyArray<{ dataId: string; reason?: string }>;
+  getRenderPlan?: () => ReadonlyArray<{
+    displaySetId: string;
+    reason?: string;
+  }>;
 };
 
 type DebugSliceCacheStatistics = {
@@ -139,7 +142,7 @@ function readRenderPlanReasons(
   try {
     for (const layer of viewport.getRenderPlan?.() ?? []) {
       if (layer.reason) {
-        reasonById.set(layer.dataId, layer.reason);
+        reasonById.set(layer.displaySetId, layer.reason);
       }
     }
   } catch {

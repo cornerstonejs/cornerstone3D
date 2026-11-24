@@ -140,8 +140,7 @@ window. The window is a key of the presentation of the display set.
 ```js
 const displaySetId = 'ctVolume';
 
-utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-  kind: 'planar',
+displaySetRegistry.add(displaySetId, {
   imageIds,
   volumeId,
 });
@@ -172,7 +171,7 @@ import {
   RenderingEngine,
   Enums,
   volumeLoader,
-  utilities,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import { init as dicomImageLoaderInit } from '@cornerstonejs/dicom-image-loader';
 import {
@@ -274,8 +273,7 @@ async function run() {
 
   const displaySetId = 'ctVolume';
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId, {
     imageIds,
     volumeId,
   });

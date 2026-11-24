@@ -8,7 +8,7 @@ import {
   setPreferSizeOverAccuracy,
   cache,
   metaData,
-  utilities,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import uids from '../uids';
@@ -174,8 +174,7 @@ async function loadAndViewImage(imageId) {
 
   const displaySetId = `dicomImageLoaderWADOURI:${imageId}`;
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId, {
     imageIds: [imageId],
   });
 

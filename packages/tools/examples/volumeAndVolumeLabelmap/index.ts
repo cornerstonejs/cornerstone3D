@@ -203,14 +203,14 @@ async function run() {
   volume.load();
   ptVolume.load();
 
-  cornerstone.utilities.genericViewportDisplaySetMetadataProvider.add(
-    ctDisplaySetId,
-    { kind: 'planar', imageIds: ctImageIds, volumeId }
-  );
-  cornerstone.utilities.genericViewportDisplaySetMetadataProvider.add(
-    ptDisplaySetId,
-    { kind: 'planar', imageIds: ptImageIds, volumeId: ptVolumeId }
-  );
+  cornerstone.displaySetRegistry.add(ctDisplaySetId, {
+    imageIds: ctImageIds,
+    volumeId,
+  });
+  cornerstone.displaySetRegistry.add(ptDisplaySetId, {
+    imageIds: ptImageIds,
+    volumeId: ptVolumeId,
+  });
 
   await Promise.all([
     viewport1.setDisplaySets({ displaySetId: ctDisplaySetId }),

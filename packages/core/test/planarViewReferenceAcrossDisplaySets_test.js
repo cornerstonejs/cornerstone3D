@@ -92,7 +92,9 @@ describe('A view reference between a stack and a volume of the same images on di
 
         const viewRef = volume.getViewReference();
 
-        expect(viewRef.dataId).not.toBe(stack.getViewReference().dataId);
+        expect(viewRef.displaySetId).not.toBe(
+          stack.getViewReference().displaySetId
+        );
         expect(series.imageIds.indexOf(viewRef.referencedImageId)).toBe(k);
         expect(answers(stack, viewRef)).toEqual({
           plain: false,
@@ -126,7 +128,9 @@ describe('A view reference between a stack and a volume of the same images on di
 
         const viewRef = stack.getViewReference();
 
-        expect(viewRef.dataId).not.toBe(volume.getViewReference().dataId);
+        expect(viewRef.displaySetId).not.toBe(
+          volume.getViewReference().displaySetId
+        );
         expect(answers(volume, viewRef)).toEqual({
           plain: false,
           withNavigation: true,

@@ -17,7 +17,7 @@ import { RenderBackends } from '../src/enums';
 import cache from '../src/cache/cache';
 import * as imageLoader from '../src/loaders/imageLoader';
 import * as metaData from '../src/metaData';
-import genericViewportDisplaySetMetadataProvider from '../src/utilities/genericViewportDisplaySetMetadataProvider';
+import displaySetRegistry from '../src/RenderingEngine/Viewports/displaySetRegistry';
 import { createPlanarViewportOnStandInEngine } from './utils/planarViewportOnStandInEngine';
 
 let mockWebGL = false;
@@ -123,7 +123,7 @@ describe('Rendering on a device without WebGL', () => {
     cache.purgeCache();
     metaData.removeAllProviders();
     imageLoader.unregisterAllImageLoaders();
-    genericViewportDisplaySetMetadataProvider.clear();
+    displaySetRegistry.clear();
     document.body.innerHTML = '';
     setRenderBackend(RenderBackends.Auto);
     mockWebGL = false;
@@ -196,8 +196,7 @@ describe('Rendering on a device without WebGL', () => {
     );
 
     engines.push(renderingEngine);
-    genericViewportDisplaySetMetadataProvider.add('withoutWebGL:stack', {
-      kind: 'planar',
+    displaySetRegistry.add('withoutWebGL:stack', {
       imageIds: createImageIds(),
       initialImageIdIndex: 0,
     });
@@ -206,10 +205,14 @@ describe('Rendering on a device without WebGL', () => {
     expect(
       viewport
         .getRenderPlan()
-        .map(({ dataId, draw, renderMode }) => ({ dataId, draw, renderMode }))
+        .map(({ displaySetId, draw, renderMode }) => ({
+          displaySetId,
+          draw,
+          renderMode,
+        }))
     ).toEqual([
       {
-        dataId: 'withoutWebGL:stack',
+        displaySetId: 'withoutWebGL:stack',
         draw: 'cpu',
         renderMode: ActorRenderMode.CPU_IMAGE,
       },

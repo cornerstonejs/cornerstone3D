@@ -2,8 +2,8 @@ import {
   Enums,
   RenderingEngine,
   imageLoader,
-  utilities,
   volumeLoader,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import type { PlanarViewport } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
@@ -267,8 +267,7 @@ async function updateViewport() {
   const imageIds = await createAndLoadData();
 
   if (currentViewportMode === 'stack') {
-    utilities.genericViewportDisplaySetMetadataProvider.add(stackDisplaySetId, {
-      kind: 'planar',
+    displaySetRegistry.add(stackDisplaySetId, {
       imageIds,
     });
     viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
@@ -280,14 +279,10 @@ async function updateViewport() {
       imageIds,
     });
     volume.load();
-    utilities.genericViewportDisplaySetMetadataProvider.add(
-      volumeDisplaySetId,
-      {
-        kind: 'planar',
-        imageIds,
-        volumeId,
-      }
-    );
+    displaySetRegistry.add(volumeDisplaySetId, {
+      imageIds,
+      volumeId,
+    });
     viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
     await viewport.setDisplaySets({ displaySetId: volumeDisplaySetId });
     viewport.render();

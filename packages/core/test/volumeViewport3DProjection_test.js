@@ -43,7 +43,7 @@ async function showVolume(viewport) {
   });
 
   await volumeLoader.createAndCacheVolume(volumeId, { imageIds: [] });
-  utilities.genericViewportDisplaySetMetadataProvider.add('projection3D', {
+  cornerstone3D.displaySetRegistry.add('projection3D', {
     imageIds: cache.getVolume(volumeId).imageIds,
     volumeId,
   });

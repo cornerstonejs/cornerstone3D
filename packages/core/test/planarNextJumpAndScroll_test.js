@@ -49,9 +49,8 @@ async function showStack(viewport) {
     })
   );
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+  cornerstone3D.displaySetRegistry.add(displaySetId, {
     imageIds,
-    kind: 'planar',
     initialImageIdIndex: 0,
   });
   await viewport.setDisplaySets({ displaySetId });
@@ -83,7 +82,7 @@ async function showVolume(
   });
 
   await volumeLoader.createAndCacheVolume(volumeId, { imageIds: [] });
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+  cornerstone3D.displaySetRegistry.add(displaySetId, {
     imageIds: cache.getVolume(volumeId).imageIds,
     volumeId,
   });
@@ -109,7 +108,7 @@ async function showTwoVolumes(viewport) {
   const options = { orientation: OrientationAxis.ACQUISITION };
 
   [fine, coarse].forEach(({ imageIds, volumeId }) => {
-    utilities.genericViewportDisplaySetMetadataProvider.add(volumeId, {
+    cornerstone3D.displaySetRegistry.add(volumeId, {
       imageIds,
       volumeId,
     });
@@ -156,7 +155,7 @@ describe('Jump and scroll on a direct next planar viewport -- ', () => {
 
   afterEach(function () {
     testUtils.cleanupTestEnvironment({ renderingEngineId });
-    utilities.genericViewportDisplaySetMetadataProvider.clear?.();
+    cornerstone3D.displaySetRegistry.clear?.();
   });
 
   describe('utilities.jumpToSlice', () => {

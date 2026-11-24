@@ -150,7 +150,7 @@ async function createVolume(
 async function showVolume(next, volumeId) {
   const displaySetId = `next3D:${next.id}`;
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+  cornerstone3D.displaySetRegistry.add(displaySetId, {
     imageIds: cache.getVolume(volumeId).imageIds,
     volumeId,
   });
@@ -347,7 +347,7 @@ describe('Direct next 3D viewport in perspective -- ', () => {
 
 /** Registers a display set of a volume for a direct next viewport. */
 function addVolumeDisplaySet(displaySetId, volumeId) {
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+  cornerstone3D.displaySetRegistry.add(displaySetId, {
     imageIds: cache.getVolume(volumeId).imageIds,
     volumeId,
   });

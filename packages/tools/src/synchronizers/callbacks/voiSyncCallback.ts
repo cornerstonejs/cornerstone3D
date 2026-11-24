@@ -28,7 +28,7 @@ function getDisplaySetIdOfVolume(
     .getDisplaySets()
     .map(({ displaySetId }) => displaySetId)
     .find((displaySetId) =>
-      viewport.isReferenceViewable({ dataId: displaySetId, volumeId })
+      viewport.isReferenceViewable({ displaySetId, volumeId })
     );
 }
 
@@ -90,18 +90,18 @@ export default function voiSyncCallback(
     findDataIdByVolumeId?: (volumeId: string) => string | undefined;
     getDisplaySets(): Array<{ displaySetId: string }>;
     setDisplaySetPresentation: (
-      dataIdOrProps: string | typeof tProperties,
+      displaySetIdOrProps: string | typeof tProperties,
       props?: typeof tProperties
     ) => void;
   };
-  const dataId = !volumeId
+  const displaySetId = !volumeId
     ? undefined
     : typeof displaySetViewport.findDataIdByVolumeId === 'function'
       ? displaySetViewport.findDataIdByVolumeId(volumeId)
       : getDisplaySetIdOfVolume(displaySetViewport, volumeId);
 
-  if (dataId) {
-    displaySetViewport.setDisplaySetPresentation(dataId, tProperties);
+  if (displaySetId) {
+    displaySetViewport.setDisplaySetPresentation(displaySetId, tProperties);
   } else if (!volumeId) {
     // No source volume id (e.g. a stack VOI change) - apply to the default
     // binding.

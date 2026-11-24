@@ -56,9 +56,8 @@ function createUnloadedImageIds(name) {
 async function showImageIds(viewport, imageIds) {
   const displaySetId = `stack:${viewport.id}`;
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+  cornerstone3D.displaySetRegistry.add(displaySetId, {
     imageIds,
-    kind: 'planar',
     initialImageIdIndex: 0,
   });
   await viewport.setDisplaySets({ displaySetId });

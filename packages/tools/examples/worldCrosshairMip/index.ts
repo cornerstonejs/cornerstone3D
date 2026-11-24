@@ -4,8 +4,8 @@ import {
   Enums,
   cache,
   getRenderingEngine,
-  utilities,
   eventTarget,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -51,8 +51,8 @@ const ptSeriesInstanceUID =
 const ctVolumeId = 'cornerstoneStreamingImageVolume:WC_MIP_CT';
 const ptVolumeId = 'cornerstoneStreamingImageVolume:WC_MIP_PT';
 
-const ctMprDataId = 'worldCrosshairMip:ct-mpr';
-const ptMipDataId = 'worldCrosshairMip:pt-mip';
+const ctMprDisplaySetId = 'worldCrosshairMip:ct-mpr';
+const ptMipDisplaySetId = 'worldCrosshairMip:pt-mip';
 
 const ptVoiRange = { lower: 0, upper: 5 };
 
@@ -239,15 +239,13 @@ async function run() {
   });
 
   // One shared CT MPR display set and one PT MIP display set.
-  utilities.genericViewportDisplaySetMetadataProvider.add(ctMprDataId, {
+  displaySetRegistry.add(ctMprDisplaySetId, {
     imageIds: ctImageIds,
-    kind: 'planar',
     volumeId: ctVolumeId,
     initialImageIdIndex: Math.floor(ctImageIds.length / 2),
   });
-  utilities.genericViewportDisplaySetMetadataProvider.add(ptMipDataId, {
+  displaySetRegistry.add(ptMipDisplaySetId, {
     imageIds: ptImageIds,
-    kind: 'planar',
     volumeId: ptVolumeId,
     initialImageIdIndex: Math.floor(ptImageIds.length / 2),
   });
@@ -261,7 +259,7 @@ async function run() {
   await Promise.all(
     viewportSpecs.map((spec) =>
       getViewport(spec.viewportId).setDisplaySets({
-        displaySetId: spec.isMip ? ptMipDataId : ctMprDataId,
+        displaySetId: spec.isMip ? ptMipDisplaySetId : ctMprDisplaySetId,
         options: { orientation: spec.orientation },
       })
     )
@@ -272,14 +270,14 @@ async function run() {
     if (spec.isMip) {
       // The MIP: maximum intensity blending through a slab covering the
       // whole PT volume, displayed as classic inverted-gray PET.
-      viewport.setDisplaySetPresentation(ptMipDataId, {
+      viewport.setDisplaySetPresentation(ptMipDisplaySetId, {
         voiRange: ptVoiRange,
         invert: true,
         blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
         slabThickness: computeFullVolumeSlabThickness(ptVolumeId),
       });
     } else {
-      viewport.setDisplaySetPresentation(ctMprDataId, {
+      viewport.setDisplaySetPresentation(ctMprDisplaySetId, {
         voiRange: ctVoiRange,
       });
     }

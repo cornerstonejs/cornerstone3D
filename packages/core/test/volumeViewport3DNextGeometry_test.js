@@ -78,7 +78,7 @@ async function showVolume(next) {
   });
 
   await volumeLoader.createAndCacheVolume(volumeId, { imageIds: [] });
-  utilities.genericViewportDisplaySetMetadataProvider.add('next3DVolume', {
+  cornerstone3D.displaySetRegistry.add('next3DVolume', {
     imageIds: cache.getVolume(volumeId).imageIds,
     volumeId,
   });
@@ -174,7 +174,7 @@ describe('Direct next 3D viewport, a geometry display set -- ', () => {
   });
 
   afterEach(function () {
-    utilities.genericViewportDisplaySetMetadataProvider.clear();
+    cornerstone3D.displaySetRegistry.clear();
     removeCachedGeometry('surface1');
     testUtils.cleanupTestEnvironment({
       renderingEngineId,
@@ -182,7 +182,7 @@ describe('Direct next 3D viewport, a geometry display set -- ', () => {
     });
   });
 
-  it('mounts a surface with addDisplaySet and takes it out of the scene with removeData', async function () {
+  it('mounts a surface with addDisplaySet and takes it out of the scene with removeDisplaySet', async function () {
     const next = createNextViewport(renderingEngine);
 
     await showVolume(next);
@@ -203,7 +203,7 @@ describe('Direct next 3D viewport, a geometry display set -- ', () => {
     expect(entry.actor.getBounds()).toEqual([0, 30, 0, 20, 0, 10]);
     expect(entry.actor.getProperty().getColor()).toEqual([1, 0, 0]);
 
-    next.removeData('surface1');
+    next.removeDisplaySet('surface1');
 
     expect(geometryEntryOf(next, 'surface1')).toBeUndefined();
     expect(next.getActors().length).toBe(1);
@@ -216,7 +216,7 @@ describe('Direct next 3D viewport, a geometry display set -- ', () => {
 
     await showVolume(next);
     createSurfaceGeometry('surface1', [0, 0, 0], [30, 20, 10]);
-    utilities.genericViewportDisplaySetMetadataProvider.add('surface1', {
+    cornerstone3D.displaySetRegistry.add('surface1', {
       imageIds: [],
       geometryId: 'surface1',
       reference: {
@@ -238,7 +238,7 @@ describe('Direct next 3D viewport, a geometry display set -- ', () => {
 
     await showVolume(next);
     createSurfaceGeometry('surface1', [0, 0, 0], [30, 20, 10]);
-    utilities.genericViewportDisplaySetMetadataProvider.add('surfaceSet1', {
+    cornerstone3D.displaySetRegistry.add('surfaceSet1', {
       geometryId: 'surface1',
       reference: {
         kind: 'segmentation',

@@ -6,6 +6,7 @@ import {
   ProgressiveRetrieveImages,
   utilities,
   metaData,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -236,8 +237,7 @@ async function run() {
   // Get the stack viewport that was created
   const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId, {
     imageIds,
     initialImageIdIndex: 0,
   });

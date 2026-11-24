@@ -3,7 +3,7 @@ import {
   RenderingEngine,
   Enums,
   getRenderingEngine,
-  utilities,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -31,7 +31,7 @@ const { MouseBindings } = csToolsEnums;
 const { ViewportType, OrientationAxis } = Enums;
 
 const volumeId = 'cornerstoneStreamingImageVolume:TEN_VIEWPORT_CT';
-const mprDataId = 'tenViewportReferencePoint:ct-mpr';
+const mprDisplaySetId = 'tenViewportReferencePoint:ct-mpr';
 const toolGroupId = 'TEN_VIEWPORT_TOOLGROUP_ID';
 const renderingEngineId = 'myRenderingEngine';
 
@@ -139,9 +139,8 @@ async function run() {
   });
 
   // One shared volume display set across all ten viewports.
-  utilities.genericViewportDisplaySetMetadataProvider.add(mprDataId, {
+  displaySetRegistry.add(mprDisplaySetId, {
     imageIds,
-    kind: 'planar',
     volumeId,
     initialImageIdIndex: Math.floor(imageIds.length / 2),
   });
@@ -152,7 +151,7 @@ async function run() {
         viewportId
       ) as PlanarViewport;
       return viewport.setDisplaySets({
-        displaySetId: mprDataId,
+        displaySetId: mprDisplaySetId,
         options: { orientation },
       });
     })
@@ -162,7 +161,9 @@ async function run() {
     const viewport = getRenderingEngine(renderingEngineId).getViewport(
       viewportId
     ) as PlanarViewport;
-    viewport.setDisplaySetPresentation(mprDataId, { voiRange: ctVoiRange });
+    viewport.setDisplaySetPresentation(mprDisplaySetId, {
+      voiRange: ctVoiRange,
+    });
   });
 
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);

@@ -1,5 +1,5 @@
 import type { PlanarViewport } from '@cornerstonejs/core';
-import { RenderingEngine, utilities } from '@cornerstonejs/core';
+import { RenderingEngine, displaySetRegistry } from '@cornerstonejs/core';
 
 const displaySetId = 'ct';
 
@@ -7,8 +7,7 @@ async function run(imageIds: string[]) {
   const renderingEngine = new RenderingEngine('engine');
   const viewport = renderingEngine.getViewport<PlanarViewport>('CT_STACK');
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId, {
     imageIds,
     initialImageIdIndex: 0,
   });

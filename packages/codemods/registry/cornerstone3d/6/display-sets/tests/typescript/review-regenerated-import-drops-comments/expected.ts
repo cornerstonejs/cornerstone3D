@@ -1,5 +1,5 @@
 import {
-  utilities,
+  displaySetRegistry,
   RenderingEngine,
   /* retain this license */
   Enums, // eslint-disable-line
@@ -11,8 +11,7 @@ export async function show(ids: string[]) {
   const viewport = renderingEngine.getViewport('CT');
 
   const displaySetId = JSON.stringify([viewport.renderingEngineId, viewport.id, ids[0]]);
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId, {
     imageIds: ids,
     initialImageIdIndex: 0,
   });

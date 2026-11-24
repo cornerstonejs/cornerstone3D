@@ -4,7 +4,7 @@ import {
   Enums,
   volumeLoader,
   getRenderingEngine,
-  utilities,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -122,14 +122,10 @@ const convertButton = addButtonToToolbar({
     volume.load();
 
     // Set the volume on the viewport
-    utilities.genericViewportDisplaySetMetadataProvider.add(
-      volumeDisplaySetId,
-      {
-        kind: 'planar',
-        imageIds,
-        volumeId,
-      }
-    );
+    displaySetRegistry.add(volumeDisplaySetId, {
+      imageIds,
+      volumeId,
+    });
 
     await viewport.setDisplaySets({ displaySetId: volumeDisplaySetId });
     viewport.setDisplaySetPresentation(volumeDisplaySetId, ctPresentation());
@@ -187,8 +183,7 @@ async function run() {
   const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
   // Set the stack on the viewport
-  utilities.genericViewportDisplaySetMetadataProvider.add(stackDisplaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(stackDisplaySetId, {
     imageIds,
     initialImageIdIndex: 0,
   });

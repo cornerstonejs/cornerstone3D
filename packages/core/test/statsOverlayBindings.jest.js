@@ -68,9 +68,9 @@ function fakeViewport(id, bindings) {
       ),
     },
     getActors: () => [],
-    getSourceDataId: () => bindings[0]?.displaySetId,
-    getDisplaySetRole: (dataId) =>
-      bindings.find(({ displaySetId }) => displaySetId === dataId)?.role,
+    getSourceDisplaySetId: () => bindings[0]?.displaySetId,
+    getDisplaySetRole: (id) =>
+      bindings.find(({ displaySetId }) => displaySetId === id)?.role,
     getDebugBindings: () =>
       bindings.map((binding) => ({
         ...binding,
@@ -81,7 +81,7 @@ function fakeViewport(id, bindings) {
 
 function sampledBinding(overrides = {}) {
   return {
-    dataId: 'ct',
+    displaySetId: 'ct',
     renderMode: 'vtkSampledSlice',
     role: 'source',
     sliceSize: [512, 135],
@@ -119,7 +119,7 @@ describe('RenderModesPanel', () => {
         entry('CT_AXIAL', [sampledBinding()]),
         entry('FUSION', [
           {
-            dataId: 'pt',
+            displaySetId: 'pt',
             renderMode: 'vtkVolumeSlice',
             role: 'overlay',
             gpuTextures: [
@@ -132,7 +132,7 @@ describe('RenderModesPanel', () => {
             ],
           },
           {
-            dataId: 'cpu',
+            displaySetId: 'cpu',
             renderMode: 'cpuVolume',
             role: 'data',
             gpuTextures: [{ kind: 'canvas', bytes: 0 }],
@@ -163,7 +163,7 @@ describe('RenderModesPanel', () => {
 
     panel.setContent([
       entry('STACK', [
-        { dataId: 'image', renderMode: 'vtkImage', role: 'source' },
+        { displaySetId: 'image', renderMode: 'vtkImage', role: 'source' },
       ]),
     ]);
 
@@ -273,7 +273,7 @@ describe('collectBindingFacts', () => {
     const entries = [
       entry('A', [
         {
-          dataId: 'pt',
+          displaySetId: 'pt',
           renderMode: 'vtkVolumeSlice',
           role: 'source',
           gpuTextures: [{ kind: 'volume', bytes: MB, volumeId: 'pt-volume' }],
@@ -281,7 +281,7 @@ describe('collectBindingFacts', () => {
       ]),
       entry('B', [
         {
-          dataId: 'pt',
+          displaySetId: 'pt',
           renderMode: 'vtkVolumeSlice',
           role: 'source',
           gpuTextures: [{ kind: 'volume', bytes: MB, volumeId: 'pt-volume' }],

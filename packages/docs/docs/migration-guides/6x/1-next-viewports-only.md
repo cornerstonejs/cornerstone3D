@@ -180,12 +180,14 @@ volume in its acquisition plane. For a stack, leave the orientation out.
 
 ## A display set is registered once
 
-A next viewport shows display sets. A display set is registered once, under
-an id that the application chooses, and then shown by its id:
+A next viewport shows display sets. A display set is registered once, in
+`displaySetRegistry`, under an id that the application chooses, and then
+shown by its id:
 
 ```ts
-utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-  kind: 'planar',
+import { displaySetRegistry } from '@cornerstonejs/core';
+
+displaySetRegistry.add(displaySetId, {
   imageIds,
   initialImageIdIndex: 0,
   volumeId,
@@ -199,21 +201,27 @@ await viewport.setDisplaySets({ displaySetId });
 - **Without a `volumeId`** it shows as a stack, in its acquisition plane. Leave
   `volumeId` out for a stack.
 
-What is registered for each family:
+The registered object is a `DisplaySetDescriptor`. It has no `kind`: the
+viewport family that mounts the display set and the fields of the descriptor
+decide how its data is loaded. What each family reads:
 
-| Viewport      | Registered display set                                                                                     |
-| ------------- | ---------------------------------------------------------------------------------------------------------- |
-| Planar        | `{ kind: 'planar', imageIds, initialImageIdIndex, volumeId }`                                              |
-| 3D            | `{ imageIds, volumeId }`                                                                                   |
-| 3D, a surface | Nothing. The `displaySetId` is the id of a geometry of the cache, shown with `renderMode: 'vtkGeometry3d'` |
-| Video         | `{ kind: 'video', sourceDataId: imageId }`, or pass the image id as `displaySetId`                         |
-| ECG           | `{ kind: 'ecg', sourceDataId: imageId }`, or pass the image id as `displaySetId`                           |
-| Whole slide   | `{ kind: 'wsi', imageIds, options: { webClient } }`                                                        |
+| Viewport      | Registered descriptor                                                                                                                |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Planar        | `{ imageIds, initialImageIdIndex, volumeId }`                                                                                        |
+| 3D            | `{ imageIds, volumeId }`                                                                                                             |
+| 3D, a surface | `{ geometryId }`, or nothing: the `displaySetId` is then the id of a geometry of the cache, shown with `renderMode: 'vtkGeometry3d'` |
+| Video         | `{ imageId }`, or pass the image id as `displaySetId`                                                                                |
+| ECG           | `{ imageId }`, or pass the image id as `displaySetId`                                                                                |
+| Whole slide   | `{ imageIds, options: { webClient } }`, or `{ imageIds, webClient }`, or `{ imageIds }` with a `WADO_WEB_CLIENT` metadata provider   |
 
-- **One registration serves a planar and a 3D viewport.** `kind: 'planar'` is
-  optional, and a 3D viewport takes a display set that has it, so a volume
-  that both show is registered once, with `kind: 'planar'`, `imageIds` and
-  `volumeId`.
+- **One registration serves a planar and a 3D viewport.** A volume that both
+  show is registered once, with `imageIds` and `volumeId`.
+- **A descriptor that a family cannot read fails the mount** with a message
+  that names what the family needs, such as
+  `[VideoViewport] The display set "ct" has no imageId, which a VideoViewport needs to show it`.
+  An id that nothing is registered under fails a planar, 3D volume or whole
+  slide mount with
+  `[PlanarViewport] No display set is registered under "ct": register it with displaySetRegistry.add(displaySetId, descriptor)`.
 - **The id of a surface** is the key that was given to
   `geometryLoader.loadAndCacheGeometry`, not `geometry.id`. For a mesh loaded
   from a URL `geometry.id` is the URL without its scheme, and
@@ -221,7 +229,63 @@ What is registered for each family:
 - **Data that is not known at the start**, such as a file that the user
   drops or a series picked from a list, is registered when it is loaded,
   under a new id for each load. `add` under an id that is registered
-  replaces the entry.
+  replaces the entry. `displaySetRegistry.get(displaySetId)`,
+  `has(displaySetId)`, `remove(displaySetId)` and `clear()` read and drop
+  entries.
+
+### From 6.0.0-beta.2
+
+In 6.0.0-beta.2 the registry was `utilities.genericViewportDisplaySetMetadataProvider`,
+a metadata provider, and a descriptor named its family with `kind`. Before:
+
+```ts
+import { utilities } from '@cornerstonejs/core';
+
+const provider = utilities.genericViewportDisplaySetMetadataProvider;
+
+provider.add('ct', { kind: 'planar', imageIds, volumeId });
+provider.add('video', { kind: 'video', sourceDataId: videoImageId });
+
+const ct = provider.get(provider.VIEWPORT_V2_DISPLAY_SET, 'ct');
+const shown = viewport.getViewReference().dataId;
+
+viewport.removeData('video');
+```
+
+After:
+
+```ts
+import { displaySetRegistry } from '@cornerstonejs/core';
+
+displaySetRegistry.add('ct', { imageIds, volumeId });
+displaySetRegistry.add('video', { imageId: videoImageId });
+
+const ct = displaySetRegistry.get('ct');
+const shown = viewport.getViewReference().displaySetId;
+
+viewport.removeDisplaySet('video');
+```
+
+- **The registry is not a metadata provider.**
+  `metaData.get('genericViewportDisplaySet', displaySetId)` gives undefined;
+  call `displaySetRegistry.get(displaySetId)`.
+- **A descriptor is an object.** `add(displaySetId, imageId)` becomes
+  `add(displaySetId, { imageId })`, and `add(displaySetId, imageIds)` becomes
+  `add(displaySetId, { imageIds })`.
+- **The id of a display set is `displaySetId` everywhere**: in a view
+  reference, a render plan layer, the detail of `RENDER_PLAN_CHANGED` and of
+  `RENDER_PATH_ERROR`, the `rendering` of the whole slide viewport's
+  `IMAGE_RENDERED`, a stack input of `addImages`, and a projection request
+  and snapshot. `viewport.getSourceDataId()` is
+  `viewport.getSourceDisplaySetId()`.
+- **A stored view reference is not read under its old key.** A view
+  reference that 6.0.0-beta.2 wrote into an annotation (its `metadata`) or
+  into a state that the application saved carries `dataId`; 6.0 reads
+  `displaySetId` only. Rename the key when the application loads such data.
+- `npx codemod @cornerstonejs/cornerstone3d-6-api-names` makes these changes
+  and reports each site it cannot see, such as a descriptor that is not a
+  literal or a `dataId` of an object that the file does not show to be
+  Cornerstone's.
 
 The first entry of `setDisplaySets` is the source. The others are overlays:
 
@@ -237,7 +301,7 @@ viewport.setDisplaySetPresentation(ptId, {
 ```
 
 `viewport.addDisplaySet(displaySetId, { role: 'overlay' })` adds one overlay,
-and `viewport.removeData(displaySetId)` removes a display set.
+and `viewport.removeDisplaySet(displaySetId)` removes a display set.
 
 The pages under
 [Generic Viewport](../../concepts/cornerstone-core/generic-viewport/migration.md)
@@ -249,7 +313,7 @@ A next viewport holds four things. Each legacy call maps to one of them.
 
 | What            | Calls                                                                                   | Replaces                                                 |
 | --------------- | --------------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| Display sets    | `setDisplaySets`, `addDisplaySet`, `removeData`, `getDisplaySets`                       | `setStack`, `setVolumes`, `addVolumes`, `setVideo`       |
+| Display sets    | `setDisplaySets`, `addDisplaySet`, `removeDisplaySet`, `getDisplaySets`                 | `setStack`, `setVolumes`, `addVolumes`, `setVideo`       |
 | A presentation  | `setDisplaySetPresentation`, `getDisplaySetPresentation`, `resetDisplaySetPresentation` | `setProperties`, `getProperties`, `resetProperties`      |
 | A view state    | `setViewState`, `updateViewState`, `getViewState`, `resetViewState`                     | `setCamera`, `getCamera`, `resetCamera`, `flip`          |
 | View references | `getViewReference`, `setViewReference`, `isReferenceViewable`                           | A camera focal point that was set to move through slices |

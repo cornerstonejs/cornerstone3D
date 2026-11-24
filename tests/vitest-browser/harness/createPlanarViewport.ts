@@ -16,6 +16,7 @@ import {
   utilities,
   volumeLoader,
   type PlanarViewport,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import {
   registerFakeImageStack,
@@ -180,7 +181,7 @@ export async function createPlanarViewport(
     cache.purgeCache();
     fakeStack.unregister();
     csImageLoader.unregisterAllImageLoaders();
-    utilities.genericViewportDisplaySetMetadataProvider.clear?.();
+    displaySetRegistry.clear?.();
 
     if (element.parentNode) {
       element.parentNode.removeChild(element);
@@ -204,9 +205,8 @@ export async function createPlanarViewport(
     };
   }
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+  displaySetRegistry.add(displaySetId, {
     imageIds,
-    kind: 'planar',
     initialImageIdIndex: 0,
     ...(isVolumeBacked
       ? { volumeId: `${FAKE_VOLUME_LOADER_SCHEME}:${displaySetId}` }

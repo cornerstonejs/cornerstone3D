@@ -125,9 +125,8 @@ function renderAndWait(viewport) {
 async function showNextStack(viewport, imageIds) {
   const displaySetId = `stack:${viewport.id}`;
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+  cornerstone3D.displaySetRegistry.add(displaySetId, {
     imageIds,
-    kind: 'planar',
     initialImageIdIndex: 0,
   });
   await viewport.setDisplaySets({
@@ -145,7 +144,7 @@ async function showNextVolumes(viewport, volumeIds, orientation) {
   const entries = volumeIds.map((volumeId, index) => {
     const displaySetId = `volume:${viewport.id}:${index}`;
 
-    utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    cornerstone3D.displaySetRegistry.add(displaySetId, {
       imageIds: cache.getVolume(volumeId).imageIds,
       volumeId,
     });
@@ -332,7 +331,7 @@ describe('Direct next planar viewport against the legacy viewports -- ', () => {
       renderingEngineId,
       toolGroupIds: ['default'],
     });
-    utilities.genericViewportDisplaySetMetadataProvider.clear?.();
+    cornerstone3D.displaySetRegistry.clear?.();
   });
 
   describe('a point in the line of sight', () => {

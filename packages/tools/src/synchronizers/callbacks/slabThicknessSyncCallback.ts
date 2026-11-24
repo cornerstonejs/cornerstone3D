@@ -54,14 +54,17 @@ export default function slabThicknessSyncCallback(
     return;
   }
 
-  const sourceDataId = sViewport.getSourceDataId();
+  const sourceDisplaySetId = sViewport.getSourceDisplaySetId();
 
-  if (!sourceDataId) {
+  if (!sourceDisplaySetId) {
     return;
   }
 
-  const slabThickness = getPresentationSlabThickness(sViewport, sourceDataId);
-  const targetDataIds = tViewport
+  const slabThickness = getPresentationSlabThickness(
+    sViewport,
+    sourceDisplaySetId
+  );
+  const targetDisplaySetIds = tViewport
     .getDisplaySets()
     .map(({ displaySetId }) => displaySetId)
     .filter(
@@ -69,11 +72,11 @@ export default function slabThicknessSyncCallback(
         getPresentationSlabThickness(tViewport, displaySetId) !== slabThickness
     );
 
-  if (!targetDataIds.length) {
+  if (!targetDisplaySetIds.length) {
     return;
   }
 
-  targetDataIds.forEach((displaySetId) => {
+  targetDisplaySetIds.forEach((displaySetId) => {
     tViewport.setDisplaySetPresentation(displaySetId, { slabThickness });
   });
   tViewport.render();

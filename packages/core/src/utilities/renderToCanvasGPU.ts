@@ -15,7 +15,7 @@ import { getRenderingEngine } from '../RenderingEngine/getRenderingEngine';
 import type RenderingEngine from '../RenderingEngine/RenderingEngine';
 import TiledRenderingEngine from '../RenderingEngine/TiledRenderingEngine';
 import type PlanarViewport from '../RenderingEngine/Viewports/Planar/PlanarViewport';
-import genericViewportDisplaySetMetadataProvider from './genericViewportDisplaySetMetadataProvider';
+import displaySetRegistry from '../RenderingEngine/Viewports/displaySetRegistry';
 import isPTPrescaledWithSUV from './isPTPrescaledWithSUV';
 import type { CanvasLoadPosition } from './loadImageToCanvas';
 
@@ -167,7 +167,7 @@ export default function renderToCanvasGPU(
       // copy to on screen from an incorrect location in the offscreen renderer.
       setTimeout(() => {
         renderingEngine.disableElement(viewportId);
-        genericViewportDisplaySetMetadataProvider.remove(volumeDisplaySetId);
+        displaySetRegistry.remove(volumeDisplaySetId);
 
         // remove all the elements that has the same id
         const elements = document.querySelectorAll(
@@ -230,8 +230,7 @@ function showVolume(
   volume: IVolume,
   displaySetId: string
 ): Promise<void> {
-  genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId, {
     imageIds: volume.imageIds,
     initialImageIdIndex: Math.floor(volume.imageIds.length / 2),
     volumeId: volume.volumeId,

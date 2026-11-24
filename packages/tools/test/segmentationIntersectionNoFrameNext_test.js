@@ -146,7 +146,7 @@ describe('SegmentationIntersectionTool with the surface that polySeg converts fr
       renderingEngineId,
       toolGroupIds: [toolGroupId],
     });
-    utilities.genericViewportDisplaySetMetadataProvider.clear?.();
+    cornerstone3D.displaySetRegistry.clear?.();
   });
 
   it('gives the converted surface the frame of reference that the planar viewport makes up for the images, and the tool draws the cut on that viewport', async function () {

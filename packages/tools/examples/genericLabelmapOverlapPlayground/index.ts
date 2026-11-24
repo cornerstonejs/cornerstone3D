@@ -3,8 +3,8 @@ import {
   Enums,
   RenderingEngine,
   imageLoader,
-  utilities,
   volumeLoader,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import {
   addBrushSizeSlider,
@@ -43,8 +43,8 @@ const segmentationId = 'LABELMAP_OVERLAP_PLAYGROUND_SEGMENTATION';
 const volumeName = 'LABELMAP_OVERLAP_PLAYGROUND_VOLUME';
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume';
 const volumeId = `${volumeLoaderScheme}:${volumeName}`;
-const stackDataId = 'labelmap-overlap-next:stack';
-const volumeDataId = 'labelmap-overlap-next:volume';
+const stackDisplaySetId = 'labelmap-overlap-next:stack';
+const volumeDisplaySetId = 'labelmap-overlap-next:volume';
 
 const viewportIds = {
   STACK: 'OVERLAP_STACK',
@@ -370,13 +370,11 @@ async function run() {
     toolGroup.addViewport(viewportId, renderingEngineId);
   });
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(stackDataId, {
-    kind: 'planar',
+  displaySetRegistry.add(stackDisplaySetId, {
     imageIds,
     initialImageIdIndex: Math.floor(imageIds.length / 2),
   });
-  utilities.genericViewportDisplaySetMetadataProvider.add(volumeDataId, {
-    kind: 'planar',
+  displaySetRegistry.add(volumeDisplaySetId, {
     imageIds,
     initialImageIdIndex: Math.floor(imageIds.length / 2),
     volumeId,
@@ -386,7 +384,7 @@ async function run() {
     viewportIds.STACK
   ) as PlanarViewport;
   await stackViewport.setDisplaySets({
-    displaySetId: stackDataId,
+    displaySetId: stackDisplaySetId,
     options: {},
   });
 
@@ -412,7 +410,7 @@ async function run() {
       ) as PlanarViewport;
 
       await viewport.setDisplaySets({
-        displaySetId: volumeDataId,
+        displaySetId: volumeDisplaySetId,
         options: {
           orientation,
         },

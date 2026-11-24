@@ -3,7 +3,6 @@ import {
   RenderingEngine,
   Enums,
   cache,
-  utilities,
   volumeLoader,
 } from '@cornerstonejs/core';
 import * as cornerstone from '@cornerstonejs/core';
@@ -226,10 +225,10 @@ async function initializeVolumeViewport(
     // Add some segmentations based on the source data volume
     await addSegmentationsToState(volumeId);
 
-    utilities.genericViewportDisplaySetMetadataProvider.add(
-      volumeDisplaySetId,
-      { kind: 'planar', imageIds, volumeId }
-    );
+    cornerstone.displaySetRegistry.add(volumeDisplaySetId, {
+      imageIds,
+      volumeId,
+    });
   }
 
   // Set the volume on the viewport
@@ -270,8 +269,7 @@ async function initializeViewport(
 
   if (viewportInfo.showsStack) {
     // Set the stack on the viewport
-    utilities.genericViewportDisplaySetMetadataProvider.add(stackDisplaySetId, {
-      kind: 'planar',
+    cornerstone.displaySetRegistry.add(stackDisplaySetId, {
       imageIds,
       initialImageIdIndex: 0,
     });

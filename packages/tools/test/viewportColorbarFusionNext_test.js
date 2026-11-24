@@ -35,11 +35,11 @@ async function showFusion(viewport) {
   pt.imageIds.forEach((imageId) => {
     cache.getImage(imageId).maxPixelValue = PT_MAX_PIXEL_VALUE;
   });
-  utilities.genericViewportDisplaySetMetadataProvider.add(CT_DISPLAY_SET_ID, {
+  cornerstone3D.displaySetRegistry.add(CT_DISPLAY_SET_ID, {
     imageIds: ct.imageIds,
     volumeId: ct.volumeId,
   });
-  utilities.genericViewportDisplaySetMetadataProvider.add(PT_DISPLAY_SET_ID, {
+  cornerstone3D.displaySetRegistry.add(PT_DISPLAY_SET_ID, {
     imageIds: pt.imageIds,
     volumeId: pt.volumeId,
   });
@@ -113,7 +113,7 @@ describe('The colorbar of an overlay of a fusion on a direct next planar viewpor
       renderingEngineId,
       toolGroupIds: ['default'],
     });
-    utilities.genericViewportDisplaySetMetadataProvider.clear();
+    cornerstone3D.displaySetRegistry.clear();
   });
 
   /** Adds a colorbar that the test removes after it. */

@@ -14,7 +14,7 @@ import {
 } from '../src/RenderingEngine/Viewports';
 import PlanarViewport from '../src/RenderingEngine/Viewports/Planar/PlanarViewport';
 import renderingEngineCache from '../src/RenderingEngine/renderingEngineCache';
-import genericViewportDisplaySetMetadataProvider from '../src/utilities/genericViewportDisplaySetMetadataProvider';
+import displaySetRegistry from '../src/RenderingEngine/Viewports/displaySetRegistry';
 import getViewportsWithVolumeId from '../src/utilities/getViewportsWithVolumeId';
 import imageIdToURI from '../src/utilities/imageIdToURI';
 
@@ -127,9 +127,9 @@ function addPlanarImageMetadata(imageIds) {
 }
 
 function mountStackBinding(viewport, images) {
-  const dataId = `stack:${viewport.id}`;
+  const displaySetId = `stack:${viewport.id}`;
   const rendering = {
-    actorEntryUID: `${dataId}:actor`,
+    actorEntryUID: `${displaySetId}:actor`,
     currentImage: images[0],
     currentImageIdIndex: 0,
     imageData: {},
@@ -139,7 +139,7 @@ function mountStackBinding(viewport, images) {
   const binding = {
     applyViewState: jest.fn(),
     data: {
-      id: dataId,
+      id: displaySetId,
       type: 'image',
       image: images[0],
       imageIds: images.map((image) => image.imageId),
@@ -151,20 +151,23 @@ function mountStackBinding(viewport, images) {
     updateDataPresentation: jest.fn(),
   };
 
-  viewport.bindings.set(dataId, binding);
-  viewport.mountedData.promoteSourceDataId(dataId);
+  viewport.bindings.set(displaySetId, binding);
+  viewport.mountedData.promoteSourceDisplaySetId(displaySetId);
 
-  return { binding, dataId, rendering };
+  return { binding, displaySetId, rendering };
 }
 
-function mountVolumeBinding(viewport, { dataId, imageData, role, volumeId }) {
+function mountVolumeBinding(
+  viewport,
+  { displaySetId, imageData, role, volumeId }
+) {
   const rendering = {
     renderMode: ActorRenderMode.VTK_VOLUME_SLICE,
   };
   const binding = {
     applyViewState: jest.fn(),
     data: {
-      id: dataId,
+      id: displaySetId,
       type: 'volume',
       volumeId,
     },
@@ -176,12 +179,12 @@ function mountVolumeBinding(viewport, { dataId, imageData, role, volumeId }) {
     updateDataPresentation: jest.fn(),
   };
 
-  viewport.bindings.set(dataId, binding);
+  viewport.bindings.set(displaySetId, binding);
   if (role === 'source') {
-    viewport.mountedData.promoteSourceDataId(dataId);
+    viewport.mountedData.promoteSourceDisplaySetId(displaySetId);
   }
 
-  return { binding, dataId, rendering };
+  return { binding, displaySetId, rendering };
 }
 
 describe('PlanarViewport view state', () => {
@@ -198,7 +201,7 @@ describe('PlanarViewport view state', () => {
       metaData.removeProvider(provider);
     }
     metadataProviders = [];
-    genericViewportDisplaySetMetadataProvider.clear();
+    displaySetRegistry.clear();
     jest.clearAllMocks();
   });
 
@@ -525,13 +528,13 @@ describe('PlanarViewport view state', () => {
     const overlayImageData = { name: 'overlay' };
 
     mountVolumeBinding(viewport, {
-      dataId: 'ct-display-set',
+      displaySetId: 'ct-display-set',
       imageData: sourceImageData,
       role: 'source',
       volumeId: 'volume:ct',
     });
     mountVolumeBinding(viewport, {
-      dataId: 'pt-display-set',
+      displaySetId: 'pt-display-set',
       imageData: overlayImageData,
       role: 'overlay',
       volumeId: 'volume:pt',
@@ -680,10 +683,10 @@ describe('PlanarViewport view state', () => {
     const imageId = 'same-image-id';
     const firstImage = { imageId };
     const secondImage = { imageId };
-    const firstDataId = `image-object:${first.viewport.id}:${imageIdToURI(
+    const firstDisplaySetId = `image-object:${first.viewport.id}:${imageIdToURI(
       imageId
     )}`;
-    const secondDataId = `image-object:${second.viewport.id}:${imageIdToURI(
+    const secondDisplaySetId = `image-object:${second.viewport.id}:${imageIdToURI(
       imageId
     )}`;
 
@@ -694,41 +697,26 @@ describe('PlanarViewport view state', () => {
     await second.viewport.renderImageObject(secondImage);
 
     expect(first.viewport.setDisplaySets).toHaveBeenCalledWith({
-      displaySetId: firstDataId,
+      displaySetId: firstDisplaySetId,
       options: { orientation: expect.anything() },
     });
     expect(second.viewport.setDisplaySets).toHaveBeenCalledWith({
-      displaySetId: secondDataId,
+      displaySetId: secondDisplaySetId,
       options: { orientation: expect.anything() },
     });
-    expect(
-      genericViewportDisplaySetMetadataProvider.get(
-        genericViewportDisplaySetMetadataProvider.VIEWPORT_V2_DISPLAY_SET,
-        firstDataId
-      ).image
-    ).toBe(firstImage);
-    expect(
-      genericViewportDisplaySetMetadataProvider.get(
-        genericViewportDisplaySetMetadataProvider.VIEWPORT_V2_DISPLAY_SET,
-        secondDataId
-      ).image
-    ).toBe(secondImage);
-    expect(
-      genericViewportDisplaySetMetadataProvider.get(
-        genericViewportDisplaySetMetadataProvider.VIEWPORT_V2_DISPLAY_SET,
-        imageId
-      )
-    ).toBeUndefined();
+    expect(displaySetRegistry.get(firstDisplaySetId).image).toBe(firstImage);
+    expect(displaySetRegistry.get(secondDisplaySetId).image).toBe(secondImage);
+    expect(displaySetRegistry.get(imageId)).toBeUndefined();
   });
 
   it('removes stale renderImageObject metadata when replacing the image', async () => {
     const { viewport } = track(createViewport());
     const firstImage = { imageId: 'first-image-id' };
     const secondImage = { imageId: 'second-image-id' };
-    const firstDataId = `image-object:${viewport.id}:${imageIdToURI(
+    const firstDisplaySetId = `image-object:${viewport.id}:${imageIdToURI(
       firstImage.imageId
     )}`;
-    const secondDataId = `image-object:${viewport.id}:${imageIdToURI(
+    const secondDisplaySetId = `image-object:${viewport.id}:${imageIdToURI(
       secondImage.imageId
     )}`;
 
@@ -737,18 +725,8 @@ describe('PlanarViewport view state', () => {
     await viewport.renderImageObject(firstImage);
     await viewport.renderImageObject(secondImage);
 
-    expect(
-      genericViewportDisplaySetMetadataProvider.get(
-        genericViewportDisplaySetMetadataProvider.VIEWPORT_V2_DISPLAY_SET,
-        firstDataId
-      )
-    ).toBeUndefined();
-    expect(
-      genericViewportDisplaySetMetadataProvider.get(
-        genericViewportDisplaySetMetadataProvider.VIEWPORT_V2_DISPLAY_SET,
-        secondDataId
-      ).image
-    ).toBe(secondImage);
+    expect(displaySetRegistry.get(firstDisplaySetId)).toBeUndefined();
+    expect(displaySetRegistry.get(secondDisplaySetId).image).toBe(secondImage);
   });
 });
 

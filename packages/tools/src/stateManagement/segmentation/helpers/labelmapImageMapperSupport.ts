@@ -25,7 +25,7 @@ type ViewportLabelmapImageMapperCompatibilityViewport = Types.IViewport<
   getDisplaySetRole?: (
     displaySetId: string
   ) => 'source' | 'overlay' | undefined;
-  getDisplaySetPresentation?: (dataId: string) => {
+  getDisplaySetPresentation?: (displaySetId: string) => {
     blendMode?: Enums.BlendModes;
     slabThickness?: number;
   };
@@ -46,7 +46,7 @@ type ViewportLabelmapImageMapperCompatibilityViewport = Types.IViewport<
         };
       })
     | undefined;
-  getSourceDataId?: () => string | undefined;
+  getSourceDisplaySetId?: () => string | undefined;
   getVolumeId?: () => string | undefined;
   getResolvedView?: () =>
     | {
@@ -112,10 +112,10 @@ function isPlanarVolumeSliceViewport(
 function getPlanarPrimaryRenderMode(
   viewport: ViewportLabelmapImageMapperCompatibilityViewport
 ): Types.ActorRenderMode | string | undefined {
-  const primaryDataId = getPlanarPrimaryDataId(viewport);
+  const primaryDisplaySetId = getPlanarPrimaryDisplaySetId(viewport);
 
-  if (primaryDataId) {
-    const renderMode = viewport.getDisplaySetRenderMode?.(primaryDataId);
+  if (primaryDisplaySetId) {
+    const renderMode = viewport.getDisplaySetRenderMode?.(primaryDisplaySetId);
 
     if (renderMode) {
       return renderMode;
@@ -139,13 +139,13 @@ function getPlanarVolumeSliceMapper(
     | undefined;
 }
 
-function getPlanarPrimaryDataId(
+function getPlanarPrimaryDisplaySetId(
   viewport: ViewportLabelmapImageMapperCompatibilityViewport
 ): string | undefined {
-  const sourceDataId = viewport.getSourceDataId?.();
+  const sourceDisplaySetId = viewport.getSourceDisplaySetId?.();
 
-  if (sourceDataId) {
-    return sourceDataId;
+  if (sourceDisplaySetId) {
+    return sourceDisplaySetId;
   }
 
   const renderModes = (
@@ -162,8 +162,8 @@ function getPlanarPrimaryDataId(
 
   return (
     Object.entries(renderModes).find(
-      ([dataId, renderMode]) =>
-        viewport.getDisplaySetRole?.(dataId) === 'source' &&
+      ([displaySetId, renderMode]) =>
+        viewport.getDisplaySetRole?.(displaySetId) === 'source' &&
         isVolumeSliceRenderMode(renderMode)
     )?.[0] ??
     Object.entries(renderModes).find(([, renderMode]) =>
@@ -231,10 +231,10 @@ function getPlanarVolumeDataPresentation(
     return;
   }
 
-  const primaryDataId = getPlanarPrimaryDataId(viewport);
+  const primaryDisplaySetId = getPlanarPrimaryDisplaySetId(viewport);
 
-  return primaryDataId
-    ? viewport.getDisplaySetPresentation(primaryDataId)
+  return primaryDisplaySetId
+    ? viewport.getDisplaySetPresentation(primaryDisplaySetId)
     : undefined;
 }
 

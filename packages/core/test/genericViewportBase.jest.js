@@ -3,16 +3,13 @@ import ViewportType from '../src/enums/ViewportType';
 import ViewportStatus from '../src/enums/ViewportStatus';
 import Events from '../src/enums/Events';
 import {
-  getRegisteredDisplaySet,
+  getDisplaySetDescriptor,
+  getDisplaySetImageId,
   getImageDisplaySet,
-  getPlanarDisplaySet,
   getWSIDisplaySet,
-  getDisplaySetSourceDataId,
   isImageDisplaySet,
-  isWSIDisplaySet,
-  isSourceAliasDisplaySet,
 } from '../src/RenderingEngine/Viewports/displaySetAccess';
-import genericViewportDisplaySetMetadataProvider from '../src/utilities/genericViewportDisplaySetMetadataProvider';
+import displaySetRegistry from '../src/RenderingEngine/Viewports/displaySetRegistry';
 
 // ── Test fixture: a minimal concrete BaseViewport subclass ────────────
 //
@@ -379,7 +376,7 @@ describe('BaseViewport', () => {
     });
   });
 
-  describe('removeData', () => {
+  describe('removeDisplaySet', () => {
     it('removes the binding, stored presentation, and debug entry, then renders', async () => {
       const { viewport } = createHarness();
 
@@ -388,7 +385,7 @@ describe('BaseViewport', () => {
       const attachment = viewport.bindings.get('ds-1');
       const renderCountBefore = viewport.renderCount;
 
-      viewport.removeData('ds-1');
+      viewport.removeDisplaySet('ds-1');
 
       expect(attachment.removeData).toHaveBeenCalledTimes(1);
       expect(viewport.getDisplaySets()).toEqual([]);
@@ -401,7 +398,7 @@ describe('BaseViewport', () => {
       const { viewport } = createHarness();
       const renderCountBefore = viewport.renderCount;
 
-      expect(() => viewport.removeData('does-not-exist')).not.toThrow();
+      expect(() => viewport.removeDisplaySet('does-not-exist')).not.toThrow();
       expect(viewport.renderCount).toBe(renderCountBefore);
     });
 
@@ -728,7 +725,7 @@ describe('BaseViewport', () => {
 
       await mountDisplaySet(viewport, 'ds-1');
 
-      expect(viewport.getViewReference().dataId).toBe('ds-1');
+      expect(viewport.getViewReference().displaySetId).toBe('ds-1');
     });
 
     it('isReferenceViewable matches on frame of reference and data id from a mounted binding', async () => {
@@ -742,13 +739,13 @@ describe('BaseViewport', () => {
       expect(
         viewport.isReferenceViewable({
           FrameOfReferenceUID: 'for-match',
-          dataId: 'ds-1',
+          displaySetId: 'ds-1',
         })
       ).toBe(true);
       expect(
         viewport.isReferenceViewable({
           FrameOfReferenceUID: 'no-match',
-          dataId: 'ds-1',
+          displaySetId: 'ds-1',
         })
       ).toBe(false);
     });
@@ -871,115 +868,80 @@ describe('BaseViewport', () => {
 
 describe('displaySetAccess', () => {
   afterEach(() => {
-    genericViewportDisplaySetMetadataProvider.clear();
+    displaySetRegistry.clear();
   });
 
   it('returns undefined for every accessor when nothing is registered', () => {
-    expect(getRegisteredDisplaySet('missing')).toBeUndefined();
+    expect(getDisplaySetDescriptor('missing')).toBeUndefined();
     expect(getImageDisplaySet('missing')).toBeUndefined();
-    expect(getPlanarDisplaySet('missing')).toBeUndefined();
     expect(getWSIDisplaySet('missing')).toBeUndefined();
   });
 
-  it('normalizes a bare imageId array into an image/planar display set', () => {
-    genericViewportDisplaySetMetadataProvider.add('ds-array', [
-      'image:1',
-      'image:2',
-    ]);
-
-    expect(getImageDisplaySet('ds-array')).toEqual({
-      imageIds: ['image:1', 'image:2'],
-    });
-    expect(getPlanarDisplaySet('ds-array')).toEqual({
-      imageIds: ['image:1', 'image:2'],
-    });
-  });
-
-  it('passes through a registered planar display set object unchanged', () => {
+  it('passes through a registered descriptor with image ids unchanged', () => {
     const registered = {
       imageIds: ['image:1'],
-      kind: 'planar',
       volumeId: 'vol-1',
     };
-    genericViewportDisplaySetMetadataProvider.add('ds-planar', registered);
+    displaySetRegistry.add('ds-planar', registered);
 
+    expect(getDisplaySetDescriptor('ds-planar')).toBe(registered);
     expect(getImageDisplaySet('ds-planar')).toBe(registered);
-    expect(getPlanarDisplaySet('ds-planar')).toBe(registered);
   });
 
-  it('excludes non-planar kinds from getPlanarDisplaySet', () => {
+  it('reads the image ids of a slide descriptor too: the viewport family decides', () => {
+    const webClient = { getDICOMwebMetadata: () => {} };
     const registered = {
       imageIds: ['image:1'],
-      kind: 'wsi',
-      options: { webClient: { getDICOMwebMetadata: () => {} } },
-    };
-    genericViewportDisplaySetMetadataProvider.add('ds-non-planar', registered);
-
-    expect(getImageDisplaySet('ds-non-planar')).toBe(registered);
-    expect(getPlanarDisplaySet('ds-non-planar')).toBeUndefined();
-  });
-
-  it('recognizes a canonically-shaped WSI display set', () => {
-    const webClient = { getDICOMwebMetadata: () => {} };
-    const registered = {
-      kind: 'wsi',
-      imageIds: ['wsi:1'],
-      options: { webClient, miniNavigationOverlay: true },
-    };
-    genericViewportDisplaySetMetadataProvider.add('ds-wsi', registered);
-
-    expect(getWSIDisplaySet('ds-wsi')).toEqual(registered);
-  });
-
-  it('normalizes a loosely-shaped WSI-like record into the canonical WSI shape', () => {
-    const webClient = { getDICOMwebMetadata: () => {} };
-    genericViewportDisplaySetMetadataProvider.add('ds-wsi-loose', {
-      imageIds: ['wsi:1'],
       options: { webClient },
-    });
+    };
+    displaySetRegistry.add('ds-slide', registered);
 
-    expect(getWSIDisplaySet('ds-wsi-loose')).toEqual({
-      imageIds: ['wsi:1'],
-      kind: 'wsi',
+    expect(getImageDisplaySet('ds-slide')).toBe(registered);
+    expect(getWSIDisplaySet('ds-slide')).toEqual({
+      imageIds: ['image:1'],
       options: { miniNavigationOverlay: undefined, webClient },
     });
   });
 
-  it('resolves the source data id for strings, arrays, and alias display sets', () => {
-    genericViewportDisplaySetMetadataProvider.add('ds-string', 'source-id-1');
-    genericViewportDisplaySetMetadataProvider.add('ds-array-alias', [
-      'first-id',
-      'second-id',
-    ]);
-    genericViewportDisplaySetMetadataProvider.add('ds-video', {
-      kind: 'video',
-      sourceDataId: 'video-source-id',
+  it('keeps the miniNavigationOverlay of a slide descriptor', () => {
+    const webClient = { getDICOMwebMetadata: () => {} };
+    displaySetRegistry.add('ds-wsi', {
+      imageIds: ['wsi:1'],
+      options: { webClient, miniNavigationOverlay: true },
     });
 
-    expect(getDisplaySetSourceDataId('ds-string')).toBe('source-id-1');
-    expect(getDisplaySetSourceDataId('ds-array-alias')).toBe('first-id');
-    expect(getDisplaySetSourceDataId('ds-video')).toBe('video-source-id');
-    expect(getDisplaySetSourceDataId('ds-unregistered')).toBe(
-      'ds-unregistered'
-    );
+    expect(getWSIDisplaySet('ds-wsi')).toEqual({
+      imageIds: ['wsi:1'],
+      options: { webClient, miniNavigationOverlay: true },
+    });
   });
 
-  it('type guards classify shapes correctly', () => {
+  it('takes the web client of a slide descriptor from its webClient', () => {
+    const webClient = { getDICOMwebMetadata: () => {} };
+    displaySetRegistry.add('ds-wsi-client', {
+      imageIds: ['wsi:1'],
+      webClient,
+    });
+
+    expect(getWSIDisplaySet('ds-wsi-client').options.webClient).toBe(webClient);
+  });
+
+  it('gives the image id of a video or ECG descriptor, and the id itself when nothing is registered', () => {
+    displaySetRegistry.add('ds-video', { imageId: 'video-source-id' });
+
+    expect(getDisplaySetImageId('ds-video')).toBe('video-source-id');
+    expect(getDisplaySetImageId('ds-unregistered')).toBe('ds-unregistered');
+  });
+
+  it('gives no image id for a registered descriptor without one', () => {
+    displaySetRegistry.add('ds-stack', { imageIds: ['image:1'] });
+
+    expect(getDisplaySetImageId('ds-stack')).toBeUndefined();
+  });
+
+  it('isImageDisplaySet classifies shapes correctly', () => {
     expect(isImageDisplaySet({ imageIds: ['a'] })).toBe(true);
     expect(isImageDisplaySet({ imageIds: 'a' })).toBe(false);
-    expect(
-      isWSIDisplaySet({
-        kind: 'wsi',
-        imageIds: ['a'],
-        options: { webClient: { getDICOMwebMetadata: () => {} } },
-      })
-    ).toBe(true);
-    expect(isWSIDisplaySet({ kind: 'video', imageIds: ['a'] })).toBe(false);
-    expect(isSourceAliasDisplaySet({ kind: 'ecg', sourceDataId: 'x' })).toBe(
-      true
-    );
-    expect(isSourceAliasDisplaySet({ kind: 'wsi', sourceDataId: 'x' })).toBe(
-      false
-    );
+    expect(isImageDisplaySet({ imageId: 'a' })).toBe(false);
   });
 });

@@ -50,14 +50,14 @@ export function getSlabIntensityPickContext(
     return null;
   }
 
-  const dataId = viewport.getSourceDataId();
-  if (!dataId) {
+  const displaySetId = viewport.getSourceDisplaySetId();
+  if (!displaySetId) {
     return null;
   }
 
   const presentation = (
     viewport as unknown as Types.IViewport
-  ).getDisplaySetPresentation(dataId) as PresentationWithSlab | undefined;
+  ).getDisplaySetPresentation(displaySetId) as PresentationWithSlab | undefined;
 
   const { blendMode, slabThickness } = presentation ?? {};
 

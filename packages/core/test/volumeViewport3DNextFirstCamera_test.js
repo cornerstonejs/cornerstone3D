@@ -82,7 +82,7 @@ function fillVolume(volumeId) {
 async function showVolume(next, volumeId) {
   const displaySetId = `firstCamera:${volumeId}`;
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+  cornerstone3D.displaySetRegistry.add(displaySetId, {
     imageIds: cache.getVolume(volumeId).imageIds,
     volumeId,
   });

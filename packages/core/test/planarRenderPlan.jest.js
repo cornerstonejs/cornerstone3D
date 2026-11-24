@@ -36,7 +36,7 @@ import {
   WEBGL_CONTEXT_RESTORE_WAIT_MS,
   attachWebGLContextEvents,
 } from '../src/RenderingEngine/helpers/attachWebGLContextEvents';
-import genericViewportDisplaySetMetadataProvider from '../src/utilities/genericViewportDisplaySetMetadataProvider';
+import displaySetRegistry from '../src/RenderingEngine/Viewports/displaySetRegistry';
 
 jest.mock('../src/utilities/renderingCapabilities', () => ({
   ...jest.requireActual('../src/utilities/renderingCapabilities'),
@@ -404,8 +404,7 @@ describe('PlanarViewport render plan', () => {
       defaultOptions: {},
     });
     [ctId, ptId].forEach((id) => {
-      genericViewportDisplaySetMetadataProvider.add(id, {
-        kind: 'planar',
+      displaySetRegistry.add(id, {
         imageIds: volumeOf[id].imageIds,
         volumeId: volumeOf[id].volumeId,
       });
@@ -438,7 +437,10 @@ describe('PlanarViewport render plan', () => {
               throw new Error(`cannot mount ${failingMode}`);
             }
 
-            const actor = { dataId: data.id, renderMode: options.renderMode };
+            const actor = {
+              displaySetId: data.id,
+              renderMode: options.renderMode,
+            };
 
             mountedModes.push([data.id, options.renderMode]);
             renderer.addViewProp(actor);
@@ -475,7 +477,7 @@ describe('PlanarViewport render plan', () => {
     renderingEngineCache.delete(engineId);
     setSliceFirst(false);
     retryGpu();
-    genericViewportDisplaySetMetadataProvider.clear();
+    displaySetRegistry.clear();
     jest.restoreAllMocks();
     getRenderingCapabilities.mockReset();
   });
@@ -503,15 +505,16 @@ describe('PlanarViewport render plan', () => {
   const planOf = () =>
     viewport
       .getRenderPlan()
-      .map(({ dataId, slice, draw, renderMode, reason }) => [
-        dataId,
+      .map(({ displaySetId, slice, draw, renderMode, reason }) => [
+        displaySetId,
         slice,
         draw,
         renderMode,
         reason,
       ]);
 
-  const eventsOf = (dataId) => events.filter((e) => e.dataId === dataId);
+  const eventsOf = (displaySetId) =>
+    events.filter((e) => e.displaySetId === displaySetId);
 
   it('gives the plan of each layer, source first, and fires one event for each added layer', async () => {
     await mountFusion();
@@ -524,7 +527,7 @@ describe('PlanarViewport render plan', () => {
       'source',
       'overlay',
     ]);
-    expect(events.map((e) => [e.dataId, e.previous, e.reason])).toEqual([
+    expect(events.map((e) => [e.displaySetId, e.previous, e.reason])).toEqual([
       [ctId, undefined, 'slice'],
       [ptId, undefined, 'slice'],
     ]);
@@ -654,9 +657,9 @@ describe('PlanarViewport render plan', () => {
   it('forgets the plan of a removed layer', async () => {
     await mountFusion();
 
-    viewport.removeData(ptId);
+    viewport.removeDisplaySet(ptId);
 
-    expect(planOf().map(([dataId]) => dataId)).toEqual([ctId]);
+    expect(planOf().map(([displaySetId]) => displaySetId)).toEqual([ctId]);
   });
 });
 
@@ -669,8 +672,8 @@ describe('the reason in the debug modal', () => {
           { displaySetId: 'pt', role: 'overlay' },
         ],
         getRenderPlan: () => [
-          { dataId: 'ct', reason: 'slab' },
-          { dataId: 'pt', reason: 'floatFilter' },
+          { displaySetId: 'ct', reason: 'slab' },
+          { displaySetId: 'pt', reason: 'floatFilter' },
         ],
       },
       () => 0

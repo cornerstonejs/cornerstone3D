@@ -133,11 +133,11 @@ describe('A planar viewport in volume mode on a dynamic volume -- ', () => {
       cornerstoneStreamingDynamicImageVolumeLoader
     );
     metaData.addProvider(timePointMetaDataProvider, 30000);
-    utilities.genericViewportDisplaySetMetadataProvider.add('dynamic', {
+    cornerstone3D.displaySetRegistry.add('dynamic', {
       imageIds: seriesImageIds('dynamic', TIME_POINTS),
       volumeId: dynamicVolumeId,
     });
-    utilities.genericViewportDisplaySetMetadataProvider.add('static', {
+    cornerstone3D.displaySetRegistry.add('static', {
       imageIds: seriesImageIds('static', 1),
       volumeId: staticVolumeId,
     });
@@ -145,7 +145,7 @@ describe('A planar viewport in volume mode on a dynamic volume -- ', () => {
 
   afterEach(function () {
     metaData.removeProvider(timePointMetaDataProvider);
-    utilities.genericViewportDisplaySetMetadataProvider.clear();
+    cornerstone3D.displaySetRegistry.clear();
     testUtils.cleanupTestEnvironment({
       renderingEngineId,
       toolGroupIds: ['default'],
@@ -273,9 +273,8 @@ describe('A planar viewport in volume mode on a dynamic volume -- ', () => {
   it('takes a reference of a time point that names only a frame of reference, a plane and a focal point on a stack', async function () {
     const viewport = createNextViewport(renderingEngine, 'timePointStack');
 
-    utilities.genericViewportDisplaySetMetadataProvider.add('staticStack', {
+    cornerstone3D.displaySetRegistry.add('staticStack', {
       imageIds: seriesImageIds('static', 1),
-      kind: 'planar',
       initialImageIdIndex: 0,
     });
     await viewport.setDisplaySets({

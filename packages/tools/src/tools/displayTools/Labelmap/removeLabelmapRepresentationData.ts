@@ -1,8 +1,8 @@
-import { utilities, type Types } from '@cornerstonejs/core';
+import { displaySetRegistry, type Types } from '@cornerstonejs/core';
 import { isLabelmapRepresentationUID } from './labelmapRepresentationUID';
 
 type ViewportWithDataRemoval = Types.IViewport & {
-  removeData?: (dataId: string) => void;
+  removeDisplaySet?: (displaySetId: string) => void;
 };
 
 function removeLabelmapRepresentationData(
@@ -18,12 +18,12 @@ function removeLabelmapRepresentationData(
 
   const dataViewport = viewport as ViewportWithDataRemoval;
 
-  if (typeof dataViewport.removeData !== 'function') {
+  if (typeof dataViewport.removeDisplaySet !== 'function') {
     return false;
   }
 
-  utilities.genericViewportDisplaySetMetadataProvider.remove(representationUID);
-  dataViewport.removeData(representationUID);
+  displaySetRegistry.remove(representationUID);
+  dataViewport.removeDisplaySet(representationUID);
 
   return true;
 }

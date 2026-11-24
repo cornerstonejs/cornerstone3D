@@ -3,8 +3,8 @@ import {
   cache,
   RenderingEngine,
   Enums,
-  utilities,
   volumeLoader,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -345,8 +345,7 @@ async function run() {
 
   const viewportIds = [viewportId1, viewportId2, viewportId3];
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId, {
     imageIds,
     volumeId,
   });

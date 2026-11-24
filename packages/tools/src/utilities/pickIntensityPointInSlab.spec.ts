@@ -50,7 +50,7 @@ function createFakeMipViewport({
     setViewState: () => undefined,
     getViewState: () => ({}),
     getCurrentMode: () => mode,
-    getSourceDataId: () => 'fake-source-data',
+    getSourceDisplaySetId: () => 'fake-source-data',
     getDefaultVOIRange: () => undefined,
     getDisplaySetPresentation: () => ({ blendMode, slabThickness }),
     getVolumeId: () => volumeId,

@@ -1,0 +1,20 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "1",
+        "rule": "@cornerstonejs/core/utilities/genericViewportDisplaySetMetadataProvider: the module is deleted, import { displaySetRegistry } from '@cornerstonejs/core'"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "2",
+        "rule": "genericViewportDisplaySetMetadataProvider: imported from @cornerstonejs/core/utilities, import { displaySetRegistry } from '@cornerstonejs/core'"
+      },
+      "count": 1
+    }
+  ]
+}

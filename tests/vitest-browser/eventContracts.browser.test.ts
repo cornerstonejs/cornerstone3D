@@ -40,7 +40,7 @@
 // singleton for lifecycle events).
 
 import { afterEach, expect, test } from 'vitest';
-import { Enums, eventTarget, utilities } from '@cornerstonejs/core';
+import { Enums, eventTarget, displaySetRegistry } from '@cornerstonejs/core';
 import {
   createPlanarViewport,
   recordEvents,
@@ -325,9 +325,8 @@ test('golden event sequence for load -> scroll -> zoom', async () => {
   track(recorder.stop);
 
   // -- load: setDisplaySets + first render --
-  utilities.genericViewportDisplaySetMetadataProvider.add(ctx.displaySetId, {
+  displaySetRegistry.add(ctx.displaySetId, {
     imageIds: ctx.imageIds,
-    kind: 'planar',
     initialImageIdIndex: 0,
   });
 

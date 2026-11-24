@@ -48,7 +48,7 @@ describe('utilities.jumpToSlice on a direct next 3D viewport -- ', () => {
       renderingEngineId,
       toolGroupIds: ['default'],
     });
-    utilities.genericViewportDisplaySetMetadataProvider.clear();
+    cornerstone3D.displaySetRegistry.clear();
   });
 
   it('does not throw and leaves the view as it is, as on the 5.x 3D viewport', async function () {
@@ -64,7 +64,7 @@ describe('utilities.jumpToSlice on a direct next 3D viewport -- ', () => {
     const viewport = renderingEngine.getViewport('jump3D');
     const volumeId = await createVolume('jump3DVolume');
 
-    utilities.genericViewportDisplaySetMetadataProvider.add('jump3D:volume', {
+    cornerstone3D.displaySetRegistry.add('jump3D:volume', {
       imageIds: cache.getVolume(volumeId).imageIds,
       volumeId,
     });

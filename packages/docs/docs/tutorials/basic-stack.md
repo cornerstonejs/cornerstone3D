@@ -85,8 +85,7 @@ const imageIds = await createImageIdsAndCacheMetaData({
 const viewport = renderingEngine.getViewport(viewportId);
 const displaySetId = 'ctStack';
 
-utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-  kind: 'planar',
+displaySetRegistry.add(displaySetId, {
   imageIds,
   initialImageIdIndex: 60,
 });
@@ -111,8 +110,8 @@ as a stack.
 import {
   RenderingEngine,
   Enums,
-  utilities,
   init as coreInit,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import { init as dicomImageLoaderInit } from '@cornerstonejs/dicom-image-loader';
 import { createImageIdsAndCacheMetaData } from '../../../../utils/demo/helpers';
@@ -158,8 +157,7 @@ async function run() {
   const viewport = renderingEngine.getViewport(viewportId);
   const displaySetId = 'ctStack';
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId, {
     imageIds,
     initialImageIdIndex: 60,
   });

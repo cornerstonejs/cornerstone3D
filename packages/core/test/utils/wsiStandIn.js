@@ -1,5 +1,5 @@
 import { getConfiguration } from '../../src/init';
-import genericViewportDisplaySetMetadataProvider from '../../src/utilities/genericViewportDisplaySetMetadataProvider';
+import displaySetRegistry from '../../src/RenderingEngine/Viewports/displaySetRegistry';
 
 export const WIDTH = 400;
 export const HEIGHT = 300;
@@ -190,9 +190,8 @@ export async function mountNext(
     defaultOptions,
   });
 
-  genericViewportDisplaySetMetadataProvider.add(IMAGE_ID, {
+  displaySetRegistry.add(IMAGE_ID, {
     imageIds: [IMAGE_ID],
-    kind: 'wsi',
     options: {
       miniNavigationOverlay: false,
       webClient: withWebClient ? createClient() : undefined,

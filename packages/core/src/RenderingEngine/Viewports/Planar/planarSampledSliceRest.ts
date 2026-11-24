@@ -153,7 +153,7 @@ export function getCanvasScreenSliceGeometry(
  */
 export function getNeighbourCameras(args: {
   ctx: PlanarSampledSliceContext;
-  dataId: string;
+  displaySetId: string;
   rendering: PlanarRendering & {
     currentImageIdIndex: number;
     maxImageIdIndex: number;
@@ -161,7 +161,7 @@ export function getNeighbourCameras(args: {
   lastStep: number | undefined;
   camera: PlanarResolvedICamera | undefined;
 }): PlanarResolvedICamera[] {
-  const { ctx, dataId, lastStep, rendering, camera } = args;
+  const { ctx, displaySetId, lastStep, rendering, camera } = args;
 
   if (!camera?.focalPoint || !camera.viewPlaneNormal) {
     return [];
@@ -174,7 +174,7 @@ export function getNeighbourCameras(args: {
     steps.push(step * direction, -step * direction);
   }
 
-  if (ctx.viewport.isCurrentDataId(dataId)) {
+  if (ctx.viewport.isCurrentDisplaySetId(displaySetId)) {
     const viewState = ctx.viewport.getViewState();
 
     return steps

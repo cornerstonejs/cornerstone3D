@@ -21,7 +21,7 @@ import type { PlanarRendering } from './planarRuntimeTypes';
 
 type PlanarRenderPathProjectionContext = PlanarViewResolutionRenderContext & {
   viewport: {
-    isCurrentDataId(dataId: string): boolean;
+    isCurrentDisplaySetId(displaySetId: string): boolean;
   };
   view: PlanarActiveViewRuntime;
 };
@@ -136,7 +136,7 @@ export function worldToCanvasPlanarRenderPathProjection(args: {
 export function resolvePlanarRenderPathProjection(args: {
   ctx: PlanarRenderPathProjectionContext;
   data?: PlanarPayload;
-  dataId: string;
+  displaySetId: string;
   frameOfReferenceUID?: string;
   imageIds?: string[];
   rendering: PlanarRendering;
@@ -146,7 +146,7 @@ export function resolvePlanarRenderPathProjection(args: {
   const {
     ctx,
     data,
-    dataId,
+    displaySetId,
     frameOfReferenceUID,
     imageIds,
     rendering,
@@ -168,7 +168,7 @@ export function resolvePlanarRenderPathProjection(args: {
   }
 
   const resolvedICamera = resolvedView.toICamera();
-  const isSourceBinding = ctx.viewport.isCurrentDataId(dataId);
+  const isSourceBinding = ctx.viewport.isCurrentDisplaySetId(displaySetId);
 
   if (isSourceBinding) {
     ctx.view.activeSourceICamera = resolvedICamera;

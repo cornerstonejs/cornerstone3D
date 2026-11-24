@@ -167,6 +167,7 @@ import type {
   VtkOffscreenMultiRenderWindow,
 } from './VtkOffscreenMultiRenderWindow';
 import type { ViewportDataReference } from '../RenderingEngine/Viewports';
+import type { DisplaySetDescriptor } from './DisplaySetDescriptor';
 import type { ResetCameraOptions } from './ICamera';
 import type {
   ViewportType,
@@ -368,6 +369,7 @@ export type {
   VtkOffscreenMultiRenderWindow,
   OffscreenCanvasContainer,
   ViewportDataReference,
+  DisplaySetDescriptor,
   ViewportType,
   ViewportTypeRegistry,
   ViewportTypeConstants,

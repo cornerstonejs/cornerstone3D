@@ -3,7 +3,7 @@ import {
   RenderingEngine,
   Enums,
   getRenderingEngine,
-  utilities,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
@@ -35,8 +35,8 @@ const { ViewportType } = Enums;
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'CT_SAGITTAL_STACK_GENERIC';
 const toolGroupId = 'myToolGroupNext';
-const ctDataId = 'multi-volume-api-next:ct';
-const ptDataId = 'multi-volume-api-next:pt';
+const ctDisplaySetId = 'multi-volume-api-next:ct';
+const ptDisplaySetId = 'multi-volume-api-next:pt';
 const defaultOrientation = Enums.OrientationAxis.SAGITTAL;
 
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume';
@@ -59,9 +59,9 @@ function updatePetColormap(patch: {
 }) {
   const viewport = getViewport();
   const currentColormap =
-    viewport.getDisplaySetPresentation(ptDataId)?.colormap || {};
+    viewport.getDisplaySetPresentation(ptDisplaySetId)?.colormap || {};
 
-  viewport.setDisplaySetPresentation(ptDataId, {
+  viewport.setDisplaySetPresentation(ptDisplaySetId, {
     colormap: {
       ...currentColormap,
       ...patch,
@@ -127,7 +127,7 @@ addButtonToToolbar({
   onClick: () => {
     const viewport = getViewport();
 
-    viewport.setDisplaySetPresentation(ctDataId, {
+    viewport.setDisplaySetPresentation(ctDisplaySetId, {
       voiRange: { lower: -1500, upper: 2500 },
     });
     viewport.render();
@@ -149,9 +149,9 @@ addButtonToToolbar({
   onClick: () => {
     const viewport = getViewport();
     const visible =
-      viewport.getDisplaySetPresentation(ptDataId)?.visible ?? true;
+      viewport.getDisplaySetPresentation(ptDisplaySetId)?.visible ?? true;
 
-    viewport.setDisplaySetPresentation(ptDataId, {
+    viewport.setDisplaySetPresentation(ptDisplaySetId, {
       visible: !visible,
     });
     viewport.render();
@@ -292,38 +292,36 @@ async function run() {
 
   addColormapEventListener();
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(ctDataId, {
+  displaySetRegistry.add(ctDisplaySetId, {
     imageIds: ctImageIds,
-    kind: 'planar',
     initialImageIdIndex: Math.floor(ctImageIds.length / 2),
     volumeId: ctVolumeId,
   });
-  utilities.genericViewportDisplaySetMetadataProvider.add(ptDataId, {
+  displaySetRegistry.add(ptDisplaySetId, {
     imageIds: ptImageIds,
-    kind: 'planar',
     initialImageIdIndex: Math.floor(ptImageIds.length / 2),
     volumeId: ptVolumeId,
   });
 
   await viewport.setDisplaySets(
     {
-      displaySetId: ctDataId,
+      displaySetId: ctDisplaySetId,
       options: {
         orientation: defaultOrientation,
       },
     },
     {
-      displaySetId: ptDataId,
+      displaySetId: ptDisplaySetId,
       options: {
         orientation: defaultOrientation,
       },
     }
   );
 
-  viewport.setDisplaySetPresentation(ctDataId, {
+  viewport.setDisplaySetPresentation(ctDisplaySetId, {
     voiRange: ctVoiRange,
   });
-  viewport.setDisplaySetPresentation(ptDataId, {
+  viewport.setDisplaySetPresentation(ptDisplaySetId, {
     colormap: {
       name: 'hsv',
       opacity: PET_DEFAULT_OPACITY,

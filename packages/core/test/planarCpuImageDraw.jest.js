@@ -534,7 +534,7 @@ describe('CpuImageSliceRenderPath on the canvas', () => {
       viewport: {
         element: document.createElement('div'),
         getViewState: jest.fn(() => undefined),
-        isCurrentDataId: jest.fn(() => true),
+        isCurrentDisplaySetId: jest.fn(() => true),
         invalidateResolvedView: jest.fn(),
         getOverlayActors: jest.fn(() => []),
       },

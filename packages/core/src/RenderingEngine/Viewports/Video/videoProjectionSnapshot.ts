@@ -112,7 +112,7 @@ export function getVideoProjectionSnapshot(
     adapterId: VIDEO_PROJECTION_ID,
     canvasHeight,
     canvasWidth,
-    dataId: request.dataId,
+    displaySetId: request.displaySetId,
     frameOfReferenceUID,
     presentation: {
       pan: clonePoint2(rawPan),

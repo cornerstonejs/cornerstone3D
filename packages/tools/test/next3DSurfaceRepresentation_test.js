@@ -97,7 +97,7 @@ async function showVolume(next) {
   });
 
   await volumeLoader.createAndCacheVolume(volumeId, { imageIds: [] });
-  utilities.genericViewportDisplaySetMetadataProvider.add('next3DVolume', {
+  cornerstone3D.displaySetRegistry.add('next3DVolume', {
     imageIds: cache.getVolume(volumeId).imageIds,
     volumeId,
   });
@@ -184,9 +184,9 @@ function displaySetIdsOf(viewport) {
 
 /** The registration of a display set, if there is one. */
 function registeredDisplaySetOf(displaySetId) {
-  const provider = utilities.genericViewportDisplaySetMetadataProvider;
+  const provider = cornerstone3D.displaySetRegistry;
 
-  return provider.get(provider.VIEWPORT_V2_DISPLAY_SET, displaySetId);
+  return provider.get(displaySetId);
 }
 
 /** Whether the vtk.js renderer of the viewport draws the actor. */

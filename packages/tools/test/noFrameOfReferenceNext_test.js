@@ -97,9 +97,8 @@ async function showStackAt(viewport, displaySetId, imageIds, imageIdIndex) {
 
 /** Registers a stack display set of image ids. */
 function registerStack(displaySetId, imageIds) {
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+  cornerstone3D.displaySetRegistry.add(displaySetId, {
     imageIds,
-    kind: 'planar',
     initialImageIdIndex: 0,
   });
 }
@@ -165,7 +164,7 @@ describe('Images without a frame of reference on direct next planar viewports --
 
   afterEach(function () {
     annotation.state.removeAllAnnotations();
-    utilities.genericViewportDisplaySetMetadataProvider.clear();
+    cornerstone3D.displaySetRegistry.clear();
     testUtils.cleanupTestEnvironment({ renderingEngineId });
   });
 
@@ -246,7 +245,7 @@ describe('Images without a frame of reference on direct next planar viewports --
     );
     volumeLoader.createAndCacheVolumeFromImagesSync(volumeId, imageIds);
     registerStack('noFrame:stack', imageIds);
-    utilities.genericViewportDisplaySetMetadataProvider.add('noFrame:volume', {
+    cornerstone3D.displaySetRegistry.add('noFrame:volume', {
       imageIds,
       volumeId,
     });
@@ -298,10 +297,10 @@ describe('Images without a frame of reference on direct next planar viewports --
     );
     volumeLoader.createAndCacheVolumeFromImagesSync(volumeId, imageIds);
     registerStack('noFrame:earlier', imageIds);
-    utilities.genericViewportDisplaySetMetadataProvider.add(
-      'noFrame:earlierVolume',
-      { imageIds, volumeId }
-    );
+    cornerstone3D.displaySetRegistry.add('noFrame:earlierVolume', {
+      imageIds,
+      volumeId,
+    });
     await showStackAt(stack, 'noFrame:earlier', imageIds, 4);
 
     const current = stack.getViewReference();

@@ -3,7 +3,6 @@ import {
   RenderingEngine,
   Enums,
   getRenderingEngine,
-  utilities as csUtils,
   viewportProjection,
 } from '@cornerstonejs/core';
 import * as cornerstone from '@cornerstonejs/core';
@@ -373,13 +372,11 @@ async function _startFromVolume(
  * Registers the series twice: as a stack, and with a volume id as a volume.
  */
 function registerDisplaySets(imageIds: string[]) {
-  csUtils.genericViewportDisplaySetMetadataProvider.add(stackDisplaySetId, {
-    kind: 'planar',
+  cornerstone.displaySetRegistry.add(stackDisplaySetId, {
     imageIds,
     initialImageIdIndex: 0,
   });
-  csUtils.genericViewportDisplaySetMetadataProvider.add(volumeDisplaySetId, {
-    kind: 'planar',
+  cornerstone.displaySetRegistry.add(volumeDisplaySetId, {
     imageIds,
     volumeId,
   });

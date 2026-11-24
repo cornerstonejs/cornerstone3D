@@ -3,8 +3,8 @@ import {
   RenderingEngine,
   getRenderingEngine,
   Enums,
-  utilities,
   viewportProjection,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -245,8 +245,7 @@ async function run() {
   const stack = [imageIds[0], imageIds[1], imageIds[2]];
 
   // Set the stack on the viewport
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId, {
     imageIds: stack,
     initialImageIdIndex: 0,
   });

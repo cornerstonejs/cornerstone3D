@@ -32,16 +32,16 @@ import {
 } from './createLabelmapRenderPlan';
 import {
   addLabelmapToPlanarVolumeViewport,
-  isPlanarNextVolumeViewport,
+  isPlanarVolumeViewport,
 } from './planarVolumeLabelmap';
 import type {
   LabelmapRenderPlan,
   LabelmapRenderPlanMountResult,
 } from './types';
 import {
-  addLabelmapToVolume3DNextViewport,
-  isVolume3DNextViewport,
-} from './volume3DNextLabelmap';
+  addLabelmapToVolume3DViewport,
+  isVolume3DViewport,
+} from './volume3DLabelmap';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
 const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
@@ -219,7 +219,7 @@ async function mountVolumeLabelmap({
     }
   }
 
-  if (isPlanarNextVolumeViewport(viewport)) {
+  if (isPlanarVolumeViewport(viewport)) {
     return addLabelmapToPlanarVolumeViewport({
       blendMode,
       labelmapLayers,
@@ -229,8 +229,8 @@ async function mountVolumeLabelmap({
     });
   }
 
-  if (isVolume3DNextViewport(viewport)) {
-    return addLabelmapToVolume3DNextViewport({
+  if (isVolume3DViewport(viewport)) {
+    return addLabelmapToVolume3DViewport({
       blendMode: useIndependentComponents
         ? Enums.BlendModes.MAXIMUM_INTENSITY_BLEND
         : blendMode,

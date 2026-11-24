@@ -1,0 +1,12 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "36",
+        "rule": "genericViewportDisplaySetMetadataProvider.add: the descriptor is not a literal here: delete its kind, and give a video or an ECG descriptor its image id as imageId (was sourceDataId)"
+      },
+      "count": 1
+    }
+  ]
+}

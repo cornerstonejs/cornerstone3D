@@ -36,8 +36,7 @@ export async function run(element, imageIds) {
   const stack = renderingEngine.getViewport('stack');
 
   const displaySetId = JSON.stringify([stack.renderingEngineId, stack.id, imageIds[0]]);
-  csUtils.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-    kind: 'planar',
+  cornerstone.displaySetRegistry.add(displaySetId, {
     imageIds,
     initialImageIdIndex: 0,
   });

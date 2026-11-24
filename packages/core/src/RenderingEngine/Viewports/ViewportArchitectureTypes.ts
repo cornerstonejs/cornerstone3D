@@ -47,7 +47,7 @@ export type ViewportRenderContextType =
 export type LogicalDataType = 'image' | 'video' | 'ecg' | 'wsi' | 'geometry';
 export type BindingRole = 'source' | 'overlay';
 export type ViewportDataReference =
-  | { kind: 'data'; dataId: string }
+  | { kind: 'data'; displaySetId: string }
   | { kind: 'image'; imageId: string }
   | { kind: 'volume'; volumeId: string }
   | { kind: 'geometry'; geometryId: string }
@@ -200,7 +200,10 @@ export interface DataProvider<
   TData extends object = object,
   TOptions = unknown,
 > {
-  load(dataId: DisplaySetId, options?: TOptions): Promise<LoadedData<TData>>;
+  load(
+    displaySetId: DisplaySetId,
+    options?: TOptions
+  ): Promise<LoadedData<TData>>;
 }
 
 export interface ViewportDataBinding<TPresentation = unknown>
@@ -230,7 +233,7 @@ export interface ViewportController<
    * uniformly across the viewport families.
    */
   getDisplaySets(): Array<{ displaySetId: DisplaySetId; options?: unknown }>;
-  removeData(displaySetId: DisplaySetId): void;
+  removeDisplaySet(displaySetId: DisplaySetId): void;
 
   setViewState(viewState: Partial<TViewState>): void;
   getViewState(): TViewState;

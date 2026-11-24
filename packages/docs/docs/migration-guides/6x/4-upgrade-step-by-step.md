@@ -414,8 +414,7 @@ await viewport.setStack(imageIds, 0);
 After:
 
 ```ts
-utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-  kind: 'planar',
+displaySetRegistry.add(displaySetId, {
   imageIds,
   initialImageIdIndex: 0,
 });
@@ -434,8 +433,7 @@ await viewport.setVolumes([{ volumeId }]);
 After:
 
 ```ts
-utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-  kind: 'planar',
+displaySetRegistry.add(displaySetId, {
   imageIds,
   volumeId,
 });
@@ -492,7 +490,7 @@ shows. On 6.0 `VIEWPORT_NEW_IMAGE_SET` fires for a stack and
 - `setDisplaySets` replaces everything that the viewport shows, also a
   surface that a segmentation mounted before it.
   `viewport.addDisplaySet(displaySetId, { role: 'overlay' })` adds one display
-  set, and `viewport.removeData(displaySetId)` removes one.
+  set, and `viewport.removeDisplaySet(displaySetId)` removes one.
 - Wait for `setDisplaySets` before code that reads the view, that sets a tool
   active which reads it, that adds a Surface representation, or that should
   not see the first `NEW_IMAGE`. Legacy code often did not wait for
@@ -1045,8 +1043,7 @@ viewport.setViewState({ frameRange: [5, 10] });
 A whole slide is registered with its web client:
 
 ```ts
-utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-  kind: 'wsi',
+displaySetRegistry.add(displaySetId, {
   imageIds,
   options: { webClient },
 });

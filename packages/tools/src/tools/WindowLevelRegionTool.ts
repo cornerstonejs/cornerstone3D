@@ -377,11 +377,11 @@ class WindowLevelRegionTool extends AnnotationTool {
       utilities.viewportSupportsDisplaySetPresentation(viewport)
         ? viewport
         : undefined;
-    const sourceDataId = presentationViewport?.getSourceDataId();
+    const sourceDisplaySetId = presentationViewport?.getSourceDisplaySetId();
 
-    const voiLutFunction = sourceDataId
+    const voiLutFunction = sourceDisplaySetId
       ? (
-          presentationViewport.getDisplaySetPresentation(sourceDataId) as
+          presentationViewport.getDisplaySetPresentation(sourceDisplaySetId) as
             | { voiLUTFunction?: unknown }
             | undefined
         )?.voiLUTFunction
@@ -396,12 +396,12 @@ class WindowLevelRegionTool extends AnnotationTool {
     );
 
     if (presentationViewport) {
-      if (sourceDataId) {
-        presentationViewport.setDisplaySetPresentation(sourceDataId, {
+      if (sourceDisplaySetId) {
+        presentationViewport.setDisplaySetPresentation(sourceDisplaySetId, {
           voiRange,
         });
       } else {
-        // No resolvable source binding id (e.g. getSourceDataId() is undefined).
+        // No resolvable source binding id (e.g. getSourceDisplaySetId() is undefined).
         // The single-argument form targets the current binding, so the window
         // level is applied rather than silently dropped; it is a no-op only when
         // the viewport has no bound data at all.

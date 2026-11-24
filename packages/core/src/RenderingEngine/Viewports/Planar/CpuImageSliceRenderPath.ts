@@ -221,7 +221,7 @@ export class CpuImageSliceRenderPath
       (image) =>
         void updateRenderedImage({
           ctx,
-          dataId: data.id,
+          displaySetId: data.id,
           image,
           imageIdIndex: rendering.currentImageIdIndex,
           numberOfSlices: payload.imageIds.length,
@@ -283,7 +283,7 @@ export class CpuImageSliceRenderPath
   private applyViewState(
     ctx: PlanarCpuImageAdapterContext,
     rendering: PlanarCpuImageRendering,
-    dataId: string,
+    displaySetId: string,
     camera: unknown,
     imageIds: string[]
   ): void {
@@ -295,7 +295,7 @@ export class CpuImageSliceRenderPath
     const projection = image
       ? resolvePlanarRenderPathProjection({
           ctx,
-          dataId,
+          displaySetId,
           imageIds,
           rendering,
           viewState: planarCamera,
@@ -342,7 +342,7 @@ export class CpuImageSliceRenderPath
 
         return updateRenderedImage({
           ctx,
-          dataId,
+          displaySetId,
           image,
           imageIdIndex: nextImageIdIndex,
           numberOfSlices: imageIds.length,
@@ -407,10 +407,10 @@ export class CpuImageSliceRenderPath
     return buildPlanarImageData(image, this.getFrameOfReferenceUID(rendering));
   }
 
-  private render(mount: CpuImageSliceMount, dataId: string): void {
+  private render(mount: CpuImageSliceMount, displaySetId: string): void {
     const { ctx } = mount;
 
-    if (!ctx.viewport.isCurrentDataId(dataId)) {
+    if (!ctx.viewport.isCurrentDisplaySetId(displaySetId)) {
       if (mount.overlayImage) {
         this.drawImage(mount);
       }
@@ -432,7 +432,7 @@ export class CpuImageSliceRenderPath
   private resize(
     ctx: PlanarCpuImageAdapterContext,
     rendering: PlanarCpuImageRendering,
-    dataId: string
+    displaySetId: string
   ): void {
     const image = rendering.enabledElement.image;
     const camera = ctx.viewport.getViewState();
@@ -445,7 +445,7 @@ export class CpuImageSliceRenderPath
 
     const projection = resolvePlanarRenderPathProjection({
       ctx,
-      dataId,
+      displaySetId,
       rendering,
       viewState: camera,
     });
@@ -993,15 +993,22 @@ function renderCompatibilityOverlayActors(
 
 async function updateRenderedImage(args: {
   ctx: PlanarCpuImageAdapterContext;
-  dataId: string;
+  displaySetId: string;
   image: IImage;
   imageIdIndex: number;
   numberOfSlices: number;
   props?: PlanarDataPresentation;
   rendering: PlanarCpuImageRendering;
 }): Promise<void> {
-  const { ctx, dataId, image, imageIdIndex, numberOfSlices, props, rendering } =
-    args;
+  const {
+    ctx,
+    displaySetId,
+    image,
+    imageIdIndex,
+    numberOfSlices,
+    props,
+    rendering,
+  } = args;
   const enabledElement = rendering.enabledElement;
   markCpuImagePreScaled(image);
   const camera = ctx.viewport.getViewState();
@@ -1044,7 +1051,7 @@ async function updateRenderedImage(args: {
   applyDataPresentation(rendering, props);
   const projection = resolvePlanarRenderPathProjection({
     ctx,
-    dataId,
+    displaySetId,
     rendering,
     viewState: camera,
   });
@@ -1058,7 +1065,7 @@ async function updateRenderedImage(args: {
   }
 
   ctx.viewport.notifyDefaultVOIRangeOfNewImage?.(
-    dataId,
+    displaySetId,
     previousDefaultVOIRange
   );
   triggerPlanarNewImage(ctx, { image, imageIdIndex, numberOfSlices });

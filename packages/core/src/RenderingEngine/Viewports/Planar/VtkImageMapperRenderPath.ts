@@ -121,7 +121,7 @@ export class VtkImageMapperRenderPath
       (image) =>
         void updateRenderedImage({
           ctx,
-          dataId: data.id,
+          displaySetId: data.id,
           image,
           rendering,
           imageIdIndex: rendering.currentImageIdIndex,
@@ -197,7 +197,7 @@ export class VtkImageMapperRenderPath
   private applyViewState(
     ctx: PlanarVtkImageAdapterContext,
     rendering: PlanarImageMapperRendering,
-    dataId: string,
+    displaySetId: string,
     camera: unknown,
     imageIds: string[]
   ): void {
@@ -211,7 +211,7 @@ export class VtkImageMapperRenderPath
 
     const projection = resolvePlanarRenderPathProjection({
       ctx,
-      dataId,
+      displaySetId,
       imageIds,
       rendering,
       viewState: planarCamera,
@@ -269,7 +269,7 @@ export class VtkImageMapperRenderPath
 
         return updateRenderedImage({
           ctx,
-          dataId,
+          displaySetId,
           image,
           rendering,
           imageIdIndex: nextImageIdIndex,
@@ -341,7 +341,7 @@ export class VtkImageMapperRenderPath
   private resize(
     ctx: PlanarVtkImageAdapterContext,
     rendering: PlanarImageMapperRendering,
-    dataId: string
+    displaySetId: string
   ): void {
     if (rendering.useWorldCoordinateImageData) {
       ctx.display.requestRender();
@@ -351,7 +351,7 @@ export class VtkImageMapperRenderPath
     const camera = ctx.viewport.getViewState();
     const projection = resolvePlanarRenderPathProjection({
       ctx,
-      dataId,
+      displaySetId,
       rendering,
       viewState: camera,
     });
@@ -414,7 +414,7 @@ export class VtkImageMapperPath
 
 async function updateRenderedImage(args: {
   ctx: PlanarVtkImageAdapterContext;
-  dataId: string;
+  displaySetId: string;
   image: IImage;
   rendering: PlanarImageMapperRendering;
   imageIdIndex: number;
@@ -423,7 +423,7 @@ async function updateRenderedImage(args: {
 }): Promise<void> {
   const {
     ctx,
-    dataId,
+    displaySetId,
     image,
     rendering,
     imageIdIndex,
@@ -488,7 +488,7 @@ async function updateRenderedImage(args: {
 
   const projection = resolvePlanarRenderPathProjection({
     ctx,
-    dataId,
+    displaySetId,
     rendering,
     viewState: camera,
   });
@@ -505,7 +505,7 @@ async function updateRenderedImage(args: {
   }
 
   ctx.viewport.notifyDefaultVOIRangeOfNewImage?.(
-    dataId,
+    displaySetId,
     previousDefaultVOIRange
   );
 

@@ -263,7 +263,7 @@ function recordLostContext(): void {
   );
 
   if (drawsOnCpuAfterLostContext()) {
-    _updateRenderingPipelinesForAllViewports(isPlanarNextViewport);
+    _updateRenderingPipelinesForAllViewports(isPlanarViewport);
   }
 }
 
@@ -404,7 +404,7 @@ function setSliceFirst(enabled: boolean): void {
 const failedVolumeTextureIds = new Set<string>();
 
 /** Whether a viewport is a planar next viewport, the one the router serves. */
-function isPlanarNextViewport(viewport: { type: string }): boolean {
+function isPlanarViewport(viewport: { type: string }): boolean {
   return viewport.type === ViewportType.PLANAR;
 }
 
@@ -428,7 +428,7 @@ function recordVolumeTextureFailure(volumeId: string): void {
     `the 3D texture of the volume ${volumeId} failed; with slice first on, its slabs are sampled on the CPU`
   );
   setTimeout(() => {
-    _updateRenderingPipelinesForAllViewports(isPlanarNextViewport);
+    _updateRenderingPipelinesForAllViewports(isPlanarViewport);
   }, 0);
 }
 
@@ -454,7 +454,7 @@ function hasVolumeTextureFailed(volumeId: string | undefined): boolean {
 function retryGpu(): void {
   failedVolumeTextureIds.clear();
   lostContext = false;
-  _updateRenderingPipelinesForAllViewports(isPlanarNextViewport);
+  _updateRenderingPipelinesForAllViewports(isPlanarViewport);
 }
 
 function setPreferSizeOverAccuracy(status: boolean): void {

@@ -5,7 +5,7 @@ import {
   imageLoader,
   metaData,
   volumeLoader,
-  utilities,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -104,8 +104,7 @@ async function renderImages() {
   if (!showAsVolume) {
     const displaySetId = `dicomLoader:stack:${imageIds[0]}`;
 
-    utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-      kind: 'planar',
+    displaySetRegistry.add(displaySetId, {
       imageIds,
     });
     viewport.setDisplaySets({ displaySetId });
@@ -125,8 +124,7 @@ async function renderImages() {
 
     const displaySetId = `dicomLoader:volume:${imageIds[0]}`;
 
-    utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-      kind: 'planar',
+    displaySetRegistry.add(displaySetId, {
       imageIds,
       volumeId,
     });

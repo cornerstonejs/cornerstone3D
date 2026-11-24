@@ -56,7 +56,7 @@ const PARALLEL_COSINE = 0.99;
 const reversedImageIds = new WeakMap<string[], string[]>();
 
 export type PlanarReferenceContext = {
-  dataId: string;
+  displaySetId: string;
   data: LoadedData<PlanarPayload>;
   frameOfReferenceUID: string;
   rendering: PlanarRendering;
@@ -70,11 +70,13 @@ type PlanarResolvedViewLike = {
 export type PlanarViewReferenceHost = {
   viewportId: string;
   viewportType: string;
-  getActiveDataId(): string | undefined;
-  getBinding(dataId: string): PlanarDataBinding | undefined;
+  getSourceDisplaySetId(): string | undefined;
+  getBinding(displaySetId: string): PlanarDataBinding | undefined;
   getBindings(): Iterable<[string, PlanarDataBinding]>;
   getCurrentBinding(): PlanarDataBinding | undefined;
-  getDisplaySetPresentation(dataId: string): PlanarDataPresentation | undefined;
+  getDisplaySetPresentation(
+    displaySetId: string
+  ): PlanarDataPresentation | undefined;
   getRenderContext(): PlanarViewportRenderContext;
   getResolvedView(args?: {
     frameOfReferenceUID?: string;
@@ -84,7 +86,7 @@ export type PlanarViewReferenceHost = {
   getVolumeSliceWorldPointForImageIdIndex(
     imageIdIndex: number
   ): Point3 | undefined;
-  promoteSourceDataId(dataId: string): void;
+  promoteSourceDisplaySetId(displaySetId: string): void;
   render(): void;
   setImageIdIndex(imageIdIndex: number): Promise<string>;
   setViewState(viewStatePatch: Partial<PlanarViewState>): void;
@@ -141,7 +143,7 @@ class PlanarViewReferenceController {
 
     return getPlanarViewReference({
       viewState: this.host.getViewState(),
-      dataId: referenceContext?.dataId,
+      displaySetId: referenceContext?.displaySetId,
       frameOfReferenceUID:
         referenceContext?.frameOfReferenceUID ?? this.getFrameOfReferenceUID(),
       data: referenceContext?.data,
@@ -170,7 +172,7 @@ class PlanarViewReferenceController {
     }
 
     const slabThickness = this.host.getDisplaySetPresentation(
-      referenceContext.dataId
+      referenceContext.displaySetId
     )?.slabThickness;
 
     return typeof slabThickness === 'number'
@@ -206,7 +208,10 @@ class PlanarViewReferenceController {
 
     const sourceContext = this.getCurrentPlanarReferenceContext();
 
-    if (sourceContext && sourceContext.dataId !== targetContext.dataId) {
+    if (
+      sourceContext &&
+      sourceContext.displaySetId !== targetContext.displaySetId
+    ) {
       this.applyViewReferenceToCurrentBinding(
         this.getSourceReferenceForOverlay(viewRef, sourceContext)
       );
@@ -214,7 +219,7 @@ class PlanarViewReferenceController {
     }
 
     const didActivateBinding = this.activatePlanarReferenceContext(
-      targetContext.dataId
+      targetContext.displaySetId
     );
     const didApplyReference = this.applyViewReferenceToCurrentBinding(viewRef);
 
@@ -335,26 +340,26 @@ class PlanarViewReferenceController {
   private getCurrentPlanarReferenceContext():
     | PlanarReferenceContext
     | undefined {
-    const activeDataId = this.host.getActiveDataId();
+    const sourceDisplaySetId = this.host.getSourceDisplaySetId();
 
-    if (activeDataId) {
+    if (sourceDisplaySetId) {
       const activeContext =
-        this.getPlanarReferenceContextByDataId(activeDataId);
+        this.getPlanarReferenceContextByDisplaySetId(sourceDisplaySetId);
 
       if (activeContext) {
         return activeContext;
       }
     }
 
-    for (const [dataId] of this.host.getBindings()) {
-      return this.getPlanarReferenceContextByDataId(dataId);
+    for (const [displaySetId] of this.host.getBindings()) {
+      return this.getPlanarReferenceContextByDisplaySetId(displaySetId);
     }
   }
 
-  private getPlanarReferenceContextByDataId(
-    dataId: string
+  private getPlanarReferenceContextByDisplaySetId(
+    displaySetId: string
   ): PlanarReferenceContext | undefined {
-    const binding = this.host.getBinding(dataId);
+    const binding = this.host.getBinding(displaySetId);
 
     if (!binding) {
       return;
@@ -363,7 +368,7 @@ class PlanarViewReferenceController {
     const data = binding.data as LoadedData<PlanarPayload>;
 
     return {
-      dataId,
+      displaySetId,
       data,
       frameOfReferenceUID:
         binding.getFrameOfReferenceUID() ??
@@ -375,8 +380,9 @@ class PlanarViewReferenceController {
   private getAllPlanarReferenceContexts(): PlanarReferenceContext[] {
     const contexts: PlanarReferenceContext[] = [];
 
-    for (const [dataId] of this.host.getBindings()) {
-      const referenceContext = this.getPlanarReferenceContextByDataId(dataId);
+    for (const [displaySetId] of this.host.getBindings()) {
+      const referenceContext =
+        this.getPlanarReferenceContextByDisplaySetId(displaySetId);
 
       if (referenceContext) {
         contexts.push(referenceContext);
@@ -402,8 +408,8 @@ class PlanarViewReferenceController {
     };
 
     return {
-      dataId: referenceContext.dataId,
-      dataIds: [referenceContext.data.id],
+      displaySetId: referenceContext.displaySetId,
+      displaySetIds: [referenceContext.data.id],
       frameOfReferenceUID: referenceContext.frameOfReferenceUID,
       imageIds: this.getImageIdsBySliceIndex(referenceContext),
       currentImageIdIndex: this.getReferenceImageIdIndex(referenceContext),
@@ -488,7 +494,7 @@ class PlanarViewReferenceController {
 
     if (
       slice?.kind === 'stackIndex' &&
-      referenceContext.dataId === this.host.getActiveDataId() &&
+      referenceContext.displaySetId === this.host.getSourceDisplaySetId() &&
       isImageRenderMode(referenceContext.rendering.renderMode)
     ) {
       return slice.imageIdIndex;
@@ -500,11 +506,11 @@ class PlanarViewReferenceController {
   private findPlanarReferenceContextByVolumeId(
     volumeId: string
   ): PlanarReferenceContext | undefined {
-    for (const [dataId, binding] of this.host.getBindings()) {
+    for (const [displaySetId, binding] of this.host.getBindings()) {
       const bindingData = binding.data as LoadedData<PlanarPayload>;
 
       if (bindingData.volumeId === volumeId) {
-        return this.getPlanarReferenceContextByDataId(dataId);
+        return this.getPlanarReferenceContextByDisplaySetId(displaySetId);
       }
     }
   }
@@ -535,9 +541,9 @@ class PlanarViewReferenceController {
   private resolveViewReferenceContext(
     viewRef: ViewReference
   ): PlanarReferenceContext | undefined {
-    if (viewRef.dataId) {
-      const dataContext = this.getPlanarReferenceContextByDataId(
-        viewRef.dataId
+    if (viewRef.displaySetId) {
+      const dataContext = this.getPlanarReferenceContextByDisplaySetId(
+        viewRef.displaySetId
       );
 
       if (dataContext) {
@@ -616,12 +622,12 @@ class PlanarViewReferenceController {
     return reference;
   }
 
-  private activatePlanarReferenceContext(dataId: string): boolean {
-    if (this.host.getActiveDataId() === dataId) {
+  private activatePlanarReferenceContext(displaySetId: string): boolean {
+    if (this.host.getSourceDisplaySetId() === displaySetId) {
       return false;
     }
 
-    this.host.promoteSourceDataId(dataId);
+    this.host.promoteSourceDisplaySetId(displaySetId);
     this.host.updateBindingsCameraState();
 
     return true;

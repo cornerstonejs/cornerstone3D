@@ -405,9 +405,8 @@ async function showStack(source) {
   const imageIds = createRampImageIds();
 
   await loadRampImages(imageIds);
-  utilities.genericViewportDisplaySetMetadataProvider.add('magnifyRamp', {
+  cornerstone3D.displaySetRegistry.add('magnifyRamp', {
     imageIds,
-    kind: 'planar',
     initialImageIdIndex: 1,
   });
   await source.setDisplaySets({ displaySetId: 'magnifyRamp' });
@@ -424,7 +423,7 @@ async function showStack(source) {
 async function showVolume(source, name, orientation, imageIdIndex, view) {
   const volume = await createRampVolume(name);
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(name, {
+  cornerstone3D.displaySetRegistry.add(name, {
     imageIds: volume.imageIds,
     volumeId: volume.volumeId,
   });
@@ -452,10 +451,10 @@ async function showFusion(source, name) {
   const displaySetIds = [`${name}Base`, `${name}Overlay`];
 
   [base, overlay].forEach((volume, index) => {
-    utilities.genericViewportDisplaySetMetadataProvider.add(
-      displaySetIds[index],
-      { imageIds: volume.imageIds, volumeId: volume.volumeId }
-    );
+    cornerstone3D.displaySetRegistry.add(displaySetIds[index], {
+      imageIds: volume.imageIds,
+      volumeId: volume.volumeId,
+    });
   });
   await source.setDisplaySets(
     {
@@ -658,7 +657,7 @@ function expectColoursOfSource(loupe, source) {
 
 /** Expects the presentation of the source display set on the loupe. */
 function expectPresentationOfSource(loupe, source) {
-  const displaySetId = source.getSourceDataId();
+  const displaySetId = source.getSourceDisplaySetId();
   const presentation = loupe.getDisplaySetPresentation(displaySetId);
 
   expect(presentation.voiRange.lower).toBeCloseTo(PRESENTATION.voiRange.lower);
@@ -987,7 +986,7 @@ describe('The glass of AdvancedMagnifyTool on a next planar viewport -- ', () =>
     await showStack(source);
 
     const glass = await addGlass(source, [230, 120]);
-    const displaySetId = source.getSourceDataId();
+    const displaySetId = source.getSourceDisplaySetId();
 
     expectPresentationOfSource(glass, source);
 

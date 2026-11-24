@@ -2,8 +2,8 @@ import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
-  utilities,
   volumeLoader,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -332,30 +332,23 @@ async function run() {
   // Set the volume to load
   volume.load();
 
-  const { genericViewportDisplaySetMetadataProvider } = utilities;
-
-  genericViewportDisplaySetMetadataProvider.add(displaySetIds.volume, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetIds.volume, {
     imageIds: t2_tse_tra_vol,
     volumeId,
   });
-  genericViewportDisplaySetMetadataProvider.add(displaySetIds.sagittal, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetIds.sagittal, {
     imageIds: t2_tse_sag,
     initialImageIdIndex: Math.floor(t2_tse_sag.length / 2),
   });
-  genericViewportDisplaySetMetadataProvider.add(displaySetIds.transverse, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetIds.transverse, {
     imageIds: t2_tse_tra,
     initialImageIdIndex: Math.floor(t2_tse_tra.length / 2),
   });
-  genericViewportDisplaySetMetadataProvider.add(displaySetIds.coronal, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetIds.coronal, {
     imageIds: t2_tse_cor,
     initialImageIdIndex: Math.floor(t2_tse_cor.length / 2),
   });
-  genericViewportDisplaySetMetadataProvider.add(displaySetIds.adc, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetIds.adc, {
     imageIds: adc,
     initialImageIdIndex: Math.floor(adc.length / 2),
   });

@@ -89,7 +89,7 @@ describe('The window level that the one click segmentation reads from a direct n
       OrientationAxis.AXIAL
     );
     const defaultRange = viewport.getDefaultVOIRange(
-      viewport.getSourceDataId()
+      viewport.getSourceDisplaySetId()
     );
     const defaultMapping = getViewportVoiMappingForVolume(
       viewport,

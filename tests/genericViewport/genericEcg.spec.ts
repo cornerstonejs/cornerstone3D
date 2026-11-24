@@ -50,7 +50,7 @@ test.describe('ECGViewport', () => {
         viewportId: 'ecgGenericViewport',
         constructorName: 'ECGViewport',
         type: 'ecg',
-        renderModesByDataId: {
+        renderModesByDisplaySetId: {
           'ecg-next:primary': 'signal2d',
         },
       },

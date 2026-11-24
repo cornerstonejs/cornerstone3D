@@ -164,7 +164,7 @@ describe('A stack of a direct next planar viewport whose final image stage comes
 
   afterEach(function () {
     utilities.imageRetrieveMetadataProvider.clear();
-    utilities.genericViewportDisplaySetMetadataProvider.clear();
+    cornerstone3D.displaySetRegistry.clear();
     testUtils.cleanupTestEnvironment({ renderingEngineId });
   });
 
@@ -187,15 +187,14 @@ describe('A stack of a direct next planar viewport whose final image stage comes
         overlay,
         overlayRequested,
       });
-      utilities.genericViewportDisplaySetMetadataProvider.add('staged:source', {
+      cornerstone3D.displaySetRegistry.add('staged:source', {
         imageIds: sourceImageIds,
-        kind: 'planar',
         initialImageIdIndex: 0,
       });
-      utilities.genericViewportDisplaySetMetadataProvider.add(
-        'staged:overlay',
-        { imageIds: overlayImageIds, kind: 'planar', initialImageIdIndex: 0 }
-      );
+      cornerstone3D.displaySetRegistry.add('staged:overlay', {
+        imageIds: overlayImageIds,
+        initialImageIdIndex: 0,
+      });
 
       const viewport = createNextViewport(renderingEngine, 'stagedPreview');
       const finalLoaded = finalImageLoaded(sourceImageIds[0]);
@@ -239,15 +238,14 @@ describe('A stack of a direct next planar viewport whose final image stage comes
         overlay,
         overlayRequested,
       });
-      utilities.genericViewportDisplaySetMetadataProvider.add('commit:source', {
+      cornerstone3D.displaySetRegistry.add('commit:source', {
         imageIds: sourceImageIds,
-        kind: 'planar',
         initialImageIdIndex: 0,
       });
-      utilities.genericViewportDisplaySetMetadataProvider.add(
-        'commit:overlay',
-        { imageIds: overlayImageIds, kind: 'planar', initialImageIdIndex: 0 }
-      );
+      cornerstone3D.displaySetRegistry.add('commit:overlay', {
+        imageIds: overlayImageIds,
+        initialImageIdIndex: 0,
+      });
 
       const viewport = createNextViewport(renderingEngine, 'stagedCommit');
       const finalLoaded = finalImageLoaded(sourceImageIds[0]);
@@ -317,7 +315,7 @@ describe('A display set of a direct next planar viewport whose registration goes
   });
 
   afterEach(function () {
-    utilities.genericViewportDisplaySetMetadataProvider.clear();
+    cornerstone3D.displaySetRegistry.clear();
     testUtils.cleanupTestEnvironment({ renderingEngineId });
   });
 
@@ -347,9 +345,8 @@ describe('A display set of a direct next planar viewport whose registration goes
       ['registration:source', sourceImageIds],
       ['registration:overlay', overlayImageIds],
     ].forEach(([displaySetId, imageIds]) =>
-      utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+      cornerstone3D.displaySetRegistry.add(displaySetId, {
         imageIds,
-        kind: 'planar',
         initialImageIdIndex: 0,
       })
     );
@@ -368,16 +365,13 @@ describe('A display set of a direct next planar viewport whose registration goes
     );
 
     await overlayRequested.promise;
-    utilities.genericViewportDisplaySetMetadataProvider.remove(
-      'registration:source'
-    );
+    cornerstone3D.displaySetRegistry.remove('registration:source');
     overlay.open();
     await mount;
 
-    expect(viewport.getRenderPlan().map(({ dataId }) => dataId)).toEqual([
-      'registration:source',
-      'registration:overlay',
-    ]);
+    expect(
+      viewport.getRenderPlan().map(({ displaySetId }) => displaySetId)
+    ).toEqual(['registration:source', 'registration:overlay']);
     expect(viewport.getImageIds()).toEqual(sourceImageIds);
     expect(viewport.getCurrentImageId()).toBe(sourceImageIds[0]);
   });
@@ -403,13 +397,12 @@ describe('A display set of a direct next planar viewport whose registration goes
 
       return testUtils.fakeImageLoader(imageId, options);
     });
-    utilities.genericViewportDisplaySetMetadataProvider.add('voi:scan', {
+    cornerstone3D.displaySetRegistry.add('voi:scan', {
       imageIds: seriesA.imageIds,
       volumeId: seriesA.volumeId,
     });
-    utilities.genericViewportDisplaySetMetadataProvider.add('voi:overlay', {
+    cornerstone3D.displaySetRegistry.add('voi:overlay', {
       imageIds: overlayImageIds,
-      kind: 'planar',
       initialImageIdIndex: 0,
     });
 
@@ -425,7 +418,7 @@ describe('A display set of a direct next planar viewport whose registration goes
     );
 
     await overlayRequested.promise;
-    utilities.genericViewportDisplaySetMetadataProvider.add('voi:scan', {
+    cornerstone3D.displaySetRegistry.add('voi:scan', {
       imageIds: seriesB.imageIds,
       volumeId: seriesB.volumeId,
     });
@@ -460,7 +453,7 @@ describe('A stack of a direct next planar viewport whose render backend changes 
 
   afterEach(function () {
     setRenderBackend(previousRenderBackend);
-    utilities.genericViewportDisplaySetMetadataProvider.clear();
+    cornerstone3D.displaySetRegistry.clear();
     testUtils.cleanupTestEnvironment({ renderingEngineId });
   });
 
@@ -486,14 +479,12 @@ describe('A stack of a direct next planar viewport whose render backend changes 
 
       return testUtils.fakeImageLoader(imageId, options);
     });
-    utilities.genericViewportDisplaySetMetadataProvider.add('backend:source', {
+    cornerstone3D.displaySetRegistry.add('backend:source', {
       imageIds: sourceImageIds,
-      kind: 'planar',
       initialImageIdIndex: 0,
     });
-    utilities.genericViewportDisplaySetMetadataProvider.add('backend:overlay', {
+    cornerstone3D.displaySetRegistry.add('backend:overlay', {
       imageIds: overlayImageIds,
-      kind: 'planar',
       initialImageIdIndex: 0,
     });
     setRenderBackend('gpu');
@@ -513,10 +504,14 @@ describe('A stack of a direct next planar viewport whose render backend changes 
     expect(
       viewport
         .getRenderPlan()
-        .map(({ dataId, draw, renderMode }) => ({ dataId, draw, renderMode }))
+        .map(({ displaySetId, draw, renderMode }) => ({
+          displaySetId,
+          draw,
+          renderMode,
+        }))
     ).toEqual([
-      { dataId: 'backend:source', draw: 'cpu', renderMode: 'cpuImage' },
-      { dataId: 'backend:overlay', draw: 'cpu', renderMode: 'cpuImage' },
+      { displaySetId: 'backend:source', draw: 'cpu', renderMode: 'cpuImage' },
+      { displaySetId: 'backend:overlay', draw: 'cpu', renderMode: 'cpuImage' },
     ]);
     expect(loads[sourceImageIds[0]]).toBe(1);
   });

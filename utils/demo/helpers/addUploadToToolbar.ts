@@ -3,7 +3,7 @@ import {
   getRenderingEngine,
   imageLoader,
   metaData,
-  utilities,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import dicomImageLoader from '@cornerstonejs/dicom-image-loader';
 import { utilities as metadataUtilities } from '@cornerstonejs/metadata';
@@ -133,8 +133,7 @@ export function loadAndViewImagesSingle(imageIds, viewportInfo?) {
   const viewport = getViewport(viewportInfo);
   const displaySetId = `upload:stack:${imageIds[0]}`;
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId, {
     imageIds,
   });
 

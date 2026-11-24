@@ -139,7 +139,7 @@ export type PlanarCpuVolumeRendering = MountedRendering<{
   /**
    * The counts and timings of the sampler of this slice, for tests and
    * example pages, as
-   * `viewport.bindings.get(dataId).rendering.getSliceCacheStatistics()`.
+   * `viewport.bindings.get(displaySetId).rendering.getSliceCacheStatistics()`.
    */
   getSliceCacheStatistics(): PlanarSliceCacheStatistics;
   /**
@@ -204,7 +204,7 @@ export type PlanarSampledSliceRendering = MountedRendering<{
   /**
    * The counts and timings of the sampler of this slice, for tests and
    * example pages, as
-   * `viewport.bindings.get(dataId).rendering.getSliceCacheStatistics()`.
+   * `viewport.bindings.get(displaySetId).rendering.getSliceCacheStatistics()`.
    */
   getSliceCacheStatistics(): PlanarSliceCacheStatistics;
   /**

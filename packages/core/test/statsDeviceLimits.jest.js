@@ -108,7 +108,7 @@ describe('device facts in the debug panel', () => {
           viewportType: 'planar',
           bindings: [
             {
-              dataId: 'pt',
+              displaySetId: 'pt',
               role: 'overlay',
               renderMode: 'vtkSampledSlice',
               gpuTextures: [texture],

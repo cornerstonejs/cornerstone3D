@@ -284,7 +284,7 @@ const VIEW_CASES: ParityCase[] = [
 
 type TestViewport = {
   getRenderPlan: () => Array<{
-    dataId: string;
+    displaySetId: string;
     draw: string;
     renderMode: string;
     reason: string;
@@ -292,8 +292,8 @@ type TestViewport = {
   getDebugBindings: () => Array<{
     rendering: { refreshFidelity?: () => void; qualityPending?: boolean };
   }>;
-  getDisplaySetPresentation: (dataId: string) => Presentation | undefined;
-  setDisplaySetPresentation: (dataId: string, props: Presentation) => void;
+  getDisplaySetPresentation: (displaySetId: string) => Presentation | undefined;
+  setDisplaySetPresentation: (displaySetId: string, props: Presentation) => void;
   getViewState: () => Record<string, unknown>;
   setViewState: (patch: Record<string, unknown>) => void;
   setZoom: (zoom: number) => void;
@@ -409,13 +409,13 @@ async function applyCase(page: Page, parityCase: ParityCase): Promise<void> {
         .getViewport(parityCase.viewportId);
       const { presentations = {}, slab, view } = parityCase;
 
-      Object.entries(presentations).forEach(([dataId, props]) =>
-        viewport.setDisplaySetPresentation(dataId, props)
+      Object.entries(presentations).forEach(([displaySetId, props]) =>
+        viewport.setDisplaySetPresentation(displaySetId, props)
       );
 
       if (slab) {
-        viewport.getRenderPlan().forEach(({ dataId }) =>
-          viewport.setDisplaySetPresentation(dataId, {
+        viewport.getRenderPlan().forEach(({ displaySetId }) =>
+          viewport.setDisplaySetPresentation(displaySetId, {
             slabThickness: slab.thickness,
             blendMode: cornerstone.Enums.BlendModes[slab.blendMode],
           })
@@ -476,13 +476,13 @@ async function readCutOutline(
           0
         );
 
-      viewport.getRenderPlan().forEach(({ dataId }) => {
-        if (viewport.getDisplaySetPresentation(dataId)?.visible === false) {
+      viewport.getRenderPlan().forEach(({ displaySetId }) => {
+        if (viewport.getDisplaySetPresentation(displaySetId)?.visible === false) {
           return;
         }
 
         const { dimensions, direction, spacing, origin } =
-          cornerstone.cache.getVolume(volumeIds[dataId]);
+          cornerstone.cache.getVolume(volumeIds[displaySetId]);
         const corners: number[][] = [];
 
         [-0.5, dimensions[0] - 0.5].forEach((i) =>

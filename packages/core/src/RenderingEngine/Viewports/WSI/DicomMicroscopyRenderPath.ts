@@ -59,7 +59,7 @@ export class DicomMicroscopyRenderPath
         viewportId: ctx.viewportId,
         renderingEngineId: ctx.renderingEngineId,
         rendering: {
-          dataId: data.id,
+          displaySetId: data.id,
           renderMode: 'wsi2d',
         },
       });

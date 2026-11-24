@@ -1,6 +1,6 @@
 import * as cornerstone3D from '../src/index';
 import { describe, it, expect, afterEach } from '@jest/globals';
-import genericViewportDisplaySetMetadataProvider from '../src/utilities/genericViewportDisplaySetMetadataProvider';
+import displaySetRegistry from '../src/RenderingEngine/Viewports/displaySetRegistry';
 import { createPlanarViewportOnStandInEngine } from './utils/planarViewportOnStandInEngine';
 
 const { setRenderBackend, Enums, init, cache, volumeLoader } = cornerstone3D;
@@ -61,7 +61,7 @@ function createVolumeDisplaySet(volumeId, dimensions, spacing) {
   });
   const displaySetId = `fusion:${volumeId}`;
 
-  genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+  displaySetRegistry.add(displaySetId, {
     imageIds: volume.imageIds,
     volumeId,
   });
@@ -84,10 +84,10 @@ describe('Direct next planar viewport with a fusion', () => {
     renderingEngine = undefined;
     setRenderBackend('auto');
     cache.purgeCache();
-    genericViewportDisplaySetMetadataProvider.clear();
+    displaySetRegistry.clear();
   });
 
-  it('keeps the source, its slice and its camera when removeData takes the overlay away, as the legacy removeVolumeActors', async () => {
+  it('keeps the source, its slice and its camera when removeDisplaySet takes the overlay away, as the legacy removeVolumeActors', async () => {
     let viewport;
 
     ({ renderingEngine, viewport } = createPlanarViewportOnStandInEngine(
@@ -115,7 +115,7 @@ describe('Direct next planar viewport with a fusion', () => {
     expect(viewport.hasVolumeId('volume-b')).toBe(true);
     expect(viewport.getActors().length).toBe(2);
 
-    viewport.removeData(overlayId);
+    viewport.removeDisplaySet(overlayId);
 
     expect(viewport.getActors().map((entry) => entry.referencedId)).toEqual(
       LEGACY_FUSION_AFTER_REMOVAL.actorReferencedIds
@@ -128,7 +128,7 @@ describe('Direct next planar viewport with a fusion', () => {
       viewport.getCameraForEvent().focalPoint,
       LEGACY_FUSION_AFTER_REMOVAL.focalPoint
     );
-    expect(viewport.getSourceDataId()).toBe(sourceId);
+    expect(viewport.getSourceDisplaySetId()).toBe(sourceId);
     expect(viewport.getCurrentImageIdIndex()).toBe(sliceIndex);
     expect(viewport.hasVolumeId('volume-a')).toBe(true);
     expect(viewport.hasVolumeId('volume-b')).toBe(false);

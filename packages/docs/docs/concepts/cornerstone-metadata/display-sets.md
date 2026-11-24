@@ -96,7 +96,7 @@ With the cache, you do not register a second shape for each family. With the
 provider, the registered shape depends on the viewport family:
 
 ```ts
-import { Enums, utilities } from '@cornerstonejs/core';
+import { Enums, displaySetRegistry } from '@cornerstonejs/core';
 
 const { ViewportType } = Enums;
 
@@ -111,9 +111,9 @@ const volumeId = `cornerstoneStreamingImageVolume:${displaySetId}`;
 
 // 1. Register the renderable data so the viewport can resolve `displaySetId`.
 //    a stack uses { imageIds }, a volume adds a volumeId;
-//    video/ecg use { kind, sourceDataId };
-//    wsi uses { kind: 'wsi', imageIds, options: { webClient } }.
-utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+//    video/ecg use { imageId };
+//    wsi uses { imageIds, options: { webClient } }.
+displaySetRegistry.add(displaySetId, {
   imageIds: [...displaySet.imageIds],
   ...(displaySet.isReconstructable ? { volumeId } : {}),
 });

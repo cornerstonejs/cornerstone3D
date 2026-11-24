@@ -112,7 +112,7 @@ async function runCanonicalScenario(
 
 /**
  * Runs the baseline (vtkImage) and a target mode through the canonical
- * scenario under a shared displaySetId (so viewReference.dataId and the
+ * scenario under a shared displaySetId (so viewReference.displaySetId and the
  * presentation lookup key line up across the two runs and do not pollute
  * the diff with an incidental id mismatch), tearing each context down before
  * the next is created. `targetScrollDelta` is the scroll of step 2 for the

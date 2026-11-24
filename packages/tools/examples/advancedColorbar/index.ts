@@ -6,7 +6,7 @@ import {
   cache,
   volumeLoader,
   getRenderingEngine,
-  utilities,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import { utilities as cstUtils } from '@cornerstonejs/tools';
 import {
@@ -208,10 +208,10 @@ async function initializeVolumeViewport(
 
   await createAndCacheVolume(ctVolumeId, ctImageIds);
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(
-    ctVolumeDisplaySetId,
-    { kind: 'planar', imageIds: ctImageIds, volumeId: ctVolumeId }
-  );
+  displaySetRegistry.add(ctVolumeDisplaySetId, {
+    imageIds: ctImageIds,
+    volumeId: ctVolumeId,
+  });
   displaySets.push({ displaySetId: ctVolumeDisplaySetId });
 
   // Add PT volume on fusion viewports
@@ -220,10 +220,10 @@ async function initializeVolumeViewport(
 
     await createAndCacheVolume(ptVolumeId, ptImageIds);
 
-    utilities.genericViewportDisplaySetMetadataProvider.add(
-      ptVolumeDisplaySetId,
-      { kind: 'planar', imageIds: ptImageIds, volumeId: ptVolumeId }
-    );
+    displaySetRegistry.add(ptVolumeDisplaySetId, {
+      imageIds: ptImageIds,
+      volumeId: ptVolumeId,
+    });
     displaySets.push({ displaySetId: ptVolumeDisplaySetId });
   }
 
@@ -531,10 +531,10 @@ async function initializeViewport(renderingEngine, toolGroup, viewportInfo) {
   if (viewportInfo.volumeIds) {
     await initializeVolumeViewport(viewportInfo, viewport);
   } else {
-    utilities.genericViewportDisplaySetMetadataProvider.add(
-      ctStackDisplaySetId,
-      { kind: 'planar', imageIds: ctImageIds, initialImageIdIndex: 0 }
-    );
+    displaySetRegistry.add(ctStackDisplaySetId, {
+      imageIds: ctImageIds,
+      initialImageIdIndex: 0,
+    });
 
     await viewport.setDisplaySets({ displaySetId: ctStackDisplaySetId });
 

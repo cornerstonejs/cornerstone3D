@@ -356,7 +356,7 @@ describe('reportSamplingState', () => {
     let slabTooLarge = false;
     const refreshRenderPlan = jest.fn();
     const mount = {
-      dataId: 'ct',
+      displaySetId: 'ct',
       sampler: { isSlabTooLarge: () => slabTooLarge },
       ctx: { viewport: { refreshRenderPlan } },
       rendering: {},

@@ -146,7 +146,7 @@ export function syncStackLabelmapActors(
       if (drawsOnCanvas) {
         viewport.addImages([
           {
-            dataId: representationUID,
+            displaySetId: representationUID,
             imageId: derivedImageId,
             reference: {
               kind: 'segmentation',
@@ -183,7 +183,7 @@ export function syncStackLabelmapActors(
 
         viewport.addImages([
           {
-            dataId: representationUID,
+            displaySetId: representationUID,
             imageId: derivedImageId,
             reference: {
               kind: 'segmentation',

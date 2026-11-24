@@ -7,8 +7,8 @@ import {
   getConfiguration,
   getRenderingEngine,
   setSliceFirst,
-  utilities,
   volumeLoader,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
@@ -50,8 +50,8 @@ const ptSeriesInstanceUID =
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume';
 const ctVolumeId = `${volumeLoaderScheme}:SLICE_FIRST_CT`;
 const ptVolumeId = `${volumeLoaderScheme}:SLICE_FIRST_PT`;
-const ctDataId = 'slice-first:ct';
-const ptDataId = 'slice-first:pt';
+const ctDisplaySetId = 'slice-first:ct';
+const ptDisplaySetId = 'slice-first:pt';
 const ptVoiRange = { lower: 0, upper: 5 };
 /**
  * The PT look of the fusion viewport: hsv over 0 to 5, clear at 0, faint for
@@ -266,8 +266,8 @@ function getViewport(viewportId: string): PlanarViewport | undefined {
 }
 
 /** Returns the display set ids that a viewport of the given spec shows. */
-function getDataIds(spec: ViewportSpec): string[] {
-  return spec.withPet ? [ctDataId, ptDataId] : [ctDataId];
+function getDisplaySetIds(spec: ViewportSpec): string[] {
+  return spec.withPet ? [ctDisplaySetId, ptDisplaySetId] : [ctDisplaySetId];
 }
 
 /** Names a volume of this example for the captions and the report. */
@@ -404,7 +404,7 @@ function describeSampling(binding: DebugBinding): string | undefined {
     return undefined;
   }
 
-  const label = binding.displaySetId === ptDataId ? 'PT' : 'CT';
+  const label = binding.displaySetId === ptDisplaySetId ? 'PT' : 'CT';
   const [width, height] =
     binding.rendering?.mapper?.getInputData?.()?.getDimensions?.() ?? [];
   const slice = width ? `slice ${width}x${height}, ` : '';
@@ -512,8 +512,8 @@ function applySlab(): void {
 
   const isOff = slabState.blendMode === 'off';
 
-  for (const dataId of [ctDataId, ptDataId]) {
-    viewport.setDisplaySetPresentation(dataId, {
+  for (const displaySetId of [ctDisplaySetId, ptDisplaySetId]) {
+    viewport.setDisplaySetPresentation(displaySetId, {
       blendMode: blendModesByName[slabState.blendMode],
       slabThickness: isOff ? 0 : slabState.thickness,
     });
@@ -573,8 +573,8 @@ function applyInterpolation(name: string): void {
       continue;
     }
 
-    for (const dataId of getDataIds(spec)) {
-      viewport.setDisplaySetPresentation(dataId, { interpolationType });
+    for (const displaySetId of getDisplaySetIds(spec)) {
+      viewport.setDisplaySetPresentation(displaySetId, { interpolationType });
     }
 
     viewport.render();
@@ -883,13 +883,13 @@ async function mountViewport(spec: ViewportSpec): Promise<void> {
   const options = { orientation: spec.orientation };
 
   await viewport.setDisplaySets(
-    ...getDataIds(spec).map((displaySetId) => ({ displaySetId, options }))
+    ...getDisplaySetIds(spec).map((displaySetId) => ({ displaySetId, options }))
   );
 
-  viewport.setDisplaySetPresentation(ctDataId, { voiRange: ctVoiRange });
+  viewport.setDisplaySetPresentation(ctDisplaySetId, { voiRange: ctVoiRange });
 
   if (spec.withPet) {
-    viewport.setDisplaySetPresentation(ptDataId, {
+    viewport.setDisplaySetPresentation(ptDisplaySetId, {
       voiRange: ptVoiRange,
       colormap: ptColormap,
     });
@@ -948,14 +948,12 @@ async function run() {
   ctVolume.load();
   ptVolume.load();
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(ctDataId, {
-    kind: 'planar',
+  displaySetRegistry.add(ctDisplaySetId, {
     imageIds: ctImageIds,
     initialImageIdIndex: Math.floor(ctImageIds.length / 2),
     volumeId: ctVolumeId,
   });
-  utilities.genericViewportDisplaySetMetadataProvider.add(ptDataId, {
-    kind: 'planar',
+  displaySetRegistry.add(ptDisplaySetId, {
     imageIds: ptImageIds,
     initialImageIdIndex: Math.floor(ptImageIds.length / 2),
     volumeId: ptVolumeId,

@@ -198,7 +198,7 @@ option `asVolume` asks whether the stack could show it as a volume: then a
 reference that names no image is viewable when it is in the frame of
 reference of the stack, as on the legacy stack viewport. A reference in
 another plane comes from a volume: it names that volume (`volumeId`) and the display set it was made on
-(`dataId`), and no image, so only a viewport that shows that display set
+(`displaySetId`), and no image, so only a viewport that shows that display set
 takes it. To show
 such a reference on a stack, choose a stack that shows the images of the
 volume, and mount the display set of the reference there. The function then
@@ -244,7 +244,7 @@ async function findViewportForAnnotation(
     ? cache.getVolume(metadata.volumeId)?.imageIds
     : undefined;
 
-  if (metadata.dataId && volumeImageIds) {
+  if (metadata.displaySetId && volumeImageIds) {
     const stackViewport = viewports.find(
       (viewport): viewport is PlanarViewport =>
         viewport instanceof PlanarViewport &&
@@ -255,7 +255,9 @@ async function findViewportForAnnotation(
     );
 
     if (stackViewport) {
-      await stackViewport.setDisplaySets({ displaySetId: metadata.dataId });
+      await stackViewport.setDisplaySets({
+        displaySetId: metadata.displaySetId,
+      });
       return stackViewport;
     }
   }

@@ -155,14 +155,10 @@ async function loadDicom() {
 
   const displaySetId = `segmentationVolume:${state.volumeId}`;
 
-  cornerstone.utilities.genericViewportDisplaySetMetadataProvider.add(
-    displaySetId,
-    {
-      kind: 'planar',
-      imageIds: state.referenceImageIds,
-      volumeId: state.volumeId,
-    }
-  );
+  cornerstone.displaySetRegistry.add(displaySetId, {
+    imageIds: state.referenceImageIds,
+    volumeId: state.volumeId,
+  });
 
   await Promise.all(
     viewportIds.map((viewportId) => {

@@ -162,7 +162,7 @@ describe('The first fit of a surface on a direct next 3D viewport -- ', () => {
   });
 
   afterEach(function () {
-    utilities.genericViewportDisplaySetMetadataProvider.clear();
+    cornerstone3D.displaySetRegistry.clear();
 
     if (cache.getGeometry(geometryId)) {
       cache.removeGeometryLoadObject(geometryId);

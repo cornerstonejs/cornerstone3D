@@ -79,7 +79,7 @@ function makeSegmentation() {
   } as never;
 }
 
-function makePlanarNextViewport() {
+function makePlanarViewport() {
   return {
     id: 'vp-planar',
     type: 'planar',
@@ -142,7 +142,7 @@ describe('getVolumeLabelmapImageMapperRepresentationUIDs', () => {
     canRenderVolumeViewportLabelmapAsImage.mockReturnValue(false);
     expect(
       getVolumeLabelmapImageMapperRepresentationUIDs(
-        makePlanarNextViewport() as never,
+        makePlanarViewport() as never,
         'seg-1',
         makeSegmentation()
       )
@@ -160,7 +160,7 @@ describe('getVolumeLabelmapImageMapperRepresentationUIDs', () => {
     getSliceState.mockReturnValue({ key: 'slice-key' });
 
     const uids = getVolumeLabelmapImageMapperRepresentationUIDs(
-      makePlanarNextViewport() as never,
+      makePlanarViewport() as never,
       'seg-1',
       makeSegmentation()
     );
@@ -176,7 +176,7 @@ describe('getVolumeLabelmapImageMapperRepresentationUIDs', () => {
     getSliceState.mockReturnValue({ key: 'slice-key' });
 
     const uids = getVolumeLabelmapImageMapperRepresentationUIDs(
-      makePlanarNextViewport() as never,
+      makePlanarViewport() as never,
       'seg-1',
       makeSegmentation()
     );
@@ -192,7 +192,7 @@ describe('getVolumeLabelmapImageMapperRepresentationUIDs', () => {
     canCreateResampledSliceImageData.mockReturnValue(true);
 
     const uids = getVolumeLabelmapImageMapperRepresentationUIDs(
-      makePlanarNextViewport() as never,
+      makePlanarViewport() as never,
       'seg-1',
       makeSegmentation()
     );
@@ -210,7 +210,7 @@ describe('getVolumeLabelmapImageMapperRepresentationUIDs', () => {
 
     expect(
       getVolumeLabelmapImageMapperRepresentationUIDs(
-        makePlanarNextViewport() as never,
+        makePlanarViewport() as never,
         'seg-1',
         makeSegmentation()
       )
@@ -225,7 +225,7 @@ describe('addVolumeLabelmapImageMapperActors', () => {
 
   it('is a no-op when the viewport cannot render as image mapper', async () => {
     canRenderVolumeViewportLabelmapAsImage.mockReturnValue(false);
-    const viewport = makePlanarNextViewport();
+    const viewport = makePlanarViewport();
 
     await addVolumeLabelmapImageMapperActors({
       viewport: viewport as never,
@@ -239,7 +239,7 @@ describe('addVolumeLabelmapImageMapperActors', () => {
 
   it('skips layers that fail to resolve a labelmap volume or slice data', async () => {
     canRenderVolumeViewportLabelmapAsImage.mockReturnValue(true);
-    const viewport = makePlanarNextViewport();
+    const viewport = makePlanarViewport();
     getLabelmaps.mockReturnValue([
       { labelmapId: 'a' },
       { labelmapId: 'b' },
@@ -267,7 +267,7 @@ describe('addVolumeLabelmapImageMapperActors', () => {
 
   it('routes through addImages on planar-next viewports', async () => {
     canRenderVolumeViewportLabelmapAsImage.mockReturnValue(true);
-    const viewport = makePlanarNextViewport();
+    const viewport = makePlanarViewport();
     getLabelmaps.mockReturnValue([{ labelmapId: 'layer-1' }]);
     getOrCreateLabelmapVolume.mockReturnValue({
       imageIds: ['v-0', 'v-1'],
@@ -305,7 +305,7 @@ describe('addVolumeLabelmapImageMapperActors', () => {
 
   it('asks the planar slice mapper for the label outline at the faces of the volume', async () => {
     canRenderVolumeViewportLabelmapAsImage.mockReturnValue(true);
-    const viewport = makePlanarNextViewport();
+    const viewport = makePlanarViewport();
     getLabelmaps.mockReturnValue([{ labelmapId: 'layer-1' }]);
     getOrCreateLabelmapVolume.mockReturnValue({ imageIds: ['v-0'] });
     createPlanarSliceImageData.mockReturnValue({
@@ -339,7 +339,7 @@ describe('addVolumeLabelmapImageMapperActors', () => {
 
   it('places a new planar slice after the image slices that the viewport already draws', async () => {
     canRenderVolumeViewportLabelmapAsImage.mockReturnValue(true);
-    const viewport = makePlanarNextViewport();
+    const viewport = makePlanarViewport();
     const camera = { focalPoint: [0, 0, 10], viewPlaneNormal: [0, 0, 1] };
     const sliceImageData = {};
 
@@ -379,7 +379,7 @@ describe('addVolumeLabelmapImageMapperActors', () => {
 
   it('gives the planar slice image of an off-axis view to addImages', async () => {
     canRenderVolumeViewportLabelmapAsImage.mockReturnValue(true);
-    const viewport = makePlanarNextViewport();
+    const viewport = makePlanarViewport();
     const resampledImageData = {};
 
     getLabelmaps.mockReturnValue([{ labelmapId: 'layer-1' }]);
@@ -406,7 +406,7 @@ describe('addVolumeLabelmapImageMapperActors', () => {
 
   it('falls back to the image of the slice index when the planar viewport has no current image', async () => {
     canRenderVolumeViewportLabelmapAsImage.mockReturnValue(true);
-    const viewport = makePlanarNextViewport();
+    const viewport = makePlanarViewport();
 
     viewport.getCurrentImageId = jest.fn(() => undefined);
     getLabelmaps.mockReturnValue([{ labelmapId: 'layer-1' }]);
@@ -431,7 +431,7 @@ describe('addVolumeLabelmapImageMapperActors', () => {
 
   it('adds no planar actor for a layer without a slice image', async () => {
     canRenderVolumeViewportLabelmapAsImage.mockReturnValue(true);
-    const viewport = makePlanarNextViewport();
+    const viewport = makePlanarViewport();
 
     getLabelmaps.mockReturnValue([{ labelmapId: 'layer-1' }]);
     getOrCreateLabelmapVolume.mockReturnValue({
@@ -458,7 +458,7 @@ describe('updateVolumeLabelmapImageMapperActors', () => {
     canRenderVolumeViewportLabelmapAsImage.mockReturnValue(false);
     expect(() =>
       updateVolumeLabelmapImageMapperActors({
-        viewport: makePlanarNextViewport() as never,
+        viewport: makePlanarViewport() as never,
         segmentation: makeSegmentation(),
         segmentationId: 'seg-1',
       })
@@ -495,7 +495,7 @@ describe('updateVolumeLabelmapImageMapperActors', () => {
       sliceIndex: 0,
     });
 
-    const viewport = makePlanarNextViewport();
+    const viewport = makePlanarViewport();
     viewport.getActors = jest.fn(() => [actorA, actorOther]) as never;
 
     updateVolumeLabelmapImageMapperActors({
@@ -530,7 +530,7 @@ describe('updateVolumeLabelmapImageMapperActors', () => {
       sliceIndex: 0,
     });
 
-    const viewport = makePlanarNextViewport();
+    const viewport = makePlanarViewport();
     viewport.getActors = jest.fn(() => [actorEntry]);
 
     updateVolumeLabelmapImageMapperActors({
@@ -565,7 +565,7 @@ describe('updateVolumeLabelmapImageMapperActors', () => {
     });
     getSliceRenderingCamera.mockReturnValue(camera);
 
-    const viewport = makePlanarNextViewport();
+    const viewport = makePlanarViewport();
     viewport.getActors = jest.fn(() => [
       makeImageSliceEntry('ct'),
       contourEntry,
@@ -612,7 +612,7 @@ describe('updateVolumeLabelmapImageMapperActors', () => {
     const getLabelmapOrder = (rendererOrder: unknown[]) => {
       applyPlanarOverlayDepthOffset.mockClear();
 
-      const viewport = makePlanarNextViewport();
+      const viewport = makePlanarViewport();
       viewport.getActors = jest.fn(() => rendererOrder) as never;
 
       updateVolumeLabelmapImageMapperActors({
@@ -661,7 +661,7 @@ describe('placeVolumeLabelmapImageMapperActors', () => {
       imageData: {},
       renderMode: 'VTK_VOLUME_SLICE',
     });
-    const viewport = makePlanarNextViewport();
+    const viewport = makePlanarViewport();
 
     viewport.getActors = jest.fn(() => [
       makeImageSliceEntry('ct'),
@@ -688,7 +688,7 @@ describe('placeVolumeLabelmapImageMapperActors', () => {
   it('skips a labelmap slice that holds no image yet', () => {
     canRenderVolumeViewportLabelmapAsImage.mockReturnValue(true);
 
-    const viewport = makePlanarNextViewport();
+    const viewport = makePlanarViewport();
 
     viewport.getActors = jest.fn(() => [
       makeLabelmapSliceEntry({
@@ -708,7 +708,7 @@ describe('placeVolumeLabelmapImageMapperActors', () => {
   it('does nothing when the viewport cannot draw the labelmap as a slice image', () => {
     canRenderVolumeViewportLabelmapAsImage.mockReturnValue(false);
 
-    const viewport = makePlanarNextViewport();
+    const viewport = makePlanarViewport();
 
     placeVolumeLabelmapImageMapperActors({
       viewport: viewport as never,
@@ -722,7 +722,7 @@ describe('placeVolumeLabelmapImageMapperActors', () => {
     canRenderVolumeViewportLabelmapAsImage.mockReturnValue(true);
     getSliceRenderingCamera.mockReturnValue(undefined);
 
-    const viewport = makePlanarNextViewport();
+    const viewport = makePlanarViewport();
 
     placeVolumeLabelmapImageMapperActors({
       viewport: viewport as never,

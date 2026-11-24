@@ -22,7 +22,7 @@ import {
   Enums,
   RenderingEngine,
   viewportProjection,
-  utilities,
+  displaySetRegistry,
   type PlanarViewport,
 } from '@cornerstonejs/core';
 
@@ -53,8 +53,7 @@ Register stack-like data with the metadata provider, then mount it with
 ```ts
 const stackDisplaySetId = 'ct-stack';
 
-utilities.genericViewportDisplaySetMetadataProvider.add(stackDisplaySetId, {
-  kind: 'planar',
+displaySetRegistry.add(stackDisplaySetId, {
   imageIds,
   initialImageIdIndex: 0,
 });
@@ -84,17 +83,16 @@ Volume slice data uses the same viewport API. The registered data includes a
 `volumeId`, so the viewport selects a volume slice render path.
 
 ```ts
-const ctDataId = 'ct-volume-source';
+const ctDisplaySetId = 'ct-volume-source';
 
-utilities.genericViewportDisplaySetMetadataProvider.add(ctDataId, {
-  kind: 'planar',
+displaySetRegistry.add(ctDisplaySetId, {
   imageIds: ctImageIds,
   initialImageIdIndex: Math.floor(ctImageIds.length / 2),
   volumeId: ctVolumeId,
 });
 
 await viewport.setDisplaySets({
-  displaySetId: ctDataId,
+  displaySetId: ctDisplaySetId,
   options: {
     orientation: Enums.OrientationAxis.SAGITTAL,
   },
@@ -111,21 +109,20 @@ Overlays are additional data bindings mounted with `role: 'overlay'`. They use
 the same viewport view state as the source but keep their own data presentation.
 
 ```ts
-const ptDataId = 'pt-volume-overlay';
+const ptDisplaySetId = 'pt-volume-overlay';
 
-utilities.genericViewportDisplaySetMetadataProvider.add(ptDataId, {
-  kind: 'planar',
+displaySetRegistry.add(ptDisplaySetId, {
   imageIds: ptImageIds,
   initialImageIdIndex: Math.floor(ptImageIds.length / 2),
   volumeId: ptVolumeId,
 });
 
-await viewport.addDisplaySet(ptDataId, {
+await viewport.addDisplaySet(ptDisplaySetId, {
   orientation: Enums.OrientationAxis.SAGITTAL,
   role: 'overlay',
 });
 
-viewport.setDisplaySetPresentation(ptDataId, {
+viewport.setDisplaySetPresentation(ptDisplaySetId, {
   colormap: {
     name: 'hsv',
     opacity: 0.4,
@@ -140,14 +137,14 @@ viewport.render();
 ```ts
 await viewport.setDisplaySets(
   {
-    displaySetId: ctDataId,
+    displaySetId: ctDisplaySetId,
     options: {
       orientation: Enums.OrientationAxis.SAGITTAL,
       role: 'source',
     },
   },
   {
-    displaySetId: ptDataId,
+    displaySetId: ptDisplaySetId,
     options: {
       orientation: Enums.OrientationAxis.SAGITTAL,
       role: 'overlay',
@@ -162,8 +159,7 @@ their `displaySetId`, `imageIds`, and optional `volumeId` are already the
 public identity.
 
 ```ts
-utilities.genericViewportDisplaySetMetadataProvider.add(labelmapDataId, {
-  kind: 'planar',
+displaySetRegistry.add(labelmapDisplaySetId, {
   imageIds: labelmapImageIds,
   reference: {
     kind: 'segmentation',
@@ -242,11 +238,11 @@ current source binding, or with an explicit `displaySetId` to target a
 specific binding.
 
 ```ts
-viewport.setDisplaySetPresentation(ctDataId, {
+viewport.setDisplaySetPresentation(ctDisplaySetId, {
   voiRange: { lower: -1500, upper: 2500 },
 });
 
-viewport.setDisplaySetPresentation(ptDataId, {
+viewport.setDisplaySetPresentation(ptDisplaySetId, {
   visible: false,
 });
 
@@ -309,12 +305,12 @@ The segmentation display tool registers each labelmap layer as overlay data in
 the viewport:
 
 ```ts
-await viewport.addDisplaySet(labelmapDataId, {
+await viewport.addDisplaySet(labelmapDisplaySetId, {
   orientation: viewport.getViewState().orientation,
   role: 'overlay',
 });
 
-viewport.setDisplaySetPresentation(labelmapDataId, {
+viewport.setDisplaySetPresentation(labelmapDisplaySetId, {
   blendMode: Enums.BlendModes.COMPOSITE,
   visible: true,
 });

@@ -248,7 +248,7 @@ describe('A Surface representation on a direct next planar viewport -- ', () => 
       cache.removeGeometryLoadObject(geometryId);
     }
     testUtils.cleanupTestEnvironment({ renderingEngineId });
-    utilities.genericViewportDisplaySetMetadataProvider.clear?.();
+    cornerstone3D.displaySetRegistry.clear?.();
   });
 
   it('draws the cut of the surface on a slice that cuts it and nothing on a slice that does not, at each scroll, in volume mode', async function () {
@@ -635,7 +635,7 @@ describe('A Surface representation that the polySeg add-on computes from a label
   afterEach(function () {
     setConfig(config);
     testUtils.cleanupTestEnvironment({ renderingEngineId });
-    utilities.genericViewportDisplaySetMetadataProvider.clear?.();
+    cornerstone3D.displaySetRegistry.clear?.();
   });
 
   it('takes the surface of an erased segment off the viewport, and its entry out of the geometry map, at the update', async function () {

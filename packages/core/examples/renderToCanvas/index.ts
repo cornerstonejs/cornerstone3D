@@ -5,6 +5,7 @@ import {
   utilities,
   setRenderBackend,
   volumeLoader,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import * as csTools from '@cornerstonejs/tools';
 import {
@@ -188,13 +189,11 @@ async function run() {
     imageIds,
   });
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(stackDisplaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(stackDisplaySetId, {
     imageIds: [imageIds[100]],
     initialImageIdIndex: 0,
   });
-  utilities.genericViewportDisplaySetMetadataProvider.add(volumeDisplaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(volumeDisplaySetId, {
     imageIds,
     volumeId,
   });

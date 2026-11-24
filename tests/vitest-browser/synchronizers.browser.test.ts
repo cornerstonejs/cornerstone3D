@@ -21,7 +21,7 @@
 // registering its own independent fake stack -- is what the plan calls "SAME
 // fake stack registration so they share frameOfReferenceUID", and it matters
 // beyond just the FrameOfReferenceUID match: the CameraPosition synchronizer
-// copies a `ViewReference` whose `dataId` must resolve to a mounted display
+// copies a `ViewReference` whose `displaySetId` must resolve to a mounted display
 // set on the TARGET viewport too, which only holds when the id is literally
 // shared.
 //
@@ -90,7 +90,7 @@ function toViewportId(ctx: PlanarViewportContext): Types.IViewportId {
  * `base` already registered via the harness's `createPlanarViewport()` --
  * AND to `base`'s own RenderingEngine instance (see the file-header comment
  * for why sharing the engine matters, not just the display set) -- so all
- * viewports resolve identical imageIds / FrameOfReferenceUID / dataId /
+ * viewports resolve identical imageIds / FrameOfReferenceUID / displaySetId /
  * renderingEngineId without registering a second fake stack or a second
  * engine. Mirrors the construction inlined in planarInvariants.browser.test.ts's
  * "cross-viewport reference" test, generalized to reuse the engine too.

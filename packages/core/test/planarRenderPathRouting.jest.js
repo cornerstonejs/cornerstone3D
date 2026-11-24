@@ -25,7 +25,7 @@ import PlanarViewport, {
   getRemountedViewPropOrder,
 } from '../src/RenderingEngine/Viewports/Planar/PlanarViewport';
 import renderingEngineCache from '../src/RenderingEngine/renderingEngineCache';
-import genericViewportDisplaySetMetadataProvider from '../src/utilities/genericViewportDisplaySetMetadataProvider';
+import displaySetRegistry from '../src/RenderingEngine/Viewports/displaySetRegistry';
 
 const flush = async () => {
   for (let i = 0; i < 20; i++) {
@@ -248,7 +248,7 @@ describe('slab routing of the slice first decision', () => {
 });
 
 describe('PlanarViewport remount after presentation changes', () => {
-  const dataId = 'ct-display-set';
+  const displaySetId = 'ct-display-set';
   const volumeId = 'ct-volume';
   const engineId = 'routing-engine';
   const imageIds = Array.from({ length: 10 }, (_, i) => `ct:${i}`);
@@ -263,7 +263,7 @@ describe('PlanarViewport remount after presentation changes', () => {
   let pendingAdds;
   let deferAdds;
 
-  const binding = () => viewport.bindings.get(dataId);
+  const binding = () => viewport.bindings.get(displaySetId);
   const overlayId = 'pt-display-set';
 
   beforeEach(() => {
@@ -322,9 +322,8 @@ describe('PlanarViewport remount after presentation changes', () => {
       };
     };
     metaData.addProvider(provider, 10000);
-    [dataId, overlayId].forEach((id) => {
-      genericViewportDisplaySetMetadataProvider.add(id, {
-        kind: 'planar',
+    [displaySetId, overlayId].forEach((id) => {
+      displaySetRegistry.add(id, {
         imageIds,
         volumeId,
       });
@@ -365,7 +364,10 @@ describe('PlanarViewport remount after presentation changes', () => {
               await new Promise((resolve) => pendingAdds.push(resolve));
             }
 
-            const actor = { dataId: data.id, renderMode: options.renderMode };
+            const actor = {
+              displaySetId: data.id,
+              renderMode: options.renderMode,
+            };
 
             renderer.addViewProp(actor);
 
@@ -394,7 +396,7 @@ describe('PlanarViewport remount after presentation changes', () => {
     renderingEngineCache.delete(engineId);
     setSliceFirst(false);
     metaData.removeProvider(provider);
-    genericViewportDisplaySetMetadataProvider.clear();
+    displaySetRegistry.clear();
     jest.restoreAllMocks();
   });
 
@@ -407,7 +409,7 @@ describe('PlanarViewport remount after presentation changes', () => {
 
   it('ends on the render mode of the final presentation when a slab comes and goes during a remount', async () => {
     await viewport.setDisplaySets({
-      displaySetId: dataId,
+      displaySetId: displaySetId,
       options: { orientation: OrientationAxis.AXIAL, sliceFirst: true },
     });
     await flush();
@@ -417,14 +419,16 @@ describe('PlanarViewport remount after presentation changes', () => {
     );
 
     deferLoads = true;
-    viewport.setDisplaySetPresentation(dataId, {
+    viewport.setDisplaySetPresentation(displaySetId, {
       blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
     });
-    viewport.setDisplaySetPresentation(dataId, { slabThickness: 1e6 });
+    viewport.setDisplaySetPresentation(displaySetId, { slabThickness: 1e6 });
 
     expect(pendingLoads.length).toBe(1);
 
-    viewport.setDisplaySetPresentation(dataId, { slabThickness: undefined });
+    viewport.setDisplaySetPresentation(displaySetId, {
+      slabThickness: undefined,
+    });
     await resolvePendingLoads();
 
     expect(binding().rendering.renderMode).toBe(
@@ -434,14 +438,14 @@ describe('PlanarViewport remount after presentation changes', () => {
 
   it('still remounts when the final presentation needs the other render mode', async () => {
     await viewport.setDisplaySets({
-      displaySetId: dataId,
+      displaySetId: displaySetId,
       options: { orientation: OrientationAxis.AXIAL, sliceFirst: true },
     });
     await flush();
 
     deferLoads = true;
-    viewport.setDisplaySetPresentation(dataId, { slabThickness: 1e6 });
-    viewport.setDisplaySetPresentation(dataId, {
+    viewport.setDisplaySetPresentation(displaySetId, { slabThickness: 1e6 });
+    viewport.setDisplaySetPresentation(displaySetId, {
       blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
     });
     await resolvePendingLoads();
@@ -455,7 +459,7 @@ describe('PlanarViewport remount after presentation changes', () => {
   async function mountSourceAndOverlay(options = {}) {
     await viewport.setDisplaySets(
       {
-        displaySetId: dataId,
+        displaySetId: displaySetId,
         options: { orientation: OrientationAxis.AXIAL, ...options },
       },
       {
@@ -474,9 +478,12 @@ describe('PlanarViewport remount after presentation changes', () => {
   it('keeps a remounted source actor in front of the overlays in the draw order', async () => {
     await mountSourceAndOverlay({ sliceFirst: true });
 
-    expect(props.map((actor) => actor.dataId)).toEqual([dataId, overlayId]);
+    expect(props.map((actor) => actor.displaySetId)).toEqual([
+      displaySetId,
+      overlayId,
+    ]);
 
-    viewport.setDisplaySetPresentation(dataId, mip10);
+    viewport.setDisplaySetPresentation(displaySetId, mip10);
     await flush();
 
     expect(binding().rendering.renderMode).toBe(
@@ -485,16 +492,20 @@ describe('PlanarViewport remount after presentation changes', () => {
     expect(viewport.bindings.get(overlayId).rendering.renderMode).toBe(
       ActorRenderMode.VTK_SAMPLED_SLICE
     );
-    expect(props.map((actor) => [actor.dataId, actor.renderMode])).toEqual([
-      [dataId, ActorRenderMode.VTK_VOLUME_SLICE],
+    expect(
+      props.map((actor) => [actor.displaySetId, actor.renderMode])
+    ).toEqual([
+      [displaySetId, ActorRenderMode.VTK_VOLUME_SLICE],
       [overlayId, ActorRenderMode.VTK_SAMPLED_SLICE],
     ]);
 
-    viewport.setDisplaySetPresentation(dataId, { slabThickness: 0 });
+    viewport.setDisplaySetPresentation(displaySetId, { slabThickness: 0 });
     await flush();
 
-    expect(props.map((actor) => [actor.dataId, actor.renderMode])).toEqual([
-      [dataId, ActorRenderMode.VTK_SAMPLED_SLICE],
+    expect(
+      props.map((actor) => [actor.displaySetId, actor.renderMode])
+    ).toEqual([
+      [displaySetId, ActorRenderMode.VTK_SAMPLED_SLICE],
       [overlayId, ActorRenderMode.VTK_SAMPLED_SLICE],
     ]);
   });
@@ -502,14 +513,16 @@ describe('PlanarViewport remount after presentation changes', () => {
   it('keeps the places of several bindings remounted in one pass', async () => {
     await mountSourceAndOverlay();
 
-    const labelmap = { dataId: 'labelmap' };
+    const labelmap = { displaySetId: 'labelmap' };
 
     renderer.addViewProp(labelmap);
     setSliceFirst(true);
     await flush();
 
-    expect(props.map((actor) => [actor.dataId, actor.renderMode])).toEqual([
-      [dataId, ActorRenderMode.VTK_SAMPLED_SLICE],
+    expect(
+      props.map((actor) => [actor.displaySetId, actor.renderMode])
+    ).toEqual([
+      [displaySetId, ActorRenderMode.VTK_SAMPLED_SLICE],
       [overlayId, ActorRenderMode.VTK_SAMPLED_SLICE],
       ['labelmap', undefined],
     ]);
@@ -553,7 +566,7 @@ describe('PlanarViewport remount after presentation changes', () => {
     const rendersBefore = renderViewport.mock.calls.length;
 
     deferLoads = true;
-    viewport.setDisplaySetPresentation(dataId, mip10);
+    viewport.setDisplaySetPresentation(displaySetId, mip10);
     viewport.setDisplaySetPresentation(overlayId, mip10);
     viewport.render();
     await flush();
@@ -577,8 +590,8 @@ describe('PlanarViewport remount after presentation changes', () => {
     const propsBefore = [...props];
 
     deferLoads = true;
-    viewport.setDisplaySetPresentation(dataId, mip10);
-    viewport.setDisplaySetPresentation(dataId, { slabThickness: 0 });
+    viewport.setDisplaySetPresentation(displaySetId, mip10);
+    viewport.setDisplaySetPresentation(displaySetId, { slabThickness: 0 });
     await resolvePendingLoads();
 
     expect(props).toEqual(propsBefore);
@@ -589,7 +602,7 @@ describe('PlanarViewport remount after presentation changes', () => {
 
   it('gives a slab that moves to another render mode to the remounted binding only', async () => {
     await viewport.setDisplaySets({
-      displaySetId: dataId,
+      displaySetId: displaySetId,
       options: { orientation: OrientationAxis.AXIAL, sliceFirst: true },
     });
     await flush();
@@ -598,7 +611,7 @@ describe('PlanarViewport remount after presentation changes', () => {
     const voiRange = { lower: 0, upper: 100 };
 
     deferLoads = true;
-    viewport.setDisplaySetPresentation(dataId, { ...mip10, voiRange });
+    viewport.setDisplaySetPresentation(displaySetId, { ...mip10, voiRange });
 
     expect(mounted.updateDataPresentation).toHaveBeenLastCalledWith(
       expect.objectContaining({
@@ -607,11 +620,11 @@ describe('PlanarViewport remount after presentation changes', () => {
         blendMode: undefined,
       })
     );
-    expect(viewport.getDisplaySetPresentation(dataId)).toEqual(
+    expect(viewport.getDisplaySetPresentation(displaySetId)).toEqual(
       expect.objectContaining({ ...mip10, voiRange })
     );
 
-    viewport.setDisplaySetPresentation(dataId, { opacity: 0.5 });
+    viewport.setDisplaySetPresentation(displaySetId, { opacity: 0.5 });
 
     expect(mounted.updateDataPresentation).toHaveBeenLastCalledWith(
       expect.objectContaining({
@@ -635,7 +648,7 @@ describe('PlanarViewport remount after presentation changes', () => {
 
   it('gives the mounted binding a slab that keeps its render mode at once', async () => {
     await viewport.setDisplaySets({
-      displaySetId: dataId,
+      displaySetId: displaySetId,
       options: { orientation: OrientationAxis.AXIAL, sliceFirst: true },
     });
     await flush();
@@ -643,8 +656,8 @@ describe('PlanarViewport remount after presentation changes', () => {
     const mounted = binding();
 
     deferLoads = true;
-    viewport.setDisplaySetPresentation(dataId, mip10);
-    viewport.setDisplaySetPresentation(dataId, {
+    viewport.setDisplaySetPresentation(displaySetId, mip10);
+    viewport.setDisplaySetPresentation(displaySetId, {
       slabThickness: 0.9,
       blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
     });
@@ -663,14 +676,14 @@ describe('PlanarViewport remount after presentation changes', () => {
 
   it('gives the whole presentation at once with slice first off', async () => {
     await viewport.setDisplaySets({
-      displaySetId: dataId,
+      displaySetId: displaySetId,
       options: { orientation: OrientationAxis.AXIAL },
     });
     await flush();
 
     const mounted = binding();
 
-    viewport.setDisplaySetPresentation(dataId, mip10);
+    viewport.setDisplaySetPresentation(displaySetId, mip10);
     await flush();
 
     expect(binding()).toBe(mounted);

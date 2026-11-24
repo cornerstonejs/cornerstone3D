@@ -3,8 +3,8 @@ import {
   RenderingEngine,
   Enums,
   eventTarget,
-  utilities,
   volumeLoader,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import {
   addButtonToToolbar,
@@ -111,10 +111,7 @@ async function showView(view: string) {
       imageIds,
     });
     volume.load();
-    utilities.genericViewportDisplaySetMetadataProvider.add(
-      volumeDisplaySetId,
-      { kind: 'planar', imageIds, volumeId }
-    );
+    displaySetRegistry.add(volumeDisplaySetId, { imageIds, volumeId });
     volumeRegistered = true;
   }
 
@@ -403,8 +400,7 @@ async function run() {
   // Set the video on the viewport
   // Will be `<dicomwebRoot>/studies/<studyUID>/series/<seriesUID>/instances/<instanceUID>/rendered?accept=video/mp4`
   // on a compliant DICOMweb endpoint
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId, {
     imageIds,
     initialImageIdIndex: 1,
   });

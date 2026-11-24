@@ -260,15 +260,15 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
     let voiRange: Types.VOIRange;
     const sourceViewport: Types.IViewport = viewport;
     if (csUtils.viewportSupportsDisplaySetPresentation(sourceViewport)) {
-      const dataId = sourceViewport.getSourceDataId();
-      voiRange = ((dataId
+      const displaySetId = sourceViewport.getSourceDisplaySetId();
+      voiRange = ((displaySetId
         ? (
-            sourceViewport.getDisplaySetPresentation(dataId) as
+            sourceViewport.getDisplaySetPresentation(displaySetId) as
               | { voiRange?: Types.VOIRange }
               | undefined
           )?.voiRange
         : undefined) ??
-        sourceViewport.getDefaultVOIRange(dataId) ??
+        sourceViewport.getDefaultVOIRange(displaySetId) ??
         undefined) as Types.VOIRange;
     }
     const startPos = worldToSlice(worldPos);

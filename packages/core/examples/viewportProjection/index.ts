@@ -13,6 +13,7 @@ import {
   RenderingEngine,
   utilities,
   viewportProjection,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import {
   addButtonToToolbar,
@@ -32,8 +33,8 @@ const { Events, OrientationAxis, ViewportType } = Enums;
 const renderingEngineId = 'viewportProjectionRenderingEngine';
 const planarViewportId = 'PROJECTION_PLANAR_NEXT';
 const volumeViewportId = 'PROJECTION_VOLUME_3D_NEXT';
-const planarDataId = 'viewport-projection:planar';
-const volumeDataId = 'viewport-projection:volume3d';
+const planarDisplaySetId = 'viewport-projection:planar';
+const volumeDisplaySetId = 'viewport-projection:volume3d';
 const volumeId = 'cornerstoneStreamingImageVolume:VIEWPORT_PROJECTION_VOLUME';
 const viewportWidthPx = 560;
 const viewportHeightPx = 420;
@@ -424,33 +425,32 @@ async function run() {
   const planarViewport = getPlanarViewport();
   const volumeViewport = getVolumeViewport();
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(planarDataId, {
+  displaySetRegistry.add(planarDisplaySetId, {
     imageIds: planarImageIds,
-    kind: 'planar',
     initialImageIdIndex: middleImageIndex,
   });
-  utilities.genericViewportDisplaySetMetadataProvider.add(volumeDataId, {
+  displaySetRegistry.add(volumeDisplaySetId, {
     imageIds: volumeImageIds,
     volumeId,
   });
 
   await Promise.all([
     planarViewport.setDisplaySets({
-      displaySetId: planarDataId,
+      displaySetId: planarDisplaySetId,
       options: {},
     }),
     volumeViewport.setDisplaySets({
-      displaySetId: volumeDataId,
+      displaySetId: volumeDisplaySetId,
       options: {
         renderMode: 'vtkVolume3d',
       },
     }),
   ]);
 
-  planarViewport.setDisplaySetPresentation(planarDataId, {
+  planarViewport.setDisplaySetPresentation(planarDisplaySetId, {
     voiRange: ctVoiRange,
   });
-  volumeViewport.setDisplaySetPresentation(volumeDataId, {
+  volumeViewport.setDisplaySetPresentation(volumeDisplaySetId, {
     sampleDistanceMultiplier: 1,
   });
   applyVolumeRenderingPreset(volumeViewport);

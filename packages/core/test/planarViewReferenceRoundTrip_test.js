@@ -89,14 +89,14 @@ describe('A copy of a planar volume view through its view reference -- ', () => 
 
     const series = await createSeries({ id: 'roundTrip' });
 
-    utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    cornerstone3D.displaySetRegistry.add(displaySetId, {
       imageIds: series.imageIds,
       volumeId: series.volumeId,
     });
   });
 
   afterEach(function () {
-    utilities.genericViewportDisplaySetMetadataProvider.clear();
+    cornerstone3D.displaySetRegistry.clear();
     testUtils.cleanupTestEnvironment({
       renderingEngineId,
       toolGroupIds: ['default'],

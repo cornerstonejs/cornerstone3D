@@ -1,7 +1,7 @@
 import {
+  displaySetRegistry,
   Enums,
   getEnabledElements,
-  utilities,
   type Types,
 } from '@cornerstonejs/core';
 import type { VolumeViewport3D } from '@cornerstonejs/core';
@@ -58,7 +58,7 @@ async function addOrUpdateSurfaceDisplaySet(
     return;
   }
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(geometryId, {
+  displaySetRegistry.add(geometryId, {
     geometryId,
     reference: {
       kind: 'segmentation',
@@ -107,10 +107,10 @@ function removeSurfaceDisplaySets(
       return;
     }
 
-    viewport.removeData(referencedId);
+    viewport.removeDisplaySet(referencedId);
 
     if (!isShownOnAViewport(referencedId)) {
-      utilities.genericViewportDisplaySetMetadataProvider.remove(referencedId);
+      displaySetRegistry.remove(referencedId);
     }
   });
 }

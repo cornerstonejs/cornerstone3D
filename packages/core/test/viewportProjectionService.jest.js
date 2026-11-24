@@ -9,7 +9,7 @@ import ECGViewport from '../src/RenderingEngine/Viewports/ECG/ECGViewport';
 import ECGResolvedView from '../src/RenderingEngine/Viewports/ECG/ECGResolvedView';
 import WSIViewport from '../src/RenderingEngine/Viewports/WSI/WSIViewport';
 import VolumeViewport3D from '../src/RenderingEngine/Viewports/Volume3D/viewport3D';
-import genericViewportDisplaySetMetadataProvider from '../src/utilities/genericViewportDisplaySetMetadataProvider';
+import displaySetRegistry from '../src/RenderingEngine/Viewports/displaySetRegistry';
 
 function createAdapter(id, viewportTypes = ['testViewport']) {
   return {
@@ -19,14 +19,14 @@ function createAdapter(id, viewportTypes = ['testViewport']) {
       adapterId: id,
       kind: id,
       presentation: {
-        requestedDataId: request.dataId,
+        requestedDisplaySetId: request.displaySetId,
       },
       spaces: {},
       viewportType: request.viewportType ?? request.viewport?.type,
     })),
     getPresentation: jest.fn((snapshot) => ({
       adapterId: snapshot.adapterId,
-      requestedDataId: snapshot.presentation.requestedDataId,
+      requestedDisplaySetId: snapshot.presentation.requestedDisplaySetId,
     })),
     withPresentation: jest.fn((_snapshot, presentation) => ({
       adapterId: id,
@@ -303,9 +303,8 @@ describe('ViewportProjectionService', () => {
   });
 
   it('references the ECG source imageId, not the display set id', () => {
-    genericViewportDisplaySetMetadataProvider.add('ecg-display-set', {
-      kind: 'ecg',
-      sourceDataId: 'wadors:/studies/1/series/2/instances/3/frames/1',
+    displaySetRegistry.add('ecg-display-set', {
+      imageId: 'wadors:/studies/1/series/2/instances/3/frames/1',
     });
     const viewport = Object.create(ECGViewport.prototype);
     viewport.getFirstBinding = () => ({ data: { id: 'ecg-display-set' } });
@@ -314,16 +313,16 @@ describe('ViewportProjectionService', () => {
     try {
       const viewRef = viewport.getViewReference();
 
-      expect(viewRef.dataId).toBe('ecg-display-set');
+      expect(viewRef.displaySetId).toBe('ecg-display-set');
       expect(viewRef.referencedImageId).toBe(
         'wadors:/studies/1/series/2/instances/3/frames/1'
       );
-      expect(viewport.getSourceDataId()).toBe('ecg-display-set');
+      expect(viewport.getSourceDisplaySetId()).toBe('ecg-display-set');
       expect(viewport.getImageIds()).toEqual([viewRef.referencedImageId]);
       expect(viewport.hasImageId(viewRef.referencedImageId)).toBe(true);
       expect(viewport.hasImageId('ecg-display-set')).toBe(false);
     } finally {
-      genericViewportDisplaySetMetadataProvider.remove('ecg-display-set');
+      displaySetRegistry.remove('ecg-display-set');
     }
   });
 
@@ -484,12 +483,12 @@ describe('ViewportProjectionService', () => {
     expect(
       service.get(viewport, {
         kind: 'secondProjection',
-        dataId: 'target-data',
+        displaySetId: 'target-data',
       }).adapterId
     ).toBe('secondProjection');
     expect(secondAdapter.getSnapshot).toHaveBeenCalledWith({
       kind: 'secondProjection',
-      dataId: 'target-data',
+      displaySetId: 'target-data',
       viewport,
     });
   });
@@ -551,11 +550,11 @@ describe('ViewportProjectionService', () => {
 
     expect(
       service.getPresentation(viewport, {
-        dataId: 'presentation-data',
+        displaySetId: 'presentation-data',
       })
     ).toEqual({
       adapterId: 'stateProjection',
-      requestedDataId: 'presentation-data',
+      requestedDisplaySetId: 'presentation-data',
     });
     expect(
       service.withPresentation(viewport, {

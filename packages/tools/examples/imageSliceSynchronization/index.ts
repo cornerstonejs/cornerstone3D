@@ -3,7 +3,7 @@ import {
   RenderingEngine,
   Enums,
   volumeLoader,
-  utilities,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -196,8 +196,7 @@ async function run() {
   const vp1 = renderingEngine.getViewport<PlanarViewport>(viewportIds[0]);
   const vp2 = renderingEngine.getViewport<PlanarViewport>(viewportIds[1]);
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(stackDisplaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(stackDisplaySetId, {
     imageIds,
     initialImageIdIndex: 0,
   });
@@ -217,8 +216,7 @@ async function run() {
   // Set the volume to load
   volume.load();
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(volumeDisplaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(volumeDisplaySetId, {
     imageIds,
     volumeId,
   });

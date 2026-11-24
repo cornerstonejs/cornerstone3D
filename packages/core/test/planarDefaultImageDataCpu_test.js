@@ -54,7 +54,7 @@ describe('getDefaultImageData of a direct next planar viewport on the CPU -- ', 
       renderingEngineId,
       toolGroupIds: ['default'],
     });
-    utilities.genericViewportDisplaySetMetadataProvider.clear();
+    cornerstone3D.displaySetRegistry.clear();
   });
 
   for (const { mode, show, cpuRenderMode, index } of MODES) {

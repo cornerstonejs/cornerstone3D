@@ -39,7 +39,7 @@ async function show3D(renderingEngine, series) {
 
   const viewport = renderingEngine.getViewport('labelmapReferences3D');
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+  cornerstone3D.displaySetRegistry.add(displaySetId, {
     imageIds: series.imageIds,
     volumeId: series.volumeId,
   });
@@ -65,7 +65,7 @@ describe('The labelmap image references of a segmentation on direct next viewpor
   });
 
   afterEach(function () {
-    utilities.genericViewportDisplaySetMetadataProvider.clear();
+    cornerstone3D.displaySetRegistry.clear();
     testUtils.cleanupTestEnvironment({
       renderingEngineId,
       toolGroupIds: ['default'],

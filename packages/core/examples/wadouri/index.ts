@@ -4,7 +4,7 @@ import {
   Enums,
   getRenderingEngine,
   init as csRenderInit,
-  utilities,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 
 import { init as initLoader } from '@cornerstonejs/dicom-image-loader';
@@ -99,13 +99,11 @@ async function run() {
   // Get the stack viewport that was created
   const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(ctDisplaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(ctDisplaySetId, {
     imageIds: ctImageIds,
     initialImageIdIndex: 0,
   });
-  utilities.genericViewportDisplaySetMetadataProvider.add(ptDisplaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(ptDisplaySetId, {
     imageIds: ptImageIds,
     initialImageIdIndex: 0,
   });

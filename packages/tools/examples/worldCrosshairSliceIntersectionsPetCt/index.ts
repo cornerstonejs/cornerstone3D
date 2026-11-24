@@ -10,6 +10,7 @@ import {
   getRenderingEngine,
   utilities,
   eventTarget,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
@@ -43,7 +44,7 @@ const renderingEngineId = 'WC_SI_PETCT_ENGINE';
 const toolGroupId = 'WC_SI_PETCT_TOOLGROUP';
 const toolGroup3dId = 'WC_SI_PETCT_3D_TOOLGROUP';
 const ct3dViewportId = 'CT_3D';
-const ct3dDataId = 'wc-si-petct:ct-3d';
+const ct3dDisplaySetId = 'wc-si-petct:ct-3d';
 const ct3dPresetName = 'CT-Bone';
 
 const wadoRsRoot =
@@ -58,10 +59,10 @@ const ptSeriesInstanceUID =
 const ctVolumeId = 'cornerstoneStreamingImageVolume:WC_SI_PETCT_CT';
 const ptVolumeId = 'cornerstoneStreamingImageVolume:WC_SI_PETCT_PT';
 
-const ctStackDataId = 'wc-si-petct:ct-stack';
-const ctMprDataId = 'wc-si-petct:ct-mpr';
-const ptStackDataId = 'wc-si-petct:pt-stack';
-const ptMprDataId = 'wc-si-petct:pt-mpr';
+const ctStackDisplaySetId = 'wc-si-petct:ct-stack';
+const ctMprDisplaySetId = 'wc-si-petct:ct-mpr';
+const ptStackDisplaySetId = 'wc-si-petct:pt-stack';
+const ptMprDisplaySetId = 'wc-si-petct:pt-mpr';
 
 const ptVoiRange = { lower: 0, upper: 5 };
 
@@ -345,29 +346,25 @@ async function run() {
   // Register display-set metadata: one stack + one shared MPR display set
   // per modality.
   // ----------------------------------------------------------------------
-  utilities.genericViewportDisplaySetMetadataProvider.add(ctStackDataId, {
+  displaySetRegistry.add(ctStackDisplaySetId, {
     imageIds: ctImageIds,
-    kind: 'planar',
     initialImageIdIndex: Math.floor(ctImageIds.length / 2),
   });
-  utilities.genericViewportDisplaySetMetadataProvider.add(ctMprDataId, {
+  displaySetRegistry.add(ctMprDisplaySetId, {
     imageIds: ctImageIds,
-    kind: 'planar',
     volumeId: ctVolumeId,
     initialImageIdIndex: Math.floor(ctImageIds.length / 2),
   });
-  utilities.genericViewportDisplaySetMetadataProvider.add(ptStackDataId, {
+  displaySetRegistry.add(ptStackDisplaySetId, {
     imageIds: ptImageIds,
-    kind: 'planar',
     initialImageIdIndex: Math.floor(ptImageIds.length / 2),
   });
-  utilities.genericViewportDisplaySetMetadataProvider.add(ptMprDataId, {
+  displaySetRegistry.add(ptMprDisplaySetId, {
     imageIds: ptImageIds,
-    kind: 'planar',
     volumeId: ptVolumeId,
     initialImageIdIndex: Math.floor(ptImageIds.length / 2),
   });
-  utilities.genericViewportDisplaySetMetadataProvider.add(ct3dDataId, {
+  displaySetRegistry.add(ct3dDisplaySetId, {
     imageIds: ctImageIds,
     volumeId: ctVolumeId,
   });
@@ -403,14 +400,14 @@ async function run() {
     ...ctViewportSpecs.map((spec) =>
       mountViewport(
         spec,
-        spec.orientation ? ctMprDataId : ctStackDataId,
+        spec.orientation ? ctMprDisplaySetId : ctStackDisplaySetId,
         ctVoiRange
       )
     ),
     ...ptViewportSpecs.map((spec) =>
       mountViewport(
         spec,
-        spec.orientation ? ptMprDataId : ptStackDataId,
+        spec.orientation ? ptMprDisplaySetId : ptStackDisplaySetId,
         ptVoiRange,
         true
       )
@@ -424,10 +421,10 @@ async function run() {
     ct3dViewportId
   ) as VolumeViewport3D;
   await ct3dViewport.setDisplaySets({
-    displaySetId: ct3dDataId,
+    displaySetId: ct3dDisplaySetId,
     options: { renderMode: 'vtkVolume3d' },
   });
-  ct3dViewport.setDisplaySetPresentation(ct3dDataId, {
+  ct3dViewport.setDisplaySetPresentation(ct3dDisplaySetId, {
     sampleDistanceMultiplier: 1,
   });
 

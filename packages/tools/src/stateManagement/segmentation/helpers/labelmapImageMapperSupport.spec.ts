@@ -42,7 +42,7 @@ const { getLabelmaps } = jest.requireMock(
 
 const { Enums } = jest.requireMock('@cornerstonejs/core');
 
-function makePlanarNextViewport(opts: {
+function makePlanarViewport(opts: {
   renderMode?: string;
   blendMode?: number;
   slabThickness?: number;
@@ -52,7 +52,7 @@ function makePlanarNextViewport(opts: {
   const renderMode = opts.renderMode ?? 'VTK_VOLUME_SLICE';
   return {
     type: 'planar',
-    getSourceDataId: () => 'src',
+    getSourceDisplaySetId: () => 'src',
     getDataRole: (id: string) => (id === 'src' ? 'source' : 'overlay'),
     getDataRenderMode: () => renderMode,
     getDataPresentation: () => ({
@@ -156,7 +156,7 @@ describe('shouldUseSliceRendering', () => {
   });
 
   it('returns true on a viewport that samples its slice on the CPU, with no flag', () => {
-    const viewport = makePlanarNextViewport({
+    const viewport = makePlanarViewport({
       renderMode: 'VTK_SAMPLED_SLICE',
     });
 
@@ -171,7 +171,7 @@ describe('shouldUseSliceRendering', () => {
 
   it('keeps the flag on a viewport that samples a slab on the CPU, as on the GPU volume path', () => {
     for (const renderMode of ['VTK_SAMPLED_SLICE', 'VTK_VOLUME_SLICE']) {
-      const viewport = makePlanarNextViewport({
+      const viewport = makePlanarViewport({
         renderMode,
         slabThickness: 10,
       });
@@ -194,7 +194,7 @@ describe('shouldUseSliceRendering', () => {
   });
 
   it('keeps the flag on a viewport on the GPU volume slice path', () => {
-    const viewport = makePlanarNextViewport({
+    const viewport = makePlanarViewport({
       renderMode: 'VTK_VOLUME_SLICE',
     });
 
@@ -225,7 +225,7 @@ describe('canRenderVolumeViewportLabelmapAsImage', () => {
   });
 
   it('rejects when slab thickness exceeds the supported minimum', () => {
-    const viewport = makePlanarNextViewport({
+    const viewport = makePlanarViewport({
       blendMode: Enums.BlendModes.COMPOSITE,
       slabThickness: 5,
     });
@@ -235,7 +235,7 @@ describe('canRenderVolumeViewportLabelmapAsImage', () => {
   });
 
   it('accepts a planar-next viewport rendering VTK_VOLUME_SLICE with thin slab', () => {
-    const viewport = makePlanarNextViewport({
+    const viewport = makePlanarViewport({
       renderMode: 'VTK_VOLUME_SLICE',
       slabThickness: 0.1,
     });
@@ -246,7 +246,7 @@ describe('canRenderVolumeViewportLabelmapAsImage', () => {
 
   it('accepts a planar-next viewport that samples its slice on the CPU, with no slab', () => {
     for (const slabThickness of [undefined, 0, 0.1]) {
-      const viewport = makePlanarNextViewport({
+      const viewport = makePlanarViewport({
         renderMode: 'VTK_SAMPLED_SLICE',
         slabThickness,
       });
@@ -259,7 +259,7 @@ describe('canRenderVolumeViewportLabelmapAsImage', () => {
 
   it('rejects a slab on a sampled slice as it does on the GPU volume slice path', () => {
     for (const renderMode of ['VTK_SAMPLED_SLICE', 'VTK_VOLUME_SLICE']) {
-      const viewport = makePlanarNextViewport({
+      const viewport = makePlanarViewport({
         renderMode,
         slabThickness: 10,
       });
@@ -275,7 +275,7 @@ describe('canRenderVolumeViewportLabelmapAsImage', () => {
       () => Enums.BlendModes.MAXIMUM_INTENSITY_BLEND
     );
     const viewport = {
-      ...makePlanarNextViewport({ renderMode: 'VTK_VOLUME_SLICE' }),
+      ...makePlanarViewport({ renderMode: 'VTK_VOLUME_SLICE' }),
       setDisplaySets: jest.fn(),
       setDisplaySetPresentation: jest.fn(),
       setViewState: jest.fn(),
@@ -290,7 +290,7 @@ describe('canRenderVolumeViewportLabelmapAsImage', () => {
   });
 
   it('rejects a planar-next viewport that is not in VTK_VOLUME_SLICE render mode', () => {
-    const viewport = makePlanarNextViewport({ renderMode: 'CPU_VOLUME' });
+    const viewport = makePlanarViewport({ renderMode: 'CPU_VOLUME' });
     expect(canRenderVolumeViewportLabelmapAsImage(viewport as never)).toBe(
       false
     );
@@ -308,7 +308,7 @@ describe('getVolumeViewportLabelmapImageMapperState', () => {
   });
 
   it('returns unsupported:camera when no camera is available', () => {
-    const viewport = makePlanarNextViewport({ slabThickness: 0.1 });
+    const viewport = makePlanarViewport({ slabThickness: 0.1 });
     const state = getVolumeViewportLabelmapImageMapperState(viewport as never);
     expect(state.supported).toBe(false);
     expect(state.key).toBe('unsupported:camera');
@@ -317,7 +317,7 @@ describe('getVolumeViewportLabelmapImageMapperState', () => {
   it('keeps the planar key when the view turns in its own plane', () => {
     const keyFor = (viewUp: number[]) =>
       getVolumeViewportLabelmapImageMapperState(
-        makePlanarNextViewport({
+        makePlanarViewport({
           slabThickness: 0.1,
           resolvedCamera: { viewPlaneNormal: [0, 0, 1], viewUp },
         }) as never
@@ -330,7 +330,7 @@ describe('getVolumeViewportLabelmapImageMapperState', () => {
 
   it('supports a planar-next viewport that samples its slice on the CPU', () => {
     const state = getVolumeViewportLabelmapImageMapperState(
-      makePlanarNextViewport({
+      makePlanarViewport({
         renderMode: 'VTK_SAMPLED_SLICE',
         slabThickness: 0.1,
         sliceIndex: 12,
@@ -348,7 +348,7 @@ describe('getVolumeViewportLabelmapImageMapperState', () => {
 
   it('marks a slab on a sampled slice as unsupported', () => {
     const state = getVolumeViewportLabelmapImageMapperState(
-      makePlanarNextViewport({
+      makePlanarViewport({
         renderMode: 'VTK_SAMPLED_SLICE',
         slabThickness: 10,
         resolvedCamera: { viewPlaneNormal: [0, 0, 1], viewUp: [0, 1, 0] },
@@ -360,7 +360,7 @@ describe('getVolumeViewportLabelmapImageMapperState', () => {
   });
 
   it('marks unsupported slab thickness with a distinct key', () => {
-    const viewport = makePlanarNextViewport({
+    const viewport = makePlanarViewport({
       blendMode: Enums.BlendModes.COMPOSITE,
       slabThickness: 10,
       resolvedCamera: { viewPlaneNormal: [0, 0, 1], viewUp: [0, 1, 0] },
@@ -377,7 +377,7 @@ describe('getVolumeViewportLabelmapImageMapperState', () => {
     // guard is conservative, so here we just confirm that a planar-next
     // viewport in the supported state encodes the slice index from a
     // different viewport configuration.
-    const viewport = makePlanarNextViewport({
+    const viewport = makePlanarViewport({
       blendMode: Enums.BlendModes.AVERAGE_INTENSITY_BLEND,
       slabThickness: 0.1,
       sliceIndex: 7,
@@ -393,17 +393,17 @@ describe('isPlanarSampledSliceViewport', () => {
   it('is true only for a planar-next viewport whose source is a sampled slice', () => {
     expect(
       isPlanarSampledSliceViewport(
-        makePlanarNextViewport({ renderMode: 'VTK_SAMPLED_SLICE' }) as never
+        makePlanarViewport({ renderMode: 'VTK_SAMPLED_SLICE' }) as never
       )
     ).toBe(true);
     expect(
       isPlanarSampledSliceViewport(
-        makePlanarNextViewport({ renderMode: 'VTK_VOLUME_SLICE' }) as never
+        makePlanarViewport({ renderMode: 'VTK_VOLUME_SLICE' }) as never
       )
     ).toBe(false);
     expect(
       isPlanarSampledSliceViewport({
-        ...makePlanarNextViewport({ renderMode: 'VTK_SAMPLED_SLICE' }),
+        ...makePlanarViewport({ renderMode: 'VTK_SAMPLED_SLICE' }),
         type: 'volume3d',
       } as never)
     ).toBe(false);

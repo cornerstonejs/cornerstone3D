@@ -162,7 +162,7 @@ describe('Images over a direct next video viewport -- ', () => {
 
     expect(next.getActors()).toEqual([]);
 
-    next.addImages([{ imageId: image.imageId, dataId: 'blockOverlay' }]);
+    next.addImages([{ imageId: image.imageId, displaySetId: 'blockOverlay' }]);
 
     const actors = next.getActors();
 
@@ -192,7 +192,7 @@ describe('Images over a direct next video viewport -- ', () => {
 
     expectOverlay(next, { inside: INSIDE, outside: OUTSIDE });
 
-    next.removeData('blockOverlay');
+    next.removeDisplaySet('blockOverlay');
     await animationFrames(3);
 
     expect(next.getActors()).toEqual([]);

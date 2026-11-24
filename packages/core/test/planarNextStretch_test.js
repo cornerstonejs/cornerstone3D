@@ -55,9 +55,8 @@ async function showStack(viewport, renderBackend) {
     })
   );
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+  cornerstone3D.displaySetRegistry.add(displaySetId, {
     imageIds,
-    kind: 'planar',
     initialImageIdIndex: 0,
   });
   await viewport.setDisplaySets({ displaySetId, options: { renderBackend } });
@@ -86,7 +85,7 @@ async function showVolume(viewport, renderBackend) {
     await volumeLoader.createAndCacheVolume(volumeId, { imageIds: [] });
   }
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+  cornerstone3D.displaySetRegistry.add(displaySetId, {
     imageIds: cache.getVolume(volumeId).imageIds,
     volumeId,
   });
@@ -233,7 +232,7 @@ describe('The stretch of a direct next planar viewport -- ', () => {
 
   afterEach(function () {
     testUtils.cleanupTestEnvironment({ renderingEngineId });
-    utilities.genericViewportDisplaySetMetadataProvider.clear?.();
+    cornerstone3D.displaySetRegistry.clear?.();
   });
 
   ['stack', 'volume'].forEach((mode) => {

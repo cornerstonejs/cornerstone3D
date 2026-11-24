@@ -4,7 +4,7 @@ import {
   fakeMetaDataProvider,
 } from '../../../utils/test/testUtilsImageLoader';
 import { describe, it, expect, afterEach } from '@jest/globals';
-import genericViewportDisplaySetMetadataProvider from '../src/utilities/genericViewportDisplaySetMetadataProvider';
+import displaySetRegistry from '../src/RenderingEngine/Viewports/displaySetRegistry';
 import { createPlanarViewportOnStandInEngine } from './utils/planarViewportOnStandInEngine';
 
 const {
@@ -114,8 +114,7 @@ function setUpCore() {
 
 /** Shows a stack on a direct next viewport. */
 async function showStack(viewport, imageIds, imageIdIndex = 0) {
-  genericViewportDisplaySetMetadataProvider.add('stack', {
-    kind: 'planar',
+  displaySetRegistry.add('stack', {
     imageIds,
     initialImageIdIndex: imageIdIndex,
   });
@@ -240,7 +239,7 @@ describe('Direct next planar viewport events and image loads against the legacy 
     loads.release();
     loads.imageIds = [];
     cache.purgeCache();
-    genericViewportDisplaySetMetadataProvider.clear?.();
+    displaySetRegistry.clear?.();
     metaData.removeAllProviders();
     imageLoader.unregisterAllImageLoaders();
     setRenderBackend('auto');

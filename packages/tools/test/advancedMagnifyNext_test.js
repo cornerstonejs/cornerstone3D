@@ -58,9 +58,8 @@ function renderAndWait(viewport) {
 
 /** Shows a stack on the direct next viewport through a display set. */
 async function showStack(viewport, imageIds) {
-  utilities.genericViewportDisplaySetMetadataProvider.add('magnifyStack', {
+  cornerstone3D.displaySetRegistry.add('magnifyStack', {
     imageIds,
-    kind: 'planar',
     initialImageIdIndex: 0,
   });
   await viewport.setDisplaySets({ displaySetId: 'magnifyStack' });
@@ -82,7 +81,7 @@ async function showVolume(viewport, name) {
   });
 
   await volumeLoader.createAndCacheVolume(volumeId, { imageIds: [] });
-  utilities.genericViewportDisplaySetMetadataProvider.add(name, {
+  cornerstone3D.displaySetRegistry.add(name, {
     imageIds: cache.getVolume(volumeId).imageIds,
     volumeId,
   });

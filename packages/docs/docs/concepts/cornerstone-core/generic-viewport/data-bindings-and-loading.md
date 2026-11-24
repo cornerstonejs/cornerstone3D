@@ -37,7 +37,7 @@ application code can update a single mounted display set without reaching into
 actors or mapper objects:
 
 ```ts
-viewport.setDisplaySetPresentation(petDataId, {
+viewport.setDisplaySetPresentation(petDisplaySetId, {
   visible: false,
 });
 
@@ -50,8 +50,7 @@ segmentation labelmap, volume, image, geometry, or another data id. It is not an
 actor id and it is not used as runtime actor identity.
 
 ```ts
-utilities.genericViewportDisplaySetMetadataProvider.add(labelmapDataId, {
-  kind: 'planar',
+displaySetRegistry.add(labelmapDisplaySetId, {
   imageIds: labelmapImageIds,
   reference: {
     kind: 'segmentation',
@@ -97,7 +96,7 @@ await segmentation.addLabelmapRepresentationToViewportMap({
 Internally, that representation maps to overlay data:
 
 ```ts
-await viewport.addDisplaySet(labelmapDataId, {
+await viewport.addDisplaySet(labelmapDisplaySetId, {
   orientation: viewport.getViewState().orientation,
   role: 'overlay',
 });
@@ -112,7 +111,7 @@ The typical flow is:
 
 1. The viewport infers the render path from dataset shape, orientation, and
    rendering configuration.
-2. The viewport calls `dataProvider.load(dataId, options)` with that internal
+2. The viewport calls `dataProvider.load(displaySetId, options)` with that internal
    decision.
 3. The render path resolver selects the runtime path for the loaded data.
 4. The render path mounts runtime resources and returns a binding.

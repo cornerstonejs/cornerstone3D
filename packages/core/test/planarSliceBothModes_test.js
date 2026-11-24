@@ -137,7 +137,7 @@ describe('A direct next planar viewport in stack mode and in volume mode -- ', (
       renderingEngineId,
       toolGroupIds: ['default'],
     });
-    utilities.genericViewportDisplaySetMetadataProvider.clear?.();
+    cornerstone3D.displaySetRegistry.clear?.();
   });
 
   describe('the image data of the viewport', () => {
@@ -246,10 +246,10 @@ describe('A direct next planar viewport in stack mode and in volume mode -- ', (
       const viewport = createNextViewport(renderingEngine, 'fusion');
 
       [series, overlay].forEach(({ imageIds, volumeId }, index) => {
-        utilities.genericViewportDisplaySetMetadataProvider.add(
-          `fusion:${index}`,
-          { imageIds, volumeId }
-        );
+        cornerstone3D.displaySetRegistry.add(`fusion:${index}`, {
+          imageIds,
+          volumeId,
+        });
       });
       await viewport.setDisplaySets(
         {

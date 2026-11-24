@@ -2,8 +2,8 @@ import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
-  utilities,
   volumeLoader,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -31,7 +31,7 @@ const { MouseBindings } = csToolsEnums;
 const volumeName = 'CT_VOLUME_ID';
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume';
 const volumeId = `${volumeLoaderScheme}:${volumeName}`;
-const dataId = 'volume-annotation-tools-next:source';
+const displaySetId = 'volume-annotation-tools-next:source';
 
 setTitleAndDescription(
   'Annotation Tools On Volumes',
@@ -186,8 +186,7 @@ async function run() {
 
   volume.load();
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(dataId, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId, {
     imageIds,
     initialImageIdIndex: Math.floor(imageIds.length / 2),
     volumeId,
@@ -200,7 +199,7 @@ async function run() {
       ) as PlanarViewport;
 
       await viewport.setDisplaySets({
-        displaySetId: dataId,
+        displaySetId: displaySetId,
         options: {
           orientation,
         },

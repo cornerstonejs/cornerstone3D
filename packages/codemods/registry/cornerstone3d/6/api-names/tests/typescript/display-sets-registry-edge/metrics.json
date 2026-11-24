@@ -1,0 +1,68 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "15",
+        "rule": "utilities.genericViewportDisplaySetMetadataProvider.add: the key kind: its value runs code"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "18",
+        "rule": "genericViewportDisplaySetMetadataProvider.add: the descriptor is not a literal here: delete its kind, and give a video or an ECG descriptor its image id as imageId (was sourceDataId)"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "23",
+        "rule": "genericViewportDisplaySetMetadataProvider.get: the registry is not a metadata provider in 6.0, call displaySetRegistry.get(displaySetId)"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "27",
+        "rule": "utilities.genericViewportDisplaySetMetadataProvider: moves to displaySetRegistry"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "28",
+        "rule": "genericViewportDisplaySetMetadataProvider.get: displaySetRegistry.get takes the display set id only"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "29",
+        "rule": "'genericViewportDisplaySet': the metadata key is deleted, call displaySetRegistry.get(displaySetId)"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "30",
+        "rule": "genericViewportDisplaySetMetadataProvider.VIEWPORT_V2_DISPLAY_SET: deleted, call displaySetRegistry.get(displaySetId)"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "9",
+        "rule": "genericViewportDisplaySetMetadataProvider.add: the registry is in a name that the file writes, the descriptor is not a literal here: delete its kind, and give a video or an ECG descriptor its image id as imageId (was sourceDataId)"
+      },
+      "count": 1
+    }
+  ]
+}

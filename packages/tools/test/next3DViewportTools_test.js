@@ -228,7 +228,7 @@ async function createVolume() {
 async function showVolume(next) {
   const volumeId = await createVolume();
 
-  utilities.genericViewportDisplaySetMetadataProvider.add('next3DVolume', {
+  cornerstone3D.displaySetRegistry.add('next3DVolume', {
     imageIds: cache.getVolume(volumeId).imageIds,
     volumeId,
   });
@@ -569,7 +569,7 @@ describe('Tools on a direct next 3D viewport -- ', () => {
     const pt = await createSeries({ id: 'next3DPT', info: { PT: true } });
     const { Labelmap } = csToolsEnums.SegmentationRepresentations;
 
-    utilities.genericViewportDisplaySetMetadataProvider.add('next3DCT', {
+    cornerstone3D.displaySetRegistry.add('next3DCT', {
       imageIds: ct.imageIds,
       volumeId: ct.volumeId,
     });

@@ -1,20 +1,28 @@
 import type { DataProvider, LoadedData } from '../ViewportArchitectureTypes';
 import type { ECGWaveformPayload } from './ECGViewportTypes';
 import { loadECGWaveform } from './ecgWaveform';
-import { getDisplaySetSourceDataId } from '../displaySetAccess';
+import {
+  displaySetShapeError,
+  getDisplaySetImageId,
+} from '../displaySetAccess';
 
 export class DefaultECGDataProvider implements DataProvider {
   async load(
-    dataId: string,
+    displaySetId: string,
     options?: { multiplexGroupIndex?: number }
   ): Promise<LoadedData<ECGWaveformPayload>> {
-    const sourceDataId = getDisplaySetSourceDataId(dataId);
-    const { waveform } = await loadECGWaveform(sourceDataId, {
+    const sourceImageId = getDisplaySetImageId(displaySetId);
+
+    if (!sourceImageId) {
+      throw displaySetShapeError('ECGViewport', displaySetId, 'imageId');
+    }
+
+    const { waveform } = await loadECGWaveform(sourceImageId, {
       multiplexGroupIndex: options?.multiplexGroupIndex,
     });
 
     return {
-      id: dataId,
+      id: displaySetId,
       type: 'ecg',
       ...(waveform as ECGWaveformPayload),
     };

@@ -3,8 +3,8 @@ import {
   RenderingEngine,
   Enums,
   getRenderingEngine,
-  utilities,
   viewportProjection,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -22,7 +22,7 @@ const { ViewportType, Events } = Enums;
 
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'CT_STACK_GENERIC_POSITION';
-const stackDataId = 'stack-position-next:primary';
+const stackDisplaySetId = 'stack-position-next:primary';
 
 type FractionPoint = number | [number, number];
 type DisplayAreaSize = number | [number, number];
@@ -203,7 +203,7 @@ addButtonToToolbar({
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     viewport.resetViewState();
-    viewport.setDisplaySetPresentation(stackDataId, {
+    viewport.setDisplaySetPresentation(stackDisplaySetId, {
       colormap: undefined,
       invert: false,
     });
@@ -269,14 +269,13 @@ async function run() {
 
   viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(stackDataId, {
+  displaySetRegistry.add(stackDisplaySetId, {
     imageIds,
-    kind: 'planar',
     initialImageIdIndex: 0,
   });
 
   await viewport.setDisplaySets({
-    displaySetId: stackDataId,
+    displaySetId: stackDisplaySetId,
     options: {},
   });
 

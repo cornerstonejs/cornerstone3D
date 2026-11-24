@@ -74,8 +74,7 @@ RenderingEngine will handle creation of the viewports. We register the images on
 const viewport = renderingEngine.getViewport(viewportId);
 const displaySetId = 'ctStack';
 
-utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-  kind: 'planar',
+displaySetRegistry.add(displaySetId, {
   imageIds,
 });
 
@@ -141,7 +140,7 @@ import {
   init as coreInit,
   RenderingEngine,
   Enums,
-  utilities,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import { init as dicomImageLoaderInit } from '@cornerstonejs/dicom-image-loader';
 import {
@@ -201,8 +200,7 @@ async function run() {
   const viewport = renderingEngine.getViewport(viewportId);
   const displaySetId = 'ctStack';
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId, {
     imageIds,
   });
 

@@ -8,6 +8,7 @@ import {
   type PlanarViewport,
   type Types,
   setRenderBackend,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -329,13 +330,11 @@ async function run() {
   // Get the stack viewport that was created
   const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId, {
     imageIds,
     initialImageIdIndex: 0,
   });
-  utilities.genericViewportDisplaySetMetadataProvider.add(ctDisplaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(ctDisplaySetId, {
     imageIds: imageIdsCt,
     initialImageIdIndex: 0,
   });

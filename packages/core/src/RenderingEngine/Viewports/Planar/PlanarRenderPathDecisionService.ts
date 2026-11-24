@@ -43,7 +43,7 @@ import type {
   PlanarViewState,
   PlanarEffectiveRenderMode,
   PlanarOrientation,
-  PlanarRegisteredDataSet,
+  PlanarDisplaySetDescriptor,
   RenderPlanReason,
 } from './PlanarViewportTypes';
 
@@ -365,7 +365,7 @@ type PlanarPathInputs = {
  */
 export class PlanarRenderPathDecisionService {
   select(
-    dataSet: PlanarRegisteredDataSet,
+    dataSet: PlanarDisplaySetDescriptor,
     options: PlanarRenderPathDecisionOptions = {}
   ): SelectedPlanarRenderPath {
     if (!dataSet.imageIds.length) {
@@ -412,7 +412,7 @@ export class PlanarRenderPathDecisionService {
    * GPU volume mode, so it never changes whether a data set can render.
    */
   canRender(
-    dataSet: PlanarRegisteredDataSet,
+    dataSet: PlanarDisplaySetDescriptor,
     options: PlanarRenderPathDecisionOptions = {}
   ): boolean {
     if (!dataSet.imageIds.length) {
@@ -445,7 +445,7 @@ export class PlanarRenderPathDecisionService {
    * slice path draws the acquired frames (see `canDrawAcquiredFrames`).
    */
   private resolvePathInputs(
-    dataSet: PlanarRegisteredDataSet,
+    dataSet: PlanarDisplaySetDescriptor,
     options: PlanarRenderPathDecisionOptions
   ): PlanarPathInputs {
     const orientation = options.orientation || OrientationAxis.ACQUISITION;
@@ -481,7 +481,7 @@ export class PlanarRenderPathDecisionService {
    * frames for this reason.
    */
   canDrawAcquiredFrames(
-    dataSet: PlanarRegisteredDataSet,
+    dataSet: PlanarDisplaySetDescriptor,
     options: PlanarRenderPathDecisionOptions
   ): boolean {
     if (
@@ -552,7 +552,7 @@ export class PlanarRenderPathDecisionService {
    * the cache.
    */
   selectVolumeRenderModeForDataSet(
-    dataSet: PlanarRegisteredDataSet,
+    dataSet: PlanarDisplaySetDescriptor,
     options: PlanarRenderPathDecisionOptions
   ): PlanarRenderModeDecision {
     const backend = this.resolveBackend(options);
@@ -590,7 +590,7 @@ export class PlanarRenderPathDecisionService {
    * and that the backend has a sampled volume mode.
    */
   private decideSliceOnCpu(
-    dataSet: PlanarRegisteredDataSet,
+    dataSet: PlanarDisplaySetDescriptor,
     options: PlanarRenderPathDecisionOptions
   ): { sampled: boolean; reason: RenderPlanReason } {
     const sliceFirst =
@@ -654,7 +654,7 @@ export const defaultPlanarRenderPathDecisionService =
   new PlanarRenderPathDecisionService();
 
 export function selectPlanarRenderPath(
-  dataSet: PlanarRegisteredDataSet,
+  dataSet: PlanarDisplaySetDescriptor,
   options: PlanarRenderPathDecisionOptions = {}
 ): SelectedPlanarRenderPath {
   return defaultPlanarRenderPathDecisionService.select(dataSet, options);
@@ -750,20 +750,20 @@ function getImageDirection(imageOrientationPatient: number[]): number[] {
   ];
 }
 
-function getVolumeId(dataSet: PlanarRegisteredDataSet): string {
+function getVolumeId(dataSet: PlanarDisplaySetDescriptor): string {
   return dataSet.volumeId || cache.generateVolumeId(dataSet.imageIds);
 }
 
-function hasExplicitCachedVolume(dataSet: PlanarRegisteredDataSet): boolean {
+function hasExplicitCachedVolume(dataSet: PlanarDisplaySetDescriptor): boolean {
   return !!(dataSet.volumeId && cache.getVolume(dataSet.volumeId));
 }
 
-function supportsVolumeRendering(dataSet: PlanarRegisteredDataSet): boolean {
+function supportsVolumeRendering(dataSet: PlanarDisplaySetDescriptor): boolean {
   return hasExplicitCachedVolume(dataSet) || isValidVolume(dataSet.imageIds);
 }
 
 function isVolumeBackedDataSet(
-  dataSet: PlanarRegisteredDataSet,
+  dataSet: PlanarDisplaySetDescriptor,
   isAcquisitionPath: boolean
 ): boolean {
   if (dataSet.useWorldCoordinateImageData) {

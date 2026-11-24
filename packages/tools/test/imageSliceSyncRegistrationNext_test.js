@@ -116,7 +116,7 @@ describe('The spatial registration of two direct next planar viewports in differ
   afterEach(function () {
     SynchronizerManager.destroySynchronizer(synchronizerId);
     testUtils.cleanupTestEnvironment({ renderingEngineId });
-    utilities.genericViewportDisplaySetMetadataProvider.clear?.();
+    cornerstone3D.displaySetRegistry.clear?.();
   });
 
   it('adds the registration of the images on display, and the image slice synchronizer moves the target by it', async function () {

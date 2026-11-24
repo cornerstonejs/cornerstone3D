@@ -142,7 +142,7 @@ describe('Tools on a direct next planar viewport in stack mode and in volume mod
       renderingEngineId,
       toolGroupIds: ['default'],
     });
-    utilities.genericViewportDisplaySetMetadataProvider.clear?.();
+    cornerstone3D.displaySetRegistry.clear?.();
   });
 
   describe('a point in the line of sight', () => {

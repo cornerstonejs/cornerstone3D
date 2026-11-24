@@ -24,7 +24,7 @@ function frames() {
 
 /** The slab thickness of the presentation of the source of a viewport. */
 function slabOf(viewport) {
-  return viewport.getDisplaySetPresentation(viewport.getSourceDataId())
+  return viewport.getDisplaySetPresentation(viewport.getSourceDisplaySetId())
     ?.slabThickness;
 }
 
@@ -49,7 +49,7 @@ describe('The slab thickness synchronizer on direct next planar viewports -- ', 
   afterEach(function () {
     SynchronizerManager.destroySynchronizer(synchronizerId);
     testUtils.cleanupTestEnvironment({ renderingEngineId });
-    utilities.genericViewportDisplaySetMetadataProvider.clear?.();
+    cornerstone3D.displaySetRegistry.clear?.();
   });
 
   it('keeps the slab of a volume target when a stack source pans, as the legacy synchronizer took no slab from a stack', async function () {
@@ -59,7 +59,7 @@ describe('The slab thickness synchronizer on direct next planar viewports -- ', 
 
     await showStack(stack, series, 3);
     await showVolume(volume, series, 3);
-    volume.setDisplaySetPresentation(volume.getSourceDataId(), {
+    volume.setDisplaySetPresentation(volume.getSourceDisplaySetId(), {
       slabThickness: 5,
     });
     synchronize(stack, volume);
@@ -83,14 +83,14 @@ describe('The slab thickness synchronizer on direct next planar viewports -- ', 
     await showVolume(target, series, 3);
     synchronize(source, target);
 
-    source.setDisplaySetPresentation(source.getSourceDataId(), {
+    source.setDisplaySetPresentation(source.getSourceDisplaySetId(), {
       slabThickness: 5,
     });
     await frames();
 
     expect(slabOf(target)).toBe(5);
 
-    source.setDisplaySetPresentation(source.getSourceDataId(), {
+    source.setDisplaySetPresentation(source.getSourceDisplaySetId(), {
       slabThickness: undefined,
     });
     await frames();

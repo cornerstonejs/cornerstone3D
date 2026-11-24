@@ -12,6 +12,7 @@ import {
   RenderingEngine,
   utilities,
   type PlanarViewport,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import {
   createPlanarViewport,
@@ -309,14 +310,12 @@ function registerRaceStacks(prefix: string): RaceStacks {
   const idA = `${prefix}-displayset-A`;
   const idB = `${prefix}-displayset-B`;
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(idA, {
+  displaySetRegistry.add(idA, {
     imageIds: stackA.imageIds,
-    kind: 'planar',
     initialImageIdIndex: 0,
   });
-  utilities.genericViewportDisplaySetMetadataProvider.add(idB, {
+  displaySetRegistry.add(idB, {
     imageIds: stackB.imageIds,
-    kind: 'planar',
     initialImageIdIndex: 0,
   });
 
@@ -445,9 +444,8 @@ test('scroll calls fired during an in-flight setDisplaySets reject cleanly and l
   );
   const { viewport, element, imageIds, displaySetId } = ctx;
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+  displaySetRegistry.add(displaySetId, {
     imageIds,
-    kind: 'planar',
     initialImageIdIndex: 0,
   });
 
@@ -478,14 +476,14 @@ test('scroll calls fired during an in-flight setDisplaySets reject cleanly and l
 });
 
 // ----------------------------------------------------------------------------
-// 7. removeData
+// 7. removeDisplaySet
 // ----------------------------------------------------------------------------
 
-test('removeData clears bindings and actors, and viewportStatus returns to noData', async () => {
+test('removeDisplaySet clears bindings and actors, and viewportStatus returns to noData', async () => {
   const ctx = track(await createPlanarViewport());
   const { viewport, displaySetId } = ctx;
 
-  viewport.removeData(displaySetId);
+  viewport.removeDisplaySet(displaySetId);
 
   expect(viewport.getDisplaySets()).toEqual([]);
   expect(viewport.getActors()).toEqual([]);
@@ -502,8 +500,8 @@ test('removeData clears bindings and actors, and viewportStatus returns to noDat
 
   // Pinned: PlanarViewport.render() sets viewportStatus to NO_DATA ('noData')
   // synchronously as soon as bindings.size is 0 (this already happened as a
-  // side effect of removeData()'s own internal render() call via
-  // BaseViewport.removeData -> this.render()); the explicit render() call
+  // side effect of removeDisplaySet()'s own internal render() call via
+  // BaseViewport.removeDisplaySet -> this.render()); the explicit render() call
   // above is a no-op re-confirmation of that same state.
   expect(viewport.viewportStatus).toBe(ViewportStatus.NO_DATA);
 });
@@ -606,9 +604,8 @@ test('a 2x2 grid of viewports on one engine renders independently; disabling one
   );
   const elements: HTMLDivElement[] = [];
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(gridDisplaySetId, {
+  displaySetRegistry.add(gridDisplaySetId, {
     imageIds: stack.imageIds,
-    kind: 'planar',
     initialImageIdIndex: 0,
   });
 
@@ -617,7 +614,7 @@ test('a 2x2 grid of viewports on one engine renders independently; disabling one
     cache.purgeCache();
     stack.unregister();
     imageLoader.unregisterAllImageLoaders();
-    utilities.genericViewportDisplaySetMetadataProvider.clear?.();
+    displaySetRegistry.clear?.();
 
     for (const element of elements) {
       element.parentNode?.removeChild(element);

@@ -119,7 +119,7 @@ export function getVolume3DProjectionSnapshot(
     adapterId: VOLUME3D_PROJECTION_ID,
     canvasHeight,
     canvasWidth,
-    dataId: request.dataId,
+    displaySetId: request.displaySetId,
     fit,
     frameOfReferenceUID,
     presentation: {

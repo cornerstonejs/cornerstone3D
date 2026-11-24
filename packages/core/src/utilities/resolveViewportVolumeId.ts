@@ -9,10 +9,10 @@ type ViewportActorSurface = IViewport & {
 /**
  * Resolves the cache volume id backing a viewport target.
  *
- * VOI tooling and the colorbar identify a target by its display-set `dataId`,
- * which is NOT the cache volume id - the volume id ends in `:<dataId>`. This
- * maps the `dataId` to the matching actor's `referencedId` (the real volume id):
- * an exact match first, then the `<scheme>:<dataId>` suffix. Anchoring to the
+ * VOI tooling and the colorbar identify a target by its display-set `displaySetId`,
+ * which is NOT the cache volume id - the volume id ends in `:<displaySetId>`. This
+ * maps the `displaySetId` to the matching actor's `referencedId` (the real volume id):
+ * an exact match first, then the `<scheme>:<displaySetId>` suffix. Anchoring to the
  * `:` separator avoids the unintended-actor matches a loose substring search
  * could produce in a fusion viewport. When no `targetId` is given (or it matches
  * nothing) it falls back to the bound default actor's referenced volume.

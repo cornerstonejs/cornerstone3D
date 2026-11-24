@@ -1,15 +1,23 @@
 import type { DataProvider, LoadedData } from '../ViewportArchitectureTypes';
 import { loadVideoStreamMetadata } from '../../../utilities/VideoUtilities';
-import { getDisplaySetSourceDataId } from '../displaySetAccess';
+import {
+  displaySetShapeError,
+  getDisplaySetImageId,
+} from '../displaySetAccess';
 import type { VideoStreamPayload } from './VideoViewportTypes';
 
 export class DefaultVideoDataProvider implements DataProvider {
-  async load(dataId: string): Promise<LoadedData<VideoStreamPayload>> {
-    const sourceDataId = getDisplaySetSourceDataId(dataId);
-    const stream = loadVideoStreamMetadata(sourceDataId);
+  async load(displaySetId: string): Promise<LoadedData<VideoStreamPayload>> {
+    const sourceImageId = getDisplaySetImageId(displaySetId);
+
+    if (!sourceImageId) {
+      throw displaySetShapeError('VideoViewport', displaySetId, 'imageId');
+    }
+
+    const stream = loadVideoStreamMetadata(sourceImageId);
 
     return {
-      id: dataId,
+      id: displaySetId,
       type: 'video',
       renderedUrl: stream.renderedUrl,
       fps: stream.cineRate || 30,

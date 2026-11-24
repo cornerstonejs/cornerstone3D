@@ -6,6 +6,7 @@ import {
   cache,
   metaData,
   utilities as csUtils,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -353,8 +354,7 @@ async function run() {
     0,
     Math.min(Math.floor(sortedImageIds.length / 2), sortedImageIds.length - 1)
   );
-  csUtils.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId, {
     imageIds: sortedImageIds,
     initialImageIdIndex: mid,
   });

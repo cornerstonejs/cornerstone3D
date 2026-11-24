@@ -16,6 +16,7 @@ import {
   metaData,
   getRenderingCapabilities,
   getLossyDownsampling,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -759,8 +760,7 @@ async function run() {
       } ms for ${text} with ${imageIds.length} items`;
     });
 
-    utilities.genericViewportDisplaySetMetadataProvider.add(volumeId, {
-      kind: 'planar',
+    displaySetRegistry.add(volumeId, {
       imageIds,
       volumeId,
     });
@@ -1041,7 +1041,7 @@ async function run() {
       scalarOpacity.push(segmentIndex, 1);
     }
 
-    utilities.genericViewportDisplaySetMetadataProvider.add(segVolumeId, {
+    displaySetRegistry.add(segVolumeId, {
       imageIds: labelmapImageIds,
       volumeId: segVolumeId,
     });

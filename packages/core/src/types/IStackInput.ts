@@ -19,6 +19,12 @@ type StackInputCallback = (params: {
 interface IStackInput {
   /** imageId of the image in the cache */
   imageId: string;
+  /**
+   * The display set id of the image on a planar or a video viewport, which
+   * `removeDisplaySet` takes. Without it the image goes under its
+   * `representationUID`, else its image id.
+   */
+  displaySetId?: string;
   // actorUID of the imageActor being added
   actorUID?: string;
   /** Visibility of the image actor - by default it is true */

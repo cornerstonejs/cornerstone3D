@@ -75,7 +75,7 @@ test.describe('Labelmap Rendering - Next (GPU)', () => {
         viewportId: 'CT_AXIAL',
         constructorName: 'PlanarViewport',
         type: 'planar',
-        renderModesByDataId: {
+        renderModesByDisplaySetId: {
           'labelmap-rendering-next:source': getPlainVolumeSliceRenderMode(),
         },
       },
@@ -84,7 +84,7 @@ test.describe('Labelmap Rendering - Next (GPU)', () => {
         viewportId: 'CT_SAGITTAL',
         constructorName: 'PlanarViewport',
         type: 'planar',
-        renderModesByDataId: {
+        renderModesByDisplaySetId: {
           'labelmap-rendering-next:source': getPlainVolumeSliceRenderMode(),
         },
       },
@@ -93,7 +93,7 @@ test.describe('Labelmap Rendering - Next (GPU)', () => {
         viewportId: 'CT_CORONAL',
         constructorName: 'PlanarViewport',
         type: 'planar',
-        renderModesByDataId: {
+        renderModesByDisplaySetId: {
           'labelmap-rendering-next:source': getPlainVolumeSliceRenderMode(),
         },
       },
@@ -135,7 +135,7 @@ test.describe('Labelmap Rendering - Next (CPU)', () => {
         viewportId: 'CT_AXIAL',
         constructorName: 'PlanarViewport',
         type: 'planar',
-        renderModesByDataId: {
+        renderModesByDisplaySetId: {
           'labelmap-rendering-next:source': 'cpuVolume',
         },
       },
@@ -144,7 +144,7 @@ test.describe('Labelmap Rendering - Next (CPU)', () => {
         viewportId: 'CT_SAGITTAL',
         constructorName: 'PlanarViewport',
         type: 'planar',
-        renderModesByDataId: {
+        renderModesByDisplaySetId: {
           'labelmap-rendering-next:source': 'cpuVolume',
         },
       },
@@ -153,7 +153,7 @@ test.describe('Labelmap Rendering - Next (CPU)', () => {
         viewportId: 'CT_CORONAL',
         constructorName: 'PlanarViewport',
         type: 'planar',
-        renderModesByDataId: {
+        renderModesByDisplaySetId: {
           'labelmap-rendering-next:source': 'cpuVolume',
         },
       },

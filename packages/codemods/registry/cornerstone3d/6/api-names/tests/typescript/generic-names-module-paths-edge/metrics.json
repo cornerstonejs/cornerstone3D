@@ -4,7 +4,7 @@
       "cardinality": {
         "file": "input.ts",
         "line": "1",
-        "rule": "@cornerstonejs/tools/tools/displayTools/Labelmap/labelmapRenderPlan/planarGenericVolumeLabelmap: a namespace import, addLabelmapToPlanarGenericViewport is addLabelmapToPlanarVolumeViewport"
+        "rule": "@cornerstonejs/tools/tools/displayTools/Labelmap/labelmapRenderPlan/planarGenericVolumeLabelmap: a namespace import, addLabelmapToPlanarGenericViewport is addLabelmapToPlanarVolumeViewport, isPlanarNextVolumeViewport is isPlanarVolumeViewport, PlanarNextVolumeViewport is PlanarVolumeViewport"
       },
       "count": 1
     },

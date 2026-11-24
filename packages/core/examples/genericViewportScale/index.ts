@@ -3,8 +3,8 @@ import {
   RenderingEngine,
   Enums,
   getRenderingEngine,
-  utilities,
   viewportProjection,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -25,8 +25,8 @@ const { ViewportType, Events, OrientationAxis } = Enums;
 const renderingEngineId = 'genericViewportScaleRenderingEngine';
 const stackViewportId = 'CT_STACK_GENERIC_SCALE';
 const volumeViewportId = 'CT_VOLUME_GENERIC_SCALE';
-const stackDataId = 'generic-viewport-scale:stack';
-const volumeDataId = 'generic-viewport-scale:volume';
+const stackDisplaySetId = 'generic-viewport-scale:stack';
+const volumeDisplaySetId = 'generic-viewport-scale:volume';
 const volumeId = 'cornerstoneStreamingImageVolume:GENERIC_VIEWPORT_SCALE_CT';
 const viewportWidthPx = 640;
 const viewportHeightPx = 400;
@@ -421,35 +421,33 @@ async function run() {
   const stackViewport = getViewport(stackViewportId);
   const volumeViewport = getViewport(volumeViewportId);
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(stackDataId, {
+  displaySetRegistry.add(stackDisplaySetId, {
     imageIds,
-    kind: 'planar',
     initialImageIdIndex: middleImageIndex,
   });
-  utilities.genericViewportDisplaySetMetadataProvider.add(volumeDataId, {
+  displaySetRegistry.add(volumeDisplaySetId, {
     imageIds,
-    kind: 'planar',
     initialImageIdIndex: middleImageIndex,
     volumeId,
   });
 
   await Promise.all([
     stackViewport.setDisplaySets({
-      displaySetId: stackDataId,
+      displaySetId: stackDisplaySetId,
       options: {},
     }),
     volumeViewport.setDisplaySets({
-      displaySetId: volumeDataId,
+      displaySetId: volumeDisplaySetId,
       options: {
         orientation: OrientationAxis.SAGITTAL,
       },
     }),
   ]);
 
-  stackViewport.setDisplaySetPresentation(stackDataId, {
+  stackViewport.setDisplaySetPresentation(stackDisplaySetId, {
     voiRange: ctVoiRange,
   });
-  volumeViewport.setDisplaySetPresentation(volumeDataId, {
+  volumeViewport.setDisplaySetPresentation(volumeDisplaySetId, {
     voiRange: ctVoiRange,
   });
 

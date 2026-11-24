@@ -349,7 +349,7 @@ For example `Planar/DefaultPlanarDataProvider.ts`.
 - **GENVIEW-DATA-4** Every data source has a display set, also a source that
   is not a DICOM instance. The data provider finds the display set by its
   display set id through `displaySetAccess.ts`, and not by an
-  image id. An entry of `genericViewportDisplaySetMetadataProvider` wins.
+  image id. An entry of `displaySetRegistry` wins.
   Otherwise the display set comes from the `DISPLAY_SET` metadata cache, and its
   `displaySetId` or `displaySetInstanceUID` equals the key.
 

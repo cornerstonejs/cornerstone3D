@@ -40,7 +40,7 @@ jest.mock('@cornerstonejs/core', () => {
       ),
       viewportSupportsDisplaySetPresentation: jest.fn(
         (viewport) =>
-          typeof viewport?.getSourceDataId === 'function' &&
+          typeof viewport?.getSourceDisplaySetId === 'function' &&
           typeof viewport?.getDefaultVOIRange === 'function'
       ),
     },
@@ -1014,7 +1014,7 @@ describe('slabThicknessSyncCallback', () => {
 
     return {
       getCurrentMode: jest.fn(() => mode),
-      getSourceDataId: jest.fn(() => Object.keys(slabThicknesses)[0]),
+      getSourceDisplaySetId: jest.fn(() => Object.keys(slabThicknesses)[0]),
       getDefaultVOIRange: jest.fn(),
       getDisplaySets: jest.fn(() =>
         Object.keys(slabThicknesses).map((displaySetId) => ({ displaySetId }))

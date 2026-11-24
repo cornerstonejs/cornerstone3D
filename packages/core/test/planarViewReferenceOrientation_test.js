@@ -85,7 +85,7 @@ async function showSagittalAndAxial(renderingEngine, id) {
   const sagittalRef4 = sagittal.getViewReference();
 
   await axial.setDisplaySets({
-    displaySetId: sagittalRef16.dataId,
+    displaySetId: sagittalRef16.displaySetId,
     options: { orientation: OrientationAxis.AXIAL },
   });
   await renderAndWait(axial);
@@ -146,7 +146,9 @@ describe('A view reference of another orientation of a volume on a direct next p
     await moveTo(axialOther, worldOfVoxel(series, [16, 12, 3]));
     const axialRef5 = axial.getViewReference({ sliceIndex: 5 });
 
-    expect(axialOther.getViewReference().dataId).not.toBe(sagittalRef16.dataId);
+    expect(axialOther.getViewReference().displaySetId).not.toBe(
+      sagittalRef16.displaySetId
+    );
     expect(axialOther.getViewReference().volumeId).toBe(sagittalRef16.volumeId);
     expect(axialOther.getSliceIndex()).toBe(4);
     expect(answers(axialOther, sagittalRef16)).toEqual({
@@ -256,7 +258,7 @@ describe('The option asVolume of a direct next planar viewport in stack mode -- 
     ).toEqual(all);
     expect(answersAsVolume(stack, otherFrame)).toEqual(none);
 
-    await stack.setDisplaySets({ displaySetId: sagittalRef16.dataId });
+    await stack.setDisplaySets({ displaySetId: sagittalRef16.displaySetId });
     await renderAndWait(stack);
     stack.setViewReference(sagittalRef16);
     await renderAndWait(stack);
@@ -273,7 +275,7 @@ describe('The option asVolume of a direct next planar viewport in stack mode -- 
     const stack = createNextViewport(renderingEngine, 'asVolumeStack');
     const frameOnly = { ...sagittalRef16 };
 
-    delete frameOnly.dataId;
+    delete frameOnly.displaySetId;
     delete frameOnly.volumeId;
     await showStack(stack, series, 3);
 
@@ -429,9 +431,8 @@ describe('A stack of images in two orientations on a direct next planar viewport
     const stack = createNextViewport(renderingEngine, 'twoOrientations');
     const displaySetId = 'twoOrientationsStack';
 
-    utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+    cornerstone3D.displaySetRegistry.add(displaySetId, {
       imageIds: [...axial.imageIds, ...sagittal.imageIds],
-      kind: 'planar',
       initialImageIdIndex: 0,
     });
     await stack.setDisplaySets({

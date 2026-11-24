@@ -86,7 +86,7 @@ describe('A planar viewport resized to half its width and back -- ', () => {
   });
 
   afterEach(function () {
-    utilities.genericViewportDisplaySetMetadataProvider.clear();
+    cornerstone3D.displaySetRegistry.clear();
     renderingEngine?.destroy();
     renderingEngine = undefined;
     testUtils.cleanupTestEnvironment({

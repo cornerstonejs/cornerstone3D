@@ -3,7 +3,7 @@ import {
   RenderingEngine,
   Enums,
   getRenderingEngine,
-  utilities,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -28,8 +28,8 @@ const viewportIds = {
   PET_SAGITTAL_CPU: 'PET_SAGITTAL_CPU',
 } as const;
 
-const petStackDataId = 'pet-planar-backend-grid:stack';
-const petVolumeDataId = 'pet-planar-backend-grid:volume';
+const petStackDisplaySetId = 'pet-planar-backend-grid:stack';
+const petVolumeDisplaySetId = 'pet-planar-backend-grid:volume';
 
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume';
 const petVolumeId = `${volumeLoaderScheme}:PET_PLANAR_BACKEND_GRID_VOLUME`;
@@ -42,7 +42,7 @@ const ptSeriesInstanceUID =
 
 type ViewportSpec = {
   viewportId: string;
-  dataId: string;
+  displaySetId: string;
   label: string;
   renderBackend: 'gpu' | 'cpu';
   orientation?: typeof OrientationAxis.SAGITTAL;
@@ -51,26 +51,26 @@ type ViewportSpec = {
 const viewportSpecs: ViewportSpec[] = [
   {
     viewportId: viewportIds.PET_STACK_GPU,
-    dataId: petStackDataId,
+    displaySetId: petStackDisplaySetId,
     label: 'PET Stack - GPU',
     renderBackend: 'gpu',
   },
   {
     viewportId: viewportIds.PET_SAGITTAL_GPU,
-    dataId: petVolumeDataId,
+    displaySetId: petVolumeDisplaySetId,
     label: 'PET Sagittal - GPU',
     renderBackend: 'gpu',
     orientation: OrientationAxis.SAGITTAL,
   },
   {
     viewportId: viewportIds.PET_STACK_CPU,
-    dataId: petStackDataId,
+    displaySetId: petStackDisplaySetId,
     label: 'PET Stack - CPU',
     renderBackend: 'cpu',
   },
   {
     viewportId: viewportIds.PET_SAGITTAL_CPU,
-    dataId: petVolumeDataId,
+    displaySetId: petVolumeDisplaySetId,
     label: 'PET Sagittal - CPU',
     renderBackend: 'cpu',
     orientation: OrientationAxis.SAGITTAL,
@@ -134,7 +134,7 @@ function describeViewport(spec: ViewportSpec): string {
   }
 
   return `${spec.viewportId}: requested=${spec.renderBackend} actual=${viewport.getDisplaySetRenderMode(
-    spec.dataId
+    spec.displaySetId
   )} slice=${viewport.getCurrentImageIdIndex()}`;
 }
 
@@ -210,14 +210,12 @@ async function run() {
     }))
   );
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(petStackDataId, {
+  displaySetRegistry.add(petStackDisplaySetId, {
     imageIds: petImageIds,
-    kind: 'planar',
     initialImageIdIndex: Math.floor(petImageIds.length / 2),
   });
-  utilities.genericViewportDisplaySetMetadataProvider.add(petVolumeDataId, {
+  displaySetRegistry.add(petVolumeDisplaySetId, {
     imageIds: petImageIds,
-    kind: 'planar',
     initialImageIdIndex: Math.floor(petImageIds.length / 2),
     volumeId: petVolumeId,
   });
@@ -227,7 +225,7 @@ async function run() {
       const viewport = getViewport(spec.viewportId);
 
       await viewport.setDisplaySets({
-        displaySetId: spec.dataId,
+        displaySetId: spec.displaySetId,
         options: {
           renderBackend: spec.renderBackend,
           ...(spec.orientation ? { orientation: spec.orientation } : {}),

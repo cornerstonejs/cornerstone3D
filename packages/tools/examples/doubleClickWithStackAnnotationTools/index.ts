@@ -3,7 +3,7 @@ import {
   RenderingEngine,
   Enums,
   getRenderingEngine,
-  utilities,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -287,8 +287,7 @@ async function run() {
 
   const viewportIds = ['CT_STACK_0', 'CT_STACK_1'];
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId, {
     imageIds: [imageIds[0]],
     initialImageIdIndex: 0,
   });

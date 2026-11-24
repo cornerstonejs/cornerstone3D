@@ -62,7 +62,7 @@ function createFakePlanarViewport({
     setDisplaySets: async () => undefined,
     setDisplaySetPresentation: jest.fn(),
     getDisplaySetPresentation: () => sourcePresentation,
-    getSourceDataId: () => 'fake-source-data',
+    getSourceDisplaySetId: () => 'fake-source-data',
     getDefaultVOIRange: () => undefined,
     getVolumeId: () => volumeId,
     setViewState: jest.fn((patch: Record<string, unknown>) => {

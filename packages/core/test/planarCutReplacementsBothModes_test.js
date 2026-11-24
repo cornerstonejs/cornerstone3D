@@ -42,7 +42,7 @@ describe('What a caller uses in place of cut planar members, in stack mode and i
 
   afterEach(function () {
     testUtils.cleanupTestEnvironment({ renderingEngineId });
-    utilities.genericViewportDisplaySetMetadataProvider.clear?.();
+    cornerstone3D.displaySetRegistry.clear?.();
   });
 
   describe('cache.getImage(viewport.getCurrentImageId()), in place of getCornerstoneImage', () => {
@@ -159,7 +159,7 @@ describe('What a caller uses in place of cut planar members, in stack mode and i
         ['uri:source', source],
         ['uri:overlay', overlay],
       ].forEach(([displaySetId, series]) =>
-        utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+        cornerstone3D.displaySetRegistry.add(displaySetId, {
           imageIds: series.imageIds,
           volumeId: series.volumeId,
         })

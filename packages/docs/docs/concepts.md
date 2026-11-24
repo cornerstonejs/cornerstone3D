@@ -19,7 +19,7 @@ import {
   RenderingEngine,
   Enums,
   volumeLoader,
-  utilities,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 
 // RENDER
@@ -51,8 +51,7 @@ const volume = await volumeLoader.createAndCacheVolume(volumeId, { imageIds });
 volume.load();
 
 // Register the images once as a display set, then show it
-utilities.genericViewportDisplaySetMetadataProvider.add('ctVolume', {
-  kind: 'planar',
+displaySetRegistry.add('ctVolume', {
   imageIds,
   volumeId,
 });

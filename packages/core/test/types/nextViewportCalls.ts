@@ -83,7 +83,7 @@ export function membersOfTheInterface() {
   viewport.updateViewState(() => ({}));
   viewport.setViewReference(reference);
   viewport.setDisplaySetPresentation(displaySetId, {});
-  viewport.removeData(displaySetId);
+  viewport.removeDisplaySet(displaySetId);
   viewport.resize();
   viewport.render();
 
@@ -241,7 +241,7 @@ export function selectorsOfTheProjection() {
  */
 export function guards() {
   if (utilities.viewportSupportsDisplaySetPresentation(viewport)) {
-    viewport.getDefaultVOIRange(viewport.getSourceDataId());
+    viewport.getDefaultVOIRange(viewport.getSourceDisplaySetId());
   }
 
   if (utilities.viewportSupportsImageSlices(enabledElement.viewport)) {

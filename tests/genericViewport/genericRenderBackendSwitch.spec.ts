@@ -40,7 +40,7 @@ async function navigateToExample(page: Page) {
 
 function getViewportState(page: Page) {
   return page.evaluate(
-    ({ engineId, viewportId, dataId }) => {
+    ({ engineId, viewportId, displaySetId }) => {
       const win = window as CornerstoneWindow;
       const engine = win.cornerstone?.getRenderingEngine?.(engineId);
       const viewport = engine?.getViewport?.(viewportId);
@@ -49,11 +49,11 @@ function getViewportState(page: Page) {
         imageIdIndex: viewport?.getCurrentImageIdIndex?.(),
         zoom: viewport?.getZoom?.(),
         pan: viewport?.getPan?.(),
-        voiRange: viewport?.getDisplaySetPresentation?.(dataId)?.voiRange,
-        renderMode: viewport?.getDisplaySetRenderMode?.(dataId),
+        voiRange: viewport?.getDisplaySetPresentation?.(displaySetId)?.voiRange,
+        renderMode: viewport?.getDisplaySetRenderMode?.(displaySetId),
       };
     },
-    { engineId: ENGINE_ID, viewportId: VIEWPORT_ID, dataId: DATA_ID }
+    { engineId: ENGINE_ID, viewportId: VIEWPORT_ID, displaySetId: DATA_ID }
   );
 }
 
@@ -80,7 +80,7 @@ test.describe('Render backend live switch', () => {
         viewportId: VIEWPORT_ID,
         constructorName: 'PlanarViewport',
         type: 'planar',
-        renderModesByDataId: { [DATA_ID]: 'vtkImage' },
+        renderModesByDisplaySetId: { [DATA_ID]: 'vtkImage' },
       },
     ]);
 

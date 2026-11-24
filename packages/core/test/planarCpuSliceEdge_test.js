@@ -162,7 +162,7 @@ async function showVolume(renderingEngine, viewportId, volumeId, options) {
   const viewport = createViewport(renderingEngine, viewportId);
   const displaySetId = `volume:${utilities.uuidv4()}`;
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+  cornerstone3D.displaySetRegistry.add(displaySetId, {
     imageIds: cache.getVolume(volumeId).imageIds,
     volumeId,
   });
@@ -181,9 +181,8 @@ async function showStack(renderingEngine, viewportId, imageIds, options) {
   const viewport = createViewport(renderingEngine, viewportId);
   const displaySetId = `stack:${utilities.uuidv4()}`;
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+  cornerstone3D.displaySetRegistry.add(displaySetId, {
     imageIds,
-    kind: 'planar',
     initialImageIdIndex: 0,
   });
   await viewport.setDisplaySets({
@@ -224,8 +223,7 @@ async function addFullLabelmap(viewport, volumeId) {
     image.maxPixelValue = 1;
   });
   labelmap.modified();
-  utilities.genericViewportDisplaySetMetadataProvider.add(representationUID, {
-    kind: 'planar',
+  cornerstone3D.displaySetRegistry.add(representationUID, {
     imageIds: labelmap.imageIds,
     initialImageIdIndex: 0,
     volumeId: labelmapId,
@@ -320,7 +318,7 @@ function stripes(x) {
  * more than a tenth of VALUE, none after it.
  */
 function showStripedEdges(viewport) {
-  viewport.setDisplaySetPresentation(viewport.getRenderPlan()[0].dataId, {
+  viewport.setDisplaySetPresentation(viewport.getRenderPlan()[0].displaySetId, {
     interpolationType: InterpolationType.LINEAR,
   });
   viewport.setViewState({ rotation: 45, scale: [0.33, 0.33] });
@@ -341,7 +339,7 @@ function isMiddleLayer(k) {
  * more than a tenth of VALUE, up to half of VALUE.
  */
 function showStripedSlabEdges(viewport) {
-  viewport.setDisplaySetPresentation(viewport.getRenderPlan()[0].dataId, {
+  viewport.setDisplaySetPresentation(viewport.getRenderPlan()[0].displaySetId, {
     interpolationType: InterpolationType.LINEAR,
     slabThickness: 4,
     blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,

@@ -1,7 +1,7 @@
 import {
   getRenderingEngine,
   volumeLoader,
-  utilities,
+  displaySetRegistry,
   Enums,
 } from '@cornerstonejs/core';
 
@@ -34,8 +34,7 @@ export async function show(
     return viewport;
   });
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(viewportId, {
-    kind: 'planar',
+  displaySetRegistry.add(viewportId, {
     imageIds,
     volumeId: viewportId,
   });

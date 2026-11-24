@@ -289,7 +289,7 @@ type TestViewport = {
   getRenderPlan: () => Array<{ draw: string; renderMode: string }>;
   setDisplaySets: (...entries: unknown[]) => Promise<void>;
   setDisplaySetPresentation: (
-    dataId: string,
+    displaySetId: string,
     props: Record<string, unknown>
   ) => void;
   setZoom: (zoom: number) => void;
@@ -365,9 +365,9 @@ type TestWindow = typeof window & {
           getScalarData: () => ArrayLike<number>;
         };
       };
-      genericViewportDisplaySetMetadataProvider: {
-        add: (id: string, value: Record<string, unknown>) => void;
-      };
+    };
+    displaySetRegistry: {
+      add: (id: string, value: Record<string, unknown>) => void;
     };
     Enums: { ViewportType: Record<string, string> };
   };
@@ -681,18 +681,16 @@ async function openExample(page: Page): Promise<string> {
           const overlayId = `${id}:overlay`;
           const entries: unknown[] = [{ displaySetId: sourceId, options: {} }];
 
-          cs.utilities.genericViewportDisplaySetMetadataProvider.add(sourceId, {
+          cs.displaySetRegistry.add(sourceId, {
             imageIds: [imageIdOf(stackCase.image)],
-            kind: 'planar',
             initialImageIdIndex: 0,
           });
 
           if (stackCase.overlay) {
-            cs.utilities.genericViewportDisplaySetMetadataProvider.add(
+            cs.displaySetRegistry.add(
               overlayId,
               {
                 imageIds: [imageIdOf(stackCase.overlay.image)],
-                kind: 'planar',
                 initialImageIdIndex: 0,
               }
             );

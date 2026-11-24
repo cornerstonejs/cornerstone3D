@@ -37,7 +37,7 @@ type TestViewport = {
   getZoom: () => number;
   setZoom: (zoom: number) => void;
   setDisplaySetPresentation: (
-    dataId: string,
+    displaySetId: string,
     props: { slabThickness?: number; blendMode?: number }
   ) => void;
   render: () => void;
@@ -243,13 +243,13 @@ async function setSlab(
   blendModeName: string
 ): Promise<void> {
   await page.evaluate(
-    ({ engineId, viewportId, dataId, slabThickness, blendModeName }) => {
+    ({ engineId, viewportId, displaySetId, slabThickness, blendModeName }) => {
       const { cornerstone } = window as TestWindow;
       const viewport = cornerstone
         .getRenderingEngine(engineId)
         .getViewport(viewportId);
 
-      viewport?.setDisplaySetPresentation(dataId, {
+      viewport?.setDisplaySetPresentation(displaySetId, {
         slabThickness,
         blendMode: cornerstone.Enums.BlendModes[blendModeName],
       });
@@ -258,7 +258,7 @@ async function setSlab(
     {
       engineId: ENGINE_ID,
       viewportId,
-      dataId: DATA_ID,
+      displaySetId: DATA_ID,
       slabThickness,
       blendModeName,
     }

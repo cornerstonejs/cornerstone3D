@@ -33,10 +33,10 @@ const CASES = [
 
 /** The window of the source of a viewport: the one set, else the default. */
 function windowOf(viewport) {
-  const dataId = viewport.getSourceDataId();
+  const displaySetId = viewport.getSourceDisplaySetId();
   const voiRange =
-    viewport.getDisplaySetPresentation(dataId)?.voiRange ??
-    viewport.getDefaultVOIRange(dataId);
+    viewport.getDisplaySetPresentation(displaySetId)?.voiRange ??
+    viewport.getDefaultVOIRange(displaySetId);
 
   return utilities.windowLevel.toWindowLevel(voiRange.lower, voiRange.upper);
 }
@@ -72,7 +72,7 @@ describe('The window level tool on a direct next planar viewport -- ', () => {
       renderingEngineId,
       toolGroupIds: [toolGroupId],
     });
-    utilities.genericViewportDisplaySetMetadataProvider.clear();
+    cornerstone3D.displaySetRegistry.clear();
   });
 
   CASES.forEach(([name, show, options]) => {

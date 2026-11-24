@@ -63,7 +63,7 @@ async function showVolume(viewport) {
   });
 
   await volumeLoader.createAndCacheVolume(volumeId, { imageIds: [] });
-  utilities.genericViewportDisplaySetMetadataProvider.add('rotation3D', {
+  cornerstone3D.displaySetRegistry.add('rotation3D', {
     imageIds: cache.getVolume(volumeId).imageIds,
     volumeId,
   });
@@ -106,7 +106,7 @@ describe('Rotation of a 3D viewport through the projection -- ', () => {
 
   afterEach(function () {
     testUtils.cleanupTestEnvironment({ renderingEngineId });
-    utilities.genericViewportDisplaySetMetadataProvider.clear?.();
+    cornerstone3D.displaySetRegistry.clear?.();
   });
 
   it('turns the view up about the view plane normal to the rotation, from the view up of the orientation, as the legacy viewport did', async function () {

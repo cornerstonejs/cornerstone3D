@@ -1363,14 +1363,14 @@ class WorldCrosshairTool extends AnnotationTool {
       return 0;
     }
 
-    const dataId = viewport.getSourceDataId();
-    if (!dataId) {
+    const displaySetId = viewport.getSourceDisplaySetId();
+    if (!displaySetId) {
       return 0;
     }
 
     const presentation = (
       viewport as unknown as Types.IViewport
-    ).getDisplaySetPresentation(dataId) as
+    ).getDisplaySetPresentation(displaySetId) as
       | { slabThickness?: number }
       | undefined;
     const slabThickness = presentation?.slabThickness;

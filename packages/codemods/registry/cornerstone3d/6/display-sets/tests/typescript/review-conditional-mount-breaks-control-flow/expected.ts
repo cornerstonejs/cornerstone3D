@@ -1,4 +1,8 @@
-import { RenderingEngine, volumeLoader, utilities } from '@cornerstonejs/core';
+import {
+  RenderingEngine,
+  volumeLoader,
+  displaySetRegistry,
+} from '@cornerstonejs/core';
 
 const renderingEngine = new RenderingEngine('engine');
 
@@ -7,8 +11,7 @@ export async function show(ok: boolean, ids: string[], fallback: () => void) {
 
   if (ok) {
     const displaySetId = JSON.stringify([viewport.renderingEngineId, viewport.id, ids[0]]);
-    utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-      kind: 'planar',
+    displaySetRegistry.add(displaySetId, {
       imageIds: ids,
       initialImageIdIndex: 0,
     });

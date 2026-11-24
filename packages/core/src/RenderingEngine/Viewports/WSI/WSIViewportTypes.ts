@@ -17,6 +17,7 @@ import type {
   WSIViewerLike,
 } from '../../../utilities/WSIUtilities';
 import type ICamera from '../../../types/ICamera';
+import type { DisplaySetDescriptor } from '../../../types/DisplaySetDescriptor';
 import type ViewportInputOptions from '../../../types/ViewportInputOptions';
 import type { VOIRange } from '../../../types';
 
@@ -25,8 +26,13 @@ export interface WSIDataSetOptions {
   webClient: WSIClientLike;
 }
 
-/** @internal */
-export interface WSIRegisteredDataSet {
+/**
+ * The descriptor of a slide as a whole slide viewport reads it: its image
+ * ids and its web client.
+ *
+ * @internal
+ */
+export interface WSIDisplaySetDescriptor extends DisplaySetDescriptor {
   imageIds: string[];
   options: WSIDataSetOptions;
 }
@@ -67,7 +73,7 @@ export type WSIDataPresentation = WSIPresentationProps & WSIProperties;
 
 /** @internal */
 export interface WSIDataProvider extends DataProvider {
-  load(dataId: string): Promise<LoadedData<WSIPayload>>;
+  load(displaySetId: string): Promise<LoadedData<WSIPayload>>;
 }
 
 export interface WSIViewportInput {

@@ -199,7 +199,7 @@ describe('A surface shown as contours on a direct next planar viewport -- ', () 
       renderingEngineId,
       toolGroupIds: [toolGroupId],
     });
-    utilities.genericViewportDisplaySetMetadataProvider.clear?.();
+    cornerstone3D.displaySetRegistry.clear?.();
   });
 
   it('draws in stack mode the one contour of the image on display, and after a scroll the one of the next image', async function () {
@@ -260,7 +260,7 @@ describe('A surface shown as contours on a direct next planar viewport -- ', () 
 
     const viewport = renderingEngine.getViewport('contour3D');
 
-    utilities.genericViewportDisplaySetMetadataProvider.add('contour3DVolume', {
+    cornerstone3D.displaySetRegistry.add('contour3DVolume', {
       imageIds: series.imageIds,
       volumeId: series.volumeId,
     });

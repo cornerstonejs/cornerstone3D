@@ -63,7 +63,7 @@ async function firstRenderDone(viewport) {
 function addVolumeDisplaySet(viewport, series, fields = {}) {
   const displaySetId = `volume:${viewport.id}:${series.volumeId}`;
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+  cornerstone3D.displaySetRegistry.add(displaySetId, {
     imageIds: series.imageIds,
     volumeId: series.volumeId,
     ...fields,
@@ -76,9 +76,8 @@ function addVolumeDisplaySet(viewport, series, fields = {}) {
 function addStackDisplaySet(viewport, series, initialImageIdIndex) {
   const displaySetId = `stack:${viewport.id}`;
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+  cornerstone3D.displaySetRegistry.add(displaySetId, {
     imageIds: series.imageIds,
-    kind: 'planar',
     initialImageIdIndex,
   });
 

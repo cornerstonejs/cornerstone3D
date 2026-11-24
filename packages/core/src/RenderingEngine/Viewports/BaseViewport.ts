@@ -194,7 +194,7 @@ abstract class BaseViewport<
    * Returns the display sets currently mounted on the viewport, in mount order
    * (source binding first, then overlays). Derived from the live bindings, so
    * it always reflects what is actually rendered - including overlays and any
-   * `removeData` calls. The per-entry `options` carry the binding `role`.
+   * `removeDisplaySet` calls. The per-entry `options` carry the binding `role`.
    */
   getDisplaySets(): Array<{ displaySetId: DisplaySetId; options?: unknown }> {
     return Array.from(this.bindings.entries()).map(
@@ -234,7 +234,7 @@ abstract class BaseViewport<
    * Removes a dataset binding and its stored presentation state, then
    * triggers a re-render so the viewport reflects the removal.
    */
-  removeData(displaySetId: DisplaySetId): void {
+  removeDisplaySet(displaySetId: DisplaySetId): void {
     const binding = this.bindings.get(displaySetId);
 
     if (!binding) {
@@ -439,7 +439,7 @@ abstract class BaseViewport<
   getViewReference(_specifier: ViewReferenceSpecifier = {}): ViewReference {
     return {
       FrameOfReferenceUID: this.getFrameOfReferenceUID(),
-      dataId: this.getCurrentBinding()?.data.id,
+      displaySetId: this.getCurrentBinding()?.data.id,
     };
   }
 
@@ -830,7 +830,7 @@ abstract class BaseViewport<
 
   protected removeAllData(): void {
     for (const displaySetId of Array.from(this.bindings.keys())) {
-      this.removeData(displaySetId);
+      this.removeDisplaySet(displaySetId);
     }
   }
 
@@ -1109,10 +1109,10 @@ abstract class BaseViewport<
     const resolvedView = this.getResolvedView();
     const camera = resolvedView?.toICamera();
 
-    for (const [dataId, binding] of this.bindings.entries()) {
+    for (const [displaySetId, binding] of this.bindings.entries()) {
       contexts.push({
-        dataId,
-        dataIds: [binding.data.id],
+        displaySetId,
+        displaySetIds: [binding.data.id],
         frameOfReferenceUID:
           binding.getFrameOfReferenceUID() ??
           resolvedView?.getFrameOfReferenceUID() ??
@@ -1173,8 +1173,8 @@ abstract class BaseViewport<
    * Tears down all mounted dataset bindings by removing each one individually.
    */
   protected destroyBindings(): void {
-    for (const dataId of Array.from(this.bindings.keys())) {
-      this.removeData(dataId);
+    for (const displaySetId of Array.from(this.bindings.keys())) {
+      this.removeDisplaySet(displaySetId);
     }
   }
 

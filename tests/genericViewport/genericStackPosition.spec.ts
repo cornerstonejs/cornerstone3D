@@ -139,7 +139,7 @@ test.describe('Stack Position Next display area', () => {
         viewportId: VIEWPORT_ID,
         constructorName: 'PlanarViewport',
         type: 'planar',
-        renderModesByDataId: {
+        renderModesByDisplaySetId: {
           [STACK_DATA_ID]: 'vtkImage',
         },
       },

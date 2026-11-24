@@ -3,7 +3,7 @@ import {
   RenderingEngine,
   Enums,
   eventTarget,
-  utilities,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -204,8 +204,7 @@ async function run() {
   toolGroup1.addViewport(viewportId1, renderingEngineId);
   toolGroup2.addViewport(viewportId2, renderingEngineId);
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId, {
     imageIds,
     initialImageIdIndex: 0,
   });

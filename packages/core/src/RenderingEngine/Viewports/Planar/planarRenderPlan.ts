@@ -40,13 +40,13 @@ function getRenderPlanSlice(
 
 /** The entry of one layer of a render plan. */
 export function createRenderPlanLayer(
-  dataId: string,
+  displaySetId: string,
   role: BindingRole,
   renderMode: PlanarEffectiveRenderMode,
   reason: RenderPlanReason
 ): RenderPlanLayer {
   return {
-    dataId,
+    displaySetId,
     role,
     slice: getRenderPlanSlice(renderMode),
     draw: getRenderSurfaceForRenderMode(renderMode) === 'cpu' ? 'cpu' : 'gpu',
@@ -61,7 +61,7 @@ export function isSameRenderPlanLayer(
   b: RenderPlanLayer | undefined
 ): boolean {
   return (
-    a?.dataId === b?.dataId &&
+    a?.displaySetId === b?.displaySetId &&
     a?.role === b?.role &&
     a?.renderMode === b?.renderMode &&
     a?.reason === b?.reason

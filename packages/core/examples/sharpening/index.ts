@@ -4,7 +4,7 @@ import {
   Enums,
   getRenderingEngine,
   volumeLoader,
-  utilities,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -362,8 +362,7 @@ async function run() {
     renderingEngine.getViewport<PlanarViewport>(stackViewportId);
 
   // Set the stack on the viewport
-  utilities.genericViewportDisplaySetMetadataProvider.add(stackDisplaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(stackDisplaySetId, {
     imageIds,
     initialImageIdIndex: 0,
   });
@@ -383,8 +382,7 @@ async function run() {
     renderingEngine.getViewport<PlanarViewport>(stackViewportId2);
 
   // Set the stack on the second viewport
-  utilities.genericViewportDisplaySetMetadataProvider.add(stackDisplaySetId2, {
-    kind: 'planar',
+  displaySetRegistry.add(stackDisplaySetId2, {
     imageIds: imageIds2,
     initialImageIdIndex: 0,
   });
@@ -407,8 +405,7 @@ async function run() {
     renderingEngine.getViewport<PlanarViewport>(stackViewportId3);
 
   // Set the stack on the third viewport
-  utilities.genericViewportDisplaySetMetadataProvider.add(stackDisplaySetId3, {
-    kind: 'planar',
+  displaySetRegistry.add(stackDisplaySetId3, {
     imageIds: imageIds3,
     initialImageIdIndex: 0,
   });
@@ -444,8 +441,7 @@ async function run() {
   volume.load();
 
   // Set the volume on the viewport
-  utilities.genericViewportDisplaySetMetadataProvider.add(volumeDisplaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(volumeDisplaySetId, {
     imageIds,
     volumeId,
   });

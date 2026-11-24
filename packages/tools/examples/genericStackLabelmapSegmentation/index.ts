@@ -4,6 +4,7 @@ import {
   RenderingEngine,
   imageLoader,
   utilities,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
@@ -47,8 +48,8 @@ const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'STACK_VIEWPORT';
 const viewportId2 = 'STACK_VIEWPORT_2';
 const toolGroupId = 'TOOL_GROUP_ID';
-const ctDataId = 'stack-labelmap-segmentation-next:ct';
-const mgDataId = 'stack-labelmap-segmentation-next:mg';
+const ctDisplaySetId = 'stack-labelmap-segmentation-next:ct';
+const mgDisplaySetId = 'stack-labelmap-segmentation-next:mg';
 
 setTitleAndDescription(
   'Segmentation in StackViewport',
@@ -468,23 +469,21 @@ async function run() {
     await imageLoader.createAndCacheDerivedLabelmapImages(mgImageIds);
   const mgStackImageIds = [...mgImageIds, ctImageIds[2]];
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(ctDataId, {
-    kind: 'planar',
+  displaySetRegistry.add(ctDisplaySetId, {
     imageIds: ctImageIds,
     initialImageIdIndex: 0,
   });
-  utilities.genericViewportDisplaySetMetadataProvider.add(mgDataId, {
-    kind: 'planar',
+  displaySetRegistry.add(mgDisplaySetId, {
     imageIds: mgStackImageIds,
     initialImageIdIndex: 0,
   });
 
   await viewport.setDisplaySets({
-    displaySetId: ctDataId,
+    displaySetId: ctDisplaySetId,
     options: {},
   });
   await viewport2.setDisplaySets({
-    displaySetId: mgDataId,
+    displaySetId: mgDisplaySetId,
     options: {},
   });
 

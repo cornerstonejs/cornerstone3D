@@ -9,7 +9,7 @@ const STACK_DATA_ID = 'stack-api-next:primary';
 type ReferenceJson = {
   FrameOfReferenceUID?: string;
   cameraFocalPoint?: number[];
-  dataId?: string;
+  displaySetId?: string;
   planeRestriction?: {
     FrameOfReferenceUID: string;
     point: number[];
@@ -29,9 +29,9 @@ type ReferenceCompatibilityJson = {
     targetSliceIndex: number;
   };
   checks: {
-    badDataIdNavigation: boolean;
+    badDisplaySetIdNavigation: boolean;
     badFrameOfReferenceNavigation: boolean;
-    dataIdOnlyStrict: boolean;
+    displaySetIdOnlyStrict: boolean;
     forOnlyStrict: boolean;
     fullNavigation: boolean;
     fullStrict: boolean;
@@ -93,21 +93,21 @@ test('reports viewport view reference compatibility as JSON', async ({
 
   expect(result.references.full).toMatchObject({
     FrameOfReferenceUID: expect.any(String),
-    dataId: STACK_DATA_ID,
+    displaySetId: STACK_DATA_ID,
     referencedImageId: expect.any(String),
     referencedImageURI: expect.any(String),
     sliceIndex: 2,
   });
   expect(result.references.image).toEqual({
     FrameOfReferenceUID: result.references.full.FrameOfReferenceUID,
-    dataId: STACK_DATA_ID,
+    displaySetId: STACK_DATA_ID,
     referencedImageId: result.references.full.referencedImageId,
     referencedImageURI: result.references.full.referencedImageURI,
     sliceIndex: 2,
   });
   expect(result.references.plane).toMatchObject({
     FrameOfReferenceUID: result.references.full.FrameOfReferenceUID,
-    dataId: STACK_DATA_ID,
+    displaySetId: STACK_DATA_ID,
     planeRestriction: {
       FrameOfReferenceUID: result.references.full.FrameOfReferenceUID,
       point: expect.any(Array),
@@ -118,9 +118,9 @@ test('reports viewport view reference compatibility as JSON', async ({
   expect(result.referenceSliceIndex).toBe(2);
   expect(result.viewportSliceIndexBeforeApply).toBe(0);
   expect(result.checks).toEqual({
-    badDataIdNavigation: false,
+    badDisplaySetIdNavigation: false,
     badFrameOfReferenceNavigation: false,
-    dataIdOnlyStrict: true,
+    displaySetIdOnlyStrict: true,
     forOnlyStrict: true,
     fullNavigation: true,
     fullStrict: false,
@@ -139,7 +139,7 @@ async function getReferenceCompatibilityJson(
   page: Page
 ): Promise<ReferenceCompatibilityJson> {
   return page.evaluate(
-    async ({ renderingEngineId, viewportId, stackDataId }) => {
+    async ({ renderingEngineId, viewportId, stackDisplaySetId }) => {
       type BrowserViewport = {
         getCurrentImageIdIndex(): number;
         getMaxImageIdIndex(): number;
@@ -181,29 +181,29 @@ async function getReferenceCompatibilityJson(
       );
       const imageReference: ReferenceJson = {
         FrameOfReferenceUID: fullReference.FrameOfReferenceUID,
-        dataId: fullReference.dataId,
+        displaySetId: fullReference.displaySetId,
         referencedImageId: fullReference.referencedImageId,
         referencedImageURI: fullReference.referencedImageURI,
         sliceIndex: fullReference.sliceIndex,
       };
       const planeReference: ReferenceJson = {
         FrameOfReferenceUID: fullReference.FrameOfReferenceUID,
-        dataId: fullReference.dataId,
+        displaySetId: fullReference.displaySetId,
         planeRestriction: fullReference.planeRestriction
           ? cloneReference(fullReference.planeRestriction)
           : undefined,
         sliceIndex: fullReference.sliceIndex,
       };
-      const dataIdReference: ReferenceJson = {
+      const displaySetIdReference: ReferenceJson = {
         FrameOfReferenceUID: fullReference.FrameOfReferenceUID,
-        dataId: fullReference.dataId,
+        displaySetId: fullReference.displaySetId,
       };
       const frameOfReferenceOnly: ReferenceJson = {
         FrameOfReferenceUID: fullReference.FrameOfReferenceUID,
       };
-      const badDataIdReference: ReferenceJson = {
+      const badDisplaySetIdReference: ReferenceJson = {
         ...fullReference,
-        dataId: `${stackDataId}:missing`,
+        displaySetId: `${stackDisplaySetId}:missing`,
       };
       const badFrameOfReference: ReferenceJson = {
         ...fullReference,
@@ -217,14 +217,14 @@ async function getReferenceCompatibilityJson(
       };
       const viewportSliceIndexBeforeApply = viewport.getCurrentImageIdIndex();
       const checks = {
-        badDataIdNavigation: viewport.isReferenceViewable(badDataIdReference, {
+        badDisplaySetIdNavigation: viewport.isReferenceViewable(badDisplaySetIdReference, {
           withNavigation: true,
         }),
         badFrameOfReferenceNavigation: viewport.isReferenceViewable(
           badFrameOfReference,
           { withNavigation: true, withOrientation: true }
         ),
-        dataIdOnlyStrict: viewport.isReferenceViewable(dataIdReference),
+        displaySetIdOnlyStrict: viewport.isReferenceViewable(displaySetIdReference),
         forOnlyStrict: viewport.isReferenceViewable(frameOfReferenceOnly),
         fullNavigation: viewport.isReferenceViewable(fullReference, {
           withNavigation: true,
@@ -318,7 +318,7 @@ async function getReferenceCompatibilityJson(
     {
       renderingEngineId: RENDERING_ENGINE_ID,
       viewportId: VIEWPORT_ID,
-      stackDataId: STACK_DATA_ID,
+      stackDisplaySetId: STACK_DATA_ID,
     }
   );
 }

@@ -4,7 +4,7 @@ import {
   Enums,
   imageLoader,
   cache,
-  utilities,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -279,13 +279,11 @@ async function run() {
   viewport1 = renderingEngine.getViewport<PlanarViewport>(viewportId1);
   viewport2 = renderingEngine.getViewport<PlanarViewport>(viewportId2);
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId1, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId1, {
     imageIds: imageIds1,
     initialImageIdIndex: 80,
   });
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId2, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId2, {
     imageIds: imageIds2,
     initialImageIdIndex: 80,
   });

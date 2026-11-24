@@ -1,0 +1,28 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "73",
+        "rule": "dataId: if this is a view reference, a render plan layer, an event detail, an actor entry, a stack input or a projection request of Cornerstone, the key is displaySetId"
+      },
+      "count": 2
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "75",
+        "rule": "getActiveDataId: never public: on a planar or an ECG viewport getSourceDisplaySetId() gives the same id, and the slide that a whole slide viewport shows has no public getter"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "75",
+        "rule": "getSourceDataId"
+      },
+      "count": 1
+    }
+  ]
+}

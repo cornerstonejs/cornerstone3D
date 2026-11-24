@@ -44,7 +44,7 @@ import { deepClone } from '../../../utilities/deepClone';
 import imageIdToURI from '../../../utilities/imageIdToURI';
 import { getImageDataMetadata } from '../../../utilities/getImageDataMetadata';
 import { getNormalizedAspectRatio } from '../../../utilities/getNormalizedAspectRatio';
-import genericViewportDisplaySetMetadataProvider from '../../../utilities/genericViewportDisplaySetMetadataProvider';
+import displaySetRegistry from '../displaySetRegistry';
 import triggerEvent from '../../../utilities/triggerEvent';
 import eventTarget from '../../../eventTarget';
 import getMinMax from '../../../utilities/getMinMax';
@@ -154,7 +154,7 @@ import type {
   PlanarEffectiveRenderMode,
   PlanarOrientation,
   PlanarPayload,
-  PlanarRegisteredDataSet,
+  PlanarDisplaySetDescriptor,
   PlanarSetDataOptions,
   PlanarViewportRenderContext,
   PlanarViewportInput,
@@ -169,7 +169,7 @@ type ResolvedPlanarViewportView = NonNullable<
 >;
 
 type ResolvedViewCache = {
-  activeDataId?: string;
+  sourceDisplaySetId?: string;
   canvasHeight: number;
   canvasWidth: number;
   data?: LoadedData<PlanarPayload>;
@@ -321,7 +321,7 @@ function getSlabPresentation(
  * options ask for.
  */
 type PlanarDataLoad = {
-  dataSet: PlanarRegisteredDataSet;
+  dataSet: PlanarDisplaySetDescriptor;
   data: LoadedData<PlanarPayload>;
   selectedPath: SelectedPlanarRenderPath;
   resolvedOrientation: PlanarViewState['orientation'];
@@ -430,7 +430,7 @@ class PlanarViewport extends BaseViewport<
   private readonly mountedData: PlanarMountedData;
   private readonly viewReferences: PlanarViewReferenceController;
   private cpuCanvas?: HTMLCanvasElement;
-  private renderImageObjectDataId?: string;
+  private renderImageObjectDisplaySetId?: string;
   private resolvedViewCache?: ResolvedViewCache;
   private resolvedViewCacheRevision = 0;
   // Canvas CSS dimensions, cached to avoid a forced layout reflow on every
@@ -456,11 +456,14 @@ class PlanarViewport extends BaseViewport<
   // Last reported render-path error message per display set; a successful
   // render clears the entry so a genuine repeat failure after recovery is
   // reported again.
-  private readonly lastRenderPathErrorByDataId = new Map<string, string>();
+  private readonly lastRenderPathErrorByDisplaySetId = new Map<
+    string,
+    string
+  >();
   // Original mount options per display set, kept so a live render-backend
   // switch (updateRenderingPipeline) can re-run the render-path decision with
   // the same per-mount semantics (orientation, thresholds, backend pins).
-  private readonly mountOptionsByDataId = new Map<
+  private readonly mountOptionsByDisplaySetId = new Map<
     string,
     PlanarSetDataOptions
   >();
@@ -473,12 +476,15 @@ class PlanarViewport extends BaseViewport<
     PlanarSlabPresentation
   >();
   /** The reason of the decision behind the mounted render mode of each display set. */
-  private readonly renderPlanReasonByDataId = new Map<
+  private readonly renderPlanReasonByDisplaySetId = new Map<
     string,
     RenderPlanReason
   >();
   /** The render plan entry of each display set that the last event gave. */
-  private readonly renderPlanByDataId = new Map<string, RenderPlanLayer>();
+  private readonly renderPlanByDisplaySetId = new Map<
+    string,
+    RenderPlanLayer
+  >();
   /** The passes of `applyRenderingPipelineUpdate` that hold the renders. */
   private remountRenderHolds = 0;
   /** Set when a render was asked for while a remount held the renders. */
@@ -510,28 +516,28 @@ class PlanarViewport extends BaseViewport<
     this.renderPathResolver =
       args.renderPathResolver || createPlanarRenderPathResolver();
     this.mountedData = new PlanarMountedData({
-      getBinding: (dataId) => this.getBinding(dataId),
+      getBinding: (displaySetId) => this.getBinding(displaySetId),
       getFirstBinding: () => this.getFirstBinding(),
       getBindings: () => this.bindings.entries(),
-      removeData: (dataId) => this.removeData(dataId),
+      removeDisplaySet: (displaySetId) => this.removeDisplaySet(displaySetId),
     });
     this.viewReferences = new PlanarViewReferenceController({
       viewportId: this.id,
       viewportType: this.type,
-      getActiveDataId: () => this.mountedData.getActiveDataId(),
-      getBinding: (dataId) => this.getBinding(dataId),
+      getSourceDisplaySetId: () => this.mountedData.getSourceDisplaySetId(),
+      getBinding: (displaySetId) => this.getBinding(displaySetId),
       getBindings: () => this.bindings.entries(),
       getCurrentBinding: () => this.getCurrentBinding(),
-      getDisplaySetPresentation: (dataId) =>
-        this.getDisplaySetPresentation(dataId),
+      getDisplaySetPresentation: (displaySetId) =>
+        this.getDisplaySetPresentation(displaySetId),
       getRenderContext: () => this.renderContext,
       getResolvedView: (viewArgs) => this.getResolvedView(viewArgs),
       getViewState: () => this.viewState,
       getVolumeSliceWorldPointForImageIdIndex: (imageIdIndex) =>
         this.getVolumeSliceWorldPointForImageIdIndex(imageIdIndex),
-      promoteSourceDataId: (dataId) => {
+      promoteSourceDisplaySetId: (displaySetId) => {
         this.clearResolvedViewCache();
-        this.mountedData.promoteSourceDataId(dataId);
+        this.mountedData.promoteSourceDisplaySetId(displaySetId);
       },
       render: () => this.render(),
       setImageIdIndex: (imageIdIndex) => this.setImageIdIndex(imageIdIndex),
@@ -597,17 +603,19 @@ class PlanarViewport extends BaseViewport<
       type: 'planar',
       viewport: {
         element: this.element,
-        getActiveDataId: () => this.mountedData.getActiveDataId(),
+        getSourceDisplaySetId: () => this.mountedData.getSourceDisplaySetId(),
         invalidateResolvedView: () => this.clearResolvedViewCache(),
-        notifyDefaultVOIRangeOfNewImage: (dataId, previousRange) =>
-          this.notifyDefaultVOIRangeOfNewImage(dataId, previousRange),
+        notifyDefaultVOIRangeOfNewImage: (displaySetId, previousRange) =>
+          this.notifyDefaultVOIRangeOfNewImage(displaySetId, previousRange),
         getViewState: () => this.getViewState(),
-        isCurrentDataId: (dataId) =>
-          this.getCurrentBinding()?.data.id === dataId,
+        isCurrentDisplaySetId: (displaySetId) =>
+          this.getCurrentBinding()?.data.id === displaySetId,
         getOverlayActors: () =>
           this.mountedData.getProjectedActorEntries('overlay'),
-        canDrawAcquiredFrames: (dataId) => this.canDrawAcquiredFrames(dataId),
-        refreshRenderPlan: (dataId) => this.updateRenderPlan(dataId),
+        canDrawAcquiredFrames: (displaySetId) =>
+          this.canDrawAcquiredFrames(displaySetId),
+        refreshRenderPlan: (displaySetId) =>
+          this.updateRenderPlan(displaySetId),
       },
       renderPath: {
         renderMode: ActorRenderMode.VTK_IMAGE,
@@ -797,10 +805,10 @@ class PlanarViewport extends BaseViewport<
    * actor entries of the volumes among them, or VIEWPORT_NEW_IMAGE_SET with
    * the image ids of the stack and its first index.
    */
-  private triggerNewDataEvent(dataIds: string[]): void {
-    const sourceDataId = this.getSourceDataId();
+  private triggerNewDataEvent(displaySetIds: string[]): void {
+    const sourceDisplaySetId = this.getSourceDisplaySetId();
 
-    if (!sourceDataId || !dataIds.includes(sourceDataId)) {
+    if (!sourceDisplaySetId || !displaySetIds.includes(sourceDisplaySetId)) {
       return;
     }
 
@@ -808,9 +816,9 @@ class PlanarViewport extends BaseViewport<
 
     if (mode === 'volume') {
       this.triggerNewVolumeEvent(
-        dataIds.flatMap((dataId) => {
-          const binding = this.getBinding(dataId);
-          const actorEntry = this.getDataSet(dataId)?.volumeId
+        displaySetIds.flatMap((displaySetId) => {
+          const binding = this.getBinding(displaySetId);
+          const actorEntry = this.getDataSet(displaySetId)?.volumeId
             ? binding?.getActorEntry?.(binding.data)
             : undefined;
 
@@ -820,7 +828,7 @@ class PlanarViewport extends BaseViewport<
     } else if (mode === 'stack') {
       this.triggerNewImageSetEvent(
         this.getImageIds(),
-        this.getDataSet(sourceDataId)?.initialImageIdIndex ?? 0
+        this.getDataSet(sourceDisplaySetId)?.initialImageIdIndex ?? 0
       );
     }
   }
@@ -876,7 +884,7 @@ class PlanarViewport extends BaseViewport<
    * the later stages, so no stage comes between the two.
    */
   private async addDisplaySetInternal(
-    dataId: string,
+    displaySetId: string,
     options: PlanarSetDataOptions = {},
     loaded?: PlanarDataLoad
   ): Promise<void> {
@@ -886,7 +894,7 @@ class PlanarViewport extends BaseViewport<
       role,
     };
     const planarLoad = await this.loadPlanarData(
-      dataId,
+      displaySetId,
       resolvedOptions,
       loaded
     );
@@ -895,11 +903,11 @@ class PlanarViewport extends BaseViewport<
       : planarLoad;
 
     if (role === 'source') {
-      this.mountedData.promoteSourceDataId(dataId);
+      this.mountedData.promoteSourceDisplaySetId(displaySetId);
       this.applyLoadedPlanarViewState(resolvedOrientation, data, selectedPath);
     }
 
-    const added = await this.addLoadedData(dataId, data, {
+    const added = await this.addLoadedData(displaySetId, data, {
       renderMode: selectedPath.renderMode,
       role,
     });
@@ -908,10 +916,10 @@ class PlanarViewport extends BaseViewport<
       return;
     }
 
-    this.updateRenderPlan(dataId, selectedPath.reason);
-    this.mountOptionsByDataId.set(dataId, resolvedOptions);
+    this.updateRenderPlan(displaySetId, selectedPath.reason);
+    this.mountOptionsByDisplaySetId.set(displaySetId, resolvedOptions);
     this.clearResolvedViewCache();
-    this.setDefaultDataPresentation(dataId, {
+    this.setDefaultDataPresentation(displaySetId, {
       visible: true,
     });
 
@@ -920,15 +928,15 @@ class PlanarViewport extends BaseViewport<
     // never surfaced its default VOI. Legacy Stack/Volume viewports emit
     // VOI_MODIFIED at load; mirror that here so OHIF's window-level readout,
     // the colorbar, and VOI synchronizers update when the display set changes.
-    // Runs per binding (source and each overlay) with that binding's own dataId,
+    // Runs per binding (source and each overlay) with that binding's own displaySetId,
     // and `notifyDataPresentationModified` resolves the matching volumeId/event
     // internally. Mirrors the `resetDisplaySetPresentation` precedent below.
-    const mountedPresentation = this.getDisplaySetPresentation(dataId);
+    const mountedPresentation = this.getDisplaySetPresentation(displaySetId);
     const voiRange =
-      mountedPresentation?.voiRange ?? this.getDefaultVOIRange(dataId);
+      mountedPresentation?.voiRange ?? this.getDefaultVOIRange(displaySetId);
 
     if (voiRange) {
-      this.notifyDataPresentationModified(dataId, { voiRange });
+      this.notifyDataPresentationModified(displaySetId, { voiRange });
     }
 
     if (role === 'source') {
@@ -954,8 +962,8 @@ class PlanarViewport extends BaseViewport<
     const source = this.getCurrentBinding();
     const plan: RenderPlanLayer[] = [];
 
-    for (const [dataId, binding] of this.bindings) {
-      const layer = this.getRenderPlanLayer(dataId);
+    for (const [displaySetId, binding] of this.bindings) {
+      const layer = this.getRenderPlanLayer(displaySetId);
 
       if (!layer) {
         continue;
@@ -972,9 +980,11 @@ class PlanarViewport extends BaseViewport<
   }
 
   /** The render plan entry of one mounted display set. */
-  private getRenderPlanLayer(dataId: string): RenderPlanLayer | undefined {
-    const binding = this.bindings.get(dataId);
-    const reason = this.renderPlanReasonByDataId.get(dataId);
+  private getRenderPlanLayer(
+    displaySetId: string
+  ): RenderPlanLayer | undefined {
+    const binding = this.bindings.get(displaySetId);
+    const reason = this.renderPlanReasonByDisplaySetId.get(displaySetId);
 
     if (!binding || !reason) {
       return;
@@ -988,7 +998,7 @@ class PlanarViewport extends BaseViewport<
     };
 
     return createRenderPlanLayer(
-      dataId,
+      displaySetId,
       binding.role,
       rendering.renderMode,
       rendering.slabTooLarge ? 'slabTooLarge' : reason
@@ -1001,24 +1011,27 @@ class PlanarViewport extends BaseViewport<
    * element and on the event target when its entry differs from the entry of
    * the last event.
    */
-  private updateRenderPlan(dataId: string, reason?: RenderPlanReason): void {
+  private updateRenderPlan(
+    displaySetId: string,
+    reason?: RenderPlanReason
+  ): void {
     if (reason) {
-      this.renderPlanReasonByDataId.set(dataId, reason);
+      this.renderPlanReasonByDisplaySetId.set(displaySetId, reason);
     }
 
-    const previous = this.renderPlanByDataId.get(dataId);
-    const current = this.getRenderPlanLayer(dataId);
+    const previous = this.renderPlanByDisplaySetId.get(displaySetId);
+    const current = this.getRenderPlanLayer(displaySetId);
 
     if (!current || isSameRenderPlanLayer(previous, current)) {
       return;
     }
 
-    this.renderPlanByDataId.set(dataId, current);
+    this.renderPlanByDisplaySetId.set(displaySetId, current);
 
     const detail: RenderPlanChangedEventDetail = {
       renderingEngineId: this.renderingEngineId,
       viewportId: this.id,
-      dataId,
+      displaySetId,
       previous,
       current,
       reason: current.reason,
@@ -1032,14 +1045,14 @@ class PlanarViewport extends BaseViewport<
    * Removes a dataset binding and clears the active data id when the
    * removed dataset was active.
    */
-  removeData(dataId: string): void {
+  removeDisplaySet(displaySetId: string): void {
     this.clearResolvedViewCache();
-    this.mountOptionsByDataId.delete(dataId);
-    this.lastRenderPathErrorByDataId.delete(dataId);
-    this.renderPlanReasonByDataId.delete(dataId);
-    this.renderPlanByDataId.delete(dataId);
-    super.removeData(dataId);
-    this.mountedData.handleRemovedData(dataId);
+    this.mountOptionsByDisplaySetId.delete(displaySetId);
+    this.lastRenderPathErrorByDisplaySetId.delete(displaySetId);
+    this.renderPlanReasonByDisplaySetId.delete(displaySetId);
+    this.renderPlanByDisplaySetId.delete(displaySetId);
+    super.removeDisplaySet(displaySetId);
+    this.mountedData.handleRemovedData(displaySetId);
 
     if (!this.isDestroyed && this.getCurrentBinding()) {
       this.updateBindingsCameraState();
@@ -1091,13 +1104,13 @@ class PlanarViewport extends BaseViewport<
     if (volumeId) {
       // Match by actor referencedId first (e.g. the prefixed volume id
       // "cornerstoneStreamingImageVolume:<uid>"). VOI/colorbar tooling, however,
-      // identifies a layer by its display-set id (the presentation dataId, a bare
-      // uid), which is not the referencedId. Fall back to resolving that dataId
+      // identifies a layer by its display-set id (the presentation displaySetId, a bare
+      // uid), which is not the referencedId. Fall back to resolving that displaySetId
       // through the binding so a fused viewport's per-layer colorbar reads the
       // correct actor (e.g. the PT layer) instead of defaulting to the source.
       actorEntry =
         actorEntries.find((a) => a.referencedId === volumeId) ??
-        this.mountedData.getActorForDataId(volumeId);
+        this.mountedData.getActorForDisplaySetId(volumeId);
     }
 
     if (!actorEntry || !isImageActor(actorEntry)) {
@@ -1141,27 +1154,24 @@ class PlanarViewport extends BaseViewport<
    * Renders a single image object by setting it as a one-image stack.
    */
   renderImageObject(image: IImage): Promise<void> {
-    const dataId = `image-object:${this.id}:${imageIdToURI(image.imageId)}`;
+    const displaySetId = `image-object:${this.id}:${imageIdToURI(image.imageId)}`;
 
     if (
-      this.renderImageObjectDataId &&
-      this.renderImageObjectDataId !== dataId
+      this.renderImageObjectDisplaySetId &&
+      this.renderImageObjectDisplaySetId !== displaySetId
     ) {
-      genericViewportDisplaySetMetadataProvider.remove(
-        this.renderImageObjectDataId
-      );
+      displaySetRegistry.remove(this.renderImageObjectDisplaySetId);
     }
 
-    this.renderImageObjectDataId = dataId;
-    genericViewportDisplaySetMetadataProvider.add(dataId, {
+    this.renderImageObjectDisplaySetId = displaySetId;
+    displaySetRegistry.add(displaySetId, {
       image,
       imageIds: [image.imageId],
       initialImageIdIndex: 0,
-      kind: 'planar',
     });
 
     return this.setDisplaySets({
-      displaySetId: dataId,
+      displaySetId,
       options: {
         orientation: this.resolveRequestedOrientation(),
       },
@@ -1284,23 +1294,26 @@ class PlanarViewport extends BaseViewport<
       }
 
       const reference = this.resolveOverlayReference(stackInput, image);
-      const dataId = this.resolveOverlayDataId(stackInput, image, reference);
-      genericViewportDisplaySetMetadataProvider.add(dataId, {
+      const displaySetId = this.resolveOverlayDisplaySetId(
+        stackInput,
+        image,
+        reference
+      );
+      displaySetRegistry.add(displaySetId, {
         image,
         imageData: stackInput.imageData,
         imageIds: [stackInput.imageId],
         initialImageIdIndex: 0,
-        kind: 'planar',
         reference,
         useWorldCoordinateImageData:
           stackInput.useWorldCoordinateImageData === true,
       });
 
-      await this.addDisplaySet(dataId, {
+      await this.addDisplaySet(displaySetId, {
         role: 'overlay',
       });
 
-      const actorEntry = this.mountedData.getActorForDataId(dataId);
+      const actorEntry = this.mountedData.getActorForDisplaySetId(displaySetId);
 
       if (stackInput.callback && actorEntry) {
         stackInput.callback({
@@ -1353,8 +1366,8 @@ class PlanarViewport extends BaseViewport<
     return this.viewReferences.getVolumeId(viewRefSpecifier);
   }
 
-  getSourceDataId(): string | undefined {
-    return this.mountedData.getActiveDataId();
+  getSourceDisplaySetId(): string | undefined {
+    return this.mountedData.getSourceDisplaySetId();
   }
 
   /**
@@ -1582,7 +1595,7 @@ class PlanarViewport extends BaseViewport<
     if (!binding) {
       return (
         this.getDataSet(displaySetId)?.volumeId ??
-        (displaySetId === this.getSourceDataId()
+        (displaySetId === this.getSourceDisplaySetId()
           ? this.getVolumeId()
           : undefined)
       );
@@ -1613,8 +1626,8 @@ class PlanarViewport extends BaseViewport<
     return super.mergeDataPresentation(displaySetId, props);
   }
 
-  getDefaultVOIRange(dataId?: string): VOIRange | undefined {
-    return this.mountedData.getDefaultVOIRange(dataId);
+  getDefaultVOIRange(displaySetId?: string): VOIRange | undefined {
+    return this.mountedData.getDefaultVOIRange(displaySetId);
   }
 
   /**
@@ -1622,10 +1635,10 @@ class PlanarViewport extends BaseViewport<
    * presentation does not set `invert`: true for a MONOCHROME1 image. It is
    * undefined for data that has no such default, as a volume.
    *
-   * @param dataId - Optional display set id; defaults to the active source.
+   * @param displaySetId - Optional display set id; defaults to the active source.
    */
-  getDefaultInvert(dataId?: string): boolean | undefined {
-    return this.mountedData.getDefaultInvert(dataId);
+  getDefaultInvert(displaySetId?: string): boolean | undefined {
+    return this.mountedData.getDefaultInvert(displaySetId);
   }
 
   /**
@@ -1809,13 +1822,13 @@ class PlanarViewport extends BaseViewport<
    * renders of the remount (`applyRenderingPipelineUpdate`).
    */
   protected override setDataPresentationState(
-    dataId: string,
+    displaySetId: string,
     props: PlanarDataPresentation
   ): void {
-    const previousProps = this.getDataPresentationState(dataId);
-    const binding = this.bindings.get(dataId);
+    const previousProps = this.getDataPresentationState(displaySetId);
+    const binding = this.bindings.get(displaySetId);
     const decision = this.getRenderModeForPresentation(
-      dataId,
+      displaySetId,
       previousProps,
       props
     );
@@ -1841,14 +1854,14 @@ class PlanarViewport extends BaseViewport<
         this.withheldSlabByBinding.delete(binding);
       }
 
-      super.setDataPresentationState(dataId, props);
+      super.setDataPresentationState(displaySetId, props);
     } else {
       const mountedSlab =
         this.withheldSlabByBinding.get(binding) ??
         getSlabPresentation(previousProps);
 
       this.withheldSlabByBinding.set(binding, mountedSlab);
-      this.dataPresentation.set(dataId, props);
+      this.dataPresentation.set(displaySetId, props);
       binding.updateDataPresentation({ ...props, ...mountedSlab });
       this.render();
     }
@@ -1857,7 +1870,7 @@ class PlanarViewport extends BaseViewport<
       this.startRenderingPipelineUpdate();
       this.releaseRemountRenderHold();
     } else if (decision && binding) {
-      this.updateRenderPlan(dataId, decision.reason);
+      this.updateRenderPlan(displaySetId, decision.reason);
     }
   }
 
@@ -1873,7 +1886,7 @@ class PlanarViewport extends BaseViewport<
    * the reason in the render plan.
    */
   private getRenderModeForPresentation(
-    dataId: string,
+    displaySetId: string,
     previousProps: PlanarDataPresentation | undefined,
     props: PlanarDataPresentation | undefined
   ): PlanarRenderModeDecision | undefined {
@@ -1884,8 +1897,8 @@ class PlanarViewport extends BaseViewport<
       return;
     }
 
-    const binding = this.bindings.get(dataId);
-    const dataSet = this.getDataSet(dataId);
+    const binding = this.bindings.get(displaySetId);
+    const dataSet = this.getDataSet(displaySetId);
 
     if (
       this.isDestroyed ||
@@ -1897,7 +1910,7 @@ class PlanarViewport extends BaseViewport<
     }
 
     const options = {
-      ...(this.mountOptionsByDataId.get(dataId) ?? {}),
+      ...(this.mountOptionsByDisplaySetId.get(displaySetId) ?? {}),
       role: binding.role,
     };
 
@@ -1905,7 +1918,7 @@ class PlanarViewport extends BaseViewport<
       const { renderMode, reason } = selectPlanarRenderPath(
         dataSet,
         this.getRenderPathDecisionOptions(
-          dataId,
+          displaySetId,
           options,
           this.resolveRequestedOrientation(
             options.orientation,
@@ -2202,8 +2215,8 @@ class PlanarViewport extends BaseViewport<
    */
   getImageData(volumeId?: string): IImageData | CPUIImageData | undefined {
     if (volumeId) {
-      const dataId = this.findDataIdByVolumeId(volumeId);
-      const binding = dataId ? this.getBinding(dataId) : undefined;
+      const displaySetId = this.findDataIdByVolumeId(volumeId);
+      const binding = displaySetId ? this.getBinding(displaySetId) : undefined;
       return binding?.getImageData?.();
     }
     return this.getCurrentBinding()?.getImageData?.();
@@ -2281,11 +2294,11 @@ class PlanarViewport extends BaseViewport<
    * @returns `true` when a source or overlay binding shows the volume id.
    */
   hasVolumeId(volumeId: string): boolean {
-    const dataId = this.findDataIdByVolumeId(volumeId);
+    const displaySetId = this.findDataIdByVolumeId(volumeId);
 
     return (
-      dataId !== undefined &&
-      !isImageRenderMode(this.getBinding(dataId)?.rendering.renderMode)
+      displaySetId !== undefined &&
+      !isImageRenderMode(this.getBinding(displaySetId)?.rendering.renderMode)
     );
   }
 
@@ -2555,20 +2568,20 @@ class PlanarViewport extends BaseViewport<
    * mount with that orientation would render.
    *
    * @param orientation - The orientation to test.
-   * @param dataId - Optional display set id; defaults to the active source.
+   * @param displaySetId - Optional display set id; defaults to the active source.
    * @returns `true` when the orientation can be rendered for the data.
    */
   canRenderOrientation(
     orientation: PlanarOrientation,
-    dataId?: string
+    displaySetId?: string
   ): boolean {
-    const targetDataId = dataId ?? this.getSourceDataId();
+    const targetDisplaySetId = displaySetId ?? this.getSourceDisplaySetId();
 
-    if (!targetDataId) {
+    if (!targetDisplaySetId) {
       return false;
     }
 
-    const dataSet = this.getDataSet(targetDataId);
+    const dataSet = this.getDataSet(targetDisplaySetId);
 
     if (!dataSet) {
       return false;
@@ -2576,7 +2589,7 @@ class PlanarViewport extends BaseViewport<
 
     try {
       return this.canShowOrientation(
-        targetDataId,
+        targetDisplaySetId,
         this.resolveOrientation(
           orientation,
           dataSet.imageIds,
@@ -2648,7 +2661,7 @@ class PlanarViewport extends BaseViewport<
   /**
    * Clears the stored presentation of one display set to `{}`. This is the
    * contract: every key goes, the `visible: true` that the mount stored too,
-   * so `getDisplaySetPresentation(dataId)` then gives `{}` and a hidden
+   * so `getDisplaySetPresentation(displaySetId)` then gives `{}` and a hidden
    * display set shows again. The render path then draws its defaults (the
    * default VOI, no colormap, no inversion, no slab, the default blend mode
    * and opacity) and `VOI_MODIFIED` reports the default VOI range, unless
@@ -2656,30 +2669,33 @@ class PlanarViewport extends BaseViewport<
    * `resetViewState` resets it. "Reset View" calls both, so that it also
    * resets a window level that the user changed.
    *
-   * @param dataId - Optional display set id; defaults to the active source.
+   * @param displaySetId - Optional display set id; defaults to the active source.
    */
-  resetDisplaySetPresentation(dataId?: string): void {
+  resetDisplaySetPresentation(displaySetId?: string): void {
     if (this.isDestroyed) {
       return;
     }
 
-    const targetDataId = dataId ?? this.getSourceDataId();
+    const targetDisplaySetId = displaySetId ?? this.getSourceDisplaySetId();
 
-    if (!targetDataId) {
+    if (!targetDisplaySetId) {
       return;
     }
 
     // Drop the stored override so the render path's `updateDataPresentation`
     // reapplies its defaults.
-    this.setDataPresentationState(targetDataId, {} as PlanarDataPresentation);
+    this.setDataPresentationState(
+      targetDisplaySetId,
+      {} as PlanarDataPresentation
+    );
 
     // `setDataPresentationState` does not emit (only the public merge path
     // notifies), so surface the now-default VOI to OHIF's window-level readout,
     // colorbar, sliders, and VOI synchronizers.
-    const defaultVOIRange = this.getDefaultVOIRange(targetDataId);
+    const defaultVOIRange = this.getDefaultVOIRange(targetDisplaySetId);
 
     if (defaultVOIRange) {
-      this.notifyDataPresentationModified(targetDataId, {
+      this.notifyDataPresentationModified(targetDisplaySetId, {
         voiRange: defaultVOIRange,
       });
     }
@@ -2972,17 +2988,15 @@ class PlanarViewport extends BaseViewport<
 
   protected override onDestroy(): void {
     this.clearResolvedViewCache();
-    if (this.renderImageObjectDataId) {
-      genericViewportDisplaySetMetadataProvider.remove(
-        this.renderImageObjectDataId
-      );
-      this.renderImageObjectDataId = undefined;
+    if (this.renderImageObjectDisplaySetId) {
+      displaySetRegistry.remove(this.renderImageObjectDisplaySetId);
+      this.renderImageObjectDisplaySetId = undefined;
     }
 
     this.cpuCanvas?.remove();
     this.cpuCanvas = undefined;
     this.renderContext.vtk.canvas.classList.add(CANVAS_CSS_CLASS);
-    this.mountedData.clearActiveDataId();
+    this.mountedData.clearSourceDisplaySetId();
     this.renderContext.view.activeSourceICamera = undefined;
   }
 
@@ -3008,7 +3022,7 @@ class PlanarViewport extends BaseViewport<
     const sourceBinding = this.getCurrentBinding();
     const renderBinding = (
       binding: ViewportDataBinding<PlanarDataPresentation>,
-      dataId: string
+      displaySetId: string
     ) => {
       if (!binding.render) {
         return;
@@ -3018,21 +3032,21 @@ class PlanarViewport extends BaseViewport<
 
       try {
         binding.render();
-        this.lastRenderPathErrorByDataId.delete(dataId);
+        this.lastRenderPathErrorByDisplaySetId.delete(displaySetId);
       } catch (error) {
-        this.reportRenderPathError(error, dataId);
+        this.reportRenderPathError(error, displaySetId);
       }
     };
 
-    for (const [dataId, binding] of this.bindings.entries()) {
+    for (const [displaySetId, binding] of this.bindings.entries()) {
       if (binding === sourceBinding) {
-        renderBinding(binding, dataId);
+        renderBinding(binding, displaySetId);
       }
     }
 
-    for (const [dataId, binding] of this.bindings.entries()) {
+    for (const [displaySetId, binding] of this.bindings.entries()) {
       if (binding !== sourceBinding) {
-        renderBinding(binding, dataId);
+        renderBinding(binding, displaySetId);
       }
     }
 
@@ -3136,7 +3150,7 @@ class PlanarViewport extends BaseViewport<
     // renderBackend inherit the source's mounted backend, so the source must
     // resolve to the new backend before the overlays re-run their decisions
     // (the source is not guaranteed to be first in insertion order after a
-    // promoteSourceDataId).
+    // promoteSourceDisplaySetId).
     const sourceBinding = this.getCurrentBinding();
     const bindingEntries = Array.from(this.bindings.entries());
     const orderedEntries = [
@@ -3144,7 +3158,7 @@ class PlanarViewport extends BaseViewport<
       ...bindingEntries.filter(([, binding]) => binding !== sourceBinding),
     ];
     const mounts: Array<{
-      dataId: string;
+      displaySetId: string;
       binding: ViewportDataBinding<PlanarDataPresentation>;
       data: LoadedData<PlanarPayload>;
       renderMode: PlanarEffectiveRenderMode;
@@ -3152,21 +3166,21 @@ class PlanarViewport extends BaseViewport<
     }> = [];
     let sourceRenderBackend: EffectiveRenderBackend | undefined;
 
-    for (const [dataId, binding] of orderedEntries) {
+    for (const [displaySetId, binding] of orderedEntries) {
       if (isStale()) {
         return false;
       }
 
       // Skip bindings that were removed or replaced (e.g. by a concurrent
       // setDisplaySets) since this pass started.
-      if (this.bindings.get(dataId) !== binding) {
+      if (this.bindings.get(displaySetId) !== binding) {
         continue;
       }
 
-      const options = this.mountOptionsByDataId.get(dataId) ?? {};
+      const options = this.mountOptionsByDisplaySetId.get(displaySetId) ?? {};
 
       try {
-        const { data, selectedPath } = await this.loadPlanarData(dataId, {
+        const { data, selectedPath } = await this.loadPlanarData(displaySetId, {
           ...options,
           role: binding.role,
           renderBackend:
@@ -3181,56 +3195,56 @@ class PlanarViewport extends BaseViewport<
           );
         }
 
-        if (isStale() || this.bindings.get(dataId) !== binding) {
+        if (isStale() || this.bindings.get(displaySetId) !== binding) {
           continue;
         }
 
         if (selectedPath.renderMode === binding.rendering.renderMode) {
-          this.updateRenderPlan(dataId, selectedPath.reason);
-          this.releaseWithheldSlab(dataId, binding);
+          this.updateRenderPlan(displaySetId, selectedPath.reason);
+          this.releaseWithheldSlab(displaySetId, binding);
           continue;
         }
 
         mounts.push({
-          dataId,
+          displaySetId,
           binding,
           data,
           renderMode: selectedPath.renderMode,
           reason: selectedPath.reason,
         });
       } catch (error) {
-        this.reportRenderPathError(error, dataId);
-        this.releaseWithheldSlabAfterError(dataId, binding);
+        this.reportRenderPathError(error, displaySetId);
+        this.releaseWithheldSlabAfterError(displaySetId, binding);
       }
     }
 
-    for (const { dataId, binding, data, renderMode, reason } of mounts) {
+    for (const { displaySetId, binding, data, renderMode, reason } of mounts) {
       if (isStale()) {
         return false;
       }
 
-      if (this.bindings.get(dataId) !== binding) {
+      if (this.bindings.get(displaySetId) !== binding) {
         continue;
       }
 
       try {
         const propsBefore = this.getViewProps();
         const added = await this.addLoadedData(
-          dataId,
+          displaySetId,
           data,
           { renderMode, role: binding.role },
-          () => isStale() || this.bindings.get(dataId) !== binding
+          () => isStale() || this.bindings.get(displaySetId) !== binding
         );
 
         if (added) {
-          this.keepViewPropPlace(propsBefore, this.bindings.get(dataId));
-          this.updateRenderPlan(dataId, reason);
+          this.keepViewPropPlace(propsBefore, this.bindings.get(displaySetId));
+          this.updateRenderPlan(displaySetId, reason);
         }
 
         changed = changed || added;
       } catch (error) {
-        this.reportRenderPathError(error, dataId);
-        this.releaseWithheldSlabAfterError(dataId, binding);
+        this.reportRenderPathError(error, displaySetId);
+        this.releaseWithheldSlabAfterError(displaySetId, binding);
       }
     }
 
@@ -3262,7 +3276,7 @@ class PlanarViewport extends BaseViewport<
    * (`setDataPresentationState`) and keeps its render mode after all.
    */
   private releaseWithheldSlab(
-    dataId: string,
+    displaySetId: string,
     binding: ViewportDataBinding<PlanarDataPresentation>
   ): void {
     if (!this.withheldSlabByBinding.has(binding)) {
@@ -3271,7 +3285,7 @@ class PlanarViewport extends BaseViewport<
 
     this.withheldSlabByBinding.delete(binding);
 
-    const props = this.getDataPresentationState(dataId);
+    const props = this.getDataPresentationState(displaySetId);
 
     if (props !== undefined) {
       binding.updateDataPresentation(props);
@@ -3285,11 +3299,11 @@ class PlanarViewport extends BaseViewport<
    * no binding keeps a withheld slab.
    */
   private releaseWithheldSlabAfterError(
-    dataId: string,
+    displaySetId: string,
     binding: ViewportDataBinding<PlanarDataPresentation>
   ): void {
-    if (!this.isDestroyed && this.bindings.get(dataId) === binding) {
-      this.releaseWithheldSlab(dataId, binding);
+    if (!this.isDestroyed && this.bindings.get(displaySetId) === binding) {
+      this.releaseWithheldSlab(displaySetId, binding);
     }
   }
 
@@ -3471,13 +3485,13 @@ class PlanarViewport extends BaseViewport<
   }
 
   /**
-   * Whether the volume slice path of `dataId` may draw the acquired frames
+   * Whether the volume slice path of `displaySetId` may draw the acquired frames
    * (`PlanarRenderPathDecisionService.canDrawAcquiredFrames`). The render path
    * reads this at each change of the view or the presentation.
    */
-  private canDrawAcquiredFrames(dataId: string): boolean {
-    const binding = this.bindings.get(dataId);
-    const dataSet = this.getDataSet(dataId);
+  private canDrawAcquiredFrames(displaySetId: string): boolean {
+    const binding = this.bindings.get(displaySetId);
+    const dataSet = this.getDataSet(displaySetId);
 
     if (!binding || !dataSet) {
       return false;
@@ -3486,9 +3500,9 @@ class PlanarViewport extends BaseViewport<
     return defaultPlanarRenderPathDecisionService.canDrawAcquiredFrames(
       dataSet,
       this.getRenderPathDecisionOptions(
-        dataId,
+        displaySetId,
         {
-          ...(this.mountOptionsByDataId.get(dataId) ?? {}),
+          ...(this.mountOptionsByDisplaySetId.get(displaySetId) ?? {}),
           role: binding.role,
         },
         this.viewState.orientation
@@ -3503,10 +3517,10 @@ class PlanarViewport extends BaseViewport<
    * Only the source may draw the acquired frames of a reduced volume.
    */
   private getRenderPathDecisionOptions(
-    dataId: string,
+    displaySetId: string,
     options: PlanarSetDataOptions,
     orientation: PlanarViewState['orientation'],
-    presentation = this.getDataPresentationState(dataId)
+    presentation = this.getDataPresentationState(displaySetId)
   ): PlanarRenderPathDecisionOptions {
     return {
       orientation,
@@ -3532,20 +3546,20 @@ class PlanarViewport extends BaseViewport<
    * record, so a genuine failure after a recovery is reported again.
    * Applications listen for this to offer a backend switch.
    */
-  private reportRenderPathError(error: unknown, dataId?: string): void {
+  private reportRenderPathError(error: unknown, displaySetId?: string): void {
     const message = error instanceof Error ? error.message : String(error);
-    const errorKey = dataId ?? '';
+    const errorKey = displaySetId ?? '';
 
-    if (this.lastRenderPathErrorByDataId.get(errorKey) === message) {
+    if (this.lastRenderPathErrorByDisplaySetId.get(errorKey) === message) {
       return;
     }
 
-    this.lastRenderPathErrorByDataId.set(errorKey, message);
-    log.error('[PlanarViewport] Render path error', dataId ?? '', error);
+    this.lastRenderPathErrorByDisplaySetId.set(errorKey, message);
+    log.error('[PlanarViewport] Render path error', displaySetId ?? '', error);
     triggerEvent(eventTarget, Events.RENDER_PATH_ERROR, {
       renderingEngineId: this.renderingEngineId,
       viewportId: this.id,
-      dataId,
+      displaySetId,
       error,
     });
   }
@@ -3699,17 +3713,18 @@ class PlanarViewport extends BaseViewport<
   ): void {
     const nextSourceId = this.resolveNextSourceId(entries);
     const preserveSegmentationOverlays =
-      nextSourceId !== undefined && nextSourceId === this.getSourceDataId();
+      nextSourceId !== undefined &&
+      nextSourceId === this.getSourceDisplaySetId();
 
-    for (const dataId of Array.from(this.bindings.keys())) {
+    for (const displaySetId of Array.from(this.bindings.keys())) {
       if (
         preserveSegmentationOverlays &&
-        this.isSegmentationOverlayBinding(dataId)
+        this.isSegmentationOverlayBinding(displaySetId)
       ) {
         continue;
       }
 
-      this.removeData(dataId);
+      this.removeDisplaySet(displaySetId);
     }
   }
 
@@ -3732,18 +3747,20 @@ class PlanarViewport extends BaseViewport<
    * overlay (an overlay-role binding whose registered data references a
    * segmentation).
    */
-  private isSegmentationOverlayBinding(dataId: string): boolean {
-    if (this.getDisplaySetRole(dataId) !== 'overlay') {
+  private isSegmentationOverlayBinding(displaySetId: string): boolean {
+    if (this.getDisplaySetRole(displaySetId) !== 'overlay') {
       return false;
     }
 
-    return this.getDataSet(dataId)?.reference?.kind === 'segmentation';
+    return this.getDataSet(displaySetId)?.reference?.kind === 'segmentation';
   }
 
-  private getDataSet(dataId: string): PlanarRegisteredDataSet | undefined {
-    const dataSet = getImageDisplaySet(dataId);
+  private getDataSet(
+    displaySetId: string
+  ): PlanarDisplaySetDescriptor | undefined {
+    const dataSet = getImageDisplaySet(displaySetId);
 
-    if (!isPlanarRegisteredDataSet(dataSet)) {
+    if (!isPlanarDisplaySetDescriptor(dataSet)) {
       return;
     }
 
@@ -3771,15 +3788,15 @@ class PlanarViewport extends BaseViewport<
    * not count.
    */
   private async loadPlanarData(
-    dataId: string,
+    displaySetId: string,
     options: PlanarSetDataOptions,
     loaded?: PlanarDataLoad
   ): Promise<PlanarDataLoad> {
-    const dataSet = loaded?.dataSet ?? this.getDataSet(dataId);
+    const dataSet = loaded?.dataSet ?? this.getDataSet(displaySetId);
 
     if (!dataSet) {
       throw new Error(
-        `[PlanarViewport] No registered planar dataset metadata for ${dataId}`
+        `[PlanarViewport] No registered planar dataset metadata for ${displaySetId}`
       );
     }
 
@@ -3788,7 +3805,7 @@ class PlanarViewport extends BaseViewport<
       dataSet.imageIds
     );
     const decisionOptions = this.getRenderPathDecisionOptions(
-      dataId,
+      displaySetId,
       options,
       resolvedOrientation
     );
@@ -3808,7 +3825,7 @@ class PlanarViewport extends BaseViewport<
     const selectedPath = selectPlanarRenderPath(dataSet, decisionOptions);
     const data = loaded
       ? { ...loaded.data, renderMode: selectedPath.renderMode }
-      : await (this.dataProvider as PlanarDataProvider).load(dataId, {
+      : await (this.dataProvider as PlanarDataProvider).load(displaySetId, {
           acquisitionOrientation: selectedPath.acquisitionOrientation,
           orientation: resolvedOrientation,
           renderMode: selectedPath.renderMode,
@@ -4011,7 +4028,7 @@ class PlanarViewport extends BaseViewport<
   private resolveNextOrientation(
     orientation: PlanarOrientation | undefined
   ): PlanarViewState['orientation'] {
-    const sourceDataId = this.getSourceDataId();
+    const sourceDisplaySetId = this.getSourceDisplaySetId();
     const resolved = this.resolveOrientation(
       orientation,
       this.getImageIds(),
@@ -4019,10 +4036,10 @@ class PlanarViewport extends BaseViewport<
     );
 
     if (
-      sourceDataId &&
+      sourceDisplaySetId &&
       resolved !== OrientationAxis.ACQUISITION &&
       this.getCurrentMode() === 'stack' &&
-      !this.canShowOrientation(sourceDataId, resolved)
+      !this.canShowOrientation(sourceDisplaySetId, resolved)
     ) {
       return this.viewState.orientation;
     }
@@ -4038,11 +4055,11 @@ class PlanarViewport extends BaseViewport<
    * mounted answers for a mount with that orientation.
    */
   private canShowOrientation(
-    dataId: string,
+    displaySetId: string,
     orientation: PlanarViewState['orientation']
   ): boolean {
-    const dataSet = this.getDataSet(dataId);
-    const binding = this.getBinding(dataId);
+    const dataSet = this.getDataSet(displaySetId);
+    const binding = this.getBinding(displaySetId);
 
     if (
       !dataSet ||
@@ -4062,9 +4079,9 @@ class PlanarViewport extends BaseViewport<
         selectPlanarRenderPath(
           dataSet,
           this.getRenderPathDecisionOptions(
-            dataId,
+            displaySetId,
             {
-              ...(this.mountOptionsByDataId.get(dataId) ?? {}),
+              ...(this.mountOptionsByDisplaySetId.get(displaySetId) ?? {}),
               role: binding.role,
             },
             orientation
@@ -4109,15 +4126,15 @@ class PlanarViewport extends BaseViewport<
     };
   }
 
-  private resolveOverlayDataId(
+  private resolveOverlayDisplaySetId(
     stackInput: IStackInput,
     image: IImage,
     reference: ViewportDataReference
   ): string {
-    const explicitDataId = stackInput.dataId;
+    const explicitDisplaySetId = stackInput.displaySetId;
 
-    if (typeof explicitDataId === 'string') {
-      return explicitDataId;
+    if (typeof explicitDisplaySetId === 'string') {
+      return explicitDisplaySetId;
     }
 
     if (
@@ -4127,19 +4144,21 @@ class PlanarViewport extends BaseViewport<
       return reference.representationUID;
     }
 
-    const baseDataId = image.imageId;
+    const baseDisplaySetId = image.imageId;
 
-    if (!this.mountedData.hasBinding(baseDataId)) {
-      return baseDataId;
+    if (!this.mountedData.hasBinding(baseDisplaySetId)) {
+      return baseDisplaySetId;
     }
 
-    return `overlay:${baseDataId}`;
+    return `overlay:${baseDisplaySetId}`;
   }
 
-  protected findBindingDataIdByActorEntryUID(
+  protected findBindingDisplaySetIdByActorEntryUID(
     actorEntryUID: string
   ): string | undefined {
-    return this.mountedData.findBindingDataIdByActorEntryUID(actorEntryUID);
+    return this.mountedData.findBindingDisplaySetIdByActorEntryUID(
+      actorEntryUID
+    );
   }
 
   /**
@@ -4150,7 +4169,7 @@ class PlanarViewport extends BaseViewport<
    * it lives here rather than on IViewport.
    */
   public findDataIdByVolumeId(volumeId: string): string | undefined {
-    return this.mountedData.findDataIdByVolumeId(volumeId);
+    return this.mountedData.findDisplaySetIdByVolumeId(volumeId);
   }
 
   protected getCurrentPlanarRendering(): PlanarRendering | undefined {
@@ -4246,7 +4265,7 @@ class PlanarViewport extends BaseViewport<
 
     const data = this.getPlanarData();
     const rendering = this.getCurrentPlanarRendering();
-    const activeDataId = this.mountedData.getActiveDataId();
+    const sourceDisplaySetId = this.mountedData.getSourceDisplaySetId();
     const frameOfReferenceUID = this.resolveFrameOfReferenceUID();
     const cache = this.resolvedViewCache;
 
@@ -4259,7 +4278,7 @@ class PlanarViewport extends BaseViewport<
 
     if (
       cache &&
-      cache.activeDataId === activeDataId &&
+      cache.sourceDisplaySetId === sourceDisplaySetId &&
       cache.viewState === viewState &&
       cache.data === data &&
       cache.rendering === rendering &&
@@ -4285,7 +4304,7 @@ class PlanarViewport extends BaseViewport<
 
     if (resolvedView) {
       this.resolvedViewCache = {
-        activeDataId,
+        sourceDisplaySetId,
         canvasHeight,
         canvasWidth,
         data,
@@ -4591,9 +4610,9 @@ function createPlanarImageFromVTKImageData(
   };
 }
 
-function isPlanarRegisteredDataSet(
+function isPlanarDisplaySetDescriptor(
   value: unknown
-): value is PlanarRegisteredDataSet {
+): value is PlanarDisplaySetDescriptor {
   if (!isImageDisplaySet(value) || value.imageIds.length === 0) {
     return false;
   }

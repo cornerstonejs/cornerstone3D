@@ -4,12 +4,11 @@ import {
   registerDisplaySetMetadata,
 } from '@cornerstonejs/metadata';
 import {
+  getDisplaySetImageId,
   getImageDisplaySet,
-  getPlanarDisplaySet,
-  getDisplaySetSourceDataId,
   getWSIDisplaySet,
 } from '../src/RenderingEngine/Viewports/displaySetAccess';
-import genericViewportDisplaySetMetadataProvider from '../src/utilities/genericViewportDisplaySetMetadataProvider';
+import displaySetRegistry from '../src/RenderingEngine/Viewports/displaySetRegistry';
 
 const displaySet = (displaySetId, extra = {}) => ({
   displaySetId,
@@ -33,9 +32,9 @@ describe('Display set lookup by display set id', () => {
       'ds-1:frame1',
       'ds-1:frame2',
     ]);
-    expect(getPlanarDisplaySet('ds-1').imageIds).toHaveLength(2);
+    expect(getImageDisplaySet('ds-1').imageIds).toHaveLength(2);
     // Video and ECG show the first instance.
-    expect(getDisplaySetSourceDataId('ds-1')).toBe('ds-1:instance');
+    expect(getDisplaySetImageId('ds-1')).toBe('ds-1:instance');
   });
 
   it('loads an OHIF display set, keyed by displaySetInstanceUID', () => {
@@ -46,7 +45,7 @@ describe('Display set lookup by display set id', () => {
       },
     });
 
-    expect(getDisplaySetSourceDataId('uid-2')).toBe('video:1');
+    expect(getDisplaySetImageId('uid-2')).toBe('video:1');
   });
 
   it('does not take a display set that the cache holds under an image id', () => {
@@ -54,7 +53,7 @@ describe('Display set lookup by display set id', () => {
 
     // The ECG example opens an instance by its image id. That id is not a
     // display set id, so the source stays the image id.
-    expect(getDisplaySetSourceDataId('ecg:imageId')).toBe('ecg:imageId');
+    expect(getDisplaySetImageId('ecg:imageId')).toBe('ecg:imageId');
     expect(getImageDisplaySet('ecg:imageId')).toBeUndefined();
   });
 
@@ -64,7 +63,7 @@ describe('Display set lookup by display set id', () => {
       displaySet('ds-6', { instance: { imageId: 'ds-6:shown' } })
     );
 
-    expect(getDisplaySetSourceDataId('ds-6')).toBe('ds-6:shown');
+    expect(getDisplaySetImageId('ds-6')).toBe('ds-6:shown');
   });
 
   it('loads a WSI display set with its own web client', () => {
@@ -72,9 +71,8 @@ describe('Display set lookup by display set id', () => {
     registerDisplaySetMetadata([], displaySet('ds-4', { webClient }));
 
     expect(getWSIDisplaySet('ds-4')).toEqual({
-      kind: 'wsi',
       imageIds: ['ds-4:frame1', 'ds-4:frame2'],
-      options: { webClient },
+      options: { miniNavigationOverlay: undefined, webClient },
     });
   });
 
@@ -93,9 +91,9 @@ describe('Display set lookup by display set id', () => {
 
   it('uses the viewport registry first', () => {
     registerDisplaySetMetadata([], displaySet('ds-5'));
-    genericViewportDisplaySetMetadataProvider.add('ds-5', ['registry:1']);
+    displaySetRegistry.add('ds-5', { imageIds: ['registry:1'] });
 
     expect(getImageDisplaySet('ds-5').imageIds).toEqual(['registry:1']);
-    genericViewportDisplaySetMetadataProvider.remove('ds-5');
+    displaySetRegistry.remove('ds-5');
   });
 });

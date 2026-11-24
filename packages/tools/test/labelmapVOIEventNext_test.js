@@ -156,7 +156,7 @@ describe('VOI_MODIFIED of a direct next planar viewport with a labelmap -- ', ()
         expect(viewport.getDisplaySets().length).toBeGreaterThan(1);
         expect(details).toEqual([]);
 
-        viewport.setDisplaySetPresentation(viewport.getSourceDataId(), {
+        viewport.setDisplaySetPresentation(viewport.getSourceDisplaySetId(), {
           voiRange: { ...SOURCE_RANGE },
         });
         await settle();
@@ -205,7 +205,7 @@ describe('VOI_MODIFIED of a direct next planar viewport with a labelmap -- ', ()
       expect(viewport.getDisplaySets().length).toBeGreaterThan(1);
       expect(details).toEqual([]);
 
-      viewport.setDisplaySetPresentation(viewport.getSourceDataId(), {
+      viewport.setDisplaySetPresentation(viewport.getSourceDisplaySetId(), {
         voiRange: { ...SOURCE_RANGE },
       });
       await settle();

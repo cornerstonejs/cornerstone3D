@@ -43,7 +43,7 @@ type TestViewport = {
     actorMapper?: { renderMode?: string };
   }>;
   setDisplaySetPresentation: (
-    dataId: string,
+    displaySetId: string,
     props: { slabThickness?: number; blendMode?: number }
   ) => void;
   render: () => void;
@@ -157,17 +157,17 @@ async function setCoronalSlab(
   page: Page,
   slabThickness: number,
   blendModeName: string,
-  dataIds = [CT_DATA_ID, PT_DATA_ID]
+  displaySetIds = [CT_DATA_ID, PT_DATA_ID]
 ): Promise<void> {
   await page.evaluate(
-    ({ engineId, viewportId, dataIds, slabThickness, blendModeName }) => {
+    ({ engineId, viewportId, displaySetIds, slabThickness, blendModeName }) => {
       const { cornerstone } = window as TestWindow;
       const viewport = cornerstone
         .getRenderingEngine(engineId)
         .getViewport(viewportId);
 
-      for (const dataId of dataIds) {
-        viewport?.setDisplaySetPresentation(dataId, {
+      for (const displaySetId of displaySetIds) {
+        viewport?.setDisplaySetPresentation(displaySetId, {
           slabThickness,
           blendMode: cornerstone.Enums.BlendModes[blendModeName],
         });
@@ -178,7 +178,7 @@ async function setCoronalSlab(
     {
       engineId: ENGINE_ID,
       viewportId: CORONAL_VIEWPORT_ID,
-      dataIds,
+      displaySetIds,
       slabThickness,
       blendModeName,
     }

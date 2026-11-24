@@ -52,9 +52,8 @@ function registerStack() {
     })
   );
 
-  utilities.genericViewportDisplaySetMetadataProvider.add('voiSyncStack', {
+  cornerstone3D.displaySetRegistry.add('voiSyncStack', {
     imageIds,
-    kind: 'planar',
     initialImageIdIndex: 0,
   });
 
@@ -76,7 +75,7 @@ async function registerVolume() {
   });
 
   await volumeLoader.createAndCacheVolume(volumeId, { imageIds: [] });
-  utilities.genericViewportDisplaySetMetadataProvider.add('voiSyncVolume', {
+  cornerstone3D.displaySetRegistry.add('voiSyncVolume', {
     imageIds: cache.getVolume(volumeId).imageIds,
     volumeId,
   });
@@ -110,7 +109,8 @@ async function showAndLink(viewports, displaySetId) {
 
 /** The invert of the presentation of the source display set of a viewport. */
 function invertOf(viewport) {
-  return viewport.getDisplaySetPresentation(viewport.getSourceDataId())?.invert;
+  return viewport.getDisplaySetPresentation(viewport.getSourceDisplaySetId())
+    ?.invert;
 }
 
 describe('VOI synchronizer on direct next planar viewports -- ', () => {
@@ -185,27 +185,23 @@ describe('VOI synchronizer on direct next planar viewports -- ', () => {
     const sourceDisplaySetId = registerStack();
     const targetDisplaySetId = 'voiSyncOtherStack';
 
-    utilities.genericViewportDisplaySetMetadataProvider.add(
-      targetDisplaySetId,
-      {
-        imageIds: Array.from({ length: 4 }, (_, sliceIndex) =>
-          testUtils.encodeImageIdInfo({
-            loader: 'fakeImageLoader',
-            name: 'imageURI',
-            id: targetDisplaySetId,
-            rows: 64,
-            columns: 64,
-            barStart: 20,
-            barWidth: 5,
-            xSpacing: 1,
-            ySpacing: 1,
-            sliceIndex,
-          })
-        ),
-        kind: 'planar',
-        initialImageIdIndex: 0,
-      }
-    );
+    cornerstone3D.displaySetRegistry.add(targetDisplaySetId, {
+      imageIds: Array.from({ length: 4 }, (_, sliceIndex) =>
+        testUtils.encodeImageIdInfo({
+          loader: 'fakeImageLoader',
+          name: 'imageURI',
+          id: targetDisplaySetId,
+          rows: 64,
+          columns: 64,
+          barStart: 20,
+          barWidth: 5,
+          xSpacing: 1,
+          ySpacing: 1,
+          sliceIndex,
+        })
+      ),
+      initialImageIdIndex: 0,
+    });
 
     const synchronizer = synchronizers.createVOISynchronizer(synchronizerId, {
       syncInvertState: true,

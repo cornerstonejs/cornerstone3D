@@ -162,7 +162,7 @@ function obliqueCamera() {
 
 /**
  * The context of the CPU volume path. The display set is an overlay
- * (`isCurrentDataId` is false), which follows the camera of the view and
+ * (`isCurrentDisplaySetId` is false), which follows the camera of the view and
  * needs no resolved view of the viewport.
  */
 function createContext(canvas, camera) {
@@ -174,7 +174,7 @@ function createContext(canvas, camera) {
     viewport: {
       element,
       getViewState: jest.fn(() => ({})),
-      isCurrentDataId: jest.fn(() => false),
+      isCurrentDisplaySetId: jest.fn(() => false),
       invalidateResolvedView: jest.fn(),
     },
     view: { activeSourceICamera: camera },

@@ -1,4 +1,4 @@
-import { RenderingEngine, utilities } from '@cornerstonejs/core';
+import { RenderingEngine, displaySetRegistry } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 const engine = new RenderingEngine('engine');
@@ -36,8 +36,7 @@ export async function assignedParameter(viewport: Types.IStackViewport) {
 export async function constBinding() {
   const viewport = engine.getViewport('kept');
   const displaySetId = JSON.stringify([viewport.renderingEngineId, viewport.id, 'kept-1']);
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId, {
     imageIds: ['kept-1'],
     initialImageIdIndex: 0,
   });

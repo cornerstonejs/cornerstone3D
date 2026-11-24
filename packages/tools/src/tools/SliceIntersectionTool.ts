@@ -1754,8 +1754,8 @@ class SliceIntersectionTool extends AnnotationTool {
       return false;
     }
 
-    const dataId = this._getSourceDataId(viewport);
-    if (!dataId) {
+    const displaySetId = this._getSourceDisplaySetId(viewport);
+    if (!displaySetId) {
       return false;
     }
 
@@ -1769,7 +1769,7 @@ class SliceIntersectionTool extends AnnotationTool {
       blendMode = Enums.BlendModes.COMPOSITE;
     }
 
-    (viewport as Types.IViewport).setDisplaySetPresentation(dataId, {
+    (viewport as Types.IViewport).setDisplaySetPresentation(displaySetId, {
       slabThickness,
       blendMode,
     });
@@ -1806,11 +1806,13 @@ class SliceIntersectionTool extends AnnotationTool {
     }
   }
 
-  private _getSourceDataId(viewport: Types.IViewport): string | undefined {
+  private _getSourceDisplaySetId(
+    viewport: Types.IViewport
+  ): string | undefined {
     if (!csUtils.viewportSupportsDisplaySetPresentation(viewport)) {
       return undefined;
     }
-    return viewport.getSourceDataId();
+    return viewport.getSourceDisplaySetId();
   }
 
   /**
@@ -1818,14 +1820,14 @@ class SliceIntersectionTool extends AnnotationTool {
    * defaults to the minimum slab thickness.
    */
   private _getSourceSlabThickness(viewport: Types.IViewport): number {
-    const dataId = this._getSourceDataId(viewport);
-    if (!dataId) {
+    const displaySetId = this._getSourceDisplaySetId(viewport);
+    if (!displaySetId) {
       return RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS;
     }
 
     const presentation = (
       viewport as Types.IViewport
-    ).getDisplaySetPresentation(dataId) as
+    ).getDisplaySetPresentation(displaySetId) as
       | { slabThickness?: number }
       | undefined;
     const slabThickness = presentation?.slabThickness;

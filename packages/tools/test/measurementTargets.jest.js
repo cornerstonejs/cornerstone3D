@@ -3,7 +3,7 @@ import {
   registerDefaultProviders,
   registerDisplaySetMetadata,
 } from '@cornerstonejs/metadata';
-import { cache, utilities } from '@cornerstonejs/core';
+import { cache, displaySetRegistry } from '@cornerstonejs/core';
 import CircleROITool from '../src/tools/annotation/CircleROITool';
 import RectangleROITool from '../src/tools/annotation/RectangleROITool';
 import CircleROIStartEndThresholdTool from '../src/tools/segmentation/CircleROIStartEndThresholdTool';
@@ -89,7 +89,7 @@ describe('measurement target regressions', () => {
 
   afterEach(() => {
     metaData.clear('displaySetModule');
-    utilities.genericViewportDisplaySetMetadataProvider.clear();
+    displaySetRegistry.clear();
     jest.restoreAllMocks();
     jest.clearAllMocks();
   });
@@ -110,14 +110,10 @@ describe('measurement target regressions', () => {
     };
 
     registerDisplaySetMetadata(['series:ct'], displaySet);
-    utilities.genericViewportDisplaySetMetadataProvider.add(
-      'generic-display-set',
-      {
-        imageIds: ['series:ct'],
-        kind: 'planar',
-        volumeId: 'volume:ct',
-      }
-    );
+    displaySetRegistry.add('generic-display-set', {
+      imageIds: ['series:ct'],
+      volumeId: 'volume:ct',
+    });
 
     const resolved = TestBaseTool.getViewportDisplaySetsForTest({
       getDisplaySets: () => [{ displaySetId: 'generic-display-set' }],

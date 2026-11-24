@@ -55,7 +55,7 @@ describe('A streaming volume with an image that fails to load, on a direct next 
 
   afterEach(function () {
     testUtils.cleanupTestEnvironment({ renderingEngineId });
-    utilities.genericViewportDisplaySetMetadataProvider.clear();
+    cornerstone3D.displaySetRegistry.clear();
   });
 
   it('mounts in volume mode, fires IMAGE_LOAD_FAILED and IMAGE_LOAD_ERROR for that image, ends the load and leaves no unhandled rejection', async function () {
@@ -83,10 +83,10 @@ describe('A streaming volume with an image that fails to load, on a direct next 
     try {
       const viewport = createNextViewport(renderingEngine, 'failedImage');
 
-      utilities.genericViewportDisplaySetMetadataProvider.add(
-        'failedImageStream',
-        { imageIds, volumeId }
-      );
+      cornerstone3D.displaySetRegistry.add('failedImageStream', {
+        imageIds,
+        volumeId,
+      });
       await viewport.setDisplaySets({
         displaySetId: 'failedImageStream',
         options: { orientation: OrientationAxis.ACQUISITION },

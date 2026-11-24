@@ -56,7 +56,7 @@ import type {
   Volume3DCamera,
   Volume3DPayload,
   Volume3DDataPresentation,
-  Volume3DRegisteredDataSet,
+  Volume3DDisplaySetDescriptor,
   Volume3DRendering,
   Volume3DSetDataOptions,
   Volume3DViewportRenderContext,
@@ -106,7 +106,7 @@ class VolumeViewport3D extends BaseViewport<
 
   protected renderContext: Volume3DViewportRenderContext;
 
-  private primaryDataId?: string;
+  private primaryDisplaySetId?: string;
   /**
    * The number of the newest `setDisplaySets` call. An older call that is
    * still loading stops after its load and leaves the viewport to the newer
@@ -407,7 +407,7 @@ class VolumeViewport3D extends BaseViewport<
     }
 
     if (renderMode === 'vtkVolume3d' && volumeOptions.role === 'source') {
-      this.primaryDataId = displaySetId;
+      this.primaryDisplaySetId = displaySetId;
     }
 
     this.mountedPresentations.set(
@@ -471,8 +471,8 @@ class VolumeViewport3D extends BaseViewport<
     this.triggerVOIModified(targetId);
   }
 
-  removeData(displaySetId: string): void {
-    super.removeData(displaySetId);
+  removeDisplaySet(displaySetId: string): void {
+    super.removeDisplaySet(displaySetId);
     this.mountedPresentations.delete(displaySetId);
   }
 
@@ -726,7 +726,7 @@ class VolumeViewport3D extends BaseViewport<
     const viewUp = camera.viewUp as Point3 | undefined;
     const viewReference: ViewReference = {
       FrameOfReferenceUID,
-      dataId: binding?.data.id,
+      displaySetId: binding?.data.id,
       cameraFocalPoint,
       viewPlaneNormal,
       viewUp,
@@ -1086,7 +1086,7 @@ class VolumeViewport3D extends BaseViewport<
   }
 
   protected override onDestroy(): void {
-    this.primaryDataId = undefined;
+    this.primaryDisplaySetId = undefined;
     this.mountedPresentations.clear();
   }
 
@@ -1273,8 +1273,10 @@ class VolumeViewport3D extends BaseViewport<
   }
 
   protected getCurrentBinding() {
-    if (this.primaryDataId) {
-      return this.getBinding(this.primaryDataId) ?? this.getFirstBinding();
+    if (this.primaryDisplaySetId) {
+      return (
+        this.getBinding(this.primaryDisplaySetId) ?? this.getFirstBinding()
+      );
     }
 
     return this.getFirstBinding();
@@ -1284,14 +1286,14 @@ class VolumeViewport3D extends BaseViewport<
     const contexts: ViewReferenceContext[] = [];
     const camera = this.getViewState();
 
-    for (const [dataId, binding] of this.bindings.entries()) {
+    for (const [displaySetId, binding] of this.bindings.entries()) {
       const data = this.getVolume3DPayload(binding);
       const volumeId =
         data?.renderMode === 'vtkVolume3d' ? data.volumeId : undefined;
 
       contexts.push({
-        dataId,
-        dataIds: [binding.data.id],
+        displaySetId,
+        displaySetIds: [binding.data.id],
         frameOfReferenceUID:
           binding.getFrameOfReferenceUID() ?? this.getFrameOfReferenceUID(),
         imageIds:
@@ -1318,14 +1320,14 @@ class VolumeViewport3D extends BaseViewport<
   }
 
   private resolveRenderMode(
-    dataId: string,
+    displaySetId: string,
     requestedRenderMode: Volume3DSetDataOptions['renderMode'] = 'auto'
   ): 'vtkVolume3d' | 'vtkGeometry3d' {
     if (requestedRenderMode && requestedRenderMode !== 'auto') {
       return requestedRenderMode;
     }
 
-    const dataSet = this.getDataSet(dataId);
+    const dataSet = this.getDataSet(displaySetId);
 
     if (dataSet?.imageIds?.length) {
       return 'vtkVolume3d';
@@ -1334,10 +1336,12 @@ class VolumeViewport3D extends BaseViewport<
     return 'vtkGeometry3d';
   }
 
-  private getDataSet(dataId: string): Volume3DRegisteredDataSet | undefined {
-    const dataSet = getImageDisplaySet(dataId);
+  private getDataSet(
+    displaySetId: string
+  ): Volume3DDisplaySetDescriptor | undefined {
+    const dataSet = getImageDisplaySet(displaySetId);
 
-    if (!isVolume3DRegisteredDataSet(dataSet)) {
+    if (!isVolume3DDisplaySetDescriptor(dataSet)) {
       return;
     }
 
@@ -1587,9 +1591,9 @@ function isVolume3DRendering(rendering: {
   );
 }
 
-function isVolume3DRegisteredDataSet(
+function isVolume3DDisplaySetDescriptor(
   value: unknown
-): value is Volume3DRegisteredDataSet {
+): value is Volume3DDisplaySetDescriptor {
   if (!isImageDisplaySet(value)) {
     return false;
   }

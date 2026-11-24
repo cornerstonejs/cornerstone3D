@@ -1,4 +1,8 @@
-import { RenderingEngine, volumeLoader, utilities } from '@cornerstonejs/core';
+import {
+  RenderingEngine,
+  volumeLoader,
+  displaySetRegistry,
+} from '@cornerstonejs/core';
 
 const engine = new RenderingEngine('engine');
 const imagesA = ['a-1', 'a-2'];
@@ -38,8 +42,7 @@ export async function sameFunction(imageIds: string[]) {
   });
 
   volume.load();
-  utilities.genericViewportDisplaySetMetadataProvider.add(volumeId, {
-    kind: 'planar',
+  displaySetRegistry.add(volumeId, {
     imageIds,
     volumeId,
   });

@@ -8,8 +8,8 @@ import {
   Enums,
   volumeLoader,
   getRenderingEngine,
-  utilities,
   cache,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -271,8 +271,7 @@ async function run() {
   // Set the volume to load
   volume.load();
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(volumeDisplaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(volumeDisplaySetId, {
     imageIds: volumeImageIds,
     volumeId,
   });

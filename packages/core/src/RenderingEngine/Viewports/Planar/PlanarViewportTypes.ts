@@ -33,6 +33,7 @@ import type {
   RenderPathResolver,
   ViewportDataReference,
 } from '../ViewportArchitectureTypes';
+import type { DisplaySetDescriptor } from '../../../types/DisplaySetDescriptor';
 import type ICamera from '../../../types/ICamera';
 import type { CameraScaleMode, ViewAnchor } from '../ViewportCameraTypes';
 import type DisplayArea from '../../../types/displayArea';
@@ -104,7 +105,7 @@ export type RenderPlanReason =
  */
 export type RenderPlanLayer = {
   /** The display set id of the layer. */
-  dataId: string;
+  displaySetId: string;
   role: BindingRole;
   /**
    * How the slice is made: `frame` (the acquired frame is the image), `cpu`
@@ -128,7 +129,7 @@ export type RenderPlanLayer = {
 export type RenderPlanChangedEventDetail = {
   renderingEngineId: string;
   viewportId: string;
-  dataId: string;
+  displaySetId: string;
   previous?: RenderPlanLayer;
   current: RenderPlanLayer;
   reason: RenderPlanReason;
@@ -164,8 +165,12 @@ export type PlanarOrientation =
   | OrientationAxis.SAGITTAL_REFORMAT
   | OrientationVectors;
 
-/** @internal */
-export interface PlanarRegisteredDataSet {
+/**
+ * The descriptor of a display set as a planar viewport reads it.
+ *
+ * @internal
+ */
+export interface PlanarDisplaySetDescriptor extends DisplaySetDescriptor {
   imageIds: string[];
   initialImageIdIndex?: number;
   volumeId?: string;
@@ -322,7 +327,7 @@ export interface PlanarActiveViewRuntime {
 /** @internal */
 export interface PlanarDataProvider extends DataProvider {
   load(
-    dataId: string,
+    displaySetId: string,
     options?: PlanarDataLoadOptions
   ): Promise<LoadedData<PlanarPayload>>;
 }
@@ -340,32 +345,32 @@ export interface PlanarViewportRenderContext extends BaseViewportRenderContext {
   type: 'planar';
   viewport: {
     element: HTMLDivElement;
-    getActiveDataId(): string | undefined;
+    getSourceDisplaySetId(): string | undefined;
     invalidateResolvedView(): void;
     /**
-     * Tells the viewport that a stack path shows a new image of `dataId`,
+     * Tells the viewport that a stack path shows a new image of `displaySetId`,
      * whose default window was `previousRange` before. The viewport fires
      * `VOI_MODIFIED` when the window on display changed with it.
      */
     notifyDefaultVOIRangeOfNewImage?(
-      dataId: string,
+      displaySetId: string,
       previousRange: VOIRange | undefined
     ): void;
     getViewState(): PlanarViewState;
-    isCurrentDataId(dataId: string): boolean;
+    isCurrentDisplaySetId(displaySetId: string): boolean;
     getOverlayActors(): ActorEntry[];
     /**
-     * Whether the volume slice path of `dataId` may draw the acquired frames in
+     * Whether the volume slice path of `displaySetId` may draw the acquired frames in
      * place of a reduced slice. The render path adds the check of the
      * acquisition plane.
      */
-    canDrawAcquiredFrames?(dataId: string): boolean;
+    canDrawAcquiredFrames?(displaySetId: string): boolean;
     /**
-     * Reads the render plan entry of `dataId` again after its render path
+     * Reads the render plan entry of `displaySetId` again after its render path
      * changed what the entry reads (`slabTooLarge`), and fires
      * `RENDER_PLAN_CHANGED` when it changed.
      */
-    refreshRenderPlan?(dataId: string): void;
+    refreshRenderPlan?(displaySetId: string): void;
   };
   renderPath: PlanarRenderPathRuntime;
   view: PlanarActiveViewRuntime;

@@ -26,7 +26,7 @@ import { getImageSliceOverlayOrder } from '../src/RenderingEngine/Viewports/Plan
 import { triggerPlanarVolumeNewImageOfPlacedSlice } from '../src/RenderingEngine/Viewports/Planar/planarImageEvents';
 import { resolvePlanarRenderPathProjection } from '../src/RenderingEngine/Viewports/Planar/planarRenderPathProjection';
 import renderingEngineCache from '../src/RenderingEngine/renderingEngineCache';
-import genericViewportDisplaySetMetadataProvider from '../src/utilities/genericViewportDisplaySetMetadataProvider';
+import displaySetRegistry from '../src/RenderingEngine/Viewports/displaySetRegistry';
 import {
   resetGpuSettingsPreset,
   setGpuSettingsPreset,
@@ -144,7 +144,7 @@ describe('PlanarRenderPathDecisionService acquired frames (API)', () => {
 });
 
 describe('PlanarViewport acquired frames in the volume path (user experience)', () => {
-  const dataId = 'ct-display-set';
+  const displaySetId = 'ct-display-set';
   const segId = 'seg-display-set';
   const volumeId = 'ct-volume';
   const FOR = 'planar-test-frame';
@@ -166,7 +166,7 @@ describe('PlanarViewport acquired frames in the volume path (user experience)', 
   let releaseFrames;
   const engineId = 'acquired-frames-engine';
 
-  const sourceBinding = () => viewport.bindings.get(dataId);
+  const sourceBinding = () => viewport.bindings.get(displaySetId);
   const volumeActor = () => sourceBinding().rendering.actor;
   const frameRendering = () => sourceBinding().getRenderings()[1];
 
@@ -212,7 +212,7 @@ describe('PlanarViewport acquired frames in the volume path (user experience)', 
       applyViewState: (viewState) => {
         const projection = resolvePlanarRenderPathProjection({
           ctx,
-          dataId: data.id,
+          displaySetId: data.id,
           rendering,
           viewState,
         });
@@ -260,7 +260,7 @@ describe('PlanarViewport acquired frames in the volume path (user experience)', 
 
   async function mount(orientation = OrientationAxis.AXIAL) {
     await viewport.setDisplaySets({
-      displaySetId: dataId,
+      displaySetId: displaySetId,
       options: { orientation },
     });
     await flush();
@@ -334,13 +334,11 @@ describe('PlanarViewport acquired frames in the volume path (user experience)', 
       };
     };
     metaData.addProvider(provider, 10000);
-    genericViewportDisplaySetMetadataProvider.add(dataId, {
-      kind: 'planar',
+    displaySetRegistry.add(displaySetId, {
       imageIds,
       volumeId,
     });
-    genericViewportDisplaySetMetadataProvider.add(segId, {
-      kind: 'planar',
+    displaySetRegistry.add(segId, {
       imageIds,
       volumeId: 'seg-volume',
     });
@@ -422,7 +420,7 @@ describe('PlanarViewport acquired frames in the volume path (user experience)', 
     viewport.destroy();
     renderingEngineCache.delete(engineId);
     metaData.removeProvider(provider);
-    genericViewportDisplaySetMetadataProvider.clear();
+    displaySetRegistry.clear();
     resetGpuSettingsPreset();
     jest.restoreAllMocks();
   });
@@ -527,7 +525,7 @@ describe('PlanarViewport acquired frames in the volume path (user experience)', 
       nodes(utilities.createLinearRGBTransferFunction(volumeVOI))
     );
 
-    viewport.setDisplaySetPresentation(dataId, {
+    viewport.setDisplaySetPresentation(displaySetId, {
       voiLUTFunction: VOILUTFunctionType.SAMPLED_SIGMOID,
     });
 
@@ -605,7 +603,7 @@ describe('PlanarViewport acquired frames in the volume path (user experience)', 
       }),
     };
     await viewport.setDisplaySets({
-      displaySetId: dataId,
+      displaySetId: displaySetId,
       options: { renderMode: ActorRenderMode.VTK_IMAGE },
     });
     await flush();
@@ -614,9 +612,9 @@ describe('PlanarViewport acquired frames in the volume path (user experience)', 
   });
 
   function bindStack() {
-    viewport.bindings.set(dataId, {
+    viewport.bindings.set(displaySetId, {
       applyViewState: jest.fn(),
-      data: { id: dataId, type: 'image', imageIds },
+      data: { id: displaySetId, type: 'image', imageIds },
       getImageData: jest.fn(),
       getFrameOfReferenceUID: () => FOR,
       removeData: jest.fn(),
@@ -627,7 +625,7 @@ describe('PlanarViewport acquired frames in the volume path (user experience)', 
       role: 'source',
       updateDataPresentation: jest.fn(),
     });
-    viewport.mountedData.promoteSourceDataId(dataId);
+    viewport.mountedData.promoteSourceDisplaySetId(displaySetId);
     return jest.spyOn(viewport, 'setImageIdIndex');
   }
 
@@ -667,7 +665,7 @@ describe('PlanarViewport acquired frames in the volume path (user experience)', 
     ]);
     // The frame entry gives no second measurement target.
     expect(actors[1].referencedId).toBeUndefined();
-    expect(viewport.getDefaultActor().uid).toBe(`${dataId}-volume`);
+    expect(viewport.getDefaultActor().uid).toBe(`${displaySetId}-volume`);
     // Both source actors are below the labelmap in the depth order.
     expect(getImageSliceOverlayOrder(renderer, actors[2].actor)).toBe(1);
     const laterOverlay = vtkImageSlice.newInstance();

@@ -4,8 +4,8 @@ import {
   Enums,
   volumeLoader,
   getRenderingEngine,
-  utilities,
   viewportProjection,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
@@ -365,8 +365,7 @@ async function run() {
   volume.load();
 
   // Set the volume on the viewport and it's default properties
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId, {
     imageIds,
     volumeId,
   });

@@ -3,8 +3,8 @@ import {
   Enums,
   RenderingEngine,
   imageLoader,
-  utilities,
   volumeLoader,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import {
   addBrushSizeSlider,
@@ -384,8 +384,7 @@ async function run() {
     viewportIds.CT_SAGITTAL,
     viewportIds.CT_CORONAL,
   ];
-  utilities.genericViewportDisplaySetMetadataProvider.add(ctDisplaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(ctDisplaySetId, {
     imageIds: ctImageIds,
     volumeId: ctVolumeId,
   });
@@ -405,8 +404,7 @@ async function run() {
     viewportIds.PT_SAGITTAL,
     viewportIds.PT_CORONAL,
   ];
-  utilities.genericViewportDisplaySetMetadataProvider.add(ptDisplaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(ptDisplaySetId, {
     imageIds: ptImageIds,
     volumeId: ptVolumeId,
   });

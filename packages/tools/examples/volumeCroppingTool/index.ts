@@ -7,8 +7,8 @@ import {
   RenderingEngine,
   Enums,
   volumeLoader,
-  utilities,
   viewportProjection,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -422,8 +422,7 @@ async function run(numViewports = getNumViewportsFromUrl()) {
     ...orthographicViewports.map((vp) => vp.viewportId),
     viewportId4,
   ];
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId, {
     imageIds,
     volumeId,
   });

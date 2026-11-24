@@ -47,6 +47,7 @@ import {
   ProgressiveRetrieveImages,
   eventTarget,
   imageLoadPoolManager,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -459,8 +460,7 @@ async function run() {
 
     // Set volumes for orthographic and 3D viewports (excluding stack viewport)
     const volumeViewportIds = viewportIds.filter((id) => id !== viewportId2);
-    utilities.genericViewportDisplaySetMetadataProvider.add(currentVolumeId, {
-      kind: 'planar',
+    displaySetRegistry.add(currentVolumeId, {
       imageIds: volume.imageIds,
       volumeId: currentVolumeId,
     });
@@ -485,8 +485,7 @@ async function run() {
       renderingEngine.getViewport<PlanarViewport>(viewportId2);
     const centerSliceIndex = Math.floor(imageIds.length / 2);
     const stackDisplaySetId = `${currentVolumeId}:stack`;
-    utilities.genericViewportDisplaySetMetadataProvider.add(stackDisplaySetId, {
-      kind: 'planar',
+    displaySetRegistry.add(stackDisplaySetId, {
       imageIds,
       initialImageIdIndex: centerSliceIndex,
     });

@@ -8,7 +8,7 @@ import {
   getECGFrameOfReferenceUID,
   ECG_DEFAULT_SWEEP_SPEED_MM_S,
 } from './ecgWaveform';
-import { getDisplaySetSourceDataId } from '../displaySetAccess';
+import { getDisplaySetImageId } from '../displaySetAccess';
 import imageIdToURI from '../../../utilities/imageIdToURI';
 import type {
   CPUIImageData,
@@ -247,12 +247,12 @@ class ECGViewport extends BaseViewport<
    * @returns View reference representation.
    */
   getViewReference(specifier: ViewReferenceSpecifier = {}): ViewReference {
-    const dataId = this.getFirstBinding()?.data.id;
+    const displaySetId = this.getFirstBinding()?.data.id;
     const lead = specifier.points?.[0]?.[2];
 
     return {
       FrameOfReferenceUID: this.getFrameOfReferenceUID(),
-      dataId,
+      displaySetId,
       referencedImageId: this.getCurrentImageId(),
       ...(Number.isFinite(lead) ? { sliceIndex: Math.round(lead) } : {}),
     };
@@ -360,8 +360,8 @@ class ECGViewport extends BaseViewport<
 
     return [
       {
-        dataId: binding.data.id,
-        dataIds: [binding.data.id],
+        displaySetId: binding.data.id,
+        displaySetIds: [binding.data.id],
         frameOfReferenceUID: this.getFrameOfReferenceUID(),
         imageIds: this.getImageIds(),
         currentImageIdIndex: 0,
@@ -595,7 +595,7 @@ class ECGViewport extends BaseViewport<
    * Returns the display set id bound to this viewport, if one has been loaded.
    * Use `getCurrentImageId` for the SOP image id of the waveform instance.
    */
-  getSourceDataId(): string | undefined {
+  getSourceDisplaySetId(): string | undefined {
     return this.getFirstBinding()?.data.id;
   }
 
@@ -605,9 +605,9 @@ class ECGViewport extends BaseViewport<
    * display set id.
    */
   getCurrentImageId(): string | undefined {
-    const dataId = this.getSourceDataId();
+    const displaySetId = this.getSourceDisplaySetId();
 
-    return dataId ? getDisplaySetSourceDataId(dataId) : undefined;
+    return displaySetId ? getDisplaySetImageId(displaySetId) : undefined;
   }
 
   /**
@@ -705,14 +705,14 @@ class ECGViewport extends BaseViewport<
   }
 
   private async loadWaveformData(
-    dataId: string,
+    displaySetId: string,
     options?: { multiplexGroupIndex?: number }
   ): Promise<LoadedData<ECGWaveformPayload>> {
-    const waveform = await this.dataProvider.load(dataId, options);
+    const waveform = await this.dataProvider.load(displaySetId, options);
 
     if (!isECGWaveformData(waveform)) {
       throw new Error(
-        `[ECGViewport] Loaded data for ${dataId} is not a valid ECG waveform`
+        `[ECGViewport] Loaded data for ${displaySetId} is not a valid ECG waveform`
       );
     }
 

@@ -124,7 +124,7 @@ describe('The orientation marker on a direct next planar viewport -- ', () => {
       renderingEngineId,
       toolGroupIds: [toolGroupId, secondToolGroupId],
     });
-    utilities.genericViewportDisplaySetMetadataProvider.clear?.();
+    cornerstone3D.displaySetRegistry.clear?.();
   });
 
   Object.keys(MODES).forEach((mode) => {

@@ -7,8 +7,8 @@ import {
   Enums,
   getRenderingEngine,
   RenderingEngine,
-  utilities,
   viewportProjection,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
@@ -43,8 +43,8 @@ const renderingEngineId = 'viewportProjectionSynchronizerRenderingEngine';
 const toolGroupId = 'VIEWPORT_PROJECTION_SYNCHRONIZER_TOOL_GROUP';
 const leftViewportId = 'PROJECTION_SYNC_LEFT';
 const rightViewportId = 'PROJECTION_SYNC_RIGHT';
-const leftDataId = 'viewport-projection-sync:left';
-const rightDataId = 'viewport-projection-sync:right';
+const leftDisplaySetId = 'viewport-projection-sync:left';
+const rightDisplaySetId = 'viewport-projection-sync:right';
 const viewportIds = [leftViewportId, rightViewportId] as const;
 const viewportWidthPx = 512;
 const viewportHeightPx = 512;
@@ -412,14 +412,12 @@ async function run() {
     toolGroup.addViewport(viewportId, renderingEngineId);
   });
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(leftDataId, {
+  displaySetRegistry.add(leftDisplaySetId, {
     imageIds,
-    kind: 'planar',
     initialImageIdIndex: middleImageIndex,
   });
-  utilities.genericViewportDisplaySetMetadataProvider.add(rightDataId, {
+  displaySetRegistry.add(rightDisplaySetId, {
     imageIds,
-    kind: 'planar',
     initialImageIdIndex: middleImageIndex,
   });
 
@@ -428,17 +426,19 @@ async function run() {
 
   await Promise.all([
     leftViewport.setDisplaySets({
-      displaySetId: leftDataId,
+      displaySetId: leftDisplaySetId,
       options: {},
     }),
     rightViewport.setDisplaySets({
-      displaySetId: rightDataId,
+      displaySetId: rightDisplaySetId,
       options: {},
     }),
   ]);
 
-  leftViewport.setDisplaySetPresentation(leftDataId, { voiRange: ctVoiRange });
-  rightViewport.setDisplaySetPresentation(rightDataId, {
+  leftViewport.setDisplaySetPresentation(leftDisplaySetId, {
+    voiRange: ctVoiRange,
+  });
+  rightViewport.setDisplaySetPresentation(rightDisplaySetId, {
     voiRange: ctVoiRange,
   });
   const initialRightViewState = viewportProjection.withPresentation<

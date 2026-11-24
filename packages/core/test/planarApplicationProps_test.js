@@ -150,7 +150,7 @@ describe('A vtk.js prop of the application in a direct next planar viewport -- '
 
   afterEach(function () {
     testUtils.cleanupTestEnvironment({ renderingEngineId });
-    utilities.genericViewportDisplaySetMetadataProvider.clear?.();
+    cornerstone3D.displaySetRegistry.clear?.();
   });
 
   Object.entries(MODES).forEach(([mode, show]) => {

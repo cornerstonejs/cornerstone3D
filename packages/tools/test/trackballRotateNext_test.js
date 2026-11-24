@@ -300,10 +300,10 @@ describe('TrackballRotateTool on a direct next viewport -- ', () => {
     const viewport = renderingEngine.getViewport(viewportId);
     const volumeId = await createVolume();
 
-    utilities.genericViewportDisplaySetMetadataProvider.add(
-      'trackballRotateNext3D',
-      { imageIds: cache.getVolume(volumeId).imageIds, volumeId }
-    );
+    cornerstone3D.displaySetRegistry.add('trackballRotateNext3D', {
+      imageIds: cache.getVolume(volumeId).imageIds,
+      volumeId,
+    });
     await viewport.setDisplaySets({
       displaySetId: 'trackballRotateNext3D',
       options: { renderMode: 'vtkVolume3d' },

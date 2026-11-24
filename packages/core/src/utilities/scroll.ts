@@ -83,8 +83,8 @@ export default function scroll(
     return;
   }
 
-  if (isNextPlanarViewport(viewport)) {
-    scrollNextPlanar(viewport, options);
+  if (isPlanarViewport(viewport)) {
+    scrollPlanar(viewport, options);
     return;
   }
 
@@ -154,7 +154,7 @@ export type PlanarVolumeScrollSteps = {
  * Whether the viewport is a next planar viewport in stack or volume mode,
  * whose scroll options this utility works out.
  */
-function isNextPlanarViewport(viewport: unknown): viewport is PlanarViewport {
+function isPlanarViewport(viewport: unknown): viewport is PlanarViewport {
   const mode = getViewportContentMode(viewport);
 
   return mode === 'stack' || mode === 'volume';
@@ -180,10 +180,10 @@ export function getPlanarVolumeScrollSteps(
     return;
   }
 
-  const sourceDataId = viewport.getSourceDataId();
+  const sourceDisplaySetId = viewport.getSourceDisplaySetId();
   const slabThickness = resolveSlabThickness(
-    sourceDataId
-      ? viewport.getDisplaySetPresentation(sourceDataId)?.slabThickness
+    sourceDisplaySetId
+      ? viewport.getDisplaySetPresentation(sourceDisplaySetId)?.slabThickness
       : undefined
   );
   const stepsBySlab = Boolean(scrollSlabs) && slabThickness > 0;
@@ -303,7 +303,7 @@ export function scrollPlanarVolumeSteps(
  * one volume scroll event after it moves, as the legacy volume viewport did
  * (see `triggerVolumeScrollEvent`).
  */
-function scrollNextPlanar(viewport: PlanarViewport, options: ScrollOptions) {
+function scrollPlanar(viewport: PlanarViewport, options: ScrollOptions) {
   const { delta, loop } = options;
   const steps = getPlanarVolumeScrollSteps(viewport, options);
   const counted = steps ? countPlanarVolumeScrollSteps(steps) : undefined;

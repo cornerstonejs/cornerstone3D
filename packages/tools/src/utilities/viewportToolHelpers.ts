@@ -26,9 +26,9 @@ export function getViewSlabDepthOfViewport(
     csUtils.viewportIsInVolumeMode(viewport) &&
     csUtils.viewportSupportsDisplaySetPresentation(viewport)
   ) {
-    const sourceDataId = viewport.getSourceDataId();
-    const presentation = sourceDataId
-      ? (viewport.getDisplaySetPresentation(sourceDataId) as
+    const sourceDisplaySetId = viewport.getSourceDisplaySetId();
+    const presentation = sourceDisplaySetId
+      ? (viewport.getDisplaySetPresentation(sourceDisplaySetId) as
           | { slabThickness?: number }
           | undefined)
       : undefined;
@@ -141,10 +141,10 @@ export function getNativeSourceProperties(
   if (!csUtils.viewportSupportsDisplaySetPresentation(viewport)) {
     return { properties: {} };
   }
-  const sourceDataId = viewport.getSourceDataId();
+  const sourceDisplaySetId = viewport.getSourceDisplaySetId();
   const properties = {
-    ...((sourceDataId
-      ? (viewport.getDisplaySetPresentation(sourceDataId) as Record<
+    ...((sourceDisplaySetId
+      ? (viewport.getDisplaySetPresentation(sourceDisplaySetId) as Record<
           string,
           unknown
         >)

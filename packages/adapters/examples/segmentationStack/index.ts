@@ -125,13 +125,9 @@ function loadDicom() {
     state.renderingEngine.getViewport(viewportIds[0]);
   const displaySetId = `segmentationStack:${state.referenceImageIds[0]}`;
 
-  cornerstone.utilities.genericViewportDisplaySetMetadataProvider.add(
-    displaySetId,
-    {
-      kind: 'planar',
-      imageIds: state.referenceImageIds,
-    }
-  );
+  cornerstone.displaySetRegistry.add(displaySetId, {
+    imageIds: state.referenceImageIds,
+  });
   viewport.setDisplaySets({ displaySetId });
   cornerstoneTools.utilities.stackContextPrefetch.enable(element1);
 

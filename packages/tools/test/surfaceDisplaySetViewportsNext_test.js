@@ -18,8 +18,6 @@ const {
 const { ViewportType, OrientationAxis, GeometryType } = Enums;
 const { segmentation, Enums: csToolsEnums } = csTools3d;
 const { Surface } = csToolsEnums.SegmentationRepresentations;
-const { genericViewportDisplaySetMetadataProvider } = utilities;
-
 const renderingEngineId = utilities.uuidv4();
 const otherRenderingEngineId = utilities.uuidv4();
 const segmentationId = 'surfaceDisplaySetViewports';
@@ -87,10 +85,7 @@ function showsSurface(viewport) {
 
 /** The registration of the display set of the surface. */
 function registrationOfSurface() {
-  return genericViewportDisplaySetMetadataProvider.get(
-    genericViewportDisplaySetMetadataProvider.VIEWPORT_V2_DISPLAY_SET,
-    geometryId
-  );
+  return cornerstone3D.displaySetRegistry.get(geometryId);
 }
 
 describe('The surface of a segmentation on several next 3D viewports -- ', () => {
@@ -124,7 +119,7 @@ describe('The surface of a segmentation on several next 3D viewports -- ', () =>
     if (cache.getGeometry(geometryId)) {
       cache.removeGeometryLoadObject(geometryId);
     }
-    genericViewportDisplaySetMetadataProvider.clear();
+    cornerstone3D.displaySetRegistry.clear();
   });
 
   it('keeps the registration of the surface while another 3D viewport shows it, so that a mount of the display sets there keeps the segmentation of the surface', async function () {

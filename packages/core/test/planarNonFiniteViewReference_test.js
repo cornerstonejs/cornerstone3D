@@ -100,7 +100,7 @@ describe('A view reference with a value that is not finite on a direct next plan
       renderingEngineId,
       toolGroupIds: ['default'],
     });
-    utilities.genericViewportDisplaySetMetadataProvider.clear();
+    cornerstone3D.displaySetRegistry.clear();
   });
 
   MODES.forEach(({ name: modeName, show, options }) => {

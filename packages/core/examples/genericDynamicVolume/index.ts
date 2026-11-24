@@ -5,7 +5,7 @@ import {
   volumeLoader,
   getRenderingEngine,
   eventTarget,
-  utilities,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
@@ -36,7 +36,7 @@ const { ViewportType } = Enums;
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'PT_4D_VOLUME_GENERIC';
 const toolGroupId = 'myToolGroupGeneric4D';
-const dataId = 'dynamic-volume-next:pt';
+const displaySetId = 'dynamic-volume-next:pt';
 const dimensionGroupSliderId = 'dimension-group-slider';
 
 // Registering the display set with a volumeId that carries the dynamic
@@ -254,14 +254,13 @@ async function run() {
   // Register the display set. The volumeId ties the display set to the
   // dynamic volume created above; the PlanarViewport resolves it through
   // the volume render path.
-  utilities.genericViewportDisplaySetMetadataProvider.add(dataId, {
+  displaySetRegistry.add(displaySetId, {
     imageIds,
-    kind: 'planar',
     volumeId,
   });
 
   await viewport.setDisplaySets({
-    displaySetId: dataId,
+    displaySetId: displaySetId,
     options: {
       orientation: Enums.OrientationAxis.ACQUISITION,
     },

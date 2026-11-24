@@ -59,7 +59,7 @@ function makeStaticVolume(volumeId: string) {
  * A next viewport (`PlanarViewport` or its legacy adapter) with a source
  * volume. The legacy adapter also has `getAllVolumeIds`.
  */
-function makeNextViewport(options: {
+function makeViewport(options: {
   id: string;
   volumeId?: string;
   mode?: string;
@@ -117,7 +117,7 @@ describe('playClip on next viewports', () => {
 
   it('plays the time points of a 4D volume on a PlanarViewport', () => {
     const volume = makeDynamicVolume('dynamic-volume');
-    const viewport = makeNextViewport({
+    const viewport = makeViewport({
       id: 'planar',
       volumeId: 'dynamic-volume',
     });
@@ -134,7 +134,7 @@ describe('playClip on next viewports', () => {
 
   it('plays the time points of a 4D volume on a legacy adapter viewport', () => {
     const volume = makeDynamicVolume('dynamic-volume');
-    const viewport = makeNextViewport({
+    const viewport = makeViewport({
       id: 'adapter',
       volumeId: 'dynamic-volume',
       legacyAdapter: true,
@@ -152,7 +152,7 @@ describe('playClip on next viewports', () => {
 
   it('starts again at the first time point after the last one', () => {
     const volume = makeDynamicVolume('dynamic-volume', 3);
-    const viewport = makeNextViewport({
+    const viewport = makeViewport({
       id: 'planar-loop',
       volumeId: 'dynamic-volume',
     });
@@ -169,7 +169,7 @@ describe('playClip on next viewports', () => {
 
   it('scrolls slices of a 4D volume when 4D cine is off', () => {
     const volume = makeDynamicVolume('dynamic-volume');
-    const viewport = makeNextViewport({
+    const viewport = makeViewport({
       id: 'planar-3d-cine',
       volumeId: 'dynamic-volume',
     });
@@ -188,7 +188,7 @@ describe('playClip on next viewports', () => {
   });
 
   it('scrolls slices of a 3D volume', () => {
-    const viewport = makeNextViewport({
+    const viewport = makeViewport({
       id: 'planar-static',
       volumeId: 'static-volume',
     });
@@ -207,7 +207,7 @@ describe('playClip on next viewports', () => {
 
   it('scrolls images of a next viewport in stack mode', () => {
     const volume = makeDynamicVolume('dynamic-volume');
-    const viewport = makeNextViewport({
+    const viewport = makeViewport({
       id: 'planar-stack',
       volumeId: 'dynamic-volume',
       mode: 'stack',
@@ -224,7 +224,7 @@ describe('playClip on next viewports', () => {
   });
 
   it('plays a next viewport that has no getNumberOfSlices as one step, and does not throw', () => {
-    const viewport = makeNextViewport({ id: 'ecg', mode: 'ecg' });
+    const viewport = makeViewport({ id: 'ecg', mode: 'ecg' });
 
     delete viewport.getNumberOfSlices;
     viewport.getSliceIndex = jest.fn(() => 0);

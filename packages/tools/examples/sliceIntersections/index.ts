@@ -4,7 +4,7 @@ import {
   Enums,
   CONSTANTS,
   getRenderingEngine,
-  utilities,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import {
   initDemo,
@@ -34,7 +34,7 @@ const { ViewportType, OrientationAxis, BlendModes } = Enums;
 const { MINIMUM_SLAB_THICKNESS } = CONSTANTS.RENDERING_DEFAULTS;
 
 const volumeId = 'cornerstoneStreamingImageVolume:SLICE_INTERSECTION_CT';
-const mprDataId = 'sliceIntersections:ct-mpr';
+const mprDisplaySetId = 'sliceIntersections:ct-mpr';
 const toolGroupId = 'SLICE_INTERSECTION_TOOLGROUP_ID';
 const viewportIds = ['CT_AXIAL', 'CT_SAGITTAL', 'CT_CORONAL'];
 const orientations = [
@@ -97,7 +97,7 @@ function setSlabThickness(slabThickness: number) {
 
   viewportIds.forEach((viewportId) => {
     const viewport = renderingEngine.getViewport(viewportId) as PlanarViewport;
-    viewport.setDisplaySetPresentation(mprDataId, {
+    viewport.setDisplaySetPresentation(mprDisplaySetId, {
       slabThickness,
       blendMode:
         slabThickness > MINIMUM_SLAB_THICKNESS
@@ -167,9 +167,8 @@ async function run() {
   });
 
   // One shared volume display set across the three MPR viewports.
-  utilities.genericViewportDisplaySetMetadataProvider.add(mprDataId, {
+  displaySetRegistry.add(mprDisplaySetId, {
     imageIds,
-    kind: 'planar',
     volumeId,
     initialImageIdIndex: Math.floor(imageIds.length / 2),
   });
@@ -180,7 +179,7 @@ async function run() {
         viewportId
       ) as PlanarViewport;
       return viewport.setDisplaySets({
-        displaySetId: mprDataId,
+        displaySetId: mprDisplaySetId,
         options: { orientation: orientations[index] },
       });
     })
@@ -190,7 +189,9 @@ async function run() {
     const viewport = getRenderingEngine(renderingEngineId).getViewport(
       viewportId
     ) as PlanarViewport;
-    viewport.setDisplaySetPresentation(mprDataId, { voiRange: ctVoiRange });
+    viewport.setDisplaySetPresentation(mprDisplaySetId, {
+      voiRange: ctVoiRange,
+    });
   });
 
   const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);

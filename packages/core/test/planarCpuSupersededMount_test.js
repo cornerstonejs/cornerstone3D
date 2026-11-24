@@ -70,9 +70,8 @@ async function createStalledSeries(id, stalls) {
 
 /** Registers a series as a stack display set, shown from image 0. */
 function addStack(displaySetId, series) {
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+  cornerstone3D.displaySetRegistry.add(displaySetId, {
     imageIds: series.imageIds,
-    kind: 'planar',
     initialImageIdIndex: 0,
   });
 }
@@ -113,7 +112,7 @@ describe('A mount of a direct next planar viewport on the CPU that a newer mount
 
   afterEach(function () {
     stalls.clear();
-    utilities.genericViewportDisplaySetMetadataProvider.clear();
+    cornerstone3D.displaySetRegistry.clear();
     testUtils.cleanupTestEnvironment({
       renderingEngineId,
       toolGroupIds: ['default'],

@@ -4,9 +4,9 @@ import {
   Enums,
   getRenderingEngine,
   RenderingEngine,
-  utilities,
   viewportProjection,
   volumeLoader,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
@@ -177,7 +177,7 @@ async function run() {
   volume.load();
   const viewport = renderingEngine.getViewport<VolumeViewport3D>(viewportId);
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
+  displaySetRegistry.add(displaySetId, {
     imageIds,
     volumeId,
   });

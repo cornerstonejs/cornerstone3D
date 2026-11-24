@@ -63,7 +63,7 @@ export async function mountLoupeSource(
 ): Promise<boolean> {
   const displaySets = getMagnifiedDisplaySets(sourceViewport);
 
-  if (!sourceViewport.getSourceDataId() || !displaySets.length) {
+  if (!sourceViewport.getSourceDisplaySetId() || !displaySets.length) {
     return false;
   }
 
@@ -101,7 +101,7 @@ export function syncLoupeWithSource(
   worldPerPixel: number
 ): void {
   if (
-    !sourceViewport.getSourceDataId() ||
+    !sourceViewport.getSourceDisplaySetId() ||
     loupeViewport.getCurrentMode() === 'empty'
   ) {
     return;

@@ -193,8 +193,7 @@ await volume.load();
 // Register the volume once and show it on the viewports
 const displaySetId = 'ctVolume';
 
-utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-  kind: 'planar',
+displaySetRegistry.add(displaySetId, {
   imageIds,
   volumeId,
 });
@@ -251,7 +250,7 @@ import {
   RenderingEngine,
   Enums,
   volumeLoader,
-  utilities,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import { init as dicomImageLoaderInit } from '@cornerstonejs/dicom-image-loader';
 import {
@@ -402,8 +401,7 @@ async function run() {
   // Register the volume once and show it on the viewports
   const displaySetId = 'ctVolume';
 
-  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, {
-    kind: 'planar',
+  displaySetRegistry.add(displaySetId, {
     imageIds,
     volumeId,
   });

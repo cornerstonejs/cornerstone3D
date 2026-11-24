@@ -116,7 +116,7 @@ test.describe('Labelmap Slice Rendering Tools - Next', () => {
         viewportId: 'CT_AXIAL',
         constructorName: 'PlanarViewport',
         type: 'planar',
-        renderModesByDataId: {
+        renderModesByDisplaySetId: {
           'labelmap-slice-rendering-tools-next:source':
             getPlainVolumeSliceRenderMode(),
         },
@@ -126,7 +126,7 @@ test.describe('Labelmap Slice Rendering Tools - Next', () => {
         viewportId: 'CT_SAGITTAL',
         constructorName: 'PlanarViewport',
         type: 'planar',
-        renderModesByDataId: {
+        renderModesByDisplaySetId: {
           'labelmap-slice-rendering-tools-next:source':
             getPlainVolumeSliceRenderMode(),
         },
@@ -136,7 +136,7 @@ test.describe('Labelmap Slice Rendering Tools - Next', () => {
         viewportId: 'CT_CORONAL',
         constructorName: 'PlanarViewport',
         type: 'planar',
-        renderModesByDataId: {
+        renderModesByDisplaySetId: {
           'labelmap-slice-rendering-tools-next:source':
             getPlainVolumeSliceRenderMode(),
         },
