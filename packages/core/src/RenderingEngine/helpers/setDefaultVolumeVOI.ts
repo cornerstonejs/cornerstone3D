@@ -208,7 +208,7 @@ export async function getDefaultVolumeVOI(
     return { voiRange: PT_PRESCALED_RANGE };
   }
 
-  const source = getVolumeVOISource(imageVolume);
+  let source = getVolumeVOISource(imageVolume);
   let voiRange = getRangeFromVOISource(source);
 
   if (
@@ -216,7 +216,11 @@ export async function getDefaultVolumeVOI(
     imageVolume.imageIds?.length &&
     shouldUseImageIdsForVOI(imageVolume)
   ) {
-    voiRange = await getVOIFromMiddleSliceMinMax(imageVolume);
+    const minMaxRange = await getVOIFromMiddleSliceMinMax(imageVolume);
+    // The load can bring the VOI metadata of the instance. Read it again, so the
+    // applied VOI is the shape that getVolumeVOIShape later reports.
+    source = getVolumeVOISource(imageVolume);
+    voiRange = getRangeFromVOISource(source) ?? minMaxRange;
   }
 
   return {

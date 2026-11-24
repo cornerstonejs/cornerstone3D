@@ -89,9 +89,6 @@ layout.appendChild(info);
 let renderingEngine: RenderingEngine;
 let viewport: Types.IStackViewport;
 let currentImageId: string;
-// Mirrors what the viewport tracks internally: asking for a VOI LUT Function is
-// the opt out from the image's own VOI LUT Sequence
-let voiLUTFunctionRequested = false;
 // Kept here so that the inversion survives a reload of the image, which the CPU
 // toggle does, and so both pipelines are compared in the same state
 let invertRequested = false;
@@ -160,7 +157,10 @@ function updateInfo() {
       properties.isComputedVOI ? 'metadata / VOI LUT' : 'set explicitly'
     }`,
     `applied VOI             : ${
-      voiLUT && !voiLUTFunctionRequested
+      voiLUT &&
+      !properties.colormap?.name &&
+      properties.useVOILUTSequence !== false &&
+      (properties.useVOILUTSequence || !properties.voiLUTFunctionSetByUser)
         ? 'VOI LUT Sequence, stretched over voiRange'
         : `${properties.VOILUTFunction} over voiRange`
     }`,
@@ -171,9 +171,14 @@ function updateInfo() {
 
 async function loadAndViewImage(imageId: string) {
   currentImageId = imageId;
-  voiLUTFunctionRequested = false;
 
   await prefetchMetadataInformation([imageId]);
+
+  // A newer file was selected while this one was prefetching
+  if (currentImageId !== imageId) {
+    return;
+  }
+
   await viewport.setStack([imageId]);
 
   // A new stack starts from the state of the file, so put the requested
@@ -241,7 +246,6 @@ addDropdownToToolbar({
     defaultValue: 'LINEAR',
   },
   onSelectedValueChange: (key) => {
-    voiLUTFunctionRequested = true;
     viewport.setProperties({
       VOILUTFunction: voiLUTFunctions[key as keyof typeof voiLUTFunctions],
     });
@@ -253,9 +257,8 @@ addDropdownToToolbar({
 addButtonToToolbar({
   title: 'Back to the VOI LUT Sequence',
   onClick: () => {
-    // resetProperties drops the explicitly requested VOI LUT Function, which is
-    // what opts back in to the file's own VOI LUT Sequence
-    voiLUTFunctionRequested = false;
+    // resetProperties drops the requested VOI LUT Function and the
+    // useVOILUTSequence choice, which opts back in to the VOI LUT Sequence
     viewport.resetProperties();
 
     // resetProperties also puts the inversion back to the state of the file, so
@@ -286,8 +289,9 @@ addButtonToToolbar({
       return;
     }
 
-    // Requesting a VOI LUT Function is the opt out from the VOI LUT Sequence;
-    // an explicit range alone would only stretch the sequence's curve
+    // useVOILUTSequence: false is the opt out from the VOI LUT Sequence. A
+    // function equal to the function of the file keeps the sequence, and an
+    // explicit range alone would only stretch the curve of the sequence.
     const voiLUTFunction =
       viewport.getProperties().VOILUTFunction ?? VOILUTFunctionType.LINEAR;
     const voiRange = utilities.windowLevel.toLowHighRange(
@@ -296,8 +300,11 @@ addButtonToToolbar({
       voiLUTFunction
     );
 
-    voiLUTFunctionRequested = true;
-    viewport.setProperties({ VOILUTFunction: voiLUTFunction, voiRange });
+    viewport.setProperties({
+      VOILUTFunction: voiLUTFunction,
+      useVOILUTSequence: false,
+      voiRange,
+    });
     viewport.render();
     updateInfo();
   },
