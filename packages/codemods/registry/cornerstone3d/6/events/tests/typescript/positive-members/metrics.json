@@ -4,7 +4,7 @@
       "cardinality": {
         "file": "input.ts",
         "line": "10",
-        "rule": "Events.STACK_NEW_IMAGE: NEW_IMAGE also fires for each slice of a volume"
+        "rule": "Events.STACK_NEW_IMAGE: NEW_IMAGE also fires for each slice of a volume, and detail.imageIdIndex is detail.sliceIndex"
       },
       "count": 1
     },
@@ -20,7 +20,7 @@
       "cardinality": {
         "file": "input.ts",
         "line": "5",
-        "rule": "Events.STACK_NEW_IMAGE: NEW_IMAGE also fires for each slice of a volume"
+        "rule": "Events.STACK_NEW_IMAGE: NEW_IMAGE also fires for each slice of a volume, and detail.imageIdIndex is detail.sliceIndex"
       },
       "count": 1
     },
@@ -28,7 +28,7 @@
       "cardinality": {
         "file": "input.ts",
         "line": "5",
-        "rule": "Events.VOLUME_NEW_IMAGE: detail.imageIndex is detail.imageIdIndex"
+        "rule": "Events.VOLUME_NEW_IMAGE: detail.imageIndex is detail.sliceIndex"
       },
       "count": 1
     },
@@ -36,7 +36,7 @@
       "cardinality": {
         "file": "input.ts",
         "line": "7",
-        "rule": "Events.STACK_NEW_IMAGE: NEW_IMAGE also fires for each slice of a volume"
+        "rule": "Events.STACK_NEW_IMAGE: NEW_IMAGE also fires for each slice of a volume, and detail.imageIdIndex is detail.sliceIndex"
       },
       "count": 1
     },
@@ -44,7 +44,7 @@
       "cardinality": {
         "file": "input.ts",
         "line": "8",
-        "rule": "Events.VOLUME_NEW_IMAGE: detail.imageIndex is detail.imageIdIndex"
+        "rule": "Events.VOLUME_NEW_IMAGE: detail.imageIndex is detail.sliceIndex"
       },
       "count": 1
     }

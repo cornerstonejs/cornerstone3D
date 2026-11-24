@@ -84,13 +84,17 @@ function addStackDisplaySet(viewport, series, initialImageIdIndex) {
   return displaySetId;
 }
 
-/** The one NEW_IMAGE that a volume fires for a slice. */
+/**
+ * The one NEW_IMAGE that a volume fires for a slice: of the source display
+ * set, with the slice index of the view as `sliceIndex`.
+ */
 function newImageOfSlice(viewport, { imageId, imageIdIndex, numberOfSlices }) {
   return [
     {
       viewportId: viewport.id,
       renderingEngineId,
-      imageIdIndex,
+      displaySetId: viewport.getSourceDisplaySetId(),
+      sliceIndex: imageIdIndex,
       numberOfSlices,
       imageId,
       image: undefined,
@@ -98,13 +102,17 @@ function newImageOfSlice(viewport, { imageId, imageIdIndex, numberOfSlices }) {
   ];
 }
 
-/** The one NEW_IMAGE that a stack fires for an image. */
+/**
+ * The one NEW_IMAGE that a stack fires for an image: of the source display
+ * set, with the index of the image as `sliceIndex`.
+ */
 function newImageOfStack(viewport, series, imageIdIndex) {
   return [
     {
       viewportId: viewport.id,
       renderingEngineId,
-      imageIdIndex,
+      displaySetId: viewport.getSourceDisplaySetId(),
+      sliceIndex: imageIdIndex,
       numberOfSlices: series.imageIds.length,
       imageId: series.imageIds[imageIdIndex],
       image: jasmine.objectContaining({

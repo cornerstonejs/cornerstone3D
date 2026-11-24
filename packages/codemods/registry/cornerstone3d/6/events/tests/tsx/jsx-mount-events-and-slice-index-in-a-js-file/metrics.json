@@ -1,0 +1,36 @@
+{
+  "cornerstone3d-6-review": [
+    {
+      "cardinality": {
+        "file": "input.js",
+        "line": "10",
+        "rule": "Events.STACK_NEW_IMAGE: NEW_IMAGE also fires for each slice of a volume, and detail.imageIdIndex is detail.sliceIndex"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.js",
+        "line": "12",
+        "rule": "Events.VOLUME_VIEWPORT_NEW_VOLUME: DISPLAY_SETS_CHANGED also fires when an overlay such as a labelmap is added or removed: a listener that cares only for the source adds if (!evt.detail.sourceChanged) return, it fires for a stack too, and the detail has no volumeActors (call viewport.getActors())"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.js",
+        "line": "17",
+        "rule": "Events.STACK_NEW_IMAGE: NEW_IMAGE also fires for each slice of a volume, and detail.imageIdIndex is detail.sliceIndex"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.js",
+        "line": "19",
+        "rule": "Events.VOLUME_VIEWPORT_NEW_VOLUME: DISPLAY_SETS_CHANGED also fires when an overlay such as a labelmap is added or removed: a listener that cares only for the source adds if (!evt.detail.sourceChanged) return, it fires for a stack too, and the detail has no volumeActors (call viewport.getActors())"
+      },
+      "count": 1
+    }
+  ]
+}

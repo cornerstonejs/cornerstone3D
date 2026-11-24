@@ -194,7 +194,8 @@ function expectSameTransferFunctions(next, legacy) {
 
 /**
  * The detail of the one VOLUME_VIEWPORT_NEW_VOLUME event of the legacy 3D
- * viewport at `setVolumes`: one volume actor, which names the volume.
+ * viewport at `setVolumes`: one volume actor, which names the volume. In 6.0
+ * DISPLAY_SETS_CHANGED fires once, and `getActors()` gives that actor.
  */
 function legacyNewVolumeDetails(volumeId) {
   return [{ volumeActors: [{ referencedId: volumeId }] }];
@@ -656,25 +657,30 @@ describe('Direct next 3D viewport, the scene -- ', () => {
     expect(details.length).toBe(0);
   });
 
-  it('fires VOLUME_VIEWPORT_NEW_VOLUME once on a mount with the legacy detail', async function () {
+  it('fires DISPLAY_SETS_CHANGED once on a mount, when getActors gives the actor that the legacy VOLUME_VIEWPORT_NEW_VOLUME named', async function () {
     const [next] = createViewports(renderingEngine, { nextIds: ['next3D'] });
     const volumeId = await createVolume();
     const legacyDetails = legacyNewVolumeDetails(volumeId);
-    const nextDetails = recordEvents(next, Events.VOLUME_VIEWPORT_NEW_VOLUME);
+    const nextDetails = recordEvents(next, Events.DISPLAY_SETS_CHANGED);
+    const actorsAtEvent = [];
 
-    await showVolume(next, volumeId);
+    next.element.addEventListener(Events.DISPLAY_SETS_CHANGED, () =>
+      actorsAtEvent.push(next.getActors())
+    );
 
-    expect(nextDetails.length).toBe(1);
+    const displaySetId = await showVolume(next, volumeId);
+
     expect(nextDetails.length).toBe(legacyDetails.length);
     expect(nextDetails[0].viewportId).toBe(next.id);
-    expect(nextDetails[0].volumeActors.length).toBe(
-      legacyDetails[0].volumeActors.length
-    );
-    expect(nextDetails[0].volumeActors[0].referencedId).toBe(
+    expect(nextDetails[0].displaySets).toEqual([
+      { displaySetId, role: 'source' },
+    ]);
+    expect(nextDetails[0].sourceChanged).toBe(true);
+    expect(actorsAtEvent[0].length).toBe(legacyDetails[0].volumeActors.length);
+    expect(actorsAtEvent[0][0].referencedId).toBe(
       legacyDetails[0].volumeActors[0].referencedId
     );
-    expect(nextDetails[0].volumeActors[0].actor).toBe(volumeActorOf(next));
-    expect(nextDetails[0].volumeActors[0].uid).toBe(next.getActors()[0].uid);
+    expect(actorsAtEvent[0][0].actor).toBe(volumeActorOf(next));
   });
 
   it('fits a prop of the application in the renderer on resetViewState as the legacy viewport fits the actors of setActors on resetCamera, from the same view direction', async function () {

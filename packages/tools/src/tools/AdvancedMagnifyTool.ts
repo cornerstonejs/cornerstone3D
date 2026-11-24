@@ -1280,25 +1280,25 @@ class AdvancedMagnifyViewportManager {
   private _addSourceElementEventListener(element) {
     element.addEventListener(csEvents.NEW_IMAGE, this._newImageCallback);
 
-    const newStackHandler = (evt) => {
-      const { viewportId: sourceViewportId } = evt.detail;
+    const displaySetsChangedHandler = (
+      evt: Types.EventTypes.DisplaySetsChangedEvent
+    ) => {
+      const { viewportId: sourceViewportId, sourceChanged } = evt.detail;
+
+      if (!sourceChanged) {
+        return;
+      }
+
       this._reset(sourceViewportId);
     };
 
-    element.addEventListener(csEvents.VIEWPORT_NEW_IMAGE_SET, newStackHandler);
-
-    const newVolumeHandler = (evt) => {
-      const { viewportId: sourceViewportId } = evt.detail;
-      this._reset(sourceViewportId);
-    };
     element.addEventListener(
-      csEvents.VOLUME_VIEWPORT_NEW_VOLUME,
-      newVolumeHandler
+      csEvents.DISPLAY_SETS_CHANGED,
+      displaySetsChangedHandler
     );
 
     // Store the event handlers to remove later
-    element.newStackHandler = newStackHandler;
-    element.newVolumeHandler = newVolumeHandler;
+    element.displaySetsChangedHandler = displaySetsChangedHandler;
   }
 
   private _removeSourceElementEventListener(element) {
@@ -1306,17 +1306,12 @@ class AdvancedMagnifyViewportManager {
 
     // Remove using the stored handlers
     element.removeEventListener(
-      csEvents.VIEWPORT_NEW_IMAGE_SET,
-      element.newStackHandler
-    );
-    element.removeEventListener(
-      csEvents.VOLUME_VIEWPORT_NEW_VOLUME,
-      element.newVolumeHandler
+      csEvents.DISPLAY_SETS_CHANGED,
+      element.displaySetsChangedHandler
     );
 
     // Clean up references
-    delete element.newStackHandler;
-    delete element.newVolumeHandler;
+    delete element.displaySetsChangedHandler;
   }
 
   private _initialize() {

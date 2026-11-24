@@ -73,7 +73,8 @@ function expectOneNewImage(viewport, events, frameIndex) {
   expect(events.newImage[0]).toEqual({
     viewportId: 'nextVideoMount',
     renderingEngineId,
-    imageIdIndex: frameIndex,
+    displaySetId: TEST_VIDEO.imageId,
+    sliceIndex: frameIndex,
     numberOfSlices: TEST_VIDEO.numberOfFrames,
     imageId: viewport.getImageIds()[frameIndex],
     image: undefined,

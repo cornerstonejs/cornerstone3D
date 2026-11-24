@@ -56,7 +56,7 @@ function createNextPlanarViewport(
 /**
  * How many times CrosshairsTool handled VOLUME_VIEWPORT_NEW_VOLUME when a
  * new volume was shown on one of two legacy volume viewports of its tool
- * group.
+ * group. A 6.0 viewport fires DISPLAY_SETS_CHANGED there, once.
  */
 const LEGACY_CROSSHAIRS_NEW_VOLUME_CALLS = 1;
 
@@ -385,28 +385,35 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
   });
 
   describe('new data', () => {
-    it('fires VOLUME_VIEWPORT_NEW_VOLUME once when a volume is shown, as the legacy setVolumes', async function () {
+    it('fires DISPLAY_SETS_CHANGED once when a volume is shown, as the legacy setVolumes fired VOLUME_VIEWPORT_NEW_VOLUME, when getActors gives the actor of the volume', async function () {
       const volumeId = await createVolume();
       const viewport = createNextPlanarViewport(renderingEngine, {
         orientation: OrientationAxis.AXIAL,
       });
       const details = [];
 
-      viewport.element.addEventListener(
-        Events.VOLUME_VIEWPORT_NEW_VOLUME,
-        (evt) => details.push(evt.detail)
+      viewport.element.addEventListener(Events.DISPLAY_SETS_CHANGED, (evt) =>
+        details.push({ ...evt.detail, actors: viewport.getActors() })
       );
       await showVolume(viewport, volumeId, OrientationAxis.AXIAL);
       await frames();
 
-      const next = details.map(({ viewportId, volumeActors }) => ({
-        viewportId,
-        volumeIds: volumeActors.map((entry) => entry.referencedId),
-        actorClasses: volumeActors.map((entry) => entry.actor.getClassName()),
-      }));
+      const next = details.map(
+        ({ viewportId, displaySets, sourceChanged, actors }) => ({
+          viewportId,
+          displaySets,
+          sourceChanged,
+          volumeIds: actors.map((entry) => entry.referencedId),
+          actorClasses: actors.map((entry) => entry.actor.getClassName()),
+        })
+      );
 
       expect(next.length).toBe(1);
       expect(next[0].viewportId).toBe('next');
+      expect(next[0].displaySets).toEqual([
+        { displaySetId: getVolumeDisplaySetId(viewport), role: 'source' },
+      ]);
+      expect(next[0].sourceChanged).toBe(true);
       expect(next[0].volumeIds).toEqual([volumeId]);
       expect(next[0].actorClasses.length).toBe(1);
     });
@@ -446,17 +453,42 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
 
       const tool = toolGroup.getToolInstance(CrosshairsTool.toolName);
       let count = 0;
+      let centers = 0;
       const onNewVolume = tool._onNewVolume;
+      const computeToolCenter = tool._computeToolCenter;
 
       tool._onNewVolume = (evt) => {
         count++;
         onNewVolume(evt);
+      };
+      tool._computeToolCenter = (...args) => {
+        centers++;
+
+        return computeToolCenter(...args);
       };
 
       await showVolume(viewports[0], otherVolumeId, OrientationAxis.AXIAL);
       await frames();
 
       expect(count).toBe(LEGACY_CROSSHAIRS_NEW_VOLUME_CALLS);
+
+      const centersAfterNewVolume = centers;
+      const overlayDisplaySetId = 'overlay:next0';
+
+      cornerstone3D.displaySetRegistry.add(overlayDisplaySetId, {
+        imageIds: cache.getVolume(volumeId).imageIds,
+        volumeId,
+      });
+      await viewports[0].addDisplaySet(overlayDisplaySetId, {
+        role: 'overlay',
+        orientation: OrientationAxis.AXIAL,
+      });
+      viewports[0].removeDisplaySet(overlayDisplaySetId);
+      await frames();
+
+      expect(centersAfterNewVolume).toBeGreaterThan(0);
+      expect(count).toBe(LEGACY_CROSSHAIRS_NEW_VOLUME_CALLS + 2);
+      expect(centers).toBe(centersAfterNewVolume);
     });
   });
 
@@ -1001,7 +1033,8 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
         {
           viewportId: 'next',
           renderingEngineId,
-          imageIdIndex: 3,
+          displaySetId: viewport.getSourceDisplaySetId(),
+          sliceIndex: 3,
           numberOfSlices: series.size.slices,
           imageId: series.imageIds[3],
           image: jasmine.objectContaining({ imageId: series.imageIds[3] }),
@@ -1043,7 +1076,8 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
         {
           viewportId: 'next',
           renderingEngineId,
-          imageIdIndex: indexBefore + 1,
+          displaySetId: viewport.getSourceDisplaySetId(),
+          sliceIndex: indexBefore + 1,
           numberOfSlices: series.size.slices,
           imageId: viewport.getCurrentImageId(),
           image: undefined,
@@ -1100,7 +1134,9 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
         expect(detail.imageId).toBe(series.imageIds[3]);
         expect(detail.imageId).toBe(viewport.getCurrentImageId());
         expect(detail.image.imageId).toBe(series.imageIds[3]);
-        expect(detail.imageIdIndex).toBe(viewport.getCurrentImageIdIndex());
+        expect(detail.displaySetId).toBe(viewport.getSourceDisplaySetId());
+        expect(detail.sliceIndex).toBe(viewport.getSliceIndex());
+        expect(detail.imageIdIndex).toBeUndefined();
         expect(detail.numberOfSlices).toBe(viewport.getNumberOfSlices());
         expect(detailsOf(events, 'CORNERSTONE_STACK_NEW_IMAGE')).toEqual([]);
       });
@@ -1135,17 +1171,19 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
         mountDetails.forEach((mountDetail) => {
           expect(mountDetail.imageId).toBe(viewport.getCurrentImageId());
         });
-        expect(mountDetails.at(-1).imageIdIndex).toBe(
-          viewport.getCurrentImageIdIndex()
-        );
+        expect(mountDetails.at(-1).sliceIndex).toBe(viewport.getSliceIndex());
+        mountDetails.forEach((mountDetail) => {
+          expect(mountDetail.displaySetId).toBe(displaySetId);
+        });
 
         const detail = await scrollOneSlice(viewport, events);
 
         expect(series.imageIds).toContain(detail.imageId);
         expect(detail.imageId).toBe(viewport.getCurrentImageId());
-        expect(detail.imageIdIndex).toBe(viewport.getCurrentImageIdIndex());
+        expect(detail.displaySetId).toBe(displaySetId);
+        expect(detail.sliceIndex).toBe(viewport.getSliceIndex());
         expect(series.imageIds.indexOf(detail.imageId)).toBe(
-          series.size.slices - 1 - detail.imageIdIndex
+          series.size.slices - 1 - detail.sliceIndex
         );
         expect(detail.numberOfSlices).toBe(viewport.getNumberOfSlices());
         expect(detail.image).toBeUndefined();
@@ -1169,9 +1207,33 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
       expect(viewport.getCurrentImageId()).toBeUndefined();
       expect(detail.imageId).toBeUndefined();
       expect(detail.image).toBeUndefined();
-      expect(detail.imageIdIndex).toBe(viewport.getCurrentImageIdIndex());
+      expect(detail.displaySetId).toBe(viewport.getSourceDisplaySetId());
+      expect(detail.sliceIndex).toBe(viewport.getSliceIndex());
       expect(detail.numberOfSlices).toBe(viewport.getNumberOfSlices());
       expect(detail.numberOfSlices).toBeGreaterThan(series.size.slices);
+    });
+
+    it('gives the display set and the slice index of the view in NEW_IMAGE on an oblique plane, with no image id', async function () {
+      const series = await createSeries();
+      const viewport = createNextViewport(renderingEngine, 'next');
+
+      await showSeriesVolume(viewport, series, 2, {
+        orientation: {
+          viewPlaneNormal: [Math.SQRT1_2, 0, Math.SQRT1_2],
+          viewUp: [0, -1, 0],
+        },
+      });
+
+      const events = recordSliceEvents(viewport.element);
+      const detail = await scrollOneSlice(viewport, events);
+
+      expect(viewport.getCurrentMode()).toBe('volume');
+      expect(utilities.isInAcquisitionPlane(viewport)).toBe(false);
+      expect(detail.imageId).toBeUndefined();
+      expect(detail.displaySetId).toBe(viewport.getSourceDisplaySetId());
+      expect(detail.sliceIndex).toBe(viewport.getSliceIndex());
+      expect(detail.numberOfSlices).toBe(viewport.getNumberOfSlices());
+      expect(detail.imageIdIndex).toBeUndefined();
     });
   });
 

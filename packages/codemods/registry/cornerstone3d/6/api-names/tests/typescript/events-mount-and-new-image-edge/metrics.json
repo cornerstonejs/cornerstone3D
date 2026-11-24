@@ -1,0 +1,36 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "11",
+        "rule": "detail.imageIdIndex: if this is the detail of NEW_IMAGE, the key is sliceIndex now"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "35",
+        "rule": "detail.imageIdIndex: if this is the detail of NEW_IMAGE, the key is sliceIndex now"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "40",
+        "rule": "'CORNERSTONE_VOLUME_VIEWPORT_NEW_VOLUME'"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "6",
+        "rule": "detail.imageIdIndex: if this is the detail of NEW_IMAGE, the key is sliceIndex now"
+      },
+      "count": 1
+    }
+  ]
+}

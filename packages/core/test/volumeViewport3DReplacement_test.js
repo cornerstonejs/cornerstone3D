@@ -157,7 +157,7 @@ describe('A failed replacement of the display sets of a 3D viewport -- ', () => 
     const shownPicture = pictureOf(viewport);
     const newVolumeEvents = [];
 
-    viewport.element.addEventListener(Events.VOLUME_VIEWPORT_NEW_VOLUME, () =>
+    viewport.element.addEventListener(Events.DISPLAY_SETS_CHANGED, () =>
       newVolumeEvents.push(true)
     );
 
@@ -232,7 +232,7 @@ describe('A failed replacement of the display sets of a 3D viewport -- ', () => 
     const shownPicture = pictureOf(viewport);
     const newVolumeEvents = [];
 
-    viewport.element.addEventListener(Events.VOLUME_VIEWPORT_NEW_VOLUME, () =>
+    viewport.element.addEventListener(Events.DISPLAY_SETS_CHANGED, () =>
       newVolumeEvents.push(true)
     );
 
@@ -287,14 +287,11 @@ describe('Two replacements of the display sets of a 3D viewport, one after the o
     await viewport.setDisplaySets(volumeEntry('replacement3D:shown'));
     provider = wrapDataProvider(viewport);
     newVolumeEvents = [];
-    viewport.element.addEventListener(
-      Events.VOLUME_VIEWPORT_NEW_VOLUME,
-      (event) => {
-        newVolumeEvents.push(
-          event.detail.volumeActors.map(({ referencedId }) => referencedId)
-        );
-      }
-    );
+    viewport.element.addEventListener(Events.DISPLAY_SETS_CHANGED, () => {
+      newVolumeEvents.push(
+        viewport.getActors().map(({ referencedId }) => referencedId)
+      );
+    });
   });
 
   afterEach(function () {
@@ -330,7 +327,7 @@ describe('Two replacements of the display sets of a 3D viewport, one after the o
     await older;
 
     expect(sceneOf(viewport)).toEqual({ displaySets: [], actors: [] });
-    expect(newVolumeEvents).toEqual([]);
+    expect(newVolumeEvents).toEqual([[]]);
   });
 
   it('keeps the shown scene when the older call loads before the newer call, which then mounts', async function () {
@@ -387,17 +384,14 @@ describe('A replacement of the display sets of a 3D viewport that a newer call c
 
     await viewport.setDisplaySets(volumeEntry('replacement3D:shown'));
     newVolumeEvents = [];
-    viewport.element.addEventListener(
-      Events.VOLUME_VIEWPORT_NEW_VOLUME,
-      (event) => {
-        newVolumeEvents.push({
-          volumeActors: event.detail.volumeActors.map(
-            ({ referencedId }) => referencedId
-          ),
-          scene: sceneOf(viewport),
-        });
-      }
-    );
+    viewport.element.addEventListener(Events.DISPLAY_SETS_CHANGED, () => {
+      newVolumeEvents.push({
+        volumeActors: viewport
+          .getActors()
+          .map(({ referencedId }) => referencedId),
+        scene: sceneOf(viewport),
+      });
+    });
   });
 
   afterEach(function () {
@@ -558,14 +552,11 @@ describe('A replacement of the display sets of a 3D viewport and its loads -- ',
   it('mounts what it loaded when the registration of the first display set goes while the second loads', async function () {
     const newVolumeEvents = [];
 
-    viewport.element.addEventListener(
-      Events.VOLUME_VIEWPORT_NEW_VOLUME,
-      (event) => {
-        newVolumeEvents.push(
-          event.detail.volumeActors.map(({ referencedId }) => referencedId)
-        );
-      }
-    );
+    viewport.element.addEventListener(Events.DISPLAY_SETS_CHANGED, () => {
+      newVolumeEvents.push(
+        viewport.getActors().map(({ referencedId }) => referencedId)
+      );
+    });
     provider.hold('replacement3D:second');
 
     const replacement = viewport.setDisplaySets(
@@ -591,12 +582,9 @@ describe('A replacement of the display sets of a 3D viewport and its loads -- ',
   it('rejects and keeps the shown scene when the volume that it loaded leaves the cache while the second loads', async function () {
     const newVolumeEvents = [];
 
-    viewport.element.addEventListener(
-      Events.VOLUME_VIEWPORT_NEW_VOLUME,
-      (event) => {
-        newVolumeEvents.push(event.detail.volumeActors.length);
-      }
-    );
+    viewport.element.addEventListener(Events.DISPLAY_SETS_CHANGED, () => {
+      newVolumeEvents.push(viewport.getActors().length);
+    });
     const shownScene = sceneOf(viewport);
 
     provider.hold('replacement3D:second');

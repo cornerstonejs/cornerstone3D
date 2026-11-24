@@ -152,7 +152,9 @@ class VideoViewport extends BaseViewport<
    * and the video then shows the 1-based `frameNumber` of its options.
    * NEW_IMAGE fires once for the frame that the mount shows: after the seek
    * when the mount seeks, else when the frame shows. The legacy video viewport
-   * fired its new image event at every mount too.
+   * fired its new image event at every mount too. DISPLAY_SETS_CHANGED fires
+   * once the videos are mounted; a newer call stops this one, which then
+   * fires nothing.
    *
    * @param entries - Video display sets to mount.
    */
@@ -162,16 +164,27 @@ class VideoViewport extends BaseViewport<
       options?: { frameNumber?: number };
     }>
   ): Promise<void> {
+    const isSuperseded = this.startSetDisplaySets();
+
     this.removeAllData();
     this.overlayActors = [];
     this.frameScalarData = undefined;
     this.lastFrameEventNumber = undefined;
 
     for (const [index, { displaySetId }] of entries.entries()) {
-      await this.addDisplaySet(displaySetId, {
-        renderMode: 'video2d',
-        role: index === 0 ? 'source' : 'overlay',
-      });
+      const bound = await this.bindDisplaySet(
+        displaySetId,
+        {
+          renderMode: 'video2d',
+          role: index === 0 ? 'source' : 'overlay',
+        },
+        isSuperseded
+      );
+
+      if (!bound) {
+        return;
+      }
+
       const binding = this.getBinding(displaySetId);
 
       if (!binding) {
@@ -211,6 +224,10 @@ class VideoViewport extends BaseViewport<
       this.modified();
       this.trackVideoElement();
       await this.primeInitialFrame(videoData);
+
+      if (isSuperseded()) {
+        return;
+      }
     }
 
     const frameNumber = entries[0]?.options?.frameNumber;
@@ -228,6 +245,10 @@ class VideoViewport extends BaseViewport<
     ) {
       this.triggerFrameEvents();
     }
+
+    this.triggerDisplaySetsChanged(
+      entries.map(({ displaySetId }) => displaySetId)
+    );
   }
 
   /**
@@ -236,7 +257,7 @@ class VideoViewport extends BaseViewport<
    *
    * @param displaySetId - Logical dataset id to remove.
    */
-  removeDisplaySet(displaySetId: string): void {
+  protected override removeDisplaySetBinding(displaySetId: string): void {
     const overlayActors = this.overlayActors.filter(
       (actorEntry) => actorEntry.uid !== displaySetId
     );
@@ -249,7 +270,7 @@ class VideoViewport extends BaseViewport<
 
     const firstDisplaySetId = this.getFirstBinding()?.data.id;
 
-    super.removeDisplaySet(displaySetId);
+    super.removeDisplaySetBinding(displaySetId);
 
     if (firstDisplaySetId === displaySetId) {
       this.untrackVideoElement();
@@ -1032,28 +1053,31 @@ class VideoViewport extends BaseViewport<
 
   /**
    * Fires NEW_IMAGE for the frame on display, as the next planar viewport
-   * fires it for a new image: the 0-based index of the frame, the number of
-   * frames and the image id of the frame. A video has no image object for a
-   * frame. Then asks for the IMAGE_RENDERED of the frame.
+   * fires it for a new image: the video display set, the 0-based index of
+   * the frame, the number of frames and the image id of the frame. A video
+   * has no image object for a frame. Then asks for the IMAGE_RENDERED of the
+   * frame.
    */
   private triggerFrameEvents(): void {
     const element = this.getVideoElement();
+    const displaySetId = this.getCurrentBinding()?.data.id;
 
-    if (this.isDestroyed || !element) {
+    if (this.isDestroyed || !element || !displaySetId) {
       return;
     }
 
-    const imageIdIndex = this.getCurrentImageIdIndex();
+    const sliceIndex = this.getCurrentImageIdIndex();
     const detail: EventTypes.NewImageEventDetail = {
       viewportId: this.id,
       renderingEngineId: this.renderingEngineId,
-      imageIdIndex,
+      displaySetId,
+      sliceIndex,
       numberOfSlices: this.getNumberOfFrames(),
-      imageId: this.getCurrentImageId(imageIdIndex),
+      imageId: this.getCurrentImageId(sliceIndex),
       image: undefined,
     };
 
-    this.lastFrameEventNumber = imageIdIndex + 1;
+    this.lastFrameEventNumber = sliceIndex + 1;
     triggerEvent(this.element, Events.NEW_IMAGE, detail);
     this.render();
   }

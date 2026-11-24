@@ -1003,7 +1003,7 @@ function renameDataIdSite(
  * Returns the value that a destructuring pattern takes apart: the value of
  * its declarator, or the pattern itself where it is a parameter.
  */
-function patternSource(pattern: Node): Node {
+export function patternSource(pattern: Node): Node {
   const holder = pattern.parent();
 
   return holder?.kind() === 'variable_declarator' &&
@@ -1060,7 +1060,7 @@ function objectEvidence(node: Node | null | undefined, depth = 0): Evidence {
  * Returns the value of the `const` that an identifier names, or undefined
  * for another binding.
  */
-function constValue(identifier: Node): Node | undefined {
+export function constValue(identifier: Node): Node | undefined {
   const declaration = declarationNodeOf(identifier);
   const holder = declaration?.parent();
 
@@ -1269,7 +1269,7 @@ function callbackOf(declaration: Node): ReturnType<typeof methodCall> {
  * Returns the function whose first parameter is a declaration: a name, or
  * a destructuring pattern of it.
  */
-function functionOfFirstParameter(declaration: Node): Node | undefined {
+export function functionOfFirstParameter(declaration: Node): Node | undefined {
   let node = declaration;
   let parent = node.parent();
 

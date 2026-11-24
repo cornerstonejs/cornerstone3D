@@ -57,7 +57,7 @@ next viewports side by side.
 | Slice first, `setSliceFirst()`, `retryGpu()`, `RENDER_PLAN_CHANGED`                                                                                | Not there              | Work    |
 | Zoom and pan of a 3D viewport through `viewportProjection`, and a zoom of a planar viewport about a canvas point with `anchorCanvas`               | Not there              | Work    |
 | The view state key `frameRange` of a video viewport, and `loop` of `utilities.scroll` on a next planar viewport                                    | Not there              | Work    |
-| The events `VIEWPORT_NEW_IMAGE_SET` and `VOLUME_VIEWPORT_NEW_VOLUME` from a viewport that was made with a next type                                | Do not fire            | Fire    |
+| The event `DISPLAY_SETS_CHANGED` (`VIEWPORT_NEW_IMAGE_SET` and `VOLUME_VIEWPORT_NEW_VOLUME` of 5.x)                                                | Do not fire            | Fire    |
 
 So the upgrade has three stages.
 
@@ -477,8 +477,9 @@ await Promise.all(
 
 **Check.** `viewport.getCurrentMode()` is `'stack'` or `'volume'`.
 `viewport.getDisplaySets()` lists the ids, the source first. The picture
-shows. On 6.0 `VIEWPORT_NEW_IMAGE_SET` fires for a stack and
-`VOLUME_VIEWPORT_NEW_VOLUME` for a volume.
+shows. On 6.0 `DISPLAY_SETS_CHANGED` fires once for each `setDisplaySets`,
+for a stack and for a volume, when the getters of the viewport answer for the
+new display sets.
 
 **What can go wrong**
 
@@ -735,7 +736,7 @@ These calls keep their names and work in both modes:
 
 **Check.** `viewport.getCurrentImageIdIndex()` gives the new index.
 `NEW_IMAGE` fires after another image or slice shows, with that index in
-`detail.imageIdIndex`.
+`detail.sliceIndex` and the source display set in `detail.displaySetId`.
 
 **What can go wrong**
 
@@ -930,21 +931,27 @@ Read each listener.
 with one detail for a stack, a volume and a video. A listener for stacks and
 a listener for volumes become one listener. Its event type is
 `Types.EventTypes.NewImageEvent`, and the type of the detail is
-`Types.EventTypes.NewImageEventDetail`:
+`Types.EventTypes.NewImageEventDetail`. The detail also has `displaySetId`,
+the source display set; `NEW_IMAGE` does not fire for an overlay:
 
-| Old detail                           | Detail of `NEW_IMAGE`   | What it is                                                                      |
-| ------------------------------------ | ----------------------- | ------------------------------------------------------------------------------- |
-| `imageIdIndex` of the stack event    | `detail.imageIdIndex`   | The index of the image in a stack, the slice index of the view of a volume      |
-| `imageIndex` of the volume event     | `detail.imageIdIndex`   | The same key in both modes. `viewport.getCurrentImageIdIndex()` gives the value |
-| `numberOfSlices` of the volume event | `detail.numberOfSlices` | Now in stack mode too. `viewport.getNumberOfSlices()` gives the value           |
-| `imageId` of the stack event         | `detail.imageId`        | `viewport.getCurrentImageId()`. Undefined for a cut that shows no single image  |
-| `image` of the stack event           | `detail.image`          | The image object in stack mode. Undefined in volume mode and on a video         |
+| Old detail                           | Detail of `NEW_IMAGE`   | What it is                                                                     |
+| ------------------------------------ | ----------------------- | ------------------------------------------------------------------------------ |
+| `imageIdIndex` of the stack event    | `detail.sliceIndex`     | The index of the image in a stack, the slice of the view of a volume           |
+| `imageIndex` of the volume event     | `detail.sliceIndex`     | The same key in both modes. `viewport.getSliceIndex()` gives the value         |
+| `numberOfSlices` of the volume event | `detail.numberOfSlices` | Now in stack mode too. `viewport.getNumberOfSlices()` gives the value          |
+| `imageId` of the stack event         | `detail.imageId`        | `viewport.getCurrentImageId()`. Undefined for a cut that shows no single image |
+| `image` of the stack event           | `detail.image`          | The image object in stack mode. Undefined in volume mode and on a video        |
 
 Before:
 
 ```ts
 element.addEventListener(Enums.Events.STACK_NEW_IMAGE, onNewImage);
 element.addEventListener(Enums.Events.VOLUME_NEW_IMAGE, onNewImage);
+element.addEventListener(Enums.Events.VIEWPORT_NEW_IMAGE_SET, onNewDisplaySet);
+element.addEventListener(
+  Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME,
+  onNewDisplaySet
+);
 eventTarget.addEventListener(Enums.Events.IMAGE_LOAD_ERROR, onLoadError);
 ```
 
@@ -952,6 +959,13 @@ After:
 
 ```ts
 element.addEventListener(Enums.Events.NEW_IMAGE, onNewImage);
+element.addEventListener(Enums.Events.DISPLAY_SETS_CHANGED, (evt) => {
+  if (!evt.detail.sourceChanged) {
+    return;
+  }
+
+  onNewDisplaySet();
+});
 
 eventTarget.addEventListener(Enums.Events.IMAGE_LOAD_FAILED, (evt) => {
   const { imageId, error } = evt.detail;
@@ -971,6 +985,13 @@ a volume: scroll, change the window, reset. Compare with the table.
 - `NEW_IMAGE` fires in both modes. A listener that came from
   `STACK_NEW_IMAGE` now also runs for each slice of a volume, where
   `detail.image` is undefined.
+- `VIEWPORT_NEW_IMAGE_SET` and `VOLUME_VIEWPORT_NEW_VOLUME` are gone from
+  `Enums.Events`. `DISPLAY_SETS_CHANGED` fires in their place, in both modes
+  and in every viewport family, and also when an overlay such as a labelmap
+  is added or removed. A listener that restarts a cine, a prefetch or a
+  synchroniser for a new series checks `detail.sourceChanged` first, or it
+  runs again each time a segmentation is shown. The detail has no `imageIds`,
+  `currentImageIdIndex` or `volumeActors`: ask the viewport in the listener.
 - `CAMERA_MODIFIED` fires on each new image of a stack and once after the
   source mounts. `detail.previousCamera` can be undefined.
 - `CAMERA_RESET` fires in stack mode too, and only from `resetViewState()`.
@@ -1002,7 +1023,7 @@ a volume: scroll, change the window, reset. Compare with the table.
   `Types.EventTypes.VolumeScrollOutOfBoundsEventDetail` now: it is
   `undefined` out of the acquisition plane, as in 5.x, so a typed listener
   checks it before it reads it.
-- In volume mode `detail.imageIdIndex` of `NEW_IMAGE` is the slice index of
+- In volume mode `detail.sliceIndex` of `NEW_IMAGE` is the slice index of
   the view. It can run against the order of the image ids, so it is not the
   place of `detail.imageId` in `viewport.getImageIds()`.
 - On a video the detail of `NEW_IMAGE` has no `time` and no `duration`. Read

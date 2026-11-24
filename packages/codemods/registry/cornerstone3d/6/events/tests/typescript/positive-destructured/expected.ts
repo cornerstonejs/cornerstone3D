@@ -16,5 +16,5 @@ element.addEventListener(IMAGE_RENDERED, () =>
 );
 
 export function onVolume(detail: Types.EventTypes.NewImageEventDetail) {
-  return detail.imageIndex;
+  return detail.sliceIndex;
 }

@@ -334,6 +334,7 @@ export class VtkVolumeSliceRenderPath
 
     if (triggerImageEvent) {
       triggerPlanarVolumeNewImageOfPlacedSlice(ctx, {
+        displaySetId,
         rendering,
         viewState: camera,
         isSourceBinding: projection.isSourceBinding,

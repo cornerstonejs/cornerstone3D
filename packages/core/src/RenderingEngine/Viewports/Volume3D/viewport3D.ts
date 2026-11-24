@@ -239,12 +239,12 @@ class VolumeViewport3D extends BaseViewport<
    * loaded for, so each display set loads once, and the actor of a volume
    * draws the volume that was loaded.
    *
-   * A newer call stops an older one while the older one loads. Once a call
-   * has loaded, its commit (the removal of the shown display sets and the
-   * mounts) runs to its end and the call fires its event, and a newer call
-   * waits for it before it removes anything, as on the planar viewport. So a
-   * listener of an event of the commit, as DISPLAY_SET_APPEARANCE_CHANGED,
-   * that starts a call
+   * A newer call stops an older one while the older one loads, and the
+   * older one fires nothing. Once a call has loaded, its commit (the removal
+   * of the shown display sets and the mounts) runs to its end and the call
+   * fires DISPLAY_SETS_CHANGED, and a newer call waits for it before it
+   * removes anything, as on the planar viewport. So a listener of an event
+   * of the commit, as DISPLAY_SET_APPEARANCE_CHANGED, that starts a call
    * that rejects leaves the complete new scene.
    *
    * @param entries - Display sets to mount, each with its own render-mode options.
@@ -302,7 +302,9 @@ class VolumeViewport3D extends BaseViewport<
       }
     }
 
-    this.triggerNewVolume(entries.map(({ displaySetId }) => displaySetId));
+    this.triggerDisplaySetsChanged(
+      entries.map(({ displaySetId }) => displaySetId)
+    );
   }
 
   /**
@@ -326,16 +328,15 @@ class VolumeViewport3D extends BaseViewport<
           ...options,
           role: options.role ?? (index === 0 ? 'source' : 'overlay'),
         },
-        false,
         staged[index]
       );
     }
   }
 
   /**
-   * Adds a single 3D display set and selects the effective 3D render mode.
-   * A volume added as the source fires VOLUME_VIEWPORT_NEW_VOLUME; an
-   * overlay does not, as the legacy `addVolumes`.
+   * Adds a single 3D display set and selects the effective 3D render mode,
+   * then fires DISPLAY_SETS_CHANGED, for an overlay as well as for the
+   * source.
    *
    * The first display set of a viewport that shows nothing fits the camera
    * in the orientation of the options. A camera that was written while the
@@ -350,26 +351,27 @@ class VolumeViewport3D extends BaseViewport<
     displaySetId: string,
     options: Volume3DSetDataOptions | DataAddOptions = {}
   ): Promise<void> {
-    await this.mountDisplaySet(
+    const mounted = await this.mountDisplaySet(
       displaySetId,
-      options as Volume3DSetDataOptions,
-      true
+      options as Volume3DSetDataOptions
     );
+
+    if (mounted) {
+      this.triggerDisplaySetsChanged([displaySetId]);
+    }
   }
 
   /**
-   * Mounts one 3D display set, as `addDisplaySet` describes. It takes the
-   * data and the render mode that `setDisplaySets` loaded (`staged`), and
-   * loads them without it. A source fires VOLUME_VIEWPORT_NEW_VOLUME here
-   * only when `notifiesNewVolume` is set: `setDisplaySets` fires it once for
-   * all its display sets.
+   * Mounts one 3D display set, as `addDisplaySet` describes, without an
+   * event. It takes the data and the render mode that `setDisplaySets`
+   * loaded (`staged`), and loads them without it. Gives whether the display
+   * set was bound.
    */
   private async mountDisplaySet(
     displaySetId: string,
     volumeOptions: Volume3DSetDataOptions,
-    notifiesNewVolume: boolean,
     staged?: Volume3DStagedLoad
-  ): Promise<void> {
+  ): Promise<boolean> {
     if (this.isDestroyed) {
       throw new Error('Viewport has been destroyed');
     }
@@ -396,7 +398,7 @@ class VolumeViewport3D extends BaseViewport<
     const added = await this.addLoadedData(displaySetId, data, dataOptions);
 
     if (!added) {
-      return;
+      return false;
     }
 
     if (renderMode === 'vtkVolume3d' && volumeOptions.role === 'source') {
@@ -419,9 +421,7 @@ class VolumeViewport3D extends BaseViewport<
 
     this.applyMountedAppearance(displaySetId);
 
-    if (notifiesNewVolume && volumeOptions.role === 'source') {
-      this.triggerNewVolume([displaySetId]);
-    }
+    return true;
   }
 
   /**
@@ -1095,36 +1095,6 @@ class VolumeViewport3D extends BaseViewport<
       ...super.getDefaultDisplaySetAppearance(displaySetId),
       voiRange: defaultVOIRange ? { ...defaultVOIRange } : undefined,
     };
-  }
-
-  /**
-   * Fires VOLUME_VIEWPORT_NEW_VOLUME with the actor entries of the volumes of
-   * these display sets, as the legacy `setVolumes`, unless none is a volume
-   * or `suppressEvents` is set.
-   */
-  private triggerNewVolume(displaySetIds: string[]): void {
-    const volumeActors = displaySetIds.flatMap((displaySetId) => {
-      const binding = this.getBinding(displaySetId);
-      const data = binding ? this.getVolume3DPayload(binding) : undefined;
-
-      if (!data || data.renderMode !== 'vtkVolume3d') {
-        return [];
-      }
-
-      return this.getActorEntriesForRendering(
-        this.getVolume3DRendering(binding),
-        data
-      );
-    });
-
-    if (this.suppressEvents || !volumeActors.length) {
-      return;
-    }
-
-    triggerEvent(this.element, Events.VOLUME_VIEWPORT_NEW_VOLUME, {
-      viewportId: this.id,
-      volumeActors,
-    });
   }
 
   /**

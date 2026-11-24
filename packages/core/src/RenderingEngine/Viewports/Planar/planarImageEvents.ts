@@ -68,17 +68,23 @@ const renderingsWithPlacedSlice = new WeakSet<PlanarVolumeEventRendering>();
 
 /**
  * Fires NEW_IMAGE for the image of a stack that the viewport shows now: the
- * image object and its image id, its index in the stack and the number of
- * images of the stack.
+ * display set of the stack, the image object and its image id, its index in
+ * the stack and the number of images of the stack.
  */
 export function triggerPlanarNewImage(
   ctx: PlanarImageEventContext,
-  args: { image: IImage; imageIdIndex: number; numberOfSlices: number }
+  args: {
+    displaySetId: string;
+    image: IImage;
+    sliceIndex: number;
+    numberOfSlices: number;
+  }
 ): void {
   const detail: EventTypes.NewImageEventDetail = {
     viewportId: ctx.viewportId,
     renderingEngineId: ctx.renderingEngineId,
-    imageIdIndex: args.imageIdIndex,
+    displaySetId: args.displaySetId,
+    sliceIndex: args.sliceIndex,
     numberOfSlices: args.numberOfSlices,
     imageId: args.image.imageId,
     image: args.image,
@@ -118,9 +124,10 @@ function getShownVolumeImageId(
 
 /**
  * Fires NEW_IMAGE for the slice of a volume that the view state shows:
- * - `imageIdIndex` is the slice index of the view, in any orientation, which
- *   is what `viewport.getCurrentImageIdIndex()` answers. It counts along the
- *   view, which can run against the order of the image ids, so it is not the
+ * - `displaySetId` is the display set of the volume.
+ * - `sliceIndex` is the slice index of the view, in any orientation, which
+ *   is what `viewport.getSliceIndex()` answers. It counts along the view,
+ *   which can run against the order of the image ids, so it is not the
  *   place of `imageId` in the image ids.
  * - `numberOfSlices` is the number of slices along the view, which is what
  *   `viewport.getNumberOfSlices()` answers.
@@ -131,13 +138,15 @@ function getShownVolumeImageId(
  */
 function triggerPlanarVolumeNewImage(
   ctx: PlanarImageEventContext,
+  displaySetId: string,
   rendering: PlanarVolumeEventRendering,
   viewState: PlanarViewState | undefined
 ): void {
   const detail: EventTypes.NewImageEventDetail = {
     viewportId: ctx.viewportId,
     renderingEngineId: ctx.renderingEngineId,
-    imageIdIndex: rendering.currentImageIdIndex,
+    displaySetId,
+    sliceIndex: rendering.currentImageIdIndex,
     numberOfSlices: rendering.maxImageIdIndex + 1,
     imageId: getShownVolumeImageId(rendering, viewState),
     image: undefined,
@@ -157,18 +166,25 @@ function triggerPlanarVolumeNewImage(
 export function triggerPlanarVolumeNewImageOfPlacedSlice(
   ctx: PlanarImageEventContext,
   args: {
+    displaySetId: string;
     rendering: PlanarVolumeEventRendering;
     viewState: PlanarViewState | undefined;
     isSourceBinding: boolean;
     imageIdIndexChanged: boolean;
   }
 ): void {
-  const { rendering, viewState, isSourceBinding, imageIdIndexChanged } = args;
+  const {
+    displaySetId,
+    rendering,
+    viewState,
+    isSourceBinding,
+    imageIdIndexChanged,
+  } = args;
   const isFirstSlice = !renderingsWithPlacedSlice.has(rendering);
 
   renderingsWithPlacedSlice.add(rendering);
 
   if (isSourceBinding && (isFirstSlice || imageIdIndexChanged)) {
-    triggerPlanarVolumeNewImage(ctx, rendering, viewState);
+    triggerPlanarVolumeNewImage(ctx, displaySetId, rendering, viewState);
   }
 }

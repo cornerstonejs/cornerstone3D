@@ -211,7 +211,36 @@ part of a view that another viewport can take is its framing.
 
 ### Events
 
-None yet.
+- `VIEWPORT_NEW_IMAGE_SET` and `VOLUME_VIEWPORT_NEW_VOLUME` of
+  `Enums.Events` (also `EVENTS`, destructured, quoted or in brackets)
+  become `DISPLAY_SETS_CHANGED`, and each site is reported for review: the
+  new event also fires when an overlay such as a labelmap is added or
+  removed, so a listener that cares only for the source adds
+  `if (!evt.detail.sourceChanged) return`; its detail has no `imageIds`,
+  `currentImageIdIndex` or `volumeActors`. A string
+  `'CORNERSTONE_VIEWPORT_NEW_IMAGE_SET'` or
+  `'CORNERSTONE_VOLUME_VIEWPORT_NEW_VOLUME'` is reported.
+- `Types.EventTypes.StackViewportNewStackEvent` and its `Detail` become
+  `DisplaySetsChangedEvent` and `DisplaySetsChangedEventDetail`, for review.
+- `imageIdIndex` of the detail of `NEW_IMAGE` becomes `sliceIndex`: in
+  `evt.detail.imageIdIndex`, `evt.detail?.imageIdIndex`,
+  `evt.detail['imageIdIndex']`, `detail.imageIdIndex` of
+  `const { detail } = evt` or of a `({ detail })` parameter, and in a
+  pattern of the detail (`const { imageIdIndex } = evt.detail`,
+  `{ imageIdIndex = 0 }`, `{ imageIdIndex: index }`, `{ 'imageIdIndex': i }`,
+  `({ detail: { imageIdIndex } }) => ...`). A shorthand takes the new name
+  with its uses when the name is free and each use is a plain name, and
+  becomes `sliceIndex: imageIdIndex` otherwise. It does so where the file
+  shows the event: the listener is given to `addEventListener` of
+  `Enums.Events.NEW_IMAGE` or of `'CORNERSTONE_NEW_IMAGE'` (inline, by its
+  name, or as `this.listener` of its class), or its event is typed
+  `Types.EventTypes.NewImageEvent` (its detail `NewImageEventDetail`). A
+  listener of another core event, such as `STACK_SCROLL_OUT_OF_BOUNDS`,
+  stays. A `detail.imageIdIndex` whose event the file does not show, or of
+  a listener given to `NEW_IMAGE` and to another event, is reported with
+  the text that the key is `sliceIndex` if it is the detail of `NEW_IMAGE`.
+  Every other `imageIdIndex` (`setImageIdIndex`,
+  `initialImageIdIndex`, `getCurrentImageIdIndex`) stays.
 
 ### Render modes
 

@@ -156,6 +156,16 @@ abstract class BaseViewport<
   protected defaultDisplaySetAppearances = new Map<DisplaySetId, TAppearance>();
   protected viewState!: TViewState;
   private destroyed = false;
+  private setDisplaySetsCallId = 0;
+  /**
+   * The display sets and the source of the last DISPLAY_SETS_CHANGED, which
+   * the next one compares with to say what was removed and whether the
+   * source changed.
+   */
+  private notifiedDisplaySets: {
+    displaySetIds: DisplaySetId[];
+    sourceDisplaySetId?: DisplaySetId;
+  } = { displaySetIds: [] };
 
   // ── Debug ────────────────────────────────────────────────────────────
 
@@ -184,11 +194,15 @@ abstract class BaseViewport<
   /**
    * Replaces all mounted display sets with the provided logical display sets.
    * The first entry is mounted as the source binding; subsequent entries default
-   * to the overlay role unless they specify one explicitly.
+   * to the overlay role unless they specify one explicitly. Fires
+   * DISPLAY_SETS_CHANGED once when all are mounted; a newer call stops this
+   * one, which then fires nothing.
    */
   async setDisplaySets(
     ...entries: Array<{ displaySetId: DisplaySetId; options?: unknown }>
   ): Promise<void> {
+    const isSuperseded = this.startSetDisplaySets();
+
     this.removeAllData();
 
     for (const [index, { displaySetId, options }] of entries.entries()) {
@@ -199,28 +213,56 @@ abstract class BaseViewport<
       }
 
       const dataOptions = options as DataAddOptions;
+      const bound = await this.bindDisplaySet(
+        displaySetId,
+        {
+          ...dataOptions,
+          role: dataOptions.role ?? (index === 0 ? 'source' : 'overlay'),
+        },
+        isSuperseded
+      );
 
-      await this.addDisplaySet(displaySetId, {
-        ...dataOptions,
-        role: dataOptions.role ?? (index === 0 ? 'source' : 'overlay'),
-      });
+      if (!bound) {
+        return;
+      }
     }
+
+    this.triggerDisplaySetsChanged(
+      entries.map(({ displaySetId }) => displaySetId)
+    );
   }
 
   /**
    * Loads a logical display set through the viewport data provider and adds it
-   * through the render-path resolver.
+   * through the render-path resolver, then fires DISPLAY_SETS_CHANGED.
    */
   async addDisplaySet(
     displaySetId: DisplaySetId,
     options: DataAddOptions
   ): Promise<void> {
+    if (await this.bindDisplaySet(displaySetId, options)) {
+      this.triggerDisplaySetsChanged([displaySetId]);
+    }
+  }
+
+  /**
+   * Loads a display set through the data provider and binds it, without an
+   * event. Gives false, and binds nothing, when `shouldIgnore` tells after
+   * the load or after the render path added the data that the call is
+   * stale.
+   */
+  protected async bindDisplaySet(
+    displaySetId: DisplaySetId,
+    options: DataAddOptions,
+    shouldIgnore?: () => boolean
+  ): Promise<boolean> {
     if (this.isDestroyed) {
       throw new Error('Viewport has been destroyed');
     }
 
     const data = await this.dataProvider.load(displaySetId, options);
-    await this.addLoadedData(displaySetId, data, options);
+
+    return this.addLoadedData(displaySetId, data, options, shouldIgnore);
   }
 
   /**
@@ -264,10 +306,26 @@ abstract class BaseViewport<
   }
 
   /**
-   * Removes a dataset binding and its stored appearance, then
-   * triggers a re-render so the viewport reflects the removal.
+   * Removes a mounted display set, then fires DISPLAY_SETS_CHANGED. An id
+   * that the viewport does not show fires nothing.
    */
   removeDisplaySet(displaySetId: DisplaySetId): void {
+    const mounted = this.bindings.has(displaySetId);
+
+    this.removeDisplaySetBinding(displaySetId);
+
+    if (mounted) {
+      this.triggerDisplaySetsChanged([]);
+    }
+  }
+
+  /**
+   * Removes a dataset binding and its stored appearance, then triggers a
+   * re-render so the viewport reflects the removal. It fires no event: the
+   * public call that removes the display set fires DISPLAY_SETS_CHANGED.
+   * A viewport family overrides it to release what it keeps per display set.
+   */
+  protected removeDisplaySetBinding(displaySetId: DisplaySetId): void {
     const binding = this.bindings.get(displaySetId);
 
     if (!binding) {
@@ -984,8 +1042,89 @@ abstract class BaseViewport<
 
   protected removeAllData(): void {
     for (const displaySetId of Array.from(this.bindings.keys())) {
-      this.removeDisplaySet(displaySetId);
+      this.removeDisplaySetBinding(displaySetId);
     }
+  }
+
+  /**
+   * Starts a `setDisplaySets` call. The function that it gives tells whether
+   * a newer `setDisplaySets` started since: the call is then superseded, it
+   * stops, and it fires no DISPLAY_SETS_CHANGED.
+   */
+  protected startSetDisplaySets(): () => boolean {
+    const callId = ++this.setDisplaySetsCallId;
+
+    return () => callId !== this.setDisplaySetsCallId;
+  }
+
+  /**
+   * The display sets that the viewport shows, as `getDisplaySets` gives
+   * them, each with its role, and the one whose role is `source`. A viewport
+   * that shows only overlays has no source.
+   */
+  private getMountedDisplaySets(): {
+    displaySets: EventTypes.DisplaySetsChangedEntry[];
+    sourceDisplaySetId?: DisplaySetId;
+  } {
+    const displaySets = Array.from(this.bindings.entries()).map(
+      ([displaySetId, binding]) => ({ displaySetId, role: binding.role })
+    );
+
+    return {
+      displaySets,
+      sourceDisplaySetId: displaySets.find(({ role }) => role === 'source')
+        ?.displaySetId,
+    };
+  }
+
+  /**
+   * Fires DISPLAY_SETS_CHANGED for a committed `setDisplaySets`,
+   * `addDisplaySet` or `removeDisplaySet`, once the getters of the viewport
+   * answer for the new display sets, unless the viewport was made with
+   * `suppressEvents`. `mountedDisplaySetIds` are the display sets that the
+   * call mounted; the removed ones and `sourceChanged` come from the
+   * display sets of the last event.
+   */
+  protected triggerDisplaySetsChanged(
+    mountedDisplaySetIds: DisplaySetId[]
+  ): void {
+    if (this.isDestroyed) {
+      return;
+    }
+
+    const { displaySets, sourceDisplaySetId } = this.getMountedDisplaySets();
+    const displaySetIds = displaySets.map(({ displaySetId }) => displaySetId);
+    const previous = this.notifiedDisplaySets;
+    const added = displaySetIds.filter(
+      (displaySetId) =>
+        mountedDisplaySetIds.includes(displaySetId) ||
+        !previous.displaySetIds.includes(displaySetId)
+    );
+    const removed = previous.displaySetIds.filter(
+      (displaySetId) => !displaySetIds.includes(displaySetId)
+    );
+    const sourceChanged =
+      sourceDisplaySetId !== previous.sourceDisplaySetId ||
+      (sourceDisplaySetId !== undefined && added.includes(sourceDisplaySetId));
+
+    this.notifiedDisplaySets = { displaySetIds, sourceDisplaySetId };
+
+    if (this.defaultOptions.suppressEvents) {
+      return;
+    }
+
+    const eventDetail: EventTypes.DisplaySetsChangedEventDetail = {
+      element: this.element,
+      viewportId: this.id,
+      renderingEngineId: this.renderingEngineId,
+      displaySets,
+      sourceDisplaySetId,
+      added,
+      removed,
+      sourceChanged,
+    };
+
+    triggerEvent(this.element, Events.DISPLAY_SETS_CHANGED, eventDetail);
   }
 
   /**
@@ -1472,7 +1611,7 @@ abstract class BaseViewport<
    */
   protected destroyBindings(): void {
     for (const displaySetId of Array.from(this.bindings.keys())) {
-      this.removeDisplaySet(displaySetId);
+      this.removeDisplaySetBinding(displaySetId);
     }
   }
 

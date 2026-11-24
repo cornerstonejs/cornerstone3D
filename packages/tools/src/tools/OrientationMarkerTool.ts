@@ -161,6 +161,20 @@ class OrientationMarkerTool extends BaseTool {
     orientationWidget.updateViewport();
   };
 
+  /**
+   * Builds the markers again when a viewport shows another source display
+   * set. An overlay that comes or goes, such as a labelmap, keeps them.
+   */
+  _onDisplaySetsChanged = (
+    evt: Types.EventTypes.DisplaySetsChangedEvent
+  ): void => {
+    if (!evt.detail.sourceChanged) {
+      return;
+    }
+
+    this.initViewports();
+  };
+
   _unsubscribeToViewportNewVolumeSet() {
     const unsubscribe = () => {
       const viewportsInfo = this._getViewportsInfo();
@@ -172,8 +186,8 @@ class OrientationMarkerTool extends BaseTool {
         const { element } = viewport;
 
         element.removeEventListener(
-          Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME,
-          this.initViewports.bind(this)
+          Enums.Events.DISPLAY_SETS_CHANGED,
+          this._onDisplaySetsChanged as EventListener
         );
 
         const resizeObserver = this._resizeObservers.get(viewportId);
@@ -202,8 +216,8 @@ class OrientationMarkerTool extends BaseTool {
         this.initViewports();
 
         element.addEventListener(
-          Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME,
-          this.initViewports.bind(this)
+          Enums.Events.DISPLAY_SETS_CHANGED,
+          this._onDisplaySetsChanged as EventListener
         );
 
         const resizeObserver = new ResizeObserver(() => {

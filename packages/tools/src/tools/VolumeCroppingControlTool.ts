@@ -1052,7 +1052,11 @@ class VolumeCroppingControlTool extends AnnotationTool {
     }
   };
 
-  _onNewVolume = () => {
+  _onNewVolume = (evt: Types.EventTypes.DisplaySetsChangedEvent) => {
+    if (!evt.detail.sourceChanged) {
+      return;
+    }
+
     const viewportsInfo = this._getViewportsInfo();
     if (viewportsInfo && viewportsInfo.length > 0) {
       const { viewportId, renderingEngineId } = viewportsInfo[0];
@@ -1090,8 +1094,8 @@ class VolumeCroppingControlTool extends AnnotationTool {
       const { element } = viewport;
 
       element.removeEventListener(
-        Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME,
-        this._onNewVolume
+        Enums.Events.DISPLAY_SETS_CHANGED,
+        this._onNewVolume as EventListener
       );
     });
   }
@@ -1105,8 +1109,8 @@ class VolumeCroppingControlTool extends AnnotationTool {
       const { element } = viewport;
 
       element.addEventListener(
-        Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME,
-        this._onNewVolume
+        Enums.Events.DISPLAY_SETS_CHANGED,
+        this._onNewVolume as EventListener
       );
     });
   }

@@ -134,6 +134,8 @@ class ECGViewport extends BaseViewport<
    *
    * The view state resets to the full record with every channel visible. The
    * trace layout, the sweep speed, the sensitivity and the amplitude scale stay.
+   * DISPLAY_SETS_CHANGED fires once the waveforms are mounted; a newer call
+   * stops this one, which then fires nothing.
    *
    * @param entries - Waveform display sets to mount.
    * `options.multiplexGroupIndex` (0-based) names the multiplex group to
@@ -145,10 +147,17 @@ class ECGViewport extends BaseViewport<
       options?: { multiplexGroupIndex?: number };
     }>
   ): Promise<void> {
+    const isSuperseded = this.startSetDisplaySets();
+
     this.removeAllData();
 
-    for (const { displaySetId, options } of entries) {
+    for (const [index, { displaySetId, options }] of entries.entries()) {
       const waveform = await this.loadWaveformData(displaySetId, options);
+
+      if (isSuperseded()) {
+        return;
+      }
+
       const durationMs =
         (waveform.numberOfSamples / waveform.samplingFrequency) * 1000;
       const { traceLayout, sweepSpeed, sensitivityMmMv, amplitudeScale } =
@@ -170,11 +179,26 @@ class ECGViewport extends BaseViewport<
       });
       warnIfAmplitudeScaleIgnored(this.viewState);
 
-      await this.addLoadedData(displaySetId, waveform, {
-        renderMode: 'signal2d',
-      });
+      const bound = await this.addLoadedData(
+        displaySetId,
+        waveform,
+        {
+          renderMode: 'signal2d',
+          role: index === 0 ? 'source' : 'overlay',
+        },
+        isSuperseded
+      );
+
+      if (!bound) {
+        return;
+      }
+
       this.applyMountedAppearance(displaySetId);
     }
+
+    this.triggerDisplaySetsChanged(
+      entries.map(({ displaySetId }) => displaySetId)
+    );
   }
 
   /**

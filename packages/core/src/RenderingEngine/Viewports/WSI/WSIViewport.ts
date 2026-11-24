@@ -120,11 +120,13 @@ export default class WSIViewport extends BaseViewport<
    * Mounts the slides. The microscopy viewer fits each slide to the canvas,
    * as on the legacy viewport: a slide mounted in place of another one drops
    * the zoom, the resolution and the centre of the view, and keeps the
-   * rotation.
+   * rotation. DISPLAY_SETS_CHANGED fires once the slides are mounted; a
+   * newer call stops this one, which then fires nothing.
    */
   async setDisplaySets(
     ...entries: Array<{ displaySetId: string }>
   ): Promise<void> {
+    const isSuperseded = this.startSetDisplaySets();
     const hadSlide = Boolean(this.getWSIData());
 
     this.removeAllData();
@@ -134,10 +136,18 @@ export default class WSIViewport extends BaseViewport<
     }
 
     for (const [index, { displaySetId }] of entries.entries()) {
-      await this.addDisplaySet(displaySetId, {
-        renderMode: 'wsi2d',
-        role: index === 0 ? 'source' : 'overlay',
-      });
+      const bound = await this.bindDisplaySet(
+        displaySetId,
+        {
+          renderMode: 'wsi2d',
+          role: index === 0 ? 'source' : 'overlay',
+        },
+        isSuperseded
+      );
+
+      if (!bound) {
+        return;
+      }
 
       this.setDefaultAppearance(displaySetId, {
         visible: true,
@@ -149,6 +159,9 @@ export default class WSIViewport extends BaseViewport<
 
     this.syncCameraFromView();
     this.applyVOIToRendering();
+    this.triggerDisplaySetsChanged(
+      entries.map(({ displaySetId }) => displaySetId)
+    );
   }
 
   /**
@@ -510,8 +523,8 @@ export default class WSIViewport extends BaseViewport<
     // No-op for DOM-driven WSI rendering.
   }
 
-  removeDisplaySet(displaySetId: string): void {
-    super.removeDisplaySet(displaySetId);
+  protected override removeDisplaySetBinding(displaySetId: string): void {
+    super.removeDisplaySetBinding(displaySetId);
 
     if (this.activeDisplaySetId === displaySetId) {
       this.activeDisplaySetId = this.bindings.keys().next().value;

@@ -4,7 +4,7 @@
       "cardinality": {
         "file": "input.ts",
         "line": "3",
-        "rule": "Events.STACK_NEW_IMAGE: NEW_IMAGE also fires for each slice of a volume"
+        "rule": "Events.STACK_NEW_IMAGE: NEW_IMAGE also fires for each slice of a volume, and detail.imageIdIndex is detail.sliceIndex"
       },
       "count": 1
     }

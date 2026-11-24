@@ -146,8 +146,9 @@ interface CameraModifiedDetail {
 
 interface NewImageDetail {
   viewportId?: string;
+  displaySetId?: string;
   imageId?: string;
-  imageIdIndex?: number;
+  sliceIndex?: number;
   numberOfSlices?: number;
 }
 
@@ -424,7 +425,8 @@ test('scroll fires exactly one new-image event whose imageId matches the resolve
   expect(resolvedImageId).toBe(imageIds[1]);
   expect(viewport.getCurrentImageId()).toBe(imageIds[1]);
   expect(detail?.imageId).toBe(viewport.getCurrentImageId());
-  expect(detail?.imageIdIndex).toBe(1);
+  expect(detail?.sliceIndex).toBe(1);
+  expect(detail?.displaySetId).toBe(ctx.displaySetId);
   expect(detail?.numberOfSlices).toBe(imageIds.length);
   expect(detail?.viewportId).toBe(ctx.viewportId);
 });

@@ -96,11 +96,11 @@ describe('What a caller uses in place of cut planar members, in stack mode and i
         cache.getImage(stack.getCurrentImageId())
       );
       expect(details.stack.imageId).toBe(stack.getCurrentImageId());
-      expect(details.stack.imageIdIndex).toBe(stack.getCurrentImageIdIndex());
+      expect(details.stack.sliceIndex).toBe(stack.getSliceIndex());
       expect(details.stack.numberOfSlices).toBe(stack.getNumberOfSlices());
       expect(details.volume.image).toBeUndefined();
       expect(details.volume.imageId).toBe(volume.getCurrentImageId());
-      expect(details.volume.imageIdIndex).toBe(volume.getCurrentImageIdIndex());
+      expect(details.volume.sliceIndex).toBe(volume.getSliceIndex());
       expect(details.volume.numberOfSlices).toBe(volume.getNumberOfSlices());
     });
   });

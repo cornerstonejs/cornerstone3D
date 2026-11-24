@@ -1659,13 +1659,18 @@ class CrosshairsTool extends AnnotationTool {
   };
 
   /**
-   * Starts the crosshairs when a viewport of the tool group shows a new
-   * volume: each viewport that shows data gets its annotation, and the centre
-   * is worked out from the views. A next viewport fires no CAMERA_RESET at a
-   * mount, so the crosshairs of a tool that was active before the data came
-   * start here.
+   * Starts the crosshairs when a viewport of the tool group shows another
+   * source display set: each viewport that shows data gets its annotation,
+   * and the centre is worked out from the views. A next viewport fires no
+   * CAMERA_RESET at a mount, so the crosshairs of a tool that was active
+   * before the data came start here. An overlay that comes or goes, such as
+   * a labelmap, keeps the centre.
    */
-  _onNewVolume = (_evt?: Event) => {
+  _onNewVolume = (evt?: Types.EventTypes.DisplaySetsChangedEvent) => {
+    if (evt && !evt.detail.sourceChanged) {
+      return;
+    }
+
     this._syncVolumeListenersWithToolGroup();
     this._computeToolCenter(this._getViewportsInfo());
   };
@@ -3193,7 +3198,7 @@ class CrosshairsTool extends AnnotationTool {
       if (!enabledElement) {
         if (existingListenerInfo) {
           existingListenerInfo.element.removeEventListener(
-            Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME,
+            Enums.Events.DISPLAY_SETS_CHANGED,
             existingListenerInfo.handler
           );
           this._volumeViewportNewVolumeListeners.delete(viewportKey);
@@ -3206,7 +3211,7 @@ class CrosshairsTool extends AnnotationTool {
 
       if (existingListenerInfo && existingListenerInfo.element !== element) {
         existingListenerInfo.element.removeEventListener(
-          Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME,
+          Enums.Events.DISPLAY_SETS_CHANGED,
           existingListenerInfo.handler
         );
         this._volumeViewportNewVolumeListeners.delete(viewportKey);
@@ -3216,11 +3221,9 @@ class CrosshairsTool extends AnnotationTool {
         return;
       }
 
-      const handler = ((evt: Event) => this._onNewVolume(evt)) as EventListener;
-      element.addEventListener(
-        Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME,
-        handler
-      );
+      const handler = ((evt: Types.EventTypes.DisplaySetsChangedEvent) =>
+        this._onNewVolume(evt)) as EventListener;
+      element.addEventListener(Enums.Events.DISPLAY_SETS_CHANGED, handler);
 
       this._volumeViewportNewVolumeListeners.set(viewportKey, {
         element,
@@ -3235,7 +3238,7 @@ class CrosshairsTool extends AnnotationTool {
         }
 
         listenerInfo.element.removeEventListener(
-          Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME,
+          Enums.Events.DISPLAY_SETS_CHANGED,
           listenerInfo.handler
         );
         this._volumeViewportNewVolumeListeners.delete(viewportKey);
@@ -3246,7 +3249,7 @@ class CrosshairsTool extends AnnotationTool {
   _clearAllVolumeListenersAndViewportState = (): void => {
     this._volumeViewportNewVolumeListeners.forEach((listenerInfo) => {
       listenerInfo.element.removeEventListener(
-        Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME,
+        Enums.Events.DISPLAY_SETS_CHANGED,
         listenerInfo.handler
       );
     });

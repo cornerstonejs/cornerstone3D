@@ -8,14 +8,19 @@ import {
   bindsAt,
   bracketKey,
   coreImportOf,
+  declarationNodeOf,
   isCoreEnum,
   isCoreExport,
   isCoreNamespace,
   isNameTaken,
+  isStableBinding,
+  keptValue,
+  methodCall,
   referencesOf,
   removeProperty,
   site,
   staticKeyName,
+  unwrap,
 } from './lib.ts';
 import type { Node } from './lib.ts';
 
@@ -25,15 +30,27 @@ const manual = new HeldMetric(useMetricAtom('cornerstone3d-6-manual'));
 /** Rewrites at a decision of the migration guide. */
 const review = new HeldMetric(useMetricAtom('cornerstone3d-6-review'));
 
+/** What a listener of one of the two mount events of 5.x reads now. */
+const MOUNT_EVENT_NOTE =
+  'DISPLAY_SETS_CHANGED also fires when an overlay such as a labelmap is added or removed: a listener that cares only for the source adds if (!evt.detail.sourceChanged) return';
+
 /** The removed events that have one event in their place, and why to review. */
 const RENAMED_EVENTS: Record<string, { name: string; note: string }> = {
   STACK_NEW_IMAGE: {
     name: 'NEW_IMAGE',
-    note: 'NEW_IMAGE also fires for each slice of a volume',
+    note: 'NEW_IMAGE also fires for each slice of a volume, and detail.imageIdIndex is detail.sliceIndex',
   },
   VOLUME_NEW_IMAGE: {
     name: 'NEW_IMAGE',
-    note: 'detail.imageIndex is detail.imageIdIndex',
+    note: 'detail.imageIndex is detail.sliceIndex',
+  },
+  VIEWPORT_NEW_IMAGE_SET: {
+    name: 'DISPLAY_SETS_CHANGED',
+    note: `${MOUNT_EVENT_NOTE}, and the detail has no imageIds and no currentImageIdIndex (ask the viewport)`,
+  },
+  VOLUME_VIEWPORT_NEW_VOLUME: {
+    name: 'DISPLAY_SETS_CHANGED',
+    note: `${MOUNT_EVENT_NOTE}, it fires for a stack too, and the detail has no volumeActors (call viewport.getActors())`,
   },
   IMAGE_LOAD_ERROR: {
     name: 'IMAGE_LOAD_FAILED',
@@ -63,6 +80,8 @@ const EVENT_STRINGS: Record<string, string> = {
   DYNAMIC_VOLUME_TIME_POINT_LOADED: 'DYNAMIC_VOLUME_TIME_POINT_LOADED',
   CORNERSTONE_STACK_NEW_IMAGE: 'STACK_NEW_IMAGE',
   CORNERSTONE_VOLUME_NEW_IMAGE: 'VOLUME_NEW_IMAGE',
+  CORNERSTONE_VIEWPORT_NEW_IMAGE_SET: 'VIEWPORT_NEW_IMAGE_SET',
+  CORNERSTONE_VOLUME_VIEWPORT_NEW_VOLUME: 'VOLUME_VIEWPORT_NEW_VOLUME',
   CORNERSTONE_PRE_STACK_NEW_IMAGE: 'PRE_STACK_NEW_IMAGE',
   CORNERSTONE_STACK_VIEWPORT_SCROLL: 'STACK_VIEWPORT_SCROLL',
   CORNERSTONE_VIEWPORT_RENDERING_PRESET_MODIFIED: 'PRESET_MODIFIED',
@@ -76,7 +95,38 @@ const RENAMED_EVENT_TYPES: Record<string, string> = {
   StackNewImageEventDetail: 'NewImageEventDetail',
   VolumeNewImageEvent: 'NewImageEvent',
   VolumeNewImageEventDetail: 'NewImageEventDetail',
+  StackViewportNewStackEvent: 'DisplaySetsChangedEvent',
+  StackViewportNewStackEventDetail: 'DisplaySetsChangedEventDetail',
 };
+
+/**
+ * The key of the detail of each 5.x event that becomes `NEW_IMAGE`, which
+ * is `sliceIndex` in 6.0.
+ */
+const NEW_IMAGE_DETAIL_KEYS: Record<string, string> = {
+  STACK_NEW_IMAGE: 'imageIdIndex',
+  VOLUME_NEW_IMAGE: 'imageIndex',
+};
+
+/** The key of the detail of `NEW_IMAGE` in 6.0. */
+const SLICE_INDEX = 'sliceIndex';
+
+/** The 5.x event of each event type and detail type of `Types.EventTypes`. */
+const EVENT_OF_TYPE: Record<string, string> = {
+  StackNewImageEvent: 'STACK_NEW_IMAGE',
+  StackNewImageEventDetail: 'STACK_NEW_IMAGE',
+  VolumeNewImageEvent: 'VOLUME_NEW_IMAGE',
+  VolumeNewImageEventDetail: 'VOLUME_NEW_IMAGE',
+};
+
+/** The kinds of the function nodes of the syntax tree. */
+const FUNCTION_KINDS = new Set([
+  'arrow_function',
+  'function_expression',
+  'function_declaration',
+  'function',
+  'method_definition',
+]);
 
 /** The event types of `Types.EventTypes` that 6.0 removes. */
 const REPORTED_EVENT_TYPES = new Set([
@@ -394,6 +444,439 @@ function rewriteEventTypes(run: Run): void {
 }
 
 /**
+ * Returns the 5.x core event that an expression names: a member of the core
+ * `Enums.Events` or `EVENTS`, a name destructured from it, or the string of
+ * an event; `''` for an expression that names no event the file shows.
+ */
+function eventName(argument: Node | undefined): string {
+  const inner = argument ? unwrap(argument) : undefined;
+  const kind = inner?.kind();
+
+  if (kind === 'string') {
+    const value = inner.text().slice(1, -1);
+
+    return EVENT_STRINGS[value] ?? value.replace(/^CORNERSTONE_/, '');
+  }
+
+  if (kind === 'member_expression' || kind === 'subscript_expression') {
+    const name =
+      kind === 'subscript_expression'
+        ? bracketKey(inner)
+        : inner.field('property')?.text();
+
+    return name && isCoreEvents(inner.field('object')) ? name : '';
+  }
+
+  const declaration =
+    kind === 'identifier' ? declarationNodeOf(inner) : undefined;
+  const entry =
+    declaration?.parent()?.kind() === 'pair_pattern'
+      ? declaration.parent()
+      : declaration;
+  const pattern = entry?.parent();
+  const source =
+    pattern?.kind() === 'object_pattern' && isStableBinding(declaration)
+      ? patternSource(pattern)
+      : undefined;
+
+  if (!source || source.id() === pattern.id() || !isCoreEvents(source)) {
+    return '';
+  }
+
+  return (
+    (entry.kind() === 'pair_pattern'
+      ? staticKeyName(entry.field('key'))
+      : entry.text()) ?? ''
+  );
+}
+
+/**
+ * Returns the value of a `const` destructuring pattern, or the pattern
+ * itself when it is a parameter.
+ */
+function patternSource(pattern: Node): Node {
+  const holder = pattern.parent();
+
+  return holder?.kind() === 'variable_declarator' &&
+    holder.field('name')?.id() === pattern.id()
+    ? (holder.field('value') ?? pattern)
+    : pattern;
+}
+
+/**
+ * Returns the value of a `const` that a name refers to, or undefined.
+ */
+function constValue(identifier: Node): Node | undefined {
+  const declaration = declarationNodeOf(identifier);
+  const holder = declaration?.parent();
+
+  return declaration &&
+    holder?.kind() === 'variable_declarator' &&
+    holder.field('name')?.id() === declaration.id() &&
+    isStableBinding(declaration)
+    ? (holder.field('value') ?? undefined)
+    : undefined;
+}
+
+/**
+ * Returns the function or the class method whose first parameter is a
+ * declaration: a name, or a destructuring pattern of it.
+ */
+function listenerOfParameter(declaration: Node): Node | undefined {
+  let node = declaration;
+  let parent = node.parent();
+
+  if (
+    parent?.kind() === 'required_parameter' ||
+    parent?.kind() === 'optional_parameter'
+  ) {
+    node = parent;
+    parent = node.parent();
+  }
+
+  if (
+    parent?.kind() === 'arrow_function' &&
+    parent.field('parameter')?.id() === node.id()
+  ) {
+    return parent;
+  }
+
+  const first = parent?.children().find((child) => child.isNamed());
+  const fn = parent?.parent();
+
+  return parent?.kind() === 'formal_parameters' &&
+    first?.id() === node.id() &&
+    fn &&
+    FUNCTION_KINDS.has(fn.kind())
+    ? fn
+    : undefined;
+}
+
+/**
+ * Returns the nodes that hand a listener function to a call: the function
+ * itself, the uses of its name, and `this.name` in its class for a method or
+ * a field that holds it.
+ */
+function listenerReferences(fn: Node): Node[] {
+  const holder = fn.parent();
+
+  if (fn.kind() === 'function_declaration') {
+    return [fn, ...referencesOf(fn.field('name'))];
+  }
+
+  if (holder?.kind() === 'variable_declarator') {
+    return [fn, ...referencesOf(holder.field('name'))];
+  }
+
+  const member =
+    fn.kind() === 'method_definition'
+      ? fn
+      : holder?.kind() === 'public_field_definition'
+        ? holder
+        : undefined;
+  const name = member?.field('name')?.text();
+  const classBody = member?.parent();
+
+  if (!name || classBody?.kind() !== 'class_body') {
+    return [fn];
+  }
+
+  return [
+    fn,
+    ...classBody.findAll({
+      rule: {
+        kind: 'member_expression',
+        all: [
+          { has: { field: 'object', kind: 'this' } },
+          { has: { field: 'property', regex: `^${name}$` } },
+        ],
+      },
+    }),
+  ];
+}
+
+/**
+ * Returns the event type of `Types.EventTypes` that annotates a
+ * declaration, or undefined.
+ */
+function annotatedEventType(declaration: Node | undefined): string | undefined {
+  const annotation = declaration
+    ?.parent()
+    ?.children()
+    .find((child) => child.kind() === 'type_annotation');
+  const typeNode = annotation?.children().find((child) => child.isNamed());
+  const named =
+    typeNode?.kind() === 'nested_type_identifier'
+      ? typeNode.children().filter((child) => child.isNamed())
+      : [];
+
+  return named.length === 2 &&
+    named[0].kind() === 'nested_identifier' &&
+    isCoreEventTypes(named[0])
+    ? named[1].text()
+    : undefined;
+}
+
+/**
+ * Returns the 5.x events that a function listens to, by the type of its
+ * event parameter or by each `addEventListener` that gets it, or undefined
+ * when one of them is an event that the file does not show.
+ */
+function listenerEvents(
+  fn: Node,
+  eventParameter: Node | undefined
+): string[] | undefined {
+  const typed = EVENT_OF_TYPE[annotatedEventType(eventParameter) ?? ''];
+
+  if (typed) {
+    return [typed];
+  }
+
+  const events: string[] = [];
+
+  for (const reference of listenerReferences(fn).map(keptValue)) {
+    const args = reference.parent();
+    const call = args?.parent();
+    const parts =
+      args?.kind() === 'arguments' && call?.kind() === 'call_expression'
+        ? methodCall(call)
+        : undefined;
+
+    if (
+      parts?.method === 'addEventListener' &&
+      parts.args[1]?.id() === reference.id()
+    ) {
+      events.push(eventName(parts.args[0]));
+    }
+  }
+
+  return events.length && !events.includes('') ? events : undefined;
+}
+
+/**
+ * Returns the 5.x events of an expression that holds an event: the event
+ * parameter of a listener, or a `const` that holds it.
+ */
+function eventsOfExpression(node: Node, depth = 0): string[] | undefined {
+  const inner = unwrap(node);
+
+  if (inner.kind() !== 'identifier' || depth > 3) {
+    return undefined;
+  }
+
+  const value = constValue(inner);
+
+  if (value) {
+    return eventsOfExpression(value, depth + 1);
+  }
+
+  const declaration = declarationNodeOf(inner);
+  const fn = declaration ? listenerOfParameter(declaration) : undefined;
+
+  return fn ? listenerEvents(fn, declaration) : undefined;
+}
+
+/**
+ * Returns the 5.x events of a pattern of an event: the pattern of the event
+ * parameter, or the pattern of a `const` whose value holds the event.
+ */
+function eventsOfPattern(pattern: Node): string[] | undefined {
+  const source = patternSource(pattern);
+
+  if (source.id() !== pattern.id()) {
+    return eventsOfExpression(source);
+  }
+
+  const fn = listenerOfParameter(pattern);
+
+  return fn ? listenerEvents(fn, pattern) : undefined;
+}
+
+/**
+ * Returns the 5.x events of an expression that holds the detail of an
+ * event: `evt.detail`, `detail` destructured from an event, a value typed
+ * with a detail type, or a `const` that holds one of these.
+ */
+function eventsOfDetail(node: Node, depth = 0): string[] | undefined {
+  const inner = unwrap(node);
+
+  if (depth > 3) {
+    return undefined;
+  }
+
+  if (
+    inner.kind() === 'member_expression' &&
+    inner.field('property')?.text() === 'detail'
+  ) {
+    return eventsOfExpression(inner.field('object'));
+  }
+
+  if (inner.kind() !== 'identifier') {
+    return undefined;
+  }
+
+  const declaration = declarationNodeOf(inner);
+  const typed = EVENT_OF_TYPE[annotatedEventType(declaration) ?? ''];
+
+  if (typed) {
+    return [typed];
+  }
+
+  const value = constValue(inner);
+
+  if (value) {
+    return eventsOfDetail(value, depth + 1);
+  }
+
+  const entry =
+    declaration?.kind() === 'shorthand_property_identifier_pattern'
+      ? declaration
+      : declaration?.parent()?.kind() === 'pair_pattern'
+        ? declaration.parent()
+        : undefined;
+  const key =
+    entry?.kind() === 'pair_pattern'
+      ? staticKeyName(entry.field('key'))
+      : entry?.text();
+  const pattern = entry?.parent();
+
+  return key === 'detail' && pattern?.kind() === 'object_pattern'
+    ? eventsOfPattern(pattern)
+    : undefined;
+}
+
+/**
+ * Returns the 5.x events of the source of an object pattern of a detail:
+ * `const { imageIdIndex } = evt.detail`, or `{ detail: { imageIdIndex } }`
+ * of an event.
+ */
+function eventsOfDetailPattern(pattern: Node): string[] | undefined {
+  const source = patternSource(pattern);
+
+  if (source.id() !== pattern.id()) {
+    return eventsOfDetail(source);
+  }
+
+  const pair = pattern.parent();
+  const outer = pair?.parent();
+
+  return pair?.kind() === 'pair_pattern' &&
+    pair.field('value')?.id() === pattern.id() &&
+    staticKeyName(pair.field('key')) === 'detail' &&
+    outer?.kind() === 'object_pattern'
+    ? eventsOfPattern(outer)
+    : undefined;
+}
+
+/**
+ * Tells whether a key of a detail becomes `sliceIndex` for these events:
+ * every event becomes `NEW_IMAGE`, and one of them has the key.
+ */
+function isSliceIndexKey(key: string, events: string[] | undefined): boolean {
+  return Boolean(
+    events?.every((event) => NEW_IMAGE_DETAIL_KEYS[event]) &&
+      events.some((event) => NEW_IMAGE_DETAIL_KEYS[event] === key)
+  );
+}
+
+/**
+ * Rewrites the key of an entry of an object pattern of a detail to
+ * `sliceIndex`. A shorthand takes the new name with its uses when the name
+ * is free and each use is a plain name, and keeps its local name otherwise,
+ * also with a default value; a key with a name, quoted or in brackets, keeps
+ * its quotes.
+ */
+function renameDetailEntry(run: Run, entry: Node, key: string): void {
+  const kind = entry.kind();
+
+  if (kind === 'shorthand_property_identifier_pattern') {
+    const uses = referencesOf(entry);
+
+    if (
+      uses.every((use) => use.kind() === 'identifier') &&
+      !isNameTaken(run.rootNode, SLICE_INDEX)
+    ) {
+      run.edits.add(
+        entry.replace(SLICE_INDEX),
+        ...uses.map((use) => use.replace(SLICE_INDEX))
+      );
+    } else {
+      run.edits.add(entry.replace(`${SLICE_INDEX}: ${key}`));
+    }
+
+    return;
+  }
+
+  if (kind === 'object_assignment_pattern') {
+    run.edits.add(entry.field('left').replace(`${SLICE_INDEX}: ${key}`));
+
+    return;
+  }
+
+  run.edits.add(renameKey(entry.field('key'), SLICE_INDEX));
+}
+
+/**
+ * Writes `sliceIndex` for the key of the detail of a 5.x `STACK_NEW_IMAGE`
+ * (`imageIdIndex`) or `VOLUME_NEW_IMAGE` (`imageIndex`) listener, which
+ * listens to `NEW_IMAGE` after this step: in a member access, quoted in
+ * brackets, and in a destructuring pattern with or without a default.
+ */
+function rewriteDetailKeys(run: Run): void {
+  const keys = [...new Set(Object.values(NEW_IMAGE_DETAIL_KEYS))].join('|');
+
+  for (const node of run.rootNode.findAll({
+    rule: {
+      any: [
+        {
+          kind: 'member_expression',
+          has: { field: 'property', regex: `^(${keys})$` },
+        },
+        {
+          kind: 'subscript_expression',
+          has: { field: 'index', regex: `^['"](${keys})['"]$` },
+        },
+      ],
+    },
+  })) {
+    const isBracket = node.kind() === 'subscript_expression';
+    const keyNode = isBracket ? node.field('index') : node.field('property');
+    const key = isBracket ? bracketKey(node) : keyNode?.text();
+
+    if (keyNode && isSliceIndexKey(key, eventsOfDetail(node.field('object')))) {
+      const quote = isBracket ? keyNode.text()[0] : '';
+
+      run.edits.add(keyNode.replace(`${quote}${SLICE_INDEX}${quote}`));
+    }
+  }
+
+  for (const pattern of run.rootNode.findAll({
+    rule: { kind: 'object_pattern' },
+  })) {
+    for (const entry of pattern.children()) {
+      const kind = entry.kind();
+      const keyNode =
+        kind === 'shorthand_property_identifier_pattern'
+          ? entry
+          : kind === 'object_assignment_pattern'
+            ? entry.field('left')
+            : kind === 'pair_pattern'
+              ? entry.field('key')
+              : undefined;
+      const key = staticKeyName(keyNode);
+
+      if (
+        key &&
+        Object.values(NEW_IMAGE_DETAIL_KEYS).includes(key) &&
+        isSliceIndexKey(key, eventsOfDetailPattern(pattern))
+      ) {
+        renameDetailEntry(run, entry, key);
+      }
+    }
+  }
+}
+
+/**
  * Reports a string that names a removed event: a listener of it compiles and
  * never runs. A string that is a key of `Enums.Events`, which the passes
  * before rewrote or reported, is not reported again.
@@ -416,9 +899,11 @@ function reportEventStrings(run: Run): void {
 /**
  * Rewrites the events that Cornerstone3D 6.0 removes and that have one event
  * in their place: `STACK_NEW_IMAGE` and `VOLUME_NEW_IMAGE` become
- * `NEW_IMAGE`, `IMAGE_LOAD_ERROR` becomes `IMAGE_LOAD_FAILED`, with their
- * event types. Each rewrite is reported for review. The events without a
- * twin are reported.
+ * `NEW_IMAGE`, with `sliceIndex` for the key of their detail in a listener
+ * the file shows, `VIEWPORT_NEW_IMAGE_SET` and `VOLUME_VIEWPORT_NEW_VOLUME`
+ * become `DISPLAY_SETS_CHANGED`, and `IMAGE_LOAD_ERROR` becomes
+ * `IMAGE_LOAD_FAILED`, with their event types. Each rewrite is reported for
+ * review. The events without a twin are reported.
  */
 const codemod: Codemod<TSX> = (root) => {
   const rootNode = root.root();
@@ -429,6 +914,7 @@ const codemod: Codemod<TSX> = (root) => {
     handled: new Set(),
   };
 
+  rewriteDetailKeys(run);
   rewriteMembers(run);
   rewriteDestructured(run);
   rewriteEventTypes(run);

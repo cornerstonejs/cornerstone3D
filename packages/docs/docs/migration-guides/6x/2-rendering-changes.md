@@ -795,24 +795,75 @@ point of the image on display.
 
 ## Events and image loading of a planar viewport
 
-- **The events of new data fire.** `VOLUME_VIEWPORT_NEW_VOLUME` when a volume
-  is shown and `VIEWPORT_NEW_IMAGE_SET` when a stack is shown, on every
-  `setDisplaySets`. In 5.x only the adapter fired them.
+- **One event for new data: `DISPLAY_SETS_CHANGED`.** It replaces
+  `VIEWPORT_NEW_IMAGE_SET` and `VOLUME_VIEWPORT_NEW_VOLUME`, which are gone
+  from `Enums.Events`. Every viewport family fires it on its element: a
+  planar, a 3D, a video, an ECG and a whole slide viewport. It fires once for
+  each `setDisplaySets`, `addDisplaySet` and `removeDisplaySet` that commits,
+  that is when the data of the call is loaded and bound and the getters of
+  the viewport (`getDisplaySets()`, `getImageIds()`, `getActors()`,
+  `getCurrentImageIdIndex()`) answer for the new display sets. A call that a
+  newer `setDisplaySets` supersedes fires nothing, and so does a call that
+  rejects. A `removeDisplaySet` of an id that the viewport does not show
+  fires nothing. On a mount it fires after the first `NEW_IMAGE`, where the
+  two old events fired. The detail has `displaySets` (each
+  `{ displaySetId, role }`, as `getDisplaySets()` gives them),
+  `sourceDisplaySetId`, `added`, `removed` and `sourceChanged`.
+- **`DISPLAY_SETS_CHANGED` also fires for an overlay.** The two old events
+  fired only when the source was mounted. The new event fires when a labelmap
+  or another overlay is added or removed too, with `detail.sourceChanged`
+  false. A listener that cares only for the source returns early then, or a
+  cine stops each time a segmentation is shown. `sourceChanged` is true when
+  the source is another display set, or when the call mounted it again, as
+  each `setDisplaySets` does. A viewport that shows only overlays has no
+  source: `detail.sourceDisplaySetId` is undefined.
+
+  Before:
+
+  ```ts
+  element.addEventListener(Enums.Events.VIEWPORT_NEW_IMAGE_SET, restartCine);
+  element.addEventListener(
+    Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME,
+    restartCine
+  );
+  ```
+
+  After:
+
+  ```ts
+  element.addEventListener(Enums.Events.DISPLAY_SETS_CHANGED, (evt) => {
+    if (!evt.detail.sourceChanged) {
+      return;
+    }
+
+    restartCine();
+  });
+  ```
+
+  A listener that shows each layer, such as a histogram for each display
+  set, reads `detail.displaySets` and needs no event of its own for the
+  layers of a viewport.
+
 - **One event for a new image: `NEW_IMAGE`.** It replaces `STACK_NEW_IMAGE`
   and `VOLUME_NEW_IMAGE`. No next viewport fires those two. `NEW_IMAGE` fires
   after another image of a stack shows, after another slice of a volume
   shows, and for each frame of a video. A listener for stacks and a listener
   for volumes become one listener. `detail.imageIndex` of `VOLUME_NEW_IMAGE`
-  is `detail.imageIdIndex` now. A listener that came from `STACK_NEW_IMAGE`
+  is `detail.sliceIndex` now. A listener that came from `STACK_NEW_IMAGE`
   and reads `detail.image` also runs for a volume, where there is no image:
-  check `detail.image`, or `viewport.getCurrentMode()`. The detail has the
-  same keys in every mode:
+  check `detail.image`, or `viewport.getCurrentMode()`. It fires for the
+  source display set only: an overlay such as a labelmap fires nothing. The
+  detail has the same keys in every mode:
   - `viewportId` and `renderingEngineId`.
-  - `imageIdIndex` is the index of what is on display, which is what
-    `viewport.getCurrentImageIdIndex()` gives: the index of the image in a
-    stack, the slice index of the view of a volume, the index of the frame
-    of a video. The slice index of a volume counts along the view, in any
-    orientation, and can run against the order of the image ids.
+  - `displaySetId` is the source display set, whose image shows.
+  - `sliceIndex` is the index of what is on display, which is what
+    `viewport.getSliceIndex()` and `viewport.getCurrentImageIdIndex()` give:
+    the index of the image in a stack, the slice index of the view of a
+    volume, the index of the frame of a video. The slice index of a volume
+    counts along the view, in any orientation, and can run against the order
+    of the image ids. It was `imageIdIndex` in 6.0.0-beta.2; only the key of
+    the detail changes, `setImageIdIndex` and `initialImageIdIndex` keep
+    their names.
   - `numberOfSlices` is how many there are along the view, which is what
     `viewport.getNumberOfSlices()` gives.
   - `imageId` is the image on display, which is what
@@ -1281,7 +1332,7 @@ through one CPU draw step that follows the GPU:
 - **A linear image is drawn once more, exactly, when the view rests.**
 - **A mount draws once on the CPU.** The renders that `setDisplaySets` asks
   for while it mounts wait, and the viewport draws once when the mount ends,
-  before `VIEWPORT_NEW_IMAGE_SET`, so a mount fires one `IMAGE_RENDERED`, as
+  before `DISPLAY_SETS_CHANGED`, so a mount fires one `IMAGE_RENDERED`, as
   the legacy CPU stack viewport drew once in the frame of the rendering
   engine. The draw of a linear image at rest fires one more. In 5.x a next
   viewport drew at each render call, so a mount of a stack fired
@@ -1472,7 +1523,8 @@ legacy picture within two levels of 255.
   anew. It does not move the camera: `resetViewState()` does.
 - **Events.** `DISPLAY_SET_APPEARANCE_CHANGED` fires from a 3D viewport, once
   for each change and once when a display set is mounted, and
-  `VOLUME_VIEWPORT_NEW_VOLUME` fires on a mount. None of them fired in 5.x. A
+  `DISPLAY_SETS_CHANGED` fires on each mount and removal. None of them fired
+  in 5.x. A
   colormap change fires one event, where 6.0.0-beta.2 fired `VOI_MODIFIED`
   and `COLORMAP_MODIFIED`. `PRESET_MODIFIED` does not fire, nothing listened
   to it: a preset change fires `DISPLAY_SET_APPEARANCE_CHANGED` with
@@ -1630,8 +1682,9 @@ legacy picture within two levels of 255.
   fires it at every mount. The legacy video viewport fired its
   `STACK_NEW_IMAGE` at a mount too, twice, once for each of the two draws of
   the frame that its mount made. Its detail has the keys that a planar viewport
-  gives: `imageIdIndex` is the 0-based index of the frame, `numberOfSlices`
-  the number of frames and `imageId` the image id of the frame. `image` is
+  gives: `displaySetId` is the video, `sliceIndex` the 0-based index of the
+  frame, `numberOfSlices` the number of frames and `imageId` the image id of
+  the frame. `image` is
   undefined. The detail has no `time` and no `duration`, which the legacy
   video viewport put into `STACK_NEW_IMAGE`: read
   `viewport.getCurrentTime()`. The length of the media is `detail.duration`

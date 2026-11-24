@@ -70,7 +70,7 @@ describe('StackViewport CPU -- ', () => {
       const imageId = testUtils.encodeImageIdInfo(imageInfo);
 
       const vp = renderingEngine.getViewport(viewportId);
-      element.addEventListener(Events.VIEWPORT_NEW_IMAGE_SET, () => {
+      element.addEventListener(Events.DISPLAY_SETS_CHANGED, () => {
         testUtils.expectNextViewportToDrawOnCPU(vp);
 
         const canvas = vp.getCanvas();
@@ -115,7 +115,7 @@ describe('StackViewport CPU -- ', () => {
 
       const vp = renderingEngine.getViewport(viewportId);
 
-      element.addEventListener(Events.VIEWPORT_NEW_IMAGE_SET, () => {
+      element.addEventListener(Events.DISPLAY_SETS_CHANGED, () => {
         const canvas = vp.getCanvas();
         const image = canvas.toDataURL('image/png');
         testUtils
@@ -167,7 +167,7 @@ describe('StackViewport CPU -- ', () => {
 
       const vp = renderingEngine.getViewport(viewportId);
 
-      element.addEventListener(Events.VIEWPORT_NEW_IMAGE_SET, () => {
+      element.addEventListener(Events.DISPLAY_SETS_CHANGED, () => {
         const canvas = vp.getCanvas();
         const image = canvas.toDataURL('image/png');
 
@@ -237,7 +237,7 @@ describe('StackViewport CPU -- ', () => {
 
       const vp = renderingEngine.getViewport(viewportId);
 
-      element.addEventListener(Events.VIEWPORT_NEW_IMAGE_SET, () => {
+      element.addEventListener(Events.DISPLAY_SETS_CHANGED, () => {
         const canvas = vp.getCanvas();
         const image = canvas.toDataURL('image/png');
 
@@ -312,7 +312,7 @@ describe('StackViewport CPU -- ', () => {
 
       const vp = renderingEngine.getViewport(viewportId);
 
-      element.addEventListener(Events.VIEWPORT_NEW_IMAGE_SET, () => {
+      element.addEventListener(Events.DISPLAY_SETS_CHANGED, () => {
         const canvas = vp.getCanvas();
         const image = canvas.toDataURL('image/png');
 
@@ -431,7 +431,7 @@ describe('StackViewport CPU -- ', () => {
 
       const vp = renderingEngine.getViewport(viewportId);
 
-      element.addEventListener(Events.VIEWPORT_NEW_IMAGE_SET, () => {
+      element.addEventListener(Events.DISPLAY_SETS_CHANGED, () => {
         const canvas = vp.getCanvas();
         const image = canvas.toDataURL('image/png');
 
@@ -487,7 +487,7 @@ describe('StackViewport CPU -- ', () => {
       const imageId2 = testUtils.encodeImageIdInfo(imageInfo2);
 
       const vp = renderingEngine.getViewport(viewportId);
-      element.addEventListener(Events.VIEWPORT_NEW_IMAGE_SET, () => {
+      element.addEventListener(Events.DISPLAY_SETS_CHANGED, () => {
         const canvas = vp.getCanvas();
         const image = canvas.toDataURL('image/png');
         testUtils

@@ -358,11 +358,10 @@ describe('Tools on a direct next 3D viewport -- ', () => {
       const { id, type, element } = viewport;
       const [widget] = viewport.getWidgets();
 
-      cornerstone3D.triggerEvent(
-        element,
-        Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME,
-        { viewportId: id, volumeActors: [] }
-      );
+      cornerstone3D.triggerEvent(element, Enums.Events.DISPLAY_SETS_CHANGED, {
+        viewportId: id,
+        sourceChanged: true,
+      });
 
       expect(viewport.getWidgets()).toEqual([widget]);
       expect(widget.getEnabled()).toBe(true);

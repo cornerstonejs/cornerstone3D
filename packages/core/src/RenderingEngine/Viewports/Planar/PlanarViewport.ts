@@ -21,7 +21,6 @@ import type { EffectiveRenderBackend } from '../../../types/RenderBackendRegistr
 import type {
   ActorEntry,
   CPUIImageData,
-  EventTypes,
   ICamera,
   IImage,
   IImageData,
@@ -527,7 +526,8 @@ class PlanarViewport extends BaseViewport<
       getBinding: (displaySetId) => this.getBinding(displaySetId),
       getFirstBinding: () => this.getFirstBinding(),
       getBindings: () => this.bindings.entries(),
-      removeDisplaySet: (displaySetId) => this.removeDisplaySet(displaySetId),
+      removeDisplaySet: (displaySetId) =>
+        this.removeDisplaySetBinding(displaySetId),
     });
     this.viewReferences = new PlanarViewReferenceController({
       viewportId: this.id,
@@ -699,10 +699,9 @@ class PlanarViewport extends BaseViewport<
   }
 
   /**
-   * Mounts display sets as `setDisplaySets` does, then fires the event of new
-   * data that the legacy viewports fire: VOLUME_VIEWPORT_NEW_VOLUME when the
-   * new source is a volume, as `setVolumes`, and VIEWPORT_NEW_IMAGE_SET when
-   * it is a stack, as `setStack`.
+   * Mounts display sets as `setDisplaySets` does, then fires
+   * DISPLAY_SETS_CHANGED. A call that a newer one stops, or that rejects,
+   * fires nothing.
    *
    * The data of every entry is loaded before the shown display sets go, so an
    * entry without data rejects and leaves the shown scene as it was, as the
@@ -721,7 +720,7 @@ class PlanarViewport extends BaseViewport<
    * mounts) runs to its end, and a newer call waits for it before it removes
    * anything. So a listener of an event of the commit, as NEW_IMAGE, that
    * starts a call that rejects leaves the complete new scene, and the commit
-   * fires its event of new data.
+   * fires DISPLAY_SETS_CHANGED.
    */
   private async mountDisplaySets(
     entries: Array<{ displaySetId: string; options?: PlanarSetDataOptions }>
@@ -785,7 +784,9 @@ class PlanarViewport extends BaseViewport<
       this.releaseMountCpuDrawHold(requestId);
     }
 
-    this.triggerNewDataEvent(entries.map(({ displaySetId }) => displaySetId));
+    this.triggerDisplaySetsChanged(
+      entries.map(({ displaySetId }) => displaySetId)
+    );
   }
 
   /**
@@ -808,69 +809,6 @@ class PlanarViewport extends BaseViewport<
   }
 
   /**
-   * Fires the event of new data for display sets that were just mounted,
-   * when the source is one of them: VOLUME_VIEWPORT_NEW_VOLUME with the
-   * actor entries of the volumes among them, or VIEWPORT_NEW_IMAGE_SET with
-   * the image ids of the stack and its first index.
-   */
-  private triggerNewDataEvent(displaySetIds: string[]): void {
-    const sourceDisplaySetId = this.getSourceDisplaySetId();
-
-    if (!sourceDisplaySetId || !displaySetIds.includes(sourceDisplaySetId)) {
-      return;
-    }
-
-    const mode = this.getCurrentMode();
-
-    if (mode === 'volume') {
-      this.triggerNewVolumeEvent(
-        displaySetIds.flatMap((displaySetId) => {
-          const binding = this.getBinding(displaySetId);
-          const actorEntry = this.getDataSet(displaySetId)?.volumeId
-            ? binding?.getActorEntry?.(binding.data)
-            : undefined;
-
-          return actorEntry ? [actorEntry] : [];
-        })
-      );
-    } else if (mode === 'stack') {
-      this.triggerNewImageSetEvent(
-        this.getImageIds(),
-        this.getDataSet(sourceDisplaySetId)?.initialImageIdIndex ?? 0
-      );
-    }
-  }
-
-  /**
-   * Fires VOLUME_VIEWPORT_NEW_VOLUME with the detail of the legacy volume
-   * viewport: the viewport id and the actor entries of the new volumes.
-   */
-  private triggerNewVolumeEvent(volumeActors: ActorEntry[]): void {
-    triggerEvent(this.element, Events.VOLUME_VIEWPORT_NEW_VOLUME, {
-      viewportId: this.id,
-      volumeActors,
-    });
-  }
-
-  /**
-   * Fires VIEWPORT_NEW_IMAGE_SET with the detail of the legacy stack
-   * viewport, once the first image of a new stack is shown.
-   */
-  protected triggerNewImageSetEvent(
-    imageIds: string[],
-    currentImageIdIndex: number
-  ): void {
-    const eventDetail: EventTypes.StackViewportNewStackEventDetail = {
-      imageIds,
-      viewportId: this.id,
-      element: this.element,
-      currentImageIdIndex,
-    };
-
-    triggerEvent(this.element, Events.VIEWPORT_NEW_IMAGE_SET, eventDetail);
-  }
-
-  /**
    * Adds a single logical planar display set.
    *
    * @param displaySetId - Logical display set id to add.
@@ -881,21 +819,27 @@ class PlanarViewport extends BaseViewport<
     displaySetId: string,
     options: PlanarSetDataOptions = {}
   ): Promise<void> {
-    await this.addDisplaySetInternal(displaySetId, options);
+    const added = await this.addDisplaySetInternal(displaySetId, options);
+
     this.clearResolvedViewCache();
+
+    if (added) {
+      this.triggerDisplaySetsChanged([displaySetId]);
+    }
   }
 
   /**
    * Mounts a display set. With `loaded`, what `setDisplaySets` loaded for it,
    * it takes the best stage of the image of a stack that the cache has, after
    * its last wait and in the same task as the render path that listens for
-   * the later stages, so no stage comes between the two.
+   * the later stages, so no stage comes between the two. Gives whether the
+   * display set was bound.
    */
   private async addDisplaySetInternal(
     displaySetId: string,
     options: PlanarSetDataOptions = {},
     loaded?: PlanarDataLoad
-  ): Promise<void> {
+  ): Promise<boolean> {
     const role = this.mountedData.resolveBindingRole(options);
     const resolvedOptions: PlanarSetDataOptions = {
       ...options,
@@ -921,7 +865,7 @@ class PlanarViewport extends BaseViewport<
     });
 
     if (!added) {
-      return;
+      return false;
     }
 
     this.updateRenderPlan(displaySetId, selectedPath.reason);
@@ -940,6 +884,8 @@ class PlanarViewport extends BaseViewport<
       // redundant render (addLoadedData already rendered).
       this.triggerCameraModifiedEvent(this.getCameraForEvent());
     }
+
+    return true;
   }
 
   /**
@@ -1038,13 +984,13 @@ class PlanarViewport extends BaseViewport<
    * Removes a dataset binding and clears the active data id when the
    * removed dataset was active.
    */
-  removeDisplaySet(displaySetId: string): void {
+  protected override removeDisplaySetBinding(displaySetId: string): void {
     this.clearResolvedViewCache();
     this.mountOptionsByDisplaySetId.delete(displaySetId);
     this.lastRenderPathErrorByDisplaySetId.delete(displaySetId);
     this.renderPlanReasonByDisplaySetId.delete(displaySetId);
     this.renderPlanByDisplaySetId.delete(displaySetId);
-    super.removeDisplaySet(displaySetId);
+    super.removeDisplaySetBinding(displaySetId);
     this.mountedData.handleRemovedData(displaySetId);
 
     if (!this.isDestroyed && this.getCurrentBinding()) {
@@ -3512,7 +3458,7 @@ class PlanarViewport extends BaseViewport<
         continue;
       }
 
-      this.removeDisplaySet(displaySetId);
+      this.removeDisplaySetBinding(displaySetId);
     }
   }
 

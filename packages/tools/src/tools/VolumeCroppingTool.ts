@@ -185,7 +185,7 @@ const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
  *   - viewportId?: string - Optional viewport ID
  *   - renderingEngineId?: string - Optional rendering engine ID
  * @event VOLUMECROPPINGCONTROL_TOOL_CHANGED - Listens for changes from VolumeCroppingControlTool
- * @event VOLUME_VIEWPORT_NEW_VOLUME - Listens for new volume loading to reinitialize cropping bounds
+ * @event DISPLAY_SETS_CHANGED - Listens for another source display set to reinitialize cropping bounds; an overlay keeps them
  * @event TOOLGROUP_VIEWPORT_ADDED - Listens for new viewport additions to extend resize observation
  *
  * @methods
@@ -1788,7 +1788,11 @@ class VolumeCroppingTool extends BaseTool {
     this._updateEdgeLines();
   }
 
-  _onNewVolume = () => {
+  _onNewVolume = (evt: Types.EventTypes.DisplaySetsChangedEvent) => {
+    if (!evt.detail.sourceChanged) {
+      return;
+    }
+
     const viewportsInfo = this._getViewportsInfo();
     this._setHandlesInScene(false);
     this.originalClippingPlanes = [];
@@ -1806,8 +1810,8 @@ class VolumeCroppingTool extends BaseTool {
       const { element } = viewport;
 
       element.removeEventListener(
-        Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME,
-        this._onNewVolume
+        Enums.Events.DISPLAY_SETS_CHANGED,
+        this._onNewVolume as EventListener
       );
     });
   }
@@ -1821,8 +1825,8 @@ class VolumeCroppingTool extends BaseTool {
       const { element } = viewport;
 
       element.addEventListener(
-        Enums.Events.VOLUME_VIEWPORT_NEW_VOLUME,
-        this._onNewVolume
+        Enums.Events.DISPLAY_SETS_CHANGED,
+        this._onNewVolume as EventListener
       );
     });
   }

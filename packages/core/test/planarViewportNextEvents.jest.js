@@ -22,7 +22,7 @@ const recordedEvents = [
   'CORNERSTONE_PRE_STACK_NEW_IMAGE',
   'CORNERSTONE_STACK_NEW_IMAGE',
   Events.NEW_IMAGE,
-  Events.VIEWPORT_NEW_IMAGE_SET,
+  Events.DISPLAY_SETS_CHANGED,
   'CORNERSTONE_STACK_VIEWPORT_SCROLL',
 ];
 
@@ -122,7 +122,10 @@ async function showStack(viewport, imageIds, imageIdIndex = 0) {
   return viewport.setDisplaySets({ displaySetId: 'stack' });
 }
 
-/** Records the stack events of an element as `name:index`, with details. */
+/**
+ * Records the stack events of an element as `name:index`, or as `name` for
+ * an event without an index, with details.
+ */
 function recordEvents(element) {
   const events = [];
   const details = {};
@@ -130,11 +133,11 @@ function recordEvents(element) {
   recordedEvents.forEach((eventName) => {
     element.addEventListener(eventName, (evt) => {
       const index =
-        evt.detail.imageIdIndex ??
+        evt.detail.sliceIndex ??
         evt.detail.newImageIdIndex ??
         evt.detail.currentImageIdIndex;
 
-      events.push(`${eventName}:${index}`);
+      events.push(index === undefined ? eventName : `${eventName}:${index}`);
       details[eventName] = evt.detail;
     });
   });
@@ -151,14 +154,13 @@ function getRequestedImageIdIndex(viewport) {
 }
 
 /**
- * The details of STACK_NEW_IMAGE and VIEWPORT_NEW_IMAGE_SET that the legacy
- * stack viewport fired for `setStack(imageIds, 1)`, less the image, the
- * element and the ids of the viewport and of its rendering engine.
+ * The detail of STACK_NEW_IMAGE that the legacy stack viewport fired for
+ * `setStack(imageIds, 1)`, less the image and the ids of the viewport and of
+ * its rendering engine. Its `imageIdIndex` is `sliceIndex` of NEW_IMAGE.
  */
 function legacySetStackDetails(imageIds) {
   return {
     stackNewImage: { imageId: imageIds[1], imageIdIndex: 1 },
-    newImageSet: { imageIds, currentImageIdIndex: 1 },
   };
 }
 
@@ -202,7 +204,7 @@ const LEGACY_NEARBY_PROJECTION_VIEWABLE = [true, true, false];
 function waitForNewImage(element, imageIdIndex) {
   return new Promise((resolve) => {
     const listener = (evt) => {
-      if (evt.detail.imageIdIndex === imageIdIndex) {
+      if (evt.detail.sliceIndex === imageIdIndex) {
         element.removeEventListener(Events.NEW_IMAGE, listener);
         resolve();
       }
@@ -247,7 +249,7 @@ describe('Direct next planar viewport events and image loads against the legacy 
   });
 
   describe('new data', () => {
-    it('fires NEW_IMAGE and VIEWPORT_NEW_IMAGE_SET when a stack is shown, and neither the PRE_STACK_NEW_IMAGE nor the STACK_NEW_IMAGE of the legacy setStack', async () => {
+    it('fires NEW_IMAGE, then DISPLAY_SETS_CHANGED, when a stack is shown, and neither the PRE_STACK_NEW_IMAGE nor the STACK_NEW_IMAGE of the legacy setStack', async () => {
       const imageIds = createImageIds();
       const viewport = createNextViewport();
       const next = recordEvents(viewport.element);
@@ -257,23 +259,29 @@ describe('Direct next planar viewport events and image loads against the legacy 
 
       expect(next.events).toEqual([
         `${Events.NEW_IMAGE}:1`,
-        `${Events.VIEWPORT_NEW_IMAGE_SET}:1`,
+        Events.DISPLAY_SETS_CHANGED,
       ]);
       expect(next.details[Events.NEW_IMAGE]).toEqual({
-        ...legacy.stackNewImage,
+        displaySetId: 'stack',
+        imageId: legacy.stackNewImage.imageId,
+        sliceIndex: legacy.stackNewImage.imageIdIndex,
         numberOfSlices: imageIds.length,
         image: expect.objectContaining({ imageId: imageIds[1] }),
         viewportId: 'next',
         renderingEngineId: expect.any(String),
       });
-      expect(next.details[Events.VIEWPORT_NEW_IMAGE_SET]).toEqual({
-        ...legacy.newImageSet,
+      expect(next.details[Events.DISPLAY_SETS_CHANGED]).toEqual({
+        element: viewport.element,
         viewportId: 'next',
-        element: next.details[Events.VIEWPORT_NEW_IMAGE_SET].element,
+        renderingEngineId: viewport.renderingEngineId,
+        displaySets: [{ displaySetId: 'stack', role: 'source' }],
+        sourceDisplaySetId: 'stack',
+        added: ['stack'],
+        removed: [],
+        sourceChanged: true,
       });
-      expect(next.details[Events.VIEWPORT_NEW_IMAGE_SET].imageIds).toEqual(
-        imageIds
-      );
+      expect(viewport.getImageIds()).toEqual(imageIds);
+      expect(viewport.getCurrentImageIdIndex()).toBe(1);
     });
   });
 
@@ -408,7 +416,7 @@ describe('Direct next planar viewport events and image loads against the legacy 
 
       await showStack(viewport, imageIds, 0);
       element.addEventListener(Events.NEW_IMAGE, (evt) => {
-        shown ||= evt.detail.imageIdIndex === 2;
+        shown ||= evt.detail.sliceIndex === 2;
       });
 
       const before = [

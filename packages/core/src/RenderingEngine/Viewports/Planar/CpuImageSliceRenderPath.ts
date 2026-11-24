@@ -230,11 +230,14 @@ export class CpuImageSliceRenderPath
         })
     );
 
-    triggerPlanarNewImage(ctx, {
-      image: payload.image,
-      imageIdIndex: payload.initialImageIdIndex ?? 0,
-      numberOfSlices: payload.imageIds.length,
-    });
+    if (options.role !== 'overlay') {
+      triggerPlanarNewImage(ctx, {
+        displaySetId: data.id,
+        image: payload.image,
+        sliceIndex: payload.initialImageIdIndex ?? 0,
+        numberOfSlices: payload.imageIds.length,
+      });
+    }
 
     return {
       rendering,
@@ -1067,7 +1070,14 @@ async function updateRenderedImage(args: {
     displaySetId,
     previousDefaultVOIRange
   );
-  triggerPlanarNewImage(ctx, { image, imageIdIndex, numberOfSlices });
+  if (ctx.viewport.isCurrentDisplaySetId(displaySetId)) {
+    triggerPlanarNewImage(ctx, {
+      displaySetId,
+      image,
+      sliceIndex: imageIdIndex,
+      numberOfSlices,
+    });
+  }
   // cpuImage is drawn by the Planar viewport itself, not by the rendering
   // engine's VTK pass. The image swap therefore needs an immediate viewport
   // render or the visible canvas stays stale until another direct render.

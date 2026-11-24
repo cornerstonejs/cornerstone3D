@@ -143,7 +143,7 @@ describe('Bidirectional Tool (CPU): ', () => {
       });
     };
 
-    element.addEventListener(Events.VIEWPORT_NEW_IMAGE_SET, () => {
+    element.addEventListener(Events.DISPLAY_SETS_CHANGED, () => {
       testUtils.expectNextViewportToDrawOnCPU(vp);
 
       const index1 = [32, 32, 0];
@@ -264,7 +264,7 @@ describe('Bidirectional Tool (CPU): ', () => {
       });
     };
 
-    element.addEventListener(Events.VIEWPORT_NEW_IMAGE_SET, () => {
+    element.addEventListener(Events.DISPLAY_SETS_CHANGED, () => {
       // Not not to move the handle too much since the length become width and it would fail
       const index1 = [50, 50, 0];
       const index2 = [5, 5, 0];
@@ -418,7 +418,7 @@ describe('Bidirectional Tool (CPU): ', () => {
       });
     };
 
-    element.addEventListener(Events.VIEWPORT_NEW_IMAGE_SET, () => {
+    element.addEventListener(Events.DISPLAY_SETS_CHANGED, () => {
       const index1 = [20, 20, 0];
       const index2 = [20, 30, 0];
 
@@ -604,7 +604,7 @@ describe('Bidirectional Tool (CPU): ', () => {
       });
     };
 
-    element.addEventListener(Events.VIEWPORT_NEW_IMAGE_SET, () => {
+    element.addEventListener(Events.DISPLAY_SETS_CHANGED, () => {
       const index1 = [20, 20, 0];
       const index2 = [20, 30, 0];
 
@@ -739,7 +739,7 @@ describe('Bidirectional Tool (CPU): ', () => {
 
     let p1, p2;
 
-    element.addEventListener(Events.VIEWPORT_NEW_IMAGE_SET, () => {
+    element.addEventListener(Events.DISPLAY_SETS_CHANGED, () => {
       const index1 = [32, 32, 4];
       const index2 = [10, 1, 4];
 

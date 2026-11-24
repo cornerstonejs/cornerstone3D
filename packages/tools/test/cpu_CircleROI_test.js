@@ -134,7 +134,7 @@ describe('CircleROITool (CPU):', () => {
       });
     };
 
-    element.addEventListener(Events.VIEWPORT_NEW_IMAGE_SET, () => {
+    element.addEventListener(Events.DISPLAY_SETS_CHANGED, () => {
       testUtils.expectNextViewportToDrawOnCPU(vp);
 
       const index1 = [12, 30, 0];
@@ -220,7 +220,7 @@ describe('CircleROITool (CPU):', () => {
     const imageId1 = encodeImageIdInfo(imageInfo1);
     const vp = renderingEngine.getViewport(viewportId);
 
-    element.addEventListener(Events.VIEWPORT_NEW_IMAGE_SET, () => {
+    element.addEventListener(Events.DISPLAY_SETS_CHANGED, () => {
       const index1 = [12, 30, 0];
       const index2 = [14, 30, 0];
 

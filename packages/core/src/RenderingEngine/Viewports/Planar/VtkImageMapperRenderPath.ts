@@ -136,8 +136,9 @@ export class VtkImageMapperRenderPath
     // the scrollbar to the overlay's own index (0) instead of the current slice.
     if (options.role !== 'overlay') {
       triggerPlanarNewImage(ctx, {
+        displaySetId: data.id,
         image: payload.image,
-        imageIdIndex: payload.initialImageIdIndex ?? 0,
+        sliceIndex: payload.initialImageIdIndex ?? 0,
         numberOfSlices: payload.imageIds.length,
       });
     }
@@ -512,7 +513,12 @@ async function updateRenderedImage(args: {
   // Only the source binding's slice change should drive the slice scrollbar; an
   // overlay (segmentation) slice update must not emit NEW_IMAGE.
   if (projection?.isSourceBinding) {
-    triggerPlanarNewImage(ctx, { image, imageIdIndex, numberOfSlices });
+    triggerPlanarNewImage(ctx, {
+      displaySetId,
+      image,
+      sliceIndex: imageIdIndex,
+      numberOfSlices,
+    });
   }
   ctx.display.requestRender();
 }

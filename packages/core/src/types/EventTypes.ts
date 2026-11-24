@@ -291,24 +291,27 @@ type VolumeScrollOutOfBoundsEventDetail = {
 
 /**
  * NEW_IMAGE Event's data. A viewport fires the event when it shows another
- * image: a planar viewport for another image of a stack and for another slice
- * of a volume, a video viewport for another frame. The detail has the same
- * keys in every mode.
+ * image of its source display set: a planar viewport for another image of a
+ * stack and for another slice of a volume, a video viewport for another
+ * frame. The detail has the same keys in every mode.
  */
 interface NewImageEventDetail {
   /** unique id for the viewport */
   viewportId: string;
   /** unique id for the renderingEngine */
   renderingEngineId: string;
+  /** The source display set of the viewport, the one whose image this is. */
+  displaySetId: string;
   /**
-   * The index of what is on display, which is what
-   * `viewport.getCurrentImageIdIndex()` gives. In stack mode it is the index
-   * of the image in the stack. In volume mode it is the slice index of the
-   * view, in any orientation: it counts along the view, which can run against
-   * the order of the image ids, so it is not the place of `imageId` in the
-   * image ids. On a video it is the 0-based index of the frame.
+   * The index of the slice on display along the view, 0-based, which is what
+   * `viewport.getSliceIndex()` and `viewport.getCurrentImageIdIndex()` give
+   * and what a view reference names as `sliceIndex`. In stack mode it is the
+   * index of the image in the stack. In volume mode it counts the slices
+   * along the view, in any orientation, which can run against the order of
+   * the image ids: it is not the place of `imageId` in the image ids. On a
+   * video it is the index of the frame.
    */
-  imageIdIndex: number;
+  sliceIndex: number;
   /**
    * How many there are along the view, which is what
    * `viewport.getNumberOfSlices()` gives. In stack mode it is the number of
@@ -346,13 +349,45 @@ interface ImageSpacingCalibratedEventDetail {
 }
 
 /**
- * The VIEWPORT_NEW_IMAGE_SET event's data, when a planar viewport shows a new stack
+ * One display set that a viewport shows, as DISPLAY_SETS_CHANGED gives it:
+ * its id and its role, `source` for the display set that defines the view
+ * and `overlay` for each one drawn over it.
  */
-interface StackViewportNewStackEventDetail {
-  imageIds: string[];
-  viewportId: string;
+interface DisplaySetsChangedEntry {
+  displaySetId: string;
+  role: 'source' | 'overlay';
+}
+
+/**
+ * The DISPLAY_SETS_CHANGED event's data: the display sets that the viewport
+ * shows after one committed `setDisplaySets`, `addDisplaySet` or
+ * `removeDisplaySet`, and what the call changed.
+ */
+interface DisplaySetsChangedEventDetail {
   element: HTMLDivElement;
-  currentImageIdIndex: number;
+  viewportId: string;
+  renderingEngineId: string;
+  /**
+   * The display sets that the viewport shows now, in the order of
+   * `viewport.getDisplaySets()`, each with its role.
+   */
+  displaySets: DisplaySetsChangedEntry[];
+  /** The source display set now, undefined when the viewport shows nothing. */
+  sourceDisplaySetId?: string;
+  /**
+   * The display sets that the call mounted: new ones, and one that it
+   * mounted again, as `setDisplaySets` mounts its source again.
+   */
+  added: string[];
+  /** The display sets that the viewport showed before the call and no longer shows. */
+  removed: string[];
+  /**
+   * True when the source display set is another one now, or the call
+   * mounted it again; false when only an overlay came or went, such as a
+   * labelmap. A listener that cares only for the source returns early on
+   * false.
+   */
+  sourceChanged: boolean;
 }
 
 /**
@@ -466,10 +501,9 @@ type ImageSpacingCalibratedEvent =
   CustomEventType<ImageSpacingCalibratedEventDetail>;
 
 /**
- * VIEWPORT_NEW_IMAGE_SET
+ * DISPLAY_SETS_CHANGED
  */
-type StackViewportNewStackEvent =
-  CustomEventType<StackViewportNewStackEventDetail>;
+type DisplaySetsChangedEvent = CustomEventType<DisplaySetsChangedEventDetail>;
 
 type StackScrollOutOfBoundsEvent =
   CustomEventType<StackScrollOutOfBoundsEventDetail>;
@@ -519,8 +553,9 @@ export type {
   NewImageEventDetail,
   ImageSpacingCalibratedEvent,
   ImageSpacingCalibratedEventDetail,
-  StackViewportNewStackEvent,
-  StackViewportNewStackEventDetail,
+  DisplaySetsChangedEntry,
+  DisplaySetsChangedEvent,
+  DisplaySetsChangedEventDetail,
   StackScrollOutOfBoundsEvent,
   StackScrollOutOfBoundsEventDetail,
   CameraResetEvent,

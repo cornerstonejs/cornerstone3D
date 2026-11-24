@@ -95,15 +95,17 @@ function sceneOf(viewport) {
   };
 }
 
-/** Counts the events of new data of a viewport from now on. */
+/**
+ * Counts the DISPLAY_SETS_CHANGED events of a viewport from now on, and those
+ * of them that changed the source. A call that fails or that a newer call
+ * supersedes fires none.
+ */
 function countNewDataEvents(viewport) {
-  const counter = { newImageSet: 0, newVolume: 0 };
+  const counter = { displaySetsChanged: 0, sourceChanged: 0 };
 
-  viewport.element.addEventListener(Events.VIEWPORT_NEW_IMAGE_SET, () => {
-    counter.newImageSet++;
-  });
-  viewport.element.addEventListener(Events.VOLUME_VIEWPORT_NEW_VOLUME, () => {
-    counter.newVolume++;
+  viewport.element.addEventListener(Events.DISPLAY_SETS_CHANGED, (evt) => {
+    counter.displaySetsChanged++;
+    counter.sourceChanged += evt.detail.sourceChanged ? 1 : 0;
   });
 
   return counter;
@@ -206,7 +208,7 @@ describe('A replacement of the display sets of a direct next planar viewport who
 
         expect(error).toBeDefined();
         expect(sceneOf(viewport)).toEqual(shownScene);
-        expect(newData).toEqual({ newImageSet: 0, newVolume: 0 });
+        expect(newData).toEqual({ displaySetsChanged: 0, sourceChanged: 0 });
 
         await renderAndWait(viewport);
 
@@ -223,11 +225,7 @@ describe('A replacement of the display sets of a direct next planar viewport who
           { displaySetId: 'replacement:next', options: { role: 'source' } },
         ]);
         expect(viewport.getImageIds()).toEqual(next.imageIds);
-        expect(newData).toEqual(
-          mode === 'stack'
-            ? { newImageSet: 1, newVolume: 0 }
-            : { newImageSet: 0, newVolume: 1 }
-        );
+        expect(newData).toEqual({ displaySetsChanged: 1, sourceChanged: 1 });
         expect(next.imageIds).toContain(viewport.getCurrentImageId());
       });
     }
@@ -284,7 +282,7 @@ describe('A replacement of the display sets of a direct next planar viewport who
     expect(error).toBeDefined();
     expect(sceneOf(viewport)).toEqual(shownScene);
     expect(pictureOf(viewport)).toBe(shownPicture);
-    expect(newData).toEqual({ newImageSet: 0, newVolume: 0 });
+    expect(newData).toEqual({ displaySetsChanged: 0, sourceChanged: 0 });
   });
 
   for (const renderBackend of ['gpu', 'cpu']) {
@@ -337,7 +335,7 @@ describe('A replacement of the display sets of a direct next planar viewport who
       ]);
       expect(viewport.getImageIds()).toEqual(next.imageIds);
       expect(viewport.getCurrentImageId()).toBe(next.imageIds[0]);
-      expect(newData).toEqual({ newImageSet: 1, newVolume: 0 });
+      expect(newData).toEqual({ displaySetsChanged: 1, sourceChanged: 1 });
 
       if (!viewport.getDisplaySets().length) {
         return;
@@ -527,7 +525,7 @@ describe('A replacement of the display sets of a direct next planar viewport who
 
       expect(error).toBeDefined();
       expect(sceneOf(viewport)).toEqual(shownScene);
-      expect(newData).toEqual({ newImageSet: 0, newVolume: 0 });
+      expect(newData).toEqual({ displaySetsChanged: 0, sourceChanged: 0 });
 
       await renderAndWait(viewport);
 

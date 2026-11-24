@@ -136,7 +136,7 @@ describe('ProbeTool (CPU):', () => {
       });
     };
 
-    element.addEventListener(Events.VIEWPORT_NEW_IMAGE_SET, () => {
+    element.addEventListener(Events.DISPLAY_SETS_CHANGED, () => {
       testUtils.expectNextViewportToDrawOnCPU(vp);
 
       const index1 = [11, 20, 0];
@@ -209,7 +209,7 @@ describe('ProbeTool (CPU):', () => {
 
     let p2;
 
-    element.addEventListener(Events.VIEWPORT_NEW_IMAGE_SET, () => {
+    element.addEventListener(Events.DISPLAY_SETS_CHANGED, () => {
       const index1 = [11, 20, 0];
       const index2 = [40, 40, 0];
 

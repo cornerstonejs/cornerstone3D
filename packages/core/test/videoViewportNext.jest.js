@@ -168,7 +168,8 @@ describe('Next video viewport', () => {
     expect(newImage.mock.calls.at(-1)[0].detail).toEqual({
       viewportId: 'video',
       renderingEngineId: 'renderingEngine',
-      imageIdIndex: 15,
+      displaySetId: VIDEO_ID,
+      sliceIndex: 15,
       numberOfSlices: FRAMES,
       imageId: viewport.getCurrentImageId(),
       image: undefined,
@@ -192,7 +193,8 @@ describe('Next video viewport', () => {
     expect(newImage.mock.calls[0][0].detail).toEqual({
       viewportId: 'video',
       renderingEngineId: 'renderingEngine',
-      imageIdIndex: 20,
+      displaySetId: VIDEO_ID,
+      sliceIndex: 20,
       numberOfSlices: FRAMES,
       imageId: viewport.getCurrentImageId(),
       image: undefined,

@@ -1,0 +1,52 @@
+{
+  "cornerstone3d-6-review": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "10",
+        "rule": "Events.VIEWPORT_NEW_IMAGE_SET: DISPLAY_SETS_CHANGED also fires when an overlay such as a labelmap is added or removed: a listener that cares only for the source adds if (!evt.detail.sourceChanged) return, and the detail has no imageIds and no currentImageIdIndex (ask the viewport)"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "40",
+        "rule": "Events.VIEWPORT_NEW_IMAGE_SET: DISPLAY_SETS_CHANGED also fires when an overlay such as a labelmap is added or removed: a listener that cares only for the source adds if (!evt.detail.sourceChanged) return, and the detail has no imageIds and no currentImageIdIndex (ask the viewport)"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "43",
+        "rule": "Types.EventTypes.StackViewportNewStackEvent: the detail has displaySets, sourceDisplaySetId, added, removed and sourceChanged, and no imageIds"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "44",
+        "rule": "Types.EventTypes.StackViewportNewStackEventDetail: the detail has displaySets, sourceDisplaySetId, added, removed and sourceChanged, and no imageIds"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "7",
+        "rule": "Events.VIEWPORT_NEW_IMAGE_SET: DISPLAY_SETS_CHANGED also fires when an overlay such as a labelmap is added or removed: a listener that cares only for the source adds if (!evt.detail.sourceChanged) return, and the detail has no imageIds and no currentImageIdIndex (ask the viewport)"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "8",
+        "rule": "Events.VOLUME_VIEWPORT_NEW_VOLUME: DISPLAY_SETS_CHANGED also fires when an overlay such as a labelmap is added or removed: a listener that cares only for the source adds if (!evt.detail.sourceChanged) return, it fires for a stack too, and the detail has no volumeActors (call viewport.getActors())"
+      },
+      "count": 1
+    }
+  ]
+}

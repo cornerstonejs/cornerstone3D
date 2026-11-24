@@ -409,6 +409,7 @@ export class CpuVolumeSliceRenderPath
     }
 
     triggerPlanarVolumeNewImageOfPlacedSlice(ctx, {
+      displaySetId,
       rendering,
       viewState: camera,
       isSourceBinding: projection.isSourceBinding,

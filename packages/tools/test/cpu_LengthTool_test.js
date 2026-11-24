@@ -150,7 +150,7 @@ describe('Length Tool (CPU):', () => {
       });
     };
 
-    element.addEventListener(Events.VIEWPORT_NEW_IMAGE_SET, () => {
+    element.addEventListener(Events.DISPLAY_SETS_CHANGED, () => {
       testUtils.expectNextViewportToDrawOnCPU(vp);
 
       const index1 = [30, 30, 0];
@@ -300,7 +300,7 @@ describe('Length Tool (CPU):', () => {
       });
     };
 
-    element.addEventListener(Events.VIEWPORT_NEW_IMAGE_SET, () => {
+    element.addEventListener(Events.DISPLAY_SETS_CHANGED, () => {
       const index1 = [20, 20, 0];
       const index2 = [20, 30, 0];
       const index3 = [20, 25, 0];

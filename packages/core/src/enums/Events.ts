@@ -123,10 +123,6 @@ enum Events {
    * and see what event detail is included in {@link EventTypes.ImageLoadedFailedEventDetail | ImageLoadedFailed Event Detail }
    */
   IMAGE_LOAD_FAILED = 'CORNERSTONE_IMAGE_LOAD_FAILED',
-  /**
-   * Triggers on element when a new voluem is set on the volume viewport
-   */
-  VOLUME_VIEWPORT_NEW_VOLUME = 'CORNERSTONE_VOLUME_VIEWPORT_NEW_VOLUME',
 
   /**
    * Triggers on the eventTarget when the volume has successfully loaded by volumeLoaders
@@ -178,12 +174,13 @@ enum Events {
    */
   VOLUME_TEXTURE_LIMITS_CHANGED = 'CORNERSTONE_VOLUME_TEXTURE_LIMITS_CHANGED',
   /**
-   * Triggers on the element when a viewport shows another image: another
-   * image of a stack, another slice of a volume or another frame of a video.
-   * A planar viewport fires it once at a mount, for what the mount shows, and
-   * once for each change of what is on display. A video viewport fires it for
-   * each frame while it plays and for the frame of a seek. The detail has the
-   * same keys in every mode.
+   * Triggers on the element when a viewport shows another image of its source
+   * display set: another image of a stack, another slice of a volume or
+   * another frame of a video. A planar viewport fires it once at a mount, for
+   * what the mount shows, and once for each change of what is on display. A
+   * video viewport fires it for each frame while it plays and for the frame
+   * of a seek. An overlay, such as a labelmap, fires nothing. The detail has
+   * the same keys in every mode.
    *
    * Make use of {@link EventTypes.NewImageEvent | NewImage Event Type } for typing your event listeners for NEW_IMAGE event,
    * and see what event detail is included in {@link EventTypes.NewImageEventDetail | NewImage Event Detail }
@@ -199,11 +196,19 @@ enum Events {
   IMAGE_SPACING_CALIBRATED = 'CORNERSTONE_IMAGE_SPACING_CALIBRATED',
 
   /**
-   * Triggers on the event target when a new stack is set on its stack viewport.
-   * Make use of {@link EventTypes.StackViewportNewStack | StackViewportNewStack Event Type } for typing your event listeners for VIEWPORT_NEW_IMAGE_SET event,
-   * and see what event detail is included in {@link EventTypes.StackViewportNewStackEventDetail | StackViewportNewStack Event Detail }
+   * Triggers on the element once for each committed `setDisplaySets`,
+   * `addDisplaySet` and `removeDisplaySet` of a viewport of any family, for
+   * an overlay as well as for the source. A call is committed when its data
+   * is loaded and bound and the getters of the viewport answer for the new
+   * display sets; a call that a newer `setDisplaySets` supersedes, or that
+   * fails, fires nothing. `detail.sourceChanged` is false when only an
+   * overlay came or went: a listener that cares only for the source returns
+   * early then.
+   *
+   * Make use of {@link EventTypes.DisplaySetsChangedEvent | DisplaySetsChanged Event Type } for typing your event listeners for DISPLAY_SETS_CHANGED event,
+   * and see what event detail is included in {@link EventTypes.DisplaySetsChangedEventDetail | DisplaySetsChanged Event Detail }
    */
-  VIEWPORT_NEW_IMAGE_SET = 'CORNERSTONE_VIEWPORT_NEW_IMAGE_SET',
+  DISPLAY_SETS_CHANGED = 'CORNERSTONE_DISPLAY_SETS_CHANGED',
 
   /**
    * Triggers when the scroll function is called with a delta that is out of bounds in the stack viewport.

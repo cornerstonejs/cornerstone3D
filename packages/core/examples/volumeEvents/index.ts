@@ -91,7 +91,11 @@ element.addEventListener(CAMERA_MODIFIED, ((
 }) as EventListener);
 
 element.addEventListener(NEW_IMAGE, ((evt: Types.EventTypes.NewImageEvent) => {
-  const { imageIdIndex, renderingEngineId, viewportId } = evt.detail;
+  const {
+    sliceIndex: imageIdIndex,
+    renderingEngineId,
+    viewportId,
+  } = evt.detail;
   const detail = {
     imageIdIndex,
     renderingEngineId,

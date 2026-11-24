@@ -231,7 +231,7 @@ describe('Direct next video viewport -- ', () => {
     expect(nextRendered.count).toBeLessThanOrEqual(2);
   });
 
-  it('fires NEW_IMAGE once for the frame of a seek, with the frame index, the number of frames and the image id, and no STACK_NEW_IMAGE', async function () {
+  it('fires NEW_IMAGE once for the frame of a seek, with the display set, the frame index, the number of frames and the image id, and no STACK_NEW_IMAGE', async function () {
     const events = recordNewImageEvents(next.element);
 
     next.setFrameNumber(6);
@@ -244,7 +244,8 @@ describe('Direct next video viewport -- ', () => {
       {
         viewportId: 'nextVideo',
         renderingEngineId,
-        imageIdIndex: 5,
+        displaySetId: TEST_VIDEO.imageId,
+        sliceIndex: 5,
         numberOfSlices: TEST_VIDEO.numberOfFrames,
         imageId: next.getCurrentImageId(),
         image: undefined,
@@ -262,7 +263,7 @@ describe('Direct next video viewport -- ', () => {
     next.pause();
     await animationFrames(3);
 
-    const indices = events.newImage.map(({ imageIdIndex }) => imageIdIndex);
+    const indices = events.newImage.map(({ sliceIndex }) => sliceIndex);
 
     expect(new Set(indices).size).toBe(indices.length);
     expect(indices).toEqual([...indices].sort((a, b) => a - b));
@@ -270,9 +271,10 @@ describe('Direct next video viewport -- ', () => {
       expect(detail).toEqual({
         viewportId: 'nextVideo',
         renderingEngineId,
-        imageIdIndex: detail.imageIdIndex,
+        displaySetId: TEST_VIDEO.imageId,
+        sliceIndex: detail.sliceIndex,
         numberOfSlices: TEST_VIDEO.numberOfFrames,
-        imageId: next.getImageIds()[detail.imageIdIndex],
+        imageId: next.getImageIds()[detail.sliceIndex],
         image: undefined,
       });
     });
