@@ -133,6 +133,11 @@ interface IImage {
   };
 
   imageQualityStatus?: ImageQualityStatus;
+  /**
+   * True while a later progressive stage of this image is still to come, so a
+   * reduced `imageQualityStatus` is not final.
+   */
+  imageQualityPending?: boolean;
   calibration?: IImageCalibration;
   imageFrame?: IImageFrame;
 

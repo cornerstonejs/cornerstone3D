@@ -16,16 +16,17 @@ const SOFTWARE_RASTERIZER_PATTERN =
  * The GPU capability profile detected through offscreen WebGL probes.
  *
  * This is the single source the rendering configuration consults instead of
- * scattered per-feature checks: backend selection reads `webgl`/`webgl2`,
+ * scattered per-feature checks: backend selection reads `webgl`,
  * texture-format decisions read the {@link TextureFormatSupport} flags, and
  * `renderer`/`softwareRasterizer` let applications surface or log degraded
  * environments (e.g. SwiftShader after a driver denylist hit).
+ *
+ * Only WebGL2 is probed: vtk.js cannot render with WebGL1, so a WebGL1-only
+ * browser reports `webgl: false` and uses CPU rendering.
  */
 export interface RenderingCapabilities extends TextureFormatSupport {
-  /** Any WebGL context (1 or 2) could be created. */
-  webgl: boolean;
   /** A WebGL2 context could be created. */
-  webgl2: boolean;
+  webgl: boolean;
   /** MAX_TEXTURE_SIZE of the probed context, 0 when no context exists. */
   maxTextureSize: number;
   /** Unmasked renderer string when exposed by the browser, '' otherwise. */
@@ -36,7 +37,6 @@ export interface RenderingCapabilities extends TextureFormatSupport {
 
 interface WebGLContextInfo {
   webgl: boolean;
-  webgl2: boolean;
   maxTextureSize: number;
   renderer: string;
 }
@@ -44,7 +44,6 @@ interface WebGLContextInfo {
 interface CachedCapabilities {
   probeVersion: number;
   renderer: string;
-  webgl2: boolean;
   formats: TextureFormatSupport;
 }
 
@@ -62,7 +61,6 @@ let cachedCapabilities: RenderingCapabilities | null = null;
 function getWebGLContextInfo(): WebGLContextInfo {
   const info: WebGLContextInfo = {
     webgl: false,
-    webgl2: false,
     maxTextureSize: 0,
     renderer: '',
   };
@@ -73,18 +71,13 @@ function getWebGLContextInfo(): WebGLContextInfo {
 
   try {
     const canvas = document.createElement('canvas');
-    const gl2 = canvas.getContext('webgl2');
-    const gl =
-      gl2 ||
-      (canvas.getContext('webgl') as WebGLRenderingContext | null) ||
-      (canvas.getContext('experimental-webgl') as WebGLRenderingContext | null);
+    const gl = canvas.getContext('webgl2');
 
     if (!gl) {
       return info;
     }
 
     info.webgl = true;
-    info.webgl2 = !!gl2;
     info.maxTextureSize = Number(gl.getParameter(gl.MAX_TEXTURE_SIZE)) || 0;
 
     // Modern browsers expose the unmasked renderer through RENDERER directly;
@@ -107,10 +100,7 @@ function getWebGLContextInfo(): WebGLContextInfo {
   return info;
 }
 
-function readCachedFormats(
-  renderer: string,
-  webgl2: boolean
-): TextureFormatSupport | null {
+function readCachedFormats(renderer: string): TextureFormatSupport | null {
   try {
     const raw = window.localStorage?.getItem(STORAGE_KEY);
 
@@ -120,13 +110,9 @@ function readCachedFormats(
 
     const parsed = JSON.parse(raw) as CachedCapabilities;
 
-    // The texture probes require WebGL2, so a profile cached on a WebGL1-only
-    // run is all-false; invalidate it when WebGL2 availability changes for
-    // the same renderer (browser update/flag) instead of pinning it forever.
     if (
       parsed?.probeVersion !== RENDERING_CAPABILITIES_PROBE_VERSION ||
       parsed?.renderer !== renderer ||
-      parsed?.webgl2 !== webgl2 ||
       typeof parsed?.formats !== 'object' ||
       parsed?.formats === null
     ) {
@@ -141,14 +127,12 @@ function readCachedFormats(
 
 function writeCachedFormats(
   renderer: string,
-  webgl2: boolean,
   formats: TextureFormatSupport
 ): void {
   try {
     const payload: CachedCapabilities = {
       probeVersion: RENDERING_CAPABILITIES_PROBE_VERSION,
       renderer,
-      webgl2,
       formats,
     };
 
@@ -161,10 +145,10 @@ function writeCachedFormats(
 
 /**
  * Runs the capability detection: one cheap context to gather renderer string,
- * WebGL level and MAX_TEXTURE_SIZE, then the texture-format probes.
+ * WebGL2 availability and MAX_TEXTURE_SIZE, then the texture-format probes.
  *
- * Probe results are cached in localStorage keyed by renderer string, WebGL2
- * availability, and probe version, so repeat page loads on the same GPU skip
+ * Probe results are cached in localStorage keyed by renderer string and
+ * probe version, so repeat page loads on the same GPU skip
  * the probe contexts entirely. Pass `useCache: false` to force a fresh probe
  * run (also refreshes the stored cache).
  */
@@ -181,9 +165,7 @@ export function detectRenderingCapabilities({
     };
   }
 
-  let formats = useCache
-    ? readCachedFormats(contextInfo.renderer, contextInfo.webgl2)
-    : null;
+  let formats = useCache ? readCachedFormats(contextInfo.renderer) : null;
 
   if (!formats) {
     const probed = getSupportedTextureFormats();
@@ -194,7 +176,7 @@ export function detectRenderingCapabilities({
     // costs one re-probe next load instead of poisoning the cache under an
     // otherwise valid renderer key.
     if (probed) {
-      writeCachedFormats(contextInfo.renderer, contextInfo.webgl2, probed);
+      writeCachedFormats(contextInfo.renderer, probed);
     }
 
     formats = probed ?? { ...NO_GPU_FORMATS };

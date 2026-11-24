@@ -42,8 +42,13 @@ interface IImageVolume {
   numVoxels: number
   /** volume image data as vtkImageData */
   imageData?: vtkImageData
-  /** openGL texture for the volume */
-  vtkOpenGLTexture: any
+  /**
+   * Read-only getter: the texture of the full-resolution texture set, or
+   * undefined until something provisions that set and after an eviction.
+   * Use markFrameModified(i) or modified() to mark frames for an upload, and
+   * getFullResolutionTexture() to provision and get the texture.
+   */
+  readonly vtkOpenGLTexture?: vtkStreamingOpenGLTexture
   /** loading status object for the volume containing loaded/loading statuses */
   loadStatus?: Record<string, any>
   /** imageIds of the volume (if it is built of separate imageIds) */

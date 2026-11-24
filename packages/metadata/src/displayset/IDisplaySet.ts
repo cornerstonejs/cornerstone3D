@@ -81,7 +81,8 @@ export interface IDisplaySet {
    * instances form a volume. The name of the OHIF display set attribute. CS3D
    * gives a first value from the instance attributes (see
    * `isReconstructableInstances`, which follows OHIF
-   * `isDisplaySetReconstructable`); a host may refine it for display. False for
+   * `isDisplaySetReconstructable` with some differences); a host may refine it
+   * or use its own check for display. False for
    * a single image and for a clip. Absent for another handler. A host opens
    * the display set as a volume when true.
    */
