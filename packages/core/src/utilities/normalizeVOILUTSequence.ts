@@ -36,25 +36,46 @@ function copyElements(source: ArrayLike<number>): number[] {
 }
 
 /**
- * Decodes the bytes of LUT Data. An entry is 16 bits (LUT Data is US or OW)
- * unless LUT Descriptor declares 8 bits for each entry, in which case the
- * entries are packed one to a byte and reading them as 16 bit words gives half
- * a LUT of nonsense.
+ * The width in bytes of one entry of LUT Data (0028,3006). An entry is 16 bits
+ * (LUT Data is US or OW). A LUT that declares 8 bits for each entry can also
+ * pack one entry in each byte, with one pad byte after an odd count (PS3.3
+ * C.11.2.1). The length of the data tells the two apart: packed data has fewer
+ * than two bytes for each entry. The wadouri getLUTs uses the same rule.
+ *
+ * @param numEntries - value 1 of LUT Descriptor (0 already read as 65536)
+ * @param bitsPerEntry - value 3 of LUT Descriptor
+ * @param byteLength - the length of LUT Data in bytes
+ */
+export function getVOILUTBytesPerEntry(
+  numEntries: number,
+  bitsPerEntry: number,
+  byteLength: number
+): 1 | 2 {
+  return bitsPerEntry === 8 && byteLength < 2 * numEntries ? 1 : 2;
+}
+
+/**
+ * Decodes the bytes of LUT Data, with one or two bytes for each entry (refer
+ * to getVOILUTBytesPerEntry).
  *
  * The pairs are combined by hand rather than through a `Uint16Array`, because
  * that needs an even offset into the buffer, which a view of a larger buffer
  * does not promise, and because DICOM writes LUT Data little endian whatever
  * the endianness of the host is.
  */
-function fromBytes(bytes: Uint8Array, bitsPerEntry?: number): number[] {
-  if (bitsPerEntry === 8) {
+function fromBytes(
+  bytes: Uint8Array,
+  bitsPerEntry?: number,
+  numEntries = bytes.length
+): number[] {
+  if (getVOILUTBytesPerEntry(numEntries, bitsPerEntry, bytes.length) === 1) {
     return copyElements(bytes);
   }
 
-  const numEntries = bytes.length >> 1;
-  const entries = new Array<number>(numEntries);
+  const numWords = bytes.length >> 1;
+  const entries = new Array<number>(numWords);
 
-  for (let i = 0; i < numEntries; i++) {
+  for (let i = 0; i < numWords; i++) {
     entries[i] = bytes[2 * i] | (bytes[2 * i + 1] << 8);
   }
 
@@ -75,12 +96,13 @@ function isBinary(value: unknown): boolean {
 
 function toNumberArray(
   data: unknown,
-  bitsPerEntry?: number
+  bitsPerEntry?: number,
+  numEntries?: number
 ): number[] | undefined {
   if (Array.isArray(data)) {
     // A single element array holding the buffer, as bulkdata sometimes arrives
     if (data.length === 1 && isBinary(data[0])) {
-      return toNumberArray(data[0], bitsPerEntry);
+      return toNumberArray(data[0], bitsPerEntry, numEntries);
     }
 
     if (data.every((value) => typeof value === 'number')) {
@@ -91,20 +113,20 @@ function toNumberArray(
   }
 
   if (data instanceof ArrayBuffer) {
-    return fromBytes(new Uint8Array(data), bitsPerEntry);
+    return fromBytes(new Uint8Array(data), bitsPerEntry, numEntries);
   }
 
   if (ArrayBuffer.isView(data)) {
     const elementSize = (data as { BYTES_PER_ELEMENT?: number })
       .BYTES_PER_ELEMENT;
 
-    // A byte view of a 16 bit LUT is a buffer that nobody reinterpreted yet,
-    // rather than one entry for each element. A DataView has no element size at
-    // all, so it holds bytes as well.
-    const holdsBytes = !elementSize || (elementSize === 1 && bitsPerEntry > 8);
+    // A byte view of LUT Data is a buffer that nobody reinterpreted yet, which
+    // can hold 16 bit or word-allocated 8 bit entries. A DataView has no element
+    // size at all, so it holds bytes as well.
+    const holdsBytes = !elementSize || (elementSize === 1 && bitsPerEntry >= 8);
 
     if (holdsBytes) {
-      return fromBytes(toBytes(data), bitsPerEntry);
+      return fromBytes(toBytes(data), bitsPerEntry, numEntries);
     }
 
     return copyElements(data as unknown as ArrayLike<number>);
@@ -115,7 +137,8 @@ function toNumberArray(
 
 function fromInlineBinary(
   inlineBinary: unknown,
-  bitsPerEntry?: number
+  bitsPerEntry?: number,
+  numEntries?: number
 ): number[] | undefined {
   if (typeof inlineBinary !== 'string') {
     return undefined;
@@ -128,7 +151,7 @@ function fromInlineBinary(
     bytes[i] = binary.charCodeAt(i);
   }
 
-  return fromBytes(bytes, bitsPerEntry);
+  return fromBytes(bytes, bitsPerEntry, numEntries);
 }
 
 /**
@@ -187,18 +210,23 @@ function normalizeItem(item: RawLUTItem): CPUFallbackLUT | undefined {
   // Value 3 of LUT Descriptor is how wide an entry is, so it has to be known
   // before the LUT Data can be decoded
   const bitsPerEntry = descriptor[2];
+  // LUT Descriptor value 1 of 0 means 65536 entries (it is a US that cannot
+  // hold 65536), and cannot be trusted beyond the data we actually received.
+  const declaredEntries = descriptor[0] || 65536;
   const data =
-    toNumberArray(item.LUTData, bitsPerEntry) ??
-    toNumberArray(item['00283006']?.Value, bitsPerEntry) ??
-    fromInlineBinary(item['00283006']?.InlineBinary, bitsPerEntry);
+    toNumberArray(item.LUTData, bitsPerEntry, declaredEntries) ??
+    toNumberArray(item['00283006']?.Value, bitsPerEntry, declaredEntries) ??
+    fromInlineBinary(
+      item['00283006']?.InlineBinary,
+      bitsPerEntry,
+      declaredEntries
+    );
 
   if (!data?.length) {
     return undefined;
   }
 
-  // LUT Descriptor value 1 of 0 means 65536 entries (it is a US that cannot
-  // hold 65536), and cannot be trusted beyond the data we actually received.
-  const numEntries = Math.min(descriptor[0] || 65536, data.length);
+  const numEntries = Math.min(declaredEntries, data.length);
 
   return {
     lut: numEntries === data.length ? data : data.slice(0, numEntries),

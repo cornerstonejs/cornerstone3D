@@ -437,6 +437,34 @@ describe('wadouri dataSet-layer', () => {
         expect(lut[65535]).toBe(65535);
       });
 
+      it('reads an odd count of packed 8 bit entries with a pad byte', () => {
+        // [3, 0, 8] packs 3 entries in 3 bytes, and one pad byte makes the
+        // value length even. normalizeVOILUTSequence uses the same rule.
+        const voiLutItemDataSet = fakeDataSet(
+          {},
+          {
+            x00283002: { length: 6 },
+            x00283006: { length: 4, dataOffset: 0 },
+          },
+          Uint8Array.from([0, 128, 255, 0])
+        );
+        (voiLutItemDataSet as any).uint16 = (t: string, i = 0) =>
+          t === 'x00283002' ? [3, 0, 8][i] : undefined;
+
+        const dataSet = fakeDataSet(
+          { x00280103: 0 },
+          { x00283010: { items: [{ dataSet: voiLutItemDataSet }] } }
+        );
+
+        const result = metadataForDataset(
+          'voiLutModule',
+          'imageId',
+          dataSet as any
+        );
+
+        expect(result.voiLUTSequence[0].lut).toEqual([0, 128, 255]);
+      });
+
       it('reads the window from the Frame VOI LUT macro of an enhanced multi frame', () => {
         // Enhanced SOPs carry the VOI inside FrameVOILUTSequence (0028,9132) in
         // the functional groups, and the frame combiner leaves it one level

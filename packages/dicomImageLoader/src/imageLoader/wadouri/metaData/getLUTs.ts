@@ -1,4 +1,5 @@
 import type { DataSet, Element } from 'dicom-parser';
+import { utilities } from '@cornerstonejs/core';
 import type { LutType } from '../../../types';
 
 function getLUT(pixelRepresentation: number, lutDataSet: DataSet): LutType {
@@ -28,10 +29,11 @@ function getLUT(pixelRepresentation: number, lutDataSet: DataSet): LutType {
   };
 
   const lutDataElement = lutDataSet.elements.x00283006;
-  const bytesPerEntry = getBytesPerEntry(
-    lutDataElement,
+  // Packed or word-allocated 8 bit entries, as normalizeVOILUTSequence reads.
+  const bytesPerEntry = utilities.getVOILUTBytesPerEntry(
     numLUTEntries,
-    numBitsPerEntry
+    numBitsPerEntry,
+    lutDataElement?.length ?? 2 * numLUTEntries
   );
 
   // The descriptor cannot be trusted beyond the data actually received - a
@@ -56,25 +58,6 @@ function getLUT(pixelRepresentation: number, lutDataSet: DataSet): LutType {
   }
 
   return lut;
-}
-
-/**
- * The width of one entry of LUT Data. An entry is 16 bits (LUT Data is US or
- * OW), but a LUT that declares 8 bits for each entry can hold one entry in each
- * byte. The length of the element says which of the two the file uses, because
- * the number of entries is known. Reading such a LUT as 16 bit words gave half
- * a LUT of nonsense.
- */
-function getBytesPerEntry(
-  lutDataElement: Element,
-  numLUTEntries: number,
-  numBitsPerEntry: number
-): number {
-  if (numBitsPerEntry === 8 && lutDataElement?.length === numLUTEntries) {
-    return 1;
-  }
-
-  return 2;
 }
 
 function getLUTs(pixelRepresentation: number, lutSequence: Element): LutType[] {

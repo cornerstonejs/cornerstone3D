@@ -53,6 +53,24 @@ describe('normalizeVOILUTSequence', () => {
     expect(result?.numBitsPerEntry).toBe(8);
   });
 
+  it('decodes word-allocated 8 bit LUT Data as one entry per word', () => {
+    // Two bytes for each entry, with the entry in the low byte (PS3.3 C.11.2.1)
+    const bytes = [0, 0, 64, 0, 128, 0, 255, 0];
+
+    expect(
+      normalizeVOILUTSequence({
+        LUTDescriptor: [4, 10, 8],
+        LUTData: Uint8Array.from(bytes),
+      })?.lut
+    ).toEqual([0, 64, 128, 255]);
+    expect(
+      normalizeVOILUTSequence({
+        '00283002': { Value: [4, 10, 8] },
+        '00283006': { InlineBinary: toBase64(bytes) },
+      })?.lut
+    ).toEqual([0, 64, 128, 255]);
+  });
+
   it('decodes InlineBinary with the declared entry width', () => {
     expect(
       normalizeVOILUTSequence({
