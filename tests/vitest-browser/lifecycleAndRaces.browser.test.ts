@@ -512,9 +512,17 @@ test('removeData clears bindings and actors, and viewportStatus returns to noDat
 // 8. Resize keeps the view anchored
 // ----------------------------------------------------------------------------
 
-test('resize keeps the fit-mode anchor world point centered after the canvas dimensions change', async () => {
+/** The distance between two world points. */
+function worldDistance(a: number[], b: number[]): number {
+  return Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+}
+
+test('resize keeps the world point at the canvas centre of a panned view and the world height of the canvas, as the legacy viewports kept their camera', async () => {
   const ctx = track(await createPlanarViewport({ width: 400, height: 400 }));
   const { viewport, element, renderingEngine } = ctx;
+
+  viewport.setPan([40, 25]);
+  await renderAndWait(element, viewport);
 
   const canvasBefore = viewport.getCanvas();
   const widthBefore = canvasBefore.width;
@@ -523,6 +531,10 @@ test('resize keeps the fit-mode anchor world point centered after the canvas dim
     widthBefore / 2,
     heightBefore / 2,
   ]);
+  const worldHeightBefore = worldDistance(
+    viewport.canvasToWorld([widthBefore / 2, 0]),
+    viewport.canvasToWorld([widthBefore / 2, heightBefore])
+  );
 
   element.style.width = '600px';
   element.style.height = '300px';
@@ -546,16 +558,15 @@ test('resize keeps the fit-mode anchor world point centered after the canvas dim
     heightAfter / 2,
   ]);
 
-  // Pinned "fit mode recenter" semantics: PlanarViewport's default view state
-  // (createDefaultPlanarViewState, Planar/planarViewState.ts) uses
-  // scaleMode 'fit' with anchorCanvas [0.5, 0.5] (fractional canvas center).
-  // ContextPoolRenderingEngine._resizeVTKViewports calls only vp.resize()
-  // and does no getCamera/setCamera snapshot-restore; PlanarViewport.resize()
-  // -> resizeBindingsWithActiveFirst() recomputes the fit scale for the new
-  // canvas size while keeping the same fractional anchor point pinned to the
-  // same world point. So the world point under the canvas center should be
-  // preserved (within 1e-1 world units) even though the pixel dimensions,
-  // aspect ratio, and zoom level all change.
+  // Pinned "keep the camera" semantics, as the legacy stack and volume
+  // viewports of 5.x: with `renderingEngine.resize()` (keepCamera true)
+  // PlanarViewport.resize() keeps the parallel scale and the focal point of the
+  // view (keepCameraThroughResize). The world point under the canvas centre of
+  // a panned view stays there, and the canvas shows the same world height, so
+  // the zoom read after it is against the fit of the new size. Until package C6
+  // (22 November 2026) the view kept its zoom against the fit and its pan as a
+  // share of the canvas; the OHIF upgrade (its M40) saw a panned image move
+  // when a panel opened, where 5.x kept it in place.
   const worldEpsilon = 1e-1;
 
   for (let axis = 0; axis < 3; axis++) {
@@ -565,6 +576,15 @@ test('resize keeps the fit-mode anchor world point centered after the canvas dim
       `axis ${axis}: before=${centerWorldBefore[axis]} after=${centerWorldAfter[axis]}`
     ).toBeLessThanOrEqual(worldEpsilon);
   }
+
+  const worldHeightAfter = worldDistance(
+    viewport.canvasToWorld([widthAfter / 2, 0]),
+    viewport.canvasToWorld([widthAfter / 2, heightAfter])
+  );
+
+  expect(Math.abs(worldHeightAfter - worldHeightBefore)).toBeLessThanOrEqual(
+    worldEpsilon
+  );
 });
 
 // ----------------------------------------------------------------------------

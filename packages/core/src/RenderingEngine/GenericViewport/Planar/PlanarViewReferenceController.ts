@@ -37,6 +37,7 @@ import {
   getPlanarReferencedImageId,
   getPlanarViewReference,
   getPlanarViewReferenceId,
+  hasNonFiniteViewReferenceGeometry,
   isPlanarPlaneViewable,
 } from './planarViewReference';
 import { resolvePlanarViewportView } from './PlanarResolvedView';
@@ -191,7 +192,7 @@ class PlanarViewReferenceController {
   }
 
   setViewReference(viewRef: ViewReference): void {
-    if (!viewRef) {
+    if (!viewRef || hasNonFiniteViewReferenceGeometry(viewRef)) {
       return;
     }
 
@@ -200,6 +201,15 @@ class PlanarViewReferenceController {
     const targetContext = this.resolveViewReferenceContext(viewRef);
 
     if (!targetContext) {
+      return;
+    }
+
+    const sourceContext = this.getCurrentPlanarReferenceContext();
+
+    if (sourceContext && sourceContext.dataId !== targetContext.dataId) {
+      this.applyViewReferenceToCurrentBinding(
+        this.getSourceReferenceForOverlay(viewRef, sourceContext)
+      );
       return;
     }
 
@@ -565,6 +575,45 @@ class PlanarViewReferenceController {
     }
 
     return currentReferenceContext;
+  }
+
+  /**
+   * The reference that the source takes for a reference of one of the
+   * overlays of the viewport, as the legacy volume viewport took the
+   * reference of another volume of its fusion: the plane and the point of the
+   * reference move the view, and the source and the order of the layers
+   * stay. A volume reads the image and the slice index of the overlay as it
+   * reads those of another series. A stack goes by its images, so a stack
+   * whose images do not hold the image of the reference goes to its image at
+   * the point of the reference: the image and the slice index of the overlay
+   * are left out.
+   */
+  private getSourceReferenceForOverlay(
+    viewRef: ViewReference,
+    sourceContext: PlanarReferenceContext
+  ): ViewReference {
+    if (!isImageRenderMode(sourceContext.rendering.renderMode)) {
+      return viewRef;
+    }
+
+    const sourceImageIndex = this.findImageIdIndexByReference(
+      this.getImageIdsForReferenceContext(sourceContext),
+      viewRef.referencedImageId,
+      viewRef.referencedImageURI
+    );
+
+    if (typeof sourceImageIndex === 'number') {
+      return viewRef;
+    }
+
+    const {
+      referencedImageId: _referencedImageId,
+      referencedImageURI: _referencedImageURI,
+      sliceIndex: _sliceIndex,
+      ...reference
+    } = viewRef;
+
+    return reference;
   }
 
   private activatePlanarReferenceContext(dataId: string): boolean {

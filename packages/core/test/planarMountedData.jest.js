@@ -107,7 +107,7 @@ describe('Planar mounted-data orchestration', () => {
 });
 
 describe('Planar view-reference orchestration', () => {
-  it('activates the binding that owns an image reference before navigation', () => {
+  it('keeps the source for a reference of an image of an overlay', () => {
     const bindings = new Map([
       [
         'source',
@@ -226,9 +226,9 @@ describe('Planar view-reference orchestration', () => {
       referencedImageId: 'image:overlay',
     });
 
-    expect(mountedData.getActiveDataId()).toBe('overlay');
-    expect(updateBindingsCameraState).toHaveBeenCalledTimes(1);
-    expect(setImageIdIndex).toHaveBeenCalledWith(0);
+    expect(mountedData.getActiveDataId()).toBe('source');
+    expect(updateBindingsCameraState).not.toHaveBeenCalled();
+    expect(setImageIdIndex).not.toHaveBeenCalled();
     expect(render).not.toHaveBeenCalled();
   });
 });

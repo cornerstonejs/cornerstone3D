@@ -97,6 +97,7 @@ import {
 } from './planarViewState';
 import {
   normalizePlanarScale,
+  normalizePlanarScaleMode,
   type PlanarScaleInput,
 } from './planarCameraScale';
 import {
@@ -142,6 +143,7 @@ import PlanarViewReferenceController from './PlanarViewReferenceController';
 import {
   getPlanarImageReferenceForStack,
   getPlanarReferenceForViewableCheck,
+  hasNonFiniteViewReferenceGeometry,
   namesImageWithoutFrameOfReference,
 } from './planarViewReference';
 import { applyCanvasSharpeningSmoothing } from './planarCanvasSharpeningSmoothing';
@@ -2368,6 +2370,10 @@ class PlanarViewport extends GenericViewport<
    * `asOverlay`, which that viewport did not read, still takes an image that
    * lies on the slice on display.
    *
+   * A reference with a point, a direction or a slice index that is not a
+   * finite number is not viewable with any option, in both modes, and
+   * `setViewReference` moves nothing for it.
+   *
    * @param viewRef - View reference to test.
    * @param options - Optional compatibility flags for the spatial check.
    * @returns `true` when the reference can be viewed in this viewport state.
@@ -2376,6 +2382,10 @@ class PlanarViewport extends GenericViewport<
     viewRef: ViewReference,
     options: ReferenceCompatibleOptions = {}
   ): boolean {
+    if (hasNonFiniteViewReferenceGeometry(viewRef)) {
+      return false;
+    }
+
     const reference = getPlanarReferenceForViewableCheck(viewRef);
     const isStack = this.getCurrentMode() === 'stack';
 
@@ -2699,11 +2709,15 @@ class PlanarViewport extends GenericViewport<
 
   /**
    * Resizes the internal CPU canvas and notifies active render bindings.
+   * The view keeps its camera through the new size, as the legacy viewports
+   * did (`keepCameraThroughResize`).
    */
   resize(): void {
     if (this.isDestroyed) {
       return;
     }
+
+    const previousView = this.getResolvedView();
 
     this.clearResolvedViewCache();
     // The canvas CSS size may have changed; drop the cached dimensions so the
@@ -2720,7 +2734,82 @@ class PlanarViewport extends GenericViewport<
       canvas.height = targetHeight;
     }
 
+    const previousCamera = this.keepCameraThroughResize(previousView);
+
     this.resizeBindingsWithActiveFirst();
+
+    if (previousCamera) {
+      this.triggerCameraModifiedEvent(previousCamera);
+    }
+  }
+
+  /**
+   * Keeps the camera of the view through a change of the size of the canvas,
+   * as the legacy stack and volume viewports kept theirs: the parallel scale
+   * and the focal point stay. Across a change of the width the image keeps
+   * its size in pixels and its distance from the centre; across a change of
+   * the height it scales with the canvas. The zoom and the pan read after it
+   * are against the fit of the new size, as on 5.x. A view with a display
+   * area, or with a scale mode other than `fit`, fits the new size as before,
+   * as the legacy viewports applied the display area again.
+   *
+   * @param previousView - The view resolved at the size before the resize.
+   * @returns The camera before the resize when the view state changed, so
+   *   that the caller fires `CAMERA_MODIFIED` as the legacy `setCamera` did.
+   */
+  private keepCameraThroughResize(
+    previousView: ReturnType<PlanarViewport['getResolvedView']>
+  ): ICamera | undefined {
+    const { viewState } = this;
+
+    if (
+      !previousView ||
+      viewState.displayArea ||
+      normalizePlanarScaleMode(viewState.scaleMode) !== 'fit'
+    ) {
+      return;
+    }
+
+    const nextView = this.getResolvedView();
+
+    if (!nextView) {
+      return;
+    }
+
+    const previousHeight = previousView.state.canvasHeight;
+    const nextHeight = nextView.state.canvasHeight;
+
+    if (
+      previousView.state.canvasWidth === nextView.state.canvasWidth &&
+      previousHeight === nextHeight
+    ) {
+      return;
+    }
+
+    const previousParallelScale = previousView.toICamera().parallelScale;
+    const nextParallelScale = nextView.toICamera().parallelScale;
+
+    if (
+      !(previousParallelScale > 0) ||
+      !(nextParallelScale > 0) ||
+      !(previousHeight > 0) ||
+      !(nextHeight > 0)
+    ) {
+      return;
+    }
+
+    const scaleRatio = nextParallelScale / previousParallelScale;
+    const panRatio = nextHeight / previousHeight;
+    const [scaleX, scaleY] = nextView.scale;
+    const [panX, panY] = previousView.pan;
+    const keptView = nextView
+      .withScale([scaleX * scaleRatio, scaleY * scaleRatio])
+      .withPan([panX * panRatio, panY * panRatio]);
+
+    this.viewState = this.normalizeViewState(keptView.state.viewState);
+    this.clearResolvedViewCache();
+
+    return previousView.toICamera() as unknown as ICamera;
   }
 
   /**

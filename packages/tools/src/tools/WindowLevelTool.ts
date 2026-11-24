@@ -1,6 +1,6 @@
 import { BaseTool } from './base';
 import { getEnabledElement, cache, utilities } from '@cornerstonejs/core';
-import type { Types } from '@cornerstonejs/core';
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import type { EventTypes } from '../types';
 
 // Todo: should move to configuration
@@ -50,9 +50,9 @@ class WindowLevelTool extends BaseTool {
     // `.modality` or `.preScale` of its own; the descriptor reads each family
     // from its own source of truth so a prescaled PT viewport still takes the
     // gentle fixed-width PT path (5/clientHeight) instead of the aggressive
-    // dynamic-range multiplier. No volume id is given, so the descriptor
-    // falls back to the bound default actor.
-    const descriptor = utilities.getScalingDescriptor(viewport);
+    // dynamic-range multiplier.
+    const volumeId = getVolumeIdOnDisplay(viewport);
+    const descriptor = utilities.getScalingDescriptor(viewport, volumeId);
     modality = descriptor?.modality;
     isPreScaled = !!descriptor?.isPreScaled;
 
@@ -69,13 +69,13 @@ class WindowLevelTool extends BaseTool {
         clientHeight: element.clientHeight,
         isPreScaled,
         viewport,
-        volumeId: undefined,
+        volumeId,
       });
     } else {
       newRange = this.getNewRange({
         viewport,
         deltaPointsCanvas: deltaPoints.canvas,
-        volumeId: undefined,
+        volumeId,
         lower,
         upper,
         voiLutFunction: properties.voiLUTFunction,
@@ -286,6 +286,24 @@ class WindowLevelTool extends BaseTool {
 
 WindowLevelTool.toolName = 'WindowLevel';
 export default WindowLevelTool;
+
+/**
+ * The volume on display of a planar viewport in volume mode, which the drag
+ * takes its multiplier from (the range of the middle slice of the volume),
+ * as the 5.x tool read `getVolumeId()` of a legacy volume viewport.
+ * Undefined in stack mode and for the other families: their multiplier
+ * comes from the range of their image data, as on 5.x.
+ */
+function getVolumeIdOnDisplay(viewport: Types.IViewport): string | undefined {
+  if (
+    !utilities.viewportSupportsDisplaySetPresentation(viewport) ||
+    utilities.getViewportContentMode(viewport) !== 'volume'
+  ) {
+    return;
+  }
+
+  return (viewport as PlanarViewport).getVolumeId();
+}
 
 type ViewportVOIProperties = {
   voiRange?: Types.VOIRange;

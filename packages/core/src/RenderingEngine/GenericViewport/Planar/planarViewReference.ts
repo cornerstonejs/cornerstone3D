@@ -375,6 +375,38 @@ export function namesImageWithoutFrameOfReference(
 }
 
 /**
+ * Whether a reference has a point, a direction or a slice index that is not
+ * a finite number, as the focal point of NaN that the centre of an empty
+ * segment gives. A planar viewport cannot take such a reference: it is not
+ * viewable, and `setViewReference` moves nothing. The legacy volume viewport
+ * threw "Incompatible view refs" for it and stayed where it was.
+ */
+export function hasNonFiniteViewReferenceGeometry(
+  viewRef: ViewReference
+): boolean {
+  if (!viewRef) {
+    return false;
+  }
+
+  const { planeRestriction } = viewRef;
+  const vectors = [
+    viewRef.cameraFocalPoint,
+    viewRef.viewPlaneNormal,
+    viewRef.viewUp,
+    planeRestriction?.point,
+    planeRestriction?.inPlaneVector1,
+    planeRestriction?.inPlaneVector2,
+  ];
+
+  return (
+    vectors.some(
+      (vector) => vector && !Array.from(vector).every(Number.isFinite)
+    ) ||
+    (viewRef.sliceIndex !== undefined && !Number.isFinite(viewRef.sliceIndex))
+  );
+}
+
+/**
  * Tests whether a given plane (defined by a PlaneRestriction) is viewable
  * in this viewport's current orientation.
  *

@@ -614,6 +614,14 @@ point of the image on display.
   display shows it. The legacy volume viewport did not read the image there,
   and answered true for any image of its frame of reference when the
   reference had no `sliceIndex`.
+- **A reference with a value that is not finite moves nothing.** A view
+  reference whose `cameraFocalPoint`, `viewPlaneNormal`, `viewUp`, plane
+  restriction or `sliceIndex` holds NaN or an infinity, as the centre of an
+  empty segment gives, is not viewable with any option, and
+  `setViewReference` moves nothing and does not throw, in both modes. The
+  legacy volume viewport threw "Incompatible view refs" for a focal point of
+  NaN and stayed. In 5.x the next planar viewport went to slice NaN and drew
+  nothing.
 - **A reference of a sagittal or a coronal slice is viewable with navigation
   on every slice of that view.** Its slice index counts in the slices along
   the view, as on the legacy volume viewport. In 5.x the next planar
@@ -633,6 +641,17 @@ point of the image on display.
   and its slice index count, as on the legacy volume viewport, which had no
   display set id. In 5.x the next viewports refused such a reference that
   names no image (a sagittal or a coronal one) with every option.
+- **A reference of an overlay moves the view and keeps the source.** When the
+  display set that a reference names (by `dataId`, `volumeId` or image) is
+  an overlay of a planar viewport, as the PET of a fusion,
+  `setViewReference` moves the view to the plane and the point of the
+  reference, and the source and the order of the layers stay, as on the
+  legacy volume viewport. The slice index of such a reference counts in the
+  overlay and is not used; a stack goes to its image at the point of the
+  reference. In 5.x the next planar viewport made the overlay its source.
+  A reference that names the source, or a display set that the viewport
+  does not show, does what it did; the time point of a dynamic overlay is
+  selected as before.
 - **`IMAGE_SPACING_CALIBRATED` fires from `calibrateSpacing(imageId)`,** and
   its detail has `worldToIndex` and `scale`. It does not fire by itself when
   a newly shown image has another calibration, as it did on the legacy stack
@@ -1679,10 +1698,17 @@ and is deprecated.
   legacy volume viewport also went to its middle slice and kept its
   rotation. With `keepCamera` true, the default, a 3D viewport keeps its
   camera and its parallel scale, as the legacy 3D viewport did, and a
-  planar viewport keeps its zoom and its pan against the fit of the new
-  size. The legacy stack and volume viewports kept the parallel scale
-  there: the image kept its size in pixels and the zoom against the new fit
-  changed.
+  planar viewport keeps its parallel scale and its focal point, as the
+  legacy stack and volume viewports did: across a change of the width the
+  image keeps its size in pixels and its distance from the centre, across a
+  change of the height it scales with the canvas, and the zoom and the pan
+  read after the resize are against the fit of the new size. The 5.x next
+  viewports kept their zoom against the fit and their pan as a share of the
+  canvas instead. A planar view with a display area, or with a scale mode
+  other than `fit` (`fitAspect`), fits the new size again, as the legacy
+  viewports applied their display area again. A planar viewport fires one
+  `CAMERA_MODIFIED` for a resize that changes its zoom or its pan; the
+  legacy viewports fired several for each resize.
 - **`isReferenceViewable` takes the points of an annotation** in the option
   `points`, and the annotation filter of the tools passes the handle points
   of each annotation. A viewport that shows a part of its world in several

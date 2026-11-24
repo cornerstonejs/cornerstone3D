@@ -10,7 +10,7 @@ import {
 
 const { Enums, volumeLoader, utilities, cache, viewportProjection } =
   cornerstone3D;
-const { ViewportType, OrientationAxis } = Enums;
+const { ViewportType, OrientationAxis, Events } = Enums;
 
 const environmentEngineId = utilities.uuidv4();
 
@@ -21,6 +21,44 @@ const ENGINES = [
   },
   { name: 'the tiled rendering engine', Engine: TiledRenderingEngine },
 ];
+
+const PLANAR_BACKENDS = [
+  { name: 'on the GPU', options: {} },
+  { name: 'on the CPU', options: { renderBackend: 'cpu' } },
+];
+
+/**
+ * The two changes of size of the planar cases, from 400 by 300 pixels, with
+ * the zoom and the change of the pan in canvas pixels (`getPan()`) that
+ * 5.19.4 read after each on its legacy stack and volume viewports at zoom 2:
+ * the parallel scale stays, so the zoom against the new fit is 2 * 19.2 / 18
+ * after the width change, and the pan in pixels scales with the height.
+ */
+const PLANAR_RESIZES = [
+  {
+    name: 'a change of the width',
+    apply: (element) => {
+      element.style.width = '250px';
+    },
+    zoom: (2 * 19.2) / 18,
+    panFactor: 1,
+  },
+  {
+    name: 'a change of the height',
+    apply: (element) => {
+      element.style.height = '200px';
+    },
+    zoom: 2,
+    panFactor: 200 / 300,
+  },
+];
+
+/** The parallel scale and the focal point of a planar viewport. */
+function readPlanarCamera(viewport) {
+  const { parallelScale, focalPoint } = viewport.getResolvedView().toICamera();
+
+  return { parallelScale, focalPoint: [...focalPoint] };
+}
 
 /** Waits for the given number of animation frames. */
 async function frames(count) {
@@ -112,9 +150,10 @@ async function show3DViewport(renderingEngine, name) {
 
 /**
  * Makes a direct next planar viewport of 400 by 300 pixels of one series in
- * a mode, at image 3, and zooms it to 2 with a pan.
+ * a mode, at image 3, and zooms it to 2 with a pan. `options` are those of
+ * the display set.
  */
-async function showPlanarViewport(renderingEngine, mode, name) {
+async function showPlanarViewport(renderingEngine, mode, name, options = {}) {
   const series = await createSeries({ id: name });
 
   testUtils.createViewports(renderingEngine, {
@@ -129,9 +168,9 @@ async function showPlanarViewport(renderingEngine, mode, name) {
   const viewport = renderingEngine.getViewport('resizeKeepCameraPlanar');
 
   if (mode === 'stack') {
-    await showStack(viewport, series, 3);
+    await showStack(viewport, series, 3, options);
   } else {
-    await showVolume(viewport, series, 3);
+    await showVolume(viewport, series, 3, options);
   }
   viewport.setViewState(
     viewportProjection.withPresentation(viewport, { zoom: 2, pan: [20, 10] })
@@ -256,23 +295,56 @@ describe('renderingEngine.resize(immediate, keepCamera) -- ', () => {
     });
 
     ['stack', 'volume'].forEach((mode) => {
-      it(`keeps the zoom and the pan of a planar viewport in ${mode} mode against the fit with keepCamera true on ${engineName}`, async () => {
-        renderingEngine = new Engine(utilities.uuidv4());
+      PLANAR_BACKENDS.forEach(({ name: backendName, options }) => {
+        PLANAR_RESIZES.forEach(
+          ({ name: resizeName, apply, zoom, panFactor }) => {
+            it(`keeps the parallel scale and the focal point of a planar viewport in ${mode} mode ${backendName} through ${resizeName} with keepCamera true on ${engineName}, as the legacy viewports`, async () => {
+              renderingEngine = new Engine(utilities.uuidv4());
 
-        const { viewport, series } = await showPlanarViewport(
-          renderingEngine,
-          mode,
-          `resizeKeepCameraPlanarTrue${mode}${Engine.name}`
+              const { viewport, series } = await showPlanarViewport(
+                renderingEngine,
+                mode,
+                `resizeKeepCameraPlanarTrue${mode}${backendName}${resizeName}${Engine.name}`,
+                options
+              );
+              const before = readPlanarCamera(viewport);
+              const panBefore = viewport.getPan();
+              const cameraEvents = [];
+              const onCameraModified = (event) => cameraEvents.push(event);
+
+              viewport.element.addEventListener(
+                Events.CAMERA_MODIFIED,
+                onCameraModified
+              );
+              apply(viewport.element);
+              renderingEngine.resize(true, true);
+              await frames(4);
+              viewport.element.removeEventListener(
+                Events.CAMERA_MODIFIED,
+                onCameraModified
+              );
+
+              const after = readPlanarCamera(viewport);
+              const panAfter = viewport.getPan();
+
+              expect(after.parallelScale).toBeCloseTo(before.parallelScale, 6);
+              expectPointClose(
+                after.focalPoint,
+                before.focalPoint,
+                'focal point'
+              );
+              expect(viewport.getZoom()).toBeCloseTo(zoom, 3);
+              expect(panAfter[0]).toBeCloseTo(panBefore[0] * panFactor, 3);
+              expect(panAfter[1]).toBeCloseTo(panBefore[1] * panFactor, 3);
+              expect(viewport.getCurrentImageId()).toBe(series.imageIds[3]);
+              expect(cameraEvents.length).toBe(1);
+              expect(cameraEvents[0].detail.camera.parallelScale).toBeCloseTo(
+                before.parallelScale,
+                6
+              );
+            });
+          }
         );
-
-        viewport.element.style.width = '250px';
-        renderingEngine.resize(true, true);
-        await frames(4);
-
-        const presentation = viewportProjection.getPresentation(viewport);
-
-        expect(presentation.zoom).toBeCloseTo(2, 6);
-        expect(viewport.getCurrentImageId()).toBe(series.imageIds[3]);
       });
 
       it(`fits a planar viewport in ${mode} mode to the new canvas with keepCamera false on ${engineName}, and keeps its slice`, async () => {

@@ -274,12 +274,14 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
   /**
    * Resizes viewports that use VTK.js for rendering.
    * Only updates the VTK offscreen size when the displayed size (canvas client size in device pixels)
-   * differs from the current rendered size (canvas.width/height). The on-screen canvas dimensions
-   * are updated only when the VTK render result is copied in _copyToOnscreenCanvas, avoiding
-   * flicker during resize. If a render is already scheduled, that frame draws the viewports at
-   * their new size, so the viewports whose size changed are told of it now: their `resize()`
-   * runs, and what they keep by the size of the canvas (the canvas size of a planar viewport,
-   * its CPU canvas) follows. The next resize() call finds the canvas at its new size.
+   * differs from the size the engine draws the viewport at (`sWidth` and `sHeight`, set here at
+   * each resize). The on-screen canvas is not compared: its dimensions are updated only when the
+   * VTK render result is copied in _copyToOnscreenCanvas, avoiding flicker during resize, and a
+   * viewport that draws on its own CPU canvas never copies, so its on-screen canvas keeps its
+   * first size and a resize back to that size would not be passed on. If a render is already
+   * scheduled, that frame draws the viewports at their new size, so the viewports whose size
+   * changed are told of it now: their `resize()` runs, and what they keep by the size of the
+   * canvas (the canvas size of a planar viewport, its CPU canvas) follows.
    * With `keepCamera` false each viewport that is told of the new size then fits its view to
    * it (`resetViewStateForResize`), as the legacy viewports did; with `keepCamera` true it
    * keeps its view.
@@ -292,14 +294,13 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     // Compute target display size (pixels the canvas is actually displayed at) for each viewport
     const viewportsNeedingResize: EngineViewport[] = [];
     for (const vp of vtkDrivenViewports) {
-      const canvas = getOrCreateCanvas(vp.element);
       const { displayedWidth, displayedHeight } = this._getDisplayedSize(vp);
 
       if (displayedWidth === 0 || displayedHeight === 0) {
         continue;
       }
-      const renderedWidth = canvas.width;
-      const renderedHeight = canvas.height;
+      const renderedWidth = vp.sWidth;
+      const renderedHeight = vp.sHeight;
 
       if (
         displayedWidth === renderedWidth &&

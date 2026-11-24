@@ -995,7 +995,7 @@ describe('PlanarViewReferenceController', () => {
       return harness;
     }
 
-    it('activates the binding that owns a referenced imageId before navigating', () => {
+    it('keeps the source for a reference of an image of the overlay, and moves nothing without a point', () => {
       const harness = createHarness();
 
       harness.controller.setViewReference({
@@ -1003,10 +1003,10 @@ describe('PlanarViewReferenceController', () => {
         referencedImageId: 'ovl:0',
       });
 
-      expect(harness.mountedData.getActiveDataId()).toBe('overlay');
-      expect(harness.updateBindingsCameraState).toHaveBeenCalledTimes(1);
-      expect(harness.setImageIdIndex).toHaveBeenCalledWith(0);
-      // Applying the reference succeeded, so no extra forced render is needed.
+      expect(harness.mountedData.getActiveDataId()).toBe('source');
+      expect(harness.promoteSourceDataId).not.toHaveBeenCalled();
+      expect(harness.updateBindingsCameraState).not.toHaveBeenCalled();
+      expect(harness.setImageIdIndex).not.toHaveBeenCalled();
       expect(harness.render).not.toHaveBeenCalled();
     });
 
@@ -1066,17 +1066,15 @@ describe('PlanarViewReferenceController', () => {
       expect(harness.render).not.toHaveBeenCalled();
     });
 
-    it('activates a targeted binding by dataId and forces a render even when no image reference applies', () => {
+    it('keeps the source for a reference that names the overlay by dataId, and moves nothing without a point', () => {
       const harness = createHarness();
 
       harness.controller.setViewReference({ dataId: 'overlay' });
 
-      expect(harness.mountedData.getActiveDataId()).toBe('overlay');
-      // Activation succeeded but nothing could be applied (no imageId or
-      // sliceIndex on the reference), so the controller forces a render to
-      // reflect the promoted binding.
+      expect(harness.mountedData.getActiveDataId()).toBe('source');
+      expect(harness.promoteSourceDataId).not.toHaveBeenCalled();
       expect(harness.setImageIdIndex).not.toHaveBeenCalled();
-      expect(harness.render).toHaveBeenCalledTimes(1);
+      expect(harness.render).not.toHaveBeenCalled();
     });
 
     it('delegates getViewReference/getViewReferenceId/getCurrentImageId to the active binding', () => {
@@ -1218,7 +1216,7 @@ describe('PlanarViewReferenceController', () => {
       expect(harness.controller.getVolumeId()).toBeUndefined();
     });
 
-    it('activates the volume overlay by volumeId even though it also matches no imageId reference', () => {
+    it('keeps the stack source for a reference of the volume overlay by volumeId, whose slice index counts in the overlay', () => {
       const { harness, volume } = createHarness();
 
       harness.controller.setViewReference({
@@ -1228,12 +1226,10 @@ describe('PlanarViewReferenceController', () => {
         sliceIndex: 3,
       });
 
-      expect(harness.mountedData.getActiveDataId()).toBe('overlay');
-      expect(harness.setViewState).toHaveBeenCalled();
-      expect(harness.getViewState().slice).toEqual({
-        kind: 'volumePoint',
-        sliceWorldPoint: [0, 0, 3],
-      });
+      expect(harness.mountedData.getActiveDataId()).toBe('source');
+      expect(harness.promoteSourceDataId).not.toHaveBeenCalled();
+      expect(harness.setViewState).not.toHaveBeenCalled();
+      expect(harness.setImageIdIndex).not.toHaveBeenCalled();
     });
 
     it('falls back to imageId membership to pick the right binding when volumeId does not match any binding', () => {
