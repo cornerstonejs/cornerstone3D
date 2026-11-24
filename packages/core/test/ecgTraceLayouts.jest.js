@@ -5,7 +5,7 @@ import {
   resolveDefaultECGTraceLayout,
   resolveECGTraceCells,
   resolveECGTraceLayout,
-} from '../src/RenderingEngine/GenericViewport/ECG/ecgTraceLayouts';
+} from '../src/RenderingEngine/Viewports/ECG/ecgTraceLayouts';
 
 const NUMBER_OF_SAMPLES = 1000;
 

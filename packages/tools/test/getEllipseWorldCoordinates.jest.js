@@ -1,7 +1,7 @@
 import getEllipseWorldCoordinates from '../src/utilities/getEllipseWorldCoordinates';
 
 describe('getEllipseWorldCoordinates', () => {
-  it('uses the resolved camera for a Planar GenericViewport', () => {
+  it('uses the resolved camera for a PlanarViewport', () => {
     const viewport = {
       getResolvedView: () => ({
         toICamera: () => ({

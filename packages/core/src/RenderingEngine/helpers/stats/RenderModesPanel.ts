@@ -5,7 +5,7 @@ import { CONVERSION, PANEL_CONFIG, PANEL_CONFIGS } from './constants';
 import { PanelType } from './enums';
 
 /**
- * Text panel that displays each viewport's GenericViewport bindings from its
+ * Text panel that displays each viewport's BaseViewport bindings from its
  * internal debug map, public actor metadata, and volume {@link VoxelQualityRecord}s.
  */
 export class RenderModesPanel implements Panel {

@@ -29,7 +29,7 @@ import {
 } from '../cursors/elementCursor';
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
 import getViewportICamera from '../utilities/getViewportICamera';
-import { navigatePlanarViewportToPoint } from '../utilities/genericViewportToolHelpers';
+import { navigatePlanarViewportToPoint } from '../utilities/viewportToolHelpers';
 import {
   getViewportPlane,
   distancePointToPlane,
@@ -160,7 +160,7 @@ export type WorldCrosshairToolConfiguration = {
   /** Whether to render the point in the configured 3D viewports. */
   showIn3D: boolean;
   /**
-   * Ids of Generic 3D (VOLUME_3D) viewports in which the point is
+   * Ids of 3D (VOLUME_3D) viewports in which the point is
    * rendered as three world-space intersecting lines (one per patient
    * axis). Kept as an explicit list so 3D viewports (usually in their own
    * tool group for trackball manipulation) need not join this tool's group.
@@ -237,7 +237,7 @@ function parseCssColorToRGB(color: string): [number, number, number] {
  * cameras, camera focal points or slice plane intersections, and the tool
  * deliberately does not react to CAMERA_MODIFIED or view-state resets.
  *
- * The tool targets the Generic ("next") viewport architecture exclusively: it
+ * The tool targets the viewport architecture exclusively: it
  * only operates on direct PLANAR viewports through the native view-state
  * API (getResolvedView / setViewReference / setViewState).
  *
@@ -517,7 +517,7 @@ class WorldCrosshairTool extends AnnotationTool {
    * Called on mouse down / touch start in empty space: sets the world point
    * from the event world coordinates and starts a drag so the point can be
    * refined while the button is held. By default this requires shift to be
-   * held (clickToSet enables plain clicks), and only planar generic
+   * held (clickToSet enables plain clicks), and only planar
    * viewports participate.
    */
   addNewAnnotation = (
@@ -1134,7 +1134,7 @@ class WorldCrosshairTool extends AnnotationTool {
   // ===================================================================
 
   /**
-   * Resolves the configured Generic 3D viewports the point is mirrored into.
+   * Resolves the configured 3D viewports the point is mirrored into.
    */
   private _get3DViewports(): Types.IViewport[] {
     const { threeDViewportIds } = this.configuration;
@@ -1186,7 +1186,7 @@ class WorldCrosshairTool extends AnnotationTool {
   // ===================================================================
 
   /**
-   * Narrows to the direct Generic planar ("next") viewport surface. Legacy
+   * Narrows to the planar viewport surface. Legacy
    * viewports and legacy compatibility adapters never match: the tool is
    * native-next only.
    */
@@ -1356,7 +1356,7 @@ class WorldCrosshairTool extends AnnotationTool {
 
   /**
    * Reads the viewport's source display-set slab thickness (mm); 0 when the
-   * viewport has none (non-generic viewports, stacks, plain slices).
+   * viewport has none (legacy viewports, stacks, plain slices).
    */
   private _getSourceSlabThicknessMm(viewport: Types.IViewport): number {
     if (!csUtils.viewportSupportsDisplaySetPresentation(viewport)) {

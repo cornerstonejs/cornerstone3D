@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import {
   createExampleUrl,
   checkForCanvasSnapshot,
-  expectGenericViewportRuntime,
+  expectViewportRuntime,
   screenShotPaths,
 } from '../utils/index';
 
@@ -133,7 +133,7 @@ test.beforeEach(async ({ page }) => {
 
 test.describe('Stack Position Next display area', () => {
   test('uses the native PlanarViewport API', async ({ page }) => {
-    await expectGenericViewportRuntime(page, [
+    await expectViewportRuntime(page, [
       {
         renderingEngineId: RENDERING_ENGINE_ID,
         viewportId: VIEWPORT_ID,
@@ -146,7 +146,7 @@ test.describe('Stack Position Next display area', () => {
     ]);
   });
 
-  test('captures native GenericViewport display area presets', async ({
+  test('captures native PlanarViewport display area presets', async ({
     page,
   }) => {
     for (const screenshotCase of screenshotCases) {

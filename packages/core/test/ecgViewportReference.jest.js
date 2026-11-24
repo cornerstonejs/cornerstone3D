@@ -1,4 +1,4 @@
-import ECGViewport from '../src/RenderingEngine/GenericViewport/ECG/ECGViewport';
+import ECGViewport from '../src/RenderingEngine/Viewports/ECG/ECGViewport';
 import * as metaData from '../src/metaData';
 
 const N = 5000;

@@ -1,10 +1,10 @@
 import {
   getDimensionGroupReferenceContext,
-  isGenericViewportReferenceViewable,
-} from '../src/RenderingEngine/GenericViewport/genericViewportReferenceCompatibility';
+  isViewReferenceViewable,
+} from '../src/RenderingEngine/Viewports/viewReferenceCompatibility';
 import genericViewportDisplaySetMetadataProvider from '../src/utilities/genericViewportDisplaySetMetadataProvider';
 
-describe('GenericViewport reference compatibility', () => {
+describe('BaseViewport reference compatibility', () => {
   const baseContext = {
     frameOfReferenceUID: 'for-1',
     dataId: 'data-1',
@@ -16,28 +16,24 @@ describe('GenericViewport reference compatibility', () => {
 
   it('matches frame-of-reference-only references', () => {
     expect(
-      isGenericViewportReferenceViewable({ FrameOfReferenceUID: 'for-1' }, [
-        baseContext,
-      ])
+      isViewReferenceViewable({ FrameOfReferenceUID: 'for-1' }, [baseContext])
     ).toBe(true);
 
     expect(
-      isGenericViewportReferenceViewable({ FrameOfReferenceUID: 'for-2' }, [
-        baseContext,
-      ])
+      isViewReferenceViewable({ FrameOfReferenceUID: 'for-2' }, [baseContext])
     ).toBe(false);
   });
 
   it('rejects mismatched data ids unless the reference is FOR-only', () => {
     expect(
-      isGenericViewportReferenceViewable(
+      isViewReferenceViewable(
         { FrameOfReferenceUID: 'for-1', dataId: 'data-2' },
         [baseContext]
       )
     ).toBe(false);
 
     expect(
-      isGenericViewportReferenceViewable(
+      isViewReferenceViewable(
         { FrameOfReferenceUID: 'for-1', dataId: 'data-1' },
         [baseContext]
       )
@@ -59,7 +55,7 @@ describe('GenericViewport reference compatibility', () => {
     });
 
     expect(
-      isGenericViewportReferenceViewable(
+      isViewReferenceViewable(
         {
           ...otherData,
           dataId: 'data-unknown',
@@ -70,33 +66,33 @@ describe('GenericViewport reference compatibility', () => {
       )
     ).toBe(false);
     expect(
-      isGenericViewportReferenceViewable(
+      isViewReferenceViewable(
         { ...otherData, referencedImageId: 'scheme:image-2' },
         [baseContext]
       )
     ).toBe(true);
     expect(
-      isGenericViewportReferenceViewable(
+      isViewReferenceViewable(
         { ...otherData, referencedImageId: 'scheme:image-3' },
         [baseContext]
       )
     ).toBe(false);
     expect(
-      isGenericViewportReferenceViewable(
+      isViewReferenceViewable(
         { ...otherData, referencedImageId: 'scheme:image-3' },
         [baseContext],
         { withNavigation: true }
       )
     ).toBe(true);
     expect(
-      isGenericViewportReferenceViewable(
+      isViewReferenceViewable(
         { ...otherData, referencedImageId: 'scheme:image-9' },
         [baseContext],
         { withNavigation: true }
       )
     ).toBe(false);
     expect(
-      isGenericViewportReferenceViewable(
+      isViewReferenceViewable(
         {
           ...otherData,
           referencedImageId: 'scheme:image-3',
@@ -115,25 +111,20 @@ describe('GenericViewport reference compatibility', () => {
 
     for (const currentImageIdIndex of [0, 1, 2]) {
       expect(
-        isGenericViewportReferenceViewable(
-          { referencedImageURI: 'whole-data' },
-          [{ ...context, currentImageIdIndex }]
-        )
+        isViewReferenceViewable({ referencedImageURI: 'whole-data' }, [
+          { ...context, currentImageIdIndex },
+        ])
       ).toBe(true);
     }
 
     expect(
-      isGenericViewportReferenceViewable({ referencedImageURI: 'image-3' }, [
-        context,
-      ])
+      isViewReferenceViewable({ referencedImageURI: 'image-3' }, [context])
     ).toBe(false);
     expect(
-      isGenericViewportReferenceViewable({ referencedImageURI: 'other-data' }, [
-        context,
-      ])
+      isViewReferenceViewable({ referencedImageURI: 'other-data' }, [context])
     ).toBe(false);
     expect(
-      isGenericViewportReferenceViewable({ referencedImageURI: 'whole-data' }, [
+      isViewReferenceViewable({ referencedImageURI: 'whole-data' }, [
         baseContext,
       ])
     ).toBe(false);
@@ -141,20 +132,17 @@ describe('GenericViewport reference compatibility', () => {
 
   it('matches image references by current image or navigable image', () => {
     expect(
-      isGenericViewportReferenceViewable(
-        { referencedImageId: 'scheme:image-2' },
-        [baseContext]
-      )
+      isViewReferenceViewable({ referencedImageId: 'scheme:image-2' }, [
+        baseContext,
+      ])
     ).toBe(true);
 
     expect(
-      isGenericViewportReferenceViewable({ referencedImageURI: 'image-3' }, [
-        baseContext,
-      ])
+      isViewReferenceViewable({ referencedImageURI: 'image-3' }, [baseContext])
     ).toBe(false);
 
     expect(
-      isGenericViewportReferenceViewable(
+      isViewReferenceViewable(
         { referencedImageURI: 'image-3' },
         [baseContext],
         { withNavigation: true }
@@ -164,7 +152,7 @@ describe('GenericViewport reference compatibility', () => {
 
   it('matches referenced image ranges against the current image', () => {
     expect(
-      isGenericViewportReferenceViewable(
+      isViewReferenceViewable(
         {
           referencedImageId: 'scheme:image-1',
           multiSliceReference: {
@@ -178,7 +166,7 @@ describe('GenericViewport reference compatibility', () => {
 
   it('can match any image reference for single-view URI membership contexts', () => {
     expect(
-      isGenericViewportReferenceViewable({ referencedImageURI: 'tile-2' }, [
+      isViewReferenceViewable({ referencedImageURI: 'tile-2' }, [
         {
           frameOfReferenceUID: 'for-1',
           imageURIs: ['tile-1', 'tile-2'],
@@ -190,7 +178,7 @@ describe('GenericViewport reference compatibility', () => {
 
   it('matches plane restrictions using orientation and navigation options', () => {
     expect(
-      isGenericViewportReferenceViewable(
+      isViewReferenceViewable(
         {
           planeRestriction: {
             FrameOfReferenceUID: 'for-1',
@@ -204,7 +192,7 @@ describe('GenericViewport reference compatibility', () => {
     ).toBe(true);
 
     expect(
-      isGenericViewportReferenceViewable(
+      isViewReferenceViewable(
         {
           planeRestriction: {
             FrameOfReferenceUID: 'for-1',
@@ -218,7 +206,7 @@ describe('GenericViewport reference compatibility', () => {
     ).toBe(false);
 
     expect(
-      isGenericViewportReferenceViewable(
+      isViewReferenceViewable(
         {
           planeRestriction: {
             FrameOfReferenceUID: 'for-1',
@@ -241,41 +229,29 @@ describe('GenericViewport reference compatibility', () => {
     };
 
     expect(
-      isGenericViewportReferenceViewable({ dimensionGroupNumber: 2 }, [context])
+      isViewReferenceViewable({ dimensionGroupNumber: 2 }, [context])
     ).toBe(true);
 
     expect(
-      isGenericViewportReferenceViewable({ dimensionGroupNumber: 3 }, [context])
+      isViewReferenceViewable({ dimensionGroupNumber: 3 }, [context])
     ).toBe(false);
 
     expect(
-      isGenericViewportReferenceViewable(
-        { dimensionGroupNumber: 3 },
-        [context],
-        {
-          withNavigation: true,
-        }
-      )
+      isViewReferenceViewable({ dimensionGroupNumber: 3 }, [context], {
+        withNavigation: true,
+      })
     ).toBe(true);
 
     expect(
-      isGenericViewportReferenceViewable(
-        { dimensionGroupNumber: 5 },
-        [context],
-        {
-          withNavigation: true,
-        }
-      )
+      isViewReferenceViewable({ dimensionGroupNumber: 5 }, [context], {
+        withNavigation: true,
+      })
     ).toBe(false);
 
     expect(
-      isGenericViewportReferenceViewable(
-        { dimensionGroupNumber: 0 },
-        [context],
-        {
-          withNavigation: true,
-        }
-      )
+      isViewReferenceViewable({ dimensionGroupNumber: 0 }, [context], {
+        withNavigation: true,
+      })
     ).toBe(false);
   });
 
@@ -291,11 +267,9 @@ describe('GenericViewport reference compatibility', () => {
       dimensionGroupNumber: undefined,
       numDimensionGroups: undefined,
     });
-    expect(isGenericViewportReferenceViewable(viewRef, [baseContext])).toBe(
-      true
-    );
+    expect(isViewReferenceViewable(viewRef, [baseContext])).toBe(true);
     expect(
-      isGenericViewportReferenceViewable(viewRef, [baseContext], {
+      isViewReferenceViewable(viewRef, [baseContext], {
         withNavigation: true,
       })
     ).toBe(true);
@@ -331,7 +305,7 @@ describe('GenericViewport reference compatibility', () => {
       numDimensionGroups: undefined,
     });
     expect(
-      isGenericViewportReferenceViewable(viewRef, [
+      isViewReferenceViewable(viewRef, [
         { ...baseContext, ...getDimensionGroupReferenceContext(oneTimePoint) },
       ])
     ).toBe(true);

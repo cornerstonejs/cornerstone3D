@@ -2,7 +2,7 @@ import { InterpolationType } from '../enums';
 import {
   NEAREST_VOXEL_TIE_EPSILON,
   SOURCE_SLICE_INDEX_TOLERANCE,
-} from '../RenderingEngine/GenericViewport/Planar/planarCPUVolumeSamplingUtils';
+} from '../RenderingEngine/Viewports/Planar/planarCPUVolumeSamplingUtils';
 import type { IImageVolume, PixelDataTypedArray, Point3 } from '../types';
 
 const SPAN_MARGIN = 1e-7;

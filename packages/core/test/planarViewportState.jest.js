@@ -11,8 +11,8 @@ import {
   planarProjection,
   viewportProjection,
   volume3DProjection,
-} from '../src/RenderingEngine/GenericViewport';
-import PlanarViewport from '../src/RenderingEngine/GenericViewport/Planar/PlanarViewport';
+} from '../src/RenderingEngine/Viewports';
+import PlanarViewport from '../src/RenderingEngine/Viewports/Planar/PlanarViewport';
 import renderingEngineCache from '../src/RenderingEngine/renderingEngineCache';
 import genericViewportDisplaySetMetadataProvider from '../src/utilities/genericViewportDisplaySetMetadataProvider';
 import getViewportsWithVolumeId from '../src/utilities/getViewportsWithVolumeId';

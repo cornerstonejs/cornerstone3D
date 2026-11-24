@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import {
   createExampleUrl,
-  expectGenericViewportRuntime,
+  expectViewportRuntime,
 } from '../utils/index';
 
 const PROJECTION_EXAMPLE = 'viewportProjection';
@@ -197,7 +197,7 @@ test.describe('Viewport Projection Service example', () => {
   test('uses Planar Next and Volume 3D Next projection adapters', async ({
     page,
   }) => {
-    await expectGenericViewportRuntime(page, [
+    await expectViewportRuntime(page, [
       {
         renderingEngineId: PROJECTION_ENGINE_ID,
         viewportId: PLANAR_VIEWPORT_ID,
@@ -309,7 +309,7 @@ test.describe('Viewport Projection Synchronizer example', () => {
   test('uses Planar Next projection adapters for both viewports', async ({
     page,
   }) => {
-    await expectGenericViewportRuntime(page, [
+    await expectViewportRuntime(page, [
       {
         renderingEngineId: SYNC_ENGINE_ID,
         viewportId: LEFT_VIEWPORT_ID,

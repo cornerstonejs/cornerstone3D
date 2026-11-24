@@ -99,8 +99,8 @@ const fakeBidirectionalSpecs: FakeBidirectionalSpec[] = [
 ];
 
 setTitleAndDescription(
-  'GenericViewport Render Backend Switch',
-  'Live-switches the render backend (gpu | cpu | auto) of GenericViewport-based viewports without a page reload. ' +
+  'Viewport Render Backend Switch',
+  'Live-switches the render backend (gpu | cpu | auto) of the viewports without a page reload. ' +
     'The CT stack, CT MPR, and PET stack viewports follow the global setRenderBackend() value while keeping their slice, zoom/pan, and VOI.'
 );
 

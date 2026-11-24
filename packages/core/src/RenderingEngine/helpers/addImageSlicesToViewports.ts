@@ -1,5 +1,5 @@
 import type { IStackInput, IRenderingEngine } from '../../types';
-import type PlanarViewport from '../GenericViewport/Planar/PlanarViewport';
+import type PlanarViewport from '../Viewports/Planar/PlanarViewport';
 import { coreLog } from '../../utilities/logger';
 
 const log = coreLog.getLogger('RenderingEngine', 'addImageSlicesToViewports');

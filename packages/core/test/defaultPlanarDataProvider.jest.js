@@ -8,18 +8,15 @@ jest.mock('../src/loaders/imageLoader', () => ({
   loadAndCacheImage: jest.fn(async (imageId) => ({ imageId })),
 }));
 
-jest.mock(
-  '../src/RenderingEngine/GenericViewport/genericViewportDisplaySetAccess',
-  () => ({
-    __esModule: true,
-    getGenericViewportPlanarDisplaySet: jest.fn(),
-  })
-);
+jest.mock('../src/RenderingEngine/Viewports/displaySetAccess', () => ({
+  __esModule: true,
+  getPlanarDisplaySet: jest.fn(),
+}));
 
 import { ActorRenderMode } from '../src/types';
 import { createAndCacheVolume } from '../src/loaders/volumeLoader';
-import { getGenericViewportPlanarDisplaySet } from '../src/RenderingEngine/GenericViewport/genericViewportDisplaySetAccess';
-import { DefaultPlanarDataProvider } from '../src/RenderingEngine/GenericViewport/Planar/DefaultPlanarDataProvider';
+import { getPlanarDisplaySet } from '../src/RenderingEngine/Viewports/displaySetAccess';
+import { DefaultPlanarDataProvider } from '../src/RenderingEngine/Viewports/Planar/DefaultPlanarDataProvider';
 import { coreLog } from '../src/utilities/logger';
 
 const DATA_ID = 'display-set-1';
@@ -29,7 +26,7 @@ function makeImageIds(count) {
 }
 
 function registerDataSet(dataSet) {
-  getGenericViewportPlanarDisplaySet.mockReturnValue(dataSet);
+  getPlanarDisplaySet.mockReturnValue(dataSet);
 }
 
 function mockVolume(imageIds) {

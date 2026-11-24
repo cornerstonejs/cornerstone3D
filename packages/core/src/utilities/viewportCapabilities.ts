@@ -112,20 +112,6 @@ function viewportHasDisplaySetApi(viewport: unknown): viewport is IViewport {
 }
 
 /**
- * Whether the value is a viewport. Since 6.0 every viewport is one of the
- * families of `GenericViewport`, so this is true for every viewport and
- * false for a value that is not a viewport.
- *
- * @deprecated Every viewport has the members of `Types.IViewport` in 6.0, so
- * a viewport needs no narrowing. To narrow to a family, use
- * `viewportSupportsDisplaySetPresentation`, `getViewportContentMode` or the
- * class of the family.
- */
-export function isGenericViewport(viewport: unknown): viewport is IViewport {
-  return viewportHasDisplaySetApi(viewport);
-}
-
-/**
  * A viewport that also exposes the per-display-set source/VOI accessors.
  * These live only on the `PlanarViewport` family (not video / WSI / ECG /
  * 3D), so they are gated by a focused guard rather than declared on

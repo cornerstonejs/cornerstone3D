@@ -266,7 +266,7 @@ describe('renderPathParity', () => {
   // vtkVolumeSlice and cpuVolume are volume-backed: the harness registers
   // their planar display set with an explicit `volumeId` (see
   // createPlanarViewport.ts) so PlanarRenderPathDecisionService selects the
-  // volume render path (packages/core/src/RenderingEngine/GenericViewport/
+  // volume render path (packages/core/src/RenderingEngine/Viewports/
   // Planar/PlanarRenderPathDecisionService.ts, isVolumeBackedDataSet). Two
   // distinct divergences from the vtkImage/cpuImage (stack-backed) baseline
   // were confirmed by inspecting every one of the 6 canonical-scenario steps

@@ -20,7 +20,7 @@ export type DebugRendering = {
   getSliceCacheStatistics?: () => DebugSliceCacheStatistics | undefined;
 };
 
-/** One display set of a viewport, as `GenericViewport.getDebugBindings` gives it. */
+/** One display set of a viewport, as `BaseViewport.getDebugBindings` gives it. */
 export type DebugBinding = {
   displaySetId: string;
   role?: string;

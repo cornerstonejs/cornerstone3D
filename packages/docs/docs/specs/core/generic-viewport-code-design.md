@@ -1,24 +1,24 @@
 ---
 id: generic-viewport-code-design
-title: Generic Viewport code design
-summary: Which part of a generic viewport family owns which responsibility - the base class, the family viewport class, the resolved view, the render path, the data provider, and the projection adapter
+title: Viewport code design
+summary: Which part of a viewport family owns which responsibility - the base class, the family viewport class, the resolved view, the render path, the data provider, and the projection adapter
 ---
 
-# Generic Viewport code design
+# Viewport code design
 
 ## Scope
 
-This specification describes the code design of the Generic Viewport
+This specification describes the code design of the viewport
 architecture. It says where each part of a viewport family must live. It covers
-the base class `GenericViewport`, the family viewport class, the resolved view,
+the base class `BaseViewport`, the family viewport class, the resolved view,
 the render path, the render path resolver, the data provider, and the
 projection adapter.
 
-In 6.0 the Generic Viewport architecture is the only viewport architecture.
+In 6.0 this architecture is the only viewport architecture.
 5.x had it behind a flag, beside the old viewport classes, and remapped the
 legacy viewport types to it through legacy adapters. 6.0 removed the flag, the
 legacy viewport types, the old viewport classes and the legacy adapters. Every
-viewport is of a Generic Viewport family, and the types have plain names:
+viewport is of a family of `BaseViewport`, and the types have plain names:
 `ViewportType.PLANAR`, `VOLUME_3D`, `VIDEO`, `WHOLE_SLIDE` and `ECG`. The
 [6.0 migration guide](../../migration-guides/6x/index.md) says what replaces
 each legacy name.
@@ -30,7 +30,7 @@ which explain why the architecture exists. This page states the rules that a
 contributor must follow, and a reviewer must check.
 
 The "user" of this specification is a developer or a coding agent. That user
-writes application code against the Generic Viewport API, or adds a new
+writes application code against the viewport API, or adds a new
 viewport family. The
 § User requirements section states what that developer can rely on. The
 § Implementation requirements section states how the code delivers it.
@@ -46,12 +46,12 @@ Change rule:
 Source: pull request
 [2666 "cornerstone3d redo viewports"](https://github.com/cornerstonejs/cornerstone3D/pull/2666),
 which introduced the architecture, and the code in
-`packages/core/src/RenderingEngine/GenericViewport/`.
+`packages/core/src/RenderingEngine/Viewports/`.
 
 ## How to use this specification in a review
 
 Read this page before you review a change that touches
-`packages/core/src/RenderingEngine/GenericViewport/`, or a tool that reads the
+`packages/core/src/RenderingEngine/Viewports/`, or a tool that reads the
 geometry of a viewport, or a module under `packages/core/src/utilities/` that
 names one viewport family.
 
@@ -79,8 +79,8 @@ The three questions that find the most defects, in order:
 
 ## Description
 
-A generic viewport family is a set of files in one directory under
-`packages/core/src/RenderingEngine/GenericViewport/`. Today the repository holds
+A viewport family is a set of files in one directory under
+`packages/core/src/RenderingEngine/Viewports/`. Today the repository holds
 five families: `Planar`, `Video`, `ECG`, `WSI` and `Volume3D`.
 
 The `Planar` family draws the 2D slices of CT, MR and other cross-sectional
@@ -207,7 +207,7 @@ states the contract, and this specification repeats it:
 
 ### The base class (GENVIEW-BASE)
 
-`packages/core/src/RenderingEngine/GenericViewport/GenericViewport.ts`
+`packages/core/src/RenderingEngine/Viewports/BaseViewport.ts`
 
 - **GENVIEW-BASE-1** The base class owns the bindings, the data presentation
   map, the view state field, the destroy lifecycle and the events. The base
@@ -348,7 +348,7 @@ For example `Planar/DefaultPlanarDataProvider.ts`.
   canvas, no actor and no mapper.
 - **GENVIEW-DATA-4** Every data source has a display set, also a source that
   is not a DICOM instance. The data provider finds the display set by its
-  display set id through `genericViewportDisplaySetAccess.ts`, and not by an
+  display set id through `displaySetAccess.ts`, and not by an
   image id. An entry of `genericViewportDisplaySetMetadataProvider` wins.
   Otherwise the display set comes from the `DISPLAY_SET` metadata cache, and its
   `displaySetId` or `displaySetInstanceUID` equals the key.
@@ -389,7 +389,7 @@ family class.
 ### The fidelity of the view (GENVIEW-FIDELITY)
 
 The user requirements are in [Viewport fidelity](./viewport-fidelity.md). This
-group says which part of a generic viewport owns each piece of the fidelity.
+group says which part of a viewport owns each piece of the fidelity.
 
 - **GENVIEW-FIDELITY-1** The render path composes the fidelity of each frame,
   because only the render path knows which texture it bound and at which
@@ -450,20 +450,20 @@ group says which part of a generic viewport owns each piece of the fidelity.
 ### The file layout of a family (GENVIEW-FILE)
 
 - **GENVIEW-FILE-1** Every file of one family lives in one directory,
-  `GenericViewport/<Family>/`. The directory holds the drawing code of the
+  `Viewports/<Family>/`. The directory holds the drawing code of the
   family.
 - **GENVIEW-FILE-2** The directory exports one `index.ts`. That file exports the
   viewport class as the default, the render path factories, the data provider,
-  the projection namespace and the public types. `GenericViewport/index.ts`
+  the projection namespace and the public types. `Viewports/index.ts`
   re-exports those names, and nothing else reaches outside.
 - **GENVIEW-FILE-3** The file names follow the pattern of the family:
   `<Family>Viewport.ts`, `<Family>ViewportTypes.ts`, `<Family>ResolvedView.ts`,
   `<Family>RenderPathResolver.ts`, `Default<Family>DataProvider.ts`, and one
   file for each render path.
 - **GENVIEW-FILE-4** Code that two or more families share lives in
-  `GenericViewport/`, and not in `packages/core/src/utilities/`. Today
-  `viewportProjection.ts`, `genericViewportReferenceCompatibility.ts` and
-  `genericViewportDisplaySetAccess.ts` are examples.
+  `Viewports/`, and not in `packages/core/src/utilities/`. Today
+  `viewportProjection.ts`, `viewReferenceCompatibility.ts` and
+  `displaySetAccess.ts` are examples.
 - **GENVIEW-FILE-5** A module in `packages/core/src/utilities/` must not serve
   one family alone. A family-specific module there is a defect, because a
   reader of the family directory does not see it, and because a second consumer
@@ -474,17 +474,17 @@ group says which part of a generic viewport owns each piece of the fidelity.
 - **GENVIEW-PLACE-1** A reviewer answers the questions below in order, and the
   first answer of yes gives the owner.
 
-| Question                                                                             | Owner                                                    |
-| ------------------------------------------------------------------------------------ | -------------------------------------------------------- |
-| Does the code load the data?                                                         | The data provider                                        |
-| Does the code choose which implementation draws the data?                            | The render path resolver, or a decision service          |
-| Does the code call a drawing API?                                                    | The render path                                          |
-| Does the code convert between world space and canvas space, or compute a world size? | The resolved view                                        |
-| Does the code change what the user navigates to?                                     | The view state, on the family class                      |
-| Does the code change how a mounted data set looks?                                   | The data presentation, on the binding                    |
-| Does the code persist or restore the look of the view?                               | The projection adapter                                   |
-| Does the code record or report the fidelity of the frame?                            | See GENVIEW-FIDELITY                                     |
-| Do two or more families need the same code?                                          | The base class, or a shared module in `GenericViewport/` |
+| Question                                                                             | Owner                                              |
+| ------------------------------------------------------------------------------------ | -------------------------------------------------- |
+| Does the code load the data?                                                         | The data provider                                  |
+| Does the code choose which implementation draws the data?                            | The render path resolver, or a decision service    |
+| Does the code call a drawing API?                                                    | The render path                                    |
+| Does the code convert between world space and canvas space, or compute a world size? | The resolved view                                  |
+| Does the code change what the user navigates to?                                     | The view state, on the family class                |
+| Does the code change how a mounted data set looks?                                   | The data presentation, on the binding              |
+| Does the code persist or restore the look of the view?                               | The projection adapter                             |
+| Does the code record or report the fidelity of the frame?                            | See GENVIEW-FIDELITY                               |
+| Do two or more families need the same code?                                          | The base class, or a shared module in `Viewports/` |
 
 ## Known deviations
 
@@ -526,5 +526,5 @@ The § Known deviations section holds what is open.
 | `RenderWindowMetrics` and `ECGRenderMetrics` were two declarations of one shape, joined by a cast, and the deprecated class declared its own `ChannelLayout`. `ECGRenderMetrics` and `ECGChannelLayout` are now the only declarations.                                     | [#2899](https://github.com/cornerstonejs/cornerstone3D/pull/2899) | GENVIEW-STATE-5                                               |
 | The ECG family answered `getCurrentMode()` with `'unknown'`.                                                                                                                                                                                                               | [#2899](https://github.com/cornerstonejs/cornerstone3D/pull/2899) | GENVIEW-FAMILY-5, GENVIEW-API-6                               |
 | The video and whole slide families answered `getCurrentMode()` with `'unknown'`, and `UltrasoundDirectionalTool` told the families apart with `instanceof` tests. Every family answers the mode now, and the tool tests no class.                                          | the 6.0 branch                                                    | GENVIEW-FAMILY-5, GENVIEW-API-6                               |
-| `utilities/ECGUtilities.ts` held the ECG layout, metric and drawing code, outside the family directory, and served the ECG family and the deprecated class. The code is now in `GenericViewport/ECG/`, and `utilities.ECGUtilities` is deprecated. 6.x still exports it.   | [#2899](https://github.com/cornerstonejs/cornerstone3D/pull/2899) | GENVIEW-FILE-1, GENVIEW-FILE-5                                |
+| `utilities/ECGUtilities.ts` held the ECG layout, metric and drawing code, outside the family directory, and served the ECG family and the deprecated class. The code is now in `Viewports/ECG/`, and `utilities.ECGUtilities` is deprecated. 6.x still exports it.         | [#2899](https://github.com/cornerstonejs/cornerstone3D/pull/2899) | GENVIEW-FILE-1, GENVIEW-FILE-5                                |
 | The ECG layout had two attributes: `layoutType`, a closed list of names, and `traceRegions`, which no code read. `traceLayout` now takes a registered name or a full definition.                                                                                           | [#2899](https://github.com/cornerstonejs/cornerstone3D/pull/2899) | GENVIEW-ECG-1, GENVIEW-ECG-2                                  |

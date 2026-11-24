@@ -3,7 +3,7 @@ import type OrientationVectors from './OrientationVectors';
 import type DisplayArea from './displayArea';
 import type RGB from './RGB';
 import type Point2 from './Point2';
-import type { ECGTraceLayout } from '../RenderingEngine/GenericViewport/ECG/ECGViewportTypes';
+import type { ECGTraceLayout } from '../RenderingEngine/Viewports/ECG/ECGViewportTypes';
 
 /**
  * This type defines the shape of viewport input options, so we can throw when it is incorrect.

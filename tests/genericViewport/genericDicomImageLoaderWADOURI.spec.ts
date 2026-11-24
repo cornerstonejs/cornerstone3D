@@ -10,9 +10,9 @@ import {
 import { dicomDimensions } from '../../packages/dicomImageLoader/examples/dicomImageLoaderWADOURI/dicomDimensions';
 
 // This spec exists so `scripts/run-playwright.sh --next` picks up the WADOURI
-// scenario under the GenericViewport code path. It re-runs the same 45 image
+// scenario under the BaseViewport code path. It re-runs the same 45 image
 // comparisons as the legacy spec. The example asks for a legacy viewport
-// type, which gives a GenericViewport with its legacy adapter.
+// type, which gives a BaseViewport with its legacy adapter.
 //
 // The 45 baselines are dcm2jpg-derived (DICOM ground truth) and live under
 // `tests/screenshots/<project>/dicomImageLoaderWADOURI.spec.ts/`. We point at
@@ -134,7 +134,7 @@ const CASES: Array<[string, string]> = Object.keys(dicomDimensions).map(
   }
 );
 
-test.describe('GenericViewport: Dicom Image Loader WADOURI', async () => {
+test.describe('PlanarViewport: Dicom Image Loader WADOURI', async () => {
   for (const [imagePath, snapshotKey] of CASES) {
     test(`should load ${imagePath}`, async ({ page }) => {
       await selectImageAndWaitForRender(page, imagePath);

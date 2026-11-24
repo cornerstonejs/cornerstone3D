@@ -1,6 +1,6 @@
 import type { IViewport } from '../types/IViewport';
 import type { ScalingDescriptor } from '../types/ScalingDescriptor';
-import { resolveGenericViewportVolumeId } from './resolveGenericViewportVolumeId';
+import { resolveViewportVolumeId } from './resolveViewportVolumeId';
 
 type VolumeLike =
   | { metadata?: { Modality?: string }; scaling?: object }
@@ -30,7 +30,7 @@ function _getScalingDescriptor(
   }
 
   if (viewport) {
-    const resolvedVolumeId = resolveGenericViewportVolumeId(viewport, targetId);
+    const resolvedVolumeId = resolveViewportVolumeId(viewport, targetId);
     const volume = resolvedVolumeId ? getVolume(resolvedVolumeId) : undefined;
     const imageData = (
       viewport as { getImageData?: () => { metadata?: { Modality?: string } } }

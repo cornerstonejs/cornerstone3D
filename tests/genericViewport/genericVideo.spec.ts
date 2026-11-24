@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import {
   createExampleUrl,
-  expectGenericViewportRuntime,
+  expectViewportRuntime,
   screenShotPaths,
 } from '../utils/index';
 
@@ -26,11 +26,11 @@ function navigateToExample(params?: Record<string, string>) {
   };
 }
 
-test.describe('Video GenericViewport', () => {
+test.describe('VideoViewport', () => {
   test.beforeEach(navigateToExample());
 
   test('should use VideoViewport runtime', async ({ page }) => {
-    await expectGenericViewportRuntime(page, [
+    await expectViewportRuntime(page, [
       {
         renderingEngineId: 'myRenderingEngine',
         viewportId: 'videoGenericViewport',

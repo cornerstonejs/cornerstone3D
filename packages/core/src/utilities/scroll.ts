@@ -7,11 +7,11 @@ import type {
   ICamera,
   IViewport,
 } from '../types';
-import type PlanarViewport from '../RenderingEngine/GenericViewport/Planar/PlanarViewport';
-import type VideoViewport from '../RenderingEngine/GenericViewport/Video/VideoViewport';
-import { getVideoScrollStepFrames } from '../RenderingEngine/GenericViewport/Video/videoViewportCamera';
-import { getPlanarVolumeSliceRange } from '../RenderingEngine/GenericViewport/Planar/planarSliceBasis';
-import { resolveSlabThickness } from '../RenderingEngine/GenericViewport/Planar/planarVolumeSliceBlendMode';
+import type PlanarViewport from '../RenderingEngine/Viewports/Planar/PlanarViewport';
+import type VideoViewport from '../RenderingEngine/Viewports/Video/VideoViewport';
+import { getVideoScrollStepFrames } from '../RenderingEngine/Viewports/Video/videoViewportCamera';
+import { getPlanarVolumeSliceRange } from '../RenderingEngine/Viewports/Planar/planarSliceBasis';
+import { resolveSlabThickness } from '../RenderingEngine/Viewports/Planar/planarVolumeSliceBlendMode';
 import getTargetVolumeAndSpacingInNormalDir from './getTargetVolumeAndSpacingInNormalDir';
 import { getVolumeId as getVolumeIdOfSpecifier } from './getVolumeId';
 import snapFocalPointToSlice from './snapFocalPointToSlice';
@@ -78,7 +78,7 @@ export default function scroll(
       'function' ||
     typeof (viewport as ImageScrollViewport).scroll !== 'function'
   ) {
-    // Viewports without index-based scrolling (e.g. Generic 3D volume
+    // Viewports without index-based scrolling (e.g. 3D volume
     // rendering) ignore scroll requests instead of throwing.
     return;
   }

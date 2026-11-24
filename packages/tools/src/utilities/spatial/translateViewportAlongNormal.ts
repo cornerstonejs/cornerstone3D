@@ -1,7 +1,7 @@
 import { vec3 } from 'gl-matrix';
 import type { Types } from '@cornerstonejs/core';
 import getViewportICamera from '../getViewportICamera';
-import { navigatePlanarViewportToPoint } from '../genericViewportToolHelpers';
+import { navigatePlanarViewportToPoint } from '../viewportToolHelpers';
 
 /**
  * Moves a viewport camera (position and focal point) along its view-plane

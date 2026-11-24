@@ -148,7 +148,7 @@ module.exports = {
             'concepts/cornerstone-core/viewports',
             {
               type: 'category',
-              label: 'Generic Viewport',
+              label: 'Viewport Architecture',
               collapsed: true,
               link: {
                 type: 'doc',

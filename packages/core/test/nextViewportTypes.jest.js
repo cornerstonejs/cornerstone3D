@@ -31,7 +31,7 @@ describe('The types of a next viewport', () => {
     expect(status).toBe(0);
   }, 300000);
 
-  it('refuse a registered class without the members that the rendering engine calls, and keep the named export of IGenericViewport', () => {
+  it('refuse a registered class without the members that the rendering engine calls', () => {
     const { status, errors } = compileNextViewportCalls(
       'tsconfig.contracts.json'
     );

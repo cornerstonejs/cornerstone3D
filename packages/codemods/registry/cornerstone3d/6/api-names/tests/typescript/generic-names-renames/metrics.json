@@ -1,0 +1,28 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "17",
+        "rule": "utilities.isGenericViewport: true for every viewport in 6.0: delete the test and the branch for the other case"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "45",
+        "rule": "utilities.isGenericViewport: true for every viewport in 6.0: delete the test and the branch for the other case"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "60",
+        "rule": "renderingEngineExportsV2: import each class and function from @cornerstonejs/core by its own name"
+      },
+      "count": 1
+    }
+  ]
+}

@@ -2,7 +2,7 @@
 //
 // Factors the proven patterns from tests/vitest-browser/toolMeasurements.browser.test.ts
 // (do not modify that file) into reusable primitives: tool-group bootstrap on
-// top of the GenericViewport harness (./createPlanarViewport), and synthetic
+// top of the BaseViewport harness (./createPlanarViewport), and synthetic
 // pointer-event dispatch that mirrors the real DOM event flow @cornerstonejs/tools
 // depends on (see packages/tools/src/eventListeners/mouse/mouseDownListener.ts).
 //

@@ -3,12 +3,11 @@ import ViewportTypes, {
   registerViewportTypesConstant,
 } from '../../enums/ViewportTypes';
 import type { ViewportType as ViewportTypeWire } from '../../types/ViewportTypeRegistry';
-import ECGViewport from '../GenericViewport/ECG/ECGViewport';
-import PlanarViewport from '../GenericViewport/Planar/PlanarViewport';
-import VideoViewport from '../GenericViewport/Video/VideoViewport';
-import VolumeViewport3D from '../GenericViewport/Volume3D/viewport3D';
-import WSIViewport from '../GenericViewport/WSI/WSIViewport';
-import { viewportTypeByDeprecatedString } from './deprecatedViewportTypes';
+import ECGViewport from '../Viewports/ECG/ECGViewport';
+import PlanarViewport from '../Viewports/Planar/PlanarViewport';
+import VideoViewport from '../Viewports/Video/VideoViewport';
+import VolumeViewport3D from '../Viewports/Volume3D/viewport3D';
+import WSIViewport from '../Viewports/WSI/WSIViewport';
 import type { ViewportTypeConstants } from '../../types/ViewportTypeRegistry';
 import type {
   ViewportInput,
@@ -79,14 +78,22 @@ const removedViewportTypeMessages: Record<string, string> = {
     "ViewportType 'orthographic' was removed in Cornerstone3D 6.0: use ViewportType.PLANAR with an orientation in defaultOptions, for example OrientationAxis.AXIAL (a planar viewport shows a stack or a volume)",
   perspective:
     "ViewportType 'perspective' was removed in Cornerstone3D 6.0: use ViewportType.VOLUME_3D with parallelProjection: false in defaultOptions",
+  planarNext:
+    "ViewportType 'planarNext' was removed in Cornerstone3D 6.0: use ViewportType.PLANAR ('planar')",
+  volume3dNext:
+    "ViewportType 'volume3dNext' was removed in Cornerstone3D 6.0: use ViewportType.VOLUME_3D ('volume3d')",
+  videoNext:
+    "ViewportType 'videoNext' was removed in Cornerstone3D 6.0: use ViewportType.VIDEO ('video')",
+  wholeSlideNext:
+    "ViewportType 'wholeSlideNext' was removed in Cornerstone3D 6.0: use ViewportType.WHOLE_SLIDE ('wholeSlide')",
+  ecgNext:
+    "ViewportType 'ecgNext' was removed in Cornerstone3D 6.0: use ViewportType.ECG ('ecg')",
 };
 
 /**
  * Registers the viewport types of the library: the five viewports under
  * their plain strings (`'planar'`, `'volume3d'`, `'video'`, `'wholeSlide'`,
- * `'ecg'`), and the 5.x strings `'planarNext'`, `'volume3dNext'`,
- * `'videoNext'`, `'wholeSlideNext'` and `'ecgNext'` as deprecated aliases of
- * the same viewports.
+ * `'ecg'`).
  */
 function registerCoreViewportTypes() {
   if (hasRegisteredCoreViewportTypes) {
@@ -114,38 +121,6 @@ function registerCoreViewportTypes() {
     type: ViewportType.ECG,
     ViewportClass: ECGViewport,
   });
-
-  for (const [alias, type] of Object.entries(viewportTypeByDeprecatedString)) {
-    registerViewportTypeAlias(alias, type);
-  }
-}
-
-/**
- * Registers `alias` as one more type string of the class that `type` has.
- * The viewport that the alias makes is the viewport of `type`, with the
- * `type` of its class. A second registration of the same alias for the same
- * class does nothing; an alias that already gives another class throws.
- */
-function registerViewportTypeAlias(alias: string, type: string): void {
-  const ViewportClass = viewportConstructors.get(type);
-
-  if (!ViewportClass) {
-    throw new Error(`Viewport type "${type}" is not registered`);
-  }
-
-  const registeredClass = viewportConstructors.get(alias);
-
-  if (registeredClass === ViewportClass) {
-    return;
-  }
-
-  if (registeredClass) {
-    throw new Error(`Viewport type "${alias}" is already registered`);
-  }
-
-  viewportConstructors.set(alias, ViewportClass);
-  viewportTypeToViewportClass[alias] = ViewportClass;
-  registeredViewportTypes.add(alias);
 }
 
 export function registerViewportType<Name extends keyof ViewportTypeConstants>(
@@ -191,8 +166,9 @@ export function isRegisteredViewportType(type: string): boolean {
 
 /**
  * Throws the message of a viewport type string that Cornerstone3D 6.0
- * removed (`'stack'`, `'orthographic'`, `'perspective'`), which names the
- * type to use instead. A string that an application registered itself is
+ * removed (`'stack'`, `'orthographic'`, `'perspective'`, and the 5.x
+ * strings `'planarNext'`, `'volume3dNext'`, `'videoNext'`,
+ * `'wholeSlideNext'`, `'ecgNext'`), which names the type to use instead. A string that an application registered itself is
  * not removed. Any other string passes.
  */
 export function throwIfRemovedViewportType(type: string): void {

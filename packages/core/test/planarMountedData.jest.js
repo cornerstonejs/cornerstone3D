@@ -1,6 +1,6 @@
 import { ActorRenderMode } from '../src/types';
-import PlanarMountedData from '../src/RenderingEngine/GenericViewport/Planar/PlanarMountedData';
-import PlanarViewReferenceController from '../src/RenderingEngine/GenericViewport/Planar/PlanarViewReferenceController';
+import PlanarMountedData from '../src/RenderingEngine/Viewports/Planar/PlanarMountedData';
+import PlanarViewReferenceController from '../src/RenderingEngine/Viewports/Planar/PlanarViewReferenceController';
 
 function createBinding({
   actorUID,

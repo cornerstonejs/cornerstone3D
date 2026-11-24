@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import {
   createExampleUrl,
   checkForCanvasSnapshot,
-  expectGenericViewportRuntime,
+  expectViewportRuntime,
   getPlainVolumeSliceRenderMode,
   getVisibleViewportCanvas,
   getSegmentationActorClassNames,
@@ -110,7 +110,7 @@ test.describe('Labelmap Slice Rendering Tools - Next', () => {
   test.beforeEach(navigateToExample());
 
   test('should use PlanarViewport GPU runtime', async ({ page }) => {
-    await expectGenericViewportRuntime(page, [
+    await expectViewportRuntime(page, [
       {
         renderingEngineId: 'myRenderingEngine',
         viewportId: 'CT_AXIAL',

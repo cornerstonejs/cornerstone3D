@@ -4,11 +4,11 @@ import {
   registerDisplaySetMetadata,
 } from '@cornerstonejs/metadata';
 import {
-  getGenericViewportImageDisplaySet,
-  getGenericViewportPlanarDisplaySet,
-  getGenericViewportSourceDataId,
-  getGenericViewportWSIDisplaySet,
-} from '../src/RenderingEngine/GenericViewport/genericViewportDisplaySetAccess';
+  getImageDisplaySet,
+  getPlanarDisplaySet,
+  getDisplaySetSourceDataId,
+  getWSIDisplaySet,
+} from '../src/RenderingEngine/Viewports/displaySetAccess';
 import genericViewportDisplaySetMetadataProvider from '../src/utilities/genericViewportDisplaySetMetadataProvider';
 
 const displaySet = (displaySetId, extra = {}) => ({
@@ -29,13 +29,13 @@ describe('Display set lookup by display set id', () => {
   it('loads a registered IDisplaySet in every viewport family', () => {
     registerDisplaySetMetadata([], displaySet('ds-1'));
 
-    expect(getGenericViewportImageDisplaySet('ds-1').imageIds).toEqual([
+    expect(getImageDisplaySet('ds-1').imageIds).toEqual([
       'ds-1:frame1',
       'ds-1:frame2',
     ]);
-    expect(getGenericViewportPlanarDisplaySet('ds-1').imageIds).toHaveLength(2);
+    expect(getPlanarDisplaySet('ds-1').imageIds).toHaveLength(2);
     // Video and ECG show the first instance.
-    expect(getGenericViewportSourceDataId('ds-1')).toBe('ds-1:instance');
+    expect(getDisplaySetSourceDataId('ds-1')).toBe('ds-1:instance');
   });
 
   it('loads an OHIF display set, keyed by displaySetInstanceUID', () => {
@@ -46,7 +46,7 @@ describe('Display set lookup by display set id', () => {
       },
     });
 
-    expect(getGenericViewportSourceDataId('uid-2')).toBe('video:1');
+    expect(getDisplaySetSourceDataId('uid-2')).toBe('video:1');
   });
 
   it('does not take a display set that the cache holds under an image id', () => {
@@ -54,8 +54,8 @@ describe('Display set lookup by display set id', () => {
 
     // The ECG example opens an instance by its image id. That id is not a
     // display set id, so the source stays the image id.
-    expect(getGenericViewportSourceDataId('ecg:imageId')).toBe('ecg:imageId');
-    expect(getGenericViewportImageDisplaySet('ecg:imageId')).toBeUndefined();
+    expect(getDisplaySetSourceDataId('ecg:imageId')).toBe('ecg:imageId');
+    expect(getImageDisplaySet('ecg:imageId')).toBeUndefined();
   });
 
   it('shows the instance of a video or ECG display set', () => {
@@ -64,14 +64,14 @@ describe('Display set lookup by display set id', () => {
       displaySet('ds-6', { instance: { imageId: 'ds-6:shown' } })
     );
 
-    expect(getGenericViewportSourceDataId('ds-6')).toBe('ds-6:shown');
+    expect(getDisplaySetSourceDataId('ds-6')).toBe('ds-6:shown');
   });
 
   it('loads a WSI display set with its own web client', () => {
     const webClient = { getDICOMwebMetadata: () => undefined };
     registerDisplaySetMetadata([], displaySet('ds-4', { webClient }));
 
-    expect(getGenericViewportWSIDisplaySet('ds-4')).toEqual({
+    expect(getWSIDisplaySet('ds-4')).toEqual({
       kind: 'wsi',
       imageIds: ['ds-4:frame1', 'ds-4:frame2'],
       options: { webClient },
@@ -87,9 +87,7 @@ describe('Display set lookup by display set id', () => {
     metaData.addProvider(provider, 100000);
     registerDisplaySetMetadata([], displaySet('ds-7'));
 
-    expect(getGenericViewportWSIDisplaySet('ds-7').options.webClient).toBe(
-      webClient
-    );
+    expect(getWSIDisplaySet('ds-7').options.webClient).toBe(webClient);
     metaData.removeProvider(provider);
   });
 
@@ -97,9 +95,7 @@ describe('Display set lookup by display set id', () => {
     registerDisplaySetMetadata([], displaySet('ds-5'));
     genericViewportDisplaySetMetadataProvider.add('ds-5', ['registry:1']);
 
-    expect(getGenericViewportImageDisplaySet('ds-5').imageIds).toEqual([
-      'registry:1',
-    ]);
+    expect(getImageDisplaySet('ds-5').imageIds).toEqual(['registry:1']);
     genericViewportDisplaySetMetadataProvider.remove('ds-5');
   });
 });

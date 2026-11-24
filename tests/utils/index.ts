@@ -11,9 +11,9 @@ export { getVisibleViewportCanvas } from './getVisibleViewportCanvas';
 export { createExampleUrl } from './createExampleUrl';
 export { getSegmentationActorClassNames } from './getSegmentationActorClassNames';
 export {
-  expectGenericViewportRuntime,
+  expectViewportRuntime,
   getPlainVolumeSliceRenderMode,
-} from './expectGenericViewportRuntime';
+} from './expectViewportRuntime';
 export { waitForImageRendered } from './waitForImageRendered';
 export { retryRemoteFixtures } from './retryRemoteFixtures';
 export {

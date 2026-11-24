@@ -93,7 +93,7 @@ are two implemented synchronizers and we are working on more.
 - WindowLevel synchronizer: synchronizes the window level of the source and target viewports
 - Camera synchronizer: synchronizes the camera of the source and target viewports
 
-For Generic/Next viewport integrations, camera-style synchronization is modeled
+For viewport integrations, camera-style synchronization is modeled
 as `ViewState` plus viewport projection: tools can read portable presentation
 with `viewportProjection.getPresentation(...)` and apply the translated native
 state through `setViewState(...)`.

@@ -6,7 +6,7 @@ import type { PlanarViewport, Types } from '@cornerstonejs/core';
 import type { EventTypes, PublicToolProps, ToolProps, IPoints } from '../types';
 import { getViewportIdsWithToolToRender } from '../utilities/viewportFilters';
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
-import { getNativeSourceProperties } from '../utilities/genericViewportToolHelpers';
+import { getNativeSourceProperties } from '../utilities/viewportToolHelpers';
 import {
   getWorldHeightPerPixel,
   mountLoupeSource,

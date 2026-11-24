@@ -1,5 +1,5 @@
 // Plan 4: lifecycle, teardown, and race-condition coverage for the
-// GenericViewport (PLANAR) architecture. State-based only -- no
+// BaseViewport (PLANAR) architecture. State-based only -- no
 // screenshots. See plans/vitest-browser-state-tests/04-lifecycle-teardown-races.md.
 
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
@@ -503,7 +503,7 @@ test('removeData clears bindings and actors, and viewportStatus returns to noDat
   // Pinned: PlanarViewport.render() sets viewportStatus to NO_DATA ('noData')
   // synchronously as soon as bindings.size is 0 (this already happened as a
   // side effect of removeData()'s own internal render() call via
-  // GenericViewport.removeData -> this.render()); the explicit render() call
+  // BaseViewport.removeData -> this.render()); the explicit render() call
   // above is a no-op re-confirmation of that same state.
   expect(viewport.viewportStatus).toBe(ViewportStatus.NO_DATA);
 });

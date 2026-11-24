@@ -2,8 +2,8 @@
  * The render path draws the trace with the transform of the resolved view, so
  * the trace, the grid and `worldToCanvas` agree (GENVIEW-VIEW-6).
  */
-import ECGViewport from '../src/RenderingEngine/GenericViewport/ECG/ECGViewport';
-import { ECG_PX_PER_MM } from '../src/RenderingEngine/GenericViewport/ECG/ecgWaveform';
+import ECGViewport from '../src/RenderingEngine/Viewports/ECG/ECGViewport';
+import { ECG_PX_PER_MM } from '../src/RenderingEngine/Viewports/ECG/ecgWaveform';
 
 const FS = 500;
 const N = 5000;

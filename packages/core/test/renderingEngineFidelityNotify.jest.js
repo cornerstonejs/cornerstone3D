@@ -1,6 +1,6 @@
 import { describe, it, expect, jest } from '@jest/globals';
 import BaseRenderingEngine from '../src/RenderingEngine/BaseRenderingEngine';
-import GenericViewport from '../src/RenderingEngine/GenericViewport/GenericViewport';
+import BaseViewport from '../src/RenderingEngine/Viewports/BaseViewport';
 import Events from '../src/enums/Events';
 import actorsWaitingForStorage from '../src/RenderingEngine/helpers/actorsWaitingForStorage';
 
@@ -48,7 +48,7 @@ describe('rendering engine fidelity notification (FIDELITY-EVENT-2)', () => {
 
   it('does no fidelity work for a viewport that cannot report fidelity', () => {
     // An ECG, video or WSI viewport keeps the base answer `false`.
-    const viewports = [GenericViewport].map((ViewportClass, i) =>
+    const viewports = [BaseViewport].map((ViewportClass, i) =>
       Object.assign(Object.create(ViewportClass.prototype), {
         id: `vp-${i}`,
         renderingEngineId: 're-1',

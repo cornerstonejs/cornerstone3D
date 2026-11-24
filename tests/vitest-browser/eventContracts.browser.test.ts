@@ -1,14 +1,14 @@
 // Plan 3: event contracts.
 //
-// Pins the observable event behavior of PlanarViewport (GenericViewport /
+// Pins the observable event behavior of PlanarViewport (BaseViewport /
 // PLANAR) as a contract: which events fire, how many, in what order,
 // with what payload shape, and that nothing fires after teardown. Downstream
 // consumers (tools, OHIF) build on this surface; regressions here are
 // invisible to screenshot tests.
 //
 // Event source facts verified against
-// packages/core/src/RenderingEngine/GenericViewport/Planar/planarImageEvents.ts,
-// GenericViewport.ts, PlanarViewport.ts, BaseRenderingEngine.ts and
+// packages/core/src/RenderingEngine/Viewports/Planar/planarImageEvents.ts,
+// BaseViewport.ts, PlanarViewport.ts, BaseRenderingEngine.ts and
 // ContextPoolRenderingEngine.ts before writing any assertion:
 // - ELEMENT_ENABLED / ELEMENT_DISABLED are triggered on the module-level
 //   `eventTarget` singleton (BaseRenderingEngine.ts), NOT on the viewport
@@ -18,7 +18,7 @@
 //   once per flagged viewport per animation frame, regardless of how many
 //   `render()` calls were coalesced into that frame.
 // - CAMERA_MODIFIED is triggered synchronously (not deferred to a frame) by
-//   `GenericViewport.modified()` every time `setViewState`/the Planar
+//   `BaseViewport.modified()` every time `setViewState`/the Planar
 //   zoom/pan/scale legacy shims run, as long as a previous camera snapshot
 //   was resolvable.
 // - NEW_IMAGE is triggered by `triggerPlanarNewImage` in
@@ -257,7 +257,7 @@ test('setZoom from steady state fires CAMERA_MODIFIED exactly once', async () =>
   await waitForQuiescence(recorder);
 
   // Observed on a stable run: exactly 1. setZoom -> setScale ->
-  // applyResolvedViewState -> GenericViewport.modified(previousCamera),
+  // applyResolvedViewState -> BaseViewport.modified(previousCamera),
   // which fires triggerCameraModifiedEvent synchronously exactly once; the
   // render() call in the same modified() only schedules a frame and does
   // not itself fire another CAMERA_MODIFIED.

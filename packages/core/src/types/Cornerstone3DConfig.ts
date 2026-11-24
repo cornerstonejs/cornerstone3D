@@ -36,7 +36,7 @@ interface Cornerstone3DConfig {
     // 1. HalfFloat: https://github.com/Kitware/vtk-js/pull/2046
     // 2. Norm16: https://github.com/Kitware/vtk-js/pull/2058
     //
-    // Applies to the legacy volume-actor pipeline; GenericViewport render
+    // Applies to the legacy volume-actor pipeline; BaseViewport render
     // paths resolve texture formats through the probed capability profile
     // (see utilities/renderingCapabilities) and do not consult this flag.
     preferSizeOverAccuracy?: boolean;
@@ -93,7 +93,7 @@ interface Cornerstone3DConfig {
     webGlContextCount?: number;
     planar?: {
       /**
-       * The render backend preference for planar GenericViewports: 'gpu',
+       * The render backend preference for planar viewports: 'gpu',
        * 'cpu', or any backend registered via `registerRenderBackend()` pin
        * the backend, 'auto' (default) resolves it from the capability
        * detection performed at init(): the CPU on a device without WebGL.

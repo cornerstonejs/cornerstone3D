@@ -1,5 +1,5 @@
 import { InterpolationType } from '../src/enums';
-import { getSpatiallyClampedContinuousIndex } from '../src/RenderingEngine/GenericViewport/Planar/planarCPUVolumeSamplingUtils';
+import { getSpatiallyClampedContinuousIndex } from '../src/RenderingEngine/Viewports/Planar/planarCPUVolumeSamplingUtils';
 import sampleVolumeGrid, {
   isIndexInsideVolume,
 } from '../src/utilities/sampleVolumeGrid';

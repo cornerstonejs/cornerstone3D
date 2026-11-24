@@ -11,7 +11,7 @@ import sampleVolumeGrid, {
   isIndexInsideVolume,
 } from '../src/utilities/sampleVolumeGrid';
 import { getVolumeSliceGeometry } from '../src/utilities/volumeSliceGeometry';
-import { mapBlendModeToSlabType } from '../src/RenderingEngine/GenericViewport/Planar/planarVolumeSliceBlendMode';
+import { mapBlendModeToSlabType } from '../src/RenderingEngine/Viewports/Planar/planarVolumeSliceBlendMode';
 import VoxelManager from '../src/utilities/VoxelManager';
 
 const dimensions = [6, 5, 20];

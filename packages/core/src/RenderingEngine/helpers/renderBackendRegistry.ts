@@ -7,11 +7,11 @@ import type {
   RenderBackend as RenderBackendWire,
   RenderBackendConstants,
 } from '../../types/RenderBackendRegistry';
-import type { RenderPathDefinition } from '../GenericViewport/ViewportArchitectureTypes';
+import type { RenderPathDefinition } from '../Viewports/ViewportArchitectureTypes';
 
 /**
  * The composited canvas a render mode draws to inside a planar
- * GenericViewport. The viewport owns one canvas per surface and toggles their
+ * BaseViewport. The viewport owns one canvas per surface and toggles their
  * visibility when the active render mode changes; custom backends draw to one
  * of the existing surfaces.
  */
@@ -123,7 +123,7 @@ function registerCoreRenderBackends() {
 }
 
 /**
- * Registers a render backend for planar GenericViewports, following the same
+ * Registers a render backend for planar viewports, following the same
  * extensible-enum model as `registerViewportType`: the backend id becomes a
  * valid value for `setRenderBackend()`, the global
  * `rendering.planar.renderBackend` configuration and per-mount `renderBackend`

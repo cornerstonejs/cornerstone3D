@@ -413,7 +413,7 @@ export class StatsOverlay implements StatsInstance {
   }
 
   /**
-   * Collects every viewport's GenericViewport binding debug state and volume
+   * Collects every viewport's BaseViewport binding debug state and volume
    * {@link VoxelQualityRecord}s. Within one tick, `getVoxelQuality` runs at
    * most once per `volumeId` so MPR viewports that share a volume do not
    * recompute the same record.
@@ -515,7 +515,7 @@ export class StatsOverlay implements StatsInstance {
       });
     }
 
-    // Legacy viewports do not expose a GenericViewport `_debug.renderModes`
+    // Legacy viewports do not expose a BaseViewport `_debug.renderModes`
     // map, so derive the rows directly from the actors. This lets the debug
     // overlay show the same actor UID / referencedId info for legacy viewports
     // (e.g. to compare whether a labelmap actor is reused or recreated across

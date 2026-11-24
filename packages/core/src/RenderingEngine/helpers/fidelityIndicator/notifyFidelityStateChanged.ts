@@ -25,7 +25,7 @@ const lastKeys = new WeakMap<object, string>();
  * display spacing, so a zoom that keeps the verdict fires nothing. A viewport
  * with `suppressEvents` records the key and fires nothing.
  *
- * Called after `IMAGE_RENDERED`: by the rendering engines, and by a generic
+ * Called after `IMAGE_RENDERED`: by the rendering engines, and by a
  * viewport whose render path draws outside the engine (FIDELITY-EVENT-7).
  *
  * @internal

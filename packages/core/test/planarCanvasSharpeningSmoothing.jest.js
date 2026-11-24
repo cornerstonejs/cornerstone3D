@@ -1,5 +1,5 @@
 import { describe, it, expect, jest } from '@jest/globals';
-import { applyCanvasSharpeningSmoothing } from '../src/RenderingEngine/GenericViewport/Planar/planarCanvasSharpeningSmoothing';
+import { applyCanvasSharpeningSmoothing } from '../src/RenderingEngine/Viewports/Planar/planarCanvasSharpeningSmoothing';
 import { createSharpeningRenderPass } from '../src/RenderingEngine/renderPasses/sharpeningRenderPass';
 import { createSmoothingRenderPass } from '../src/RenderingEngine/renderPasses/smoothingRenderPass';
 

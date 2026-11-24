@@ -1,5 +1,5 @@
 // State-based tests for the labelmap segmentation lifecycle on a
-// GenericViewport stack (voxel values, segment indices, active-segmentation
+// BaseViewport stack (voxel values, segment indices, active-segmentation
 // bookkeeping, visibility, events, statistics). No pixels are asserted
 // anywhere in this file.
 //

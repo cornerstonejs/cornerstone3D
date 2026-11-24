@@ -224,9 +224,9 @@ renderingEngine.enableElement({
 });
 ```
 
-On 5.x the planar type is `ViewportType.PLANAR_NEXT`. On 6.0 it is
-`ViewportType.PLANAR`, and `PLANAR_NEXT` is its deprecated alias, so code
-written on 5.x with `PLANAR_NEXT` runs on 6.0 too.
+On 5.x the planar type had a next name. On 6.0 it is `ViewportType.PLANAR`,
+and the 5.x name is gone: the codemod renames it, see
+[Viewport types](./3-api-map.md#viewport-types).
 
 **Check.** `viewport.type` is `'planar'` on 6.0 (`'planarNext'` on 5.x), and
 `viewport.getCurrentMode()` is `'empty'` until step 3 shows data.
@@ -294,13 +294,13 @@ family: the members that every family has. `getEnabledElement(element).viewport`
 `renderingEngine.getViewport(viewportId)` and each viewport of
 `renderingEngine.getViewports()` are typed with it. The members of a family
 are on its class: type a planar viewport as `PlanarViewport`, a 3D viewport
-as `VolumeViewport3D`, and so on (on 5.x the next 3D class is exported as
-`GenericVolumeViewport3D`, which 6.0 keeps as a deprecated alias).
+as `VolumeViewport3D`, and so on (on 5.x the next 3D class had a next
+export name, which 6.0 does not have; the codemod renames it).
 `Types.IStackViewport`, `Types.IVolumeViewport`, `Types.IBaseVolumeViewport`,
 `Types.IVideoViewport`, `Types.IWSIViewport` and `Types.IECGViewport` are
-gone, and so are the `*ViewportProperties` types. `Types.IGenericViewport` and
-`utilities.isGenericViewport` are deprecated: replace the first with
-`Types.IViewport`, and drop the second, keeping its true branch.
+gone, and so are the `*ViewportProperties` types. The 5.x name of
+`Types.IViewport` is gone too, and so is the 5.x guard that was true for every
+next viewport: delete its test and the branch for the other case.
 [Classes and TypeScript types](./3-api-map.md#classes-and-typescript-types)
 has every type.
 
@@ -1157,9 +1157,8 @@ WebGL draws on the CPU by itself.
 
 The rename of the viewport types is in the code. Replace `PLANAR_NEXT`,
 `VOLUME_3D_NEXT`, `VIDEO_NEXT`, `WHOLE_SLIDE_NEXT` and `ECG_NEXT` with
-`PLANAR`, `VOLUME_3D`, `VIDEO`, `WHOLE_SLIDE` and `ECG` (the `_NEXT` names
-still work: they are deprecated aliases), and a stored or compared
-`'planarNext'` with `'planar'`.
+`PLANAR`, `VOLUME_3D`, `VIDEO`, `WHOLE_SLIDE` and `ECG`, and a stored or
+compared `'planarNext'` with `'planar'`: 6.0 has none of the 5.x names.
 
 **Check.** The type checker passes. `viewport.getRenderPlan()` of a planar
 viewport says for each layer what draws it and why. Go through every screen
@@ -1237,11 +1236,11 @@ first, and take its two lists as the start of the work.
 4. **Know what is gone and what is deprecated.** Every call in the column
    "Use instead" is in the code. On 6.0 the legacy classes and their types,
    the compatibility adapters and the setting `rendering.useGenericViewport`
-   are gone, so the type checker lists each use. A row marked
-   **Deprecated** names a name that still compiles in 6.x, such as the
-   `_NEXT` types, the `Generic` class names, `Types.IGenericViewport`,
-   `utilities.isGenericViewport` and `utilities.ECGUtilities`: move off
-   each one as its row says.
+   are gone, so the type checker lists each use. So are the 5.x next names
+   of the types, the classes and `Types.IViewport`, and the guard of a next
+   viewport: each has a row. A row marked **Deprecated** names a name that
+   still compiles in 6.x, such as `utilities.ECGUtilities`: move off it as
+   its row says.
 5. **Do not import a private name.** A cell with `-` means that no call takes
    the place of the legacy name. Do not import from a path inside a package,
    such as `@cornerstonejs/core/dist`. The `LegacyAdapter` classes and

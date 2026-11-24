@@ -64,8 +64,8 @@ function applyPlanarProjectionPresentation(
 }
 
 setTitleAndDescription(
-  'Generic Viewport Scale',
-  'Shows scalar and two-axis scale on Planar GenericViewport stack and volume-slice viewports.'
+  'Viewport Scale',
+  'Shows scalar and two-axis scale on PlanarViewport stack and volume-slice viewports.'
 );
 
 const content = document.getElementById('content');

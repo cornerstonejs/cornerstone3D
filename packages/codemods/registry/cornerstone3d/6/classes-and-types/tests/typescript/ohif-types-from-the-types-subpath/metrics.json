@@ -35,14 +35,6 @@
     {
       "cardinality": {
         "file": "input.ts",
-        "line": "4",
-        "rule": "Types.IGenericViewport"
-      },
-      "count": 1
-    },
-    {
-      "cardinality": {
-        "file": "input.ts",
         "line": "7",
         "rule": "Types.IVolumeInput"
       },

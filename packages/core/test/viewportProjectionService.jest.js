@@ -1,14 +1,14 @@
 import {
   ViewportProjectionService,
   viewportProjection,
-} from '../src/RenderingEngine/GenericViewport';
+} from '../src/RenderingEngine/Viewports';
 import { ViewportType } from '../src/enums';
-import VideoViewport from '../src/RenderingEngine/GenericViewport/Video/VideoViewport';
-import VideoResolvedView from '../src/RenderingEngine/GenericViewport/Video/VideoResolvedView';
-import ECGViewport from '../src/RenderingEngine/GenericViewport/ECG/ECGViewport';
-import ECGResolvedView from '../src/RenderingEngine/GenericViewport/ECG/ECGResolvedView';
-import WSIViewport from '../src/RenderingEngine/GenericViewport/WSI/WSIViewport';
-import VolumeViewport3D from '../src/RenderingEngine/GenericViewport/Volume3D/viewport3D';
+import VideoViewport from '../src/RenderingEngine/Viewports/Video/VideoViewport';
+import VideoResolvedView from '../src/RenderingEngine/Viewports/Video/VideoResolvedView';
+import ECGViewport from '../src/RenderingEngine/Viewports/ECG/ECGViewport';
+import ECGResolvedView from '../src/RenderingEngine/Viewports/ECG/ECGResolvedView';
+import WSIViewport from '../src/RenderingEngine/Viewports/WSI/WSIViewport';
+import VolumeViewport3D from '../src/RenderingEngine/Viewports/Volume3D/viewport3D';
 import genericViewportDisplaySetMetadataProvider from '../src/utilities/genericViewportDisplaySetMetadataProvider';
 
 function createAdapter(id, viewportTypes = ['testViewport']) {
@@ -511,30 +511,28 @@ describe('ViewportProjectionService', () => {
     expect(snapshot.viewportType).toBe('externalViewport');
   });
 
-  it('finds the adapter of the plain type for a 5.x type string, as a viewport type or a request', () => {
+  it('finds no adapter for a removed 5.x type string, as a viewport type or a request', () => {
     [
-      ['planarNext', 'planar'],
-      ['volume3dNext', 'volume3d'],
-      ['videoNext', 'video'],
-      ['ecgNext', 'ecg'],
-      ['wholeSlideNext', 'wsi'],
-    ].forEach(([type, adapterId]) => {
-      expect(viewportProjection.getAdapter({ type })?.id).toBe(adapterId);
+      'planarNext',
+      'volume3dNext',
+      'videoNext',
+      'ecgNext',
+      'wholeSlideNext',
+    ].forEach((type) => {
+      expect(viewportProjection.getAdapter({ type })).toBeUndefined();
       expect(
-        viewportProjection.getAdapter(undefined, { viewportType: type })?.id
-      ).toBe(adapterId);
+        viewportProjection.getAdapter(undefined, { viewportType: type })
+      ).toBeUndefined();
     });
   });
 
-  it('finds an adapter registered for a 5.x type string, for its plain type and for that string', () => {
+  it('finds an adapter registered for a 5.x type string for that string only, not for the plain type', () => {
     const service = new ViewportProjectionService();
     const adapter = createAdapter('legacyTypeProjection', ['planarNext']);
 
     service.register(adapter);
 
-    expect(service.getAdapter({ type: ViewportType.PLANAR })?.id).toBe(
-      'legacyTypeProjection'
-    );
+    expect(service.getAdapter({ type: ViewportType.PLANAR })).toBeUndefined();
     expect(service.getAdapter({ type: 'planarNext' })?.id).toBe(
       'legacyTypeProjection'
     );

@@ -57,7 +57,7 @@ const viewportIds = viewportConfigs.map(({ viewportId }) => viewportId);
 // ======== Set up page ======== //
 setTitleAndDescription(
   'Ten Viewport Reference Point',
-  'A large grid of native PLANAR (generic) viewports with the WorldCrosshairTool: one persistent world-space reference point appears in every linked viewport.'
+  'A large grid of PLANAR viewports with the WorldCrosshairTool: one persistent world-space reference point appears in every linked viewport.'
 );
 
 const size = '290px';

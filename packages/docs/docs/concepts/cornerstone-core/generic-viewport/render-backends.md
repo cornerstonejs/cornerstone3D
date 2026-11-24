@@ -1,13 +1,13 @@
 ---
 id: render-backends
 title: Render Backends
-summary: How planar Generic Viewports select a render backend, and how extensions register additional backends with registerRenderBackend
+summary: How planar viewports select a render backend, and how extensions register additional backends with registerRenderBackend
 ---
 
 # Render Backends
 
-A render backend is the named rendering implementation a planar Generic
-Viewport mounts data through. Cornerstone ships two concrete backends, `'gpu'`
+A render backend is the named rendering implementation a planar
+viewport mounts data through. Cornerstone ships two concrete backends, `'gpu'`
 (VTK/WebGL) and `'cpu'`, plus the `'auto'` preference that resolves to one of
 them from the capability detection performed at `init()` (WebGL availability
 and texture-format probes): `'cpu'` on a device without WebGL.

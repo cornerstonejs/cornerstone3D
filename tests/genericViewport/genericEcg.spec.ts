@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import {
   createExampleUrl,
   checkForCanvasSnapshot,
-  expectGenericViewportRuntime,
+  expectViewportRuntime,
   screenShotPaths,
 } from '../utils/index';
 
@@ -40,11 +40,11 @@ function navigateToExample(params?: Record<string, string>) {
   };
 }
 
-test.describe('ECG GenericViewport', () => {
+test.describe('ECGViewport', () => {
   test.beforeEach(navigateToExample());
 
   test('should use ECGViewport runtime', async ({ page }) => {
-    await expectGenericViewportRuntime(page, [
+    await expectViewportRuntime(page, [
       {
         renderingEngineId: 'myRenderingEngine',
         viewportId: 'ecgGenericViewport',

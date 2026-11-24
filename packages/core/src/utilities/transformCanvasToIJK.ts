@@ -1,5 +1,5 @@
 import type { Point2 } from '../types';
-import type PlanarViewport from '../RenderingEngine/GenericViewport/Planar/PlanarViewport';
+import type PlanarViewport from '../RenderingEngine/Viewports/Planar/PlanarViewport';
 import transformWorldToIndex from './transformWorldToIndex';
 
 /**

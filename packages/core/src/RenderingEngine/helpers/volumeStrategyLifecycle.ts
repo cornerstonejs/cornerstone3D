@@ -3,12 +3,12 @@ import eventTarget from '../../eventTarget';
 import type { IImageVolume } from '../../types';
 import type { vtkStreamingOpenGLTexture } from '../../cache/classes/ImageVolume';
 import { gpuSettingsForRender } from '../../utilities/gpuSettingsPresets';
-import type { RenderingFidelity } from '../GenericViewport/ViewportArchitectureTypes';
+import type { RenderingFidelity } from '../Viewports/ViewportArchitectureTypes';
 import {
   isBindingPending,
   readBoundQuality,
-} from '../GenericViewport/renderingFidelity';
-import type { BoundGrid } from '../GenericViewport/renderingFidelity';
+} from '../Viewports/renderingFidelity';
+import type { BoundGrid } from '../Viewports/renderingFidelity';
 import type {
   IVolumeRenderStrategy,
   SelectVolumeStrategy,

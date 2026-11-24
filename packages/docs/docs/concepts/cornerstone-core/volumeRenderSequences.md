@@ -19,7 +19,7 @@ The six sequences are:
 2. [A viewport adds its actor, and the provider chooses the texture](#2-a-viewport-adds-its-actor-and-the-provider-chooses-the-texture)
 3. [The loader delivers the images](#3-the-loader-delivers-the-images)
 4. [A render fills the dirty slices of a reduced texture](#4-a-render-fills-the-dirty-slices-of-a-reduced-texture)
-5. [A render path of the generic architecture selects a strategy on each render](#5-a-render-path-of-the-generic-architecture-selects-a-strategy-on-each-render)
+5. [A render path of the BaseViewport architecture selects a strategy on each render](#5-a-render-path-of-the-baseviewport-architecture-selects-a-strategy-on-each-render)
 6. [A segmentation is displayed over a reduced volume](#6-a-segmentation-is-displayed-over-a-reduced-volume)
 
 ## A worked example
@@ -228,16 +228,16 @@ sequenceDiagram
 `rendering.reducedTextureFill.maxSlicesPerRender` (16) and
 `rendering.reducedTextureFill.maxMillisecondsPerRender` (8) set the budget.
 
-## 5. A render path of the generic architecture selects a strategy on each render
+## 5. A render path of the BaseViewport architecture selects a strategy on each render
 
 A caller of `createVolumeActor` without a provider stops after sequence 2: it keeps the texture
 that `resolveVolumeTexture` gave.
-A render path of the generic architecture holds its strategies, and it selects again on each render.
+A render path of the `BaseViewport` architecture holds its strategies, and it selects again on each render.
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant GV as GenericViewport
+    participant GV as BaseViewport
     participant RP as VtkVolumeSliceRenderPath
     participant Prov as provideStrategies
     participant Sel as selectStrategy
@@ -292,7 +292,7 @@ sequenceDiagram
     Seg->>Plan: mountVolumeLabelmap()
     Plan->>Store: getOrCreateLabelmapVolume(layer), tagLabelmapVolume(volume)
     Store->>LV: reductionStatistic = foregroundMajority
-    Plan->>Plan: addLabelmapToPlanarGenericViewport()
+    Plan->>Plan: addLabelmapToPlanarVolumeViewport()
     Note over Plan: The overlay reaches VtkVolumeSliceRenderPath.addData,<br/>then sequences 2 and 5, with the grid and the voxel width of the labelmap.<br/>The same dimensions give the same factors as the CT,<br/>for example the set reduced-1x1x2/full-extent/foregroundMajority.
     App->>LV: a brush tool writes voxels through volume.voxelManager
     App-->>Upd: SEGMENTATION_DATA_MODIFIED, onLabelmapSegmentationDataModified

@@ -4,7 +4,7 @@ import {
   resolveVideoCanvasMapping,
   getPanForVideoCanvasMapping,
   getAnchorWorldForPan as getAnchorWorldForVideoPan,
-} from '../src/RenderingEngine/GenericViewport/Video/videoViewportCamera';
+} from '../src/RenderingEngine/Viewports/Video/videoViewportCamera';
 import {
   createDefaultECGViewState,
   normalizeECGViewState,
@@ -12,12 +12,12 @@ import {
   getPanForECGCanvasMapping,
   getAnchorWorldForPan as getAnchorWorldForECGPan,
   getAnchorWorldForCanvasPoint,
-} from '../src/RenderingEngine/GenericViewport/ECG/ecgViewportCamera';
+} from '../src/RenderingEngine/Viewports/ECG/ecgViewportCamera';
 import {
   cloneVolume3DCamera,
   getVolume3DProjectionScale,
   getVolume3DProjectionPosition,
-} from '../src/RenderingEngine/GenericViewport/Volume3D/volume3DProjectionCamera';
+} from '../src/RenderingEngine/Viewports/Volume3D/volume3DProjectionCamera';
 
 describe('videoViewportCamera', () => {
   describe('createDefaultVideoViewState', () => {

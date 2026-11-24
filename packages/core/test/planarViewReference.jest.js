@@ -14,10 +14,10 @@ import {
   getPlanarViewReference,
   getPlanarViewReferenceId,
   isPlanarPlaneViewable,
-} from '../src/RenderingEngine/GenericViewport/Planar/planarViewReference';
-import { resolvePlanarViewportView } from '../src/RenderingEngine/GenericViewport/Planar/PlanarResolvedView';
-import PlanarViewReferenceController from '../src/RenderingEngine/GenericViewport/Planar/PlanarViewReferenceController';
-import PlanarMountedData from '../src/RenderingEngine/GenericViewport/Planar/PlanarMountedData';
+} from '../src/RenderingEngine/Viewports/Planar/planarViewReference';
+import { resolvePlanarViewportView } from '../src/RenderingEngine/Viewports/Planar/PlanarResolvedView';
+import PlanarViewReferenceController from '../src/RenderingEngine/Viewports/Planar/PlanarViewReferenceController';
+import PlanarMountedData from '../src/RenderingEngine/Viewports/Planar/PlanarMountedData';
 
 const IMAGE_FOR = 'image-for';
 const VOLUME_FOR = 'volume-for';

@@ -26,7 +26,6 @@ import type {
   ViewportInput,
   RenderingEngineResizeOptions,
 } from './IViewport';
-import type IGenericViewport from './IGenericViewport';
 import type { ViewportContentMode } from './IViewport';
 import type {
   VolumeActor,
@@ -167,7 +166,7 @@ import type {
   OffscreenCanvasContainer,
   VtkOffscreenMultiRenderWindow,
 } from './VtkOffscreenMultiRenderWindow';
-import type { ViewportDataReference } from '../RenderingEngine/GenericViewport';
+import type { ViewportDataReference } from '../RenderingEngine/Viewports';
 import type { ResetCameraOptions } from './ICamera';
 import type {
   ViewportType,
@@ -244,7 +243,6 @@ export type {
   IRegisterImageLoader,
   IStreamingVolumeProperties,
   IViewport,
-  IGenericViewport,
   ViewportContentMode,
   ViewReference,
   ViewPresentation,

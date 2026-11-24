@@ -2,7 +2,7 @@ import { test } from '@playwright/test';
 import {
   createExampleUrl,
   checkForCanvasSnapshot,
-  expectGenericViewportRuntime,
+  expectViewportRuntime,
   getPlainVolumeSliceRenderMode,
   screenShotPaths,
 } from '../utils/index';
@@ -38,7 +38,7 @@ test.describe('Multi Volume API Next (GPU)', () => {
   test.beforeEach(navigateToExample());
 
   test('should use PlanarViewport GPU runtime', async ({ page }) => {
-    await expectGenericViewportRuntime(page, [
+    await expectViewportRuntime(page, [
       {
         renderingEngineId: 'myRenderingEngine',
         viewportId: 'CT_SAGITTAL_STACK_GENERIC',
@@ -59,7 +59,7 @@ test.describe('Multi Volume API Next (CPU)', () => {
   test.beforeEach(navigateToExample({ cpu: 'true' }));
 
   test('should use PlanarViewport CPU runtime', async ({ page }) => {
-    await expectGenericViewportRuntime(page, [
+    await expectViewportRuntime(page, [
       {
         renderingEngineId: 'myRenderingEngine',
         viewportId: 'CT_SAGITTAL_STACK_GENERIC',

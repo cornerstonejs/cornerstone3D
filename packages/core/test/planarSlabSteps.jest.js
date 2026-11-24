@@ -6,15 +6,15 @@ import * as sampleVolumeSliceModule from '../src/utilities/sampleVolumeSlice';
 import {
   MAX_SLAB_SAMPLES_AT_ONCE,
   PlanarSliceSampler,
-} from '../src/RenderingEngine/GenericViewport/Planar/planarSampledSlice';
+} from '../src/RenderingEngine/Viewports/Planar/planarSampledSlice';
 import {
   VtkSampledSliceRenderPath,
   reportSamplingState,
-} from '../src/RenderingEngine/GenericViewport/Planar/VtkSampledSliceRenderPath';
+} from '../src/RenderingEngine/Viewports/Planar/VtkSampledSliceRenderPath';
 import {
   SAMPLED_SLICE_REST_DELAY_MS,
   scheduleSampledSliceRestWork,
-} from '../src/RenderingEngine/GenericViewport/Planar/planarSampledSliceRest';
+} from '../src/RenderingEngine/Viewports/Planar/planarSampledSliceRest';
 
 const DIMENSIONS = [128, 96, 60];
 

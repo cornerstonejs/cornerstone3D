@@ -12,7 +12,7 @@ jest.mock('../../core/src/getEnabledElement');
 import { afterEach, beforeEach, describe, expect, it } from '@jest/globals';
 import { getEnabledElement, getEnabledElementByIds } from '@cornerstonejs/core';
 import * as coreGetEnabledElement from '../../core/src/getEnabledElement';
-import WSIViewport from '../../core/src/RenderingEngine/GenericViewport/WSI/WSIViewport';
+import WSIViewport from '../../core/src/RenderingEngine/Viewports/WSI/WSIViewport';
 import { mountNext, unmount } from '../../core/test/utils/wsiStandIn';
 import StackScrollTool from '../src/tools/StackScrollTool';
 

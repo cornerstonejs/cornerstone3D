@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import {
   createExampleUrl,
   checkForCanvasSnapshot,
-  expectGenericViewportRuntime,
+  expectViewportRuntime,
   getPlainVolumeSliceRenderMode,
   screenShotPaths,
   setupRenderTracking,
@@ -43,7 +43,7 @@ test.describe('Generic viewport two-axis scale', () => {
   test('uses native PlanarViewport stack and volume render paths', async ({
     page,
   }) => {
-    await expectGenericViewportRuntime(page, [
+    await expectViewportRuntime(page, [
       {
         renderingEngineId: RENDERING_ENGINE_ID,
         viewportId: STACK_VIEWPORT_ID,

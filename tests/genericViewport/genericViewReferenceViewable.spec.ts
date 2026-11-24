@@ -80,7 +80,7 @@ test.beforeEach(async ({ page }) => {
   );
 });
 
-test('reports GenericViewport view reference compatibility as JSON', async ({
+test('reports viewport view reference compatibility as JSON', async ({
   page,
 }) => {
   const result = await getReferenceCompatibilityJson(page);
@@ -167,7 +167,7 @@ async function getReferenceCompatibilityJson(
       const viewport = renderingEngine?.getViewport(viewportId);
 
       if (!cornerstone || !renderingEngine || !viewport) {
-        throw new Error('Missing GenericViewport test harness runtime');
+        throw new Error('Missing viewport test harness runtime');
       }
 
       await viewport.setImageIdIndex(0);

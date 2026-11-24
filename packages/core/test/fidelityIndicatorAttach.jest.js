@@ -20,8 +20,8 @@ import {
   isLabelmapActorEntry,
   maybeAttachFidelityIndicator,
 } from '../src/RenderingEngine/helpers/fidelityIndicator';
-import VolumeViewport3DNext from '../src/RenderingEngine/GenericViewport/Volume3D/viewport3D';
-import GenericViewport from '../src/RenderingEngine/GenericViewport/GenericViewport';
+import VolumeViewport3DNext from '../src/RenderingEngine/Viewports/Volume3D/viewport3D';
+import BaseViewport from '../src/RenderingEngine/Viewports/BaseViewport';
 import { fidelityLinesFromBindings } from '../src/RenderingEngine/helpers/fidelityIndicator/collectFidelityLines';
 
 function viewportStub({
@@ -392,7 +392,7 @@ describe('fidelityIndicator attach gates', () => {
       getFrameOfReferenceUID: () => '1.2.3',
     };
 
-    class FidelityTestViewport extends GenericViewport {
+    class FidelityTestViewport extends BaseViewport {
       constructor(element, ...renderings) {
         super({ id: 'gvp-1', element });
         this.type = ViewportType.PLANAR;

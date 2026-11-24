@@ -41,8 +41,8 @@ import {
   MAX_CPU_SLICE_SAMPLES,
   PlanarRenderPathDecisionService,
   canSampleSlabOnCpu,
-} from '../src/RenderingEngine/GenericViewport/Planar/PlanarRenderPathDecisionService';
-import { createDefaultPlanarRenderPaths } from '../src/RenderingEngine/GenericViewport/Planar/PlanarRenderPathResolver';
+} from '../src/RenderingEngine/Viewports/Planar/PlanarRenderPathDecisionService';
+import { createDefaultPlanarRenderPaths } from '../src/RenderingEngine/Viewports/Planar/PlanarRenderPathResolver';
 import {
   MAX_PREFETCH_SLICE_SAMPLES,
   MAX_SCREEN_SLICE_SIZE,
@@ -53,25 +53,25 @@ import {
   getScreenSliceGeometry,
   getVolumeClipPlanes,
   needsScreenGridSample,
-} from '../src/RenderingEngine/GenericViewport/Planar/planarSampledSlice';
-import { PlanarSampledSliceActor } from '../src/RenderingEngine/GenericViewport/Planar/planarSampledSliceActor';
+} from '../src/RenderingEngine/Viewports/Planar/planarSampledSlice';
+import { PlanarSampledSliceActor } from '../src/RenderingEngine/Viewports/Planar/planarSampledSliceActor';
 import {
   SAMPLED_SLICE_LOADING_UPDATE_MS,
   getSampledSliceDefaultVOIRange,
   getSampledSliceMaxSize,
-} from '../src/RenderingEngine/GenericViewport/Planar/VtkSampledSliceRenderPath';
-import { MAX_CPU_CANVAS_SLICE_SIZE } from '../src/RenderingEngine/GenericViewport/Planar/CpuVolumeSliceRenderPath';
+} from '../src/RenderingEngine/Viewports/Planar/VtkSampledSliceRenderPath';
+import { MAX_CPU_CANVAS_SLICE_SIZE } from '../src/RenderingEngine/Viewports/Planar/CpuVolumeSliceRenderPath';
 import {
   SAMPLED_SLICE_REST_DELAY_MS,
   scheduleSampledSliceRestWork,
-} from '../src/RenderingEngine/GenericViewport/Planar/planarSampledSliceRest';
+} from '../src/RenderingEngine/Viewports/Planar/planarSampledSliceRest';
 import * as renderingCapabilitiesModule from '../src/utilities/renderingCapabilities';
 import VoxelManager from '../src/utilities/VoxelManager';
 import {
   VtkVolumeSlicePath,
   VtkVolumeSliceRenderPath,
-} from '../src/RenderingEngine/GenericViewport/Planar/VtkVolumeSliceRenderPath';
-import PlanarViewport from '../src/RenderingEngine/GenericViewport/Planar/PlanarViewport';
+} from '../src/RenderingEngine/Viewports/Planar/VtkVolumeSliceRenderPath';
+import PlanarViewport from '../src/RenderingEngine/Viewports/Planar/PlanarViewport';
 import renderingEngineCache from '../src/RenderingEngine/renderingEngineCache';
 import genericViewportDisplaySetMetadataProvider from '../src/utilities/genericViewportDisplaySetMetadataProvider';
 
@@ -1999,7 +1999,7 @@ describe('PlanarViewport with slice first (render path)', () => {
     const stackId = 'ct-stack-display-set';
     const realResolver = viewport.renderPathResolver;
     const decide = jest.spyOn(
-      require('../src/RenderingEngine/GenericViewport/Planar/PlanarRenderPathDecisionService')
+      require('../src/RenderingEngine/Viewports/Planar/PlanarRenderPathDecisionService')
         .defaultPlanarRenderPathDecisionService,
       'select'
     );

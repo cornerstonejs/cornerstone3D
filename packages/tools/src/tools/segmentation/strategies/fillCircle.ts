@@ -12,7 +12,7 @@ import { StrategyCallbacks } from '../../../enums';
 import compositions from './compositions';
 import { pointInSphere } from '../../../utilities/math/sphere';
 import { applyBrushFill, createCircleBrushFill } from './utils/brushVoxelSlab';
-import { getViewSlabDepthOfViewport } from '../../../utilities/genericViewportToolHelpers';
+import { getViewSlabDepthOfViewport } from '../../../utilities/viewportToolHelpers';
 import { getViewStretch } from './utils/getViewStretch';
 
 const { transformWorldToIndex, transformIndexToWorld, isEqual } = csUtils;

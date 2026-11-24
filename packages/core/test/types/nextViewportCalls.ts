@@ -9,15 +9,11 @@ import {
   attachFidelityIndicator,
   canReportFidelity,
   detachFidelityIndicator,
-  ECGGenericViewport,
   Enums,
-  GenericVolumeViewport3D,
   init,
   maybeAttachFidelityIndicator,
   utilities,
-  VideoGenericViewport,
   viewportProjection,
-  WSIGenericViewport,
 } from '../../src';
 import type {
   ECGViewport,
@@ -35,7 +31,6 @@ declare const volume3D: VolumeViewport3D;
 declare const video: VideoViewport;
 declare const wholeSlide: WSIViewport;
 declare const ecg: ECGViewport;
-declare const generic: Types.IGenericViewport;
 declare const viewport: Types.IViewport;
 declare const enabledElement: Types.IEnabledElement;
 declare const renderingEngine: RenderingEngine;
@@ -54,7 +49,6 @@ export const nextViewports: Types.IViewport[] = [
   video,
   wholeSlide,
   ecg,
-  generic,
   viewport,
   enabledElement.viewport,
   renderingEngine.getViewport(viewportId),
@@ -62,88 +56,36 @@ export const nextViewports: Types.IViewport[] = [
   ...renderingEngine.getViewports(),
 ];
 
-/** The deprecated name takes every viewport too. */
-export const viewportsOfTheLibrary: Types.IGenericViewport[] = [
-  planar,
-  volume3D,
-  video,
-  wholeSlide,
-  ecg,
-  viewport,
-  enabledElement.viewport,
-];
-
-/**
- * The deprecated 5.x class names are the same classes: as types, both ways,
- * and as values.
- */
-export const classesByTheirDeprecatedNames: [
-  GenericVolumeViewport3D,
-  VideoGenericViewport,
-  WSIGenericViewport,
-  ECGGenericViewport,
-] = [volume3D, video, wholeSlide, ecg];
-export const deprecatedNamesOfTheClasses: [
-  VolumeViewport3D,
-  VideoViewport,
-  WSIViewport,
-  ECGViewport,
-] = classesByTheirDeprecatedNames;
-export const constructorsByTheirDeprecatedNames: [
-  typeof VolumeViewport3D,
-  typeof VideoViewport,
-  typeof WSIViewport,
-  typeof ECGViewport,
-] = [
-  GenericVolumeViewport3D,
-  VideoGenericViewport,
-  WSIGenericViewport,
-  ECGGenericViewport,
-];
-
-/**
- * A `_NEXT` name of `Enums.ViewportType` has the plain string, so the type of
- * a viewport still compares with it, and a `_NEXT` name is a plain type.
- */
-export const typesOfTheDeprecatedNames: boolean[] = [
-  planar.type === Enums.ViewportType.PLANAR_NEXT,
-  volume3D.type === Enums.ViewportType.VOLUME_3D_NEXT,
-  video.type === Enums.ViewportType.VIDEO_NEXT,
-  wholeSlide.type === Enums.ViewportType.WHOLE_SLIDE_NEXT,
-  ecg.type === Enums.ViewportType.ECG_NEXT,
-];
-export const plainTypeOfADeprecatedName: Enums.ViewportType.PLANAR =
-  Enums.ViewportType.PLANAR_NEXT;
-export const deprecatedStringAsAType: Types.ViewportType = 'planarNext';
-
 /** The members of the base class, read from the interface. */
 export function membersOfTheInterface() {
-  const viewState: object = generic.getViewState();
-  const mode: Types.ViewportContentMode = generic.getCurrentMode();
-  const reference: Types.ViewReference = generic.getViewReference();
-  const referenceId: string = generic.getViewReferenceId();
-  const viewable: boolean = generic.isReferenceViewable(reference, {
+  const viewState: object = viewport.getViewState();
+  const mode: Types.ViewportContentMode = viewport.getCurrentMode();
+  const reference: Types.ViewReference = viewport.getViewReference();
+  const referenceId: string = viewport.getViewReferenceId();
+  const viewable: boolean = viewport.isReferenceViewable(reference, {
     withNavigation: true,
   });
-  const world: Types.Point3 = generic.canvasToWorld([0, 0]);
-  const canvas: Types.Point2 = generic.worldToCanvas(world);
+  const world: Types.Point3 = viewport.canvasToWorld([0, 0]);
+  const canvas: Types.Point2 = viewport.worldToCanvas(world);
   const displaySets: Array<{ displaySetId: string; options?: unknown }> =
-    generic.getDisplaySets();
-  const camera: Types.ICamera<unknown> = generic.getResolvedView()?.toICamera();
-  const engine: Types.IRenderingEngine = generic.getRenderingEngine();
-  const frameOfReferenceUID: string = generic.getFrameOfReferenceUID();
-  const fidelity: Types.ViewportFidelityState = generic.getFidelityState();
-  const element: HTMLDivElement = generic.element;
-  const destroyed: boolean = generic.isDestroyed;
-  const didReset: boolean = generic.resetViewState();
+    viewport.getDisplaySets();
+  const camera: Types.ICamera<unknown> = viewport
+    .getResolvedView()
+    ?.toICamera();
+  const engine: Types.IRenderingEngine = viewport.getRenderingEngine();
+  const frameOfReferenceUID: string = viewport.getFrameOfReferenceUID();
+  const fidelity: Types.ViewportFidelityState = viewport.getFidelityState();
+  const element: HTMLDivElement = viewport.element;
+  const destroyed: boolean = viewport.isDestroyed;
+  const didReset: boolean = viewport.resetViewState();
 
-  generic.setViewState({});
-  generic.updateViewState(() => ({}));
-  generic.setViewReference(reference);
-  generic.setDisplaySetPresentation(displaySetId, {});
-  generic.removeData(displaySetId);
-  generic.resize();
-  generic.render();
+  viewport.setViewState({});
+  viewport.updateViewState(() => ({}));
+  viewport.setViewReference(reference);
+  viewport.setDisplaySetPresentation(displaySetId, {});
+  viewport.removeData(displaySetId);
+  viewport.resize();
+  viewport.render();
 
   return [
     viewState,
@@ -159,15 +101,15 @@ export function membersOfTheInterface() {
     element,
     destroyed,
     didReset,
-    generic.getDisplaySetPresentation(displaySetId),
-    generic.setDisplaySets({ displaySetId }),
-    generic.id,
-    generic.type,
-    generic.renderingEngineId,
-    generic.viewportStatus,
-    generic.defaultOptions,
-    generic.getAspectRatio(),
-    generic.canReportFidelity(),
+    viewport.getDisplaySetPresentation(displaySetId),
+    viewport.setDisplaySets({ displaySetId }),
+    viewport.id,
+    viewport.type,
+    viewport.renderingEngineId,
+    viewport.viewportStatus,
+    viewport.defaultOptions,
+    viewport.getAspectRatio(),
+    viewport.canReportFidelity(),
   ];
 }
 
@@ -210,7 +152,6 @@ export function functionsOfTheGuide() {
   utilities.scroll(planar, { delta: 1 });
   utilities.scroll(video, { delta: 1 });
   utilities.scroll(ecg, { delta: 1 });
-  utilities.scroll(generic, { delta: 1 });
   utilities.scroll(viewport, { delta: 1 });
   utilities.scroll(enabledElement.viewport, { delta: 1 });
 
@@ -218,22 +159,18 @@ export function functionsOfTheGuide() {
     utilities.isInAcquisitionPlane(planar),
     utilities.isInAcquisitionPlane(video),
     utilities.isInAcquisitionPlane(wholeSlide),
-    utilities.isInAcquisitionPlane(generic),
     utilities.isInAcquisitionPlane(viewport),
     utilities.getSlicesClippingPlanes(planar),
-    utilities.getSlicesClippingPlanes(generic),
     utilities.getSlicesClippingPlanes(viewport),
     utilities.getCurrentVolumeViewportSlice(planar),
     utilities.getViewportModality(planar),
-    utilities.getViewportModality(generic),
     utilities.getViewportModality(viewport),
     utilities.getViewportImageIds(planar),
-    utilities.getViewportImageIds(generic),
     utilities.getViewportImageIds(viewport),
     utilities.getClosestStackImageIndexForPoint(point, planar),
     utilities.getScalingDescriptor(planar),
-    utilities.getScalingDescriptor(generic),
-    utilities.resolveGenericViewportVolumeId(generic),
+    utilities.getScalingDescriptor(viewport),
+    utilities.resolveViewportVolumeId(viewport),
     utilities.getViewportImageCornersInWorld(planar),
     utilities.calculateViewportsSpatialRegistration(planar, planar),
     utilities.getTargetVolumeAndSpacingInNormalDir(
@@ -257,13 +194,13 @@ export function initWithOneKey() {
 /** The fidelity indicator takes a viewport of any family. */
 export function fidelityIndicator() {
   maybeAttachFidelityIndicator(planar);
-  detachFidelityIndicator(generic);
+  detachFidelityIndicator(viewport);
 
   return [
     attachFidelityIndicator(volume3D),
     attachFidelityIndicator(viewport),
     canReportFidelity(video),
-    canReportFidelity(generic),
+    canReportFidelity(viewport),
   ];
 }
 
@@ -274,7 +211,7 @@ export function selectorsOfTheProjection() {
       selector: { scale: true, zoom: true, pan: true },
     })?.scale;
   const planarByKind: Types.Point2 | undefined =
-    viewportProjection.getPresentation(generic, {
+    viewportProjection.getPresentation(viewport, {
       kind: 'planar',
       selector: { scale: true },
     })?.scale;
@@ -315,9 +252,7 @@ export function guards() {
     planar.getCurrentImageIdIndex();
   }
 
-  if (utilities.isGenericViewport(viewport)) {
-    viewport.setViewState({});
-  }
+  viewport.setViewState({});
 
   const planarOfTheEngine: PlanarViewport =
     renderingEngine.getViewport<PlanarViewport>(viewportId);

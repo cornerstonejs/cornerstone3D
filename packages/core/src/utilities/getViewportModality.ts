@@ -2,8 +2,7 @@ import type { IViewport } from '../types/IViewport';
 import { _getScalingDescriptor } from './getScalingDescriptor';
 
 /**
- * Resolves the modality of a viewport target across the stack / volume / generic
- * ("next") families.
+ * Resolves the modality of a viewport target, for every viewport family.
  *
  * Thin wrapper over {@link _getScalingDescriptor} so modality and pre-scaled
  * detection share one family-aware source of truth. Throws "Invalid viewport

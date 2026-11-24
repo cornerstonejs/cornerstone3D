@@ -11,14 +11,6 @@
     {
       "cardinality": {
         "file": "input.js",
-        "line": "12",
-        "rule": "isGenericViewport"
-      },
-      "count": 1
-    },
-    {
-      "cardinality": {
-        "file": "input.js",
         "line": "31",
         "rule": "StackViewport"
       },

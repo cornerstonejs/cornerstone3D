@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach, beforeEach } from '@jest/globals';
-import WSIViewport from '../src/RenderingEngine/GenericViewport/WSI/WSIViewport';
-import { canvasToIndexForWSI } from '../src/RenderingEngine/GenericViewport/WSI/wsiTransformUtils';
+import WSIViewport from '../src/RenderingEngine/Viewports/WSI/WSIViewport';
+import { canvasToIndexForWSI } from '../src/RenderingEngine/Viewports/WSI/wsiTransformUtils';
 
 const WIDTH = 400;
 const HEIGHT = 300;

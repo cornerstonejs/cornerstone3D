@@ -1,16 +1,16 @@
 ---
 id: api
 title: API
-summary: Practical Generic Viewport API examples for data, overlays, presentation, navigation, and segmentation slice rendering
+summary: Practical viewport API examples for data, overlays, presentation, navigation, and segmentation slice rendering
 ---
 
 # API
 
-The Generic Viewport API is centered on logical display set ids. Register the
+The viewport API is centered on logical display set ids. Register the
 display set once, mount it into a viewport, then update view state and data
 presentation independently.
 
-## Create A Planar Generic Viewport
+## Create A Planar Viewport
 
 Use `ViewportType.PLANAR` for stack-like and volume-slice 2D workflows.
 The viewport infers the render path from the registered dataset shape,
@@ -322,7 +322,7 @@ viewport.setDisplaySetPresentation(labelmapDataId, {
 
 Application code usually does not need to call this lower-level overlay path
 directly for segmentations; it is shown here to explain how segmentations map
-onto the Generic Viewport binding model.
+onto the viewport binding model.
 
 ## View References
 

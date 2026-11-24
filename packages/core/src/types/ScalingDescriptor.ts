@@ -11,7 +11,7 @@
 interface ScalingDescriptor {
   /**
    * Modality of the target, e.g. `'CT' | 'PT' | 'RTDOSE'`. Undefined when it
-   * cannot be resolved (e.g. a generic viewport whose actor has no metadata).
+   * cannot be resolved (e.g. a viewport whose actor has no metadata).
    */
   modality?: string;
   /**

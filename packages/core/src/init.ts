@@ -45,7 +45,7 @@ const defaultConfig: Cornerstone3DConfig = {
     webGlContextCount: 7,
     planar: {
       /**
-       * Render backend for planar GenericViewports: 'gpu' | 'cpu' pin the
+       * Render backend for planar viewports: 'gpu' | 'cpu' pin the
        * backend, 'auto' resolves it from capability detection at init().
        * See setRenderBackend().
        */
@@ -191,7 +191,7 @@ function getCanUseNorm16Texture(): boolean {
 
 /**
  * Returns the configured render backend preference for planar
- * GenericViewport-based viewports ('auto' | 'gpu' | 'cpu' | a backend
+ * BaseViewport-based viewports ('auto' | 'gpu' | 'cpu' | a backend
  * registered via `registerRenderBackend()`), stored at
  * `rendering.planar.renderBackend`. Use {@link getEffectiveRenderBackend}
  * for the resolved concrete-backend decision.
@@ -277,7 +277,7 @@ function hasLostContext(): boolean {
 }
 
 /**
- * Returns the effective render backend for GenericViewport-based viewports:
+ * Returns the effective render backend for BaseViewport-based viewports:
  * the configured concrete-backend pin (any backend registered via
  * `registerRenderBackend()`, e.g. 'gpu' or 'cpu'), or the resolved 'auto'
  * decision.
@@ -316,7 +316,7 @@ function getEffectiveRenderBackend(
 }
 
 /**
- * Sets the global render backend for GenericViewport-based viewports and
+ * Sets the global render backend for BaseViewport-based viewports and
  * live-switches all mounted viewports to the new backend in place: viewport
  * ids, mounted data, cameras, presentation state and tool annotations are
  * preserved; only the render paths are rebuilt. The switch is reversible in

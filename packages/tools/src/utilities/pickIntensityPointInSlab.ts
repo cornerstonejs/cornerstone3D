@@ -28,7 +28,7 @@ type PresentationWithSlab = {
 
 /**
  * Resolves how (and whether) intensity picking applies to a viewport: the
- * viewport must be a Generic planar viewport in volume mode whose source
+ * viewport must be a planar viewport in volume mode whose source
  * display-set presentation renders an intensity-projection slab (MIP or
  * MinIP with a real slab thickness).
  *
@@ -92,7 +92,7 @@ export function getSlabIntensityPickContext(
  * the maximum (MIP) or minimum (MinIP) intensity, i.e. the point the
  * projection actually displayed.
  *
- * Works exclusively through the Generic ("next") viewport surface: the slab
+ * Works exclusively through the viewport surface: the slab
  * and blend mode are read from the source display-set presentation and the
  * volume is sampled directly from the cache (no legacy viewport APIs).
  *

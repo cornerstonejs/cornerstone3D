@@ -5,7 +5,7 @@ import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import { vtkOffscreenMultiRenderWindow } from '../RenderingEngine/vtkClasses';
 import { getTextureFormatName } from '../RenderingEngine/vtkClasses/vtkStreamingOpenGLImageMapper';
 import copyWebGLCanvasToCanvas from '../RenderingEngine/helpers/copyWebGLCanvasToCanvas';
-import { applyPlanarVolumePresentation } from '../RenderingEngine/GenericViewport/Planar/planarVolumePresentation';
+import { applyPlanarVolumePresentation } from '../RenderingEngine/Viewports/Planar/planarVolumePresentation';
 import { InterpolationType } from '../enums';
 import { getCanUseNorm16Texture } from '../init';
 import type { VOIRange } from '../types';

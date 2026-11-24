@@ -1,4 +1,4 @@
-// Round-trip and fixed-point invariant tests for PlanarViewport (GenericViewport
+// Round-trip and fixed-point invariant tests for PlanarViewport (BaseViewport
 // architecture). These assert geometric/API contracts that must hold
 // regardless of which render path is active. Default renderMode is
 // 'vtkImage' with the harness's default 5-slice fake stack, per the plan.
@@ -427,7 +427,7 @@ describe('planarInvariants: presentation round trip', () => {
 
     // Defaults captured right after mount: only the load-time `visible: true`
     // default is stored; interpolationType/voiRange overrides are unset
-    // until explicitly requested (see GenericViewport.setDefaultDataPresentation
+    // until explicitly requested (see BaseViewport.setDefaultDataPresentation
     // call in PlanarViewport.ts around line 441).
     expect(defaultsBeforeMutation?.interpolationType).toBeUndefined();
     expect(defaultsBeforeMutation?.voiRange).toBeUndefined();

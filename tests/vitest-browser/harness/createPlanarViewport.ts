@@ -1,4 +1,4 @@
-// Shared GenericViewport (PLANAR) test-harness setup, generalizing the
+// Shared BaseViewport (PLANAR) test-harness setup, generalizing the
 // setup flow proven in tests/vitest-browser/genericStackApi.browser.test.ts
 // to all four planar render modes.
 

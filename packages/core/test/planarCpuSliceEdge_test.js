@@ -1,7 +1,7 @@
 import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import * as cornerstone3D from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
-import { SAMPLED_SLICE_REST_DELAY_MS } from '../src/RenderingEngine/GenericViewport/Planar/planarSampledSliceRest';
+import { SAMPLED_SLICE_REST_DELAY_MS } from '../src/RenderingEngine/Viewports/Planar/planarSampledSliceRest';
 
 const { Enums, volumeLoader, imageLoader, utilities, cache } = cornerstone3D;
 const { ViewportType, OrientationAxis, Events, InterpolationType } = Enums;

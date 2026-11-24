@@ -1,8 +1,5 @@
 /**
- * The viewport type strings of the library. The `*Next` strings are the 5.x
- * strings of the same types: the rendering engine still makes the viewport
- * for one (a stored layout, for example), and the viewport has the plain
- * string as its `type`.
+ * The viewport type strings of the library.
  */
 export interface CoreViewportTypeRegistry {
   planar: 'planar';
@@ -10,21 +7,10 @@ export interface CoreViewportTypeRegistry {
   video: 'video';
   wholeSlide: 'wholeSlide';
   ecg: 'ecg';
-  /** @deprecated Use `'planar'`. */
-  planarNext: 'planarNext';
-  /** @deprecated Use `'volume3d'`. */
-  volume3dNext: 'volume3dNext';
-  /** @deprecated Use `'video'`. */
-  videoNext: 'videoNext';
-  /** @deprecated Use `'wholeSlide'`. */
-  wholeSlideNext: 'wholeSlideNext';
-  /** @deprecated Use `'ecg'`. */
-  ecgNext: 'ecgNext';
 }
 
 /**
- * The names of `Enums.ViewportTypes`. The `_NEXT` names are the 5.x names of
- * the same types, with the plain strings as their values.
+ * The names of `Enums.ViewportTypes`.
  */
 export interface CoreViewportTypeConstants {
   readonly PLANAR: 'planar';
@@ -32,16 +18,6 @@ export interface CoreViewportTypeConstants {
   readonly VIDEO: 'video';
   readonly WHOLE_SLIDE: 'wholeSlide';
   readonly ECG: 'ecg';
-  /** @deprecated Use `PLANAR`. */
-  readonly PLANAR_NEXT: 'planar';
-  /** @deprecated Use `VOLUME_3D`. */
-  readonly VOLUME_3D_NEXT: 'volume3d';
-  /** @deprecated Use `VIDEO`. */
-  readonly VIDEO_NEXT: 'video';
-  /** @deprecated Use `WHOLE_SLIDE`. */
-  readonly WHOLE_SLIDE_NEXT: 'wholeSlide';
-  /** @deprecated Use `ECG`. */
-  readonly ECG_NEXT: 'ecg';
 }
 
 /**

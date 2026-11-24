@@ -1,20 +1,20 @@
-import { computeECGRenderMetrics } from '../src/RenderingEngine/GenericViewport/ECG/ecgGeometry';
+import { computeECGRenderMetrics } from '../src/RenderingEngine/Viewports/ECG/ecgGeometry';
 import {
   drawECGGrid,
   drawECGTraces,
   drawECGLabels,
   drawECGCanvasLabels,
-} from '../src/RenderingEngine/GenericViewport/ECG/ecgDrawing';
+} from '../src/RenderingEngine/Viewports/ECG/ecgDrawing';
 import {
   resolveECGTraceCells,
   resolveECGTraceLayout,
-} from '../src/RenderingEngine/GenericViewport/ECG/ecgTraceLayouts';
+} from '../src/RenderingEngine/Viewports/ECG/ecgTraceLayouts';
 import {
   ECG_DEFAULT_MV_PER_UNIT,
   ECG_DEFAULT_SWEEP_SPEED_MM_S,
   ECG_PX_PER_MM,
   ECG_RENDERING_COLORS,
-} from '../src/RenderingEngine/GenericViewport/ECG/ecgWaveform';
+} from '../src/RenderingEngine/Viewports/ECG/ecgWaveform';
 
 const NUMBER_OF_SAMPLES = 1000;
 const SAMPLING_FREQUENCY = 100;

@@ -32,8 +32,8 @@ const viewportId = 'wsiGenericViewport';
 const wsiDataId = 'wsi-next:primary';
 
 setTitleAndDescription(
-  'WSI GenericViewport',
-  'Demonstrates whole slide imaging with the clean GenericViewport WSI API.'
+  'WSIViewport',
+  'Demonstrates whole slide imaging with the clean WSIViewport API.'
 );
 
 addButtonToToolbar({

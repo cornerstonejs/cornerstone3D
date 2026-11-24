@@ -3,19 +3,19 @@ import { InterpolationType } from '../src/enums';
 import * as metaData from '../src/metaData';
 import VoxelManager from '../src/utilities/VoxelManager';
 import { applyPlanarImagePresentation } from '../src/RenderingEngine/helpers/planarImageRendering';
-import { PlanarSampledSliceActor } from '../src/RenderingEngine/GenericViewport/Planar/planarSampledSliceActor';
+import { PlanarSampledSliceActor } from '../src/RenderingEngine/Viewports/Planar/planarSampledSliceActor';
 import {
   PlanarSampledSliceCanvas,
   colourChannels,
   colourSlice,
   colourWholeNumbers,
   getColourTables,
-} from '../src/RenderingEngine/GenericViewport/Planar/planarSampledSliceCanvas';
-import { PlanarSliceSampler } from '../src/RenderingEngine/GenericViewport/Planar/planarSampledSlice';
+} from '../src/RenderingEngine/Viewports/Planar/planarSampledSliceCanvas';
+import { PlanarSliceSampler } from '../src/RenderingEngine/Viewports/Planar/planarSampledSlice';
 import {
   CpuImageSliceRenderPath,
   createImageSliceVolume,
-} from '../src/RenderingEngine/GenericViewport/Planar/CpuImageSliceRenderPath';
+} from '../src/RenderingEngine/Viewports/Planar/CpuImageSliceRenderPath';
 
 /**
  * The colour tables that the CPU draw step reads for a presentation, applied

@@ -29,7 +29,7 @@ import {
 } from '../cursors/elementCursor';
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
 import getViewportICamera from '../utilities/getViewportICamera';
-import { navigatePlanarViewportToPoint } from '../utilities/genericViewportToolHelpers';
+import { navigatePlanarViewportToPoint } from '../utilities/viewportToolHelpers';
 import * as lineSegment from '../utilities/math/line';
 import {
   getViewportPlane,
@@ -262,7 +262,7 @@ type EditData = {
 
 /**
  * SliceIntersectionTool ("Slice Intersections") renders and manipulates
- * slice plane intersection lines on Generic (PLANAR) viewports.
+ * slice plane intersection lines on planar (PLANAR) viewports.
  *
  * The tool thinks in PLANES, not viewports: viewports showing the same plane
  * family over the same frame of reference (e.g. CT axial + PT axial + a 2D
@@ -1779,7 +1779,7 @@ class SliceIntersectionTool extends AnnotationTool {
   }
 
   /**
-   * Narrows to the direct Generic planar ("next") viewport surface. Legacy
+   * Narrows to the planar viewport surface. Legacy
    * viewports and legacy compatibility adapters never match: the tool is
    * native-next only.
    */

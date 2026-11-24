@@ -7,7 +7,7 @@ import {
 } from '../../../utils/demo/helpers/volumePresentationRecipes';
 import perfusionColorMap from '../../tools/examples/rectangleROIThreshold/preset';
 import { readStoredPicture } from './utils/storedPicture';
-import { SAMPLED_SLICE_REST_DELAY_MS } from '../src/RenderingEngine/GenericViewport/Planar/planarSampledSliceRest';
+import { SAMPLED_SLICE_REST_DELAY_MS } from '../src/RenderingEngine/Viewports/Planar/planarSampledSliceRest';
 import * as legacySigmoidPicture from './groundTruth/planarPresentation_legacy_sigmoid.png';
 import * as adapterCtCallbackPicture from './groundTruth/planarPresentation_adapter_callback_ct.png';
 import * as adapterPetCallbackPicture from './groundTruth/planarPresentation_adapter_callback_pet.png';

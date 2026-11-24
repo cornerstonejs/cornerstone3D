@@ -42,7 +42,7 @@ const LEGACY_CLASS_TYPE: Record<string, string> = {
   StackViewport: 'PlanarViewport',
   VolumeViewport: 'PlanarViewport',
   BaseVolumeViewport: 'PlanarViewport',
-  Viewport: 'GenericViewport',
+  Viewport: 'BaseViewport',
 };
 
 /** The class names that 6.0 renames, deprecated aliases and the legacy 3D name. */
@@ -1271,27 +1271,12 @@ function reportBracketClasses(run: Run): void {
 }
 
 /**
- * Reports `utilities.isGenericViewport(viewport)`: deprecated, true for every
- * viewport, so its check goes and its true branch stays.
- */
-function reportIsGenericViewport(run: Run): void {
-  for (const call of run.rootNode.findAll({
-    rule: { pattern: '$UTILS.isGenericViewport($$$ARGS)' },
-  })) {
-    const callee = call.field('function');
-
-    if (callee && isCoreExport(callee.field('object'), 'utilities')) {
-      manual.increment(site(run.root, 'isGenericViewport', call));
-    }
-  }
-}
-
-/**
  * Reports the removed and renamed `Types` names that a file imports or
  * re-exports from the subpath `@cornerstonejs/core/types`
  * (`import { IStackViewport } from '@cornerstonejs/core/types'`). The
  * rewrites read `Types.X` of the core only, so each name is left to the
- * reader, by its `Types` name.
+ * reader, by its `Types` name. The step `api-names` reports
+ * `IGenericViewport`, which a 6.0 beta also exported.
  */
 function reportTypesSubpath(run: Run): void {
   const typesPath = `${CORE_PACKAGE}/types`;
@@ -1312,11 +1297,7 @@ function reportTypesSubpath(run: Run): void {
     })) {
       const name = specifier.field('name')?.text() ?? '';
 
-      if (
-        TYPES_TO_CLASS[name] ||
-        TYPES_RENAMED[name] ||
-        TYPES_REPORTED.has(name)
-      ) {
+      if (TYPES_TO_CLASS[name] || TYPES_REPORTED.has(name)) {
         manual.increment(site(run.root, `Types.${name}`, specifier));
       }
     }
@@ -1387,7 +1368,6 @@ const codemod: Codemod<TSX> = (root) => {
   rewriteNamespaceValues(run);
   rewriteReExports(run);
   reportBracketClasses(run);
-  reportIsGenericViewport(run);
   reportTypesSubpath(run);
   reportMergedOperands(run);
 

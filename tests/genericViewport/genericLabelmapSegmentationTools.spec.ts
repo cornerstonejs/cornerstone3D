@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import {
   createExampleUrl,
   checkForCanvasSnapshot,
-  expectGenericViewportRuntime,
+  expectViewportRuntime,
   getPlainVolumeSliceRenderMode,
   getVisibleViewportCanvas,
   screenShotPaths,
@@ -242,7 +242,7 @@ test.describe('Labelmap Segmentation Tools - Next (GPU)', () => {
   test.beforeEach(navigateToExample());
 
   test('should use PlanarViewport GPU runtime', async ({ page }) => {
-    await expectGenericViewportRuntime(page, [
+    await expectViewportRuntime(page, [
       {
         renderingEngineId: 'myRenderingEngine',
         viewportId: 'CT_AXIAL',
@@ -313,7 +313,7 @@ test.describe('Labelmap Segmentation Tools - Next (CPU)', () => {
   test.beforeEach(navigateToExample({ cpu: 'true' }));
 
   test('should use PlanarViewport CPU runtime', async ({ page }) => {
-    await expectGenericViewportRuntime(page, [
+    await expectViewportRuntime(page, [
       {
         renderingEngineId: 'myRenderingEngine',
         viewportId: 'CT_AXIAL',

@@ -38,8 +38,8 @@ function parseStackReadyDelayMs(): number {
 }
 
 setTitleAndDescription(
-  'Stack GenericViewport API',
-  'Demonstrates the clean Planar GenericViewport API for stack-like workflows.'
+  'Stack PlanarViewport API',
+  'Demonstrates the clean PlanarViewport API for stack-like workflows.'
 );
 
 const content = document.getElementById('content');

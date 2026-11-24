@@ -8,7 +8,7 @@ import {
 } from '../../utilities/viewportPresentation';
 
 // A ViewReference deliberately excludes zoom/pan (see IViewport ViewReference
-// docs), so for Generic ("next") viewports we transport them separately to match
+// docs), so for viewports we transport them separately to match
 // the legacy setCamera(camera) path, which carried parallelScale (zoom) + the
 // in-plane focal point (pan). Mirrors zoomPanSyncCallback's selector.
 const ZOOM_PAN_SELECTOR: Types.ViewPresentationSelector = {
@@ -141,7 +141,7 @@ export default function cameraSyncCallback(
 
   const tViewport = renderingEngine.getViewport(targetViewport.viewportId);
 
-  // Direct Generic ("next") viewports do not expose setCamera. Camera-position
+  // Viewports do not expose setCamera. Camera-position
   // synchronization across viewports is expressed natively by copying the
   // source viewport's spatial view reference onto the target. The CAMERA_MODIFIED
   // event detail only carries an ICamera (no ViewReference), so we read the

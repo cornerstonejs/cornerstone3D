@@ -67,7 +67,7 @@ import {
   jumpToFocalPoint,
   navigatePlanarViewportToPoint,
   getViewSlabDepthOfViewport,
-} from './genericViewportToolHelpers';
+} from './viewportToolHelpers';
 import pickIntensityPointInSlab, {
   getSlabIntensityPickContext,
 } from './pickIntensityPointInSlab';

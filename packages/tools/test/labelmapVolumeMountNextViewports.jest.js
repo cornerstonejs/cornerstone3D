@@ -15,24 +15,24 @@ import {
   beforeAll,
   jest,
 } from '@jest/globals';
-import VolumeViewport3D from '../../core/src/RenderingEngine/GenericViewport/Volume3D/viewport3D';
+import VolumeViewport3D from '../../core/src/RenderingEngine/Viewports/Volume3D/viewport3D';
 import renderingEngineCache from '../../core/src/RenderingEngine/renderingEngineCache';
 import { createPlanarViewportOnStandInEngine } from '../../core/test/utils/planarViewportOnStandInEngine';
 import { resolveLabelmapRenderPlan } from '../src/tools/displayTools/Labelmap/labelmapRenderPlan';
-import { addLabelmapToPlanarGenericViewport } from '../src/tools/displayTools/Labelmap/labelmapRenderPlan/planarGenericVolumeLabelmap';
+import { addLabelmapToPlanarVolumeViewport } from '../src/tools/displayTools/Labelmap/labelmapRenderPlan/planarVolumeLabelmap';
 import { addLabelmapToVolume3DNextViewport } from '../src/tools/displayTools/Labelmap/labelmapRenderPlan/volume3DNextLabelmap';
 
 jest.mock(
-  '../src/tools/displayTools/Labelmap/labelmapRenderPlan/planarGenericVolumeLabelmap',
+  '../src/tools/displayTools/Labelmap/labelmapRenderPlan/planarVolumeLabelmap',
   () => {
     const actual = jest.requireActual(
-      '../src/tools/displayTools/Labelmap/labelmapRenderPlan/planarGenericVolumeLabelmap'
+      '../src/tools/displayTools/Labelmap/labelmapRenderPlan/planarVolumeLabelmap'
     );
 
     return {
       ...actual,
-      addLabelmapToPlanarGenericViewport: jest.fn(
-        actual.addLabelmapToPlanarGenericViewport
+      addLabelmapToPlanarVolumeViewport: jest.fn(
+        actual.addLabelmapToPlanarVolumeViewport
       ),
     };
   }
@@ -224,13 +224,13 @@ describe('The volume labelmap mount on the next viewports', () => {
 
       expect(renderPlan.renderMode).toBe('volume');
       expect(renderPlan.isVolumeImageMapper).toBe(false);
-      expect(addLabelmapToPlanarGenericViewport).toHaveBeenCalledTimes(1);
-      expect(addLabelmapToPlanarGenericViewport.mock.calls[0][0].viewport).toBe(
+      expect(addLabelmapToPlanarVolumeViewport).toHaveBeenCalledTimes(1);
+      expect(addLabelmapToPlanarVolumeViewport.mock.calls[0][0].viewport).toBe(
         viewport
       );
-      expect(
-        addLabelmapToPlanarGenericViewport.mock.calls[0][0].blendMode
-      ).toBe(blendMode ?? BlendModes.MAXIMUM_INTENSITY_BLEND);
+      expect(addLabelmapToPlanarVolumeViewport.mock.calls[0][0].blendMode).toBe(
+        blendMode ?? BlendModes.MAXIMUM_INTENSITY_BLEND
+      );
       expect(addLabelmapToVolume3DNextViewport).not.toHaveBeenCalled();
       expect(viewport.getDisplaySetRole(labelmapRepresentationUID)).toBe(
         'overlay'
@@ -282,7 +282,7 @@ describe('The volume labelmap mount on the next viewports', () => {
       expect(addLabelmapToVolume3DNextViewport.mock.calls[0][0].blendMode).toBe(
         BlendModes.MAXIMUM_INTENSITY_BLEND
       );
-      expect(addLabelmapToPlanarGenericViewport).not.toHaveBeenCalled();
+      expect(addLabelmapToPlanarVolumeViewport).not.toHaveBeenCalled();
       expect(mountResult.uid).toBe(
         viewport
           .getActors()

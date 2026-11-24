@@ -33,8 +33,8 @@ export type ResolvedVolumeTexture = {
  * when it is created.
  *
  * Both architectures build their actor through the two actor helpers, so this
- * is the one place that a legacy viewport and a viewport of the generic
- * architecture share. A legacy viewport has no render path and therefore no
+ * is the one place that a legacy viewport and a viewport of the
+ * `BaseViewport` architecture share. A legacy viewport has no render path and therefore no
  * per-frame choice, but the capability of a device does not change while a
  * viewport lives, so one choice at the creation of the actor is what the
  * capability needs.

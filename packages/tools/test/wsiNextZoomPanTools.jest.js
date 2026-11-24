@@ -9,7 +9,7 @@ jest.mock('@cornerstonejs/core', () => {
 
 import { afterEach, beforeEach, describe, expect, it } from '@jest/globals';
 import { getEnabledElement, viewportProjection } from '@cornerstonejs/core';
-import WSIViewport from '../../core/src/RenderingEngine/GenericViewport/WSI/WSIViewport';
+import WSIViewport from '../../core/src/RenderingEngine/Viewports/WSI/WSIViewport';
 import {
   COLUMNS,
   HEIGHT,

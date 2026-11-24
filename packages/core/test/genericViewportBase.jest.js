@@ -1,28 +1,28 @@
-import GenericViewport from '../src/RenderingEngine/GenericViewport/GenericViewport';
+import BaseViewport from '../src/RenderingEngine/Viewports/BaseViewport';
 import ViewportType from '../src/enums/ViewportType';
 import ViewportStatus from '../src/enums/ViewportStatus';
 import Events from '../src/enums/Events';
 import {
-  getGenericViewportRegisteredDisplaySet,
-  getGenericViewportImageDisplaySet,
-  getGenericViewportPlanarDisplaySet,
-  getGenericViewportWSIDisplaySet,
-  getGenericViewportSourceDataId,
-  isGenericViewportImageDisplaySet,
-  isGenericViewportWSIDisplaySet,
-  isGenericViewportSourceAliasDisplaySet,
-} from '../src/RenderingEngine/GenericViewport/genericViewportDisplaySetAccess';
+  getRegisteredDisplaySet,
+  getImageDisplaySet,
+  getPlanarDisplaySet,
+  getWSIDisplaySet,
+  getDisplaySetSourceDataId,
+  isImageDisplaySet,
+  isWSIDisplaySet,
+  isSourceAliasDisplaySet,
+} from '../src/RenderingEngine/Viewports/displaySetAccess';
 import genericViewportDisplaySetMetadataProvider from '../src/utilities/genericViewportDisplaySetMetadataProvider';
 
-// ── Test fixture: a minimal concrete GenericViewport subclass ────────────
+// ── Test fixture: a minimal concrete BaseViewport subclass ────────────
 //
-// GenericViewport is abstract and generic over view-state/presentation/
+// BaseViewport is abstract and generic over view-state/presentation/
 // render-context types. The base class only orchestrates bindings, view
 // state, and lifecycle; it delegates rendering, resolved-view computation,
 // view-state normalization, and presentation notifications to subclasses.
 // This fixture implements just enough of those hooks to exercise the base
 // class behavior, with spies exposed so tests can assert on hook calls.
-class TestViewport extends GenericViewport {
+class TestViewport extends BaseViewport {
   constructor({
     id,
     element,
@@ -158,7 +158,7 @@ async function mountDisplaySet(
   return resolvedAttachment;
 }
 
-describe('GenericViewport', () => {
+describe('BaseViewport', () => {
   describe('setDisplaySets', () => {
     it('throws when an entry is missing options', async () => {
       const { viewport } = createHarness();
@@ -869,16 +869,16 @@ describe('GenericViewport', () => {
   });
 });
 
-describe('genericViewportDisplaySetAccess', () => {
+describe('displaySetAccess', () => {
   afterEach(() => {
     genericViewportDisplaySetMetadataProvider.clear();
   });
 
   it('returns undefined for every accessor when nothing is registered', () => {
-    expect(getGenericViewportRegisteredDisplaySet('missing')).toBeUndefined();
-    expect(getGenericViewportImageDisplaySet('missing')).toBeUndefined();
-    expect(getGenericViewportPlanarDisplaySet('missing')).toBeUndefined();
-    expect(getGenericViewportWSIDisplaySet('missing')).toBeUndefined();
+    expect(getRegisteredDisplaySet('missing')).toBeUndefined();
+    expect(getImageDisplaySet('missing')).toBeUndefined();
+    expect(getPlanarDisplaySet('missing')).toBeUndefined();
+    expect(getWSIDisplaySet('missing')).toBeUndefined();
   });
 
   it('normalizes a bare imageId array into an image/planar display set', () => {
@@ -887,10 +887,10 @@ describe('genericViewportDisplaySetAccess', () => {
       'image:2',
     ]);
 
-    expect(getGenericViewportImageDisplaySet('ds-array')).toEqual({
+    expect(getImageDisplaySet('ds-array')).toEqual({
       imageIds: ['image:1', 'image:2'],
     });
-    expect(getGenericViewportPlanarDisplaySet('ds-array')).toEqual({
+    expect(getPlanarDisplaySet('ds-array')).toEqual({
       imageIds: ['image:1', 'image:2'],
     });
   });
@@ -903,11 +903,11 @@ describe('genericViewportDisplaySetAccess', () => {
     };
     genericViewportDisplaySetMetadataProvider.add('ds-planar', registered);
 
-    expect(getGenericViewportImageDisplaySet('ds-planar')).toBe(registered);
-    expect(getGenericViewportPlanarDisplaySet('ds-planar')).toBe(registered);
+    expect(getImageDisplaySet('ds-planar')).toBe(registered);
+    expect(getPlanarDisplaySet('ds-planar')).toBe(registered);
   });
 
-  it('excludes non-planar kinds from getGenericViewportPlanarDisplaySet', () => {
+  it('excludes non-planar kinds from getPlanarDisplaySet', () => {
     const registered = {
       imageIds: ['image:1'],
       kind: 'wsi',
@@ -915,8 +915,8 @@ describe('genericViewportDisplaySetAccess', () => {
     };
     genericViewportDisplaySetMetadataProvider.add('ds-non-planar', registered);
 
-    expect(getGenericViewportImageDisplaySet('ds-non-planar')).toBe(registered);
-    expect(getGenericViewportPlanarDisplaySet('ds-non-planar')).toBeUndefined();
+    expect(getImageDisplaySet('ds-non-planar')).toBe(registered);
+    expect(getPlanarDisplaySet('ds-non-planar')).toBeUndefined();
   });
 
   it('recognizes a canonically-shaped WSI display set', () => {
@@ -928,7 +928,7 @@ describe('genericViewportDisplaySetAccess', () => {
     };
     genericViewportDisplaySetMetadataProvider.add('ds-wsi', registered);
 
-    expect(getGenericViewportWSIDisplaySet('ds-wsi')).toEqual(registered);
+    expect(getWSIDisplaySet('ds-wsi')).toEqual(registered);
   });
 
   it('normalizes a loosely-shaped WSI-like record into the canonical WSI shape', () => {
@@ -938,7 +938,7 @@ describe('genericViewportDisplaySetAccess', () => {
       options: { webClient },
     });
 
-    expect(getGenericViewportWSIDisplaySet('ds-wsi-loose')).toEqual({
+    expect(getWSIDisplaySet('ds-wsi-loose')).toEqual({
       imageIds: ['wsi:1'],
       kind: 'wsi',
       options: { miniNavigationOverlay: undefined, webClient },
@@ -956,32 +956,30 @@ describe('genericViewportDisplaySetAccess', () => {
       sourceDataId: 'video-source-id',
     });
 
-    expect(getGenericViewportSourceDataId('ds-string')).toBe('source-id-1');
-    expect(getGenericViewportSourceDataId('ds-array-alias')).toBe('first-id');
-    expect(getGenericViewportSourceDataId('ds-video')).toBe('video-source-id');
-    expect(getGenericViewportSourceDataId('ds-unregistered')).toBe(
+    expect(getDisplaySetSourceDataId('ds-string')).toBe('source-id-1');
+    expect(getDisplaySetSourceDataId('ds-array-alias')).toBe('first-id');
+    expect(getDisplaySetSourceDataId('ds-video')).toBe('video-source-id');
+    expect(getDisplaySetSourceDataId('ds-unregistered')).toBe(
       'ds-unregistered'
     );
   });
 
   it('type guards classify shapes correctly', () => {
-    expect(isGenericViewportImageDisplaySet({ imageIds: ['a'] })).toBe(true);
-    expect(isGenericViewportImageDisplaySet({ imageIds: 'a' })).toBe(false);
+    expect(isImageDisplaySet({ imageIds: ['a'] })).toBe(true);
+    expect(isImageDisplaySet({ imageIds: 'a' })).toBe(false);
     expect(
-      isGenericViewportWSIDisplaySet({
+      isWSIDisplaySet({
         kind: 'wsi',
         imageIds: ['a'],
         options: { webClient: { getDICOMwebMetadata: () => {} } },
       })
     ).toBe(true);
-    expect(
-      isGenericViewportWSIDisplaySet({ kind: 'video', imageIds: ['a'] })
-    ).toBe(false);
-    expect(
-      isGenericViewportSourceAliasDisplaySet({ kind: 'ecg', sourceDataId: 'x' })
-    ).toBe(true);
-    expect(
-      isGenericViewportSourceAliasDisplaySet({ kind: 'wsi', sourceDataId: 'x' })
-    ).toBe(false);
+    expect(isWSIDisplaySet({ kind: 'video', imageIds: ['a'] })).toBe(false);
+    expect(isSourceAliasDisplaySet({ kind: 'ecg', sourceDataId: 'x' })).toBe(
+      true
+    );
+    expect(isSourceAliasDisplaySet({ kind: 'wsi', sourceDataId: 'x' })).toBe(
+      false
+    );
   });
 });

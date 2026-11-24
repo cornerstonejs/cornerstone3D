@@ -16,15 +16,15 @@ import * as metaData from '../src/metaData';
 import cache from '../src/cache/cache';
 import * as utilities from '../src/utilities';
 import * as imageLoader from '../src/loaders/imageLoader';
-import PlanarViewport from '../src/RenderingEngine/GenericViewport/Planar/PlanarViewport';
-import { PlanarRenderPathDecisionService } from '../src/RenderingEngine/GenericViewport/Planar/PlanarRenderPathDecisionService';
+import PlanarViewport from '../src/RenderingEngine/Viewports/Planar/PlanarViewport';
+import { PlanarRenderPathDecisionService } from '../src/RenderingEngine/Viewports/Planar/PlanarRenderPathDecisionService';
 import {
   acquiredFrameIndexOfVolumePoint,
   withAcquiredFrames,
-} from '../src/RenderingEngine/GenericViewport/Planar/planarAcquiredFrames';
-import { getImageSliceOverlayOrder } from '../src/RenderingEngine/GenericViewport/Planar/VtkVolumeSliceRenderPath';
-import { triggerPlanarVolumeNewImageOfPlacedSlice } from '../src/RenderingEngine/GenericViewport/Planar/planarImageEvents';
-import { resolvePlanarRenderPathProjection } from '../src/RenderingEngine/GenericViewport/Planar/planarRenderPathProjection';
+} from '../src/RenderingEngine/Viewports/Planar/planarAcquiredFrames';
+import { getImageSliceOverlayOrder } from '../src/RenderingEngine/Viewports/Planar/VtkVolumeSliceRenderPath';
+import { triggerPlanarVolumeNewImageOfPlacedSlice } from '../src/RenderingEngine/Viewports/Planar/planarImageEvents';
+import { resolvePlanarRenderPathProjection } from '../src/RenderingEngine/Viewports/Planar/planarRenderPathProjection';
 import renderingEngineCache from '../src/RenderingEngine/renderingEngineCache';
 import genericViewportDisplaySetMetadataProvider from '../src/utilities/genericViewportDisplaySetMetadataProvider';
 import {
@@ -34,7 +34,7 @@ import {
 import { setLossyDownsampling } from '../src/init';
 import eventTarget from '../src/eventTarget';
 import triggerEvent from '../src/utilities/triggerEvent';
-import { VtkImageMapperRenderPath } from '../src/RenderingEngine/GenericViewport/Planar/VtkImageMapperRenderPath';
+import { VtkImageMapperRenderPath } from '../src/RenderingEngine/Viewports/Planar/VtkImageMapperRenderPath';
 import { dataKindOf } from '../src/RenderingEngine/helpers/fidelityIndicator/fidelityIndicatorState';
 
 // These tests need final downsampling, which is off by default.

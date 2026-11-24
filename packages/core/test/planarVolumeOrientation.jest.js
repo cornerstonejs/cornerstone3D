@@ -4,7 +4,7 @@ import {
   fakeMetaDataProvider,
 } from '../../../utils/test/testUtilsImageLoader';
 import { describe, it, expect, afterEach } from '@jest/globals';
-import PlanarViewport from '../src/RenderingEngine/GenericViewport/Planar/PlanarViewport';
+import PlanarViewport from '../src/RenderingEngine/Viewports/Planar/PlanarViewport';
 import genericViewportDisplaySetMetadataProvider from '../src/utilities/genericViewportDisplaySetMetadataProvider';
 import renderingEngineCache from '../src/RenderingEngine/renderingEngineCache';
 import { MPR_CAMERA_VALUES } from '../src/constants';

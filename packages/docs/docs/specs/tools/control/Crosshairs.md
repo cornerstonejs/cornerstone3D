@@ -101,7 +101,7 @@ specification holds for an oblique plane.
 ## Implementation requirements
 
 - **CROSSHAIRS-IMPL-1** The `SliceIntersectionTool` implements this control on
-  the generic planar viewports.
+  the planar viewports.
 - **CROSSHAIRS-IMPL-2** The hollow control points take the position from the
   dashed boundary lines that the tool draws. A projection of the slab offset
   gives the wrong position on an oblique plane, so the tool does not use one.

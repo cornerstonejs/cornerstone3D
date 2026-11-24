@@ -1,4 +1,4 @@
-// Single entry point for the shared vitest-browser GenericViewport test
+// Single entry point for the shared vitest-browser BaseViewport test
 // harness. Other suites import from './harness'.
 
 export * from './fakeImageStack';

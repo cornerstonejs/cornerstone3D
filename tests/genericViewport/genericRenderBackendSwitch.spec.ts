@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import {
   createExampleUrl,
-  expectGenericViewportRuntime,
+  expectViewportRuntime,
   getVisibleViewportCanvas,
 } from '../utils/index';
 
@@ -74,7 +74,7 @@ test.describe('Render backend live switch', () => {
   test('switches a live viewport GPU -> CPU -> GPU preserving state', async ({
     page,
   }) => {
-    await expectGenericViewportRuntime(page, [
+    await expectViewportRuntime(page, [
       {
         renderingEngineId: ENGINE_ID,
         viewportId: VIEWPORT_ID,

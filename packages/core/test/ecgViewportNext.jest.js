@@ -1,9 +1,9 @@
 import { describe, it, expect, afterEach, beforeEach } from '@jest/globals';
 import { Events, MetadataModules } from '../src/enums';
 import * as metaData from '../src/metaData';
-import ECGViewport from '../src/RenderingEngine/GenericViewport/ECG/ECGViewport';
-import { viewportProjection } from '../src/RenderingEngine/GenericViewport/viewportProjection';
-import { ECG_PX_PER_MM } from '../src/RenderingEngine/GenericViewport/ECG/ecgWaveform';
+import ECGViewport from '../src/RenderingEngine/Viewports/ECG/ECGViewport';
+import { viewportProjection } from '../src/RenderingEngine/Viewports/viewportProjection';
+import { ECG_PX_PER_MM } from '../src/RenderingEngine/Viewports/ECG/ecgWaveform';
 
 const ECG_ID = 'ecg:legacyNext';
 const LEADS = [

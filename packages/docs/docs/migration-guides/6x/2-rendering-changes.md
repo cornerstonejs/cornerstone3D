@@ -1658,8 +1658,8 @@ if (utilities.getViewportContentMode(viewport) === 'stack') {
 Or ask the rendering engine for the class:
 `renderingEngine.getViewport<PlanarViewport>(viewportId)`. A JavaScript tool
 behaves as before: a planar member called on a 3D viewport fails at run time,
-as it did in 5.x. `utilities.isGenericViewport` is true for every viewport
-and is deprecated.
+as it did in 5.x. The 5.x guard of a next viewport is gone: every viewport
+is one, see [Functions of the core package](./3-api-map.md#functions-of-the-core-package).
 
 ## Smaller changes
 
@@ -1667,10 +1667,9 @@ and is deprecated.
   `'planar'` where a 5.x next viewport had `'planarNext'`, and the other
   families have `'volume3d'`, `'video'`, `'wholeSlide'` and `'ecg'` in place
   of `'volume3dNext'`, `'videoNext'`, `'wholeSlideNext'` and `'ecgNext'`. A
-  comparison with `ViewportType.PLANAR` or `ViewportType.PLANAR_NEXT` holds
-  as before, since both are `'planar'`. Code that compares `viewport.type`
-  with the string `'planarNext'`, or stores it and reads it back, changes to
-  `'planar'`. The `viewportType` of a projection snapshot is the same plain
+  comparison with `ViewportType.PLANAR` holds. Code that compares
+  `viewport.type` with the string `'planarNext'`, or stores it and reads it
+  back, changes to `'planar'`: 6.0 takes no 5.x type string. The `viewportType` of a projection snapshot is the same plain
   string. See [Viewport types](./3-api-map.md#viewport-types).
 - **No `setOptions()` and no `reset()`** on the 3D, video, whole slide and ECG
   viewports. The options that a viewport was made with are in

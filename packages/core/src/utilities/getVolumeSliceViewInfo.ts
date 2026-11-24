@@ -1,7 +1,7 @@
 import { mat4, vec3 } from 'gl-matrix';
 import { EPSILON } from '../constants';
 import type { Point2, Point3 } from '../types';
-import type PlanarViewport from '../RenderingEngine/GenericViewport/Planar/PlanarViewport';
+import type PlanarViewport from '../RenderingEngine/Viewports/Planar/PlanarViewport';
 import { transformCanvasToIJK } from './transformCanvasToIJK';
 import { transformIJKToCanvas } from './transformIJKToCanvas';
 

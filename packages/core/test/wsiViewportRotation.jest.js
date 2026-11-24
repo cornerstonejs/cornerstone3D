@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach, beforeEach } from '@jest/globals';
 import { getConfiguration } from '../src/init';
-import WSIViewport from '../src/RenderingEngine/GenericViewport/WSI/WSIViewport';
-import { viewportProjection } from '../src/RenderingEngine/GenericViewport/viewportProjection';
+import WSIViewport from '../src/RenderingEngine/Viewports/WSI/WSIViewport';
+import { viewportProjection } from '../src/RenderingEngine/Viewports/viewportProjection';
 
 const WIDTH = 400;
 const HEIGHT = 300;

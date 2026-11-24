@@ -3,8 +3,8 @@ import { jumpToSlice } from '../src/utilities/jumpToSlice';
 import { Events } from '../src/enums';
 import eventTarget from '../src/eventTarget';
 import * as getEnabledElementModule from '../src/getEnabledElement';
-import ECGViewport from '../src/RenderingEngine/GenericViewport/ECG/ECGViewport';
-import WSIViewport from '../src/RenderingEngine/GenericViewport/WSI/WSIViewport';
+import ECGViewport from '../src/RenderingEngine/Viewports/ECG/ECGViewport';
+import WSIViewport from '../src/RenderingEngine/Viewports/WSI/WSIViewport';
 import { mountNext, unmount } from './utils/wsiStandIn';
 
 jest.mock('../src/getEnabledElement');

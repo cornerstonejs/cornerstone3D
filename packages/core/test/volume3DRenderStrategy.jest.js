@@ -8,8 +8,8 @@ import {
   beforeAll,
   afterAll,
 } from '@jest/globals';
-import { VtkVolume3DRenderPath } from '../src/RenderingEngine/GenericViewport/Volume3D/VtkVolume3DRenderPath';
-import { VtkVolumeSliceRenderPath } from '../src/RenderingEngine/GenericViewport/Planar/VtkVolumeSliceRenderPath';
+import { VtkVolume3DRenderPath } from '../src/RenderingEngine/Viewports/Volume3D/VtkVolume3DRenderPath';
+import { VtkVolumeSliceRenderPath } from '../src/RenderingEngine/Viewports/Planar/VtkVolumeSliceRenderPath';
 import {
   defaultVolumeStrategyProvider,
   provisionFullResolutionStrategy,

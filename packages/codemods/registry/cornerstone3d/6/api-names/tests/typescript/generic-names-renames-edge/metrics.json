@@ -1,0 +1,38 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "10",
+        "rule": "utilities.isGenericViewport: true for every viewport in 6.0: delete the test and the branch for the other case"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "30",
+        "rule": "isGenericViewport: imported from @cornerstonejs/core/utilities, true for every viewport in 6.0: delete the test and the branch for the other case"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "7",
+        "rule": "IGenericViewport: imported from @cornerstonejs/core/types, use Types.IViewport"
+      },
+      "count": 1
+    }
+  ],
+  "cornerstone3d-6-review": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "17",
+        "rule": "PLANAR: two operands of one || are the same now, read what each tested before the rename"
+      },
+      "count": 1
+    }
+  ]
+}

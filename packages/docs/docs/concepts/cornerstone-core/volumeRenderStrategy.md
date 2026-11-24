@@ -93,19 +93,19 @@ already exists.
 [Volume Render Sequences](./volumeRenderSequences.md) gives the sequence of calls as diagrams. The
 table gives the file of each piece. The paths are under `packages/core/src/`, except the last row.
 
-| Piece or step                                       | Code                                                                                                               |
-| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| The presets, and the limits of a grid               | `utilities/gpuSettingsPresets.ts`: `setGpuSettingsPreset`, `gridLimitsOfGpuSettings`                               |
-| The factors of a reduction, and the reduced grid    | `utilities/voxelGrid/`: `boxAverageReductionFactors`, `reducedDimensions`, `deriveBoxAverageGrid`                  |
-| The default provider and the default selection      | `RenderingEngine/helpers/volumeRenderStrategy.ts`: `defaultVolumeStrategyProvider`, `selectFirstReadyStrategy`     |
-| The one place that both architectures share         | `RenderingEngine/helpers/resolveVolumeTexture.ts`, called by `createVolumeActor` and `createVolumeSliceActor`      |
-| The texture sets and the store                      | `cache/classes/VolumeTextureSet.ts`, `cache/volumeTextureStore.ts`, `ImageVolume.provisionTextureSet`              |
-| The marks and the deliveries                        | `cache/classes/ImageVolume.ts`: `markFrameTexturesDirty`, `recordFrameDelivery`, `markFrameModified`               |
-| The load                                            | `cache/classes/BaseStreamingImageVolume.ts`: `load`, `successCallback`, `takeInCachedImages`                       |
-| The fill of a reduced texture                       | `RenderingEngine/vtkClasses/vtkStreamingOpenGLTexture.js`: `updateTextureFromComposite`, `fillSliceByBoxStatistic` |
-| The selection on each render (generic architecture) | `RenderingEngine/helpers/volumeStrategyLifecycle.ts`: `provisionStrategies`, `applyStrategy`, `onVolumeData`       |
-| The sample distance of a 3D render                  | `RenderingEngine/helpers/createVolumeMapper.ts`: `sampleDistanceOf`                                                |
-| The statistic of a labelmap                         | `packages/tools/src/stateManagement/segmentation/labelmapModel/labelmapLayerStore.ts`: `tagLabelmapVolume`         |
+| Piece or step                                              | Code                                                                                                               |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| The presets, and the limits of a grid                      | `utilities/gpuSettingsPresets.ts`: `setGpuSettingsPreset`, `gridLimitsOfGpuSettings`                               |
+| The factors of a reduction, and the reduced grid           | `utilities/voxelGrid/`: `boxAverageReductionFactors`, `reducedDimensions`, `deriveBoxAverageGrid`                  |
+| The default provider and the default selection             | `RenderingEngine/helpers/volumeRenderStrategy.ts`: `defaultVolumeStrategyProvider`, `selectFirstReadyStrategy`     |
+| The one place that both architectures share                | `RenderingEngine/helpers/resolveVolumeTexture.ts`, called by `createVolumeActor` and `createVolumeSliceActor`      |
+| The texture sets and the store                             | `cache/classes/VolumeTextureSet.ts`, `cache/volumeTextureStore.ts`, `ImageVolume.provisionTextureSet`              |
+| The marks and the deliveries                               | `cache/classes/ImageVolume.ts`: `markFrameTexturesDirty`, `recordFrameDelivery`, `markFrameModified`               |
+| The load                                                   | `cache/classes/BaseStreamingImageVolume.ts`: `load`, `successCallback`, `takeInCachedImages`                       |
+| The fill of a reduced texture                              | `RenderingEngine/vtkClasses/vtkStreamingOpenGLTexture.js`: `updateTextureFromComposite`, `fillSliceByBoxStatistic` |
+| The selection on each render (`BaseViewport` architecture) | `RenderingEngine/helpers/volumeStrategyLifecycle.ts`: `provisionStrategies`, `applyStrategy`, `onVolumeData`       |
+| The sample distance of a 3D render                         | `RenderingEngine/helpers/createVolumeMapper.ts`: `sampleDistanceOf`                                                |
+| The statistic of a labelmap                                | `packages/tools/src/stateManagement/segmentation/labelmapModel/labelmapLayerStore.ts`: `tagLabelmapVolume`         |
 
 ## How the viewport builds the strategies
 
@@ -386,7 +386,7 @@ settings (`gridFitsGpuSettings`). It tries the upload, as in 4.x.
 This section applies only when `rendering.lossyDownsampling.final` is on, and the final
 downsampling reduces the texture of a volume.
 
-**What a user sees.** A generic `PlanarViewport` shows the source volume in the acquisition plane.
+**What a user sees.** A `PlanarViewport` shows the source volume in the acquisition plane.
 The source draws the loaded image of the nearest acquired frame in place of the reduced slice. The
 frame has full resolution, so the fidelity indicator reports the quality of the frame. Outside the
 acquisition plane, the viewport draws the reduced slice.

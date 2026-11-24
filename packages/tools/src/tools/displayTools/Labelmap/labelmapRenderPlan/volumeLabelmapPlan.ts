@@ -31,9 +31,9 @@ import {
   getActorEntryRenderMode,
 } from './createLabelmapRenderPlan';
 import {
-  addLabelmapToPlanarGenericViewport,
+  addLabelmapToPlanarVolumeViewport,
   isPlanarNextVolumeViewport,
-} from './planarGenericVolumeLabelmap';
+} from './planarVolumeLabelmap';
 import type {
   LabelmapRenderPlan,
   LabelmapRenderPlanMountResult,
@@ -220,7 +220,7 @@ async function mountVolumeLabelmap({
   }
 
   if (isPlanarNextVolumeViewport(viewport)) {
-    return addLabelmapToPlanarGenericViewport({
+    return addLabelmapToPlanarVolumeViewport({
       blendMode,
       labelmapLayers,
       segmentationId,

@@ -51,7 +51,7 @@ are temporary.
   `resolveClass` given to `registerViewportType` gets `{ type }`, without
   `requestedType`.
 - **The word "next" in the type names.** The five types that remain get plain
-  names, and the `_NEXT` names stay as deprecated aliases. See
+  names; the 5.x `_NEXT` names and `*Next` strings are gone. See
   [The viewport types](#the-viewport-types).
 - **The legacy viewport API:** `setStack`, `setVolumes`, `addVolumes`,
   `setProperties`, `getProperties`, `getCamera`, `setCamera`, `resetCamera`,
@@ -80,8 +80,9 @@ are temporary.
 - **The legacy types:** `Types.IStackViewport`, `Types.IVolumeViewport`,
   `Types.IBaseVolumeViewport`, `Types.IVideoViewport`, `Types.IWSIViewport`,
   `Types.IECGViewport` and the `*ViewportProperties` types.
-  `Types.IViewport` is the interface of a viewport of any family, and
-  `Types.IGenericViewport` is its deprecated 5.x name.
+  `Types.IViewport` is the interface of a viewport of any family, under
+  its 5.x next name too: see
+  [Classes and TypeScript types](./3-api-map.md#classes-and-typescript-types).
 - **Events that no viewport fires:** `STACK_NEW_IMAGE` and `VOLUME_NEW_IMAGE`
   (listen to `NEW_IMAGE`), `PRE_STACK_NEW_IMAGE` and `STACK_VIEWPORT_SCROLL`
   (listen to `CAMERA_MODIFIED`), and `PRESET_MODIFIED` (read the `preset` key
@@ -123,16 +124,14 @@ The types have plain names, and this is in the code: `PLANAR` (`'planar'`),
 `ECG` keep their 5.x names and strings and now mean the next viewport of
 that family. `viewport.type` is the plain string.
 
-The 5.x next names stay in 6.x as deprecated aliases. `PLANAR_NEXT`,
-`VOLUME_3D_NEXT`, `VIDEO_NEXT`, `WHOLE_SLIDE_NEXT` and `ECG_NEXT` have the
-plain strings as their values, so code that uses them, including the code
-of some of these pages, works as before. A stored `'planarNext'`,
-`'volume3dNext'`, `'videoNext'`, `'wholeSlideNext'` or `'ecgNext'` given to
-`enableElement` or `setViewports` still makes the viewport of its family.
-The classes have their plain names too: `VolumeViewport3D`, `VideoViewport`,
-`WSIViewport` and `ECGViewport`, with `GenericVolumeViewport3D`,
-`VideoGenericViewport`, `WSIGenericViewport` and `ECGGenericViewport` as
-deprecated aliases.
+The 5.x next names of the types and of the classes are gone in 6.0, with
+no alias: [Viewport types](./3-api-map.md#viewport-types) and
+[Classes and TypeScript types](./3-api-map.md#classes-and-typescript-types)
+name each one and its plain name, and the codemod renames them. A stored 5.x
+type string given to `enableElement` or `setViewports` throws a message that
+names the plain type. The classes have their plain names: `VolumeViewport3D`,
+`VideoViewport`, `WSIViewport` and `ECGViewport`, and their base class is
+`BaseViewport`.
 
 The context pool rendering engine of 5.x spread the stack viewports over its
 WebGL contexts (`rendering.webGlContextCount`). In 6.0 every planar and 3D

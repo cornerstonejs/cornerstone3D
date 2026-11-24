@@ -1,7 +1,7 @@
 ---
 id: migration
 title: Migration
-summary: Before and after examples for moving stack, volume, overlay, segmentation, and camera-style code to Generic Viewport APIs
+summary: Before and after examples for moving stack, volume, overlay, segmentation, and camera-style code to the viewport APIs
 ---
 
 # Migration
@@ -12,7 +12,7 @@ This page shows the move from the legacy viewport API of 5.x, which 6.0 removed.
 
 :::
 
-This migration guide is local to the Generic Viewport architecture. It is not a
+This migration guide is local to the viewport architecture. It is not a
 general Cornerstone migration guide.
 
 The goal is to move application code from viewport-class-specific behavior to

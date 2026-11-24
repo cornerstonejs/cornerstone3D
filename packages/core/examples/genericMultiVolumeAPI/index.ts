@@ -71,8 +71,8 @@ function updatePetColormap(patch: {
 }
 
 setTitleAndDescription(
-  'Multi Volume GenericViewport API',
-  'Demonstrates fused CT/PT rendering using the clean Planar GenericViewport multi-dataset API.'
+  'Multi Volume PlanarViewport API',
+  'Demonstrates fused CT/PT rendering using the clean PlanarViewport multi-dataset API.'
 );
 
 const content = document.getElementById('content');

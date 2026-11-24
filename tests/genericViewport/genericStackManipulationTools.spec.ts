@@ -2,7 +2,7 @@ import { test } from '@playwright/test';
 import {
   createExampleUrl,
   checkForCanvasSnapshot,
-  expectGenericViewportRuntime,
+  expectViewportRuntime,
   getVisibleViewportCanvas,
   screenShotPaths,
 } from '../utils/index';
@@ -67,7 +67,7 @@ test.describe('Stack Manipulation - Next (GPU)', () => {
   test.beforeEach(navigateToExample());
 
   test('should use PlanarViewport GPU runtime', async ({ page }) => {
-    await expectGenericViewportRuntime(page, [
+    await expectViewportRuntime(page, [
       {
         renderingEngineId: 'myRenderingEngine',
         viewportId: 'CT_STACK',
@@ -121,7 +121,7 @@ test.describe('Stack Manipulation - Next (CPU)', () => {
   test.beforeEach(navigateToExample({ cpu: 'true' }));
 
   test('should use PlanarViewport CPU runtime', async ({ page }) => {
-    await expectGenericViewportRuntime(page, [
+    await expectViewportRuntime(page, [
       {
         renderingEngineId: 'myRenderingEngine',
         viewportId: 'CT_STACK',

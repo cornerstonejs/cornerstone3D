@@ -2,8 +2,8 @@ import { SlabTypes } from '@kitware/vtk.js/Rendering/Core/ImageResliceMapper/Con
 import { vec3 } from 'gl-matrix';
 import InterpolationType from '../enums/InterpolationType';
 import type BlendModes from '../enums/BlendModes';
-import { SOURCE_SLICE_INDEX_TOLERANCE } from '../RenderingEngine/GenericViewport/Planar/planarCPUVolumeSamplingUtils';
-import { mapBlendModeToSlabType } from '../RenderingEngine/GenericViewport/Planar/planarVolumeSliceBlendMode';
+import { SOURCE_SLICE_INDEX_TOLERANCE } from '../RenderingEngine/Viewports/Planar/planarCPUVolumeSamplingUtils';
+import { mapBlendModeToSlabType } from '../RenderingEngine/Viewports/Planar/planarVolumeSliceBlendMode';
 import type { IImageVolume, PixelDataTypedArray, Point3 } from '../types';
 import sampleVolumeGrid, { isIndexInsideVolume } from './sampleVolumeGrid';
 import { transformWorldToIndexContinuous } from './transformWorldToIndex';

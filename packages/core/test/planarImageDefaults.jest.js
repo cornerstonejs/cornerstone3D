@@ -11,7 +11,7 @@ import {
   beforeEach,
   jest,
 } from '@jest/globals';
-import { PlanarSampledSliceCanvas } from '../src/RenderingEngine/GenericViewport/Planar/planarSampledSliceCanvas';
+import { PlanarSampledSliceCanvas } from '../src/RenderingEngine/Viewports/Planar/planarSampledSliceCanvas';
 import {
   getDefaultImageInvert,
   getDefaultImageVOIRange,

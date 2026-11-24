@@ -1,7 +1,7 @@
 import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import type { ActorEntry } from '../types/IActor';
 import type { IViewport } from '../types/IViewport';
-import type { ViewportWidget } from './GenericViewport/Volume3D/viewport3DTypes';
+import type { ViewportWidget } from './Viewports/Volume3D/viewport3DTypes';
 
 /**
  * A viewport as the rendering engines see it: the public interface and the

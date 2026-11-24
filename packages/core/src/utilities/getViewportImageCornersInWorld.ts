@@ -1,5 +1,5 @@
 import type { IImageData, Point2, Point3 } from '../types';
-import type PlanarViewport from '../RenderingEngine/GenericViewport/Planar/PlanarViewport';
+import type PlanarViewport from '../RenderingEngine/Viewports/Planar/PlanarViewport';
 
 /**
  * Given a viewport, return the corners of the image in the viewport in world coordinates.

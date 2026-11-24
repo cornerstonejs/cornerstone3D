@@ -9,7 +9,7 @@ import { resetRenderingCapabilities } from '../src/utilities/renderingCapabiliti
 import ContextPoolRenderingEngine from '../src/RenderingEngine/ContextPoolRenderingEngine';
 import TiledRenderingEngine from '../src/RenderingEngine/TiledRenderingEngine';
 import vtkStreamingOpenGLRenderWindow from '../src/RenderingEngine/vtkClasses/vtkStreamingOpenGLRenderWindow';
-import { SAMPLED_SLICE_REST_DELAY_MS } from '../src/RenderingEngine/GenericViewport/Planar/planarSampledSliceRest';
+import { SAMPLED_SLICE_REST_DELAY_MS } from '../src/RenderingEngine/Viewports/Planar/planarSampledSliceRest';
 
 const { Enums, cache, imageLoader, metaData, utilities } = cornerstone3D;
 const { Events, ViewportType } = Enums;

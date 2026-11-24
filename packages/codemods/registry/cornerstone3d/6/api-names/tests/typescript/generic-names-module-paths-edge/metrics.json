@@ -1,0 +1,20 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "1",
+        "rule": "@cornerstonejs/tools/tools/displayTools/Labelmap/labelmapRenderPlan/planarGenericVolumeLabelmap: a namespace import, addLabelmapToPlanarGenericViewport is addLabelmapToPlanarVolumeViewport"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "3",
+        "rule": "@cornerstonejs/core/types/IGenericViewport: the module is deleted, use Types.IViewport"
+      },
+      "count": 1
+    }
+  ]
+}

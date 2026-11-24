@@ -6,7 +6,7 @@ import {
   beforeEach,
   jest,
 } from '@jest/globals';
-import VideoViewport from '../src/RenderingEngine/GenericViewport/Video/VideoViewport';
+import VideoViewport from '../src/RenderingEngine/Viewports/Video/VideoViewport';
 import { Enums, metaData, utilities, viewportProjection } from '../src/index';
 
 const WIDTH = 400;

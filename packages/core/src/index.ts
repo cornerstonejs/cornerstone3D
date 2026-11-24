@@ -24,10 +24,10 @@ import {
   viewportHasFrameOfReferenceUID,
   viewportHasPan,
   viewportHasZoom,
-  GenericViewport,
+  BaseViewport,
   ViewportProjectionService,
   viewportProjection,
-} from './RenderingEngine/GenericViewport';
+} from './RenderingEngine/Viewports';
 import ECGViewport, {
   createDefaultECGRenderPaths,
   createECGRenderPathResolver,
@@ -49,37 +49,31 @@ import ECGViewport, {
   type ECGTraceLayoutRegistry,
   type ECGTraceRegion,
   type ECGProperties,
-} from './RenderingEngine/GenericViewport/ECG';
+} from './RenderingEngine/Viewports/ECG';
 import VideoViewport, {
   createDefaultVideoRenderPaths,
   createVideoRenderPathResolver,
   DefaultVideoDataProvider,
   videoProjection,
-} from './RenderingEngine/GenericViewport/Video';
+} from './RenderingEngine/Viewports/Video';
 import PlanarViewport, {
   createDefaultPlanarRenderPaths,
   createPlanarRenderPathResolver,
   DefaultPlanarDataProvider,
   planarProjection,
-} from './RenderingEngine/GenericViewport/Planar';
+} from './RenderingEngine/Viewports/Planar';
 import VolumeViewport3D, {
   createDefaultVolume3DRenderPaths,
   createVolume3DRenderPathResolver,
   DefaultVolume3DDataProvider,
   volume3DProjection,
-} from './RenderingEngine/GenericViewport/Volume3D';
+} from './RenderingEngine/Viewports/Volume3D';
 import WSIViewport, {
   createDefaultWSIRenderPaths,
   createWSIRenderPathResolver,
   DefaultWSIDataProvider,
   wsiProjection,
-} from './RenderingEngine/GenericViewport/WSI';
-import {
-  ECGGenericViewport,
-  GenericVolumeViewport3D,
-  VideoGenericViewport,
-  WSIGenericViewport,
-} from './RenderingEngine/GenericViewport/deprecatedViewportClassNames';
+} from './RenderingEngine/Viewports/WSI';
 export type {
   BuiltInViewportProjectionByKind,
   BuiltInViewportProjectionByType,
@@ -104,7 +98,7 @@ export type {
   ProjectionWriteOptions,
   ViewportDataReference,
   ViewportProjectionAdapter,
-} from './RenderingEngine/GenericViewport';
+} from './RenderingEngine/Viewports';
 export type {
   ECGProjectionPresentation,
   ECGProjectionRequest,
@@ -112,13 +106,13 @@ export type {
   ECGViewState,
   ECGClinicalSweepSpeed,
   ECGClinicalSensitivity,
-} from './RenderingEngine/GenericViewport/ECG';
+} from './RenderingEngine/Viewports/ECG';
 export type {
   VideoProjectionPresentation,
   VideoProjectionRequest,
   VideoProjectionSnapshot,
   VideoViewState,
-} from './RenderingEngine/GenericViewport/Video';
+} from './RenderingEngine/Viewports/Video';
 export type {
   PlanarResolvedICamera,
   PlanarSliceBasis,
@@ -132,19 +126,19 @@ export type {
   RenderPlanChangedEventDetail,
   RenderPlanLayer,
   RenderPlanReason,
-} from './RenderingEngine/GenericViewport/Planar';
+} from './RenderingEngine/Viewports/Planar';
 export type {
   WSIProjectionPresentation,
   WSIProjectionRequest,
   WSIProjectionSnapshot,
   WSIViewState,
-} from './RenderingEngine/GenericViewport/WSI';
+} from './RenderingEngine/Viewports/WSI';
 export type {
   Volume3DCamera,
   Volume3DProjectionPresentation,
   Volume3DProjectionRequest,
   Volume3DProjectionSnapshot,
-} from './RenderingEngine/GenericViewport/Volume3D';
+} from './RenderingEngine/Viewports/Volume3D';
 import eventTarget from './eventTarget';
 import { version } from './version';
 
@@ -308,49 +302,6 @@ export type { RegisterVoxelStatisticOptions } from './utilities/voxelGrid/voxelS
 
 export * from './loaders/decimatedVolumeLoader';
 
-const renderingEngineExportsV2 = {
-  GenericViewport,
-  DefaultRenderPathResolver,
-  defaultRenderPathResolver,
-  ECGViewport,
-  /** @deprecated Use `ECGViewport`: the same class. */
-  ECGGenericViewport,
-  createDefaultECGRenderPaths,
-  createECGRenderPathResolver,
-  DefaultECGDataProvider,
-  ecgProjection,
-  registerECGTraceLayout,
-  getECGTraceLayout,
-  getECGTraceLayoutNames,
-  resolveDefaultECGTraceLayout,
-  ECG_CLINICAL_SWEEP_SPEEDS,
-  ECG_CLINICAL_SENSITIVITIES,
-  VideoViewport,
-  /** @deprecated Use `VideoViewport`: the same class. */
-  VideoGenericViewport,
-  createDefaultVideoRenderPaths,
-  createVideoRenderPathResolver,
-  DefaultVideoDataProvider,
-  videoProjection,
-  PlanarViewport,
-  createDefaultPlanarRenderPaths,
-  createPlanarRenderPathResolver,
-  DefaultPlanarDataProvider,
-  planarProjection,
-  VolumeViewport3D,
-  createDefaultVolume3DRenderPaths,
-  createVolume3DRenderPathResolver,
-  DefaultVolume3DDataProvider,
-  volume3DProjection,
-  WSIViewport,
-  /** @deprecated Use `WSIViewport`: the same class. */
-  WSIGenericViewport,
-  createDefaultWSIRenderPaths,
-  createWSIRenderPathResolver,
-  DefaultWSIDataProvider,
-  wsiProjection,
-};
-
 // Add new types here so that they can be imported singly as required.
 export type {
   Types,
@@ -390,10 +341,8 @@ export {
   Settings,
   // Rendering Engine
   VolumeViewport3D,
-  GenericVolumeViewport3D,
   ECGViewport,
-  ECGGenericViewport,
-  GenericViewport,
+  BaseViewport,
   ViewportProjectionService,
   viewportProjection,
   viewportHasCanvasWorldTransform,
@@ -447,7 +396,6 @@ export {
   ECG_CLINICAL_SWEEP_SPEEDS,
   ECG_CLINICAL_SENSITIVITIES,
   VideoViewport,
-  VideoGenericViewport,
   createDefaultVideoRenderPaths,
   createVideoRenderPathResolver,
   DefaultVideoDataProvider,
@@ -462,12 +410,10 @@ export {
   DefaultVolume3DDataProvider,
   volume3DProjection,
   WSIViewport,
-  WSIGenericViewport,
   createDefaultWSIRenderPaths,
   createWSIRenderPathResolver,
   DefaultWSIDataProvider,
   wsiProjection,
-  renderingEngineExportsV2,
   getProjectionScaleMatrix,
   registerViewportType,
   isRegisteredViewportType,

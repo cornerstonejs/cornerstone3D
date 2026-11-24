@@ -50,7 +50,7 @@ function applyPlanarProjectionPresentation(
 
 setTitleAndDescription(
   'Stack Position Next',
-  'Demonstrates the native Planar GenericViewport display area API.'
+  'Demonstrates the native PlanarViewport display area API.'
 );
 
 const content = document.getElementById('content');

@@ -29,8 +29,8 @@ const toolGroupId = 'videoNextToolGroup';
 const videoDataId = 'video-next:primary';
 
 setTitleAndDescription(
-  'Video GenericViewport API',
-  'Demonstrates the clean GenericViewport video API using dataset registration and setDisplaySets. Right-drag to pan, scroll to zoom.'
+  'VideoViewport API',
+  'Demonstrates the clean VideoViewport API using dataset registration and setDisplaySets. Right-drag to pan, scroll to zoom.'
 );
 
 const content = document.getElementById('content');

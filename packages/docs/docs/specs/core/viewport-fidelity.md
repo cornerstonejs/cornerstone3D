@@ -39,8 +39,8 @@ Related documents:
 - The fidelity state component: [cornerstone3D#2902](https://github.com/cornerstonejs/cornerstone3D/issues/2902).
 - The quality record and the comparison function:
   [Composite voxel manager](../../concepts/cornerstone-core/compositeVoxelManager.md).
-- The placement of fidelity code in a generic viewport:
-  [Generic Viewport code design](./generic-viewport-code-design.md), group
+- The placement of fidelity code in a viewport:
+  [Viewport code design](./generic-viewport-code-design.md), group
   GENVIEW-FIDELITY.
 
 ## Description
@@ -190,7 +190,7 @@ states map to the states of this specification: transiently lossy is
   `ProgressiveRetrieveImages` sets `IImage.imageQualityPending` while the same
   request or a later stage still replaces the image, and clears it when no
   stage follows. A pending `SUBRESOLUTION` or `LOSSY` image is `loading`.
-  The generic stack render paths read `imageQualityPending` of the image that
+  The stack render paths read `imageQualityPending` of the image that
   they draw, and draw again when `IMAGE_LOADED` gives a better stage of that
   image.
 - **FIDELITY-STATE-9** A viewport reports the fidelity of its source data. The
@@ -342,9 +342,9 @@ states map to the states of this specification: transiently lossy is
     `IMAGE_VOLUME_LOADING_COMPLETED`, because no render can follow such an
     event. The call for `IMAGE_VOLUME_MODIFIED` runs at most once for each
     animation frame, after the last event of that frame, because a streaming
-    load fires the event once for each image. A generic render path requests
+    load fires the event once for each image. A render path requests
     a render on each volume event.
-  - The `Viewport` class and the `GenericViewport` class use one shared
+  - The `Viewport` class and the `BaseViewport` class use one shared
     helper, `helpers/fidelityIndicator/notifyFidelityStateChanged.ts`. The
     helper obeys `suppressEvents`.
   - A viewport whose `canReportFidelity()` is false returns at once. It
@@ -389,7 +389,7 @@ states map to the states of this specification: transiently lossy is
   with `detachFidelityIndicator()`. An application can call
   `attachFidelityIndicator(viewport)` itself, and that call returns the cleanup
   function. The indicator attaches only when `canReportFidelity()` is true. A
-  generic family that can show lossy data returns true before it mounts data.
+  viewport family that can show lossy data returns true before it mounts data.
   The indicator then stays `hidden` until the viewport draws such data.
 - **FIDELITY-UI-9** The indicator of FIDELITY-UI-2 is a DOM element in the
   top-right corner of the viewport element. `fidelityLabelOf()` takes the

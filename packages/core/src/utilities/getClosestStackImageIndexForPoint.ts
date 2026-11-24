@@ -3,7 +3,7 @@ import * as planar from './planar';
 import * as metaData from '../metaData';
 import { MetadataModules } from '../enums';
 import type { Point3 } from '../types';
-import type PlanarViewport from '../RenderingEngine/GenericViewport/Planar/PlanarViewport';
+import type PlanarViewport from '../RenderingEngine/Viewports/Planar/PlanarViewport';
 
 /**
  * Given a point in 3D space and a viewport it returns the index of the closest imageId, it assumes that stack images are sorted according to their sliceLocation

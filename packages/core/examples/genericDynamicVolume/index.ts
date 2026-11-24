@@ -40,7 +40,7 @@ const dataId = 'dynamic-volume-next:pt';
 const dimensionGroupSliderId = 'dimension-group-slider';
 
 // Registering the display set with a volumeId that carries the dynamic
-// loader scheme is what makes the GenericViewport mount this data as a
+// loader scheme is what makes the PlanarViewport mount this data as a
 // StreamingDynamicImageVolume (4D) instead of a regular streaming volume.
 const volumeLoaderScheme = 'cornerstoneStreamingDynamicImageVolume';
 const volumeName = 'PT_4D_VOLUME_GENERIC_ID';
@@ -50,11 +50,11 @@ let volume: Types.IDynamicImageVolume;
 let cineIntervalId: ReturnType<typeof setInterval> | null = null;
 
 const description = [
-  'Displays a 4D DICOM series (dimension groups) in a Planar GenericViewport.',
+  'Displays a 4D DICOM series (dimension groups) in a PlanarViewport.',
   'DataSet: PET 255 x 255 images / 40 dimension groups / 235 images each / 9,400 images total',
 ].join('\n');
 
-setTitleAndDescription('Volume 4D GenericViewport', description);
+setTitleAndDescription('Volume 4D PlanarViewport', description);
 
 const content = document.getElementById('content');
 const element = document.createElement('div');
@@ -86,7 +86,7 @@ function getViewport(): PlanarViewport | undefined {
 function setDimensionGroup(dimensionGroupNumber: number) {
   // Setting dimensionGroupNumber swaps the active scalar data on the volume,
   // invalidates its shared GPU texture and re-renders every viewport that
-  // holds this volume - including GenericViewports.
+  // holds this volume - including the viewports.
   volume.dimensionGroupNumber = dimensionGroupNumber;
 }
 
@@ -210,7 +210,7 @@ async function run() {
   addDimensionGroupSlider();
   addDimensionGroupEventListener();
 
-  // Instantiate a rendering engine and create a Planar GenericViewport
+  // Instantiate a rendering engine and create a PlanarViewport
   const renderingEngine = new RenderingEngine(renderingEngineId);
 
   renderingEngine.enableElement({
@@ -252,7 +252,7 @@ async function run() {
   element.addEventListener('contextmenu', (e) => e.preventDefault());
 
   // Register the display set. The volumeId ties the display set to the
-  // dynamic volume created above; the GenericViewport resolves it through
+  // dynamic volume created above; the PlanarViewport resolves it through
   // the volume render path.
   utilities.genericViewportDisplaySetMetadataProvider.add(dataId, {
     imageIds,

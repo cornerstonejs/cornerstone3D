@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import {
   createExampleUrl,
   checkForCanvasSnapshot,
-  expectGenericViewportRuntime,
+  expectViewportRuntime,
   getPlainVolumeSliceRenderMode,
   screenShotPaths,
 } from '../utils/index';
@@ -69,7 +69,7 @@ test.describe('Labelmap Rendering - Next (GPU)', () => {
   test.beforeEach(navigateToExample());
 
   test('should use PlanarViewport GPU runtime', async ({ page }) => {
-    await expectGenericViewportRuntime(page, [
+    await expectViewportRuntime(page, [
       {
         renderingEngineId: 'myRenderingEngine',
         viewportId: 'CT_AXIAL',
@@ -129,7 +129,7 @@ test.describe('Labelmap Rendering - Next (CPU)', () => {
   test.beforeEach(navigateToExample({ cpu: 'true' }));
 
   test('should use PlanarViewport CPU runtime', async ({ page }) => {
-    await expectGenericViewportRuntime(page, [
+    await expectViewportRuntime(page, [
       {
         renderingEngineId: 'myRenderingEngine',
         viewportId: 'CT_AXIAL',

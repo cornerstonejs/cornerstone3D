@@ -19,11 +19,11 @@ import {
   PlanarRenderPathDecisionService,
   canSampleSlabOnCpu,
   hasSlab,
-} from '../src/RenderingEngine/GenericViewport/Planar/PlanarRenderPathDecisionService';
-import { VtkVolumeSliceRenderPath } from '../src/RenderingEngine/GenericViewport/Planar/VtkVolumeSliceRenderPath';
+} from '../src/RenderingEngine/Viewports/Planar/PlanarRenderPathDecisionService';
+import { VtkVolumeSliceRenderPath } from '../src/RenderingEngine/Viewports/Planar/VtkVolumeSliceRenderPath';
 import PlanarViewport, {
   getRemountedViewPropOrder,
-} from '../src/RenderingEngine/GenericViewport/Planar/PlanarViewport';
+} from '../src/RenderingEngine/Viewports/Planar/PlanarViewport';
 import renderingEngineCache from '../src/RenderingEngine/renderingEngineCache';
 import genericViewportDisplaySetMetadataProvider from '../src/utilities/genericViewportDisplaySetMetadataProvider';
 

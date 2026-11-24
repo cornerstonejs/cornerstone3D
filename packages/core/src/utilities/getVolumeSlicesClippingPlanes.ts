@@ -1,7 +1,7 @@
 import { vec3 } from 'gl-matrix';
 import { RENDERING_DEFAULTS } from '../constants';
 import type { IImageVolume, Point3 } from '../types';
-import { getPlanarVolumeSliceRange } from '../RenderingEngine/GenericViewport/Planar/planarSliceBasis';
+import { getPlanarVolumeSliceRange } from '../RenderingEngine/Viewports/Planar/planarSliceBasis';
 import {
   getPlanarVolumeSliceNavigationState,
   getPlanarVolumeSlicePoint,

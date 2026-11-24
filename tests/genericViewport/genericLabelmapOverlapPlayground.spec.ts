@@ -2,7 +2,7 @@ import { test } from '@playwright/test';
 import {
   createExampleUrl,
   checkForCanvasSnapshot,
-  expectGenericViewportRuntime,
+  expectViewportRuntime,
   getPlainVolumeSliceRenderMode,
   getVisibleViewportCanvas,
   screenShotPaths,
@@ -96,7 +96,7 @@ test.describe('Labelmap Overlap Playground - Next', () => {
   test.beforeEach(navigateToExample({ labelmapImageMapper: '1' }));
 
   test('should use PlanarViewport runtime', async ({ page }) => {
-    await expectGenericViewportRuntime(page, [
+    await expectViewportRuntime(page, [
       {
         renderingEngineId: 'labelmapOverlapPlaygroundRenderingEngine',
         viewportId: 'OVERLAP_STACK',
@@ -157,7 +157,7 @@ test.describe('Labelmap Overlap Playground - Next (CPU)', () => {
   );
 
   test('should use PlanarViewport CPU runtime', async ({ page }) => {
-    await expectGenericViewportRuntime(page, [
+    await expectViewportRuntime(page, [
       {
         renderingEngineId: 'labelmapOverlapPlaygroundRenderingEngine',
         viewportId: 'OVERLAP_STACK',

@@ -1,12 +1,12 @@
 ---
 id: data-bindings-and-loading
 title: Data Bindings And Loading
-summary: How Generic Viewport data providers, bindings, and presentation state work together
+summary: How viewport data providers, bindings, and presentation state work together
 ---
 
 # Data Bindings And Loading
 
-Generic viewports separate loading, binding, viewport navigation, and render
+The viewports separate loading, binding, viewport navigation, and render
 appearance.
 
 The viewport asks its `DataProvider` to load a logical data id. The loaded data

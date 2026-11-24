@@ -2,7 +2,7 @@ import { test } from '@playwright/test';
 import {
   createExampleUrl,
   checkForCanvasSnapshot,
-  expectGenericViewportRuntime,
+  expectViewportRuntime,
   getVisibleViewportCanvas,
   screenShotPaths,
   simulateDrawPath,
@@ -51,7 +51,7 @@ test.describe('Stack Labelmap Segmentation - Next (GPU)', () => {
   test.beforeEach(navigateToExample());
 
   test('should use PlanarViewport GPU runtime', async ({ page }) => {
-    await expectGenericViewportRuntime(page, [
+    await expectViewportRuntime(page, [
       {
         renderingEngineId: 'myRenderingEngine',
         viewportId: 'STACK_VIEWPORT',
@@ -88,7 +88,7 @@ test.describe('Stack Labelmap Segmentation - Next (CPU)', () => {
   test.beforeEach(navigateToExample({ cpu: 'true' }));
 
   test('should use PlanarViewport CPU runtime', async ({ page }) => {
-    await expectGenericViewportRuntime(page, [
+    await expectViewportRuntime(page, [
       {
         renderingEngineId: 'myRenderingEngine',
         viewportId: 'STACK_VIEWPORT',

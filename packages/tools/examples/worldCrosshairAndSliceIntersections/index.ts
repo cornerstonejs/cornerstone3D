@@ -45,7 +45,7 @@ const renderingEngineId = 'myRenderingEngine';
 // ======== Set up page ======== //
 setTitleAndDescription(
   'World Crosshair + Slice Intersections',
-  'Both tools enabled together on native PLANAR (generic) viewports and fully independent: the WorldCrosshairTool owns the persistent reference point, the SliceIntersectionTool owns the plane intersection lines. Dragging a line scrolls the source plane but never moves the reference point; the lines are never centered on the point.'
+  'Both tools enabled together on PLANAR viewports and fully independent: the WorldCrosshairTool owns the persistent reference point, the SliceIntersectionTool owns the plane intersection lines. Dragging a line scrolls the source plane but never moves the reference point; the lines are never centered on the point.'
 );
 
 const size = '500px';

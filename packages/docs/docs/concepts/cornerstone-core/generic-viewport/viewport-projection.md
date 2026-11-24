@@ -1,12 +1,12 @@
 ---
 id: viewport-projection
 title: Viewport Projection
-summary: How Generic Viewport exposes cross-viewport presentation, transforms, and renderer-camera output without making ICamera universal
+summary: How the viewports expose cross-viewport presentation, transforms, and renderer-camera output without making ICamera universal
 ---
 
 # Viewport Projection
 
-Viewport Projection is the Generic Viewport construct for asking how a
+Viewport Projection is the construct of the viewports for asking how a
 viewport's semantic state maps into presentation, coordinate transforms, and
 renderer output.
 
@@ -68,7 +68,7 @@ The family namespaces are intentionally exported as advanced helpers:
 Use those namespaces when building a custom synchronizer, tool, test, or new
 viewport family that needs lower-level snapshot or renderer-camera behavior.
 They are a tier below the core viewport methods and may change while the
-Generic Viewport API is still settling. Application code should prefer
+viewport API is still settling. Application code should prefer
 `viewportProjection.getPresentation()` and
 `viewportProjection.withPresentation()` for presentation reads and writes.
 Viewport instances intentionally do not expose
@@ -223,7 +223,7 @@ Use Viewport Projection when you are writing:
 
 - a custom synchronizer that needs to work across viewport families
 - a tool that must inspect capabilities before transforming points
-- a new Generic Viewport family
+- a new viewport family
 - a bridge between semantic state and renderer-specific camera output
 
 ## Reading A Projection
@@ -299,14 +299,14 @@ native view state and let the caller decide whether to call `setViewState`.
 
 ## Adding A New Adapter
 
-For a new Generic Viewport family:
+For a new viewport family:
 
 1. Define the family-specific snapshot and presentation types.
 2. Implement `getSnapshot` from current semantic state and resolved geometry.
 3. Implement `getPresentation` for the existing public view-presentation shape.
 4. Implement `withPresentation` as a pure translation back to semantic state.
 5. Implement `applyToRenderer` only if the viewport can produce renderer output.
-6. Register the adapter in the Generic Viewport projection setup.
+6. Register the adapter in the viewport projection setup.
 
 The adapter should not mutate the viewport in `withPresentation`. Return the
 next semantic state and let the viewport decide how to apply it.

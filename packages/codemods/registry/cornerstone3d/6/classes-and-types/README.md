@@ -51,7 +51,7 @@ npx codemod @cornerstonejs/cornerstone3d-6-classes-and-types
 - `Types.IGenericViewport` becomes `Types.IViewport`.
 - The legacy classes `StackViewport`, `VolumeViewport` and
   `BaseVolumeViewport` become `PlanarViewport` in a type, and `Viewport`
-  becomes `GenericViewport`.
+  becomes `BaseViewport`.
 - `x instanceof StackViewport` becomes `utilities.viewportIsInStackMode(x)`,
   `VolumeViewport` `(utilities.getViewportContentMode(x) === 'volume')` (in
   parentheses where the comparison would bind otherwise),
@@ -102,14 +102,13 @@ npx codemod @cornerstonejs/cornerstone3d-6-classes-and-types
   binding, an input from a helper or `push`, `this.renderingEngine`), the
   removed `Types.*ViewportProperties`, `Types.IVolumeInput`,
   `Types.VolumeInputCallback`, `Types.SetAspectRatioOptions` and
-  `Types.ImageSetOptions`, a removed or renamed `Types` name
-  (`IStackViewport` and its kin, `IGenericViewport`, and the removed names
-  above) that a file imports or re-exports from the subpath
-  `@cornerstonejs/core/types`, such as
+  `Types.ImageSetOptions`, and a removed `Types` name (`IStackViewport`
+  and its kin, and the removed names above) that a file imports or
+  re-exports from the subpath `@cornerstonejs/core/types`, such as
   `import { IStackViewport } from '@cornerstonejs/core/types'` (reported by
-  its `Types` name: the rewrites read `Types.X` only), and
-  `utilities.isGenericViewport(...)`
-  (deprecated: drop the check and keep its true branch).
+  its `Types` name: the rewrites read `Types.X` only). The last step,
+  `api-names`, reports `utilities.isGenericViewport(...)` and
+  `IGenericViewport` from the subpath.
 - Manual, at line 1: `the file was not analysed:` with the reason, for a
   file whose names cannot be looked up (the tool cannot read it, or a name
   is declared twice in one scope). The file stays as it is. See the README

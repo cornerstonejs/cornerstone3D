@@ -1,4 +1,4 @@
-// Shared fake-image-stack loader for vitest-browser GenericViewport state tests.
+// Shared fake-image-stack loader for vitest-browser BaseViewport state tests.
 //
 // Generalizes the single-slice fake loader pattern from
 // tests/vitest-browser/genericStackApi.browser.test.ts to an N-slice stack.

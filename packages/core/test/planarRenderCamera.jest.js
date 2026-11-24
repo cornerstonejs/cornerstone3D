@@ -5,7 +5,7 @@ jest.mock('../src/metaData', () => ({
 
 import { OrientationAxis } from '../src/enums';
 import { RENDERING_DEFAULTS } from '../src/constants';
-import { PlanarVolumeResolvedView } from '../src/RenderingEngine/GenericViewport/Planar';
+import { PlanarVolumeResolvedView } from '../src/RenderingEngine/Viewports/Planar';
 import {
   applyPlanarICameraToActor,
   applyPlanarICameraToRenderer,
@@ -15,8 +15,8 @@ import {
   resolvePlanarICamera,
   setPlanarVolumeCameraClippingRange,
   updatePlanarVolumeClippingPlanes,
-} from '../src/RenderingEngine/GenericViewport/Planar/planarRenderCamera';
-import setVtkCameraClippingRange from '../src/RenderingEngine/GenericViewport/setVtkCameraClippingRange';
+} from '../src/RenderingEngine/Viewports/Planar/planarRenderCamera';
+import setVtkCameraClippingRange from '../src/RenderingEngine/Viewports/setVtkCameraClippingRange';
 
 function expectPoint2Close(actual, expected, precision = 5) {
   expect(actual[0]).toBeCloseTo(expected[0], precision);

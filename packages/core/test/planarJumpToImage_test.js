@@ -1,6 +1,6 @@
 import * as cornerstone3D from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
-import { SAMPLED_SLICE_REST_DELAY_MS } from '../src/RenderingEngine/GenericViewport/Planar/planarSampledSliceRest';
+import { SAMPLED_SLICE_REST_DELAY_MS } from '../src/RenderingEngine/Viewports/Planar/planarSampledSliceRest';
 import {
   createNextViewport,
   createSeries,

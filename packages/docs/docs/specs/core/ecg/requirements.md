@@ -9,12 +9,12 @@ summary: What a clinician must see and be able to do when Cornerstone3D shows a 
 ## Scope
 
 This specification gives the user requirements of the ECG display of the
-Generic Viewport: what a clinician sees, and what a clinician can do. It names
+`ECGViewport`: what a clinician sees, and what a clinician can do. It names
 no class, file or algorithm. The deprecated ECG display does not meet ECG-U-3,
 ECG-U-7 and ECG-U-8.
 
 The code design is in the
-[Generic Viewport code design](../generic-viewport-code-design.md), section
+[Viewport code design](../generic-viewport-code-design.md), section
 GENVIEW-ECG. That section can change when a better design appears.
 
 Change rule: change a requirement of this document only when the requirement

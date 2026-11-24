@@ -9,7 +9,7 @@ import scroll from '../../src/utilities/scroll';
  * A stand-in for a generic viewport that shows `mode` content, with 3 slices
  * and the second one on display. Its scroll is a mock.
  */
-function createGenericViewport(mode) {
+function createViewport(mode) {
   return {
     type: mode === 'stack' || mode === 'volume' ? 'planar' : mode,
     element: document.createElement('div'),
@@ -26,7 +26,7 @@ function createGenericViewport(mode) {
 
 describe('scroll on a generic viewport', () => {
   it('gives a next planar viewport in stack mode a number of images only, whatever the options', () => {
-    const viewport = createGenericViewport('stack');
+    const viewport = createViewport('stack');
 
     scroll(viewport, {
       delta: 1,
@@ -39,7 +39,7 @@ describe('scroll on a generic viewport', () => {
   });
 
   it('wraps a next planar viewport at both ends with loop', () => {
-    const viewport = createGenericViewport('stack');
+    const viewport = createViewport('stack');
 
     scroll(viewport, { delta: 2, loop: true });
     scroll(viewport, { delta: -2, loop: true });
@@ -50,8 +50,8 @@ describe('scroll on a generic viewport', () => {
   });
 
   it('leaves a whole slide viewport and an ECG viewport as they were', () => {
-    const wholeSlide = createGenericViewport('wsi');
-    const ecg = createGenericViewport('ecg');
+    const wholeSlide = createViewport('wsi');
+    const ecg = createViewport('ecg');
 
     scroll(wholeSlide, { delta: 1, debounceLoading: false, loop: true });
     scroll(ecg, { delta: 2, loop: true });

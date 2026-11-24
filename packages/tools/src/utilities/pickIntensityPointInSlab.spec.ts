@@ -23,7 +23,7 @@ function createFakeVolume(
 }
 
 /**
- * Minimal axial Generic ("next") planar viewport: enough surface for the
+ * Minimal axial planar viewport: enough surface for the
  * viewportSupportsDisplaySetPresentation duck-typing,
  * plus a camera looking along +z with its focal plane at z = focalPoint[2].
  */

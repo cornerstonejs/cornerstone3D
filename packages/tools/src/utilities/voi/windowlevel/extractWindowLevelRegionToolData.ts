@@ -10,10 +10,10 @@ function extractWindowLevelRegionToolData(viewport: Types.IViewport) {
   const contentMode = csUtils.getViewportContentMode(viewport);
 
   if (contentMode === 'volume') {
-    return extractImageDataGenericVolume(viewport as PlanarViewport);
+    return extractImageDataOfVolumeSlice(viewport as PlanarViewport);
   }
 
-  return extractImageDataGeneric(viewport);
+  return extractImageDataOfCurrentImage(viewport);
 }
 
 /**
@@ -22,7 +22,7 @@ function extractWindowLevelRegionToolData(viewport: Types.IViewport) {
  * level is skipped with a warning instead of a throw that would end the tool
  * interaction.
  */
-function extractImageDataGenericVolume(viewport: PlanarViewport) {
+function extractImageDataOfVolumeSlice(viewport: PlanarViewport) {
   try {
     return extractImageDataVolume(viewport);
   } catch (error) {
@@ -51,7 +51,7 @@ function extractImageDataVolume(viewport: PlanarViewport) {
   };
 }
 
-function extractImageDataGeneric(viewport: Types.IViewport) {
+function extractImageDataOfCurrentImage(viewport: Types.IViewport) {
   const imageId = (viewport as PlanarViewport).getCurrentImageId();
 
   if (!imageId) {
@@ -60,7 +60,7 @@ function extractImageDataGeneric(viewport: Types.IViewport) {
     // is no per-image slice to read here. Degrade gracefully (the caller skips
     // the region window level) instead of throwing, which would abort the tool
     // interaction. Full reformatted-slice region window-leveling for native
-    // volume viewports needs slice-view plumbing on the generic viewport and is
+    // volume viewports needs slice-view plumbing on the viewport and is
     // tracked as a follow-up.
     cs3dLogger.warn(
       'WindowLevelRegionTool: the current native viewport slice has no backing image (reformatted/oblique volume plane); skipping region window level.'

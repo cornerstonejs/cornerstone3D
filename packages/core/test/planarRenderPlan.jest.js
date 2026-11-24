@@ -28,8 +28,8 @@ import { getRenderingCapabilities } from '../src/utilities/renderingCapabilities
 import {
   PlanarRenderPathDecisionService,
   getGpuVolumePathLimit,
-} from '../src/RenderingEngine/GenericViewport/Planar/PlanarRenderPathDecisionService';
-import PlanarViewport from '../src/RenderingEngine/GenericViewport/Planar/PlanarViewport';
+} from '../src/RenderingEngine/Viewports/Planar/PlanarRenderPathDecisionService';
+import PlanarViewport from '../src/RenderingEngine/Viewports/Planar/PlanarViewport';
 import renderingEngineCache from '../src/RenderingEngine/renderingEngineCache';
 import { collectBindingFacts } from '../src/RenderingEngine/helpers/stats/collectBindingFacts';
 import {

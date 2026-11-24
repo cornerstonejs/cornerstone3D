@@ -79,7 +79,7 @@ const viewportSpecs: ViewportSpec[] = [
 
 setTitleAndDescription(
   'PET Planar Render Backend Grid',
-  'Four PET Planar GenericViewport viewports. Top row is pinned to GPU rendering, bottom row is pinned to CPU rendering; left column is stack-like PET and right column is sagittal PET volume slicing.'
+  'Four PET PlanarViewport viewports. Top row is pinned to GPU rendering, bottom row is pinned to CPU rendering; left column is stack-like PET and right column is sagittal PET volume slicing.'
 );
 
 const content = document.getElementById('content');

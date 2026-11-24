@@ -27,7 +27,36 @@ that has no entry yet changes nothing.
 
 ### Generic names
 
-None yet.
+- `GenericViewport` becomes `BaseViewport`; `GenericVolumeViewport3D`,
+  `VideoGenericViewport`, `WSIGenericViewport` and `ECGGenericViewport`
+  become `VolumeViewport3D`, `VideoViewport`, `WSIViewport` and
+  `ECGViewport`, in the import and in every use. A re-export keeps its
+  public name (`export { BaseViewport as GenericViewport }`).
+- `Types.IGenericViewport` becomes `Types.IViewport`.
+- `utilities.resolveGenericViewportVolumeId` becomes
+  `utilities.resolveViewportVolumeId`.
+- `ViewportType.PLANAR_NEXT`, `VOLUME_3D_NEXT`, `VIDEO_NEXT`,
+  `WHOLE_SLIDE_NEXT` and `ECG_NEXT`, of `Enums.ViewportType` and of
+  `Enums.ViewportTypes`, become `PLANAR`, `VOLUME_3D`, `VIDEO`,
+  `WHOLE_SLIDE` and `ECG`. The 5.x strings `'planarNext'` and its kin are
+  the work of the `viewport-types` step, which rewrites them on code of a
+  6.0 beta too.
+- The modules of the entry points `@cornerstonejs/core/utilities/*`,
+  `@cornerstonejs/tools/utilities/*` and `@cornerstonejs/tools/tools/*` that
+  6.0 renamed: `resolveGenericViewportVolumeId` becomes
+  `resolveViewportVolumeId`, `genericViewportToolHelpers` becomes
+  `viewportToolHelpers`, and
+  `displayTools/Labelmap/labelmapRenderPlan/planarGenericVolumeLabelmap`
+  becomes `planarVolumeLabelmap`. A renamed name in such an import keeps its
+  local name (`import { resolveViewportVolumeId as resolveGenericViewportVolumeId }`).
+- Reported, manual: `utilities.isGenericViewport(...)` (true for every
+  viewport in 6.0: delete the test and the branch for the other case),
+  `renderingEngineExportsV2` (import each class and function by its own
+  name), and `IGenericViewport`, `isGenericViewport` and
+  `resolveGenericViewportVolumeId` imported from the subpaths
+  `@cornerstonejs/core/types` and `@cornerstonejs/core/utilities`, an import
+  of the deleted module `@cornerstonejs/core/types/IGenericViewport`, and a
+  namespace import of a renamed module whose names changed.
 
 ### Display sets
 

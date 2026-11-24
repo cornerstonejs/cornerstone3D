@@ -44,7 +44,7 @@ const {
 const { MouseBindings } = csToolsEnums;
 const { ViewportType, OrientationAxis } = Enums;
 
-const LOG = 'GenericViewportShowcase:';
+const LOG = 'ViewportShowcase:';
 
 // ----------------------------------------------------------------------------
 // Identifiers
@@ -84,12 +84,12 @@ const viewportColors = {
 // Page chrome
 // ----------------------------------------------------------------------------
 setTitleAndDescription(
-  'GenericViewport (next) Showcase',
+  'Viewport Showcase',
   [
     'A single example that exercises everything migrated to the native next API:',
     'planar acquisition rendering, volume MPR (axial/sagittal/coronal PlanarViewport),',
     'native 3D volume rendering, plus Crosshairs, Cine, Reference Cursors, Magnify,',
-    'Scale Overlay and Window Level - all running on GenericViewports.',
+    'Scale Overlay and Window Level - all running on the 6.0 viewports.',
   ].join(' ')
 );
 
@@ -201,7 +201,7 @@ function getReferenceLineDraggableRotatable(): boolean {
   // reference-line grab (drag-to-translate, which reslices the other MPR
   // viewports - the "jump") and the center gap. Rotation drag itself is a
   // no-op on native PLANAR (the tool gates OPERATION.ROTATE off for
-  // GenericViewports), so the rotation handles render but are inert for now.
+  // the 6.0 viewports), so the rotation handles render but are inert for now.
   return true;
 }
 

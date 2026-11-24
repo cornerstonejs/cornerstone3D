@@ -22,7 +22,7 @@ export type MeasurementTargetCandidate = {
   /**
    * The display set being shown, where registered - an `IDisplaySet` from
    * `@cornerstonejs/metadata` (via the `displaySetModule` metadata module),
-   * or the display set registered with the generic viewports.
+   * or the display set registered with the viewports.
    */
   displaySet?: unknown;
   /** The uid of the display set, where known. */

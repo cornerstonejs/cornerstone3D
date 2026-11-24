@@ -86,7 +86,7 @@ import * as voxelGrid from './voxelGrid';
 
 /**
  * @deprecated Kept for 5.x compatibility. Use the ECG functions of
- * `GenericViewport/ECG`, for example `getECGTraceLayout`. 6.x still
+ * `Viewports/ECG`, for example `getECGTraceLayout`. 6.x still
  * exports it.
  */
 const ECGUtilities = ECGUtilitiesModule;
@@ -106,7 +106,7 @@ import { buildMetadata } from './buildMetadata';
 // solving the circular dependency issue
 import { _getViewportModality } from './getViewportModality';
 import { _getScalingDescriptor } from './getScalingDescriptor';
-import { resolveGenericViewportVolumeId } from './resolveGenericViewportVolumeId';
+import { resolveViewportVolumeId } from './resolveViewportVolumeId';
 import cache from '../cache/cache';
 import getDynamicVolumeInfo from './getDynamicVolumeInfo';
 import autoLoad from './autoLoad';
@@ -153,7 +153,6 @@ import {
   viewportSupportsVolumeActors,
   viewportSupportsVolumeId,
   viewportSupportsVolumeURI,
-  isGenericViewport,
   viewportSupportsDisplaySetPresentation,
   getViewportContentMode,
   viewportIsInVolumeMode,
@@ -215,7 +214,7 @@ export {
   isOpposite,
   getViewportModality,
   getScalingDescriptor,
-  resolveGenericViewportVolumeId,
+  resolveViewportVolumeId,
   windowLevel,
   convertToGrayscale,
   convertColorArrayToRgbString,
@@ -316,7 +315,6 @@ export {
   viewportSupportsVolumeActors,
   viewportSupportsVolumeId,
   viewportSupportsVolumeURI,
-  isGenericViewport,
   viewportSupportsDisplaySetPresentation,
   getViewportContentMode,
   viewportIsInVolumeMode,

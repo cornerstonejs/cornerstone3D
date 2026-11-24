@@ -1,6 +1,6 @@
 import * as cornerstone3D from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
-import { applyCanvasSharpeningSmoothing } from '../src/RenderingEngine/GenericViewport/Planar/planarCanvasSharpeningSmoothing';
+import { applyCanvasSharpeningSmoothing } from '../src/RenderingEngine/Viewports/Planar/planarCanvasSharpeningSmoothing';
 import * as stackSharpening05 from './groundTruth/planarSharpening_stack_sharpening_0_5.png';
 import * as stackSharpening2 from './groundTruth/planarSharpening_stack_sharpening_2.png';
 import * as stackSmoothing3 from './groundTruth/planarSharpening_stack_smoothing_3.png';

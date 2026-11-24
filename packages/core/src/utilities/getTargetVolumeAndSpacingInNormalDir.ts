@@ -1,7 +1,7 @@
 import cache from '../cache/cache';
 import { EPSILON } from '../constants';
 import type { ICamera, IImageVolume, Point3 } from '../types';
-import type PlanarViewport from '../RenderingEngine/GenericViewport/Planar/PlanarViewport';
+import type PlanarViewport from '../RenderingEngine/Viewports/Planar/PlanarViewport';
 import getSpacingInNormalDirection from './getSpacingInNormalDirection';
 import getVoxelThicknessAlongNormal from './voxelSlab/getVoxelThicknessAlongNormal';
 import { getConfiguration } from '../init';

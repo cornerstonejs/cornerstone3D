@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach } from '@jest/globals';
-import WSIViewport from '../src/RenderingEngine/GenericViewport/WSI/WSIViewport';
-import { viewportProjection } from '../src/RenderingEngine/GenericViewport/viewportProjection';
+import WSIViewport from '../src/RenderingEngine/Viewports/WSI/WSIViewport';
+import { viewportProjection } from '../src/RenderingEngine/Viewports/viewportProjection';
 import { Events, MetadataModules } from '../src/enums';
 import * as metaData from '../src/metaData';
 import { isInAcquisitionPlane } from '../src/utilities/isInAcquisitionPlane';

@@ -131,8 +131,8 @@ const allViewportIds = allViewportSpecs.map(({ viewportId }) => viewportId);
 // Page chrome
 // ----------------------------------------------------------------------------
 setTitleAndDescription(
-  'World Crosshair + Slice Intersections (PET/CT, Generic Viewports)',
-  'Both new tools running exclusively on native Generic viewports. Top row: CT as a 2D planar stack, axial/sagittal/coronal volume slices, and a 3D bone-preset volume rendering that mirrors the reference point as world-space intersecting lines. Bottom row: the PT series of the same study. Viewports showing the same plane (CT + PT + 2D stack) form one plane group: each viewport shows exactly one line per other plane, and dragging a line moves every viewport of that plane together. Each tool can be toggled on and off independently.'
+  'World Crosshair + Slice Intersections (PET/CT)',
+  'Both new tools running exclusively on the 6.0 viewports. Top row: CT as a 2D planar stack, axial/sagittal/coronal volume slices, and a 3D bone-preset volume rendering that mirrors the reference point as world-space intersecting lines. Bottom row: the PT series of the same study. Viewports showing the same plane (CT + PT + 2D stack) form one plane group: each viewport shows exactly one line per other plane, and dragging a line moves every viewport of that plane together. Each tool can be toggled on and off independently.'
 );
 
 const content = document.getElementById('content');
@@ -488,7 +488,7 @@ async function run() {
   toolGroup3d.addViewport(ct3dViewportId, renderingEngineId);
 
   // Wheel zooms the 3D volume rendering through the native view-state API
-  // (the generic 3D viewport has no legacy zoom surface for the ZoomTool).
+  // (the 3D viewport has no legacy zoom surface for the ZoomTool).
   ct3dElement.addEventListener(
     'wheel',
     (evt) => {

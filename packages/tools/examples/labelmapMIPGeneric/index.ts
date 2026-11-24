@@ -47,8 +47,8 @@ const viewportId2 = 'CT_MIP';
 
 // ======== Set up page ======== //
 setTitleAndDescription(
-  'Labelmap Rendering over MIP data (Generic Planar Viewport)',
-  'Here we demonstrate rendering of a mock ellipsoid labelmap over MIP data using the new generic planar viewport API'
+  'Labelmap Rendering over MIP data (Planar Viewport)',
+  'Here we demonstrate rendering of a mock ellipsoid labelmap over MIP data using the planar viewport API'
 );
 
 const size = '512px';
@@ -185,7 +185,7 @@ async function run() {
   // Set the volume to load
   volume.load();
 
-  // Register the source display set for the generic viewports
+  // Register the source display set for the viewports
   utilities.genericViewportDisplaySetMetadataProvider.add(sourceDataId, {
     kind: 'planar',
     imageIds,

@@ -6,7 +6,7 @@ summary: Comprehensive ownership model for view state, presentation, references,
 
 # Camera Model
 
-Generic viewports use `viewState`, not VTK-style camera fields, as the clean source
+The viewports use `viewState`, not VTK-style camera fields, as the clean source
 of truth.
 
 The model is:

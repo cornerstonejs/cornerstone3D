@@ -251,7 +251,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
   /**
    * Returns the displayed size (in device pixels) of a viewport's container.
    *
-   * For native Generic ("next") viewports the on-screen canvas returned by
+   * The on-screen canvas of a viewport returned by
    * getOrCreateCanvas (the .cornerstone-canvas / VTK target) can report
    * clientWidth/Height === 0 when the CPU render path is active and that canvas
    * is hidden in favor of the CPU canvas. Measuring from the viewport element

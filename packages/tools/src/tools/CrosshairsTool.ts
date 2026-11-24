@@ -44,7 +44,7 @@ import {
   hideElementCursor,
 } from '../cursors/elementCursor';
 import liangBarksyClip from '../utilities/math/vec2/liangBarksyClip';
-import { jumpToFocalPoint } from '../utilities/genericViewportToolHelpers';
+import { jumpToFocalPoint } from '../utilities/viewportToolHelpers';
 import { isMobile } from '../utilities/touch';
 import {
   applyViewportPresentation,

@@ -5,7 +5,7 @@ import { utilities } from '@cornerstonejs/core';
 import { getPointInLineOfSightWithCriteria } from '../utilities/planar';
 import type { PublicToolProps, ToolProps } from '../types';
 import { getToolGroupForViewport } from '../store/ToolGroupManager';
-import { navigatePlanarViewportToPoint } from '../utilities/genericViewportToolHelpers';
+import { navigatePlanarViewportToPoint } from '../utilities/viewportToolHelpers';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
 const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(

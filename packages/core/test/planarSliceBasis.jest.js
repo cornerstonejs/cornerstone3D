@@ -18,7 +18,7 @@ import {
   getVolumeImageIdIndexWorldPoint,
   resolvePlanarVolumeImageIdIndex,
   shouldUsePlanarCpuVolumeSliceBasis,
-} from '../src/RenderingEngine/GenericViewport/Planar/planarSliceBasis';
+} from '../src/RenderingEngine/Viewports/Planar/planarSliceBasis';
 
 // Mutable per-test override merged into the mocked imagePlaneModule so each
 // test can control rowCosines/columnCosines/imagePositionPatient/spacing

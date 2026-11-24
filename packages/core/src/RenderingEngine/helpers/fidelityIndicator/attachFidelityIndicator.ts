@@ -104,7 +104,7 @@ export function attachFidelityIndicator(viewport: IViewport): () => void {
  * the product indicator is not disabled. Uses {@link attachFidelityIndicator},
  * which stores cleanup for {@link detachFidelityIndicator}.
  *
- * A generic family that can show degradable data reports fidelity before it
+ * A viewport family that can show degradable data reports fidelity before it
  * mounts data; the indicator stays `hidden` until it draws such data.
  */
 export function maybeAttachFidelityIndicator(viewport: IViewport): void {
@@ -133,7 +133,7 @@ export function detachFidelityIndicator(viewport: IViewport): void {
 
 /**
  * Whether a viewport can report fidelity (GENVIEW-FIDELITY-8). Declared on
- * `IViewportFidelity`; `Viewport` and `GenericViewport` both implement it.
+ * `IViewportFidelity`; `Viewport` and `BaseViewport` both implement it.
  */
 export function canReportFidelity(viewport: IViewport): boolean {
   return viewport.canReportFidelity() === true;

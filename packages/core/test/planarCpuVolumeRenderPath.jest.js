@@ -8,17 +8,17 @@ import { BlendModes, Events, InterpolationType } from '../src/enums';
 import { ActorRenderMode } from '../src/types';
 import drawImageSync from '../src/RenderingEngine/helpers/cpuFallback/drawImageSync';
 import * as setDefaultVolumeVOIModule from '../src/RenderingEngine/helpers/setDefaultVolumeVOI';
-import { CpuVolumeSliceRenderPath } from '../src/RenderingEngine/GenericViewport/Planar/CpuVolumeSliceRenderPath';
+import { CpuVolumeSliceRenderPath } from '../src/RenderingEngine/Viewports/Planar/CpuVolumeSliceRenderPath';
 import {
   PlanarSampledSliceCanvas,
   getSliceCanvasTransform,
-} from '../src/RenderingEngine/GenericViewport/Planar/planarSampledSliceCanvas';
+} from '../src/RenderingEngine/Viewports/Planar/planarSampledSliceCanvas';
 import {
   PlanarSliceSampler,
   getScreenSliceGeometry,
-} from '../src/RenderingEngine/GenericViewport/Planar/planarSampledSlice';
-import { worldToCanvasPlanarViewState } from '../src/RenderingEngine/GenericViewport/Planar/planarAdapterCoordinateTransforms';
-import { SAMPLED_SLICE_REST_DELAY_MS } from '../src/RenderingEngine/GenericViewport/Planar/planarSampledSliceRest';
+} from '../src/RenderingEngine/Viewports/Planar/planarSampledSlice';
+import { worldToCanvasPlanarViewState } from '../src/RenderingEngine/Viewports/Planar/planarAdapterCoordinateTransforms';
+import { SAMPLED_SLICE_REST_DELAY_MS } from '../src/RenderingEngine/Viewports/Planar/planarSampledSliceRest';
 import VoxelManager from '../src/utilities/VoxelManager';
 import eventTarget from '../src/eventTarget';
 import { getConfiguration } from '../src/init';

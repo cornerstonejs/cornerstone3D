@@ -1,4 +1,4 @@
-import PlanarViewport from '../../src/RenderingEngine/GenericViewport/Planar/PlanarViewport';
+import PlanarViewport from '../../src/RenderingEngine/Viewports/Planar/PlanarViewport';
 import renderingEngineCache from '../../src/RenderingEngine/renderingEngineCache';
 import uuidv4 from '../../src/utilities/uuidv4';
 

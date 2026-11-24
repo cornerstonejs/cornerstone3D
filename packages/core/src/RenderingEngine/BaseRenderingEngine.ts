@@ -152,7 +152,7 @@ abstract class BaseRenderingEngine {
     // 2.b) Retrieving the list of viewports for calculation of the new size for
     // offScreen canvas.
 
-    // Route based on the viewport's declared pipeline. Some Generic viewports still
+    // Route based on the viewport's declared pipeline. Some viewports still
     // need VTK backing even when global CPU rendering is enabled.
     if (!viewportUsesCustomRenderingPipeline) {
       this.enableVTKjsDrivenViewport(viewportInput);

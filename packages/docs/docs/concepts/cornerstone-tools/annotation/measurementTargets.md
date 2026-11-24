@@ -57,7 +57,7 @@ The display set related parameters of each candidate include:
 
 - `displaySet` — the display set being shown, where registered (an
   `IDisplaySet` from `@cornerstonejs/metadata` via the `displaySetModule`
-  metadata module, or the display set registered with the generic viewports)
+  metadata module, or the display set registered with the viewports)
 - `displaySetUID` — the uid of the display set, where known
 - `instance` — an exemplar (first) instance of the display set: naturalized
   DICOM metadata (with `Modality`, `Rows`, `SeriesInstanceUID`, ...), if
@@ -232,7 +232,7 @@ The candidates passed to the filter are built by
   single candidate for the viewport's default view reference is used. If the
   viewport displays a registered display set (`setDisplaySets`), the candidate's display set fields are resolved from the
   `displaySetModule` metadata (an `IDisplaySet` from
-  `@cornerstonejs/metadata`) or the generic viewport display set
+  `@cornerstonejs/metadata`) or the viewport display set
   registration; a display set id with no registration (a video or an ECG
   shown by its image id) has no display set, so the candidate carries none of
   the display set fields. Filters can detect this via the missing

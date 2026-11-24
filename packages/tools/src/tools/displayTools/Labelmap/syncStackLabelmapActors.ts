@@ -85,7 +85,7 @@ export function syncStackLabelmapActors(
     (actorEntry) => !derivedImageIdSet.has(actorEntry.referencedId)
   );
 
-  // The native (generic) viewport rebuilds the stack labelmap overlay actor per
+  // The viewport rebuilds the stack labelmap overlay actor per
   // slice. Carry the outgoing actor's color/opacity style onto the replacement
   // so it renders translucent (transparent background) from its first frame,
   // instead of painting opaque over the underlying image until the segmentation

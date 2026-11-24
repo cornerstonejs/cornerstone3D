@@ -9,8 +9,8 @@ import type ICamera from './ICamera';
 import type IRenderingEngine from './IRenderingEngine';
 import type { FidelityLine } from '../RenderingEngine/helpers/fidelityIndicator/fidelityIndicatorState';
 import type { ViewportFidelityState } from './ViewportFidelity';
-import type { GenericViewportOptions } from '../RenderingEngine/GenericViewport/GenericViewport';
-import type ResolvedViewportView from '../RenderingEngine/GenericViewport/ResolvedViewportView';
+import type { BaseViewportOptions } from '../RenderingEngine/Viewports/BaseViewport';
+import type ResolvedViewportView from '../RenderingEngine/Viewports/ResolvedViewportView';
 /**
  * Specifies what view to get a reference for.
  * This set of options allows a Viewport to return a reference for an image
@@ -496,7 +496,7 @@ type ViewportContentMode =
 /**
  * The interface of a viewport: the public members that every viewport family
  * has (planar, 3D, video, whole slide and ECG), which are those of the base
- * class `GenericViewport`.
+ * class `BaseViewport`.
  *
  * The class of a family has more members (`PlanarViewport`,
  * `VolumeViewport3D`, `VideoViewport`, `WSIViewport`, `ECGViewport`): type
@@ -526,7 +526,7 @@ interface IViewport<
   /** Whether the viewport has data, waits for a draw or is drawn. */
   viewportStatus: ViewportStatus;
   /** The options that the viewport was made with. They do not change. */
-  readonly defaultOptions: GenericViewportOptions;
+  readonly defaultOptions: BaseViewportOptions;
   /**
    * True once the viewport is destroyed, which the rendering engine does when
    * it disables the element. Read only.

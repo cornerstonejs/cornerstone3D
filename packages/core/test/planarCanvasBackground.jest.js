@@ -1,5 +1,5 @@
 import { describe, it, expect, jest } from '@jest/globals';
-import { beginPlanarCanvasPass } from '../src/RenderingEngine/GenericViewport/Planar/planarSampledSliceCanvas';
+import { beginPlanarCanvasPass } from '../src/RenderingEngine/Viewports/Planar/planarSampledSliceCanvas';
 
 /** A canvas target that records the fill of each pass. */
 function createTarget(background) {

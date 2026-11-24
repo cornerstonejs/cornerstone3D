@@ -1,5 +1,5 @@
 import { vec3, mat4 } from 'gl-matrix';
-import type PlanarViewport from '../RenderingEngine/GenericViewport/Planar/PlanarViewport';
+import type PlanarViewport from '../RenderingEngine/Viewports/Planar/PlanarViewport';
 import type { ImagePlaneModule } from '../types';
 import {
   addCalculatedRegistration,

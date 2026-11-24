@@ -16,11 +16,6 @@ const builtInViewportTypes: CoreViewportTypeConstants = {
   VIDEO: ViewportType.VIDEO,
   WHOLE_SLIDE: ViewportType.WHOLE_SLIDE,
   ECG: ViewportType.ECG,
-  PLANAR_NEXT: ViewportType.PLANAR_NEXT,
-  VOLUME_3D_NEXT: ViewportType.VOLUME_3D_NEXT,
-  VIDEO_NEXT: ViewportType.VIDEO_NEXT,
-  WHOLE_SLIDE_NEXT: ViewportType.WHOLE_SLIDE_NEXT,
-  ECG_NEXT: ViewportType.ECG_NEXT,
 };
 
 /**

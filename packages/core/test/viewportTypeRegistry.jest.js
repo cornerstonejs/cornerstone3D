@@ -12,12 +12,12 @@ import {
 } from '../src/RenderingEngine/helpers/viewportTypeToViewportClass';
 import ViewportType from '../src/enums/ViewportType';
 import ViewportTypes from '../src/enums/ViewportTypes';
-import PlanarViewport from '../src/RenderingEngine/GenericViewport/Planar/PlanarViewport';
-import VolumeViewport3D from '../src/RenderingEngine/GenericViewport/Volume3D/viewport3D';
-import VideoViewport from '../src/RenderingEngine/GenericViewport/Video/VideoViewport';
-import WSIViewport from '../src/RenderingEngine/GenericViewport/WSI/WSIViewport';
-import ECGViewport from '../src/RenderingEngine/GenericViewport/ECG/ECGViewport';
-import GenericViewport from '../src/RenderingEngine/GenericViewport/GenericViewport';
+import PlanarViewport from '../src/RenderingEngine/Viewports/Planar/PlanarViewport';
+import VolumeViewport3D from '../src/RenderingEngine/Viewports/Volume3D/viewport3D';
+import VideoViewport from '../src/RenderingEngine/Viewports/Video/VideoViewport';
+import WSIViewport from '../src/RenderingEngine/Viewports/WSI/WSIViewport';
+import ECGViewport from '../src/RenderingEngine/Viewports/ECG/ECGViewport';
+import BaseViewport from '../src/RenderingEngine/Viewports/BaseViewport';
 import renderingEngineCache from '../src/RenderingEngine/renderingEngineCache';
 import * as renderingEngineModule from '../src/RenderingEngine';
 import * as core from '../src/index';
@@ -42,19 +42,35 @@ const removedTypes = [
   ],
 ];
 
+/**
+ * Each family: its plain enum name and string, its removed `_NEXT` enum
+ * name, its removed 5.x string (the prefix of its made-up frame of
+ * reference), and its class.
+ */
+const families = [
+  ['PLANAR', 'planar', 'PLANAR_NEXT', 'planarNext', PlanarViewport],
+  ['VOLUME_3D', 'volume3d', 'VOLUME_3D_NEXT', 'volume3dNext', VolumeViewport3D],
+  ['VIDEO', 'video', 'VIDEO_NEXT', 'videoNext', VideoViewport],
+  [
+    'WHOLE_SLIDE',
+    'wholeSlide',
+    'WHOLE_SLIDE_NEXT',
+    'wholeSlideNext',
+    WSIViewport,
+  ],
+  ['ECG', 'ecg', 'ECG_NEXT', 'ecgNext', ECGViewport],
+];
+
 describe('the viewport type registry', () => {
-  it('gives the next class of each next type string', () => {
-    expect(getViewportClassForInput({ type: 'planarNext' })).toBe(
-      PlanarViewport
-    );
-    expect(getViewportClassForInput({ type: 'volume3dNext' })).toBe(
-      VolumeViewport3D
-    );
-    expect(getViewportClassForInput({ type: 'videoNext' })).toBe(VideoViewport);
-    expect(getViewportClassForInput({ type: 'wholeSlideNext' })).toBe(
-      WSIViewport
-    );
-    expect(getViewportClassForInput({ type: 'ecgNext' })).toBe(ECGViewport);
+  it('has no 5.x next type string, and names the plain type', () => {
+    families.forEach(([name, type, , nextType]) => {
+      expect(isRegisteredViewportType(nextType)).toBe(false);
+      expect(() => getViewportClassForInput({ type: nextType })).toThrow(
+        new Error(
+          `ViewportType '${nextType}' was removed in Cornerstone3D 6.0: use ViewportType.${name} ('${type}')`
+        )
+      );
+    });
   });
 
   it('gives the next 3D, video, whole slide and ECG viewports for their plain strings', () => {
@@ -89,31 +105,13 @@ describe('the viewport type registry', () => {
   });
 });
 
-/**
- * Each family: its plain enum name and string, its deprecated `_NEXT` enum
- * name, its deprecated 5.x string, and its class.
- */
-const families = [
-  ['PLANAR', 'planar', 'PLANAR_NEXT', 'planarNext', PlanarViewport],
-  ['VOLUME_3D', 'volume3d', 'VOLUME_3D_NEXT', 'volume3dNext', VolumeViewport3D],
-  ['VIDEO', 'video', 'VIDEO_NEXT', 'videoNext', VideoViewport],
-  [
-    'WHOLE_SLIDE',
-    'wholeSlide',
-    'WHOLE_SLIDE_NEXT',
-    'wholeSlideNext',
-    WSIViewport,
-  ],
-  ['ECG', 'ecg', 'ECG_NEXT', 'ecgNext', ECGViewport],
-];
-
 describe('the plain viewport type names', () => {
-  it('give each type its plain string, and each _NEXT name the same string', () => {
+  it('give each type its plain string, and have no _NEXT name', () => {
     families.forEach(([name, type, nextName]) => {
       expect(ViewportType[name]).toBe(type);
       expect(ViewportTypes[name]).toBe(type);
-      expect(ViewportType[nextName]).toBe(type);
-      expect(ViewportTypes[nextName]).toBe(type);
+      expect(ViewportType[nextName]).toBeUndefined();
+      expect(ViewportTypes[nextName]).toBeUndefined();
     });
   });
 
@@ -122,16 +120,6 @@ describe('the plain viewport type names', () => {
       expect(isRegisteredViewportType(type)).toBe(true);
       expect(getViewportClassForInput({ type })).toBe(ViewportClass);
       expect(getViewportClassForInput({ type: ViewportTypes[name] })).toBe(
-        ViewportClass
-      );
-    });
-  });
-
-  it('give the same class for each _NEXT name and each 5.x string', () => {
-    families.forEach(([, , nextName, nextType, ViewportClass]) => {
-      expect(isRegisteredViewportType(nextType)).toBe(true);
-      expect(getViewportClassForInput({ type: nextType })).toBe(ViewportClass);
-      expect(getViewportClassForInput({ type: ViewportType[nextName] })).toBe(
         ViewportClass
       );
     });
@@ -200,8 +188,8 @@ describe('the viewport of each family', () => {
     destroyers.splice(0).forEach((destroy) => destroy());
   });
 
-  it('has the plain string as its type, which equals the _NEXT name', () => {
-    families.forEach(([name, type, nextName, , ViewportClass]) => {
+  it('has the plain string as its type', () => {
+    families.forEach(([name, type, , , ViewportClass]) => {
       const { viewport, destroy } = makeEmptyViewport(
         ViewportClass,
         `${type}-type`
@@ -210,7 +198,6 @@ describe('the viewport of each family', () => {
       destroyers.push(destroy);
       expect(viewport.type).toBe(type);
       expect(viewport.type).toBe(ViewportType[name]);
-      expect(viewport.type).toBe(ViewportType[nextName]);
     });
   });
 
@@ -232,8 +219,8 @@ describe('the viewport of each family', () => {
 
 describe('the class export names', () => {
   /**
-   * Each class with its plain export name and its deprecated 5.x export
-   * name, or none.
+   * Each class with its plain export name and its removed 5.x export name,
+   * or none.
    */
   const classNames = [
     [PlanarViewport, 'PlanarViewport'],
@@ -243,27 +230,21 @@ describe('the class export names', () => {
     [ECGViewport, 'ECGViewport', 'ECGGenericViewport'],
   ];
 
-  it('export each class under its plain name, and the Generic names as the same class', () => {
-    classNames.forEach(([ViewportClass, name, deprecatedName]) => {
+  it('export each class under its plain name, and no Generic name or renderingEngineExportsV2', () => {
+    classNames.forEach(([ViewportClass, name, removedName]) => {
       expect(core[name]).toBe(ViewportClass);
-      expect(core.renderingEngineExportsV2[name]).toBe(ViewportClass);
       expect(renderingEngineModule[name]).toBe(ViewportClass);
-      expect(renderingEngineModule.renderingEngineExportsV2[name]).toBe(
-        ViewportClass
-      );
 
-      if (deprecatedName) {
-        expect(core[deprecatedName]).toBe(ViewportClass);
-        expect(renderingEngineModule[deprecatedName]).toBe(ViewportClass);
+      if (removedName) {
+        expect(core[removedName]).toBeUndefined();
+        expect(renderingEngineModule[removedName]).toBeUndefined();
       }
     });
-    ['ECG', 'Video', 'WSI'].forEach((family) => {
-      expect(core.renderingEngineExportsV2[`${family}GenericViewport`]).toBe(
-        core[`${family}Viewport`]
-      );
-    });
-    expect(core.GenericViewport).toBe(GenericViewport);
-    expect(renderingEngineModule.GenericViewport).toBe(GenericViewport);
+    expect(core.renderingEngineExportsV2).toBeUndefined();
+    expect(renderingEngineModule.renderingEngineExportsV2).toBeUndefined();
+    expect(core.BaseViewport).toBe(BaseViewport);
+    expect(renderingEngineModule.BaseViewport).toBe(BaseViewport);
+    expect(core.GenericViewport).toBeUndefined();
   });
 });
 

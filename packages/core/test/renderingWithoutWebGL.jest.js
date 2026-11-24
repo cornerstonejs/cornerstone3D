@@ -11,7 +11,7 @@ import {
 } from '../src/init';
 import ContextPoolRenderingEngine from '../src/RenderingEngine/ContextPoolRenderingEngine';
 import TiledRenderingEngine from '../src/RenderingEngine/TiledRenderingEngine';
-import { PlanarRenderPathDecisionService } from '../src/RenderingEngine/GenericViewport/Planar/PlanarRenderPathDecisionService';
+import { PlanarRenderPathDecisionService } from '../src/RenderingEngine/Viewports/Planar/PlanarRenderPathDecisionService';
 import { ActorRenderMode } from '../src/types';
 import { RenderBackends } from '../src/enums';
 import cache from '../src/cache/cache';

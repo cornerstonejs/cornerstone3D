@@ -568,9 +568,9 @@ abstract class BaseTool {
   /**
    * Resolves the display sets a viewport is displaying, when known.
    * Viewports displaying registered display sets (see `setDisplaySets` on
-   * the generic viewports) resolve through the `displaySetModule` metadata
+   * the viewports) resolve through the `displaySetModule` metadata
    * (an `IDisplaySet` from `@cornerstonejs/metadata`) falling back to the
-   * generic viewport display set registration; a display set id with no
+   * viewport display set registration; a display set id with no
    * registration (a video or an ECG shown by its image id) has no display
    * set, so an empty list is returned and its candidates carry no display
    * set fields.
@@ -593,16 +593,16 @@ abstract class BaseTool {
     }
     const provider = csUtils.genericViewportDisplaySetMetadataProvider;
     return displaySets.map(({ displaySetId }) => {
-      const genericRegistration = provider.get(
+      const registryEntry = provider.get(
         provider.VIEWPORT_V2_DISPLAY_SET,
         displaySetId
       );
-      const registeredImageIds = Array.isArray(genericRegistration)
-        ? (genericRegistration as string[])
-        : (genericRegistration as { imageIds?: string[] })?.imageIds;
+      const registeredImageIds = Array.isArray(registryEntry)
+        ? (registryEntry as string[])
+        : (registryEntry as { imageIds?: string[] })?.imageIds;
       // registerDisplaySetMetadata stores IDisplaySet metadata under image
-      // ids, not the logical displaySetId used by GenericViewport. Resolve
-      // the generic registration first to bridge those two identifiers.
+      // ids, not the logical displaySetId used by BaseViewport. Resolve
+      // the registry entry first to bridge those two identifiers.
       const typedDisplaySet = registeredImageIds
         ?.map(
           (imageId) =>
@@ -618,7 +618,7 @@ abstract class BaseTool {
       const imageIds = typedDisplaySet?.imageIds?.length
         ? Array.from(typedDisplaySet.imageIds)
         : registeredImageIds;
-      const registered = typedDisplaySet ?? genericRegistration;
+      const registered = typedDisplaySet ?? registryEntry;
       const instance =
         typedDisplaySet?.instances?.[0] ??
         BaseTool.getExemplarInstance(imageIds);
@@ -627,10 +627,10 @@ abstract class BaseTool {
         displaySet: registered,
         instance,
         imageIds,
-        // The typed IDisplaySet owns the rich metadata, while the generic
-        // registration carries the volume binding used to match viewport
+        // The typed IDisplaySet owns the rich metadata, while the registry
+        // entry carries the volume binding used to match viewport
         // actors back to that display set.
-        volumeId: (genericRegistration as { volumeId?: string })?.volumeId,
+        volumeId: (registryEntry as { volumeId?: string })?.volumeId,
         modality:
           (instance?.Modality as string) ??
           (imageIds?.length

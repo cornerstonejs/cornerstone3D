@@ -4,7 +4,7 @@ import { utilities } from '@cornerstonejs/core';
 /**
  * Whether the voxels backing `targetId` in `viewport` are already pre-scaled
  * into modality units (e.g. SUV). Thin wrapper over the family-aware
- * {@link utilities.getScalingDescriptor} so stack / volume / generic ("next")
+ * {@link utilities.getScalingDescriptor} so stack / volume
  * viewports share one detection path; returns false for families with no
  * scaling concept.
  */

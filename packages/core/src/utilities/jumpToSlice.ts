@@ -1,6 +1,6 @@
 import clip from './clip';
 import type { ImageSliceData, IViewport, JumpToSliceOptions } from '../types';
-import type PlanarViewport from '../RenderingEngine/GenericViewport/Planar/PlanarViewport';
+import type PlanarViewport from '../RenderingEngine/Viewports/Planar/PlanarViewport';
 import scroll, {
   countPlanarVolumeScrollSteps,
   getPlanarVolumeScrollSteps,

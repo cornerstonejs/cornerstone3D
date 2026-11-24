@@ -3,7 +3,7 @@ import {
   createExampleUrl,
   checkForCanvasSnapshot,
   expectAnnotationText,
-  expectGenericViewportRuntime,
+  expectViewportRuntime,
   getPlainVolumeSliceRenderMode,
   getVisibleViewportCanvas,
   screenShotPaths,
@@ -182,7 +182,7 @@ test.describe('Volume Annotation - Next (GPU)', () => {
   test.beforeEach(navigateToExample());
 
   test('should use PlanarViewport GPU runtime', async ({ page }) => {
-    await expectGenericViewportRuntime(page, [
+    await expectViewportRuntime(page, [
       {
         renderingEngineId: 'myRenderingEngine',
         viewportId: 'CT_AXIAL_STACK',
@@ -266,7 +266,7 @@ test.describe('Volume Annotation - Next (CPU)', () => {
   test.beforeEach(navigateToExample({ cpu: 'true' }));
 
   test('should use PlanarViewport CPU runtime', async ({ page }) => {
-    await expectGenericViewportRuntime(page, [
+    await expectViewportRuntime(page, [
       {
         renderingEngineId: 'myRenderingEngine',
         viewportId: 'CT_AXIAL_STACK',

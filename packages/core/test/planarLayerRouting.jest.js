@@ -15,7 +15,7 @@ import { getRenderingCapabilities } from '../src/utilities/renderingCapabilities
 import {
   PlanarRenderPathDecisionService,
   getGpuVolumePathLimit,
-} from '../src/RenderingEngine/GenericViewport/Planar/PlanarRenderPathDecisionService';
+} from '../src/RenderingEngine/Viewports/Planar/PlanarRenderPathDecisionService';
 
 jest.mock('../src/utilities/renderingCapabilities', () => ({
   ...jest.requireActual('../src/utilities/renderingCapabilities'),

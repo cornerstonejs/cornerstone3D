@@ -248,43 +248,29 @@ describe('RenderingEngineAPI -- ', () => {
     });
 
     [
-      ['planar', 'PLANAR_NEXT', 'planarNext', cornerstone3D.PlanarViewport],
-      [
-        'volume3d',
-        'VOLUME_3D_NEXT',
-        'volume3dNext',
-        cornerstone3D.VolumeViewport3D,
-      ],
-      ['video', 'VIDEO_NEXT', 'videoNext', cornerstone3D.VideoViewport],
-      [
-        'wholeSlide',
-        'WHOLE_SLIDE_NEXT',
-        'wholeSlideNext',
-        cornerstone3D.WSIViewport,
-      ],
-      ['ecg', 'ECG_NEXT', 'ecgNext', cornerstone3D.ECGViewport],
-    ].forEach(([type, nextName, nextType, ViewportClass]) => {
-      it(`makes the ${type} viewport, with the type '${type}', for ViewportType.${nextName} at enableElement and '${nextType}' at setViewports`, function () {
-        createViewports(renderingEngine, {
-          viewportId: 'byNextName',
-          viewportType: ViewportType[nextName],
-          useEnableElement: true,
-        });
+      ['PLANAR', 'planar', 'planarNext'],
+      ['VOLUME_3D', 'volume3d', 'volume3dNext'],
+      ['VIDEO', 'video', 'videoNext'],
+      ['WHOLE_SLIDE', 'wholeSlide', 'wholeSlideNext'],
+      ['ECG', 'ecg', 'ecgNext'],
+    ].forEach(([name, type, nextType]) => {
+      it(`throws at enableElement and at setViewports for the removed 5.x string '${nextType}', with ViewportType.${name} to use instead`, function () {
+        const message = `ViewportType '${nextType}' was removed in Cornerstone3D 6.0: use ViewportType.${name} ('${type}')`;
 
-        const byNextName = renderingEngine.getViewport('byNextName');
-
-        expect(byNextName).toBeInstanceOf(ViewportClass);
-        expect(byNextName.type).toBe(type);
-
-        createViewports(renderingEngine, [
-          { viewportId: 'byNextString', viewportType: nextType },
-        ]);
-
-        const byNextString = renderingEngine.getViewport('byNextString');
-
-        expect(byNextString).toBeInstanceOf(ViewportClass);
-        expect(byNextString.type).toBe(type);
-        expect(byNextString.type).toBe(ViewportType[nextName]);
+        expect(ViewportType[`${name}_NEXT`]).toBeUndefined();
+        expect(() =>
+          createViewports(renderingEngine, {
+            viewportId: 'byNextString',
+            viewportType: nextType,
+            useEnableElement: true,
+          })
+        ).toThrowError(message);
+        expect(() =>
+          createViewports(renderingEngine, [
+            { viewportId: 'byNextString', viewportType: nextType },
+          ])
+        ).toThrowError(message);
+        expect(renderingEngine.getViewport('byNextString')).toBeUndefined();
       });
     });
 

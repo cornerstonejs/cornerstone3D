@@ -318,7 +318,7 @@ enum Events {
   WEBGL_CONTEXT_RESTORED = 'CORNERSTONE_WEBGL_CONTEXT_RESTORED',
 
   /**
-   * Triggers on the eventTarget when a GenericViewport render path throws
+   * Triggers on the eventTarget when a BaseViewport render path throws
    * while mounting or rendering data. Like WEBGL_CONTEXT_LOST this is a
    * degradation signal for applications; no automatic backend switch happens.
    * Detail: `{ renderingEngineId, viewportId, dataId, error }`.

@@ -18,7 +18,7 @@ const ORIENTATION_VIEW_UPS: Record<Orientation, number[]> = {
 };
 
 /**
- * Fake direct Generic planar ("next") viewport. It intentionally has NO
+ * Fake planar viewport. It intentionally has NO
  * legacy setCamera: the tools must navigate exclusively through
  * setViewReference / setViewState, and any legacy camera write would throw.
  */
@@ -54,11 +54,11 @@ function createFakePlanarViewport({
     type: 'planar',
     renderingEngineId: 'fakeRenderingEngine',
     canvas: { clientWidth: 0, clientHeight: 0 },
-    // Generic viewports render to the element's displayed space; geometry
+    // Viewports render to the element's displayed space; geometry
     // helpers read the element size, not the hidden canvas size.
     element: { clientWidth: 500, clientHeight: 500 },
     getFrameOfReferenceUID: () => frameOfReferenceUID,
-    // --- Generic ("next") surface ---
+    // --- Viewport surface ---
     setDisplaySets: async () => undefined,
     setDisplaySetPresentation: jest.fn(),
     getDisplaySetPresentation: () => sourcePresentation,
@@ -174,7 +174,7 @@ function createTool({
 
   // Stub the viewport resolution and render fan-out: unit tests run without
   // rendering engines or tool groups. The stub deliberately returns the
-  // viewports unfiltered so the tool's own planar-generic gates are what get
+  // viewports unfiltered so the tool's own planar gates are what get
   // exercised.
   (tool as unknown as Record<string, unknown>)._getLinkedViewports = () =>
     viewports;
@@ -387,7 +387,7 @@ describe('WorldCrosshairTool', () => {
     expect(axial._camera.focalPoint).toEqual([0, 0, 42]);
   });
 
-  it('ignores legacy (non-generic) viewports entirely', () => {
+  it('ignores legacy viewports entirely', () => {
     const legacy = createFakeLegacyViewport({
       id: 'legacy',
       focalPoint: [0, 0, 5],

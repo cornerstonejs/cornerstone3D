@@ -1,6 +1,6 @@
 import { glMatrix, vec3 } from 'gl-matrix';
 import type { PixelDataTypedArray } from '../types';
-import type PlanarViewport from '../RenderingEngine/GenericViewport/Planar/PlanarViewport';
+import type PlanarViewport from '../RenderingEngine/Viewports/Planar/PlanarViewport';
 import { getStackSliceViewInfo } from './getStackSliceViewInfo';
 import {
   getVolumeSliceViewInfo,

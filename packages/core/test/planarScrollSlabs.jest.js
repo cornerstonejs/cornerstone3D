@@ -2,7 +2,7 @@ import * as cornerstone3D from '../src/index';
 import { describe, it, expect, afterEach, beforeEach } from '@jest/globals';
 import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 import vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
-import PlanarViewport from '../src/RenderingEngine/GenericViewport/Planar/PlanarViewport';
+import PlanarViewport from '../src/RenderingEngine/Viewports/Planar/PlanarViewport';
 import genericViewportDisplaySetMetadataProvider from '../src/utilities/genericViewportDisplaySetMetadataProvider';
 import renderingEngineCache from '../src/RenderingEngine/renderingEngineCache';
 import getSliceRange from '../src/utilities/getSliceRange';

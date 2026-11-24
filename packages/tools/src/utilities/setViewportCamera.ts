@@ -13,7 +13,7 @@ function normalizeVec3(v: Types.Point3): Types.Point3 {
 
 /**
  * Writes camera state to a viewport, the write counterpart of
- * getViewportICamera. A next viewport has no setCamera. A 3D Generic
+ * getViewportICamera. A next viewport has no setCamera. A 3D
  * viewport (VolumeViewport3D) applies the same camera
  * fields (position/focalPoint/viewUp/viewPlaneNormal/parallelScale) through setViewState
  * (-> applyVolume3DCamera on the vtk camera), so 3D-camera tooling (trackball rotate,

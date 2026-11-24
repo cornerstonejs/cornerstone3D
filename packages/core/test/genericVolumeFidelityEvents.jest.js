@@ -26,18 +26,15 @@ jest.mock('../src/RenderingEngine/helpers/createVolumeActor', () => ({
   default: jest.fn(async () => mockFakeActor()),
   createVolumeActorOfVolume: jest.fn(async () => mockFakeActor()),
 }));
-jest.mock(
-  '../src/RenderingEngine/GenericViewport/setVtkCameraClippingRange',
-  () => ({
-    __esModule: true,
-    default: jest.fn(),
-  })
-);
+jest.mock('../src/RenderingEngine/Viewports/setVtkCameraClippingRange', () => ({
+  __esModule: true,
+  default: jest.fn(),
+}));
 
 import { Events, ImageQualityStatus } from '../src/enums';
 import eventTarget from '../src/eventTarget';
-import { VtkVolumeSliceRenderPath } from '../src/RenderingEngine/GenericViewport/Planar/VtkVolumeSliceRenderPath';
-import { VtkVolume3DRenderPath } from '../src/RenderingEngine/GenericViewport/Volume3D/VtkVolume3DRenderPath';
+import { VtkVolumeSliceRenderPath } from '../src/RenderingEngine/Viewports/Planar/VtkVolumeSliceRenderPath';
+import { VtkVolume3DRenderPath } from '../src/RenderingEngine/Viewports/Volume3D/VtkVolume3DRenderPath';
 import { shownStateOf } from '../src/RenderingEngine/helpers/fidelityIndicator/fidelityIndicatorState';
 import { fidelityLinesFromBindings } from '../src/RenderingEngine/helpers/fidelityIndicator/collectFidelityLines';
 

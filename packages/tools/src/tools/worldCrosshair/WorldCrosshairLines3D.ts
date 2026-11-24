@@ -7,13 +7,13 @@ import type { Types, VolumeViewport3D } from '@cornerstonejs/core';
 
 /**
  * Isolated 3D rendering extension for the WorldCrosshairTool ("Reference
- * Point"). It renders the reference point in Generic 3D (VOLUME_3D)
+ * Point"). It renders the reference point in 3D (VOLUME_3D)
  * viewports as world-space intersecting lines along the three patient axes
  * (crossing at the point), mirroring the 2D crosshair rendering. It holds no
  * tool state: the tool passes the authoritative worldPoint in on every
  * update.
  *
- * The actor is attached through `viewport.getRenderer()`, the generic 3D
+ * The actor is attached through `viewport.getRenderer()`, the 3D
  * viewport's documented direct-integration hook for vtk-level extensions.
  */
 
@@ -75,7 +75,7 @@ function getViewportRenderer(viewport: Types.IViewport) {
 
 /**
  * Creates or updates the world-space crosshair line actor for the given
- * Generic 3D viewport, then renders the viewport.
+ * 3D viewport, then renders the viewport.
  */
 export function updateWorldCrosshairLines3D(
   viewport: Types.IViewport,

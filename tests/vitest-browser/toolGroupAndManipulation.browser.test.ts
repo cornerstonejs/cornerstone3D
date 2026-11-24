@@ -1,5 +1,5 @@
 // State-based tests covering two contract areas of @cornerstonejs/tools against
-// the GenericViewport (PLANAR) harness:
+// the BaseViewport (PLANAR) harness:
 //
 //   A. ToolGroupManager / tool-mode state machine as observable public state
 //      and events (createToolGroup/getToolGroup/destroyToolGroup, mode

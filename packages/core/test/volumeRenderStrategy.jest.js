@@ -8,7 +8,7 @@ import {
   beforeAll,
   afterAll,
 } from '@jest/globals';
-import { VtkVolumeSliceRenderPath } from '../src/RenderingEngine/GenericViewport/Planar/VtkVolumeSliceRenderPath';
+import { VtkVolumeSliceRenderPath } from '../src/RenderingEngine/Viewports/Planar/VtkVolumeSliceRenderPath';
 import {
   defaultVolumeStrategyProvider,
   provisionFullResolutionStrategy,

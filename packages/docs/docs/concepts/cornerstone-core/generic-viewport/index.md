@@ -1,16 +1,16 @@
 ---
 id: index
-title: Generic Viewport
-summary: Why the Generic Viewport architecture separates data loading, render paths, bindings, and view state
+title: Viewport Architecture
+summary: Why the viewport architecture separates data loading, render paths, bindings, and view state
 ---
 
 import DocCardList from '@theme/DocCardList';
 import {useCurrentSidebarCategory} from '@docusaurus/theme-common';
 
-# Generic Viewport
+# Viewport Architecture
 
-The Generic Viewport architecture is the viewport architecture of
-Cornerstone3D 6.0: every viewport is a Generic viewport. It replaced the split
+This is the viewport architecture of Cornerstone3D 6.0: every viewport is of
+a family of `BaseViewport`. It replaced the split
 of 5.x between the legacy stack and volume viewport classes, CPU rendering, VTK
 image rendering, VTK volume rendering, and segmentation overlays. The legacy
 classes are gone in 6.0; the
@@ -38,7 +38,7 @@ That made common workflows harder than they needed to be:
 - Adding a new render mode meant touching more viewport behavior than the
   renderer actually needed.
 
-Generic Viewport keeps the existing rendering power, but moves the ownership to a
+The architecture keeps the existing rendering power, but moves the ownership to a
 smaller set of concepts.
 
 ## What Changed
@@ -90,7 +90,7 @@ receive state from the viewport and project it into renderer-specific commands.
 
 ## Presentation Split
 
-Generic Viewport separates two kinds of presentation:
+The architecture separates two kinds of presentation:
 
 - View presentation: pan, zoom or scale, rotation, flips, and display area.
   Every viewport reads and writes this through `viewportProjection`.
@@ -102,7 +102,7 @@ having independent VOI, color, and opacity.
 
 ## Camera In Brief
 
-Generic viewports prefer semantic state over durable VTK-style camera
+The viewports prefer semantic state over durable VTK-style camera
 fields. For planar, video, ECG, and WSI, the viewport state is the source of
 truth and the runtime camera, canvas transform, media transform, signal
 transform, or OpenLayers view is derived from it. The 3D viewport is

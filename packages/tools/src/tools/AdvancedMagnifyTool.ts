@@ -51,7 +51,7 @@ import type { AdvancedMagnifyAnnotation } from '../types/ToolSpecificAnnotationT
 
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
 import getViewportICamera from '../utilities/getViewportICamera';
-import { getNativeSourceProperties } from '../utilities/genericViewportToolHelpers';
+import { getNativeSourceProperties } from '../utilities/viewportToolHelpers';
 import {
   getWorldHeightPerPixel,
   mountLoupeSource,

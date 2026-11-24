@@ -14,7 +14,7 @@ import type {
 import { getRenderingEngine } from '../RenderingEngine/getRenderingEngine';
 import type RenderingEngine from '../RenderingEngine/RenderingEngine';
 import TiledRenderingEngine from '../RenderingEngine/TiledRenderingEngine';
-import type PlanarViewport from '../RenderingEngine/GenericViewport/Planar/PlanarViewport';
+import type PlanarViewport from '../RenderingEngine/Viewports/Planar/PlanarViewport';
 import genericViewportDisplaySetMetadataProvider from './genericViewportDisplaySetMetadataProvider';
 import isPTPrescaledWithSUV from './isPTPrescaledWithSUV';
 import type { CanvasLoadPosition } from './loadImageToCanvas';

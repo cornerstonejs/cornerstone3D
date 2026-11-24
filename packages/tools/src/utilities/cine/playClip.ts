@@ -171,7 +171,7 @@ function playClip(
   };
 
   if (isDynamicCinePlaying) {
-    const volume = _getGenericViewportDynamicVolume(viewport);
+    const volume = _getDynamicVolumeOfViewport(viewport);
 
     if (volume) {
       dynamicVolumesPlayingMap.set(volume.volumeId, element);
@@ -266,7 +266,7 @@ function _stopClip(
  */
 function _stopDynamicVolumeCine(element: HTMLDivElement) {
   const { viewport } = getEnabledElement(element);
-  const volume = _getGenericViewportDynamicVolume(viewport);
+  const volume = _getDynamicVolumeOfViewport(viewport);
 
   if (volume?.isDynamicVolume()) {
     const dynamicCineElement = dynamicVolumesPlayingMap.get(volume.volumeId);
@@ -358,7 +358,7 @@ function _stopClipWithData(playClipData) {
  * its render path: the volume of its source when that is a dynamic volume in
  * the cache, or undefined.
  */
-function _getGenericViewportDynamicVolume(
+function _getDynamicVolumeOfViewport(
   viewport: unknown
 ): Types.IDynamicImageVolume | undefined {
   if (!csUtils.viewportIsInVolumeMode(viewport)) {
@@ -401,13 +401,13 @@ function _createDynamicVolumeViewportCinePlayContext(
 /**
  * Cine play context for every viewport, unless the clip plays the dimension
  * groups of a dynamic volume. Both stack-mode and
- * volume-mode generic viewports advance through frames/slices via the semantic
+ * volume-mode viewports advance through frames/slices via the semantic
  * getNumberOfSlices/getSliceIndex API and csUtils.scroll. Frame-time-vector
  * playback applies only in stack mode (acquired multi-frame); volume reformat
  * cine uses a fixed frame rate. A viewport that has no `getNumberOfSlices`,
  * as a next ECG viewport, has one step, so a clip on it scrolls nothing.
  */
-function _createGenericViewportCinePlayContext(
+function _createSliceCinePlayContext(
   viewport,
   waitForRendered: number
 ): CINETypes.CinePlayContext {
@@ -420,9 +420,9 @@ function _createGenericViewportCinePlayContext(
     },
     get frameTimeVectorEnabled(): boolean {
       // Frame-time-vector timing applies only to acquired multi-frame image-id
-      // stacks. Only stack-mode generic viewports report 'stack' here (volume,
+      // stacks. Only stack-mode viewports report 'stack' here (volume,
       // video, ecg, wsi return other modes), so this intentionally disables
-      // frame-time-vector playback for every non-stack generic family.
+      // frame-time-vector playback for every non-stack viewport family.
       return viewport.getCurrentMode() === 'stack';
     },
     waitForRenderedCount: 0,
@@ -447,14 +447,14 @@ function _createCinePlayContext(
   playClipOptions: CINETypes.PlayClipOptions
 ): CINETypes.CinePlayContext {
   const dynamicVolume = playClipOptions.dynamicCineEnabled
-    ? _getGenericViewportDynamicVolume(viewport)
+    ? _getDynamicVolumeOfViewport(viewport)
     : undefined;
 
   if (dynamicVolume) {
     return _createDynamicVolumeViewportCinePlayContext(dynamicVolume);
   }
 
-  return _createGenericViewportCinePlayContext(
+  return _createSliceCinePlayContext(
     viewport,
     playClipOptions.waitForRendered ?? 30
   );

@@ -1,8 +1,8 @@
-import { computeECGTraceGeometry } from '../src/RenderingEngine/GenericViewport/ECG/ecgGeometry';
+import { computeECGTraceGeometry } from '../src/RenderingEngine/Viewports/ECG/ecgGeometry';
 import {
   resolveECGTraceCells,
   resolveECGTraceLayout,
-} from '../src/RenderingEngine/GenericViewport/ECG/ecgTraceLayouts';
+} from '../src/RenderingEngine/Viewports/ECG/ecgTraceLayouts';
 
 const NUMBER_OF_SAMPLES = 5000;
 const ECG_WIDTH = 1000;

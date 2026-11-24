@@ -9,7 +9,7 @@ import {
 } from '../src/init';
 import eventTarget from '../src/eventTarget';
 import cache from '../src/cache/cache';
-import { PlanarRenderPathDecisionService } from '../src/RenderingEngine/GenericViewport/Planar/PlanarRenderPathDecisionService';
+import { PlanarRenderPathDecisionService } from '../src/RenderingEngine/Viewports/Planar/PlanarRenderPathDecisionService';
 import {
   __resetRenderBackendRegistry,
   getRenderBackendForRenderMode,
@@ -17,7 +17,7 @@ import {
   isRegisteredRenderBackend,
   registerRenderBackend,
 } from '../src/RenderingEngine/helpers/renderBackendRegistry';
-import { createDefaultPlanarRenderPaths } from '../src/RenderingEngine/GenericViewport/Planar/PlanarRenderPathResolver';
+import { createDefaultPlanarRenderPaths } from '../src/RenderingEngine/Viewports/Planar/PlanarRenderPathResolver';
 
 const IMAGE_DATASET = { imageIds: ['plain-img-1'] };
 const VOLUME_DATASET = {

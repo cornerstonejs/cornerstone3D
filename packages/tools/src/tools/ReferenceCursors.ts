@@ -32,7 +32,7 @@ import {
   resetElementCursor,
 } from '../cursors/elementCursor';
 import { getToolGroup } from '../store/ToolGroupManager';
-import { jumpToFocalPoint } from '../utilities/genericViewportToolHelpers';
+import { jumpToFocalPoint } from '../utilities/viewportToolHelpers';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
 const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(

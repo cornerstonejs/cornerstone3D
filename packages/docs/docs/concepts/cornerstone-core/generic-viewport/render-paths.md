@@ -1,7 +1,7 @@
 ---
 id: render-paths
 title: Render Paths
-summary: How Generic Viewport render paths select runtime implementations and project resolved views into renderer commands
+summary: How viewport render paths select runtime implementations and project resolved views into renderer commands
 ---
 
 # Render Paths

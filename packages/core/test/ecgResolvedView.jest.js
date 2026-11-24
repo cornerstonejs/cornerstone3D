@@ -1,4 +1,4 @@
-import ECGResolvedView from '../src/RenderingEngine/GenericViewport/ECG/ECGResolvedView';
+import ECGResolvedView from '../src/RenderingEngine/Viewports/ECG/ECGResolvedView';
 
 const SAMPLING_FREQUENCY = 500;
 const NUMBER_OF_SAMPLES = 5000;

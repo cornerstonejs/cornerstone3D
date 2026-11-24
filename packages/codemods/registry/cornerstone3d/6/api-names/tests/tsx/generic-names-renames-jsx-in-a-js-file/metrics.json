@@ -1,0 +1,12 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.js",
+        "line": "9",
+        "rule": "utilities.isGenericViewport: true for every viewport in 6.0: delete the test and the branch for the other case"
+      },
+      "count": 1
+    }
+  ]
+}

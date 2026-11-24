@@ -2,7 +2,7 @@
 // (`createZoomPanSynchronizer`, `createVOISynchronizer`,
 // `createImageSliceSynchronizer`, `createCameraPositionSynchronizer`, plus
 // the `SynchronizerManager`/`Synchronizer` API surface) as pure cross-viewport
-// state equality on GenericViewports (`PlanarViewport`, `ViewportType.PLANAR`).
+// state equality on the viewports (`PlanarViewport`, `ViewportType.PLANAR`).
 //
 // Black-box rule: assertions only ever touch public `@cornerstonejs/tools` and
 // `@cornerstonejs/core` exports, DOM state, and events -- never
@@ -40,7 +40,7 @@
 // next property access) whenever source and target live on different
 // engines. This is a genuine, separate engine-topology requirement/bug
 // documented in the tests below; using one shared engine here isolates the
-// synchronizer contract tests from it so the other, GenericViewport-specific
+// synchronizer contract tests from it so the other, BaseViewport-specific
 // findings (documented per-test) are not masked by it.
 import { afterEach, describe, expect, test } from 'vitest';
 import {
@@ -585,10 +585,10 @@ describe('synchronizers', () => {
       sync.addSource(toViewportId(a));
       sync.addTarget(toViewportId(b));
 
-      // CAMERA_MODIFIED fires SYNCHRONOUSLY inside setZoom (GenericViewport's
+      // CAMERA_MODIFIED fires SYNCHRONOUSLY inside setZoom (BaseViewport's
       // `modified()` calls `triggerCameraModifiedEvent` right after scheduling
       // the render -- see
-      // packages/core/src/RenderingEngine/GenericViewport/GenericViewport.ts),
+      // packages/core/src/RenderingEngine/Viewports/BaseViewport.ts),
       // and the custom callback here does no async work, so the call is
       // observable immediately with no wait needed.
       a.viewport.setZoom(2);

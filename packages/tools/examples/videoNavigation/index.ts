@@ -262,7 +262,7 @@ async function run() {
 
   toolGroup.addViewport(viewport.id, renderingEngineId);
 
-  // Drive the viewport from the display set, mirroring the GenericViewport
+  // Drive the viewport from the display set, mirroring the VideoViewport
   // setDisplaySets API. The displaySetId is the video instance's imageId; the
   // initial frame is forwarded through options.frameNumber.
   await viewport.setDisplaySets({

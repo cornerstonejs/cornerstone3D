@@ -470,12 +470,12 @@ describe('viewStateSerialization', () => {
   });
 
   // Real finding (no-op detection gap), kept as test.fails per shared-context
-  // rule 5 rather than weakened or deleted. Observed: GenericViewport
+  // rule 5 rather than weakened or deleted. Observed: BaseViewport
   // .setViewState / PlanarViewport.setViewState unconditionally call
   // modified() -> triggerCameraModifiedEvent() whenever a previous-camera
   // snapshot was captured, with no equality check against the incoming
-  // patch (see packages/core/src/RenderingEngine/GenericViewport/
-  // GenericViewport.ts setViewState and Planar/PlanarViewport.ts
+  // patch (see packages/core/src/RenderingEngine/Viewports/
+  // BaseViewport.ts setViewState and Planar/PlanarViewport.ts
   // setViewState). So a second restore with byte-identical viewState still
   // emits one CAMERA_MODIFIED event; a true no-op restore would emit zero.
   // Open issue: a view state write equal to the current state fires CAMERA_MODIFIED (5.x setCamera did the same).

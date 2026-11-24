@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import {
   createExampleUrl,
-  expectGenericViewportRuntime,
+  expectViewportRuntime,
   screenShotPaths,
 } from '../utils/index';
 
@@ -26,11 +26,11 @@ function navigateToExample(params?: Record<string, string>) {
   };
 }
 
-test.describe('WSI GenericViewport', () => {
+test.describe('WSIViewport', () => {
   test.beforeEach(navigateToExample());
 
   test('should use WSIViewport runtime', async ({ page }) => {
-    await expectGenericViewportRuntime(page, [
+    await expectViewportRuntime(page, [
       {
         renderingEngineId: 'myRenderingEngine',
         viewportId: 'wsiGenericViewport',

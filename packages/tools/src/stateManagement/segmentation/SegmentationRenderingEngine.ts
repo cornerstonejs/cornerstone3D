@@ -319,7 +319,7 @@ const deferredSegmentationRenderTimers = new Map<
 function isProjectionHeavySegmentationViewport(
   viewport: Types.IViewport
 ): boolean {
-  // Generic planar viewports are projection-heavy when any of their display
+  // Planar viewports are projection-heavy when any of their display
   // sets renders across a slab (e.g. a MIP source with a projected labelmap
   // overlay, which inherits the source's slab thickness).
   const planarViewport = viewport as Partial<{

@@ -31,8 +31,8 @@ const wadoRsRoot =
   getLocalUrl() || 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb';
 
 setTitleAndDescription(
-  'ECG GenericViewport',
-  'Displays a 12-lead ECG using the clean GenericViewport ECG API.'
+  'ECGViewport',
+  'Displays a 12-lead ECG using the clean ECGViewport API.'
 );
 
 const content = document.getElementById('content');

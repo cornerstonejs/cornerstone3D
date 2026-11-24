@@ -85,7 +85,7 @@ class ViewportColorbar extends Colorbar {
 
     const viewport: Types.IViewport = this.enabledElement.viewport;
 
-    // Direct Generic ("next") viewports have no setProperties; VOI is applied
+    // Viewports have no setProperties; VOI is applied
     // through the display-set presentation. _volumeId names the bound data
     // when known (multi-volume/fusion); otherwise the single-argument overload
     // targets the viewport's default binding.

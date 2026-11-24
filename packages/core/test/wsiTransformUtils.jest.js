@@ -7,7 +7,7 @@ import {
   buildWSIColorTransform,
   canvasToIndexForWSI,
   indexToCanvasForWSI,
-} from '../src/RenderingEngine/GenericViewport/WSI/wsiTransformUtils';
+} from '../src/RenderingEngine/Viewports/WSI/wsiTransformUtils';
 
 // Identity-oriented WSI: row cosines [1,0,0], column cosines [0,1,0],
 // scan-axis normal (cross product) [0,0,1]. Origin offset from slide corner
