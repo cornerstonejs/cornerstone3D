@@ -2,6 +2,7 @@ import {
   CORE_PACKAGE,
   declarationNodeOf,
   isStableBinding,
+  referencesOf,
   staticKeyName,
   topLevelCoreTypes,
   unwrap,
@@ -29,6 +30,43 @@ const APPEARANCE_METHODS: Record<string, string> = {
   getDisplaySetPresentation: 'getDisplaySetAppearance',
   resetDisplaySetPresentation: 'resetDisplaySetAppearance',
 };
+
+/** The events that `DISPLAY_SET_APPEARANCE_CHANGED` replaces, with their values. */
+const APPEARANCE_EVENTS: Record<string, string> = {
+  VOI_MODIFIED: 'CORNERSTONE_VOI_MODIFIED',
+  COLORMAP_MODIFIED: 'CORNERSTONE_COLORMAP_MODIFIED',
+};
+
+/** The text of a listener of the appearance event, word for word in the guide. */
+const APPEARANCE_EVENT_REVIEW =
+  'DISPLAY_SET_APPEARANCE_CHANGED fires once for every change of the appearance of a display set, also at its mount and when a scroll shows an image with another default window: test detail.cause and detail.changedKeys; the window is detail.effective.voiRange, the colormap detail.effective.colormap, what a caller set detail.overrides';
+
+/** The types of the detail of the two events and their names in 6.0. */
+const APPEARANCE_EVENT_TYPES: Record<string, string> = {
+  VoiModifiedEvent: 'DisplaySetAppearanceChangedEvent',
+  VoiModifiedEventDetail: 'DisplaySetAppearanceChangedEventDetail',
+  ColormapModifiedEvent: 'DisplaySetAppearanceChangedEvent',
+  ColormapModifiedEventDetail: 'DisplaySetAppearanceChangedEventDetail',
+};
+
+/**
+ * The keys of the detail of `VOI_MODIFIED` and `COLORMAP_MODIFIED` and their
+ * place in the detail of `DISPLAY_SET_APPEARANCE_CHANGED`; null for a key
+ * that has none.
+ */
+const DETAIL_KEYS: Record<string, string | null> = {
+  viewportId: 'viewportId',
+  volumeId: 'volumeId',
+  range: 'effective.voiRange',
+  VOILUTFunction: 'effective.voiLUTFunction',
+  invert: 'effective.invert',
+  colormap: 'effective.colormap',
+  invertStateChanged: null,
+};
+
+/** The text of a read of the overrides that shows or compares them. */
+const SHOWN_OVERRIDES =
+  'it gives the overrides only, what a caller set, and here the value is shown or compared: use getEffectiveDisplaySetAppearance for what is drawn, the defaults included';
 
 /** The text of a mount option `presentation`, word for word in the guide. */
 const MOUNT_PRESENTATION =
@@ -63,6 +101,23 @@ const appearance: Rules = {
       name: 'viewportSupportsDisplaySetPresentation',
       to: 'viewportSupportsDisplaySetAppearance',
     },
+    ...Object.entries(APPEARANCE_EVENTS).map(
+      ([name, value]): ExportRule => ({
+        namespace: 'Enums.Events',
+        name,
+        to: 'DISPLAY_SET_APPEARANCE_CHANGED',
+        review: APPEARANCE_EVENT_REVIEW,
+        value,
+      })
+    ),
+    ...Object.entries(APPEARANCE_EVENT_TYPES).map(
+      ([name, to]): ExportRule => ({
+        namespace: 'Types.EventTypes',
+        name,
+        to,
+        review: APPEARANCE_EVENT_REVIEW,
+      })
+    ),
   ],
   members: Object.entries(APPEARANCE_METHODS).map(
     ([name, to]): MemberRule => ({
@@ -602,6 +657,428 @@ function reportUnprovenReceivers(run: Run): void {
   }
 }
 
+/** The function kinds of a listener. */
+const FUNCTION_KINDS = new Set([
+  'arrow_function',
+  'function_expression',
+  'function',
+  'function_declaration',
+]);
+
+/**
+ * Returns the function that a listener argument is: an arrow function or a
+ * function expression, or a name of the file that declares a function or
+ * holds one in a `const`. Undefined for another listener, such as a method.
+ */
+function listenerFunction(node: Node | null | undefined): Node | undefined {
+  if (!node) {
+    return undefined;
+  }
+
+  const inner = unwrap(node);
+
+  if (FUNCTION_KINDS.has(inner.kind())) {
+    return inner;
+  }
+
+  if (inner.kind() !== 'identifier') {
+    return undefined;
+  }
+
+  const declaration = declarationNodeOf(inner);
+  const holder = declaration?.parent();
+
+  if (holder?.kind() === 'function_declaration') {
+    return holder;
+  }
+
+  return holder?.kind() === 'variable_declarator' &&
+    holder.field('name')?.id() === declaration.id() &&
+    isStableBinding(declaration)
+    ? listenerFunction(holder.field('value'))
+    : undefined;
+}
+
+/**
+ * Returns the node that names the first parameter of a function when it is
+ * a plain name, else undefined.
+ */
+function firstParameterName(fn: Node): Node | undefined {
+  const single = fn.field('parameter');
+
+  if (single) {
+    return single.kind() === 'identifier' ? single : undefined;
+  }
+
+  const first = fn
+    .field('parameters')
+    ?.children()
+    .find((child) => child.isNamed());
+  const pattern =
+    first?.kind() === 'required_parameter' ||
+    first?.kind() === 'optional_parameter'
+      ? first.field('pattern')
+      : first;
+
+  return pattern?.kind() === 'identifier' ? pattern : undefined;
+}
+
+/**
+ * Returns the text of a destructured entry of a key of the old detail in the
+ * new detail: `range` becomes `effective: { voiRange: range }`.
+ */
+function movedEntryText(place: string, local: string): string {
+  const [holder, key] = place.split('.');
+
+  return `${holder}: { ${key === local ? key : `${key}: ${local}`} }`;
+}
+
+/**
+ * Rewrites the entries of a pattern that destructures the detail of the old
+ * events, and reports the entries that it cannot rewrite.
+ */
+function rewriteDetailPattern(run: Run, pattern: Node, event: string): void {
+  for (const entry of pattern.children().filter((child) => child.isNamed())) {
+    const kind = entry.kind();
+    const keyNode =
+      kind === 'shorthand_property_identifier_pattern'
+        ? entry
+        : kind === 'pair_pattern'
+          ? entry.field('key')
+          : undefined;
+    const key = staticKeyName(keyNode);
+    const place = key === undefined ? undefined : DETAIL_KEYS[key];
+
+    if (!keyNode || key === undefined || place === undefined) {
+      report(
+        run,
+        'manual',
+        `${event}: a part of the detail that the step cannot follow; ${APPEARANCE_EVENT_REVIEW}`,
+        entry
+      );
+      continue;
+    }
+
+    if (place === key) {
+      continue;
+    }
+
+    if (place === null) {
+      report(
+        run,
+        'manual',
+        `${event}: the detail has no ${key}; test detail.changedKeys`,
+        entry
+      );
+      continue;
+    }
+
+    const local =
+      kind === 'pair_pattern' ? entry.field('value')?.text() : entry.text();
+
+    if (!local || !run.edits.add(entry.replace(movedEntryText(place, local)))) {
+      report(
+        run,
+        'manual',
+        `${event}: the key ${key} of the detail is ${place}`,
+        entry
+      );
+      continue;
+    }
+
+    noteRewritten(run, `${event}: detail ${key} -> ${place}`, entry);
+  }
+}
+
+/**
+ * Rewrites the reads of the detail in a listener of `VOI_MODIFIED` or
+ * `COLORMAP_MODIFIED` whose event parameter is a plain name: a key of the
+ * detail with a place in the new detail takes it (`detail.range` becomes
+ * `detail.effective.voiRange`, also in a destructuring pattern), and every
+ * other use of the detail is reported.
+ */
+function rewriteListenerDetail(run: Run, fn: Node, event: string): void {
+  const parameter = firstParameterName(fn);
+
+  if (!parameter) {
+    report(
+      run,
+      'manual',
+      `${event}: a listener whose event parameter is not a plain name; ${APPEARANCE_EVENT_REVIEW}`,
+      fn
+    );
+    return;
+  }
+
+  for (const reference of referencesOf(parameter)) {
+    const detail = reference.parent();
+
+    if (
+      detail?.kind() !== 'member_expression' ||
+      detail.field('object')?.id() !== reference.id()
+    ) {
+      continue;
+    }
+
+    if (detail.field('property')?.text() !== 'detail') {
+      continue;
+    }
+
+    const holder = detail.parent();
+
+    if (
+      holder?.kind() === 'member_expression' &&
+      holder.field('object')?.id() === detail.id()
+    ) {
+      const property = holder.field('property');
+      const key = property?.text() ?? '';
+      const place = DETAIL_KEYS[key];
+
+      if (place === key) {
+        continue;
+      }
+
+      if (!property || !place || !run.edits.add(property.replace(place))) {
+        report(
+          run,
+          'manual',
+          place === null
+            ? `${event}: the detail has no ${key}; test detail.changedKeys`
+            : `${event}: a part of the detail that the step cannot follow; ${APPEARANCE_EVENT_REVIEW}`,
+          holder
+        );
+        continue;
+      }
+
+      noteRewritten(run, `${event}: detail ${key} -> ${place}`, property);
+      continue;
+    }
+
+    if (
+      holder?.kind() === 'variable_declarator' &&
+      holder.field('value')?.id() === detail.id() &&
+      holder.field('name')?.kind() === 'object_pattern'
+    ) {
+      rewriteDetailPattern(run, holder.field('name'), event);
+      continue;
+    }
+
+    report(
+      run,
+      'manual',
+      `${event}: the detail goes on as a whole; ${APPEARANCE_EVENT_REVIEW}`,
+      detail
+    );
+  }
+}
+
+/**
+ * Rewrites the reads of the detail of each listener of `VOI_MODIFIED` and
+ * `COLORMAP_MODIFIED` that `addEventListener` gets, once per function. A
+ * listener that is not a function of the file is reported. The tables
+ * rename the event itself and report it for review.
+ */
+function rewriteAppearanceListeners(run: Run): void {
+  const done = new Set<number>();
+
+  for (const call of run.rootNode.findAll({
+    rule: {
+      kind: 'call_expression',
+      has: {
+        field: 'function',
+        kind: 'member_expression',
+        has: { field: 'property', regex: '^addEventListener$' },
+      },
+    },
+  })) {
+    const args = call
+      .field('arguments')
+      ?.children()
+      .filter((child) => child.isNamed());
+    const path = pathOf(args?.[0]) ?? '';
+    const event = path.replace(/^Enums\.Events\./, '');
+
+    if (
+      !path.startsWith('Enums.Events.') ||
+      !Object.prototype.hasOwnProperty.call(APPEARANCE_EVENTS, event)
+    ) {
+      continue;
+    }
+
+    const fn = listenerFunction(args[1]);
+
+    if (!fn) {
+      report(
+        run,
+        'manual',
+        `${event}: a listener that is not a function of this file; ${APPEARANCE_EVENT_REVIEW}`,
+        args[1] ?? call
+      );
+      continue;
+    }
+
+    if (done.has(fn.id())) {
+      continue;
+    }
+
+    done.add(fn.id());
+    rewriteListenerDetail(run, fn, event);
+  }
+}
+
+/** The operators that compare. */
+const COMPARISONS = new Set(['===', '!==', '==', '!=', '<', '>', '<=', '>=']);
+
+/**
+ * Returns the node that shows or compares a value, or a key read off it:
+ * a comparison, a `!`, a template string or a JSX expression. Undefined
+ * when the value goes elsewhere.
+ */
+function showingNode(node: Node): Node | undefined {
+  let current = node;
+
+  for (;;) {
+    const parent = current.parent();
+    const kind = parent?.kind() ?? '';
+
+    if (
+      (kind === 'member_expression' &&
+        parent.field('object')?.id() === current.id()) ||
+      kind === 'parenthesized_expression' ||
+      kind === 'non_null_expression'
+    ) {
+      current = parent;
+      continue;
+    }
+
+    if (kind === 'binary_expression') {
+      return COMPARISONS.has(parent.field('operator')?.text() ?? '')
+        ? parent
+        : undefined;
+    }
+
+    if (
+      (kind === 'unary_expression' &&
+        parent.field('operator')?.text() === '!') ||
+      kind === 'template_substitution' ||
+      kind === 'jsx_expression'
+    ) {
+      return parent;
+    }
+
+    return undefined;
+  }
+}
+
+/**
+ * Returns the expression that holds a value with a fallback after it
+ * (`value ?? {}`, `value || {}`), or the value itself.
+ */
+function withFallback(node: Node): Node {
+  let current = node;
+
+  for (;;) {
+    const parent = current.parent();
+    const kind = parent?.kind() ?? '';
+
+    if (kind === 'parenthesized_expression') {
+      current = parent;
+      continue;
+    }
+
+    if (
+      kind === 'binary_expression' &&
+      parent.field('left')?.id() === current.id() &&
+      ['??', '||'].includes(parent.field('operator')?.text() ?? '')
+    ) {
+      current = parent;
+      continue;
+    }
+
+    return current;
+  }
+}
+
+/**
+ * Returns the names that a declarator binds to a value: the name, or the
+ * names of a destructuring pattern of it.
+ */
+function boundNames(holder: Node): Node[] {
+  const name = holder.field('name');
+
+  if (name?.kind() === 'identifier') {
+    return [name];
+  }
+
+  if (name?.kind() !== 'object_pattern') {
+    return [];
+  }
+
+  return name
+    .children()
+    .map((entry) =>
+      entry.kind() === 'shorthand_property_identifier_pattern'
+        ? entry
+        : entry.kind() === 'pair_pattern'
+          ? entry.field('value')
+          : undefined
+    )
+    .filter(
+      (entry) =>
+        entry?.kind() === 'identifier' ||
+        entry?.kind() === 'shorthand_property_identifier_pattern'
+    );
+}
+
+/**
+ * Reports for review a read of the overrides of a viewport
+ * (`getDisplaySetAppearance`, or `getDisplaySetPresentation` of 6.0.0-beta.2)
+ * whose value, or a key of it, is shown or compared: directly, or through a
+ * `const` that holds it or destructures it. In 6.0 it gives what a caller
+ * set; a readout or a toggle reads `getEffectiveDisplaySetAppearance`.
+ */
+function reportShownOverrides(run: Run): void {
+  for (const member of run.rootNode.findAll({
+    rule: {
+      kind: 'member_expression',
+      has: {
+        field: 'property',
+        regex: '^(getDisplaySetAppearance|getDisplaySetPresentation)$',
+      },
+    },
+  })) {
+    const call = member.parent();
+
+    if (
+      call?.kind() !== 'call_expression' ||
+      call.field('function')?.id() !== member.id() ||
+      !receiverEvidence(member.field('object'), 'viewport')
+    ) {
+      continue;
+    }
+
+    const value = withFallback(call);
+    const holder = value.parent();
+    const readers =
+      holder?.kind() === 'variable_declarator' &&
+      holder.field('value')?.id() === value.id()
+        ? boundNames(holder).flatMap((name) => referencesOf(name))
+        : [call];
+    const shown = readers
+      .map((reader) => showingNode(reader))
+      .find((node) => node && !run.handled.has(node.range().start.index));
+
+    if (shown) {
+      report(
+        run,
+        'review',
+        `getDisplaySetAppearance: ${SHOWN_OVERRIDES}`,
+        shown
+      );
+    }
+  }
+}
+
 /**
  * The rewrites of the appearance that no table entry says: a method of the
  * look on a receiver that only the types of the file show to be a viewport,
@@ -613,6 +1090,8 @@ function reportUnprovenReceivers(run: Run): void {
  * file does not show to be a viewport, are reported.
  */
 function rewriteAppearance(run: Run): void {
+  rewriteAppearanceListeners(run);
+  reportShownOverrides(run);
   reportMembersOfTypes(run, APPEARANCE_TYPE_MEMBERS);
   reportSubpathNames(run, new Set(), APPEARANCE_SUBPATH_NAMES);
   reportApplicationTypedReceivers(run);

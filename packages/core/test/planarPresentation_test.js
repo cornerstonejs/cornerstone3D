@@ -279,15 +279,20 @@ describe('Planar presentation, a sigmoid window on a volume -- ', () => {
 });
 
 /**
- * Collects the colormaps that COLORMAP_MODIFIED carries on the element of a
- * viewport.
+ * Collects the colormaps that DISPLAY_SET_APPEARANCE_CHANGED carries on the
+ * element of a viewport when the colormap changes.
  */
 function collectColormapEvents(viewport) {
   const colormaps = [];
 
-  viewport.element.addEventListener(Events.COLORMAP_MODIFIED, (event) => {
-    colormaps.push(event.detail.colormap);
-  });
+  viewport.element.addEventListener(
+    Events.DISPLAY_SET_APPEARANCE_CHANGED,
+    (event) => {
+      if (event.detail.changedKeys.includes('colormap')) {
+        colormaps.push(event.detail.overrides.colormap);
+      }
+    }
+  );
 
   return colormaps;
 }

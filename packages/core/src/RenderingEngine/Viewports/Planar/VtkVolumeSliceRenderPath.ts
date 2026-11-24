@@ -101,9 +101,7 @@ export class VtkVolumeSliceRenderPath
 
     const { actor } = await createVolumeSliceActor(
       { volumeId: payload.volumeId, ...this.hooks },
-      ctx.viewport.element,
-      ctx.viewportId,
-      true
+      ctx.viewportId
     );
     const mapper = actor.getMapper() as vtkImageResliceMapper;
 

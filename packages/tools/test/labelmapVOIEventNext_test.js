@@ -37,13 +37,22 @@ async function settle() {
   await frames();
 }
 
-/** The details of the VOI_MODIFIED events of a viewport from now on. */
+/**
+ * The details of the DISPLAY_SET_APPEARANCE_CHANGED events of a viewport from
+ * now on.
+ */
 function recordVOIEvents(viewport) {
   const details = [];
 
-  viewport.element.addEventListener(Events.VOI_MODIFIED, (evt) => {
-    details.push({ range: evt.detail.range, volumeId: evt.detail.volumeId });
-  });
+  viewport.element.addEventListener(
+    Events.DISPLAY_SET_APPEARANCE_CHANGED,
+    (evt) => {
+      details.push({
+        range: evt.detail.effective.voiRange,
+        volumeId: evt.detail.volumeId,
+      });
+    }
+  );
 
   return details;
 }
@@ -113,7 +122,7 @@ function addStackSegmentation(imageIds, filled) {
   ]);
 }
 
-describe('VOI_MODIFIED of a direct next planar viewport with a labelmap -- ', () => {
+describe('DISPLAY_SET_APPEARANCE_CHANGED of a direct next planar viewport with a labelmap -- ', () => {
   let renderingEngine;
 
   beforeEach(function () {

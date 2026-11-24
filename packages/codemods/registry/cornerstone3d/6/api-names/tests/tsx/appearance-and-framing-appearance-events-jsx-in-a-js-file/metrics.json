@@ -1,0 +1,20 @@
+{
+  "cornerstone3d-6-review": [
+    {
+      "cardinality": {
+        "file": "input.js",
+        "line": "4",
+        "rule": "Events.VOI_MODIFIED: DISPLAY_SET_APPEARANCE_CHANGED fires once for every change of the appearance of a display set, also at its mount and when a scroll shows an image with another default window: test detail.cause and detail.changedKeys; the window is detail.effective.voiRange, the colormap detail.effective.colormap, what a caller set detail.overrides"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.js",
+        "line": "8",
+        "rule": "getDisplaySetAppearance: it gives the overrides only, what a caller set, and here the value is shown or compared: use getEffectiveDisplaySetAppearance for what is drawn, the defaults included"
+      },
+      "count": 1
+    }
+  ]
+}

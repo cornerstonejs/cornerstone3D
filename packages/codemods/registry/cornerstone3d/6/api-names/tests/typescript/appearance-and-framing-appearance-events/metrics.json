@@ -1,0 +1,60 @@
+{
+  "cornerstone3d-6-review": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "14",
+        "rule": "Events.VOI_MODIFIED: DISPLAY_SET_APPEARANCE_CHANGED fires once for every change of the appearance of a display set, also at its mount and when a scroll shows an image with another default window: test detail.cause and detail.changedKeys; the window is detail.effective.voiRange, the colormap detail.effective.colormap, what a caller set detail.overrides"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "15",
+        "rule": "Types.EventTypes.VoiModifiedEvent: DISPLAY_SET_APPEARANCE_CHANGED fires once for every change of the appearance of a display set, also at its mount and when a scroll shows an image with another default window: test detail.cause and detail.changedKeys; the window is detail.effective.voiRange, the colormap detail.effective.colormap, what a caller set detail.overrides"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "22",
+        "rule": "Types.EventTypes.ColormapModifiedEvent: DISPLAY_SET_APPEARANCE_CHANGED fires once for every change of the appearance of a display set, also at its mount and when a scroll shows an image with another default window: test detail.cause and detail.changedKeys; the window is detail.effective.voiRange, the colormap detail.effective.colormap, what a caller set detail.overrides"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "28",
+        "rule": "Events.COLORMAP_MODIFIED: DISPLAY_SET_APPEARANCE_CHANGED fires once for every change of the appearance of a display set, also at its mount and when a scroll shows an image with another default window: test detail.cause and detail.changedKeys; the window is detail.effective.voiRange, the colormap detail.effective.colormap, what a caller set detail.overrides"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "29",
+        "rule": "Events.VOI_MODIFIED: DISPLAY_SET_APPEARANCE_CHANGED fires once for every change of the appearance of a display set, also at its mount and when a scroll shows an image with another default window: test detail.cause and detail.changedKeys; the window is detail.effective.voiRange, the colormap detail.effective.colormap, what a caller set detail.overrides"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "39",
+        "rule": "getDisplaySetAppearance: it gives the overrides only, what a caller set, and here the value is shown or compared: use getEffectiveDisplaySetAppearance for what is drawn, the defaults included"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "49",
+        "rule": "Types.EventTypes.VoiModifiedEventDetail: DISPLAY_SET_APPEARANCE_CHANGED fires once for every change of the appearance of a display set, also at its mount and when a scroll shows an image with another default window: test detail.cause and detail.changedKeys; the window is detail.effective.voiRange, the colormap detail.effective.colormap, what a caller set detail.overrides"
+      },
+      "count": 1
+    }
+  ]
+}

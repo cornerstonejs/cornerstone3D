@@ -27,12 +27,11 @@
 //   (`resolvePlanarRenderPathCurrentImageIdIndex` dedups against the last
 //   *requested* index) -- so it fires on scroll/setImageIdIndex but not on a
 //   pure zoom/pan/rotation call.
-// - VOI_MODIFIED is triggered by `PlanarViewport.notifyAppearanceModified`
-//   whenever a `setDisplaySetAppearance` call touches `voiRange`/`invert`/
-//   `voiLUTFunction` AND resolves a non-undefined range. In stack mode a call
-//   that leaves the range, the VOI LUT function and the invert as they were
-//   fires none, as the legacy stack viewport (see test 6); in volume mode
-//   every touching call fires, as the legacy volume viewport.
+// - DISPLAY_SET_APPEARANCE_CHANGED is triggered by
+//   `BaseViewport.notifyAppearanceChanged` once for each change of the
+//   appearance of a display set, at its mount too. A call that leaves every
+//   override and every value on display as it was fires none, in stack and in
+//   volume mode (see test 6).
 //
 // CustomEvents here are created via `triggerEvent` with no `bubbles: true`,
 // so they do not bubble; the recorder is always attached directly to the
@@ -129,8 +128,7 @@ const ALL_TRACKED_EVENTS = [
   Events.IMAGE_RENDERED,
   Events.CAMERA_MODIFIED,
   Events.CAMERA_RESET,
-  Events.VOI_MODIFIED,
-  Events.COLORMAP_MODIFIED,
+  Events.DISPLAY_SET_APPEARANCE_CHANGED,
   Events.DISPLAY_AREA_MODIFIED,
   Events.NEW_IMAGE,
   'CORNERSTONE_STACK_NEW_IMAGE',
@@ -154,10 +152,11 @@ interface NewImageDetail {
   numberOfSlices?: number;
 }
 
-interface VoiModifiedDetail {
+interface AppearanceChangedDetail {
   viewportId?: string;
-  range?: { upper: number; lower: number };
-  invert?: boolean;
+  cause?: string;
+  changedKeys?: string[];
+  effective?: { voiRange?: { upper: number; lower: number } };
 }
 
 async function setupViewport(): Promise<PlanarViewportContext> {
@@ -353,9 +352,9 @@ test('golden event sequence for load -> scroll -> zoom', async () => {
   // was needed -- none occurred. Ordering, per step:
   //   load:   NEW_IMAGE fires first (the vtkImage mount fires the
   //           initial slice synchronously while building the binding),
-  //           then VOI_MODIFIED (addDisplaySetInternal mirrors legacy
-  //           StackViewport by emitting the resolved default VOI right
-  //           after `setDefaultAppearance`), then CAMERA_MODIFIED
+  //           then DISPLAY_SET_APPEARANCE_CHANGED with cause 'mount'
+  //           (addDisplaySetInternal fires the appearance of the mount
+  //           right after the bind), then CAMERA_MODIFIED
   //           (the source-binding's initial camera, emitted directly by
   //           addDisplaySetInternal), then IMAGE_RENDERED (the RAF
   //           callback fires after the mount's render() request).
@@ -368,7 +367,7 @@ test('golden event sequence for load -> scroll -> zoom', async () => {
   //           frame).
   const golden = [
     Events.NEW_IMAGE,
-    Events.VOI_MODIFIED,
+    Events.DISPLAY_SET_APPEARANCE_CHANGED,
     Events.CAMERA_MODIFIED,
     Events.IMAGE_RENDERED,
     Events.CAMERA_MODIFIED,
@@ -435,7 +434,7 @@ test('scroll fires exactly one new-image event whose imageId matches the resolve
 // 6. VOI event
 // ==========================================================================
 
-test('setDisplaySetAppearance with a new voiRange fires VOI_MODIFIED with the new range', async () => {
+test('setDisplaySetAppearance with a new voiRange fires one DISPLAY_SET_APPEARANCE_CHANGED with the new range', async () => {
   const ctx = await setupViewport();
   const { viewport, element, displaySetId } = ctx;
 
@@ -450,25 +449,27 @@ test('setDisplaySetAppearance with a new voiRange fires VOI_MODIFIED with the ne
   viewport.render();
   await waitForQuiescence(recorder);
 
-  expect(recorder.count(Events.VOI_MODIFIED)).toBeGreaterThanOrEqual(1);
+  expect(recorder.count(Events.DISPLAY_SET_APPEARANCE_CHANGED)).toBe(1);
 
   const voiEvent = recorder.events.find(
-    (event) => event.type === Events.VOI_MODIFIED
+    (event) => event.type === Events.DISPLAY_SET_APPEARANCE_CHANGED
   );
-  const detail = voiEvent?.detail as VoiModifiedDetail | undefined;
+  const detail = voiEvent?.detail as AppearanceChangedDetail | undefined;
 
   expect(detail?.viewportId).toBe(ctx.viewportId);
-  expect(detail?.range).toEqual(nextRange);
+  expect(detail?.cause).toBe('edit');
+  expect(detail?.changedKeys).toEqual(['voiRange']);
+  expect(detail?.effective?.voiRange).toEqual(nextRange);
   expect(viewport.getDisplaySetAppearance(displaySetId)?.voiRange).toEqual(
     nextRange
   );
 });
 
-// The viewport of `setupViewport` shows a stack. `notifyAppearanceModified`
-// compares the VOI with the stored presentation before the change, so setting
-// the same VOI range a second time fires no VOI_MODIFIED, as the legacy stack
-// viewport on the GPU (it returned early from `setVOIGPU` on an equal range).
-test('setting the same voiRange again in stack mode does not fire VOI_MODIFIED, as the legacy stack viewport', async () => {
+// The viewport of `setupViewport` shows a stack. A change of the appearance
+// fires only when an override or a value on display changes, so setting the
+// same VOI range a second time fires nothing, as the legacy stack viewport on
+// the GPU (it returned early from `setVOIGPU` on an equal range).
+test('setting the same voiRange again in stack mode does not fire DISPLAY_SET_APPEARANCE_CHANGED, as the legacy stack viewport', async () => {
   const ctx = await setupViewport();
   const { viewport, element, displaySetId } = ctx;
 
@@ -486,7 +487,7 @@ test('setting the same voiRange again in stack mode does not fire VOI_MODIFIED, 
   viewport.render();
   await waitForQuiescence(recorder);
 
-  expect(recorder.count(Events.VOI_MODIFIED)).toBe(0);
+  expect(recorder.count(Events.DISPLAY_SET_APPEARANCE_CHANGED)).toBe(0);
 });
 
 // ==========================================================================

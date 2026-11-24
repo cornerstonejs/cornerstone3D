@@ -116,4 +116,6 @@ fusionViewports.forEach((viewport) => {
 });
 ```
 
-Internally, `voiSyncCallback` runs after the `VOI_MODIFIED` event.
+Internally, `voiSyncCallback` runs after the `DISPLAY_SET_APPEARANCE_CHANGED`
+event. It copies what a caller set or reset (`cause` `'edit'` or `'reset'`),
+never the window of a mount or of a scroll.

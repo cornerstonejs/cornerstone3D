@@ -6,13 +6,11 @@ import type ICachedVolume from './ICachedVolume';
 import type ICamera from './ICamera';
 import type IImage from './IImage';
 import type IImageVolume from './IImageVolume';
-import type { VOIRange } from './voi';
-import type VOILUTFunctionType from '../enums/VOILUTFunctionType';
 import type ViewportStatus from '../enums/ViewportStatus';
 import type DisplayArea from './displayArea';
 import type IImageCalibration from './IImageCalibration';
-import type { ColormapPublic } from './Colormap';
 import type { IViewport } from './IViewport';
+import type { PlanarDisplaySetAppearance } from '../RenderingEngine/Viewports/Planar/PlanarViewportTypes';
 import type { ViewportFidelityState } from './ViewportFidelity';
 
 /**
@@ -49,32 +47,62 @@ interface CameraResetEventDetail {
 type CameraResetEvent = CustomEventType<CameraResetEventDetail>;
 
 /**
- * VOI_MODIFIED Event's data
+ * Why the appearance of a display set changed:
+ *
+ * - `'mount'`: the display set was mounted on the viewport and has its first
+ *   appearance: the defaults of its data and family, with the overrides that
+ *   were set before the mount or that the mount asked for. It fires once per
+ *   mount, after the display set is bound, with every key that has a value.
+ * - `'edit'`: a call of `setDisplaySetAppearance` changed an override, and
+ *   with it maybe the effective value. A call that changes nothing fires
+ *   nothing.
+ * - `'reset'`: a call of `resetDisplaySetAppearance` removed overrides; the
+ *   keys are back to their defaults.
+ * - `'default'`: an effective value changed and no call made it: the default
+ *   of a key that has no override changed, for example when a scroll shows
+ *   an image of a stack whose own window differs from the image before. The
+ *   overrides are the same as before.
  */
-interface VoiModifiedEventDetail {
-  /** Viewport Unique ID in the renderingEngine */
-  viewportId: string;
-  /** new VOI range */
-  range: VOIRange;
-  /** Unique ID for the volume in the cache */
-  volumeId?: string;
-  /** VOILUTFunction */
-  VOILUTFunction?: VOILUTFunctionType;
-  /** inverted */
-  invert?: boolean;
-  /** Indicates if the 'invert' state has changed from the previous state */
-  invertStateChanged?: boolean;
-  /** color map */
-  colormap?: ColormapPublic;
-}
+type DisplaySetAppearanceChangeCause = 'mount' | 'edit' | 'reset' | 'default';
 
-interface ColormapModifiedEventDetail {
+/**
+ * DISPLAY_SET_APPEARANCE_CHANGED Event's data. It fires once per change of
+ * the appearance of one display set of a viewport, on the element of the
+ * viewport. The type parameter is the appearance of the viewport family:
+ * `PlanarDisplaySetAppearance` by default, `Volume3DDisplaySetAppearance`,
+ * `VideoDisplaySetAppearance`, `WSIDisplaySetAppearance` or
+ * `ECGDisplaySetAppearance` for the others.
+ *
+ * `overrides` is what `getDisplaySetAppearance(displaySetId)` gives after
+ * the change: what a caller set, also a value equal to the default. Copy or
+ * store these. `effective` is what
+ * `getEffectiveDisplaySetAppearance(displaySetId)` gives: what is drawn,
+ * the defaults included. Show or compare these.
+ */
+interface DisplaySetAppearanceChangedEventDetail<
+  TAppearance extends object = PlanarDisplaySetAppearance,
+> {
   /** Viewport Unique ID in the renderingEngine */
   viewportId: string;
-  /** The new colormap */
-  colormap: ColormapPublic;
-  /** Unique ID for the volume in the cache */
+  /** Unique ID for the renderingEngine */
+  renderingEngineId: string;
+  /** The display set whose appearance changed */
+  displaySetId: string;
+  /** Whether the display set is the source of the viewport or an overlay */
+  role: 'source' | 'overlay';
+  /** The volume that the display set draws, when it draws one */
   volumeId?: string;
+  /** Why it changed. See {@link DisplaySetAppearanceChangeCause}. */
+  cause: DisplaySetAppearanceChangeCause;
+  /**
+   * The keys whose override or effective value changed. For `'mount'`
+   * every key that has an effective value.
+   */
+  changedKeys: Array<keyof TAppearance & string>;
+  /** The explicit overrides after the change */
+  overrides: Partial<TAppearance>;
+  /** The effective values after the change: the overrides over the defaults */
+  effective: TAppearance;
 }
 
 /**
@@ -358,14 +386,11 @@ type StackScrollOutOfBoundsEventDetail = {
 type CameraModifiedEvent = CustomEventType<CameraModifiedEventDetail>;
 
 /**
- * VOI_MODIFIED Event type
+ * DISPLAY_SET_APPEARANCE_CHANGED Event type
  */
-type VoiModifiedEvent = CustomEventType<VoiModifiedEventDetail>;
-
-/**
- * COLORMAP_MODIFIED Event type
- */
-type ColormapModifiedEvent = CustomEventType<ColormapModifiedEventDetail>;
+type DisplaySetAppearanceChangedEvent<
+  TAppearance extends object = PlanarDisplaySetAppearance,
+> = CustomEventType<DisplaySetAppearanceChangedEventDetail<TAppearance>>;
 
 /**
  * DISPLAY_AREA_MODIFIED Event type
@@ -479,10 +504,9 @@ export type {
   ViewportFidelityChangedEvent,
   CameraModifiedEventDetail,
   CameraModifiedEvent,
-  VoiModifiedEvent,
-  VoiModifiedEventDetail,
-  ColormapModifiedEvent,
-  ColormapModifiedEventDetail,
+  DisplaySetAppearanceChangeCause,
+  DisplaySetAppearanceChangedEvent,
+  DisplaySetAppearanceChangedEventDetail,
   DisplayAreaModifiedEvent,
   DisplayAreaModifiedEventDetail,
   ElementDisabledEvent,

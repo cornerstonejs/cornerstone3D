@@ -34,12 +34,18 @@ enum Events {
    */
   CAMERA_RESET = 'CORNERSTONE_CAMERA_RESET',
   /**
-   * Triggers on the HTML element when viewport modifies its VOI
+   * Triggers on the HTML element of a viewport when the appearance of one of
+   * its display sets changes: the window, invert, colormap, opacity,
+   * visibility, blend mode, preset, interpolation, sharpening, smoothing,
+   * slab thickness or any other key of the appearance of its family. It
+   * fires once per change, with the keys that changed and the `cause`:
+   * `'mount'`, `'edit'`, `'reset'` or `'default'`. The layer of a
+   * segmentation fires nothing.
    *
-   * Make use of {@link EventTypes.VoiModifiedEvent | VoiModified Event Type } for typing your event listeners for VOI_MODIFIED event,
-   * and see what event detail is included in {@link EventTypes.VoiModifiedEventDetail | VoiModified Event Detail }
+   * Make use of {@link EventTypes.DisplaySetAppearanceChangedEvent | DisplaySetAppearanceChanged Event Type } for typing your event listeners for DISPLAY_SET_APPEARANCE_CHANGED event,
+   * and see what event detail is included in {@link EventTypes.DisplaySetAppearanceChangedEventDetail | DisplaySetAppearanceChanged Event Detail }
    */
-  VOI_MODIFIED = 'CORNERSTONE_VOI_MODIFIED',
+  DISPLAY_SET_APPEARANCE_CHANGED = 'CORNERSTONE_DISPLAY_SET_APPEARANCE_CHANGED',
   /**
    * Triggers on the HTML element when viewport modifies its display area
    *
@@ -238,13 +244,6 @@ enum Events {
    * You should use it with a workerType to indicate the type of worker that is making progress
    */
   WEB_WORKER_PROGRESS = 'CORNERSTONE_WEB_WORKER_PROGRESS',
-
-  /**
-   * Triggers on the HTML element when viewport modifies its colormap
-   * Make use of {@link EventTypes.ColormapModifiedEvent | ColormapModified Event Type } for typing your event listeners for COLORMAP_MODIFIED event,
-   * and see what event detail is included in {@link EventTypes.ColormapModifiedEventDetail | ColormapModified Event Detail }
-   */
-  COLORMAP_MODIFIED = 'CORNERSTONE_COLORMAP_MODIFIED',
 
   /**
    * Dynamic image volume dimension group number changed

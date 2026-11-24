@@ -31,7 +31,7 @@ export function getViewportVoiMappingForVolume(
   }
 
   const planarViewport = viewport as typeof viewport &
-    Pick<PlanarViewport, 'findDataIdByVolumeId' | 'getDefaultInvert'>;
+    Pick<PlanarViewport, 'findDataIdByVolumeId'>;
   const displaySetId =
     (volumeId && planarViewport.findDataIdByVolumeId(volumeId)) ||
     viewport.getSourceDisplaySetId();
@@ -40,11 +40,10 @@ export function getViewportVoiMappingForVolume(
     return null;
   }
 
-  const appearance = viewport.getDisplaySetAppearance(displaySetId) as
+  const appearance = viewport.getEffectiveDisplaySetAppearance(displaySetId) as
     | PlanarVoiAppearance
     | undefined;
-  const voiRange =
-    appearance?.voiRange ?? viewport.getDefaultVOIRange(displaySetId);
+  const voiRange = appearance?.voiRange;
 
   if (
     typeof voiRange?.lower !== 'number' ||
@@ -56,8 +55,6 @@ export function getViewportVoiMappingForVolume(
   return {
     voiRange: { lower: voiRange.lower, upper: voiRange.upper },
     VOILUTFunction: appearance?.voiLUTFunction,
-    invert:
-      (appearance?.invert ?? planarViewport.getDefaultInvert(displaySetId)) ===
-      true,
+    invert: appearance?.invert === true,
   };
 }

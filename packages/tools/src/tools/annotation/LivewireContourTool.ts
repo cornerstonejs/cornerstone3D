@@ -255,21 +255,19 @@ class LivewireContourTool extends ContourSegmentationBaseTool {
       throw new Error('Viewport not supported');
     }
     scalarData = csUtils.convertToGrayscale(scalarData, width, height);
-    // Native ("next") viewports expose no getProperties; read the effective VOI
-    // from the per-binding appearance, falling back to the computed default VOI.
     let voiRange: Types.VOIRange;
     const sourceViewport: Types.IViewport = viewport;
     if (csUtils.viewportSupportsDisplaySetAppearance(sourceViewport)) {
       const displaySetId = sourceViewport.getSourceDisplaySetId();
-      voiRange = ((displaySetId
-        ? (
-            sourceViewport.getDisplaySetAppearance(displaySetId) as
-              | { voiRange?: Types.VOIRange }
-              | undefined
-          )?.voiRange
-        : undefined) ??
-        sourceViewport.getDefaultVOIRange(displaySetId) ??
-        undefined) as Types.VOIRange;
+      voiRange = (
+        displaySetId
+          ? (
+              sourceViewport.getEffectiveDisplaySetAppearance(displaySetId) as
+                | { voiRange?: Types.VOIRange }
+                | undefined
+            )?.voiRange
+          : undefined
+      ) as Types.VOIRange;
     }
     const startPos = worldToSlice(worldPos);
 

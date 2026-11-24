@@ -18,22 +18,34 @@ function getAppearanceSlabThickness(
 /**
  * Synchronizer callback to synchronize the slab thickness.
  *
- * It gives the slab thickness of the appearance of the source display set
- * of the source viewport to each display set of the target viewport whose
- * slab differs, as the legacy synchronizer gave it to every volume of the
- * target. A planar viewport fires CAMERA_MODIFIED when a slab changes, as the
- * legacy volume viewport did. Each viewport is read from its own rendering
- * engine, and a disabled source or target does nothing. Only a source that
- * shows a volume gives its slab, as the legacy synchronizer read the slab of
- * a volume viewport only: a stack, which draws no slab, leaves the slab of
- * the targets as it is. A volume source without a slab clears the slab of
- * the targets.
+ * It acts on a DISPLAY_SET_APPEARANCE_CHANGED of the source display set of
+ * the source viewport whose changed keys name `slabThickness`, of any cause
+ * but `'default'`: a slab thickness has no default other than none, so the
+ * slab of a mount is one that a caller set. It gives that slab thickness to
+ * each display set of the target viewport whose slab differs, as the legacy
+ * synchronizer gave it to every volume of the target. Each viewport is read
+ * from its own rendering engine, and a disabled source or target does
+ * nothing. Only a source that shows a volume gives its slab, as the legacy
+ * synchronizer read the slab of a volume viewport only: a stack, which draws
+ * no slab, leaves the slab of the targets as it is. A volume source whose
+ * slab was removed clears the slab of the targets.
  */
 export default function slabThicknessSyncCallback(
   _synchronizerInstance,
   sourceViewport: Types.IViewportId,
-  targetViewport: Types.IViewportId
+  targetViewport: Types.IViewportId,
+  appearanceEvent: Types.EventTypes.DisplaySetAppearanceChangedEvent
 ): void {
+  const { cause, changedKeys, role } = appearanceEvent.detail;
+
+  if (
+    cause === 'default' ||
+    role !== 'source' ||
+    !changedKeys.includes('slabThickness')
+  ) {
+    return;
+  }
+
   const renderingEngine = getRenderingEngine(targetViewport.renderingEngineId);
   if (!renderingEngine) {
     throw new Error(

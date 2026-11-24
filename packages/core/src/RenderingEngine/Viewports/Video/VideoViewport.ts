@@ -186,6 +186,7 @@ class VideoViewport extends BaseViewport<
         muted: true,
         objectFit: 'contain',
       });
+      this.applyMountedAppearance(displaySetId);
 
       const videoData = this.getVideoDataFromBinding(binding);
 
@@ -574,7 +575,7 @@ class VideoViewport extends BaseViewport<
         )?.frameOfReferenceUID || videoData.renderedUrl,
       intrinsicHeight: videoElement.videoHeight || this.element.clientHeight,
       intrinsicWidth: videoElement.videoWidth || this.element.clientWidth,
-      objectFit: this.getDisplaySetAppearance(videoData.id)?.objectFit,
+      objectFit: this.getEffectiveDisplaySetAppearance(videoData.id)?.objectFit,
       payload: videoData,
     });
   }

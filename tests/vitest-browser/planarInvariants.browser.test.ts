@@ -453,13 +453,14 @@ describe('planarInvariants: presentation round trip', () => {
     expect(afterReset?.voiRange).toEqual(defaultsBeforeMutation?.voiRange);
   });
 
-  test('resetDisplaySetAppearance clears the presentation to {}, the visible flag of the mount too', async () => {
+  test('resetDisplaySetAppearance clears the overrides to {}; the mount stores none', async () => {
     const ctx = track(await createPlanarViewport());
     const { viewport, element, displaySetId } = ctx;
 
-    expect(viewport.getDisplaySetAppearance(displaySetId)).toStrictEqual({
-      visible: true,
-    });
+    expect(viewport.getDisplaySetAppearance(displaySetId)).toStrictEqual({});
+    expect(
+      viewport.getEffectiveDisplaySetAppearance(displaySetId)?.visible
+    ).toBe(true);
 
     viewport.setDisplaySetAppearance(displaySetId, {
       interpolationType: InterpolationType.NEAREST,

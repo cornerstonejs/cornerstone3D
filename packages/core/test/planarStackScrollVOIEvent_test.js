@@ -48,18 +48,50 @@ async function scrollTo(viewport, series, imageIdIndex) {
   await renderAndWait(viewport);
 }
 
-/** The ranges of the VOI_MODIFIED events of a viewport from now on. */
+/**
+ * The windows on display of the DISPLAY_SET_APPEARANCE_CHANGED events of a
+ * viewport from now on that change the window.
+ */
 function recordVOIRanges(viewport) {
   const ranges = [];
 
-  viewport.element.addEventListener(Events.VOI_MODIFIED, (evt) => {
-    ranges.push({ ...evt.detail.range });
-  });
+  viewport.element.addEventListener(
+    Events.DISPLAY_SET_APPEARANCE_CHANGED,
+    (evt) => {
+      if (evt.detail.changedKeys.includes('voiRange')) {
+        ranges.push({ ...evt.detail.effective.voiRange });
+      }
+    }
+  );
 
   return ranges;
 }
 
-describe('A stack on a direct next planar viewport whose images have their own windows -- ', () => {
+/** The DISPLAY_SET_APPEARANCE_CHANGED events of a viewport from now on. */
+function recordAppearanceEvents(viewport) {
+  const details = [];
+
+  viewport.element.addEventListener(
+    Events.DISPLAY_SET_APPEARANCE_CHANGED,
+    (evt) => {
+      const { displaySetId, role, cause, changedKeys, overrides, effective } =
+        evt.detail;
+
+      details.push({
+        displaySetId,
+        role,
+        cause,
+        changedKeys,
+        voiRange: overrides.voiRange,
+        effectiveVOIRange: effective.voiRange,
+      });
+    }
+  );
+
+  return details;
+}
+
+describe('DISPLAY_SET_APPEARANCE_CHANGED of a stack on a planar viewport whose images have their own windows -- ', () => {
   let renderingEngine;
 
   beforeEach(function () {
@@ -74,7 +106,7 @@ describe('A stack on a direct next planar viewport whose images have their own w
   });
 
   for (const [where, options] of CASES) {
-    it(`fires no VOI_MODIFIED with a range whose upper end is below its lower end, when a scroll shows an image with a window of width 0, ${where}`, async function () {
+    it(`fires nothing when a scroll shows an image with a window of width 0, whose range has its upper end below its lower end, ${where}`, async function () {
       const series = await createSeries({ id: `scrollNoWindow-${where}` });
       const viewport = createNextViewport(renderingEngine, 'scrollNoWindow');
 
@@ -97,7 +129,7 @@ describe('A stack on a direct next planar viewport whose images have their own w
       expect(ranges).toEqual([]);
     });
 
-    it(`fires VOI_MODIFIED for the window of the source and none for the window of a stack that is drawn over it, ${where}`, async function () {
+    it(`fires for the window of a stack that is drawn over the source with the id and the role of the overlay, apart from the window of the source, ${where}`, async function () {
       const series = await createSeries({ id: `overlayVOI-${where}` });
       const overlay = await createSeries({ id: `overlayVOIOver-${where}` });
       const viewport = createNextViewport(renderingEngine, 'overlayVOI');
@@ -106,7 +138,7 @@ describe('A stack on a direct next planar viewport whose images have their own w
 
       const sourceId = viewport.getSourceDisplaySetId();
       const overlayId = 'overlayVOI:over';
-      const ranges = recordVOIRanges(viewport);
+      const details = recordAppearanceEvents(viewport);
 
       cornerstone3D.displaySetRegistry.add(overlayId, {
         imageIds: overlay.imageIds,
@@ -131,17 +163,43 @@ describe('A stack on a direct next planar viewport whose images have their own w
         lower: 5,
         upper: 50,
       });
-      expect(ranges).toEqual([]);
+      expect(viewport.getDisplaySetAppearance(sourceId)).toEqual({});
 
       viewport.setDisplaySetAppearance(sourceId, {
         voiRange: { lower: 0, upper: 100 },
       });
       await renderAndWait(viewport);
 
-      expect(ranges).toEqual([{ lower: 0, upper: 100 }]);
+      expect(
+        details.map(({ displaySetId, role, cause, voiRange }) => ({
+          displaySetId,
+          role,
+          cause,
+          voiRange,
+        }))
+      ).toEqual([
+        {
+          displaySetId: overlayId,
+          role: 'overlay',
+          cause: 'mount',
+          voiRange: undefined,
+        },
+        {
+          displaySetId: overlayId,
+          role: 'overlay',
+          cause: 'edit',
+          voiRange: { lower: 5, upper: 50 },
+        },
+        {
+          displaySetId: sourceId,
+          role: 'source',
+          cause: 'edit',
+          voiRange: { lower: 0, upper: 100 },
+        },
+      ]);
     });
 
-    it(`fires one VOI_MODIFIED with the window of the new image when a scroll shows an image with another window, and none when the window is the same, ${where}`, async function () {
+    it(`fires once with cause default and the window of the new image when a scroll shows an image with another window, and none when the window is the same, ${where}`, async function () {
       const series = await createSeriesWithTwoWindows(`scrollVOI-${where}`);
       const viewport = createNextViewport(renderingEngine, 'scrollVOI');
 
@@ -149,12 +207,23 @@ describe('A stack on a direct next planar viewport whose images have their own w
 
       const displaySetId = viewport.getSourceDisplaySetId();
       const ranges = recordVOIRanges(viewport);
+      const details = recordAppearanceEvents(viewport);
 
       await scrollTo(viewport, series, 1);
       expect(ranges).toEqual([]);
 
       await scrollTo(viewport, series, 4);
       expect(ranges).toEqual([OTHER_RANGE]);
+      expect(details).toEqual([
+        {
+          displaySetId,
+          role: 'source',
+          cause: 'default',
+          changedKeys: ['voiRange'],
+          voiRange: undefined,
+          effectiveVOIRange: OTHER_RANGE,
+        },
+      ]);
       expect(viewport.getDefaultVOIRange(displaySetId)).toEqual(OTHER_RANGE);
       expect(
         viewport.getDisplaySetAppearance(displaySetId)?.voiRange
@@ -167,7 +236,7 @@ describe('A stack on a direct next planar viewport whose images have their own w
       expect(ranges).toEqual([OTHER_RANGE, FIRST_RANGE]);
     });
 
-    it(`fires no VOI_MODIFIED on a scroll while a window is set, as the window on display stays, ${where}`, async function () {
+    it(`fires nothing on a scroll while a window is set, and leaves that window, also when it equals the default window of the first image, ${where}`, async function () {
       const series = await createSeriesWithTwoWindows(`scrollSetVOI-${where}`);
       const viewport = createNextViewport(renderingEngine, 'scrollSetVOI');
 
@@ -190,6 +259,19 @@ describe('A stack on a direct next planar viewport whose images have their own w
         lower: 0,
         upper: 100,
       });
+
+      viewport.setDisplaySetAppearance(displaySetId, {
+        voiRange: { ...FIRST_RANGE },
+      });
+      await scrollTo(viewport, series, 4);
+
+      expect(ranges).toEqual([FIRST_RANGE]);
+      expect(viewport.getDisplaySetAppearance(displaySetId).voiRange).toEqual(
+        FIRST_RANGE
+      );
+      expect(
+        viewport.getEffectiveDisplaySetAppearance(displaySetId).voiRange
+      ).toEqual(FIRST_RANGE);
     });
   }
 });

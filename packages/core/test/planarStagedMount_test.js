@@ -410,7 +410,10 @@ describe('A display set of a direct next planar viewport whose registration goes
     const events = [];
     const listener = (evt) => events.push(evt.detail);
 
-    viewport.element.addEventListener(Events.VOI_MODIFIED, listener);
+    viewport.element.addEventListener(
+      Events.DISPLAY_SET_APPEARANCE_CHANGED,
+      listener
+    );
 
     const mount = viewport.setDisplaySets(
       { displaySetId: 'voi:scan', options },
@@ -436,7 +439,10 @@ describe('A display set of a direct next planar viewport whose registration goes
 
     expect(events.length).toBe(1);
     expect(events[0].volumeId).toBe(seriesA.volumeId);
-    viewport.element.removeEventListener(Events.VOI_MODIFIED, listener);
+    viewport.element.removeEventListener(
+      Events.DISPLAY_SET_APPEARANCE_CHANGED,
+      listener
+    );
   });
 });
 

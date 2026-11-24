@@ -342,7 +342,10 @@ describe('synchronizers', () => {
       // Sanity check that the mutation below is an actual change, not a no-op.
       expect(targetRange).not.toEqual(beforeRange);
 
-      const voiOnB = waitForEventOn(b.element, Events.VOI_MODIFIED);
+      const voiOnB = waitForEventOn(
+        b.element,
+        Events.DISPLAY_SET_APPEARANCE_CHANGED
+      );
       a.viewport.setDisplaySetAppearance(a.displaySetId, {
         voiRange: targetRange,
       });
@@ -374,7 +377,10 @@ describe('synchronizers', () => {
         )?.invert;
         expect(beforeInvertB).toBeFalsy();
 
-        const voiOnB = waitForEventOn(b.element, Events.VOI_MODIFIED);
+        const voiOnB = waitForEventOn(
+          b.element,
+          Events.DISPLAY_SET_APPEARANCE_CHANGED
+        );
         a.viewport.setDisplaySetAppearance(a.displaySetId, {
           voiRange: { lower: 1, upper: 2 },
           invert: true,

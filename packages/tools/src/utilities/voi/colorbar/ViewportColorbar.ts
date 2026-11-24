@@ -226,34 +226,42 @@ class ViewportColorbar extends Colorbar {
     this.imageRange = ViewportColorbar._getImageRange(element, volumeId);
   };
 
-  private _viewportVOIModifiedCallback = (
-    evt: Types.EventTypes.VoiModifiedEvent
+  /**
+   * Whether an appearance event names the data of the colorbar: the display
+   * set or the volume that its `volumeId` names, or the source display set
+   * when the colorbar names none.
+   */
+  private _namesOwnDisplaySet(
+    detail: Types.EventTypes.DisplaySetAppearanceChangedEventDetail
+  ): boolean {
+    if (!this._volumeId) {
+      return detail.role === 'source';
+    }
+
+    return (
+      detail.displaySetId === this._volumeId ||
+      (detail.volumeId !== undefined && this._namesOwnData(detail.volumeId))
+    );
+  }
+
+  private _viewportAppearanceChangedCallback = (
+    evt: Types.EventTypes.DisplaySetAppearanceChangedEvent
   ) => {
-    const { viewportId, volumeId, range: voiRange, colormap } = evt.detail;
+    const { viewportId, changedKeys, effective } = evt.detail;
     const { viewport } = this.enabledElement;
-    if (viewportId !== viewport.id || !this._namesOwnData(volumeId)) {
+
+    if (viewportId !== viewport.id || !this._namesOwnDisplaySet(evt.detail)) {
       return;
     }
 
-    this.voiRange = voiRange;
-
-    if (colormap) {
-      this.activeColormapName = colormap.name;
-    }
-    this.showAndAutoHideTicks();
-  };
-
-  private _viewportColormapModifiedCallback = (
-    evt: Types.EventTypes.ColormapModifiedEvent
-  ) => {
-    const { viewportId, colormap, volumeId } = evt.detail;
-    const { viewport } = this.enabledElement;
-
-    if (viewportId !== viewport.id || !this._namesOwnData(volumeId)) {
-      return;
+    if (changedKeys.includes('colormap') && effective.colormap?.name) {
+      this.activeColormapName = effective.colormap.name;
     }
 
-    this.activeColormapName = colormap.name;
+    if (changedKeys.includes('voiRange') && effective.voiRange) {
+      this.voiRange = effective.voiRange;
+      this.showAndAutoHideTicks();
+    }
   };
 
   private _addCornerstoneEventListener() {
@@ -267,13 +275,8 @@ class ViewportColorbar extends Colorbar {
     element.addEventListener(Events.NEW_IMAGE, this._newImageCallback);
 
     element.addEventListener(
-      Events.VOI_MODIFIED,
-      this._viewportVOIModifiedCallback as EventListener
-    );
-
-    element.addEventListener(
-      Events.COLORMAP_MODIFIED,
-      this._viewportColormapModifiedCallback as EventListener
+      Events.DISPLAY_SET_APPEARANCE_CHANGED,
+      this._viewportAppearanceChangedCallback as EventListener
     );
   }
 
@@ -289,13 +292,8 @@ class ViewportColorbar extends Colorbar {
     element.removeEventListener(Events.NEW_IMAGE, this._newImageCallback);
 
     element.removeEventListener(
-      Events.VOI_MODIFIED,
-      this._viewportVOIModifiedCallback as EventListener
-    );
-
-    element.removeEventListener(
-      Events.COLORMAP_MODIFIED,
-      this._viewportColormapModifiedCallback as EventListener
+      Events.DISPLAY_SET_APPEARANCE_CHANGED,
+      this._viewportAppearanceChangedCallback as EventListener
     );
   }
 }

@@ -98,6 +98,11 @@ export type {
   ProjectionWriteOptions,
   ViewportDataReference,
   ViewportProjectionAdapter,
+  PlanarDisplaySetAppearance,
+  Volume3DDisplaySetAppearance,
+  VideoDisplaySetAppearance,
+  WSIDisplaySetAppearance,
+  ECGDisplaySetAppearance,
 } from './RenderingEngine/Viewports';
 export type { DisplaySetDescriptor } from './types/DisplaySetDescriptor';
 export type {

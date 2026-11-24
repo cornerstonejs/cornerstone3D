@@ -916,22 +916,7 @@ class PlanarViewport extends BaseViewport<
     this.setDefaultAppearance(displaySetId, {
       visible: true,
     });
-
-    // `setDefaultAppearance` -> `setAppearanceState` does not emit
-    // (only the public merge path notifies), so a freshly-mounted display set
-    // never surfaced its default VOI. Legacy Stack/Volume viewports emit
-    // VOI_MODIFIED at load; mirror that here so OHIF's window-level readout,
-    // the colorbar, and VOI synchronizers update when the display set changes.
-    // Runs per binding (source and each overlay) with that binding's own displaySetId,
-    // and `notifyAppearanceModified` resolves the matching volumeId/event
-    // internally. Mirrors the `resetDisplaySetAppearance` precedent below.
-    const mountedAppearance = this.getDisplaySetAppearance(displaySetId);
-    const voiRange =
-      mountedAppearance?.voiRange ?? this.getDefaultVOIRange(displaySetId);
-
-    if (voiRange) {
-      this.notifyAppearanceModified(displaySetId, { voiRange });
-    }
+    this.applyMountedAppearance(displaySetId);
 
     if (role === 'source') {
       // Emit an initial CAMERA_MODIFIED for the source binding only, mirroring
@@ -1407,124 +1392,32 @@ class PlanarViewport extends BaseViewport<
   }
 
   /**
-   * Emits the legacy-named appearance events (`VOI_MODIFIED`,
-   * `COLORMAP_MODIFIED`) when a per-display-set appearance update changes the
-   * VOI, invert, or colormap of a mounted dataset.
-   *
-   * The native appearance write path previously emitted no event, so OHIF's
-   * VOI sliders, colorbar, window-level readout, and VOI/colormap
-   * synchronizers went stale after any programmatic or tool-driven
-   * `setDisplaySetAppearance` change on a direct `PLANAR` viewport.
-   *
-   * A change of the slab thickness fires `CAMERA_MODIFIED`, with the camera
-   * as the previous camera, as the legacy volume viewport did when its slab
-   * changed. The slab thickness synchronizer listens to it.
-   *
-   * In stack mode a change that leaves the VOI as it was fires no
-   * `VOI_MODIFIED` (`keepsStackVOI`), as the legacy stack viewport. Volume
-   * mode fires it for every change that names the VOI, as the legacy volume
-   * viewport.
+   * Whether a change of the appearance of a display set fires
+   * `DISPLAY_SET_APPEARANCE_CHANGED`: not for the labelmap of a
+   * segmentation, whose look the segmentation style owns. The legacy
+   * viewports fired no VOI event for a labelmap either.
    */
-  protected notifyAppearanceModified(
-    displaySetId: string,
-    props: Partial<PlanarDisplaySetAppearance>,
-    previousAppearance?: PlanarDisplaySetAppearance
-  ): void {
-    if (this.suppressEvents) {
-      return;
-    }
-
-    if ('slabThickness' in props) {
-      this.triggerCameraModifiedEvent(this.getCameraForEvent());
-    }
-
-    const voiTouched =
-      'voiRange' in props || 'invert' in props || 'voiLUTFunction' in props;
-    const colormapTouched = 'colormap' in props;
-
-    if (!voiTouched && !colormapTouched) {
-      return;
-    }
-
-    const appearance = this.getDisplaySetAppearance(displaySetId);
-    const volumeId = this.getAppearanceEventVolumeId(displaySetId);
-
-    if (voiTouched) {
-      const range =
-        props.voiRange ??
-        appearance?.voiRange ??
-        this.getDefaultVOIRange(displaySetId);
-
-      if (
-        range &&
-        this.reportsVOI(displaySetId, range, volumeId) &&
-        !this.keepsStackVOI(displaySetId, appearance, previousAppearance)
-      ) {
-        triggerEvent(this.element, Events.VOI_MODIFIED, {
-          viewportId: this.id,
-          range,
-          volumeId,
-          VOILUTFunction: props.voiLUTFunction ?? appearance?.voiLUTFunction,
-          invert: props.invert ?? appearance?.invert,
-          colormap: appearance?.colormap,
-        });
-      }
-    }
-
-    if (colormapTouched && props.colormap) {
-      triggerEvent(this.element, Events.COLORMAP_MODIFIED, {
-        viewportId: this.id,
-        colormap: appearance?.colormap ?? props.colormap,
-        volumeId,
-      });
-    }
-  }
-
-  /**
-   * Whether `VOI_MODIFIED` reports the window of a display set. The detail
-   * of the event names a volume and no display set, so a listener takes an
-   * event without a volume as the window of the source. Not reported:
-   * - a range whose upper end is below its lower end, as the range of a
-   *   labelmap image, which has no window;
-   * - the labelmap of a segmentation: the legacy viewports fired no
-   *   `VOI_MODIFIED` for a labelmap;
-   * - an overlay that is drawn as images, which names no volume and would
-   *   read as the source.
-   */
-  private reportsVOI(
-    displaySetId: string,
-    range: VOIRange,
-    volumeId: string | undefined
-  ): boolean {
-    if (range.upper < range.lower) {
-      return false;
-    }
-
+  protected override firesAppearanceEvents(displaySetId: string): boolean {
     const binding = this.getBinding(displaySetId);
 
-    if (!binding) {
-      return true;
-    }
-
-    if (
-      isSegmentationOverlayData(binding.data as LoadedData<PlanarPayload>, {
+    return (
+      !this.suppressEvents &&
+      !!binding &&
+      !isSegmentationOverlayData(binding.data as LoadedData<PlanarPayload>, {
         renderMode: binding.rendering.renderMode,
         role: binding.role,
       })
-    ) {
-      return false;
-    }
-
-    return volumeId !== undefined || binding.role === 'source';
+    );
   }
 
   /**
-   * Fires `VOI_MODIFIED` when a new image of a stack changed the window on
-   * display: no window is set for the display set, and the default window of
-   * the new image is another than `previousRange`, that of the image before.
-   * The legacy stack viewport fired it then. A window that is set stays on
-   * display over a scroll, so nothing fires, and nothing fires for a new
-   * image with the same window.
+   * Fires `DISPLAY_SET_APPEARANCE_CHANGED` with cause `'default'` when a new
+   * image of a stack changed the window on display: no window is set for
+   * the display set, and the default window of the new image is another
+   * than `previousRange`, that of the image before. A window that is set
+   * stays on display over a scroll, so nothing fires, and nothing fires for
+   * a new image with the same window, or for an image without a window (a
+   * range whose upper end is below its lower end).
    */
   private notifyDefaultVOIRangeOfNewImage(
     displaySetId: string,
@@ -1534,68 +1427,49 @@ class PlanarViewport extends BaseViewport<
 
     if (
       !range ||
-      this.getDisplaySetAppearance(displaySetId)?.voiRange ||
+      range.upper < range.lower ||
+      this.getAppearanceState(displaySetId)?.voiRange ||
       (range.lower === previousRange?.lower &&
         range.upper === previousRange?.upper)
     ) {
       return;
     }
 
-    this.notifyAppearanceModified(displaySetId, { voiRange: range });
+    this.notifyAppearanceChanged(displaySetId, 'default', ['voiRange']);
   }
 
   /**
-   * Whether an appearance change of a display set in stack mode leaves its
-   * VOI as it was: the same range, where the default range stands for none,
-   * the same VOI LUT function and the same invert. The legacy stack viewport
-   * fired no `VOI_MODIFIED` when the same range was set again. False in
-   * volume mode, and when the appearance before the change is not known.
+   * The volume that the appearance event of a display set names: the
+   * volume that its binding draws, and none when the binding draws images.
+   * The binding keeps what the mount drew, so a registration that names
+   * another volume after the load does not count.
    */
-  private keepsStackVOI(
-    displaySetId: string,
-    appearance: PlanarDisplaySetAppearance | undefined,
-    previousAppearance: PlanarDisplaySetAppearance | undefined
-  ): boolean {
-    if (!previousAppearance || this.getCurrentMode() !== 'stack') {
-      return false;
-    }
-
-    const defaultRange = this.getDefaultVOIRange(displaySetId);
-    const range = appearance?.voiRange ?? defaultRange;
-    const previousRange = previousAppearance.voiRange ?? defaultRange;
-
-    return (
-      range?.lower === previousRange?.lower &&
-      range?.upper === previousRange?.upper &&
-      appearance?.voiLUTFunction === previousAppearance.voiLUTFunction &&
-      appearance?.invert === previousAppearance.invert
-    );
-  }
-
-  /**
-   * The volume id that an appearance event of a display set names, so that
-   * a VOI or colormap change of an overlay does not name the volume of the
-   * source. A mounted display set names the volume that its binding draws,
-   * and none when the binding draws images: the binding keeps what the mount
-   * drew, so a registration that names another volume after the load does
-   * not count. A display set that is not mounted names the volume of its
-   * registration, or the volume of the source when it is the source.
-   */
-  private getAppearanceEventVolumeId(displaySetId: string): string | undefined {
+  protected override getAppearanceEventVolumeId(
+    displaySetId: string
+  ): string | undefined {
     const binding = this.getBinding(displaySetId);
 
-    if (!binding) {
-      return (
-        this.getDataSet(displaySetId)?.volumeId ??
-        (displaySetId === this.getSourceDisplaySetId()
-          ? this.getVolumeId()
-          : undefined)
-      );
+    if (!binding || isImageRenderMode(binding.rendering.renderMode)) {
+      return undefined;
     }
 
-    return isImageRenderMode(binding.rendering.renderMode)
-      ? undefined
-      : (binding.data as LoadedData<PlanarPayload>).volumeId;
+    return (binding.data as LoadedData<PlanarPayload>).volumeId;
+  }
+
+  /**
+   * The defaults that the effective appearance shows under the overrides:
+   * visible, an opacity of 1, the default window of the image or volume on
+   * display, and the default invert of the image (true for MONOCHROME1).
+   */
+  protected override getDefaultDisplaySetAppearance(
+    displaySetId: string
+  ): Partial<PlanarDisplaySetAppearance> {
+    return {
+      opacity: 1,
+      ...super.getDefaultDisplaySetAppearance(displaySetId),
+      voiRange: this.getDefaultVOIRange(displaySetId),
+      invert: this.getDefaultInvert(displaySetId) ?? false,
+    };
   }
 
   /**
@@ -1853,7 +1727,10 @@ class PlanarViewport extends BaseViewport<
 
       this.withheldSlabByBinding.set(binding, mountedSlab);
       this.displaySetAppearances.set(displaySetId, props);
-      binding.updateAppearance({ ...props, ...mountedSlab });
+      binding.updateAppearance({
+        ...this.getAppliedAppearance(displaySetId),
+        ...mountedSlab,
+      });
       this.render();
     }
 
@@ -2651,49 +2528,6 @@ class PlanarViewport extends BaseViewport<
     return this.resetViewState();
   }
 
-  /**
-   * Clears the stored appearance of one display set to `{}`. This is the
-   * contract: every key goes, the `visible: true` that the mount stored too,
-   * so `getDisplaySetAppearance(displaySetId)` then gives `{}` and a hidden
-   * display set shows again. The render path then draws its defaults (the
-   * default VOI, no colormap, no inversion, no slab, the default blend mode
-   * and opacity) and `VOI_MODIFIED` reports the default VOI range, unless
-   * the viewport suppresses events. The view state does not change:
-   * `resetViewState` resets it. "Reset View" calls both, so that it also
-   * resets a window level that the user changed.
-   *
-   * @param displaySetId - Optional display set id; defaults to the active source.
-   */
-  resetDisplaySetAppearance(displaySetId?: string): void {
-    if (this.isDestroyed) {
-      return;
-    }
-
-    const targetDisplaySetId = displaySetId ?? this.getSourceDisplaySetId();
-
-    if (!targetDisplaySetId) {
-      return;
-    }
-
-    // Drop the stored override so the render path's `updateAppearance`
-    // reapplies its defaults.
-    this.setAppearanceState(
-      targetDisplaySetId,
-      {} as PlanarDisplaySetAppearance
-    );
-
-    // `setAppearanceState` does not emit (only the public merge path
-    // notifies), so surface the now-default VOI to OHIF's window-level readout,
-    // colorbar, sliders, and VOI synchronizers.
-    const defaultVOIRange = this.getDefaultVOIRange(targetDisplaySetId);
-
-    if (defaultVOIRange) {
-      this.notifyAppearanceModified(targetDisplaySetId, {
-        voiRange: defaultVOIRange,
-      });
-    }
-  }
-
   // ====================================================================
   // Public API -- lifecycle
   // ====================================================================
@@ -3222,6 +3056,7 @@ class PlanarViewport extends BaseViewport<
 
       try {
         const propsBefore = this.getViewProps();
+        const appearanceBefore = this.getAppearanceSnapshot(displaySetId);
         const added = await this.addLoadedData(
           displaySetId,
           data,
@@ -3232,6 +3067,11 @@ class PlanarViewport extends BaseViewport<
         if (added) {
           this.keepViewPropPlace(propsBefore, this.bindings.get(displaySetId));
           this.updateRenderPlan(displaySetId, reason);
+          this.notifyAppearanceChangedSince(
+            displaySetId,
+            'default',
+            appearanceBefore
+          );
         }
 
         changed = changed || added;
@@ -3278,7 +3118,7 @@ class PlanarViewport extends BaseViewport<
 
     this.withheldSlabByBinding.delete(binding);
 
-    const props = this.getAppearanceState(displaySetId);
+    const props = this.getAppliedAppearance(displaySetId);
 
     if (props !== undefined) {
       binding.updateAppearance(props);

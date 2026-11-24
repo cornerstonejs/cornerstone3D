@@ -18,8 +18,8 @@
 //     setToolDisabled all call `triggerEvent(eventTarget, ...)`), never on the
 //     viewport element. Verified empirically in the first A2 test below by
 //     recording on both targets simultaneously.
-//   - VOI_MODIFIED fires on the viewport `element` (PlanarViewport's
-//     `notifyAppearanceModified` calls `triggerEvent(this.element, ...)`).
+//   - DISPLAY_SET_APPEARANCE_CHANGED fires on the viewport `element`
+//     (`notifyAppearanceChanged` calls `triggerEvent(this.element, ...)`).
 //   - IMAGE_RENDERED / NEW_IMAGE fire on the viewport `element`.
 import { afterEach, describe, expect, test } from 'vitest';
 import { Enums, eventTarget, utilities } from '@cornerstonejs/core';
@@ -561,7 +561,7 @@ describe('Manipulation tools with exact viewport-state values', () => {
     expect(relativeError).toBeLessThan(0.01);
   });
 
-  test('WindowLevelTool: horizontal drag widens the window, vertical drag shifts the center, VOI_MODIFIED detail matches stored presentation, and the round trip is reversible', async () => {
+  test('WindowLevelTool: horizontal drag widens the window, vertical drag shifts the center, the DISPLAY_SET_APPEARANCE_CHANGED detail matches the stored appearance, and the round trip is reversible', async () => {
     const ctx = await setupTools({
       tools: [WindowLevelTool],
       activeTool: WindowLevelTool.toolName,
@@ -596,7 +596,7 @@ describe('Manipulation tools with exact viewport-state values', () => {
     // deltaCanvas.x * multiplier, added directly to windowWidth -- a
     // positive (rightward) horizontal delta increases window width.
     const events1 = recordEvents(element, [
-      CoreEvents.VOI_MODIFIED,
+      CoreEvents.DISPLAY_SET_APPEARANCE_CHANGED,
       CoreEvents.IMAGE_RENDERED,
     ]);
     mouseDrag(element, [200, 200], [280, 200]);
@@ -606,16 +606,17 @@ describe('Manipulation tools with exact viewport-state values', () => {
     const width1 = voiRange1.upper - voiRange1.lower;
     expect(width1).toBeGreaterThan(width0);
 
-    // Exact-value contract: VOI_MODIFIED's event detail range equals the
-    // presentation's stored voiRange exactly (event/state consistency).
+    // Exact-value contract: the window on display in the detail of the last
+    // DISPLAY_SET_APPEARANCE_CHANGED equals the stored voiRange exactly
+    // (event/state consistency).
     const voiModifiedEvents = events1.events.filter(
-      (event) => event.type === CoreEvents.VOI_MODIFIED
+      (event) => event.type === CoreEvents.DISPLAY_SET_APPEARANCE_CHANGED
     );
     expect(voiModifiedEvents.length).toBeGreaterThan(0);
     const lastVoiModifiedDetail = voiModifiedEvents[
       voiModifiedEvents.length - 1
-    ].detail as { range?: { lower: number; upper: number } };
-    expect(lastVoiModifiedDetail.range).toEqual(voiRange1);
+    ].detail as { effective?: { voiRange?: { lower: number; upper: number } } };
+    expect(lastVoiModifiedDetail.effective?.voiRange).toEqual(voiRange1);
 
     // Vertical-only drag (deltaX = 0): isolates the center-only shift.
     // Pinned contract: wcDelta = deltaCanvas.y * multiplier, added to

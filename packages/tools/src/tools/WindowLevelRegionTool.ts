@@ -382,9 +382,9 @@ class WindowLevelRegionTool extends AnnotationTool {
 
     const voiLutFunction = sourceDisplaySetId
       ? (
-          appearanceViewport.getDisplaySetAppearance(sourceDisplaySetId) as
-            | { voiLUTFunction?: unknown }
-            | undefined
+          appearanceViewport.getEffectiveDisplaySetAppearance(
+            sourceDisplaySetId
+          ) as { voiLUTFunction?: unknown } | undefined
         )?.voiLUTFunction
       : undefined;
 

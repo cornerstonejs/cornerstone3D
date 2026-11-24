@@ -515,3 +515,59 @@ describe('suppressEvents on the direct next ECG viewport', () => {
     expect(nextCounts.reset).toBe(1);
   });
 });
+
+describe('The appearance of the next ECG viewport', () => {
+  it('keeps the defaults of the mount out of the overrides, so that setting the overrides again changes nothing, and fires once at the mount and once for a reset', async () => {
+    const details = [];
+    const listener = (evt) => details.push(evt.detail);
+
+    document.addEventListener(
+      Events.DISPLAY_SET_APPEARANCE_CHANGED,
+      listener,
+      true
+    );
+
+    try {
+      const viewport = await mountNext();
+
+      viewport.setDisplaySetAppearance(ECG_ID, { lineWidth: 2 });
+      viewport.setDisplaySetAppearance(
+        ECG_ID,
+        viewport.getDisplaySetAppearance(ECG_ID)
+      );
+
+      expect(viewport.getDisplaySetAppearance(ECG_ID)).toEqual({
+        lineWidth: 2,
+      });
+      expect(viewport.getEffectiveDisplaySetAppearance(ECG_ID)).toEqual({
+        visible: true,
+        opacity: 1,
+        lineWidth: 2,
+        showGrid: true,
+      });
+
+      viewport.resetDisplaySetAppearance(ECG_ID, ['lineWidth']);
+
+      expect(viewport.getDisplaySetAppearance(ECG_ID)).toEqual({});
+      expect(viewport.getEffectiveDisplaySetAppearance(ECG_ID).lineWidth).toBe(
+        1
+      );
+      expect(
+        details.map(({ cause, changedKeys }) => ({ cause, changedKeys }))
+      ).toEqual([
+        {
+          cause: 'mount',
+          changedKeys: ['visible', 'opacity', 'lineWidth', 'showGrid'],
+        },
+        { cause: 'edit', changedKeys: ['lineWidth'] },
+        { cause: 'reset', changedKeys: ['lineWidth'] },
+      ]);
+    } finally {
+      document.removeEventListener(
+        Events.DISPLAY_SET_APPEARANCE_CHANGED,
+        listener,
+        true
+      );
+    }
+  });
+});

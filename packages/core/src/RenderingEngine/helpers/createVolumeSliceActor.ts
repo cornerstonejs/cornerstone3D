@@ -4,10 +4,7 @@ import type { ResolveVolumeTextureOptions } from './resolveVolumeTexture';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import { vtkSharedImageResliceMapper } from '../vtkClasses';
 import type { ImageActor } from '../../types/IActor';
-import type { VoiModifiedEventDetail } from '../../types/EventTypes';
 import { loadVolume } from '../../loaders/volumeLoader';
-import triggerEvent from '../../utilities/triggerEvent';
-import { Events } from '../../enums';
 import setDefaultVolumeVOI from './setDefaultVolumeVOI';
 
 interface CreateVolumeSliceActorOptions extends ResolveVolumeTextureOptions {
@@ -23,9 +20,7 @@ interface CreateVolumeSliceActorOptions extends ResolveVolumeTextureOptions {
 
 async function createVolumeSliceActor(
   props: CreateVolumeSliceActorOptions,
-  element: HTMLDivElement,
-  viewportId: string,
-  suppressEvents = false
+  viewportId: string
 ): Promise<{ actor: ImageActor; slicePlane: vtkPlane }> {
   const { volumeId, callback } = props;
   const imageVolume = await loadVolume(volumeId);
@@ -109,36 +104,7 @@ async function createVolumeSliceActor(
     callback({ volumeActor: actor, volumeId });
   }
 
-  if (!suppressEvents) {
-    triggerVOIModified(element, viewportId, actor, volumeId);
-  }
-
   return { actor, slicePlane };
-}
-
-function triggerVOIModified(
-  element: HTMLDivElement,
-  viewportId: string,
-  actor: ImageActor,
-  volumeId: string
-) {
-  const transferFunction = actor.getProperty().getRGBTransferFunction(0);
-
-  if (!transferFunction) {
-    return;
-  }
-
-  const voiRange = transferFunction.getRange();
-  const voiModifiedEventDetail: VoiModifiedEventDetail = {
-    viewportId,
-    range: {
-      lower: voiRange[0],
-      upper: voiRange[1],
-    },
-    volumeId,
-  };
-
-  triggerEvent(element, Events.VOI_MODIFIED, voiModifiedEventDetail);
 }
 
 export default createVolumeSliceActor;

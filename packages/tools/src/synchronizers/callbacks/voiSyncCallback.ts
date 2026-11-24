@@ -1,16 +1,41 @@
 import type { Types } from '@cornerstonejs/core';
 import { getRenderingEngine } from '@cornerstonejs/core';
 
+type SyncedAppearance = {
+  voiRange?: Types.VOIRange;
+  invert?: boolean;
+  colormap?: Types.ColormapPublic;
+};
+
+type SyncedKey = keyof SyncedAppearance;
+
+type AppearanceViewport = Types.IViewport & {
+  findDataIdByVolumeId?: (volumeId: string) => string | undefined;
+  getDisplaySets(): Array<{ displaySetId: string }>;
+  getSourceDisplaySetId?: () => string | undefined;
+  setDisplaySetAppearance(
+    displaySetId: string,
+    props: Partial<SyncedAppearance>
+  ): void;
+  resetDisplaySetAppearance(
+    displaySetId?: string,
+    keys?: ReadonlyArray<SyncedKey>
+  ): void;
+};
+
 /**
- * Whether a VOI_MODIFIED event gives the targets an invert to take. The
- * event of a next viewport carries the invert of its display set in
- * `invert`, in stack mode and in volume mode, and the targets take it when
- * it is set.
+ * The keys of the appearance that the synchronizer copies: the window, the
+ * invert with `syncInvertState`, the colormap with `syncColormap`.
  */
-function givesInvert(
-  eventDetail: Types.EventTypes.VoiModifiedEventDetail
-): boolean {
-  return eventDetail.invert !== undefined;
+function getSyncedKeys(options?: {
+  syncInvertState?: boolean;
+  syncColormap?: boolean;
+}): SyncedKey[] {
+  return [
+    'voiRange',
+    ...(options?.syncInvertState ? (['invert'] as const) : []),
+    ...(options?.syncColormap ? (['colormap'] as const) : []),
+  ];
 }
 
 /**
@@ -19,11 +44,13 @@ function givesInvert(
  * `findDataIdByVolumeId` such as the 3D viewport.
  */
 function getDisplaySetIdOfVolume(
-  viewport: Types.IViewport & {
-    getDisplaySets(): Array<{ displaySetId: string }>;
-  },
+  viewport: AppearanceViewport,
   volumeId: string
 ): string | undefined {
+  if (typeof viewport.findDataIdByVolumeId === 'function') {
+    return viewport.findDataIdByVolumeId(volumeId);
+  }
+
   return viewport
     .getDisplaySets()
     .map(({ displaySetId }) => displaySetId)
@@ -33,24 +60,85 @@ function getDisplaySetIdOfVolume(
 }
 
 /**
- * Synchronizer callback to synchronize the voi of volumeActors of identical volumes
- * in different viewports.
+ * The display set of the target that takes the change: the same display
+ * set when the target shows it; else the display set that shows the same
+ * volume; else, for a change of the source of a stack, the source of the
+ * target, as two stacks of two series are synchronised. Undefined when the
+ * change names a volume that the target does not show, as a fusion overlay
+ * that is not mounted there yet: its own mount gives it its appearance.
+ */
+function getTargetDisplaySetId(
+  viewport: AppearanceViewport,
+  detail: Types.EventTypes.DisplaySetAppearanceChangedEventDetail
+): string | undefined {
+  const { displaySetId, volumeId, role } = detail;
+  const mounted = viewport
+    .getDisplaySets()
+    .some((entry) => entry.displaySetId === displaySetId);
+
+  if (mounted) {
+    return displaySetId;
+  }
+
+  if (volumeId) {
+    return getDisplaySetIdOfVolume(viewport, volumeId);
+  }
+
+  if (role === 'source') {
+    return (
+      viewport.getSourceDisplaySetId?.() ??
+      viewport.getDisplaySets()[0]?.displaySetId
+    );
+  }
+
+  return undefined;
+}
+
+/**
+ * Synchronizer callback that gives the target viewport the window, and with
+ * the options the invert and the colormap, of a display set of the source
+ * viewport.
+ *
+ * It acts only on what a caller did: an `'edit'` (a call of
+ * `setDisplaySetAppearance`) and a `'reset'` (a call of
+ * `resetDisplaySetAppearance`). A `'mount'` and a `'default'` (a scroll to
+ * an image with another default window) are not copied: they carry no
+ * override, and writing their window into the target would turn a default
+ * into an explicit override there.
+ *
+ * - An `'edit'` copies the overrides of the synced keys that changed; a key
+ *   whose override the edit removed is reset in the target.
+ * - A `'reset'` resets the same keys in the target, so the target goes back
+ *   to its own defaults. It does not copy the effective values of the
+ *   source, which are defaults of the source.
  *
  * @param synchronizerInstance - The Instance of the Synchronizer
  * @param sourceViewport - The list of IDs defining the source viewport.
  * @param targetViewport - The list of IDs defining the target viewport.
- * @param modifiedEvent - The COLORMAP_MODIFIED or VOI_MODIFIED event.
+ * @param modifiedEvent - The DISPLAY_SET_APPEARANCE_CHANGED event.
  * @param options - Options for the synchronizer.
  */
 export default function voiSyncCallback(
   synchronizerInstance,
   sourceViewport: Types.IViewportId,
   targetViewport: Types.IViewportId,
-  modifiedEvent: Types.EventTypes.VoiModifiedEvent,
+  modifiedEvent: Types.EventTypes.DisplaySetAppearanceChangedEvent,
   options?: { syncInvertState?: boolean; syncColormap?: boolean }
 ): void {
-  const eventDetail = modifiedEvent.detail;
-  const { volumeId, range, invert, colormap } = eventDetail;
+  const detail = modifiedEvent.detail;
+  const { cause, changedKeys, overrides } = detail;
+
+  if (cause !== 'edit' && cause !== 'reset') {
+    return;
+  }
+
+  const keys = getSyncedKeys(options).filter((key) =>
+    changedKeys.includes(key)
+  );
+
+  if (!keys.length) {
+    return;
+  }
 
   const renderingEngine = getRenderingEngine(targetViewport.renderingEngineId);
   if (!renderingEngine) {
@@ -59,59 +147,28 @@ export default function voiSyncCallback(
     );
   }
 
-  const tViewport = renderingEngine.getViewport(targetViewport.viewportId);
-  const tProperties: {
-    voiRange: Types.VOIRange;
-    invert?: boolean;
-    colormap?: Types.ColormapPublic;
-  } = {
-    voiRange: range,
-  };
+  const tViewport = renderingEngine.getViewport(
+    targetViewport.viewportId
+  ) as AppearanceViewport;
+  const displaySetId = getTargetDisplaySetId(tViewport, detail);
 
-  if (options?.syncInvertState && givesInvert(eventDetail)) {
-    tProperties.invert = invert;
-  }
-  if (options?.syncColormap && colormap) {
-    // The colormap carries the scalar overall opacity, the per-value opacity mapping, and the
-    // threshold as separate fields, so the target re-derives its opacity function (overall *
-    // mapping, with threshold cutoff) without collapsing the mapping to a single value. This keeps
-    // both the initial fusion display and slider/threshold changes synchronized correctly.
-    tProperties.colormap = colormap;
+  if (!displaySetId) {
+    return;
   }
 
-  // Viewports expose appearance per display set
-  // rather than setProperties. Map the source change's volumeId to THIS
-  // viewport's binding so a fusion overlay (e.g. PT) update lands on the PT
-  // binding and not the default source (CT) - the next analogue of the legacy
-  // `setProperties(props, volumeId)` fusion path. Without this the PT colormap/
-  // VOI sync colors the CT background. Fall back to the default binding when the
-  // viewport has no matching binding (single-volume viewports).
-  const displaySetViewport = tViewport as typeof tViewport & {
-    findDataIdByVolumeId?: (volumeId: string) => string | undefined;
-    getDisplaySets(): Array<{ displaySetId: string }>;
-    setDisplaySetAppearance: (
-      displaySetIdOrProps: string | typeof tProperties,
-      props?: typeof tProperties
-    ) => void;
-  };
-  const displaySetId = !volumeId
-    ? undefined
-    : typeof displaySetViewport.findDataIdByVolumeId === 'function'
-      ? displaySetViewport.findDataIdByVolumeId(volumeId)
-      : getDisplaySetIdOfVolume(displaySetViewport, volumeId);
+  const copied = keys.filter((key) => cause === 'edit' && key in overrides);
+  const removed = keys.filter((key) => !copied.includes(key));
 
-  if (displaySetId) {
-    displaySetViewport.setDisplaySetAppearance(displaySetId, tProperties);
-  } else if (!volumeId) {
-    // No source volume id (e.g. a stack VOI change) - apply to the default
-    // binding.
-    displaySetViewport.setDisplaySetAppearance(tProperties);
+  if (removed.length) {
+    tViewport.resetDisplaySetAppearance(displaySetId, removed);
   }
-  // else: the source change names a volume this viewport does not have bound
-  // (e.g. a fusion-overlay colormap sync that arrives before the overlay is
-  // mounted here). Skip rather than fall back to the default binding, which
-  // would wrongly color the source (CT) actor. The overlay receives its own
-  // colormap at mount, so no update is lost.
+
+  if (copied.length) {
+    tViewport.setDisplaySetAppearance(
+      displaySetId,
+      Object.fromEntries(copied.map((key) => [key, overrides[key]]))
+    );
+  }
 
   tViewport.render();
 }

@@ -312,16 +312,19 @@ type ViewportVOIProperties = {
 
 type ViewportWithAppearance = {
   getSourceDisplaySetId?: () => string | undefined;
-  getDisplaySetAppearance?: (
+  getEffectiveDisplaySetAppearance?: (
     displaySetId: string
   ) => ViewportVOIProperties | undefined;
   setDisplaySetAppearance?: (
     displaySetId: string,
     props: Partial<ViewportVOIProperties>
   ) => void;
-  getDefaultVOIRange?: (displaySetId?: string) => Types.VOIRange | undefined;
 };
 
+/**
+ * The window that the tool starts from: the one on display, the default
+ * window of the image included.
+ */
 function getViewportVOIProperties(viewport): ViewportVOIProperties | undefined {
   const target = getAppearanceTarget(viewport);
 
@@ -329,16 +332,10 @@ function getViewportVOIProperties(viewport): ViewportVOIProperties | undefined {
     return;
   }
 
-  const appearance = target.viewport.getDisplaySetAppearance?.(
-    target.displaySetId
-  );
-  const defaultVOIRange = target.viewport.getDefaultVOIRange?.(
-    target.displaySetId
-  );
-
   return {
-    ...(appearance || {}),
-    voiRange: appearance?.voiRange ?? defaultVOIRange,
+    ...(target.viewport.getEffectiveDisplaySetAppearance?.(
+      target.displaySetId
+    ) ?? {}),
   };
 }
 
@@ -366,7 +363,7 @@ function getAppearanceTarget(viewport):
 
   if (
     !displaySetId ||
-    typeof appearanceViewport.getDisplaySetAppearance !== 'function' ||
+    typeof appearanceViewport.getEffectiveDisplaySetAppearance !== 'function' ||
     typeof appearanceViewport.setDisplaySetAppearance !== 'function'
   ) {
     return;

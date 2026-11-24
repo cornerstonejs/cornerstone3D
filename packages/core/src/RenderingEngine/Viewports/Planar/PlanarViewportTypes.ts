@@ -346,7 +346,8 @@ export interface PlanarViewportRenderContext extends BaseViewportRenderContext {
     /**
      * Tells the viewport that a stack path shows a new image of `displaySetId`,
      * whose default window was `previousRange` before. The viewport fires
-     * `VOI_MODIFIED` when the window on display changed with it.
+     * `DISPLAY_SET_APPEARANCE_CHANGED` with cause `'default'` when the
+     * window on display changed with it.
      */
     notifyDefaultVOIRangeOfNewImage?(
       displaySetId: string,

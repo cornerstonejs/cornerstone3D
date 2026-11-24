@@ -825,162 +825,217 @@ describe('cameraSyncCallback', () => {
 });
 
 describe('voiSyncCallback', () => {
+  const RANGE = { lower: 0, upper: 1 };
+
+  /** A DISPLAY_SET_APPEARANCE_CHANGED of the source display set `ct`. */
+  function appearanceEvent(detail) {
+    return {
+      detail: {
+        viewportId: 'source',
+        renderingEngineId: 're',
+        displaySetId: 'ct',
+        role: 'source',
+        cause: 'edit',
+        changedKeys: ['voiRange'],
+        overrides: {},
+        effective: {},
+        ...detail,
+      },
+    };
+  }
+
+  /** A stand-in of a target viewport that shows these display sets. */
+  function makeTarget(displaySetIds = ['ct'], members = {}) {
+    return {
+      getDisplaySets: jest.fn(() =>
+        displaySetIds.map((displaySetId) => ({ displaySetId }))
+      ),
+      getSourceDisplaySetId: jest.fn(() => displaySetIds[0]),
+      isReferenceViewable: jest.fn(() => false),
+      setDisplaySetAppearance: jest.fn(),
+      resetDisplaySetAppearance: jest.fn(),
+      render: jest.fn(),
+      ...members,
+    };
+  }
+
+  function sync(tViewport, detail, options) {
+    getRenderingEngine.mockReturnValue({
+      getViewport: jest.fn(() => tViewport),
+    });
+    voiSyncCallback(
+      {},
+      { renderingEngineId: 're', viewportId: 'source' },
+      { renderingEngineId: 're', viewportId: 'target' },
+      appearanceEvent(detail),
+      options
+    );
+  }
+
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('propagates invert and colormap to a next viewport only when the matching sync options are enabled', () => {
-    const tViewport = {
-      setDisplaySetAppearance: jest.fn(),
-      render: jest.fn(),
-    };
-    getRenderingEngine.mockReturnValue({
-      getViewport: jest.fn(() => tViewport),
-    });
+  it('copies nothing for a mount or a default window, which carry no override', () => {
+    const tViewport = makeTarget();
 
-    voiSyncCallback(
-      {},
-      { renderingEngineId: 're', viewportId: 'source' },
-      { renderingEngineId: 're', viewportId: 'target' },
+    sync(
+      tViewport,
       {
-        detail: {
-          range: { lower: 0, upper: 1 },
-          invert: true,
-          colormap: { name: 'hot' },
-        },
+        cause: 'mount',
+        changedKeys: ['voiRange', 'invert', 'visible'],
+        effective: { voiRange: RANGE, invert: false, visible: true },
       },
       { syncInvertState: true, syncColormap: true }
     );
+    sync(tViewport, {
+      cause: 'default',
+      changedKeys: ['voiRange'],
+      effective: { voiRange: RANGE },
+    });
 
-    expect(tViewport.setDisplaySetAppearance).toHaveBeenCalledWith({
-      voiRange: { lower: 0, upper: 1 },
+    expect(tViewport.setDisplaySetAppearance).not.toHaveBeenCalled();
+    expect(tViewport.resetDisplaySetAppearance).not.toHaveBeenCalled();
+    expect(tViewport.render).not.toHaveBeenCalled();
+  });
+
+  it('copies the override of the window that an edit set to the same display set of the target, and renders', () => {
+    const tViewport = makeTarget(['ct', 'pt']);
+
+    sync(tViewport, {
+      overrides: { voiRange: RANGE, visible: false },
+      effective: { voiRange: RANGE, visible: false },
+    });
+
+    expect(tViewport.setDisplaySetAppearance.mock.calls).toEqual([
+      ['ct', { voiRange: RANGE }],
+    ]);
+    expect(tViewport.render).toHaveBeenCalledTimes(1);
+  });
+
+  it('propagates invert and colormap only when the matching sync options are enabled', () => {
+    const detail = {
+      changedKeys: ['voiRange', 'invert', 'colormap'],
+      overrides: { voiRange: RANGE, invert: true, colormap: { name: 'hot' } },
+    };
+    const withOptions = makeTarget();
+    const withoutOptions = makeTarget();
+
+    sync(withOptions, detail, { syncInvertState: true, syncColormap: true });
+    sync(withoutOptions, detail);
+
+    expect(withOptions.setDisplaySetAppearance).toHaveBeenCalledWith('ct', {
+      voiRange: RANGE,
       invert: true,
       colormap: { name: 'hot' },
     });
+    expect(withoutOptions.setDisplaySetAppearance).toHaveBeenCalledWith('ct', {
+      voiRange: RANGE,
+    });
   });
 
-  it('does not propagate invert or colormap to a next viewport without the matching options', () => {
-    const tViewport = {
-      setDisplaySetAppearance: jest.fn(),
-      render: jest.fn(),
-    };
-    getRenderingEngine.mockReturnValue({
-      getViewport: jest.fn(() => tViewport),
-    });
+  it('copies only the synced keys that the edit changed', () => {
+    const tViewport = makeTarget();
 
-    voiSyncCallback(
-      {},
-      { renderingEngineId: 're', viewportId: 'source' },
-      { renderingEngineId: 're', viewportId: 'target' },
+    sync(
+      tViewport,
       {
-        detail: {
-          range: { lower: 0, upper: 1 },
-          invert: true,
-          colormap: { name: 'hot' },
-        },
-      }
-    );
-
-    expect(tViewport.setDisplaySetAppearance).toHaveBeenCalledWith({
-      voiRange: { lower: 0, upper: 1 },
-    });
-  });
-
-  it('gives the target the invert of a next source viewport, which sets no invertStateChanged', () => {
-    const tViewport = {
-      setDisplaySetAppearance: jest.fn(),
-      render: jest.fn(),
-    };
-    getRenderingEngine.mockReturnValue({
-      getViewport: jest.fn(() => tViewport),
-    });
-
-    voiSyncCallback(
-      {},
-      { renderingEngineId: 're', viewportId: 'source' },
-      { renderingEngineId: 're', viewportId: 'target' },
-      { detail: { range: { lower: 0, upper: 1 }, invert: false } },
-      { syncInvertState: true }
-    );
-    voiSyncCallback(
-      {},
-      { renderingEngineId: 're', viewportId: 'source' },
-      { renderingEngineId: 're', viewportId: 'target' },
-      { detail: { range: { lower: 0, upper: 1 } } },
+        changedKeys: ['invert'],
+        overrides: { voiRange: RANGE, invert: true },
+      },
       { syncInvertState: true }
     );
 
     expect(tViewport.setDisplaySetAppearance.mock.calls).toEqual([
-      [{ voiRange: { lower: 0, upper: 1 }, invert: false }],
-      [{ voiRange: { lower: 0, upper: 1 } }],
+      ['ct', { invert: true }],
     ]);
   });
 
-  it('routes to the matching display-set binding on Generic viewports', () => {
-    const tViewport = {
-      findDataIdByVolumeId: jest.fn(() => 'data-1'),
-      setDisplaySetAppearance: jest.fn(),
-      render: jest.fn(),
-    };
-    getRenderingEngine.mockReturnValue({
-      getViewport: jest.fn(() => tViewport),
+  it('does nothing for an edit of keys that it does not synchronise', () => {
+    const tViewport = makeTarget();
+
+    sync(tViewport, {
+      changedKeys: ['slabThickness', 'opacity'],
+      overrides: { slabThickness: 5, opacity: 0.5 },
     });
-
-    voiSyncCallback(
-      {},
-      { renderingEngineId: 're', viewportId: 'source' },
-      { renderingEngineId: 're', viewportId: 'target' },
-      { detail: { volumeId: 'v1', range: { lower: 0, upper: 1 } } }
-    );
-
-    expect(tViewport.setDisplaySetAppearance).toHaveBeenCalledWith('data-1', {
-      voiRange: { lower: 0, upper: 1 },
-    });
-    expect(tViewport.render).toHaveBeenCalledTimes(1);
-  });
-
-  it('applies to the default binding on Generic viewports when there is no source volumeId', () => {
-    const tViewport = {
-      setDisplaySetAppearance: jest.fn(),
-      render: jest.fn(),
-    };
-    getRenderingEngine.mockReturnValue({
-      getViewport: jest.fn(() => tViewport),
-    });
-
-    voiSyncCallback(
-      {},
-      { renderingEngineId: 're', viewportId: 'source' },
-      { renderingEngineId: 're', viewportId: 'target' },
-      { detail: { range: { lower: 0, upper: 1 } } }
-    );
-
-    expect(tViewport.setDisplaySetAppearance).toHaveBeenCalledWith({
-      voiRange: { lower: 0, upper: 1 },
-    });
-  });
-
-  it('skips Generic viewports without a matching volume binding, but still renders', () => {
-    const tViewport = {
-      findDataIdByVolumeId: jest.fn(() => undefined),
-      setDisplaySetAppearance: jest.fn(),
-      render: jest.fn(),
-    };
-    getRenderingEngine.mockReturnValue({
-      getViewport: jest.fn(() => tViewport),
-    });
-
-    voiSyncCallback(
-      {},
-      { renderingEngineId: 're', viewportId: 'source' },
-      { renderingEngineId: 're', viewportId: 'target' },
-      {
-        detail: { volumeId: 'unmatched-volume', range: { lower: 0, upper: 1 } },
-      }
-    );
 
     expect(tViewport.setDisplaySetAppearance).not.toHaveBeenCalled();
-    expect(tViewport.render).toHaveBeenCalledTimes(1);
+    expect(tViewport.render).not.toHaveBeenCalled();
+  });
+
+  it('resets a key in the target whose override the edit removed', () => {
+    const tViewport = makeTarget();
+
+    sync(tViewport, { changedKeys: ['voiRange'], overrides: {} });
+
+    expect(tViewport.resetDisplaySetAppearance.mock.calls).toEqual([
+      ['ct', ['voiRange']],
+    ]);
+    expect(tViewport.setDisplaySetAppearance).not.toHaveBeenCalled();
+  });
+
+  it('resets the same keys in the target on a reset, and copies no effective value of the source', () => {
+    const tViewport = makeTarget();
+
+    sync(
+      tViewport,
+      {
+        cause: 'reset',
+        changedKeys: ['voiRange', 'invert', 'colormap'],
+        overrides: {},
+        effective: { voiRange: RANGE, invert: false },
+      },
+      { syncInvertState: true }
+    );
+
+    expect(tViewport.resetDisplaySetAppearance.mock.calls).toEqual([
+      ['ct', ['voiRange', 'invert']],
+    ]);
+    expect(tViewport.setDisplaySetAppearance).not.toHaveBeenCalled();
+  });
+
+  it('routes the change of a volume to the display set of the target that shows the volume', () => {
+    const tViewport = makeTarget(['other-ct'], {
+      findDataIdByVolumeId: jest.fn(() => 'other-ct'),
+    });
+
+    sync(tViewport, {
+      displaySetId: 'ct',
+      volumeId: 'v1',
+      overrides: { voiRange: RANGE },
+    });
+
+    expect(tViewport.findDataIdByVolumeId).toHaveBeenCalledWith('v1');
+    expect(tViewport.setDisplaySetAppearance).toHaveBeenCalledWith('other-ct', {
+      voiRange: RANGE,
+    });
+  });
+
+  it('gives the change of the source of a stack to the source of a target that shows another stack', () => {
+    const tViewport = makeTarget(['other-stack']);
+
+    sync(tViewport, { overrides: { voiRange: RANGE } });
+
+    expect(tViewport.setDisplaySetAppearance).toHaveBeenCalledWith(
+      'other-stack',
+      { voiRange: RANGE }
+    );
+  });
+
+  it('skips an overlay that the target does not show, and does not render', () => {
+    const tViewport = makeTarget(['ct'], {
+      findDataIdByVolumeId: jest.fn(() => undefined),
+    });
+
+    sync(tViewport, {
+      displaySetId: 'pt',
+      role: 'overlay',
+      volumeId: 'unmatched-volume',
+      overrides: { voiRange: RANGE },
+    });
+
+    expect(tViewport.setDisplaySetAppearance).not.toHaveBeenCalled();
+    expect(tViewport.render).not.toHaveBeenCalled();
   });
 
   it('throws when there is no rendering engine for the target', () => {
@@ -991,7 +1046,7 @@ describe('voiSyncCallback', () => {
         {},
         { renderingEngineId: 're', viewportId: 'source' },
         { renderingEngineId: 're', viewportId: 'target' },
-        { detail: {} }
+        appearanceEvent({ overrides: { voiRange: RANGE } })
       )
     ).toThrow();
   });
@@ -1026,7 +1081,19 @@ describe('slabThicknessSyncCallback', () => {
     };
   }
 
-  function syncSlab(sourceViewport, targetViewport) {
+  /** A DISPLAY_SET_APPEARANCE_CHANGED of the source display set. */
+  function slabEvent(detail = {}) {
+    return {
+      detail: {
+        role: 'source',
+        cause: 'edit',
+        changedKeys: ['slabThickness'],
+        ...detail,
+      },
+    };
+  }
+
+  function syncSlab(sourceViewport, targetViewport, detail) {
     getRenderingEngine.mockReturnValue({
       getViewport: jest.fn((id) =>
         id === 'source' ? sourceViewport : targetViewport
@@ -1036,7 +1103,8 @@ describe('slabThicknessSyncCallback', () => {
     slabThicknessSyncCallback(
       {},
       { renderingEngineId: 're', viewportId: 'source' },
-      { renderingEngineId: 're', viewportId: 'target' }
+      { renderingEngineId: 're', viewportId: 'target' },
+      slabEvent(detail)
     );
   }
 
@@ -1055,6 +1123,29 @@ describe('slabThicknessSyncCallback', () => {
       ['seg', { slabThickness: 5 }],
     ]);
     expect(targetViewport.render).toHaveBeenCalledTimes(1);
+  });
+
+  it('does nothing for a change that leaves the slab, for a default and for an overlay', () => {
+    const sourceViewport = makeSlabViewport({ ct: 5 });
+    const targetViewport = makeSlabViewport({ ct: 1 });
+
+    syncSlab(sourceViewport, targetViewport, { changedKeys: ['voiRange'] });
+    syncSlab(sourceViewport, targetViewport, { cause: 'default' });
+    syncSlab(sourceViewport, targetViewport, { role: 'overlay' });
+
+    expect(targetViewport.setDisplaySetAppearance).not.toHaveBeenCalled();
+    expect(targetViewport.render).not.toHaveBeenCalled();
+  });
+
+  it('gives the slab of a mount, which a caller set, as a slab has no default', () => {
+    const sourceViewport = makeSlabViewport({ ct: 5 });
+    const targetViewport = makeSlabViewport({ ct: 1 });
+
+    syncSlab(sourceViewport, targetViewport, { cause: 'mount' });
+
+    expect(targetViewport.setDisplaySetAppearance.mock.calls).toEqual([
+      ['ct', { slabThickness: 5 }],
+    ]);
   });
 
   it('does nothing when every display set of the target has the slab of the source', () => {
@@ -1122,7 +1213,8 @@ describe('slabThicknessSyncCallback', () => {
     slabThicknessSyncCallback(
       {},
       { renderingEngineId: 'engineA', viewportId: 'source' },
-      { renderingEngineId: 'engineB', viewportId: 'target' }
+      { renderingEngineId: 'engineB', viewportId: 'target' },
+      slabEvent()
     );
 
     expect(sourceViewport.getDisplaySetAppearance).toHaveBeenCalled();
@@ -1148,7 +1240,8 @@ describe('slabThicknessSyncCallback', () => {
       slabThicknessSyncCallback(
         {},
         { renderingEngineId: 're', viewportId: 'source' },
-        { renderingEngineId: 're', viewportId: 'target' }
+        { renderingEngineId: 're', viewportId: 'target' },
+        slabEvent()
       )
     ).toThrow();
   });

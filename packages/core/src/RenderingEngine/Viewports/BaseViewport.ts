@@ -11,6 +11,7 @@ import ViewportStatus from '../../enums/ViewportStatus';
 import triggerEvent from '../../utilities/triggerEvent';
 import renderingEngineCache from '../renderingEngineCache';
 import { deepClone } from '../../utilities/deepClone';
+import { deepEqual } from '../../utilities/deepEqual';
 import type ViewportInputOptions from '../../types/ViewportInputOptions';
 import type DisplayArea from '../../types/displayArea';
 import type { PlanarDisplayArea } from './Planar/PlanarViewportTypes';
@@ -74,6 +75,22 @@ export type BaseViewportOptions = Omit<ViewportInputOptions, 'displayArea'> & {
 };
 
 /**
+ * The overrides and the effective appearance of a display set at one
+ * moment, to find the keys that a change changed.
+ */
+type AppearanceSnapshot = {
+  overrides: Record<string, unknown>;
+  effective: Record<string, unknown>;
+};
+
+/** A copy of an object without the keys whose value is undefined. */
+function withoutUndefined<T extends object>(value: T): T {
+  return Object.fromEntries(
+    Object.entries(value).filter(([, entry]) => entry !== undefined)
+  ) as T;
+}
+
+/**
  * The base controller of every viewport family.
  *
  * The base class owns only shared viewport state and binding orchestration:
@@ -124,7 +141,17 @@ abstract class BaseViewport<
     DisplaySetId,
     ViewportDataBinding<TAppearance>
   >();
+  /**
+   * The explicit overrides of the appearance of each display set: what
+   * callers set, and nothing the viewport computed.
+   */
   protected displaySetAppearances = new Map<DisplaySetId, TAppearance>();
+  /**
+   * The defaults of the family that a mount stores for a display set, as
+   * `visible: true`. A binding gets the overrides over them; they are not
+   * overrides, so `getDisplaySetAppearance` leaves them out.
+   */
+  protected defaultDisplaySetAppearances = new Map<DisplaySetId, TAppearance>();
   protected viewState!: TViewState;
   private destroyed = false;
 
@@ -248,6 +275,7 @@ abstract class BaseViewport<
     binding.removeData();
     this.bindings.delete(displaySetId);
     this.displaySetAppearances.delete(displaySetId);
+    this.defaultDisplaySetAppearances.delete(displaySetId);
     delete this._debug.renderModes[displaySetId];
 
     if (!this.isDestroyed) {
@@ -256,9 +284,13 @@ abstract class BaseViewport<
   }
 
   /**
-   * Updates the stored appearance of a display set. When called with
-   * just `props`, the update is applied to the current (source) binding. When
-   * called with an explicit `displaySetId`, the update targets that binding.
+   * Merges explicit overrides into the appearance of a display set. When
+   * called with just `props`, the update is applied to the current (source)
+   * binding. When called with an explicit `displaySetId`, the update targets
+   * that binding. A key given as `undefined` removes its override, so the key
+   * is back to its default. A change of a mounted display set fires
+   * `DISPLAY_SET_APPEARANCE_CHANGED` once with cause `'edit'`; a call that
+   * changes nothing fires nothing.
    */
   setDisplaySetAppearance(props: Partial<TAppearance>): void;
   setDisplaySetAppearance(
@@ -284,10 +316,93 @@ abstract class BaseViewport<
   }
 
   /**
-   * Returns the stored appearance of a specific dataset.
+   * The explicit overrides of the appearance of a display set: what callers
+   * set, also a value equal to the default, and none of the defaults of the
+   * data or the family. `setDisplaySetAppearance(id,
+   * getDisplaySetAppearance(id))` therefore changes nothing. Copy or store
+   * this; to show or compare what is drawn, read
+   * {@link getEffectiveDisplaySetAppearance}.
+   *
+   * @param displaySetId - The display set; the current one when not given.
+   * @returns A copy of the overrides, `{}` for a mounted display set without
+   * any, undefined for a display set that is neither mounted nor has
+   * overrides.
    */
-  getDisplaySetAppearance(displaySetId: DisplaySetId): TAppearance | undefined {
-    return this.getAppearanceState(displaySetId);
+  getDisplaySetAppearance(
+    displaySetId?: DisplaySetId
+  ): TAppearance | undefined {
+    const targetId = displaySetId ?? this.getCurrentBinding()?.data.id;
+
+    if (!targetId) {
+      return undefined;
+    }
+
+    const overrides = this.getAppearanceState(targetId);
+
+    if (!overrides && !this.bindings.has(targetId)) {
+      return undefined;
+    }
+
+    return { ...(overrides ?? {}) } as TAppearance;
+  }
+
+  /**
+   * The appearance that a display set is drawn with: its overrides over the
+   * defaults of its family and of its data, as the default window of the
+   * image on display. Show or compare this; to copy or store an appearance,
+   * read {@link getDisplaySetAppearance}.
+   *
+   * @param displaySetId - The display set; the current one when not given.
+   * @returns The effective appearance, or undefined when the display set is
+   * not mounted.
+   */
+  getEffectiveDisplaySetAppearance(
+    displaySetId?: DisplaySetId
+  ): TAppearance | undefined {
+    const targetId = displaySetId ?? this.getCurrentBinding()?.data.id;
+
+    if (!targetId || !this.bindings.has(targetId)) {
+      return undefined;
+    }
+
+    return {
+      ...withoutUndefined(this.getDefaultDisplaySetAppearance(targetId)),
+      ...(this.getAppearanceState(targetId) ?? {}),
+    } as TAppearance;
+  }
+
+  /**
+   * Removes the overrides of a display set, all of them or the named keys,
+   * so those keys are back to their defaults. The view state does not
+   * change: `resetViewState` resets it. A change of a mounted display set
+   * fires `DISPLAY_SET_APPEARANCE_CHANGED` once with cause `'reset'`.
+   *
+   * @param displaySetId - The display set; the current one when not given.
+   * @param keys - The keys to reset; every key when not given.
+   */
+  resetDisplaySetAppearance(
+    displaySetId?: DisplaySetId,
+    keys?: ReadonlyArray<keyof TAppearance & string>
+  ): void {
+    if (this.isDestroyed) {
+      return;
+    }
+
+    const targetId = displaySetId ?? this.getCurrentBinding()?.data.id;
+
+    if (!targetId) {
+      return;
+    }
+
+    const before = this.getAppearanceSnapshot(targetId);
+    const next = { ...before.overrides } as Record<string, unknown>;
+
+    for (const key of keys ?? Object.keys(next)) {
+      delete next[key];
+    }
+
+    this.setAppearanceState(targetId, next as TAppearance);
+    this.notifyAppearanceChangedSince(targetId, 'reset', before);
   }
 
   /**
@@ -669,6 +784,7 @@ abstract class BaseViewport<
     this.onDestroy();
     this.bindings.clear();
     this.displaySetAppearances.clear();
+    this.defaultDisplaySetAppearances.clear();
 
     for (const key of Object.keys(this._debug.renderModes)) {
       delete this._debug.renderModes[key];
@@ -851,7 +967,7 @@ abstract class BaseViewport<
       throw new Error(`Failed to bind rendering for ${displaySetId}`);
     }
 
-    const props = this.displaySetAppearances.get(displaySetId);
+    const props = this.getAppliedAppearance(displaySetId);
     if (props !== undefined) {
       binding.updateAppearance(props);
     }
@@ -871,8 +987,8 @@ abstract class BaseViewport<
   }
 
   /**
-   * Stores per-dataset render state and forwards it immediately when
-   * that dataset is already added.
+   * Stores the overrides of a display set and gives the binding, when the
+   * display set is mounted, the overrides over the defaults of the family.
    */
   protected setAppearanceState(
     displaySetId: DisplaySetId,
@@ -889,13 +1005,13 @@ abstract class BaseViewport<
       return;
     }
 
-    binding.updateAppearance(props);
+    binding.updateAppearance(this.getAppliedAppearance(displaySetId));
     this.render();
   }
 
   /**
-   * Returns the last render state stored for a display set, even if that
-   * display set is not currently mounted.
+   * Returns the overrides stored for a display set, even if that display set
+   * is not currently mounted.
    */
   protected getAppearanceState(
     displaySetId: DisplaySetId
@@ -904,67 +1020,221 @@ abstract class BaseViewport<
   }
 
   /**
-   * Stores object-like defaults for a display set without clobbering any values
-   * already tracked for that display set.
+   * What a binding draws with: the overrides over the defaults of the
+   * family. Undefined when the display set has neither.
    */
-  protected setDefaultAppearance(
-    displaySetId: DisplaySetId,
-    defaults: TAppearance
-  ): TAppearance {
-    const nextAppearance = {
-      ...(defaults as Record<string, unknown>),
-      ...((this.getAppearanceState(displaySetId) || {}) as Record<
-        string,
-        unknown
-      >),
-    } as TAppearance;
+  protected getAppliedAppearance(
+    displaySetId: DisplaySetId
+  ): TAppearance | undefined {
+    const defaults = this.defaultDisplaySetAppearances.get(displaySetId);
+    const overrides = this.getAppearanceState(displaySetId);
 
-    this.setAppearanceState(displaySetId, nextAppearance);
+    if (defaults === undefined && overrides === undefined) {
+      return undefined;
+    }
 
-    return nextAppearance;
+    return { ...(defaults ?? {}), ...(overrides ?? {}) } as TAppearance;
   }
 
   /**
-   * Merges object-like updates into the stored per-display-set render state and
-   * forwards the result immediately when mounted.
+   * Stores defaults of the family for a display set, as `visible: true`.
+   * They are not overrides: the getter of the overrides leaves them out, a
+   * reset keeps them, and an override of the same key wins over them. The
+   * binding gets them at once when the display set is mounted. Fires
+   * nothing: {@link applyMountedAppearance} fires the event of the mount.
+   */
+  protected setDefaultAppearance(
+    displaySetId: DisplaySetId,
+    defaults: Partial<TAppearance>
+  ): void {
+    this.defaultDisplaySetAppearances.set(displaySetId, {
+      ...(this.defaultDisplaySetAppearances.get(displaySetId) ?? {}),
+      ...defaults,
+    } as TAppearance);
+
+    if (this.bindings.has(displaySetId)) {
+      this.setAppearanceState(
+        displaySetId,
+        (this.getAppearanceState(displaySetId) ?? {}) as TAppearance
+      );
+    }
+  }
+
+  /**
+   * The defaults that the effective appearance of a mounted display set
+   * shows under its overrides: those of the family that the mount stored.
+   * A family adds the defaults of its data, as the default window of the
+   * image on display.
+   */
+  protected getDefaultDisplaySetAppearance(
+    displaySetId: DisplaySetId
+  ): Partial<TAppearance> {
+    return { ...(this.defaultDisplaySetAppearances.get(displaySetId) ?? {}) };
+  }
+
+  /**
+   * The one entry point of the appearance of a mount. Every family calls it
+   * once when a display set is mounted, after the display set is bound:
+   * it merges `appearance`, the overrides that the mount asks for, over the
+   * overrides stored before, and fires `DISPLAY_SET_APPEARANCE_CHANGED` once
+   * with cause `'mount'` and every key that has an effective value. A mount
+   * option `appearance` comes in here, in the same task as the bind, so the
+   * first draw has it.
+   *
+   * @param displaySetId - The display set that was mounted.
+   * @param appearance - Overrides that the mount sets.
+   */
+  protected applyMountedAppearance(
+    displaySetId: DisplaySetId,
+    appearance?: Partial<TAppearance>
+  ): void {
+    if (appearance) {
+      this.setAppearanceState(
+        displaySetId,
+        withoutUndefined({
+          ...(this.getAppearanceState(displaySetId) ?? {}),
+          ...appearance,
+        }) as TAppearance
+      );
+    }
+
+    const effective = this.getEffectiveDisplaySetAppearance(displaySetId);
+
+    if (!effective) {
+      return;
+    }
+
+    this.notifyAppearanceChanged(
+      displaySetId,
+      'mount',
+      Object.keys(effective) as Array<keyof TAppearance & string>
+    );
+  }
+
+  /**
+   * Merges overrides into the stored overrides of a display set, removes
+   * the keys given as `undefined`, forwards the result when mounted, and
+   * fires `DISPLAY_SET_APPEARANCE_CHANGED` with cause `'edit'` when a key
+   * changed.
    */
   protected mergeAppearance(
     displaySetId: DisplaySetId,
     props: Partial<TAppearance>
   ): TAppearance {
-    const previousAppearance = this.getAppearanceState(displaySetId);
-    const nextAppearance = {
-      ...((previousAppearance || {}) as Record<string, unknown>),
-      ...(props as Record<string, unknown>),
-    } as TAppearance;
+    const before = this.getAppearanceSnapshot(displaySetId);
+    const nextAppearance = withoutUndefined({
+      ...before.overrides,
+      ...props,
+    }) as TAppearance;
 
     this.setAppearanceState(displaySetId, nextAppearance);
-
-    // Notify only when the change targets a mounted dataset so that listeners
-    // (VOI/colormap UI, synchronizers) react to applied appearance changes.
-    if (this.bindings.has(displaySetId)) {
-      this.notifyAppearanceModified(displaySetId, props, previousAppearance);
-    }
+    this.notifyAppearanceChangedSince(displaySetId, 'edit', before);
 
     return nextAppearance;
   }
 
   /**
-   * Hook invoked after a per-display-set appearance update is applied through
-   * the public `setDisplaySetAppearance` path and the target display set is
-   * mounted. Concrete viewport families override this to emit their
-   * appearance-modified events (e.g. `VOI_MODIFIED`, `COLORMAP_MODIFIED`) so
-   * application UI and synchronizers can react to programmatic and tool-driven
-   * appearance changes. `_previousAppearance` is the stored appearance
-   * before the change, when the change came through that path. The base
-   * implementation is intentionally a no-op.
+   * The overrides and the effective appearance of a display set now, to
+   * find the keys that a change changes.
    */
-  protected notifyAppearanceModified(
-    _displaySetId: DisplaySetId,
-    _props: Partial<TAppearance>,
-    _previousAppearance?: TAppearance
+  protected getAppearanceSnapshot(
+    displaySetId: DisplaySetId
+  ): AppearanceSnapshot {
+    return {
+      overrides: { ...(this.getAppearanceState(displaySetId) ?? {}) },
+      effective: {
+        ...(this.getEffectiveDisplaySetAppearance(displaySetId) ?? {}),
+      },
+    };
+  }
+
+  /**
+   * Fires `DISPLAY_SET_APPEARANCE_CHANGED` for the keys whose override or
+   * effective value differs from `before`, and nothing when none does.
+   */
+  protected notifyAppearanceChangedSince(
+    displaySetId: DisplaySetId,
+    cause: EventTypes.DisplaySetAppearanceChangeCause,
+    before: AppearanceSnapshot
   ): void {
-    // Subclasses emit appearance-modified events; base viewports do not.
+    const after = this.getAppearanceSnapshot(displaySetId);
+    const keys = new Set([
+      ...Object.keys(before.overrides),
+      ...Object.keys(after.overrides),
+      ...Object.keys(before.effective),
+      ...Object.keys(after.effective),
+    ]);
+    const changedKeys = Array.from(keys).filter(
+      (key) =>
+        key in before.overrides !== key in after.overrides ||
+        !deepEqual(before.overrides[key], after.overrides[key]) ||
+        !deepEqual(before.effective[key], after.effective[key])
+    ) as Array<keyof TAppearance & string>;
+
+    if (changedKeys.length) {
+      this.notifyAppearanceChanged(displaySetId, cause, changedKeys);
+    }
+  }
+
+  /**
+   * Fires `DISPLAY_SET_APPEARANCE_CHANGED` on the element once, with the
+   * overrides and the effective appearance of the display set now. Nothing
+   * fires for a display set that is not mounted, for a layer that
+   * {@link firesAppearanceEvents} keeps silent, or with `suppressEvents`.
+   */
+  protected notifyAppearanceChanged(
+    displaySetId: DisplaySetId,
+    cause: EventTypes.DisplaySetAppearanceChangeCause,
+    changedKeys: Array<keyof TAppearance & string>
+  ): void {
+    const binding = this.bindings.get(displaySetId);
+    const effective = this.getEffectiveDisplaySetAppearance(displaySetId);
+
+    if (
+      !binding ||
+      !effective ||
+      this.defaultOptions.suppressEvents ||
+      !this.firesAppearanceEvents(displaySetId)
+    ) {
+      return;
+    }
+
+    const detail: EventTypes.DisplaySetAppearanceChangedEventDetail<
+      TAppearance & object
+    > = {
+      viewportId: this.id,
+      renderingEngineId: this.renderingEngineId,
+      displaySetId,
+      role: binding.role,
+      volumeId: this.getAppearanceEventVolumeId(displaySetId),
+      cause,
+      changedKeys,
+      overrides: { ...(this.getAppearanceState(displaySetId) ?? {}) },
+      effective: effective as TAppearance & object,
+    };
+
+    triggerEvent(this.element, Events.DISPLAY_SET_APPEARANCE_CHANGED, detail);
+  }
+
+  /**
+   * Whether a change of the appearance of a display set fires
+   * `DISPLAY_SET_APPEARANCE_CHANGED`. True in the base class; a family keeps
+   * the layers of a segmentation silent.
+   */
+  protected firesAppearanceEvents(_displaySetId: DisplaySetId): boolean {
+    return true;
+  }
+
+  /**
+   * The volume that the appearance event of a display set names: the
+   * volume that its binding draws, when it draws one.
+   */
+  protected getAppearanceEventVolumeId(
+    displaySetId: DisplaySetId
+  ): string | undefined {
+    return (
+      this.bindings.get(displaySetId)?.data as { volumeId?: string } | undefined
+    )?.volumeId;
   }
 
   // ====================================================================

@@ -227,4 +227,59 @@ describe('VOI synchronizer on direct next planar viewports -- ', () => {
       }
     );
   });
+
+  for (const [mode, register] of [
+    ['stack', async () => registerStack()],
+    ['volume', registerVolume],
+  ]) {
+    it(`writes no override in the other viewport when a display set mounts in one of two viewports that synchronise each other, in ${mode} mode`, async function () {
+      const [first, second] = createNextViewports(renderingEngine);
+      const displaySetId = await register();
+      const synchronizer = synchronizers.createVOISynchronizer(synchronizerId, {
+        syncInvertState: true,
+        syncColormap: true,
+      });
+
+      [first, second].forEach((viewport) => {
+        synchronizer.add({ renderingEngineId, viewportId: viewport.id });
+      });
+
+      await first.setDisplaySets({ displaySetId });
+      await renderAndWait(first);
+      await second.setDisplaySets({ displaySetId });
+      await renderAndWait(second);
+      await first.setDisplaySets({ displaySetId });
+      await renderAndWait(first);
+
+      expect(first.getCurrentMode()).toBe(mode);
+      expect(first.getDisplaySetAppearance(displaySetId)).toEqual({});
+      expect(second.getDisplaySetAppearance(displaySetId)).toEqual({});
+      expect(
+        second.getEffectiveDisplaySetAppearance(displaySetId).voiRange
+      ).toEqual(second.getDefaultVOIRange(displaySetId));
+    });
+  }
+
+  it('resets the window of the target when the source resets its window, and copies no default of the source', async function () {
+    const [source, target] = createNextViewports(renderingEngine);
+    const displaySetId = registerStack();
+
+    await showAndLink([source, target], displaySetId);
+    target.setDisplaySetAppearance(displaySetId, { invert: true });
+    source.setDisplaySetAppearance(displaySetId, {
+      voiRange: { lower: 10, upper: 90 },
+    });
+
+    expect(target.getDisplaySetAppearance(displaySetId)).toEqual({
+      invert: true,
+      voiRange: { lower: 10, upper: 90 },
+    });
+
+    source.resetDisplaySetAppearance(displaySetId);
+
+    expect(source.getDisplaySetAppearance(displaySetId)).toEqual({});
+    expect(target.getDisplaySetAppearance(displaySetId)).toEqual({
+      invert: true,
+    });
+  });
 });

@@ -555,24 +555,25 @@ viewport.setDisplaySetAppearance(displaySetId, {
   invert: true,
 });
 
-const voiRange =
-  viewport.getDisplaySetAppearance(displaySetId)?.voiRange ??
-  viewport.getDefaultVOIRange(displaySetId);
+const { voiRange } = viewport.getEffectiveDisplaySetAppearance(displaySetId);
 
 viewport.setDisplaySetAppearance(displaySetId, { slabThickness: 10 });
 ```
 
-**Check.** `VOI_MODIFIED` fires on the element when the window or the invert
-changes. `viewport.getDisplaySetAppearance(displaySetId)` returns the keys
-that were set.
+**Check.** `DISPLAY_SET_APPEARANCE_CHANGED` fires on the element when the
+window or the invert changes. `viewport.getDisplaySetAppearance(displaySetId)`
+returns the keys that were set, and
+`viewport.getEffectiveDisplaySetAppearance(displaySetId)` what is drawn.
 
 **What can go wrong**
 
-- An appearance is what was set. A key that was never set is undefined, where
-  `getProperties()` read the value back from the actor. The window that the
-  data starts with is `viewport.getDefaultVOIRange(displaySetId)`.
+- `getDisplaySetAppearance(displaySetId)` is what was set. A key that was
+  never set is undefined, where `getProperties()` read the value back from
+  the actor. Read `getEffectiveDisplaySetAppearance(displaySetId)` to show a
+  value or to compare it; copy or store `getDisplaySetAppearance`, so that a
+  default does not become a setting.
 - The key is `voiLUTFunction`, with a lower case `voi`. The legacy key and the
-  detail of `VOI_MODIFIED` spell it `VOILUTFunction`.
+  detail of the legacy `VOI_MODIFIED` spell it `VOILUTFunction`.
 - There are no default properties. The application keeps its own default and
   sets it.
 - `resetDisplaySetAppearance(displaySetId)` does not move the camera, and it
@@ -911,7 +912,7 @@ is its geometry id.
 
 ```sh
 rg -n "STACK_NEW_IMAGE|VOLUME_NEW_IMAGE|PRE_STACK_NEW_IMAGE|STACK_VIEWPORT_SCROLL|IMAGE_LOAD_ERROR|PRESET_MODIFIED|ACTORS_CHANGED|CLIPPING_PLANES_UPDATED|DYNAMIC_VOLUME_TIME_POINT" src
-rg -n "CAMERA_MODIFIED|CAMERA_RESET|VOI_MODIFIED|IMAGE_SPACING_CALIBRATED|STACK_SCROLL_OUT_OF_BOUNDS|VOLUME_VIEWPORT_SCROLL" src
+rg -n "CAMERA_MODIFIED|CAMERA_RESET|VOI_MODIFIED|COLORMAP_MODIFIED|IMAGE_SPACING_CALIBRATED|STACK_SCROLL_OUT_OF_BOUNDS|VOLUME_VIEWPORT_SCROLL" src
 rg -n "invertStateChanged|previousCamera" src
 ```
 
@@ -968,11 +969,16 @@ a volume: scroll, change the window, reset. Compare with the table.
 - `CAMERA_MODIFIED` fires on each new image of a stack and once after the
   source mounts. `detail.previousCamera` can be undefined.
 - `CAMERA_RESET` fires in stack mode too, and only from `resetViewState()`.
-- A change of `slabThickness` in the appearance of a planar viewport
-  fires `CAMERA_MODIFIED`, as a slab change of the legacy volume viewport
-  did. Read the slab from the appearance.
-- `detail.invertStateChanged` of `VOI_MODIFIED` is not set by a next
-  viewport. Compare `detail.invert` with the last value.
+- `VOI_MODIFIED` and `COLORMAP_MODIFIED` are one event,
+  `DISPLAY_SET_APPEARANCE_CHANGED`. It fires also at the mount and when a
+  scroll shows an image with another default window: test `detail.cause`
+  and `detail.changedKeys`. The window is `detail.effective.voiRange`, the
+  colormap `detail.effective.colormap`, what a caller set
+  `detail.overrides`; there is no `invertStateChanged`. See
+  [The appearance event and the two getters](./2-rendering-changes.md#the-appearance-event-and-the-two-getters).
+- A change of `slabThickness` in the appearance fires
+  `DISPLAY_SET_APPEARANCE_CHANGED` with `slabThickness` in `changedKeys`,
+  and no `CAMERA_MODIFIED`.
 - `IMAGE_LOAD_FAILED` fires on the `eventTarget`, as `IMAGE_LOAD_ERROR` did.
   Its detail has no image index and no viewport id, and it also fires for a
   prefetch that fails.

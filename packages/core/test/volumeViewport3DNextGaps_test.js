@@ -193,44 +193,6 @@ function expectSameTransferFunctions(next, legacy) {
 }
 
 /**
- * What the two VOI_MODIFIED events of the legacy 3D viewport carried for
- * `setProperties` with a VOI range of 30 to 90 and then with invert.
- */
-function legacyVoiModifiedDetails(volumeId) {
-  return [
-    {
-      volumeId,
-      range: { lower: 30, upper: 90 },
-      invert: false,
-      colormap: { name: 'Grayscale' },
-    },
-    {
-      volumeId,
-      range: { lower: 30, upper: 90 },
-      invert: true,
-      colormap: { name: 'Inverted-Grayscale' },
-    },
-  ];
-}
-
-/**
- * How many VOI_MODIFIED events the legacy 3D viewport fired for
- * `setProperties` with the colormap `hsv` and then with the colormap
- * threshold 100.
- */
-const LEGACY_VOI_MODIFIED_COUNT_ON_COLORMAP = 1;
-
-/**
- * The details of the two COLORMAP_MODIFIED events that the legacy 3D viewport
- * fired for `setProperties` with the colormap `hsv` and then with the
- * colormap threshold 100.
- */
-const LEGACY_COLORMAP_MODIFIED_DETAILS = [
-  { colormap: { name: 'hsv', threshold: null } },
-  { colormap: { name: 'hsv', threshold: 100 } },
-];
-
-/**
  * The detail of the one VOLUME_VIEWPORT_NEW_VOLUME event of the legacy 3D
  * viewport at `setVolumes`: one volume actor, which names the volume.
  */
@@ -458,69 +420,81 @@ describe('Direct next 3D viewport, colour and presets -- ', () => {
     expect(mapper.getSampleDistance()).toBeGreaterThan(sampleDistance);
   });
 
-  it('fires VOI_MODIFIED with the legacy detail on a VOI change and on invert, with the invert of the display set and no invertStateChanged', async function () {
+  it('fires one DISPLAY_SET_APPEARANCE_CHANGED for each change, with the volume, the keys that changed and the window on display, on a VOI change and on invert', async function () {
     const [next] = createViewports(renderingEngine, { nextIds: ['next3D'] });
     const volumeId = await createVolume();
-
-    await showVolume(next, volumeId);
-
-    const legacyDetails = legacyVoiModifiedDetails(volumeId);
-    const nextDetails = recordEvents(next, Events.VOI_MODIFIED);
+    const displaySetId = await showVolume(next, volumeId);
+    const details = recordEvents(next, Events.DISPLAY_SET_APPEARANCE_CHANGED);
 
     next.setDisplaySetAppearance({ voiRange: { lower: 30, upper: 90 } });
     next.setDisplaySetAppearance({ invert: true });
+    next.setDisplaySetAppearance({ invert: true });
 
-    expect(nextDetails.length).toBe(2);
-    expect(nextDetails.length).toBe(legacyDetails.length);
-    nextDetails.forEach((detail, index) => {
-      const legacyDetail = legacyDetails[index];
-
-      expect(detail.viewportId).toBe(next.id);
-      expect(detail.volumeId).toBe(legacyDetail.volumeId);
+    expect(
+      details.map((detail) => ({
+        viewportId: detail.viewportId,
+        displaySetId: detail.displaySetId,
+        volumeId: detail.volumeId,
+        cause: detail.cause,
+        changedKeys: detail.changedKeys,
+        invert: detail.effective.invert,
+      }))
+    ).toEqual([
+      {
+        viewportId: next.id,
+        displaySetId,
+        volumeId,
+        cause: 'edit',
+        changedKeys: ['voiRange'],
+        invert: undefined,
+      },
+      {
+        viewportId: next.id,
+        displaySetId,
+        volumeId,
+        cause: 'edit',
+        changedKeys: ['invert'],
+        invert: true,
+      },
+    ]);
+    details.forEach((detail) => {
       expectPointsClose(
-        [detail.range.lower, detail.range.upper],
-        [legacyDetail.range.lower, legacyDetail.range.upper]
+        [detail.effective.voiRange.lower, detail.effective.voiRange.upper],
+        [30, 90]
       );
-      expect(Boolean(detail.invert)).toBe(Boolean(legacyDetail.invert));
-      expect(detail.invertStateChanged).toBeUndefined();
-      expect(detail.colormap?.name).toBe(legacyDetail.colormap?.name);
     });
-    expect(nextDetails[1].invert).toBe(true);
   });
 
-  it('fires VOI_MODIFIED and COLORMAP_MODIFIED with the legacy detail on a colormap change', async function () {
+  it('fires one DISPLAY_SET_APPEARANCE_CHANGED for each colormap change, where the legacy viewport fired VOI_MODIFIED and COLORMAP_MODIFIED', async function () {
     const [next] = createViewports(renderingEngine, { nextIds: ['next3D'] });
     const volumeId = await createVolume();
 
     await showVolume(next, volumeId);
 
-    const nextVOI = recordEvents(next, Events.VOI_MODIFIED);
-    const legacyColormap = LEGACY_COLORMAP_MODIFIED_DETAILS;
-    const nextColormap = recordEvents(next, Events.COLORMAP_MODIFIED);
+    const details = recordEvents(next, Events.DISPLAY_SET_APPEARANCE_CHANGED);
 
     next.setDisplaySetAppearance({ colormap: { name: 'hsv' } });
     next.setDisplaySetAppearance({ colormap: { threshold: 100 } });
 
-    expect(nextVOI.length).toBe(LEGACY_VOI_MODIFIED_COUNT_ON_COLORMAP);
-    expect(nextColormap.length).toBe(2);
-    expect(nextColormap.length).toBe(legacyColormap.length);
-    nextColormap.forEach((detail, index) => {
-      expect(detail.viewportId).toBe(next.id);
-      expect(detail.volumeId).toBe(volumeId);
-      expect(detail.colormap.name).toBe(legacyColormap[index].colormap.name);
-      expect(detail.colormap.threshold).toBe(
-        legacyColormap[index].colormap.threshold
-      );
-    });
+    expect(
+      details.map(({ volumeId: id, changedKeys, overrides }) => ({
+        volumeId: id,
+        changedKeys,
+        colormap: overrides.colormap,
+      }))
+    ).toEqual([
+      { volumeId, changedKeys: ['colormap'], colormap: { name: 'hsv' } },
+      { volumeId, changedKeys: ['colormap'], colormap: { threshold: 100 } },
+    ]);
   });
 
-  it('fires no presentation event with suppressEvents set', async function () {
+  it('fires no appearance event with suppressEvents set', async function () {
     const [next] = createViewports(renderingEngine, { nextIds: ['next3D'] });
     const volumeId = await createVolume();
 
     await showVolume(next, volumeId);
 
-    const details = recordEvents(next, Events.VOI_MODIFIED);
+    const details = recordEvents(next, Events.DISPLAY_SET_APPEARANCE_CHANGED);
 
     next.suppressEvents = true;
     next.setDisplaySetAppearance({ voiRange: { lower: 30, upper: 90 } });
@@ -528,7 +502,24 @@ describe('Direct next 3D viewport, colour and presets -- ', () => {
     expect(details.length).toBe(0);
   });
 
-  it('goes back to the presentation of the first mount on resetDisplaySetAppearance, and keeps the camera', async function () {
+  it('fires once with cause mount and the default window of the volume, with no override', async function () {
+    const [next] = createViewports(renderingEngine, { nextIds: ['next3D'] });
+    const volumeId = await createVolume();
+    const details = recordEvents(next, Events.DISPLAY_SET_APPEARANCE_CHANGED);
+    const displaySetId = await showVolume(next, volumeId);
+
+    expect(details.length).toBe(1);
+    expect(details[0].cause).toBe('mount');
+    expect(details[0].displaySetId).toBe(displaySetId);
+    expect(details[0].overrides).toEqual({});
+    expect(details[0].changedKeys).toEqual(['visible', 'opacity', 'voiRange']);
+    expect(details[0].effective.voiRange).toEqual(
+      next.getEffectiveDisplaySetAppearance(displaySetId).voiRange
+    );
+    expect(next.getDisplaySetAppearance(displaySetId)).toEqual({});
+  });
+
+  it('goes back to the look of the mount on resetDisplaySetAppearance, with no override left, fires once with cause reset, and keeps the camera', async function () {
     const [next] = createViewports(renderingEngine, { nextIds: ['next3D'] });
     const volumeId = await createVolume();
     const displaySetId = await showVolume(next, volumeId);
@@ -546,18 +537,42 @@ describe('Direct next 3D viewport, colour and presets -- ', () => {
 
     next.setViewState({ parallelScale: camera.parallelScale / 2 });
 
-    const details = recordEvents(next, Events.VOI_MODIFIED);
+    const details = recordEvents(next, Events.DISPLAY_SET_APPEARANCE_CHANGED);
 
     next.resetDisplaySetAppearance(displaySetId);
 
     expectPointsClose(sampledColoursOf(next), mountedColours);
     expectPointsClose(sampledOpacitiesOf(next), mountedOpacity);
-    expect(next.getDisplaySetAppearance(displaySetId).preset).toBe(undefined);
+    expect(next.getDisplaySetAppearance(displaySetId)).toEqual({});
     expect(next.getViewState().parallelScale).toBeCloseTo(
       camera.parallelScale / 2,
       6
     );
-    expect(details.length).toBe(1);
+    expect(details.map(({ cause }) => cause)).toEqual(['reset']);
+    expect([...details[0].changedKeys].sort()).toEqual([
+      'invert',
+      'opacity',
+      'preset',
+      'voiRange',
+    ]);
+  });
+
+  it('builds the window of the volume again when one override goes, and keeps the others', async function () {
+    const [next] = createViewports(renderingEngine, { nextIds: ['next3D'] });
+    const volumeId = await createVolume();
+    const displaySetId = await showVolume(next, volumeId);
+    const mountedColours = sampledColoursOf(next);
+
+    next.setDisplaySetAppearance(displaySetId, {
+      voiRange: { lower: 20, upper: 60 },
+      opacity: 0.5,
+    });
+    next.resetDisplaySetAppearance(displaySetId, ['voiRange']);
+
+    expectPointsClose(sampledColoursOf(next), mountedColours);
+    expect(next.getDisplaySetAppearance(displaySetId)).toEqual({
+      opacity: 0.5,
+    });
   });
 });
 

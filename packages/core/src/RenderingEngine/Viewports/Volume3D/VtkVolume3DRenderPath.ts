@@ -84,9 +84,7 @@ export class VtkVolume3DRenderPath
     const actor = await createVolumeActorOfVolume(
       payload.imageVolume,
       { volumeId: payload.volumeId, ...this.hooks },
-      ctx.viewport.element,
-      ctx.viewportId,
-      true
+      ctx.viewportId
     );
     const mapper = actor.getMapper() as vtkVolumeMapper;
 

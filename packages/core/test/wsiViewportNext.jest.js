@@ -534,3 +534,49 @@ describe('suppressEvents on the direct next whole slide viewport', () => {
     expect(nextCounts.modified).toBe(1);
   });
 });
+
+describe('The appearance of the direct next whole slide viewport', () => {
+  it('keeps the defaults of the mount out of the overrides, so that setting the overrides again changes nothing, and fires once at the mount', async () => {
+    const details = [];
+    const listener = (evt) => details.push(evt.detail);
+
+    document.addEventListener(
+      Events.DISPLAY_SET_APPEARANCE_CHANGED,
+      listener,
+      true
+    );
+
+    try {
+      const { viewport } = await track(mountNext(WSIViewport, 0.4));
+
+      viewport.setDisplaySetAppearance(IMAGE_ID, {
+        voiRange: { lower: 10, upper: 200 },
+      });
+      viewport.setDisplaySetAppearance(
+        IMAGE_ID,
+        viewport.getDisplaySetAppearance(IMAGE_ID)
+      );
+
+      expect(viewport.getDisplaySetAppearance(IMAGE_ID)).toEqual({
+        voiRange: { lower: 10, upper: 200 },
+      });
+      expect(viewport.getEffectiveDisplaySetAppearance(IMAGE_ID)).toEqual({
+        visible: true,
+        opacity: 1,
+        voiRange: { lower: 10, upper: 200 },
+      });
+      expect(
+        details.map(({ cause, changedKeys }) => ({ cause, changedKeys }))
+      ).toEqual([
+        { cause: 'mount', changedKeys: ['visible', 'opacity'] },
+        { cause: 'edit', changedKeys: ['voiRange'] },
+      ]);
+    } finally {
+      document.removeEventListener(
+        Events.DISPLAY_SET_APPEARANCE_CHANGED,
+        listener,
+        true
+      );
+    }
+  });
+});

@@ -67,12 +67,6 @@ const LEGACY_CROSSHAIRS_NEW_VOLUME_CALLS = 1;
 const LEGACY_SYNCED_INVERT = true;
 
 /**
- * The CAMERA_MODIFIED events that a legacy volume viewport fired for
- * `setSlabThickness(5)`: one, with the camera as the previous camera.
- */
-const LEGACY_SLAB_CAMERA_EVENTS = 1;
-
-/**
  * The slab of the target of the slab thickness synchroniser against the slab
  * of the source, both legacy volume viewports: the source had 5 and the
  * target got 5.
@@ -196,18 +190,15 @@ const LEGACY_CALIBRATION_EVENTS = [1, 1].map((imageIdIndex) => ({
 }));
 
 /**
- * How many VOI_MODIFIED events the legacy stack viewport of 5.x fired on the
- * GPU for each range that `countVOIEvents` sets: the range on display, a new
- * range three times, then another range. None for a range that was already
- * on display. Measured on that class. On the CPU it fired one for each.
+ * How many DISPLAY_SET_APPEARANCE_CHANGED events a planar viewport fires for
+ * each range that `countVOIEvents` sets: the range on display, a new range
+ * three times, then another range. The range on display fires one, because
+ * it becomes an explicit override; a range that is set again fires none. The
+ * same in stack and volume mode, on the GPU and the CPU. The legacy stack
+ * viewport of 5.x fired [0, 1, 0, 0, 1] on the GPU and one for each on the
+ * CPU; the legacy volume viewport one for each.
  */
-const LEGACY_STACK_VOI_EVENTS = [0, 1, 0, 0, 1];
-
-/**
- * The same for the legacy volume viewport of 5.x: one for each range, also
- * for a range that was already on display.
- */
-const LEGACY_VOLUME_VOI_EVENTS = [1, 1, 1, 1, 1];
+const APPEARANCE_VOI_EVENTS = [1, 1, 0, 0, 1];
 
 /** Makes and caches a volume of the fake volume loader. */
 async function createVolume(name = 'volumeURI') {
@@ -248,13 +239,12 @@ async function frames(count = 3) {
 /**
  * Sets on the source display set of a direct next viewport the range on
  * display, the range 0 to 100 three times and the range 20 to 120, and
- * counts the VOI_MODIFIED events of each.
+ * counts the DISPLAY_SET_APPEARANCE_CHANGED events of each.
  */
 async function countVOIEvents(viewport) {
   const displaySetId = viewport.getSourceDisplaySetId();
   const shownRange =
-    viewport.getDisplaySetAppearance(displaySetId)?.voiRange ??
-    viewport.getDefaultVOIRange(displaySetId);
+    viewport.getEffectiveDisplaySetAppearance(displaySetId).voiRange;
   const ranges = [
     shownRange,
     { lower: 0, upper: 100 },
@@ -269,7 +259,10 @@ async function countVOIEvents(viewport) {
   };
 
   await frames();
-  viewport.element.addEventListener(Events.VOI_MODIFIED, listener);
+  viewport.element.addEventListener(
+    Events.DISPLAY_SET_APPEARANCE_CHANGED,
+    listener
+  );
 
   for (const range of ranges) {
     count = 0;
@@ -281,7 +274,10 @@ async function countVOIEvents(viewport) {
     counts.push(count);
   }
 
-  viewport.element.removeEventListener(Events.VOI_MODIFIED, listener);
+  viewport.element.removeEventListener(
+    Events.DISPLAY_SET_APPEARANCE_CHANGED,
+    listener
+  );
 
   return counts;
 }
@@ -464,7 +460,7 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
     });
   });
 
-  describe('VOI_MODIFIED', () => {
+  describe('DISPLAY_SET_APPEARANCE_CHANGED of the window', () => {
     it('lets the VOI synchroniser sync an invert from a direct next viewport, as from a legacy one', async function () {
       const volumeId = await createVolume();
       const [source, target] = [0, 1].map((index) =>
@@ -501,49 +497,33 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
       expect(invert).toBe(LEGACY_SYNCED_INVERT);
     });
 
-    it('fires in stack mode only when the range changes, on the GPU and on the CPU, as the legacy stack viewport on the GPU', async function () {
-      const series = await createSeries({ id: 'voiEventsStack' });
+    it('fires once for each change of the window and none for a window that is set again, in stack and volume mode, on the GPU and on the CPU', async function () {
+      const series = await createSeries({ id: 'voiEvents' });
       const counts = [];
 
-      for (const options of [{}, { renderBackend: 'cpu' }]) {
-        const viewport = createNextViewport(
-          renderingEngine,
-          `voiStack${counts.length}`
-        );
+      for (const show of [showSeriesStack, showSeriesVolume]) {
+        for (const options of [{}, { renderBackend: 'cpu' }]) {
+          const viewport = createNextViewport(
+            renderingEngine,
+            `voiEvents${counts.length}`
+          );
 
-        await showSeriesStack(viewport, series, 0, options);
-        counts.push(await countVOIEvents(viewport));
+          await show(viewport, series, 0, options);
+          counts.push(await countVOIEvents(viewport));
+        }
       }
 
       expect(counts).toEqual([
-        LEGACY_STACK_VOI_EVENTS,
-        LEGACY_STACK_VOI_EVENTS,
-      ]);
-    });
-
-    it('fires in volume mode for each range that is set, also for the range on display, on the GPU and on the CPU, as the legacy volume viewport', async function () {
-      const series = await createSeries({ id: 'voiEventsVolume' });
-      const counts = [];
-
-      for (const options of [{}, { renderBackend: 'cpu' }]) {
-        const viewport = createNextViewport(
-          renderingEngine,
-          `voiVolume${counts.length}`
-        );
-
-        await showSeriesVolume(viewport, series, 0, options);
-        counts.push(await countVOIEvents(viewport));
-      }
-
-      expect(counts).toEqual([
-        LEGACY_VOLUME_VOI_EVENTS,
-        LEGACY_VOLUME_VOI_EVENTS,
+        APPEARANCE_VOI_EVENTS,
+        APPEARANCE_VOI_EVENTS,
+        APPEARANCE_VOI_EVENTS,
+        APPEARANCE_VOI_EVENTS,
       ]);
     });
   });
 
-  describe('CAMERA_MODIFIED for a slab', () => {
-    it('fires once when the slab of the presentation changes, as the legacy volume viewport did when its slab changed, and not for a window level', async function () {
+  describe('a slab', () => {
+    it('fires one DISPLAY_SET_APPEARANCE_CHANGED with the slab thickness when the slab changes, and no CAMERA_MODIFIED', async function () {
       const volumeId = await createVolume();
       const viewport = createNextPlanarViewport(renderingEngine, {
         orientation: OrientationAxis.AXIAL,
@@ -551,29 +531,30 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
 
       await showVolume(viewport, volumeId, OrientationAxis.AXIAL);
 
-      const details = [];
+      const cameraEvents = [];
+      const appearanceEvents = [];
 
       viewport.element.addEventListener(Events.CAMERA_MODIFIED, (evt) =>
-        details.push(evt.detail)
+        cameraEvents.push(evt.detail)
       );
-      viewport.setDisplaySetAppearance(getVolumeDisplaySetId(viewport), {
-        voiRange: { lower: 0, upper: 100 },
-      });
-
-      expect(details.length).toBe(0);
-
+      viewport.element.addEventListener(
+        Events.DISPLAY_SET_APPEARANCE_CHANGED,
+        (evt) => appearanceEvents.push(evt.detail)
+      );
       viewport.setDisplaySetAppearance(getVolumeDisplaySetId(viewport), {
         slabThickness: 10,
       });
 
-      expect(details.length).toBe(LEGACY_SLAB_CAMERA_EVENTS);
-      expect(details[0].viewportId).toBe(viewport.id);
-      expect(details[0].camera.focalPoint).toEqual(
-        details[0].previousCamera.focalPoint
-      );
-      expect(details[0].camera.viewPlaneNormal).toEqual(
-        details[0].previousCamera.viewPlaneNormal
-      );
+      expect(cameraEvents.length).toBe(0);
+      expect(
+        appearanceEvents.map(({ cause, changedKeys, overrides }) => ({
+          cause,
+          changedKeys,
+          slabThickness: overrides.slabThickness,
+        }))
+      ).toEqual([
+        { cause: 'edit', changedKeys: ['slabThickness'], slabThickness: 10 },
+      ]);
     });
 
     it('lets the slab thickness synchroniser sync a slab from a direct next viewport, as from a legacy one', async function () {

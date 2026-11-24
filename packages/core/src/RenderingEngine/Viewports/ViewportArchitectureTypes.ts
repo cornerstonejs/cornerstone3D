@@ -251,7 +251,14 @@ export interface ViewportController<
     displaySetId: DisplaySetId,
     props: Partial<TAppearance>
   ): void;
-  getDisplaySetAppearance(displaySetId: DisplaySetId): TAppearance | undefined;
+  getDisplaySetAppearance(displaySetId?: DisplaySetId): TAppearance | undefined;
+  getEffectiveDisplaySetAppearance(
+    displaySetId?: DisplaySetId
+  ): TAppearance | undefined;
+  resetDisplaySetAppearance(
+    displaySetId?: DisplaySetId,
+    keys?: ReadonlyArray<keyof TAppearance & string>
+  ): void;
   setViewReference(viewReference: ViewReference): void;
   getViewReference(specifier?: ViewReferenceSpecifier): ViewReference;
   getViewReferenceId(specifier?: ViewReferenceSpecifier): string;

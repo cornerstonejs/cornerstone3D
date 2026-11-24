@@ -14,7 +14,6 @@ import type {
   ViewReferenceSpecifier,
   ViewportContentMode,
 } from '../../../types';
-import type { VoiModifiedEventDetail } from '../../../types/EventTypes';
 import { isImageActor } from '../../../utilities/actorCheck';
 import isEqual from '../../../utilities/isEqual';
 import { coreLog } from '../../../utilities/logger';
@@ -27,6 +26,7 @@ import type {
   ViewportDataBinding,
 } from '../ViewportArchitectureTypes';
 import BaseViewport from '../BaseViewport';
+import { isSegmentationOverlayData } from '../renderingFidelity';
 import { viewportProjection } from '../viewportProjection';
 import { disableViewportWidgets } from '../viewportWidgets';
 import {
@@ -38,7 +38,6 @@ import { DefaultVolume3DDataProvider } from './DefaultVolume3DDataProvider';
 import { createVolume3DRenderPathResolver } from './Volume3DRenderPathResolver';
 import Volume3DResolvedView from './Volume3DResolvedView';
 import applyVolume3DCamera from './applyVolume3DCamera';
-import { getVolume3DColormap } from './applyVolume3DAppearance';
 import {
   VOLUME3D_PROJECTION_ID,
   type Volume3DProjectionFit,
@@ -119,14 +118,6 @@ class VolumeViewport3D extends BaseViewport<
    * stop it; it waits for its end before it removes anything.
    */
   private mountCommit?: Promise<void>;
-  /**
-   * The appearance of each display set after its mount, which
-   * `resetDisplaySetAppearance` goes back to.
-   */
-  private readonly mountedAppearances = new Map<
-    string,
-    Volume3DDisplaySetAppearance
-  >();
   /** The widgets that tools keep on the viewport, by id. */
   protected readonly widgets = new Map<string, ViewportWidget>();
 
@@ -251,7 +242,8 @@ class VolumeViewport3D extends BaseViewport<
    * has loaded, its commit (the removal of the shown display sets and the
    * mounts) runs to its end and the call fires its event, and a newer call
    * waits for it before it removes anything, as on the planar viewport. So a
-   * listener of an event of the commit, as VOI_MODIFIED, that starts a call
+   * listener of an event of the commit, as DISPLAY_SET_APPEARANCE_CHANGED,
+   * that starts a call
    * that rejects leaves the complete new scene.
    *
    * @param entries - Display sets to mount, each with its own render-mode options.
@@ -410,13 +402,10 @@ class VolumeViewport3D extends BaseViewport<
       this.primaryDisplaySetId = displaySetId;
     }
 
-    this.mountedAppearances.set(
-      displaySetId,
-      this.setDefaultAppearance(displaySetId, {
-        visible: true,
-        opacity: 1,
-      })
-    );
+    this.setDefaultAppearance(displaySetId, {
+      visible: true,
+      opacity: 1,
+    });
     this.viewState = this.getViewState();
 
     if (showedNothing && this.viewState.viewUp) {
@@ -427,53 +416,11 @@ class VolumeViewport3D extends BaseViewport<
       );
     }
 
-    this.triggerMountedVOIModified(displaySetId);
+    this.applyMountedAppearance(displaySetId);
 
     if (notifiesNewVolume && volumeOptions.role === 'source') {
       this.triggerNewVolume([displaySetId]);
     }
-  }
-
-  /**
-   * Sets the appearance of a display set back to the one after its mount:
-   * the default VOI range, and the preset, the colormap and the opacity that
-   * it was mounted with. The transfer functions are built anew. The camera
-   * stays: `resetViewState` resets it. Fires VOI_MODIFIED, as the legacy
-   * `resetProperties`.
-   *
-   * @param displaySetId - The display set; the current one when not given.
-   */
-  resetDisplaySetAppearance(displaySetId?: string): void {
-    if (this.isDestroyed) {
-      return;
-    }
-
-    const targetId = displaySetId ?? this.getCurrentBinding()?.data.id;
-    const rendering = targetId
-      ? this.getVolumeRenderingOf(targetId)
-      : undefined;
-
-    if (!targetId || !this.getBinding(targetId)) {
-      return;
-    }
-
-    if (rendering) {
-      rendering.appliedAppearance = undefined;
-    }
-
-    this.setAppearanceState(targetId, {
-      ...(this.mountedAppearances.get(targetId) ?? {
-        visible: true,
-        opacity: 1,
-      }),
-    });
-
-    this.triggerVOIModified(targetId);
-  }
-
-  removeDisplaySet(displaySetId: string): void {
-    super.removeDisplaySet(displaySetId);
-    this.mountedAppearances.delete(displaySetId);
   }
 
   /**
@@ -1085,59 +1032,61 @@ class VolumeViewport3D extends BaseViewport<
 
   protected override onDestroy(): void {
     this.primaryDisplaySetId = undefined;
-    this.mountedAppearances.clear();
   }
 
   /**
-   * Fires the events of an appearance change with the detail of the legacy
-   * viewport: COLORMAP_MODIFIED for a colormap, with VOI_MODIFIED too for a
-   * colormap name; VOI_MODIFIED for invert, a VOI range or a VOI LUT
-   * function. The detail carries the invert of the display set in `invert`,
-   * and no `invertStateChanged`, as on the next planar viewport. Nothing
-   * fires with `suppressEvents` set, or for a display set that is not a
-   * volume. A preset fires no event.
+   * Stores the overrides of a display set as the base class does. When an
+   * override goes, by a reset or a key given as `undefined`, the transfer
+   * functions of the volume are built anew from the defaults: a later
+   * appearance otherwise changes only what differs from the one before, and
+   * would keep the window or the colormap that the override set.
    */
-  protected override notifyAppearanceModified(
+  protected override setAppearanceState(
     displaySetId: string,
-    props: Partial<Volume3DDisplaySetAppearance>
+    props: Volume3DDisplaySetAppearance
   ): void {
+    const previous = this.getAppearanceState(displaySetId) ?? {};
     const rendering = this.getVolumeRenderingOf(displaySetId);
 
-    if (this.suppressEvents || !rendering) {
-      return;
+    if (rendering && Object.keys(previous).some((key) => !(key in props))) {
+      rendering.appliedAppearance = undefined;
     }
 
-    const volumeId = rendering.imageVolume.volumeId;
+    super.setAppearanceState(displaySetId, props);
+  }
 
-    if ('invert' in props) {
-      triggerEvent(
-        this.element,
-        Events.VOI_MODIFIED,
-        this.getVOIModifiedEventDetail(displaySetId, rendering)
-      );
-    }
+  /**
+   * Whether a change of the appearance of a display set fires
+   * `DISPLAY_SET_APPEARANCE_CHANGED`: not for a segmentation, whose look
+   * the segmentation style owns.
+   */
+  protected override firesAppearanceEvents(displaySetId: string): boolean {
+    const binding = this.getBinding(displaySetId);
 
-    if (props.colormap) {
-      const colormapDetail = {
-        viewportId: this.id,
-        colormap: getVolume3DColormap(rendering.actor),
-        volumeId,
-      };
+    return (
+      !this.suppressEvents &&
+      !!binding &&
+      !isSegmentationOverlayData(
+        binding.data as { reference?: { kind?: string } },
+        { renderMode: binding.rendering.renderMode, role: binding.role }
+      )
+    );
+  }
 
-      if (props.colormap.name) {
-        triggerEvent(this.element, Events.VOI_MODIFIED, colormapDetail);
-      }
+  /**
+   * The defaults that the effective appearance shows under the overrides:
+   * those of the mount, and the default window of a volume.
+   */
+  protected override getDefaultDisplaySetAppearance(
+    displaySetId: string
+  ): Partial<Volume3DDisplaySetAppearance> {
+    const defaultVOIRange =
+      this.getVolumeRenderingOf(displaySetId)?.defaultVOIRange;
 
-      triggerEvent(this.element, Events.COLORMAP_MODIFIED, colormapDetail);
-    }
-
-    if ('voiRange' in props || 'voiLUTFunction' in props) {
-      triggerEvent(
-        this.element,
-        Events.VOI_MODIFIED,
-        this.getVOIModifiedEventDetail(displaySetId, rendering)
-      );
-    }
+    return {
+      ...super.getDefaultDisplaySetAppearance(displaySetId),
+      voiRange: defaultVOIRange ? { ...defaultVOIRange } : undefined,
+    };
   }
 
   /**
@@ -1167,74 +1116,6 @@ class VolumeViewport3D extends BaseViewport<
     triggerEvent(this.element, Events.VOLUME_VIEWPORT_NEW_VOLUME, {
       viewportId: this.id,
       volumeActors,
-    });
-  }
-
-  /**
-   * Fires VOI_MODIFIED for a mounted volume display set with the detail of
-   * the legacy viewport, unless `suppressEvents` is set.
-   */
-  protected triggerVOIModified(displaySetId: string): void {
-    const rendering = this.getVolumeRenderingOf(displaySetId);
-
-    if (this.suppressEvents || !rendering) {
-      return;
-    }
-
-    triggerEvent(
-      this.element,
-      Events.VOI_MODIFIED,
-      this.getVOIModifiedEventDetail(displaySetId, rendering)
-    );
-  }
-
-  /**
-   * The detail of VOI_MODIFIED as the legacy viewport sends it: the mapping
-   * range of the colour function, the VOI LUT function, the colormap and
-   * invert.
-   */
-  private getVOIModifiedEventDetail(
-    displaySetId: string,
-    rendering: Volume3DVolumeRendering
-  ): VoiModifiedEventDetail {
-    const appearance = this.getDisplaySetAppearance(displaySetId);
-    const [lower, upper] = rendering.actor
-      .getProperty()
-      .getRGBTransferFunction(0)
-      .getMappingRange();
-
-    return {
-      viewportId: this.id,
-      range: { lower, upper },
-      volumeId: rendering.imageVolume.volumeId,
-      VOILUTFunction: appearance?.voiLUTFunction,
-      colormap: getVolume3DColormap(rendering.actor),
-      invert: appearance?.invert,
-    };
-  }
-
-  /**
-   * Fires VOI_MODIFIED after the mount of a volume, with the range that it
-   * shows, as the legacy viewport does when it makes the volume actor. A
-   * segmentation overlay fires nothing, as the legacy labelmap mount
-   * suppresses it.
-   */
-  private triggerMountedVOIModified(displaySetId: string): void {
-    const rendering = this.getVolumeRenderingOf(displaySetId);
-
-    if (this.suppressEvents || !rendering || rendering.excludeFromFidelity) {
-      return;
-    }
-
-    const [lower, upper] = rendering.actor
-      .getProperty()
-      .getRGBTransferFunction(0)
-      .getRange();
-
-    triggerEvent(this.element, Events.VOI_MODIFIED, {
-      viewportId: this.id,
-      range: { lower, upper },
-      volumeId: rendering.imageVolume.volumeId,
     });
   }
 

@@ -596,3 +596,73 @@ describe('Next video viewport in Safari on iOS', () => {
     }
   });
 });
+
+describe('The appearance of the next video viewport', () => {
+  it('keeps the defaults of the mount out of the overrides, so that setting the overrides again changes nothing, and fires once at the mount and once for an edit', async () => {
+    const details = [];
+    const listener = (evt) => details.push(evt.detail);
+
+    document.addEventListener(
+      Enums.Events.DISPLAY_SET_APPEARANCE_CHANGED,
+      listener,
+      true
+    );
+
+    const { viewport, element } = await createViewport();
+
+    try {
+      expect(viewport.getDisplaySetAppearance(VIDEO_ID)).toEqual({});
+      expect(viewport.getEffectiveDisplaySetAppearance(VIDEO_ID)).toEqual({
+        visible: true,
+        opacity: 1,
+        playbackRate: 1,
+        loop: true,
+        muted: true,
+        objectFit: 'contain',
+      });
+
+      viewport.setPlaybackRate(2);
+      viewport.setDisplaySetAppearance(
+        VIDEO_ID,
+        viewport.getDisplaySetAppearance(VIDEO_ID)
+      );
+
+      expect(viewport.getDisplaySetAppearance(VIDEO_ID)).toEqual({
+        playbackRate: 2,
+      });
+      expect(
+        details.map(({ displaySetId, cause, changedKeys }) => ({
+          displaySetId,
+          cause,
+          changedKeys,
+        }))
+      ).toEqual([
+        {
+          displaySetId: VIDEO_ID,
+          cause: 'mount',
+          changedKeys: [
+            'visible',
+            'opacity',
+            'playbackRate',
+            'loop',
+            'muted',
+            'objectFit',
+          ],
+        },
+        {
+          displaySetId: VIDEO_ID,
+          cause: 'edit',
+          changedKeys: ['playbackRate'],
+        },
+      ]);
+    } finally {
+      document.removeEventListener(
+        Enums.Events.DISPLAY_SET_APPEARANCE_CHANGED,
+        listener,
+        true
+      );
+      viewport.destroy();
+      element.remove();
+    }
+  });
+});

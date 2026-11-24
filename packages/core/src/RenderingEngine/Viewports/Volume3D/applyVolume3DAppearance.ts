@@ -10,8 +10,6 @@ import type {
 } from '../../../types';
 import applyPreset from '../../../utilities/applyPreset';
 import {
-  findMatchingColormap,
-  getOpacityState,
   resolveColormap,
   updateOpacity,
   updateOpacityMapping,
@@ -343,22 +341,4 @@ function applySampleDistanceMultiplier(
   mapper.setSampleDistance(
     sampleDistanceOf(imageData, texture, idleSampleDistanceMultiplierOf(mapper))
   );
-}
-
-/**
- * The colormap that a volume actor shows, as the legacy `getColormap` reads
- * it: the registered colormap whose colours the colour function has, with
- * the opacity, the opacity mapping and the threshold of the actor.
- */
-export function getVolume3DColormap(actor: VolumeActor): ColormapPublic {
-  const { nodes } = (
-    actor.getProperty().getRGBTransferFunction(0) as unknown as {
-      getState(): { nodes: { x: number; r: number; g: number; b: number }[] };
-    }
-  ).getState();
-  const rgbPoints = nodes.flatMap(({ x, r, g, b }) => [x, r, g, b]);
-  const colormap: ColormapPublic = findMatchingColormap(rgbPoints, actor) || {};
-  const { opacity, opacityMapping, threshold } = getOpacityState(actor);
-
-  return { ...colormap, opacity, opacityMapping, threshold };
 }

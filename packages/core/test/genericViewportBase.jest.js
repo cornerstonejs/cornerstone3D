@@ -44,7 +44,6 @@ class TestViewport extends BaseViewport {
     this._normalizeViewState = undefined;
 
     this.normalizeViewStateSpy = jest.fn();
-    this.notifyDataPresentationModifiedSpy = jest.fn();
     this.onDestroySpy = jest.fn();
   }
 
@@ -63,8 +62,12 @@ class TestViewport extends BaseViewport {
       : viewState;
   }
 
-  notifyAppearanceModified(displaySetId, props) {
-    this.notifyDataPresentationModifiedSpy(displaySetId, props);
+  mount(displaySetId, defaults, appearance) {
+    if (defaults) {
+      this.setDefaultAppearance(displaySetId, defaults);
+    }
+
+    this.applyMountedAppearance(displaySetId, appearance);
   }
 
   onDestroy() {
@@ -429,7 +432,8 @@ describe('BaseViewport', () => {
       expect(viewport.getDisplaySetAppearance('ds-1')).toEqual({
         opacity: 0.3,
       });
-      expect(viewport.getDisplaySetAppearance('ds-2')).toBeUndefined();
+      expect(viewport.getDisplaySetAppearance()).toEqual({ opacity: 0.3 });
+      expect(viewport.getDisplaySetAppearance('ds-2')).toEqual({});
     });
 
     it('targets an explicit display set id when provided', async () => {
@@ -440,7 +444,7 @@ describe('BaseViewport', () => {
 
       viewport.setDisplaySetAppearance('ds-2', { opacity: 0.7 });
 
-      expect(viewport.getDisplaySetAppearance('ds-1')).toBeUndefined();
+      expect(viewport.getDisplaySetAppearance('ds-1')).toEqual({});
       expect(viewport.getDisplaySetAppearance('ds-2')).toEqual({
         opacity: 0.7,
       });
@@ -482,20 +486,196 @@ describe('BaseViewport', () => {
     });
   });
 
-  describe('notifyAppearanceModified hook', () => {
-    it('is only invoked when the target display set is mounted', async () => {
-      const { viewport } = createHarness();
+  describe('overrides, defaults and DISPLAY_SET_APPEARANCE_CHANGED', () => {
+    function recordAppearanceEvents(element) {
+      const details = [];
+
+      element.addEventListener(Events.DISPLAY_SET_APPEARANCE_CHANGED, (evt) =>
+        details.push(evt.detail)
+      );
+
+      return details;
+    }
+
+    it('fires once with cause edit for a change of a mounted display set, nothing for a display set that is not mounted, and nothing for a call that changes nothing', async () => {
+      const { viewport, element } = createHarness();
+      const details = recordAppearanceEvents(element);
 
       viewport.setDisplaySetAppearance('unmounted-ds', { opacity: 0.2 });
-      expect(viewport.notifyDataPresentationModifiedSpy).not.toHaveBeenCalled();
-
-      await mountDisplaySet(viewport, 'ds-1');
+      await mountDisplaySet(viewport, 'ds-1', { role: 'source' });
+      viewport.setDisplaySetAppearance('ds-1', { opacity: 0.9 });
       viewport.setDisplaySetAppearance('ds-1', { opacity: 0.9 });
 
-      expect(viewport.notifyDataPresentationModifiedSpy).toHaveBeenCalledWith(
+      expect(details).toEqual([
+        {
+          viewportId: 'vp-1',
+          renderingEngineId: 'engine-1',
+          displaySetId: 'ds-1',
+          role: 'source',
+          volumeId: undefined,
+          cause: 'edit',
+          changedKeys: ['opacity'],
+          overrides: { opacity: 0.9 },
+          effective: { opacity: 0.9 },
+        },
+      ]);
+    });
+
+    it('keeps the defaults of a mount out of the overrides, so setting the overrides again changes nothing', async () => {
+      const { viewport, element } = createHarness();
+      const attachment = await mountDisplaySet(viewport, 'ds-1');
+
+      viewport.mount('ds-1', { visible: true, opacity: 1, loop: true });
+      viewport.setDisplaySetAppearance('ds-1', { opacity: 0.4 });
+
+      const details = recordAppearanceEvents(element);
+
+      viewport.setDisplaySetAppearance(
         'ds-1',
-        { opacity: 0.9 }
+        viewport.getDisplaySetAppearance('ds-1')
       );
+
+      expect(viewport.getDisplaySetAppearance('ds-1')).toEqual({
+        opacity: 0.4,
+      });
+      expect(viewport.getEffectiveDisplaySetAppearance('ds-1')).toEqual({
+        visible: true,
+        opacity: 0.4,
+        loop: true,
+      });
+      expect(attachment.updateAppearance).toHaveBeenLastCalledWith({
+        visible: true,
+        opacity: 0.4,
+        loop: true,
+      });
+      expect(details).toEqual([]);
+    });
+
+    it('fires once with cause mount and every key of the effective appearance, with the overrides of the mount', async () => {
+      const { viewport, element } = createHarness();
+
+      await mountDisplaySet(viewport, 'ds-1');
+
+      const details = recordAppearanceEvents(element);
+
+      viewport.mount('ds-1', { visible: true, opacity: 1 }, { opacity: 0.5 });
+
+      expect(
+        details.map(({ cause, changedKeys, overrides, effective }) => ({
+          cause,
+          changedKeys,
+          overrides,
+          effective,
+        }))
+      ).toEqual([
+        {
+          cause: 'mount',
+          changedKeys: ['visible', 'opacity'],
+          overrides: { opacity: 0.5 },
+          effective: { visible: true, opacity: 0.5 },
+        },
+      ]);
+    });
+
+    it('removes an override that is set to undefined, back to the default', async () => {
+      const { viewport, element } = createHarness();
+
+      await mountDisplaySet(viewport, 'ds-1');
+      viewport.mount('ds-1', { opacity: 1 });
+      viewport.setDisplaySetAppearance('ds-1', {
+        opacity: 0.3,
+        visible: false,
+      });
+
+      const details = recordAppearanceEvents(element);
+
+      viewport.setDisplaySetAppearance('ds-1', { opacity: undefined });
+
+      expect(viewport.getDisplaySetAppearance('ds-1')).toEqual({
+        visible: false,
+      });
+      expect(
+        details.map(({ cause, changedKeys }) => [cause, changedKeys])
+      ).toEqual([['edit', ['opacity']]]);
+    });
+
+    it('resets only the keys given, keeps the defaults, and fires once with cause reset', async () => {
+      const { viewport, element } = createHarness();
+
+      await mountDisplaySet(viewport, 'ds-1');
+      viewport.mount('ds-1', { visible: true, opacity: 1 });
+      viewport.setDisplaySetAppearance('ds-1', {
+        opacity: 0.3,
+        visible: false,
+        lineWidth: 2,
+      });
+
+      const details = recordAppearanceEvents(element);
+
+      viewport.resetDisplaySetAppearance('ds-1', ['opacity', 'visible']);
+
+      expect(viewport.getDisplaySetAppearance('ds-1')).toEqual({
+        lineWidth: 2,
+      });
+      expect(viewport.getEffectiveDisplaySetAppearance('ds-1')).toEqual({
+        visible: true,
+        opacity: 1,
+        lineWidth: 2,
+      });
+      expect(
+        details.map(({ cause, changedKeys }) => [cause, changedKeys])
+      ).toEqual([['reset', ['opacity', 'visible']]]);
+
+      viewport.resetDisplaySetAppearance();
+
+      expect(viewport.getDisplaySetAppearance('ds-1')).toEqual({});
+      expect(
+        details.map(({ cause, changedKeys }) => [cause, changedKeys])
+      ).toEqual([
+        ['reset', ['opacity', 'visible']],
+        ['reset', ['lineWidth']],
+      ]);
+    });
+
+    it('keeps an override that equals the default an override', async () => {
+      const { viewport } = createHarness();
+
+      await mountDisplaySet(viewport, 'ds-1');
+      viewport.mount('ds-1', { opacity: 1 });
+      viewport.setDisplaySetAppearance('ds-1', { opacity: 1 });
+
+      expect(viewport.getDisplaySetAppearance('ds-1')).toEqual({ opacity: 1 });
+    });
+
+    it('has no effective appearance for a display set that is not mounted', () => {
+      const { viewport } = createHarness();
+
+      viewport.setDisplaySetAppearance('never-mounted', { opacity: 0.1 });
+
+      expect(viewport.getEffectiveDisplaySetAppearance('never-mounted')).toBe(
+        undefined
+      );
+      expect(viewport.getDisplaySetAppearance('unknown')).toBeUndefined();
+    });
+
+    it('fires nothing with suppressEvents', async () => {
+      const element = document.createElement('div');
+      const viewport = new TestViewport({
+        id: 'vp-quiet',
+        element,
+        dataProvider: createDataProvider(),
+        renderPathResolver: createResolver(),
+      });
+
+      viewport.defaultOptions.suppressEvents = true;
+
+      const details = recordAppearanceEvents(element);
+
+      await mountDisplaySet(viewport, 'ds-1');
+      viewport.mount('ds-1', { opacity: 1 });
+      viewport.setDisplaySetAppearance('ds-1', { opacity: 0.5 });
+
+      expect(details).toEqual([]);
     });
   });
 

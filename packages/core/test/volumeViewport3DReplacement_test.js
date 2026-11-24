@@ -407,17 +407,21 @@ describe('A replacement of the display sets of a 3D viewport that a newer call c
 
   /**
    * Replaces the shown scene with the older source and overlay, and starts
-   * the newer call in the VOI_MODIFIED listener of the mount of the older
-   * source, before the mount of the older overlay. Resolves with both calls.
+   * the newer call in the DISPLAY_SET_APPEARANCE_CHANGED listener of the
+   * mount of the older source, before the mount of the older overlay.
+   * Resolves with both calls.
    */
   function replaceWithNewerBetweenMounts(newerDisplaySetId) {
     let newer;
 
-    viewport.element.addEventListener(Events.VOI_MODIFIED, (event) => {
-      if (!newer && event.detail.volumeId === volumeIds.olderSource) {
-        newer = viewport.setDisplaySets(volumeEntry(newerDisplaySetId));
+    viewport.element.addEventListener(
+      Events.DISPLAY_SET_APPEARANCE_CHANGED,
+      (event) => {
+        if (!newer && event.detail.volumeId === volumeIds.olderSource) {
+          newer = viewport.setDisplaySets(volumeEntry(newerDisplaySetId));
+        }
       }
-    });
+    );
 
     const older = viewport.setDisplaySets(
       volumeEntry('replacement3D:olderSource'),

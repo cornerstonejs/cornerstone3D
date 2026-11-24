@@ -203,30 +203,36 @@ addDropdownToToolbar({
 });
 
 function addColormapEventListener() {
-  element.addEventListener(Enums.Events.COLORMAP_MODIFIED, function (event) {
-    const { volumeId, colormap } = event.detail;
-
-    if (volumeId === ptVolumeId) {
-      const opacity = colormap.opacity;
-      const threshold = colormap.threshold;
-      const opacityToUse = Array.isArray(opacity)
-        ? opacity.reduce((max, current) => Math.max(max, current.opacity), 0)
-        : opacity;
-
-      const details: Record<string, string> = {
-        type: 'Colormap Modified',
+  element.addEventListener(
+    Enums.Events.DISPLAY_SET_APPEARANCE_CHANGED,
+    function (event) {
+      const {
         volumeId,
-        opacity: opacityToUse.toFixed(2),
-        timestamp: new Date().toLocaleTimeString(),
-      };
+        effective: { colormap },
+      } = event.detail;
 
-      if (typeof threshold === 'number') {
-        details.threshold = threshold.toFixed(2);
+      if (volumeId === ptVolumeId) {
+        const opacity = colormap.opacity;
+        const threshold = colormap.threshold;
+        const opacityToUse = Array.isArray(opacity)
+          ? opacity.reduce((max, current) => Math.max(max, current.opacity), 0)
+          : opacity;
+
+        const details: Record<string, string> = {
+          type: 'Colormap Modified',
+          volumeId,
+          opacity: opacityToUse.toFixed(2),
+          timestamp: new Date().toLocaleTimeString(),
+        };
+
+        if (typeof threshold === 'number') {
+          details.threshold = threshold.toFixed(2);
+        }
+
+        eventDetailsElement.innerText = JSON.stringify(details, null, 2);
       }
-
-      eventDetailsElement.innerText = JSON.stringify(details, null, 2);
     }
-  });
+  );
 }
 
 async function run() {

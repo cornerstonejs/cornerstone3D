@@ -555,8 +555,29 @@ interface IViewport<TViewState extends object = object, TAppearance = unknown> {
     displaySetId: string,
     props: Partial<TAppearance>
   ): void;
-  /** The appearance of one display set, or undefined when it is not mounted. */
-  getDisplaySetAppearance(displaySetId: string): TAppearance | undefined;
+  /**
+   * The explicit overrides of the appearance of one display set (the current
+   * one when not given): what callers set, none of the defaults. Copy or
+   * store this; `setDisplaySetAppearance(id, getDisplaySetAppearance(id))`
+   * changes nothing.
+   */
+  getDisplaySetAppearance(displaySetId?: string): TAppearance | undefined;
+  /**
+   * The appearance that one display set is drawn with (the current one when
+   * not given): its overrides over the defaults, or undefined when it is not
+   * mounted. Show or compare this.
+   */
+  getEffectiveDisplaySetAppearance(
+    displaySetId?: string
+  ): TAppearance | undefined;
+  /**
+   * Removes the overrides of one display set (the current one when not
+   * given), all of them or the named keys.
+   */
+  resetDisplaySetAppearance(
+    displaySetId?: string,
+    keys?: ReadonlyArray<keyof TAppearance & string>
+  ): void;
   /** What the viewport shows now. See {@link ViewportContentMode}. */
   getCurrentMode(): ViewportContentMode;
 

@@ -1,0 +1,12 @@
+{
+  "cornerstone3d-6-review": [
+    {
+      "cardinality": {
+        "file": "input.js",
+        "line": "14",
+        "rule": "getDisplaySetAppearance: it gives the overrides only, what a caller set, and here the value is shown or compared: use getEffectiveDisplaySetAppearance for what is drawn, the defaults included"
+      },
+      "count": 1
+    }
+  ]
+}

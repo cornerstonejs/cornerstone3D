@@ -144,33 +144,25 @@ export default class WSIViewport extends BaseViewport<
         opacity: 1,
       });
       this.activeDisplaySetId = displaySetId;
+      this.applyMountedAppearance(displaySetId);
     }
 
     this.syncCameraFromView();
     this.applyVOIToRendering();
   }
 
-  setDisplaySetAppearance(props: Partial<WSIDisplaySetAppearance>): void;
-  setDisplaySetAppearance(
+  /**
+   * Stores the overrides of a display set as the base class does, and
+   * applies the window of the display set on display to the slide, after a
+   * change or a reset of its appearance.
+   */
+  protected override setAppearanceState(
     displaySetId: string,
-    props: Partial<WSIDisplaySetAppearance>
-  ): void;
-  setDisplaySetAppearance(
-    displaySetIdOrProps: string | Partial<WSIDisplaySetAppearance>,
-    maybeProps?: Partial<WSIDisplaySetAppearance>
+    props: WSIDisplaySetAppearance
   ): void {
-    if (typeof displaySetIdOrProps === 'string') {
-      super.setDisplaySetAppearance(displaySetIdOrProps, maybeProps ?? {});
+    super.setAppearanceState(displaySetId, props);
 
-      if (displaySetIdOrProps === this.getActiveDisplaySetId()) {
-        this.applyVOIToRendering();
-      }
-      return;
-    }
-
-    super.setDisplaySetAppearance(displaySetIdOrProps);
-
-    if (this.getActiveDisplaySetId()) {
+    if (displaySetId === this.getActiveDisplaySetId()) {
       this.applyVOIToRendering();
     }
   }
@@ -575,7 +567,7 @@ export default class WSIViewport extends BaseViewport<
   private applyVOIToRendering(): void {
     const activeDisplaySetId = this.getActiveDisplaySetId();
     const appearance = activeDisplaySetId
-      ? this.getDisplaySetAppearance(activeDisplaySetId)
+      ? this.getEffectiveDisplaySetAppearance(activeDisplaySetId)
       : undefined;
     const filter = buildWSIColorTransform(
       appearance?.voiRange || {

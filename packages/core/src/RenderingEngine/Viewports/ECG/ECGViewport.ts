@@ -173,6 +173,7 @@ class ECGViewport extends BaseViewport<
       await this.addLoadedData(displaySetId, waveform, {
         renderMode: 'signal2d',
       });
+      this.applyMountedAppearance(displaySetId);
     }
   }
 
@@ -745,7 +746,7 @@ class ECGViewport extends BaseViewport<
     return new ECGResolvedView({
       viewState: this.viewState,
       canvas: this.canvas,
-      appearance: this.getDisplaySetAppearance(waveform.id),
+      appearance: this.getEffectiveDisplaySetAppearance(waveform.id),
       frameOfReferenceUID: getECGFrameOfReferenceUID(this.getCurrentImageId()),
       waveform,
       preferredRegionIndex: this.clickedRegionIndex,

@@ -2,15 +2,12 @@ import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
 import type { VolumeActor } from './../../types/IActor';
 import type IImageVolume from './../../types/IImageVolume';
-import type { VoiModifiedEventDetail } from './../../types/EventTypes';
 import { loadVolume } from '../../loaders/volumeLoader';
 import createVolumeMapper from './createVolumeMapper';
 import { resolveVolumeTexture } from './resolveVolumeTexture';
 import type { ResolveVolumeTextureOptions } from './resolveVolumeTexture';
 import { claimLegacyActorTextureSet } from './legacyActorTextureSet';
 import type BlendModes from '../../enums/BlendModes';
-import triggerEvent from '../../utilities/triggerEvent';
-import { Events } from '../../enums';
 import setDefaultVolumeVOI from './setDefaultVolumeVOI';
 import type { BlendMode } from '@kitware/vtk.js/Rendering/Core/VolumeMapper/Constants';
 import { getConfiguration } from '../../init';
@@ -28,21 +25,21 @@ interface createVolumeActorInterface extends ResolveVolumeTextureOptions {
 }
 
 /**
- * Creates a volume actor based on the provided properties.
+ * Creates a volume actor based on the provided properties. It fires no
+ * event: a viewport that mounts the volume fires
+ * `DISPLAY_SET_APPEARANCE_CHANGED` with cause `'mount'`.
  *
  * @param props - The properties for creating the volume actor.
- * @param element - The HTMLDivElement where the volume actor will be rendered.
+ * @param _element - Not used since 6.0, when the helper stopped firing
+ * `VOI_MODIFIED` on it.
  * @param viewportId - The ID of the viewport where the volume actor will be displayed.
- * @param suppressEvents - Optional. Specifies whether to suppress triggering events. Default is false.
- * @param useNativeDataType - Optional. Specifies whether to use the native data type. Default is false.
  * @returns A promise that resolves to the created volume actor.
  * @throws An error if the imageVolume with the specified ID does not exist.
  */
 async function createVolumeActor(
   props: createVolumeActorInterface,
-  element: HTMLDivElement,
-  viewportId: string,
-  suppressEvents = false
+  _element: HTMLDivElement,
+  viewportId: string
 ): Promise<VolumeActor> {
   const imageVolume = await loadVolume(props.volumeId);
 
@@ -52,13 +49,7 @@ async function createVolumeActor(
     );
   }
 
-  return createVolumeActorOfVolume(
-    imageVolume,
-    props,
-    element,
-    viewportId,
-    suppressEvents
-  );
+  return createVolumeActorOfVolume(imageVolume, props, viewportId);
 }
 
 /**
@@ -70,9 +61,7 @@ async function createVolumeActor(
 export async function createVolumeActorOfVolume(
   imageVolume: IImageVolume,
   props: createVolumeActorInterface,
-  element: HTMLDivElement,
-  viewportId: string,
-  suppressEvents = false
+  viewportId: string
 ): Promise<VolumeActor> {
   const { volumeId, callback, blendMode } = props;
   const { imageData } = imageVolume;
@@ -136,34 +125,7 @@ export async function createVolumeActorOfVolume(
     callback({ volumeActor, volumeId });
   }
 
-  if (!suppressEvents) {
-    triggerVOIModified(element, viewportId, volumeActor, volumeId);
-  }
-
   return volumeActor;
-}
-
-function triggerVOIModified(
-  element: HTMLDivElement,
-  viewportId: string,
-  volumeActor: VolumeActor,
-  volumeId: string
-) {
-  const voiRange = volumeActor
-    .getProperty()
-    .getRGBTransferFunction(0)
-    .getRange();
-
-  const voiModifiedEventDetail: VoiModifiedEventDetail = {
-    viewportId,
-    range: {
-      lower: voiRange[0],
-      upper: voiRange[1],
-    },
-    volumeId,
-  };
-
-  triggerEvent(element, Events.VOI_MODIFIED, voiModifiedEventDetail);
 }
 
 export default createVolumeActor;

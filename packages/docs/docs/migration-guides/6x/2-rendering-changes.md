@@ -253,13 +253,15 @@ leave the canvas. Against the legacy volume viewport:
   the GPU and on the CPU. In 5.x a next planar viewport stored the key and drew
   a linear window for a volume.
 - **The key is `voiLUTFunction`** on the planar and on the 3D appearance. The
-  legacy properties and the detail of `VOI_MODIFIED` spell it `VOILUTFunction`.
+  legacy properties and the detail of the legacy `VOI_MODIFIED` spell it
+  `VOILUTFunction`.
 - **A colormap update keeps what it does not name.**
   `{ colormap: { opacity: 0.5 } }` keeps the stored name, opacity mapping and
   threshold, and `{ colormap: { name } }` keeps the stored opacity, as the
   legacy `setProperties`. In 5.x a next planar viewport replaced the whole
-  colormap, so the name was lost. `COLORMAP_MODIFIED` carries the whole
-  colormap. A number in `opacity` after opacity points multiplies the points.
+  colormap, so the name was lost. `DISPLAY_SET_APPEARANCE_CHANGED` carries
+  the whole colormap. A number in `opacity` after opacity points multiplies
+  the points.
   On a legacy volume viewport `setProperties({ colormap: { opacity } })` threw
   the points of a callback away and kept one opacity, so the same two steps
   give another picture.
@@ -275,19 +277,21 @@ leave the canvas. Against the legacy volume viewport:
   application keeps its own default and sets it with
   `setDisplaySetAppearance`. `resetDisplaySetAppearance(displaySetId)`
   goes back to the look of the data.
-- **An appearance is what was set.** `getDisplaySetAppearance(displaySetId)`
-  gives the stored keys. A key that was never set is undefined, where the
-  legacy `getProperties()` read the value back from the actor.
-  `getDefaultVOIRange(displaySetId)` gives the window that the data starts
-  with.
+- **An appearance is what was set; what is drawn has its own getter.**
+  `getDisplaySetAppearance(displaySetId)` gives the overrides: the keys that
+  a caller set, and nothing else. A key that was never set is undefined.
+  `getEffectiveDisplaySetAppearance(displaySetId)` gives what is drawn, the
+  defaults included, as the legacy `getProperties()` did. See
+  [The appearance event and the two getters](#the-appearance-event-and-the-two-getters).
 - **A reset of the appearance does not move the camera.**
   `resetDisplaySetAppearance(displaySetId)` also clears the slab, the blend
   mode, the opacity and the visibility. `resetViewState()` resets the view.
-- **A reset of the appearance clears it to `{}`.** After
+- **A reset of the appearance clears the overrides.** After
   `resetDisplaySetAppearance(displaySetId)`,
-  `getDisplaySetAppearance(displaySetId)` gives `{}`: the `visible: true`
-  that the mount stored goes too, and a hidden display set shows again. To
-  keep a display set hidden, set `{ visible: false }` again after the reset.
+  `getDisplaySetAppearance(displaySetId)` gives `{}`, and a hidden display
+  set shows again. `resetDisplaySetAppearance(displaySetId, ['voiRange'])`
+  resets the window alone. To keep a display set hidden, set
+  `{ visible: false }` again after the reset.
 - **An edit of an actor does not last.** The next appearance update writes
   the look of the actor again. Set the look through the appearance.
 - **No preset on a slice.** A preset is a look of a 3D viewport. For a slice,
@@ -309,6 +313,268 @@ leave the canvas. Against the legacy volume viewport:
   legacy volume viewport drew it with the callback, within two levels of 255,
   measured on a fusion like the TMTV example. Its second argument gives the
   points for a fusion whose volumes have other bounds.
+
+## The appearance event and the two getters
+
+`Events.DISPLAY_SET_APPEARANCE_CHANGED` replaces `VOI_MODIFIED` and
+`COLORMAP_MODIFIED`, which are gone. It fires on the element of the viewport,
+once for each change of the appearance of one display set, for every key of
+the appearance of the family: the window (`voiRange`), `voiLUTFunction`,
+`invert`, `colormap`, `opacity`, `visible`, `blendMode`, `slabThickness`,
+`interpolationType`, `sharpening` and `smoothing` of a planar viewport, also
+`preset`, `color` and `sampleDistanceMultiplier` of a 3D viewport, the
+playback keys of a video, the line and grid keys of an ECG and the window of
+a whole slide. It fires on every viewport family.
+
+### Why it changed
+
+The detail of `VOI_MODIFIED` named a volume and no display set, and it could
+not tell a window that a caller set from a window that the data has. The
+VOI synchronizer therefore wrote the window of every mount into the other
+viewports as an explicit setting, and an application that stored the
+appearance stored computed windows: OHIF guessed with `isComputedVOI`, by
+comparing the stored window with the default window, which also threw away
+a window that the user had set to the default. A window level drag fired
+`VOI_MODIFIED` and a colormap change of a 3D viewport fired both events. A
+slab change fired a made-up `CAMERA_MODIFIED`.
+
+### The cause
+
+Each event says why the appearance changed, in `detail.cause`:
+
+| Cause       | When it fires                                                                                                                                                                                                                                                                                                                               |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `'mount'`   | The display set was mounted and has its first appearance: the defaults of its data and of its family, with the overrides set before the mount. Once per mount, after the display set is bound. `changedKeys` holds every key that has a value                                                                                               |
+| `'edit'`    | A call of `setDisplaySetAppearance` changed an override, and with it maybe the value on display. A call that changes nothing fires nothing                                                                                                                                                                                                  |
+| `'reset'`   | A call of `resetDisplaySetAppearance` removed overrides: the keys are back to their defaults                                                                                                                                                                                                                                                |
+| `'default'` | A value on display changed and no call made it: the default of a key that has no override changed. A scroll of a stack to an image with another window of its own (no window set) fires it with `changedKeys: ['voiRange']`; so does a remount on another render path that has another default window. The overrides are the same as before |
+
+### The detail
+
+| Key                 | What it is                                                                                                                                |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `viewportId`        | The viewport                                                                                                                              |
+| `renderingEngineId` | Its rendering engine                                                                                                                      |
+| `displaySetId`      | The display set whose appearance changed                                                                                                  |
+| `role`              | `'source'` or `'overlay'`                                                                                                                 |
+| `volumeId`          | The volume that the display set draws; undefined for a display set drawn as images                                                        |
+| `cause`             | `'mount'`, `'edit'`, `'reset'` or `'default'`                                                                                             |
+| `changedKeys`       | The keys whose override or value on display changed                                                                                       |
+| `overrides`         | What `getDisplaySetAppearance(displaySetId)` gives after the change: what a caller set. Copy and store this                               |
+| `effective`         | What `getEffectiveDisplaySetAppearance(displaySetId)` gives after the change: what is drawn, the defaults included. Show and compare this |
+
+The type is `Types.EventTypes.DisplaySetAppearanceChangedEvent` (and
+`...EventDetail`), with the appearance of the family as its type parameter,
+`PlanarDisplaySetAppearance` when none is given. The appearance types
+`PlanarDisplaySetAppearance`, `Volume3DDisplaySetAppearance`,
+`VideoDisplaySetAppearance`, `WSIDisplaySetAppearance` and
+`ECGDisplaySetAppearance` are exported from `@cornerstonejs/core`.
+
+### What does not fire
+
+- The labelmap of a segmentation on a planar viewport, and a segmentation
+  volume or surface on a 3D viewport: the segmentation style owns their
+  look. The legacy viewports fired no VOI event for a labelmap either.
+- A display set that is not mounted. Its overrides are stored and the mount
+  fires them.
+- A viewport made with `suppressEvents`.
+- A scroll to an image without a window (a range whose upper end is below
+  its lower end).
+
+A display set that is drawn as images over the source of a stack fires now,
+with its own `displaySetId` and `role: 'overlay'`. The legacy event was
+silent for it, because its detail would have read as the window of the
+source.
+
+### Overrides and the values on display
+
+- `getDisplaySetAppearance(displaySetId?)` gives the overrides only, so
+  `setDisplaySetAppearance(id, getDisplaySetAppearance(id))` changes nothing
+  and fires nothing, on every family. A window that a caller set stays an
+  override also when it equals the default window of the image on display:
+  nothing compares numbers. Without an id it reads the source display set.
+  It gives `{}` for a mounted display set without overrides.
+- `getEffectiveDisplaySetAppearance(displaySetId?)` gives what is drawn: on a
+  planar viewport the overrides over `visible: true`, `opacity: 1`, the
+  default window of the image or the volume on display and the default
+  invert of the image (true for MONOCHROME1); on a 3D viewport over
+  `visible: true`, `opacity: 1` and the default window of the volume; on a
+  video, an ECG and a whole slide over the defaults that the mount sets
+  (`playbackRate: 1`, `loop: true`, `muted: true`, `objectFit: 'contain'`,
+  `lineWidth: 1`, `showGrid: true`). Undefined for a display set that is not
+  mounted.
+- `setDisplaySetAppearance(id, { key: undefined })` removes the override of
+  that key.
+- `resetDisplaySetAppearance(displaySetId?, keys?)` removes all the
+  overrides, or those of the keys given.
+- A 3D reset goes back to the defaults. In 6.0.0-beta.2 it went back to the
+  appearance after the mount, with the overrides set before the mount.
+
+Code that copies an appearance to another viewport or stores it reads the
+overrides. Code that shows a value or compares it (a readout, a toggle such
+as invert, a tool that starts from the current window) reads the effective
+values. In the tools, the magnifier loupe and the viewport capture copy the
+overrides; the window level tools, the livewire, the grow cut and the
+colorbar read the effective values.
+
+### Synchronizers
+
+The VOI synchronizer (`synchronizers.createVOISynchronizer`) acts on
+`'edit'` and `'reset'` only, and on the keys that it synchronises: the
+window, the invert with `syncInvertState` and the colormap with
+`syncColormap`. An edit copies the overrides of those keys that changed; a
+key whose override the edit removed is reset in the target. A reset resets
+the same keys in the target, which goes back to its own defaults: it does
+not take the effective values of the source, which are defaults of the
+source. A mount and a default write nothing into the other viewports, so an
+application that stores the appearance stores only what a user set.
+
+The slab thickness synchronizer listens to this event too, and acts when
+`changedKeys` holds `slabThickness` on the source display set, for every
+cause but `'default'`. A slab change fires no `CAMERA_MODIFIED`.
+
+### Before and after
+
+A window level readout. Before, the readout listened to `VOI_MODIFIED` and
+read the default window at the mount itself:
+
+```ts
+import { Enums, type Types } from '@cornerstonejs/core';
+
+showWindowLevel(
+  viewport.getDisplaySetAppearance()?.voiRange ?? viewport.getDefaultVOIRange()
+);
+
+element.addEventListener(
+  Enums.Events.VOI_MODIFIED,
+  (evt: Types.EventTypes.VoiModifiedEvent) => {
+    if (evt.detail.volumeId && evt.detail.volumeId !== shownVolumeId) {
+      return;
+    }
+
+    showWindowLevel(evt.detail.range);
+  }
+);
+```
+
+After, the mount fires the event with the default window, and the readout
+takes the window on display of the source:
+
+```ts
+import { Enums, type Types } from '@cornerstonejs/core';
+
+element.addEventListener(
+  Enums.Events.DISPLAY_SET_APPEARANCE_CHANGED,
+  (evt: Types.EventTypes.DisplaySetAppearanceChangedEvent) => {
+    const { role, changedKeys, effective } = evt.detail;
+
+    if (role === 'source' && changedKeys.includes('voiRange')) {
+      showWindowLevel(effective.voiRange);
+    }
+  }
+);
+
+showWindowLevel(viewport.getEffectiveDisplaySetAppearance()?.voiRange);
+```
+
+A synchronizer of two viewports that an application wrote. Before, it
+copied every window, also the window of a mount and of a scroll, as an
+explicit setting:
+
+```ts
+first.element.addEventListener(
+  Enums.Events.VOI_MODIFIED,
+  (evt: Types.EventTypes.VoiModifiedEvent) => {
+    second.setDisplaySetAppearance({
+      voiRange: evt.detail.range,
+      invert: evt.detail.invert,
+    });
+  }
+);
+```
+
+After, it copies what a caller set or reset, and nothing else. A key given as
+`undefined` removes the override in the second viewport:
+
+```ts
+first.element.addEventListener(
+  Enums.Events.DISPLAY_SET_APPEARANCE_CHANGED,
+  (evt: Types.EventTypes.DisplaySetAppearanceChangedEvent) => {
+    const { cause, changedKeys, overrides, displaySetId } = evt.detail;
+    const keys = changedKeys.filter(
+      (key) => key === 'voiRange' || key === 'invert'
+    );
+
+    if (!keys.length) {
+      return;
+    }
+
+    if (cause === 'edit') {
+      second.setDisplaySetAppearance(
+        displaySetId,
+        Object.fromEntries(keys.map((key) => [key, overrides[key]]))
+      );
+    } else if (cause === 'reset') {
+      second.resetDisplaySetAppearance(displaySetId, keys);
+    }
+  }
+);
+```
+
+`synchronizers.createVOISynchronizer` of the tools does this, with the
+target display set found by id, by volume or as the source of the target.
+
+A colormap listener. Before:
+
+```ts
+element.addEventListener(
+  Enums.Events.COLORMAP_MODIFIED,
+  (evt: Types.EventTypes.ColormapModifiedEvent) => {
+    const { volumeId, colormap } = evt.detail;
+
+    if (volumeId === ptVolumeId) {
+      updateLegend(colormap.name, colormap.threshold);
+    }
+  }
+);
+```
+
+After, the listener tests the key, and the mount of a PET with a colormap
+fires it too:
+
+```ts
+element.addEventListener(
+  Enums.Events.DISPLAY_SET_APPEARANCE_CHANGED,
+  (evt: Types.EventTypes.DisplaySetAppearanceChangedEvent) => {
+    const { volumeId, changedKeys, effective } = evt.detail;
+
+    if (volumeId === ptVolumeId && changedKeys.includes('colormap')) {
+      updateLegend(effective.colormap?.name, effective.colormap?.threshold);
+    }
+  }
+);
+```
+
+### What the codemod does
+
+The step `api-names` renames `Events.VOI_MODIFIED`,
+`Events.COLORMAP_MODIFIED` and the four detail types, and reports each site
+for review with the text: "DISPLAY_SET_APPEARANCE_CHANGED fires once for
+every change of the appearance of a display set, also at its mount and when
+a scroll shows an image with another default window: test detail.cause and
+detail.changedKeys; the window is detail.effective.voiRange, the colormap
+detail.effective.colormap, what a caller set detail.overrides". In a
+listener that `addEventListener` gets as a function of the file, it rewrites
+the reads of the detail: `range` becomes `effective.voiRange`,
+`VOILUTFunction` `effective.voiLUTFunction`, `invert` `effective.invert`,
+`colormap` `effective.colormap`, also in a destructuring pattern;
+`viewportId` and `volumeId` stay. It reports a listener that is not a
+function of the file, a detail that goes on as a whole, and
+`invertStateChanged`, which has no place. It reports for review a read of
+`getDisplaySetAppearance` whose value is shown or compared (a comparison, a
+`!`, a template string, JSX), with the text "it gives the overrides only,
+what a caller set, and here the value is shown or compared: use
+getEffectiveDisplaySetAppearance for what is drawn, the defaults included".
 
 ## Display area and stretch
 
@@ -516,31 +782,19 @@ point of the image on display.
   configuration an image is requested as on the legacy stack viewport: as an
   interaction request with priority 5. In 5.x a next viewport requested it as
   a prefetch.
-- **`VOI_MODIFIED` carries `invert`,** so the VOI synchronizer syncs an invert
-  from a planar viewport, in stack mode and in volume mode. The event also
-  fires for a change of the invert or of the VOI function when no window was
-  set yet, and at the mount. The detail of a planar viewport has no
-  `invertStateChanged`: a listener compares `detail.invert` with the last
-  value. Its `volumeId` is the volume that the display set draws, none for a
-  display set drawn as images. It stays the volume that the mount drew when
-  the registration of the display set names another volume while the mount
-  loads.
-- **In stack mode `VOI_MODIFIED` fires only for a change.** A
-  `setDisplaySetAppearance` call that leaves the window, the VOI function
-  and the invert of a stack as they were fires none, as the legacy stack
-  viewport on the GPU. In volume mode each such call fires it, as the legacy
-  volume viewport. In 5.x a next planar viewport, and the legacy stack
-  viewport on the CPU, fired it for each call. A scroll is a change when no
-  window is set and the new image has another default window: the event
-  fires once, with the window of the new image, as on the legacy stack
-  viewport on the GPU. It fires on the CPU too, where each image shows with
-  its own window. While a window is set a scroll fires none.
-- **`VOI_MODIFIED` reports the source and a volume over it.** A labelmap
-  fires none, as on the legacy viewports. A display set that is drawn as
-  images over the source of a stack fires none either: the detail names a
-  volume and no display set, so its event would read as the window of the
-  source. Read its window with `getDisplaySetAppearance(displaySetId)`.
-  No event has a range whose upper end is below its lower end.
+- **One appearance event in place of `VOI_MODIFIED` and
+  `COLORMAP_MODIFIED`.** `DISPLAY_SET_APPEARANCE_CHANGED` fires once for each
+  change, in stack mode and in volume mode, on the GPU and on the CPU, with
+  `cause` and `changedKeys`; a call that changes nothing fires none, also in
+  volume mode, where the legacy volume viewport fired for each call. A window
+  set equal to the one on display fires one, because it becomes an override.
+  A scroll to an image with another window of its own fires it with cause
+  `'default'`, on the GPU and on the CPU; while a window is set a scroll
+  fires none. A labelmap fires none. Its `volumeId` is the volume that the
+  display set draws, none for a display set drawn as images, and stays the
+  volume that the mount drew when the registration names another volume
+  while the mount loads. See
+  [The appearance event and the two getters](#the-appearance-event-and-the-two-getters).
 - **`suppressEvents` in the options of a planar viewport is honoured.** No
   call takes a `suppressEvents` argument.
 - **`isReferenceViewable` honours `asOverlay`,** so a labelmap image that is
@@ -1124,16 +1378,17 @@ legacy picture within two levels of 255.
   `voiLUTFunction` (the legacy `VOILUTFunction`), `colormap` (with `name`,
   `opacityMapping` and `threshold`), `blendMode`, `sharpening` and
   `smoothing`.
-- **`resetDisplaySetAppearance(displaySetId)`** goes back to what the volume
-  showed after its mount. It does not move the camera: `resetViewState()`
-  does.
-- **Events.** `VOI_MODIFIED` and `COLORMAP_MODIFIED` fire from a 3D viewport,
-  `VOI_MODIFIED` also when a volume is mounted, and
-  `VOLUME_VIEWPORT_NEW_VOLUME` fires on a mount. None of them fired in 5.x.
-  `PRESET_MODIFIED` does not fire, nothing listened to it. Read the preset
-  with `getDisplaySetAppearance(displaySetId)?.preset`. The detail of
-  `VOI_MODIFIED` has `invert` and no `invertStateChanged`, as on a planar
-  viewport.
+- **`resetDisplaySetAppearance(displaySetId)`** removes the overrides and
+  goes back to the defaults of the volume; the transfer functions are built
+  anew. It does not move the camera: `resetViewState()` does.
+- **Events.** `DISPLAY_SET_APPEARANCE_CHANGED` fires from a 3D viewport, once
+  for each change and once when a display set is mounted, and
+  `VOLUME_VIEWPORT_NEW_VOLUME` fires on a mount. None of them fired in 5.x. A
+  colormap change fires one event, where 6.0.0-beta.2 fired `VOI_MODIFIED`
+  and `COLORMAP_MODIFIED`. `PRESET_MODIFIED` does not fire, nothing listened
+  to it: a preset change fires `DISPLAY_SET_APPEARANCE_CHANGED` with
+  `changedKeys: ['preset']`. Read the preset with
+  `getDisplaySetAppearance(displaySetId)?.preset`.
 - **A surface is a display set.**
   `viewport.addDisplaySet(geometryId, { renderMode: 'vtkGeometry3d' })` mounts
   the surface of a geometry of the cache, `viewport.removeDisplaySet(geometryId)`
