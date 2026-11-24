@@ -1,6 +1,15 @@
 import { getDefaultVolumeVOIRange } from '../src/RenderingEngine/helpers/setDefaultVolumeVOI';
 import * as metaData from '../src/metaData';
 import { MetadataModules } from '../src/enums';
+import getVOIRangeFromWindowLevel from '../src/utilities/getVOIRangeFromWindowLevel';
+
+// The stack and generic viewports get the range from this function.
+it('getVOIRangeFromWindowLevel uses LINEAR for an unknown VOI LUT function', () => {
+  expect(getVOIRangeFromWindowLevel(400, 40, 'BOGUS')).toEqual({
+    lower: -160,
+    upper: 239,
+  });
+});
 
 describe('getDefaultVolumeVOIRange from the VOI LUT module', () => {
   let voiLutModule;

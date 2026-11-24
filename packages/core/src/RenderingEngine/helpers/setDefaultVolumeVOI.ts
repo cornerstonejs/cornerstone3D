@@ -10,7 +10,8 @@ import { loadAndCacheImage } from '../../loaders/imageLoader';
 import * as metaData from '../../metaData';
 import * as windowLevel from '../../utilities/windowLevel';
 import { asArrayFirst } from '../../utilities/asArray';
-import { MetadataModules, RequestType, VOILUTFunctionType } from '../../enums';
+import { getValidVOILUTFunction } from '../../utilities/buildMetadata';
+import { MetadataModules, RequestType } from '../../enums';
 import cache from '../../cache/cache';
 
 const PRIORITY = 0;
@@ -140,19 +141,15 @@ function getVOIFromMetadata(imageVolume: IImageVolume): VOIRange | undefined {
     if (voiLutModule && voiLutModule.windowWidth && voiLutModule.windowCenter) {
       const width = asArrayFirst(voiLutModule.windowWidth);
       const center = asArrayFirst(voiLutModule.windowCenter);
-      const voiLUTFunction = asArrayFirst(voiLutModule.voiLUTFunction);
-
       // Skip if width is 0 or missing
       if (width) {
         voi = {
           windowWidth: width,
           windowCenter: center,
           // toLowHighRange throws on an unknown function
-          voiLUTFunction: Object.values(VOILUTFunctionType).includes(
-            voiLUTFunction
-          )
-            ? voiLUTFunction
-            : undefined,
+          voiLUTFunction: getValidVOILUTFunction(
+            asArrayFirst(voiLutModule.voiLUTFunction)
+          ),
         };
       }
     }
