@@ -72,4 +72,24 @@ function getBufferConfiguration(
   return { numBytes, TypedArrayConstructor };
 }
 
-export { getBufferConfiguration, getConstructorFromType };
+/**
+ * The bytes of a volume texture of this many voxels: the type of the volume
+ * buffer, which is the type that the texture really holds, times the
+ * components of one voxel. Without a type, the count of values.
+ */
+function volumeTextureBytes(
+  voxelCount: number,
+  dataType?: PixelDataTypedArrayString,
+  numberOfComponents = 1
+): number {
+  const values = voxelCount * Math.max(numberOfComponents || 1, 1);
+
+  if (!dataType) {
+    return values;
+  }
+
+  return getBufferConfiguration(dataType, values, { isVolumeBuffer: true })
+    .numBytes;
+}
+
+export { getBufferConfiguration, getConstructorFromType, volumeTextureBytes };

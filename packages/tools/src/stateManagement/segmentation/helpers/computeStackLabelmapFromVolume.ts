@@ -3,6 +3,15 @@ import { cache } from '@cornerstonejs/core';
 import { getSegmentation } from '../getSegmentation';
 import { updateStackSegmentationState } from '../helpers/updateStackSegmentationState';
 import type { LabelmapSegmentationDataVolume } from '../../../types/LabelmapTypes';
+import { getDynamicLabelmapImageIds } from '../labelmapModel/dynamicLabelmapVolume';
+
+/** The labelmap images of a volume; every time point of a 4D labelmap. */
+function getStackImageIds(segmentationVolume: Types.IImageVolume): string[] {
+  return (
+    getDynamicLabelmapImageIds(segmentationVolume) ??
+    segmentationVolume.imageIds
+  );
+}
 
 // This function is responsible for the conversion calculations
 export async function computeStackLabelmapFromVolume({
@@ -12,7 +21,7 @@ export async function computeStackLabelmapFromVolume({
 }): Promise<{ imageIds: string[] }> {
   const segmentationVolume = cache.getVolume(volumeId) as Types.IImageVolume;
 
-  return { imageIds: segmentationVolume.imageIds };
+  return { imageIds: getStackImageIds(segmentationVolume) };
 }
 
 // Updated original function to call the new separate functions
@@ -40,7 +49,7 @@ export function convertVolumeToStackLabelmap({
   return updateStackSegmentationState({
     segmentationId,
     viewportId: options.viewportId,
-    imageIds: segmentationVolume.imageIds,
+    imageIds: getStackImageIds(segmentationVolume),
     options,
   });
 }

@@ -54,6 +54,7 @@ export {
   checkForm,
   compileKey,
   conditionShape,
+  deepFreeze,
   describeForm,
   describeShape,
   didYouMean,

@@ -12,7 +12,12 @@
  * @module displayset/splitRuleSchema
  */
 
-import { conditionShape, matchTestShape, valueShape } from '../safeFunctions';
+import {
+  conditionShape,
+  deepFreeze,
+  matchTestShape,
+  valueShape,
+} from '../safeFunctions';
 import type { Schema, SchemaShape } from '../safeFunctions';
 
 /** The names that only `attributes` can read: values of the display set. */
@@ -32,18 +37,13 @@ const ruleShape: SchemaShape = {
           kind: 'string',
           optional: true,
           description:
-            'The rule id. Optional: the key of the rule in the rule set is the id. When present it must equal that key.',
+            'The rule id. Optional: the key of the rule in the registry is the id. When present it must equal that key.',
         },
         groupId: {
           kind: 'string',
           optional: true,
           description:
             'The group of rules this rule belongs to, for a reader that must recognize display sets from several related rules (for example every mammography rule). Defaults to the rule id.',
-        },
-        priority: {
-          kind: 'priority',
-          description:
-            'Evaluation order: ascending, first match wins. null excludes the rule.',
         },
         description: {
           kind: 'string',
@@ -190,16 +190,6 @@ const nameShape: SchemaShape = {
   function: true,
   forms: {},
 };
-
-function deepFreeze<T>(value: T): T {
-  if (value && typeof value === 'object' && !Object.isFrozen(value)) {
-    Object.freeze(value);
-    for (const entry of Object.values(value)) {
-      deepFreeze(entry);
-    }
-  }
-  return value;
-}
 
 /**
  * The schema of a raw split rule, keyed by shape name. `rule` is the rule
