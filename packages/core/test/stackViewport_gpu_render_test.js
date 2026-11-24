@@ -1234,6 +1234,126 @@ describe('renderingCore -- Stack', () => {
       // stayed and the sigmoid never reached the actor.
       expect(viewport.getTransferFunction().getSize()).toBeGreaterThan(2);
     });
+
+    it('removes a sigmoid that the user selected on resetProperties', async function () {
+      testUtils.createViewports(renderingEngine, {
+        viewportId,
+        orientation: Enums.OrientationAxis.AXIAL,
+      });
+      const imageId = encodeImageIdInfo({
+        loader: 'fakeImageLoader',
+        name: 'resetUserSigmoid',
+        rows: 16,
+        columns: 16,
+        barStart: 4,
+        barWidth: 4,
+        xSpacing: 1,
+        ySpacing: 1,
+      });
+      await imageLoader.loadAndCacheImage(imageId);
+
+      const viewport = renderingEngine.getViewport(viewportId);
+      await viewport.setStack([imageId], 0);
+      viewport.setProperties({
+        VOILUTFunction: Enums.VOILUTFunctionType.SAMPLED_SIGMOID,
+      });
+
+      viewport.resetProperties();
+
+      expect(viewport.getProperties().VOILUTFunction).toBe(
+        Enums.VOILUTFunctionType.LINEAR
+      );
+      expect(viewport.getTransferFunction().getSize()).toBe(2);
+    });
+
+    // Both GPU navigation paths: actor reuse (same size), new actor (new size)
+    [16, 32].forEach((rows) => {
+      it(`keeps an application VOI LUT Function across frames (${rows} rows)`, async function () {
+        testUtils.createViewports(renderingEngine, {
+          viewportId,
+          orientation: Enums.OrientationAxis.AXIAL,
+        });
+        const imageInfo = {
+          loader: 'fakeImageLoader',
+          name: `appFunction${rows}`,
+          rows: 16,
+          columns: 16,
+          barStart: 4,
+          barWidth: 4,
+          xSpacing: 1,
+          ySpacing: 1,
+          sliceIndex: 0,
+        };
+        const imageId1 = encodeImageIdInfo(imageInfo);
+        const imageId2 = encodeImageIdInfo({
+          ...imageInfo,
+          rows,
+          sliceIndex: 1,
+        });
+        const [, image2] = await Promise.all([
+          imageLoader.loadAndCacheImage(imageId1),
+          imageLoader.loadAndCacheImage(imageId2),
+        ]);
+        image2.voiLUT = {
+          firstValueMapped: 0,
+          numBitsPerEntry: 8,
+          lut: [0, 192, 255],
+        };
+
+        const viewport = renderingEngine.getViewport(viewportId);
+        await viewport.setStack([imageId1, imageId2], 0);
+        viewport.setProperties({
+          VOILUTFunction: Enums.VOILUTFunctionType.SAMPLED_SIGMOID,
+        });
+
+        await viewport.setImageIdIndex(1);
+
+        expect(viewport.getProperties().VOILUTFunction).toBe(
+          Enums.VOILUTFunctionType.SAMPLED_SIGMOID
+        );
+        expect(viewport.voiLUTSequenceApplied).toBe(false);
+        expect(viewport.getTransferFunction().getSize()).toBeGreaterThan(2);
+      });
+
+      it(`uses the function of each frame without an application value (${rows} rows)`, async function () {
+        testUtils.createViewports(renderingEngine, {
+          viewportId,
+          orientation: Enums.OrientationAxis.AXIAL,
+        });
+        const imageInfo = {
+          loader: 'fakeImageLoader',
+          name: `frameFunction${rows}`,
+          rows: 16,
+          columns: 16,
+          barStart: 4,
+          barWidth: 4,
+          xSpacing: 1,
+          ySpacing: 1,
+          sliceIndex: 0,
+        };
+        const imageId1 = encodeImageIdInfo(imageInfo);
+        const imageId2 = encodeImageIdInfo({
+          ...imageInfo,
+          rows,
+          sliceIndex: 1,
+        });
+        const [, image2] = await Promise.all([
+          imageLoader.loadAndCacheImage(imageId1),
+          imageLoader.loadAndCacheImage(imageId2),
+        ]);
+        image2.voiLUTFunction = Enums.VOILUTFunctionType.SAMPLED_SIGMOID;
+
+        const viewport = renderingEngine.getViewport(viewportId);
+        await viewport.setStack([imageId1, imageId2], 0);
+
+        await viewport.setImageIdIndex(1);
+
+        expect(viewport.getProperties().VOILUTFunction).toBe(
+          Enums.VOILUTFunctionType.SAMPLED_SIGMOID
+        );
+        expect(viewport.getTransferFunction().getSize()).toBeGreaterThan(2);
+      });
+    });
   });
 
   describe('Flipping', function () {

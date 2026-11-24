@@ -114,4 +114,103 @@ describe('stackViewport_node_render', function () {
     viewport.render();
     return promise;
   });
+
+  describe('VOI on the CPU path', () => {
+    const lutA = { firstValueMapped: 0, numBitsPerEntry: 8, lut: [0, 64, 255] };
+    const lutB = {
+      firstValueMapped: 0,
+      numBitsPerEntry: 8,
+      lut: [0, 192, 255],
+    };
+
+    async function loadFrames(name, setups) {
+      const ids = setups.map((_, sliceIndex) =>
+        encodeImageIdInfo({ ...imageInfo, name, sliceIndex })
+      );
+      const images = await Promise.all(
+        ids.map((id) => imageLoader.loadAndCacheImage(id))
+      );
+      images.forEach((image, i) => Object.assign(image, setups[i]));
+      return ids;
+    }
+
+    const cpuViewport = () => viewport._cpuFallbackEnabledElement.viewport;
+
+    it('uses the VOI LUT Sequence and the function of each frame', async () => {
+      const ids = await loadFrames('cpuFrames', [
+        { voiLUT: lutA },
+        { voiLUT: lutB, voiLUTFunction: 'SIGMOID' },
+        { voiLUT: undefined },
+      ]);
+      await viewport.setStack(ids, 0);
+      expect(cpuViewport().voiLUT).toBe(lutA);
+
+      await viewport.setImageIdIndex(1);
+      expect(cpuViewport().voiLUT).toBe(lutB);
+      expect(cpuViewport().voi.voiLUTFunction).toBe('SIGMOID');
+      expect(viewport.getProperties().VOILUTFunction).toBe('SIGMOID');
+
+      await viewport.setImageIdIndex(2);
+      expect(cpuViewport().voiLUT).toBeUndefined();
+      expect(viewport.getProperties().VOILUTFunction).toBe('LINEAR');
+    });
+
+    it('keeps a VOI LUT Function that the application set across frames', async () => {
+      const ids = await loadFrames('cpuAppFunction', [
+        { voiLUT: lutA },
+        { voiLUT: lutB },
+      ]);
+      await viewport.setStack(ids, 0);
+      viewport.setProperties({ VOILUTFunction: 'SIGMOID' });
+
+      await viewport.setImageIdIndex(1);
+
+      expect(viewport.getProperties().VOILUTFunction).toBe('SIGMOID');
+      expect(cpuViewport().voi.voiLUTFunction).toBe('SIGMOID');
+      expect(cpuViewport().voiLUT).toBeUndefined();
+    });
+
+    it('sends the function and the sequence state in VOI_MODIFIED', async () => {
+      const ids = await loadFrames('cpuEvent', [
+        { voiLUT: lutA, voiLUTFunction: 'LINEAR_EXACT' },
+      ]);
+      await viewport.setStack(ids, 0);
+      const details = [];
+      element.addEventListener(Events.VOI_MODIFIED, (evt) =>
+        details.push(evt.detail)
+      );
+
+      viewport.setProperties({ voiRange: { lower: 0, upper: 2 } });
+
+      expect(details.at(-1)).toEqual(
+        expect.objectContaining({
+          VOILUTFunction: 'LINEAR_EXACT',
+          voiLUTSequenceApplied: true,
+        })
+      );
+    });
+
+    it('drops the VOI LUT Sequence for a colormap, as the GPU path does', async () => {
+      const ids = await loadFrames('cpuColormap', [{ voiLUT: lutA }]);
+      await viewport.setStack(ids, 0);
+      const { voiRange } = viewport.getProperties();
+
+      viewport.setProperties({ colormap: { name: 'hsv' } });
+
+      // The colormap maps the window of the sequence domain linearly.
+      expect(cpuViewport().voiLUT).toBeUndefined();
+      expect(viewport.getProperties().voiRange).toEqual(voiRange);
+    });
+
+    it('does not throw for useVOILUTSequence while a new stack loads', async () => {
+      const ids = await loadFrames('cpuLoading', [{ voiLUT: lutA }]);
+      await viewport.setStack(ids, 0);
+      const pending = viewport.setStack(ids, 0);
+
+      expect(() =>
+        viewport.setProperties({ useVOILUTSequence: false })
+      ).not.toThrow();
+      await pending;
+    });
+  });
 });
