@@ -2,16 +2,17 @@ import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/C
 import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
 
-import type { ColormapPublic, ColormapRegistration } from '../types';
+import type { AppearanceColormap, ColormapRegistration } from '../types';
 import type { OpacityMapping } from '../types/Colormap';
 import isEqual from './isEqual';
 import { actorIsA } from './actorCheck';
+import { getOpacityRampPoints } from './opacityRamp';
 
 /**
  * Per-actor opacity specification. The rendered scalar-opacity function is always derived from
  * these three orthogonal pieces, which means none of them can clobber another:
- *  - `overall`: a single scalar level (e.g. the fusion/master slider value).
- *  - `mapping`: an optional per-value shape (e.g. a hanging-protocol opacity array). Its per-point
+ *  - `overall`: a single scalar level, the `opacity` of the appearance.
+ *  - `mapping`: an optional per-value shape, the `opacityMapping` of the colormap. Its per-point
  *    opacities are *scaled* by `overall` -> rendered_opacity(v) = overall * mapping(v).
  *  - `threshold`: an optional cutoff; values below it render fully transparent.
  *
@@ -21,7 +22,7 @@ import { actorIsA } from './actorCheck';
  */
 interface OpacitySpec {
   overall: number;
-  mapping?: OpacityMapping[];
+  mapping?: readonly OpacityMapping[];
   threshold?: number | null;
 }
 
@@ -137,7 +138,7 @@ function resolveColormap(name?: string): ColormapRegistration | undefined {
  * @param rgbPoints - The RGB points to match against the colormaps.
  * @returns  The matched colormap object or null if no match is found.
  */
-function findMatchingColormap(rgbPoints, actor): ColormapPublic | null {
+function findMatchingColormap(rgbPoints, actor): AppearanceColormap | null {
   const colormapsVTK = vtkColorMaps.rgbPresetNames.map((presetName) =>
     vtkColorMaps.getPresetByName(presetName)
   );
@@ -174,7 +175,7 @@ function findMatchingColormap(rgbPoints, actor): ColormapPublic | null {
     return null;
   }
 
-  const opacity = [];
+  const opacityMapping: OpacityMapping[] = [];
   if (actorIsA(actor, 'vtkVolume') || actorIsA(actor, 'vtkImageSlice')) {
     const opacityPoints = actor
       .getProperty()
@@ -188,20 +189,17 @@ function findMatchingColormap(rgbPoints, actor): ColormapPublic | null {
     }
 
     for (let i = 0; i < opacityPoints.length; i += 2) {
-      opacity.push({
+      opacityMapping.push({
         value: opacityPoints[i],
         opacity: opacityPoints[i + 1],
       });
     }
   }
 
-  const result = {
+  return {
     name: matchedColormap.Name,
-    ...(Array.isArray(opacity) && opacity.length > 0 && { opacity }),
-    ...(typeof opacity === 'number' && { opacity }),
+    ...(opacityMapping.length > 0 && { opacityMapping }),
   };
-
-  return result;
 }
 
 export function setColorMapTransferFunctionForVolumeActor(volumeInfo) {
@@ -250,7 +248,7 @@ export function updateThreshold(volumeActor, newThreshold) {
  */
 export function updateOpacityMapping(
   volumeActor,
-  mapping: OpacityMapping[],
+  mapping: readonly OpacityMapping[] | undefined,
   overall?: number
 ) {
   const spec = getOpacitySpec(volumeActor);
@@ -262,12 +260,13 @@ export function updateOpacityMapping(
 }
 
 /**
- * Reads back the current opacity spec for an actor in public-colormap shape: a scalar `opacity`
- * (the overall level), the per-value `opacityMapping` (if any), and the `threshold`.
+ * Reads back the current opacity spec for an actor in the shape of an appearance: a scalar
+ * `opacity` (the overall level), the per-value `opacityMapping` of the colormap (if any), and
+ * the `threshold`.
  */
 export function getOpacityState(volumeActor): {
   opacity: number;
-  opacityMapping?: OpacityMapping[];
+  opacityMapping?: readonly OpacityMapping[];
   threshold: number | null;
 } {
   const spec = opacitySpecByActor.get(volumeActor);
@@ -287,7 +286,9 @@ export function getOpacityState(volumeActor): {
 
 /**
  * Derives and applies the scalar-opacity function from an opacity spec, then stores the spec on
- * the actor so later overall/threshold/mapping changes can re-derive without flattening.
+ * the actor so later overall/threshold/mapping changes can re-derive without flattening. The
+ * function follows the rule of every render path (`getOpacityRampPoints`); without a mapping it
+ * spans the voxel range of the volume.
  */
 function applyOpacitySpec(volumeActor, spec: OpacitySpec) {
   const overall = spec.overall ?? 1;
@@ -297,33 +298,17 @@ function applyOpacitySpec(volumeActor, spec: OpacitySpec) {
   opacitySpecByActor.set(volumeActor, { overall, mapping, threshold });
 
   if (mapping?.length) {
-    const ofun = vtkPiecewiseFunction.newInstance();
-    const sorted = [...mapping].sort((a, b) => a.value - b.value);
-
-    if (threshold !== null) {
-      // Keep the mapping shape (scaled by overall) but force everything below the threshold to
-      // be fully transparent, with a sharp transition at the threshold.
-      const span =
-        Math.abs(sorted[sorted.length - 1].value - sorted[0].value) || 1;
-      const delta = span * 0.001;
-      ofun.addPoint(sorted[0].value, 0);
-      ofun.addPoint(threshold - delta, 0);
-      sorted.forEach(({ value, opacity }) => {
-        if (value >= threshold) {
-          ofun.addPoint(value, opacity * overall);
-        }
-      });
-    } else {
-      sorted.forEach(({ value, opacity }) => {
-        ofun.addPoint(value, opacity * overall);
-      });
-    }
-
-    volumeActor.getProperty().setScalarOpacity(0, ofun);
+    setScalarOpacityPoints(
+      volumeActor,
+      getOpacityRampPoints({
+        opacity: overall,
+        opacityMapping: mapping,
+        threshold,
+      })
+    );
     return;
   }
 
-  // No per-value mapping: a uniform `overall` opacity with an optional threshold.
   updateOpacityWithThreshold(volumeActor, overall, threshold);
 }
 
@@ -343,26 +328,20 @@ function updateOpacityWithThreshold(volumeActor, opacity, threshold) {
     );
   }
   const range = meta.voxelManager.getRange();
+
+  setScalarOpacityPoints(
+    volumeActor,
+    getOpacityRampPoints({ opacity, threshold }, [range[0], range[1]])
+  );
+}
+
+function setScalarOpacityPoints(
+  volumeActor,
+  points: Array<[number, number]>
+): void {
   const ofun = vtkPiecewiseFunction.newInstance();
 
-  if (threshold !== null) {
-    // Small delta for sharp threshold transition
-    const delta = Math.abs(range[1] - range[0]) * 0.001;
-
-    // Make sure threshold is within range
-    const thresholdValue = Math.max(range[0], Math.min(range[1], threshold));
-
-    // Create points for the piecewise function
-    ofun.addPoint(range[0], 0);
-    ofun.addPoint(thresholdValue - delta, 0);
-    ofun.addPoint(thresholdValue, opacity);
-    ofun.addPoint(range[1], opacity);
-  } else {
-    // Simple uniform opacity without threshold
-    ofun.addPoint(range[0], opacity);
-    ofun.addPoint(range[1], opacity);
-  }
-
+  points.forEach(([value, opacity]) => ofun.addPoint(value, opacity));
   volumeActor.getProperty().setScalarOpacity(0, ofun);
 }
 

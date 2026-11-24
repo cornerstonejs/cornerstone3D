@@ -4,7 +4,8 @@ import { getRenderingEngine } from '@cornerstonejs/core';
 type SyncedAppearance = {
   voiRange?: Types.VOIRange;
   invert?: boolean;
-  colormap?: Types.ColormapPublic;
+  colormap?: Types.AppearanceColormap;
+  opacity?: number;
 };
 
 type SyncedKey = keyof SyncedAppearance;
@@ -25,7 +26,8 @@ type AppearanceViewport = Types.IViewport & {
 
 /**
  * The keys of the appearance that the synchronizer copies: the window, the
- * invert with `syncInvertState`, the colormap with `syncColormap`.
+ * invert with `syncInvertState`, the colormap and the opacity with
+ * `syncColormap`.
  */
 function getSyncedKeys(options?: {
   syncInvertState?: boolean;
@@ -34,7 +36,7 @@ function getSyncedKeys(options?: {
   return [
     'voiRange',
     ...(options?.syncInvertState ? (['invert'] as const) : []),
-    ...(options?.syncColormap ? (['colormap'] as const) : []),
+    ...(options?.syncColormap ? (['colormap', 'opacity'] as const) : []),
   ];
 }
 

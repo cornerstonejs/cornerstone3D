@@ -536,6 +536,7 @@ new display sets.
 rg -n "\.(setProperties|getProperties|resetProperties|setDefaultProperties|getDefaultProperties|clearDefaultProperties|resetToDefaultProperties)\(" src
 rg -n "\.(setBlendMode|getBlendMode|setSlabThickness|getSlabThickness|resetSlabThickness|setSampleDistanceMultiplier|setVOI|setWindowLevel|setAverageWhite|unsetColormap)\(" src
 rg -n "\bVOILUTFunction\b|isComputedVOI|callback:|actorUID" src
+rg -n "colormap[^}]*\bopacity\b|colormap\??\.opacity\b" src
 ```
 
 **Change.** The look of one display set is its appearance.
@@ -590,6 +591,10 @@ returns the keys that were set, and
   actors, so a fusion needs one call for each display set.
 - A preset is a look of a 3D viewport. On a slice use
   `colormap: { name, opacityMapping }`.
+- `colormap.opacity` is gone. A number in it is the `opacity` of the
+  appearance, a list of points is `colormap.opacityMapping`, and the opacity
+  scales the points. An opacity slider that kept the points to scale them
+  sets `opacity` alone. See [One opacity](./2-rendering-changes.md#one-opacity).
 - Do not edit an actor to set a look. The next appearance update writes the
   look of the actor again.
 

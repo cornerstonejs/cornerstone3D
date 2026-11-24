@@ -934,6 +934,35 @@ describe('voiSyncCallback', () => {
     });
   });
 
+  it('copies the opacity with the colormap under syncColormap, as the one opacity of the layer, and resets it in the target', () => {
+    const detail = {
+      changedKeys: ['opacity', 'colormap'],
+      overrides: {
+        opacity: 0.4,
+        colormap: { name: 'hsv', opacityMapping: [{ value: 0, opacity: 0 }] },
+      },
+    };
+    const withOption = makeTarget();
+    const withoutOption = makeTarget();
+    const reset = makeTarget();
+
+    sync(withOption, detail, { syncColormap: true });
+    sync(withoutOption, detail);
+    sync(
+      reset,
+      { cause: 'reset', changedKeys: ['opacity'], overrides: {} },
+      { syncColormap: true }
+    );
+
+    expect(withOption.setDisplaySetAppearance.mock.calls).toEqual([
+      ['ct', { colormap: detail.overrides.colormap, opacity: 0.4 }],
+    ]);
+    expect(withoutOption.setDisplaySetAppearance).not.toHaveBeenCalled();
+    expect(reset.resetDisplaySetAppearance.mock.calls).toEqual([
+      ['ct', ['opacity']],
+    ]);
+  });
+
   it('copies only the synced keys that the edit changed', () => {
     const tViewport = makeTarget();
 

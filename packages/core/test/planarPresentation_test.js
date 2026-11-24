@@ -301,7 +301,8 @@ function collectColormapEvents(viewport) {
 /**
  * The colormap of the last COLORMAP_MODIFIED event of the legacy volume
  * viewport after `setProperties` with the colormap name `hsv` and then with
- * the colormap opacity 0.5 alone.
+ * the colormap opacity 0.5 alone. In 6.0 that opacity is the `opacity` of
+ * the appearance.
  */
 const LEGACY_LAST_COLORMAP = { name: 'hsv', opacity: 0.5 };
 
@@ -336,11 +337,10 @@ describe('Planar presentation, a colormap update keeps what it does not name -- 
     stepwise.setDisplaySetAppearance(stepwiseId, {
       colormap: { name: 'hsv' },
     });
-    stepwise.setDisplaySetAppearance(stepwiseId, {
-      colormap: { opacity: 0.5 },
-    });
+    stepwise.setDisplaySetAppearance(stepwiseId, { opacity: 0.5 });
     atOnce.setDisplaySetAppearance(atOnceId, {
-      colormap: { name: 'hsv', opacity: 0.5 },
+      colormap: { name: 'hsv' },
+      opacity: 0.5,
     });
     await renderAndWait(stepwise);
     await renderAndWait(atOnce);
@@ -362,21 +362,24 @@ describe('Planar presentation, a colormap update keeps what it does not name -- 
     expect(difference).toBeLessThanOrEqual(1);
     expect(stepwise.getDisplaySetAppearance(stepwiseId).colormap).toEqual({
       name: 'hsv',
-      opacity: 0.5,
     });
+    expect(stepwise.getDisplaySetAppearance(stepwiseId).opacity).toBe(
+      legacyLast.opacity
+    );
     expect(nextLast.name).toBe(legacyLast.name);
-    expect(nextLast.opacity).toBe(0.5);
   }, 60000);
 
   it('keeps the opacity and the threshold when only the name changes', async function () {
     stepwise.setDisplaySetAppearance(stepwiseId, {
-      colormap: { name: 'hsv', opacity: 0.5, threshold: 100 },
+      colormap: { name: 'hsv', threshold: 100 },
+      opacity: 0.5,
     });
     stepwise.setDisplaySetAppearance(stepwiseId, {
       colormap: { name: 'Grayscale' },
     });
     atOnce.setDisplaySetAppearance(atOnceId, {
-      colormap: { name: 'Grayscale', opacity: 0.5, threshold: 100 },
+      colormap: { name: 'Grayscale', threshold: 100 },
+      opacity: 0.5,
     });
     await renderAndWait(stepwise);
     await renderAndWait(atOnce);
@@ -390,9 +393,9 @@ describe('Planar presentation, a colormap update keeps what it does not name -- 
     expect(difference).toBeLessThanOrEqual(1);
     expect(stepwise.getDisplaySetAppearance(stepwiseId).colormap).toEqual({
       name: 'Grayscale',
-      opacity: 0.5,
       threshold: 100,
     });
+    expect(stepwise.getDisplaySetAppearance(stepwiseId).opacity).toBe(0.5);
   }, 60000);
 });
 
@@ -440,7 +443,7 @@ async function createFlatVolume(name, value) {
   return volumeId;
 }
 
-describe('Planar presentation, a list of opacities in a colormap -- ', () => {
+describe('Planar presentation, the opacity mapping of a colormap -- ', () => {
   let renderingEngine;
 
   beforeEach(function () {
@@ -451,7 +454,7 @@ describe('Planar presentation, a list of opacities in a colormap -- ', () => {
     cleanupEngine();
   });
 
-  it('reads a list of opacities in opacity as an opacityMapping, as the legacy volume viewport, on every next draw path', async function () {
+  it('reads an opacityMapping as values of the data, as the legacy volume viewport read a list in opacity, on every next draw path', async function () {
     const sourceId = await createFlatVolume('opacityListSource', 0);
     const overlayId = await createRampVolume('opacityListOverlay');
     const overlayWindow = { lower: 0, upper: 252 };
@@ -466,61 +469,49 @@ describe('Planar presentation, a list of opacities in a colormap -- ', () => {
     const rows = [];
 
     for (const path of NEXT_PATHS) {
-      const viewports = createViewports(renderingEngine, [
-        `${path.viewportId}List`,
+      const [viewport] = createViewports(renderingEngine, [
         `${path.viewportId}Mapping`,
       ]);
-      const colormaps = [
-        {
-          name: 'Grayscale',
-          opacity: OPACITY_LIST.map((point) => ({ ...point })),
-        },
-        {
+      const sourceDisplaySetId = await showVolumeOnNext(
+        viewport,
+        sourceId,
+        path.options
+      );
+      const overlayDisplaySetId = `presentation:${viewport.id}:${overlayId}`;
+
+      cornerstone3D.displaySetRegistry.add(overlayDisplaySetId, {
+        imageIds: cache.getVolume(overlayId).imageIds,
+        volumeId: overlayId,
+      });
+      await viewport.addDisplaySet(overlayDisplaySetId, {
+        mode: 'volume',
+        ...path.options,
+      });
+      viewport.setDisplaySetAppearance(sourceDisplaySetId, {
+        voiRange: { lower: 0, upper: 252 },
+      });
+      viewport.setDisplaySetAppearance(overlayDisplaySetId, {
+        voiRange: overlayWindow,
+        colormap: {
           name: 'Grayscale',
           opacityMapping: OPACITY_LIST.map((point) => ({ ...point })),
         },
-      ];
-
-      for (const [index, viewport] of viewports.entries()) {
-        const sourceDisplaySetId = await showVolumeOnNext(
-          viewport,
-          sourceId,
-          path.options
-        );
-        const overlayDisplaySetId = `presentation:${viewport.id}:${overlayId}`;
-
-        cornerstone3D.displaySetRegistry.add(overlayDisplaySetId, {
-          imageIds: cache.getVolume(overlayId).imageIds,
-          volumeId: overlayId,
-        });
-        await viewport.addDisplaySet(overlayDisplaySetId, {
-          mode: 'volume',
-          ...path.options,
-        });
-        viewport.setDisplaySetAppearance(sourceDisplaySetId, {
-          voiRange: { lower: 0, upper: 252 },
-        });
-        viewport.setDisplaySetAppearance(overlayDisplaySetId, {
-          voiRange: overlayWindow,
-          colormap: colormaps[index],
-        });
-        await renderAndWait(viewport);
-      }
-
+      });
+      await renderAndWait(viewport);
       await waitForDraws();
 
-      const [listed, mapped] = viewports;
       const drawsWithVtk = path.drawPath.endsWith('-gpu');
+      const row = middleRow(readPixels(viewport)).filter((_, x) => x % 4 === 0);
 
       rows.push({
         path: path.viewportId,
-        drawPath: drawPathOf(listed.getRenderPlan()[0]),
-        listed: middleRow(readPixels(listed)).filter((_, x) => x % 4 === 0),
-        listedPoints: drawsWithVtk ? opacityPointsOf(listed) : null,
-        mappedPoints: drawsWithVtk ? opacityPointsOf(mapped) : null,
-        largestToMapping: getLargestDifference(
-          readPixels(listed),
-          readPixels(mapped)
+        drawPath: drawPathOf(viewport.getRenderPlan()[0]),
+        mapped: row,
+        mappedPoints: drawsWithVtk ? opacityPointsOf(viewport) : null,
+        largestToLegacy: Math.max(
+          ...row.map((value, index) =>
+            Math.abs(value - LEGACY_OPACITY_LIST_MIDDLE_ROW[index])
+          )
         ),
       });
     }
@@ -536,12 +527,15 @@ describe('Planar presentation, a list of opacities in a colormap -- ', () => {
     rows.forEach((row, index) => {
       expect(row.drawPath).toBe(NEXT_PATHS[index].drawPath);
 
-      if (row.listedPoints) {
-        expect(row.listedPoints).toEqual(LEGACY_OPACITY_LIST_POINTS);
+      if (row.mappedPoints) {
         expect(row.mappedPoints).toEqual(LEGACY_OPACITY_LIST_POINTS);
       }
 
-      expect(row.largestToMapping).toBe(0);
+      expect(
+        Math.max(
+          ...row.mapped.map((value, x) => Math.abs(value - rows[0].mapped[x]))
+        )
+      ).toBeLessThanOrEqual(1);
     });
   }, 60000);
 });

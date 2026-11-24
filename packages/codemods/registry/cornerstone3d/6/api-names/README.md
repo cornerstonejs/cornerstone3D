@@ -212,6 +212,23 @@ part of a view that another viewport can take is its framing.
   `DisplayAreaModifiedEventDetail`. Review: each `setViewState` whose literal
   patch has `displayArea`, which shows the area at scale `[1, 1]` now when
   the patch has no `scale`, `scaleMode`, `anchorWorld` or `anchorCanvas`.
+- One opacity: in an appearance literal that reaches
+  `setDisplaySetAppearance` (or `setDisplaySetPresentation`), the
+  `appearance` of a mount entry, or a value typed
+  `PlanarDisplaySetAppearance` or `Volume3DDisplaySetAppearance`,
+  `colormap: { opacity: <number> }` becomes `opacity: <number>` beside the
+  colormap, and `colormap: { opacity: [...] }` becomes
+  `colormap: { opacityMapping: [...] }` (also in a `const` that the
+  appearance names, and in a value typed `Types.AppearanceColormap`).
+  `Types.ColormapPublic` becomes `Types.AppearanceColormap`. Reported,
+  manual: a number when the appearance has an `opacity` too, a value that is
+  not a number or a list that the file shows, a number in a colormap that a
+  `const` holds, a colormap with both `opacity` and `opacityMapping`, a
+  receiver known by its name only, and, in a file that imports Cornerstone,
+  a colormap with `opacity` that the file does not show to reach Cornerstone
+  (a key `colormap`, a `const` whose name ends in `colormap`), a spread into a
+  colormap whose type has `opacity`, each read of `colormap.opacity`, and
+  `ColormapPublic` imported from `@cornerstonejs/core/types`.
 - Reported, manual: a method of the look on a receiver known by its name
   only, on a receiver that the file gives a type of the application (a cast
   such as `viewport as unknown as { setDisplaySetPresentation(): void }`, or

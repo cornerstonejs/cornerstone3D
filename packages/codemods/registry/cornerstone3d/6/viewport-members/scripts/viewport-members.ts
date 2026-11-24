@@ -11,6 +11,7 @@ import {
   coreReExports,
   declarationNodeOf,
   enclosingFunction,
+  indentOf,
   isBoundTo,
   isCoreExport,
   isMountedBefore,
@@ -21,6 +22,7 @@ import {
   viewportEvidence,
   methodCall,
   objectEntries,
+  removeProperty,
   site,
   stableBinding,
   unwrap,
@@ -394,11 +396,16 @@ function keyName(key: Node): string {
 
 /**
  * Returns the text of an object literal with the keys of its pairs renamed by
- * a map of key names. A quoted key keeps its quotes.
+ * a map of key names, and with the edits of `extra` inside it. A quoted key
+ * keeps its quotes.
  */
-function renameKeys(objectNode: Node, names: Record<string, string>): string {
+function renameKeys(
+  objectNode: Node,
+  names: Record<string, string>,
+  extra: Edit[] = []
+): string {
   const offset = objectNode.range().start.index;
-  const keys = objectNode
+  const keyEdits = objectNode
     .children()
     .filter((child) => child.kind() === 'pair')
     .map((pair) => pair.field('key'))
@@ -406,18 +413,202 @@ function renameKeys(objectNode: Node, names: Record<string, string>): string {
       (key) =>
         key && names[keyName(key)] && names[keyName(key)] !== keyName(key)
     )
-    .reverse();
+    .map((key): Edit => {
+      const quote = key.kind() === 'string' ? key.text()[0] : '';
+
+      return {
+        startPos: key.range().start.index,
+        endPos: key.range().end.index,
+        insertedText: `${quote}${names[keyName(key)]}${quote}`,
+      };
+    });
   let text = objectNode.text();
 
-  for (const key of keys) {
-    const start = key.range().start.index - offset;
-    const end = key.range().end.index - offset;
-    const quote = key.kind() === 'string' ? key.text()[0] : '';
-
-    text = `${text.slice(0, start)}${quote}${names[keyName(key)]}${quote}${text.slice(end)}`;
+  for (const edit of [...keyEdits, ...extra].sort(
+    (a, b) => b.startPos - a.startPos
+  )) {
+    text = `${text.slice(0, edit.startPos - offset)}${edit.insertedText}${text.slice(edit.endPos - offset)}`;
   }
 
   return text;
+}
+
+/** The text of a report of `colormap.opacity`, word for word in the guide. */
+const COLORMAP_OPACITY =
+  'colormap.opacity is gone: a number is the opacity of the appearance (opacity beside the colormap), a list of { value, opacity } points is colormap.opacityMapping';
+
+/** The calls that give an array. */
+const ARRAY_METHODS = new Set(['map', 'filter', 'slice', 'concat', 'flatMap']);
+
+/**
+ * The literal that an expression holds: the expression, or the value of the
+ * `const` that a name refers to, through parentheses and casts.
+ */
+function heldLiteral(
+  node: Node | null | undefined,
+  depth = 0
+): Node | undefined {
+  if (!node || depth > 2) {
+    return undefined;
+  }
+
+  const inner = unwrap(node);
+  const kind = inner.kind();
+
+  if (kind !== 'identifier' && kind !== 'shorthand_property_identifier') {
+    return inner;
+  }
+
+  const declaration = stableBinding(inner);
+  const holder = declaration?.parent();
+  const value =
+    holder?.kind() === 'variable_declarator' &&
+    holder.field('name')?.id() === declaration.id()
+      ? holder.field('value')
+      : undefined;
+
+  return value ? heldLiteral(value, depth + 1) : undefined;
+}
+
+/**
+ * What a value of `colormap.opacity` is: a number, a list of points, or
+ * unknown.
+ */
+function opacityKind(value: Node | undefined): 'number' | 'list' | undefined {
+  const literal = heldLiteral(value);
+  const kind = literal?.kind();
+
+  if (
+    kind === 'number' ||
+    (kind === 'unary_expression' && /^[-+]\s*[\d.]/.test(literal.text()))
+  ) {
+    return 'number';
+  }
+
+  if (kind === 'array') {
+    return 'list';
+  }
+
+  const callee =
+    kind === 'call_expression' ? unwrap(literal.field('function')) : undefined;
+
+  if (
+    callee?.kind() === 'member_expression' &&
+    ARRAY_METHODS.has(callee.field('property')?.text() ?? '')
+  ) {
+    return 'list';
+  }
+
+  return callee?.text() === 'Array.from' || callee?.text() === 'Array.of'
+    ? 'list'
+    : undefined;
+}
+
+/**
+ * The edits that write `colormap.opacity` of the literal of `setProperties`
+ * in the form of 6.0, where there is one opacity: a list of points becomes
+ * `colormap.opacityMapping`, a number becomes the `opacity` of the
+ * appearance beside the colormap. A reason when the value is not a number or
+ * a list that the file shows; no edits without `colormap.opacity`.
+ */
+function colormapOpacityEdits(
+  rootNode: Node,
+  objectNode: Node
+): { edits: Edit[] } | { reason: string } {
+  const colormapPair = objectNode
+    .children()
+    .find(
+      (child) =>
+        child.kind() === 'pair' && keyName(child.field('key')) === 'colormap'
+    );
+  const colormap = colormapPair?.field('value')
+    ? unwrap(colormapPair.field('value'))
+    : undefined;
+  const entry =
+    colormap?.kind() === 'object'
+      ? colormap
+          .children()
+          .find(
+            (child) =>
+              (child.kind() === 'pair' &&
+                keyName(child.field('key')) === 'opacity') ||
+              (child.kind() === 'shorthand_property_identifier' &&
+                child.text() === 'opacity')
+          )
+      : undefined;
+
+  if (!entry) {
+    return { edits: [] };
+  }
+
+  const isShorthand = entry.kind() === 'shorthand_property_identifier';
+  const value = isShorthand ? entry : entry.field('value');
+  const kind = opacityKind(value);
+
+  if (kind === 'list') {
+    if (objectEntries(colormap).keys.includes('opacityMapping')) {
+      return { reason: 'the colormap has an opacityMapping too' };
+    }
+
+    const key = isShorthand ? entry : entry.field('key');
+
+    return {
+      edits: [
+        {
+          startPos: key.range().start.index,
+          endPos: key.range().end.index,
+          insertedText: isShorthand
+            ? 'opacityMapping: opacity'
+            : 'opacityMapping',
+        },
+      ],
+    };
+  }
+
+  if (kind !== 'number') {
+    return {
+      reason: 'its value is not a number or a list that the file shows',
+    };
+  }
+
+  const opacityText = isShorthand ? 'opacity' : `opacity: ${value.text()}`;
+  const others = colormap
+    .children()
+    .filter(
+      (child) =>
+        child.isNamed() &&
+        child.kind() !== 'comment' &&
+        child.id() !== entry.id()
+    );
+
+  if (!others.length) {
+    return {
+      edits: [
+        {
+          startPos: colormapPair.range().start.index,
+          endPos: colormapPair.range().end.index,
+          insertedText: opacityText,
+        },
+      ],
+    };
+  }
+
+  const end = colormapPair.range().end.index;
+  const separator =
+    colormapPair.range().start.line > objectNode.range().start.line
+      ? `,\n${indentOf(rootNode, colormapPair)}`
+      : ', ';
+
+  return {
+    edits: [
+      removeProperty(entry),
+      {
+        startPos: end,
+        endPos: end,
+        insertedText: `${separator}${opacityText}`,
+      },
+    ],
+  };
 }
 
 /**
@@ -483,12 +674,24 @@ function rewriteSetProperties(
     );
   }
 
+  const colormap = isAppearance
+    ? colormapOpacityEdits(run.rootNode, args[0])
+    : { edits: [] };
+
+  if ('reason' in colormap) {
+    return reportSite(
+      run,
+      `setProperties: colormap.opacity: ${colormap.reason}, ${COLORMAP_OPACITY}`,
+      call
+    );
+  }
+
   const method = isEcgView ? 'setViewState' : 'setDisplaySetAppearance';
   const names = isEcgView ? ECG_VIEW_KEYS : RENAMED_APPEARANCE_KEYS;
 
   return run.edits.add(
     property.replace(method),
-    args[0].replace(renameKeys(args[0], names))
+    args[0].replace(renameKeys(args[0], names, colormap.edits))
   );
 }
 

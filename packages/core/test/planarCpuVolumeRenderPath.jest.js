@@ -839,7 +839,7 @@ describe('PlanarCpuSliceCanvas', () => {
     expect(channel(pixels, 3)).toEqual([255, 255, 255, 255]);
   });
 
-  it('reads the values of a colormap opacity array as values of the data, as the legacy volume viewport and the GPU draw step do', () => {
+  it('reads the values of a colormap opacity mapping as values of the data, as the legacy volume viewport and the GPU draw step do', () => {
     const { pixels } = drawSlice(
       createTestVolume({ ArrayType: Float32Array, modality: 'PT' }),
       slice(new Float32Array([0, 1, 5, 10]), { width: 4 }),
@@ -847,7 +847,7 @@ describe('PlanarCpuSliceCanvas', () => {
         voiRange: { lower: 0, upper: 20 },
         colormap: {
           name: 'hsv',
-          opacity: [
+          opacityMapping: [
             { value: 0, opacity: 0 },
             { value: 10, opacity: 1 },
           ],
@@ -936,7 +936,7 @@ describe('PlanarCpuSliceCanvas', () => {
         voiRange: { lower: 0, upper: 255 },
         colormap: {
           name: 'hsv',
-          opacity: [
+          opacityMapping: [
             { value: 0, opacity: 0 },
             { value: 255, opacity: 0.6 },
           ],

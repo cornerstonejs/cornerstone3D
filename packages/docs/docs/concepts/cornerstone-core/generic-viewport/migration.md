@@ -176,8 +176,8 @@ await viewport.setDisplaySets(
 viewport.setDisplaySetAppearance(ptDisplaySetId, {
   colormap: {
     name: 'hsv',
-    opacity: 0.4,
   },
+  opacity: 0.4,
 });
 ```
 

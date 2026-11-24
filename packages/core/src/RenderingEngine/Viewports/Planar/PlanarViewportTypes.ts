@@ -9,7 +9,7 @@ import type {
 } from '../../../enums';
 import type {
   ActorEntry,
-  ColormapPublic,
+  AppearanceColormap,
   IImage,
   IImageVolume,
   OrientationVectors,
@@ -261,7 +261,7 @@ export interface PlanarPayload {
 }
 
 export interface PlanarAppearanceProps extends BaseAppearanceProps {
-  colormap?: ColormapPublic;
+  colormap?: AppearanceColormap;
   voiRange?: VOIRange;
   voiLUTFunction?: VOILUTFunctionType;
   invert?: boolean;

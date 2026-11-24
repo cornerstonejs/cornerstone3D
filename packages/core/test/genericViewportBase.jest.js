@@ -465,6 +465,42 @@ describe('BaseViewport', () => {
       });
     });
 
+    it('merges a colormap one level deep, and removes a colormap field given as undefined', () => {
+      const { viewport } = createHarness();
+      const opacityMapping = [
+        { value: 0, opacity: 0 },
+        { value: 5, opacity: 0.9 },
+      ];
+
+      viewport.setDisplaySetAppearance('ds-1', {
+        colormap: { name: 'hsv', opacityMapping },
+      });
+      viewport.setDisplaySetAppearance('ds-1', {
+        colormap: { threshold: 2 },
+        opacity: 0.5,
+      });
+
+      expect(viewport.getDisplaySetAppearance('ds-1')).toEqual({
+        colormap: { name: 'hsv', opacityMapping, threshold: 2 },
+        opacity: 0.5,
+      });
+
+      viewport.setDisplaySetAppearance('ds-1', {
+        colormap: { opacityMapping: undefined },
+      });
+
+      expect(viewport.getDisplaySetAppearance('ds-1').colormap).toEqual({
+        name: 'hsv',
+        threshold: 2,
+      });
+
+      viewport.setDisplaySetAppearance('ds-1', { colormap: undefined });
+
+      expect(viewport.getDisplaySetAppearance('ds-1')).toEqual({
+        opacity: 0.5,
+      });
+    });
+
     it('is a no-op when called with props only and nothing is mounted', () => {
       const { viewport } = createHarness();
       const renderCountBefore = viewport.renderCount;

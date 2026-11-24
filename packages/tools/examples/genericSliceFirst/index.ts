@@ -60,7 +60,7 @@ const ptVoiRange = { lower: 0, upper: 5 };
  */
 const ptColormap = {
   name: 'hsv',
-  opacity: [
+  opacityMapping: [
     { value: 0, opacity: 0 },
     { value: 0.5, opacity: 0.25 },
     { value: 2.5, opacity: 0.6 },

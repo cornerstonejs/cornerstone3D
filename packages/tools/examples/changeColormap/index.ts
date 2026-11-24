@@ -75,8 +75,8 @@ addButtonToToolbar({
       viewport.setDisplaySetAppearance(ptDisplaySetId, {
         colormap: {
           name: 'hsv',
-          opacity: opacity,
         },
+        opacity: opacity,
         voiRange: {
           upper: 5,
           lower: 0,
@@ -114,11 +114,9 @@ addSliderToToolbar({
   onSelectedValueChange: (value) => {
     opacity = Number(value) / 255;
 
-    // Adjust the opacity of the colormap by specifying the desired opacity value and passing it inside the 'colormap' object.
+    // Adjust the opacity of the PET layer by passing it as the opacity of its appearance.
     viewport.setDisplaySetAppearance(ptDisplaySetId, {
-      colormap: {
-        opacity: opacity,
-      },
+      opacity: opacity,
     });
     viewport.render();
   },

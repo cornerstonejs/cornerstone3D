@@ -1670,7 +1670,7 @@ function placeLabel(place: KeyPlace): string {
  * Returns the object literals of a file that a key rule reaches, each with
  * what shows it: proven, or a receiver shown by its name alone.
  */
-function placeObjects(
+export function placeObjects(
   run: Run,
   place: KeyPlace
 ): { object: Node; evidence: Evidence; at: Node }[] {
@@ -1745,7 +1745,7 @@ function placeObjects(
  * Returns the entry of an object literal with a key, and the node of its
  * key: a pair, a shorthand property or a method.
  */
-function entryOf(
+export function entryOf(
   object: Node,
   key: string
 ): { entry: Node; keyNode: Node } | undefined {
@@ -1769,7 +1769,7 @@ function entryOf(
 /**
  * Returns the object literal at a path of keys inside an object literal.
  */
-function objectAtPath(object: Node, path: string[]): Node | undefined {
+export function objectAtPath(object: Node, path: string[]): Node | undefined {
   let current: Node | undefined = object;
 
   for (const key of path) {

@@ -101,7 +101,11 @@ import type RGB from './RGB';
 import type { Memo, HistoryMemo } from '../utilities/historyMemo';
 import type { VoxelManager } from '../utilities/VoxelManager';
 import type RLEVoxelMap from '../utilities/RLEVoxelMap';
-import type { ColormapPublic, ColormapRegistration } from './Colormap';
+import type {
+  AppearanceColormap,
+  ColormapRegistration,
+  OpacityMapping,
+} from './Colormap';
 import type {
   PixelDataTypedArray,
   PixelDataTypedArrayString,
@@ -314,8 +318,9 @@ export type {
   IMesh,
   // Color
   RGB,
-  ColormapPublic,
+  AppearanceColormap,
   ColormapRegistration,
+  OpacityMapping,
   // PixelData
   PixelDataTypedArray,
   PixelDataTypedArrayString,

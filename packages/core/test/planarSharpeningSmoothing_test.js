@@ -105,7 +105,7 @@ const LEGACY_BOTH_AGAINST_SHARPENING = 0;
 /** The colormap of the second layer of the fusion. */
 const FUSION_COLORMAP = {
   name: 'hsv',
-  opacity: [
+  opacityMapping: [
     { value: 0, opacity: 0 },
     { value: 255, opacity: 0.6 },
   ],

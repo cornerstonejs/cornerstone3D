@@ -29,7 +29,9 @@ its name, and so is a legacy member in brackets
   keeps its quotes. `preset` and
   `sampleDistanceMultiplier` count only on a viewport typed as a 3D viewport.
   An ECG `setProperties` of view keys becomes `setViewState` (`layoutType`
-  becomes `traceLayout`).
+  becomes `traceLayout`). In its `colormap` literal a number in `opacity`
+  becomes the `opacity` of the appearance beside the colormap, and a list in
+  `opacity` becomes `opacityMapping` (6.0 has one opacity).
 - `resetCameraForResize()` becomes `resetViewStateForResize()`,
   `getTargetImageIdIndex()` `getCurrentImageIdIndex()`.
 - `getViewPresentation(selector)` and `setViewPresentation(presentation)`
@@ -72,6 +74,8 @@ its name, and so is a legacy member in brackets
 All manual, with the rule name: `setProperties` with a second argument, a
 variable, a spread, or a key without a twin (`slabThickness`, `preset`,
 `isComputedVOI` and the others), or before the viewport shows its data;
+`setProperties` whose `colormap.opacity` is not a number or a list that the
+file shows, or whose colormap has `opacityMapping` too;
 `setAverageWhite` before the viewport shows its data;
 `resetCamera` with `resetToCenter` or `storeAsInitialCamera`; `getCamera`,
 `setCamera` of other keys, `getProperties`, `resetProperties`, the default

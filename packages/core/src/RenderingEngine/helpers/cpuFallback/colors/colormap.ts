@@ -1,7 +1,7 @@
 import LookupTable from './lookupTable';
 import CPU_COLORMAPS from '../../../../constants/cpuColormaps';
 import type {
-  ColormapPublic,
+  AppearanceColormap,
   ColormapRegistration,
   CPUFallbackColormap,
   CPUFallbackColormapData,
@@ -10,6 +10,11 @@ import type {
 } from '../../../../types';
 import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import { resolveColormap as resolveSharedColormap } from '../../../../utilities/colormap';
+import {
+  getOpacityRampPoints,
+  getOpacityRampValue,
+  hasOpacityRamp,
+} from '../../../../utilities/opacityRamp';
 
 const COLOR_TRANSPARENT: Point4 = [0, 0, 0, 0];
 const CPU_FALLBACK_COLOR_COUNT = 256;
@@ -239,7 +244,7 @@ export function getColormapsList() {
 }
 
 export function resolveCPUFallbackColormap(
-  colormap?: string | ColormapPublic,
+  colormap?: string | AppearanceColormap,
   fallbackColormap?: CPUFallbackColormap,
   options?: {
     voiRange?: VOIRange;
@@ -465,16 +470,22 @@ function findCPUFallbackColormapId(name: string): string | undefined {
   });
 }
 
+/**
+ * The colormap with the alpha of the ramp of a colormap in each colour: the
+ * `opacityMapping` and the `threshold`, by the rule of every render path
+ * (`getOpacityRampPoints`), over the VOI range that the table spans. The
+ * opacity of the appearance is not in the table: the layer is drawn with it.
+ */
 function resolveCPUFallbackOpacityMappedColormap(
   baseColormap: CPUFallbackColormap | undefined,
-  colormap: ColormapPublic | undefined,
+  colormap: AppearanceColormap | undefined,
   voiRange?: VOIRange
 ): CPUFallbackColormap | undefined {
   if (!baseColormap) {
     return;
   }
 
-  if (colormap?.opacity === undefined && colormap?.threshold === undefined) {
+  if (!hasOpacityRamp(colormap)) {
     return baseColormap;
   }
 
@@ -482,17 +493,28 @@ function resolveCPUFallbackOpacityMappedColormap(
     return baseColormap;
   }
 
+  const points = getOpacityRampPoints(
+    {
+      opacityMapping: colormap.opacityMapping,
+      threshold: colormap.threshold,
+    },
+    [voiRange.lower, voiRange.upper]
+  );
   const alphaMappedColors = createOpacityMappedColors(
     baseColormap,
-    colormap,
+    points,
     voiRange
   );
   const id = [
     baseColormap.getId(),
     `lower:${roundColormapNumber(voiRange.lower)}`,
     `upper:${roundColormapNumber(voiRange.upper)}`,
-    `opacity:${serializeColormapOpacity(colormap?.opacity)}`,
-    `threshold:${roundColormapNumber(colormap?.threshold)}`,
+    `opacity:${points
+      .map(
+        ([value, alpha]) =>
+          `${roundColormapNumber(value)}-${roundColormapNumber(alpha)}`
+      )
+      .join(',')}`,
   ].join(':');
 
   return getColormap(id, {
@@ -504,7 +526,7 @@ function resolveCPUFallbackOpacityMappedColormap(
 
 function createOpacityMappedColors(
   baseColormap: CPUFallbackColormap,
-  colormap: ColormapPublic | undefined,
+  points: Array<[number, number]>,
   voiRange: VOIRange
 ): Point4[] {
   const numberOfColors = Math.max(baseColormap.getNumberOfColors(), 1);
@@ -518,11 +540,7 @@ function createOpacityMappedColors(
     const scalarValue =
       voiRange.lower +
       (voiRange.upper - voiRange.lower) * getCPUFallbackUnitValue(index);
-    const opacity = resolveOpacityAtValue(
-      scalarValue,
-      colormap?.opacity,
-      colormap?.threshold
-    );
+    const opacity = getOpacityRampValue(points, scalarValue);
 
     return [
       rgba[0],
@@ -531,69 +549,6 @@ function createOpacityMappedColors(
       Math.round((rgba[3] / 255) * opacity * 255),
     ];
   });
-}
-
-function resolveOpacityAtValue(
-  scalarValue: number,
-  opacity: ColormapPublic['opacity'],
-  threshold?: number
-): number {
-  if (threshold !== undefined && scalarValue < threshold) {
-    return 0;
-  }
-
-  if (opacity === undefined) {
-    return 1;
-  }
-
-  if (typeof opacity === 'number') {
-    return clampToUnit(opacity);
-  }
-
-  if (!opacity.length) {
-    return 1;
-  }
-
-  if (scalarValue <= opacity[0].value) {
-    return clampToUnit(opacity[0].opacity);
-  }
-
-  for (let i = 1; i < opacity.length; i++) {
-    const previous = opacity[i - 1];
-    const current = opacity[i];
-
-    if (scalarValue <= current.value) {
-      const range = current.value - previous.value;
-      const t = range > 0 ? (scalarValue - previous.value) / range : 0;
-
-      return clampToUnit(
-        previous.opacity + (current.opacity - previous.opacity) * t
-      );
-    }
-  }
-
-  return clampToUnit(opacity[opacity.length - 1].opacity);
-}
-
-function clampToUnit(value: number): number {
-  return Math.max(0, Math.min(1, value));
-}
-
-function serializeColormapOpacity(opacity: ColormapPublic['opacity']): string {
-  if (opacity === undefined) {
-    return 'none';
-  }
-
-  if (typeof opacity === 'number') {
-    return String(roundColormapNumber(opacity));
-  }
-
-  return opacity
-    .map(
-      ({ opacity: alpha, value }) =>
-        `${roundColormapNumber(value)}-${roundColormapNumber(alpha)}`
-    )
-    .join(',');
 }
 
 function roundColormapNumber(value: number | undefined): string {

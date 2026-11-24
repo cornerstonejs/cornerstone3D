@@ -476,7 +476,8 @@ async function showFusion(source, name) {
   });
   source.setDisplaySetAppearance(displaySetIds[1], {
     voiRange: { lower: 0, upper: 160 },
-    colormap: { name: 'hsv', opacity: 0.5 },
+    colormap: { name: 'hsv' },
+    opacity: 0.5,
   });
   source.setZoom(1.2);
   await renderAndWait(source);

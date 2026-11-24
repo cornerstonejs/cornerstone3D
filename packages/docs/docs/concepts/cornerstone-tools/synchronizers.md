@@ -118,4 +118,5 @@ fusionViewports.forEach((viewport) => {
 
 Internally, `voiSyncCallback` runs after the `DISPLAY_SET_APPEARANCE_CHANGED`
 event. It copies what a caller set or reset (`cause` `'edit'` or `'reset'`),
-never the window of a mount or of a scroll.
+never the window of a mount or of a scroll: the window, the invert with
+`syncInvertState`, and the colormap and the opacity with `syncColormap`.

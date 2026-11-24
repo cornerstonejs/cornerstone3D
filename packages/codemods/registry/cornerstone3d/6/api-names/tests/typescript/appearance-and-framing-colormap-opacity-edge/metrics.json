@@ -1,0 +1,100 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "17",
+        "rule": "colormap.opacity: the appearance has an opacity too, choose one, colormap.opacity is gone: a number is the opacity of the appearance (opacity beside the colormap), a list of { value, opacity } points is colormap.opacityMapping"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "20",
+        "rule": "colormap.opacity: its value is not a number or a list that the file shows, colormap.opacity is gone: a number is the opacity of the appearance (opacity beside the colormap), a list of { value, opacity } points is colormap.opacityMapping"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "24",
+        "rule": "colormap.opacity: the colormap has an opacityMapping too, colormap.opacity is gone: a number is the opacity of the appearance (opacity beside the colormap), a list of { value, opacity } points is colormap.opacityMapping"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "29",
+        "rule": "colormap.opacity: its value is not a number or a list that the file shows, colormap.opacity is gone: a number is the opacity of the appearance (opacity beside the colormap), a list of { value, opacity } points is colormap.opacityMapping"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "33",
+        "rule": "colormap.opacity: the file does not show that the object reaches Cornerstone, colormap.opacity is gone: a number is the opacity of the appearance (opacity beside the colormap), a list of { value, opacity } points is colormap.opacityMapping"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "39",
+        "rule": "colormap.opacity: colormap.opacity is gone: read the opacity of the appearance (opacity) and the points of colormap.opacityMapping"
+      },
+      "count": 2
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "42",
+        "rule": "colormap.opacity: colormap.opacity is gone: read the opacity of the appearance (opacity) and the points of colormap.opacityMapping"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "54",
+        "rule": "colormap.opacity: the spread gives the colormap an opacity, colormap.opacity is gone: a number is the opacity of the appearance (opacity beside the colormap), a list of { value, opacity } points is colormap.opacityMapping"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "58",
+        "rule": "colormap.opacity: the file does not show that the object reaches Cornerstone, colormap.opacity is gone: a number is the opacity of the appearance (opacity beside the colormap), a list of { value, opacity } points is colormap.opacityMapping"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "59",
+        "rule": "colormap.opacity: the file does not show that the object reaches Cornerstone, colormap.opacity is gone: a number is the opacity of the appearance (opacity beside the colormap), a list of { value, opacity } points is colormap.opacityMapping"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "6",
+        "rule": "colormap.opacity: a number goes to the opacity of the appearance, which the file does not show here, colormap.opacity is gone: a number is the opacity of the appearance (opacity beside the colormap), a list of { value, opacity } points is colormap.opacityMapping"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "65",
+        "rule": "colormap.opacity: a viewport by its name only, colormap.opacity is gone: a number is the opacity of the appearance (opacity beside the colormap), a list of { value, opacity } points is colormap.opacityMapping"
+      },
+      "count": 1
+    }
+  ]
+}

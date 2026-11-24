@@ -12,8 +12,8 @@ type VOISynchronizerOptions = {
 /**
  * A helper that creates a new `Synchronizer` which listens to the
  * `DISPLAY_SET_APPEARANCE_CHANGED` rendering event and calls the
- * `voiSyncCallback`, which copies the window (and the invert and the
- * colormap) that a caller set or reset, never a default.
+ * `voiSyncCallback`, which copies the window (and the invert, and the
+ * colormap with the opacity) that a caller set or reset, never a default.
  *
  * @param synchronizerName - The name of the synchronizer.
  * @param options - The options for the synchronizer. By default the voi

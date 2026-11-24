@@ -280,12 +280,12 @@ describe('colour tables kept across a window change', () => {
     ],
     [
       'volume',
-      'colormap with an opacity array',
+      'colormap with an opacity mapping',
       {
         voiRange: { lower: 0, upper: 1000 },
         colormap: {
           name: 'hsv',
-          opacity: [
+          opacityMapping: [
             { value: 0, opacity: 0 },
             { value: 0.5, opacity: 0.6 },
             { value: 1, opacity: 0.8 },
@@ -296,7 +296,7 @@ describe('colour tables kept across a window change', () => {
         voiRange: { lower: -200, upper: 50 },
         colormap: {
           name: 'hsv',
-          opacity: [
+          opacityMapping: [
             { value: 0, opacity: 0 },
             { value: 0.5, opacity: 0.6 },
             { value: 1, opacity: 0.8 },

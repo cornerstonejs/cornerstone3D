@@ -259,22 +259,17 @@ leave the canvas. Against the legacy volume viewport:
   legacy properties and the detail of the legacy `VOI_MODIFIED` spell it
   `VOILUTFunction`.
 - **A colormap update keeps what it does not name.**
-  `{ colormap: { opacity: 0.5 } }` keeps the stored name, opacity mapping and
-  threshold, and `{ colormap: { name } }` keeps the stored opacity, as the
-  legacy `setProperties`. In 5.x a next planar viewport replaced the whole
-  colormap, so the name was lost. `DISPLAY_SET_APPEARANCE_CHANGED` carries
-  the whole colormap. A number in `opacity` after opacity points multiplies
-  the points.
-  On a legacy volume viewport `setProperties({ colormap: { opacity } })` threw
-  the points of a callback away and kept one opacity, so the same two steps
-  give another picture.
-- **A list of opacities holds values of the data.** A list in
-  `colormap.opacity` is read as `colormap.opacityMapping`, as on the legacy
-  volume viewport: its values are values of the data, on the GPU and on the
-  CPU, and a change of the window keeps them. In 5.x a next planar viewport
-  read such a list over the window, from 0 at its lower end to 1 at its upper
-  end: a list that gave 0.6 at the value 255 drew almost nothing over a
-  window of 0 to 255.
+  `{ colormap: { threshold: 100 } }` keeps the stored name and opacity
+  mapping, and `{ colormap: { name } }` keeps the stored threshold and opacity
+  mapping, as the legacy `setProperties`, on a planar and on a 3D viewport. A
+  field given as `undefined` is removed. In 5.x a next planar viewport
+  replaced the whole colormap, so the name was lost, and in 6.0.0-beta.2 a 3D
+  viewport stored the colormap as it was given. `DISPLAY_SET_APPEARANCE_CHANGED`
+  carries the whole colormap.
+- **One opacity.** `colormap.opacity` is gone: the opacity of a display set is
+  the `opacity` of its appearance, and the colormap has `opacityMapping` and
+  `threshold`, whose values are values of the data. See
+  [One opacity](#one-opacity).
 - **No default properties.** `setDefaultProperties`, `getDefaultProperties`,
   `clearDefaultProperties` and `resetToDefaultProperties` have no twin. An
   application keeps its own default and sets it with
@@ -424,8 +419,8 @@ colorbar read the effective values.
 
 The VOI synchronizer (`synchronizers.createVOISynchronizer`) acts on
 `'edit'` and `'reset'` only, and on the keys that it synchronises: the
-window, the invert with `syncInvertState` and the colormap with
-`syncColormap`. An edit copies the overrides of those keys that changed; a
+window, the invert with `syncInvertState`, and the colormap and the opacity
+with `syncColormap`. An edit copies the overrides of those keys that changed; a
 key whose override the edit removed is reset in the target. A reset resets
 the same keys in the target, which goes back to its own defaults: it does
 not take the effective values of the source, which are defaults of the
@@ -578,6 +573,158 @@ function of the file, a detail that goes on as a whole, and
 `!`, a template string, JSX), with the text "it gives the overrides only,
 what a caller set, and here the value is shown or compared: use
 getEffectiveDisplaySetAppearance for what is drawn, the defaults included".
+
+## One opacity
+
+`colormap.opacity` is gone. A display set has one opacity, the `opacity` of
+its appearance, from 0 to 1. Its colormap has `name`, `opacityMapping` and
+`threshold` (`Types.AppearanceColormap`). Every render path draws the alpha of
+a pixel as `opacity * ramp(value)`, and 0 below `threshold`, where `ramp` is
+the `opacityMapping`: linear between two points, constant past the first and
+the last, and 1 everywhere without a mapping. The values of the mapping and
+the threshold are values of the data (a pixel value, a Hounsfield unit, an
+SUV), as on the legacy volume viewport, so a change of the window keeps them.
+The opacity function of the volume of a 3D viewport follows the same rule.
+
+### Why it changed
+
+In 6.0.0-beta.2 `colormap.opacity` held a number or a list, `opacity` held a
+number, and each render path read the two its own way. A number and a list
+in `colormap.opacity` shared one key, so one replaced the other. Measured on
+the bands 0 to 224 of one series with `opacity: 0.6`, the mapping 0 to 0,
+128 to 1, 224 to 0.5 and the threshold 48:
+
+| Render path                                                               | 6.0.0-beta.2                                                                                                                                                                                                                                      | 6.0       |
+| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| A stack on the GPU, its canvas frame, and the acquired frames of a volume | The mapping and the threshold were not drawn: 0.6 on every band. `colormap.opacity` was not drawn either                                                                                                                                          | The rule  |
+| A volume slice cut on the GPU or on the CPU, and its canvas slice         | `opacity` and `colormap.opacity` multiplied. A threshold without a mapping drew the opacity twice (0.36 for 0.6). A threshold with a mapping rose from 0 at the threshold to the next point of the mapping (0.12 in place of 0.3 at the value 64) | The rule  |
+| A colour volume (three components) cut on the GPU                         | `opacity` was not drawn                                                                                                                                                                                                                           | `opacity` |
+| The volume of a 3D viewport                                               | `colormap.opacity` and `opacity` overwrote each other; a threshold rose to the next point of the mapping; `threshold: null` left the threshold                                                                                                    | The rule  |
+| The colour table of the CPU fallback (`utilities.renderToCanvasCPU`)      | It read `colormap.opacity` and not `opacityMapping`                                                                                                                                                                                               | The rule  |
+
+### Before and after
+
+A colormap with an opacity:
+
+```ts
+// Before (6.0.0-beta.2)
+viewport.setDisplaySetAppearance(ptDisplaySetId, {
+  colormap: { name: 'hsv', opacity: 0.5 },
+});
+
+// After
+viewport.setDisplaySetAppearance(ptDisplaySetId, {
+  colormap: { name: 'hsv' },
+  opacity: 0.5,
+});
+```
+
+Opacities by value of the data, such as the PET of a fusion:
+
+```ts
+// Before (6.0.0-beta.2)
+viewport.setDisplaySetAppearance(ptDisplaySetId, {
+  colormap: {
+    name: 'hsv',
+    opacity: [
+      { value: 0, opacity: 0 },
+      { value: 0.1, opacity: 0.8 },
+      { value: 1, opacity: 0.9 },
+    ],
+  },
+});
+
+// After
+viewport.setDisplaySetAppearance(ptDisplaySetId, {
+  colormap: {
+    name: 'hsv',
+    opacityMapping: [
+      { value: 0, opacity: 0 },
+      { value: 0.1, opacity: 0.8 },
+      { value: 1, opacity: 0.9 },
+    ],
+  },
+});
+```
+
+An opacity slider over those points. The opacity scales them, so the slider
+keeps no copy of them:
+
+```ts
+// Before (6.0.0-beta.2): a number in colormap.opacity replaced the points
+const { opacity: stored, ...colormap } =
+  viewport.getDisplaySetAppearance(ptDisplaySetId)?.colormap ?? {};
+
+viewport.setDisplaySetAppearance(ptDisplaySetId, {
+  colormap: {
+    ...colormap,
+    opacityMapping: Array.isArray(stored) ? stored : colormap.opacityMapping,
+    opacity: sliderValue,
+  },
+});
+
+// After
+viewport.setDisplaySetAppearance(ptDisplaySetId, { opacity: sliderValue });
+```
+
+The opacity on display:
+
+```ts
+// Before (6.0.0-beta.2): a number, a list, or undefined
+const opacity =
+  viewport.getDisplaySetAppearance(ptDisplaySetId)?.colormap?.opacity;
+
+// After: 1 unless a caller set another
+const { opacity } = viewport.getEffectiveDisplaySetAppearance(ptDisplaySetId);
+```
+
+### Notes
+
+- **A threshold keeps the mapping above it.** Below the threshold the alpha
+  is 0, from the threshold on it is `opacity * ramp(value)`. The legacy
+  volume viewport of 5.x, and 6.0.0-beta.2, rose from 0 at the threshold to
+  the next point of the mapping, so the values just above the threshold drew
+  weaker than the mapping gives. This is not copied.
+- **A colour layer has no value for a ramp.** An RGB image or volume is drawn
+  with `opacity`; its `opacityMapping` and `threshold` do nothing.
+- **The opacity without the ramp of a colormap:** `{ colormap: { opacityMapping: [] }, opacity }`
+  draws the opacity alone; `opacityMapping: undefined` removes the mapping
+  from the stored colormap too.
+- **A removed opacity is 1 again.** `{ opacity: undefined }` and
+  `resetDisplaySetAppearance(displaySetId, ['opacity'])` draw the opacity 1
+  on a planar viewport; 6.0.0-beta.2 kept drawing the opacity set before.
+- **Synchronizers.** `createVOISynchronizer(name, { syncColormap: true })`
+  copies the opacity with the colormap.
+- **The legacy look of a numeric opacity is not copied.** The legacy volume
+  viewport drew an opacity `a` as `1 - (1 - a) ** f` (see
+  [a labelmap fill is drawn with the configured alpha](#a-labelmap-fill-is-drawn-with-the-configured-alpha)).
+  A next viewport draws `a`.
+
+### What the codemod does
+
+`npx codemod @cornerstonejs/cornerstone3d-6-api-names` rewrites, in an
+appearance literal that the file shows to reach `setDisplaySetAppearance`
+(also under its 6.0.0-beta.2 name `setDisplaySetPresentation`), the
+`appearance` of a mount entry, or a value typed `PlanarDisplaySetAppearance`
+or `Volume3DDisplaySetAppearance`:
+
+- `colormap: { opacity: <number> }` to `opacity: <number>` beside the
+  colormap, the number given as a literal or by a `const`;
+- `colormap: { opacity: [...] }` to `colormap: { opacityMapping: [...] }`,
+  also in a `const` that the appearance names, and in a value typed
+  `Types.AppearanceColormap`;
+- `Types.ColormapPublic` to `Types.AppearanceColormap`.
+
+The `viewport-members` step writes the same form for the 5.x
+`setProperties({ colormap })`. Each site that a step cannot rewrite is
+reported in `cornerstone3d-6-manual` with
+`colormap.opacity is gone: a number is the opacity of the appearance (opacity beside the colormap), a list of { value, opacity } points is colormap.opacityMapping`:
+a number when the appearance has an `opacity` too (choose one), a value that
+is not a number or a list that the file shows, a number in a colormap that a
+`const` holds, a colormap with an `opacity` that the file does not show to
+reach Cornerstone (a hanging protocol, a store of the application), a spread
+into a colormap whose type has an `opacity`, and each read of
+`colormap.opacity`.
 
 ## Display area and stretch
 
@@ -1582,9 +1729,9 @@ of other bounds (the same weaker opacity as above, applied to an opacity of
 1). This held with and without a `callback`. A next viewport draws the grey
 of the window, as the legacy stack viewport did, so a CT shown as a volume is
 a little brighter than in 5.x, alone and under the PET layer of a fusion. To
-get the old look, give the CT `colormap: { opacity: 0.925 }` in its
-appearance (`0.726` for the other bounds); with it a fusion matched the
-legacy picture within two levels of 255.
+get the old look, give the CT `opacity: 0.925` in its appearance (`0.726`
+for the other bounds); with it a fusion matched the legacy picture within two
+levels of 255.
 
 ## Image defaults
 

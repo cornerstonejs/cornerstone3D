@@ -100,7 +100,7 @@ addSliderToToolbar({
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     viewport.setDisplaySetAppearance(ptDisplaySetId, {
-      colormap: { opacity: Number(value) },
+      opacity: Number(value),
     });
     viewport.render();
   },
@@ -239,21 +239,15 @@ function addColormapEventListener() {
     function (event) {
       const {
         volumeId,
-        effective: { colormap },
+        effective: { colormap, opacity = 1 },
       } = event.detail;
       if (volumeId === ptVolumeId) {
-        const opacity = colormap.opacity; // Second value is max opacity
-        const threshold = colormap.threshold;
-
-        // get the max opacity from value
-        const opacityToUse = Array.isArray(opacity)
-          ? opacity.reduce((max, current) => Math.max(max, current.opacity), 0)
-          : opacity;
+        const threshold = colormap?.threshold;
 
         const details: Record<string, string> = {
           type: 'Colormap Modified',
           volumeId,
-          opacity: opacityToUse.toFixed(2),
+          opacity: opacity.toFixed(2),
           timestamp: new Date().toLocaleTimeString(),
         };
 
@@ -381,9 +375,9 @@ async function run() {
     voiRange: petColorMapPresentation().voiRange,
     colormap: {
       name: 'hsv',
-      opacity: PET_DEFAULT_OPACITY,
       threshold: PET_DEFAULT_THRESHOLD,
     },
+    opacity: PET_DEFAULT_OPACITY,
   });
 
   viewport.render();

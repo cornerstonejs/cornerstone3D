@@ -4,7 +4,7 @@ import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 import type { GeometryOptions } from '../../../loaders/geometryLoader';
 import type {
   ActorEntry,
-  ColormapPublic,
+  AppearanceColormap,
   ICamera,
   IGeometry,
   IImageVolume,
@@ -114,11 +114,12 @@ export interface Volume3DAppearanceProps extends BaseAppearanceProps {
    */
   voiLUTFunction?: VOILUTFunctionType;
   /**
-   * A colormap by name, with an opacity, an opacity mapping or a threshold,
-   * as the legacy `setProperties({ colormap })`. Each field that is given is
-   * applied, the others stay.
+   * A colormap by name, with an opacity mapping or a threshold. A change is
+   * merged into the stored colormap one level deep: each field that is given
+   * is applied, the others stay. The opacity function of the volume is
+   * `opacity * opacityMapping(value)`, 0 below the threshold.
    */
-  colormap?: ColormapPublic;
+  colormap?: AppearanceColormap;
   /** The blend mode of the ray cast, as the `blendMode` of a legacy volume input. */
   blendMode?: BlendModes;
   /**

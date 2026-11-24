@@ -101,9 +101,8 @@ export function petPresentation() {
  * viewport: a colormap over SUV 0 to 5 with the opacities of
  * `petColorMapOpacity`, which are weaker than the numbers of the callback.
  * They go in `opacityMapping`, whose values are values of the data, as in
- * the callback. The overall `opacity` is 1, so that `COLORMAP_MODIFIED` carries a
- * number as it did on a legacy viewport. Without a registration the colormap
- * is hsv, as in the callback. A registration, as the `preset` that some
+ * the callback; the `opacity` of the appearance scales them. Without a
+ * registration the colormap is hsv, as in the callback. A registration, as the `preset` that some
  * examples give the callback, is registered under its name first.
  *
  * The exponent with which the legacy viewport drew an opacity was not the same
@@ -135,7 +134,6 @@ export function petColorMapPresentation(
     voiRange: { ...petVoiRange },
     colormap: {
       name,
-      opacity: 1,
       opacityMapping: petColorMapOpacity.map(([value, opacity]) => ({
         value,
         opacity: power === 1 ? opacity : 1 - (1 - opacity) ** power,

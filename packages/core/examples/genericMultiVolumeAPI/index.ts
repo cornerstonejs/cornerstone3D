@@ -52,11 +52,7 @@ function getViewport(): PlanarViewport {
   ) as PlanarViewport;
 }
 
-function updatePetColormap(patch: {
-  name?: string;
-  opacity?: number;
-  threshold?: number;
-}) {
+function updatePetColormap(patch: { name?: string; threshold?: number }) {
   const viewport = getViewport();
   const currentColormap =
     viewport.getDisplaySetAppearance(ptDisplaySetId)?.colormap || {};
@@ -102,9 +98,12 @@ addSliderToToolbar({
   step: 0.05,
   defaultValue: PET_DEFAULT_OPACITY,
   onSelectedValueChange: (value) => {
-    updatePetColormap({
+    const viewport = getViewport();
+
+    viewport.setDisplaySetAppearance(ptDisplaySetId, {
       opacity: Number(value),
     });
+    viewport.render();
   },
 });
 
@@ -208,20 +207,16 @@ function addColormapEventListener() {
     function (event) {
       const {
         volumeId,
-        effective: { colormap },
+        effective: { colormap, opacity = 1 },
       } = event.detail;
 
       if (volumeId === ptVolumeId) {
-        const opacity = colormap.opacity;
-        const threshold = colormap.threshold;
-        const opacityToUse = Array.isArray(opacity)
-          ? opacity.reduce((max, current) => Math.max(max, current.opacity), 0)
-          : opacity;
+        const threshold = colormap?.threshold;
 
         const details: Record<string, string> = {
           type: 'Colormap Modified',
           volumeId,
-          opacity: opacityToUse.toFixed(2),
+          opacity: opacity.toFixed(2),
           timestamp: new Date().toLocaleTimeString(),
         };
 
@@ -332,8 +327,8 @@ async function run() {
   viewport.setDisplaySetAppearance(ptDisplaySetId, {
     colormap: {
       name: 'hsv',
-      opacity: PET_DEFAULT_OPACITY,
     },
+    opacity: PET_DEFAULT_OPACITY,
   });
 
   viewport.render();

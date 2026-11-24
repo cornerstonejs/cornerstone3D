@@ -1505,25 +1505,6 @@ class PlanarViewport extends BaseViewport<
     };
   }
 
-  /**
-   * Merges an appearance change as the base class does, with `colormap`
-   * merged one level deep: a colormap that names only some of its fields
-   * keeps the stored others, so the name stays when only the opacity
-   * changes.
-   */
-  protected override mergeAppearance(
-    displaySetId: string,
-    changes: Partial<PlanarDisplaySetAppearance>
-  ): PlanarDisplaySetAppearance {
-    const storedColormap = this.getDisplaySetAppearance(displaySetId)?.colormap;
-    const props =
-      changes.colormap && storedColormap
-        ? { ...changes, colormap: { ...storedColormap, ...changes.colormap } }
-        : changes;
-
-    return super.mergeAppearance(displaySetId, props);
-  }
-
   getDefaultVOIRange(displaySetId?: string): VOIRange | undefined {
     return this.mountedData.getDefaultVOIRange(displaySetId);
   }

@@ -18,6 +18,10 @@ import {
   report,
 } from '../rules.ts';
 import type { ExportRule, KeyRule, MemberRule, Rules, Run } from '../rules.ts';
+import {
+  COLORMAP_OPACITY,
+  rewriteColormapOpacity,
+} from './appearance-colormap.ts';
 import { importsCornerstone, reportMembersOfTypes } from './display-sets.ts';
 import type { TypeMembers } from './display-sets.ts';
 import { reportSubpathNames, rewriteModulePaths } from './generic-names.ts';
@@ -119,6 +123,12 @@ const appearance: Rules = {
         review: APPEARANCE_EVENT_REVIEW,
       })
     ),
+    {
+      namespace: 'Types',
+      name: 'ColormapPublic',
+      to: 'AppearanceColormap',
+      manual: COLORMAP_OPACITY,
+    },
   ],
   members: Object.entries(APPEARANCE_METHODS).map(
     ([name, to]): MemberRule => ({
@@ -158,6 +168,9 @@ const APPEARANCE_SUBPATH_NAMES: SubpathNames = {
   [`${CORE_PACKAGE}/utilities`]: {
     viewportSupportsDisplaySetPresentation:
       'use utilities.viewportSupportsDisplaySetAppearance',
+  },
+  [`${CORE_PACKAGE}/types`]: {
+    ColormapPublic: 'use Types.AppearanceColormap',
   },
 };
 
@@ -1155,7 +1168,8 @@ function reportShownOverrides(run: Run): void {
 }
 
 /**
- * The rewrites of the appearance that no table entry says: a method of the
+ * The rewrites of the appearance that no table entry says: `colormap.opacity`
+ * of an appearance literal (`rewriteColormapOpacity`), a method of the
  * look on a receiver that only the types of the file show to be a viewport,
  * and its name in an indexed type of a viewport type, are renamed; a member
  * of the look that a type of the application declares on top of a viewport
@@ -1165,6 +1179,7 @@ function reportShownOverrides(run: Run): void {
  * file does not show to be a viewport, are reported.
  */
 function rewriteAppearance(run: Run): void {
+  rewriteColormapOpacity(run);
   rewriteAppearanceListeners(run);
   reportShownOverrides(run);
   reportMembersOfTypes(run, APPEARANCE_TYPE_MEMBERS);

@@ -1,0 +1,28 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "10",
+        "rule": "setProperties: colormap.opacity: its value is not a number or a list that the file shows, colormap.opacity is gone: a number is the opacity of the appearance (opacity beside the colormap), a list of { value, opacity } points is colormap.opacityMapping"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "11",
+        "rule": "setProperties: colormap.opacity: the colormap has an opacityMapping too, colormap.opacity is gone: a number is the opacity of the appearance (opacity beside the colormap), a list of { value, opacity } points is colormap.opacityMapping"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "14",
+        "rule": "setProperties: colormap.opacity: its value is not a number or a list that the file shows, colormap.opacity is gone: a number is the opacity of the appearance (opacity beside the colormap), a list of { value, opacity } points is colormap.opacityMapping"
+      },
+      "count": 1
+    }
+  ]
+}

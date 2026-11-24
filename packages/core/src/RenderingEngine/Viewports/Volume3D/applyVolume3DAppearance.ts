@@ -3,7 +3,7 @@ import type { BlendMode } from '@kitware/vtk.js/Rendering/Core/VolumeMapper/Cons
 import { VIEWPORT_PRESETS } from '../../../constants';
 import { BlendModes, VOILUTFunctionType } from '../../../enums';
 import type {
-  ColormapPublic,
+  AppearanceColormap,
   VOIRange,
   ViewportPreset,
   VolumeActor,
@@ -248,12 +248,14 @@ function currentVOIRange(
 
 /**
  * Applies the fields of a colormap that differ from the colormap before, as
- * the legacy `setColormap`, `setOpacity` and `setThreshold` apply them.
+ * the legacy `setColormap` and `setThreshold` apply them: the name, the
+ * opacity mapping, which the opacity of the appearance scales, and the
+ * threshold, which null clears.
  */
 function applyColormap(
   actor: VolumeActor,
-  colormap: ColormapPublic | undefined,
-  previous: ColormapPublic | undefined
+  colormap: AppearanceColormap | undefined,
+  previous: AppearanceColormap | undefined
 ): void {
   if (!colormap || colormap === previous) {
     return;
@@ -275,22 +277,12 @@ function applyColormap(
     property.setRGBTransferFunction(0, transferFunction);
   }
 
-  const mapping = Array.isArray(colormap.opacityMapping)
-    ? colormap.opacityMapping
-    : Array.isArray(colormap.opacity)
-      ? colormap.opacity
-      : undefined;
-  const overall =
-    typeof colormap.opacity === 'number' ? colormap.opacity : undefined;
-
-  if (mapping !== undefined) {
-    updateOpacityMapping(actor, mapping, overall);
-  } else if (overall !== undefined) {
-    updateOpacity(actor, overall);
+  if (colormap.opacityMapping !== previous?.opacityMapping) {
+    updateOpacityMapping(actor, colormap.opacityMapping);
   }
 
-  if (colormap.threshold != null) {
-    updateThreshold(actor, colormap.threshold);
+  if (colormap.threshold !== previous?.threshold) {
+    updateThreshold(actor, colormap.threshold ?? null);
   }
 }
 

@@ -1,5 +1,6 @@
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
+import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
 import type vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
@@ -9,7 +10,7 @@ import {
   VOILUTFunctionType,
 } from '../../enums';
 import * as metaData from '../../metaData';
-import type { ColormapPublic, IImage, Point3, VOIRange } from '../../types';
+import type { AppearanceColormap, IImage, Point3, VOIRange } from '../../types';
 import createLinearRGBTransferFunction from '../../utilities/createLinearRGBTransferFunction';
 import createSigmoidRGBTransferFunction from '../../utilities/createSigmoidRGBTransferFunction';
 import getVOIRangeFromWindowLevel from '../../utilities/getVOIRangeFromWindowLevel';
@@ -17,6 +18,10 @@ import isPTPrescaledWithSUV from '../../utilities/isPTPrescaledWithSUV';
 import { getImageDataMetadata } from '../../utilities/getImageDataMetadata';
 import invertRgbTransferFunction from '../../utilities/invertRgbTransferFunction';
 import { resolveColormap } from '../../utilities/colormap';
+import {
+  getOpacityRampPoints,
+  hasOpacityRamp,
+} from '../../utilities/opacityRamp';
 import { updateVTKImageDataWithCornerstoneImage } from '../../utilities/updateVTKImageDataWithCornerstoneImage';
 
 export interface PlanarCameraState {
@@ -31,7 +36,7 @@ export interface PlanarImageAppearance {
   visible?: boolean;
   opacity?: number;
   interpolationType?: InterpolationType;
-  colormap?: ColormapPublic;
+  colormap?: AppearanceColormap;
   voiRange?: VOIRange;
   voiLUTFunction?: VOILUTFunctionType;
   invert?: boolean;
@@ -221,9 +226,7 @@ export function applyPlanarImageAppearance(args: {
     actor.setVisibility(props.visible);
   }
 
-  if (props?.opacity !== undefined) {
-    property.setOpacity(props.opacity);
-  }
+  property.setOpacity(props?.opacity ?? 1);
 
   if (props?.interpolationType !== undefined) {
     property.setInterpolationType(
@@ -246,10 +249,84 @@ export function applyPlanarImageAppearance(args: {
 
   property.setUseLookupTableScalarRange(true);
   property.setRGBTransferFunction(0, transferFunction);
+  applyPlanarOpacityRamp(actor, props?.colormap);
+}
+
+/** The actors whose opacity function `applyPlanarOpacityRamp` set. */
+const actorsWithOpacityRamp = new WeakSet<vtkImageSlice>();
+
+/**
+ * Sets the opacity function of a planar slice actor to the ramp of a
+ * colormap: its `opacityMapping` and its `threshold`, by the rule of every
+ * render path (`getOpacityRampPoints`), with an opacity of 1. The opacity of
+ * the appearance stays on the property, which the vtk.js mappers multiply
+ * with the function for a slice of one value per pixel. Without a mapping and
+ * a threshold the function that this set is removed, which the mappers read
+ * as 1; a function that another owner set, as the style of a labelmap, stays.
+ * A threshold without a mapping spans the range of the data of the actor.
+ */
+export function applyPlanarOpacityRamp(
+  actor: vtkImageSlice,
+  colormap: AppearanceColormap | undefined
+): void {
+  const property = actor.getProperty();
+
+  if (!hasOpacityRamp(colormap)) {
+    if (actorsWithOpacityRamp.delete(actor)) {
+      property.setScalarOpacity(0, null);
+    }
+    return;
+  }
+
+  const range = colormap.opacityMapping?.length
+    ? undefined
+    : getActorScalarRange(actor);
+  const opacityFunction = vtkPiecewiseFunction.newInstance();
+  const points = getOpacityRampPoints(
+    {
+      opacityMapping: colormap.opacityMapping,
+      threshold: colormap.threshold,
+    },
+    range ? [range.lower, range.upper] : undefined
+  );
+
+  points.forEach(([value, opacity]) => {
+    opacityFunction.addPoint(value, opacity);
+  });
+  property.setScalarOpacity(0, opacityFunction);
+  actorsWithOpacityRamp.add(actor);
+}
+
+/**
+ * The range of the data behind an actor: the range of the voxel manager of
+ * a volume, else the range of the scalars of its image data.
+ */
+export function getActorScalarRange(
+  actor: vtkImageSlice
+): VOIRange | undefined {
+  const mapperInputData = actor.getMapper()?.getInputData?.();
+  const voxelManager = (
+    mapperInputData?.get?.('voxelManager') as
+      | { voxelManager?: { getRange?: () => [number, number] } }
+      | undefined
+  )?.voxelManager;
+  const ranges = [
+    voxelManager?.getRange?.(),
+    mapperInputData?.getPointData?.()?.getScalars?.()?.getRange?.(),
+  ];
+  const range = ranges.find(
+    (candidate) =>
+      candidate &&
+      Number.isFinite(candidate[0]) &&
+      Number.isFinite(candidate[1]) &&
+      candidate[1] > candidate[0]
+  );
+
+  return range ? { lower: range[0], upper: range[1] } : undefined;
 }
 
 export function createPlanarRGBTransferFunction(args: {
-  colormap?: ColormapPublic;
+  colormap?: AppearanceColormap;
   invert?: boolean;
   voiRange: VOIRange;
   voiLUTFunction?: VOILUTFunctionType;
@@ -270,7 +347,7 @@ export function createPlanarRGBTransferFunction(args: {
 }
 
 function createColormapTransferFunction(
-  colormap: ColormapPublic,
+  colormap: AppearanceColormap,
   voiRange: VOIRange
 ): vtkColorTransferFunction {
   const colormapName = colormap.name;

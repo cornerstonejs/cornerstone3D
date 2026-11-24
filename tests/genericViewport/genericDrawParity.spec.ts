@@ -80,8 +80,11 @@ type ParityCase = {
   };
 };
 
-const ptColormap = (colormap: Presentation) => ({
-  [PT_DATA_ID]: { colormap: { name: 'hsv', ...colormap } },
+const ptColormap = (colormap: Presentation, opacity?: number) => ({
+  [PT_DATA_ID]: {
+    colormap: { name: 'hsv', ...colormap },
+    ...(opacity !== undefined && { opacity }),
+  },
 });
 
 /** The cases of a single grey layer: orientation, interpolation and look. */
@@ -164,16 +167,16 @@ const FUSION_CASES: ParityCase[] = [
     },
   },
   {
-    name: 'fusion, numeric opacity',
+    name: 'fusion, opacity without the opacity mapping',
     viewportId: 'FUSION_CORONAL',
     tolerance: GPU_FILTERING,
-    presentations: ptColormap({ opacity: 0.5 }),
+    presentations: ptColormap({ opacityMapping: [] }, 0.5),
   },
   {
     name: 'fusion, threshold',
     viewportId: 'FUSION_CORONAL',
     tolerance: THRESHOLD,
-    presentations: ptColormap({ opacity: 0.7, threshold: 1 }),
+    presentations: ptColormap({ opacityMapping: [], threshold: 1 }, 0.7),
   },
   {
     name: 'fusion, layer opacity',

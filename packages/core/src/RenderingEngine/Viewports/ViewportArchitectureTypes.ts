@@ -65,6 +65,11 @@ export interface DataAddOptions {
 
 export interface BaseAppearanceProps {
   visible?: boolean;
+  /**
+   * The one opacity of the display set, 0 to 1. With a colormap the alpha of
+   * a pixel is `opacity * ramp(value)`, the ramp being the `opacityMapping`
+   * of the colormap, and 0 below its `threshold`.
+   */
   opacity?: number;
 }
 

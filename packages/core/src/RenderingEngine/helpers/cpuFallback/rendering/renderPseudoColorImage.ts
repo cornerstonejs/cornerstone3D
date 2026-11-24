@@ -8,7 +8,7 @@ import storedPixelDataToCanvasImageDataPseudocolorLUT from './storedPixelDataToC
 import storedPixelDataToCanvasImageDataPseudocolorLUTPET from './storedPixelDataToCanvasImageDataPseudocolorLUTPET';
 import * as colors from '../colors/index';
 import type {
-  ColormapPublic,
+  AppearanceColormap,
   IImage,
   CPUFallbackEnabledElement,
 } from '../../../../types';
@@ -58,7 +58,9 @@ function getRenderCanvas(
     typeof colormap === 'object' &&
     typeof colormap.getId !== 'function'
   ) {
-    colormap = colors.resolveCPUFallbackColormap(colormap as ColormapPublic);
+    colormap = colors.resolveCPUFallbackColormap(
+      colormap as AppearanceColormap
+    );
   }
 
   if (!colormap) {

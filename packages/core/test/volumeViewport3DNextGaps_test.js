@@ -349,7 +349,7 @@ describe('Direct next 3D viewport, colour and presets -- ', () => {
     );
   });
 
-  it('applies an opacity mapping and a threshold of the colormap as the legacy viewport', async function () {
+  it('applies an opacity mapping of the colormap as the legacy viewport, and a threshold by the rule of every render path', async function () {
     const [next] = createViewports(renderingEngine, { nextIds: ['next3D'] });
     const volumeId = await createVolume();
     const opacityMapping = [
@@ -366,9 +366,14 @@ describe('Direct next 3D viewport, colour and presets -- ', () => {
 
     next.setDisplaySetAppearance({ colormap: { threshold: 120 } });
 
-    expectSameTransferFunctions(
-      next,
-      LEGACY_TRANSFER_FUNCTIONS.opacityMappingThreshold
+    expectPointsClose(
+      sampledOpacitiesOf(next),
+      SAMPLE_VALUES.filter((value) => value >= 0 && value <= 255).map(
+        (value, index) =>
+          value < 120
+            ? 0
+            : LEGACY_TRANSFER_FUNCTIONS.opacityMapping.opacities[index]
+      )
     );
   });
 
@@ -484,7 +489,11 @@ describe('Direct next 3D viewport, colour and presets -- ', () => {
       }))
     ).toEqual([
       { volumeId, changedKeys: ['colormap'], colormap: { name: 'hsv' } },
-      { volumeId, changedKeys: ['colormap'], colormap: { threshold: 100 } },
+      {
+        volumeId,
+        changedKeys: ['colormap'],
+        colormap: { name: 'hsv', threshold: 100 },
+      },
     ]);
   });
 

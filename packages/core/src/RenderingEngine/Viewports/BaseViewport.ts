@@ -91,6 +91,31 @@ function withoutUndefined<T extends object>(value: T): T {
 }
 
 /**
+ * The colormap of an appearance change merged one level deep into the
+ * stored colormap: a colormap that names only some of its fields keeps the
+ * stored others, so the name stays when only the threshold changes, and a
+ * field given as undefined is removed. Empty when the change or the stored
+ * overrides have no colormap object.
+ */
+function mergedColormapOf(
+  overrides: Record<string, unknown>,
+  changes: object
+): { colormap?: object } {
+  const stored = overrides.colormap;
+  const changed = (changes as { colormap?: unknown }).colormap;
+
+  if (!isPlainObject(stored) || !isPlainObject(changed)) {
+    return {};
+  }
+
+  return { colormap: withoutUndefined({ ...stored, ...changed }) };
+}
+
+function isPlainObject(value: unknown): value is object {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/**
  * The base controller of every viewport family.
  *
  * The base class owns only shared viewport state and binding orchestration:
@@ -1256,7 +1281,7 @@ abstract class BaseViewport<
    * Merges overrides into the stored overrides of a display set, removes
    * the keys given as `undefined`, forwards the result when mounted, and
    * fires `DISPLAY_SET_APPEARANCE_CHANGED` with cause `'edit'` when a key
-   * changed.
+   * changed. A `colormap` is merged one level deep (`mergedColormapOf`).
    */
   protected mergeAppearance(
     displaySetId: DisplaySetId,
@@ -1266,6 +1291,7 @@ abstract class BaseViewport<
     const nextAppearance = withoutUndefined({
       ...before.overrides,
       ...props,
+      ...mergedColormapOf(before.overrides, props),
     }) as TAppearance;
 
     this.setAppearanceState(displaySetId, nextAppearance);
