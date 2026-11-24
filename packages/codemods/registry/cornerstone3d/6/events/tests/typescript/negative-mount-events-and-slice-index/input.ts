@@ -23,7 +23,7 @@ export async function jump(viewport: Types.IStackViewport, imageIdIndex: number)
 }
 
 export function onOutOfBounds(element: HTMLDivElement) {
-  element.addEventListener(Enums.Events.STACK_SCROLL_OUT_OF_BOUNDS, (evt) => {
+  element.addEventListener(Enums.Events.IMAGE_RENDERED, (evt) => {
     const { imageIdIndex } = evt.detail;
 
     console.log(evt.detail.imageIdIndex, imageIdIndex);

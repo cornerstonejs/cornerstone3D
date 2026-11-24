@@ -187,10 +187,12 @@ leave the canvas. Against the legacy volume viewport:
   lies behind them.
 - **Scrolling by slabs is an option.** `viewport.scroll(1)` on a legacy volume
   viewport with a slab steps by the slab thickness. On a planar viewport it
-  steps by one slice. Pass `scrollSlabs: true` to `utilities.scroll` to step
-  by the slab. `viewport.scroll(delta)` takes the delta only, and
+  steps by one slice. Pass `scrollSlabs: true` to `utilities.scroll` or to
+  `viewport.scroll(delta, { scrollSlabs: true })` to step by the slab.
   `getCurrentImageIdIndex()` and `getNumberOfSlices()` take no arguments and
-  count slices. No member counts the slab steps.
+  count slices. No member counts the slab steps; the detail of
+  `SCROLL_OUT_OF_BOUNDS` does (see
+  [Scroll and its event](#scroll-and-its-event)).
 - **A slab is set for each display set.** `slabThickness` and `blendMode` are
   keys of the appearance of one display set. The legacy `setSlabThickness`
   set all actors. A change of `slabThickness` fires `CAMERA_MODIFIED`, as the
@@ -231,6 +233,96 @@ leave the canvas. Against the legacy volume viewport:
   slices. In 5.x the index counted the slices of the source volume while
   each step went by the spacing of the named volume, so the jump landed
   elsewhere.
+
+## Scroll and its event
+
+- **One scroll.** `utilities.scroll(viewport, options)`,
+  `viewport.scroll(delta, options)` of a planar viewport and
+  `viewport.scroll(delta, debounceLoading, loop)` of a video viewport go
+  through one function, so one request gives the same position and the same
+  event by each of them. A planar viewport takes the options of
+  `utilities.scroll`: `loop`, `scrollSlabs` and `volumeId`. In 6.0.0-beta.2
+  `viewport.scroll` took the delta only, stopped at an end and fired nothing.
+- **`SCROLL_OUT_OF_BOUNDS` fires when a scroll stops at an end.** A scroll
+  without `loop` that stops at the first or the last position, short of the
+  position it asked for, fires it once on the element of the viewport and
+  once on `eventTarget`, after the viewport moved. A position is an image of
+  a stack, a slice of a volume along the view in any orientation, a slab with
+  `scrollSlabs` while the source has one, a slice of the volume that
+  `volumeId` names, or a frame of a video, which a step of its `scrollStep`
+  moves by. An event of the core does not bubble: a listener added on the
+  element and a listener added on `eventTarget` both hear it, so a 5.x
+  listener on `eventTarget` keeps working once its event has the new name.
+  `StackScrollTool`, cine and `utilities.jumpToSlice` scroll through the same
+  function; cine and a jump never ask past an end, so they fire nothing.
+- **Nothing fires for a scroll inside the range, or with `loop`.** With
+  `loop` the scroll wraps around. `CAMERA_MODIFIED` fires when a position is
+  asked for and `NEW_IMAGE` when it shows. A viewport of one position, a
+  stack of one image or a volume of one slice, fires `SCROLL_OUT_OF_BOUNDS`
+  on each scroll.
+- **The detail** has `viewportId`, `renderingEngineId`, `displaySetId`,
+  `volumeId`, `sliceIndex`, `numberOfSlices`, `delta`, `direction` and
+  `imageId`. `sliceIndex` is the position the scroll stopped at, `0` or
+  `numberOfSlices - 1`, counted in the positions above, with the names of the
+  detail of `NEW_IMAGE`.
+  `delta` is the delta asked for, `direction` is `-1` toward the first
+  position and `1` toward the last. `displaySetId` is the source display set.
+  `volumeId` is the volume of the steps in volume mode: the `volumeId` of the
+  scroll, else the volume on display. `imageId` is the image on display,
+  undefined for an oblique cut or a reformat.
+- **What 6.0.0-beta.2 and 5.x did.** `STACK_SCROLL_OUT_OF_BOUNDS` fired on
+  `eventTarget` from `utilities.scroll` in stack mode and on a video, with
+  `loop` too, before the scroll, with `{ imageIdIndex, direction }`: the
+  image before the scroll and the delta. In volume mode `utilities.scroll`
+  fired `VOLUME_VIEWPORT_SCROLL` after each scroll, and
+  `VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS` in its place past an end in the
+  acquisition plane only, with `volumeId`, `viewport`, `delta`,
+  `desiredStepIndex`, `currentStepIndex`, `numScrollSteps` and
+  `currentImageId`. A volume of one slice fired nothing, and
+  `viewport.scroll` fired nothing.
+- **A video scroll lands on a frame.** A video viewport pauses and goes to
+  the start of the frame `delta` steps away; with `loop` it wraps by frames.
+  6.0.0-beta.2 moved the time by the step and kept the offset inside the
+  frame, and with `loop` it took one more step at the last frame before it
+  wrapped.
+
+Before, in 6.0.0-beta.2 and 5.x:
+
+```ts
+eventTarget.addEventListener(
+  Enums.Events.STACK_SCROLL_OUT_OF_BOUNDS,
+  (evt: Types.EventTypes.StackScrollOutOfBoundsEvent) => {
+    if (evt.detail.direction > 0) {
+      showNextSeries();
+    }
+  }
+);
+eventTarget.addEventListener(
+  Enums.Events.VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS,
+  (evt: Types.EventTypes.VolumeScrollOutOfBoundsEvent) => {
+    const { viewport, currentStepIndex, numScrollSteps } = evt.detail;
+
+    loadMoreSlices(viewport.id, currentStepIndex === numScrollSteps);
+  }
+);
+```
+
+After, in 6.0:
+
+```ts
+eventTarget.addEventListener(
+  Enums.Events.SCROLL_OUT_OF_BOUNDS,
+  (evt: Types.EventTypes.ScrollOutOfBoundsEvent) => {
+    const { viewportId, sliceIndex, numberOfSlices, direction } = evt.detail;
+
+    if (direction > 0) {
+      showNextSeries();
+    }
+
+    loadMoreSlices(viewportId, sliceIndex === numberOfSlices - 1);
+  }
+);
+```
 
 ## Sharpening and smoothing
 
@@ -1041,14 +1133,10 @@ point of the image on display.
   scroll is a view state change like any other. `CAMERA_MODIFIED` fires at once when an
   index is asked for, before the image loads. `NEW_IMAGE` fires when the
   image or the slice shows.
-- **The scroll events are those of the legacy viewport of the mode.** In
-  volume mode `utilities.scroll` fires `VOLUME_VIEWPORT_SCROLL` on each
-  scroll, and `VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS` in its place when it is
-  asked to go past an end while the view is in the acquisition plane, with
-  the detail of the legacy volume viewport. In stack mode it fires
-  `STACK_SCROLL_OUT_OF_BOUNDS` when it is asked to go past an end, as the
-  legacy stack viewport did. `utilities.jumpToSlice` scrolls, so it fires
-  them too.
+- **One scroll event, `SCROLL_OUT_OF_BOUNDS`, when a scroll stops at an
+  end.** `STACK_SCROLL_OUT_OF_BOUNDS`, `VOLUME_VIEWPORT_SCROLL` and
+  `VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS` are gone. See
+  [Scroll and its event](#scroll-and-its-event).
 - **No `ACTORS_CHANGED` and no `CLIPPING_PLANES_UPDATED`.** Both are gone
   from `Enums.Events`. No next viewport has a list of actors to change or
   sets slab clipping planes on a vtk mapper. The

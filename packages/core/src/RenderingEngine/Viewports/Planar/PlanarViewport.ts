@@ -30,6 +30,7 @@ import type {
   Point2,
   Point3,
   ReferenceCompatibleOptions,
+  ScrollOptions,
   VOIRange,
   ViewReference,
   ViewReferenceSpecifier,
@@ -71,6 +72,7 @@ import {
   getVolumeOrImageDisplaySet,
   isImageDisplaySet,
 } from '../displaySetAccess';
+import scrollViewport from '../viewportScroll';
 import { DefaultPlanarDataProvider } from './DefaultPlanarDataProvider';
 import { getPlanarWorldToIndexMatrix } from './planarImageData';
 import { createPlanarRenderPathResolver } from './PlanarRenderPathResolver';
@@ -2343,16 +2345,28 @@ class PlanarViewport extends BaseViewport<
   }
 
   /**
-   * Scrolls by a signed number of steps. A step is one image of a stack or
-   * one slice of the source volume, and the scroll stops at the first and at
-   * the last one. `utilities.scroll` has the options of a scroll: a loop, a
-   * step of the slab thickness and a step of another volume.
+   * Scrolls by a signed number of steps, with the scroll of
+   * `utilities.scroll`: the same request gives the same position and the
+   * same event by either. A step is one image of a stack or one slice of the
+   * source volume along the view, in any orientation. Without `loop` the
+   * scroll stops at the first and at the last one, and when it stops there
+   * short of the step it asked for it fires SCROLL_OUT_OF_BOUNDS on the
+   * element and on the eventTarget.
    *
    * @param delta - Signed number of steps to move by.
-   * @returns The resolved image id after scrolling.
+   * @param options - `loop` wraps at both ends; `scrollSlabs` makes a step
+   * the slab thickness of the source in volume mode; `volumeId` names
+   * another volume of the viewport whose spacing along the view gives the
+   * step in volume mode.
+   * @returns The resolved image id after scrolling; with a step of a slab or
+   * of another volume, the image on display, undefined out of the
+   * acquisition plane.
    */
-  scroll(delta: number): Promise<string> {
-    return this.setImageIdIndex(this.getActiveImageIdIndex() + delta);
+  scroll(
+    delta: number,
+    options: Omit<ScrollOptions, 'delta'> = {}
+  ): Promise<string | undefined> {
+    return scrollViewport(this, { ...options, delta });
   }
 
   /**

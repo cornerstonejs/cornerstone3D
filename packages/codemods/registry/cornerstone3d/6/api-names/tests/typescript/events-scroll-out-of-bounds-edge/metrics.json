@@ -1,0 +1,62 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "15",
+        "rule": "'STACK_SCROLL_OUT_OF_BOUNDS'"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "38",
+        "rule": "detail.imageIdIndex: if this is the detail of NEW_IMAGE, the key is sliceIndex now"
+      },
+      "count": 1
+    }
+  ],
+  "cornerstone3d-6-review": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "12",
+        "rule": "SCROLL_OUT_OF_BOUNDS: the file does not show that the listener hears only this event, the file listened to both out of bounds events, which are one event now; the detail is { viewportId, renderingEngineId, displaySetId, volumeId, sliceIndex, numberOfSlices, delta, direction, imageId }"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "15",
+        "rule": "SCROLL_OUT_OF_BOUNDS: the file listened to both out of bounds events, which are one event now; the detail is { viewportId, renderingEngineId, displaySetId, volumeId, sliceIndex, numberOfSlices, delta, direction, imageId }"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "25",
+        "rule": "SCROLL_OUT_OF_BOUNDS: two operands of one || are the same now, read what each tested before the rename"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "31",
+        "rule": "SCROLL_OUT_OF_BOUNDS: the file does not show that the listener hears only this event, the file listened to both out of bounds events, which are one event now; the detail is { viewportId, renderingEngineId, displaySetId, volumeId, sliceIndex, numberOfSlices, delta, direction, imageId }"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "8",
+        "rule": "SCROLL_OUT_OF_BOUNDS: the listener is not in this file, the file listened to both out of bounds events, which are one event now; the detail is { viewportId, renderingEngineId, displaySetId, volumeId, sliceIndex, numberOfSlices, delta, direction, imageId }"
+      },
+      "count": 1
+    }
+  ]
+}

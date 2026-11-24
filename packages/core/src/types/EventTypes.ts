@@ -8,7 +8,6 @@ import type IImage from './IImage';
 import type IImageVolume from './IImageVolume';
 import type ViewportStatus from '../enums/ViewportStatus';
 import type IImageCalibration from './IImageCalibration';
-import type { IViewport } from './IViewport';
 import type { PlanarDisplaySetAppearance } from '../RenderingEngine/Viewports/Planar/PlanarViewportTypes';
 import type { ViewportFidelityState } from './ViewportFidelity';
 
@@ -273,23 +272,6 @@ interface VolumeCacheVolumeAddedEventDetail {
 }
 
 /**
- * Volume Scroll Out of Bounds event detail
- */
-type VolumeScrollOutOfBoundsEventDetail = {
-  volumeId: string;
-  viewport: IViewport;
-  desiredStepIndex: number;
-  currentStepIndex: number;
-  delta: number; // difference between the desired and current frame
-  numScrollSteps: number; // total scroll steps in the volume
-  /**
-   * The image id shown after the scroll. Undefined out of the acquisition
-   * plane, where the view shows no single image, as in 5.x.
-   */
-  currentImageId?: string;
-};
-
-/**
  * NEW_IMAGE Event's data. A viewport fires the event when it shows another
  * image of its source display set: a planar viewport for another image of a
  * stack and for another slice of a volume, a video viewport for another
@@ -391,14 +373,43 @@ interface DisplaySetsChangedEventDetail {
 }
 
 /**
- * Stack Scroll out of bounds event detail
+ * SCROLL_OUT_OF_BOUNDS Event's data: a scroll without `loop` stopped at the
+ * first or the last position short of the position it asked for. A
+ * position is an image of a stack, a slice of a volume along the view in
+ * any orientation, a slab with `scrollSlabs`, a slice of the volume that
+ * `volumeId` of the scroll names, or a frame of a video.
  */
-type StackScrollOutOfBoundsEventDetail = {
-  /** the current imageId index in the stack that we just scroll to */
-  imageIdIndex: number;
-  /** direction of the scroll */
-  direction: number;
-};
+interface ScrollOutOfBoundsEventDetail {
+  /** unique id for the viewport */
+  viewportId: string;
+  /** unique id for the renderingEngine */
+  renderingEngineId: string;
+  /** The source display set of the viewport. */
+  displaySetId: string;
+  /**
+   * In volume mode the volume whose slices the scroll counts: the
+   * `volumeId` of the scroll, else the volume on display. Undefined for a
+   * stack and a video.
+   */
+  volumeId?: string;
+  /**
+   * The position the scroll stopped at: 0, or `numberOfSlices - 1`,
+   * counted in the positions of the scroll.
+   */
+  sliceIndex: number;
+  /** How many positions the scroll has. */
+  numberOfSlices: number;
+  /** The signed number of steps that the scroll asked for. */
+  delta: number;
+  /** -1 when the scroll stopped at the first position, 1 at the last. */
+  direction: -1 | 1;
+  /**
+   * The image on display, which is what `viewport.getCurrentImageId()`
+   * gives: undefined for a cut that shows no single image, as an oblique
+   * cut or a reformat. On a video it is the image id of the frame.
+   */
+  imageId?: string;
+}
 
 /**
  * CameraModified Event type
@@ -505,15 +516,12 @@ type ImageSpacingCalibratedEvent =
  */
 type DisplaySetsChangedEvent = CustomEventType<DisplaySetsChangedEventDetail>;
 
-type StackScrollOutOfBoundsEvent =
-  CustomEventType<StackScrollOutOfBoundsEventDetail>;
-
-type VolumeScrollOutOfBoundsEvent =
-  CustomEventType<VolumeScrollOutOfBoundsEventDetail>;
+/**
+ * SCROLL_OUT_OF_BOUNDS Event type
+ */
+type ScrollOutOfBoundsEvent = CustomEventType<ScrollOutOfBoundsEventDetail>;
 
 export type {
-  VolumeScrollOutOfBoundsEventDetail,
-  VolumeScrollOutOfBoundsEvent,
   ViewportFidelityChangedEventDetail,
   ViewportFidelityChangedEvent,
   CameraModifiedEventDetail,
@@ -556,8 +564,8 @@ export type {
   DisplaySetsChangedEntry,
   DisplaySetsChangedEvent,
   DisplaySetsChangedEventDetail,
-  StackScrollOutOfBoundsEvent,
-  StackScrollOutOfBoundsEventDetail,
+  ScrollOutOfBoundsEvent,
+  ScrollOutOfBoundsEventDetail,
   CameraResetEvent,
   CameraResetEventDetail,
 };

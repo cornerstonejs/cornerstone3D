@@ -87,6 +87,7 @@ describe('legacy viewport utilities on legacy viewports and legacy adapters', ()
             getCurrentImageIdIndex: () => 3,
             getCurrentImageId: () => 'd',
             getVolumeId: () => (mode === 'volume' ? 'ct' : undefined),
+            setImageIdIndex: jest.fn(() => Promise.resolve('b')),
             scroll: jest.fn(),
           })
         );
@@ -96,7 +97,7 @@ describe('legacy viewport utilities on legacy viewports and legacy adapters', ()
           debounceLoading: true,
         });
 
-        expect(viewport.scroll.mock.calls[0][0]).toBe(-2);
+        expect(viewport.setImageIdIndex.mock.calls).toEqual([[1]]);
       });
     });
   });

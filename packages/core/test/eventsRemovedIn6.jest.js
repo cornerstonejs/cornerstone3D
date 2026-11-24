@@ -23,7 +23,12 @@ import { Events } from '../src/enums';
  *   DYNAMIC_VOLUME_DIMENSION_GROUP_LOADED;
  * - VIEWPORT_NEW_IMAGE_SET and VOLUME_VIEWPORT_NEW_VOLUME, the mount events
  *   of a stack and of a volume, are one event of every viewport family:
- *   DISPLAY_SETS_CHANGED, which fires for an overlay too (EV1).
+ *   DISPLAY_SETS_CHANGED, which fires for an overlay too (EV1);
+ * - STACK_SCROLL_OUT_OF_BOUNDS and VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS are
+ *   one event, SCROLL_OUT_OF_BOUNDS, of every scroll that stops at an end;
+ *   VOLUME_VIEWPORT_SCROLL, which fired on each scroll in volume mode, has
+ *   no event in its place: NEW_IMAGE and CAMERA_MODIFIED report a scroll
+ *   (EV2).
  *
  * The others were removed earlier in 6.0 (stage 5, O9).
  */
@@ -40,6 +45,9 @@ describe('Events that 6.0 removed', () => {
     'VOLUME_NEW_IMAGE',
     'VIEWPORT_NEW_IMAGE_SET',
     'VOLUME_VIEWPORT_NEW_VOLUME',
+    'STACK_SCROLL_OUT_OF_BOUNDS',
+    'VOLUME_VIEWPORT_SCROLL',
+    'VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS',
   ])('has no %s in Enums.Events', (name) => {
     expect(Events[name]).toBeUndefined();
   });
@@ -51,13 +59,9 @@ describe('Events that 6.0 removed', () => {
     expect(Events.NEW_IMAGE).toBe('CORNERSTONE_NEW_IMAGE');
   });
 
-  it('keeps the scroll events that a planar viewport fires', () => {
-    expect(Events.STACK_SCROLL_OUT_OF_BOUNDS).toBe(
-      'STACK_SCROLL_OUT_OF_BOUNDS'
-    );
-    expect(Events.VOLUME_VIEWPORT_SCROLL).toBe('VOLUME_VIEWPORT_SCROLL');
-    expect(Events.VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS).toBe(
-      'VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS'
+  it('has SCROLL_OUT_OF_BOUNDS in place of the scroll events', () => {
+    expect(Events.SCROLL_OUT_OF_BOUNDS).toBe(
+      'CORNERSTONE_SCROLL_OUT_OF_BOUNDS'
     );
   });
 });

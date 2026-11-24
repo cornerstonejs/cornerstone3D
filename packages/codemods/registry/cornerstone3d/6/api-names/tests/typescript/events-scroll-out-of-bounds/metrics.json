@@ -1,0 +1,62 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "43",
+        "rule": "Events.VOLUME_VIEWPORT_SCROLL: no event fires for each scroll: listen to NEW_IMAGE for the slice that is shown and to CAMERA_MODIFIED for the camera; a scroll stopped at the first or the last slice fires SCROLL_OUT_OF_BOUNDS"
+      },
+      "count": 1
+    }
+  ],
+  "cornerstone3d-6-review": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "26",
+        "rule": "detail.imageIdIndex: SCROLL_OUT_OF_BOUNDS gives sliceIndex, the position the scroll stopped at (the first or the last), where the old event gave the position before the scroll"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "33",
+        "rule": "Types.EventTypes.VolumeScrollOutOfBoundsEvent: the detail is { viewportId, renderingEngineId, displaySetId, volumeId, sliceIndex, numberOfSlices, delta, direction, imageId }"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "34",
+        "rule": "Types.EventTypes.VolumeScrollOutOfBoundsEventDetail: the detail is { viewportId, renderingEngineId, displaySetId, volumeId, sliceIndex, numberOfSlices, delta, direction, imageId }"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "39",
+        "rule": "detail.currentStepIndex: SCROLL_OUT_OF_BOUNDS gives sliceIndex, the position the scroll stopped at (the first or the last), where the old event gave the position before the scroll"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "39",
+        "rule": "detail.numScrollSteps: SCROLL_OUT_OF_BOUNDS gives numberOfSlices, which is numScrollSteps + 1"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "39",
+        "rule": "detail.viewport: SCROLL_OUT_OF_BOUNDS gives viewportId and renderingEngineId: getEnabledElementByIds(viewportId, renderingEngineId).viewport"
+      },
+      "count": 1
+    }
+  ]
+}

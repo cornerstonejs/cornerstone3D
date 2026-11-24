@@ -23,6 +23,13 @@ under an alias), `cornerstone.EVENTS.X` of the namespace, or
 - `VIEWPORT_NEW_IMAGE_SET` and `VOLUME_VIEWPORT_NEW_VOLUME` become
   `DISPLAY_SETS_CHANGED`.
 - `IMAGE_LOAD_ERROR` becomes `IMAGE_LOAD_FAILED`.
+- `STACK_SCROLL_OUT_OF_BOUNDS` and `VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS`
+  become `SCROLL_OUT_OF_BOUNDS`. In a listener of one of them that the file
+  shows (as for `NEW_IMAGE` below, or with its event typed
+  `StackScrollOutOfBoundsEvent` or `VolumeScrollOutOfBoundsEvent`),
+  `detail.direction` of the stack event becomes `detail.delta` and
+  `detail.currentImageId` of the volume event `detail.imageId`. Two entries
+  of one pattern of `Enums.Events` become one entry.
 - In a listener of `STACK_NEW_IMAGE` or `VOLUME_NEW_IMAGE` that the file
   shows (given to `addEventListener` inline, by its name or as
   `this.listener`, or with its event typed `StackNewImageEvent` or
@@ -45,7 +52,9 @@ under an alias), `cornerstone.EVENTS.X` of the namespace, or
 - `Types.EventTypes.StackNewImageEvent` and `VolumeNewImageEvent` become
   `NewImageEvent`, their `Detail` types `NewImageEventDetail`;
   `StackViewportNewStackEvent` becomes `DisplaySetsChangedEvent`, its
-  `Detail` type `DisplaySetsChangedEventDetail`.
+  `Detail` type `DisplaySetsChangedEventDetail`; `StackScrollOutOfBoundsEvent`
+  and `VolumeScrollOutOfBoundsEvent` become `ScrollOutOfBoundsEvent`, their
+  `Detail` types `ScrollOutOfBoundsEventDetail`.
 
 ## Reported
 
@@ -55,14 +64,21 @@ under an alias), `cornerstone.EVENTS.X` of the namespace, or
   an overlay such as a labelmap is added or removed, so a listener that
   cares only for the source adds `if (!evt.detail.sourceChanged) return`;
   `IMAGE_LOAD_FAILED` has no `imageIdIndex` and fires for a failed prefetch
-  too.
-- Manual: `PRE_STACK_NEW_IMAGE`, `STACK_VIEWPORT_SCROLL`, `PRESET_MODIFIED`,
+  too; `SCROLL_OUT_OF_BOUNDS` fires for a stack, a volume in any orientation
+  and a video, on the element and on `eventTarget`, and not with `loop`, and
+  its detail has `sliceIndex` (where the scroll stopped) and
+  `numberOfSlices`, and no `imageIdIndex`, `currentStepIndex`,
+  `desiredStepIndex`, `numScrollSteps` or `viewport`.
+- Manual, with what to listen to instead (`NEW_IMAGE` for the slice that
+  shows, `CAMERA_MODIFIED` for the camera): `STACK_VIEWPORT_SCROLL` and
+  `VOLUME_VIEWPORT_SCROLL`.
+- Manual: `PRE_STACK_NEW_IMAGE`, `PRESET_MODIFIED`,
   `ACTORS_CHANGED`, `CLIPPING_PLANES_UPDATED`, the two
   `DYNAMIC_VOLUME_TIME_POINT_*` events (also quoted, with a default or in
   brackets), their event types, a rest element or a key computed from code
   in a pattern of `Enums.Events`, and a string
   such as `'CORNERSTONE_STACK_NEW_IMAGE'`,
-  `'CORNERSTONE_VIEWPORT_NEW_IMAGE_SET'`,
+  `'CORNERSTONE_VIEWPORT_NEW_IMAGE_SET'`, `'STACK_SCROLL_OUT_OF_BOUNDS'`,
   `'DYNAMIC_VOLUME_TIME_POINT_LOADED'` or `'IMAGE_LOAD_ERROR'` (a listener
   of it compiles and never runs; a planar viewport no longer fires
   `IMAGE_LOAD_ERROR`).

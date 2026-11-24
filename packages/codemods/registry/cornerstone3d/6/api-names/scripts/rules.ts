@@ -1312,6 +1312,35 @@ function applyPatternRules(
 }
 
 /**
+ * Tells whether an earlier shorthand of the same pattern takes a name as its
+ * local name: it is that name, or a rule renames it to that name. Two
+ * events that 6.0 merges into one would otherwise declare one name twice.
+ */
+function isTakenBySibling(
+  rules: ExportRule[],
+  base: string,
+  entry: Node,
+  name: string
+): boolean {
+  for (const sibling of entry.parent()?.children() ?? []) {
+    if (sibling.id() === entry.id()) {
+      return false;
+    }
+
+    const key =
+      sibling.kind() === 'shorthand_property_identifier_pattern'
+        ? sibling.text()
+        : undefined;
+
+    if (key && (key === name || ruleAt(rules, base, key)?.to === name)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
  * Applies the rule of one entry of a destructuring pattern of an exported
  * object.
  */
@@ -1371,7 +1400,11 @@ function applyPatternEntry(
     const uses = referencesOf(entry);
     const plain = uses.every((use) => use.kind() === 'identifier');
 
-    if (plain && !isNameTaken(run.rootNode, rule.to)) {
+    if (
+      plain &&
+      !isNameTaken(run.rootNode, rule.to) &&
+      !isTakenBySibling(rules, base, entry, rule.to)
+    ) {
       applyEdits(
         run,
         rule,

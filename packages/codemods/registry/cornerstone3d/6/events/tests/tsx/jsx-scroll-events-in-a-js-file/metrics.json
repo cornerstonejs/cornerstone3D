@@ -1,0 +1,30 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.js",
+        "line": "17",
+        "rule": "Events.VOLUME_VIEWPORT_SCROLL: no event fires for each scroll: listen to NEW_IMAGE for the slice that is shown and to CAMERA_MODIFIED for the camera; a scroll stopped at the first or the last slice fires SCROLL_OUT_OF_BOUNDS"
+      },
+      "count": 1
+    }
+  ],
+  "cornerstone3d-6-review": [
+    {
+      "cardinality": {
+        "file": "input.js",
+        "line": "12",
+        "rule": "Events.STACK_SCROLL_OUT_OF_BOUNDS: SCROLL_OUT_OF_BOUNDS fires for a stack, a volume in any orientation and a video, from utilities.scroll and from viewport.scroll, on the element and on eventTarget, and not with loop; the detail is { viewportId, renderingEngineId, displaySetId, volumeId, sliceIndex, numberOfSlices, delta, direction, imageId }, and sliceIndex is the position the scroll stopped at: detail.direction is detail.delta, and detail.imageIdIndex (the position before the scroll) has no key"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.js",
+        "line": "8",
+        "rule": "Events.STACK_SCROLL_OUT_OF_BOUNDS: SCROLL_OUT_OF_BOUNDS fires for a stack, a volume in any orientation and a video, from utilities.scroll and from viewport.scroll, on the element and on eventTarget, and not with loop; the detail is { viewportId, renderingEngineId, displaySetId, volumeId, sliceIndex, numberOfSlices, delta, direction, imageId }, and sliceIndex is the position the scroll stopped at: detail.direction is detail.delta, and detail.imageIdIndex (the position before the scroll) has no key"
+      },
+      "count": 1
+    }
+  ]
+}

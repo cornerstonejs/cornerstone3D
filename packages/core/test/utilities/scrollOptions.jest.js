@@ -7,7 +7,8 @@ import scroll from '../../src/utilities/scroll';
 
 /**
  * A stand-in for a generic viewport that shows `mode` content, with 3 slices
- * and the second one on display. Its scroll is a mock.
+ * and the second one on display. Its scroll and its setImageIdIndex are
+ * mocks.
  */
 function createViewport(mode) {
   return {
@@ -18,8 +19,10 @@ function createViewport(mode) {
     setDisplaySetAppearance() {},
     setViewState() {},
     getCurrentImageIdIndex: () => 1,
+    getCurrentImageId: () => 'b',
     getNumberOfSlices: () => 3,
     getImageIds: () => ['a', 'b', 'c'],
+    setImageIdIndex: jest.fn(() => Promise.resolve('b')),
     scroll: jest.fn(),
   };
 }
@@ -35,7 +38,7 @@ describe('scroll on a generic viewport', () => {
       debounceLoading: false,
     });
 
-    expect(viewport.scroll.mock.calls).toEqual([[1]]);
+    expect(viewport.setImageIdIndex.mock.calls).toEqual([[2]]);
   });
 
   it('wraps a next planar viewport at both ends with loop', () => {
@@ -46,7 +49,21 @@ describe('scroll on a generic viewport', () => {
     scroll(viewport, { delta: 1, loop: true });
     scroll(viewport, { delta: 7, loop: true });
 
-    expect(viewport.scroll.mock.calls).toEqual([[-1], [1], [1], [1]]);
+    expect(viewport.setImageIdIndex.mock.calls).toEqual([[0], [2], [2], [2]]);
+  });
+
+  it('moves a planar viewport with nothing mounted by its own setImageIdIndex, not by a scroll that calls back', () => {
+    const viewport = {
+      ...createViewport('empty'),
+      type: 'planar',
+      getNumberOfSlices: () => 0,
+      getImageIds: () => [],
+    };
+
+    scroll(viewport, { delta: 1 });
+
+    expect(viewport.setImageIdIndex.mock.calls).toEqual([[2]]);
+    expect(viewport.scroll).not.toHaveBeenCalled();
   });
 
   it('leaves a whole slide viewport and an ECG viewport as they were', () => {

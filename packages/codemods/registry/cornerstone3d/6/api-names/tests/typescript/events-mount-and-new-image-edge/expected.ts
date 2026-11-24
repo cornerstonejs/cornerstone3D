@@ -35,7 +35,7 @@ export function listen(element: HTMLDivElement, eventName: string) {
   const both = (evt) => evt.detail.imageIdIndex;
 
   element.addEventListener(Enums.Events.NEW_IMAGE, both);
-  element.addEventListener(Enums.Events.STACK_SCROLL_OUT_OF_BOUNDS, both);
+  element.addEventListener(Enums.Events.CAMERA_MODIFIED, both);
 
   eventTarget.addEventListener('CORNERSTONE_VOLUME_VIEWPORT_NEW_VOLUME', () =>
     console.log('volume')

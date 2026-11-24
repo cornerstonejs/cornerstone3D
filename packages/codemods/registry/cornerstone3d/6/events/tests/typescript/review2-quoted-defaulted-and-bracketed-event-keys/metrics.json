@@ -4,7 +4,7 @@
       "cardinality": {
         "file": "input.ts",
         "line": "14",
-        "rule": "Events.STACK_VIEWPORT_SCROLL"
+        "rule": "Events.STACK_VIEWPORT_SCROLL: no event fires for each scroll: listen to NEW_IMAGE for the slice that is shown and to CAMERA_MODIFIED for the camera; a scroll stopped at the first or the last slice fires SCROLL_OUT_OF_BOUNDS"
       },
       "count": 1
     },

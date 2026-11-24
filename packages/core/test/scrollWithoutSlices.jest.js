@@ -67,17 +67,11 @@ describe('Scroll on a next viewport that has no slices', () => {
 
   beforeEach(() => {
     outOfBounds = jest.fn();
-    eventTarget.addEventListener(
-      Events.STACK_SCROLL_OUT_OF_BOUNDS,
-      outOfBounds
-    );
+    eventTarget.addEventListener(Events.SCROLL_OUT_OF_BOUNDS, outOfBounds);
   });
 
   afterEach(() => {
-    eventTarget.removeEventListener(
-      Events.STACK_SCROLL_OUT_OF_BOUNDS,
-      outOfBounds
-    );
+    eventTarget.removeEventListener(Events.SCROLL_OUT_OF_BOUNDS, outOfBounds);
     mounted.splice(0).forEach(unmount);
     jest.restoreAllMocks();
   });

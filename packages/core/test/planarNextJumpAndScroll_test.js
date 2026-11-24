@@ -235,34 +235,26 @@ describe('Jump and scroll on a direct next planar viewport -- ', () => {
 
   describe('utilities.scroll', () => {
     /**
-     * STACK_SCROLL_OUT_OF_BOUNDS is the event of the legacy stack viewport. A
-     * legacy volume viewport fired the volume scroll events in its place
-     * (measured on 58914567b), and so does volume mode:
-     * `planarScrollEvents_test.js`.
+     * A scroll that stops at an end fires SCROLL_OUT_OF_BOUNDS in both
+     * modes, with the position it stopped at; `planarScrollEvents_test.js`
+     * tests the event itself.
      */
     const modes = [
-      {
-        mode: 'stack',
-        show: showStack,
-        slices: 10,
-        stackOutOfBounds: [
-          { imageIdIndex: 4, direction: 40 },
-          { imageIdIndex: 9, direction: -40 },
-        ],
-      },
-      { mode: 'volume', show: showVolume, slices: 12, stackOutOfBounds: [] },
+      { mode: 'stack', show: showStack, slices: 10 },
+      { mode: 'volume', show: showVolume, slices: 12 },
     ];
 
-    modes.forEach(({ mode, show, slices, stackOutOfBounds }) => {
+    modes.forEach(({ mode, show, slices }) => {
       it(`steps by delta slices in ${mode} mode and stops at both ends`, async function () {
         const viewport = createNextViewport(renderingEngine);
         const outOfBounds = [];
-        const onOutOfBounds = (evt) => outOfBounds.push(evt.detail);
+        const onOutOfBounds = (evt) =>
+          outOfBounds.push([evt.detail.sliceIndex, evt.detail.direction]);
 
         await show(viewport);
         await utilities.jumpToSlice(viewport.element, { imageIndex: 3 });
         eventTarget.addEventListener(
-          Events.STACK_SCROLL_OUT_OF_BOUNDS,
+          Events.SCROLL_OUT_OF_BOUNDS,
           onOutOfBounds
         );
 
@@ -273,14 +265,17 @@ describe('Jump and scroll on a direct next planar viewport -- ', () => {
         });
 
         eventTarget.removeEventListener(
-          Events.STACK_SCROLL_OUT_OF_BOUNDS,
+          Events.SCROLL_OUT_OF_BOUNDS,
           onOutOfBounds
         );
         await renderAndWait(viewport);
 
         expect(viewport.getCurrentMode()).toBe(mode);
         expect(indices).toEqual([5, 4, slices - 1, 0]);
-        expect(outOfBounds).toEqual(stackOutOfBounds);
+        expect(outOfBounds).toEqual([
+          [slices - 1, 1],
+          [0, -1],
+        ]);
       });
 
       it(`wraps at both ends with loop in ${mode} mode`, async function () {

@@ -36,10 +36,83 @@ const NEW_IMAGE_PATH = 'Enums.Events.NEW_IMAGE';
 const NEW_IMAGE_STRING = 'CORNERSTONE_NEW_IMAGE';
 
 /**
- * What shows the event of a listener: `NEW_IMAGE`, another event, or
- * nothing.
+ * What shows the event of a listener: `NEW_IMAGE`, one of the two out of
+ * bounds events of 6.0.0-beta.2, another event, or nothing.
  */
-type EventProof = 'newImage' | 'other' | undefined;
+type EventProof =
+  | 'newImage'
+  | 'stackOutOfBounds'
+  | 'volumeOutOfBounds'
+  | 'other'
+  | undefined;
+
+/** The out of bounds events of 6.0.0-beta.2 by their name, string and types. */
+const OUT_OF_BOUNDS_EVENTS: Record<
+  string,
+  { proof: EventProof; types: string[] }
+> = {
+  STACK_SCROLL_OUT_OF_BOUNDS: {
+    proof: 'stackOutOfBounds',
+    types: ['StackScrollOutOfBoundsEvent', 'StackScrollOutOfBoundsEventDetail'],
+  },
+  VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS: {
+    proof: 'volumeOutOfBounds',
+    types: [
+      'VolumeScrollOutOfBoundsEvent',
+      'VolumeScrollOutOfBoundsEventDetail',
+    ],
+  },
+};
+
+/** The new name of the out of bounds events. */
+const SCROLL_OUT_OF_BOUNDS = 'SCROLL_OUT_OF_BOUNDS';
+
+/** The keys of the new detail, for the reports. */
+const SCROLL_OUT_OF_BOUNDS_DETAIL =
+  'the detail is { viewportId, renderingEngineId, displaySetId, volumeId, sliceIndex, numberOfSlices, delta, direction, imageId }';
+
+/**
+ * The keys of an old out of bounds detail that have one key in the new
+ * detail, by the event.
+ */
+const OUT_OF_BOUNDS_KEYS: Record<string, Record<string, string>> = {
+  stackOutOfBounds: { direction: 'delta' },
+  volumeOutOfBounds: { currentImageId: 'imageId' },
+};
+
+/** The text of the index of the old details, which is not `sliceIndex`. */
+const OLD_INDEX_NOTE =
+  'SCROLL_OUT_OF_BOUNDS gives sliceIndex, the position the scroll stopped at (the first or the last), where the old event gave the position before the scroll';
+
+/**
+ * The keys of an old out of bounds detail that have no one key in the new
+ * detail, by the event, with what to read instead.
+ */
+const OUT_OF_BOUNDS_DROPPED: Record<string, Record<string, string>> = {
+  stackOutOfBounds: { imageIdIndex: OLD_INDEX_NOTE },
+  volumeOutOfBounds: {
+    currentStepIndex: OLD_INDEX_NOTE,
+    desiredStepIndex:
+      'SCROLL_OUT_OF_BOUNDS has no requested position: it gives delta and direction (-1 toward the first position, 1 toward the last)',
+    numScrollSteps:
+      'SCROLL_OUT_OF_BOUNDS gives numberOfSlices, which is numScrollSteps + 1',
+    viewport:
+      'SCROLL_OUT_OF_BOUNDS gives viewportId and renderingEngineId: getEnabledElementByIds(viewportId, renderingEngineId).viewport',
+  },
+};
+
+/** What a listener of `VOLUME_VIEWPORT_SCROLL` listens to now. */
+const VOLUME_SCROLL_MANUAL =
+  'no event fires for each scroll: listen to NEW_IMAGE for the slice that is shown and to CAMERA_MODIFIED for the camera; a scroll stopped at the first or the last slice fires SCROLL_OUT_OF_BOUNDS';
+
+/** The function kinds that a listener can be. */
+const LISTENER_KINDS = new Set([
+  'arrow_function',
+  'function_expression',
+  'function',
+  'function_declaration',
+  'method_definition',
+]);
 
 /**
  * Events: the one appearance event in place of `VOI_MODIFIED` and
@@ -51,6 +124,11 @@ type EventProof = 'newImage' | 'other' | undefined;
  * `DISPLAY_SETS_CHANGED`, each site for review, as the new event also fires
  * for an overlay; `StackViewportNewStackEvent` and its detail become the
  * types of the new event.
+ *
+ * EV2: `STACK_SCROLL_OUT_OF_BOUNDS` and `VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS`
+ * become `SCROLL_OUT_OF_BOUNDS`, their four types the two types of the new
+ * event; the keys of their detail are rewritten in `rewrite`. Each site of
+ * `VOLUME_VIEWPORT_SCROLL` is reported: no event fires for each scroll.
  */
 export const rules: Rules = {
   exports: [
@@ -82,6 +160,28 @@ export const rules: Rules = {
       review:
         'the detail has displaySets, sourceDisplaySetId, added, removed and sourceChanged, and no imageIds',
     },
+    ...Object.keys(OUT_OF_BOUNDS_EVENTS).map((name) => ({
+      namespace: 'Enums.Events',
+      name,
+      to: SCROLL_OUT_OF_BOUNDS,
+      value: name,
+    })),
+    {
+      namespace: 'Enums.Events',
+      name: 'VOLUME_VIEWPORT_SCROLL',
+      value: 'VOLUME_VIEWPORT_SCROLL',
+      manual: VOLUME_SCROLL_MANUAL,
+    },
+    ...Object.values(OUT_OF_BOUNDS_EVENTS).flatMap(({ types }) =>
+      types.map((name) => ({
+        namespace: 'Types.EventTypes',
+        name,
+        to: name.endsWith('Detail')
+          ? 'ScrollOutOfBoundsEventDetail'
+          : 'ScrollOutOfBoundsEvent',
+        review: SCROLL_OUT_OF_BOUNDS_DETAIL,
+      }))
+    ),
   ],
   members: [],
   keys: [],
@@ -147,9 +247,13 @@ function eventOfArgument(argument: Node | undefined): EventProof {
   const inner = unwrap(argument);
 
   if (inner.kind() === 'string') {
-    return inner.text().slice(1, -1) === NEW_IMAGE_STRING
-      ? 'newImage'
-      : 'other';
+    const value = inner.text().slice(1, -1);
+
+    if (value === NEW_IMAGE_STRING) {
+      return 'newImage';
+    }
+
+    return OUT_OF_BOUNDS_EVENTS[value]?.proof ?? 'other';
   }
 
   const path = pathOf(inner);
@@ -158,7 +262,37 @@ function eventOfArgument(argument: Node | undefined): EventProof {
     return 'newImage';
   }
 
-  return path?.startsWith('Enums.Events.') ? 'other' : undefined;
+  if (!path?.startsWith('Enums.Events.')) {
+    return undefined;
+  }
+
+  return (
+    OUT_OF_BOUNDS_EVENTS[path.slice('Enums.Events.'.length)]?.proof ?? 'other'
+  );
+}
+
+/**
+ * Returns the event that a type of `Types.EventTypes` shows: `NEW_IMAGE`
+ * for `NewImageEvent` and its detail, an out of bounds event for one of its
+ * types, another event for another event type, and nothing otherwise.
+ */
+function eventOfType(types: string[]): EventProof {
+  if (
+    types.includes('NewImageEvent') ||
+    types.includes('NewImageEventDetail')
+  ) {
+    return 'newImage';
+  }
+
+  const outOfBounds = Object.values(OUT_OF_BOUNDS_EVENTS).find(
+    ({ types: of }) => of.some((type) => types.includes(type))
+  );
+
+  if (outOfBounds) {
+    return outOfBounds.proof;
+  }
+
+  return types.some((type) => type.endsWith('Event')) ? 'other' : undefined;
 }
 
 /**
@@ -206,20 +340,26 @@ function listenerReferences(fn: Node): Node[] {
 /**
  * Returns what shows the event that a function listens to: the type of its
  * event parameter, or the first argument of each `addEventListener` that
- * gets it. A function that listens to `NEW_IMAGE` and to another event, or
- * to an event that the file does not show, shows nothing.
+ * gets it. A function that listens to `NEW_IMAGE` or to an out of bounds
+ * event and to another event, or to an event that the file does not show,
+ * shows nothing.
  */
 function listenerEvent(fn: Node, eventParameter: Node | undefined): EventProof {
-  const types = annotatedTypes(eventParameter);
+  const typed = eventOfType(annotatedTypes(eventParameter));
 
-  if (types.includes('NewImageEvent')) {
-    return 'newImage';
+  if (typed) {
+    return typed;
   }
 
-  if (types.some((type) => type.endsWith('Event'))) {
-    return 'other';
-  }
+  return registeredEvent(fn);
+}
 
+/**
+ * Returns the event of the first argument of each `addEventListener` that
+ * gets a function: the one event when they agree, another event when each
+ * is an event that this family does not rewrite, and nothing otherwise.
+ */
+function registeredEvent(fn: Node): EventProof {
   const events: EventProof[] = [];
 
   for (const reference of listenerReferences(fn).map(keptValue)) {
@@ -242,11 +382,7 @@ function listenerEvent(fn: Node, eventParameter: Node | undefined): EventProof {
     return undefined;
   }
 
-  if (events.every((event) => event === 'newImage')) {
-    return 'newImage';
-  }
-
-  return events.includes('newImage') ? undefined : 'other';
+  return new Set(events).size === 1 ? events[0] : undefined;
 }
 
 /**
@@ -326,9 +462,12 @@ function detailEvent(node: Node, depth = 0): EventProof {
   }
 
   const declaration = declarationNodeOf(inner);
+  const typed = eventOfType(
+    annotatedTypes(declaration).filter((type) => type.endsWith('Detail'))
+  );
 
-  if (annotatedTypes(declaration).includes('NewImageEventDetail')) {
-    return 'newImage';
+  if (typed) {
+    return typed;
   }
 
   const value = constValue(inner);
@@ -481,29 +620,35 @@ function rewriteDetailMembers(run: Run): void {
 }
 
 /**
- * Rewrites the `imageIdIndex` entry of one object pattern of a `NEW_IMAGE`
- * detail. A shorthand takes the new name with its uses when the name is
- * free and each use is a plain name, and becomes `sliceIndex: imageIdIndex`
- * otherwise; a shorthand with a default value keeps its local name; a key
- * with a name, quoted or in brackets, keeps its quotes.
+ * Rewrites the entry of a key of one object pattern of a detail to its new
+ * key: `imageIdIndex` of a `NEW_IMAGE` detail to `sliceIndex`, and the keys
+ * of an out of bounds detail. A shorthand takes the new name with its uses
+ * when the name is free and each use is a plain name, and becomes
+ * `newKey: oldKey` otherwise; a shorthand with a default value keeps its
+ * local name; a key with a name, quoted or in brackets, keeps its quotes.
  */
-function rewritePatternEntry(run: Run, entry: Node): void {
+function rewritePatternEntry(
+  run: Run,
+  entry: Node,
+  oldKey: string,
+  newKey: string,
+  label: string
+): void {
   const kind = entry.kind();
-  const label = `NEW_IMAGE detail.${OLD_DETAIL_KEY} -> ${DETAIL_KEY}`;
 
   if (kind === 'shorthand_property_identifier_pattern') {
     const uses = referencesOf(entry);
 
     if (
       uses.every((use) => use.kind() === 'identifier') &&
-      !isNameTaken(run.rootNode, DETAIL_KEY)
+      !isNameTaken(run.rootNode, newKey)
     ) {
       run.edits.add(
-        entry.replace(DETAIL_KEY),
-        ...uses.map((use) => use.replace(DETAIL_KEY))
+        entry.replace(newKey),
+        ...uses.map((use) => use.replace(newKey))
       );
     } else {
-      run.edits.add(entry.replace(`${DETAIL_KEY}: ${OLD_DETAIL_KEY}`));
+      run.edits.add(entry.replace(`${newKey}: ${oldKey}`));
     }
 
     noteRewritten(run, label, entry);
@@ -512,9 +657,7 @@ function rewritePatternEntry(run: Run, entry: Node): void {
   }
 
   if (kind === 'object_assignment_pattern') {
-    run.edits.add(
-      entry.field('left').replace(`${DETAIL_KEY}: ${OLD_DETAIL_KEY}`)
-    );
+    run.edits.add(entry.field('left').replace(`${newKey}: ${oldKey}`));
     noteRewritten(run, label, entry);
 
     return;
@@ -531,31 +674,39 @@ function rewritePatternEntry(run: Run, entry: Node): void {
   if (string) {
     const quote = string.text()[0];
 
-    run.edits.add(string.replace(`${quote}${DETAIL_KEY}${quote}`));
+    run.edits.add(string.replace(`${quote}${newKey}${quote}`));
   } else {
-    run.edits.add(keyNode.replace(DETAIL_KEY));
+    run.edits.add(keyNode.replace(newKey));
   }
 
   noteRewritten(run, label, entry);
 }
 
 /**
+ * Returns the name of the key of an entry of an object pattern, or
+ * undefined for a rest element or a computed key.
+ */
+function patternEntryKey(entry: Node): string | undefined {
+  const kind = entry.kind();
+  const keyNode =
+    kind === 'shorthand_property_identifier_pattern'
+      ? entry
+      : kind === 'object_assignment_pattern'
+        ? entry.field('left')
+        : kind === 'pair_pattern'
+          ? entry.field('key')
+          : undefined;
+
+  return keyNode ? staticKeyName(keyNode) : undefined;
+}
+
+/**
  * Returns the `imageIdIndex` entry of an object pattern, or undefined.
  */
 function oldKeyEntry(pattern: Node): Node | undefined {
-  return pattern.children().find((entry) => {
-    const kind = entry.kind();
-    const keyNode =
-      kind === 'shorthand_property_identifier_pattern'
-        ? entry
-        : kind === 'object_assignment_pattern'
-          ? entry.field('left')
-          : kind === 'pair_pattern'
-            ? entry.field('key')
-            : undefined;
-
-    return staticKeyName(keyNode) === OLD_DETAIL_KEY;
-  });
+  return pattern
+    .children()
+    .find((entry) => patternEntryKey(entry) === OLD_DETAIL_KEY);
 }
 
 /**
@@ -575,13 +726,308 @@ function rewriteDetailPatterns(run: Run): void {
     }
 
     if (detail.event === 'newImage') {
-      rewritePatternEntry(run, entry);
+      rewritePatternEntry(
+        run,
+        entry,
+        OLD_DETAIL_KEY,
+        DETAIL_KEY,
+        `NEW_IMAGE detail.${OLD_DETAIL_KEY} -> ${DETAIL_KEY}`
+      );
     } else if (detail.event === undefined && detail.detailLike) {
       report(
         run,
         'manual',
         `detail.${OLD_DETAIL_KEY}: ${DETAIL_KEY_UNPROVEN}`,
         entry
+      );
+    }
+  }
+}
+
+/**
+ * Tells whether a proof is one of the two out of bounds events.
+ */
+function isOutOfBounds(
+  event: EventProof
+): event is 'stackOutOfBounds' | 'volumeOutOfBounds' {
+  return event === 'stackOutOfBounds' || event === 'volumeOutOfBounds';
+}
+
+/** Every key of the old out of bounds details that this family takes. */
+const OUT_OF_BOUNDS_OLD_KEYS = [
+  ...new Set(
+    [
+      ...Object.values(OUT_OF_BOUNDS_KEYS),
+      ...Object.values(OUT_OF_BOUNDS_DROPPED),
+    ].flatMap((keys) => Object.keys(keys))
+  ),
+];
+
+/**
+ * Rewrites a key of the detail of an out of bounds listener that has one
+ * key in the new detail, and reports a key that has none for review. A key
+ * that the old detail of that event did not have stays.
+ */
+function applyOutOfBoundsKey(
+  run: Run,
+  event: 'stackOutOfBounds' | 'volumeOutOfBounds',
+  key: string,
+  node: Node,
+  rewriteTo: (newKey: string) => void
+): void {
+  const newKey = OUT_OF_BOUNDS_KEYS[event][key];
+  const note = OUT_OF_BOUNDS_DROPPED[event][key];
+
+  if (newKey) {
+    rewriteTo(newKey);
+  } else if (note) {
+    report(run, 'review', `detail.${key}: ${note}`, node);
+  }
+}
+
+/**
+ * Rewrites `detail.direction` and `detail['currentImageId']` of an out of
+ * bounds listener, and reports the keys that have no new key.
+ */
+function rewriteOutOfBoundsMembers(run: Run): void {
+  const keys = OUT_OF_BOUNDS_OLD_KEYS.join('|');
+
+  for (const node of run.rootNode.findAll({
+    rule: {
+      any: [
+        {
+          kind: 'member_expression',
+          has: { field: 'property', regex: `^(${keys})$` },
+        },
+        {
+          kind: 'subscript_expression',
+          has: { field: 'index', regex: `^['"](${keys})['"]$` },
+        },
+      ],
+    },
+  })) {
+    const isBracket = node.kind() === 'subscript_expression';
+    const keyNode = isBracket ? node.field('index') : node.field('property');
+    const key = isBracket ? bracketKey(node) : keyNode?.text();
+    const object = node.field('object');
+
+    if (
+      !keyNode ||
+      !object ||
+      !key ||
+      run.handled.has(keyNode.range().start.index)
+    ) {
+      continue;
+    }
+
+    const event = detailEvent(object);
+
+    if (!isOutOfBounds(event)) {
+      continue;
+    }
+
+    applyOutOfBoundsKey(run, event, key, keyNode, (newKey) => {
+      const quote = isBracket ? keyNode.text()[0] : '';
+
+      if (run.edits.add(keyNode.replace(`${quote}${newKey}${quote}`))) {
+        noteRewritten(
+          run,
+          `${SCROLL_OUT_OF_BOUNDS} detail.${key} -> ${newKey}`,
+          keyNode
+        );
+      }
+    });
+  }
+}
+
+/**
+ * Rewrites the keys of an object pattern of the detail of an out of bounds
+ * listener, and reports the keys that have no new key.
+ */
+function rewriteOutOfBoundsPatterns(run: Run): void {
+  for (const pattern of run.rootNode.findAll({
+    rule: { kind: 'object_pattern' },
+  })) {
+    const entries = pattern
+      .children()
+      .filter((entry) =>
+        OUT_OF_BOUNDS_OLD_KEYS.includes(patternEntryKey(entry) ?? '')
+      );
+    const event = entries.length ? patternDetail(pattern)?.event : undefined;
+
+    if (!isOutOfBounds(event)) {
+      continue;
+    }
+
+    for (const entry of entries) {
+      const key = patternEntryKey(entry);
+
+      if (!key || run.handled.has(entry.range().start.index)) {
+        continue;
+      }
+
+      applyOutOfBoundsKey(run, event, key, entry, (newKey) =>
+        rewritePatternEntry(
+          run,
+          entry,
+          key,
+          newKey,
+          `${SCROLL_OUT_OF_BOUNDS} detail.${key} -> ${newKey}`
+        )
+      );
+    }
+  }
+}
+
+/**
+ * Returns the function that a listener argument names: an inline function,
+ * a function or a `const` of the file, a method or a field of the class of
+ * `this.name`, also with `.bind(...)`; undefined for another value.
+ */
+function listenerFunction(listener: Node, depth = 0): Node | undefined {
+  const inner = unwrap(listener);
+  const kind = inner.kind();
+
+  if (LISTENER_KINDS.has(kind)) {
+    return inner;
+  }
+
+  if (depth > 3) {
+    return undefined;
+  }
+
+  if (kind === 'call_expression') {
+    const parts = methodCall(inner);
+
+    return parts?.method === 'bind'
+      ? listenerFunction(parts.object, depth + 1)
+      : undefined;
+  }
+
+  if (kind === 'identifier') {
+    const holder = declarationNodeOf(inner)?.parent();
+
+    if (holder?.kind() === 'function_declaration') {
+      return holder;
+    }
+
+    const value = constValue(inner);
+
+    return value ? listenerFunction(value, depth + 1) : undefined;
+  }
+
+  if (
+    kind !== 'member_expression' ||
+    inner.field('object')?.kind() !== 'this'
+  ) {
+    return undefined;
+  }
+
+  const name = inner.field('property')?.text();
+  const member = inner
+    .ancestors()
+    .find((ancestor) => ancestor.kind() === 'class_body')
+    ?.children()
+    .find(
+      (child) =>
+        (child.kind() === 'method_definition' ||
+          child.kind() === 'public_field_definition') &&
+        child.field('name')?.text() === name
+    );
+
+  if (member?.kind() === 'method_definition') {
+    return member;
+  }
+
+  const value = member?.field('value');
+
+  return value ? listenerFunction(value, depth + 1) : undefined;
+}
+
+/**
+ * Returns the event parameter of a function: its first parameter, a name or
+ * a pattern.
+ */
+function eventParameterOf(fn: Node): Node | undefined {
+  const single = fn.field('parameter');
+
+  if (single) {
+    return single;
+  }
+
+  const first = fn
+    .field('parameters')
+    ?.children()
+    .find((child) => child.isNamed() && child.kind() !== 'comment');
+
+  if (
+    first?.kind() === 'required_parameter' ||
+    first?.kind() === 'optional_parameter'
+  ) {
+    return first.field('pattern') ?? undefined;
+  }
+
+  return first;
+}
+
+/**
+ * Reports for review each `addEventListener` of an out of bounds event whose
+ * listener the file does not show to hear only that event: a listener that
+ * is not in the file, or that is given to another event too. In a file that
+ * listened to both out of bounds events, each listener is reported: both
+ * are one event now, so each listener hears a stack, a volume and a video.
+ */
+function reportOutOfBoundsListeners(run: Run): void {
+  const registrations: Array<{
+    event: EventProof;
+    property: Node;
+    listener: Node | undefined;
+  }> = [];
+
+  for (const call of run.rootNode.findAll({
+    rule: { kind: 'call_expression' },
+  })) {
+    const parts = methodCall(call);
+    const event =
+      parts?.method === 'addEventListener'
+        ? eventOfArgument(parts.args[0])
+        : undefined;
+
+    if (isOutOfBounds(event)) {
+      registrations.push({
+        event,
+        property: parts.property,
+        listener: parts.args[1],
+      });
+    }
+  }
+
+  const both = new Set(registrations.map(({ event }) => event)).size > 1;
+
+  for (const { property, listener } of registrations) {
+    const fn = listener ? listenerFunction(listener) : undefined;
+    const reasons: string[] = [];
+
+    if (!fn) {
+      reasons.push('the listener is not in this file');
+    } else if (!isOutOfBounds(listenerEvent(fn, eventParameterOf(fn)))) {
+      reasons.push(
+        'the file does not show that the listener hears only this event'
+      );
+    }
+
+    if (both) {
+      reasons.push(
+        'the file listened to both out of bounds events, which are one event now'
+      );
+    }
+
+    if (reasons.length) {
+      report(
+        run,
+        'review',
+        `${SCROLL_OUT_OF_BOUNDS}: ${reasons.join(', ')}; ${SCROLL_OUT_OF_BOUNDS_DETAIL}`,
+        property
       );
     }
   }
@@ -599,8 +1045,18 @@ function rewriteDetailPatterns(run: Run): void {
  * or its event is typed `NewImageEvent`. A `detail.imageIdIndex` of a
  * listener of another core event stays; one whose event the file does not
  * show is reported.
+ *
+ * EV2: in a listener of `STACK_SCROLL_OUT_OF_BOUNDS` or
+ * `VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS` that the file shows, in the same
+ * forms, `direction` of the stack detail becomes `delta` and
+ * `currentImageId` of the volume detail becomes `imageId`; the keys that
+ * have no one key in the new detail are reported for review. A listener
+ * that the file does not show is reported for review.
  */
 export function rewrite(run: Run): void {
   rewriteDetailMembers(run);
   rewriteDetailPatterns(run);
+  rewriteOutOfBoundsMembers(run);
+  rewriteOutOfBoundsPatterns(run);
+  reportOutOfBoundsListeners(run);
 }

@@ -40,17 +40,11 @@ describe('utilities.scroll on a registered video viewport', () => {
 
   beforeEach(() => {
     outOfBounds = jest.fn();
-    eventTarget.addEventListener(
-      Events.STACK_SCROLL_OUT_OF_BOUNDS,
-      outOfBounds
-    );
+    eventTarget.addEventListener(Events.SCROLL_OUT_OF_BOUNDS, outOfBounds);
   });
 
   afterEach(() => {
-    eventTarget.removeEventListener(
-      Events.STACK_SCROLL_OUT_OF_BOUNDS,
-      outOfBounds
-    );
+    eventTarget.removeEventListener(Events.SCROLL_OUT_OF_BOUNDS, outOfBounds);
     jest.restoreAllMocks();
   });
 

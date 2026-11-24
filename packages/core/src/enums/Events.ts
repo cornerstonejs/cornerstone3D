@@ -211,9 +211,18 @@ enum Events {
   DISPLAY_SETS_CHANGED = 'CORNERSTONE_DISPLAY_SETS_CHANGED',
 
   /**
-   * Triggers when the scroll function is called with a delta that is out of bounds in the stack viewport.
+   * Triggers when a scroll without `loop` stops at the first or the last
+   * position short of the position it asked for: an image of a stack, a
+   * slice of a volume along the view in any orientation, a slab with
+   * `scrollSlabs`, or a frame of a video. `utilities.scroll` and `scroll()`
+   * of a planar and of a video viewport fire it, after the viewport moved,
+   * once on the element of the viewport and once on the eventTarget. A
+   * scroll inside the range fires NEW_IMAGE and CAMERA_MODIFIED, not this.
+   *
+   * Make use of {@link EventTypes.ScrollOutOfBoundsEvent | ScrollOutOfBounds Event Type } for typing your event listeners for SCROLL_OUT_OF_BOUNDS event,
+   * and see what event detail is included in {@link EventTypes.ScrollOutOfBoundsEventDetail | ScrollOutOfBounds Event Detail }
    */
-  STACK_SCROLL_OUT_OF_BOUNDS = 'STACK_SCROLL_OUT_OF_BOUNDS',
+  SCROLL_OUT_OF_BOUNDS = 'CORNERSTONE_SCROLL_OUT_OF_BOUNDS',
 
   /**
    * Triggers on the eventTarget when a new geometry is added to the geometry cache
@@ -222,20 +231,6 @@ enum Events {
 
   // removed
   GEOMETRY_CACHE_GEOMETRY_REMOVED = 'CORNERSTONE_GEOMETRY_CACHE_GEOMETRY_REMOVED',
-
-  /**
-   * Triggers on the eventTarget when `utilities.scroll` of a planar viewport
-   * in volume mode is asked to go past the first or the last slice while the
-   * view is in the acquisition plane, in place of VOLUME_VIEWPORT_SCROLL.
-   * This is usually for signaling that the user may want a different volume for partially loaded volumes which is meant to optimize memory.
-   */
-  VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS = 'VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS',
-
-  /**
-   * Triggers on the eventTarget when `utilities.scroll` scrolls a planar
-   * viewport in volume mode.
-   */
-  VOLUME_VIEWPORT_SCROLL = 'VOLUME_VIEWPORT_SCROLL',
 
   /**
    * Triggers when the webworker has made progress

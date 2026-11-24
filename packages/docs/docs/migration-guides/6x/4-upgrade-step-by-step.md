@@ -762,9 +762,10 @@ These calls keep their names and work in both modes:
 - A stack has one orientation. `setOrientation` changes nothing on a stack
   and does not throw. Ask `viewport.canRenderOrientation(orientation)` before
   the call.
-- `viewport.scroll(1)` steps by one slice, also with a slab, and it takes the
-  delta only. Pass `scrollSlabs: true` to `utilities.scroll` to step by the
-  slab, and `loop: true` to wrap at the ends.
+- `viewport.scroll(1)` steps by one slice, also with a slab. Pass
+  `scrollSlabs: true` to `viewport.scroll(delta, options)` or to
+  `utilities.scroll` to step by the slab, and `loop: true` to wrap at the
+  ends.
 - `setImageIdIndex` clamps an index that is out of range. It does not throw.
 - `getCurrentImageId()` takes no index: use `viewport.getImageIds()[index]`.
   For a volume it is undefined on a plane that is not the acquisition plane.
@@ -929,8 +930,8 @@ is its geometry id.
 **Search**
 
 ```sh
-rg -n "STACK_NEW_IMAGE|VOLUME_NEW_IMAGE|PRE_STACK_NEW_IMAGE|STACK_VIEWPORT_SCROLL|IMAGE_LOAD_ERROR|PRESET_MODIFIED|ACTORS_CHANGED|CLIPPING_PLANES_UPDATED|DYNAMIC_VOLUME_TIME_POINT" src
-rg -n "CAMERA_MODIFIED|CAMERA_RESET|VOI_MODIFIED|COLORMAP_MODIFIED|IMAGE_SPACING_CALIBRATED|STACK_SCROLL_OUT_OF_BOUNDS|VOLUME_VIEWPORT_SCROLL" src
+rg -n "STACK_NEW_IMAGE|VOLUME_NEW_IMAGE|PRE_STACK_NEW_IMAGE|STACK_VIEWPORT_SCROLL|VOLUME_VIEWPORT_SCROLL|STACK_SCROLL_OUT_OF_BOUNDS|IMAGE_LOAD_ERROR|PRESET_MODIFIED|ACTORS_CHANGED|CLIPPING_PLANES_UPDATED|DYNAMIC_VOLUME_TIME_POINT" src
+rg -n "CAMERA_MODIFIED|CAMERA_RESET|VOI_MODIFIED|COLORMAP_MODIFIED|IMAGE_SPACING_CALIBRATED" src
 rg -n "invertStateChanged|previousCamera" src
 ```
 
@@ -965,6 +966,9 @@ element.addEventListener(
   onNewDisplaySet
 );
 eventTarget.addEventListener(Enums.Events.IMAGE_LOAD_ERROR, onLoadError);
+eventTarget.addEventListener(Enums.Events.STACK_SCROLL_OUT_OF_BOUNDS, (evt) =>
+  onScrollEnd(evt.detail.direction)
+);
 ```
 
 After:
@@ -984,6 +988,10 @@ eventTarget.addEventListener(Enums.Events.IMAGE_LOAD_FAILED, (evt) => {
 
   onLoadError(imageId, error);
 });
+
+eventTarget.addEventListener(Enums.Events.SCROLL_OUT_OF_BOUNDS, (evt) =>
+  onScrollEnd(evt.detail.delta)
+);
 ```
 
 **Check.** Log each event that the application listens to, on a stack and on
@@ -1026,15 +1034,20 @@ a volume: scroll, change the window, reset. Compare with the table.
   `DYNAMIC_VOLUME_TIME_POINT_LOADED` are gone from `Enums.Events` too, with
   their detail types (`Types.EventTypes.ActorsChangedEvent` and
   `ActorsChangedEventDetail`), so a listener of one no longer compiles.
-- `STACK_SCROLL_OUT_OF_BOUNDS` fires in stack mode only, as on the legacy
-  stack viewport. In volume mode `utilities.scroll` fires
-  `VOLUME_VIEWPORT_SCROLL` and `VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS` with
-  the detail of the legacy volume viewport. Without a `volumeId` in the
-  scroll options, `detail.volumeId` is the volume that the viewport shows,
-  where 5.x gave `undefined`. `currentImageId` is optional in
-  `Types.EventTypes.VolumeScrollOutOfBoundsEventDetail` now: it is
-  `undefined` out of the acquisition plane, as in 5.x, so a typed listener
-  checks it before it reads it.
+- `STACK_SCROLL_OUT_OF_BOUNDS`, `VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS` and
+  `VOLUME_VIEWPORT_SCROLL` are gone from `Enums.Events`, with their detail
+  types. `SCROLL_OUT_OF_BOUNDS` fires in place of the two out of bounds
+  events, for a stack, a volume in any orientation and a video, only when a
+  scroll without `loop` stops at the first or the last position, from
+  `utilities.scroll` and from `viewport.scroll`. It fires on the element and
+  on `eventTarget`, so a listener on either keeps working. In its detail
+  `delta` is the old `direction` of the stack event and `imageId` the old
+  `currentImageId`; `sliceIndex` is where the scroll stopped, not where it
+  started, and `numberOfSlices` is `numScrollSteps + 1`. The detail has no
+  `viewport`: `getEnabledElementByIds(viewportId, renderingEngineId)` gives
+  it. A listener of `VOLUME_VIEWPORT_SCROLL` listens to `NEW_IMAGE` for the
+  slice that shows and to `CAMERA_MODIFIED` for the camera. See
+  [Scroll and its event](./2-rendering-changes.md#scroll-and-its-event).
 - In volume mode `detail.sliceIndex` of `NEW_IMAGE` is the slice index of
   the view. It can run against the order of the image ids, so it is not the
   place of `detail.imageId` in `viewport.getImageIds()`.
@@ -1234,7 +1247,7 @@ decides. A coding agent stops here and asks.
 | The fill of a labelmap                              | A `fillAlpha` of 0.5 looked like 0.26 on a legacy volume viewport. Now it is drawn as 0.5                                                                                        | Keep the stronger fill, or lower `fillAlpha` and `fillAlphaInactive`                                                                                    |
 | The opacity of a fusion layer                       | A numeric opacity of a colour layer is applied as given. The legacy viewport drew it weaker                                                                                      | Keep the value, or lower it                                                                                                                             |
 | A slab with the composite blend mode                | It draws as an average. The legacy viewport cast rays, so voxels in front hid what lies behind                                                                                   | Which blend mode the slab gets                                                                                                                          |
-| A scroll with a slab                                | `viewport.scroll(1)` steps by one slice. The legacy volume viewport stepped by the slab thickness                                                                                | Step by slices, or pass `scrollSlabs: true` to `utilities.scroll`                                                                                       |
+| A scroll with a slab                                | `viewport.scroll(1)` steps by one slice. The legacy volume viewport stepped by the slab thickness                                                                                | Step by slices, or pass `scrollSlabs: true` to `viewport.scroll` or `utilities.scroll`                                                                  |
 | A scroll with `loop`                                | `utilities.scroll` and `StackScrollTool` with `loop: true` wrap a volume at both ends. The legacy volume viewport ignored `loop`                                                 | Keep the wrap on volumes, or set `loop` only where the application wants it                                                                             |
 | `setOrientation` with a normal and no view up       | The view takes the view up of the acquisition. The legacy viewport kept the current view up when it was orthogonal to the normal, and otherwise took `[0, 0, 1]` or `[0, -1, 0]` | Which `viewUp` the application passes                                                                                                                   |
 | Default properties                                  | `setDefaultProperties` and its family have no twin                                                                                                                               | Where the application keeps its default, and when it sets it: for each display set, or for each image in a listener of `NEW_IMAGE`                      |

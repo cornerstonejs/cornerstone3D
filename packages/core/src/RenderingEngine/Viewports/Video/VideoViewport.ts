@@ -35,6 +35,7 @@ import type {
   ViewportDataBinding,
 } from '../ViewportArchitectureTypes';
 import { getDisplaySetImageId } from '../displaySetAccess';
+import scrollViewport from '../viewportScroll';
 import type { ViewReferenceContext } from '../viewReferenceCompatibility';
 import type {
   VideoViewState,
@@ -732,55 +733,21 @@ class VideoViewport extends BaseViewport<
   }
 
   /**
-   * Scrolls through frames using a signed delta.
+   * Scrolls through frames using a signed delta, with the scroll of
+   * `utilities.scroll`: the same request gives the same frame and the same
+   * event by either. The video pauses and goes to the start of the frame
+   * `delta` steps away. Without `loop` it stops at the first and at the last
+   * frame, and when it stops there short of the frame it asked for it fires
+   * SCROLL_OUT_OF_BOUNDS on the element and on the eventTarget.
    *
    * @param delta - Signed number of scroll steps to move by. A step is one
    * frame, or the `scrollStep` of the view state.
-   * @param _debounceLoading - Unused compatibility argument kept for stack-like
+   * @param debounceLoading - Unused compatibility argument kept for stack-like
    * callers.
    * @param loop - Whether to wrap when scrolling past either end.
    */
-  scroll(delta = 1, _debounceLoading = true, loop = false): void {
-    const videoData = this.getVideoData();
-
-    if (!videoData?.fps) {
-      return;
-    }
-
-    this.pause();
-
-    const minTimeSeconds = frameNumberToTimeSeconds(
-      videoData.frameRange[0],
-      videoData.fps
-    );
-    const maxTimeSeconds =
-      videoData.durationSeconds ??
-      frameNumberToTimeSeconds(videoData.frameRange[1], videoData.fps);
-    let nextTimeSeconds =
-      this.getCurrentTime() +
-      (delta * this.getScrollStepFrames()) / videoData.fps;
-
-    if (loop) {
-      const durationSeconds = Math.max(
-        maxTimeSeconds - minTimeSeconds,
-        1 / videoData.fps
-      );
-
-      while (nextTimeSeconds < minTimeSeconds) {
-        nextTimeSeconds += durationSeconds;
-      }
-
-      while (nextTimeSeconds > maxTimeSeconds) {
-        nextTimeSeconds -= durationSeconds;
-      }
-    } else {
-      nextTimeSeconds = Math.max(
-        minTimeSeconds,
-        Math.min(nextTimeSeconds, maxTimeSeconds)
-      );
-    }
-
-    this.seek(nextTimeSeconds);
+  scroll(delta = 1, debounceLoading = true, loop = false): void {
+    scrollViewport(this, { delta, debounceLoading, loop });
   }
 
   // ====================================================================

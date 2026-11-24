@@ -277,12 +277,40 @@ part of a view that another viewport can take is its framing.
   `Enums.Events.NEW_IMAGE` or of `'CORNERSTONE_NEW_IMAGE'` (inline, by its
   name, or as `this.listener` of its class), or its event is typed
   `Types.EventTypes.NewImageEvent` (its detail `NewImageEventDetail`). A
-  listener of another core event, such as `STACK_SCROLL_OUT_OF_BOUNDS`,
+  listener of another core event, such as `IMAGE_RENDERED`,
   stays. A `detail.imageIdIndex` whose event the file does not show, or of
   a listener given to `NEW_IMAGE` and to another event, is reported with
   the text that the key is `sliceIndex` if it is the detail of `NEW_IMAGE`.
   Every other `imageIdIndex` (`setImageIdIndex`,
   `initialImageIdIndex`, `getCurrentImageIdIndex`) stays.
+- `STACK_SCROLL_OUT_OF_BOUNDS` and `VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS` of
+  `Enums.Events` (also `EVENTS`, destructured, quoted or in brackets) become
+  `SCROLL_OUT_OF_BOUNDS`; `Types.EventTypes.StackScrollOutOfBoundsEvent`,
+  `VolumeScrollOutOfBoundsEvent` and their `Detail` types become
+  `ScrollOutOfBoundsEvent` and `ScrollOutOfBoundsEventDetail`, for review.
+  In a listener that the file shows (given to `addEventListener` of the
+  event, inline, by its name, or as `this.listener`, or with its event or
+  detail typed with one of these types), the keys of the old detail that
+  have one key in the new one are rewritten, in the same forms as
+  `imageIdIndex` above: `direction` of the stack event becomes `delta` and
+  `currentImageId` of the volume event `imageId`. A read of `imageIdIndex`,
+  `currentStepIndex` (both are `sliceIndex`, but where the scroll stopped,
+  not where it started), `desiredStepIndex`, `numScrollSteps`
+  (`numberOfSlices - 1`) or `viewport` (read
+  `getEnabledElementByIds(viewportId, renderingEngineId).viewport`) is
+  reported for review with what to read.
+  An `addEventListener` of one of the two events is reported for review
+  when the listener is not in the file, when the file does not show that it
+  hears that event only, and when the file listened to both events, which
+  are one event now. Two shorthands of one pattern of `Enums.Events` that
+  become `SCROLL_OUT_OF_BOUNDS` keep one name: the second becomes
+  `SCROLL_OUT_OF_BOUNDS: VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS`. A string of
+  an old event is reported.
+- `VOLUME_VIEWPORT_SCROLL` is reported at each site: no event fires for
+  each scroll; listen to `NEW_IMAGE` for the slice that shows and to
+  `CAMERA_MODIFIED` for the camera. A listener added on `eventTarget` and
+  one added on an element both hear `SCROLL_OUT_OF_BOUNDS`, which fires on
+  both.
 
 ### Render modes
 

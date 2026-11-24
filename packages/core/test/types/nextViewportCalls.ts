@@ -166,8 +166,22 @@ export function functionsOfTheGuide() {
   utilities.scroll(ecg, { delta: 1 });
   utilities.scroll(viewport, { delta: 1 });
   utilities.scroll(enabledElement.viewport, { delta: 1 });
+  planar.scroll(-1, { loop: true, scrollSlabs: true, volumeId: displaySetId });
+  video.scroll(1, true, true);
+
+  const outOfBounds: Types.EventTypes.ScrollOutOfBoundsEventDetail = {
+    viewportId,
+    renderingEngineId: renderingEngine.id,
+    displaySetId,
+    sliceIndex: 0,
+    numberOfSlices: 1,
+    delta: -1,
+    direction: -1,
+  };
 
   return [
+    outOfBounds,
+    Enums.Events.SCROLL_OUT_OF_BOUNDS,
     utilities.isInAcquisitionPlane(planar),
     utilities.isInAcquisitionPlane(video),
     utilities.isInAcquisitionPlane(wholeSlide),

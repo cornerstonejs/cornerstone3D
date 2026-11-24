@@ -12,14 +12,11 @@ describe('scroll utility — ECG viewport handling and bounds checks', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     triggerSpy = jest.fn();
-    eventTarget.addEventListener(Events.STACK_SCROLL_OUT_OF_BOUNDS, triggerSpy);
+    eventTarget.addEventListener(Events.SCROLL_OUT_OF_BOUNDS, triggerSpy);
   });
 
   afterEach(() => {
-    eventTarget.removeEventListener(
-      Events.STACK_SCROLL_OUT_OF_BOUNDS,
-      triggerSpy
-    );
+    eventTarget.removeEventListener(Events.SCROLL_OUT_OF_BOUNDS, triggerSpy);
   });
 
   it('throws an error when the viewport is disabled (getEnabledElement returns undefined)', () => {
@@ -55,29 +52,30 @@ describe('scroll utility — ECG viewport handling and bounds checks', () => {
 
     expect(scrollMock).toHaveBeenCalledTimes(1);
     expect(scrollMock).toHaveBeenCalledWith(1);
-    // Crucial check: STACK_SCROLL_OUT_OF_BOUNDS must NOT be triggered
+    // Crucial check: SCROLL_OUT_OF_BOUNDS must NOT be triggered
     expect(triggerSpy).not.toHaveBeenCalled();
   });
 
-  it('fires STACK_SCROLL_OUT_OF_BOUNDS for standard non-ECG stack viewports when out of bounds', () => {
+  it('fires SCROLL_OUT_OF_BOUNDS for standard non-ECG stack viewports when out of bounds', () => {
     jest
       .spyOn(getEnabledElementModule, 'default')
       .mockReturnValue({ viewport: {} });
 
-    const stackScrollMock = jest.fn();
+    const setImageIdIndex = jest.fn(() => Promise.resolve('slice-1'));
     const stackViewport = {
       element: dummyElement,
       getCurrentMode: () => 'stack',
       getCurrentImageIdIndex: () => 0,
+      getCurrentImageId: () => 'slice-1',
       getImageIds: () => ['slice-1'],
       getNumberOfSlices: () => 1,
-      scroll: stackScrollMock,
+      setImageIdIndex,
+      scroll: jest.fn(),
     };
 
-    // delta = 1 with only 1 image (index 0) is out of bounds
     scroll(stackViewport, { delta: 1 });
 
     expect(triggerSpy).toHaveBeenCalledTimes(1);
-    expect(stackScrollMock).toHaveBeenCalledWith(1);
+    expect(setImageIdIndex).toHaveBeenCalledWith(0);
   });
 });

@@ -13,7 +13,7 @@ import {
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import { KeyboardBindings } from '../../src/enums';
-import { StackScrollOutOfBoundsEvent } from 'core/src/types/EventTypes';
+import { ScrollOutOfBoundsEvent } from 'core/src/types/EventTypes';
 
 // This is for debugging purposes
 console.warn(
@@ -117,14 +117,14 @@ function updateLastEvents(number, eventName, detail) {
 
 let eventNumber = 1;
 
-const { STACK_SCROLL_OUT_OF_BOUNDS } = Enums.Events;
+const { SCROLL_OUT_OF_BOUNDS } = Enums.Events;
 
-eventTarget.addEventListener(STACK_SCROLL_OUT_OF_BOUNDS, ((
-  evt: StackScrollOutOfBoundsEvent
+eventTarget.addEventListener(SCROLL_OUT_OF_BOUNDS, ((
+  evt: ScrollOutOfBoundsEvent
 ) => {
   updateLastEvents(
     eventNumber,
-    STACK_SCROLL_OUT_OF_BOUNDS,
+    SCROLL_OUT_OF_BOUNDS,
     JSON.stringify(evt.detail)
   );
   eventNumber++;

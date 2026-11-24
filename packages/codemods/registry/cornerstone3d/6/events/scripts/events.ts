@@ -34,6 +34,14 @@ const review = new HeldMetric(useMetricAtom('cornerstone3d-6-review'));
 const MOUNT_EVENT_NOTE =
   'DISPLAY_SETS_CHANGED also fires when an overlay such as a labelmap is added or removed: a listener that cares only for the source adds if (!evt.detail.sourceChanged) return';
 
+/** What a listener of one of the two out of bounds events of 5.x reads now. */
+const OUT_OF_BOUNDS_NOTE =
+  'SCROLL_OUT_OF_BOUNDS fires for a stack, a volume in any orientation and a video, from utilities.scroll and from viewport.scroll, on the element and on eventTarget, and not with loop; the detail is { viewportId, renderingEngineId, displaySetId, volumeId, sliceIndex, numberOfSlices, delta, direction, imageId }, and sliceIndex is the position the scroll stopped at';
+
+/** What a listener of a removed per-scroll event listens to now. */
+const SCROLL_EVENT_NOTE =
+  'no event fires for each scroll: listen to NEW_IMAGE for the slice that is shown and to CAMERA_MODIFIED for the camera; a scroll stopped at the first or the last slice fires SCROLL_OUT_OF_BOUNDS';
+
 /** The removed events that have one event in their place, and why to review. */
 const RENAMED_EVENTS: Record<string, { name: string; note: string }> = {
   STACK_NEW_IMAGE: {
@@ -56,18 +64,43 @@ const RENAMED_EVENTS: Record<string, { name: string; note: string }> = {
     name: 'IMAGE_LOAD_FAILED',
     note: 'the detail has no imageIdIndex, a failed prefetch fires it too',
   },
+  STACK_SCROLL_OUT_OF_BOUNDS: {
+    name: 'SCROLL_OUT_OF_BOUNDS',
+    note: `${OUT_OF_BOUNDS_NOTE}: detail.direction is detail.delta, and detail.imageIdIndex (the position before the scroll) has no key`,
+  },
+  VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS: {
+    name: 'SCROLL_OUT_OF_BOUNDS',
+    note: `${OUT_OF_BOUNDS_NOTE}: detail.currentImageId is detail.imageId, numScrollSteps is numberOfSlices - 1, and currentStepIndex, desiredStepIndex and viewport have no key (getEnabledElementByIds(viewportId, renderingEngineId).viewport)`,
+  },
 };
 
 /** The removed events that need the application. */
 const REPORTED_EVENTS = new Set([
   'PRE_STACK_NEW_IMAGE',
   'STACK_VIEWPORT_SCROLL',
+  'VOLUME_VIEWPORT_SCROLL',
   'PRESET_MODIFIED',
   'ACTORS_CHANGED',
   'CLIPPING_PLANES_UPDATED',
   'DYNAMIC_VOLUME_TIME_POINT_INDEX_CHANGED',
   'DYNAMIC_VOLUME_TIME_POINT_LOADED',
 ]);
+
+/** The text of a removed event that says what to listen to instead. */
+const REPORTED_EVENT_NOTES: Record<string, string> = {
+  STACK_VIEWPORT_SCROLL: SCROLL_EVENT_NOTE,
+  VOLUME_VIEWPORT_SCROLL: SCROLL_EVENT_NOTE,
+};
+
+/**
+ * Returns the text of a site of a removed event: its name, and what to
+ * listen to instead where there is a note.
+ */
+function reportedEventText(name: string): string {
+  const note = REPORTED_EVENT_NOTES[name];
+
+  return note ? `Events.${name}: ${note}` : `Events.${name}`;
+}
 
 /**
  * The strings of the removed events, which a listener can name directly.
@@ -87,6 +120,9 @@ const EVENT_STRINGS: Record<string, string> = {
   CORNERSTONE_VIEWPORT_RENDERING_PRESET_MODIFIED: 'PRESET_MODIFIED',
   CORNERSTONE_ACTORS_CHANGED: 'ACTORS_CHANGED',
   CORNERSTONE_CLIPPING_PLANES_UPDATED: 'CLIPPING_PLANES_UPDATED',
+  STACK_SCROLL_OUT_OF_BOUNDS: 'STACK_SCROLL_OUT_OF_BOUNDS',
+  VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS: 'VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS',
+  VOLUME_VIEWPORT_SCROLL: 'VOLUME_VIEWPORT_SCROLL',
 };
 
 /** The event types of `Types.EventTypes` that 6.0 renames. */
@@ -97,19 +133,32 @@ const RENAMED_EVENT_TYPES: Record<string, string> = {
   VolumeNewImageEventDetail: 'NewImageEventDetail',
   StackViewportNewStackEvent: 'DisplaySetsChangedEvent',
   StackViewportNewStackEventDetail: 'DisplaySetsChangedEventDetail',
-};
-
-/**
- * The key of the detail of each 5.x event that becomes `NEW_IMAGE`, which
- * is `sliceIndex` in 6.0.
- */
-const NEW_IMAGE_DETAIL_KEYS: Record<string, string> = {
-  STACK_NEW_IMAGE: 'imageIdIndex',
-  VOLUME_NEW_IMAGE: 'imageIndex',
+  StackScrollOutOfBoundsEvent: 'ScrollOutOfBoundsEvent',
+  StackScrollOutOfBoundsEventDetail: 'ScrollOutOfBoundsEventDetail',
+  VolumeScrollOutOfBoundsEvent: 'ScrollOutOfBoundsEvent',
+  VolumeScrollOutOfBoundsEventDetail: 'ScrollOutOfBoundsEventDetail',
 };
 
 /** The key of the detail of `NEW_IMAGE` in 6.0. */
 const SLICE_INDEX = 'sliceIndex';
+
+/**
+ * The keys of the detail of a 5.x event that have one key in the detail of
+ * its 6.0 event: the index of `STACK_NEW_IMAGE` and `VOLUME_NEW_IMAGE`,
+ * which is `sliceIndex` of `NEW_IMAGE`, and the keys of the two out of
+ * bounds events that `SCROLL_OUT_OF_BOUNDS` keeps under another name.
+ */
+const DETAIL_KEYS: Record<string, Record<string, string>> = {
+  STACK_NEW_IMAGE: { imageIdIndex: SLICE_INDEX },
+  VOLUME_NEW_IMAGE: { imageIndex: SLICE_INDEX },
+  STACK_SCROLL_OUT_OF_BOUNDS: { direction: 'delta' },
+  VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS: { currentImageId: 'imageId' },
+};
+
+/** Every 5.x key of `DETAIL_KEYS`. */
+const OLD_DETAIL_KEYS = [
+  ...new Set(Object.values(DETAIL_KEYS).flatMap((keys) => Object.keys(keys))),
+];
 
 /** The 5.x event of each event type and detail type of `Types.EventTypes`. */
 const EVENT_OF_TYPE: Record<string, string> = {
@@ -117,6 +166,10 @@ const EVENT_OF_TYPE: Record<string, string> = {
   StackNewImageEventDetail: 'STACK_NEW_IMAGE',
   VolumeNewImageEvent: 'VOLUME_NEW_IMAGE',
   VolumeNewImageEventDetail: 'VOLUME_NEW_IMAGE',
+  StackScrollOutOfBoundsEvent: 'STACK_SCROLL_OUT_OF_BOUNDS',
+  StackScrollOutOfBoundsEventDetail: 'STACK_SCROLL_OUT_OF_BOUNDS',
+  VolumeScrollOutOfBoundsEvent: 'VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS',
+  VolumeScrollOutOfBoundsEventDetail: 'VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS',
 };
 
 /** The kinds of the function nodes of the syntax tree. */
@@ -191,7 +244,7 @@ function rewriteMembers(run: Run): void {
     run.handled.add(key.range().start.index);
 
     if (REPORTED_EVENTS.has(name)) {
-      manual.increment(site(run.root, `Events.${name}`, node));
+      manual.increment(site(run.root, reportedEventText(name), node));
       continue;
     }
 
@@ -370,7 +423,7 @@ function rewriteDestructured(run: Run): void {
       }
 
       if (REPORTED_EVENTS.has(name)) {
-        manual.increment(site(run.root, `Events.${name}`, entry));
+        manual.increment(site(run.root, reportedEventText(name), entry));
         continue;
       }
 
@@ -769,24 +822,42 @@ function eventsOfDetailPattern(pattern: Node): string[] | undefined {
 }
 
 /**
- * Tells whether a key of a detail becomes `sliceIndex` for these events:
- * every event becomes `NEW_IMAGE`, and one of them has the key.
+ * Returns the 6.0 key of a key of a detail for these events: every event
+ * becomes one and the same 6.0 event, one of them has the key, and none
+ * gives it another name. Undefined otherwise.
  */
-function isSliceIndexKey(key: string, events: string[] | undefined): boolean {
-  return Boolean(
-    events?.every((event) => NEW_IMAGE_DETAIL_KEYS[event]) &&
-      events.some((event) => NEW_IMAGE_DETAIL_KEYS[event] === key)
+function newDetailKey(
+  key: string,
+  events: string[] | undefined
+): string | undefined {
+  if (!events?.length || !events.every((event) => DETAIL_KEYS[event])) {
+    return undefined;
+  }
+
+  if (new Set(events.map((event) => RENAMED_EVENTS[event].name)).size !== 1) {
+    return undefined;
+  }
+
+  const newKeys = new Set(
+    events.map((event) => DETAIL_KEYS[event][key]).filter(Boolean)
   );
+
+  return newKeys.size === 1 ? [...newKeys][0] : undefined;
 }
 
 /**
- * Rewrites the key of an entry of an object pattern of a detail to
- * `sliceIndex`. A shorthand takes the new name with its uses when the name
- * is free and each use is a plain name, and keeps its local name otherwise,
- * also with a default value; a key with a name, quoted or in brackets, keeps
- * its quotes.
+ * Rewrites the key of an entry of an object pattern of a detail to its 6.0
+ * key. A shorthand takes the new name with its uses when the name is free
+ * and each use is a plain name, and keeps its local name otherwise, also
+ * with a default value; a key with a name, quoted or in brackets, keeps its
+ * quotes.
  */
-function renameDetailEntry(run: Run, entry: Node, key: string): void {
+function renameDetailEntry(
+  run: Run,
+  entry: Node,
+  key: string,
+  newKey: string
+): void {
   const kind = entry.kind();
 
   if (kind === 'shorthand_property_identifier_pattern') {
@@ -794,36 +865,39 @@ function renameDetailEntry(run: Run, entry: Node, key: string): void {
 
     if (
       uses.every((use) => use.kind() === 'identifier') &&
-      !isNameTaken(run.rootNode, SLICE_INDEX)
+      !isNameTaken(run.rootNode, newKey)
     ) {
       run.edits.add(
-        entry.replace(SLICE_INDEX),
-        ...uses.map((use) => use.replace(SLICE_INDEX))
+        entry.replace(newKey),
+        ...uses.map((use) => use.replace(newKey))
       );
     } else {
-      run.edits.add(entry.replace(`${SLICE_INDEX}: ${key}`));
+      run.edits.add(entry.replace(`${newKey}: ${key}`));
     }
 
     return;
   }
 
   if (kind === 'object_assignment_pattern') {
-    run.edits.add(entry.field('left').replace(`${SLICE_INDEX}: ${key}`));
+    run.edits.add(entry.field('left').replace(`${newKey}: ${key}`));
 
     return;
   }
 
-  run.edits.add(renameKey(entry.field('key'), SLICE_INDEX));
+  run.edits.add(renameKey(entry.field('key'), newKey));
 }
 
 /**
- * Writes `sliceIndex` for the key of the detail of a 5.x `STACK_NEW_IMAGE`
- * (`imageIdIndex`) or `VOLUME_NEW_IMAGE` (`imageIndex`) listener, which
- * listens to `NEW_IMAGE` after this step: in a member access, quoted in
- * brackets, and in a destructuring pattern with or without a default.
+ * Writes the 6.0 key for a key of the detail of a 5.x listener that listens
+ * to the 6.0 event after this step: `sliceIndex` for the index of a
+ * `STACK_NEW_IMAGE` (`imageIdIndex`) or `VOLUME_NEW_IMAGE` (`imageIndex`)
+ * listener, `delta` for `direction` of `STACK_SCROLL_OUT_OF_BOUNDS` and
+ * `imageId` for `currentImageId` of `VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS`:
+ * in a member access, quoted in brackets, and in a destructuring pattern
+ * with or without a default.
  */
 function rewriteDetailKeys(run: Run): void {
-  const keys = [...new Set(Object.values(NEW_IMAGE_DETAIL_KEYS))].join('|');
+  const keys = OLD_DETAIL_KEYS.join('|');
 
   for (const node of run.rootNode.findAll({
     rule: {
@@ -843,10 +917,14 @@ function rewriteDetailKeys(run: Run): void {
     const keyNode = isBracket ? node.field('index') : node.field('property');
     const key = isBracket ? bracketKey(node) : keyNode?.text();
 
-    if (keyNode && isSliceIndexKey(key, eventsOfDetail(node.field('object')))) {
+    const newKey = keyNode
+      ? newDetailKey(key, eventsOfDetail(node.field('object')))
+      : undefined;
+
+    if (newKey) {
       const quote = isBracket ? keyNode.text()[0] : '';
 
-      run.edits.add(keyNode.replace(`${quote}${SLICE_INDEX}${quote}`));
+      run.edits.add(keyNode.replace(`${quote}${newKey}${quote}`));
     }
   }
 
@@ -864,13 +942,13 @@ function rewriteDetailKeys(run: Run): void {
               ? entry.field('key')
               : undefined;
       const key = staticKeyName(keyNode);
+      const newKey =
+        key && OLD_DETAIL_KEYS.includes(key)
+          ? newDetailKey(key, eventsOfDetailPattern(pattern))
+          : undefined;
 
-      if (
-        key &&
-        Object.values(NEW_IMAGE_DETAIL_KEYS).includes(key) &&
-        isSliceIndexKey(key, eventsOfDetailPattern(pattern))
-      ) {
-        renameDetailEntry(run, entry, key);
+      if (newKey) {
+        renameDetailEntry(run, entry, key, newKey);
       }
     }
   }
@@ -901,9 +979,12 @@ function reportEventStrings(run: Run): void {
  * in their place: `STACK_NEW_IMAGE` and `VOLUME_NEW_IMAGE` become
  * `NEW_IMAGE`, with `sliceIndex` for the key of their detail in a listener
  * the file shows, `VIEWPORT_NEW_IMAGE_SET` and `VOLUME_VIEWPORT_NEW_VOLUME`
- * become `DISPLAY_SETS_CHANGED`, and `IMAGE_LOAD_ERROR` becomes
- * `IMAGE_LOAD_FAILED`, with their event types. Each rewrite is reported for
- * review. The events without a twin are reported.
+ * become `DISPLAY_SETS_CHANGED`, `IMAGE_LOAD_ERROR` becomes
+ * `IMAGE_LOAD_FAILED`, and `STACK_SCROLL_OUT_OF_BOUNDS` and
+ * `VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS` become `SCROLL_OUT_OF_BOUNDS`, with
+ * `delta` and `imageId` for the keys of their detail that have one, with
+ * their event types. Each rewrite is reported for review. The events without
+ * a twin are reported, the per-scroll events with what to listen to instead.
  */
 const codemod: Codemod<TSX> = (root) => {
   const rootNode = root.root();
