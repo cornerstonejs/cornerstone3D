@@ -1158,3 +1158,31 @@ Other changes:
   the work does not depend on the image values.
 - A listener that keeps data for each time point must read
   `dimensionGroupNumber`, and not the time point on display.
+
+## `roundNumber` removes trailing zeros
+
+### What Changed
+
+`utilities.roundNumber` still decides the number of decimals from the size of
+the value. It now removes the trailing zeros after the decimal point, and a
+decimal point with no digits after it. A value that rounds to zero gives `0`,
+never `-0`.
+
+| Call                   | Before    | After  |
+| ---------------------- | --------- | ------ |
+| `roundNumber(1)`       | `1.00`    | `1`    |
+| `roundNumber(12.30)`   | `12.3`    | `12.3` |
+| `roundNumber(10)`      | `10.0`    | `10`   |
+| `roundNumber(400, 5)`  | `400.000` | `400`  |
+| `roundNumber(40.5, 5)` | `40.5000` | `40.5` |
+
+The zeros after the last significant digit give no information to the user.
+The text of the measurement tools uses `roundNumber`, so a label such as
+`10.0 mm` now shows as `10 mm`.
+
+### Migration Guidance
+
+- If a test or a screenshot compares the text of a measurement, update the
+  expected text.
+- If your code needs a fixed number of decimals, call `Number.toFixed` in
+  place of `roundNumber`.

@@ -9,6 +9,10 @@ import { EPSILON } from '../constants';
  * * Values between 10 and 99 show 1 decimal point
  * * Values between 1 and 9 show 2 decimal points
  *
+ * Trailing zeros after the decimal point are removed, and so is a decimal
+ * point with no digits after it: 1 gives `1`, 12.30 gives `12.3`. A value that
+ * rounds to zero gives `0`, never `-0`.
+ *
  * @param value - to return a fixed measurement value from
  * @param precision - defining how many digits after 1..9 are desired
  */
@@ -41,7 +45,9 @@ function roundNumber(
               : absValue >= 0.001
                 ? precision + 3
                 : precision + 4;
-  return value.toFixed(fixedPrecision);
+  const text = value.toFixed(fixedPrecision);
+  const trimmed = text.includes('.') ? text.replace(/\.?0+$/, '') : text;
+  return trimmed === '-0' ? '0' : trimmed;
 }
 
 /**

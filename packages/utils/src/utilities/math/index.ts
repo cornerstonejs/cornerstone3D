@@ -5,7 +5,6 @@ export {
   toFiniteVector,
 } from './toNumber';
 export { default as toNumberDefault } from './toNumber';
-export { formatDecimal } from './formatDecimal';
 export {
   DEFAULT_EPSILON,
   areNumbersEqualWithTolerance,
