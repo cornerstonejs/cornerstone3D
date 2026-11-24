@@ -1,4 +1,8 @@
-import type { ActorEntry, VOIRange } from '../../../types';
+import { ActorRenderMode } from '../../../types';
+import type { ActorEntry, IImage, VOIRange } from '../../../types';
+import { getVolumeVOIShape } from '../../helpers/setDefaultVolumeVOI';
+import type { VolumeVOIShape } from '../../helpers/setDefaultVolumeVOI';
+import type { PlanarRendering } from './planarRuntimeTypes';
 import type {
   BindingRole,
   LoadedData,
@@ -11,6 +15,10 @@ import type {
 } from './PlanarViewportTypes';
 
 export type PlanarDataBinding = ViewportDataBinding<PlanarDataPresentation>;
+
+function shapeOfImage(image?: IImage): VolumeVOIShape {
+  return { voiLUTFunction: image?.voiLUTFunction, voiLUT: image?.voiLUT };
+}
 
 export type PlanarMountedDataHost = {
   getBinding(dataId: string): PlanarDataBinding | undefined;
@@ -157,16 +165,42 @@ class PlanarMountedData {
   }
 
   getDefaultVOIRange(dataId?: string): VOIRange | undefined {
-    const targetDataId =
-      dataId ?? this.sourceDataId ?? this.getCurrentBinding()?.data.id;
-    const rendering = targetDataId
-      ? (this.host.getBinding(targetDataId)?.rendering as
-          | { defaultVOIRange?: VOIRange }
-          | undefined)
-      : undefined;
-    const defaultVOIRange = rendering?.defaultVOIRange;
+    const defaultVOIRange = this.getRendering(dataId)?.defaultVOIRange;
 
     return defaultVOIRange ? { ...defaultVOIRange } : undefined;
+  }
+
+  /**
+   * The VOI LUT Function and the VOI LUT Sequence that the file gives for the
+   * displayed data: the current image of a stack, or the volume.
+   */
+  getDefaultVOIShape(dataId?: string): VolumeVOIShape {
+    const rendering = this.getRendering(dataId);
+
+    switch (rendering?.renderMode) {
+      case ActorRenderMode.VTK_IMAGE:
+        return shapeOfImage(rendering.currentImage);
+      case ActorRenderMode.CPU_IMAGE:
+        return shapeOfImage(rendering.enabledElement?.image);
+      case ActorRenderMode.CPU_VOLUME:
+        return getVolumeVOIShape(rendering.imageVolume);
+      case ActorRenderMode.VTK_VOLUME_SLICE:
+        return {
+          voiLUTFunction: rendering.defaultVOILUTFunction,
+          voiLUT: rendering.defaultVOILUT,
+        };
+      default:
+        return {};
+    }
+  }
+
+  private getRendering(dataId?: string): PlanarRendering | undefined {
+    const targetDataId =
+      dataId ?? this.sourceDataId ?? this.getCurrentBinding()?.data.id;
+
+    return targetDataId
+      ? (this.host.getBinding(targetDataId)?.rendering as PlanarRendering)
+      : undefined;
   }
 
   private promoteFirstAvailableBindingToSource(): void {

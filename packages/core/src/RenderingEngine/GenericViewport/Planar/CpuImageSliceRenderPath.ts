@@ -448,11 +448,15 @@ function applyDataPresentation(
     enabledElement.image?.voiLUTFunction ??
     VOILUTFunctionType.LINEAR;
 
-  viewport.voiLUT = resolveVOILUTSequenceToApply({
-    defaultVOILUT: enabledElement.image?.voiLUT,
-    defaultVOILUTFunction: enabledElement.image?.voiLUTFunction,
-    props,
-  });
+  // A colormap replaces the VOI LUT Sequence, as on the GPU path.
+  viewport.voiLUT =
+    props?.colormap?.name === undefined
+      ? resolveVOILUTSequenceToApply({
+          defaultVOILUT: enabledElement.image?.voiLUT,
+          defaultVOILUTFunction: enabledElement.image?.voiLUTFunction,
+          props,
+        })
+      : undefined;
 
   if (voiRange) {
     const { windowCenter, windowWidth } = toWindowLevel(

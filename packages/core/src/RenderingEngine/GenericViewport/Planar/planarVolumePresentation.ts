@@ -2,7 +2,20 @@ import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunc
 import type vtkImageResliceMapper from '@kitware/vtk.js/Rendering/Core/ImageResliceMapper';
 import type vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import type { VOILUTFunctionType } from '../../../enums';
-import type { ColormapPublic, CPUFallbackLUT, VOIRange } from '../../../types';
+import type {
+  ColormapPublic,
+  CPUFallbackLUT,
+  IImageVolume,
+  ImageActor,
+  VOIRange,
+  VolumeActor,
+} from '../../../types';
+import {
+  getDefaultVolumeVOIRange,
+  getVolumeVOIShape,
+  volumeVOIIsCurve,
+} from '../../helpers/setDefaultVolumeVOI';
+import type { VolumeVOIShape } from '../../helpers/setDefaultVolumeVOI';
 import {
   createPlanarRGBTransferFunction,
   resolveVOILUTSequenceToApply,
@@ -12,6 +25,26 @@ import {
   mapBlendModeToSlabType,
   resolveSlabThickness,
 } from './planarVolumeSliceBlendMode';
+
+/**
+ * The default VOI range of a volume actor after setDefaultVolumeVOI. A linear
+ * VOI reads the range of the transfer function. A curve (SIGMOID, or a VOI LUT
+ * Sequence) has nodes outside the window - a sigmoid spans about c +/- 1.733 w
+ * - so its range comes from the VOI of the file instead.
+ */
+export async function getVolumeActorDefaultVOIRange(
+  actor: ImageActor | VolumeActor,
+  imageVolume: IImageVolume,
+  shape: VolumeVOIShape = getVolumeVOIShape(imageVolume)
+): Promise<VOIRange | undefined> {
+  if (volumeVOIIsCurve(shape)) {
+    return getDefaultVolumeVOIRange(imageVolume);
+  }
+
+  const range = actor.getProperty().getRGBTransferFunction(0)?.getRange?.();
+
+  return range ? { lower: range[0], upper: range[1] } : undefined;
+}
 
 export function applyPlanarVolumePresentation(args: {
   actor: vtkImageSlice;

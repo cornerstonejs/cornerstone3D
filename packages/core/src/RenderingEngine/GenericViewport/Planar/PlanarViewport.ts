@@ -30,6 +30,9 @@ import type {
   ViewportContentMode,
 } from '../../../types';
 import { isImageActor } from '../../../utilities/actorCheck';
+import { getValidVOILUTFunction } from '../../../utilities/voiLUTFunction';
+import { isRenderableVOILUT } from '../../../utilities/createVOILUTSequenceTransferFunction';
+import { resolveVOILUTSequenceToApply } from '../../helpers/planarImageRendering';
 import cache from '../../../cache/cache';
 import type { PlaneRestriction } from '../../../types/IViewport';
 import type ViewportInputOptions from '../../../types/ViewportInputOptions';
@@ -815,7 +818,7 @@ class PlanarViewport extends GenericViewport<
           viewportId: this.id,
           range,
           volumeId,
-          VOILUTFunction: props.voiLUTFunction ?? presentation?.voiLUTFunction,
+          ...this.getVOILUTState(displaySetId, { ...presentation, ...props }),
           invert: props.invert ?? presentation?.invert,
           colormap: presentation?.colormap,
         });
@@ -833,6 +836,36 @@ class PlanarViewport extends GenericViewport<
 
   getDefaultVOIRange(dataId?: string): VOIRange | undefined {
     return this.mountedData.getDefaultVOIRange(dataId);
+  }
+
+  /**
+   * The VOI LUT Function in effect for a display set, and whether its VOI LUT
+   * Sequence draws it, with the rule of the stack viewport: the application
+   * value, else the value of the file, else LINEAR. A colormap replaces the
+   * sequence. An application converts the range with this function.
+   */
+  getVOILUTState(
+    dataId: string,
+    presentation:
+      | PlanarDataPresentation
+      | undefined = this.getDisplaySetPresentation(dataId)
+  ): { VOILUTFunction: VOILUTFunctionType; voiLUTSequenceApplied: boolean } {
+    const shape = this.mountedData.getDefaultVOIShape(dataId);
+    const voiLUT =
+      presentation?.colormap?.name === undefined
+        ? resolveVOILUTSequenceToApply({
+            defaultVOILUT: shape.voiLUT,
+            defaultVOILUTFunction: shape.voiLUTFunction,
+            props: presentation,
+          })
+        : undefined;
+
+    return {
+      VOILUTFunction: getValidVOILUTFunction(
+        presentation?.voiLUTFunction ?? shape.voiLUTFunction
+      ),
+      voiLUTSequenceApplied: isRenderableVOILUT(voiLUT),
+    };
   }
 
   /**
@@ -2039,6 +2072,7 @@ class PlanarViewport extends GenericViewport<
         this.mountedData.findDataIdByVolumeId(volumeId),
       getBindingActor: (dataId) => this.mountedData.getBindingActor(dataId),
       getDefaultVOIRange: (dataId) => this.getDefaultVOIRange(dataId),
+      getVOILUTState: (dataId) => this.getVOILUTState(dataId),
       getImageCount: () => this.getImageIds().length,
       getMaxImageIdIndex: () => this.getMaxImageIdIndex(),
     };

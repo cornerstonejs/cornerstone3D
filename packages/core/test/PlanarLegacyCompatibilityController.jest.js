@@ -51,6 +51,7 @@ function createHost(overrides = {}) {
     findDataIdByVolumeId: jest.fn(() => undefined),
     getBindingActor: jest.fn(() => undefined),
     getDefaultVOIRange: jest.fn(() => undefined),
+    getVOILUTState: jest.fn(() => ({ VOILUTFunction: 'LINEAR' })),
     getImageCount: jest.fn(() => 0),
     getMaxImageIdIndex: jest.fn(() => -1),
     ...overrides,

@@ -424,11 +424,15 @@ export default class PlanarCPUVolumeSampler {
     );
 
     viewport.voi = { windowCenter, windowWidth, voiLUTFunction };
-    viewport.voiLUT = resolveVOILUTSequenceToApply({
-      defaultVOILUT: sampledSliceState.image.voiLUT,
-      defaultVOILUTFunction: sampledSliceState.image.voiLUTFunction,
-      props: dataPresentation,
-    });
+    // A colormap replaces the VOI LUT Sequence, as on the GPU path.
+    viewport.voiLUT =
+      dataPresentation?.colormap?.name === undefined
+        ? resolveVOILUTSequenceToApply({
+            defaultVOILUT: sampledSliceState.image.voiLUT,
+            defaultVOILUTFunction: sampledSliceState.image.voiLUTFunction,
+            props: dataPresentation,
+          })
+        : undefined;
   }
 
   public needsResample(args: {

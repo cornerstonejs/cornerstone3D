@@ -1,6 +1,7 @@
 import cache from '../../../cache/cache';
 import type BlendModes from '../../../enums/BlendModes';
 import { Events } from '../../../enums';
+import type { VOILUTFunctionType } from '../../../enums';
 import { ActorRenderMode } from '../../../types';
 import type { ActorEntry, ColormapPublic, IVolumeInput } from '../../../types';
 import triggerEvent from '../../../utilities/triggerEvent';
@@ -60,6 +61,7 @@ export type PlanarLegacyCompatibilityHost = {
   getDefaultVOIRange(
     dataId: string
   ): { lower: number; upper: number } | undefined;
+  getVOILUTState(dataId: string): { VOILUTFunction: VOILUTFunctionType };
   getImageCount(): number;
   getMaxImageIdIndex(): number;
 };
@@ -331,6 +333,16 @@ class PlanarLegacyCompatibilityController {
       }
     }
 
+    if (targetDataId) {
+      // The function in effect, as on the stack viewport; a value from the file
+      // is not an application choice.
+      merged.voiLUTFunctionSetByUser ??=
+        (merged.VOILUTFunction ?? dataPresentation?.voiLUTFunction) !==
+        undefined;
+      merged.VOILUTFunction =
+        this.host.getVOILUTState(targetDataId).VOILUTFunction;
+    }
+
     return merged;
   }
 
@@ -578,13 +590,17 @@ class PlanarLegacyCompatibilityController {
         const actor = this.host.getBindingActor(dataId);
 
         if (actor && volumeInput.callback) {
+          const transferFunctionBefore = getActorTransferFunctionState(actor);
+
           volumeInput.callback({
             volumeActor: actor as never,
             volumeId: volumeInput.volumeId,
           });
 
-          const volumePresentation =
-            this.buildVolumePresentationFromActor(dataId);
+          const volumePresentation = this.buildVolumePresentationFromActor(
+            dataId,
+            transferFunctionBefore
+          );
 
           if (volumePresentation) {
             this.applyVolumePresentation(dataId, volumePresentation);
@@ -784,8 +800,15 @@ class PlanarLegacyCompatibilityController {
     return Object.keys(matchedColormap).length ? matchedColormap : undefined;
   }
 
+  /**
+   * The presentation that a legacy volume callback put on the actor. The VOI
+   * range is read only when the callback changed the transfer function: the
+   * default transfer function of a SIGMOID volume spans about c +/- 1.733 w,
+   * and that span is not the window of the file.
+   */
   private buildVolumePresentationFromActor(
-    dataId: string
+    dataId: string,
+    transferFunctionBefore?: ReturnType<typeof getActorTransferFunctionState>
   ): PlanarLegacyViewportProperties | undefined {
     const actor = this.host.getBindingActor(dataId) as
       | {
@@ -796,6 +819,7 @@ class PlanarLegacyCompatibilityController {
           getProperty?: () => {
             getRGBTransferFunction?: (index: number) => {
               getRange?: () => [number, number];
+              getMTime?: () => number;
             };
           };
         }
@@ -814,7 +838,12 @@ class PlanarLegacyCompatibilityController {
       volumePresentation.colormap = volumeColormap;
     }
 
-    if (range && range[1] > range[0]) {
+    const transferFunctionChanged =
+      !transferFunctionBefore ||
+      transferFunctionBefore.transferFunction !== transferFunction ||
+      transferFunctionBefore.mTime !== getMTime(transferFunction);
+
+    if (transferFunctionChanged && range && range[1] > range[0]) {
       volumePresentation.voiRange = {
         lower: range[0],
         upper: range[1],
@@ -907,6 +936,26 @@ class PlanarLegacyCompatibilityController {
       }
     }
   }
+}
+
+type TransferFunctionLike = { getMTime?: () => number } | undefined;
+
+function getMTime(transferFunction: TransferFunctionLike): number | undefined {
+  return transferFunction?.getMTime?.();
+}
+
+function getActorTransferFunctionState(actor: unknown) {
+  const transferFunction = (
+    actor as {
+      getProperty?: () => {
+        getRGBTransferFunction?: (index: number) => TransferFunctionLike;
+      };
+    }
+  )
+    ?.getProperty?.()
+    .getRGBTransferFunction?.(0);
+
+  return { transferFunction, mTime: getMTime(transferFunction) };
 }
 
 export default PlanarLegacyCompatibilityController;
