@@ -1,3 +1,4 @@
+import { utilities } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 export type ViewportVoiMappingForTool = {
@@ -13,12 +14,17 @@ export type ViewportVoiMappingForTool = {
   invert?: boolean;
 };
 
+type ViewportProps = {
+  voiRange?: { lower: number; upper: number };
+  VOILUTFunction?: string;
+  invert?: boolean;
+  useVOILUTSequence?: boolean;
+  voiLUTFunctionSetByUser?: boolean;
+  colormap?: { name?: string };
+};
+
 type ViewportWithProps = Types.IViewport & {
-  getProperties?: (volumeId?: string) => {
-    voiRange?: { lower: number; upper: number };
-    VOILUTFunction?: string;
-    invert?: boolean;
-  } | null;
+  getProperties?: (volumeId?: string) => ViewportProps | null;
   getCornerstoneImage?: () => Types.IImage | undefined;
 };
 
@@ -51,7 +57,31 @@ export function getViewportVoiMappingForVolume(
   return {
     voiRange: { lower, upper },
     VOILUTFunction: props.VOILUTFunction,
-    voiLUT: image?.voiLUT,
+    voiLUT: getAppliedVOILUTSequence(props, image?.voiLUT),
     invert: props.invert === true,
   };
+}
+
+/**
+ * The VOI LUT Sequence that the stack viewport shows, or undefined when it
+ * shows the window. This is the rule of StackViewport._getVOILUTSequenceToApply
+ * and setVOIGPU: `useVOILUTSequence: false` stops the sequence, a VOI LUT
+ * Function that the application set stops it unless `useVOILUTSequence` is
+ * true, and a colormap replaces it.
+ */
+function getAppliedVOILUTSequence(
+  props: ViewportProps,
+  voiLUT: Types.CPUFallbackLUT | undefined
+): Types.CPUFallbackLUT | undefined {
+  const { useVOILUTSequence, voiLUTFunctionSetByUser, colormap } = props;
+  if (
+    useVOILUTSequence === false ||
+    (useVOILUTSequence !== true && voiLUTFunctionSetByUser) ||
+    colormap?.name ||
+    !utilities.isRenderableVOILUT(voiLUT)
+  ) {
+    return undefined;
+  }
+
+  return voiLUT;
 }

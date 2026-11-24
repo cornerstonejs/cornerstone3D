@@ -7,10 +7,14 @@ import doesImageNeedToBeRendered from './doesImageNeedToBeRendered';
 import storedPixelDataToCanvasImageDataPseudocolorLUT from './storedPixelDataToCanvasImageDataPseudocolorLUT';
 import storedPixelDataToCanvasImageDataPseudocolorLUTPET from './storedPixelDataToCanvasImageDataPseudocolorLUTPET';
 import * as colors from '../colors/index';
+import computeAutoVoi from './computeAutoVoi';
+import VOILUTFunctionType from '../../../../enums/VOILUTFunctionType';
+import { getValidVOILUTFunction } from '../../../../utilities/voiLUTFunction';
 import type {
   ColormapPublic,
   IImage,
   CPUFallbackEnabledElement,
+  CPUFallbackViewport,
 } from '../../../../types';
 import { clamp } from '../../../../utilities/clamp';
 import { toLowHighRange } from '../../../../utilities/windowLevel';
@@ -18,6 +22,37 @@ import { createCanvas } from '../../getOrCreateCanvas';
 import { coreLog } from '../../../../utilities/logger';
 
 const log = coreLog.getLogger('RenderingEngine', 'renderPseudoColorImage');
+
+/**
+ * Gets the LUT that maps the stored values to the indices of the colormap.
+ *
+ * On the GPU a colormap fills the transfer function with its own colors, so it
+ * replaces the curve of a VOI LUT Sequence and the curve of a sigmoid (refer to
+ * setVOIGPU in StackViewport). The CPU path follows the same rule: it drops
+ * the VOI LUT Sequence, and it maps the window with a linear ramp. The sigmoid
+ * carries its window in the LINEAR bounds, so LINEAR gives the GPU ramp.
+ * LINEAR_EXACT keeps its exact bounds, as on the GPU.
+ */
+export function getColormapLut(
+  image: IImage,
+  viewport: CPUFallbackViewport,
+  invalidated: boolean
+): Uint8ClampedArray {
+  const lutViewport = { ...viewport, voiLUT: undefined };
+  // Without the sequence, a viewport with no window gets the automatic window.
+  computeAutoVoi(lutViewport, image);
+  viewport.voi = lutViewport.voi;
+  const { voiLUTFunction } = viewport.voi;
+  const isSigmoid =
+    getValidVOILUTFunction(voiLUTFunction) ===
+    VOILUTFunctionType.SAMPLED_SIGMOID;
+  lutViewport.voi = {
+    ...viewport.voi,
+    voiLUTFunction: isSigmoid ? VOILUTFunctionType.LINEAR : voiLUTFunction,
+  };
+
+  return getLut(image, lutViewport, invalidated);
+}
 
 /**
  * Returns an appropriate canvas to render the Image. If the canvas available in the cache is appropriate
@@ -107,7 +142,7 @@ function getRenderCanvas(
 
   if (viewport.modality === 'PT') {
     const { windowWidth, windowCenter, voiLUTFunction } = viewport.voi;
-    // The exact inverse of toWindowLevel, so that the window shows the range that made it.
+    // A linear ramp over the window bounds, as on the GPU (see getColormapLut).
     const { lower: minimum, upper: maximum } = toLowHighRange(
       windowWidth,
       windowCenter,
@@ -143,7 +178,7 @@ function getRenderCanvas(
       renderCanvasData.data
     );
   } else {
-    const lut = getLut(image, enabledElement.viewport, invalidated);
+    const lut = getColormapLut(image, viewport, invalidated);
 
     image.stats = image.stats || {};
     image.stats.lastLutGenerateTime = now() - start;
