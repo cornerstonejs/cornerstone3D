@@ -25,7 +25,7 @@ import PlanarViewport, {
   getRemountedViewPropOrder,
 } from '../src/RenderingEngine/Viewports/Planar/PlanarViewport';
 import renderingEngineCache from '../src/RenderingEngine/renderingEngineCache';
-import displaySetRegistry from '../src/RenderingEngine/Viewports/displaySetRegistry';
+import { displaySetRegistry } from '@cornerstonejs/metadata';
 
 const flush = async () => {
   for (let i = 0; i < 20; i++) {

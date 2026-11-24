@@ -14,7 +14,7 @@ import {
 } from '../src/RenderingEngine/Viewports';
 import PlanarViewport from '../src/RenderingEngine/Viewports/Planar/PlanarViewport';
 import renderingEngineCache from '../src/RenderingEngine/renderingEngineCache';
-import displaySetRegistry from '../src/RenderingEngine/Viewports/displaySetRegistry';
+import { displaySetRegistry } from '@cornerstonejs/metadata';
 import getViewportsWithVolumeId from '../src/utilities/getViewportsWithVolumeId';
 import imageIdToURI from '../src/utilities/imageIdToURI';
 

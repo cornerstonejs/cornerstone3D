@@ -17,7 +17,7 @@ import { RenderBackends } from '../src/enums';
 import cache from '../src/cache/cache';
 import * as imageLoader from '../src/loaders/imageLoader';
 import * as metaData from '../src/metaData';
-import displaySetRegistry from '../src/RenderingEngine/Viewports/displaySetRegistry';
+import { displaySetRegistry } from '@cornerstonejs/metadata';
 import { createPlanarViewportOnStandInEngine } from './utils/planarViewportOnStandInEngine';
 
 let mockWebGL = false;
@@ -203,13 +203,11 @@ describe('Rendering on a device without WebGL', () => {
     await viewport.setDisplaySets({ displaySetId: 'withoutWebGL:stack' });
 
     expect(
-      viewport
-        .getRenderPlan()
-        .map(({ displaySetId, draw, renderMode }) => ({
-          displaySetId,
-          draw,
-          renderMode,
-        }))
+      viewport.getRenderPlan().map(({ displaySetId, draw, renderMode }) => ({
+        displaySetId,
+        draw,
+        renderMode,
+      }))
     ).toEqual([
       {
         displaySetId: 'withoutWebGL:stack',

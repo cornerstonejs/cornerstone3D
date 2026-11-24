@@ -15,7 +15,7 @@ import { getRenderingEngine } from '../RenderingEngine/getRenderingEngine';
 import type RenderingEngine from '../RenderingEngine/RenderingEngine';
 import TiledRenderingEngine from '../RenderingEngine/TiledRenderingEngine';
 import type PlanarViewport from '../RenderingEngine/Viewports/Planar/PlanarViewport';
-import displaySetRegistry from '../RenderingEngine/Viewports/displaySetRegistry';
+import { displaySetRegistry } from '@cornerstonejs/metadata';
 import isPTPrescaledWithSUV from './isPTPrescaledWithSUV';
 import type { CanvasLoadPosition } from './loadImageToCanvas';
 

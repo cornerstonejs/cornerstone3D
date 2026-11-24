@@ -1,4 +1,5 @@
 import {
+  displaySetRegistry,
   metaData,
   registerDisplaySetProviders,
   registerDisplaySetMetadata,
@@ -8,7 +9,6 @@ import {
   getImageDisplaySet,
   getWSIDisplaySet,
 } from '../src/RenderingEngine/Viewports/displaySetAccess';
-import displaySetRegistry from '../src/RenderingEngine/Viewports/displaySetRegistry';
 
 const displaySet = (displaySetId, extra = {}) => ({
   displaySetId,
@@ -25,6 +25,10 @@ describe('Display set lookup by display set id', () => {
     registerDisplaySetProviders();
   });
 
+  afterEach(() => {
+    displaySetRegistry.clear();
+  });
+
   it('loads a registered IDisplaySet in every viewport family', () => {
     registerDisplaySetMetadata([], displaySet('ds-1'));
 
@@ -37,15 +41,29 @@ describe('Display set lookup by display set id', () => {
     expect(getDisplaySetImageId('ds-1')).toBe('ds-1:instance');
   });
 
-  it('loads an OHIF display set, keyed by displaySetInstanceUID', () => {
-    metaData.addTyped('displaySetModule', 'uid-2', {
+  it('loads an OHIF display set, added under its displaySetInstanceUID', () => {
+    const ohifDisplaySet = {
+      displaySetInstanceUID: 'uid-2',
+      imageIds: ['video:1'],
+      instance: { imageId: 'video:1' },
+    };
+    displaySetRegistry.add('uid-2', ohifDisplaySet);
+
+    expect(getDisplaySetImageId('uid-2')).toBe('video:1');
+    expect(getImageDisplaySet('uid-2')).toBe(ohifDisplaySet);
+  });
+
+  it('does not load a display set that was written to the cache but not added', () => {
+    metaData.addTyped('displaySetModule', 'uid-8', {
       displaySet: {
-        displaySetInstanceUID: 'uid-2',
-        imageIds: ['video:1'],
+        displaySetInstanceUID: 'uid-8',
+        imageIds: ['video:8'],
+        instance: { imageId: 'video:8' },
       },
     });
 
-    expect(getDisplaySetImageId('uid-2')).toBe('video:1');
+    expect(getImageDisplaySet('uid-8')).toBeUndefined();
+    expect(getDisplaySetImageId('uid-8')).toBe('uid-8');
   });
 
   it('does not take a display set that the cache holds under an image id', () => {
@@ -89,11 +107,17 @@ describe('Display set lookup by display set id', () => {
     metaData.removeProvider(provider);
   });
 
-  it('uses the viewport registry first', () => {
+  it('loads what was added last under an id: one store, no precedence', () => {
     registerDisplaySetMetadata([], displaySet('ds-5'));
     displaySetRegistry.add('ds-5', { imageIds: ['registry:1'] });
 
     expect(getImageDisplaySet('ds-5').imageIds).toEqual(['registry:1']);
-    displaySetRegistry.remove('ds-5');
+
+    registerDisplaySetMetadata([], displaySet('ds-5'));
+
+    expect(getImageDisplaySet('ds-5').imageIds).toEqual([
+      'ds-5:frame1',
+      'ds-5:frame2',
+    ]);
   });
 });

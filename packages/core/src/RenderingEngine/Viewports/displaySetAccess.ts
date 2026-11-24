@@ -1,7 +1,6 @@
-import { Enums, metaData } from '@cornerstonejs/metadata';
+import { displaySetRegistry, Enums, metaData } from '@cornerstonejs/metadata';
 import type { DisplaySetDescriptor } from '../../types/DisplaySetDescriptor';
 import type { WSIClientLike } from '../../utilities/WSIUtilities';
-import displaySetRegistry from './displaySetRegistry';
 import type { WSIDisplaySetDescriptor } from './WSI/WSIViewportTypes';
 
 /** A display set descriptor with the image ids that a viewport loads. */
@@ -9,63 +8,11 @@ export interface ImageDisplaySetDescriptor extends DisplaySetDescriptor {
   imageIds: string[];
 }
 
-/**
- * Finds the descriptor of `displaySetId` for a data provider. An entry of
- * `displaySetRegistry` wins. Otherwise the descriptor comes from the
- * `DISPLAY_SET` metadata cache, by its display set id.
- */
+/** The descriptor that `displaySetRegistry` holds under `displaySetId`. */
 export function getDisplaySetDescriptor(
   displaySetId: string
 ): DisplaySetDescriptor | undefined {
-  return (
-    displaySetRegistry.get(displaySetId) ?? getCachedDisplaySet(displaySetId)
-  );
-}
-
-/**
- * Reads the `DISPLAY_SET` cache. The cache also holds a display set under
- * each of its image ids, so the id of the display set must equal the key:
- * `displaySetId` (`IDisplaySet`) or `displaySetInstanceUID` (OHIF). The
- * `imageId` of the descriptor is the object to show: `instance.imageId`,
- * else the first underlying image id, else the first image id.
- */
-function getCachedDisplaySet(
-  displaySetId: string
-): DisplaySetDescriptor | undefined {
-  const displaySet: unknown = metaData.getTyped(
-    Enums.MetadataModules.DISPLAY_SET,
-    displaySetId
-  );
-
-  if (
-    !isRecord(displaySet) ||
-    (displaySet.displaySetId !== displaySetId &&
-      displaySet.displaySetInstanceUID !== displaySetId)
-  ) {
-    return;
-  }
-
-  const imageIds = isStringArray(displaySet.imageIds)
-    ? [...displaySet.imageIds]
-    : [];
-  const underlyingImageIds = isStringArray(displaySet.underlyingImageIds)
-    ? displaySet.underlyingImageIds
-    : [];
-  const instanceImageId = isRecord(displaySet.instance)
-    ? displaySet.instance.imageId
-    : undefined;
-  const imageId =
-    (typeof instanceImageId === 'string' && instanceImageId) ||
-    underlyingImageIds[0] ||
-    imageIds[0];
-
-  return imageId
-    ? {
-        imageIds,
-        imageId,
-        webClient: displaySet.webClient as WSIClientLike | undefined,
-      }
-    : undefined;
+  return displaySetRegistry.get(displaySetId);
 }
 
 /** The descriptor of `displaySetId` when it has image ids. */
@@ -114,9 +61,10 @@ export function getWSIDisplaySet(
 
 /**
  * The image id of the object that a video or an ECG viewport shows: the
- * `imageId` of the descriptor of `displaySetId`, the id itself when no
- * display set is registered under it, and undefined when the descriptor
- * has no `imageId`.
+ * `imageId` of the descriptor of `displaySetId`, else the image id of its
+ * `instance` (an OHIF display set), else its first underlying image id (an
+ * `IDisplaySet`). The id itself when no display set is registered under it,
+ * and undefined when the descriptor has none of these.
  */
 export function getDisplaySetImageId(displaySetId: string): string | undefined {
   const descriptor = getDisplaySetDescriptor(displaySetId);
@@ -125,9 +73,17 @@ export function getDisplaySetImageId(displaySetId: string): string | undefined {
     return displaySetId;
   }
 
-  return typeof descriptor.imageId === 'string' && descriptor.imageId
-    ? descriptor.imageId
+  const instanceImageId = isRecord(descriptor.instance)
+    ? descriptor.instance.imageId
     : undefined;
+  const underlyingImageIds = isStringArray(descriptor.underlyingImageIds)
+    ? descriptor.underlyingImageIds
+    : [];
+
+  return [descriptor.imageId, instanceImageId, underlyingImageIds[0]].find(
+    (imageId): imageId is string =>
+      typeof imageId === 'string' && imageId.length > 0
+  );
 }
 
 /**

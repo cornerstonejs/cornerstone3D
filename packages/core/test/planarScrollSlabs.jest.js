@@ -3,7 +3,7 @@ import { describe, it, expect, afterEach, beforeEach } from '@jest/globals';
 import vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 import vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 import PlanarViewport from '../src/RenderingEngine/Viewports/Planar/PlanarViewport';
-import displaySetRegistry from '../src/RenderingEngine/Viewports/displaySetRegistry';
+import { displaySetRegistry } from '@cornerstonejs/metadata';
 import renderingEngineCache from '../src/RenderingEngine/renderingEngineCache';
 import getSliceRange from '../src/utilities/getSliceRange';
 import snapFocalPointToSlice from '../src/utilities/snapFocalPointToSlice';

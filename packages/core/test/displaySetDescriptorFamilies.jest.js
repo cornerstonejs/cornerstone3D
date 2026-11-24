@@ -43,7 +43,7 @@ jest.mock('../src/utilities/WSIUtilities', () => ({
 }));
 
 import { ActorRenderMode } from '../src/types';
-import displaySetRegistry from '../src/RenderingEngine/Viewports/displaySetRegistry';
+import { displaySetRegistry } from '@cornerstonejs/metadata';
 import { DefaultPlanarDataProvider } from '../src/RenderingEngine/Viewports/Planar/DefaultPlanarDataProvider';
 import { DefaultVolume3DDataProvider } from '../src/RenderingEngine/Viewports/Volume3D/DefaultVolume3DDataProvider';
 import { DefaultVideoDataProvider } from '../src/RenderingEngine/Viewports/Video/DefaultVideoDataProvider';

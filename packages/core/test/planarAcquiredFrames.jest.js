@@ -26,7 +26,7 @@ import { getImageSliceOverlayOrder } from '../src/RenderingEngine/Viewports/Plan
 import { triggerPlanarVolumeNewImageOfPlacedSlice } from '../src/RenderingEngine/Viewports/Planar/planarImageEvents';
 import { resolvePlanarRenderPathProjection } from '../src/RenderingEngine/Viewports/Planar/planarRenderPathProjection';
 import renderingEngineCache from '../src/RenderingEngine/renderingEngineCache';
-import displaySetRegistry from '../src/RenderingEngine/Viewports/displaySetRegistry';
+import { displaySetRegistry } from '@cornerstonejs/metadata';
 import {
   resetGpuSettingsPreset,
   setGpuSettingsPreset,

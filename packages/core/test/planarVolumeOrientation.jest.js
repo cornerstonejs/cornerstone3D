@@ -5,7 +5,7 @@ import {
 } from '../../../utils/test/testUtilsImageLoader';
 import { describe, it, expect, afterEach } from '@jest/globals';
 import PlanarViewport from '../src/RenderingEngine/Viewports/Planar/PlanarViewport';
-import displaySetRegistry from '../src/RenderingEngine/Viewports/displaySetRegistry';
+import { displaySetRegistry } from '@cornerstonejs/metadata';
 import renderingEngineCache from '../src/RenderingEngine/renderingEngineCache';
 import { MPR_CAMERA_VALUES } from '../src/constants';
 

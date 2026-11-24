@@ -9,7 +9,7 @@ import {
   getWSIDisplaySet,
   isImageDisplaySet,
 } from '../src/RenderingEngine/Viewports/displaySetAccess';
-import displaySetRegistry from '../src/RenderingEngine/Viewports/displaySetRegistry';
+import { displaySetRegistry } from '@cornerstonejs/metadata';
 
 // ── Test fixture: a minimal concrete BaseViewport subclass ────────────
 //

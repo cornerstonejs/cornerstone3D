@@ -1,5 +1,5 @@
 import { getConfiguration } from '../../src/init';
-import displaySetRegistry from '../../src/RenderingEngine/Viewports/displaySetRegistry';
+import { displaySetRegistry } from '@cornerstonejs/metadata';
 
 export const WIDTH = 400;
 export const HEIGHT = 300;

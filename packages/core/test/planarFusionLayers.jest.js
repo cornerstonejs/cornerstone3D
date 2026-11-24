@@ -1,6 +1,6 @@
 import * as cornerstone3D from '../src/index';
 import { describe, it, expect, afterEach } from '@jest/globals';
-import displaySetRegistry from '../src/RenderingEngine/Viewports/displaySetRegistry';
+import { displaySetRegistry } from '@cornerstonejs/metadata';
 import { createPlanarViewportOnStandInEngine } from './utils/planarViewportOnStandInEngine';
 
 const { setRenderBackend, Enums, init, cache, volumeLoader } = cornerstone3D;

@@ -212,8 +212,8 @@ enum MetadataModules {
   NATURALIZED = 'naturalized',
 
   /**
-   * Display set metadata for a series group (frame and underlying image ids,
-   * handler). Registered per imageId via addTyped / registerDisplaySetMetadata.
+   * The display sets of `displaySetRegistry`, under their display set ids,
+   * and under their image ids where `registerDisplaySetMetadata` stored them.
    */
   DISPLAY_SET = 'displaySetModule',
 }

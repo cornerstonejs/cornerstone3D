@@ -233,6 +233,87 @@ decide how its data is loaded. What each family reads:
   `has(displaySetId)`, `remove(displaySetId)` and `clear()` read and drop
   entries.
 
+### One store for display sets
+
+`displaySetRegistry` keeps the display sets in the `DISPLAY_SET` module of
+the metadata cache of `@cornerstonejs/metadata`. `@cornerstonejs/core`
+exports the same object, so an application that has no other use for core,
+such as the display set service of a viewer, adds its display sets from
+`@cornerstonejs/metadata`. The metadata cache and the viewports then read the
+same object: `stored` below is `displaySet`.
+
+```ts
+import { displaySetRegistry, Enums, metaData } from '@cornerstonejs/metadata';
+
+displaySetRegistry.add(displaySet.displaySetInstanceUID, displaySet);
+
+const stored = metaData.getTyped(
+  Enums.MetadataModules.DISPLAY_SET,
+  displaySet.displaySetInstanceUID
+);
+
+await viewport.setDisplaySets({
+  displaySetId: displaySet.displaySetInstanceUID,
+});
+```
+
+- **The registry keeps the object itself.** It does not copy it and does not
+  change it: an OHIF display set keeps its `displaySetInstanceUID` and gets no
+  `displaySetId`. A change that the application makes to the object is seen
+  by the next mount. A second `add` under the id replaces the object.
+- **`displaySetId` of a descriptor must be its id.**
+  `displaySetRegistry.add('a', { displaySetId: 'b' })` throws.
+- **Only an added id is a display set id.** A value that the application
+  writes into the `DISPLAY_SET` module with `utilities.setCacheData` or
+  `metaData.addTyped` is not a registration, and a viewport does not mount
+  it.
+- **`registerDisplaySetMetadata(imageIds, displaySet)`** registers an
+  `IDisplaySet` under its `displaySetId`, and stores it under its image ids
+  too, so that `metaData.get(MetadataModules.DISPLAY_SET, imageId)` finds it.
+  `displaySetRegistry.get(imageId)` and `has(imageId)` give nothing for such
+  an image id, and `setDisplaySets({ displaySetId: imageId })` fails.
+  `displaySetRegistry.remove(displaySetId)` and `clear()` remove these image
+  id entries with the display set.
+- **A video or an ECG viewport shows** the `imageId` of the descriptor, else
+  the `imageId` of its `instance` (an OHIF display set), else the first of
+  its `underlyingImageIds` (an `IDisplaySet`).
+- **`cache.purgeCache()` keeps the registrations.** It removes the images
+  and the volumes; a mount after it loads them again.
+- **`utilities.clearCacheData()` of `@cornerstonejs/metadata` removes every
+  registration**, as it clears the whole metadata cache. The DICOM image
+  loader's `init` calls it: register display sets after that `init`.
+
+Before, in 6.0.0-beta.2, a viewer kept its display set in the metadata cache
+and registered it a second time for the viewport, under the same id or
+under an id of its own:
+
+```ts
+import { utilities as metadataUtilities, Enums } from '@cornerstonejs/metadata';
+import { utilities } from '@cornerstonejs/core';
+
+metadataUtilities.setCacheData(
+  Enums.MetadataModules.DISPLAY_SET,
+  displaySet.displaySetInstanceUID,
+  displaySet
+);
+
+utilities.genericViewportDisplaySetMetadataProvider.add(
+  displaySet.displaySetInstanceUID,
+  { kind: 'planar', imageIds: displaySet.imageIds }
+);
+```
+
+After, it registers the display set once:
+
+```ts
+import { displaySetRegistry } from '@cornerstonejs/metadata';
+
+displaySetRegistry.add(displaySet.displaySetInstanceUID, displaySet);
+```
+
+A second `add` under the id would now replace the display set itself with
+the descriptor, for the viewer and for the viewports.
+
 ### From 6.0.0-beta.2
 
 In 6.0.0-beta.2 the registry was `utilities.genericViewportDisplaySetMetadataProvider`,

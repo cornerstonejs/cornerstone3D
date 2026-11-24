@@ -44,6 +44,7 @@ export type {
 } from './safeFunctions';
 export type {
   IDisplaySet,
+  DisplaySetDescriptor,
   BaseDisplaySetOptions,
   ImageStackDisplaySetOptions,
   ResolveInstancesOptions,
@@ -93,6 +94,7 @@ export {
   splitImageIdsBySplitRules,
   registerDisplaySetMetadata,
   registerDisplaySetProviders,
+  displaySetRegistry,
   compiledDisplaySetRules,
   defaultDisplaySetSplitRules,
   orderInstancesForRule,

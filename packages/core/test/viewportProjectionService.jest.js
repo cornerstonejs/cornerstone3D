@@ -10,7 +10,7 @@ import ECGResolvedView from '../src/RenderingEngine/Viewports/ECG/ECGResolvedVie
 import WSIViewport from '../src/RenderingEngine/Viewports/WSI/WSIViewport';
 import VolumeViewport3D from '../src/RenderingEngine/Viewports/Volume3D/viewport3D';
 import BaseViewport from '../src/RenderingEngine/Viewports/BaseViewport';
-import displaySetRegistry from '../src/RenderingEngine/Viewports/displaySetRegistry';
+import { displaySetRegistry } from '@cornerstonejs/metadata';
 
 function createAdapter(id, viewportTypes = ['testViewport']) {
   return {

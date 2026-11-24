@@ -44,7 +44,7 @@ import { deepClone } from '../../../utilities/deepClone';
 import imageIdToURI from '../../../utilities/imageIdToURI';
 import { getImageDataMetadata } from '../../../utilities/getImageDataMetadata';
 import { getNormalizedAspectRatio } from '../../../utilities/getNormalizedAspectRatio';
-import displaySetRegistry from '../displaySetRegistry';
+import { displaySetRegistry } from '@cornerstonejs/metadata';
 import triggerEvent from '../../../utilities/triggerEvent';
 import eventTarget from '../../../eventTarget';
 import getMinMax from '../../../utilities/getMinMax';

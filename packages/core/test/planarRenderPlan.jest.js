@@ -36,7 +36,7 @@ import {
   WEBGL_CONTEXT_RESTORE_WAIT_MS,
   attachWebGLContextEvents,
 } from '../src/RenderingEngine/helpers/attachWebGLContextEvents';
-import displaySetRegistry from '../src/RenderingEngine/Viewports/displaySetRegistry';
+import { displaySetRegistry } from '@cornerstonejs/metadata';
 
 jest.mock('../src/utilities/renderingCapabilities', () => ({
   ...jest.requireActual('../src/utilities/renderingCapabilities'),

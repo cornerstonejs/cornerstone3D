@@ -31,6 +31,8 @@ export {
   type RegisterDisplaySetMetadataOptions,
 } from './registerDisplaySetMetadata';
 export { registerDisplaySetProviders } from './displaySetProvider';
+export { displaySetRegistry } from './displaySetRegistry';
+export type { DisplaySetDescriptor } from './DisplaySetDescriptor';
 export {
   compiledDisplaySetRules,
   defaultDisplaySetSplitRules,

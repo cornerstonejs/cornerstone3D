@@ -79,24 +79,31 @@ The viewport/registry `displaySetId` is the same value as the display set's
 `displaySetId` field — there is one identifier for a display set, used on both
 the metadata object and the viewport API.
 
-`setDisplaySets` finds the display set by its `displaySetId`. Every viewport
-family reads it from one of two places:
+`setDisplaySets` finds the display set by its `displaySetId` in
+`displaySetRegistry`, the one store of display sets. The registry is the
+`DISPLAY_SET` module of the metadata cache, and `@cornerstonejs/metadata` and
+`@cornerstonejs/core` export the same registry. Two calls register a display
+set there:
 
-1. The **generic-viewport display-set provider**, when you registered the
-   renderable data there. This entry wins.
-2. The `DISPLAY_SET` metadata cache, under the display set id.
-   `registerDisplaySetMetadata` stores the display set there (see
+1. `registerDisplaySetMetadata(imageIds, displaySet)` registers the
+   `IDisplaySet` itself under its `displaySetId` (see
    [Caching display sets in the metadata layer](#caching-display-sets-in-the-metadata-layer)).
-   A stack or a volume shows `imageIds`. A video or an ECG shows `instance`
-   (the object to show), else the first entry of `underlyingImageIds`, else the
-   first entry of `imageIds`. A WSI display set uses its own `webClient`, else
-   the `WADO_WEB_CLIENT` metadata of its first image id.
+   A stack shows `imageIds`. A video or an ECG shows the image id of
+   `instance`, else the first entry of `underlyingImageIds`. A WSI display
+   set uses its own `webClient`, else the `WADO_WEB_CLIENT` metadata of its
+   first image id.
+2. `displaySetRegistry.add(displaySetId, descriptor)` registers a descriptor
+   or an application's own display set object. An `add` under the id of a
+   display set that `registerDisplaySetMetadata` stored takes its place.
 
-With the cache, you do not register a second shape for each family. With the
-provider, the registered shape depends on the viewport family:
+The image ids under which `registerDisplaySetMetadata` also stores a display
+set are not display set ids: `setDisplaySets` does not find a display set by
+one of them. The fields that a descriptor needs depend on the viewport
+family:
 
 ```ts
 import { Enums, displaySetRegistry } from '@cornerstonejs/core';
+import { registerDisplaySetMetadata } from '@cornerstonejs/metadata';
 
 const { ViewportType } = Enums;
 
@@ -109,14 +116,17 @@ const HANDLER_TO_VIEWPORT_TYPE: Record<string, Enums.ViewportType> = {
 const displaySetId = displaySet.displaySetId;
 const volumeId = `cornerstoneStreamingImageVolume:${displaySetId}`;
 
-// 1. Register the renderable data so the viewport can resolve `displaySetId`.
-//    a stack uses { imageIds }, a volume adds a volumeId;
-//    video/ecg use { imageId };
-//    wsi uses { imageIds, options: { webClient } }.
-displaySetRegistry.add(displaySetId, {
-  imageIds: [...displaySet.imageIds],
-  ...(displaySet.isReconstructable ? { volumeId } : {}),
-});
+// 1. Register the display set under its displaySetId. A stack, a video, an
+//    ECG and a slide read the IDisplaySet itself; a volume is registered as a
+//    descriptor with a volumeId, which takes the place of the IDisplaySet.
+if (displaySet.isReconstructable) {
+  displaySetRegistry.add(displaySetId, {
+    imageIds: [...displaySet.imageIds],
+    volumeId,
+  });
+} else {
+  registerDisplaySetMetadata([], displaySet);
+}
 
 // 2. Choose the viewport: from the handler, else a planar viewport, which
 //    shows the display set as a volume when it was registered with a
@@ -209,9 +219,24 @@ ds?.instances; // the full IDisplaySet — including instances and split-rule
 ds?.numImageFrames; // attributes such as isClip / numImageFrames / splitNumber
 ```
 
-`getTyped(MetadataModules.DISPLAY_SET, …)` returns the full `IDisplaySet` that
-was registered, not a narrowed projection, so the cached shape and the typed
-read never drift apart.
+`getTyped(MetadataModules.DISPLAY_SET, …)` returns the object that was
+registered, not a copy. Its type is `DisplaySetDescriptor`, because the module
+holds descriptors and application display sets too; read it as `IDisplaySet`
+where the application registered one.
+
+`registerDisplaySetMetadata` registers the display set in `displaySetRegistry`
+under its `displaySetId` (a viewport mounts it by that id) and stores it under
+the image ids as well. Registering it again under the same `displaySetId`
+replaces the earlier display set and the image ids that it stored.
+`displaySetRegistry.remove(displaySetId)` and `displaySetRegistry.clear()`
+remove these image id entries with the display set; an image id that is a
+display set id keeps its own display set.
+
+A registration outlives `cache.purgeCache()` of `@cornerstonejs/core`, which
+removes images and volumes only. `utilities.clearCacheData()` of
+`@cornerstonejs/metadata` clears the whole metadata cache, registrations
+included; the DICOM image loader's `init` calls it, so register display sets
+after that `init`.
 
 ## Split rules
 

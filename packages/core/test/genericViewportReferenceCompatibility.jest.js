@@ -2,7 +2,7 @@ import {
   getDimensionGroupReferenceContext,
   isViewReferenceViewable,
 } from '../src/RenderingEngine/Viewports/viewReferenceCompatibility';
-import displaySetRegistry from '../src/RenderingEngine/Viewports/displaySetRegistry';
+import { displaySetRegistry } from '@cornerstonejs/metadata';
 
 describe('BaseViewport reference compatibility', () => {
   const baseContext = {

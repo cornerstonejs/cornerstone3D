@@ -16,7 +16,7 @@ import {
   getDefaultImageInvert,
   getDefaultImageVOIRange,
 } from '../src/RenderingEngine/helpers/planarImageRendering';
-import displaySetRegistry from '../src/RenderingEngine/Viewports/displaySetRegistry';
+import { displaySetRegistry } from '@cornerstonejs/metadata';
 import { createPlanarViewportOnStandInEngine } from './utils/planarViewportOnStandInEngine';
 
 const { setRenderBackend, imageLoader, metaData, init, cache } = cornerstone3D;

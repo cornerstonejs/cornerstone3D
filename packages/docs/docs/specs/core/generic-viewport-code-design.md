@@ -347,9 +347,10 @@ For example `Planar/DefaultPlanarDataProvider.ts`.
 - **GENVIEW-DATA-4** Every data source has a display set, also a source that
   is not a DICOM instance. The data provider finds the display set by its
   display set id through `displaySetAccess.ts`, and not by an
-  image id. An entry of `displaySetRegistry` wins.
-  Otherwise the display set comes from the `DISPLAY_SET` metadata cache, and its
-  `displaySetId` or `displaySetInstanceUID` equals the key.
+  image id. The one store is `displaySetRegistry` of `@cornerstonejs/metadata`,
+  the `DISPLAY_SET` metadata module; only the ids that were added to it are
+  display set ids, not the image ids under which `registerDisplaySetMetadata`
+  stores a display set.
 
 ### The projection adapter (GENVIEW-PROJ)
 

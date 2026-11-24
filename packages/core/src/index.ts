@@ -202,7 +202,7 @@ import getEnabledElement, {
   getEnabledElements,
 } from './getEnabledElement';
 import * as metaData from './metaData';
-import displaySetRegistry from './RenderingEngine/Viewports/displaySetRegistry';
+import { displaySetRegistry } from '@cornerstonejs/metadata';
 import {
   init,
   isCornerstoneInitialized,

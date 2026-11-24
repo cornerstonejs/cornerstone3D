@@ -1,4 +1,4 @@
-import type { IDisplaySet } from '../displayset/IDisplaySet';
+import type { DisplaySetDescriptor } from '../displayset/DisplaySetDescriptor';
 import type { EcgWaveformAnnotation } from '../utilities/metadataProvider/ecgFromInstance';
 
 export interface DicomDateObject {
@@ -124,11 +124,10 @@ export interface MetadataModuleType {
   transferSyntax: TransferSyntaxMetadata;
   compressedFrameData: CompressedFrameDataMetadata;
   /**
-   * The display set stored by `registerDisplaySetMetadata` and resolved by the
-   * display set provider. This is the full {@link IDisplaySet} (including
-   * `instances` and any split-rule attributes such as `isClip`,
-   * `numImageFrames`, `splitNumber`), not a narrowed projection, so a typed
-   * `getTyped(MetadataModules.DISPLAY_SET, imageId)` read matches what is cached.
+   * The display set stored by `displaySetRegistry.add` or
+   * `registerDisplaySetMetadata`: the object itself, so a descriptor, an
+   * `IDisplaySet` or an application's own display set object such as an OHIF
+   * display set. Narrow it to the type that the application registered.
    */
-  displaySetModule: IDisplaySet;
+  displaySetModule: DisplaySetDescriptor;
 }
