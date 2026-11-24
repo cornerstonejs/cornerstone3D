@@ -83,8 +83,12 @@
     "lint": "oxlint .",
     "prepublishOnly": "pnpm run build"
   },
-  "dependencies": {
-    "@dcmjs-org/dcmjs": "1.0.0-beta.10"
+  "peerDependencies": {
+    "loglevel": "^1.9.2"
+  },
+  "devDependencies": {
+    "@dcmjs-org/dcmjs": "1.0.0-beta.10",
+    "loglevel": "1.9.2"
   },
   "contributors": [
     {

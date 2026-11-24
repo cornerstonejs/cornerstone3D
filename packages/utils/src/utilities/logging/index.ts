@@ -1,6 +1,8 @@
 /**
- * Logging utilities. Uses the log exported by dcmjs so all packages share
- * the same log hierarchy.
+ * Logging utilities. Uses `loglevel`, a peer dependency, so that the
+ * application, Cornerstone and dcmjs 1.0 (which imports the same `loglevel`)
+ * share one log hierarchy. A dcmjs build that bundles its own copy of
+ * `loglevel`, for example dcmjs 0.x, keeps separate loggers.
  *
  * A logger name has this structure:
  *
@@ -27,7 +29,7 @@
  * configuration of `init`. Thus the same interface controls the loggers of
  * Cornerstone, of dcmjs, and of the other components.
  */
-import { log } from '@dcmjs-org/dcmjs';
+import log from 'loglevel';
 
 export type Logger = {
   getLogger: (...categories: string[]) => Logger;
@@ -72,15 +74,15 @@ export const examplesLog = cs3dLog.getLogger('examples') as Logger;
 export const workerLog = cs3dLog.getLogger('worker') as Logger;
 // These two loggers are not below `cs3d`, because dcmjs writes the same
 // consistency messages and the two sets must stay together.
-export const dicomConsistencyLog = log.getLogger('consistency.dicom') as Logger;
-export const imageConsistencyLog = log.getLogger('consistency.image') as Logger;
+export const dicomConsistencyLog = getRootLogger('consistency.dicom');
+export const imageConsistencyLog = getRootLogger('consistency.image');
 
 /**
  * Gets a root logger for the given category name and wires up a hierarchical
  * `getLogger` method on it, similar to loglevel 2.x.
  */
 export function getRootLogger(name: string): Logger {
-  const logger = log.getLogger(name) as Logger;
+  const logger = log.getLogger(name) as unknown as Logger;
   logger.getLogger = (...names: string[]): Logger =>
     getRootLogger(`${name}.${names.join('.')}`);
   return logger;
@@ -93,5 +95,5 @@ export function getLogger(...name: string[]): Logger {
   return getRootLogger(name.join('.'));
 }
 
-/** Re-export dcmjs log for consumers that need the root */
+/** The root `loglevel` logger, which is also the `log` of dcmjs 1.0. */
 export { log };

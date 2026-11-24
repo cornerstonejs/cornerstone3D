@@ -801,7 +801,9 @@ These shapes reach your code through the adapters:
   instances, and the `annotationUID` of the annotations that the SR reader
   makes, from a random UUID (`2.25.<integer>`). The integer has 39 digits or
   fewer. In 0.52 it always had 39 digits.
-- The log root of Cornerstone is now the log root of `@dcmjs-org/dcmjs`.
+- `@cornerstonejs/utils` takes `loglevel` (`^1.9.2`) as a peer dependency,
+  and no longer depends on dcmjs. The Cornerstone loggers, the application
+  and `@dcmjs-org/dcmjs` share the log root of that one `loglevel` copy.
 - A zero-length string element now naturalizes as empty: `[]` for a list VM
   and `null` for VM 1. Before 1.0.0-beta.9 the reader gave `['']`.
 - `combineFrameInstance` of `@cornerstonejs/metadata` now uses the dcmjs
@@ -821,8 +823,9 @@ These shapes reach your code through the adapters:
 - A spread, `structuredClone` or `JSON.stringify` of an item object does not
   keep the hidden `[0]` and `length`.
 - An application that also loads `dcmjs` 0.x has two copies of dcmjs. Each copy
-  has its own log root and its own `registerTag()` entries. The `log` of the
-  0.x copy does not control the Cornerstone loggers.
+  has its own `registerTag()` entries. dcmjs 0.x bundles its own copy of
+  `loglevel`, so the `log` of the 0.x copy does not control the Cornerstone
+  loggers.
 
 ### Migration Guidance
 
