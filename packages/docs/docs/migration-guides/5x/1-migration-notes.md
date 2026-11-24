@@ -434,6 +434,156 @@ the pointer.
   Nothing reads such a value incorrectly now, but it is not the window that the
   file gives.
 
+## Stack viewports show the VOI LUT Sequence on the GPU
+
+### What Changed
+
+A stack viewport on the GPU now applies the VOI LUT Sequence (0028,3010) of the
+image by default. CR, DX and MG files frequently carry a sequence with a strongly
+non linear curve. **These images look very different after the upgrade.** The
+sequence stops when the application sets a different VOI LUT Function, when
+`useVOILUTSequence` is `false`, or when a colormap is applied.
+
+### Migration Guidance
+
+- To keep the window display, call `setProperties({ useVOILUTSequence: false })`.
+- Read `voiLUTSequenceApplied` of the `VOI_MODIFIED` event before you show a
+  window level value or a colorbar. A window does not describe a sequence curve.
+
+## Color images get no window, no rescale and no VOI LUT
+
+### What Changed
+
+`createImage` of the DICOM image loader no longer gives a color image the
+Window Center, the Window Width, the Rescale Slope and Intercept, the VOI LUT
+Function or the VOI LUT Sequence of the file. The slope is 1 and the intercept
+is 0. The loader also does not prescale a color image, even when the
+application requests `preScale`.
+
+### Migration Guidance
+
+- Do not read a grayscale window or a rescale from the `IImage` of a color
+  image. The values of a color image are the 0 to 255 values of the samples.
+
+## `toWindowLevel` and `toLowHighRange` accept LINEAR_EXACT
+
+### What Changed
+
+- `utilities.windowLevel.toWindowLevel(low, high, 'LINEAR_EXACT')` uses the exact
+  formula of C.11.2.1.3.2: `width = high - low` and `center = (low + high) / 2`.
+  Without the function, the LINEAR formula gives a width that is one larger and
+  a center that is 0.5 larger.
+- `toLowHighRange` no longer throws `Invalid VOI LUT function`. A function that
+  is not known gives the LINEAR range.
+
+### Migration Guidance
+
+- Pass the VOI LUT Function in effect to both functions. A LINEAR_EXACT series
+  that you convert without the function shows `W 401 / C 40.5` for a window of
+  `W 400 / C 40`.
+
+## `StackViewport.getProperties()` reports the VOI LUT Function in effect
+
+### What Changed
+
+- `getProperties().VOILUTFunction` is now the resolved function: the function
+  that the application set, or the function of the image. It is never
+  `undefined`. An image without (0028,1056) gives `LINEAR`.
+- `getProperties()` also returns `voiLUTFunctionSetByUser` and
+  `useVOILUTSequence`.
+
+### Migration Guidance
+
+- Code that tested `VOILUTFunction === undefined` to find "no function" must use
+  `voiLUTFunctionSetByUser`.
+- Code that copies the properties to another viewport now also copies the
+  function. A function that is equal to the function of the image does not stop
+  the VOI LUT Sequence.
+
+## `setVOILUTFunction` works on the CPU path
+
+### What Changed
+
+`setProperties({ VOILUTFunction })` on a stack viewport that uses CPU rendering
+no longer throws. The CPU path applies the function, and it removes the VOI LUT
+Sequence, as the GPU path does.
+
+### Migration Guidance
+
+- Remove a `try`/`catch` or a CPU test that you added around this call.
+
+## `getLUTs` reads LUT Data as unsigned and reads 8 bit entries
+
+### What Changed
+
+The `getLUTs` function of the WADO-URI metadata provider now reads LUT Data
+(0028,3006) as unsigned values, whatever the Pixel Representation is. An entry
+above 32767 was negative before. It also reads a LUT that declares 8 bits for
+each entry and stores one entry in each byte. Before, the loader read that LUT
+as 16 bit words. A number of entries of 0 in the LUT Descriptor (0028,3002)
+now means 65536 entries.
+
+### Migration Guidance
+
+- **Files that the old code read incorrectly now look different.** No change to
+  the application is necessary.
+
+## A VOI LUT Function that the application sets stays active across frames
+
+### What Changed
+
+A VOI LUT Function that the application sets with
+`setProperties({ VOILUTFunction })` on a stack viewport stays active when the
+user scrolls to a different frame or image of the stack. This is the same rule
+as for `voiRange`. Before, the result depended on the image size: the function
+stayed active for an image of the same size and changed back to the function of
+the file for an image of a different size. The function clears on `setStack`
+and on `resetProperties`.
+
+### Migration Guidance
+
+- An application that set the function again after each scroll can remove that
+  code.
+- To go back to the function of each file, call `resetProperties()`.
+
+## Generic viewports report the VOI LUT Function in effect
+
+### What Changed
+
+The generic viewports (`PLANAR_NEXT` and the compatibility controller) report
+the VOI LUT Function in effect, as the stack and the volume viewports do:
+
+- `getProperties().VOILUTFunction` is the function that the application set,
+  or the function of the file. Before, it was `undefined` unless the application
+  set a function.
+- The `VOI_MODIFIED` event carries `VOILUTFunction` and
+  `voiLUTSequenceApplied`.
+
+### Migration Guidance
+
+- An application that shows a window level value must call
+  `toWindowLevel(lower, upper, VOILUTFunction)` with the function from the event
+  or from `getProperties()`. Without the function, a LINEAR_EXACT series shows
+  `W 401 / C 40.5` for a window of `W 400 / C 40`.
+- When `voiLUTSequenceApplied` is `true`, show the range or a "VOI LUT" label.
+  A window does not describe the curve.
+
+## The CPU path follows the GPU for a colormap and for prescaled PT
+
+### What Changed
+
+- A colormap on a CPU stack viewport now replaces the curve of the VOI LUT
+  Sequence and the curve of a sigmoid, as on the GPU. The colormap maps the
+  window with a linear ramp. Before, the CPU path applied the sequence or the
+  sigmoid and then the colormap.
+- A prescaled PT image on the CPU path without a colormap now uses the VOI LUT
+  Function: a SIGMOID series shows a sigmoid and not a linear ramp.
+
+### Migration Guidance
+
+- **Usually, you do not have to do an operation.** The CPU display agrees with
+  the GPU display.
+
 ## Progressive loading: split chunk sizes, decode throttle, full resolution partial HTJ2K decode
 
 ### What Changed
