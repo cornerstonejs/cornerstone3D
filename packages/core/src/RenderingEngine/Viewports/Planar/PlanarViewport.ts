@@ -535,14 +535,8 @@ class PlanarViewport extends BaseViewport<
       getViewState: () => this.viewState,
       getVolumeSliceWorldPointForImageIdIndex: (imageIdIndex) =>
         this.getVolumeSliceWorldPointForImageIdIndex(imageIdIndex),
-      promoteSourceDisplaySetId: (displaySetId) => {
-        this.clearResolvedViewCache();
-        this.mountedData.promoteSourceDisplaySetId(displaySetId);
-      },
-      render: () => this.render(),
       setImageIdIndex: (imageIdIndex) => this.setImageIdIndex(imageIdIndex),
       setViewState: (viewStatePatch) => this.setViewState(viewStatePatch),
-      updateBindingsCameraState: () => this.updateBindingsCameraState(),
     });
     const renderer = isWebGLUnavailable()
       ? vtkRenderer.newInstance()
@@ -2192,8 +2186,10 @@ class PlanarViewport extends BaseViewport<
   }
 
   /**
-   * Applies a view reference by activating the matching binding and
-   * navigating to the referenced slice.
+   * Moves the view to the slice, the plane and the time point of a view
+   * reference. The source stays the source: a reference of an overlay moves
+   * the source to the plane and the point of the reference, and no reference
+   * makes another display set the source.
    */
   setViewReference(viewRef: ViewReference): void {
     this.viewReferences.setViewReference(viewRef);

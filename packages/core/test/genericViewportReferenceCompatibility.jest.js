@@ -64,7 +64,7 @@ describe('BaseViewport reference compatibility', () => {
         [baseContext],
         { withNavigation: true }
       )
-    ).toBe(false);
+    ).toBe(true);
     expect(
       isViewReferenceViewable(
         { ...otherData, referencedImageId: 'scheme:image-2' },
@@ -104,6 +104,204 @@ describe('BaseViewport reference compatibility', () => {
     ).toBe(false);
 
     displaySetRegistry.remove('data-2');
+  });
+
+  describe('the same display set as a stack and as a volume', () => {
+    const volumeContext = {
+      ...baseContext,
+      displaySetId: 'series',
+      volumeId: 'series-volume',
+      imageIds: ['scheme:image-3', 'scheme:image-2', 'scheme:image-1'],
+      currentImageIdIndex: 0,
+    };
+    const stackReference = {
+      FrameOfReferenceUID: 'for-1',
+      displaySetId: 'series',
+      viewPlaneNormal: [0, 0, 1],
+    };
+
+    it('takes a stack reference of the image on display whatever its slice index in the stack', () => {
+      expect(
+        isViewReferenceViewable(
+          {
+            ...stackReference,
+            referencedImageId: 'scheme:image-3',
+            sliceIndex: 2,
+          },
+          [volumeContext]
+        )
+      ).toBe(true);
+    });
+
+    it('does not take a stack reference of another image whose slice index in the stack is the slice on display', () => {
+      const otherImage = {
+        ...stackReference,
+        referencedImageId: 'scheme:image-1',
+        sliceIndex: 0,
+      };
+
+      expect(isViewReferenceViewable(otherImage, [volumeContext])).toBe(false);
+      expect(
+        isViewReferenceViewable(otherImage, [volumeContext], {
+          withNavigation: true,
+        })
+      ).toBe(true);
+    });
+
+    it('reads the slice index of a reference in the mode of the reference only', () => {
+      expect(
+        isViewReferenceViewable(
+          {
+            ...stackReference,
+            volumeId: 'series-volume',
+            referencedImageId: 'scheme:image-3',
+            sliceIndex: 2,
+          },
+          [volumeContext]
+        )
+      ).toBe(false);
+      expect(
+        isViewReferenceViewable({ ...stackReference, sliceIndex: 2 }, [
+          { ...baseContext, displaySetId: 'series' },
+        ])
+      ).toBe(false);
+      expect(
+        isViewReferenceViewable({ ...stackReference, sliceIndex: 1 }, [
+          { ...baseContext, displaySetId: 'series' },
+        ])
+      ).toBe(true);
+    });
+  });
+
+  describe('a reference of data that is no longer registered', () => {
+    const volumeContext = {
+      ...baseContext,
+      volumeId: 'volume-1',
+      volumeIds: ['volume-1'],
+    };
+    const plane = (point) => ({
+      FrameOfReferenceUID: 'for-1',
+      point,
+      inPlaneVector1: [1, 0, 0],
+      inPlaneVector2: [0, 1, 0],
+    });
+
+    it('takes a reference of a display set that is not registered by the image that it names', () => {
+      const viewRef = {
+        FrameOfReferenceUID: 'for-1',
+        displaySetId: 'gone',
+        referencedImageId: 'scheme:image-3',
+        sliceIndex: 7,
+        viewPlaneNormal: [0, 0, 1],
+      };
+
+      expect(isViewReferenceViewable(viewRef, [baseContext])).toBe(false);
+      expect(
+        isViewReferenceViewable(viewRef, [baseContext], {
+          withNavigation: true,
+        })
+      ).toBe(true);
+      expect(
+        isViewReferenceViewable(
+          { ...viewRef, referencedImageId: 'scheme:image-2' },
+          [baseContext]
+        )
+      ).toBe(true);
+      expect(
+        isViewReferenceViewable(
+          { ...viewRef, referencedImageId: 'scheme:image-9' },
+          [baseContext],
+          { withNavigation: true }
+        )
+      ).toBe(false);
+    });
+
+    it('takes a reference of a volume that is not in the cache by the image that it names', () => {
+      const viewRef = {
+        FrameOfReferenceUID: 'for-1',
+        volumeId: 'volume-gone',
+        referencedImageId: 'scheme:image-2',
+        sliceIndex: 0,
+      };
+
+      expect(isViewReferenceViewable(viewRef, [baseContext])).toBe(true);
+      expect(isViewReferenceViewable(viewRef, [volumeContext])).toBe(true);
+    });
+
+    it('takes a reference that names no image by its plane on a volume', () => {
+      const viewRef = {
+        FrameOfReferenceUID: 'for-1',
+        displaySetId: 'gone',
+        volumeId: 'volume-gone',
+        sliceIndex: 40,
+        viewPlaneNormal: [0, 0, 1],
+        cameraFocalPoint: [0, 0, 5],
+        planeRestriction: plane([0, 0, 5]),
+      };
+      const offSlice = {
+        ...viewRef,
+        cameraFocalPoint: [0, 0, 6],
+        planeRestriction: plane([0, 0, 6]),
+      };
+
+      expect(isViewReferenceViewable(viewRef, [volumeContext])).toBe(true);
+      expect(isViewReferenceViewable(offSlice, [volumeContext])).toBe(false);
+      expect(
+        isViewReferenceViewable({ ...offSlice, planeRestriction: undefined }, [
+          volumeContext,
+        ])
+      ).toBe(false);
+      expect(
+        isViewReferenceViewable(offSlice, [volumeContext], {
+          withNavigation: true,
+        })
+      ).toBe(true);
+      expect(
+        isViewReferenceViewable(
+          {
+            ...viewRef,
+            viewPlaneNormal: [1, 0, 0],
+            planeRestriction: undefined,
+          },
+          [volumeContext],
+          { withNavigation: true }
+        )
+      ).toBe(false);
+      expect(
+        isViewReferenceViewable(
+          {
+            ...viewRef,
+            viewPlaneNormal: [1, 0, 0],
+            planeRestriction: undefined,
+          },
+          [volumeContext],
+          { withNavigation: true, withOrientation: true }
+        )
+      ).toBe(true);
+    });
+
+    it('does not take a reference that names no image on a stack, nor one that names neither an image nor a plane', () => {
+      expect(
+        isViewReferenceViewable(
+          {
+            FrameOfReferenceUID: 'for-1',
+            displaySetId: 'gone',
+            volumeId: 'volume-gone',
+            viewPlaneNormal: [0, 0, 1],
+            planeRestriction: plane([0, 0, 5]),
+          },
+          [baseContext],
+          { withNavigation: true }
+        )
+      ).toBe(false);
+      expect(
+        isViewReferenceViewable(
+          { displaySetId: 'gone', volumeId: 'volume-gone' },
+          [volumeContext],
+          { withNavigation: true }
+        )
+      ).toBe(false);
+    });
   });
 
   it('shows a reference to an image URI of the whole data on every slice', () => {

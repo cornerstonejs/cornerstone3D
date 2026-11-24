@@ -569,6 +569,56 @@ point of the image on display.
   not show, is not viewable. Without the option the answer is true when the
   viewport shows that image; the legacy volume viewport compared the slice
   index of the stack with its own there, and answered false.
+- **The slice index of a reference counts in the mode of the reference.** A
+  stack counts its slices in the order of its image ids, a volume in the
+  order of its view, sorted by position. A reference of the other mode, where
+  the reference names a `volumeId` and the viewport shows no volume or the
+  other way round, is checked by the image that it names and by its plane
+  restriction, not by its slice index. This is the case of one display set
+  shown as a stack in one viewport and as a volume in another, and of a
+  reference that names no display set, as the annotations of the legacy stack
+  viewport keep: `volume.isReferenceViewable(stack.getViewReference())` is
+  true when the volume shows the image of the stack, in whatever order the
+  stack holds its images. The legacy volume viewport, and an earlier build of
+  6.0, compared the slice index of the stack with the slice of the volume and
+  answered false when the two orders differ. A display set in stack mode
+  gives no `volumeId` to the check, though its data keeps the id that its
+  images would get as a volume. A reference that has only a slice index, as
+  `{ sliceIndex }`, is still checked by it. `setViewReference` on a volume
+  uses a slice index only with the `volumeId` of the volume, as before.
+- **A reference of data that is no longer registered is taken by its image or
+  its plane.** The check does not read the display set that a reference names
+  in `displaySetRegistry`, nor its volume in the cache, so an application can
+  remove the display set of a viewport that it closes while annotations keep
+  references to it. A reference that names an image is viewable on a planar
+  viewport that has that image, as on the legacy stack and volume viewports.
+  A reference that names no image, as that of a sagittal slice, is viewable
+  by its plane on a viewport in volume mode of its frame of reference, and on
+  a 3D viewport: with navigation in that plane, without it on the slice of
+  its point, as the legacy volume viewports took it with navigation. A
+  viewport in stack mode takes such a reference only with `asVolume`. A
+  reference that names neither an image nor a plane, as
+  `{ displaySetId, volumeId }`, is viewable only on a viewport that shows that
+  display set or that volume. An earlier build of
+  6.0 refused a reference of a display set that was not registered, or of a
+  volume that was not in the cache, with every option, and a reference of
+  another display set that names no image. `setViewReference` already moved
+  to such a reference. Before, an application kept the registration while a
+  reference to it could be shown; now it can remove it:
+
+  ```js
+  renderingEngine.disableElement(stackViewportId);
+  displaySetRegistry.remove(stackDisplaySetId);
+
+  if (
+    volumeViewport.isReferenceViewable(annotation.metadata, {
+      withNavigation: true,
+    })
+  ) {
+    volumeViewport.setViewReference(annotation.metadata);
+  }
+  ```
+
 - **A stack stays where it is for a reference of other images.** In stack
   mode, `setViewReference` with a reference that names an image the stack
   does not hold moves nothing, whatever slice index or focal point comes
@@ -652,6 +702,16 @@ point of the image on display.
   A reference that names the source, or a display set that the viewport
   does not show, does what it did; the time point of a dynamic overlay is
   selected as before.
+- **No view reference changes the source.** `setViewReference` moves the
+  view and never makes the display set that it names the source. This holds
+  also while `addDisplaySet(displaySetId, { role: 'source' })` mounts its
+  display set: a reference of the old source that comes before the new layer
+  is in place, as from a synchronizer, moves the view and leaves the new
+  source. An earlier build of 6.0 made the old source the source again there:
+  after the mount `getSourceDisplaySetId()` named the old display set and
+  `getRenderPlan()` put it first, while the layers gave the role of the
+  source to the new one. To change the source, mount the display set with
+  `role: 'source'`.
 - **`IMAGE_SPACING_CALIBRATED` fires from `calibrateSpacing(imageId)`,** and
   its detail has `worldToIndex` and `scale`. It does not fire by itself when
   a newly shown image has another calibration, as it did on the legacy stack

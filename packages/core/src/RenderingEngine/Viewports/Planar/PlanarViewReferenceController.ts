@@ -86,11 +86,8 @@ export type PlanarViewReferenceHost = {
   getVolumeSliceWorldPointForImageIdIndex(
     imageIdIndex: number
   ): Point3 | undefined;
-  promoteSourceDisplaySetId(displaySetId: string): void;
-  render(): void;
   setImageIdIndex(imageIdIndex: number): Promise<string>;
   setViewState(viewStatePatch: Partial<PlanarViewState>): void;
-  updateBindingsCameraState(): void;
 };
 
 class PlanarViewReferenceController {
@@ -193,6 +190,12 @@ class PlanarViewReferenceController {
     });
   }
 
+  /**
+   * Moves the view to a reference. The source stays what it is: a reference
+   * of an overlay moves the source to its plane and its point, and a
+   * reference never makes the display set that it names the source, also
+   * while a new source mounts and its binding is not there yet.
+   */
   setViewReference(viewRef: ViewReference): void {
     if (!viewRef || hasNonFiniteViewReferenceGeometry(viewRef)) {
       return;
@@ -218,14 +221,7 @@ class PlanarViewReferenceController {
       return;
     }
 
-    const didActivateBinding = this.activatePlanarReferenceContext(
-      targetContext.displaySetId
-    );
-    const didApplyReference = this.applyViewReferenceToCurrentBinding(viewRef);
-
-    if (didActivateBinding && !didApplyReference) {
-      this.host.render();
-    }
+    this.applyViewReferenceToCurrentBinding(viewRef);
   }
 
   /**
@@ -392,6 +388,13 @@ class PlanarViewReferenceController {
     return contexts;
   }
 
+  /**
+   * The facts of a binding that a reference is checked against. A binding in
+   * an image render mode (a stack) shows no volume, so its context has no
+   * volume id, though its data keeps the id that its images would get as a
+   * volume: a reference of that volume is then checked across modes, by its
+   * image and its plane.
+   */
   private toViewReferenceContext(
     referenceContext: PlanarReferenceContext
   ): ViewReferenceContext {
@@ -402,7 +405,9 @@ class PlanarViewReferenceController {
       rendering: referenceContext.rendering,
       renderContext: this.host.getRenderContext(),
     })?.toICamera();
-    const volumeId = referenceContext.data.volumeId;
+    const volumeId = isImageRenderMode(referenceContext.rendering?.renderMode)
+      ? undefined
+      : referenceContext.data.volumeId;
     const { maxImageIdIndex } = referenceContext.rendering as {
       maxImageIdIndex?: number;
     };
@@ -620,17 +625,6 @@ class PlanarViewReferenceController {
     } = viewRef;
 
     return reference;
-  }
-
-  private activatePlanarReferenceContext(displaySetId: string): boolean {
-    if (this.host.getSourceDisplaySetId() === displaySetId) {
-      return false;
-    }
-
-    this.host.promoteSourceDisplaySetId(displaySetId);
-    this.host.updateBindingsCameraState();
-
-    return true;
   }
 
   /**

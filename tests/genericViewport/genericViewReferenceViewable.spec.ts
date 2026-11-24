@@ -118,7 +118,7 @@ test('reports viewport view reference compatibility as JSON', async ({
   expect(result.referenceSliceIndex).toBe(2);
   expect(result.viewportSliceIndexBeforeApply).toBe(0);
   expect(result.checks).toEqual({
-    badDisplaySetIdNavigation: false,
+    badDisplaySetIdNavigation: true,
     badFrameOfReferenceNavigation: false,
     displaySetIdOnlyStrict: true,
     forOnlyStrict: true,

@@ -9,8 +9,6 @@ import type {
 import type { PlaneRestriction } from '../../types/IViewport';
 import { MetadataModules } from '../../enums';
 import * as metaData from '../../metaData';
-import cache from '../../cache/cache';
-import { getImageDisplaySet } from './displaySetAccess';
 import getSpacingInNormalDirection from '../../utilities/getSpacingInNormalDirection';
 import { isEarlierImagesFrameOfReferenceUID } from '../../utilities/getImagesFrameOfReferenceUID';
 import imageIdToURI from '../../utilities/imageIdToURI';
@@ -154,17 +152,40 @@ function isReferenceViewableInContext(
     return false;
   }
 
-  return isSliceIndexCompatible(viewRef, context, options);
+  return (
+    !isSliceIndexOfContext(viewRef, context) ||
+    isSliceIndexCompatible(viewRef, context, options)
+  );
+}
+
+/**
+ * Whether the slice index of a reference counts in the slices of a context.
+ * It does not across modes, where the reference names a volume and the
+ * context shows none, or the other way round, as a stack and a volume of the
+ * same display set: the slice index of a stack counts in its image ids, that
+ * of a volume in the slices of its view, sorted by position. Such a reference
+ * is checked by the image that it names and by its plane restriction. A
+ * reference with neither keeps its slice index, the only place that it names.
+ */
+function isSliceIndexOfContext(
+  viewRef: ViewReference,
+  context: ViewReferenceContext
+): boolean {
+  return (
+    Boolean(viewRef.volumeId) === Boolean(context.volumeId) ||
+    (!getReferencedImageURIs(viewRef).length && !viewRef.planeRestriction)
+  );
 }
 
 /**
  * Whether a reference of another display set or of another volume shows in a
- * context that has the same images, as a stack and a volume of one series.
- * The legacy stack and volume viewports took such a reference by the image
- * that it names. The display set of the reference, or its volume when it
- * names no display set, must be known and hold that image, the context must
- * have the image too, and the plane of the reference must be one that the
- * context shows. Its slice index counts in the other display set and is not
+ * context, as a stack and a volume of one series. The legacy stack and volume
+ * viewports, which had no display set ids, took such a reference by the image
+ * that it names, which the context must have, and the volume viewport took a
+ * reference that names no image by its plane. The data of the reference is
+ * not read, so its display set need not be registered any more, nor its
+ * volume be in the cache. The plane of the reference must be one that the
+ * context shows, and its slice index counts in the other data and is not
  * asked.
  */
 function isOtherDataReferenceViewable(
@@ -172,10 +193,11 @@ function isOtherDataReferenceViewable(
   context: ViewReferenceContext,
   options: ReferenceCompatibleOptions
 ): boolean {
-  if (
-    !hasReferencedImage(viewRef, getReferenceDataImageIds(viewRef)) ||
-    !hasReferencedImage(viewRef, context.imageIds, context.imageURIs)
-  ) {
+  const isShown = getReferencedImageURIs(viewRef).length
+    ? hasReferencedImage(viewRef, context.imageIds, context.imageURIs)
+    : isPlaneOfVolumeContext(viewRef, context, options);
+
+  if (!isShown) {
     return false;
   }
 
@@ -194,20 +216,48 @@ function isOtherDataReferenceViewable(
 }
 
 /**
- * The image ids of the data that a reference names: of its registered
- * display set, or of its volume in the cache when it names no display set.
- * Undefined when that data is not known.
+ * Whether a reference that names no image names a plane of a context that
+ * shows a volume: it has a view plane normal or a plane restriction, and,
+ * without orientation and navigation, its point (that of its plane
+ * restriction, else its focal point) lies on the slice on display. A stack
+ * shows only the planes of its images, so it takes such a reference only as a
+ * volume (`asVolume`).
  */
-function getReferenceDataImageIds(
-  viewRef: ViewReference
-): string[] | undefined {
-  if (viewRef.displaySetId) {
-    return getImageDisplaySet(viewRef.displaySetId)?.imageIds;
+function isPlaneOfVolumeContext(
+  viewRef: ViewReference,
+  context: ViewReferenceContext,
+  options: ReferenceCompatibleOptions
+): boolean {
+  if (
+    !context.volumeId ||
+    (!viewRef.viewPlaneNormal && !viewRef.planeRestriction)
+  ) {
+    return false;
   }
 
-  return viewRef.volumeId
-    ? cache.getVolume(viewRef.volumeId)?.imageIds
-    : undefined;
+  const point = viewRef.planeRestriction?.point ?? viewRef.cameraFocalPoint;
+
+  if (!point || options.withOrientation || options.withNavigation) {
+    return true;
+  }
+
+  const { cameraFocalPoint, viewPlaneNormal } = context;
+
+  return Boolean(
+    cameraFocalPoint &&
+      viewPlaneNormal &&
+      isEqual(
+        0,
+        vec3.dot(
+          vec3.sub(
+            vec3.create(),
+            point as unknown as vec3,
+            cameraFocalPoint as unknown as vec3
+          ),
+          viewPlaneNormal as unknown as vec3
+        )
+      )
+  );
 }
 
 /**

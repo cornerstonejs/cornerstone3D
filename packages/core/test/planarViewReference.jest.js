@@ -18,6 +18,7 @@ import {
 import { resolvePlanarViewportView } from '../src/RenderingEngine/Viewports/Planar/PlanarResolvedView';
 import PlanarViewReferenceController from '../src/RenderingEngine/Viewports/Planar/PlanarViewReferenceController';
 import PlanarMountedData from '../src/RenderingEngine/Viewports/Planar/PlanarMountedData';
+import { isViewReferenceViewable } from '../src/RenderingEngine/Viewports/viewReferenceCompatibility';
 
 const IMAGE_FOR = 'image-for';
 const VOLUME_FOR = 'volume-for';
@@ -813,6 +814,7 @@ function createStackBinding({
   imageIds,
   role = 'overlay',
   currentImageIdIndex = 0,
+  volumeId,
 }) {
   return {
     data: {
@@ -820,7 +822,7 @@ function createStackBinding({
       type: 'image',
       imageIds,
       initialImageIdIndex: currentImageIdIndex,
-      volumeId: undefined,
+      volumeId,
     },
     role,
     rendering: {
@@ -882,7 +884,6 @@ function createControllerHarness(bindingEntries) {
   const renderContext = createRenderContext();
   let viewState = {};
 
-  const render = jest.fn();
   const setImageIdIndex = jest.fn((imageIdIndex) => {
     const binding = mountedData.getCurrentBinding();
 
@@ -893,10 +894,6 @@ function createControllerHarness(bindingEntries) {
   const setViewState = jest.fn((patch) => {
     viewState = { ...viewState, ...patch };
   });
-  const updateBindingsCameraState = jest.fn();
-  const promoteSourceDisplaySetId = jest.fn((displaySetId) =>
-    mountedData.promoteSourceDisplaySetId(displaySetId)
-  );
   const getVolumeSliceWorldPointForImageIdIndex = jest.fn((imageIdIndex) => [
     0,
     0,
@@ -940,11 +937,8 @@ function createControllerHarness(bindingEntries) {
     },
     getViewState: () => viewState,
     getVolumeSliceWorldPointForImageIdIndex,
-    promoteSourceDisplaySetId,
-    render,
     setImageIdIndex,
     setViewState,
-    updateBindingsCameraState,
   };
   const controller = new PlanarViewReferenceController(host);
 
@@ -955,8 +949,6 @@ function createControllerHarness(bindingEntries) {
     getViewState: () => viewState,
     host,
     mountedData,
-    promoteSourceDisplaySetId,
-    render,
     // Seeds the initial viewState directly, bypassing the setViewState spy
     // so test setup doesn't pollute the call history asserted on below.
     seedViewState: (patch) => {
@@ -964,7 +956,6 @@ function createControllerHarness(bindingEntries) {
     },
     setImageIdIndex,
     setViewState,
-    updateBindingsCameraState,
   };
 }
 
@@ -1005,10 +996,8 @@ describe('PlanarViewReferenceController', () => {
       });
 
       expect(harness.mountedData.getSourceDisplaySetId()).toBe('source');
-      expect(harness.promoteSourceDisplaySetId).not.toHaveBeenCalled();
-      expect(harness.updateBindingsCameraState).not.toHaveBeenCalled();
+      expect(harness.bindings.get('overlay').role).toBe('overlay');
       expect(harness.setImageIdIndex).not.toHaveBeenCalled();
-      expect(harness.render).not.toHaveBeenCalled();
     });
 
     it('navigates within the active binding via referencedImageId without switching bindings', () => {
@@ -1020,7 +1009,6 @@ describe('PlanarViewReferenceController', () => {
       });
 
       expect(harness.mountedData.getSourceDisplaySetId()).toBe('source');
-      expect(harness.promoteSourceDisplaySetId).not.toHaveBeenCalled();
       expect(harness.setImageIdIndex).toHaveBeenCalledWith(2);
     });
 
@@ -1040,9 +1028,9 @@ describe('PlanarViewReferenceController', () => {
 
       harness.controller.setViewReference({ FrameOfReferenceUID: 'for-1' });
 
-      expect(harness.promoteSourceDisplaySetId).not.toHaveBeenCalled();
+      expect(harness.mountedData.getSourceDisplaySetId()).toBe('source');
       expect(harness.setImageIdIndex).not.toHaveBeenCalled();
-      expect(harness.render).not.toHaveBeenCalled();
+      expect(harness.setViewState).not.toHaveBeenCalled();
     });
 
     it('refuses (no-ops) a reference whose FrameOfReferenceUID matches no binding and carries no other identity', () => {
@@ -1052,10 +1040,9 @@ describe('PlanarViewReferenceController', () => {
         FrameOfReferenceUID: 'for-unknown',
       });
 
-      expect(harness.promoteSourceDisplaySetId).not.toHaveBeenCalled();
-      expect(harness.updateBindingsCameraState).not.toHaveBeenCalled();
+      expect(harness.mountedData.getSourceDisplaySetId()).toBe('source');
       expect(harness.setImageIdIndex).not.toHaveBeenCalled();
-      expect(harness.render).not.toHaveBeenCalled();
+      expect(harness.setViewState).not.toHaveBeenCalled();
     });
 
     it('does nothing when setViewReference is called with a falsy reference', () => {
@@ -1063,8 +1050,9 @@ describe('PlanarViewReferenceController', () => {
 
       harness.controller.setViewReference(undefined);
 
-      expect(harness.promoteSourceDisplaySetId).not.toHaveBeenCalled();
-      expect(harness.render).not.toHaveBeenCalled();
+      expect(harness.mountedData.getSourceDisplaySetId()).toBe('source');
+      expect(harness.setImageIdIndex).not.toHaveBeenCalled();
+      expect(harness.setViewState).not.toHaveBeenCalled();
     });
 
     it('keeps the source for a reference that names the overlay by displaySetId, and moves nothing without a point', () => {
@@ -1073,9 +1061,8 @@ describe('PlanarViewReferenceController', () => {
       harness.controller.setViewReference({ displaySetId: 'overlay' });
 
       expect(harness.mountedData.getSourceDisplaySetId()).toBe('source');
-      expect(harness.promoteSourceDisplaySetId).not.toHaveBeenCalled();
+      expect(harness.bindings.get('overlay').role).toBe('overlay');
       expect(harness.setImageIdIndex).not.toHaveBeenCalled();
-      expect(harness.render).not.toHaveBeenCalled();
     });
 
     it('delegates getViewReference/getViewReferenceId/getCurrentImageId to the active binding', () => {
@@ -1174,6 +1161,77 @@ describe('PlanarViewReferenceController', () => {
     });
   });
 
+  describe('a source that is promoted and not bound yet', () => {
+    it('keeps the new source for a reference of the old one, whose binding is still the first', () => {
+      const harness = createControllerHarness([
+        [
+          'source',
+          createStackBinding({
+            displaySetId: 'source',
+            imageIds: ['src:0', 'src:1', 'src:2'],
+            role: 'source',
+          }),
+        ],
+      ]);
+
+      harness.mountedData.promoteSourceDisplaySetId('source');
+      harness.mountedData.promoteSourceDisplaySetId('incoming');
+
+      harness.controller.setViewReference({
+        FrameOfReferenceUID: 'for-1',
+        displaySetId: 'source',
+        referencedImageId: 'src:2',
+      });
+
+      expect(harness.mountedData.getSourceDisplaySetId()).toBe('incoming');
+      expect(harness.bindings.get('source').role).toBe('overlay');
+    });
+  });
+
+  describe('the same display set as a stack and as a volume', () => {
+    it('gives a stack context no volume id, so the slice index of a volume reference of its images is not read', () => {
+      const harness = createControllerHarness([
+        [
+          'ct',
+          createStackBinding({
+            displaySetId: 'ct',
+            imageIds: ['src:0', 'src:1', 'src:2'],
+            role: 'source',
+            volumeId: 'ct-images-volume',
+          }),
+        ],
+      ]);
+
+      harness.mountedData.promoteSourceDisplaySetId('ct');
+
+      const contexts = harness.controller.getReferenceViewContexts([]);
+      const volumeReference = {
+        FrameOfReferenceUID: 'for-1',
+        displaySetId: 'ct',
+        volumeId: 'ct-images-volume',
+        referencedImageId: 'src:0',
+        sliceIndex: 2,
+      };
+
+      expect(contexts[0].volumeId).toBeUndefined();
+      expect(contexts[0].volumeIds).toBeUndefined();
+      expect(isViewReferenceViewable(volumeReference, contexts)).toBe(true);
+      expect(
+        isViewReferenceViewable(
+          { ...volumeReference, referencedImageId: 'src:2', sliceIndex: 0 },
+          contexts
+        )
+      ).toBe(false);
+      expect(
+        isViewReferenceViewable(
+          { ...volumeReference, referencedImageId: 'src:2', sliceIndex: 0 },
+          contexts,
+          { withNavigation: true }
+        )
+      ).toBe(true);
+    });
+  });
+
   describe('stack source + volume overlay bindings', () => {
     function createHarness() {
       const volume = createImageVolume({
@@ -1232,7 +1290,7 @@ describe('PlanarViewReferenceController', () => {
       });
 
       expect(harness.mountedData.getSourceDisplaySetId()).toBe('source');
-      expect(harness.promoteSourceDisplaySetId).not.toHaveBeenCalled();
+      expect(harness.bindings.get('overlay').role).toBe('overlay');
       expect(harness.setViewState).not.toHaveBeenCalled();
       expect(harness.setImageIdIndex).not.toHaveBeenCalled();
     });
@@ -1433,7 +1491,7 @@ describe('PlanarViewReferenceController', () => {
       });
 
       expect(harness.setViewState).not.toHaveBeenCalled();
-      expect(harness.render).not.toHaveBeenCalled();
+      expect(harness.setImageIdIndex).not.toHaveBeenCalled();
     });
   });
 });

@@ -134,7 +134,6 @@ describe('Planar view-reference orchestration', () => {
         imageIdIndex: 0,
       },
     };
-    const render = jest.fn();
     const setImageIdIndex = jest.fn((imageIdIndex) => {
       viewState = {
         ...viewState,
@@ -146,8 +145,6 @@ describe('Planar view-reference orchestration', () => {
 
       return Promise.resolve('image:overlay');
     });
-    const updateBindingsCameraState = jest.fn();
-
     mountedData.promoteSourceDisplaySetId('source');
 
     const references = new PlanarViewReferenceController({
@@ -209,9 +206,6 @@ describe('Planar view-reference orchestration', () => {
         0,
         imageIdIndex,
       ],
-      promoteSourceDisplaySetId: (displaySetId) =>
-        mountedData.promoteSourceDisplaySetId(displaySetId),
-      render,
       setImageIdIndex,
       setViewState: (viewStatePatch) => {
         viewState = {
@@ -219,7 +213,6 @@ describe('Planar view-reference orchestration', () => {
           ...viewStatePatch,
         };
       },
-      updateBindingsCameraState,
     });
 
     references.setViewReference({
@@ -228,8 +221,7 @@ describe('Planar view-reference orchestration', () => {
     });
 
     expect(mountedData.getSourceDisplaySetId()).toBe('source');
-    expect(updateBindingsCameraState).not.toHaveBeenCalled();
+    expect(bindings.get('overlay').role).toBe('overlay');
     expect(setImageIdIndex).not.toHaveBeenCalled();
-    expect(render).not.toHaveBeenCalled();
   });
 });
