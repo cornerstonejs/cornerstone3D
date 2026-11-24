@@ -1,0 +1,20 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "11",
+        "rule": "findDataIdByVolumeId: its name in 6.0 is getDisplaySetIdForVolumeId"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "4",
+        "rule": "findDataIdByVolumeId: a member of a type of the application on a Cornerstone type, its name in 6.0 is getDisplaySetIdForVolumeId"
+      },
+      "count": 1
+    }
+  ]
+}

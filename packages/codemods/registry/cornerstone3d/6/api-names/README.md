@@ -286,7 +286,23 @@ private.
 
 ### Viewport members and queries
 
-None yet.
+A planar and a 3D viewport answer `getVolumeIds()`, `getScalarRange()`,
+`getDisplaySetIdForVolumeId()` and, on a planar viewport,
+`isInAcquisitionPlane()`; a 3D viewport whose source is a surface has the
+content mode `'geometry3d'`. Only the reverse lookup of a volume had a name
+before.
+
+- `findDataIdByVolumeId` becomes `getDisplaySetIdForVolumeId` on a viewport
+  that the file proves (a cast or a type of a viewport class, the viewport of
+  `getEnabledElement`, `getViewport` of a rendering engine): a call, an
+  optional call, a string in brackets, an `in` test and a destructured key.
+- Reported, manual: the same member on a receiver that only its name shows
+  to be a viewport, and a member `findDataIdByVolumeId` that a type of the
+  application declares on top of a Cornerstone viewport type (an
+  intersection with it, an interface that extends it).
+- Left: a member of that name on an object that is no viewport, such as a
+  class or an object literal of the application. The other queries are new:
+  nothing to rewrite.
 
 ## Reported
 

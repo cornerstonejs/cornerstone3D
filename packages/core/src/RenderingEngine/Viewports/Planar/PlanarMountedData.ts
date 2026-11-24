@@ -1,4 +1,12 @@
-import type { ActorEntry, VOIRange } from '../../../types';
+import type {
+  ActorEntry,
+  IImage,
+  IImageVolume,
+  VOIRange,
+} from '../../../types';
+import { isImageRenderMode } from '../../helpers/renderBackendRegistry';
+import { isSegmentationOverlayData } from '../renderingFidelity';
+import { getImageScalarRange, getVolumeScalarRange } from '../scalarRange';
 import type {
   BindingRole,
   LoadedData,
@@ -151,16 +159,115 @@ class PlanarMountedData {
     }
   }
 
+  /**
+   * The display set whose data has this volume id: the source when its data
+   * has it, else the first such display set in mount order.
+   */
   findDisplaySetIdByVolumeId(volumeId: string): string | undefined {
+    let firstDisplaySetId: string | undefined;
+
     for (const [displaySetId, binding] of this.host.getBindings()) {
       const bindingVolumeId = (
         binding.data as LoadedData<PlanarPayload> | undefined
       )?.volumeId;
 
-      if (bindingVolumeId === volumeId) {
+      if (bindingVolumeId !== volumeId) {
+        continue;
+      }
+
+      if (binding.role === 'source') {
         return displaySetId;
       }
+
+      firstDisplaySetId ??= displaySetId;
     }
+
+    return firstDisplaySetId;
+  }
+
+  /**
+   * The ids of the volumes that the display sets draw, each once: the
+   * source first, then in mount order. A display set drawn as images (stack
+   * mode) draws no volume. The labelmap overlay of a segmentation is left
+   * out unless `includeSegmentations` is true.
+   */
+  getVolumeIds(includeSegmentations: boolean): string[] {
+    const bindings = Array.from(
+      this.host.getBindings(),
+      ([, binding]) => binding
+    );
+    const volumeIds = new Set<string>();
+
+    for (const binding of [
+      ...bindings.filter(({ role }) => role === 'source'),
+      ...bindings.filter(({ role }) => role !== 'source'),
+    ]) {
+      const data = binding.data as LoadedData<PlanarPayload> | undefined;
+      const options = {
+        renderMode: binding.rendering.renderMode,
+        role: binding.role,
+      };
+
+      if (
+        !data?.volumeId ||
+        isImageRenderMode(options.renderMode) ||
+        (!includeSegmentations && isSegmentationOverlayData(data, options))
+      ) {
+        continue;
+      }
+
+      volumeIds.add(data.volumeId);
+    }
+
+    return Array.from(volumeIds);
+  }
+
+  /**
+   * The volume that a display set draws (the current one when not given),
+   * or undefined when it draws images.
+   */
+  getImageVolume(displaySetId?: string): IImageVolume | undefined {
+    const binding = this.getTargetBinding(displaySetId);
+
+    if (!binding || isImageRenderMode(binding.rendering.renderMode)) {
+      return;
+    }
+
+    const rendering = binding.rendering as { imageVolume?: IImageVolume };
+
+    return (
+      rendering.imageVolume ??
+      (binding.data as LoadedData<PlanarPayload>).imageVolume
+    );
+  }
+
+  /**
+   * The range of the values of the data of a display set (the current one
+   * when not given): of the image on display when it draws images, of the
+   * whole volume when it draws a volume. See
+   * `PlanarViewport.getScalarRange`.
+   */
+  getScalarRange(displaySetId?: string): [number, number] | undefined {
+    const binding = this.getTargetBinding(displaySetId);
+
+    if (!binding) {
+      return;
+    }
+
+    if (!isImageRenderMode(binding.rendering.renderMode)) {
+      return getVolumeScalarRange(this.getImageVolume(displaySetId));
+    }
+
+    const rendering = binding.rendering as {
+      currentImage?: IImage;
+      enabledElement?: { image?: IImage };
+    };
+
+    return getImageScalarRange(
+      rendering.currentImage ??
+        rendering.enabledElement?.image ??
+        (binding.data as LoadedData<PlanarPayload>).image
+    );
   }
 
   getDefaultVOIRange(displaySetId?: string): VOIRange | undefined {
@@ -194,6 +301,14 @@ class PlanarMountedData {
       : undefined;
 
     return rendering?.defaultInvert;
+  }
+
+  private getTargetBinding(
+    displaySetId?: string
+  ): PlanarDataBinding | undefined {
+    return displaySetId
+      ? this.host.getBinding(displaySetId)
+      : this.getCurrentBinding();
   }
 
   private promoteFirstAvailableBindingToSource(): void {

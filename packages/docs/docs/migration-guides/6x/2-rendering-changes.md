@@ -1380,6 +1380,128 @@ and `sampledVolume` is `cpu`; `volume` is `cpu` on a backend with
 `surface: 'cpu'` (the built-in CPU backend filed its CPU slicer there) and
 `gpuVolume` on any other.
 
+## Viewport queries
+
+A planar and a 3D viewport answer five questions that an application asked
+of the cache, of a vtk mapper or of the actor list before. The answers come
+from the data, so they are the same on every render path.
+
+### The volumes on display
+
+```ts
+// Before
+const volumeIds = [
+  ...new Set(
+    viewport
+      .getActors()
+      .map((entry) => entry.referencedId)
+      .filter((id) => viewport.hasVolumeId(id))
+  ),
+];
+
+// After
+const volumeIds = viewport.getVolumeIds();
+```
+
+`getVolumeIds()` gives each volume once, the source first, then the overlays
+in mount order. It leaves out the labelmap of a segmentation, an overlay
+whose descriptor has a `reference` of kind `'segmentation'` as the tools
+mount it, so a window level panel with a row for each volume gets no row for
+a hydrated SEG. `getVolumeIds({ includeSegmentations: true })` lists the
+labelmaps too. In stack mode the list is empty. A labelmap that the tools draw
+as images beside a slice cut on the CPU is not a volume of the viewport, and
+is in neither list.
+
+### The display set of a volume
+
+```ts
+// Before (6.0.0-beta.2)
+const displaySetId = viewport.findDataIdByVolumeId(volumeId);
+
+// After
+const displaySetId = viewport.getDisplaySetIdForVolumeId(volumeId);
+```
+
+A planar and a 3D viewport have it. When two mounted display sets share the
+volume, the answer is the source when it is one of them, else the first in
+mount order; to change one of them, keep its id from `getDisplaySets()`. The
+codemod renames the call.
+
+### The range of the values
+
+```ts
+// Before
+const volume = cache.getVolume(volumeId);
+const range = volume
+  ? volume.voxelManager.getRange()
+  : actor.getMapper().getInputData().getPointData().getScalars().getRange();
+
+// After
+const range = viewport.getScalarRange(displaySetId);
+```
+
+`getScalarRange(displaySetId)` gives `[min, max]` of the data of a display
+set, of the source without an id:
+
+- A display set drawn as a volume, and the volume of a 3D viewport: the range
+  of the whole volume, as `voxelManager.getRange()` gives it from the pixel
+  values that the loader gave for each image. While the volume loads it is
+  the range of the images that have arrived: read it again at
+  `IMAGE_VOLUME_MODIFIED`. A dynamic volume gives the range of its time point
+  on display.
+- A display set drawn as images (a stack): the range of the image on display,
+  its `minPixelValue` and `maxPixelValue`. Read it again at `NEW_IMAGE`.
+
+It is undefined before the data arrives, for a surface and for a display set
+that is not mounted. A video, a whole slide and an ECG viewport have no window
+and no such member.
+
+`ViewportColorbar` of the tools takes its image range from it. On a viewport
+drawn on the CPU (a stack, or a volume with `renderBackend: 'cpu'`) the
+colorbar showed `[-1000, 1000]`, its default; it shows the range of the data
+now. For a stack on the GPU it read the pixels of the image, which gives the
+same numbers where the loader's values are those of the pixels.
+
+### The acquisition plane
+
+```ts
+// Before (6.0.0-beta.2)
+const volume = cache.getVolume(viewport.getVolumeId());
+const inAcquisitionPlane = utilities.isAcquisitionPlaneNormal(
+  volume,
+  viewport.getViewReference().viewPlaneNormal
+);
+
+// After
+const inAcquisitionPlane = viewport.isInAcquisitionPlane();
+```
+
+A stack is always in its acquisition plane. A volume is when the view plane
+normal is the scan axis of the source volume, by
+`utilities.isAcquisitionPlaneNormal`: an axial view of an axial series is, a
+sagittal reformat or an oblique plane of it is not. With nothing mounted the
+answer is false. `utilities.isInAcquisitionPlane(viewport)` stays: it calls
+the member of a planar viewport, gives true for a video and a whole slide
+viewport, and false for a 3D viewport, which has no plane of its own, and for
+an ECG viewport.
+
+### A 3D viewport that shows a surface
+
+```ts
+// Before: a 3D viewport whose source is a surface
+viewport.getCurrentMode() === 'unknown';
+
+// After
+viewport.getCurrentMode() === 'geometry3d';
+```
+
+`getCurrentMode()` of a 3D viewport is `'volume3d'` when its source is a
+volume and `'geometry3d'` when its source is a surface, where it was
+`'unknown'`. `utilities.getViewportContentMode(viewport)` gives the same, and
+`utilities.viewportIsInVolumeMode(viewport)` is false for it. A test of the
+content such as `mode !== 'empty' && mode !== 'unknown'` now counts a 3D
+viewport with surfaces as one that shows something.
+
 ## A viewport on the CPU shows the GPU picture
 
 A viewport draws on the CPU when the device has no WebGL2, when a lost context

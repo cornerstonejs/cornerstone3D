@@ -2633,10 +2633,12 @@ class CrosshairsTool extends AnnotationTool {
     }
 
     const volumeViewport = viewport as typeof viewport & {
-      findDataIdByVolumeId?(volumeId: string): string | undefined;
+      getDisplaySetIdForVolumeId?(volumeId: string): string | undefined;
     };
     const filteredIds = new Set(
-      filter.map((uid) => volumeViewport.findDataIdByVolumeId?.(uid) ?? uid)
+      filter.map(
+        (uid) => volumeViewport.getDisplaySetIdForVolumeId?.(uid) ?? uid
+      )
     );
 
     return viewport

@@ -10,7 +10,7 @@ type SyncedAppearance = {
 type SyncedKey = keyof SyncedAppearance;
 
 type AppearanceViewport = Types.IViewport & {
-  findDataIdByVolumeId?: (volumeId: string) => string | undefined;
+  getDisplaySetIdForVolumeId?: (volumeId: string) => string | undefined;
   getDisplaySets(): Array<{ displaySetId: string }>;
   getSourceDisplaySetId?: () => string | undefined;
   setDisplaySetAppearance(
@@ -41,14 +41,14 @@ function getSyncedKeys(options?: {
 /**
  * The display set of a next viewport that shows this volume, found through
  * its display sets and its view references, for a viewport without
- * `findDataIdByVolumeId` such as the 3D viewport.
+ * `getDisplaySetIdForVolumeId`.
  */
 function getDisplaySetIdOfVolume(
   viewport: AppearanceViewport,
   volumeId: string
 ): string | undefined {
-  if (typeof viewport.findDataIdByVolumeId === 'function') {
-    return viewport.findDataIdByVolumeId(volumeId);
+  if (typeof viewport.getDisplaySetIdForVolumeId === 'function') {
+    return viewport.getDisplaySetIdForVolumeId(volumeId);
   }
 
   return viewport

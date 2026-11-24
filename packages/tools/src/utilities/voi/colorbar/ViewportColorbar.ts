@@ -1,42 +1,27 @@
 import type { Types, PlanarViewport } from '@cornerstonejs/core';
-import {
-  eventTarget,
-  Enums,
-  getEnabledElement,
-  cache,
-} from '@cornerstonejs/core';
+import { eventTarget, Enums, getEnabledElement } from '@cornerstonejs/core';
 import { Colorbar } from './Colorbar';
 import type { ViewportColorbarProps, ColorbarVOIRange } from './types';
 import { getVOIMultipliers } from '../../getVOIMultipliers';
-import { getRenderPlanLayer } from '../../viewport/getRenderPlanLayer';
 
 const { Events } = Enums;
 const defaultImageRange = { lower: -1000, upper: 1000 };
 
-/**
- * Whether an image actor of a viewport draws a slice of a volume cut on the
- * CPU and drawn on the GPU: its layer in the render plan has `slice: 'cpu'`
- * and `draw: 'gpu'`. The input data of its mapper holds only the visible
- * slice, so the range of its scalars is not the range of the volume; the
- * volume range comes from the voxel manager that the input data carries.
- */
-function isCpuSliceActor(viewport, actor): boolean {
-  const actorEntry = (viewport.getActors?.() ?? []).find(
-    (entry) => entry.actor === actor
-  );
-  const layer = getRenderPlanLayer(viewport, actorEntry?.displaySetId);
-
-  return layer?.slice === 'cpu' && layer.draw === 'gpu';
-}
+/** The queries of a planar or 3D viewport that a colorbar reads. */
+type ColorbarViewport = Types.IViewport &
+  Partial<
+    Pick<PlanarViewport, 'getDisplaySetIdForVolumeId' | 'getScalarRange'>
+  >;
 
 /**
  * The display set id of the data that a colorbar names by `volumeId`: the
- * display set of a planar viewport that shows the volume of that id, else the
- * id itself, which then is a display set id.
+ * display set of a planar or 3D viewport that shows the volume of that id,
+ * else the id itself, which then is a display set id.
  */
 function getDisplaySetId(viewport: Types.IViewport, volumeId: string): string {
   return (
-    (viewport as PlanarViewport).findDataIdByVolumeId?.(volumeId) ?? volumeId
+    (viewport as ColorbarViewport).getDisplaySetIdForVolumeId?.(volumeId) ??
+    volumeId
   );
 }
 
@@ -101,46 +86,19 @@ class ViewportColorbar extends Colorbar {
     viewport.render();
   }
 
+  /**
+   * The image range of the colorbar: the scalar range of the data that
+   * `volumeId` names (the source when it names none), as the viewport gives
+   * it on every render path, or the default range while the viewport has
+   * none.
+   */
   private static _getImageRange(element, volumeId?) {
-    const enabledElement = getEnabledElement(element);
-    const viewport = enabledElement.viewport as PlanarViewport;
+    const { viewport } = getEnabledElement(element);
+    const imageRange = (viewport as ColorbarViewport).getScalarRange?.(
+      volumeId ? getDisplaySetId(viewport, volumeId) : undefined
+    );
 
-    const actor = viewport.getImageActor(volumeId);
-
-    if (!actor) {
-      return defaultImageRange;
-    }
-
-    const imageData = actor.getMapper().getInputData();
-
-    const scalarData = isCpuSliceActor(viewport, actor)
-      ? undefined
-      : imageData.getPointData().getScalars();
-
-    let imageRange;
-    if (!scalarData) {
-      // Streaming volumes (legacy and native PLANAR) keep pixels in a
-      // voxelManager rather than on the vtk point data. Prefer the voxelManager
-      // attached to the mapper input data - it is present for both viewport
-      // families and does not require a volumeId. A direct PLANAR viewport
-      // exposes no getAllVolumeIds, so callers cannot always supply one; only
-      // fall back to a cached volume lookup when the input voxelManager is
-      // unavailable, and default the range instead of throwing.
-      const inputVoxelManager = imageData.get('voxelManager')?.voxelManager;
-      const volume = volumeId ? cache.getVolume(volumeId) : undefined;
-      const voxelManager = inputVoxelManager ?? volume?.voxelManager;
-
-      if (!voxelManager?.getRange) {
-        return defaultImageRange;
-      }
-
-      const [minValue, maxValue] = voxelManager.getRange();
-      imageRange = [minValue, maxValue];
-    } else {
-      imageRange = scalarData.getRange();
-    }
-
-    return imageRange[0] === 0 && imageRange[1] === 0
+    return !imageRange || (imageRange[0] === 0 && imageRange[1] === 0)
       ? defaultImageRange
       : { lower: imageRange[0], upper: imageRange[1] };
   }

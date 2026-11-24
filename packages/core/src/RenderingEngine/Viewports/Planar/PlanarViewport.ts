@@ -36,6 +36,7 @@ import type {
   ViewportContentMode,
 } from '../../../types';
 import { isImageActor } from '../../../utilities/actorCheck';
+import { isAcquisitionPlaneNormal } from '../../../utilities/isAcquisitionPlaneNormal';
 import cache from '../../../cache/cache';
 import type { PlaneRestriction } from '../../../types/IViewport';
 import { deepClone } from '../../../utilities/deepClone';
@@ -1306,6 +1307,79 @@ class PlanarViewport extends BaseViewport<
     return this.viewReferences.getVolumeId(viewRefSpecifier);
   }
 
+  /**
+   * The ids of the volumes that the viewport shows, each once: the volume of
+   * the source first, then those of the overlays in mount order. A display
+   * set drawn as images shows no volume, so in stack mode the list is empty.
+   *
+   * The labelmap of a segmentation, an overlay whose descriptor has a
+   * `reference` of kind `'segmentation'`, is left out: the list holds the
+   * image volumes, such as the CT and the PT of a fusion. Pass
+   * `{ includeSegmentations: true }` to have the labelmaps too. A labelmap
+   * that the tools draw as images, as beside a slice cut on the CPU, shows no
+   * volume and is in neither list.
+   *
+   * @param options - `includeSegmentations`: list the labelmap volumes too.
+   * @returns The volume ids, the source first.
+   */
+  getVolumeIds(options: { includeSegmentations?: boolean } = {}): string[] {
+    return this.mountedData.getVolumeIds(Boolean(options.includeSegmentations));
+  }
+
+  /**
+   * The range of the values of the data of a display set, `[min, max]`: of
+   * the source when no display set is given. It is read from the data, so it
+   * is the same on every render path (GPU or CPU, frame, CPU slice or GPU
+   * volume slice).
+   *
+   * - A display set drawn as a volume: the range of the whole volume, as its
+   *   voxel manager knows it (`voxelManager.getRange()`). While the volume
+   *   loads it is the range of the images that have arrived, so it can
+   *   grow: read it again at `IMAGE_VOLUME_MODIFIED`. A dynamic volume gives
+   *   the range of its time point on display.
+   * - A display set drawn as images (stack mode): the range of the image on
+   *   display, its `minPixelValue` and `maxPixelValue`; read it again at
+   *   `NEW_IMAGE`.
+   *
+   * The values are those that the image loader gave for each image. Undefined
+   * when the display set is not mounted, before the image on display or the
+   * first image of the volume has arrived, and when the data gives no range.
+   *
+   * @param displaySetId - The display set; the source when not given.
+   * @returns The range, or undefined.
+   */
+  getScalarRange(displaySetId?: string): [number, number] | undefined {
+    return this.mountedData.getScalarRange(displaySetId);
+  }
+
+  /**
+   * Whether the view shows the data in the plane it was acquired in. A
+   * stack shows its images: true. A volume: true when the view plane normal
+   * shows the acquisition plane of the source volume, by
+   * `utilities.isAcquisitionPlaneNormal`, the rule by which the viewport draws
+   * the acquired frames; so an axial view of an axial series is in its
+   * acquisition plane, a sagittal reformat or an oblique plane of it is not.
+   * False with nothing mounted.
+   *
+   * @returns Whether the view is in the acquisition plane.
+   */
+  isInAcquisitionPlane(): boolean {
+    const mode = this.getCurrentMode();
+
+    if (mode !== 'volume') {
+      return mode === 'stack';
+    }
+
+    const imageVolume = this.mountedData.getImageVolume();
+    const { viewPlaneNormal } = this.getViewReference();
+
+    return Boolean(
+      imageVolume &&
+        viewPlaneNormal &&
+        isAcquisitionPlaneNormal(imageVolume, viewPlaneNormal)
+    );
+  }
+
   getSourceDisplaySetId(): string | undefined {
     return this.mountedData.getSourceDisplaySetId();
   }
@@ -1974,7 +2048,7 @@ class PlanarViewport extends BaseViewport<
    */
   getImageData(volumeId?: string): IImageData | CPUIImageData | undefined {
     if (volumeId) {
-      const displaySetId = this.findDataIdByVolumeId(volumeId);
+      const displaySetId = this.getDisplaySetIdForVolumeId(volumeId);
       const binding = displaySetId ? this.getBinding(displaySetId) : undefined;
       return binding?.getImageData?.();
     }
@@ -2053,7 +2127,7 @@ class PlanarViewport extends BaseViewport<
    * @returns `true` when a source or overlay binding shows the volume id.
    */
   hasVolumeId(volumeId: string): boolean {
-    const displaySetId = this.findDataIdByVolumeId(volumeId);
+    const displaySetId = this.getDisplaySetIdForVolumeId(volumeId);
 
     return (
       displaySetId !== undefined &&
@@ -3892,13 +3966,18 @@ class PlanarViewport extends BaseViewport<
   }
 
   /**
-   * Maps a volume id to its bound display-set (data) id. Public because the
-   * tools VOI synchronizer needs it across the tools<->core boundary; it was
-   * previously reached through a structural cast against this protected member,
-   * which leaked the type contract. Planar-family specific (volume-backed), so
-   * it lives here rather than on IViewport.
+   * The id of the mounted display set whose data is the volume of this id,
+   * as an event or `getVolumeIds()` names it. In stack mode a display set
+   * keeps the volume id that it has as a volume, so the answer is the same.
+   * When two mounted display sets share the volume: the source when it is
+   * one of them, else the first in mount order, the order in which
+   * `getVolumeIds()` meets them. Undefined for a volume that no display set
+   * has.
+   *
+   * @param volumeId - The volume id.
+   * @returns The display set id, or undefined.
    */
-  public findDataIdByVolumeId(volumeId: string): string | undefined {
+  public getDisplaySetIdForVolumeId(volumeId: string): string | undefined {
     return this.mountedData.findDisplaySetIdByVolumeId(volumeId);
   }
 

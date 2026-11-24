@@ -292,3 +292,31 @@ export function guards() {
 
   return utilities.getViewportContentMode(enabledElement.viewport) === 'stack';
 }
+
+/** The queries of a planar and a 3D viewport, as the guide gives them. */
+export function queriesOfTheViewports() {
+  const volumeIds: string[] = planar.getVolumeIds();
+  const withLabelmaps: string[] = volume3D.getVolumeIds({
+    includeSegmentations: true,
+  });
+  const range: [number, number] | undefined =
+    planar.getScalarRange(displaySetId);
+  const range3D: [number, number] | undefined = volume3D.getScalarRange();
+  const ofVolume: string | undefined = planar.getDisplaySetIdForVolumeId(
+    volumeIds[0]
+  );
+  const ofVolume3D: string | undefined =
+    volume3D.getDisplaySetIdForVolumeId('volume');
+  const inAcquisitionPlane: boolean = planar.isInAcquisitionPlane();
+  const surfaceMode: Types.ViewportContentMode = 'geometry3d';
+
+  return [
+    withLabelmaps,
+    range,
+    range3D,
+    ofVolume,
+    ofVolume3D,
+    inAcquisitionPlane,
+    surfaceMode,
+  ];
+}

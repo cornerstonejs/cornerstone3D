@@ -164,9 +164,10 @@ viewport.getCurrentMode();
 ```
 
 `getCurrentMode()` returns `'stack'`, `'volume'` or `'empty'` for a planar
-viewport. A 3D viewport says `'volume3d'`, a video viewport `'video'`, a
-whole slide viewport `'wholeSlide'` and an ECG viewport `'ecg'`, and each
-says `'empty'` with nothing mounted.
+viewport. A 3D viewport says `'volume3d'`, or `'geometry3d'` when its source
+is a surface, a video viewport `'video'`, a whole slide viewport
+`'wholeSlide'` and an ECG viewport `'ecg'`, and each says `'empty'` with
+nothing mounted.
 `utilities.getViewportContentMode(viewport)` gives the same answer for any
 viewport. Use them where the code asked
 `viewport instanceof StackViewport` or `viewport.type === ViewportType.STACK`.

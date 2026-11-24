@@ -27,6 +27,7 @@ import type {
 } from '../ViewportArchitectureTypes';
 import BaseViewport from '../BaseViewport';
 import { isSegmentationOverlayData } from '../renderingFidelity';
+import { getVolumeScalarRange } from '../scalarRange';
 import { viewportProjection } from '../viewportProjection';
 import { disableViewportWidgets } from '../viewportWidgets';
 import {
@@ -210,8 +211,9 @@ class VolumeViewport3D extends BaseViewport<
   }
 
   /**
-   * Content mode of the 3D family (GENVIEW-FAMILY-5): `volume3d` for a mounted
-   * volume, `unknown` for a geometry-only source, `empty` with no source.
+   * Content mode of the 3D family (GENVIEW-FAMILY-5): `volume3d` for a
+   * mounted volume, `geometry3d` when the source is a surface, `empty` with
+   * no source.
    */
   getCurrentMode(): ViewportContentMode {
     const binding = this.getSourceBinding();
@@ -221,7 +223,7 @@ class VolumeViewport3D extends BaseViewport<
     }
 
     return binding.rendering.renderMode === 'vtkGeometry3d'
-      ? 'unknown'
+      ? 'geometry3d'
       : 'volume3d';
   }
 
@@ -727,6 +729,73 @@ class VolumeViewport3D extends BaseViewport<
   }
 
   /**
+   * The ids of the volumes that the viewport shows, each once: the volume of
+   * the source first, then those of the overlays in mount order. A surface
+   * shows no volume. The labelmap of a segmentation, an overlay whose
+   * descriptor has a `reference` of kind `'segmentation'`, is left out
+   * unless `includeSegmentations` is true.
+   *
+   * @param options - `includeSegmentations`: list the labelmap volumes too.
+   * @returns The volume ids, the source first.
+   */
+  getVolumeIds(options: { includeSegmentations?: boolean } = {}): string[] {
+    const volumeIds = new Set<string>();
+
+    for (const { binding, volumeId } of this.getVolumeBindingsSourceFirst()) {
+      if (
+        options.includeSegmentations ||
+        !isSegmentationOverlayData(
+          binding.data as { reference?: { kind?: string } },
+          { renderMode: binding.rendering.renderMode, role: binding.role }
+        )
+      ) {
+        volumeIds.add(volumeId);
+      }
+    }
+
+    return Array.from(volumeIds);
+  }
+
+  /**
+   * The id of the mounted display set that shows the volume of this id.
+   * When two display sets show the volume, the source when it is one of
+   * them, else the first in mount order. Undefined for a volume that the
+   * viewport does not show.
+   *
+   * @param volumeId - The volume id.
+   * @returns The display set id, or undefined.
+   */
+  getDisplaySetIdForVolumeId(volumeId: string): string | undefined {
+    return this.getVolumeBindingsSourceFirst().find(
+      (entry) => entry.volumeId === volumeId
+    )?.displaySetId;
+  }
+
+  /**
+   * The range of the values of the volume of a display set, `[min, max]`:
+   * of the source when no display set is given. It is the range of the whole
+   * volume as its voxel manager knows it (`voxelManager.getRange()`), the
+   * same answer as a planar viewport that shows the volume gives. While the
+   * volume loads it is the range of the images that have arrived; read it
+   * again at `IMAGE_VOLUME_MODIFIED`. Undefined for a surface, for a display
+   * set that is not mounted and before the first image of the volume has
+   * arrived.
+   *
+   * @param displaySetId - The display set; the source when not given.
+   * @returns The range, or undefined.
+   */
+  getScalarRange(displaySetId?: string): [number, number] | undefined {
+    const binding = displaySetId
+      ? this.getBinding(displaySetId)
+      : this.getSourceBinding();
+    const rendering = binding?.rendering as Volume3DRendering | undefined;
+
+    return rendering?.renderMode === 'vtkVolume3d'
+      ? getVolumeScalarRange(rendering.imageVolume)
+      : undefined;
+  }
+
+  /**
    * Returns whether any actor reference id contains the given volume URI.
    *
    * @param volumeURI - Volume URI substring to test against actor references.
@@ -1109,6 +1178,30 @@ class VolumeViewport3D extends BaseViewport<
         return binding;
       }
     }
+  }
+
+  /**
+   * The display sets that show a volume, with their volume ids: the source
+   * first, then the others in mount order.
+   */
+  private getVolumeBindingsSourceFirst(): Array<{
+    displaySetId: string;
+    binding: ViewportDataBinding<Volume3DDisplaySetAppearance>;
+    volumeId: string;
+  }> {
+    const entries = Array.from(this.bindings.entries()).flatMap(
+      ([displaySetId, binding]) => {
+        const volumeId =
+          this.getVolumeRenderingOf(displaySetId)?.imageVolume.volumeId;
+
+        return volumeId ? [{ displaySetId, binding, volumeId }] : [];
+      }
+    );
+
+    return [
+      ...entries.filter(({ binding }) => binding.role === 'source'),
+      ...entries.filter(({ binding }) => binding.role !== 'source'),
+    ];
   }
 
   /** The volume rendering of a display set, when it is a mounted volume. */

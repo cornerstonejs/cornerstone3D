@@ -31,9 +31,9 @@ export function getViewportVoiMappingForVolume(
   }
 
   const planarViewport = viewport as typeof viewport &
-    Pick<PlanarViewport, 'findDataIdByVolumeId'>;
+    Pick<PlanarViewport, 'getDisplaySetIdForVolumeId'>;
   const displaySetId =
-    (volumeId && planarViewport.findDataIdByVolumeId(volumeId)) ||
+    (volumeId && planarViewport.getDisplaySetIdForVolumeId(volumeId)) ||
     viewport.getSourceDisplaySetId();
 
   if (!displaySetId) {

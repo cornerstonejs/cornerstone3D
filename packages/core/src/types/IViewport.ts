@@ -470,6 +470,7 @@ export interface ViewFramingSelector {
  * - `stack`      — image-id stack content (image render path)
  * - `volume`     — volume-backed slice content (volume slice render path)
  * - `volume3d`   — 3D volume rendering
+ * - `geometry3d` — a 3D viewport whose source is a surface, with no volume
  * - `video`      — video frames
  * - `wholeSlide` — whole-slide tiles
  * - `ecg`        — ECG waveform
@@ -480,6 +481,7 @@ type ViewportContentMode =
   | 'stack'
   | 'volume'
   | 'volume3d'
+  | 'geometry3d'
   | 'video'
   | 'wholeSlide'
   | 'ecg'

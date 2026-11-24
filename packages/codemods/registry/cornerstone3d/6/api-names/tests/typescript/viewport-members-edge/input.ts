@@ -1,0 +1,25 @@
+import type { PlanarViewport, Types } from '@cornerstonejs/core';
+
+type FusionViewport = Types.IViewport & {
+  findDataIdByVolumeId?(volumeId: string): string | undefined;
+};
+
+export class FusionPanel {
+  viewport;
+
+  displaySetOf(volumeId: string) {
+    return this.viewport.findDataIdByVolumeId(volumeId);
+  }
+}
+
+export function lookUp(
+  planar: PlanarViewport,
+  fusion: FusionViewport,
+  volumeId: string
+) {
+  const byKey = planar['findDataIdByVolumeId'](volumeId);
+  const hasLookup = 'findDataIdByVolumeId' in planar;
+  const { findDataIdByVolumeId } = planar;
+
+  return [byKey, hasLookup, findDataIdByVolumeId, fusion];
+}

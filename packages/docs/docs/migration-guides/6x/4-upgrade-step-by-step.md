@@ -50,7 +50,7 @@ next viewports side by side.
 | The legacy viewport types and the legacy API                                                                                                       | Work                   | Removed |
 | `rendering.useGenericViewport: true`: the legacy API on next viewports, through adapters                                                           | Works                  | Removed |
 | The next viewport types with `setDisplaySets`, `setDisplaySetAppearance`, `setViewState`, `viewportProjection` and view references                 | Work                   | Work    |
-| `viewport.getRenderPlan()`, `viewport.isDestroyed`, `viewport.findDataIdByVolumeId()`, and `viewport.calibrateSpacing()` on a next planar viewport | Not there              | Work    |
+| `viewport.getRenderPlan()`, `viewport.isDestroyed`, `viewport.getDisplaySetIdForVolumeId()` and `calibrateSpacing()` of every next planar viewport | Not there              | Work    |
 | `utilities.getSlicesClippingPlanes()`, `utilities.isInAcquisitionPlane()`, `utilities.navigatePlanarViewportToPoint()` of the tools                | Not there              | Work    |
 | `utilities.getCurrentVolumeViewportSlice()` for a stack on a next viewport                                                                         | Not there              | Works   |
 | The appearance keys `sharpening` and `smoothing`                                                                                                   | Not on a next viewport | Work    |
@@ -286,8 +286,8 @@ if (viewport.getCurrentMode() === 'stack') {
 ```
 
 For a viewport of any family, `utilities.getViewportContentMode(viewport)`
-returns `'stack'`, `'volume'`, `'volume3d'`, `'video'`, `'wholeSlide'`, `'ecg'`
-or `'empty'`.
+returns `'stack'`, `'volume'`, `'volume3d'`, `'geometry3d'`, `'video'`,
+`'wholeSlide'`, `'ecg'` or `'empty'`.
 
 **The types.** `Types.IViewport` is the interface of a viewport of any
 family: the members that every family has. `getEnabledElement(element).viewport`,

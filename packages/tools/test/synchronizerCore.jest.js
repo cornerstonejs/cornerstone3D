@@ -996,7 +996,7 @@ describe('voiSyncCallback', () => {
 
   it('routes the change of a volume to the display set of the target that shows the volume', () => {
     const tViewport = makeTarget(['other-ct'], {
-      findDataIdByVolumeId: jest.fn(() => 'other-ct'),
+      getDisplaySetIdForVolumeId: jest.fn(() => 'other-ct'),
     });
 
     sync(tViewport, {
@@ -1005,7 +1005,7 @@ describe('voiSyncCallback', () => {
       overrides: { voiRange: RANGE },
     });
 
-    expect(tViewport.findDataIdByVolumeId).toHaveBeenCalledWith('v1');
+    expect(tViewport.getDisplaySetIdForVolumeId).toHaveBeenCalledWith('v1');
     expect(tViewport.setDisplaySetAppearance).toHaveBeenCalledWith('other-ct', {
       voiRange: RANGE,
     });
@@ -1024,7 +1024,7 @@ describe('voiSyncCallback', () => {
 
   it('skips an overlay that the target does not show, and does not render', () => {
     const tViewport = makeTarget(['ct'], {
-      findDataIdByVolumeId: jest.fn(() => undefined),
+      getDisplaySetIdForVolumeId: jest.fn(() => undefined),
     });
 
     sync(tViewport, {

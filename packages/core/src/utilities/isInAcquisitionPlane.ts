@@ -1,23 +1,21 @@
-import cache from '../cache/cache';
 import type { IViewport } from '../types';
-import { isAcquisitionPlaneNormal } from './isAcquisitionPlaneNormal';
 import { getViewportContentMode } from './viewportCapabilities';
 
-/** The members that answer for the acquisition plane, where a viewport has them. */
+/** The member that answers for the acquisition plane, where a viewport has it. */
 type AcquisitionPlaneViewport = {
   isInAcquisitionPlane?: () => boolean;
-  getVolumeId?: () => string | undefined;
 };
 
 /**
  * Whether a viewport shows its data in the plane it was acquired in.
  *
- * - A viewport that shows a stack, a video or a whole slide image shows one
- *   image plane: true.
- * - A viewport that shows a volume: true when its view plane normal shows
- *   the acquisition plane of the volume, by `isAcquisitionPlaneNormal`, the
- *   rule the planar viewport draws the acquired frames by.
- * - A viewport with nothing mounted, or with other content: false.
+ * - A planar viewport answers with `PlanarViewport.isInAcquisitionPlane()`:
+ *   true for a stack, and for a volume when its view plane normal shows the
+ *   acquisition plane of the source volume.
+ * - A viewport that shows a video or a whole slide image shows one image
+ *   plane: true.
+ * - A 3D viewport has no plane of its own, an ECG viewport shows no image,
+ *   and a viewport with nothing mounted shows nothing: false.
  *
  * @param viewport - The viewport
  * @returns Whether the view is in the acquisition plane
@@ -25,25 +23,13 @@ type AcquisitionPlaneViewport = {
 function isInAcquisitionPlane(viewport: IViewport): boolean {
   const planeViewport = viewport as AcquisitionPlaneViewport;
 
-  const contentMode = getViewportContentMode(viewport);
-
-  if (contentMode !== 'volume') {
-    return (
-      contentMode === 'stack' ||
-      contentMode === 'video' ||
-      contentMode === 'wholeSlide'
-    );
+  if (typeof planeViewport.isInAcquisitionPlane === 'function') {
+    return planeViewport.isInAcquisitionPlane();
   }
 
-  const volumeId = planeViewport.getVolumeId?.();
-  const volume = volumeId ? cache.getVolume(volumeId) : undefined;
-  const viewPlaneNormal = viewport.getViewReference?.()?.viewPlaneNormal;
+  const contentMode = getViewportContentMode(viewport);
 
-  return Boolean(
-    volume &&
-      viewPlaneNormal &&
-      isAcquisitionPlaneNormal(volume, viewPlaneNormal)
-  );
+  return contentMode === 'video' || contentMode === 'wholeSlide';
 }
 
 export { isInAcquisitionPlane as default, isInAcquisitionPlane };
