@@ -1,4 +1,4 @@
-import { ActorRenderMode } from '../src/types';
+import { PlanarRenderModeId } from '../src/RenderingEngine/Viewports/Planar/planarRenderModeIds';
 import PlanarMountedData from '../src/RenderingEngine/Viewports/Planar/PlanarMountedData';
 import PlanarViewReferenceController from '../src/RenderingEngine/Viewports/Planar/PlanarViewReferenceController';
 
@@ -22,7 +22,7 @@ function createBinding({
     rendering: {
       currentImageIdIndex: 0,
       maxImageIdIndex: imageIds.length - 1,
-      renderMode: ActorRenderMode.CPU_IMAGE,
+      renderMode: PlanarRenderModeId.CANVAS_FRAME,
     },
     applyViewState: jest.fn(),
     getActorEntry: () => ({
@@ -168,7 +168,7 @@ describe('Planar view-reference orchestration', () => {
             mountedData.getCurrentBinding()?.data.id === displaySetId,
         },
         renderPath: {
-          renderMode: ActorRenderMode.CPU_IMAGE,
+          renderMode: PlanarRenderModeId.CANVAS_FRAME,
         },
         view: {},
         display: {

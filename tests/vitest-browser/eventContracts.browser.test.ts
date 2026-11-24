@@ -121,7 +121,7 @@ async function waitAnimationFrames(count: number): Promise<void> {
 }
 
 // All event types this suite cares about, across every render path (only
-// the vtkImage default mode is exercised here per the harness default, but
+// the vtkFrame default mode is exercised here per the harness default, but
 // the list matches the full set named in the plan plus what
 // planarImageEvents.ts can emit for volume-backed data).
 const ALL_TRACKED_EVENTS = [
@@ -350,7 +350,7 @@ test('golden event sequence for load -> scroll -> zoom', async () => {
   // Golden contract, pinned from an actual run (verified stable across
   // repeated runs of this file). No collapsing of consecutive duplicates
   // was needed -- none occurred. Ordering, per step:
-  //   load:   NEW_IMAGE fires first (the vtkImage mount fires the
+  //   load:   NEW_IMAGE fires first (the vtkFrame mount fires the
   //           initial slice synchronously while building the binding),
   //           then DISPLAY_SET_APPEARANCE_CHANGED with cause 'mount'
   //           (addDisplaySetInternal fires the appearance of the mount

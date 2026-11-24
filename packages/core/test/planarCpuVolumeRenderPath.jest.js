@@ -5,20 +5,20 @@ jest.mock('../src/RenderingEngine/helpers/cpuFallback/drawImageSync', () => ({
 
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import { BlendModes, Events, InterpolationType } from '../src/enums';
-import { ActorRenderMode } from '../src/types';
+import { PlanarRenderModeId } from '../src/RenderingEngine/Viewports/Planar/planarRenderModeIds';
 import drawImageSync from '../src/RenderingEngine/helpers/cpuFallback/drawImageSync';
 import * as setDefaultVolumeVOIModule from '../src/RenderingEngine/helpers/setDefaultVolumeVOI';
-import { CpuVolumeSliceRenderPath } from '../src/RenderingEngine/Viewports/Planar/CpuVolumeSliceRenderPath';
+import { CanvasCpuSliceRenderPath } from '../src/RenderingEngine/Viewports/Planar/CanvasCpuSliceRenderPath';
 import {
-  PlanarSampledSliceCanvas,
+  PlanarCpuSliceCanvas,
   getSliceCanvasTransform,
-} from '../src/RenderingEngine/Viewports/Planar/planarSampledSliceCanvas';
+} from '../src/RenderingEngine/Viewports/Planar/planarCpuSliceCanvas';
 import {
   PlanarSliceSampler,
   getScreenSliceGeometry,
-} from '../src/RenderingEngine/Viewports/Planar/planarSampledSlice';
+} from '../src/RenderingEngine/Viewports/Planar/planarCpuSlice';
 import { worldToCanvasPlanarViewState } from '../src/RenderingEngine/Viewports/Planar/planarAdapterCoordinateTransforms';
-import { SAMPLED_SLICE_REST_DELAY_MS } from '../src/RenderingEngine/Viewports/Planar/planarSampledSliceRest';
+import { CPU_SLICE_REST_DELAY_MS } from '../src/RenderingEngine/Viewports/Planar/planarCpuSliceRest';
 import VoxelManager from '../src/utilities/VoxelManager';
 import eventTarget from '../src/eventTarget';
 import { getConfiguration } from '../src/init';
@@ -205,7 +205,7 @@ async function mount({
   reference,
 } = {}) {
   const ctx = createContext(canvas, camera);
-  const path = new CpuVolumeSliceRenderPath();
+  const path = new CanvasCpuSliceRenderPath();
   const attachment = await path.addData(
     ctx,
     {
@@ -246,7 +246,7 @@ function lastDrawnPixels() {
   return Array.from(lastDrawnImage().getPixelData());
 }
 
-describe('CpuVolumeSliceRenderPath', () => {
+describe('CanvasCpuSliceRenderPath', () => {
   let voiSpy;
 
   beforeEach(() => {
@@ -255,7 +255,7 @@ describe('CpuVolumeSliceRenderPath', () => {
     voiSpy = jest
       .spyOn(setDefaultVolumeVOIModule, 'getDefaultVolumeVOIRange')
       .mockResolvedValue({ lower: 0, upper: 400 });
-    drawSpy = jest.spyOn(PlanarSampledSliceCanvas.prototype, 'draw');
+    drawSpy = jest.spyOn(PlanarCpuSliceCanvas.prototype, 'draw');
     putImageDataSpy = jest.spyOn(
       CanvasRenderingContext2D.prototype,
       'putImageData'
@@ -305,7 +305,7 @@ describe('CpuVolumeSliceRenderPath', () => {
     });
     const imageData = attachment.getImageData();
 
-    expect(entry.actorMapper.renderMode).toBe(ActorRenderMode.CPU_VOLUME);
+    expect(entry.displaySetId).toBe('cpu-volume:data');
     expect(entry.actor).toBe(rendering.compatibilityActor);
     expect(entry.actor.getClassName()).toBe('CanvasActor');
     expect(imageData.dimensions).toEqual([4, 4, 4]);
@@ -321,7 +321,7 @@ describe('CpuVolumeSliceRenderPath', () => {
     expect(lastDrawnImage().width).toBe(4);
     expect(lastDrawnImage().height).toBe(4);
 
-    jest.advanceTimersByTime(SAMPLED_SLICE_REST_DELAY_MS);
+    jest.advanceTimersByTime(CPU_SLICE_REST_DELAY_MS);
 
     expect(rendering.getSliceCacheStatistics().refined).toBe(1);
     expect(lastDrawnImage().width).toBe(1);
@@ -334,7 +334,7 @@ describe('CpuVolumeSliceRenderPath', () => {
     });
 
     attachment.render();
-    jest.advanceTimersByTime(SAMPLED_SLICE_REST_DELAY_MS);
+    jest.advanceTimersByTime(CPU_SLICE_REST_DELAY_MS);
 
     expect(lastDrawnPixels()).toEqual([152]);
   });
@@ -360,7 +360,7 @@ describe('CpuVolumeSliceRenderPath', () => {
       smoothing.push(this.imageSmoothingEnabled);
     });
     attachment.render();
-    jest.advanceTimersByTime(SAMPLED_SLICE_REST_DELAY_MS);
+    jest.advanceTimersByTime(CPU_SLICE_REST_DELAY_MS);
 
     expect(rendering.getSliceCacheStatistics().refined).toBe(0);
     expect(lastDrawnImage().width).toBe(4);
@@ -381,7 +381,7 @@ describe('CpuVolumeSliceRenderPath', () => {
 
     const voxelSize = lastDrawnImage();
 
-    jest.advanceTimersByTime(SAMPLED_SLICE_REST_DELAY_MS);
+    jest.advanceTimersByTime(CPU_SLICE_REST_DELAY_MS);
 
     expect(voxelSize.width).not.toBe(20);
     expect(rendering.getSliceCacheStatistics().refined).toBe(1);
@@ -428,7 +428,7 @@ describe('CpuVolumeSliceRenderPath', () => {
     attachment.render();
     ctx.view.activeSourceICamera = axialCamera(2);
     attachment.render();
-    jest.advanceTimersByTime(SAMPLED_SLICE_REST_DELAY_MS);
+    jest.advanceTimersByTime(CPU_SLICE_REST_DELAY_MS);
     jest.runOnlyPendingTimers();
 
     expect(rendering.getSliceCacheStatistics().prefetched).toBeGreaterThan(0);
@@ -493,7 +493,7 @@ describe('CpuVolumeSliceRenderPath', () => {
     ).toBe(true);
     expect(rendering.qualityPending).toBe(true);
 
-    jest.advanceTimersByTime(SAMPLED_SLICE_REST_DELAY_MS);
+    jest.advanceTimersByTime(CPU_SLICE_REST_DELAY_MS);
     jest.runAllTimers();
     rendering.refreshFidelity();
 
@@ -695,7 +695,7 @@ describe('CpuVolumeSliceRenderPath', () => {
     });
 
     attachment.render();
-    jest.advanceTimersByTime(SAMPLED_SLICE_REST_DELAY_MS);
+    jest.advanceTimersByTime(CPU_SLICE_REST_DELAY_MS);
 
     const image = lastDrawnImage();
     const pixels = lastDrawnPixels();
@@ -729,7 +729,7 @@ describe('CpuVolumeSliceRenderPath', () => {
   });
 });
 
-describe('PlanarSampledSliceCanvas', () => {
+describe('PlanarCpuSliceCanvas', () => {
   const slice = (pixelData, overrides = {}) => ({
     pixelData,
     width: 2,
@@ -747,12 +747,12 @@ describe('PlanarSampledSliceCanvas', () => {
   });
 
   it('rounds the float samples of a CT slice for the LUT and keeps those of a PT slice', () => {
-    const ct = new PlanarSampledSliceCanvas(
+    const ct = new PlanarCpuSliceCanvas(
       createTestVolume({ ArrayType: Float32Array }),
       4,
       4
     );
-    const pt = new PlanarSampledSliceCanvas(
+    const pt = new PlanarCpuSliceCanvas(
       createTestVolume({ ArrayType: Float32Array, modality: 'PT' }),
       4,
       4
@@ -769,7 +769,7 @@ describe('PlanarSampledSliceCanvas', () => {
   });
 
   it('makes an RGBA image of a slice with 4 components', () => {
-    const canvas = new PlanarSampledSliceCanvas(createColourVolume(4), 4, 4);
+    const canvas = new PlanarCpuSliceCanvas(createColourVolume(4), 4, 4);
     const pixels = new Uint8Array([1, 2, 3, 255, 4, 5, 6, 255]);
     const image = canvas.setSlice(
       slice(pixels, { numberOfComponents: 4 })
@@ -788,7 +788,7 @@ describe('PlanarSampledSliceCanvas', () => {
    * drawn with.
    */
   const drawSlice = (volume, sliceToDraw, appearance) => {
-    const canvas = new PlanarSampledSliceCanvas(volume, 4, 4);
+    const canvas = new PlanarCpuSliceCanvas(volume, 4, 4);
     const target = createCanvas(4, 4);
     const context = target.getContext('2d');
     const putImageData = jest.spyOn(
@@ -912,7 +912,7 @@ describe('PlanarSampledSliceCanvas', () => {
     values[0] = 255;
     values[1] = 1;
 
-    const canvas = new PlanarSampledSliceCanvas(createTestVolume(), 4, 4);
+    const canvas = new PlanarCpuSliceCanvas(createTestVolume(), 4, 4);
     const target = createCanvas(4, 4);
     const context = target.getContext('2d');
     const below = context.createImageData(4, 4);
@@ -959,7 +959,7 @@ describe('PlanarSampledSliceCanvas', () => {
   });
 
   it('makes the image again only for another slice', () => {
-    const canvas = new PlanarSampledSliceCanvas(createTestVolume(), 4, 4);
+    const canvas = new PlanarCpuSliceCanvas(createTestVolume(), 4, 4);
     const first = slice(new Int16Array([1, 2]));
 
     expect(canvas.setSlice(first).changed).toBe(true);

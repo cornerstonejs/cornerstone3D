@@ -1,7 +1,7 @@
 import { vec3 } from 'gl-matrix';
 import cache from '../../../cache/cache';
 import { BlendModes, OrientationAxis, RenderBackends } from '../../../enums';
-import { ActorRenderMode } from '../../../types/IActor';
+import { PlanarRenderModeId } from './planarRenderModeIds';
 import type { RenderBackendValue } from '../../../enums';
 import {
   getConfiguration,
@@ -16,7 +16,6 @@ import {
   getRenderBackendDefinition,
   getRenderModeForBackend,
   getRenderSurfaceForRenderMode,
-  getSampledVolumeRenderModeForBackend,
 } from '../../helpers/renderBackendRegistry';
 import toCacheVolumeId from '../../helpers/toCacheVolumeId';
 import {
@@ -323,6 +322,26 @@ function getLayerFacts(volume: IImageVolume): PlanarLayerFacts {
 }
 
 /**
+ * The render mode of the slot `slice` of a backend for a volume-backed data
+ * set. Throws a descriptive error when the backend has no mode there, so a
+ * backend with neither `cpu` nor `gpuVolume` cannot mount such a data set.
+ */
+function getVolumeRenderModeOrThrow(
+  backend: EffectiveRenderBackend,
+  slice: 'cpu' | 'gpuVolume'
+): string {
+  const renderMode = getRenderModeForBackend(backend, slice);
+
+  if (!renderMode) {
+    throw new Error(
+      `Render backend "${backend}" does not support volume-backed rendering`
+    );
+  }
+
+  return renderMode;
+}
+
+/**
  * The reason of a decision that the backend makes alone, or undefined for
  * the 'gpu' backend, whose decision depends on the view and the layer. A
  * backend that draws on the CPU does so because the device has no WebGL2,
@@ -527,43 +546,52 @@ export class PlanarRenderPathDecisionService {
     const backend = this.resolveBackend(options);
 
     return {
-      renderMode: getRenderModeForBackend(backend, 'image'),
+      renderMode: getRenderModeForBackend(backend, 'frame'),
       reason: getBackendReason(backend) ?? 'frame',
     };
   }
 
+  /**
+   * The volume render mode of a backend when the CPU does not take the
+   * slice: its `gpuVolume` mode, else its `cpu` mode. Throws when the backend
+   * has neither.
+   */
   private selectVolumeRenderMode(
     options: PlanarRenderPathDecisionOptions
   ): PlanarEffectiveRenderMode {
-    return getRenderModeForBackend(this.resolveBackend(options), 'volume');
+    const backend = this.resolveBackend(options);
+
+    return (
+      getRenderModeForBackend(backend, 'gpuVolume') ??
+      getVolumeRenderModeOrThrow(backend, 'cpu')
+    );
   }
 
   /**
-   * The volume render mode of one data set and its reason: the sampled
-   * volume mode of the resolved backend when `decideSliceOnCpu` samples, the
-   * volume mode of the backend otherwise. So with slice first on and the
-   * 'gpu' backend, a plain slice is sampled and any slab is drawn by the GPU
-   * volume path, except the slab of a layer that this device cannot draw
-   * there exactly (`getGpuVolumePathLimit`), which is sampled too. A backend
-   * with no sampled volume mode (the 'cpu' backend, or an extension backend
-   * that declares none) keeps its volume mode. The viewport calls it again
-   * once the data provider has loaded a data set on the volume path, because
-   * the load may create the volume that the first decision did not find in
-   * the cache.
+   * The volume render mode of one data set and its reason: the `cpu` mode of
+   * the resolved backend when `decideSliceOnCpu` samples, its `gpuVolume`
+   * mode otherwise. So with slice first on and the 'gpu' backend, a plain
+   * slice is cut on the CPU and any slab is drawn by the GPU volume path,
+   * except the slab of a layer that this device cannot draw there exactly
+   * (`getGpuVolumePathLimit`), which is cut on the CPU too. A backend with
+   * one of the two modes (the 'cpu' backend has only `cpu`) keeps that mode.
+   * The viewport calls it again once the data provider has loaded a data set
+   * on the volume path, because the load may create the volume that the
+   * first decision did not find in the cache.
    */
   selectVolumeRenderModeForDataSet(
     dataSet: PlanarDisplaySetDescriptor,
     options: PlanarRenderPathDecisionOptions
   ): PlanarRenderModeDecision {
     const backend = this.resolveBackend(options);
-    const volumeRenderMode = getRenderModeForBackend(backend, 'volume');
-    const sampledVolumeRenderMode =
-      getSampledVolumeRenderModeForBackend(backend);
+    const cpuRenderMode = getRenderModeForBackend(backend, 'cpu');
+    const gpuVolumeRenderMode = getRenderModeForBackend(backend, 'gpuVolume');
     const backendReason = getBackendReason(backend);
 
-    if (!sampledVolumeRenderMode) {
+    if (!cpuRenderMode || !gpuVolumeRenderMode) {
       return {
-        renderMode: volumeRenderMode,
+        renderMode:
+          cpuRenderMode ?? getVolumeRenderModeOrThrow(backend, 'gpuVolume'),
         reason: backendReason ?? 'sliceFirstOff',
       };
     }
@@ -571,7 +599,7 @@ export class PlanarRenderPathDecisionService {
     const { sampled, reason } = this.decideSliceOnCpu(dataSet, options);
 
     return {
-      renderMode: sampled ? sampledVolumeRenderMode : volumeRenderMode,
+      renderMode: sampled ? cpuRenderMode : gpuVolumeRenderMode,
       reason: backendReason ?? reason,
     };
   }
@@ -587,7 +615,7 @@ export class PlanarRenderPathDecisionService {
    * cannot draw this layer exactly on this device (`getGpuVolumePathLimit`
    * with the capability profile), so its slab is sampled on the CPU whatever
    * its thickness. The caller checks that the data set takes the volume path
-   * and that the backend has a sampled volume mode.
+   * and that the backend has a `cpu` mode.
    */
   private decideSliceOnCpu(
     dataSet: PlanarDisplaySetDescriptor,
@@ -604,7 +632,7 @@ export class PlanarRenderPathDecisionService {
 
     if (
       isSegmentationOverlayData(dataSet, {
-        renderMode: ActorRenderMode.VTK_SAMPLED_SLICE,
+        renderMode: PlanarRenderModeId.VTK_CPU_SLICE,
         role: options.role ?? 'overlay',
       })
     ) {

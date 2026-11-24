@@ -21,6 +21,7 @@ import * as volumePlain from './groundTruth/planarSharpening_volume_plain.png';
 import * as fusionPlain from './groundTruth/planarSharpening_fusion_plain.png';
 import legacyRenderPasses from './fixtures/legacySharpeningRenderPasses.json';
 import { readStoredPicture } from './utils/storedPicture';
+import { drawPathOf } from './utils/planarSeriesBothModes';
 
 const { Enums, volumeLoader, imageLoader, utilities } = cornerstone3D;
 const { ViewportType, OrientationAxis, Events } = Enums;
@@ -483,15 +484,15 @@ async function showReference(renderingEngine, referenceName) {
 
 /**
  * The direct next viewports: a name, the reference, how to show it, the
- * render mode of its source, and whether its picture is compared with the
- * reference.
+ * draw path of its source (`drawPathOf` its render plan layer), and whether
+ * its picture is compared with the reference.
  */
 const NEXT_SCENES = [
   [
     'a stack image on the GPU',
     'stack',
     (renderingEngine) => showNextStack(renderingEngine, 'gpu'),
-    'vtkImage',
+    'frame-gpu',
     true,
   ],
   [
@@ -502,7 +503,7 @@ const NEXT_SCENES = [
         renderBackend: 'gpu',
         sliceFirst: true,
       }),
-    'vtkSampledSlice',
+    'cpu-gpu',
     true,
   ],
   [
@@ -513,7 +514,7 @@ const NEXT_SCENES = [
         renderBackend: 'gpu',
         sliceFirst: false,
       }),
-    'vtkVolumeSlice',
+    'gpuVolume-gpu',
     true,
   ],
   [
@@ -521,14 +522,14 @@ const NEXT_SCENES = [
     'fusion',
     (renderingEngine) =>
       showNextVolume(renderingEngine, true, { renderBackend: 'gpu' }),
-    'vtkSampledSlice',
+    'cpu-gpu',
     false,
   ],
   [
     'a stack image on the CPU',
     'stack',
     (renderingEngine) => showNextStack(renderingEngine, 'cpu'),
-    'cpuImage',
+    'frame-cpu',
     true,
   ],
   [
@@ -536,7 +537,7 @@ const NEXT_SCENES = [
     'volume',
     (renderingEngine) =>
       showNextVolume(renderingEngine, false, { renderBackend: 'cpu' }),
-    'cpuVolume',
+    'cpu-cpu',
     true,
   ],
   [
@@ -544,7 +545,7 @@ const NEXT_SCENES = [
     'nextFusion',
     (renderingEngine) =>
       showNextVolume(renderingEngine, true, { renderBackend: 'cpu' }),
-    'cpuVolume',
+    'cpu-cpu',
     true,
   ],
 ];
@@ -595,16 +596,16 @@ describe('Sharpening and smoothing of the planar viewports -- ', () => {
   });
 
   NEXT_SCENES.forEach(
-    ([name, referenceName, showNext, renderMode, comparesPicture]) => {
+    ([name, referenceName, showNext, drawPath, comparesPicture]) => {
       it(`draws ${name} on the direct next viewport as its reference, with each setting`, async function () {
         const reference = await showReference(renderingEngine, referenceName);
         const { viewport: next, displaySetId } =
           await showNext(renderingEngine);
-        const drawsOnCpu = renderMode.startsWith('cpu');
+        const drawsOnCpu = drawPath.endsWith('-cpu');
         const plainNext = readPixels(next);
         const plain = compareInside(reference.readPixels(), plainNext);
 
-        expect(next.getRenderPlan()[0].renderMode).toBe(renderMode);
+        expect(drawPathOf(next.getRenderPlan()[0])).toBe(drawPath);
 
         if (comparesPicture) {
           expect(plain.over).toBe(0);

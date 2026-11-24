@@ -8,6 +8,7 @@ import {
   showVolume as showSeriesVolume,
   sliceNormal,
   waitFor,
+  drawPathOf,
 } from './utils/planarSeriesBothModes';
 
 const { Enums, volumeLoader, utilities, cache, eventTarget } = cornerstone3D;
@@ -1116,9 +1117,9 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
       return detailsOf(events, name)[before];
     }
 
-    for (const [path, options, renderMode] of [
-      ['on the GPU', {}, 'vtkImage'],
-      ['on the CPU', { renderBackend: 'cpu' }, 'cpuImage'],
+    for (const [path, options, drawPath] of [
+      ['on the GPU', {}, 'frame-gpu'],
+      ['on the CPU', { renderBackend: 'cpu' }, 'frame-cpu'],
     ]) {
       it(`names the image on display in NEW_IMAGE in stack mode ${path}`, async function () {
         const series = await createSeries();
@@ -1130,7 +1131,7 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
         const detail = await scrollOneSlice(viewport, events);
 
         expect(viewport.getCurrentMode()).toBe('stack');
-        expect(viewport.getRenderPlan()[0].renderMode).toBe(renderMode);
+        expect(drawPathOf(viewport.getRenderPlan()[0])).toBe(drawPath);
         expect(detail.imageId).toBe(series.imageIds[3]);
         expect(detail.imageId).toBe(viewport.getCurrentImageId());
         expect(detail.image.imageId).toBe(series.imageIds[3]);
@@ -1142,10 +1143,10 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
       });
     }
 
-    for (const [path, options, renderMode] of [
-      ['on the sampled slice path', {}, 'vtkSampledSlice'],
-      ['on the volume slice path', { sliceFirst: false }, 'vtkVolumeSlice'],
-      ['on the CPU', { renderBackend: 'cpu' }, 'cpuVolume'],
+    for (const [path, options, drawPath] of [
+      ['on the sampled slice path', {}, 'cpu-gpu'],
+      ['on the volume slice path', { sliceFirst: false }, 'gpuVolume-gpu'],
+      ['on the CPU', { renderBackend: 'cpu' }, 'cpu-cpu'],
     ]) {
       it(`names the image on display in NEW_IMAGE in volume mode ${path}, at the mount and after a scroll, where the slice index runs against the order of the images`, async function () {
         const series = await createSeries();
@@ -1166,7 +1167,7 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
         const mountDetails = detailsOf(events, Events.NEW_IMAGE);
 
         expect(viewport.getCurrentMode()).toBe('volume');
-        expect(viewport.getRenderPlan()[0].renderMode).toBe(renderMode);
+        expect(drawPathOf(viewport.getRenderPlan()[0])).toBe(drawPath);
         expect(mountDetails.length).toBeGreaterThan(0);
         mountDetails.forEach((mountDetail) => {
           expect(mountDetail.imageId).toBe(viewport.getCurrentImageId());

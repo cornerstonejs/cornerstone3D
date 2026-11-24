@@ -80,7 +80,7 @@ test.describe('Render backend live switch', () => {
         viewportId: VIEWPORT_ID,
         constructorName: 'PlanarViewport',
         type: 'planar',
-        renderModesByDisplaySetId: { [DATA_ID]: 'vtkImage' },
+        renderModesByDisplaySetId: { [DATA_ID]: 'vtkFrame' },
       },
     ]);
 
@@ -94,7 +94,7 @@ test.describe('Render backend live switch', () => {
     await page.waitForTimeout(500);
 
     const before = await getViewportState(page);
-    expect(before.renderMode).toBe('vtkImage');
+    expect(before.renderMode).toBe('vtkFrame');
     expect(before.imageIdIndex).toBe(1);
 
     // Live-switch to the CPU backend; no page reload, same viewport instance.
@@ -104,7 +104,7 @@ test.describe('Render backend live switch', () => {
       .poll(async () => (await getViewportState(page)).renderMode, {
         timeout: 15000,
       })
-      .toBe('cpuImage');
+      .toBe('canvasFrame');
 
     const afterCpu = await getViewportState(page);
     expect(afterCpu.imageIdIndex).toBe(before.imageIdIndex);
@@ -134,7 +134,7 @@ test.describe('Render backend live switch', () => {
       .poll(async () => (await getViewportState(page)).renderMode, {
         timeout: 15000,
       })
-      .toBe('vtkImage');
+      .toBe('vtkFrame');
 
     const afterGpu = await getViewportState(page);
     expect(afterGpu.imageIdIndex).toBe(2);

@@ -58,7 +58,7 @@ test.describe('Stack Labelmap Segmentation - Next (GPU)', () => {
         constructorName: 'PlanarViewport',
         type: 'planar',
         renderModesByDisplaySetId: {
-          'stack-labelmap-segmentation-next:ct': 'vtkImage',
+          'stack-labelmap-segmentation-next:ct': 'vtkFrame',
         },
       },
       {
@@ -67,7 +67,7 @@ test.describe('Stack Labelmap Segmentation - Next (GPU)', () => {
         constructorName: 'PlanarViewport',
         type: 'planar',
         renderModesByDisplaySetId: {
-          'stack-labelmap-segmentation-next:mg': 'vtkImage',
+          'stack-labelmap-segmentation-next:mg': 'vtkFrame',
         },
       },
     ]);
@@ -95,7 +95,7 @@ test.describe('Stack Labelmap Segmentation - Next (CPU)', () => {
         constructorName: 'PlanarViewport',
         type: 'planar',
         renderModesByDisplaySetId: {
-          'stack-labelmap-segmentation-next:ct': 'cpuImage',
+          'stack-labelmap-segmentation-next:ct': 'canvasFrame',
         },
       },
       {
@@ -104,7 +104,7 @@ test.describe('Stack Labelmap Segmentation - Next (CPU)', () => {
         constructorName: 'PlanarViewport',
         type: 'planar',
         renderModesByDisplaySetId: {
-          'stack-labelmap-segmentation-next:mg': 'cpuImage',
+          'stack-labelmap-segmentation-next:mg': 'canvasFrame',
         },
       },
     ]);

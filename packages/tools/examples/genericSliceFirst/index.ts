@@ -139,7 +139,7 @@ setTitleAndDescription(
   'Slice first cuts the slice you see out of the volume on the CPU and draws it as a flat 2D image. ' +
     'Volume texture puts the whole volume on the GPU as a 3D texture and cuts the slice there. ' +
     'Press the Rendering button and watch, in the debug panel, the MODE of each binding and the GPU memory line. ' +
-    'A coronal slab always uses the volume texture, so that viewport shows vtkVolumeSlice and a 3D texture. ' +
+    'A coronal slab always uses the volume texture, so that viewport shows vtkGpuVolumeSlice and a 3D texture. ' +
     'Touch: one finger scrolls, two fingers zoom and move. ' +
     'Mouse: wheel scrolls, left drag sets window level, right drag zooms, middle drag moves. ' +
     'Add ?sliceFirst=0 to start with the volume texture, and ?debug=false to hide the debug panel.'
@@ -370,14 +370,25 @@ function formatMegabytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
 
-/** Names the display sets of a viewport with their render mode, as "CT vtkSampledSlice". */
+/**
+ * Names the display sets of a viewport with how their slice is made and what
+ * draws it, from the render plan, as "CT cpu slice on the gpu".
+ */
 function describeModes(viewport: PlanarViewport): string {
+  const plan = viewport.getRenderPlan();
+
   return viewport
     .getActors()
-    .map(
-      (entry) =>
-        `${getVolumeLabel(entry.referencedId)} ${entry.actorMapper?.renderMode ?? 'unknown'}`
-    )
+    .map((entry) => {
+      const layer = plan.find(
+        (planLayer) => planLayer.displaySetId === entry.displaySetId
+      );
+      const path = layer
+        ? `${layer.slice} slice on the ${layer.draw}`
+        : 'unknown';
+
+      return `${getVolumeLabel(entry.referencedId)} ${path}`;
+    })
     .join(', ');
 }
 
@@ -417,7 +428,7 @@ function describeSampling(binding: DebugBinding): string | undefined {
   );
 }
 
-/** Describes one viewport: render modes, slice index, canvas size, then one line per sampled display set. */
+/** Describes one viewport: its draw paths, slice index, canvas size, then one line per sampled display set. */
 function describeViewport(spec: ViewportSpec): string[] {
   const viewport = getViewport(spec.viewportId);
 
@@ -474,7 +485,7 @@ function buildReport(): string {
   ].join('\n');
 }
 
-/** Shows the render mode of the display sets of each viewport in its caption. */
+/** Shows how the display sets of each viewport are drawn, in its caption. */
 function updateCaptions(): void {
   for (const viewportId of viewportIds) {
     const viewport = getViewport(viewportId);

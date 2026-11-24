@@ -11,7 +11,6 @@ type Volume3DViewport = Types.IViewport & {
   addDisplaySet: (
     displaySetId: string,
     options: {
-      renderMode: 'vtkVolume3d';
       role: 'source' | 'overlay';
     }
   ) => Promise<void>;
@@ -84,7 +83,6 @@ async function addLabelmapToVolume3DViewport(args: {
       },
     });
     await viewport.addDisplaySet(representationUID, {
-      renderMode: 'vtkVolume3d',
       role: 'overlay',
     });
     viewport.setDisplaySetAppearance(representationUID, {

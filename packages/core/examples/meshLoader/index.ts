@@ -213,9 +213,7 @@ async function run() {
   });
 
   const viewport1 = renderingEngine.getViewport<VolumeViewport3D>(viewportId1);
-  await viewport1.addDisplaySet(meshId1, {
-    renderMode: 'vtkGeometry3d',
-  });
+  await viewport1.addDisplaySet(meshId1);
   viewport1.resetViewState();
   viewport1.render();
 
@@ -232,9 +230,7 @@ async function run() {
 
   const viewport2 = renderingEngine.getViewport<VolumeViewport3D>(viewportId2);
 
-  await viewport2.addDisplaySet(meshId2, {
-    renderMode: 'vtkGeometry3d',
-  });
+  await viewport2.addDisplaySet(meshId2);
   viewport2.resetViewState();
   viewport2.render();
 
@@ -251,9 +247,7 @@ async function run() {
 
   const viewport3 = renderingEngine.getViewport<VolumeViewport3D>(viewportId3);
 
-  await viewport3.addDisplaySet(meshId3, {
-    renderMode: 'vtkGeometry3d',
-  });
+  await viewport3.addDisplaySet(meshId3);
   viewport3.resetViewState();
   viewport3.render();
 
@@ -270,9 +264,7 @@ async function run() {
 
   const viewport4 = renderingEngine.getViewport<VolumeViewport3D>(viewportId4);
 
-  await viewport4.addDisplaySet(meshId4, {
-    renderMode: 'vtkGeometry3d',
-  });
+  await viewport4.addDisplaySet(meshId4);
   viewport4.resetViewState();
   viewport4.render();
 }

@@ -213,11 +213,14 @@ async function getSegmentationActorRenderModes(page) {
           getEnabledElements?: () => Array<{
             viewport?: {
               getActors?: () => Array<{
-                actorMapper?: {
-                  renderMode?: string;
-                };
+                displaySetId?: string;
                 representationUID?: string;
                 uid?: string;
+              }>;
+              getRenderPlan?: () => Array<{
+                displaySetId: string;
+                slice: string;
+                draw: string;
               }>;
             };
           }>;
@@ -226,6 +229,7 @@ async function getSegmentationActorRenderModes(page) {
 
     const viewport = enabledElements[0]?.viewport;
     const actors = viewport?.getActors?.() ?? [];
+    const plan = viewport?.getRenderPlan?.() ?? [];
 
     return actors
       .filter(
@@ -233,7 +237,13 @@ async function getSegmentationActorRenderModes(page) {
           actor.representationUID?.startsWith?.(`${segmentationId}-`) ||
           actor.uid?.startsWith?.(`${segmentationId}-`)
       )
-      .map((actor) => actor.actorMapper?.renderMode)
+      .map((actor) => {
+        const layer = plan.find(
+          (planLayer) => planLayer.displaySetId === actor.displaySetId
+        );
+
+        return layer && `${layer.slice}-${layer.draw}`;
+      })
       .filter(Boolean);
   }, SEGMENTATION_ID);
 }
@@ -293,7 +303,7 @@ test.describe('Labelmap Segmentation Tools - Next (GPU)', () => {
 test.describe('Labelmap Segmentation Tools - Next (2D Slice Rendering)', () => {
   test.beforeEach(navigateToExample({ useSliceRendering: 'true' }));
 
-  test('should use vtkImage segmentation actors when useSliceRendering is enabled', async ({
+  test('should draw the segmentation actors as frames on the GPU when useSliceRendering is enabled', async ({
     page,
   }) => {
     await expect(page.locator('#segmentation-rendering-mode')).toHaveValue(
@@ -304,7 +314,7 @@ test.describe('Labelmap Segmentation Tools - Next (2D Slice Rendering)', () => {
 
     expect(renderModes.length).toBeGreaterThan(0);
     for (const renderMode of renderModes) {
-      expect(renderMode).toBe('vtkImage');
+      expect(renderMode).toBe('frame-gpu');
     }
   });
 });
@@ -320,7 +330,7 @@ test.describe('Labelmap Segmentation Tools - Next (CPU)', () => {
         constructorName: 'PlanarViewport',
         type: 'planar',
         renderModesByDisplaySetId: {
-          'labelmap-segmentation-tools-next:source': 'cpuVolume',
+          'labelmap-segmentation-tools-next:source': 'canvasCpuSlice',
         },
       },
       {
@@ -329,7 +339,7 @@ test.describe('Labelmap Segmentation Tools - Next (CPU)', () => {
         constructorName: 'PlanarViewport',
         type: 'planar',
         renderModesByDisplaySetId: {
-          'labelmap-segmentation-tools-next:source': 'cpuVolume',
+          'labelmap-segmentation-tools-next:source': 'canvasCpuSlice',
         },
       },
       {
@@ -338,7 +348,7 @@ test.describe('Labelmap Segmentation Tools - Next (CPU)', () => {
         constructorName: 'PlanarViewport',
         type: 'planar',
         renderModesByDisplaySetId: {
-          'labelmap-segmentation-tools-next:source': 'cpuVolume',
+          'labelmap-segmentation-tools-next:source': 'canvasCpuSlice',
         },
       },
     ]);

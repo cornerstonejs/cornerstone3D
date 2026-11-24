@@ -1,4 +1,4 @@
-import { ActorRenderMode } from '../../../types';
+import { PlanarRenderModeId } from './planarRenderModeIds';
 import type { IImage, IImageVolume, Point2, Point3 } from '../../../types';
 import clonePoint3 from '../../../utilities/clonePoint3';
 import ResolvedViewportView from '../ResolvedViewportView';
@@ -428,8 +428,8 @@ export function getPlanarViewStateCanvasDimensions(args: {
   const { renderContext, rendering } = args;
 
   if (
-    rendering.renderMode === ActorRenderMode.CPU_IMAGE ||
-    rendering.renderMode === ActorRenderMode.CPU_VOLUME
+    rendering.renderMode === PlanarRenderModeId.CANVAS_FRAME ||
+    rendering.renderMode === PlanarRenderModeId.CANVAS_CPU_SLICE
   ) {
     if (!renderContext.cpu) {
       throw new Error(
@@ -490,11 +490,11 @@ export function resolvePlanarViewportView(args: {
   const requestedViewState = args.viewState;
 
   if (
-    rendering.renderMode === ActorRenderMode.CPU_IMAGE ||
-    rendering.renderMode === ActorRenderMode.VTK_IMAGE
+    rendering.renderMode === PlanarRenderModeId.CANVAS_FRAME ||
+    rendering.renderMode === PlanarRenderModeId.VTK_FRAME
   ) {
     const image =
-      (rendering.renderMode === ActorRenderMode.CPU_IMAGE
+      (rendering.renderMode === PlanarRenderModeId.CANVAS_FRAME
         ? rendering.enabledElement?.image
         : rendering.currentImage) || data?.image;
 
@@ -520,14 +520,15 @@ export function resolvePlanarViewportView(args: {
       frameOfReferenceUID,
       image,
       maxImageIdIndex,
-      usePixelGridCenter: rendering.renderMode === ActorRenderMode.CPU_IMAGE,
+      usePixelGridCenter:
+        rendering.renderMode === PlanarRenderModeId.CANVAS_FRAME,
     });
   }
 
   if (
-    rendering.renderMode === ActorRenderMode.CPU_VOLUME ||
-    rendering.renderMode === ActorRenderMode.VTK_VOLUME_SLICE ||
-    rendering.renderMode === ActorRenderMode.VTK_SAMPLED_SLICE
+    rendering.renderMode === PlanarRenderModeId.CANVAS_CPU_SLICE ||
+    rendering.renderMode === PlanarRenderModeId.VTK_GPU_VOLUME_SLICE ||
+    rendering.renderMode === PlanarRenderModeId.VTK_CPU_SLICE
   ) {
     const resolvedViewState =
       typeof sliceIndex === 'number'
@@ -571,7 +572,7 @@ export function resolvePlanarViewportView(args: {
       maxImageIdIndex,
       sliceBasis,
       usePixelGridCenter:
-        rendering.renderMode === ActorRenderMode.CPU_VOLUME &&
+        rendering.renderMode === PlanarRenderModeId.CANVAS_CPU_SLICE &&
         shouldUsePlanarCpuVolumeSliceBasis(
           rendering.appearance?.interpolationType
         ),

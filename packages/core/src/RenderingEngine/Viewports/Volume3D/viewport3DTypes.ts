@@ -37,7 +37,6 @@ import type { DisplaySetDescriptor } from '../../../types/DisplaySetDescriptor';
 
 /** @internal */
 export type Volume3DRenderMode = 'vtkVolume3d' | 'vtkGeometry3d';
-export type Volume3DRequestedRenderMode = Volume3DRenderMode | 'auto';
 
 /**
  * The descriptor of a display set as a 3D viewport reads it: image ids for a
@@ -57,8 +56,12 @@ export interface Volume3DDisplaySetDescriptor extends DisplaySetDescriptor {
   reference?: ViewportDataReference;
 }
 
+/**
+ * The mount options of a display set of a 3D viewport. What a display set
+ * shows follows from its descriptor: image ids give a volume, a geometry id
+ * (or an id of a geometry of the cache) gives a surface.
+ */
 export interface Volume3DSetDataOptions {
-  renderMode?: Volume3DRequestedRenderMode;
   role?: BindingRole;
 }
 

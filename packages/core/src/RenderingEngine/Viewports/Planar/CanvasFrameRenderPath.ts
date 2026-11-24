@@ -19,7 +19,7 @@ import {
   ViewportStatus,
 } from '../../../enums';
 import * as metaData from '../../../metaData';
-import { ActorRenderMode } from '../../../types';
+import { PlanarRenderModeId } from './planarRenderModeIds';
 import { getImageDataMetadata } from '../../../utilities/getImageDataMetadata';
 import triggerEvent from '../../../utilities/triggerEvent';
 import uuidv4 from '../../../utilities/uuidv4';
@@ -49,7 +49,7 @@ import type {
   PlanarResolvedICamera,
   PlanarViewportRenderContext,
 } from './PlanarViewportTypes';
-import type { PlanarCpuImageRendering } from './planarRuntimeTypes';
+import type { PlanarCanvasFrameRendering } from './planarRuntimeTypes';
 import type { DerivedPlanarFraming } from './planarRenderCamera';
 import {
   resolvePlanarCpuImageDisplayedArea,
@@ -67,35 +67,39 @@ import {
   worldToCanvasPlanarRenderPathProjection,
 } from './planarRenderPathProjection';
 import type { PlanarRenderPathProjectionCamera } from './planarRenderPathProjection';
-import { PlanarSliceSampler } from './planarSampledSlice';
-import type {
-  PlanarSampledSlice,
-  PlanarSampledSliceInputs,
-} from './planarSampledSlice';
+import { PlanarSliceSampler } from './planarCpuSlice';
+import type { PlanarCpuSlice, PlanarCpuSliceInputs } from './planarCpuSlice';
 import {
-  PlanarSampledSliceCanvas,
+  PlanarCpuSliceCanvas,
   beginPlanarCanvasPass,
   getSliceCanvasTransform,
-} from './planarSampledSliceCanvas';
+} from './planarCpuSliceCanvas';
 import {
   getCanvasScreenSliceGeometry,
-  scheduleSampledSliceRestWork,
-} from './planarSampledSliceRest';
+  scheduleCpuSliceRestWork,
+} from './planarCpuSliceRest';
 import {
   MAX_CPU_CANVAS_SLICE_SIZE,
   isSameGeometry,
-} from './CpuVolumeSliceRenderPath';
+} from './CanvasCpuSliceRenderPath';
 import { buildPlanarImageData } from './planarImageData';
 import { imageQualityStatusOf } from '../../helpers/fidelityIndicator/collectFidelityLines';
 import { isSegmentationOverlayData } from '../renderingFidelity';
 import { loadPlanarStackImage } from './planarStackImageLoad';
 
+/**
+ * The actors of the images that this path draws. A labelmap overlay drawn by
+ * this path is drawn by its actor in the pass of the source
+ * (`renderCompatibilityOverlayActors`).
+ */
+const canvasFrameActors = new WeakSet<object>();
+
 /** The parts of one mounted CPU image. */
 type CpuImageSliceMount = {
   ctx: PlanarCpuImageAdapterContext;
-  rendering: PlanarCpuImageRendering;
+  rendering: PlanarCanvasFrameRendering;
   sampler: PlanarSliceSampler;
-  draw: PlanarSampledSliceCanvas;
+  draw: PlanarCpuSliceCanvas;
   /**
    * True for an overlay that is an image, which draws itself over the source
    * as on the GPU image path. The labelmap of a segmentation is drawn by its
@@ -108,28 +112,28 @@ type CpuImageSliceMount = {
   /** Cancels the pending work at rest. */
   cancelRestWork?: () => void;
   /** The slice drawn last and the screen grid it was drawn for. */
-  shownSlice?: PlanarSampledSlice;
+  shownSlice?: PlanarCpuSlice;
   shownScreen?: VolumeSliceGeometry;
   /** The plane, screen grid and inputs of the last request to the sampler. */
   sampledFor?: string;
 };
 
 /**
- * The render path of `cpuImage`: one image of a stack drawn on the 2D canvas
+ * The render path of `canvasFrame`: one image of a stack drawn on the 2D canvas
  * of the viewport.
  *
  * The image is drawn by the CPU draw step of the sampled slice
- * (`PlanarSampledSliceCanvas`, appearance `image`), so that the picture is
- * the one of the GPU image path (`VtkImageMapperRenderPath`): the same colour
+ * (`PlanarCpuSliceCanvas`, appearance `image`), so that the picture is
+ * the one of the GPU image path (`VtkFrameRenderPath`): the same colour
  * tables, the same blend with the background, the same placement. The image
  * is handed to it as a volume of one slice (`createImageSliceVolume`): along
  * its own normal the sampler copies the image unchanged. The canvas enlarges
  * colours, not values, so a LINEAR image is sampled once more on the screen
- * grid at rest (`scheduleSampledSliceRestWork`), as on the CPU volume path.
+ * grid at rest (`scheduleCpuSliceRestWork`), as on the CPU volume path.
  *
  * @internal
  */
-export class CpuImageSliceRenderPath
+export class CanvasFrameRenderPath
   implements RenderPath<PlanarCpuImageAdapterContext>
 {
   async addData(
@@ -143,9 +147,9 @@ export class CpuImageSliceRenderPath
       throw new Error('[PlanarViewport] CPU rendering requires an image');
     }
 
-    ctx.display.activateRenderMode(ActorRenderMode.CPU_IMAGE);
+    ctx.display.activateRenderMode(PlanarRenderModeId.CANVAS_FRAME);
 
-    let rendering: PlanarCpuImageRendering;
+    let rendering: PlanarCanvasFrameRendering;
     markCpuImagePreScaled(payload.image);
     const compatibilityActor = new CanvasActor(
       {
@@ -155,6 +159,7 @@ export class CpuImageSliceRenderPath
     );
 
     compatibilityActor.setVisibility(true);
+    canvasFrameActors.add(compatibilityActor);
 
     const defaultViewport = getDefaultViewport(
       ctx.cpu.canvas,
@@ -176,7 +181,7 @@ export class CpuImageSliceRenderPath
     fitToWindow(enabledElement);
     enabledElement.transform = calculateTransform(enabledElement);
     rendering = {
-      renderMode: ActorRenderMode.CPU_IMAGE,
+      renderMode: PlanarRenderModeId.CANVAS_FRAME,
       actorEntryUID: uuidv4(),
       excludeFromFidelity: isSegmentationOverlayData(payload, options),
       imageQualityStatus: imageQualityStatusOf(payload.image),
@@ -208,7 +213,7 @@ export class CpuImageSliceRenderPath
         keepFractions: true,
         maxSliceSize: MAX_CPU_CANVAS_SLICE_SIZE,
       }),
-      draw: new PlanarSampledSliceCanvas(
+      draw: new PlanarCpuSliceCanvas(
         volume,
         ctx.cpu.canvas.width,
         ctx.cpu.canvas.height,
@@ -253,8 +258,6 @@ export class CpuImageSliceRenderPath
       getActorEntry: (data) => {
         return buildPlanarActorEntry(data as LoadedData<PlanarPayload>, {
           actor: rendering.compatibilityActor,
-          mapper: rendering.compatibilityActor.getMapper(),
-          renderMode: ActorRenderMode.CPU_IMAGE,
           uid: rendering.actorEntryUID,
           referencedIdFallback: rendering.enabledElement.image?.imageId,
         });
@@ -276,7 +279,7 @@ export class CpuImageSliceRenderPath
   }
 
   private updateAppearance(
-    rendering: PlanarCpuImageRendering,
+    rendering: PlanarCanvasFrameRendering,
     props: unknown
   ): void {
     rendering.appearance = props as PlanarDisplaySetAppearance | undefined;
@@ -285,7 +288,7 @@ export class CpuImageSliceRenderPath
 
   private applyViewState(
     ctx: PlanarCpuImageAdapterContext,
-    rendering: PlanarCpuImageRendering,
+    rendering: PlanarCanvasFrameRendering,
     displaySetId: string,
     camera: unknown,
     imageIds: string[]
@@ -293,7 +296,7 @@ export class CpuImageSliceRenderPath
     const planarCamera = camera as PlanarViewState | undefined;
     const image = rendering.enabledElement.image;
 
-    ctx.display.activateRenderMode(ActorRenderMode.CPU_IMAGE);
+    ctx.display.activateRenderMode(PlanarRenderModeId.CANVAS_FRAME);
 
     const projection = image
       ? resolvePlanarRenderPathProjection({
@@ -318,7 +321,7 @@ export class CpuImageSliceRenderPath
       );
     }
 
-    // See VtkImageMapperRenderPath for context on why this dedupes against
+    // See VtkFrameRenderPath for context on why this dedupes against
     // lastRequestedImageIdIndex instead of currentImageIdIndex.
     const dedupTarget =
       rendering.lastRequestedImageIdIndex ?? rendering.currentImageIdIndex;
@@ -363,7 +366,7 @@ export class CpuImageSliceRenderPath
 
   private canvasToWorld(
     ctx: PlanarCpuImageAdapterContext,
-    rendering: PlanarCpuImageRendering,
+    rendering: PlanarCanvasFrameRendering,
     canvasPos: Point2
   ): Point3 {
     return canvasToWorldPlanarRenderPathProjection({
@@ -375,7 +378,7 @@ export class CpuImageSliceRenderPath
 
   private worldToCanvas(
     ctx: PlanarCpuImageAdapterContext,
-    rendering: PlanarCpuImageRendering,
+    rendering: PlanarCanvasFrameRendering,
     worldPos: Point3
   ): Point2 {
     return worldToCanvasPlanarRenderPathProjection({
@@ -386,7 +389,7 @@ export class CpuImageSliceRenderPath
   }
 
   private getFrameOfReferenceUID(
-    rendering: PlanarCpuImageRendering
+    rendering: PlanarCanvasFrameRendering
   ): string | undefined {
     const imageId = rendering.enabledElement.image?.imageId;
     const imagePlaneModule = imageId
@@ -399,7 +402,7 @@ export class CpuImageSliceRenderPath
   }
 
   private getImageData(
-    rendering: PlanarCpuImageRendering
+    rendering: PlanarCanvasFrameRendering
   ): CPUIImageData | undefined {
     const image = rendering.enabledElement.image;
 
@@ -434,7 +437,7 @@ export class CpuImageSliceRenderPath
 
   private resize(
     ctx: PlanarCpuImageAdapterContext,
-    rendering: PlanarCpuImageRendering,
+    rendering: PlanarCanvasFrameRendering,
     displaySetId: string
   ): void {
     const image = rendering.enabledElement.image;
@@ -570,7 +573,7 @@ export class CpuImageSliceRenderPath
     const { ctx, rendering, sampler, volume } = mount;
 
     mount.cancelRestWork?.();
-    mount.cancelRestWork = scheduleSampledSliceRestWork({
+    mount.cancelRestWork = scheduleCpuSliceRestWork({
       sampler,
       volume,
       getCamera: () => getImagePlaneCamera(ctx, volume),
@@ -613,24 +616,25 @@ export class CpuImageSliceRenderPath
 }
 
 /** @internal */
-export class CpuImageSlicePath
+export class CanvasFramePath
   implements
     RenderPathDefinition<
       PlanarViewportRenderContext,
       PlanarCpuImageAdapterContext
     >
 {
-  readonly id = 'planar:cpu-image-slice';
+  readonly id = 'planar:canvas-frame';
   readonly type = ViewportType.PLANAR;
 
   matches(data: LoadedData, options: DataAddOptions): boolean {
     return (
-      data.type === 'image' && options.renderMode === ActorRenderMode.CPU_IMAGE
+      data.type === 'image' &&
+      options.renderMode === PlanarRenderModeId.CANVAS_FRAME
     );
   }
 
   createRenderPath() {
-    return new CpuImageSliceRenderPath();
+    return new CanvasFrameRenderPath();
   }
 
   selectContext(
@@ -650,7 +654,7 @@ export class CpuImageSlicePath
 }
 
 function applyAppearance(
-  rendering: PlanarCpuImageRendering,
+  rendering: PlanarCanvasFrameRendering,
   props?: PlanarDisplaySetAppearance
 ): void {
   const { enabledElement, defaultVOIRange } = rendering;
@@ -689,7 +693,7 @@ function getCPUFallbackScalarScale(scale?: number | Point2): number {
 }
 
 function applyAppearanceState(
-  rendering: PlanarCpuImageRendering,
+  rendering: PlanarCanvasFrameRendering,
   framing?: DerivedPlanarFraming,
   activeSourceICamera?: PlanarResolvedICamera
 ): void {
@@ -938,8 +942,8 @@ function getImagePlaneCamera(
  * slab and no time point.
  */
 function getImageSliceInputs(
-  rendering: PlanarCpuImageRendering
-): PlanarSampledSliceInputs {
+  rendering: PlanarCanvasFrameRendering
+): PlanarCpuSliceInputs {
   return {
     interpolationType:
       rendering.appearance?.interpolationType === InterpolationType.NEAREST
@@ -954,7 +958,7 @@ function getImageSliceInputs(
  * invert flag of the image unless the appearance gives them.
  */
 function getImageSliceAppearance(
-  rendering: PlanarCpuImageRendering
+  rendering: PlanarCanvasFrameRendering
 ): PlanarDisplaySetAppearance {
   const { appearance, enabledElement } = rendering;
 
@@ -979,7 +983,7 @@ function renderCompatibilityOverlayActors(
 
   for (const actorEntry of overlayActors) {
     if (
-      actorEntry.actorMapper?.renderMode !== ActorRenderMode.CPU_IMAGE ||
+      !canvasFrameActors.has(actorEntry.actor) ||
       (actorEntry.reference as { kind?: string } | undefined)?.kind !==
         'segmentation'
     ) {
@@ -1000,7 +1004,7 @@ async function updateRenderedImage(args: {
   imageIdIndex: number;
   numberOfSlices: number;
   props?: PlanarDisplaySetAppearance;
-  rendering: PlanarCpuImageRendering;
+  rendering: PlanarCanvasFrameRendering;
 }): Promise<void> {
   const {
     ctx,

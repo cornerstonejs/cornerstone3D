@@ -9,7 +9,6 @@ import type {
 } from '../../../enums';
 import type {
   ActorEntry,
-  ActorRenderMode,
   ColormapPublic,
   IImage,
   IImageVolume,
@@ -35,12 +34,9 @@ import type ICamera from '../../../types/ICamera';
 import type { CameraScaleMode, ViewAnchor } from '../ViewportCameraTypes';
 import type DisplayArea from '../../../types/displayArea';
 import type { PlanarScaleInput } from './planarCameraScale';
+import type { PlanarRenderModeId } from './planarRenderModeIds';
+import type { EffectiveRenderBackend } from '../../../types/RenderBackendRegistry';
 
-export type PlanarRenderMode =
-  | ActorRenderMode.CPU_IMAGE
-  | 'webgl2d'
-  | ActorRenderMode.VTK_IMAGE
-  | ActorRenderMode.VTK_VOLUME_SLICE;
 /**
  * A render mode a planar viewport can mount: the built-in modes plus any mode
  * declared by an extension backend registered via `registerRenderBackend()`
@@ -48,14 +44,7 @@ export type PlanarRenderMode =
  * built-in literals from completion).
  * @internal
  */
-export type PlanarEffectiveRenderMode =
-  | ActorRenderMode.CPU_IMAGE
-  | 'webgl2d'
-  | ActorRenderMode.VTK_IMAGE
-  | ActorRenderMode.VTK_VOLUME_SLICE
-  | ActorRenderMode.VTK_SAMPLED_SLICE
-  | ActorRenderMode.CPU_VOLUME
-  | (string & {});
+export type PlanarEffectiveRenderMode = PlanarRenderModeId | (string & {});
 /**
  * Why a layer of a planar viewport is drawn the way it is, in one word:
  * - `frame`: the view is the acquisition plane, so the acquired frame is the
@@ -76,8 +65,6 @@ export type PlanarEffectiveRenderMode =
  * - `noWebGL`: the device has no WebGL2, so the CPU draws.
  * - `contextLost`: the WebGL context was lost and did not come back, so the
  *   CPU draws.
- *
- * @experimental
  */
 export type RenderPlanReason =
   | 'frame'
@@ -95,24 +82,36 @@ export type RenderPlanReason =
   | 'contextLost';
 
 /**
+ * How the slice of a layer is made: `frame` (the acquired frame is the
+ * image), `cpu` (the CPU cuts the slice out of the volume) or `gpuVolume`
+ * (the GPU cuts it out of a 3D texture of the volume). The same words name the
+ * slots of `registerRenderBackend()`.
+ */
+export type RenderPlanSlice = 'frame' | 'cpu' | 'gpuVolume';
+
+/** What draws the slice of a layer: the GPU, or the CPU on a 2D canvas. */
+export type RenderPlanDraw = 'gpu' | 'cpu';
+
+/**
  * How one layer (display set) of a planar viewport is drawn
- * (`PlanarViewport.getRenderPlan`).
- *
- * @experimental
+ * (`PlanarViewport.getRenderPlan`). It is the one public description of a
+ * render path: match an actor to its layer with `ActorEntry.displaySetId`.
  */
 export type RenderPlanLayer = {
   /** The display set id of the layer. */
   displaySetId: string;
   role: BindingRole;
+  /** How the slice is made. */
+  slice: RenderPlanSlice;
+  /** What draws the slice. */
+  draw: RenderPlanDraw;
   /**
-   * How the slice is made: `frame` (the acquired frame is the image), `cpu`
-   * (the CPU sampler) or `gpuVolume` (the GPU volume texture).
+   * The render backend that draws the layer, as `registerRenderBackend()`
+   * registered it and `setRenderBackend()` and the `renderBackend` option
+   * take it: `'gpu'`, `'cpu'` or the id of an extension backend. Never
+   * `'auto'`: the plan gives the backend that `'auto'` resolved to.
    */
-  slice: 'frame' | 'cpu' | 'gpuVolume';
-  /** What draws the slice: the GPU or the CPU (a 2D canvas). */
-  draw: 'gpu' | 'cpu';
-  /** The render mode behind the two. */
-  renderMode: PlanarEffectiveRenderMode;
+  backend: EffectiveRenderBackend;
   reason: RenderPlanReason;
 };
 
@@ -120,8 +119,6 @@ export type RenderPlanLayer = {
  * The detail of `Events.RENDER_PLAN_CHANGED`: the entry of one layer before
  * and after the change. `previous` is undefined for a layer that was just
  * added.
- *
- * @experimental
  */
 export type RenderPlanChangedEventDetail = {
   renderingEngineId: string;

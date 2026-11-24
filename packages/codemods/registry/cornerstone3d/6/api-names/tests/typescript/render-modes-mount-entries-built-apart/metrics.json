@@ -1,0 +1,12 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "6",
+        "rule": "renderMode: if this object is the option of a mount of a 3D viewport, a 3D viewport has no mount option renderMode in 6.0: the descriptor decides (image ids give a volume, a geometry id a surface), delete it"
+      },
+      "count": 1
+    }
+  ]
+}

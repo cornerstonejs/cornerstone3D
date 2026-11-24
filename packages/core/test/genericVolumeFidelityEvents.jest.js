@@ -33,7 +33,7 @@ jest.mock('../src/RenderingEngine/Viewports/setVtkCameraClippingRange', () => ({
 
 import { Events, ImageQualityStatus } from '../src/enums';
 import eventTarget from '../src/eventTarget';
-import { VtkVolumeSliceRenderPath } from '../src/RenderingEngine/Viewports/Planar/VtkVolumeSliceRenderPath';
+import { VtkGpuVolumeSliceRenderPath } from '../src/RenderingEngine/Viewports/Planar/VtkGpuVolumeSliceRenderPath';
 import { VtkVolume3DRenderPath } from '../src/RenderingEngine/Viewports/Volume3D/VtkVolume3DRenderPath';
 import { shownStateOf } from '../src/RenderingEngine/helpers/fidelityIndicator/fidelityIndicatorState';
 import { fidelityLinesFromBindings } from '../src/RenderingEngine/helpers/fidelityIndicator/collectFidelityLines';
@@ -139,7 +139,7 @@ function shownState(rendering) {
 }
 
 describe.each([
-  ['the slice render path', VtkVolumeSliceRenderPath, 'slice-volume'],
+  ['the slice render path', VtkGpuVolumeSliceRenderPath, 'slice-volume'],
   ['the 3D render path', VtkVolume3DRenderPath, '3d-volume'],
 ])('%s and a streaming volume', (_name, RenderPath, volumeId) => {
   async function mount(options = {}) {

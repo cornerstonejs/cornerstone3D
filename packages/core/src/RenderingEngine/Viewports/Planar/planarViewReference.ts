@@ -16,7 +16,7 @@
  * on demand via `getPlanarResolvedICameraForReference`.
  */
 import { vec3 } from 'gl-matrix';
-import { ActorRenderMode } from '../../../types';
+import { PlanarRenderModeId } from './planarRenderModeIds';
 import { isVolumeRenderMode } from '../../helpers/renderBackendRegistry';
 import type {
   Point3,
@@ -76,8 +76,8 @@ export function getPlanarReferencedImageId(args: {
   }
 
   if (
-    rendering.renderMode === ActorRenderMode.CPU_IMAGE ||
-    rendering.renderMode === ActorRenderMode.VTK_IMAGE
+    rendering.renderMode === PlanarRenderModeId.CANVAS_FRAME ||
+    rendering.renderMode === PlanarRenderModeId.VTK_FRAME
   ) {
     const imageIdIndex =
       typeof viewRefSpecifier?.sliceIndex === 'number'

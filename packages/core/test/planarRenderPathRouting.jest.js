@@ -1,7 +1,7 @@
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkCamera from '@kitware/vtk.js/Rendering/Core/Camera';
 import { BlendModes, MetadataModules, OrientationAxis } from '../src/enums';
-import { ActorRenderMode } from '../src/types';
+import { PlanarRenderModeId } from '../src/RenderingEngine/Viewports/Planar/planarRenderModeIds';
 import * as metaData from '../src/metaData';
 import cache from '../src/cache/cache';
 import ImageVolume from '../src/cache/classes/ImageVolume';
@@ -20,7 +20,7 @@ import {
   canSampleSlabOnCpu,
   hasSlab,
 } from '../src/RenderingEngine/Viewports/Planar/PlanarRenderPathDecisionService';
-import { VtkVolumeSliceRenderPath } from '../src/RenderingEngine/Viewports/Planar/VtkVolumeSliceRenderPath';
+import { VtkGpuVolumeSliceRenderPath } from '../src/RenderingEngine/Viewports/Planar/VtkGpuVolumeSliceRenderPath';
 import PlanarViewport, {
   getRemountedViewPropOrder,
 } from '../src/RenderingEngine/Viewports/Planar/PlanarViewport';
@@ -141,7 +141,7 @@ describe('slab routing of the slice first decision', () => {
         orientations.forEach((orientation) => {
           expect(
             modeOf({ sliceFirst: true, blendMode, slabThickness, orientation })
-          ).toBe(ActorRenderMode.VTK_VOLUME_SLICE);
+          ).toBe(PlanarRenderModeId.VTK_GPU_VOLUME_SLICE);
         });
       });
     });
@@ -156,7 +156,7 @@ describe('slab routing of the slice first decision', () => {
         orientations.forEach((orientation) => {
           expect(
             modeOf({ sliceFirst: true, blendMode, slabThickness, orientation })
-          ).toBe(ActorRenderMode.VTK_SAMPLED_SLICE);
+          ).toBe(PlanarRenderModeId.VTK_CPU_SLICE);
         });
       });
       expect(
@@ -166,20 +166,20 @@ describe('slab routing of the slice first decision', () => {
           slabThickness: 1,
           orientation: OrientationAxis.CORONAL,
         })
-      ).toBe(ActorRenderMode.VTK_VOLUME_SLICE);
+      ).toBe(PlanarRenderModeId.VTK_GPU_VOLUME_SLICE);
     });
   });
 
   it('goes back to the sampled slice when the slab is turned off', () => {
     const options = { ...mip, orientation: OrientationAxis.CORONAL };
 
-    expect(modeOf(options)).toBe(ActorRenderMode.VTK_VOLUME_SLICE);
+    expect(modeOf(options)).toBe(PlanarRenderModeId.VTK_GPU_VOLUME_SLICE);
     expect(modeOf({ ...options, slabThickness: 0 })).toBe(
-      ActorRenderMode.VTK_SAMPLED_SLICE
+      PlanarRenderModeId.VTK_CPU_SLICE
     );
     expect(
       modeOf({ ...options, slabThickness: 0, blendMode: BlendModes.COMPOSITE })
-    ).toBe(ActorRenderMode.VTK_SAMPLED_SLICE);
+    ).toBe(PlanarRenderModeId.VTK_CPU_SLICE);
   });
 
   it('follows the global slice first setting when the data set has none', () => {
@@ -187,21 +187,21 @@ describe('slab routing of the slice first decision', () => {
 
     setSliceFirst(false);
 
-    expect(modeOf(options)).toBe(ActorRenderMode.VTK_VOLUME_SLICE);
+    expect(modeOf(options)).toBe(PlanarRenderModeId.VTK_GPU_VOLUME_SLICE);
 
     setSliceFirst(true);
 
     try {
-      expect(modeOf(options)).toBe(ActorRenderMode.VTK_SAMPLED_SLICE);
+      expect(modeOf(options)).toBe(PlanarRenderModeId.VTK_CPU_SLICE);
       expect(
         modeOf({
           ...options,
           slabThickness: 10,
           blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
         })
-      ).toBe(ActorRenderMode.VTK_VOLUME_SLICE);
+      ).toBe(PlanarRenderModeId.VTK_GPU_VOLUME_SLICE);
       expect(modeOf({ ...options, sliceFirst: false })).toBe(
-        ActorRenderMode.VTK_VOLUME_SLICE
+        PlanarRenderModeId.VTK_GPU_VOLUME_SLICE
       );
     } finally {
       setSliceFirst(false);
@@ -214,7 +214,7 @@ describe('slab routing of the slice first decision', () => {
         orientations.forEach((orientation) => {
           expect(
             modeOf({ sliceFirst: false, blendMode, slabThickness, orientation })
-          ).toBe(ActorRenderMode.VTK_VOLUME_SLICE);
+          ).toBe(PlanarRenderModeId.VTK_GPU_VOLUME_SLICE);
         });
       });
     });
@@ -232,7 +232,7 @@ describe('slab routing of the slice first decision', () => {
               slabThickness,
               orientation: OrientationAxis.CORONAL,
             })
-          ).toBe(ActorRenderMode.CPU_VOLUME);
+          ).toBe(PlanarRenderModeId.CANVAS_CPU_SLICE);
         });
       });
     });
@@ -415,7 +415,7 @@ describe('PlanarViewport remount after presentation changes', () => {
     await flush();
 
     expect(binding().rendering.renderMode).toBe(
-      ActorRenderMode.VTK_SAMPLED_SLICE
+      PlanarRenderModeId.VTK_CPU_SLICE
     );
 
     deferLoads = true;
@@ -432,7 +432,7 @@ describe('PlanarViewport remount after presentation changes', () => {
     await resolvePendingLoads();
 
     expect(binding().rendering.renderMode).toBe(
-      ActorRenderMode.VTK_SAMPLED_SLICE
+      PlanarRenderModeId.VTK_CPU_SLICE
     );
   });
 
@@ -451,7 +451,7 @@ describe('PlanarViewport remount after presentation changes', () => {
     await resolvePendingLoads();
 
     expect(binding().rendering.renderMode).toBe(
-      ActorRenderMode.VTK_VOLUME_SLICE
+      PlanarRenderModeId.VTK_GPU_VOLUME_SLICE
     );
   });
 
@@ -487,16 +487,16 @@ describe('PlanarViewport remount after presentation changes', () => {
     await flush();
 
     expect(binding().rendering.renderMode).toBe(
-      ActorRenderMode.VTK_VOLUME_SLICE
+      PlanarRenderModeId.VTK_GPU_VOLUME_SLICE
     );
     expect(viewport.bindings.get(overlayId).rendering.renderMode).toBe(
-      ActorRenderMode.VTK_SAMPLED_SLICE
+      PlanarRenderModeId.VTK_CPU_SLICE
     );
     expect(
       props.map((actor) => [actor.displaySetId, actor.renderMode])
     ).toEqual([
-      [displaySetId, ActorRenderMode.VTK_VOLUME_SLICE],
-      [overlayId, ActorRenderMode.VTK_SAMPLED_SLICE],
+      [displaySetId, PlanarRenderModeId.VTK_GPU_VOLUME_SLICE],
+      [overlayId, PlanarRenderModeId.VTK_CPU_SLICE],
     ]);
 
     viewport.setDisplaySetAppearance(displaySetId, { slabThickness: 0 });
@@ -505,8 +505,8 @@ describe('PlanarViewport remount after presentation changes', () => {
     expect(
       props.map((actor) => [actor.displaySetId, actor.renderMode])
     ).toEqual([
-      [displaySetId, ActorRenderMode.VTK_SAMPLED_SLICE],
-      [overlayId, ActorRenderMode.VTK_SAMPLED_SLICE],
+      [displaySetId, PlanarRenderModeId.VTK_CPU_SLICE],
+      [overlayId, PlanarRenderModeId.VTK_CPU_SLICE],
     ]);
   });
 
@@ -522,8 +522,8 @@ describe('PlanarViewport remount after presentation changes', () => {
     expect(
       props.map((actor) => [actor.displaySetId, actor.renderMode])
     ).toEqual([
-      [displaySetId, ActorRenderMode.VTK_SAMPLED_SLICE],
-      [overlayId, ActorRenderMode.VTK_SAMPLED_SLICE],
+      [displaySetId, PlanarRenderModeId.VTK_CPU_SLICE],
+      [overlayId, PlanarRenderModeId.VTK_CPU_SLICE],
       ['labelmap', undefined],
     ]);
   });
@@ -543,7 +543,7 @@ describe('PlanarViewport remount after presentation changes', () => {
     await flush();
 
     expect(binding().rendering.renderMode).toBe(
-      ActorRenderMode.VTK_SAMPLED_SLICE
+      PlanarRenderModeId.VTK_CPU_SLICE
     );
     expect(pendingAdds.length).toBe(1);
 
@@ -555,7 +555,7 @@ describe('PlanarViewport remount after presentation changes', () => {
     await flush();
 
     expect(viewport.bindings.get(overlayId).rendering.renderMode).toBe(
-      ActorRenderMode.VTK_SAMPLED_SLICE
+      PlanarRenderModeId.VTK_CPU_SLICE
     );
     expect(renderViewport.mock.calls.length).toBeGreaterThan(rendersBefore);
   });
@@ -576,10 +576,10 @@ describe('PlanarViewport remount after presentation changes', () => {
     await resolvePendingLoads();
 
     expect(binding().rendering.renderMode).toBe(
-      ActorRenderMode.VTK_VOLUME_SLICE
+      PlanarRenderModeId.VTK_GPU_VOLUME_SLICE
     );
     expect(viewport.bindings.get(overlayId).rendering.renderMode).toBe(
-      ActorRenderMode.VTK_VOLUME_SLICE
+      PlanarRenderModeId.VTK_GPU_VOLUME_SLICE
     );
     expect(renderViewport.mock.calls.length).toBeGreaterThan(rendersBefore);
   });
@@ -596,7 +596,7 @@ describe('PlanarViewport remount after presentation changes', () => {
 
     expect(props).toEqual(propsBefore);
     expect(binding().rendering.renderMode).toBe(
-      ActorRenderMode.VTK_SAMPLED_SLICE
+      PlanarRenderModeId.VTK_CPU_SLICE
     );
   });
 
@@ -639,7 +639,7 @@ describe('PlanarViewport remount after presentation changes', () => {
 
     expect(binding()).not.toBe(mounted);
     expect(binding().rendering.renderMode).toBe(
-      ActorRenderMode.VTK_VOLUME_SLICE
+      PlanarRenderModeId.VTK_GPU_VOLUME_SLICE
     );
     expect(binding().updateAppearance).toHaveBeenLastCalledWith(
       expect.objectContaining({ ...mip10, voiRange, opacity: 0.5 })
@@ -814,7 +814,7 @@ describe('GPU volume textures after a switch to slice first', () => {
   }
 
   function removeRendering(rendering) {
-    new VtkVolumeSliceRenderPath().removeData(
+    new VtkGpuVolumeSliceRenderPath().removeData(
       { vtk: { renderer: { removeActor: jest.fn() } } },
       rendering
     );

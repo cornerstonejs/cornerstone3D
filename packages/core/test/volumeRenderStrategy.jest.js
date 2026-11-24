@@ -8,7 +8,7 @@ import {
   beforeAll,
   afterAll,
 } from '@jest/globals';
-import { VtkVolumeSliceRenderPath } from '../src/RenderingEngine/Viewports/Planar/VtkVolumeSliceRenderPath';
+import { VtkGpuVolumeSliceRenderPath } from '../src/RenderingEngine/Viewports/Planar/VtkGpuVolumeSliceRenderPath';
 import {
   defaultVolumeStrategyProvider,
   provisionFullResolutionStrategy,
@@ -308,7 +308,7 @@ describe('the render path provisions once and selects per render', () => {
     const provider = jest.fn(defaultVolumeStrategyProvider);
     const volume = makeVolume();
     const rendering = makeRendering(volume);
-    const path = new VtkVolumeSliceRenderPath(provider);
+    const path = new VtkGpuVolumeSliceRenderPath(provider);
 
     provision(path, rendering);
     render(path, rendering);
@@ -324,7 +324,7 @@ describe('the render path provisions once and selects per render', () => {
     const select = jest.fn(selectFirstReadyStrategy);
     const volume = makeVolume();
     const rendering = makeRendering(volume);
-    const path = new VtkVolumeSliceRenderPath(
+    const path = new VtkGpuVolumeSliceRenderPath(
       defaultVolumeStrategyProvider,
       select
     );
@@ -342,7 +342,7 @@ describe('the render path provisions once and selects per render', () => {
     const rendering = makeRendering(volume);
     // A render component that implements phases supplies a function like this.
     const select = ({ strategies }) => strategies[strategies.length - 1];
-    const path = new VtkVolumeSliceRenderPath(
+    const path = new VtkGpuVolumeSliceRenderPath(
       ({ volume: aVolume, gpuSettings }) => [
         provisionReducedResolutionStrategy({
           volume: aVolume,
@@ -362,7 +362,7 @@ describe('the render path provisions once and selects per render', () => {
   it('binds nothing when the selection chooses no strategy', () => {
     const volume = makeVolume();
     const rendering = makeRendering(volume);
-    const path = new VtkVolumeSliceRenderPath(
+    const path = new VtkGpuVolumeSliceRenderPath(
       defaultVolumeStrategyProvider,
       () => undefined
     );
@@ -379,7 +379,7 @@ describe('the render path provisions once and selects per render', () => {
     const volume = makeVolume();
     const rendering = makeRendering(volume);
     let useFull = false;
-    const path = new VtkVolumeSliceRenderPath(
+    const path = new VtkGpuVolumeSliceRenderPath(
       ({ volume: aVolume }) => [
         provisionReducedResolutionStrategy({
           volume: aVolume,
@@ -417,7 +417,7 @@ describe('the render path provisions once and selects per render', () => {
   it('binds one texture once while the strategy does not change', () => {
     const volume = makeVolume();
     const rendering = makeRendering(volume);
-    const path = new VtkVolumeSliceRenderPath();
+    const path = new VtkGpuVolumeSliceRenderPath();
 
     provision(path, rendering);
     render(path, rendering);
@@ -433,7 +433,7 @@ describe('the strategies are rebuilt when something changes', () => {
     const provider = jest.fn(defaultVolumeStrategyProvider);
     const volume = makeVolume();
     const rendering = makeRendering(volume);
-    const path = new VtkVolumeSliceRenderPath(provider);
+    const path = new VtkGpuVolumeSliceRenderPath(provider);
 
     provision(path, rendering, 'high', 'initial');
     render(path, rendering);
@@ -448,7 +448,7 @@ describe('the strategies are rebuilt when something changes', () => {
   it('keeps the identity of a strategy that the provider names again', () => {
     const volume = makeVolume();
     const rendering = makeRendering(volume);
-    const path = new VtkVolumeSliceRenderPath();
+    const path = new VtkGpuVolumeSliceRenderPath();
 
     provision(path, rendering, 'high', 'initial');
     render(path, rendering);
@@ -473,7 +473,7 @@ describe('the strategies are rebuilt when something changes', () => {
     const volume = makeVolume();
     const rendering = makeRendering(volume);
     let reduced = true;
-    const path = new VtkVolumeSliceRenderPath(({ volume: aVolume }) =>
+    const path = new VtkGpuVolumeSliceRenderPath(({ volume: aVolume }) =>
       reduced
         ? [
             provisionReducedResolutionStrategy({
@@ -513,7 +513,7 @@ describe('the strategies are rebuilt when something changes', () => {
   it('rebuilds a set that the store evicted under memory pressure', () => {
     const volume = makeVolume();
     const rendering = makeRendering(volume);
-    const path = new VtkVolumeSliceRenderPath();
+    const path = new VtkGpuVolumeSliceRenderPath();
 
     provision(path, rendering, 'high', 'initial');
     render(path, rendering);
@@ -553,7 +553,7 @@ describe('the render reports the quality', () => {
 
     const volume = makeVolume();
     const rendering = makeRendering(volume);
-    const path = new VtkVolumeSliceRenderPath();
+    const path = new VtkGpuVolumeSliceRenderPath();
 
     provision(path, rendering, 'low-tablet');
     render(path, rendering);
@@ -585,7 +585,7 @@ describe('the render reports the quality', () => {
       deactivate: () => undefined,
       update: () => undefined,
     };
-    const path = new VtkVolumeSliceRenderPath(() => [strategy]);
+    const path = new VtkGpuVolumeSliceRenderPath(() => [strategy]);
 
     provision(path, rendering);
     render(path, rendering);

@@ -45,7 +45,6 @@ async function show3D(renderingEngine, series) {
   });
   await viewport.setDisplaySets({
     displaySetId,
-    options: { renderMode: 'vtkVolume3d' },
   });
   viewport.render();
   await frames(3);

@@ -50,7 +50,7 @@ test.describe('Generic viewport two-axis scale', () => {
         constructorName: 'PlanarViewport',
         type: 'planar',
         renderModesByDisplaySetId: {
-          [STACK_DATA_ID]: 'vtkImage',
+          [STACK_DATA_ID]: 'vtkFrame',
         },
       },
       {

@@ -6,6 +6,7 @@ import {
   createSeries,
   showStack,
   showVolume,
+  drawPathOf,
 } from './utils/planarSeriesBothModes';
 
 const { utilities } = cornerstone3D;
@@ -15,9 +16,9 @@ const viewportId = 'namedCanvas';
 
 /** The draw paths of a direct next planar viewport, and how each is shown. */
 const PATHS = [
-  ['a stack on the GPU', showStack, {}, 'vtkImage'],
-  ['a stack on the CPU', showStack, { renderBackend: 'cpu' }, 'cpuImage'],
-  ['a volume on the CPU', showVolume, { renderBackend: 'cpu' }, 'cpuVolume'],
+  ['a stack on the GPU', showStack, {}, 'frame-gpu'],
+  ['a stack on the CPU', showStack, { renderBackend: 'cpu' }, 'frame-cpu'],
+  ['a volume on the CPU', showVolume, { renderBackend: 'cpu' }, 'cpu-cpu'],
 ];
 
 /** The canvases of an element that carry the class `cornerstone-canvas`. */
@@ -42,14 +43,14 @@ describe('The canvas named cornerstone-canvas of a direct next planar viewport -
     });
   });
 
-  for (const [what, show, options, renderMode] of PATHS) {
+  for (const [what, show, options, drawPath] of PATHS) {
     it(`is the one canvas that shows ${what}`, async function () {
-      const series = await createSeries({ id: `namedCanvas-${renderMode}` });
+      const series = await createSeries({ id: `namedCanvas-${drawPath}` });
       const viewport = createNextViewport(renderingEngine, viewportId);
 
       await show(viewport, series, 2, options);
 
-      expect(viewport.getRenderPlan()[0].renderMode).toBe(renderMode);
+      expect(drawPathOf(viewport.getRenderPlan()[0])).toBe(drawPath);
 
       const named = namedCanvases(viewport.element);
 

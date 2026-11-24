@@ -7,6 +7,7 @@ import {
   showStack,
   showVolume,
   worldOfVoxel,
+  drawPathOf,
 } from './utils/planarSeriesBothModes';
 
 const { utilities, viewportProjection } = cornerstone3D;
@@ -29,10 +30,10 @@ const DISPLAY_AREA = {
 
 /** A direct next planar viewport in each content mode, on each draw path. */
 const CASES = [
-  ['stack', 'GPU', showStack, {}, 'vtkImage'],
-  ['volume', 'GPU', showVolume, {}, 'vtkSampledSlice'],
-  ['stack', 'CPU', showStack, { renderBackend: 'cpu' }, 'cpuImage'],
-  ['volume', 'CPU', showVolume, { renderBackend: 'cpu' }, 'cpuVolume'],
+  ['stack', 'GPU', showStack, {}, 'frame-gpu'],
+  ['volume', 'GPU', showVolume, {}, 'cpu-gpu'],
+  ['stack', 'CPU', showStack, { renderBackend: 'cpu' }, 'frame-cpu'],
+  ['volume', 'CPU', showVolume, { renderBackend: 'cpu' }, 'cpu-cpu'],
 ];
 
 /** Resolves after a few animation frames. */
@@ -152,7 +153,7 @@ describe('The projection service on a planar view with a display area -- ', () =
     });
   });
 
-  for (const [mode, backend, show, options, renderMode] of CASES) {
+  for (const [mode, backend, show, options, drawPath] of CASES) {
     const where = `in ${mode} mode on the ${backend}`;
 
     it(`moves the picture by a pan patch from where the display area put it, at the size that the display area gave, ${where}`, async function () {
@@ -166,7 +167,7 @@ describe('The projection service on a planar view with a display area -- ', () =
       const greyOfVoxel = redAt(next, area.a);
 
       expect(next.getCurrentMode()).toBe(mode);
-      expect(next.getRenderPlan()[0].renderMode).toBe(renderMode);
+      expect(drawPathOf(next.getRenderPlan()[0])).toBe(drawPath);
       expect(zoom).toBeCloseTo(2, 4);
       expect(area.size / fit.size).toBeCloseTo(2, 3);
       expect(Math.hypot(pan[0], pan[1])).toBeGreaterThan(10);

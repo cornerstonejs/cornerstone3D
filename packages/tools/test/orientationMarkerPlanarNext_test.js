@@ -200,7 +200,7 @@ describe('The orientation marker on a direct next planar viewport -- ', () => {
       .map((args) => args.join(' '))
       .filter((message) => message.includes('vtk.js'));
 
-    expect(viewport.getRenderPlan()[0].renderMode).toMatch(/^cpu/);
+    expect(viewport.getRenderPlan()[0].draw).toBe('cpu');
     expect(viewport.getWidgets().length).toBe(1);
     expect(warnings.length).toBe(1);
     expect(warnings[0]).toContain('CPU');

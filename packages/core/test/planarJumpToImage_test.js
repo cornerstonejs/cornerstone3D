@@ -1,6 +1,6 @@
 import * as cornerstone3D from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
-import { SAMPLED_SLICE_REST_DELAY_MS } from '../src/RenderingEngine/Viewports/Planar/planarSampledSliceRest';
+import { CPU_SLICE_REST_DELAY_MS } from '../src/RenderingEngine/Viewports/Planar/planarCpuSliceRest';
 import {
   createNextViewport,
   createSeries,
@@ -8,6 +8,7 @@ import {
   showStack,
   showVolume,
   worldOfVoxel,
+  drawPathOf,
 } from './utils/planarSeriesBothModes';
 
 const { Enums, utilities } = cornerstone3D;
@@ -52,15 +53,15 @@ const VOLUMES = [
 
 /** The draw paths of a volume on a direct next planar viewport. */
 const VOLUME_PATHS = [
-  ['on the sampled slice path', {}, 'vtkSampledSlice'],
-  ['on the volume slice path', { sliceFirst: false }, 'vtkVolumeSlice'],
-  ['on the CPU', { renderBackend: 'cpu' }, 'cpuVolume'],
+  ['on the sampled slice path', {}, 'cpu-gpu'],
+  ['on the volume slice path', { sliceFirst: false }, 'gpuVolume-gpu'],
+  ['on the CPU', { renderBackend: 'cpu' }, 'cpu-cpu'],
 ];
 
 /** The draw paths of a stack on a direct next planar viewport. */
 const STACK_PATHS = [
-  ['on the GPU', {}, 'vtkImage'],
-  ['on the CPU', { renderBackend: 'cpu' }, 'cpuImage'],
+  ['on the GPU', {}, 'frame-gpu'],
+  ['on the CPU', { renderBackend: 'cpu' }, 'frame-cpu'],
 ];
 
 /** Resolves after a few animation frames. */
@@ -81,7 +82,7 @@ async function settle(viewport) {
  * of the new view at rest, for a read of the canvas. The first draw of a new
  * slice starts the work at rest just before its IMAGE_RENDERED, and on the CPU
  * a LINEAR slice is drawn once more by that work, sampled on the screen grid,
- * SAMPLED_SLICE_REST_DELAY_MS later: one grey level up at the probe voxel. A
+ * CPU_SLICE_REST_DELAY_MS later: one grey level up at the probe voxel. A
  * read three frames after the change came before that draw on an idle machine
  * and after it under load. A timer that ends that delay after the first
  * IMAGE_RENDERED fires after the work at rest at any load, and the render
@@ -102,7 +103,7 @@ async function changeAndSettleAtRest(viewport, change) {
       resolve,
       Math.max(
         0,
-        Math.ceil(firstDrawAt + SAMPLED_SLICE_REST_DELAY_MS - performance.now())
+        Math.ceil(firstDrawAt + CPU_SLICE_REST_DELAY_MS - performance.now())
       ) + 1
     )
   );
@@ -248,11 +249,11 @@ describe('A jump to an image by a view reference on a direct next planar viewpor
   });
 
   for (const [order, orientation, imageOfSlice] of VOLUMES) {
-    for (const [path, pathOptions, renderMode] of VOLUME_PATHS) {
+    for (const [path, pathOptions, drawPath] of VOLUME_PATHS) {
       it(
         `lands on the image of a referencedImageId and of a referencedImageURI in volume mode ${path}, for a volume whose slices run ${order}`,
         async function () {
-          const series = await createSeries({ id: `jump-${renderMode}` });
+          const series = await createSeries({ id: `jump-${drawPath}` });
           const viewport = createNextViewport(renderingEngine, 'nextJump');
           const count = series.imageIds.length;
 
@@ -262,7 +263,7 @@ describe('A jump to an image by a view reference on a direct next planar viewpor
           });
 
           expect(viewport.getCurrentMode()).toBe('volume');
-          expect(viewport.getRenderPlan()[0].renderMode).toBe(renderMode);
+          expect(drawPathOf(viewport.getRenderPlan()[0])).toBe(drawPath);
 
           await viewport.setImageIdIndex(1);
           await settle(viewport);
@@ -303,17 +304,17 @@ describe('A jump to an image by a view reference on a direct next planar viewpor
     }
   }
 
-  for (const [path, pathOptions, renderMode] of STACK_PATHS) {
+  for (const [path, pathOptions, drawPath] of STACK_PATHS) {
     it(
       `lands on the image of a referencedImageId and of a referencedImageURI in stack mode ${path}`,
       async function () {
-        const series = await createSeries({ id: `jump-${renderMode}` });
+        const series = await createSeries({ id: `jump-${drawPath}` });
         const viewport = createNextViewport(renderingEngine, 'nextJump');
 
         await showStack(viewport, series, 2, pathOptions);
 
         expect(viewport.getCurrentMode()).toBe('stack');
-        expect(viewport.getRenderPlan()[0].renderMode).toBe(renderMode);
+        expect(drawPathOf(viewport.getRenderPlan()[0])).toBe(drawPath);
 
         const greys = await greysByPlace(viewport, series);
 

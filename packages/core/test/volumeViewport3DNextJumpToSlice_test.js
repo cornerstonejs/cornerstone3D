@@ -70,7 +70,6 @@ describe('utilities.jumpToSlice on a direct next 3D viewport -- ', () => {
     });
     await viewport.setDisplaySets({
       displaySetId: 'jump3D:volume',
-      options: { renderMode: 'vtkVolume3d' },
     });
 
     const viewState = JSON.stringify(viewport.getViewState());

@@ -16,6 +16,7 @@ import {
   storedValue,
   waitFor,
   worldOfVoxel,
+  drawPathOf,
 } from './utils/planarSeriesBothModes';
 
 const { Enums, utilities } = cornerstone3D;
@@ -152,9 +153,9 @@ describe('A direct next planar viewport in stack mode and in volume mode -- ', (
       await showVolume(volume, series, 3);
 
       expect(stack.getCurrentMode()).toBe('stack');
-      expect(stack.getRenderPlan()[0].renderMode).toBe('vtkImage');
+      expect(drawPathOf(stack.getRenderPlan()[0])).toBe('frame-gpu');
       expect(stackCpu.getCurrentMode()).toBe('stack');
-      expect(stackCpu.getRenderPlan()[0].renderMode).toBe('cpuImage');
+      expect(drawPathOf(stackCpu.getRenderPlan()[0])).toBe('frame-cpu');
       expect(volume.getCurrentMode()).toBe('volume');
       expect(volume.getCurrentImageId()).toBe(stack.getCurrentImageId());
 

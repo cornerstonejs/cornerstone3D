@@ -136,7 +136,7 @@ test.describe('Labelmap Rendering - Next (CPU)', () => {
         constructorName: 'PlanarViewport',
         type: 'planar',
         renderModesByDisplaySetId: {
-          'labelmap-rendering-next:source': 'cpuVolume',
+          'labelmap-rendering-next:source': 'canvasCpuSlice',
         },
       },
       {
@@ -145,7 +145,7 @@ test.describe('Labelmap Rendering - Next (CPU)', () => {
         constructorName: 'PlanarViewport',
         type: 'planar',
         renderModesByDisplaySetId: {
-          'labelmap-rendering-next:source': 'cpuVolume',
+          'labelmap-rendering-next:source': 'canvasCpuSlice',
         },
       },
       {
@@ -154,7 +154,7 @@ test.describe('Labelmap Rendering - Next (CPU)', () => {
         constructorName: 'PlanarViewport',
         type: 'planar',
         renderModesByDisplaySetId: {
-          'labelmap-rendering-next:source': 'cpuVolume',
+          'labelmap-rendering-next:source': 'canvasCpuSlice',
         },
       },
     ]);

@@ -42,7 +42,7 @@ jest.mock('../src/utilities/WSIUtilities', () => ({
   })),
 }));
 
-import { ActorRenderMode } from '../src/types';
+import { PlanarRenderModeId } from '../src/RenderingEngine/Viewports/Planar/planarRenderModeIds';
 import { displaySetRegistry } from '@cornerstonejs/metadata';
 import { DefaultPlanarDataProvider } from '../src/RenderingEngine/Viewports/Planar/DefaultPlanarDataProvider';
 import { DefaultVolume3DDataProvider } from '../src/RenderingEngine/Viewports/Volume3D/DefaultVolume3DDataProvider';
@@ -58,7 +58,7 @@ const imageIds = ['wadors:image-0', 'wadors:image-1'];
 const webClient = { getDICOMwebMetadata: () => undefined };
 const planarOptions = {
   orientation: 'acquisition',
-  renderMode: ActorRenderMode.VTK_IMAGE,
+  renderMode: PlanarRenderModeId.VTK_FRAME,
   volumeId: undefined,
 };
 

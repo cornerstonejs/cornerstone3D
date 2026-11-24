@@ -9,13 +9,10 @@ import type {
   PlanarDisplaySetAppearance,
   PlanarResolvedICamera,
 } from './PlanarViewportTypes';
-import type {
-  PlanarSampledSlice,
-  PlanarSliceClipPlane,
-} from './planarSampledSlice';
+import type { PlanarCpuSlice, PlanarSliceClipPlane } from './planarCpuSlice';
 import { applyPlanarICameraToActor } from './planarRenderCamera';
 import { applyPlanarVolumeAppearance } from './planarVolumeAppearance';
-import { updateVolumeSliceActorDepthOffset } from './VtkVolumeSliceRenderPath';
+import { updateVolumeSliceActorDepthOffset } from './VtkGpuVolumeSliceRenderPath';
 
 /** Returns an empty vector that holds double precision numbers. */
 function createVector(): vec3 {
@@ -25,7 +22,7 @@ function createVector(): vec3 {
 /**
  * The draw step of the sampled slice render path, and the only part of that
  * path that knows vtk.js image classes. It owns one vtkImageData, one
- * vtkImageMapper and one vtkImageSlice, and draws a `PlanarSampledSlice` in
+ * vtkImageMapper and one vtkImageSlice, and draws a `PlanarCpuSlice` in
  * world coordinates.
  *
  * The vtkImageData and its scalar array are reused while the size and the
@@ -45,14 +42,14 @@ function createVector(): vec3 {
  * the drawn image are then antialiased like the edges of the cut of the GPU
  * volume path, which a clip plane, tested once per pixel, does not do.
  */
-export class PlanarSampledSliceActor {
+export class PlanarCpuSliceActor {
   readonly actor: vtkImageSlice;
   readonly mapper: vtkImageMapper;
   private readonly imageData: vtkImageData;
   private readonly clipPlanes: vtkPlane[] = [];
   private volumeClipPlanes: PlanarSliceClipPlane[] = [];
   private clipping = false;
-  private slice?: PlanarSampledSlice;
+  private slice?: PlanarCpuSlice;
   private appearanceVisible = true;
 
   constructor(options: { voxelManager?: unknown; viewportId?: string } = {}) {
@@ -88,7 +85,7 @@ export class PlanarSampledSliceActor {
    *
    * @returns true when the drawn pixels or their place changed.
    */
-  setSlice(slice: PlanarSampledSlice | undefined): boolean {
+  setSlice(slice: PlanarCpuSlice | undefined): boolean {
     if (slice === this.slice) {
       return false;
     }
@@ -107,7 +104,7 @@ export class PlanarSampledSliceActor {
   }
 
   /** The slice that the actor draws, or undefined. */
-  getSlice(): PlanarSampledSlice | undefined {
+  getSlice(): PlanarCpuSlice | undefined {
     return this.slice;
   }
 
@@ -192,7 +189,7 @@ export class PlanarSampledSliceActor {
     this.slice = undefined;
   }
 
-  private writeSlice(slice: PlanarSampledSlice): void {
+  private writeSlice(slice: PlanarCpuSlice): void {
     const { imageData } = this;
     const scalars = imageData.getPointData().getScalars();
     const values = scalars?.getData();

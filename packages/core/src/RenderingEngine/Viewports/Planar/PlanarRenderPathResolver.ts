@@ -1,11 +1,11 @@
 import { createRegisteredPlanarRenderPaths } from '../../helpers/renderBackendRegistry';
 import { DefaultRenderPathResolver } from '../DefaultRenderPathResolver';
 import type { RenderPathDefinition } from '../ViewportArchitectureTypes';
-import { CpuImageSlicePath } from './CpuImageSliceRenderPath';
-import { CpuVolumeSlicePath } from './CpuVolumeSliceRenderPath';
-import { VtkImageMapperPath } from './VtkImageMapperRenderPath';
-import { VtkVolumeSlicePath } from './VtkVolumeSliceRenderPath';
-import { VtkSampledSlicePath } from './VtkSampledSliceRenderPath';
+import { CanvasFramePath } from './CanvasFrameRenderPath';
+import { CanvasCpuSlicePath } from './CanvasCpuSliceRenderPath';
+import { VtkFramePath } from './VtkFrameRenderPath';
+import { VtkGpuVolumeSlicePath } from './VtkGpuVolumeSliceRenderPath';
+import { VtkCpuSlicePath } from './VtkCpuSliceRenderPath';
 
 /**
  * The built-in planar render paths (the 'gpu' and 'cpu' backends' modes) plus
@@ -14,11 +14,11 @@ import { VtkSampledSlicePath } from './VtkSampledSliceRenderPath';
  */
 export function createDefaultPlanarRenderPaths(): RenderPathDefinition[] {
   return [
-    new CpuImageSlicePath(),
-    new CpuVolumeSlicePath(),
-    new VtkImageMapperPath(),
-    new VtkVolumeSlicePath(),
-    new VtkSampledSlicePath(),
+    new CanvasFramePath(),
+    new CanvasCpuSlicePath(),
+    new VtkFramePath(),
+    new VtkGpuVolumeSlicePath(),
+    new VtkCpuSlicePath(),
     ...createRegisteredPlanarRenderPaths(),
   ];
 }

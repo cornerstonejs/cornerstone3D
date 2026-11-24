@@ -266,7 +266,6 @@ describe('A surface shown as contours on a direct next planar viewport -- ', () 
     });
     await viewport.setDisplaySets({
       displaySetId: 'contour3DVolume',
-      options: { renderMode: 'vtkVolume3d' },
     });
     addBoxSurfaceSegmentation(3000);
 

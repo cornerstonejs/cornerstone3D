@@ -103,7 +103,7 @@ test.describe('Labelmap Overlap Playground - Next', () => {
         constructorName: 'PlanarViewport',
         type: 'planar',
         renderModesByDisplaySetId: {
-          'labelmap-overlap-next:stack': 'vtkImage',
+          'labelmap-overlap-next:stack': 'vtkFrame',
         },
       },
       {
@@ -164,7 +164,7 @@ test.describe('Labelmap Overlap Playground - Next (CPU)', () => {
         constructorName: 'PlanarViewport',
         type: 'planar',
         renderModesByDisplaySetId: {
-          'labelmap-overlap-next:stack': 'cpuImage',
+          'labelmap-overlap-next:stack': 'canvasFrame',
         },
       },
       {
@@ -173,7 +173,7 @@ test.describe('Labelmap Overlap Playground - Next (CPU)', () => {
         constructorName: 'PlanarViewport',
         type: 'planar',
         renderModesByDisplaySetId: {
-          'labelmap-overlap-next:volume': 'cpuVolume',
+          'labelmap-overlap-next:volume': 'canvasCpuSlice',
         },
       },
       {
@@ -182,7 +182,7 @@ test.describe('Labelmap Overlap Playground - Next (CPU)', () => {
         constructorName: 'PlanarViewport',
         type: 'planar',
         renderModesByDisplaySetId: {
-          'labelmap-overlap-next:volume': 'cpuVolume',
+          'labelmap-overlap-next:volume': 'canvasCpuSlice',
         },
       },
       {
@@ -191,7 +191,7 @@ test.describe('Labelmap Overlap Playground - Next (CPU)', () => {
         constructorName: 'PlanarViewport',
         type: 'planar',
         renderModesByDisplaySetId: {
-          'labelmap-overlap-next:volume': 'cpuVolume',
+          'labelmap-overlap-next:volume': 'canvasCpuSlice',
         },
       },
     ]);

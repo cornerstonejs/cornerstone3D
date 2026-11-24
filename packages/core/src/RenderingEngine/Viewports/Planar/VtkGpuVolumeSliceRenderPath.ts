@@ -16,7 +16,7 @@ import type {
 } from '../../helpers/volumeRenderStrategy';
 import * as lifecycle from '../../helpers/volumeStrategyLifecycle';
 import type { VolumeStrategyHooks } from '../../helpers/volumeStrategyLifecycle';
-import { ActorRenderMode } from '../../../types';
+import { PlanarRenderModeId } from './planarRenderModeIds';
 import type { IImageData, ImageActor, Point2, Point3 } from '../../../types';
 import type {
   DataAddOptions,
@@ -33,7 +33,7 @@ import type {
   PlanarViewportRenderContext,
   PlanarVtkVolumeAdapterContext,
 } from './PlanarViewportTypes';
-import type { PlanarVolumeSliceRendering } from './planarRuntimeTypes';
+import type { PlanarVtkGpuVolumeSliceRendering } from './planarRuntimeTypes';
 import {
   canvasToWorldContextPool,
   worldToCanvasContextPool,
@@ -63,7 +63,7 @@ const SLICE_OVERLAY_DEPTH_EPSILON = 1e-4;
 // after its volume was modified (brush edits fire many events per second).
 const PROJECTING_OVERLAY_RENDER_DELAY_MS = 240;
 /** @internal */
-export class VtkVolumeSliceRenderPath
+export class VtkGpuVolumeSliceRenderPath
   implements RenderPath<PlanarVtkVolumeAdapterContext>
 {
   /**
@@ -75,7 +75,7 @@ export class VtkVolumeSliceRenderPath
    * supplies its own selection, and that is where "reduced for the first
    * render, full resolution for the lossless render" belongs.
    */
-  private readonly hooks: VolumeStrategyHooks<PlanarVolumeSliceRendering>;
+  private readonly hooks: VolumeStrategyHooks<PlanarVtkGpuVolumeSliceRendering>;
 
   constructor(
     provideStrategies: VolumeStrategyProvider = defaultVolumeStrategyProvider,
@@ -105,13 +105,13 @@ export class VtkVolumeSliceRenderPath
     );
     const mapper = actor.getMapper() as vtkImageResliceMapper;
 
-    ctx.display.activateRenderMode(ActorRenderMode.VTK_VOLUME_SLICE);
+    ctx.display.activateRenderMode(PlanarRenderModeId.VTK_GPU_VOLUME_SLICE);
     ctx.vtk.renderer.addActor(actor);
 
     const defaultRange = getVolumeSliceActorRange(actor);
 
-    const rendering: PlanarVolumeSliceRendering = {
-      renderMode: ActorRenderMode.VTK_VOLUME_SLICE,
+    const rendering: PlanarVtkGpuVolumeSliceRendering = {
+      renderMode: PlanarRenderModeId.VTK_GPU_VOLUME_SLICE,
       actorEntryUID: uuidv4(),
       actor,
       overlayOrder: getImageSliceOverlayOrder(ctx.vtk.renderer, actor),
@@ -199,8 +199,6 @@ export class VtkVolumeSliceRenderPath
 
         return buildPlanarActorEntry(planarData, {
           actor: rendering.actor,
-          mapper: rendering.mapper,
-          renderMode: ActorRenderMode.VTK_VOLUME_SLICE,
           uid: rendering.actorEntryUID,
           referencedIdFallback: planarData.volumeId,
         });
@@ -226,7 +224,7 @@ export class VtkVolumeSliceRenderPath
 
   private updateAppearance(
     ctx: PlanarVtkVolumeAdapterContext,
-    rendering: PlanarVolumeSliceRendering,
+    rendering: PlanarVtkGpuVolumeSliceRendering,
     props: unknown,
     displaySetId: string
   ): void {
@@ -267,19 +265,19 @@ export class VtkVolumeSliceRenderPath
 
   private applyViewState(
     ctx: PlanarVtkVolumeAdapterContext,
-    rendering: PlanarVolumeSliceRendering,
+    rendering: PlanarVtkGpuVolumeSliceRendering,
     displaySetId: string,
     cameraInput: unknown
   ): void {
     const camera = cameraInput as PlanarViewState | undefined;
 
-    ctx.display.activateRenderMode(ActorRenderMode.VTK_VOLUME_SLICE);
+    ctx.display.activateRenderMode(PlanarRenderModeId.VTK_GPU_VOLUME_SLICE);
     this.syncRenderCamera(ctx, rendering, displaySetId, camera, true);
   }
 
   private syncRenderCamera(
     ctx: PlanarVtkVolumeAdapterContext,
-    rendering: PlanarVolumeSliceRendering,
+    rendering: PlanarVtkGpuVolumeSliceRendering,
     displaySetId: string,
     camera: PlanarViewState | undefined,
     triggerImageEvent: boolean
@@ -366,20 +364,20 @@ export class VtkVolumeSliceRenderPath
   }
 
   private getFrameOfReferenceUID(
-    rendering: PlanarVolumeSliceRendering
+    rendering: PlanarVtkGpuVolumeSliceRendering
   ): string | undefined {
     return rendering.imageVolume.metadata?.FrameOfReferenceUID;
   }
 
   private getImageData(
-    rendering: PlanarVolumeSliceRendering
+    rendering: PlanarVtkGpuVolumeSliceRendering
   ): IImageData | undefined {
     return buildPlanarVolumeImageData(rendering.imageVolume);
   }
 
   private render(
     ctx: PlanarVtkVolumeAdapterContext,
-    rendering?: PlanarVolumeSliceRendering
+    rendering?: PlanarVtkGpuVolumeSliceRendering
   ): void {
     if (rendering) {
       this.applyStrategy(rendering);
@@ -395,7 +393,7 @@ export class VtkVolumeSliceRenderPath
    */
   private setFillHint(
     ctx: PlanarVtkVolumeAdapterContext,
-    rendering: PlanarVolumeSliceRendering
+    rendering: PlanarVtkGpuVolumeSliceRendering
   ): void {
     const focalPoint = getPlanarRenderPathActiveSourceICamera(ctx)?.focalPoint;
     const grid = rendering.boundGrid?.grid;
@@ -409,7 +407,7 @@ export class VtkVolumeSliceRenderPath
 
   private resize(
     ctx: PlanarVtkVolumeAdapterContext,
-    rendering: PlanarVolumeSliceRendering,
+    rendering: PlanarVtkGpuVolumeSliceRendering,
     displaySetId: string
   ): void {
     const camera = ctx.viewport.getViewState();
@@ -429,7 +427,7 @@ export class VtkVolumeSliceRenderPath
    */
   private removeData(
     ctx: PlanarVtkVolumeAdapterContext,
-    rendering: PlanarVolumeSliceRendering
+    rendering: PlanarVtkGpuVolumeSliceRendering
   ): void {
     lifecycle.releaseStrategies(rendering);
     rendering.removeStreamingSubscriptions?.();
@@ -443,7 +441,7 @@ export class VtkVolumeSliceRenderPath
   }
 
   private provisionStrategies(
-    rendering: PlanarVolumeSliceRendering,
+    rendering: PlanarVtkGpuVolumeSliceRendering,
     reason: VolumeStrategyProvisionReason
   ): void {
     lifecycle.provisionStrategies(
@@ -453,31 +451,31 @@ export class VtkVolumeSliceRenderPath
     );
   }
 
-  private applyStrategy(rendering: PlanarVolumeSliceRendering): void {
+  private applyStrategy(rendering: PlanarVtkGpuVolumeSliceRendering): void {
     lifecycle.applyStrategy(rendering, this.hooks);
   }
 }
 
 /** @internal */
-export class VtkVolumeSlicePath
+export class VtkGpuVolumeSlicePath
   implements
     RenderPathDefinition<
       PlanarViewportRenderContext,
       PlanarVtkVolumeAdapterContext
     >
 {
-  readonly id = 'planar:vtk-volume-slice';
+  readonly id = 'planar:vtk-gpu-volume-slice';
   readonly type = ViewportType.PLANAR;
 
   matches(data: LoadedData, options: DataAddOptions): boolean {
     return (
       data.type === 'image' &&
-      options.renderMode === ActorRenderMode.VTK_VOLUME_SLICE
+      options.renderMode === PlanarRenderModeId.VTK_GPU_VOLUME_SLICE
     );
   }
 
   createRenderPath() {
-    return new VtkVolumeSliceRenderPath();
+    return new VtkGpuVolumeSliceRenderPath();
   }
 
   selectContext(
@@ -555,7 +553,7 @@ function updateVolumeSlicePlane(
 /** @internal The depth order of a slice actor; acquired frame actors do not count. */
 export function getImageSliceOverlayOrder(
   renderer: PlanarVtkVolumeAdapterContext['vtk']['renderer'],
-  actor: PlanarVolumeSliceRendering['actor']
+  actor: PlanarVtkGpuVolumeSliceRendering['actor']
 ): number {
   const imageSliceActors = renderer
     .getActors()
@@ -581,7 +579,7 @@ export function getImageSliceOverlayOrder(
 export function getSliceActorDepthOrder(
   ctx: Pick<PlanarVtkVolumeAdapterContext, 'viewport' | 'vtk'>,
   displaySetId: string,
-  actor: PlanarVolumeSliceRendering['actor']
+  actor: PlanarVtkGpuVolumeSliceRendering['actor']
 ): number {
   if (ctx.viewport.isCurrentDisplaySetId(displaySetId)) {
     return 0;
@@ -611,7 +609,7 @@ export function getSliceActorDepthOrder(
  * does not lie on the view plane uses to bring it onto that plane.
  */
 export function updateVolumeSliceActorDepthOffset(
-  actor: PlanarVolumeSliceRendering['actor'],
+  actor: PlanarVtkGpuVolumeSliceRendering['actor'],
   activeSourceICamera?: Pick<PlanarResolvedICamera, 'viewPlaneNormal'>,
   overlayOrder = 0,
   planeOffset = 0

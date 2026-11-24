@@ -7,12 +7,13 @@ import {
 } from '../../../utils/demo/helpers/volumePresentationRecipes';
 import perfusionColorMap from '../../tools/examples/rectangleROIThreshold/preset';
 import { readStoredPicture } from './utils/storedPicture';
-import { SAMPLED_SLICE_REST_DELAY_MS } from '../src/RenderingEngine/Viewports/Planar/planarSampledSliceRest';
+import { CPU_SLICE_REST_DELAY_MS } from '../src/RenderingEngine/Viewports/Planar/planarCpuSliceRest';
 import * as legacySigmoidPicture from './groundTruth/planarPresentation_legacy_sigmoid.png';
 import * as adapterCtCallbackPicture from './groundTruth/planarPresentation_adapter_callback_ct.png';
 import * as adapterPetCallbackPicture from './groundTruth/planarPresentation_adapter_callback_pet.png';
 import * as adapterPetColorMapCallbackPicture from './groundTruth/planarPresentation_adapter_callback_petColorMap.png';
 import * as adapterPetColorMapPresetCallbackPicture from './groundTruth/planarPresentation_adapter_callback_petColorMapPreset.png';
+import { drawPathOf } from './utils/planarSeriesBothModes';
 
 const { Enums, volumeLoader, utilities, cache, eventTarget } = cornerstone3D;
 const { ViewportType, OrientationAxis, Events, VOILUTFunctionType } = Enums;
@@ -27,16 +28,16 @@ const VOI_RANGE = { lower: 60, upper: 180 };
  * default), the volume texture on the GPU, and the 2D canvas.
  */
 const NEXT_PATHS = [
-  { viewportId: 'nextSampled', options: {}, renderMode: 'vtkSampledSlice' },
+  { viewportId: 'nextSampled', options: {}, drawPath: 'cpu-gpu' },
   {
     viewportId: 'nextVolume',
     options: { sliceFirst: false },
-    renderMode: 'vtkVolumeSlice',
+    drawPath: 'gpuVolume-gpu',
   },
   {
     viewportId: 'nextCpu',
     options: { renderBackend: 'cpu' },
-    renderMode: 'cpuVolume',
+    drawPath: 'cpu-cpu',
   },
 ];
 
@@ -138,7 +139,7 @@ function renderAndWait(viewport) {
  */
 async function waitForDraws() {
   await new Promise((resolve) =>
-    setTimeout(resolve, 3 * SAMPLED_SLICE_REST_DELAY_MS)
+    setTimeout(resolve, 3 * CPU_SLICE_REST_DELAY_MS)
   );
 
   for (let frame = 0; frame < 3; frame++) {
@@ -256,7 +257,7 @@ describe('Planar presentation, a sigmoid window on a volume -- ', () => {
 
       rows.push({
         path: path.viewportId,
-        renderMode: next.getRenderPlan()[0].renderMode,
+        drawPath: drawPathOf(next.getRenderPlan()[0]),
         linearDifference,
         sigmoidDifference: getLargestDifference(legacyPicture, picture),
         next: middleRow(picture).filter((_, x) => x % 8 === 0),
@@ -271,7 +272,7 @@ describe('Planar presentation, a sigmoid window on a volume -- ', () => {
     );
 
     rows.forEach((row, index) => {
-      expect(row.renderMode).toBe(NEXT_PATHS[index].renderMode);
+      expect(row.drawPath).toBe(NEXT_PATHS[index].drawPath);
       expect(row.linearDifference).toBeGreaterThan(8);
       expect(row.sigmoidDifference).toBeLessThanOrEqual(3);
     });
@@ -506,11 +507,11 @@ describe('Planar presentation, a list of opacities in a colormap -- ', () => {
       await waitForDraws();
 
       const [listed, mapped] = viewports;
-      const drawsWithVtk = path.renderMode.startsWith('vtk');
+      const drawsWithVtk = path.drawPath.endsWith('-gpu');
 
       rows.push({
         path: path.viewportId,
-        renderMode: listed.getRenderPlan()[0].renderMode,
+        drawPath: drawPathOf(listed.getRenderPlan()[0]),
         listed: middleRow(readPixels(listed)).filter((_, x) => x % 4 === 0),
         listedPoints: drawsWithVtk ? opacityPointsOf(listed) : null,
         mappedPoints: drawsWithVtk ? opacityPointsOf(mapped) : null,
@@ -530,7 +531,7 @@ describe('Planar presentation, a list of opacities in a colormap -- ', () => {
     );
 
     rows.forEach((row, index) => {
-      expect(row.renderMode).toBe(NEXT_PATHS[index].renderMode);
+      expect(row.drawPath).toBe(NEXT_PATHS[index].drawPath);
 
       if (row.listedPoints) {
         expect(row.listedPoints).toEqual(LEGACY_OPACITY_LIST_POINTS);

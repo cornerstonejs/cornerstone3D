@@ -88,7 +88,6 @@ async function showVolume(next, volumeId) {
   });
   await next.setDisplaySets({
     displaySetId,
-    options: { renderMode: 'vtkVolume3d' },
   });
 }
 

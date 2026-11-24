@@ -244,7 +244,45 @@ part of a view that another viewport can take is its framing.
 
 ### Render modes
 
-None yet.
+The render plan of a planar viewport (`viewport.getRenderPlan()`) is the one
+public description of how a display set is drawn; the render modes are
+private.
+
+- `entry.actorMapper.mapper` becomes `entry.actor.getMapper()`, and
+  `entry.actorMapper.actor` becomes `entry.actor`, where the file shows that
+  the entry is an actor entry: a value typed `ActorEntry`, the result of
+  `getDefaultActor()` or `getActor()`, or an entry of `getActors()` (an
+  index, a `find`, a `for...of`, the first parameter of a callback). An
+  optional chain keeps its `?.` on the entry.
+- The slots of a literal given to `registerRenderBackend` take the words of
+  `RenderPlanLayer.slice`: `image` becomes `frame`, `sampledVolume` becomes
+  `cpu`, and `volume` becomes `cpu` on a backend with `surface: 'cpu'` and
+  `gpuVolume` on any other.
+- `renderMode` goes from a literal mount option of `addDisplaySet` and of
+  the `options` of a `setDisplaySets` entry where its value is
+  `'vtkVolume3d'` or `'vtkGeometry3d'` (these values name the 3D viewport, so
+  this also runs in a file that imports no Cornerstone package, such as a
+  fragment of a page), and where it is `'auto'` on a viewport that the file
+  types as a 3D viewport. An option object that held nothing else goes with
+  it.
+- Reported, manual: each use of `ActorRenderMode` and
+  `Types.ActorRenderMode`, a member with the test of the render plan that
+  stands for it (`VTK_IMAGE` is `slice 'frame'` and `draw 'gpu'`,
+  `VTK_SAMPLED_SLICE` `'cpu'` and `'gpu'`, `VTK_VOLUME_SLICE` `'gpuVolume'`,
+  `CPU_IMAGE` `'frame'` and `'cpu'`, `CPU_VOLUME` `'cpu'` and `'cpu'`;
+  `VTK_VOLUME` was never drawn); `entry.actorMapper.renderMode` and
+  `renderMode` of a render plan layer (an entry of `getRenderPlan()`, a value
+  typed `RenderPlanLayer`, the `previous` and `current` of the detail of
+  `RENDER_PLAN_CHANGED`), once at a comparison with a mode or an old mode
+  string, with the test for that mode; `Types.ActorMapperProxy`; any other
+  `actorMapper`, also of an object that the file does not show, in a file
+  that imports Cornerstone; a `registerRenderBackend` whose definition or
+  `renderModes` is not a literal, or whose slots would meet in one; and a
+  `renderMode` mount option of a 3D viewport that is not a literal.
+- Left: `renderMode` of an object that is not a render plan layer (such as
+  the mount option of a custom viewport family on `BaseViewport`), the
+  strings `'vtkVolume'` and the other mode values outside a comparison with
+  a Cornerstone mode, and the slots that are final already.
 
 ### Viewport members and queries
 

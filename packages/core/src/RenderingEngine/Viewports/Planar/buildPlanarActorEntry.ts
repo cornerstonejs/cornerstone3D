@@ -1,4 +1,4 @@
-import type { ActorEntry, ActorMapperProxy } from '../../../types';
+import type { ActorEntry } from '../../../types';
 import type {
   LoadedData,
   ViewportDataReference,
@@ -7,15 +7,14 @@ import type { PlanarPayload } from './PlanarViewportTypes';
 
 /**
  * Builds an ActorEntry from a planar data payload and the render-path-specific
- * actor/mapper. The display set id stays on the binding, and semantic
- * derived-data relationships live on `reference`; actor UID stays internal.
+ * actor. The entry names its display set (`displaySetId`), so a caller can
+ * find its layer in `getRenderPlan()`; semantic derived-data relationships
+ * live on `reference`; actor UID stays internal.
  */
 export function buildPlanarActorEntry(
   data: LoadedData<PlanarPayload>,
   source: {
-    actor: NonNullable<ActorEntry['actorMapper']>['actor'];
-    mapper?: NonNullable<ActorEntry['actorMapper']>['mapper'];
-    renderMode: NonNullable<ActorEntry['actorMapper']>['renderMode'];
+    actor: ActorEntry['actor'];
     uid: string;
     referencedIdFallback?: string;
   }
@@ -25,23 +24,10 @@ export function buildPlanarActorEntry(
     data.volumeId || source.referencedIdFallback
   );
 
-  const actor = source.actor;
-  const mapper =
-    source.mapper ??
-    (typeof (actor as { getMapper?: () => unknown }).getMapper === 'function'
-      ? ((actor as { getMapper: () => unknown }).getMapper() as NonNullable<
-          ActorEntry['actorMapper']
-        >['mapper'])
-      : undefined);
-
   return {
     uid: source.uid,
-    actor: actor as ActorEntry['actor'],
-    actorMapper: {
-      actor,
-      mapper,
-      renderMode: source.renderMode,
-    } as ActorMapperProxy,
+    actor: source.actor,
+    displaySetId: data.id,
     ...referenceFields,
   };
 }

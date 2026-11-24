@@ -29,7 +29,7 @@ import { triggerSegmentationDataModified } from '../../stateManagement/segmentat
 import { fillInsideCircle } from './strategies';
 import type { LabelmapToolOperationData } from '../../types/LabelmapToolOperationData';
 import getViewportLabelmapRenderMode from '../../stateManagement/segmentation/helpers/getViewportLabelmapRenderMode';
-import { isPlanarSampledSliceViewport } from '../../stateManagement/segmentation/helpers/labelmapImageMapperSupport';
+import { isPlanarCpuSliceViewport } from '../../stateManagement/segmentation/helpers/labelmapImageMapperSupport';
 import {
   getOrCreateLabelmapVolume,
   resolveLabelmapForSegment,
@@ -886,7 +886,7 @@ function createSegmentEditableLookup(
  * volume (`getDefaultImageData`).
  */
 function getContourFillImageData(viewport: Types.IViewport) {
-  if (isPlanarSampledSliceViewport(viewport)) {
+  if (isPlanarCpuSliceViewport(viewport)) {
     return (
       viewport as unknown as {
         getDefaultImageData: () => vtkImageData;

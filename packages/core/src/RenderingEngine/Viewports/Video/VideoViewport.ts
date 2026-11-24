@@ -15,7 +15,6 @@ import type {
   ViewReferenceSpecifier,
   ViewportContentMode,
 } from '../../../types';
-import { ActorRenderMode } from '../../../types';
 import { Events, ViewportType } from '../../../enums';
 import cache from '../../../cache/cache';
 import CanvasActor from '../../CanvasActor';
@@ -492,11 +491,9 @@ class VideoViewport extends BaseViewport<
         {
           uid,
           actor,
-          actorMapper: {
-            actor,
-            mapper: actor.getMapper(),
-            renderMode: ActorRenderMode.CPU_IMAGE,
-          },
+          ...(stackInput.displaySetId
+            ? { displaySetId: stackInput.displaySetId }
+            : {}),
           referencedId: stackInput.imageId,
           representationUID: stackInput.representationUID,
           reference: stackInput.reference,

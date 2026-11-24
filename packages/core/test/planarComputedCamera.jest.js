@@ -4,7 +4,7 @@ jest.mock('../src/metaData', () => ({
 }));
 
 import { OrientationAxis, VOILUTFunctionType } from '../src/enums';
-import { ActorRenderMode } from '../src/types';
+import { PlanarRenderModeId } from '../src/RenderingEngine/Viewports/Planar/planarRenderModeIds';
 import * as metaData from '../src/metaData';
 import {
   PlanarStackResolvedView,
@@ -12,7 +12,7 @@ import {
   resolvePlanarRenderPathProjection,
   resolvePlanarStackImageIdIndex,
 } from '../src/RenderingEngine/Viewports/Planar';
-import { CpuImageSliceRenderPath } from '../src/RenderingEngine/Viewports/Planar/CpuImageSliceRenderPath';
+import { CanvasFrameRenderPath } from '../src/RenderingEngine/Viewports/Planar/CanvasFrameRenderPath';
 import { resolvePlanarCpuImageDisplayedArea } from '../src/RenderingEngine/Viewports/Planar/planarCpuViewportMath';
 
 function createImage(imageId = 'image-1') {
@@ -65,7 +65,7 @@ function createProjectionContext({
   sourceDisplaySetId = 'source',
   canvasHeight = 256,
   canvasWidth = 256,
-  renderMode = ActorRenderMode.CPU_IMAGE,
+  renderMode = PlanarRenderModeId.CANVAS_FRAME,
   useVtk = false,
 } = {}) {
   const canvas = document.createElement('canvas');
@@ -276,11 +276,11 @@ describe('Planar resolved cameras', () => {
     const cpuProjection = resolvePlanarRenderPathProjection({
       ctx: createProjectionContext({
         sourceDisplaySetId: 'cpu',
-        renderMode: ActorRenderMode.CPU_IMAGE,
+        renderMode: PlanarRenderModeId.CANVAS_FRAME,
       }),
       displaySetId: 'cpu',
       rendering: {
-        renderMode: ActorRenderMode.CPU_IMAGE,
+        renderMode: PlanarRenderModeId.CANVAS_FRAME,
         currentImageIdIndex: 0,
         enabledElement: {
           image,
@@ -291,12 +291,12 @@ describe('Planar resolved cameras', () => {
     const vtkProjection = resolvePlanarRenderPathProjection({
       ctx: createProjectionContext({
         sourceDisplaySetId: 'vtk',
-        renderMode: ActorRenderMode.VTK_IMAGE,
+        renderMode: PlanarRenderModeId.VTK_FRAME,
         useVtk: true,
       }),
       displaySetId: 'vtk',
       rendering: {
-        renderMode: ActorRenderMode.VTK_IMAGE,
+        renderMode: PlanarRenderModeId.VTK_FRAME,
         currentImage: image,
         currentImageIdIndex: 0,
       },
@@ -325,14 +325,14 @@ describe('Planar resolved cameras', () => {
   it('preserves acquisition volume fallback index in render path cameras', () => {
     const imageVolume = createImageVolume();
     const rendering = {
-      renderMode: ActorRenderMode.VTK_VOLUME_SLICE,
+      renderMode: PlanarRenderModeId.VTK_GPU_VOLUME_SLICE,
       currentImageIdIndex: 2,
       imageVolume,
     };
     const fallbackProjection = resolvePlanarRenderPathProjection({
       ctx: createProjectionContext({
         sourceDisplaySetId: 'volume',
-        renderMode: ActorRenderMode.VTK_VOLUME_SLICE,
+        renderMode: PlanarRenderModeId.VTK_GPU_VOLUME_SLICE,
         useVtk: true,
       }),
       displaySetId: 'volume',
@@ -344,7 +344,7 @@ describe('Planar resolved cameras', () => {
     const explicitProjection = resolvePlanarRenderPathProjection({
       ctx: createProjectionContext({
         sourceDisplaySetId: 'volume',
-        renderMode: ActorRenderMode.VTK_VOLUME_SLICE,
+        renderMode: PlanarRenderModeId.VTK_GPU_VOLUME_SLICE,
         useVtk: true,
       }),
       displaySetId: 'volume',
@@ -371,7 +371,7 @@ describe('Planar resolved cameras', () => {
       ctx,
       displaySetId: 'source',
       rendering: {
-        renderMode: ActorRenderMode.CPU_IMAGE,
+        renderMode: PlanarRenderModeId.CANVAS_FRAME,
         currentImageIdIndex: 0,
         enabledElement: {
           image: createImage('source-image'),
@@ -385,7 +385,7 @@ describe('Planar resolved cameras', () => {
       ctx,
       displaySetId: 'overlay',
       rendering: {
-        renderMode: ActorRenderMode.CPU_IMAGE,
+        renderMode: PlanarRenderModeId.CANVAS_FRAME,
         currentImageIdIndex: 0,
         enabledElement: {
           image: createImage('overlay-image'),
@@ -604,7 +604,7 @@ describe('Planar CPU image render path', () => {
       },
     };
 
-    const renderPath = new CpuImageSliceRenderPath();
+    const renderPath = new CanvasFrameRenderPath();
     const attachment = await renderPath.addData(
       {
         viewportId: 'viewport',
@@ -703,7 +703,7 @@ describe('Planar CPU image render path on a high-DPI display', () => {
       clientWidth: { configurable: true, value: cssSize },
     });
 
-    const attachment = await new CpuImageSliceRenderPath().addData(
+    const attachment = await new CanvasFrameRenderPath().addData(
       ctx,
       {
         id: displaySetId,

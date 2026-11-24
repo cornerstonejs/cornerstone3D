@@ -234,7 +234,6 @@ async function showVolume(next) {
   });
   await next.setDisplaySets({
     displaySetId: 'next3DVolume',
-    options: { renderMode: 'vtkVolume3d' },
   });
 
   return volumeId;
@@ -477,7 +476,6 @@ describe('Tools on a direct next 3D viewport -- ', () => {
 
     await next.setDisplaySets({
       displaySetId: 'next3DVolume',
-      options: { renderMode: 'vtkVolume3d' },
     });
 
     expect(clippingPlanesOf(next).length).toBe(6);
@@ -498,7 +496,6 @@ describe('Tools on a direct next 3D viewport -- ', () => {
 
     await next.setDisplaySets({
       displaySetId: 'next3DVolume',
-      options: { renderMode: 'vtkVolume3d' },
     });
 
     const newHandles = handleActorsOf(tool);
@@ -574,7 +571,6 @@ describe('Tools on a direct next 3D viewport -- ', () => {
     });
     await next.setDisplaySets({
       displaySetId: 'next3DCT',
-      options: { renderMode: 'vtkVolume3d' },
     });
     await volumeLoader.createAndCacheDerivedLabelmapVolume(pt.volumeId, {
       volumeId: 'labelmap3D',

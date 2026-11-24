@@ -1,6 +1,6 @@
 import { loadAndCacheImage } from '../../../loaders/imageLoader';
 import { isAcquisitionPlaneNormal } from '../../../utilities/isAcquisitionPlaneNormal';
-import { ActorRenderMode } from '../../../types';
+import { PlanarRenderModeId } from './planarRenderModeIds';
 import type { ActorEntry, IImageVolume, Point3 } from '../../../types';
 import { coreLog } from '../../../utilities/logger';
 import type {
@@ -13,12 +13,12 @@ import type {
   PlanarVtkVolumeAdapterContext,
 } from './PlanarViewportTypes';
 import type {
-  PlanarImageMapperRendering,
-  PlanarVolumeSliceRendering,
+  PlanarVtkFrameRendering,
+  PlanarVtkGpuVolumeSliceRendering,
 } from './planarRuntimeTypes';
 import { applyPlanarICameraToActor } from './planarRenderCamera';
 import { getPlanarRenderPathActiveSourceICamera } from './planarRenderPathProjection';
-import { VtkImageMapperRenderPath } from './VtkImageMapperRenderPath';
+import { VtkFrameRenderPath } from './VtkFrameRenderPath';
 
 const log = coreLog.getLogger('RenderingEngine', 'planarAcquiredFrames');
 
@@ -109,7 +109,7 @@ export function acquiredFrameIndexOfVolumePoint(
  * Adds the acquired frames to the volume slice attachment of a source.
  *
  * The binding keeps the volume slice render path for navigation, and keeps an
- * image path (`VtkImageMapperRenderPath`) mounted for the acquired frames. Both
+ * image path (`VtkFrameRenderPath`) mounted for the acquired frames. Both
  * actors stay in the renderer. The frame actor is visible only while the view
  * is in the acquisition plane, `canDrawAcquiredFrames` holds, and the frame of
  * the current plane has loaded; otherwise the volume slice actor is visible.
@@ -123,7 +123,7 @@ export function withAcquiredFrames(
   data: LoadedData<PlanarPayload>,
   volume: RenderPathAttachment<PlanarDisplaySetAppearance>
 ): RenderPathAttachment<PlanarDisplaySetAppearance> {
-  const volumeRendering = volume.rendering as PlanarVolumeSliceRendering;
+  const volumeRendering = volume.rendering as PlanarVtkGpuVolumeSliceRendering;
   const { imageVolume, imageIds } = volumeRendering;
   let frame: RenderPathAttachment<PlanarDisplaySetAppearance> | undefined;
   let mounting = false;
@@ -131,7 +131,7 @@ export function withAcquiredFrames(
   let wantedIndex: number | undefined;
 
   const frameRendering = () =>
-    frame?.rendering as PlanarImageMapperRendering | undefined;
+    frame?.rendering as PlanarVtkFrameRendering | undefined;
   const isSource = () => ctx.viewport.isCurrentDisplaySetId(data.id);
   // The image path follows the volume camera, so it never drives the
   // renderer camera or the render mode of the viewport. As an overlay it sends
@@ -203,7 +203,7 @@ export function withAcquiredFrames(
 
     try {
       const image = await loadAndCacheImage(imageIds[imageIdIndex]);
-      const attachment = await new VtkImageMapperRenderPath().addData(
+      const attachment = await new VtkFrameRenderPath().addData(
         frameCtx,
         {
           ...data,
@@ -211,7 +211,7 @@ export function withAcquiredFrames(
           imageData: undefined,
           initialImageIdIndex: imageIdIndex,
         } as LoadedData,
-        { renderMode: ActorRenderMode.VTK_IMAGE, role: 'overlay' }
+        { renderMode: PlanarRenderModeId.VTK_FRAME, role: 'overlay' }
       );
 
       if (removed) {
@@ -274,11 +274,7 @@ export function withAcquiredFrames(
       rendering && {
         uid: rendering.actorEntryUID,
         actor: rendering.actor,
-        actorMapper: {
-          actor: rendering.actor,
-          mapper: rendering.mapper,
-          renderMode: ActorRenderMode.VTK_IMAGE,
-        } as ActorEntry['actorMapper'],
+        displaySetId: data.id,
       }
     );
   };

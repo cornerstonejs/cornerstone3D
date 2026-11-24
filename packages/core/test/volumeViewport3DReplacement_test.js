@@ -118,7 +118,7 @@ function sceneOf(viewport) {
 
 /** A volume display set entry of `setDisplaySets`. */
 function volumeEntry(displaySetId) {
-  return { displaySetId, options: { renderMode: 'vtkVolume3d' } };
+  return { displaySetId };
 }
 
 describe('A failed replacement of the display sets of a 3D viewport -- ', () => {
@@ -150,7 +150,6 @@ describe('A failed replacement of the display sets of a 3D viewport -- ', () => 
     });
     await viewport.setDisplaySets({
       displaySetId: 'replacement3D:shown',
-      options: { renderMode: 'vtkVolume3d' },
     });
     await renderAndWait(viewport);
 
@@ -167,11 +166,9 @@ describe('A failed replacement of the display sets of a 3D viewport -- ', () => 
       await viewport.setDisplaySets(
         {
           displaySetId: 'replacement3D:first',
-          options: { renderMode: 'vtkVolume3d' },
         },
         {
           displaySetId: 'replacement3D:missing',
-          options: { renderMode: 'vtkVolume3d' },
         }
       );
     } catch (caught) {
@@ -241,7 +238,6 @@ describe('A failed replacement of the display sets of a 3D viewport -- ', () => 
     try {
       await viewport.setDisplaySets(volumeEntry('replacement3D:first'), {
         displaySetId: 'replacement3D:contour',
-        options: { renderMode: 'vtkGeometry3d' },
       });
     } catch (caught) {
       error = caught;

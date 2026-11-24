@@ -148,7 +148,7 @@ function persist(viewport: PlanarViewport, displaySetId: string): string {
  * Decision (verified empirically by the round-trip test below, and by
  * reading PlanarViewport.setImageIdIndex /
  * PlanarViewReferenceController.applyImageViewReference): for image-backed
- * render paths (vtkImage, cpuImage -- the two modes this suite exercises),
+ * render paths (vtkFrame, canvasFrame -- the two modes this suite exercises),
  * `PlanarViewState.slice` already carries `{ kind: 'stackIndex',
  * imageIdIndex }`, and that field is a direct, clamped index into the
  * display set's imageIds array. `setViewState(payload.viewState)` restores
@@ -282,7 +282,7 @@ describe('viewStateSerialization', () => {
   // so the rest of this suite restores from a genuinely stable JSON string.
   // Open issue: the view reference carries float32 and trigonometric round-off noise.
   test.fails('1. public state payload is JSON-safe', async () => {
-    const ctx = await createNavigatedViewport({ renderMode: 'vtkImage' });
+    const ctx = await createNavigatedViewport({ renderMode: 'vtkFrame' });
 
     try {
       const raw = buildRawPayload(ctx.viewport, ctx.displaySetId);
@@ -299,7 +299,7 @@ describe('viewStateSerialization', () => {
     const { stack, displaySetId } = sharedStackAndId('roundtrip');
 
     const a = await createNavigatedViewport({
-      renderMode: 'vtkImage',
+      renderMode: 'vtkFrame',
       stack,
       displaySetId,
     });
@@ -308,7 +308,7 @@ describe('viewStateSerialization', () => {
     teardown(a);
 
     const b = await makeViewport({
-      renderMode: 'vtkImage',
+      renderMode: 'vtkFrame',
       stack,
       displaySetId,
     });
@@ -325,11 +325,11 @@ describe('viewStateSerialization', () => {
     );
   });
 
-  test('3. cross-render-mode restore (vtkImage -> cpuImage) preserves core state', async () => {
+  test('3. cross-render-mode restore (vtkFrame -> canvasFrame) preserves core state', async () => {
     const { stack, displaySetId } = sharedStackAndId('crossmode');
 
     const a = await createNavigatedViewport({
-      renderMode: 'vtkImage',
+      renderMode: 'vtkFrame',
       stack,
       displaySetId,
     });
@@ -338,7 +338,7 @@ describe('viewStateSerialization', () => {
     teardown(a);
 
     const b = await makeViewport({
-      renderMode: 'cpuImage',
+      renderMode: 'canvasFrame',
       stack,
       displaySetId,
     });
@@ -358,7 +358,7 @@ describe('viewStateSerialization', () => {
       const { stack, displaySetId } = sharedStackAndId('partial-viewstate');
 
       const source = await createNavigatedViewport({
-        renderMode: 'vtkImage',
+        renderMode: 'vtkFrame',
         stack,
         displaySetId,
       });
@@ -367,7 +367,7 @@ describe('viewStateSerialization', () => {
       teardown(source);
 
       const fresh = await makeViewport({
-        renderMode: 'vtkImage',
+        renderMode: 'vtkFrame',
         stack,
         displaySetId,
       });
@@ -399,7 +399,7 @@ describe('viewStateSerialization', () => {
       );
 
       const source = await createNavigatedViewport({
-        renderMode: 'vtkImage',
+        renderMode: 'vtkFrame',
         stack,
         displaySetId,
       });
@@ -408,7 +408,7 @@ describe('viewStateSerialization', () => {
       teardown(source);
 
       const fresh = await makeViewport({
-        renderMode: 'vtkImage',
+        renderMode: 'vtkFrame',
         stack,
         displaySetId,
       });
@@ -442,7 +442,7 @@ describe('viewStateSerialization', () => {
     const { stack, displaySetId } = sharedStackAndId('idempotent');
 
     const source = await createNavigatedViewport({
-      renderMode: 'vtkImage',
+      renderMode: 'vtkFrame',
       stack,
       displaySetId,
     });
@@ -450,7 +450,7 @@ describe('viewStateSerialization', () => {
     teardown(source);
 
     const target = await makeViewport({
-      renderMode: 'vtkImage',
+      renderMode: 'vtkFrame',
       stack,
       displaySetId,
     });
@@ -485,7 +485,7 @@ describe('viewStateSerialization', () => {
       const { stack, displaySetId } = sharedStackAndId('idempotent-events');
 
       const source = await createNavigatedViewport({
-        renderMode: 'vtkImage',
+        renderMode: 'vtkFrame',
         stack,
         displaySetId,
       });
@@ -493,7 +493,7 @@ describe('viewStateSerialization', () => {
       teardown(source);
 
       const target = await makeViewport({
-        renderMode: 'vtkImage',
+        renderMode: 'vtkFrame',
         stack,
         displaySetId,
       });

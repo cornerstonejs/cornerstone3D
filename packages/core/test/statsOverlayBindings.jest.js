@@ -35,7 +35,7 @@ function sampledRendering(volumeId, width, height) {
   const input = imageData(width, height, Int16Array);
 
   return {
-    renderMode: 'vtkSampledSlice',
+    renderMode: 'vtkCpuSlice',
     imageVolume: { volumeId },
     mapper: { getInputData: () => input },
     actor: { getMapper: () => ({ getInputData: () => input }) },
@@ -52,7 +52,7 @@ function sampledRendering(volumeId, width, height) {
 }
 
 function volumeSliceRendering(volumeId) {
-  return { renderMode: 'vtkVolumeSlice', imageVolume: { volumeId } };
+  return { renderMode: 'vtkGpuVolumeSlice', imageVolume: { volumeId } };
 }
 
 function fakeViewport(id, bindings) {
@@ -82,7 +82,7 @@ function fakeViewport(id, bindings) {
 function sampledBinding(overrides = {}) {
   return {
     displaySetId: 'ct',
-    renderMode: 'vtkSampledSlice',
+    renderMode: 'vtkCpuSlice',
     role: 'source',
     sliceSize: [512, 135],
     sampleMs: 3.25,
@@ -120,7 +120,7 @@ describe('RenderModesPanel', () => {
         entry('FUSION', [
           {
             displaySetId: 'pt',
-            renderMode: 'vtkVolumeSlice',
+            renderMode: 'vtkGpuVolumeSlice',
             role: 'overlay',
             gpuTextures: [
               {
@@ -133,7 +133,7 @@ describe('RenderModesPanel', () => {
           },
           {
             displaySetId: 'cpu',
-            renderMode: 'cpuVolume',
+            renderMode: 'canvasCpuSlice',
             role: 'data',
             gpuTextures: [{ kind: 'canvas', bytes: 0 }],
           },
@@ -163,7 +163,7 @@ describe('RenderModesPanel', () => {
 
     panel.setContent([
       entry('STACK', [
-        { displaySetId: 'image', renderMode: 'vtkImage', role: 'source' },
+        { displaySetId: 'image', renderMode: 'vtkFrame', role: 'source' },
       ]),
     ]);
 
@@ -216,7 +216,7 @@ describe('collectBindingFacts', () => {
       {
         displaySetId: 'cpu',
         role: 'data',
-        rendering: { renderMode: 'cpuVolume' },
+        rendering: { renderMode: 'canvasCpuSlice' },
       },
     ]);
     const facts = collectBindingFacts(viewport, (volumeId) =>
@@ -255,7 +255,7 @@ describe('collectBindingFacts', () => {
           {
             displaySetId: 'broken',
             rendering: {
-              renderMode: 'vtkSampledSlice',
+              renderMode: 'vtkCpuSlice',
               getSliceCacheStatistics: () => {
                 throw new Error('boom');
               },
@@ -274,7 +274,7 @@ describe('collectBindingFacts', () => {
       entry('A', [
         {
           displaySetId: 'pt',
-          renderMode: 'vtkVolumeSlice',
+          renderMode: 'vtkGpuVolumeSlice',
           role: 'source',
           gpuTextures: [{ kind: 'volume', bytes: MB, volumeId: 'pt-volume' }],
         },
@@ -282,7 +282,7 @@ describe('collectBindingFacts', () => {
       entry('B', [
         {
           displaySetId: 'pt',
-          renderMode: 'vtkVolumeSlice',
+          renderMode: 'vtkGpuVolumeSlice',
           role: 'source',
           gpuTextures: [{ kind: 'volume', bytes: MB, volumeId: 'pt-volume' }],
         },
@@ -334,7 +334,7 @@ describe('StatsOverlay', () => {
     overlay.cleanup();
 
     expect(text).toContain('engine/CT_AXIAL');
-    expect(text).toContain('vtkSampledSlice');
+    expect(text).toContain('vtkCpuSlice');
     expect(text).toContain('512 x 512');
     expect(text).toContain('2D slice 512x512 Int16, about 0.50 MB');
     expect(text).toContain('3D volumes 0.0 MB, 2D slices about 0.50 MB');

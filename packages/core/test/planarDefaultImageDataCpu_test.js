@@ -7,6 +7,7 @@ import {
   showStack,
   showVolume,
   worldOfVoxel,
+  drawPathOf,
 } from './utils/planarSeriesBothModes';
 
 const { utilities } = cornerstone3D;
@@ -21,20 +22,20 @@ const VOXEL = [3, 5, SLICE_INDEX];
 
 /**
  * The two ways a series shows on a direct next planar viewport, with the
- * render mode of the CPU, and the index of the voxel that the image data
+ * draw path of the CPU, and the index of the voxel that the image data
  * gives: a stack gives the image on display, a volume the volume.
  */
 const MODES = [
   {
     mode: 'stack',
     show: showStack,
-    cpuRenderMode: 'cpuImage',
+    cpuDrawPath: 'frame-cpu',
     index: [VOXEL[0], VOXEL[1], 0],
   },
   {
     mode: 'volume',
     show: showVolume,
-    cpuRenderMode: 'cpuVolume',
+    cpuDrawPath: 'cpu-cpu',
     index: VOXEL,
   },
 ];
@@ -57,7 +58,7 @@ describe('getDefaultImageData of a direct next planar viewport on the CPU -- ', 
     cornerstone3D.displaySetRegistry.clear();
   });
 
-  for (const { mode, show, cpuRenderMode, index } of MODES) {
+  for (const { mode, show, cpuDrawPath, index } of MODES) {
     it(`gives image data whose worldToIndex finds a voxel as on the GPU in ${mode} mode`, async function () {
       const series = await createSeries({ id: `defaultImageDataCpu-${mode}` });
       const indices = {};
@@ -71,7 +72,7 @@ describe('getDefaultImageData of a direct next planar viewport on the CPU -- ', 
         await show(viewport, series, SLICE_INDEX, { renderBackend: backend });
 
         expect(viewport.getCurrentMode()).toBe(mode);
-        expect(viewport.getRenderPlan()[0].renderMode === cpuRenderMode).toBe(
+        expect(drawPathOf(viewport.getRenderPlan()[0]) === cpuDrawPath).toBe(
           backend === 'cpu'
         );
 

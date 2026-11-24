@@ -1,6 +1,6 @@
 import * as cornerstone3D from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
-import { SAMPLED_SLICE_REST_DELAY_MS } from '../src/RenderingEngine/Viewports/Planar/planarSampledSliceRest';
+import { CPU_SLICE_REST_DELAY_MS } from '../src/RenderingEngine/Viewports/Planar/planarCpuSliceRest';
 import {
   createNextViewport,
   createSeries,
@@ -10,6 +10,7 @@ import {
   showVolume,
   storedValue,
   worldOfVoxel,
+  drawPathOf,
 } from './utils/planarSeriesBothModes';
 
 const { utilities, viewportProjection, Enums } = cornerstone3D;
@@ -416,7 +417,7 @@ function readRedAt(viewport, canvasPoint) {
 /** Waits for the draws at rest and the frames of the rendering engine. */
 async function waitForDraws() {
   await new Promise((resolve) =>
-    setTimeout(resolve, 3 * SAMPLED_SLICE_REST_DELAY_MS)
+    setTimeout(resolve, 3 * CPU_SLICE_REST_DELAY_MS)
   );
 
   for (let frame = 0; frame < 3; frame++) {
@@ -460,8 +461,8 @@ describe('A turned and flipped stack on the CPU path -- ', () => {
         await writePresentation(cpu, view);
         await waitForDraws();
 
-        expect(gpu.getRenderPlan()[0].renderMode).toBe('vtkImage');
-        expect(cpu.getRenderPlan()[0].renderMode).toBe('cpuImage');
+        expect(drawPathOf(gpu.getRenderPlan()[0])).toBe('frame-gpu');
+        expect(drawPathOf(cpu.getRenderPlan()[0])).toBe('frame-cpu');
 
         PROBE_VOXELS.forEach(([i, j]) => {
           const world = worldOfVoxel(series, [i, j, 2]);

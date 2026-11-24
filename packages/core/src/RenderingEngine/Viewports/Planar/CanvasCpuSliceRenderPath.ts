@@ -7,7 +7,7 @@ import {
   ViewportType,
 } from '../../../enums';
 import eventTarget from '../../../eventTarget';
-import { ActorRenderMode } from '../../../types';
+import { PlanarRenderModeId } from './planarRenderModeIds';
 import type { IImageVolume } from '../../../types';
 import type { IViewport } from '../../../types/IViewport';
 import triggerEvent from '../../../utilities/triggerEvent';
@@ -29,38 +29,32 @@ import type {
   PlanarPayload,
   PlanarViewportRenderContext,
 } from './PlanarViewportTypes';
-import type { PlanarCpuVolumeRendering } from './planarRuntimeTypes';
+import type { PlanarCanvasCpuSliceRendering } from './planarRuntimeTypes';
 import { triggerPlanarVolumeNewImageOfPlacedSlice } from './planarImageEvents';
 import {
   getPlanarRenderPathActiveSourceICamera,
   resolvePlanarRenderPathProjection,
 } from './planarRenderPathProjection';
+import { PlanarSliceSampler, getPlanarCpuSliceInputs } from './planarCpuSlice';
+import type { PlanarCpuSlice, PlanarCpuSliceInputs } from './planarCpuSlice';
 import {
-  PlanarSliceSampler,
-  getPlanarSampledSliceInputs,
-} from './planarSampledSlice';
-import type {
-  PlanarSampledSlice,
-  PlanarSampledSliceInputs,
-} from './planarSampledSlice';
-import {
-  PlanarSampledSliceCanvas,
+  PlanarCpuSliceCanvas,
   beginPlanarCanvasPass,
   getResolvedVOIRange,
-} from './planarSampledSliceCanvas';
+} from './planarCpuSliceCanvas';
 import {
   getCanvasScreenSliceGeometry,
   getNeighbourCameras,
   recordPlaneMove,
-  scheduleSampledSliceRestWork,
-} from './planarSampledSliceRest';
-import type { PlanarSlicePlaneMoves } from './planarSampledSliceRest';
-import { buildPlanarVolumeImageData } from './VtkVolumeSliceRenderPath';
+  scheduleCpuSliceRestWork,
+} from './planarCpuSliceRest';
+import type { PlanarSlicePlaneMoves } from './planarCpuSliceRest';
+import { buildPlanarVolumeImageData } from './VtkGpuVolumeSliceRenderPath';
 import {
-  getSampledSliceDefaultVOIRange,
-  refreshSampledSliceFidelity,
+  getCpuSliceDefaultVOIRange,
+  refreshCpuSliceFidelity,
   reportSamplingState,
-} from './VtkSampledSliceRenderPath';
+} from './VtkCpuSliceRenderPath';
 import { isSegmentationOverlayData } from '../renderingFidelity';
 
 /**
@@ -74,13 +68,13 @@ export const MAX_CPU_CANVAS_SLICE_SIZE = 16384;
 type CpuVolumeSliceMount = PlanarSlicePlaneMoves & {
   ctx: PlanarCpuVolumeAdapterContext;
   displaySetId: string;
-  rendering: PlanarCpuVolumeRendering;
+  rendering: PlanarCanvasCpuSliceRendering;
   sampler: PlanarSliceSampler;
-  draw: PlanarSampledSliceCanvas;
+  draw: PlanarCpuSliceCanvas;
   /** Cancels the pending work at rest: the rest timer or an idle prefetch. */
   cancelRestWork?: () => void;
   /** The slice drawn last and the screen grid it was drawn for. */
-  shownSlice?: PlanarSampledSlice;
+  shownSlice?: PlanarCpuSlice;
   shownScreen?: VolumeSliceGeometry;
   /**
    * The plane, screen grid and inputs of the last request to the sampler. A
@@ -97,13 +91,13 @@ type CpuVolumeSliceMount = PlanarSlicePlaneMoves & {
  * viewport.
  *
  * It wires the same two steps as the sampled slice path of the GPU
- * (`VtkSampledSliceRenderPath`): the sample step (`PlanarSliceSampler`, plain
+ * (`VtkCpuSliceRenderPath`): the sample step (`PlanarSliceSampler`, plain
  * data, with its cache of neighbour slices, slabs and time points) and a draw
- * step (`PlanarSampledSliceCanvas`, the only part that knows the canvas
+ * step (`PlanarCpuSliceCanvas`, the only part that knows the canvas
  * drawing). The slice is sampled when the viewport renders; a render with the
  * same plane and inputs finds the kept slice. When the slice on screen or the
  * screen grid changes, the work at rest starts again
- * (`scheduleSampledSliceRestWork`): a slice that the canvas cannot enlarge
+ * (`scheduleCpuSliceRestWork`): a slice that the canvas cannot enlarge
  * exactly is sampled once more on the screen grid, and the neighbours are
  * prefetched. The canvas enlarges colours, not values, so that is every
  * LINEAR slice, an oblique NEAREST slice and a maximum or minimum slab
@@ -114,7 +108,7 @@ type CpuVolumeSliceMount = PlanarSlicePlaneMoves & {
  *
  * @internal
  */
-export class CpuVolumeSliceRenderPath
+export class CanvasCpuSliceRenderPath
   implements RenderPath<PlanarCpuVolumeAdapterContext>
 {
   async addData(
@@ -131,7 +125,7 @@ export class CpuVolumeSliceRenderPath
     }
 
     const compositeActor = payload.reference?.kind === 'segmentation';
-    const defaultVOIRange = await getSampledSliceDefaultVOIRange(
+    const defaultVOIRange = await getCpuSliceDefaultVOIRange(
       payload.imageVolume
     );
     const sampler = new PlanarSliceSampler({
@@ -141,7 +135,7 @@ export class CpuVolumeSliceRenderPath
       sampleSlabsInSteps: true,
       outsideValue: compositeActor ? 0 : undefined,
     });
-    const draw = new PlanarSampledSliceCanvas(
+    const draw = new PlanarCpuSliceCanvas(
       payload.imageVolume,
       ctx.cpu.canvas.width,
       ctx.cpu.canvas.height
@@ -156,10 +150,10 @@ export class CpuVolumeSliceRenderPath
     );
 
     compatibilityActor.setVisibility(true);
-    ctx.display.activateRenderMode(ActorRenderMode.CPU_VOLUME);
+    ctx.display.activateRenderMode(PlanarRenderModeId.CANVAS_CPU_SLICE);
 
-    const rendering: PlanarCpuVolumeRendering = {
-      renderMode: ActorRenderMode.CPU_VOLUME,
+    const rendering: PlanarCanvasCpuSliceRendering = {
+      renderMode: PlanarRenderModeId.CANVAS_CPU_SLICE,
       actorEntryUID: uuidv4(),
       excludeFromFidelity: isSegmentationOverlayData(payload, options),
       fullGrid: payload.imageVolume.voxelGrid,
@@ -196,7 +190,7 @@ export class CpuVolumeSliceRenderPath
         this.updateAppearance(mount, props);
       },
       applyViewState: (camera) => {
-        ctx.display.activateRenderMode(ActorRenderMode.CPU_VOLUME);
+        ctx.display.activateRenderMode(PlanarRenderModeId.CANVAS_CPU_SLICE);
         this.syncRenderCamera(mount, camera as PlanarViewState | undefined);
       },
       getFrameOfReferenceUID: () => {
@@ -207,7 +201,6 @@ export class CpuVolumeSliceRenderPath
 
         return buildPlanarActorEntry(planarData, {
           actor: rendering.compatibilityActor,
-          renderMode: ActorRenderMode.CPU_VOLUME,
           uid: rendering.actorEntryUID,
           referencedIdFallback: planarData.volumeId,
         });
@@ -425,7 +418,7 @@ export class CpuVolumeSliceRenderPath
   private render(mount: CpuVolumeSliceMount): void {
     const { ctx, draw, rendering, sampler } = mount;
 
-    ctx.display.activateRenderMode(ActorRenderMode.CPU_VOLUME);
+    ctx.display.activateRenderMode(PlanarRenderModeId.CANVAS_CPU_SLICE);
     ctx.cpu.canvas.style.display = '';
     ctx.cpu.canvas.style.opacity = '1';
 
@@ -538,7 +531,7 @@ export class CpuVolumeSliceRenderPath
     const { ctx, displaySetId, rendering, sampler } = mount;
 
     mount.cancelRestWork?.();
-    mount.cancelRestWork = scheduleSampledSliceRestWork({
+    mount.cancelRestWork = scheduleCpuSliceRestWork({
       sampler,
       volume: rendering.imageVolume,
       getCamera: () => getPlanarRenderPathActiveSourceICamera(ctx),
@@ -582,7 +575,7 @@ export class CpuVolumeSliceRenderPath
 
 /**
  * The sampling inputs of a CPU volume slice: those of the sampled slice path
- * (`getPlanarSampledSliceInputs`). The sampler samples a large slab in steps
+ * (`getPlanarCpuSliceInputs`). The sampler samples a large slab in steps
  * (`PlanarSliceSamplerOptions.sampleSlabsInSteps`), as for the sampled slice
  * path, and shows the plain slice of the plane until the slab is done. A
  * labelmap is sampled with NEAREST, as the GPU reads a labelmap, so a slice
@@ -590,9 +583,9 @@ export class CpuVolumeSliceRenderPath
  * two labels.
  */
 function getCpuSliceInputs(
-  rendering: PlanarCpuVolumeRendering
-): PlanarSampledSliceInputs {
-  const inputs = getPlanarSampledSliceInputs(
+  rendering: PlanarCanvasCpuSliceRendering
+): PlanarCpuSliceInputs {
+  const inputs = getPlanarCpuSliceInputs(
     rendering.imageVolume,
     rendering.appearance
   );
@@ -625,15 +618,15 @@ function isVolumeReady(imageVolume: IImageVolume): boolean {
 
 /**
  * Reads the fidelity of a CPU volume slice as for a sampled slice
- * (`refreshSampledSliceFidelity`): a slab whose steps still run, or that is
+ * (`refreshCpuSliceFidelity`): a slab whose steps still run, or that is
  * too large for the CPU, is pending as a loading picture is. The slice on
  * screen is never an interactive reduction.
  */
 function refreshCpuVolumeFidelity(
-  rendering: PlanarCpuVolumeRendering,
+  rendering: PlanarCanvasCpuSliceRendering,
   sampler: PlanarSliceSampler
 ): void {
-  refreshSampledSliceFidelity(rendering, sampler);
+  refreshCpuSliceFidelity(rendering, sampler);
   rendering.interactiveReduction = false;
 }
 
@@ -672,24 +665,25 @@ function getCpuVolumeModifiedThrottleMs(): number {
 }
 
 /** @internal */
-export class CpuVolumeSlicePath
+export class CanvasCpuSlicePath
   implements
     RenderPathDefinition<
       PlanarViewportRenderContext,
       PlanarCpuVolumeAdapterContext
     >
 {
-  readonly id = 'planar:cpu-volume-slice';
+  readonly id = 'planar:canvas-cpu-slice';
   readonly type = ViewportType.PLANAR;
 
   matches(data: LoadedData, options: DataAddOptions): boolean {
     return (
-      data.type === 'image' && options.renderMode === ActorRenderMode.CPU_VOLUME
+      data.type === 'image' &&
+      options.renderMode === PlanarRenderModeId.CANVAS_CPU_SLICE
     );
   }
 
   createRenderPath() {
-    return new CpuVolumeSliceRenderPath();
+    return new CanvasCpuSliceRenderPath();
   }
 
   selectContext(

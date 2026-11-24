@@ -9,7 +9,7 @@ import {
   ViewportType,
   VOILUTFunctionType,
 } from '../../../enums';
-import { ActorRenderMode } from '../../../types';
+import { PlanarRenderModeId } from './planarRenderModeIds';
 import { coreLog } from '../../../utilities/logger';
 import {
   getRenderBackendForRenderMode,
@@ -118,7 +118,7 @@ import {
 } from './planarSliceBasis';
 import type {
   PlanarRendering,
-  PlanarVolumeSliceRendering,
+  PlanarVtkGpuVolumeSliceRendering,
 } from './planarRuntimeTypes';
 import type { FidelityDisplay } from '../../helpers/fidelityIndicator/displaySpacingOfViewport';
 import {
@@ -620,7 +620,7 @@ class PlanarViewport extends BaseViewport<
           this.updateRenderPlan(displaySetId),
       },
       renderPath: {
-        renderMode: ActorRenderMode.VTK_IMAGE,
+        renderMode: PlanarRenderModeId.VTK_FRAME,
       },
       view: {},
       display: {
@@ -667,7 +667,7 @@ class PlanarViewport extends BaseViewport<
       orientation: this.resolveRequestedOrientation(),
     });
     this.setRenderModeVisibility(
-      ActorRenderMode.VTK_IMAGE,
+      PlanarRenderModeId.VTK_FRAME,
       cpuCanvas,
       vtkCanvas
     );
@@ -890,12 +890,13 @@ class PlanarViewport extends BaseViewport<
 
   /**
    * The render plan of this viewport: for each mounted layer (display set),
-   * source first, how its slice is made, what draws it, the render mode and
-   * the reason of the decision. It reads what the last decision stored, so
-   * it gives the same answer at any time and costs nothing.
+   * source first, how its slice is made (`slice`), what draws it (`draw`),
+   * the render backend that draws it (`backend`) and the reason of the
+   * decision. It is the one public way to ask how a layer is drawn: the
+   * entry of an actor is the layer whose `displaySetId` is the
+   * `displaySetId` of its `ActorEntry`. It reads what the last decision
+   * stored, so it gives the same answer at any time and costs nothing.
    * `Events.RENDER_PLAN_CHANGED` fires when an entry changes.
-   *
-   * @experimental
    */
   getRenderPlan(): RenderPlanLayer[] {
     const source = this.getCurrentBinding();
@@ -1066,7 +1067,7 @@ class PlanarViewport extends BaseViewport<
    * PLANAR viewports previously threw
    * `getDefaultImageData is not a function`.
    *
-   * A volume sampled for the slice (`vtkSampledSlice`, or on the CPU) gives
+   * A volume sampled for the slice (`vtkCpuSlice`, or on the CPU) gives
    * the image data of the volume. A stack drawn on the CPU has no vtk image
    * data: it gives the image data of the image on display
    * (`getImageData().imageData`), which has `worldToIndex` and
@@ -1076,13 +1077,13 @@ class PlanarViewport extends BaseViewport<
     const rendering = this.getCurrentPlanarRendering();
 
     if (
-      rendering?.renderMode === ActorRenderMode.VTK_SAMPLED_SLICE ||
-      rendering?.renderMode === ActorRenderMode.CPU_VOLUME
+      rendering?.renderMode === PlanarRenderModeId.VTK_CPU_SLICE ||
+      rendering?.renderMode === PlanarRenderModeId.CANVAS_CPU_SLICE
     ) {
       return rendering.imageVolume.imageData;
     }
 
-    if (rendering?.renderMode === ActorRenderMode.CPU_IMAGE) {
+    if (rendering?.renderMode === PlanarRenderModeId.CANVAS_FRAME) {
       return this.getImageData()?.imageData;
     }
 
@@ -1334,12 +1335,7 @@ class PlanarViewport extends BaseViewport<
 
     const renderMode = binding.rendering.renderMode;
 
-    // VTK_VOLUME is not a mode the planar decision service selects (no
-    // registered backend owns it) but compatibility layers can still mount it.
-    if (
-      renderMode === ActorRenderMode.VTK_VOLUME ||
-      isVolumeRenderMode(renderMode)
-    ) {
+    if (isVolumeRenderMode(renderMode)) {
       return 'volume';
     }
 
@@ -2679,13 +2675,13 @@ class PlanarViewport extends BaseViewport<
     display?: FidelityDisplay
   ): FidelityLine[] {
     const lines = super.collectFidelityLines(display);
-    const renderings: Partial<PlanarVolumeSliceRendering>[] = [];
+    const renderings: Partial<PlanarVtkGpuVolumeSliceRendering>[] = [];
 
     this.forEachBinding((binding) => {
       renderings.push(
         ...((binding.getRenderings?.() ?? [
           binding.rendering,
-        ]) as Partial<PlanarVolumeSliceRendering>[])
+        ]) as Partial<PlanarVtkGpuVolumeSliceRendering>[])
       );
     });
 
@@ -3174,7 +3170,7 @@ class PlanarViewport extends BaseViewport<
     const rendering = this.getCurrentPlanarRendering();
 
     if (
-      rendering?.renderMode !== ActorRenderMode.CPU_IMAGE ||
+      rendering?.renderMode !== PlanarRenderModeId.CANVAS_FRAME ||
       !rendering.imageLoad ||
       this.endedImageLoads.has(rendering.imageLoad) ||
       rendering.lastRequestedImageIdIndex === undefined ||

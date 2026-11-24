@@ -49,7 +49,6 @@ async function showVolume(viewport) {
   });
   await viewport.setDisplaySets({
     displaySetId: 'projection3D',
-    options: { renderMode: 'vtkVolume3d' },
   });
   viewport.resetViewState();
 }

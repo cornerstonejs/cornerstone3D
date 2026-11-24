@@ -254,7 +254,7 @@ test('cache accounts for every loaded stack image and returns to baseline after 
   // Pinned: a stack-backed planar display set lazy-loads one slice at a time,
   // not the whole stack up front. DefaultPlanarDataProvider.loadPlanarData
   // only calls loadAndCacheImage() for the requested initialImageIdIndex, and
-  // VtkImageMapperRenderPath's navigation path only loads the *target* slice
+  // VtkFrameRenderPath's navigation path only loads the *target* slice
   // of a setImageIdIndex/scroll call. So immediately after the first render,
   // only imageIds[0] is cached -- the other 4 registered imageIds are known
   // to the display set (metadata-registered) but not yet loaded.

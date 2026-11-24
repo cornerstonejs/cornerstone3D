@@ -5,7 +5,7 @@ import {
   OrientationAxis,
   ViewportType,
 } from '../src/enums';
-import { ActorRenderMode } from '../src/types';
+import { PlanarRenderModeId } from '../src/RenderingEngine/Viewports/Planar/planarRenderModeIds';
 import * as metaData from '../src/metaData';
 import {
   planarProjection,
@@ -134,7 +134,7 @@ function mountStackBinding(viewport, images) {
     currentImageIdIndex: 0,
     imageData: {},
     loadRequestId: 0,
-    renderMode: ActorRenderMode.VTK_IMAGE,
+    renderMode: PlanarRenderModeId.VTK_FRAME,
   };
   const binding = {
     applyViewState: jest.fn(),
@@ -162,7 +162,7 @@ function mountVolumeBinding(
   { displaySetId, imageData, role, volumeId }
 ) {
   const rendering = {
-    renderMode: ActorRenderMode.VTK_VOLUME_SLICE,
+    renderMode: PlanarRenderModeId.VTK_GPU_VOLUME_SLICE,
   };
   const binding = {
     applyViewState: jest.fn(),

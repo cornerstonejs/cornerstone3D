@@ -1,13 +1,14 @@
 import RenderBackends, {
   registerRenderBackendsConstant,
 } from '../../enums/RenderBackends';
-import { ActorRenderMode } from '../../types/IActor';
+import { PlanarRenderModeId } from '../Viewports/Planar/planarRenderModeIds';
 import type {
   EffectiveRenderBackend,
   RenderBackend as RenderBackendWire,
   RenderBackendConstants,
 } from '../../types/RenderBackendRegistry';
 import type { RenderPathDefinition } from '../Viewports/ViewportArchitectureTypes';
+import type { RenderPlanSlice } from '../Viewports/Planar/PlanarViewportTypes';
 
 /**
  * The composited canvas a render mode draws to inside a planar
@@ -17,11 +18,8 @@ import type { RenderPathDefinition } from '../Viewports/ViewportArchitectureType
  */
 export type RenderSurface = 'vtk' | 'cpu';
 
-/** The dataset shapes a planar render backend can mount. */
-export type RenderBackendDataKind = 'image' | 'volume';
-
 export interface RenderBackendRenderMode {
-  /** Wire id of the render mode, e.g. 'myOrg:webgpuImage'. */
+  /** Wire id of the render mode, e.g. 'myOrg:webgpuFrame'. */
   id: string;
   /**
    * Planar render path definition implementing this render mode. Called once
@@ -32,31 +30,42 @@ export interface RenderBackendRenderMode {
   createDefinition?: () => RenderPathDefinition;
 }
 
+/**
+ * The render modes of a backend, one for each way of making the slice. The
+ * slot names are the values of `RenderPlanLayer.slice`: a layer drawn by the
+ * mode of a slot has that `slice` in `viewport.getRenderPlan()`.
+ */
 export interface RenderBackendRenderModes {
-  /** Render mode selected for image-stack (non-volume-backed) mounts. */
-  image: RenderBackendRenderMode;
   /**
-   * Render mode selected for volume-backed mounts. Omit when the backend
-   * cannot render volume-backed datasets; selecting the backend for such a
-   * dataset then fails with a descriptive error.
+   * The acquired frame is the image. The decision selects it for a mount
+   * that is not volume-backed (a stack).
    */
-  volume?: RenderBackendRenderMode;
+  frame: RenderBackendRenderMode;
   /**
-   * Optional second render mode for volume-backed mounts that cuts the visible
-   * slice on the CPU and draws it as a 2D image (no 3D texture). The planar
-   * render path decision selects it in place of `volume` when slice first is
-   * on and the view allows it. It counts as a volume render mode.
-   * @experimental
+   * The CPU cuts the slice out of the volume and the mode draws it as a 2D
+   * image (no 3D texture). The planar render path decision selects it for a
+   * volume-backed mount when slice first is on and the view allows it, and
+   * always when the backend has no `gpuVolume` mode. Omit it when the backend
+   * cannot draw such a slice.
    */
-  sampledVolume?: RenderBackendRenderMode;
+  cpu?: RenderBackendRenderMode;
+  /**
+   * The GPU cuts the slice (or the slab) out of a 3D texture of the volume.
+   * The decision selects it for a volume-backed mount that the `cpu` mode
+   * does not take, and always when the backend has no `cpu` mode. A backend
+   * with neither cannot mount a volume-backed display set: selecting it for
+   * one fails with a descriptive error.
+   */
+  gpuVolume?: RenderBackendRenderMode;
 }
 
 export interface RenderBackendDefinition {
   /** Wire id of the backend, e.g. 'gpu' or 'myOrg:webgpu'. 'auto' is reserved. */
   backend: string;
   /**
-   * Render modes this backend resolves to, by dataset kind. Each mode
-   * co-locates its wire id with the render path definition implementing it.
+   * Render modes this backend resolves to, by the way the slice is made.
+   * Each mode co-locates its wire id with the render path definition
+   * implementing it.
    */
   renderModes: RenderBackendRenderModes;
   /** Composited canvas the backend's render modes draw to. Default 'vtk'. */
@@ -82,9 +91,11 @@ export type RegisterRenderBackendOptions =
 
 interface RenderModeEntry {
   backend: EffectiveRenderBackend;
-  kind: RenderBackendDataKind;
+  slice: RenderPlanSlice;
   surface: RenderSurface;
 }
+
+const renderPlanSlices: RenderPlanSlice[] = ['frame', 'cpu', 'gpuVolume'];
 
 type InternalRenderBackendDefinition = RenderBackendDefinition & {
   surface: RenderSurface;
@@ -106,17 +117,17 @@ function registerCoreRenderBackends() {
   registerRenderBackend({
     backend: RenderBackends.GPU,
     renderModes: {
-      image: { id: ActorRenderMode.VTK_IMAGE },
-      volume: { id: ActorRenderMode.VTK_VOLUME_SLICE },
-      sampledVolume: { id: ActorRenderMode.VTK_SAMPLED_SLICE },
+      frame: { id: PlanarRenderModeId.VTK_FRAME },
+      cpu: { id: PlanarRenderModeId.VTK_CPU_SLICE },
+      gpuVolume: { id: PlanarRenderModeId.VTK_GPU_VOLUME_SLICE },
     },
     surface: 'vtk',
   });
   registerRenderBackend({
     backend: RenderBackends.CPU,
     renderModes: {
-      image: { id: ActorRenderMode.CPU_IMAGE },
-      volume: { id: ActorRenderMode.CPU_VOLUME },
+      frame: { id: PlanarRenderModeId.CANVAS_FRAME },
+      cpu: { id: PlanarRenderModeId.CANVAS_CPU_SLICE },
     },
     surface: 'cpu',
   });
@@ -131,9 +142,13 @@ function registerCoreRenderBackends() {
  *
  * The definition carries the semantic wiring the viewport needs:
  * - `renderModes` tells the planar render-path decision which render mode to
- *   select for image-stack vs volume-backed datasets. Each mode co-locates
- *   its wire id with the `createDefinition` factory that injects the render
- *   path implementing it into every planar viewport's render path resolver.
+ *   select for each way of making the slice: `frame` (a stack, or the
+ *   acquired frame), `cpu` (a slice cut on the CPU) and `gpuVolume` (a slice
+ *   or slab cut on the GPU from a 3D texture). The slot of the mode a layer
+ *   uses is the `slice` of its entry in `viewport.getRenderPlan()`. Each mode
+ *   co-locates its wire id with the `createDefinition` factory that injects
+ *   the render path implementing it into every planar viewport's render path
+ *   resolver.
  * - `surface` tells the viewport which composited canvas to show while one of
  *   the backend's modes is active.
  *
@@ -154,12 +169,12 @@ function registerCoreRenderBackends() {
  *   name: 'WEBGPU',
  *   backend: 'myOrg:webgpu',
  *   renderModes: {
- *     image: {
- *       id: 'myOrg:webgpuImage',
- *       createDefinition: () => new WebGPUImageSlicePath(),
+ *     frame: {
+ *       id: 'myOrg:webgpuFrame',
+ *       createDefinition: () => new WebGPUFramePath(),
  *     },
- *     volume: {
- *       id: 'myOrg:webgpuVolume',
+ *     gpuVolume: {
+ *       id: 'myOrg:webgpuVolumeSlice',
  *       createDefinition: () => new WebGPUVolumeSlicePath(),
  *     },
  *   },
@@ -191,28 +206,20 @@ export function registerRenderBackend({
     throw new Error(`Render backend "${backend}" is already registered`);
   }
 
-  if (!renderModes?.image?.id) {
+  if (!renderModes?.frame?.id) {
     throw new Error(
-      `Render backend "${backend}" must declare renderModes.image`
+      `Render backend "${backend}" must declare renderModes.frame`
     );
   }
 
-  if (renderModes.volume && renderModes.volume.id === renderModes.image.id) {
-    throw new Error(
-      `Render backend "${backend}" must use distinct render modes for image and volume`
-    );
-  }
+  const modeEntries: Array<[string, RenderPlanSlice]> = [];
 
-  const modeEntries: Array<[string, RenderBackendDataKind]> = [
-    [renderModes.image.id, 'image'],
-  ];
+  for (const slice of renderPlanSlices) {
+    const mode = renderModes[slice];
 
-  if (renderModes.volume) {
-    modeEntries.push([renderModes.volume.id, 'volume']);
-  }
-
-  if (renderModes.sampledVolume) {
-    modeEntries.push([renderModes.sampledVolume.id, 'volume']);
+    if (mode) {
+      modeEntries.push([mode.id, slice]);
+    }
   }
 
   if (
@@ -220,7 +227,7 @@ export function registerRenderBackend({
     modeEntries.length
   ) {
     throw new Error(
-      `Render backend "${backend}" must use distinct render modes for image and volume`
+      `Render backend "${backend}" must use distinct render modes for frame, cpu and gpuVolume`
     );
   }
 
@@ -243,10 +250,10 @@ export function registerRenderBackend({
     surface,
   });
 
-  for (const [renderMode, kind] of modeEntries) {
+  for (const [renderMode, slice] of modeEntries) {
     renderModeIndex.set(renderMode, {
       backend: backend as EffectiveRenderBackend,
-      kind,
+      slice,
       surface,
     });
   }
@@ -278,14 +285,14 @@ export function getRenderBackendDefinition(
 }
 
 /**
- * Render mode a backend resolves to for the given dataset kind. Throws a
- * descriptive error when the backend is unknown or does not support the kind
- * (e.g. an image-only backend asked to mount a volume-backed dataset).
+ * Render mode of the slot `slice` of a backend, or undefined when the
+ * backend has no mode in that slot. Throws a descriptive error when the
+ * backend is unknown.
  */
 export function getRenderModeForBackend(
   backend: string,
-  kind: RenderBackendDataKind
-): string {
+  slice: RenderPlanSlice
+): string | undefined {
   const definition = getRenderBackendDefinition(backend);
 
   if (!definition) {
@@ -294,27 +301,7 @@ export function getRenderModeForBackend(
     );
   }
 
-  const renderMode = definition.renderModes[kind];
-
-  if (!renderMode) {
-    throw new Error(
-      `Render backend "${backend}" does not support ${kind}-backed rendering`
-    );
-  }
-
-  return renderMode.id;
-}
-
-/**
- * The sampled volume render mode of a backend (see
- * `RenderBackendRenderModes.sampledVolume`), or undefined when the backend is
- * unknown or has none.
- * @experimental
- */
-export function getSampledVolumeRenderModeForBackend(
-  backend: string
-): string | undefined {
-  return getRenderBackendDefinition(backend)?.renderModes.sampledVolume?.id;
+  return definition.renderModes[slice]?.id;
 }
 
 /** Backend that provides `renderMode`, or undefined for unknown modes. */
@@ -325,18 +312,31 @@ export function getRenderBackendForRenderMode(
   return renderMode ? renderModeIndex.get(renderMode)?.backend : undefined;
 }
 
-/** Whether `renderMode` is a registered backend's volume render mode. */
-export function isVolumeRenderMode(renderMode: string | undefined): boolean {
+/**
+ * The slot of a registered backend that provides `renderMode`: how a layer
+ * drawn with it makes its slice (`RenderPlanLayer.slice`). Undefined for
+ * unknown modes.
+ */
+export function getRenderPlanSliceForRenderMode(
+  renderMode: string | undefined
+): RenderPlanSlice | undefined {
   registerCoreRenderBackends();
-  return renderMode
-    ? renderModeIndex.get(renderMode)?.kind === 'volume'
-    : false;
+  return renderMode ? renderModeIndex.get(renderMode)?.slice : undefined;
 }
 
-/** Whether `renderMode` is a registered backend's image render mode. */
+/**
+ * Whether `renderMode` is a registered backend's volume render mode: the mode
+ * of its `cpu` or `gpuVolume` slot.
+ */
+export function isVolumeRenderMode(renderMode: string | undefined): boolean {
+  const slice = getRenderPlanSliceForRenderMode(renderMode);
+
+  return slice === 'cpu' || slice === 'gpuVolume';
+}
+
+/** Whether `renderMode` is a registered backend's `frame` render mode. */
 export function isImageRenderMode(renderMode: string | undefined): boolean {
-  registerCoreRenderBackends();
-  return renderMode ? renderModeIndex.get(renderMode)?.kind === 'image' : false;
+  return getRenderPlanSliceForRenderMode(renderMode) === 'frame';
 }
 
 /**
@@ -361,8 +361,9 @@ export function createRegisteredPlanarRenderPaths(): RenderPathDefinition[] {
   const paths: RenderPathDefinition[] = [];
 
   for (const definition of backendDefinitions.values()) {
-    const { image, volume, sampledVolume } = definition.renderModes;
-    for (const mode of [image, volume, sampledVolume]) {
+    for (const slice of renderPlanSlices) {
+      const mode = definition.renderModes[slice];
+
       if (mode?.createDefinition) {
         paths.push(mode.createDefinition());
       }

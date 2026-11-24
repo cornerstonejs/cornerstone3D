@@ -17,8 +17,12 @@ const VIEWPORT_IDS = [
 const ALIGNED_VIEWPORT_INDICES = [0, 1];
 const VOLUME_ID = 'cornerstoneStreamingImageVolume:CT_VOLUME_ID';
 const DATA_ID = 'volume-annotation-tools-next:source';
-const GPU_VOLUME_MODE = 'vtkVolumeSlice';
-const SAMPLED_MODE = 'vtkSampledSlice';
+/** The draw path (`slice-draw` of a render plan layer) of a GPU volume slice. */
+const GPU_VOLUME_MODE = 'gpuVolume-gpu';
+/** The draw path of a slice cut on the CPU and drawn on the GPU. */
+const SAMPLED_MODE = 'cpu-gpu';
+/** The render mode that the debug modal names for a slice cut on the CPU. */
+const SAMPLED_MODE_LABEL = 'vtkCpuSlice';
 const MAX_GREY_DIFFERENCE = 3;
 /**
  * The part of a canvas that must be content, not background, before two
@@ -31,7 +35,12 @@ const SWITCH_TIMEOUT_MS = 15000;
 type TestViewport = {
   getActors: () => Array<{
     referencedId?: string;
-    actorMapper?: { renderMode?: string };
+    displaySetId?: string;
+  }>;
+  getRenderPlan: () => Array<{
+    displaySetId: string;
+    slice: string;
+    draw: string;
   }>;
   scroll: (delta: number) => Promise<string>;
   getZoom: () => number;
@@ -86,7 +95,7 @@ async function openExample(page: Page, sliceFirst: boolean): Promise<void> {
   await waitForRenderSettled(page, { quietMs: 500, timeout: 30000 });
 }
 
-/** Returns the render mode of the source volume actor of every viewport. */
+/** Returns the draw path of the source volume actor of every viewport. */
 function getSourceRenderModes(page: Page): Promise<string[]> {
   return page.evaluate(
     ({ engineId, viewportIds, volumeId }) => {
@@ -95,19 +104,22 @@ function getSourceRenderModes(page: Page): Promise<string[]> {
       );
 
       return viewportIds.map((viewportId) => {
-        const entry = engine
-          ?.getViewport(viewportId)
+        const viewport = engine?.getViewport(viewportId);
+        const entry = viewport
           ?.getActors()
           .find((actorEntry) => actorEntry.referencedId === volumeId);
+        const layer = viewport
+          ?.getRenderPlan()
+          .find((planLayer) => planLayer.displaySetId === entry?.displaySetId);
 
-        return entry?.actorMapper?.renderMode ?? 'missing';
+        return layer ? `${layer.slice}-${layer.draw}` : 'missing';
       });
     },
     { engineId: ENGINE_ID, viewportIds: VIEWPORT_IDS, volumeId: VOLUME_ID }
   );
 }
 
-/** Waits until every viewport draws its source with the given render mode. */
+/** Waits until every viewport draws its source with the given draw path. */
 async function expectSourceRenderModes(
   page: Page,
   renderMode: string
@@ -117,7 +129,7 @@ async function expectSourceRenderModes(
     .toEqual(VIEWPORT_IDS.map(() => renderMode));
 }
 
-/** Switches slice first in the running page and waits for the new render mode. */
+/** Switches slice first in the running page and waits for the new draw path. */
 async function switchSliceFirst(page: Page, enabled: boolean): Promise<void> {
   await page.evaluate((value) => {
     (window as TestWindow).cornerstone.setSliceFirst(value);
@@ -265,7 +277,7 @@ async function setSlab(
   );
 }
 
-/** Returns the render mode of the source volume actor of one viewport. */
+/** Returns the draw path of the source volume actor of one viewport. */
 async function getViewportRenderMode(
   page: Page,
   viewportId: string
@@ -327,7 +339,7 @@ async function openDebugExample(
   await waitForRenderSettled(page, { quietMs: 500, timeout: 30000 });
 }
 
-/** Returns the render modes of every actor of every viewport of the slice first example. */
+/** Returns the draw paths of every actor of every viewport of the slice first example. */
 function getDebugExampleRenderModes(page: Page): Promise<string[][]> {
   return page.evaluate(
     ({ engineId, viewportIds }) => {
@@ -335,13 +347,20 @@ function getDebugExampleRenderModes(page: Page): Promise<string[][]> {
         engineId
       );
 
-      return viewportIds.map(
-        (viewportId) =>
-          engine
-            ?.getViewport(viewportId)
-            ?.getActors()
-            .map((entry) => entry.actorMapper?.renderMode ?? 'missing') ?? []
-      );
+      return viewportIds.map((viewportId) => {
+        const viewport = engine?.getViewport(viewportId);
+        const plan = viewport?.getRenderPlan() ?? [];
+
+        return (
+          viewport?.getActors().map((entry) => {
+            const layer = plan.find(
+              (planLayer) => planLayer.displaySetId === entry.displaySetId
+            );
+
+            return layer ? `${layer.slice}-${layer.draw}` : 'missing';
+          }) ?? []
+        );
+      });
     },
     { engineId: ENGINE_ID, viewportIds: DEBUG_EXAMPLE_VIEWPORT_IDS }
   );
@@ -435,7 +454,7 @@ test.describe('Slice first', () => {
         .locator(`div[title="${ENGINE_ID}/${viewportId}"]`)
         .locator('..');
 
-      await expect(section).toContainText(SAMPLED_MODE, {
+      await expect(section).toContainText(SAMPLED_MODE_LABEL, {
         timeout: SWITCH_TIMEOUT_MS,
       });
       await expect(section).toContainText('2D slice');

@@ -11,7 +11,7 @@ import {
   beforeEach,
   jest,
 } from '@jest/globals';
-import { PlanarSampledSliceCanvas } from '../src/RenderingEngine/Viewports/Planar/planarSampledSliceCanvas';
+import { PlanarCpuSliceCanvas } from '../src/RenderingEngine/Viewports/Planar/planarCpuSliceCanvas';
 import {
   getDefaultImageInvert,
   getDefaultImageVOIRange,
@@ -108,7 +108,7 @@ describe('Direct next planar viewport and the default invert of an image', () =>
   let drawSpy;
 
   beforeEach(() => {
-    drawSpy = jest.spyOn(PlanarSampledSliceCanvas.prototype, 'draw');
+    drawSpy = jest.spyOn(PlanarCpuSliceCanvas.prototype, 'draw');
   });
 
   afterEach(() => {

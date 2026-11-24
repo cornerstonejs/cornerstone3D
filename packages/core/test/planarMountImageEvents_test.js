@@ -6,6 +6,7 @@ import {
   renderAndWait,
   SERIES_SIZE,
   waitFor,
+  drawPathOf,
 } from './utils/planarSeriesBothModes';
 
 const { Enums, utilities } = cornerstone3D;
@@ -15,15 +16,15 @@ const renderingEngineId = utilities.uuidv4();
 
 /** The draw paths of a volume on a direct next planar viewport. */
 const VOLUME_PATHS = [
-  ['on the sampled slice path', {}, 'vtkSampledSlice'],
-  ['on the volume slice path', { sliceFirst: false }, 'vtkVolumeSlice'],
-  ['on the CPU', { renderBackend: 'cpu' }, 'cpuVolume'],
+  ['on the sampled slice path', {}, 'cpu-gpu'],
+  ['on the volume slice path', { sliceFirst: false }, 'gpuVolume-gpu'],
+  ['on the CPU', { renderBackend: 'cpu' }, 'cpu-cpu'],
 ];
 
 /** The draw paths of a stack on a direct next planar viewport. */
 const STACK_PATHS = [
-  ['on the GPU', {}, 'vtkImage'],
-  ['on the CPU', { renderBackend: 'cpu' }, 'cpuImage'],
+  ['on the GPU', {}, 'frame-gpu'],
+  ['on the CPU', { renderBackend: 'cpu' }, 'frame-cpu'],
 ];
 
 /** Resolves after a few animation frames. */
@@ -152,9 +153,9 @@ describe('The new image event of a mount and of a scroll on a planar viewport --
     });
   });
 
-  for (const [path, pathOptions, renderMode] of VOLUME_PATHS) {
+  for (const [path, pathOptions, drawPath] of VOLUME_PATHS) {
     it(`fires NEW_IMAGE once for the slice that the mount of a volume shows, and not the old pair ${path}`, async function () {
-      const series = await createSeries({ id: `mount-${renderMode}` });
+      const series = await createSeries({ id: `mount-${drawPath}` });
       const viewport = createNextViewport(renderingEngine, 'nextMount');
       const events = recordNewImageEvents(viewport.element);
 
@@ -168,7 +169,7 @@ describe('The new image event of a mount and of a scroll on a planar viewport --
       const imageId = viewport.getCurrentImageId();
 
       expect(viewport.getCurrentMode()).toBe('volume');
-      expect(viewport.getRenderPlan()[0].renderMode).toBe(renderMode);
+      expect(drawPathOf(viewport.getRenderPlan()[0])).toBe(drawPath);
       expect(imageIdIndex).toBeGreaterThan(0);
       expect(series.imageIds).toContain(imageId);
       expect(viewport.getNumberOfSlices()).toBe(series.size.slices);
@@ -183,7 +184,7 @@ describe('The new image event of a mount and of a scroll on a planar viewport --
     });
 
     it(`fires NEW_IMAGE once for the slice of the first image index of a volume ${path}`, async function () {
-      const series = await createSeries({ id: `mount-first-${renderMode}` });
+      const series = await createSeries({ id: `mount-first-${drawPath}` });
       const viewport = createNextViewport(renderingEngine, 'nextMount');
       const events = recordNewImageEvents(viewport.element);
 
@@ -211,7 +212,7 @@ describe('The new image event of a mount and of a scroll on a planar viewport --
 
     it(`fires NEW_IMAGE once when the first slice has the index that the rendering starts with ${path}`, async function () {
       const series = await createSeries({
-        id: `mount-same-${renderMode}`,
+        id: `mount-same-${drawPath}`,
         size: { ...SERIES_SIZE, slices: 7 },
       });
       const viewport = createNextViewport(renderingEngine, 'nextMount');
@@ -238,7 +239,7 @@ describe('The new image event of a mount and of a scroll on a planar viewport --
     });
 
     it(`fires NEW_IMAGE once, with the slice index of the view and no image id, for a volume that is cut across its images ${path}`, async function () {
-      const series = await createSeries({ id: `mount-across-${renderMode}` });
+      const series = await createSeries({ id: `mount-across-${drawPath}` });
       const viewport = createNextViewport(renderingEngine, 'nextMount');
       const events = recordNewImageEvents(viewport.element);
 
@@ -279,8 +280,8 @@ describe('The new image event of a mount and of a scroll on a planar viewport --
     });
 
     it(`fires NEW_IMAGE once for the source when a second volume is mounted over it ${path}`, async function () {
-      const series = await createSeries({ id: `mount-source-${renderMode}` });
-      const over = await createSeries({ id: `mount-over-${renderMode}` });
+      const series = await createSeries({ id: `mount-source-${drawPath}` });
+      const over = await createSeries({ id: `mount-over-${drawPath}` });
       const viewport = createNextViewport(renderingEngine, 'nextMount');
       const events = recordNewImageEvents(viewport.element);
 
@@ -305,9 +306,10 @@ describe('The new image event of a mount and of a scroll on a planar viewport --
       const imageIdIndex = viewport.getCurrentImageIdIndex();
       const imageId = viewport.getCurrentImageId();
 
-      expect(viewport.getRenderPlan().map((layer) => layer.renderMode)).toEqual(
-        [renderMode, renderMode]
-      );
+      expect(viewport.getRenderPlan().map(drawPathOf)).toEqual([
+        drawPath,
+        drawPath,
+      ]);
       expect(series.imageIds).toContain(imageId);
       expect(events.newImage).toEqual(
         newImageOfSlice(viewport, {
@@ -332,7 +334,7 @@ describe('The new image event of a mount and of a scroll on a planar viewport --
     });
 
     it(`fires NEW_IMAGE once for each scroll of a volume, and not the old pair ${path}`, async function () {
-      const series = await createSeries({ id: `scroll-${renderMode}` });
+      const series = await createSeries({ id: `scroll-${drawPath}` });
       const viewport = createNextViewport(renderingEngine, 'nextMount');
       const events = recordNewImageEvents(viewport.element);
 
@@ -369,10 +371,10 @@ describe('The new image event of a mount and of a scroll on a planar viewport --
     });
   }
 
-  for (const [path, pathOptions, renderMode] of STACK_PATHS) {
+  for (const [path, pathOptions, drawPath] of STACK_PATHS) {
     for (const first of [0, 5]) {
       it(`fires NEW_IMAGE once, and not the old pair, for the mount of a stack at its image ${first} ${path}`, async function () {
-        const series = await createSeries({ id: `mount-${renderMode}` });
+        const series = await createSeries({ id: `mount-${drawPath}` });
         const viewport = createNextViewport(renderingEngine, 'nextMount');
         const events = recordNewImageEvents(viewport.element);
 
@@ -383,7 +385,7 @@ describe('The new image event of a mount and of a scroll on a planar viewport --
         await firstRenderDone(viewport);
 
         expect(viewport.getCurrentMode()).toBe('stack');
-        expect(viewport.getRenderPlan()[0].renderMode).toBe(renderMode);
+        expect(drawPathOf(viewport.getRenderPlan()[0])).toBe(drawPath);
         expect(viewport.getCurrentImageId()).toBe(series.imageIds[first]);
         expect(viewport.getCurrentImageIdIndex()).toBe(first);
         expect(viewport.getNumberOfSlices()).toBe(series.size.slices);
@@ -395,7 +397,7 @@ describe('The new image event of a mount and of a scroll on a planar viewport --
     }
 
     it(`fires NEW_IMAGE once for each scroll of a stack, and not the old pair ${path}`, async function () {
-      const series = await createSeries({ id: `scroll-${renderMode}` });
+      const series = await createSeries({ id: `scroll-${drawPath}` });
       const viewport = createNextViewport(renderingEngine, 'nextMount');
       const events = recordNewImageEvents(viewport.element);
 

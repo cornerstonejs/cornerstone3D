@@ -1,7 +1,7 @@
 // Round-trip and fixed-point invariant tests for PlanarViewport (BaseViewport
 // architecture). These assert geometric/API contracts that must hold
 // regardless of which render path is active. Default renderMode is
-// 'vtkImage' with the harness's default 5-slice fake stack, per the plan.
+// 'vtkFrame' with the harness's default 5-slice fake stack, per the plan.
 //
 // See plans/vitest-browser-state-tests/02-roundtrip-invariants.md.
 
@@ -306,7 +306,7 @@ describe('planarInvariants: view reference round trip (same viewport)', () => {
     await renderAndWait(element, viewport);
 
     // Read getPlanarViewReferenceId (Planar/planarViewReference.ts): for the
-    // default vtkImage (image-path) render mode it returns
+    // default vtkFrame (image-path) render mode it returns
     // `imageId:${referencedImageId}`, which is a pure function of the current
     // slice's imageId, so it both encodes the slice and is stable when the
     // state does not change.

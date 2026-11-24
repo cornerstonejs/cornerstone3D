@@ -24,14 +24,14 @@ import type {
   PlanarDisplaySetAppearance,
   PlanarViewportRenderContext,
 } from './PlanarViewportTypes';
-import { getVolumeClipPlanes } from './planarSampledSlice';
+import { getVolumeClipPlanes } from './planarCpuSlice';
 import { hasSlab } from './PlanarRenderPathDecisionService';
 import type {
-  PlanarSampledSlice,
+  PlanarCpuSlice,
   PlanarScreenCamera,
   PlanarSliceClipPlane,
-} from './planarSampledSlice';
-import { PlanarSampledSliceActor } from './planarSampledSliceActor';
+} from './planarCpuSlice';
+import { PlanarCpuSliceActor } from './planarCpuSliceActor';
 import {
   resetCanvasLabelmapComposition,
   setOutlineAtImageEdges,
@@ -120,10 +120,10 @@ export type PlanarSliceColourTables = {
 export type PlanarCanvasTarget = PlanarViewportRenderContext['cpu'];
 
 /**
- * The GPU draw step whose picture a `PlanarSampledSliceCanvas` draws.
+ * The GPU draw step whose picture a `PlanarCpuSliceCanvas` draws.
  * `volume`, the default, is the slice of a volume drawn by
- * `PlanarSampledSliceActor`, with the appearance of a volume slice. `image`
- * is an acquired image of a stack drawn by `VtkImageMapperRenderPath`: the
+ * `PlanarCpuSliceActor`, with the appearance of a volume slice. `image`
+ * is an acquired image of a stack drawn by `VtkFrameRenderPath`: the
  * appearance of an image (`applyPlanarImageAppearance`), and a colour
  * image whose red, green and blue each read the colour table, as the vtk.js
  * image mapper reads an image of three dependent components.
@@ -145,14 +145,14 @@ export type PlanarSliceCanvasTransform = [
 ];
 
 /**
- * The CPU draw step of the sampled slice: it draws a `PlanarSampledSlice` on
+ * The CPU draw step of the sampled slice: it draws a `PlanarCpuSlice` on
  * the 2D canvas of a viewport. It is the only part of the CPU volume path that
- * knows the canvas drawing, the counterpart of `PlanarSampledSliceActor` on
+ * knows the canvas drawing, the counterpart of `PlanarCpuSliceActor` on
  * the vtk.js path.
  *
  * A slice of one value per pixel is coloured as the GPU draw step colours
  * it, so that both draw steps give the same picture: the appearance is
- * applied with `PlanarSampledSliceActor.applyAppearance` to an actor that
+ * applied with `PlanarCpuSliceActor.applyAppearance` to an actor that
  * is never drawn, and its colour and opacity functions become the tables of
  * the vtk.js image mapper (`getColourTables`), read the way its shader reads
  * them. The pixels outside the faces of the volume are left clear, as the
@@ -177,21 +177,21 @@ export type PlanarSliceCanvasTransform = [
  * image smoothing unless the appearance asks for NEAREST. A slice of the
  * screen grid maps to the canvas one to one and is copied unchanged.
  */
-export class PlanarSampledSliceCanvas {
+export class PlanarCpuSliceCanvas {
   /** The canvas of this display set, of the size of the viewport canvas. */
   readonly layerCanvas: HTMLCanvasElement;
   private readonly sliceCanvas: HTMLCanvasElement;
   private enabledElement?: CPUFallbackEnabledElement;
-  private slice?: PlanarSampledSlice;
+  private slice?: PlanarCpuSlice;
   private image?: IImage;
   private roundedPixelData?: Int32Array;
   private sequence = 0;
-  private appearanceActor?: PlanarSampledSliceActor;
+  private appearanceActor?: PlanarCpuSliceActor;
   private appearanceKey?: string;
   private colourTables?: PlanarSliceColourTables;
   private clipPlanes?: PlanarSliceClipPlane[];
   private sliceImageData?: ImageData;
-  private colouredSlice?: PlanarSampledSlice;
+  private colouredSlice?: PlanarCpuSlice;
   private colouredTables?: PlanarSliceColourTables;
   private colouredEdgeSamples?: Point2[];
   private colouredAlphas?: Float32Array;
@@ -225,7 +225,7 @@ export class PlanarSampledSliceCanvas {
    *
    * @returns the image of the slice and whether it is new
    */
-  setSlice(slice: PlanarSampledSlice): { image: IImage; changed: boolean } {
+  setSlice(slice: PlanarCpuSlice): { image: IImage; changed: boolean } {
     if (slice === this.slice && this.image) {
       return { image: this.image, changed: false };
     }
@@ -459,11 +459,11 @@ export class PlanarSampledSliceCanvas {
 
   /**
    * The colour tables of the appearance. The appearance is applied to the
-   * actor of the GPU draw step (`PlanarSampledSliceActor`), which is never
+   * actor of the GPU draw step (`PlanarCpuSliceActor`), which is never
    * drawn here, only when it changed, as the GPU draw step applies it; the
    * tables are then read from that actor. For the `image` appearance the
    * appearance of an image is applied to that actor, as
-   * `VtkImageMapperRenderPath` applies it to its own.
+   * `VtkFrameRenderPath` applies it to its own.
    */
   private getColourTables(
     appearance: PlanarDisplaySetAppearance | undefined,
@@ -475,7 +475,7 @@ export class PlanarSampledSliceCanvas {
       return this.colourTables;
     }
 
-    this.appearanceActor ||= new PlanarSampledSliceActor({
+    this.appearanceActor ||= new PlanarCpuSliceActor({
       voxelManager: this.volume.voxelManager,
     });
 
@@ -587,7 +587,7 @@ export class PlanarSampledSliceCanvas {
    * image, RGB or RGBA, which the pipeline draws with its colour LUT, as the
    * CPU volume path drew colour volumes before it used the shared sampler.
    */
-  private createSliceImage(slice: PlanarSampledSlice): IImage {
+  private createSliceImage(slice: PlanarCpuSlice): IImage {
     const { volume } = this;
     const numberOfComponents = slice.numberOfComponents ?? 1;
     const color = numberOfComponents > 1;
@@ -677,7 +677,7 @@ export class PlanarSampledSliceCanvas {
  */
 export function getSliceCanvasTransform(
   slice: Pick<
-    PlanarSampledSlice,
+    PlanarCpuSlice,
     'origin' | 'xDirection' | 'yDirection' | 'spacing' | 'width' | 'height'
   >,
   camera: PlanarScreenCamera,
@@ -814,7 +814,7 @@ export function getResolvedVOIRange(
  * @internal
  */
 export function getColourTables(
-  appearanceActor: Pick<PlanarSampledSliceActor, 'actor' | 'mapper'>,
+  appearanceActor: Pick<PlanarCpuSliceActor, 'actor' | 'mapper'>,
   previous?: PlanarSliceColourTables
 ): PlanarSliceColourTables {
   const property = appearanceActor.actor.getProperty();
@@ -1077,7 +1077,7 @@ export function colourSlice(
  * @internal
  */
 export function colourWholeNumbers(
-  slice: Pick<PlanarSampledSlice, 'pixelData' | 'min' | 'max'>,
+  slice: Pick<PlanarCpuSlice, 'pixelData' | 'min' | 'max'>,
   pixels: Uint32Array,
   tables: PlanarSliceColourTables
 ): boolean {
@@ -1159,7 +1159,7 @@ export function colourChannels(
  * after the last.
  */
 function getInsideRun(
-  slice: PlanarSampledSlice,
+  slice: PlanarCpuSlice,
   planes: PlanarSliceClipPlane[],
   row: number,
   sample: Point2
@@ -1213,7 +1213,7 @@ type PlanarSliceEdgePixels = {
  * with the colours.
  */
 const valuesOnVoxelCentres = new WeakMap<
-  PlanarSampledSlice,
+  PlanarCpuSlice,
   Map<number, Float64Array>
 >();
 
@@ -1228,7 +1228,7 @@ const valuesOnVoxelCentres = new WeakMap<
  */
 function getValuesOnVoxelCentres(
   volume: IImageVolume,
-  slice: PlanarSampledSlice,
+  slice: PlanarCpuSlice,
   index: number
 ): Float64Array {
   let kept = valuesOnVoxelCentres.get(slice);
@@ -1291,7 +1291,7 @@ function getValuesOnVoxelCentres(
  * @returns the pixels that the slice covers in part, or undefined for none
  */
 function clearOutsideVolume(
-  slice: PlanarSampledSlice,
+  slice: PlanarCpuSlice,
   planes: PlanarSliceClipPlane[],
   pixels: Uint32Array,
   samples: Point2[],
@@ -1400,7 +1400,7 @@ function clearOutsideVolume(
  * share of the pixel that the slice covers for a pixel on an edge.
  */
 function getSliceAlphas(
-  slice: PlanarSampledSlice,
+  slice: PlanarCpuSlice,
   tables: PlanarSliceColourTables,
   edges: PlanarSliceEdgePixels | undefined
 ): Float32Array {
@@ -1466,7 +1466,7 @@ function isIdentityTransform(transform: PlanarSliceCanvasTransform): boolean {
  */
 function blendSlice(
   target: PlanarCanvasTarget,
-  slice: Pick<PlanarSampledSlice, 'width' | 'height'>,
+  slice: Pick<PlanarCpuSlice, 'width' | 'height'>,
   sliceImageData: ImageData,
   alphas: Float32Array,
   transform: PlanarSliceCanvasTransform

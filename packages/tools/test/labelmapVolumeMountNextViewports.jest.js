@@ -263,7 +263,6 @@ describe('The volume labelmap mount on the next viewports', () => {
 
       await viewport.setDisplaySets({
         displaySetId,
-        options: { renderMode: 'vtkVolume3d' },
       });
 
       expect(viewport.type).toBe(ViewportType.VOLUME_3D);

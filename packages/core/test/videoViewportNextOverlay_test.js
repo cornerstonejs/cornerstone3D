@@ -170,12 +170,11 @@ describe('Images over a direct next video viewport -- ', () => {
     expect(actors[0]).toEqual(
       jasmine.objectContaining({
         uid: 'blockOverlay',
+        displaySetId: 'blockOverlay',
         referencedId: image.imageId,
       })
     );
-    expect(actors[0].actorMapper.renderMode).toBe(
-      cornerstone3D.ActorRenderMode.CPU_IMAGE
-    );
+    expect(actors[0].actor.isA('CanvasActor')).toBe(true);
 
     colorActor(actors[0].actor);
     next.render();

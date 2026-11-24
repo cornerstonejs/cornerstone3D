@@ -25,13 +25,16 @@ What changes for an application:
 
 - **GPU memory is much smaller** for plain slices, and a volume that is too
   large for a 3D texture on the device still shows.
-- **The render mode of a plain volume slice is `vtkSampledSlice`**, not
-  `vtkVolumeSlice`. Code that compares render mode names should read
-  `viewport.getRenderPlan()` instead.
+- **A plain volume slice is a CPU slice drawn on the GPU.** Its layer in
+  `viewport.getRenderPlan()` has `slice: 'cpu'` and `draw: 'gpu'`; a slab
+  has `slice: 'gpuVolume'`. The render plan is the one public way to ask how
+  a layer is drawn: the render mode names (`ActorRenderMode`, the
+  `actorMapper` of an actor entry) are gone, see
+  [The render plan](#the-render-plan).
 - **The edge pixels of a slice can differ between the two GPU paths.** The
   GPU volume path leaves an edge pixel whose centre lies outside the volume
   with the background, and shows a pixel that the slice covers in part with
-  a part of its value. The sampled slice, on the GPU and on the CPU, clips a
+  a part of its value. The CPU slice, drawn on the GPU and on the canvas, clips a
   tilted slice at the pixel centre, and shows an edge pixel of a slice along
   a volume axis with the share of it that the slice covers (the CPU takes the
   4 samples of a 4x multisampled GPU picture, so a GPU without multisampling
@@ -1188,7 +1191,7 @@ point of the image on display.
   [the map](./3-api-map.md#members-of-the-volume-viewport-only).
 - **`getDefaultImageData()` of a planar viewport answers on the CPU too.** For
   a volume drawn on the CPU it gives the vtk.js image data of the volume, as
-  for a sampled slice. For a stack drawn on the CPU it gives the `imageData`
+  for a CPU slice drawn on the GPU. For a stack drawn on the CPU it gives the `imageData`
   of `getImageData()`, the plain object above. The 5.x next planar viewport
   gave undefined for both, so the ONNX segmentation controller of
   `@cornerstonejs/ai` threw on a CPU viewport.
@@ -1280,7 +1283,7 @@ point of the image on display.
 ## The render plan
 
 Each layer of a planar viewport has a plan: how its slice is made, what draws
-it, and why.
+it, the render backend that draws it, and why.
 
 ```ts
 viewport.getRenderPlan();
@@ -1293,21 +1296,89 @@ viewport.getRenderPlan();
     role: 'source',
     slice: 'cpu',
     draw: 'gpu',
-    renderMode: 'vtkSampledSlice',
+    backend: 'gpu',
     reason: 'slice',
   },
 ];
 ```
 
-`slice` is `frame`, `cpu` or `gpuVolume`. `draw` is `gpu` or `cpu`. `reason`
-says why the layer is on this path: `frame`, `slice`, `slab`, `sliceFirstOff`,
-`notSampled`, `floatFilter`, `textureSize`, `textureReduced`, `textureFailed`,
-`slabTooLarge`, `pinned`, `noWebGL` or `contextLost`.
+`slice` says how the slice is made: `frame` (the acquired frame is the image),
+`cpu` (the CPU cuts the slice out of the volume) or `gpuVolume` (the GPU cuts
+it out of a 3D texture of the volume). `draw` is `gpu` or `cpu` (a 2D
+canvas). `backend` is the render backend that draws the layer, as
+`setRenderBackend()`, the `renderBackend` mount option and
+`registerRenderBackend()` name it: `'gpu'`, `'cpu'` or the id of an extension
+backend, never `'auto'`. `reason` says why the layer is on this path:
+`frame`, `slice`, `slab`, `sliceFirstOff`, `notSampled`, `floatFilter`,
+`textureSize`, `textureReduced`, `textureFailed`, `slabTooLarge`, `pinned`,
+`noWebGL` or `contextLost`.
 
-`Events.RENDER_PLAN_CHANGED` fires on the element and on the `eventTarget`
-when the plan of a layer changes. Cornerstone changes the path of a layer by
-itself only when the new path draws the same pixels. `retryGpu()` lets the
-layers that left the GPU try it again.
+`getRenderPlan()`, `Events.RENDER_PLAN_CHANGED` and their types
+(`RenderPlanLayer`, `RenderPlanSlice`, `RenderPlanDraw`, `RenderPlanReason`,
+`RenderPlanChangedEventDetail`) are stable API. `Events.RENDER_PLAN_CHANGED`
+fires on the element and on the `eventTarget` when the plan of a layer
+changes. Cornerstone changes the path of a layer by itself only when the new
+path draws the same pixels. `retryGpu()` lets the layers that left the GPU
+try it again.
+
+The plan is the one public description of a render path. The 5.x names of the
+paths are gone from the public API: `ActorRenderMode`, `ActorMapperProxy`,
+`ActorEntry.actorMapper`, the `renderMode` of a layer and the `renderMode`
+option of a 3D mount. An actor entry names its layer by `displaySetId`:
+
+```ts
+// Before
+const isImageSlice =
+  entry.actorMapper?.renderMode === ActorRenderMode.VTK_IMAGE;
+const mapper = entry.actorMapper.mapper;
+
+// After
+const layer = viewport
+  .getRenderPlan()
+  .find((planLayer) => planLayer.displaySetId === entry.displaySetId);
+const isImageSlice = layer?.slice === 'frame' && layer.draw === 'gpu';
+const mapper = entry.actor.getMapper();
+```
+
+| 5.x render mode   | `slice`     | `draw` |
+| ----------------- | ----------- | ------ |
+| `vtkImage`        | `frame`     | `gpu`  |
+| `vtkSampledSlice` | `cpu`       | `gpu`  |
+| `vtkVolumeSlice`  | `gpuVolume` | `gpu`  |
+| `cpuImage`        | `frame`     | `cpu`  |
+| `cpuVolume`       | `cpu`       | `cpu`  |
+
+`viewport.getCurrentMode()` gives `stack` or `volume` for the content, and
+`entry.actor.isA('vtkImageSlice')` tells an image slice actor from a canvas
+actor (`CanvasActor`) or a volume actor.
+
+An extension backend registers one render mode for each way of making the
+slice, in the slots of the same words as `slice`:
+
+```ts
+// Before
+registerRenderBackend({
+  backend: 'myOrg:webgpu',
+  renderModes: {
+    image: { id: 'myOrg:webgpuImage', createDefinition },
+    volume: { id: 'myOrg:webgpuVolume', createDefinition },
+  },
+});
+
+// After
+registerRenderBackend({
+  backend: 'myOrg:webgpu',
+  renderModes: {
+    frame: { id: 'myOrg:webgpuImage', createDefinition },
+    gpuVolume: { id: 'myOrg:webgpuVolume', createDefinition },
+  },
+});
+```
+
+`frame` is required, `cpu` and `gpuVolume` are optional. `image` is `frame`
+and `sampledVolume` is `cpu`; `volume` is `cpu` on a backend with
+`surface: 'cpu'` (the built-in CPU backend filed its CPU slicer there) and
+`gpuVolume` on any other.
 
 ## A viewport on the CPU shows the GPU picture
 
@@ -1531,7 +1602,7 @@ legacy picture within two levels of 255.
   `changedKeys: ['preset']`. Read the preset with
   `getDisplaySetAppearance(displaySetId)?.preset`.
 - **A surface is a display set.**
-  `viewport.addDisplaySet(geometryId, { renderMode: 'vtkGeometry3d' })` mounts
+  `viewport.addDisplaySet(geometryId)` mounts
   the surface of a geometry of the cache, `viewport.removeDisplaySet(geometryId)`
   removes it, and its colour, opacity and visibility are its appearance.
   `geometryId` is the key that was given to
@@ -1542,6 +1613,21 @@ legacy picture within two levels of 255.
   gives the actors of the display sets.
   [The 3D viewport](./3-api-map.md#the-3d-viewport) has the call for each
   member.
+- **A 3D mount has no option `renderMode`.** What a display set shows
+  follows from its descriptor: image ids give a volume, a geometry id (or the
+  id of a geometry of the cache, with no registration) a surface.
+
+  ```ts
+  // Before
+  await viewport.addDisplaySet(geometryId, { renderMode: 'vtkGeometry3d' });
+
+  // After
+  await viewport.addDisplaySet(geometryId);
+  ```
+
+  The codemod removes the key where its value is `'vtkVolume3d'` or
+  `'vtkGeometry3d'`, and `'auto'` on a viewport typed as a 3D viewport.
+
 - **A geometry display set needs no image ids.** Register it as
   `{ geometryId, reference }` with
   `displaySetRegistry.add`, and

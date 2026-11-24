@@ -12,7 +12,7 @@ import {
   RenderBackends,
   ViewportType,
 } from '../src/enums';
-import { ActorRenderMode } from '../src/types';
+import { PlanarRenderModeId } from '../src/RenderingEngine/Viewports/Planar/planarRenderModeIds';
 import * as metaData from '../src/metaData';
 import cache from '../src/cache/cache';
 import eventTarget from '../src/eventTarget';
@@ -33,7 +33,7 @@ import {
   createRegisteredPlanarRenderPaths,
   getRenderBackendForRenderMode,
   getRenderSurfaceForRenderMode,
-  getSampledVolumeRenderModeForBackend,
+  getRenderModeForBackend,
   isVolumeRenderMode,
   registerRenderBackend,
 } from '../src/RenderingEngine/helpers/renderBackendRegistry';
@@ -47,30 +47,30 @@ import {
   MAX_PREFETCH_SLICE_SAMPLES,
   MAX_SCREEN_SLICE_SIZE,
   PlanarSliceSampler,
-  SAMPLED_SLICE_CACHE_SIZE,
+  CPU_SLICE_CACHE_SIZE,
   drawsWithNearestFilter,
-  getPlanarSampledSliceInputs,
+  getPlanarCpuSliceInputs,
   getScreenSliceGeometry,
   getVolumeClipPlanes,
   needsScreenGridSample,
-} from '../src/RenderingEngine/Viewports/Planar/planarSampledSlice';
-import { PlanarSampledSliceActor } from '../src/RenderingEngine/Viewports/Planar/planarSampledSliceActor';
+} from '../src/RenderingEngine/Viewports/Planar/planarCpuSlice';
+import { PlanarCpuSliceActor } from '../src/RenderingEngine/Viewports/Planar/planarCpuSliceActor';
 import {
-  SAMPLED_SLICE_LOADING_UPDATE_MS,
-  getSampledSliceDefaultVOIRange,
-  getSampledSliceMaxSize,
-} from '../src/RenderingEngine/Viewports/Planar/VtkSampledSliceRenderPath';
-import { MAX_CPU_CANVAS_SLICE_SIZE } from '../src/RenderingEngine/Viewports/Planar/CpuVolumeSliceRenderPath';
+  CPU_SLICE_LOADING_UPDATE_MS,
+  getCpuSliceDefaultVOIRange,
+  getCpuSliceMaxSize,
+} from '../src/RenderingEngine/Viewports/Planar/VtkCpuSliceRenderPath';
+import { MAX_CPU_CANVAS_SLICE_SIZE } from '../src/RenderingEngine/Viewports/Planar/CanvasCpuSliceRenderPath';
 import {
-  SAMPLED_SLICE_REST_DELAY_MS,
-  scheduleSampledSliceRestWork,
-} from '../src/RenderingEngine/Viewports/Planar/planarSampledSliceRest';
+  CPU_SLICE_REST_DELAY_MS,
+  scheduleCpuSliceRestWork,
+} from '../src/RenderingEngine/Viewports/Planar/planarCpuSliceRest';
 import * as renderingCapabilitiesModule from '../src/utilities/renderingCapabilities';
 import VoxelManager from '../src/utilities/VoxelManager';
 import {
-  VtkVolumeSlicePath,
-  VtkVolumeSliceRenderPath,
-} from '../src/RenderingEngine/Viewports/Planar/VtkVolumeSliceRenderPath';
+  VtkGpuVolumeSlicePath,
+  VtkGpuVolumeSliceRenderPath,
+} from '../src/RenderingEngine/Viewports/Planar/VtkGpuVolumeSliceRenderPath';
 import PlanarViewport from '../src/RenderingEngine/Viewports/Planar/PlanarViewport';
 import renderingEngineCache from '../src/RenderingEngine/renderingEngineCache';
 import { displaySetRegistry } from '@cornerstonejs/metadata';
@@ -140,68 +140,73 @@ function mockSampler() {
     });
 }
 
-describe('render backend registry: sampled volume mode', () => {
+describe('render backend registry: cpu slot', () => {
   afterEach(() => {
     __resetRenderBackendRegistry();
   });
 
-  it('registers vtkSampledSlice as a volume mode of the gpu backend on the vtk surface', () => {
-    expect(isVolumeRenderMode(ActorRenderMode.VTK_SAMPLED_SLICE)).toBe(true);
+  it('registers vtkCpuSlice as the cpu mode of the gpu backend on the vtk surface', () => {
+    expect(isVolumeRenderMode(PlanarRenderModeId.VTK_CPU_SLICE)).toBe(true);
     expect(
-      getRenderSurfaceForRenderMode(ActorRenderMode.VTK_SAMPLED_SLICE)
+      getRenderSurfaceForRenderMode(PlanarRenderModeId.VTK_CPU_SLICE)
     ).toBe('vtk');
     expect(
-      getRenderBackendForRenderMode(ActorRenderMode.VTK_SAMPLED_SLICE)
+      getRenderBackendForRenderMode(PlanarRenderModeId.VTK_CPU_SLICE)
     ).toBe(RenderBackends.GPU);
-    expect(getSampledVolumeRenderModeForBackend(RenderBackends.GPU)).toBe(
-      ActorRenderMode.VTK_SAMPLED_SLICE
+    expect(getRenderModeForBackend(RenderBackends.GPU, 'cpu')).toBe(
+      PlanarRenderModeId.VTK_CPU_SLICE
     );
-    expect(getSampledVolumeRenderModeForBackend(RenderBackends.CPU)).toBe(
+    expect(getRenderModeForBackend(RenderBackends.CPU, 'cpu')).toBe(
+      PlanarRenderModeId.CANVAS_CPU_SLICE
+    );
+    expect(getRenderModeForBackend(RenderBackends.CPU, 'gpuVolume')).toBe(
       undefined
     );
-    expect(getSampledVolumeRenderModeForBackend('unknown')).toBe(undefined);
+    expect(() => getRenderModeForBackend('unknown', 'cpu')).toThrow(
+      /Unknown render backend/
+    );
   });
 
-  it('ships the sampled slice path in the default planar render paths', () => {
+  it('ships the CPU slice path in the default planar render paths', () => {
     const ids = createDefaultPlanarRenderPaths().map((path) => path.id);
 
-    expect(ids).toContain('planar:vtk-sampled-slice');
-    expect(ids).toContain('planar:vtk-volume-slice');
+    expect(ids).toContain('planar:vtk-cpu-slice');
+    expect(ids).toContain('planar:vtk-gpu-volume-slice');
   });
 
-  it('lets an extension backend declare a sampled volume mode', () => {
-    const sampledPath = { id: 'test:sampled-path' };
+  it('lets an extension backend declare a cpu mode', () => {
+    const cpuSlicePath = { id: 'test:cpu-slice-path' };
 
     registerRenderBackend({
       backend: 'test:sampler',
       renderModes: {
-        image: { id: 'test:samplerImage' },
-        volume: { id: 'test:samplerVolume' },
-        sampledVolume: {
-          id: 'test:samplerSampled',
-          createDefinition: () => sampledPath,
+        frame: { id: 'test:samplerFrame' },
+        cpu: {
+          id: 'test:samplerCpuSlice',
+          createDefinition: () => cpuSlicePath,
         },
+        gpuVolume: { id: 'test:samplerGpuVolume' },
       },
     });
 
-    expect(isVolumeRenderMode('test:samplerSampled')).toBe(true);
-    expect(getRenderBackendForRenderMode('test:samplerSampled')).toBe(
+    expect(isVolumeRenderMode('test:samplerCpuSlice')).toBe(true);
+    expect(getRenderBackendForRenderMode('test:samplerCpuSlice')).toBe(
       'test:sampler'
     );
-    expect(getSampledVolumeRenderModeForBackend('test:sampler')).toBe(
-      'test:samplerSampled'
+    expect(getRenderModeForBackend('test:sampler', 'cpu')).toBe(
+      'test:samplerCpuSlice'
     );
-    expect(createRegisteredPlanarRenderPaths()).toContain(sampledPath);
+    expect(createRegisteredPlanarRenderPaths()).toContain(cpuSlicePath);
   });
 
-  it('rejects a sampled volume mode that repeats another mode of the backend', () => {
+  it('rejects a cpu mode that repeats another mode of the backend', () => {
     expect(() =>
       registerRenderBackend({
         backend: 'test:same',
         renderModes: {
-          image: { id: 'test:sameImage' },
-          volume: { id: 'test:sameVolume' },
-          sampledVolume: { id: 'test:sameVolume' },
+          frame: { id: 'test:sameFrame' },
+          cpu: { id: 'test:sameVolume' },
+          gpuVolume: { id: 'test:sameVolume' },
         },
       })
     ).toThrow(/distinct render modes/);
@@ -210,8 +215,8 @@ describe('render backend registry: sampled volume mode', () => {
   it('keeps the core backends after a reset', () => {
     __resetRenderBackendRegistry();
 
-    expect(getSampledVolumeRenderModeForBackend(RenderBackends.GPU)).toBe(
-      ActorRenderMode.VTK_SAMPLED_SLICE
+    expect(getRenderModeForBackend(RenderBackends.GPU, 'cpu')).toBe(
+      PlanarRenderModeId.VTK_CPU_SLICE
     );
   });
 });
@@ -259,7 +264,7 @@ describe('slice first decision', () => {
 
     try {
       expect(service.select(dataSet).renderMode).toBe(
-        ActorRenderMode.VTK_SAMPLED_SLICE
+        PlanarRenderModeId.VTK_CPU_SLICE
       );
     } finally {
       setConfiguration(configuration);
@@ -271,7 +276,7 @@ describe('slice first decision', () => {
 
     expect(getConfiguration().rendering.planar.sliceFirst).toBe(false);
     expect(service.select(dataSet).renderMode).toBe(
-      ActorRenderMode.VTK_VOLUME_SLICE
+      PlanarRenderModeId.VTK_GPU_VOLUME_SLICE
     );
   });
 
@@ -279,35 +284,35 @@ describe('slice first decision', () => {
     setSliceFirst(true);
 
     expect(service.select(dataSet).renderMode).toBe(
-      ActorRenderMode.VTK_SAMPLED_SLICE
+      PlanarRenderModeId.VTK_CPU_SLICE
     );
   });
 
   it('lets the option of the display set win over the global value', () => {
     expect(service.select(dataSet, { sliceFirst: true }).renderMode).toBe(
-      ActorRenderMode.VTK_SAMPLED_SLICE
+      PlanarRenderModeId.VTK_CPU_SLICE
     );
 
     setSliceFirst(true);
 
     expect(service.select(dataSet, { sliceFirst: false }).renderMode).toBe(
-      ActorRenderMode.VTK_VOLUME_SLICE
+      PlanarRenderModeId.VTK_GPU_VOLUME_SLICE
     );
   });
 
-  it('keeps the volume mode of a cpu pin and of an extension backend with no sampled mode', () => {
+  it('keeps the cpu mode of a cpu pin and the gpuVolume mode of an extension backend with no cpu mode', () => {
     registerRenderBackend({
       backend: 'test:plain',
       renderModes: {
-        image: { id: 'test:plainImage' },
-        volume: { id: 'test:plainVolume' },
+        frame: { id: 'test:plainImage' },
+        gpuVolume: { id: 'test:plainVolume' },
       },
     });
 
     expect(
       service.select(dataSet, { sliceFirst: true, renderBackend: 'cpu' })
         .renderMode
-    ).toBe(ActorRenderMode.CPU_VOLUME);
+    ).toBe(PlanarRenderModeId.CANVAS_CPU_SLICE);
     expect(
       service.select(dataSet, { sliceFirst: true, renderBackend: 'test:plain' })
         .renderMode
@@ -317,7 +322,7 @@ describe('slice first decision', () => {
   it('keeps the stack path for a stack data set', () => {
     expect(
       service.select({ imageIds: ['plain:1'] }, { sliceFirst: true }).renderMode
-    ).toBe(ActorRenderMode.VTK_IMAGE);
+    ).toBe(PlanarRenderModeId.VTK_FRAME);
   });
 
   it('gives the GPU volume path before the load creates the volume (the viewport decides again after it), and for a colour volume', () => {
@@ -330,12 +335,12 @@ describe('slice first decision', () => {
         { imageIds: dataSet.imageIds, volumeId: 'not-cached' },
         { sliceFirst: true }
       ).renderMode
-    ).toBe(ActorRenderMode.VTK_VOLUME_SLICE);
+    ).toBe(PlanarRenderModeId.VTK_GPU_VOLUME_SLICE);
 
     volume = createVolume({ numberOfComponents: 3 });
 
     expect(service.select(dataSet, { sliceFirst: true }).renderMode).toBe(
-      ActorRenderMode.VTK_VOLUME_SLICE
+      PlanarRenderModeId.VTK_GPU_VOLUME_SLICE
     );
   });
 
@@ -348,14 +353,14 @@ describe('slice first decision', () => {
     expect(
       service.select(segmentation, { sliceFirst: true, role: 'overlay' })
         .renderMode
-    ).toBe(ActorRenderMode.VTK_VOLUME_SLICE);
+    ).toBe(PlanarRenderModeId.VTK_GPU_VOLUME_SLICE);
     expect(service.select(segmentation, { sliceFirst: true }).renderMode).toBe(
-      ActorRenderMode.VTK_VOLUME_SLICE
+      PlanarRenderModeId.VTK_GPU_VOLUME_SLICE
     );
     expect(
       service.select(segmentation, { sliceFirst: true, role: 'source' })
         .renderMode
-    ).toBe(ActorRenderMode.VTK_SAMPLED_SLICE);
+    ).toBe(PlanarRenderModeId.VTK_CPU_SLICE);
   });
 
   it('leaves every slab to the GPU volume path and samples a thickness of one sample on the CPU', () => {
@@ -370,21 +375,21 @@ describe('slice first decision', () => {
         slabThickness: 10,
         blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
       }).renderMode
-    ).toBe(ActorRenderMode.VTK_VOLUME_SLICE);
+    ).toBe(PlanarRenderModeId.VTK_GPU_VOLUME_SLICE);
     expect(
       service.select(dataSet, {
         sliceFirst: true,
         slabThickness: 2,
         blendMode: BlendModes.AVERAGE_INTENSITY_BLEND,
       }).renderMode
-    ).toBe(ActorRenderMode.VTK_VOLUME_SLICE);
+    ).toBe(PlanarRenderModeId.VTK_GPU_VOLUME_SLICE);
     expect(
       service.select(dataSet, {
         sliceFirst: true,
         slabThickness: 1,
         blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
       }).renderMode
-    ).toBe(ActorRenderMode.VTK_SAMPLED_SLICE);
+    ).toBe(PlanarRenderModeId.VTK_CPU_SLICE);
   });
 
   it('estimates the slab work from the slab samples and the largest slice', () => {
@@ -540,7 +545,7 @@ describe('sample step', () => {
       sampler.sample(volume, axialCamera([3.5, 2.5, index * 2]), nearest)
     );
 
-    expect(SAMPLED_SLICE_CACHE_SIZE).toBe(7);
+    expect(CPU_SLICE_CACHE_SIZE).toBe(7);
     expect(sampler.getStatistics().size).toBe(7);
 
     sampler.sample(volume, axialCamera([3.5, 2.5, 14]), nearest);
@@ -925,13 +930,13 @@ describe('sample step', () => {
   });
 
   it('turns a presentation into sampling inputs', () => {
-    expect(getPlanarSampledSliceInputs(volume, undefined)).toEqual({
+    expect(getPlanarCpuSliceInputs(volume, undefined)).toEqual({
       interpolationType: InterpolationType.LINEAR,
       slab: undefined,
       timePoint: undefined,
     });
     expect(
-      getPlanarSampledSliceInputs(volume, {
+      getPlanarCpuSliceInputs(volume, {
         interpolationType: InterpolationType.NEAREST,
         slabThickness: 4,
       })
@@ -948,7 +953,7 @@ describe('sample step', () => {
     };
 
     expect(
-      getPlanarSampledSliceInputs(dynamicVolume, {
+      getPlanarCpuSliceInputs(dynamicVolume, {
         blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
       }).timePoint
     ).toBe(3);
@@ -1091,13 +1096,13 @@ describe('screen grid', () => {
     );
 
     spy.mockReturnValue({ webgl: true, maxTextureSize: 16384 });
-    expect(getSampledSliceMaxSize()).toBe(16384);
+    expect(getCpuSliceMaxSize()).toBe(16384);
 
     spy.mockReturnValue({ webgl: true, maxTextureSize: 0 });
-    expect(getSampledSliceMaxSize()).toBe(2048);
+    expect(getCpuSliceMaxSize()).toBe(2048);
 
     spy.mockReturnValue({ webgl: false, maxTextureSize: 8192 });
-    expect(getSampledSliceMaxSize()).toBe(2048);
+    expect(getCpuSliceMaxSize()).toBe(2048);
 
     expect(MAX_CPU_CANVAS_SLICE_SIZE).toBe(16384);
     spy.mockRestore();
@@ -1243,7 +1248,7 @@ describe('draw step', () => {
   }
 
   it('hides the actor until it has a slice', () => {
-    const draw = new PlanarSampledSliceActor();
+    const draw = new PlanarCpuSliceActor();
 
     expect(draw.actor.getVisibility()).toBe(false);
 
@@ -1257,7 +1262,7 @@ describe('draw step', () => {
   });
 
   it('draws the slice in world coordinates on a real vtkImageData', () => {
-    const draw = new PlanarSampledSliceActor({ voxelManager: { id: 'vm' } });
+    const draw = new PlanarCpuSliceActor({ voxelManager: { id: 'vm' } });
     const slice = createSlice();
 
     expect(draw.setSlice(slice)).toBe(true);
@@ -1281,7 +1286,7 @@ describe('draw step', () => {
   });
 
   it('reuses the image data and its scalar array while the size and type stay', () => {
-    const draw = new PlanarSampledSliceActor();
+    const draw = new PlanarCpuSliceActor();
     const pixelData = new Int16Array(12);
 
     draw.setSlice(createSlice({ pixelData }));
@@ -1312,7 +1317,7 @@ describe('draw step', () => {
   });
 
   it('clips to the faces of the volume and moves the planes with the actor', () => {
-    const draw = new PlanarSampledSliceActor();
+    const draw = new PlanarCpuSliceActor();
     const volume = createVolume();
 
     draw.setClipPlanes(getVolumeClipPlanes(volume));
@@ -1342,7 +1347,7 @@ describe('draw step', () => {
   });
 
   it('draws a slice inside the volume without clip planes, so its edges are the faces', () => {
-    const draw = new PlanarSampledSliceActor();
+    const draw = new PlanarCpuSliceActor();
 
     draw.setClipPlanes(getVolumeClipPlanes(createVolume()));
     draw.setSlice(createSlice({ insideVolume: true }));
@@ -1374,7 +1379,7 @@ describe('draw step', () => {
   });
 
   it('applies the presentation of the volume path', () => {
-    const draw = new PlanarSampledSliceActor();
+    const draw = new PlanarCpuSliceActor();
 
     draw.setSlice(createSlice());
     draw.applyAppearance(
@@ -1471,7 +1476,7 @@ describe('sample step: array types and size limits', () => {
   it('draws a slice whose array type changes from one slice to the next', () => {
     const volume = createSampledVolume();
     const sampler = new PlanarSliceSampler({ keepFractions: true });
-    const draw = new PlanarSampledSliceActor();
+    const draw = new PlanarCpuSliceActor();
     const scalarsOf = () =>
       draw.mapper.getInputData().getPointData().getScalars();
 
@@ -1646,7 +1651,7 @@ describe('work at rest after a cancel', () => {
       hasPendingSteps: () => false,
     };
 
-    cancel = scheduleSampledSliceRestWork({
+    cancel = scheduleCpuSliceRestWork({
       sampler,
       volume: { loadStatus: { loaded: true } },
       getCamera: () => undefined,
@@ -1655,7 +1660,7 @@ describe('work at rest after a cancel', () => {
       getNeighbours,
       onFinerSlice: () => cancel(),
     });
-    jest.advanceTimersByTime(10 * SAMPLED_SLICE_REST_DELAY_MS);
+    jest.advanceTimersByTime(10 * CPU_SLICE_REST_DELAY_MS);
 
     expect(sampler.sampleFiner).toHaveBeenCalledTimes(1);
     expect(getNeighbours).not.toHaveBeenCalled();
@@ -1672,14 +1677,14 @@ describe('default VOI of a sampled slice', () => {
       .spyOn(setDefaultVolumeVOIModule, 'getDefaultVolumeVOIRange')
       .mockResolvedValue({ lower: 40, upper: 400 });
 
-    expect(await getSampledSliceDefaultVOIRange(volume)).toEqual({
+    expect(await getCpuSliceDefaultVOIRange(volume)).toEqual({
       lower: 40,
       upper: 400,
     });
 
     spy.mockResolvedValue(undefined);
 
-    expect(await getSampledSliceDefaultVOIRange(volume)).toEqual({
+    expect(await getCpuSliceDefaultVOIRange(volume)).toEqual({
       lower: -1000,
       upper: 2000,
     });
@@ -1810,12 +1815,12 @@ describe('PlanarViewport with slice first (render path)', () => {
     await flush();
   }
 
-  it('mounts the sampled slice path, samples the visible slice and adds no 3D texture', async () => {
+  it('mounts the CPU slice path, samples the visible slice and adds no 3D texture', async () => {
     await mount();
 
     const rendering = binding().rendering;
 
-    expect(rendering.renderMode).toBe(ActorRenderMode.VTK_SAMPLED_SLICE);
+    expect(rendering.renderMode).toBe(PlanarRenderModeId.VTK_CPU_SLICE);
     expect(viewport.getCurrentMode()).toBe('volume');
     expect(rendering.mapper.getClassName()).toBe('vtkImageMapper');
     expect(rendering.fullGrid).toBe(volume.voxelGrid);
@@ -1829,9 +1834,16 @@ describe('PlanarViewport with slice first (render path)', () => {
     const entry = binding().getActorEntry(binding().data);
 
     expect(entry.referencedId).toBe(volumeId);
-    expect(entry.actorMapper.renderMode).toBe(
-      ActorRenderMode.VTK_SAMPLED_SLICE
-    );
+    expect(entry.displaySetId).toBe(displaySetId);
+    expect(entry.actor).toBe(rendering.actor);
+    expect(viewport.getRenderPlan()).toEqual([
+      expect.objectContaining({
+        displaySetId,
+        slice: 'cpu',
+        draw: 'gpu',
+        backend: 'gpu',
+      }),
+    ]);
   });
 
   it('does not sample for zoom, pan or VOI, and samples once for a scroll', async () => {
@@ -1923,19 +1935,19 @@ describe('PlanarViewport with slice first (render path)', () => {
   it('remounts a mounted volume in place when setSliceFirst turns slice first on', async () => {
     const realResolver = viewport.renderPathResolver;
     const gpuAttachment = createFakeVolumeSliceAttachment(
-      ActorRenderMode.VTK_VOLUME_SLICE
+      PlanarRenderModeId.VTK_GPU_VOLUME_SLICE
     );
 
     viewport.renderPathResolver = {
       resolve: (type, data, options) =>
-        options.renderMode === ActorRenderMode.VTK_VOLUME_SLICE
+        options.renderMode === PlanarRenderModeId.VTK_GPU_VOLUME_SLICE
           ? { createRenderPath: () => ({ addData: async () => gpuAttachment }) }
           : realResolver.resolve(type, data, options),
     };
     await mount({ sliceFirst: undefined });
 
     expect(binding().rendering.renderMode).toBe(
-      ActorRenderMode.VTK_VOLUME_SLICE
+      PlanarRenderModeId.VTK_GPU_VOLUME_SLICE
     );
 
     setSliceFirst(true);
@@ -1943,7 +1955,7 @@ describe('PlanarViewport with slice first (render path)', () => {
 
     const rendering = binding().rendering;
 
-    expect(rendering.renderMode).toBe(ActorRenderMode.VTK_SAMPLED_SLICE);
+    expect(rendering.renderMode).toBe(PlanarRenderModeId.VTK_CPU_SLICE);
     expect(gpuAttachment.removeData).toHaveBeenCalledTimes(1);
     expect(rendering.actor.getVisibility()).toBe(true);
     expect(renderer.getActors()).toEqual([rendering.actor]);
@@ -1983,12 +1995,12 @@ describe('PlanarViewport with slice first (render path)', () => {
 
       expect(viewport.dataProvider.load).toHaveBeenCalledTimes(1);
       expect(viewport.dataProvider.load.mock.calls[0][1].renderMode).toBe(
-        ActorRenderMode.VTK_VOLUME_SLICE
+        PlanarRenderModeId.VTK_GPU_VOLUME_SLICE
       );
       expect(binding().rendering.renderMode).toBe(
-        ActorRenderMode.VTK_SAMPLED_SLICE
+        PlanarRenderModeId.VTK_CPU_SLICE
       );
-      expect(binding().data.renderMode).toBe(ActorRenderMode.VTK_SAMPLED_SLICE);
+      expect(binding().data.renderMode).toBe(PlanarRenderModeId.VTK_CPU_SLICE);
       expect(sampleSpy).toHaveBeenCalled();
     }
   );
@@ -2016,7 +2028,7 @@ describe('PlanarViewport with slice first (render path)', () => {
       resolve: (type, data, options) => {
         renderMode = options.renderMode;
 
-        return options.renderMode === ActorRenderMode.VTK_IMAGE
+        return options.renderMode === PlanarRenderModeId.VTK_FRAME
           ? {
               createRenderPath: () => ({
                 addData: async () => ({
@@ -2037,7 +2049,7 @@ describe('PlanarViewport with slice first (render path)', () => {
     });
     await flush();
 
-    expect(renderMode).toBe(ActorRenderMode.VTK_IMAGE);
+    expect(renderMode).toBe(PlanarRenderModeId.VTK_FRAME);
     expect(decide).toHaveBeenCalledTimes(1);
   });
 
@@ -2055,7 +2067,7 @@ describe('PlanarViewport with slice first (render path)', () => {
     await mount({ sliceFirst: undefined });
 
     expect(binding().rendering.renderMode).toBe(
-      ActorRenderMode.VTK_VOLUME_SLICE
+      PlanarRenderModeId.VTK_GPU_VOLUME_SLICE
     );
 
     viewport.setDisplaySetAppearance(displaySetId, { slabThickness: 1e6 });
@@ -2093,7 +2105,7 @@ describe('PlanarViewport with slice first (render path)', () => {
     expect(sampleSpy).toHaveBeenCalledTimes(1);
     expect(fineCalls()).toHaveLength(0);
 
-    jest.advanceTimersByTime(SAMPLED_SLICE_REST_DELAY_MS - 1);
+    jest.advanceTimersByTime(CPU_SLICE_REST_DELAY_MS - 1);
 
     expect(sampleSpy).toHaveBeenCalledTimes(1);
 
@@ -2107,7 +2119,7 @@ describe('PlanarViewport with slice first (render path)', () => {
       1,
     ]);
 
-    jest.advanceTimersByTime(10 * SAMPLED_SLICE_REST_DELAY_MS);
+    jest.advanceTimersByTime(10 * CPU_SLICE_REST_DELAY_MS);
 
     expect(fineCalls()).toHaveLength(1);
 
@@ -2124,9 +2136,9 @@ describe('PlanarViewport with slice first (render path)', () => {
 
     const onScreenZ = sampleSpy.mock.calls[0][0].geometry.origin[2];
 
-    jest.advanceTimersByTime(10 * SAMPLED_SLICE_REST_DELAY_MS);
+    jest.advanceTimersByTime(10 * CPU_SLICE_REST_DELAY_MS);
     viewport.setZoom(3);
-    jest.advanceTimersByTime(10 * SAMPLED_SLICE_REST_DELAY_MS);
+    jest.advanceTimersByTime(10 * CPU_SLICE_REST_DELAY_MS);
 
     const onScreenSamples = sampleSpy.mock.calls.filter(
       (call) => call[0].geometry.origin[2] === onScreenZ
@@ -2142,7 +2154,7 @@ describe('PlanarViewport with slice first (render path)', () => {
 
     const coarseSpacing = sampledSpacing(sampleSpy.mock.calls[0]);
 
-    jest.advanceTimersByTime(10 * SAMPLED_SLICE_REST_DELAY_MS);
+    jest.advanceTimersByTime(10 * CPU_SLICE_REST_DELAY_MS);
 
     const firstFineSpacing = drawnSpacing();
 
@@ -2154,7 +2166,7 @@ describe('PlanarViewport with slice first (render path)', () => {
     expect(sampleSpy).not.toHaveBeenCalled();
     expect(drawnSpacing()).toBeCloseTo(coarseSpacing);
 
-    jest.advanceTimersByTime(10 * SAMPLED_SLICE_REST_DELAY_MS);
+    jest.advanceTimersByTime(10 * CPU_SLICE_REST_DELAY_MS);
 
     expect(sampleSpy).toHaveBeenCalledTimes(1);
     expect(isScreenGridCall(sampleSpy.mock.calls[0])).toBe(true);
@@ -2165,7 +2177,7 @@ describe('PlanarViewport with slice first (render path)', () => {
     expect(sampleSpy).toHaveBeenCalledTimes(1);
     expect(drawnSpacing()).toBeCloseTo(coarseSpacing);
 
-    jest.advanceTimersByTime(10 * SAMPLED_SLICE_REST_DELAY_MS);
+    jest.advanceTimersByTime(10 * CPU_SLICE_REST_DELAY_MS);
 
     expect(sampleSpy).toHaveBeenCalledTimes(2);
     expect(drawnSpacing()).toBeCloseTo(firstFineSpacing / 4);
@@ -2173,13 +2185,13 @@ describe('PlanarViewport with slice first (render path)', () => {
     viewport.setDisplaySetAppearance(displaySetId, {
       voiRange: { lower: 0, upper: 80 },
     });
-    jest.advanceTimersByTime(10 * SAMPLED_SLICE_REST_DELAY_MS);
+    jest.advanceTimersByTime(10 * CPU_SLICE_REST_DELAY_MS);
 
     expect(sampleSpy).toHaveBeenCalledTimes(2);
     expect(drawnSpacing()).toBeCloseTo(firstFineSpacing / 4);
     expect(binding().rendering.getSliceCacheStatistics()).toMatchObject({
       refined: 3,
-      size: SAMPLED_SLICE_CACHE_SIZE + 1,
+      size: CPU_SLICE_CACHE_SIZE + 1,
     });
   });
 
@@ -2196,7 +2208,7 @@ describe('PlanarViewport with slice first (render path)', () => {
     viewport.removeDisplaySet(displaySetId);
     sampleSpy.mockClear();
     onLoad();
-    jest.advanceTimersByTime(10 * SAMPLED_SLICE_LOADING_UPDATE_MS);
+    jest.advanceTimersByTime(10 * CPU_SLICE_LOADING_UPDATE_MS);
 
     expect(sampleSpy).not.toHaveBeenCalled();
   });
@@ -2206,7 +2218,7 @@ describe('PlanarViewport with slice first (render path)', () => {
     await mount({ orientation: obliqueOrientation });
     viewport.removeDisplaySet(displaySetId);
     sampleSpy.mockClear();
-    jest.advanceTimersByTime(10 * SAMPLED_SLICE_REST_DELAY_MS);
+    jest.advanceTimersByTime(10 * CPU_SLICE_REST_DELAY_MS);
 
     expect(sampleSpy).not.toHaveBeenCalled();
   });
@@ -2228,7 +2240,7 @@ describe('PlanarViewport with slice first (render path)', () => {
       const onScreenZ = sampleSpy.mock.calls[0][0].geometry.origin[2];
 
       sampleSpy.mockClear();
-      jest.advanceTimersByTime(SAMPLED_SLICE_REST_DELAY_MS);
+      jest.advanceTimersByTime(CPU_SLICE_REST_DELAY_MS);
 
       expect(sampleSpy).not.toHaveBeenCalled();
       expect(window.requestIdleCallback).toHaveBeenCalledWith(
@@ -2261,7 +2273,7 @@ describe('PlanarViewport with slice first (render path)', () => {
       expect(sampleSpy).not.toHaveBeenCalled();
       expect(binding().rendering.getSliceCacheStatistics().hits).toBe(2);
 
-      jest.advanceTimersByTime(SAMPLED_SLICE_REST_DELAY_MS);
+      jest.advanceTimersByTime(CPU_SLICE_REST_DELAY_MS);
       viewport.setZoom(2);
 
       expect(window.cancelIdleCallback).toHaveBeenCalled();
@@ -2276,7 +2288,7 @@ describe('PlanarViewport with slice first (render path)', () => {
     const ptVolume = createVolume({ volumeId: 'pt-volume', imageIds });
     const volumes = { [volumeId]: volume, 'pt-volume': ptVolume };
     const realResolver = viewport.renderPathResolver;
-    const gpuPath = new VtkVolumeSlicePath();
+    const gpuPath = new VtkGpuVolumeSlicePath();
 
     jest
       .spyOn(createVolumeSliceActorModule, 'default')
@@ -2302,10 +2314,10 @@ describe('PlanarViewport with slice first (render path)', () => {
     });
     viewport.renderPathResolver = {
       resolve: (type, data, options) =>
-        options.renderMode === ActorRenderMode.VTK_VOLUME_SLICE
+        options.renderMode === PlanarRenderModeId.VTK_GPU_VOLUME_SLICE
           ? {
               createRenderPath: () =>
-                new VtkVolumeSliceRenderPath(
+                new VtkGpuVolumeSliceRenderPath(
                   () => [],
                   () => undefined
                 ),
@@ -2329,10 +2341,10 @@ describe('PlanarViewport with slice first (render path)', () => {
     await flush();
 
     expect(binding().rendering.renderMode).toBe(
-      ActorRenderMode.VTK_SAMPLED_SLICE
+      PlanarRenderModeId.VTK_CPU_SLICE
     );
     expect(viewport.bindings.get(overlayId).rendering.renderMode).toBe(
-      ActorRenderMode.VTK_VOLUME_SLICE
+      PlanarRenderModeId.VTK_GPU_VOLUME_SLICE
     );
 
     setSliceFirst(false);
@@ -2341,7 +2353,7 @@ describe('PlanarViewport with slice first (render path)', () => {
     const source = binding().rendering;
     const overlay = viewport.bindings.get(overlayId).rendering;
 
-    expect(source.renderMode).toBe(ActorRenderMode.VTK_VOLUME_SLICE);
+    expect(source.renderMode).toBe(PlanarRenderModeId.VTK_GPU_VOLUME_SLICE);
     expect(source.overlayOrder).toBe(0);
     expect(overlay.overlayOrder).toBe(1);
     expect(Array.from(source.actor.getPosition())).toEqual([0, 0, 0]);

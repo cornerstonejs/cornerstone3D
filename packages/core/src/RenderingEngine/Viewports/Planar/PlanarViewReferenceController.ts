@@ -1,5 +1,5 @@
 import { vec3 } from 'gl-matrix';
-import { ActorRenderMode } from '../../../types';
+import { PlanarRenderModeId } from './planarRenderModeIds';
 import type {
   ICamera,
   IDynamicImageVolume,
@@ -673,8 +673,8 @@ class PlanarViewReferenceController {
     const { rendering } = referenceContext;
 
     if (
-      rendering.renderMode === ActorRenderMode.CPU_IMAGE ||
-      rendering.renderMode === ActorRenderMode.VTK_IMAGE
+      rendering.renderMode === PlanarRenderModeId.CANVAS_FRAME ||
+      rendering.renderMode === PlanarRenderModeId.VTK_FRAME
     ) {
       return this.applyImageViewReference(referenceContext, viewRef);
     }
@@ -1012,9 +1012,9 @@ class PlanarViewReferenceController {
     const { rendering } = referenceContext;
 
     if (
-      rendering.renderMode !== ActorRenderMode.CPU_VOLUME &&
-      rendering.renderMode !== ActorRenderMode.VTK_VOLUME_SLICE &&
-      rendering.renderMode !== ActorRenderMode.VTK_SAMPLED_SLICE
+      rendering.renderMode !== PlanarRenderModeId.CANVAS_CPU_SLICE &&
+      rendering.renderMode !== PlanarRenderModeId.VTK_GPU_VOLUME_SLICE &&
+      rendering.renderMode !== PlanarRenderModeId.VTK_CPU_SLICE
     ) {
       return;
     }

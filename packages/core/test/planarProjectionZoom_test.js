@@ -6,6 +6,7 @@ import {
   renderAndWait,
   showStack,
   showVolume,
+  drawPathOf,
 } from './utils/planarSeriesBothModes';
 
 const { Enums, utilities, viewportProjection } = cornerstone3D;
@@ -18,10 +19,10 @@ const ANCHOR = [260, 110];
 
 /** A direct next planar viewport in each content mode, on each draw path. */
 const CASES = [
-  ['stack', 'GPU', showStack, {}, 'vtkImage'],
-  ['volume', 'GPU', showVolume, {}, 'vtkSampledSlice'],
-  ['stack', 'CPU', showStack, { renderBackend: 'cpu' }, 'cpuImage'],
-  ['volume', 'CPU', showVolume, { renderBackend: 'cpu' }, 'cpuVolume'],
+  ['stack', 'GPU', showStack, {}, 'frame-gpu'],
+  ['volume', 'GPU', showVolume, {}, 'cpu-gpu'],
+  ['stack', 'CPU', showStack, { renderBackend: 'cpu' }, 'frame-cpu'],
+  ['volume', 'CPU', showVolume, { renderBackend: 'cpu' }, 'cpu-cpu'],
 ];
 
 /** The red value that the canvas of the viewport shows at a canvas point. */
@@ -76,7 +77,7 @@ describe('The anchor of a zoom in the planar projection -- ', () => {
     });
   });
 
-  for (const [mode, backend, show, options, renderMode] of CASES) {
+  for (const [mode, backend, show, options, drawPath] of CASES) {
     const where = `in ${mode} mode on the ${backend}`;
 
     it(`keeps the world point of the anchor under it for a zoom, as one change of the view state, ${where}`, async function () {
@@ -97,7 +98,7 @@ describe('The anchor of a zoom in the planar projection -- ', () => {
       const presentation = viewportProjection.getFraming(next);
 
       expect(next.getCurrentMode()).toBe(mode);
-      expect(next.getRenderPlan()[0].renderMode).toBe(renderMode);
+      expect(drawPathOf(next.getRenderPlan()[0])).toBe(drawPath);
       expect(events.count).toBe(1);
       expect(presentation.zoom).toBeCloseTo(1.8, 6);
       expect(presentation.scale[0]).toBeCloseTo(1.8, 6);
@@ -250,7 +251,7 @@ describe('A zoom of the planar projection on a stretched view -- ', () => {
     return viewportProjection.getFraming(viewport).scale;
   }
 
-  for (const [mode, backend, show, options, renderMode] of CASES) {
+  for (const [mode, backend, show, options, drawPath] of CASES) {
     const where = `in ${mode} mode on the ${backend}`;
 
     it(`keeps the ratio of the two axes for a zoom, with and without an anchor and a pan, ${where}`, async function () {
@@ -259,7 +260,7 @@ describe('A zoom of the planar projection on a stretched view -- ', () => {
 
       const read = viewportProjection.getFraming(next);
 
-      expect(next.getRenderPlan()[0].renderMode).toBe(renderMode);
+      expect(drawPathOf(next.getRenderPlan()[0])).toBe(drawPath);
       expect(read.zoom).toBeCloseTo(1, 6);
       expect(read.scale).toEqual([1.5, 1]);
 

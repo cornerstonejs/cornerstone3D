@@ -62,7 +62,6 @@ export type {
   PlanarOrientation,
   PlanarAppearanceProps,
   PlanarProperties,
-  PlanarRenderMode,
   PlanarSetDataOptions,
   PlanarViewportInput,
   PlanarViewportInputOptions,
@@ -72,6 +71,8 @@ export type {
   PlanarSliceState,
   PlanarResolvedICamera,
   RenderPlanChangedEventDetail,
+  RenderPlanDraw,
   RenderPlanLayer,
   RenderPlanReason,
+  RenderPlanSlice,
 } from './PlanarViewportTypes';

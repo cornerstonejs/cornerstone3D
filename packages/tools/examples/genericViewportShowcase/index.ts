@@ -490,7 +490,6 @@ async function run() {
   const volume3dViewport = getVolume3dViewport();
   await volume3dViewport.setDisplaySets({
     displaySetId: volume3dDisplaySetId,
-    options: { renderMode: 'vtkVolume3d' },
   });
   volume3dViewport.setDisplaySetAppearance(volume3dDisplaySetId, {
     sampleDistanceMultiplier: 1,

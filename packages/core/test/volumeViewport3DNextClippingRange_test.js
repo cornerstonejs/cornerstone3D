@@ -152,7 +152,6 @@ async function showVolume(next) {
   });
   await next.setDisplaySets({
     displaySetId: 'next3DVolume',
-    options: { renderMode: 'vtkVolume3d' },
   });
 }
 
@@ -181,7 +180,6 @@ async function showSurface(next) {
   });
   await next.setDisplaySets({
     displaySetId: 'clippingBox',
-    options: { renderMode: 'vtkGeometry3d' },
   });
 }
 

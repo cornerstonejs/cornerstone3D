@@ -1,6 +1,5 @@
 import type { Types, PlanarViewport } from '@cornerstonejs/core';
 import {
-  ActorRenderMode,
   eventTarget,
   Enums,
   getEnabledElement,
@@ -9,24 +8,25 @@ import {
 import { Colorbar } from './Colorbar';
 import type { ViewportColorbarProps, ColorbarVOIRange } from './types';
 import { getVOIMultipliers } from '../../getVOIMultipliers';
+import { getRenderPlanLayer } from '../../viewport/getRenderPlanLayer';
 
 const { Events } = Enums;
 const defaultImageRange = { lower: -1000, upper: 1000 };
 
 /**
- * Whether an image actor of a viewport draws a slice of a volume sampled on
- * the CPU (`vtkSampledSlice`). The input data of its mapper holds only the
- * visible slice, so the range of its scalars is not the range of the volume;
- * the volume range comes from the voxel manager that the input data carries.
+ * Whether an image actor of a viewport draws a slice of a volume cut on the
+ * CPU and drawn on the GPU: its layer in the render plan has `slice: 'cpu'`
+ * and `draw: 'gpu'`. The input data of its mapper holds only the visible
+ * slice, so the range of its scalars is not the range of the volume; the
+ * volume range comes from the voxel manager that the input data carries.
  */
-function isSampledSliceActor(viewport, actor): boolean {
-  const actorEntries = viewport.getActors?.() ?? [];
-
-  return actorEntries.some(
-    (actorEntry) =>
-      actorEntry.actor === actor &&
-      actorEntry.actorMapper?.renderMode === ActorRenderMode.VTK_SAMPLED_SLICE
+function isCpuSliceActor(viewport, actor): boolean {
+  const actorEntry = (viewport.getActors?.() ?? []).find(
+    (entry) => entry.actor === actor
   );
+  const layer = getRenderPlanLayer(viewport, actorEntry?.displaySetId);
+
+  return layer?.slice === 'cpu' && layer.draw === 'gpu';
 }
 
 /**
@@ -113,7 +113,7 @@ class ViewportColorbar extends Colorbar {
 
     const imageData = actor.getMapper().getInputData();
 
-    const scalarData = isSampledSliceActor(viewport, actor)
+    const scalarData = isCpuSliceActor(viewport, actor)
       ? undefined
       : imageData.getPointData().getScalars();
 

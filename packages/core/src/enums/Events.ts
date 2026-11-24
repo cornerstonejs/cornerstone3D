@@ -334,13 +334,12 @@ enum Events {
 
   /**
    * Triggers on the viewport element and on the eventTarget when the render
-   * plan of one layer of a planar next viewport changes
+   * plan of one layer of a planar viewport changes
    * (`PlanarViewport.getRenderPlan`): how its slice is made, what draws it,
-   * its render mode or the reason. It fires at most once for each layer in
+   * its render backend or the reason. It fires at most once for each layer in
    * one pass of the render path decision, and also for a layer that was just
-   * added. Detail: `{ renderingEngineId, viewportId, displaySetId, previous,
-   * current, reason }`.
-   * @experimental
+   * added. Detail (`RenderPlanChangedEventDetail`): `{ renderingEngineId,
+   * viewportId, displaySetId, previous, current, reason }`.
    */
   RENDER_PLAN_CHANGED = 'CORNERSTONE_RENDER_PLAN_CHANGED',
 }

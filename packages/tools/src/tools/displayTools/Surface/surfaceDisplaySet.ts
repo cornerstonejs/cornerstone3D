@@ -67,7 +67,6 @@ async function addOrUpdateSurfaceDisplaySet(
     },
   });
   await viewport.addDisplaySet(geometryId, {
-    renderMode: 'vtkGeometry3d',
     role: 'overlay',
   });
   resetViewportCamera(viewport);

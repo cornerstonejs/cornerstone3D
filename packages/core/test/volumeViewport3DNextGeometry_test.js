@@ -84,7 +84,6 @@ async function showVolume(next) {
   });
   await next.setDisplaySets({
     displaySetId: 'next3DVolume',
-    options: { renderMode: 'vtkVolume3d' },
   });
 }
 
@@ -187,7 +186,7 @@ describe('Direct next 3D viewport, a geometry display set -- ', () => {
 
     await showVolume(next);
     createSurfaceGeometry('surface1', [0, 0, 0], [30, 20, 10]);
-    await next.addDisplaySet('surface1', { renderMode: 'vtkGeometry3d' });
+    await next.addDisplaySet('surface1');
 
     const entry = geometryEntryOf(next, 'surface1');
 
@@ -261,7 +260,7 @@ describe('Direct next 3D viewport, a geometry display set -- ', () => {
     await showVolume(next);
     createSurfaceGeometry('surface1', [0, 0, 0], [30, 20, 10]);
     next.setDisplaySetAppearance('surface1', { color: [0, 0, 255] });
-    await next.addDisplaySet('surface1', { renderMode: 'vtkGeometry3d' });
+    await next.addDisplaySet('surface1');
 
     const { actor } = geometryEntryOf(next, 'surface1');
 
@@ -301,7 +300,7 @@ describe('Direct next 3D viewport, a geometry display set -- ', () => {
       [30, 20, 10]
     ).data;
 
-    await next.addDisplaySet('surface1', { renderMode: 'vtkGeometry3d' });
+    await next.addDisplaySet('surface1');
 
     const { actor, uid } = geometryEntryOf(next, 'surface1');
     const polyData = actor.getMapper().getInputData();
@@ -334,7 +333,7 @@ describe('Direct next 3D viewport, a geometry display set -- ', () => {
       [30, 20, 10]
     ).data;
 
-    await next.addDisplaySet('surface1', { renderMode: 'vtkGeometry3d' });
+    await next.addDisplaySet('surface1');
 
     const { actor, uid } = geometryEntryOf(next, 'surface1');
     const { points, polys } = surface;
@@ -368,7 +367,7 @@ describe('Direct next 3D viewport, a geometry display set -- ', () => {
       [200, 150, 120]
     ).data;
 
-    await next.addDisplaySet('surface1', { renderMode: 'vtkGeometry3d' });
+    await next.addDisplaySet('surface1');
 
     const { actor } = geometryEntryOf(next, 'surface1');
 
@@ -394,7 +393,7 @@ describe('Direct next 3D viewport, a geometry display set -- ', () => {
     const max = [150, 60, 300];
 
     createSurfaceGeometry('surface1', min, max);
-    await next.addDisplaySet('surface1', { renderMode: 'vtkGeometry3d' });
+    await next.addDisplaySet('surface1');
 
     const { viewUp, focalPoint, position } = LEGACY_ACTOR_ONLY_CAMERA;
 
@@ -417,7 +416,7 @@ describe('Direct next 3D viewport, a geometry display set -- ', () => {
 
     await showVolume(next);
     createSurfaceGeometry('surface1', [2, 2, 2], [20, 15, 10]);
-    await next.addDisplaySet('surface1', { renderMode: 'vtkGeometry3d' });
+    await next.addDisplaySet('surface1');
     next.resetViewState();
 
     const nextCamera = next.getViewState();
@@ -438,7 +437,7 @@ describe('Direct next 3D viewport, a geometry display set -- ', () => {
     const volumeFit = next.getViewState();
 
     createSurfaceGeometry('surface1', min, max);
-    await next.addDisplaySet('surface1', { renderMode: 'vtkGeometry3d' });
+    await next.addDisplaySet('surface1');
     next.resetViewState();
 
     expectBoxInsideCanvas(next, min, max);

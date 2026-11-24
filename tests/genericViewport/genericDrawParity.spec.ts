@@ -285,8 +285,8 @@ const VIEW_CASES: ParityCase[] = [
 type TestViewport = {
   getRenderPlan: () => Array<{
     displaySetId: string;
+    slice: string;
     draw: string;
-    renderMode: string;
     reason: string;
   }>;
   getDebugBindings: () => Array<{
@@ -693,13 +693,13 @@ test.describe('Draw parity: the CPU draw step draws the picture of the GPU draw 
 
             return viewport
               .getRenderPlan()
-              .map(({ renderMode, reason }) => [renderMode, reason]);
+              .map(({ slice, draw, reason }) => [slice, draw, reason]);
           }, ENGINE_ID),
         { timeout: SWITCH_TIMEOUT_MS }
       )
       .toEqual([
-        ['cpuVolume', 'slabTooLarge'],
-        ['cpuVolume', 'slabTooLarge'],
+        ['cpu', 'cpu', 'slabTooLarge'],
+        ['cpu', 'cpu', 'slabTooLarge'],
       ]);
   });
 });

@@ -8,9 +8,9 @@ import { imageQualityStatusOf } from '../../helpers/fidelityIndicator/collectFid
 import { resolvePlanarViewportView } from './PlanarResolvedView';
 import type { PlanarViewState } from './PlanarViewportTypes';
 import type {
-  PlanarCpuVolumeRendering,
-  PlanarSampledSliceRendering,
-  PlanarVolumeSliceRendering,
+  PlanarCanvasCpuSliceRendering,
+  PlanarVtkCpuSliceRendering,
+  PlanarVtkGpuVolumeSliceRendering,
 } from './planarRuntimeTypes';
 
 /**
@@ -59,9 +59,9 @@ interface PlanarImageEventContext {
 
 /** The rendering of a volume on any of its three draw paths. */
 type PlanarVolumeEventRendering =
-  | PlanarCpuVolumeRendering
-  | PlanarVolumeSliceRendering
-  | PlanarSampledSliceRendering;
+  | PlanarCanvasCpuSliceRendering
+  | PlanarVtkGpuVolumeSliceRendering
+  | PlanarVtkCpuSliceRendering;
 
 /** The volume renderings whose first slice a view state has placed. */
 const renderingsWithPlacedSlice = new WeakSet<PlanarVolumeEventRendering>();

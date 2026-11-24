@@ -10,14 +10,14 @@ import type { PlanarRendering } from './planarRuntimeTypes';
 import type { PlanarRenderPathProjectionCamera } from './planarRenderPathProjection';
 import { resolvePlanarViewportView } from './PlanarResolvedView';
 import {
-  SAMPLED_SLICE_PREFETCH_NEIGHBOURS,
+  CPU_SLICE_PREFETCH_NEIGHBOURS,
   getScreenSliceGeometry,
-} from './planarSampledSlice';
+} from './planarCpuSlice';
 import type {
-  PlanarSampledSlice,
-  PlanarSampledSliceInputs,
+  PlanarCpuSlice,
+  PlanarCpuSliceInputs,
   PlanarSliceSampler,
-} from './planarSampledSlice';
+} from './planarCpuSlice';
 import { isVolumeLoading } from '../renderingFidelity';
 
 /**
@@ -28,19 +28,19 @@ import { isVolumeLoading } from '../renderingFidelity';
  * oblique slice is sampled once more per screen pixel, and the neighbours are
  * prefetched.
  */
-export const SAMPLED_SLICE_REST_DELAY_MS = 100;
+export const CPU_SLICE_REST_DELAY_MS = 100;
 
 /**
  * The longest wait for an idle period before a prefetch runs anyway, so a
  * busy page still fills the neighbours.
  */
-export const SAMPLED_SLICE_IDLE_TIMEOUT_MS = 500;
+export const CPU_SLICE_IDLE_TIMEOUT_MS = 500;
 
 /**
  * The work of one step of a slab sampled in steps, in milliseconds: 12 ms per
  * animation frame, so a frame of 16.7 ms keeps time to draw.
  */
-export const SAMPLED_SLICE_STEP_MS = 12;
+export const CPU_SLICE_STEP_MS = 12;
 
 /**
  * The smallest move of the view plane along its normal that counts as a
@@ -49,7 +49,7 @@ export const SAMPLED_SLICE_STEP_MS = 12;
 const PLANE_MOVE_TOLERANCE = 1e-6;
 
 /** The context of a render path that draws a sampled slice. */
-export type PlanarSampledSliceContext =
+export type PlanarCpuSliceContext =
   | PlanarCpuVolumeAdapterContext
   | PlanarVtkVolumeAdapterContext;
 
@@ -93,7 +93,7 @@ export function recordPlaneMove(
 
 /**
  * Runs a callback in idle time, with requestIdleCallback and a timeout of
- * SAMPLED_SLICE_IDLE_TIMEOUT_MS, or with setTimeout where the browser has no
+ * CPU_SLICE_IDLE_TIMEOUT_MS, or with setTimeout where the browser has no
  * requestIdleCallback (Safari).
  *
  * @returns the function that cancels the callback
@@ -105,7 +105,7 @@ export function requestIdle(callback: () => void): () => void {
   ) {
     const cancelIdle = cancelIdleCallback;
     const idleId = requestIdleCallback(callback, {
-      timeout: SAMPLED_SLICE_IDLE_TIMEOUT_MS,
+      timeout: CPU_SLICE_IDLE_TIMEOUT_MS,
     });
 
     return () => cancelIdle(idleId);
@@ -141,7 +141,7 @@ export function getCanvasScreenSliceGeometry(
 /**
  * The cameras of the neighbour planes that a scroll reaches, nearest first and
  * in the direction of the last scroll first: one step ahead, one step back,
- * two steps ahead, and so on up to SAMPLED_SLICE_PREFETCH_NEIGHBOURS.
+ * two steps ahead, and so on up to CPU_SLICE_PREFETCH_NEIGHBOURS.
  *
  * For the source the plane of each neighbour is resolved as a scroll resolves
  * it: the view state of the viewport with the image index of the neighbour
@@ -152,7 +152,7 @@ export function getCanvasScreenSliceGeometry(
  * and prefetches nothing before the first scroll.
  */
 export function getNeighbourCameras(args: {
-  ctx: PlanarSampledSliceContext;
+  ctx: PlanarCpuSliceContext;
   displaySetId: string;
   rendering: PlanarRendering & {
     currentImageIdIndex: number;
@@ -170,7 +170,7 @@ export function getNeighbourCameras(args: {
   const direction = lastStep < 0 ? -1 : 1;
   const steps: number[] = [];
 
-  for (let step = 1; step <= SAMPLED_SLICE_PREFETCH_NEIGHBOURS; step++) {
+  for (let step = 1; step <= CPU_SLICE_PREFETCH_NEIGHBOURS; step++) {
     steps.push(step * direction, -step * direction);
   }
 
@@ -210,16 +210,16 @@ export function getNeighbourCameras(args: {
 
 /**
  * Runs the steps of a slab that a sampler samples in steps
- * (`PlanarSliceSampler.continueSampling`), SAMPLED_SLICE_STEP_MS of work per
+ * (`PlanarSliceSampler.continueSampling`), CPU_SLICE_STEP_MS of work per
  * animation frame, until none is left. `onSlice` gets the slab when it is
  * done, and `onDone` runs after the last step.
  *
  * @returns the function that cancels the steps that remain
  */
-export function runSampledSliceSteps(args: {
+export function runCpuSliceSteps(args: {
   sampler: PlanarSliceSampler;
   volume: IImageVolume;
-  onSlice: (slice: PlanarSampledSlice) => void;
+  onSlice: (slice: PlanarCpuSlice) => void;
   onDone: () => void;
 }): () => void {
   const { sampler, volume } = args;
@@ -231,7 +231,7 @@ export function runSampledSliceSteps(args: {
 
     const slice = sampler.continueSampling(
       volume,
-      performance.now() + SAMPLED_SLICE_STEP_MS
+      performance.now() + CPU_SLICE_STEP_MS
     );
 
     if (slice) {
@@ -257,8 +257,8 @@ export function runSampledSliceSteps(args: {
 
 /**
  * Starts the work of a view at rest: it runs once the view has not changed
- * for SAMPLED_SLICE_REST_DELAY_MS. First the steps of a slab that the sampler
- * samples in steps run (`runSampledSliceSteps`), and `onFinerSlice` draws the
+ * for CPU_SLICE_REST_DELAY_MS. First the steps of a slab that the sampler
+ * samples in steps run (`runCpuSliceSteps`), and `onFinerSlice` draws the
  * slab when it is done. Then the slice on screen is sampled once more on the
  * screen grid when the sampler wants that (`PlanarSliceSampler.sampleFiner`),
  * at once or in steps, and `onFinerSlice` draws it. Then the neighbour slices
@@ -272,18 +272,18 @@ export function runSampledSliceSteps(args: {
  *
  * @returns the function that cancels the pending work
  */
-export function scheduleSampledSliceRestWork(args: {
+export function scheduleCpuSliceRestWork(args: {
   sampler: PlanarSliceSampler;
   volume: IImageVolume;
   getCamera: () => PlanarResolvedICamera | undefined;
-  getInputs: () => PlanarSampledSliceInputs;
+  getInputs: () => PlanarCpuSliceInputs;
   getScreen: (
     camera: PlanarResolvedICamera | undefined
   ) => VolumeSliceGeometry | undefined;
   getNeighbours: (
     camera: PlanarResolvedICamera | undefined
   ) => PlanarResolvedICamera[];
-  onFinerSlice: (slice: PlanarSampledSlice) => void;
+  onFinerSlice: (slice: PlanarCpuSlice) => void;
   onStateChange?: () => void;
 }): () => void {
   const { sampler, volume } = args;
@@ -291,7 +291,7 @@ export function scheduleSampledSliceRestWork(args: {
   let cancelled = false;
   const prefetch = (
     neighbours: PlanarResolvedICamera[],
-    inputs: PlanarSampledSliceInputs
+    inputs: PlanarCpuSliceInputs
   ) => {
     if (cancelled) {
       return;
@@ -313,7 +313,7 @@ export function scheduleSampledSliceRestWork(args: {
     }
 
     if (sampler.hasPendingSteps()) {
-      cancelPending = runSampledSliceSteps({
+      cancelPending = runCpuSliceSteps({
         sampler,
         volume,
         onSlice: args.onFinerSlice,
@@ -363,7 +363,7 @@ export function scheduleSampledSliceRestWork(args: {
       cancelPending = requestIdle(() => prefetch(neighbours, inputs));
     }
   };
-  const timeoutId = setTimeout(onRest, SAMPLED_SLICE_REST_DELAY_MS);
+  const timeoutId = setTimeout(onRest, CPU_SLICE_REST_DELAY_MS);
 
   cancelPending = () => clearTimeout(timeoutId);
 

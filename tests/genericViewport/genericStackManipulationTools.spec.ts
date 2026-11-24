@@ -74,7 +74,7 @@ test.describe('Stack Manipulation - Next (GPU)', () => {
         constructorName: 'PlanarViewport',
         type: 'planar',
         renderModesByDisplaySetId: {
-          'stack-manipulation-tools-next:primary': 'vtkImage',
+          'stack-manipulation-tools-next:primary': 'vtkFrame',
         },
       },
     ]);
@@ -128,7 +128,7 @@ test.describe('Stack Manipulation - Next (CPU)', () => {
         constructorName: 'PlanarViewport',
         type: 'planar',
         renderModesByDisplaySetId: {
-          'stack-manipulation-tools-next:primary': 'cpuImage',
+          'stack-manipulation-tools-next:primary': 'canvasFrame',
         },
       },
     ]);

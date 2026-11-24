@@ -8,6 +8,7 @@ import {
   showStack,
   showVolume,
   waitFor,
+  drawPathOf,
 } from '../../core/test/utils/planarSeriesBothModes';
 
 const { Enums, utilities } = cornerstone3D;
@@ -34,25 +35,30 @@ const LINE = [
  * runs with it.
  */
 const CASES = [
-  ['in stack mode on the GPU', showStack, {}, 'vtkImage'],
-  ['in stack mode on the CPU', showStack, { renderBackend: 'cpu' }, 'cpuImage'],
+  ['in stack mode on the GPU', showStack, {}, 'frame-gpu'],
+  [
+    'in stack mode on the CPU',
+    showStack,
+    { renderBackend: 'cpu' },
+    'frame-cpu',
+  ],
   [
     'in volume mode on the GPU, where the slices run against the order of the images',
     showVolume,
     { orientation: OrientationAxis.ACQUISITION },
-    'vtkSampledSlice',
+    'cpu-gpu',
   ],
   [
     'in volume mode on the CPU, where the slices run against the order of the images',
     showVolume,
     { orientation: OrientationAxis.ACQUISITION, renderBackend: 'cpu' },
-    'cpuVolume',
+    'cpu-cpu',
   ],
   [
     'in volume mode on the GPU, where the slices run with the order of the images',
     showVolume,
     { orientation: { viewPlaneNormal: [0, 0, 1], viewUp: [0, -1, 0] } },
-    'vtkSampledSlice',
+    'cpu-gpu',
   ],
   [
     'in volume mode on the CPU, where the slices run with the order of the images',
@@ -61,7 +67,7 @@ const CASES = [
       orientation: { viewPlaneNormal: [0, 0, 1], viewUp: [0, -1, 0] },
       renderBackend: 'cpu',
     },
-    'cpuVolume',
+    'cpu-cpu',
   ],
 ];
 
@@ -169,15 +175,15 @@ describe('A jump to an annotation on a direct next planar viewport -- ', () => {
     });
   });
 
-  for (const [where, show, options, renderMode] of CASES) {
+  for (const [where, show, options, drawPath] of CASES) {
     it(`shows the annotation of a length and of a probe again after a scroll away, by setViewReference with its metadata, ${where}`, async function () {
-      const series = await createSeries({ id: `jump-${renderMode}` });
+      const series = await createSeries({ id: `jump-${drawPath}` });
       const viewport = createNextViewport(renderingEngine, 'nextJump');
 
       toolGroup.addViewport(viewport.id, renderingEngineId);
       await show(viewport, series, IMAGE, options);
 
-      expect(viewport.getRenderPlan()[0].renderMode).toBe(renderMode);
+      expect(drawPathOf(viewport.getRenderPlan()[0])).toBe(drawPath);
       expect(viewport.getCurrentImageId()).toBe(series.imageIds[IMAGE]);
 
       const length = await drawLength(viewport);

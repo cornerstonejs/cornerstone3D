@@ -306,7 +306,6 @@ describe('TrackballRotateTool on a direct next viewport -- ', () => {
     });
     await viewport.setDisplaySets({
       displaySetId: 'trackballRotateNext3D',
-      options: { renderMode: 'vtkVolume3d' },
     });
     viewport.render();
 

@@ -13,7 +13,7 @@ jest.mock('../src/RenderingEngine/Viewports/displaySetAccess', () => ({
   getImageDisplaySet: jest.fn(),
 }));
 
-import { ActorRenderMode } from '../src/types';
+import { PlanarRenderModeId } from '../src/RenderingEngine/Viewports/Planar/planarRenderModeIds';
 import { createAndCacheVolume } from '../src/loaders/volumeLoader';
 import { getImageDisplaySet } from '../src/RenderingEngine/Viewports/displaySetAccess';
 import { DefaultPlanarDataProvider } from '../src/RenderingEngine/Viewports/Planar/DefaultPlanarDataProvider';
@@ -52,7 +52,7 @@ describe('DefaultPlanarDataProvider', () => {
       const provider = new DefaultPlanarDataProvider();
       const payload = await provider.load(DATA_ID, {
         orientation: 'acquisition',
-        renderMode: ActorRenderMode.VTK_VOLUME_SLICE,
+        renderMode: PlanarRenderModeId.VTK_GPU_VOLUME_SLICE,
         volumeId: 'volume-1',
       });
 
@@ -73,7 +73,7 @@ describe('DefaultPlanarDataProvider', () => {
       const provider = new DefaultPlanarDataProvider();
       const payload = await provider.load(DATA_ID, {
         orientation: 'acquisition',
-        renderMode: ActorRenderMode.VTK_VOLUME_SLICE,
+        renderMode: PlanarRenderModeId.VTK_GPU_VOLUME_SLICE,
         volumeId: 'volume-1',
       });
 
@@ -95,7 +95,7 @@ describe('DefaultPlanarDataProvider', () => {
         const provider = new DefaultPlanarDataProvider();
         const payload = await provider.load(DATA_ID, {
           orientation: 'acquisition',
-          renderMode: ActorRenderMode.VTK_VOLUME_SLICE,
+          renderMode: PlanarRenderModeId.VTK_GPU_VOLUME_SLICE,
           volumeId: 'volume-1',
         });
 
@@ -116,7 +116,7 @@ describe('DefaultPlanarDataProvider', () => {
       const provider = new DefaultPlanarDataProvider();
       const payload = await provider.load(DATA_ID, {
         orientation: 'acquisition',
-        renderMode: ActorRenderMode.VTK_VOLUME_SLICE,
+        renderMode: PlanarRenderModeId.VTK_GPU_VOLUME_SLICE,
         volumeId: 'volume-1',
       });
 
@@ -132,7 +132,7 @@ describe('DefaultPlanarDataProvider', () => {
       const provider = new DefaultPlanarDataProvider();
       const payload = await provider.load(DATA_ID, {
         orientation: 'acquisition',
-        renderMode: ActorRenderMode.VTK_IMAGE,
+        renderMode: PlanarRenderModeId.VTK_FRAME,
         volumeId: undefined,
       });
 

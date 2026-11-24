@@ -73,7 +73,6 @@ async function showVolume(viewport, volumeId) {
   });
   await viewport.setDisplaySets({
     displaySetId,
-    options: { renderMode: 'vtkVolume3d' },
   });
 }
 

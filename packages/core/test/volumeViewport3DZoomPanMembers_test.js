@@ -90,7 +90,6 @@ async function showVolume(viewport) {
   });
   await viewport.setDisplaySets({
     displaySetId: 'zoomPanMembers3D',
-    options: { renderMode: 'vtkVolume3d' },
   });
   viewport.resetViewState();
 }

@@ -1,10 +1,4 @@
 jest.mock('@cornerstonejs/core', () => ({
-  ActorRenderMode: {
-    CPU_VOLUME: 'CPU_VOLUME',
-    VTK_IMAGE: 'VTK_IMAGE',
-    VTK_VOLUME_SLICE: 'VTK_VOLUME_SLICE',
-    VTK_SAMPLED_SLICE: 'VTK_SAMPLED_SLICE',
-  },
   Enums: {
     BlendModes: {
       LABELMAP_EDGE_PROJECTION_BLEND: 0,
@@ -173,11 +167,7 @@ function createPlanarVolumeViewport(labelmapId: string) {
       },
     ]),
     getCurrentImageIdIndex: jest.fn(() => 0),
-    getDefaultActor: jest.fn(() => ({
-      actorMapper: {
-        renderMode: 'CPU_VOLUME',
-      },
-    })),
+    getCurrentMode: jest.fn(() => 'volume'),
     getViewReference: jest.fn(() => ({ volumeId: 'source-volume-id' })),
     getViewState: jest.fn(() => ({ orientation: 'axial' })),
     getVolumeId: jest.fn(() => 'source-volume-id'),
@@ -308,11 +298,7 @@ describe('labelmapRenderPlan', () => {
         },
       ]),
       getCurrentImageIdIndex: jest.fn(() => 1),
-      getDefaultActor: jest.fn(() => ({
-        actorMapper: {
-          renderMode: 'CPU_VOLUME',
-        },
-      })),
+      getCurrentMode: jest.fn(() => 'volume'),
       getViewReference: jest.fn(() => ({ volumeId: 'source-volume-id' })),
       getViewState: jest.fn(() => ({ orientation: 'axial' })),
       getVolumeId: jest.fn(() => 'source-volume-id'),
@@ -480,17 +466,25 @@ describe('labelmapRenderPlan', () => {
     expect(utilities.logger.toolsLog.getLogger().warn).toHaveBeenCalledTimes(1);
   });
 
-  it('draws the labelmap of a sampled slice source as slice images in place of a volume overlay', async () => {
+  it('draws the labelmap of a CPU slice source as slice images in place of a volume overlay', async () => {
     const volumeOverlayEntry = {
       referencedId: 'layer-id',
       representationUID: 'segmentation-id-Labelmap-layer-id',
       uid: 'volume-overlay-uid',
-      actorMapper: { renderMode: 'VTK_VOLUME_SLICE' },
+      displaySetId: 'segmentation-id-Labelmap-layer-id',
     };
     const viewport = {
       id: 'viewport-id',
       type: 'planar',
       removeDisplaySet: jest.fn(),
+      getRenderPlan: jest.fn(() => [
+        {
+          displaySetId: 'segmentation-id-Labelmap-layer-id',
+          role: 'overlay',
+          slice: 'gpuVolume',
+          draw: 'gpu',
+        },
+      ]),
     };
     const segmentation = {
       segmentationId: 'segmentation-id',
@@ -583,16 +577,30 @@ describe('labelmapRenderPlan', () => {
     });
   });
 
-  it('keeps the labelmap slice images of a sampled slice source', async () => {
+  it('keeps the labelmap slice images of a CPU slice source', async () => {
     const sliceEntry = {
       referencedId: 'layer-id',
       representationUID: 'segmentation-id-Labelmap-layer-id',
       uid: 'slice-uid',
-      actorMapper: { renderMode: 'VTK_IMAGE' },
+      displaySetId: 'slice-display-set',
     };
     const viewport = {
       id: 'viewport-id',
       type: 'planar',
+      getRenderPlan: jest.fn(() => [
+        {
+          displaySetId: 'slice-display-set',
+          role: 'overlay',
+          slice: 'frame',
+          draw: 'gpu',
+        },
+        {
+          displaySetId: 'cpu-slice-display-set',
+          role: 'overlay',
+          slice: 'cpu',
+          draw: 'gpu',
+        },
+      ]),
     };
 
     shouldUseSliceRenderingMock.mockReturnValue(true);
@@ -617,7 +625,7 @@ describe('labelmapRenderPlan', () => {
     expect(renderPlan.needsRemount([sliceEntry] as never)).toBe(false);
     expect(
       renderPlan.needsRemount([
-        { ...sliceEntry, actorMapper: { renderMode: 'VTK_SAMPLED_SLICE' } },
+        { ...sliceEntry, displaySetId: 'cpu-slice-display-set' },
       ] as never)
     ).toBe(true);
   });

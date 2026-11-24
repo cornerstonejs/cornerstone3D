@@ -9,7 +9,7 @@ import { resetRenderingCapabilities } from '../src/utilities/renderingCapabiliti
 import ContextPoolRenderingEngine from '../src/RenderingEngine/ContextPoolRenderingEngine';
 import TiledRenderingEngine from '../src/RenderingEngine/TiledRenderingEngine';
 import vtkStreamingOpenGLRenderWindow from '../src/RenderingEngine/vtkClasses/vtkStreamingOpenGLRenderWindow';
-import { SAMPLED_SLICE_REST_DELAY_MS } from '../src/RenderingEngine/Viewports/Planar/planarSampledSliceRest';
+import { CPU_SLICE_REST_DELAY_MS } from '../src/RenderingEngine/Viewports/Planar/planarCpuSliceRest';
 
 const { Enums, cache, imageLoader, metaData, utilities } = cornerstone3D;
 const { Events, ViewportType } = Enums;
@@ -130,7 +130,7 @@ async function waitForFrames(count) {
  */
 async function waitForDraws() {
   await new Promise((resolve) =>
-    setTimeout(resolve, 3 * SAMPLED_SLICE_REST_DELAY_MS)
+    setTimeout(resolve, 3 * CPU_SLICE_REST_DELAY_MS)
   );
   await waitForFrames(3);
 }
@@ -225,11 +225,12 @@ describe('A planar viewport on a device without WebGL -- ', () => {
       await rendered;
 
       expect(
-        viewport.getRenderPlan().map(({ draw, renderMode }) => ({
+        viewport.getRenderPlan().map(({ slice, draw, backend }) => ({
+          slice,
           draw,
-          renderMode,
+          backend,
         }))
-      ).toEqual([{ draw: 'cpu', renderMode: 'cpuImage' }]);
+      ).toEqual([{ slice: 'frame', draw: 'cpu', backend: 'cpu' }]);
       expect(brightestShownValue(element)).toBeGreaterThan(0);
       expect(webGL.counter.webGLContexts).toBe(0);
       expect(renderWindowSpy).not.toHaveBeenCalled();

@@ -40,8 +40,8 @@ geometryLoader.registerGeometryLoader('mesh', cornerstoneMeshLoader);
 You can take a look at our sample code example for `cornerstoneMeshLoader` [here](https://github.com/cornerstonejs/cornerstone3D/tree/main/packages/core/examples/meshLoader)
 
 A loaded mesh is a display set of a 3D viewport (`ViewportType.VOLUME_3D`). Its
-display set id is the key given to `loadAndCacheGeometry`, and
-`renderMode: 'vtkGeometry3d'` shows it as a surface:
+display set id is the key given to `loadAndCacheGeometry`. An id of a geometry
+of the cache, with no image ids registered for it, shows as a surface:
 
 ```js
 const meshId1 = 'mesh:https://example.com/mesh.ply';
@@ -66,8 +66,8 @@ await geometryLoader.loadAndCacheGeometry(meshId2, {
 
 const viewport = renderingEngine.getViewport<VolumeViewport3D>(viewportId);
 
-await viewport.addDisplaySet(meshId1, { renderMode: 'vtkGeometry3d' });
-await viewport.addDisplaySet(meshId2, { renderMode: 'vtkGeometry3d' });
+await viewport.addDisplaySet(meshId1);
+await viewport.addDisplaySet(meshId2);
 viewport.resetViewState();
 viewport.render();
 ```

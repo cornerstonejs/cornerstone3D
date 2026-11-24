@@ -9,7 +9,7 @@ import {
   afterAll,
 } from '@jest/globals';
 import { VtkVolume3DRenderPath } from '../src/RenderingEngine/Viewports/Volume3D/VtkVolume3DRenderPath';
-import { VtkVolumeSliceRenderPath } from '../src/RenderingEngine/Viewports/Planar/VtkVolumeSliceRenderPath';
+import { VtkGpuVolumeSliceRenderPath } from '../src/RenderingEngine/Viewports/Planar/VtkGpuVolumeSliceRenderPath';
 import {
   defaultVolumeStrategyProvider,
   provisionFullResolutionStrategy,
@@ -163,7 +163,7 @@ describe('two viewports over one volume report independently', () => {
         gpuSettings: getGpuSettingsPreset('low-tablet'),
       }),
     ]);
-    const slice = new VtkVolumeSliceRenderPath(({ volume: aVolume }) => [
+    const slice = new VtkGpuVolumeSliceRenderPath(({ volume: aVolume }) => [
       provisionFullResolutionStrategy({
         volume: aVolume,
         gpuSettings: getGpuSettingsPreset('high'),
@@ -230,7 +230,7 @@ describe('the GPU renders when planar viewports prefer the CPU', () => {
   it('binds the reduced texture of the preset in a planar layer that draws on the GPU', () => {
     const volume = makeVolume({ volumeId: 'volume-slice-cpu-preference' });
     const rendering = makeRendering(volume, 'viewport-slice');
-    const path = new VtkVolumeSliceRenderPath();
+    const path = new VtkGpuVolumeSliceRenderPath();
 
     setGpuSettingsPreset('low');
     setRenderBackend('cpu');

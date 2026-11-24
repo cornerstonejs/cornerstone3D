@@ -152,7 +152,7 @@ async function showSurface(next) {
       polys: [4, 0, 1, 2, 3, 4, 4, 5, 6, 7],
     },
   });
-  await next.addDisplaySet('orientationBox', { renderMode: 'vtkGeometry3d' });
+  await next.addDisplaySet('orientationBox');
 }
 
 function expectPointsClose(actual, expected, precision = 4) {

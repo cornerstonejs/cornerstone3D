@@ -69,7 +69,6 @@ async function showSurface(viewport) {
   });
   await viewport.setDisplaySets({
     displaySetId: geometryId,
-    options: { renderMode: 'vtkGeometry3d' },
   });
 }
 

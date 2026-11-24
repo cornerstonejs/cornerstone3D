@@ -1,11 +1,6 @@
 import { vec3, mat4 } from 'gl-matrix';
 import type { Types, PlanarViewport } from '@cornerstonejs/core';
-import {
-  ActorRenderMode,
-  getRenderingEngine,
-  metaData,
-  utilities,
-} from '@cornerstonejs/core';
+import { getRenderingEngine, metaData, utilities } from '@cornerstonejs/core';
 import type { Synchronizer } from '../../store';
 import areViewportsCoplanar from './areViewportsCoplanar';
 
@@ -27,26 +22,7 @@ const getSpatialRegistration = (
   );
 
 function isVolumeSliceViewport(viewport: PlanarViewport): boolean {
-  if (utilities.viewportIsInVolumeMode(viewport)) {
-    return true;
-  }
-
-  const getDefaultActor = (
-    viewport as Types.IViewport & {
-      getDefaultActor?: () => {
-        actorMapper?: {
-          renderMode?: unknown;
-        };
-      };
-    }
-  ).getDefaultActor;
-  const renderMode = getDefaultActor?.call(viewport)?.actorMapper?.renderMode;
-
-  return (
-    renderMode === ActorRenderMode.CPU_VOLUME ||
-    renderMode === ActorRenderMode.VTK_VOLUME_SLICE ||
-    renderMode === ActorRenderMode.VTK_SAMPLED_SLICE
-  );
+  return utilities.viewportIsInVolumeMode(viewport);
 }
 
 /**

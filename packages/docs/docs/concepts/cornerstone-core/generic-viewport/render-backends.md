@@ -69,12 +69,12 @@ registerRenderBackend({
   name: 'WEBGPU',
   backend: 'myOrg:webgpu',
   renderModes: {
-    image: {
-      id: 'myOrg:webgpuImage',
-      createDefinition: () => new WebGPUImageSlicePath(),
+    frame: {
+      id: 'myOrg:webgpuFrame',
+      createDefinition: () => new WebGPUFramePath(),
     },
-    volume: {
-      id: 'myOrg:webgpuVolume',
+    gpuVolume: {
+      id: 'myOrg:webgpuVolumeSlice',
       createDefinition: () => new WebGPUVolumeSlicePath(),
     },
   },
@@ -87,15 +87,21 @@ The definition carries the semantic wiring the viewport needs today:
 
 - `backend` — the wire id, e.g. `'myOrg:webgpu'`. Prefix custom ids with an
   organization namespace; `'auto'` is reserved.
-- `renderModes` — the render mode the backend resolves to per dataset kind,
-  co-locating each mode's wire `id` with the `createDefinition` factory for
-  the planar render path definition that implements it (see
-  [Render Paths](./render-paths.md) for what a path implements). The factory
-  is called once per viewport (each planar viewport owns its render path
-  resolver), so it must return a fresh definition instance on every call.
-  `image` is required and its id must differ from `volume`'s; omit `volume`
-  when the backend cannot render volume-backed datasets, in which case
-  selecting it for such a dataset fails with a descriptive error.
+- `renderModes` — the render mode of each way of making the slice, one slot
+  each, co-locating each mode's wire `id` with the `createDefinition` factory
+  for the planar render path definition that implements it (see
+  [Render Paths](./render-paths.md) for what a path implements). The slots
+  are the values of `slice` in `viewport.getRenderPlan()`: `frame` (a stack,
+  whose acquired frame is the image) is required; `cpu` (a slice of a volume
+  cut on the CPU and drawn as a 2D image) and `gpuVolume` (a slice or a slab
+  cut on the GPU from a 3D texture of the volume) are optional. With both,
+  slice first picks `cpu` for a plain slice and `gpuVolume` for a slab; with
+  one, a volume-backed dataset always takes it; with neither, selecting the
+  backend for such a dataset fails with a descriptive error. Each slot needs
+  its own id. The factory is called once per viewport (each planar viewport
+  owns its render path resolver), so it must return a fresh definition
+  instance on every call. A layer drawn by a mode of the backend reads that
+  backend in `backend` of its render plan entry.
 - `surface` — which existing composited canvas the backend's render modes draw
   to, `'vtk'` (default) or `'cpu'`. Custom backends cannot yet register their
   own surface; this is one of the planned extension points noted above.

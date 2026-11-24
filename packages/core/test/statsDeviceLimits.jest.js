@@ -29,7 +29,7 @@ function sampledRendering(ArrayType) {
   const mapper = { getInputData: () => input };
 
   return {
-    renderMode: 'vtkSampledSlice',
+    renderMode: 'vtkCpuSlice',
     mapper,
     actor: { getMapper: () => mapper },
   };
@@ -110,7 +110,7 @@ describe('device facts in the debug panel', () => {
             {
               displaySetId: 'pt',
               role: 'overlay',
-              renderMode: 'vtkSampledSlice',
+              renderMode: 'vtkCpuSlice',
               gpuTextures: [texture],
             },
           ],

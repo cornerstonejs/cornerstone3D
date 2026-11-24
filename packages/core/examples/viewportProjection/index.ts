@@ -441,9 +441,6 @@ async function run() {
     }),
     volumeViewport.setDisplaySets({
       displaySetId: volumeDisplaySetId,
-      options: {
-        renderMode: 'vtkVolume3d',
-      },
     }),
   ]);
 

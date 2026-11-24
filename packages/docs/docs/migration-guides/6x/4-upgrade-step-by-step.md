@@ -871,7 +871,7 @@ viewport.addActor({ uid: geometryId, actor });
 After:
 
 ```ts
-await viewport.addDisplaySet(geometryId, { renderMode: 'vtkGeometry3d' });
+await viewport.addDisplaySet(geometryId);
 
 viewport.setDisplaySetAppearance(geometryId, {
   color: [255, 0, 0],

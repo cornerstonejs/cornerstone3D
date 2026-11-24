@@ -1,4 +1,4 @@
-import { ActorRenderMode } from '../../../types/IActor';
+import { PlanarRenderModeId } from '../../Viewports/Planar/planarRenderModeIds';
 import type { RenderingCapabilities } from '../../../utilities/renderingCapabilities';
 import { getImageMapperTextureFacts } from '../../vtkClasses/vtkStreamingOpenGLImageMapper';
 import type {
@@ -83,13 +83,13 @@ export type BindingFacts = Pick<
 >;
 
 const SLICE_TEXTURE_MODES = new Set<string>([
-  ActorRenderMode.VTK_IMAGE,
-  ActorRenderMode.VTK_SAMPLED_SLICE,
+  PlanarRenderModeId.VTK_FRAME,
+  PlanarRenderModeId.VTK_CPU_SLICE,
 ]);
 
 const CANVAS_MODES = new Set<string>([
-  ActorRenderMode.CPU_IMAGE,
-  ActorRenderMode.CPU_VOLUME,
+  PlanarRenderModeId.CANVAS_FRAME,
+  PlanarRenderModeId.CANVAS_CPU_SLICE,
 ]);
 
 /**
@@ -266,7 +266,7 @@ function readBindingFacts(
     };
   }
 
-  if (rendering?.renderMode === ActorRenderMode.VTK_SAMPLED_SLICE) {
+  if (rendering?.renderMode === PlanarRenderModeId.VTK_CPU_SLICE) {
     const dimensions = readImageData(rendering)?.getDimensions?.();
 
     if (dimensions && dimensions.length >= 2) {

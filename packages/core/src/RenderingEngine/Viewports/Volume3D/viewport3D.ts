@@ -247,7 +247,7 @@ class VolumeViewport3D extends BaseViewport<
    * of the commit, as DISPLAY_SET_APPEARANCE_CHANGED, that starts a call
    * that rejects leaves the complete new scene.
    *
-   * @param entries - Display sets to mount, each with its own render-mode options.
+   * @param entries - Display sets to mount, each with its own mount options.
    */
   async setDisplaySets(
     ...entries: Array<{
@@ -260,10 +260,7 @@ class VolumeViewport3D extends BaseViewport<
     const staged: Volume3DStagedLoad[] = [];
 
     for (const { displaySetId, options = {} } of entries) {
-      const renderMode = this.resolveRenderMode(
-        displaySetId,
-        options.renderMode
-      );
+      const renderMode = this.resolveRenderMode(displaySetId);
       const data = await this.dataProvider.load(displaySetId, { renderMode });
 
       if (isStale()) {
@@ -345,16 +342,13 @@ class VolumeViewport3D extends BaseViewport<
    * at `setVolumes` in the same way.
    *
    * @param displaySetId - Logical display set id to add.
-   * @param options - Requested 3D render-mode options.
+   * @param options - The mount options of the display set.
    */
   async addDisplaySet(
     displaySetId: string,
-    options: Volume3DSetDataOptions | DataAddOptions = {}
+    options: Volume3DSetDataOptions = {}
   ): Promise<void> {
-    const mounted = await this.mountDisplaySet(
-      displaySetId,
-      options as Volume3DSetDataOptions
-    );
+    const mounted = await this.mountDisplaySet(displaySetId, options);
 
     if (mounted) {
       this.triggerDisplaySetsChanged([displaySetId]);
@@ -377,8 +371,7 @@ class VolumeViewport3D extends BaseViewport<
     }
 
     const renderMode =
-      staged?.renderMode ??
-      this.resolveRenderMode(displaySetId, volumeOptions.renderMode);
+      staged?.renderMode ?? this.resolveRenderMode(displaySetId);
 
     const showedNothing = !this.bindings.size;
 
@@ -1177,13 +1170,8 @@ class VolumeViewport3D extends BaseViewport<
   }
 
   private resolveRenderMode(
-    displaySetId: string,
-    requestedRenderMode: Volume3DSetDataOptions['renderMode'] = 'auto'
+    displaySetId: string
   ): 'vtkVolume3d' | 'vtkGeometry3d' {
-    if (requestedRenderMode && requestedRenderMode !== 'auto') {
-      return requestedRenderMode;
-    }
-
     const dataSet = this.getDataSet(displaySetId);
 
     if (dataSet?.imageIds?.length) {

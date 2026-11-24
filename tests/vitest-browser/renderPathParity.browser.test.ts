@@ -4,29 +4,38 @@ import {
   captureViewportState,
   createPlanarViewport,
   renderAndWait,
-  type PlanarRenderMode,
+  type HarnessRenderMode,
   type PlanarViewportContext,
   type ViewportStateSnapshot,
 } from './harness';
 
-const ALL_MODES: PlanarRenderMode[] = [
-  'vtkImage',
-  'vtkSampledSlice',
-  'vtkVolumeSlice',
-  'cpuImage',
-  'cpuVolume',
+const ALL_MODES: HarnessRenderMode[] = [
+  'vtkFrame',
+  'vtkCpuSlice',
+  'vtkGpuVolumeSlice',
+  'canvasFrame',
+  'canvasCpuSlice',
 ];
-const BASELINE_MODE: PlanarRenderMode = 'vtkImage';
+const BASELINE_MODE: HarnessRenderMode = 'vtkFrame';
 
-// vtkVolumeSlice and cpuVolume are volume-backed and genuinely diverge from
-// the vtkImage/cpuImage (stack-backed) baseline; see the confirmed findings
-// documented above the parity tests below. cpuImage is stack-backed exactly
+/** The `slice-draw` of the render plan layer that each mode of the harness mounts. */
+const DRAW_PATH_OF_MODE: Partial<Record<HarnessRenderMode, string>> = {
+  vtkFrame: 'frame-gpu',
+  vtkCpuSlice: 'cpu-gpu',
+  vtkGpuVolumeSlice: 'gpuVolume-gpu',
+  canvasFrame: 'frame-cpu',
+  canvasCpuSlice: 'cpu-cpu',
+};
+
+// vtkGpuVolumeSlice and canvasCpuSlice are volume-backed and genuinely diverge from
+// the vtkFrame/canvasFrame (stack-backed) baseline; see the confirmed findings
+// documented above the parity tests below. canvasFrame is stack-backed exactly
 // like the baseline (only the render backend differs) and matches exactly.
-const CLEAN_NON_BASELINE_MODES: PlanarRenderMode[] = ['cpuImage'];
-const VOLUME_BACKED_NON_BASELINE_MODES: PlanarRenderMode[] = [
-  'vtkSampledSlice',
-  'vtkVolumeSlice',
-  'cpuVolume',
+const CLEAN_NON_BASELINE_MODES: HarnessRenderMode[] = ['canvasFrame'];
+const VOLUME_BACKED_NON_BASELINE_MODES: HarnessRenderMode[] = [
+  'vtkCpuSlice',
+  'vtkGpuVolumeSlice',
+  'canvasCpuSlice',
 ];
 
 // Safety net: if a test throws before reaching its own cleanup() call, this
@@ -48,7 +57,7 @@ afterEach(() => {
 });
 
 async function setupMode(
-  mode: PlanarRenderMode,
+  mode: HarnessRenderMode,
   displaySetId?: string
 ): Promise<PlanarViewportContext> {
   const ctx = await createPlanarViewport({ renderMode: mode, displaySetId });
@@ -111,7 +120,7 @@ async function runCanonicalScenario(
 }
 
 /**
- * Runs the baseline (vtkImage) and a target mode through the canonical
+ * Runs the baseline (vtkFrame) and a target mode through the canonical
  * scenario under a shared displaySetId (so viewReference.displaySetId and the
  * presentation lookup key line up across the two runs and do not pollute
  * the diff with an incidental id mismatch), tearing each context down before
@@ -119,7 +128,7 @@ async function runCanonicalScenario(
  * target mode.
  */
 async function collectBaselineAndTargetSnapshots(
-  mode: PlanarRenderMode,
+  mode: HarnessRenderMode,
   targetScrollDelta = 2
 ): Promise<{
   baseline: ViewportStateSnapshot[];
@@ -197,17 +206,17 @@ describe('renderPathParity', () => {
         );
 
         // The actor's render path must match the requested backend: CPU
-        // modes (cpuImage, cpuVolume) mount a CanvasActor; GPU modes
-        // (vtkImage, vtkVolumeSlice) mount a vtk.js actor. Note: vtkImage and
-        // vtkVolumeSlice both mount an actor whose getClassName() is
+        // modes (canvasFrame, canvasCpuSlice) mount a CanvasActor; GPU modes
+        // (vtkFrame, vtkGpuVolumeSlice) mount a vtk.js actor. Note: vtkFrame and
+        // vtkGpuVolumeSlice both mount an actor whose getClassName() is
         // "vtkImageSlice" (ImageActor) -- vtk.js reuses the same actor class
         // for the plain image mapper and the reslice mapper, distinguishing
         // them only by mapper class (vtkImageMapper vs vtkImageResliceMapper,
-        // see packages/core/src/types/IActor.ts ActorMapperProxy). The frozen
+        // which `actor.getMapper()` gives). The frozen
         // pathSpecific contract (actorClassNames/actorUIDs only) cannot
         // surface that distinction, so this check is intentionally scoped to
         // CPU-vs-GPU rather than to the specific GPU sub-mode.
-        const isCpuMode = mode === 'cpuImage' || mode === 'cpuVolume';
+        const isCpuMode = mode === 'canvasFrame' || mode === 'canvasCpuSlice';
         const actorClassNames = snapshot.pathSpecific.actorClassNames;
 
         if (isCpuMode) {
@@ -220,14 +229,16 @@ describe('renderPathParity', () => {
           );
         }
 
-        expect(viewport.getRenderPlan()[0].renderMode).toBe(mode);
+        const { slice, draw } = viewport.getRenderPlan()[0];
+
+        expect(`${slice}-${draw}`).toBe(DRAW_PATH_OF_MODE[mode]);
       } finally {
         teardown(ctx);
       }
     }
   );
 
-  test('vtkImage baseline snapshot survives a JSON round-trip', async () => {
+  test('vtkFrame baseline snapshot survives a JSON round-trip', async () => {
     const ctx = await setupMode(BASELINE_MODE);
 
     try {
@@ -243,9 +254,9 @@ describe('renderPathParity', () => {
   });
 
   describe.each(CLEAN_NON_BASELINE_MODES)(
-    '%s vs vtkImage baseline core-state parity',
+    '%s vs vtkFrame baseline core-state parity',
     (mode) => {
-      test('core state matches the vtkImage baseline across the canonical scenario', async () => {
+      test('core state matches the vtkFrame baseline across the canonical scenario', async () => {
         const { baseline, target } =
           await collectBaselineAndTargetSnapshots(mode);
 
@@ -263,12 +274,12 @@ describe('renderPathParity', () => {
   // ------------------------------------------------------------------------
   // Confirmed cross-render-path divergences (shared-context rule 5).
   //
-  // vtkVolumeSlice and cpuVolume are volume-backed: the harness registers
+  // vtkGpuVolumeSlice and canvasCpuSlice are volume-backed: the harness registers
   // their planar display set with an explicit `volumeId` (see
   // createPlanarViewport.ts) so PlanarRenderPathDecisionService selects the
   // volume render path (packages/core/src/RenderingEngine/Viewports/
   // Planar/PlanarRenderPathDecisionService.ts, isVolumeBackedDataSet). Two
-  // distinct divergences from the vtkImage/cpuImage (stack-backed) baseline
+  // distinct divergences from the vtkFrame/canvasFrame (stack-backed) baseline
   // were confirmed by inspecting every one of the 6 canonical-scenario steps
   // (see the per-step diffs captured during development of this suite):
   //
@@ -296,13 +307,13 @@ describe('renderPathParity', () => {
   //    modes opening on the last image (z = 4); they open on the first image
   //    now.
   // ------------------------------------------------------------------------
-  // vtkVolumeSliceFrames: a reduced volume draws the acquired frames in the
+  // vtkGpuVolumeSliceFrames: a reduced volume draws the acquired frames in the
   // acquisition plane. A one-pixel bar on a 512 x 512 stack shows the
   // difference: `low` halves the texture and blurs the bar, the frame keeps it.
-  describe('vtkVolumeSliceFrames (acquired frames of a reduced volume)', () => {
+  describe('vtkGpuVolumeSliceFrames (acquired frames of a reduced volume)', () => {
     const stack = { rows: 512, columns: 512, barStart: 256, barWidth: 1 };
 
-    const setupFrames = async (mode: PlanarRenderMode) => {
+    const setupFrames = async (mode: HarnessRenderMode) => {
       const ctx = await createPlanarViewport({
         renderMode: mode,
         stack,
@@ -331,11 +342,11 @@ describe('renderPathParity', () => {
     };
 
     test('shows the frame in the acquisition plane, as the stack draws it', async () => {
-      const stackCtx = await setupFrames('vtkImage');
+      const stackCtx = await setupFrames('vtkFrame');
       const stackRow = centerRow(stackCtx);
       teardown(stackCtx);
 
-      const ctx = await setupFrames('vtkVolumeSliceFrames');
+      const ctx = await setupFrames('vtkGpuVolumeSliceFrames');
 
       await expect.poll(() => showsFrame(ctx)).toBe(true);
       await renderAndWait(ctx.element, ctx.viewport);
@@ -348,7 +359,7 @@ describe('renderPathParity', () => {
     });
 
     test('shows the reduced slice off the acquisition plane, and the same frame actor on return', async () => {
-      const ctx = await setupFrames('vtkVolumeSliceFrames');
+      const ctx = await setupFrames('vtkGpuVolumeSliceFrames');
 
       await expect.poll(() => showsFrame(ctx)).toBe(true);
       await renderAndWait(ctx.element, ctx.viewport);
@@ -381,9 +392,9 @@ describe('renderPathParity', () => {
   });
 
   describe.each(VOLUME_BACKED_NON_BASELINE_MODES)(
-    '%s vs vtkImage baseline core-state parity',
+    '%s vs vtkFrame baseline core-state parity',
     (mode) => {
-      test('core state matches the vtkImage baseline across the canonical scenario, apart from the volume content mode', async () => {
+      test('core state matches the vtkFrame baseline across the canonical scenario, apart from the volume content mode', async () => {
         const { baseline, target } = await collectBaselineAndTargetSnapshots(
           mode,
           -2

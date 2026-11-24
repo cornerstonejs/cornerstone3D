@@ -66,8 +66,8 @@ test.describe('Multi Volume API Next (CPU)', () => {
         constructorName: 'PlanarViewport',
         type: 'planar',
         renderModesByDisplaySetId: {
-          'multi-volume-api-next:ct': 'cpuVolume',
-          'multi-volume-api-next:pt': 'cpuVolume',
+          'multi-volume-api-next:ct': 'canvasCpuSlice',
+          'multi-volume-api-next:pt': 'canvasCpuSlice',
         },
       },
     ]);

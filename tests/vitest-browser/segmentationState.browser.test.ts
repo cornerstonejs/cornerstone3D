@@ -7,7 +7,7 @@
 // and packages/tools/examples/genericStackLabelmapSegmentation/index.ts, using
 // only public @cornerstonejs/core and @cornerstonejs/tools exports):
 //   1. tools harness viewport: setupTools({ tools: [BrushTool], viewport: {...} })
-//      (vtkImage render mode, 5-slice default synthetic stack -- 64x64, 1mm
+//      (vtkFrame render mode, 5-slice default synthetic stack -- 64x64, 1mm
 //      spacing, background value 10 + sliceIndex, vertical bar value 255 at
 //      world x in [20, 25), see harness/fakeImageStack.ts).
 //   2. imageLoader.createAndCacheDerivedLabelmapImages(ctx.imageIds) -- one

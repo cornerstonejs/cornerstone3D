@@ -4,7 +4,7 @@ jest.mock('../src/metaData', () => ({
 }));
 
 import { OrientationAxis } from '../src/enums';
-import { ActorRenderMode } from '../src/types';
+import { PlanarRenderModeId } from '../src/RenderingEngine/Viewports/Planar/planarRenderModeIds';
 import * as metaData from '../src/metaData';
 import imageIdToURI from '../src/utilities/imageIdToURI';
 import fnv1aHash from '../src/utilities/fnv1aHash';
@@ -108,7 +108,7 @@ function createRenderContext({ sourceDisplaySetId = 'data' } = {}) {
       isCurrentDisplaySetId: (displaySetId) =>
         displaySetId === sourceDisplaySetId,
     },
-    renderPath: { renderMode: ActorRenderMode.CPU_IMAGE },
+    renderPath: { renderMode: PlanarRenderModeId.CANVAS_FRAME },
     view: {},
     display: {
       activateRenderMode: jest.fn(),
@@ -193,13 +193,13 @@ function createStackData() {
   return {
     imageIds: STACK_IMAGE_IDS,
     volumeId: undefined,
-    renderMode: ActorRenderMode.CPU_IMAGE,
+    renderMode: PlanarRenderModeId.CANVAS_FRAME,
   };
 }
 
 function createStackRendering(currentImageIdIndex = 0) {
   return {
-    renderMode: ActorRenderMode.CPU_IMAGE,
+    renderMode: PlanarRenderModeId.CANVAS_FRAME,
     currentImageIdIndex,
     maxImageIdIndex: STACK_IMAGE_IDS.length - 1,
     enabledElement: {
@@ -218,7 +218,7 @@ const STACK_VIEW_UP = [0, -1, 0];
 
 function createVolumeRendering(volume, currentImageIdIndex) {
   return {
-    renderMode: ActorRenderMode.VTK_VOLUME_SLICE,
+    renderMode: PlanarRenderModeId.VTK_GPU_VOLUME_SLICE,
     currentImageIdIndex,
     maxImageIdIndex: volume.imageIds.length - 1,
     imageVolume: volume,
@@ -230,7 +230,7 @@ function createVolumeData(volume) {
   return {
     imageIds: volume.imageIds,
     volumeId: volume.volumeId,
-    renderMode: ActorRenderMode.VTK_VOLUME_SLICE,
+    renderMode: PlanarRenderModeId.VTK_GPU_VOLUME_SLICE,
     imageVolume: volume,
   };
 }
@@ -826,7 +826,7 @@ function createStackBinding({
     },
     role,
     rendering: {
-      renderMode: ActorRenderMode.CPU_IMAGE,
+      renderMode: PlanarRenderModeId.CANVAS_FRAME,
       currentImageIdIndex,
       maxImageIdIndex: imageIds.length - 1,
       enabledElement: { image: createImage(imageIds[currentImageIdIndex]) },

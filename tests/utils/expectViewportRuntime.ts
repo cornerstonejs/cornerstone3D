@@ -74,13 +74,13 @@ export async function expectViewportRuntime(
 
 /**
  * The render mode of a plain slice of a scalar volume on a next planar
- * viewport with the GPU backend: `vtkSampledSlice`, since slice first is on by
- * default, and `vtkVolumeSlice` when the run turns slice first off for every
+ * viewport with the GPU backend: `vtkCpuSlice`, since slice first is on by
+ * default, and `vtkGpuVolumeSlice` when the run turns slice first off for every
  * example (`PLAYWRIGHT_SLICE_FIRST=0`). A test that is about the 3D texture
  * itself pins its mode.
  */
 export function getPlainVolumeSliceRenderMode(): string {
   return getForcedSliceFirst() === false
-    ? 'vtkVolumeSlice'
-    : 'vtkSampledSlice';
+    ? 'vtkGpuVolumeSlice'
+    : 'vtkCpuSlice';
 }

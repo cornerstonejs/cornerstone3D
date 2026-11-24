@@ -1,6 +1,5 @@
 import {
   type Types,
-  ActorRenderMode,
   Enums,
   cache,
   gpuSettingsForRender,
@@ -26,10 +25,8 @@ import {
 } from '../../../../stateManagement/segmentation/helpers/labelmapSegmentationState';
 import { tagLabelmapVolume } from '../../../../stateManagement/segmentation/labelmapModel/labelmapLayerStore';
 import { createLabelmapRepresentationUID } from '../labelmapRepresentationUID';
-import {
-  createLabelmapRenderPlan,
-  getActorEntryRenderMode,
-} from './createLabelmapRenderPlan';
+import { createLabelmapRenderPlan } from './createLabelmapRenderPlan';
+import { getRenderPlanLayer } from '../../../../utilities/viewport/getRenderPlanLayer';
 import {
   addLabelmapToPlanarVolumeViewport,
   isPlanarVolumeViewport,
@@ -86,7 +83,7 @@ function createVolumeLabelmapPlan({
     // representation UID but not its shape; force a remount through the
     // volume path.
     isActorEntryCompatible: (actorEntry) =>
-      !isImageMountedActorEntry(actorEntry),
+      !isImageMountedActorEntry(viewport, actorEntry),
     mount: ({ labelMapData }) =>
       mountVolumeLabelmap({
         config,
@@ -98,12 +95,16 @@ function createVolumeLabelmapPlan({
   });
 }
 
-function isImageMountedActorEntry(actorEntry: Types.ActorEntry): boolean {
-  const renderMode = getActorEntryRenderMode(actorEntry);
-
+/**
+ * Whether the viewport draws an actor entry as a frame: its layer in the
+ * render plan has `slice: 'frame'`.
+ */
+function isImageMountedActorEntry(
+  viewport: Types.IViewport,
+  actorEntry: Types.ActorEntry
+): boolean {
   return (
-    renderMode === ActorRenderMode.VTK_IMAGE ||
-    renderMode === ActorRenderMode.CPU_IMAGE
+    getRenderPlanLayer(viewport, actorEntry.displaySetId)?.slice === 'frame'
   );
 }
 

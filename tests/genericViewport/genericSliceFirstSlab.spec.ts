@@ -16,8 +16,10 @@ const CT_DATA_ID = 'slice-first:ct';
 const PT_DATA_ID = 'slice-first:pt';
 const CT_VOLUME_ID = 'cornerstoneStreamingImageVolume:SLICE_FIRST_CT';
 const PT_VOLUME_ID = 'cornerstoneStreamingImageVolume:SLICE_FIRST_PT';
-const GPU_VOLUME_MODE = 'vtkVolumeSlice';
-const SAMPLED_MODE = 'vtkSampledSlice';
+/** The draw path (`slice-draw` of a render plan layer) of a GPU volume slice. */
+const GPU_VOLUME_MODE = 'gpuVolume-gpu';
+/** The draw path of a slice cut on the CPU and drawn on the GPU. */
+const SAMPLED_MODE = 'cpu-gpu';
 const MAX_GREY_DIFFERENCE = 3;
 /** The part of the canvas that must be content, not background. */
 const MIN_CONTENT_FRACTION = 0.05;
@@ -40,7 +42,12 @@ const SWITCH_TIMEOUT_MS = 20000;
 type TestViewport = {
   getActors: () => Array<{
     referencedId?: string;
-    actorMapper?: { renderMode?: string };
+    displaySetId?: string;
+  }>;
+  getRenderPlan: () => Array<{
+    displaySetId: string;
+    slice: string;
+    draw: string;
   }>;
   setDisplaySetAppearance: (
     displaySetId: string,
@@ -111,21 +118,24 @@ async function openExample(page: Page, sliceFirst: boolean): Promise<void> {
   await waitForRenderSettled(page, { quietMs: 800, timeout: 30000 });
 }
 
-/** The render modes of the CT and the PT actor of the coronal viewport. */
+/** The draw paths of the CT and the PT actor of the coronal viewport. */
 function getCoronalModes(page: Page): Promise<string[]> {
   return page.evaluate(
     ({ engineId, viewportId, volumeIds }) => {
-      const actors =
-        (window as TestWindow).cornerstone
-          .getRenderingEngine(engineId)
-          ?.getViewport(viewportId)
-          ?.getActors() ?? [];
+      const viewport = (window as TestWindow).cornerstone
+        .getRenderingEngine(engineId)
+        ?.getViewport(viewportId);
+      const actors = viewport?.getActors() ?? [];
+      const plan = viewport?.getRenderPlan() ?? [];
 
-      return volumeIds.map(
-        (volumeId) =>
-          actors.find((actor) => actor.referencedId === volumeId)?.actorMapper
-            ?.renderMode ?? 'missing'
-      );
+      return volumeIds.map((volumeId) => {
+        const entry = actors.find((actor) => actor.referencedId === volumeId);
+        const layer = plan.find(
+          (planLayer) => planLayer.displaySetId === entry?.displaySetId
+        );
+
+        return layer ? `${layer.slice}-${layer.draw}` : 'missing';
+      });
     },
     {
       engineId: ENGINE_ID,
@@ -136,7 +146,7 @@ function getCoronalModes(page: Page): Promise<string[]> {
 }
 
 /**
- * Waits until the CT and the PT of the coronal viewport use the render mode,
+ * Waits until the CT and the PT of the coronal viewport use the draw path,
  * or the CT the first and the PT the second.
  */
 async function expectCoronalModes(

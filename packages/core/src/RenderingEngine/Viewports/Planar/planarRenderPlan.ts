@@ -1,9 +1,8 @@
-import { ActorRenderMode } from '../../../types/IActor';
+import RenderBackends from '../../../enums/RenderBackends';
 import {
   getRenderBackendForRenderMode,
+  getRenderPlanSliceForRenderMode,
   getRenderSurfaceForRenderMode,
-  getSampledVolumeRenderModeForBackend,
-  isVolumeRenderMode,
 } from '../../helpers/renderBackendRegistry';
 import type { BindingRole } from '../ViewportArchitectureTypes';
 import type {
@@ -13,32 +12,12 @@ import type {
 } from './PlanarViewportTypes';
 
 /**
- * How the slice of a render mode is made: `cpu` for a mode that samples a
- * volume on the CPU (the CPU volume mode and the sampled volume mode of any
- * backend), `gpuVolume` for any other volume mode, and `frame` for an image
- * mode, which draws the acquired frame.
+ * The entry of one layer of a render plan. `slice` is the slot of
+ * `registerRenderBackend()` that holds the render mode, `draw` follows the
+ * surface of its backend, and `backend` is that backend. A mode that no
+ * backend registered reads as a frame drawn by the GPU backend, as the
+ * surface of such a mode defaults to the vtk.js canvas.
  */
-function getRenderPlanSlice(
-  renderMode: PlanarEffectiveRenderMode
-): RenderPlanLayer['slice'] {
-  if (!isVolumeRenderMode(renderMode)) {
-    return 'frame';
-  }
-
-  if (
-    renderMode === ActorRenderMode.CPU_VOLUME ||
-    renderMode ===
-      getSampledVolumeRenderModeForBackend(
-        getRenderBackendForRenderMode(renderMode)
-      )
-  ) {
-    return 'cpu';
-  }
-
-  return 'gpuVolume';
-}
-
-/** The entry of one layer of a render plan. */
 export function createRenderPlanLayer(
   displaySetId: string,
   role: BindingRole,
@@ -48,9 +27,9 @@ export function createRenderPlanLayer(
   return {
     displaySetId,
     role,
-    slice: getRenderPlanSlice(renderMode),
+    slice: getRenderPlanSliceForRenderMode(renderMode) ?? 'frame',
     draw: getRenderSurfaceForRenderMode(renderMode) === 'cpu' ? 'cpu' : 'gpu',
-    renderMode,
+    backend: getRenderBackendForRenderMode(renderMode) ?? RenderBackends.GPU,
     reason,
   };
 }
@@ -63,7 +42,9 @@ export function isSameRenderPlanLayer(
   return (
     a?.displaySetId === b?.displaySetId &&
     a?.role === b?.role &&
-    a?.renderMode === b?.renderMode &&
+    a?.slice === b?.slice &&
+    a?.draw === b?.draw &&
+    a?.backend === b?.backend &&
     a?.reason === b?.reason
   );
 }

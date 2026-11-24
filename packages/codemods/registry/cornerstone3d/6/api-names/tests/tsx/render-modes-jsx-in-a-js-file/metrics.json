@@ -1,0 +1,12 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.js",
+        "line": "8",
+        "rule": "renderMode: removed from the render plan layer: read its slice ('frame' | 'cpu' | 'gpuVolume'), draw ('gpu' | 'cpu') and backend"
+      },
+      "count": 1
+    }
+  ]
+}

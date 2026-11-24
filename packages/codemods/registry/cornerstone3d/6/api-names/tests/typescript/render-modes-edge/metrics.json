@@ -1,0 +1,92 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "15",
+        "rule": "ActorRenderMode.VTK_SAMPLED_SLICE: removed from the public API: read the layer of viewport.getRenderPlan() whose displaySetId is the displaySetId of the actor entry and test slice 'cpu' and draw 'gpu'"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "17",
+        "rule": "registerRenderBackend: renderModes is not a literal, the slots of renderModes are frame, cpu and gpuVolume in 6.0: image is frame, sampledVolume is cpu, and volume is cpu on a backend with surface cpu, gpuVolume on any other"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "22",
+        "rule": "registerRenderBackend: the slot volume, the slots of renderModes are frame, cpu and gpuVolume in 6.0: image is frame, sampledVolume is cpu, and volume is cpu on a backend with surface cpu, gpuVolume on any other"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "23",
+        "rule": "registerRenderBackend: the slot sampledVolume, the slots of renderModes are frame, cpu and gpuVolume in 6.0: image is frame, sampledVolume is cpu, and volume is cpu on a backend with surface cpu, gpuVolume on any other"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "31",
+        "rule": "renderMode: removed from the render plan layer: read its slice ('frame' | 'cpu' | 'gpuVolume'), draw ('gpu' | 'cpu') and backend"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "36",
+        "rule": "renderMode: a 3D viewport has no mount option renderMode in 6.0: the descriptor decides (image ids give a volume, a geometry id a surface), delete it"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "41",
+        "rule": "actorMapper.renderMode: removed: read the layer of viewport.getRenderPlan() whose displaySetId is the displaySetId of the actor entry, its slice, draw and backend"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "42",
+        "rule": "ActorRenderMode.CPU_VOLUME: removed from the public API: read the layer of viewport.getRenderPlan() whose displaySetId is the displaySetId of the actor entry and test slice 'cpu' and draw 'cpu'"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "46",
+        "rule": "Types.ActorMapperProxy: removed from the public API: the actor is entry.actor, its mapper entry.actor.getMapper(), and how it is drawn the layer of viewport.getRenderPlan() whose displaySetId is entry.displaySetId"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "47",
+        "rule": "renderMode: removed from the render plan layer: read its slice ('frame' | 'cpu' | 'gpuVolume'), draw ('gpu' | 'cpu') and backend"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "49",
+        "rule": "actorMapper: if this is an actor entry of Cornerstone, actorMapper is removed from the public API: the actor is entry.actor, its mapper entry.actor.getMapper(), and how it is drawn the layer of viewport.getRenderPlan() whose displaySetId is entry.displaySetId"
+      },
+      "count": 1
+    }
+  ]
+}

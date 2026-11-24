@@ -1,4 +1,4 @@
-import { ActorRenderMode } from '../../../types';
+import { PlanarRenderModeId } from './planarRenderModeIds';
 import type { Point2, Point3 } from '../../../types';
 import {
   canvasToWorldPlanarViewState,
@@ -62,8 +62,8 @@ export function resolvePlanarRenderPathCurrentImageIdIndex(args: {
   }
 
   if (
-    rendering.renderMode === ActorRenderMode.CPU_IMAGE ||
-    rendering.renderMode === ActorRenderMode.VTK_IMAGE
+    rendering.renderMode === PlanarRenderModeId.CANVAS_FRAME ||
+    rendering.renderMode === PlanarRenderModeId.VTK_FRAME
   ) {
     return resolvePlanarStackImageIdIndex({
       fallbackImageIdIndex: rendering.currentImageIdIndex,

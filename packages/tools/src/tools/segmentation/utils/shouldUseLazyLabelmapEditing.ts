@@ -1,16 +1,10 @@
 import {
-  ActorRenderMode,
   Enums,
   getEffectiveRenderBackend,
   type PlanarViewport,
   type Types,
 } from '@cornerstonejs/core';
 import { getConfig } from '../../../config';
-
-const CPU_RENDER_MODES = new Set<Types.ActorRenderMode>([
-  ActorRenderMode.CPU_IMAGE,
-  ActorRenderMode.CPU_VOLUME,
-]);
 
 /**
  * Whether the planar viewports draw on the CPU by default: on a device without
@@ -52,12 +46,6 @@ export function isCPUViewport(viewport?: Types.IViewport): boolean {
   }
 
   const defaultActor = getDefaultActor(viewport);
-  const renderMode = defaultActor?.actorMapper?.renderMode;
-
-  if (renderMode && CPU_RENDER_MODES.has(renderMode)) {
-    return true;
-  }
-
   const actorClassName =
     typeof defaultActor?.actor?.getClassName === 'function'
       ? defaultActor.actor.getClassName()

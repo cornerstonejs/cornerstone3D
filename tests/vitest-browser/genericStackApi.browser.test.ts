@@ -205,7 +205,7 @@ async function renderNextStackViewport() {
     element,
     defaultOptions: {
       orientation: OrientationAxis.AXIAL,
-      renderMode: 'vtkImage',
+      renderMode: 'vtkFrame',
     },
   });
 
@@ -220,7 +220,7 @@ async function renderNextStackViewport() {
   await viewport.setDisplaySets({
     displaySetId: stackDisplaySetId,
     options: {
-      renderMode: 'vtkImage',
+      renderMode: 'vtkFrame',
     },
   });
 

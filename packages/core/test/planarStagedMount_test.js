@@ -508,14 +508,27 @@ describe('A stack of a direct next planar viewport whose render backend changes 
     await mount;
 
     expect(
-      viewport.getRenderPlan().map(({ displaySetId, draw, renderMode }) => ({
-        displaySetId,
-        draw,
-        renderMode,
-      }))
+      viewport
+        .getRenderPlan()
+        .map(({ displaySetId, slice, draw, backend }) => ({
+          displaySetId,
+          slice,
+          draw,
+          backend,
+        }))
     ).toEqual([
-      { displaySetId: 'backend:source', draw: 'cpu', renderMode: 'cpuImage' },
-      { displaySetId: 'backend:overlay', draw: 'cpu', renderMode: 'cpuImage' },
+      {
+        displaySetId: 'backend:source',
+        slice: 'frame',
+        draw: 'cpu',
+        backend: 'cpu',
+      },
+      {
+        displaySetId: 'backend:overlay',
+        slice: 'frame',
+        draw: 'cpu',
+        backend: 'cpu',
+      },
     ]);
     expect(loads[sourceImageIds[0]]).toBe(1);
   });

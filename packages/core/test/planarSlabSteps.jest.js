@@ -6,15 +6,15 @@ import * as sampleVolumeSliceModule from '../src/utilities/sampleVolumeSlice';
 import {
   MAX_SLAB_SAMPLES_AT_ONCE,
   PlanarSliceSampler,
-} from '../src/RenderingEngine/Viewports/Planar/planarSampledSlice';
+} from '../src/RenderingEngine/Viewports/Planar/planarCpuSlice';
 import {
-  VtkSampledSliceRenderPath,
+  VtkCpuSliceRenderPath,
   reportSamplingState,
-} from '../src/RenderingEngine/Viewports/Planar/VtkSampledSliceRenderPath';
+} from '../src/RenderingEngine/Viewports/Planar/VtkCpuSliceRenderPath';
 import {
-  SAMPLED_SLICE_REST_DELAY_MS,
-  scheduleSampledSliceRestWork,
-} from '../src/RenderingEngine/Viewports/Planar/planarSampledSliceRest';
+  CPU_SLICE_REST_DELAY_MS,
+  scheduleCpuSliceRestWork,
+} from '../src/RenderingEngine/Viewports/Planar/planarCpuSliceRest';
 
 const DIMENSIONS = [128, 96, 60];
 
@@ -292,7 +292,7 @@ describe('a slab sampled in steps', () => {
     );
     const drawn = [];
     const start = () =>
-      scheduleSampledSliceRestWork({
+      scheduleCpuSliceRestWork({
         sampler,
         volume,
         getCamera: () => CAMERAS.axial,
@@ -312,7 +312,7 @@ describe('a slab sampled in steps', () => {
 
     const cancel = start();
 
-    jest.advanceTimersByTime(SAMPLED_SLICE_REST_DELAY_MS);
+    jest.advanceTimersByTime(CPU_SLICE_REST_DELAY_MS);
     jest.advanceTimersByTime(16);
 
     expect(steps).toHaveBeenCalledTimes(1);
@@ -324,7 +324,7 @@ describe('a slab sampled in steps', () => {
     expect(drawn).toEqual([]);
 
     start();
-    jest.advanceTimersByTime(SAMPLED_SLICE_REST_DELAY_MS + 5000);
+    jest.advanceTimersByTime(CPU_SLICE_REST_DELAY_MS + 5000);
 
     expect(drawn.length).toBe(1);
     expect(drawn[0].sampledFor.slab).toEqual(inputs.slab);
@@ -337,7 +337,7 @@ describe('the sampled slice render path', () => {
     const ctx = { vtk: { renderer: { addActor: jest.fn() } } };
 
     await expect(
-      new VtkSampledSliceRenderPath().addData(
+      new VtkCpuSliceRenderPath().addData(
         ctx,
         {
           id: 'rgb',

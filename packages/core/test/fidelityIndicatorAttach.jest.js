@@ -459,7 +459,7 @@ describe('fidelityIndicator attach gates', () => {
 
     it('attaches at enable and shows a lossy view that mounts later', async () => {
       const rendering = {
-        renderMode: 'vtkVolumeSlice',
+        renderMode: 'vtkGpuVolumeSlice',
         voxelQuality: quality(
           { ...fullGrid, spacing: [2, 2, 1] },
           VoxelReductions.Decimation
@@ -478,7 +478,7 @@ describe('fidelityIndicator attach gates', () => {
       expect(root).not.toBeNull();
       expect(root.dataset.state).toBeUndefined();
 
-      await viewport.addDisplaySet('ds-1', { renderMode: 'vtkVolumeSlice' });
+      await viewport.addDisplaySet('ds-1', { renderMode: 'vtkGpuVolumeSlice' });
       render(viewport);
 
       expect(root.dataset.state).toBe('lossy');
@@ -487,7 +487,7 @@ describe('fidelityIndicator attach gates', () => {
 
     it('refreshes a stale record before it reads the fidelity', async () => {
       const rendering = {
-        renderMode: 'vtkVolumeSlice',
+        renderMode: 'vtkGpuVolumeSlice',
         voxelQuality: quality(fullGrid, VoxelReductions.None),
         fullGrid,
         sampleDistanceLod: 1,
@@ -505,21 +505,21 @@ describe('fidelityIndicator attach gates', () => {
         document.createElement('div'),
         rendering
       );
-      await viewport.addDisplaySet('ds-1', { renderMode: 'vtkVolumeSlice' });
+      await viewport.addDisplaySet('ds-1', { renderMode: 'vtkGpuVolumeSlice' });
 
       expect(viewport.getFidelityState().lossy).toBe(true);
     });
 
     it('ignores a segmentation overlay that the render path excludes', async () => {
       const source = {
-        renderMode: 'vtkVolumeSlice',
+        renderMode: 'vtkGpuVolumeSlice',
         voxelQuality: quality(fullGrid, VoxelReductions.None),
         fullGrid,
         sampleDistanceLod: 1,
       };
       // A decimated labelmap: lossy if it counted.
       const labelmap = {
-        renderMode: 'vtkVolumeSlice',
+        renderMode: 'vtkGpuVolumeSlice',
         voxelQuality: quality(
           { ...fullGrid, spacing: [2, 2, 2] },
           VoxelReductions.Decimation
@@ -534,9 +534,9 @@ describe('fidelityIndicator attach gates', () => {
         labelmap
       );
 
-      await viewport.addDisplaySet('ds-1', { renderMode: 'vtkVolumeSlice' });
+      await viewport.addDisplaySet('ds-1', { renderMode: 'vtkGpuVolumeSlice' });
       await viewport.addDisplaySet('seg-1', {
-        renderMode: 'vtkVolumeSlice',
+        renderMode: 'vtkGpuVolumeSlice',
         role: 'overlay',
       });
 
@@ -547,7 +547,7 @@ describe('fidelityIndicator attach gates', () => {
 
     it('reports a reduced to full texture upgrade once, then shows nothing', async () => {
       const rendering = {
-        renderMode: 'vtkVolumeSlice',
+        renderMode: 'vtkGpuVolumeSlice',
         // A box average of 4 mm under 2 mm pixels.
         voxelQuality: quality({ ...fullGrid, spacing: [4, 4, 1] }),
         fullGrid,
@@ -563,7 +563,7 @@ describe('fidelityIndicator attach gates', () => {
         (evt) => events.push(evt.detail.state)
       );
       maybeAttachFidelityIndicator(viewport);
-      await viewport.addDisplaySet('ds-1', { renderMode: 'vtkVolumeSlice' });
+      await viewport.addDisplaySet('ds-1', { renderMode: 'vtkGpuVolumeSlice' });
       const root = viewport.element.querySelector('.fi-root');
 
       render(viewport);

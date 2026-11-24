@@ -44,7 +44,12 @@ type TestEngine = TestEngineInternals & {
         element: HTMLElement;
         getActors: () => Array<{
           referencedId?: string;
-          actorMapper?: { renderMode?: string };
+          displaySetId?: string;
+        }>;
+        getRenderPlan: () => Array<{
+          displaySetId: string;
+          slice: string;
+          draw: string;
         }>;
       }
     | undefined;
@@ -211,8 +216,9 @@ function loseAndRestoreEngineContexts(
 }
 
 /**
- * Returns the render mode of the source actor of every given viewport: the
- * actor of the volume when the viewport shows it, else the first actor.
+ * Returns the draw path (`slice-draw` of its render plan layer) of the source
+ * actor of every given viewport: the actor of the volume when the viewport
+ * shows it, else the first actor.
  */
 function getRenderModes(page: Page, viewportIds: string[]): Promise<string[]> {
   return page.evaluate(
@@ -222,18 +228,22 @@ function getRenderModes(page: Page, viewportIds: string[]): Promise<string[]> {
       );
 
       return viewportIds.map((viewportId) => {
-        const actors = engine?.getViewport(viewportId)?.getActors() ?? [];
+        const viewport = engine?.getViewport(viewportId);
+        const actors = viewport?.getActors() ?? [];
         const source =
           actors.find((entry) => entry.referencedId === volumeId) ?? actors[0];
+        const layer = viewport
+          ?.getRenderPlan()
+          .find((planLayer) => planLayer.displaySetId === source?.displaySetId);
 
-        return source?.actorMapper?.renderMode ?? 'missing';
+        return layer ? `${layer.slice}-${layer.draw}` : 'missing';
       });
     },
     { engineId: ENGINE_ID, viewportIds, volumeId: VOLUME_ID }
   );
 }
 
-/** Opens an example and waits until it rendered with the given render mode. */
+/** Opens an example and waits until it rendered with the given draw path. */
 async function openExample(
   page: Page,
   example: string,
@@ -349,7 +359,7 @@ test.describe('WebGL context loss', () => {
   test('the stack image path draws its picture again after a restore', async ({
     page,
   }) => {
-    await openExample(page, STACK_EXAMPLE, STACK_VIEWPORT_IDS, 'vtkImage');
+    await openExample(page, STACK_EXAMPLE, STACK_VIEWPORT_IDS, 'frame-gpu');
 
     await expectPictureBackAfterContextLoss(
       page,
@@ -361,13 +371,9 @@ test.describe('WebGL context loss', () => {
   test('the sampled slice path draws its picture again after a restore', async ({
     page,
   }) => {
-    await openExample(
-      page,
-      VOLUME_EXAMPLE,
-      VOLUME_VIEWPORT_IDS,
-      'vtkSampledSlice',
-      { sliceFirst: '1' }
-    );
+    await openExample(page, VOLUME_EXAMPLE, VOLUME_VIEWPORT_IDS, 'cpu-gpu', {
+      sliceFirst: '1',
+    });
 
     await expectPictureBackAfterContextLoss(
       page,
@@ -383,7 +389,7 @@ test.describe('WebGL context loss', () => {
       page,
       VOLUME_EXAMPLE,
       VOLUME_VIEWPORT_IDS,
-      'vtkVolumeSlice',
+      'gpuVolume-gpu',
       { sliceFirst: '0' }
     );
 

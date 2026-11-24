@@ -205,14 +205,14 @@ The registered object is a `DisplaySetDescriptor`. It has no `kind`: the
 viewport family that mounts the display set and the fields of the descriptor
 decide how its data is loaded. What each family reads:
 
-| Viewport      | Registered descriptor                                                                                                                |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| Planar        | `{ imageIds, initialImageIdIndex, volumeId }`                                                                                        |
-| 3D            | `{ imageIds, volumeId }`                                                                                                             |
-| 3D, a surface | `{ geometryId }`, or nothing: the `displaySetId` is then the id of a geometry of the cache, shown with `renderMode: 'vtkGeometry3d'` |
-| Video         | `{ imageId }`, or pass the image id as `displaySetId`                                                                                |
-| ECG           | `{ imageId }`, or pass the image id as `displaySetId`                                                                                |
-| Whole slide   | `{ imageIds, options: { webClient } }`, or `{ imageIds, webClient }`, or `{ imageIds }` with a `WADO_WEB_CLIENT` metadata provider   |
+| Viewport      | Registered descriptor                                                                                                              |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Planar        | `{ imageIds, initialImageIdIndex, volumeId }`                                                                                      |
+| 3D            | `{ imageIds, volumeId }`                                                                                                           |
+| 3D, a surface | `{ geometryId }`, or nothing: the `displaySetId` is then the id of a geometry of the cache, shown as a surface                     |
+| Video         | `{ imageId }`, or pass the image id as `displaySetId`                                                                              |
+| ECG           | `{ imageId }`, or pass the image id as `displaySetId`                                                                              |
+| Whole slide   | `{ imageIds, options: { webClient } }`, or `{ imageIds, webClient }`, or `{ imageIds }` with a `WADO_WEB_CLIENT` metadata provider |
 
 - **One registration serves a planar and a 3D viewport.** A volume that both
   show is registered once, with `imageIds` and `volumeId`.

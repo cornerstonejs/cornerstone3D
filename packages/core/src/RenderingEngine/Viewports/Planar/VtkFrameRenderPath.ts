@@ -9,7 +9,7 @@ import {
 } from '../../../enums';
 import { updateVTKImageDataWithCornerstoneImage } from '../../../utilities/updateVTKImageDataWithCornerstoneImage';
 import * as metaData from '../../../metaData';
-import { ActorRenderMode } from '../../../types';
+import { PlanarRenderModeId } from './planarRenderModeIds';
 import type { CPUIImageData, IImage, Point3 } from '../../../types';
 import type { Point2 } from '../../../types';
 import {
@@ -34,7 +34,7 @@ import type {
   PlanarViewportRenderContext,
   PlanarVtkImageAdapterContext,
 } from './PlanarViewportTypes';
-import type { PlanarImageMapperRendering } from './planarRuntimeTypes';
+import type { PlanarVtkFrameRendering } from './planarRuntimeTypes';
 import {
   canvasToWorldContextPool,
   worldToCanvasContextPool,
@@ -57,7 +57,7 @@ import { isSegmentationOverlayData } from '../renderingFidelity';
 import { loadPlanarStackImage } from './planarStackImageLoad';
 
 /** @internal */
-export class VtkImageMapperRenderPath
+export class VtkFrameRenderPath
   implements RenderPath<PlanarVtkImageAdapterContext>
 {
   async addData(
@@ -84,7 +84,7 @@ export class VtkImageMapperRenderPath
     const imageData =
       payload.imageData ?? createVTKImageDataFromImage(payload.image);
 
-    ctx.display.activateRenderMode(ActorRenderMode.VTK_IMAGE);
+    ctx.display.activateRenderMode(PlanarRenderModeId.VTK_FRAME);
     mapper.setInputData(imageData);
     actor.setMapper(mapper);
     // Multi-component images (e.g. RGB ultrasound) must render as direct color.
@@ -95,8 +95,8 @@ export class VtkImageMapperRenderPath
       actor.getProperty().setIndependentComponents(false);
     }
     ctx.vtk.renderer.addActor(actor);
-    const rendering: PlanarImageMapperRendering = {
-      renderMode: ActorRenderMode.VTK_IMAGE,
+    const rendering: PlanarVtkFrameRendering = {
+      renderMode: PlanarRenderModeId.VTK_FRAME,
       actorEntryUID: uuidv4(),
       actor,
       currentImage: payload.image,
@@ -157,8 +157,6 @@ export class VtkImageMapperRenderPath
       getActorEntry: (data) => {
         return buildPlanarActorEntry(data as LoadedData<PlanarPayload>, {
           actor: rendering.actor,
-          mapper: rendering.mapper,
-          renderMode: ActorRenderMode.VTK_IMAGE,
           uid: rendering.actorEntryUID,
           referencedIdFallback: rendering.currentImage.imageId,
         });
@@ -177,7 +175,7 @@ export class VtkImageMapperRenderPath
   }
 
   private updateAppearance(
-    rendering: PlanarImageMapperRendering,
+    rendering: PlanarVtkFrameRendering,
     props: unknown
   ): void {
     const appearance = props as PlanarDisplaySetAppearance | undefined;
@@ -197,14 +195,14 @@ export class VtkImageMapperRenderPath
 
   private applyViewState(
     ctx: PlanarVtkImageAdapterContext,
-    rendering: PlanarImageMapperRendering,
+    rendering: PlanarVtkFrameRendering,
     displaySetId: string,
     camera: unknown,
     imageIds: string[]
   ): void {
     const planarCamera = camera as PlanarViewState | undefined;
 
-    ctx.display.activateRenderMode(ActorRenderMode.VTK_IMAGE);
+    ctx.display.activateRenderMode(PlanarRenderModeId.VTK_FRAME);
 
     if (rendering.useWorldCoordinateImageData) {
       return;
@@ -309,7 +307,7 @@ export class VtkImageMapperRenderPath
   }
 
   private getFrameOfReferenceUID(
-    rendering: PlanarImageMapperRendering
+    rendering: PlanarVtkFrameRendering
   ): string | undefined {
     const imageId = rendering.currentImage.imageId;
     const imagePlaneModule = imageId
@@ -322,7 +320,7 @@ export class VtkImageMapperRenderPath
   }
 
   private getImageData(
-    rendering: PlanarImageMapperRendering
+    rendering: PlanarVtkFrameRendering
   ): CPUIImageData | undefined {
     return buildPlanarImageData(
       rendering.currentImage,
@@ -332,7 +330,7 @@ export class VtkImageMapperRenderPath
 
   private removeData(
     ctx: PlanarVtkImageAdapterContext,
-    rendering: PlanarImageMapperRendering
+    rendering: PlanarVtkFrameRendering
   ): void {
     const { actor } = rendering;
 
@@ -341,7 +339,7 @@ export class VtkImageMapperRenderPath
 
   private resize(
     ctx: PlanarVtkImageAdapterContext,
-    rendering: PlanarImageMapperRendering,
+    rendering: PlanarVtkFrameRendering,
     displaySetId: string
   ): void {
     if (rendering.useWorldCoordinateImageData) {
@@ -377,24 +375,25 @@ export class VtkImageMapperRenderPath
 }
 
 /** @internal */
-export class VtkImageMapperPath
+export class VtkFramePath
   implements
     RenderPathDefinition<
       PlanarViewportRenderContext,
       PlanarVtkImageAdapterContext
     >
 {
-  readonly id = 'planar:vtk-image-mapper';
+  readonly id = 'planar:vtk-frame';
   readonly type = ViewportType.PLANAR;
 
   matches(data: LoadedData, options: DataAddOptions): boolean {
     return (
-      data.type === 'image' && options.renderMode === ActorRenderMode.VTK_IMAGE
+      data.type === 'image' &&
+      options.renderMode === PlanarRenderModeId.VTK_FRAME
     );
   }
 
   createRenderPath() {
-    return new VtkImageMapperRenderPath();
+    return new VtkFrameRenderPath();
   }
 
   selectContext(
@@ -417,7 +416,7 @@ async function updateRenderedImage(args: {
   ctx: PlanarVtkImageAdapterContext;
   displaySetId: string;
   image: IImage;
-  rendering: PlanarImageMapperRendering;
+  rendering: PlanarVtkFrameRendering;
   imageIdIndex: number;
   numberOfSlices: number;
   appearance?: PlanarDisplaySetAppearance;
@@ -569,7 +568,7 @@ function canReuseImageDataForImage(
 
 function applyPlanarImageActorTransforms(
   ctx: PlanarVtkImageAdapterContext,
-  rendering: PlanarImageMapperRendering,
+  rendering: PlanarVtkFrameRendering,
   activeSourceICamera: PlanarResolvedICamera
 ): void {
   applyPlanarICameraToActor({

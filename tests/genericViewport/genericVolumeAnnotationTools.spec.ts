@@ -273,7 +273,7 @@ test.describe('Volume Annotation - Next (CPU)', () => {
         constructorName: 'PlanarViewport',
         type: 'planar',
         renderModesByDisplaySetId: {
-          'volume-annotation-tools-next:source': 'cpuVolume',
+          'volume-annotation-tools-next:source': 'canvasCpuSlice',
         },
       },
       {
@@ -282,7 +282,7 @@ test.describe('Volume Annotation - Next (CPU)', () => {
         constructorName: 'PlanarViewport',
         type: 'planar',
         renderModesByDisplaySetId: {
-          'volume-annotation-tools-next:source': 'cpuVolume',
+          'volume-annotation-tools-next:source': 'canvasCpuSlice',
         },
       },
       {
@@ -291,7 +291,7 @@ test.describe('Volume Annotation - Next (CPU)', () => {
         constructorName: 'PlanarViewport',
         type: 'planar',
         renderModesByDisplaySetId: {
-          'volume-annotation-tools-next:source': 'cpuVolume',
+          'volume-annotation-tools-next:source': 'canvasCpuSlice',
         },
       },
     ]);

@@ -103,7 +103,6 @@ async function showVolume(next) {
   });
   await next.setDisplaySets({
     displaySetId: 'next3DVolume',
-    options: { renderMode: 'vtkVolume3d' },
   });
 }
 

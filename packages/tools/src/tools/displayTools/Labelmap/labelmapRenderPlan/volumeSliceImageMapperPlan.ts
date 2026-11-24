@@ -1,4 +1,4 @@
-import { ActorRenderMode, type Types } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 import type { ViewportLabelmapRenderMode } from '../../../../stateManagement/segmentation/helpers/getViewportLabelmapRenderMode';
 import type { Segmentation } from '../../../../types/SegmentationStateTypes';
 import { triggerSegmentationDataModified } from '../../../../stateManagement/segmentation/triggerSegmentationEvents';
@@ -7,10 +7,8 @@ import {
   getVolumeLabelmapImageMapperRepresentationUIDs,
   updateVolumeLabelmapImageMapperActors,
 } from '../volumeLabelmapImageMapper';
-import {
-  createLabelmapRenderPlan,
-  getActorEntryRenderMode,
-} from './createLabelmapRenderPlan';
+import { createLabelmapRenderPlan } from './createLabelmapRenderPlan';
+import { getRenderPlanLayer } from '../../../../utilities/viewport/getRenderPlanLayer';
 import type { LabelmapRenderPlan } from './types';
 
 /**
@@ -55,7 +53,7 @@ function createVolumeSliceImageMapperPlan({
     // representation UID but not its shape; force a remount through the
     // image-mapper path.
     isActorEntryCompatible: (actorEntry) =>
-      !isVolumeMountedActorEntry(actorEntry),
+      !isVolumeMountedActorEntry(viewport, actorEntry),
     mount: () =>
       mountVolumeLabelmapImageMapper({
         viewport,
@@ -74,15 +72,17 @@ function createVolumeSliceImageMapperPlan({
   });
 }
 
-function isVolumeMountedActorEntry(actorEntry: Types.ActorEntry): boolean {
-  const renderMode = getActorEntryRenderMode(actorEntry);
+/**
+ * Whether the viewport draws an actor entry from a volume: its layer in the
+ * render plan cuts the slice out of a volume (`cpu` or `gpuVolume`).
+ */
+function isVolumeMountedActorEntry(
+  viewport: Types.IViewport,
+  actorEntry: Types.ActorEntry
+): boolean {
+  const slice = getRenderPlanLayer(viewport, actorEntry.displaySetId)?.slice;
 
-  return (
-    renderMode === ActorRenderMode.VTK_VOLUME ||
-    renderMode === ActorRenderMode.VTK_VOLUME_SLICE ||
-    renderMode === ActorRenderMode.VTK_SAMPLED_SLICE ||
-    renderMode === ActorRenderMode.CPU_VOLUME
-  );
+  return slice === 'cpu' || slice === 'gpuVolume';
 }
 
 async function mountVolumeLabelmapImageMapper({

@@ -286,7 +286,7 @@ const VIEW_CASES: StackCase[] = [
 
 type TestViewport = {
   getImageIds: () => string[];
-  getRenderPlan: () => Array<{ draw: string; renderMode: string }>;
+  getRenderPlan: () => Array<{ draw: string; slice: string }>;
   setDisplaySets: (...entries: unknown[]) => Promise<void>;
   setDisplaySetAppearance: (
     displaySetId: string,
@@ -839,8 +839,8 @@ async function openExample(page: Page): Promise<string> {
 }
 
 /**
- * Draws the image of a case with the GPU draw step (`vtkImage`) and with the
- * CPU draw step (`cpuImage`) and checks that the CPU picture follows the GPU
+ * Draws the image of a case with the GPU draw step (`vtkFrame`) and with the
+ * CPU draw step (`canvasFrame`) and checks that the CPU picture follows the GPU
  * picture within the tolerance of the case, away from the outline of the
  * image.
  */
@@ -942,7 +942,7 @@ function describeCases(title: string, cases: StackCase[]): void {
   });
 }
 
-test.describe('Stack draw parity: cpuImage draws the picture of vtkImage', () => {
+test.describe('Stack draw parity: canvasFrame draws the picture of vtkFrame', () => {
   test.describe.configure({ mode: 'parallel' });
   test.setTimeout(300000);
 

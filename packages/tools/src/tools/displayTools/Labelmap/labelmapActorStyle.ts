@@ -1,4 +1,4 @@
-import { ActorRenderMode, type Types } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
 import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
 import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import type vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
@@ -194,10 +194,7 @@ function setLabelmapColorAndOpacity(
 
   const visible = isActiveLabelmap || renderInactiveSegmentations;
 
-  const useImageSliceProperties =
-    labelmapActorEntry.actorMapper?.renderMode === ActorRenderMode.VTK_IMAGE ||
-    labelmapActorEntry.actorMapper?.renderMode ===
-      ActorRenderMode.VTK_VOLUME_SLICE;
+  const useImageSliceProperties = labelmapActor.isA('vtkImageSlice');
 
   // @ts-ignore - fix type in vtk
   const { preLoad } = labelmapActor.get?.('preLoad') || { preLoad: null };
@@ -232,16 +229,7 @@ function setLabelmapColorAndOpacity(
   ofun.setNodes(opacityNodes);
 
   ofun.setClamping(false);
-  const actorMapper = labelmapActorEntry.actorMapper as
-    | {
-        mapper?: {
-          modified?: () => void;
-        };
-      }
-    | undefined;
-  const labelmapMapper = actorMapper?.mapper
-    ? actorMapper.mapper
-    : labelmapActor.getMapper();
+  const labelmapMapper = labelmapActor.getMapper();
 
   if (preLoad) {
     preLoad({ cfun, ofun, actor: labelmapActor });

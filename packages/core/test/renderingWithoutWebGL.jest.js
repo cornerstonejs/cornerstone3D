@@ -12,7 +12,7 @@ import {
 import ContextPoolRenderingEngine from '../src/RenderingEngine/ContextPoolRenderingEngine';
 import TiledRenderingEngine from '../src/RenderingEngine/TiledRenderingEngine';
 import { PlanarRenderPathDecisionService } from '../src/RenderingEngine/Viewports/Planar/PlanarRenderPathDecisionService';
-import { ActorRenderMode } from '../src/types';
+import { PlanarRenderModeId } from '../src/RenderingEngine/Viewports/Planar/planarRenderModeIds';
 import { RenderBackends } from '../src/enums';
 import cache from '../src/cache/cache';
 import * as imageLoader from '../src/loaders/imageLoader';
@@ -163,10 +163,10 @@ describe('Rendering on a device without WebGL', () => {
     try {
       expect(getEffectiveRenderBackend()).toBe(RenderBackends.CPU);
       expect(service.select(IMAGE_DATASET).renderMode).toBe(
-        ActorRenderMode.CPU_IMAGE
+        PlanarRenderModeId.CANVAS_FRAME
       );
       expect(service.select(VOLUME_DATASET).renderMode).toBe(
-        ActorRenderMode.CPU_VOLUME
+        PlanarRenderModeId.CANVAS_CPU_SLICE
       );
     } finally {
       getVolumeSpy.mockRestore();
@@ -181,7 +181,7 @@ describe('Rendering on a device without WebGL', () => {
       IMAGE_DATASET
     );
 
-    expect(renderMode).toBe(ActorRenderMode.VTK_IMAGE);
+    expect(renderMode).toBe(PlanarRenderModeId.VTK_FRAME);
   });
 
   it('shows a stack on a planar viewport with the CPU in its render plan', async () => {
@@ -203,16 +203,20 @@ describe('Rendering on a device without WebGL', () => {
     await viewport.setDisplaySets({ displaySetId: 'withoutWebGL:stack' });
 
     expect(
-      viewport.getRenderPlan().map(({ displaySetId, draw, renderMode }) => ({
-        displaySetId,
-        draw,
-        renderMode,
-      }))
+      viewport
+        .getRenderPlan()
+        .map(({ displaySetId, slice, draw, backend }) => ({
+          displaySetId,
+          slice,
+          draw,
+          backend,
+        }))
     ).toEqual([
       {
         displaySetId: 'withoutWebGL:stack',
+        slice: 'frame',
         draw: 'cpu',
-        renderMode: ActorRenderMode.CPU_IMAGE,
+        backend: 'cpu',
       },
     ]);
   });

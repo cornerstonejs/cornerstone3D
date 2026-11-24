@@ -31,7 +31,7 @@ const MAX_DIFFERING_FRACTION = 0.01;
 const MIN_CONTENT_FRACTION = 0.05;
 /**
  * The part of the canvas whose stack image may differ by more than 1 level
- * between `vtkImage` and `cpuImage`: the tolerance of
+ * between `vtkFrame` and `canvasFrame`: the tolerance of
  * `genericStackDrawParity.spec.ts` for an image that is not moved.
  */
 const STACK_DIFFERING_FRACTION = 0.0002;
@@ -43,7 +43,7 @@ type PlanLayer = {
   role: string;
   slice: string;
   draw: string;
-  renderMode: string;
+  backend: string;
   reason: string;
 };
 
@@ -161,7 +161,7 @@ function getPlan(page: Page): Promise<PlanLayer[]> {
   );
 }
 
-/** The slice, the draw, the render mode and the reason of the CT and the PT. */
+/** The slice, the draw, the backend and the reason of the CT and the PT. */
 async function getPlanSummary(page: Page): Promise<string[][]> {
   const plan = await getPlan(page);
 
@@ -169,7 +169,7 @@ async function getPlanSummary(page: Page): Promise<string[][]> {
     const layer = plan.find((entry) => entry.displaySetId === displaySetId);
 
     return layer
-      ? [layer.slice, layer.draw, layer.renderMode, layer.reason]
+      ? [layer.slice, layer.draw, layer.backend, layer.reason]
       : ['missing'];
   });
 }
@@ -378,8 +378,8 @@ async function getHealthyPicture(browser: Browser): Promise<ViewportPixels> {
     await setCoronalSlab(page, SLAB_THICKNESS);
     await expectPlan(
       page,
-      ['gpuVolume', 'gpu', 'vtkVolumeSlice', 'slab'],
-      ['gpuVolume', 'gpu', 'vtkVolumeSlice', 'slab']
+      ['gpuVolume', 'gpu', 'gpu', 'slab'],
+      ['gpuVolume', 'gpu', 'gpu', 'slab']
     );
     healthyPicture = await readCoronal(page);
   } finally {
@@ -413,9 +413,9 @@ async function expectStaysDown(
   expect(
     events
       .filter((event) => event.displaySetId === movedDisplaySetId)
-      .map((event) => event.current.renderMode),
-    `${movedDisplaySetId}: render modes during a second slab on and off`
-  ).not.toContain('vtkVolumeSlice');
+      .map((event) => event.current.slice),
+    `${movedDisplaySetId}: slices during a second slab on and off`
+  ).not.toContain('gpuVolume');
 }
 
 test.describe('Router: a layer leaves the GPU volume path when its 3D texture cannot work', () => {
@@ -455,9 +455,9 @@ test.describe('Router: a layer leaves the GPU volume path when its 3D texture ca
 
     const ctFloat = !(capabilities.norm16 && capabilities.norm16Linear);
     const ctPlan = ctFloat
-      ? ['cpu', 'gpu', 'vtkSampledSlice', 'floatFilter']
-      : ['gpuVolume', 'gpu', 'vtkVolumeSlice', 'slab'];
-    const ptPlan = ['cpu', 'gpu', 'vtkSampledSlice', 'floatFilter'];
+      ? ['cpu', 'gpu', 'gpu', 'floatFilter']
+      : ['gpuVolume', 'gpu', 'gpu', 'slab'];
+    const ptPlan = ['cpu', 'gpu', 'gpu', 'floatFilter'];
 
     console.log(
       `the CT 3D texture is ${ctFloat ? 'R32F (no norm16 here)' : 'norm16'}, so the CT ${ctFloat ? 'moves too' : 'stays on the GPU'}`
@@ -475,8 +475,8 @@ test.describe('Router: a layer leaves the GPU volume path when its 3D texture ca
       ).toBe(false);
       await expectPlan(
         page,
-        ['cpu', 'gpu', 'vtkSampledSlice', 'slice'],
-        ['cpu', 'gpu', 'vtkSampledSlice', 'slice']
+        ['cpu', 'gpu', 'gpu', 'slice'],
+        ['cpu', 'gpu', 'gpu', 'slice']
       );
       await takePlanEvents(page);
       await setCoronalSlab(page, SLAB_THICKNESS);
@@ -531,8 +531,8 @@ test.describe('Router: a layer leaves the GPU volume path when its 3D texture ca
     await setCoronalSlab(page, SLAB_THICKNESS);
     await expectPlan(
       page,
-      ['cpu', 'gpu', 'vtkSampledSlice', 'textureSize'],
-      ['gpuVolume', 'gpu', 'vtkVolumeSlice', 'slab']
+      ['cpu', 'gpu', 'gpu', 'textureSize'],
+      ['gpuVolume', 'gpu', 'gpu', 'slab']
     );
 
     const events = await takePlanEvents(page);
@@ -554,8 +554,8 @@ test.describe('Router: a layer leaves the GPU volume path when its 3D texture ca
     await expectStaysDown(
       page,
       CT_DATA_ID,
-      ['cpu', 'gpu', 'vtkSampledSlice', 'textureSize'],
-      ['gpuVolume', 'gpu', 'vtkVolumeSlice', 'slab']
+      ['cpu', 'gpu', 'gpu', 'textureSize'],
+      ['gpuVolume', 'gpu', 'gpu', 'slab']
     );
     expect(await getTextureSetCount(page, CT_VOLUME_ID)).toBe(0);
   });
@@ -621,8 +621,8 @@ test.describe('Router: a layer leaves the GPU volume path when its 3D texture ca
     await setCoronalSlab(page, SLAB_THICKNESS);
     await expectPlan(
       page,
-      ['cpu', 'gpu', 'vtkSampledSlice', 'textureFailed'],
-      ['gpuVolume', 'gpu', 'vtkVolumeSlice', 'slab']
+      ['cpu', 'gpu', 'gpu', 'textureFailed'],
+      ['gpuVolume', 'gpu', 'gpu', 'slab']
     );
 
     const events = await takePlanEvents(page);
@@ -630,8 +630,8 @@ test.describe('Router: a layer leaves the GPU volume path when its 3D texture ca
     expect(
       events
         .filter((event) => event.reason === 'textureFailed')
-        .map((event) => [event.displaySetId, event.previous?.renderMode])
-    ).toEqual([[CT_DATA_ID, 'vtkVolumeSlice']]);
+        .map((event) => [event.displaySetId, event.previous?.slice])
+    ).toEqual([[CT_DATA_ID, 'gpuVolume']]);
     expect(events.filter((event) => event.displaySetId === PT_DATA_ID).length).toBe(
       1
     );
@@ -652,8 +652,8 @@ test.describe('Router: a layer leaves the GPU volume path when its 3D texture ca
     await expectStaysDown(
       page,
       CT_DATA_ID,
-      ['cpu', 'gpu', 'vtkSampledSlice', 'textureFailed'],
-      ['gpuVolume', 'gpu', 'vtkVolumeSlice', 'slab']
+      ['cpu', 'gpu', 'gpu', 'textureFailed'],
+      ['gpuVolume', 'gpu', 'gpu', 'slab']
     );
     expect(
       await page.evaluate(
@@ -672,8 +672,8 @@ test.describe('Router: a layer leaves the GPU volume path when its 3D texture ca
     browser,
   }) => {
     const healthy = await getHealthyPicture(browser);
-    const gpuPlan = ['gpuVolume', 'gpu', 'vtkVolumeSlice', 'slab'];
-    const cpuPlan = ['cpu', 'cpu', 'cpuVolume', 'contextLost'];
+    const gpuPlan = ['gpuVolume', 'gpu', 'gpu', 'slab'];
+    const cpuPlan = ['cpu', 'cpu', 'cpu', 'contextLost'];
 
     await recordWebGLContexts(page);
     await openExample(page);
@@ -708,7 +708,7 @@ test.describe('Router: a layer leaves the GPU volume path when its 3D texture ca
     );
     await expectStaysDown(page, CT_DATA_ID, cpuPlan, cpuPlan);
   });
-  test('a stack image whose context does not come back is drawn by cpuImage with the GPU picture', async ({
+  test('a stack image whose context does not come back is drawn by canvasFrame with the GPU picture', async ({
     page,
   }) => {
     const stackDisplaySetId = 'stack-api-next:primary';
@@ -723,7 +723,7 @@ test.describe('Router: a layer leaves the GPU volume path when its 3D texture ca
               .getRenderPlan(),
           { engineId: ENGINE_ID, viewportId }
         )
-      ).map((layer) => [layer.displaySetId, layer.draw, layer.renderMode]);
+      ).map((layer) => [layer.displaySetId, layer.slice, layer.draw]);
     const url = createExampleUrl('genericStackAPI.html');
 
     url.searchParams.set('sliceFirst', '1');
@@ -758,14 +758,14 @@ test.describe('Router: a layer leaves the GPU volume path when its 3D texture ca
         }
       );
     }, viewportId);
-    expect(await stackPlan()).toEqual([[stackDisplaySetId, 'gpu', 'vtkImage']]);
+    expect(await stackPlan()).toEqual([[stackDisplaySetId, 'frame', 'gpu']]);
 
     const gpu = await readViewportPixels(page, 0, { stableMs: 500 });
 
     expect(await loseWebGLContexts(page)).toBeGreaterThan(0);
     await expect
       .poll(stackPlan, { timeout: SWITCH_TIMEOUT_MS })
-      .toEqual([[stackDisplaySetId, 'cpu', 'cpuImage']]);
+      .toEqual([[stackDisplaySetId, 'frame', 'cpu']]);
     await waitForRenderSettled(page, { quietMs: 800, timeout: 30000 });
 
     const events = await takePlanEvents(page);
@@ -780,11 +780,11 @@ test.describe('Router: a layer leaves the GPU volume path when its 3D texture ca
     expect(
       events.map((event) => [
         event.displaySetId,
-        event.previous?.renderMode,
-        event.current.renderMode,
+        event.previous?.backend,
+        event.current.backend,
         event.reason,
       ])
-    ).toEqual([[stackDisplaySetId, 'vtkImage', 'cpuImage', 'contextLost']]);
+    ).toEqual([[stackDisplaySetId, 'gpu', 'cpu', 'contextLost']]);
     expect(
       countContentPixels(cpu),
       'pixels that are not background'

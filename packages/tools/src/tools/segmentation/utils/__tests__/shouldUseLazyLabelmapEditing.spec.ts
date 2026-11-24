@@ -1,21 +1,14 @@
-import { ActorRenderMode } from '@cornerstonejs/core';
-
 import { getConfig, setConfig } from '../../../../config';
 import {
   isCPUViewport,
   shouldUseLazyLabelmapEditing,
 } from '../shouldUseLazyLabelmapEditing';
 
-function createViewport(renderMode?: unknown) {
+/** A planar viewport whose render plan has one source layer. */
+function createViewport(layer?: { slice: string; draw: string }) {
   return {
-    getDefaultActor: () =>
-      renderMode
-        ? {
-            actorMapper: {
-              renderMode,
-            },
-          }
-        : undefined,
+    getRenderPlan: () =>
+      layer ? [{ displaySetId: 'ct', role: 'source', ...layer }] : [],
   };
 }
 
@@ -31,7 +24,7 @@ describe('shouldUseLazyLabelmapEditing', () => {
 
     expect(
       shouldUseLazyLabelmapEditing(
-        createViewport(ActorRenderMode.CPU_IMAGE) as never
+        createViewport({ slice: 'frame', draw: 'cpu' }) as never
       )
     ).toBe(true);
   });
@@ -41,7 +34,7 @@ describe('shouldUseLazyLabelmapEditing', () => {
 
     expect(
       shouldUseLazyLabelmapEditing(
-        createViewport(ActorRenderMode.CPU_VOLUME) as never
+        createViewport({ slice: 'cpu', draw: 'cpu' }) as never
       )
     ).toBe(true);
   });
@@ -55,7 +48,7 @@ describe('shouldUseLazyLabelmapEditing', () => {
 
     expect(
       shouldUseLazyLabelmapEditing(
-        createViewport(ActorRenderMode.VTK_IMAGE) as never
+        createViewport({ slice: 'frame', draw: 'gpu' }) as never
       )
     ).toBe(true);
   });
@@ -77,7 +70,7 @@ describe('shouldUseLazyLabelmapEditing', () => {
 
     expect(
       isCPUViewport({
-        ...createViewport(ActorRenderMode.VTK_IMAGE),
+        ...createViewport({ slice: 'frame', draw: 'gpu' }),
         getRenderPlan: () => [
           { displaySetId: 'ct', role: 'source', draw: 'gpu' },
           { displaySetId: 'pt', role: 'overlay', draw: 'cpu' },
@@ -91,7 +84,7 @@ describe('shouldUseLazyLabelmapEditing', () => {
 
     expect(
       isCPUViewport({
-        ...createViewport(ActorRenderMode.VTK_IMAGE),
+        ...createViewport({ slice: 'frame', draw: 'gpu' }),
         _cpuFallbackEnabledElement: {},
         useCPURendering: true,
         getRenderPlan: () => [

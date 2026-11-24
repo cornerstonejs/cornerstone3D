@@ -4,7 +4,7 @@ import { Events, ViewportType } from '../../../enums';
 import eventTarget from '../../../eventTarget';
 import { getDefaultVolumeVOIRange } from '../../helpers/setDefaultVolumeVOI';
 import * as lifecycle from '../../helpers/volumeStrategyLifecycle';
-import { ActorRenderMode } from '../../../types';
+import { PlanarRenderModeId } from './planarRenderModeIds';
 import type { IImageData, IImageVolume, VOIRange } from '../../../types';
 import type {
   DataAddOptions,
@@ -21,7 +21,7 @@ import type {
   PlanarViewportRenderContext,
   PlanarVtkVolumeAdapterContext,
 } from './PlanarViewportTypes';
-import type { PlanarSampledSliceRendering } from './planarRuntimeTypes';
+import type { PlanarVtkCpuSliceRendering } from './planarRuntimeTypes';
 import { triggerPlanarVolumeNewImageOfPlacedSlice } from './planarImageEvents';
 import {
   applyPlanarICameraToRenderer,
@@ -34,22 +34,22 @@ import {
 import {
   MAX_SCREEN_SLICE_SIZE,
   PlanarSliceSampler,
-  getPlanarSampledSliceInputs,
+  getPlanarCpuSliceInputs,
   getVolumeClipPlanes,
-} from './planarSampledSlice';
-import type { PlanarSampledSlice } from './planarSampledSlice';
+} from './planarCpuSlice';
+import type { PlanarCpuSlice } from './planarCpuSlice';
 import {
   getCanvasScreenSliceGeometry,
   getNeighbourCameras,
   recordPlaneMove,
-  scheduleSampledSliceRestWork,
-} from './planarSampledSliceRest';
-import type { PlanarSlicePlaneMoves } from './planarSampledSliceRest';
-import { PlanarSampledSliceActor } from './planarSampledSliceActor';
+  scheduleCpuSliceRestWork,
+} from './planarCpuSliceRest';
+import type { PlanarSlicePlaneMoves } from './planarCpuSliceRest';
+import { PlanarCpuSliceActor } from './planarCpuSliceActor';
 import {
   buildPlanarVolumeImageData,
   getSliceActorDepthOrder,
-} from './VtkVolumeSliceRenderPath';
+} from './VtkGpuVolumeSliceRenderPath';
 import {
   isSegmentationOverlayData,
   isVolumeLoading,
@@ -62,30 +62,30 @@ import { canFilterFloatTextures } from '../../vtkClasses/floatLinearFilter';
  * loads. A frame that arrives shows within this time, and a long load does
  * not sample once for each of its frames.
  */
-export const SAMPLED_SLICE_LOADING_UPDATE_MS = 100;
+export const CPU_SLICE_LOADING_UPDATE_MS = 100;
 
 /** The parts of one mounted sampled slice. */
-type SampledSliceMount = PlanarSlicePlaneMoves & {
+type CpuSliceMount = PlanarSlicePlaneMoves & {
   ctx: PlanarVtkVolumeAdapterContext;
   displaySetId: string;
-  rendering: PlanarSampledSliceRendering;
+  rendering: PlanarVtkCpuSliceRendering;
   sampler: PlanarSliceSampler;
-  draw: PlanarSampledSliceActor;
-  /** The largest width or height of a slice (`getSampledSliceMaxSize`). */
+  draw: PlanarCpuSliceActor;
+  /** The largest width or height of a slice (`getCpuSliceMaxSize`). */
   maxSliceSize: number;
   /** Cancels the pending work at rest: the rest timer or an idle prefetch. */
   cancelRestWork?: () => void;
 };
 
 /**
- * The render path of `vtkSampledSlice`: a volume-backed display set whose
+ * The render path of `vtkCpuSlice`: a volume-backed display set whose
  * visible slice is cut out of the volume on the CPU and drawn as a 2D image.
  * No 3D texture is made for it.
  *
  * It wires two steps: the sample step (`PlanarSliceSampler`, plain data) and
- * the draw step (`PlanarSampledSliceActor`, the only part that knows vtk.js
+ * the draw step (`PlanarCpuSliceActor`, the only part that knows vtk.js
  * image classes). Navigation, events, appearance and depth order follow
- * `VtkVolumeSliceRenderPath`.
+ * `VtkGpuVolumeSliceRenderPath`.
  *
  * It draws one value per voxel, so it refuses a volume of several components
  * per voxel (a colour volume), which the render path decision never sends
@@ -97,7 +97,7 @@ type SampledSliceMount = PlanarSlicePlaneMoves & {
  *
  * @internal
  */
-export class VtkSampledSliceRenderPath
+export class VtkCpuSliceRenderPath
   implements RenderPath<PlanarVtkVolumeAdapterContext>
 {
   async addData(
@@ -117,29 +117,29 @@ export class VtkSampledSliceRenderPath
 
     if ((imageVolume.voxelManager?.numberOfComponents ?? 1) > 1) {
       throw new Error(
-        '[PlanarViewport] vtkSampledSlice draws one value per voxel; a volume of several components per voxel needs another render mode'
+        '[PlanarViewport] vtkCpuSlice draws one value per voxel; a volume of several components per voxel needs another render mode'
       );
     }
 
-    const defaultVOIRange = await getSampledSliceDefaultVOIRange(imageVolume);
-    const draw = new PlanarSampledSliceActor({
+    const defaultVOIRange = await getCpuSliceDefaultVOIRange(imageVolume);
+    const draw = new PlanarCpuSliceActor({
       voxelManager: imageVolume.voxelManager,
       viewportId: ctx.viewportId,
     });
 
     draw.setClipPlanes(getVolumeClipPlanes(imageVolume));
-    ctx.display.activateRenderMode(ActorRenderMode.VTK_SAMPLED_SLICE);
+    ctx.display.activateRenderMode(PlanarRenderModeId.VTK_CPU_SLICE);
     ctx.vtk.renderer.addActor(draw.actor);
 
-    const maxSliceSize = getSampledSliceMaxSize();
+    const maxSliceSize = getCpuSliceMaxSize();
     const sampler = new PlanarSliceSampler({
       keepFractions: canFilterFloatTextures(),
       maxSliceSize,
       canFilterFloatTextures: () => canFilterFloatTextures(),
       sampleSlabsInSteps: true,
     });
-    const rendering: PlanarSampledSliceRendering = {
-      renderMode: ActorRenderMode.VTK_SAMPLED_SLICE,
+    const rendering: PlanarVtkCpuSliceRendering = {
+      renderMode: PlanarRenderModeId.VTK_CPU_SLICE,
       actorEntryUID: uuidv4(),
       actor: draw.actor,
       mapper: draw.mapper,
@@ -157,7 +157,7 @@ export class VtkSampledSliceRenderPath
       sampleDistanceLod: 1,
       getSliceCacheStatistics: () => sampler.getStatistics(),
     };
-    const mount: SampledSliceMount = {
+    const mount: CpuSliceMount = {
       ctx,
       displaySetId: data.id,
       rendering,
@@ -167,7 +167,7 @@ export class VtkSampledSliceRenderPath
     };
 
     rendering.refreshFidelity = () =>
-      refreshSampledSliceFidelity(rendering, sampler);
+      refreshCpuSliceFidelity(rendering, sampler);
     rendering.refreshFidelity();
     rendering.removeStreamingSubscriptions = this.subscribeToVolumeData(
       mount,
@@ -190,8 +190,6 @@ export class VtkSampledSliceRenderPath
 
         return buildPlanarActorEntry(planarData, {
           actor: rendering.actor,
-          mapper: rendering.mapper,
-          renderMode: ActorRenderMode.VTK_SAMPLED_SLICE,
           uid: rendering.actorEntryUID,
           referencedIdFallback: planarData.volumeId,
         });
@@ -215,7 +213,7 @@ export class VtkSampledSliceRenderPath
   /**
    * Listens for new voxel data of the volume and for a change of its active
    * time point, and samples the visible slice again for each. While the
-   * volume loads, the samples are at least SAMPLED_SLICE_LOADING_UPDATE_MS
+   * volume loads, the samples are at least CPU_SLICE_LOADING_UPDATE_MS
    * apart. Any other change (an edit of the voxels, the end of the load, a new
    * time point) samples at the next animation frame. A change of the texture
    * limits does not concern this path, which holds no 3D texture. The load
@@ -225,11 +223,11 @@ export class VtkSampledSliceRenderPath
    * @returns the function that removes the listeners
    */
   private subscribeToVolumeData(
-    mount: SampledSliceMount,
+    mount: CpuSliceMount,
     volumeId: string
   ): () => void {
     const { rendering, sampler } = mount;
-    const updates = createSampledSliceUpdates(() => {
+    const updates = createCpuSliceUpdates(() => {
       this.updateSlice(
         mount,
         getPlanarRenderPathActiveSourceICamera(mount.ctx)
@@ -291,7 +289,7 @@ export class VtkSampledSliceRenderPath
     };
   }
 
-  private updateAppearance(mount: SampledSliceMount, props: unknown): void {
+  private updateAppearance(mount: CpuSliceMount, props: unknown): void {
     const { ctx, draw, rendering } = mount;
 
     rendering.appearance = props as PlanarDisplaySetAppearance | undefined;
@@ -304,8 +302,8 @@ export class VtkSampledSliceRenderPath
     fitPlanarCameraClippingRange(ctx.vtk.renderer);
   }
 
-  private applyViewState(mount: SampledSliceMount, cameraInput: unknown): void {
-    mount.ctx.display.activateRenderMode(ActorRenderMode.VTK_SAMPLED_SLICE);
+  private applyViewState(mount: CpuSliceMount, cameraInput: unknown): void {
+    mount.ctx.display.activateRenderMode(PlanarRenderModeId.VTK_CPU_SLICE);
     this.syncRenderCamera(
       mount,
       cameraInput as PlanarViewState | undefined,
@@ -314,7 +312,7 @@ export class VtkSampledSliceRenderPath
   }
 
   private syncRenderCamera(
-    mount: SampledSliceMount,
+    mount: CpuSliceMount,
     camera: PlanarViewState | undefined,
     triggerImageEvent: boolean
   ): void {
@@ -373,7 +371,7 @@ export class VtkSampledSliceRenderPath
    * rest and starts the rest timer again.
    */
   private updateSlice(
-    mount: SampledSliceMount,
+    mount: CpuSliceMount,
     camera: PlanarResolvedICamera | undefined
   ): void {
     const { rendering, sampler } = mount;
@@ -386,10 +384,7 @@ export class VtkSampledSliceRenderPath
       sampler.sample(
         rendering.imageVolume,
         camera,
-        getPlanarSampledSliceInputs(
-          rendering.imageVolume,
-          rendering.appearance
-        ),
+        getPlanarCpuSliceInputs(rendering.imageVolume, rendering.appearance),
         getCanvasScreenSliceGeometry(
           mount.ctx.vtk.canvas,
           camera,
@@ -407,9 +402,9 @@ export class VtkSampledSliceRenderPath
    * again here because a remount replaces an actor (`getSliceActorDepthOrder`).
    */
   private drawSlice(
-    mount: SampledSliceMount,
+    mount: CpuSliceMount,
     camera: PlanarResolvedICamera | undefined,
-    slice: PlanarSampledSlice | undefined
+    slice: PlanarCpuSlice | undefined
   ): void {
     const { ctx, displaySetId, draw, rendering } = mount;
 
@@ -423,26 +418,23 @@ export class VtkSampledSliceRenderPath
   }
 
   /**
-   * Starts the work of a view at rest (`scheduleSampledSliceRestWork`): once
-   * the view has not changed for SAMPLED_SLICE_REST_DELAY_MS, an oblique
+   * Starts the work of a view at rest (`scheduleCpuSliceRestWork`): once
+   * the view has not changed for CPU_SLICE_REST_DELAY_MS, an oblique
    * slice is sampled once more on the screen grid, one sample per device
    * pixel, when the sampler wants that (`PlanarSliceSampler.sampleFiner`), and
    * drawn. Then the neighbour slices are prefetched in idle time, nearest
    * first and in the direction of the last scroll first. A change of the view
    * stops it (`updateSlice`).
    */
-  private scheduleRestWork(mount: SampledSliceMount): void {
+  private scheduleRestWork(mount: CpuSliceMount): void {
     const { ctx, displaySetId, rendering, sampler } = mount;
 
-    mount.cancelRestWork = scheduleSampledSliceRestWork({
+    mount.cancelRestWork = scheduleCpuSliceRestWork({
       sampler,
       volume: rendering.imageVolume,
       getCamera: () => getPlanarRenderPathActiveSourceICamera(ctx),
       getInputs: () =>
-        getPlanarSampledSliceInputs(
-          rendering.imageVolume,
-          rendering.appearance
-        ),
+        getPlanarCpuSliceInputs(rendering.imageVolume, rendering.appearance),
       getScreen: (camera) =>
         getCanvasScreenSliceGeometry(
           ctx.vtk.canvas,
@@ -473,7 +465,7 @@ export class VtkSampledSliceRenderPath
     });
   }
 
-  private removeData(mount: SampledSliceMount): void {
+  private removeData(mount: CpuSliceMount): void {
     cancelRestWork(mount);
     mount.rendering.removeStreamingSubscriptions?.();
     mount.draw.remove(mount.ctx.vtk.renderer);
@@ -481,7 +473,7 @@ export class VtkSampledSliceRenderPath
   }
 }
 
-function cancelRestWork(mount: SampledSliceMount): void {
+function cancelRestWork(mount: CpuSliceMount): void {
   mount.cancelRestWork?.();
   mount.cancelRestWork = undefined;
 }
@@ -497,8 +489,8 @@ function cancelRestWork(mount: SampledSliceMount): void {
  * debounced work of the tools about 100 ms after every move of the view.
  */
 export function reportSamplingState(
-  mount: Pick<SampledSliceMount, 'displaySetId' | 'sampler'> & {
-    ctx: Pick<SampledSliceMount['ctx'], 'viewport'>;
+  mount: Pick<CpuSliceMount, 'displaySetId' | 'sampler'> & {
+    ctx: Pick<CpuSliceMount['ctx'], 'viewport'>;
     rendering: { slabTooLarge?: boolean };
   }
 ): boolean {
@@ -516,25 +508,25 @@ export function reportSamplingState(
 }
 
 /** @internal */
-export class VtkSampledSlicePath
+export class VtkCpuSlicePath
   implements
     RenderPathDefinition<
       PlanarViewportRenderContext,
       PlanarVtkVolumeAdapterContext
     >
 {
-  readonly id = 'planar:vtk-sampled-slice';
+  readonly id = 'planar:vtk-cpu-slice';
   readonly type = ViewportType.PLANAR;
 
   matches(data: LoadedData, options: DataAddOptions): boolean {
     return (
       data.type === 'image' &&
-      options.renderMode === ActorRenderMode.VTK_SAMPLED_SLICE
+      options.renderMode === PlanarRenderModeId.VTK_CPU_SLICE
     );
   }
 
   createRenderPath() {
-    return new VtkSampledSliceRenderPath();
+    return new VtkCpuSliceRenderPath();
   }
 
   selectContext(
@@ -559,7 +551,7 @@ export class VtkSampledSlicePath
  * MAX_SCREEN_SLICE_SIZE without a WebGL profile. An oblique slice and the
  * screen grid are then sampled at full resolution up to what the GPU can hold.
  */
-export function getSampledSliceMaxSize(): number {
+export function getCpuSliceMaxSize(): number {
   const { webgl, maxTextureSize } = getRenderingCapabilities();
 
   return webgl && maxTextureSize > 0 ? maxTextureSize : MAX_SCREEN_SLICE_SIZE;
@@ -573,7 +565,7 @@ export function getSampledSliceMaxSize(): number {
  * of the volume (see `createVolumeSliceActor`), so the voxel range is the
  * default here.
  */
-export async function getSampledSliceDefaultVOIRange(
+export async function getCpuSliceDefaultVOIRange(
   imageVolume: IImageVolume
 ): Promise<VOIRange | undefined> {
   const voi = await getDefaultVolumeVOIRange(imageVolume);
@@ -606,9 +598,9 @@ export async function getSampledSliceDefaultVOIRange(
  * picture that is not the slab of the view yet, because its steps still run
  * or because it is too large for the CPU, is pending as a loading picture is.
  */
-export function refreshSampledSliceFidelity(
+export function refreshCpuSliceFidelity(
   rendering: Pick<
-    PlanarSampledSliceRendering,
+    PlanarVtkCpuSliceRendering,
     'imageVolume' | 'voxelQuality' | 'qualityPending' | 'fullGrid'
   >,
   sampler: PlanarSliceSampler
@@ -624,10 +616,10 @@ export function refreshSampledSliceFidelity(
 /**
  * Coalesces the samples that volume data asks for. `now` samples at the next
  * animation frame; `soon` samples at the next animation frame after at least
- * SAMPLED_SLICE_LOADING_UPDATE_MS since the last sample; a pending sample
+ * CPU_SLICE_LOADING_UPDATE_MS since the last sample; a pending sample
  * takes any later request.
  */
-function createSampledSliceUpdates(update: () => void): {
+function createCpuSliceUpdates(update: () => void): {
   now: () => void;
   soon: () => void;
   cancel: () => void;
@@ -658,7 +650,7 @@ function createSampledSliceUpdates(update: () => void): {
 
     const delay = Math.max(
       0,
-      SAMPLED_SLICE_LOADING_UPDATE_MS - (performance.now() - lastUpdateTime)
+      CPU_SLICE_LOADING_UPDATE_MS - (performance.now() - lastUpdateTime)
     );
 
     if (delay === 0) {

@@ -1,8 +1,4 @@
 jest.mock('@cornerstonejs/core', () => ({
-  ActorRenderMode: {
-    VTK_IMAGE: 'VTK_IMAGE',
-    VTK_VOLUME_SLICE: 'VTK_VOLUME_SLICE',
-  },
   Enums: {
     BlendModes: {
       COMPOSITE: 0,
@@ -79,6 +75,13 @@ function makeSegmentation() {
   } as never;
 }
 
+/** The render plan layer of each labelmap display set of a test. */
+const labelmapLayers = new Map<string, { slice: string; draw: string }>();
+
+afterEach(() => {
+  labelmapLayers.clear();
+});
+
 function makePlanarViewport() {
   return {
     id: 'vp-planar',
@@ -86,6 +89,13 @@ function makePlanarViewport() {
     addImages: jest.fn(async () => {}),
     getCurrentImageId: jest.fn(() => 'curr-image'),
     getActors: jest.fn(() => []),
+    getRenderPlan: jest.fn(() =>
+      [...labelmapLayers].map(([displaySetId, layer]) => ({
+        displaySetId,
+        role: 'overlay',
+        ...layer,
+      }))
+    ),
     render: jest.fn(),
   };
 }
@@ -112,7 +122,7 @@ function makeLabelmapSliceEntry(args: {
   representationUID: string;
   referencedId: string;
   imageData?: unknown;
-  renderMode?: string;
+  slice?: string;
 }) {
   const mapper = {
     setInputData: jest.fn(),
@@ -120,11 +130,16 @@ function makeLabelmapSliceEntry(args: {
     getInputData: jest.fn(() => args.imageData),
   };
 
+  labelmapLayers.set(args.representationUID, {
+    slice: args.slice ?? 'frame',
+    draw: 'gpu',
+  });
+
   return {
     uid: args.representationUID,
+    displaySetId: args.representationUID,
     representationUID: args.representationUID,
     referencedId: args.referencedId,
-    actorMapper: { renderMode: args.renderMode ?? 'VTK_IMAGE' },
     actor: {
       getClassName: () => 'vtkImageSlice',
       getMapper: jest.fn(() => mapper),
@@ -659,7 +674,7 @@ describe('placeVolumeLabelmapImageMapperActors', () => {
       representationUID: 'seg-1-Labelmap-layer-c',
       referencedId: 'layer-c',
       imageData: {},
-      renderMode: 'VTK_VOLUME_SLICE',
+      slice: 'gpuVolume',
     });
     const viewport = makePlanarViewport();
 

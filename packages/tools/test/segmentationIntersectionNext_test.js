@@ -322,7 +322,6 @@ async function showVolumeOn3DViewport(renderingEngine, series) {
 
   await viewport3D.setDisplaySets({
     displaySetId,
-    options: { renderMode: 'vtkVolume3d' },
   });
 
   return viewport3D;
@@ -689,7 +688,6 @@ describe('SegmentationIntersectionTool on a direct next viewport -- ', () => {
     });
     await viewport.setDisplaySets({
       displaySetId: 'segmentationIntersectionNext3D',
-      options: { renderMode: 'vtkVolume3d' },
     });
     await enableToolAndWaitForRender(viewport.element);
 

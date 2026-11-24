@@ -8,7 +8,7 @@ import {
 } from '@jest/globals';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import { BlendModes, OrientationAxis } from '../src/enums';
-import { ActorRenderMode } from '../src/types';
+import { PlanarRenderModeId } from '../src/RenderingEngine/Viewports/Planar/planarRenderModeIds';
 import cache from '../src/cache/cache';
 import { canRenderFloatTextures, setSliceFirst } from '../src/init';
 import { getRenderingCapabilities } from '../src/utilities/renderingCapabilities';
@@ -144,10 +144,10 @@ describe('slab routing of each layer of a fusion viewport', () => {
         const options = { sliceFirst: true, blendMode, slabThickness };
 
         expect(modeOf(ptDataSet, options)).toBe(
-          ActorRenderMode.VTK_SAMPLED_SLICE
+          PlanarRenderModeId.VTK_CPU_SLICE
         );
         expect(modeOf(ctDataSet, options)).toBe(
-          ActorRenderMode.VTK_VOLUME_SLICE
+          PlanarRenderModeId.VTK_GPU_VOLUME_SLICE
         );
       });
     });
@@ -158,7 +158,7 @@ describe('slab routing of each layer of a fusion viewport', () => {
 
     [ctDataSet, ptDataSet].forEach((dataSet) => {
       expect(modeOf(dataSet, { sliceFirst: true, slabThickness: 0 })).toBe(
-        ActorRenderMode.VTK_SAMPLED_SLICE
+        PlanarRenderModeId.VTK_CPU_SLICE
       );
     });
   });
@@ -173,7 +173,7 @@ describe('slab routing of each layer of a fusion viewport', () => {
           blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
           slabThickness: 10,
         })
-      ).toBe(ActorRenderMode.VTK_VOLUME_SLICE);
+      ).toBe(PlanarRenderModeId.VTK_GPU_VOLUME_SLICE);
     });
   });
 
@@ -188,7 +188,7 @@ describe('slab routing of each layer of a fusion viewport', () => {
             blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
             slabThickness,
           })
-        ).toBe(ActorRenderMode.VTK_VOLUME_SLICE);
+        ).toBe(PlanarRenderModeId.VTK_GPU_VOLUME_SLICE);
       });
     });
   });
@@ -203,7 +203,7 @@ describe('slab routing of each layer of a fusion viewport', () => {
         blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
         slabThickness: 10,
       })
-    ).toBe(ActorRenderMode.CPU_VOLUME);
+    ).toBe(PlanarRenderModeId.CANVAS_CPU_SLICE);
   });
 });
 

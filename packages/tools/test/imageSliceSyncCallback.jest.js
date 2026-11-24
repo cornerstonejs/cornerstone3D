@@ -1,11 +1,5 @@
 jest.mock('@cornerstonejs/core', () => {
   return {
-    ActorRenderMode: {
-      CPU_IMAGE: 'cpuImage',
-      CPU_VOLUME: 'cpuVolume',
-      VTK_VOLUME_SLICE: 'vtkVolumeSlice',
-      VTK_SAMPLED_SLICE: 'vtkSampledSlice',
-    },
     getRenderingEngine: jest.fn(),
     metaData: {
       get: jest.fn(),
@@ -45,7 +39,6 @@ function createSourceViewport(imageId = 'image:2') {
 
 function createTargetViewport({
   currentImageIdIndex = 0,
-  renderMode,
   volumeId,
   type,
   getCurrentMode,
@@ -55,14 +48,6 @@ function createTargetViewport({
     getCurrentMode,
     element: document.createElement('div'),
     getCurrentImageIdIndex: jest.fn(() => currentImageIdIndex),
-    getDefaultActor:
-      renderMode === undefined
-        ? undefined
-        : jest.fn(() => ({
-            actorMapper: {
-              renderMode,
-            },
-          })),
     getFrameOfReferenceUID: jest.fn(() => 'frame-of-reference'),
     getImageIds: jest.fn(() => imageIds),
     getVolumeId: volumeId === undefined ? undefined : jest.fn(() => volumeId),
@@ -115,7 +100,7 @@ describe('imageSliceSyncCallback', () => {
   it('keeps planar image-rendering stack targets in imageId order even when they expose a volume id', async () => {
     const sourceViewport = createSourceViewport('image:2');
     const targetViewport = createTargetViewport({
-      renderMode: 'cpuImage',
+      getCurrentMode: () => 'stack',
       volumeId: 'generated-volume-id',
     });
 
@@ -136,7 +121,7 @@ describe('imageSliceSyncCallback', () => {
     const sourceViewport = createSourceViewport('image:2');
     const targetViewport = createTargetViewport({
       currentImageIdIndex: 0,
-      renderMode: 'cpuVolume',
+      getCurrentMode: () => 'volume',
       volumeId: 'volume-id',
     });
 
@@ -157,7 +142,7 @@ describe('imageSliceSyncCallback', () => {
     const sourceViewport = createSourceViewport('image:2');
     const targetViewport = createTargetViewport({
       currentImageIdIndex: 0,
-      renderMode: 'vtkSampledSlice',
+      getCurrentMode: () => 'volume',
       volumeId: 'volume-id',
     });
 
@@ -200,7 +185,7 @@ describe('imageSliceSyncCallback', () => {
     const sourceViewport = createSourceViewport('image:2');
     const targetViewport = createTargetViewport({
       currentImageIdIndex: 1,
-      renderMode: 'cpuVolume',
+      getCurrentMode: () => 'volume',
       volumeId: 'volume-id',
     });
 

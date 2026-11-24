@@ -1,13 +1,7 @@
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
-import {
-  ActorRenderMode,
-  cache,
-  Enums,
-  utilities,
-  type Types,
-} from '@cornerstonejs/core';
+import { cache, Enums, utilities, type Types } from '@cornerstonejs/core';
 import type { PlanarViewport } from '@cornerstonejs/core';
 import { triggerSegmentationRender } from '../../../stateManagement/segmentation/SegmentationRenderingEngine';
 import { isSegmentationOverlayCompatible } from '../../../stateManagement/segmentation/helpers/isSegmentationOverlayCompatible';
@@ -16,6 +10,7 @@ import { updateLabelmapSegmentationImageReferences } from '../../../stateManagem
 import { getCurrentLabelmapImageIdsForViewport } from '../../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
 import { getLabelmapActorEntries } from '../../../stateManagement/segmentation/helpers/getSegmentationActor';
 import getViewportLabelmapRenderMode from '../../../stateManagement/segmentation/helpers/getViewportLabelmapRenderMode';
+import { getSourceRenderPlanLayer } from '../../../utilities/viewport/getRenderPlanLayer';
 import { getSegmentationRepresentations } from '../../../stateManagement/segmentation/getSegmentationRepresentation';
 import type { LabelmapRepresentation } from '../../../types/SegmentationStateTypes';
 import { createLabelmapRepresentationUID } from './labelmapRepresentationUID';
@@ -106,12 +101,12 @@ export function syncStackLabelmapActors(
   }
 
   const renderMode = getViewportLabelmapRenderMode(viewport);
-  const defaultActorRenderMode = viewport.getDefaultActor?.()?.actorMapper
-    ?.renderMode as Types.ActorRenderMode | undefined;
+  const sourceLayer = getSourceRenderPlanLayer(viewport);
   const drawsOnCanvas =
     isVideo ||
     (renderMode === 'image' &&
-      defaultActorRenderMode === ActorRenderMode.CPU_IMAGE);
+      sourceLayer?.slice === 'frame' &&
+      sourceLayer.draw === 'cpu');
   const currentImage =
     cache.getImage(currentImageId) ||
     ({
@@ -210,16 +205,7 @@ export function syncStackLabelmapActors(
       return;
     }
 
-    const actorMapper = segmentationActorEntry.actorMapper as
-      | {
-          mapper?: {
-            getInputData: () => unknown;
-          };
-        }
-      | undefined;
-    const mapper = actorMapper?.mapper
-      ? actorMapper.mapper
-      : segmentationActorEntry.actor.getMapper();
+    const mapper = segmentationActorEntry.actor.getMapper();
     const segmentationImageData = mapper.getInputData();
 
     segmentationImageData.modified();

@@ -25,22 +25,22 @@ import {
 
 const { Events, OrientationAxis, RenderBackends, ViewportType } = Enums;
 
-// vtkSampledSlice is the default path of a plain volume slice: slice first
-// is on, the CPU cuts the slice and the GPU draws it. vtkVolumeSlice turns
+// vtkCpuSlice is the default path of a plain volume slice: slice first
+// is on, the CPU cuts the slice and the GPU draws it. vtkGpuVolumeSlice turns
 // slice first off for its display set, so the slice comes from the volume
-// texture. vtkVolumeSliceFrames is vtkVolumeSlice with final downsampling on
+// texture. vtkGpuVolumeSliceFrames is vtkGpuVolumeSlice with final downsampling on
 // and the `low` preset, so the reduced volume draws the acquired frames in
 // the acquisition plane. It needs a stack larger than the edge of `low` (256).
-export type PlanarRenderMode =
-  | 'vtkImage'
-  | 'vtkSampledSlice'
-  | 'vtkVolumeSlice'
-  | 'vtkVolumeSliceFrames'
-  | 'cpuImage'
-  | 'cpuVolume';
+export type HarnessRenderMode =
+  | 'vtkFrame'
+  | 'vtkCpuSlice'
+  | 'vtkGpuVolumeSlice'
+  | 'vtkGpuVolumeSliceFrames'
+  | 'canvasFrame'
+  | 'canvasCpuSlice';
 
 export interface CreatePlanarViewportOptions {
-  renderMode?: PlanarRenderMode;
+  renderMode?: HarnessRenderMode;
   orientation?: Enums.OrientationAxis;
   width?: number;
   height?: number;
@@ -66,7 +66,7 @@ export interface PlanarViewportContext {
   cleanup(): void;
 }
 
-// Volume-backed render modes (vtkVolumeSlice, cpuVolume) build an IImageVolume
+// Volume-backed render modes (vtkGpuVolumeSlice, canvasCpuSlice) build an IImageVolume
 // from the stack's imageIds. The built-in cornerstoneStreamingImageVolumeLoader
 // already does exactly what is needed here (load each imageId through the
 // registered image loader and derive volume props from per-image metadata),
@@ -118,7 +118,7 @@ export function renderAndWait(
 export async function createPlanarViewport(
   opts: CreatePlanarViewportOptions = {}
 ): Promise<PlanarViewportContext> {
-  const renderMode = opts.renderMode ?? 'vtkImage';
+  const renderMode = opts.renderMode ?? 'vtkFrame';
   const orientation = opts.orientation ?? OrientationAxis.AXIAL;
   const width = opts.width ?? 400;
   const height = opts.height ?? 400;
@@ -130,14 +130,14 @@ export async function createPlanarViewport(
 
   init();
 
-  const drawsAcquiredFrames = renderMode === 'vtkVolumeSliceFrames';
+  const drawsAcquiredFrames = renderMode === 'vtkGpuVolumeSliceFrames';
   const drawsVolumeTexture =
-    renderMode === 'vtkVolumeSlice' || drawsAcquiredFrames;
+    renderMode === 'vtkGpuVolumeSlice' || drawsAcquiredFrames;
   const isVolumeBacked =
-    renderMode === 'vtkSampledSlice' ||
-    renderMode === 'cpuVolume' ||
+    renderMode === 'vtkCpuSlice' ||
+    renderMode === 'canvasCpuSlice' ||
     drawsVolumeTexture;
-  const isCpu = renderMode === 'cpuImage' || renderMode === 'cpuVolume';
+  const isCpu = renderMode === 'canvasFrame' || renderMode === 'canvasCpuSlice';
 
   if (isVolumeBacked) {
     ensureFakeVolumeLoaderRegistered();

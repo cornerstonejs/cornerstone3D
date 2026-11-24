@@ -69,7 +69,6 @@ async function showVolume(viewport) {
   });
   await viewport.setDisplaySets({
     displaySetId: 'rotation3D',
-    options: { renderMode: 'vtkVolume3d' },
   });
   await renderAndWait(viewport);
 }

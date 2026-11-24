@@ -63,14 +63,13 @@ const SCREEN_GRID_TOLERANCE = 1e-6;
  * sampler keeps and prefetches: 3, so that a scroll of up to three slices in
  * either direction finds its slice ready.
  */
-export const SAMPLED_SLICE_PREFETCH_NEIGHBOURS = 3;
+export const CPU_SLICE_PREFETCH_NEIGHBOURS = 3;
 
 /**
  * The most slices that one sampler keeps: the slice on screen and its
  * neighbours on both sides.
  */
-export const SAMPLED_SLICE_CACHE_SIZE =
-  2 * SAMPLED_SLICE_PREFETCH_NEIGHBOURS + 1;
+export const CPU_SLICE_CACHE_SIZE = 2 * CPU_SLICE_PREFETCH_NEIGHBOURS + 1;
 
 /**
  * The most voxel samples that one prefetch may take: 1 million, about 10 ms at
@@ -114,7 +113,7 @@ const SLAB_STEP_SAMPLES = 50_000;
  */
 type SlabSteps = {
   geometry: VolumeSliceGeometry;
-  inputs: PlanarSampledSliceInputs;
+  inputs: PlanarCpuSliceInputs;
   generation: number;
   fine: boolean;
   insideVolume: boolean;
@@ -133,7 +132,7 @@ type SlabSteps = {
  * samples again. Zoom, pan, rotation in the plane, window level, colormap and
  * opacity are not inputs, so they never sample.
  */
-export type PlanarSampledSliceInputs = {
+export type PlanarCpuSliceInputs = {
   /** NEAREST samples the nearest voxel, any other type samples linearly. */
   interpolationType: InterpolationType;
   /** The slab around the plane, or undefined for a plain slice. */
@@ -147,7 +146,7 @@ export type PlanarSampledSliceInputs = {
  * object with no vtk.js types, so the step that draws it can be replaced
  * without a change to the sampling.
  */
-export type PlanarSampledSlice = {
+export type PlanarCpuSlice = {
   /**
    * The pixels, row by row, in the array type of the volume, or a
    * Float32Array for a sample of an integer volume that keeps its fractions
@@ -182,7 +181,7 @@ export type PlanarSampledSlice = {
    */
   insideVolume: boolean;
   /** The inputs that this slice was sampled for. */
-  sampledFor: PlanarSampledSliceInputs & { sliceIndex: number };
+  sampledFor: PlanarCpuSliceInputs & { sliceIndex: number };
 };
 
 /** A plane that keeps the side its normal points to. */
@@ -301,9 +300,9 @@ export type PlanarSliceSamplerOptions = {
 export function needsScreenGridSample(
   volume: IImageVolume,
   viewPlaneNormal: Point3,
-  inputs: PlanarSampledSliceInputs,
+  inputs: PlanarCpuSliceInputs,
   enlargesColours: boolean,
-  slice?: PlanarSampledSlice,
+  slice?: PlanarCpuSlice,
   canFilterFloatTextures: () => boolean = filtersFloatTextures
 ): boolean {
   if (getExactSliceAxis(volume, viewPlaneNormal) === undefined) {
@@ -347,7 +346,7 @@ function filtersFloatTextures(): boolean {
  * on every device.
  */
 export function drawsWithNearestFilter(
-  slice: Pick<PlanarSampledSlice, 'pixelData' | 'min' | 'max'>
+  slice: Pick<PlanarCpuSlice, 'pixelData' | 'min' | 'max'>
 ): boolean {
   const { pixelData, min, max } = slice;
 
@@ -369,7 +368,7 @@ export function drawsWithNearestFilter(
 /** One kept slice with the geometry it was sampled for. */
 type CachedSlice = {
   geometry: VolumeSliceGeometry;
-  slice: PlanarSampledSlice;
+  slice: PlanarCpuSlice;
   generation: number;
 };
 
@@ -378,8 +377,8 @@ type CachedSlice = {
  * view plane out of a volume with getVolumeSliceGeometry and sampleVolumeSlice.
  *
  * It keeps a small cache: the slice on screen and up to
- * SAMPLED_SLICE_PREFETCH_NEIGHBOURS neighbours on each side along the view
- * normal, at most SAMPLED_SLICE_CACHE_SIZE slices. A slice is kept for its
+ * CPU_SLICE_PREFETCH_NEIGHBOURS neighbours on each side along the view
+ * normal, at most CPU_SLICE_CACHE_SIZE slices. A slice is kept for its
  * plane and its sampling inputs. A request whose plane and inputs match a kept
  * slice, with pixels as fine or finer, returns that slice and does not sample,
  * so a change of zoom, pan or appearance costs nothing, and a scroll to a
@@ -409,7 +408,7 @@ export class PlanarSliceSampler {
   private entries: CachedSlice[] = [];
   private current?: CachedSlice;
   private fine?: CachedSlice;
-  private shown?: PlanarSampledSlice;
+  private shown?: PlanarCpuSlice;
   private steps?: SlabSteps;
   private thin?: CachedSlice;
   private slabTooLarge = false;
@@ -447,9 +446,9 @@ export class PlanarSliceSampler {
   sample(
     volume: IImageVolume,
     camera: SliceCamera | undefined,
-    inputs: PlanarSampledSliceInputs,
+    inputs: PlanarCpuSliceInputs,
     screen?: VolumeSliceGeometry
-  ): PlanarSampledSlice | undefined {
+  ): PlanarCpuSlice | undefined {
     if (!camera?.focalPoint || !camera.viewPlaneNormal) {
       return this.shown;
     }
@@ -529,9 +528,9 @@ export class PlanarSliceSampler {
   sampleFiner(
     volume: IImageVolume,
     camera: SliceCamera | undefined,
-    inputs: PlanarSampledSliceInputs,
+    inputs: PlanarCpuSliceInputs,
     screen: VolumeSliceGeometry | undefined
-  ): PlanarSampledSlice | undefined {
+  ): PlanarCpuSlice | undefined {
     const { current, fine } = this;
 
     if (
@@ -622,7 +621,7 @@ export class PlanarSliceSampler {
   prefetch(
     volume: IImageVolume,
     camera: SliceCamera | undefined,
-    inputs: PlanarSampledSliceInputs
+    inputs: PlanarCpuSliceInputs
   ): boolean {
     const { current } = this;
 
@@ -671,7 +670,7 @@ export class PlanarSliceSampler {
   continueSampling(
     volume: IImageVolume,
     deadline: number
-  ): PlanarSampledSlice | undefined {
+  ): PlanarCpuSlice | undefined {
     const { steps } = this;
 
     if (!steps || steps.generation !== this.generation) {
@@ -767,7 +766,7 @@ export class PlanarSliceSampler {
   }
 
   /** The slice on screen, or undefined. */
-  getSlice(): PlanarSampledSlice | undefined {
+  getSlice(): PlanarCpuSlice | undefined {
     return this.shown;
   }
 
@@ -809,7 +808,7 @@ export class PlanarSliceSampler {
    */
   private find(
     geometry: VolumeSliceGeometry,
-    inputs: PlanarSampledSliceInputs
+    inputs: PlanarCpuSliceInputs
   ): CachedSlice | undefined {
     return this.entries.find(
       (entry) =>
@@ -828,7 +827,7 @@ export class PlanarSliceSampler {
    */
   private dropOtherViews(
     geometry: VolumeSliceGeometry,
-    inputs: PlanarSampledSliceInputs
+    inputs: PlanarCpuSliceInputs
   ): void {
     this.entries = this.entries.filter((entry) => {
       const keep =
@@ -870,7 +869,7 @@ export class PlanarSliceSampler {
   private store(
     volume: IImageVolume,
     geometry: VolumeSliceGeometry,
-    inputs: PlanarSampledSliceInputs,
+    inputs: PlanarCpuSliceInputs,
     reference: VolumeSliceGeometry
   ): CachedSlice {
     this.makeRoom(geometry, inputs, reference);
@@ -895,7 +894,7 @@ export class PlanarSliceSampler {
    */
   private makeRoom(
     geometry: VolumeSliceGeometry,
-    inputs: PlanarSampledSliceInputs,
+    inputs: PlanarCpuSliceInputs,
     reference: VolumeSliceGeometry
   ): void {
     this.entries = this.entries.filter((entry) => {
@@ -911,7 +910,7 @@ export class PlanarSliceSampler {
       return !samePlane;
     });
 
-    while (this.entries.length >= SAMPLED_SLICE_CACHE_SIZE) {
+    while (this.entries.length >= CPU_SLICE_CACHE_SIZE) {
       this.dropFarthest(reference);
     }
   }
@@ -936,7 +935,7 @@ export class PlanarSliceSampler {
   private startSlabSteps(
     volume: IImageVolume,
     geometry: VolumeSliceGeometry,
-    inputs: PlanarSampledSliceInputs,
+    inputs: PlanarCpuSliceInputs,
     screen: VolumeSliceGeometry | undefined
   ): boolean {
     if (!this.sampleSlabsInSteps || !inputs.slab) {
@@ -1011,7 +1010,7 @@ export class PlanarSliceSampler {
    */
   private dropSlabSteps(
     geometry: VolumeSliceGeometry,
-    inputs: PlanarSampledSliceInputs
+    inputs: PlanarCpuSliceInputs
   ): void {
     const { steps } = this;
 
@@ -1034,7 +1033,7 @@ export class PlanarSliceSampler {
   private createSlabSteps(
     volume: IImageVolume,
     geometry: VolumeSliceGeometry,
-    inputs: PlanarSampledSliceInputs,
+    inputs: PlanarCpuSliceInputs,
     fine: boolean,
     insideVolume: boolean
   ): SlabSteps {
@@ -1077,7 +1076,7 @@ export class PlanarSliceSampler {
   private sampleEntry(
     volume: IImageVolume,
     geometry: VolumeSliceGeometry,
-    inputs: PlanarSampledSliceInputs,
+    inputs: PlanarCpuSliceInputs,
     insideVolume: boolean
   ): CachedSlice {
     const options = this.getSampleOptions(volume, geometry, inputs);
@@ -1108,7 +1107,7 @@ export class PlanarSliceSampler {
   private getSampleOptions(
     volume: IImageVolume,
     geometry: VolumeSliceGeometry,
-    inputs: PlanarSampledSliceInputs
+    inputs: PlanarCpuSliceInputs
   ): SampleVolumeSliceOptions {
     return {
       volume,
@@ -1127,12 +1126,12 @@ export class PlanarSliceSampler {
   private createSlice(
     volume: IImageVolume,
     geometry: VolumeSliceGeometry,
-    inputs: PlanarSampledSliceInputs,
+    inputs: PlanarCpuSliceInputs,
     pixelData: PixelDataTypedArray,
     min: number,
     max: number,
     insideVolume: boolean
-  ): PlanarSampledSlice {
+  ): PlanarCpuSlice {
     return {
       pixelData,
       numberOfComponents: getNumberOfComponents(volume),
@@ -1210,7 +1209,7 @@ export class PlanarSliceSampler {
 function getSliceGeometry(
   volume: IImageVolume,
   camera: SliceCamera,
-  inputs: PlanarSampledSliceInputs,
+  inputs: PlanarCpuSliceInputs,
   maxSize: number
 ): VolumeSliceGeometry | undefined {
   return getVolumeSliceGeometry(volume, camera, {
@@ -1385,7 +1384,7 @@ function getRowBand(
 function getSampleCount(
   volume: IImageVolume,
   geometry: VolumeSliceGeometry,
-  inputs: PlanarSampledSliceInputs
+  inputs: PlanarCpuSliceInputs
 ): number {
   const slabSamples = inputs.slab
     ? getSlabSampleOffsets(volume, inputs.slab.thickness).length
@@ -1485,10 +1484,10 @@ function isSamePlane(
  * thickness, and a slab with no blend mode uses the average, the default slab
  * type of the vtk.js reslice mapper.
  */
-export function getPlanarSampledSliceInputs(
+export function getPlanarCpuSliceInputs(
   volume: IImageVolume,
   appearance: PlanarDisplaySetAppearance | undefined
-): PlanarSampledSliceInputs {
+): PlanarCpuSliceInputs {
   const thickness = resolveSlabThickness(appearance?.slabThickness);
 
   return {
@@ -1626,8 +1625,8 @@ function isSamePoint(a: Point3, b: Point3, tolerance: number): boolean {
 }
 
 function isSameInputs(
-  previous: PlanarSampledSliceInputs,
-  next: PlanarSampledSliceInputs
+  previous: PlanarCpuSliceInputs,
+  next: PlanarCpuSliceInputs
 ): boolean {
   return (
     previous.interpolationType === next.interpolationType &&

@@ -11,7 +11,7 @@ import {
   VOILUTFunctionType,
   VoxelReductions,
 } from '../src/enums';
-import { ActorRenderMode } from '../src/types';
+import { PlanarRenderModeId } from '../src/RenderingEngine/Viewports/Planar/planarRenderModeIds';
 import * as metaData from '../src/metaData';
 import cache from '../src/cache/cache';
 import * as utilities from '../src/utilities';
@@ -22,7 +22,7 @@ import {
   acquiredFrameIndexOfVolumePoint,
   withAcquiredFrames,
 } from '../src/RenderingEngine/Viewports/Planar/planarAcquiredFrames';
-import { getImageSliceOverlayOrder } from '../src/RenderingEngine/Viewports/Planar/VtkVolumeSliceRenderPath';
+import { getImageSliceOverlayOrder } from '../src/RenderingEngine/Viewports/Planar/VtkGpuVolumeSliceRenderPath';
 import { triggerPlanarVolumeNewImageOfPlacedSlice } from '../src/RenderingEngine/Viewports/Planar/planarImageEvents';
 import { resolvePlanarRenderPathProjection } from '../src/RenderingEngine/Viewports/Planar/planarRenderPathProjection';
 import renderingEngineCache from '../src/RenderingEngine/renderingEngineCache';
@@ -34,7 +34,7 @@ import {
 import { setLossyDownsampling } from '../src/init';
 import eventTarget from '../src/eventTarget';
 import triggerEvent from '../src/utilities/triggerEvent';
-import { VtkImageMapperRenderPath } from '../src/RenderingEngine/Viewports/Planar/VtkImageMapperRenderPath';
+import { VtkFrameRenderPath } from '../src/RenderingEngine/Viewports/Planar/VtkFrameRenderPath';
 import { dataKindOf } from '../src/RenderingEngine/helpers/fidelityIndicator/fidelityIndicatorState';
 
 // These tests need final downsampling, which is off by default.
@@ -103,7 +103,7 @@ describe('PlanarRenderPathDecisionService acquired frames (API)', () => {
     };
 
     expect(service.select(dataSet, options).renderMode).toBe(
-      ActorRenderMode.VTK_VOLUME_SLICE
+      PlanarRenderModeId.VTK_GPU_VOLUME_SLICE
     );
     expect(service.canDrawAcquiredFrames(dataSet, options)).toBe(true);
   });
@@ -175,7 +175,7 @@ describe('PlanarViewport acquired frames in the volume path (user experience)', 
   function createVolumeAttachment(ctx, data) {
     const actor = vtkImageSlice.newInstance();
     const rendering = {
-      renderMode: ActorRenderMode.VTK_VOLUME_SLICE,
+      renderMode: PlanarRenderModeId.VTK_GPU_VOLUME_SLICE,
       actorEntryUID: `${data.id}-volume`,
       actor,
       imageVolume: data.imageVolume,
@@ -236,7 +236,7 @@ describe('PlanarViewport acquired frames in the volume path (user experience)', 
         uid: rendering.actorEntryUID,
         actor,
         referencedId: data.volumeId,
-        actorMapper: { actor, renderMode: ActorRenderMode.VTK_VOLUME_SLICE },
+        displaySetId: data.id,
       }),
       getImageData: () => volume.imageData,
       removeData: jest.fn(),
@@ -429,7 +429,7 @@ describe('PlanarViewport acquired frames in the volume path (user experience)', 
     await mount();
 
     expect(sourceBinding().rendering.renderMode).toBe(
-      ActorRenderMode.VTK_VOLUME_SLICE
+      PlanarRenderModeId.VTK_GPU_VOLUME_SLICE
     );
     expect(viewport.getCurrentMode()).toBe('volume');
     expect(volumeActor().getVisibility()).toBe(true);
@@ -599,12 +599,12 @@ describe('PlanarViewport acquired frames in the volume path (user experience)', 
     renderer.getActiveCamera.mockReturnValue(vtkCamera.newInstance());
     viewport.renderPathResolver = {
       resolve: () => ({
-        createRenderPath: () => new VtkImageMapperRenderPath(),
+        createRenderPath: () => new VtkFrameRenderPath(),
       }),
     };
     await viewport.setDisplaySets({
       displaySetId: displaySetId,
-      options: { renderMode: ActorRenderMode.VTK_IMAGE },
+      options: { renderMode: PlanarRenderModeId.VTK_FRAME },
     });
     await flush();
 
@@ -619,7 +619,7 @@ describe('PlanarViewport acquired frames in the volume path (user experience)', 
       getFrameOfReferenceUID: () => FOR,
       removeData: jest.fn(),
       rendering: {
-        renderMode: ActorRenderMode.VTK_IMAGE,
+        renderMode: PlanarRenderModeId.VTK_FRAME,
         currentImageIdIndex: 3,
       },
       role: 'source',
@@ -658,10 +658,17 @@ describe('PlanarViewport acquired frames in the volume path (user experience)', 
     expect(frameRendering().actor.getVisibility()).toBe(true);
     // The overlay counts only the volume slice of the source below it.
     const actors = viewport.getActors();
-    expect(actors.map((entry) => entry.actorMapper.renderMode)).toEqual([
-      ActorRenderMode.VTK_VOLUME_SLICE,
-      ActorRenderMode.VTK_IMAGE,
-      ActorRenderMode.VTK_VOLUME_SLICE,
+    expect(actors.map((entry) => entry.displaySetId)).toEqual([
+      displaySetId,
+      displaySetId,
+      segId,
+    ]);
+    expect(actors[1].actor).toBe(frameRendering().actor);
+    expect(
+      viewport.getRenderPlan().map((layer) => [layer.displaySetId, layer.slice])
+    ).toEqual([
+      [displaySetId, 'gpuVolume'],
+      [segId, 'gpuVolume'],
     ]);
     // The frame entry gives no second measurement target.
     expect(actors[1].referencedId).toBeUndefined();

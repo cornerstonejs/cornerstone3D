@@ -9,7 +9,7 @@ import {
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkCamera from '@kitware/vtk.js/Rendering/Core/Camera';
 import { BlendModes, Events, OrientationAxis } from '../src/enums';
-import { ActorRenderMode } from '../src/types';
+import { PlanarRenderModeId } from '../src/RenderingEngine/Viewports/Planar/planarRenderModeIds';
 import cache from '../src/cache/cache';
 import eventTarget from '../src/eventTarget';
 import {
@@ -232,15 +232,15 @@ describe('the reason of each decision', () => {
 
   it('says slice first off, slice and slab', () => {
     expect(decide(ct, { sliceFirst: false, ...mip10 })).toEqual([
-      ActorRenderMode.VTK_VOLUME_SLICE,
+      PlanarRenderModeId.VTK_GPU_VOLUME_SLICE,
       'sliceFirstOff',
     ]);
     expect(decide(ct, { sliceFirst: true })).toEqual([
-      ActorRenderMode.VTK_SAMPLED_SLICE,
+      PlanarRenderModeId.VTK_CPU_SLICE,
       'slice',
     ]);
     expect(decide(ct, { sliceFirst: true, ...mip10 })).toEqual([
-      ActorRenderMode.VTK_VOLUME_SLICE,
+      PlanarRenderModeId.VTK_GPU_VOLUME_SLICE,
       'slab',
     ]);
   });
@@ -249,11 +249,11 @@ describe('the reason of each decision', () => {
     setProfile(PHONE);
 
     expect(decide(pt, { sliceFirst: true, ...mip10 })).toEqual([
-      ActorRenderMode.VTK_SAMPLED_SLICE,
+      PlanarRenderModeId.VTK_CPU_SLICE,
       'floatFilter',
     ]);
     expect(decide(ct, { sliceFirst: true, ...mip10 })).toEqual([
-      ActorRenderMode.VTK_VOLUME_SLICE,
+      PlanarRenderModeId.VTK_GPU_VOLUME_SLICE,
       'slab',
     ]);
   });
@@ -262,15 +262,15 @@ describe('the reason of each decision', () => {
     setProfile({ ...DESKTOP, max3DTextureSize: 256 });
 
     expect(decide(big, { sliceFirst: true, ...mip10 })).toEqual([
-      ActorRenderMode.VTK_SAMPLED_SLICE,
+      PlanarRenderModeId.VTK_CPU_SLICE,
       'textureSize',
     ]);
     expect(decide(ct, { sliceFirst: true, ...mip10 })).toEqual([
-      ActorRenderMode.VTK_VOLUME_SLICE,
+      PlanarRenderModeId.VTK_GPU_VOLUME_SLICE,
       'slab',
     ]);
     expect(decide(big, { sliceFirst: false, ...mip10 })).toEqual([
-      ActorRenderMode.VTK_VOLUME_SLICE,
+      PlanarRenderModeId.VTK_GPU_VOLUME_SLICE,
       'sliceFirstOff',
     ]);
   });
@@ -279,25 +279,25 @@ describe('the reason of each decision', () => {
     setGpuSettingsPreset('low');
 
     expect(decide(big, { sliceFirst: true, ...mip10 })).toEqual([
-      ActorRenderMode.VTK_SAMPLED_SLICE,
+      PlanarRenderModeId.VTK_CPU_SLICE,
       'textureReduced',
     ]);
     expect(decide(ct, { sliceFirst: true, ...mip10 })).toEqual([
-      ActorRenderMode.VTK_VOLUME_SLICE,
+      PlanarRenderModeId.VTK_GPU_VOLUME_SLICE,
       'slab',
     ]);
 
     setLossyDownsampling({ final: true });
 
     expect(decide(big, { sliceFirst: true, ...mip10 })).toEqual([
-      ActorRenderMode.VTK_VOLUME_SLICE,
+      PlanarRenderModeId.VTK_GPU_VOLUME_SLICE,
       'slab',
     ]);
 
     setProfile({ ...DESKTOP, max3DTextureSize: 128 });
 
     expect(decide(big, { sliceFirst: true, ...mip10 })).toEqual([
-      ActorRenderMode.VTK_SAMPLED_SLICE,
+      PlanarRenderModeId.VTK_CPU_SLICE,
       'textureSize',
     ]);
   });
@@ -306,32 +306,32 @@ describe('the reason of each decision', () => {
     recordVolumeTextureFailure('ct-volume');
 
     expect(decide(ct, { sliceFirst: true, ...mip10 })).toEqual([
-      ActorRenderMode.VTK_SAMPLED_SLICE,
+      PlanarRenderModeId.VTK_CPU_SLICE,
       'textureFailed',
     ]);
     expect(decide(pt, { sliceFirst: true, ...mip10 })).toEqual([
-      ActorRenderMode.VTK_VOLUME_SLICE,
+      PlanarRenderModeId.VTK_GPU_VOLUME_SLICE,
       'slab',
     ]);
 
     retryGpu();
 
     expect(decide(ct, { sliceFirst: true, ...mip10 })).toEqual([
-      ActorRenderMode.VTK_VOLUME_SLICE,
+      PlanarRenderModeId.VTK_GPU_VOLUME_SLICE,
       'slab',
     ]);
   });
 
   it('says why a backend that draws on the CPU was chosen', () => {
     expect(decide(ct, { sliceFirst: true, renderBackend: 'cpu' })).toEqual([
-      ActorRenderMode.CPU_VOLUME,
+      PlanarRenderModeId.CANVAS_CPU_SLICE,
       'pinned',
     ]);
 
     setProfile({ ...DESKTOP, webgl: false });
 
     expect(decide(ct, { sliceFirst: true, renderBackend: 'cpu' })).toEqual([
-      ActorRenderMode.CPU_VOLUME,
+      PlanarRenderModeId.CANVAS_CPU_SLICE,
       'noWebGL',
     ]);
   });
@@ -342,7 +342,10 @@ describe('the reason of each decision', () => {
       { orientation: OrientationAxis.ACQUISITION, sliceFirst: true }
     );
 
-    expect([renderMode, reason]).toEqual([ActorRenderMode.VTK_IMAGE, 'frame']);
+    expect([renderMode, reason]).toEqual([
+      PlanarRenderModeId.VTK_FRAME,
+      'frame',
+    ]);
   });
 });
 
@@ -505,11 +508,11 @@ describe('PlanarViewport render plan', () => {
   const planOf = () =>
     viewport
       .getRenderPlan()
-      .map(({ displaySetId, slice, draw, renderMode, reason }) => [
+      .map(({ displaySetId, slice, draw, backend, reason }) => [
         displaySetId,
         slice,
         draw,
-        renderMode,
+        backend,
         reason,
       ]);
 
@@ -520,8 +523,8 @@ describe('PlanarViewport render plan', () => {
     await mountFusion();
 
     expect(planOf()).toEqual([
-      [ctId, 'cpu', 'gpu', ActorRenderMode.VTK_SAMPLED_SLICE, 'slice'],
-      [ptId, 'cpu', 'gpu', ActorRenderMode.VTK_SAMPLED_SLICE, 'slice'],
+      [ctId, 'cpu', 'gpu', 'gpu', 'slice'],
+      [ptId, 'cpu', 'gpu', 'gpu', 'slice'],
     ]);
     expect(viewport.getRenderPlan().map((layer) => layer.role)).toEqual([
       'source',
@@ -542,17 +545,14 @@ describe('PlanarViewport render plan', () => {
     await setSlab(mip10);
 
     expect(planOf()).toEqual([
-      [ctId, 'gpuVolume', 'gpu', ActorRenderMode.VTK_VOLUME_SLICE, 'slab'],
-      [ptId, 'cpu', 'gpu', ActorRenderMode.VTK_SAMPLED_SLICE, 'floatFilter'],
+      [ctId, 'gpuVolume', 'gpu', 'gpu', 'slab'],
+      [ptId, 'cpu', 'gpu', 'gpu', 'floatFilter'],
     ]);
     expect(eventsOf(ctId).length).toBe(1);
     expect(eventsOf(ptId).length).toBe(1);
-    expect(eventsOf(ctId)[0].previous.renderMode).toBe(
-      ActorRenderMode.VTK_SAMPLED_SLICE
-    );
-    expect(eventsOf(ctId)[0].current.renderMode).toBe(
-      ActorRenderMode.VTK_VOLUME_SLICE
-    );
+    expect(eventsOf(ctId)[0].previous.slice).toBe('cpu');
+    expect(eventsOf(ctId)[0].current.slice).toBe('gpuVolume');
+    expect(eventsOf(ctId)[0].current.backend).toBe('gpu');
   });
 
   it('updates the reason of layers that keep their render mode when a slab comes, with no remount', async () => {
@@ -564,8 +564,8 @@ describe('PlanarViewport render plan', () => {
     await setSlab(mip10);
 
     expect(planOf()).toEqual([
-      [ctId, 'cpu', 'gpu', ActorRenderMode.VTK_SAMPLED_SLICE, 'floatFilter'],
-      [ptId, 'cpu', 'gpu', ActorRenderMode.VTK_SAMPLED_SLICE, 'floatFilter'],
+      [ctId, 'cpu', 'gpu', 'gpu', 'floatFilter'],
+      [ptId, 'cpu', 'gpu', 'gpu', 'floatFilter'],
     ]);
     expect(mountedModes).toEqual([]);
     expect(eventsOf(ctId).length).toBe(1);
@@ -586,13 +586,7 @@ describe('PlanarViewport render plan', () => {
     await nextTask();
     await flush();
 
-    expect(planOf()[0]).toEqual([
-      ctId,
-      'cpu',
-      'gpu',
-      ActorRenderMode.VTK_SAMPLED_SLICE,
-      'textureFailed',
-    ]);
+    expect(planOf()[0]).toEqual([ctId, 'cpu', 'gpu', 'gpu', 'textureFailed']);
     expect(eventsOf(ctId).length).toBe(1);
     expect(eventsOf(ptId).length).toBe(0);
 
@@ -604,7 +598,8 @@ describe('PlanarViewport render plan', () => {
     expect(planOf()[0][4]).toBe('textureFailed');
     expect(
       mountedModes.filter(
-        ([id, mode]) => id === ctId && mode === ActorRenderMode.VTK_VOLUME_SLICE
+        ([id, mode]) =>
+          id === ctId && mode === PlanarRenderModeId.VTK_GPU_VOLUME_SLICE
       )
     ).toEqual([]);
 
@@ -612,19 +607,13 @@ describe('PlanarViewport render plan', () => {
     retryGpu();
     await flush();
 
-    expect(planOf()[0]).toEqual([
-      ctId,
-      'gpuVolume',
-      'gpu',
-      ActorRenderMode.VTK_VOLUME_SLICE,
-      'slab',
-    ]);
+    expect(planOf()[0]).toEqual([ctId, 'gpuVolume', 'gpu', 'gpu', 'slab']);
     expect(eventsOf(ctId).length).toBe(1);
   });
 
   it('draws the new slab on the mounted path when the remount to another path throws', async () => {
     await mountFusion();
-    failingMode = ActorRenderMode.VTK_VOLUME_SLICE;
+    failingMode = PlanarRenderModeId.VTK_GPU_VOLUME_SLICE;
     jest.spyOn(console, 'error').mockImplementation(() => undefined);
 
     await setSlab(mip10);
@@ -632,7 +621,7 @@ describe('PlanarViewport render plan', () => {
     const ct = viewport.bindings.get(ctId);
     const lastProps = ct.updateAppearance.mock.calls.at(-1)[0];
 
-    expect(ct.rendering.renderMode).toBe(ActorRenderMode.VTK_SAMPLED_SLICE);
+    expect(ct.rendering.renderMode).toBe(PlanarRenderModeId.VTK_CPU_SLICE);
     expect(lastProps.slabThickness).toBe(10);
     expect(lastProps.blendMode).toBe(BlendModes.MAXIMUM_INTENSITY_BLEND);
     expect(viewport.withheldSlabByBinding.has(ct)).toBe(false);
@@ -647,7 +636,7 @@ describe('PlanarViewport render plan', () => {
 
     const ct = viewport.bindings.get(ctId);
 
-    expect(ct.rendering.renderMode).toBe(ActorRenderMode.VTK_SAMPLED_SLICE);
+    expect(ct.rendering.renderMode).toBe(PlanarRenderModeId.VTK_CPU_SLICE);
     expect(ct.updateAppearance.mock.calls.at(-1)[0].slabThickness).toBe(10);
     expect(viewport.withheldSlabByBinding.has(ct)).toBe(false);
   });
@@ -741,7 +730,7 @@ describe('a WebGL context that is lost', () => {
     jest.advanceTimersByTime(10 * WEBGL_CONTEXT_RESTORE_WAIT_MS);
 
     expect(hasLostContext()).toBe(false);
-    expect(decide()).toEqual([ActorRenderMode.VTK_SAMPLED_SLICE, 'slice']);
+    expect(decide()).toEqual([PlanarRenderModeId.VTK_CPU_SLICE, 'slice']);
   });
 
   it('makes auto draw on the CPU with slice first on when it does not come back, until retryGpu', () => {
@@ -750,11 +739,14 @@ describe('a WebGL context that is lost', () => {
     jest.advanceTimersByTime(WEBGL_CONTEXT_RESTORE_WAIT_MS);
 
     expect(hasLostContext()).toBe(true);
-    expect(decide()).toEqual([ActorRenderMode.CPU_VOLUME, 'contextLost']);
+    expect(decide()).toEqual([
+      PlanarRenderModeId.CANVAS_CPU_SLICE,
+      'contextLost',
+    ]);
 
     retryGpu();
 
-    expect(decide()).toEqual([ActorRenderMode.VTK_SAMPLED_SLICE, 'slice']);
+    expect(decide()).toEqual([PlanarRenderModeId.VTK_CPU_SLICE, 'slice']);
   });
 
   it('changes nothing with slice first off', () => {
@@ -762,7 +754,7 @@ describe('a WebGL context that is lost', () => {
 
     expect(hasLostContext()).toBe(false);
     expect(decide()).toEqual([
-      ActorRenderMode.VTK_VOLUME_SLICE,
+      PlanarRenderModeId.VTK_GPU_VOLUME_SLICE,
       'sliceFirstOff',
     ]);
   });

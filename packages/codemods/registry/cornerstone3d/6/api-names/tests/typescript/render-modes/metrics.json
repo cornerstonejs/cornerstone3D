@@ -1,0 +1,28 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "48",
+        "rule": "actorMapper.renderMode === ActorRenderMode.VTK_SAMPLED_SLICE: removed from the public API: read the layer of viewport.getRenderPlan() whose displaySetId is the displaySetId of the actor entry and test slice 'cpu' and draw 'gpu'"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "54",
+        "rule": "renderMode === 'vtkVolumeSlice': removed from the public API: read the layer of viewport.getRenderPlan() whose displaySetId is the displaySetId of the actor entry and test slice 'gpuVolume'"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "54",
+        "rule": "renderMode: removed from the render plan layer: read its slice ('frame' | 'cpu' | 'gpuVolume'), draw ('gpu' | 'cpu') and backend"
+      },
+      "count": 1
+    }
+  ]
+}

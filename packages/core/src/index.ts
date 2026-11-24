@@ -130,8 +130,10 @@ export type {
   PlanarViewFramingSelector,
   PlanarViewState,
   RenderPlanChangedEventDetail,
+  RenderPlanDraw,
   RenderPlanLayer,
   RenderPlanReason,
+  RenderPlanSlice,
 } from './RenderingEngine/Viewports/Planar';
 export type {
   WSIProjectionFraming,
@@ -248,10 +250,7 @@ import type {
   RetrieveOptions,
   RetrieveStage,
   ImageLoadListener,
-  // eslint-disable-next-line import/no-duplicates
 } from './types';
-// eslint-disable-next-line import/no-duplicates
-import { ActorRenderMode } from './types';
 import * as utilities from './utilities';
 import { registerImageLoader } from './loaders/imageLoader'; // since it is used by CSWIL right now
 
@@ -448,7 +447,6 @@ export {
   cornerstoneMeshLoader,
   ProgressiveRetrieveImages,
   decimatedVolumeLoader,
-  ActorRenderMode,
   cornerstoneStreamingImageVolumeLoader,
   cornerstoneStreamingDynamicImageVolumeLoader,
   StreamingDynamicImageVolume,

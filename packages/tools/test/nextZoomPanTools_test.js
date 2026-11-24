@@ -103,7 +103,6 @@ async function show3D(viewport, series) {
   });
   await viewport.setDisplaySets({
     displaySetId,
-    options: { renderMode: 'vtkVolume3d' },
   });
   viewport.resetViewState();
   await frames();
@@ -484,9 +483,9 @@ describe('Zoom and pan tools on a direct next planar viewport -- ', () => {
       expect(shown[1]).toBeCloseTo(mouse[1], 0);
     }, 15000);
 
-    for (const [backend, options, renderModes] of [
-      ['GPU', {}, ['vtkImage', 'vtkSampledSlice']],
-      ['CPU', { renderBackend: 'cpu' }, ['cpuImage', 'cpuVolume']],
+    for (const [backend, options, draw] of [
+      ['GPU', {}, 'gpu'],
+      ['CPU', { renderBackend: 'cpu' }, 'cpu'],
     ]) {
       it(`changes the view once for one wheel step at the mouse in ${mode} mode on the ${backend}, and the point under the mouse stays`, async function () {
         await show(next, series, 2, options);
@@ -505,7 +504,7 @@ describe('Zoom and pan tools on a direct next planar viewport -- ', () => {
         const shown = next.worldToCanvas(underMouse);
 
         expect(next.getCurrentMode()).toBe(mode);
-        expect(renderModes).toContain(next.getRenderPlan()[0].renderMode);
+        expect(next.getRenderPlan()[0].draw).toBe(draw);
         expect(cameraEvents).toBe(1);
         expect(zoomPanOf(next).zoom).toBeGreaterThan(1.01);
         expect(shown[0]).toBeCloseTo(mouse[0], 3);
@@ -513,9 +512,9 @@ describe('Zoom and pan tools on a direct next planar viewport -- ', () => {
       }, 15000);
     }
 
-    for (const [backend, options, renderModes] of [
-      ['GPU', {}, ['vtkImage', 'vtkSampledSlice']],
-      ['CPU', { renderBackend: 'cpu' }, ['cpuImage', 'cpuVolume']],
+    for (const [backend, options, draw] of [
+      ['GPU', {}, 'gpu'],
+      ['CPU', { renderBackend: 'cpu' }, 'cpu'],
     ]) {
       it(`moves the picture of a view with a display area with the mouse of the pan tool, at the size that the display area gave, in ${mode} mode on the ${backend}`, async function () {
         await show(next, series, 2, options);
@@ -532,7 +531,7 @@ describe('Zoom and pan tools on a direct next planar viewport -- ', () => {
         const world = next.canvasToWorld(from);
 
         expect(next.getCurrentMode()).toBe(mode);
-        expect(renderModes).toContain(next.getRenderPlan()[0].renderMode);
+        expect(next.getRenderPlan()[0].draw).toBe(draw);
         expect(zoomPanOf(next).zoom).toBeCloseTo(1.25, 4);
         expect(area.size / fit.size).toBeCloseTo(1.25, 3);
         expectPresentationOnScreen(next, series, fit);
@@ -567,7 +566,7 @@ describe('Zoom and pan tools on a direct next planar viewport -- ', () => {
         const step = 12 / 11;
 
         expect(next.getCurrentMode()).toBe(mode);
-        expect(renderModes).toContain(next.getRenderPlan()[0].renderMode);
+        expect(next.getRenderPlan()[0].draw).toBe(draw);
         expect(area.size / fit.size).toBeCloseTo(1.25, 3);
 
         await wheel(next.element, mouse, 1);

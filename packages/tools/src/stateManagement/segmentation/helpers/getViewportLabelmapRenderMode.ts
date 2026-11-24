@@ -1,4 +1,4 @@
-import { ActorRenderMode, Enums, type Types } from '@cornerstonejs/core';
+import { Enums, type Types } from '@cornerstonejs/core';
 import {
   canRenderVolumeViewportLabelmapAsImage,
   isSliceRenderingEnabled,
@@ -24,36 +24,20 @@ export default function getViewportLabelmapRenderMode(
     return 'image';
   }
 
+  const contentMode = viewport.getCurrentMode?.();
+
+  if (contentMode === 'volume') {
+    return 'volume';
+  }
+
+  if (contentMode === 'stack') {
+    return 'image';
+  }
+
   const defaultActor =
     typeof compatibilityViewport.getDefaultActor === 'function'
       ? compatibilityViewport.getDefaultActor()
       : undefined;
-  const actorMapper = defaultActor?.actorMapper as
-    | {
-        renderMode?: Types.ActorRenderMode;
-      }
-    | undefined;
-  const renderMode = actorMapper?.renderMode;
-
-  if (
-    renderMode === ActorRenderMode.VTK_VOLUME ||
-    renderMode === ActorRenderMode.VTK_VOLUME_SLICE ||
-    renderMode === ActorRenderMode.VTK_SAMPLED_SLICE
-  ) {
-    return 'volume';
-  }
-
-  if (renderMode === ActorRenderMode.CPU_VOLUME) {
-    return 'volume';
-  }
-
-  if (
-    renderMode === ActorRenderMode.VTK_IMAGE ||
-    renderMode === ActorRenderMode.CPU_IMAGE
-  ) {
-    return 'image';
-  }
-
   const actorClassName =
     typeof defaultActor?.actor?.getClassName === 'function'
       ? defaultActor.actor.getClassName()
@@ -63,17 +47,7 @@ export default function getViewportLabelmapRenderMode(
     return 'volume';
   }
 
-  if (actorClassName === 'vtkImageSlice') {
-    return 'image';
-  }
-
-  if (actorClassName === 'CanvasActor') {
-    const defaultActorRenderMode = actorMapper?.renderMode;
-
-    if (defaultActorRenderMode === ActorRenderMode.CPU_VOLUME) {
-      return 'volume';
-    }
-
+  if (actorClassName === 'vtkImageSlice' || actorClassName === 'CanvasActor') {
     return 'image';
   }
 

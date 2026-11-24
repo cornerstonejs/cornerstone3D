@@ -3,26 +3,26 @@ import { InterpolationType } from '../src/enums';
 import * as metaData from '../src/metaData';
 import VoxelManager from '../src/utilities/VoxelManager';
 import { applyPlanarImageAppearance } from '../src/RenderingEngine/helpers/planarImageRendering';
-import { PlanarSampledSliceActor } from '../src/RenderingEngine/Viewports/Planar/planarSampledSliceActor';
+import { PlanarCpuSliceActor } from '../src/RenderingEngine/Viewports/Planar/planarCpuSliceActor';
 import {
-  PlanarSampledSliceCanvas,
+  PlanarCpuSliceCanvas,
   colourChannels,
   colourSlice,
   colourWholeNumbers,
   getColourTables,
-} from '../src/RenderingEngine/Viewports/Planar/planarSampledSliceCanvas';
-import { PlanarSliceSampler } from '../src/RenderingEngine/Viewports/Planar/planarSampledSlice';
+} from '../src/RenderingEngine/Viewports/Planar/planarCpuSliceCanvas';
+import { PlanarSliceSampler } from '../src/RenderingEngine/Viewports/Planar/planarCpuSlice';
 import {
-  CpuImageSliceRenderPath,
+  CanvasFrameRenderPath,
   createImageSliceVolume,
-} from '../src/RenderingEngine/Viewports/Planar/CpuImageSliceRenderPath';
+} from '../src/RenderingEngine/Viewports/Planar/CanvasFrameRenderPath';
 
 /**
  * The colour tables that the CPU draw step reads for a presentation, applied
  * as the image path (`image`) or the volume path (`volume`) applies it.
  */
 function tablesFor(appearance, kind = 'image', previous) {
-  const actor = new PlanarSampledSliceActor();
+  const actor = new PlanarCpuSliceActor();
 
   if (kind === 'image') {
     applyPlanarImageAppearance({ actor: actor.actor, props: appearance });
@@ -137,7 +137,7 @@ describe('colourWholeNumbers', () => {
     pixelData[5] = 400;
 
     const volume = createImageSliceVolume(createImage('lying-range'));
-    const canvas = new PlanarSampledSliceCanvas(volume, 4, 4, 'image');
+    const canvas = new PlanarCpuSliceCanvas(volume, 4, 4, 'image');
     const target = document.createElement('canvas');
     const appearance = PRESENTATIONS['wide window'];
 
@@ -503,7 +503,7 @@ describe('the image as a volume of one slice', () => {
   );
 });
 
-describe('CpuImageSliceRenderPath on the canvas', () => {
+describe('CanvasFrameRenderPath on the canvas', () => {
   /** Mounts an image on the CPU image path of a canvas with a background. */
   async function mountImage(appearance) {
     const canvas = document.createElement('canvas');
@@ -560,7 +560,7 @@ describe('CpuImageSliceRenderPath on the canvas', () => {
         getBackground: () => [0.2, 0.1, 0.3],
       },
     };
-    const attachment = await new CpuImageSliceRenderPath().addData(
+    const attachment = await new CanvasFrameRenderPath().addData(
       ctx,
       {
         id: 'image-data',
@@ -578,7 +578,7 @@ describe('CpuImageSliceRenderPath on the canvas', () => {
   }
 
   it('clears to the background of the viewport and draws the image over it', async () => {
-    const draw = jest.spyOn(PlanarSampledSliceCanvas.prototype, 'draw');
+    const draw = jest.spyOn(PlanarCpuSliceCanvas.prototype, 'draw');
     const { attachment, context, fills } = await mountImage({});
 
     context.fillStyle = 'rgb(51, 26, 77)';
@@ -594,7 +594,7 @@ describe('CpuImageSliceRenderPath on the canvas', () => {
   });
 
   it('shows only the background for a layer that is not visible', async () => {
-    const draw = jest.spyOn(PlanarSampledSliceCanvas.prototype, 'draw');
+    const draw = jest.spyOn(PlanarCpuSliceCanvas.prototype, 'draw');
     const { attachment, context, fills } = await mountImage({
       visible: false,
     });

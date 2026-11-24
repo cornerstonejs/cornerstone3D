@@ -31,11 +31,9 @@ import type {
   VolumeActor,
   Actor,
   ActorEntry,
-  ActorMapperProxy,
   ImageActor,
   ICanvasActor,
 } from './IActor';
-import { ActorRenderMode } from './IActor';
 import type {
   IImageLoadObject,
   IVolumeLoadObject,
@@ -255,7 +253,6 @@ export type {
   VolumeActor,
   Actor,
   ActorEntry,
-  ActorMapperProxy,
   ImageActor,
   ICanvasActor,
   IImageLoadObject,
@@ -395,5 +392,3 @@ export type {
   ViewportFidelityState,
   ViewportFidelityShownState,
 };
-
-export { ActorRenderMode };

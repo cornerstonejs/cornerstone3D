@@ -422,7 +422,6 @@ async function run() {
   ) as VolumeViewport3D;
   await ct3dViewport.setDisplaySets({
     displaySetId: ct3dDisplaySetId,
-    options: { renderMode: 'vtkVolume3d' },
   });
   ct3dViewport.setDisplaySetAppearance(ct3dDisplaySetId, {
     sampleDistanceMultiplier: 1,

@@ -11,12 +11,12 @@
  * they are internal implementation details shared between the viewport
  * controller and its render-path adapters.
  *
- * Render modes:
- *   - `vtkImage`   -- GPU path for single-image (stack) display via vtkImageMapper.
- *   - `cpuImage`      -- CPU fallback for single-image display via CPUFallbackEnabledElement.
- *   - `cpuVolume`  -- CPU path for volume slicing (samples a slice from the volume on the CPU).
- *   - `vtkVolumeSlice` -- GPU path for volume slicing via vtkImageResliceMapper.
- *   - `vtkSampledSlice` -- volume slice sampled on the CPU, drawn via vtkImageMapper.
+ * Render modes (`PlanarRenderModeId`):
+ *   - `vtkFrame` -- GPU path for single-image (stack) display via vtkImageMapper.
+ *   - `canvasFrame` -- CPU path for single-image display on the 2D canvas.
+ *   - `canvasCpuSlice` -- CPU path for volume slicing (samples a slice from the volume on the CPU).
+ *   - `vtkGpuVolumeSlice` -- GPU path for volume slicing via vtkImageResliceMapper.
+ *   - `vtkCpuSlice` -- volume slice sampled on the CPU, drawn via vtkImageMapper.
  */
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
@@ -24,7 +24,6 @@ import type vtkImageResliceMapper from '@kitware/vtk.js/Rendering/Core/ImageResl
 import type vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import type {
   CPUFallbackEnabledElement,
-  ActorRenderMode,
   ICanvasActor,
   IImage,
   IImageVolume,
@@ -36,17 +35,18 @@ import type {
   PlanarViewState,
   PlanarDisplaySetAppearance,
 } from './PlanarViewportTypes';
-import type { PlanarSliceCacheStatistics } from './planarSampledSlice';
+import type { PlanarSliceCacheStatistics } from './planarCpuSlice';
+import type { PlanarRenderModeId } from './planarRenderModeIds';
 
 /**
- * Mounted rendering state for the GPU single-image path (`vtkImage`).
+ * Mounted rendering state for the GPU single-image path (`vtkFrame`).
  *
  * Uses a vtkImageMapper + vtkImageSlice actor to display one DICOM image
  * at a time. The viewport swaps `currentImage` and rebuilds the VTK pipeline
  * when the slice index changes.
  */
-export type PlanarImageMapperRendering = MountedRendering<{
-  renderMode: ActorRenderMode.VTK_IMAGE;
+export type PlanarVtkFrameRendering = MountedRendering<{
+  renderMode: PlanarRenderModeId.VTK_FRAME;
   actorEntryUID: string;
   actor: vtkImageSlice;
   currentImage: IImage;
@@ -81,14 +81,14 @@ export type PlanarImageMapperRendering = MountedRendering<{
 }>;
 
 /**
- * Mounted rendering state for the CPU single-image path (`cpuImage`).
+ * Mounted rendering state for the CPU single-image path (`canvasFrame`).
  *
  * Uses the Cornerstone CPU fallback renderer (`CPUFallbackEnabledElement`)
  * to draw a single image onto an offscreen canvas. The viewport reads
  * pixel data directly from the IImage and applies windowing / LUT on the CPU.
  */
-export type PlanarCpuImageRendering = MountedRendering<{
-  renderMode: ActorRenderMode.CPU_IMAGE;
+export type PlanarCanvasFrameRendering = MountedRendering<{
+  renderMode: PlanarRenderModeId.CANVAS_FRAME;
   actorEntryUID: string;
   enabledElement: CPUFallbackEnabledElement;
   compatibilityActor: ICanvasActor;
@@ -100,7 +100,7 @@ export type PlanarCpuImageRendering = MountedRendering<{
   fitScale: number;
   loadRequestId: number;
   renderingInvalidated: boolean;
-  // See PlanarImageMapperRendering.lastRequestedImageIdIndex.
+  // See PlanarVtkFrameRendering.lastRequestedImageIdIndex.
   lastRequestedImageIdIndex?: number;
   /**
    * The load of the image of the last request: it resolves when the image
@@ -112,17 +112,17 @@ export type PlanarCpuImageRendering = MountedRendering<{
 }>;
 
 /**
- * Mounted rendering state for the CPU volume-slice path (`cpuVolume`).
+ * Mounted rendering state for the CPU volume-slice path (`canvasCpuSlice`).
  *
  * Cuts the slice of the view plane out of the volume on the CPU with
  * `PlanarSliceSampler`, the sample step of the sampled slice path, and draws
- * it on the 2D canvas with `PlanarSampledSliceCanvas`, which uses the CPU
+ * it on the 2D canvas with `PlanarCpuSliceCanvas`, which uses the CPU
  * fallback pipeline for VOI, colormap and invert, and `CanvasActor` for a
  * labelmap. The sampler keeps the slice on screen and its neighbours, so a
  * change of the appearance, a pan or a zoom does not sample again.
  */
-export type PlanarCpuVolumeRendering = MountedRendering<{
-  renderMode: ActorRenderMode.CPU_VOLUME;
+export type PlanarCanvasCpuSliceRendering = MountedRendering<{
+  renderMode: PlanarRenderModeId.CANVAS_CPU_SLICE;
   actorEntryUID: string;
   compatibilityActor: ICanvasActor;
   imageVolume: IImageVolume;
@@ -150,14 +150,14 @@ export type PlanarCpuVolumeRendering = MountedRendering<{
 }>;
 
 /**
- * Mounted rendering state for the GPU volume-slice path (`vtkVolumeSlice`).
+ * Mounted rendering state for the GPU volume-slice path (`vtkGpuVolumeSlice`).
  *
  * Uses a vtkImageResliceMapper + vtkImageSlice actor to display an orthogonal
  * slab of the volume. Slice navigation updates the mapper slice plane to match
  * the current render camera focal point and view-plane normal.
  */
-export type PlanarVolumeSliceRendering = MountedRendering<{
-  renderMode: ActorRenderMode.VTK_VOLUME_SLICE;
+export type PlanarVtkGpuVolumeSliceRendering = MountedRendering<{
+  renderMode: PlanarRenderModeId.VTK_GPU_VOLUME_SLICE;
   actorEntryUID: string;
   actor: vtkImageSlice;
   overlayOrder: number;
@@ -180,14 +180,14 @@ export type PlanarVolumeSliceRendering = MountedRendering<{
   VolumeStrategyState;
 
 /**
- * Mounted rendering state for the sampled slice path (`vtkSampledSlice`).
+ * Mounted rendering state for the sampled slice path (`vtkCpuSlice`).
  *
  * Cuts the slice of the view plane out of the volume on the CPU and draws it
  * as a 2D image with a vtkImageMapper + vtkImageSlice actor. No 3D texture is
- * made. The fields match `PlanarVolumeSliceRendering` apart from the mapper.
+ * made. The fields match `PlanarVtkGpuVolumeSliceRendering` apart from the mapper.
  */
-export type PlanarSampledSliceRendering = MountedRendering<{
-  renderMode: ActorRenderMode.VTK_SAMPLED_SLICE;
+export type PlanarVtkCpuSliceRendering = MountedRendering<{
+  renderMode: PlanarRenderModeId.VTK_CPU_SLICE;
   actorEntryUID: string;
   actor: vtkImageSlice;
   overlayOrder: number;
@@ -219,14 +219,14 @@ export type PlanarSampledSliceRendering = MountedRendering<{
  *
  * Discriminate on `renderMode` to narrow to a specific render path:
  * ```ts
- * if (rendering.renderMode === 'cpuVolume') {
- *   // rendering is PlanarCpuVolumeRendering
+ * if (rendering.renderMode === 'canvasCpuSlice') {
+ *   // rendering is PlanarCanvasCpuSliceRendering
  * }
  * ```
  */
 export type PlanarRendering =
-  | PlanarImageMapperRendering
-  | PlanarCpuImageRendering
-  | PlanarCpuVolumeRendering
-  | PlanarVolumeSliceRendering
-  | PlanarSampledSliceRendering;
+  | PlanarVtkFrameRendering
+  | PlanarCanvasFrameRendering
+  | PlanarCanvasCpuSliceRendering
+  | PlanarVtkGpuVolumeSliceRendering
+  | PlanarVtkCpuSliceRendering;

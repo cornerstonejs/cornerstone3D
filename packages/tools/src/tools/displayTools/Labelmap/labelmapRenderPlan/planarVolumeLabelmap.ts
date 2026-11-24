@@ -1,5 +1,4 @@
 import {
-  ActorRenderMode,
   type Types,
   Enums,
   cache,
@@ -13,13 +12,6 @@ type PlanarVolumeViewport = Types.IViewport<
   { blendMode?: Enums.BlendModes; slabThickness?: number }
 > & {
   getCurrentImageIdIndex?: () => number;
-  getDefaultActor?: () =>
-    | (Types.ActorEntry & {
-        actorMapper?: {
-          renderMode?: Types.ActorRenderMode;
-        };
-      })
-    | undefined;
   getVolumeId: () => string | undefined;
   getViewReference: (
     specifier?: Types.ViewReferenceSpecifier
@@ -84,9 +76,7 @@ async function addLabelmapToPlanarVolumeViewport(args: {
 }): Promise<LabelmapRenderPlanMountResult> {
   const { blendMode, labelmapLayers, segmentationId, viewport, visibility } =
     args;
-  const sourceVolumeRenderMode = getPlanarVolumeRenderMode(viewport);
-
-  if (!sourceVolumeRenderMode) {
+  if (viewport.getCurrentMode() !== 'volume') {
     return;
   }
 
@@ -167,24 +157,6 @@ async function addLabelmapToPlanarVolumeViewport(args: {
       uid: firstActorEntry.uid,
       actor: firstActorEntry.actor,
     };
-  }
-}
-
-function getPlanarVolumeRenderMode(
-  viewport: PlanarVolumeViewport
-):
-  | Types.ActorRenderMode.CPU_VOLUME
-  | Types.ActorRenderMode.VTK_VOLUME_SLICE
-  | Types.ActorRenderMode.VTK_SAMPLED_SLICE
-  | undefined {
-  const renderMode = viewport.getDefaultActor?.()?.actorMapper?.renderMode;
-
-  if (
-    renderMode === ActorRenderMode.CPU_VOLUME ||
-    renderMode === ActorRenderMode.VTK_VOLUME_SLICE ||
-    renderMode === ActorRenderMode.VTK_SAMPLED_SLICE
-  ) {
-    return renderMode;
   }
 }
 

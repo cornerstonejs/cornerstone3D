@@ -128,7 +128,6 @@ async function showVolume(viewport, volumeId) {
 
   await viewport.setDisplaySets({
     displaySetId,
-    options: { renderMode: 'vtkVolume3d' },
   });
 
   return displaySetId;
@@ -961,11 +960,9 @@ describe('Direct next 3D viewport, volume members -- ', () => {
     await next.setDisplaySets(
       {
         displaySetId: addVolumeDisplaySet('next3D:first', volumeId),
-        options: { renderMode: 'vtkVolume3d' },
       },
       {
         displaySetId: addVolumeDisplaySet('next3D:second', otherVolumeId),
-        options: { renderMode: 'vtkVolume3d' },
       }
     );
 

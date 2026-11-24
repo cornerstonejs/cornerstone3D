@@ -267,3 +267,11 @@ export function expectPointsClose(actual, expected, precision = 4) {
     expect(value).toBeCloseTo(expected[index], precision);
   });
 }
+
+/**
+ * The draw path of a layer of a render plan in one word, its `slice` and its
+ * `draw`: `frame-gpu`, `cpu-gpu`, `gpuVolume-gpu`, `frame-cpu` or `cpu-cpu`.
+ */
+export function drawPathOf(layer) {
+  return layer && `${layer.slice}-${layer.draw}`;
+}

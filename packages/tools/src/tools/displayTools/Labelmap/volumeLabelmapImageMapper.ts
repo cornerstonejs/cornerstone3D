@@ -1,9 +1,10 @@
 import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
 import type vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
-import { ActorRenderMode, Enums, type Types } from '@cornerstonejs/core';
+import { Enums, type Types } from '@cornerstonejs/core';
 import type { Segmentation } from '../../../types/SegmentationStateTypes';
 import { canRenderVolumeViewportLabelmapAsImage } from '../../../stateManagement/segmentation/helpers/labelmapImageMapperSupport';
+import { getRenderPlanLayer } from '../../../utilities/viewport/getRenderPlanLayer';
 import {
   getLabelmap,
   getOrCreateLabelmapVolume,
@@ -354,14 +355,18 @@ export function placeVolumeLabelmapImageMapperActors(args: {
 
   viewport
     .getActors()
-    .filter(
-      (actorEntry) =>
-        actorEntry.actorMapper?.renderMode === ActorRenderMode.VTK_IMAGE &&
+    .filter((actorEntry) => {
+      const layer = getRenderPlanLayer(viewport, actorEntry.displaySetId);
+
+      return (
+        layer?.slice === 'frame' &&
+        layer.draw === 'gpu' &&
         isLabelmapRepresentationUID(
           actorEntry.representationUID,
           segmentationId
         )
-    )
+      );
+    })
     .forEach((actorEntry) => {
       const actor = actorEntry.actor as vtkImageSlice;
       const imageData = (actor.getMapper() as vtkImageMapper).getInputData();

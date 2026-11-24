@@ -1,7 +1,8 @@
 import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import * as cornerstone3D from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
-import { SAMPLED_SLICE_REST_DELAY_MS } from '../src/RenderingEngine/Viewports/Planar/planarSampledSliceRest';
+import { CPU_SLICE_REST_DELAY_MS } from '../src/RenderingEngine/Viewports/Planar/planarCpuSliceRest';
+import { drawPathOf } from './utils/planarSeriesBothModes';
 
 const { Enums, volumeLoader, imageLoader, utilities, cache } = cornerstone3D;
 const { ViewportType, OrientationAxis, Events, InterpolationType } = Enums;
@@ -123,7 +124,7 @@ function renderAndWait(viewport) {
  */
 async function waitForDraws() {
   await new Promise((resolve) =>
-    setTimeout(resolve, 3 * SAMPLED_SLICE_REST_DELAY_MS)
+    setTimeout(resolve, 3 * CPU_SLICE_REST_DELAY_MS)
   );
 
   for (let frame = 0; frame < 3; frame++) {
@@ -361,8 +362,8 @@ async function compareStripedSlabEdges(renderingEngine, valueOf) {
   });
   const { gpuRed, cpuRed } = await drawBoth(gpu, cpu, showStripedSlabEdges);
 
-  expect(gpu.getRenderPlan()[0].renderMode).toBe('vtkVolumeSlice');
-  expect(cpu.getRenderPlan()[0].renderMode).toBe('cpuVolume');
+  expect(drawPathOf(gpu.getRenderPlan()[0])).toBe('gpuVolume-gpu');
+  expect(drawPathOf(cpu.getRenderPlan()[0])).toBe('cpu-cpu');
 
   return compareEdges(gpuRed, cpuRed);
 }
@@ -435,8 +436,8 @@ describe('The edge pixels of a slice on the CPU against the GPU picture -- ', ()
     );
     const result = compare(gpuRed, cpuRed);
 
-    expect(gpu.getRenderPlan()[0].renderMode).toBe('vtkSampledSlice');
-    expect(cpu.getRenderPlan()[0].renderMode).toBe('cpuVolume');
+    expect(drawPathOf(gpu.getRenderPlan()[0])).toBe('cpu-gpu');
+    expect(drawPathOf(cpu.getRenderPlan()[0])).toBe('cpu-cpu');
     expect(result.edge).toBeGreaterThan(0);
     expect(result.max).toBeLessThanOrEqual(ONE_SAMPLE);
     expect(result.differing).toBeLessThanOrEqual(
@@ -457,8 +458,8 @@ describe('The edge pixels of a slice on the CPU against the GPU picture -- ', ()
     );
     const result = compare(gpuRed, cpuRed);
 
-    expect(gpu.getRenderPlan()[0].renderMode).toBe('vtkImage');
-    expect(cpu.getRenderPlan()[0].renderMode).toBe('cpuImage');
+    expect(drawPathOf(gpu.getRenderPlan()[0])).toBe('frame-gpu');
+    expect(drawPathOf(cpu.getRenderPlan()[0])).toBe('frame-cpu');
     expect(result.edge).toBeGreaterThan(0);
     expect(result.max).toBeLessThanOrEqual(ONE_SAMPLE);
     expect(result.differing).toBeLessThanOrEqual(
@@ -477,8 +478,8 @@ describe('The edge pixels of a slice on the CPU against the GPU picture -- ', ()
     const { gpuRed, cpuRed } = await drawBoth(gpu, cpu, showStripedEdges);
     const result = compareEdges(gpuRed, cpuRed);
 
-    expect(gpu.getRenderPlan()[0].renderMode).toBe('vtkImage');
-    expect(cpu.getRenderPlan()[0].renderMode).toBe('cpuImage');
+    expect(drawPathOf(gpu.getRenderPlan()[0])).toBe('frame-gpu');
+    expect(drawPathOf(cpu.getRenderPlan()[0])).toBe('frame-cpu');
     expect(result.edge).toBeGreaterThan(0);
     expect(result.max).toBeLessThanOrEqual(ONE_SAMPLE);
     expect(result.differing).toBeLessThanOrEqual(
@@ -497,8 +498,8 @@ describe('The edge pixels of a slice on the CPU against the GPU picture -- ', ()
     const { gpuRed, cpuRed } = await drawBoth(gpu, cpu, showStripedEdges);
     const result = compareEdges(gpuRed, cpuRed);
 
-    expect(gpu.getRenderPlan()[0].renderMode).toBe('vtkSampledSlice');
-    expect(cpu.getRenderPlan()[0].renderMode).toBe('cpuVolume');
+    expect(drawPathOf(gpu.getRenderPlan()[0])).toBe('cpu-gpu');
+    expect(drawPathOf(cpu.getRenderPlan()[0])).toBe('cpu-cpu');
     expect(result.edge).toBeGreaterThan(0);
     expect(result.max).toBeLessThanOrEqual(ONE_SAMPLE);
     expect(result.differing).toBeLessThanOrEqual(
@@ -543,7 +544,7 @@ describe('The edge pixels of a slice on the CPU against the GPU picture -- ', ()
     );
     const result = compare(gpuRed, cpuRed);
 
-    expect(gpu.getRenderPlan()[0].renderMode).toBe('vtkSampledSlice');
+    expect(drawPathOf(gpu.getRenderPlan()[0])).toBe('cpu-gpu');
     expect(result.edge).toBe(0);
     expect(result.differing).toBe(0);
   }, 30000);
@@ -593,7 +594,7 @@ describe('The edge pixels of a slice on the CPU against the GPU picture -- ', ()
     expect(cpu.getRenderPlan().length).toBe(2);
     cpu
       .getRenderPlan()
-      .forEach((layer) => expect(layer.renderMode).toBe('cpuVolume'));
+      .forEach((layer) => expect(drawPathOf(layer)).toBe('cpu-cpu'));
     expect(inside).toBeGreaterThan(0);
     expect(inside).toBeLessThan(slice.length);
     expect(labelledFarOutside).toBe(0);

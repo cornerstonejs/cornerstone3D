@@ -204,7 +204,7 @@ test.describe('Viewport Projection Service example', () => {
         constructorName: 'PlanarViewport',
         type: 'planar',
         renderModesByDisplaySetId: {
-          [PLANAR_DATA_ID]: 'vtkImage',
+          [PLANAR_DATA_ID]: 'vtkFrame',
         },
       },
       {
@@ -316,7 +316,7 @@ test.describe('Viewport Projection Synchronizer example', () => {
         constructorName: 'PlanarViewport',
         type: 'planar',
         renderModesByDisplaySetId: {
-          [LEFT_DATA_ID]: 'vtkImage',
+          [LEFT_DATA_ID]: 'vtkFrame',
         },
       },
       {
@@ -325,7 +325,7 @@ test.describe('Viewport Projection Synchronizer example', () => {
         constructorName: 'PlanarViewport',
         type: 'planar',
         renderModesByDisplaySetId: {
-          [RIGHT_DATA_ID]: 'vtkImage',
+          [RIGHT_DATA_ID]: 'vtkFrame',
         },
       },
     ]);
