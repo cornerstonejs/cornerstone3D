@@ -23,7 +23,8 @@ export type RenderableVOILUT = CPUFallbackLUT & { firstValueMapped: number };
 
 /**
  * Returns true when the given VOI LUT Sequence item holds enough data to build
- * a transfer function from.
+ * a transfer function from. An all zero LUT carries no curve, so it is not
+ * renderable, and the window of the file applies.
  */
 export function isRenderableVOILUT(
   voiLUT: CPUFallbackLUT | undefined
@@ -32,9 +33,14 @@ export function isRenderableVOILUT(
     !!voiLUT &&
     !!voiLUT.lut &&
     voiLUT.lut.length > 1 &&
-    Number.isFinite(voiLUT.firstValueMapped)
+    Number.isFinite(voiLUT.firstValueMapped) &&
+    getVOILUTOutputScale(voiLUT.lut) > 0
   );
 }
+
+// The scan of a LUT of 65536 entries is slow, and the viewports test a LUT on
+// every window level move. The decoded LUT data does not change.
+const outputScales = new WeakMap<ArrayLike<number>, number>();
 
 /**
  * The range of input (modality LUT output) values a VOI LUT Sequence maps.
@@ -56,6 +62,20 @@ export function getVOILUTSequenceRange(voiLUT: RenderableVOILUT): VOIRange {
  * trusted in real world data.
  */
 export function getVOILUTOutputScale(lut: ArrayLike<number>): number {
+  const cached = outputScales.get(lut);
+
+  if (cached !== undefined) {
+    return cached;
+  }
+
+  const scale = computeVOILUTOutputScale(lut);
+
+  outputScales.set(lut, scale);
+
+  return scale;
+}
+
+function computeVOILUTOutputScale(lut: ArrayLike<number>): number {
   let maxEntry = -Infinity;
 
   for (let i = 0; i < lut.length; i++) {

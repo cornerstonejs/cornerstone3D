@@ -3,7 +3,6 @@ import VOILUTFunctionType from '../../../../enums/VOILUTFunctionType';
 import { getValidVOILUTFunction } from '../../../../utilities/voiLUTFunction';
 import {
   createVOILUTSampler,
-  getVOILUTOutputScale,
   isRenderableVOILUT,
 } from '../../../../utilities/createVOILUTSequenceTransferFunction';
 import type { RenderableVOILUT } from '../../../../utilities/createVOILUTSequenceTransferFunction';
@@ -178,12 +177,9 @@ export default function (
   voiLUT?: CPUFallbackLUT,
   voiLUTFunction?: VOILUTFunctionType | string
 ) {
-  // An all zero LUT carries no curve. createVOILUTSampler gives 0 for every
-  // value there, which is a black image. Fall back to the analytic window, as
-  // the GPU path does in setVOIGPU. getVOILUTOutputScale reads every entry, so
-  // the test belongs here and not in isRenderableVOILUT, which the viewports
-  // call on every mouse move.
-  if (isRenderableVOILUT(voiLUT) && getVOILUTOutputScale(voiLUT.lut)) {
+  // An all zero LUT is not renderable, so it falls back to the analytic window,
+  // as the GPU path does in setVOIGPU.
+  if (isRenderableVOILUT(voiLUT)) {
     return generateNonLinearVOILUT(
       voiLUT,
       windowWidth,

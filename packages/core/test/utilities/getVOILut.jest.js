@@ -173,6 +173,10 @@ describe('createVOILUTSequenceTransferFunction', function () {
     expect(isRenderableVOILUT({ lut: [] })).toBe(false);
     // Missing LUT Descriptor first value mapped
     expect(isRenderableVOILUT({ lut: [1, 2, 3] })).toBe(false);
+    // An all zero LUT carries no curve, so the window of the file applies
+    expect(isRenderableVOILUT({ firstValueMapped: 0, lut: [0, 0, 0] })).toBe(
+      false
+    );
   });
 
   it('reports the LUT input domain', () => {

@@ -841,13 +841,13 @@ class StackViewport extends Viewport {
     }
     // if voi is not applied for the first time, run the setVOI function
     // which will apply the default voi based on the range
+    if (typeof useVOILUTSequence !== 'undefined') {
+      this.useVOILUTSequence = useVOILUTSequence;
+    }
+
     if (typeof voiRange !== 'undefined') {
       const voiUpdatedWithSetProperties = true;
       this.setVOI(voiRange, { suppressEvents, voiUpdatedWithSetProperties });
-    }
-
-    if (typeof useVOILUTSequence !== 'undefined') {
-      this.useVOILUTSequence = useVOILUTSequence;
     }
 
     if (typeof VOILUTFunction !== 'undefined') {
@@ -960,6 +960,16 @@ class StackViewport extends Viewport {
     this.VOILUTFunction = normalizeVOILUTFunction(this.csImage?.voiLUTFunction);
     this.viewportStatus = ViewportStatus.PRE_RENDER;
 
+    // Reset restores the curve of the file, and a colormap replaces that curve.
+    // Remove the colormap first, or setVOI cannot put the sequence back.
+    if (
+      (this.colormap as ColormapPublic)?.name &&
+      this._getVOILUTSequenceToApply()
+    ) {
+      this.colormap = undefined;
+      delete this._cpuFallbackEnabledElement?.viewport?.colormap;
+    }
+
     this.fillWithBackgroundColor();
 
     if (this.useCPURendering) {
@@ -1062,8 +1072,24 @@ class StackViewport extends Viewport {
       this.perImageIdDefaultProperties.get(currentImageId) ||
       this.globalDefaultProperties;
 
+    // The saved sequence choice and function, else the automatic selection.
+    const previousVOILUTFunction = this.VOILUTFunction;
+    const imageVOILUTFunction = getValidVOILUTFunction(
+      this.csImage?.voiLUTFunction
+    );
+    this.useVOILUTSequence = properties.useVOILUTSequence;
+    this.VOILUTFunction =
+      properties.VOILUTFunction !== undefined
+        ? getValidVOILUTFunction(properties.VOILUTFunction)
+        : imageVOILUTFunction;
+    this.voiLUTFunctionSetByUser = this.VOILUTFunction !== imageVOILUTFunction;
+
     if (properties.colormap?.name) {
       this.setColormap(properties.colormap);
+    }
+
+    if (this.useCPURendering) {
+      this._syncCPUVOILUTSequence();
     }
 
     let voiRange;
@@ -1076,7 +1102,9 @@ class StackViewport extends Viewport {
       voiRange = properties.voiRange;
     }
 
-    this.setVOI(voiRange);
+    this.setVOI(voiRange, {
+      forceRecreateLUTFunction: previousVOILUTFunction !== this.VOILUTFunction,
+    });
 
     this.setInterpolationType(InterpolationType.LINEAR);
     this.setInvertColor(false);
@@ -1817,6 +1845,8 @@ class StackViewport extends Viewport {
       !forceRecreateLUTFunction &&
       !this.stackInvalidated
     ) {
+      // Nothing to draw, but an explicit range still locks the VOI.
+      this.voiUpdatedWithSetProperties ||= voiUpdatedWithSetProperties;
       return;
     }
 
@@ -3130,6 +3160,11 @@ class StackViewport extends Viewport {
       return undefined;
     }
 
+    // A prescaled PT image is in SUV, and the curve is in stored values.
+    if (this._isPTPrescaled(image)) {
+      return undefined;
+    }
+
     const voiLUT = image?.voiLUT;
 
     return isRenderableVOILUT(voiLUT) ? voiLUT : undefined;
@@ -3181,15 +3216,15 @@ class StackViewport extends Viewport {
   }
 
   private _isCurrentImagePTPrescaled() {
-    if (this.modality !== 'PT' || !this.csImage.isPreScaled) {
-      return false;
-    }
+    return this._isPTPrescaled(this.csImage);
+  }
 
-    if (!this.csImage.preScale?.scalingParameters.suvbw) {
-      return false;
-    }
-
-    return true;
+  private _isPTPrescaled(image: IImage): boolean {
+    return (
+      this.modality === 'PT' &&
+      !!image?.isPreScaled &&
+      !!image.preScale?.scalingParameters?.suvbw
+    );
   }
 
   private _getDefaultPTPrescaledVOIRange() {

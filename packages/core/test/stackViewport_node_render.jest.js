@@ -224,6 +224,31 @@ describe('stackViewport_node_render', function () {
       expect(cpuViewport().voiLUT).toBeUndefined();
     });
 
+    it('removes a colormap on resetProperties and shows the sequence again, as the GPU path does', async () => {
+      const ids = await loadFrames('cpuColormapReset', [{ voiLUT: lutA }]);
+      await viewport.setStack(ids, 0);
+      viewport.setProperties({ colormap: { name: 'hsv' } });
+
+      viewport.resetProperties();
+
+      expect(viewport.getProperties().colormap).toBeUndefined();
+      expect(cpuViewport().colormap).toBeUndefined();
+      expect(cpuViewport().voiLUT).toBe(lutA);
+    });
+
+    it('restores the default useVOILUTSequence on resetToDefaultProperties', async () => {
+      const ids = await loadFrames('cpuDefaultSequence', [{ voiLUT: lutA }]);
+      await viewport.setStack(ids, 0);
+      viewport.setProperties({ useVOILUTSequence: false });
+      viewport.setProperties({ useVOILUTSequence: true });
+      expect(cpuViewport().voiLUT).toBe(lutA);
+
+      viewport.resetToDefaultProperties();
+
+      expect(viewport.getProperties().useVOILUTSequence).toBe(false);
+      expect(cpuViewport().voiLUT).toBeUndefined();
+    });
+
     it('does not throw for useVOILUTSequence while a new stack loads', async () => {
       const ids = await loadFrames('cpuLoading', [{ voiLUT: lutA }]);
       await viewport.setStack(ids, 0);
