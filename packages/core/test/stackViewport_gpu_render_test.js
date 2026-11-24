@@ -1084,6 +1084,13 @@ describe('renderingCore -- Stack', () => {
 
       expect(viewport.getTransferFunction()).not.toBe(firstTransferFunction);
       expect(viewport.voiLUTSequenceApplied).toBe(true);
+
+      // The two LUTs map the input 1 to 64 and to 192
+      const rgb = [0, 0, 0];
+      firstTransferFunction.getColor(1, rgb);
+      expect(rgb[0]).toBeCloseTo(64 / 255, 2);
+      viewport.getTransferFunction().getColor(1, rgb);
+      expect(rgb[0]).toBeCloseTo(192 / 255, 2);
     });
 
     it('clears the VOI LUT Sequence decision state for a new stack', async function () {

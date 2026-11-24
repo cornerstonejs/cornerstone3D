@@ -1141,15 +1141,8 @@ class StackViewport extends Viewport {
     const { colormap, interpolationType, invert, sharpening, smoothing } =
       this.getProperties();
 
-    // The raw field, not getProperties()' resolved value: this re-asserts what
-    // the viewport already had, so an unset function must stay unset and leave
-    // the per image fallbacks to resolve it. Feeding the resolved value back
-    // here would pin it to the current image's function, and the next frame
-    // would then be rendered with the previous frame's.
-    if (typeof this.VOILUTFunction !== 'undefined') {
-      this.setVOILUTFunction(this.VOILUTFunction, true);
-    }
-
+    // _setVOILUTFunctionForFrame already set this.VOILUTFunction. One setVOI
+    // builds the curve over the final range of the frame.
     this.setVOI(voiRange, { forceRecreateLUTFunction });
 
     if (typeof colormap !== 'undefined') {
