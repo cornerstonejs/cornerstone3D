@@ -434,9 +434,11 @@ describe('PlanarViewport view state', () => {
   it('can clear display area through view-presentation projection writes', () => {
     const { viewport } = track(createViewport());
 
-    viewport.setDisplayArea({
-      imageArea: [0.5, 0.5],
-      type: 'FIT',
+    viewport.setViewState({
+      displayArea: {
+        imageArea: [0.5, 0.5],
+        type: 'FIT',
+      },
     });
 
     applyProjectionPresentation(viewport, {
@@ -444,7 +446,297 @@ describe('PlanarViewport view state', () => {
     });
 
     expect(viewport.getViewState().displayArea).toBeUndefined();
-    expect(viewport.getDisplayArea()).toBeUndefined();
+  });
+
+  describe('the display area in the view state', () => {
+    const AREA = { imageArea: [0.5, 0.5] };
+    const PANNED_ZOOM = {
+      anchorCanvas: [0.6, 0.4],
+      anchorWorld: [1, 2, 3],
+      scale: [2, 2],
+      scaleMode: 'fitAspect',
+    };
+
+    /** A viewport with a stack and a zoom, a pan and a scale mode. */
+    function createZoomedViewport(defaultOptions) {
+      const context = track(createViewport(defaultOptions));
+      const image = createPlanarImage(`area-image-${viewportCounter}`);
+
+      addPlanarImageMetadata([image.imageId]);
+      mountStackBinding(context.viewport, [image]);
+      context.viewport.setViewState({
+        displayArea: undefined,
+        ...PANNED_ZOOM,
+      });
+
+      return context.viewport;
+    }
+
+    function framingStateOf(viewport) {
+      const { anchorCanvas, anchorWorld, displayArea, scale, scaleMode } =
+        viewport.getViewState();
+
+      return { anchorCanvas, anchorWorld, displayArea, scale, scaleMode };
+    }
+
+    it('is the display area of defaultOptions at creation, shown as it is', () => {
+      const { viewport } = track(
+        createViewport({
+          displayArea: { ...AREA, scaleMode: 'fitWidth' },
+        })
+      );
+
+      expect(framingStateOf(viewport)).toEqual({
+        anchorCanvas: [0.5, 0.5],
+        anchorWorld: undefined,
+        displayArea: { ...AREA, scaleMode: 'fitWidth' },
+        scale: [1, 1],
+        scaleMode: 'fitWidth',
+      });
+    });
+
+    it('is shown as it is by a patch with no scale, scale mode or anchor', () => {
+      const viewport = createZoomedViewport();
+
+      viewport.setViewState({ displayArea: AREA });
+
+      expect(framingStateOf(viewport)).toEqual({
+        anchorCanvas: [0.5, 0.5],
+        anchorWorld: undefined,
+        displayArea: AREA,
+        scale: [1, 1],
+        scaleMode: 'fit',
+      });
+    });
+
+    it('takes the scale mode of the display area', () => {
+      const viewport = createZoomedViewport();
+
+      viewport.setViewState({
+        displayArea: { ...AREA, scaleMode: 'fitHeight' },
+      });
+
+      expect(viewport.getViewState().scaleMode).toBe('fitHeight');
+      expect(viewport.getViewState().scale).toEqual([1, 1]);
+    });
+
+    it.each([
+      ['scale', { scale: [3, 3] }, { scale: [3, 3] }],
+      [
+        'scaleMode',
+        { scaleMode: 'absolute' },
+        { scale: [2, 2], scaleMode: 'absolute' },
+      ],
+      [
+        'anchorWorld',
+        { anchorWorld: [4, 5, 6] },
+        { anchorWorld: [4, 5, 6], scale: [2, 2] },
+      ],
+      [
+        'anchorCanvas',
+        { anchorCanvas: [0.2, 0.3] },
+        { anchorCanvas: [0.2, 0.3], scale: [2, 2] },
+      ],
+    ])(
+      'keeps the rest of the view state when the patch has %s',
+      (_key, patch, expected) => {
+        const viewport = createZoomedViewport();
+
+        viewport.setViewState({ displayArea: AREA, ...patch });
+
+        expect(framingStateOf(viewport)).toEqual({
+          anchorCanvas: PANNED_ZOOM.anchorCanvas,
+          anchorWorld: PANNED_ZOOM.anchorWorld,
+          displayArea: AREA,
+          scaleMode: PANNED_ZOOM.scaleMode,
+          ...expected,
+        });
+      }
+    );
+
+    it('is cleared by { displayArea: undefined }, which changes nothing else', () => {
+      const viewport = createZoomedViewport();
+
+      viewport.setViewState({ displayArea: AREA, scale: [3, 3] });
+      viewport.setViewState({ displayArea: undefined });
+
+      expect(framingStateOf(viewport)).toEqual({
+        anchorCanvas: PANNED_ZOOM.anchorCanvas,
+        anchorWorld: PANNED_ZOOM.anchorWorld,
+        displayArea: undefined,
+        scale: [3, 3],
+        scaleMode: PANNED_ZOOM.scaleMode,
+      });
+    });
+
+    it('stays through a patch that does not name it', () => {
+      const viewport = createZoomedViewport();
+
+      viewport.setViewState({ displayArea: AREA });
+      viewport.setViewState({ rotation: 90 });
+
+      expect(viewport.getViewState().displayArea).toEqual(AREA);
+      expect(viewport.getViewState().scale).toEqual([1, 1]);
+    });
+
+    it('is cleared by resetViewState when none was given with storeAsInitialCamera', () => {
+      const viewport = createZoomedViewport({ displayArea: AREA });
+
+      viewport.setViewState({ displayArea: AREA });
+      viewport.resetViewState();
+
+      expect(framingStateOf(viewport)).toEqual({
+        anchorCanvas: [0.5, 0.5],
+        anchorWorld: undefined,
+        displayArea: undefined,
+        scale: [1, 1],
+        scaleMode: 'fit',
+      });
+    });
+
+    it('goes back to the display area of defaultOptions with storeAsInitialCamera at resetViewState', () => {
+      const stored = {
+        ...AREA,
+        scaleMode: 'fitWidth',
+        storeAsInitialCamera: true,
+      };
+      const viewport = createZoomedViewport({ displayArea: stored });
+
+      expect(viewport.getViewState().displayArea).toBeUndefined();
+
+      viewport.resetViewState();
+
+      expect(framingStateOf(viewport)).toEqual({
+        anchorCanvas: [0.5, 0.5],
+        anchorWorld: undefined,
+        displayArea: stored,
+        scale: [1, 1],
+        scaleMode: 'fitWidth',
+      });
+    });
+
+    it('goes back to the last display area given with storeAsInitialCamera at resetViewState', () => {
+      const later = { imageArea: [0.25, 0.25], storeAsInitialCamera: true };
+      const viewport = createZoomedViewport({
+        displayArea: { ...AREA, storeAsInitialCamera: true },
+      });
+
+      viewport.setViewState({ displayArea: later });
+      viewport.setViewState({ displayArea: AREA });
+      viewport.resetViewState();
+
+      expect(viewport.getViewState().displayArea).toEqual(later);
+    });
+
+    it('stays through a reset that keeps the pan or the zoom', () => {
+      const viewport = createZoomedViewport({
+        displayArea: { ...AREA, storeAsInitialCamera: true },
+      });
+
+      viewport.setViewState({ displayArea: { imageArea: [0.25, 0.25] } });
+      viewport.resetViewState({ resetPan: false });
+
+      expect(viewport.getViewState().displayArea).toEqual({
+        imageArea: [0.25, 0.25],
+      });
+    });
+
+    it('is in the framing with the scale mode and the scale of the view state', () => {
+      const viewport = createZoomedViewport();
+
+      viewport.setViewState({
+        displayArea: { ...AREA, scaleMode: 'fitWidth' },
+        scale: [2, 2],
+      });
+
+      const framing = viewport.getViewFraming();
+
+      expect(framing.displayArea).toEqual({ ...AREA, scaleMode: 'fitWidth' });
+      expect(framing.scaleMode).toBe('fitWidth');
+      expect(framing.fitScale).toEqual([2, 2]);
+      expect(viewport.getViewFraming({ scaleMode: true })).toEqual({
+        scaleMode: 'fitWidth',
+      });
+    });
+
+    it.each([
+      ['a fit with a pan', { displayArea: undefined, scaleMode: 'fit' }],
+      ['a stretched fit with a pan', { displayArea: undefined }],
+      [
+        'a stretched fit',
+        { displayArea: undefined, scale: [2, 1], scaleMode: 'fitAspect' },
+      ],
+      [
+        'a stretched scale',
+        { displayArea: undefined, scale: [2, 1], scaleMode: 'fit' },
+      ],
+      [
+        'fitWidth',
+        { displayArea: undefined, scale: [1.5, 1.5], scaleMode: 'fitWidth' },
+      ],
+      [
+        'a display area with fitHeight and a scale',
+        {
+          displayArea: { ...AREA, scaleMode: 'fitHeight' },
+          scale: [2, 2],
+        },
+      ],
+      [
+        'a display area with absolute',
+        { displayArea: { imageArea: [0.5, 0.25], scaleMode: 'absolute' } },
+      ],
+    ])(
+      'gives back the view state of %s through setViewFraming(getViewFraming())',
+      (_name, patch) => {
+        const viewport = createZoomedViewport();
+
+        viewport.setViewState(patch);
+
+        const before = viewport.getViewState();
+        const picture = viewport.getResolvedView();
+
+        viewport.setViewFraming(viewport.getViewFraming());
+
+        const after = viewport.getViewState();
+        const resolved = viewport.getResolvedView();
+
+        expect(after.displayArea).toEqual(before.displayArea);
+        expect(after.scaleMode).toBe(before.scaleMode);
+        expect(after.scale[0]).toBeCloseTo(before.scale[0], 9);
+        expect(after.scale[1]).toBeCloseTo(before.scale[1], 9);
+        expect(resolved.pan[0]).toBeCloseTo(picture.pan[0], 3);
+        expect(resolved.pan[1]).toBeCloseTo(picture.pan[1], 3);
+        expect(resolved.scale[0]).toBeCloseTo(picture.scale[0], 9);
+        expect(resolved.scale[1]).toBeCloseTo(picture.scale[1], 9);
+      }
+    );
+
+    it('keeps the display area of a framing patch that has a pan too', () => {
+      const viewport = createZoomedViewport();
+
+      viewport.setViewFraming({ displayArea: AREA, pan: [40, 10] });
+
+      expect(framingStateOf(viewport)).toEqual({
+        anchorCanvas: [0.5, 0.5],
+        anchorWorld: undefined,
+        displayArea: AREA,
+        scale: [1, 1],
+        scaleMode: 'fit',
+      });
+    });
+
+    it('takes the fitScale of a framing patch over its scale and zoom', () => {
+      const viewport = createZoomedViewport();
+
+      viewport.setViewFraming({
+        displayArea: AREA,
+        fitScale: [3, 3],
+        scale: [7, 7],
+        zoom: 5,
+      });
+
+      expect(viewport.getViewState().scale).toEqual([3, 3]);
+    });
   });
 
   it('exposes volume3d cameras through the projection service', () => {

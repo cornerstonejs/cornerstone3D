@@ -748,7 +748,7 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
       };
     }
 
-    it('leaves the options to the application on a direct next viewport', async function () {
+    it('takes the display area of the options into the view state and leaves the aspect ratio to the application on a direct next viewport', async function () {
       const viewport = enableViewport(renderingEngine, {
         viewportId: 'next',
         type: ViewportType.PLANAR,
@@ -759,25 +759,41 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
       await showStack(viewport, createStackImageIds('nextURI'));
 
       expect(viewport.getViewState().scale).toEqual([1, 1]);
-      expect(viewport.getViewState().displayArea).toBeUndefined();
+      expect(viewport.getViewState().displayArea).toEqual(
+        DISPLAY_AREA_OPTIONS.displayArea
+      );
     });
 
-    it('shows the display area of the options with setDisplayArea at the mount and after a reset, as the legacy stack viewport after a reset', async function () {
+    it('shows the display area of the options at the mount and, with storeAsInitialCamera, after a reset, as the legacy stack viewport after a reset', async function () {
       const corners = await readCornersWithOptions(
         renderingEngine,
-        DISPLAY_AREA_OPTIONS,
-        (viewport) =>
-          viewport.setDisplayArea(viewport.defaultOptions.displayArea)
+        {
+          displayArea: {
+            ...DISPLAY_AREA_OPTIONS.displayArea,
+            storeAsInitialCamera: true,
+          },
+        },
+        () => undefined
       );
 
-      expectCornersClose(corners.plain, LEGACY_DISPLAY_AREA_CORNERS.atMount);
-      expectCornersClose(
-        corners.atMount,
-        LEGACY_DISPLAY_AREA_CORNERS.afterReset
-      );
+      expectCornersClose(corners.plain, LEGACY_DISPLAY_AREA_CORNERS.afterReset);
       expectCornersClose(
         corners.afterReset,
         LEGACY_DISPLAY_AREA_CORNERS.afterReset
+      );
+    });
+
+    it('shows the fit after a reset when the display area of the options has no storeAsInitialCamera', async function () {
+      const corners = await readCornersWithOptions(
+        renderingEngine,
+        DISPLAY_AREA_OPTIONS,
+        () => undefined
+      );
+
+      expectCornersClose(corners.plain, LEGACY_DISPLAY_AREA_CORNERS.afterReset);
+      expectCornersClose(
+        corners.afterReset,
+        LEGACY_DISPLAY_AREA_CORNERS.atMount
       );
     });
 

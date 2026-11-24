@@ -39,7 +39,6 @@ import type {
 import { isImageActor } from '../../../utilities/actorCheck';
 import cache from '../../../cache/cache';
 import type { PlaneRestriction } from '../../../types/IViewport';
-import type ViewportInputOptions from '../../../types/ViewportInputOptions';
 import { deepClone } from '../../../utilities/deepClone';
 import imageIdToURI from '../../../utilities/imageIdToURI';
 import { getImageDataMetadata } from '../../../utilities/getImageDataMetadata';
@@ -91,6 +90,7 @@ import {
   cloneDisplayArea,
   createDefaultPlanarViewState,
   normalizePlanarViewState,
+  withDisplayAreaFraming,
 } from './planarViewState';
 import {
   normalizePlanarScale,
@@ -156,6 +156,8 @@ import type {
   PlanarPayload,
   PlanarDisplaySetDescriptor,
   PlanarSetDataOptions,
+  PlanarViewFraming,
+  PlanarViewFramingSelector,
   PlanarViewportRenderContext,
   PlanarViewportInput,
   PlanarViewportInputOptions,
@@ -391,7 +393,9 @@ type PlanarStackImageLoads = {
 class PlanarViewport extends BaseViewport<
   PlanarViewState,
   PlanarDisplaySetAppearance,
-  PlanarViewportRenderContext
+  PlanarViewportRenderContext,
+  PlanarViewFraming,
+  PlanarViewFramingSelector
 > {
   readonly type = ViewportType.PLANAR;
   readonly renderingEngineId: string;
@@ -399,8 +403,13 @@ class PlanarViewport extends BaseViewport<
   sWidth: number;
   sHeight: number;
   defaultOptions: PlanarViewportInputOptions;
-  options: PlanarViewportInputOptions;
   suppressEvents = false;
+  /**
+   * The display area that `resetViewState` goes back to: the last one given
+   * with `storeAsInitialCamera: true`, in `defaultOptions` or in a view state
+   * patch.
+   */
+  private initialDisplayArea?: PlanarDisplayArea;
   /** Set when a render path draws in `render()` instead of the engine. */
   private drewOutsideEngine = false;
   /**
@@ -510,7 +519,6 @@ class PlanarViewport extends BaseViewport<
     this.sWidth = args.sWidth;
     this.sHeight = args.sHeight;
     this.defaultOptions = cloneViewportOptions(args.defaultOptions || {});
-    this.options = cloneViewportOptions(this.defaultOptions);
     this.suppressEvents = Boolean(this.defaultOptions.suppressEvents);
     this.dataProvider = args.dataProvider || new DefaultPlanarDataProvider();
     this.renderPathResolver =
@@ -648,8 +656,14 @@ class PlanarViewport extends BaseViewport<
         canvas: vtkCanvas,
       },
     };
+    const { displayArea } = this.defaultOptions;
+
+    this.initialDisplayArea = displayArea?.storeAsInitialCamera
+      ? cloneDisplayArea(displayArea)
+      : undefined;
     this.viewState = normalizePlanarViewState({
       ...createDefaultPlanarViewState(),
+      ...withDisplayAreaFraming({ displayArea: cloneDisplayArea(displayArea) }),
       orientation: this.resolveRequestedOrientation(),
     });
     this.setRenderModeVisibility(
@@ -1622,6 +1636,13 @@ class PlanarViewport extends BaseViewport<
    * has no `rotation` mirrors the picture on the screen, as the 5.x flip and
    * `setCamera` did: the rotation becomes 360 minus the rotation for each
    * flip that changes.
+   *
+   * A patch with a defined `displayArea` and none of `scale`, `scaleMode`,
+   * `anchorWorld` and `anchorCanvas` shows the area as it is: scale `[1, 1]`,
+   * the scale mode of the area (`fit` without one), centred. An explicit
+   * field of the patch wins. `{ displayArea: undefined }` clears the area. A
+   * display area with `storeAsInitialCamera: true` becomes the one that
+   * `resetViewState` goes back to.
    */
   public override setViewState(viewStatePatch: Partial<PlanarViewState>): void {
     if (this.isDestroyed) {
@@ -1630,16 +1651,13 @@ class PlanarViewport extends BaseViewport<
 
     const previousCamera = this.getResolvedCameraForEvent();
 
-    if (Object.prototype.hasOwnProperty.call(viewStatePatch, 'displayArea')) {
-      this.options = {
-        ...this.options,
-        displayArea: cloneDisplayArea(viewStatePatch.displayArea),
-      };
+    if (viewStatePatch.displayArea?.storeAsInitialCamera) {
+      this.initialDisplayArea = cloneDisplayArea(viewStatePatch.displayArea);
     }
 
     const next = {
       ...this.viewState,
-      ...viewStatePatch,
+      ...withDisplayAreaFraming(viewStatePatch),
     };
 
     if (!Object.prototype.hasOwnProperty.call(viewStatePatch, 'rotation')) {
@@ -1828,77 +1846,6 @@ class PlanarViewport extends BaseViewport<
     this.setViewState({
       anchorWorld: point ? ([...point] as Point3) : undefined,
     });
-  }
-
-  /**
-   * Applies viewport-level options that affect the planar camera.
-   */
-  setOptions(options: ViewportInputOptions, immediate = false): void {
-    this.options = cloneViewportOptions(options);
-
-    if (this.options.displayArea) {
-      this.setDisplayArea(
-        this.options.displayArea,
-        this.options.suppressEvents ?? false
-      );
-    }
-
-    if (immediate) {
-      this.render();
-    }
-  }
-
-  /**
-   * Resets viewport options to the construction defaults.
-   */
-  reset(immediate = false): void {
-    this.options = cloneViewportOptions(this.defaultOptions);
-
-    if (immediate) {
-      this.render();
-    }
-  }
-
-  /**
-   * Returns the display area of the view state, if any. A display area in
-   * the options of the viewport is not read: the one given at creation stays
-   * in `defaultOptions.displayArea`.
-   */
-  getDisplayArea(): PlanarDisplayArea | undefined {
-    return cloneDisplayArea(this.viewState.displayArea);
-  }
-
-  /**
-   * Stores a display-area declaration on the semantic camera. The shared
-   * planar camera resolver turns it into render-path-specific pan/zoom.
-   */
-  setDisplayArea(displayArea: PlanarDisplayArea, suppressEvents = false): void {
-    const nextDisplayArea = cloneDisplayArea(displayArea);
-
-    if (!nextDisplayArea) {
-      return;
-    }
-
-    this.options = {
-      ...this.options,
-      displayArea: cloneDisplayArea(nextDisplayArea),
-    };
-
-    this.setViewState({
-      anchorCanvas: [0.5, 0.5],
-      anchorWorld: undefined,
-      displayArea: nextDisplayArea,
-      scale: [1, 1],
-      scaleMode: nextDisplayArea.scaleMode ?? 'fit',
-    });
-
-    if (!suppressEvents && !this.suppressEvents) {
-      triggerEvent(this.element, Events.DISPLAY_AREA_MODIFIED, {
-        viewportId: this.id,
-        displayArea: cloneDisplayArea(nextDisplayArea),
-        storeAsInitialCamera: nextDisplayArea.storeAsInitialCamera,
-      });
-    }
   }
 
   /** @deprecated Legacy shim for `getZoom()`. */
@@ -2474,7 +2421,11 @@ class PlanarViewport extends BaseViewport<
   /**
    * Resets the view state back to the viewport defaults.
    *
-   * Navigation state such as the current slice remains unchanged.
+   * Navigation state such as the current slice remains unchanged. A reset of
+   * the pan and the zoom shows the display area that was last given with
+   * `storeAsInitialCamera: true` (in `defaultOptions.displayArea` or in a
+   * view state patch), and clears any other display area, as the legacy
+   * `resetCamera` applied the display area of the options.
    *
    * @param options - Flags controlling which view-state fields are reset.
    * @returns Always `true` for compatibility with legacy viewport contracts.
@@ -2510,6 +2461,10 @@ class PlanarViewport extends BaseViewport<
     if (resetFlip) {
       nextCamera.flipHorizontal = false;
       nextCamera.flipVertical = false;
+    }
+
+    if (resetPan && resetZoom) {
+      nextCamera.displayArea = cloneDisplayArea(this.initialDisplayArea);
     }
 
     this.setViewState(nextCamera);
@@ -4040,7 +3995,6 @@ class PlanarViewport extends BaseViewport<
       viewport: this,
       canvasHeight,
       canvasWidth,
-      displayArea: this.getDisplayArea(),
       frameOfReferenceUID: this.resolveFrameOfReferenceUID(),
       resolvedView: this.getResolvedView(),
       resolveViewState: (viewState) => this.resolveViewState(viewState),

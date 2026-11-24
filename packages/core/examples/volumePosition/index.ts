@@ -168,7 +168,7 @@ addDropdownToToolbar({
       displayArea: Types.DisplayArea;
     };
 
-    viewport.setDisplayArea(area);
+    viewport.setViewState({ displayArea: area });
     viewport.setViewState({ flipHorizontal });
 
     const viewState = viewportProjection.withFraming(viewport, {

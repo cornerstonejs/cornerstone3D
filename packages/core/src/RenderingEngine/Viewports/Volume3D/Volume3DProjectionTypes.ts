@@ -32,6 +32,10 @@ export type Volume3DProjectionFit = {
 export type Volume3DResolvedViewLike = {
   /** The fit of the viewport, when it shows something to fit. */
   fit?: Volume3DProjectionFit;
+  /** The fit of the viewport for a camera that looks in another direction. */
+  getFitFor?(
+    direction: Pick<Volume3DCamera, 'viewPlaneNormal' | 'viewUp'>
+  ): Volume3DProjectionFit | undefined;
   canvasToWorld(canvasPos: Point2): Point3;
   worldToCanvas(worldPos: Point3): Point2;
   getFrameOfReferenceUID(): string | undefined;
@@ -67,6 +71,12 @@ export type Volume3DRenderTarget = Pick<Volume3DViewportRenderContext, 'vtk'>;
  *   of the canvas. It is `[0, 0]` for the fit.
  *
  * Both are missing when the viewport shows nothing to fit.
+ *
+ * `camera` is the camera of the view. A patch with it takes the direction
+ * and the projection of that camera, and then its `zoom` and its `pan`
+ * against the fit of the viewport for that direction, so that
+ * `setViewFraming(getViewFraming())` changes nothing, and gives the same
+ * zoom and pan against the fit on a viewport of another size.
  */
 export interface Volume3DProjectionFraming extends ProjectionFraming {
   camera: Volume3DCamera & ICamera;

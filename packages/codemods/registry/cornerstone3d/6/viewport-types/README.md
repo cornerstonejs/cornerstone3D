@@ -86,9 +86,9 @@ an alias of `Enums`, the namespace import, or `const { ViewportType } = Enums`.
   member in brackets (`Enums.ViewportType['STACK']`); an object with the keys of a
   viewport input that the file does not pass to the engine
   (`not shown to be a viewport input`); a stored
-  `'*Next'` string; `defaultOptions.displayArea` and
-  `defaultOptions.aspectRatio` of a viewport input, which a planar viewport
-  does not apply by itself.
+  `'*Next'` string; `defaultOptions.aspectRatio` of a viewport input, which
+  a planar viewport does not apply by itself (a `defaultOptions.displayArea`
+  is applied: it is the first display area of the view state).
 - Manual, at line 1: `the file was not analysed:` with the reason, for a
   file whose names cannot be looked up (the tool cannot read it, or a name
   is declared twice in one scope). The file stays as it is. See the README

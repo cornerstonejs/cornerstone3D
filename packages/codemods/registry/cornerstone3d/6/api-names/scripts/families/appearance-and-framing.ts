@@ -3,6 +3,7 @@ import {
   declarationNodeOf,
   isStableBinding,
   referencesOf,
+  methodCall,
   staticKeyName,
   topLevelCoreTypes,
   unwrap,
@@ -215,6 +216,28 @@ const SNAPSHOT_TYPES = [
   'WSIProjectionSnapshot',
 ];
 
+/** The texts of the display area of a viewport, word for word in the guide. */
+const DISPLAY_AREA_TEXTS = {
+  setDisplayArea:
+    'use viewport.setViewState({ displayArea }): it shows the area at scale [1, 1], and CAMERA_MODIFIED fires in place of DISPLAY_AREA_MODIFIED',
+  getDisplayArea: 'use viewport.getViewState().displayArea',
+  setOptions:
+    'a viewport has no setOptions: set a display area with viewport.setViewState({ displayArea }); the other options are set once, in defaultOptions at enableElement',
+  reset:
+    'a viewport has no reset: viewport.resetViewState() goes back to the display area of defaultOptions or of setViewState given with storeAsInitialCamera: true',
+  options:
+    'a viewport has no options: read viewport.defaultOptions (the options of enableElement) or viewport.getViewState().displayArea',
+  event:
+    'DISPLAY_AREA_MODIFIED is gone: listen to CAMERA_MODIFIED and read viewport.getViewState().displayArea',
+  undefinedArea:
+    'setDisplayArea did nothing with an undefined area, setViewState({ displayArea: undefined }) clears the display area',
+  setViewState:
+    'setViewState({ displayArea }) without scale, scaleMode, anchorWorld or anchorCanvas shows the area at scale [1, 1]; 6.0.0-beta.2 kept the scale of the view state',
+};
+
+/** The keys of the framing and of its selector that 6.0 deleted: nothing read them. */
+const DEAD_SELECTOR_KEYS = ['slabThickness', 'windowLevel', 'paletteLut'];
+
 /**
  * Framing: the camera part, `ViewFraming` (`getViewFraming`,
  * `setViewFraming`, `viewportProjection.getFraming`, `withFraming`), and
@@ -223,6 +246,19 @@ const SNAPSHOT_TYPES = [
  */
 const framing: Rules = {
   exports: [
+    {
+      namespace: 'Enums.Events',
+      name: 'DISPLAY_AREA_MODIFIED',
+      manual: DISPLAY_AREA_TEXTS.event,
+      value: 'CORNERSTONE_DISPLAY_AREA_MODIFIED',
+    },
+    ...['DisplayAreaModifiedEvent', 'DisplayAreaModifiedEventDetail'].map(
+      (name): ExportRule => ({
+        namespace: 'Types.EventTypes',
+        name,
+        manual: DISPLAY_AREA_TEXTS.event,
+      })
+    ),
     ...Object.entries(FRAMING_TYPES).map(
       ([name, to]): ExportRule => ({ name, to })
     ),
@@ -254,6 +290,21 @@ const framing: Rules = {
     },
   ],
   members: [
+    ...(
+      [
+        'setDisplayArea',
+        'getDisplayArea',
+        'setOptions',
+        'reset',
+        'options',
+      ] as const
+    ).map(
+      (name): MemberRule => ({
+        receiver: 'viewport',
+        name,
+        manual: DISPLAY_AREA_TEXTS[name],
+      })
+    ),
     ...SNAPSHOT_TYPES.map(
       (type): MemberRule => ({
         receiver: { type },
@@ -284,6 +335,30 @@ const framing: Rules = {
       { in: { call: 'viewportProjection.register', argument: 0 }, key, to },
       { in: { type: 'ViewportProjectionAdapter' }, key, to },
     ]),
+    ...DEAD_SELECTOR_KEYS.flatMap((key): KeyRule[] => [
+      {
+        in: { receiver: 'viewport', method: 'getViewFraming', argument: 0 },
+        key,
+        remove: true,
+      },
+      {
+        in: { call: 'viewportProjection.getFraming', argument: 1 },
+        key: `selector.${key}`,
+        remove: true,
+      },
+      { in: { type: 'ViewFramingSelector' }, key, remove: true },
+    ]),
+    {
+      in: { receiver: 'viewport', method: 'setViewFraming', argument: 0 },
+      key: 'slabThickness',
+      remove: true,
+    },
+    { in: { type: 'ViewFraming' }, key: 'slabThickness', remove: true },
+    {
+      in: { receiver: 'viewport', method: 'setViewState', argument: 0 },
+      key: 'displayArea',
+      review: DISPLAY_AREA_TEXTS.setViewState,
+    },
   ],
 };
 
@@ -1261,11 +1336,108 @@ function rewriteSnapshotFraming(run: Run): void {
   }
 }
 
+/** The calls of the display area of a viewport and the text that replaces them. */
+const DISPLAY_AREA_CALLS: Record<
+  string,
+  { arity: number; text: (args: string[]) => string }
+> = {
+  setDisplayArea: {
+    arity: 1,
+    text: ([area]) =>
+      area === 'displayArea'
+        ? 'setViewState({ displayArea })'
+        : `setViewState({ displayArea: ${area} })`,
+  },
+  getDisplayArea: { arity: 0, text: () => 'getViewState().displayArea' },
+};
+
+/**
+ * Rewrites the display area calls of a viewport that the file shows, also
+ * by its type: `viewport.setDisplayArea(area)` becomes
+ * `viewport.setViewState({ displayArea: area })`, which shows the area as
+ * the setter did, and `viewport.getDisplayArea()` becomes
+ * `viewport.getViewState().displayArea`. An area that is not an object
+ * literal can be undefined, where the setter did nothing and `setViewState`
+ * clears the area: that rewrite is listed for review. A call with other
+ * arguments (the `suppressEvents` of the setter) is reported; a member that
+ * is not called is the table's to report.
+ */
+function rewriteDisplayArea(run: Run): void {
+  for (const call of run.rootNode.findAll({
+    rule: {
+      kind: 'call_expression',
+      has: {
+        field: 'function',
+        kind: 'member_expression',
+        has: {
+          field: 'property',
+          regex: `^(${Object.keys(DISPLAY_AREA_CALLS).join('|')})$`,
+        },
+      },
+    },
+  })) {
+    const parts = methodCall(call);
+
+    if (
+      !parts ||
+      run.handled.has(parts.property.range().start.index) ||
+      (receiverEvidence(parts.object, 'viewport') !== 'proven' &&
+        !isTypedViewport(parts.object))
+    ) {
+      continue;
+    }
+
+    const { args, method, property } = parts;
+    const { arity, text } = DISPLAY_AREA_CALLS[method];
+    const label = method as keyof typeof DISPLAY_AREA_TEXTS;
+
+    run.handled.add(property.range().start.index);
+
+    if (
+      args.length !== arity ||
+      args.some((arg) => arg.kind() === 'spread_element')
+    ) {
+      report(run, 'manual', `${method}: ${DISPLAY_AREA_TEXTS[label]}`, call);
+      continue;
+    }
+
+    const replacement = text(args.map((arg) => arg.text()));
+
+    if (
+      !run.edits.add({
+        startPos: property.range().start.index,
+        endPos: call.range().end.index,
+        insertedText: replacement,
+      })
+    ) {
+      report(
+        run,
+        'manual',
+        `${method}: another rewrite of the line overlaps it, ${DISPLAY_AREA_TEXTS[label]}`,
+        call
+      );
+      continue;
+    }
+
+    noteRewritten(run, `${method} -> ${replacement}`, call);
+
+    if (method === 'setDisplayArea' && unwrap(args[0]).kind() !== 'object') {
+      report(
+        run,
+        'review',
+        `setDisplayArea: ${DISPLAY_AREA_TEXTS.undefinedArea}`,
+        call
+      );
+    }
+  }
+}
+
 /**
  * The rewrites of the framing that no table entry says: the module of the
- * framing of the tools and the `presentation` of a projection snapshot. The
- * names of the framing imported from a subpath of the core and each
- * projection adapter of the application are reported.
+ * framing of the tools, the `presentation` of a projection snapshot and the
+ * display area calls of a viewport. The names of the framing imported from
+ * a subpath of the core and each projection adapter of the application are
+ * reported.
  */
 function rewriteFraming(run: Run): void {
   const taken = rewriteModulePaths(run, FRAMING_MODULES, {});
@@ -1273,6 +1445,7 @@ function rewriteFraming(run: Run): void {
   reportSubpathNames(run, taken, FRAMING_SUBPATH_NAMES);
   rewriteSnapshotFraming(run);
   reportProjectionAdapters(run);
+  rewriteDisplayArea(run);
 }
 
 /**

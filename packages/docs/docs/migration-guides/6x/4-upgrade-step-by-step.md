@@ -662,10 +662,15 @@ the framing gives zoom 1 and pan `[0, 0]`.
   `{ resetPan, resetZoom, resetOrientation, resetFlip }`, and each defaults
   to true.
 - A camera that was set to move through slices is step 6.
-- A display area in the options of a viewport is not applied by itself. Call
-  `viewport.setViewState({ displayArea })` after the mount. `getDisplayArea()`
-  reads the view state only; code that read the option back through it reads
-  `viewport.defaultOptions.displayArea`.
+- The display area is a key of the view state:
+  `viewport.setViewState({ displayArea })` in place of `setDisplayArea`, and
+  `viewport.getViewState().displayArea` in place of `getDisplayArea()` (the
+  codemod rewrites both). A display area in the options of a viewport is the
+  first one of its view state, and with `storeAsInitialCamera: true` it is
+  the one that `resetViewState()` shows. Listen to `CAMERA_MODIFIED` in place
+  of `DISPLAY_AREA_MODIFIED`. To store a view and show it again, also on a
+  viewport of another size, keep `viewport.getViewFraming()` and give it to
+  `setViewFraming`.
 - A stretch is `viewport.setViewState({ scale: [x, y] })`. `getAspectRatio()`
   of a planar viewport reads it back as the pair divided by its smaller
   number, as in 5.x. The legacy `setAspectRatio([w, h], { fit: true })` is
@@ -1252,8 +1257,8 @@ first, and take its two lists as the start of the work.
    application pass. The search of the step prints nothing, or only lines
    that you list with the reason. Then do the check of the step. A search
    also finds names that stay, such as `setOrientation`, `setImageIdIndex`,
-   `scroll`, `getActors`, `setZoom` and `setDisplayArea` (the map says
-   "Same name"), and calls in comments: list those as such.
+   `scroll`, `getActors` and `setZoom` (the map says "Same name"), and calls
+   in comments: list those as such.
 9. **Stop and ask** at each row of
    [Changes that need a decision by a person](#changes-that-need-a-decision-by-a-person)
    that the code touches. Say what you found, where, and what the choices

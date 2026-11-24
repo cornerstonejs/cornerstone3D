@@ -7,7 +7,6 @@ import type ICamera from './ICamera';
 import type IImage from './IImage';
 import type IImageVolume from './IImageVolume';
 import type ViewportStatus from '../enums/ViewportStatus';
-import type DisplayArea from './displayArea';
 import type IImageCalibration from './IImageCalibration';
 import type { IViewport } from './IViewport';
 import type { PlanarDisplaySetAppearance } from '../RenderingEngine/Viewports/Planar/PlanarViewportTypes';
@@ -103,20 +102,6 @@ interface DisplaySetAppearanceChangedEventDetail<
   overrides: Partial<TAppearance>;
   /** The effective values after the change: the overrides over the defaults */
   effective: TAppearance;
-}
-
-/**
- * DISPLAY_AREA_MODIFIED Event's data
- */
-interface DisplayAreaModifiedEventDetail {
-  /** Viewport Unique ID in the renderingEngine */
-  viewportId: string;
-  /** new display area */
-  displayArea: DisplayArea;
-  /** Unique ID for the volume in the cache */
-  volumeId?: string;
-  /** Whether displayArea was stored as initial view */
-  storeAsInitialCamera?: boolean;
 }
 
 /**
@@ -393,11 +378,6 @@ type DisplaySetAppearanceChangedEvent<
 > = CustomEventType<DisplaySetAppearanceChangedEventDetail<TAppearance>>;
 
 /**
- * DISPLAY_AREA_MODIFIED Event type
- */
-type DisplayAreaModifiedEvent = CustomEventType<DisplayAreaModifiedEventDetail>;
-
-/**
  * ELEMENT_DISABLED Event type
  */
 type ElementDisabledEvent = CustomEventType<ElementDisabledEventDetail>;
@@ -507,8 +487,6 @@ export type {
   DisplaySetAppearanceChangeCause,
   DisplaySetAppearanceChangedEvent,
   DisplaySetAppearanceChangedEventDetail,
-  DisplayAreaModifiedEvent,
-  DisplayAreaModifiedEventDetail,
   ElementDisabledEvent,
   ElementDisabledEventDetail,
   ElementEnabledEvent,

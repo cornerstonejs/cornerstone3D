@@ -193,7 +193,7 @@ export default function renderToCanvasGPU(
 
     shown.then(() => {
       viewport.resetViewState();
-      viewport.setDisplayArea(viewportOptions.displayArea);
+      viewport.setViewState({ displayArea: viewportOptions.displayArea });
 
       if (viewReference) {
         viewport.setViewReference(viewReference);

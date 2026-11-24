@@ -12,6 +12,7 @@ import type { ViewportFidelityState } from './ViewportFidelity';
 import type { BaseViewportOptions } from '../RenderingEngine/Viewports/BaseViewport';
 import type ResolvedViewportView from '../RenderingEngine/Viewports/ResolvedViewportView';
 import type { ProjectionWriteOptions } from '../RenderingEngine/Viewports/ViewportProjectionTypes';
+import type { PlanarDisplayArea } from '../RenderingEngine/Viewports/Planar/PlanarViewportTypes';
 /**
  * Specifies what view to get a reference for.
  * This set of options allows a Viewport to return a reference for an image
@@ -378,12 +379,6 @@ export interface ViewReference {
  */
 export interface ViewFraming {
   /**
-   * The slice thickness - in frames(true/default) it will be 1 for a frame distance of
-   * 1 pixel thickness, while for mm will be in mm distance.
-   */
-  slabThickness?: number;
-
-  /**
    * The rotation of the view - this is related to cameraViewUp, but is relative
    * to the viewNormal and the default viewUp for that viewNormal.
    */
@@ -391,9 +386,10 @@ export interface ViewFraming {
 
   /**
    * The display area being shown.  This is more consistent than applying a set
-   * of boundary areas.
+   * of boundary areas. On a planar viewport it is a `PlanarDisplayArea`,
+   * whose scale can be a point.
    */
-  displayArea?: DisplayArea;
+  displayArea?: DisplayArea | PlanarDisplayArea;
 
   /**
    * The zoom value is a zoom factor relative either to fit to canvas or relative
@@ -433,11 +429,12 @@ export interface ViewFraming {
  * object to be used to specify which framing attributes are to be used.
  *
  * For example, a synchronizer might choose to use a framing selector
- * so that multiple viewports could specify to synchronizer, say slabThickness
- * and windowLevel across one set, while a different synchronizer would choose
- * to apply zoom and pan.
+ * so that multiple viewports could specify to synchronizer, say rotation
+ * across one set, while a different synchronizer would choose to apply zoom
+ * and pan.
  * Then, a resize operation might choose to synchronize display area, zoom and pan, but
- * not window level or slab thickness.
+ * not rotation. The slab thickness and the window are not part of the
+ * framing: they are the appearance of a display set.
  * A store/remember state of viewport might choose to synchronize everything
  * Individual tools might choose to use synchronization of the specific attribute
  * which they are modifying (such as rotation) for history undo/redo, but use the
@@ -448,8 +445,6 @@ export interface ViewFraming {
  * share particular sets for different uses.
  */
 export interface ViewFramingSelector {
-  slabThickness?: number;
-  // Camera relative parameters
   rotation?: boolean;
   displayArea?: boolean;
   zoom?: boolean;
@@ -457,9 +452,6 @@ export interface ViewFramingSelector {
   aspectRatio?: boolean;
   flipHorizontal?: boolean;
   flipVertical?: boolean;
-  // Transfer function relative parameters
-  windowLevel?: boolean;
-  paletteLut?: boolean;
 }
 
 /**
@@ -511,8 +503,16 @@ type ViewportContentMode =
  * any object.
  * @typeParam TAppearance - The appearance of a display set of the
  * family.
+ * @typeParam TFraming - The framing of the family, `PlanarViewFraming` on a
+ * planar viewport. The bare name takes the general `ViewFraming`.
+ * @typeParam TFramingSelector - The selector of the framing of the family.
  */
-interface IViewport<TViewState extends object = object, TAppearance = unknown> {
+interface IViewport<
+  TViewState extends object = object,
+  TAppearance = unknown,
+  TFraming extends ViewFraming = ViewFraming,
+  TFramingSelector extends ViewFramingSelector = ViewFramingSelector,
+> {
   /** The id of the viewport in its rendering engine. */
   readonly id: string;
   /** The element that the viewport draws in. */
@@ -598,10 +598,10 @@ interface IViewport<TViewState extends object = object, TAppearance = unknown> {
    * against the fit, which another viewport can take. Undefined while the
    * viewport shows nothing.
    */
-  getViewFraming(selector?: ViewFramingSelector): ViewFraming | undefined;
+  getViewFraming(selector?: TFramingSelector): TFraming | undefined;
   /** Sets the framing of the view as one change of the view state. */
   setViewFraming(
-    framing: Partial<ViewFraming>,
+    framing: Partial<TFraming>,
     options?: ProjectionWriteOptions
   ): void;
 

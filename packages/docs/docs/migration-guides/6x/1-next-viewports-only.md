@@ -447,8 +447,9 @@ Not carried over:
 - a `callback` and an `actorUID` on a volume or stack input;
 - a preset on a slice viewport;
 - a display area and an aspect ratio on a 3D viewport;
-- options that change after creation (`setOptions`, `reset`) on the 3D, video,
-  whole slide and ECG viewports;
-- a stored initial camera (`storeAsInitialCamera`).
+- options that change after creation (`options`, `setOptions`, `reset`) on
+  every viewport;
+- a stored initial camera: `storeAsInitialCamera` of a display area only
+  names the display area that `resetViewState()` shows.
 
 [Rendering changes](./2-rendering-changes.md) has the call for each one.

@@ -81,8 +81,9 @@ properties, the actor members, `getSliceViewInfo`,
 `getSliceIndexForImage` (5.x took a view reference too and gave `undefined`
 for a missing image, where `getImageIds().indexOf(imageId)` gives -1), writes
 of a
-renamed property, the properties `requestedType`, `options`, `scaling` and
-the others of the map, and the removed helpers of the core
+renamed property, the properties `requestedType`, `scaling` and
+the others of the map (`options`, `setOptions` and `reset` are reported by
+the `api-names` step, with the text of the guide), and the removed helpers of the core
 (`viewportSupportsStackCompatibility`, `getImageLegacy`, `scrollVolume`,
 `getVolumeViewportScrollInfo` and the others), also in an
 `export { ... } from '@cornerstonejs/core'`, and

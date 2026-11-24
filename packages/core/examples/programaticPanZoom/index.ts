@@ -133,11 +133,13 @@ addButtonToToolbar({
 
     // Get the stack viewport
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
-    viewport.setDisplayArea({
-      imageArea: [1.1, 1.1],
-      imageCanvasPoint: {
-        imagePoint: [0, 0.5],
-        canvasPoint: [0, 0.5],
+    viewport.setViewState({
+      displayArea: {
+        imageArea: [1.1, 1.1],
+        imageCanvasPoint: {
+          imagePoint: [0, 0.5],
+          canvasPoint: [0, 0.5],
+        },
       },
     });
     viewport.render();
@@ -152,11 +154,13 @@ addButtonToToolbar({
 
     // Get the stack viewport
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
-    viewport.setDisplayArea({
-      imageArea: [1.1, 1.1],
-      imageCanvasPoint: {
-        imagePoint: [1, 0.5],
-        canvasPoint: [1, 0.5],
+    viewport.setViewState({
+      displayArea: {
+        imageArea: [1.1, 1.1],
+        imageCanvasPoint: {
+          imagePoint: [1, 0.5],
+          canvasPoint: [1, 0.5],
+        },
       },
     });
     viewport.render();
@@ -171,11 +175,13 @@ addButtonToToolbar({
 
     // Get the stack viewport
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
-    viewport.setDisplayArea({
-      imageArea: [1.1, 1.1],
-      imageCanvasPoint: {
-        imagePoint: [0.5, 0],
-        canvasPoint: [0.5, 0],
+    viewport.setViewState({
+      displayArea: {
+        imageArea: [1.1, 1.1],
+        imageCanvasPoint: {
+          imagePoint: [0.5, 0],
+          canvasPoint: [0.5, 0],
+        },
       },
     });
     viewport.render();
@@ -190,11 +196,13 @@ addButtonToToolbar({
 
     // Get the stack viewport
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
-    viewport.setDisplayArea({
-      imageArea: [1.1, 1.1],
-      imageCanvasPoint: {
-        imagePoint: [0.5, 1],
-        canvasPoint: [0.5, 1],
+    viewport.setViewState({
+      displayArea: {
+        imageArea: [1.1, 1.1],
+        imageCanvasPoint: {
+          imagePoint: [0.5, 1],
+          canvasPoint: [0.5, 1],
+        },
       },
     });
     viewport.render();
@@ -209,11 +217,13 @@ addButtonToToolbar({
 
     // Get the stack viewport
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
-    viewport.setDisplayArea({
-      imageArea: [getRand(0.5, 1.5), getRand(0.5, 1.5)],
-      imageCanvasPoint: {
-        imagePoint: [getRand(0.5, 1.5), getRand(0.5, 1.5)],
-        canvasPoint: [getRand(0.5, 1.5), getRand(0.5, 1.5)],
+    viewport.setViewState({
+      displayArea: {
+        imageArea: [getRand(0.5, 1.5), getRand(0.5, 1.5)],
+        imageCanvasPoint: {
+          imagePoint: [getRand(0.5, 1.5), getRand(0.5, 1.5)],
+          canvasPoint: [getRand(0.5, 1.5), getRand(0.5, 1.5)],
+        },
       },
     });
     viewport.render();

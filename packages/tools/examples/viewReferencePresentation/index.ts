@@ -254,7 +254,7 @@ addDropdownToToolbar({
   },
   onSelectedValueChange: (value) => {
     const displayArea = displayAreaOptions.get(value);
-    viewport.setDisplayArea(displayArea);
+    viewport.setViewState({ displayArea });
     viewport.render();
   },
 });

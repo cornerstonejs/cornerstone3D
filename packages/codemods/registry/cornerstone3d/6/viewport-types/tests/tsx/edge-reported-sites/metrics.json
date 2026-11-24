@@ -43,14 +43,6 @@
     {
       "cardinality": {
         "file": "input.tsx",
-        "line": "44",
-        "rule": "defaultOptions.displayArea"
-      },
-      "count": 1
-    },
-    {
-      "cardinality": {
-        "file": "input.tsx",
         "line": "49",
         "rule": "'planarNext'"
       },

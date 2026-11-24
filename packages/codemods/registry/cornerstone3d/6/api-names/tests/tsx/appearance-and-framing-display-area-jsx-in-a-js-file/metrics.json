@@ -1,0 +1,22 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.js",
+        "line": "10",
+        "rule": "Events.DISPLAY_AREA_MODIFIED: DISPLAY_AREA_MODIFIED is gone: listen to CAMERA_MODIFIED and read viewport.getViewState().displayArea"
+      },
+      "count": 1
+    }
+  ],
+  "cornerstone3d-6-review": [
+    {
+      "cardinality": {
+        "file": "input.js",
+        "line": "6",
+        "rule": "setDisplayArea: setDisplayArea did nothing with an undefined area, setViewState({ displayArea: undefined }) clears the display area"
+      },
+      "count": 1
+    }
+  ]
+}

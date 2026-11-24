@@ -1,0 +1,78 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "12",
+        "rule": "setDisplayArea: use viewport.setViewState({ displayArea }): it shows the area at scale [1, 1], and CAMERA_MODIFIED fires in place of DISPLAY_AREA_MODIFIED"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "14",
+        "rule": "setDisplayArea: use viewport.setViewState({ displayArea }): it shows the area at scale [1, 1], and CAMERA_MODIFIED fires in place of DISPLAY_AREA_MODIFIED"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "15",
+        "rule": "setDisplayArea: use viewport.setViewState({ displayArea }): it shows the area at scale [1, 1], and CAMERA_MODIFIED fires in place of DISPLAY_AREA_MODIFIED"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "16",
+        "rule": "getDisplayArea: use viewport.getViewState().displayArea"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "20",
+        "rule": "getDisplayArea: use viewport.getViewState().displayArea"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "20",
+        "rule": "options: a viewport has no options: read viewport.defaultOptions (the options of enableElement) or viewport.getViewState().displayArea"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "23",
+        "rule": "Events.DISPLAY_AREA_MODIFIED: DISPLAY_AREA_MODIFIED is gone: listen to CAMERA_MODIFIED and read viewport.getViewState().displayArea"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "24",
+        "rule": "'CORNERSTONE_DISPLAY_AREA_MODIFIED'"
+      },
+      "count": 1
+    }
+  ],
+  "cornerstone3d-6-review": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "13",
+        "rule": "setDisplayArea: setDisplayArea did nothing with an undefined area, setViewState({ displayArea: undefined }) clears the display area"
+      },
+      "count": 1
+    }
+  ]
+}

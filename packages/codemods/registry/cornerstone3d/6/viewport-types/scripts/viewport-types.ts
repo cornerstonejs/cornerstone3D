@@ -552,7 +552,8 @@ function rewriteString(run: Run, node: Node, value: string): void {
 
 /**
  * Reports the viewport options that a planar viewport does not apply by
- * itself.
+ * itself. A `displayArea` is applied: it is the first display area of the
+ * view state.
  */
 function reportInputOptions(run: Run, typePair: Node): void {
   const objectNode = typePair.parent();
@@ -571,7 +572,7 @@ function reportInputOptions(run: Run, typePair: Node): void {
 
   const { pairs, shorthand } = objectEntries(options);
 
-  for (const key of ['displayArea', 'aspectRatio']) {
+  for (const key of ['aspectRatio']) {
     const entry = pairs.get(key) ?? (shorthand.has(key) ? options : undefined);
 
     if (entry) {

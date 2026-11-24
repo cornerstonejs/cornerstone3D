@@ -46,7 +46,6 @@ export type PlanarResolvedViewLike = {
 export type PlanarProjectionViewport = {
   type: ViewportType | string;
   element?: HTMLDivElement;
-  getDisplayArea?(): PlanarDisplayArea | undefined;
   getFrameOfReferenceUID?(): string | undefined;
   getResolvedView?(args?: {
     frameOfReferenceUID?: string;

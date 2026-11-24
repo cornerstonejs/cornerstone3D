@@ -578,21 +578,64 @@ getEffectiveDisplaySetAppearance for what is drawn, the defaults included".
 
 ## Display area and stretch
 
-- **The display area is a key of the view state.**
-  `viewport.setViewState({ displayArea })` sets it after the mount.
-  `setDisplayArea(displayArea)` does the same and fires
-  `DISPLAY_AREA_MODIFIED`.
-- **A `displayArea` in the options of a viewport is not applied by itself.**
-  The picture follows the view state only, at the mount and after
-  `resetViewState()`.
-- **`getDisplayArea()` answers from the view state only.** It is undefined
-  until a display area is set in the view state, even when the options of
-  the viewport have one, and so is the `displayArea` of
-  `viewportProjection.getFraming(viewport)`. On a 5.x viewport it
-  returned the display area of the options. The display area given at
-  `enableElement` is still there as `viewport.defaultOptions.displayArea`:
-  to show it, call `viewport.setDisplayArea(viewport.defaultOptions.displayArea)`
-  after the mount.
+- **The display area lives only in the view state.**
+  `viewport.setViewState({ displayArea })` sets it,
+  `viewport.getViewState().displayArea` reads it, and
+  `viewport.setViewState({ displayArea: undefined })` clears it. A planar
+  viewport has no `setDisplayArea()`, `getDisplayArea()`, `options`,
+  `setOptions()` or `reset()` any more, and `Events.DISPLAY_AREA_MODIFIED` is
+  gone: a change of the display area fires `CAMERA_MODIFIED` when the picture
+  moves, and a listener reads `viewport.getViewState().displayArea`. The
+  codemod rewrites the two calls.
+
+  ```js
+  // Before
+  viewport.setDisplayArea(displayArea);
+  const shown = viewport.getDisplayArea();
+  element.addEventListener(Events.DISPLAY_AREA_MODIFIED, onArea);
+
+  // After
+  viewport.setViewState({ displayArea });
+  const shown = viewport.getViewState().displayArea;
+  element.addEventListener(Events.CAMERA_MODIFIED, () =>
+    onArea(viewport.getViewState().displayArea)
+  );
+  ```
+
+- **A display area shows as it is.** A patch with a display area and none of
+  `scale`, `scaleMode`, `anchorWorld` and `anchorCanvas` sets `scale: [1, 1]`,
+  `scaleMode: displayArea.scaleMode ?? 'fit'`, `anchorWorld: undefined` and
+  `anchorCanvas: [0.5, 0.5]`, as `setDisplayArea` did. A key of the patch
+  wins: `setViewState({ displayArea, scale: [2, 2] })` shows the display area
+  twice as large. Before this change `setViewState({ displayArea })` merged,
+  and a scale that the view state already had multiplied the display area.
+- **The display area of the options is the first display area of the view
+  state.** `defaultOptions.displayArea` of `enableElement` shows from the
+  first draw, and `viewport.getViewState().displayArea` gives it. Before this
+  change the option was not applied, as a 5.x stack viewport did not apply it
+  at `setStack`, and code called
+  `viewport.setDisplayArea(viewport.defaultOptions.displayArea)` after the
+  mount; that call can go.
+- **`storeAsInitialCamera: true` makes the display area the one of a
+  reset.** `resetViewState()` (with `resetPan` and `resetZoom`) shows the
+  last display area given with `storeAsInitialCamera: true`, in
+  `defaultOptions` or in `setViewState`, and clears any other display area,
+  as the legacy `resetCamera` applied the display area of the options. Zoom 1
+  and pan `[0, 0]` are still the fit, not the display area.
+
+  ```js
+  renderingEngine.enableElement({
+    viewportId,
+    type: ViewportType.PLANAR,
+    element,
+    defaultOptions: {
+      displayArea: { imageArea: [0.5, 0.5], storeAsInitialCamera: true },
+    },
+  });
+  // After a zoom and a pan of the user:
+  viewport.resetViewState(); // shows the display area again
+  ```
+
 - **A display area of `type: 'SCALE'` reads its `scale` against the fit.** A
   scale of 1 is the fit of the picture. On a legacy viewport 1 meant one
   image pixel on one screen pixel. The scale of the view state multiplies
@@ -610,33 +653,79 @@ getEffectiveDisplaySetAppearance for what is drawn, the defaults included".
   work this way, in stack mode and in volume mode. Before this change the
   display area stayed: a pan did nothing and a zoom was multiplied by the
   zoom of the display area. To set a display area again, call
-  `viewport.setDisplayArea(displayArea)`. `setPan(pan)` and `setZoom(zoom)`
+  `viewport.setViewState({ displayArea })`. `setPan(pan)` and `setZoom(zoom)`
   of a planar viewport work the same way, so `setPan(getPan())` and
   `setZoom(getZoom())` keep the picture, as on a legacy viewport. Before this
   change `setPan` dropped the zoom back to the fit and `setZoom` lost the pan.
-- **A zoom next to a display area is against the fit.** In
-  `viewportProjection.withFraming(viewport, { displayArea, zoom })` the
-  `zoom`, and a `scale`, are measured against the fit, as `getFraming`
-  reads them: the display area places the picture, at that zoom. A patch
-  with a display area and no `zoom` and no `scale` shows the display area at
-  its own size. So writing back a framing that was read gives the same
-  view, as the legacy
-  `setViewPresentation(getViewPresentation())` did. A `pan` in the same patch
-  decides where the picture is, and the display area gives way to it: after
-  it `viewport.getViewState().displayArea` is undefined. Before this change a
-  zoom in the patch multiplied the zoom of the display area, so a
-  framing of zoom 2 written back gave zoom 4.
-- **`setViewState({ displayArea })` merges.** A scale that the view state
-  already has stays and multiplies the display area.
-  `setDisplayArea(displayArea)` resets the scale first.
+- **A display area in a framing decides where the picture is.** In
+  `viewport.setViewFraming({ displayArea, pan })` the display area places the
+  picture and the pan is not used; after it
+  `viewport.getViewState().displayArea` is the display area. Before this
+  change the pan won and the display area was dropped, so a framing that was
+  read with its display area lost the display area when it was written back.
+  A `zoom` or a `scale` next to the display area is measured against the
+  fit, as `getViewFraming` reads them. A patch with a display area and no
+  `zoom`, `scale` or `fitScale` shows the display area as it is.
+- **The framing keeps how the view fits.** The framing of a planar viewport
+  has `scaleMode` and `fitScale`: the scale mode and the scale of the view
+  state, which is measured against the display area when there is one,
+  against the fit of the stretched picture for `scaleMode: 'fitAspect'`, and
+  against the fit otherwise. `zoom`, `scale` and `pan` stay those of the
+  picture against the fit, as tools read them. A `fitScale` in a patch wins
+  over `scale` and `zoom`. So `viewport.setViewFraming(viewport.getViewFraming())`
+  changes no pixel, in every scale mode and with a stretch, also after a
+  resize, and the framing of one viewport gives another viewport of another
+  size the same fit: a display area that fits the width fits the width there.
+  Before this change the framing had no scale mode, its writer set
+  `scaleMode: 'fit'`, and its `scale` was taken against the fit of the
+  viewport it was written to.
+
+  ```js
+  // Before: kept the keys of the view state to restore a view
+  const saved = pick(viewport.getViewState(), [
+    'displayArea',
+    'anchorWorld',
+    'anchorCanvas',
+    'scale',
+    'scaleMode',
+    'rotation',
+    'flipHorizontal',
+    'flipVertical',
+  ]);
+  other.setViewState({ displayArea: undefined, ...saved });
+
+  // After
+  const framing = viewport.getViewFraming();
+  other.setViewFraming(framing);
+  ```
+
+- **The framing of a 3D viewport goes to a viewport of another size.** Its
+  `camera` gives the direction, and its `zoom` and `pan` are applied against
+  the fit of the viewport it is written to, for that direction. On the same
+  viewport `setViewFraming(getViewFraming())` changes no pixel. Before this
+  change the camera was applied as it was, so on a viewport of another size
+  the zoom against the fit changed.
+- **The framing has no slab thickness and no window.** `slabThickness` of
+  `ViewFraming` and `slabThickness`, `windowLevel` and `paletteLut` of
+  `ViewFramingSelector` are gone; nothing read them. The slab thickness and
+  the window are the appearance of a display set
+  (`viewport.getDisplaySetAppearance(displaySetId)`).
+- **`getViewFraming` has the framing of the family.** On a planar viewport it
+  takes a `PlanarViewFramingSelector` and gives a `PlanarViewFraming`, so
+  `viewport.getViewFraming({ scale: true })?.scale` needs no cast; on a 3D
+  viewport it gives the `Volume3DProjectionFraming` with its `camera`.
+  `Types.IViewport` takes the framing as type parameters and gives the
+  general `ViewFraming` without them.
 - **A turn after a pan turns the picture about its own centre.** A pan set
   through `viewportProjection.withFraming(viewport, { zoom, pan })` stays
   through a later rotation, so the picture turns about its own centre. The
   legacy `setCamera({ focalPoint, position, parallelScale })` kept a world
   point at the centre of the canvas, so a later rotation turned the picture
   about the centre of the canvas.
-- **No `storeAsInitialCamera`.** Zoom 1 and pan `[0, 0]` are always the fit.
-  A display area does not change the interpolation either.
+- **No stored initial camera.** Zoom 1 and pan `[0, 0]` are always the fit.
+  `storeAsInitialCamera` of a display area only makes it the display area of
+  `resetViewState()`. A display area does not change the interpolation
+  either.
 - **A stretch is the scale pair of the view state.**
   `viewport.setViewState({ scale: [x, y] })` stretches the picture, in stack
   mode and in volume mode, on the GPU and on the CPU.
@@ -1989,9 +2078,10 @@ is one, see [Functions of the core package](./3-api-map.md#functions-of-the-core
 - **No `setOptions()` and no `reset()`** on the 3D, video, whole slide and ECG
   viewports. The options that a viewport was made with are in
   `defaultOptions`, and they do not change. Change the view through the view
-  state, and the look through the appearance. A planar viewport still has
-  `options`, `setOptions()` and `reset()` from 5.x. Do not use them in new
-  code.
+  state, and the look through the appearance. A planar viewport has none of
+  them either: `viewport.setViewState({ displayArea })` sets a display area,
+  and `resetViewState()` goes back to the one given with
+  `storeAsInitialCamera: true`.
 - **`isDestroyed` in place of `isDisabled`.** `viewport.isDestroyed` is true
   after `disableElement`, on every family, and it is read only. A next
   viewport has no `isDisabled`.

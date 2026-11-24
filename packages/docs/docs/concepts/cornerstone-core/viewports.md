@@ -84,11 +84,12 @@ Every viewport is created via the `RenderingEngine` API.
 
 ## Initial Display Area
 
-A planar viewport takes a display area: `viewport.setDisplayArea(displayArea)`,
-or the key `displayArea` of its view state. It can be used to programmatically set
+A planar viewport takes a display area as the key `displayArea` of its view
+state: `viewport.setViewState({ displayArea })`. It can be used to programmatically set
 the zoom and pan on an image. By default, the viewport will fit the dicom image to
-the screen. A display area in the options of a viewport is not applied by itself:
-set it after the data is shown. The `displayArea` takes a `DisplayArea` type which
+the screen. A display area in the options of a viewport (`defaultOptions.displayArea`)
+is the first one of its view state, and with `storeAsInitialCamera: true` it is the
+one that `resetViewState()` shows. The `displayArea` takes a `DisplayArea` type which
 has the following fields.
 
 ```js

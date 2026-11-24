@@ -43,14 +43,6 @@
     {
       "cardinality": {
         "file": "input.js",
-        "line": "43",
-        "rule": "defaultOptions.displayArea"
-      },
-      "count": 1
-    },
-    {
-      "cardinality": {
-        "file": "input.js",
         "line": "48",
         "rule": "'planarNext'"
       },

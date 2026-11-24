@@ -257,13 +257,32 @@ export type PlanarViewportInputOptions = Omit<
   displayArea?: PlanarDisplayArea;
 };
 
-export interface PlanarViewFraming extends Omit<ViewFraming, 'displayArea'> {
+/**
+ * The framing of a planar view. `zoom`, `scale` and `pan` describe the
+ * picture on the screen against the plain fit of the slice, as tools read
+ * and write them. `scaleMode` and `fitScale` describe how the view fits the
+ * canvas, so that `setViewFraming(getViewFraming())` changes no pixel, and
+ * on a viewport of another size gives the same fit.
+ */
+export interface PlanarViewFraming extends ViewFraming {
   displayArea?: PlanarDisplayArea;
+  /** The scale of each canvas axis against the plain fit of the slice. */
   scale?: Point2;
+  /** The scale mode of the view state. */
+  scaleMode?: CameraScaleMode;
+  /**
+   * The scale of the view state: against the display area when there is
+   * one, against the fit of the stretched slice for `scaleMode: 'fitAspect'`,
+   * and against the plain fit otherwise. A patch with it takes it in place of
+   * `scale` and `zoom`.
+   */
+  fitScale?: Point2;
 }
 
 export interface PlanarViewFramingSelector extends ViewFramingSelector {
   scale?: boolean;
+  scaleMode?: boolean;
+  fitScale?: boolean;
 }
 
 export type PlanarSliceState =

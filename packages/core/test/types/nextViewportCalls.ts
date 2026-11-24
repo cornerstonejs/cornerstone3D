@@ -239,6 +239,33 @@ export function selectorsOfTheProjection() {
 }
 
 /**
+ * The framing methods of each family take and give the framing of that
+ * family, with its own selector.
+ */
+export function framingOfEachFamily() {
+  const planarFraming = planar.getViewFraming({
+    scale: true,
+    scaleMode: true,
+    fitScale: true,
+  });
+  const scale: Types.Point2 | undefined = planarFraming?.scale;
+  const fitScale: Types.Point2 | undefined = planarFraming?.fitScale;
+  const camera: Types.Point3 | undefined =
+    volume3D.getViewFraming()?.camera.viewPlaneNormal;
+  const anyZoom: number | undefined = viewport.getViewFraming({
+    zoom: true,
+  })?.zoom;
+
+  planar.setViewFraming({ scale: [2, 1], scaleMode: 'fitAspect' });
+  planar.setViewFraming(planarFraming);
+  volume3D.setViewFraming(volume3D.getViewFraming());
+  viewport.setViewFraming({ zoom: 2 });
+  planar.setViewState({ displayArea: { imageArea: [0.5, 0.5] } });
+
+  return [scale, fitScale, camera, anyZoom];
+}
+
+/**
  * A viewport of any family narrows to the members of a family with a guard,
  * or comes from the rendering engine typed with its class.
  */

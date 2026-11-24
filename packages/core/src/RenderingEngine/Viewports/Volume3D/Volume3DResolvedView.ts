@@ -15,9 +15,12 @@ type Volume3DResolvedViewState = {
   renderer: vtkRenderer;
   /**
    * Computes the fit of the viewport: the camera that `resetViewState` would
-   * give now. Undefined when the viewport shows nothing to fit.
+   * give now, for the direction of the camera or for another one. Undefined
+   * when the viewport shows nothing to fit.
    */
-  getFit?: () => Volume3DProjectionFit | undefined;
+  getFit?: (
+    direction?: Pick<Volume3DCamera, 'viewPlaneNormal' | 'viewUp'>
+  ) => Volume3DProjectionFit | undefined;
 };
 
 class Volume3DResolvedView extends ResolvedViewportView<Volume3DResolvedViewState> {
@@ -27,6 +30,16 @@ class Volume3DResolvedView extends ResolvedViewportView<Volume3DResolvedViewStat
    */
   get fit(): Volume3DProjectionFit | undefined {
     return this.state.getFit?.();
+  }
+
+  /**
+   * The fit of the viewport for a camera that looks in another direction:
+   * the reference of a zoom and a pan written together with that camera.
+   */
+  getFitFor(
+    direction: Pick<Volume3DCamera, 'viewPlaneNormal' | 'viewUp'>
+  ): Volume3DProjectionFit | undefined {
+    return this.state.getFit?.(direction);
   }
 
   canvasToWorld(canvasPos: Point2): Point3 {

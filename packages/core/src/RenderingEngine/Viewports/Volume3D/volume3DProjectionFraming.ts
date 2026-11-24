@@ -60,10 +60,12 @@ export function getVolume3DProjectionFraming(
 
 /**
  * Applies a framing patch to the camera of the snapshot and returns the
- * view state. A patch with a `camera` applies that camera and nothing else,
- * so a framing that was read comes back as it was. A patch without one
- * applies its camera fields, then its `rotation`, then its `zoom` and its
- * `pan` against the fit, see `Volume3DProjectionFraming`. The rotation
+ * view state. A patch with a `camera` applies that camera, and then its
+ * `zoom` and its `pan` against the fit of the viewport for the direction of
+ * that camera, so a framing that was read comes back as it was, and on a
+ * viewport of another size gives the same zoom and pan against its fit. A
+ * patch without one applies its camera fields, then its `rotation`, then its
+ * `zoom` and its `pan` against the fit, see `Volume3DProjectionFraming`. The rotation
  * is absolute, as on the legacy 3D viewport: the view up turns about the view
  * plane normal until the rotation of the snapshot, measured from the view up
  * of the orientation of the viewport options, is the one asked for. A zoom
@@ -93,12 +95,11 @@ export function withVolume3DProjectionFraming(
         );
   const zoom = hasOwn(framing, 'zoom') ? framing.zoom : undefined;
   const pan = hasOwn(framing, 'pan') ? framing.pan : undefined;
+  const fit = hasOwn(framing, 'camera')
+    ? (snapshot.resolvedView?.getFitFor?.(camera) ?? snapshot.fit)
+    : snapshot.fit;
 
-  if (
-    hasOwn(framing, 'camera') ||
-    !snapshot.fit ||
-    (zoom === undefined && !pan)
-  ) {
+  if (!fit || (zoom === undefined && !pan)) {
     return camera;
   }
 
@@ -106,7 +107,7 @@ export function withVolume3DProjectionFraming(
     ...camera,
     ...withVolume3DProjectionZoomPan(
       camera,
-      snapshot.fit,
+      fit,
       { width: snapshot.canvasWidth, height: snapshot.canvasHeight },
       { zoom, pan, anchorCanvas: options.anchorCanvas }
     ),

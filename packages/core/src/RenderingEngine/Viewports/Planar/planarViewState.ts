@@ -19,6 +19,37 @@ export function cloneDisplayArea<T extends DisplayArea | PlanarDisplayArea>(
   return deepClone(displayArea);
 }
 
+/**
+ * A view state patch with the framing that its display area implies. A patch
+ * with a defined `displayArea` and none of `scale`, `scaleMode`,
+ * `anchorWorld` and `anchorCanvas` shows the area as it is: scale `[1, 1]`,
+ * the scale mode of the area (`fit` without one), no world anchor and the
+ * canvas anchor in the centre. Any other patch is returned as it is, so an
+ * explicit field wins and `{ displayArea: undefined }` only clears the area.
+ */
+export function withDisplayAreaFraming(
+  patch: Partial<PlanarViewState>
+): Partial<PlanarViewState> {
+  const { displayArea } = patch;
+
+  if (
+    !displayArea ||
+    ['scale', 'scaleMode', 'anchorWorld', 'anchorCanvas'].some((key) =>
+      Object.prototype.hasOwnProperty.call(patch, key)
+    )
+  ) {
+    return patch;
+  }
+
+  return {
+    ...patch,
+    scale: [1, 1],
+    scaleMode: displayArea.scaleMode ?? 'fit',
+    anchorWorld: undefined,
+    anchorCanvas: [0.5, 0.5],
+  };
+}
+
 export function createDefaultPlanarViewState(): PlanarViewState {
   return {
     slice: {

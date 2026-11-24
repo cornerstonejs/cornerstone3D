@@ -100,8 +100,7 @@ export function getPlanarProjectionSnapshot(
     resolvedView?.state.canvasHeight ??
     viewport.element?.clientHeight ??
     1;
-  const displayArea =
-    request.displayArea ?? viewport.getDisplayArea?.() ?? viewState.displayArea;
+  const displayArea = request.displayArea ?? viewState.displayArea;
   const scaleVector = resolvedView?.scale ?? clonePlanarScale(viewState.scale);
   const zoom = resolvedView?.zoom ?? getPlanarScaleZoom(viewState.scale);
   const rawPan =

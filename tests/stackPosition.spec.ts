@@ -142,7 +142,7 @@ test.describe('Stack Position display area', () => {
 type StackPositionViewport = {
   sWidth: number;
   sHeight: number;
-  setDisplayArea: (displayArea: unknown) => void;
+  setViewState: (viewState: { displayArea: unknown }) => void;
   render: () => void;
   getResolvedView: () =>
     | { toICamera: () => { focalPoint: number[] } }
@@ -167,7 +167,7 @@ type StackPositionWindow = {
 
 test.describe('Stack Position stored display area', () => {
   // A display area stored as the initial camera used to become the baseline
-  // the next setDisplayArea measured its zoom and pan against, so applying
+  // the next display area measured its zoom and pan against, so applying
   // the same area again moved the image point off the canvas point.
   test('keeps the image point on the canvas point when applied repeatedly', async ({
     page,
@@ -180,13 +180,15 @@ test.describe('Stack Position stored display area', () => {
           ).cornerstone
             .getRenderingEngine('myRenderingEngine')
             .getViewport('CT_STACK');
-          viewport.setDisplayArea({
-            imageArea: [2, 2],
-            imageCanvasPoint: {
-              imagePoint: [0.5, 0.35],
-              canvasPoint: [0.5, 0.5],
+          viewport.setViewState({
+            displayArea: {
+              imageArea: [2, 2],
+              imageCanvasPoint: {
+                imagePoint: [0.5, 0.35],
+                canvasPoint: [0.5, 0.5],
+              },
+              storeAsInitialCamera: true,
             },
-            storeAsInitialCamera: true,
           });
           viewport.render();
 
@@ -265,10 +267,12 @@ test.describe('Stack Position stored display area', () => {
           ).cornerstone
             .getRenderingEngine('myRenderingEngine')
             .getViewport('CT_STACK');
-          viewport.setDisplayArea({
-            type: 'SCALE',
-            scale: 1,
-            imageCanvasPoint: { imagePoint, canvasPoint: imagePoint },
+          viewport.setViewState({
+            displayArea: {
+              type: 'SCALE',
+              scale: 1,
+              imageCanvasPoint: { imagePoint, canvasPoint: imagePoint },
+            },
           });
           viewport.render();
 

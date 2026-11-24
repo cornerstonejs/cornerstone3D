@@ -1,7 +1,11 @@
 import type { Point2 } from '../../../types';
 import type { ViewFramingSelector } from '../../../types/IViewport';
 import type { ProjectionWriteOptions } from '../ViewportProjectionTypes';
-import { normalizePlanarScale } from './planarCameraScale';
+import type { CameraScaleMode } from '../ViewportCameraTypes';
+import {
+  normalizePlanarScale,
+  normalizePlanarScaleMode,
+} from './planarCameraScale';
 import { getPlanarProjectionFallbackViewStateWithPan } from './planarProjectionFallback';
 import { derivePlanarFraming } from './planarRenderCamera';
 import {
@@ -10,8 +14,13 @@ import {
   getPlanarProjectionZoom,
 } from './planarProjectionSnapshot';
 import type { PlanarProjectionSnapshot } from './PlanarProjectionTypes';
+import { getStretchedFitRatio } from './planarSliceBasis';
 import { getPlanarRotationAfterFlips } from './planarViewFraming';
-import { cloneDisplayArea, normalizePlanarViewState } from './planarViewState';
+import {
+  cloneDisplayArea,
+  normalizePlanarViewState,
+  withDisplayAreaFraming,
+} from './planarViewState';
 import type {
   PlanarViewFraming,
   PlanarViewFramingSelector,
@@ -25,6 +34,8 @@ const DEFAULT_SELECTOR: Required<
     | 'displayArea'
     | 'zoom'
     | 'scale'
+    | 'scaleMode'
+    | 'fitScale'
     | 'pan'
     | 'flipHorizontal'
     | 'flipVertical'
@@ -34,6 +45,8 @@ const DEFAULT_SELECTOR: Required<
   displayArea: true,
   zoom: true,
   scale: true,
+  scaleMode: true,
+  fitScale: true,
   pan: true,
   flipHorizontal: true,
   flipVertical: true,
@@ -164,6 +177,14 @@ export function getPlanarProjectionFraming(
     target.scale = getPlanarProjectionScale(snapshot);
   }
 
+  if (planarSelector.scaleMode) {
+    target.scaleMode = normalizePlanarScaleMode(snapshot.viewState?.scaleMode);
+  }
+
+  if (planarSelector.fitScale) {
+    target.fitScale = normalizePlanarScale(snapshot.viewState?.scale);
+  }
+
   if (planarSelector.pan) {
     const scale = getPlanarProjectionScale(snapshot);
     const pan = getPlanarProjectionPan(snapshot);
@@ -183,15 +204,70 @@ export function getPlanarProjectionFraming(
 }
 
 /**
+ * The vertical scale, against the plain fit, at which the slice of a view
+ * state, stretched by the ratio of the two axes of `scale`, fits the canvas
+ * of the snapshot: the factor between the scale of a `fitAspect` view state
+ * and the scale of its picture. 1 when no slice resolves.
+ */
+function getFitAspectRatio(
+  snapshot: PlanarProjectionSnapshot,
+  viewState: PlanarViewState,
+  scale: Point2
+): number {
+  const sliceBasis = (
+    snapshot.resolveViewState?.(viewState) ?? snapshot.resolvedView
+  )?.getSliceBasis?.();
+
+  if (!sliceBasis) {
+    return 1;
+  }
+
+  return getStretchedFitRatio({
+    canvasWidth: snapshot.canvasWidth,
+    canvasHeight: snapshot.canvasHeight,
+    widthWorld: sliceBasis.sliceWidthWorld,
+    heightWorld: sliceBasis.sliceHeightWorld,
+    stretch: scale[0] / scale[1],
+  });
+}
+
+/**
+ * A view state without a display area whose scale is the scale of its
+ * picture against the plain fit, written in `scaleMode`. Only `fitAspect`
+ * reads the scale against another fit (the fit of the stretched slice), so
+ * only then the scale changes. With `fitScale` the scale is that one.
+ */
+function withScaleMode(
+  snapshot: PlanarProjectionSnapshot,
+  viewState: PlanarViewState,
+  scaleMode: CameraScaleMode,
+  fitScale?: Point2
+): PlanarViewState {
+  if (scaleMode !== 'fitAspect') {
+    return { ...viewState, scaleMode };
+  }
+
+  const scale = normalizePlanarScale(viewState.scale);
+  const ratio = getFitAspectRatio(snapshot, viewState, scale);
+
+  return {
+    ...viewState,
+    scale: fitScale ?? [scale[0] / ratio, scale[1] / ratio],
+    scaleMode,
+  };
+}
+
+/**
  * Converts a Planar view-framing patch back into normalized semantic
  * PlanarViewState.
  *
  * A zoom in the patch is the new vertical scale against the fit and keeps
  * the ratio of the two axes, so a stretched view stays stretched. A scale in
- * the patch is taken as it is, and wins over a zoom. Next to a display area
- * in the patch, a zoom and a scale are against the fit too, as
- * `getPlanarProjectionFraming` reads them, so writing back a
- * framing that was read gives the same view.
+ * the patch is taken as it is, and wins over a zoom. A `fitScale` wins over
+ * both: it is the scale of the view state in the scale mode of the patch,
+ * so a framing that was read gives the same fit on a canvas of another size.
+ * A `scaleMode` in the patch is the scale mode of the view state; without
+ * one, a patch that sets the scale gives `fit`.
  *
  * A rotation and flips in one patch flip the view first and turn it after,
  * as the view setter of 5.x did. A patch that changes a flip and has
@@ -200,8 +276,14 @@ export function getPlanarProjectionFraming(
  *
  * A pan in the patch is the place of the centre of the slice. The view
  * state it gives holds no world anchor, so a pan after a zoom at a canvas
- * point is right at the new scale and rotation. A pan decides where the
- * picture is, so a display area in the same patch gives way to it.
+ * point is right at the new scale and rotation.
+ *
+ * A display area in the patch decides where the picture is: the pan of the
+ * same patch is not used. It shows the area as `setViewState({ displayArea
+ * })` does, at the `fitScale` of the patch, or at its zoom or scale against
+ * the fit, or else as the area is. A world anchor of the view state is
+ * cleared as an own undefined property, because `setViewState` merges
+ * patches.
  *
  * With `options.anchorCanvas`, a patch that has a zoom or a scale keeps the
  * world point under that canvas point under it, in one view state. A pan or
@@ -218,9 +300,6 @@ export function getPlanarProjectionFraming(
  * from that scale, about the anchor or, with no anchor, about the centre of
  * the canvas. The display area is cleared as an own undefined property,
  * because `setViewState` merges patches.
- *
- * A display area in the patch replaces a world anchor of the view state,
- * which is cleared as an own undefined property too.
  */
 export function withPlanarProjectionFraming(
   snapshot: PlanarProjectionSnapshot,
@@ -245,55 +324,108 @@ export function withPlanarProjectionFraming(
   const viewState = snapshot.viewState ?? {};
   const hasZoom = hasOwn(framing, 'zoom');
   const hasScale = hasOwn(framing, 'scale');
-  const hasDisplayArea = hasOwn(framing, 'displayArea') && !pan;
-  const dropsDisplayArea =
-    !hasDisplayArea &&
-    (Boolean(viewState.displayArea) || hasOwn(framing, 'displayArea')) &&
-    (Boolean(pan) || hasZoom || hasScale);
+  const fitScale = framing.fitScale
+    ? normalizePlanarScale(framing.fitScale)
+    : undefined;
+  const scaleMode = framing.scaleMode
+    ? normalizePlanarScaleMode(framing.scaleMode)
+    : undefined;
+  const changesScale = hasZoom || hasScale || Boolean(fitScale);
   const currentScale = snapshot.framing.scaleVector;
-  const nextScale = hasScale
-    ? normalizePlanarScale(framing.scale)
-    : typeof framing.zoom === 'number' && !hasDisplayArea
-      ? getPlanarScaleForZoom(framing.zoom, currentScale)
-      : normalizePlanarScale(framing.zoom ?? currentScale);
   const nextCamera: Partial<PlanarViewState> = {
     flipHorizontal,
     flipVertical,
     rotation,
   };
 
-  if (hasDisplayArea) {
-    const displayArea = cloneDisplayArea(framing.displayArea);
+  if (framing.displayArea) {
+    Object.assign(
+      nextCamera,
+      withDisplayAreaFraming({
+        displayArea: cloneDisplayArea(framing.displayArea),
+      }),
+      scaleMode ? { scaleMode } : {}
+    );
 
-    nextCamera.anchorCanvas = [0.5, 0.5];
-    nextCamera.anchorWorld = undefined;
-    nextCamera.displayArea = displayArea;
-    nextCamera.scaleMode = displayArea?.scaleMode ?? 'fit';
-    nextCamera.scale =
-      hasZoom || hasScale
-        ? getScaleNextToDisplayArea(
+    if (fitScale) {
+      nextCamera.scale = fitScale;
+    } else if (hasZoom || hasScale) {
+      nextCamera.scale = getScaleNextToDisplayArea(
+        snapshot,
+        { ...viewState, ...nextCamera },
+        normalizePlanarScale(
+          hasScale ? framing.scale : (framing.zoom ?? currentScale)
+        ),
+        hasScale
+      );
+    }
+
+    return preserveClears(
+      normalizePlanarViewState({ ...viewState, ...nextCamera }),
+      { anchorWorld: true }
+    );
+  }
+
+  const clearsDisplayArea = hasOwn(framing, 'displayArea');
+
+  if (clearsDisplayArea && !pan && !changesScale) {
+    return preserveClears(
+      normalizePlanarViewState({
+        ...viewState,
+        ...nextCamera,
+        anchorCanvas: [0.5, 0.5],
+        anchorWorld: undefined,
+        displayArea: undefined,
+        scale: [1, 1],
+        scaleMode: scaleMode ?? 'fit',
+      }),
+      { displayArea: true, anchorWorld: true }
+    );
+  }
+
+  const dropsDisplayArea =
+    (Boolean(viewState.displayArea) || clearsDisplayArea) &&
+    (Boolean(pan) || changesScale);
+  const setsScale = changesScale || dropsDisplayArea || !viewState.displayArea;
+  const nextScaleMode = scaleMode ?? 'fit';
+  let nextScale = currentScale;
+
+  if (fitScale) {
+    const ratio =
+      nextScaleMode === 'fitAspect'
+        ? getFitAspectRatio(
             snapshot,
-            { ...viewState, ...nextCamera },
-            nextScale,
-            hasScale
+            normalizePlanarViewState({ ...viewState, ...nextCamera }),
+            fitScale
           )
-        : [1, 1];
-  } else if (
-    hasZoom ||
-    hasScale ||
-    dropsDisplayArea ||
-    !viewState.displayArea
-  ) {
+        : 1;
+
+    nextScale = [fitScale[0] * ratio, fitScale[1] * ratio];
+  } else if (hasScale) {
+    nextScale = normalizePlanarScale(framing.scale);
+  } else if (typeof framing.zoom === 'number') {
+    nextScale = getPlanarScaleForZoom(framing.zoom, currentScale);
+  }
+
+  if (setsScale) {
     nextCamera.scale = nextScale;
     nextCamera.scaleMode = 'fit';
+  } else if (scaleMode) {
+    nextCamera.scaleMode = scaleMode;
   }
 
   if (dropsDisplayArea) {
     nextCamera.displayArea = undefined;
   }
 
+  const inScaleMode = (state: PlanarViewState): PlanarViewState =>
+    setsScale
+      ? normalizePlanarViewState(
+          withScaleMode(snapshot, state, nextScaleMode, fitScale)
+        )
+      : state;
+
   if (pan) {
-    const targetPan: Point2 = [pan[0] * nextScale[0], pan[1] * nextScale[1]];
     const baseViewState = normalizePlanarViewState({
       ...viewState,
       ...nextCamera,
@@ -303,18 +435,21 @@ export function withPlanarProjectionFraming(
       (baseViewState === snapshot.viewState
         ? snapshot.resolvedView
         : undefined);
+    const panScale = resolvedView?.scale ?? nextScale;
+    const targetPan: Point2 = [pan[0] * panScale[0], pan[1] * panScale[1]];
 
     const getViewStateWithPan = snapshot.resolvedView
       ? getPlanarViewStateWithPanFromSliceCentre
       : getPlanarProjectionFallbackViewStateWithPan;
-    const nextViewState =
+    const nextViewState = inScaleMode(
       resolvedView?.withPan(targetPan).state.viewState ??
-      getViewStateWithPan(
-        baseViewState,
-        targetPan,
-        snapshot.canvasWidth,
-        snapshot.canvasHeight
-      );
+        getViewStateWithPan(
+          baseViewState,
+          targetPan,
+          snapshot.canvasWidth,
+          snapshot.canvasHeight
+        )
+    );
 
     return preserveClears(nextViewState, {
       displayArea: dropsDisplayArea,
@@ -322,36 +457,28 @@ export function withPlanarProjectionFraming(
     });
   }
 
-  const anchoredView =
-    !hasDisplayArea && (hasZoom || hasScale)
-      ? snapshot.resolvedView?.withScale?.(nextScale, options.anchorCanvas)
-      : undefined;
+  const anchoredView = changesScale
+    ? snapshot.resolvedView?.withScale?.(nextScale, options.anchorCanvas)
+    : undefined;
 
   if (anchoredView) {
-    return preserveClears(
+    const nextViewState = inScaleMode(
       normalizePlanarViewState({
         ...anchoredView.state.viewState,
         flipHorizontal,
         flipVertical,
         rotation,
-      }),
-      {
-        displayArea: dropsDisplayArea,
-        anchorWorld: !anchoredView.state.viewState.anchorWorld,
-      }
+      })
     );
+
+    return preserveClears(nextViewState, {
+      displayArea: dropsDisplayArea,
+      anchorWorld: !nextViewState.anchorWorld,
+    });
   }
 
   return preserveClears(
-    normalizePlanarViewState({
-      ...viewState,
-      ...nextCamera,
-    }),
-    {
-      displayArea:
-        dropsDisplayArea ||
-        (hasDisplayArea && framing.displayArea === undefined),
-      anchorWorld: hasDisplayArea,
-    }
+    inScaleMode(normalizePlanarViewState({ ...viewState, ...nextCamera })),
+    { displayArea: dropsDisplayArea }
   );
 }

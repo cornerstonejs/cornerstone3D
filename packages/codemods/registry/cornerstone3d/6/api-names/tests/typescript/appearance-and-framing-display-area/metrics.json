@@ -1,0 +1,86 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "28",
+        "rule": "setOptions: a viewport has no setOptions: set a display area with viewport.setViewState({ displayArea }); the other options are set once, in defaultOptions at enableElement"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "29",
+        "rule": "reset: a viewport has no reset: viewport.resetViewState() goes back to the display area of defaultOptions or of setViewState given with storeAsInitialCamera: true"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "30",
+        "rule": "options: a viewport has no options: read viewport.defaultOptions (the options of enableElement) or viewport.getViewState().displayArea"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "45",
+        "rule": "Events.DISPLAY_AREA_MODIFIED: DISPLAY_AREA_MODIFIED is gone: listen to CAMERA_MODIFIED and read viewport.getViewState().displayArea"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "46",
+        "rule": "Events.DISPLAY_AREA_MODIFIED: DISPLAY_AREA_MODIFIED is gone: listen to CAMERA_MODIFIED and read viewport.getViewState().displayArea"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "51",
+        "rule": "Types.EventTypes.DisplayAreaModifiedEvent: DISPLAY_AREA_MODIFIED is gone: listen to CAMERA_MODIFIED and read viewport.getViewState().displayArea"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "52",
+        "rule": "Types.EventTypes.DisplayAreaModifiedEventDetail: DISPLAY_AREA_MODIFIED is gone: listen to CAMERA_MODIFIED and read viewport.getViewState().displayArea"
+      },
+      "count": 1
+    }
+  ],
+  "cornerstone3d-6-review": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "23",
+        "rule": "setDisplayArea: setDisplayArea did nothing with an undefined area, setViewState({ displayArea: undefined }) clears the display area"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "24",
+        "rule": "setDisplayArea: setDisplayArea did nothing with an undefined area, setViewState({ displayArea: undefined }) clears the display area"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "32",
+        "rule": "setViewState: the key displayArea: setViewState({ displayArea }) without scale, scaleMode, anchorWorld or anchorCanvas shows the area at scale [1, 1]; 6.0.0-beta.2 kept the scale of the view state"
+      },
+      "count": 1
+    }
+  ]
+}

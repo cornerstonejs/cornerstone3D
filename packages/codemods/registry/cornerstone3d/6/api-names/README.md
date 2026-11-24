@@ -161,6 +161,32 @@ part of a view that another viewport can take is its framing.
 - The `viewport-members` step rewrites the 5.x `getViewPresentation` and
   `setViewPresentation` to `getViewFraming` and `setViewFraming`, and
   `setProperties` to `setDisplaySetAppearance`.
+- The display area lives only in the view state (lane VS1).
+  `viewport.setDisplayArea(area)` becomes
+  `viewport.setViewState({ displayArea: area })` (`{ displayArea }` when the
+  argument is a name `displayArea`), and `viewport.getDisplayArea()` becomes
+  `viewport.getViewState().displayArea`, on a viewport that the file shows,
+  also by its type. A `setDisplayArea` whose area is not an object literal
+  is listed for review: the setter did nothing with an undefined area, and
+  `setViewState({ displayArea: undefined })` clears the area. The keys
+  `slabThickness`, `windowLevel` and `paletteLut`, which nothing read, are
+  deleted from a selector given to `viewport.getViewFraming`, to
+  `viewportProjection.getFraming` (its `selector`) or typed
+  `ViewFramingSelector`, and `slabThickness` from a framing given to
+  `viewport.setViewFraming` or typed `ViewFraming`. The 5.x steps leave
+  `setDisplayArea` and `getDisplayArea` to this step, and since this step
+  reports `options`, `setOptions` and `reset`, the `viewport-members` step
+  no longer does.
+- Reported, manual, with the text of the guide: `setDisplayArea` with a
+  second argument (`suppressEvents`) or a spread, and on a receiver known by
+  its name only; `getDisplayArea` with an argument or on such a receiver;
+  either in brackets or in a destructuring pattern; `setOptions`, `reset`
+  and `options` of a viewport; `Enums.Events.DISPLAY_AREA_MODIFIED` (also
+  through `EVENTS` and as the string `'CORNERSTONE_DISPLAY_AREA_MODIFIED'`),
+  `Types.EventTypes.DisplayAreaModifiedEvent` and
+  `DisplayAreaModifiedEventDetail`. Review: each `setViewState` whose literal
+  patch has `displayArea`, which shows the area at scale `[1, 1]` now when
+  the patch has no `scale`, `scaleMode`, `anchorWorld` or `anchorCanvas`.
 - Reported, manual: a method of the look on a receiver known by its name
   only, on a receiver that the file gives a type of the application (a cast
   such as `viewport as unknown as { setDisplaySetPresentation(): void }`, or

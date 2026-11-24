@@ -18,9 +18,9 @@ import type InterpolationType from '../enums/InterpolationType';
  * is located at the canvas fractional point canvasPoint.  Using fractional
  * points allows being independent of image size.
  *
- * Finally, the store as initial camera allows the zoom and pan values to be
- * set to 1 and [0,0] respectively for the initially displayed position, as well
- * as having the reset camera reset to the specified display area.
+ * Finally, `storeAsInitialCamera` makes the display area the one that
+ * `resetViewState()` of a planar viewport shows again. Zoom 1 and pan [0, 0]
+ * stay the fit of the image.
  */
 interface DisplayArea {
   type?: 'SCALE' | 'FIT';
@@ -35,7 +35,7 @@ interface DisplayArea {
      */
     canvasPoint?: [number, number]; // canvasX, canvasY
   };
-  /** Make this display area the default and reset/navigate will reapply this */
+  /** Makes this display area the one that `resetViewState()` shows. */
   storeAsInitialCamera?: boolean;
 }
 

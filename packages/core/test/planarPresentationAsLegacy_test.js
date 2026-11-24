@@ -83,13 +83,13 @@ function expectAtCentre(viewport, worldPoint) {
   expect(shown[1]).toBeCloseTo(CENTRE[1], 2);
 }
 
-/** Shows the series and puts the display area on it with `setDisplayArea`. */
+/** Shows the series and puts the display area into its view state. */
 async function showWithDisplayArea(viewport, series, show) {
   await show(viewport, series, SLICE);
 
   const fit = pictureOf(viewport, series);
 
-  viewport.setDisplayArea(DISPLAY_AREA);
+  viewport.setViewState({ displayArea: DISPLAY_AREA });
   await settle(viewport);
 
   return { fit, area: pictureOf(viewport, series) };
@@ -134,7 +134,7 @@ describe('A planar view answers a zoom, a pan and a stretch as the legacy viewpo
       expect(next.getZoom()).toBeCloseTo(zoom, 4);
       expect(next.getViewState().displayArea).toBeUndefined();
 
-      next.setDisplayArea(DISPLAY_AREA);
+      next.setViewState({ displayArea: DISPLAY_AREA });
       await settle(next);
       next.setZoom(zoom);
       await settle(next);
@@ -241,7 +241,7 @@ describe('A planar view answers a zoom, a pan and a stretch as the legacy viewpo
 
       const fit = pictureOf(next, series);
 
-      next.setDisplayArea(SCALE_AREA);
+      next.setViewState({ displayArea: SCALE_AREA });
       await settle(next);
 
       const areaPan = viewportProjection.getFraming(next).pan;

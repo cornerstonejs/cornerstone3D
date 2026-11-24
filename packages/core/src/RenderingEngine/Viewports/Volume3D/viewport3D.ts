@@ -94,7 +94,8 @@ function isRemovedVolume({ data }: Volume3DStagedLoad): boolean {
 class VolumeViewport3D extends BaseViewport<
   Volume3DCamera,
   Volume3DDisplaySetAppearance,
-  Volume3DViewportRenderContext
+  Volume3DViewportRenderContext,
+  Volume3DProjectionFraming
 > {
   readonly type = ViewportType.VOLUME_3D;
   readonly renderingEngineId: string;
@@ -655,7 +656,7 @@ class VolumeViewport3D extends BaseViewport<
       canvas: this.canvas,
       frameOfReferenceUID: this.resolveFrameOfReferenceUID(),
       renderer: this.getRenderer(),
-      getFit: () => this.getProjectionFit(),
+      getFit: (direction) => this.getProjectionFit(direction),
     });
   }
 
@@ -935,8 +936,16 @@ class VolumeViewport3D extends BaseViewport<
    * of the projection service: its focal point, its parallel scale, and the
    * distance and the view angle of its camera. Undefined when the viewport
    * shows nothing to fit.
+   *
+   * @param direction - The view plane normal and the view up of the fit; the
+   *   ones of the camera now when not given.
    */
-  private getProjectionFit(): Volume3DProjectionFit | undefined {
+  private getProjectionFit(
+    direction: Pick<
+      Volume3DCamera,
+      'viewPlaneNormal' | 'viewUp'
+    > = this.getViewState()
+  ): Volume3DProjectionFit | undefined {
     const content = this.getFitContent();
     const { bounds } = content;
 
@@ -948,12 +957,11 @@ class VolumeViewport3D extends BaseViewport<
       return;
     }
 
-    const camera = this.getViewState();
     const fit = getVolume3DFitCamera(
       this.renderContext,
       content,
-      camera.viewPlaneNormal,
-      camera.viewUp
+      direction.viewPlaneNormal,
+      direction.viewUp
     );
 
     return {

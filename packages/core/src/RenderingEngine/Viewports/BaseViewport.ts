@@ -117,9 +117,11 @@ abstract class BaseViewport<
     TViewState extends object,
     TAppearance = unknown,
     TContext extends BaseViewportRenderContext = BaseViewportRenderContext,
+    TFraming extends ViewFraming = ViewFraming,
+    TFramingSelector extends ViewFramingSelector = ViewFramingSelector,
   >
   implements
-    IViewport<TViewState, TAppearance>,
+    IViewport<TViewState, TAppearance, TFraming, TFramingSelector>,
     ViewportController<TViewState, TAppearance>,
     IViewportFidelity
 {
@@ -723,8 +725,8 @@ abstract class BaseViewport<
    *
    * @param selector - The keys to read; every key when not given.
    */
-  getViewFraming(selector?: ViewFramingSelector): ViewFraming | undefined {
-    return viewportProjection.getFraming<ViewFraming>(this, { selector });
+  getViewFraming(selector?: TFramingSelector): TFraming | undefined {
+    return viewportProjection.getFraming<TFraming>(this, { selector });
   }
 
   /**
@@ -736,12 +738,12 @@ abstract class BaseViewport<
    * @param options - The canvas point that a zoom keeps.
    */
   setViewFraming(
-    framing: Partial<ViewFraming>,
+    framing: Partial<TFraming>,
     options?: ProjectionWriteOptions
   ): void {
     const viewState = viewportProjection.withFraming<
       Partial<TViewState>,
-      ViewFraming
+      TFraming
     >(this, framing, undefined, options);
 
     if (viewState) {

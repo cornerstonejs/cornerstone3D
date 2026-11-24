@@ -6,7 +6,7 @@ import {
   showVolume,
 } from './utils/planarSeriesBothModes';
 
-const { Enums, utilities, viewportProjection } = cornerstone3D;
+const { Enums, utilities } = cornerstone3D;
 const { ViewportType, OrientationAxis } = Enums;
 
 const renderingEngineId = utilities.uuidv4();
@@ -16,7 +16,11 @@ const DISPLAY_AREA = { imageArea: [0.5, 0.5] };
  * Makes a direct next planar viewport of 400 by 300 pixels with a display
  * area in its options.
  */
-function createNextViewportWithDisplayAreaOption(renderingEngine, viewportId) {
+function createNextViewportWithDisplayAreaOption(
+  renderingEngine,
+  viewportId,
+  displayArea = DISPLAY_AREA
+) {
   const element = document.createElement('div');
 
   element.style.width = '400px';
@@ -29,7 +33,7 @@ function createNextViewportWithDisplayAreaOption(renderingEngine, viewportId) {
     defaultOptions: {
       background: [1, 0, 1],
       orientation: OrientationAxis.ACQUISITION,
-      displayArea: DISPLAY_AREA,
+      displayArea,
     },
   });
 
@@ -59,7 +63,7 @@ describe('The display area option of a direct next planar viewport -- ', () => {
     ['stack', showStack],
     ['volume', showVolume],
   ]) {
-    it(`is not what getDisplayArea answers: it answers from the view state only and the picture is the fit, in ${mode} mode`, async function () {
+    it(`is the display area of the view state and of the framing from the start, in ${mode} mode`, async function () {
       const next = createNextViewportWithDisplayAreaOption(
         renderingEngine,
         'nextDisplayAreaOption'
@@ -67,19 +71,17 @@ describe('The display area option of a direct next planar viewport -- ', () => {
 
       await show(next, series, 2);
 
-      const presentation = viewportProjection.getFraming(next);
+      const framing = next.getViewFraming();
 
       expect(next.getCurrentMode()).toBe(mode);
-      expect(next.getViewState().displayArea).toBeUndefined();
-      expect(next.getDisplayArea()).toBeUndefined();
-      expect(presentation.displayArea).toBeUndefined();
+      expect(next.getViewState().displayArea).toEqual(DISPLAY_AREA);
+      expect(framing.displayArea).toEqual(DISPLAY_AREA);
       expect(next.defaultOptions.displayArea).toEqual(DISPLAY_AREA);
-      expect(presentation.zoom).toBeCloseTo(1, 6);
-      expect(presentation.pan[0]).toBeCloseTo(0, 6);
-      expect(presentation.pan[1]).toBeCloseTo(0, 6);
+      expect(framing.zoom).toBeCloseTo(2, 6);
+      expect(framing.fitScale).toEqual([1, 1]);
     }, 15000);
 
-    it(`answers with the display area of the view state once it has one, in ${mode} mode`, async function () {
+    it(`answers with the display area that the view state is given later, in ${mode} mode`, async function () {
       const next = createNextViewportWithDisplayAreaOption(
         renderingEngine,
         'nextDisplayAreaState'
@@ -90,11 +92,10 @@ describe('The display area option of a direct next planar viewport -- ', () => {
       next.setViewState({ displayArea });
 
       expect(next.getViewState().displayArea).toEqual(displayArea);
-      expect(next.getDisplayArea()).toEqual(displayArea);
-      expect(viewportProjection.getFraming(next).zoom).toBeCloseTo(4, 6);
+      expect(next.getViewFraming().zoom).toBeCloseTo(4, 6);
     }, 15000);
 
-    it(`answers undefined again once the view state has none, after reset brought the options back, in ${mode} mode`, async function () {
+    it(`shows the fit after resetViewState, as the option has no storeAsInitialCamera, in ${mode} mode`, async function () {
       const next = createNextViewportWithDisplayAreaOption(
         renderingEngine,
         'nextDisplayAreaCleared'
@@ -102,12 +103,39 @@ describe('The display area option of a direct next planar viewport -- ', () => {
 
       await show(next, series, 2);
       next.setViewState({ displayArea: { imageArea: [0.25, 0.25] } });
-      next.setViewState(viewportProjection.withFraming(next, { pan: [10, 0] }));
-      next.reset();
+      next.setViewFraming({ pan: [10, 0] });
+      next.resetViewState();
+
+      const framing = next.getViewFraming();
 
       expect(next.getViewState().displayArea).toBeUndefined();
-      expect(next.getDisplayArea()).toBeUndefined();
-      expect(viewportProjection.getFraming(next).displayArea).toBeUndefined();
+      expect(framing.displayArea).toBeUndefined();
+      expect(framing.zoom).toBeCloseTo(1, 6);
+      expect(framing.pan[0]).toBeCloseTo(0, 6);
+      expect(framing.pan[1]).toBeCloseTo(0, 6);
+    }, 15000);
+
+    it(`goes back to the display area of the option with storeAsInitialCamera after resetViewState, in ${mode} mode`, async function () {
+      const stored = { ...DISPLAY_AREA, storeAsInitialCamera: true };
+      const next = createNextViewportWithDisplayAreaOption(
+        renderingEngine,
+        'nextDisplayAreaStored',
+        stored
+      );
+
+      await show(next, series, 2);
+      next.setViewFraming({ zoom: 3, pan: [10, 0] });
+
+      expect(next.getViewState().displayArea).toBeUndefined();
+
+      next.resetViewState();
+
+      const framing = next.getViewFraming();
+
+      expect(next.getViewState().displayArea).toEqual(stored);
+      expect(framing.zoom).toBeCloseTo(2, 6);
+      expect(framing.pan[0]).toBeCloseTo(0, 6);
+      expect(framing.pan[1]).toBeCloseTo(0, 6);
     }, 15000);
   }
 });

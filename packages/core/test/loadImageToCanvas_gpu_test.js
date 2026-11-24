@@ -86,7 +86,7 @@ describe('loadImageToCanvas -- GPU', () => {
     const volumeId = await createVolume();
 
     await testUtils.setVolumesOnNextViewport(viewport, [volumeId]);
-    viewport.setDisplayArea({ imageArea: [1, 1] });
+    viewport.setViewState({ displayArea: { imageArea: [1, 1] } });
 
     const middleSlice = await renderAndCapture(viewport, element);
 
@@ -131,7 +131,7 @@ describe('loadImageToCanvas -- GPU', () => {
     const volumeId = await createVolume();
 
     await testUtils.setVolumesOnNextViewport(viewport, [volumeId]);
-    viewport.setDisplayArea({ imageArea: [1, 1] });
+    viewport.setViewState({ displayArea: { imageArea: [1, 1] } });
 
     const middleSlice = await renderAndCapture(viewport, element);
     const canvas = createCanvas();
@@ -173,7 +173,7 @@ describe('loadImageToCanvas -- GPU', () => {
     });
 
     await testUtils.setStackOnNextViewport(viewport, [imageId], 0);
-    viewport.setDisplayArea({ imageArea: [1, 1] });
+    viewport.setViewState({ displayArea: { imageArea: [1, 1] } });
 
     const defaultWindow = await renderAndCapture(viewport, element);
 

@@ -222,8 +222,6 @@ const REPORTED_METHODS = new Set([
   'getClippingPlanesForActor',
   'getAspectRatio',
   'setAspectRatio',
-  'setOptions',
-  'reset',
   'getSliceIndexForImage',
 ]);
 
@@ -235,7 +233,6 @@ const REPORTED_PROPERTIES = new Set([
   'sWidth',
   'sHeight',
   '_actors',
-  'options',
   'suppressEvents',
   'scaling',
   'stackActorReInitialized',

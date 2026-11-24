@@ -400,8 +400,10 @@ async function run() {
 
   await stackViewport.setDisplaySets({ displaySetId: stackDisplaySetId });
   viewports.push(stackViewport);
-  stackViewport.setDisplayArea({
-    imageArea: [0.9, 0.9],
+  stackViewport.setViewState({
+    displayArea: {
+      imageArea: [0.9, 0.9],
+    },
   });
   stackViewport.setDisplaySetAppearance(stackDisplaySetId, {
     interpolationType: InterpolationType.NEAREST,
