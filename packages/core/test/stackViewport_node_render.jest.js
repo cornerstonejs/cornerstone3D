@@ -202,6 +202,16 @@ describe('stackViewport_node_render', function () {
       expect(viewport.getProperties().voiRange).toEqual(voiRange);
     });
 
+    it('drops the VOI LUT Sequence for a colormap name that does not resolve, as the GPU path does', async () => {
+      const ids = await loadFrames('cpuColormapUnknown', [{ voiLUT: lutA }]);
+      await viewport.setStack(ids, 0);
+
+      viewport.setProperties({ colormap: { name: 'notAColormap' } });
+
+      expect(cpuViewport().colormap).toBeUndefined();
+      expect(cpuViewport().voiLUT).toBeUndefined();
+    });
+
     it('keeps the colormap and drops the sequence after setStack, as the GPU path does', async () => {
       const ids = await loadFrames('cpuColormapStack', [{ voiLUT: lutA }]);
       const nextIds = await loadFrames('cpuColormapStack2', [{ voiLUT: lutB }]);

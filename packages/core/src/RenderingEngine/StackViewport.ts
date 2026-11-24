@@ -2769,10 +2769,7 @@ class StackViewport extends Viewport {
     // request for a VOI LUT Function and `useVOILUTSequence: false` both did
     // nothing when the stack was invalidated.
     const previousViewport = this._cpuFallbackEnabledElement.viewport;
-    const voiLUTToApply = this._getCPUVOILUTSequenceToApply(
-      image,
-      previousViewport.colormap
-    );
+    const voiLUTToApply = this._getCPUVOILUTSequenceToApply(image);
 
     viewport.voiLUT = voiLUTToApply;
 
@@ -3086,19 +3083,17 @@ class StackViewport extends Viewport {
       return;
     }
 
-    viewport.voiLUT = this._getCPUVOILUTSequenceToApply(
-      image ?? this.csImage,
-      viewport.colormap
-    );
+    viewport.voiLUT = this._getCPUVOILUTSequenceToApply(image ?? this.csImage);
   }
 
   /**
-   * The VOI LUT Sequence for the CPU viewport. As in setVOIGPU, a colormap that
-   * the application set replaces the curve of the sequence, and the colormap
-   * then maps the window of the sequence domain linearly.
+   * The VOI LUT Sequence for the CPU viewport. As in setVOIGPU, a colormap name
+   * that the application set replaces the curve of the sequence. This includes
+   * a grey colormap and a name that does not resolve: the GPU then draws the
+   * window with the VOI LUT Function, and the CPU must do the same.
    */
-  private _getCPUVOILUTSequenceToApply(image: IImage, cpuColormap: unknown) {
-    if ((this.colormap as ColormapPublic)?.name && cpuColormap) {
+  private _getCPUVOILUTSequenceToApply(image: IImage) {
+    if ((this.colormap as ColormapPublic)?.name) {
       return undefined;
     }
 
@@ -4098,6 +4093,7 @@ class StackViewport extends Viewport {
   };
 
   private unsetColormapCPU() {
+    this.colormap = undefined;
     delete this._cpuFallbackEnabledElement.viewport.colormap;
     this._syncCPUVOILUTSequence();
     this._cpuFallbackEnabledElement.renderingTools = {};
