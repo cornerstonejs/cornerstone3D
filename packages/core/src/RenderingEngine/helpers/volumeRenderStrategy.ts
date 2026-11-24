@@ -5,7 +5,11 @@ import {
 } from '../../utilities/voxelGrid';
 import type { ViewportFidelityCause } from '../../types/ViewportFidelity';
 import { volumeTextureBytes } from '../../utilities/getBufferConfiguration';
-import { gridLimitsOfGpuSettings } from '../../utilities/gpuSettingsPresets';
+import {
+  gpuSettingsForGrid,
+  gridLimitsOfGpuSettings,
+} from '../../utilities/gpuSettingsPresets';
+import { getGpuMemoryTotal } from '../../utilities/gpuMemoryLedger';
 import { getLossyDownsampling } from '../../init';
 import { FULL_RESOLUTION_TEXTURE_SET } from '../../cache/classes/ImageVolume';
 import type { GpuSettings } from '../../utilities/gpuSettingsPresets';
@@ -308,13 +312,21 @@ export function reducedStrategyName(
  * must know whether a volume draws reduced, before any texture exists, reads
  * the same answer here.
  *
+ * Under `auto`, the memory limit is a budget of the page: the textures of the
+ * other volumes, the canvases and the contexts count against it (see
+ * `gpuMemoryLedger`). An edge that the device has not passed yet runs the edge
+ * probe here, before any texture is allocated, unless `probe` is false.
+ *
  * @param volume - the volume to draw
  * @param gpuSettings - the GPU settings that apply
+ * @param options.probe - false for a caller that only decides and allocates
+ * nothing, so it creates no probe context
  * @returns the box size on each axis of the voxel grid
  */
 export function volumeTextureReductionFactors(
   volume: IImageVolume,
-  gpuSettings: GpuSettings | undefined
+  gpuSettings: GpuSettings | undefined,
+  { probe = true }: { probe?: boolean } = {}
 ): Point3 {
   if (
     !gpuSettings ||
@@ -325,29 +337,74 @@ export function volumeTextureReductionFactors(
     return [1, 1, 1];
   }
 
-  const limits = gridLimitsOfGpuSettings(gpuSettings, bytesPerVoxelOf(volume));
+  const bytesPerVoxel = bytesPerVoxelOf(volume);
+  const limits = gridLimitsOfGpuSettings(
+    gpuSettingsForVolume(volume, gpuSettings, probe),
+    bytesPerVoxel
+  );
 
   return boxAverageReductionFactors(volume.voxelGrid.dimensions, limits);
 }
 
+/** The GPU settings for the grid of a volume, with the rest of the page. */
+function gpuSettingsForVolume(
+  volume: IImageVolume,
+  gpuSettings: GpuSettings,
+  probe: boolean
+): GpuSettings {
+  return gpuSettingsForGrid(
+    gpuSettings,
+    volume.voxelGrid.dimensions,
+    bytesPerVoxelOf(volume),
+    getGpuMemoryTotal(volume.volumeId),
+    { probe }
+  );
+}
+
+/** The share of the voxels that the factors keep, inverted: 8 for 2x2x2. */
+function reductionOf(factors: Point3): number {
+  return factors[0] * factors[1] * factors[2];
+}
+
 /**
- * Why the GPU settings reduce this volume: `deviceTextureLimit` when the edge
- * limit alone reduces it, `memoryBudget` when only the texture memory does.
- * Undefined when the settings do not reduce the volume.
+ * Why the GPU settings reduce this volume: `memoryBudget` when the memory
+ * limit reduces it at least as much as the edge limit does, and
+ * `deviceTextureLimit` when the edge limit reduces it more. Undefined when the
+ * settings do not reduce the volume. The limits are the ones of the settings
+ * for this grid, as in {@link volumeTextureReductionFactors}, so an
+ * application can offer a larger memory limit when that would help.
+ *
+ * @param options.probe - false for a caller that only decides
  */
 export function reductionCauseOf(
   volume: IImageVolume,
-  gpuSettings: GpuSettings | undefined
+  gpuSettings: GpuSettings | undefined,
+  { probe = true }: { probe?: boolean } = {}
 ): ViewportFidelityCause | undefined {
-  if (!volumeTextureReductionFactors(volume, gpuSettings).some((f) => f > 1)) {
+  if (
+    !volumeTextureReductionFactors(volume, gpuSettings, { probe }).some(
+      (f) => f > 1
+    )
+  ) {
     return undefined;
   }
 
-  const edgeFactors = boxAverageReductionFactors(volume.voxelGrid.dimensions, {
-    maxEdge: gpuSettings.maxTextureEdge,
-  });
+  const { dimensions } = volume.voxelGrid;
+  const settings = gpuSettingsForVolume(volume, gpuSettings, probe);
+  const { maxVoxelCount } = gridLimitsOfGpuSettings(
+    settings,
+    bytesPerVoxelOf(volume)
+  );
+  const edgeReduction = reductionOf(
+    boxAverageReductionFactors(dimensions, { maxEdge: settings.maxTextureEdge })
+  );
+  const memoryReduction = reductionOf(
+    boxAverageReductionFactors(dimensions, { maxVoxelCount })
+  );
 
-  return edgeFactors.some((f) => f > 1) ? 'deviceTextureLimit' : 'memoryBudget';
+  return memoryReduction > 1 && memoryReduction >= edgeReduction
+    ? 'memoryBudget'
+    : 'deviceTextureLimit';
 }
 
 /**

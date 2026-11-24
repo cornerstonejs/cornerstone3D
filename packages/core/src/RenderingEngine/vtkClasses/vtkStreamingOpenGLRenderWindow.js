@@ -3,6 +3,11 @@ import vtkOpenGLRenderWindow from '@kitware/vtk.js/Rendering/OpenGL/RenderWindow
 import vtkStreamingOpenGLViewNodeFactory, {
   registerOverride,
 } from './vtkStreamingOpenGLViewNodeFactory';
+import {
+  CONTEXT_OVERHEAD_BYTES,
+  removeGpuMemoryEntry,
+  setGpuMemoryEntry,
+} from '../../utilities/gpuMemoryLedger';
 
 /**
  * vtkStreamingOpenGLRenderWindow - A derived class of the core vtkOpenGLRenderWindow class.
@@ -15,6 +20,31 @@ import vtkStreamingOpenGLViewNodeFactory, {
  */
 function vtkStreamingOpenGLRenderWindow(publicAPI, model) {
   model.classHierarchy.push('vtkStreamingOpenGLRenderWindow');
+
+  const superInitialize = publicAPI.initialize;
+
+  /**
+   * vtk.js creates the WebGL context at the first render, not with the
+   * window. The fixed cost of the context counts in the GPU memory ledger
+   * from then on, so a pool of contexts that never render books nothing.
+   */
+  publicAPI.initialize = () => {
+    superInitialize();
+
+    if (model.context && !model.rootOpenGLRenderWindow) {
+      setGpuMemoryEntry(publicAPI, {
+        kind: 'context',
+        bytes: CONTEXT_OVERHEAD_BYTES,
+      });
+    }
+  };
+
+  const superDelete = publicAPI.delete;
+
+  publicAPI.delete = () => {
+    removeGpuMemoryEntry(publicAPI);
+    superDelete();
+  };
 }
 
 // ----------------------------------------------------------------------------

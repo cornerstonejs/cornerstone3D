@@ -9,10 +9,45 @@ import {
 } from '@kitware/vtk.js/Rendering/OpenGL/RenderWindow/resourceSharingHelper';
 import vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
 import { getCanUseNorm16Texture } from '../../init';
+import {
+  getGpuMemoryTotal,
+  removeGpuMemoryEntry,
+  setGpuMemoryEntry,
+} from '../../utilities/gpuMemoryLedger';
+import {
+  noteTextureAllocation,
+  noteTextureRendered,
+} from '../../utilities/gpuAllocationTracker';
+import gridFitsGpuSettings from './gridFitsGpuSettings';
 import takeBoundScalarTexture from './takeBoundScalarTexture';
 import actorsWaitingForStorage from '../helpers/actorsWaitingForStorage';
 
 const { vtkErrorMacro } = macro;
+
+/**
+ * A plain vtk.js texture whose release and delete also remove its entry of
+ * the GPU memory ledger. vtk.js freezes the public API of an instance, so the
+ * override happens in the constructor, before the freeze. It registers no
+ * class name, so the vtk.js factory of `vtkOpenGLTexture` stays as it is.
+ */
+export const newLedgerTexture = macro.newInstance(
+  (publicAPI, model, initialValues) => {
+    vtkOpenGLTexture.extend(publicAPI, model, initialValues);
+
+    const superRelease = publicAPI.releaseGraphicsResources;
+    const superDelete = publicAPI.delete;
+
+    publicAPI.releaseGraphicsResources = (...args) => {
+      removeGpuMemoryEntry(publicAPI);
+
+      return superRelease(...args);
+    };
+    publicAPI.delete = () => {
+      removeGpuMemoryEntry(publicAPI);
+      superDelete();
+    };
+  }
+);
 
 function findLabelOutlineProperties(actor, currentValidInputs) {
   const labelmapProperties = [];
@@ -127,6 +162,8 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
     } else {
       actorsWaitingForStorage.delete(actor);
       publicAPI.renderPieceDraw(ren, actor);
+      /** Only a draw that ran settles a large allocation. */
+      noteTextureRendered(model.context, model.scalarTextures);
     }
 
     publicAPI.renderPieceFinish(ren, actor);
@@ -268,13 +305,47 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
         !tex?.oglObject?.getHandle() || tex?.hash !== scalarsHash;
 
       if (reBuildTex && !hasUpdatedExtents) {
-        const newScalarTexture = vtkOpenGLTexture.newInstance();
-
-        newScalarTexture.setOpenGLRenderWindow(model._openGLRenderWindow);
-        // This path builds the texture from the scalars of `imageData`, which
-        // are the full-resolution voxels, so the dimensions must be the ones of
-        // `imageData`. Only the streaming path below reads a reduced grid.
+        /**
+         * This path builds the texture from the scalars of `imageData`, which
+         * are the full-resolution voxels, so the dimensions must be the ones of
+         * `imageData`. Only the streaming path below reads a reduced grid.
+         */
         const dims = imageData.getDimensions();
+        const numberOfComponents = scalars.getNumberOfComponents();
+        const volumeId = imageData.get('id')?.id;
+
+        /**
+         * The full-resolution voxels have no reduction here, so a grid that
+         * the GPU settings cannot hold gets no texture rather than a gray one.
+         */
+        if (
+          !gridFitsGpuSettings(
+            dims,
+            scalars.getDataType(),
+            numberOfComponents,
+            {
+              volumeId,
+            }
+          )
+        ) {
+          return;
+        }
+
+        const textureBytes =
+          dims[0] *
+          dims[1] *
+          dims[2] *
+          numberOfComponents *
+          (scalars.getData()?.BYTES_PER_ELEMENT ?? 4);
+
+        const newScalarTexture = newLedgerTexture();
+
+        noteTextureAllocation({
+          textureBytes,
+          totalBytes: getGpuMemoryTotal() + textureBytes,
+          owner: newScalarTexture,
+        });
+        newScalarTexture.setOpenGLRenderWindow(model._openGLRenderWindow);
         newScalarTexture.setOglNorm16Ext(
           model.context.getExtension('EXT_texture_norm16')
         );
@@ -284,6 +355,13 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
           height: dims[1],
           depth: dims[2],
           dataArray: scalars,
+        });
+        /** The size that vtk.js computed for the format it chose. */
+        setGpuMemoryEntry(newScalarTexture, {
+          kind: 'texture',
+          bytes:
+            newScalarTexture.getAllocatedGPUMemoryInBytes?.() || textureBytes,
+          volumeId,
         });
         model._openGLRenderWindow.setGraphicsResourceForObject(
           scalars,

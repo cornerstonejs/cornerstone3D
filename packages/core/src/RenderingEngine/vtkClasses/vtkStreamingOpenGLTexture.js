@@ -10,6 +10,13 @@ import VoxelStatistics from '../../enums/VoxelStatistics';
 import ImageQualityStatus from '../../enums/ImageQualityStatus';
 import autoLoad from '../../utilities/autoLoad';
 import { getConfiguration } from '../../init';
+import { noteTextureAllocation } from '../../utilities/gpuAllocationTracker';
+import {
+  getGpuMemoryEntryBytes,
+  getGpuMemoryTotal,
+  removeGpuMemoryEntry,
+  setGpuMemoryEntry,
+} from '../../utilities/gpuMemoryLedger';
 
 const DEFAULT_MAX_SLICES_PER_RENDER = 16;
 const DEFAULT_MAX_MILLISECONDS_PER_RENDER = 8;
@@ -116,12 +123,65 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
   const superCreate3DFromRaw = publicAPI.create3DFromRaw;
 
   /**
+   * Tells the allocation tracker about a new GPU allocation, before it
+   * happens. An update of some extents of the same texture is no allocation,
+   * and a new upload of the same shape, after the texture moved to another
+   * context, writes no pending record either.
+   *
+   * The size is an estimate from the typed array. The ledger takes the size
+   * that vtk.js states after the allocation (see `noteAllocated`).
+   */
+  function noteAllocation({ width, height, depth, numComps, dataType }) {
+    const shape = `${width}x${height}x${depth}x${numComps}x${dataType}`;
+
+    if (shape === model.allocatedShape) {
+      return;
+    }
+
+    model.allocatedShape = shape;
+
+    /** `dataType` names a typed array, such as 'Float32Array'. */
+    const textureBytes =
+      width *
+      height *
+      depth *
+      (numComps || 1) *
+      (globalThis[dataType]?.BYTES_PER_ELEMENT ?? 4);
+
+    /** The page total leaves out the earlier upload that this one replaces. */
+    noteTextureAllocation({
+      textureBytes,
+      totalBytes:
+        getGpuMemoryTotal() - getGpuMemoryEntryBytes(publicAPI) + textureBytes,
+      owner: publicAPI,
+    });
+  }
+
+  /**
+   * Records the upload in the GPU memory ledger, with the size that vtk.js
+   * computed for the internal format it chose (half float, norm16 or float).
+   */
+  function noteAllocated() {
+    setGpuMemoryEntry(publicAPI, {
+      kind: 'texture',
+      bytes: model.allocatedGPUMemoryInBytes || 0,
+      volumeId: model.volumeId,
+    });
+  }
+
+  /**
    * The mappers allocate with `data: null`, which leaves the GPU storage empty,
    * so every slice needs a fill. `modified()` no longer implies that, and a
    * re-allocation after the first fill would otherwise stay black.
    */
   publicAPI.create3DFromRaw = (options) => {
+    noteAllocation(options);
+
     const created = superCreate3DFromRaw(options);
+
+    if (created) {
+      noteAllocated();
+    }
 
     if (created && !options.data) {
       // New storage reads 0, so a slice with no data needs no upload until a
@@ -292,6 +352,7 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     const window = model._openGLRenderWindow;
 
     releaseInitFence();
+    removeGpuMemoryEntry(publicAPI);
     superReleaseGraphicsResources(
       rwin ?? (window?.isDeleted?.() ? undefined : window)
     );
@@ -301,6 +362,7 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
 
   publicAPI.delete = () => {
     releaseInitFence();
+    removeGpuMemoryEntry(publicAPI);
     superDelete();
   };
 

@@ -32,10 +32,21 @@ import {
   setGpuSettingsPreset,
 } from '../src/utilities/gpuSettingsPresets';
 import { setLossyDownsampling } from '../src/init';
+import * as renderingCapabilities from '../src/utilities/renderingCapabilities';
 import eventTarget from '../src/eventTarget';
 import triggerEvent from '../src/utilities/triggerEvent';
 import { VtkImageMapperRenderPath } from '../src/RenderingEngine/GenericViewport/Planar/VtkImageMapperRenderPath';
 import { dataKindOf } from '../src/RenderingEngine/helpers/fidelityIndicator/fidelityIndicatorState';
+
+/**
+ * The GPU settings apply to a GPU renderer only, and jsdom has no WebGL, so
+ * the renderer is a desktop GPU here.
+ */
+beforeEach(() => {
+  jest
+    .spyOn(renderingCapabilities, 'getRendererClass')
+    .mockReturnValue('desktop');
+});
 
 // These tests need final downsampling, which is off by default.
 beforeAll(() => setLossyDownsampling({ final: true }));

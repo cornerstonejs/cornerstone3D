@@ -1,4 +1,11 @@
-import { describe, it, expect, jest, beforeEach } from '@jest/globals';
+import {
+  describe,
+  it,
+  expect,
+  jest,
+  beforeEach,
+  afterEach,
+} from '@jest/globals';
 import ImageVolume from '../src/cache/classes/ImageVolume';
 import volumeTextureStore from '../src/cache/volumeTextureStore';
 import VoxelManager from '../src/utilities/VoxelManager';
@@ -9,6 +16,7 @@ import {
   setGpuSettingsPreset,
 } from '../src/utilities/gpuSettingsPresets';
 import { setLossyDownsampling } from '../src/init';
+import * as renderingCapabilities from '../src/utilities/renderingCapabilities';
 import vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 
 // A legacy viewport has no render path, so the set that its actor draws is held
@@ -79,10 +87,26 @@ async function show(viewport, volumeId) {
   viewport.setActors([{ uid: volumeId, actor, referencedId: volumeId }]);
 }
 
+let rendererClassSpy;
+
 beforeEach(() => {
   volumeTextureStore.clear();
   volumeTextureStore.setBudget(0);
   mockVolumes.clear();
+  /**
+   * The GPU settings apply to a GPU renderer only, and jsdom has no WebGL, so
+   * the renderer is a desktop GPU here.
+   */
+  rendererClassSpy = jest
+    .spyOn(renderingCapabilities, 'getRendererClass')
+    .mockReturnValue('desktop');
+  /** The default `auto` reads a WebGL probe, which jest does not have. */
+  setGpuSettingsPreset('high');
+});
+
+afterEach(() => {
+  resetGpuSettingsPreset();
+  rendererClassSpy.mockRestore();
 });
 
 describe('a legacy viewport holds the texture set that it draws', () => {

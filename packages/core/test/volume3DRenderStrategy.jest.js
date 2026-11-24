@@ -24,6 +24,7 @@ import {
   setGpuSettingsPreset,
 } from '../src/utilities/gpuSettingsPresets';
 import { setLossyDownsampling } from '../src/init';
+import * as renderingCapabilities from '../src/utilities/renderingCapabilities';
 
 const mockVolumes = new Map();
 
@@ -87,13 +88,24 @@ function render(path, rendering) {
   path.applyStrategy(rendering);
 }
 
+let rendererClassSpy;
+
 beforeEach(() => {
   volumeTextureStore.clear();
   volumeTextureStore.setBudget(0);
+  /**
+   * The default `auto` reads a WebGL probe, which jest does not have, and the
+   * GPU settings apply to a GPU renderer only, which jsdom does not have.
+   */
+  setGpuSettingsPreset('high');
+  rendererClassSpy = jest
+    .spyOn(renderingCapabilities, 'getRendererClass')
+    .mockReturnValue('desktop');
 });
 
 afterEach(() => {
   resetGpuSettingsPreset();
+  rendererClassSpy.mockRestore();
 });
 
 describe('the 3D render path chooses a strategy', () => {

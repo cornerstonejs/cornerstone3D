@@ -5,6 +5,8 @@ const mockVolumes = new Map();
 
 jest.mock('../src/init', () => ({
   getConfiguration: () => mockConfig,
+  getShouldUseCPURendering: () => false,
+  getLossyDownsampling: () => ({ final: false }),
 }));
 jest.mock('../src/utilities/autoLoad', () => ({
   __esModule: true,
