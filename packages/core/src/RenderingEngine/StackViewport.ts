@@ -1800,9 +1800,8 @@ class StackViewport extends Viewport {
     // A colormap fills the transfer function with its own colors. Thus it stops
     // the curve of a VOI LUT Sequence and the curve of a sigmoid, which would
     // replace those colors with a grey ramp. The generic viewports use the same
-    // rule (refer to createPlanarRGBTransferFunction). The CPU path is
-    // different: there the colormap comes after the VOI LUT, so the two combine
-    // and _syncCPUVOILUTSequence keeps the sequence.
+    // rule (refer to createPlanarRGBTransferFunction). The CPU path uses the
+    // same rule too (refer to _getCPUVOILUTSequenceToApply).
     const colormapApplied = !!(this.colormap as ColormapPublic)?.name;
     const voiLUTSequence = colormapApplied
       ? undefined
@@ -2264,7 +2263,14 @@ class StackViewport extends Viewport {
 
     if (this.useCPURendering) {
       this._cpuFallbackEnabledElement.renderingTools = {};
-      delete this._cpuFallbackEnabledElement.viewport.colormap;
+      // Keep the application colormap across stacks, as the GPU path does.
+      const colormap =
+        this.colormap && resolveCPUFallbackColormap(this.colormap);
+      if (colormap) {
+        this._cpuFallbackEnabledElement.viewport.colormap = colormap;
+      } else {
+        delete this._cpuFallbackEnabledElement.viewport.colormap;
+      }
     }
 
     const imageId = await this._setImageIdIndex(currentImageIdIndex);

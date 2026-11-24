@@ -202,6 +202,18 @@ describe('stackViewport_node_render', function () {
       expect(viewport.getProperties().voiRange).toEqual(voiRange);
     });
 
+    it('keeps the colormap and drops the sequence after setStack, as the GPU path does', async () => {
+      const ids = await loadFrames('cpuColormapStack', [{ voiLUT: lutA }]);
+      const nextIds = await loadFrames('cpuColormapStack2', [{ voiLUT: lutB }]);
+      await viewport.setStack(ids, 0);
+      viewport.setProperties({ colormap: { name: 'hsv' } });
+
+      await viewport.setStack(nextIds, 0);
+
+      expect(cpuViewport().colormap).toBeDefined();
+      expect(cpuViewport().voiLUT).toBeUndefined();
+    });
+
     it('does not throw for useVOILUTSequence while a new stack loads', async () => {
       const ids = await loadFrames('cpuLoading', [{ voiLUT: lutA }]);
       await viewport.setStack(ids, 0);
