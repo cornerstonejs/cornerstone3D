@@ -234,8 +234,8 @@ async function convertStackToFusionVolume() {
 
   // Set both volumes on the viewport with fusion
   await viewport.setDisplaySets(
-    { displaySetId: ctDisplaySetId },
-    { displaySetId: ptDisplaySetId }
+    { displaySetId: ctDisplaySetId, options: { mode: 'volume' } },
+    { displaySetId: ptDisplaySetId, options: { mode: 'volume' } }
   );
   viewport.setDisplaySetAppearance(ctDisplaySetId, ctPresentation());
   viewport.setDisplaySetAppearance(ptDisplaySetId, petColorMapPresentation());
@@ -279,7 +279,10 @@ async function convertStackToVolumeWithLabelmap() {
   ]);
 
   // Set the volume on the viewport
-  await viewport.setDisplaySets({ displaySetId: ctDisplaySetId });
+  await viewport.setDisplaySets({
+    displaySetId: ctDisplaySetId,
+    options: { mode: 'volume' },
+  });
   viewport.setDisplaySetAppearance(ctDisplaySetId, ctPresentation());
 
   // Add the segmentation representation to the viewport

@@ -226,6 +226,7 @@ describe('slice first decision', () => {
     imageIds: Array.from({ length: 10 }, (_, i) => `ct:${i}`),
     volumeId: 'ct-volume',
   };
+  const VOLUME_MODE = { mode: 'volume' };
   let service;
   let volume;
 
@@ -263,7 +264,7 @@ describe('slice first decision', () => {
     });
 
     try {
-      expect(service.select(dataSet).renderMode).toBe(
+      expect(service.select(dataSet, VOLUME_MODE).renderMode).toBe(
         PlanarRenderModeId.VTK_CPU_SLICE
       );
     } finally {
@@ -275,7 +276,7 @@ describe('slice first decision', () => {
     setSliceFirst(false);
 
     expect(getConfiguration().rendering.planar.sliceFirst).toBe(false);
-    expect(service.select(dataSet).renderMode).toBe(
+    expect(service.select(dataSet, VOLUME_MODE).renderMode).toBe(
       PlanarRenderModeId.VTK_GPU_VOLUME_SLICE
     );
   });
@@ -283,21 +284,21 @@ describe('slice first decision', () => {
   it('samples on the CPU when slice first is on globally', () => {
     setSliceFirst(true);
 
-    expect(service.select(dataSet).renderMode).toBe(
+    expect(service.select(dataSet, VOLUME_MODE).renderMode).toBe(
       PlanarRenderModeId.VTK_CPU_SLICE
     );
   });
 
   it('lets the option of the display set win over the global value', () => {
-    expect(service.select(dataSet, { sliceFirst: true }).renderMode).toBe(
-      PlanarRenderModeId.VTK_CPU_SLICE
-    );
+    expect(
+      service.select(dataSet, { mode: 'volume', sliceFirst: true }).renderMode
+    ).toBe(PlanarRenderModeId.VTK_CPU_SLICE);
 
     setSliceFirst(true);
 
-    expect(service.select(dataSet, { sliceFirst: false }).renderMode).toBe(
-      PlanarRenderModeId.VTK_GPU_VOLUME_SLICE
-    );
+    expect(
+      service.select(dataSet, { mode: 'volume', sliceFirst: false }).renderMode
+    ).toBe(PlanarRenderModeId.VTK_GPU_VOLUME_SLICE);
   });
 
   it('keeps the cpu mode of a cpu pin and the gpuVolume mode of an extension backend with no cpu mode', () => {
@@ -310,12 +311,18 @@ describe('slice first decision', () => {
     });
 
     expect(
-      service.select(dataSet, { sliceFirst: true, renderBackend: 'cpu' })
-        .renderMode
+      service.select(dataSet, {
+        mode: 'volume',
+        sliceFirst: true,
+        renderBackend: 'cpu',
+      }).renderMode
     ).toBe(PlanarRenderModeId.CANVAS_CPU_SLICE);
     expect(
-      service.select(dataSet, { sliceFirst: true, renderBackend: 'test:plain' })
-        .renderMode
+      service.select(dataSet, {
+        mode: 'volume',
+        sliceFirst: true,
+        renderBackend: 'test:plain',
+      }).renderMode
     ).toBe('test:plainVolume');
   });
 
@@ -333,15 +340,15 @@ describe('slice first decision', () => {
     expect(
       service.select(
         { imageIds: dataSet.imageIds, volumeId: 'not-cached' },
-        { sliceFirst: true }
+        { mode: 'volume', sliceFirst: true }
       ).renderMode
     ).toBe(PlanarRenderModeId.VTK_GPU_VOLUME_SLICE);
 
     volume = createVolume({ numberOfComponents: 3 });
 
-    expect(service.select(dataSet, { sliceFirst: true }).renderMode).toBe(
-      PlanarRenderModeId.VTK_GPU_VOLUME_SLICE
-    );
+    expect(
+      service.select(dataSet, { mode: 'volume', sliceFirst: true }).renderMode
+    ).toBe(PlanarRenderModeId.VTK_GPU_VOLUME_SLICE);
   });
 
   it('keeps the GPU volume path for a segmentation overlay', () => {
@@ -351,15 +358,22 @@ describe('slice first decision', () => {
     };
 
     expect(
-      service.select(segmentation, { sliceFirst: true, role: 'overlay' })
+      service.select(segmentation, {
+        mode: 'volume',
+        sliceFirst: true,
+        role: 'overlay',
+      }).renderMode
+    ).toBe(PlanarRenderModeId.VTK_GPU_VOLUME_SLICE);
+    expect(
+      service.select(segmentation, { mode: 'volume', sliceFirst: true })
         .renderMode
     ).toBe(PlanarRenderModeId.VTK_GPU_VOLUME_SLICE);
-    expect(service.select(segmentation, { sliceFirst: true }).renderMode).toBe(
-      PlanarRenderModeId.VTK_GPU_VOLUME_SLICE
-    );
     expect(
-      service.select(segmentation, { sliceFirst: true, role: 'source' })
-        .renderMode
+      service.select(segmentation, {
+        mode: 'volume',
+        sliceFirst: true,
+        role: 'source',
+      }).renderMode
     ).toBe(PlanarRenderModeId.VTK_CPU_SLICE);
   });
 
@@ -371,6 +385,7 @@ describe('slice first decision', () => {
 
     expect(
       service.select(dataSet, {
+        mode: 'volume',
         sliceFirst: true,
         slabThickness: 10,
         blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
@@ -378,6 +393,7 @@ describe('slice first decision', () => {
     ).toBe(PlanarRenderModeId.VTK_GPU_VOLUME_SLICE);
     expect(
       service.select(dataSet, {
+        mode: 'volume',
         sliceFirst: true,
         slabThickness: 2,
         blendMode: BlendModes.AVERAGE_INTENSITY_BLEND,
@@ -385,6 +401,7 @@ describe('slice first decision', () => {
     ).toBe(PlanarRenderModeId.VTK_GPU_VOLUME_SLICE);
     expect(
       service.select(dataSet, {
+        mode: 'volume',
         sliceFirst: true,
         slabThickness: 1,
         blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,
@@ -429,9 +446,15 @@ describe('slice first decision', () => {
   });
 
   it('does not change whether a data set can render', () => {
-    expect(service.canRender(dataSet, { sliceFirst: true })).toBe(true);
     expect(
-      service.canRender(dataSet, { sliceFirst: true, slabThickness: 1000 })
+      service.canRender(dataSet, { mode: 'volume', sliceFirst: true })
+    ).toBe(true);
+    expect(
+      service.canRender(dataSet, {
+        mode: 'volume',
+        sliceFirst: true,
+        slabThickness: 1000,
+      })
     ).toBe(true);
   });
 
@@ -1808,6 +1831,7 @@ describe('PlanarViewport with slice first (render path)', () => {
       displaySetId: displaySetId,
       options: {
         orientation: OrientationAxis.AXIAL,
+        mode: 'volume',
         sliceFirst: true,
         ...options,
       },
@@ -1978,7 +2002,7 @@ describe('PlanarViewport with slice first (render path)', () => {
         .mockReturnValue(true);
       cache.getVolume.mockImplementation((id) => volumes.get(id));
       viewport.dataProvider.load.mockImplementation(async (id, options) => {
-        const createdId = `cornerstoneStreamingImageVolume:${options.volumeId}`;
+        const createdId = options.volumeId;
 
         volumes.set(createdId, volume);
 
@@ -2331,11 +2355,15 @@ describe('PlanarViewport with slice first (render path)', () => {
     await viewport.setDisplaySets(
       {
         displaySetId: displaySetId,
-        options: { orientation: OrientationAxis.AXIAL },
+        options: { orientation: OrientationAxis.AXIAL, mode: 'volume' },
       },
       {
         displaySetId: overlayId,
-        options: { orientation: OrientationAxis.AXIAL, sliceFirst: false },
+        options: {
+          orientation: OrientationAxis.AXIAL,
+          mode: 'volume',
+          sliceFirst: false,
+        },
       }
     );
     await flush();

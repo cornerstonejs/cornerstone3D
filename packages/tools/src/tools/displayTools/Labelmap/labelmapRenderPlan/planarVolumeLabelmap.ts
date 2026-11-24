@@ -24,6 +24,7 @@ type PlanarVolumeViewport = Types.IViewport<
   addDisplaySet: (
     displaySetId: string,
     options: {
+      mode?: 'auto' | 'stack' | 'volume';
       orientation?: unknown;
       role?: 'source' | 'overlay';
     }
@@ -133,6 +134,7 @@ async function addLabelmapToPlanarVolumeViewport(args: {
     });
 
     await viewport.addDisplaySet(displaySetId, {
+      mode: 'volume',
       orientation: requestedOrientation,
       role: 'overlay',
     });

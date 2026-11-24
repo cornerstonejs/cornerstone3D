@@ -86,7 +86,10 @@ async function showVolume(
     imageIds: cache.getVolume(volumeId).imageIds,
     volumeId,
   });
-  await viewport.setDisplaySets({ displaySetId, options: { orientation } });
+  await viewport.setDisplaySets({
+    displaySetId,
+    options: { orientation, mode: 'volume' },
+  });
   await renderAndWait(viewport);
 
   return displaySetId;
@@ -105,7 +108,7 @@ async function showTwoVolumes(viewport) {
     id: 'scrollCoarse',
     size: { ...SERIES_SIZE, slices: 5, sliceSpacing: 3 },
   });
-  const options = { orientation: OrientationAxis.ACQUISITION };
+  const options = { orientation: OrientationAxis.ACQUISITION, mode: 'volume' };
 
   [fine, coarse].forEach(({ imageIds, volumeId }) => {
     cornerstone3D.displaySetRegistry.add(volumeId, {

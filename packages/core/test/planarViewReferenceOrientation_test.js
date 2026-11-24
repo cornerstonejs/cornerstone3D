@@ -86,7 +86,7 @@ async function showSagittalAndAxial(renderingEngine, id) {
 
   await axial.setDisplaySets({
     displaySetId: sagittalRef16.displaySetId,
-    options: { orientation: OrientationAxis.AXIAL },
+    options: { orientation: OrientationAxis.AXIAL, mode: 'volume' },
   });
   await renderAndWait(axial);
   await moveTo(axial, worldOfVoxel(series, [16, 12, 3]));
@@ -258,7 +258,10 @@ describe('The option asVolume of a direct next planar viewport in stack mode -- 
     ).toEqual(all);
     expect(answersAsVolume(stack, otherFrame)).toEqual(none);
 
-    await stack.setDisplaySets({ displaySetId: sagittalRef16.displaySetId });
+    await stack.setDisplaySets({
+      displaySetId: sagittalRef16.displaySetId,
+      options: { mode: 'volume' },
+    });
     await renderAndWait(stack);
     stack.setViewReference(sagittalRef16);
     await renderAndWait(stack);

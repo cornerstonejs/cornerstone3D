@@ -130,7 +130,7 @@ async function renderImages() {
     });
     viewport.setDisplaySets({
       displaySetId,
-      options: { orientation: Enums.OrientationAxis.AXIAL },
+      options: { orientation: Enums.OrientationAxis.AXIAL, mode: 'volume' },
     });
   }
 

@@ -314,12 +314,14 @@ async function run() {
       displaySetId: ctDisplaySetId,
       options: {
         orientation: defaultOrientation,
+        mode: 'volume',
       },
     },
     {
       displaySetId: ptDisplaySetId,
       options: {
         orientation: defaultOrientation,
+        mode: 'volume',
       },
     }
   );

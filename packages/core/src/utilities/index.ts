@@ -106,6 +106,7 @@ import { buildMetadata } from './buildMetadata';
 import { _getViewportModality } from './getViewportModality';
 import { _getScalingDescriptor } from './getScalingDescriptor';
 import { resolveViewportVolumeId } from './resolveViewportVolumeId';
+import { getDefaultVolumeId } from './getDefaultVolumeId';
 import cache from '../cache/cache';
 import getDynamicVolumeInfo from './getDynamicVolumeInfo';
 import autoLoad from './autoLoad';
@@ -214,6 +215,7 @@ export {
   getViewportModality,
   getScalingDescriptor,
   resolveViewportVolumeId,
+  getDefaultVolumeId,
   windowLevel,
   convertToGrayscale,
   convertColorArrayToRgbString,

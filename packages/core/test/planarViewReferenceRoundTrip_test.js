@@ -40,7 +40,10 @@ async function settle(viewport) {
 
 /** Shows the volume display set of the tests in an orientation. */
 async function showVolumeIn(viewport, orientation) {
-  await viewport.setDisplaySets({ displaySetId, options: { orientation } });
+  await viewport.setDisplaySets({
+    displaySetId,
+    options: { orientation, mode: 'volume' },
+  });
   await settle(viewport);
 }
 

@@ -468,15 +468,15 @@ async function run() {
   await Promise.all([
     axialViewport.setDisplaySets({
       displaySetId: mprDisplaySetId,
-      options: { orientation: OrientationAxis.AXIAL },
+      options: { orientation: OrientationAxis.AXIAL, mode: 'volume' },
     }),
     sagittalViewport.setDisplaySets({
       displaySetId: mprDisplaySetId,
-      options: { orientation: OrientationAxis.SAGITTAL },
+      options: { orientation: OrientationAxis.SAGITTAL, mode: 'volume' },
     }),
     coronalViewport.setDisplaySets({
       displaySetId: mprDisplaySetId,
-      options: { orientation: OrientationAxis.CORONAL },
+      options: { orientation: OrientationAxis.CORONAL, mode: 'volume' },
     }),
   ]);
   getMprViewports().forEach((viewport) => {

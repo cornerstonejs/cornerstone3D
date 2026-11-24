@@ -291,7 +291,10 @@ async function showVolume(viewport, volumeId, orientation) {
     imageIds: cache.getVolume(volumeId).imageIds,
     volumeId,
   });
-  await viewport.setDisplaySets({ displaySetId, options: { orientation } });
+  await viewport.setDisplaySets({
+    displaySetId,
+    options: { orientation, mode: 'volume' },
+  });
   await renderAndWait(viewport);
 }
 
@@ -649,7 +652,7 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
       await target.setDisplaySets(
         ...[volumeId, secondVolumeId].map((id) => ({
           displaySetId: `volume:${target.id}:${id}`,
-          options: { orientation: OrientationAxis.CORONAL },
+          options: { orientation: OrientationAxis.CORONAL, mode: 'volume' },
         }))
       );
       await renderAndWait(target);
@@ -1160,7 +1163,11 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
         });
         await viewport.setDisplaySets({
           displaySetId,
-          options: { orientation: OrientationAxis.ACQUISITION, ...options },
+          options: {
+            mode: 'volume',
+            orientation: OrientationAxis.ACQUISITION,
+            ...options,
+          },
         });
         await renderAndWait(viewport);
 

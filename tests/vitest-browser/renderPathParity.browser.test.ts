@@ -274,11 +274,11 @@ describe('renderPathParity', () => {
   // ------------------------------------------------------------------------
   // Confirmed cross-render-path divergences (shared-context rule 5).
   //
-  // vtkGpuVolumeSlice and canvasCpuSlice are volume-backed: the harness registers
-  // their planar display set with an explicit `volumeId` (see
+  // vtkGpuVolumeSlice and canvasCpuSlice are volume-backed: the harness mounts
+  // their planar display set with `mode: 'volume'` (see
   // createPlanarViewport.ts) so PlanarRenderPathDecisionService selects the
   // volume render path (packages/core/src/RenderingEngine/Viewports/
-  // Planar/PlanarRenderPathDecisionService.ts, isVolumeBackedDataSet). Two
+  // Planar/PlanarRenderPathDecisionService.ts, resolvePathInputs). Two
   // distinct divergences from the vtkFrame/canvasFrame (stack-backed) baseline
   // were confirmed by inspecting every one of the 6 canonical-scenario steps
   // (see the per-step diffs captured during development of this suite):

@@ -194,6 +194,7 @@ async function run() {
     displaySetId: sourceDisplaySetId,
     options: {
       orientation: Enums.OrientationAxis.CORONAL,
+      mode: 'volume',
     },
   });
 
@@ -201,6 +202,7 @@ async function run() {
     displaySetId: sourceDisplaySetId,
     options: {
       orientation: Enums.OrientationAxis.SAGITTAL,
+      mode: 'volume',
     },
   });
 

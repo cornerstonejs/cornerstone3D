@@ -338,7 +338,7 @@ async function run() {
     viewportIds.forEach((viewportId) => {
       renderingEngine
         .getViewport<PlanarViewport>(viewportId)
-        .setDisplaySets({ displaySetId });
+        .setDisplaySets({ displaySetId, options: { mode: 'volume' } });
     });
 
     // Render the image

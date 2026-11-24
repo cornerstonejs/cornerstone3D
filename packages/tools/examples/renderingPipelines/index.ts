@@ -216,7 +216,7 @@ async function run() {
     viewportIds.map((viewportId) =>
       renderingEngine
         .getViewport<PlanarViewport>(viewportId)
-        .setDisplaySets({ displaySetId })
+        .setDisplaySets({ displaySetId, options: { mode: 'volume' } })
     )
   );
 

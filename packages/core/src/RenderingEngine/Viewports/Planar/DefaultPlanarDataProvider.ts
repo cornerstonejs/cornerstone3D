@@ -3,7 +3,10 @@ import { isVolumeRenderMode } from '../../helpers/renderBackendRegistry';
 import toCacheVolumeId from '../../helpers/toCacheVolumeId';
 import type { IImage } from '../../../types';
 import type { LoadedData } from '../ViewportArchitectureTypes';
-import { displaySetShapeError, getImageDisplaySet } from '../displaySetAccess';
+import {
+  displaySetShapeError,
+  getVolumeOrImageDisplaySet,
+} from '../displaySetAccess';
 import { coreLog } from '../../../utilities/logger';
 import type {
   PlanarDataProvider,
@@ -23,7 +26,11 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
     const dataSet = this.getDataSet(displaySetId);
 
     if (!dataSet) {
-      throw displaySetShapeError('PlanarViewport', displaySetId, 'imageIds');
+      throw displaySetShapeError(
+        'PlanarViewport',
+        displaySetId,
+        'imageIds or volumeId of a cached volume'
+      );
     }
 
     if (!options) {
@@ -118,7 +125,7 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
   private getDataSet(
     displaySetId: string
   ): PlanarDisplaySetDescriptor | undefined {
-    const dataSet = getImageDisplaySet(displaySetId);
+    const dataSet = getVolumeOrImageDisplaySet(displaySetId);
 
     if (!isPlanarDisplaySetDescriptor(dataSet)) {
       return;

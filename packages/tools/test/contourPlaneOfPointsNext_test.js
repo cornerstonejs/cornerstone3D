@@ -95,7 +95,10 @@ async function showVolumeIn(viewport, series, orientation) {
     imageIds: series.imageIds,
     volumeId: series.volumeId,
   });
-  await viewport.setDisplaySets({ displaySetId, options: { orientation } });
+  await viewport.setDisplaySets({
+    displaySetId,
+    options: { orientation, mode: 'volume' },
+  });
   await renderAndWait(viewport);
 }
 

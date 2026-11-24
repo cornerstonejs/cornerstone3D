@@ -257,6 +257,7 @@ async function findViewportForAnnotation(
     if (stackViewport) {
       await stackViewport.setDisplaySets({
         displaySetId: metadata.displaySetId,
+        options: { mode: 'volume', volumeId: metadata.volumeId },
       });
       return stackViewport;
     }

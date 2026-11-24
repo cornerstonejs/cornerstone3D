@@ -589,13 +589,12 @@ async function run() {
 
   // Set volumes on the viewports
   await Promise.all(
-    viewportIds
-      .slice(1)
-      .map((viewportId) =>
-        renderingEngine
-          .getViewport<PlanarViewport>(viewportId)
-          .setDisplaySets({ displaySetId: volumeDisplaySetId })
-      )
+    viewportIds.slice(1).map((viewportId) =>
+      renderingEngine.getViewport<PlanarViewport>(viewportId).setDisplaySets({
+        displaySetId: volumeDisplaySetId,
+        options: { mode: 'volume' },
+      })
+    )
   );
 
   // Render the image

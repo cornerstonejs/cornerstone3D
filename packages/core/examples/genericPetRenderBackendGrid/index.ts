@@ -228,6 +228,8 @@ async function run() {
         displaySetId: spec.displaySetId,
         options: {
           renderBackend: spec.renderBackend,
+          mode:
+            spec.displaySetId === petVolumeDisplaySetId ? 'volume' : 'stack',
           ...(spec.orientation ? { orientation: spec.orientation } : {}),
         },
       });

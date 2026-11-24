@@ -209,7 +209,7 @@ async function run() {
 
   const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-  await viewport.setDisplaySets({ displaySetId });
+  await viewport.setDisplaySets({ displaySetId, options: { mode: 'volume' } });
 
   // // Add the first segmentation representation to the viewport
   await segmentation.addLabelmapRepresentationToViewport(viewportId, [

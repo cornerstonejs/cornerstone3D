@@ -109,7 +109,7 @@ async function showVolumeOnNext(viewport, volumeId, options = {}) {
   });
   await viewport.setDisplaySets({
     displaySetId,
-    options: { orientation: OrientationAxis.AXIAL, ...options },
+    options: { mode: 'volume', orientation: OrientationAxis.AXIAL, ...options },
   });
 
   return displaySetId;
@@ -493,7 +493,10 @@ describe('Planar presentation, a list of opacities in a colormap -- ', () => {
           imageIds: cache.getVolume(overlayId).imageIds,
           volumeId: overlayId,
         });
-        await viewport.addDisplaySet(overlayDisplaySetId, path.options);
+        await viewport.addDisplaySet(overlayDisplaySetId, {
+          mode: 'volume',
+          ...path.options,
+        });
         viewport.setDisplaySetAppearance(sourceDisplaySetId, {
           voiRange: { lower: 0, upper: 252 },
         });

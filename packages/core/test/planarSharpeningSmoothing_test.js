@@ -408,6 +408,7 @@ async function showNextVolume(
     return {
       displaySetId,
       options: {
+        mode: 'volume',
         ...options,
         orientation: OrientationAxis.AXIAL,
         ...(index ? { role: 'overlay' } : {}),

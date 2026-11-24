@@ -149,10 +149,10 @@ leave the canvas. Against the legacy volume viewport:
   position** and moved the focal point, so the cut moved too.
   `setViewState({ orientation })` keeps the point in view, so on a thin
   volume the two show cuts that are slices apart.
-- **A stack has one orientation.** A display set without a `volumeId` shows
-  as a stack in its acquisition plane. Mounted with another orientation, the
-  viewport shows the images as a volume when they form one, and the mount
-  throws when they do not. After the mount, `setOrientation` and
+- **A stack has one orientation.** A display set mounted without a mode
+  shows as a stack in its acquisition plane, with or without a `volumeId`.
+  Mounted with another orientation, the viewport shows the images as a volume
+  when they form one, and the mount throws when they do not. After the mount, `setOrientation` and
   `setViewState({ orientation })` change nothing on a stack and do not throw,
   and the view state keeps its orientation.
   `canRenderOrientation(orientation)` tells before the call: for a mounted

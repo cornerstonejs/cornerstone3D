@@ -374,7 +374,10 @@ async function run() {
   );
 
   await Promise.all([
-    volumeViewport.setDisplaySets({ displaySetId: displaySetIds.volume }),
+    volumeViewport.setDisplaySets({
+      displaySetId: displaySetIds.volume,
+      options: { mode: 'volume' },
+    }),
     stackViewport.setDisplaySets({ displaySetId: displaySetIds.sagittal }),
     stackViewport2.setDisplaySets({ displaySetId: displaySetIds.transverse }),
     stackViewport3.setDisplaySets({ displaySetId: displaySetIds.coronal }),

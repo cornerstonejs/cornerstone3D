@@ -46,11 +46,15 @@ async function showFusion(viewport) {
   await viewport.setDisplaySets(
     {
       displaySetId: CT_DISPLAY_SET_ID,
-      options: { orientation: OrientationAxis.ACQUISITION },
+      options: { orientation: OrientationAxis.ACQUISITION, mode: 'volume' },
     },
     {
       displaySetId: PT_DISPLAY_SET_ID,
-      options: { orientation: OrientationAxis.ACQUISITION, role: 'overlay' },
+      options: {
+        orientation: OrientationAxis.ACQUISITION,
+        role: 'overlay',
+        mode: 'volume',
+      },
     }
   );
   await renderAndWait(viewport);

@@ -1,4 +1,6 @@
 import { displaySetRegistry, Enums, metaData } from '@cornerstonejs/metadata';
+import cache from '../../cache/cache';
+import toCacheVolumeId from '../helpers/toCacheVolumeId';
 import type { DisplaySetDescriptor } from '../../types/DisplaySetDescriptor';
 import type { WSIClientLike } from '../../utilities/WSIUtilities';
 import type { WSIDisplaySetDescriptor } from './WSI/WSIViewportTypes';
@@ -22,6 +24,38 @@ export function getImageDisplaySet(
   const descriptor = getDisplaySetDescriptor(displaySetId);
 
   return isImageDisplaySet(descriptor) ? descriptor : undefined;
+}
+
+/**
+ * The descriptor of `displaySetId` with the image ids that a planar or a 3D
+ * viewport loads: the descriptor itself when it has image ids. A descriptor
+ * that names a volume and has no image ids (a volume of its own, such as a
+ * parametric map or a labelmap) gives a copy with the image ids of that
+ * volume, when the cache holds it, and `volumeOnly` set: such a display set
+ * shows as a volume.
+ */
+export function getVolumeOrImageDisplaySet(
+  displaySetId: string
+): (ImageDisplaySetDescriptor & { volumeOnly?: boolean }) | undefined {
+  const descriptor = getDisplaySetDescriptor(displaySetId);
+
+  if (isImageDisplaySet(descriptor) && descriptor.imageIds.length) {
+    return descriptor;
+  }
+
+  const volumeId =
+    isRecord(descriptor) && typeof descriptor.volumeId === 'string'
+      ? descriptor.volumeId
+      : undefined;
+  const volume = volumeId
+    ? cache.getVolume(toCacheVolumeId(volumeId))
+    : undefined;
+
+  if (!volume?.imageIds?.length) {
+    return isImageDisplaySet(descriptor) ? descriptor : undefined;
+  }
+
+  return { ...descriptor, imageIds: volume.imageIds, volumeOnly: true };
 }
 
 /**

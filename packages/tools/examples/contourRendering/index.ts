@@ -178,7 +178,7 @@ async function run() {
 
   await renderingEngine
     .getViewport<PlanarViewport>(viewportId1)
-    .setDisplaySets({ displaySetId });
+    .setDisplaySets({ displaySetId, options: { mode: 'volume' } });
 
   // // Add the segmentation representation to the viewport
   await segmentation.addContourRepresentationToViewport(viewportId1, [

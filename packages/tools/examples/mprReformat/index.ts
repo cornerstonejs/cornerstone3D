@@ -284,7 +284,7 @@ async function run() {
     viewportIds.map((viewportId) =>
       renderingEngine
         .getViewport<PlanarViewport>(viewportId)
-        .setDisplaySets({ displaySetId })
+        .setDisplaySets({ displaySetId, options: { mode: 'volume' } })
     )
   ).then(() => {
     const voi = metaData.get('voiLutModule', imageIds[0]);

@@ -330,7 +330,7 @@ function setVolumesOnNextViewport(viewport, volumeIds, options = {}) {
       volumeId,
     });
 
-    return { displaySetId, options };
+    return { displaySetId, options: { mode: 'volume', ...options } };
   });
 
   return viewport.setDisplaySets(...entries);

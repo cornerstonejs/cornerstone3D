@@ -440,12 +440,15 @@ displaySetRegistry.add(displaySetId, {
 
 await viewport.setDisplaySets({
   displaySetId,
-  options: { orientation: Enums.OrientationAxis.AXIAL },
+  options: { orientation: Enums.OrientationAxis.AXIAL, mode: 'volume' },
 });
 ```
 
-The viewport takes the volume from the cache. When the volume is not there,
-the viewport makes it from the image ids and starts its load.
+`mode: 'volume'` asks for the volume: without it the viewport shows the
+images as a stack in their acquisition plane, also with a `volumeId`. The
+viewport takes the volume from the cache. When the volume is not there, the
+viewport makes it from the image ids and starts its load. Without a
+`volumeId` the viewport names the volume `utilities.getDefaultVolumeId(imageIds)`.
 
 `setVolumesForViewports` becomes a loop over the viewports. Find and check
 every viewport first, as the 5.x helper did, so that a missing one, or one
@@ -471,7 +474,9 @@ const viewports = viewportIds.map((viewportId) => {
 });
 
 await Promise.all(
-  viewports.map((viewport) => viewport.setDisplaySets({ displaySetId }))
+  viewports.map((viewport) =>
+    viewport.setDisplaySets({ displaySetId, options: { mode: 'volume' } })
+  )
 );
 ```
 
@@ -483,8 +488,10 @@ new display sets.
 
 **What can go wrong**
 
-- A display set with a `volumeId` shows as a volume. Without it the same
-  images show as a stack. Leave `volumeId` out for a stack.
+- A planar viewport shows a volume when the mount asks for
+  `mode: 'volume'`. Without a mode the same images show as a stack in their
+  acquisition plane, whatever the registration gives: a `volumeId` names the
+  volume and never chooses the mode.
 - A stack that is asked for an orientation other than its acquisition plane
   shows as a volume when its images form one. The mount throws when they do
   not. Ask `viewport.canRenderOrientation(orientation)` first.

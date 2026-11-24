@@ -366,7 +366,7 @@ class GrowCutBaseTool extends BaseTool {
       const referencedImageIds = segImageIds.map(
         (imageId) => cache.getImage(imageId).referencedImageId
       );
-      const volumeId = cache.generateVolumeId(referencedImageIds);
+      const volumeId = csUtils.getDefaultVolumeId(referencedImageIds);
       const imageVolume = cache.getVolume(volumeId);
 
       referencedVolumeId = imageVolume

@@ -8,5 +8,15 @@
       },
       "count": 1
     }
+  ],
+  "cornerstone3d-6-review": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "19",
+        "rule": "displaySetRegistry.add: a volumeId no longer makes a planar viewport show a volume: the viewport shows this display set as a stack in its acquisition plane unless its mount asks for mode: 'volume' (setDisplaySets({ displaySetId, options: { mode: 'volume' } }) or addDisplaySet(displaySetId, { mode: 'volume' })); a 3D viewport shows it as before"
+      },
+      "count": 1
+    }
   ]
 }

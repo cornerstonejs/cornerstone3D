@@ -282,7 +282,10 @@ async function run() {
     [viewportId1, viewportId2].map(async (viewportId) => {
       const viewport = renderingEngine.getViewport(viewportId);
 
-      await viewport.setDisplaySets({ displaySetId });
+      await viewport.setDisplaySets({
+        displaySetId,
+        options: { mode: 'volume' },
+      });
       viewport.setDisplaySetAppearance(displaySetId, {
         voiRange: { lower: -180, upper: 220 },
       });

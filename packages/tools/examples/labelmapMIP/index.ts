@@ -190,9 +190,9 @@ async function run() {
   const viewport1 = renderingEngine.getViewport<PlanarViewport>(viewportId1);
   const viewport2 = renderingEngine.getViewport<PlanarViewport>(viewportId2);
 
-  await viewport1.setDisplaySets({ displaySetId });
+  await viewport1.setDisplaySets({ displaySetId, options: { mode: 'volume' } });
 
-  await viewport2.setDisplaySets({ displaySetId });
+  await viewport2.setDisplaySets({ displaySetId, options: { mode: 'volume' } });
   viewport2.setDisplaySetAppearance(displaySetId, {
     ...petPresentation(),
     blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,

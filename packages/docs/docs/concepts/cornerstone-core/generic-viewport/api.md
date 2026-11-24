@@ -79,8 +79,11 @@ and view-reference operations.
 
 ## Add Volume Slice Data
 
-Volume slice data uses the same viewport API. The registered data includes a
-`volumeId`, so the viewport selects a volume slice render path.
+Volume slice data uses the same viewport API. The mount asks for the volume
+with `mode: 'volume'`, so the viewport selects a volume slice render path; an
+orientation other than the acquisition plane shows a volume without it. The
+`volumeId` of the registration names the volume in the cache and never chooses
+the mode.
 
 ```ts
 const ctDisplaySetId = 'ct-volume-source';
@@ -95,6 +98,7 @@ await viewport.setDisplaySets({
   displaySetId: ctDisplaySetId,
   options: {
     orientation: Enums.OrientationAxis.SAGITTAL,
+    mode: 'volume',
   },
 });
 ```

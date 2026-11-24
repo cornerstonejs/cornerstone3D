@@ -151,7 +151,9 @@ async function showNextVolumes(viewport, volumeIds, orientation) {
 
     return {
       displaySetId,
-      options: index ? { role: 'overlay', orientation } : { orientation },
+      options: index
+        ? { role: 'overlay', orientation, mode: 'volume' }
+        : { orientation, mode: 'volume' },
     };
   });
 

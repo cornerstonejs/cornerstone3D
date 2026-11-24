@@ -260,7 +260,7 @@ async function run() {
     viewportSpecs.map((spec) =>
       getViewport(spec.viewportId).setDisplaySets({
         displaySetId: spec.isMip ? ptMipDisplaySetId : ctMprDisplaySetId,
-        options: { orientation: spec.orientation },
+        options: { orientation: spec.orientation, mode: 'volume' },
       })
     )
   );

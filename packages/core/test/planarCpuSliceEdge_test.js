@@ -169,7 +169,7 @@ async function showVolume(renderingEngine, viewportId, volumeId, options) {
   });
   await viewport.setDisplaySets({
     displaySetId,
-    options: { ...options, orientation: OrientationAxis.AXIAL },
+    options: { ...options, orientation: OrientationAxis.AXIAL, mode: 'volume' },
   });
   viewport.setDisplaySetAppearance(displaySetId, { voiRange: VOI_RANGE });
   await renderAndWait(viewport);
@@ -238,6 +238,7 @@ async function addFullLabelmap(viewport, volumeId) {
   await viewport.addDisplaySet(representationUID, {
     role: 'overlay',
     renderBackend: 'cpu',
+    mode: 'volume',
   });
 
   const colours = vtkColorTransferFunction.newInstance();

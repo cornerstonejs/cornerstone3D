@@ -391,9 +391,10 @@ async function run() {
   ];
   await Promise.all(
     volumeViewportIds.map((viewportId) =>
-      renderingEngine
-        .getViewport<PlanarViewport>(viewportId)
-        .setDisplaySets({ displaySetId: volumeDisplaySetId })
+      renderingEngine.getViewport<PlanarViewport>(viewportId).setDisplaySets({
+        displaySetId: volumeDisplaySetId,
+        options: { mode: 'volume' },
+      })
     )
   );
 

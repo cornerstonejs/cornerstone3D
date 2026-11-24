@@ -224,12 +224,21 @@ async function run() {
     viewportIds[2]
   );
 
-  await ctViewport.setDisplaySets({ displaySetId: ctDisplaySetId });
+  await ctViewport.setDisplaySets({
+    displaySetId: ctDisplaySetId,
+    options: { mode: 'volume' },
+  });
 
-  await ptViewport.setDisplaySets({ displaySetId: ptDisplaySetId });
+  await ptViewport.setDisplaySets({
+    displaySetId: ptDisplaySetId,
+    options: { mode: 'volume' },
+  });
   ptViewport.setDisplaySetAppearance(ptDisplaySetId, petPresentation());
 
-  await mipViewport.setDisplaySets({ displaySetId: ptDisplaySetId });
+  await mipViewport.setDisplaySets({
+    displaySetId: ptDisplaySetId,
+    options: { mode: 'volume' },
+  });
   mipViewport.setDisplaySetAppearance(ptDisplaySetId, {
     ...petPresentation(),
     blendMode: BlendModes.MAXIMUM_INTENSITY_BLEND,

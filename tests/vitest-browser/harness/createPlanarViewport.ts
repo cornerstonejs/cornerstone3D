@@ -218,6 +218,7 @@ export async function createPlanarViewport(
       displaySetId,
       options: {
         orientation,
+        mode: isVolumeBacked ? 'volume' : 'stack',
         renderBackend: isCpu ? RenderBackends.CPU : RenderBackends.GPU,
         ...(isVolumeBacked && !isCpu
           ? { sliceFirst: !drawsVolumeTexture }

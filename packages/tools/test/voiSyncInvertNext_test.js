@@ -84,17 +84,18 @@ async function registerVolume() {
 }
 
 /**
- * Shows the display set on both viewports and links them with a VOI
- * synchronizer that syncs the invert, the first viewport as the source.
+ * Shows the display set on both viewports, with the mount options, and links
+ * them with a VOI synchronizer that syncs the invert, the first viewport as
+ * the source.
  */
-async function showAndLink(viewports, displaySetId) {
+async function showAndLink(viewports, displaySetId, options = {}) {
   const synchronizer = synchronizers.createVOISynchronizer(synchronizerId, {
     syncInvertState: true,
     syncColormap: true,
   });
 
   for (const viewport of viewports) {
-    await viewport.setDisplaySets({ displaySetId });
+    await viewport.setDisplaySets({ displaySetId, options });
     await renderAndWait(viewport);
   }
 
@@ -148,7 +149,7 @@ describe('VOI synchronizer on direct next planar viewports -- ', () => {
     const [source, target] = createNextViewports(renderingEngine);
     const displaySetId = await registerVolume();
 
-    await showAndLink([source, target], displaySetId);
+    await showAndLink([source, target], displaySetId, { mode: 'volume' });
 
     expect(source.getCurrentMode()).toBe('volume');
     expect(Boolean(invertOf(target))).toBe(false);

@@ -55,7 +55,10 @@ as `viewport` alone, a `let`, a `var` and a container type such as
 - `viewport.setVolumes([{ volumeId }])` and
   `setVolumesForViewports(renderingEngine, [{ volumeId }], viewportIds)` as
   statements become a registration under the volume id and
-  `setDisplaySets({ displaySetId: volumeId })` on each viewport, when the
+  `setDisplaySets({ displaySetId: volumeId, options: { mode: 'volume' } })`
+  on each viewport (without the options on a viewport that the file types as
+  a 3D viewport: a planar viewport shows a volume when the mount asks for
+  one, whatever the registration gives), when the
   function of the call creates that volume with
   `volumeLoader.createAndCacheVolume(volumeId, { imageIds })` in a statement
   that runs before the call on every path: an expression statement or a
@@ -97,7 +100,10 @@ as `viewport` alone, a `let`, a `var` and a container type such as
 
   await Promise.all(
     viewports.map((viewport) =>
-      viewport.setDisplaySets({ displaySetId: volumeId })
+      viewport.setDisplaySets({
+        displaySetId: volumeId,
+        options: { mode: 'volume' },
+      })
     )
   );
   ```

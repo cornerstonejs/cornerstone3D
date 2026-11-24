@@ -338,9 +338,10 @@ async function _startFromVolume(
   // Set the volume to load
   volume.load();
   registerDisplaySets(imageIds);
-  await renderingEngine
-    .getViewport<PlanarViewport>(viewportId)
-    .setDisplaySets({ displaySetId: volumeDisplaySetId });
+  await renderingEngine.getViewport<PlanarViewport>(viewportId).setDisplaySets({
+    displaySetId: volumeDisplaySetId,
+    options: { mode: 'volume' },
+  });
 
   renderingEngine.render();
 

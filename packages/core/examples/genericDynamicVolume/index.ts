@@ -263,6 +263,7 @@ async function run() {
     displaySetId: displaySetId,
     options: {
       orientation: Enums.OrientationAxis.ACQUISITION,
+      mode: 'volume',
     },
   });
 

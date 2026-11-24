@@ -471,7 +471,10 @@ async function run() {
       renderingEngine.getViewport<VolumeViewport3D>(viewportId4);
     await Promise.all([
       ...planarViewports.map((viewport) =>
-        viewport.setDisplaySets({ displaySetId: currentVolumeId })
+        viewport.setDisplaySets({
+          displaySetId: currentVolumeId,
+          options: { mode: 'volume' },
+        })
       ),
       vrtViewport.setDisplaySets({ displaySetId: currentVolumeId }),
     ]);

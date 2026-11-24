@@ -195,7 +195,7 @@ async function run() {
 
   const viewport2: PlanarViewport = renderingEngine.getViewport(viewportId2);
 
-  await viewport2.setDisplaySets({ displaySetId });
+  await viewport2.setDisplaySets({ displaySetId, options: { mode: 'volume' } });
   viewport2.setDisplaySetAppearance(displaySetId, ctPresentation());
   const geometryIds = await createAndCacheGeometriesFromSurfaces();
 

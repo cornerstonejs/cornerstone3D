@@ -96,6 +96,7 @@ async function show(viewport, ...displaySetIds) {
       displaySetId,
       options: {
         orientation: OrientationAxis.AXIAL,
+        mode: 'volume',
         ...(index ? { role: 'overlay' } : {}),
       },
     }))

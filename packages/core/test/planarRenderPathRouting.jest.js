@@ -132,7 +132,7 @@ describe('slab routing of the slice first decision', () => {
   ];
 
   function modeOf(options) {
-    return service.select(dataSet, options).renderMode;
+    return service.select(dataSet, { mode: 'volume', ...options }).renderMode;
   }
 
   it('draws a slab of any blend mode on the GPU volume path with slice first on', () => {
@@ -410,7 +410,11 @@ describe('PlanarViewport remount after presentation changes', () => {
   it('ends on the render mode of the final presentation when a slab comes and goes during a remount', async () => {
     await viewport.setDisplaySets({
       displaySetId: displaySetId,
-      options: { orientation: OrientationAxis.AXIAL, sliceFirst: true },
+      options: {
+        orientation: OrientationAxis.AXIAL,
+        mode: 'volume',
+        sliceFirst: true,
+      },
     });
     await flush();
 
@@ -439,7 +443,11 @@ describe('PlanarViewport remount after presentation changes', () => {
   it('still remounts when the final presentation needs the other render mode', async () => {
     await viewport.setDisplaySets({
       displaySetId: displaySetId,
-      options: { orientation: OrientationAxis.AXIAL, sliceFirst: true },
+      options: {
+        orientation: OrientationAxis.AXIAL,
+        mode: 'volume',
+        sliceFirst: true,
+      },
     });
     await flush();
 
@@ -460,11 +468,19 @@ describe('PlanarViewport remount after presentation changes', () => {
     await viewport.setDisplaySets(
       {
         displaySetId: displaySetId,
-        options: { orientation: OrientationAxis.AXIAL, ...options },
+        options: {
+          orientation: OrientationAxis.AXIAL,
+          mode: 'volume',
+          ...options,
+        },
       },
       {
         displaySetId: overlayId,
-        options: { orientation: OrientationAxis.AXIAL, ...options },
+        options: {
+          orientation: OrientationAxis.AXIAL,
+          mode: 'volume',
+          ...options,
+        },
       }
     );
     await flush();
@@ -603,7 +619,11 @@ describe('PlanarViewport remount after presentation changes', () => {
   it('gives a slab that moves to another render mode to the remounted binding only', async () => {
     await viewport.setDisplaySets({
       displaySetId: displaySetId,
-      options: { orientation: OrientationAxis.AXIAL, sliceFirst: true },
+      options: {
+        orientation: OrientationAxis.AXIAL,
+        mode: 'volume',
+        sliceFirst: true,
+      },
     });
     await flush();
 
@@ -649,7 +669,11 @@ describe('PlanarViewport remount after presentation changes', () => {
   it('gives the mounted binding a slab that keeps its render mode at once', async () => {
     await viewport.setDisplaySets({
       displaySetId: displaySetId,
-      options: { orientation: OrientationAxis.AXIAL, sliceFirst: true },
+      options: {
+        orientation: OrientationAxis.AXIAL,
+        mode: 'volume',
+        sliceFirst: true,
+      },
     });
     await flush();
 
@@ -677,7 +701,7 @@ describe('PlanarViewport remount after presentation changes', () => {
   it('gives the whole presentation at once with slice first off', async () => {
     await viewport.setDisplaySets({
       displaySetId: displaySetId,
-      options: { orientation: OrientationAxis.AXIAL },
+      options: { orientation: OrientationAxis.AXIAL, mode: 'volume' },
     });
     await flush();
 

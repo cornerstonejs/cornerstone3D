@@ -1369,6 +1369,10 @@ async function mountViewport(
 
   await viewport.setDisplaySets({
     displaySetId: displaySet.displaySetId,
+    options:
+      viewportType === ViewportType.PLANAR && orientation
+        ? { mode: 'volume' }
+        : undefined,
   });
 
   if (viewportType === ViewportType.PLANAR && orientation) {

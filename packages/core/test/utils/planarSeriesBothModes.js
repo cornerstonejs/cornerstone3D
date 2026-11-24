@@ -245,7 +245,11 @@ export async function showVolume(
   });
   await viewport.setDisplaySets({
     displaySetId,
-    options: { orientation: OrientationAxis.ACQUISITION, ...options },
+    options: {
+      mode: 'volume',
+      orientation: OrientationAxis.ACQUISITION,
+      ...options,
+    },
   });
   await renderAndWait(viewport);
   viewport.setViewState({

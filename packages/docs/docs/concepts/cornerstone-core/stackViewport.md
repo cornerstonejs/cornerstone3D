@@ -7,9 +7,9 @@ summary: Cornerstone3D 6.0 has no stack viewport class. A planar viewport shows 
 # Stacks in a Planar Viewport
 
 Cornerstone3D 6.0 has no stack viewport class. A planar viewport
-(`ViewportType.PLANAR`) shows a stack of images in stack mode: the display set
-is registered without a `volumeId`, and `viewport.getCurrentMode()` says
-`'stack'`. See [Planar viewport](./viewports.md#planar-viewport).
+(`ViewportType.PLANAR`) shows a stack of images in stack mode: the mount asks
+for `mode: 'stack'`, or leaves the mode to `'auto'` in the acquisition plane,
+and `viewport.getCurrentMode()` says `'stack'`. See [Planar viewport](./viewports.md#planar-viewport).
 
 For an upgrade from the stack viewport of 5.x, see the
 [6.0 migration guide](../../migration-guides/6x/index.md).

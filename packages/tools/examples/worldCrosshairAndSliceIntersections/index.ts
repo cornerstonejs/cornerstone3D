@@ -131,7 +131,7 @@ async function run() {
       ) as PlanarViewport;
       return viewport.setDisplaySets({
         displaySetId: mprDisplaySetId,
-        options: { orientation: orientations[index] },
+        options: { orientation: orientations[index], mode: 'volume' },
       });
     })
   );

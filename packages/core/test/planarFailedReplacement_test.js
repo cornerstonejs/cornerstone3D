@@ -180,6 +180,7 @@ describe('A replacement of the display sets of a direct next planar viewport who
         const options = {
           orientation: OrientationAxis.ACQUISITION,
           renderBackend,
+          mode,
         };
 
         failing.forEach((imageId) => failingImageIds.add(imageId));
@@ -485,6 +486,7 @@ describe('A replacement of the display sets of a direct next planar viewport who
       const options = {
         orientation: OrientationAxis.ACQUISITION,
         renderBackend,
+        mode: 'volume',
       };
 
       await showVolume(viewport, shown, SHOWN_SLICE, options);

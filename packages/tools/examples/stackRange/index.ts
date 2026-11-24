@@ -117,7 +117,7 @@ async function showView(view: string) {
 
   await viewport.setDisplaySets({
     displaySetId: volumeDisplaySetId,
-    options: { orientation },
+    options: { orientation, mode: 'volume' },
   });
 }
 

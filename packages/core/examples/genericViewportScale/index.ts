@@ -440,6 +440,7 @@ async function run() {
       displaySetId: volumeDisplaySetId,
       options: {
         orientation: OrientationAxis.SAGITTAL,
+        mode: 'volume',
       },
     }),
   ]);

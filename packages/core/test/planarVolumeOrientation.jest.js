@@ -138,7 +138,10 @@ async function showVolume(viewport, volume, options = {}) {
     imageIds: volume.imageIds,
     volumeId: volume.volumeId,
   });
-  await viewport.setDisplaySets({ displaySetId, options });
+  await viewport.setDisplaySets({
+    displaySetId,
+    options: { mode: 'volume', ...options },
+  });
 
   return displaySetId;
 }

@@ -40,6 +40,6 @@ export async function show(
   });
 
   await Promise.all(
-    viewports.map((viewport) => viewport.setDisplaySets({ displaySetId: viewportId }))
+    viewports.map((viewport) => viewport.setDisplaySets({ displaySetId: viewportId, options: { mode: 'volume' } }))
   );
 }

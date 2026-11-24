@@ -220,7 +220,7 @@ async function run() {
     volumeId,
   });
 
-  await viewport.setDisplaySets({ displaySetId });
+  await viewport.setDisplaySets({ displaySetId, options: { mode: 'volume' } });
   viewport.setDisplaySetAppearance(displaySetId, ctPresentation());
 
   // Render the image

@@ -67,7 +67,10 @@ addButtonToToolbar({
 
       fused = false;
     } else {
-      await viewport.addDisplaySet(ptDisplaySetId, { role: 'overlay' });
+      await viewport.addDisplaySet(ptDisplaySetId, {
+        role: 'overlay',
+        mode: 'volume',
+      });
 
       viewport.setDisplaySetAppearance(ptDisplaySetId, {
         colormap: {
@@ -195,7 +198,10 @@ async function run() {
     volumeId: ptVolumeId,
   });
 
-  await viewport.setDisplaySets({ displaySetId: ctDisplaySetId });
+  await viewport.setDisplaySets({
+    displaySetId: ctDisplaySetId,
+    options: { mode: 'volume' },
+  });
   viewport.setDisplaySetAppearance(ctDisplaySetId, ctPresentation());
 
   // Render the image

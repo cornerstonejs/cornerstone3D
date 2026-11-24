@@ -27,6 +27,7 @@ import {
   statementsBefore,
   unwrap,
   viewportEvidence,
+  viewportFamily,
 } from './lib.ts';
 import type { Node } from './lib.ts';
 
@@ -336,14 +337,17 @@ function registration(
   return `${registry}.add(${idText}, {\n${lines.join('\n')}\n${indent}});`;
 }
 
+/** The mount options that ask a planar viewport for a volume. */
+const VOLUME_OPTIONS = "options: { mode: 'volume' }";
+
 /**
  * Formats the awaited call that mounts a display set by the expression of its
- * id.
+ * id, with the options that ask for a volume when `asVolume` is set.
  */
-function mountCall(viewport: string, id: string): string {
+function mountCall(viewport: string, id: string, asVolume = false): string {
   const key = id === 'displaySetId' ? id : `displaySetId: ${id}`;
 
-  return `await ${viewport}.setDisplaySets({ ${key} });`;
+  return `await ${viewport}.setDisplaySets({ ${key}${asVolume ? `, ${VOLUME_OPTIONS}` : ''} });`;
 }
 
 /**
@@ -553,7 +557,7 @@ function rewriteSetVolumes(
       ],
       indent
     ),
-    mountCall(object.text(), id),
+    mountCall(object.text(), id, viewportFamily(object) !== '3d'),
   ]);
 
   if (!run.edits.add(edit)) {
@@ -667,7 +671,7 @@ function rewriteSetVolumesForViewports(run: Run, call: Node): boolean {
     '',
     [
       'await Promise.all(',
-      `${indent}  ${viewports}.map((${element}) => ${element}.setDisplaySets({ displaySetId: ${id} }))`,
+      `${indent}  ${viewports}.map((${element}) => ${element}.setDisplaySets({ displaySetId: ${id}, ${VOLUME_OPTIONS} }))`,
       `${indent});`,
     ].join('\n'),
   ]);

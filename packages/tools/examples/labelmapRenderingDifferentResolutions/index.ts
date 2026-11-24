@@ -224,7 +224,7 @@ async function run() {
 
   const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId1);
 
-  await viewport.setDisplaySets({ displaySetId });
+  await viewport.setDisplaySets({ displaySetId, options: { mode: 'volume' } });
 
   // Render the image
   renderingEngine.render();

@@ -236,5 +236,5 @@ function showVolume(
     volumeId: volume.volumeId,
   });
 
-  return viewport.setDisplaySets({ displaySetId });
+  return viewport.setDisplaySets({ displaySetId, options: { mode: 'volume' } });
 }

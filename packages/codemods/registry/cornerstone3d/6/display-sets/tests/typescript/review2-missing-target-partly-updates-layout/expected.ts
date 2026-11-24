@@ -37,7 +37,7 @@ export async function layout(imageIds: string[]) {
   });
 
   await Promise.all(
-    viewports.map((viewport) => viewport.setDisplaySets({ displaySetId: volumeId }))
+    viewports.map((viewport) => viewport.setDisplaySets({ displaySetId: volumeId, options: { mode: 'volume' } }))
   );
 }
 

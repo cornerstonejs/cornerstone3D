@@ -91,6 +91,31 @@ that has no entry yet changes nothing.
   `isReferenceViewable` and `setViewReference`, and the request and the
   result of `viewportProjection.get`. A shorthand keeps its value:
   `{ dataId }` becomes `{ displaySetId: dataId }`. Local names stay.
+- `mode: 'volume'` is written in the options of a planar mount of a display
+  set that a literal (or a `const` that holds one) registers with a
+  `volumeId` and image ids: an entry of `setDisplaySets` (also of an array
+  that the call spreads, built of literals and `push`) or an `addDisplaySet`,
+  in the same file, with the same id (a string, the same binding, or the same
+  chain of property reads). A `volumeId` made a planar viewport show a volume;
+  in 6.0 only the mount does. The mount is on a viewport that the file shows
+  to be Cornerstone's and not of another family than planar: a
+  `getViewport<PlanarViewport>` (also on an engine that the file does not
+  show), a cast or an annotation, a `let` whose every value is one of these,
+  a function of the file declared to give a planar viewport, or, with no
+  type, a viewport of the core of any family (a 3D viewport ignores the
+  option at run time and `IViewport.setDisplaySets` takes options of any
+  type), a name in a JavaScript file, or a parameter without a type. Options
+  that are an object literal get the key at the end, or first when they
+  spread another object, so a `mode` of that object still wins. A mount that
+  says `mode` already, a mount with `renderMode` (a 3D viewport) and a
+  viewport typed with another family are left. A registration with a
+  `volumeId` and no image ids is left: it shows a volume without a mode.
+- Reported, review: such a registration whose planar mount the file does not
+  show (the text of the guide row: `a volumeId no longer makes a planar
+viewport show a volume: ...`), and such a mount whose options are not a
+  literal (a name, also as `{ displaySetId, options }`), on a viewport known
+  by its name only, of a type of the application, or of several families
+  (`PlanarViewport | VolumeViewport3D`).
 - Reported, manual: a descriptor of `add` that is not a literal (`kind` and
   `sourceDataId` may be in it), a registry in a name that the file writes,
   a `get` with other arguments or handed on as a metadata provider,

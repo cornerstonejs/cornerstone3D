@@ -846,7 +846,10 @@ async function run() {
   const sagittalViewport =
     renderingEngine.getViewport<PlanarViewport>(viewportIdSagittal);
 
-  await sagittalViewport.setDisplaySets({ displaySetId: volumeDisplaySetId });
+  await sagittalViewport.setDisplaySets({
+    displaySetId: volumeDisplaySetId,
+    options: { mode: 'volume' },
+  });
   sagittalViewport.setDisplaySetAppearance(
     volumeDisplaySetId,
     ctPresentation()

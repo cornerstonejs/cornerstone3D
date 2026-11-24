@@ -172,10 +172,35 @@ export interface PlanarDisplaySetDescriptor extends DisplaySetDescriptor {
   imageData?: vtkImageData;
   useWorldCoordinateImageData?: boolean;
   reference?: ViewportDataReference;
+  /**
+   * Set on a descriptor that names a volume and has no image ids of its
+   * own: its image ids are those of the volume in the cache.
+   */
+  volumeOnly?: boolean;
 }
 
 export interface PlanarSetDataOptions {
   orientation?: PlanarOrientation;
+  /**
+   * Whether the display set shows as a stack of its images or as a volume.
+   * 'stack' draws the images in their acquisition plane and fails the mount
+   * for another orientation. 'volume' draws slices of the volume of the
+   * images in any orientation and fails the mount when the images form no
+   * volume. 'auto', the default, shows a volume for an orientation other
+   * than the acquisition plane when the images form one, and for a display
+   * set registered with a `volumeId` and no image ids; else a stack. A
+   * `volumeId` of the display set or of these options never chooses the
+   * volume.
+   */
+  mode?: 'auto' | 'stack' | 'volume';
+  /**
+   * The volume that the display set shows in volume mode, in place of the
+   * `volumeId` of its registration, so two viewports can show two volumes
+   * of one display set (a reduced one and the full one). Without either,
+   * the volume id is made from the image ids (`utilities.getDefaultVolumeId`).
+   * A stack ignores it.
+   */
+  volumeId?: string;
   /**
    * Per-display-set render backend override, taking precedence over the
    * global `rendering.planar.renderBackend` configuration. 'cpu' pins this

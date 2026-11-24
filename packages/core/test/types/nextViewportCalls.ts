@@ -141,6 +141,18 @@ export function membersOfTheClasses() {
     scaleOfCamera,
     camera3D,
     planar.setDisplaySets({ displaySetId, options: { orientation } }),
+    planar.setDisplaySets({
+      displaySetId,
+      options: {
+        mode: 'volume',
+        volumeId: 'cornerstoneStreamingImageVolume:ct',
+      },
+    }),
+    planar.addDisplaySet(displaySetId, { mode: 'stack', role: 'overlay' }),
+    volume3D.setDisplaySets({
+      displaySetId,
+      options: { volumeId: 'cornerstoneStreamingImageVolume:ct' },
+    }),
     video.getImageData().dimensions,
     wholeSlide.getImageData().dimensions,
     ecg.getImageData().dimensions,
@@ -171,6 +183,7 @@ export function functionsOfTheGuide() {
     utilities.getScalingDescriptor(planar),
     utilities.getScalingDescriptor(viewport),
     utilities.resolveViewportVolumeId(viewport),
+    utilities.getDefaultVolumeId(planar.getImageIds()),
     utilities.getViewportImageCornersInWorld(planar),
     utilities.calculateViewportsSpatialRegistration(planar, planar),
     utilities.getTargetVolumeAndSpacingInNormalDir(

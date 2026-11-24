@@ -89,7 +89,7 @@ describe('A streaming volume with an image that fails to load, on a direct next 
       });
       await viewport.setDisplaySets({
         displaySetId: 'failedImageStream',
-        options: { orientation: OrientationAxis.ACQUISITION },
+        options: { orientation: OrientationAxis.ACQUISITION, mode: 'volume' },
       });
       await renderAndWait(viewport);
 

@@ -102,7 +102,7 @@ one of them. The fields that a descriptor needs depend on the viewport
 family:
 
 ```ts
-import { Enums, displaySetRegistry } from '@cornerstonejs/core';
+import { Enums } from '@cornerstonejs/core';
 import { registerDisplaySetMetadata } from '@cornerstonejs/metadata';
 
 const { ViewportType } = Enums;
@@ -114,29 +114,27 @@ const HANDLER_TO_VIEWPORT_TYPE: Record<string, Enums.ViewportType> = {
 };
 
 const displaySetId = displaySet.displaySetId;
-const volumeId = `cornerstoneStreamingImageVolume:${displaySetId}`;
 
-// 1. Register the display set under its displaySetId. A stack, a video, an
-//    ECG and a slide read the IDisplaySet itself; a volume is registered as a
-//    descriptor with a volumeId, which takes the place of the IDisplaySet.
-if (displaySet.isReconstructable) {
-  displaySetRegistry.add(displaySetId, {
-    imageIds: [...displaySet.imageIds],
-    volumeId,
-  });
-} else {
-  registerDisplaySetMetadata([], displaySet);
-}
+// 1. Register the display set under its displaySetId. Every viewport family
+//    reads the IDisplaySet itself. A volume needs no volumeId: its id is made
+//    from the image ids unless the descriptor or the mount names one.
+registerDisplaySetMetadata([], displaySet);
 
-// 2. Choose the viewport: from the handler, else a planar viewport, which
-//    shows the display set as a volume when it was registered with a
-//    volumeId and as a stack otherwise.
+// 2. Choose the viewport: from the handler, else a planar viewport. The mount
+//    says how a planar viewport shows the display set: here as a volume when
+//    its images form one, else as a stack.
 const viewportType =
   HANDLER_TO_VIEWPORT_TYPE[displaySet.handler ?? ''] ?? ViewportType.PLANAR;
 renderingEngine.enableElement({ viewportId, type: viewportType, element });
 
 const viewport = renderingEngine.getViewport(viewportId);
-await viewport.setDisplaySets({ displaySetId });
+await viewport.setDisplaySets({
+  displaySetId,
+  options:
+    viewportType === ViewportType.PLANAR && displaySet.isReconstructable
+      ? { mode: 'volume' }
+      : undefined,
+});
 
 viewport.getDisplaySets(); // [{ displaySetId }] — reflects what was mounted
 ```

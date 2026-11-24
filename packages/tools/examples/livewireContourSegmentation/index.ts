@@ -413,6 +413,7 @@ async function run() {
   // Set the volume on the viewport
   await volumeCoronalViewport.setDisplaySets({
     displaySetId: volumeDisplaySetId,
+    options: { mode: 'volume' },
   });
   volumeCoronalViewport.setDisplaySetAppearance(
     volumeDisplaySetId,
@@ -446,6 +447,7 @@ async function run() {
   // Set the volume on the viewport
   await volumeSagittalViewport.setDisplaySets({
     displaySetId: volumeDisplaySetId,
+    options: { mode: 'volume' },
   });
   volumeSagittalViewport.setDisplaySetAppearance(
     volumeDisplaySetId,

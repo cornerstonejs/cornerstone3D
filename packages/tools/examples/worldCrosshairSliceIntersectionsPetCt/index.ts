@@ -387,7 +387,9 @@ async function run() {
     const viewport = getPlanarViewport(spec.viewportId);
     await viewport.setDisplaySets({
       displaySetId,
-      options: spec.orientation ? { orientation: spec.orientation } : {},
+      options: spec.orientation
+        ? { orientation: spec.orientation, mode: 'volume' }
+        : {},
     });
     viewport.setDisplaySetAppearance(displaySetId, {
       voiRange,

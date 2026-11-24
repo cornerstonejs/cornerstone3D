@@ -298,7 +298,7 @@ async function setup() {
     viewportInputArray.map((v) =>
       renderingEngine
         .getViewport<PlanarViewport>(v.viewportId)
-        .setDisplaySets({ displaySetId })
+        .setDisplaySets({ displaySetId, options: { mode: 'volume' } })
     )
   );
 

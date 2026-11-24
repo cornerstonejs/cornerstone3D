@@ -36,11 +36,15 @@ copying camera objects between viewport families.
 images or a slice of a volume. What it shows decides how it behaves, and
 `viewport.getCurrentMode()` says `'stack'`, `'volume'` or `'empty'`.
 
-- **Stack mode**: a display set registered without a `volumeId`. Suitable for
+- **Stack mode**: the mount asks for `mode: 'stack'`, or leaves the mode to
+  `'auto'` in the acquisition plane. Suitable for
   rendering a stack of images, that might or might not belong to the same
   series. A stack can include 2D images of various shapes, sizes and
   directions, and shows in its acquisition plane.
-- **Volume mode**: a display set registered with a `volumeId`. Suitable for
+- **Volume mode**: the mount asks for `mode: 'volume'` (`'auto'` shows a
+  volume in another orientation than the acquisition plane, and for a display
+  set registered with a `volumeId` and no image ids). A `volumeId` names the
+  volume and never chooses the mode. Suitable for
   rendering a volumetric data which is considered as one 3D image. It enables
   Multi-planar reformation or reconstruction (MPR) by design, in which you can
   visualize the volume from various different orientations without addition

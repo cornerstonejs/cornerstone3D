@@ -213,8 +213,14 @@ async function run() {
   });
 
   await Promise.all([
-    viewport1.setDisplaySets({ displaySetId: ctDisplaySetId }),
-    viewport2.setDisplaySets({ displaySetId: ptDisplaySetId }),
+    viewport1.setDisplaySets({
+      displaySetId: ctDisplaySetId,
+      options: { mode: 'volume' },
+    }),
+    viewport2.setDisplaySets({
+      displaySetId: ptDisplaySetId,
+      options: { mode: 'volume' },
+    }),
   ]);
   renderingEngine.render();
 

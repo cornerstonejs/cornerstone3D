@@ -91,7 +91,11 @@ async function showVolume(viewport, renderBackend) {
   });
   await viewport.setDisplaySets({
     displaySetId,
-    options: { orientation: OrientationAxis.AXIAL, renderBackend },
+    options: {
+      orientation: OrientationAxis.AXIAL,
+      renderBackend,
+      mode: 'volume',
+    },
   });
   await renderAndWait(viewport);
 }

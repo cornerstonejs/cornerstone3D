@@ -276,13 +276,19 @@ async function setUpDisplay() {
 
   await Promise.all(
     ctViewports.map((viewport) =>
-      viewport.setDisplaySets({ displaySetId: ctDisplaySetId })
+      viewport.setDisplaySets({
+        displaySetId: ctDisplaySetId,
+        options: { mode: 'volume' },
+      })
     )
   );
 
   await Promise.all(
     ptViewports.map(async (viewport) => {
-      await viewport.setDisplaySets({ displaySetId: ptDisplaySetId });
+      await viewport.setDisplaySets({
+        displaySetId: ptDisplaySetId,
+        options: { mode: 'volume' },
+      });
       viewport.setDisplaySetAppearance(ptDisplaySetId, petPresentation());
     })
   );

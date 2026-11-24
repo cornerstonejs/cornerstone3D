@@ -89,7 +89,10 @@ async function loadImage32Float() {
   setTimeout(async () => {
     const volume = cache.getVolume(volumeId);
     // Set the volume on the viewport
-    await viewport.setDisplaySets({ displaySetId });
+    await viewport.setDisplaySets({
+      displaySetId,
+      options: { mode: 'volume' },
+    });
     viewport.setDisplaySetAppearance(displaySetId, ctPresentation());
 
     console.log('And now rendering');
@@ -137,7 +140,10 @@ async function loadImage16Float() {
     volume.load();
 
     // Set the volume on the viewport
-    await viewport.setDisplaySets({ displaySetId: displaySetId16 });
+    await viewport.setDisplaySets({
+      displaySetId: displaySetId16,
+      options: { mode: 'volume' },
+    });
     viewport.setDisplaySetAppearance(displaySetId16, ctPresentation());
 
     // Render the image
@@ -197,7 +203,7 @@ async function run() {
     volumeId: volumeId16,
   });
 
-  await viewport.setDisplaySets({ displaySetId });
+  await viewport.setDisplaySets({ displaySetId, options: { mode: 'volume' } });
   viewport.setDisplaySetAppearance(displaySetId, ctPresentation());
 
   // Render the image

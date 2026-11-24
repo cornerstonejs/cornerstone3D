@@ -413,6 +413,7 @@ async function run() {
         displaySetId: volumeDisplaySetId,
         options: {
           orientation,
+          mode: 'volume',
         },
       });
     })

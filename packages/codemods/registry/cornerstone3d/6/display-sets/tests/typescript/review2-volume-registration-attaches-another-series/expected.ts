@@ -46,5 +46,5 @@ export async function sameFunction(imageIds: string[]) {
     imageIds,
     volumeId,
   });
-  await viewport.setDisplaySets({ displaySetId: volumeId });
+  await viewport.setDisplaySets({ displaySetId: volumeId, options: { mode: 'volume' } });
 }

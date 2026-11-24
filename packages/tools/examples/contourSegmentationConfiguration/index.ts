@@ -180,7 +180,10 @@ async function run() {
 
   const viewport2: PlanarViewport = renderingEngine.getViewport(viewportId2);
 
-  await viewport2.setDisplaySets({ displaySetId: volumeDisplaySetId });
+  await viewport2.setDisplaySets({
+    displaySetId: volumeDisplaySetId,
+    options: { mode: 'volume' },
+  });
   viewport2.setDisplaySetAppearance(volumeDisplaySetId, ctPresentation());
 
   const viewport1: PlanarViewport = renderingEngine.getViewport(viewportId1);

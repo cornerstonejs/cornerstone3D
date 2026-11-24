@@ -264,7 +264,10 @@ async function _handleVolumeViewports(volumeImageIds, renderingEngine) {
     [viewportId2, viewportId4].map(async (viewportId) => {
       const viewport: PlanarViewport = renderingEngine.getViewport(viewportId);
 
-      await viewport.setDisplaySets({ displaySetId: volumeDisplaySetId });
+      await viewport.setDisplaySets({
+        displaySetId: volumeDisplaySetId,
+        options: { mode: 'volume' },
+      });
       viewport.setDisplaySetAppearance(volumeDisplaySetId, ctPresentation());
     })
   );

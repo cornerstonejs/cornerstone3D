@@ -3,10 +3,13 @@ import {
   bracketKey,
   declarationNodeOf,
   importSource,
+  indentOf,
   isPure,
+  isRepeatable,
   isStableBinding,
   keptValue,
   methodCall,
+  objectEntries,
   referencesOf,
   removeProperty,
   removeStatement,
@@ -14,9 +17,10 @@ import {
   topLevelCoreTypes,
   unwrap,
   viewportEvidence,
+  viewportFamily,
   writtenValues,
 } from '../lib.ts';
-import type { Node } from '../lib.ts';
+import type { Node, ViewportFamily } from '../lib.ts';
 import type { Edit } from 'codemod:ast-grep';
 import {
   importOf,
@@ -123,8 +127,9 @@ type Evidence = 'proven' | 'name' | undefined;
 
 /**
  * Display sets: the registry (`displaySetRegistry.add` in place of the beta
- * metadata provider), `displaySetId` in place of `dataId`, and the deleted
- * `kind` of a registered display set (lanes N2, DS1 to DS3).
+ * metadata provider), `displaySetId` in place of `dataId`, the deleted
+ * `kind` of a registered display set, and `mode: 'volume'` on the mount of a
+ * display set registered with a `volumeId` (lanes N2, DS1 to DS3).
  */
 export const rules: Rules = {
   exports: [{ namespace: 'utilities', name: OLD_NAME, moveTo: REGISTRY }],
@@ -162,6 +167,7 @@ export function rewrite(run: Run): void {
   }
 
   rewriteRegistryCalls(run);
+  rewriteVolumeMounts(run);
   rewriteRegistryPatterns(run);
   reportRegistryKey(run);
   reportRegistryModules(run);
@@ -1416,4 +1422,574 @@ function projectionSnapshotEvidence(node: Node): Evidence {
     pathOf(node.field('function')) === 'viewportProjection.get'
     ? 'proven'
     : undefined;
+}
+
+/**
+ * The text of a registration with a `volumeId` whose planar mounts the file
+ * does not show, word for word in the guide.
+ */
+const VOLUME_ID_NO_MOUNT =
+  "a volumeId no longer makes a planar viewport show a volume: the viewport shows this display set as a stack in its acquisition plane unless its mount asks for mode: 'volume' (setDisplaySets({ displaySetId, options: { mode: 'volume' } }) or addDisplaySet(displaySetId, { mode: 'volume' })); a 3D viewport shows it as before";
+
+/**
+ * The text of a mount of such a registration that the step cannot write,
+ * with the reason in front.
+ */
+const VOLUME_ID_MOUNT =
+  "write mode: 'volume' in its options to show the volume, a volumeId no longer makes a planar viewport show one";
+
+/** The family of each core viewport type that a mount can name. */
+const FAMILY_OF_TYPE: Record<string, ViewportFamily> = {
+  PlanarViewport: 'planar',
+  IStackViewport: 'planar',
+  IVolumeViewport: 'planar',
+  IBaseVolumeViewport: 'planar',
+  StackViewport: 'planar',
+  VolumeViewport: 'planar',
+  BaseVolumeViewport: 'planar',
+  VolumeViewport3D: '3d',
+  VideoViewport: 'video',
+  IVideoViewport: 'video',
+  WSIViewport: 'wsi',
+  IWSIViewport: 'wsi',
+  ECGViewport: 'ecg',
+  IECGViewport: 'ecg',
+};
+
+/**
+ * The family of a mount: one viewport family, `mixed` for types of several
+ * families (`PlanarViewport | VolumeViewport3D`), or undefined.
+ */
+type MountFamily = ViewportFamily | 'mixed' | undefined;
+
+/** The family that core type names give together. */
+function familyOfTypes(types: string[]): MountFamily {
+  const families = new Set(types.map((type) => FAMILY_OF_TYPE[type]));
+
+  if (families.size > 1) {
+    return 'mixed';
+  }
+
+  return families.size === 1 ? [...families][0] : undefined;
+}
+
+/** One mount of a display set in the file: its call, its id and its options. */
+interface Mount {
+  call: Node;
+  receiver: Node;
+  id: Node;
+  holder: Node;
+  options: Node | undefined;
+}
+
+/**
+ * Writes `mode: 'volume'` on the mounts of a display set whose registration
+ * gives a `volumeId` with its image ids: a `volumeId` made a planar viewport
+ * show a volume, and in 6.0 the mount asks for it. The registration is a
+ * literal (or a `const` that holds one) given to `displaySetRegistry.add`,
+ * and a mount is an entry of `setDisplaySets` or a call of `addDisplaySet`
+ * in the same file with the same id, on a viewport that the file shows to
+ * be Cornerstone's and not of another family than planar. A mount that says
+ * `mode` already is left. A registration with no such mount in the file, a
+ * mount whose options the step cannot see or extend, and a mount on a
+ * viewport known by its name only are reported. A registration with a
+ * `volumeId` and no image ids shows a volume without a mode.
+ */
+function rewriteVolumeMounts(run: Run): void {
+  const mounts = mountsOf(run);
+
+  for (const member of run.rootNode.findAll({
+    rule: {
+      kind: 'member_expression',
+      has: { field: 'property', regex: '^add$' },
+    },
+  })) {
+    const call = member.parent();
+
+    if (
+      !registryPath(member.field('object')) ||
+      call?.kind() !== 'call_expression' ||
+      call.field('function')?.id() !== member.id()
+    ) {
+      continue;
+    }
+
+    const [id, descriptor] = argumentsOf(call);
+    const object = descriptor ? literalObjectOf(descriptor) : undefined;
+
+    if (!id || !object) {
+      continue;
+    }
+
+    const { keys, hasSpread } = objectEntries(object);
+
+    if (
+      !keys.includes('volumeId') ||
+      (!keys.includes('imageIds') && !hasSpread)
+    ) {
+      continue;
+    }
+
+    const own = mounts.filter((mount) => isSameId(mount.id, id));
+
+    if (!own.length) {
+      report(
+        run,
+        'review',
+        `displaySetRegistry.add: ${VOLUME_ID_NO_MOUNT}`,
+        call
+      );
+      continue;
+    }
+
+    for (const mount of own) {
+      writeVolumeMode(run, mount);
+    }
+  }
+}
+
+/**
+ * Returns the mounts of the file: each entry of a `setDisplaySets` call that
+ * is an object literal with a `displaySetId` (also in an array that the call
+ * spreads, `setDisplaySets(...entries)`, where every entry of the array is
+ * such a literal), and each `addDisplaySet` call with an id.
+ */
+function mountsOf(run: Run): Mount[] {
+  const mounts: Mount[] = [];
+
+  for (const call of run.rootNode.findAll({
+    rule: { kind: 'call_expression' },
+  })) {
+    const parts = methodCall(call);
+
+    if (parts?.method === 'addDisplaySet' && parts.args[0]) {
+      mounts.push({
+        call,
+        receiver: parts.object,
+        id: parts.args[0],
+        holder: call,
+        options: parts.args[1],
+      });
+      continue;
+    }
+
+    if (parts?.method !== 'setDisplaySets') {
+      continue;
+    }
+
+    for (const entry of parts.args.flatMap(spreadEntries)) {
+      const object = unwrap(entry);
+
+      if (object.kind() !== 'object') {
+        continue;
+      }
+
+      const { pairs, shorthand } = objectEntries(object);
+      const shorthandOf = (key: string) =>
+        shorthand.has(key)
+          ? object
+              .children()
+              .find(
+                (child) =>
+                  child.kind() === 'shorthand_property_identifier' &&
+                  child.text() === key
+              )
+          : undefined;
+      const id =
+        shorthandOf('displaySetId') ??
+        pairs.get('displaySetId')?.field('value');
+
+      if (!id) {
+        continue;
+      }
+
+      mounts.push({
+        call,
+        receiver: parts.object,
+        id,
+        holder: object,
+        options:
+          shorthandOf('options') ??
+          pairs.get('options')?.field('value') ??
+          undefined,
+      });
+    }
+  }
+
+  return mounts;
+}
+
+/**
+ * Returns the entries of an argument of `setDisplaySets`: the argument
+ * itself, or for `...entries` the object literals of the `const` array
+ * `entries`, its literal entries and those of each `entries.push(...)`,
+ * when that array gets nothing else.
+ */
+function spreadEntries(argument: Node): Node[] {
+  if (argument.kind() !== 'spread_element') {
+    return [argument];
+  }
+
+  const name = argument.children().find((child) => child.isNamed());
+  const value = name?.kind() === 'identifier' ? constValue(name) : undefined;
+  const declaration = name ? declarationNodeOf(name) : undefined;
+
+  if (!value || !declaration || unwrap(value).kind() !== 'array') {
+    return [];
+  }
+
+  const entries = unwrap(value)
+    .children()
+    .filter((child) => child.isNamed() && child.kind() !== 'comment');
+
+  for (const use of referencesOf(declaration)) {
+    if (use.id() === name?.id()) {
+      continue;
+    }
+
+    const member = use.parent();
+    const call = member?.parent();
+    const parts = call ? methodCall(call) : undefined;
+
+    if (
+      member?.kind() !== 'member_expression' ||
+      parts?.object.id() !== use.id()
+    ) {
+      continue;
+    }
+
+    if (parts.method !== 'push') {
+      return [];
+    }
+
+    entries.push(...parts.args);
+  }
+
+  return entries.every((entry) => unwrap(entry).kind() === 'object')
+    ? entries
+    : [];
+}
+
+/**
+ * Returns the object literal of a descriptor: the literal itself, or the
+ * value of a `const` that holds one.
+ */
+function literalObjectOf(node: Node, depth = 0): Node | undefined {
+  const inner = unwrap(node);
+
+  if (inner.kind() === 'object') {
+    return inner;
+  }
+
+  if (inner.kind() !== 'identifier' || depth > 1) {
+    return undefined;
+  }
+
+  const value = constValue(inner);
+
+  return value ? literalObjectOf(value, depth + 1) : undefined;
+}
+
+/**
+ * Tells whether two expressions name the same display set: two strings with
+ * the same text, two names of the same binding, or two equal chains of
+ * property reads.
+ */
+function isSameId(a: Node, b: Node): boolean {
+  const left = unwrap(a);
+  const right = unwrap(b);
+  const isName = (node: Node) =>
+    node.kind() === 'identifier' ||
+    node.kind() === 'shorthand_property_identifier';
+
+  if (isName(left) && isName(right)) {
+    if (left.text() !== right.text()) {
+      return false;
+    }
+
+    const declaration = declarationNodeOf(left);
+
+    return (
+      Boolean(declaration) &&
+      declaration?.id() === declarationNodeOf(right)?.id()
+    );
+  }
+
+  if (left.kind() === 'string' && right.kind() === 'string') {
+    return left.text().slice(1, -1) === right.text().slice(1, -1);
+  }
+
+  return (
+    left.kind() === 'member_expression' &&
+    right.kind() === 'member_expression' &&
+    isRepeatable(left) &&
+    left.text() === right.text()
+  );
+}
+
+/**
+ * Returns the family of the viewport of a mount that the file shows by its
+ * types, as `viewportFamily` does; by the type argument of a `getViewport`
+ * call (`getViewport<PlanarViewport>(id)`); by the declared return type of a
+ * function of the file that gives it; or, for a `let`, by the family of
+ * every value that the file gives it.
+ */
+function mountFamily(receiver: Node, depth = 0): MountFamily {
+  const family = viewportFamily(receiver);
+
+  if (family || depth > 2) {
+    return family;
+  }
+
+  const inner = unwrap(receiver);
+
+  if (inner.kind() === 'identifier') {
+    const declaration = declarationNodeOf(inner);
+    const annotation = declaration
+      ?.parent()
+      ?.children()
+      .find((child) => child.kind() === 'type_annotation');
+    const values =
+      declaration && !annotation ? writtenValues(declaration) : undefined;
+    const families = new Set(
+      (values ?? []).map((value) => mountFamily(value, depth + 1))
+    );
+
+    if (annotation) {
+      return familyOfTypes(topLevelCoreTypes(annotation));
+    }
+
+    if (!values?.length) {
+      return undefined;
+    }
+
+    return families.size === 1 ? [...families][0] : 'mixed';
+  }
+
+  if (inner.kind() !== 'call_expression') {
+    return undefined;
+  }
+
+  const called = inner.field('function');
+  const callee =
+    called?.kind() === 'await_expression'
+      ? called.children().find((child) => child.isNamed())
+      : called;
+  const typeArgument =
+    callee?.kind() === 'member_expression' &&
+    callee.field('property')?.text() === 'getViewport'
+      ? inner
+          .field('type_arguments')
+          ?.children()
+          .find((child) => child.isNamed())
+      : undefined;
+  const declaration =
+    callee?.kind() === 'identifier' ? declarationNodeOf(callee) : undefined;
+  const holder = declaration?.parent();
+  const types = typeArgument
+    ? topLevelCoreTypes(typeArgument)
+    : holder?.kind() === 'function_declaration'
+      ? topLevelCoreTypes(holder.field('return_type'))
+      : [];
+
+  return familyOfTypes(types);
+}
+
+/**
+ * Tells whether a receiver has no type that can refuse an option: any
+ * receiver in a JavaScript file, and a parameter declared without a type.
+ */
+function isUntyped(run: Run, receiver: Node): boolean {
+  if (/\.(js|jsx|mjs|cjs)$/.test(run.root.filename())) {
+    return true;
+  }
+
+  const inner = unwrap(receiver);
+  const declaration =
+    inner.kind() === 'identifier' ? declarationNodeOf(inner) : undefined;
+  const parameter = declaration?.parent();
+
+  return Boolean(
+    parameter &&
+      (parameter.kind() === 'required_parameter' ||
+        parameter.kind() === 'optional_parameter') &&
+      !parameter.children().some((child) => child.kind() === 'type_annotation')
+  );
+}
+
+/**
+ * Writes `mode: 'volume'` in the options of one mount, or reports it: the
+ * mount says `mode` already (left), it is a mount of a 3D viewport (a
+ * `renderMode` option, or a viewport of another family than planar: left),
+ * its viewport may be of several families or is known by its name only, or
+ * its options are not a literal that the step can extend. In options with a
+ * spread the mode goes first, so a `mode` of the spread still wins.
+ */
+function writeVolumeMode(run: Run, mount: Mount): void {
+  const family = mountFamily(mount.receiver);
+  const evidence = viewportEvidence(mount.receiver);
+  const options = mount.options ? unwrap(mount.options) : undefined;
+  const entries =
+    options?.kind() === 'object' ? objectEntries(options) : undefined;
+
+  if (
+    (family && family !== 'planar' && family !== 'mixed') ||
+    entries?.keys.includes('mode') ||
+    entries?.keys.includes('renderMode')
+  ) {
+    return;
+  }
+
+  if (family === 'mixed') {
+    report(
+      run,
+      'review',
+      `${methodName(mount)}: the viewport may be of another family than planar, if it is a planar viewport ${VOLUME_ID_MOUNT}`,
+      mount.call
+    );
+
+    return;
+  }
+
+  if (
+    !family &&
+    evidence !== 'core' &&
+    !(evidence === 'name' && isUntyped(run, mount.receiver))
+  ) {
+    const known =
+      evidence === 'name' ? 'is known by its name only' : 'is not shown';
+
+    report(
+      run,
+      'review',
+      `${methodName(mount)}: the viewport ${known}, if it is a planar viewport ${VOLUME_ID_MOUNT}`,
+      mount.call
+    );
+
+    return;
+  }
+
+  if (mount.options && !entries) {
+    report(
+      run,
+      'review',
+      `${methodName(mount)}: the options are not a literal that the step can extend, ${VOLUME_ID_MOUNT}`,
+      mount.call
+    );
+
+    return;
+  }
+
+  const edit = options
+    ? entries?.hasSpread
+      ? prependProperty(run.rootNode, options, "mode: 'volume'")
+      : appendProperty(run.rootNode, options, "mode: 'volume'")
+    : mount.holder.kind() === 'object'
+      ? appendProperty(
+          run.rootNode,
+          mount.holder,
+          "options: { mode: 'volume' }"
+        )
+      : appendArgument(mount.call, "{ mode: 'volume' }");
+
+  if (!edit || !run.edits.add(edit)) {
+    report(
+      run,
+      'review',
+      `${methodName(mount)}: another rewrite of the line overlaps it, ${VOLUME_ID_MOUNT}`,
+      mount.call
+    );
+
+    return;
+  }
+
+  noteRewritten(
+    run,
+    `${methodName(mount)}: a registration with a volumeId -> mode: 'volume'`,
+    mount.call
+  );
+}
+
+/** The name of the method of a mount. */
+function methodName(mount: Mount): string {
+  return methodCall(mount.call)?.method ?? 'setDisplaySets';
+}
+
+/**
+ * Returns an edit that adds a property at the end of an object literal, on
+ * a line of its own when the literal spans lines.
+ */
+function appendProperty(rootNode: Node, object: Node, text: string): Edit {
+  const last = object
+    .children()
+    .filter((child) => child.isNamed() && child.kind() !== 'comment')
+    .pop();
+
+  if (!last) {
+    return {
+      startPos: object.range().start.index,
+      endPos: object.range().end.index,
+      insertedText: `{ ${text} }`,
+    };
+  }
+
+  const trailing = last.next()?.kind() === ',' ? last.next() : undefined;
+  const after = (trailing ?? last).range().end.index;
+  const multiline = object.text().includes('\n');
+
+  if (!multiline) {
+    return {
+      startPos: after,
+      endPos: after,
+      insertedText: trailing ? ` ${text},` : `, ${text}`,
+    };
+  }
+
+  const indent = indentOf(rootNode, last);
+
+  return {
+    startPos: after,
+    endPos: after,
+    insertedText: trailing ? `\n${indent}${text},` : `,\n${indent}${text},`,
+  };
+}
+
+/**
+ * Returns an edit that adds a property at the start of an object literal, on
+ * a line of its own when the literal spans lines.
+ */
+function prependProperty(rootNode: Node, object: Node, text: string): Edit {
+  const first = object
+    .children()
+    .find((child) => child.isNamed() && child.kind() !== 'comment');
+  const start = first?.range().start.index ?? object.range().start.index + 1;
+  const multiline = object.text().includes('\n');
+
+  return {
+    startPos: start,
+    endPos: start,
+    insertedText:
+      multiline && first
+        ? `${text},\n${indentOf(rootNode, first)}`
+        : `${text}, `,
+  };
+}
+
+/** Returns an edit that adds an argument at the end of a call. */
+function appendArgument(call: Node, text: string): Edit | undefined {
+  const args = argumentsOf(call);
+  const last = args[args.length - 1];
+
+  if (!last) {
+    return undefined;
+  }
+
+  const trailing = last.next()?.kind() === ',' ? last.next() : undefined;
+  const after = (trailing ?? last).range().end.index;
+
+  return {
+    startPos: after,
+    endPos: after,
+    insertedText: trailing ? ` ${text},` : `, ${text}`,
+  };
 }

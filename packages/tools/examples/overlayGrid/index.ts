@@ -175,11 +175,17 @@ async function run() {
 
   await renderingEngine
     .getViewport<PlanarViewport>(viewportIds[1])
-    .setDisplaySets({ displaySetId: ctVolumeDisplaySetId });
+    .setDisplaySets({
+      displaySetId: ctVolumeDisplaySetId,
+      options: { mode: 'volume' },
+    });
 
   await renderingEngine
     .getViewport<PlanarViewport>(viewportIds[2])
-    .setDisplaySets({ displaySetId: ptVolumeDisplaySetId });
+    .setDisplaySets({
+      displaySetId: ptVolumeDisplaySetId,
+      options: { mode: 'volume' },
+    });
 
   toolGroup.addViewport(viewportIds[0], renderingEngine.id);
   toolGroup.addViewport(viewportIds[1], renderingEngine.id);

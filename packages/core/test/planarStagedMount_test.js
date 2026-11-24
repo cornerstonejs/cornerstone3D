@@ -416,7 +416,7 @@ describe('A display set of a direct next planar viewport whose registration goes
     );
 
     const mount = viewport.setDisplaySets(
-      { displaySetId: 'voi:scan', options },
+      { displaySetId: 'voi:scan', options: { ...options, mode: 'volume' } },
       { displaySetId: 'voi:overlay', options }
     );
 

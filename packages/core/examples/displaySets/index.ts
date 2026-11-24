@@ -250,7 +250,7 @@ async function mountRow(row: Row) {
 
     const options =
       row.hint === 'volume'
-        ? { orientation: Enums.OrientationAxis.AXIAL }
+        ? { orientation: Enums.OrientationAxis.AXIAL, mode: 'volume' as const }
         : undefined;
 
     // The unified entry point: resolves the displaySetId through the registry,

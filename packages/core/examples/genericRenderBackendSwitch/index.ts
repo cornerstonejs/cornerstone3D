@@ -625,7 +625,7 @@ async function run() {
   const mprViewport = getViewport(mprViewportId);
   await mprViewport.setDisplaySets({
     displaySetId: volumeDisplaySetId,
-    options: { orientation: OrientationAxis.SAGITTAL },
+    options: { orientation: OrientationAxis.SAGITTAL, mode: 'volume' },
   });
   mprViewport.setDisplaySetAppearance(volumeDisplaySetId, {
     voiRange: ctVoiRange,

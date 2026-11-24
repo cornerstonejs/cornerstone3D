@@ -499,7 +499,10 @@ async function run() {
       .map(async ({ viewportId, displaySetId }) => {
         const volumeViewport =
           renderingEngine.getViewport<PlanarViewport>(viewportId);
-        await volumeViewport.setDisplaySets({ displaySetId });
+        await volumeViewport.setDisplaySets({
+          displaySetId,
+          options: { mode: 'volume' },
+        });
         volumeViewport.setDisplaySetAppearance(displaySetId, ctPresentation());
       })
   );

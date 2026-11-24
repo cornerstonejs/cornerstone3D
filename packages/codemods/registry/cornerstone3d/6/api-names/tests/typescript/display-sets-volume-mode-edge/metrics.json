@@ -1,0 +1,52 @@
+{
+  "cornerstone3d-6-review": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "26",
+        "rule": "displaySetRegistry.add: a volumeId no longer makes a planar viewport show a volume: the viewport shows this display set as a stack in its acquisition plane unless its mount asks for mode: 'volume' (setDisplaySets({ displaySetId, options: { mode: 'volume' } }) or addDisplaySet(displaySetId, { mode: 'volume' })); a 3D viewport shows it as before"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "43",
+        "rule": "setDisplaySets: the viewport is not shown, if it is a planar viewport write mode: 'volume' in its options to show the volume, a volumeId no longer makes a planar viewport show one"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "48",
+        "rule": "setDisplaySets: the viewport may be of another family than planar, if it is a planar viewport write mode: 'volume' in its options to show the volume, a volumeId no longer makes a planar viewport show one"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "49",
+        "rule": "setDisplaySets: the viewport may be of another family than planar, if it is a planar viewport write mode: 'volume' in its options to show the volume, a volumeId no longer makes a planar viewport show one"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "52",
+        "rule": "setDisplaySets: the options are not a literal that the step can extend, write mode: 'volume' in its options to show the volume, a volumeId no longer makes a planar viewport show one"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "63",
+        "rule": "setDisplaySets: the options are not a literal that the step can extend, write mode: 'volume' in its options to show the volume, a volumeId no longer makes a planar viewport show one"
+      },
+      "count": 1
+    }
+  ]
+}

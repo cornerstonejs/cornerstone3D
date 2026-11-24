@@ -165,9 +165,9 @@ describe('Rendering on a device without WebGL', () => {
       expect(service.select(IMAGE_DATASET).renderMode).toBe(
         PlanarRenderModeId.CANVAS_FRAME
       );
-      expect(service.select(VOLUME_DATASET).renderMode).toBe(
-        PlanarRenderModeId.CANVAS_CPU_SLICE
-      );
+      expect(
+        service.select(VOLUME_DATASET, { mode: 'volume' }).renderMode
+      ).toBe(PlanarRenderModeId.CANVAS_CPU_SLICE);
     } finally {
       getVolumeSpy.mockRestore();
     }

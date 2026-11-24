@@ -58,7 +58,10 @@ displaySetRegistry.add('ctVolume', {
 
 const viewport = renderingEngine.getViewport(viewportId);
 
-await viewport.setDisplaySets({ displaySetId: 'ctVolume' });
+await viewport.setDisplaySets({
+  displaySetId: 'ctVolume',
+  options: { mode: 'volume' },
+});
 
 // The look of the data is the appearance of its display set
 viewport.setDisplaySetAppearance('ctVolume', {

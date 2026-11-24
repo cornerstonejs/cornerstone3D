@@ -351,6 +351,7 @@ describe('labelmapRenderPlan', () => {
     expect(viewport.addDisplaySet).toHaveBeenCalledWith(
       'segmentation-id-Labelmap-stack-layer-id',
       {
+        mode: 'volume',
         orientation: 'axial',
         role: 'overlay',
       }

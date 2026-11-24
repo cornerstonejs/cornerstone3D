@@ -62,8 +62,8 @@ are temporary.
   `setVolumesForViewports` and `addVolumesToViewports` (call
   `viewport.setDisplaySets` or `viewport.addDisplaySet` on each viewport),
   `utilities.convertStackToVolumeViewport` and
-  `utilities.convertVolumeToStackViewport` (show the display set again, with
-  or without a `volumeId`), the guards
+  `utilities.convertVolumeToStackViewport` (show the display set again with
+  `mode: 'volume'` or `mode: 'stack'` in the options of the mount), the guards
   `utilities.viewportSupportsStackCompatibility` and
   `utilities.viewportSupportsVolumeCompatibility` with their types
   `StackCompatibilityViewport` and `VolumeCompatibilityViewport` (ask
@@ -175,9 +175,10 @@ viewport. Use them where the code asked
 Every call of the API answers in both modes. Where the answer differs between
 a stack and a volume, [the map](./3-api-map.md) says so in its last column.
 
-Pass the orientation for a volume. A legacy `ORTHOGRAPHIC` viewport without
-options opened in `AXIAL`. A planar viewport without an orientation opens a
-volume in its acquisition plane. For a stack, leave the orientation out.
+Ask for a volume with `mode: 'volume'` and pass its orientation. A legacy
+`ORTHOGRAPHIC` viewport without options opened in `AXIAL`. A planar viewport
+without an orientation opens a volume in its acquisition plane. For a stack,
+leave the mode and the orientation out.
 
 ## A display set is registered once
 
@@ -191,16 +192,21 @@ import { displaySetRegistry } from '@cornerstonejs/core';
 displaySetRegistry.add(displaySetId, {
   imageIds,
   initialImageIdIndex: 0,
-  volumeId,
 });
 
-await viewport.setDisplaySets({ displaySetId });
+await stackViewport.setDisplaySets({ displaySetId });
+await mprViewport.setDisplaySets({
+  displaySetId,
+  options: { mode: 'volume', orientation: Enums.OrientationAxis.SAGITTAL },
+});
 ```
 
-- **With a `volumeId`** the display set shows as a volume, in every
-  orientation.
-- **Without a `volumeId`** it shows as a stack, in its acquisition plane. Leave
-  `volumeId` out for a stack.
+- **With `mode: 'volume'` on the mount** a planar viewport shows the display
+  set as a volume, in every orientation.
+- **Without a mode** it shows as a stack in its acquisition plane, and as a
+  volume in another orientation when its images form one. A `volumeId` names
+  the volume and does not choose; see
+  [A volume id names a volume, the mount chooses the mode](#a-volume-id-names-a-volume-the-mount-chooses-the-mode).
 
 The registered object is a `DisplaySetDescriptor`. It has no `kind`: the
 viewport family that mounts the display set and the fields of the descriptor
@@ -208,15 +214,18 @@ decide how its data is loaded. What each family reads:
 
 | Viewport      | Registered descriptor                                                                                                              |
 | ------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| Planar        | `{ imageIds, initialImageIdIndex, volumeId }`                                                                                      |
-| 3D            | `{ imageIds, volumeId }`                                                                                                           |
+| Planar        | `{ imageIds, initialImageIdIndex }`, with a `volumeId` to name the volume; `{ volumeId }` for a volume of the cache                |
+| 3D            | `{ imageIds }`, with a `volumeId` to name the volume; `{ volumeId }` for a volume of the cache                                     |
 | 3D, a surface | `{ geometryId }`, or nothing: the `displaySetId` is then the id of a geometry of the cache, shown as a surface                     |
 | Video         | `{ imageId }`, or pass the image id as `displaySetId`                                                                              |
 | ECG           | `{ imageId }`, or pass the image id as `displaySetId`                                                                              |
 | Whole slide   | `{ imageIds, options: { webClient } }`, or `{ imageIds, webClient }`, or `{ imageIds }` with a `WADO_WEB_CLIENT` metadata provider |
 
 - **One registration serves a planar and a 3D viewport.** A volume that both
-  show is registered once, with `imageIds` and `volumeId`.
+  show is registered once, with its `imageIds`: a planar viewport in volume
+  mode and a 3D viewport make the same volume id from them
+  (`utilities.getDefaultVolumeId(imageIds)`), so they share one volume of the
+  cache. A `volumeId` in the registration names the volume instead.
 - **A descriptor that a family cannot read fails the mount** with a message
   that names what the family needs, such as
   `[VideoViewport] The display set "ct" has no imageId, which a VideoViewport needs to show it`.
@@ -314,6 +323,89 @@ displaySetRegistry.add(displaySet.displaySetInstanceUID, displaySet);
 
 A second `add` under the id would now replace the display set itself with
 the descriptor, for the viewer and for the viewports.
+
+### A volume id names a volume, the mount chooses the mode
+
+In 6.0.0-beta.2 a display set registered with a `volumeId` showed as a volume
+on every planar viewport, and one without it as a stack. In 6.0 the
+`volumeId` names the volume and does nothing more: the mount says whether a
+planar viewport shows a stack or a volume.
+
+Before:
+
+```ts
+displaySetRegistry.add('ct', { imageIds, volumeId });
+
+await axialViewport.setDisplaySets({
+  displaySetId: 'ct',
+  options: { orientation: Enums.OrientationAxis.AXIAL },
+});
+```
+
+After:
+
+```ts
+displaySetRegistry.add('ct', { imageIds, volumeId });
+
+await axialViewport.setDisplaySets({
+  displaySetId: 'ct',
+  options: { orientation: Enums.OrientationAxis.AXIAL, mode: 'volume' },
+});
+```
+
+- **Code that is not changed shows a stack where it showed a volume.** An
+  axial view of an axial series, the pane of an MPR in the plane of the
+  images, a fusion in that plane and a dynamic (4D) volume show the images as
+  a stack: `getCurrentMode()` says `'stack'`, a scroll steps through the
+  images (of every time point, for a 4D series), and a slab or an MIP is not
+  drawn. Nothing fails or warns. A view in another orientation than the
+  acquisition plane still shows a volume when the images form one.
+- **The mode of the mount.** `mode: 'stack'` shows the images in their
+  acquisition plane, and the mount fails for another orientation and for a
+  display set with no image ids. `mode: 'volume'` shows slices of the volume
+  in every orientation, and the mount fails when the images form no volume.
+  `mode: 'auto'`, the default, shows a volume for another orientation than
+  the acquisition plane when the images form one, and for a display set with
+  a `volumeId` and no image ids; else a stack. A 3D viewport has no mode.
+- **Two volumes of one display set.** The mount options take a `volumeId`
+  too. It wins over the one of the registration, so two panes can show a
+  reduced and the full volume of one display set:
+
+  ```ts
+  await fullViewport.setDisplaySets({
+    displaySetId: 'ct',
+    options: { mode: 'volume' },
+  });
+  await reducedViewport.setDisplaySets({
+    displaySetId: 'ct',
+    options: { mode: 'volume', volumeId: reducedVolumeId },
+  });
+  ```
+
+  The order is: the `volumeId` of the mount, then of the registration, then
+  `utilities.getDefaultVolumeId(imageIds)`. A stack ignores the `volumeId`
+  of the mount. A 3D viewport takes it the same way
+  (`volumeViewport3D.setDisplaySets({ displaySetId, options: { volumeId } })`).
+
+- **One default id.** Without a `volumeId` a planar viewport in volume mode, a
+  3D viewport and the segmentation tools take
+  `utilities.getDefaultVolumeId(imageIds)`, so they find one volume in the
+  cache. A 3D viewport made `cornerstoneStreamingImageVolume:<displaySetId>`
+  in 6.0.0-beta.2: give that id as the `volumeId` where the application reads
+  the volume by it.
+- **A volume with no image ids.** `displaySetRegistry.add(displaySetId, { volumeId })`
+  mounts a volume of the cache, such as a parametric map or a labelmap
+  volume, on a planar viewport (as a volume) and on a 3D viewport. The
+  volume must be in the cache at the mount.
+- **Other volume loaders and other schemes keep working.** Give the id of a
+  dynamic volume (`cornerstoneStreamingDynamicImageVolume:...`), of a NIfTI
+  volume or of a scheme of the application, such as
+  `${volumeLoaderSchema}:${displaySetInstanceUID}`, at registration or on
+  the mount, with `mode: 'volume'` on a planar mount.
+- `npx codemod @cornerstonejs/cornerstone3d-6-api-names` writes
+  `mode: 'volume'` on each planar mount of a display set registered with a
+  `volumeId` and image ids in the same file, and reports the registration
+  when the file shows no such mount: `a volumeId no longer makes a planar viewport show a volume: the viewport shows this display set as a stack in its acquisition plane unless its mount asks for mode: 'volume' (setDisplaySets({ displaySetId, options: { mode: 'volume' } }) or addDisplaySet(displaySetId, { mode: 'volume' })); a 3D viewport shows it as before`.
 
 ### From 6.0.0-beta.2
 

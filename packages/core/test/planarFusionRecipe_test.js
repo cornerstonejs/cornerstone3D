@@ -252,8 +252,8 @@ describe('Planar presentation, the PET colormap recipe on a fusion -- ', () => {
         volumeId: pt.volumeId,
       });
       await viewport.setDisplaySets(
-        { displaySetId: 'fusion-ct' },
-        { displaySetId: 'fusion-pt' }
+        { displaySetId: 'fusion-ct', options: { mode: 'volume' } },
+        { displaySetId: 'fusion-pt', options: { mode: 'volume' } }
       );
       viewport.setDisplaySetAppearance('fusion-ct', ctPresentation());
       viewport.setDisplaySetAppearance(

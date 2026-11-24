@@ -10,12 +10,12 @@ jest.mock('../src/loaders/imageLoader', () => ({
 
 jest.mock('../src/RenderingEngine/Viewports/displaySetAccess', () => ({
   __esModule: true,
-  getImageDisplaySet: jest.fn(),
+  getVolumeOrImageDisplaySet: jest.fn(),
 }));
 
 import { PlanarRenderModeId } from '../src/RenderingEngine/Viewports/Planar/planarRenderModeIds';
 import { createAndCacheVolume } from '../src/loaders/volumeLoader';
-import { getImageDisplaySet } from '../src/RenderingEngine/Viewports/displaySetAccess';
+import { getVolumeOrImageDisplaySet } from '../src/RenderingEngine/Viewports/displaySetAccess';
 import { DefaultPlanarDataProvider } from '../src/RenderingEngine/Viewports/Planar/DefaultPlanarDataProvider';
 import { coreLog } from '../src/utilities/logger';
 
@@ -26,7 +26,7 @@ function makeImageIds(count) {
 }
 
 function registerDataSet(dataSet) {
-  getImageDisplaySet.mockReturnValue(dataSet);
+  getVolumeOrImageDisplaySet.mockReturnValue(dataSet);
 }
 
 function mockVolume(imageIds) {

@@ -88,7 +88,10 @@ async function showVolume(viewport, orientation, slices = 12) {
     imageIds,
     volumeId,
   });
-  await viewport.setDisplaySets({ displaySetId, options: { orientation } });
+  await viewport.setDisplaySets({
+    displaySetId,
+    options: { orientation, mode: 'volume' },
+  });
   await renderAndWait(viewport);
 
   return { volumeId, imageIds };

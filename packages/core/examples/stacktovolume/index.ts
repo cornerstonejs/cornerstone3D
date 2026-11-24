@@ -127,7 +127,10 @@ const convertButton = addButtonToToolbar({
       volumeId,
     });
 
-    await viewport.setDisplaySets({ displaySetId: volumeDisplaySetId });
+    await viewport.setDisplaySets({
+      displaySetId: volumeDisplaySetId,
+      options: { mode: 'volume' },
+    });
     viewport.setDisplaySetAppearance(volumeDisplaySetId, ctPresentation());
     // Set the VOI range
     viewport.setDisplaySetAppearance(volumeDisplaySetId, {

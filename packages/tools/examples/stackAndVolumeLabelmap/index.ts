@@ -200,7 +200,10 @@ async function run() {
 
   await viewport2.setDisplaySets({ displaySetId: ptDisplaySetId });
 
-  await viewport1.setDisplaySets({ displaySetId: ctDisplaySetId });
+  await viewport1.setDisplaySets({
+    displaySetId: ctDisplaySetId,
+    options: { mode: 'volume' },
+  });
 
   renderingEngine.render();
 

@@ -262,15 +262,20 @@ async function run() {
     viewportIds[2]
   );
 
-  ptViewport.setDisplaySets({ displaySetId: ptDisplaySetId }).then(() => {
-    ptViewport.setDisplaySetAppearance(ptDisplaySetId, {
-      ...petPresentation(),
-      blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
-      slabThickness: 300,
-    });
+  ptViewport
+    .setDisplaySets({
+      displaySetId: ptDisplaySetId,
+      options: { mode: 'volume' },
+    })
+    .then(() => {
+      ptViewport.setDisplaySetAppearance(ptDisplaySetId, {
+        ...petPresentation(),
+        blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
+        slabThickness: 300,
+      });
 
-    ptViewport.render();
-  });
+      ptViewport.render();
+    });
 
   ctToolGroup.setToolActive(OrientationMarkerTool.toolName);
   ptToolGroup.setToolActive(OrientationMarkerTool.toolName);

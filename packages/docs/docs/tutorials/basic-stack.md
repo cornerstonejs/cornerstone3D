@@ -97,8 +97,8 @@ viewport.render();
 
 :::note Tip
 Since imageIds is an arrays of imageId, we can set which one to be displayed using
-`initialImageIdIndex` of the display set. A display set without a `volumeId` shows
-as a stack.
+`initialImageIdIndex` of the display set. A display set mounted without a mode
+shows as a stack in its acquisition plane.
 :::
 
 ## Final code

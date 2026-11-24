@@ -99,6 +99,7 @@ describe('PlanarRenderPathDecisionService acquired frames (API)', () => {
   it('keeps the volume path for a reduced volume, and allows the frames', () => {
     const options = {
       orientation: OrientationAxis.ACQUISITION,
+      mode: 'volume',
       preferAcquiredFrames: true,
     };
 

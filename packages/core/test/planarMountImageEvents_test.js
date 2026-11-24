@@ -161,7 +161,11 @@ describe('The new image event of a mount and of a scroll on a planar viewport --
 
       await viewport.setDisplaySets({
         displaySetId: addVolumeDisplaySet(viewport, series),
-        options: { orientation: OrientationAxis.ACQUISITION, ...pathOptions },
+        options: {
+          mode: 'volume',
+          orientation: OrientationAxis.ACQUISITION,
+          ...pathOptions,
+        },
       });
       await firstRenderDone(viewport);
 
@@ -192,7 +196,11 @@ describe('The new image event of a mount and of a scroll on a planar viewport --
         displaySetId: addVolumeDisplaySet(viewport, series, {
           initialImageIdIndex: 6,
         }),
-        options: { orientation: OrientationAxis.ACQUISITION, ...pathOptions },
+        options: {
+          mode: 'volume',
+          orientation: OrientationAxis.ACQUISITION,
+          ...pathOptions,
+        },
       });
       await firstRenderDone(viewport);
 
@@ -222,7 +230,11 @@ describe('The new image event of a mount and of a scroll on a planar viewport --
         displaySetId: addVolumeDisplaySet(viewport, series, {
           initialImageIdIndex: 3,
         }),
-        options: { orientation: OrientationAxis.ACQUISITION, ...pathOptions },
+        options: {
+          mode: 'volume',
+          orientation: OrientationAxis.ACQUISITION,
+          ...pathOptions,
+        },
       });
       await firstRenderDone(viewport);
 
@@ -245,7 +257,11 @@ describe('The new image event of a mount and of a scroll on a planar viewport --
 
       await viewport.setDisplaySets({
         displaySetId: addVolumeDisplaySet(viewport, series),
-        options: { orientation: OrientationAxis.SAGITTAL, ...pathOptions },
+        options: {
+          mode: 'volume',
+          orientation: OrientationAxis.SAGITTAL,
+          ...pathOptions,
+        },
       });
       await firstRenderDone(viewport);
 
@@ -289,6 +305,7 @@ describe('The new image event of a mount and of a scroll on a planar viewport --
         {
           displaySetId: addVolumeDisplaySet(viewport, series),
           options: {
+            mode: 'volume',
             orientation: OrientationAxis.ACQUISITION,
             ...pathOptions,
           },
@@ -296,6 +313,7 @@ describe('The new image event of a mount and of a scroll on a planar viewport --
         {
           displaySetId: addVolumeDisplaySet(viewport, over),
           options: {
+            mode: 'volume',
             orientation: OrientationAxis.ACQUISITION,
             ...pathOptions,
           },
@@ -342,7 +360,11 @@ describe('The new image event of a mount and of a scroll on a planar viewport --
         displaySetId: addVolumeDisplaySet(viewport, series, {
           initialImageIdIndex: 6,
         }),
-        options: { orientation: OrientationAxis.ACQUISITION, ...pathOptions },
+        options: {
+          mode: 'volume',
+          orientation: OrientationAxis.ACQUISITION,
+          ...pathOptions,
+        },
       });
       await firstRenderDone(viewport);
 

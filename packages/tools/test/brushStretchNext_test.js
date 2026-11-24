@@ -92,7 +92,7 @@ async function showVolume(viewport) {
   });
   await viewport.setDisplaySets({
     displaySetId: 'brushVolume',
-    options: { orientation: OrientationAxis.AXIAL },
+    options: { orientation: OrientationAxis.AXIAL, mode: 'volume' },
   });
   await renderAndWait(viewport);
 

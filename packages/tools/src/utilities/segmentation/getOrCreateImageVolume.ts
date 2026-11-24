@@ -6,7 +6,10 @@ import {
 } from '@cornerstonejs/core';
 
 /**
- * Gets an existing image volume from cache or creates a new one from the provided image IDs
+ * Gets an existing image volume from cache or creates a new one from the provided image IDs.
+ * The volume id is the one that a planar viewport in volume mode and a 3D viewport give
+ * the same image ids (`utilities.getDefaultVolumeId`), so the tools and the viewports find
+ * one volume in the cache.
  * @param referencedImageIds - Array of image IDs to create the volume from
  * @returns The image volume or undefined if volume cannot be created
  */
@@ -23,7 +26,7 @@ function getOrCreateImageVolume(
     return;
   }
 
-  const volumeId = cache.generateVolumeId(referencedImageIds);
+  const volumeId = csUtils.getDefaultVolumeId(referencedImageIds);
 
   // Check if volume already exists in cache
   let imageVolume = cache.getVolume(volumeId);

@@ -429,7 +429,7 @@ async function showVolume(source, name, orientation, imageIdIndex, view) {
   });
   await source.setDisplaySets({
     displaySetId: name,
-    options: { orientation },
+    options: { orientation, mode: 'volume' },
   });
   await source.setImageIdIndex(imageIdIndex);
   source.setDisplaySetAppearance(name, PRESENTATION);
@@ -459,11 +459,15 @@ async function showFusion(source, name) {
   await source.setDisplaySets(
     {
       displaySetId: displaySetIds[0],
-      options: { orientation: OrientationAxis.AXIAL },
+      options: { orientation: OrientationAxis.AXIAL, mode: 'volume' },
     },
     {
       displaySetId: displaySetIds[1],
-      options: { orientation: OrientationAxis.AXIAL, role: 'overlay' },
+      options: {
+        orientation: OrientationAxis.AXIAL,
+        role: 'overlay',
+        mode: 'volume',
+      },
     }
   );
   await source.setImageIdIndex(7);

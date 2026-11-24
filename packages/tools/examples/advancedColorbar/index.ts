@@ -212,7 +212,10 @@ async function initializeVolumeViewport(
     imageIds: ctImageIds,
     volumeId: ctVolumeId,
   });
-  displaySets.push({ displaySetId: ctVolumeDisplaySetId });
+  displaySets.push({
+    displaySetId: ctVolumeDisplaySetId,
+    options: { mode: 'volume' },
+  });
 
   // Add PT volume on fusion viewports
   if (fusion) {
@@ -224,7 +227,10 @@ async function initializeVolumeViewport(
       imageIds: ptImageIds,
       volumeId: ptVolumeId,
     });
-    displaySets.push({ displaySetId: ptVolumeDisplaySetId });
+    displaySets.push({
+      displaySetId: ptVolumeDisplaySetId,
+      options: { mode: 'volume' },
+    });
   }
 
   // Set the volume on the viewport

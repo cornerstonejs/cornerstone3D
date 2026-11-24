@@ -417,7 +417,7 @@ async function run() {
 
   const viewport: PlanarViewport = renderingEngine.getViewport(viewportId1);
 
-  await viewport.setDisplaySets({ displaySetId });
+  await viewport.setDisplaySets({ displaySetId, options: { mode: 'volume' } });
   viewport.setDisplaySetAppearance(displaySetId, ctPresentation());
 
   // Add some segmentations based on the source data volume

@@ -272,7 +272,7 @@ async function run() {
     volumeId,
   });
 
-  await viewport.setDisplaySets({ displaySetId });
+  await viewport.setDisplaySets({ displaySetId, options: { mode: 'volume' } });
 
   // Render the image
   viewport.render();

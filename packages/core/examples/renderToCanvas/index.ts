@@ -235,7 +235,10 @@ async function run() {
     } else {
       // Get the stack viewport that was created
       const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
-      await viewport.setDisplaySets({ displaySetId: volumeDisplaySetId });
+      await viewport.setDisplaySets({
+        displaySetId: volumeDisplaySetId,
+        options: { mode: 'volume' },
+      });
       if (sliceIndex !== undefined) {
         await utilities.jumpToSlice(viewport.element, {
           imageIndex: sliceIndex,

@@ -194,7 +194,10 @@ async function updateViewport() {
       volumeId,
     });
     viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
-    await viewport.setDisplaySets({ displaySetId: volumeDisplaySetId });
+    await viewport.setDisplaySets({
+      displaySetId: volumeDisplaySetId,
+      options: { mode: 'volume' },
+    });
     viewport.render();
   }
 

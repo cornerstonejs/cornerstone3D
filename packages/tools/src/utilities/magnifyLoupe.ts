@@ -47,10 +47,28 @@ function getMagnifiedDisplaySets(
 }
 
 /**
+ * The mode of each display set of a planar viewport, from its render plan:
+ * 'stack' for a layer that draws the acquired frames of a stack, 'volume'
+ * for a layer that draws a slice of a volume.
+ */
+function getMountedModes(
+  viewport: PlanarViewport
+): Map<string, 'stack' | 'volume'> {
+  return new Map(
+    viewport
+      .getRenderPlan()
+      .map(({ displaySetId, slice }) => [
+        displaySetId,
+        slice === 'frame' ? 'stack' : 'volume',
+      ])
+  );
+}
+
+/**
  * Mounts on a loupe the display sets of the planar viewport that it
- * magnifies, in the orientation of the view of that viewport: its source
- * display set and its overlays, as a fusion. A stack shows its images, a
- * volume shows its slices.
+ * magnifies, in the orientation of the view of that viewport and in the
+ * mode that each has there: its source display set and its overlays, as a
+ * fusion. A stack shows its images, a volume shows its slices.
  *
  * @returns False when the source viewport shows nothing.
  */
@@ -65,11 +83,12 @@ export async function mountLoupeSource(
   }
 
   const { orientation } = sourceViewport.getViewState();
+  const modes = getMountedModes(sourceViewport);
 
   await loupeViewport.setDisplaySets(
     ...displaySets.map(({ displaySetId, role }) => ({
       displaySetId,
-      options: { orientation, role },
+      options: { orientation, role, mode: modes.get(displaySetId) },
     }))
   );
 

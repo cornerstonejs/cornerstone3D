@@ -296,7 +296,7 @@ async function run() {
 
   const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-  await viewport.setDisplaySets({ displaySetId });
+  await viewport.setDisplaySets({ displaySetId, options: { mode: 'volume' } });
 
   // // Add the segmentation representations to the viewport
   await segmentation.addSegmentationRepresentations(viewportId, [

@@ -282,7 +282,10 @@ async function run() {
     [viewportId1, viewportId2].map(async (viewportId) => {
       const viewport: PlanarViewport = renderingEngine.getViewport(viewportId);
 
-      await viewport.setDisplaySets({ displaySetId });
+      await viewport.setDisplaySets({
+        displaySetId,
+        options: { mode: 'volume' },
+      });
       viewport.setDisplaySetAppearance(displaySetId, ctPresentation());
     })
   );

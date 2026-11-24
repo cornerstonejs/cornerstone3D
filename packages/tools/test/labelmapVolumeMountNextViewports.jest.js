@@ -212,7 +212,7 @@ describe('The volume labelmap mount on the next viewports', () => {
 
       await viewport.setDisplaySets({
         displaySetId,
-        options: { orientation: OrientationAxis.AXIAL },
+        options: { orientation: OrientationAxis.AXIAL, mode: 'volume' },
       });
 
       expect(viewport.type).toBe(ViewportType.PLANAR);

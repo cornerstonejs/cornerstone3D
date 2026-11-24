@@ -27,6 +27,7 @@ const VOLUME_DATASET = {
   imageIds: ['vol-img-1', 'vol-img-2'],
   volumeId: 'vol-1',
 };
+const VOLUME_MODE = { mode: 'volume' };
 
 describe('Planar render backend resolution', () => {
   let service;
@@ -86,12 +87,13 @@ describe('Planar render backend resolution', () => {
 
   describe('volume path', () => {
     it('selects the GPU volume slice path by default', () => {
-      const { renderMode } = service.select(VOLUME_DATASET);
+      const { renderMode } = service.select(VOLUME_DATASET, VOLUME_MODE);
       expect(renderMode).toBe(PlanarRenderModeId.VTK_GPU_VOLUME_SLICE);
     });
 
     it('honors a per-mount cpu pin for volume datasets', () => {
       const { renderMode } = service.select(VOLUME_DATASET, {
+        ...VOLUME_MODE,
         renderBackend: 'cpu',
       });
       expect(renderMode).toBe(PlanarRenderModeId.CANVAS_CPU_SLICE);
@@ -100,6 +102,7 @@ describe('Planar render backend resolution', () => {
     it('honors a per-mount gpu pin over a global cpu pin for volume datasets', () => {
       setRenderBackend('cpu');
       const { renderMode } = service.select(VOLUME_DATASET, {
+        ...VOLUME_MODE,
         renderBackend: 'gpu',
       });
       expect(renderMode).toBe(PlanarRenderModeId.VTK_GPU_VOLUME_SLICE);
@@ -107,7 +110,7 @@ describe('Planar render backend resolution', () => {
 
     it('selects the CPU volume path with a global cpu pin', () => {
       setRenderBackend('cpu');
-      const { renderMode } = service.select(VOLUME_DATASET);
+      const { renderMode } = service.select(VOLUME_DATASET, VOLUME_MODE);
       expect(renderMode).toBe(PlanarRenderModeId.CANVAS_CPU_SLICE);
     });
   });
@@ -265,8 +268,10 @@ describe('Planar render backend resolution', () => {
           .renderMode
       ).toBe('test:canvasCpuFrame');
       expect(
-        service.select(VOLUME_DATASET, { renderBackend: 'test:canvasCpu' })
-          .renderMode
+        service.select(VOLUME_DATASET, {
+          mode: 'volume',
+          renderBackend: 'test:canvasCpu',
+        }).renderMode
       ).toBe('test:canvasCpuSlice');
       expect(layerOf('test:canvasCpuSlice')).toEqual({
         slice: 'cpu',
@@ -275,6 +280,7 @@ describe('Planar render backend resolution', () => {
       });
       expect(
         service.select(VOLUME_DATASET, {
+          mode: 'volume',
           renderBackend: 'test:gpuVolumeOnly',
         }).renderMode
       ).toBe('test:gpuVolumeOnlySlice');
@@ -358,7 +364,7 @@ describe('Planar render backend resolution', () => {
       setRenderBackend('test:fancy');
 
       expect(service.select(IMAGE_DATASET).renderMode).toBe('test:fancyImage');
-      expect(service.select(VOLUME_DATASET).renderMode).toBe(
+      expect(service.select(VOLUME_DATASET, VOLUME_MODE).renderMode).toBe(
         'test:fancyVolume'
       );
     });
@@ -379,7 +385,7 @@ describe('Planar render backend resolution', () => {
       expect(service.select(IMAGE_DATASET).renderMode).toBe(
         'test:imageOnlyImage'
       );
-      expect(() => service.select(VOLUME_DATASET)).toThrow(
+      expect(() => service.select(VOLUME_DATASET, VOLUME_MODE)).toThrow(
         /does not support volume-backed rendering/
       );
     });

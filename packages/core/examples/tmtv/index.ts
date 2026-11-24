@@ -793,7 +793,10 @@ async function showDisplaySets(
       const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
       await viewport.setDisplaySets(
-        ...entries.map(({ displaySetId }) => ({ displaySetId }))
+        ...entries.map(({ displaySetId }) => ({
+          displaySetId,
+          options: { mode: 'volume' as const },
+        }))
       );
       entries.forEach(({ displaySetId, presentation }) => {
         viewport.setDisplaySetAppearance(displaySetId, presentation);

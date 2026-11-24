@@ -245,7 +245,7 @@ async function run() {
 
   const viewport1: PlanarViewport = renderingEngine.getViewport(viewportId1);
 
-  await viewport1.setDisplaySets({ displaySetId });
+  await viewport1.setDisplaySets({ displaySetId, options: { mode: 'volume' } });
   viewport1.setDisplaySetAppearance(displaySetId, ctPresentation());
 
   const viewport3: VolumeViewport3D = renderingEngine.getViewport(viewportId2);

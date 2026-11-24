@@ -34,7 +34,10 @@ import {
   getDimensionGroupReferenceContext,
   type ViewReferenceContext,
 } from '../viewReferenceCompatibility';
-import { getImageDisplaySet, isImageDisplaySet } from '../displaySetAccess';
+import {
+  getVolumeOrImageDisplaySet,
+  isImageDisplaySet,
+} from '../displaySetAccess';
 import { DefaultVolume3DDataProvider } from './DefaultVolume3DDataProvider';
 import { createVolume3DRenderPathResolver } from './Volume3DRenderPathResolver';
 import Volume3DResolvedView from './Volume3DResolvedView';
@@ -263,7 +266,10 @@ class VolumeViewport3D extends BaseViewport<
 
     for (const { displaySetId, options = {} } of entries) {
       const renderMode = this.resolveRenderMode(displaySetId);
-      const data = await this.dataProvider.load(displaySetId, { renderMode });
+      const data = await this.dataProvider.load(displaySetId, {
+        renderMode,
+        volumeId: options.volumeId,
+      });
 
       if (isStale()) {
         return;
@@ -389,7 +395,10 @@ class VolumeViewport3D extends BaseViewport<
     };
     const data = staged?.data
       ? staged.data
-      : await this.dataProvider.load(displaySetId, dataOptions);
+      : await this.dataProvider.load(displaySetId, {
+          ...dataOptions,
+          volumeId: volumeOptions.volumeId,
+        });
     const added = await this.addLoadedData(displaySetId, data, dataOptions);
 
     if (!added) {
@@ -1277,7 +1286,7 @@ class VolumeViewport3D extends BaseViewport<
   private getDataSet(
     displaySetId: string
   ): Volume3DDisplaySetDescriptor | undefined {
-    const dataSet = getImageDisplaySet(displaySetId);
+    const dataSet = getVolumeOrImageDisplaySet(displaySetId);
 
     if (!isVolume3DDisplaySetDescriptor(dataSet)) {
       return;

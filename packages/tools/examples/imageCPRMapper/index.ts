@@ -277,7 +277,10 @@ async function run() {
   });
 
   // Set the volume on the viewport
-  volumeViewport.setDisplaySets({ displaySetId: volumeDisplaySetId });
+  volumeViewport.setDisplaySets({
+    displaySetId: volumeDisplaySetId,
+    options: { mode: 'volume' },
+  });
 
   // Render the image
   renderingEngine.renderViewports(viewportIds);

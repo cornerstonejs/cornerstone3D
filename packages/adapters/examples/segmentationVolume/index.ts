@@ -165,7 +165,10 @@ async function loadDicom() {
       const viewport: cornerstone.PlanarViewport =
         renderingEngine.getViewport(viewportId);
 
-      return viewport.setDisplaySets({ displaySetId });
+      return viewport.setDisplaySets({
+        displaySetId,
+        options: { mode: 'volume' },
+      });
     })
   );
 

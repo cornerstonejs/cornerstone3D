@@ -224,8 +224,8 @@ async function setViewMode(mode: string) {
           renderingEngine.getViewport<PlanarViewport>(viewportId);
 
         await viewport.setDisplaySets(
-          { displaySetId: ctDisplaySetId },
-          { displaySetId: ptDisplaySetId }
+          { displaySetId: ctDisplaySetId, options: { mode: 'volume' } },
+          { displaySetId: ptDisplaySetId, options: { mode: 'volume' } }
         );
         viewport.setDisplaySetAppearance(ctDisplaySetId, ctPresentation());
         viewport.resetDisplaySetAppearance(ptDisplaySetId);
@@ -244,7 +244,10 @@ async function setViewMode(mode: string) {
         const viewport =
           renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-        await viewport.setDisplaySets({ displaySetId: ptDisplaySetId });
+        await viewport.setDisplaySets({
+          displaySetId: ptDisplaySetId,
+          options: { mode: 'volume' },
+        });
         viewport.resetDisplaySetAppearance(ptDisplaySetId);
         viewport.setDisplaySetAppearance(ptDisplaySetId, petPresentation());
       })

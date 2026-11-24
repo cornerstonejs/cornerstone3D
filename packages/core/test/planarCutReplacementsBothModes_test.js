@@ -153,7 +153,10 @@ describe('What a caller uses in place of cut planar members, in stack mode and i
       const overlay = await createSeries({ id: 'uriOverlay' });
       const fused = createNextViewport(renderingEngine, 'fused');
       const empty = createNextViewport(renderingEngine, 'emptyURI');
-      const options = { orientation: OrientationAxis.ACQUISITION };
+      const options = {
+        orientation: OrientationAxis.ACQUISITION,
+        mode: 'volume',
+      };
 
       [
         ['uri:source', source],

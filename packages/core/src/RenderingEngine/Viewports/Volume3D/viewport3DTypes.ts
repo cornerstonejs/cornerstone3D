@@ -63,6 +63,13 @@ export interface Volume3DDisplaySetDescriptor extends DisplaySetDescriptor {
  */
 export interface Volume3DSetDataOptions {
   role?: BindingRole;
+  /**
+   * The volume that the display set shows, in place of the `volumeId` of
+   * its registration. Without either, the volume id is made from the image
+   * ids (`utilities.getDefaultVolumeId`), the same id as a planar viewport
+   * in volume mode takes.
+   */
+  volumeId?: string;
 }
 
 /** @internal */
@@ -144,6 +151,7 @@ export interface Volume3DDataProvider extends DataProvider {
     displaySetId: string,
     options?: {
       renderMode: Volume3DRenderMode;
+      volumeId?: string;
     }
   ): Promise<LoadedData<Volume3DPayload>>;
 }

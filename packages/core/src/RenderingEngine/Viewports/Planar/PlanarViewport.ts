@@ -67,7 +67,10 @@ import {
   isViewReferenceViewableAsVolume,
   isPointNearImagePlane,
 } from '../viewReferenceCompatibility';
-import { getImageDisplaySet, isImageDisplaySet } from '../displaySetAccess';
+import {
+  getVolumeOrImageDisplaySet,
+  isImageDisplaySet,
+} from '../displaySetAccess';
 import { DefaultPlanarDataProvider } from './DefaultPlanarDataProvider';
 import { getPlanarWorldToIndexMatrix } from './planarImageData';
 import { createPlanarRenderPathResolver } from './PlanarRenderPathResolver';
@@ -3328,6 +3331,8 @@ class PlanarViewport extends BaseViewport<
   ): PlanarRenderPathDecisionOptions {
     return {
       orientation,
+      mode: options.mode,
+      volumeId: options.volumeId,
       // Per-mount backend pin/override. Overlays without an explicit pin
       // follow the source binding's mounted backend rather than the global
       // configuration; only then does the global renderBackend decide.
@@ -3562,7 +3567,7 @@ class PlanarViewport extends BaseViewport<
   private getDataSet(
     displaySetId: string
   ): PlanarDisplaySetDescriptor | undefined {
-    const dataSet = getImageDisplaySet(displaySetId);
+    const dataSet = getVolumeOrImageDisplaySet(displaySetId);
 
     if (!isPlanarDisplaySetDescriptor(dataSet)) {
       return;

@@ -122,6 +122,7 @@ await viewport.setDisplaySets({
   displaySetId,
   options: {
     orientation: Enums.OrientationAxis.AXIAL,
+    mode: 'volume',
   },
 });
 

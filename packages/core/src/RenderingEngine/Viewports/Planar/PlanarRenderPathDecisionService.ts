@@ -17,6 +17,7 @@ import {
   getRenderModeForBackend,
   getRenderSurfaceForRenderMode,
 } from '../../helpers/renderBackendRegistry';
+import resolveDisplaySetVolumeId from '../../helpers/resolveDisplaySetVolumeId';
 import toCacheVolumeId from '../../helpers/toCacheVolumeId';
 import {
   gpuSettingsReductionFactors,
@@ -43,6 +44,7 @@ import type {
   PlanarEffectiveRenderMode,
   PlanarOrientation,
   PlanarDisplaySetDescriptor,
+  PlanarSetDataOptions,
   RenderPlanReason,
 } from './PlanarViewportTypes';
 
@@ -59,6 +61,10 @@ export interface SelectedPlanarRenderPath extends PlanarRenderModeDecision {
 
 export interface PlanarRenderPathDecisionOptions {
   orientation?: PlanarOrientation;
+  /** Stack, volume or auto (see `PlanarSetDataOptions.mode`). */
+  mode?: PlanarSetDataOptions['mode'];
+  /** The volume id of the mount options (see `PlanarSetDataOptions.volumeId`). */
+  volumeId?: string;
   useSliceRendering?: boolean;
   /**
    * Per-mount render backend override. 'cpu' and 'gpu' pin this dataset to
@@ -393,7 +399,13 @@ export class PlanarRenderPathDecisionService {
 
     const { acquisitionOrientation, isAcquisitionPath, useVolumePath } =
       this.resolvePathInputs(dataSet, options);
-    const volumeId = getVolumeId(dataSet);
+    const volumeId = getVolumeId(dataSet, useVolumePath, options);
+
+    if (options.mode === 'stack' && dataSet.volumeOnly) {
+      throw new Error(
+        "[PlanarViewport] mode 'stack' shows the image ids of a display set, and this one names a volume only"
+      );
+    }
 
     if (
       !isAcquisitionPath &&
@@ -401,11 +413,13 @@ export class PlanarRenderPathDecisionService {
       !dataSet.useWorldCoordinateImageData
     ) {
       throw new Error(
-        '[PlanarViewport] Non-acquisition rendering requires a valid volume dataset'
+        options.mode === 'stack'
+          ? "[PlanarViewport] mode 'stack' shows the images in their acquisition plane only"
+          : '[PlanarViewport] Non-acquisition rendering requires a valid volume dataset'
       );
     }
 
-    if (useVolumePath && !supportsVolumeRendering(dataSet)) {
+    if (useVolumePath && !supportsVolumeRendering(dataSet, options)) {
       throw new Error(
         '[PlanarViewport] Volume rendering requires a valid volume dataset'
       );
@@ -443,6 +457,10 @@ export class PlanarRenderPathDecisionService {
       options
     );
 
+    if (options.mode === 'stack' && dataSet.volumeOnly) {
+      return false;
+    }
+
     if (
       !isAcquisitionPath &&
       !useVolumePath &&
@@ -451,7 +469,7 @@ export class PlanarRenderPathDecisionService {
       return false;
     }
 
-    if (useVolumePath && !supportsVolumeRendering(dataSet)) {
+    if (useVolumePath && !supportsVolumeRendering(dataSet, options)) {
       return false;
     }
 
@@ -460,8 +478,12 @@ export class PlanarRenderPathDecisionService {
 
   /**
    * The inputs that `select` and `canRender` share, so the two cannot drift.
-   * A data set with a volume always takes the volume path, also when its
-   * slice path draws the acquired frames (see `canDrawAcquiredFrames`).
+   * The mode of the options decides the path: 'stack' the image path,
+   * 'volume' the volume path, 'auto' (the default) the volume path for a
+   * display set that names a volume only and for an orientation other than
+   * the acquisition plane when the images form a volume. A data set on the
+   * volume path keeps it also when its slice path draws the acquired frames
+   * (see `canDrawAcquiredFrames`).
    */
   private resolvePathInputs(
     dataSet: PlanarDisplaySetDescriptor,
@@ -470,13 +492,18 @@ export class PlanarRenderPathDecisionService {
     const orientation = options.orientation || OrientationAxis.ACQUISITION;
     const acquisitionOrientation = getPlanarAcquisitionOrientation(
       dataSet.imageIds,
-      !dataSet.useWorldCoordinateImageData && supportsVolumeRendering(dataSet)
+      !dataSet.useWorldCoordinateImageData &&
+        supportsVolumeRendering(dataSet, options)
     );
     const isAcquisitionPath =
       orientation === OrientationAxis.ACQUISITION ||
       (acquisitionOrientation !== undefined &&
         orientation === acquisitionOrientation);
-    const useVolumePath = isVolumeBackedDataSet(dataSet, isAcquisitionPath);
+    const mode = options.mode ?? 'auto';
+    const useVolumePath =
+      mode === 'auto'
+        ? isVolumeBackedDataSet(dataSet, isAcquisitionPath, options)
+        : mode === 'volume';
 
     return {
       acquisitionOrientation,
@@ -490,8 +517,9 @@ export class PlanarRenderPathDecisionService {
    * in place of the reduced slice. The orientation is not an input: the render
    * path draws a frame only while the view is in the acquisition plane.
    *
-   * All of these must hold: the caller prefers the acquired frames; the data
-   * set names a cached, non-dynamic volume; the volume path of the resolved
+   * All of these must hold: the caller prefers the acquired frames; the
+   * volume of the data set on the volume path (`getVolumeId`) is cached and
+   * not dynamic; the volume path of the resolved
    * backend draws from a GPU texture; final downsampling with the active GPU
    * settings reduces that texture on at least one axis; the slab is not thicker than
    * one acquired slice; and the blend mode is composite.
@@ -503,11 +531,7 @@ export class PlanarRenderPathDecisionService {
     dataSet: PlanarDisplaySetDescriptor,
     options: PlanarRenderPathDecisionOptions
   ): boolean {
-    if (
-      !options.preferAcquiredFrames ||
-      !dataSet.volumeId ||
-      dataSet.useWorldCoordinateImageData
-    ) {
+    if (!options.preferAcquiredFrames || dataSet.useWorldCoordinateImageData) {
       return false;
     }
 
@@ -518,7 +542,7 @@ export class PlanarRenderPathDecisionService {
       return false;
     }
 
-    const volume = cache.getVolume(dataSet.volumeId);
+    const volume = cache.getVolume(getVolumeId(dataSet, true, options));
 
     if (!volume?.voxelGrid || volume.isDynamicVolume?.()) {
       return false;
@@ -609,7 +633,7 @@ export class PlanarRenderPathDecisionService {
    * first), and why. It samples when all of these hold: slice first is on
    * for the data set (its own option, else the global configuration); the
    * volume is in the cache, under the id that the data provider gives it
-   * (`toCacheVolumeId`), and holds one value per voxel (a colour
+   * (`getVolumeId`), and holds one value per voxel (a colour
    * volume keeps the GPU volume path); the data set is not a segmentation
    * overlay; and the view has no slab (`hasSlab`), or the GPU volume path
    * cannot draw this layer exactly on this device (`getGpuVolumePathLimit`
@@ -639,7 +663,7 @@ export class PlanarRenderPathDecisionService {
       return { sampled: false, reason: 'notSampled' };
     }
 
-    const volume = cache.getVolume(toCacheVolumeId(getVolumeId(dataSet)));
+    const volume = cache.getVolume(getVolumeId(dataSet, true, options));
 
     if (
       !volume?.imageData ||
@@ -778,29 +802,59 @@ function getImageDirection(imageOrientationPatient: number[]): number[] {
   ];
 }
 
-function getVolumeId(dataSet: PlanarDisplaySetDescriptor): string {
-  return dataSet.volumeId || cache.generateVolumeId(dataSet.imageIds);
+/**
+ * The volume id of a data set: on the volume path the volume id of the
+ * mount options, else of the data set, else the default id of its image ids
+ * (`resolveDisplaySetVolumeId`); on the image path the mount options do not
+ * count.
+ */
+function getVolumeId(
+  dataSet: PlanarDisplaySetDescriptor,
+  useVolumePath: boolean,
+  options: PlanarRenderPathDecisionOptions
+): string {
+  return resolveDisplaySetVolumeId(
+    dataSet,
+    useVolumePath ? options.volumeId : undefined
+  );
 }
 
-function hasExplicitCachedVolume(dataSet: PlanarDisplaySetDescriptor): boolean {
-  return !!(dataSet.volumeId && cache.getVolume(dataSet.volumeId));
+/** Whether the volume id of the mount options or of the data set names a cached volume. */
+function hasExplicitCachedVolume(
+  dataSet: PlanarDisplaySetDescriptor,
+  options: PlanarRenderPathDecisionOptions
+): boolean {
+  const volumeId = options.volumeId || dataSet.volumeId;
+
+  return !!(volumeId && cache.getVolume(toCacheVolumeId(volumeId)));
 }
 
-function supportsVolumeRendering(dataSet: PlanarDisplaySetDescriptor): boolean {
-  return hasExplicitCachedVolume(dataSet) || isValidVolume(dataSet.imageIds);
+function supportsVolumeRendering(
+  dataSet: PlanarDisplaySetDescriptor,
+  options: PlanarRenderPathDecisionOptions
+): boolean {
+  return (
+    hasExplicitCachedVolume(dataSet, options) || isValidVolume(dataSet.imageIds)
+  );
 }
 
+/**
+ * Whether the 'auto' mode puts a data set on the volume path: a data set
+ * that names a volume only, and a data set in an orientation other than the
+ * acquisition plane whose images form a volume. A volume id does not count.
+ */
 function isVolumeBackedDataSet(
   dataSet: PlanarDisplaySetDescriptor,
-  isAcquisitionPath: boolean
+  isAcquisitionPath: boolean,
+  options: PlanarRenderPathDecisionOptions
 ): boolean {
   if (dataSet.useWorldCoordinateImageData) {
     return false;
   }
 
-  if (dataSet.volumeId) {
+  if (dataSet.volumeOnly) {
     return true;
   }
 
-  return !isAcquisitionPath && supportsVolumeRendering(dataSet);
+  return !isAcquisitionPath && supportsVolumeRendering(dataSet, options);
 }

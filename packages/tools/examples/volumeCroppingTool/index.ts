@@ -430,7 +430,10 @@ async function run(numViewports = getNumViewportsFromUrl()) {
   await Promise.all([
     ...orthographicViewports.map(async ({ viewportId }) => {
       const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
-      await viewport.setDisplaySets({ displaySetId });
+      await viewport.setDisplaySets({
+        displaySetId,
+        options: { mode: 'volume' },
+      });
       viewport.setDisplaySetAppearance(displaySetId, ctPresentation());
     }),
     renderingEngine

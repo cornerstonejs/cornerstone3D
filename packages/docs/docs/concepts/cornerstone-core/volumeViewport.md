@@ -7,9 +7,8 @@ summary: Cornerstone3D 6.0 has no volume viewport class. A planar viewport shows
 # Volumes in a Planar Viewport
 
 Cornerstone3D 6.0 has no volume viewport class. A planar viewport
-(`ViewportType.PLANAR`) shows a slice of a volume in volume mode: the display
-set is registered with a `volumeId`, and `viewport.getCurrentMode()` says
-`'volume'`. Pass the orientation in the options of the display set or in
+(`ViewportType.PLANAR`) shows a slice of a volume in volume mode: the mount
+asks for `mode: 'volume'`, and `viewport.getCurrentMode()` says `'volume'`. Pass the orientation in the options of the display set or in
 `defaultOptions`. A volume in 3D is shown by a 3D viewport
 (`ViewportType.VOLUME_3D`). See [Planar viewport](./viewports.md#planar-viewport)
 and [3D Viewport](./viewports.md#3d-viewport).

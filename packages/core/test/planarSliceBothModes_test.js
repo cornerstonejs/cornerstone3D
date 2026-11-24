@@ -255,13 +255,14 @@ describe('A direct next planar viewport in stack mode and in volume mode -- ', (
       await viewport.setDisplaySets(
         {
           displaySetId: 'fusion:0',
-          options: { orientation: OrientationAxis.ACQUISITION },
+          options: { orientation: OrientationAxis.ACQUISITION, mode: 'volume' },
         },
         {
           displaySetId: 'fusion:1',
           options: {
             role: 'overlay',
             orientation: OrientationAxis.ACQUISITION,
+            mode: 'volume',
           },
         }
       );

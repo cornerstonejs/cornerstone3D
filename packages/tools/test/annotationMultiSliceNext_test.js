@@ -87,7 +87,7 @@ async function showNextVolume(
   });
   await viewport.setDisplaySets({
     displaySetId,
-    options: { orientation },
+    options: { orientation, mode: 'volume' },
   });
   await renderAndWait(viewport);
 }

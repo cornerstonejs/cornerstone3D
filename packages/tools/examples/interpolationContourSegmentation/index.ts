@@ -418,7 +418,10 @@ async function run() {
     volumeId,
   });
 
-  await volumeViewport.setDisplaySets({ displaySetId: volumeDisplaySetId });
+  await volumeViewport.setDisplaySets({
+    displaySetId: volumeDisplaySetId,
+    options: { mode: 'volume' },
+  });
   viewports.push(volumeViewport);
 
   // Render the image

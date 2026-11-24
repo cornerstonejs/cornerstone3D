@@ -225,7 +225,10 @@ async function run() {
       (volumeViewportId) =>
         renderingEngine
           .getViewport<PlanarViewport>(volumeViewportId)
-          .setDisplaySets({ displaySetId: volumeDisplaySetId })
+          .setDisplaySets({
+            displaySetId: volumeDisplaySetId,
+            options: { mode: 'volume' },
+          })
     )
   );
 

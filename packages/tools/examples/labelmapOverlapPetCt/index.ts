@@ -393,7 +393,10 @@ async function run() {
     ctViewportIds.map(async (viewportId) => {
       const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-      await viewport.setDisplaySets({ displaySetId: ctDisplaySetId });
+      await viewport.setDisplaySets({
+        displaySetId: ctDisplaySetId,
+        options: { mode: 'volume' },
+      });
       viewport.setDisplaySetAppearance(ctDisplaySetId, ctPresentation());
     })
   );
@@ -413,7 +416,10 @@ async function run() {
     ptViewportIds.map(async (viewportId) => {
       const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-      await viewport.setDisplaySets({ displaySetId: ptDisplaySetId });
+      await viewport.setDisplaySets({
+        displaySetId: ptDisplaySetId,
+        options: { mode: 'volume' },
+      });
       viewport.setDisplaySetAppearance(ptDisplaySetId, petPresentation());
     })
   );

@@ -127,10 +127,12 @@ addButtonToToolbar({
       newViewport = await showDisplaySetInPlace(viewport, volumeDisplaySetId, {
         background: [0, 0.4, 0],
         keepPresentation: true,
+        mode: 'volume',
       });
     } else {
       newViewport = await showDisplaySetInPlace(viewport, stackDisplaySetId, {
         background: [0.4, 0.0, 0.4],
+        mode: 'stack',
       });
     }
 
@@ -145,8 +147,8 @@ addButtonToToolbar({
 // ============================= //
 
 /**
- * Shows a display set in place of what a viewport shows, on the same slice.
- * A display set with a volume id shows as a volume, one without as a stack.
+ * Shows a display set in place of what a viewport shows, on the same slice,
+ * as a stack or as a volume (`options.mode`).
  * The background is an option of a viewport, so the element is enabled again
  * with the new colour. With `keepPresentation` the zoom, the pan and the
  * rotation stay too.
@@ -154,7 +156,11 @@ addButtonToToolbar({
 async function showDisplaySetInPlace(
   viewport: PlanarViewport,
   displaySetId: string,
-  options: { background: Types.Point3; keepPresentation?: boolean }
+  options: {
+    background: Types.Point3;
+    keepPresentation?: boolean;
+    mode: 'stack' | 'volume';
+  }
 ): Promise<PlanarViewport> {
   const { id: viewportId, element } = viewport;
   const renderingEngine = getRenderingEngine(renderingEngineId);
@@ -172,7 +178,10 @@ async function showDisplaySetInPlace(
 
   const newViewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-  await newViewport.setDisplaySets({ displaySetId });
+  await newViewport.setDisplaySets({
+    displaySetId,
+    options: { mode: options.mode },
+  });
 
   const viewState =
     viewPresentation &&

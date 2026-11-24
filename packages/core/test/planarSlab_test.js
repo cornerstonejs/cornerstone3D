@@ -113,7 +113,7 @@ async function showVolumeOnNext(viewport, volumeId) {
   });
   await viewport.setDisplaySets({
     displaySetId,
-    options: { orientation: OrientationAxis.AXIAL },
+    options: { orientation: OrientationAxis.AXIAL, mode: 'volume' },
   });
   viewport.setDisplaySetAppearance(displaySetId, { voiRange: VOI_RANGE });
 

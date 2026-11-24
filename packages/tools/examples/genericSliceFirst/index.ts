@@ -891,7 +891,7 @@ function setupControls(): void {
 /** Mounts the display sets of one viewport and sets their look. */
 async function mountViewport(spec: ViewportSpec): Promise<void> {
   const viewport = getViewport(spec.viewportId);
-  const options = { orientation: spec.orientation };
+  const options = { orientation: spec.orientation, mode: 'volume' as const };
 
   await viewport.setDisplaySets(
     ...getDisplaySetIds(spec).map((displaySetId) => ({ displaySetId, options }))

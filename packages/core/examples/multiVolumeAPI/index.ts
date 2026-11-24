@@ -169,7 +169,10 @@ addButtonToToolbar({
 
     // Get the volume viewport
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
-    await viewport.addDisplaySet(ptDisplaySetId, { role: 'overlay' });
+    await viewport.addDisplaySet(ptDisplaySetId, {
+      role: 'overlay',
+      mode: 'volume',
+    });
     viewport.resetDisplaySetAppearance(ptDisplaySetId);
     viewport.setDisplaySetAppearance(ptDisplaySetId, petColorMapPresentation());
     viewport.render();
@@ -371,8 +374,8 @@ async function run() {
   });
 
   await viewport.setDisplaySets(
-    { displaySetId: ctDisplaySetId },
-    { displaySetId: ptDisplaySetId }
+    { displaySetId: ctDisplaySetId, options: { mode: 'volume' } },
+    { displaySetId: ptDisplaySetId, options: { mode: 'volume' } }
   );
   viewport.setDisplaySetAppearance(ptDisplaySetId, {
     voiRange: petColorMapPresentation().voiRange,

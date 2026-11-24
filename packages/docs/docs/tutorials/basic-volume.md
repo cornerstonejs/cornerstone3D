@@ -114,8 +114,8 @@ volume.load();
 ```
 
 Finally, register the volume once as a display set, under an id that we
-choose, and show it in both viewports. A display set with a `volumeId` shows
-as a volume.
+choose, and show it in both viewports. The mount asks for the volume with
+`mode: 'volume'`; the `volumeId` names the volume that the viewports show.
 
 ```js
 const displaySetId = 'ctVolume';
@@ -234,7 +234,9 @@ async function run() {
 
   await Promise.all(
     [viewportId1, viewportId2].map((viewportId) =>
-      renderingEngine.getViewport(viewportId).setDisplaySets({ displaySetId })
+      renderingEngine
+        .getViewport(viewportId)
+        .setDisplaySets({ displaySetId, options: { mode: 'volume' } })
     )
   );
 }

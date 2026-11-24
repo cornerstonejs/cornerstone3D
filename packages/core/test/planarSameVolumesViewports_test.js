@@ -69,7 +69,10 @@ describe('utilities.getVolumeViewportsContainingSameVolumes on direct next plana
   it('counts each volume as often as it is shown, so two display sets of one volume are not that volume and another', async function () {
     const series = await createSeries({ id: 'sameVolumesTwice' });
     const other = await createSeries({ id: 'sameVolumesOther' });
-    const options = { orientation: OrientationAxis.ACQUISITION };
+    const options = {
+      orientation: OrientationAxis.ACQUISITION,
+      mode: 'volume',
+    };
     const twice = createNextViewport(renderingEngine, 'twice');
     const twiceToo = createNextViewport(renderingEngine, 'twiceToo');
     const mixed = createNextViewport(renderingEngine, 'mixed');

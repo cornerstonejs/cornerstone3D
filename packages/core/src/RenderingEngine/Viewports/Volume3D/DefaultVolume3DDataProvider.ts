@@ -1,11 +1,11 @@
 import cache from '../../../cache/cache';
 import { loadAndCacheGeometry } from '../../../loaders/geometryLoader';
 import { createAndCacheVolume } from '../../../loaders/volumeLoader';
-import toCacheVolumeId from '../../helpers/toCacheVolumeId';
+import resolveDisplaySetVolumeId from '../../helpers/resolveDisplaySetVolumeId';
 import type { LoadedData } from '../ViewportArchitectureTypes';
 import {
   displaySetShapeError,
-  getImageDisplaySet,
+  getVolumeOrImageDisplaySet,
   getDisplaySetDescriptor,
   isImageDisplaySet,
 } from '../displaySetAccess';
@@ -21,6 +21,7 @@ export class DefaultVolume3DDataProvider implements Volume3DDataProvider {
     displaySetId: string,
     options?: {
       renderMode: 'vtkVolume3d' | 'vtkGeometry3d';
+      volumeId?: string;
     }
   ): Promise<LoadedData<Volume3DVolumePayload | Volume3DGeometryPayload>> {
     if (!options) {
@@ -32,24 +33,27 @@ export class DefaultVolume3DDataProvider implements Volume3DDataProvider {
     const dataSet = this.getDataSet(displaySetId);
 
     if (options.renderMode === 'vtkVolume3d') {
-      if (!dataSet?.imageIds?.length) {
+      const imageIds = dataSet?.imageIds;
+
+      if (!imageIds?.length) {
         throw displaySetShapeError(
           'VolumeViewport3D',
           displaySetId,
-          'imageIds'
+          'imageIds or volumeId of a cached volume'
         );
       }
 
-      const volumeId = toCacheVolumeId(dataSet.volumeId ?? displaySetId);
-      const imageVolume = await createAndCacheVolume(volumeId, {
-        imageIds: dataSet.imageIds,
-      });
+      const volumeId = resolveDisplaySetVolumeId(
+        { volumeId: dataSet.volumeId, imageIds },
+        options.volumeId
+      );
+      const imageVolume = await createAndCacheVolume(volumeId, { imageIds });
       imageVolume.load();
 
       return {
         id: displaySetId,
         type: 'image',
-        imageIds: imageVolume.imageIds || dataSet.imageIds,
+        imageIds: imageVolume.imageIds || imageIds,
         imageVolume,
         renderMode: 'vtkVolume3d',
         volumeId,
@@ -88,7 +92,8 @@ export class DefaultVolume3DDataProvider implements Volume3DDataProvider {
     displaySetId: string
   ): Volume3DDisplaySetDescriptor | undefined {
     const dataSet =
-      getImageDisplaySet(displaySetId) ?? getDisplaySetDescriptor(displaySetId);
+      getVolumeOrImageDisplaySet(displaySetId) ??
+      getDisplaySetDescriptor(displaySetId);
 
     if (!isVolume3DDisplaySetDescriptor(dataSet)) {
       return;

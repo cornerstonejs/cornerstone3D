@@ -232,7 +232,10 @@ async function initializeVolumeViewport(
   }
 
   // Set the volume on the viewport
-  await viewport.setDisplaySets({ displaySetId: volumeDisplaySetId });
+  await viewport.setDisplaySets({
+    displaySetId: volumeDisplaySetId,
+    options: { mode: 'volume' },
+  });
   viewport.setDisplaySetAppearance(volumeDisplaySetId, ctPresentation());
 
   return volume;

@@ -230,7 +230,10 @@ async function run() {
   const axialViewport: PlanarViewport =
     renderingEngine.getViewport(viewportId1);
 
-  await axialViewport.setDisplaySets({ displaySetId: axialDisplaySetId });
+  await axialViewport.setDisplaySets({
+    displaySetId: axialDisplaySetId,
+    options: { mode: 'volume' },
+  });
 
   const viewport3d: VolumeViewport3D = renderingEngine.getViewport(viewportId2);
 

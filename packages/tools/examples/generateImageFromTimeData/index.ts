@@ -185,7 +185,10 @@ async function createVolumeFromTimeData(dataInTime) {
   imageData.modified();
 
   // Set computed volume to second viewport
-  await viewport2.setDisplaySets({ displaySetId: computedDisplaySetId });
+  await viewport2.setDisplaySets({
+    displaySetId: computedDisplaySetId,
+    options: { mode: 'volume' },
+  });
 
   viewport2.render();
 }
@@ -293,7 +296,7 @@ async function run() {
     volumeId: computedVolumeId,
   });
 
-  await viewport.setDisplaySets({ displaySetId });
+  await viewport.setDisplaySets({ displaySetId, options: { mode: 'volume' } });
 
   // Render the image
   viewport.render();

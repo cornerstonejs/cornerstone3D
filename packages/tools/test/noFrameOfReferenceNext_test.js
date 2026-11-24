@@ -252,7 +252,7 @@ describe('Images without a frame of reference on direct next planar viewports --
     await showStackAt(stack, 'noFrame:stack', imageIds, 3);
     await volume.setDisplaySets({
       displaySetId: 'noFrame:volume',
-      options: { orientation: OrientationAxis.ACQUISITION },
+      options: { orientation: OrientationAxis.ACQUISITION, mode: 'volume' },
     });
     await renderAndWait(volume);
 
@@ -316,7 +316,7 @@ describe('Images without a frame of reference on direct next planar viewports --
     await showStackAt(stack, 'noFrame:earlier', imageIds, 1);
     await volume.setDisplaySets({
       displaySetId: 'noFrame:earlierVolume',
-      options: { orientation: OrientationAxis.ACQUISITION },
+      options: { orientation: OrientationAxis.ACQUISITION, mode: 'volume' },
     });
     await renderAndWait(volume);
 

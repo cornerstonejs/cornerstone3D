@@ -143,8 +143,8 @@ async function run() {
   });
 
   await viewport.setDisplaySets(
-    { displaySetId: ctDisplaySetId },
-    { displaySetId: ptDisplaySetId }
+    { displaySetId: ctDisplaySetId, options: { mode: 'volume' } },
+    { displaySetId: ptDisplaySetId, options: { mode: 'volume' } }
   );
   viewport.setDisplaySetAppearance(ctDisplaySetId, ctPresentation());
   viewport.setDisplaySetAppearance(ptDisplaySetId, petColorMapPresentation());

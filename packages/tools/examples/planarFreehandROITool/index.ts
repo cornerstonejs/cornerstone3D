@@ -322,7 +322,10 @@ async function run() {
   volume.load();
 
   // Set the volume on the viewport
-  await volumeViewport.setDisplaySets({ displaySetId: volumeDisplaySetId });
+  await volumeViewport.setDisplaySets({
+    displaySetId: volumeDisplaySetId,
+    options: { mode: 'volume' },
+  });
 
   // Render the image
   renderingEngine.renderViewports(viewportIds);
