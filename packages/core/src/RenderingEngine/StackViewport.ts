@@ -214,6 +214,9 @@ class StackViewport extends Viewport {
   private invert = false;
   // The initial invert of the image loaded as opposed to the invert status of the viewport itself (see above).
   private initialInvert = false;
+  // The colormap when the CPU stack loaded. The GPU reset keeps only such a
+  // colormap, because it replays the transfer function of the load.
+  private cpuInitialColormap: unknown;
   private initialTransferFunctionNodes = null;
   private interpolationType: InterpolationType;
 
@@ -962,9 +965,11 @@ class StackViewport extends Viewport {
 
     // Reset restores the curve of the file, and a colormap replaces that curve.
     // Remove the colormap first, or setVOI cannot put the sequence back.
+    // The CPU also removes a colormap applied after the load, as the GPU does.
     if (
       (this.colormap as ColormapPublic)?.name &&
-      this._getVOILUTSequenceToApply()
+      (this._getVOILUTSequenceToApply() ||
+        (this.useCPURendering && this.colormap !== this.cpuInitialColormap))
     ) {
       this.colormap = undefined;
       delete this._cpuFallbackEnabledElement?.viewport?.colormap;
@@ -2837,6 +2842,7 @@ class StackViewport extends Viewport {
     if (this.stackInvalidated) {
       this._cpuFallbackEnabledElement.viewport = viewport;
       this.voiRange = frameVOIRange;
+      this.cpuInitialColormap = this.colormap;
     } else {
       const viewportSettingToUse = Object.assign(
         {},
