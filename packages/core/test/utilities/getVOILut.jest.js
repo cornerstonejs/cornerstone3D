@@ -3,6 +3,7 @@ import getVOILUT from '../../src/RenderingEngine/helpers/cpuFallback/rendering/g
 import createVOILUTSequenceTransferFunction, {
   isRenderableVOILUT,
   getVOILUTSequenceRange,
+  createVOILUTSampler,
 } from '../../src/utilities/createVOILUTSequenceTransferFunction';
 import createLinearRGBTransferFunction from '../../src/utilities/createLinearRGBTransferFunction';
 import VOILUTFunctionType from '../../src/enums/VOILUTFunctionType';
@@ -97,9 +98,9 @@ describe('cpuFallback getVOILut', function () {
     const fn = getVOILUT(7, 3.5, voiLUT, VOILUTFunctionType.LINEAR);
 
     // The window 0 .. 6 is two times the domain of the LUT. Thus the middle of
-    // the window gives the middle of the curve.
+    // the window is between the entries 64 and 128, which the GPU interpolates.
     expect(fn(0)).toBe(0);
-    expect(fn(3)).toBe(128);
+    expect(fn(3)).toBe(96);
     expect(fn(6)).toBe(255);
   });
 
@@ -269,6 +270,18 @@ describe('createVOILUTSequenceTransferFunction', function () {
     cfun.getColor(0, rgb);
     expect(rgb[0]).toBeCloseTo(0, 3);
     cfun.getColor(length - 1, rgb);
+    expect(rgb[0]).toBeCloseTo(1, 3);
+  });
+
+  it('keeps a second step in the same sampled span, as the CPU sampler does', () => {
+    const lut = new Array(4096).fill(255);
+    lut.splice(0, 5, 0, 128, 128, 255, 255);
+    const voiLUT = { firstValueMapped: 0, numBitsPerEntry: 8, lut };
+    const cfun = createVOILUTSequenceTransferFunction(voiLUT);
+    const rgb = [0, 0, 0];
+
+    cfun.getColor(3, rgb);
+    expect(rgb[0]).toBeCloseTo(createVOILUTSampler(voiLUT)(3), 3);
     expect(rgb[0]).toBeCloseTo(1, 3);
   });
 

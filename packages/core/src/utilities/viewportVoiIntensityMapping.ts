@@ -3,6 +3,7 @@ import type { CPUFallbackLUT, VOIRange } from '../types';
 import type { RenderableVOILUT } from './createVOILUTSequenceTransferFunction';
 import {
   createVOILUTSampler,
+  invertVOILUTBand,
   invertVOILUTSample,
   isRenderableVOILUT,
 } from './createVOILUTSequenceTransferFunction';
@@ -144,6 +145,18 @@ export function mapMappedBandToRawRange(
 ): { rawMin: number; rawMax: number } {
   const a = Math.min(mappedMin, mappedMax);
   const b = Math.max(mappedMin, mappedMax);
+
+  if (isRenderableVOILUT(props.voiLUT)) {
+    const band =
+      props.invert === true
+        ? invertVOILUTBand(props.voiLUT, 1 - b, 1 - a, props.voiRange)
+        : invertVOILUTBand(props.voiLUT, a, b, props.voiRange);
+
+    if (band) {
+      return { rawMin: band.lower, rawMax: band.upper };
+    }
+  }
+
   const rawAtA = mapViewportVoiIntensityToScalar(a, props);
   const rawAtB = mapViewportVoiIntensityToScalar(b, props);
   return {

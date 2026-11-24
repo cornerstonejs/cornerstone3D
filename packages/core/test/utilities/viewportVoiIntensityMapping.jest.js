@@ -2,6 +2,7 @@ import { describe, it, expect } from '@jest/globals';
 import {
   mapScalarToViewportVoiIntensity,
   mapViewportVoiIntensityToScalar,
+  mapMappedBandToRawRange,
 } from '../../src/utilities/viewportVoiIntensityMapping';
 import { createVOILUTSampler } from '../../src/utilities/createVOILUTSequenceTransferFunction';
 
@@ -70,7 +71,27 @@ describe('viewportVoiIntensityMapping with a VOI LUT Sequence', function () {
     });
 
     expect(first).not.toBe(second);
-    expect(second).toBe(0);
+    expect(second).toBeCloseTo(0.32 / 255);
+  });
+
+  it('keeps a plateau at the end of a band in the raw range', () => {
+    const props = {
+      voiRange: { lower: 0, upper: 3 },
+      voiLUT: {
+        firstValueMapped: 0,
+        numBitsPerEntry: 8,
+        lut: [0, 0, 255, 255],
+      },
+    };
+
+    expect(mapMappedBandToRawRange(0, 1, props)).toEqual({
+      rawMin: 0,
+      rawMax: 3,
+    });
+    expect(mapMappedBandToRawRange(0.9, 1, props)).toEqual({
+      rawMin: 2,
+      rawMax: 3,
+    });
   });
 
   it('honors invert in both directions', () => {

@@ -150,24 +150,21 @@ function getRenderCanvas(
     );
     const range = maximum - minimum;
     const collectedMultiplierTerms = 255.0 / range;
+    // A LINEAR window of width 1 has no range: a threshold, as in getVOILut.
+    const ramp =
+      range > 0
+        ? (value) => (value - minimum) * collectedMultiplierTerms
+        : (value) => (value > minimum ? 255 : 0);
 
     let petVOILutFunction;
 
     if (viewport.invert) {
       petVOILutFunction = (value) => {
-        return clamp(
-          Math.floor(255 - (value - minimum) * collectedMultiplierTerms),
-          0,
-          255
-        );
+        return clamp(Math.floor(255 - ramp(value)), 0, 255);
       };
     } else {
       petVOILutFunction = (value) => {
-        return clamp(
-          Math.floor((value - minimum) * collectedMultiplierTerms),
-          0,
-          255
-        );
+        return clamp(Math.floor(ramp(value)), 0, 255);
       };
     }
 

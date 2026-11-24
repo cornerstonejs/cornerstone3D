@@ -127,10 +127,19 @@ export function createVOILUTSampler(
     };
   }
 
+  // Linear between the entries, as the GPU interpolates between its nodes.
   return (value: number) => {
-    const index = Math.round(((value - domain.lower) / span) * lastIndex);
+    const position = Math.min(
+      Math.max(((value - domain.lower) / span) * lastIndex, 0),
+      lastIndex
+    );
+    const index = Math.floor(position);
+    const entry = lut[index];
+    const fraction = position - index;
 
-    return lut[Math.min(Math.max(index, 0), lastIndex)] / scale;
+    return fraction
+      ? (entry + (lut[index + 1] - entry) * fraction) / scale
+      : entry / scale;
   };
 }
 
@@ -164,6 +173,42 @@ export function invertVOILUTSample(
     domain.lower +
     (nearestIndex / (lut.length - 1)) * (domain.upper - domain.lower)
   );
+}
+
+/**
+ * The input range of all entries whose output is in `low01`..`high01`, from 0
+ * to 1. Unlike two calls of invertVOILUTSample, a plateau at an end of the band
+ * stays in the range. Returns undefined when no entry is in the band.
+ */
+export function invertVOILUTBand(
+  voiLUT: RenderableVOILUT,
+  low01: number,
+  high01: number,
+  voiRange?: VOIRange
+): VOIRange | undefined {
+  const { lut } = voiLUT;
+  const scale = getVOILUTOutputScale(lut);
+  let first = -1;
+  let last = -1;
+
+  for (let i = 0; scale && i < lut.length; i++) {
+    const output = lut[i] / scale;
+
+    if (output >= low01 && output <= high01) {
+      first = first < 0 ? i : first;
+      last = i;
+    }
+  }
+
+  if (first < 0) {
+    return undefined;
+  }
+
+  const domain = resolveDomain(voiLUT, voiRange);
+  const inputAt = (index: number) =>
+    domain.lower + (index / (lut.length - 1)) * (domain.upper - domain.lower);
+
+  return { lower: inputAt(first), upper: inputAt(last) };
 }
 
 /**
@@ -262,6 +307,8 @@ export default function createVOILUTSequenceTransferFunction(
    * skipped span and lands up to `step` entries away from where the file put
    * it. So the span is checked against the line it would be drawn as, and the
    * entries on both sides of its sharpest transition are kept when it deviates.
+   * The two sub-spans are then checked again, so a second step in the same span
+   * is kept too. The nodes stay in order: left sub-span, kept entries, right.
    */
   const refineSpan = (start: number, end: number) => {
     const spread = lut[end] - lut[start];
@@ -284,9 +331,11 @@ export default function createVOILUTSequenceTransferFunction(
 
     // Both sides, so a step stays a step: the ramp between the kept pair is
     // then one entry wide, which is as sharp as the LUT itself is
+    refineSpan(start, worstIndex - 1);
     pushNode(worstIndex - 1);
     pushNode(worstIndex);
     pushNode(worstIndex + 1);
+    refineSpan(worstIndex + 1, end);
   };
 
   for (let i = 0; i < length; i += step) {
