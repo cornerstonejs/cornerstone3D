@@ -1,15 +1,16 @@
 jest.mock('../../../../../drawingSvg', () => ({
   drawCircle: jest.fn(),
+  drawEllipseByCoordinates: jest.fn(),
   drawPath: jest.fn(),
 }));
 
 import type { Types } from '@cornerstonejs/core';
 
-import { drawCircle, drawPath } from '../../../../../drawingSvg';
+import { drawEllipseByCoordinates, drawPath } from '../../../../../drawingSvg';
 import StrategyCallbacks from '../../../../../enums/StrategyCallbacks';
 import circularCursor from '../circularCursor';
 
-const drawCircleMock = drawCircle as jest.Mock;
+const drawEllipseMock = drawEllipseByCoordinates as jest.Mock;
 const drawPathMock = drawPath as jest.Mock;
 
 const renderCursor = circularCursor[StrategyCallbacks.RenderCursor];
@@ -75,22 +76,30 @@ function render(aspectRatio: Types.Point2, points: Types.Point3[]) {
 
 describe('circularCursor renderCursor', () => {
   beforeEach(() => {
-    drawCircleMock.mockClear();
+    drawEllipseMock.mockClear();
     drawPathMock.mockClear();
   });
 
   it.each([[[1, 1]], [[1, 2]], [[2, 1]], [[1, 3]]] as Array<[Types.Point2]>)(
-    'keeps the cursor at the unstretched radius for aspect ratio %j',
-    (aspectRatio) => {
-      render(aspectRatio, createCirclePoints([0, 0], BRUSH_RADIUS_MM));
+    'draws the cursor over the painted area on both axes for aspect ratio %j',
+    ([sx, sy]) => {
+      render([sx, sy], createCirclePoints([0, 0], BRUSH_RADIUS_MM));
 
-      expect(drawCircleMock).toHaveBeenCalledTimes(1);
-      expect(drawCircleMock).toHaveBeenCalledWith(
+      const rx = BRUSH_RADIUS_MM * PIXELS_PER_MM * sx;
+      const ry = BRUSH_RADIUS_MM * PIXELS_PER_MM * sy;
+      const [x, y] = CANVAS_ORIGIN;
+
+      expect(drawEllipseMock).toHaveBeenCalledTimes(1);
+      expect(drawEllipseMock).toHaveBeenCalledWith(
         svgDrawingHelper,
         'cursor',
         'current-circle',
-        CANVAS_ORIGIN,
-        BRUSH_RADIUS_MM * PIXELS_PER_MM,
+        [
+          [x, y + ry],
+          [x, y - ry],
+          [x - rx, y],
+          [x + rx, y],
+        ],
         expect.any(Object),
         'brush-cursor'
       );
@@ -118,12 +127,17 @@ describe('circularCursor renderCursor', () => {
         lineWidth: 2 * BRUSH_RADIUS_MM * PIXELS_PER_MM,
       })
     );
-    expect(drawCircleMock).toHaveBeenCalledWith(
+    // Latest circle at x = 120 on the canvas; Stretch Y = 2 doubles ry.
+    expect(drawEllipseMock).toHaveBeenCalledWith(
       svgDrawingHelper,
       'cursor',
       'current-circle',
-      [120, 100],
-      BRUSH_RADIUS_MM * PIXELS_PER_MM,
+      [
+        [120, 140],
+        [120, 60],
+        [100, 100],
+        [140, 100],
+      ],
       expect.any(Object),
       'brush-cursor'
     );

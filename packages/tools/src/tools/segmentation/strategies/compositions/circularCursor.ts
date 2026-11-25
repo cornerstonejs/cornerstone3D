@@ -8,6 +8,7 @@ import type { SVGDrawingHelper } from '../../../../types';
 import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
 import {
   drawCircle as drawCircleSvg,
+  drawEllipseByCoordinates as drawEllipseByCoordinatesSvg,
   drawPath as drawPathSvg,
 } from '../../../../drawingSvg';
 import getViewportICamera from '../../../../utilities/getViewportICamera';
@@ -135,7 +136,6 @@ export default {
     }
 
     const points = data.handles?.points || [];
-    const totalCircles = Math.floor((points?.length || 0) / 4);
     const circleGeometries: Array<{ center: Types.Point2; radius: number }> =
       [];
 
@@ -176,12 +176,21 @@ export default {
     }
 
     if (currentCircle) {
-      drawCircleSvg(
+      // The projected brush circle is an ellipse when an axis is stretched.
+      const currentStart = (circleGeometries.length - 1) * 4;
+      const currentPoints = points
+        .slice(currentStart, currentStart + 4)
+        .map((point) => viewport.worldToCanvas(point)) as [
+        Types.Point2,
+        Types.Point2,
+        Types.Point2,
+        Types.Point2,
+      ];
+      drawEllipseByCoordinatesSvg(
         svgDrawingHelper,
         annotationUID,
         'current-circle',
-        currentCircle.center,
-        currentCircle.radius,
+        currentPoints,
         {
           color,
           lineWidth: 2,
