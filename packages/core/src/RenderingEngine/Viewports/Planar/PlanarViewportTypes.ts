@@ -386,13 +386,17 @@ export interface PlanarViewportRenderContext extends BaseViewportRenderContext {
     invalidateResolvedView(): void;
     /**
      * Tells the viewport that a stack path shows a new image of `displaySetId`,
-     * whose default window was `previousRange` before. The viewport fires
-     * `DISPLAY_SET_APPEARANCE_CHANGED` with cause `'default'` when the
-     * window on display changed with it.
+     * whose default window, invert and VOI LUT function were
+     * `previousDefaults` before. The viewport fires
+     * `DISPLAY_SET_APPEARANCE_CHANGED` with cause `'default'` when one of
+     * them on display changed with it.
      */
-    notifyDefaultVOIRangeOfNewImage?(
+    notifyDefaultAppearanceOfNewImage?(
       displaySetId: string,
-      previousRange: VOIRange | undefined
+      previousDefaults: Pick<
+        PlanarDisplaySetAppearance,
+        'voiRange' | 'invert' | 'voiLUTFunction'
+      >
     ): void;
     getViewState(): PlanarViewState;
     isCurrentDisplaySetId(displaySetId: string): boolean;

@@ -273,4 +273,62 @@ describe('The orientation marker on a direct next planar viewport -- ', () => {
     expect(widget.isDeleted()).toBe(true);
     expect(cornerFaceColors(viewport).blue).toBe(0);
   });
+
+  it('keeps one listener of the viewports added to its tool group and removes it when the tool is disabled', async function () {
+    const viewport = await createViewport(renderingEngine, 'stack');
+    const toolGroup = ToolGroupManager.getToolGroup(toolGroupId);
+    const before = toolGroupViewportAddedListenerCount();
+
+    await showMarker(viewport);
+    toolGroup.setToolActive(toolName);
+
+    const instance = toolGroup.getToolInstance(toolName);
+
+    expect(toolGroupViewportAddedListenerCount()).toBe(before + 1);
+
+    toolGroup.setToolDisabled(toolName);
+
+    expect(toolGroupViewportAddedListenerCount()).toBe(before);
+
+    spyOn(instance, 'initViewports').and.callThrough();
+    toolGroup.addViewport(
+      createNextViewport(renderingEngine, 'markerAddedLater').id,
+      renderingEngineId
+    );
+
+    expect(instance.initViewports).not.toHaveBeenCalled();
+  });
+
+  it('removes its listener of the viewports added to its tool group when the tool group is destroyed', async function () {
+    const viewport = await createViewport(renderingEngine, 'stack');
+    const before = toolGroupViewportAddedListenerCount();
+
+    await showMarker(viewport);
+
+    const instance =
+      ToolGroupManager.getToolGroup(toolGroupId).getToolInstance(toolName);
+
+    spyOn(instance, 'initViewports').and.callThrough();
+    ToolGroupManager.destroyToolGroup(toolGroupId);
+
+    const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+
+    toolGroup.addTool(toolName);
+    toolGroup.addViewport(viewport.id, renderingEngineId);
+
+    expect(instance.initViewports).not.toHaveBeenCalled();
+    expect(toolGroupViewportAddedListenerCount()).toBe(before);
+  });
 });
+
+/**
+ * The number of listeners of `TOOLGROUP_VIEWPORT_ADDED` on the event target
+ * of the package.
+ */
+function toolGroupViewportAddedListenerCount() {
+  return (
+    cornerstone3D.eventTarget.listeners[
+      csTools3d.Enums.Events.TOOLGROUP_VIEWPORT_ADDED
+    ] ?? []
+  ).length;
+}

@@ -53,6 +53,7 @@ describe('The display set id of an actor entry of a direct planar viewport -- ',
         const overlayId = `entry:${mode}:${backend}:overlay`;
         const viewport = createNextViewport(renderingEngine, viewportId);
         const options = {
+          mode,
           orientation: OrientationAxis.ACQUISITION,
           renderBackend: backend,
         };

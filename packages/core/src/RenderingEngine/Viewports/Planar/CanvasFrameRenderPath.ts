@@ -190,6 +190,7 @@ export class CanvasFrameRenderPath
       currentImageIdIndex: payload.initialImageIdIndex ?? 0,
       defaultVOIRange: getDefaultImageVOIRange(payload.image),
       defaultInvert: getDefaultImageInvert(payload.image),
+      defaultVOILUTFunction: payload.image.voiLUTFunction,
       appearance: undefined,
       fitScale: getCPUFallbackScalarScale(enabledElement.viewport.scale),
       loadRequestId: 0,
@@ -960,13 +961,13 @@ function getImageSliceInputs(
 function getImageSliceAppearance(
   rendering: PlanarCanvasFrameRendering
 ): PlanarDisplaySetAppearance {
-  const { appearance, enabledElement } = rendering;
+  const { appearance } = rendering;
 
   return {
     interpolationType: InterpolationType.LINEAR,
     ...appearance,
     voiLUTFunction:
-      appearance?.voiLUTFunction ?? enabledElement.image?.voiLUTFunction,
+      appearance?.voiLUTFunction ?? rendering.defaultVOILUTFunction,
     invert: appearance?.invert ?? rendering.defaultInvert,
   };
 }
@@ -1042,10 +1043,15 @@ async function updateRenderedImage(args: {
 
   rendering.currentImageIdIndex = imageIdIndex;
 
-  const previousDefaultVOIRange = rendering.defaultVOIRange;
+  const previousDefaults = {
+    voiRange: rendering.defaultVOIRange,
+    invert: rendering.defaultInvert,
+    voiLUTFunction: rendering.defaultVOILUTFunction,
+  };
 
   rendering.defaultVOIRange = getDefaultImageVOIRange(image);
   rendering.defaultInvert = getDefaultImageInvert(image);
+  rendering.defaultVOILUTFunction = image.voiLUTFunction;
   rendering.fitScale = getCPUFallbackScalarScale(defaultViewport.scale);
   rendering.renderingInvalidated = true;
   ctx.viewport.invalidateResolvedView();
@@ -1070,9 +1076,9 @@ async function updateRenderedImage(args: {
     );
   }
 
-  ctx.viewport.notifyDefaultVOIRangeOfNewImage?.(
+  ctx.viewport.notifyDefaultAppearanceOfNewImage?.(
     displaySetId,
-    previousDefaultVOIRange
+    previousDefaults
   );
   if (ctx.viewport.isCurrentDisplaySetId(displaySetId)) {
     triggerPlanarNewImage(ctx, {

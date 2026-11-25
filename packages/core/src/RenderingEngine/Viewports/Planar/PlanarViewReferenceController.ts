@@ -28,6 +28,7 @@ import {
 import { getViewportLocalFrameOfReferenceUID } from '../../helpers/getViewportLocalFrameOfReferenceUID';
 import {
   getDimensionGroupReferenceContext,
+  isViewReferenceViewable,
   type ViewReferenceContext,
 } from '../viewReferenceCompatibility';
 import type { LoadedData } from '../ViewportArchitectureTypes';
@@ -688,6 +689,13 @@ class PlanarViewReferenceController {
    * that names an image that the stack does not hold moves nothing, as on the
    * legacy stack viewport: it is not viewable on the stack, and its slice
    * index and its focal point belong to the images of another series.
+   *
+   * A reference of a volume that names no image, as a sagittal slice gives,
+   * counts its slice index in the slices of the view of that volume, so the
+   * slice index is not read. Such a reference moves the stack only when the
+   * stack takes it with navigation (`isViewReferenceViewable`), as a volume
+   * that it shows as an overlay, and then to the image at its focal point.
+   * The legacy stack viewport went to the image at the slice index.
    */
   private applyImageViewReference(
     referenceContext: PlanarReferenceContext,
@@ -709,7 +717,16 @@ class PlanarViewReferenceController {
       return false;
     }
 
-    if (typeof viewRef.sliceIndex === 'number') {
+    if (
+      viewRef.volumeId &&
+      !isViewReferenceViewable(viewRef, this.getReferenceViewContexts([]), {
+        withNavigation: true,
+      })
+    ) {
+      return false;
+    }
+
+    if (typeof viewRef.sliceIndex === 'number' && !viewRef.volumeId) {
       this.host.setImageIdIndex(viewRef.sliceIndex);
       return true;
     }

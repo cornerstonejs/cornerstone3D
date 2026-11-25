@@ -245,7 +245,7 @@ describe('The queries of a direct planar and 3D viewport -- ', () => {
 
           register(ctId, ct);
           register(ptId, pt);
-          await showFusion(viewport, ctId, ptId, options);
+          await showFusion(viewport, ctId, ptId, { mode, ...options });
 
           if (mode === 'stack') {
             await waitFor(
@@ -282,7 +282,13 @@ describe('The queries of a direct planar and 3D viewport -- ', () => {
 
         registerVolume(ctId, ct);
         registerVolume(ptId, pt);
-        await showFusion(viewport, ctId, ptId, options, true);
+        await showFusion(
+          viewport,
+          ctId,
+          ptId,
+          { mode: 'volume', ...options },
+          true
+        );
 
         expect(viewport.getDisplaySets().map((entry) => entry.displaySetId))
           .withContext('the mount order')
@@ -314,11 +320,12 @@ describe('The queries of a direct planar and 3D viewport -- ', () => {
       await viewport.setDisplaySets(
         {
           displaySetId: 'idsLabelmap:ct',
-          options: { orientation: OrientationAxis.ACQUISITION },
+          options: { mode: 'volume', orientation: OrientationAxis.ACQUISITION },
         },
         {
           displaySetId: representationUID,
           options: {
+            mode: 'volume',
             orientation: OrientationAxis.ACQUISITION,
             role: 'overlay',
           },

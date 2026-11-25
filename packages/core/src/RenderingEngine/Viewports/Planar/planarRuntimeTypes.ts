@@ -29,6 +29,7 @@ import type {
   IImageVolume,
   VOIRange,
 } from '../../../types';
+import type { VOILUTFunctionType } from '../../../enums';
 import type { MountedRendering } from '../ViewportArchitectureTypes';
 import type { VolumeStrategyState } from '../../helpers/volumeStrategyLifecycle';
 import type {
@@ -64,6 +65,8 @@ export type PlanarVtkFrameRendering = MountedRendering<{
   defaultVOIRange?: VOIRange;
   /** Whether the image shown starts inverted, as a MONOCHROME1 image does. */
   defaultInvert?: boolean;
+  /** The VOI LUT function of the image shown, from its metadata. */
+  defaultVOILUTFunction?: VOILUTFunctionType;
   appearance?: PlanarDisplaySetAppearance;
   loadRequestId: number;
   // Target index of the most recent applyViewState request. Used by the
@@ -96,6 +99,8 @@ export type PlanarCanvasFrameRendering = MountedRendering<{
   defaultVOIRange?: VOIRange;
   /** Whether the image shown starts inverted, as a MONOCHROME1 image does. */
   defaultInvert?: boolean;
+  /** The VOI LUT function of the image shown, from its metadata. */
+  defaultVOILUTFunction?: VOILUTFunctionType;
   appearance?: PlanarDisplaySetAppearance;
   fitScale: number;
   loadRequestId: number;

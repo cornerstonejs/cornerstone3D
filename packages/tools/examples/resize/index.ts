@@ -61,7 +61,6 @@ const synchronizerOptions: Types.ViewFramingSelector = {
   rotation: true,
   pan: true,
   zoom: true,
-  aspectRatio: true,
   displayArea: true,
 };
 

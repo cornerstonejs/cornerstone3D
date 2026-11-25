@@ -245,11 +245,11 @@ describe('VOI synchronizer on direct next planar viewports -- ', () => {
         synchronizer.add({ renderingEngineId, viewportId: viewport.id });
       });
 
-      await first.setDisplaySets({ displaySetId });
+      await first.setDisplaySets({ displaySetId, options: { mode } });
       await renderAndWait(first);
-      await second.setDisplaySets({ displaySetId });
+      await second.setDisplaySets({ displaySetId, options: { mode } });
       await renderAndWait(second);
-      await first.setDisplaySets({ displaySetId });
+      await first.setDisplaySets({ displaySetId, options: { mode } });
       await renderAndWait(first);
 
       expect(first.getCurrentMode()).toBe(mode);

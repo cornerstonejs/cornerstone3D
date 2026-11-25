@@ -232,4 +232,35 @@ describe('The camera position synchronizer between direct next planar viewports 
       6
     );
   });
+
+  it('leaves a stack target on its image when the source is a sagittal slice of a volume of the series, whose slice index counts in that view', async function () {
+    const series = await createSeries({ id: 'cameraSyncSagittalToStack' });
+    const source = createNextViewport(renderingEngine, 'sagittalToStackSource');
+    const target = createNextViewport(renderingEngine, 'sagittalToStackTarget');
+
+    await showVolume(source, series, 0, {
+      orientation: OrientationAxis.SAGITTAL,
+    });
+    await showStack(target, series, 2);
+
+    const synchronizer =
+      synchronizers.createCameraPositionSynchronizer(synchronizerId);
+
+    synchronizer.add({ renderingEngineId, viewportId: source.id });
+    synchronizer.add({ renderingEngineId, viewportId: target.id });
+
+    const sliceIndex = source.getViewReference().sliceIndex;
+
+    source.scroll(1);
+    await renderAndWait(source);
+    await waitFor(
+      () => source.getViewReference().sliceIndex === sliceIndex + 1,
+      1000
+    ).catch(() => undefined);
+    await renderAndWait(target);
+
+    expect(source.getViewReference().sliceIndex).toBe(sliceIndex + 1);
+    expect(target.getCurrentImageIdIndex()).toBe(2);
+    expect(target.getCurrentImageId()).toBe(series.imageIds[2]);
+  });
 });

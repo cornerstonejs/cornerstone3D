@@ -249,7 +249,19 @@ const DISPLAY_AREA_TEXTS = {
 };
 
 /** The keys of the framing and of its selector that 6.0 deleted: nothing read them. */
-const DEAD_SELECTOR_KEYS = ['slabThickness', 'windowLevel', 'paletteLut'];
+const DEAD_SELECTOR_KEYS = [
+  'slabThickness',
+  'windowLevel',
+  'paletteLut',
+  'aspectRatio',
+];
+
+/**
+ * The review text of an aspect ratio deleted from a framing: 6.0.0-beta.2
+ * did nothing with it, 5.x `setViewPresentation` stretched the view by it.
+ */
+const ASPECT_RATIO_REVIEW =
+  'the framing has no aspectRatio, which did nothing in 6.0.0-beta.2: the stretch that 5.x setViewPresentation gave with it is the scale pair of a planar framing, setViewFraming({ scale: [x, y] })';
 
 /**
  * Framing: the camera part, `ViewFraming` (`getViewFraming`,
@@ -367,6 +379,18 @@ const framing: Rules = {
       remove: true,
     },
     { in: { type: 'ViewFraming' }, key: 'slabThickness', remove: true },
+    {
+      in: { receiver: 'viewport', method: 'setViewFraming', argument: 0 },
+      key: 'aspectRatio',
+      remove: true,
+      review: ASPECT_RATIO_REVIEW,
+    },
+    {
+      in: { type: 'ViewFraming' },
+      key: 'aspectRatio',
+      remove: true,
+      review: ASPECT_RATIO_REVIEW,
+    },
     {
       in: { receiver: 'viewport', method: 'setViewState', argument: 0 },
       key: 'displayArea',

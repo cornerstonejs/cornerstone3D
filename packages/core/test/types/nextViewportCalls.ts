@@ -293,6 +293,30 @@ export function framingOfEachFamily() {
 }
 
 /**
+ * A framing and its selector have no aspect ratio: the stretch of a planar
+ * view is the scale pair of its framing.
+ */
+export function framingWithoutAspectRatio() {
+  // @ts-expect-error
+  planar.setViewFraming({ aspectRatio: [2, 1] });
+  // @ts-expect-error
+  viewport.getViewFraming({ aspectRatio: true });
+
+  const framing: Types.ViewFraming = {
+    zoom: 2,
+    // @ts-expect-error
+    aspectRatio: [2, 1],
+  };
+  const selector: Types.ViewFramingSelector = {
+    zoom: true,
+    // @ts-expect-error
+    aspectRatio: true,
+  };
+
+  return [framing, selector];
+}
+
+/**
  * A viewport of any family narrows to the members of a family with a guard,
  * or comes from the rendering engine typed with its class.
  */

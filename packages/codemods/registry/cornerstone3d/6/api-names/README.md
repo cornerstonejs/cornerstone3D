@@ -194,11 +194,14 @@ part of a view that another viewport can take is its framing.
   also by its type. A `setDisplayArea` whose area is not an object literal
   is listed for review: the setter did nothing with an undefined area, and
   `setViewState({ displayArea: undefined })` clears the area. The keys
-  `slabThickness`, `windowLevel` and `paletteLut`, which nothing read, are
-  deleted from a selector given to `viewport.getViewFraming`, to
-  `viewportProjection.getFraming` (its `selector`) or typed
-  `ViewFramingSelector`, and `slabThickness` from a framing given to
-  `viewport.setViewFraming` or typed `ViewFraming`. The 5.x steps leave
+  `slabThickness`, `windowLevel`, `paletteLut` and `aspectRatio`, which
+  nothing read, are deleted from a selector given to
+  `viewport.getViewFraming`, to `viewportProjection.getFraming` (its
+  `selector`) or typed `ViewFramingSelector`, and `slabThickness` and
+  `aspectRatio` from a framing given to `viewport.setViewFraming` or typed
+  `ViewFraming`; a deleted `aspectRatio` of a framing is listed for review,
+  because the 5.x `setViewPresentation` stretched the view by it (the
+  stretch is `scale` of a planar framing). The 5.x steps leave
   `setDisplayArea` and `getDisplayArea` to this step, and since this step
   reports `options`, `setOptions` and `reset`, the `viewport-members` step
   no longer does.

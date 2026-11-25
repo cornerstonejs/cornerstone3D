@@ -1,0 +1,46 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "14",
+        "rule": "setViewFraming: the key aspectRatio: its value runs code"
+      },
+      "count": 1
+    }
+  ],
+  "cornerstone3d-6-review": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "12",
+        "rule": "setViewFraming: the key aspectRatio: the framing has no aspectRatio, which did nothing in 6.0.0-beta.2: the stretch that 5.x setViewPresentation gave with it is the scale pair of a planar framing, setViewFraming({ scale: [x, y] })"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "13",
+        "rule": "setViewFraming: the key aspectRatio: the framing has no aspectRatio, which did nothing in 6.0.0-beta.2: the stretch that 5.x setViewPresentation gave with it is the scale pair of a planar framing, setViewFraming({ scale: [x, y] })"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "15",
+        "rule": "setViewFraming: the key aspectRatio: the framing has no aspectRatio, which did nothing in 6.0.0-beta.2: the stretch that 5.x setViewPresentation gave with it is the scale pair of a planar framing, setViewFraming({ scale: [x, y] })"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "17",
+        "rule": "setViewFraming: the key aspectRatio: the framing has no aspectRatio, which did nothing in 6.0.0-beta.2: the stretch that 5.x setViewPresentation gave with it is the scale pair of a planar framing, setViewFraming({ scale: [x, y] })"
+      },
+      "count": 1
+    }
+  ]
+}

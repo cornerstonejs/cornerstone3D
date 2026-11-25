@@ -123,9 +123,9 @@ function hasApplicationType(node: Node | null | undefined, depth = 0): boolean {
 /** The review note of a renamed member whose 6.0 call answers differently. */
 const RENAMED_METHOD_REVIEWS: Record<string, string> = {
   getViewPresentation:
-    'getViewFraming: zoom and pan are against the fit, the framing has no slab thickness and no window (read them with getDisplaySetAppearance), and it is undefined while the viewport shows nothing',
+    'getViewFraming: zoom and pan are against the fit, the framing has no slab thickness and no window (read them with getDisplaySetAppearance) and no aspect ratio (the stretch is its scale), and it is undefined while the viewport shows nothing',
   setViewPresentation:
-    'setViewFraming: zoom and pan are against the fit, and a slab thickness or a window in the framing does nothing (set them with setDisplaySetAppearance)',
+    'setViewFraming: zoom and pan are against the fit, a slab thickness or a window in the framing does nothing (set them with setDisplaySetAppearance), and an aspect ratio neither (give the stretch as scale)',
 };
 
 /** The members whose call becomes a fixed read of `getActors()`. */

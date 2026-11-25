@@ -22,7 +22,7 @@
       "cardinality": {
         "file": "input.ts",
         "line": "10",
-        "rule": "setViewFraming: zoom and pan are against the fit, and a slab thickness or a window in the framing does nothing (set them with setDisplaySetAppearance)"
+        "rule": "setViewFraming: zoom and pan are against the fit, a slab thickness or a window in the framing does nothing (set them with setDisplaySetAppearance), and an aspect ratio neither (give the stretch as scale)"
       },
       "count": 1
     },
@@ -30,7 +30,7 @@
       "cardinality": {
         "file": "input.ts",
         "line": "11",
-        "rule": "setViewFraming: zoom and pan are against the fit, and a slab thickness or a window in the framing does nothing (set them with setDisplaySetAppearance)"
+        "rule": "setViewFraming: zoom and pan are against the fit, a slab thickness or a window in the framing does nothing (set them with setDisplaySetAppearance), and an aspect ratio neither (give the stretch as scale)"
       },
       "count": 1
     },
@@ -38,7 +38,7 @@
       "cardinality": {
         "file": "input.ts",
         "line": "13",
-        "rule": "getViewFraming: zoom and pan are against the fit, the framing has no slab thickness and no window (read them with getDisplaySetAppearance), and it is undefined while the viewport shows nothing"
+        "rule": "getViewFraming: zoom and pan are against the fit, the framing has no slab thickness and no window (read them with getDisplaySetAppearance) and no aspect ratio (the stretch is its scale), and it is undefined while the viewport shows nothing"
       },
       "count": 1
     },
@@ -46,7 +46,7 @@
       "cardinality": {
         "file": "input.ts",
         "line": "8",
-        "rule": "getViewFraming: zoom and pan are against the fit, the framing has no slab thickness and no window (read them with getDisplaySetAppearance), and it is undefined while the viewport shows nothing"
+        "rule": "getViewFraming: zoom and pan are against the fit, the framing has no slab thickness and no window (read them with getDisplaySetAppearance) and no aspect ratio (the stretch is its scale), and it is undefined while the viewport shows nothing"
       },
       "count": 1
     }

@@ -4,6 +4,7 @@ import type {
   IImageVolume,
   VOIRange,
 } from '../../../types';
+import type { VOILUTFunctionType } from '../../../enums';
 import { isImageRenderMode } from '../../helpers/renderBackendRegistry';
 import { isSegmentationOverlayData } from '../renderingFidelity';
 import { getImageScalarRange, getVolumeScalarRange } from '../scalarRange';
@@ -301,6 +302,27 @@ class PlanarMountedData {
       : undefined;
 
     return rendering?.defaultInvert;
+  }
+
+  /**
+   * The VOI LUT function of the image of a display set from its metadata,
+   * which its rendering draws with when the appearance does not set one, or
+   * undefined when the rendering has none.
+   */
+  getDefaultVOILUTFunction(
+    displaySetId?: string
+  ): VOILUTFunctionType | undefined {
+    const targetDisplaySetId =
+      displaySetId ??
+      this.sourceDisplaySetId ??
+      this.getCurrentBinding()?.data.id;
+    const rendering = targetDisplaySetId
+      ? (this.host.getBinding(targetDisplaySetId)?.rendering as
+          | { defaultVOILUTFunction?: VOILUTFunctionType }
+          | undefined)
+      : undefined;
+
+    return rendering?.defaultVOILUTFunction;
   }
 
   private getTargetBinding(

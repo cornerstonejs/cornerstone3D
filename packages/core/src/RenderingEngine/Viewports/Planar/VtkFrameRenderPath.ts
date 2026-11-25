@@ -109,6 +109,7 @@ export class VtkFrameRenderPath
       currentImageIdIndex: payload.initialImageIdIndex ?? 0,
       defaultVOIRange: getDefaultImageVOIRange(payload.image),
       defaultInvert: getDefaultImageInvert(payload.image),
+      defaultVOILUTFunction: payload.image.voiLUTFunction,
       appearance: undefined,
       loadRequestId: 0,
       refreshFidelity: () => {
@@ -184,7 +185,7 @@ export class VtkFrameRenderPath
     applyPlanarImageAppearance({
       actor: rendering.actor,
       defaultVOIRange: rendering.defaultVOIRange,
-      defaultVOILUTFunction: rendering.currentImage?.voiLUTFunction,
+      defaultVOILUTFunction: rendering.defaultVOILUTFunction,
       defaultInvert: rendering.defaultInvert,
       props: {
         interpolationType: InterpolationType.LINEAR,
@@ -464,10 +465,15 @@ async function updateRenderedImage(args: {
   rendering.newImageData = newImageData;
   rendering.currentImageIdIndex = imageIdIndex;
 
-  const previousDefaultVOIRange = rendering.defaultVOIRange;
+  const previousDefaults = {
+    voiRange: rendering.defaultVOIRange,
+    invert: rendering.defaultInvert,
+    voiLUTFunction: rendering.defaultVOILUTFunction,
+  };
 
   rendering.defaultVOIRange = getDefaultImageVOIRange(image);
   rendering.defaultInvert = getDefaultImageInvert(image);
+  rendering.defaultVOILUTFunction = image.voiLUTFunction;
   ctx.viewport.invalidateResolvedView();
 
   if (imageData.getPointData().getScalars().getNumberOfComponents() > 1) {
@@ -477,7 +483,7 @@ async function updateRenderedImage(args: {
   applyPlanarImageAppearance({
     actor,
     defaultVOIRange: rendering.defaultVOIRange,
-    defaultVOILUTFunction: image.voiLUTFunction,
+    defaultVOILUTFunction: rendering.defaultVOILUTFunction,
     defaultInvert: rendering.defaultInvert,
     props: {
       interpolationType:
@@ -504,9 +510,9 @@ async function updateRenderedImage(args: {
     }
   }
 
-  ctx.viewport.notifyDefaultVOIRangeOfNewImage?.(
+  ctx.viewport.notifyDefaultAppearanceOfNewImage?.(
     displaySetId,
-    previousDefaultVOIRange
+    previousDefaults
   );
 
   // Only the source binding's slice change should drive the slice scrollbar; an

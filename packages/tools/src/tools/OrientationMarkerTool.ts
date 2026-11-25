@@ -11,6 +11,7 @@ import {
   Enums,
   eventTarget,
   getEnabledElementByIds,
+  getEnabledElementByViewportId,
   getRenderingEngines,
   type Types,
 } from '@cornerstonejs/core';
@@ -73,6 +74,7 @@ class OrientationMarkerTool extends BaseTool {
   updatingOrientationMarker;
   polyDataURL;
   _resizeObservers = new Map();
+  _toolGroupViewportAddedListener: EventListener = null;
 
   static OVERLAY_MARKER_TYPES = OverlayMarkerType;
 
@@ -175,33 +177,29 @@ class OrientationMarkerTool extends BaseTool {
     this.initViewports();
   };
 
+  /**
+   * Removes the listeners and the resize observers of the viewports that the
+   * tool subscribed to, and its listener of the viewports added to a tool
+   * group. It finds the viewports by their observers and not by the tool
+   * group, which may be destroyed.
+   */
   _unsubscribeToViewportNewVolumeSet() {
-    const unsubscribe = () => {
-      const viewportsInfo = this._getViewportsInfo();
-      viewportsInfo.forEach(({ viewportId, renderingEngineId }) => {
-        const { viewport } = getEnabledElementByIds(
-          viewportId,
-          renderingEngineId
-        );
-        const { element } = viewport;
-
-        element.removeEventListener(
-          Enums.Events.DISPLAY_SETS_CHANGED,
-          this._onDisplaySetsChanged as EventListener
-        );
-
-        const resizeObserver = this._resizeObservers.get(viewportId);
-        resizeObserver.unobserve(element);
-      });
-    };
-
-    eventTarget.removeEventListener(Events.TOOLGROUP_VIEWPORT_ADDED, (evt) => {
-      if (evt.detail.toolGroupId !== this.toolGroupId) {
-        return;
-      }
-      unsubscribe();
-      this.initViewports();
+    this._resizeObservers.forEach((resizeObserver, viewportId) => {
+      resizeObserver.disconnect();
+      getEnabledElementByViewportId(
+        viewportId
+      )?.viewport.element.removeEventListener(
+        Enums.Events.DISPLAY_SETS_CHANGED,
+        this._onDisplaySetsChanged as EventListener
+      );
     });
+    this._resizeObservers.clear();
+
+    eventTarget.removeEventListener(
+      Events.TOOLGROUP_VIEWPORT_ADDED,
+      this._toolGroupViewportAddedListener
+    );
+    this._toolGroupViewportAddedListener = null;
   }
 
   _subscribeToViewportEvents() {
@@ -238,20 +236,37 @@ class OrientationMarkerTool extends BaseTool {
 
         resizeObserver.observe(element);
 
+        this._resizeObservers.get(viewportId)?.disconnect();
         this._resizeObservers.set(viewportId, resizeObserver);
       });
     };
 
     subscribeToElementResize();
 
-    eventTarget.addEventListener(Events.TOOLGROUP_VIEWPORT_ADDED, (evt) => {
+    eventTarget.removeEventListener(
+      Events.TOOLGROUP_VIEWPORT_ADDED,
+      this._toolGroupViewportAddedListener
+    );
+    this._toolGroupViewportAddedListener = ((evt: CustomEvent) => {
+      const toolInstances =
+        getToolGroup(this.toolGroupId)?.getToolInstances() ?? {};
+
+      if (!Object.values(toolInstances).includes(this)) {
+        this._unsubscribeToViewportNewVolumeSet();
+        return;
+      }
+
       if (evt.detail.toolGroupId !== this.toolGroupId) {
         return;
       }
 
       subscribeToElementResize();
       this.initViewports();
-    });
+    }) as EventListener;
+    eventTarget.addEventListener(
+      Events.TOOLGROUP_VIEWPORT_ADDED,
+      this._toolGroupViewportAddedListener
+    );
   }
 
   private cleanUpData() {

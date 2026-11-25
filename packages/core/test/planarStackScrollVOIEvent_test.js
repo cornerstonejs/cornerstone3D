@@ -8,8 +8,8 @@ import {
   waitFor,
 } from './utils/planarSeriesBothModes';
 
-const { Enums, cache, utilities } = cornerstone3D;
-const { Events, OrientationAxis } = Enums;
+const { Enums, cache, metaData, utilities } = cornerstone3D;
+const { Events, OrientationAxis, VOILUTFunctionType } = Enums;
 
 const renderingEngineId = utilities.uuidv4();
 
@@ -37,6 +37,32 @@ async function createSeriesWithTwoWindows(id) {
   });
 
   return series;
+}
+
+/**
+ * Makes the images of the given indices of a series MONOCHROME1 images, as
+ * a stack of computed radiography can mix them with MONOCHROME2 images.
+ */
+function makeMonochrome1(series, indices) {
+  const modules = new Map(
+    indices.map((index) => {
+      const imageId = series.imageIds[index];
+
+      return [
+        imageId,
+        {
+          ...metaData.get('imagePixelModule', imageId),
+          photometricInterpretation: 'MONOCHROME1',
+        },
+      ];
+    })
+  );
+
+  metaData.addProvider(
+    (type, imageId) =>
+      type === 'imagePixelModule' ? modules.get(imageId) : undefined,
+    30000
+  );
 }
 
 /** Shows the image of an index of the stack and waits for its draw. */
@@ -84,6 +110,8 @@ function recordAppearanceEvents(viewport) {
         changedKeys,
         voiRange: overrides.voiRange,
         effectiveVOIRange: effective.voiRange,
+        effectiveInvert: effective.invert,
+        effectiveVOILUTFunction: effective.voiLUTFunction,
       });
     }
   );
@@ -222,6 +250,8 @@ describe('DISPLAY_SET_APPEARANCE_CHANGED of a stack on a planar viewport whose i
           changedKeys: ['voiRange'],
           voiRange: undefined,
           effectiveVOIRange: OTHER_RANGE,
+          effectiveInvert: false,
+          effectiveVOILUTFunction: undefined,
         },
       ]);
       expect(viewport.getDefaultVOIRange(displaySetId)).toEqual(OTHER_RANGE);
@@ -272,6 +302,133 @@ describe('DISPLAY_SET_APPEARANCE_CHANGED of a stack on a planar viewport whose i
       expect(
         viewport.getEffectiveDisplaySetAppearance(displaySetId).voiRange
       ).toEqual(FIRST_RANGE);
+    });
+    it(`fires once with cause default and the invert of the new image when a scroll goes between MONOCHROME2 and MONOCHROME1 images, and none for an image of the same invert, ${where}`, async function () {
+      const series = await createSeries({ id: `scrollInvert-${where}` });
+
+      makeMonochrome1(series, [4, 5]);
+
+      const viewport = createNextViewport(renderingEngine, 'scrollInvert');
+
+      await showStack(viewport, series, 0, options);
+
+      const displaySetId = viewport.getSourceDisplaySetId();
+      const details = recordAppearanceEvents(viewport);
+
+      expect(
+        viewport.getEffectiveDisplaySetAppearance(displaySetId).invert
+      ).toBe(false);
+
+      await scrollTo(viewport, series, 4);
+      await scrollTo(viewport, series, 5);
+
+      expect(
+        viewport.getEffectiveDisplaySetAppearance(displaySetId).invert
+      ).toBe(true);
+
+      await scrollTo(viewport, series, 0);
+
+      expect(
+        details.map(({ cause, changedKeys, effectiveInvert, voiRange }) => ({
+          cause,
+          changedKeys,
+          effectiveInvert,
+          voiRange,
+        }))
+      ).toEqual([
+        {
+          cause: 'default',
+          changedKeys: ['invert'],
+          effectiveInvert: true,
+          voiRange: undefined,
+        },
+        {
+          cause: 'default',
+          changedKeys: ['invert'],
+          effectiveInvert: false,
+          voiRange: undefined,
+        },
+      ]);
+      expect(viewport.getDisplaySetAppearance(displaySetId)).toEqual({});
+    });
+
+    it(`fires nothing for the invert of a MONOCHROME1 image while an invert is set, and keeps that invert, ${where}`, async function () {
+      const series = await createSeries({ id: `scrollSetInvert-${where}` });
+
+      makeMonochrome1(series, [4, 5]);
+
+      const viewport = createNextViewport(renderingEngine, 'scrollSetInvert');
+
+      await showStack(viewport, series, 0, options);
+
+      const displaySetId = viewport.getSourceDisplaySetId();
+
+      viewport.setDisplaySetAppearance(displaySetId, { invert: false });
+      await renderAndWait(viewport);
+
+      const details = recordAppearanceEvents(viewport);
+
+      await scrollTo(viewport, series, 4);
+      await scrollTo(viewport, series, 0);
+
+      expect(details).toEqual([]);
+      expect(
+        viewport.getEffectiveDisplaySetAppearance(displaySetId).invert
+      ).toBe(false);
+    });
+
+    it(`gives the VOI LUT function of the image on display in the effective appearance and in the event, and fires cause default when a scroll changes it, ${where}`, async function () {
+      const series = await createSeries({ id: `scrollVOILUT-${where}` });
+
+      [0, 1, 2, 3].forEach((index) => {
+        cache.getImage(series.imageIds[index]).voiLUTFunction =
+          VOILUTFunctionType.SAMPLED_SIGMOID;
+      });
+
+      const viewport = createNextViewport(renderingEngine, 'scrollVOILUT');
+      const details = recordAppearanceEvents(viewport);
+
+      await showStack(viewport, series, 0, options);
+
+      const displaySetId = viewport.getSourceDisplaySetId();
+
+      expect(
+        viewport.getEffectiveDisplaySetAppearance(displaySetId).voiLUTFunction
+      ).toBe(VOILUTFunctionType.SAMPLED_SIGMOID);
+      expect(viewport.getDisplaySetAppearance(displaySetId)).toEqual({});
+      expect(details.length).toBe(1);
+      expect(details[0].cause).toBe('mount');
+      expect(details[0].changedKeys).toContain('voiLUTFunction');
+      expect(details[0].effectiveVOILUTFunction).toBe(
+        VOILUTFunctionType.SAMPLED_SIGMOID
+      );
+
+      await scrollTo(viewport, series, 1);
+      await scrollTo(viewport, series, 4);
+
+      expect(details.length).toBe(2);
+      expect(details[1].cause).toBe('default');
+      expect(details[1].changedKeys).toEqual(['voiLUTFunction']);
+      expect(details[1].effectiveVOILUTFunction).toBeUndefined();
+      expect(
+        'voiLUTFunction' in
+          viewport.getEffectiveDisplaySetAppearance(displaySetId)
+      ).toBe(false);
+
+      viewport.setDisplaySetAppearance(displaySetId, {
+        voiLUTFunction: VOILUTFunctionType.LINEAR,
+      });
+      await renderAndWait(viewport);
+      await scrollTo(viewport, series, 0);
+
+      expect(details.map(({ cause }) => cause)).toEqual([
+        'mount',
+        'default',
+        'edit',
+      ]);
+      expect(
+        viewport.getEffectiveDisplaySetAppearance(displaySetId).voiLUTFunction
+      ).toBe(VOILUTFunctionType.LINEAR);
     });
   }
 });

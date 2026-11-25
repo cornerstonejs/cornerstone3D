@@ -41,6 +41,7 @@ import { isAcquisitionPlaneNormal } from '../../../utilities/isAcquisitionPlaneN
 import cache from '../../../cache/cache';
 import type { PlaneRestriction } from '../../../types/IViewport';
 import { deepClone } from '../../../utilities/deepClone';
+import { deepEqual } from '../../../utilities/deepEqual';
 import imageIdToURI from '../../../utilities/imageIdToURI';
 import { getImageDataMetadata } from '../../../utilities/getImageDataMetadata';
 import { getNormalizedAspectRatio } from '../../../utilities/getNormalizedAspectRatio';
@@ -613,8 +614,11 @@ class PlanarViewport extends BaseViewport<
         element: this.element,
         getSourceDisplaySetId: () => this.mountedData.getSourceDisplaySetId(),
         invalidateResolvedView: () => this.clearResolvedViewCache(),
-        notifyDefaultVOIRangeOfNewImage: (displaySetId, previousRange) =>
-          this.notifyDefaultVOIRangeOfNewImage(displaySetId, previousRange),
+        notifyDefaultAppearanceOfNewImage: (displaySetId, previousDefaults) =>
+          this.notifyDefaultAppearanceOfNewImage(
+            displaySetId,
+            previousDefaults
+          ),
         getViewState: () => this.getViewState(),
         isCurrentDisplaySetId: (displaySetId) =>
           this.getCurrentBinding()?.data.id === displaySetId,
@@ -1446,31 +1450,42 @@ class PlanarViewport extends BaseViewport<
   }
 
   /**
-   * Fires `DISPLAY_SET_APPEARANCE_CHANGED` with cause `'default'` when a new
-   * image of a stack changed the window on display: no window is set for
-   * the display set, and the default window of the new image is another
-   * than `previousRange`, that of the image before. A window that is set
-   * stays on display over a scroll, so nothing fires, and nothing fires for
-   * a new image with the same window, or for an image without a window (a
-   * range whose upper end is below its lower end).
+   * Fires `DISPLAY_SET_APPEARANCE_CHANGED` once with cause `'default'` when
+   * a new image of a stack changed the window, the invert or the VOI LUT
+   * function on display: the key is not set for the display set, and the
+   * default of the new image is another than in `previousDefaults`, those
+   * of the image before. A key that is set stays on display over a scroll,
+   * so nothing fires for it, and nothing fires for the window of an image
+   * without one (no range, or a range whose upper end is below its lower
+   * end).
    */
-  private notifyDefaultVOIRangeOfNewImage(
+  private notifyDefaultAppearanceOfNewImage(
     displaySetId: string,
-    previousRange: VOIRange | undefined
+    previousDefaults: Pick<
+      PlanarDisplaySetAppearance,
+      'voiRange' | 'invert' | 'voiLUTFunction'
+    >
   ): void {
-    const range = this.getDefaultVOIRange(displaySetId);
+    const defaults = this.getDefaultDisplaySetAppearance(displaySetId);
+    const overrides = this.getAppearanceState(displaySetId) ?? {};
+    const previous = {
+      ...previousDefaults,
+      invert: previousDefaults.invert ?? false,
+    };
+    const range = defaults.voiRange;
+    const changedKeys = (['voiRange', 'invert', 'voiLUTFunction'] as const)
+      .filter(
+        (key) =>
+          overrides[key] === undefined &&
+          !deepEqual(defaults[key], previous[key])
+      )
+      .filter(
+        (key) => key !== 'voiRange' || (range && range.upper >= range.lower)
+      );
 
-    if (
-      !range ||
-      range.upper < range.lower ||
-      this.getAppearanceState(displaySetId)?.voiRange ||
-      (range.lower === previousRange?.lower &&
-        range.upper === previousRange?.upper)
-    ) {
-      return;
+    if (changedKeys.length) {
+      this.notifyAppearanceChanged(displaySetId, 'default', [...changedKeys]);
     }
-
-    this.notifyAppearanceChanged(displaySetId, 'default', ['voiRange']);
   }
 
   /**
@@ -1494,7 +1509,9 @@ class PlanarViewport extends BaseViewport<
   /**
    * The defaults that the effective appearance shows under the overrides:
    * visible, an opacity of 1, the default window of the image or volume on
-   * display, and the default invert of the image (true for MONOCHROME1).
+   * display, the default invert of the image (true for MONOCHROME1), and
+   * the VOI LUT function of the metadata of the image, which a volume and
+   * an image without one do not have.
    */
   protected override getDefaultDisplaySetAppearance(
     displaySetId: string
@@ -1504,6 +1521,7 @@ class PlanarViewport extends BaseViewport<
       ...super.getDefaultDisplaySetAppearance(displaySetId),
       voiRange: this.getDefaultVOIRange(displaySetId),
       invert: this.getDefaultInvert(displaySetId) ?? false,
+      voiLUTFunction: this.mountedData.getDefaultVOILUTFunction(displaySetId),
     };
   }
 

@@ -437,7 +437,30 @@ Each event says why the appearance changed, in `detail.cause`:
 | `'mount'`   | The display set was mounted and has its first appearance: the defaults of its data and of its family, with the overrides set before the mount. Once per mount, after the display set is bound. `changedKeys` holds every key that has a value                                                                                               |
 | `'edit'`    | A call of `setDisplaySetAppearance` changed an override, and with it maybe the value on display. A call that changes nothing fires nothing                                                                                                                                                                                                  |
 | `'reset'`   | A call of `resetDisplaySetAppearance` removed overrides: the keys are back to their defaults                                                                                                                                                                                                                                                |
-| `'default'` | A value on display changed and no call made it: the default of a key that has no override changed. A scroll of a stack to an image with another window of its own (no window set) fires it with `changedKeys: ['voiRange']`; so does a remount on another render path that has another default window. The overrides are the same as before |
+| `'default'` | A value on display changed and no call made it: the default of a key without an override changed. A scroll of a stack to an image with another default window, invert (MONOCHROME1) or VOI LUT function fires it once, with each such key; so does a remount on another render path with another default window. The overrides are the same |
+
+In 6.0.0-beta.2 a scroll fired `'default'` for the window only: the invert
+of a stack that mixes MONOCHROME1 and MONOCHROME2 images, and the VOI LUT
+function of the image, changed on display without an event, and the
+effective appearance had no `voiLUTFunction`. A readout that followed them
+on `NEW_IMAGE` can listen to the appearance event:
+
+```js
+// Before
+element.addEventListener(Enums.Events.NEW_IMAGE, () => {
+  showInvert(viewport.getEffectiveDisplaySetAppearance()?.invert);
+});
+
+// After
+element.addEventListener(
+  Enums.Events.DISPLAY_SET_APPEARANCE_CHANGED,
+  ({ detail }) => {
+    if (detail.changedKeys.includes('invert')) {
+      showInvert(detail.effective.invert);
+    }
+  }
+);
+```
 
 ### The detail
 
@@ -486,8 +509,10 @@ source.
   It gives `{}` for a mounted display set without overrides.
 - `getEffectiveDisplaySetAppearance(displaySetId?)` gives what is drawn: on a
   planar viewport the overrides over `visible: true`, `opacity: 1`, the
-  default window of the image or the volume on display and the default
-  invert of the image (true for MONOCHROME1); on a 3D viewport over
+  default window of the image or the volume on display, the default invert
+  of the image (true for MONOCHROME1) and the VOI LUT function of the
+  metadata of the image (`voiLUTFunction`, which a volume and an image
+  without one do not have: they are drawn linear); on a 3D viewport over
   `visible: true`, `opacity: 1` and the default window of the volume; on a
   video, an ECG and a whole slide over the defaults that the mount sets
   (`playbackRate: 1`, `loop: true`, `muted: true`, `objectFit: 'contain'`,
@@ -952,6 +977,22 @@ into a colormap whose type has an `opacity`, and each read of
   `ViewFramingSelector` are gone; nothing read them. The slab thickness and
   the window are the appearance of a display set
   (`viewport.getDisplaySetAppearance(displaySetId)`).
+- **The framing has no aspect ratio.** `aspectRatio` of `ViewFraming` and of
+  `ViewFramingSelector` is gone: no viewport gave it or applied it, so
+  `setViewFraming({ aspectRatio: [2, 1] })` changed nothing. The 5.x
+  `setViewPresentation` stretched the view by it. The stretch of a planar
+  view is the scale pair of its framing:
+
+  ```ts
+  // Before
+  viewport.setViewPresentation({ aspectRatio: [2, 1] });
+  const [x, y] = viewport.getViewPresentation().aspectRatio;
+
+  // After
+  viewport.setViewFraming({ scale: [2, 1] });
+  const [x, y] = viewport.getViewFraming({ scale: true }).scale;
+  ```
+
 - **`getViewFraming` has the framing of the family.** On a planar viewport it
   takes a `PlanarViewFramingSelector` and gives a `PlanarViewFraming`, so
   `viewport.getViewFraming({ scale: true })?.scale` needs no cast; on a 3D
@@ -1258,6 +1299,37 @@ point of the image on display.
   slice index of such a reference, which counts in the other series. In
   volume mode a reference of another series in the same frame of reference
   still moves the view to its plane, as on the legacy volume viewport.
+- **A stack stays where it is for a reference of a volume that names no
+  image.** A sagittal or a coronal slice of a volume, as
+  `cameraSyncCallback` copies from a volume viewport to a stack, gives a
+  `volumeId`, no image, and a slice index that counts in the slices of that
+  view. In stack mode `setViewReference` moves nothing for it, as
+  `isReferenceViewable(viewRef, { withNavigation: true })` answers false: a
+  stack shows only the planes of its images and takes such a reference only
+  with `asVolume`. The legacy stack viewport, and 6.0.0-beta.2, went to the
+  image of the stack at that slice index (a sagittal slice 16 put a stack of
+  8 images on its last image). A stack that shows that volume as an overlay
+  still goes to the image at the point of the reference. To show the
+  reference, the application mounts the display set in volume mode:
+
+  ```js
+  // Before: the stack went to the image at viewRef.sliceIndex
+  stackViewport.setViewReference(sagittalViewport.getViewReference());
+
+  // After
+  const viewRef = sagittalViewport.getViewReference();
+
+  if (stackViewport.isReferenceViewable(viewRef, { withNavigation: true })) {
+    stackViewport.setViewReference(viewRef);
+  } else if (stackViewport.isReferenceViewable(viewRef, { asVolume: true })) {
+    await stackViewport.setDisplaySets({
+      displaySetId,
+      options: { mode: 'volume' },
+    });
+    stackViewport.setViewReference(viewRef);
+  }
+  ```
+
 - **A stack decides a reference of one of its images by the image.** In
   stack mode `isReferenceViewable(viewRef, { withNavigation: true })` is
   true for a reference that names an image of the stack whatever plane it
