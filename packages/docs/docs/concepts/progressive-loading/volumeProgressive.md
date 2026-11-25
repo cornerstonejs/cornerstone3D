@@ -199,3 +199,24 @@ interval between images included, and the offset in that set.
 The same ordering is done if partial resolution is not configured, except that
 the last two stages are never run because the partial resolution has already
 loaded those. This DOES allow the interpolation of results to appear very quickly.
+
+## GPU memory controls of the example
+
+The `volumeProgressive` example also shows the GPU memory of `auto` (see
+[GPU device limits](../../specs/core/gpu-device-limits/requirements.md)), and
+models what an application shows after a GPU memory failure.
+
+| Control                | What it does                                                                                                                                                                                                                                               |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `?gpuMemory=512MB`     | Sets the memory limit before the first load, as the user would in a dialog (`MB` or `GB`). The limit is stored, so it stays after the parameter goes, until a reset.                                                                                       |
+| `?gpuMemoryHard=1`     | Makes that limit a hard limit.                                                                                                                                                                                                                             |
+| `?gpuReset=1`          | Clears the record of the device and the limit, so the device is tested again.                                                                                                                                                                              |
+| The status line        | The limit and its source, the GPU memory of the page, the start of the device, and whether WebGL waits.                                                                                                                                                    |
+| The GPU memory log     | Each limit change, failure, wait for WebGL and calibration result.                                                                                                                                                                                         |
+| View GPU probe         | The probed capabilities, the record, the memory status, the history of the sizes that worked and failed, and the suggested limit.                                                                                                                          |
+| Allocate until failure | A real GPU failure, for an end-to-end test: it doubles the frames that the 3D viewport shows (256, 512, 1024 and so on) until the WebGL context is lost, the page is hidden, or 32 GB. It applies a hard limit of 64 GB to the page until a reload.        |
+| The failure popup      | Opens after a failure. It offers the suggested limit and one step lower, CPU rendering when no GPU size works, and the calibration run, behind a warning. It counts down while WebGL waits, and reloads the page that lost its context when the wait ends. |
+
+"Allocate until failure" can stop the tab or the browser, and makes the
+browser block WebGL for the site for about two minutes. Run it on a device
+that you can spare.

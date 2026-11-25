@@ -1,7 +1,7 @@
 ---
 id: gpu-device-limits-requirements
 title: GPU device limits
-summary: What the user gets when the viewer fits volumes to the texture size and the GPU memory of the device
+summary: What the user gets when the viewer fits volumes to the texture size and the GPU memory of the device, and when the GPU fails
 ---
 
 # GPU device limits
@@ -10,7 +10,8 @@ summary: What the user gets when the viewer fits volumes to the texture size and
 
 This specification gives the user requirements of the automatic GPU settings
 (`auto`): how the viewer fits the volumes of a page to the texture size and to
-the GPU memory of the device. It names no class, file or algorithm.
+the GPU memory of the device, and what happens when the GPU fails. It names no
+class, file or algorithm.
 
 The "user" is the person who reads the images. The "application" is the
 program that a developer builds on Cornerstone3D, for example a viewer that
@@ -88,3 +89,34 @@ Related documents:
 - **GPULIM-U-13** A view that must draw a volume at full resolution, and that
   the limits cannot hold, draws nothing in place of a wrong image. It tries
   again at the next render, for example after the user sets a larger limit.
+
+## GPU failures
+
+- **GPULIM-U-14** After a GPU memory failure (a lost context, a tab that
+  stopped, or an out of memory during a large allocation), the application
+  learns what failed, how often that size worked and failed before, the
+  largest size that worked, and a suggested memory limit. The viewer does not
+  apply the suggestion; the user picks a limit (see GPULIM-U-8 and
+  GPULIM-U-9).
+- **GPULIM-U-15** A failure that the start of a page found, because the tab
+  stopped during an allocation, reaches the application when the application
+  is ready to show it. A tab that the system stopped finds its own failure at
+  its next load, at once.
+- **GPULIM-U-16** After a failure, no tab of the site creates a WebGL context
+  or allocates a large texture until WebGL works again: while the browser
+  blocks WebGL for the site, and, in a browser that does not block, for two
+  minutes after a second failure within two minutes. The images on screen
+  stay, and loading goes on. When the wait ends, every tab learns it and its
+  views draw again. A page that lost its context reloads then.
+- **GPULIM-U-17** While WebGL waits, a page keeps GPU rendering. It does not
+  switch to CPU rendering by itself.
+- **GPULIM-U-18** After a failure, the user can start one calibration run,
+  after a warning that the run causes a failure and the wait. The run finds
+  the largest memory that works, and the result is offered as a limit.
+  Nothing applies it. A run that stops the tab still records its result.
+- **GPULIM-U-19** When a failure happens at the smallest limit (128 MB), the
+  application can offer CPU rendering. The viewer does not switch by itself.
+- **GPULIM-U-20** The application can read, for a memory dialog: the limit
+  and its source, the GPU memory that the page holds, the sizes that worked
+  and failed, the last failure, the last calibration, the suggested limit,
+  and whether WebGL waits and until when.

@@ -728,6 +728,91 @@ differently, and the 5.x code to use.
     element.addEventListener(Events.IMAGE_RENDERED, capture, { once: true });
     ```
 
+14. **A page keeps GPU rendering while the browser blocks WebGL.** Default
+    settings. Chromium blocks WebGL for a site for about two minutes after
+    repeated context losses. In 4.x a page that loaded during the block found
+    no WebGL2 context, so `init` switched it to CPU rendering, and a render
+    window that got no context threw. In 5.x the page waits for WebGL:
+    `getRenderingCapabilities()` reports `webgl: true` with
+    `webglBlocked: true`, from the stored record of the device, the viewports
+    draw nothing until the wait ends, and then they draw. An application that
+    reads `webgl === false` as "no GPU" needs no change; one that shows its own
+    message during the wait reads `webglBlocked` or `isWebGLBlocked()`.
+
+    ```js
+    // 5.x
+    if (getRenderingCapabilities().webglBlocked) {
+      await whenWebGLAvailable();
+    }
+    ```
+
+15. **A large texture waits after a GPU memory failure.** Default settings.
+    After a failure, a texture of 64 MB or more is not allocated in any tab of
+    the site until WebGL works again (see
+    [GPU memory failures and the wait for WebGL](#gpu-memory-failures-and-the-wait-for-webgl)).
+    A viewport that needs one draws it when the wait ends, and every
+    rendering engine renders then.
+
+## GPU memory failures and the wait for WebGL
+
+### What Changed
+
+Cornerstone3D reports a GPU memory failure, waits for WebGL after it in every
+tab of the site, and offers one calibration run. It never changes the memory
+limit by itself: the application shows the facts and the user picks.
+
+| Event                        | When it fires                                                                                      |
+| ---------------------------- | -------------------------------------------------------------------------------------------------- |
+| `GPU_MEMORY_FAILURE`         | A lost context, a tab that stopped (found at the next start), or an out of memory during an upload |
+| `GPU_MEMORY_LIMIT_CHANGED`   | `setGpuMemoryLimit` or `resetGpuMemoryLimit`, with the limit before and after                      |
+| `WEBGL_AVAILABILITY_CHANGED` | A wait for WebGL starts or ends, in this tab or in another tab of the site                         |
+| `GPU_MEMORY_CALIBRATED`      | A calibration run ends with a result                                                               |
+
+The new functions of `@cornerstonejs/core`:
+
+- `getGpuMemoryStatus()`: the limit and its source, the GPU memory of the
+  page, `noGpuSizeWorks`, `cpuRecommended`, `canCalibrate` and the wait.
+- `getGpuMemoryHistory()`: the successes and the failures of each size of
+  `GPU_MEMORY_BUCKETS_GB`, the largest load and texture that worked, the last
+  failure and the last calibration.
+- `suggestGpuMemoryLimit()`, `getLastGpuMemoryFailure()`,
+  `acknowledgeGpuMemoryFailure()`.
+- `canRunGpuMemoryCalibration()`, `runGpuMemoryCalibration()`.
+- `isWebGLBlocked()`, `whenWebGLAvailable()`.
+
+The browser storage holds new keys: `cornerstone3D.webglBlockedUntil`,
+`cornerstone3D.gpuMemoryFailureTimes` and `cornerstone3D.gpuMemoryCalibration`
+in the capability storage, and `cornerstone3D.tabId` in `sessionStorage`.
+
+### Why This Matters
+
+After a GPU failure, a browser can fail again at once, and Chromium blocks
+WebGL for the site for about two minutes. A tab that creates a context or
+uploads a large texture during that time fails again, and in 4.x it fell back
+to CPU rendering. iOS stops a tab that runs out of GPU memory with no event;
+5.x finds that at the next load of the same tab. Firefox reports an out of
+memory through `getError()` and keeps the context; 5.x reads it.
+
+### Migration Guidance
+
+- **Nothing changes until a failure happens.** An application that ignores
+  the new events gets the wait for WebGL and the record, and no dialog.
+- **To offer a new limit,** listen to `GPU_MEMORY_FAILURE`, show the facts of
+  the detail, pre-select `suggestedBytes`, and call `setGpuMemoryLimit` with
+  the user's choice. Read `getLastGpuMemoryFailure()` when the application
+  starts listening, for a crash that the start of the page found, and call
+  `acknowledgeGpuMemoryFailure()` once the user answered.
+- **When `mustReload` is true,** reload the page after
+  `WEBGL_AVAILABILITY_CHANGED` fires with `blocked: false`.
+- **When `noGpuSizeWorks` is true,** offer CPU rendering with
+  `setRenderBackend('cpu')`. A legacy volume viewport cannot render on the
+  CPU.
+- **Offer the calibration run only when `canCalibrate` is true,** and warn the
+  user first that it causes a GPU failure and a wait of about two minutes in
+  every tab.
+- **A custom `CapabilityStorage`** (`setCapabilityStorage`) gets no `storage`
+  event, so the tabs share a wait only through the default `localStorage`.
+
 ## Locked segments stop the brush, and do not cause an overlap
 
 ### What Changed
