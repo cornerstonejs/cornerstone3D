@@ -33,7 +33,8 @@ gone. The viewport types have their plain names, see
 ### What to read
 
 1. [Next viewports only](./1-next-viewports-only.md): the model of a next
-   viewport.
+   viewport. Code that already runs on a 6.0 beta reads
+   [From a 6.0 beta to 6.0](./5-from-a-6-beta.md) instead of this page.
 2. [Changes that need a decision by a person](#changes-that-need-a-decision-by-a-person)
    on this page.
 3. Keep [the map](./3-api-map.md) open while you work. Search it for the name
@@ -384,7 +385,8 @@ application chooses. Then show it by its id.
 
 The id names the data, such as the series instance UID. Give another series
 another id: when the new source of a viewport has the id of the source it
-shows, `setDisplaySets` keeps the segmentation overlays of that source. The
+shows and the same mode (stack or volume), `setDisplaySets` keeps the
+segmentation overlays of that source. The
 registration is global, so an application with two rendering engines whose
 viewports share ids puts the engine in the id too, in a form that keeps the
 parts apart: joined with `:`, engine `a:b` with viewport `c` and engine `a`
@@ -572,7 +574,8 @@ viewport.setDisplaySetAppearance(displaySetId, {
   invert: true,
 });
 
-const { voiRange } = viewport.getEffectiveDisplaySetAppearance(displaySetId);
+const voiRange =
+  viewport.getEffectiveDisplaySetAppearance(displaySetId)?.voiRange;
 
 viewport.setDisplaySetAppearance(displaySetId, { slabThickness: 10 });
 ```
@@ -790,9 +793,9 @@ rg -n "\.(modality|scaling|isDisabled|stackActorReInitialized|useCPURendering|su
 rg -n "getImageLegacy" src
 ```
 
-**Change.** A question that the state and the data can answer is a function
-that takes the viewport, or a read of `viewport.getImageData()`. Each one
-answers for a stack and for a volume. The rows are in
+**Change.** A question that the state and the data can answer is a member
+of the planar viewport, a function that takes the viewport, or a read of
+`viewport.getImageData()`. Each one answers for a stack and for a volume. The rows are in
 [Members of the stack and the volume viewport](./3-api-map.md#members-of-the-stack-and-the-volume-viewport),
 [Members of the stack viewport only](./3-api-map.md#members-of-the-stack-viewport-only)
 and
@@ -803,8 +806,8 @@ Before:
 ```ts
 const bounds = viewport.getBounds();
 const value = viewport.getIntensityFromWorld(point);
-const inPlane = viewport.isInAcquisitionPlane();
 const image = viewport.getCornerstoneImage();
+const volumeIds = viewport.getAllVolumeIds();
 ```
 
 After:
@@ -821,10 +824,17 @@ const bounds = imageData.getBounds?.();
 const value = voxelManager?.getAtIJKPoint(
   utilities.transformWorldToIndex(imageData, point)
 );
-const inPlane = utilities.isInAcquisitionPlane(viewport);
 const imageId = viewport.getCurrentImageId();
 const image = imageId ? cache.getImage(imageId) : undefined;
+const volumeIds = viewport.getVolumeIds({ includeSegmentations: true });
 ```
+
+`viewport.isInAcquisitionPlane()` keeps its name on a planar viewport, and
+answers in both modes; `utilities.isInAcquisitionPlane(viewport)` answers for
+a viewport of any family. `viewport.getScalarRange(displaySetId)` gives the
+range of the values of a display set, and
+`viewport.getDisplaySetIdForVolumeId(volumeId)` the display set of a volume,
+see [Viewport queries](./2-rendering-changes.md#viewport-queries).
 
 **Check.** Show the same series once as a stack and once as a volume in its
 acquisition orientation, on the same slice. Both give the same value at a
@@ -938,8 +948,8 @@ is its geometry id.
 **Search**
 
 ```sh
-rg -n "STACK_NEW_IMAGE|VOLUME_NEW_IMAGE|PRE_STACK_NEW_IMAGE|STACK_VIEWPORT_SCROLL|VOLUME_VIEWPORT_SCROLL|STACK_SCROLL_OUT_OF_BOUNDS|IMAGE_LOAD_ERROR|PRESET_MODIFIED|ACTORS_CHANGED|CLIPPING_PLANES_UPDATED|DYNAMIC_VOLUME_TIME_POINT" src
-rg -n "CAMERA_MODIFIED|CAMERA_RESET|VOI_MODIFIED|COLORMAP_MODIFIED|IMAGE_SPACING_CALIBRATED" src
+rg -n "STACK_NEW_IMAGE|VOLUME_NEW_IMAGE|PRE_STACK_NEW_IMAGE|STACK_VIEWPORT_SCROLL|VOLUME_VIEWPORT_SCROLL|STACK_SCROLL_OUT_OF_BOUNDS|VIEWPORT_NEW_IMAGE_SET|VOLUME_VIEWPORT_NEW_VOLUME|VOI_MODIFIED|COLORMAP_MODIFIED|DISPLAY_AREA_MODIFIED|IMAGE_LOAD_ERROR|PRESET_MODIFIED|ACTORS_CHANGED|CLIPPING_PLANES_UPDATED|DYNAMIC_VOLUME_TIME_POINT" src
+rg -n "CAMERA_MODIFIED|CAMERA_RESET|NEW_IMAGE|IMAGE_SPACING_CALIBRATED" src
 rg -n "invertStateChanged|previousCamera" src
 ```
 
@@ -947,6 +957,12 @@ rg -n "invertStateChanged|previousCamera" src
 fire. [Events](./3-api-map.md#events) names the event to listen to in place
 of each. The second command finds events that stay and fire at other times.
 Read each listener.
+
+The samples type the event in the listener so that the detail reads
+clearly. On a DOM element in a TypeScript project with `strict`, pass such a
+listener as `((evt: Types.EventTypes.NewImageEvent) => { ... }) as EventListener`,
+as the examples of this repository do: the DOM types the parameter of a
+listener as `Event`.
 
 `STACK_NEW_IMAGE` and `VOLUME_NEW_IMAGE` are one event now, `NEW_IMAGE`,
 with one detail for a stack, a volume and a video. A listener for stacks and
@@ -974,8 +990,10 @@ element.addEventListener(
   onNewDisplaySet
 );
 eventTarget.addEventListener(Enums.Events.IMAGE_LOAD_ERROR, onLoadError);
-eventTarget.addEventListener(Enums.Events.STACK_SCROLL_OUT_OF_BOUNDS, (evt) =>
-  onScrollEnd(evt.detail.direction)
+eventTarget.addEventListener(
+  Enums.Events.STACK_SCROLL_OUT_OF_BOUNDS,
+  (evt: Types.EventTypes.StackScrollOutOfBoundsEvent) =>
+    onScrollEnd(evt.detail.direction)
 );
 ```
 
@@ -983,22 +1001,30 @@ After:
 
 ```ts
 element.addEventListener(Enums.Events.NEW_IMAGE, onNewImage);
-element.addEventListener(Enums.Events.DISPLAY_SETS_CHANGED, (evt) => {
-  if (!evt.detail.sourceChanged) {
-    return;
+element.addEventListener(
+  Enums.Events.DISPLAY_SETS_CHANGED,
+  (evt: Types.EventTypes.DisplaySetsChangedEvent) => {
+    if (!evt.detail.sourceChanged) {
+      return;
+    }
+
+    onNewDisplaySet();
   }
+);
 
-  onNewDisplaySet();
-});
+eventTarget.addEventListener(
+  Enums.Events.IMAGE_LOAD_FAILED,
+  (evt: Types.EventTypes.ImageLoadedFailedEvent) => {
+    const { imageId, error } = evt.detail;
 
-eventTarget.addEventListener(Enums.Events.IMAGE_LOAD_FAILED, (evt) => {
-  const { imageId, error } = evt.detail;
+    onLoadError(imageId, error);
+  }
+);
 
-  onLoadError(imageId, error);
-});
-
-eventTarget.addEventListener(Enums.Events.SCROLL_OUT_OF_BOUNDS, (evt) =>
-  onScrollEnd(evt.detail.delta)
+eventTarget.addEventListener(
+  Enums.Events.SCROLL_OUT_OF_BOUNDS,
+  (evt: Types.EventTypes.ScrollOutOfBoundsEvent) =>
+    onScrollEnd(evt.detail.delta)
 );
 ```
 
@@ -1246,31 +1272,32 @@ At these the code compiles and runs, and the picture or the result differs
 from 5.x. Each one has more than one right answer, and the application
 decides. A coding agent stops here and asks.
 
-| Change                                              | What differs                                                                                                                                                                     | The choice                                                                                                                                              |
-| --------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| The orientation of a volume without an option       | A legacy `ORTHOGRAPHIC` viewport without options opened in `AXIAL`. A planar viewport opens a volume in its acquisition plane                                                    | Which orientation each viewport opens in. See [Orientation of a volume](./2-rendering-changes.md#orientation-of-a-volume)                               |
-| A tilted series                                     | `AXIAL`, `SAGITTAL` and `CORONAL` show the true axis. `ACQUISITION` shows the plane of the acquisition                                                                           | Whether a viewport shows the true axis or the acquired plane                                                                                            |
-| `setOrientation` keeps the view                     | The legacy volume viewport reset its camera and showed the middle of the volume. A next viewport keeps the point in view, the pan and the zoom                                   | Keep the view, or call `resetViewState()` after the change                                                                                              |
-| A jump lands on a slice centre                      | The focal point after a jump can differ from the requested point by up to half a slice spacing                                                                                   | What code that stores or compares focal points does. See [the section](./2-rendering-changes.md#a-volume-slice-sits-on-a-slice-centre)                  |
-| The fill of a labelmap                              | A `fillAlpha` of 0.5 looked like 0.26 on a legacy volume viewport. Now it is drawn as 0.5                                                                                        | Keep the stronger fill, or lower `fillAlpha` and `fillAlphaInactive`                                                                                    |
-| The opacity of a fusion layer                       | A numeric opacity of a colour layer is applied as given. The legacy viewport drew it weaker                                                                                      | Keep the value, or lower it                                                                                                                             |
-| A slab with the composite blend mode                | It draws as an average. The legacy viewport cast rays, so voxels in front hid what lies behind                                                                                   | Which blend mode the slab gets                                                                                                                          |
-| A scroll with a slab                                | `viewport.scroll(1)` steps by one slice. The legacy volume viewport stepped by the slab thickness                                                                                | Step by slices, or pass `scrollSlabs: true` to `viewport.scroll` or `utilities.scroll`                                                                  |
-| A scroll with `loop`                                | `utilities.scroll` and `StackScrollTool` with `loop: true` wrap a volume at both ends. The legacy volume viewport ignored `loop`                                                 | Keep the wrap on volumes, or set `loop` only where the application wants it                                                                             |
-| `setOrientation` with a normal and no view up       | The view takes the view up of the acquisition. The legacy viewport kept the current view up when it was orthogonal to the normal, and otherwise took `[0, 0, 1]` or `[0, -1, 0]` | Which `viewUp` the application passes                                                                                                                   |
-| Default properties                                  | `setDefaultProperties` and its family have no twin                                                                                                                               | Where the application keeps its default, and when it sets it: for each display set, or for each image in a listener of `NEW_IMAGE`                      |
-| Image defaults                                      | A MONOCHROME1 image starts inverted. An image without a window starts at its pixel range, not at 0 to 255                                                                        | Whether the application sets its own window or invert on top. See [Image defaults](./2-rendering-changes.md#image-defaults)                             |
-| A display area of `type: 'SCALE'`                   | A scale of 1 is the fit of the picture. On a legacy viewport 1 meant one image pixel on one screen pixel                                                                         | The scale that gives the size the application wants                                                                                                     |
-| Listeners of a new image and of `CAMERA_MODIFIED`   | `NEW_IMAGE` replaces `STACK_NEW_IMAGE` and `VOLUME_NEW_IMAGE` and has no `image` for a volume. `CAMERA_MODIFIED` fires on each new image of a stack                              | Whether one listener serves stacks and volumes, and what each listener does in each mode                                                                |
-| A viewport on the CPU                               | The VOI lookup table and the modality lookup table of an image are not applied, as on the GPU. The area around the image has the background colour                               | Whether the application relied on the lookup tables on the CPU. See [the section](./2-rendering-changes.md#a-viewport-on-the-cpu-shows-the-gpu-picture) |
-| The crosshair                                       | `CrosshairsTool` sets no blend mode for its slab                                                                                                                                 | Set `blendMode` in the appearance. Or use `WorldCrosshairTool` with `SliceIntersectionTool`                                                             |
-| `ViewportType.PERSPECTIVE`                          | The legacy type drew a thin slab of the volume. A 3D viewport with `parallelProjection: false` draws the volume in 3D                                                            | What the screen shows                                                                                                                                   |
-| The zoom and the pan of a video and an ECG viewport | `getPan()` gives canvas pixels from the fit. The legacy viewport gave world units, and the legacy video viewport did not zoom                                                    | What code that stores a pan does with stored values                                                                                                     |
-| The pan of a whole slide viewport                   | It is measured from the centre of the slide. The legacy `getPan()` measured from the view at mount, and `setPan(pan, true)` stored a new origin                                  | What code that stores a pan does with stored values                                                                                                     |
-| The zoom of a 3D viewport                           | `getZoom()` and `viewportProjection` measure it against the fit for the direction of the camera now. The legacy `getZoom()` measured against the camera of the last reset        | What code that stores or compares a zoom does                                                                                                           |
-| Playback of a video                                 | `setPlaybackRate()` does not start or pause playback                                                                                                                             | Where the application calls `play()` and `pause()`                                                                                                      |
-| World points of a whole slide viewport              | World points follow the coordinate system of the slide, and the rotation is in degrees. Points saved from a next whole slide viewport of 5.x show shifted                        | What happens to saved points and rotations                                                                                                              |
-| The trace layout of an ECG                          | The legacy viewport drew twelve rows of one lead. The next viewport picks a layout by the record                                                                                 | Which `traceLayout` the application sets                                                                                                                |
+| Change                                              | What differs                                                                                                                                                                                                                              | The choice                                                                                                                                              |
+| --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The orientation of a volume without an option       | A legacy `ORTHOGRAPHIC` viewport without options opened in `AXIAL`. A planar viewport opens a volume in its acquisition plane                                                                                                             | Which orientation each viewport opens in. See [Orientation of a volume](./2-rendering-changes.md#orientation-of-a-volume)                               |
+| A tilted series                                     | `AXIAL`, `SAGITTAL` and `CORONAL` show the true axis. `ACQUISITION` shows the plane of the acquisition                                                                                                                                    | Whether a viewport shows the true axis or the acquired plane                                                                                            |
+| `setOrientation` keeps the view                     | The legacy volume viewport reset its camera and showed the middle of the volume. A next viewport keeps the point in view, the pan and the zoom                                                                                            | Keep the view, or call `resetViewState()` after the change                                                                                              |
+| A jump lands on a slice centre                      | The focal point after a jump can differ from the requested point by up to half a slice spacing                                                                                                                                            | What code that stores or compares focal points does. See [the section](./2-rendering-changes.md#a-volume-slice-sits-on-a-slice-centre)                  |
+| The fill of a labelmap                              | A `fillAlpha` of 0.5 looked like 0.26 on a legacy volume viewport. Now it is drawn as 0.5                                                                                                                                                 | Keep the stronger fill, or lower `fillAlpha` and `fillAlphaInactive`                                                                                    |
+| The opacity of a fusion layer                       | A numeric opacity of a colour layer is applied as given. The legacy viewport drew it weaker                                                                                                                                               | Keep the value, or lower it                                                                                                                             |
+| A colormap threshold with an opacity mapping        | Below the threshold the alpha is 0, and from the threshold on it is `opacity * ramp(value)`. The legacy volume viewport rose from 0 at the threshold to the next point of the mapping, so the values just above the threshold drew weaker | Keep the mapping as it is, or add a point at the threshold for the old ramp. See [One opacity](./2-rendering-changes.md#one-opacity)                    |
+| A slab with the composite blend mode                | It draws as an average. The legacy viewport cast rays, so voxels in front hid what lies behind                                                                                                                                            | Which blend mode the slab gets                                                                                                                          |
+| A scroll with a slab                                | `viewport.scroll(1)` steps by one slice. The legacy volume viewport stepped by the slab thickness                                                                                                                                         | Step by slices, or pass `scrollSlabs: true` to `viewport.scroll` or `utilities.scroll`                                                                  |
+| A scroll with `loop`                                | `utilities.scroll` and `StackScrollTool` with `loop: true` wrap a volume at both ends. The legacy volume viewport ignored `loop`                                                                                                          | Keep the wrap on volumes, or set `loop` only where the application wants it                                                                             |
+| `setOrientation` with a normal and no view up       | The view takes the view up of the acquisition. The legacy viewport kept the current view up when it was orthogonal to the normal, and otherwise took `[0, 0, 1]` or `[0, -1, 0]`                                                          | Which `viewUp` the application passes                                                                                                                   |
+| Default properties                                  | `setDefaultProperties` and its family have no twin                                                                                                                                                                                        | Where the application keeps its default, and when it sets it: for each display set, or for each image in a listener of `NEW_IMAGE`                      |
+| Image defaults                                      | A MONOCHROME1 image starts inverted. An image without a window starts at its pixel range, not at 0 to 255                                                                                                                                 | Whether the application sets its own window or invert on top. See [Image defaults](./2-rendering-changes.md#image-defaults)                             |
+| A display area of `type: 'SCALE'`                   | A scale of 1 is the fit of the picture. On a legacy viewport 1 meant one image pixel on one screen pixel                                                                                                                                  | The scale that gives the size the application wants                                                                                                     |
+| Listeners of a new image and of `CAMERA_MODIFIED`   | `NEW_IMAGE` replaces `STACK_NEW_IMAGE` and `VOLUME_NEW_IMAGE` and has no `image` for a volume. `CAMERA_MODIFIED` fires on each new image of a stack                                                                                       | Whether one listener serves stacks and volumes, and what each listener does in each mode                                                                |
+| A viewport on the CPU                               | The VOI lookup table and the modality lookup table of an image are not applied, as on the GPU. The area around the image has the background colour                                                                                        | Whether the application relied on the lookup tables on the CPU. See [the section](./2-rendering-changes.md#a-viewport-on-the-cpu-shows-the-gpu-picture) |
+| The crosshair                                       | `CrosshairsTool` sets no blend mode for its slab                                                                                                                                                                                          | Set `blendMode` in the appearance. Or use `WorldCrosshairTool` with `SliceIntersectionTool`                                                             |
+| `ViewportType.PERSPECTIVE`                          | The legacy type drew a thin slab of the volume. A 3D viewport with `parallelProjection: false` draws the volume in 3D                                                                                                                     | What the screen shows                                                                                                                                   |
+| The zoom and the pan of a video and an ECG viewport | `getPan()` gives canvas pixels from the fit. The legacy viewport gave world units, and the legacy video viewport did not zoom                                                                                                             | What code that stores a pan does with stored values                                                                                                     |
+| The pan of a whole slide viewport                   | It is measured from the centre of the slide. The legacy `getPan()` measured from the view at mount, and `setPan(pan, true)` stored a new origin                                                                                           | What code that stores a pan does with stored values                                                                                                     |
+| The zoom of a 3D viewport                           | `getZoom()` and `viewportProjection` measure it against the fit for the direction of the camera now. The legacy `getZoom()` measured against the camera of the last reset                                                                 | What code that stores or compares a zoom does                                                                                                           |
+| Playback of a video                                 | `setPlaybackRate()` does not start or pause playback                                                                                                                                                                                      | Where the application calls `play()` and `pause()`                                                                                                      |
+| World points of a whole slide viewport              | World points follow the coordinate system of the slide, and the rotation is in degrees. Points saved from a next whole slide viewport of 5.x show shifted                                                                                 | What happens to saved points and rotations                                                                                                              |
+| The trace layout of an ECG                          | The legacy viewport drew twelve rows of one lead. The next viewport picks a layout by the record                                                                                                                                          | Which `traceLayout` the application sets                                                                                                                |
 
 Rows that say "Differs" in [the map](./3-api-map.md) and are not in this table
 change an answer in a way that has one right fix. The row gives it.

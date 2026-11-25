@@ -100,10 +100,12 @@ Three words name what a viewport keeps:
   of the view that another viewport can take: pan, zoom or scale, rotation,
   flips, and display area, measured against the fit. Setting a framing
   writes the view state.
-- The appearance (`getDisplaySetAppearance()`, `setDisplaySetAppearance()`,
-  `resetDisplaySetAppearance()`) is the look of one display set in one
-  viewport: VOI, opacity, colormap, blend mode, slab, interpolation, and
-  visibility.
+- The appearance (`setDisplaySetAppearance()`, `resetDisplaySetAppearance()`)
+  is the look of one display set in one viewport: VOI, opacity, colormap,
+  blend mode, slab, interpolation, and visibility.
+  `getDisplaySetAppearance()` gives what a caller set, and
+  `getEffectiveDisplaySetAppearance()` what is drawn, the defaults of the
+  data included.
 
 This is what makes a CT source and PET overlay share the same view while still
 having independent VOI, color, and opacity.

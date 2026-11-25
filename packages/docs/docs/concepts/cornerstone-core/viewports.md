@@ -42,8 +42,9 @@ images or a slice of a volume. What it shows decides how it behaves, and
   series. A stack can include 2D images of various shapes, sizes and
   directions, and shows in its acquisition plane.
 - **Volume mode**: the mount asks for `mode: 'volume'` (`'auto'` shows a
-  volume in another orientation than the acquisition plane, and for a display
-  set registered with a `volumeId` and no image ids). A `volumeId` names the
+  volume in another orientation than the acquisition plane, for a slab of the
+  mount, for a display set whose volume is a dynamic volume of the cache, and
+  for a display set registered with a `volumeId` and no image ids). A `volumeId` names the
   volume and never chooses the mode. Suitable for
   rendering a volumetric data which is considered as one 3D image. It enables
   Multi-planar reformation or reconstruction (MPR) by design, in which you can

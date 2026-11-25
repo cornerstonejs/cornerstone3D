@@ -103,7 +103,7 @@ Five records describe the view, and each record has one owner and one purpose.
 `ResolvedView` holds no state of its own. The family viewport class derives
 `ResolvedView` from the other records for one frame, and no code persists it.
 The contract in
-[ViewportArchitectureTypes.ts:10-22](https://github.com/cornerstonejs/cornerstone3D/blob/main/packages/core/src/RenderingEngine/GenericViewport/ViewportArchitectureTypes.ts#L10-L22)
+[ViewportArchitectureTypes.ts:21-33](https://github.com/cornerstonejs/cornerstone3D/blob/main/packages/core/src/RenderingEngine/Viewports/ViewportArchitectureTypes.ts#L21-L33)
 states the contract, and this specification repeats it:
 
 | Record                 | Owner                                    | Holds                                                                     | Persisted                         |

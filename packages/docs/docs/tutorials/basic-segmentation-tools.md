@@ -202,7 +202,10 @@ await Promise.all(
   [viewportId1, viewportId2, viewportId3].map(async (viewportId) => {
     const viewport = renderingEngine.getViewport(viewportId);
 
-    await viewport.setDisplaySets({ displaySetId });
+    await viewport.setDisplaySets({
+      displaySetId,
+      options: { mode: 'volume' },
+    });
     viewport.setDisplaySetAppearance(displaySetId, {
       voiRange: { lower: -180, upper: 220 },
     });

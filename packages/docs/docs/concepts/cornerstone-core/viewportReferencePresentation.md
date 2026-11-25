@@ -146,7 +146,8 @@ or may not display the same image instance.
 The framing holds no VOI. The VOI (`voiRange`, the lower and upper
 values of the window), the VOI LUT function (`voiLUTFunction`), `invert` and
 the colormap belong to the appearance of a display set:
-`viewport.getDisplaySetAppearance(displaySetId)` reads them and
+`viewport.getDisplaySetAppearance(displaySetId)` reads what a caller set,
+`viewport.getEffectiveDisplaySetAppearance(displaySetId)` what is drawn, and
 `viewport.setDisplaySetAppearance(displaySetId, props)` applies them. To show
 an image again as it was, keep both (see "Remember a view and show it again"
 below).

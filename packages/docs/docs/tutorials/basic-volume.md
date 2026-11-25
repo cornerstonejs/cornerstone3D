@@ -127,7 +127,9 @@ displaySetRegistry.add(displaySetId, {
 
 await Promise.all(
   [viewportId1, viewportId2].map((viewportId) =>
-    renderingEngine.getViewport(viewportId).setDisplaySets({ displaySetId })
+    renderingEngine
+      .getViewport(viewportId)
+      .setDisplaySets({ displaySetId, options: { mode: 'volume' } })
   )
 );
 

@@ -80,14 +80,20 @@ are temporary.
 - **The legacy types:** `Types.IStackViewport`, `Types.IVolumeViewport`,
   `Types.IBaseVolumeViewport`, `Types.IVideoViewport`, `Types.IWSIViewport`,
   `Types.IECGViewport` and the `*ViewportProperties` types.
-  `Types.IViewport` is the interface of a viewport of any family, under
-  its 5.x next name too: see
+  `Types.IViewport` is the interface of a viewport of any family, and its
+  5.x next name `Types.IGenericViewport` is gone: see
   [Classes and TypeScript types](./3-api-map.md#classes-and-typescript-types).
-- **Events that no viewport fires:** `STACK_NEW_IMAGE` and `VOLUME_NEW_IMAGE`
-  (listen to `NEW_IMAGE`), `PRE_STACK_NEW_IMAGE` and `STACK_VIEWPORT_SCROLL`
-  (listen to `CAMERA_MODIFIED`), and `PRESET_MODIFIED` (read the `preset` key
-  of the appearance), with their detail types.
-  [Events](./3-api-map.md#events) has the row of each.
+- **Events that 6.0 replaced or removed:** `STACK_NEW_IMAGE` and
+  `VOLUME_NEW_IMAGE` (listen to `NEW_IMAGE`), `VIEWPORT_NEW_IMAGE_SET` and
+  `VOLUME_VIEWPORT_NEW_VOLUME` (listen to `DISPLAY_SETS_CHANGED`),
+  `VOI_MODIFIED` and `COLORMAP_MODIFIED` (listen to
+  `DISPLAY_SET_APPEARANCE_CHANGED`), `STACK_SCROLL_OUT_OF_BOUNDS` and
+  `VOLUME_VIEWPORT_SCROLL_OUT_OF_BOUNDS` (listen to `SCROLL_OUT_OF_BOUNDS`),
+  `PRE_STACK_NEW_IMAGE`, `STACK_VIEWPORT_SCROLL`, `VOLUME_VIEWPORT_SCROLL` and
+  `DISPLAY_AREA_MODIFIED` (listen to `CAMERA_MODIFIED`, and to `NEW_IMAGE` for
+  the image that shows), and `PRESET_MODIFIED` (read the `preset` key of the
+  appearance), with their detail types. [Events](./3-api-map.md#events) has
+  the row of each.
 - **The CPU rendering setting:** `rendering.useCPURendering` with
   `setUseCPURendering`, `resetUseCPURendering` and
   `getShouldUseCPURendering`. The render plan picks
@@ -206,8 +212,8 @@ await mprViewport.setDisplaySets({
 - **With `mode: 'volume'` on the mount** a planar viewport shows the display
   set as a volume, in every orientation.
 - **Without a mode** it shows as a stack in its acquisition plane, and as a
-  volume in another orientation when its images form one. A `volumeId` names
-  the volume and does not choose; see
+  volume in another orientation or for a slab of the mount when its images
+  form one. A `volumeId` names the volume and does not choose; see
   [A volume id names a volume, the mount chooses the mode](#a-volume-id-names-a-volume-the-mount-chooses-the-mode).
 
 The registered object is a `DisplaySetDescriptor`. It has no `kind`: the
@@ -245,86 +251,156 @@ decide how its data is loaded. What each family reads:
   `has(displaySetId)`, `remove(displaySetId)` and `clear()` read and drop
   entries.
 
-### One store for display sets
-
-`displaySetRegistry` keeps the display sets in the `DISPLAY_SET` module of
-the metadata cache of `@cornerstonejs/metadata`. `@cornerstonejs/core`
-exports the same object, so an application that has no other use for core,
-such as the display set service of a viewer, adds its display sets from
-`@cornerstonejs/metadata`. The metadata cache and the viewports then read the
-same object: `stored` below is `displaySet`.
+The first entry of `setDisplaySets` is the source. The others are overlays:
 
 ```ts
-import { displaySetRegistry, Enums, metaData } from '@cornerstonejs/metadata';
-
-displaySetRegistry.add(displaySet.displaySetInstanceUID, displaySet);
-
-const stored = metaData.getTyped(
-  Enums.MetadataModules.DISPLAY_SET,
-  displaySet.displaySetInstanceUID
+await viewport.setDisplaySets(
+  { displaySetId: ctId, options: { mode: 'volume', orientation } },
+  { displaySetId: ptId, options: { mode: 'volume' } }
 );
 
-await viewport.setDisplaySets({
-  displaySetId: displaySet.displaySetInstanceUID,
+viewport.setDisplaySetAppearance(ptId, {
+  colormap: { name: 'hsv' },
+  opacity: 0.4,
 });
 ```
 
-- **The registry keeps the object itself.** It does not copy it and does not
-  change it: an OHIF display set keeps its `displaySetInstanceUID` and gets no
-  `displaySetId`. A change that the application makes to the object is seen
-  by the next mount. A second `add` under the id replaces the object.
-- **`displaySetId` of a descriptor must be its id.**
-  `displaySetRegistry.add('a', { displaySetId: 'b' })` throws.
-- **Only an added id is a display set id.** A value that the application
-  writes into the `DISPLAY_SET` module with `utilities.setCacheData` or
-  `metaData.addTyped` is not a registration, and a viewport does not mount
-  it.
-- **`registerDisplaySetMetadata(imageIds, displaySet)`** registers an
-  `IDisplaySet` under its `displaySetId`, and stores it under its image ids
-  too, so that `metaData.get(MetadataModules.DISPLAY_SET, imageId)` finds it.
-  `displaySetRegistry.get(imageId)` and `has(imageId)` give nothing for such
-  an image id, and `setDisplaySets({ displaySetId: imageId })` fails.
-  `displaySetRegistry.remove(displaySetId)` and `clear()` remove these image
-  id entries with the display set.
-- **A video or an ECG viewport shows** the `imageId` of the descriptor, else
-  the `imageId` of its `instance` (an OHIF display set), else the first of
-  its `underlyingImageIds` (an `IDisplaySet`).
-- **`cache.purgeCache()` keeps the registrations.** It removes the images
-  and the volumes; a mount after it loads them again.
-- **`utilities.clearCacheData()` of `@cornerstonejs/metadata` removes every
-  registration**, as it clears the whole metadata cache. The DICOM image
-  loader's `init` calls it: register display sets after that `init`.
+`viewport.addDisplaySet(displaySetId, { role: 'overlay' })` adds one overlay,
+and `viewport.removeDisplaySet(displaySetId)` removes a display set. Each of
+these calls fires `DISPLAY_SETS_CHANGED` once when it commits, see
+[Events and image loading of a planar viewport](./2-rendering-changes.md#events-and-image-loading-of-a-planar-viewport).
 
-Before, in 6.0.0-beta.2, a viewer kept its display set in the metadata cache
-and registered it a second time for the viewport, under the same id or
-under an id of its own:
+The pages under
+[Viewport Architecture](../../concepts/cornerstone-core/generic-viewport/migration.md)
+show these with code before and after.
+
+The code of 6.0.0-beta.2 in the "Before" blocks of the sections below has the
+names of 6.0, as the codemod leaves it: each section is about what still
+differs after the renames. The renames are in
+[The names of 6.0.0-beta.2](#the-names-of-600-beta2).
+
+### What one viewport wants is said on its mount
+
+What is true of the data is registered once, in `displaySetRegistry`: its
+image ids, its volume id. What one viewport wants of it is said on the mount:
+`mode`, `role`, `orientation`, `renderBackend`, `sliceFirst`, `volumeId`,
+`initialImageIdIndex` and `appearance` (`PlanarMountOptions`;
+`Volume3DMountOptions` takes `role`, `volumeId` and `appearance`). So one
+display set shows as a stack in one pane and as a volume in another under one
+id, each at its own image, and a view reference made in one pane is viewable
+in the other and goes to the same image.
+
+A slab pane that opens on slice 40 with its own window. Before, in
+6.0.0-beta.2:
 
 ```ts
-import { utilities as metadataUtilities, Enums } from '@cornerstonejs/metadata';
-import { utilities } from '@cornerstonejs/core';
+displaySetRegistry.add('ct', { imageIds, volumeId, initialImageIdIndex: 40 });
 
-metadataUtilities.setCacheData(
-  Enums.MetadataModules.DISPLAY_SET,
-  displaySet.displaySetInstanceUID,
-  displaySet
-);
-
-utilities.genericViewportDisplaySetMetadataProvider.add(
-  displaySet.displaySetInstanceUID,
-  { kind: 'planar', imageIds: displaySet.imageIds }
-);
+await viewport.setDisplaySets({ displaySetId: 'ct' });
+viewport.setDisplaySetAppearance('ct', {
+  voiRange: { lower: -160, upper: 240 },
+  slabThickness: 20,
+});
 ```
 
-After, it registers the display set once:
+After:
 
 ```ts
-import { displaySetRegistry } from '@cornerstonejs/metadata';
+displaySetRegistry.add('ct', { imageIds, volumeId });
 
-displaySetRegistry.add(displaySet.displaySetInstanceUID, displaySet);
+await viewport.setDisplaySets({
+  displaySetId: 'ct',
+  options: {
+    mode: 'volume',
+    initialImageIdIndex: 40,
+    appearance: { voiRange: { lower: -160, upper: 240 }, slabThickness: 20 },
+  },
+});
 ```
 
-A second `add` under the id would now replace the display set itself with
-the descriptor, for the viewer and for the viewports.
+One series as a stack in one pane and as a volume in another. Before, in
+6.0.0-beta.2, the `volumeId` of the registration chose the volume, so the two
+panes needed two registrations of the same images under two ids, and each
+viewport opened on the index of its registration:
+
+```ts
+displaySetRegistry.add('ct-stack', { imageIds, initialImageIdIndex: 40 });
+displaySetRegistry.add('ct-volume', { imageIds, volumeId });
+
+await stackViewport.setDisplaySets({ displaySetId: 'ct-stack' });
+await mprViewport.setDisplaySets({
+  displaySetId: 'ct-volume',
+  options: { orientation: Enums.OrientationAxis.SAGITTAL },
+});
+```
+
+After, one registration and one id; each mount says what its viewport shows:
+
+```ts
+displaySetRegistry.add('ct', { imageIds });
+
+await stackViewport.setDisplaySets({
+  displaySetId: 'ct',
+  options: { initialImageIdIndex: 40 },
+});
+await mprViewport.setDisplaySets({
+  displaySetId: 'ct',
+  options: { mode: 'volume', orientation: Enums.OrientationAxis.SAGITTAL },
+});
+```
+
+The two viewports take the view references of each other by image and by
+plane, see
+[Events and image loading of a planar viewport](./2-rendering-changes.md#events-and-image-loading-of-a-planar-viewport).
+
+- **`initialImageIdIndex` is a mount option.** It indexes the registered
+  image ids: the image of a stack, the slice of a volume in its acquisition
+  plane. A planar mount of a descriptor that still has it fails with
+  `[PlanarViewport] The display set "ct" is registered with initialImageIdIndex, which is a mount option: remove it from the descriptor and pass it on the mount, setDisplaySets({ displaySetId, options: { initialImageIdIndex } })`.
+  It fails, and does not warn, because a descriptor is shared by every
+  viewport: an index left in it would open each viewport on another image
+  than the one the application asked for, and nothing else would show it.
+- **`appearance` is the appearance from the first draw.** It merges over the
+  overrides set before the mount (a `colormap` one level deep, as
+  `setDisplaySetAppearance` merges it). The mount draws once with it and
+  fires `DISPLAY_SET_APPEARANCE_CHANGED` once, with cause `'mount'` and the
+  overrides of the mount. With `setDisplaySetAppearance` after the mount the
+  viewport drew twice, fired a second event with cause `'edit'`, and a slab
+  remounted the render path. A slab in `appearance` chooses the render path
+  of the first draw, and a mount without `mode` shows a volume for it. A 3D,
+  a video, an ECG and a whole slide viewport take `appearance` on their
+  mounts too, each with the keys of its own appearance (a video its
+  `playbackRate`, `loop`, `muted`, `objectFit`; an ECG its `lineWidth`,
+  `showGrid`; a slide its `voiRange` and `averageWhite`).
+- **A mount reads the registration once.** The image ids, the volume id, the
+  mode and whether the display set is the labelmap of a segmentation are read
+  at the mount and kept with it. A display set that is registered again or
+  removed after the mount does not change a viewport that shows it, also
+  through a switch of the render backend, a slab and an orientation check,
+  until the viewport mounts it again. The next mount reads the registration
+  as it is then.
+- **`getDisplaySets()` gives the options of each mount**, not only the role:
+  the options that the mount was given, without `appearance`, with the role
+  that the display set has now, the mode that the mount chose (`'stack'` or
+  `'volume'`, never `'auto'`) and, in volume mode, the id of the volume that it
+  shows. `target.setDisplaySets(...source.getDisplaySets())` shows the same
+  data the same way; the loupe of the magnify tools mounts its source so.
+- **A `setDisplaySets` that mounts the source again keeps the labelmaps of a
+  segmentation only when the source and its mode stay the same.** The same
+  display set mounted in the other mode drops them, as another source does.
+- **A mount that has no data names it.** An id that nothing is registered
+  under fails with
+  `[PlanarViewport] No display set is registered under "ct": register it with displaySetRegistry.add(displaySetId, descriptor)`,
+  and a display set registered with a `volumeId` and no image ids whose
+  volume is not in the cache with
+  `[PlanarViewport] The display set "pmap" names the volume "<volumeId>" and no imageIds, and the cache does not hold that volume: create the volume before the mount, or register the imageIds`.
+- `npx codemod @cornerstonejs/cornerstone3d-6-api-names` moves
+  `initialImageIdIndex` from a registered literal to the options of every
+  planar mount of the display set in the same file, and reports the
+  registration as manual when it cannot:
+  `initialImageIdIndex is a mount option in 6.0, and a planar viewport refuses a descriptor that has it: remove it from the descriptor and pass it on each planar mount, setDisplaySets({ displaySetId, options: { initialImageIdIndex } }) or addDisplaySet(displaySetId, { initialImageIdIndex })`.
+  The step from 5.x writes `setStack(imageIds, index)` as a registration of
+  the image ids and a mount with `initialImageIdIndex`.
 
 ### A volume id names a volume, the mount chooses the mode
 
@@ -413,93 +489,88 @@ await axialViewport.setDisplaySets({
   `volumeId` and image ids in the same file, and reports the registration
   when the file shows no such mount: `a volumeId no longer makes a planar viewport show a volume: the viewport shows this display set as a stack in its acquisition plane unless its mount asks for mode: 'volume' (setDisplaySets({ displaySetId, options: { mode: 'volume' } }) or addDisplaySet(displaySetId, { mode: 'volume' })); a 3D viewport shows it as before`.
 
-### What one viewport wants is said on its mount
+### One store for display sets
 
-What is true of the data is registered once, in `displaySetRegistry`: its
-image ids, its volume id. What one viewport wants of it is said on the mount:
-`mode`, `role`, `orientation`, `renderBackend`, `sliceFirst`, `volumeId`,
-`initialImageIdIndex` and `appearance` (`PlanarMountOptions`;
-`Volume3DMountOptions` takes `role`, `volumeId` and `appearance`). So one
-display set shows as a stack in one pane and as a volume in another under one
-id, each at its own image, and an annotation or a view reference made in one
-pane shows in the other.
-
-Before, in 6.0.0-beta.2:
+`displaySetRegistry` keeps the display sets in the `DISPLAY_SET` module of
+the metadata cache of `@cornerstonejs/metadata`. `@cornerstonejs/core`
+exports the same object, so an application that has no other use for core,
+such as the display set service of a viewer, adds its display sets from
+`@cornerstonejs/metadata`. The metadata cache and the viewports then read the
+same object: `stored` below is `displaySet`.
 
 ```ts
-displaySetRegistry.add('ct', { imageIds, initialImageIdIndex: 40 });
+import { displaySetRegistry, Enums, metaData } from '@cornerstonejs/metadata';
 
-await viewport.setDisplaySets({ displaySetId: 'ct' });
-viewport.setDisplaySetAppearance('ct', {
-  voiRange: { lower: -160, upper: 240 },
-  slabThickness: 20,
-});
-```
+displaySetRegistry.add(displaySet.displaySetInstanceUID, displaySet);
 
-After:
-
-```ts
-displaySetRegistry.add('ct', { imageIds });
+const stored = metaData.getTyped(
+  Enums.MetadataModules.DISPLAY_SET,
+  displaySet.displaySetInstanceUID
+);
 
 await viewport.setDisplaySets({
-  displaySetId: 'ct',
-  options: {
-    initialImageIdIndex: 40,
-    appearance: { voiRange: { lower: -160, upper: 240 }, slabThickness: 20 },
-  },
+  displaySetId: displaySet.displaySetInstanceUID,
 });
 ```
 
-- **`initialImageIdIndex` is a mount option.** It indexes the registered
-  image ids: the image of a stack, the slice of a volume in its acquisition
-  plane. A planar mount of a descriptor that still has it fails with
-  `[PlanarViewport] The display set "ct" is registered with initialImageIdIndex, which is a mount option: remove it from the descriptor and pass it on the mount, setDisplaySets({ displaySetId, options: { initialImageIdIndex } })`.
-  It fails, and does not warn, because a descriptor is shared by every
-  viewport: an index left in it would open each viewport on another image
-  than the one the application asked for, and nothing else would show it.
-- **`appearance` is the appearance from the first draw.** It merges over the
-  overrides set before the mount (a `colormap` one level deep, as
-  `setDisplaySetAppearance` merges it). The mount draws once with it and
-  fires `DISPLAY_SET_APPEARANCE_CHANGED` once, with cause `'mount'` and the
-  overrides of the mount. With `setDisplaySetAppearance` after the mount the
-  viewport drew twice, fired a second event with cause `'edit'`, and a slab
-  remounted the render path. A slab in `appearance` chooses the render path
-  of the first draw, and a mount without `mode` shows a volume for it. A 3D,
-  a video, an ECG and a whole slide viewport take `appearance` on their
-  mounts too, each with the keys of its own appearance (a video its
-  `playbackRate`, `loop`, `muted`, `objectFit`; an ECG its `lineWidth`,
-  `showGrid`; a slide its `voiRange` and `averageWhite`).
-- **A mount reads the registration once.** The image ids, the volume id, the
-  mode and whether the display set is the labelmap of a segmentation are read
-  at the mount and kept with it. A display set that is registered again or
-  removed after the mount does not change a viewport that shows it, also
-  through a switch of the render backend, a slab and an orientation check,
-  until the viewport mounts it again. The next mount reads the registration
-  as it is then.
-- **`getDisplaySets()` gives the options of each mount**, not only the role:
-  the options that the mount was given, without `appearance`, with the role
-  that the display set has now, the mode that the mount chose (`'stack'` or
-  `'volume'`, never `'auto'`) and, in volume mode, the id of the volume that it
-  shows. `target.setDisplaySets(...source.getDisplaySets())` shows the same
-  data the same way; the loupe of the magnify tools mounts its source so.
-- **A `setDisplaySets` that mounts the source again keeps the labelmaps of a
-  segmentation only when the source and its mode stay the same.** The same
-  display set mounted in the other mode drops them, as another source does.
-- **A mount that has no data names it.** An id that nothing is registered
-  under fails with
-  `[PlanarViewport] No display set is registered under "ct": register it with displaySetRegistry.add(displaySetId, descriptor)`,
-  and a display set registered with a `volumeId` and no image ids whose
-  volume is not in the cache with
-  `[PlanarViewport] The display set "pmap" names the volume "<volumeId>" and no imageIds, and the cache does not hold that volume: create the volume before the mount, or register the imageIds`.
-- `npx codemod @cornerstonejs/cornerstone3d-6-api-names` moves
-  `initialImageIdIndex` from a registered literal to the options of every
-  planar mount of the display set in the same file, and reports the
-  registration as manual when it cannot:
-  `initialImageIdIndex is a mount option in 6.0, and a planar viewport refuses a descriptor that has it: remove it from the descriptor and pass it on each planar mount, setDisplaySets({ displaySetId, options: { initialImageIdIndex } }) or addDisplaySet(displaySetId, { initialImageIdIndex })`.
-  The step from 5.x writes `setStack(imageIds, index)` as a registration of
-  the image ids and a mount with `initialImageIdIndex`.
+- **The registry keeps the object itself.** It does not copy it and does not
+  change it: an OHIF display set keeps its `displaySetInstanceUID` and gets no
+  `displaySetId`. A change that the application makes to the object is seen
+  by the next mount. A second `add` under the id replaces the object.
+- **`displaySetId` of a descriptor must be its id.**
+  `displaySetRegistry.add('a', { displaySetId: 'b' })` throws.
+- **Only an added id is a display set id.** A value that the application
+  writes into the `DISPLAY_SET` module with `utilities.setCacheData` or
+  `metaData.addTyped` is not a registration, and a viewport does not mount
+  it.
+- **`registerDisplaySetMetadata(imageIds, displaySet)`** registers an
+  `IDisplaySet` under its `displaySetId`, and stores it under its image ids
+  too, so that `metaData.get(MetadataModules.DISPLAY_SET, imageId)` finds it.
+  `displaySetRegistry.get(imageId)` and `has(imageId)` give nothing for such
+  an image id, and `setDisplaySets({ displaySetId: imageId })` fails.
+  `displaySetRegistry.remove(displaySetId)` and `clear()` remove these image
+  id entries with the display set.
+- **A video or an ECG viewport shows** the `imageId` of the descriptor, else
+  the `imageId` of its `instance` (an OHIF display set), else the first of
+  its `underlyingImageIds` (an `IDisplaySet`).
+- **`cache.purgeCache()` keeps the registrations.** It removes the images
+  and the volumes; a mount after it loads them again.
+- **`utilities.clearCacheData()` of `@cornerstonejs/metadata` removes every
+  registration**, as it clears the whole metadata cache. The DICOM image
+  loader's `init` calls it: register display sets after that `init`.
 
-### From 6.0.0-beta.2
+Before, in 6.0.0-beta.2, a viewer kept its display set in the metadata cache
+and registered it a second time for the viewport, under the same id or
+under an id of its own:
+
+```ts
+import { utilities as metadataUtilities, Enums } from '@cornerstonejs/metadata';
+import { utilities } from '@cornerstonejs/core';
+
+metadataUtilities.setCacheData(
+  Enums.MetadataModules.DISPLAY_SET,
+  displaySet.displaySetInstanceUID,
+  displaySet
+);
+
+utilities.genericViewportDisplaySetMetadataProvider.add(
+  displaySet.displaySetInstanceUID,
+  { kind: 'planar', imageIds: displaySet.imageIds }
+);
+```
+
+After, it registers the display set once:
+
+```ts
+import { displaySetRegistry } from '@cornerstonejs/metadata';
+
+displaySetRegistry.add(displaySet.displaySetInstanceUID, displaySet);
+```
+
+A second `add` under the id would now replace the display set itself with
+the descriptor, for the viewer and for the viewports.
+
+### The names of 6.0.0-beta.2
 
 In 6.0.0-beta.2 the registry was `utilities.genericViewportDisplaySetMetadataProvider`,
 a metadata provider, and a descriptor named its family with `kind`. Before:
@@ -553,41 +624,25 @@ viewport.removeDisplaySet('video');
   literal or a `dataId` of an object that the file does not show to be
   Cornerstone's.
 
-The first entry of `setDisplaySets` is the source. The others are overlays:
-
-```ts
-await viewport.setDisplaySets(
-  { displaySetId: ctId, options: { orientation } },
-  { displaySetId: ptId }
-);
-
-viewport.setDisplaySetAppearance(ptId, {
-  colormap: { name: 'hsv' },
-  opacity: 0.4,
-});
-```
-
-`viewport.addDisplaySet(displaySetId, { role: 'overlay' })` adds one overlay,
-and `viewport.removeDisplaySet(displaySetId)` removes a display set.
-
-The pages under
-[Generic Viewport](../../concepts/cornerstone-core/generic-viewport/migration.md)
-show these with code before and after.
-
 ## Four things on a viewport
 
 A next viewport holds four things. Each legacy call maps to one of them.
 
-| What            | Calls                                                                             | Replaces                                                 |
-| --------------- | --------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| Display sets    | `setDisplaySets`, `addDisplaySet`, `removeDisplaySet`, `getDisplaySets`           | `setStack`, `setVolumes`, `addVolumes`, `setVideo`       |
-| An appearance   | `setDisplaySetAppearance`, `getDisplaySetAppearance`, `resetDisplaySetAppearance` | `setProperties`, `getProperties`, `resetProperties`      |
-| A view state    | `setViewState`, `updateViewState`, `getViewState`, `resetViewState`               | `setCamera`, `getCamera`, `resetCamera`, `flip`          |
-| View references | `getViewReference`, `setViewReference`, `isReferenceViewable`                     | A camera focal point that was set to move through slices |
+| What            | Calls                                                                                                                 | Replaces                                                 |
+| --------------- | --------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| Display sets    | `setDisplaySets`, `addDisplaySet`, `removeDisplaySet`, `getDisplaySets`                                               | `setStack`, `setVolumes`, `addVolumes`, `setVideo`       |
+| An appearance   | `setDisplaySetAppearance`, `getDisplaySetAppearance`, `getEffectiveDisplaySetAppearance`, `resetDisplaySetAppearance` | `setProperties`, `getProperties`, `resetProperties`      |
+| A view state    | `setViewState`, `updateViewState`, `getViewState`, `resetViewState`                                                   | `setCamera`, `getCamera`, `resetCamera`, `flip`          |
+| View references | `getViewReference`, `setViewReference`, `isReferenceViewable`                                                         | A camera focal point that was set to move through slices |
 
 Zoom and pan are read and written as the framing of the view, in one form
-for every family. A question that the state and the data can answer is a
-function of `utilities`, not a member of the viewport.
+for every family. A question about the data on display is a member of a
+planar and a 3D viewport where the viewport answers it from what it mounted
+(`getVolumeIds`, `getScalarRange`, `getDisplaySetIdForVolumeId`,
+`isInAcquisitionPlane`, see
+[Viewport queries](./2-rendering-changes.md#viewport-queries)), and a function
+of `utilities` that takes the viewport otherwise, such as
+`utilities.getCurrentVolumeViewportSlice(viewport)`.
 
 ### View state, framing and appearance
 
@@ -597,13 +652,17 @@ of the family: the slice, the orientation, the anchors, the scale, the rotation
 and the flips. The **framing** (`getViewFraming`, `setViewFraming`, and
 `viewportProjection.getFraming` and `withFraming`) is the camera part of the
 view that another viewport of any size can take: pan, zoom, rotation, flips and
-display area, against the fit; setting it writes the view state. The
-**appearance** (`setDisplaySetAppearance`, `getDisplaySetAppearance`,
-`resetDisplaySetAppearance`) is the look of one display set in one viewport:
-the window, the colormap, the opacity, the slab, the interpolation, the
-visibility. 6.0.0-beta.2 called the last two the view presentation and the
-presentation of a display set; see
-[Appearance and framing of 6.0.0-beta.2](./3-api-map.md#appearance-and-framing-of-600-beta2).
+display area, against the fit, and on a planar viewport the scale mode and the
+scale of the fit (`scaleMode`, `fitScale`); setting it writes the view state.
+The **appearance** (`setDisplaySetAppearance`, `resetDisplaySetAppearance`) is
+the look of one display set in one viewport: the window, the colormap, the
+opacity, the slab, the interpolation, the visibility.
+`getDisplaySetAppearance` gives what a caller set, and
+`getEffectiveDisplaySetAppearance` what is drawn, the defaults of the data
+included. 6.0.0-beta.2 called the framing the view presentation and the
+appearance the presentation of a display set; see
+[Framing names](./3-api-map.md#framing-names) and
+[Appearance names](./3-api-map.md#appearance-names).
 
 ## What comes over and what does not
 

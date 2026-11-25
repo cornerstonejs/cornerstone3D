@@ -6,13 +6,20 @@ summary: What a 6.0 viewport draws and answers differently from 5.x - slice firs
 
 # Rendering changes
 
-**State: in the code.** Everything on this page is about the Generic
-("next") viewports, which are the only viewports of 6.0. The legacy viewports
+**State: in the code.** Everything on this page is about the next viewports
+(the Generic viewports that 5.x had as an opt-in), which are the only
+viewports of 6.0. The legacy viewports
 that the page compares with are those of 5.x, which 6.0 no longer has, see
 [Next viewports only](./1-next-viewports-only.md).
 
 This page says what differs. For the call that replaces a legacy call, see
 [Every legacy call and what replaces it](./3-api-map.md).
+
+The samples type the event in the listener so that the detail reads
+clearly. On a DOM element in a TypeScript project with `strict`, pass such a
+listener as `((evt: Types.EventTypes.NewImageEvent) => { ... }) as EventListener`,
+as the examples of this repository do: the DOM types the parameter of a
+listener as `Event`.
 
 ## Slice first is on by default
 
@@ -195,8 +202,10 @@ leave the canvas. Against the legacy volume viewport:
   [Scroll and its event](#scroll-and-its-event)).
 - **A slab is set for each display set.** `slabThickness` and `blendMode` are
   keys of the appearance of one display set. The legacy `setSlabThickness`
-  set all actors. A change of `slabThickness` fires `CAMERA_MODIFIED`, as the
-  legacy member did. Other appearance changes fire no camera event.
+  set all actors. A change of `slabThickness` fires
+  `DISPLAY_SET_APPEARANCE_CHANGED` with `slabThickness` in `changedKeys`, and
+  no `CAMERA_MODIFIED`, where the legacy member fired `CAMERA_MODIFIED`. No
+  appearance change fires a camera event.
 - **A brush and a new annotation take the depth of the slab shown.** A
   `slabThickness` of `T` shows the slices within about `T` of the plane, so
   the depth is `2T`, as on the legacy volume viewport.
@@ -792,7 +801,8 @@ const opacity =
   viewport.getDisplaySetAppearance(ptDisplaySetId)?.colormap?.opacity;
 
 // After: 1 unless a caller set another
-const { opacity } = viewport.getEffectiveDisplaySetAppearance(ptDisplaySetId);
+const opacity =
+  viewport.getEffectiveDisplaySetAppearance(ptDisplaySetId)?.opacity;
 ```
 
 ### Notes
@@ -1114,13 +1124,16 @@ point of the image on display.
   After:
 
   ```ts
-  element.addEventListener(Enums.Events.DISPLAY_SETS_CHANGED, (evt) => {
-    if (!evt.detail.sourceChanged) {
-      return;
-    }
+  element.addEventListener(
+    Enums.Events.DISPLAY_SETS_CHANGED,
+    (evt: Types.EventTypes.DisplaySetsChangedEvent) => {
+      if (!evt.detail.sourceChanged) {
+        return;
+      }
 
-    restartCine();
-  });
+      restartCine();
+    }
+  );
   ```
 
   A listener that shows each layer, such as a histogram for each display
@@ -2357,11 +2370,11 @@ levels of 255.
 
 ## Tools on the next viewports
 
-- **The slab thickness synchronizer reads the appearance.** A change of
-  `slabThickness` in the appearance of a next planar viewport fires
-  `CAMERA_MODIFIED`, as a slab change of the legacy volume viewport did. The
-  synchronizer then gives the slab of the source display set of the source
-  viewport to every display set of each target. A source that shows a stack
+- **The slab thickness synchronizer reads the appearance.** It listens to
+  `DISPLAY_SET_APPEARANCE_CHANGED` with `slabThickness` in `changedKeys`,
+  where the legacy synchronizer listened to the `CAMERA_MODIFIED` of a slab
+  change, and gives the slab of the source display set of the source viewport
+  to every display set of each target. A source that shows a stack
   gives no slab, as the legacy synchronizer took none from a stack viewport,
   and each viewport is read from its own rendering engine.
 - **The camera position synchronizer copies a view reference.** On a next
@@ -2534,8 +2547,8 @@ levels of 255.
 - **The zoom and pan tools go through `viewportProjection`** on a next
   viewport. On a 3D viewport the zoom limits of the zoom tool apply and the
   zoom goes to the mouse, the zoom and pan synchronizer moves a 3D target,
-  and the VOI synchronizer reaches a 3D target when the event names a
-  volume. On a whole slide viewport the limits are factors against the fit
+  and the VOI synchronizer reaches a 3D target, which it finds by display set
+  id, by volume or as its source. On a whole slide viewport the limits are factors against the fit
   too. On an ECG and on a whole slide viewport a wheel step or a drag of the
   zoom tool zooms by another amount than on the legacy viewports, which the
   tool zoomed through their camera.
@@ -2657,9 +2670,10 @@ is one, see [Functions of the core package](./3-api-map.md#functions-of-the-core
   holds it. A planar and a 3D viewport also keep the field. A video, a whole
   slide and an ECG viewport do not.
 - **The slice questions answer for a stack and for a volume.** The slice on
-  display, the planes of the slices, the acquisition plane and a jump to a
-  world point are functions that take the viewport, and they work in both
-  modes. See [the map](./3-api-map.md#members-of-the-volume-viewport-only).
+  display, the planes of the slices and a jump to a world point are functions
+  that take the viewport, and the acquisition plane is
+  `viewport.isInAcquisitionPlane()`; each works in both modes. See
+  [the map](./3-api-map.md#members-of-the-volume-viewport-only).
 - **A resize keeps the view** of a video and an ECG viewport. The legacy
   viewports fitted the picture again.
 - **`renderingEngine.resize(immediate, keepCamera)` reads `keepCamera` for

@@ -47,7 +47,7 @@ runtime rendering configuration and thresholds.
 
 ## Add Stack Data
 
-Register stack-like data with the metadata provider, then mount it with
+Register stack-like data in `displaySetRegistry`, then mount it with
 `setDisplaySets()`.
 
 ```ts
