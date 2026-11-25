@@ -212,9 +212,7 @@ export function fidelityLinesFromVolumeActors(
       qualityPending: isBindingPending(volume, texture),
       reductionCause: fullResolution
         ? undefined
-        : reductionCauseOf(volume, gpuSettingsForRender({ probe: false }), {
-            probe: false,
-          }),
+        : reductionCauseOf(volume, gpuSettingsForRender()),
     });
   }
 

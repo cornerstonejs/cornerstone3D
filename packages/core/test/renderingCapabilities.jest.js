@@ -2,7 +2,6 @@ import {
   detectRenderingCapabilities,
   getRenderingCapabilities,
   getStoredRenderingCapabilities,
-  probeRenderingEdge,
   recordRenderingCapabilityFailure,
   recordRenderingCapabilitySuccess,
   resetRenderingCapabilities,
@@ -12,10 +11,7 @@ import {
   clearGpuMemoryRecords,
   RENDERING_CAPABILITIES_PROBE_VERSION,
 } from '../src/utilities/renderingCapabilities';
-import {
-  probeRenderingLimits,
-  probeTextureEdge,
-} from '../src/utilities/textureSupport';
+import { probeRenderingLimits } from '../src/utilities/textureSupport';
 import {
   cancelTextureAllocation,
   noteTextureAllocation,
@@ -27,7 +23,6 @@ import Events from '../src/enums/Events';
 
 jest.mock('../src/utilities/textureSupport', () => ({
   probeRenderingLimits: jest.fn(),
-  probeTextureEdge: jest.fn(),
   probeEdgeSearch: jest.fn(),
 }));
 
@@ -470,11 +465,10 @@ describe('renderingCapabilities', () => {
       mockWebGL();
       detectRenderingCapabilities();
       jest.advanceTimersByTime(5000);
-      probeTextureEdge.mockReturnValue(true);
 
       /** The allocation comes first, so the loss can come from the probe. */
       noteTextureAllocation({ textureBytes: GIGABYTE, totalBytes: GIGABYTE });
-      probeRenderingEdge(3000);
+      detectRenderingCapabilities({ useCache: false });
       jest.advanceTimersByTime(300);
       lose();
 
@@ -487,9 +481,9 @@ describe('renderingCapabilities', () => {
         )
       ).toBe(true);
 
-      /** The edge probe runs just before the allocation that it protects. */
+      /** A probe just before an allocation does not exempt its loss. */
       jest.advanceTimersByTime(10000);
-      probeRenderingEdge(4000);
+      detectRenderingCapabilities({ useCache: false });
       noteTextureAllocation({
         textureBytes: 12 * GIGABYTE,
         totalBytes: 12 * GIGABYTE,

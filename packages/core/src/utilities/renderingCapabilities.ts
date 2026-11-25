@@ -1,12 +1,9 @@
 import type {
-  ProbeTextureFormat,
+  EdgeSearchOptions,
+  RenderingLimitsProbeResult,
   TextureFormatSupport,
 } from './textureSupport';
-import {
-  probeEdgeSearch,
-  probeRenderingLimits,
-  probeTextureEdge,
-} from './textureSupport';
+import { probeEdgeSearch, probeRenderingLimits } from './textureSupport';
 import { getCapabilityStorage } from './capabilityStorage';
 import { coreLog } from './logger';
 import uuidv4 from './uuidv4';
@@ -22,8 +19,10 @@ const log = coreLog.getLogger('utilities', 'renderingCapabilities');
  * Version 3 kept a normal level and a ceiling for each memory record.
  * Version 4 records memory with no automatic policy, adds the GPU memory
  * limit that the user chose, and probes unsigned 16-bit textures.
+ * Version 5 tests no edge above 2048, and assumes MAX_3D_TEXTURE_SIZE when
+ * 2048 passes.
  */
-export const RENDERING_CAPABILITIES_PROBE_VERSION = 4;
+export const RENDERING_CAPABILITIES_PROBE_VERSION = 5;
 
 const STORAGE_KEY = 'cornerstone3D.renderingCapabilities';
 const PENDING_KEY_PREFIX = `${STORAGE_KEY}.pending.`;
@@ -40,8 +39,45 @@ function recordKey(renderer: string): string {
   return `${STORAGE_KEY}.${fnv1aHash(renderer)}`;
 }
 
-/** The edge that the first probe tests. */
+/**
+ * The largest edge that a probe tests. When it passes, the edge of the device
+ * is MAX_3D_TEXTURE_SIZE, with no test above it: 2048 separates the good
+ * devices from the bad ones, and no device is known to fail above it.
+ */
 const SAFE_PROBE_EDGE = 2048;
+
+/**
+ * Reads `rendering.autoGpuSettings.maxTextureEdge`. `init` sets the reader,
+ * because `init` imports this module.
+ */
+let readMaxTextureEdge: () => unknown = () => undefined;
+
+export function setMaxTextureEdgeReader(reader: () => unknown): void {
+  readMaxTextureEdge = reader;
+}
+
+/**
+ * `maxTextureEdge` of `rendering.autoGpuSettings`, or `Infinity` when it is
+ * missing or not a positive number. It caps the edge of `auto` and the edge
+ * that a probe tests.
+ */
+export function getConfiguredMaxTextureEdge(): number {
+  const edge = readMaxTextureEdge();
+
+  if (edge === undefined) {
+    return Number.POSITIVE_INFINITY;
+  }
+
+  if (typeof edge === 'number' && edge >= 1) {
+    return Math.floor(edge);
+  }
+
+  log.warn(
+    'rendering.autoGpuSettings.maxTextureEdge must be a positive number, so it is ignored'
+  );
+
+  return Number.POSITIVE_INFINITY;
+}
 
 /** The smallest GPU memory limit that the user or the configuration can state. */
 export const GPU_MEMORY_MIN_BYTES = 128 * 1024 * 1024;
@@ -105,8 +141,15 @@ export interface RenderingCapabilities extends TextureFormatSupport {
   softwareRasterizer: boolean;
 }
 
-/** A value that worked, and how often it worked. */
-export type RenderingCapabilitySuccess = { value: number; successes: number };
+/**
+ * A value that worked, and how often it worked. `assumed` marks an edge that
+ * no probe tested: MAX_3D_TEXTURE_SIZE after a pass at 2048.
+ */
+export type RenderingCapabilitySuccess = {
+  value: number;
+  successes: number;
+  assumed?: boolean;
+};
 
 /** The smallest value that failed, and how often a failure occurred. */
 export type RenderingCapabilityFailure = { value: number; failures: number };
@@ -197,10 +240,10 @@ let cachedCapabilities: RenderingCapabilities | null = null;
  * also when the probe could not run, and it is stored once it holds a value.
  */
 let record: StoredRenderingCapabilities | null = null;
-/** True after this page ran the edge search for a record with no edge. */
+/** True after this page ran the edge search in the context of a viewport. */
 let edgeSearchTried = false;
-/** The edges whose probe could not run in this page. */
-const unprobeableEdges = new Set<number>();
+/** True after a retest of the edge, until the next edge search. */
+let edgeRetest = false;
 /** The time of the last probe context, from `performance.now()`. */
 let lastProbeAt = Number.NEGATIVE_INFINITY;
 
@@ -379,12 +422,16 @@ function readRecord(renderer: string): StoredRenderingCapabilities | null {
 
     const stored = emptyRecord(renderer);
     const edge = isObject(parsed.edge) ? parsed.edge : {};
+    const reliable = numbers<RenderingCapabilitySuccess>(edge.reliable, [
+      'value',
+      'successes',
+    ]);
 
-    setOrDelete(
-      stored.edge,
-      'reliable',
-      numbers<RenderingCapabilitySuccess>(edge.reliable, ['value', 'successes'])
-    );
+    if (reliable && edge.reliable.assumed === true) {
+      reliable.assumed = true;
+    }
+
+    setOrDelete(stored.edge, 'reliable', reliable);
     setOrDelete(
       stored.edge,
       'failed',
@@ -562,14 +609,13 @@ function addSuccess(
  * every failure.
  *
  * For the edge, a failed edge at or below the reliable edge contradicts that
- * edge, so the reliable edge becomes `reliableFallback` (an edge that passed),
- * or is removed, which makes the next need probe again.
+ * edge, so the reliable edge is removed, which makes the edge search run
+ * again (see `isEdgeSearchPending`).
  */
 function addFailure(
   target: StoredRenderingCapabilities,
   category: RenderingCapabilityCategory,
-  value: number,
-  reliableFallback?: number
+  value: number
 ): void {
   const entry = target[category];
 
@@ -585,11 +631,65 @@ function addFailure(
   const edge = target.edge;
 
   if (edge.reliable && edge.reliable.value >= value) {
-    if (reliableFallback > 0 && reliableFallback < value) {
-      edge.reliable = { value: reliableFallback, successes: 0 };
-    } else {
-      delete edge.reliable;
-    }
+    delete edge.reliable;
+  }
+}
+
+/**
+ * Where an edge search starts: the configured maximum edge, capped at
+ * `SAFE_PROBE_EDGE`, and below a failed edge of the record. The probe caps it
+ * at MAX_3D_TEXTURE_SIZE. A stored reliable edge does not count, because a
+ * search replaces it. With no stored formats, the startup probe chooses the
+ * texel type from its own test of the formats.
+ */
+function edgeSearchOptions(
+  target: StoredRenderingCapabilities | null
+): EdgeSearchOptions {
+  return {
+    startEdge: Math.min(getConfiguredMaxTextureEdge(), SAFE_PROBE_EDGE),
+    belowEdge: target?.edge.failed?.value,
+    format: target?.formats
+      ? target.formats.float
+        ? 'float'
+        : 'halfFloat'
+      : undefined,
+  };
+}
+
+/**
+ * Stores the result of an edge search. It replaces the reliable edge, so a
+ * search after a retest can lower it. A pass at `SAFE_PROBE_EDGE` on a device
+ * with a larger MAX_3D_TEXTURE_SIZE stores MAX_3D_TEXTURE_SIZE as an assumed
+ * edge. The configured maximum edge applies when the edge is read, so it is
+ * not stored.
+ */
+function applyEdgeSearch(
+  target: StoredRenderingCapabilities,
+  probed: Omit<RenderingLimitsProbeResult, 'formats'>
+): void {
+  const { reliableEdge, failedEdge, max3DTextureSize } = probed;
+  const edge = target.edge;
+
+  target.max3DTextureSize = max3DTextureSize;
+
+  if (!reliableEdge) {
+    delete edge.reliable;
+  } else if (
+    reliableEdge === SAFE_PROBE_EDGE &&
+    max3DTextureSize > SAFE_PROBE_EDGE
+  ) {
+    edge.reliable = { value: max3DTextureSize, successes: 1, assumed: true };
+  } else {
+    edge.reliable = { value: reliableEdge, successes: 1 };
+  }
+
+  if (failedEdge) {
+    edge.failed = {
+      value: failedEdge,
+      failures: (edge.failed?.failures ?? 0) + 1,
+    };
+  } else {
+    delete edge.failed;
   }
 }
 
@@ -696,7 +796,7 @@ export function detectRenderingCapabilities({
 
   if (!formats) {
     const start = performance.now();
-    const probed = probeRenderingLimits({ startEdge: SAFE_PROBE_EDGE });
+    const probed = probeRenderingLimits(edgeSearchOptions(record));
     const probeMs = performance.now() - start;
 
     noteProbe();
@@ -706,22 +806,16 @@ export function detectRenderingCapabilities({
 
     /**
      * A null result means that the probe could not run. Nothing is stored,
-     * and `auto` probes again when it needs an edge.
+     * and the edge search runs later in the context of a viewport (see
+     * `runPendingEdgeSearch`).
      */
     if (probed) {
       updateRecord((target) => {
         target.formats = probed.formats;
-        target.max3DTextureSize = probed.max3DTextureSize;
         target.probeMs = Math.round(probeMs * 10) / 10;
-
-        if (probed.reliableEdge) {
-          addSuccess(target, 'edge', probed.reliableEdge);
-        }
-
-        if (probed.failedEdge) {
-          addFailure(target, 'edge', probed.failedEdge, probed.reliableEdge);
-        }
+        applyEdgeSearch(target, probed);
       });
+      edgeRetest = false;
     }
 
     formats = probed?.formats ?? { ...NO_GPU_FORMATS };
@@ -827,45 +921,47 @@ export function getReliableEdge(): number | undefined {
 }
 
 /**
- * Makes sure that the record holds an edge that a probe passed.
- *
- * When it holds none (the first probe could not run, or a failure removed
- * it), this runs the edge search once in this page, from the safe edge down.
- *
- * @returns the reliable edge, or `undefined` when no probe could run
+ * True when the edge search must run again: the startup probe could not test
+ * the edge, or an application asked for a retest of the edge. It reads only
+ * the state of this page, so a render can ask it each time.
  */
-export function ensureReliableEdge(): number | undefined {
-  getRenderingCapabilities();
+export function isEdgeSearchPending(): boolean {
+  return (
+    Boolean(record) &&
+    !edgeSearchTried &&
+    (edgeRetest || getReliableEdge() === undefined)
+  );
+}
 
-  if (!record || getReliableEdge() || edgeSearchTried) {
-    return getReliableEdge();
+/**
+ * Runs a pending edge search (see {@link isEdgeSearchPending}) once in this
+ * page, in the context of a viewport, so the search adds no WebGL context.
+ * The search is synchronous, and its result stays in the record.
+ *
+ * @param gl - the context of the viewport that renders
+ * @returns true when the edge of the record changed
+ */
+export function runEdgeSearchInContext(gl: WebGL2RenderingContext): boolean {
+  if (!isEdgeSearchPending()) {
+    return false;
   }
 
   edgeSearchTried = true;
+  edgeRetest = false;
 
+  const before = getReliableEdge();
   const start = performance.now();
-  const probed = probeEdgeSearch({ startEdge: SAFE_PROBE_EDGE });
+  const probed = probeEdgeSearch(gl, edgeSearchOptions(record));
 
-  noteProbe();
   log.debug(
-    `the edge search took ${(performance.now() - start).toFixed(1)} ms and found ${probed?.reliableEdge}`
+    `the edge search in a viewport context took ${(performance.now() - start).toFixed(1)} ms and found ${probed?.reliableEdge}`
   );
 
   if (probed) {
-    updateRecord((target) => {
-      target.max3DTextureSize = probed.max3DTextureSize;
-
-      if (probed.reliableEdge) {
-        addSuccess(target, 'edge', probed.reliableEdge);
-      }
-
-      if (probed.failedEdge) {
-        addFailure(target, 'edge', probed.failedEdge, probed.reliableEdge);
-      }
-    });
+    updateRecord((target) => applyEdgeSearch(target, probed));
   }
 
-  return getReliableEdge();
+  return getReliableEdge() !== before;
 }
 
 /**
@@ -967,54 +1063,6 @@ export function getLastProbeTime(): number {
 }
 
 /**
- * Tests an edge that a volume needs, before the allocation of the real
- * texture, and stores the result.
- *
- * The probe runs only when the edge is above the reliable edge, below the
- * failed edge and not above MAX_3D_TEXTURE_SIZE. It runs synchronously in a
- * new probe context, and its time is logged at the debug level. An edge whose
- * probe could not run is not tried again in this page.
- *
- * @returns true when the probe ran
- */
-export function probeRenderingEdge(
-  edge: number,
-  format: ProbeTextureFormat = 'float'
-): boolean {
-  getRenderingCapabilities();
-
-  if (
-    !record ||
-    unprobeableEdges.has(edge) ||
-    edge <= (getReliableEdge() ?? 0) ||
-    (record.edge.failed && edge >= record.edge.failed.value) ||
-    edge > (record.max3DTextureSize ?? 0)
-  ) {
-    return false;
-  }
-
-  const start = performance.now();
-  const passed = probeTextureEdge(edge, format);
-
-  noteProbe();
-  log.debug(
-    `the probe of the edge ${edge} (${format}) took ${(performance.now() - start).toFixed(1)} ms and ${passed ? 'passed' : 'failed'}`
-  );
-
-  if (passed === undefined) {
-    unprobeableEdges.add(edge);
-
-    return false;
-  }
-
-  updateRecord((target) =>
-    passed ? addSuccess(target, 'edge', edge) : addFailure(target, 'edge', edge)
-  );
-
-  return true;
-}
-
-/**
  * Writes the pending record of this tab before a large allocation. A pending
  * record that a later start finds means that the page stopped during that
  * allocation, which is a crash.
@@ -1056,8 +1104,9 @@ export type RetestRenderingCapabilitiesOptions = {
  * Clears the failures of the selected categories. A retest is the one way to
  * try a failed edge again, and the application decides when to offer it.
  *
- * - `edge`: the reliable edge stays, and the next need above it runs the probe
- *   again. A record with no reliable edge runs the edge search again.
+ * - `edge`: the next render runs the edge search again, in the context of a
+ *   viewport, from the start edge (see `edgeSearchOptions`), and its result
+ *   replaces the reliable edge. The reliable edge applies until then.
  * - `textureBytes`, `gpuBytes`: the recorded failures go. The memory limit
  *   does not change, because the record never sets it.
  * - `formats`: the next detection probes the data types again. Decisions that
@@ -1093,7 +1142,7 @@ export function retestRenderingCapabilities(
 
   if (all || options.edge) {
     edgeSearchTried = false;
-    unprobeableEdges.clear();
+    edgeRetest = true;
   }
 
   if (all || options.formats) {
@@ -1113,7 +1162,7 @@ export function resetRenderingCapabilities({
   cachedCapabilities = null;
   record = null;
   edgeSearchTried = false;
-  unprobeableEdges.clear();
+  edgeRetest = false;
 
   if (clearStorage) {
     const storage = getCapabilityStorage();

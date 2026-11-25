@@ -200,7 +200,7 @@ export function noteTextureAllocation({
   if (
     textureBytes < LARGE_ALLOCATION_BYTES ||
     isHidden() ||
-    !gpuSettingsForRender({ probe: false })
+    !gpuSettingsForRender()
   ) {
     return;
   }

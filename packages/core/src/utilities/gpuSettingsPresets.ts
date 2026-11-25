@@ -10,22 +10,21 @@ import eventTarget from '../eventTarget';
 import triggerEvent from './triggerEvent';
 import { coreLog } from './logger';
 import {
-  ensureReliableEdge,
+  getConfiguredMaxTextureEdge,
   getRendererClass,
   getReliableEdge,
-  getRenderingCapabilities,
   getStoredGpuMemoryLimit,
   clearGpuMemoryRecords,
   GPU_MEMORY_MIN_BYTES,
+  isEdgeSearchPending,
   peekStoredRenderingCapabilities,
-  probeRenderingEdge,
+  runEdgeSearchInContext,
   storeGpuMemoryLimit,
 } from './renderingCapabilities';
 import type {
   GpuMemoryUserLimit,
   RendererClass,
 } from './renderingCapabilities';
-import type { ProbeTextureFormat } from './textureSupport';
 
 const log = coreLog.getLogger('utilities', 'gpuSettingsPresets');
 
@@ -68,7 +67,7 @@ export type GpuSettings = {
   /**
    * The number of bytes of texture memory. A named preset limits each
    * texture. `auto` limits the GPU memory of the page, and
-   * `gpuSettingsForGrid` gives one texture what the rest of the page leaves.
+   * `gpuSettingsForShare` gives one texture its fair share of the page.
    */
   textureMemoryBytes: number;
   /** How fast this class of device draws. See `GpuSpeedIndex`. */
@@ -256,43 +255,20 @@ function configuredBytes(value: unknown, name: string): number | undefined {
 }
 
 /**
- * `maxTextureEdge` of `rendering.autoGpuSettings`, or `Infinity` when it is
- * missing or not a positive number.
- */
-function configuredMaxEdge(): number {
-  const edge = autoGpuConfig()?.maxTextureEdge;
-
-  if (edge === undefined) {
-    return Number.POSITIVE_INFINITY;
-  }
-
-  if (typeof edge === 'number' && edge >= 1) {
-    return Math.floor(edge);
-  }
-
-  log.warn(
-    'gpuSettingsPresets: rendering.autoGpuSettings.maxTextureEdge must be a positive number, so it is ignored'
-  );
-
-  return Number.POSITIVE_INFINITY;
-}
-
-/**
  * The memory that `auto` starts from on this device, in GPU bytes of the
  * page: the memory of its class (see `START_MEMORY_OF_CLASS`), or 0.5 GB when
  * the probed edge is below 2048. The smallest wins.
  *
- * @param options.probe - false to read the record only, with no probe
  * @returns the start, or `undefined` when the GPU settings do not apply
  */
-function startMemoryBytes({ probe = true } = {}): number | undefined {
+function startMemoryBytes(): number | undefined {
   if (!gpuSettingsApply()) {
     return undefined;
   }
 
   const classMemory =
     START_MEMORY_OF_CLASS[getRendererClass() as GpuRendererClass];
-  const edge = probe ? ensureReliableEdge() : getReliableEdge();
+  const edge = getReliableEdge();
 
   return edge !== undefined && edge < SMALL_EDGE
     ? Math.min(classMemory, SMALL_EDGE_START_MEMORY_BYTES)
@@ -320,10 +296,9 @@ let pageChoice: { limit?: GpuMemoryUserLimit } | undefined;
  * Nothing raises or lowers the limit by itself. A failure is recorded, and the
  * user or the application picks a new limit.
  *
- * @param options.probe - false to read the record only, with no probe
  * @returns the limit, or `undefined` when the GPU settings do not apply
  */
-function getGpuMemoryLimit({ probe = true } = {}): GpuMemoryLimit | undefined {
+function getGpuMemoryLimit(): GpuMemoryLimit | undefined {
   if (!gpuSettingsApply()) {
     return undefined;
   }
@@ -356,7 +331,7 @@ function getGpuMemoryLimit({ probe = true } = {}): GpuMemoryLimit | undefined {
     return { bytes: configStart, source: 'config', hard: false };
   }
 
-  return { bytes: startMemoryBytes({ probe }), source: 'start', hard: false };
+  return { bytes: startMemoryBytes(), source: 'start', hard: false };
 }
 
 /**
@@ -408,16 +383,14 @@ function resetGpuMemoryLimit(): void {
 }
 
 /**
- * The edge of `auto`: the largest edge that a probe passed, and never an edge
- * that no probe passed. With no such edge, the edge search runs once in this
- * page (see `ensureReliableEdge`). When no probe can run, the edge is
- * `UNPROBED_EDGE_FLOOR`. `maxTextureEdge` of `rendering.autoGpuSettings` caps
- * the edge.
- *
- * @param options.probe - false to read the record only, with no probe
+ * The edge of `auto`: the reliable edge of the record, which the startup
+ * probe tested up to 2048 and assumed above it (see `renderingCapabilities`).
+ * When no probe has run, the edge is `UNPROBED_EDGE_FLOOR` until the edge
+ * search runs in the context of a viewport (see `runPendingEdgeSearch`).
+ * `maxTextureEdge` of `rendering.autoGpuSettings` caps the edge.
  */
-function autoEdge({ probe = true } = {}): number {
-  const reliable = probe ? ensureReliableEdge() : getReliableEdge();
+function autoEdge(): number {
+  const reliable = getReliableEdge();
   const failed = peekStoredRenderingCapabilities()?.edge.failed?.value;
 
   return Math.min(
@@ -425,7 +398,7 @@ function autoEdge({ probe = true } = {}): number {
       (failed && failed <= UNPROBED_EDGE_FLOOR
         ? FORMAT_PROBE_EDGE
         : UNPROBED_EDGE_FLOOR),
-    configuredMaxEdge()
+    getConfiguredMaxTextureEdge()
   );
 }
 
@@ -435,12 +408,10 @@ function autoEdge({ probe = true } = {}): number {
  * is the one of a named preset for the class of the GPU.
  *
  * When the GPU settings do not apply (see `gpuSettingsApply`), `auto` has no
- * limit, reads no record and runs no probe.
- *
- * @param options.probe - false to read the record only, with no probe
+ * limit and reads no record. `auto` runs no probe itself.
  */
-function getAutoGpuSettings({ probe = true } = {}): GpuSettings {
-  const memory = getGpuMemoryLimit({ probe });
+function getAutoGpuSettings(): GpuSettings {
+  const memory = getGpuMemoryLimit();
 
   if (!memory) {
     return {
@@ -453,7 +424,7 @@ function getAutoGpuSettings({ probe = true } = {}): GpuSettings {
 
   return {
     id: 'auto',
-    maxTextureEdge: autoEdge({ probe }),
+    maxTextureEdge: autoEdge(),
     textureMemoryBytes: memory.bytes,
     speed:
       PRESETS[SPEED_PRESET_OF_CLASS[getRendererClass() as GpuRendererClass]]
@@ -464,7 +435,7 @@ function getAutoGpuSettings({ probe = true } = {}): GpuSettings {
 /**
  * Every preset: `auto` first, then the named presets, the internal one
  * included. The values of `auto` come from the stored record, so the first
- * call can run the probe, also with final downsampling off.
+ * call can run the startup probe, also with final downsampling off.
  */
 function getGpuSettingsPresets(): GpuSettings[] {
   return [getAutoGpuSettings(), ...Object.values(PRESETS)];
@@ -507,8 +478,8 @@ function setGpuSettingsPreset(id: GpuSettingsPresetId): void {
 }
 
 /**
- * The GPU settings that apply now. Under `auto`, a call can run the probe,
- * also with final downsampling off. The render paths read
+ * The GPU settings that apply now. Under `auto`, the first call can run the
+ * startup probe, also with final downsampling off. The render paths read
  * `gpuSettingsForRender` instead.
  */
 function getActiveGpuSettings(): GpuSettings {
@@ -521,19 +492,14 @@ function getActiveGpuSettings(): GpuSettings {
  * or CPU rendering (see `gpuSettingsApply`), whatever preset is active. With
  * `undefined`, a volume renders as in 4.x, with no probe and no read of the
  * record. Every render path reads the settings here, so that one check covers
- * them all. A caller that only decides, with no allocation to follow, passes
- * `probe: false`, so it creates no probe context.
+ * them all.
  */
-function gpuSettingsForRender({ probe = true }: { probe?: boolean } = {}):
-  | GpuSettings
-  | undefined {
+function gpuSettingsForRender(): GpuSettings | undefined {
   if (!getLossyDownsampling().final || !gpuSettingsApply()) {
     return undefined;
   }
 
-  return activePresetId === 'auto'
-    ? getAutoGpuSettings({ probe })
-    : getActiveGpuSettings();
+  return getActiveGpuSettings();
 }
 
 /** Returns to the default preset, which is `auto`. */
@@ -542,112 +508,72 @@ function resetGpuSettingsPreset(): void {
   triggerEvent(eventTarget, Events.VOLUME_TEXTURE_LIMITS_CHANGED);
 }
 
-/** The texel type that the edge probe tests for a voxel of this width. */
 /**
- * The texel type that the edge probe tests for a voxel of this width: the
- * unsigned or signed norm16 type that vtk.js uploads for 16-bit data of that
- * sign.
+ * Runs a pending edge search of `auto` in the context of a viewport, before
+ * the render of that viewport (see `isEdgeSearchPending`). The render window
+ * calls this on each render, and it does nothing in the common case: the
+ * startup probe already stored the edge.
+ *
+ * A new edge applies to the next provision: `VOLUME_TEXTURE_LIMITS_CHANGED`
+ * fires after the render, not during it.
+ *
+ * @param gl - the context of the viewport that renders
  */
-function probeFormatOf(
-  bytesPerVoxel: number,
-  dataType?: string
-): ProbeTextureFormat {
-  if (bytesPerVoxel === 1) {
-    return 'uint8';
+function runPendingEdgeSearch(gl: WebGL2RenderingContext): void {
+  if (
+    !isEdgeSearchPending() ||
+    activePresetId !== 'auto' ||
+    !gpuSettingsForRender()
+  ) {
+    return;
   }
 
-  if (bytesPerVoxel === 2) {
-    if (dataType === 'Uint16Array') {
-      return 'unorm16';
-    }
-
-    if (dataType === 'Int16Array') {
-      return 'norm16';
-    }
-
-    return getRenderingCapabilities().norm16 ? 'norm16' : 'halfFloat';
+  if (runEdgeSearchInContext(gl)) {
+    setTimeout(() =>
+      triggerEvent(eventTarget, Events.VOLUME_TEXTURE_LIMITS_CHANGED)
+    );
   }
-
-  return 'float';
 }
 
 /**
- * The preset that applies to a grid of these dimensions.
+ * The GPU settings of one texture under its share of the memory.
  *
- * Under `auto`, a grid with an edge above the reliable edge first runs the
- * probe at that edge, synchronously, before the real texture is allocated
- * (see `probeRenderingEdge`). The preset then comes from the updated record.
- * A caller that only decides, with no allocation to follow, passes
- * `probe: false`, so it creates no context.
- *
- * `auto` states its memory limit for the GPU memory of the page, so the
- * texture of this grid gets the limit minus `otherBytes`, the bytes that the
- * rest of the page already takes, and never less than 32 MB. A named preset
- * comes back as it is, and its memory limits one texture.
+ * `auto` states its memory limit for the GPU memory of the page. The strategy
+ * gives each volume a share of it (see `fairShares`), and the texture gets
+ * that share, never less than 32 MB. A named preset comes back as it is, and
+ * its memory limits one texture.
  *
  * @param gpuSettings - the GPU settings that apply
- * @param dimensions - the number of voxels on each axis of the grid
- * @param bytesPerVoxel - the number of bytes of one voxel of the texture
- * @param otherBytes - the GPU bytes of the page that this grid does not
- * replace
- * @param options.probe - false to read the record only, with no probe
- * @param options.dataType - the typed array of the data, so the edge probe
- * tests the texel type of the upload
+ * @param shareBytes - the memory of this texture under `auto`
  */
-function gpuSettingsForGrid(
+function gpuSettingsForShare(
   gpuSettings: GpuSettings,
-  dimensions: ArrayLike<number>,
-  bytesPerVoxel: number,
-  otherBytes = 0,
-  { probe = true, dataType }: { probe?: boolean; dataType?: string } = {}
+  shareBytes: number
 ): GpuSettings {
-  if (gpuSettings.id !== 'auto') {
+  if (
+    gpuSettings.id !== 'auto' ||
+    !Number.isFinite(gpuSettings.textureMemoryBytes)
+  ) {
     return gpuSettings;
   }
 
-  const edge = Math.max(dimensions[0], dimensions[1], dimensions[2]);
-  let result = gpuSettings;
-
-  /**
-   * An `auto` with no limits has an infinite edge, so it never probes. The
-   * edge comes from the record after a probe, and also when an earlier check
-   * already passed this edge, because the settings that a caller holds can
-   * predate that probe.
-   */
-  if (edge > gpuSettings.maxTextureEdge) {
-    if (probe && edge <= configuredMaxEdge()) {
-      probeRenderingEdge(edge, probeFormatOf(bytesPerVoxel, dataType));
-    }
-
-    const recordedEdge = autoEdge({ probe: false });
-
-    if (recordedEdge > gpuSettings.maxTextureEdge) {
-      result = { ...gpuSettings, maxTextureEdge: recordedEdge };
-    }
-  }
-
-  if (otherBytes <= 0 || !Number.isFinite(result.textureMemoryBytes)) {
-    return result;
-  }
-
   return {
-    ...result,
-    textureMemoryBytes: Math.max(
-      result.textureMemoryBytes - otherBytes,
-      MIN_TEXTURE_BYTES
-    ),
+    ...gpuSettings,
+    textureMemoryBytes: Math.max(shareBytes, MIN_TEXTURE_BYTES),
   };
 }
 
 /**
  * The bytes of one voxel of a volume texture on the GPU, for the type of the
- * volume data.
+ * volume data. The strategy, the texture store and the allocation tracker all
+ * count with this function.
  *
  * The volume buffer in memory holds 16-bit data as Float32, but the texture
  * that vtk.js uploads holds 2 bytes per value when it gets the norm16
- * extension, and 4 bytes as float otherwise. `Uint8Array` takes 1 byte. Any
- * other type, signed bytes included, uploads as float, 4 bytes. With no type,
- * the count of values.
+ * extension, or when `rendering.preferSizeOverAccuracy` lets it upload half
+ * float, and 4 bytes as float otherwise. `Uint8Array` takes 1 byte. Any other
+ * type, signed bytes included, uploads as float, 4 bytes. With no type, the
+ * count of values.
  *
  * @param dataType - the typed array of the volume data, such as 'Int16Array'
  * @param numberOfComponents - the components of one voxel
@@ -670,7 +596,12 @@ function gpuTextureBytesPerVoxel(
       return components;
     case 'Int16Array':
     case 'Uint16Array':
-      return ((norm16 ?? getCanUseNorm16Texture()) ? 2 : 4) * components;
+      return (
+        ((norm16 ?? getCanUseNorm16Texture()) ||
+        getConfiguration()?.rendering?.preferSizeOverAccuracy
+          ? 2
+          : 4) * components
+      );
     default:
       return 4 * components;
   }
@@ -714,7 +645,8 @@ export {
   setGpuSettingsPreset,
   getActiveGpuSettings,
   gpuSettingsForRender,
-  gpuSettingsForGrid,
+  gpuSettingsForShare,
+  runPendingEdgeSearch,
   resetGpuSettingsPreset,
   gridLimitsOfGpuSettings,
   gpuTextureBytesPerVoxel,

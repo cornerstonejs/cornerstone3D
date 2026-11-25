@@ -3,7 +3,6 @@ import { voxelGridWithinLimits } from '../../utilities/voxelGrid';
 import {
   gpuSettingsForRender,
   gridLimitsOfGpuSettings,
-  gpuSettingsForGrid,
   gpuTextureBytesPerVoxel,
 } from '../../utilities/gpuSettingsPresets';
 
@@ -14,10 +13,11 @@ const warnedKeys = new Set();
  * States whether the active GPU settings can hold a texture of these
  * dimensions.
  *
- * The count happens before the allocation. Under `auto`, an edge above the
- * reliable edge runs the edge probe first (see `gpuSettingsForGrid`). With
- * final downsampling off, every texture fits, so the mapper allocates as it
- * did before the GPU settings existed.
+ * The count happens before the allocation. Under `auto`, the check uses the
+ * memory limit of the whole page, not the share of the volume, so the mapper
+ * never refuses a grid that the strategy chose. With final downsampling off,
+ * every texture fits, so the mapper allocates as it did before the GPU
+ * settings existed.
  *
  * A dynamic (4D) volume and a texture of more than one component also always
  * fit: the strategy does not reduce them (VRS-I-13, VRS-I-14), so the mapper
@@ -49,9 +49,7 @@ export default function gridFitsGpuSettings(
   const numBytes = gpuTextureBytesPerVoxel(dataType, numberOfComponents, {
     norm16: context?.norm16,
   });
-  const gpuSettings = gpuSettingsForGrid(active, dims, numBytes, 0, {
-    dataType,
-  });
+  const gpuSettings = active;
   const limits = gridLimitsOfGpuSettings(gpuSettings, numBytes);
   const grid = {
     dimensions: [dims[0], dims[1], dims[2]],

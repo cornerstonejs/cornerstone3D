@@ -1,5 +1,9 @@
 import VoxelStatistics from '../enums/VoxelStatistics';
-import { volumeTextureBytes } from '../utilities/getBufferConfiguration';
+import {
+  gpuSettingsForRender,
+  gpuTextureBytesPerVoxel,
+} from '../utilities/gpuSettingsPresets';
+import triggerEvent from '../utilities/triggerEvent';
 import {
   voxelCountOfGrid,
   voxelGridWithinLimits,
@@ -90,6 +94,9 @@ class VolumeTextureStore {
   private readonly sets = new Map<string, StoredSet>();
   private budgetBytes = 0;
   private clock = 0;
+  /** The display sets at the last check (see `noteClaimsChanged`). */
+  private displaySets = new Set<string>();
+  private claimsTimer: ReturnType<typeof setTimeout> | undefined;
 
   /** The number of bytes that every texture of every volume takes. */
   public get bytesUsed(): number {
@@ -153,21 +160,58 @@ class VolumeTextureStore {
    * the texture. The code therefore knows in advance whether a texture can
    * work.
    *
-   * The count uses the type of the buffer of a volume, which is the type that
-   * the texture really holds. A `Uint16Array` volume renders through a
-   * `Float32Array` buffer, so a count that read `Uint16Array` would state half
-   * of the true cost.
+   * The count uses the format that vtk.js uploads, as the strategy does (see
+   * `gpuTextureBytesPerVoxel`). The CPU buffer of a 16-bit volume is
+   * `Float32Array`, but its texture holds 2 bytes per value with norm16 or
+   * half float.
    */
   public costOf(
     grid: VoxelGrid,
     dataType?: PixelDataTypedArrayString,
     numberOfComponents = 1
   ): number {
-    return volumeTextureBytes(
-      voxelCountOfGrid(grid),
-      dataType,
-      numberOfComponents
+    return (
+      voxelCountOfGrid(grid) *
+      gpuTextureBytesPerVoxel(dataType, numberOfComponents)
     );
+  }
+
+  /** The volumes whose texture sets a viewport holds: the display sets. */
+  public claimedVolumeIds(): Set<string> {
+    const volumeIds = new Set<string>();
+
+    for (const stored of this.sets.values()) {
+      if (stored.set.references > 0) {
+        volumeIds.add(stored.volumeId);
+      }
+    }
+
+    return volumeIds;
+  }
+
+  /**
+   * Notes a change of the claims. Under `auto`, a display set that comes or
+   * goes changes the memory share of the others, so the limits change for
+   * each volume that stays. The check runs after the current work, so a
+   * release and a claim of one volume in one provision change nothing.
+   */
+  private noteClaimsChanged(): void {
+    this.claimsTimer ??= setTimeout(() => {
+      this.claimsTimer = undefined;
+
+      const current = this.claimedVolumeIds();
+      const previous = this.displaySets;
+      const changed =
+        current.size !== previous.size ||
+        [...current].some((volumeId) => !previous.has(volumeId));
+      const stayed = [...current].some((volumeId) => previous.has(volumeId));
+
+      this.displaySets = current;
+
+      if (changed && stayed && gpuSettingsForRender()?.id === 'auto') {
+        triggerEvent(eventTarget, Events.VOLUME_TEXTURE_LIMITS_CHANGED);
+      }
+    });
   }
 
   /**
@@ -286,6 +330,7 @@ class VolumeTextureStore {
 
     stored.set.references++;
     stored.set.lastUsed = ++this.clock;
+    this.noteClaimsChanged();
 
     return true;
   }
@@ -299,6 +344,7 @@ class VolumeTextureStore {
     }
 
     stored.set.references = Math.max(stored.set.references - 1, 0);
+    this.noteClaimsChanged();
 
     return true;
   }
@@ -313,6 +359,10 @@ class VolumeTextureStore {
     }
 
     this.sets.delete(key);
+
+    if (stored.set.references > 0) {
+      this.noteClaimsChanged();
+    }
 
     if (stored.destroyTexture) {
       for (const slot of stored.set.members()) {

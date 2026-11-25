@@ -7,9 +7,12 @@ import {
   jest,
 } from '@jest/globals';
 import {
+  fairShares,
   reductionCauseOf,
   volumeTextureReductionFactors,
 } from '../src/RenderingEngine/helpers/volumeRenderStrategy';
+import { volumeTextureStore } from '../src/cache/volumeTextureStore';
+import cache from '../src/cache/cache';
 import {
   getGpuSettingsPreset,
   getGpuSettingsPresets,
@@ -17,8 +20,9 @@ import {
   setGpuSettingsPreset,
   resetGpuSettingsPreset,
   gridLimitsOfGpuSettings,
-  gpuSettingsForGrid,
+  gpuSettingsForShare,
   gpuSettingsForRender,
+  runPendingEdgeSearch,
   gpuTextureBytesPerVoxel,
   getGpuMemoryLimit,
   setGpuMemoryLimit,
@@ -55,12 +59,10 @@ import {
 import {
   probeEdgeSearch,
   probeRenderingLimits,
-  probeTextureEdge,
 } from '../src/utilities/textureSupport';
 
 jest.mock('../src/utilities/textureSupport', () => ({
   probeRenderingLimits: jest.fn(),
-  probeTextureEdge: jest.fn(),
   probeEdgeSearch: jest.fn(),
 }));
 
@@ -217,7 +219,6 @@ describe('final downsampling off', () => {
     convertMapperToNotSharedMapper(sharedMapper).delete();
 
     expect(probeRenderingLimits).not.toHaveBeenCalled();
-    expect(probeTextureEdge).not.toHaveBeenCalled();
     expect(probeEdgeSearch).not.toHaveBeenCalled();
   });
 });
@@ -288,14 +289,23 @@ describe('final downsampling on', () => {
 });
 
 describe('the auto preset', () => {
-  it('starts a desktop GPU from 2 GB, with the edge of the probe', () => {
+  it('starts a desktop GPU from 2 GB, with MAX_3D_TEXTURE_SIZE after a pass at 2048', () => {
     mockWebGL();
 
+    /** The probe tests no edge above 2048, and 2048 passed. */
     expect(getActiveGpuSettings()).toEqual({
       id: 'auto',
-      maxTextureEdge: 2048,
+      maxTextureEdge: 8192,
       textureMemoryBytes: 2 * GIGABYTE,
       speed: 60,
+    });
+    expect(probeRenderingLimits).toHaveBeenLastCalledWith(
+      expect.objectContaining({ startEdge: 2048 })
+    );
+    expect(getStoredRenderingCapabilities().edge.reliable).toEqual({
+      value: 8192,
+      successes: 1,
+      assumed: true,
     });
     expect(getGpuMemoryLimit()).toEqual({
       bytes: 2 * GIGABYTE,
@@ -346,7 +356,6 @@ describe('the auto preset', () => {
       expect(gpuSettingsForRender()).toBeUndefined();
       expect(gridFitsGpuSettings([16, 16, 3000], 'Float32Array', 1)).toBe(true);
       expect(getActiveGpuSettings().maxTextureEdge).toBe(Infinity);
-      expect(probeTextureEdge).not.toHaveBeenCalled();
       expect(probeEdgeSearch).not.toHaveBeenCalled();
     });
 
@@ -425,7 +434,7 @@ describe('the auto preset', () => {
       resetGpuMemoryLimit();
 
       expect(getGpuMemoryLimit().source).toBe('start');
-      expect(getStoredRenderingCapabilities().edge.reliable.value).toBe(2048);
+      expect(getStoredRenderingCapabilities().edge.reliable.value).toBe(8192);
     });
 
     it('refuses a limit below 128 MB', () => {
@@ -476,45 +485,82 @@ describe('the auto preset', () => {
     });
   });
 
-  it('gives a texture what the rest of the page leaves, and never below 32 MB', () => {
-    mockWebGL();
+  describe('the fair share of the page', () => {
+    /**
+     * The API must do this: a display set that fits a fair share gets its
+     * full need, and the large ones share the rest equally.
+     */
+    it('gives each small display set its need, and divides the rest', () => {
+      expect(fairShares([100, 500, 900], 1200)).toEqual([100, 500, 600]);
+      /** Three display sets that are all too large get equal shares. */
+      expect(fairShares([900, 900, 900], 1200)).toEqual([400, 400, 400]);
+      /**
+       * The passes repeat: 400 is above 1000 / 3, but fits 900 / 2 after 100
+       * left the budget. One pass would give 400 and 1000 each 450.
+       */
+      expect(fairShares([100, 400, 1000], 1000)).toEqual([100, 400, 500]);
+      expect(fairShares([100, 200], 1000)).toEqual([100, 200]);
+    });
 
-    const settings = getActiveGpuSettings();
+    it('gives a texture its share under auto, never below 32 MB, and leaves a named preset as it is', () => {
+      mockWebGL();
 
-    expect(
-      gpuSettingsForGrid(settings, [64, 64, 64], 2, 1.5 * GIGABYTE)
-        .textureMemoryBytes
-    ).toBe(0.5 * GIGABYTE);
-    expect(
-      gpuSettingsForGrid(settings, [64, 64, 64], 2, 3 * GIGABYTE)
-        .textureMemoryBytes
-    ).toBe(32 * MEGABYTE);
+      expect(
+        gpuSettingsForShare(getActiveGpuSettings(), 0.5 * GIGABYTE)
+          .textureMemoryBytes
+      ).toBe(0.5 * GIGABYTE);
+      expect(
+        gpuSettingsForShare(getActiveGpuSettings(), 0).textureMemoryBytes
+      ).toBe(32 * MEGABYTE);
+      expect(
+        gpuSettingsForShare(getGpuSettingsPreset('low'), 0).textureMemoryBytes
+      ).toBe(2 * GIGABYTE);
+    });
 
-    /** A named preset limits one texture, whatever the page holds. */
-    expect(
-      gpuSettingsForGrid(
-        getGpuSettingsPreset('low'),
-        [64, 64, 64],
-        2,
-        3 * GIGABYTE
-      ).textureMemoryBytes
-    ).toBe(2 * GIGABYTE);
-  });
+    /**
+     * The user experience must have this: a small display set draws at full
+     * resolution whatever the load order, and only the large one is reduced.
+     */
+    it('draws a small PT at full resolution next to a large CT, in both load orders', () => {
+      mockWebGL();
+      setLossyDownsampling({ final: true });
+      setGpuMemoryLimit({ bytes: 512 * MEGABYTE });
 
-  it('runs no probe for a caller that only decides', () => {
-    mockWebGL();
-    setLossyDownsampling({ final: true });
+      const volume = (volumeId, dimensions) => ({
+        volumeId,
+        dataType: 'Float32Array',
+        voxelGrid: { dimensions },
+        voxelManager: { numberOfComponents: 1 },
+        isDynamicVolume: () => false,
+      });
+      /** 32 MB as float, and 1 GB as float. */
+      const pt = volume('pt', [128, 128, 512]);
+      const ct = volume('ct', [512, 512, 1024]);
+      const volumes = { pt, ct };
+      const claimed = jest.spyOn(volumeTextureStore, 'claimedVolumeIds');
+      const getVolume = jest
+        .spyOn(cache, 'getVolume')
+        .mockImplementation((volumeId) => volumes[volumeId]);
 
-    try {
-      const settings = gpuSettingsForRender({ probe: false });
+      try {
+        for (const shown of [new Set(['ct']), new Set(['pt'])]) {
+          claimed.mockReturnValue(shown);
 
-      probeTextureEdge.mockClear();
-      gpuSettingsForGrid(settings, [512, 512, 2464], 4, 0, { probe: false });
-
-      expect(probeTextureEdge).not.toHaveBeenCalled();
-    } finally {
-      setLossyDownsampling({ final: false });
-    }
+          expect(
+            volumeTextureReductionFactors(pt, getActiveGpuSettings())
+          ).toEqual([1, 1, 1]);
+          expect(
+            volumeTextureReductionFactors(ct, getActiveGpuSettings()).some(
+              (factor) => factor > 1
+            )
+          ).toBe(true);
+        }
+      } finally {
+        claimed.mockRestore();
+        getVolume.mockRestore();
+        setLossyDownsampling({ final: false });
+      }
+    });
   });
 
   describe('the bytes of a voxel on the GPU', () => {
@@ -546,23 +592,37 @@ describe('the auto preset', () => {
       );
     });
 
-    it('probes an unsigned 16-bit grid as unorm16, and a signed one as norm16', () => {
+    it('counts 16-bit data at 2 bytes with 16-bit float on, and the texture store counts the same', () => {
       mockWebGL();
 
-      const settings = getActiveGpuSettings();
+      const grid = { dimensions: [64, 64, 64] };
 
-      probeTextureEdge.mockClear();
-      gpuSettingsForGrid(settings, [512, 512, 2464], 2, 0, {
-        dataType: 'Uint16Array',
-      });
-      gpuSettingsForGrid(settings, [512, 512, 3000], 2, 0, {
-        dataType: 'Int16Array',
+      expect(volumeTextureStore.costOf(grid, 'Int16Array')).toBe(
+        64 * 64 * 64 * 4
+      );
+
+      setConfiguration({
+        ...getConfiguration(),
+        rendering: {
+          ...getConfiguration().rendering,
+          preferSizeOverAccuracy: true,
+        },
       });
 
-      expect(probeTextureEdge.mock.calls).toEqual([
-        [2464, 'unorm16'],
-        [3000, 'norm16'],
-      ]);
+      try {
+        expect(gpuTextureBytesPerVoxel('Int16Array')).toBe(2);
+        expect(volumeTextureStore.costOf(grid, 'Uint16Array')).toBe(
+          64 * 64 * 64 * 2
+        );
+      } finally {
+        setConfiguration({
+          ...getConfiguration(),
+          rendering: {
+            ...getConfiguration().rendering,
+            preferSizeOverAccuracy: false,
+          },
+        });
+      }
     });
 
     it('fits a 16-bit volume of 1 GB under a 2 GB limit with norm16', () => {
@@ -641,7 +701,7 @@ describe('the auto preset', () => {
     mockWebGL();
     setAutoGpuConfig({ maxTextureEdge: 0 });
 
-    expect(getActiveGpuSettings().maxTextureEdge).toBe(2048);
+    expect(getActiveGpuSettings().maxTextureEdge).toBe(8192);
   });
 
   it('gives the full-resolution reslice texture a ledger entry that its release removes', () => {
@@ -657,23 +717,27 @@ describe('the auto preset', () => {
     expect(Object.isFrozen(texture)).toBe(true);
   });
 
-  it('probes no edge above the configured maximum edge', () => {
+  /**
+   * The API must do this: a configured maximum edge below 2048 starts the
+   * probe there, and the tested edge is not an assumed one.
+   */
+  it('starts the probe at the configured maximum edge', () => {
     mockWebGL();
-    probeTextureEdge.mockClear();
+    probeRenderingLimits.mockImplementation(({ startEdge }) => ({
+      formats: { float: true, norm16: false },
+      max3DTextureSize: 8192,
+      reliableEdge: startEdge,
+    }));
     setAutoGpuConfig({ maxTextureEdge: 1024 });
 
-    try {
-      const settings = gpuSettingsForGrid(
-        getActiveGpuSettings(),
-        [512, 512, 2464],
-        4
-      );
-
-      expect(probeTextureEdge).not.toHaveBeenCalled();
-      expect(settings.maxTextureEdge).toBe(1024);
-    } finally {
-      setAutoGpuConfig({});
-    }
+    expect(getActiveGpuSettings().maxTextureEdge).toBe(1024);
+    expect(probeRenderingLimits).toHaveBeenLastCalledWith(
+      expect.objectContaining({ startEdge: 1024 })
+    );
+    expect(getStoredRenderingCapabilities().edge.reliable).toEqual({
+      value: 1024,
+      successes: 1,
+    });
   });
 
   it('classes "Apple GPU" on a Mac with no touch screen as a desktop', () => {
@@ -688,22 +752,6 @@ describe('the auto preset', () => {
     } finally {
       platform.mockRestore();
     }
-  });
-
-  it('reuses an edge that an earlier check passed, with settings from before it', () => {
-    mockWebGL();
-    probeTextureEdge.mockReturnValueOnce(true);
-
-    const before = getActiveGpuSettings();
-
-    gpuSettingsForGrid(before, [512, 512, 2464], 4);
-    probeTextureEdge.mockClear();
-
-    /** The second check holds the settings from before the probe. */
-    const second = gpuSettingsForGrid(before, [512, 512, 2464], 4);
-
-    expect(probeTextureEdge).not.toHaveBeenCalled();
-    expect(second.maxTextureEdge).toBe(2464);
   });
 
   it('keeps a reset that the store refused, ahead of the stored limit', () => {
@@ -749,30 +797,10 @@ describe('the auto preset', () => {
       setItem.mockRestore();
     }
   });
-
-  it('probes an edge that a grid needs before it raises the edge', () => {
-    mockWebGL();
-    probeTextureEdge.mockReturnValueOnce(true).mockReturnValueOnce(false);
-
-    const raised = gpuSettingsForGrid(
-      getActiveGpuSettings(),
-      [512, 512, 2464],
-      4
-    );
-
-    expect(probeTextureEdge).toHaveBeenCalledWith(2464, 'float');
-    expect(raised.maxTextureEdge).toBe(2464);
-
-    /** A failed edge stays the limit until a retest. */
-    const kept = gpuSettingsForGrid(raised, [512, 512, 4096], 4);
-
-    expect(kept.maxTextureEdge).toBe(2464);
-    gpuSettingsForGrid(kept, [512, 512, 5000], 4);
-    expect(probeTextureEdge).toHaveBeenCalledTimes(2);
-  });
 });
 
-describe('auto on a device that renders gray above an edge of 128', () => {
+describe('the edge search in the context of a viewport', () => {
+  const gl = { viewport: 'gl' };
   const edgeSearch = {
     max3DTextureSize: 8192,
     reliableEdge: 128,
@@ -785,47 +813,92 @@ describe('auto on a device that renders gray above an edge of 128', () => {
       formats: { float: true, norm16: false },
       ...edgeSearch,
     });
-    probeTextureEdge.mockReset();
-    probeTextureEdge.mockImplementation((edge) => edge <= 128);
     probeEdgeSearch.mockReset();
+    setLossyDownsampling({ final: true });
   }
 
-  it('never gives an edge above 128 after a retest of the edge', () => {
+  afterEach(() => setLossyDownsampling({ final: false }));
+
+  /**
+   * The API must do this: the render path creates no probe context. A retest
+   * searches again in the context of the viewport, from the start edge.
+   */
+  it('runs a retest once, in the context of the viewport', () => {
     mockSmallEdgeDevice();
+    probeEdgeSearch.mockReturnValue(edgeSearch);
 
     expect(getActiveGpuSettings().maxTextureEdge).toBe(128);
+    runPendingEdgeSearch(gl);
+    expect(probeEdgeSearch).not.toHaveBeenCalled();
 
     retestRenderingCapabilities({ edge: true });
 
-    /** The start edge of the class is 256, which no probe passed. */
+    /** The old edge applies until the search ran. */
     expect(getActiveGpuSettings().maxTextureEdge).toBe(128);
 
-    const preset = gpuSettingsForGrid(
-      getActiveGpuSettings(),
-      [256, 256, 200],
-      4
-    );
+    runPendingEdgeSearch(gl);
+    runPendingEdgeSearch(gl);
 
-    expect(probeTextureEdge).toHaveBeenCalledWith(256, 'float');
-    expect(preset.maxTextureEdge).toBe(128);
+    expect(probeEdgeSearch).toHaveBeenCalledTimes(1);
+    /** The retest removed the failed edge, and starts at 2048 again. */
+    expect(probeEdgeSearch).toHaveBeenCalledWith(
+      gl,
+      expect.objectContaining({ startEdge: 2048, belowEdge: undefined })
+    );
+    expect(getActiveGpuSettings().maxTextureEdge).toBe(128);
   });
 
-  it('searches the edge again when the first probe could not run', () => {
+  it('searches in the context of the viewport when the startup probe could not run, and applies the new edge', async () => {
     mockSmallEdgeDevice();
     probeRenderingLimits.mockReturnValue(null);
-    probeEdgeSearch.mockReturnValueOnce(null).mockReturnValue(edgeSearch);
+    probeEdgeSearch.mockReturnValue({
+      max3DTextureSize: 8192,
+      reliableEdge: 2048,
+    });
 
-    /** The search could not run either, so the edge is the unprobed floor. */
-    expect(getActiveGpuSettings().maxTextureEdge).toBe(128);
-    /** A search that could not run is not repeated in the same page. */
+    const listener = jest.fn();
+
+    eventTarget.addEventListener(
+      Events.VOLUME_TEXTURE_LIMITS_CHANGED,
+      listener
+    );
+
+    try {
+      /** The unprobed floor applies until the search ran. */
+      expect(getActiveGpuSettings().maxTextureEdge).toBe(128);
+
+      runPendingEdgeSearch(gl);
+
+      expect(getActiveGpuSettings().maxTextureEdge).toBe(8192);
+      /** The provisions follow after the render, not during it. */
+      expect(listener).not.toHaveBeenCalled();
+      await new Promise((resolve) => setTimeout(resolve));
+      expect(listener).toHaveBeenCalledTimes(1);
+    } finally {
+      eventTarget.removeEventListener(
+        Events.VOLUME_TEXTURE_LIMITS_CHANGED,
+        listener
+      );
+    }
+  });
+
+  it('starts below an edge whose test lost the context', () => {
+    mockSmallEdgeDevice();
+    probeRenderingLimits.mockReturnValue({
+      formats: { float: true, norm16: false },
+      max3DTextureSize: 8192,
+      failedEdge: 2048,
+      contextLost: true,
+    });
+    probeEdgeSearch.mockReturnValue(edgeSearch);
+
     getActiveGpuSettings();
-    expect(probeEdgeSearch).toHaveBeenCalledTimes(1);
+    runPendingEdgeSearch(gl);
 
-    /** The next page runs the search, and finds the edge. */
-    resetRenderingCapabilities();
-
-    expect(getActiveGpuSettings().maxTextureEdge).toBe(128);
-    expect(probeEdgeSearch).toHaveBeenCalledTimes(2);
+    expect(probeEdgeSearch).toHaveBeenCalledWith(
+      gl,
+      expect.objectContaining({ belowEdge: 2048 })
+    );
   });
 });
 

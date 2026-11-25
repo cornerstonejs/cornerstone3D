@@ -173,10 +173,10 @@ interface Cornerstone3DConfig {
      *   the user has set none. With neither, `auto` starts from the class of
      *   the device: 1 GB for a phone or a tablet, 2 GB for any other GPU, and
      *   0.5 GB when the probed texture edge is below 2048.
-     * - `maxTextureEdge` caps the texture edge of `auto`, and no edge above it
-     *   is probed for a volume. It does not cap the capability probe at
-     *   startup, which tests up to 2048. The default, and the upper bound, is
-     *   `MAX_3D_TEXTURE_SIZE` of the device.
+     * - `maxTextureEdge` caps the texture edge of `auto`, and the edge that the
+     *   startup probe tests. The probe never tests above 2048. When the test
+     *   at 2048 passes, `auto` uses `MAX_3D_TEXTURE_SIZE` of the device, or
+     *   this value when it is smaller.
      *
      * An application maps its own settings to these values. Nothing raises or
      * lowers the limit by itself.

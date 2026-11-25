@@ -625,7 +625,7 @@ async function run() {
       const text = JSON.stringify(
         {
           capabilities: getRenderingCapabilities(),
-          memoryLimit: getGpuMemoryLimit({ probe: false }) ?? 'none',
+          memoryLimit: getGpuMemoryLimit() ?? 'none',
           record: getStoredRenderingCapabilities(),
         },
         null,

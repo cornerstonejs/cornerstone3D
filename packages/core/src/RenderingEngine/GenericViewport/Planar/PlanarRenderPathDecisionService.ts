@@ -217,13 +217,9 @@ export class PlanarRenderPathDecisionService {
       return false;
     }
 
-    return volumeTextureReductionFactors(
-      volume,
-      gpuSettingsForRender({ probe: false }),
-      {
-        probe: false,
-      }
-    ).some((factor) => factor > 1);
+    return volumeTextureReductionFactors(volume, gpuSettingsForRender()).some(
+      (factor) => factor > 1
+    );
   }
 
   private selectImageRenderMode(

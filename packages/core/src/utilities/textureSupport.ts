@@ -35,6 +35,8 @@ export interface RenderingLimitsProbeResult {
   reliableEdge?: number;
   /** The smallest edge that failed, or `undefined` when no edge failed. */
   failedEdge?: number;
+  /** True when the context was lost during the test of `failedEdge`. */
+  contextLost?: boolean;
 }
 
 interface FormatSpec {
@@ -139,8 +141,22 @@ export class TextureProbe {
   private readonly coordsLocation: WebGLUniformLocation;
   public readonly max3DTextureSize: number;
 
-  private constructor(gl: WebGL2RenderingContext, program: WebGLProgram) {
+  private readonly program: WebGLProgram;
+  /** The draw target in a context that the probe does not own. */
+  private readonly target?: {
+    framebuffer: WebGLFramebuffer;
+    renderbuffer: WebGLRenderbuffer;
+    vertexArray: WebGLVertexArrayObject;
+  };
+
+  private constructor(
+    gl: WebGL2RenderingContext,
+    program: WebGLProgram,
+    target?: TextureProbe['target']
+  ) {
     this.gl = gl;
+    this.program = program;
+    this.target = target;
     this.coordsLocation = gl.getUniformLocation(program, 'u_coords');
     this.max3DTextureSize =
       Number(gl.getParameter(gl.MAX_3D_TEXTURE_SIZE)) || 0;
@@ -164,32 +180,9 @@ export class TextureProbe {
       canvas.height = 1;
 
       const gl = canvas.getContext('webgl2');
+      const program = gl && createProbeProgram(gl);
 
-      if (!gl) {
-        return null;
-      }
-
-      const program = gl.createProgram();
-
-      for (const [type, source] of [
-        [gl.VERTEX_SHADER, VERTEX_SHADER],
-        [gl.FRAGMENT_SHADER, FRAGMENT_SHADER],
-      ] as const) {
-        const shader = gl.createShader(type);
-
-        gl.shaderSource(shader, source);
-        gl.compileShader(shader);
-
-        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-          return null;
-        }
-
-        gl.attachShader(program, shader);
-      }
-
-      gl.linkProgram(program);
-
-      if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      if (!program) {
         return null;
       }
 
@@ -202,13 +195,90 @@ export class TextureProbe {
     }
   }
 
+  /**
+   * Creates a probe in a context that a viewport owns, so the probe adds no
+   * context. The probe draws to its own 4 x 1 framebuffer. Call it only inside
+   * {@link withProbeState}, which sets and restores the state of the context.
+   *
+   * @returns the probe, or `null` when the program does not compile
+   */
+  private static inContext(gl: WebGL2RenderingContext): TextureProbe | null {
+    const program = createProbeProgram(gl);
+
+    if (!program) {
+      return null;
+    }
+
+    const renderbuffer = gl.createRenderbuffer();
+    const framebuffer = gl.createFramebuffer();
+    const vertexArray = gl.createVertexArray();
+
+    gl.bindRenderbuffer(gl.RENDERBUFFER, renderbuffer);
+    gl.renderbufferStorage(gl.RENDERBUFFER, gl.RGBA8, 4, 1);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
+    gl.framebufferRenderbuffer(
+      gl.FRAMEBUFFER,
+      gl.COLOR_ATTACHMENT0,
+      gl.RENDERBUFFER,
+      renderbuffer
+    );
+    gl.bindVertexArray(vertexArray);
+    gl.useProgram(program);
+    gl.viewport(0, 0, 4, 1);
+
+    return new TextureProbe(gl, program, {
+      framebuffer,
+      renderbuffer,
+      vertexArray,
+    });
+  }
+
+  /**
+   * Runs `search` with a probe in the context of a viewport, and restores the
+   * state of that context after it.
+   *
+   * @returns the result of `search`, or `null` when the probe cannot run
+   */
+  public static runInContext<T>(
+    gl: WebGL2RenderingContext,
+    search: (probe: TextureProbe) => T
+  ): T | null {
+    return withProbeState(gl, () => {
+      const probe = TextureProbe.inContext(gl);
+
+      if (!probe) {
+        return null;
+      }
+
+      try {
+        return search(probe);
+      } finally {
+        probe.dispose();
+      }
+    });
+  }
+
   public isContextLost(): boolean {
     return this.gl.isContextLost();
   }
 
-  /** Releases the context. */
+  /**
+   * Releases the context of the probe, or, in the context of a viewport, the
+   * objects that the probe created there.
+   */
   public dispose(): void {
-    this.gl.getExtension('WEBGL_lose_context')?.loseContext();
+    const { gl, target } = this;
+
+    if (!target) {
+      gl.getExtension('WEBGL_lose_context')?.loseContext();
+
+      return;
+    }
+
+    gl.deleteFramebuffer(target.framebuffer);
+    gl.deleteRenderbuffer(target.renderbuffer);
+    gl.deleteVertexArray(target.vertexArray);
+    gl.deleteProgram(this.program);
   }
 
   /**
@@ -385,17 +455,15 @@ function formatsOf(probe: TextureProbe): TextureFormatSupport {
  * Runs the combined probe: the texel data types at a small edge, then the
  * texture edge.
  *
- * The edge search starts at `startEdge` (or at MAX_3D_TEXTURE_SIZE when that
- * is smaller) and halves on each failure, down to 16. It returns the largest
- * edge that passed and the smallest edge that failed. A device that renders a
- * uniform gray above 128 therefore costs five edge steps.
+ * See {@link searchEdge} for the edge search.
  *
  * @returns the result, or `null` when the probe could not run (no context, or
- * the context was lost during the probe), so that a caller does not store it
+ * the context was lost during the test of the data types), so that a caller
+ * does not store it
  */
-export function probeRenderingLimits({
-  startEdge = 2048,
-}: { startEdge?: number } = {}): RenderingLimitsProbeResult | null {
+export function probeRenderingLimits(
+  edgeSearch: EdgeSearchOptions = {}
+): RenderingLimitsProbeResult | null {
   const probe = TextureProbe.create();
 
   if (!probe) {
@@ -404,35 +472,67 @@ export function probeRenderingLimits({
 
   try {
     const formats = formatsOf(probe);
-    const result: RenderingLimitsProbeResult = {
-      formats,
-      max3DTextureSize: probe.max3DTextureSize,
-      ...searchEdge(probe, startEdge, formats.float ? 'float' : 'halfFloat'),
-    };
 
     /** A context lost during the probe reads zeros, which are not answers. */
-    return probe.isContextLost() ? null : result;
+    if (probe.isContextLost()) {
+      return null;
+    }
+
+    return {
+      formats,
+      max3DTextureSize: probe.max3DTextureSize,
+      ...searchEdge(probe, {
+        ...edgeSearch,
+        format: edgeSearch.format ?? (formats.float ? 'float' : 'halfFloat'),
+      }),
+    };
   } finally {
     probe.dispose();
   }
 }
 
+/** Where the edge search starts, and the texel type that it tests. */
+export type EdgeSearchOptions = {
+  /** The first edge to test; MAX_3D_TEXTURE_SIZE when that is smaller. */
+  startEdge?: number;
+  /** Every tested edge is below this edge, a failed edge of the record. */
+  belowEdge?: number;
+  format?: ProbeTextureFormat;
+};
+
+/**
+ * Tests from `startEdge` down, halving on each failure, down to 16. Returns
+ * the largest edge that passed and the smallest edge that failed. A context
+ * lost during a test counts as a failure of that edge, and ends the search
+ * (`contextLost`), so the next start begins below it.
+ */
 function searchEdge(
   probe: TextureProbe,
-  startEdge: number,
-  format: ProbeTextureFormat
-): Pick<RenderingLimitsProbeResult, 'reliableEdge' | 'failedEdge'> {
+  { startEdge = 2048, belowEdge, format = 'float' }: EdgeSearchOptions
+): Pick<
+  RenderingLimitsProbeResult,
+  'reliableEdge' | 'failedEdge' | 'contextLost'
+> {
   const result: Pick<
     RenderingLimitsProbeResult,
-    'reliableEdge' | 'failedEdge'
+    'reliableEdge' | 'failedEdge' | 'contextLost'
   > = {};
+  let edge = Math.min(startEdge, probe.max3DTextureSize);
 
-  for (
-    let edge = Math.min(startEdge, probe.max3DTextureSize);
-    edge >= MIN_PROBE_EDGE;
-    edge = Math.floor(edge / 2)
-  ) {
-    if (probe.probeEdge(edge, format)) {
+  while (belowEdge && edge >= belowEdge) {
+    edge = Math.floor(edge / 2);
+  }
+
+  for (; edge >= MIN_PROBE_EDGE; edge = Math.floor(edge / 2)) {
+    const passed = probe.probeEdge(edge, format);
+
+    if (probe.isContextLost()) {
+      result.failedEdge = edge;
+      result.contextLost = true;
+      break;
+    }
+
+    if (passed) {
       result.reliableEdge = edge;
       break;
     }
@@ -444,57 +544,172 @@ function searchEdge(
 }
 
 /**
- * Runs the edge search of {@link probeRenderingLimits} alone, in a new probe
- * context.
+ * Runs the edge search of {@link probeRenderingLimits} alone, in the context
+ * of a viewport, so the search adds no WebGL context. The state of that
+ * context is the same after the search.
  *
  * @returns the result without formats, or `null` when the probe could not run
  */
-export function probeEdgeSearch({
-  startEdge = 2048,
-  format = 'float',
-}: {
-  startEdge?: number;
-  format?: ProbeTextureFormat;
-} = {}): Omit<RenderingLimitsProbeResult, 'formats'> | null {
-  const probe = TextureProbe.create();
+export function probeEdgeSearch(
+  gl: WebGL2RenderingContext,
+  options: EdgeSearchOptions = {}
+): Omit<RenderingLimitsProbeResult, 'formats'> | null {
+  return TextureProbe.runInContext(gl, (probe) => ({
+    max3DTextureSize: probe.max3DTextureSize,
+    ...searchEdge(probe, options),
+  }));
+}
 
-  if (!probe) {
-    return null;
-  }
+/** Compiles the probe program, or returns `null`. */
+function createProbeProgram(gl: WebGL2RenderingContext): WebGLProgram | null {
+  const program = gl.createProgram();
+  const shaders: WebGLShader[] = [];
 
   try {
-    const result = {
-      max3DTextureSize: probe.max3DTextureSize,
-      ...searchEdge(probe, startEdge, format),
-    };
+    for (const [type, source] of [
+      [gl.VERTEX_SHADER, VERTEX_SHADER],
+      [gl.FRAGMENT_SHADER, FRAGMENT_SHADER],
+    ] as const) {
+      const shader = gl.createShader(type);
 
-    return probe.isContextLost() ? null : result;
+      shaders.push(shader);
+      gl.shaderSource(shader, source);
+      gl.compileShader(shader);
+
+      if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+        gl.deleteProgram(program);
+
+        return null;
+      }
+
+      gl.attachShader(program, shader);
+    }
+
+    gl.linkProgram(program);
+
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      gl.deleteProgram(program);
+
+      return null;
+    }
+
+    return program;
   } finally {
-    probe.dispose();
+    /** A linked program keeps its shaders. */
+    shaders.forEach((shader) => gl.deleteShader(shader));
   }
 }
 
-/**
- * Tests one edge for one data type, in a new probe context.
- *
- * @returns true or false, or `undefined` when the probe could not run
- */
-export function probeTextureEdge(
-  edge: number,
-  format: ProbeTextureFormat = 'float'
-): boolean | undefined {
-  const probe = TextureProbe.create();
+/** The capabilities that the probe turns off, and that vtk.js can turn on. */
+const PROBE_DISABLED_CAPABILITIES = [
+  'BLEND',
+  'CULL_FACE',
+  'DEPTH_TEST',
+  'POLYGON_OFFSET_FILL',
+  'RASTERIZER_DISCARD',
+  'SAMPLE_ALPHA_TO_COVERAGE',
+  'SAMPLE_COVERAGE',
+  'SCISSOR_TEST',
+  'STENCIL_TEST',
+] as const;
 
-  if (!probe) {
-    return undefined;
-  }
+/** The pixel store values that the probe sets, with the value it needs. */
+const PROBE_PIXEL_STORE = {
+  PACK_ALIGNMENT: 4,
+  UNPACK_ALIGNMENT: 1,
+  UNPACK_ROW_LENGTH: 0,
+  UNPACK_IMAGE_HEIGHT: 0,
+  UNPACK_SKIP_PIXELS: 0,
+  UNPACK_SKIP_ROWS: 0,
+  UNPACK_SKIP_IMAGES: 0,
+  UNPACK_FLIP_Y_WEBGL: false,
+  UNPACK_PREMULTIPLY_ALPHA_WEBGL: false,
+} as const;
+
+/**
+ * Runs `run` in the context of a viewport, with the state that the probe
+ * needs, and restores every state that the probe changes: the program, the
+ * framebuffers, the renderbuffer, the vertex array, the viewport, the active
+ * texture unit, the 3D texture and the sampler of unit 0, the buffers of the pixel
+ * transfers, the pixel store, the clear color, the color mask, and the
+ * capabilities. vtk.js binds what it uses before each draw, so it reads none
+ * of the probe state.
+ */
+function withProbeState<T>(gl: WebGL2RenderingContext, run: () => T): T {
+  const unit = gl.getParameter(gl.ACTIVE_TEXTURE);
+
+  /** The sampler of the probe program reads unit 0. */
+  gl.activeTexture(gl.TEXTURE0);
+
+  const saved = {
+    program: gl.getParameter(gl.CURRENT_PROGRAM),
+    drawFramebuffer: gl.getParameter(gl.DRAW_FRAMEBUFFER_BINDING),
+    readFramebuffer: gl.getParameter(gl.READ_FRAMEBUFFER_BINDING),
+    renderbuffer: gl.getParameter(gl.RENDERBUFFER_BINDING),
+    vertexArray: gl.getParameter(gl.VERTEX_ARRAY_BINDING),
+    viewport: gl.getParameter(gl.VIEWPORT),
+    texture3D: gl.getParameter(gl.TEXTURE_BINDING_3D),
+    sampler: gl.getParameter(gl.SAMPLER_BINDING),
+    packBuffer: gl.getParameter(gl.PIXEL_PACK_BUFFER_BINDING),
+    unpackBuffer: gl.getParameter(gl.PIXEL_UNPACK_BUFFER_BINDING),
+    clearColor: gl.getParameter(gl.COLOR_CLEAR_VALUE),
+    colorMask: gl.getParameter(gl.COLOR_WRITEMASK),
+    capabilities: PROBE_DISABLED_CAPABILITIES.map((name) =>
+      gl.isEnabled(gl[name])
+    ),
+    pixelStore: Object.keys(PROBE_PIXEL_STORE).map((name) =>
+      gl.getParameter(gl[name])
+    ),
+  };
 
   try {
-    const passed = probe.probeEdge(edge, format);
+    PROBE_DISABLED_CAPABILITIES.forEach((name) => gl.disable(gl[name]));
+    Object.entries(PROBE_PIXEL_STORE).forEach(([name, value]) =>
+      gl.pixelStorei(gl[name], Number(value))
+    );
+    gl.bindSampler(0, null);
+    gl.bindBuffer(gl.PIXEL_PACK_BUFFER, null);
+    gl.bindBuffer(gl.PIXEL_UNPACK_BUFFER, null);
+    gl.colorMask(true, true, true, true);
 
-    return probe.isContextLost() ? undefined : passed;
+    return run();
   } finally {
-    probe.dispose();
+    if (!gl.isContextLost()) {
+      gl.useProgram(saved.program);
+      gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, saved.drawFramebuffer);
+      gl.bindFramebuffer(gl.READ_FRAMEBUFFER, saved.readFramebuffer);
+      gl.bindRenderbuffer(gl.RENDERBUFFER, saved.renderbuffer);
+      gl.bindVertexArray(saved.vertexArray);
+      gl.viewport(
+        saved.viewport[0],
+        saved.viewport[1],
+        saved.viewport[2],
+        saved.viewport[3]
+      );
+      gl.bindTexture(gl.TEXTURE_3D, saved.texture3D);
+      gl.bindSampler(0, saved.sampler);
+      gl.activeTexture(unit);
+      gl.bindBuffer(gl.PIXEL_PACK_BUFFER, saved.packBuffer);
+      gl.bindBuffer(gl.PIXEL_UNPACK_BUFFER, saved.unpackBuffer);
+      gl.clearColor(
+        saved.clearColor[0],
+        saved.clearColor[1],
+        saved.clearColor[2],
+        saved.clearColor[3]
+      );
+      gl.colorMask(
+        saved.colorMask[0],
+        saved.colorMask[1],
+        saved.colorMask[2],
+        saved.colorMask[3]
+      );
+      PROBE_DISABLED_CAPABILITIES.forEach((name, index) =>
+        saved.capabilities[index] ? gl.enable(gl[name]) : gl.disable(gl[name])
+      );
+      Object.keys(PROBE_PIXEL_STORE).forEach((name, index) =>
+        gl.pixelStorei(gl[name], Number(saved.pixelStore[index]))
+      );
+    }
   }
 }
 

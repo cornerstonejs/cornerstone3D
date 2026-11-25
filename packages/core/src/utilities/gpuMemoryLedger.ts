@@ -60,13 +60,21 @@ export function getGpuMemoryEntryBytes(owner: unknown): number {
  * The ledger is in memory only, so another tab does not count. Each owner adds
  * its entry when it allocates and removes it when it releases.
  *
- * @param excludeVolumeId - leaves out the textures of this volume
+ * @param exclude - leaves out the textures of this volume, or of these volumes
  */
-export function getGpuMemoryTotal(excludeVolumeId?: string): number {
+export function getGpuMemoryTotal(
+  exclude?: string | ReadonlySet<string>
+): number {
   let total = 0;
 
   for (const entry of entries.values()) {
-    if (!excludeVolumeId || entry.volumeId !== excludeVolumeId) {
+    const excluded =
+      entry.volumeId !== undefined &&
+      (typeof exclude === 'string'
+        ? entry.volumeId === exclude
+        : exclude?.has(entry.volumeId));
+
+    if (!excluded) {
       total += entry.bytes;
     }
   }

@@ -11,6 +11,7 @@ import ImageQualityStatus from '../../enums/ImageQualityStatus';
 import autoLoad from '../../utilities/autoLoad';
 import { getConfiguration } from '../../init';
 import { noteTextureAllocation } from '../../utilities/gpuAllocationTracker';
+import { gpuTextureBytesPerVoxel } from '../../utilities/gpuSettingsPresets';
 import {
   getGpuMemoryEntryBytes,
   getGpuMemoryTotal,
@@ -130,8 +131,9 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
    * only after an upload succeeded (see `create3DFromRaw`), so a retry after a
    * failed upload is noted again.
    *
-   * The size is an estimate from the typed array. The ledger takes the size
-   * that vtk.js states after the allocation (see `noteAllocated`).
+   * The size is the count of the strategy (see `gpuTextureBytesPerVoxel`).
+   * The ledger takes the size that vtk.js states after the allocation (see
+   * `noteAllocated`).
    *
    * @returns the shape of the upload
    */
@@ -142,13 +144,13 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
       return shape;
     }
 
-    /** `dataType` names a typed array, such as 'Float32Array'. */
     const textureBytes =
       width *
       height *
       depth *
-      (numComps || 1) *
-      (globalThis[dataType]?.BYTES_PER_ELEMENT ?? 4);
+      gpuTextureBytesPerVoxel(dataType, numComps, {
+        norm16: Boolean(model.oglNorm16Ext),
+      });
 
     /** The page total leaves out the earlier upload that this one replaces. */
     noteTextureAllocation({

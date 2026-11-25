@@ -9,7 +9,6 @@ import vtkBoundingBox from '@kitware/vtk.js/Common/DataModel/BoundingBox';
 import {
   gpuSettingsForRender,
   gridLimitsOfGpuSettings,
-  gpuSettingsForGrid,
   gpuTextureBytesPerVoxel,
 } from '../../utilities/gpuSettingsPresets';
 import { voxelGridWithinLimits } from '../../utilities/voxelGrid';
@@ -167,9 +166,9 @@ export default function createVolumeMapper(
  *
  * The new mapper is a plain vtk.js mapper, which uploads the complete scalar
  * array at full resolution, with no reduction. With final downsampling off,
- * the mapper is the one of 4.x. With final downsampling on, under `auto` the
- * edge probe runs first, the upload counts in the memory record, and a grid
- * above the limits of the GPU settings logs a warning.
+ * the mapper is the one of 4.x. With final downsampling on, the upload counts
+ * in the memory record, and a grid above the limits of the GPU settings logs a
+ * warning.
  *
  * @param sharedMapper - The shared mapper to convert.
  * @returns The converted volume mapper.
@@ -194,7 +193,7 @@ export function convertMapperToNotSharedMapper(sharedMapper: vtkVolumeMapper) {
 
   const gpuSettings = gpuSettingsForRender();
 
-  /** With final downsampling off, no preset applies and no probe runs. */
+  /** With final downsampling off, no preset applies. */
   if (!gpuSettings) {
     return volumeMapper;
   }
@@ -206,10 +205,7 @@ export function convertMapperToNotSharedMapper(sharedMapper: vtkVolumeMapper) {
     scalarArray.getData().length *
     gpuTextureBytesPerVoxel(scalarArray.getDataType());
   const textureBytes = bytesOfScalars();
-  const limits = gridLimitsOfGpuSettings(
-    gpuSettingsForGrid(gpuSettings, dimensions, bytesPerVoxel),
-    bytesPerVoxel
-  );
+  const limits = gridLimitsOfGpuSettings(gpuSettings, bytesPerVoxel);
 
   if (
     !voxelGridWithinLimits(

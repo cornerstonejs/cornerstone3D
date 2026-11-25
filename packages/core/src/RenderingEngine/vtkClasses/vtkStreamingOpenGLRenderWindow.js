@@ -8,6 +8,7 @@ import {
   removeGpuMemoryEntry,
   setGpuMemoryEntry,
 } from '../../utilities/gpuMemoryLedger';
+import { runPendingEdgeSearch } from '../../utilities/gpuSettingsPresets';
 
 /**
  * vtkStreamingOpenGLRenderWindow - A derived class of the core vtkOpenGLRenderWindow class.
@@ -37,6 +38,17 @@ function vtkStreamingOpenGLRenderWindow(publicAPI, model) {
         bytes: CONTEXT_OVERHEAD_BYTES,
       });
     }
+  };
+
+  const superTraverseAllPasses = publicAPI.traverseAllPasses;
+
+  /** A pending edge search of `auto` runs in this context, not in a new one. */
+  publicAPI.traverseAllPasses = () => {
+    if (model.context && !model.rootOpenGLRenderWindow) {
+      runPendingEdgeSearch(model.context);
+    }
+
+    superTraverseAllPasses();
   };
 
   const superDelete = publicAPI.delete;
