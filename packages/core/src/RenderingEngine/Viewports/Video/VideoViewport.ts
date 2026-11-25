@@ -9,7 +9,7 @@ import type {
   ImageActor,
   Point2,
   Point3,
-  ReferenceCompatibleOptions,
+  ReferenceViewableCheck,
   RGB,
   ViewReference,
   ViewReferenceSpecifier,
@@ -548,17 +548,18 @@ class VideoViewport extends BaseViewport<
   }
 
   /**
-   * Whether the viewport shows a reference. A reference to an image of one
-   * frame shows on that frame. A reference whose image names a range of
-   * frames (`.../frames/3-9`) shows on each frame of the range. A reference
-   * to the video without a frame shows on every frame. With `withNavigation`
-   * the answer is whether the video has the frame at all.
+   * A check of whether the viewport shows a reference, for the frame on
+   * display when it was made. A reference to an image of one frame shows on
+   * that frame. A reference whose image names a range of frames
+   * (`.../frames/3-9`) shows on each frame of the range. A reference to the
+   * video without a frame shows on every frame. With `withNavigation` the
+   * answer is whether the video has the frame at all.
    */
-  override isReferenceViewable(
-    viewRef: ViewReference,
-    options: ReferenceCompatibleOptions = {}
-  ): boolean {
-    return super.isReferenceViewable(asFrameRangeReference(viewRef), options);
+  override getReferenceViewableCheck(): ReferenceViewableCheck {
+    const isViewable = super.getReferenceViewableCheck();
+
+    return (viewRef, options) =>
+      isViewable(asFrameRangeReference(viewRef), options);
   }
 
   /**

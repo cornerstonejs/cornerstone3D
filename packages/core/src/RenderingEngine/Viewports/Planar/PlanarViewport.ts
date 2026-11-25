@@ -30,6 +30,7 @@ import type {
   Point2,
   Point3,
   ReferenceCompatibleOptions,
+  ReferenceViewableCheck,
   ScrollOptions,
   VOIRange,
   ViewReference,
@@ -66,6 +67,7 @@ import { isSegmentationOverlayData } from '../renderingFidelity';
 import type { ViewportWidget } from '../Volume3D/viewport3DTypes';
 import type { ViewReferenceContext } from '../viewReferenceCompatibility';
 import {
+  isViewReferenceViewable,
   isViewReferenceViewableAsVolume,
   isPointNearImagePlane,
 } from '../viewReferenceCompatibility';
@@ -183,7 +185,6 @@ type ResolvedViewCache = {
   canvasHeight: number;
   canvasWidth: number;
   data?: LoadedData<PlanarPayload>;
-  frameOfReferenceUID: string;
   rendering?: PlanarRendering;
   resolvedView: ResolvedPlanarViewportView;
   revision: number;
@@ -2304,8 +2305,12 @@ class PlanarViewport extends BaseViewport<
   }
 
   /**
-   * Returns whether a view reference is spatially compatible with this
-   * viewport.
+   * A check that answers `isReferenceViewable` for many references against
+   * the view as it is now, as on every viewport. It reads the reference
+   * contexts of the view, its mode and the image on display once, so that a
+   * filter of the annotations of a draw does not resolve the view and read
+   * the metadata of the image on display for each annotation. Make a new one
+   * after the view changes.
    *
    * `asOverlay` takes an image that is not in the stack but lies on the image
    * shown as viewable.
@@ -2346,75 +2351,75 @@ class PlanarViewport extends BaseViewport<
    * finite number is not viewable with any option, in both modes, and
    * `setViewReference` moves nothing for it.
    *
-   * @param viewRef - View reference to test.
-   * @param options - Optional compatibility flags for the spatial check.
-   * @returns `true` when the reference can be viewed in this viewport state.
+   * @returns The check: for a view reference and options, `true` when the
+   * reference can be viewed in the view of the moment the check was made.
    */
-  isReferenceViewable(
-    viewRef: ViewReference,
-    options: ReferenceCompatibleOptions = {}
-  ): boolean {
-    if (hasNonFiniteViewReferenceGeometry(viewRef)) {
-      return false;
-    }
+  getReferenceViewableCheck(): ReferenceViewableCheck {
+    const contexts = this.getReferenceViewContexts();
+    const mode = this.getCurrentMode();
+    const isStack = mode === 'stack';
+    const currentImageId = isStack ? this.getCurrentImageId() : undefined;
+    let imageData: CPUIImageData | undefined;
 
-    const reference = getPlanarReferenceForViewableCheck(viewRef);
-    const isStack = this.getCurrentMode() === 'stack';
+    return (viewRef, options = {}) => {
+      if (hasNonFiniteViewReferenceGeometry(viewRef)) {
+        return false;
+      }
 
-    if (
-      isStack &&
-      viewRef?.referencedImageId &&
-      viewRef.referencedImageId === this.getCurrentImageId()
-    ) {
-      return true;
-    }
+      const reference = getPlanarReferenceForViewableCheck(viewRef);
 
-    if (
-      this.getCurrentMode() === 'volume' &&
-      !options.asOverlay &&
-      namesImageWithoutFrameOfReference(viewRef)
-    ) {
-      return false;
-    }
+      if (
+        isStack &&
+        viewRef?.referencedImageId &&
+        viewRef.referencedImageId === currentImageId
+      ) {
+        return true;
+      }
 
-    const checkOptions = isStack
-      ? { ...options, withOrientation: options.asVolume }
-      : options;
-    const imageReference =
-      isStack && options.withNavigation
-        ? getPlanarImageReferenceForStack(reference)
-        : undefined;
-    const isViewable =
-      super.isReferenceViewable(reference, checkOptions) ||
-      Boolean(
-        imageReference &&
-          super.isReferenceViewable(imageReference, checkOptions)
+      if (
+        mode === 'volume' &&
+        !options.asOverlay &&
+        namesImageWithoutFrameOfReference(viewRef)
+      ) {
+        return false;
+      }
+
+      const checkOptions = isStack
+        ? { ...options, withOrientation: options.asVolume }
+        : options;
+      const imageReference =
+        isStack && options.withNavigation
+          ? getPlanarImageReferenceForStack(reference)
+          : undefined;
+      const isViewable =
+        isViewReferenceViewable(reference, contexts, checkOptions) ||
+        Boolean(
+          imageReference &&
+            isViewReferenceViewable(imageReference, contexts, checkOptions)
+        );
+
+      if (!isViewable && options.asVolume && isStack) {
+        return isViewReferenceViewableAsVolume(reference, contexts);
+      }
+
+      if (
+        !isViewable ||
+        !options.asNearbyProjection ||
+        !viewRef.cameraFocalPoint ||
+        viewRef.referencedImageId ||
+        viewRef.volumeId ||
+        viewRef.FrameOfReferenceUID ||
+        !isStack
+      ) {
+        return isViewable;
+      }
+
+      imageData ??= this.getImageData() as CPUIImageData | undefined;
+
+      return Boolean(
+        imageData && isPointNearImagePlane(viewRef.cameraFocalPoint, imageData)
       );
-
-    if (!isViewable && options.asVolume && isStack) {
-      return isViewReferenceViewableAsVolume(
-        reference,
-        this.getReferenceViewContexts()
-      );
-    }
-
-    if (
-      !isViewable ||
-      !options.asNearbyProjection ||
-      !viewRef.cameraFocalPoint ||
-      viewRef.referencedImageId ||
-      viewRef.volumeId ||
-      viewRef.FrameOfReferenceUID ||
-      this.getCurrentMode() !== 'stack'
-    ) {
-      return isViewable;
-    }
-
-    const imageData = this.getImageData() as CPUIImageData | undefined;
-
-    return Boolean(
-      imageData && isPointNearImagePlane(viewRef.cameraFocalPoint, imageData)
-    );
+    };
   }
 
   /**
@@ -4322,6 +4327,15 @@ class PlanarViewport extends BaseViewport<
     return { width: canvasWidth, height: canvasHeight };
   }
 
+  /**
+   * The resolved view of the view state, kept until the view state, the
+   * source, its data or rendering, the canvas size or the revision changes.
+   * A render path bumps the revision (`invalidateResolvedView`) when it draws
+   * another image or slice, so the frame of reference of the drawn image,
+   * which comes from its metadata, is read when the view is resolved and not
+   * on each lookup: a coordinate transform, which a tool makes for each point
+   * that it draws, reads no metadata.
+   */
   private resolveCachedViewState(
     viewState: PlanarViewState,
     args: {
@@ -4336,7 +4350,6 @@ class PlanarViewport extends BaseViewport<
     const data = this.getPlanarData();
     const rendering = this.getCurrentPlanarRendering();
     const sourceDisplaySetId = this.mountedData.getSourceDisplaySetId();
-    const frameOfReferenceUID = this.resolveFrameOfReferenceUID();
     const cache = this.resolvedViewCache;
 
     if (!rendering) {
@@ -4352,7 +4365,6 @@ class PlanarViewport extends BaseViewport<
       cache.viewState === viewState &&
       cache.data === data &&
       cache.rendering === rendering &&
-      cache.frameOfReferenceUID === frameOfReferenceUID &&
       cache.canvasHeight === canvasHeight &&
       cache.canvasWidth === canvasWidth &&
       cache.revision === this.resolvedViewCacheRevision
@@ -4363,7 +4375,7 @@ class PlanarViewport extends BaseViewport<
     const resolvedView = resolvePlanarViewportView({
       viewState,
       data,
-      frameOfReferenceUID,
+      frameOfReferenceUID: this.resolveFrameOfReferenceUID(),
       renderContext: this.renderContext,
       rendering,
       canvasDimensions: {
@@ -4378,7 +4390,6 @@ class PlanarViewport extends BaseViewport<
         canvasHeight,
         canvasWidth,
         data,
-        frameOfReferenceUID,
         rendering,
         resolvedView,
         revision: this.resolvedViewCacheRevision,

@@ -12,6 +12,7 @@ import type {
 import type ImageQualityStatus from '../../enums/ImageQualityStatus';
 import type {
   ReferenceCompatibleOptions,
+  ReferenceViewableCheck,
   ViewReference,
   ViewReferenceSpecifier,
 } from '../../types/IViewport';
@@ -271,6 +272,7 @@ export interface ViewportController<
     viewReference: ViewReference,
     options?: ReferenceCompatibleOptions
   ): boolean;
+  getReferenceViewableCheck(): ReferenceViewableCheck;
 
   render(): void;
   setRendered(): void;

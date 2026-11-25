@@ -33,6 +33,7 @@ import type ViewportType from '../../enums/ViewportType';
 import type ResolvedViewportView from './ResolvedViewportView';
 import type {
   ReferenceCompatibleOptions,
+  ReferenceViewableCheck,
   ViewFraming,
   ViewFramingSelector,
   ViewReference,
@@ -766,17 +767,30 @@ abstract class BaseViewport<
   }
 
   /**
-   * Returns whether a spatial reference is compatible with this viewport.
+   * Returns whether a spatial reference is compatible with this viewport: the
+   * answer of a check of `getReferenceViewableCheck` for one reference.
    */
   isReferenceViewable(
     viewReference: ViewReference,
     options: ReferenceCompatibleOptions = {}
   ): boolean {
-    return isViewReferenceViewable(
-      viewReference,
-      this.getReferenceViewContexts(viewReference),
-      options
-    );
+    return this.getReferenceViewableCheck()(viewReference, options);
+  }
+
+  /**
+   * A check that answers `isReferenceViewable` for many references against
+   * the view as it is now. It reads the reference contexts of the view (the
+   * facts of the drawn image or slice) once, so that a filter of the
+   * annotations of a draw does not read them for each annotation. It does
+   * not follow the view: make a new one after the view changes. A viewport
+   * family that decides references in its own way overrides this method,
+   * and `isReferenceViewable` answers with it.
+   */
+  getReferenceViewableCheck(): ReferenceViewableCheck {
+    const contexts = this.getReferenceViewContexts();
+
+    return (viewReference, options = {}) =>
+      isViewReferenceViewable(viewReference, contexts, options);
   }
 
   /**
@@ -1856,9 +1870,7 @@ abstract class BaseViewport<
    * Returns generic reference-compatibility contexts for mounted datasets.
    * Subclasses can add image, volume, slice, plane, and dimension facts.
    */
-  protected getReferenceViewContexts(
-    _viewReference?: ViewReference
-  ): ViewReferenceContext[] {
+  protected getReferenceViewContexts(): ViewReferenceContext[] {
     const contexts: ViewReferenceContext[] = [];
     const resolvedView = this.getResolvedView();
     const camera = resolvedView?.toICamera();

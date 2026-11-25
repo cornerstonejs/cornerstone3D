@@ -9,7 +9,10 @@ import type { Annotation, Annotations } from '../../types';
  * Given the viewport and the annotations, it filters the annotations array and only
  * return those annotation that should be displayed on the viewport.
  * A viewport that checks references by `isReferenceViewable` also gets the
- * handle points of each annotation in the `points` option.
+ * handle points of each annotation in the `points` option. The filter asks
+ * one check of the viewport (`getReferenceViewableCheck`) for all the
+ * annotations, so that the facts of the drawn view are read once for a
+ * filter and not once for each annotation.
  *
  * An annotation with a range of slices (a `multiSliceReference` in its
  * metadata, which `AnnotationMultiSlice` sets) shows on the slices of the
@@ -55,15 +58,18 @@ export default function filterAnnotationsForDisplay(
         spacingInNormalDirection
       )
     );
+    const isRangeViewable = createAnnotationViewableCheck(viewport);
 
     return annotations.filter((annotation) =>
       hasSliceRange(annotation)
-        ? isAnnotationViewable(viewport, annotation, filterOptions)
+        ? isRangeViewable(annotation, filterOptions)
         : annotationsWithinSlice.has(annotation)
     );
   }
+  const isViewable = createAnnotationViewableCheck(viewport);
+
   return annotations.filter((annotation) =>
-    isAnnotationViewable(viewport, annotation, filterOptions)
+    isViewable(annotation, filterOptions)
   );
 }
 
@@ -77,23 +83,32 @@ function hasSliceRange(annotation: Annotation): boolean {
 
 /**
  * Whether the viewport shows an annotation by its reference, with the handle
- * points of the annotation in the `points` option.
+ * points of the annotation in the `points` option. The check of the viewport
+ * is made on the first annotation that needs it, so a filter of annotations
+ * that are all hidden or on the canvas reads nothing of the view.
  */
-function isAnnotationViewable(
-  viewport: Types.IViewport,
+function createAnnotationViewableCheck(
+  viewport: Types.IViewport
+): (
   annotation: Annotation,
   filterOptions: Types.ReferenceCompatibleOptions
-): boolean {
-  if (!annotation.isVisible) {
-    return false;
-  }
-  if (annotation.data.isCanvasAnnotation) {
-    return true;
-  }
-  const points = annotation.data?.handles?.points;
+) => boolean {
+  let isReferenceViewable: Types.ReferenceViewableCheck | undefined;
 
-  return viewport.isReferenceViewable(
-    annotation.metadata,
-    points?.length ? { ...filterOptions, points } : filterOptions
-  );
+  return (annotation, filterOptions) => {
+    if (!annotation.isVisible) {
+      return false;
+    }
+    if (annotation.data.isCanvasAnnotation) {
+      return true;
+    }
+    const points = annotation.data?.handles?.points;
+
+    isReferenceViewable ??= viewport.getReferenceViewableCheck();
+
+    return isReferenceViewable(
+      annotation.metadata,
+      points?.length ? { ...filterOptions, points } : filterOptions
+    );
+  };
 }

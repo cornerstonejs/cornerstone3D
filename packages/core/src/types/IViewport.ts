@@ -147,6 +147,18 @@ export interface ReferenceCompatibleOptions {
 }
 
 /**
+ * The answer of `isReferenceViewable` for the view that a viewport showed
+ * when it made the check (`getReferenceViewableCheck`). The check reads the
+ * facts of the view once, so that it answers for each of many references,
+ * as the annotations of a draw, at the cost of a comparison of what each
+ * reference carries.
+ */
+export type ReferenceViewableCheck = (
+  viewReference: ViewReference,
+  options?: ReferenceCompatibleOptions
+) => boolean;
+
+/**
  * A referenced image range is used for specifying that an annotation applies
  * to a range of images.  The content value references the last image included,
  * while the top level view reference specifies the first image included.
@@ -629,6 +641,12 @@ interface IViewport<
     viewReference: ViewReference,
     options?: ReferenceCompatibleOptions
   ): boolean;
+  /**
+   * A check that answers `isReferenceViewable` for many references against
+   * the view as it is now. It reads the facts of the view once; make a new
+   * one after the view changes.
+   */
+  getReferenceViewableCheck(): ReferenceViewableCheck;
   /** The frame of reference of the view, or an id of the viewport itself. */
   getFrameOfReferenceUID(): string;
 

@@ -70,6 +70,11 @@ export function membersOfTheInterface() {
   const viewable: boolean = viewport.isReferenceViewable(reference, {
     withNavigation: true,
   });
+  const isViewable: Types.ReferenceViewableCheck =
+    viewport.getReferenceViewableCheck();
+  const viewableByCheck: boolean = isViewable(reference, {
+    withNavigation: true,
+  });
   const world: Types.Point3 = viewport.canvasToWorld([0, 0]);
   const canvas: Types.Point2 = viewport.worldToCanvas(world);
   const displaySets: Array<{ displaySetId: string; options?: unknown }> =
@@ -97,6 +102,7 @@ export function membersOfTheInterface() {
     mode,
     referenceId,
     viewable,
+    viewableByCheck,
     canvas,
     displaySets,
     camera,

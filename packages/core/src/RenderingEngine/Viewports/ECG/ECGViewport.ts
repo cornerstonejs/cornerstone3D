@@ -15,7 +15,7 @@ import type {
   Mat3,
   Point2,
   Point3,
-  ReferenceCompatibleOptions,
+  ReferenceViewableCheck,
   ViewReference,
   ViewReferenceSpecifier,
   ViewportContentMode,
@@ -399,12 +399,13 @@ class ECGViewport extends BaseViewport<
   }
 
   /**
-   * Checks the record as the base class does, and then rejects a reference
-   * whose lead (`sliceIndex`, see {@link getViewReference}) the current trace
-   * layout does not show, so that a tool does not draw it. World Z of an ECG
-   * is a lead and not a place in space, so the view plane normal and the
-   * plane restriction that a legacy ECG viewport puts in its references are
-   * not checked, as the legacy viewport does not check them.
+   * A check that decides the record as the base class does, and then rejects
+   * a reference whose lead (`sliceIndex`, see {@link getViewReference}) the
+   * trace layout of the moment the check was made does not show, so that a
+   * tool does not draw it. World Z of an ECG is a lead and not a place in
+   * space, so the view plane normal and the plane restriction that a legacy
+   * ECG viewport puts in its references are not checked, as the legacy
+   * viewport does not check them.
    *
    * With `options.points`, the points of the annotation, the reference shows
    * only when, for each lead of the points, one cell of the layout holds the
@@ -412,44 +413,44 @@ class ECGViewport extends BaseViewport<
    * viewport keeps that cell for each point, and `worldToCanvas` draws the
    * point there.
    */
-  isReferenceViewable(
-    viewReference: ViewReference,
-    options: ReferenceCompatibleOptions = {}
-  ): boolean {
-    if (!viewReference) {
-      return false;
-    }
-    const { sliceIndex } = viewReference;
-    const recordReference: ViewReference = { ...viewReference };
-
-    delete recordReference.sliceIndex;
-    delete recordReference.viewPlaneNormal;
-    delete recordReference.planeRestriction;
-
-    if (!super.isReferenceViewable(recordReference, options)) {
-      return false;
-    }
+  getReferenceViewableCheck(): ReferenceViewableCheck {
+    const isRecordViewable = super.getReferenceViewableCheck();
     const resolvedView = this.getResolvedView();
 
-    if (!resolvedView) {
-      return true;
-    }
-    if (
-      typeof sliceIndex === 'number' &&
-      !resolvedView.findLayoutForZ(sliceIndex)
-    ) {
-      return false;
-    }
-    if (!options.points?.length) {
-      return true;
-    }
-    const layouts = resolvedView.findLayoutsForPoints(options.points);
+    return (viewReference, options = {}) => {
+      if (!viewReference) {
+        return false;
+      }
+      const { sliceIndex } = viewReference;
+      const recordReference: ViewReference = { ...viewReference };
 
-    layouts?.forEach((layout, point) =>
-      this.pointRegions.set(point, layout.regionIndex)
-    );
+      delete recordReference.sliceIndex;
+      delete recordReference.viewPlaneNormal;
+      delete recordReference.planeRestriction;
 
-    return !!layouts;
+      if (!isRecordViewable(recordReference, options)) {
+        return false;
+      }
+      if (!resolvedView) {
+        return true;
+      }
+      if (
+        typeof sliceIndex === 'number' &&
+        !resolvedView.findLayoutForZ(sliceIndex)
+      ) {
+        return false;
+      }
+      if (!options.points?.length) {
+        return true;
+      }
+      const layouts = resolvedView.findLayoutsForPoints(options.points);
+
+      layouts?.forEach((layout, point) =>
+        this.pointRegions.set(point, layout.regionIndex)
+      );
+
+      return !!layouts;
+    };
   }
 
   /**

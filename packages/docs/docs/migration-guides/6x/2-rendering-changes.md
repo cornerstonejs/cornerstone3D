@@ -2983,6 +2983,46 @@ is one, see [Functions of the core package](./3-api-map.md#functions-of-the-core
   `points`, and the annotation filter of the tools passes the handle points
   of each annotation. A viewport that shows a part of its world in several
   places uses them.
+- **The annotation filter of the tools asks the viewport one check for all
+  the annotations of a draw.** `viewport.getReferenceViewableCheck()` gives
+  a function (`Types.ReferenceViewableCheck`) that answers
+  `isReferenceViewable(viewReference, options)` for the view as it is when
+  the check is made. It reads the facts of the view (the drawn image or
+  slice, its plane and its frame of reference) once, so a filter of 2,000
+  annotations reads them once and not 2,000 times, and calls the metadata
+  provider a number of times that does not depend on the annotations.
+  `isReferenceViewable` is that check for one reference. A check does not
+  follow the view: make a new one after a scroll. A viewport class that
+  decides references in its own way overrides `getReferenceViewableCheck`;
+  one that overrides only `isReferenceViewable` changes a single call and
+  not what the tools draw:
+
+  ```ts
+  // Before (6.0.0-beta.2)
+  class MyViewport extends PlanarViewport {
+    isReferenceViewable(viewRef, options) {
+      return isMine(viewRef) && super.isReferenceViewable(viewRef, options);
+    }
+  }
+
+  // After
+  class MyViewport extends PlanarViewport {
+    getReferenceViewableCheck() {
+      const isViewable = super.getReferenceViewableCheck();
+
+      return (viewRef, options) =>
+        isMine(viewRef) && isViewable(viewRef, options);
+    }
+  }
+  ```
+
+  In 6.0.0-beta.2 the filter of a stack asked `isReferenceViewable` for each
+  annotation, and each call resolved the view and read the metadata of the
+  drawn image again: 2,265 contours of an RTSTRUCT on a stack of 262 images
+  made about 64,000 metadata calls at each draw and drew 150 to 200 ms after
+  a scroll. The legacy stack viewport of 5.x decided an annotation by its
+  image id, with no metadata.
+
 - **16-bit textures:** a scale error of up to one grey level at a normal
   window is fixed on GPUs with 16-bit normalised textures.
 - **`AnnotationMultiSlice.setViewportFrameRange`** sets the range. It passed

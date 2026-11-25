@@ -83,8 +83,7 @@ export function isViewReferenceViewableAsVolume(
   return contexts.some(
     (context) =>
       isFrameOfReferenceCompatible(viewRef, context) &&
-      (!viewRef.referencedImageURI ||
-        hasReferencedImage(viewRef, context.imageIds, context.imageURIs)) &&
+      (!viewRef.referencedImageURI || hasReferencedImage(viewRef, context)) &&
       (!viewRef.planeRestriction ||
         isPlaneRestrictionViewable(viewRef.planeRestriction, viewRef, context, {
           withOrientation: true,
@@ -194,7 +193,7 @@ function isOtherDataReferenceViewable(
   options: ReferenceCompatibleOptions
 ): boolean {
   const isShown = getReferencedImageURIs(viewRef).length
-    ? hasReferencedImage(viewRef, context.imageIds, context.imageURIs)
+    ? hasReferencedImage(viewRef, context)
     : isPlaneOfVolumeContext(viewRef, context, options);
 
   if (!isShown) {
@@ -261,13 +260,12 @@ function isPlaneOfVolumeContext(
 }
 
 /**
- * Whether the image that a reference names is among image ids, or among the
- * image URIs of data as a whole.
+ * Whether the image that a reference names is among the image ids of a
+ * context, or among the image URIs of its data as a whole.
  */
 function hasReferencedImage(
   viewRef: ViewReference,
-  imageIds: string[] | undefined,
-  imageURIs?: string[]
+  context: ViewReferenceContext
 ): boolean {
   const referencedImageURIs = getReferencedImageURIs(viewRef);
 
@@ -275,16 +273,15 @@ function hasReferencedImage(
     return false;
   }
 
-  if (imageURIs?.some((imageURI) => referencedImageURIs.includes(imageURI))) {
+  if (
+    context.imageURIs?.some((imageURI) =>
+      referencedImageURIs.includes(imageURI)
+    )
+  ) {
     return true;
   }
 
-  return Boolean(
-    imageIds?.length &&
-      getImageIdsURIEntries(imageIds).some((imageURIEntry) =>
-        imageURIEntryMatches(imageURIEntry, referencedImageURIs)
-      )
-  );
+  return getImageIndexOfURIs(context, referencedImageURIs) !== -1;
 }
 
 /**
@@ -323,7 +320,7 @@ function isFrameOfReferenceUIDOfContext(
       frameOfReferenceUID,
       context.imageIds
     ) &&
-      hasReferencedImage(viewRef, context.imageIds))
+      getImageIndexOfURIs(context, getReferencedImageURIs(viewRef)) !== -1)
   );
 }
 
@@ -538,35 +535,37 @@ function isReferencedImageCompatible(
     return true;
   }
 
-  const foundSliceIndex = imageURIEntries.findIndex((imageURIEntry) =>
-    imageURIEntryMatches(imageURIEntry, referencedImageURIs)
+  const isAnyImageViewable = Boolean(
+    context.allowAnyImageReference || options.withNavigation
   );
+  const rangeEndImageURIs = viewRef.multiSliceReference
+    ? getReferencedImageURIs(viewRef.multiSliceReference)
+    : [];
+
+  if (!isAnyImageViewable && !rangeEndImageURIs.length) {
+    return false;
+  }
+
+  const foundSliceIndex = getImageIndexOfURIs(context, referencedImageURIs);
 
   if (foundSliceIndex === -1) {
     return false;
   }
 
-  if (context.allowAnyImageReference) {
+  if (isAnyImageViewable) {
     return true;
   }
 
-  if (options.withNavigation) {
-    return true;
+  const rangeEndSliceIndex = getImageIndexOfURIs(context, rangeEndImageURIs);
+
+  if (rangeEndSliceIndex === -1) {
+    return false;
   }
 
-  const rangeEndSliceIndex = getReferencedImageRangeEndIndex(
-    imageURIEntries,
-    viewRef
-  );
+  const start = Math.min(foundSliceIndex, rangeEndSliceIndex);
+  const end = Math.max(foundSliceIndex, rangeEndSliceIndex);
 
-  if (rangeEndSliceIndex !== undefined) {
-    const start = Math.min(foundSliceIndex, rangeEndSliceIndex);
-    const end = Math.max(foundSliceIndex, rangeEndSliceIndex);
-
-    return start <= currentImageIdIndex && currentImageIdIndex <= end;
-  }
-
-  return currentImageIdIndex === foundSliceIndex;
+  return start <= currentImageIdIndex && currentImageIdIndex <= end;
 }
 
 /**
@@ -754,25 +753,6 @@ function getReferencedImageURIs(viewRef: ViewReference): string[] {
   ]);
 }
 
-function getReferencedImageRangeEndIndex(
-  imageURIEntries: string[][],
-  viewRef: ViewReference
-): number | undefined {
-  const rangeEndImageURI =
-    viewRef.multiSliceReference &&
-    getReferencedImageURIs(viewRef.multiSliceReference);
-
-  if (!rangeEndImageURI?.length) {
-    return;
-  }
-
-  const rangeEndSliceIndex = imageURIEntries.findIndex((imageURIEntry) =>
-    imageURIEntryMatches(imageURIEntry, rangeEndImageURI)
-  );
-
-  return rangeEndSliceIndex === -1 ? undefined : rangeEndSliceIndex;
-}
-
 // Cache the compatible URIs for a given imageId. imageId -> URI is a pure,
 // stable mapping, so memoizing it avoids re-parsing the same strings on every
 // reference-compatibility check (these run once per labelmap image while
@@ -796,6 +776,74 @@ function getImageIdsURIEntries(imageIds: string[]): string[][] {
   }
 
   return entries;
+}
+
+/**
+ * The index of the image URIs of a context: each URI to the first slice
+ * whose image has it. It is made on the first lookup of a context and kept
+ * with the context object. The viewports make their contexts anew for each
+ * check (`getReferenceViewableCheck`), so an index lives as long as the facts
+ * of the view that it was made from, and a check of the next view makes its
+ * own.
+ */
+const contextImageURIIndexes = new WeakMap<
+  ViewReferenceContext,
+  Map<string, number>
+>();
+
+function getContextImageURIIndex(
+  context: ViewReferenceContext
+): Map<string, number> {
+  let index = contextImageURIIndexes.get(context);
+
+  if (!index) {
+    index = new Map();
+
+    const imageURIEntries = context.imageIds?.length
+      ? getImageIdsURIEntries(context.imageIds)
+      : [];
+
+    imageURIEntries.forEach((imageURIEntry, sliceIndex) => {
+      imageURIEntry.forEach((imageURI) => {
+        if (!index.has(imageURI)) {
+          index.set(imageURI, sliceIndex);
+        }
+      });
+    });
+    contextImageURIIndexes.set(context, index);
+  }
+
+  return index;
+}
+
+/**
+ * The first slice of a context whose image has one of the image URIs, or -1
+ * when none has: a lookup in the index of the context, at the cost of a
+ * comparison for each URI and not of a pass over the images.
+ */
+function getImageIndexOfURIs(
+  context: ViewReferenceContext,
+  imageURIs: string[]
+): number {
+  if (!imageURIs.length) {
+    return -1;
+  }
+
+  const index = getContextImageURIIndex(context);
+  let firstSliceIndex = -1;
+
+  imageURIs.forEach((imageURI) => {
+    const sliceIndex = index.get(imageURI);
+
+    if (
+      sliceIndex !== undefined &&
+      (firstSliceIndex === -1 || sliceIndex < firstSliceIndex)
+    ) {
+      firstSliceIndex = sliceIndex;
+    }
+  });
+
+  return firstSliceIndex;
 }
 
 function getImageIdCompatibleURIs(imageId: string): string[] {

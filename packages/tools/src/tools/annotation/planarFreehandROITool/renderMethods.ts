@@ -54,6 +54,31 @@ function _getRenderingOptions(
 }
 
 /**
+ * Whether the viewport of a draw has its image data, asked once for a draw
+ * and not for each contour that it draws: making the image data reads the
+ * metadata of the drawn image. `getSvgDrawingHelper` makes a helper for each
+ * draw of an element, so the answer is kept with the helper of the draw and
+ * goes with it.
+ */
+const imageDataOfDraws = new WeakMap<SVGDrawingHelper, boolean>();
+
+function hasImageDataForDraw(
+  enabledElement: Types.IEnabledElement,
+  svgDrawingHelper: SVGDrawingHelper
+): boolean {
+  let hasImageData = imageDataOfDraws.get(svgDrawingHelper);
+
+  if (hasImageData === undefined) {
+    hasImageData = Boolean(
+      (enabledElement?.viewport as PlanarViewport)?.getImageData()
+    );
+    imageDataOfDraws.set(svgDrawingHelper, hasImageData);
+  }
+
+  return hasImageData;
+}
+
+/**
  * Renders a `PlanarFreehandROIAnnotation` that is not currently being drawn or edited.
  */
 function renderContour(
@@ -62,7 +87,7 @@ function renderContour(
   annotation: PlanarFreehandROIAnnotation
 ): void {
   // prevent drawing or further calculation in case viewport data is not ready yet
-  if (!(enabledElement?.viewport as PlanarViewport)?.getImageData()) {
+  if (!hasImageDataForDraw(enabledElement, svgDrawingHelper)) {
     return;
   }
   // Check if the contour is an open contour

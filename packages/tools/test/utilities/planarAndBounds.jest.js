@@ -399,7 +399,7 @@ describe('utilities/planar/filterAnnotationsForDisplay', () => {
       ...nextViewportApi(),
       type: 'planar',
       getCurrentImageId,
-      isReferenceViewable,
+      getReferenceViewableCheck: () => isReferenceViewable,
     };
     csUtils.getViewportContentMode.mockReturnValue('stack');
     const annotation = makeAnnotation();
@@ -425,7 +425,7 @@ describe('utilities/planar/filterAnnotationsForDisplay', () => {
 
   it('generic viewport: falls through to isReferenceViewable with the given filterOptions', () => {
     const isReferenceViewable = jest.fn(() => false);
-    const viewport = { isReferenceViewable };
+    const viewport = { getReferenceViewableCheck: () => isReferenceViewable };
     csUtils.getViewportContentMode.mockReturnValue(undefined);
     const annotation = makeAnnotation();
 
@@ -443,7 +443,7 @@ describe('utilities/planar/filterAnnotationsForDisplay', () => {
 describe('utilities/planar/filterAnnotationsForDisplay with handle points', () => {
   it('gives the handle points of the annotation to isReferenceViewable', () => {
     const isReferenceViewable = jest.fn(() => true);
-    const viewport = { isReferenceViewable };
+    const viewport = { getReferenceViewableCheck: () => isReferenceViewable };
     const points = [
       [500, 10, 1],
       [2000, 20, 1],
@@ -460,6 +460,29 @@ describe('utilities/planar/filterAnnotationsForDisplay with handle points', () =
     });
     expect(isReferenceViewable.mock.calls[0][1].points).toBe(points);
     expect(filterOptions).toEqual({ withNavigation: true });
+  });
+
+  it('makes one reference viewable check of the viewport for all the annotations, and none for hidden or canvas annotations only', () => {
+    const isReferenceViewable = jest.fn(() => true);
+    const getReferenceViewableCheck = jest.fn(() => isReferenceViewable);
+    const viewport = { getReferenceViewableCheck };
+    csUtils.getViewportContentMode.mockReturnValue('stack');
+
+    filterAnnotationsForDisplay(viewport, [
+      makeAnnotation({ isVisible: false }),
+      makeAnnotation({ isCanvasAnnotation: true }),
+    ]);
+
+    expect(getReferenceViewableCheck).not.toHaveBeenCalled();
+
+    filterAnnotationsForDisplay(viewport, [
+      makeAnnotation(),
+      makeAnnotation(),
+      makeAnnotation(),
+    ]);
+
+    expect(getReferenceViewableCheck).toHaveBeenCalledTimes(1);
+    expect(isReferenceViewable).toHaveBeenCalledTimes(3);
   });
 });
 
