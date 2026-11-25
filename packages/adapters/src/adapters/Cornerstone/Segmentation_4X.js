@@ -1617,51 +1617,57 @@ export function getUnpackedChunks(data, maxBytesPerChunk) {
  * getImageIdOfSourceImageBySourceImageSequence - Returns the Cornerstone imageId of the source image.
  *
  * @param  {Object}   SourceImageSequence  Sequence describing the source image.
- * @param  {String[]} imageIds             A list of imageIds.
- * @param  {Object}   sopUIDImageIdIndexMap A map of SOPInstanceUIDs to imageIds.
+ * @param  {Object}   sopUIDImageIdIndexMap A map of SOPInstanceUIDs to the list
+ *                                         of imageIds (one per frame, in frame order).
  * @return {String}                        The corresponding imageId.
  */
 export function getImageIdOfSourceImageBySourceImageSequence(
   SourceImageSequence,
   sopUIDImageIdIndexMap
 ) {
-  const { ReferencedSOPInstanceUID, ReferencedFrameNumber } =
+  const { ReferencedSOPInstanceUID, ReferencedFrameNumber = 1 } =
     SourceImageSequence;
 
-  const baseImageId = sopUIDImageIdIndexMap[ReferencedSOPInstanceUID];
+  const mapped = sopUIDImageIdIndexMap[ReferencedSOPInstanceUID];
+  // Accept a single imageId too, for callers still building a string-valued map.
+  const baseImageIds = Array.isArray(mapped) ? mapped : mapped ? [mapped] : [];
 
-  if (!baseImageId) {
+  if (!baseImageIds.length) {
     cs3dLogger.warn(
       `No imageId found for SOPInstanceUID: ${ReferencedSOPInstanceUID}`
     );
     return undefined;
   }
 
-  if (ReferencedFrameNumber !== undefined) {
-    if (baseImageId.includes('frames/')) {
-      return baseImageId.replace(
-        /frames\/\d+/,
-        `frames/${ReferencedFrameNumber}`
-      );
-    } else if (baseImageId.includes('dicomfile:')) {
-      // dicomfile base 1, despite having frame=
-      return baseImageId.replace(/frame=\d+/, `frame=${ReferencedFrameNumber}`);
-    } else if (
-      baseImageId.includes('frame=') ||
-      baseImageId.includes('wadouri:')
-    ) {
-      // OHIF local/wadouri use 1-based ?frame= / &frame= (same as dicomfile:).
-      return baseImageId.replace(/frame=\d+/, `frame=${ReferencedFrameNumber}`);
-    } else {
-      if (baseImageId.includes('wadors:')) {
-        return `${baseImageId}/frames/${ReferencedFrameNumber}`;
-      } else {
-        return `${baseImageId}?frame=${ReferencedFrameNumber}`;
-      }
-    }
+  // Otherwise derive the frame's imageId from the first one by rewriting
+  // the frame number.
+  const [baseImageId] = baseImageIds;
+
+  if (baseImageId.includes('frames/')) {
+    return baseImageId.replace(
+      /frames\/\d+/,
+      `frames/${ReferencedFrameNumber}`
+    );
+  } else if (baseImageId.includes('dicomfile:')) {
+    // dicomfile base 1, despite having frame=
+    return baseImageId.replace(/frame=\d+/, `frame=${ReferencedFrameNumber}`);
+  } else if (
+    baseImageId.includes('frame=') ||
+    baseImageId.includes('wadouri:')
+  ) {
+    // OHIF local/wadouri use 1-based ?frame= / &frame= (same as dicomfile:).
+    return baseImageId.replace(/frame=\d+/, `frame=${ReferencedFrameNumber}`);
+  } else if (baseImageId.includes('wadors:')) {
+    return `${baseImageId}/frames/${ReferencedFrameNumber}`;
   }
 
-  return baseImageId;
+  // Direct hit: the imageId for this frame is already in the list.
+  const imageId = baseImageIds[ReferencedFrameNumber - 1];
+  if (imageId) {
+    return imageId;
+  }
+
+  return `${baseImageId}?frame=${ReferencedFrameNumber}`;
 }
 
 /**

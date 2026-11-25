@@ -31,10 +31,24 @@ export function getReferencedFrameNumber(imageId, metadata) {
   }
 
   const providerFrame = metadata?.getFrameInformationFromURL?.(imageId);
-  const frameNumber =
+  let frameNumber =
     providerFrame != null
       ? Number(providerFrame)
       : utilities.FrameRange.imageIdToFrameStart(imageId);
+
+  // Schemes that do not encode the frame in the imageId (for example, a custom
+  // custom:// scheme) fall back to the frame module metadata, but only for
+  // multi-frame instances.
+  if (!Number.isFinite(frameNumber)) {
+    const frameModule = metadata?.get?.(MetadataModules.FRAME_MODULE, imageId);
+    const numberOfFrames =
+      metadata?.get?.('instance', imageId)?.NumberOfFrames ??
+      frameModule?.numberOfFrames;
+
+    if (Number(numberOfFrames) > 1) {
+      frameNumber = Number(frameModule?.frameNumber);
+    }
+  }
 
   return Number.isFinite(frameNumber) ? frameNumber : undefined;
 }

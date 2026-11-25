@@ -147,12 +147,16 @@ function buildSopUIDImageIdIndexMap(referencedImageIds, metadataProvider) {
     const { sopInstanceUID } =
       metadataProvider.get('generalImageModule', imageId) ?? {};
 
-    if (!sopInstanceUID) {
-      return acc;
-    }
-
-    if (!acc[sopInstanceUID]) {
-      acc[sopInstanceUID] = imageId;
+    const existingImageId = acc[sopInstanceUID];
+    if (existingImageId === undefined) {
+      // If DerivationImageSequence is missing from the PerFrameFunctionalGroupsSequence in
+      //current data (eg: segmentation generated from 3d slicer app)
+      // multiple frames may map to the same SOP Instance UID in multi frame data.
+      acc[sopInstanceUID] = [imageId];
+    } else if (Array.isArray(existingImageId)) {
+      existingImageId.push(imageId);
+    } else {
+      acc[sopInstanceUID] = [existingImageId, imageId];
     }
 
     return acc;
