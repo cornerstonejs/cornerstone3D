@@ -368,6 +368,36 @@ class VolumeViewport3D extends BaseViewport<
   }
 
   /**
+   * The display sets that the viewport shows, in mount order, each with the
+   * options of its mount, resolved: the role that it has now and, for a
+   * volume, the id of the volume that it shows (the volume of the mount
+   * option, else of the registration, else the default id of its images).
+   * `appearance` is not among them: it was applied once, at the mount, and
+   * `getDisplaySetAppearance(displaySetId)` gives the look.
+   * `other.setDisplaySets(...viewport.getDisplaySets())` on another 3D
+   * viewport therefore shows the same layers of the same data, and loads no
+   * volume a second time.
+   */
+  override getDisplaySets(): Array<{
+    displaySetId: string;
+    options: Volume3DMountOptions;
+  }> {
+    return Array.from(this.bindings.entries()).map(
+      ([displaySetId, binding]) => {
+        const volumeId =
+          this.getVolumeRenderingOf(displaySetId)?.imageVolume.volumeId;
+
+        return {
+          displaySetId,
+          options: volumeId
+            ? { role: binding.role, volumeId }
+            : { role: binding.role },
+        };
+      }
+    );
+  }
+
+  /**
    * Mounts one 3D display set, as `addDisplaySet` describes, without an
    * event. It takes the data and the render mode that `setDisplaySets`
    * loaded (`staged`), and loads them without it. Gives whether the display

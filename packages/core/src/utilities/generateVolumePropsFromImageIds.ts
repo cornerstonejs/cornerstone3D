@@ -10,15 +10,7 @@ import type {
 import getScalingParameters from './getScalingParameters';
 import { hasFloatScalingParameters } from './hasFloatScalingParameters';
 import { canRenderFloatTextures } from '../init';
-import cache from '../cache/cache';
 
-// Map constructor names to PixelDataTypedArrayString
-const constructorToTypedArray: Record<string, PixelDataTypedArrayString> = {
-  Uint8Array: 'Uint8Array',
-  Int16Array: 'Int16Array',
-  Uint16Array: 'Uint16Array',
-  Float32Array: 'Float32Array',
-};
 /**
  * Generates volume properties from a list of image IDs.
  *
@@ -83,26 +75,26 @@ function generateVolumePropsFromImageIds(
 }
 
 /**
- * Determines the appropriate data type based on bits allocated and other parameters.
- * @param BitsAllocated - The number of bits allocated for each pixel.
- * @param signed - Whether the data is signed.
- * @param canRenderFloat - Whether float rendering is supported.
- * @param floatAfterScale - Whether to use float after scaling.
- * @param hasNegativeRescale - Whether there's a negative rescale.
- * @returns The determined data type.
+ * The array type of a volume: the type that holds every value that the
+ * series can hold, read from its metadata (bits allocated, bits stored,
+ * pixel representation, and the modality LUT and the scaling of the first,
+ * the middle and the last image), and never from the values of the images.
+ * An image that a stack loaded before has the smallest type that holds its
+ * own values (a 12 bit image whose values are all below 256 is a
+ * `Uint8Array`), so its type says nothing of the other images of the series.
+ * Unsigned 16 bit data with 8 bits stored, whose modality LUT keeps it below
+ * 256, is a `Uint8Array`.
+ *
+ * @param imageIds - The image ids of the volume, sorted.
+ * @param volumeMetadata - The metadata of the volume (`makeVolumeMetadata`).
+ * @returns The array type of the volume.
  */
 function _determineDataType(
   imageIds: string[],
   volumeMetadata
 ): PixelDataTypedArrayString {
-  const { BitsAllocated, PixelRepresentation } = volumeMetadata;
+  const { BitsAllocated, BitsStored, PixelRepresentation } = volumeMetadata;
   const signed = PixelRepresentation === 1;
-
-  // First try to get data type from cache if images are loaded
-  const cachedDataType = _getDataTypeFromCache(imageIds);
-  if (cachedDataType) {
-    return cachedDataType;
-  }
 
   // Check scaling parameters for first, middle, and last images
   const [firstIndex, middleIndex, lastIndex] = [
@@ -139,10 +131,16 @@ function _determineDataType(
       if (signed || hasNegativeRescale) {
         return 'Int16Array';
       }
-      if (!signed && !hasNegativeRescale) {
-        return 'Uint16Array';
+      if (
+        BitsStored <= 8 &&
+        scalingParameters.every(
+          ({ rescaleSlope, rescaleIntercept }) =>
+            (2 ** BitsStored - 1) * rescaleSlope + rescaleIntercept <= 255
+        )
+      ) {
+        return 'Uint8Array';
       }
-      return 'Float32Array';
+      return 'Uint16Array';
 
     case 24:
       return 'Uint8Array';
@@ -158,37 +156,6 @@ function _determineDataType(
         `Bits allocated of ${BitsAllocated} is not defined to generate scalarData for the volume.`
       );
   }
-}
-
-/**
- * Attempts to determine data type from cached images
- */
-function _getDataTypeFromCache(
-  imageIds: string[]
-): PixelDataTypedArrayString | null {
-  // Check first, middle and last images
-  const indices = [0, Math.floor(imageIds.length / 2), imageIds.length - 1];
-  const images = indices.map((i) => cache.getImage(imageIds[i]));
-
-  // Return null if any images are missing
-  if (!images.every(Boolean)) {
-    return null;
-  }
-
-  // Get constructor name from first image's pixel data
-  const constructorName = images[0].getPixelData().constructor.name;
-
-  // Check if all images have same constructor and it's a valid type
-  if (
-    images.every(
-      (img) => img.getPixelData().constructor.name === constructorName
-    ) &&
-    constructorName in constructorToTypedArray
-  ) {
-    return constructorToTypedArray[constructorName];
-  }
-
-  return null;
 }
 
 export { generateVolumePropsFromImageIds };

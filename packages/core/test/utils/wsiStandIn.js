@@ -163,7 +163,7 @@ function createElement() {
  * Runs `mountFn` with the stand-in microscopy viewer as the peer import of
  * dicom-microscopy-viewer.
  */
-async function withMicroscopyViewer(slideRotation, mountFn) {
+export async function withMicroscopyViewer(slideRotation, mountFn) {
   const views = [];
   const configuration = getConfiguration();
   const peerImport = configuration.peerImport;

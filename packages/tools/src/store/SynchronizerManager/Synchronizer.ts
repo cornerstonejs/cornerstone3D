@@ -192,9 +192,8 @@ class Synchronizer {
       target.addEventListener(name, this._eventListener);
     });
 
-    this._updateDisableHandlers();
-
     this._sourceViewports.push(viewportInfo);
+    this._updateDisableHandlers();
   }
 
   /**
@@ -227,9 +226,12 @@ class Synchronizer {
     return this._targetViewports;
   }
 
+  /**
+   * Takes every viewport out of the synchronizer and removes its listeners.
+   */
   public destroy(): void {
-    this._sourceViewports.forEach((s) => this.removeSource(s));
-    this._targetViewports.forEach((t) => this.removeTarget(t));
+    [...this._sourceViewports].forEach((s) => this.removeSource(s));
+    [...this._targetViewports].forEach((t) => this.removeTarget(t));
   }
 
   /**
@@ -407,38 +409,36 @@ class Synchronizer {
     return this._sourceViewports.length !== 0;
   }
 
+  /**
+   * Takes the viewport of a disabled element out of the synchronizer, by the
+   * rendering engine id and the viewport id of the event.
+   */
+  private _onElementDisabled = (
+    evt: Types.EventTypes.ElementDisabledEvent
+  ): void => {
+    const { renderingEngineId, viewportId } = evt.detail;
+
+    this.remove({ renderingEngineId, viewportId });
+  };
+
+  /**
+   * Listens to `ELEMENT_DISABLED` while the synchronizer has a viewport, with
+   * one function for the synchronizer, on the global event target where the
+   * rendering engine fires the event, so the listener is added once and goes
+   * with the last viewport.
+   */
   private _updateDisableHandlers(): void {
-    const viewports = _getUniqueViewports(
-      this._sourceViewports,
-      this._targetViewports
-    );
-    const _remove = this.remove.bind(this);
-    const disableHandler = (elementDisabledEvent) => {
-      _remove(elementDisabledEvent.detail.element);
-    };
-
-    viewports.forEach((vp) => {
-      const eventSource = this.getEventSource(vp);
-
-      if (!eventSource) {
-        return;
-      }
-
-      eventSource.removeEventListener(
+    if (this._sourceViewports.length || this._targetViewports.length) {
+      eventTarget.addEventListener(
         Enums.Events.ELEMENT_DISABLED,
-        disableHandler
+        this._onElementDisabled
       );
-      eventSource.addEventListener(
+    } else {
+      eventTarget.removeEventListener(
         Enums.Events.ELEMENT_DISABLED,
-        disableHandler
+        this._onElementDisabled
       );
-    });
-  }
-
-  private getEventSource(viewportInfo: Types.IViewportId): EventTarget {
-    return this._eventSource === 'element'
-      ? this.getViewportElement(viewportInfo)
-      : eventTarget;
+    }
   }
 
   private getViewportElement(viewportInfo: Types.IViewportId): HTMLDivElement {
@@ -453,30 +453,6 @@ class Synchronizer {
     }
     return viewport.element;
   }
-}
-
-function _getUniqueViewports(
-  vp1: Array<Types.IViewportId>,
-  vp2: Array<Types.IViewportId>
-): Array<Types.IViewportId> {
-  const unique = [];
-
-  const vps = vp1.concat(vp2);
-
-  for (let i = 0; i < vps.length; i++) {
-    const vp = vps[i];
-    if (
-      !unique.some(
-        (u) =>
-          vp.renderingEngineId === u.renderingEngineId &&
-          vp.viewportId === u.viewportId
-      )
-    ) {
-      unique.push(vp);
-    }
-  }
-
-  return unique;
 }
 
 function _getViewportIndex(

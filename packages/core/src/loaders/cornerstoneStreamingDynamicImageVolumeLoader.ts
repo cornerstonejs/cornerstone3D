@@ -73,6 +73,7 @@ function cornerstoneStreamingDynamicImageVolumeLoader(
     imageIdGroups: sortedImageIdGroups,
     dimensionGroupNumber: 1,
     numberOfComponents,
+    dataType,
   });
 
   let streamingImageVolume = new StreamingDynamicImageVolume(

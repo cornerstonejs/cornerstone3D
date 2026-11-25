@@ -177,7 +177,10 @@ describe('A failed replacement of the display sets of a 3D viewport -- ', () => 
 
     expect(error).toBeDefined();
     expect(viewport.getDisplaySets()).toEqual([
-      { displaySetId: 'replacement3D:shown', options: { role: 'source' } },
+      {
+        displaySetId: 'replacement3D:shown',
+        options: { role: 'source', volumeId: shownVolumeId },
+      },
     ]);
     expect(
       viewport.getActors().map(({ referencedId }) => referencedId)
@@ -246,7 +249,10 @@ describe('A failed replacement of the display sets of a 3D viewport -- ', () => 
     expect(error).toBeDefined();
     expect(sceneOf(viewport)).toEqual({
       displaySets: [
-        { displaySetId: 'replacement3D:shown', options: { role: 'source' } },
+        {
+          displaySetId: 'replacement3D:shown',
+          options: { role: 'source', volumeId: shownVolumeId },
+        },
       ],
       actors: [shownVolumeId],
     });
@@ -306,7 +312,10 @@ describe('Two replacements of the display sets of a 3D viewport, one after the o
 
     expect(sceneOf(viewport)).toEqual({
       displaySets: [
-        { displaySetId: 'replacement3D:newer', options: { role: 'source' } },
+        {
+          displaySetId: 'replacement3D:newer',
+          options: { role: 'source', volumeId: volumeIds.newer },
+        },
       ],
       actors: [volumeIds.newer],
     });
@@ -338,7 +347,10 @@ describe('Two replacements of the display sets of a 3D viewport, one after the o
 
     expect(sceneOf(viewport)).toEqual({
       displaySets: [
-        { displaySetId: 'replacement3D:shown', options: { role: 'source' } },
+        {
+          displaySetId: 'replacement3D:shown',
+          options: { role: 'source', volumeId: volumeIds.shown },
+        },
       ],
       actors: [volumeIds.shown],
     });
@@ -349,7 +361,10 @@ describe('Two replacements of the display sets of a 3D viewport, one after the o
 
     expect(sceneOf(viewport)).toEqual({
       displaySets: [
-        { displaySetId: 'replacement3D:newer', options: { role: 'source' } },
+        {
+          displaySetId: 'replacement3D:newer',
+          options: { role: 'source', volumeId: volumeIds.newer },
+        },
       ],
       actors: [volumeIds.newer],
     });
@@ -432,18 +447,21 @@ describe('A replacement of the display sets of a 3D viewport that a newer call c
       displaySets: [
         {
           displaySetId: 'replacement3D:olderSource',
-          options: { role: 'source' },
+          options: { role: 'source', volumeId: volumeIds.olderSource },
         },
         {
           displaySetId: 'replacement3D:olderOverlay',
-          options: { role: 'overlay' },
+          options: { role: 'overlay', volumeId: volumeIds.olderOverlay },
         },
       ],
       actors: [volumeIds.olderSource, volumeIds.olderOverlay],
     };
     const newerScene = {
       displaySets: [
-        { displaySetId: 'replacement3D:newer', options: { role: 'source' } },
+        {
+          displaySetId: 'replacement3D:newer',
+          options: { role: 'source', volumeId: volumeIds.newer },
+        },
       ],
       actors: [volumeIds.newer],
     };
@@ -475,11 +493,11 @@ describe('A replacement of the display sets of a 3D viewport that a newer call c
       displaySets: [
         {
           displaySetId: 'replacement3D:olderSource',
-          options: { role: 'source' },
+          options: { role: 'source', volumeId: volumeIds.olderSource },
         },
         {
           displaySetId: 'replacement3D:olderOverlay',
-          options: { role: 'overlay' },
+          options: { role: 'overlay', volumeId: volumeIds.olderOverlay },
         },
       ],
       actors: [volumeIds.olderSource, volumeIds.olderOverlay],
@@ -538,8 +556,14 @@ describe('A replacement of the display sets of a 3D viewport and its loads -- ',
     });
     expect(sceneOf(viewport)).toEqual({
       displaySets: [
-        { displaySetId: 'replacement3D:first', options: { role: 'source' } },
-        { displaySetId: 'replacement3D:second', options: { role: 'overlay' } },
+        {
+          displaySetId: 'replacement3D:first',
+          options: { role: 'source', volumeId: volumeIds.first },
+        },
+        {
+          displaySetId: 'replacement3D:second',
+          options: { role: 'overlay', volumeId: volumeIds.second },
+        },
       ],
       actors: [volumeIds.first, volumeIds.second],
     });
@@ -567,8 +591,14 @@ describe('A replacement of the display sets of a 3D viewport and its loads -- ',
 
     expect(sceneOf(viewport)).toEqual({
       displaySets: [
-        { displaySetId: 'replacement3D:first', options: { role: 'source' } },
-        { displaySetId: 'replacement3D:second', options: { role: 'overlay' } },
+        {
+          displaySetId: 'replacement3D:first',
+          options: { role: 'source', volumeId: volumeIds.first },
+        },
+        {
+          displaySetId: 'replacement3D:second',
+          options: { role: 'overlay', volumeId: volumeIds.second },
+        },
       ],
       actors: [volumeIds.first, volumeIds.second],
     });
@@ -634,8 +664,14 @@ describe('A replacement of the display sets of a 3D viewport and its loads -- ',
     await replacement;
 
     expect(sceneOf(viewport).displaySets).toEqual([
-      { displaySetId: 'replacement3D:first', options: { role: 'source' } },
-      { displaySetId: 'replacement3D:second', options: { role: 'overlay' } },
+      {
+        displaySetId: 'replacement3D:first',
+        options: { role: 'source', volumeId: volumeIds.first },
+      },
+      {
+        displaySetId: 'replacement3D:second',
+        options: { role: 'overlay', volumeId: volumeIds.second },
+      },
     ]);
     expect(
       viewport.getActors()[0].actor.getMapper().getInputData() ===

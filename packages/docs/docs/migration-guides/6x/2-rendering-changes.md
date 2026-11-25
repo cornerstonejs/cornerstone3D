@@ -1194,6 +1194,35 @@ point of the image on display.
   set, reads `detail.displaySets` and needs no event of its own for the
   layers of a viewport.
 
+- **The labelmap of a stack follows the slice without an event.** The tools
+  draw the labelmap of a stack as one display set for each labelmap layer,
+  whose image is the labelmap image of the slice on display. A scroll gives
+  that display set the image of the new slice and fires no
+  `DISPLAY_SETS_CHANGED`: its id stays the same in `getDisplaySets()`, and
+  the actor entry of `getActors()` names the labelmap image of the slice
+  (`referencedId`). In 6.0.0-beta.2 the labelmap image of the old slice was
+  removed and the one of the new slice added at each scroll, two events for
+  each image, with a new display set id each time. The event fires when the
+  labelmap is added or removed, and when a layer has no image on the new
+  slice. `getVolumeIds()` lists no volume for it, with or without
+  `includeSegmentations`: a stack draws its labelmap as images. Behind it,
+  `viewport.addImages([{ displaySetId, imageId }])` with the id of a display
+  set that the viewport shows replaces the image of that display set and
+  fires nothing; a new id fires the event once, as before.
+
+  A listener of the layers runs when a layer comes or goes, and no longer at
+  each scroll:
+
+  ```ts
+  element.addEventListener(Enums.Events.DISPLAY_SETS_CHANGED, (evt) => {
+    updateLayers(evt.detail.displaySets);
+  });
+  ```
+
+  In 6.0.0-beta.2 it ran twice at each image of a stack with a labelmap. A
+  listener that followed the labelmap image of the slice through this event
+  listens to `NEW_IMAGE` and reads `getActors()`.
+
 - **One event for a new image: `NEW_IMAGE`.** It replaces `STACK_NEW_IMAGE`
   and `VOLUME_NEW_IMAGE`. No next viewport fires those two. `NEW_IMAGE` fires
   after another image of a stack shows, after another slice of a volume
@@ -1974,6 +2003,43 @@ levels of 255.
   were. In 6.0 the colours are inverted, as for a grey volume; leave `invert`
   out to keep the 5.x picture.
 
+## The array type of a volume
+
+- **A volume takes the array type that its series can hold.** The type is
+  read from the metadata of the series: the bits allocated, the bits stored,
+  the pixel representation, and the modality LUT and the scaling of the
+  first, the middle and the last image. A 12 bit MR is a `Uint16Array`
+  volume, a 16 bit series with 8 bits stored and a modality LUT that keeps
+  it below 256 is a `Uint8Array` volume, and an 8 bit series stays a
+  `Uint8Array` volume, so a series that truly is 8 bits costs no more memory.
+  In 5.x and in 6.0.0-beta.2 a volume made while its first, middle and last
+  images were in the cache took the array of those images, and the image
+  loader gives an image of a stack the smallest array that holds its own
+  values. A 12 bit MR whose outer slices and middle slice held values below
+  256 became a `Uint8Array` volume whose other slices were cut at 255
+  (`getCompleteScalarDataArray()`, the GPU texture and the picture of an
+  MPR), while `voxelManager.getRange()` gave the true range, `[0, 943]` for
+  the MR of OHIF M65. The voxel manager of a volume also answers
+  `getConstructor()` with the type of the volume, where it gave the array of
+  its first image.
+
+  ```ts
+  await Promise.all(imageIds.map((id) => imageLoader.loadAndCacheImage(id)));
+
+  const volume = volumeLoader.createAndCacheVolumeFromImagesSync(
+    volumeId,
+    imageIds
+  );
+  const values = volume.voxelManager.getCompleteScalarDataArray();
+  ```
+
+  Before, `values` of that MR was a `Uint8Array` whose values stopped at 255;
+  after, it is a `Uint16Array` with every value.
+
+  A volume of derived or local images (`createAndCacheDerivedImages`,
+  `createAndCacheLocalImage`) keeps the array of its images: their pixel
+  module says it, and an `Int16Array` image now says that it is signed.
+
 ## Whole slide viewports
 
 - **World points follow the coordinate system of the slide.** The row of a
@@ -2748,6 +2814,24 @@ is one, see [Functions of the core package](./3-api-map.md#functions-of-the-core
 
 ## Smaller changes
 
+- **Destroying a tool group disables its tools.**
+  `ToolGroupManager.destroyToolGroup` (and `ToolGroupManager.destroy`) calls
+  `onSetToolDisabled` of each tool of the group that is enabled, passive or
+  active, without the mode event and the render of `setToolDisabled`. A tool
+  removes its listeners there, so a tool group made again under the same id
+  no longer reaches the tools of the old one: the crosshairs, the trackball,
+  the cropping, the orientation controller and the orientation marker kept
+  one or two listeners on `eventTarget` for each tool group that was
+  destroyed, and the orientation marker kept its markers drawn. A disable
+  that throws, as one that restores the view of a viewport whose volume the
+  cache no longer holds, is logged, and the destroy goes on.
+- **A synchronizer has one `ELEMENT_DISABLED` listener**, on `eventTarget`,
+  while it has viewports. It added one more at each `add` and `remove`, on
+  the element or on `eventTarget` (after five layout rounds of OHIF, 85 on
+  `eventTarget` and 58 on the element of one pane), and none of them took a
+  viewport out. A viewport that is only a target is now taken out when its
+  element is disabled, and `destroy()` removes the listeners of every
+  viewport, where it skipped every other one.
 - **`viewport.type` is the plain string.** A planar viewport has the type
   `'planar'` where a 5.x next viewport had `'planarNext'`, and the other
   families have `'volume3d'`, `'video'`, `'wholeSlide'` and `'ecg'` in place

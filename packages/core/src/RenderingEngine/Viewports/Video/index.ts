@@ -30,6 +30,7 @@ export type {
   VideoViewState,
   VideoDisplaySetAppearance,
   VideoAppearanceProps,
+  VideoMountOptions,
   VideoProperties,
   VideoViewportInput,
 } from './VideoViewportTypes';

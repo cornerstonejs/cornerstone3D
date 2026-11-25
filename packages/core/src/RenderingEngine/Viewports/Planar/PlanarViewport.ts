@@ -488,6 +488,12 @@ class PlanarViewport extends BaseViewport<
     PlanarMountedDisplaySet
   >();
   /**
+   * The newest replacement of the image of each image overlay that
+   * `addImages` mounted, so an older replacement that loads after a newer
+   * one binds nothing.
+   */
+  private readonly overlayImageRequests = new Map<string, number>();
+  /**
    * The slab that a mounted binding draws while its display set waits for a
    * remount to the render mode of a new slab (`setAppearanceState`).
    */
@@ -854,12 +860,14 @@ class PlanarViewport extends BaseViewport<
    * bind, so the first draw has them; the mount fires
    * `DISPLAY_SET_APPEARANCE_CHANGED` once, with cause `'mount'`. A source
    * that comes after its overlays in one `setDisplaySets` call gives them
-   * its slice once it is bound.
+   * its slice once it is bound. A mount that `shouldIgnore` tells, after its
+   * load, is stale binds nothing and gives false.
    */
   private async addDisplaySetInternal(
     displaySetId: string,
     options: PlanarMountOptions = {},
-    loaded?: PlanarDataLoad
+    loaded?: PlanarDataLoad,
+    shouldIgnore?: () => boolean
   ): Promise<boolean> {
     const role = this.mountedData.resolveBindingRole(options);
     const resolvedOptions: PlanarMountOptions = {
@@ -896,10 +904,15 @@ class PlanarViewport extends BaseViewport<
     });
 
     try {
-      added = await this.addLoadedData(displaySetId, data, {
-        renderMode: selectedPath.renderMode,
-        role,
-      });
+      added = await this.addLoadedData(
+        displaySetId,
+        data,
+        {
+          renderMode: selectedPath.renderMode,
+          role,
+        },
+        shouldIgnore
+      );
     } finally {
       if (!added) {
         restoreAppearance();
@@ -1057,6 +1070,7 @@ class PlanarViewport extends BaseViewport<
   protected override removeDisplaySetBinding(displaySetId: string): void {
     this.clearResolvedViewCache();
     this.mountedDisplaySets.delete(displaySetId);
+    this.overlayImageRequests.delete(displaySetId);
     this.lastRenderPathErrorByDisplaySetId.delete(displaySetId);
     this.renderPlanReasonByDisplaySetId.delete(displaySetId);
     this.renderPlanByDisplaySetId.delete(displaySetId);
@@ -1276,7 +1290,13 @@ class PlanarViewport extends BaseViewport<
   }
 
   /**
-   * Adds overlay images on top of the primary render path output.
+   * Adds overlay images on top of the primary render path output, each as an
+   * overlay display set. The id of an image is its `displaySetId`, else its
+   * `representationUID`, else its image id. An image whose id is a display
+   * set that the viewport shows replaces the image of that display set: the
+   * display set stays, so `DISPLAY_SETS_CHANGED` does not fire. The labelmap
+   * of a stack is drawn this way, one display set for each labelmap layer
+   * whose image follows the slice; a new id fires the event once.
    */
   async addImages(stackInputs: IStackInput[]): Promise<void> {
     const rendering = this.getCurrentPlanarRendering();
@@ -1307,6 +1327,8 @@ class PlanarViewport extends BaseViewport<
         image,
         reference
       );
+      const replacesImage = this.bindings.has(displaySetId);
+
       displaySetRegistry.add(displaySetId, {
         image,
         imageData: stackInput.imageData,
@@ -1316,9 +1338,28 @@ class PlanarViewport extends BaseViewport<
           stackInput.useWorldCoordinateImageData === true,
       });
 
-      await this.addDisplaySet(displaySetId, {
-        role: 'overlay',
-      });
+      if (replacesImage) {
+        const request = (this.overlayImageRequests.get(displaySetId) ?? 0) + 1;
+
+        this.overlayImageRequests.set(displaySetId, request);
+
+        const replaced = await this.addDisplaySetInternal(
+          displaySetId,
+          { role: 'overlay' },
+          undefined,
+          () => this.overlayImageRequests.get(displaySetId) !== request
+        );
+
+        this.clearResolvedViewCache();
+
+        if (!replaced) {
+          continue;
+        }
+      } else {
+        await this.addDisplaySet(displaySetId, {
+          role: 'overlay',
+        });
+      }
 
       const actorEntry = this.mountedData.getActorForDisplaySetId(displaySetId);
 

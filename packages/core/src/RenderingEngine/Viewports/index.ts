@@ -88,6 +88,7 @@ export type {
   ECGViewState,
   ECGDisplaySetAppearance,
   ECGChannelData,
+  ECGMountOptions,
   ECGProjectionFraming,
   ECGProjectionRequest,
   ECGProjectionSnapshot,
@@ -105,6 +106,7 @@ export {
 export type {
   VideoViewState,
   VideoDisplaySetAppearance,
+  VideoMountOptions,
   VideoProjectionFraming,
   VideoProjectionRequest,
   VideoProjectionSnapshot,
@@ -163,6 +165,7 @@ export type {
   WSICamera,
   WSIDisplaySetAppearance,
   WSIDataSetOptions,
+  WSIMountOptions,
   WSIProjectionFraming,
   WSIProjectionRequest,
   WSIProjectionSnapshot,

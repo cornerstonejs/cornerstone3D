@@ -23,6 +23,7 @@ import { DefaultWSIDataProvider } from './DefaultWSIDataProvider';
 import { createWSIRenderPathResolver } from './WSIRenderPathResolver';
 import type {
   WSIDisplaySetAppearance,
+  WSIMountOptions,
   WSIPayload,
   WSIViewState,
   WSIViewportRenderContext,
@@ -125,12 +126,13 @@ export default class WSIViewport extends BaseViewport<
    * `appearance` of an entry is the appearance of the slide from its first
    * draw (its window, average white and opacity), merged over the overrides
    * set before the mount; DISPLAY_SET_APPEARANCE_CHANGED fires once for it,
-   * with cause `'mount'`.
+   * with cause `'mount'`. The first entry is the source and the others are
+   * overlays, unless an entry names its `role`.
    */
   async setDisplaySets(
     ...entries: Array<{
       displaySetId: string;
-      options?: { appearance?: Partial<WSIDisplaySetAppearance> };
+      options?: WSIMountOptions;
     }>
   ): Promise<void> {
     const isSuperseded = this.startSetDisplaySets();
@@ -155,7 +157,7 @@ export default class WSIViewport extends BaseViewport<
           displaySetId,
           {
             renderMode: 'wsi2d',
-            role: index === 0 ? 'source' : 'overlay',
+            role: options?.role ?? (index === 0 ? 'source' : 'overlay'),
           },
           isSuperseded
         );
@@ -177,6 +179,26 @@ export default class WSIViewport extends BaseViewport<
     this.applyVOIToRendering();
     this.triggerDisplaySetsChanged(
       entries.map(({ displaySetId }) => displaySetId)
+    );
+  }
+
+  /**
+   * The display sets that the viewport shows, in mount order, each with the
+   * options of its mount: the role that it has now. `appearance` is not
+   * among them: it was applied once, at the mount, and
+   * `getDisplaySetAppearance(displaySetId)` gives the look.
+   * `other.setDisplaySets(...viewport.getDisplaySets())` on another whole
+   * slide viewport therefore shows the same slides in the same roles.
+   */
+  override getDisplaySets(): Array<{
+    displaySetId: string;
+    options: WSIMountOptions;
+  }> {
+    return Array.from(this.bindings.entries()).map(
+      ([displaySetId, binding]) => ({
+        displaySetId,
+        options: { role: binding.role },
+      })
     );
   }
 

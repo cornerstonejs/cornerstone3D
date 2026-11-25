@@ -106,6 +106,7 @@ export type {
 } from './RenderingEngine/Viewports';
 export type { DisplaySetDescriptor } from './types/DisplaySetDescriptor';
 export type {
+  ECGMountOptions,
   ECGProjectionFraming,
   ECGProjectionRequest,
   ECGProjectionSnapshot,
@@ -114,6 +115,7 @@ export type {
   ECGClinicalSensitivity,
 } from './RenderingEngine/Viewports/ECG';
 export type {
+  VideoMountOptions,
   VideoProjectionFraming,
   VideoProjectionRequest,
   VideoProjectionSnapshot,
@@ -137,6 +139,7 @@ export type {
   RenderPlanSlice,
 } from './RenderingEngine/Viewports/Planar';
 export type {
+  WSIMountOptions,
   WSIProjectionFraming,
   WSIProjectionRequest,
   WSIProjectionSnapshot,

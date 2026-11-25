@@ -41,6 +41,7 @@ import type {
   VideoViewState,
   VideoDisplaySetAppearance,
   VideoElementRenderContext,
+  VideoMountOptions,
   VideoElementRendering,
   VideoStreamPayload,
   VideoViewportInput,
@@ -102,6 +103,12 @@ class VideoViewport extends BaseViewport<
   /** The canvas just above the video that the overlay actors draw on. */
   private overlayLayer?: HTMLCanvasElement;
 
+  /**
+   * The frame number of the mount of each video that was given one, for
+   * `getDisplaySets`.
+   */
+  private readonly mountFrameNumbers = new Map<string, number>();
+
   /** The frame image ids that `getImageIds` gave last, and for which video. */
   private frameImageIds?: {
     displaySetId: string;
@@ -149,8 +156,9 @@ class VideoViewport extends BaseViewport<
 
   /**
    * Replaces all mounted video display sets with the provided ones using the
-   * HTML video render path. The first entry is mounted as the source binding,
-   * and the video then shows the 1-based `frameNumber` of its options. The
+   * HTML video render path. The first entry is mounted as the source binding
+   * and the others as overlays, unless an entry names its `role`, and the
+   * first video then shows the 1-based `frameNumber` of its options. The
    * option `appearance` of an entry is the appearance of the video from its
    * first draw (its playback rate, loop, mute, object fit, opacity and the
    * rest), merged over the overrides set before the mount;
@@ -178,10 +186,7 @@ class VideoViewport extends BaseViewport<
   async setDisplaySets(
     ...entries: Array<{
       displaySetId: string;
-      options?: {
-        frameNumber?: number;
-        appearance?: Partial<VideoDisplaySetAppearance>;
-      };
+      options?: VideoMountOptions;
     }>
   ): Promise<void> {
     const isSuperseded = this.startSetDisplaySets();
@@ -211,7 +216,7 @@ class VideoViewport extends BaseViewport<
           displaySetId,
           {
             renderMode: 'video2d',
-            role: index === 0 ? 'source' : 'overlay',
+            role: options?.role ?? (index === 0 ? 'source' : 'overlay'),
           },
           isSuperseded
         );
@@ -223,6 +228,10 @@ class VideoViewport extends BaseViewport<
 
       if (!bound) {
         return;
+      }
+
+      if (typeof options?.frameNumber === 'number') {
+        this.mountFrameNumbers.set(displaySetId, options.frameNumber);
       }
 
       const binding = this.getBinding(displaySetId);
@@ -294,6 +303,35 @@ class VideoViewport extends BaseViewport<
   }
 
   /**
+   * The display sets that the viewport shows, in mount order, each with the
+   * options of its mount: the role that it has now and the `frameNumber`
+   * that the mount was given. `appearance` is not among them: it was
+   * applied once, at the mount, and `getDisplaySetAppearance(displaySetId)`
+   * gives the look. `other.setDisplaySets(...viewport.getDisplaySets())` on
+   * another video viewport therefore shows the same videos in the same
+   * roles. The images drawn over the video (`addImages`) are not display
+   * sets: `getActors()` lists them.
+   */
+  override getDisplaySets(): Array<{
+    displaySetId: string;
+    options: VideoMountOptions;
+  }> {
+    return Array.from(this.bindings.entries()).map(
+      ([displaySetId, binding]) => {
+        const frameNumber = this.mountFrameNumbers.get(displaySetId);
+
+        return {
+          displaySetId,
+          options:
+            frameNumber === undefined
+              ? { role: binding.role }
+              : { role: binding.role, frameNumber },
+        };
+      }
+    );
+  }
+
+  /**
    * Removes a video dataset and rebinds tracking if the primary video changed.
    * An id of an image drawn over the video (`addImages`) removes that image.
    *
@@ -313,6 +351,7 @@ class VideoViewport extends BaseViewport<
     const firstDisplaySetId = this.getFirstBinding()?.data.id;
 
     super.removeDisplaySetBinding(displaySetId);
+    this.mountFrameNumbers.delete(displaySetId);
 
     if (firstDisplaySetId === displaySetId) {
       this.untrackVideoElement();

@@ -16,15 +16,18 @@ import {
   viewportProjection,
 } from '../../src';
 import type {
+  ECGMountOptions,
   ECGViewport,
   PlanarMountOptions,
   PlanarResolvedICamera,
   PlanarViewport,
   RenderingEngine,
   Types,
+  VideoMountOptions,
   VideoViewport,
   Volume3DMountOptions,
   VolumeViewport3D,
+  WSIMountOptions,
   WSIViewport,
 } from '../../src';
 
@@ -190,6 +193,37 @@ export function membersOfTheClasses() {
     video.getImageData().dimensions,
     wholeSlide.getImageData().dimensions,
     ecg.getImageData().dimensions,
+  ];
+}
+
+/**
+ * The display sets of a viewport, with the options of their mounts, mount
+ * another viewport of the same family as they are.
+ */
+export function copiesOfTheMountsOfEachFamily() {
+  const volume3DOptions: Volume3DMountOptions =
+    volume3D.getDisplaySets()[0].options;
+  const videoOptions: VideoMountOptions = video.getDisplaySets()[0].options;
+  const ecgOptions: ECGMountOptions = ecg.getDisplaySets()[0].options;
+  const wholeSlideOptions: WSIMountOptions =
+    wholeSlide.getDisplaySets()[0].options;
+
+  return [
+    planar.setDisplaySets(...planar.getDisplaySets()),
+    volume3D.setDisplaySets(...volume3D.getDisplaySets()),
+    video.setDisplaySets(...video.getDisplaySets()),
+    ecg.setDisplaySets(...ecg.getDisplaySets()),
+    wholeSlide.setDisplaySets(...wholeSlide.getDisplaySets()),
+    volume3DOptions.volumeId,
+    videoOptions.frameNumber,
+    ecgOptions.multiplexGroupIndex,
+    wholeSlideOptions.role,
+    video.setDisplaySets({ displaySetId, options: { role: 'source' } }),
+    ecg.setDisplaySets({
+      displaySetId,
+      options: { role: 'source', multiplexGroupIndex: 1 },
+    }),
+    wholeSlide.setDisplaySets({ displaySetId, options: { role: 'source' } }),
   ];
 }
 

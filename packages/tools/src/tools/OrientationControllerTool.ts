@@ -134,6 +134,7 @@ class OrientationControllerTool extends BaseTool {
   private resizeObservers = new Map<string, ResizeObserver>();
   private cameraHandlers = new Map<string, (evt: CustomEvent) => void>();
   private animationFrameHandles = new Map<string, number>();
+  private markerTimeouts = new Set<ReturnType<typeof setTimeout>>();
   private animationTokens = new Map<string, number>();
 
   constructor(
@@ -266,10 +267,23 @@ class OrientationControllerTool extends BaseTool {
       return;
     }
 
-    setTimeout(() => {
+    this.scheduleMarker(viewportId, renderingEngineId);
+  };
+
+  /**
+   * Adds the marker of a viewport after `ADD_MARKER_DELAY_MS`. `removeMarkers`
+   * cancels the markers that wait, so a tool that is disabled, or whose tool
+   * group is destroyed, before the delay ends adds no marker, which would keep
+   * its listeners on the element.
+   */
+  private scheduleMarker(viewportId: string, renderingEngineId: string): void {
+    const timeout = setTimeout(() => {
+      this.markerTimeouts.delete(timeout);
       this.addMarkerToViewport(viewportId, renderingEngineId);
     }, ADD_MARKER_DELAY_MS);
-  };
+
+    this.markerTimeouts.add(timeout);
+  }
 
   private onViewportRemoved = (evt: CustomEvent): void => {
     const { viewportId, renderingEngineId, toolGroupId } = evt.detail;
@@ -344,6 +358,8 @@ class OrientationControllerTool extends BaseTool {
     });
 
     this.widget.cleanup();
+    this.markerTimeouts.forEach((timeout) => clearTimeout(timeout));
+    this.markerTimeouts.clear();
     this.resizeObservers.forEach((observer) => observer.disconnect());
     this.resizeObservers.clear();
     this.cameraHandlers.clear();
@@ -377,9 +393,7 @@ class OrientationControllerTool extends BaseTool {
         return;
       }
 
-      setTimeout(() => {
-        this.addMarkerToViewport(viewportId, renderingEngineId);
-      }, ADD_MARKER_DELAY_MS);
+      this.scheduleMarker(viewportId, renderingEngineId);
     });
   };
 

@@ -31,6 +31,7 @@ export type {
   WSIDisplaySetAppearance,
   WSIDataSetOptions,
   WSIAppearanceProps,
+  WSIMountOptions,
   WSIProperties,
   WSIViewState,
   WSIViewportInput,

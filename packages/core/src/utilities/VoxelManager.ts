@@ -1134,8 +1134,10 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
    * gives the caller an array of its own, and it keeps the cached image
    * unchanged.
    *
-   * `getConstructor` answers from `dataType` before the first image arrives,
-   * so a derivation that runs before the load allocates the right type.
+   * `getConstructor` answers from `dataType`, before and after the images
+   * arrive: an image that a stack loaded holds the smallest array for its own
+   * values, so the array of one image is not the type of the volume. Without
+   * `dataType` it answers with the array of the first image.
    *
    * @param dimensions - The dimensions of the image volume.
    * @param imageIds - The array of image IDs.
@@ -1367,14 +1369,11 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
     }
 
     const _getConstructor = () => {
-      const imageVoxelManager = resolveSliceVoxelManager(0);
-
-      if (imageVoxelManager) {
-        return imageVoxelManager.getConstructor();
+      if (dataType) {
+        return getConstructorFromType(dataType, false);
       }
 
-      // No image has arrived yet; use the type from the metadata.
-      return dataType ? getConstructorFromType(dataType, false) : null;
+      return resolveSliceVoxelManager(0)?.getConstructor() ?? null;
     };
 
     const voxelManager = new VoxelManager<number | RGB>(dimensions, {
@@ -1724,7 +1723,8 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
    * The result is an `IVoxelManager` and not an `IVolumeVoxelManager`. This
    * factory installs `getRange`, `getCompleteScalarDataArray`,
    * `setCompleteScalarDataArray` and `invalidateCache`; each one acts on the
-   * active dimension group only.
+   * active dimension group only. `dataType` is the array type of every
+   * dimension group, as in `createImageVolumeVoxelManager`.
    */
   public static createScalarDynamicVolumeVoxelManager({
     imageIdGroups,
@@ -1733,6 +1733,7 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
     timePoint = 0,
     numberOfComponents = 1,
     id,
+    dataType,
   }: {
     imageIdGroups: string[][];
     dimensions: Point3;
@@ -1740,6 +1741,7 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
     timePoint?: number;
     numberOfComponents?: number;
     id?: string;
+    dataType?: PixelDataTypedArrayString;
   }): IVoxelManager<number> | IVoxelManager<RGB> {
     // Convert to zero-based index for internal use
     let activeDimensionGroup = 0;
@@ -1779,6 +1781,7 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
         imageIds,
         numberOfComponents,
         id,
+        dataType,
       });
     });
 

@@ -2,8 +2,10 @@ import type { Types, PlanarViewport } from '@cornerstonejs/core';
 import type { ViewportLabelmapRenderMode } from '../../../../stateManagement/segmentation/helpers/getViewportLabelmapRenderMode';
 import { getCurrentLabelmapImageIdsForViewport } from '../../../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
 import { triggerSegmentationDataModified } from '../../../../stateManagement/segmentation/triggerSegmentationEvents';
-import { syncStackLabelmapActors } from '../syncStackLabelmapActors';
-import { createLabelmapRepresentationUID } from '../labelmapRepresentationUID';
+import {
+  getCurrentStackLabelmapImages,
+  syncStackLabelmapActors,
+} from '../syncStackLabelmapActors';
 import { createLabelmapRenderPlan } from './createLabelmapRenderPlan';
 import type { LabelmapRenderPlan } from './types';
 
@@ -50,14 +52,8 @@ function getExpectedStackLabelmapRepresentationUIDs(
   viewport: Types.IViewport,
   segmentationId: string
 ): string[] {
-  return (
-    getCurrentLabelmapImageIdsForViewport(viewport.id, segmentationId)?.map(
-      (imageId) =>
-        createLabelmapRepresentationUID({
-          segmentationId,
-          referencedId: imageId,
-        })
-    ) ?? []
+  return getCurrentStackLabelmapImages(viewport.id, segmentationId).map(
+    ({ representationUID }) => representationUID
   );
 }
 

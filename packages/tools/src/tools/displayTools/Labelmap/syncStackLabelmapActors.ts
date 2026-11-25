@@ -12,6 +12,8 @@ import { getLabelmapActorEntries } from '../../../stateManagement/segmentation/h
 import getViewportLabelmapRenderMode from '../../../stateManagement/segmentation/helpers/getViewportLabelmapRenderMode';
 import { getSourceRenderPlanLayer } from '../../../utilities/viewport/getRenderPlanLayer';
 import { getSegmentationRepresentations } from '../../../stateManagement/segmentation/getSegmentationRepresentation';
+import { getSegmentation } from '../../../stateManagement/segmentation/getSegmentation';
+import { getLabelmapForImageId } from '../../../stateManagement/segmentation/helpers/labelmapSegmentationState';
 import type { LabelmapRepresentation } from '../../../types/SegmentationStateTypes';
 import { createLabelmapRepresentationUID } from './labelmapRepresentationUID';
 import { setLabelmapColorAndOpacity } from './labelmapActorStyle';
@@ -23,8 +25,49 @@ const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
 );
 
 /**
- * Mounts the labelmap images of the image on display of a stack viewport, or
- * of the frame on display of a video viewport, removes the others and renders.
+ * The labelmap images of the image on display of a stack or a video, each
+ * with the representation UID of its labelmap layer. The UID is the display
+ * set id of the layer on the viewport: one display set for each labelmap
+ * layer, whose image follows the slice, so a scroll changes the image of the
+ * display set and not the display sets that the viewport shows. Two images
+ * of one layer on one image get one UID each, numbered after the first.
+ */
+export function getCurrentStackLabelmapImages(
+  viewportId: string,
+  segmentationId: string
+): Array<{ imageId: string; representationUID: string }> {
+  const imageIds =
+    getCurrentLabelmapImageIdsForViewport(viewportId, segmentationId) ?? [];
+  const segmentation = getSegmentation(segmentationId);
+  const countsByLayer = new Map<string, number>();
+
+  return imageIds.map((imageId) => {
+    const layerId =
+      (segmentation &&
+        getLabelmapForImageId(segmentation, imageId)?.labelmapId) ??
+      imageId;
+    const count = countsByLayer.get(layerId) ?? 0;
+
+    countsByLayer.set(layerId, count + 1);
+
+    return {
+      imageId,
+      representationUID: createLabelmapRepresentationUID({
+        segmentationId,
+        referencedId: layerId,
+        sliceStateKey: count ? `stack-${count}` : 'stack',
+      }),
+    };
+  });
+}
+
+/**
+ * Shows the labelmap images of the image on display of a stack viewport, or
+ * of the frame on display of a video viewport, removes the layers that have
+ * none on it and renders. Each labelmap layer is one display set of the
+ * viewport (`getCurrentStackLabelmapImages`): a layer that shows the image
+ * of another slice gets the new image through `addImages` with its id, which
+ * replaces the image and fires no `DISPLAY_SETS_CHANGED`.
  * A video does not run the reference scan of
  * `updateLabelmapSegmentationImageReferences`: each labelmap image of a video
  * lies on the plane of every frame, so the scan matched all of them on each
@@ -71,22 +114,29 @@ export function syncStackLabelmapActors(
     updateLabelmapSegmentationImageReferences(viewport.id, segmentationId);
   }
 
-  const derivedImageIds =
-    getCurrentLabelmapImageIdsForViewport(viewport.id, segmentationId) ?? [];
-  const derivedImageIdSet = new Set(derivedImageIds);
+  const labelmapImages = getCurrentStackLabelmapImages(
+    viewport.id,
+    segmentationId
+  );
+  const representationUIDs = new Set(
+    labelmapImages.map(({ representationUID }) => representationUID)
+  );
   const labelmapActorEntries =
     getLabelmapActorEntries(viewport.id, segmentationId) ?? [];
   const staleActorEntries = labelmapActorEntries.filter(
-    (actorEntry) => !derivedImageIdSet.has(actorEntry.referencedId)
+    (actorEntry) =>
+      !representationUIDs.has(actorEntry.representationUID as string)
   );
 
-  // The viewport rebuilds the stack labelmap overlay actor per
-  // slice. Carry the outgoing actor's color/opacity style onto the replacement
+  // The viewport builds a new actor when the image of a layer changes with
+  // the slice. Carry the outgoing actor's color/opacity style onto the new one
   // so it renders translucent (transparent background) from its first frame,
   // instead of painting opaque over the underlying image until the segmentation
   // style pass runs - which otherwise reads as a black flash while scrolling.
   const inheritedLabelmapStyle = captureLabelmapActorStyle(
-    staleActorEntries[0]?.actor as { getProperty?: () => unknown } | undefined
+    labelmapActorEntries[0]?.actor as
+      | { getProperty?: () => unknown }
+      | undefined
   );
 
   let shouldTriggerSegmentationRender = false;
@@ -115,8 +165,12 @@ export function syncStackLabelmapActors(
   const currentOrigin = drawsOnCanvas
     ? undefined
     : viewport.getImageDataMetadata(currentImage).origin;
+  const representation = getSegmentationRepresentations(viewport.id, {
+    segmentationId,
+    type: SegmentationRepresentations.Labelmap,
+  })[0] as LabelmapRepresentation | undefined;
 
-  derivedImageIds.forEach((derivedImageId) => {
+  labelmapImages.forEach(({ imageId: derivedImageId, representationUID }) => {
     const derivedImage = cache.getImage(derivedImageId);
 
     if (!derivedImage) {
@@ -127,16 +181,30 @@ export function syncStackLabelmapActors(
       return;
     }
 
-    const segmentationActorEntry = getLabelmapActorEntries(
-      viewport.id,
-      segmentationId
-    )?.find((actorEntry) => actorEntry.referencedId === derivedImageId);
+    const layerActorEntry = labelmapActorEntries.find(
+      (actorEntry) => actorEntry.representationUID === representationUID
+    );
+    const segmentationActorEntry =
+      layerActorEntry?.referencedId === derivedImageId
+        ? layerActorEntry
+        : undefined;
 
     if (!segmentationActorEntry) {
-      const representationUID = createLabelmapRepresentationUID({
-        segmentationId,
-        referencedId: derivedImage.imageId,
-      });
+      const replacesImage = Boolean(layerActorEntry && representation);
+      const styleReplacement = (actor: unknown) => {
+        if (replacesImage) {
+          setLabelmapColorAndOpacity(
+            viewport.id,
+            {
+              uid: representationUID,
+              actor,
+              referencedId: derivedImageId,
+              representationUID,
+            } as Types.ActorEntry,
+            representation
+          );
+        }
+      };
 
       if (drawsOnCanvas) {
         viewport.addImages([
@@ -152,6 +220,7 @@ export function syncStackLabelmapActors(
             representationUID,
             // FIDELITY-STATE-9: labelmap overlay actors are out of fidelity scope.
             excludeFromFidelity: true,
+            callback: ({ imageActor }) => styleReplacement(imageActor),
           },
         ]);
       } else {
@@ -195,12 +264,13 @@ export function syncStackLabelmapActors(
                 imageActor as never,
                 inheritedLabelmapStyle
               );
+              styleReplacement(imageActor);
             },
           },
         ]);
       }
 
-      shouldTriggerSegmentationRender = true;
+      shouldTriggerSegmentationRender ||= !replacesImage;
       shouldRenderViewport = true;
       return;
     }

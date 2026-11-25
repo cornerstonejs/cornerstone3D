@@ -27,6 +27,7 @@ import type {
   ECGViewState,
   ECGCanvasRenderContext,
   ECGDisplaySetAppearance,
+  ECGMountOptions,
   ECGViewportInput,
   ECGWaveformPayload,
   ECGResetViewStateOptions,
@@ -137,9 +138,11 @@ class ECGViewport extends BaseViewport<
    * DISPLAY_SETS_CHANGED fires once the waveforms are mounted; a newer call
    * stops this one, which then fires nothing.
    *
-   * @param entries - Waveform display sets to mount.
-   * `options.multiplexGroupIndex` (0-based) names the multiplex group to
-   * show; undefined shows the default group. `options.appearance` is the
+   * @param entries - Waveform display sets to mount. The first entry is the
+   * source and the others are overlays, unless an entry names its
+   * `options.role`. `options.multiplexGroupIndex` (0-based) names the
+   * multiplex group to show; undefined shows the default group.
+   * `options.appearance` is the
    * appearance of the waveform from its first draw (line width, grid,
    * amplitude labels, opacity), merged over the overrides set before the
    * mount; DISPLAY_SET_APPEARANCE_CHANGED fires once for it, with cause
@@ -148,10 +151,7 @@ class ECGViewport extends BaseViewport<
   async setDisplaySets(
     ...entries: Array<{
       displaySetId: string;
-      options?: {
-        multiplexGroupIndex?: number;
-        appearance?: Partial<ECGDisplaySetAppearance>;
-      };
+      options?: ECGMountOptions;
     }>
   ): Promise<void> {
     const isSuperseded = this.startSetDisplaySets();
@@ -198,7 +198,7 @@ class ECGViewport extends BaseViewport<
           waveform,
           {
             renderMode: 'signal2d',
-            role: index === 0 ? 'source' : 'overlay',
+            role: options?.role ?? (index === 0 ? 'source' : 'overlay'),
           },
           isSuperseded
         );
@@ -217,6 +217,37 @@ class ECGViewport extends BaseViewport<
 
     this.triggerDisplaySetsChanged(
       entries.map(({ displaySetId }) => displaySetId)
+    );
+  }
+
+  /**
+   * The display sets that the viewport shows, in mount order, each with the
+   * options of its mount, resolved: the role that it has now and the
+   * multiplex group that it shows (the group of the mount option, else the
+   * default group of the instance). `appearance` is not among them: it was
+   * applied once, at the mount, and `getDisplaySetAppearance(displaySetId)`
+   * gives the look. `other.setDisplaySets(...viewport.getDisplaySets())` on
+   * another ECG viewport therefore shows the same groups of the same
+   * waveforms.
+   */
+  override getDisplaySets(): Array<{
+    displaySetId: string;
+    options: ECGMountOptions;
+  }> {
+    return Array.from(this.bindings.entries()).map(
+      ([displaySetId, binding]) => {
+        const { multiplexGroupIndex } = isECGWaveformData(binding.data)
+          ? binding.data
+          : { multiplexGroupIndex: undefined };
+
+        return {
+          displaySetId,
+          options:
+            multiplexGroupIndex === undefined
+              ? { role: binding.role }
+              : { role: binding.role, multiplexGroupIndex },
+        };
+      }
     );
   }
 

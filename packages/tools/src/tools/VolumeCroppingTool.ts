@@ -314,6 +314,13 @@ class VolumeCroppingTool extends BaseTool {
 
     subscribeToElementResize();
 
+    if (this._viewportAddedListener) {
+      eventTarget.removeEventListener(
+        Events.TOOLGROUP_VIEWPORT_ADDED,
+        this._viewportAddedListener
+      );
+    }
+
     this._viewportAddedListener = (evt) => {
       if (evt.detail.toolGroupId === this.toolGroupId) {
         subscribeToElementResize();
@@ -385,6 +392,11 @@ class VolumeCroppingTool extends BaseTool {
       );
       this._viewportAddedListener = null; // Clear the reference to the listener
     }
+
+    eventTarget.removeEventListener(
+      Events.VOLUMECROPPINGCONTROL_TOOL_CHANGED,
+      this._onControlToolChange
+    );
 
     const viewportsInfo = this._getViewportsInfo();
     this._unsubscribeToViewportNewVolumeSet(viewportsInfo);
@@ -1416,9 +1428,7 @@ class VolumeCroppingTool extends BaseTool {
 
     eventTarget.addEventListener(
       Events.VOLUMECROPPINGCONTROL_TOOL_CHANGED,
-      (evt) => {
-        this._onControlToolChange(evt);
-      }
+      this._onControlToolChange
     );
     viewport.render();
   };

@@ -71,7 +71,32 @@ export function getStackData(element) {
   };
 }
 
-export function getPromiseRemovedHandler(element) {
+const promiseRemovedHandlers = new WeakMap<
+  HTMLDivElement,
+  (event: CustomEvent) => void
+>();
+
+/**
+ * The `IMAGE_CACHE_IMAGE_REMOVED` listener of the prefetch of an element:
+ * one function for each element, so `disable` removes the listener that
+ * `enable` added, and a second `enable` adds none.
+ */
+export function getPromiseRemovedHandler(element: HTMLDivElement) {
+  let handler = promiseRemovedHandlers.get(element);
+
+  if (!handler) {
+    handler = createPromiseRemovedHandler(element);
+    promiseRemovedHandlers.set(element, handler);
+  }
+
+  return handler;
+}
+
+/**
+ * Makes the listener that puts the index of an image of the stack that left
+ * the cache back in the list of images to prefetch.
+ */
+function createPromiseRemovedHandler(element: HTMLDivElement) {
   return function (e) {
     const eventData = e.detail;
 

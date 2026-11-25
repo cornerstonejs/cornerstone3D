@@ -42,6 +42,7 @@ export type {
   ECGViewState,
   ECGDisplaySetAppearance,
   ECGChannelData,
+  ECGMountOptions,
   ECGAppearanceProps,
   ECGProperties,
   ECGViewportInput,

@@ -379,12 +379,46 @@ plane, see
   through a switch of the render backend, a slab and an orientation check,
   until the viewport mounts it again. The next mount reads the registration
   as it is then.
-- **`getDisplaySets()` gives the options of each mount**, not only the role:
-  the options that the mount was given, without `appearance`, with the role
-  that the display set has now, the mode that the mount chose (`'stack'` or
-  `'volume'`, never `'auto'`) and, in volume mode, the id of the volume that it
-  shows. `target.setDisplaySets(...source.getDisplaySets())` shows the same
-  data the same way; the loupe of the magnify tools mounts its source so.
+- **`getDisplaySets()` gives the options of each mount**, not only the role,
+  on every viewport family: for each mounted display set, in mount order, its
+  id, its role and the options that it is mounted with, resolved, so that
+  `other.setDisplaySets(...viewport.getDisplaySets())` on a viewport of the
+  same family shows the same layers of the same data, with
+  `getDisplaySetAppearance(displaySetId)` for the look. `appearance` is not
+  among the options: the mount applied it once.
+  - Planar (`PlanarMountOptions`): the options that the mount was given, with
+    the role that the display set has now, the mode that the mount chose
+    (`'stack'` or `'volume'`, never `'auto'`) and, in volume mode, the id of
+    the volume that it shows. The loupe of the magnify tools mounts its source
+    so.
+  - 3D (`Volume3DMountOptions`): the role and, for a volume, the `volumeId`
+    of the volume that it shows (the volume of the mount option, else of the
+    registration, else the default id of its images). A copy loads no volume
+    a second time. A surface has no `volumeId`.
+  - Video (`VideoMountOptions`): the role and the `frameNumber` that the
+    mount was given. The images drawn over a video (`addImages`) are not
+    display sets: `getActors()` lists them.
+  - ECG (`ECGMountOptions`): the role and the `multiplexGroupIndex` that the
+    waveform shows, the default group of the instance when the mount named
+    none.
+  - Whole slide (`WSIMountOptions`): the role.
+
+  The mounts of the video, ECG and whole slide viewports take `role` now, as
+  the planar and 3D mounts do: without it the first entry is the source and
+  the others overlays, as before.
+
+  ```ts
+  const layers = viewport.getDisplaySets().map(({ displaySetId, options }) => ({
+    displaySetId,
+    options: {
+      ...options,
+      appearance: viewport.getDisplaySetAppearance(displaySetId),
+    },
+  }));
+
+  await capture.setDisplaySets(...layers);
+  ```
+
 - **A `setDisplaySets` that mounts the source again keeps the labelmaps of a
   segmentation only when the source and its mode stay the same.** The same
   display set mounted in the other mode drops them, as another source does.

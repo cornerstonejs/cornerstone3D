@@ -97,6 +97,7 @@ jest.mock('./removeLabelmapRepresentationData', () => ({
 }));
 
 jest.mock('./syncStackLabelmapActors', () => ({
+  getCurrentStackLabelmapImages: jest.fn(),
   syncStackLabelmapActors: jest.fn(),
 }));
 
@@ -125,7 +126,10 @@ import {
 } from '../../../stateManagement/segmentation/helpers/labelmapSegmentationState';
 import { triggerSegmentationDataModified } from '../../../stateManagement/segmentation/triggerSegmentationEvents';
 import removeLabelmapRepresentationData from './removeLabelmapRepresentationData';
-import { syncStackLabelmapActors } from './syncStackLabelmapActors';
+import {
+  getCurrentStackLabelmapImages,
+  syncStackLabelmapActors,
+} from './syncStackLabelmapActors';
 import {
   addVolumeLabelmapImageMapperActors,
   getVolumeLabelmapImageMapperRepresentationUIDs,
@@ -146,6 +150,8 @@ const shouldUseSliceRenderingMock = shouldUseSliceRendering as jest.Mock;
 const removeLabelmapRepresentationDataMock =
   removeLabelmapRepresentationData as jest.Mock;
 const syncStackLabelmapActorsMock = syncStackLabelmapActors as jest.Mock;
+const getCurrentStackLabelmapImagesMock =
+  getCurrentStackLabelmapImages as jest.Mock;
 const triggerSegmentationDataModifiedMock =
   triggerSegmentationDataModified as jest.Mock;
 
@@ -184,6 +190,12 @@ describe('labelmapRenderPlan', () => {
     getCurrentLabelmapImageIdsForViewportMock.mockReturnValue([
       'derived-image-id',
     ]);
+    getCurrentStackLabelmapImagesMock.mockReturnValue([
+      {
+        imageId: 'derived-image-id',
+        representationUID: 'segmentation-id-Labelmap-layer-id-stack',
+      },
+    ]);
     getLabelmapsMock.mockReturnValue([]);
     getOrCreateLabelmapVolumeMock.mockReset();
     getVolumeMock.mockReset();
@@ -216,7 +228,7 @@ describe('labelmapRenderPlan', () => {
 
     expect(renderPlan.kind).toBe('legacy-stack-image');
     expect(renderPlan.getExpectedRepresentationUIDs()).toEqual([
-      'segmentation-id-Labelmap-derived-image-id',
+      'segmentation-id-Labelmap-layer-id-stack',
     ]);
 
     await renderPlan.reconcile({

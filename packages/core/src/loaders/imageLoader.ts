@@ -525,6 +525,7 @@ export function createAndCacheLocalImage(
     bitsAllocated,
     bitsStored,
     highBit,
+    pixelRepresentation: scalarDataToUse instanceof Int16Array ? 1 : 0,
   } as ImagePixelModuleMetadata;
 
   const metadata = {

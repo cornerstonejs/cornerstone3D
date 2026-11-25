@@ -1,6 +1,7 @@
 import type {
   BaseViewportRenderContext,
   BaseAppearanceProps,
+  BindingRole,
   DataProvider,
   LoadedData,
   MountedRendering,
@@ -70,6 +71,22 @@ export interface WSIProperties {
 }
 
 export type WSIDisplaySetAppearance = WSIAppearanceProps & WSIProperties;
+
+/** The options of the mount of one slide display set. */
+export interface WSIMountOptions {
+  /**
+   * The role of the display set: the first entry of `setDisplaySets` is the
+   * source and the others are overlays when not given.
+   */
+  role?: BindingRole;
+  /**
+   * The appearance of the slide from its first draw (its window, average
+   * white and opacity), merged over the overrides set before the mount.
+   * `DISPLAY_SET_APPEARANCE_CHANGED` fires once for it, with cause
+   * `'mount'`.
+   */
+  appearance?: Partial<WSIDisplaySetAppearance>;
+}
 
 /** @internal */
 export interface WSIDataProvider extends DataProvider {

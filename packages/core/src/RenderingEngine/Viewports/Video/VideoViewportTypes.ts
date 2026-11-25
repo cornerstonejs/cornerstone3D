@@ -1,6 +1,7 @@
 import type {
   BaseViewportRenderContext,
   BaseAppearanceProps,
+  BindingRole,
   DataProvider,
   MountedRendering,
   RenderPathResolver,
@@ -55,6 +56,24 @@ export interface VideoProperties {
 }
 
 export type VideoDisplaySetAppearance = VideoAppearanceProps & VideoProperties;
+
+/** The options of the mount of one video display set. */
+export interface VideoMountOptions {
+  /**
+   * The role of the display set: the first entry of `setDisplaySets` is the
+   * source and the others are overlays when not given.
+   */
+  role?: BindingRole;
+  /** The 1-based frame that the source shows after the mount. */
+  frameNumber?: number;
+  /**
+   * The appearance of the video from its first draw (its playback rate,
+   * loop, mute, object fit, opacity and the rest), merged over the
+   * overrides set before the mount. `DISPLAY_SET_APPEARANCE_CHANGED` fires
+   * once for it, with cause `'mount'`.
+   */
+  appearance?: Partial<VideoDisplaySetAppearance>;
+}
 
 export interface VideoViewportInput {
   id: string;

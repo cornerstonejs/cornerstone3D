@@ -211,6 +211,7 @@ export function decimatedVolumeLoader(
         dimensions: streamingImageVolume.dimensions,
         imageIds: streamingImageVolume.imageIds,
         numberOfComponents: numberOfComponents,
+        dataType: streamingImageVolume.dataType,
       });
 
       streamingImageVolume.voxelManager = newVoxelManager;

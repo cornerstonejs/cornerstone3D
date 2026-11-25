@@ -41,7 +41,7 @@ let resetPrefetchTimeout;
 // loaded, so a 5 ms prefetch delay is fine
 const resetPrefetchDelay = 5;
 
-const priorities = {};
+const priorities = new WeakMap<HTMLDivElement, number>();
 
 /**
  * Call this to enable stack context sensitive prefetch.  Should be called
@@ -86,7 +86,7 @@ const enable = (element, priority = 0): void => {
 
   updateToolState(element);
 
-  priorities[element] = priority;
+  priorities.set(element, priority);
 
   prefetch(element, priority);
 
@@ -280,7 +280,7 @@ function onImageUpdated(e) {
     // An exception will be thrown because the element will not be enabled anymore
     try {
       updateToolState(element);
-      prefetch(element, priorities[element]);
+      prefetch(element, priorities.get(element));
     } catch (error) {
       return;
     }

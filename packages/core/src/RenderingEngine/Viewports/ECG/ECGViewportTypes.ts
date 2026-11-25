@@ -2,6 +2,7 @@ import type { AABB2, ViewportInputOptions } from '../../../types';
 import type {
   BaseViewportRenderContext,
   BaseAppearanceProps,
+  BindingRole,
   DataProvider,
   MountedRendering,
   RenderPathResolver,
@@ -168,6 +169,27 @@ export interface ECGProperties {
 }
 
 export type ECGDisplaySetAppearance = ECGAppearanceProps & ECGProperties;
+
+/** The options of the mount of one waveform display set. */
+export interface ECGMountOptions {
+  /**
+   * The role of the display set: the first entry of `setDisplaySets` is the
+   * source and the others are overlays when not given.
+   */
+  role?: BindingRole;
+  /**
+   * The multiplex group to show (0-based); the default group of the
+   * instance when not given.
+   */
+  multiplexGroupIndex?: number;
+  /**
+   * The appearance of the waveform from its first draw (line width, grid,
+   * amplitude labels, opacity), merged over the overrides set before the
+   * mount. `DISPLAY_SET_APPEARANCE_CHANGED` fires once for it, with cause
+   * `'mount'`.
+   */
+  appearance?: Partial<ECGDisplaySetAppearance>;
+}
 
 export interface ECGViewportInput {
   id: string;

@@ -163,6 +163,13 @@ class TrackballRotateTool extends BaseTool {
 
     subscribeToElementResize();
 
+    if (this._viewportAddedListener) {
+      eventTarget.removeEventListener(
+        Events.TOOLGROUP_VIEWPORT_ADDED,
+        this._viewportAddedListener
+      );
+    }
+
     this._viewportAddedListener = (evt) => {
       if (evt.detail.toolGroupId === this.toolGroupId) {
         subscribeToElementResize();
