@@ -20,6 +20,7 @@ import triggerAnnotationRenderForToolGroupIds from './triggerAnnotationRenderFor
 import triggerAnnotationRender from './triggerAnnotationRender';
 
 import { getSphereBoundsInfo } from './getSphereBoundsInfo';
+import sampleAreaAnnotationVoxels from './sampleAreaAnnotationVoxels';
 import { pointToString } from './pointToString';
 import AnnotationMultiSlice from './AnnotationMultiSlice';
 import getViewportForAnnotation from './getViewportForAnnotation';
@@ -33,6 +34,7 @@ import * as segmentation from './segmentation';
 import * as drawing from './drawing';
 import * as math from './math';
 import * as planar from './planar';
+import * as spatial from './spatial';
 import * as viewportFilters from './viewportFilters';
 import * as orientation from './orientation';
 import * as cine from './cine';
@@ -61,10 +63,20 @@ import { moveAnnotationToViewPlane } from './moveAnnotationToViewPlane';
 import { safeStructuredClone } from './safeStructuredClone';
 import getOrCreateImageVolume from './segmentation/getOrCreateImageVolume';
 import * as usFanExtraction from '../tools/annotation/UltrasoundPleuraBLineTool/utils/fanExtraction';
+import {
+  jumpToFocalPoint,
+  getViewSlabDepthOfViewport,
+} from './genericViewportToolHelpers';
+import pickIntensityPointInSlab, {
+  getSlabIntensityPickContext,
+} from './pickIntensityPointInSlab';
+
+export * from './defaultGetTextLines';
 
 export {
   math,
   planar,
+  spatial,
   viewportFilters,
   drawing,
   debounce,
@@ -86,6 +98,7 @@ export {
   triggerAnnotationRenderForToolGroupIds,
   triggerAnnotationRender,
   getSphereBoundsInfo,
+  sampleAreaAnnotationVoxels,
   getAnnotationNearPoint,
   getViewportForAnnotation,
   getAnnotationNearPointOnEnabledElement,
@@ -114,4 +127,8 @@ export {
   moveAnnotationToViewPlane,
   safeStructuredClone,
   getOrCreateImageVolume,
+  jumpToFocalPoint,
+  getViewSlabDepthOfViewport,
+  pickIntensityPointInSlab,
+  getSlabIntensityPickContext,
 };

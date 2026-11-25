@@ -16,6 +16,8 @@ import {
 } from '@cornerstonejs/core';
 
 import { getToolGroup } from '../store/ToolGroupManager';
+import getViewportICamera from '../utilities/getViewportICamera';
+import { resetViewportCamera } from '../utilities/setViewportCamera';
 
 import {
   addAnnotation,
@@ -59,6 +61,11 @@ import {
   computePlanePlaneIntersection,
   findLineBoundsIntersection,
 } from '../utilities/volumeCropping';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.VolumeCroppingControlTool'
+);
 
 type ReferenceLine = [
   viewport: {
@@ -235,7 +242,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
       }
       const volumeActors = viewport.getActors();
       if (!volumeActors || !volumeActors.length) {
-        console.warn(
+        cs3dLogger.warn(
           `VolumeCroppingControlTool: No volume actors found in viewport ${viewportId}.`
         );
         return;
@@ -259,7 +266,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
     viewportId,
   }: Types.IViewportId): void => {
     if (!renderingEngineId || !viewportId) {
-      console.warn(
+      cs3dLogger.warn(
         'VolumeCroppingControlTool: Missing renderingEngineId or viewportId'
       );
       return;
@@ -284,7 +291,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
     }
 
     const { element } = viewport;
-    const { position, focalPoint } = viewport.getCamera();
+    const { position, focalPoint } = getViewportICamera(viewport);
 
     // Check if there is already annotation for this viewport
     let annotations = this._getAnnotations(enabledElement);
@@ -300,7 +307,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
 
     // Determine orientation from camera normal, fallback to viewportId string
     const orientation = getOrientationFromNormal(
-      viewport.getCamera().viewPlaneNormal
+      getViewportICamera(viewport).viewPlaneNormal
     );
 
     const annotation = {
@@ -436,7 +443,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
       const resetToCenter = true;
       const resetRotation = true;
       const suppressEvents = true;
-      viewport.resetCamera({
+      resetViewportCamera(viewport, {
         resetPan,
         resetZoom,
         resetToCenter,
@@ -461,7 +468,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
 
   _initializeViewports = (viewportsInfo: Types.IViewportId[]): void => {
     if (!viewportsInfo?.length || !viewportsInfo[0]) {
-      console.warn(
+      cs3dLogger.warn(
         'VolumeCroppingControlTool: No valid viewportsInfo for initialization.'
       );
       return;
@@ -680,10 +687,13 @@ class VolumeCroppingControlTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     // Use orientation property for matching
     let orientation = null;
-    if (enabledElement.viewport && enabledElement.viewport.getCamera) {
-      orientation = getOrientationFromNormal(
-        enabledElement.viewport.getCamera().viewPlaneNormal
-      );
+    if (enabledElement.viewport) {
+      // Use the lane-agnostic camera read so orientation also resolves on native
+      // (generic) viewports, which do not expose the legacy getCamera method.
+      const { viewPlaneNormal } = getViewportICamera(enabledElement.viewport);
+      if (viewPlaneNormal) {
+        orientation = getOrientationFromNormal(viewPlaneNormal);
+      }
     }
 
     // Filter annotations for this orientation
@@ -735,7 +745,7 @@ class VolumeCroppingControlTool extends AnnotationTool {
     const { viewport, renderingEngine } = enabledElement;
     const { element } = viewport;
     const annotations = this._getAnnotations(enabledElement);
-    const camera = viewport.getCamera();
+    const camera = getViewportICamera(viewport);
     const filteredToolAnnotations =
       this.filterInteractableAnnotationsForElement(element, annotations);
 

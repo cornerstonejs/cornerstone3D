@@ -49,7 +49,7 @@ setTitleAndDescription(
   'Here we demonstrate how to calculate statistics for a stack segmentation.'
 );
 
-const size = '500px';
+const size = '512px';
 const content = document.getElementById('content');
 
 const statsGrid = document.createElement('div');

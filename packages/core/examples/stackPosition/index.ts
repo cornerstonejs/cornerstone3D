@@ -49,7 +49,7 @@ const content = document.getElementById('content');
 const element = document.createElement('div');
 element.id = 'cornerstone-element';
 element.style.width = '1000px';
-element.style.height = '500px';
+element.style.height = '512px';
 
 content.appendChild(element);
 
@@ -114,8 +114,8 @@ function createDisplayArea(
 }
 
 const displayAreas = new Map();
-displayAreas.set('Center with border', createDisplayArea(1.1, 0.5));
 displayAreas.set('Center Full', createDisplayArea(1, 0.5));
+displayAreas.set('Center with border', createDisplayArea(1.1, 0.5));
 displayAreas.set('Center Half', createDisplayArea(2, 0.5));
 displayAreas.set('Left Top', createDisplayArea(1, 0));
 displayAreas.set('Right Top', createDisplayArea(1, [1, 0]));
@@ -310,19 +310,35 @@ async function run() {
   instructions.innerText = 'Middle Click: Pan\nRight Click: Zoom';
   content.appendChild(instructions);
 
-  const svgNode = document.getElementsByClassName('svg-layer').item(0);
-  const divNode = document.createElement('div');
-  divNode.setAttribute(
-    'style',
-    'left:25%; top: 25%; width:25%; height:25%; border: 1px solid green; position: absolute'
-  );
-  svgNode.parentNode.insertBefore(divNode, svgNode.nextSibling);
-  const div2Node = document.createElement('div');
-  div2Node.setAttribute(
-    'style',
-    'left: 50%; top: 50%; width:25%; height:25%; border: 1px solid red; position: absolute'
-  );
-  divNode.parentNode.insertBefore(div2Node, divNode.nextSibling);
+  // Draw the display-area reference boxes inside the SVG annotation layer so
+  // they are captured by canvas-based snapshot tests (DOM-only overlays are
+  // not picked up by checkForCanvasSnapshot).
+  const svgNode = document
+    .getElementsByClassName('svg-layer')
+    .item(0) as SVGSVGElement | null;
+  if (svgNode) {
+    const SVG_NS = 'http://www.w3.org/2000/svg';
+    const makeRect = (
+      x: string,
+      y: string,
+      w: string,
+      h: string,
+      stroke: string
+    ) => {
+      const rect = document.createElementNS(SVG_NS, 'rect');
+      rect.setAttribute('x', x);
+      rect.setAttribute('y', y);
+      rect.setAttribute('width', w);
+      rect.setAttribute('height', h);
+      rect.setAttribute('fill', 'none');
+      rect.setAttribute('stroke', stroke);
+      rect.setAttribute('stroke-width', '1');
+      rect.setAttribute('vector-effect', 'non-scaling-stroke');
+      return rect;
+    };
+    svgNode.appendChild(makeRect('25%', '25%', '25%', '25%', 'green'));
+    svgNode.appendChild(makeRect('50%', '50%', '25%', '25%', 'red'));
+  }
 }
 
 run();

@@ -56,6 +56,11 @@ import { BSpline } from './splines/BSpline';
 import ContourSegmentationBaseTool from '../base/ContourSegmentationBaseTool';
 import { triggerAnnotationRenderForViewportIds } from '../../utilities';
 import { convertContourSegmentationAnnotation } from '../../utilities/contourSegmentation';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.annotation.SplineROITool'
+);
 
 const SPLINE_MIN_POINTS = 3;
 const SPLINE_CLICK_CLOSE_CURVE_DIST = 10;
@@ -110,9 +115,15 @@ class SplineROITool extends ContourSegmentationBaseTool {
     newAnnotation?: boolean;
     hasMoved?: boolean;
     lastCanvasPoint?: Types.Point2;
+    /** Close-curve snap distance (canvas px) for the preview, per input source */
+    closeCurveDistance?: number;
     contourHoleProcessingEnabled?: boolean;
   } | null;
   isDrawing: boolean;
+  // Multi-part: points already placed must survive a pinch, so the extra
+  // finger is ignored by _touchDragDuringDrawCallback rather than cancelling
+  // the contour. See BaseTool.handlesMultiTouchGestures.
+  handlesMultiTouchGestures = true;
   isHandleOutsideImage = false;
   fireChangeOnUpdate: {
     annotationUID: string;
@@ -127,6 +138,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
       configuration: {
         preventHandleOutsideImage: false,
         calculateStats: true,
+        allowOpenSplines: false,
         simplifiedSpline: false, // if true, it will convert the annotations to free hand
         getTextLines: defaultGetTextLines,
         /**
@@ -173,6 +185,13 @@ class SplineROITool extends ContourSegmentationBaseTool {
            * to the cursor position before the second point is placed.
            */
           enableTwoPointPreview: false,
+          /**
+           * Distance in canvas pixels from the first control point within
+           * which a tap closes the curve when drawing with touch. Mouse
+           * clicks keep the default 10px target; finger taps get a larger
+           * one, matching the 36px touch proximity used for handle grabs.
+           */
+          touchCloseCurveDistance: 36,
           lastControlPointDeletionKeys: ['Backspace', 'Delete'],
         },
         actions: {
@@ -516,13 +535,38 @@ class SplineROITool extends ContourSegmentationBaseTool {
     );
 
     this.editData.lastCanvasPoint = evt.detail.currentPoints.canvas;
+    this.editData.closeCurveDistance =
+      evt.type === Events.TOUCH_DRAG
+        ? this.configuration.spline.touchCloseCurveDistance
+        : SPLINE_CLICK_CLOSE_CURVE_DIST;
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
     evt.preventDefault();
   };
 
   private _mouseDownCallback = (evt: EventTypes.InteractionEventType): void => {
-    const doubleClick = evt.type === Events.MOUSE_DOUBLE_CLICK;
+    const isTouchEvent =
+      evt.type === Events.TOUCH_TAP || evt.type === Events.TOUCH_END;
+    // A double tap arrives as a single TOUCH_TAP event carrying the tap
+    // count (see touchStartListener) and closes the curve exactly like a
+    // mouse double click does.
+    const doubleTap =
+      evt.type === Events.TOUCH_TAP &&
+      (evt.detail as unknown as EventTypes.TouchTapEventDetail).taps >= 2;
+    const doubleClick = evt.type === Events.MOUSE_DOUBLE_CLICK || doubleTap;
+
+    // The tap listener anchors an active tap chain at its first tap, so a
+    // drag that ends near that anchor is counted as a tap even though it
+    // travelled beyond the tap distance. Such a drag was already committed on
+    // TOUCH_END; drop the trailing TOUCH_TAP or it would add a duplicate
+    // point and close the curve.
+    if (
+      doubleTap &&
+      this.isTouchTapEchoOfLiftCommit(evt.detail.currentPoints.canvas)
+    ) {
+      return;
+    }
+
     const { annotation, viewportIdsToRender } = this.editData;
     const { data } = annotation;
 
@@ -537,7 +581,10 @@ class SplineROITool extends ContourSegmentationBaseTool {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const { canvas: canvasPoint, world: worldPoint } = currentPoints;
-    let closeContour = data.handles.points.length >= 2 && doubleClick;
+    let closeContour =
+      data.handles.points.length >= 2 &&
+      doubleClick &&
+      !this.configuration.allowOpenSplines;
     let addNewPoint = true;
 
     if (data.handles.points.length) {
@@ -550,14 +597,17 @@ class SplineROITool extends ContourSegmentationBaseTool {
     if (data.handles.points.length >= 3) {
       this.createMemo(element, annotation);
       const { instance: spline } = data.spline;
+      const closeCurveDistance = isTouchEvent
+        ? this.configuration.spline.touchCloseCurveDistance
+        : SPLINE_CLICK_CLOSE_CURVE_DIST;
       const closestControlPoint = spline.getClosestControlPointWithinDistance(
         canvasPoint,
-        SPLINE_CLICK_CLOSE_CURVE_DIST
+        closeCurveDistance
       );
 
       if (closestControlPoint?.index === 0) {
         addNewPoint = false;
-        closeContour = true;
+        closeContour = !this.configuration.allowOpenSplines;
       }
     }
 
@@ -569,14 +619,53 @@ class SplineROITool extends ContourSegmentationBaseTool {
     annotation.invalidated = true;
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
-    if (data.contour.closed) {
+    const allowOpenSplines =
+      doubleClick &&
+      this.configuration.allowOpenSplines &&
+      data.handles.points.length >= 3;
+    if (data.contour.closed || allowOpenSplines) {
       this._endCallback(evt);
     }
 
     evt.preventDefault();
   };
 
-  private _dragCallback = (evt: EventTypes.InteractionEventType): void => {
+  private _touchDragDuringDrawCallback = (
+    evt: EventTypes.TouchDragEventType
+  ): void => {
+    // Ignore multi-touch while drawing: the mean point of two fingers is
+    // never where the user wants the preview.
+    if (evt.detail.currentPointsList.length > 1) {
+      return;
+    }
+    this._mouseMoveCallback(evt);
+  };
+
+  private _touchEndDuringDrawCallback = (
+    evt: EventTypes.TouchEndEventType
+  ): void => {
+    const { startPointsList, currentPointsList, startPoints, currentPoints } =
+      evt.detail;
+
+    if (startPointsList.length > 1 || currentPointsList.length > 1) {
+      return;
+    }
+
+    // Gestures that stay within the tap distance are committed by the
+    // TOUCH_TAP path; committing them here as well would add the point twice.
+    const dragDistance = math.point.distanceToPoint(
+      startPoints.canvas,
+      currentPoints.canvas
+    );
+    if (dragDistance <= SplineROITool.TOUCH_TAP_MAX_CANVAS_DISTANCE) {
+      return;
+    }
+
+    this.recordTouchLiftCommit(currentPoints.canvas);
+    this._mouseDownCallback(evt);
+  };
+
+  protected _dragCallback = (evt: EventTypes.InteractionEventType): void => {
     this.isDrawing = true;
     const eventDetail = evt.detail;
     const { element } = eventDetail;
@@ -708,30 +797,6 @@ class SplineROITool extends ContourSegmentationBaseTool {
     }
   };
 
-  private _activateModify = (element) => {
-    state.isInteractingWithTool = true;
-
-    element.addEventListener(Events.MOUSE_UP, this._endCallback);
-    element.addEventListener(Events.MOUSE_DRAG, this._dragCallback);
-    element.addEventListener(Events.MOUSE_CLICK, this._endCallback);
-
-    element.addEventListener(Events.TOUCH_END, this._endCallback);
-    element.addEventListener(Events.TOUCH_DRAG, this._dragCallback);
-    element.addEventListener(Events.TOUCH_TAP, this._endCallback);
-  };
-
-  private _deactivateModify = (element) => {
-    state.isInteractingWithTool = false;
-
-    element.removeEventListener(Events.MOUSE_UP, this._endCallback);
-    element.removeEventListener(Events.MOUSE_DRAG, this._dragCallback);
-    element.removeEventListener(Events.MOUSE_CLICK, this._endCallback);
-
-    element.removeEventListener(Events.TOUCH_END, this._endCallback);
-    element.removeEventListener(Events.TOUCH_DRAG, this._dragCallback);
-    element.removeEventListener(Events.TOUCH_TAP, this._endCallback);
-  };
-
   private _activateDraw = (element) => {
     state.isInteractingWithTool = true;
 
@@ -744,6 +809,14 @@ class SplineROITool extends ContourSegmentationBaseTool {
     );
 
     element.addEventListener(Events.TOUCH_TAP, this._mouseDownCallback);
+    element.addEventListener(
+      Events.TOUCH_DRAG,
+      this._touchDragDuringDrawCallback
+    );
+    element.addEventListener(
+      Events.TOUCH_END,
+      this._touchEndDuringDrawCallback
+    );
   };
 
   private _deactivateDraw = (element) => {
@@ -758,6 +831,14 @@ class SplineROITool extends ContourSegmentationBaseTool {
     );
 
     element.removeEventListener(Events.TOUCH_TAP, this._mouseDownCallback);
+    element.removeEventListener(
+      Events.TOUCH_DRAG,
+      this._touchDragDuringDrawCallback
+    );
+    element.removeEventListener(
+      Events.TOUCH_END,
+      this._touchEndDuringDrawCallback
+    );
   };
 
   protected isContourSegmentationTool(): boolean {
@@ -912,7 +993,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
         // For splines with 2 or more control points, use the existing preview logic
         const previewPolylinePoints = spline.getPreviewPolylinePoints(
           lastCanvasPoint,
-          SPLINE_CLICK_CLOSE_CURVE_DIST
+          this.editData?.closeCurveDistance ?? SPLINE_CLICK_CLOSE_CURVE_DIST
         );
 
         drawPolylineSvg(
@@ -1297,43 +1378,36 @@ class SplineROITool extends ContourSegmentationBaseTool {
       const deltaInY = vec3.distance(originalWorldPoint, deltaYPoint);
 
       const { imageData } = image;
-      const { scale, areaUnit } = getCalibratedLengthUnitsAndScale(
-        image,
-        () => {
-          const {
-            maxX: canvasMaxX,
-            maxY: canvasMaxY,
-            minX: canvasMinX,
-            minY: canvasMinY,
-          } = math.polyline.getAABB(canvasCoordinates);
+      const { areaUnit } = getCalibratedLengthUnitsAndScale(image, () => {
+        const {
+          maxX: canvasMaxX,
+          maxY: canvasMaxY,
+          minX: canvasMinX,
+          minY: canvasMinY,
+        } = math.polyline.getAABB(canvasCoordinates);
 
-          const topLeftBBWorld = viewport.canvasToWorld([
-            canvasMinX,
-            canvasMinY,
-          ]);
+        const topLeftBBWorld = viewport.canvasToWorld([canvasMinX, canvasMinY]);
 
-          const topLeftBBIndex = utilities.transformWorldToIndex(
-            imageData,
-            topLeftBBWorld
-          );
+        const topLeftBBIndex = utilities.transformWorldToIndex(
+          imageData,
+          topLeftBBWorld
+        );
 
-          const bottomRightBBWorld = viewport.canvasToWorld([
-            canvasMaxX,
-            canvasMaxY,
-          ]);
+        const bottomRightBBWorld = viewport.canvasToWorld([
+          canvasMaxX,
+          canvasMaxY,
+        ]);
 
-          const bottomRightBBIndex = utilities.transformWorldToIndex(
-            imageData,
-            bottomRightBBWorld
-          );
+        const bottomRightBBIndex = utilities.transformWorldToIndex(
+          imageData,
+          bottomRightBBWorld
+        );
 
-          return [topLeftBBIndex, bottomRightBBIndex];
-        }
-      );
-      let area = math.polyline.getArea(canvasCoordinates) / scale / scale;
-
+        return [topLeftBBIndex, bottomRightBBIndex];
+      });
       // Convert from canvas_pixels ^2 to mm^2
-      area *= deltaInX * deltaInY;
+      const area =
+        math.polyline.getArea(canvasCoordinates) * deltaInX * deltaInY;
 
       cachedStats[targetId] = {
         Modality: metadata.Modality,
@@ -1375,7 +1449,7 @@ class SplineROITool extends ContourSegmentationBaseTool {
     }
 
     if (points.length < SPLINE_MIN_POINTS) {
-      console.warn('Spline requires at least 3 control points');
+      cs3dLogger.warn('Spline requires at least 3 control points');
       return;
     }
 

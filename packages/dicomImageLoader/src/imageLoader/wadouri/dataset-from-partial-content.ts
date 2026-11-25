@@ -1,9 +1,12 @@
 import type { DataSet } from 'dicom-parser';
-import * as dicomParser from 'dicom-parser';
+import { logging } from '@cornerstonejs/metadata';
+import { parseDicom } from './parseDicomWithInflater';
 import type {
   LoadRequestFunction,
   DICOMLoaderDataSetWithFetchMore,
 } from '../../types';
+
+const log = logging.loaderLog.getLogger('wadouri');
 
 function fixFragments(dataSet: DataSet) {
   // The partially parsed pixelData element has incorrect fragment
@@ -16,7 +19,7 @@ function fixFragments(dataSet: DataSet) {
     const { position, length } = fragment;
 
     if (length > totalLength - position) {
-      console.log(
+      log.info(
         `Truncated fragment, changing fragment length from ${
           fragment.length
         } to ${totalLength - position}`
@@ -37,12 +40,12 @@ function parsePartialByteArray(byteArray: Uint8Array) {
    * partial pixel data in the error object.
    */
 
-  let dataSet = dicomParser.parseDicom(byteArray, {
+  let dataSet = parseDicom(byteArray, {
     untilTag: 'x7fe00010',
   });
 
   if (!dataSet.elements.x7fe00010) {
-    console.warn('Pixel data not found!');
+    log.warn('Pixel data not found!');
     // Re-fetch more of the file
   }
 
@@ -55,13 +58,13 @@ function parsePartialByteArray(byteArray: Uint8Array) {
     // incomplete, because dicomParser throws *before* combining the
     // metadata header and regular datasets, so transfer syntax and
     // other metadata headers aren't included.
-    pixelDataSet = dicomParser.parseDicom(byteArray);
+    pixelDataSet = parseDicom(byteArray);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (err: any) {
     // Todo: This is probably invalid handling - it expects the only reason to
     //  fail is a partial dataset
-    console.error(err);
-    console.log('pixel data dataset:', err.dataSet);
+    log.error(err);
+    log.info('pixel data dataset:', err.dataSet);
     pixelDataSet = err.dataSet;
   }
 

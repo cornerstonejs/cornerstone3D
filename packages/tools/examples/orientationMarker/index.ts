@@ -97,7 +97,7 @@ setTitleAndDescription(
   'Here we demonstrate Orientation marker tool working .'
 );
 
-const size = '500px';
+const size = '512px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 

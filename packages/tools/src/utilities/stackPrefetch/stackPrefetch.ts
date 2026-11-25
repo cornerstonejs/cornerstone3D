@@ -16,9 +16,15 @@ import {
   getPromiseRemovedHandler,
   nearestIndex,
   range,
+  isLoadedByProgressiveVolume,
 } from './stackPrefetchUtils';
 import { Events } from '../../enums';
 import type { EventTypes } from '../../types';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'utilities.stackPrefetch.stackPrefetch'
+);
 
 const { imageRetrieveMetadataProvider } = utilities;
 
@@ -35,6 +41,26 @@ let configuration = {
 
 let resetPrefetchTimeout;
 const resetPrefetchDelay = 10;
+const loadingCancelledHandlers = new WeakMap<HTMLDivElement, EventListener>();
+
+/**
+ * Prefetches again when a volume of the images of the stack cancels its load,
+ * because a progressive load of that volume removed the queued prefetch.
+ */
+function getLoadingCancelledHandler(element: HTMLDivElement): EventListener {
+  return (evt) => {
+    const { volumeId } = (evt as CustomEvent<{ volumeId: string }>).detail;
+
+    try {
+      const imageId = getStackData(element)?.imageIds[0];
+      if (cache.getVolume(volumeId)?.getImageIdIndex(imageId) !== undefined) {
+        prefetch(element);
+      }
+    } catch {
+      // The element is no longer enabled.
+    }
+  };
+}
 
 function prefetch(element) {
   // Get the stackPrefetch tool data
@@ -48,7 +74,11 @@ function prefetch(element) {
   const stack = getStackData(element);
 
   if (!stack?.imageIds?.length) {
-    console.warn('CornerstoneTools.stackPrefetch: No images in stack.');
+    cs3dLogger.warn('CornerstoneTools.stackPrefetch: No images in stack.');
+    return;
+  }
+
+  if (isLoadedByProgressiveVolume(stack.imageIds)) {
     return;
   }
 
@@ -126,7 +156,6 @@ function prefetch(element) {
   const preventCache = false;
 
   function doneCallback(imageId) {
-    console.log('prefetch done: %s', imageId);
     const imageIdIndex = stack.imageIds.indexOf(imageId);
 
     removeFromList(imageIdIndex);
@@ -238,7 +267,7 @@ function enable(element) {
   const stack = getStackData(element);
 
   if (!stack || !stack.imageIds || stack.imageIds.length === 0) {
-    console.warn('CornerstoneTools.stackPrefetch: No images in stack.');
+    cs3dLogger.warn('CornerstoneTools.stackPrefetch: No images in stack.');
     return;
   }
 
@@ -273,6 +302,22 @@ function enable(element) {
     Enums.Events.IMAGE_CACHE_IMAGE_REMOVED,
     promiseRemovedHandler
   );
+
+  removeLoadingCancelledHandler(element);
+  const loadingCancelledHandler = getLoadingCancelledHandler(element);
+  loadingCancelledHandlers.set(element, loadingCancelledHandler);
+  eventTarget.addEventListener(
+    Enums.Events.IMAGE_VOLUME_LOADING_CANCELLED,
+    loadingCancelledHandler
+  );
+}
+
+function removeLoadingCancelledHandler(element: HTMLDivElement) {
+  eventTarget.removeEventListener(
+    Enums.Events.IMAGE_VOLUME_LOADING_CANCELLED,
+    loadingCancelledHandlers.get(element)
+  );
+  loadingCancelledHandlers.delete(element);
 }
 
 function disable(element) {
@@ -285,6 +330,7 @@ function disable(element) {
     Enums.Events.IMAGE_CACHE_IMAGE_REMOVED,
     promiseRemovedHandler
   );
+  removeLoadingCancelledHandler(element);
 
   const stackPrefetchData = getToolState(element);
   // If there is actually something to disable, disable it

@@ -19,6 +19,12 @@ viewed via 4 viewports in a “4-up” view: Axial MPR, Sagittal MPR, Coronal MP
 See [Viewport Reference and Presentation](./viewportReferencePresentation.md) for more details on the reference
 and presentation details that select which image and how that image is presented.
 
+Generic/Next viewport implementations use semantic `ViewState` as their
+mutation source of truth. Code that needs cross-viewport pan, zoom, rotation,
+scale, or renderer-camera output should use
+[`Viewport Projection`](./generic-viewport/viewport-projection.md) instead of
+copying camera objects between viewport families.
+
 <div style={{textAlign: 'center'}}>
 
 ![](../../assets/viewports.png)

@@ -1,8 +1,14 @@
 import * as metaData from '../../metaData';
-import { Events, ImageQualityStatus, RequestType } from '../../enums';
+import {
+  Events,
+  ImageQualityStatus,
+  MetadataModules,
+  RequestType,
+} from '../../enums';
 import eventTarget from '../../eventTarget';
 import imageLoadPoolManager from '../../requestPool/imageLoadPoolManager';
 import type {
+  DeliveredRegion,
   IImagesLoader,
   ImageLoadRequests,
   ImageVolumeProps,
@@ -10,6 +16,8 @@ import type {
   PTScaling,
   ScalingParameters,
 } from '../../types';
+import { boundsOfFrame } from '../../utilities/voxelGrid';
+import cache from '../cache';
 import ProgressiveIterator from '../../utilities/ProgressiveIterator';
 import imageRetrieveMetadataProvider from '../../utilities/imageRetrieveMetadataProvider';
 import { hasFloatScalingParameters } from '../../utilities/hasFloatScalingParameters';
@@ -19,7 +27,11 @@ import ImageVolume from './ImageVolume';
 import ProgressiveRetrieveImages from '../../loaders/ProgressiveRetrieveImages';
 import { canRenderFloatTextures } from '../../init';
 import { loadAndCacheImage } from '../../loaders/imageLoader';
+import { coreLog } from '../../utilities/logger';
+
+const log = coreLog.getLogger('cache', 'BaseStreamingImageVolume');
 const requestTypeDefault = RequestType.Prefetch;
+const TAKE_IN_BATCH_MS = 8;
 
 /**
  * Streaming Image Volume Class that extends ImageVolume base class.
@@ -37,6 +49,10 @@ export class BaseStreamingImageVolume
   protected cachedFrames = [];
   protected reRenderTarget = 0;
   protected reRenderFraction = 2;
+  /** The listener of `listenForCachedImages`, while this volume loads. */
+  private markOnImageCached: ((event) => void) | null = null;
+  /** Increments for each load, so the batches of an older load stop. */
+  private takeInGeneration = 0;
 
   loadStatus: {
     loaded: boolean;
@@ -54,13 +70,28 @@ export class BaseStreamingImageVolume
     this.loadStatus = streamingProperties.loadStatus;
   }
 
+  /**
+   * Whether an image belongs to the dimension group that the grid shows. A
+   * volume of one group holds every image in that group.
+   */
+  protected isInCurrentDimensionGroup(_imageIdIndex: number): boolean {
+    return true;
+  }
+
   protected invalidateVolume(immediate: boolean): void {
-    const { vtkOpenGLTexture } = this;
     const { numFrames } = this;
 
+    // Every frame now holds other data, such as the next dimension group of a
+    // dynamic volume. The record of the deliveries and every derived
+    // representation describe the old data, so the composite starts again from
+    // the deliveries of the data that the grid now shows. Each texture refills.
+    this.resetCompositeVoxelManager();
+
     for (let i = 0; i < numFrames; i++) {
-      vtkOpenGLTexture.setUpdatedFrame(i);
+      this.voxelManager?.invalidateSlice?.(i);
     }
+
+    this.markAllTexturesDirty();
 
     this.modified();
 
@@ -72,7 +103,7 @@ export class BaseStreamingImageVolume
   /**
    * It cancels loading the images of the volume. It sets the loading status to false
    * and filters any imageLoad request in the requestPoolManager that has the same
-   * volumeId
+   * volumeId, then fires `IMAGE_VOLUME_LOADING_CANCELLED`.
    */
   public cancelLoading = (): void => {
     const { loadStatus } = this;
@@ -84,6 +115,7 @@ export class BaseStreamingImageVolume
     // Set to not loading.
     loadStatus.loading = false;
     loadStatus.cancelled = true;
+    this.stopListeningForCachedImages();
 
     // Remove all the callback listeners
     this.clearLoadCallbacks();
@@ -98,6 +130,12 @@ export class BaseStreamingImageVolume
     // requests to ensure requests we no longer need are
     // no longer sent.
     imageLoadPoolManager.filterRequests(filterFunction);
+
+    // A progressive load removed the prefetch of other loaders; they can
+    // queue it again.
+    triggerEvent(eventTarget, Events.IMAGE_VOLUME_LOADING_CANCELLED, {
+      volumeId: this.volumeId,
+    });
   };
 
   /**
@@ -129,6 +167,8 @@ export class BaseStreamingImageVolume
         volumeId: volumeId,
       };
 
+      this.stopListeningForCachedImages();
+
       triggerEvent(
         eventTarget,
         Events.IMAGE_VOLUME_LOADING_COMPLETED,
@@ -145,13 +185,15 @@ export class BaseStreamingImageVolume
     const frameIndex = this.imageIdIndexToFrameIndex(imageIdIndex);
     const { cachedFrames, numFrames, totalNumFrames } = this;
     const { FrameOfReferenceUID } = this.metadata;
-    const currentStatus = cachedFrames[frameIndex];
+    // `cachedFrames` holds one entry for each image id, and not for each frame:
+    // the frames of the dimension groups of a dynamic volume share one index.
+    const currentStatus = cachedFrames[imageIdIndex];
     if (currentStatus > imageQualityStatus) {
       // This is common for initial versus decimated images.
       return;
     }
 
-    if (cachedFrames[frameIndex] === ImageQualityStatus.FULL_RESOLUTION) {
+    if (cachedFrames[imageIdIndex] === ImageQualityStatus.FULL_RESOLUTION) {
       // Sometimes the frame can be delivered multiple times, so just return
       // here if that happens
       return;
@@ -162,6 +204,16 @@ export class BaseStreamingImageVolume
     if (complete) {
       this.framesLoaded++;
       this.framesProcessed++;
+    }
+
+    // Record the delivery before any event: a listener of the last frame's
+    // LOADING_COMPLETED reads the record, and no later event clears its read.
+    this.markFrameTexturesDirty(frameIndex);
+
+    // The grid of a dynamic volume holds one dimension group, so the image of
+    // another group delivers nothing to it.
+    if (this.isInCurrentDimensionGroup(imageIdIndex)) {
+      this.recordFrameDelivery(frameIndex, imageQualityStatus);
     }
 
     const eventDetail = {
@@ -191,11 +243,74 @@ export class BaseStreamingImageVolume
       imageQualityStatus,
     });
 
-    this.vtkOpenGLTexture.setUpdatedFrame(frameIndex);
-
     if (this.loadStatus.loaded) {
       this.loadStatus.callbacks = [];
     }
+  }
+
+  /**
+   * Marks a frame when the image of that frame reaches the cache.
+   *
+   * This volume reads the voxels of a frame from the image of the cache, and
+   * the image reaches the cache after the loader delivers it. A mark that runs
+   * before the image arrives reads nothing, and nothing marks the frame again,
+   * so the frame keeps whatever it held: it stays empty, or it keeps the
+   * replicate of a neighbour that a progressive loader put there first. A
+   * sagittal or a coronal view then shows a black line, or a block of one
+   * frame repeated.
+   *
+   * `cache.setPartialImage`, which is how a replicate reaches the cache, sends
+   * no event, so this member hears the arrival of real images only. The
+   * delivery path marks the frame for a replicate.
+   *
+   * The cache adds an image before the loader calls `successCallback`, so a
+   * first image arrives here with no quality yet, and `successCallback`
+   * records it. A known quality belongs to a delivery whose reduction ran
+   * before its image arrived, so the record runs again.
+   */
+  protected listenForCachedImages(): void {
+    if (this.markOnImageCached) {
+      return;
+    }
+
+    this.markOnImageCached = (event) => {
+      const { imageId } = event.detail?.image ?? {};
+      const imageIdIndex = imageId ? this.getImageIdIndex(imageId) : -1;
+
+      if (imageIdIndex < 0) {
+        return;
+      }
+
+      const frameIndex = this.imageIdIndexToFrameIndex(imageIdIndex);
+      const quality = this.cachedFrames[imageIdIndex];
+
+      this.markFrameTexturesDirty(frameIndex);
+
+      if (
+        quality !== undefined &&
+        this.isInCurrentDimensionGroup(imageIdIndex)
+      ) {
+        this.recordFrameDelivery(frameIndex, quality);
+      }
+    };
+
+    eventTarget.addEventListener(
+      Events.IMAGE_CACHE_IMAGE_ADDED,
+      this.markOnImageCached
+    );
+  }
+
+  /** Stops the volume listening for the images that reach the cache. */
+  protected stopListeningForCachedImages(): void {
+    if (!this.markOnImageCached) {
+      return;
+    }
+
+    eventTarget.removeEventListener(
+      Events.IMAGE_CACHE_IMAGE_ADDED,
+      this.markOnImageCached
+    );
+    this.markOnImageCached = null;
   }
 
   public successCallback(imageId: string, image) {
@@ -205,7 +320,7 @@ export class BaseStreamingImageVolume
     // check if the load was cancelled while we were waiting for the image
     // if so we don't want to do anything
     if (this.loadStatus.cancelled) {
-      console.warn(
+      log.warn(
         'volume load cancelled, returning for imageIdIndex: ',
         imageIdIndex
       );
@@ -272,7 +387,7 @@ export class BaseStreamingImageVolume
   public load(callback: (...args: unknown[]) => void): void {
     const { imageIds, loadStatus, numFrames } = this;
     const { transferSyntaxUID } =
-      metaData.get('transferSyntax', imageIds[0]) || {};
+      metaData.get(MetadataModules.TRANSFER_SYNTAX, imageIds[0]) || {};
     const imageRetrieveConfiguration = metaData.get(
       imageRetrieveMetadataProvider.IMAGE_RETRIEVE_CONFIGURATION,
       this.volumeId,
@@ -309,26 +424,171 @@ export class BaseStreamingImageVolume
       return;
     }
 
+    // A loaded volume receives no more images, so only a load listens. The
+    // listener otherwise keeps the volume alive after the cache removes it.
+    this.listenForCachedImages();
+
     if (callback) {
       this.loadStatus.callbacks.push(callback);
     }
 
     this._prefetchImageIds();
+
+    if (this.isLoadingProgressively()) {
+      this.removeOtherPrefetchRequests();
+    }
+
+    this.takeInCachedImages();
   }
 
+  /**
+   * Delivers the images of this volume that the cache already holds, such as
+   * the images that a stack viewport loaded before a switch to MPR.
+   *
+   * Without this, the volume learns of such an image only when its own stage
+   * requests it, and a nearby fill skips the frame because the cache already
+   * holds a better image, so the frame stays empty until a late stage.
+   *
+   * The deliveries run in batches of at most 8 ms, and a later task runs the
+   * next batch, so a volume whose images are all cached does not stall. A
+   * delivery only marks texture slices, and each render fills them under the
+   * budget of `rendering.reducedTextureFill`. A cancelled or a restarted load
+   * stops the batches.
+   */
+  protected takeInCachedImages(): void {
+    if (this.isDynamicVolume()) {
+      return;
+    }
+
+    const generation = ++this.takeInGeneration;
+    const { imageIds } = this;
+    let imageIdIndex = 0;
+
+    const deliverBatch = () => {
+      if (
+        generation !== this.takeInGeneration ||
+        this.loadStatus.cancelled ||
+        !this.loadStatus.loading
+      ) {
+        return;
+      }
+
+      const start = performance.now();
+
+      while (imageIdIndex < imageIds.length) {
+        const imageId = imageIds[imageIdIndex];
+        const image = cache.isLoaded(imageId)
+          ? cache.getImage(imageId)
+          : undefined;
+
+        if (image && !this.cachedFrames[imageIdIndex]) {
+          this.successCallback(imageId, image);
+        }
+
+        imageIdIndex++;
+
+        if (performance.now() - start >= TAKE_IN_BATCH_MS) {
+          break;
+        }
+      }
+
+      if (imageIdIndex < imageIds.length) {
+        setTimeout(deliverBatch, 0);
+      }
+    };
+
+    deliverBatch();
+  }
+
+  /**
+   * Whether this volume loads now through a retrieve configuration, such as
+   * the interleaved stages. Such a load orders its own requests, so a stack
+   * prefetch of the same images competes with it and must stay out.
+   */
+  public isLoadingProgressively(): boolean {
+    return !!this.loadStatus.loading && this.imagesLoader !== this;
+  }
+
+  /**
+   * Removes the queued prefetch requests of another loader for the images of
+   * this volume. A stack prefetch queued before a switch to a volume layout
+   * otherwise loads the whole series from the top down, and it takes more
+   * request slots than the stages of this volume.
+   */
+  protected removeOtherPrefetchRequests(): void {
+    const imageIds = new Set(this.imageIds);
+
+    imageLoadPoolManager.filterRequests(
+      ({ type, additionalDetails }) =>
+        type !== RequestType.Prefetch ||
+        additionalDetails?.volumeId === this.volumeId ||
+        !imageIds.has(additionalDetails?.imageId as string)
+    );
+  }
+
+  destroy(): void {
+    this.stopListeningForCachedImages();
+    super.destroy();
+  }
+
+  public getImageQuality(imageIdIndex: number): ImageQualityStatus | undefined {
+    return this.cachedFrames[imageIdIndex] || undefined;
+  }
+
+  /**
+   * The frames of this volume that the loader has already delivered.
+   *
+   * `cachedFrames` is the record of the quality of each frame, so this member
+   * states each loaded frame as one region of one k slice. A volume that has
+   * loaded nothing states an empty list, which tells a derivation that no
+   * source voxel holds a value yet.
+   */
+  protected deliveredRegions(): DeliveredRegion[] {
+    const regions: DeliveredRegion[] = [];
+
+    // `cachedFrames` holds one entry for each image id. A dynamic volume holds
+    // the images of every dimension group, and the grid shows one group.
+    for (
+      let imageIdIndex = 0;
+      imageIdIndex < this.cachedFrames.length;
+      imageIdIndex++
+    ) {
+      const quality = this.cachedFrames[imageIdIndex];
+
+      if (quality && this.isInCurrentDimensionGroup(imageIdIndex)) {
+        regions.push({
+          bounds: boundsOfFrame(
+            this.voxelGrid,
+            this.imageIdIndexToFrameIndex(imageIdIndex)
+          ),
+          quality,
+        });
+      }
+    }
+
+    return regions;
+  }
+
+  /**
+   * The options that the image loader gets for one image of this volume.
+   *
+   * The target buffer states the type and no size, so the cached image keeps
+   * the size that the decoder produced. A sub-resolution decode (HTJ2K, a JLS
+   * thumbnail) gives fewer voxels than one slice, and a size would make the
+   * loader replicate them up to full size and lose the saving. The voxel
+   * manager of this volume scales the image on read.
+   */
   public getLoaderImageOptions(imageId: string) {
     const { transferSyntaxUID: transferSyntaxUID } =
-      metaData.get('transferSyntax', imageId) || {};
+      metaData.get(MetadataModules.TRANSFER_SYNTAX, imageId) || {};
 
-    // Use the actual dimensions for this volume in order to support volumes not the same size as the raw data
-    const targetRows = this.dimensions[1];
-    const targetCols = this.dimensions[0];
     const imageIdIndex = this.getImageIdIndex(imageId);
 
-    const modalityLutModule = metaData.get('modalityLutModule', imageId) || {};
+    const modalityLutModule =
+      metaData.get(MetadataModules.MODALITY_LUT, imageId) || {};
 
     const generalSeriesModule =
-      metaData.get('generalSeriesModule', imageId) || {};
+      metaData.get(MetadataModules.GENERAL_SERIES, imageId) || {};
 
     const scalingParameters: ScalingParameters = {
       rescaleSlope: modalityLutModule.rescaleSlope,
@@ -338,7 +598,7 @@ export class BaseStreamingImageVolume
     const modality = scalingParameters.modality;
 
     if (modality === 'PT' || modality === 'RTDOSE') {
-      const scalingFactor = metaData.get('scalingModule', imageId);
+      const scalingFactor = metaData.get(MetadataModules.SCALING, imageId);
 
       if (scalingFactor) {
         this._addScalingToVolume(scalingFactor);
@@ -379,10 +639,10 @@ export class BaseStreamingImageVolume
       this.isPreScaled = false;
     }
 
+    // No size, so a sub-resolution decode keeps its own size in the cache; the
+    // voxel manager scales it on read.
     const targetBuffer = {
       type: this.dataType,
-      rows: targetRows,
-      columns: targetCols,
     };
 
     return {
@@ -420,24 +680,8 @@ export class BaseStreamingImageVolume
       return;
     }
 
-    // Todo: check if this needs more work for when we have progressive loading
-    const handleImageCacheAdded = (event) => {
-      const { image } = event.detail;
-      if (image.imageId === imageId) {
-        this.vtkOpenGLTexture.setUpdatedFrame(imageIdIndex);
-        // Remove the event listener after it's been triggered
-        eventTarget.removeEventListener(
-          Events.IMAGE_CACHE_IMAGE_ADDED,
-          handleImageCacheAdded
-        );
-      }
-    };
-
-    eventTarget.addEventListener(
-      Events.IMAGE_CACHE_IMAGE_ADDED,
-      handleImageCacheAdded
-    );
-
+    // `successCallback` marks the frame with the quality of the delivery, and
+    // `listenForCachedImages` marks it again when the image reaches the cache.
     const uncompressedIterator = ProgressiveIterator.as(
       loadAndCacheImage(imageId, options)
     );
@@ -448,7 +692,7 @@ export class BaseStreamingImageVolume
         // image is the pixelData decoded from workers in cornerstoneDICOMImageLoader
         this.successCallback(imageId, image);
       },
-      this.errorCallback.bind(this, imageIdIndex, imageId)
+      (error, done) => this.errorCallback(imageId, done, error)
     );
   }
 
@@ -579,7 +823,7 @@ export class BaseStreamingImageVolume
     }
 
     return this.imagesLoader.loadImages(imageIds, this).catch((e) => {
-      console.debug('progressive loading failed to complete', e);
+      log.debug('progressive loading failed to complete', e);
     });
   }
 

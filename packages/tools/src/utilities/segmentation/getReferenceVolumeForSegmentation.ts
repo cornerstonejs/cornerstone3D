@@ -44,7 +44,7 @@ export function getReferenceVolumeForSegmentation(segmentationId: string) {
     );
   }
   // Case 2: Labelmap with volumeId (volume-based)
-  else if ('volumeId' in labelmap) {
+  else if (labelmap.volumeId) {
     const { volumeId, referencedVolumeId } = labelmap;
 
     // Try to get directly referenced volume

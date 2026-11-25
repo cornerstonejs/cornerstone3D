@@ -51,7 +51,7 @@ setTitleAndDescription(
   'Here we demonstrate how to render a segmentation in StackViewport with a mammography image.'
 );
 
-const size = '500px';
+const size = '512px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 
@@ -330,7 +330,7 @@ function setupTools(toolGroupId) {
         dynamicRadius: 3,
       },
       preview: {
-        enabled: true,
+        enabled: false,
       },
     }
   );
@@ -344,7 +344,7 @@ function setupTools(toolGroupId) {
         dynamicRadius: 3,
       },
       preview: {
-        enabled: true,
+        enabled: false,
       },
     }
   );
@@ -354,7 +354,7 @@ function setupTools(toolGroupId) {
     {
       activeStrategy: brushStrategies.CircularBrush,
       preview: {
-        enabled: true,
+        enabled: false,
       },
       useCenterSegmentIndex: true,
     }
@@ -470,11 +470,17 @@ async function run() {
       viewportId: viewportId,
       type: ViewportType.STACK,
       element: element1,
+      defaultOptions: {
+        background: [0.2, 0, 0.2],
+      },
     },
     {
       viewportId: viewportId2,
       type: ViewportType.STACK,
       element: element2,
+      defaultOptions: {
+        background: [0.2, 0, 0.2],
+      },
     },
   ];
   renderingEngine.setViewports(viewportInputArray);
@@ -482,7 +488,7 @@ async function run() {
   toolGroup.addViewport(viewportId2, renderingEngineId);
   viewport = renderingEngine.getViewport(viewportId);
 
-  const ctImageIds = imageIds.slice(0, 3);
+  const ctImageIds = imageIds.slice(0, 30);
   const ctSegImages =
     await imageLoader.createAndCacheDerivedLabelmapImages(ctImageIds);
 

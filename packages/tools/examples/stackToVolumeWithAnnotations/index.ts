@@ -54,7 +54,7 @@ setTitleAndDescription(
   'In this demo, you see how the stack and volume viewport conversions work. The purple background represents a StackViewport while the green background represents a VolumeViewport. You can start annotating the images and annotations will be rendered correctly regardless of the viewport they were drawn on.'
 );
 
-const size = '500px';
+const size = '512px';
 
 const demoToolbar = document.getElementById('demo-toolbar');
 

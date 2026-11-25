@@ -54,23 +54,27 @@ setTitleAndDescription(
   'Here we demonstrate how to set up the MPR with reformat orientations. Each viewport (axial, sagittal, coronal) can be reformatted while maintaining its relationship to its base orientation using REFORMAT_AXIAL, REFORMAT_SAGITTAL, and REFORMAT_CORONAL.'
 );
 
-const size = '500px';
+const size = '512px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 
 viewportGrid.style.display = 'flex';
 viewportGrid.style.display = 'flex';
 viewportGrid.style.flexDirection = 'row';
+viewportGrid.style.flexWrap = 'wrap';
 
 const element1 = document.createElement('div');
 const element2 = document.createElement('div');
 const element3 = document.createElement('div');
 element1.style.width = size;
 element1.style.height = size;
+element1.style.flexShrink = '0';
 element2.style.width = size;
 element2.style.height = size;
+element2.style.flexShrink = '0';
 element3.style.width = size;
 element3.style.height = size;
+element3.style.flexShrink = '0';
 
 // Disable right click context menu so we can have right click tools
 element1.oncontextmenu = (e) => e.preventDefault();

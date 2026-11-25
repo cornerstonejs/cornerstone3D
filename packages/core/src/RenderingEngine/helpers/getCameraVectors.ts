@@ -3,16 +3,23 @@ import * as CONSTANTS from '../../constants';
 import * as Enums from '../../enums';
 import type * as Types from '../../types';
 import type OrientationVectors from '../../types/OrientationVectors';
+import { coreLog } from '../../utilities/logger';
 
 import { vec3 } from 'gl-matrix';
 
 const { MPR_CAMERA_VALUES } = CONSTANTS;
 const { OrientationAxis } = Enums;
+const log = coreLog.getLogger('RenderingEngine', 'getCameraVectors');
 
 export interface CameraPositionConfig {
   orientation?: Enums.OrientationAxis;
   useViewportNormal?: boolean;
 }
+
+export type CameraVectorViewport = Pick<
+  Types.IBaseVolumeViewport,
+  'getActors' | 'getCamera' | 'getCurrentImageId' | 'getImageIds' | 'type'
+>;
 
 /**
  * Calculate camera position values based on DICOM image orientation vectors.
@@ -245,7 +252,7 @@ export function calculateCameraPosition(
  * ```
  */
 export function getCameraVectors(
-  viewport: Types.IBaseVolumeViewport,
+  viewport: CameraVectorViewport,
   config?: CameraPositionConfig
 ) {
   if (!viewport.getActors()?.length) {
@@ -253,7 +260,7 @@ export function getCameraVectors(
   }
 
   if (viewport.type !== Enums.ViewportType.ORTHOGRAPHIC) {
-    console.warn('Viewport should be a volume viewport');
+    log.warn('Viewport should be a volume viewport');
   }
   let imageId = viewport.getCurrentImageId();
   if (!imageId) {
@@ -262,7 +269,10 @@ export function getCameraVectors(
   if (!imageId) {
     return;
   }
-  const { imageOrientationPatient } = metaData.get('imagePlaneModule', imageId);
+  const { imageOrientationPatient } = metaData.get(
+    Enums.MetadataModules.IMAGE_PLANE,
+    imageId
+  );
   const rowCosineVec = vec3.fromValues(
     imageOrientationPatient[0],
     imageOrientationPatient[1],

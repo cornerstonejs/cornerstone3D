@@ -47,7 +47,12 @@ import type {
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { getCalibratedProbeUnitsAndValue } from '../../utilities/getCalibratedUnits';
 import { lineSegment } from '../../utilities/math';
-const { transformWorldToIndex } = csUtils;
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.annotation.UltrasoundDirectionalTool'
+);
+const { transformWorldToIndexContinuous } = csUtils;
 
 /**
  * The `UltrasoundDirectionalTool` class is a tool for creating directional ultrasound annotations.
@@ -592,7 +597,7 @@ class UltrasoundDirectionalTool extends AnnotationTool {
 
       // If rendering engine has been destroyed while rendering
       if (!viewport.getRenderingEngine()) {
-        console.warn('Rendering Engine has been destroyed');
+        cs3dLogger.warn('Rendering Engine has been destroyed');
         return renderStatus;
       }
 
@@ -767,8 +772,8 @@ class UltrasoundDirectionalTool extends AnnotationTool {
       const worldPos1 = data.handles.points[0];
       const worldPos2 = data.handles.points[1];
 
-      const imageIndex1 = transformWorldToIndex(imageData, worldPos1);
-      const imageIndex2 = transformWorldToIndex(imageData, worldPos2);
+      const imageIndex1 = transformWorldToIndexContinuous(imageData, worldPos1);
+      const imageIndex2 = transformWorldToIndexContinuous(imageData, worldPos2);
 
       const { values: values1, units: units1 } =
         getCalibratedProbeUnitsAndValue(image, [imageIndex1]);

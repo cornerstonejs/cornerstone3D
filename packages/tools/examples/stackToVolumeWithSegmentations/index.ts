@@ -48,8 +48,8 @@ const element = document.createElement('div');
 element.oncontextmenu = (e) => e.preventDefault();
 
 element.id = 'cornerstone-element';
-element.style.width = '500px';
-element.style.height = '500px';
+element.style.width = '512px';
+element.style.height = '512px';
 
 content.appendChild(element);
 

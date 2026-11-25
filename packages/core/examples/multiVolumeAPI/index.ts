@@ -6,6 +6,7 @@ import {
   getRenderingEngine,
   eventTarget,
 } from '@cornerstonejs/core';
+import * as cornerstoneTools from '@cornerstonejs/tools';
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
@@ -16,6 +17,16 @@ import {
   setPetColorMapTransferFunctionForVolumeActor,
   addSliderToToolbar,
 } from '../../../../utils/demo/helpers';
+import { getBooleanUrlParam } from '../../../../utils/demo/helpers/exampleParameters';
+
+const {
+  PanTool,
+  ZoomTool,
+  StackScrollTool,
+  ToolGroupManager,
+  Enums: csToolsEnums,
+} = cornerstoneTools;
+const { MouseBindings } = csToolsEnums;
 
 // This is for debugging purposes
 console.warn(
@@ -25,6 +36,7 @@ console.warn(
 const { ViewportType } = Enums;
 const renderingEngineId = 'myRenderingEngine';
 const viewportId = 'CT_SAGITTAL_STACK';
+const toolGroupId = 'myToolGroup';
 
 // Define unique ids for the volumes
 const volumeLoaderScheme = 'cornerstoneStreamingImageVolume'; // Loader id which defines which volume loader to use
@@ -34,6 +46,7 @@ const ctVolumeId = `${volumeLoaderScheme}:${ctVolumeName}`; // VolumeId with loa
 // Define a unique id for the volume
 const ptVolumeName = 'PT_VOLUME_ID';
 const ptVolumeId = `${volumeLoaderScheme}:${ptVolumeName}`;
+const PET_DEFAULT_OPACITY = getDefaultPetOpacity();
 
 // ======== Set up page ======== //
 setTitleAndDescription(
@@ -44,8 +57,8 @@ setTitleAndDescription(
 const content = document.getElementById('content');
 const element = document.createElement('div');
 element.id = 'cornerstone-element';
-element.style.width = '500px';
-element.style.height = '500px';
+element.style.width = '512px';
+element.style.height = '512px';
 
 content.appendChild(element);
 
@@ -67,8 +80,8 @@ content.appendChild(eventDetailsElement);
 addSliderToToolbar({
   title: 'Opacity',
   range: [0, 1],
-  step: 0.1,
-  defaultValue: 0.5,
+  step: 0.05,
+  defaultValue: PET_DEFAULT_OPACITY,
   onSelectedValueChange: (value) => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
     const viewport = renderingEngine.getViewport(
@@ -88,15 +101,17 @@ addSliderToToolbar({
   title: 'PET Threshold',
   range: [0, 5],
   step: 0.1,
-  defaultValue: 2.5,
+  defaultValue: 0,
   onSelectedValueChange: (value) => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
     const viewport = renderingEngine.getViewport(
       viewportId
     ) as Types.IBaseVolumeViewport;
 
+    const threshold = Number(value);
+
     viewport.setProperties(
-      { colormap: { threshold: Number(value) } },
+      threshold > 0 ? { colormap: { threshold } } : { colormap: {} },
       ptVolumeId
     );
     viewport.render();
@@ -228,13 +243,16 @@ function addColormapEventListener() {
         ? opacity.reduce((max, current) => Math.max(max, current.opacity), 0)
         : opacity;
 
-      const details = {
+      const details: Record<string, string> = {
         type: 'Colormap Modified',
         volumeId,
-        threshold: threshold.toFixed(2),
         opacity: opacityToUse.toFixed(2),
         timestamp: new Date().toLocaleTimeString(),
       };
+
+      if (typeof threshold === 'number') {
+        details.threshold = threshold.toFixed(2);
+      }
 
       eventDetailsElement.innerText = JSON.stringify(details, null, 2);
     }
@@ -288,6 +306,33 @@ async function run() {
     viewportId
   ) as Types.IVolumeViewport;
 
+  // Set up interaction tools
+  cornerstoneTools.addTool(StackScrollTool);
+  cornerstoneTools.addTool(PanTool);
+  cornerstoneTools.addTool(ZoomTool);
+
+  const toolGroup = ToolGroupManager.createToolGroup(toolGroupId);
+  toolGroup.addViewport(viewportId, renderingEngineId);
+
+  toolGroup.addTool(StackScrollTool.toolName);
+  toolGroup.addTool(PanTool.toolName);
+  toolGroup.addTool(ZoomTool.toolName);
+
+  toolGroup.setToolActive(StackScrollTool.toolName, {
+    bindings: [
+      { mouseButton: MouseBindings.Primary },
+      { mouseButton: MouseBindings.Wheel },
+    ],
+  });
+  toolGroup.setToolActive(PanTool.toolName, {
+    bindings: [{ mouseButton: MouseBindings.Auxiliary }],
+  });
+  toolGroup.setToolActive(ZoomTool.toolName, {
+    bindings: [{ mouseButton: MouseBindings.Secondary }],
+  });
+
+  element.addEventListener('contextmenu', (e) => e.preventDefault());
+
   // Setup event listener for colormap modifications
   addColormapEventListener();
 
@@ -313,13 +358,33 @@ async function run() {
   await ptVolume.load();
 
   // Set the volume on the viewport
-  viewport.setVolumes([
+  await viewport.setVolumes([
     { volumeId: ctVolumeId },
     {
       volumeId: ptVolumeId,
       callback: setPetColorMapTransferFunctionForVolumeActor,
     },
   ]);
+
+  viewport.setProperties(
+    {
+      colormap: {
+        name: 'hsv',
+        opacity: PET_DEFAULT_OPACITY,
+      },
+    },
+    ptVolumeId
+  );
+
+  viewport.render();
 }
 
 run();
+
+function getDefaultPetOpacity(): number {
+  const isCpu = getBooleanUrlParam('cpu');
+  const isNext =
+    new URLSearchParams(window.location.search).get('type') === 'next';
+
+  return isCpu || isNext ? 0.4 : 0.85;
+}

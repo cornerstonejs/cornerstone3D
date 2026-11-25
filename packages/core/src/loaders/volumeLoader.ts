@@ -6,6 +6,7 @@ import Events from '../enums/Events';
 import type VoxelManagerEnum from '../enums/VoxelManagerEnum';
 import eventTarget from '../eventTarget';
 import triggerEvent from '../utilities/triggerEvent';
+import { deepClone } from '../utilities/deepClone';
 
 import uuidv4 from '../utilities/uuidv4';
 import VoxelManager from '../utilities/VoxelManager';
@@ -28,6 +29,7 @@ import {
 import { generateVolumePropsFromImageIds } from '../utilities/generateVolumePropsFromImageIds';
 import type { StreamingDynamicImageVolume } from '../cache';
 import { cornerstoneStreamingImageVolumeLoader } from './cornerstoneStreamingImageVolumeLoader';
+import VoxelStatistics from '../enums/VoxelStatistics';
 
 interface VolumeLoaderOptions {
   imageIds: string[];
@@ -249,7 +251,7 @@ export function createAndCacheDerivedVolume(
   const derivedVolume = new ImageVolume({
     volumeId,
     dataType,
-    metadata: structuredClone(metadata),
+    metadata: deepClone(metadata),
     dimensions: [dimensions[0], dimensions[1], dimensions[2]],
     spacing,
     origin,
@@ -329,7 +331,7 @@ export function createAndCacheVolumeFromImagesSync(
   const derivedVolume = new ImageVolume({
     volumeId,
     dataType: volumeProps.dataType,
-    metadata: structuredClone(volumeProps.metadata),
+    metadata: deepClone(volumeProps.metadata),
     dimensions: volumeProps.dimensions,
     spacing: volumeProps.spacing,
     origin: volumeProps.origin,
@@ -364,6 +366,8 @@ export function createLocalVolume(
     origin,
     direction,
     scalarData,
+    referencedImageIds,
+    referencedVolumeId,
     targetBuffer,
     preventCache = false,
   } = options;
@@ -422,6 +426,7 @@ export function createLocalVolume(
       spacing: [spacing[0], spacing[1]],
       origin,
       direction,
+      referencedImageId: referencedImageIds?.[i],
       targetBuffer: { type: dataType },
     });
 
@@ -431,13 +436,15 @@ export function createLocalVolume(
   // Create the image volume
   const imageVolume = new ImageVolume({
     volumeId,
-    metadata: structuredClone(metadata),
+    metadata: deepClone(metadata),
     dimensions: [dimensions[0], dimensions[1], dimensions[2]],
     spacing,
     origin,
     direction,
     imageIds,
     dataType,
+    referencedVolumeId,
+    referencedImageIds,
   });
 
   // Create and set voxel manager
@@ -446,6 +453,7 @@ export function createLocalVolume(
     dimensions,
     numberOfComponents: 1,
     id: volumeId,
+    dataType,
   });
   imageVolume.voxelManager = voxelManager;
 
@@ -509,13 +517,17 @@ export function createAndCacheDerivedLabelmapVolume(
   referencedVolumeId: string,
   options = {} as DerivedVolumeOptions
 ): IImageVolume {
-  return createAndCacheDerivedVolume(referencedVolumeId, {
+  const volume = createAndCacheDerivedVolume(referencedVolumeId, {
     ...options,
     targetBuffer: {
       type: 'Uint8Array',
       ...options?.targetBuffer,
     },
   });
+
+  volume.reductionStatistic = VoxelStatistics.ForegroundMajority;
+
+  return volume;
 }
 
 /**
@@ -537,5 +549,9 @@ export function createLocalLabelmapVolume(
     );
   }
 
-  return createLocalVolume(volumeId, { ...options, preventCache });
+  const volume = createLocalVolume(volumeId, { ...options, preventCache });
+
+  volume.reductionStatistic = VoxelStatistics.ForegroundMajority;
+
+  return volume;
 }

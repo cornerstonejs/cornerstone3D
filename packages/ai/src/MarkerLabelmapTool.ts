@@ -7,6 +7,10 @@ import {
   addTool,
 } from '@cornerstonejs/tools';
 import ONNXSegmentationController from './ONNXSegmentationController';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger =
+  cornerstoneUtilities.logger.aiLog.getLogger('MarkerLabelmapTool');
 
 /**
  * Represents a tool used for segment selection and AI-assisted segmentation.
@@ -31,13 +35,13 @@ class MarkerLabelmapTool extends LabelmapBaseTool {
           sam_b: [
             {
               name: 'sam-b-encoder',
-              url: 'https://huggingface.co/schmuell/sam-b-fp16/resolve/main/sam_vit_b_01ec64.encoder-fp16.onnx',
+              url: 'https://huggingface.co/schmuell/sam-b-fp16/resolve/b64d0347d4d2cafd9a4e43b38853d6b5daa319fb/sam_vit_b_01ec64.encoder-fp16.onnx',
               size: 180,
               key: 'encoder',
             },
             {
               name: 'sam-b-decoder',
-              url: 'https://huggingface.co/schmuell/sam-b-fp16/resolve/main/sam_vit_b_01ec64.decoder.onnx',
+              url: 'https://huggingface.co/schmuell/sam-b-fp16/resolve/b64d0347d4d2cafd9a4e43b38853d6b5daa319fb/sam_vit_b_01ec64.decoder.onnx',
               size: 17,
               key: 'decoder',
             },
@@ -65,7 +69,7 @@ class MarkerLabelmapTool extends LabelmapBaseTool {
     ];
     const toolGroup = this._getToolGroupId();
     if (!toolGroup) {
-      console.debug(
+      cs3dLogger.debug(
         `Tool group not found for tool: ${MarkerLabelmapTool.toolName}`
       );
       return false;
@@ -116,7 +120,7 @@ class MarkerLabelmapTool extends LabelmapBaseTool {
     const enabledElement = getEnabledElementByViewportId(sourceViewportId);
 
     if (!enabledElement) {
-      console.debug(
+      cs3dLogger.debug(
         'No enabled element found for viewportId:',
         sourceViewportId
       );
@@ -139,7 +143,7 @@ class MarkerLabelmapTool extends LabelmapBaseTool {
     // Get tool group
     const toolGroup = this._getToolGroupId();
     if (!toolGroup) {
-      console.debug(`Tool group not found`);
+      cs3dLogger.debug(`Tool group not found`);
       return;
     }
 

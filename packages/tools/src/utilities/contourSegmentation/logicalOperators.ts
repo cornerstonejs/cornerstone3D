@@ -26,7 +26,11 @@
  */
 
 import type { Types } from '@cornerstonejs/core';
-import { getAnnotation, removeAnnotation } from '../../stateManagement';
+import {
+  getAnnotation,
+  removeAnnotation,
+  getChildAnnotations,
+} from '../../stateManagement';
 import type {
   ContourSegmentationData,
   ContourSegmentationAnnotation,
@@ -46,6 +50,11 @@ import { intersectPolylinesSets } from './polylineIntersect';
 import { xorPolylinesSets } from './polylineXor';
 import type { PolylineInfoWorld } from './polylineInfoTypes';
 import { getViewReferenceFromAnnotation } from './getViewReferenceFromAnnotation';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'utilities.contourSegmentation.logicalOperators'
+);
 
 export type SegmentInfo = {
   segmentationId: string;
@@ -87,9 +96,20 @@ function getPolylinesInfoWorld(
       annotationUID
     ) as ContourSegmentationAnnotation;
     const { polyline } = annotation.data.contour;
+
+    const childAnnotations = getChildAnnotations(annotation);
+    const holePolylines =
+      childAnnotations.length > 0
+        ? childAnnotations.map(
+            (child) =>
+              (child as ContourSegmentationAnnotation).data.contour.polyline
+          )
+        : undefined;
+
     polylinesInfo.push({
       polyline,
       viewReference: getViewReferenceFromAnnotation(annotation),
+      ...(holePolylines ? { holePolylines } : {}),
     });
   }
   return polylinesInfo;
@@ -134,18 +154,32 @@ function extractPolylinesInCanvasSpace(
   }
 
   const polyLinesInfoCanvas1 = polyLinesInfoWorld1.map(
-    ({ polyline, viewReference }) => {
+    ({ polyline, viewReference, holePolylines }) => {
       return {
         polyline: convertContourPolylineToCanvasSpace(polyline, viewport),
         viewReference,
+        ...(holePolylines?.length
+          ? {
+              holePolylines: holePolylines.map((hole) =>
+                convertContourPolylineToCanvasSpace(hole, viewport)
+              ),
+            }
+          : {}),
       };
     }
   );
   const polyLinesInfoCanvas2 = polyLinesInfoWorld2.map(
-    ({ polyline, viewReference }) => {
+    ({ polyline, viewReference, holePolylines }) => {
       return {
         polyline: convertContourPolylineToCanvasSpace(polyline, viewport),
         viewReference,
+        ...(holePolylines?.length
+          ? {
+              holePolylines: holePolylines.map((hole) =>
+                convertContourPolylineToCanvasSpace(hole, viewport)
+              ),
+            }
+          : {}),
       };
     }
   );
@@ -263,12 +297,19 @@ function applyLogicalOperation(
       break;
   }
   // Convert merged polylines back to world space using their associated viewReference
-  const polyLinesWorld = polylinesMerged.map(({ polyline, viewReference }) => {
-    return {
+  const polyLinesWorld: PolylineInfoWorld[] = polylinesMerged.map(
+    ({ polyline, viewReference, holePolylines }) => ({
       polyline: convertContourPolylineToWorld(polyline, viewport),
       viewReference,
-    };
-  });
+      ...(holePolylines?.length
+        ? {
+            holePolylines: holePolylines.map((hole) =>
+              convertContourPolylineToWorld(hole, viewport)
+            ),
+          }
+        : {}),
+    })
+  );
 
   const resultSegment = options;
   const segmentation = getSegmentation(resultSegment.segmentationId);
@@ -387,24 +428,24 @@ export function copy(segment: SegmentInfo, options: OperatorOptions) {
 export function deleteOperation(segment: SegmentInfo) {
   const segmentation = getSegmentation(segment.segmentationId);
   if (!segmentation) {
-    console.log('No active segmentation detected');
+    cs3dLogger.info('No active segmentation detected');
     return;
   }
 
   if (!segmentation.representationData.Contour) {
-    console.log('No contour representation found');
+    cs3dLogger.info('No contour representation found');
     return;
   }
 
   const representationData = segmentation.representationData.Contour;
   const { annotationUIDsMap } = representationData;
   if (!annotationUIDsMap) {
-    console.log('No annotation map found');
+    cs3dLogger.info('No annotation map found');
     return;
   }
 
   if (!annotationUIDsMap.has(segment.segmentIndex)) {
-    console.log('Segmentation index has no annotations');
+    cs3dLogger.info('Segmentation index has no annotations');
     return;
   }
 

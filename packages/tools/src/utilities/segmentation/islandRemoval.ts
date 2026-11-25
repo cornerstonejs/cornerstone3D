@@ -1,6 +1,11 @@
 import { utilities } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import normalizeViewportPlane from '../normalizeViewportPlane';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'utilities.segmentation.islandRemoval'
+);
 
 const { RLEVoxelMap, VoxelManager } = utilities;
 
@@ -65,9 +70,9 @@ export default class IslandRemoval {
 
   // Options to control the fill
   /** Fill out to edges, assuming they are smaller in size than maxInternalRemove */
-  private fillInternalEdge = false;
+  protected fillInternalEdge = false;
   /** Maximum internal size of an island to remove */
-  private maxInternalRemove = 128;
+  protected maxInternalRemove = 128;
 
   constructor(options?: {
     maxInternalRemove?: number;
@@ -146,7 +151,7 @@ export default class IslandRemoval {
     );
 
     if (error) {
-      console.warn(
+      cs3dLogger.warn(
         'Not performing island removal for planes not orthogonal to acquisition plane',
         error
       );
@@ -354,9 +359,18 @@ export default class IslandRemoval {
       for (let iPrime = rle.start; iPrime < rle.end; iPrime++) {
         const clearPoint = toIJK(segmentSet.toIJK(baseIndex + iPrime));
         previewVoxelManager.setAtIJKPoint(clearPoint, previewSegmentIndex);
+        this.onInternalPointFilled(clearPoint);
       }
     });
     return previewVoxelManager.getArrayOfModifiedSlices();
+  }
+
+  /**
+   * Hook invoked for every internal-island voxel {@link removeInternalIslands}
+   * paints. Subclasses can override it to track the exact painted set.
+   */
+  protected onInternalPointFilled(_point: Types.Point3): void {
+    // no-op in the base implementation
   }
 
   /**

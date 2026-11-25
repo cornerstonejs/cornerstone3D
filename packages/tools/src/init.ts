@@ -19,6 +19,9 @@ import segmentationRepresentationModifiedListener from './eventListeners/segment
 import { setConfig } from './config';
 import type { Config } from './config';
 import segmentationRemovedListener from './eventListeners/segmentation/segmentationRemovedEventListener';
+import renderingPipelineChangedListener from './eventListeners/segmentation/renderingPipelineChangedListener';
+import dynamicVolumeDimensionGroupChangedListener from './eventListeners/segmentation/dynamicVolumeDimensionGroupChangedListener';
+import { registerBuiltInSegmentationRepresentationDisplays } from './tools/displayTools/registerBuiltInSegmentationRepresentationDisplays';
 
 let csToolsInitialized = false;
 
@@ -33,6 +36,7 @@ export function init(defaultConfiguration = {} as Config): void {
     return;
   }
 
+  registerBuiltInSegmentationRepresentationDisplays();
   setConfig(defaultConfiguration);
 
   _addCornerstoneEventListeners();
@@ -80,6 +84,16 @@ function _addCornerstoneEventListeners(): void {
 
   eventTarget.addEventListener(elementEnabledEvent, addEnabledElement);
   eventTarget.addEventListener(elementDisabledEvent, removeEnabledElement);
+  // A live render-backend switch rebuilds viewport render paths in place;
+  // segmentation representations must re-reconcile against the new actors.
+  eventTarget.addEventListener(
+    Enums.Events.RENDERING_PIPELINE_CHANGED,
+    renderingPipelineChangedListener
+  );
+  eventTarget.addEventListener(
+    Enums.Events.DYNAMIC_VOLUME_DIMENSION_GROUP_CHANGED,
+    dynamicVolumeDimensionGroupChangedListener
+  );
   annotationInterpolationEventDispatcher.enable();
 }
 
@@ -94,6 +108,14 @@ function _removeCornerstoneEventListeners(): void {
 
   eventTarget.removeEventListener(elementEnabledEvent, addEnabledElement);
   eventTarget.removeEventListener(elementDisabledEvent, removeEnabledElement);
+  eventTarget.removeEventListener(
+    Enums.Events.RENDERING_PIPELINE_CHANGED,
+    renderingPipelineChangedListener
+  );
+  eventTarget.removeEventListener(
+    Enums.Events.DYNAMIC_VOLUME_DIMENSION_GROUP_CHANGED,
+    dynamicVolumeDimensionGroupChangedListener
+  );
   annotationInterpolationEventDispatcher.disable();
 }
 

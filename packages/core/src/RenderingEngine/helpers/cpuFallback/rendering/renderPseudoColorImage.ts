@@ -7,9 +7,16 @@ import doesImageNeedToBeRendered from './doesImageNeedToBeRendered';
 import storedPixelDataToCanvasImageDataPseudocolorLUT from './storedPixelDataToCanvasImageDataPseudocolorLUT';
 import storedPixelDataToCanvasImageDataPseudocolorLUTPET from './storedPixelDataToCanvasImageDataPseudocolorLUTPET';
 import * as colors from '../colors/index';
-import type { IImage, CPUFallbackEnabledElement } from '../../../../types';
+import type {
+  ColormapPublic,
+  IImage,
+  CPUFallbackEnabledElement,
+} from '../../../../types';
 import { clamp } from '../../../../utilities/clamp';
 import { createCanvas } from '../../getOrCreateCanvas';
+import { coreLog } from '../../../../utilities/logger';
+
+const log = coreLog.getLogger('RenderingEngine', 'renderPseudoColorImage');
 
 /**
  * Returns an appropriate canvas to render the Image. If the canvas available in the cache is appropriate
@@ -40,12 +47,18 @@ function getRenderCanvas(
     enabledElement.viewport.colormap || enabledElement.options.colormap;
 
   if (enabledElement.options && enabledElement.options.colormap) {
-    console.warn(
+    log.warn(
       'enabledElement.options.colormap is deprecated. Use enabledElement.viewport.colormap instead'
     );
   }
   if (colormap && typeof colormap === 'string') {
-    colormap = colors.getColormap(colormap);
+    colormap = colors.resolveCPUFallbackColormap(colormap);
+  } else if (
+    colormap &&
+    typeof colormap === 'object' &&
+    typeof colormap.getId !== 'function'
+  ) {
+    colormap = colors.resolveCPUFallbackColormap(colormap as ColormapPublic);
   }
 
   if (!colormap) {
@@ -175,13 +188,22 @@ export function renderPseudoColorImage(
   context.setTransform(1, 0, 0, 1, 0, 0);
 
   // Clear the canvas
-  context.fillStyle = 'black';
-  context.fillRect(
-    0,
-    0,
-    enabledElement.canvas.width,
-    enabledElement.canvas.height
-  );
+  if (enabledElement.options?.transparentBackground) {
+    context.clearRect(
+      0,
+      0,
+      enabledElement.canvas.width,
+      enabledElement.canvas.height
+    );
+  } else {
+    context.fillStyle = 'black';
+    context.fillRect(
+      0,
+      0,
+      enabledElement.canvas.width,
+      enabledElement.canvas.height
+    );
+  }
 
   // Turn off image smooth/interpolation if pixelReplication is set in the viewport
   context.imageSmoothingEnabled = !enabledElement.viewport.pixelReplication;

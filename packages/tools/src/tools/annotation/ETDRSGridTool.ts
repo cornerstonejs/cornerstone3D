@@ -1,4 +1,5 @@
 import { AnnotationTool } from '../base';
+import getViewportICamera from '../../utilities/getViewportICamera';
 
 import { getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
@@ -30,6 +31,11 @@ import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnota
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { getCanvasCircleRadius } from '../../utilities/math/circle';
 import { vec3 } from 'gl-matrix';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.annotation.ETDRSGridTool'
+);
 
 const CROSSHAIR_SIZE = 5;
 
@@ -101,7 +107,7 @@ class ETDRSGridTool extends AnnotationTool {
 
     this.isDrawing = true;
 
-    const camera = viewport.getCamera();
+    const camera = getViewportICamera(viewport);
     const { viewPlaneNormal, viewUp } = camera;
 
     const referencedImageId = this.getReferencedImageId(
@@ -174,7 +180,7 @@ class ETDRSGridTool extends AnnotationTool {
       viewport.canvas.width / 2,
       viewport.canvas.height / 2,
     ]);
-    const { viewUp } = viewport.getCamera();
+    const { viewUp } = getViewportICamera(viewport);
     const p2 = vec3.scaleAndAdd(vec3.create(), p1, viewUp, measurement);
 
     // transform the points from world mm to canvas pixels
@@ -545,7 +551,7 @@ class ETDRSGridTool extends AnnotationTool {
       const center = canvasCoordinates[0];
       // If rendering engine has been destroyed while rendering
       if (!viewport.getRenderingEngine()) {
-        console.warn('Rendering Engine has been destroyed');
+        cs3dLogger.warn('Rendering Engine has been destroyed');
         return renderStatus;
       }
 

@@ -1,5 +1,5 @@
 import type { SegmentationDataModifiedEventType } from '../../types/EventTypes';
-import { triggerSegmentationRenderBySegmentationId } from '../../stateManagement/segmentation/SegmentationRenderingEngine';
+import { triggerSegmentationRenderForModified } from '../../stateManagement/segmentation/SegmentationRenderingEngine';
 import onLabelmapSegmentationDataModified from './labelmap/onLabelmapSegmentationDataModified';
 import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
 
@@ -16,7 +16,10 @@ const onSegmentationDataModified = function (
     onLabelmapSegmentationDataModified(evt);
   }
 
-  triggerSegmentationRenderBySegmentationId(segmentationId);
+  // Data modifications stream in at brush-stroke frequency; this trigger
+  // renders cheap viewports live and defers projection-heavy ones (labelmap
+  // over MIP) until the stream goes quiet.
+  triggerSegmentationRenderForModified(segmentationId);
 };
 
 export default onSegmentationDataModified;

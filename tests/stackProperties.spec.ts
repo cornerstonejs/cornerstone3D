@@ -1,7 +1,7 @@
 import { test } from 'playwright-test-coverage';
 import {
   visitExample,
-  checkForScreenshot,
+  checkForCanvasSnapshot,
   screenShotPaths,
 } from './utils/index';
 
@@ -12,10 +12,9 @@ test.beforeEach(async ({ page }) => {
 test.describe('Stack Properties', async () => {
   test('should display the next image.', async ({ page }) => {
     await page.getByRole('button', { name: 'Next Image' }).click();
-    const locator = page.locator('.cornerstone-canvas');
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      locator,
+      ".cornerstone-canvas",
       screenShotPaths.stackProperties.nextImage
     );
   });
@@ -23,10 +22,9 @@ test.describe('Stack Properties', async () => {
   test('should display the previous image.', async ({ page }) => {
     await page.getByRole('button', { name: 'Next Image' }).click();
     await page.getByRole('button', { name: 'Previous Image' }).click();
-    const locator = page.locator('.cornerstone-canvas');
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      locator,
+      ".cornerstone-canvas",
       screenShotPaths.stackProperties.previousImage
     );
   });
@@ -37,16 +35,15 @@ test.describe('Stack Properties', async () => {
     await page
       .getByRole('button', { name: 'Add Properties only for current imageID' })
       .click();
-    const locator = page.locator('.cornerstone-canvas');
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      locator,
+      ".cornerstone-canvas",
       screenShotPaths.stackProperties.propertiesAddedForCurrentImage
     );
     await page.getByRole('button', { name: 'Next Image' }).click();
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      locator,
+      '.cornerstone-canvas',
       screenShotPaths.stackProperties.propertiesAreSameForNextImage
     );
   });
@@ -62,16 +59,15 @@ test.describe('Stack Properties', async () => {
     await page
       .getByRole('button', { name: 'Remove current imageId Properties' })
       .click();
-    const locator = page.locator('.cornerstone-canvas');
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      locator,
+      ".cornerstone-canvas",
       screenShotPaths.stackProperties.propertiesRemovedForCurrentImage
     );
     await page.getByRole('button', { name: 'Previous Image' }).click();
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      locator,
+      '.cornerstone-canvas',
       screenShotPaths.stackProperties.propertiesAreSameForPreviousImage
     );
   });
@@ -84,10 +80,9 @@ test.describe('Stack Properties', async () => {
     await page
       .getByRole('button', { name: 'Reset to Default Viewport Properties' })
       .click();
-    const locator = page.locator('.cornerstone-canvas');
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      locator,
+      ".cornerstone-canvas",
       screenShotPaths.stackProperties.resetToDefaultViewportProperties
     );
   });
@@ -97,10 +92,9 @@ test.describe('Stack Properties', async () => {
       .getByRole('button', { name: 'Add Properties only for current imageID' })
       .click();
     await page.getByRole('button', { name: 'Reset to metadata' }).click();
-    const locator = page.locator('.cornerstone-canvas');
-    await checkForScreenshot(
+    await checkForCanvasSnapshot(
       page,
-      locator,
+      ".cornerstone-canvas",
       screenShotPaths.stackProperties.resetMetadata
     );
   });

@@ -1,3 +1,4 @@
+import type { FidelityIssue } from './ViewportFidelity';
 import type CPUFallbackLUT from './CPUFallbackLUT';
 import type {
   PixelDataTypedArray,
@@ -60,6 +61,11 @@ interface IImage {
   windowWidth: number[] | number;
   /** voiLUTFunction from metadata */
   voiLUTFunction: VOILUTFunctionType;
+  /**
+   * Issues that stop the display of this image as its metadata specifies
+   * (FIDELITY-STATE-13). A loader sets them; the viewport shows `lossy`.
+   */
+  fidelityIssues?: FidelityIssue[];
   /** function that returns the pixelData as an array */
   getPixelData: () => PixelDataTypedArray;
   getCanvas: () => HTMLCanvasElement;
@@ -133,6 +139,11 @@ interface IImage {
   };
 
   imageQualityStatus?: ImageQualityStatus;
+  /**
+   * True while a later progressive stage of this image is still to come, so a
+   * reduced `imageQualityStatus` is not final.
+   */
+  imageQualityPending?: boolean;
   calibration?: IImageCalibration;
   imageFrame?: IImageFrame;
 
@@ -175,6 +186,7 @@ interface CPUFallbackEnabledElement {
     imagePixelModule?: ImagePixelModule;
   };
   voxelManager?: IVoxelManager<number> | IVoxelManager<RGB>;
+  aspectRatio?: Point2;
 }
 
 export type { IImage as default };

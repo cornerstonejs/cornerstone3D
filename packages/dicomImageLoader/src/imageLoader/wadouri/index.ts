@@ -17,6 +17,7 @@ import {
   loadImageFromPromise,
   getLoaderForScheme,
   loadImage,
+  loadImageFromNaturalizedMetadata,
 } from './loadImage';
 import parseImageId from './parseImageId';
 import unpackBinaryFrame from './unpackBinaryFrame';
@@ -42,6 +43,7 @@ export default {
   getLoaderForScheme,
   getPixelData,
   loadImage,
+  loadImageFromNaturalizedMetadata,
   parseImageId,
   unpackBinaryFrame,
   register,
@@ -58,6 +60,7 @@ export {
   getLoaderForScheme,
   getPixelData,
   loadImage,
+  loadImageFromNaturalizedMetadata,
   parseImageId,
   unpackBinaryFrame,
   register,

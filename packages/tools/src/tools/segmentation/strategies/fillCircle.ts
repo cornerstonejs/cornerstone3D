@@ -11,8 +11,15 @@ import type { CanvasCoordinates } from '../../../types';
 import { StrategyCallbacks } from '../../../enums';
 import compositions from './compositions';
 import { pointInSphere } from '../../../utilities/math/sphere';
+import { applyBrushFill, createCircleBrushFill } from './utils/brushVoxelSlab';
+import { getViewSlabDepthOfViewport } from '../../../utilities/genericViewportToolHelpers';
 
-const { transformWorldToIndex, transformIndexToWorld, isEqual } = csUtils;
+const {
+  transformWorldToIndex,
+  transformIndexToWorld,
+  isEqual,
+  getNormalizedAspectRatio,
+} = csUtils;
 
 /**
  * Returns the corners of an ellipse in canvas coordinates.
@@ -36,27 +43,36 @@ function createCircleCornersForCenter(
   center: Types.Point3,
   viewUp: ReadonlyVec3,
   viewRight: ReadonlyVec3,
-  radius: number
+  yRadius: number,
+  xRadius: number
 ): Types.Point3[] {
   const centerVec = vec3.fromValues(center[0], center[1], center[2]);
 
-  const top = vec3.create();
-  vec3.scaleAndAdd(top, centerVec, viewUp, radius);
+  // Top-Right
+  const topRight = vec3.create();
+  vec3.scaleAndAdd(topRight, centerVec, viewUp, yRadius);
+  vec3.scaleAndAdd(topRight, topRight, viewRight, xRadius);
 
-  const bottom = vec3.create();
-  vec3.scaleAndAdd(bottom, centerVec, viewUp, -radius);
+  // Top-Left
+  const topLeft = vec3.create();
+  vec3.scaleAndAdd(topLeft, centerVec, viewUp, yRadius);
+  vec3.scaleAndAdd(topLeft, topLeft, viewRight, -xRadius);
 
-  const right = vec3.create();
-  vec3.scaleAndAdd(right, centerVec, viewRight, radius);
+  // Bottom-Right
+  const bottomRight = vec3.create();
+  vec3.scaleAndAdd(bottomRight, centerVec, viewUp, -yRadius);
+  vec3.scaleAndAdd(bottomRight, bottomRight, viewRight, xRadius);
 
-  const left = vec3.create();
-  vec3.scaleAndAdd(left, centerVec, viewRight, -radius);
+  // Bottom-Left
+  const bottomLeft = vec3.create();
+  vec3.scaleAndAdd(bottomLeft, centerVec, viewUp, -yRadius);
+  vec3.scaleAndAdd(bottomLeft, bottomLeft, viewRight, -xRadius);
 
   return [
-    bottom as Types.Point3,
-    top as Types.Point3,
-    left as Types.Point3,
-    right as Types.Point3,
+    topRight as Types.Point3,
+    topLeft as Types.Point3,
+    bottomRight as Types.Point3,
+    bottomLeft as Types.Point3,
   ];
 }
 
@@ -65,12 +81,17 @@ function createCircleCornersForCenter(
 // strategy for many intermediate samples, which was unnecessarily expensive
 // and still missed fast mouse moves. This predicate lets us describe the full
 // swept volume in constant time per segment when the strategy runs.
-function createStrokePredicate(centers: Types.Point3[], radius: number) {
-  if (!centers.length || radius <= 0) {
+function createStrokePredicate(
+  centers: Types.Point3[],
+  xRadius: number,
+  yRadius: number
+) {
+  if (!centers.length || xRadius <= 0 || yRadius <= 0) {
     return null;
   }
 
-  const radiusSquared = radius * radius;
+  const xRadiusSquared = xRadius * xRadius;
+  const yRadiusSquared = yRadius * yRadius;
   const centerVecs = centers.map(
     (point) => [point[0], point[1], point[2]] as Types.Point3
   );
@@ -100,7 +121,10 @@ function createStrokePredicate(centers: Types.Point3[], radius: number) {
       const dx = worldPoint[0] - centerVec[0];
       const dy = worldPoint[1] - centerVec[1];
       const dz = worldPoint[2] - centerVec[2];
-      if (dx * dx + dy * dy + dz * dz <= radiusSquared) {
+      if (
+        (dx * dx) / xRadiusSquared + (dy * dy) / yRadiusSquared + dz * dz <=
+        1
+      ) {
         return true;
       }
     }
@@ -110,7 +134,10 @@ function createStrokePredicate(centers: Types.Point3[], radius: number) {
         const dx = worldPoint[0] - start[0];
         const dy = worldPoint[1] - start[1];
         const dz = worldPoint[2] - start[2];
-        if (dx * dx + dy * dy + dz * dz <= radiusSquared) {
+        if (
+          (dx * dx) / xRadiusSquared + (dy * dy) / yRadiusSquared + dz * dz <=
+          1
+        ) {
           return true;
         }
         continue;
@@ -121,6 +148,7 @@ function createStrokePredicate(centers: Types.Point3[], radius: number) {
       const dz = worldPoint[2] - start[2];
       const dot = dx * vector[0] + dy * vector[1] + dz * vector[2];
       const t = Math.max(0, Math.min(1, dot / lengthSquared));
+
       const projX = start[0] + vector[0] * t;
       const projY = start[1] + vector[1] * t;
       const projZ = start[2] + vector[2] * t;
@@ -128,7 +156,12 @@ function createStrokePredicate(centers: Types.Point3[], radius: number) {
       const distY = worldPoint[1] - projY;
       const distZ = worldPoint[2] - projZ;
 
-      if (distX * distX + distY * distY + distZ * distZ <= radiusSquared) {
+      if (
+        (distX * distX) / xRadiusSquared +
+          (distY * distY) / yRadiusSquared +
+          distZ * distZ <=
+        1
+      ) {
         return true;
       }
     }
@@ -169,8 +202,18 @@ const initializeCircle = {
       center as Types.Point3
     );
 
-    const brushRadius =
-      points.length >= 2 ? vec3.distance(points[0], points[1]) / 2 : 0;
+    // Get your aspect ratio values
+    const aspectRatio = getNormalizedAspectRatio(viewport.getAspectRatio());
+
+    const yRadius =
+      points.length >= 2
+        ? vec3.distance(points[0], points[1]) / 2 / aspectRatio[1]
+        : 0;
+
+    const xRadius =
+      points.length >= 2
+        ? vec3.distance(points[2], points[3]) / 2 / aspectRatio[0]
+        : 0;
 
     const canvasCoordinates = points.map((p) =>
       viewport.worldToCanvas(p)
@@ -214,7 +257,8 @@ const initializeCircle = {
         centerPoint,
         normalizedViewUp,
         viewRight,
-        brushRadius
+        yRadius,
+        xRadius
       )
     );
 
@@ -231,10 +275,34 @@ const initializeCircle = {
     operationData.isInObject = createPointInEllipse(cornersInWorld, {
       strokePointsWorld: strokeCenters,
       segmentationImageData,
-      radius: brushRadius,
+      xRadius,
+      yRadius,
+      aspectRatio,
+      viewRight,
+      viewUp: normalizedViewUp,
+      viewNormal: normalizedPlaneNormal,
     });
 
     operationData.isInObjectBoundsIJK = boundsIJK;
+
+    // The slab thickness follows the view: a thin view fills a single oblique
+    // plane, and a full-thickness view fills every plane in the slab, so a
+    // "circle" paints all voxels through the thickness. A thin view reports
+    // undefined, and the fill falls back to one voxel along the normal.
+    const viewThicknessWorld = getViewSlabDepthOfViewport(viewport);
+    applyBrushFill(
+      operationData,
+      createCircleBrushFill({
+        segmentationImageData,
+        viewUp: normalizedViewUp as Types.Point3,
+        viewPlaneNormal: normalizedPlaneNormal as Types.Point3,
+        centerWorld: operationData.centerWorld,
+        xRadius,
+        yRadius,
+        strokeCentersWorld: strokeCenters,
+        viewThicknessWorld,
+      })
+    );
   },
 } as Composition;
 
@@ -251,44 +319,84 @@ function createPointInEllipse(
   options: {
     strokePointsWorld?: Types.Point3[];
     segmentationImageData?: vtkImageData;
-    radius?: number;
+    xRadius?: number;
+    yRadius?: number;
+    aspectRatio?: [number, number];
+    viewRight?: vec3;
+    viewUp?: vec3;
+    viewNormal?: vec3;
+    /**
+     * Semi-axis along the normal, in mm. Supply it for a shape that reaches out
+     * of the plane, such as a sphere brush. Omit it for a flat disc, which is
+     * what a circle brush paints.
+     */
+    depthRadius?: number;
   } = {}
 ) {
   if (!cornersInWorld || cornersInWorld.length !== 4) {
     throw new Error('createPointInEllipse: cornersInWorld must have 4 points');
   }
-  const [topLeft, bottomRight, bottomLeft, topRight] = cornersInWorld;
+  const [topLeft, bottomRight, , topRight] = cornersInWorld;
+
+  const aspectRatio = options.aspectRatio || [1, 1];
+  const segmentationImageData = options.segmentationImageData;
+  const { viewRight, viewUp, viewNormal } = options;
+
+  const spacing = segmentationImageData?.getSpacing?.();
+  const direction = segmentationImageData?.getDirection?.();
+
+  const spacingInNormal =
+    spacing && direction && viewNormal
+      ? csUtils.getSpacingInNormalDirection(
+          { spacing, direction },
+          viewNormal as Types.Point3
+        )
+      : spacing
+        ? Math.max(...spacing, Number.EPSILON)
+        : 1;
+
+  const planeTolerance = Math.max(spacingInNormal / 2, Number.EPSILON);
 
   // Center is the midpoint of the diagonal
   const center = vec3.create();
   vec3.add(center, topLeft, bottomRight);
   vec3.scale(center, center, 0.5);
 
-  // Major axis: from topLeft to topRight
+  // One radius, so that the base shape is a circle. The width (the major axis)
+  // gives the diameter. Only the length matters here, because the in-plane
+  // directions come from viewRight and viewUp.
   const majorAxisVec = vec3.create();
   vec3.subtract(majorAxisVec, topRight, topLeft);
-  const xRadius = vec3.length(majorAxisVec) / 2;
-  vec3.normalize(majorAxisVec, majorAxisVec);
+  const originalRadius = vec3.length(majorAxisVec) / 2;
 
-  // Minor axis: from topLeft to bottomLeft
-  const minorAxisVec = vec3.create();
-  vec3.subtract(minorAxisVec, bottomLeft, topLeft);
-  const yRadius = vec3.length(minorAxisVec) / 2;
-  vec3.normalize(minorAxisVec, minorAxisVec);
-
-  // Plane normal
-  const normal = vec3.create();
-  vec3.cross(normal, majorAxisVec, minorAxisVec);
-  vec3.normalize(normal, normal);
+  //Apply the inverse aspect ratio stretch CORRECTLY and ALWAYS the same way.
+  // To counteract the viewport's stretching and make the shape appear circular,
+  // we must "pre-squash" it in world space.
+  const xRadius = originalRadius / aspectRatio[0];
+  const yRadius = originalRadius / aspectRatio[1];
+  const invXRadiusSquared = 1 / (xRadius * xRadius);
+  const invYRadiusSquared = 1 / (yRadius * yRadius);
+  const invZRadiusSquared =
+    options.depthRadius > 0
+      ? 1 / (options.depthRadius * options.depthRadius)
+      : null;
 
   // If radii are equal, treat as sphere
-  const radiusForStroke = options.radius ?? Math.max(xRadius, yRadius);
+  const xRadiusForStroke = options.xRadius ?? xRadius;
+  const yRadiusForStroke = options.yRadius ?? yRadius;
   const strokePredicate = createStrokePredicate(
     options.strokePointsWorld || [],
-    radiusForStroke
+    xRadiusForStroke,
+    yRadiusForStroke
   );
 
-  if (isEqual(xRadius, yRadius)) {
+  // The fast path is a true sphere only when all three semi-axes agree. A
+  // depth radius of its own sends the shape to the ellipsoid branch below.
+  const isSphere =
+    isEqual(xRadius, yRadius) &&
+    (invZRadiusSquared === null || isEqual(options.depthRadius, xRadius));
+
+  if (isSphere) {
     const radius = xRadius;
     const sphereObj = {
       center,
@@ -302,6 +410,8 @@ function createPointInEllipse(
       // world position once here instead of forcing callers to do the
       // conversion (the previous code re-did this work on every sample).
       if (!worldPoint && pointIJK && options.segmentationImageData) {
+        // `indexToWorld` returns the voxel centre already, so the index needs
+        // no half-voxel offset.
         worldPoint = transformIndexToWorld(
           options.segmentationImageData,
           pointIJK as Types.Point3
@@ -339,27 +449,35 @@ function createPointInEllipse(
       return true;
     }
 
-    // Project point onto the plane so we can evaluate the ellipse equation in
-    // plane coordinates. We do this once per sample; previously the repeated
-    // conversions happened on callers for every interpolated point.
+    // Get the vector from the center of the brush to the current voxel
     const pointVec = vec3.create();
     vec3.subtract(pointVec, worldPoint, center);
-    // Remove component along normal
-    const distToPlane = vec3.dot(pointVec, normal);
-    const proj = vec3.create();
-    vec3.scaleAndAdd(proj, pointVec, normal, -distToPlane);
 
-    // Express proj in (majorAxis, minorAxis) coordinates
-    // Project from center, so shift origin to topLeft
-    const fromTopLeft = vec3.create();
-    const centerToTopLeft = vec3.create();
-    vec3.subtract(centerToTopLeft, center, topLeft);
-    vec3.subtract(fromTopLeft, proj, centerToTopLeft);
-    const x = vec3.dot(fromTopLeft, majorAxisVec);
-    const y = vec3.dot(fromTopLeft, minorAxisVec);
+    // Project that vector onto the screen's Right and Up axes
+    // This tells us how far 'left/right' and 'up/down' the voxel is on the screen
+    const xDist = vec3.dot(pointVec, viewRight);
+    const yDist = vec3.dot(pointVec, viewUp);
 
+    // Use the Ellipse Equation with the specific xRadius and yRadius
     // Ellipse equation: (x/xRadius)^2 + (y/yRadius)^2 <= 1
-    return (x * x) / (xRadius * xRadius) + (y * y) / (yRadius * yRadius) <= 1;
+    const xTerm = xDist * xDist * invXRadiusSquared;
+    const yTerm = yDist * yDist * invYRadiusSquared;
+
+    const zDist = vec3.dot(pointVec, viewNormal);
+
+    // A shape with a depth radius is an ellipsoid, so the normal joins the
+    // ellipse equation as a third term. `fillSphere` reuses this function, and
+    // a plane tolerance would flatten its sphere into a disc.
+    if (invZRadiusSquared !== null) {
+      return xTerm + yTerm + zDist * zDist * invZRadiusSquared <= 1;
+    }
+
+    if (xTerm + yTerm <= 1) {
+      // A flat disc: keep the voxel only when it lies close to the plane.
+      return Math.abs(zDist) <= planeTolerance;
+    }
+
+    return false;
   };
 }
 

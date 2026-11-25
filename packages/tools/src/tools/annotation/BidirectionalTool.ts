@@ -47,8 +47,11 @@ import type { BidirectionalAnnotation } from '../../types/ToolSpecificAnnotation
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
-const { transformWorldToIndex } = csUtils;
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.annotation.BidirectionalTool'
+);
 
 /**
  * BidirectionalTool let you draw annotations that measures the length and
@@ -208,7 +211,7 @@ class BidirectionalTool extends AnnotationTool {
     // Exclude toolInstance from the options passed into the metadata
     const { toolInstance, ...serializableOptions } = options || {};
 
-    const annotation = {
+    const annotation: BidirectionalAnnotation = {
       annotationUID: options?.annotationUID || utilities.uuidv4(),
       data: {
         handles: {
@@ -244,7 +247,7 @@ class BidirectionalTool extends AnnotationTool {
     addAnnotation(annotation, viewport.element);
     triggerAnnotationRenderForViewportIds([viewport.id]);
 
-    return annotation as BidirectionalAnnotation;
+    return annotation;
   };
 
   /**
@@ -1081,7 +1084,7 @@ class BidirectionalTool extends AnnotationTool {
     };
 
     for (let i = 0; i < annotations.length; i++) {
-      const annotation = annotations[i] as BidirectionalAnnotation;
+      const annotation = annotations[i];
       const { annotationUID, data } = annotation;
       const { points, activeHandleIndex } = data.handles;
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
@@ -1116,7 +1119,7 @@ class BidirectionalTool extends AnnotationTool {
 
       // If rendering engine has been destroyed while rendering
       if (!viewport.getRenderingEngine()) {
-        console.warn('Rendering Engine has been destroyed');
+        cs3dLogger.warn('Rendering Engine has been destroyed');
         return renderStatus;
       }
 

@@ -1,9 +1,15 @@
 import { quat, vec3 } from 'gl-matrix';
 import { utilities as csUtils, cache, volumeLoader } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
+import getViewportICamera from '../../getViewportICamera';
 import { run, type GrowCutOptions } from './runGrowCut';
 import type { SphereBoundsInfo } from '../../getSphereBoundsInfo';
 import { getSphereBoundsInfo } from '../../getSphereBoundsInfo';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'utilities.segmentation.growCut.runGrowCutForSphere'
+);
 
 const { transformWorldToIndex } = csUtils;
 
@@ -83,7 +89,8 @@ function _createSubVolumeFromSphere(
 ) {
   const refVolImageData = referencedVolume.imageData;
 
-  const camera = viewport.getCamera();
+  // Native ("next") viewports expose no getCamera; read orientation via the bridge.
+  const camera = getViewportICamera(viewport);
   const { ijkVecRowDir, ijkVecColDir } = csUtils.getVolumeDirectionVectors(
     refVolImageData,
     camera
@@ -99,7 +106,7 @@ function _createSubVolumeFromSphere(
   );
 
   if (obliqueView) {
-    console.warn('Oblique view is not supported!');
+    cs3dLogger.warn('Oblique view is not supported!');
     return;
   }
 
@@ -241,7 +248,10 @@ function _setNegativeSeedValues(
   // volume has the same orientation as the referenced volume and there is no
   // need to convert from refVolume to labelmap spaces.
   const { worldVecRowDir, worldVecSliceDir } =
-    csUtils.getVolumeDirectionVectors(labelmap.imageData, viewport.getCamera());
+    csUtils.getVolumeDirectionVectors(
+      labelmap.imageData,
+      getViewportICamera(viewport)
+    );
 
   const ijkSphereCenter = transformWorldToIndex(
     subVolume.imageData,

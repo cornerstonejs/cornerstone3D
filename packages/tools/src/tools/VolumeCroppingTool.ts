@@ -17,9 +17,14 @@ import {
   Enums,
   triggerEvent,
   eventTarget,
+  getLossyDownsampling,
 } from '@cornerstonejs/core';
 
 import { getToolGroup } from '../store/ToolGroupManager';
+import getViewportICamera from '../utilities/getViewportICamera';
+import setViewportCamera, {
+  resetViewportCamera,
+} from '../utilities/setViewportCamera';
 import { Events } from '../enums';
 
 import type { EventTypes, PublicToolProps, ToolProps } from '../types';
@@ -38,6 +43,15 @@ import {
   calculateAdaptiveSphereRadius,
 } from '../utilities/draw3D';
 import { isDragOwnedBy } from '../utilities/interactionDragCoordinator';
+import {
+  applyViewportPresentation,
+  getViewportPresentation,
+} from '../utilities/viewportPresentation';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.VolumeCroppingTool'
+);
 
 /**
  * VolumeCroppingTool provides manipulatable spheres and real-time volume cropping capabilities.
@@ -230,6 +244,7 @@ class VolumeCroppingTool extends BaseTool {
   constructor(
     toolProps: PublicToolProps = {},
     defaultToolProps: ToolProps = {
+      supportedInteractionTypes: ['Mouse', 'Touch'],
       configuration: {
         showCornerSpheres: true,
         showHandles: true,
@@ -285,9 +300,9 @@ class VolumeCroppingTool extends BaseTool {
               return;
             }
             const { viewport } = element;
-            const viewPresentation = viewport.getViewPresentation();
-            viewport.resetCamera();
-            viewport.setViewPresentation(viewPresentation);
+            const viewPresentation = getViewportPresentation(viewport);
+            resetViewportCamera(viewport);
+            applyViewportPresentation(viewport, viewPresentation);
             viewport.render();
           });
           resizeObserver.observe(element);
@@ -454,7 +469,10 @@ class VolumeCroppingTool extends BaseTool {
     const originalSampleDistance = mapper.getSampleDistance();
 
     if (!this._hasResolutionChanged) {
-      const { rotateSampleDistanceFactor } = this.configuration;
+      // A larger sample distance is an interactive downsampling.
+      const rotateSampleDistanceFactor = getLossyDownsampling().interactive
+        ? this.configuration.rotateSampleDistanceFactor
+        : 1;
       mapper.setSampleDistance(
         originalSampleDistance * rotateSampleDistanceFactor
       );
@@ -463,9 +481,16 @@ class VolumeCroppingTool extends BaseTool {
       if (this.cleanUp !== null) {
         // Clean up previous event listener
         document.removeEventListener('mouseup', this.cleanUp);
+        document.removeEventListener('touchend', this.cleanUp);
+        document.removeEventListener('touchcancel', this.cleanUp);
       }
 
       this.cleanUp = () => {
+        // All listener types are armed below; whichever fires first must
+        // clear the others so no stale once-listener lingers on document.
+        document.removeEventListener('mouseup', this.cleanUp);
+        document.removeEventListener('touchend', this.cleanUp);
+        document.removeEventListener('touchcancel', this.cleanUp);
         mapper.setSampleDistance(originalSampleDistance);
 
         // Reset cursor style
@@ -494,6 +519,10 @@ class VolumeCroppingTool extends BaseTool {
       };
 
       document.addEventListener('mouseup', this.cleanUp, { once: true });
+      document.addEventListener('touchend', this.cleanUp, { once: true });
+      // OS-interrupted gestures (incoming call, notification shade) end in
+      // touchcancel, never touchend.
+      document.addEventListener('touchcancel', this.cleanUp, { once: true });
     }
 
     return true;
@@ -544,9 +573,9 @@ class VolumeCroppingTool extends BaseTool {
    * // Check if handles are currently visible
    * const handlesVisible = volumeCroppingTool.getHandlesVisible();
    * if (handlesVisible) {
-   *   console.log('Cropping handles are currently shown');
+   *   logger.info('Cropping handles are currently shown');
    * } else {
-   *   console.log('Cropping handles are currently hidden');
+   *   logger.info('Cropping handles are currently hidden');
    * }
    * ```
    *
@@ -596,9 +625,9 @@ class VolumeCroppingTool extends BaseTool {
    * // Check if clipping planes are currently active
    * const planesVisible = volumeCroppingTool.getClippingPlanesVisible();
    * if (planesVisible) {
-   *   console.log('Volume is currently being cropped');
+   *   logger.info('Volume is currently being cropped');
    * } else {
-   *   console.log('Volume is displayed in full');
+   *   logger.info('Volume is displayed in full');
    * }
    * ```
    *
@@ -667,9 +696,9 @@ class VolumeCroppingTool extends BaseTool {
    * ```typescript
    * const isRotatingPlanes = volumeCroppingTool.getRotatePlanesOnDrag();
    * if (isRotatingPlanes) {
-   *   console.log('Dragging will rotate clipping planes');
+   *   logger.info('Dragging will rotate clipping planes');
    * } else {
-   *   console.log('Dragging will rotate camera');
+   *   logger.info('Dragging will rotate camera');
    * }
    * ```
    */
@@ -727,7 +756,7 @@ class VolumeCroppingTool extends BaseTool {
       const enabledElement = getEnabledElement(element);
       const { viewport } = enabledElement;
 
-      const camera = viewport.getCamera();
+      const camera = getViewportICamera(viewport);
       const width = element.clientWidth;
       const height = element.clientHeight;
 
@@ -1144,7 +1173,7 @@ class VolumeCroppingTool extends BaseTool {
 
   _initialize3DViewports = (viewportsInfo: Types.IViewportId[]): void => {
     if (!viewportsInfo?.length || !viewportsInfo[0]) {
-      console.warn(
+      cs3dLogger.warn(
         'VolumeCroppingTool: No viewportsInfo available for initialization of volumecroppingtool.'
       );
       return;
@@ -1155,14 +1184,16 @@ class VolumeCroppingTool extends BaseTool {
     }
     const volumeActor = this._getVolumeActor(viewport);
     if (!volumeActor) {
-      console.warn(
+      cs3dLogger.warn(
         'VolumeCroppingTool: No volume actors found in the viewport.'
       );
       return;
     }
     const imageData = volumeActor.getMapper().getInputData();
     if (!imageData) {
-      console.warn('VolumeCroppingTool: No image data found for volume actor.');
+      cs3dLogger.warn(
+        'VolumeCroppingTool: No image data found for volume actor.'
+      );
       return;
     }
     this.seriesInstanceUID = imageData.seriesInstanceUID || 'unknown';
@@ -1765,7 +1796,7 @@ class VolumeCroppingTool extends BaseTool {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
-    const camera = viewport.getCamera();
+    const camera = getViewportICamera(viewport);
     const width = element.clientWidth;
     const height = element.clientHeight;
 
@@ -2206,7 +2237,7 @@ class VolumeCroppingTool extends BaseTool {
     mat4.rotate(transform, transform, angle, axis);
     vec3.transformMat4(newViewUp, viewUp, transform);
 
-    viewport.setCamera({
+    setViewportCamera(viewport, {
       position: newPosition,
       viewUp: newViewUp,
       focalPoint: newFocalPoint,

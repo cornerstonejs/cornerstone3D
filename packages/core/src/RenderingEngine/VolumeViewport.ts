@@ -3,6 +3,7 @@ import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 
 import cache from '../cache/cache';
+import { coreLog } from '../utilities/logger';
 import { EPSILON, MPR_CAMERA_VALUES, RENDERING_DEFAULTS } from '../constants';
 import type { BlendModes } from '../enums';
 import { OrientationAxis, Events } from '../enums';
@@ -19,9 +20,6 @@ import type {
 import type { ViewportInput } from '../types/IViewport';
 import { actorIsA } from '../utilities/actorCheck';
 import getClosestImageId from '../utilities/getClosestImageId';
-import getSliceRange from '../utilities/getSliceRange';
-import getSpacingInNormalDirection from '../utilities/getSpacingInNormalDirection';
-import snapFocalPointToSlice from '../utilities/snapFocalPointToSlice';
 import triggerEvent from '../utilities/triggerEvent';
 
 import BaseVolumeViewport from './BaseVolumeViewport';
@@ -35,6 +33,10 @@ import {
   calculateCameraPosition,
   getCameraVectors,
 } from './helpers/getCameraVectors';
+import {
+  getPlanarVolumeSliceNavigationState,
+  getPlanarVolumeSlicePoint,
+} from './helpers/planarVolumeRendering';
 
 /**
  * An object representing a VolumeViewport. VolumeViewports are used to render
@@ -45,6 +47,8 @@ import {
  * For setting volumes on viewports you need to use addVolumesToViewports
  * which will add volumes to the specified viewports.
  */
+const log = coreLog.getLogger('RenderingEngine', 'VolumeViewport');
+
 class VolumeViewport extends BaseVolumeViewport {
   private _useAcquisitionPlaneForViewPlane = false;
   constructor(props: ViewportInput) {
@@ -266,7 +270,7 @@ class VolumeViewport extends BaseVolumeViewport {
     const activeCamera = this.getVtkActiveCamera();
 
     if (!activeCamera) {
-      console.warn('No active camera found');
+      log.warn('No active camera found');
       return;
     }
 
@@ -412,12 +416,20 @@ class VolumeViewport extends BaseVolumeViewport {
       resetToCenter = true,
       suppressEvents = false,
       resetOrientation = true,
+      resetAspectRatio = true,
+      storeAsInitialCamera = true,
     } = options || {};
     const { orientation } = this.viewportProperties;
     if (orientation && resetOrientation) {
       this.applyViewOrientation(orientation, false);
     }
-    super.resetCamera({ resetPan, resetZoom, resetToCenter });
+    super.resetCamera({
+      resetPan,
+      resetZoom,
+      resetToCenter,
+      resetAspectRatio,
+      storeAsInitialCamera,
+    });
 
     const activeCamera = this.getVtkActiveCamera();
     const viewPlaneNormal = activeCamera.getViewPlaneNormal() as Point3;
@@ -494,7 +506,7 @@ class VolumeViewport extends BaseVolumeViewport {
   public setSlabThickness(slabThickness: number, filterActorUIDs = []): void {
     if (slabThickness < 0.1) {
       // Cannot render zero thickness
-      slabThickness = 0.1;
+      slabThickness = RENDERING_DEFAULTS.MINIMUM_SLAB_THICKNESS;
     }
 
     let actorEntries = this.getActors();
@@ -787,7 +799,9 @@ class VolumeViewport extends BaseVolumeViewport {
   ): ViewReference {
     const viewRef = super.getViewReference(viewRefSpecifier);
     if (!viewRef?.volumeId) {
-      return;
+      // A frame-of-reference-only reference deliberately has no volumeId, so
+      // no specific volume can safely supply a referencedImageId.
+      return viewRef;
     }
     const volume = cache.getVolume(viewRef.volumeId);
     viewRef.referencedImageId = getClosestImageId(
@@ -846,11 +860,13 @@ class VolumeViewport extends BaseVolumeViewport {
     const resetZoom = true;
     const resetToCenter = true;
     const resetCameraRotation = true;
+    const resetAspectRatio = true;
     this.resetCamera({
       resetPan,
       resetZoom,
       resetToCenter,
       resetCameraRotation,
+      resetAspectRatio,
     });
 
     triggerEvent(this.element, Events.VOI_MODIFIED, eventDetails);
@@ -907,7 +923,7 @@ class VolumeViewport extends BaseVolumeViewport {
     const actorEntry = this.getDefaultActor();
 
     if (!actorEntry?.actor) {
-      console.warn('No image data found for calculating vtkPlanes.');
+      log.warn('No image data found for calculating vtkPlanes.');
       return [];
     }
 
@@ -916,15 +932,16 @@ class VolumeViewport extends BaseVolumeViewport {
 
     const camera = this.getCamera();
     const { focalPoint, position, viewPlaneNormal } = camera;
-    const spacingInNormalDirection = getSpacingInNormalDirection(
-      imageVolume,
-      viewPlaneNormal
-    );
-    const sliceRange = getSliceRange(
-      actorEntry.actor as vtkVolume,
-      viewPlaneNormal,
-      focalPoint
-    );
+    const { currentSliceIndex, sliceRange, spacingInNormalDirection } =
+      getPlanarVolumeSliceNavigationState({
+        actor: actorEntry.actor as vtkVolume,
+        camera: {
+          focalPoint,
+          position,
+          viewPlaneNormal,
+        },
+        imageVolume,
+      });
 
     // calculate the number of slices that is possible to visit
     // in the direction of the view back and forward
@@ -936,18 +953,19 @@ class VolumeViewport extends BaseVolumeViewport {
       (sliceRange.max - sliceRange.current) / spacingInNormalDirection
     );
 
-    const currentSliceIndex = this.getSliceIndex();
     const focalPoints = [];
 
     for (let i = -numSlicesBackward; i <= numSlicesForward; i++) {
-      const { newFocalPoint: point } = snapFocalPointToSlice(
-        focalPoint,
-        position,
+      const { newFocalPoint: point } = getPlanarVolumeSlicePoint({
+        camera: {
+          focalPoint,
+          position,
+          viewPlaneNormal,
+        },
+        delta: i,
         sliceRange,
-        viewPlaneNormal,
         spacingInNormalDirection,
-        i
-      );
+      });
 
       focalPoints.push({ sliceIndex: currentSliceIndex + i, point });
     }

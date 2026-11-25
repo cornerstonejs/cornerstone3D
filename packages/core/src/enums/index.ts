@@ -1,6 +1,7 @@
 import Events from './Events';
 import RequestType from './RequestType';
 import ViewportType from './ViewportType';
+import ViewportTypes, { type ViewportTypesMap } from './ViewportTypes';
 import InterpolationType from './InterpolationType';
 import BlendModes from './BlendModes';
 import OrientationAxis from './OrientationAxis';
@@ -16,7 +17,14 @@ import * as VideoEnums from './VideoEnums';
 import MetadataModules from './MetadataModules';
 import { GenerateImageType } from './GenerateImageType';
 import VoxelManagerEnum from './VoxelManagerEnum';
+import VoxelStatistics, { type VoxelStatisticsMap } from './VoxelStatistics';
+import VoxelReductions, { type VoxelReductionsMap } from './VoxelReductions';
+import VoxelDataSources, { type VoxelDataSourcesMap } from './VoxelDataSources';
 import RenderingEngineModeEnum from './RenderingEngineModeEnum';
+import RenderBackends, {
+  type RenderBackendValue,
+  type RenderBackendsMap,
+} from './RenderBackends';
 
 export {
   Events,
@@ -25,6 +33,8 @@ export {
   InterpolationType,
   RequestType,
   ViewportType,
+  ViewportTypes,
+  type ViewportTypesMap,
   OrientationAxis,
   GeometryType,
   ContourType,
@@ -36,6 +46,15 @@ export {
   MetadataModules,
   ImageQualityStatus,
   VoxelManagerEnum,
+  VoxelStatistics,
+  type VoxelStatisticsMap,
+  VoxelReductions,
+  type VoxelReductionsMap,
+  VoxelDataSources,
+  type VoxelDataSourcesMap,
   GenerateImageType,
   RenderingEngineModeEnum,
+  RenderBackends,
+  type RenderBackendValue,
+  type RenderBackendsMap,
 };

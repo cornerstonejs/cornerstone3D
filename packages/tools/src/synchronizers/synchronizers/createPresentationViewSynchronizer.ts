@@ -2,6 +2,7 @@ import { Enums, type Types } from '@cornerstonejs/core';
 import { createSynchronizer } from '../../store/SynchronizerManager';
 import presentationViewSyncCallback from '../callbacks/presentationViewSyncCallback';
 import type Synchronizer from '../../store/SynchronizerManager/Synchronizer';
+import type { ISynchronizerEventHandler } from '../../types';
 
 const { CAMERA_MODIFIED } = Enums.Events;
 
@@ -15,12 +16,12 @@ const { CAMERA_MODIFIED } = Enums.Events;
  */
 export default function createPresentationViewSynchronizer(
   synchronizerName: string,
-  options?: Types.ViewPresentation
+  options?: Types.ViewPresentationSelector
 ): Synchronizer {
   const presentationView = createSynchronizer(
     synchronizerName,
     CAMERA_MODIFIED,
-    presentationViewSyncCallback,
+    presentationViewSyncCallback as ISynchronizerEventHandler,
     { viewPresentation: options }
   );
 

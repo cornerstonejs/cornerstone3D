@@ -47,7 +47,7 @@ setTitleAndDescription(
     '
 );
 
-const size = '500px';
+const size = '512px';
 const content = document.getElementById('content');
 const viewportGrid1 = document.createElement('div');
 const viewportGrid2 = document.createElement('div');

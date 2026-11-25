@@ -1,4 +1,5 @@
 import { AnnotationTool } from './base';
+import getViewportICamera from '../utilities/getViewportICamera';
 
 import { getEnabledElement, utilities } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
@@ -29,6 +30,11 @@ import type { RectangleROIAnnotation } from '../types/ToolSpecificAnnotationType
 import type { StyleSpecifier } from '../types/AnnotationStyle';
 
 import { windowLevel } from '../utilities/voi';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.WindowLevelRegionTool'
+);
 
 /**
  * WindowLevelRegion tool manipulates the windowLevel applied to a viewport. It
@@ -78,7 +84,7 @@ class WindowLevelRegionTool extends AnnotationTool {
 
     this.isDrawing = true;
 
-    const camera = viewport.getCamera();
+    const camera = getViewportICamera(viewport);
     const { viewPlaneNormal, viewUp } = camera;
 
     const referencedImageId = this.getReferencedImageId(
@@ -282,7 +288,7 @@ class WindowLevelRegionTool extends AnnotationTool {
 
       // If rendering engine has been destroyed while rendering
       if (!viewport.getRenderingEngine()) {
-        console.warn('Rendering Engine has been destroyed');
+        cs3dLogger.warn('Rendering Engine has been destroyed');
         return renderStatus;
       }
 
@@ -312,6 +318,14 @@ class WindowLevelRegionTool extends AnnotationTool {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
     const imageData = windowLevel.extractWindowLevelRegionToolData(viewport);
+
+    // No slice pixel data available (e.g. a reformatted/oblique native volume
+    // plane); skip applying the region window level rather than dereferencing
+    // undefined below.
+    if (!imageData) {
+      return;
+    }
+
     const { data } = annotation;
     const { points } = data.handles;
 
@@ -355,15 +369,49 @@ class WindowLevelRegionTool extends AnnotationTool {
     );
     const windowCenter = minMaxMean.mean;
 
-    const voiLutFunction = viewport.getProperties().VOILUTFunction;
+    // Native ("next") viewports expose no get/setProperties; the VOI lives in the
+    // per-display-set presentation. Bridge both read (VOI LUT function) and write
+    // (the computed VOI range) so the region tool applies the window level on
+    // native viewports too (legacy keeps using get/setProperties).
+    const presentationViewport =
+      utilities.viewportSupportsDisplaySetPresentation(viewport)
+        ? viewport
+        : undefined;
+    const sourceDataId = presentationViewport?.getSourceDataId();
+
+    const voiLutFunction = presentationViewport
+      ? sourceDataId
+        ? (
+            presentationViewport.getDisplaySetPresentation(sourceDataId) as
+              | { voiLUTFunction?: unknown }
+              | undefined
+          )?.voiLUTFunction
+        : undefined
+      : viewport.getProperties().VOILUTFunction;
 
     const voiRange = utilities.windowLevel.toLowHighRange(
       windowWidth,
       windowCenter,
-      voiLutFunction
+      voiLutFunction as Parameters<
+        typeof utilities.windowLevel.toLowHighRange
+      >[2]
     );
 
-    viewport.setProperties({ voiRange });
+    if (presentationViewport) {
+      if (sourceDataId) {
+        presentationViewport.setDisplaySetPresentation(sourceDataId, {
+          voiRange,
+        });
+      } else {
+        // No resolvable source binding id (e.g. getSourceDataId() is undefined).
+        // The single-argument form targets the current binding, so the window
+        // level is applied rather than silently dropped; it is a no-op only when
+        // the viewport has no bound data at all.
+        presentationViewport.setDisplaySetPresentation({ voiRange });
+      }
+    } else {
+      viewport.setProperties({ voiRange });
+    }
     viewport.render();
   };
 

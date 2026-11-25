@@ -78,39 +78,35 @@ const html = `
 
     <br>
     <br>
-    <div class="row">
-        <div class="col-md-6">
-            <div id="cornerstone-element" style="width:512px;height:512px" onmousedown='return false;' oncontextmenu='return false;'>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <span>Transfer Syntax: </span><span id="transferSyntax"></span><br>
-            <span>SOP Class: </span><span id="sopClass"></span><br>
-            <span>Samples Per Pixel: </span><span id="samplesPerPixel"></span><br>
-            <span>Photometric Interpretation: </span><span id="photometricInterpretation"></span><br>
-            <span>Number Of Frames: </span><span id="numberOfFrames"></span><br>
-            <span>Planar Configuration: </span><span id="planarConfiguration"></span><br>
-            <span>Rows: </span><span id="rows"></span><br>
-            <span>Columns: </span><span id="columns"></span><br>
-            <span>Pixel Spacing: </span><span id="pixelSpacing"></span><br>
-            <span>Row Pixel Spacing: </span><span id="rowPixelSpacing"></span><br>
-            <span>Column Pixel Spacing: </span><span id="columnPixelSpacing"></span><br>
-            <span>Bits Allocated: </span><span id="bitsAllocated"></span><br>
-            <span>Bits Stored: </span><span id="bitsStored"></span><br>
-            <span>High Bit: </span><span id="highBit"></span><br>
-            <span>Pixel Representation: </span><span id="pixelRepresentation"></span><br>
-            <span>WindowCenter: </span><span id="windowCenter"></span><br>
-            <span>WindowWidth: </span><span id="windowWidth"></span><br>
-            <span>RescaleIntercept: </span><span id="rescaleIntercept"></span><br>
-            <span>RescaleSlope: </span><span id="rescaleSlope"></span><br>
-            <span>Basic Offset Table Entries: </span><span id="basicOffsetTable"></span><br>
-            <span>Fragments: </span><span id="fragments"></span><br>
-            <span>Max Stored Pixel Value: </span><span id="maxStoredPixelValue"></span><br>
-            <span>Min Stored Pixel Value: </span><span id="minStoredPixelValue"></span><br>
-            <span>Total Time: </span><span id="totalTime"></span><br>
-            <span>Load Time: </span><span id="loadTime"></span><br>
-            <span>Decode Time: </span><span id="decodeTime"></span><br>
-        </div>
+    <div id="cornerstone-element" style="width:512px;height:512px;display:block" onmousedown='return false;' oncontextmenu='return false;'>
+    </div>
+    <div id="metadata-panel" style="display:block;margin-top:24px;clear:both">
+        <span>Transfer Syntax: </span><span id="transferSyntax"></span><br>
+        <span>SOP Class: </span><span id="sopClass"></span><br>
+        <span>Samples Per Pixel: </span><span id="samplesPerPixel"></span><br>
+        <span>Photometric Interpretation: </span><span id="photometricInterpretation"></span><br>
+        <span>Number Of Frames: </span><span id="numberOfFrames"></span><br>
+        <span>Planar Configuration: </span><span id="planarConfiguration"></span><br>
+        <span>Rows: </span><span id="rows"></span><br>
+        <span>Columns: </span><span id="columns"></span><br>
+        <span>Pixel Spacing: </span><span id="pixelSpacing"></span><br>
+        <span>Row Pixel Spacing: </span><span id="rowPixelSpacing"></span><br>
+        <span>Column Pixel Spacing: </span><span id="columnPixelSpacing"></span><br>
+        <span>Bits Allocated: </span><span id="bitsAllocated"></span><br>
+        <span>Bits Stored: </span><span id="bitsStored"></span><br>
+        <span>High Bit: </span><span id="highBit"></span><br>
+        <span>Pixel Representation: </span><span id="pixelRepresentation"></span><br>
+        <span>WindowCenter: </span><span id="windowCenter"></span><br>
+        <span>WindowWidth: </span><span id="windowWidth"></span><br>
+        <span>RescaleIntercept: </span><span id="rescaleIntercept"></span><br>
+        <span>RescaleSlope: </span><span id="rescaleSlope"></span><br>
+        <span>Basic Offset Table Entries: </span><span id="basicOffsetTable"></span><br>
+        <span>Fragments: </span><span id="fragments"></span><br>
+        <span>Max Stored Pixel Value: </span><span id="maxStoredPixelValue"></span><br>
+        <span>Min Stored Pixel Value: </span><span id="minStoredPixelValue"></span><br>
+        <span>Total Time: </span><span id="totalTime"></span><br>
+        <span>Load Time: </span><span id="loadTime"></span><br>
+        <span>Decode Time: </span><span id="decodeTime"></span><br>
     </div>
 </div>
 `;

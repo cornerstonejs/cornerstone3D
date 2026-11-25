@@ -17,6 +17,7 @@ import {
 import { drawTextBox as drawTextBoxSvg } from '../../drawingSvg';
 import { state } from '../../store/state';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
+import getViewportICamera from '../../utilities/getViewportICamera';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import {
   triggerAnnotationCompleted,
@@ -40,6 +41,11 @@ import type {
 import type { LabelAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { isAnnotationVisible } from '../../stateManagement/annotation/annotationVisibility';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.annotation.LabelTool'
+);
 
 class LabelTool extends AnnotationTool {
   static toolName = 'Label';
@@ -148,7 +154,8 @@ class LabelTool extends AnnotationTool {
     const { viewport } = enabledElement;
     const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
 
-    const { viewPlaneNormal, viewUp } = viewport.getCamera();
+    // Native ("next") viewports expose no getCamera; read orientation via the bridge.
+    const { viewPlaneNormal, viewUp } = getViewportICamera(viewport);
 
     // This is a workaround to access the protected method getReferencedImageId
     // we should make those static too
@@ -567,7 +574,7 @@ class LabelTool extends AnnotationTool {
 
       // If rendering engine has been destroyed while rendering
       if (!viewport.getRenderingEngine()) {
-        console.warn('Rendering Engine has been destroyed');
+        cs3dLogger.warn('Rendering Engine has been destroyed');
         return renderStatus;
       }
 

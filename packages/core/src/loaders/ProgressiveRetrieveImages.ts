@@ -10,6 +10,7 @@ import type {
 import singleRetrieveStages from './configuration/singleRetrieve';
 import sequentialRetrieveStages from './configuration/sequentialRetrieve';
 import interleavedRetrieveStages from './configuration/interleavedRetrieve';
+import coarseInterleavedRetrieveStages from './configuration/coarseInterleavedRetrieve';
 import { loadAndCacheImage } from './imageLoader';
 import triggerEvent from '../utilities/triggerEvent';
 import ProgressiveIterator from '../utilities/ProgressiveIterator';
@@ -19,10 +20,15 @@ import { ImageQualityStatus, RequestType, Events } from '../enums';
 import cache from '../cache/cache';
 import eventTarget from '../eventTarget';
 import { fillNearbyFrames } from './fillNearbyFrames';
+import { coreLog } from '../utilities/logger';
+import { getLossyDownsampling } from '../init';
+
+const log = coreLog.getLogger('loaders', 'ProgressiveRetrieveImages');
 
 export {
   sequentialRetrieveStages,
   interleavedRetrieveStages,
+  coarseInterleavedRetrieveStages,
   singleRetrieveStages,
 };
 
@@ -103,6 +109,11 @@ export class ProgressiveRetrieveImages
     stages: interleavedRetrieveStages,
   };
 
+  /** Interleaved, with coarse stages that fill the whole volume first. */
+  public static coarseInterleavedRetrieveStages = {
+    stages: coarseInterleavedRetrieveStages,
+  };
+
   public static singleRetrieveStages = {
     stages: singleRetrieveStages,
   };
@@ -164,6 +175,7 @@ class ProgressiveRetrieveImagesInstance {
   protected sendRequest(request, options) {
     const { imageId, next } = request;
     const errorCallback = (reason, done) => {
+      reported = true;
       this.listener.errorCallback(imageId, complete || !next, reason);
       if (done) {
         this.updateStageStatus(request.stage, reason);
@@ -175,16 +187,19 @@ class ProgressiveRetrieveImagesInstance {
     );
     const uncompressedIterator = ProgressiveIterator.as(loadedPromise);
     let complete = false;
+    // A listener counts each permanent failure, so a frame reports one.
+    let reported = false;
 
     uncompressedIterator
       .forEach(async (image, done) => {
         const oldStatus = cache.getImageQuality(imageId);
         if (!image) {
-          console.warn('No image retrieved', imageId);
+          log.warn('No image retrieved', imageId);
           return;
         }
         const { imageQualityStatus } = image;
         complete ||= imageQualityStatus === ImageQualityStatus.FULL_RESOLUTION;
+        image.imageQualityPending = !complete && (!done || !!next);
         if (oldStatus !== undefined && oldStatus > imageQualityStatus) {
           // We already have a better status, so don't update it
           this.updateStageStatus(request.stage, null, true);
@@ -203,14 +218,21 @@ class ProgressiveRetrieveImagesInstance {
           // Updates the image cache to contain a partial image in whatever
           // the current status (none possibly), and remove the image load
           // instance but not the actual image cached value.
-          cache.setPartialImage(imageId);
+          cache.setPartialImage(imageId, undefined, true);
           // After the update, the image can still be fetched in the old version
           // but a new request will be run and will replace the old version as
           // appropriate
           this.addRequest(next, options.streamingData);
         } else {
           if (!complete) {
-            this.listener.errorCallback(imageId, true, "Couldn't decode");
+            // No stage follows, so the image shown is final.
+            const shown = cache.getImage(imageId);
+            if (shown) {
+              shown.imageQualityPending = false;
+            }
+            if (!reported) {
+              this.listener.errorCallback(imageId, true, "Couldn't decode");
+            }
           }
           this.outstandingRequests--;
           for (let skip = next; skip; skip = skip.next) {
@@ -246,7 +268,12 @@ class ProgressiveRetrieveImagesInstance {
     };
     const priority = stage.priority ?? -5;
     const requestType = stage.requestType || RequestType.Interaction;
-    const additionalDetails = { imageId };
+    // The volume id lets the volume cancel its queued requests, and keeps them
+    // apart from a stack prefetch of the same images.
+    const additionalDetails = {
+      imageId,
+      volumeId: (this.listener as { volumeId?: string }).volumeId,
+    };
 
     imageLoadPoolManager.addRequest(
       this.sendRequest.bind(this, request, options),
@@ -343,7 +370,9 @@ class ProgressiveRetrieveImagesInstance {
    */
   protected findNearbyRequests(index: number, stage): NearbyRequest[] {
     const nearby = new Array<NearbyRequest>();
-    if (!stage.nearbyFrames) {
+    // A nearby fill shows a copy of another frame, which is a lossy
+    // interleaved downsampling.
+    if (!stage.nearbyFrames || !getLossyDownsampling().interleavedLoading) {
       return nearby;
     }
     for (const nearbyItem of stage.nearbyFrames) {

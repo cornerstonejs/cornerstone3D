@@ -1,4 +1,4 @@
-import { AnnotationTool } from '../base';
+import { AnnotationTool, measurementTargetFilters } from '../base';
 import {
   getEnabledElement,
   VolumeViewport,
@@ -28,6 +28,7 @@ import {
 import { state } from '../../store/state';
 import { ChangeTypes, Events } from '../../enums';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
+import getViewportICamera from '../../utilities/getViewportICamera';
 import * as rectangle from '../../utilities/math/rectangle';
 import {
   resetElementCursor,
@@ -47,11 +48,21 @@ import type {
 import type { RectangleROIAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
+import { viewportSupportsImageSlices } from '../../utilities/viewportCapabilities';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
+import { defaultAreaGetTextLines } from '../../utilities/defaultGetTextLines';
+import sampleAreaAnnotationVoxels from '../../utilities/sampleAreaAnnotationVoxels';
+import { hasValidAreaAnnotationDimensions } from '../../utilities/areaAnnotationShapeUtils';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
-const { transformWorldToIndex } = csUtils;
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.annotation.RectangleROITool'
+);
+
+const { transformWorldToIndex, transformWorldToIndexContinuous } = csUtils;
+const { createRectangleShape } = csUtils.voxelSlab;
 
 /**
  * RectangleROIAnnotation let you draw annotations that measures the statistics
@@ -117,8 +128,12 @@ class RectangleROITool extends AnnotationTool {
         shadow: true,
         preventHandleOutsideImage: false,
         calculateStats: true,
-        getTextLines: defaultGetTextLines,
+        getTextLines: defaultAreaGetTextLines,
         statsCalculator: BasicStatsCalculator,
+        // By default show the statistics of every display set containing
+        // pixel values (eg both CT and PT on a fusion viewport), but never
+        // SEG and the like - see measurementTargetFilters for alternatives
+        targetsFilter: measurementTargetFilters.allPixelData,
       },
     }
   ) {
@@ -139,9 +154,7 @@ class RectangleROITool extends AnnotationTool {
    * @returns The annotation object.
    *
    */
-  addNewAnnotation = (
-    evt: EventTypes.InteractionEventType
-  ): RectangleROIAnnotation => {
+  addNewAnnotation = (evt: EventTypes.InteractionEventType): Annotation => {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;
@@ -273,9 +286,6 @@ class RectangleROITool extends AnnotationTool {
 
     hideElementCursor(element);
 
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
-
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
     evt.preventDefault();
@@ -316,9 +326,6 @@ class RectangleROITool extends AnnotationTool {
     this._activateModify(element);
 
     hideElementCursor(element);
-
-    const enabledElement = getEnabledElement(element);
-    const { renderingEngine } = enabledElement;
 
     triggerAnnotationRenderForViewportIds(viewportIdsToRender);
 
@@ -619,7 +626,7 @@ class RectangleROITool extends AnnotationTool {
       const { points, activeHandleIndex } = data.handles;
       const canvasCoordinates = points.map((p) => viewport.worldToCanvas(p));
 
-      const targetId = this.getTargetId(viewport, data);
+      const targetIds = this.getMeasurementTargets(viewport, data);
       styleSpecifier.annotationUID = annotationUID;
 
       const { color, lineWidth, lineDash } = this.getAnnotationStyle({
@@ -627,36 +634,37 @@ class RectangleROITool extends AnnotationTool {
         styleSpecifier,
       });
 
-      const { viewPlaneNormal, viewUp } = viewport.getCamera();
+      // Native ("next") viewports expose no getCamera; read view orientation
+      // through the shared ICamera bridge (legacy viewports fall through to getCamera).
+      const { viewPlaneNormal, viewUp } = getViewportICamera(viewport);
 
-      // If cachedStats does not exist, or the unit is missing (as part of import/hydration etc.),
-      // force to recalculate the stats from the points
+      // If cachedStats does not exist for one of the measurement targets, or
+      // the unit is missing (as part of import/hydration etc.), force to
+      // recalculate the stats from the points.  Every filtered target gets
+      // seeded here, so a single (eg fusion) viewport computes the stats for
+      // all of them even when no other viewport has done so.
       if (
-        !data.cachedStats[targetId] ||
-        data.cachedStats[targetId].areaUnit == null
+        this.ensureCachedStatsTargets(
+          data,
+          targetIds,
+          (stats) => stats.areaUnit == null
+        )
       ) {
-        data.cachedStats[targetId] = {
-          Modality: null,
-          area: null,
-          max: null,
-          mean: null,
-          stdDev: null,
-          areaUnit: null,
-        };
-
         this._calculateCachedStats(
           annotation,
           viewPlaneNormal,
           viewUp,
-          renderingEngine,
           enabledElement
         );
       } else if (annotation.invalidated) {
+        // A change - recompute (throttled, so slow stats are not recomputed
+        // every frame during a drag).  Clearing stale targets and rebuilding
+        // the cumulative key set is done inside _calculateCachedStats, gated
+        // by the invalidated flag.
         this._throttledCalculateCachedStats(
           annotation,
           viewPlaneNormal,
           viewUp,
-          renderingEngine,
           enabledElement
         );
 
@@ -674,7 +682,9 @@ class RectangleROITool extends AnnotationTool {
           // at the referencedImageId
           for (const targetId in data.cachedStats) {
             if (targetId.startsWith('imageId')) {
-              const viewports = renderingEngine.getStackViewports();
+              const viewports = renderingEngine
+                .getViewports()
+                .filter(viewportSupportsImageSlices);
 
               const invalidatedStack = viewports.find((vp) => {
                 // The stack viewport that contains the imageId but is not
@@ -698,7 +708,7 @@ class RectangleROITool extends AnnotationTool {
 
       // If rendering engine has been destroyed while rendering
       if (!viewport.getRenderingEngine()) {
-        console.warn('Rendering Engine has been destroyed');
+        cs3dLogger.warn('Rendering Engine has been destroyed');
         return renderStatus;
       }
 
@@ -752,8 +762,8 @@ class RectangleROITool extends AnnotationTool {
 
       renderStatus = true;
 
-      const textLines = this.configuration.getTextLines(data, targetId);
-      if (!textLines || textLines.length === 0) {
+      const textLines = this.configuration.getTextLines(data, targetIds);
+      if (!textLines?.length) {
         continue;
       }
       if (
@@ -806,7 +816,6 @@ class RectangleROITool extends AnnotationTool {
     annotation,
     viewPlaneNormal,
     viewUp,
-    renderingEngine,
     enabledElement
   ) => {
     if (!this.configuration.calculateStats) {
@@ -819,7 +828,27 @@ class RectangleROITool extends AnnotationTool {
     const worldHandles = data.handles.points;
     const { cachedStats } = data;
 
+    // On an actual change (invalidation) drop every cached target so stale
+    // volumes are removed and the (fixed frame of reference) key set is
+    // rebuilt from the current viewport's targets.  This is done at the seam
+    // where the invalidated flag is consumed (and reset below), so during a
+    // drag it only happens when the throttled calculation actually runs -
+    // not every frame.  When not invalidated we keep the existing targets
+    // (possibly seeded by other viewports) and just fill/refresh them.
+    if (annotation.invalidated) {
+      // Capture the current targets first (reusing existing keys where the
+      // volume already has stats) so this viewport's volumes keep stable
+      // keys, then drop everything (removing stale/foreign volumes) and
+      // reseed just those targets.
+      const currentTargets = this.getMeasurementTargets(viewport, data);
+      for (const key of Object.keys(cachedStats)) {
+        delete cachedStats[key];
+      }
+      this.ensureCachedStatsTargets(data, currentTargets);
+    }
+
     const targetIds = Object.keys(cachedStats);
+    let isHandleOutsideAnyTarget = false;
 
     for (let i = 0; i < targetIds.length; i++) {
       const targetId = targetIds[i];
@@ -830,51 +859,44 @@ class RectangleROITool extends AnnotationTool {
       // to various reasons such as if the target was a volumeViewport, and
       // the volumeViewport has been decached in the meantime.
       if (!image) {
+        // The key may have been created by another viewport that does have
+        // this volume - leave it in place so that viewport can compute it.
+        // Stale keys are cleared on annotation change, not here.
         continue;
       }
 
       const { dimensions, imageData, metadata, voxelManager } = image;
 
-      const indexHandles = worldHandles.map((worldHandle) =>
-        transformWorldToIndex(imageData, worldHandle)
+      const continuousIndexHandles = worldHandles.map((worldHandle) =>
+        transformWorldToIndexContinuous(imageData, worldHandle)
       );
-      const pos1Index = indexHandles[0].map(Math.floor);
-      const pos2Index = indexHandles[3].map(Math.floor);
+      const pos1Index = transformWorldToIndex(imageData, worldHandles[0]);
+      const pos2Index = transformWorldToIndex(imageData, worldHandles[3]);
 
       // Check if one of the indexes are inside the volume, this then gives us
       // Some area to do stats over.
 
-      if (this._isInsideVolume(pos1Index, pos2Index, dimensions)) {
-        this.isHandleOutsideImage = false;
+      const isHandleOutsideTarget = !this._isInsideVolume(
+        pos1Index,
+        pos2Index,
+        dimensions
+      );
+      isHandleOutsideAnyTarget ||= isHandleOutsideTarget;
 
+      if (!isHandleOutsideTarget) {
         // Calculate index bounds to iterate over
-
-        const iMin = Math.min(pos1Index[0], pos2Index[0]);
-        const iMax = Math.max(pos1Index[0], pos2Index[0]);
-
-        const jMin = Math.min(pos1Index[1], pos2Index[1]);
-        const jMax = Math.max(pos1Index[1], pos2Index[1]);
-
-        const kMin = Math.min(pos1Index[2], pos2Index[2]);
-        const kMax = Math.max(pos1Index[2], pos2Index[2]);
-
-        const boundsIJK = [
-          [iMin, iMax],
-          [jMin, jMax],
-          [kMin, kMax],
-        ] as [Types.Point2, Types.Point2, Types.Point2];
 
         const handles = [pos1Index, pos2Index];
         const calibrate = getCalibratedLengthUnitsAndScale(image, handles);
 
-        const width = RectangleROITool.calculateLengthInIndex(
-          calibrate,
-          indexHandles.slice(0, 2)
-        );
-        const height = RectangleROITool.calculateLengthInIndex(
-          calibrate,
-          indexHandles.slice(2, 4)
-        );
+        const width = RectangleROITool.calculateLengthInIndex(calibrate, [
+          continuousIndexHandles[0],
+          continuousIndexHandles[1],
+        ]);
+        const height = RectangleROITool.calculateLengthInIndex(calibrate, [
+          continuousIndexHandles[0],
+          continuousIndexHandles[2],
+        ]);
         const area = Math.abs(width * height);
         const { areaUnit } = calibrate;
 
@@ -894,17 +916,58 @@ class RectangleROITool extends AnnotationTool {
           pixelUnitsOptions
         );
 
-        let pointsInShape;
-        if (voxelManager) {
-          pointsInShape = voxelManager.forEach(
-            this.configuration.statsCalculator.statsCallback,
-            {
-              boundsIJK,
-              imageData,
-              returnPoints: this.configuration.storePointData,
+        // The older code walked the index bounding box and applied no shape
+        // test, which is exact only while the rectangle stays aligned with the
+        // index axes. A rotated or oblique rectangle over-counted its corners.
+        // The shared sampler tests the rectangle itself.
+        const pointsInShape = sampleAreaAnnotationVoxels({
+          annotation,
+          image,
+          // Statistics are over scalar values. A colour volume gives an
+          // RGB triple, which no statistic here consumes.
+          voxelManager: voxelManager as Types.IVoxelManager<number>,
+          // The four corners bound the rectangle.
+          points: worldHandles as Types.Point3[],
+          createShape: ({ volume, planePoint, viewPlaneNormal }) => {
+            // points[0] and points[3] are opposite corners, so 0 to 1 and 0 to
+            // 2 are the two edges.
+            const majorAxis = vec3.sub(
+              vec3.create(),
+              worldHandles[1],
+              worldHandles[0]
+            ) as unknown as Types.Point3;
+            const majorHalfLength =
+              vec3.distance(worldHandles[0], worldHandles[1]) / 2;
+            const minorHalfLength =
+              vec3.distance(worldHandles[0], worldHandles[2]) / 2;
+            if (
+              !hasValidAreaAnnotationDimensions(
+                majorHalfLength,
+                minorHalfLength
+              )
+            ) {
+              return null;
             }
-          );
-        }
+
+            return createRectangleShape({
+              volume,
+              planePoint,
+              viewPlaneNormal,
+              centerWorld: vec3.lerp(
+                vec3.create(),
+                worldHandles[0],
+                worldHandles[3],
+                0.5
+              ) as unknown as Types.Point3,
+              majorAxis,
+              majorHalfLength,
+              minorHalfLength,
+            });
+          },
+          minimumPoints: 4,
+          onSample: this.configuration.statsCalculator.statsCallback,
+          storePointData: this.configuration.storePointData,
+        });
         const stats = this.configuration.statsCalculator.getStatistics();
 
         cachedStats[targetId] = {
@@ -920,13 +983,15 @@ class RectangleROITool extends AnnotationTool {
           modalityUnit,
         };
       } else {
-        this.isHandleOutsideImage = true;
         cachedStats[targetId] = {
           Modality: metadata.Modality,
         };
       }
     }
 
+    // Aggregate every resolved measurement target so deletion under
+    // preventHandleOutsideImage is deterministic across fusion actor order.
+    this.isHandleOutsideImage = isHandleOutsideAnyTarget;
     const invalidated = annotation.invalidated;
     annotation.invalidated = false;
 
@@ -1004,43 +1069,6 @@ class RectangleROITool extends AnnotationTool {
 
     triggerAnnotationRenderForViewportIds([viewport.id]);
   };
-}
-
-/**
- * _getTextLines - Returns the Area, mean and std deviation of the area of the
- * target volume enclosed by the rectangle.
- *
- * @param data - The annotation tool-specific data.
- * @param targetId - The volumeId of the volume to display the stats for.
- */
-function defaultGetTextLines(data, targetId: string): string[] {
-  const cachedVolumeStats = data.cachedStats[targetId];
-  const { area, mean, max, stdDev, areaUnit, modalityUnit, min } =
-    cachedVolumeStats;
-
-  if (mean === undefined || mean === null) {
-    return;
-  }
-
-  const textLines: string[] = [];
-
-  if (csUtils.isNumber(area)) {
-    textLines.push(`Area: ${csUtils.roundNumber(area)} ${areaUnit}`);
-  }
-  if (csUtils.isNumber(mean)) {
-    textLines.push(`Mean: ${csUtils.roundNumber(mean)} ${modalityUnit}`);
-  }
-  if (csUtils.isNumber(max)) {
-    textLines.push(`Max: ${csUtils.roundNumber(max)} ${modalityUnit}`);
-  }
-  if (csUtils.isNumber(min)) {
-    textLines.push(`Min: ${csUtils.roundNumber(min)} ${modalityUnit}`);
-  }
-  if (csUtils.isNumber(stdDev)) {
-    textLines.push(`Std Dev: ${csUtils.roundNumber(stdDev)} ${modalityUnit}`);
-  }
-
-  return textLines;
 }
 
 export default RectangleROITool;

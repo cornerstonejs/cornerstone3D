@@ -6,6 +6,7 @@ import {
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
+import { viewportSupportsStackCompatibility } from '../../src/utilities/viewportCapabilities';
 
 // This is for debugging purposes
 console.warn(
@@ -45,7 +46,7 @@ setTitleAndDescription(
   'This example demonstrates two stack viewports where one has segmentation and one does not. Both viewports are synchronized using the image slice synchronizer, and the scroll tool is active on both. You can draw segmentation on the left viewport and scroll through both viewports which will stay in sync.'
 );
 
-const size = '500px';
+const size = '512px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 
@@ -213,10 +214,11 @@ async function run() {
   toolGroup1.addViewport(viewportIds[0], renderingEngineId); // Left viewport with segmentation
   toolGroup2.addViewport(viewportIds[1], renderingEngineId); // Right viewport without segmentation
 
-  // Get the stack viewports
-  const stackViewports = renderingEngine.getStackViewports();
+  const stackViewports = viewportIds
+    .map((viewportId) => renderingEngine.getViewport(viewportId))
+    .filter(viewportSupportsStackCompatibility);
 
-  // Set the stack on each viewport
+  // Set the stack on each stack-compatible viewport
   await stackViewports[0].setStack(imageIds);
   await stackViewports[1].setStack(imageIds);
 

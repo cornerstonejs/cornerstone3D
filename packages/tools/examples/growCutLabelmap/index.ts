@@ -63,7 +63,7 @@ setTitleAndDescription(
   'Demonstrates how to run Grow Cut algorithm in the GPU on a labelmap with positive and negative seeds'
 );
 
-const size = '500px';
+const size = '512px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 

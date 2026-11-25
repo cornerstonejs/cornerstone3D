@@ -52,13 +52,13 @@ setTitleAndDescription(
 const content = document.getElementById('content');
 const element1 = document.createElement('div');
 element1.id = 'cornerstone-element1';
-element1.style.width = '500px';
-element1.style.height = '500px';
+element1.style.width = '512px';
+element1.style.height = '512px';
 
 const element2 = document.createElement('div');
 element2.id = 'cornerstone-element2';
-element2.style.width = '500px';
-element2.style.height = '500px';
+element2.style.width = '512px';
+element2.style.height = '512px';
 
 element1.oncontextmenu = (e) => e.preventDefault();
 element2.oncontextmenu = (e) => e.preventDefault();

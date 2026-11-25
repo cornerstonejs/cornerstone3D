@@ -5,7 +5,7 @@ import {
 } from '../../../utils/test/testUtils';
 import * as cornerstone from '../src/index';
 
-const { cache, Enums } = cornerstone;
+const { cache, Enums, eventTarget } = cornerstone;
 
 describe('New Image Cache', () => {
   beforeEach(() => {
@@ -79,21 +79,49 @@ describe('New Image Cache', () => {
 
     it('should not cache an image larger than the max cache size', async () => {
       const largeImageId = 'largeImage';
+      const onCacheSizeExceeded = jasmine.createSpy('onCacheSizeExceeded');
+      eventTarget.addEventListener(
+        Enums.Events.CACHE_SIZE_EXCEEDED,
+        onCacheSizeExceeded
+      );
 
-      try {
-        await cache.putImageLoadObject(
-          largeImageId,
-          createMockImageLoadObject(largeImageId, 9)
-        );
-        // If we reach here, the method didn't throw an error as expected
-        fail('Expected putImageLoadObject to throw an error');
-      } catch (error) {
-        // The error was thrown as expected
-        console.debug('Caught expected error:', error);
-      }
+      await cache.putImageLoadObject(
+        largeImageId,
+        createMockImageLoadObject(largeImageId, 9)
+      );
 
+      eventTarget.removeEventListener(
+        Enums.Events.CACHE_SIZE_EXCEEDED,
+        onCacheSizeExceeded
+      );
+      expect(onCacheSizeExceeded).toHaveBeenCalledTimes(1);
       expect(cache.getCacheSize()).toBe(0);
       expect(cache.getImage(largeImageId)).toBeUndefined();
+    });
+
+    it('should keep an image that a CACHE_SIZE_EXCEEDED listener caches in its place', async () => {
+      const imageId = 'image1';
+      const replacement = { imageId, sizeInBytes: 8 };
+      const replaceImage = () => {
+        cache.removeImageLoadObject(imageId);
+        cache.putImageSync(imageId, replacement);
+      };
+      eventTarget.addEventListener(
+        Enums.Events.CACHE_SIZE_EXCEEDED,
+        replaceImage
+      );
+
+      await cache.putImageLoadObject(
+        imageId,
+        createMockImageLoadObject(imageId, 9)
+      );
+
+      eventTarget.removeEventListener(
+        Enums.Events.CACHE_SIZE_EXCEEDED,
+        replaceImage
+      );
+      expect(cache.getImage(imageId)).toBe(replacement);
+      expect(cache.getCacheSize()).toBe(8);
     });
   });
 });

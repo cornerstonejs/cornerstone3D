@@ -113,7 +113,10 @@ export default function filterAnnotationsWithinSlice(
   // Annotation should be within the slice, which means that it should be between
   // camera's focalPoint +/- spacingInNormalDirection.
 
-  const halfSpacingInNormalDirection = spacingInNormalDirection / 2;
+  // If the spacing is exactly half for the CT and PT, then the annotations
+  // don't appear in the center row - this fixes that issue. Note you get
+  // annotations from all three nearby CT's on the PT image.
+  const halfSpacingInNormalDirection = spacingInNormalDirection / 2 + EPSILON;
   const { focalPoint } = camera;
 
   const annotationsWithinSlice = [];

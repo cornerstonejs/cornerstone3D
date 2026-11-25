@@ -1,8 +1,4 @@
-import {
-  BaseVolumeViewport,
-  cache,
-  getEnabledElement,
-} from '@cornerstonejs/core';
+import { BaseVolumeViewport, getEnabledElement } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
 import { BaseTool } from '../base';
@@ -23,12 +19,10 @@ import {
   resetElementCursor,
   hideElementCursor,
 } from '../../cursors/elementCursor';
-import type {
-  LabelmapSegmentationDataVolume,
-  LabelmapSegmentationData,
-} from '../../types/LabelmapTypes';
+import type { LabelmapSegmentationData } from '../../types/LabelmapTypes';
 
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
+import getViewportICamera from '../../utilities/getViewportICamera';
 import {
   config as segmentationConfig,
   segmentLocking,
@@ -40,7 +34,17 @@ import {
   getCurrentLabelmapImageIdForViewport,
   getSegmentation,
 } from '../../stateManagement/segmentation/segmentationState';
+import getViewportLabelmapRenderMode from '../../stateManagement/segmentation/helpers/getViewportLabelmapRenderMode';
 import LabelmapBaseTool from './LabelmapBaseTool';
+import {
+  getOrCreateLabelmapVolume,
+  resolveLabelmapForSegment,
+} from '../../stateManagement/segmentation/helpers/labelmapSegmentationState';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.segmentation.RectangleScissorsTool'
+);
 
 /**
  * Tool for manipulating segmentation data by drawing a rectangle. It acts on the
@@ -115,7 +119,8 @@ class RectangleScissorsTool extends LabelmapBaseTool {
 
     this.isDrawing = true;
 
-    const camera = viewport.getCamera();
+    // Native ("next") viewports expose no getCamera; read orientation via the bridge.
+    const camera = getViewportICamera(viewport);
     const { viewPlaneNormal, viewUp } = camera;
 
     const activeLabelmapSegmentation = activeSegmentation.getActiveSegmentation(
@@ -189,14 +194,27 @@ class RectangleScissorsTool extends LabelmapBaseTool {
       imageId: null,
     };
 
-    if (viewport instanceof BaseVolumeViewport) {
-      const { volumeId } = labelmapData as LabelmapSegmentationDataVolume;
-      const segmentation = cache.getVolume(volumeId);
+    const viewportRenderMode = getViewportLabelmapRenderMode(viewport);
+
+    if (
+      viewportRenderMode === 'volume' ||
+      viewport instanceof BaseVolumeViewport
+    ) {
+      const layer = resolveLabelmapForSegment(
+        getSegmentation(segmentationId),
+        segmentIndex
+      );
+      const segmentation = layer ? getOrCreateLabelmapVolume(layer) : undefined;
+
+      if (!segmentation) {
+        return;
+      }
 
       this.editData = {
         ...this.editData,
-        volumeId,
-        referencedVolumeId: segmentation.referencedVolumeId,
+        volumeId: segmentation.volumeId,
+        referencedVolumeId:
+          layer?.referencedVolumeId ?? segmentation.referencedVolumeId,
       };
     } else {
       const segmentationImageId = getCurrentLabelmapImageIdForViewport(
@@ -222,10 +240,20 @@ class RectangleScissorsTool extends LabelmapBaseTool {
   };
 
   _dragCallback = (evt: EventTypes.InteractionEventType) => {
-    this.isDrawing = true;
-
     const eventDetail = evt.detail;
     const { element } = eventDetail;
+
+    const { currentPointsList } =
+      eventDetail as EventTypes.TouchDragEventDetail;
+    if (currentPointsList?.length > 1) {
+      // A second finger reclassifies the gesture (pinch zoom, multi-finger
+      // scroll); drop the rubber band instead of resizing it at the mean
+      // touch point and applying on release.
+      this._cancelTouchDraw(element);
+      return;
+    }
+
+    this.isDrawing = true;
 
     const { annotation, viewportIdsToRender, handleIndex } = this.editData;
     const { data } = annotation;
@@ -302,6 +330,7 @@ class RectangleScissorsTool extends LabelmapBaseTool {
 
     const { annotation, newAnnotation, hasMoved } = this.editData;
     const { data } = annotation;
+    const { viewPlaneNormal, viewUp } = annotation.metadata;
 
     if (newAnnotation && !hasMoved) {
       return;
@@ -318,6 +347,8 @@ class RectangleScissorsTool extends LabelmapBaseTool {
     const operationData = {
       ...this.editData,
       points: data.handles.points,
+      viewPlaneNormal,
+      viewUp,
       createMemo: this.createMemo.bind(this),
     };
 
@@ -387,7 +418,7 @@ class RectangleScissorsTool extends LabelmapBaseTool {
 
     // If rendering engine has been destroyed while rendering
     if (!viewport.getRenderingEngine()) {
-      console.warn('Rendering Engine has been destroyed');
+      cs3dLogger.warn('Rendering Engine has been destroyed');
       return renderStatus;
     }
 

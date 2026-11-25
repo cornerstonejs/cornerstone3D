@@ -5,6 +5,18 @@ import { getViewportIdsWithSegmentation } from './getViewportIdsWithSegmentation
 import { triggerSegmentationModified } from './triggerSegmentationEvents';
 import { getActiveSegmentIndex } from './getActiveSegmentIndex';
 import { getSegmentationRepresentations } from './getSegmentationRepresentation';
+import {
+  ensureLabelmapState,
+  getSegmentBinding,
+  getLabelmaps,
+  setSegmentBinding,
+  syncLegacyLabelmapData,
+} from './helpers/labelmapSegmentationState';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'stateManagement.segmentation.segmentIndex'
+);
 
 /**
  * Set the active segment index for a segmentation Id. It fires a global state
@@ -23,7 +35,7 @@ function setActiveSegmentIndex(
   const segmentation = getSegmentation(segmentationId);
 
   if (typeof segmentIndex === 'string') {
-    console.warn('segmentIndex is a string, converting to number');
+    cs3dLogger.warn('segmentIndex is a string, converting to number');
     segmentIndex = Number(segmentIndex);
   }
 
@@ -40,6 +52,33 @@ function setActiveSegmentIndex(
       cachedStats: {},
       active: false,
     };
+
+    if (segmentation.representationData?.Labelmap) {
+      ensureLabelmapState(segmentation);
+      const primaryLayer = getLabelmaps(segmentation)[0];
+      if (primaryLayer) {
+        setSegmentBinding(segmentation, segmentIndex, {
+          labelmapId: primaryLayer.labelmapId,
+          labelValue: segmentIndex,
+        });
+        syncLegacyLabelmapData(segmentation);
+      }
+    }
+  }
+
+  if (
+    segmentation.representationData?.Labelmap &&
+    !getSegmentBinding(segmentation, segmentIndex)
+  ) {
+    ensureLabelmapState(segmentation);
+    const primaryLayer = getLabelmaps(segmentation)[0];
+    if (primaryLayer) {
+      setSegmentBinding(segmentation, segmentIndex, {
+        labelmapId: primaryLayer.labelmapId,
+        labelValue: segmentIndex,
+      });
+      syncLegacyLabelmapData(segmentation);
+    }
   }
 
   if (segmentation.segments[segmentIndex].active !== true) {

@@ -1,11 +1,26 @@
 import type { RenderingEngineModeType } from '../types';
+import type { RenderBackendValue, VoxelManagerEnum } from '../enums';
+
+/** Which lossy downsampling the viewer may use. See `rendering.lossyDownsampling`. */
+interface LossyDownsampling {
+  final?: boolean;
+  interactive?: boolean;
+  interleavedLoading?: boolean;
+}
 
 interface Cornerstone3DConfig {
-  gpuTier?: { tier?: number };
   /**
    * Whether the device is mobile or not.
    */
   isMobile?: boolean;
+
+  /**
+   * When true, viewports do not show the built-in fidelity indicator. For an
+   * application that shows its own indicator, for example OHIF. Dangerous:
+   * without such an indicator the user sees lossy pixels with no disclosure
+   * (FIDELITY-CONF-4).
+   */
+  dangerouslyDisableFidelityIndicator?: boolean;
 
   rendering?: {
     // vtk.js supports 8bit integer textures and 32bit float textures.
@@ -20,7 +35,18 @@ interface Cornerstone3DConfig {
     // Read more in the following Pull Request:
     // 1. HalfFloat: https://github.com/Kitware/vtk-js/pull/2046
     // 2. Norm16: https://github.com/Kitware/vtk-js/pull/2058
+    //
+    // Applies to the legacy volume-actor pipeline; GenericViewport render
+    // paths resolve texture formats through the probed capability profile
+    // (see utilities/renderingCapabilities) and do not consult this flag.
     preferSizeOverAccuracy?: boolean;
+    /**
+     * Forces CPU rendering for legacy viewports.
+     * @deprecated For GenericViewport-based viewports use
+     * `renderBackend: 'cpu'` instead. This flag remains the control for
+     * legacy viewports and is still honored by the 'auto' backend
+     * resolution.
+     */
     useCPURendering?: boolean;
     /**
      * Use the legacy camera field of view calculation method which uses bounds
@@ -40,6 +66,28 @@ interface Cornerstone3DConfig {
     strictZSpacingForVolumeViewport?: boolean;
 
     /**
+     * EXPERIMENTAL, and off by default. Which measure gives the distance
+     * between two adjacent slices of a volume viewport.
+     *
+     * - `'l2'` - the default and the historic behaviour.
+     *   `getSpacingInNormalDirection` gives the L2 length of the projected
+     *   spacing vector, `sqrt( Σᵢ (n · aᵢ · sᵢ)² )`.
+     * - `'l1'` - `getVoxelThicknessAlongNormal` gives the L1 length,
+     *   `Σᵢ |n · aᵢ| · sᵢ`, which is how far one voxel reaches along the
+     *   normal.
+     *
+     * The two measures are equal when the normal is parallel to a voxel axis,
+     * so an acquisition-orientation view behaves the same either way. The L2
+     * value is the smaller one for an oblique normal, so the viewport steps
+     * less than the width of one voxel, and two adjacent oblique slices show
+     * some of the same voxels. A brush fill on an oblique plane then appears
+     * on the next slice and on the previous slice.
+     *
+     * See https://github.com/cornerstonejs/cornerstone3D/issues/2912.
+     */
+    sliceStepMeasure?: 'l1' | 'l2';
+
+    /**
      * The rendering engine mode to use.
      * 'contextPool' is the a rendering engine that uses sequential rendering, pararllization and has enhanced support/performance for multi-monitor and high resolution displays.
      * 'tiled' is a rendering engine that uses tiled rendering.
@@ -51,10 +99,108 @@ interface Cornerstone3DConfig {
      * The default value is 7, which is suitable for mobile/desktop.
      */
     webGlContextCount?: number;
+    planar?: {
+      /**
+       * The render backend preference for planar GenericViewports: 'gpu',
+       * 'cpu', or any backend registered via `registerRenderBackend()` pin
+       * the backend, 'auto' (default) resolves it from the capability
+       * detection performed at init() and the deprecated useCPURendering
+       * flag. Per-display-set `renderBackend` mount options override this
+       * value; use setRenderBackend() to change it at runtime with a live
+       * render-path swap. Legacy viewports (StackViewport et al.) keep
+       * reading `useCPURendering` and are not governed by this flag.
+       */
+      renderBackend?: RenderBackendValue;
+      cpuVolume?: {
+        /**
+         * When true, LINEAR CPU volume slices are sampled into a viewport-sized
+         * image even when an orthogonal source slice could be reused. This
+         * improves GPU parity for reconstructed planes. Set to false to keep
+         * the source-slice shortcut.
+         */
+        useViewportSamplingForLinear?: boolean;
+        /**
+         * Minimum delay between CPU volume re-renders triggered by
+         * progressive IMAGE_VOLUME_MODIFIED updates. Defaults to 50ms.
+         * A value of 0 disables throttling and preserves immediate rendering
+         * on every update.
+         */
+        volumeModifiedThrottleMs?: number;
+      };
+    };
     volumeRendering?: {
       /** Multiplier for the calculated sample distance */
       sampleDistanceMultiplier?: number;
     };
+    /**
+     * The work that one render does to fill the dirty slices of a reduced
+     * volume texture. The render stops after `maxSlicesPerRender` slices that
+     * hold data, or when `maxMillisecondsPerRender` has passed after at least
+     * one slice. It then requests another render for the slices that remain.
+     * The defaults are 16 slices and 8 ms. A value below 1 slice counts as 1.
+     */
+    reducedTextureFill?: {
+      maxSlicesPerRender?: number;
+      maxMillisecondsPerRender?: number;
+    };
+    /**
+     * Which lossy downsampling the viewer may use. Each kind shows pixels that
+     * differ from the source data, so an application turns on a kind only
+     * when it also shows a fidelity indication.
+     *
+     * - `final` reduces a volume texture that exceeds the active GPU settings
+     *   (see `setGpuSettingsPreset`), so the image stays reduced after all of
+     *   the data loads. Off by default: a volume then gets a full-resolution
+     *   texture whatever its size, as before the GPU settings existed.
+     * - `interactive` lowers the detail while the user interacts, for example
+     *   a larger sample distance during a 3D rotation. The full detail
+     *   returns when the interaction ends. On by default.
+     * - `interleavedLoading` fills the frames that have not loaded yet with
+     *   copies of the nearby loaded frames, so the whole volume shows early.
+     *   Each frame becomes exact when its own data loads. On by default.
+     *
+     * Read the merged value with `getLossyDownsampling`. A change applies to
+     * the next texture that a viewport provisions and to the next load.
+     */
+    lossyDownsampling?: LossyDownsampling;
+    /**
+     * When true, legacy viewport types (STACK, ORTHOGRAPHIC, VIDEO, ECG,
+     * WHOLE_SLIDE) are internally backed by GenericViewport implementations
+     * through legacy compatibility adapters at viewport creation time.
+     */
+    useGenericViewport?: boolean;
+  };
+
+  /**
+   * Core configuration for the labelmap images that core itself creates. This
+   * is not the segmentation configuration of cstools: `overwriteMode` and the
+   * rest of `SegmentationConfig` in `packages/tools/src/config.ts` describe
+   * display and editing behaviour, which cstools owns. A setting here describes
+   * how core allocates an image, so it stays beside the loader that reads it,
+   * which cstools cannot do - core cannot import cstools.
+   */
+  segmentation?: {
+    /**
+     * The voxel representation labelmap images are created with, for callers
+     * that do not ask for one (see `createAndCacheDerivedLabelmapImage(s)`).
+     *
+     * `'Volume'` (default) gives every labelmap a full frame buffer - one byte
+     * per pixel per slice, segmented or not. `'RLE'` stores each frame as runs
+     * instead, which on a large multi-segment SEG (a whole-body AI
+     * segmentation, say) is a fraction of the memory, and answers per-row
+     * questions ("is segment N on this slice?") from the runs rather than a
+     * whole-frame scan. Hosts that read labelmap pixels directly should opt in
+     * knowingly: an RLE frame's `getScalarData()` is a fresh expansion, not the
+     * writable buffer, so in-place writes to it are discarded
+     * (`getWritableScalarData()` returns undefined for such a frame).
+     *
+     * Accepts the bare string as well as the enum member, so this can come
+     * straight from a host's JSON/deployment configuration. The value is
+     * matched exactly; anything else warns and falls back to `'Volume'` rather
+     * than being silently ignored (see
+     * `getDefaultLabelmapVoxelRepresentation`).
+     */
+    labelmapVoxelRepresentation?: VoxelManagerEnum | `${VoxelManagerEnum}`;
   };
 
   debug: {
@@ -65,6 +211,12 @@ interface Cornerstone3DConfig {
      * - MB MBytes of allocated memory. (Run Chrome with --enable-precise-memory-info)
      */
     statsOverlay?: boolean;
+    /**
+     * When true, the fidelity indicator also shows the verbose text badge
+     * (top-left) beside the fidelity text label (top-right).
+     * When false/unset (default), only the text label is shown.
+     */
+    fidelityIndicatorDebug?: boolean;
   };
 
   /**
@@ -76,4 +228,4 @@ interface Cornerstone3DConfig {
   peerImport?: (moduleId: string) => Promise<any>;
 }
 
-export type { Cornerstone3DConfig as default };
+export type { Cornerstone3DConfig as default, LossyDownsampling };

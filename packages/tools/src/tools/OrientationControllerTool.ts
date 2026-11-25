@@ -7,9 +7,17 @@ import {
 import type { Types } from '@cornerstonejs/core';
 import type { Point3 } from '@cornerstonejs/core/types';
 import { getToolGroup } from '../store/ToolGroupManager';
+import setViewportCamera, {
+  resetViewportCamera,
+} from '../utilities/setViewportCamera';
 import * as ToolsEnums from '../enums';
 import { vec3, mat4, quat } from 'gl-matrix';
 import { vtkOrientationControllerWidget } from '../utilities/vtkjs/OrientationControllerWidget';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.OrientationControllerTool'
+);
 
 /**
  * OrientationControllerTool provides an interactive orientation marker
@@ -397,14 +405,14 @@ class OrientationControllerTool extends BaseTool {
     );
 
     if (!enabledElement) {
-      console.warn('OrientationControllerTool: No enabled element found');
+      cs3dLogger.warn('OrientationControllerTool: No enabled element found');
       return;
     }
 
     const { viewport } = enabledElement;
 
     if (!(viewport as Types.IViewport).isOrientationChangeable()) {
-      console.warn(
+      cs3dLogger.warn(
         'OrientationControllerTool: Viewport does not support orientation changes'
       );
       return;
@@ -424,7 +432,7 @@ class OrientationControllerTool extends BaseTool {
     );
 
     if (!positioned) {
-      console.warn(
+      cs3dLogger.warn(
         'OrientationControllerTool: Initial positioning failed, retrying...'
       );
       setTimeout(() => {
@@ -436,7 +444,7 @@ class OrientationControllerTool extends BaseTool {
         if (repositioned) {
           viewport.render();
         } else {
-          console.error(
+          cs3dLogger.error(
             'OrientationControllerTool: Retry positioning also failed'
           );
         }
@@ -713,11 +721,11 @@ class OrientationControllerTool extends BaseTool {
       const interpolatedForward = interpolatedMatrix.slice(8, 11) as Point3;
       const interpolatedUp = interpolatedMatrix.slice(4, 7) as Point3;
 
-      viewport.setCamera({
+      setViewportCamera(viewport, {
         viewPlaneNormal: isLastStep ? finalNormal : interpolatedForward,
         viewUp: isLastStep ? finalUp : interpolatedUp,
       });
-      viewport.resetCamera(ANIMATE_RESET_CAMERA_OPTIONS);
+      resetViewportCamera(viewport, ANIMATE_RESET_CAMERA_OPTIONS);
 
       viewport.render();
 

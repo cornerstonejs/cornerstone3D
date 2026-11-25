@@ -46,12 +46,12 @@ element.oncontextmenu = (e) => e.preventDefault();
 element2.oncontextmenu = (e) => e.preventDefault();
 
 element.id = 'cornerstone-element';
-element.style.width = '500px';
-element.style.height = '500px';
+element.style.width = '512px';
+element.style.height = '512px';
 
 element2.id = 'cornerstone-element';
-element2.style.width = '500px';
-element2.style.height = '500px';
+element2.style.width = '512px';
+element2.style.height = '512px';
 
 viewportGrid.appendChild(element);
 viewportGrid.appendChild(element2);

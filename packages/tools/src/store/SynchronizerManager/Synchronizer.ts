@@ -8,6 +8,11 @@ import {
 } from '@cornerstonejs/core';
 
 import type { ISynchronizerEventHandler } from '../../types';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'store.SynchronizerManager.Synchronizer'
+);
 
 type eventSource = 'element' | 'eventTarget';
 
@@ -19,7 +24,9 @@ type auxiliaryEvent = {
 export type SynchronizerOptions = {
   auxiliaryEvents?: auxiliaryEvent[];
   eventSource?: eventSource;
-  viewPresentation?: Types.ViewPresentation;
+  viewPresentation?: Types.ViewPresentationSelector;
+  syncInvertState?: boolean;
+  syncColormap?: boolean;
 };
 
 /**
@@ -34,6 +41,7 @@ class Synchronizer {
   private _eventName: string;
   private _auxiliaryEvents: auxiliaryEvent[];
   private _eventHandler: ISynchronizerEventHandler;
+  private _eventListener: EventListenerOrEventListenerObject;
   private _eventSource: eventSource;
   private _ignoreFiredEvents: boolean;
   private _sourceViewports: Array<Types.IViewportId>;
@@ -51,6 +59,7 @@ class Synchronizer {
     this._enabled = true;
     this._eventName = eventName;
     this._eventHandler = eventHandler;
+    this._eventListener = this._onEvent.bind(this);
     this._ignoreFiredEvents = false;
     this._sourceViewports = [];
     this._targetViewports = [];
@@ -119,7 +128,7 @@ class Synchronizer {
       getRenderingEngine(renderingEngineId).getViewport(viewportId);
 
     if (!viewport) {
-      console.warn(
+      cs3dLogger.warn(
         `Synchronizer.addSource: No viewport for ${renderingEngineId} ${viewportId}`
       );
       return;
@@ -128,12 +137,12 @@ class Synchronizer {
     const eventSource =
       this._eventSource === 'element' ? viewport.element : eventTarget;
 
-    eventSource.addEventListener(this._eventName, this._onEvent.bind(this));
+    eventSource.addEventListener(this._eventName, this._eventListener);
 
     // Use a default source of 'element' if not provided just like we do for the main event.
     this._auxiliaryEvents.forEach(({ name, source = 'element' }) => {
       const target = source === 'element' ? viewport.element : eventTarget;
-      target.addEventListener(name, this._onEvent.bind(this));
+      target.addEventListener(name, this._eventListener);
     });
 
     this._updateDisableHandlers();
@@ -203,16 +212,14 @@ class Synchronizer {
 
     this._sourceViewports.splice(index, 1);
 
-    //@ts-ignore
-    eventSource.removeEventListener(this._eventName, this._eventHandler);
+    eventSource.removeEventListener(this._eventName, this._eventListener);
 
-    this._auxiliaryEvents.forEach(({ name, source }) => {
+    this._auxiliaryEvents.forEach(({ name, source = 'element' }) => {
       const target =
         source === 'element'
           ? this.getViewportElement(viewportInfo)
           : eventTarget;
-      //@ts-ignore
-      target.removeEventListener(name, this._eventHandler);
+      target.removeEventListener(name, this._eventListener);
     });
 
     this._updateDisableHandlers();
@@ -257,7 +264,7 @@ class Synchronizer {
 
   private fireEvent(
     sourceViewport: Types.IViewportId,
-    sourceEvent: unknown
+    sourceEvent: Event
   ): void {
     if (this.isDisabled() || this._ignoreFiredEvents) {
       return;
@@ -290,7 +297,7 @@ class Synchronizer {
         }
       }
     } catch (ex) {
-      console.warn(`Synchronizer, for: ${this._eventName}`, ex);
+      cs3dLogger.warn(`Synchronizer, for: ${this._eventName}`, ex);
     } finally {
       if (promises.length) {
         Promise.allSettled(promises).then(() => {

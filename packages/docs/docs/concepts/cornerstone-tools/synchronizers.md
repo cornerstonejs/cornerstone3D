@@ -90,6 +90,14 @@ const axialSync = createCameraPositionSynchronizer('axialSync')[
 
 Internally, upon camera modified event on the source viewport, `cameraSyncCallback` runs to synchronize all the target viewports.
 
+For direct Generic/Next viewports, synchronizers should avoid treating
+`ICamera` as a universal state object. Read portable presentation through
+`viewportProjection.getPresentation(sourceViewport, { selector })`, translate it
+for the target with `viewportProjection.withPresentation(targetViewport,
+presentation)`, and then apply the returned native state with
+`targetViewport.setViewState(nextViewState)`. The projection service is pure and
+does not mutate either viewport.
+
 #### VOI Synchronizer
 
 It synchronizes the VOI between the viewports. For instance, if in the 3x3 layout of PET/CT, the CT image contrast gets manipulated, we want the fusion viewports to reflect the change as well.

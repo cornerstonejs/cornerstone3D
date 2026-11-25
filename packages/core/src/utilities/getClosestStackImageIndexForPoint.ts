@@ -1,6 +1,7 @@
 import { vec3 } from 'gl-matrix';
 import * as planar from './planar';
 import * as metaData from '../metaData';
+import { MetadataModules } from '../enums';
 import type { IStackViewport, Point3 } from '../types';
 
 /**
@@ -91,7 +92,7 @@ function getPlaneMetadata(imageId: string): null | {
   imagePositionPatient: Point3;
   planeNormal: Point3;
 } {
-  const targetImagePlane = metaData.get('imagePlaneModule', imageId);
+  const targetImagePlane = metaData.get(MetadataModules.IMAGE_PLANE, imageId);
 
   if (
     !targetImagePlane ||

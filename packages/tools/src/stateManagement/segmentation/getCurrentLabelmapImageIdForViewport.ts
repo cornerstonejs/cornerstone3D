@@ -1,4 +1,7 @@
 import { defaultSegmentationStateManager } from './SegmentationStateManager';
+import { getSegmentation } from './getSegmentation';
+import { getActiveSegmentIndex } from './getActiveSegmentIndex';
+import { getLabelmapForSegment } from './helpers/labelmapSegmentationState';
 
 /**
  * Retrieves the labelmap image IDs for a specific viewport and segmentation representation.
@@ -24,7 +27,24 @@ export function getCurrentLabelmapImageIdForViewport(
     return;
   }
 
-  return imageIds[0];
+  if (imageIds.length === 1) {
+    return imageIds[0];
+  }
+
+  const segmentation = getSegmentation(segmentationId);
+  const activeSegmentIndex = getActiveSegmentIndex(segmentationId);
+  const activeLayer = activeSegmentIndex
+    ? getLabelmapForSegment(segmentation, activeSegmentIndex)
+    : undefined;
+
+  if (!activeLayer?.imageIds?.length) {
+    return imageIds[0];
+  }
+
+  return (
+    imageIds.find((imageId) => activeLayer.imageIds.includes(imageId)) ??
+    imageIds[0]
+  );
 }
 
 /**

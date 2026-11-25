@@ -1,0 +1,139 @@
+---
+id: saving
+title: Saving and Replacing
+summary: How a stored segmentation, structure set or report either starts a new series or becomes the next revision of an existing one, what makes a viewer show the revision instead of the original, and how the object names the software that wrote it
+---
+
+# Saving and Replacing
+
+A segmentation is stored as a derived DICOM object: a SEG instance built from the
+images it was drawn on. A structure set (RTSTRUCT) and a measurement report (SR)
+are derived objects in the same way, and everything on this page applies to all
+three.
+
+There are two ways to store one, and the difference is a single option.
+
+## A new series
+
+With no predecessor, the adapter builds the object on a dcmjs derivation, and
+that derivation invents the series it belongs to: a fresh `SeriesInstanceUID`,
+the description `Research Derived series`, the number `99`, and the current UTC
+date and time. The stored object is the first instance of a series of its own.
+
+This is what you want for a segmentation the user has just created.
+
+## A revision of an existing series
+
+Pass `predecessorImageId` — the image id of the instance the new object
+supersedes — and the object joins that instance's series instead:
+
+```js
+const { dataset } = generateSegmentation(
+  referencedImages,
+  labelmaps3D,
+  metaData,
+  { predecessorImageId }
+);
+```
+
+`generateRTSSFromRepresentation` and `MeasurementReport.generateReport` take the
+same option. All three read it through the `PredecessorSequence` metadata
+module, which supplies three things:
+
+| What                           | Taken from                                   | Effect                                                                      |
+| ------------------------------ | -------------------------------------------- | --------------------------------------------------------------------------- |
+| The series attributes          | the predecessor's General Series module      | The revision lands in the same series, with the same number and description |
+| `InstanceNumber`               | the predecessor's, plus one                  | The revision sorts after the instance it supersedes                         |
+| `PredecessorDocumentsSequence` | the predecessor's study, series and SOP UIDs | The revision names what it supersedes                                       |
+
+Only the attributes the predecessor actually carries are copied, so a gap in the
+predecessor never clears a value the derivation has already set.
+
+## Which instance a viewer shows
+
+Nothing in the stored object marks one instance as "the" segmentation of a
+series. What the revision carries is enough for a viewer to decide:
+
+- it is in the **same series** as the predecessor, so a viewer that lists one
+  entry per series has a single entry for the whole chain;
+- it has a **higher `InstanceNumber`**;
+- it names its predecessor in **`PredecessorDocumentsSequence`**, so the order of
+  a chain of revisions is recoverable however the instances are numbered.
+
+A viewer that shows the most recently created instance of the series therefore
+shows the revision, and the original stays retrievable behind it. The
+application that stores the object is responsible for stamping the instance level
+creation date and time on every save; the series level `SeriesDate` and
+`SeriesTime` belong to the series that already exists and must not be restamped.
+
+## Recording the predecessor
+
+`Segmentation.predecessorImageId` holds the instance a segmentation was loaded
+from, or was last stored as, and `Annotation.predecessorImageId` does the same
+for an annotation. Read it when the user saves, and a second save writes a second
+revision rather than a second series.
+
+## When the predecessor cannot be used
+
+The module answers `undefined` if no metadata provider holds the image id — a
+stale id, or an instance that was never ingested. Every caller merges that answer
+as a no-op, so the save still succeeds, but the object starts a new series and
+names no predecessor. The module logs a warning naming the image id, and that
+warning is the only report the caller gets.
+
+The module throws if a provider holds the image id but carries no
+`StudyInstanceUID`, or no `SeriesInstanceUID`. Both attributes are Type 1 in
+`PredecessorDocumentsSequence`. The module cannot write the sequence without
+them, and a stored object that names an empty predecessor is worse for the user
+than a save that fails and says why.
+
+## The writer of the object
+
+Each save function writes three header attributes that name the software that
+wrote the object. This applies to the SEG (`generateSegmentation`), the
+RTSTRUCT (`generateRTSSFromRepresentation`) and the SR
+(`MeasurementReport.generateReport`), and also to the legacy Cornerstone SR and
+SEG adapters. A value in `options` wins over the default. For `Manufacturer`
+and `ManufacturerModelName`, a value with no value (`undefined`, `''`, `null`,
+`[]` or `['']`) gets the default. For `SoftwareVersions`, only `undefined` gets
+the default. Any other value with no value writes an empty `SoftwareVersions`:
+
+| Attribute               | Option                  | Default                             |
+| ----------------------- | ----------------------- | ----------------------------------- |
+| `Manufacturer`          | `Manufacturer`          | `CornerstoneJS`                     |
+| `ManufacturerModelName` | `ManufacturerModelName` | `@cornerstonejs/adapters`           |
+| `SoftwareVersions`      | `SoftwareVersions`      | the adapters version, e.g. `5.13.2` |
+
+Each instance names the software that wrote it. A revision that is saved into
+an existing series (`predecessorImageId`) does not copy the writer of its
+predecessor, so the instances of one series can name different writers or
+versions.
+
+The `MetadataModules.NEW_INSTANCE_DATA` metadata module (`'NewInstanceData'`)
+also holds the three defaults, so every instance that `createInstance` builds
+from it names the adapters as its writer unless the options give a value.
+
+For the RTSTRUCT, the writer values come first from `options`, then from the
+adapters default, and only then from the instance provider. A custom
+`RtssInstanceData` or `NewInstanceData` provider therefore cannot set the
+writer; pass the values in `options`.
+
+`utilities.getWriterHeader(options)` gives the three values, and
+`utilities.DEFAULT_WRITER_HEADER` holds the defaults.
+
+An application that builds on the adapters should pass its own values, for
+example its name in `Manufacturer` and both its version and the adapters
+`version` (exported from `@cornerstonejs/adapters`) in `SoftwareVersions`. Pass
+the same options to each of the three functions:
+
+```js
+import { version } from '@cornerstonejs/adapters';
+
+const writer = {
+  Manufacturer: 'MyViewer',
+  SoftwareVersions: ['MyViewer 2.1.0', `CS3D ${version}`],
+};
+generateSegmentation(images, labelmaps, metaData, { ...writer });
+generateRTSSFromRepresentation(segmentation, { ...writer });
+MeasurementReport.generateReport(toolState, metaData, { ...writer });
+```

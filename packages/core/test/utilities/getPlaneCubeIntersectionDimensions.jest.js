@@ -60,6 +60,14 @@ function createMockImageData(extent, spacing, origin, direction) {
 
   return {
     getExtent: () => extent,
+    getSpatialExtent: () => [
+      extent[0] - 0.5,
+      extent[1] + 0.5,
+      extent[2] - 0.5,
+      extent[3] + 0.5,
+      extent[4] - 0.5,
+      extent[5] + 0.5,
+    ],
     getSpacing: () => spacing,
     getOrigin: () => origin,
     indexToWorld: (index, out) => {

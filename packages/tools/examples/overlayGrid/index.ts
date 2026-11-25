@@ -37,7 +37,7 @@ setTitleAndDescription(
   'Here we demonstrate overlay grid tool working. The two viewports on the left are from the same CT series while the right viewport is from a PET series. '
 );
 
-const size = '500px';
+const size = '512px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 

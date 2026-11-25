@@ -12,6 +12,10 @@ module.exports = {
   baseUrl: '/',
   onBrokenLinks: 'log',
   onBrokenMarkdownLinks: 'warn',
+  markdown: {
+    mermaid: true,
+  },
+  themes: ['@docusaurus/theme-mermaid'],
   favicon: 'img/favicon.ico',
   organizationName: 'cornerstoneJS', // Usually your GitHub org/user name.
   projectName: 'cornerstone3D', // Usually your repo name.
@@ -73,8 +77,8 @@ module.exports = {
           ],
         },
         {
-          to: '/docs/migration-guides/4x',
-          label: '4.0 Migration Guides',
+          to: '/docs/migration-guides/5x',
+          label: '5.0 Migration Guides',
           position: 'left',
           className: 'new-badge',
         },
@@ -223,7 +227,7 @@ module.exports = {
           onlyIncludeVersions: ['current'],
           versions: {
             current: {
-              label: `4.0 (Latest)`,
+              label: `5.0 (Latest)`,
             },
           },
         },
@@ -260,6 +264,7 @@ module.exports = {
             tsconfig: `../${pkg}/tsconfig.json`,
             exclude: [`../${pkg}/test/**/*`, `../${pkg}/jest.config.js`],
             skipErrorChecking: true,
+            sanitizeComments: true,
           },
         ]);
       }

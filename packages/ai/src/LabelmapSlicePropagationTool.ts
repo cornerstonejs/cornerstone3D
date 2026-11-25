@@ -1,6 +1,11 @@
 import { getEnabledElementByViewportId } from '@cornerstonejs/core';
 import { LabelmapBaseTool } from '@cornerstonejs/tools';
 import ONNXSegmentationController from './ONNXSegmentationController';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.aiLog.getLogger(
+  'LabelmapSlicePropagationTool'
+);
 
 /**
  * Represents a tool used for segment selection and AI-assisted segmentation.
@@ -25,13 +30,13 @@ class LabelmapSlicePropagationTool extends LabelmapBaseTool {
           sam_b: [
             {
               name: 'sam-b-encoder',
-              url: 'https://huggingface.co/schmuell/sam-b-fp16/resolve/main/sam_vit_b_01ec64.encoder-fp16.onnx',
+              url: 'https://huggingface.co/schmuell/sam-b-fp16/resolve/b64d0347d4d2cafd9a4e43b38853d6b5daa319fb/sam_vit_b_01ec64.encoder-fp16.onnx',
               size: 180,
               key: 'encoder',
             },
             {
               name: 'sam-b-decoder',
-              url: 'https://huggingface.co/schmuell/sam-b-fp16/resolve/main/sam_vit_b_01ec64.decoder.onnx',
+              url: 'https://huggingface.co/schmuell/sam-b-fp16/resolve/b64d0347d4d2cafd9a4e43b38853d6b5daa319fb/sam_vit_b_01ec64.decoder.onnx',
               size: 17,
               key: 'decoder',
             },
@@ -76,7 +81,7 @@ class LabelmapSlicePropagationTool extends LabelmapBaseTool {
     const enabledElement = getEnabledElementByViewportId(sourceViewportId);
 
     if (!enabledElement) {
-      console.debug(
+      cs3dLogger.debug(
         'No enabled element found for viewportId:',
         sourceViewportId
       );

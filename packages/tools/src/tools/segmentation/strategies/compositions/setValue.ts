@@ -1,6 +1,8 @@
 import type { InitializedOperationData } from '../BrushStrategy';
 import StrategyCallbacks from '../../../../enums/StrategyCallbacks';
 import { handleUseSegmentCenterIndex } from '../utils/handleUseSegmentCenterIndex';
+import { getSegmentation } from '../../../../stateManagement/segmentation/getSegmentation';
+import { getSegmentIndexForLabelValue } from '../../../../stateManagement/segmentation/helpers/labelmapSegmentationState';
 
 /**
  * Creates a set value function which will apply the specified segmentIndex
@@ -21,33 +23,58 @@ export default {
       segmentationVoxelManager,
       centerSegmentIndexInfo,
       segmentIndex,
+      labelValue,
+      labelmapId,
+      segmentationId,
+      labelmapEditTransaction,
     } = operationData;
 
     const existingValue = segmentationVoxelManager.getAtIndex(index);
+    const segmentation = getSegmentation(segmentationId);
+    const existingSegmentIndex =
+      segmentation && labelmapId
+        ? getSegmentIndexForLabelValue(segmentation, labelmapId, existingValue)
+        : existingValue;
+    const writeValue = previewSegmentIndex ?? labelValue ?? segmentIndex;
 
-    if (segmentsLocked.includes(value)) {
+    if (segmentsLocked.includes(existingSegmentIndex)) {
       return;
     }
 
-    if (!centerSegmentIndexInfo && existingValue === segmentIndex) {
+    // A locked segment on another layer of the segmentation also stops the
+    // brush, for example after a move of the edited segment to a private layer.
+    if (
+      writeValue &&
+      labelmapEditTransaction?.lockedVoxelsOnOtherLayers?.some(
+        ({ voxelManager, labelValues }) =>
+          labelValues.has(voxelManager.getAtIndex(index))
+      )
+    ) {
+      return;
+    }
+
+    if (
+      !centerSegmentIndexInfo &&
+      existingValue === (labelValue ?? segmentIndex)
+    ) {
       return;
     }
 
     if (
       centerSegmentIndexInfo?.segmentIndex !== 0 &&
-      existingValue === segmentIndex
+      existingValue === (labelValue ?? segmentIndex)
     ) {
       return;
     }
 
     // this means we have previewSegmentIndex
     if (centerSegmentIndexInfo?.segmentIndex === null) {
-      memo.voxelManager.setAtIndex(index, previewSegmentIndex ?? segmentIndex);
+      memo.voxelManager.setAtIndex(index, writeValue);
       return;
     }
 
     if (!previewSegmentIndex) {
-      let useSegmentIndex = segmentIndex;
+      let useSegmentIndex = labelValue ?? segmentIndex;
       if (centerSegmentIndexInfo) {
         useSegmentIndex = centerSegmentIndexInfo.segmentIndex;
       }

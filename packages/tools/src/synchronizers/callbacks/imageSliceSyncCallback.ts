@@ -1,6 +1,7 @@
 import { vec3, mat4 } from 'gl-matrix';
 import type { Types } from '@cornerstonejs/core';
 import {
+  ActorRenderMode,
   getRenderingEngine,
   metaData,
   utilities,
@@ -15,6 +16,64 @@ const getSpatialRegistration = (targetId, sourceId) =>
     targetId,
     sourceId
   );
+
+/**
+ * The frames of reference that each registration calculated by this callback
+ * came from, keyed by `${sourceViewportId}_${targetViewportId}`.  The
+ * registration is cached by viewport id only, so when a viewport shows a
+ * series of a different frame of reference, the cached registration is stale
+ * and is removed.  Registrations that an application adds itself are not
+ * tracked here and are never removed by this callback.
+ */
+const calculatedRegistrationFrames = new Map<string, string>();
+
+function removeStaleRegistration(sourceId, targetId, sourceFOR, targetFOR) {
+  const frames = calculatedRegistrationFrames.get(`${sourceId}_${targetId}`);
+  if (frames === undefined || frames === `${sourceFOR}_${targetFOR}`) {
+    return;
+  }
+  utilities.spatialRegistrationMetadataProvider.add(
+    [sourceId, targetId],
+    undefined
+  );
+  utilities.spatialRegistrationMetadataProvider.add(
+    [targetId, sourceId],
+    undefined
+  );
+  calculatedRegistrationFrames.delete(`${sourceId}_${targetId}`);
+  calculatedRegistrationFrames.delete(`${targetId}_${sourceId}`);
+}
+
+function isVolumeSliceViewport(
+  viewport: Types.IStackViewport | Types.IVolumeViewport
+): boolean {
+  if (viewport instanceof VolumeViewport) {
+    return true;
+  }
+
+  // Direct Generic ("next") planar viewports are not VolumeViewport instances;
+  // use their content-true mode to detect volume-backed slice rendering (so the
+  // stack-is-reversed index flip below is applied correctly).
+  if (utilities.viewportIsInVolumeMode(viewport)) {
+    return true;
+  }
+
+  const getDefaultActor = (
+    viewport as Types.IViewport & {
+      getDefaultActor?: () => {
+        actorMapper?: {
+          renderMode?: unknown;
+        };
+      };
+    }
+  ).getDefaultActor;
+  const renderMode = getDefaultActor?.call(viewport)?.actorMapper?.renderMode;
+
+  return (
+    renderMode === ActorRenderMode.CPU_VOLUME ||
+    renderMode === ActorRenderMode.VTK_VOLUME_SLICE
+  );
+}
 
 /**
  * Synchronizer callback to synchronize the source viewport image to the
@@ -76,14 +135,20 @@ export default async function imageSliceSyncCallback(
   // if the frame of reference is different we need to use the registrationMetadataProvider
   // and add that to the imagePositionPatient of the source viewport to get the
   // imagePositionPatient of the target viewport's closest image in its stack
-  let registrationMatrixMat4 = getSpatialRegistration(
-    targetViewport.viewportId,
-    sourceViewport.viewportId
+  const sourceId = sourceViewport.viewportId;
+  const targetId = targetViewport.viewportId;
+  const frameOfReferenceUID1 = sViewport.getFrameOfReferenceUID();
+  const frameOfReferenceUID2 = tViewport.getFrameOfReferenceUID();
+  removeStaleRegistration(
+    sourceId,
+    targetId,
+    frameOfReferenceUID1,
+    frameOfReferenceUID2
   );
 
+  let registrationMatrixMat4 = getSpatialRegistration(targetId, sourceId);
+
   if (!registrationMatrixMat4) {
-    const frameOfReferenceUID1 = sViewport.getFrameOfReferenceUID();
-    const frameOfReferenceUID2 = tViewport.getFrameOfReferenceUID();
     if (
       frameOfReferenceUID1 === frameOfReferenceUID2 &&
       options?.useInitialPosition !== false
@@ -91,10 +156,17 @@ export default async function imageSliceSyncCallback(
       registrationMatrixMat4 = mat4.identity(mat4.create());
     } else {
       utilities.calculateViewportsSpatialRegistration(sViewport, tViewport);
-      registrationMatrixMat4 = getSpatialRegistration(
-        targetViewport.viewportId,
-        sourceViewport.viewportId
-      );
+      registrationMatrixMat4 = getSpatialRegistration(targetId, sourceId);
+      if (registrationMatrixMat4) {
+        calculatedRegistrationFrames.set(
+          `${sourceId}_${targetId}`,
+          `${frameOfReferenceUID1}_${frameOfReferenceUID2}`
+        );
+        calculatedRegistrationFrames.set(
+          `${targetId}_${sourceId}`,
+          `${frameOfReferenceUID2}_${frameOfReferenceUID1}`
+        );
+      }
     }
     if (!registrationMatrixMat4) {
       return;
@@ -117,7 +189,7 @@ export default async function imageSliceSyncCallback(
   );
 
   let imageIndexToSet = closestImageIdIndex2.index;
-  if (tViewport instanceof VolumeViewport) {
+  if (isVolumeSliceViewport(tViewport)) {
     // since in case of volume viewport our stack is reversed, we should
     // reverse the index as well
     imageIndexToSet = targetImageIds.length - closestImageIdIndex2.index - 1;
@@ -125,7 +197,7 @@ export default async function imageSliceSyncCallback(
 
   if (
     closestImageIdIndex2.index !== -1 &&
-    tViewport.getCurrentImageIdIndex() !== closestImageIdIndex2.index
+    tViewport.getCurrentImageIdIndex() !== imageIndexToSet
   ) {
     await utilities.jumpToSlice(tViewport.element, {
       imageIndex: imageIndexToSet,

@@ -1,4 +1,4 @@
-import { getEnabledElementByViewportId } from '@cornerstonejs/core';
+import { getEnabledElementByViewportId, utilities } from '@cornerstonejs/core';
 import type {
   RenderingConfig,
   RepresentationPublicInput,
@@ -12,14 +12,37 @@ import {
 } from './triggerSegmentationEvents';
 import { addColorLUT } from './addColorLUT';
 import { defaultSegmentationStateManager } from './SegmentationStateManager';
+import { isSegmentationOverlayCompatible } from './helpers/isSegmentationOverlayCompatible';
 import { addDefaultSegmentationListener } from './segmentationEventManager';
 import { getActiveSegmentIndex, setActiveSegmentIndex } from './segmentIndex';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'stateManagement.segmentation.internalAddSegmentationRepresentation'
+);
 
 function internalAddSegmentationRepresentation(
   viewportId: string,
   representationInput: RepresentationPublicInput
 ) {
   const { segmentationId, config } = representationInput;
+
+  // Only associate the overlay with a viewport it is compatible with (see
+  // isSegmentationOverlayCompatible for the per-viewport-type rules): an
+  // incompatible viewport can mount nothing useful, yet the forced re-render of
+  // it in the shared rendering engine blanks the unrelated series.
+  if (
+    !isSegmentationOverlayCompatible(
+      getEnabledElementByViewportId(viewportId)?.viewport,
+      segmentationId,
+      representationInput.type
+    )
+  ) {
+    cs3dLogger.warn(
+      `Skipping ${representationInput.type} representation of segmentation "${segmentationId}" on viewport "${viewportId}": the viewport is not a compatible destination for it.`
+    );
+    return;
+  }
 
   // need to be able to override from the outside
   const renderingConfig: RenderingConfig = {
@@ -82,9 +105,7 @@ function getColorLUTIndex(config: RepresentationPublicInput['config']): number {
 
   // If no colorLUTOrIndex provided, get next available index and add default LUT
   if (colorLUTOrIndex === undefined) {
-    const index = addColorLUT(
-      JSON.parse(JSON.stringify(CORNERSTONE_COLOR_LUT))
-    );
+    const index = addColorLUT(utilities.deepClone(CORNERSTONE_COLOR_LUT));
     return index;
   }
 
@@ -103,7 +124,7 @@ function getColorLUTIndex(config: RepresentationPublicInput['config']): number {
   }
 
   // Fallback: use default LUT with next available index
-  const index = addColorLUT(JSON.parse(JSON.stringify(CORNERSTONE_COLOR_LUT)));
+  const index = addColorLUT(utilities.deepClone(CORNERSTONE_COLOR_LUT));
   return index;
 }
 

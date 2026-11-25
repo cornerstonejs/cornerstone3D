@@ -50,7 +50,7 @@ setTitleAndDescription(
   'Demonstrates Crosshairs as a normal active tool binding. Use the toolbar checkbox to switch between Crosshairs on left click and Crosshairs on Shift plus left click while Window/Level stays on left click.'
 );
 
-const size = '500px';
+const size = '512px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 

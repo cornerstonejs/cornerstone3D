@@ -1,7 +1,18 @@
+import cache from '../../../cache/cache';
+import type { VoxelQualityRecord } from '../../../types';
+import renderingEngineCache from '../../renderingEngineCache';
+import {
+  RenderModesPanel,
+  type RenderModePanelBinding,
+  type RenderModePanelEntry,
+} from './RenderModesPanel';
 import { StatsPanel } from './StatsPanel';
 import type { Panel, StatsInstance, PerformanceWithMemory } from './types';
 import { PanelType } from './enums';
 import { STATS_CONFIG, PANEL_CONFIGS, CONVERSION } from './constants';
+import { coreLog } from '../../../utilities/logger';
+
+const log = coreLog.getLogger('RenderingEngine', 'StatsOverlay');
 
 /**
  * Singleton class for managing the stats overlay.
@@ -12,13 +23,23 @@ export class StatsOverlay implements StatsInstance {
   private static instance: StatsOverlay | null = null;
 
   public dom: HTMLDivElement | null = null;
-  private currentMode = 0;
   private startTime: number = 0;
   private lastUpdateTime: number = 0;
   private frameCount = 0;
   private panels: Map<PanelType, Panel> = new Map();
+  private metricsColumn: HTMLDivElement | null = null;
+  private bindingsColumn: HTMLDivElement | null = null;
   private animationFrameId: number | null = null;
   private isSetup = false;
+  private dragPointerId: number | null = null;
+  private dragOffsetX = 0;
+  private dragOffsetY = 0;
+  private readonly handlePointerDown = (event: PointerEvent) =>
+    this.onPointerDown(event);
+  private readonly handlePointerMove = (event: PointerEvent) =>
+    this.onPointerMove(event);
+  private readonly handlePointerUp = (event: PointerEvent) =>
+    this.onPointerUp(event);
 
   private constructor() {}
 
@@ -46,17 +67,19 @@ export class StatsOverlay implements StatsInstance {
       this.startTime = performance.now();
       this.lastUpdateTime = this.startTime;
 
-      // Initialize panels and show default
+      // Initialize panels (all stacked vertically; no cycling).
       this.initializePanels();
-      this.showPanel(PanelType.FPS);
 
       // Apply styles and add to DOM
       this.applyOverlayStyles();
+      this.addCloseButton();
+      this.restorePosition();
+      this.attachDragHandlers();
       document.body.appendChild(this.dom);
       this.startLoop();
       this.isSetup = true;
     } catch (error) {
-      console.warn('Failed to setup stats overlay:', error);
+      log.warn('Failed to setup stats overlay:', error);
     }
   }
 
@@ -65,25 +88,25 @@ export class StatsOverlay implements StatsInstance {
    */
   public cleanup(): void {
     this.stopLoop();
+    this.detachDragHandlers();
 
     if (this.dom && this.dom.parentNode) {
       this.dom.parentNode.removeChild(this.dom);
     }
 
     this.dom = null;
+    this.metricsColumn = null;
+    this.bindingsColumn = null;
     this.panels.clear();
     this.isSetup = false;
   }
 
   /**
-   * Shows a specific panel by its type.
+   * No-op retained for backwards compatibility with the {@link StatsInstance}
+   * contract. Panels are always stacked vertically and all visible.
    */
-  public showPanel(panelType: number): void {
-    const children = Array.from(this.dom.children) as HTMLElement[];
-    children.forEach((child, index) => {
-      child.style.display = index === panelType ? 'block' : 'none';
-    });
-    this.currentMode = panelType;
+  public showPanel(_panelType: number): void {
+    // All panels are rendered together -- nothing to toggle.
   }
 
   /**
@@ -97,9 +120,7 @@ export class StatsOverlay implements StatsInstance {
    * Creates the overlay DOM element.
    */
   private createOverlayElement(): HTMLDivElement {
-    const element = document.createElement('div');
-    element.addEventListener('click', this.handleClick.bind(this), false);
-    return element;
+    return document.createElement('div');
   }
 
   /**
@@ -110,18 +131,39 @@ export class StatsOverlay implements StatsInstance {
   }
 
   /**
-   * Handles click events on the overlay.
+   * Adds a top-right close control that dismisses the HUD without starting a drag.
    */
-  private handleClick(event: MouseEvent): void {
-    event.preventDefault();
-    const panelCount = this.dom.children.length;
-    this.showPanel((this.currentMode + 1) % panelCount);
+  private addCloseButton(): void {
+    if (!this.dom) {
+      return;
+    }
+
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.setAttribute('aria-label', 'Close stats overlay');
+    close.title = 'Close';
+    close.textContent = '×';
+    Object.assign(close.style, STATS_CONFIG.CLOSE_BUTTON_STYLES);
+
+    close.addEventListener('pointerdown', (event) => {
+      event.stopPropagation();
+      event.preventDefault();
+    });
+    close.addEventListener('click', (event) => {
+      event.stopPropagation();
+      event.preventDefault();
+      this.cleanup();
+    });
+
+    this.dom.appendChild(close);
   }
 
   /**
    * Initializes all panels.
    */
   private initializePanels(): void {
+    this.initializePanelColumns();
+
     // Always create FPS and MS panels
     const fpsPanel = new StatsPanel(
       PANEL_CONFIGS[PanelType.FPS].name,
@@ -146,6 +188,28 @@ export class StatsOverlay implements StatsInstance {
       );
       this.addPanel(PanelType.MEMORY, memPanel);
     }
+
+    this.addPanel(PanelType.RENDER_MODES, new RenderModesPanel());
+  }
+
+  private initializePanelColumns(): void {
+    this.metricsColumn = document.createElement('div');
+    this.metricsColumn.style.cssText = `
+      display:flex;
+      flex-direction:column;
+      flex:0 0 auto;
+    `;
+
+    this.bindingsColumn = document.createElement('div');
+    this.bindingsColumn.style.cssText = `
+      display:flex;
+      flex-direction:column;
+      flex:0 1 auto;
+      min-width:0;
+    `;
+
+    this.dom.appendChild(this.metricsColumn);
+    this.dom.appendChild(this.bindingsColumn);
   }
 
   /**
@@ -160,7 +224,12 @@ export class StatsOverlay implements StatsInstance {
    * Adds a panel to the overlay.
    */
   private addPanel(type: PanelType, panel: Panel): void {
-    this.dom.appendChild(panel.dom);
+    const column =
+      type === PanelType.RENDER_MODES
+        ? this.bindingsColumn
+        : this.metricsColumn;
+
+    (column ?? this.dom).appendChild(panel.dom);
     this.panels.set(type, panel);
   }
 
@@ -215,9 +284,155 @@ export class StatsOverlay implements StatsInstance {
 
       // Update memory panel if available
       this.updateMemoryPanel();
+      this.updateRenderModesPanel();
     }
 
     return currentTime;
+  }
+
+  /**
+   * Collects every viewport's GenericViewport binding debug state and volume
+   * {@link VoxelQualityRecord}s. Within one tick, `getVoxelQuality` runs at
+   * most once per `volumeId` so MPR viewports that share a volume do not
+   * recompute the same record.
+   */
+  private updateRenderModesPanel(): void {
+    const panel = this.panels.get(PanelType.RENDER_MODES);
+
+    if (!(panel instanceof RenderModesPanel)) {
+      return;
+    }
+
+    const qualityByVolumeId = new Map<string, VoxelQualityRecord | undefined>();
+    const entries: RenderModePanelEntry[] = [];
+
+    for (const renderingEngine of renderingEngineCache.getAll()) {
+      if (!renderingEngine || renderingEngine.hasBeenDestroyed) {
+        continue;
+      }
+
+      for (const viewport of renderingEngine.getViewports()) {
+        const debugViewport = viewport as unknown as DebugBindingsViewport;
+        const renderModes = debugViewport._debug?.renderModes;
+        const volumeIds = this.collectViewportVolumeIds(debugViewport);
+        const volumes = volumeIds.map((volumeId) => {
+          if (!qualityByVolumeId.has(volumeId)) {
+            qualityByVolumeId.set(volumeId, this.readVoxelQuality(volumeId));
+          }
+
+          return {
+            volumeId,
+            record: qualityByVolumeId.get(volumeId),
+          };
+        });
+
+        entries.push({
+          renderingEngineId: renderingEngine.id,
+          viewportId: viewport.id,
+          viewportType: viewport.type,
+          bindings: this.getViewportBindingDebugEntries(
+            debugViewport,
+            (renderModes as Record<string, string> | undefined) ?? {}
+          ),
+          volumes,
+        });
+      }
+    }
+
+    panel.setContent(entries);
+  }
+
+  private getViewportBindingDebugEntries(
+    viewport: DebugBindingsViewport,
+    renderModes: Record<string, string>
+  ): RenderModePanelBinding[] {
+    const actors = viewport.getActors?.() ?? [];
+    const sourceDataId = viewport.getSourceDataId?.();
+    const renderModeEntries = Object.entries(renderModes);
+
+    if (renderModeEntries.length) {
+      return renderModeEntries.map(([dataId, renderMode]) => {
+        const role = resolveBindingRole(viewport, dataId, sourceDataId);
+        const actor =
+          role === 'source'
+            ? viewport.getDefaultActor?.()
+            : findActorForDataId(actors, dataId);
+
+        return {
+          actorUID: actor?.uid,
+          dataId,
+          referencedId: actor?.referencedId,
+          renderMode,
+          role,
+          ...getActorScalarInfo(actor),
+        };
+      });
+    }
+
+    // Legacy viewports do not expose a GenericViewport `_debug.renderModes`
+    // map, so derive the rows directly from the actors. This lets the debug
+    // overlay show the same actor UID / referencedId info for legacy viewports
+    // (e.g. to compare whether a labelmap actor is reused or recreated across
+    // slices) instead of an empty bindings panel.
+    return actors.map((actor) => {
+      const dataId = actor.representationUID ?? actor.uid ?? '';
+
+      return {
+        actorUID: actor.uid,
+        dataId,
+        referencedId: actor.referencedId,
+        renderMode: '-',
+        role: resolveBindingRole(viewport, dataId, sourceDataId),
+        ...getActorScalarInfo(actor),
+      };
+    });
+  }
+
+  /**
+   * Volume ids bound to a viewport: source data id first, then actor
+   * `referencedId`s that resolve in the volume cache.
+   */
+  private collectViewportVolumeIds(viewport: DebugBindingsViewport): string[] {
+    const ids: string[] = [];
+    const seen = new Set<string>();
+
+    const push = (candidate: string | undefined) => {
+      if (!candidate || seen.has(candidate)) {
+        return;
+      }
+
+      if (!cache.getVolume(candidate)) {
+        return;
+      }
+
+      seen.add(candidate);
+      ids.push(candidate);
+    };
+
+    push(viewport.getSourceDataId?.());
+
+    for (const actor of viewport.getActors?.() ?? []) {
+      push(actor.referencedId);
+    }
+
+    return ids;
+  }
+
+  private readVoxelQuality(volumeId: string): VoxelQualityRecord | undefined {
+    try {
+      const volume = cache.getVolume(volumeId) as
+        | { getVoxelQuality?: () => VoxelQualityRecord | undefined }
+        | undefined;
+
+      if (typeof volume?.getVoxelQuality !== 'function') {
+        return undefined;
+      }
+
+      return volume.getVoxelQuality();
+    } catch {
+      // The debug overlay must never throw on a missing or partial volume.
+      return undefined;
+    }
   }
 
   /**
@@ -236,4 +451,295 @@ export class StatsOverlay implements StatsInstance {
       memPanel.update(memoryMB, maxMemoryMB);
     }
   }
+
+  private attachDragHandlers(): void {
+    this.dom?.addEventListener('pointerdown', this.handlePointerDown);
+  }
+
+  private detachDragHandlers(): void {
+    this.dom?.removeEventListener('pointerdown', this.handlePointerDown);
+    window.removeEventListener('pointermove', this.handlePointerMove);
+    window.removeEventListener('pointerup', this.handlePointerUp);
+    window.removeEventListener('pointercancel', this.handlePointerUp);
+  }
+
+  private onPointerDown(event: PointerEvent): void {
+    if (!this.dom || event.button !== 0) {
+      return;
+    }
+
+    // Close control handles its own pointer events; do not start a drag.
+    if (
+      event.target instanceof Element &&
+      event.target.closest('button[aria-label="Close stats overlay"]')
+    ) {
+      return;
+    }
+
+    this.dragPointerId = event.pointerId;
+    const rect = this.dom.getBoundingClientRect();
+    this.dragOffsetX = event.clientX - rect.left;
+    this.dragOffsetY = event.clientY - rect.top;
+
+    this.setPosition(rect.left, rect.top);
+
+    window.addEventListener('pointermove', this.handlePointerMove);
+    window.addEventListener('pointerup', this.handlePointerUp);
+    window.addEventListener('pointercancel', this.handlePointerUp);
+    event.preventDefault();
+  }
+
+  private onPointerMove(event: PointerEvent): void {
+    if (this.dragPointerId !== event.pointerId || !this.dom) {
+      return;
+    }
+
+    this.setPosition(
+      event.clientX - this.dragOffsetX,
+      event.clientY - this.dragOffsetY
+    );
+  }
+
+  private onPointerUp(event: PointerEvent): void {
+    if (this.dragPointerId !== event.pointerId || !this.dom) {
+      return;
+    }
+
+    this.dragPointerId = null;
+    window.removeEventListener('pointermove', this.handlePointerMove);
+    window.removeEventListener('pointerup', this.handlePointerUp);
+    window.removeEventListener('pointercancel', this.handlePointerUp);
+
+    const rect = this.dom.getBoundingClientRect();
+    this.savePosition(rect.left, rect.top);
+  }
+
+  private setPosition(left: number, top: number): void {
+    if (!this.dom) {
+      return;
+    }
+
+    const clamped = this.clampToViewport(left, top);
+    this.dom.style.left = `${clamped.left}px`;
+    this.dom.style.top = `${clamped.top}px`;
+    this.dom.style.right = 'auto';
+    this.dom.style.bottom = 'auto';
+  }
+
+  private clampToViewport(
+    left: number,
+    top: number
+  ): { left: number; top: number } {
+    if (!this.dom) {
+      return { left, top };
+    }
+
+    const width = this.dom.offsetWidth;
+    const height = this.dom.offsetHeight;
+    const maxLeft = Math.max(0, window.innerWidth - width);
+    const maxTop = Math.max(0, window.innerHeight - height);
+
+    return {
+      left: Math.min(Math.max(0, left), maxLeft),
+      top: Math.min(Math.max(0, top), maxTop),
+    };
+  }
+
+  private restorePosition(): void {
+    const saved = this.readSavedPosition();
+    if (!saved) {
+      return;
+    }
+
+    this.setPosition(saved.left, saved.top);
+  }
+
+  private readSavedPosition(): { left: number; top: number } | null {
+    try {
+      const raw = window.localStorage.getItem(
+        STATS_CONFIG.POSITION_STORAGE_KEY
+      );
+      if (!raw) {
+        return null;
+      }
+
+      const parsed = JSON.parse(raw) as { left?: number; top?: number };
+      if (
+        typeof parsed?.left !== 'number' ||
+        typeof parsed?.top !== 'number' ||
+        !Number.isFinite(parsed.left) ||
+        !Number.isFinite(parsed.top)
+      ) {
+        return null;
+      }
+
+      return { left: parsed.left, top: parsed.top };
+    } catch {
+      return null;
+    }
+  }
+
+  private savePosition(left: number, top: number): void {
+    try {
+      window.localStorage.setItem(
+        STATS_CONFIG.POSITION_STORAGE_KEY,
+        JSON.stringify({ left, top })
+      );
+    } catch {
+      // Storage may be unavailable (private mode, quota exceeded); ignore.
+    }
+  }
+}
+
+type DebugActorEntry = {
+  referencedId?: string;
+  representationUID?: string;
+  uid?: string;
+  actor?: DebugScalarActor;
+};
+
+/**
+ * Minimal structural view of an actor that exposes the image data backing it,
+ * covering both VTK actors (point-data scalars) and the canvas/CPU actors used
+ * for the labelmap render paths (`getScalarData` + pixel-value range).
+ */
+type DebugScalarActor = {
+  getMapper?: () =>
+    | {
+        getInputData?: () => DebugScalarInputData | null | undefined;
+      }
+    | null
+    | undefined;
+};
+
+type DebugScalarInputData = {
+  getPointData?: () =>
+    | {
+        getScalars?: () => DebugScalarArray | null | undefined;
+      }
+    | null
+    | undefined;
+  getScalarData?: () => ArrayLike<number> | null | undefined;
+  minPixelValue?: number;
+  maxPixelValue?: number;
+};
+
+type DebugScalarArray = {
+  getDataType?: () => string;
+  getNumberOfComponents?: () => number;
+  getRange?: (componentIndex?: number) => number[];
+};
+
+type DebugBindingsViewport = {
+  _debug?: {
+    renderModes?: unknown;
+  };
+  getActors?: () => DebugActorEntry[];
+  getDisplaySetRole?: (
+    displaySetId: string
+  ) => RenderModePanelBinding['role'] | undefined;
+  getDefaultActor?: () => DebugActorEntry | undefined;
+  getSourceDataId?: () => string | undefined;
+};
+
+function resolveBindingRole(
+  viewport: DebugBindingsViewport,
+  dataId: string,
+  sourceDataId?: string
+): RenderModePanelBinding['role'] {
+  const role = viewport.getDisplaySetRole?.(dataId);
+
+  if (role === 'source' || role === 'overlay') {
+    return role;
+  }
+
+  if (sourceDataId && dataId === sourceDataId) {
+    return 'source';
+  }
+
+  return 'data';
+}
+
+function findActorForDataId(
+  actors: DebugActorEntry[],
+  dataId: string
+): DebugActorEntry | undefined {
+  return actors.find(
+    (actor) =>
+      actor.uid === dataId ||
+      actor.representationUID === dataId ||
+      actor.referencedId === dataId
+  );
+}
+
+/**
+ * Reads the scalar buffer type (e.g. `Uint8Array`) and value range backing an
+ * actor so the debug overlay can surface what data is actually loaded. Works
+ * for both VTK actors (via point-data scalars) and the canvas/CPU labelmap
+ * actors (via `getScalarData` + precomputed pixel-value range).
+ *
+ * VTK's `getRange()` is cached per component, so polling it from the overlay
+ * loop is cheap after the first computation. This is best-effort and never
+ * throws -- actors without scalar image data (surfaces, geometry) simply
+ * return no scalar info.
+ */
+function getActorScalarInfo(entry: DebugActorEntry | undefined): {
+  scalarType?: string;
+  scalarRange?: [number, number];
+  numberOfComponents?: number;
+} {
+  const inputData = entry?.actor?.getMapper?.()?.getInputData?.();
+  if (!inputData) {
+    return {};
+  }
+
+  try {
+    const scalars = inputData.getPointData?.()?.getScalars?.();
+    if (scalars?.getDataType) {
+      const numberOfComponents = scalars.getNumberOfComponents?.() ?? 1;
+      // For multi-component (e.g. RGB) read the first component to avoid the
+      // magnitude allocation that `getRange(-1)` performs.
+      const range =
+        numberOfComponents > 1 ? scalars.getRange?.(0) : scalars.getRange?.();
+
+      return {
+        scalarType: scalars.getDataType(),
+        scalarRange: normalizeRange(range),
+        numberOfComponents,
+      };
+    }
+
+    const scalarData = inputData.getScalarData?.();
+    if (scalarData?.constructor?.name) {
+      const range =
+        Number.isFinite(inputData.minPixelValue) &&
+        Number.isFinite(inputData.maxPixelValue)
+          ? [inputData.minPixelValue, inputData.maxPixelValue]
+          : undefined;
+
+      return {
+        scalarType: scalarData.constructor.name,
+        scalarRange: normalizeRange(range),
+      };
+    }
+  } catch {
+    // The debug overlay must never throw; skip scalar info on failure.
+  }
+
+  return {};
+}
+
+function normalizeRange(
+  range: number[] | undefined
+): [number, number] | undefined {
+  if (
+    !range ||
+    range.length < 2 ||
+    !Number.isFinite(range[0]) ||
+    !Number.isFinite(range[1])
+  ) {
+    return undefined;
+  }
+
+  return [range[0], range[1]];
 }

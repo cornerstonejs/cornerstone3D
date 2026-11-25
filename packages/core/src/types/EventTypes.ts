@@ -14,17 +14,18 @@ import type IImageCalibration from './IImageCalibration';
 import type { ColormapPublic } from './Colormap';
 import type IVolumeViewport from './IVolumeViewport';
 import type { ActorEntry } from './IActor';
+import type { ViewportFidelityState } from './ViewportFidelity';
 
 /**
  * CAMERA_MODIFIED Event's data
  */
 interface CameraModifiedEventDetail {
   /** Previous camera properties */
-  previousCamera: ICamera;
+  previousCamera?: ICamera;
   /** Current camera properties */
   camera: ICamera;
   /** Viewport HTML element in the DOM */
-  element: HTMLDivElement;
+  element?: HTMLDivElement;
   /** Viewport Unique ID in the renderingEngine */
   viewportId: string;
   /** Unique ID for the renderingEngine */
@@ -37,7 +38,7 @@ interface CameraModifiedEventDetail {
 
 interface CameraResetEventDetail {
   /** Viewport HTML element in the DOM */
-  element: HTMLDivElement;
+  element?: HTMLDivElement;
   /** Viewport Unique ID in the renderingEngine */
   viewportId: string;
   /** Unique ID for the renderingEngine */
@@ -114,6 +115,26 @@ interface ElementEnabledEventDetail {
   /** Unique ID for the renderingEngine */
   renderingEngineId: string;
 }
+
+/**
+ * VIEWPORT_FIDELITY_CHANGED Event's data (FIDELITY-EVENT-3)
+ */
+interface ViewportFidelityChangedEventDetail {
+  /** Viewport Unique ID in the renderingEngine */
+  viewportId: string;
+  /** Unique ID for the renderingEngine */
+  renderingEngineId: string;
+  /**
+   * Absolute per-viewport fidelity record (FIDELITY-EVENT-5). Not a UI summary enum.
+   */
+  state: ViewportFidelityState;
+}
+
+/**
+ * VIEWPORT_FIDELITY_CHANGED Event type
+ */
+type ViewportFidelityChangedEvent =
+  CustomEventType<ViewportFidelityChangedEventDetail>;
 
 /**
  * IMAGE_RENDERED Event's data
@@ -211,6 +232,16 @@ interface ImageCacheImageRemovedEventDetail {
 interface ImageCacheImageAddedEventDetail {
   /** the added image */
   image: ICachedImage;
+}
+
+/**
+ * CACHE_SIZE_EXCEEDED Event's data
+ */
+interface CacheSizeExceededEventDetail {
+  /** the id of the image that did not fit */
+  imageId: string;
+  /** the size of the image in bytes */
+  sizeInBytes: number;
 }
 
 /**
@@ -407,6 +438,11 @@ type ImageCacheImageAddedEvent =
   CustomEventType<ImageCacheImageAddedEventDetail>;
 
 /**
+ * CACHE_SIZE_EXCEEDED Event type
+ */
+type CacheSizeExceededEvent = CustomEventType<CacheSizeExceededEventDetail>;
+
+/**
  * IMAGE_CACHE_IMAGE_REMOVED Event type
  */
 type ImageCacheImageRemovedEvent =
@@ -479,6 +515,8 @@ export type {
   VolumeScrollOutOfBoundsEvent,
   ActorsChangedEventDetail,
   ActorsChangedEvent,
+  ViewportFidelityChangedEventDetail,
+  ViewportFidelityChangedEvent,
   CameraModifiedEventDetail,
   CameraModifiedEvent,
   VoiModifiedEvent,
@@ -507,6 +545,8 @@ export type {
   VolumeLoadedFailedEventDetail,
   ImageCacheImageAddedEvent,
   ImageCacheImageAddedEventDetail,
+  CacheSizeExceededEvent,
+  CacheSizeExceededEventDetail,
   ImageCacheImageRemovedEvent,
   ImageCacheImageRemovedEventDetail,
   VolumeCacheVolumeAddedEvent,

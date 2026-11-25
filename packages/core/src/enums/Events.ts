@@ -8,8 +8,9 @@ enum Events {
   ERROR_EVENT = 'CORNERSTONE_ERROR',
 
   /**
-   * Error that is thrown when the ImageCache exceeds its max cache size.
-   * This can happen for both volumes and stack images.
+   * Fired when an image does not fit in the ImageCache. This can happen for
+   * both volumes and stack images. `putImageSync` also throws an error with
+   * this message.
    */
   CACHE_SIZE_EXCEEDED = 'CACHE_SIZE_EXCEEDED',
   /**
@@ -74,6 +75,16 @@ enum Events {
    */
   IMAGE_RENDERED = 'CORNERSTONE_IMAGE_RENDERED',
   /**
+   * Triggers on the HTML element when the derived viewport fidelity state
+   * changes (loading / lod / lossy / done / hidden). Fires only on a state
+   * change, not on every render (FIDELITY-EVENT-2..4).
+   *
+   * Make use of {@link EventTypes.ViewportFidelityChangedEvent | ViewportFidelityChanged Event Type }
+   * for typing your event listeners, and see what event detail is included in
+   * {@link EventTypes.ViewportFidelityChangedEventDetail | ViewportFidelityChanged Event Detail }.
+   */
+  VIEWPORT_FIDELITY_CHANGED = 'CORNERSTONE_VIEWPORT_FIDELITY_CHANGED',
+  /**
    * Triggers on the eventTarget when the image volume data is modified. This happens
    * in the streamingImageLoader when each frame is loaded and inserted into a volume.
    *
@@ -91,6 +102,11 @@ enum Events {
    * in {@link EventTypes.ImageVolumeLoadingCompletedEventDetail | ImageVolumeLoadingCompleted Event Detail }
    */
   IMAGE_VOLUME_LOADING_COMPLETED = 'CORNERSTONE_IMAGE_VOLUME_LOADING_COMPLETED',
+  /**
+   * Triggers on the eventTarget when a streaming volume cancels its load,
+   * while the volume is still in the cache. The detail holds `volumeId`.
+   */
+  IMAGE_VOLUME_LOADING_CANCELLED = 'CORNERSTONE_IMAGE_VOLUME_LOADING_CANCELLED',
   /**
    * Triggers on the eventTarget when the image has successfully loaded by imageLoaders.
    * This event may be fired multiple times for different statuses as the image data gets loaded.
@@ -161,6 +177,13 @@ enum Events {
    * and see what event detail is included in {@link EventTypes.VolumeCacheVolumeRemovedEventDetail | VolumeCacheRemoved Event Detail }
    */
   VOLUME_CACHE_VOLUME_REMOVED = 'CORNERSTONE_VOLUME_CACHE_VOLUME_REMOVED',
+  /**
+   * Internal. Triggers on the eventTarget when the settings that size a volume
+   * texture change: the GPU settings preset, the lossy downsampling or the
+   * texture budget. Each viewport that draws a volume chooses its texture
+   * again. The event has no detail.
+   */
+  VOLUME_TEXTURE_LIMITS_CHANGED = 'CORNERSTONE_VOLUME_TEXTURE_LIMITS_CHANGED',
   /**
    * Triggers on the element when a new image is set on the stackViewport
    *
@@ -303,6 +326,46 @@ enum Events {
    * Triggers on the viewport's element when the actors are changed via set operator
    */
   ACTORS_CHANGED = 'CORNERSTONE_ACTORS_CHANGED',
+
+  /**
+   * Triggers on the eventTarget after the global render backend changes
+   * (setRenderBackend, or a deprecated CPU-rendering toggle that changed the
+   * effective backend). Detail: `{ previous, current, effectiveBackend, reason }`.
+   */
+  RENDER_BACKEND_CHANGED = 'CORNERSTONE_RENDER_BACKEND_CHANGED',
+
+  /**
+   * Triggers on the eventTarget when one of the rendering engine's WebGL
+   * contexts is lost. Cornerstone does not switch backends on its own;
+   * applications can listen for this to offer the user a switch to CPU
+   * rendering via setRenderBackend('cpu').
+   * Detail: `{ renderingEngineId, contextIndex }`.
+   */
+  WEBGL_CONTEXT_LOST = 'CORNERSTONE_WEBGL_CONTEXT_LOST',
+
+  /**
+   * Triggers on the eventTarget when a previously lost WebGL context is
+   * restored by the browser. Detail: `{ renderingEngineId, contextIndex }`.
+   */
+  WEBGL_CONTEXT_RESTORED = 'CORNERSTONE_WEBGL_CONTEXT_RESTORED',
+
+  /**
+   * Triggers on the eventTarget when a GenericViewport render path throws
+   * while mounting or rendering data. Like WEBGL_CONTEXT_LOST this is a
+   * degradation signal for applications; no automatic backend switch happens.
+   * Detail: `{ renderingEngineId, viewportId, dataId, error }`.
+   */
+  RENDER_PATH_ERROR = 'CORNERSTONE_RENDER_PATH_ERROR',
+
+  /**
+   * Triggers on the eventTarget after a viewport finishes rebuilding its
+   * render paths in place (live render-backend switch via setRenderBackend,
+   * or a deprecated CPU-rendering toggle). The viewport's actors were
+   * replaced, so consumers that decorate them (e.g. segmentation
+   * representations) listen for this to re-reconcile and restyle their
+   * overlays. Detail: `{ renderingEngineId, viewportId }`.
+   */
+  RENDERING_PIPELINE_CHANGED = 'CORNERSTONE_RENDERING_PIPELINE_CHANGED',
 }
 
 export default Events;

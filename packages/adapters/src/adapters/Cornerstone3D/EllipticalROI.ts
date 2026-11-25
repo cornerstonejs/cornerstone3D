@@ -104,7 +104,7 @@ class EllipticalROI extends BaseAdapter3D {
     }
 
     const { area, max, min, mean, stdDev, modalityUnit, areaUnit } =
-      cachedStats[`imageId:${referencedImageId}`] || {};
+      super.getCachedStats(cachedStats, metadata);
 
     const convertedPoints = points.map((point) => toScoord(scoordProps, point));
 

@@ -1,9 +1,7 @@
-import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import type { vtkImageData as vtkImageDataType } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
-import vtkCamera from '@kitware/vtk.js/Rendering/Core/Camera';
+import extendedVtkCamera from './vtkClasses/extendedVtkCamera';
 import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
-import vtkColorMaps from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction/ColorMaps';
 import vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import { mat4, vec2, vec3 } from 'gl-matrix';
@@ -11,6 +9,9 @@ import eventTarget from '../eventTarget';
 import * as metaData from '../metaData';
 import { getImageDataMetadata as getImageDataMetadataUtil } from '../utilities/getImageDataMetadata';
 import { coreLog } from '../utilities/logger';
+import { getGenericViewportImageDisplaySet } from './GenericViewport/genericViewportDisplaySetAccess';
+import type { FidelityLine } from './helpers/fidelityIndicator/fidelityIndicatorState';
+import { fidelityLineFromStackImage } from './helpers/fidelityIndicator/collectFidelityLines';
 
 import type {
   ActorEntry,
@@ -42,6 +43,8 @@ import type {
   ImagePixelModule,
   ImagePlaneModule,
   PixelDataTypedArray,
+  ResetCameraOptions,
+  SetAspectRatioOptions,
 } from '../types';
 import { actorIsA, isImageActor } from '../utilities/actorCheck';
 import * as colormapUtils from '../utilities/colormap';
@@ -58,10 +61,16 @@ import { isEqual } from '../utilities/isEqual';
 import invertRgbTransferFunction from '../utilities/invertRgbTransferFunction';
 import imageRetrieveMetadataProvider from '../utilities/imageRetrieveMetadataProvider';
 import imageIdToURI from '../utilities/imageIdToURI';
+import getVOIRangeFromWindowLevel from '../utilities/getVOIRangeFromWindowLevel';
 
 import Viewport from './Viewport';
 import drawImageSync from './helpers/cpuFallback/drawImageSync';
-import { getImagePlaneModule } from '../utilities/buildMetadata';
+import { resolveCPUFallbackColormap } from './helpers/cpuFallback/colors';
+import {
+  getImagePlaneModule,
+  getValidVOILUTFunction,
+} from '../utilities/buildMetadata';
+import { createEmptyVTKImageData } from './helpers/planarImageRendering';
 
 import {
   Events,
@@ -78,10 +87,14 @@ import calculateTransform from './helpers/cpuFallback/rendering/calculateTransfo
 import canvasToPixel from './helpers/cpuFallback/rendering/canvasToPixel';
 import getDefaultViewport from './helpers/cpuFallback/rendering/getDefaultViewport';
 import pixelToCanvas from './helpers/cpuFallback/rendering/pixelToCanvas';
+import {
+  cssToDevicePixels,
+  deviceToCssPixels,
+} from './helpers/cpuFallback/rendering/cssPixelConversion';
 import resize from './helpers/cpuFallback/rendering/resize';
 
 import cache from '../cache/cache';
-import { getConfiguration, getShouldUseCPURendering } from '../init';
+import { getShouldUseCPURendering } from '../init';
 import { createProgressive } from '../loaders/ProgressiveRetrieveImages';
 import type {
   StackViewportNewStackEventDetail,
@@ -97,6 +110,7 @@ import uuidv4 from '../utilities/uuidv4';
 import getSpacingInNormalDirection from '../utilities/getSpacingInNormalDirection';
 import getClosestImageId from '../utilities/getClosestImageId';
 import { adjustInitialViewUp } from '../utilities/adjustInitialViewUp';
+import { getNormalizedAspectRatio } from '../utilities/getNormalizedAspectRatio';
 import { isContextPoolRenderingEngine } from './helpers/isContextPoolRenderingEngine';
 import {
   createSharpeningRenderPass,
@@ -203,6 +217,14 @@ class StackViewport extends Viewport {
   // or because of the new image inconsistency, a new actor/mapper was created
   public stackActorReInitialized: boolean;
 
+  public canReportFidelity(): boolean {
+    return true;
+  }
+
+  protected collectFidelityLines(): FidelityLine[] {
+    return fidelityLineFromStackImage(this.csImage);
+  }
+
   /**
    * Constructor for the StackViewport class
    * @param props - ViewportInput
@@ -214,9 +236,11 @@ class StackViewport extends Viewport {
     this.useCPURendering = getShouldUseCPURendering();
     this._configureRenderingPipeline();
 
-    this.useCPURendering
-      ? this._resetCPUFallbackElement()
-      : this._resetGPUViewport();
+    if (this.useCPURendering) {
+      this._resetCPUFallbackElement();
+    } else {
+      this._resetGPUViewport();
+    }
 
     this.currentImageIdIndex = 0;
     this.targetImageIdIndex = 0;
@@ -269,9 +293,11 @@ class StackViewport extends Viewport {
       }
     }
 
-    const result = this.useCPURendering
-      ? this._resetCPUFallbackElement()
-      : this._resetGPUViewport();
+    if (this.useCPURendering) {
+      this._resetCPUFallbackElement();
+    } else {
+      this._resetGPUViewport();
+    }
   }
 
   private _resetCPUFallbackElement() {
@@ -279,13 +305,13 @@ class StackViewport extends Viewport {
       canvas: this.canvas,
       renderingTools: {},
       transform: new Transform(),
-      viewport: { rotation: 0 },
+      viewport: { rotation: 0, aspectRatio: [1, 1] },
     };
   }
 
   private _resetGPUViewport() {
     const renderer = this.getRenderer();
-    const camera = vtkCamera.newInstance();
+    const camera = extendedVtkCamera.newInstance();
     renderer.setActiveCamera(camera);
 
     const viewPlaneNormal = [0, 0, -1] as Point3;
@@ -343,14 +369,18 @@ class StackViewport extends Viewport {
    * @param options - Optional configuration for the reset operation
    * @param options.resetPan - Whether to reset the pan (default: true)
    * @param options.resetZoom - Whether to reset the zoom (default: true)
+   * @param options.resetToCenter - Whether to centre the camera (default: true).
+   *   The CPU fallback ignores this option.
+   * @param options.resetAspectRatio - Whether to apply the aspect ratio of the
+   *   viewport options, instead of the one of the camera (default: true)
+   * @param options.storeAsInitialCamera - Whether to keep the result as the
+   *   baseline of the zoom and of the pan (default: true). The CPU fallback
+   *   ignores this option.
    * @returns boolean - True if the camera was reset successfully, false otherwise
    */
-  public resetCamera: (options?: {
-    resetPan?: boolean;
-    resetZoom?: boolean;
-    resetToCenter?: boolean;
-    suppressEvents?: boolean;
-  }) => boolean;
+  public resetCamera: (
+    options?: ResetCameraOptions & { suppressEvents?: boolean }
+  ) => boolean;
 
   /**
    * canvasToWorld Returns the world coordinates of the given `canvasPos`
@@ -482,22 +512,33 @@ class StackViewport extends Viewport {
 
       return renderPasses.length ? renderPasses : null;
     } catch (e) {
-      console.warn('Failed to create custom render passes:', e);
+      log.warn('Failed to create custom render passes:', e);
       return null;
     }
   };
 
   private initializeElementDisabledHandler() {
+    // Cancel the pending debounced frame change (see `scroll`) when this
+    // viewport is torn down, so its `setImageIdIndex` timer never fires against
+    // a destroyed viewport (which throws from `_throwIfDestroyed`).
+    //
+    // An arrow function is required so `this` is the viewport rather than the
+    // event target, and the listener must act only on ITS OWN element: this is
+    // a single global listener per viewport, so without the guard the first
+    // ELEMENT_DISABLED of any viewport would remove every viewport's handler.
+    const elementDisabledHandler = (evt: EventTypes.ElementDisabledEvent) => {
+      if (evt.detail?.element !== this.element) {
+        return;
+      }
+      clearTimeout(this.debouncedTimeout);
+      eventTarget.removeEventListener(
+        Events.ELEMENT_DISABLED,
+        elementDisabledHandler as EventListener
+      );
+    };
     eventTarget.addEventListener(
       Events.ELEMENT_DISABLED,
-      function elementDisabledHandler() {
-        clearTimeout(this.debouncedTimeout);
-
-        eventTarget.removeEventListener(
-          Events.ELEMENT_DISABLED,
-          elementDisabledHandler
-        );
-      }
+      elementDisabledHandler as EventListener
     );
   }
 
@@ -580,11 +621,13 @@ class StackViewport extends Viewport {
         getDimensions: () => metadata.dimensions,
         getScalarData: () => this.cpuImagePixelData,
         getSpacing: () => spacing,
+        // These bridge the CSS-pixel public transforms to the device-pixel
+        // pixelToCanvas/canvasToPixel pair, so the round trip is unchanged.
         worldToIndex: (point: Point3) => {
           const canvasPoint = this.worldToCanvasCPU(point);
           const pixelCoord = canvasToPixel(
             this._cpuFallbackEnabledElement,
-            canvasPoint
+            cssToDevicePixels(canvasPoint)
           );
           return [pixelCoord[0], pixelCoord[1], 0];
         },
@@ -593,7 +636,10 @@ class StackViewport extends Viewport {
             point[0],
             point[1],
           ]);
-          return this.canvasToWorldCPU(canvasPoint, destPoint);
+          return this.canvasToWorldCPU(
+            deviceToCssPixels(canvasPoint),
+            destPoint
+          );
         },
       },
       scalarData: this.cpuImagePixelData,
@@ -844,6 +890,7 @@ class StackViewport extends Viewport {
       resetPan: true,
       resetZoom: true,
       resetToCenter: true,
+      resetAspectRatio: true,
       suppressEvents: true,
     });
   };
@@ -969,11 +1016,44 @@ class StackViewport extends Viewport {
 
   private _setPropertiesFromCache(): void {
     const voiRange = this._getVOIFromCache();
-    const { interpolationType, invert } = this;
+    const {
+      colormap,
+      VOILUTFunction,
+      interpolationType,
+      invert,
+      sharpening,
+      smoothing,
+    } = this.getProperties();
+
+    if (typeof VOILUTFunction !== 'undefined') {
+      this.setVOILUTFunction(VOILUTFunction, true);
+    }
 
     this.setVOI(voiRange);
+
+    if (typeof colormap !== 'undefined') {
+      this.setColormap(colormap);
+      // setColormap rebuilds the RGB transfer function in its default,
+      // non-inverted state, so `this.invert` no longer reflects the actor's
+      // actual LUT. Clear the tracked flag so the setInvertColor below actually
+      // re-applies the inversion instead of being skipped by its no-op guard
+      // (setInvertColorGPU only flips the TF when the requested value differs
+      // from this.invert). Without this, invert is lost when scrolling after a
+      // reset: reset applies a colormap, which is then re-applied on every
+      // scroll and clobbers the inversion.
+      this.invert = false;
+    }
+
     this.setInterpolationType(interpolationType);
     this.setInvertColor(invert);
+
+    if (typeof sharpening !== 'undefined') {
+      this.setSharpening(sharpening);
+    }
+
+    if (typeof smoothing !== 'undefined') {
+      this.setSmoothing(smoothing);
+    }
   }
 
   private getCameraCPU(): Partial<ICamera> {
@@ -1031,26 +1111,77 @@ class StackViewport extends Viewport {
         viewPlaneNormal[1],
         viewPlaneNormal[2],
       ],
+      aspectRatio: viewport.aspectRatio ?? [1, 1],
       viewUp: [viewUp[0], viewUp[1], viewUp[2]],
       flipHorizontal: this.flipHorizontal,
       flipVertical: this.flipVertical,
     };
   }
 
+  /**
+   * set the aspect ratio on Viewport
+   *
+   * The aspect ratio only stretches the image. The zoom stays the same, and
+   * `resetCamera` fits the stretched image if a caller wants that fit.
+   *
+   * @param aspectRatio - aspect ratio to set to Viewport
+   */
+  private setAspectRatioForViewport(aspectRatio: Point2): void {
+    const { viewport } = this._cpuFallbackEnabledElement;
+
+    viewport.aspectRatio = aspectRatio;
+  }
+
+  /**
+   * Calculates the parallel scale that fits the image into the canvas for one
+   * stretch value of the aspect ratio.
+   *
+   * @param ratioValue - the width ratio divided by the height ratio
+   * @returns the parallel scale that fits the image
+   */
+  private getFitParallelScaleCPU(ratioValue: number): number {
+    const { image } = this._cpuFallbackEnabledElement;
+    const { clientWidth, clientHeight } = this.element;
+    const { rowPixelSpacing, columnPixelSpacing, width, height } = image;
+
+    const canvasRatio = clientWidth / clientHeight;
+    const baseHeight = clientHeight * rowPixelSpacing * 0.5;
+
+    const effectiveWidth = width * columnPixelSpacing * ratioValue;
+    const effectiveHeight = height * rowPixelSpacing;
+
+    // Determine if fitting the image is constrained by the canvas width or height
+    if (effectiveWidth / effectiveHeight > canvasRatio) {
+      return baseHeight / (clientWidth / effectiveWidth);
+    }
+
+    const fitParallelScale = effectiveHeight * 0.5;
+    // Adjust scale for narrow aspect ratios to ensure the image remains fully visible
+    return ratioValue < 1 ? fitParallelScale / ratioValue : fitParallelScale;
+  }
+
   private setCameraCPU(cameraInterface: ICamera): void {
     const { viewport, image } = this._cpuFallbackEnabledElement;
     const previousCamera = this.getCameraCPU();
 
-    const { focalPoint, parallelScale, scale, flipHorizontal, flipVertical } =
-      cameraInterface;
+    const {
+      focalPoint,
+      parallelScale,
+      scale,
+      flipHorizontal,
+      flipVertical,
+      aspectRatio,
+    } = cameraInterface;
 
     const { clientHeight } = this.element;
 
     if (focalPoint) {
+      // worldToCanvasCPU returns CSS pixels; canvasToPixel takes device
+      // pixels. The delta below stays in image-pixel units either way.
       const focalPointCanvas = this.worldToCanvasCPU(focalPoint);
       const focalPointPixel = canvasToPixel(
         this._cpuFallbackEnabledElement,
-        focalPointCanvas
+        cssToDevicePixels(focalPointCanvas)
       );
 
       const prevFocalPointCanvas = this.worldToCanvasCPU(
@@ -1058,7 +1189,7 @@ class StackViewport extends Viewport {
       );
       const prevFocalPointPixel = canvasToPixel(
         this._cpuFallbackEnabledElement,
-        prevFocalPointCanvas
+        cssToDevicePixels(prevFocalPointCanvas)
       );
 
       const deltaPixel = vec2.create();
@@ -1094,6 +1225,10 @@ class StackViewport extends Viewport {
       const { rowPixelSpacing } = image;
       viewport.scale = scale;
       viewport.parallelScale = (clientHeight * rowPixelSpacing * 0.5) / scale;
+    }
+
+    if (aspectRatio) {
+      this.setAspectRatioForViewport(aspectRatio);
     }
 
     if (flipHorizontal !== undefined || flipVertical !== undefined) {
@@ -1141,6 +1276,39 @@ class StackViewport extends Viewport {
     const camera = this.getCameraCPU();
 
     this.setCameraCPU({ ...camera, scale: zoom });
+  }
+
+  public getAspectRatioCPU(): Point2 {
+    const { aspectRatio } = this.getCameraCPU();
+    return aspectRatio ?? this.options?.aspectRatio ?? [1, 1];
+  }
+
+  /**
+   * The CPU version of `Viewport.setAspectRatio`, which documents the options.
+   */
+  public setAspectRatioCPU(
+    value: Point2,
+    options: SetAspectRatioOptions = {}
+  ): void {
+    const { fit = false, storeAsInitialCamera = false } = options;
+    const camera = this.getCameraCPU();
+    if (storeAsInitialCamera) {
+      this.options.aspectRatio = value;
+    }
+
+    this.setCameraCPU({
+      ...camera,
+      aspectRatio: value,
+    });
+
+    if (fit) {
+      // `resetCameraCPU` holds the fit of the CPU fallback.
+      this.resetCameraCPU({
+        resetPan: false,
+        resetZoom: true,
+        resetAspectRatio: false,
+      });
+    }
   }
 
   private setFlipCPU({ flipHorizontal, flipVertical }: FlipDirection): void {
@@ -1239,7 +1407,7 @@ class StackViewport extends Viewport {
     }
 
     // make sure the VOI LUT function is valid in the VOILUTFunctionType which is enum
-    const newVOILUTFunction = this._getValidVOILUTFunction(voiLUTFunction);
+    const newVOILUTFunction = getValidVOILUTFunction(voiLUTFunction);
 
     let forceRecreateLUTFunction = false;
     if (this.VOILUTFunction !== newVOILUTFunction) {
@@ -1386,7 +1554,7 @@ class StackViewport extends Viewport {
         voiLUTFunction: image.voiLUTFunction,
       };
 
-      const { lower, upper } = windowLevelUtil.toLowHighRange(
+      const { lower, upper } = getVOIRangeFromWindowLevel(
         wwToUse,
         wcToUse,
         image.voiLUTFunction
@@ -1589,7 +1757,7 @@ class StackViewport extends Viewport {
     }
 
     this.modality = modality;
-    const voiLUTFunctionEnum = this._getValidVOILUTFunction(voiLUTFunction);
+    const voiLUTFunctionEnum = getValidVOILUTFunction(voiLUTFunction);
     this.VOILUTFunction = voiLUTFunctionEnum;
 
     this.calibration = calibration;
@@ -1756,24 +1924,14 @@ class StackViewport extends Viewport {
     numberOfComponents,
     pixelArray,
   }) {
-    const values = new pixelArray.constructor(pixelArray.length);
-
-    // Todo: I guess nothing should be done for use16bit?
-    const scalarArray = vtkDataArray.newInstance({
-      name: 'Pixels',
-      numberOfComponents: numberOfComponents,
-      values: values,
+    return createEmptyVTKImageData({
+      origin,
+      direction,
+      dimensions,
+      spacing,
+      numberOfComponents,
+      pixelArray: new pixelArray.constructor(pixelArray.length),
     });
-
-    const imageData = vtkImageData.newInstance();
-
-    imageData.setDimensions(dimensions);
-    imageData.setSpacing(spacing);
-    imageData.setDirection(direction);
-    imageData.setOrigin(origin);
-    imageData.getPointData().setScalars(scalarArray);
-
-    return imageData;
   }
   /**
    * Creates vtkImagedata based on the image object, it creates
@@ -1819,6 +1977,10 @@ class StackViewport extends Viewport {
     currentImageIdIndex = 0
   ): Promise<string> {
     this._throwIfDestroyed();
+
+    // Setting a raw stack directly resets any display-set bookkeeping; the
+    // setDisplaySets override re-records after calling this.
+    this.clearDisplaySets();
 
     this.imageIds = imageIds;
 
@@ -1875,6 +2037,36 @@ class StackViewport extends Viewport {
     triggerEvent(this.element, Events.VIEWPORT_NEW_IMAGE_SET, eventDetail);
 
     return imageId;
+  }
+
+  /**
+   * Mounts display sets on the viewport, mirroring the GenericViewport
+   * `setDisplaySets` API. Each `displaySetId` is resolved through the registered
+   * generic-viewport dataset metadata (see `genericViewportDisplaySetMetadataProvider`)
+   * to its `imageIds`; the first entry is loaded as the stack. Resolution and
+   * loading run inside {@link mountDisplaySets}, which records the mounted
+   * entries after `setStack` so {@link getDisplaySets} reports them.
+   *
+   * @param entries - display set entries to mount; the first is used as the stack source.
+   */
+  public async setDisplaySets(
+    ...entries: Array<{ displaySetId: string; options?: unknown }>
+  ): Promise<void> {
+    await this.mountDisplaySets(entries, async (entry) => {
+      const dataSet = getGenericViewportImageDisplaySet(entry.displaySetId);
+      if (!dataSet?.imageIds?.length) {
+        throw new Error(
+          `[StackViewport] No registered imageIds for display set ${entry.displaySetId}`
+        );
+      }
+
+      const initialImageIdIndex =
+        typeof dataSet.initialImageIdIndex === 'number'
+          ? dataSet.initialImageIdIndex
+          : 0;
+
+      await this.setStack(dataSet.imageIds, initialImageIdIndex);
+    });
   }
 
   /**
@@ -2039,8 +2231,15 @@ class StackViewport extends Viewport {
           let max = 0;
 
           for (let i = 0; i < numPixels; i++) {
-            const rescaledPixel = Math.floor(
-              (pixelData[i] - intercept) / slope
+            // Float32 precision can place pixelData[i] a hair below `intercept`
+            // (which is derived from a JS Number that differs from the Float32
+            // representation), making the floor produce -1. Storing -1 into a
+            // Uint16Array wraps to 65535 and renders as white. Clamp to the
+            // valid Uint16 range to avoid spurious bright pixels at the
+            // image's min/max values.
+            const rescaledPixel = Math.max(
+              0,
+              Math.min(65535, Math.floor((pixelData[i] - intercept) / slope))
             );
 
             intPixelData[i] = rescaledPixel;
@@ -2212,7 +2411,8 @@ class StackViewport extends Viewport {
 
   public getLoaderImageOptions(imageId: string) {
     const imageIdIndex = this.imageIds.indexOf(imageId);
-    const { transferSyntaxUID } = metaData.get('transferSyntax', imageId) || {};
+    const { transferSyntaxUID } =
+      metaData.get(MetadataModules.TRANSFER_SYNTAX, imageId) || {};
 
     const options = {
       useRGBA: false,
@@ -2259,7 +2459,7 @@ class StackViewport extends Viewport {
 
   private _loadAndDisplayImageGPU(imageId: string, imageIdIndex: number) {
     if (!imageId) {
-      console.warn('No image id set yet to load');
+      log.warn('No image id set yet to load');
       return;
     }
     const eventDetail: EventTypes.PreStackNewImageEventDetail = {
@@ -2317,7 +2517,7 @@ class StackViewport extends Viewport {
     );
 
     const { windowCenter, windowWidth, voiLUTFunction } = viewport.voi;
-    this.voiRange = windowLevelUtil.toLowHighRange(
+    this.voiRange = getVOIRangeFromWindowLevel(
       windowWidth,
       windowCenter,
       voiLUTFunction
@@ -2428,6 +2628,7 @@ class StackViewport extends Viewport {
       image,
       this._imageData
     );
+    const wasStackInvalidated = this.stackInvalidated;
 
     // const activeCamera = this.getRenderer().getActiveCamera();
     const viewPresentation = this.getViewPresentation();
@@ -2435,7 +2636,7 @@ class StackViewport extends Viewport {
     // Cache camera props so we can trigger one camera changed event after
     // The full transition.
     // const previousCameraProps = this.getCamera();
-    if (sameImageData && !this.stackInvalidated) {
+    if (sameImageData && !wasStackInvalidated) {
       // 3a. If we can reuse it, replace the scalar data under the hood
       this._updateVTKImageDataFromCornerstoneImage(image);
 
@@ -2523,21 +2724,28 @@ class StackViewport extends Viewport {
     //Todo: i'm not sure if this is needed
     // activeCamera.setFreezeFocalPoint(true);
 
-    const monochrome1 =
-      imagePixelModule.photometricInterpretation === 'MONOCHROME1';
+    if (wasStackInvalidated) {
+      const monochrome1 =
+        imagePixelModule.photometricInterpretation === 'MONOCHROME1';
 
-    // invalidate the stack so that we can set the voi range
-    this.stackInvalidated = true;
+      // Keep the metadata-driven reset path only for explicit stack invalidation.
+      this.stackInvalidated = true;
 
-    const voiRange = this._getInitialVOIRange(image);
-    this.setVOI(voiRange, {
-      forceRecreateLUTFunction: !!monochrome1,
-    });
+      const voiRange = this._getInitialVOIRange(image);
+      this.setVOI(voiRange, {
+        forceRecreateLUTFunction: !!monochrome1,
+      });
 
-    this.initialInvert = !!monochrome1;
+      this.initialInvert = !!monochrome1;
 
-    // should carry over the invert color from the previous image if has been applied
-    this.setInvertColor(this.invert || this.initialInvert);
+      // should carry over the invert color from the previous image if has been applied
+      this.setInvertColor(this.invert || this.initialInvert);
+    } else {
+      // Actor recreation can still be needed when imageData cannot be reused
+      // (for example, a scalar type change), but viewport properties remain stack-based.
+      this.stackInvalidated = true;
+      this._setPropertiesFromCache();
+    }
 
     // Saving position of camera on render, to cache the panning
     this.stackInvalidated = false;
@@ -2555,7 +2763,7 @@ class StackViewport extends Viewport {
     }
     const { windowCenter, windowWidth, voiLUTFunction } = image;
 
-    let voiRange = this._getVOIRangeFromWindowLevel(
+    let voiRange = getVOIRangeFromWindowLevel(
       windowWidth,
       windowCenter,
       voiLUTFunction
@@ -2590,27 +2798,6 @@ class StackViewport extends Viewport {
 
   private _getDefaultPTPrescaledVOIRange() {
     return { lower: 0, upper: 5 };
-  }
-
-  private _getVOIRangeFromWindowLevel(
-    windowWidth: number | number[],
-    windowCenter: number | number[],
-    voiLUTFunction: VOILUTFunctionType = VOILUTFunctionType.LINEAR
-  ): { lower: number; upper: number } | undefined {
-    let center, width;
-
-    if (typeof windowCenter === 'number' && typeof windowWidth === 'number') {
-      center = windowCenter;
-      width = windowWidth;
-    } else if (Array.isArray(windowCenter) && Array.isArray(windowWidth)) {
-      center = windowCenter[0];
-      width = windowWidth[0];
-    }
-
-    // If center and width are defined, convert them to low-high range
-    if (center !== undefined && width !== undefined) {
-      return windowLevelUtil.toLowHighRange(width, center, voiLUTFunction);
-    }
   }
 
   /**
@@ -2653,9 +2840,11 @@ class StackViewport extends Viewport {
   private resetCameraCPU({
     resetPan = true,
     resetZoom = true,
+    resetAspectRatio = true,
   }: {
     resetPan?: boolean;
     resetZoom?: boolean;
+    resetAspectRatio?: boolean;
   }) {
     const { image } = this._cpuFallbackEnabledElement;
 
@@ -2663,9 +2852,24 @@ class StackViewport extends Viewport {
       return;
     }
 
+    const targetAspectRatio = resetAspectRatio
+      ? this.options?.aspectRatio || ([1, 1] as Point2)
+      : this.getAspectRatioCPU();
+
     resetCamera(this._cpuFallbackEnabledElement, resetPan, resetZoom);
 
-    const { scale } = this._cpuFallbackEnabledElement.viewport;
+    let { scale } = this._cpuFallbackEnabledElement.viewport;
+
+    if (resetZoom) {
+      // The aspect ratio stretches the image, and the reset above fits the
+      // image without that stretch. The scale therefore needs the ratio
+      // between the two fits.
+      const [stretchX, stretchY] = getNormalizedAspectRatio(targetAspectRatio);
+      const stretchRatio = stretchX / stretchY;
+      scale /=
+        this.getFitParallelScaleCPU(stretchRatio) /
+        this.getFitParallelScaleCPU(1);
+    }
 
     // canvas center is the focal point
     const { clientWidth, clientHeight } = this.element;
@@ -2676,10 +2880,11 @@ class StackViewport extends Viewport {
     this.setCameraCPU({
       focalPoint: centerWorld,
       scale,
+      aspectRatio: targetAspectRatio,
     });
   }
 
-  private resetCameraGPU({ resetPan, resetZoom }): boolean {
+  private resetCameraGPU(resetOptions: ResetCameraOptions): boolean {
     // Todo: we need to make the rotation a camera properties so that
     // we can reset it there, right now it is not possible to reset the rotation
     // without this
@@ -2695,7 +2900,7 @@ class StackViewport extends Viewport {
     // For stack Viewport we since we have only one slice
     // it should be enough to reset the camera to the center of the image
     const resetToCenter = true;
-    return super.resetCamera({ resetPan, resetZoom, resetToCenter });
+    return super.resetCamera({ resetToCenter, ...resetOptions });
   }
 
   /**
@@ -2864,8 +3069,12 @@ class StackViewport extends Viewport {
     if (!this._cpuFallbackEnabledElement.image) {
       return;
     }
-    // compute the pixel coordinate in the image
-    const [px, py] = canvasToPixel(this._cpuFallbackEnabledElement, canvasPos);
+    // compute the pixel coordinate in the image; canvasPos arrives in CSS
+    // pixels, canvasToPixel expects device pixels.
+    const [px, py] = canvasToPixel(
+      this._cpuFallbackEnabledElement,
+      cssToDevicePixels(canvasPos)
+    );
 
     // convert pixel coordinate to world coordinate
     const { origin, spacing, direction } = this.getImageData();
@@ -2900,7 +3109,9 @@ class StackViewport extends Viewport {
       this._cpuFallbackEnabledElement,
       indexPoint
     );
-    return canvasPoint;
+
+    // pixelToCanvas works in device pixels; the public contract is CSS pixels.
+    return deviceToCssPixels(canvasPoint);
   };
 
   private canvasToWorldGPUContextPool = (canvasPos: Point2): Point3 => {
@@ -2917,7 +3128,7 @@ class StackViewport extends Viewport {
     vtkCamera.setClippingRange(distance, distance + 0.1);
 
     const devicePixelRatio = window.devicePixelRatio || 1;
-    const { width, height } = this.canvas;
+    const { width, height } = this.getRenderedCanvasSize();
     const aspectRatio = width / height;
 
     // Convert canvas coordinates to normalized display coordinates
@@ -3027,7 +3238,7 @@ class StackViewport extends Viewport {
 
     const devicePixelRatio = window.devicePixelRatio || 1;
 
-    const { width, height } = this.canvas;
+    const { width, height } = this.getRenderedCanvasSize();
 
     const aspectRatio = width / height;
 
@@ -3141,24 +3352,11 @@ class StackViewport extends Viewport {
   private _getVOIRangeForCurrentImage() {
     const { windowCenter, windowWidth, voiLUTFunction } = this.csImage;
 
-    return this._getVOIRangeFromWindowLevel(
+    return getVOIRangeFromWindowLevel(
       windowWidth,
       windowCenter,
       voiLUTFunction
     );
-  }
-
-  private _getValidVOILUTFunction(
-    voiLUTFunction: VOILUTFunctionType | unknown
-  ): VOILUTFunctionType {
-    if (
-      !Object.values(VOILUTFunctionType).includes(
-        voiLUTFunction as VOILUTFunctionType
-      )
-    ) {
-      return VOILUTFunctionType.LINEAR;
-    }
-    return voiLUTFunction as VOILUTFunctionType;
   }
 
   /**
@@ -3468,11 +3666,18 @@ class StackViewport extends Viewport {
     this.render();
   }
 
-  private setColormapCPU(colormapData: CPUFallbackColormapData) {
+  private setColormapCPU(
+    colormapData: CPUFallbackColormapData | ColormapPublic
+  ) {
     this.colormap = colormapData;
-    const colormap = colormapUtils.getColormap(colormapData.name);
+    const colormap = resolveCPUFallbackColormap(colormapData);
 
-    this._cpuFallbackEnabledElement.viewport.colormap = colormap;
+    if (colormap) {
+      this._cpuFallbackEnabledElement.viewport.colormap = colormap;
+    } else {
+      delete this._cpuFallbackEnabledElement.viewport.colormap;
+    }
+
     this._cpuFallbackEnabledElement.renderingTools = {};
 
     this.fillWithBackgroundColor();
@@ -3492,10 +3697,7 @@ class StackViewport extends Viewport {
     const actor = ActorEntry.actor as ImageActor;
     const actorProp = actor.getProperty();
     const rgbTransferFunction = actorProp.getRGBTransferFunction();
-
-    const colormapObj =
-      colormapUtils.getColormap(colormap.name) ||
-      vtkColorMaps.getPresetByName(colormap.name);
+    const colormapObj = colormapUtils.resolveColormap(colormap.name);
 
     if (!rgbTransferFunction) {
       const cfun = vtkColorTransferFunction.newInstance();
@@ -3579,6 +3781,14 @@ class StackViewport extends Viewport {
       cpu: this.setZoomCPU,
       gpu: super.setZoom,
     },
+    getAspectRatio: {
+      cpu: this.getAspectRatioCPU,
+      gpu: super.getAspectRatio,
+    },
+    setAspectRatio: {
+      cpu: this.setAspectRatioCPU,
+      gpu: super.setAspectRatio,
+    },
     setVOI: {
       cpu: this.setVOICPU,
       gpu: this.setVOIGPU,
@@ -3596,18 +3806,19 @@ class StackViewport extends Viewport {
       gpu: this.setInvertColorGPU,
     },
     resetCamera: {
-      cpu: (
-        options: { resetPan?: boolean; resetZoom?: boolean } = {}
-      ): boolean => {
-        const { resetPan = true, resetZoom = true } = options;
-        this.resetCameraCPU({ resetPan, resetZoom });
+      cpu: (options: ResetCameraOptions = {}): boolean => {
+        const {
+          resetPan = true,
+          resetZoom = true,
+          resetAspectRatio = true,
+        } = options;
+        // `resetToCenter` and `storeAsInitialCamera` do not apply to the CPU
+        // fallback, which always centres and keeps no initial camera.
+        this.resetCameraCPU({ resetPan, resetZoom, resetAspectRatio });
         return true;
       },
-      gpu: (
-        options: { resetPan?: boolean; resetZoom?: boolean } = {}
-      ): boolean => {
-        const { resetPan = true, resetZoom = true } = options;
-        this.resetCameraGPU({ resetPan, resetZoom });
+      gpu: (options: ResetCameraOptions = {}): boolean => {
+        this.resetCameraGPU(options);
         return true;
       },
     },

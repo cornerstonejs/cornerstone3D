@@ -11,6 +11,7 @@ import {
   setTitleAndDescription,
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
+import { viewportSupportsStackCompatibility } from '../../src/utilities/viewportCapabilities';
 
 // This is for debugging purposes
 console.warn(
@@ -52,7 +53,7 @@ setTitleAndDescription(
   'This example demonstrates how to synchronize the image slice of a stack viewport (first two) with the image slice of a volume viewport (right most) or another stack viewport. When you scroll through the stack, the other viewports will scroll to the same image slice. Each viewport can be source or target of the synchronization.'
 );
 
-const size = '500px';
+const size = '512px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 
@@ -191,8 +192,15 @@ async function run() {
     toolGroup.addViewport(viewportId, renderingEngineId)
   );
 
-  const vp1 = renderingEngine.getStackViewports()[0];
-  const vp2 = renderingEngine.getStackViewports()[1];
+  const vp1 = renderingEngine.getViewport(viewportIds[0]);
+  const vp2 = renderingEngine.getViewport(viewportIds[1]);
+
+  if (
+    !viewportSupportsStackCompatibility(vp1) ||
+    !viewportSupportsStackCompatibility(vp2)
+  ) {
+    throw new Error('Image slice sync requires stack-compatible viewports');
+  }
 
   await vp1.setStack(imageIds);
   await vp2.setStack(imageIds, 50);

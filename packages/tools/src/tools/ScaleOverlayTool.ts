@@ -1,4 +1,5 @@
 import AnnotationDisplayTool from './base/AnnotationDisplayTool';
+import getViewportICamera from '../utilities/getViewportICamera';
 import { vec3 } from 'gl-matrix';
 import {
   getEnabledElementByIds,
@@ -91,7 +92,7 @@ class ScaleOverlayTool extends AnnotationDisplayTool {
       return;
     }
 
-    const { viewUp, viewPlaneNormal } = viewport.getCamera();
+    const { viewUp, viewPlaneNormal } = getViewportICamera(viewport);
 
     const viewportCanvasCornersInWorld =
       csUtils.getViewportImageCornersInWorld(viewport);

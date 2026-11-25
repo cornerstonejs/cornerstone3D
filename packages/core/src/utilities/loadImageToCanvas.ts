@@ -9,11 +9,14 @@ import type {
 
 import { loadAndCacheImage } from '../loaders/imageLoader';
 import * as metaData from '../metaData';
-import { RequestType } from '../enums';
+import { MetadataModules, RequestType } from '../enums';
 import imageLoadPoolManager from '../requestPool/imageLoadPoolManager';
 import renderToCanvasGPU from './renderToCanvasGPU';
 import renderToCanvasCPU from './renderToCanvasCPU';
 import cache from '../cache/cache';
+import { coreLog } from './logger';
+
+const log = coreLog.getLogger('utilities', 'loadImageToCanvas');
 
 /**
  * The original load image options specified just an image id,  which is optimal
@@ -129,7 +132,8 @@ export default function loadImageToCanvas(
 
   return new Promise((resolve, reject) => {
     function successCallback(imageOrVolume: IImage | IVolume, imageId: string) {
-      const { modality } = metaData.get('generalSeriesModule', imageId) || {};
+      const { modality } =
+        metaData.get(MetadataModules.GENERAL_SERIES, imageId) || {};
 
       const image = !isVolume && (imageOrVolume as IImage);
       const volume = isVolume && (imageOrVolume as IVolume);
@@ -159,7 +163,7 @@ export default function loadImageToCanvas(
     }
 
     function errorCallback(error: Error, imageId: string) {
-      console.error(error, imageId);
+      log.error(error, imageId);
       reject(error);
     }
 

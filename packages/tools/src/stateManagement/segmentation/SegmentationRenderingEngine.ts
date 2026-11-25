@@ -12,24 +12,20 @@ import {
 } from '../../enums';
 
 import type { SegmentationRenderedEventDetail } from '../../types/EventTypes';
-import Representations from '../../enums/SegmentationRepresentations';
 import { getSegmentation } from './getSegmentation';
 import { getSegmentationRepresentations } from './getSegmentationRepresentation';
 import type { SegmentationRepresentation } from '../../types/SegmentationStateTypes';
-import surfaceDisplay from '../../tools/displayTools/Surface/surfaceDisplay';
-import contourDisplay from '../../tools/displayTools/Contour/contourDisplay';
-import labelmapDisplay from '../../tools/displayTools/Labelmap/labelmapDisplay';
 import { addTool } from '../../store/addTool';
 import { state } from '../../store/state';
 import PlanarFreehandContourSegmentationTool from '../../tools/annotation/PlanarFreehandContourSegmentationTool';
 import { getToolGroupForViewport } from '../../store/ToolGroupManager';
 import { addDefaultSegmentationListener } from './segmentationEventManager';
+import { getSegmentationRepresentationDisplay } from './SegmentationRepresentationDisplayRegistry';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
-const renderers = {
-  [Representations.Labelmap]: labelmapDisplay,
-  [Representations.Contour]: contourDisplay,
-  [Representations.Surface]: surfaceDisplay,
-};
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'stateManagement.segmentation.SegmentationRenderingEngine'
+);
 
 const planarContourToolName = PlanarFreehandContourSegmentationTool.toolName;
 
@@ -42,7 +38,6 @@ const planarContourToolName = PlanarFreehandContourSegmentationTool.toolName;
  */
 class SegmentationRenderingEngine {
   private _needsRender: Set<string> = new Set();
-  private _pendingRenderQueue: string[][] = [];
   private _animationFrameSet = false;
   private _animationFrameHandle: number | null = null;
   public hasBeenDestroyed: boolean;
@@ -118,12 +113,14 @@ class SegmentationRenderingEngine {
     }
   }
 
+  /**
+   * Flags the viewports for the next animation frame. The flags are a set, so
+   * many requests for one viewport before a frame cause one render of that
+   * viewport. A request made while a frame renders goes into the set for the
+   * frame after it, because `_renderFlaggedSegmentations` takes and clears the
+   * set before it renders.
+   */
   private _setViewportsToBeRenderedNextFrame(viewportIds: string[]) {
-    if (this._animationFrameSet) {
-      // If a render is already scheduled, queue this set for after the current one
-      this._pendingRenderQueue.push(viewportIds);
-      return;
-    }
     // Add the viewports to the set of flagged viewports
     viewportIds.forEach((viewportId) => {
       this._needsRender.add(viewportId);
@@ -151,26 +148,24 @@ class SegmentationRenderingEngine {
   private _renderFlaggedSegmentations = () => {
     this._throwIfDestroyed();
 
+    // Take and clear the flags before the render, so that a request made
+    // during the render is kept for the next frame
     const viewportIds = Array.from(this._needsRender);
-
-    viewportIds.forEach((viewportId) => {
-      this._triggerRender(viewportId);
-    });
-
-    // Clear the set of flagged segmentations
     this._needsRender.clear();
 
     // Allow RAF to be called again
     this._animationFrameSet = false;
     this._animationFrameHandle = null;
 
-    // If there are pending viewportId sets, schedule the next one
-    if (this._pendingRenderQueue.length > 0) {
-      const nextViewportIds = this._pendingRenderQueue.shift();
-      if (nextViewportIds && nextViewportIds.length > 0) {
-        this._setViewportsToBeRenderedNextFrame(nextViewportIds);
+    viewportIds.forEach((viewportId) => {
+      // A viewport that throws must not skip the other viewports of the frame,
+      // because the set is already cleared and they would not render again.
+      try {
+        this._triggerRender(viewportId);
+      } catch (error) {
+        cs3dLogger.error(error);
       }
-    }
+    });
   };
 
   _triggerRender(viewportId?: string) {
@@ -195,14 +190,26 @@ class SegmentationRenderingEngine {
           this._addPlanarFreeHandToolIfAbsent(viewport);
         }
 
-        const display = renderers[representation.type];
+        const display = getSegmentationRepresentationDisplay(
+          representation.type
+        );
         const segmentation = getSegmentation(representation.segmentationId);
         const existingRepresentation =
           segmentation.representationData[representation.type] !== undefined;
 
-        try {
-          // @ts-ignore
-          display.render(viewport, representation).then(() => {
+        if (!display) {
+          cs3dLogger.warn(
+            `No display registered for segmentation representation type ${representation.type}.`
+          );
+          return Promise.resolve({
+            segmentationId: representation.segmentationId,
+            type: representation.type,
+          });
+        }
+
+        return display
+          .render(viewport, representation)
+          .then(() => {
             if (!existingRepresentation) {
               addDefaultSegmentationListener(
                 viewport,
@@ -210,15 +217,20 @@ class SegmentationRenderingEngine {
                 representation.type
               );
             }
-          });
-        } catch (error) {
-          console.error(error);
-        }
 
-        return Promise.resolve({
-          segmentationId: representation.segmentationId,
-          type: representation.type,
-        });
+            return {
+              segmentationId: representation.segmentationId,
+              type: representation.type,
+            };
+          })
+          .catch((error) => {
+            cs3dLogger.error(error);
+
+            return {
+              segmentationId: representation.segmentationId,
+              type: representation.type,
+            };
+          });
       }
     );
 
@@ -291,9 +303,108 @@ function triggerSegmentationRenderBySegmentationId(
   segmentationRenderingEngine.renderSegmentation(segmentationId);
 }
 
+// Trailing delay before re-rendering a projection-heavy viewport after a
+// segmentation-data modification (brush edits fire many events per second).
+const DEFERRED_SEGMENTATION_RENDER_DELAY_MS = 240;
+const deferredSegmentationRenderTimers = new Map<
+  string,
+  ReturnType<typeof setTimeout>
+>();
+
+/**
+ * Whether re-rendering this viewport's segmentations means re-marching a slab
+ * per fragment (labelmap over MIP style projections), which is too expensive
+ * to repeat for every segmentation-data-modified event.
+ */
+function isProjectionHeavySegmentationViewport(
+  viewport: Types.IViewport
+): boolean {
+  // Legacy volume viewports render labelmap-over-MIP by switching the whole
+  // viewport to the edge-projection blend mode.
+  const blendMode = (
+    viewport as Partial<{ getBlendMode: () => Enums.BlendModes }>
+  ).getBlendMode?.();
+
+  if (blendMode === Enums.BlendModes.LABELMAP_EDGE_PROJECTION_BLEND) {
+    return true;
+  }
+
+  // Generic planar viewports are projection-heavy when any of their display
+  // sets renders across a slab (e.g. a MIP source with a projected labelmap
+  // overlay, which inherits the source's slab thickness).
+  const planarViewport = viewport as Partial<{
+    getActors: () => Types.ActorEntry[];
+    getSourceDataId: () => string | undefined;
+    getDisplaySetPresentation: (
+      dataId: string
+    ) => { slabThickness?: number } | undefined;
+  }>;
+
+  if (typeof planarViewport.getDisplaySetPresentation !== 'function') {
+    return false;
+  }
+
+  const dataIds: string[] = [];
+  const sourceDataId = planarViewport.getSourceDataId?.();
+
+  if (sourceDataId) {
+    dataIds.push(sourceDataId);
+  }
+
+  planarViewport.getActors?.().forEach((actorEntry) => {
+    if (actorEntry.representationUID) {
+      dataIds.push(String(actorEntry.representationUID));
+    }
+  });
+
+  return dataIds.some(
+    (dataId) =>
+      (planarViewport.getDisplaySetPresentation(dataId)?.slabThickness ?? 0) > 0
+  );
+}
+
+/**
+ * Segmentation render trigger for high-frequency data modifications (brush
+ * strokes and the like): viewports that are cheap to repaint render live,
+ * while projection-heavy viewports (labelmap over MIP) are re-rendered once
+ * the modification stream goes quiet.
+ */
+function triggerSegmentationRenderForModified(segmentationId?: string): void {
+  const viewportIds =
+    segmentationRenderingEngine._getViewportIdsForSegmentation(segmentationId);
+
+  viewportIds.forEach((viewportId) => {
+    const { viewport } = getEnabledElementByViewportId(viewportId) || {};
+
+    if (!viewport) {
+      return;
+    }
+
+    if (!isProjectionHeavySegmentationViewport(viewport)) {
+      segmentationRenderingEngine.renderSegmentationsForViewport(viewportId);
+      return;
+    }
+
+    const existingTimer = deferredSegmentationRenderTimers.get(viewportId);
+
+    if (existingTimer !== undefined) {
+      clearTimeout(existingTimer);
+    }
+
+    deferredSegmentationRenderTimers.set(
+      viewportId,
+      setTimeout(() => {
+        deferredSegmentationRenderTimers.delete(viewportId);
+        segmentationRenderingEngine.renderSegmentationsForViewport(viewportId);
+      }, DEFERRED_SEGMENTATION_RENDER_DELAY_MS)
+    );
+  });
+}
+
 const segmentationRenderingEngine = new SegmentationRenderingEngine();
 export {
   triggerSegmentationRender,
   triggerSegmentationRenderBySegmentationId,
+  triggerSegmentationRenderForModified,
   segmentationRenderingEngine,
 };

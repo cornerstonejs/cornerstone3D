@@ -45,7 +45,7 @@ setTitleAndDescription(
   'Here we demonstrate how a segment can be locked such that it cannot be edited by segmentation tools'
 );
 
-const size = '500px';
+const size = '512px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 

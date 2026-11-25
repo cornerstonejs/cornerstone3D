@@ -1,5 +1,5 @@
 import type { IDistance, IPoints, ITouchPoints } from '../../types';
-import type { Types } from '@cornerstonejs/core';
+import { utilities, type Types } from '@cornerstonejs/core';
 
 /**
  * Returns the difference between multiple `IPoints` instances.
@@ -79,11 +79,11 @@ function getDeltaDistanceBetweenIPoints(
  * @returns A copy of the points.
  */
 function copyPointsList(points: ITouchPoints[]): ITouchPoints[] {
-  return JSON.parse(JSON.stringify(points));
+  return utilities.deepClone(points);
 }
 
 function copyPoints(points: ITouchPoints): ITouchPoints {
-  return JSON.parse(JSON.stringify(points));
+  return utilities.deepClone(points);
 }
 
 function getMeanPoints(points: IPoints[]): IPoints {
@@ -234,6 +234,19 @@ function _getDistance3D(point0: Types.Point3, point1: Types.Point3): number {
   );
 }
 
+/**
+ * Returns true when the platform reports a coarse pointer (touch-capable
+ * device). Same `(any-pointer:coarse)` check the examples use to enable
+ * mobile-specific tool configuration; false in non-browser environments.
+ */
+function isMobile(): boolean {
+  return (
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(any-pointer:coarse)').matches
+  );
+}
+
 export {
   getMeanPoints,
   getMeanTouchPoints,
@@ -243,4 +256,12 @@ export {
   getDeltaPoints,
   getDeltaDistance,
   getDeltaRotation,
+  isMobile,
 };
+
+export {
+  TOUCH_PROXIMITY,
+  MOUSE_PROXIMITY,
+  TOUCH_TAP_MAX_CANVAS_DISTANCE,
+  TOUCH_TAP_TOLERANCE_MS,
+} from './constants';

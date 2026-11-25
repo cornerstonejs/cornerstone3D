@@ -8,6 +8,7 @@ import {
 import {
   initDemo,
   createImageIdsAndCacheMetaData,
+  get4DVolumeImageIds,
   setTitleAndDescription,
   addSliderToToolbar,
   addDropdownToToolbar,
@@ -38,8 +39,8 @@ setTitleAndDescription('Volume 4D', description);
 const content = document.getElementById('content');
 const element = document.createElement('div');
 element.id = 'cornerstone-element';
-element.style.width = '500px';
-element.style.height = '500px';
+element.style.width = '512px';
+element.style.height = '512px';
 
 content.appendChild(element);
 // ============================= //
@@ -82,11 +83,12 @@ async function run() {
   // Init Cornerstone and related libraries
   await initDemo();
   // Get Cornerstone imageIds and fetch metadata into RAM
-  const imageIds = await createImageIdsAndCacheMetaData({
+  const seriesImageIds = await createImageIdsAndCacheMetaData({
     StudyInstanceUID: '2.25.79767489559005369769092179787138169587',
     SeriesInstanceUID: '2.25.87977716979310885152986847054790859463',
     wadoRsRoot: 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb',
   });
+  const imageIds = get4DVolumeImageIds(seriesImageIds);
 
   // Instantiate a rendering engine
   const renderingEngine = new RenderingEngine(renderingEngineId);

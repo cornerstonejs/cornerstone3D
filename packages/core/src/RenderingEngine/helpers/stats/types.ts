@@ -2,7 +2,7 @@
  * Interface for individual stats panels (FPS, MS, MB).
  */
 interface Panel {
-  dom: HTMLCanvasElement;
+  dom: HTMLElement;
   update: (value: number, maxValue: number) => void;
 }
 

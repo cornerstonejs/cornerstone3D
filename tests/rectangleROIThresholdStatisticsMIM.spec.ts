@@ -1,5 +1,9 @@
 import { test, expect } from 'playwright-test-coverage';
-import { visitExample, simulateClicksOnElement } from './utils/index';
+import {
+  visitExample,
+  simulateClicksOnElement,
+  getVisibleViewportCanvas,
+} from './utils/index';
 
 test.beforeEach(async ({ page }) => {
   await visitExample(page, 'rectangleROIStartEndThresholdWithSegmentation');
@@ -116,7 +120,7 @@ testCases.forEach(
       await jumpToSlice(startSlice);
 
       // Define region
-      const locator = page.locator('canvas').first();
+      const locator = getVisibleViewportCanvas(page, 0);
       await simulateClicksOnElement({
         locator,
         points: [

@@ -1,5 +1,14 @@
 import { utilities, Enums } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
+import {
+  viewportSupportsStackCalibration,
+  viewportSupportsStackCompatibility,
+} from './viewportCapabilities';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'utilities.calibrateImageSpacing'
+);
 
 const { calibratedPixelSpacingMetadataProvider } = utilities;
 
@@ -26,14 +35,35 @@ export default function calibrateImageSpacing(
   // 1. Add the calibratedPixelSpacing metadata to the metadata
   calibratedPixelSpacingMetadataProvider.add(imageId, calibrationOrScale);
 
-  // 2. Update the actor for stackViewports
-  const viewports = renderingEngine.getStackViewports();
+  // 2. Update any viewport that is currently displaying the calibrated image.
+  const viewports = renderingEngine.getViewports().filter((viewport) => {
+    return (
+      viewportSupportsStackCalibration(viewport) ||
+      viewportSupportsStackCompatibility(viewport)
+    );
+  });
 
   // 2.1 If imageId is already being used in a stackViewport -> update actor
   viewports.forEach((viewport) => {
     const imageIds = viewport.getImageIds();
     if (imageIds.includes(imageId)) {
-      viewport.calibrateSpacing(imageId);
+      if (viewportSupportsStackCalibration(viewport)) {
+        viewport.calibrateSpacing(imageId);
+        return;
+      }
+
+      const currentImageIdIndex = viewport.getCurrentImageIdIndex();
+
+      void Promise.resolve(viewport.setStack(imageIds, currentImageIdIndex))
+        .then(() => {
+          (viewport as Types.IViewport).render();
+        })
+        .catch((error) => {
+          cs3dLogger.warn(
+            'calibrateImageSpacing: failed to refresh stack-compatible viewport',
+            error
+          );
+        });
     }
   });
 

@@ -4,11 +4,17 @@ import { cache, utilities } from '@cornerstonejs/core';
 import { getClosestImageIdForStackViewport } from '../../../../utilities/annotationHydration';
 
 import { addContourSegmentationAnnotation } from '../../../../utilities/contourSegmentation';
+import getViewportICamera from '../../../../utilities/getViewportICamera';
 
 import { validateGeometry } from './utils';
 import type { ContourRepresentation } from '../../../../types/SegmentationStateTypes';
 import { SegmentationRepresentations } from '../../../../enums';
 import { segmentationStyle } from '../../../../stateManagement/segmentation/SegmentationStyle';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.displayTools.Contour.contourHandler.handleContourSegmentation'
+);
 
 function handleContourSegmentation(
   viewport: StackViewport | Types.IVolumeViewport,
@@ -36,7 +42,7 @@ function addContourSetsToElement(
     const geometry = cache.getGeometry(geometryId);
 
     if (!geometry) {
-      console.warn(
+      cs3dLogger.warn(
         `No geometry found for geometryId ${geometryId}. Skipping render.`
       );
       return;
@@ -54,7 +60,7 @@ function addContourSetsToElement(
     });
 
     const contourSet = geometry.data as Types.IContourSet;
-    const viewPlaneNormal = viewport.getCamera().viewPlaneNormal;
+    const viewPlaneNormal = getViewportICamera(viewport).viewPlaneNormal;
 
     contourSet.contours.forEach((contour) => {
       const { points, color, id } = contour;
@@ -90,7 +96,7 @@ function addContourSetsToElement(
           referencedImageId,
           toolName: 'PlanarFreehandContourSegmentationTool',
           FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
-          viewPlaneNormal: viewport.getCamera().viewPlaneNormal,
+          viewPlaneNormal,
         },
       };
       const annotationGroupSelector = viewport.element;

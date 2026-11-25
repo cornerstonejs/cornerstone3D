@@ -5,6 +5,7 @@ import { vec3 } from 'gl-matrix';
 import { pointInSphere } from './math/sphere';
 import type { BoundsIJK } from '../types';
 import { getBoundingBoxAroundShape } from './boundingBox';
+import getViewportICamera from './getViewportICamera';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -139,7 +140,17 @@ function _computeBoundsIJKWithCamera(
   const [bottom, top] = circlePoints;
 
   const dimensions = imageData.getDimensions() as Types.Point3;
-  const camera = viewport.getCamera();
+  const camera = getViewportICamera(viewport);
+
+  if (!camera.viewUp || !camera.viewPlaneNormal) {
+    return getBoundingBoxAroundShape(
+      [
+        <Types.Point3>transformWorldToIndex(imageData, <Types.Point3>top),
+        <Types.Point3>transformWorldToIndex(imageData, <Types.Point3>bottom),
+      ],
+      dimensions
+    );
+  }
 
   // Calculate viewRight from the camera, this will get used in order to
   // calculate circles topLeft and bottomRight on different planes of intersection

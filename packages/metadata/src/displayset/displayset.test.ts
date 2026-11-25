@@ -1,0 +1,937 @@
+import { describe, expect, it } from '@jest/globals';
+import { buildSeriesInfo } from './buildSeriesInfo';
+import { createDisplaySetFromGroup } from './createDisplaySetFromGroup';
+import { compiledDisplaySetRules } from './compiledDisplaySetRules';
+import {
+  groupInstancesBySplitRules,
+  orderInstancesForRule,
+} from './groupInstancesBySplitRules';
+import { ImageStackDisplaySet } from './ImageStackDisplaySet';
+import { isVideoInstance } from './isVideoInstance';
+import { resolveInstances } from './resolveInstances';
+import { splitImageIdsBySplitRules } from './splitImageIdsBySplitRules';
+import type {
+  InstanceGroup,
+  NaturalizedInstance,
+  SplitRule,
+  SplitRuleSet,
+} from './types';
+
+/** A rule set from rules listed in evaluation order. */
+const ruleSet = (...rules: SplitRule[]): SplitRuleSet => rules;
+
+describe('displayset split utilities', () => {
+  const instances: NaturalizedInstance[] = [
+    {
+      imageId: 'wadors:1',
+      Modality: 'CT',
+      SOPClassUID: '1.2.840.10008.5.1.4.1.1.2',
+      Rows: 512,
+      Columns: 512,
+      SeriesInstanceUID: '1.2.3',
+      InstanceNumber: 1,
+    },
+    {
+      imageId: 'wadors:2',
+      Modality: 'CT',
+      SOPClassUID: '1.2.840.10008.5.1.4.1.1.2',
+      Rows: 512,
+      Columns: 512,
+      SeriesInstanceUID: '1.2.3',
+      InstanceNumber: 2,
+    },
+  ];
+
+  const getNaturalizedInstance = (imageId: string) =>
+    instances.find((instance) => instance.imageId === imageId);
+
+  it('resolveInstances preserves order and skips missing ids', () => {
+    const resolved = resolveInstances(
+      ['wadors:2', 'wadors:missing', 'wadors:1'],
+      getNaturalizedInstance
+    );
+    expect(resolved.map((i) => i.imageId)).toEqual(['wadors:2', 'wadors:1']);
+  });
+
+  it('rejects an invalid rule set also when no image id resolves', () => {
+    // A broken rule set is broken whatever it is applied to. A check only on a
+    // non-empty series lets it through in the cheap case that a caller is most
+    // likely to try first, before the metadata loads.
+    expect(() =>
+      splitImageIdsBySplitRules(['wadors:missing'], {
+        getNaturalizedInstance,
+        splitRules: [{ id: 'bad' }, { id: 'bad' }],
+      })
+    ).toThrow(/"bad".*more than once/);
+  });
+
+  it('default rules group multi-slice CT as one image stack, with no handler', () => {
+    const groups = splitImageIdsBySplitRules(
+      instances.map((i) => i.imageId!),
+      {
+        getNaturalizedInstance: (id) => instances.find((i) => i.imageId === id),
+        splitRules: compiledDisplaySetRules,
+      }
+    );
+    expect(groups).toHaveLength(1);
+    expect(groups[0].matchedRule.id).toBe('volume3d');
+    const displaySet = createDisplaySetFromGroup(groups[0]);
+    expect(displaySet).toBeInstanceOf(ImageStackDisplaySet);
+    expect(displaySet.handler).toBeUndefined();
+  });
+
+  it('video rule gives the video handler', () => {
+    const videoInstance: NaturalizedInstance = {
+      imageId: 'wadors:video',
+      SOPClassUID: '1.2.840.10008.5.1.4.1.1.77.1.4.1',
+      Modality: 'US',
+    };
+    const groups = splitImageIdsBySplitRules(['wadors:video'], {
+      getNaturalizedInstance: () => videoInstance,
+      splitRules: compiledDisplaySetRules,
+    });
+    expect(groups[0].matchedRule.id).toBe('video');
+    const displaySet = createDisplaySetFromGroup(groups[0]);
+    expect(displaySet.handler).toBe('video');
+    // The video display set exposes its instances so consumers (e.g. the video
+    // viewport's setDisplaySets) can resolve the source imageId directly.
+    expect(displaySet.instances[0]?.imageId).toBe('wadors:video');
+  });
+
+  it('ecg rule gives the ecg handler', () => {
+    const ecgInstance: NaturalizedInstance = {
+      imageId: 'wadors:ecg',
+      SOPClassUID: '1.2.840.10008.5.1.4.1.1.9.1.1',
+      Modality: 'ECG',
+    };
+    const groups = splitImageIdsBySplitRules(['wadors:ecg'], {
+      getNaturalizedInstance: () => ecgInstance,
+      splitRules: compiledDisplaySetRules,
+    });
+    expect(groups[0].matchedRule.id).toBe('ecg');
+    expect(createDisplaySetFromGroup(groups[0]).handler).toBe('ecg');
+  });
+
+  it('ImageStackDisplaySet exposes underlying and frame ids', () => {
+    const displaySet = ImageStackDisplaySet.fromInstances(instances, {
+      displaySetId: 'uid-1',
+    });
+    expect(displaySet.underlyingImageIds.length).toBe(2);
+  });
+
+  it('spreads matched-rule customAttributes flat onto the display set', () => {
+    const multiFrameInstances: NaturalizedInstance[] = [
+      {
+        imageId: 'wadors:mf',
+        Modality: 'XA',
+        SOPClassUID: '1.2.840.10008.5.1.4.1.1.12.1',
+        Rows: 512,
+        // Naturalized DICOM often gives NumberOfFrames as a string, and
+        // numImageFrames must still be a number.
+        NumberOfFrames: '30' as unknown as number,
+        SliceLocation: 0,
+        SeriesInstanceUID: 'series-mf',
+        InstanceNumber: 1,
+      },
+    ];
+    const groups = splitImageIdsBySplitRules(['wadors:mf'], {
+      getNaturalizedInstance: () => multiFrameInstances[0],
+      splitRules: compiledDisplaySetRules,
+    });
+    expect(groups[0].matchedRule.id).toBe('multiFrame');
+
+    const displaySet = createDisplaySetFromGroup(groups[0], { splitNumber: 2 });
+    // customAttributes for the multiFrame rule are spread flat onto the display
+    // set; the keys are type-declared via the IDisplaySet extension.
+    expect(displaySet.isClip).toBe(true);
+    expect(displaySet.numImageFrames).toBe(30);
+    // The factory stamps splitNumber and sopClassUids; the rule does not ask.
+    expect(displaySet.splitNumber).toBe(2);
+    expect(displaySet.sopClassUids).toEqual([
+      multiFrameInstances[0].SOPClassUID,
+    ]);
+  });
+
+  it('classifies an MPEG2 transfer syntax instance as video', () => {
+    // MPEG2 Main Profile @ Main Level - in the shared videoUIDs list but absent
+    // from the previously hard-coded subset, so this guards against regressing
+    // back to a second drifting list.
+    const mpeg2Instance: NaturalizedInstance = {
+      imageId: 'wadors:mpeg2',
+      // A non-video image SOP class so only the transfer syntax can match.
+      SOPClassUID: '1.2.840.10008.5.1.4.1.1.7',
+      TransferSyntaxUID: '1.2.840.10008.1.2.4.100',
+      Modality: 'OT',
+    };
+    expect(isVideoInstance(mpeg2Instance)).toBe(true);
+  });
+
+  it('buildSeriesInfo and grouping are safe on an empty instance list', () => {
+    // buildSeriesInfo only aggregates counts; grouping derives each rule's
+    // `series` facts up front. Both must be safe when given no instances.
+    expect(() => buildSeriesInfo([])).not.toThrow();
+
+    const seriesInfo = buildSeriesInfo([]);
+    expect(seriesInfo.NumberOfSeriesRelatedInstances).toBe(0);
+    expect(groupInstancesBySplitRules([], compiledDisplaySetRules)).toEqual([]);
+  });
+
+  it('does not let customAttributes clobber resolved data fields', () => {
+    const stackInstances: NaturalizedInstance[] = [
+      {
+        imageId: 'wadors:reserved',
+        SOPClassUID: '1.2.840.10008.5.1.4.1.1.2',
+        Rows: 512,
+        SeriesInstanceUID: 'series-reserved',
+        InstanceNumber: 1,
+      },
+    ];
+    const group: InstanceGroup = {
+      instances: stackInstances,
+      matchedRule: {
+        id: 'reserved-clobber',
+        customAttributes: () => ({
+          // Reserved data fields must be ignored ...
+          imageIds: ['evil-frame'],
+          underlyingImageIds: ['evil-underlying'],
+          instances: [],
+          displaySetId: 'evil-uid',
+          // ... while non-reserved custom attributes are still applied.
+          customFlag: true,
+        }),
+      },
+    };
+
+    const displaySet = createDisplaySetFromGroup(group, {
+      displaySetId: 'good-uid',
+    });
+
+    expect(displaySet.imageIds).toEqual(['wadors:reserved']);
+    expect(displaySet.underlyingImageIds).toEqual(['wadors:reserved']);
+    expect(displaySet.instances).toHaveLength(1);
+    expect(displaySet.displaySetId).toBe('good-uid');
+    expect((displaySet as unknown as Record<string, unknown>).customFlag).toBe(
+      true
+    );
+  });
+
+  it('records the split identity, and attributes cannot rename it', () => {
+    const group: InstanceGroup = {
+      instances: [
+        {
+          imageId: 'wadors:identity',
+          SOPClassUID: '1.2.840.10008.5.1.4.1.1.2',
+          Rows: 512,
+          SeriesInstanceUID: 'series-identity',
+          InstanceNumber: 1,
+        },
+      ],
+      matchedRule: {
+        id: 'mgLegacy',
+        groupId: 'mammo',
+        customAttributes: () => ({
+          splitKey: 'other',
+          splitRuleId: 'other',
+          splitGroupId: 'other',
+        }),
+      },
+      splitKey: '["mgLegacy","series-identity"]',
+    };
+
+    const displaySet = createDisplaySetFromGroup(group);
+
+    expect(displaySet.splitKey).toBe('["mgLegacy","series-identity"]');
+    expect(displaySet.splitRuleId).toBe('mgLegacy');
+    expect(displaySet.splitGroupId).toBe('mammo');
+  });
+
+  it('does not let a __proto__ custom attribute replace the prototype', () => {
+    const group: InstanceGroup = {
+      instances: [
+        {
+          imageId: 'wadors:proto',
+          SOPClassUID: '1.2.840.10008.5.1.4.1.1.2',
+          Rows: 512,
+          SeriesInstanceUID: 'series-proto',
+          InstanceNumber: 1,
+        },
+      ],
+      matchedRule: {
+        id: 'proto',
+        // JSON.parse makes `__proto__` a real own key.
+        customAttributes: () => JSON.parse('{"__proto__": {"x": 1}, "y": 2}'),
+      },
+    };
+
+    const displaySet = createDisplaySetFromGroup(group);
+
+    expect(displaySet).toBeInstanceOf(ImageStackDisplaySet);
+    expect(
+      (displaySet as unknown as Record<string, unknown>).x
+    ).toBeUndefined();
+    expect((displaySet as unknown as Record<string, unknown>).y).toBe(2);
+  });
+
+  it('does not let customAttributes change isDisplayable or the handler', () => {
+    const displaySet = createDisplaySetFromGroup({
+      instances: [
+        {
+          imageId: 'wadors:pr',
+          SOPClassUID: '1.2.840.10008.5.1.4.1.1.11.1',
+          SeriesInstanceUID: 'series-pr',
+        },
+      ],
+      matchedRule: {
+        id: 'unsupported',
+        handler: 'unsupported',
+        customAttributes: () => ({ isDisplayable: true, handler: 'image' }),
+      },
+    });
+
+    expect([displaySet.isDisplayable, displaySet.handler]).toEqual([
+      false,
+      'unsupported',
+    ]);
+    expect(displaySet.imageIds).toEqual([]);
+    expect(displaySet.underlyingImageIds).toEqual(['wadors:pr']);
+  });
+
+  it('derives unique displaySetIds for splits of one series', () => {
+    const seriesUID = 'series-split';
+    const makeGroup = (imageId: string): InstanceGroup => ({
+      instances: [
+        {
+          imageId,
+          SOPClassUID: '1.2.840.10008.5.1.4.1.1.4',
+          Rows: 256,
+          SeriesInstanceUID: seriesUID,
+        },
+      ],
+      matchedRule: { id: 'split' },
+    });
+
+    // A series can split into multiple display sets (the DWI case); the split
+    // index keeps their displaySetIds - used as the viewport id - unique
+    // instead of all collapsing to the bare SeriesInstanceUID.
+    const ds0 = createDisplaySetFromGroup(makeGroup('wadors:s0'), {
+      splitNumber: 0,
+    });
+    const ds1 = createDisplaySetFromGroup(makeGroup('wadors:s1'), {
+      splitNumber: 1,
+    });
+
+    expect(ds0.displaySetId).toBe(seriesUID);
+    expect(ds1.displaySetId).toBe(`${seriesUID}:1`);
+    expect(ds0.displaySetId).not.toBe(ds1.displaySetId);
+  });
+
+  it('namespaces buckets by rule so identical split keys do not merge', () => {
+    const insts: NaturalizedInstance[] = [
+      { imageId: 'a', Modality: 'XA' },
+      { imageId: 'b', Modality: 'NM' },
+    ];
+    // Two different rules whose groupBy functions return the same string.
+    const rules = ruleSet(
+      {
+        id: 'ruleA',
+        matches: (i) => i.Modality === 'XA',
+        groupBy: [() => 'same'],
+      },
+      {
+        id: 'ruleB',
+        matches: (i) => i.Modality === 'NM',
+        groupBy: [() => 'same'],
+      }
+    );
+    const groups = groupInstancesBySplitRules(insts, rules);
+
+    // Without rule-namespaced keys these would collapse into one bucket.
+    expect(groups).toHaveLength(2);
+    expect(new Set(groups.map((g) => g.matchedRule.id))).toEqual(
+      new Set(['ruleA', 'ruleB'])
+    );
+  });
+
+  it('returns groups in a deterministic order regardless of input order', () => {
+    const mr: NaturalizedInstance[] = [
+      {
+        imageId: 'a',
+        Modality: 'MR',
+        SOPClassUID: '1.2.840.10008.5.1.4.1.1.4',
+        Rows: 256,
+        SeriesInstanceUID: 's',
+        DiffusionBValue: 800,
+      },
+      {
+        imageId: 'b',
+        Modality: 'MR',
+        SOPClassUID: '1.2.840.10008.5.1.4.1.1.4',
+        Rows: 256,
+        SeriesInstanceUID: 's',
+      },
+    ];
+    const options = {
+      getNaturalizedInstance: (id: string) => mr.find((i) => i.imageId === id),
+      splitRules: compiledDisplaySetRules,
+    };
+
+    const forward = splitImageIdsBySplitRules(['a', 'b'], options);
+    const reverse = splitImageIdsBySplitRules(['b', 'a'], options);
+
+    expect(forward.map((g) => g.splitKey)).toEqual(
+      reverse.map((g) => g.splitKey)
+    );
+  });
+
+  it('series hook leaves a non-mixed DWI series as one volume display set', () => {
+    // Every frame has a b-value, so the mixed-b-value rule must not fire; the
+    // series falls through to the volume3d rule as a single display set.
+    const allBValue: NaturalizedInstance[] = [
+      {
+        imageId: 'b0',
+        Modality: 'MR',
+        SOPClassUID: '1.2.840.10008.5.1.4.1.1.4',
+        Rows: 256,
+        SeriesInstanceUID: 'dwi-uniform',
+        DiffusionBValue: 0,
+      },
+      {
+        imageId: 'b1000',
+        Modality: 'MR',
+        SOPClassUID: '1.2.840.10008.5.1.4.1.1.4',
+        Rows: 256,
+        SeriesInstanceUID: 'dwi-uniform',
+        DiffusionBValue: 1000,
+      },
+    ];
+    const groups = splitImageIdsBySplitRules(['b0', 'b1000'], {
+      getNaturalizedInstance: (id) => allBValue.find((i) => i.imageId === id),
+      splitRules: compiledDisplaySetRules,
+    });
+
+    expect(groups).toHaveLength(1);
+    expect(groups[0].matchedRule.id).toBe('volume3d');
+  });
+
+  it('reports instances that match no rule via onUnmatched', () => {
+    const insts: NaturalizedInstance[] = [
+      { imageId: 'a', Modality: 'CT' },
+      { imageId: 'b', Modality: 'SR' },
+    ];
+    const rules = ruleSet({
+      id: 'ct',
+      matches: (i) => i.Modality === 'CT',
+      groupBy: ['imageId'],
+    });
+    const unmatched: string[] = [];
+
+    const groups = groupInstancesBySplitRules(insts, rules, (i) =>
+      unmatched.push(i.imageId!)
+    );
+
+    expect(unmatched).toEqual(['b']);
+    expect(groups).toHaveLength(1);
+  });
+});
+
+describe('split key stability', () => {
+  const ct = (
+    imageId: string,
+    InstanceNumber: number
+  ): NaturalizedInstance => ({
+    imageId,
+    Modality: 'CT',
+    SOPClassUID: '1.2.840.10008.5.1.4.1.1.2',
+    Rows: 512,
+    SeriesInstanceUID: 'series-1',
+    SOPInstanceUID: `sop-${imageId}`,
+    InstanceNumber,
+  });
+
+  const ctRule: SplitRule = {
+    id: 'ct',
+    matches: (i) => i.Modality === 'CT',
+    groupBy: ['SeriesInstanceUID', 'InstanceNumber'],
+  };
+
+  it('keys off the rule id, so inserting a rule leaves other rules keys unchanged', () => {
+    // The point of the whole id-based discriminator: a caller that persisted
+    // something against a display set must still find it after the rule set is
+    // edited. Keying off the rule's evaluation position would move every key
+    // below an insertion.
+    const instances = [ct('a', 1), ct('b', 2)];
+
+    const before = groupInstancesBySplitRules(instances, [ctRule]);
+    const after = groupInstancesBySplitRules(instances, [
+      // Runs before `ct`, and claims one of its instances.
+      { id: 'insertedAhead', matches: (i) => i.InstanceNumber === 2 },
+      ctRule,
+    ]);
+
+    expect(after.map((g) => g.matchedRule.id)).toEqual(['insertedAhead', 'ct']);
+    const ctKey = (groups: InstanceGroup[]) =>
+      groups.find((g) => g.matchedRule.id === 'ct')?.splitKey;
+    expect(ctKey(after)).toBe(ctKey(before));
+  });
+
+  it('keys a group by the rule id', () => {
+    const groups = groupInstancesBySplitRules(
+      [ct('a', 1)],
+      [{ id: 'byImage', groupBy: ['imageId'] }]
+    );
+
+    expect(groups[0].matchedRule.id).toBe('byImage');
+    expect(groups[0].splitKey).toBe(JSON.stringify(['byImage', 'a']));
+  });
+
+  it('orders groups by rule position, then by key numerically', () => {
+    // '10' must sort after '2', not lexically before it.
+    const instances = [ct('j', 10), ct('b', 2), ct('a', 1)];
+
+    const groups = groupInstancesBySplitRules(instances, ruleSet(ctRule));
+
+    expect(groups.map((g) => g.instances[0].imageId)).toEqual(['a', 'b', 'j']);
+  });
+
+  it('orders keys differing only in zero padding deterministically', () => {
+    // A numeric-aware collator reports '01' and '1' as EQUAL. Array sort is
+    // stable, so equal-comparing keys keep their input order and the same series
+    // yields differently ordered display sets depending on how it was passed in
+    // - the exact failure this module exists to prevent.
+    const padded = (
+      imageId: string,
+      AcquisitionNumber: string
+    ): NaturalizedInstance => ({
+      imageId,
+      Modality: 'CT',
+      SeriesInstanceUID: 'series-1',
+      SOPInstanceUID: `sop-${imageId}`,
+      AcquisitionNumber,
+    });
+    const rule: SplitRule = {
+      id: 'padded',
+      matches: () => true,
+      groupBy: ['AcquisitionNumber'],
+    };
+
+    const forward = groupInstancesBySplitRules(
+      [padded('a', '01'), padded('b', '1')],
+      ruleSet(rule)
+    );
+    const reverse = groupInstancesBySplitRules(
+      [padded('b', '1'), padded('a', '01')],
+      ruleSet(rule)
+    );
+
+    expect(forward).toHaveLength(2);
+    expect(forward.map((g) => g.instances[0].imageId)).toEqual(
+      reverse.map((g) => g.instances[0].imageId)
+    );
+    expect(forward.map((g) => g.splitKey)).toEqual(
+      reverse.map((g) => g.splitKey)
+    );
+  });
+});
+
+describe('compareInstances - rule-declared instance order', () => {
+  const slice = (
+    imageId: string,
+    SliceLocation: number,
+    InstanceNumber: number
+  ) =>
+    ({
+      imageId,
+      Modality: 'CT',
+      SOPClassUID: '1.2.840.10008.5.1.4.1.1.2',
+      Rows: 512,
+      SeriesInstanceUID: 'ct-series',
+      SOPInstanceUID: `sop-${imageId}`,
+      SliceLocation,
+      InstanceNumber,
+    }) satisfies NaturalizedInstance;
+
+  // Instance number and spatial position disagree, which is the case the field
+  // exists for: acquisition order is not the order the slices belong in. The
+  // three orderings are deliberately all distinct - input is top/middle/bottom,
+  // acquisition is bottom/top/middle, position ascending is bottom/middle/top -
+  // so no assertion below can pass by coincidence.
+  const reconstructed = [
+    slice('top', 30, 2),
+    slice('middle', 20, 3),
+    slice('bottom', 10, 1),
+  ];
+
+  const spatialRule: SplitRule = {
+    id: 'spatial',
+    matches: () => true,
+    compareInstances: (a, b) =>
+      (a.SliceLocation as number) - (b.SliceLocation as number),
+  };
+
+  it('orders a group by the rule comparator instead of acquisition order', () => {
+    const groups = groupInstancesBySplitRules(
+      reconstructed,
+      ruleSet(spatialRule)
+    );
+
+    expect(groups[0].instances.map((i) => i.imageId)).toEqual([
+      'bottom',
+      'middle',
+      'top',
+    ]);
+  });
+
+  it('defaults to acquisition order when the rule declares no comparator', () => {
+    const groups = groupInstancesBySplitRules(
+      reconstructed,
+      ruleSet({ id: 'default', matches: () => true })
+    );
+
+    expect(groups[0].instances.map((i) => i.imageId)).toEqual([
+      'bottom',
+      'top',
+      'middle',
+    ]);
+  });
+
+  it('reads the rule series facts through the comparator context', () => {
+    const groups = groupInstancesBySplitRules(
+      [...reconstructed].reverse(),
+      ruleSet({
+        id: 'directional',
+        matches: () => true,
+        series: () => ({ descending: true }),
+        compareInstances: (a, b, context) =>
+          (context.series.descending ? -1 : 1) *
+          ((a.SliceLocation as number) - (b.SliceLocation as number)),
+      })
+    );
+
+    expect(groups[0].instances.map((i) => i.imageId)).toEqual([
+      'top',
+      'middle',
+      'bottom',
+    ]);
+  });
+
+  it('breaks ties from an incomplete comparator by acquisition order', () => {
+    // A comparator that cannot separate two instances - here because they share a
+    // SliceLocation - would otherwise leave them to sort's stability, i.e. to the
+    // caller's input order. Both orderings must agree.
+    const sameLocation = [
+      slice('a', 10, 1),
+      slice('b', 10, 2),
+      slice('c', 10, 3),
+    ];
+    const forward = groupInstancesBySplitRules(
+      sameLocation,
+      ruleSet(spatialRule)
+    );
+    const reversed = groupInstancesBySplitRules(
+      [...sameLocation].reverse(),
+      ruleSet(spatialRule)
+    );
+
+    expect(forward[0].instances.map((i) => i.imageId)).toEqual(['a', 'b', 'c']);
+    expect(reversed[0].instances.map((i) => i.imageId)).toEqual([
+      'a',
+      'b',
+      'c',
+    ]);
+  });
+
+  it('falls back to acquisition order when the comparator returns NaN', () => {
+    // Arithmetic on a tag an instance is missing yields NaN, which sort treats as
+    // "keep as is" - so without a guard the result would follow input order.
+    const partial: NaturalizedInstance[] = [
+      slice('second', 20, 2),
+      { ...slice('first', 10, 1), SliceLocation: undefined },
+    ];
+    expect(
+      groupInstancesBySplitRules(
+        partial,
+        ruleSet(spatialRule)
+      )[0].instances.map((i) => i.imageId)
+    ).toEqual(['first', 'second']);
+    expect(
+      groupInstancesBySplitRules(
+        [...partial].reverse(),
+        ruleSet(spatialRule)
+      )[0].instances.map((i) => i.imageId)
+    ).toEqual(['first', 'second']);
+  });
+});
+
+describe('host-supplied instance ordering', () => {
+  const slice = (
+    imageId: string,
+    SliceLocation: number,
+    InstanceNumber: number
+  ) =>
+    ({
+      imageId,
+      Modality: 'CT',
+      SOPClassUID: '1.2.840.10008.5.1.4.1.1.2',
+      Rows: 512,
+      SeriesInstanceUID: 'ct-series',
+      SOPInstanceUID: `sop-${imageId}`,
+      SliceLocation,
+      InstanceNumber,
+    }) satisfies NaturalizedInstance;
+
+  // Acquisition order (by InstanceNumber) is b, c, a. Position order is a, b, c.
+  // Input order is a, b, c. All three are distinguishable, so no assertion below
+  // can pass by coincidence.
+  const instances = [slice('a', 10, 3), slice('b', 20, 1), slice('c', 30, 2)];
+  const plainRule: SplitRule = { id: 'plain', matches: () => true };
+  const byPosition = (list: NaturalizedInstance[]) =>
+    [...list].sort(
+      (a, b) => (a.SliceLocation as number) - (b.SliceLocation as number)
+    );
+  const byPositionDescending = (list: NaturalizedInstance[]) =>
+    [...list].sort(
+      (a, b) => (b.SliceLocation as number) - (a.SliceLocation as number)
+    );
+  const ids = (groups: InstanceGroup[]) =>
+    groups[0].instances.map((i) => i.imageId);
+
+  it('applies a host base sort to every rule', () => {
+    // A whole-list sort, which is the point: a base order that picks a reference
+    // instance and projects onto it cannot be written as a comparator.
+    const groups = groupInstancesBySplitRules(
+      instances,
+      ruleSet(plainRule),
+      undefined,
+      { sortInstances: byPosition }
+    );
+    expect(ids(groups)).toEqual(['a', 'b', 'c']);
+  });
+
+  it('tells the base sort which rule it is ordering for', () => {
+    const seen: string[] = [];
+    groupInstancesBySplitRules(instances, ruleSet(plainRule), undefined, {
+      sortInstances: (list, context) => {
+        seen.push(context.matchedRule.id ?? '');
+        return list;
+      },
+    });
+    expect(seen).toEqual(['plain']);
+  });
+
+  it('lets a rule comparator override the host base sort', () => {
+    const groups = groupInstancesBySplitRules(
+      instances,
+      ruleSet({
+        id: 'descending',
+        matches: () => true,
+        compareInstances: (a, b) =>
+          (b.SliceLocation as number) - (a.SliceLocation as number),
+      }),
+      undefined,
+      { sortInstances: byPosition }
+    );
+    expect(ids(groups)).toEqual(['c', 'b', 'a']);
+  });
+
+  it('falls through to the base order when a comparator returns 0', () => {
+    // The comparator has an opinion about `a` only - it must sort first - and
+    // declines on every other pair. The rest must keep the base (descending
+    // position) order rather than collapsing to acquisition or input order.
+    const groups = groupInstancesBySplitRules(
+      instances,
+      ruleSet({
+        id: 'aFirst',
+        matches: () => true,
+        compareInstances: (x, y) => {
+          if (x.imageId === y.imageId) {
+            return 0;
+          }
+          if (x.imageId === 'a') {
+            return -1;
+          }
+          if (y.imageId === 'a') {
+            return 1;
+          }
+          return 0;
+        },
+      }),
+      undefined,
+      { sortInstances: byPositionDescending }
+    );
+    expect(ids(groups)).toEqual(['a', 'c', 'b']);
+  });
+
+  it('consults the host comparator after the rule declines', () => {
+    const groups = groupInstancesBySplitRules(
+      instances,
+      ruleSet({
+        id: 'noOpinion',
+        matches: () => true,
+        compareInstances: () => 0,
+      }),
+      undefined,
+      {
+        compareInstances: (a, b) =>
+          (a.SliceLocation as number) - (b.SliceLocation as number),
+      }
+    );
+    expect(ids(groups)).toEqual(['a', 'b', 'c']);
+  });
+
+  it('prefers the rule comparator over the host comparator', () => {
+    const groups = groupInstancesBySplitRules(
+      instances,
+      ruleSet({
+        id: 'ruleWins',
+        matches: () => true,
+        compareInstances: (a, b) =>
+          (b.SliceLocation as number) - (a.SliceLocation as number),
+      }),
+      undefined,
+      {
+        compareInstances: (a, b) =>
+          (a.SliceLocation as number) - (b.SliceLocation as number),
+      }
+    );
+    expect(ids(groups)).toEqual(['c', 'b', 'a']);
+  });
+
+  it('treats a NaN comparator result as no opinion', () => {
+    const groups = groupInstancesBySplitRules(
+      instances,
+      ruleSet({
+        id: 'missingTag',
+        matches: () => true,
+        // `Missing` is on no instance, so every comparison yields NaN.
+        compareInstances: (a, b) =>
+          (a.Missing as number) - (b.Missing as number),
+      }),
+      undefined,
+      { sortInstances: byPosition }
+    );
+    expect(ids(groups)).toEqual(['a', 'b', 'c']);
+  });
+
+  it('orderInstancesForRule reproduces the engine order outside a split', () => {
+    const options = { sortInstances: byPosition };
+    const rule: SplitRule = {
+      id: 'descending',
+      matches: () => true,
+      compareInstances: (a, b) =>
+        (b.SliceLocation as number) - (a.SliceLocation as number),
+    };
+    const fromEngine = ids(
+      groupInstancesBySplitRules(instances, ruleSet(rule), undefined, options)
+    );
+    const standalone = orderInstancesForRule(instances, rule, options).map(
+      (i) => i.imageId
+    );
+    expect(standalone).toEqual(fromEngine);
+  });
+});
+
+describe('InstanceGroup.series - the facts of the whole split', () => {
+  const mr = (
+    imageId: string,
+    InstanceNumber: number,
+    SliceLocation: number,
+    DiffusionBValue?: number
+  ): NaturalizedInstance => ({
+    imageId,
+    Modality: 'MR',
+    SeriesInstanceUID: 'dwi',
+    SOPInstanceUID: `sop-${imageId}`,
+    InstanceNumber,
+    SliceLocation,
+    ...(DiffusionBValue === undefined ? {} : { DiffusionBValue }),
+  });
+
+  // Two halves: two frames with a b-value, two without. The series mixes both
+  // kinds, but neither half does.
+  const dwi = [
+    mr('b1', 1, 10, 800),
+    mr('b2', 2, 20, 800),
+    mr('n1', 3, 10),
+    mr('n2', 4, 20),
+  ];
+
+  const mixedBValue = ({ instances }: { instances: NaturalizedInstance[] }) => {
+    const withB = instances.filter((i) => i.DiffusionBValue !== undefined);
+    return {
+      mixed: withB.length > 0 && withB.length < instances.length,
+    };
+  };
+
+  // Orders by position, descending for a mixed series and ascending otherwise,
+  // so the order shows which facts the comparator saw.
+  const dwiRule: SplitRule = {
+    id: 'dwi',
+    series: mixedBValue,
+    groupBy: [
+      'SeriesInstanceUID',
+      (instance) => instance.DiffusionBValue === undefined,
+    ],
+    compareInstances: (a, b, context) =>
+      (context.series.mixed ? -1 : 1) *
+      ((a.SliceLocation as number) - (b.SliceLocation as number)),
+  };
+
+  const ids = (list: NaturalizedInstance[]) => list.map((i) => i.imageId);
+
+  it('gives every group the series facts of all instances in the split', () => {
+    const groups = groupInstancesBySplitRules(dwi, ruleSet(dwiRule));
+
+    expect(groups.map((g) => ids(g.instances))).toEqual([
+      ['b2', 'b1'],
+      ['n2', 'n1'],
+    ]);
+    // Each half alone is not mixed, but the group carries the split's facts.
+    for (const group of groups) {
+      expect(mixedBValue({ instances: group.instances })).toEqual({
+        mixed: false,
+      });
+      expect(group.series).toEqual({ mixed: true });
+    }
+  });
+
+  it('gives a rule with no series hook an empty facts object', () => {
+    const groups = groupInstancesBySplitRules(
+      dwi,
+      ruleSet({ id: 'plain', groupBy: ['SeriesInstanceUID'] })
+    );
+
+    expect(groups[0].series).toEqual({});
+  });
+
+  it('orderInstancesForRule uses options.series instead of recomputing the facts', () => {
+    const [firstHalf] = groupInstancesBySplitRules(dwi, ruleSet(dwiRule));
+
+    // With the group's facts, the order is the order the split produced.
+    expect(
+      ids(
+        orderInstancesForRule(firstHalf.instances, dwiRule, {
+          series: firstHalf.series,
+        })
+      )
+    ).toEqual(['b2', 'b1']);
+    // Without them, the facts come from the half alone, which is not mixed, so
+    // the comparator sees different facts and orders the other way.
+    expect(ids(orderInstancesForRule(firstHalf.instances, dwiRule))).toEqual([
+      'b1',
+      'b2',
+    ]);
+  });
+
+  it('orderInstancesForRule passes options.series to the host sort too', () => {
+    const seen: unknown[] = [];
+    orderInstancesForRule(dwi, dwiRule, {
+      series: { mixed: 'from the caller' },
+      sortInstances: (list, context) => {
+        seen.push(context.series.mixed);
+        return list;
+      },
+    });
+
+    expect(seen).toEqual(['from the caller']);
+  });
+});

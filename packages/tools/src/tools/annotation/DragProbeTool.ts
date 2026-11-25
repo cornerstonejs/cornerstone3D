@@ -8,6 +8,7 @@ import {
 } from '../../drawingSvg';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import { hideElementCursor } from '../../cursors/elementCursor';
+import { Events } from '../../enums';
 import type {
   Annotation,
   EventTypes,
@@ -17,9 +18,15 @@ import type {
 } from '../../types';
 
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
+import getViewportICamera from '../../utilities/getViewportICamera';
 import ProbeTool from './ProbeTool';
 import type { ProbeAnnotation } from '../../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.annotation.DragProbeTool'
+);
 
 class DragProbeTool extends ProbeTool {
   static toolName = 'DragProbe';
@@ -55,13 +62,22 @@ class DragProbeTool extends ProbeTool {
   ): ProbeAnnotation => {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
-    const worldPos = currentPoints.world;
 
     const enabledElement = getEnabledElement(element);
-    const { viewport, renderingEngine } = enabledElement;
+    const { viewport } = enabledElement;
+
+    // Reached with the TOUCH_START event via postTouchStartCallback (both the
+    // explicit alias below and the dispatcher-level fallback).
+    const isTouch = evt.type === Events.TOUCH_START;
+    const worldPos = this.getTouchAdjustedWorldPos(
+      viewport,
+      currentPoints,
+      isTouch
+    );
 
     this.isDrawing = true;
-    const camera = viewport.getCamera();
+    // Native ("next") viewports expose no getCamera; read orientation via the bridge.
+    const camera = getViewportICamera(viewport);
     const { viewPlaneNormal, viewUp } = camera;
 
     const referencedImageId = this.getReferencedImageId(
@@ -144,7 +160,7 @@ class DragProbeTool extends ProbeTool {
       viewportId: enabledElement.viewport.id,
     };
 
-    const annotation = this.editData.annotation;
+    const annotation = this.editData.annotation as ProbeAnnotation;
     const annotationUID = annotation.annotationUID;
     const data = annotation.data;
     const point = data.handles.points[0];
@@ -175,7 +191,7 @@ class DragProbeTool extends ProbeTool {
 
     // If rendering engine has been destroyed while rendering
     if (!viewport.getRenderingEngine()) {
-      console.warn('Rendering Engine has been destroyed');
+      cs3dLogger.warn('Rendering Engine has been destroyed');
       return renderStatus;
     }
 

@@ -1,25 +1,8 @@
 import { metaData, Enums } from '@cornerstonejs/core';
+import { utilities as metadataUtilities } from '@cornerstonejs/metadata';
 
 const { MetadataModules } = Enums;
-
-/**
- * Assign only defined values in source into destination.
- * Optionally requires an existing key in the result too.
- */
-export function assignDefined(dest, source, options?) {
-  if (!source) {
-    return;
-  }
-  for (const [key, value] of Object.entries(source)) {
-    if (value === undefined) {
-      continue;
-    }
-    if (dest[key] === undefined && options?.requireDestinationKey) {
-      continue;
-    }
-    dest[key] = value;
-  }
-}
+const { definedAttributesOf } = metadataUtilities;
 
 /**
  * Creates a new instance example tag, based on the metadata key `instanceKey`
@@ -45,9 +28,18 @@ export function createInstance<T>(
   const { metadataProvider = metaData, predecessorImageId } = options;
   const result = <T>{};
   const instanceBase = metadataProvider.get(instanceKey, studyExemplarImageId);
-  Object.assign(result, instanceBase);
-  assignDefined(result, base);
-  assignDefined(result, options, { requireDestinationKey: true });
+  Object.assign(result, instanceBase, definedAttributesOf(base));
+
+  // An option that names an attribute the instance already carries overrides
+  // that attribute. Every other option is a control value, not instance data,
+  // so it must not reach the instance.
+  const instance = result as Record<string, unknown>;
+  for (const [key, value] of Object.entries(definedAttributesOf(options))) {
+    if (instance[key] !== undefined) {
+      instance[key] = value;
+    }
+  }
+
   if (predecessorImageId) {
     const predecessor = metadataProvider.get(
       MetadataModules.PREDECESSOR_SEQUENCE,

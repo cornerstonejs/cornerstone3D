@@ -1,7 +1,5 @@
 import type { Types } from '@cornerstonejs/core';
 import {
-  BaseVolumeViewport,
-  cache,
   utilities as csUtils,
   getEnabledElementByViewportId,
   volumeLoader,
@@ -23,6 +21,7 @@ import type {
 } from '../../types/LabelmapTypes';
 import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransferFunction';
 import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
+import getViewportLabelmapRenderMode from './helpers/getViewportLabelmapRenderMode';
 import {
   triggerSegmentationModified,
   triggerSegmentationRemoved,
@@ -31,6 +30,18 @@ import {
 } from './triggerSegmentationEvents';
 import { segmentationStyle } from './SegmentationStyle';
 import { triggerSegmentationAdded } from './events/triggerSegmentationAdded';
+import {
+  ensureLabelmapState,
+  getOrCreateDynamicLabelmapVolume,
+  hasMultipleLabelmapImagesPerReferencedImageId,
+  LabelmapImageReferenceResolver,
+  syncLegacyLabelmapData,
+} from './labelmapModel';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'stateManagement.segmentation.SegmentationStateManager'
+);
 
 const initialDefaultState: SegmentationState = {
   colorLUT: [],
@@ -47,21 +58,7 @@ const initialDefaultState: SegmentationState = {
 export default class SegmentationStateManager {
   private state: Readonly<SegmentationState>;
   public readonly uid: string;
-
-  /**
-   * A map between segmentationIds and within each segmentation, another
-   * map between imageIds and labelmap imageIds.
-   */
-  private _stackLabelmapImageIdReferenceMap = new Map<
-    string,
-    Map<string, string>
-  >();
-
-  /**
-   * A map of segmentationId-imageId to the labelmapImageIds that supports segment overlapping
-   * meaning that it supports a list of labelmapImageIds for each segmentationId-imageId pair
-   */
-  private _labelmapImageIdReferenceMap = new Map<string, string[]>();
+  private readonly labelmapImageReferenceResolver: LabelmapImageReferenceResolver;
 
   /**
    * Creates an instance of SegmentationStateManager.
@@ -73,6 +70,9 @@ export default class SegmentationStateManager {
       csUtils.deepClone(initialDefaultState) as SegmentationState
     );
     this.uid = uid;
+    this.labelmapImageReferenceResolver = new LabelmapImageReferenceResolver(
+      this.getSegmentation.bind(this)
+    );
   }
 
   /**
@@ -110,8 +110,7 @@ export default class SegmentationStateManager {
    * Resets the state to the default state.
    */
   resetState(): void {
-    this._stackLabelmapImageIdReferenceMap.clear();
-    this._labelmapImageIdReferenceMap.clear();
+    this.labelmapImageReferenceResolver.reset();
     this.state = Object.freeze(
       csUtils.deepClone(initialDefaultState) as SegmentationState
     );
@@ -138,6 +137,11 @@ export default class SegmentationStateManager {
    * This method updates the state immutably. If the segmentation with the given ID is not found,
    * the method will return without making any changes.
    *
+   * A payload that gives `label` a value, and gives `labelIsGenerated` no
+   * value, clears the flag. Pass `labelIsGenerated: true` beside the label to
+   * keep the flag set. A payload that carries `label` with the value
+   * `undefined` is not a rename, and it leaves the flag alone.
+   *
    * @example
    * ```typescript
    * segmentationStateManager.updateSegmentation('seg1', { label: 'newLabel' });
@@ -153,7 +157,7 @@ export default class SegmentationStateManager {
       );
 
       if (!segmentation) {
-        console.warn(
+        cs3dLogger.warn(
           `Segmentation with id ${segmentationId} not found. Update aborted.`
         );
         return;
@@ -161,6 +165,22 @@ export default class SegmentationStateManager {
 
       // Directly mutate the draft state
       Object.assign(segmentation, payload);
+
+      // A rename with no flag means the user chose the label. The test reads
+      // the value, not the key, because a payload built from an optional field
+      // carries the key with the value `undefined`, and such a payload is not
+      // a rename.
+      if (
+        payload.label !== undefined &&
+        payload.labelIsGenerated === undefined
+      ) {
+        segmentation.labelIsGenerated = false;
+      }
+
+      if (segmentation.representationData?.Labelmap) {
+        ensureLabelmapState(segmentation);
+        syncLegacyLabelmapData(segmentation);
+      }
     });
 
     triggerSegmentationModified(segmentationId);
@@ -180,11 +200,12 @@ export default class SegmentationStateManager {
 
     this.updateState((state) => {
       const newSegmentation = csUtils.deepClone(segmentation) as Segmentation;
-      if (
-        newSegmentation.representationData.Labelmap &&
-        'volumeId' in newSegmentation.representationData.Labelmap &&
-        !('imageIds' in newSegmentation.representationData.Labelmap)
-      ) {
+      if (newSegmentation.representationData?.Labelmap) {
+        ensureLabelmapState(newSegmentation);
+        syncLegacyLabelmapData(newSegmentation);
+      }
+      const labelmapData = newSegmentation.representationData.Labelmap;
+      if (labelmapData?.volumeId && !('imageIds' in labelmapData)) {
         const imageIds = this.getLabelmapImageIds(
           newSegmentation.representationData
         );
@@ -204,6 +225,10 @@ export default class SegmentationStateManager {
    * @param {string} segmentationId - The ID of the segmentation to remove.
    */
   removeSegmentation(segmentationId: string): void {
+    // Purge cached image-id reference entries so stale labelmaps don't
+    // accumulate across reloads.
+    this.labelmapImageReferenceResolver.removeSegmentation(segmentationId);
+
     this.updateState((state) => {
       // Use Array.prototype.filter to create a new array instead of reassigning
       const filteredSegmentations = state.segmentations.filter(
@@ -250,13 +275,18 @@ export default class SegmentationStateManager {
     );
 
     if (existingRepresentations.length > 0) {
-      console.debug(
+      cs3dLogger.debug(
         'A segmentation representation of type',
         type,
         'already exists in viewport',
         viewportId,
         'for segmentation',
         segmentationId
+      );
+      triggerSegmentationRepresentationModified(
+        viewportId,
+        segmentationId,
+        type
       );
       return;
     }
@@ -429,12 +459,11 @@ export default class SegmentationStateManager {
      *    before rendering.
      */
     const volumeViewport =
-      enabledElement.viewport instanceof BaseVolumeViewport;
+      getViewportLabelmapRenderMode(enabledElement.viewport) === 'volume';
 
     const { representationData } = segmentation;
 
-    const isBaseVolumeSegmentation = 'volumeId' in representationData.Labelmap;
-    const viewport = enabledElement.viewport;
+    const isBaseVolumeSegmentation = !!representationData.Labelmap.volumeId;
     if (!volumeViewport && !isBaseVolumeSegmentation) {
       // Stack Viewport
       !this.updateLabelmapSegmentationImageReferences(
@@ -445,136 +474,15 @@ export default class SegmentationStateManager {
   }
 
   /**
-   * Helper function to update labelmap segmentation image references.
-   * @param {string} segmentationId - The ID of the segmentation representation.
-   * @param {Types.IViewport} viewport - The viewport.
-   * @param {string[]} labelmapImageIds - The labelmap image IDs.
-   * @param {Function} updateCallback - A callback to update the reference map.
-   * @returns {string | undefined} The labelmap imageId reference for the current imageId rendered on the viewport.
-   */
-  _updateLabelmapSegmentationReferences(
-    segmentationId,
-    viewport,
-    labelmapImageIds,
-    updateCallback
-  ): string | undefined {
-    const referenceImageId = viewport.getCurrentImageId();
-
-    let viewableLabelmapImageIdFound = false;
-    for (const labelmapImageId of labelmapImageIds) {
-      const viewableImageId = viewport.isReferenceViewable(
-        { referencedImageId: labelmapImageId },
-        { asOverlay: true }
-      );
-
-      if (viewableImageId) {
-        viewableLabelmapImageIdFound = true;
-        this._stackLabelmapImageIdReferenceMap
-          .get(segmentationId)
-          .set(referenceImageId, labelmapImageId);
-        this._updateLabelmapImageIdReferenceMap({
-          segmentationId,
-          referenceImageId,
-          labelmapImageId,
-        });
-      }
-    }
-
-    if (updateCallback) {
-      updateCallback(viewport, segmentationId, labelmapImageIds);
-    }
-
-    return viewableLabelmapImageIdFound
-      ? this._stackLabelmapImageIdReferenceMap
-          .get(segmentationId)
-          .get(referenceImageId)
-      : undefined;
-  }
-
-  /**
    * Updates the segmentation image references for a given viewport and segmentation representation.
    * @param {string} viewportId - The ID of the viewport.
    * @param {string} segmentationId - The Id of the segmentation representation.
    * @returns {string | undefined} The labelmap imageId reference for the current imageId rendered on the viewport.
    */
   updateLabelmapSegmentationImageReferences(viewportId, segmentationId) {
-    const segmentation = this.getSegmentation(segmentationId);
-    if (!segmentation) {
-      return;
-    }
-
-    if (!this._stackLabelmapImageIdReferenceMap.has(segmentationId)) {
-      this._stackLabelmapImageIdReferenceMap.set(segmentationId, new Map());
-    }
-
-    const { representationData } = segmentation;
-    if (!representationData.Labelmap) {
-      return;
-    }
-
-    const labelmapImageIds = this.getLabelmapImageIds(representationData);
-    const enabledElement = getEnabledElementByViewportId(viewportId);
-    const stackViewport = enabledElement.viewport as Types.IStackViewport;
-
-    return this._updateLabelmapSegmentationReferences(
-      segmentationId,
-      stackViewport,
-      labelmapImageIds,
-      null
-    );
-  }
-
-  /**
-   * Updates all segmentation image references for a given viewport and segmentation representation.
-   * @param {string} viewportId - The ID of the viewport.
-   * @param {string} segmentationId - The Id of the segmentation representation.
-   * @returns {string | undefined} The labelmap imageId reference for the current imageId rendered on the viewport.
-   */
-  _updateAllLabelmapSegmentationImageReferences(viewportId, segmentationId) {
-    const segmentation = this.getSegmentation(segmentationId);
-    if (!segmentation) {
-      return;
-    }
-
-    if (!this._stackLabelmapImageIdReferenceMap.has(segmentationId)) {
-      this._stackLabelmapImageIdReferenceMap.set(segmentationId, new Map());
-    }
-
-    const { representationData } = segmentation;
-    if (!representationData.Labelmap) {
-      return;
-    }
-
-    const labelmapImageIds = this.getLabelmapImageIds(representationData);
-    const enabledElement = getEnabledElementByViewportId(viewportId);
-    const stackViewport = enabledElement.viewport as Types.IStackViewport;
-
-    this._updateLabelmapSegmentationReferences(
-      segmentationId,
-      stackViewport,
-      labelmapImageIds,
-      (stackViewport, segmentationId, labelmapImageIds) => {
-        const imageIds = stackViewport.getImageIds();
-        imageIds.forEach((referenceImageId, index) => {
-          for (const labelmapImageId of labelmapImageIds) {
-            const viewableImageId = stackViewport.isReferenceViewable(
-              { referencedImageId: labelmapImageId, sliceIndex: index },
-              { asOverlay: true, withNavigation: true }
-            );
-
-            if (viewableImageId) {
-              this._stackLabelmapImageIdReferenceMap
-                .get(segmentationId)
-                .set(referenceImageId, labelmapImageId);
-              this._updateLabelmapImageIdReferenceMap({
-                segmentationId,
-                referenceImageId,
-                labelmapImageId,
-              });
-            }
-          }
-        });
-      }
+    return this.labelmapImageReferenceResolver.updateLabelmapSegmentationImageReferences(
+      viewportId,
+      segmentationId
     );
   }
 
@@ -584,35 +492,16 @@ export default class SegmentationStateManager {
    * @returns {string[]} An array of labelmap image IDs.
    */
   public getLabelmapImageIds(representationData: RepresentationsData) {
-    const labelmapData = representationData.Labelmap;
-    let labelmapImageIds;
-
-    if ((labelmapData as LabelmapSegmentationDataStack).imageIds) {
-      labelmapImageIds = (labelmapData as LabelmapSegmentationDataStack)
-        .imageIds;
-    } else if (
-      !labelmapImageIds &&
-      (labelmapData as LabelmapSegmentationDataVolume).volumeId
-    ) {
-      // means we are dealing with a volume labelmap that is requested
-      // to be rendered on a stack viewport, since we have moved to creating
-      // associated imageIds and views for volume we can simply use the
-      // volume.imageIds for this
-      const volumeId = (labelmapData as LabelmapSegmentationDataVolume)
-        .volumeId;
-
-      const volume = cache.getVolume(volumeId) as Types.IImageVolume;
-      labelmapImageIds = volume.imageIds;
-    }
-    return labelmapImageIds;
+    return this.labelmapImageReferenceResolver.getLabelmapImageIds(
+      representationData
+    );
   }
 
   getLabelmapImageIdsForImageId(imageId: string, segmentationId: string) {
-    const key = this._generateMapKey({
-      segmentationId,
-      referenceImageId: imageId,
-    });
-    return this._labelmapImageIdReferenceMap.get(key);
+    return this.labelmapImageReferenceResolver.getLabelmapImageIdsForImageId(
+      imageId,
+      segmentationId
+    );
   }
 
   /**
@@ -626,16 +515,10 @@ export default class SegmentationStateManager {
     viewportId: string,
     segmentationId: string
   ): string[] | undefined {
-    const enabledElement = getEnabledElementByViewportId(viewportId);
-
-    if (!enabledElement) {
-      return;
-    }
-
-    const stackViewport = enabledElement.viewport as Types.IStackViewport;
-    const referenceImageId = stackViewport.getCurrentImageId();
-
-    return this.getLabelmapImageIdsForImageId(referenceImageId, segmentationId);
+    return this.labelmapImageReferenceResolver.getCurrentLabelmapImageIdsForViewport(
+      viewportId,
+      segmentationId
+    );
   }
 
   /**
@@ -649,23 +532,10 @@ export default class SegmentationStateManager {
     viewportId: string,
     segmentationId: string
   ): string | undefined {
-    const enabledElement = getEnabledElementByViewportId(viewportId);
-
-    if (!enabledElement) {
-      return;
-    }
-
-    if (!this._stackLabelmapImageIdReferenceMap.has(segmentationId)) {
-      return;
-    }
-
-    const stackViewport = enabledElement.viewport as Types.IStackViewport;
-    const currentImageId = stackViewport.getCurrentImageId();
-
-    const imageIdReferenceMap =
-      this._stackLabelmapImageIdReferenceMap.get(segmentationId);
-
-    return imageIdReferenceMap.get(currentImageId);
+    return this.labelmapImageReferenceResolver.getCurrentLabelmapImageIdForViewport(
+      viewportId,
+      segmentationId
+    );
   }
 
   /**
@@ -679,25 +549,10 @@ export default class SegmentationStateManager {
     viewportId: string,
     segmentationId: string
   ): string[] {
-    const segmentation = this.getSegmentation(segmentationId);
-
-    if (!segmentation) {
-      return [];
-    }
-
-    this._updateAllLabelmapSegmentationImageReferences(
+    return this.labelmapImageReferenceResolver.getStackSegmentationImageIdsForViewport(
       viewportId,
       segmentationId
     );
-    const { viewport } = getEnabledElementByViewportId(viewportId);
-    const imageIds = viewport.getImageIds();
-
-    const associatedReferenceImageAndLabelmapImageIds =
-      this._stackLabelmapImageIdReferenceMap.get(segmentationId);
-
-    return imageIds.map((imageId) => {
-      return associatedReferenceImageAndLabelmapImageIds.get(imageId);
-    });
   }
 
   private removeSegmentationRepresentationsInternal(
@@ -760,8 +615,16 @@ export default class SegmentationStateManager {
         if (state.viewportSegRepresentations[viewportId].length === 0) {
           delete state.viewportSegRepresentations[viewportId];
         } else if (activeRepresentationRemoved) {
-          // Set the first remaining representation as active
-          state.viewportSegRepresentations[viewportId][0].active = true;
+          const remainingRepresentations =
+            state.viewportSegRepresentations[viewportId];
+          const hasActiveRepresentation = remainingRepresentations.some(
+            (representation) => representation.active
+          );
+
+          if (!hasActiveRepresentation) {
+            // Set the first remaining representation as active
+            remainingRepresentations[0].active = true;
+          }
         }
       }
 
@@ -809,17 +672,19 @@ export default class SegmentationStateManager {
       );
     });
 
-    // If there are remaining representations, trigger a modified event for the new active one
-    const remainingRepresentations =
-      this.getSegmentationRepresentations(viewportId);
-    if (
-      remainingRepresentations.length > 0 &&
-      remainingRepresentations[0].active
-    ) {
+    // If there are remaining representations, trigger a modified event for the
+    // active one. `removeSegmentationRepresentationsInternal` keeps an active
+    // representation that it finds at any index, so the active representation
+    // is not always the first one.
+    const activeRepresentation = this.getSegmentationRepresentations(
+      viewportId
+    ).find((representation) => representation.active);
+
+    if (activeRepresentation) {
       triggerSegmentationRepresentationModified(
         viewportId,
-        remainingRepresentations[0].segmentationId,
-        remainingRepresentations[0].type
+        activeRepresentation.segmentationId,
+        activeRepresentation.type
       );
     }
 
@@ -863,29 +728,6 @@ export default class SegmentationStateManager {
     }
 
     return removedRepresentations;
-  }
-
-  /**
-   * Updates the _labelmapImageIdReferenceMap according to the correct key and preserving old values
-   * @param segmentationId
-   * @param referenceImageId
-   * @param labelmapImageId
-   */
-  _updateLabelmapImageIdReferenceMap({
-    segmentationId,
-    referenceImageId,
-    labelmapImageId,
-  }) {
-    const key = this._generateMapKey({ segmentationId, referenceImageId });
-
-    if (!this._labelmapImageIdReferenceMap.has(key)) {
-      this._labelmapImageIdReferenceMap.set(key, [labelmapImageId]);
-      return;
-    }
-
-    const currentValues = this._labelmapImageIdReferenceMap.get(key);
-    const newValues = Array.from(new Set([...currentValues, labelmapImageId]));
-    this._labelmapImageIdReferenceMap.set(key, newValues);
   }
 
   _setActiveSegmentation(
@@ -1049,9 +891,12 @@ export default class SegmentationStateManager {
     visible: boolean
   ): void {
     this.updateState((state) => {
-      const viewportRepresentations = this.getSegmentationRepresentations(
-        viewportId,
-        specifier
+      const viewportRepresentations = state.viewportSegRepresentations[
+        viewportId
+      ]?.filter(
+        (representation) =>
+          representation.segmentationId === specifier.segmentationId &&
+          representation.type === specifier.type
       );
 
       if (!viewportRepresentations) {
@@ -1061,11 +906,9 @@ export default class SegmentationStateManager {
       viewportRepresentations.forEach((representation) => {
         representation.visible = visible;
 
-        Object.entries(representation.segments).forEach(
-          ([segmentIndex, segment]) => {
-            segment.visible = visible;
-          }
-        );
+        Object.values(representation.segments).forEach((segment) => {
+          segment.visible = visible;
+        });
       });
     });
 
@@ -1084,7 +927,7 @@ export default class SegmentationStateManager {
   addColorLUT(colorLUT: Types.ColorLUT, lutIndex: number): void {
     this.updateState((state) => {
       if (state.colorLUT[lutIndex]) {
-        console.warn('Color LUT table already exists, overwriting');
+        cs3dLogger.warn('Color LUT table already exists, overwriting');
       }
       state.colorLUT[lutIndex] = csUtils.deepClone(colorLUT) as Types.ColorLUT;
     });
@@ -1155,15 +998,6 @@ export default class SegmentationStateManager {
 
     return result;
   }
-
-  /**
-   * Generates a key for the _labelmapImageIdReferenceMap
-   * @param segmentationId - The ID of the segmentation
-   * @param referenceImageId - The reference image ID - this is the imageId that is currently being displayed in the viewport (not the derived imageId)
-   */
-  private _generateMapKey({ segmentationId, referenceImageId }) {
-    return `${segmentationId}-${referenceImageId}`;
-  }
 }
 
 async function internalComputeVolumeLabelmapFromStack({
@@ -1199,20 +1033,63 @@ async function internalConvertStackToVolumeLabelmap({
     removeOriginal?: boolean;
   };
 }): Promise<void> {
-  const segmentation =
+  const sourceSegmentation =
     defaultSegmentationStateManager.getSegmentation(segmentationId);
+  const sourceLabelmapState = ensureLabelmapState(sourceSegmentation);
+  const sourcePrimaryLayer =
+    sourceLabelmapState?.labelmaps[sourceLabelmapState.primaryLabelmapId];
 
-  const data = segmentation.representationData
+  // An overlapping SEG flattened into one layer holds several labelmap images
+  // per referenced image, so its imageIds do not form a valid volume. Leave it
+  // on the merged-volume path that getOrCreateLabelmapVolume builds instead.
+  if (
+    sourcePrimaryLayer &&
+    hasMultipleLabelmapImagesPerReferencedImageId(sourcePrimaryLayer)
+  ) {
+    return;
+  }
+
+  const data = sourceSegmentation.representationData
     .Labelmap as LabelmapSegmentationDataStack;
+
+  // A 4D labelmap already is one volume of the current time point. A volume of
+  // the images of every time point has the wrong depth. Its layer tracks that
+  // volume as geometryVolumeId and stays stack-backed, so the primary layer
+  // must not take it as volumeId below.
+  const dynamicVolume = getOrCreateDynamicLabelmapVolume(sourceSegmentation);
+  if (dynamicVolume) {
+    (data as unknown as LabelmapSegmentationDataVolume).volumeId =
+      dynamicVolume.volumeId;
+    return;
+  }
 
   const { volumeId } = await internalComputeVolumeLabelmapFromStack({
     imageIds: data.imageIds,
     options,
   });
 
-  (
-    segmentation.representationData.Labelmap as LabelmapSegmentationDataVolume
-  ).volumeId = volumeId;
+  // Re-read after the await: updateState() deep-clones the state, so the
+  // segmentation fetched before the await may no longer be the live one.
+  const segmentation =
+    defaultSegmentationStateManager.getSegmentation(segmentationId);
+
+  if (!segmentation) {
+    return;
+  }
+
+  // The primary layer is the source of truth; the top-level volumeId is a
+  // legacy mirror that syncLegacyLabelmapData overwrites on every update.
+  // Writing only the mirror would lose the volumeId at the next update.
+  const labelmapState = ensureLabelmapState(segmentation);
+  const primaryLayer =
+    labelmapState?.labelmaps[labelmapState.primaryLabelmapId];
+
+  if (primaryLayer) {
+    primaryLayer.volumeId = volumeId;
+    primaryLayer.storageKind = 'volume';
+  }
+
+  syncLegacyLabelmapData(segmentation);
 }
 
 function getDefaultRenderingConfig(type: string): RenderingConfig {

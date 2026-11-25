@@ -1,20 +1,26 @@
 import type { Types } from '@cornerstonejs/core';
-import type { Annotation, AnnotationData } from './AnnotationTypes';
+import type {
+  Annotation,
+  AnnotationData,
+  CachedStats,
+  VolumeStats,
+} from './AnnotationTypes';
 import type { ISpline } from './';
 import type { ContourSegmentationAnnotationData } from './ContourSegmentationAnnotation';
 import type { ContourAnnotation } from './ContourAnnotation';
 
-export interface ROICachedStats {
-  [targetId: string]: {
-    Modality: string;
-    area: number;
-    areaUnit: string;
-    max: number;
-    mean: number;
-    stdDev: number;
-    unit?: number;
-  };
+export interface ROICachedStatsByTargetId {
+  [targetId: string]: ROICachedStats;
 }
+
+export type ROICachedStats = CachedStats & {
+  Modality: string;
+  area: number | number[];
+  areaUnit: string;
+  max: number | number[];
+  mean: number | number[];
+  stdDev: number;
+};
 
 export interface RectangleROIAnnotation extends Annotation {
   data: {
@@ -33,13 +39,7 @@ export interface RectangleROIAnnotation extends Annotation {
       };
     };
     label: string;
-    cachedStats?:
-      | ROICachedStats
-      | {
-          pointsInVolume?: Types.Point3[];
-          projectionPoints?: Types.Point3[];
-          projectionPointsImageIds?: string[];
-        };
+    cachedStats: ROICachedStatsByTargetId;
   };
 }
 
@@ -47,7 +47,7 @@ export interface ProbeAnnotation extends Annotation {
   data: {
     handles: { points: Types.Point3[] };
     cachedStats: {
-      [targetId: string]: {
+      [targetId: string]: CachedStats & {
         Modality: string;
         index: Types.Point3;
         value: number;
@@ -84,7 +84,7 @@ export interface LengthAnnotation extends Annotation {
     };
     label: string;
     cachedStats: {
-      [targetId: string]: {
+      [targetId: string]: CachedStats & {
         length: number;
         unit: string;
       };
@@ -119,13 +119,7 @@ export interface AdvancedMagnifyAnnotation extends Annotation {
 export interface CircleROIAnnotation extends Annotation {
   data: {
     handles: {
-      points: [
-        Types.Point3,
-        Types.Point3,
-        Types.Point3,
-        Types.Point3,
-        Types.Point3,
-      ]; // [center, top, bottom, left, right]
+      points: Types.Point3[]; // [center, top, bottom, left, right] or [center, edge] when simplified
       activeHandleIndex: number | null;
       textBox?: {
         hasMoved: boolean;
@@ -139,18 +133,7 @@ export interface CircleROIAnnotation extends Annotation {
       };
     };
     label: string;
-    cachedStats?:
-      | (ROICachedStats & {
-          [targetId: string]: {
-            radius: number;
-            radiusUnit: string;
-            perimeter: number;
-          };
-        })
-      | {
-          pointsInVolume: Types.Point3[];
-          projectionPoints: Types.Point3[][];
-        };
+    cachedStats?: ROICachedStatsByTargetId;
   };
 }
 
@@ -163,7 +146,7 @@ export type SplineROIAnnotation = ContourAnnotation & {
       resolution: number;
     };
     cachedStats?: {
-      [targetId: string]: {
+      [targetId: string]: CachedStats & {
         Modality: string;
         area: number;
         areaUnit: string;
@@ -197,7 +180,7 @@ export interface EllipticalROIAnnotation extends Annotation {
       };
     };
     label: string;
-    cachedStats?: ROICachedStats;
+    cachedStats?: ROICachedStatsByTargetId;
     initialRotation: number;
   };
 }
@@ -218,14 +201,14 @@ export interface BidirectionalAnnotation extends Annotation {
         };
       };
     };
-    label?: string;
     cachedStats: {
-      [targetId: string]: {
+      [targetId: string]: CachedStats & {
         length: number;
         width: number;
         unit: string;
       };
     };
+    label?: string;
   };
 }
 
@@ -269,12 +252,7 @@ export interface RectangleROIStartEndThresholdAnnotation extends Annotation {
     label: string;
     startCoordinate: number;
     endCoordinate: number;
-    cachedStats: {
-      pointsInVolume: Types.Point3[];
-      projectionPoints: Types.Point3[][]; // first slice p1, p2, p3, p4; second slice p1, p2, p3, p4 ...
-      projectionPointsImageIds: string[];
-      statistics?: ROICachedStats;
-    };
+    cachedStats: VolumeStats;
     handles: {
       points: Types.Point3[];
       activeHandleIndex: number | null;
@@ -310,11 +288,8 @@ export interface CircleROIStartEndThresholdAnnotation extends Annotation {
     label: string;
     startCoordinate: number;
     endCoordinate: number;
-    cachedStats?: {
-      pointsInVolume: Types.Point3[];
-      projectionPoints: Types.Point3[][];
-      statistics?: ROICachedStats;
-    };
+    cachedStats?: VolumeStats;
+    labelmapUID?: string;
     handles: {
       points: Types.Point3[]; // [center, top, bottom, left, right]
       activeHandleIndex: number | null;
@@ -338,7 +313,7 @@ export type PlanarFreehandROIAnnotation = ContourAnnotation & {
     isOpenUShapeContour?: boolean | 'lineSegment' | 'orthogonalT';
     // Present if isOpenUShapeContour is truthy:
     openUShapeContourVectorToPeak?: Types.Point3[];
-    cachedStats?: ROICachedStats;
+    cachedStats?: ROICachedStatsByTargetId;
   };
 };
 export type PlanarFreehandContourSegmentationAnnotation =
@@ -567,8 +542,8 @@ export interface VideoRedactionAnnotation extends Annotation {
       points: Types.Point3[];
       activeHandleIndex: number | null;
     };
-    cachedStats: {
-      [key: string]: unknown; // Can be more specific if the structure is known
+    cachedStats?: {
+      [targetId: string]: CachedStats;
     };
     active: boolean;
   };

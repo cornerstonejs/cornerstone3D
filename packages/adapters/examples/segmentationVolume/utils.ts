@@ -74,20 +74,51 @@ export async function readSegmentation(file: File, state) {
     return;
   }
 
-  const arrayBuffer = image.data.byteArray.buffer;
-
-  await loadSegmentation(arrayBuffer, state);
+  await loadSegmentationFromImageId(imageId, state);
 }
 
 export async function loadSegmentation(arrayBuffer: ArrayBuffer, state) {
+  // The new adapter API pulls SEG pixels through the image loader (per-frame
+  // imageIds) instead of decoding the whole Part-10 buffer up front, so register
+  // the fetched buffer as a wadouri imageId before loading it.
+  const segImageId = wadouri.fileManager.add(new Blob([arrayBuffer]));
+
+  await loadSegmentationFromImageId(segImageId, state);
+}
+
+/** Appends a 1-based wadouri frame qualifier (?frame= / &frame=) to an imageId. */
+function appendFrameToImageId(imageId: string, frame: number): string {
+  const separator = imageId.includes('?') ? '&' : '?';
+  return `${imageId}${separator}frame=${frame}`;
+}
+
+export async function loadSegmentationFromImageId(segImageId: string, state) {
   const { referenceImageIds } = state;
 
+  // Make sure the SEG instance metadata is registered for this imageId.
+  await imageLoader.loadAndCacheImage(segImageId);
+
+  const instance = metaData.get('instance', segImageId) || {};
+  const numberOfFrames =
+    Number(instance.NumberOfFrames) ||
+    instance.PerFrameFunctionalGroupsSequence?.length ||
+    1;
+
+  // Per-frame loadable SEG imageIds (wadouri frame numbers are 1-based).
+  const frameImageIds =
+    numberOfFrames > 1
+      ? Array.from({ length: numberOfFrames }, (_, index) =>
+          appendFrameToImageId(segImageId, index + 1)
+        )
+      : [segImageId];
+
   const { labelMapImages } =
-    await Cornerstone3D.Segmentation.createFromDICOMSegBuffer(
+    await Cornerstone3D.Segmentation.createFromDicomSegImageId(
       referenceImageIds,
-      arrayBuffer,
+      segImageId,
       {
         metadataProvider: metaData,
+        frameImageIds,
       }
     );
 

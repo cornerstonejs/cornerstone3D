@@ -14,7 +14,7 @@ import type { IPoints } from '../../types';
 export default function getMouseEventPoints(
   evt: MouseEvent,
   element?: HTMLDivElement
-): IPoints {
+): IPoints | undefined {
   const elementToUse = element || (evt.currentTarget as HTMLDivElement);
   const { viewport } = getEnabledElement(elementToUse) || {};
 
@@ -25,7 +25,11 @@ export default function getMouseEventPoints(
   const clientPoint = _clientToPoint(evt);
   const pagePoint = _pageToPoint(evt);
   const canvasPoint = _pagePointsToCanvasPoints(elementToUse, pagePoint);
-  const worldPoint = viewport.canvasToWorld(canvasPoint);
+  const worldPoint = getWorldPoint(viewport, canvasPoint);
+
+  if (!worldPoint) {
+    return;
+  }
 
   return {
     page: pagePoint,
@@ -68,4 +72,26 @@ function _pageToPoint(evt: MouseEvent): Types.Point2 {
  */
 function _clientToPoint(evt: MouseEvent): Types.Point2 {
   return [evt.clientX, evt.clientY];
+}
+
+function getWorldPoint(
+  viewport: { canvasToWorld: (canvasPos: Types.Point2) => Types.Point3 },
+  canvasPoint: Types.Point2
+): Types.Point3 | undefined {
+  try {
+    return viewport.canvasToWorld(canvasPoint);
+  } catch (error) {
+    if (isNoMountedDataError(error)) {
+      return;
+    }
+
+    throw error;
+  }
+}
+
+function isNoMountedDataError(error: unknown): boolean {
+  return (
+    error instanceof Error &&
+    error.message.includes('because no data is mounted')
+  );
 }

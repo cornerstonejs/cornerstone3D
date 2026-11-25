@@ -2,6 +2,8 @@ import type { OrientationAxis } from '../enums';
 import type OrientationVectors from './OrientationVectors';
 import type DisplayArea from './displayArea';
 import type RGB from './RGB';
+import type Point2 from './Point2';
+import type { ECGTraceLayout } from '../RenderingEngine/GenericViewport/ECG/ECGViewportTypes';
 
 /**
  * This type defines the shape of viewport input options, so we can throw when it is incorrect.
@@ -16,10 +18,17 @@ interface ViewportInputOptions {
   /** whether the events should be suppressed and not fired*/
   suppressEvents?: boolean;
   /**
-   * parallel projection settings, Note that this will only be used for VOLUME_3D viewport. You can't modify the
-   * parallel projection of a stack viewport or volume viewport using viewport input options.
+   * parallel projection settings. This is used by 3D volume viewports (`VOLUME_3D` and `VOLUME_3D_NEXT`).
+   * You can't modify the parallel projection of a stack viewport or orthographic volume viewport using viewport input options.
    */
   parallelProjection?: boolean;
+  /** aspect ratio as [width, height] */
+  aspectRatio?: Point2;
+  /**
+   * Trace layout of an ECG viewport: a registered name such as `'3x4+1'`, or
+   * a full definition. A hanging protocol gives either form here.
+   */
+  traceLayout?: ECGTraceLayout;
 }
 
 export type { ViewportInputOptions as default };

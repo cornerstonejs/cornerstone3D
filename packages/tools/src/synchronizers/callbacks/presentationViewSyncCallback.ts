@@ -1,5 +1,9 @@
 import type { Types } from '@cornerstonejs/core';
 import { getRenderingEngine } from '@cornerstonejs/core';
+import {
+  applyViewportPresentation,
+  getViewportPresentation,
+} from '../../utilities/viewportPresentation';
 
 /**
  * Synchronizer callback to synchronize the camera. Synchronization
@@ -29,9 +33,11 @@ export default function presentationViewSyncCallback(
   const tViewport = renderingEngine.getViewport(targetViewport.viewportId);
   const sViewport = renderingEngine.getViewport(sourceViewport.viewportId);
 
-  const presentationView = sViewport.getViewPresentation(options);
+  const presentationView = getViewportPresentation(sViewport, options);
 
-  tViewport.setViewPresentation(presentationView);
+  if (!applyViewportPresentation(tViewport, presentationView)) {
+    return;
+  }
 
   tViewport.render();
 }

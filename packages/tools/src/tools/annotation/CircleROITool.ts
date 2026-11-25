@@ -1,4 +1,4 @@
-import { AnnotationTool, BaseTool } from '../base';
+import { AnnotationTool, BaseTool, measurementTargetFilters } from '../base';
 import { vec2, vec3 } from 'gl-matrix';
 
 import {
@@ -6,7 +6,6 @@ import {
   VolumeViewport,
   utilities as csUtils,
   getEnabledElementByViewportId,
-  EPSILON,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 
@@ -26,6 +25,7 @@ import {
 import {
   drawCircle as drawCircleSvg,
   drawHandles as drawHandlesSvg,
+  drawEllipseByCoordinates,
 } from '../../drawingSvg';
 import { state } from '../../store/state';
 import { ChangeTypes, Events, MeasurementType } from '../../enums';
@@ -49,16 +49,30 @@ import type { CircleROIAnnotation } from '../../types/ToolSpecificAnnotationType
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 import type { StyleSpecifier } from '../../types/AnnotationStyle';
 import { getPixelValueUnits } from '../../utilities/getPixelValueUnits';
+import { viewportSupportsImageSlices } from '../../utilities/viewportCapabilities';
 import { isViewportPreScaled } from '../../utilities/viewport/isViewportPreScaled';
 import {
   getCanvasCircleCorners,
   getCanvasCircleRadius,
 } from '../../utilities/math/circle';
-import { pointInEllipse } from '../../utilities/math/ellipse';
+import { getCanvasEllipseCorners } from '../../utilities/math/ellipse';
 import { BasicStatsCalculator } from '../../utilities/math/basic';
 import { getStyleProperty } from '../../stateManagement/annotation/config/helpers';
+import {
+  createGetTextLines,
+  type MetricDefinition,
+} from '../../utilities/defaultGetTextLines';
+import getEllipseWorldCoordinates from '../../utilities/getEllipseWorldCoordinates';
+import sampleAreaAnnotationVoxels from '../../utilities/sampleAreaAnnotationVoxels';
+import { hasValidAreaAnnotationDimensions } from '../../utilities/areaAnnotationShapeUtils';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.annotation.CircleROITool'
+);
 
 const { transformWorldToIndex } = csUtils;
+const { createCircleShape } = csUtils.voxelSlab;
 
 /**
  * CircleROITool let you draw annotations that measures the statistics
@@ -138,6 +152,10 @@ class CircleROITool extends AnnotationTool {
         getTextLines: defaultGetTextLines,
         statsCalculator: BasicStatsCalculator,
         simplified: true, // If true, only 2 points are used for the handles, otherwise 5 points are used
+        // By default show the statistics of every display set containing
+        // pixel values (eg both CT and PT on a fusion viewport), but never
+        // SEG and the like - see measurementTargetFilters for alternatives
+        targetsFilter: measurementTargetFilters.allPixelData,
       },
     }
   ) {
@@ -158,9 +176,7 @@ class CircleROITool extends AnnotationTool {
    * @returns The annotation object.
    *
    */
-  addNewAnnotation = (
-    evt: EventTypes.InteractionEventType
-  ): CircleROIAnnotation => {
+  addNewAnnotation = (evt: EventTypes.InteractionEventType): Annotation => {
     const eventDetail = evt.detail;
     const { currentPoints, element } = eventDetail;
     const worldPos = currentPoints.world;
@@ -233,13 +249,83 @@ class CircleROITool extends AnnotationTool {
     const { viewport } = enabledElement;
 
     const { points } = annotation.data.handles;
-    const canvasHandles = points.map((p) => viewport.worldToCanvas(p));
-    const canvasCenter = canvasHandles[0];
-    const radius = getCanvasCircleRadius([canvasCenter, canvasHandles[1]]);
-    const radiusPoint = getCanvasCircleRadius([canvasCenter, canvasCoords]);
+    // Get the radius in world units from the drag distance
+    const ellipseWorldCoordinates = getEllipseWorldCoordinates(
+      points.slice(0, 2) as [Types.Point3, Types.Point3],
+      viewport
+    );
 
-    return Math.abs(radiusPoint - radius) < proximity / 2;
+    const ellipseCanvasCoordinates = ellipseWorldCoordinates.map((p) =>
+      viewport.worldToCanvas(p)
+    ) as [Types.Point2, Types.Point2, Types.Point2, Types.Point2];
+    const canvasCorners = getCanvasEllipseCorners(
+      ellipseCanvasCoordinates as [
+        Types.Point2,
+        Types.Point2,
+        Types.Point2,
+        Types.Point2,
+      ]
+    );
+
+    const [canvasPoint1, canvasPoint2] = canvasCorners;
+
+    const minorEllipse = {
+      left: Math.min(canvasPoint1[0], canvasPoint2[0]) + proximity / 2,
+      top: Math.min(canvasPoint1[1], canvasPoint2[1]) + proximity / 2,
+      width: Math.abs(canvasPoint1[0] - canvasPoint2[0]) - proximity,
+      height: Math.abs(canvasPoint1[1] - canvasPoint2[1]) - proximity,
+    };
+
+    const majorEllipse = {
+      left: Math.min(canvasPoint1[0], canvasPoint2[0]) - proximity / 2,
+      top: Math.min(canvasPoint1[1], canvasPoint2[1]) - proximity / 2,
+      width: Math.abs(canvasPoint1[0] - canvasPoint2[0]) + proximity,
+      height: Math.abs(canvasPoint1[1] - canvasPoint2[1]) + proximity,
+    };
+
+    const pointInMinorEllipse = this._pointInEllipseCanvas(
+      minorEllipse,
+      canvasCoords
+    );
+    const pointInMajorEllipse = this._pointInEllipseCanvas(
+      majorEllipse,
+      canvasCoords
+    );
+
+    if (pointInMajorEllipse && !pointInMinorEllipse) {
+      return true;
+    }
+
+    return false;
   };
+
+  /**
+   * This is a temporary function to use the old ellipse's canvas-based
+   * calculation for isPointNearTool, we should move the the world-based
+   * calculation to the tool's isPointNearTool function.
+   *
+   * @param ellipse - The ellipse object
+   * @param location - The location to check
+   * @returns True if the point is inside the ellipse
+   */
+  _pointInEllipseCanvas(ellipse, location: Types.Point2): boolean {
+    const xRadius = ellipse.width / 2;
+    const yRadius = ellipse.height / 2;
+
+    if (xRadius <= 0.0 || yRadius <= 0.0) {
+      return false;
+    }
+
+    const center = [ellipse.left + xRadius, ellipse.top + yRadius];
+    const normalized = [location[0] - center[0], location[1] - center[1]];
+
+    const inEllipse =
+      (normalized[0] * normalized[0]) / (xRadius * xRadius) +
+        (normalized[1] * normalized[1]) / (yRadius * yRadius) <=
+      1.0;
+
+    return inEllipse;
+  }
 
   toolSelectedCallback = (
     evt: EventTypes.InteractionEventType,
@@ -616,7 +702,7 @@ class CircleROITool extends AnnotationTool {
       const { handles } = data;
       const { points, activeHandleIndex } = handles;
 
-      const targetId = this.getTargetId(viewport, data);
+      const targetIds = this.getMeasurementTargets(viewport, data);
       styleSpecifier.annotationUID = annotationUID;
 
       const { color, lineWidth, lineDash } = this.getAnnotationStyle({
@@ -636,24 +722,18 @@ class CircleROITool extends AnnotationTool {
 
       const { centerPointRadius } = this.configuration;
 
-      // If cachedStats does not exist, or the unit is missing (as part of import/hydration etc.),
-      // force to recalculate the stats from the points
+      // If cachedStats does not exist for one of the measurement targets, or
+      // the unit is missing (as part of import/hydration etc.), force to
+      // recalculate the stats from the points.  Every filtered target gets
+      // seeded here, so a single (eg fusion) viewport computes the stats for
+      // all of them even when no other viewport has done so.
       if (
-        !data.cachedStats[targetId] ||
-        data.cachedStats[targetId].areaUnit == null
+        this.ensureCachedStatsTargets(
+          data,
+          targetIds,
+          (stats) => stats.areaUnit == null
+        )
       ) {
-        data.cachedStats[targetId] = {
-          Modality: null,
-          area: null,
-          max: null,
-          mean: null,
-          stdDev: null,
-          areaUnit: null,
-          radius: null,
-          radiusUnit: null,
-          perimeter: null,
-        };
-
         this._calculateCachedStats(
           annotation,
           viewport,
@@ -661,6 +741,10 @@ class CircleROITool extends AnnotationTool {
           enabledElement
         );
       } else if (annotation.invalidated) {
+        // A change - recompute (throttled, so slow stats are not recomputed
+        // every frame during a drag).  Clearing stale targets and rebuilding
+        // the cumulative key set is done inside _calculateCachedStats, gated
+        // by the invalidated flag.
         this._throttledCalculateCachedStats(
           annotation,
           viewport,
@@ -680,7 +764,9 @@ class CircleROITool extends AnnotationTool {
           // at the referencedImageId
           for (const targetId in data.cachedStats) {
             if (targetId.startsWith('imageId')) {
-              const viewports = renderingEngine.getStackViewports();
+              const viewports = renderingEngine
+                .getViewports()
+                .filter(viewportSupportsImageSlices);
 
               const invalidatedStack = viewports.find((vp) => {
                 // The stack viewport that contains the imageId but is not
@@ -704,7 +790,7 @@ class CircleROITool extends AnnotationTool {
 
       // If rendering engine has been destroyed while rendering
       if (!viewport.getRenderingEngine()) {
-        console.warn('Rendering Engine has been destroyed');
+        cs3dLogger.warn('Rendering Engine has been destroyed');
         return renderStatus;
       }
 
@@ -744,12 +830,27 @@ class CircleROITool extends AnnotationTool {
 
       const dataId = `${annotationUID}-circle`;
       const circleUID = '0';
-      drawCircleSvg(
+
+      // Get the radius in world units from the drag distance
+      const ellipseWorldCoordinates = getEllipseWorldCoordinates(
+        [points[0], points[1]],
+        viewport
+      );
+
+      const ellipseCanvasCoordinates = ellipseWorldCoordinates.map((p) =>
+        viewport.worldToCanvas(p)
+      ) as [Types.Point2, Types.Point2, Types.Point2, Types.Point2];
+
+      drawEllipseByCoordinates(
         svgDrawingHelper,
         annotationUID,
         circleUID,
-        center,
-        radius,
+        ellipseCanvasCoordinates as [
+          Types.Point2,
+          Types.Point2,
+          Types.Point2,
+          Types.Point2,
+        ],
         {
           color,
           lineDash,
@@ -779,7 +880,7 @@ class CircleROITool extends AnnotationTool {
       renderStatus = true;
 
       if (this.configuration.calculateStats) {
-        const textLines = this.configuration.getTextLines(data, targetId);
+        const textLines = this.configuration.getTextLines(data, targetIds);
         if (!textLines || textLines.length === 0) {
           continue;
         }
@@ -831,7 +932,27 @@ class CircleROITool extends AnnotationTool {
     const bottomRightWorld = viewport.canvasToWorld(bottomRightCanvas);
     const { cachedStats } = data;
 
+    // On an actual change (invalidation) drop every cached target so stale
+    // volumes are removed and the (fixed frame of reference) key set is
+    // rebuilt from the current viewport's targets.  This is done at the seam
+    // where the invalidated flag is consumed (and reset below), so during a
+    // drag it only happens when the throttled calculation actually runs -
+    // not every frame.  When not invalidated we keep the existing targets
+    // (possibly seeded by other viewports) and just fill/refresh them.
+    if (wasInvalidated) {
+      // Capture the current targets first (reusing existing keys where the
+      // volume already has stats) so this viewport's volumes keep stable
+      // keys, then drop everything (removing stale/foreign volumes) and
+      // reseed just those targets.
+      const currentTargets = this.getMeasurementTargets(viewport, data);
+      for (const key of Object.keys(cachedStats)) {
+        delete cachedStats[key];
+      }
+      this.ensureCachedStatsTargets(data, currentTargets);
+    }
+
     const targetIds = Object.keys(cachedStats);
+    let isHandleOutsideAnyTarget = false;
 
     for (let i = 0; i < targetIds.length; i++) {
       const targetId = targetIds[i];
@@ -841,9 +962,9 @@ class CircleROITool extends AnnotationTool {
       // to various reasons such as if the target was a volumeViewport, and
       // the volumeViewport has been decached in the meantime.
       if (!image) {
-        console.warn('image not found for stats:', targetId);
-        // Better clean the stats for this targetId
-        delete cachedStats[targetId];
+        // The key may have been created by another viewport that does have
+        // this volume - leave it in place so that viewport can compute it.
+        // Stale keys are cleared on annotation change, not here.
         continue;
       }
 
@@ -899,40 +1020,13 @@ class CircleROITool extends AnnotationTool {
       // Check if one of the indexes are inside the volume, this then gives us
       // Some area to do stats over.
 
-      this.isHandleOutsideImage = !BaseTool.isInsideVolume(dimensions, [
+      const isHandleOutsideTarget = !BaseTool.isInsideVolume(dimensions, [
         pos1Index,
         pos2Index,
       ]);
+      isHandleOutsideAnyTarget ||= isHandleOutsideTarget;
 
-      if (!this.isHandleOutsideImage) {
-        const iMin = Math.min(pos1Index[0], pos2Index[0]);
-        const iMax = Math.max(pos1Index[0], pos2Index[0]);
-
-        const jMin = Math.min(pos1Index[1], pos2Index[1]);
-        const jMax = Math.max(pos1Index[1], pos2Index[1]);
-
-        const kMin = Math.min(pos1Index[2], pos2Index[2]);
-        const kMax = Math.max(pos1Index[2], pos2Index[2]);
-
-        const boundsIJK = [
-          [iMin, iMax],
-          [jMin, jMax],
-          [kMin, kMax],
-        ] as [Types.Point2, Types.Point2, Types.Point2];
-
-        const center = points[0];
-
-        const xRadius = Math.abs(topLeftWorld[0] - bottomRightWorld[0]) / 2;
-        const yRadius = Math.abs(topLeftWorld[1] - bottomRightWorld[1]) / 2;
-        const zRadius = Math.abs(topLeftWorld[2] - bottomRightWorld[2]) / 2;
-
-        const ellipseObj = {
-          center,
-          xRadius: xRadius < EPSILON / 2 ? 0 : xRadius,
-          yRadius: yRadius < EPSILON / 2 ? 0 : yRadius,
-          zRadius: zRadius < EPSILON / 2 ? 0 : zRadius,
-        };
-
+      if (!isHandleOutsideTarget) {
         const pixelUnitsOptions = {
           isPreScaled: isViewportPreScaled(viewport, targetId),
           isSuvScaled: this.isSuvScaled(
@@ -948,19 +1042,40 @@ class CircleROITool extends AnnotationTool {
           pixelUnitsOptions
         );
 
-        let pointsInShape;
-        if (voxelManager) {
-          pointsInShape = voxelManager.forEach(
-            this.configuration.statsCalculator.statsCallback,
-            {
-              isInObject: (pointLPS) =>
-                pointInEllipse(ellipseObj, pointLPS, { fast: true }),
-              boundsIJK,
-              imageData,
-              returnPoints: this.configuration.storePointData,
+        // A circle drawn on the viewport is a circle in the annotation
+        // plane, whatever the orientation of that plane. The shared sampler
+        // selects the voxels for it, so the selection matches the polyline
+        // and rectangle tools, and it does not depend on the display.
+        const worldRadius = vec3.distance(points[0], points[1]);
+        const pointsInShape = sampleAreaAnnotationVoxels({
+          annotation,
+          image,
+          // Statistics are over scalar values. A colour volume gives an
+          // RGB triple, which no statistic here consumes.
+          voxelManager: voxelManager as Types.IVoxelManager<number>,
+          points: points as Types.Point3[],
+          // The handles only touch the outline, and the `simplified`
+          // representation keeps the centre and one handle, so the radius is
+          // what bounds the disc.
+          boundsMargin: worldRadius,
+          createShape: ({ volume, planePoint, viewPlaneNormal }) => {
+            if (!hasValidAreaAnnotationDimensions(worldRadius)) {
+              return null;
             }
-          );
-        }
+
+            return createCircleShape({
+              volume,
+              planePoint,
+              viewPlaneNormal,
+              centerWorld: points[0] as Types.Point3,
+              radius: worldRadius,
+            });
+          },
+          // A centre and one point on the circle are the whole definition.
+          minimumPoints: 2,
+          onSample: this.configuration.statsCalculator.statsCallback,
+          storePointData: this.configuration.storePointData,
+        });
         const stats = this.configuration.statsCalculator.getStatistics();
 
         cachedStats[targetId] = {
@@ -977,6 +1092,10 @@ class CircleROITool extends AnnotationTool {
       }
     }
 
+    // With multiple selected measurement targets, preventHandleOutsideImage
+    // should not depend on actor iteration order. The annotation is valid only
+    // when its handles fit inside every target for which image data resolved.
+    this.isHandleOutsideImage = isHandleOutsideAnyTarget;
     annotation.invalidated = false;
 
     // Dispatching annotation modified
@@ -1056,23 +1175,24 @@ class CircleROITool extends AnnotationTool {
 
     triggerAnnotationRenderForViewportIds([viewport.id]);
   };
+
+  static readonly CIRCLE_ROI_METRICS: MetricDefinition[] = [
+    { name: 'Mean', attribute: 'mean', unitAttribute: 'modalityUnit' },
+    { name: 'Max', attribute: 'max', unitAttribute: 'modalityUnit' },
+    { name: 'Min', attribute: 'min', unitAttribute: 'modalityUnit' },
+    { name: 'Std Dev', attribute: 'stdDev', unitAttribute: 'modalityUnit' },
+  ];
+
+  static getTextLines = createGetTextLines(CircleROITool.CIRCLE_ROI_METRICS);
 }
 
-function defaultGetTextLines(data, targetId): string[] {
-  const cachedVolumeStats = data.cachedStats[targetId];
-  const {
-    radius,
-    radiusUnit,
-    area,
-    mean,
-    stdDev,
-    max,
-    min,
-    isEmptyArea,
-    areaUnit,
-    modalityUnit,
-  } = cachedVolumeStats;
+function defaultGetTextLines(data, targetIds: string[]): string[] {
+  const cachedVolumeStats = data.cachedStats[targetIds[0]];
   const textLines: string[] = [];
+  if (!cachedVolumeStats) {
+    return textLines;
+  }
+  const { radius, radiusUnit, area, isEmptyArea, areaUnit } = cachedVolumeStats;
 
   if (csUtils.isNumber(radius)) {
     const radiusLine = isEmptyArea
@@ -1088,19 +1208,9 @@ function defaultGetTextLines(data, targetId): string[] {
     textLines.push(areaLine);
   }
 
-  if (csUtils.isNumber(mean)) {
-    textLines.push(`Mean: ${csUtils.roundNumber(mean)} ${modalityUnit}`);
-  }
-
-  if (csUtils.isNumber(max)) {
-    textLines.push(`Max: ${csUtils.roundNumber(max)} ${modalityUnit}`);
-  }
-  if (csUtils.isNumber(min)) {
-    textLines.push(`Min: ${csUtils.roundNumber(min)} ${modalityUnit}`);
-  }
-
-  if (csUtils.isNumber(stdDev)) {
-    textLines.push(`Std Dev: ${csUtils.roundNumber(stdDev)} ${modalityUnit}`);
+  const standardTextLines = CircleROITool.getTextLines(data, targetIds);
+  if (standardTextLines) {
+    textLines.push(...standardTextLines);
   }
 
   return textLines;

@@ -3,13 +3,14 @@ import TiledRenderingEngine from './TiledRenderingEngine';
 import ContextPoolRenderingEngine from './ContextPoolRenderingEngine';
 import type BaseRenderingEngine from './BaseRenderingEngine';
 import type {
-  IStackViewport,
-  IVolumeViewport,
   IViewport,
   PublicViewportInput,
   VtkOffscreenMultiRenderWindow,
 } from '../types';
 import { RenderingEngineModeEnum } from '../enums';
+import { coreLog } from '../utilities/logger';
+
+const log = coreLog.getLogger('RenderingEngine');
 
 class RenderingEngine {
   public hasBeenDestroyed: boolean;
@@ -30,7 +31,7 @@ class RenderingEngine {
         this._implementation = new ContextPoolRenderingEngine(id);
         break;
       default:
-        console.warn(
+        log.warn(
           `RenderingEngine: Unknown rendering engine mode "${renderingEngineMode}". Defaulting to Next rendering engine.`
         );
         this._implementation = new ContextPoolRenderingEngine(id);
@@ -40,6 +41,10 @@ class RenderingEngine {
 
   get id(): string {
     return this._implementation.id;
+  }
+
+  public disableViewport(viewportId: string): void {
+    return this._implementation.disableElement(viewportId);
   }
 
   public enableElement(viewportInputEntry: PublicViewportInput): void {
@@ -58,24 +63,12 @@ class RenderingEngine {
     return this._implementation.resize(immediate, keepCamera);
   }
 
-  public getViewport(viewportId: string): IViewport {
-    return this._implementation.getViewport(viewportId);
+  public getViewport<T = IViewport>(viewportId: string): T {
+    return this._implementation.getViewport<T>(viewportId);
   }
 
   public getViewports(): IViewport[] {
     return this._implementation.getViewports();
-  }
-
-  public getStackViewport(viewportId: string): IStackViewport {
-    return this._implementation.getStackViewport(viewportId);
-  }
-
-  public getStackViewports(): IStackViewport[] {
-    return this._implementation.getStackViewports();
-  }
-
-  public getVolumeViewports(): IVolumeViewport[] {
-    return this._implementation.getVolumeViewports();
   }
 
   public getRenderer(viewportId: string) {

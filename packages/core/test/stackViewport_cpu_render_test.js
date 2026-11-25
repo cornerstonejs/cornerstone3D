@@ -45,11 +45,11 @@ describe('StackViewport CPU -- ', () => {
   });
 
   afterEach(() => {
-    setUseCPURendering(true, false);
     testUtils.cleanupTestEnvironment({
       renderingEngineId,
       toolGroupIds: ['default'],
     });
+    resetUseCPURendering();
   });
 
   describe('Basic Rendering --- ', function () {

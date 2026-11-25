@@ -1,0 +1,60 @@
+// Diffusion MR: one display set for each b-value.
+//
+// Without this rule, a DWI series is one display set, and the viewer can show
+// it as 4D, with one dimension group for each b-value. This rule puts each
+// b-value of the series into its own display set, with the description
+// `<SeriesDescription> b=<DiffusionBValue>`.
+//
+// The rule is for DWI: one direction, or a trace, at each b-value. It does not
+// separate the gradient directions of a DTI series, so a DTI b-value gives one
+// stack with all of its directions at each position.
+//
+// The rule reads the standard DiffusionBValue (0018,9087) only. Images without
+// a b-value (for example a trace or ADC set) go to the default
+// `mixedDimensionalityBValue` rule, and form one more display set.
+//
+// The rule does not read localizer images (`LOCALIZER` in ImageType): they do
+// not count as a b-value, and they stay with the default `localizer` rule.
+// Multi-frame instances stay with the default `multiFrame` rule, which gives
+// one display set for each instance.
+//
+// The file puts the rule just before the default `mixedDimensionalityBValue` rule, which
+// would otherwise take the series.
+// `$spliceById` needs `spliceById` of @cornerstonejs/metadata, registered with
+// immutability-helper `extend`.
+{
+  // New rules for the registry.
+  "displaySetRules": {
+    "$merge": {
+      "dwiByBValue": {
+        "description": "Diffusion MR: one display set for each b-value.",
+        "context": {
+          "bValue": "isLocalizer ? null : Number(DiffusionBValue)",
+          // Some scanners write DiffusionBValue = 0 into every MR series, so a
+          // series of b=0 images only is not a diffusion series.
+          "isDiffusion": "series.instances.max(bValue) > 0"
+        },
+        "matches": {
+          "Modality": "MR",
+          "isDiffusion": true,
+          "isImage": true,
+          "isMultiFrame": false,
+          "isLocalizer": false,
+          "DiffusionBValue": { "notNull": true }
+        },
+        "groupBy": ["SeriesInstanceUID", "bValue"],
+        // SliceLocation (0020,1041) is optional and has no defined direction, so
+        // sort by the distance along the slice normal, as volumePositionOrder does.
+        "sortBy": ["displaySet.sliceDistance", "InstanceNumber"],
+        "attributes": {
+          "SeriesDescription": {
+            "template": "{SeriesDescription} b={DiffusionBValue}"
+          }
+        }
+      }
+    }
+  },
+  "displaySetRuleOrder": {
+    "$spliceById": [["mixedDimensionalityBValue", 0, "dwiByBValue"]]
+  }
+}

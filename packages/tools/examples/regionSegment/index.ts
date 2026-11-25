@@ -83,9 +83,9 @@ elementAxial.oncontextmenu = (e) => e.preventDefault();
 elementCoronal.oncontextmenu = (e) => e.preventDefault();
 elementSagittal.oncontextmenu = (e) => e.preventDefault();
 
-elementAxial.style.height = '500px';
-elementCoronal.style.height = '500px';
-elementSagittal.style.height = '500px';
+elementAxial.style.height = '512px';
+elementCoronal.style.height = '512px';
+elementSagittal.style.height = '512px';
 
 viewportGrid.appendChild(elementAxial);
 viewportGrid.appendChild(elementCoronal);

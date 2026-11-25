@@ -38,7 +38,7 @@ setTitleAndDescription(
   'Show the usage of the CINE Tool to play stack and volume viewports.'
 );
 
-const size = '500px';
+const size = '512px';
 const inactiveBorder = 'solid 5px rgba(0, 0, 0, 0)';
 const activeBorder = 'solid 5px rgba(255, 0, 0, 1)';
 const content = document.getElementById('content');

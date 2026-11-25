@@ -1,6 +1,12 @@
 import * as Comlink from 'comlink';
 import { RequestType } from '../enums';
 import { RequestPoolManager } from '../requestPool/requestPoolManager';
+import { coreLog } from '../utilities/logger';
+
+const registrationLog = coreLog.getLogger(
+  'webWorkerManager',
+  'webWorkerManager'
+);
 
 export type WebWorkerManagerOptions = {
   /**
@@ -69,7 +75,9 @@ class CentralizedWorkerManager {
     } = options;
 
     if (this.workerRegistry[workerName] && !overwrite) {
-      console.warn(`Worker type '${workerName}' is already registered...`);
+      registrationLog.warn(
+        `Worker type '${workerName}' is already registered...`
+      );
       return;
     }
 
@@ -107,7 +115,7 @@ class CentralizedWorkerManager {
     const workerProperties = this.workerRegistry[workerName];
 
     if (!workerProperties) {
-      console.error(`Worker type '${workerName}' is not registered.`);
+      registrationLog.error(`Worker type '${workerName}' is not registered.`);
       return null;
     }
 
@@ -177,7 +185,7 @@ class CentralizedWorkerManager {
           const error = new Error(
             `No available worker instance for '${workerName}'`
           );
-          console.error(error);
+          registrationLog.error(error);
           reject(error);
           return;
         }
@@ -216,7 +224,7 @@ class CentralizedWorkerManager {
 
           resolve(results);
         } catch (err) {
-          console.error(
+          registrationLog.error(
             `Error executing method '${methodName}' on worker '${workerName}':`,
             err
           );
@@ -264,7 +272,7 @@ class CentralizedWorkerManager {
   terminate(workerName: string) {
     const workerProperties = this.workerRegistry[workerName];
     if (!workerProperties) {
-      console.error(`Worker type '${workerName}' is not registered.`);
+      registrationLog.error(`Worker type '${workerName}' is not registered.`);
       return;
     }
 

@@ -11,10 +11,16 @@ import { addAnnotation } from '../stateManagement/annotation/annotationState';
 import { drawLine as drawLineSvg } from '../drawingSvg';
 import { filterViewportsWithToolEnabled } from '../utilities/viewportFilters';
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
+import getViewportICamera from '../utilities/getViewportICamera';
 import type { PublicToolProps, ToolProps, SVGDrawingHelper } from '../types';
 import type { ReferenceLineAnnotation } from '../types/ToolSpecificAnnotationTypes';
 import type { StyleSpecifier } from '../types/AnnotationStyle';
 import AnnotationDisplayTool from './base/AnnotationDisplayTool';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.ReferenceLinesTool'
+);
 
 const { EPSILON } = CONSTANTS;
 
@@ -69,12 +75,16 @@ class ReferenceLines extends AnnotationDisplayTool {
       this.configuration.sourceViewportId
     ) as Types.IVolumeViewport;
 
-    if (!sourceViewport?.getImageData()) {
+    // Optional-chain the call: native ("next") viewports without image geometry
+    // (e.g. video) do not implement getImageData, and reference lines do not
+    // apply to them. Calling the missing method directly threw on every
+    // camera-modified event.
+    if (!sourceViewport?.getImageData?.()) {
       return;
     }
 
     const { element } = sourceViewport;
-    const { viewUp, viewPlaneNormal } = sourceViewport.getCamera();
+    const { viewUp, viewPlaneNormal } = getViewportICamera(sourceViewport);
 
     const sourceViewportCanvasCornersInWorld =
       csUtils.getViewportImageCornersInWorld(sourceViewport);
@@ -196,9 +206,10 @@ class ReferenceLines extends AnnotationDisplayTool {
     const bottomLeft = annotation.data.handles.points[2];
     const bottomRight = annotation.data.handles.points[3];
 
-    const { focalPoint, viewPlaneNormal, viewUp } = targetViewport.getCamera();
+    const { focalPoint, viewPlaneNormal, viewUp } =
+      getViewportICamera(targetViewport);
     const { viewPlaneNormal: sourceViewPlaneNormal } =
-      sourceViewport.getCamera();
+      getViewportICamera(sourceViewport);
 
     if (this.isParallel(viewPlaneNormal, sourceViewPlaneNormal)) {
       // If the source and target viewports are parallel, we don't need to render
@@ -374,7 +385,7 @@ class ReferenceLines extends AnnotationDisplayTool {
             return targetViewport.worldToCanvas(world);
           });
       } catch (err) {
-        console.log(err);
+        cs3dLogger.info(err);
       }
     }
     return canvasCoordinates;

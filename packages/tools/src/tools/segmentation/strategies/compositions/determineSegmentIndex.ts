@@ -33,6 +33,7 @@ export default {
   ) => {
     const {
       segmentIndex,
+      labelValue,
       previewSegmentIndex,
       segmentationVoxelManager,
       centerIJK,
@@ -68,7 +69,7 @@ export default {
     }
 
     const callback = ({ value }) => {
-      hasSegmentIndex ||= value === segmentIndex;
+      hasSegmentIndex ||= value === (labelValue ?? segmentIndex);
       hasPreviewIndex ||= value === previewSegmentIndex;
     };
 

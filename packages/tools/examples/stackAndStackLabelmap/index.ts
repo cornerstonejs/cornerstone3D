@@ -41,7 +41,7 @@ setTitleAndDescription(
   'This example demonstrates how to render a segmentation in a StackViewport, even when the underlying image stacks have different ordering. We use a mammography image as an example, showcasing how the correct labelmap is matched and rendered on a second viewport, regardless of the stack order.'
 );
 
-const size = '500px';
+const size = '512px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 

@@ -17,7 +17,7 @@ export function initialize(
   }
 
   return new Promise((resolve, reject) => {
-    import('jpeg-lossless-decoder-js').then(({ Decoder }) => {
+    import('@cornerstonejs/jpeg-lossless-decoder-js').then(({ Decoder }) => {
       local.DecoderClass = Decoder;
       resolve();
     }, reject);
@@ -46,6 +46,8 @@ async function decodeJPEGLossless(
     pixelData.length,
     byteOutput
   );
+
+  imageFrame.planarConfiguration = 0;
 
   if (imageFrame.pixelRepresentation === 0) {
     if (imageFrame.bitsAllocated === 16) {

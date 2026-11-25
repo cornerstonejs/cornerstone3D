@@ -44,8 +44,8 @@ setTitleAndDescription(
 const content = document.getElementById('content');
 const element = document.createElement('div');
 element.id = 'cornerstone-element';
-element.style.width = '500px';
-element.style.height = '500px';
+element.style.width = '512px';
+element.style.height = '512px';
 element.oncontextmenu = () => false;
 content.appendChild(element);
 // ============================= //

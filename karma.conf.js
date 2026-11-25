@@ -1,8 +1,33 @@
 // @ts-check
 const path = require('path');
 const os = require('os');
+const fs = require('fs');
 
-process.env.CHROME_BIN = require('puppeteer').executablePath();
+/**
+ * Resolve the Chrome/Chromium binary that karma-chrome-launcher should use.
+ *
+ * Historically this unconditionally set CHROME_BIN to puppeteer's bundled
+ * Chromium path. Under pnpm, puppeteer's optional download (an install script)
+ * may not have run, in which case `executablePath()` still returns a path that
+ * does not exist on disk - karma then fails with "Cannot start ChromeHeadless /
+ * Can not find the binary ...". To stay robust:
+ *   1. Honor a CHROME_BIN already provided by the environment (e.g. a system
+ *      Chrome installed by CI).
+ *   2. Otherwise fall back to puppeteer's Chromium, but only if it actually
+ *      exists on disk.
+ *   3. Otherwise leave CHROME_BIN unset so karma-chrome-launcher can auto-detect
+ *      an installed Chrome.
+ */
+if (!process.env.CHROME_BIN) {
+  try {
+    const puppeteerChrome = require('puppeteer').executablePath();
+    if (puppeteerChrome && fs.existsSync(puppeteerChrome)) {
+      process.env.CHROME_BIN = puppeteerChrome;
+    }
+  } catch (err) {
+    // puppeteer not installed / no bundled Chromium - rely on a system Chrome.
+  }
+}
 
 /**
  *
@@ -25,13 +50,21 @@ process.env.CHROME_BIN = require('puppeteer').executablePath();
  * karma-webpack config
  * https://github.com/codymikol/karma-webpack?tab=readme-ov-file#default-webpack-configuration
  */
-const outputPath = path.join(os.tmpdir(), '_karma_webpack_') + Math.floor(Math.random() * 1000000)
+const outputPath =
+  path.join(os.tmpdir(), '_karma_webpack_') +
+  Math.floor(Math.random() * 1000000);
+const forceCompat = process.env.FORCE_COMPAT === 'true';
+const forceCpuRendering = process.env.FORCE_CPU_RENDERING === 'true';
+const grepPattern = process.env.KARMA_GREP;
 
 /** @param {import('karma').Config} config */
 module.exports = function (config) {
   config.set({
     reporters: ['junit', 'coverage', 'spec'],
     client: {
+      forceCpuRendering,
+      forceCompat,
+      args: grepPattern ? ['--grep', grepPattern] : [],
       jasmine: {
         random: false, // don't randomize the order of tests
         stopOnFailure: false,
@@ -43,11 +76,10 @@ module.exports = function (config) {
       clearContext: false,
     },
     concurrency: 1,
-    // Uncomment this out to capture all logging
-    // browserConsoleLogOptions: {
-    //   terminal: true,
-    //   level: '',
-    // },
+    browserConsoleLogOptions: {
+      terminal: true,
+      level: 'log',
+    },
     specReporter: {
       maxLogLines: 5, // limit number of lines logged per test
       suppressSummary: true, // do not print summary
@@ -78,14 +110,30 @@ module.exports = function (config) {
     ],
     frameworks: ['jasmine', 'webpack'],
     files: [
-      'packages/core/test/**/*_test.js',
-      'packages/tools/test/**/*_test.js',
+      ...(process.env.KARMA_PACKAGE === 'core'
+        ? []
+        : ['packages/tools/test/**/*_test.js']),
+      ...(process.env.KARMA_PACKAGE === 'tools'
+        ? []
+        : ['packages/core/test/**/*_test.js']),
+      // Named individually rather than globbed: the rest of
+      // packages/dicomImageLoader/test predates the move to jasmine and still
+      // uses mocha's before()/chai, so a glob would switch on suites that
+      // cannot run.
+      'packages/dicomImageLoader/test/decoders_test.ts',
       // Serve dicomImageLoad test images
       {
         pattern: 'packages/dicomImageLoader/testImages/**/*',
         watched: false,
         included: false,
-        served: true
+        served: true,
+      },
+      // Compat-mode baselines for dynamic comparison
+      {
+        pattern: 'karma-baselines/**/*.png',
+        watched: false,
+        included: false,
+        served: true,
       },
       /**
        * Required to allow karma to load wasm and worker files built via webpack.
@@ -95,16 +143,17 @@ module.exports = function (config) {
         pattern: `${outputPath}/**/*`,
         included: false,
         served: true,
-        watched: false
-      }
+        watched: false,
+      },
     ],
     proxies: {
-      // Simplified path to access test images in tests
       '/testImages/': '/base/packages/dicomImageLoader/testImages/',
+      '/karma-baselines/': '/base/karma-baselines/',
     },
     preprocessors: {
       'packages/core/test/**/*_test.js': ['webpack'],
       'packages/tools/test/**/*_test.js': ['webpack'],
+      'packages/dicomImageLoader/test/decoders_test.ts': ['webpack'],
     },
     coverageReporter: {
       type: 'html',
@@ -171,18 +220,28 @@ module.exports = function (config) {
         ],
       },
       experiments: {
-        asyncWebAssembly: true
+        asyncWebAssembly: true,
       },
       resolve: {
         extensions: ['.ts', '.tsx', '.js', '.jsx'],
         fallback: {
           fs: false,
           path: require.resolve('path-browserify'),
+          // vtk.js 36 pulls in xmlbuilder2@4 -> @oozcitak/url, which requires
+          // node's built-in 'url' module. It isn't needed for the XML parsing
+          // exercised by the tests, so stub it out for the browser bundle.
+          url: false,
         },
         alias: {
           '@cornerstonejs/core': path.resolve('packages/core/src/index'),
           '@cornerstonejs/tools': path.resolve('packages/tools/src/index'),
-          '@cornerstonejs/dicom-image-loader': path.resolve('packages/dicomImageLoader/src/index'),
+          '@cornerstonejs/dicom-image-loader': path.resolve(
+            'packages/dicomImageLoader/src/index'
+          ),
+          '@cornerstonejs/metadata': path.resolve(
+            'packages/metadata/src/index'
+          ),
+          '@cornerstonejs/utils': path.resolve('packages/utils/src/index'),
         },
       },
     },
@@ -198,6 +257,15 @@ module.exports = function (config) {
           '--no-sandbox',
           '--ignore-gpu-blacklist',
           '--remote-debugging-port=9229',
+          // vtk.js needs a WebGL context. Headless Chrome only provides one via
+          // a software (SwiftShader) GL backend. Older bundled Chromium enabled
+          // this by default, but Chrome 110+ requires it to be explicitly opted
+          // into - without these flags vtk.js' get3DContext() returns null and
+          // tests fail with "no webgl context". Unknown flags are ignored by
+          // older Chrome, so this is safe across versions.
+          '--use-gl=angle',
+          '--use-angle=swiftshader',
+          '--enable-unsafe-swiftshader',
         ],
       },
     },

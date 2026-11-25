@@ -138,7 +138,7 @@ describe('RenderingEngineAPI -- ', () => {
       expect(viewport1).toBeUndefined();
     });
 
-    it('should successfully get StackViewports', function () {
+    it('should successfully filter stack-compatible viewports', function () {
       createViewports(renderingEngine, {
         viewportId: axialViewportId,
         viewportType: ViewportType.STACK,
@@ -146,8 +146,76 @@ describe('RenderingEngineAPI -- ', () => {
         useEnableElement: true,
       });
 
-      const stackViewports = renderingEngine.getStackViewports();
+      const stackViewports = renderingEngine
+        .getViewports()
+        .filter(cornerstone3D.utilities.viewportSupportsStackCompatibility);
       expect(stackViewports.length).toBe(1);
+    });
+
+    it('should resize legacy custom-pipeline viewports without changing the engine contract', function () {
+      createViewports(renderingEngine, {
+        viewportId: customOrientationViewportId,
+        viewportType: ViewportType.ECG,
+        useEnableElement: true,
+      });
+
+      expect(() => renderingEngine.resize()).not.toThrow();
+    });
+  });
+
+  describe('RenderingEngine Enable/Disable API with Generic Viewport:', function () {
+    let renderingEngine;
+
+    beforeEach(function () {
+      const testEnv = setupTestEnvironment({
+        renderingEngineId,
+        useGenericViewport: true,
+      });
+      renderingEngine = testEnv.renderingEngine;
+    });
+
+    afterEach(function () {
+      cleanupTestEnvironment({
+        renderingEngineId,
+      });
+    });
+
+    it('should remap legacy viewport types when using setViewports', function () {
+      createViewports(renderingEngine, [
+        {
+          viewportId: axialViewportId,
+          viewportType: ViewportType.STACK,
+          orientation: Enums.OrientationAxis.AXIAL,
+        },
+      ]);
+
+      const viewport = renderingEngine.getViewport(axialViewportId);
+
+      expect(viewport).toBeTruthy();
+      expect(viewport.type).toBe(ViewportType.PLANAR_NEXT);
+    });
+
+    it('should remap legacy viewport types when using enableElement', function () {
+      createViewports(renderingEngine, {
+        viewportId: customOrientationViewportId,
+        viewportType: ViewportType.ECG,
+        useEnableElement: true,
+      });
+
+      const viewport = renderingEngine.getViewport(customOrientationViewportId);
+
+      expect(viewport).toBeTruthy();
+      expect(viewport.type).toBe(ViewportType.ECG_NEXT);
+    });
+
+    it('should resize remapped custom-pipeline Generic viewports without legacy camera APIs', function () {
+      createViewports(renderingEngine, {
+        viewportId: customOrientationViewportId,
+        viewportType: ViewportType.ECG,
+        useEnableElement: true,
+      });
+
+      expect(() => renderingEngine.resize()).not.toThrow();
     });
   });
 });

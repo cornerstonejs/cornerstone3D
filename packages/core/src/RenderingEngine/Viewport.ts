@@ -7,6 +7,7 @@ import type { mat4, ReadonlyVec3 } from 'gl-matrix';
 import { vec2, vec3 } from 'gl-matrix';
 
 import Events from '../enums/Events';
+import { coreLog } from '../utilities/logger';
 import ViewportStatus from '../enums/ViewportStatus';
 import ViewportType from '../enums/ViewportType';
 import renderingEngineCache from './renderingEngineCache';
@@ -18,6 +19,8 @@ import hasNaNValues from '../utilities/hasNaNValues';
 import { RENDERING_DEFAULTS } from '../constants';
 import type {
   ICamera,
+  ResetCameraOptions,
+  SetAspectRatioOptions,
   ActorEntry,
   IRenderingEngine,
   ViewportInputOptions,
@@ -38,6 +41,7 @@ import type {
   ViewPresentationSelector,
   DataSetOptions,
   PlaneRestriction,
+  RenderingEngineResizeOptions,
 } from '../types/IViewport';
 import type { vtkSlabCamera } from './vtkClasses/vtkSlabCamera';
 import type IImageCalibration from '../types/IImageCalibration';
@@ -48,8 +52,20 @@ import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import { deepClone } from '../utilities/deepClone';
 import { updatePlaneRestriction } from '../utilities/updatePlaneRestriction';
+import { isPlaneDepthViewable } from '../utilities/voxelSlab/isPlaneDepthViewable';
 import { getCubeSizeInView } from '../utilities/getPlaneCubeIntersectionDimensions';
+import { getNormalizedAspectRatio } from '../utilities/getNormalizedAspectRatio';
 import { getConfiguration } from '../init';
+import type { extendedVtkCamera } from './vtkClasses/extendedVtkCamera';
+import type { FidelityLine } from './helpers/fidelityIndicator/fidelityIndicatorState';
+import type {
+  IViewportFidelity,
+  ViewportFidelityState,
+} from '../types/ViewportFidelity';
+import { buildViewportFidelityState } from './helpers/fidelityIndicator/buildViewportFidelityState';
+import { displaySpacingOfViewport } from './helpers/fidelityIndicator/displaySpacingOfViewport';
+import { notifyFidelityStateChanged } from './helpers/fidelityIndicator/notifyFidelityStateChanged';
+import { holdLegacyActorTextureSet } from './helpers/legacyActorTextureSet';
 
 /**
  * An object representing a single viewport, which is a camera
@@ -60,7 +76,9 @@ import { getConfiguration } from '../init';
  * which is camera properties/methods, vtk.js actors, and other common
  * logic.
  */
-class Viewport {
+const log = coreLog.getLogger('RenderingEngine', 'Viewport');
+
+class Viewport implements IViewportFidelity {
   /**
    * CameraViewPresentation is a view presentation selector that has all the
    * camera related presentation selections, and would typically be used for
@@ -72,6 +90,7 @@ class Viewport {
     rotation: true,
     pan: true,
     zoom: true,
+    aspectRatio: true,
     displayArea: true,
   };
 
@@ -96,6 +115,14 @@ class Viewport {
   readonly renderingEngineId: string;
   /** Type of viewport */
   readonly type: ViewportType;
+  /**
+   * The viewport type originally requested by the caller, before any internal
+   * compatibility remap (e.g. STACK/ORTHOGRAPHIC requested as PLANAR_NEXT when
+   * `rendering.useGenericViewport` is enabled). Equals `type` when not remapped.
+   * Set by the rendering engine at creation. Use this when branching on the
+   * legacy viewport type so the branch is transparent across compat adapters.
+   */
+  requestedType?: ViewportType;
   /**
    * The amount by which the images are inset in a viewport by default.
    */
@@ -122,6 +149,14 @@ class Viewport {
   sHeight: number;
   /** a Map containing the actor uid and actors */
   _actors: Map<string, ActorEntry>;
+  /**
+   * Records the display sets currently mounted on the viewport. Populated by the
+   * type-specific {@link setDisplaySets} overrides (via {@link mountDisplaySets})
+   * and cleared whenever raw data is set directly (e.g. `setStack`), so that
+   * {@link getDisplaySets} reflects only display-set-driven content.
+   */
+  protected _displaySets: Array<{ displaySetId: string; options?: unknown }> =
+    [];
   /** Default options for the viewport which includes orientation, viewPlaneNormal and backgroundColor */
   readonly defaultOptions: ViewportInputOptions;
   /** options for the viewport which includes orientation axis, backgroundColor and displayArea */
@@ -163,7 +198,6 @@ class Viewport {
     this.suppressEvents = props.defaultOptions.suppressEvents
       ? props.defaultOptions.suppressEvents
       : false;
-    //this.options = structuredClone(props.defaultOptions);
     this.options = deepClone(props.defaultOptions);
     this.isDisabled = false;
   }
@@ -183,6 +217,30 @@ class Viewport {
 
   static get useCustomRenderingPipeline(): boolean {
     return false;
+  }
+
+  public getUseCustomRenderingPipeline(): boolean {
+    return (this.constructor as typeof Viewport).useCustomRenderingPipeline;
+  }
+
+  /**
+   * RenderingEngine-owned resize hook for custom-pipeline viewports. Legacy
+   * viewports keep the previous camera-preserving behavior by default.
+   */
+  public resizeForRenderingEngine({
+    keepCamera = true,
+  }: RenderingEngineResizeOptions = {}): void {
+    if (typeof this.resize === 'function') {
+      this.resize();
+    }
+
+    const previousCamera = keepCamera ? this.getCamera() : undefined;
+
+    this.resetCamera();
+
+    if (previousCamera) {
+      this.setCamera(previousCamera);
+    }
   }
 
   /**
@@ -233,6 +291,18 @@ class Viewport {
       }
     });
   };
+
+  public dispose(): void {
+    // Beyond the rendering engine reset path and the widget cleanup above, a
+    // legacy viewport only gives back the texture sets that its actors hold.
+    this._actors?.forEach(({ actor }) =>
+      holdLegacyActorTextureSet(actor, false)
+    );
+  }
+
+  public destroy(): void {
+    this.dispose();
+  }
 
   /**
    * Indicate that the image has been rendered.
@@ -320,18 +390,85 @@ class Viewport {
   }
 
   /**
+   * Whether this viewport can report fidelity (GENVIEW-FIDELITY-8). Subclasses
+   * that show degraded data override this. The built-in indicator attaches
+   * only when this returns true.
+   */
+  public canReportFidelity(): boolean {
+    return false;
+  }
+
+  /**
+   * Absolute per-viewport fidelity record (FIDELITY-EVENT-5).
+   * Does not fire `VIEWPORT_FIDELITY_CHANGED`. Does not include a reader
+   * verdict — use {@link compareVoxelQuality} for that.
+   */
+  public getFidelityState(): ViewportFidelityState {
+    return buildViewportFidelityState(
+      this.collectFidelityLines(),
+      displaySpacingOfViewport(this)
+    );
+  }
+
+  /**
+   * Fidelity lines for the built-in indicator UI. Applications should use
+   * {@link getFidelityState} instead.
+   */
+  public getFidelityLines(): FidelityLine[] {
+    return this.collectFidelityLines();
+  }
+
+  /**
+   * Fires `VIEWPORT_FIDELITY_CHANGED` when the derived fidelity state changes
+   * (FIDELITY-EVENT-2..4). The rendering engines call this after each render.
+   * A viewport that cannot report fidelity does nothing.
+   *
+   * @internal
+   */
+  public notifyFidelityStateChanged(): void {
+    if (!this.canReportFidelity()) {
+      return;
+    }
+
+    notifyFidelityStateChanged(
+      this,
+      this.collectFidelityLines(),
+      displaySpacingOfViewport(this)
+    );
+  }
+
+  /**
+   * Builds the fidelity lines for this viewport. Subclasses that can show
+   * degraded data override this. The indicator and fidelity builders read
+   * only this method — they do not inspect actors or mappers
+   * (GENVIEW-FIDELITY-2).
+   */
+  protected collectFidelityLines(): FidelityLine[] {
+    return [];
+  }
+
+  /**
    * Sets new options and (TODO) applies them.
    *
    * @param options - The viewport options to set.
    * @param immediate - If `true`, renders the viewport after the options are set.
    */
   public setOptions(options: ViewportInputOptions, immediate = false): void {
-    this.options = structuredClone(options);
+    this.options = deepClone(options);
 
     // TODO When this is needed we need to move the camera position.
     // We can steal some logic from the tools we build to do this.
     if (this.options?.displayArea) {
       this.setDisplayArea(this.options?.displayArea);
+    }
+    if (this.options?.aspectRatio) {
+      // Apply the initial aspect ratio, and keep the zoom. The first
+      // `resetCamera` makes the fit while no baseline exists.
+      const zoom = this.initialCamera?.parallelScale ? this.getZoom() : null;
+      this.setAspectRatio(this.options.aspectRatio);
+      if (zoom) {
+        this.setZoom(zoom);
+      }
     }
     if (immediate) {
       this.render();
@@ -344,7 +481,7 @@ class Viewport {
    * @param immediate - If `true`, renders the viewport after the options are reset.
    */
   public reset(immediate = false) {
-    this.options = structuredClone(this.defaultOptions);
+    this.options = deepClone(this.defaultOptions);
 
     // TODO When this is needed we need to move the camera position.
     // We can steal some logic from the tools we build to do this.
@@ -394,7 +531,11 @@ class Viewport {
     // If the pan has been applied, we need to be able
     // apply the pan back
     const dimensions = imageData.getDimensions();
-    const middleIJK = dimensions.map((d) => Math.floor(d / 2));
+    const middleIJK = getVolumeCenterIJK(
+      dimensions,
+      imageData.getDirection(),
+      viewPlaneNormal
+    );
 
     const idx = [middleIJK[0], middleIJK[1], middleIJK[2]] as ReadonlyVec3;
     const centeredFocalPoint = imageData.indexToWorld(idx, vec3.create());
@@ -604,15 +745,14 @@ class Viewport {
     const actorEntry = this.getActor(actorUID);
 
     if (!actorEntry) {
-      console.warn(
-        `Actor ${actorUID} does not exist in ${this.id}, can't remove`
-      );
+      log.warn(`Actor ${actorUID} does not exist in ${this.id}, can't remove`);
       return;
     }
 
     const renderer = this.getRenderer();
     renderer.removeActor(actorEntry.actor as vtkActor);
     this._actors.delete(actorUID);
+    holdLegacyActorTextureSet(actorEntry.actor, false);
 
     return actorEntry;
   }
@@ -653,7 +793,7 @@ class Viewport {
     const { resetCamera = false } = options;
     const renderingEngine = this.getRenderingEngine();
     if (!renderingEngine || renderingEngine.hasBeenDestroyed) {
-      console.warn(
+      log.warn(
         'Viewport::addActors::Rendering engine has not been initialized or has been destroyed'
       );
       return;
@@ -700,7 +840,7 @@ class Viewport {
     const renderingEngine = this.getRenderingEngine();
 
     if (!renderingEngine || renderingEngine.hasBeenDestroyed) {
-      console.warn(
+      log.warn(
         `Cannot add actor UID of ${actorUID} Rendering Engine has been destroyed`
       );
       return;
@@ -711,13 +851,14 @@ class Viewport {
     }
 
     if (this.getActor(actorUID)) {
-      console.warn(`Actor ${actorUID} already exists for this viewport`);
+      log.warn(`Actor ${actorUID} already exists for this viewport`);
       return;
     }
 
     const renderer = this.getRenderer();
     renderer?.addActor(actor as vtkActor);
     this._actors.set(actorUID, Object.assign({}, actorEntry));
+    holdLegacyActorTextureSet(actor, true);
 
     // when we add an actor we should update the camera clipping range and
     // clipping planes as well
@@ -739,6 +880,9 @@ class Viewport {
     const currentActors = this.getActors();
     this.getRenderer()?.removeAllViewProps();
     this._actors = new Map();
+    currentActors.forEach(({ actor }) =>
+      holdLegacyActorTextureSet(actor, false)
+    );
 
     // Trigger ACTORS_CHANGED event when removing all actors
     triggerEvent(this.element, Events.ACTORS_CHANGED, {
@@ -753,11 +897,13 @@ class Viewport {
 
   /**
    * Reset the camera to the default viewport camera without firing events
+   *
+   * @param options - the same options that `resetCamera` takes.
    */
-  protected resetCameraNoEvent(): void {
+  protected resetCameraNoEvent(options?: ResetCameraOptions): void {
     const savedValue = this._suppressCameraModifiedEvents; // save the value pf the flag to restore it later
     this._suppressCameraModifiedEvents = true;
-    this.resetCamera();
+    this.resetCamera(options);
     this._suppressCameraModifiedEvents = savedValue;
   }
 
@@ -901,9 +1047,7 @@ class Viewport {
    */
   protected setDisplayAreaScale(displayArea: DisplayArea): void {
     const { scale = 1 } = displayArea;
-    const canvas = this.canvas;
-    const height = canvas.height;
-    const width = canvas.width;
+    const { width, height } = this.getRenderedCanvasSize();
     if (height < 8 || width < 8) {
       return;
     }
@@ -927,10 +1071,10 @@ class Viewport {
     // focal point to the center of an image pixel.
     const { focalPoint, position, viewUp, viewPlaneNormal } = this.getCamera();
     const focalChange = vec3.create();
-    if (canvas.height % 2) {
+    if (height % 2) {
       vec3.scaleAndAdd(focalChange, focalChange, viewUp, scale * 0.5 * spacing);
     }
-    if (canvas.width % 2) {
+    if (width % 2) {
       const viewRight = vec3.cross(vec3.create(), viewUp, viewPlaneNormal);
       vec3.scaleAndAdd(
         focalChange,
@@ -971,8 +1115,21 @@ class Viewport {
    * the right most edge of the image, at the top of the image, will be
    * displayed at the right most edge of the canvas, at the top.
    *
+   * The zoom is measured against `baseCamera`, and not against the initial
+   * camera.  A previous `storeAsInitialCamera` display area leaves its own
+   * result as the initial camera, so measuring against that would apply the
+   * area on top of itself, and the same display area would land somewhere
+   * else on every call.  The pan uses the image extent at the camera the
+   * viewport holds on entry, which for a SCALE area is already zoomed.
+   *
+   * @param displayArea - the display area to apply
+   * @param baseCamera - the camera that the zoom is relative to; defaults to
+   *   the fit to canvas camera, which `setDisplayArea` sets before this call
    */
-  protected setDisplayAreaFit(displayArea: DisplayArea) {
+  protected setDisplayAreaFit(
+    displayArea: DisplayArea,
+    baseCamera = this.fitToCanvasCamera
+  ) {
     const { imageArea, imageCanvasPoint } = displayArea;
 
     const devicePixelRatio = window?.devicePixelRatio || 1;
@@ -1000,7 +1157,11 @@ class Viewport {
     ];
     const [imgWidth, imgHeight] = canvasImage;
 
-    let zoom = this.getZoom() / this.insetImageMultiplier;
+    const baseZoom = this.getZoom(baseCamera);
+    if (!Number.isFinite(baseZoom) || baseZoom <= 0) {
+      return;
+    }
+    let zoom = baseZoom / this.insetImageMultiplier;
     if (imageArea) {
       const [areaX, areaY] = imageArea;
 
@@ -1010,18 +1171,14 @@ class Viewport {
       );
       const requireX = Math.abs((areaX * imgWidth) / canvasWidth);
       const requireY = Math.abs((areaY * imgHeight) / canvasHeight);
-      const initZoom = this.getZoom();
-      const fitZoom = this.getZoom(this.fitToCanvasCamera);
 
       const absZoom =
         requireX > requireY ? currentScale / requireX : currentScale / requireY;
-      const applyZoom = (absZoom * initZoom) / fitZoom;
 
-      zoom = applyZoom;
+      zoom = absZoom * baseZoom;
       // Don't set as initial camera because then the zoom interactions don't
       // work consistently.
-      // TODO: Add a better method to handle initial camera
-      this.setZoom(this.insetImageMultiplier * zoom, false);
+      this.setZoom(this.insetImageMultiplier * zoom, false, baseCamera);
     }
     if (imageCanvasPoint) {
       const { imagePoint, canvasPoint = imagePoint || [0.5, 0.5] } =
@@ -1031,11 +1188,11 @@ class Viewport {
       const canvasPanY = canvasHeight * (canvasY - 0.5);
 
       const [imageX, imageY] = imagePoint || canvasPoint;
-      const useZoom = zoom;
-      const imagePanX =
-        this.insetImageMultiplier * useZoom * imgWidth * (0.5 - imageX);
-      const imagePanY =
-        this.insetImageMultiplier * useZoom * imgHeight * (0.5 - imageY);
+      // The image extent is measured at the camera this was called with, so
+      // scale it by the zoom applied since, not by the zoom from baseCamera
+      const useZoom = (this.insetImageMultiplier * zoom) / baseZoom;
+      const imagePanX = useZoom * imgWidth * (0.5 - imageX);
+      const imagePanY = useZoom * imgHeight * (0.5 - imageY);
 
       // const imagePanX =
       //   (zoom * imgWidth * (0.5 - imageX) * canvasHeight) / imgHeight;
@@ -1053,8 +1210,99 @@ class Viewport {
     }
   }
 
+  /**
+   * The size, in device pixels, the viewport renders at.
+   *
+   * The context pool engine resizes the on-screen canvas only when it copies
+   * the next frame onto it, so between a resize and that render
+   * `canvas.width`/`canvas.height` still hold the old size while `sWidth`,
+   * `sHeight` and the renderer viewport already hold the new one. Coordinate
+   * conversions made in that window (the camera reset that follows a resize
+   * applies the display area through them) must use the rendered size.
+   */
+  protected getRenderedCanvasSize(): { width: number; height: number } {
+    return {
+      width: this.sWidth || this.canvas.width,
+      height: this.sHeight || this.canvas.height,
+    };
+  }
+
   public getDisplayArea(): DisplayArea | undefined {
     return this.options?.displayArea;
+  }
+
+  /**
+   * Gets the size of the visible content in the world, along the view right
+   * axis and along the view up axis.
+   *
+   * @param bounds - the bounds to use when the viewport shows no image data.
+   *   The method computes the bounds when the caller gives none.
+   * @returns the width and the height of the content in the world.
+   */
+  protected getWorldSizeInView(bounds?: number[]): {
+    widthWorld: number;
+    heightWorld: number;
+  } {
+    const imageData = this.getDefaultImageData();
+    const activeCamera = this.getVtkActiveCamera();
+    const viewPlaneNormal = activeCamera.getViewPlaneNormal() as Point3;
+    const viewUp = activeCamera.getViewUp() as Point3;
+
+    if (imageData) {
+      return getCubeSizeInView(imageData, viewPlaneNormal, viewUp);
+    }
+
+    let boundsToUse = bounds;
+    if (!boundsToUse) {
+      const defaultActor = this.getDefaultActor();
+      boundsToUse =
+        defaultActor && isImageActor(defaultActor)
+          ? defaultActor.actor.getMapper().getInputData().getBounds()
+          : this.getRenderer().computeVisiblePropBounds();
+    }
+
+    return this._getWorldDistanceViewUpAndViewRight(
+      boundsToUse,
+      viewUp,
+      viewPlaneNormal
+    );
+  }
+
+  /**
+   * Gets the parallel scale that makes the content fit the canvas at the given
+   * aspect ratio. Each aspect ratio has a different fit.
+   *
+   * @param worldSize - the size of the content in the world.
+   * @param aspectRatio - the aspect ratio to fit at, as `[widthRatio, heightRatio]`.
+   * @returns the parallel scale of the fit.
+   */
+  protected getFitParallelScale(
+    worldSize: { widthWorld: number; heightWorld: number },
+    aspectRatio: Point2
+  ): number {
+    const { widthWorld, heightWorld } = worldSize;
+
+    // The fit uses the stretched width.
+    const [stretchX, stretchY] = getNormalizedAspectRatio(aspectRatio);
+    const stretchRatio = stretchX / stretchY;
+
+    const boundsAspectRatio = (widthWorld * stretchRatio) / heightWorld;
+    const canvasAspectRatio = this.sWidth / this.sHeight;
+
+    const scaleFactor = boundsAspectRatio / canvasAspectRatio;
+
+    let parallelScale =
+      scaleFactor < 1 // can fit full height, so use it.
+        ? (this.insetImageMultiplier * heightWorld) / 2
+        : (this.insetImageMultiplier * heightWorld * scaleFactor) / 2;
+
+    // A ratio below 1 compresses the image along the canvas X axis. The camera
+    // must zoom out, or the image loses the full height.
+    if (stretchRatio < 1) {
+      parallelScale /= stretchRatio;
+    }
+
+    return parallelScale;
   }
 
   /**
@@ -1068,6 +1316,9 @@ class Viewport {
    * @param options.resetToCenter - If true, the camera is reset to the center of the volume (slice)
    * @param options.storeAsInitialCamera - If true, reset camera is stored as the initial camera (to allow differences to
    *   be detected for pan/zoom values)
+   * @param options.resetAspectRatio - If true, the aspect ratio of the viewport options is applied, otherwise the
+   *   current aspect ratio of the camera is kept. The zoom calculation uses that aspect ratio, so `resetZoom: true`
+   *   fits a stretched image into the viewport.
    * @returns boolean
    */
   public resetCamera(options?: {
@@ -1075,12 +1326,14 @@ class Viewport {
     resetZoom?: boolean;
     resetToCenter?: boolean;
     storeAsInitialCamera?: boolean;
+    resetAspectRatio?: boolean;
   }): boolean {
     const {
       resetPan = true,
       resetZoom = true,
       resetToCenter = true,
       storeAsInitialCamera = true,
+      resetAspectRatio = true,
     } = options || {};
 
     const renderer = this.getRenderer();
@@ -1126,40 +1379,26 @@ class Viewport {
 
     if (imageData) {
       const dimensions = imageData.getDimensions();
-      const middleIJK = dimensions.map((d) => Math.floor(d / 2));
+      const middleIJK = getVolumeCenterIJK(
+        dimensions,
+        imageData.getDirection(),
+        viewPlaneNormal
+      );
       const idx = [middleIJK[0], middleIJK[1], middleIJK[2]] as ReadonlyVec3;
       // Modifies the focal point in place, as this hits the vtk indexToWorld function
       imageData.indexToWorld(idx, focalPoint);
     }
 
-    let { widthWorld, heightWorld } = imageData
-      ? getCubeSizeInView(imageData, viewPlaneNormal, viewUp)
-      : this._getWorldDistanceViewUpAndViewRight(
-          bounds,
-          viewUp,
-          viewPlaneNormal
-        );
+    const worldSize = this.getWorldSizeInView(bounds);
 
-    if (imageData) {
-      const spacing = imageData.getSpacing();
-      // This change corresponds to the spacing calculation for previous version
-      // stack viewports, but is technically incorrect and results in an image
-      // a tiny bit too large for the viewport.
-      widthWorld = Math.max(spacing[0], widthWorld - spacing[0]);
-      heightWorld = Math.max(spacing[1], heightWorld - spacing[1]);
-    }
+    const targetAspectRatio = resetAspectRatio
+      ? this.options?.aspectRatio || ([1, 1] as Point2)
+      : this.getAspectRatio();
 
-    const canvasSize = [this.sWidth, this.sHeight];
-
-    const boundsAspectRatio = widthWorld / heightWorld;
-    const canvasAspectRatio = canvasSize[0] / canvasSize[1];
-
-    const scaleFactor = boundsAspectRatio / canvasAspectRatio;
-
-    const parallelScale =
-      scaleFactor < 1 // can fit full height, so use it.
-        ? (this.insetImageMultiplier * heightWorld) / 2
-        : (this.insetImageMultiplier * heightWorld * scaleFactor) / 2;
+    const parallelScale = this.getFitParallelScale(
+      worldSize,
+      targetAspectRatio
+    );
 
     // If we have just a single point, pick a radius of 1.0
     // compute the radius of the enclosing sphere
@@ -1209,6 +1448,7 @@ class Viewport {
       viewAngle: 90,
       viewUp: viewUpToSet,
       clippingRange: clippingRangeToUse,
+      aspectRatio: targetAspectRatio,
     });
 
     const modifiedCamera = this.getCamera();
@@ -1355,9 +1595,60 @@ class Viewport {
   }
 
   /**
+   * Gets the parallel scale of the given camera, expressed at the aspect ratio
+   * of the current camera.
+   *
+   * Each aspect ratio has a different fit, so a zoom of 1 fits the image only
+   * when the zoom reads the baseline through the ratio between the two fits.
+   * The usual case is two equal aspect ratios, which needs no work.
+   *
+   * @param compareCamera - the initial camera, or the fit to canvas camera.
+   * @returns the parallel scale of the baseline at the current aspect ratio.
+   */
+  protected getComparableParallelScale(compareCamera: ICamera): number {
+    const { parallelScale } = compareCamera || {};
+    if (!parallelScale) {
+      return parallelScale;
+    }
+
+    const currentAspectRatio = this.getAspectRatio();
+    const compareAspectRatio = compareCamera.aspectRatio ?? currentAspectRatio;
+
+    const getStretchRatio = (value: Point2) => {
+      const [stretchX, stretchY] = getNormalizedAspectRatio(value);
+      return stretchX / stretchY;
+    };
+
+    if (
+      isEqual(
+        getStretchRatio(currentAspectRatio),
+        getStretchRatio(compareAspectRatio)
+      )
+    ) {
+      return parallelScale;
+    }
+
+    const worldSize = this.getWorldSizeInView();
+    if (!worldSize?.heightWorld) {
+      return parallelScale;
+    }
+
+    const ratioFactor =
+      this.getFitParallelScale(worldSize, currentAspectRatio) /
+      this.getFitParallelScale(worldSize, compareAspectRatio);
+
+    return Number.isFinite(ratioFactor) && ratioFactor
+      ? parallelScale * ratioFactor
+      : parallelScale;
+  }
+
+  /**
    * Returns a current zoom level relative to the initial parallel scale
    * originally applied to the image.  That is, on initial display,
    * the zoom level is 1.  Computed as a function of the camera.
+   *
+   * The zoom is relative to the fit of the aspect ratio that the camera holds,
+   * so a zoom of 1 fits the image at every aspect ratio.
    */
   public getZoom(compareCamera = this.initialCamera): number {
     if (!compareCamera) {
@@ -1365,20 +1656,32 @@ class Viewport {
     }
 
     const activeCamera = this.getVtkActiveCamera();
-    const { parallelScale: initialParallelScale } = compareCamera;
-    return initialParallelScale / activeCamera.getParallelScale();
+    return (
+      this.getComparableParallelScale(compareCamera) /
+      activeCamera.getParallelScale()
+    );
   }
 
   /** Zooms the image using parallel scale by updating the camera value.
    * @param value - The relative parallel scale to apply.  It is relative
-   * to the initial offsets value.
+   * to the initial offsets value, at the aspect ratio that the camera holds.
    * @param storeAsInitialCamera - can be set to true to reset the camera
    *   after applying this zoom as the initial camera.  A subsequent getZoom
    *   call will return "1", but the zoom will have been applied.
+   * @param compareCamera - the camera the zoom is relative to, as for
+   *   `getZoom`; defaults to the initial camera.
    */
-  public setZoom(value: number, storeAsInitialCamera = false): void {
+  public setZoom(
+    value: number,
+    storeAsInitialCamera = false,
+    compareCamera = this.initialCamera
+  ): void {
     const camera = this.getCamera();
-    const { parallelScale: initialParallelScale } = this.initialCamera;
+    const initialParallelScale = this.getComparableParallelScale(compareCamera);
+    if (!initialParallelScale) {
+      // The viewport holds no baseline, so no zoom is relative to a fit.
+      return;
+    }
     const parallelScale = initialParallelScale / value;
     if (camera.parallelScale === parallelScale && !storeAsInitialCamera) {
       return;
@@ -1390,6 +1693,69 @@ class Viewport {
       },
       storeAsInitialCamera
     );
+  }
+
+  /**
+   * Returns the current aspect ratio of the viewport as a 2D point `[widthRatio, heightRatio]`.
+   *
+   * @returns The current aspect ratio `[widthRatio, heightRatio]`
+   *          based on the active camera settings.
+   */
+  public getAspectRatio(): Point2 {
+    const { aspectRatio } = this.getCamera();
+    return aspectRatio ?? this.options?.aspectRatio ?? [1, 1];
+  }
+
+  /**
+   * Sets the aspect ratio of the viewport (canvas) using the provided 2D point
+   * `[widthRatio, heightRatio]`.
+   *
+   * This updates the VTK camera's **projection matrix** to apply axis-based
+   * stretching during rendering.
+   *
+   * As a result:
+   * - World-to-canvas mapping is updated via the camera projection.
+   * - Canvas-to-world mapping is also updated and remains consistent, as
+   * VTK utilizes the inverse of the same projection matrix for picking and
+   * coordinate transformations.
+   *
+   * Note:
+   * - The camera pose and orientation (position, focal point, and viewPlaneNormal)
+   * remain unchanged.
+   * - Image data, spacing, and world coordinates are not modified.
+   * - The parallel scale remains unchanged, unless the caller gives the `fit`
+   * option. Each aspect ratio has a different fit, and `getZoom` reports the
+   * zoom against the fit of the aspect ratio that the camera holds.
+   *
+   * @param value - The aspect ratio to set as `[widthRatio, heightRatio]`.
+   * @param options - fit the stretched image, and keep the aspect ratio as the
+   *   default. Both default to `false`.
+   */
+  public setAspectRatio(
+    value: Point2,
+    options: SetAspectRatioOptions = {}
+  ): void {
+    const { fit = false, storeAsInitialCamera = false } = options;
+    const camera = this.getCamera();
+    if (storeAsInitialCamera) {
+      this.options.aspectRatio = value;
+    }
+
+    const cameraToSet: ICamera = {
+      ...camera,
+      aspectRatio: value,
+    };
+
+    if (fit) {
+      // Fit here, and not through `resetCamera`, which also resets the flip
+      // and the view up.
+      const worldSize = this.getWorldSizeInView();
+      if (worldSize?.heightWorld) {
+        cameraToSet.parallelScale = this.getFitParallelScale(worldSize, value);
+      }
+    }
+
+    this.setCamera(cameraToSet, storeAsInitialCamera);
   }
 
   /**
@@ -1447,7 +1813,7 @@ class Viewport {
     const renderer = this.getRenderer();
 
     if (!renderer) {
-      console.warn('No renderer found for the viewport');
+      log.warn('No renderer found for the viewport');
       return null;
     }
 
@@ -1455,7 +1821,7 @@ class Viewport {
   }
 
   protected getCameraNoRotation(): ICamera {
-    const vtkCamera = this.getVtkActiveCamera();
+    const vtkCamera = this.getVtkActiveCamera() as extendedVtkCamera;
 
     // Helper function to replace NaN vectors with defaults
     const sanitizeVector = (vector: Point3, defaultValue: Point3): Point3 => {
@@ -1490,6 +1856,7 @@ class Viewport {
       viewAngle: vtkCamera.getViewAngle(),
       flipHorizontal: this.flipHorizontal,
       flipVertical: this.flipVertical,
+      aspectRatio: vtkCamera.getAspectRatio(),
     };
   }
 
@@ -1516,7 +1883,7 @@ class Viewport {
     cameraInterface: ICamera,
     storeAsInitialCamera = false
   ): void {
-    const vtkCamera = this.getVtkActiveCamera();
+    const vtkCamera = this.getVtkActiveCamera() as extendedVtkCamera;
     const previousCamera = this.getCamera();
     const updatedCamera = Object.assign({}, previousCamera, cameraInterface);
     const {
@@ -1529,6 +1896,7 @@ class Viewport {
       flipHorizontal,
       flipVertical,
       clippingRange,
+      aspectRatio,
     } = cameraInterface;
 
     // Note: Flip camera should be two separate calls since
@@ -1588,6 +1956,13 @@ class Viewport {
 
     if (clippingRange !== undefined) {
       vtkCamera.setClippingRange(clippingRange);
+    }
+
+    if (aspectRatio) {
+      // The aspect ratio only changes the projection matrix. The zoom stays
+      // the same, and `resetCamera` fits the stretched image if a caller
+      // wants that fit.
+      vtkCamera.setAspectRatio(aspectRatio);
     }
 
     // update clipping range only if focal point changed of a new actor is added
@@ -1876,12 +2251,27 @@ class Viewport {
         inPlaneVector2: <Point3>(
           vec3.cross(vec3.create(), viewUp, viewPlaneNormal)
         ),
+        referencePlaneThickness: this.getReferencePlaneThickness(),
       },
     };
     if (viewRefSpecifier?.points) {
-      updatePlaneRestriction(viewRefSpecifier.points, target.planeRestriction);
+      updatePlaneRestriction(viewRefSpecifier.points, target, viewRefSpecifier);
     }
     return target;
+  }
+
+  /**
+   * Get the geometric thickness in mm that an annotation applies to.
+   *
+   * Two thicknesses exist, and they are not the same quantity. The **slab
+   * thickness** belongs to the viewport, and `getSlabThickness` returns it. The
+   * **reference plane thickness** belongs to the data, and this method returns
+   * it. Rule D adds the two.
+   *
+   * See `docs/docs/concepts/cornerstone-tools/annotation/voxel-statistics.md`.
+   */
+  protected getReferencePlaneThickness(): number | undefined {
+    return undefined;
   }
 
   public isPlaneViewable(
@@ -1915,12 +2305,26 @@ class Viewport {
     if (options?.withNavigation) {
       return true;
     }
-    const pointVector = vec3.sub(vec3.create(), point, focalPoint);
-    return isEqual(0, vec3.dot(pointVector, viewPlaneNormal));
+    // Rule D. When the restriction records no thickness this reduces to the
+    // historical exact-plane test, so pre-existing annotations are unaffected.
+    return isPlaneDepthViewable(
+      point,
+      focalPoint,
+      viewPlaneNormal,
+      planeRestriction.referencePlaneThickness,
+      this.getReferencePlaneThickness() ?? 0
+    );
   }
 
   /**
    * Find out if this viewport does or could show this view reference.
+   *
+   * The plane restriction and the top level orientation are two separate
+   * limits, and the viewport applies both. A restriction that pins no
+   * orientation, which is what one point gives, therefore does not make every
+   * view compatible: the `viewPlaneNormal` of the reference still has to match
+   * the camera, unless the caller passes `withOrientation`.
+   *
    * @param options - allows specifying whether the view COULD display this with
    *                  some modification - either navigation or displaying as volume.
    * @returns true if the viewport could show this view reference
@@ -1929,8 +2333,11 @@ class Viewport {
     viewRef: ViewReference,
     options?: ReferenceCompatibleOptions
   ): boolean {
-    if (viewRef.planeRestriction) {
-      return this.isPlaneViewable(viewRef.planeRestriction, options);
+    if (
+      viewRef.planeRestriction &&
+      !this.isPlaneViewable(viewRef.planeRestriction, options)
+    ) {
+      return false;
     }
     if (
       viewRef.FrameOfReferenceUID &&
@@ -1984,6 +2391,7 @@ class Viewport {
       displayArea: true,
       zoom: true,
       pan: true,
+      aspectRatio: true,
       flipHorizontal: true,
       flipVertical: true,
     }
@@ -2003,9 +2411,21 @@ class Viewport {
     if (zoom) {
       target.zoom = initZoom;
     }
+    const currentAspectRatio = this.getAspectRatio();
+    target.aspectRatio = currentAspectRatio;
     if (pan) {
-      target.pan = this.getPan();
-      vec2.scale(target.pan, target.pan, 1 / initZoom);
+      const currentPan = this.getPan();
+      const [aspectX, aspectY] = currentAspectRatio;
+
+      // Normalize pan to remove the effects of zoom and projection-based stretching.
+      // Since axis-based stretching is applied via the camera projection matrix,
+      // pan values are captured in post-projection space. Dividing by both the
+      // zoom and aspect ratio ensures the pan state remains consistent across
+      // viewports, regardless of their specific zoom levels or stretching factors.
+      const normalizedPanX = currentPan[0] / (initZoom * aspectX);
+      const normalizedPanY = currentPan[1] / (initZoom * aspectY);
+
+      target.pan = [normalizedPanX, normalizedPanY] as Point2;
     }
 
     if (flipHorizontal) {
@@ -2021,7 +2441,7 @@ class Viewport {
   /**
    * Navigates to the image specified by the viewRef.
    */
-  public setViewReference(viewRef: ViewReference) {
+  public setViewReference(_viewRef: ViewReference) {
     // No-op
   }
 
@@ -2037,6 +2457,7 @@ class Viewport {
       displayArea,
       zoom = this.getZoom(),
       pan,
+      aspectRatio = this.getAspectRatio(),
       rotation,
       flipHorizontal = this.flipHorizontal,
       flipVertical = this.flipVertical,
@@ -2044,9 +2465,14 @@ class Viewport {
     if (displayArea !== this.getDisplayArea()) {
       this.setDisplayArea(displayArea);
     }
+    // The aspect ratio changes the projection only, and the zoom is a recorded
+    // value of the presentation. The aspect ratio comes first, because the
+    // presentation gives the last word on the zoom.
+    this.setAspectRatio(aspectRatio);
     this.setZoom(zoom);
     if (pan) {
-      this.setPan(vec2.scale([0, 0], pan, zoom) as Point2);
+      const [aspectX, aspectY] = aspectRatio;
+      this.setPan([pan[0] * zoom * aspectX, pan[1] * zoom * aspectY] as Point2);
     }
 
     // flip operation requires another re-render to take effect, so unfortunately
@@ -2198,11 +2624,158 @@ class Viewport {
   }
 
   /**
-   * This is a wrapper for setStack/setVideo/etc
+   * Sets one or more datasets on the viewport. Legacy viewports should
+   * override this to delegate to their specific data setter.
    */
-  public setDataIds(_imageIds: string[], _options?: DataSetOptions) {
-    throw new Error('Unsupported operatoin setDataIds');
+  public setDataList(
+    _entries: Array<{ dataId: string; options?: DataSetOptions }>
+  ) {
+    throw new Error('Unsupported operation setDataList');
   }
+
+  /**
+   * Records the display sets currently shown on the viewport. The base
+   * implementation only stores the entries so that {@link getDisplaySets} can
+   * report them; type-specific viewports override this to actually load the data
+   * (via their native setter such as `setStack`/`setVolumes`/`setVideo`),
+   * delegating to {@link mountDisplaySets} so the clear-then-record ordering is
+   * applied consistently.
+   *
+   * Because the native data setters clear the recorded list (see
+   * {@link clearDisplaySets}), driving a viewport with a raw data setter -
+   * without going through `setDisplaySets` - leaves `getDisplaySets()` empty,
+   * correctly reflecting that the viewport is not display-set driven.
+   *
+   * @param entries - the display set entries that were mounted; the first entry
+   *   is the source and any subsequent entries are overlays.
+   */
+  public setDisplaySets(
+    ...entries: Array<{ displaySetId: string; options?: unknown }>
+  ): void | Promise<void> {
+    this._displaySets = entries;
+  }
+
+  /**
+   * Shared template for the type-specific {@link setDisplaySets} overrides. It
+   * keeps the clear-then-record ordering invariant in exactly one place instead
+   * of being copy-pasted per viewport:
+   *
+   * 1. Validate that a source display set (the first entry) was provided.
+   * 2. Run `load`, which resolves the entry to renderable data and hands it to
+   *    the viewport's native data setter (`setStack` / `setVolumes` /
+   *    `setVideo` / `setWSI` / `setEcg`). That native setter calls
+   *    {@link clearDisplaySets}, wiping any previously recorded entries.
+   * 3. Record the mounted entries - only after `load` resolves - so
+   *    {@link getDisplaySets} reflects exactly what was mounted.
+   *
+   * Because recording always happens last, a new viewport cannot accidentally
+   * record before loading (which the native setter would then wipe) or forget
+   * to record at all; both failure modes the previous copy-pasted sequence was
+   * prone to are handled here once.
+   *
+   * Overlays: the variadic signature already accepts overlay entries (index 1+),
+   * matching the generic viewport `setDisplaySets`. Legacy viewports do not yet
+   * render overlays, so only the source (first) entry is loaded and recorded -
+   * {@link getDisplaySets} stays honest about what is actually shown. Adding
+   * overlay support later is purely additive: load the extra entries here and
+   * record them, with no change to the public signature.
+   *
+   * @param entries - the display set entries passed to `setDisplaySets`; the
+   *   first is the source and any subsequent entries are overlays.
+   * @param load - resolves the source entry to renderable data and loads it via
+   *   the viewport's native data setter. Receives the validated source entry.
+   */
+  protected async mountDisplaySets<
+    TEntry extends { displaySetId: string; options?: unknown },
+  >(
+    entries: TEntry[],
+    load: (sourceEntry: TEntry) => void | Promise<void>
+  ): Promise<void> {
+    const [entry] = entries;
+    if (!entry?.displaySetId) {
+      throw new Error(
+        `${this.constructor.name}: setDisplaySets requires a displaySetId`
+      );
+    }
+
+    // `load` invokes the native data setter, which clears the recorded display
+    // sets (see clearDisplaySets); record the mounted source only afterwards.
+    // Overlays (entries[1+]) are not rendered by legacy viewports yet, so they
+    // are intentionally not recorded - see the overlay note above.
+    await load(entry);
+    this._displaySets = [entry];
+  }
+
+  /**
+   * Returns the display sets currently recorded as mounted on the viewport.
+   * Empty when the viewport was driven by a raw data setter instead of
+   * {@link setDisplaySets}.
+   */
+  public getDisplaySets(): Array<{ displaySetId: string; options?: unknown }> {
+    return this._displaySets;
+  }
+
+  /**
+   * Clears the recorded display sets. Native data setters call this so that
+   * setting raw data without {@link setDisplaySets} resets the stored list.
+   * {@link mountDisplaySets} relies on this ordering: it runs the native data
+   * setter first (which clears) and then records the mounted entries.
+   */
+  protected clearDisplaySets(): void {
+    this._displaySets = [];
+  }
+}
+
+/**
+ * Compute the IJK index of the volume center for use as a camera focal point.
+ *
+ * Mirrors 3D Slicer's behavior in vtkMRMLSliceLogic::FitSliceToVolumes +
+ * SnapSliceOffsetToIJK: center the focal point on the volume's geometric
+ * center, then snap *only* the slice-direction axis to the nearest integer
+ * voxel center so the camera doesn't land between two slices. The in-plane
+ * axes use the continuous geometric center `(d - 1) / 2`.
+ *
+ * The snap only fires when `viewPlaneNormal` is aligned with an IJK axis
+ * (axis-aligned MPR of an axis-aligned acquisition). For oblique acquisitions
+ * the IJK axes are tilted relative to the requested MPR plane, so projecting
+ * onto a single IJK axis is an approximation -- snapping there shifts the
+ * focal point by ~0.5 voxel in world space and can flip the displayed slice
+ * index. In that case we fall back to the continuous geometric center on all
+ * axes, matching the pre-snap behavior.
+ */
+export function getVolumeCenterIJK(
+  dimensions: number[],
+  direction: ArrayLike<number>,
+  viewPlaneNormal: ArrayLike<number>
+): number[] {
+  const ijkAxes: vec3[] = [
+    [direction[0], direction[1], direction[2]] as vec3,
+    [direction[3], direction[4], direction[5]] as vec3,
+    [direction[6], direction[7], direction[8]] as vec3,
+  ];
+  const normal = [
+    viewPlaneNormal[0],
+    viewPlaneNormal[1],
+    viewPlaneNormal[2],
+  ] as vec3;
+
+  let sliceAxis = 0;
+  let maxDot = -1;
+  for (let i = 0; i < 3; i++) {
+    const dot = Math.abs(vec3.dot(ijkAxes[i], normal));
+    if (dot > maxDot) {
+      maxDot = dot;
+      sliceAxis = i;
+    }
+  }
+
+  // Only snap when the slice axis is exactly aligned with viewPlaneNormal.
+  // EPSILON matches the orthonormal tolerance used elsewhere (1e-3).
+  const isAxisAligned = Math.abs(maxDot - 1) < 1e-3;
+
+  return dimensions.map((d, i) =>
+    i === sliceAxis && isAxisAligned ? Math.floor(d / 2) : (d - 1) / 2
+  );
 }
 
 export default Viewport;

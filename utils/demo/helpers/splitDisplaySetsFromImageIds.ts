@@ -1,0 +1,288 @@
+import { Enums, metaData } from '@cornerstonejs/core';
+import {
+  createDisplaySetFromGroup,
+  compiledDisplaySetRules,
+  splitImageIdsBySplitRules,
+  Enums as metadataEnums,
+  metaData as typedMetaData,
+  utilities as metadataUtilities,
+  type IDisplaySet,
+  type NaturalizedInstance,
+  type SplitRuleSet,
+} from '@cornerstonejs/metadata';
+import createImageIdsAndCacheMetaData from './createImageIdsAndCacheMetaData';
+
+export type CreateDisplaySetsOptions = {
+  StudyInstanceUID: string;
+  SeriesInstanceUID: string;
+  SOPInstanceUID?: string;
+  wadoRsRoot: string;
+  client?: unknown;
+  convertMultiframe?: boolean;
+  useLegacyWadoRs?: boolean;
+};
+
+const { splitImageIdsBy4DTags } = metadataUtilities;
+const { ViewportType } = Enums;
+const { MetadataModules } = metadataEnums;
+
+/** Maps a display set's handler (a non-image object) to a ViewportType. */
+const VIEWPORT_TYPE_BY_HANDLER: Record<string, Enums.ViewportType> = {
+  video: ViewportType.VIDEO,
+  wholeSlide: ViewportType.WHOLE_SLIDE,
+  ecg: ViewportType.ECG,
+};
+
+/** True for an image display set that opens as a volume (`isReconstructable`). */
+export function isVolumeDisplaySet(displaySet: IDisplaySet): boolean {
+  return displaySet.isReconstructable === true;
+}
+
+/**
+ * Resolves the cornerstone {@link Enums.ViewportType} to enable for a display
+ * set: from its handler for a non-image object, else a stack viewport. (A demo
+ * that wants a volume checks {@link isVolumeDisplaySet}.)
+ */
+export function getViewportTypeForDisplaySet(
+  displaySet: IDisplaySet
+): Enums.ViewportType {
+  return (
+    VIEWPORT_TYPE_BY_HANDLER[displaySet.handler ?? ''] ?? ViewportType.STACK
+  );
+}
+
+export type Select4DDimensionGroupsOptions = {
+  /** 1-based inclusive start dimension group (default 1) */
+  fromGroup?: number;
+  /** 1-based inclusive end dimension group (default last group) */
+  toGroup?: number;
+  /** Take the last N dimension groups */
+  lastCount?: number;
+};
+
+// Normalizes a frame-level imageId to its base (frame 1) form. Mirrors the
+// frame patterns handled by `generateFrameImageId` in splitImageIdsBy4DTags so
+// both wadors (`/frames/N`) and wadouri (`?frame=N` or `&frame=N`) ids collapse
+// to frame 1; the regexes preserve any trailing path/query and multi-digit
+// frame numbers instead of slicing off everything after the frame.
+function toBaseImageId(imageId: string): string {
+  const wadorsFramePattern = /\/frames\/\d+/;
+  if (wadorsFramePattern.test(imageId)) {
+    return imageId.replace(wadorsFramePattern, '/frames/1');
+  }
+
+  const queryFramePattern = /([?&])frame=\d+/;
+  if (queryFramePattern.test(imageId)) {
+    return imageId.replace(
+      queryFramePattern,
+      (_match, separator) => `${separator}frame=1`
+    );
+  }
+
+  return imageId;
+}
+
+/**
+ * Naturalized instance for display-set splitting (one row per SOP, base imageId).
+ *
+ * Read from the typed metadata modules rather than through `metaData.get`, so a
+ * rule sees the complete naturalized instance with per-frame data folded in
+ * (the INSTANCE chain: NATURALIZED, then `combineFrameProvider` for multiframe).
+ *
+ * `metaData.get('instance', ...)` would not give that here. The typed bridge is
+ * registered at a deliberately low priority so legacy providers answer first,
+ * and the legacy wadors provider does answer `instance` — with a fixed list of
+ * modules (`instanceModuleNames`) covering pixel/VOI/series data but nothing
+ * positional. No ImageLaterality, ViewPosition, PatientOrientation or
+ * ViewCodeSequence, so a rule splitting mammography by view saw those as
+ * undefined on every image and grouped all four views into one display set.
+ *
+ * A split rule can only key on what the host hands the splitter, so a host that
+ * feeds it a thinner object silently narrows what any rule can express.
+ */
+export function getNaturalizedInstanceForDisplaySetSplit(
+  imageId: string
+): NaturalizedInstance | undefined {
+  const instance = (typedMetaData.metadataModuleProvider(
+    MetadataModules.INSTANCE,
+    imageId,
+    undefined
+    // Falls back to the provider chain for hosts running the legacy metadata
+    // provider, where nothing populates NATURALIZED.
+  ) ?? metaData.get('instance', imageId)) as NaturalizedInstance | undefined;
+
+  if (!instance) {
+    return undefined;
+  }
+
+  return {
+    ...instance,
+    imageId: toBaseImageId(imageId),
+  };
+}
+
+function getInstanceLevelImageIds(imageIds: string[]): string[] {
+  const bySop = new Map<string, string>();
+
+  for (const imageId of imageIds) {
+    const instance = getNaturalizedInstanceForDisplaySetSplit(imageId);
+    if (!instance) {
+      continue;
+    }
+
+    const sopUid = instance.SOPInstanceUID as string | undefined;
+    const key = sopUid ?? imageId;
+    if (!bySop.has(key)) {
+      bySop.set(key, instance.imageId ?? toBaseImageId(imageId));
+    }
+  }
+
+  return [...bySop.values()];
+}
+
+function collectFrameImageIdsForGroup(
+  seriesImageIds: string[],
+  groupInstances: NaturalizedInstance[]
+): string[] {
+  const sopUids = new Set(
+    groupInstances
+      .map((instance) => instance.SOPInstanceUID)
+      .filter(Boolean) as string[]
+  );
+
+  if (!sopUids.size) {
+    return seriesImageIds;
+  }
+
+  return seriesImageIds.filter((imageId) => {
+    const instance = getNaturalizedInstanceForDisplaySetSplit(imageId);
+    return instance?.SOPInstanceUID && sopUids.has(instance.SOPInstanceUID);
+  });
+}
+
+/**
+ * Splits a loaded series' imageIds into display sets.
+ *
+ * @param seriesImageIds - the series' (frame-level) imageIds.
+ * @param splitRules - compiled split rules, keyed by rule id; defaults to
+ *   {@link compiledDisplaySetRules}. Pass the result of
+ *   `createDisplaySetSplitRules(rules)` to split with custom rules.
+ */
+export function splitDisplaySetsFromImageIds(
+  seriesImageIds: string[],
+  splitRules: SplitRuleSet = compiledDisplaySetRules
+): IDisplaySet[] {
+  const instanceLevelImageIds = getInstanceLevelImageIds(seriesImageIds);
+
+  const groups = splitImageIdsBySplitRules(instanceLevelImageIds, {
+    getNaturalizedInstance: getNaturalizedInstanceForDisplaySetSplit,
+    splitRules,
+  });
+
+  return groups.map((group, splitNumber) =>
+    createDisplaySetFromGroup(group, {
+      splitNumber,
+      imageIds: collectFrameImageIdsForGroup(seriesImageIds, group.instances),
+    })
+  );
+}
+
+/**
+ * Fetches a series' imageIds (caching its metadata) and splits them into
+ * display sets using the default split rules. This combines
+ * {@link createImageIdsAndCacheMetaData} with {@link splitDisplaySetsFromImageIds}
+ * so examples can go straight from a series query to display sets.
+ */
+export async function createDisplaySets(
+  options: CreateDisplaySetsOptions
+): Promise<IDisplaySet[]> {
+  const seriesImageIds = await createImageIdsAndCacheMetaData(options);
+  return splitDisplaySetsFromImageIds(seriesImageIds);
+}
+
+/**
+ * Resolves the underlying imageId for a video display set (replaces hard-coded SOP lookup).
+ */
+export function getVideoImageIdFromImageIds(
+  seriesImageIds: string[]
+): string | undefined {
+  const displaySets = splitDisplaySetsFromImageIds(seriesImageIds);
+  const videoDisplaySet = displaySets.find(
+    (displaySet) => displaySet.handler === 'video'
+  );
+
+  if (!videoDisplaySet) {
+    return undefined;
+  }
+
+  return videoDisplaySet.underlyingImageIds[0];
+}
+
+/**
+ * Frame-level imageIds for the primary stack-oriented display set in a series.
+ */
+export function getPrimaryStackFrameImageIds(
+  seriesImageIds: string[]
+): string[] {
+  const displaySets = splitDisplaySetsFromImageIds(seriesImageIds);
+
+  const primaryDisplaySet =
+    displaySets.find((displaySet) => !displaySet.handler) ?? displaySets[0];
+
+  if (!primaryDisplaySet) {
+    return seriesImageIds;
+  }
+
+  const frameImageIds = [...primaryDisplaySet.imageIds];
+  return frameImageIds.length ? frameImageIds : seriesImageIds;
+}
+
+/**
+ * Frame-level imageIds for the primary volume-oriented display set (volume3d/volume).
+ */
+export function getVolumeFrameImageIds(seriesImageIds: string[]): string[] {
+  const displaySets = splitDisplaySetsFromImageIds(seriesImageIds);
+
+  const volumeDisplaySet =
+    displaySets.find(isVolumeDisplaySet) ?? displaySets[0];
+
+  if (!volumeDisplaySet) {
+    return seriesImageIds;
+  }
+
+  const frameImageIds = [...volumeDisplaySet.imageIds];
+  return frameImageIds.length ? frameImageIds : seriesImageIds;
+}
+
+/**
+ * Splits a series into 4D dimension groups using DICOM 4D tags
+ * ({@link splitImageIdsBy4DTags}) after applying default display-set rules.
+ */
+export function get4DDimensionGroupImageIds(
+  seriesImageIds: string[]
+): string[][] {
+  const volumeFrameImageIds = getVolumeFrameImageIds(seriesImageIds);
+  const { imageIdGroups } = splitImageIdsBy4DTags(volumeFrameImageIds);
+  return imageIdGroups;
+}
+
+/**
+ * ImageIds for a dynamic (4D) volume, optionally restricted to dimension groups.
+ * Group indices are 1-based in `fromGroup` / `toGroup`.
+ */
+export function get4DVolumeImageIds(
+  seriesImageIds: string[],
+  options: Select4DDimensionGroupsOptions = {}
+): string[] {
+  let groups = get4DDimensionGroupImageIds(seriesImageIds);
+
+  if (options.lastCount !== undefined) {
+    groups = groups.slice(-options.lastCount);
+  } else if (options.fromGroup !== undefined || options.toGroup !== undefined) {
+    const fromIndex = Math.max(0, (options.fromGroup ?? 1) - 1);
+    const toIndex = options.toGroup ?? groups.length;
+    groups = groups.slice(fromIndex, toIndex);
+  }
+
+  return groups.flat();
+}

@@ -4,12 +4,22 @@ import {
   eventTarget,
   getEnabledElement,
   getEnabledElementByIds,
+  utilities as csUtils,
+  getLossyDownsampling,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { mat4, vec3 } from 'gl-matrix';
 import type { EventTypes, PublicToolProps, ToolProps } from '../types';
 import { BaseTool } from './base';
 import { getToolGroup } from '../store/ToolGroupManager';
+import getViewportICamera from '../utilities/getViewportICamera';
+import setViewportCamera, {
+  resetViewportCamera,
+} from '../utilities/setViewportCamera';
+import {
+  applyViewportPresentation,
+  getViewportPresentation,
+} from '../utilities/viewportPresentation';
 
 class TrackballRotateTool extends BaseTool {
   static toolName;
@@ -55,7 +65,10 @@ class TrackballRotateTool extends BaseTool {
     const originalSampleDistance = mapper.getSampleDistance();
 
     if (!this._hasResolutionChanged) {
-      const { rotateSampleDistanceFactor } = this.configuration;
+      // A larger sample distance is an interactive downsampling.
+      const rotateSampleDistanceFactor = getLossyDownsampling().interactive
+        ? this.configuration.rotateSampleDistanceFactor
+        : 1;
       mapper.setSampleDistance(
         originalSampleDistance * rotateSampleDistanceFactor
       );
@@ -64,15 +77,26 @@ class TrackballRotateTool extends BaseTool {
       if (this.cleanUp !== null) {
         // Clean up previous event listener
         document.removeEventListener('mouseup', this.cleanUp);
+        document.removeEventListener('touchend', this.cleanUp);
+        document.removeEventListener('touchcancel', this.cleanUp);
       }
 
       this.cleanUp = () => {
+        // All listener types are armed below; whichever fires first must
+        // clear the others so no stale once-listener lingers on document.
+        document.removeEventListener('mouseup', this.cleanUp);
+        document.removeEventListener('touchend', this.cleanUp);
+        document.removeEventListener('touchcancel', this.cleanUp);
         mapper.setSampleDistance(originalSampleDistance);
         viewport.render();
         this._hasResolutionChanged = false;
       };
 
       document.addEventListener('mouseup', this.cleanUp, { once: true });
+      document.addEventListener('touchend', this.cleanUp, { once: true });
+      // OS-interrupted gestures (incoming call, notification shade) end in
+      // touchcancel, never touchend.
+      document.addEventListener('touchcancel', this.cleanUp, { once: true });
     }
     return true;
   };
@@ -108,11 +132,11 @@ class TrackballRotateTool extends BaseTool {
             }
             const { viewport } = element;
 
-            const viewPresentation = viewport.getViewPresentation();
+            const viewPresentation = getViewportPresentation(viewport);
 
-            viewport.resetCamera();
+            resetViewportCamera(viewport);
 
-            viewport.setViewPresentation(viewPresentation);
+            applyViewportPresentation(viewport, viewPresentation);
             viewport.render();
           });
 
@@ -177,7 +201,7 @@ class TrackballRotateTool extends BaseTool {
     mat4.rotate(transform, transform, angle, axis);
     vec3.transformMat4(newViewUp, viewUp, transform);
 
-    viewport.setCamera({
+    setViewportCamera(viewport, {
       position: newPosition,
       viewUp: newViewUp,
       focalPoint: newFocalPoint,
@@ -192,7 +216,7 @@ class TrackballRotateTool extends BaseTool {
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
 
-    const camera = viewport.getCamera();
+    const camera = getViewportICamera(viewport);
     const width = element.clientWidth;
     const height = element.clientHeight;
 

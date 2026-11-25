@@ -1,6 +1,7 @@
 import type { mat3 } from 'gl-matrix';
 import { vec3 } from 'gl-matrix';
 import * as metaData from '../metaData';
+import { MetadataModules } from '../enums';
 import type { IImageVolume, Point3 } from '../types';
 import { coreLog } from './logger';
 
@@ -67,7 +68,7 @@ export default function getClosestImageId(
     const imageId = imageIds[i];
 
     // 4.a Get metadata for the imageId
-    const imagePlaneModule = metaData.get('imagePlaneModule', imageId);
+    const imagePlaneModule = metaData.get(MetadataModules.IMAGE_PLANE, imageId);
     if (!imagePlaneModule?.imagePositionPatient) {
       log.warn(`Missing imagePositionPatient for imageId: ${imageId}`);
       continue; // Skip if essential metadata is missing

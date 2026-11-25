@@ -45,7 +45,7 @@ setTitleAndDescription(
   'Here we demonstrate how to change the color of a segment in a segmentation representation'
 );
 
-const size = '500px';
+const size = '512px';
 const content = document.getElementById('content');
 const viewportGrid = document.createElement('div');
 

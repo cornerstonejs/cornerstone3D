@@ -1,5 +1,8 @@
 import type { ImageLoadListener } from '../types';
 import cache from '../cache/cache';
+import { coreLog } from '../utilities/logger';
+
+const log = coreLog.getLogger('loaders', 'fillNearbyFrames');
 
 /** Actually fills the nearby frames from the given frame */
 export function fillNearbyFrames(listener: ImageLoadListener, request, image) {
@@ -26,7 +29,7 @@ export function fillNearbyFrames(listener: ImageLoadListener, request, image) {
       cache.setPartialImage(targetId, nearbyImage);
       listener.successCallback(targetId, nearbyImage);
     } catch (e) {
-      console.warn("Couldn't fill nearby item ", nearbyItem.itemId, e);
+      log.warn("Couldn't fill nearby item ", nearbyItem.itemId, e);
     }
   }
 }

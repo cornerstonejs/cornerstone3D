@@ -126,7 +126,6 @@ function xhrRequest(
 
       // Event triggered when downloading an image progresses
       xhr.onprogress = function (oProgress) {
-        // console.log('progress:',oProgress)
         const loaded = oProgress.loaded; // evt.loaded the bytes browser receive
 
         let total: number;

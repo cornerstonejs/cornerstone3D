@@ -1,0 +1,342 @@
+import { cache, imageLoader, volumeLoader, Enums } from '@cornerstonejs/core';
+import type { Types } from '@cornerstonejs/core';
+import type { Segmentation } from '../../../types/SegmentationStateTypes';
+import type {
+  LabelmapSegmentationData,
+  LabelmapLayer,
+} from '../../../types/LabelmapTypes';
+import { ensureLabelmapState } from './normalizeLabelmapSegmentationData';
+import {
+  forEachLabelmapImageReference,
+  hasMultipleLabelmapImagesPerReferencedImageId,
+} from './labelmapImageIdMapping';
+import {
+  createDynamicLabelmapVolume,
+  isDynamicLabelmapVolume,
+  setDynamicLabelmapVolumeId,
+} from './dynamicLabelmapVolume';
+
+/** Marks a volume so GPU reduction uses foreground majority instead of average. */
+function tagLabelmapVolume(
+  volume: Types.IImageVolume | undefined
+): Types.IImageVolume | undefined {
+  if (volume) {
+    volume.reductionStatistic = Enums.VoxelStatistics.ForegroundMajority;
+  }
+
+  return volume;
+}
+
+function getLabelmap(
+  segmentation: Segmentation,
+  labelmapId: string
+): LabelmapLayer | undefined {
+  return ensureLabelmapState(segmentation)?.labelmaps?.[labelmapId];
+}
+
+function getLabelmaps(segmentation: Segmentation): LabelmapLayer[] {
+  const labelmapState = ensureLabelmapState(segmentation);
+  if (!labelmapState) {
+    return [];
+  }
+
+  return Object.values(labelmapState.labelmaps);
+}
+
+function registerLabelmap(
+  segmentation: Segmentation,
+  layer: LabelmapLayer
+): void {
+  const labelmapState = ensureLabelmapState(segmentation);
+  if (!labelmapState) {
+    return;
+  }
+
+  labelmapState.labelmaps[layer.labelmapId] = layer;
+}
+
+function removeLabelmap(segmentation: Segmentation, labelmapId: string): void {
+  const labelmapState = ensureLabelmapState(segmentation);
+  if (!labelmapState) {
+    return;
+  }
+
+  const layer = labelmapState.labelmaps[labelmapId];
+  if (layer?.geometryVolumeId && cache.getVolume(layer.geometryVolumeId)) {
+    cache.removeVolumeLoadObject(layer.geometryVolumeId);
+  }
+
+  delete labelmapState.labelmaps[labelmapId];
+}
+
+function getOrCreateLabelmapVolume(
+  layer: LabelmapLayer
+): Types.IImageVolume | undefined {
+  const mergedVolume = getOrCreateMergedStackLabelmapVolume(layer);
+
+  if (mergedVolume) {
+    return mergedVolume;
+  }
+
+  const existingVolumeId = layer.volumeId ?? layer.geometryVolumeId;
+
+  if (existingVolumeId) {
+    const cachedVolume = cache.getVolume(existingVolumeId);
+
+    if (cachedVolume) {
+      return tagLabelmapVolume(cachedVolume as Types.IImageVolume);
+    }
+  }
+
+  const imageIds = layer.imageIds ?? [];
+
+  if (!imageIds.length) {
+    return;
+  }
+
+  const volumeId =
+    layer.volumeId ?? layer.geometryVolumeId ?? `${layer.labelmapId}-geometry`;
+
+  if (!layer.volumeId) {
+    layer.geometryVolumeId = volumeId;
+  }
+
+  const cachedVolume = cache.getVolume(volumeId);
+
+  if (cachedVolume) {
+    return tagLabelmapVolume(cachedVolume as Types.IImageVolume);
+  }
+
+  return tagLabelmapVolume(
+    createDynamicLabelmapVolume(volumeId, layer) ??
+      volumeLoader.createAndCacheVolumeFromImagesSync(volumeId, imageIds)
+  );
+}
+
+const staticLabelmapLayers = new WeakSet<LabelmapLayer>();
+
+/**
+ * Gets the dynamic labelmap volume of the primary labelmap of a segmentation,
+ * and creates it when the labelmap references a 4D series.
+ *
+ * Unlike `getOrCreateLabelmapVolume`, a 3D labelmap gets no volume and no
+ * merged images. The 4D test runs once for each labelmap layer.
+ *
+ * @returns undefined when the primary labelmap is not a 4D labelmap
+ */
+function getOrCreateDynamicLabelmapVolume(
+  segmentation: Segmentation
+): Types.IImageVolume | undefined {
+  const layer = getLabelmap(
+    segmentation,
+    ensureLabelmapState(segmentation)?.primaryLabelmapId
+  );
+
+  if (!layer || staticLabelmapLayers.has(layer)) {
+    return;
+  }
+
+  const volumeId =
+    layer.volumeId ?? layer.geometryVolumeId ?? `${layer.labelmapId}-geometry`;
+  const cachedVolume = cache.getVolume(volumeId) as Types.IImageVolume;
+  const volume = cachedVolume
+    ? isDynamicLabelmapVolume(cachedVolume)
+      ? cachedVolume
+      : undefined
+    : layer.imageIds?.length &&
+      !layer.volumeId &&
+      // shortcut: overlapping labelmap images use the merged static volume, as before 4D support
+      !hasDuplicateReferencedImageIds(layer) &&
+      createDynamicLabelmapVolume(volumeId, layer);
+
+  if (!volume) {
+    staticLabelmapLayers.add(layer);
+    return;
+  }
+
+  layer.geometryVolumeId ??= layer.volumeId ? undefined : volumeId;
+  setDynamicLabelmapVolumeId(segmentation.segmentationId, volumeId);
+
+  return tagLabelmapVolume(volume);
+}
+
+function getOrCreateMergedStackLabelmapVolume(
+  layer: LabelmapLayer
+): Types.IImageVolume | undefined {
+  if (layer.volumeId || !hasDuplicateReferencedImageIds(layer)) {
+    return;
+  }
+
+  const volumeId = layer.geometryVolumeId ?? `${layer.labelmapId}-geometry`;
+  const cachedVolume = cache.getVolume(volumeId);
+
+  if (cachedVolume) {
+    return tagLabelmapVolume(cachedVolume as Types.IImageVolume);
+  }
+
+  const imageIdsByReferencedImageId = new Map<string, string[]>();
+
+  forEachLabelmapImageReference(layer, (referencedImageId, imageId) => {
+    const imageIdsForReference =
+      imageIdsByReferencedImageId.get(referencedImageId) ?? [];
+
+    imageIdsForReference.push(imageId);
+    imageIdsByReferencedImageId.set(referencedImageId, imageIdsForReference);
+  });
+
+  const mergedReferencedImageIds = Array.from(
+    imageIdsByReferencedImageId.keys()
+  );
+
+  if (!mergedReferencedImageIds.length) {
+    return;
+  }
+
+  let mergedImageIndex = 0;
+  const mergedImages = imageLoader.createAndCacheDerivedImages(
+    mergedReferencedImageIds,
+    {
+      getDerivedImageId: () => `${volumeId}-image-${mergedImageIndex++}`,
+      targetBuffer: { type: 'Uint8Array' },
+    }
+  );
+
+  mergedImages.forEach((mergedImage) => {
+    const sourceImageIds = imageIdsByReferencedImageId.get(
+      mergedImage.referencedImageId
+    );
+
+    if (!sourceImageIds?.length) {
+      return;
+    }
+
+    const targetVoxelManager = mergedImage.voxelManager;
+    const scalarDataLength = targetVoxelManager.getScalarDataLength();
+
+    sourceImageIds.forEach((sourceImageId) => {
+      const sourceImage = cache.getImage(sourceImageId);
+      const sourceVoxelManager = sourceImage?.voxelManager;
+
+      if (!sourceVoxelManager) {
+        return;
+      }
+
+      const sourceScalarDataLength = sourceVoxelManager.getScalarDataLength();
+      const length = Math.min(scalarDataLength, sourceScalarDataLength);
+
+      for (let index = 0; index < length; index++) {
+        const value = Number(sourceVoxelManager.getAtIndex(index));
+
+        if (value !== 0) {
+          targetVoxelManager.setAtIndex(index, value);
+        }
+      }
+    });
+  });
+
+  layer.geometryVolumeId = volumeId;
+
+  return tagLabelmapVolume(
+    volumeLoader.createAndCacheVolumeFromImagesSync(
+      volumeId,
+      mergedImages.map((image) => image.imageId)
+    )
+  );
+}
+
+function hasDuplicateReferencedImageIds(layer: LabelmapLayer): boolean {
+  return hasMultipleLabelmapImagesPerReferencedImageId(layer);
+}
+
+function getLabelmapIds(segmentation: Segmentation): string[] {
+  return getLabelmaps(segmentation).map((layer) => layer.labelmapId);
+}
+
+function getLabelmapDataById(
+  segmentation: Segmentation,
+  labelmapId: string
+): LabelmapSegmentationData | undefined {
+  const labelmapState = ensureLabelmapState(segmentation);
+  const layer = labelmapState?.labelmaps?.[labelmapId];
+  if (!labelmapState || !layer) {
+    return;
+  }
+
+  return {
+    volumeId: layer.volumeId,
+    referencedVolumeId: layer.referencedVolumeId,
+    imageIds: layer.imageIds,
+    referencedImageIds: layer.referencedImageIds,
+    sourceRepresentationName: labelmapState.sourceRepresentationName,
+    primaryLabelmapId: labelmapId,
+    labelmaps: {
+      [labelmapId]: layer,
+    },
+    segmentBindings: Object.fromEntries(
+      Object.entries(labelmapState.segmentBindings).filter(
+        ([, binding]) => binding.labelmapId === labelmapId
+      )
+    ),
+  };
+}
+
+function getScalarArrayLengthFromLabelmap(layer: LabelmapLayer): number {
+  if (layer.volumeId) {
+    return cache.getVolume(layer.volumeId)?.voxelManager?.getScalarDataLength();
+  }
+
+  const firstImageId = layer.imageIds?.[0];
+  const firstImage = firstImageId ? cache.getImage(firstImageId) : null;
+  if (!firstImage || !layer.imageIds?.length) {
+    return 0;
+  }
+
+  return firstImage.voxelManager.getScalarDataLength() * layer.imageIds.length;
+}
+
+function getConstructorNameForLabelmap(layer: LabelmapLayer): string {
+  if (layer.volumeId) {
+    return cache.getVolume(layer.volumeId)?.voxelManager?.getConstructor()
+      ?.name;
+  }
+
+  const imageId = layer.imageIds?.[0];
+  return imageId
+    ? cache.getImage(imageId)?.voxelManager?.getConstructor()?.name
+    : undefined;
+}
+
+function getLabelmapForImageId(
+  segmentation: Segmentation,
+  imageId: string
+): LabelmapLayer | undefined {
+  return getLabelmaps(segmentation).find((layer) =>
+    layer.imageIds?.includes(imageId)
+  );
+}
+
+function getLabelmapForVolumeId(
+  segmentation: Segmentation,
+  volumeId: string
+): LabelmapLayer | undefined {
+  return getLabelmaps(segmentation).find(
+    (layer) =>
+      layer.volumeId === volumeId || layer.geometryVolumeId === volumeId
+  );
+}
+
+export {
+  getConstructorNameForLabelmap,
+  getLabelmap,
+  getLabelmapDataById,
+  getLabelmapForImageId,
+  getLabelmapForVolumeId,
+  getLabelmapIds,
+  getLabelmaps,
+  getOrCreateDynamicLabelmapVolume,
+  getOrCreateLabelmapVolume,
+  getScalarArrayLengthFromLabelmap,
+  registerLabelmap,
+  removeLabelmap,
+  tagLabelmapVolume,
+};

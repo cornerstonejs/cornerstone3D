@@ -1,8 +1,4 @@
-import {
-  VolumeViewport,
-  getEnabledElementByViewportId,
-  StackViewport,
-} from '@cornerstonejs/core';
+import { getEnabledElementByViewportId } from '@cornerstonejs/core';
 
 import type { SegmentationDataModifiedEventType } from '../../../types/EventTypes';
 import { SegmentationRepresentations } from '../../../enums';
@@ -10,11 +6,25 @@ import { performVolumeLabelmapUpdate } from './performVolumeLabelmapUpdate';
 import { performStackLabelmapUpdate } from './performStackLabelmapUpdate';
 import { getSegmentation } from '../../../stateManagement/segmentation/getSegmentation';
 import { getViewportIdsWithSegmentation } from '../../../stateManagement/segmentation/getViewportIdsWithSegmentation';
+import { getSegmentationRepresentations } from '../../../stateManagement/segmentation/getSegmentationRepresentation';
+import getViewportLabelmapRenderMode from '../../../stateManagement/segmentation/helpers/getViewportLabelmapRenderMode';
+import { triggerSegmentationRender } from '../../../stateManagement/segmentation/SegmentationRenderingEngine';
+import {
+  canRenderVolumeViewportLabelmapAsImage,
+  shouldUseSliceRendering,
+} from '../../../stateManagement/segmentation/helpers/labelmapImageMapperSupport';
 
 const getViewportByViewportId = (viewportId: string) => {
   const enabledElement = getEnabledElementByViewportId(viewportId);
   return enabledElement?.viewport ?? undefined;
 };
+
+/**
+ * Segmentations that an edit changed while no volume viewport showed them. The
+ * edit then never reached their labelmap volume, so the volume and its
+ * reduced textures are stale, and the next mount must refresh them in full.
+ */
+const segmentationsWithStaleVolume = new Set<string>();
 
 /** A callback function that is called when the segmentation data is modified which
  *  often is as a result of tool interactions e.g., scissors, eraser, etc.
@@ -22,46 +32,86 @@ const getViewportByViewportId = (viewportId: string) => {
 const onLabelmapSegmentationDataModified = function (
   evt: SegmentationDataModifiedEventType
 ): void {
-  const { segmentationId, modifiedSlicesToUse } = evt.detail;
+  const { segmentationId, modifiedSlicesToUse, voxelsUnchanged } = evt.detail;
 
   const { representationData } = getSegmentation(segmentationId);
 
   const viewportIds = getViewportIdsWithSegmentation(segmentationId);
-
-  const hasVolumeViewport = viewportIds.some((viewportId) => {
-    const viewport = getViewportByViewportId(viewportId);
-    return viewport instanceof VolumeViewport;
-  });
-
-  const hasStackViewport = viewportIds.some((viewportId) => {
-    const viewport = getViewportByViewportId(viewportId);
-    return viewport instanceof StackViewport;
-  });
-
-  const hasBothStackAndVolume = hasVolumeViewport && hasStackViewport;
+  const volumeViewportIds: string[] = [];
+  const stackViewportIds: string[] = [];
+  const imageMapperViewportIds: string[] = [];
 
   viewportIds.forEach((viewportId) => {
     const viewport = getViewportByViewportId(viewportId);
 
-    if (viewport instanceof VolumeViewport) {
-      // For combined stack and volume scenarios in the rendering engine, updating only affected
-      // slices is not ideal. Stack indices (e.g., 0 for just one image) don't
-      // correspond to image indices in the volume. In this case, we update all slices.
-      // However, for volume-only scenarios, we update only affected slices.
-
-      performVolumeLabelmapUpdate({
-        modifiedSlicesToUse: hasBothStackAndVolume ? [] : modifiedSlicesToUse,
-        representationData,
-        type: SegmentationRepresentations.Labelmap,
-      });
+    if (!viewport) {
+      return;
     }
 
-    if (viewport instanceof StackViewport) {
-      performStackLabelmapUpdate({
-        viewportIds,
-        segmentationId,
-      });
+    const labelmapRepresentation = getSegmentationRepresentations(viewportId, {
+      segmentationId,
+      type: SegmentationRepresentations.Labelmap,
+    })[0] as { config?: { useSliceRendering?: boolean } } | undefined;
+    const useSliceRendering = shouldUseSliceRendering(
+      getSegmentation(segmentationId),
+      labelmapRepresentation?.config
+    );
+    const renderMode = getViewportLabelmapRenderMode(viewport, {
+      useSliceRendering,
+    });
+
+    if (renderMode === 'volume') {
+      volumeViewportIds.push(viewportId);
+      return;
     }
+
+    if (renderMode === 'image') {
+      if (
+        useSliceRendering &&
+        canRenderVolumeViewportLabelmapAsImage(viewport)
+      ) {
+        imageMapperViewportIds.push(viewportId);
+      } else {
+        stackViewportIds.push(viewportId);
+      }
+    }
+  });
+
+  const hasVolumeViewport = volumeViewportIds.length > 0;
+  const hasStackViewport = stackViewportIds.length > 0;
+
+  const hasBothStackAndVolume = hasVolumeViewport && hasStackViewport;
+
+  if (!hasVolumeViewport && !voxelsUnchanged) {
+    segmentationsWithStaleVolume.add(segmentationId);
+  }
+
+  if (hasVolumeViewport) {
+    // A stale volume missed edits on unknown slices, so it refreshes in full.
+    const volumeIsStale = segmentationsWithStaleVolume.delete(segmentationId);
+
+    // For combined stack and volume scenarios in the rendering engine, updating only affected
+    // slices is not ideal. Stack indices (e.g., 0 for just one image) don't
+    // correspond to image indices in the volume. In this case, we update all slices.
+    // However, for volume-only scenarios, we update only affected slices.
+    performVolumeLabelmapUpdate({
+      modifiedSlicesToUse:
+        hasBothStackAndVolume || volumeIsStale ? [] : modifiedSlicesToUse,
+      representationData,
+      type: SegmentationRepresentations.Labelmap,
+      voxelsUnchanged: Boolean(voxelsUnchanged) && !volumeIsStale,
+    });
+  }
+
+  if (hasStackViewport) {
+    performStackLabelmapUpdate({
+      viewportIds: stackViewportIds,
+      segmentationId,
+    });
+  }
+
+  imageMapperViewportIds.forEach((viewportId) => {
+    triggerSegmentationRender(viewportId);
   });
 };
 

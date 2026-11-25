@@ -20,15 +20,15 @@ const EXPECTED_IMAGE: Types.IImage = {
   imageFrame: {
     bitsAllocated: 8,
     bitsStored: 8,
-    // @ts-expect-error jasmine matcher
-    bluePaletteColorLookupTableData: jasmine.any(Array),
+    // @ts-expect-error jasmine matcher - LUT may be Uint16Array from metadata pipeline
+    bluePaletteColorLookupTableData: jasmine.any(Uint16Array),
     bluePaletteColorLookupTableDescriptor: [256, 0, 16],
     columns: 640,
     decodeLevel: undefined,
     // @ts-expect-error jasmine matcher
     decodeTimeInMS: jasmine.any(Number),
-    // @ts-expect-error jasmine matcher
-    greenPaletteColorLookupTableData: jasmine.any(Array),
+    // @ts-expect-error jasmine matcher - LUT may be Uint16Array from metadata pipeline
+    greenPaletteColorLookupTableData: jasmine.any(Uint16Array),
     greenPaletteColorLookupTableDescriptor: [256, 0, 16],
     // @ts-expect-error jasmine matcher
     imageData: { data: jasmine.any(Uint8ClampedArray) },
@@ -41,8 +41,8 @@ const EXPECTED_IMAGE: Types.IImage = {
     pixelDataLength: 768000,
     pixelRepresentation: 0,
     planarConfiguration: undefined,
-    // @ts-expect-error jasmine matcher
-    redPaletteColorLookupTableData: jasmine.any(Array),
+    // @ts-expect-error jasmine matcher - LUT may be Uint16Array from metadata pipeline
+    redPaletteColorLookupTableData: jasmine.any(Uint16Array),
     redPaletteColorLookupTableDescriptor: [256, 0, 16],
     rows: 400,
     samplesPerPixel: 1,

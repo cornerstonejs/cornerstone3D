@@ -4,17 +4,15 @@ import { getConfiguration } from '../init';
 import Events from '../enums/Events';
 import eventTarget from '../eventTarget';
 import triggerEvent from '../utilities/triggerEvent';
+import { coreLog } from '../utilities/logger';
 import ViewportType from '../enums/ViewportType';
-import VolumeViewport from './VolumeViewport';
-import StackViewport from './StackViewport';
-import VolumeViewport3D from './VolumeViewport3D';
-import viewportTypeUsesCustomRenderingPipeline from './helpers/viewportTypeUsesCustomRenderingPipeline';
+import viewportTypeUsesCustomRenderingPipeline, {
+  viewportUsesCustomRenderingPipeline,
+} from './helpers/viewportTypeUsesCustomRenderingPipeline';
 import getOrCreateCanvas, {
   updateCanvasSizeAndAspectRatio,
 } from './helpers/getOrCreateCanvas';
-import type IStackViewport from '../types/IStackViewport';
-import type IVolumeViewport from '../types/IVolumeViewport';
-
+import { setElementTouchActionNone } from './helpers/elementTouchAction';
 import type * as EventTypes from '../types/EventTypes';
 import type {
   ViewportInput,
@@ -23,7 +21,14 @@ import type {
   IViewport,
 } from '../types/IViewport';
 import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
-import type { VtkOffscreenMultiRenderWindow } from '../types';
+import type {
+  IStackViewport,
+  IVolumeViewport,
+  OffscreenCanvasContainer,
+  VtkOffscreenMultiRenderWindow,
+} from '../types';
+import { getViewportClassForInput } from './helpers/viewportTypeToViewportClass';
+import { isGenericViewport } from '../utilities/viewportCapabilities';
 
 /**
  * ContextPoolRenderingEngine extends BaseRenderingEngine to provide parallel rendering
@@ -31,17 +36,26 @@ import type { VtkOffscreenMultiRenderWindow } from '../types';
  *
  * @public
  */
+const log = coreLog.getLogger('RenderingEngine', 'ContextPoolRenderingEngine');
+
 class ContextPoolRenderingEngine extends BaseRenderingEngine {
-  private contextPool: WebGLContextPool;
+  private contextPool?: WebGLContextPool;
 
   constructor(id?: string) {
     super(id);
-    const { rendering } = getConfiguration();
-    const { webGlContextCount } = rendering;
-
     if (!this.useCPURendering) {
-      this.contextPool = new WebGLContextPool(webGlContextCount);
+      this.ensureContextPool();
     }
+  }
+
+  private ensureContextPool(): WebGLContextPool {
+    if (!this.contextPool) {
+      const { rendering } = getConfiguration();
+      const { webGlContextCount } = rendering;
+      this.contextPool = new WebGLContextPool(webGlContextCount, this.id);
+    }
+
+    return this.contextPool;
   }
 
   /**
@@ -77,37 +91,38 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
   protected addVtkjsDrivenViewport(
     viewportInputEntry: InternalViewportInput
   ): void {
+    const contextPool = this.ensureContextPool();
     const { element, canvas, viewportId, type, defaultOptions } =
       viewportInputEntry;
 
     element.tabIndex = -1;
 
+    // Deliver touch input to cornerstone tools instead of the browser
+    // (scroll, pinch-zoom, double-tap zoom). Restored in _resetViewport.
+    setElementTouchActionNone(element);
+
     // Assign viewport to a context
-    // Stack viewports get distributed across contexts, all others use context 0
+    // Stack viewports can be distributed across contexts. Planar Next may mount
+    // volume-backed GPU renderings, which cannot safely share volume textures
+    // across WebGL contexts.
     let contextIndex = 0;
     if (type === ViewportType.STACK) {
-      const contexts = this.contextPool.getAllContexts();
+      const contexts = contextPool.getAllContexts();
       contextIndex = this._viewports.size % contexts.length;
     }
-    this.contextPool.assignViewportToContext(viewportId, contextIndex);
+    contextPool.assignViewportToContext(viewportId, contextIndex);
 
     // Track viewport size
-    this.contextPool.updateViewportSize(
-      viewportId,
-      canvas.width,
-      canvas.height
-    );
+    contextPool.updateViewportSize(viewportId, canvas.width, canvas.height);
 
     // Get the context and add the renderer
-    const contextData = this.contextPool.getContextByIndex(contextIndex);
+    const contextData = contextPool.getContextByIndex(contextIndex);
 
     const { context: offscreenMultiRenderWindow, container } = contextData;
 
     // Initialize the offscreen canvas size to the max size for this context
-    const maxSize = this.contextPool.getMaxSizeForContext(contextIndex);
-    // @ts-expect-error
+    const maxSize = contextPool.getMaxSizeForContext(contextIndex);
     container.width = maxSize.width;
-    // @ts-expect-error
     container.height = maxSize.height;
 
     offscreenMultiRenderWindow.resize();
@@ -133,21 +148,20 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
       defaultOptions: defaultOptions || {},
     } as ViewportInput;
 
-    let viewport: IViewport;
-    if (type === ViewportType.STACK) {
-      viewport = new StackViewport(viewportInput);
-    } else if (
-      type === ViewportType.ORTHOGRAPHIC ||
-      type === ViewportType.PERSPECTIVE
-    ) {
-      viewport = new VolumeViewport(viewportInput);
-    } else if (type === ViewportType.VOLUME_3D) {
-      viewport = new VolumeViewport3D(viewportInput);
-    } else {
+    const ViewportClass = getViewportClassForInput(viewportInputEntry);
+
+    if (!ViewportClass) {
       throw new Error(`Viewport Type ${type} is not supported`);
     }
 
-    this._viewports.set(viewportId, viewport);
+    const viewport = new ViewportClass(viewportInput);
+
+    // Preserve the originally-requested (legacy) type so callers can branch on it
+    // even when compat remapping changed the runtime `type` (e.g. STACK -> PLANAR_NEXT).
+    (viewport as unknown as IViewport).requestedType =
+      viewportInputEntry.requestedType ?? type;
+
+    this._viewports.set(viewportId, viewport as unknown as IViewport);
 
     const eventDetail: EventTypes.ElementEnabledEventDetail = {
       element,
@@ -155,7 +169,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
       renderingEngineId: this.id,
     };
 
-    if (!viewport.suppressEvents) {
+    if (!(viewport as { suppressEvents?: boolean }).suppressEvents) {
       triggerEvent(eventTarget, Events.ELEMENT_ENABLED, eventDetail);
     }
   }
@@ -193,6 +207,31 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
   }
 
   /**
+   * Returns the displayed size (in device pixels) of a viewport's container.
+   *
+   * For native Generic ("next") viewports the on-screen canvas returned by
+   * getOrCreateCanvas (the .cornerstone-canvas / VTK target) can report
+   * clientWidth/Height === 0 when the CPU render path is active and that canvas
+   * is hidden in favor of the CPU canvas. Measuring from the viewport element
+   * instead always reflects the real container size, so native viewports are
+   * detected on container resize and their resize() (which refits the active
+   * CPU/VTK canvas) actually runs. Legacy viewports keep measuring their canvas.
+   */
+  private _getDisplayedSize(vp: IViewport): {
+    displayedWidth: number;
+    displayedHeight: number;
+  } {
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    const sizeSource = isGenericViewport(vp)
+      ? vp.element
+      : getOrCreateCanvas(vp.element);
+    return {
+      displayedWidth: Math.round(sizeSource.clientWidth * devicePixelRatio),
+      displayedHeight: Math.round(sizeSource.clientHeight * devicePixelRatio),
+    };
+  }
+
+  /**
    * Resizes viewports that use VTK.js for rendering.
    * Only updates the VTK offscreen size when the displayed size (canvas client size in device pixels)
    * differs from the current rendered size (canvas.width/height). The on-screen canvas dimensions
@@ -201,20 +240,15 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
    * resize() call.
    */
   protected _resizeVTKViewports(
-    vtkDrivenViewports: (IStackViewport | IVolumeViewport)[],
+    vtkDrivenViewports: IViewport[],
     keepCamera = true,
     immediate = true
   ) {
-    const devicePixelRatio = window.devicePixelRatio || 1;
-
     // Compute target display size (pixels the canvas is actually displayed at) for each viewport
     const viewportsNeedingResize: (IStackViewport | IVolumeViewport)[] = [];
     for (const vp of vtkDrivenViewports) {
       const canvas = getOrCreateCanvas(vp.element);
-      const displayedWidth = Math.round(canvas.clientWidth * devicePixelRatio);
-      const displayedHeight = Math.round(
-        canvas.clientHeight * devicePixelRatio
-      );
+      const { displayedWidth, displayedHeight } = this._getDisplayedSize(vp);
 
       if (displayedWidth === 0 || displayedHeight === 0) {
         continue;
@@ -228,23 +262,15 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
       ) {
         continue;
       }
-      viewportsNeedingResize.push(vp);
+      viewportsNeedingResize.push(vp as IStackViewport | IVolumeViewport);
     }
 
     if (viewportsNeedingResize.length === 0) {
       return;
     }
 
-    if (this._animationFrameSet) {
-      return;
-    }
-
     for (const vp of viewportsNeedingResize) {
-      const canvas = getOrCreateCanvas(vp.element);
-      const displayedWidth = Math.round(canvas.clientWidth * devicePixelRatio);
-      const displayedHeight = Math.round(
-        canvas.clientHeight * devicePixelRatio
-      );
+      const { displayedWidth, displayedHeight } = this._getDisplayedSize(vp);
       const targetWidth = Math.max(VIEWPORT_MIN_SIZE, displayedWidth);
       const targetHeight = Math.max(VIEWPORT_MIN_SIZE, displayedHeight);
 
@@ -252,15 +278,38 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
       vp.sHeight = targetHeight;
     }
 
-    if (vtkDrivenViewports.length) {
-      this._resize(vtkDrivenViewports);
+    if (this._animationFrameSet) {
+      return;
     }
 
-    vtkDrivenViewports.forEach((vp: IStackViewport | IVolumeViewport) => {
+    if (vtkDrivenViewports.length) {
+      this._resize(vtkDrivenViewports as (IStackViewport | IVolumeViewport)[]);
+    }
+
+    vtkDrivenViewports.forEach((vp) => {
+      vp.resize?.();
+
+      if (isGenericViewport(vp)) {
+        // Generic ("next") viewports (PlanarViewport / PLANAR_NEXT) refit
+        // inside their own resize() (recompute fitScale + reapply presentation
+        // with scaleMode 'fit') and do NOT expose the legacy getCamera/setCamera/
+        // setViewPresentation surface. Skip the legacy snapshot/restore dance.
+        return;
+      }
+
       const prevCamera = vp.getCamera();
-      const rotation = vp.getRotation();
+      const rotation = vp.getRotation?.() ?? 0;
       const { flipHorizontal } = prevCamera;
-      vp.resetCameraForResize();
+      const resizeResetViewport = vp as IViewport & {
+        resetCameraForResize?: () => boolean;
+        resetViewStateForResize?: () => boolean;
+      };
+
+      if (resizeResetViewport.resetViewStateForResize) {
+        resizeResetViewport.resetViewStateForResize();
+      } else {
+        resizeResetViewport.resetCameraForResize?.();
+      }
 
       const displayArea = vp.getDisplayArea();
 
@@ -300,6 +349,8 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
       return;
     }
 
+    const renderStart = performance.now();
+
     // Render all viewports synchronously
     const eventDetails = viewportsToRender.map((viewport) => {
       const eventDetail = this.renderViewportUsingCustomOrVtkPipeline(viewport);
@@ -311,26 +362,36 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     this._animationFrameSet = false;
     this._animationFrameHandle = null;
 
+    const waiting = viewportsToRender.map((vp) =>
+      this._waitsForStorage(vp, renderStart)
+    );
+
     // Trigger all events after rendering is complete
-    eventDetails.forEach((eventDetail) => {
-      if (eventDetail?.element) {
+    eventDetails.forEach((eventDetail, index) => {
+      if (eventDetail?.element && !waiting[index]) {
         triggerEvent(eventDetail.element, Events.IMAGE_RENDERED, eventDetail);
       }
     });
+
+    // Fidelity event after IMAGE_RENDERED so consumers can query the frame
+    // that was just drawn.
+    this._notifyFidelityOfRenderedViewports(
+      viewportsToRender.filter((_vp, index) => !waiting[index])
+    );
   };
 
   private renderViewportUsingCustomOrVtkPipeline(
     viewport: IViewport
   ): EventTypes.ImageRenderedEventDetail {
     // Handle custom rendering pipeline viewports
-    if (viewportTypeUsesCustomRenderingPipeline(viewport.type)) {
+    if (viewportUsesCustomRenderingPipeline(viewport)) {
       const eventDetail =
         viewport.customRenderViewportToCanvas() as EventTypes.ImageRenderedEventDetail;
       return eventDetail;
     }
 
     // If using CPU rendering, throw error
-    if (this.useCPURendering) {
+    if (!this.contextPool) {
       throw new Error(
         'GPU not available, and using a viewport with no custom render pipeline.'
       );
@@ -357,7 +418,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
   private _renderViewportWithContext(
     viewport: IViewport,
     offscreenMultiRenderWindow: VtkOffscreenMultiRenderWindow,
-    offScreenCanvasContainer: HTMLDivElement
+    offScreenCanvasContainer: OffscreenCanvasContainer
   ): EventTypes.ImageRenderedEventDetail {
     if (
       viewport.canvas.clientWidth === 0 ||
@@ -370,15 +431,15 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
       viewport.sWidth < VIEWPORT_MIN_SIZE ||
       viewport.sHeight < VIEWPORT_MIN_SIZE
     ) {
-      console.warn('Viewport is too small', viewport.sWidth, viewport.sHeight);
+      log.warn('Viewport is too small', viewport.sWidth, viewport.sHeight);
       return;
     }
 
-    if (viewportTypeUsesCustomRenderingPipeline(viewport.type)) {
+    if (viewportUsesCustomRenderingPipeline(viewport)) {
       return viewport.customRenderViewportToCanvas() as EventTypes.ImageRenderedEventDetail;
     }
 
-    if (this.useCPURendering) {
+    if (!this.contextPool) {
       throw new Error(
         'GPU not available, and using a viewport with no custom render pipeline.'
       );
@@ -428,10 +489,12 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
 
     renderer.setViewport(0, 0, xEnd, yEnd);
 
-    // Set only this renderer to draw
+    // Set only this renderer (and its overlay renderers) to draw.
+    // Overlay renderers use the convention id = viewportId::suffix.
     const allRenderers = offscreenMultiRenderWindow.getRenderers();
     allRenderers.forEach(({ renderer: r, id }) => {
-      r.setDraw(id === viewport.id);
+      const baseId = id.split('::')[0];
+      r.setDraw(baseId === viewport.id);
     });
 
     // Handle widget renderers
@@ -476,7 +539,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
 
   private _resizeOffScreenCanvasForViewport(
     viewport: IViewport,
-    offScreenCanvasContainer: HTMLDivElement,
+    offScreenCanvasContainer: OffscreenCanvasContainer,
     offscreenMultiRenderWindow: VtkOffscreenMultiRenderWindow
   ): void {
     const contextIndex = this.contextPool.getContextIndexForViewport(
@@ -486,30 +549,44 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
       return;
     }
 
-    const maxSizeChanged = this.contextPool.updateViewportSize(
+    this.contextPool.updateViewportSize(
       viewport.id,
       viewport.sWidth,
       viewport.sHeight
     );
 
-    if (!maxSizeChanged) {
-      return;
-    }
+    // The max size can also shrink on removal: compare with the canvas.
+    this._fitOffScreenCanvasToContext(
+      contextIndex,
+      offScreenCanvasContainer,
+      offscreenMultiRenderWindow
+    );
+  }
 
+  /**
+   * Sizes a context's shared offscreen canvas to the largest viewport still
+   * assigned to it. Each viewport renders into the bottom-left corner of that
+   * canvas and is copied out using the context's max size, so a canvas larger
+   * than the max size makes every viewport render into a region bigger than
+   * itself and only part of it reaches the screen (the image looks zoomed in).
+   */
+  private _fitOffScreenCanvasToContext(
+    contextIndex: number,
+    offScreenCanvasContainer: OffscreenCanvasContainer,
+    offscreenMultiRenderWindow: VtkOffscreenMultiRenderWindow
+  ): void {
     const maxSize = this.contextPool.getMaxSizeForContext(contextIndex);
 
     if (
-      // @ts-expect-error
-      offScreenCanvasContainer.width === maxSize.width &&
-      // @ts-expect-error
-      offScreenCanvasContainer.height === maxSize.height
+      !maxSize?.width ||
+      !maxSize?.height ||
+      (offScreenCanvasContainer.width === maxSize.width &&
+        offScreenCanvasContainer.height === maxSize.height)
     ) {
       return;
     }
 
-    // @ts-expect-error
     offScreenCanvasContainer.width = maxSize.width;
-    // @ts-expect-error
     offScreenCanvasContainer.height = maxSize.height;
 
     offscreenMultiRenderWindow.resize();
@@ -610,9 +687,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
         const { context: offscreenMultiRenderWindow, container } = contextData;
         const maxSize = this.contextPool.getMaxSizeForContext(contextIndex);
 
-        // @ts-expect-error
         container.width = maxSize.width;
-        // @ts-expect-error
         container.height = maxSize.height;
 
         offscreenMultiRenderWindow.resize();
@@ -656,7 +731,15 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     const contextIndex =
       this.contextPool?.getContextIndexForViewport(viewportId);
 
+    if (contextIndex === undefined || !this.contextPool) {
+      return;
+    }
+
     const contextData = this.contextPool.getContextByIndex(contextIndex);
+
+    if (!contextData) {
+      return;
+    }
 
     const { context: offscreenMultiRenderWindow } = contextData;
     return offscreenMultiRenderWindow.getRenderer(viewportId);
@@ -677,44 +760,65 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
 
     if (
       !viewportTypeUsesCustomRenderingPipeline(viewport.type) &&
-      !this.useCPURendering
+      this.contextPool
     ) {
       const contextIndex =
         this.contextPool.getContextIndexForViewport(viewportId);
 
-      if (contextIndex !== undefined) {
-        const contextData = this.contextPool.getContextByIndex(contextIndex);
+      const contextData =
+        contextIndex !== undefined
+          ? this.contextPool.getContextByIndex(contextIndex)
+          : null;
 
-        if (contextData) {
-          const { context: offscreenMultiRenderWindow } = contextData;
-          offscreenMultiRenderWindow.removeRenderer(viewportId);
-        }
+      if (contextData) {
+        contextData.context.removeRenderer(viewportId);
       }
 
       this.contextPool.removeViewport(viewportId);
+
+      // The removed viewport may have been the largest one on this context:
+      // shrink the shared offscreen canvas to the viewports that remain.
+      if (contextData) {
+        this._fitOffScreenCanvasToContext(
+          contextIndex,
+          contextData.container,
+          contextData.context
+        );
+      }
     }
   }
 
   public destroy(): void {
+    super.destroy();
+
     if (this.contextPool) {
       this.contextPool.destroy();
     }
-    super.destroy();
   }
 
   public getOffscreenMultiRenderWindow(
     viewportId: string
   ): VtkOffscreenMultiRenderWindow {
-    if (this.useCPURendering) {
-      throw new Error(
-        'Offscreen multi render window is not available when using CPU rendering.'
-      );
+    if (!this.contextPool) {
+      throw new Error('Offscreen multi render window is not available.');
     }
 
     const contextIndex =
       this.contextPool.getContextIndexForViewport(viewportId);
 
+    if (contextIndex === undefined) {
+      throw new Error(
+        `Offscreen multi render window is not available for viewport ${viewportId}.`
+      );
+    }
+
     const contextData = this.contextPool.getContextByIndex(contextIndex);
+
+    if (!contextData) {
+      throw new Error(
+        `Offscreen multi render window is not available for viewport ${viewportId}.`
+      );
+    }
 
     return contextData.context;
   }

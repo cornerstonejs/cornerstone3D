@@ -7,6 +7,7 @@ import { dicomMap } from './demo';
 
 import {
   addButtonToToolbar,
+  addDropdownToToolbar,
   addManipulationBindings,
   addToggleButtonToToolbar,
   addUploadToToolbar,
@@ -42,8 +43,17 @@ setTitleAndDescription(
   'Here we demonstrate how to import or export a DICOM SEG from a Cornerstone3D stack.'
 );
 
-const size = '500px';
+const size = '512px';
 const skipOverlapping = false;
+
+function viewportSupportsStackCompatibility(viewport: unknown): viewport is {
+  setStack(imageIds: string[], currentImageIdIndex?: number): Promise<string>;
+} {
+  return (
+    typeof (viewport as { setStack?: unknown } | undefined)?.setStack ===
+    'function'
+  );
+}
 
 const demoToolbar = document.getElementById('demo-toolbar');
 
@@ -120,7 +130,13 @@ function loadDicom() {
 
   toolGroup.addViewport(viewportIds[0], renderingEngineId);
 
-  const viewport = state.renderingEngine.getStackViewport(viewportIds[0]);
+  const viewport = state.renderingEngine.getViewport(viewportIds[0]);
+
+  if (!viewportSupportsStackCompatibility(viewport)) {
+    throw new Error(
+      `Viewport ${viewportIds[0]} does not implement the stack compatibility API`
+    );
+  }
 
   viewport.setStack(state.referenceImageIds);
   cornerstoneTools.utilities.stackContextPrefetch.enable(element1);
@@ -135,7 +151,35 @@ function createSegmentationRepresentation() {
   );
 }
 
+let segmentationLoaded = false;
+
+function removeAllSegmentations() {
+  csToolsSegmentation.removeAllSegmentationRepresentations();
+  csToolsSegmentation.state
+    .getSegmentations()
+    .forEach(({ segmentationId }) =>
+      csToolsSegmentation.state.removeSegmentation(segmentationId)
+    );
+  segmentationLoaded = false;
+}
+
 // ============================= //
+addDropdownToToolbar({
+  id: 'DICOM_SOURCE',
+  labelText: 'Example:',
+  options: {
+    values: [...dicomMap.keys()],
+    labels: [...dicomMap.values()].map(({ label }) => label),
+  },
+  onSelectedValueChange: (key) => {
+    removeAllSegmentations();
+    state.segmentationId = 'LOAD_SEG_ID:' + cornerstone.utilities.uuidv4();
+    state.referenceImageIds = [];
+    state.devConfig = { ...dicomMap.get(key) };
+  },
+  container: group1,
+});
+
 addButtonToToolbar({
   id: 'LOAD_DICOM',
   title: 'Load DICOM',
@@ -148,8 +192,6 @@ addButtonToToolbar({
   },
   container: group1,
 });
-
-let segmentationLoaded = false;
 
 addButtonToToolbar({
   id: 'LOAD_SEGMENTATION',

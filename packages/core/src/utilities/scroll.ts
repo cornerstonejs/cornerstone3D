@@ -1,5 +1,6 @@
 import { Events } from '../enums';
-import { StackViewport, VolumeViewport } from '../RenderingEngine';
+import StackViewport from '../RenderingEngine/StackViewport';
+import VolumeViewport from '../RenderingEngine/VolumeViewport';
 import type {
   ScrollOptions,
   EventTypes,
@@ -12,6 +13,7 @@ import snapFocalPointToSlice from './snapFocalPointToSlice';
 import getEnabledElement from '../getEnabledElement';
 import triggerEvent from './triggerEvent';
 import eventTarget from '../eventTarget';
+import { getViewportContentMode } from './viewportCapabilities';
 
 /**
  * It scrolls one slice in the Stack or Volume Viewport, it uses the options provided
@@ -45,6 +47,22 @@ export default function scroll(
   if (viewport instanceof VolumeViewport) {
     scrollVolume(viewport, volumeId, delta, scrollSlabs);
   } else {
+    // An ECG scrolls in time, and has no slice bounds.
+    if (getViewportContentMode(viewport) === 'ecg') {
+      (viewport as unknown as IStackViewport).scroll(delta);
+      return;
+    }
+
+    if (
+      typeof (viewport as IStackViewport).getCurrentImageIdIndex !==
+        'function' ||
+      typeof (viewport as IStackViewport).scroll !== 'function'
+    ) {
+      // Viewports without index-based scrolling (e.g. Generic 3D volume
+      // rendering) ignore scroll requests instead of throwing.
+      return;
+    }
+
     const imageIdIndex = viewport.getCurrentImageIdIndex();
 
     if (

@@ -5,6 +5,7 @@ import type { vtkImageData } from '@kitware/vtk.js/Common/DataModel/ImageData';
 import { vec3 } from 'gl-matrix';
 import type { BoundsIJK } from '../types';
 import { getBoundingBoxAroundShapeIJK } from './boundingBox';
+import getViewportICamera from './getViewportICamera';
 
 const { transformWorldToIndex } = csUtils;
 
@@ -113,7 +114,13 @@ function getSphereBoundsInfoFromViewport(
     );
   }
 
-  const camera = viewport.getCamera();
+  const camera = getViewportICamera(viewport);
+
+  if (!camera.viewUp || !camera.viewPlaneNormal) {
+    throw new Error(
+      'viewport view plane is required in order to calculate the sphere bounds'
+    );
+  }
 
   // Calculate viewRight from the camera, this will get used in order to
   // calculate circles topLeft and bottomRight on different planes of intersection

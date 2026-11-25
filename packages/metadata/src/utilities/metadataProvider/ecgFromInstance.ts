@@ -1,0 +1,823 @@
+/**
+ * Builds the full ECG module (including waveformData.retrieveBulkData) from a
+ * naturalized instance in NATURAL cache. Used by the typed provider so
+ * ECGViewport can get data via metaData.get(MetadataModules.ECG, imageId)
+ * without the legacy dicomImageLoader ECG provider.
+ */
+
+import { addTypedProvider } from '../../metaData';
+import { MetadataModules } from '../../enums';
+import type { TypedProvider } from '../../metaData';
+import {
+  asArrayFirst,
+  logging as cornerstoneLogging,
+  toFiniteFirst,
+} from '@cornerstonejs/utils';
+import { getSingleBufferFromArray } from '../bulkDataFromArray';
+import { decodeMultipartRelated } from '../decodeMultipartRelated';
+
+const cs3dLogger = cornerstoneLogging.metadataLog.getLogger(
+  'utilities.metadataProvider.ecgFromInstance'
+);
+
+export interface DicomCodeSequenceItem {
+  CodeValue?: string;
+  CodingSchemeDesignator?: string;
+  CodeMeaning?: string;
+}
+
+export interface DicomChannelDefinitionItem {
+  ChannelSourceSequence?:
+    | DicomCodeSequenceItem[]
+    | ArrayLike<DicomCodeSequenceItem>;
+  ChannelSensitivity?: number | string;
+  ChannelSensitivityUnitsSequence?:
+    | DicomCodeSequenceItem[]
+    | ArrayLike<DicomCodeSequenceItem>;
+  ChannelSensitivityCorrectionFactor?: number | string;
+  ChannelBaseline?: number | string;
+  ChannelSampleSkew?: number | string;
+  WaveformBitsStored?: number | string;
+}
+
+export interface DicomWaveformAnnotationItem {
+  ConceptNameCodeSequence?:
+    | DicomCodeSequenceItem[]
+    | ArrayLike<DicomCodeSequenceItem>;
+  NumericValue?: number | number[] | string | string[];
+  MeasurementUnitsCodeSequence?:
+    | DicomCodeSequenceItem[]
+    | ArrayLike<DicomCodeSequenceItem>;
+  /** The coded value of a coded statement, for example "Sinus rhythm". */
+  ConceptCodeSequence?:
+    | DicomCodeSequenceItem[]
+    | ArrayLike<DicomCodeSequenceItem>;
+  UnformattedTextValue?: string | string[];
+  TextValue?: string | string[];
+  ReferencedWaveformChannels?: number | number[];
+  TemporalRangeType?: string | string[];
+  ReferencedSamplePositions?: number | number[];
+  ReferencedTimeOffsets?: number | number[];
+  ReferencedDateTime?: string | string[];
+}
+
+export interface DicomWaveformData {
+  retrieveBulkData?: () => Promise<unknown>;
+  BulkDataURI?: string;
+  InlineBinary?: string;
+  Value?: ArrayBuffer | Uint8Array | Int16Array[] | string;
+}
+
+export interface DicomWaveformGroupItem {
+  NumberOfWaveformChannels?: number;
+  NumberOfWaveformSamples?: number;
+  SamplingFrequency?: number;
+  WaveformBitsAllocated?: number;
+  WaveformSampleInterpretation?: string;
+  MultiplexGroupLabel?: string;
+  ChannelDefinitionSequence?:
+    | DicomChannelDefinitionItem[]
+    | ArrayLike<DicomChannelDefinitionItem>;
+  WaveformData?: DicomWaveformData;
+  waveformData?: DicomWaveformData;
+}
+
+export interface DicomEcgInstance {
+  [key: string]: unknown;
+  WaveformSequence?:
+    | DicomWaveformGroupItem[]
+    | ArrayLike<DicomWaveformGroupItem>;
+  WaveformAnnotationSequence?:
+    | DicomWaveformAnnotationItem[]
+    | ArrayLike<DicomWaveformAnnotationItem>;
+}
+
+export interface EcgWaveformAnnotation {
+  concept?: {
+    codeMeaning?: string;
+    codeValue?: string;
+    codingSchemeDesignator?: string;
+  };
+  numericValue?: number;
+  unit?: string;
+  textValue?: string;
+}
+
+/**
+ * The global ECG measurements and findings of `WaveformAnnotationSequence`.
+ * A metric comes from the first global item that matches it. A global item has
+ * no time reference, and its `ReferencedWaveformChannels` is absent or names
+ * all channels (channel number 0, PS3.3 C.10.10.1.1). Values keep the units of
+ * the instance, and `units` gives the unit of each metric.
+ */
+export interface EcgAnnotations {
+  ventricularHeartRate?: number;
+  prInterval?: number;
+  qrsDuration?: number;
+  qtInterval?: number;
+  qtcInterval?: number;
+  rrInterval?: number;
+  pAxis?: number;
+  qrsAxis?: number;
+  tAxis?: number;
+  /**
+   * The unit of each metric, from the item that gives the value: the UCUM code
+   * value, for example `ms` or `/min`, or the code meaning when no code value.
+   */
+  units?: Partial<Record<EcgNumericMetricKey, string>>;
+  interpretations?: string[];
+  all?: EcgWaveformAnnotation[];
+}
+
+export interface EcgModuleFull {
+  numberOfWaveformChannels: number;
+  numberOfWaveformSamples: number;
+  samplingFrequency: number;
+  waveformBitsAllocated: number;
+  waveformSampleInterpretation: string;
+  multiplexGroupLabel: string;
+  multiplexGroupIndex?: number;
+  totalMultiplexGroups?: number;
+  channelDefinitionSequence: Array<{
+    /**
+     * The lead of the channel. `codeValue` identifies the lead in every
+     * language, for example `5.6.3-9-2` (SCPECG) or `2:2` (MDC) for lead II.
+     */
+    channelSourceSequence?: {
+      codeMeaning?: string;
+      codeValue?: string;
+      codingSchemeDesignator?: string;
+    };
+    /**
+     * Millivolts that one raw sample unit represents, from
+     * `ChannelSensitivity` x `ChannelSensitivityCorrectionFactor`, converted
+     * from `ChannelSensitivityUnitsSequence` to millivolts. The value is
+     * `ECG_DEFAULT_MV_PER_UNIT` when the instance omits the sensitivity.
+     */
+    mvPerUnit: number;
+  }>;
+  waveformData: {
+    retrieveBulkData: () => Promise<Int16Array[]>;
+  };
+  annotations?: EcgAnnotations;
+}
+
+/**
+ * Millivolts for one raw sample unit when the instance carries no channel
+ * sensitivity. A 16-bit diagnostic ECG normally samples at 1 microvolt for each
+ * unit.
+ */
+export const ECG_DEFAULT_MV_PER_UNIT = 0.001;
+
+/** Millivolts for one unit of each sensitivity unit that ECG instances use. */
+const MV_PER_SENSITIVITY_UNIT: Record<string, number> = {
+  v: 1000,
+  mv: 1,
+  uv: 0.001,
+  µv: 0.001,
+  nv: 0.000001,
+};
+
+/**
+ * Returns the millivolts that one raw sample unit of a channel represents.
+ *
+ * DICOM gives the amplitude of one unit as `ChannelSensitivity`, in the units of
+ * `ChannelSensitivityUnitsSequence`, and `ChannelSensitivityCorrectionFactor`
+ * corrects that value. The function returns the default when the instance omits
+ * the sensitivity, or when the unit code is not a voltage.
+ */
+function getChannelMvPerUnit(
+  channel: Record<string, unknown> | DicomChannelDefinitionItem
+): number {
+  const sensitivity = toFiniteFirst(channel.ChannelSensitivity);
+
+  if (sensitivity === undefined || sensitivity === 0) {
+    return ECG_DEFAULT_MV_PER_UNIT;
+  }
+
+  const correction =
+    toFiniteFirst(channel.ChannelSensitivityCorrectionFactor) || 1;
+  const unitsSeq = toArray(
+    channel.ChannelSensitivityUnitsSequence as
+      | ArrayLike<Record<string, unknown>>
+      | undefined
+  );
+  const unitCode = (
+    (unitsSeq[0]?.CodeValue as string) ??
+    (unitsSeq[0]?.CodeMeaning as string) ??
+    ''
+  )
+    .trim()
+    .toLowerCase();
+  const mvPerSensitivityUnit = MV_PER_SENSITIVITY_UNIT[unitCode];
+
+  if (mvPerSensitivityUnit === undefined) {
+    cs3dLogger.warn(
+      `[ecgFromInstance] Unknown ChannelSensitivityUnits "${unitCode}". Using ${ECG_DEFAULT_MV_PER_UNIT} mV for each unit.`
+    );
+    return ECG_DEFAULT_MV_PER_UNIT;
+  }
+
+  return sensitivity * correction * mvPerSensitivityUnit;
+}
+
+function base64ToUint8Array(base64: string): Uint8Array {
+  const binaryString = atob(base64);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes;
+}
+
+function convertBuffer(
+  dataSrc: ArrayBuffer | ArrayBufferView,
+  numberOfChannels: number,
+  numberOfSamples: number,
+  bits: number,
+  type: string
+): Int16Array[] {
+  const data = ArrayBuffer.isView(dataSrc)
+    ? new Uint8Array(dataSrc.buffer, dataSrc.byteOffset, dataSrc.byteLength)
+    : new Uint8Array(dataSrc);
+  if (bits === 16 && type === 'SS') {
+    const ret: Int16Array[] = [];
+    const bytesPerSample = 2;
+    const totalBytes = bytesPerSample * numberOfChannels * numberOfSamples;
+    const length = Math.min(data.length, totalBytes);
+    for (let channel = 0; channel < numberOfChannels; channel++) {
+      const buffer = new Int16Array(numberOfSamples);
+      ret.push(buffer);
+      let sampleI = 0;
+      for (
+        let sample = 2 * channel;
+        sample < length;
+        sample += 2 * numberOfChannels
+      ) {
+        const highByte = data[sample + 1];
+        const lowByte = data[sample];
+        const sign = highByte & 0x80;
+        buffer[sampleI++] = sign
+          ? 0xffff0000 | (highByte << 8) | lowByte
+          : (highByte << 8) | lowByte;
+      }
+    }
+    return ret;
+  }
+  return [];
+}
+
+/**
+ * Returns true when `value` already holds one decoded `Int16Array` for each
+ * channel, which is the form that `retrieveBulkData` returns.
+ */
+function isDecodedChannels(
+  value: unknown,
+  numberOfChannels: number,
+  numberOfSamples: number
+): value is Int16Array[] {
+  return (
+    Array.isArray(value) &&
+    value.length === numberOfChannels &&
+    value.every(
+      (channel) =>
+        channel instanceof Int16Array && channel.length === numberOfSamples
+    )
+  );
+}
+
+/**
+ * Parse wadors: URL to get wadoRsRoot and studyUID for relative BulkDataURI.
+ */
+function parseWadoRsImageId(imageId: string): {
+  wadoRsRoot?: string;
+  studyUID?: string;
+} {
+  const uri = imageId.replace(/^wadors:/i, '');
+  const studiesIndex = uri.indexOf('/studies/');
+  if (studiesIndex === -1) return {};
+  const wadoRsRoot = uri.substring(0, studiesIndex);
+  const afterStudies = uri.substring(studiesIndex + 9);
+  const nextSlash = afterStudies.indexOf('/');
+  const studyUID =
+    nextSlash !== -1 ? afterStudies.substring(0, nextSlash) : afterStudies;
+  return { wadoRsRoot, studyUID };
+}
+
+/** Normalize sequence to array (handles makeArrayLike single-item and real arrays). */
+function toArray<T>(seq: T[] | ArrayLike<T> | undefined): T[] {
+  if (!seq) return [];
+  if (Array.isArray(seq)) return seq;
+  if (typeof (seq as ArrayLike<T>).length === 'number') {
+    return Array.from(seq as ArrayLike<T>);
+  }
+  return [seq as T];
+}
+
+export type EcgNumericMetricKey =
+  | 'ventricularHeartRate'
+  | 'prInterval'
+  | 'qrsDuration'
+  | 'qtInterval'
+  | 'qtcInterval'
+  | 'rrInterval'
+  | 'pAxis'
+  | 'qrsAxis'
+  | 'tAxis';
+
+/** LOINC and MDC codes of the ECG metrics, from DICOM PS3.16. */
+const ECG_CODE_MAP = new Map<string, EcgNumericMetricKey>([
+  ['8867-4', 'ventricularHeartRate'], // LOINC: Ventricular Heart Rate
+  ['2:1', 'ventricularHeartRate'], // MDC: Ventricular Heart Rate
+  ['8625-6', 'prInterval'], // LOINC: P-R Interval
+  ['8633-0', 'qrsDuration'], // LOINC: QRS Duration
+  ['8634-8', 'qtInterval'], // LOINC: Q-T Interval
+  ['8636-3', 'qtcInterval'], // LOINC: Q-Tc Interval
+  ['8637-1', 'rrInterval'], // LOINC: R-R Interval
+  ['8626-4', 'pAxis'], // LOINC: P Axis
+  ['8632-2', 'qrsAxis'], // LOINC: QRS Axis
+  ['8638-9', 'tAxis'], // LOINC: T Axis
+]);
+
+/**
+ * Matchers on the code meaning, for devices that send no code value.
+ * QTc comes before QT, so that "QTc" does not match QT.
+ */
+const ECG_MEANING_PATTERNS: Array<[RegExp, EcgNumericMetricKey]> = [
+  // "Ventricular Heart Rate", "Ventricular Rate", "Heart Rate", "HR"; not "Atrial ..."
+  [
+    /^(?!.*\batrial\b).*\b((ventricular\s+)?heart|ventricular)\s+rate\b|^hr$/i,
+    'ventricularHeartRate',
+  ],
+  // "PR Interval", "P-R Interval", "PR Int", or exact "PR"
+  [/(^|\b)p[- ]?r\s*(interval|int)\b|^p[- ]?r$/i, 'prInterval'],
+  // "QRS Duration", "QRS Width", "QRS Interval", or exact "QRS"
+  [/(^|\b)qrs\s*(duration|width|interval)\b|^qrs$/i, 'qrsDuration'],
+  [/(^|\b)qtc(\s*(interval|calc|int))?\b|^qtc$/i, 'qtcInterval'],
+  // "QT Interval", "QT Int", or exact "QT"
+  [/(^|\b)qt\s*(interval|int)\b|^qt$/i, 'qtInterval'],
+  // "RR Interval", "R-R Interval", or exact "RR"
+  [/(^|\b)r[- ]?r\s*(interval|int)\b|^r[- ]?r$/i, 'rrInterval'],
+  // "P Axis", "P wave axis", "Axis P"
+  [/(^|\b)p(\s+wave)?\s+axis\b|axis\s+p\b/i, 'pAxis'],
+  // "QRS Axis", "Axis QRS"
+  [/(^|\b)qrs\s+axis\b|axis\s+qrs\b/i, 'qrsAxis'],
+  // "T Axis", "T wave axis", "Axis T"
+  [/(^|\b)t(\s+wave)?\s+axis\b|axis\s+t\b/i, 'tAxis'],
+];
+
+/** Resolves an ECG metric from its concept code, then from its meaning. */
+function matchEcgMetric(
+  codeValue: string,
+  codeMeaning: string
+): EcgNumericMetricKey | undefined {
+  if (codeValue && ECG_CODE_MAP.has(codeValue)) {
+    return ECG_CODE_MAP.get(codeValue);
+  }
+  return codeMeaning
+    ? ECG_MEANING_PATTERNS.find(([pattern]) => pattern.test(codeMeaning))?.[1]
+    : undefined;
+}
+
+function firstText(raw: unknown): string | undefined {
+  const text = asArrayFirst(raw as string | string[])
+    ?.toString()
+    .trim();
+  return text || undefined;
+}
+
+function codeText(item?: DicomCodeSequenceItem): string | undefined {
+  return firstText(item?.CodeMeaning) || firstText(item?.CodeValue);
+}
+
+/**
+ * Reads the global measurements and findings of `WaveformAnnotationSequence`.
+ * See {@link EcgAnnotations} for the rules.
+ */
+export function parseEcgAnnotations(
+  instance: Record<string, unknown> | DicomEcgInstance
+): EcgAnnotations | undefined {
+  const seq = toArray(
+    instance.WaveformAnnotationSequence as
+      | ArrayLike<DicomWaveformAnnotationItem>
+      | undefined
+  );
+  if (!seq.length) {
+    return undefined;
+  }
+
+  const annotations: EcgAnnotations = {
+    units: {},
+    interpretations: [],
+    all: [],
+  };
+
+  for (const item of seq) {
+    if (!item) {
+      continue;
+    }
+    const concept = toArray(item.ConceptNameCodeSequence)[0];
+    const codeMeaning = firstText(concept?.CodeMeaning) ?? '';
+    const codeValue = firstText(concept?.CodeValue) ?? '';
+    const numericVal = toFiniteFirst(item.NumericValue);
+    const unitItem = toArray(item.MeasurementUnitsCodeSequence)[0];
+    const unit = codeText(unitItem);
+    const codedValue = codeText(toArray(item.ConceptCodeSequence)[0]);
+    const textVal =
+      firstText(item.UnformattedTextValue ?? item.TextValue) ?? codedValue;
+    // A marker on the trace, or a value of one lead, is not a global result.
+    // Channel pairs are (multiplex group, channel); channel 0 is all channels.
+    const channelPairs = [item.ReferencedWaveformChannels ?? []].flat();
+    const isGlobal =
+      item.TemporalRangeType === undefined &&
+      item.ReferencedSamplePositions === undefined &&
+      item.ReferencedTimeOffsets === undefined &&
+      item.ReferencedDateTime === undefined &&
+      channelPairs.every((value, index) => index % 2 === 0 || value === 0);
+
+    if (codeMeaning || codeValue || numericVal !== undefined || textVal) {
+      annotations.all.push({
+        concept:
+          codeMeaning || codeValue
+            ? {
+                codeMeaning,
+                codeValue,
+                codingSchemeDesignator:
+                  firstText(concept?.CodingSchemeDesignator) ?? '',
+              }
+            : undefined,
+        numericValue: numericVal,
+        unit,
+        textValue: textVal,
+      });
+    }
+
+    if (!isGlobal) {
+      continue;
+    }
+
+    const metric =
+      numericVal !== undefined
+        ? matchEcgMetric(codeValue, codeMeaning)
+        : undefined;
+    if (metric) {
+      if (annotations[metric] === undefined) {
+        annotations[metric] = numericVal;
+        annotations.units[metric] = firstText(unitItem?.CodeValue) || unit;
+      }
+      continue;
+    }
+
+    const finding =
+      textVal || (numericVal === undefined ? codeMeaning : undefined);
+    if (finding && !annotations.interpretations.includes(finding)) {
+      annotations.interpretations.push(finding);
+    }
+  }
+
+  // Derive ventricular heart rate from RR interval if heart rate was not explicitly coded
+  if (
+    annotations.ventricularHeartRate === undefined &&
+    annotations.rrInterval !== undefined &&
+    annotations.rrInterval > 0
+  ) {
+    const rrUnit = annotations.units.rrInterval;
+    // With no unit, a value below 5 is in seconds (0.85 s, not 850 ms).
+    const inSeconds =
+      rrUnit === 's' || (rrUnit !== 'ms' && annotations.rrInterval < 5);
+    const rrMs = annotations.rrInterval * (inSeconds ? 1000 : 1);
+    annotations.ventricularHeartRate = Math.round(60000 / rrMs);
+    annotations.units.ventricularHeartRate = '/min';
+  }
+
+  return annotations;
+}
+
+export interface BuildEcgModuleOptions {
+  /** Extra request headers for a `BulkDataURI` fetch, for example auth headers. */
+  getHeaders?: () => Record<string, string> | undefined;
+  /** The multiplex group to show (0-based); see {@link getEcgMultiplexGroupIndex}. */
+  multiplexGroupIndex?: number;
+}
+
+/**
+ * The multiplex group that a request names: `options.multiplexGroupIndex`
+ * (0-based) of `metaData.get(ECG | CALIBRATION, imageId, options)`. Undefined
+ * gives the default group of {@link findPrimaryWaveformGroup}. The ECG viewport
+ * passes the same option to both requests, so the trace and the calibration
+ * always describe the same group.
+ */
+export function getEcgMultiplexGroupIndex(
+  options: unknown
+): number | undefined {
+  const index = (options as { multiplexGroupIndex?: unknown } | undefined)
+    ?.multiplexGroupIndex;
+
+  return Number.isInteger(index) && (index as number) >= 0
+    ? (index as number)
+    : undefined;
+}
+
+/**
+ * Selects the primary diagnostic waveform multiplex group from WaveformSequence.
+ * When an instance carries multiple groups (for example, a 1.2s median beat in
+ * group 0 and a 10s rhythm strip in group 1):
+ * 1. Honors `preferredIndex` if given and within bounds.
+ * 2. Prefers a group whose `MultiplexGroupLabel` contains "RHYTHM" or "CONTINUOUS".
+ * 3. Prefers the group with the longest sample duration (NumberOfWaveformSamples / SamplingFrequency).
+ */
+export function findPrimaryWaveformGroup(
+  groups: Record<string, unknown>[],
+  preferredIndex?: number
+): { group: Record<string, unknown>; index: number } {
+  if (!groups.length) {
+    throw new Error('[ecgFromInstance] WaveformSequence has no groups');
+  }
+
+  if (
+    typeof preferredIndex === 'number' &&
+    preferredIndex >= 0 &&
+    preferredIndex < groups.length
+  ) {
+    return { group: groups[preferredIndex], index: preferredIndex };
+  }
+
+  const rhythmIndex = groups.findIndex((g) => {
+    const label = String(g.MultiplexGroupLabel || '').toUpperCase();
+    return label.includes('RHYTHM') || label.includes('CONTINUOUS');
+  });
+
+  if (rhythmIndex >= 0) {
+    return { group: groups[rhythmIndex], index: rhythmIndex };
+  }
+
+  let bestIndex = 0;
+  let maxDuration = -1;
+
+  groups.forEach((g, idx) => {
+    const samples = Number(g.NumberOfWaveformSamples) || 0;
+    const freq = Number(g.SamplingFrequency) || 1;
+    const duration = freq > 0 ? samples / freq : samples;
+    if (duration > maxDuration) {
+      maxDuration = duration;
+      bestIndex = idx;
+    }
+  });
+
+  return { group: groups[bestIndex], index: bestIndex };
+}
+
+/**
+ * Build full EcgModule from a naturalized instance (UpperCamelCase convention).
+ *
+ * `WaveformData` may hold the bytes (ArrayBuffer, typed array, `Value` or
+ * `InlineBinary`), a `retrieveBulkData` method, or a `BulkDataURI`. A
+ * `BulkDataURI` fetch accepts `multipart/related` or a single part.
+ */
+export function buildEcgModuleFromInstance(
+  instance: Record<string, unknown>,
+  imageId?: string,
+  options: BuildEcgModuleOptions = {}
+): EcgModuleFull | null {
+  const raw = instance.WaveformSequence as
+    | ArrayLike<Record<string, unknown>>
+    | undefined;
+  const groups = toArray(raw);
+  if (!groups.length) return null;
+
+  const { group, index: multiplexGroupIndex } = findPrimaryWaveformGroup(
+    groups,
+    options.multiplexGroupIndex
+  );
+  const numberOfChannels = (group.NumberOfWaveformChannels as number) ?? 0;
+  const numberOfSamples = (group.NumberOfWaveformSamples as number) ?? 0;
+  const samplingFrequency = (group.SamplingFrequency as number) ?? 1;
+  const bitsAllocated = (group.WaveformBitsAllocated as number) ?? 16;
+  const sampleInterpretation =
+    (group.WaveformSampleInterpretation as string) ?? 'SS';
+  const multiplexGroupLabel = (group.MultiplexGroupLabel as string) ?? '';
+
+  const channelDefSeq = toArray(
+    group.ChannelDefinitionSequence as
+      | ArrayLike<Record<string, unknown>>
+      | undefined
+  );
+  const channelDefinitionSequence = channelDefSeq.map((ch) => {
+    const srcSeqArr = toArray(
+      ch.ChannelSourceSequence as ArrayLike<Record<string, unknown>> | undefined
+    );
+    const srcSeq = srcSeqArr[0];
+    const codeMeaning = (srcSeq?.CodeMeaning as string) ?? '';
+    const codeValue = srcSeq?.CodeValue as string | undefined;
+    const codingSchemeDesignator = srcSeq?.CodingSchemeDesignator as
+      | string
+      | undefined;
+    return {
+      channelSourceSequence: { codeMeaning, codeValue, codingSchemeDesignator },
+      mvPerUnit: getChannelMvPerUnit(ch),
+    };
+  });
+
+  let waveformDataRaw = group.WaveformData ?? group.waveformData;
+  // A naturalized value can be a one-item array. A typed array is the data.
+  if (Array.isArray(waveformDataRaw) && waveformDataRaw.length > 0) {
+    waveformDataRaw = waveformDataRaw[0];
+  }
+  const waveformData: DicomWaveformData = waveformDataRaw ?? {};
+  const { wadoRsRoot = undefined, studyUID = undefined } = imageId
+    ? parseWadoRsImageId(imageId)
+    : {};
+
+  const toChannels = (value: unknown): Int16Array[] | undefined => {
+    if (isDecodedChannels(value, numberOfChannels, numberOfSamples)) {
+      return value;
+    }
+    const bytes = getSingleBufferFromArray(value);
+    return bytes
+      ? convertBuffer(
+          bytes,
+          numberOfChannels,
+          numberOfSamples,
+          bitsAllocated,
+          sampleInterpretation
+        )
+      : undefined;
+  };
+
+  const retrieveBulkData = async (): Promise<Int16Array[]> => {
+    // Binary file upload: AsyncDicomReader stores raw bytes as ArrayBuffer / TypedArray
+    const channels = toChannels(waveformData) ?? toChannels(waveformData.Value);
+    if (channels) {
+      return channels;
+    }
+    if (waveformData.InlineBinary) {
+      const raw = base64ToUint8Array(waveformData.InlineBinary);
+      return convertBuffer(
+        raw,
+        numberOfChannels,
+        numberOfSamples,
+        bitsAllocated,
+        sampleInterpretation
+      );
+    }
+    if (typeof waveformData.retrieveBulkData === 'function') {
+      const retrieved = toChannels(
+        await (waveformData.retrieveBulkData as () => Promise<unknown>)()
+      );
+      if (retrieved) {
+        return retrieved;
+      }
+    }
+    if (waveformData.BulkDataURI) {
+      let url = waveformData.BulkDataURI as string;
+      if (url.indexOf(':') === -1 && wadoRsRoot) {
+        url = studyUID
+          ? `${wadoRsRoot}/studies/${studyUID}/${url}`
+          : `${wadoRsRoot}/${url}`;
+      }
+      const response = await fetch(url, {
+        headers: {
+          Accept: 'multipart/related; type="application/octet-stream"',
+          ...options.getHeaders?.(),
+        },
+      });
+      if (!response.ok) {
+        throw new Error(
+          `[ecgFromInstance] Waveform bulkdata fetch failed: ${response.status}`
+        );
+      }
+      const [part] = decodeMultipartRelated(
+        await response.arrayBuffer(),
+        response.headers.get('content-type') ?? undefined
+      );
+      return convertBuffer(
+        part,
+        numberOfChannels,
+        numberOfSamples,
+        bitsAllocated,
+        sampleInterpretation
+      );
+    }
+    const dataKeys = Object.keys(waveformData);
+    cs3dLogger.warn(
+      '[ecgFromInstance] No waveform data source found. waveformData keys:',
+      dataKeys.slice(0, 10),
+      `(${dataKeys.length} total)`
+    );
+    throw new Error('[ecgFromInstance] No waveform data source found');
+  };
+
+  const annotations = parseEcgAnnotations(instance);
+
+  return {
+    numberOfWaveformChannels: numberOfChannels,
+    numberOfWaveformSamples: numberOfSamples,
+    samplingFrequency,
+    waveformBitsAllocated: bitsAllocated,
+    waveformSampleInterpretation: sampleInterpretation,
+    multiplexGroupLabel,
+    multiplexGroupIndex,
+    totalMultiplexGroups: groups.length,
+    channelDefinitionSequence,
+    waveformData: { retrieveBulkData },
+    annotations,
+  };
+}
+
+/** Run after instanceLookup (INSTANCE_PRIORITY 5000) so we receive instance as data */
+const ECG_FROM_INSTANCE_PRIORITY = 4_000;
+
+/**
+ * Typed provider: when data (instance from instanceLookup) has WaveformSequence,
+ * return the full ECG module so ECGViewport gets waveformData.retrieveBulkData.
+ */
+const ecgFromInstanceProvider: TypedProvider = (next, query, data, options) => {
+  const instance = data as Record<string, unknown> | undefined;
+  const hasWaveform = instance && instance.WaveformSequence;
+  if (!hasWaveform) {
+    return next(query, data, options);
+  }
+  const result = buildEcgModuleFromInstance(instance, query, {
+    multiplexGroupIndex: getEcgMultiplexGroupIndex(options),
+  });
+  return result ?? next(query, data, options);
+};
+
+/**
+ * Index size of the amplitude axis of the ECG image data in core. Index Y is
+ * the raw amplitude plus half of this size.
+ */
+export const ECG_AMPLITUDE_INDEX_SIZE = 65536;
+const ECG_AMPLITUDE_OFFSET = ECG_AMPLITUDE_INDEX_SIZE / 2;
+
+/**
+ * Builds the CALIBRATION module of an ECG instance: one
+ * sequenceOfUltrasoundRegions entry, so measurement tools get physical units
+ * (time, mV). An application that does not use the typed providers stores
+ * the result itself, as it does for the ECG module.
+ *
+ * @returns undefined when the instance has no WaveformSequence
+ */
+export function buildEcgCalibrationFromInstance(
+  instance: Record<string, unknown> | undefined,
+  options?: { multiplexGroupIndex?: number }
+) {
+  const raw = instance?.WaveformSequence;
+  const groups = toArray(raw as ArrayLike<Record<string, unknown>> | undefined);
+  if (!groups.length) return undefined;
+  const { group } = findPrimaryWaveformGroup(
+    groups,
+    getEcgMultiplexGroupIndex(options)
+  );
+  const numberOfWaveformSamples =
+    (group.NumberOfWaveformSamples as number) ?? 0;
+  const samplingFrequency = (group.SamplingFrequency as number) ?? 1;
+  const physicalDeltaX = 1 / (samplingFrequency || 1);
+  // One raw sample unit of the first channel, in millivolts. The ECG viewport
+  // gives world Y in raw units of the first channel for every lead.
+  const firstChannel = toArray(
+    group.ChannelDefinitionSequence as
+      | ArrayLike<Record<string, unknown>>
+      | undefined
+  )[0];
+  const physicalDeltaY = firstChannel
+    ? getChannelMvPerUnit(firstChannel)
+    : ECG_DEFAULT_MV_PER_UNIT;
+  return {
+    sequenceOfUltrasoundRegions: [
+      {
+        regionLocationMinX0: 0,
+        regionLocationMaxX1: numberOfWaveformSamples,
+        regionLocationMinY0: 0,
+        regionLocationMaxY1: ECG_AMPLITUDE_INDEX_SIZE - 1,
+        referencePixelX0: 0,
+        referencePixelY0: ECG_AMPLITUDE_OFFSET,
+        physicalDeltaX,
+        physicalDeltaY,
+        // X is in seconds (DICOM unit code 4), and Y is in millivolts (the
+        // Cornerstone extension code -1). The display layer converts seconds to
+        // milliseconds; the region does not encode that choice. See
+        // getCalibratedUnits.ts.
+        physicalUnitsXDirection: 4,
+        physicalUnitsYDirection: -1,
+        regionDataType: 1,
+      },
+    ],
+  };
+}
+
+/** CALIBRATION provider for ECG: see buildEcgCalibrationFromInstance. */
+const ecgCalibrationProvider: TypedProvider = (next, query, data, options) =>
+  buildEcgCalibrationFromInstance(
+    data as Record<string, unknown> | undefined,
+    options
+  ) ?? next(query, data, options);
+
+export function registerEcgFromInstanceProvider(): void {
+  addTypedProvider(MetadataModules.ECG, ecgFromInstanceProvider, {
+    priority: ECG_FROM_INSTANCE_PRIORITY,
+  });
+  addTypedProvider(MetadataModules.CALIBRATION, ecgCalibrationProvider, {
+    priority: ECG_FROM_INSTANCE_PRIORITY,
+  });
+}

@@ -34,6 +34,8 @@ import type {
   StyleSpecifier,
 } from '../../types/AnnotationStyle';
 import { triggerAnnotationModified } from '../../stateManagement/annotation/helpers/state';
+import { state } from '../../store/state';
+import { Events } from '../../enums';
 import { drawLinkedTextBox } from '../../drawingSvg';
 import { getTextBoxCoordsCanvas } from '../../utilities/drawing';
 import type { SVGDrawingHelper } from '../../types';
@@ -41,6 +43,12 @@ import ChangeTypes from '../../enums/ChangeTypes';
 import { setAnnotationSelected } from '../../stateManagement/annotation/annotationSelection';
 import { addContourSegmentationAnnotation } from '../../utilities/contourSegmentation';
 import { safeStructuredClone } from '../../utilities/safeStructuredClone';
+import getViewportICamera from '../../utilities/getViewportICamera';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.base.AnnotationTool'
+);
 
 const { DefaultHistoryMemo } = csUtils.HistoryMemo;
 
@@ -79,10 +87,15 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
     viewport,
     ...annotationBaseData
   ): T {
-    return this.createAnnotation(
-      { metadata: viewport.getViewReference() },
-      ...annotationBaseData
-    ) as T;
+    // MPR based annotations are cross-FOR by default, while stack annotations
+    // remain per-frame. Resolve the normal volume-specific reference first so
+    // legacy VolumeViewport can populate referencedImageId, then remove only
+    // the volume restriction that would prevent the annotation from applying
+    // to other volumes in the same frame of reference.
+    const metadata = viewport.getViewReference();
+    delete metadata.volumeId;
+
+    return this.createAnnotation({ metadata }, ...annotationBaseData) as T;
   }
 
   /**
@@ -123,13 +136,20 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
   /**
    * @abstract addNewAnnotation Creates a new annotation based on the clicked mouse position
    *
+   * A tool returns `null` when it creates no annotation, because it has
+   * nothing to measure on this viewport - for example when a configured
+   * `targetsFilter` selects no target there.  `null` is the only permitted
+   * empty result: a tool must not return `undefined`, so that the caller can
+   * tell a deliberate "nothing was created" from a missing return value.
+   *
    * @param evt - The normalized mouse event
    * @param interactionType -  The interaction type used to add the annotation.
+   * @returns The new annotation, or `null` when the tool creates none.
    */
   abstract addNewAnnotation(
     evt: EventTypes.InteractionEventType,
     interactionType: InteractionTypes
-  ): Annotation;
+  ): Annotation | null;
 
   /**
    * @abstract cancel Used to cancel the ongoing tool drawing and manipulation
@@ -184,6 +204,94 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
     proximity: number,
     interactionType: string
   ): boolean;
+
+  /**
+   * Drag handler wired by `_activateModify`. Tools that use the shared
+   * modify listeners assign this (typically as an arrow-function field).
+   * Loosely typed on purpose: tools narrow the event parameter to the
+   * interaction events they actually handle, and the base class only wires
+   * the callback as an EventListener.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected _dragCallback?: (evt: any) => void;
+
+  /**
+   * End-of-interaction handler wired by `_activateModify`. Tools that use
+   * the shared modify listeners assign this (typically as an arrow-function
+   * field). Loosely typed for the same reason as `_dragCallback`.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  protected _endCallback?: (evt: any) => void;
+
+  /**
+   * Wires the standard modify-interaction listeners (`_dragCallback` on
+   * drag, `_endCallback` on mouse/touch end) on the element and flags the
+   * global interaction state. Tools with tool-specific listener sets may
+   * override this.
+   */
+  protected _activateModify = (element: HTMLDivElement): void => {
+    state.isInteractingWithTool = true;
+
+    element.addEventListener(
+      Events.MOUSE_UP,
+      this._endCallback as EventListener
+    );
+    element.addEventListener(
+      Events.MOUSE_DRAG,
+      this._dragCallback as EventListener
+    );
+    element.addEventListener(
+      Events.MOUSE_CLICK,
+      this._endCallback as EventListener
+    );
+
+    element.addEventListener(
+      Events.TOUCH_END,
+      this._endCallback as EventListener
+    );
+    element.addEventListener(
+      Events.TOUCH_DRAG,
+      this._dragCallback as EventListener
+    );
+    element.addEventListener(
+      Events.TOUCH_TAP,
+      this._endCallback as EventListener
+    );
+  };
+
+  /**
+   * Removes the listeners wired by `_activateModify` and clears the global
+   * interaction state.
+   */
+  protected _deactivateModify = (element: HTMLDivElement): void => {
+    state.isInteractingWithTool = false;
+
+    element.removeEventListener(
+      Events.MOUSE_UP,
+      this._endCallback as EventListener
+    );
+    element.removeEventListener(
+      Events.MOUSE_DRAG,
+      this._dragCallback as EventListener
+    );
+    element.removeEventListener(
+      Events.MOUSE_CLICK,
+      this._endCallback as EventListener
+    );
+
+    element.removeEventListener(
+      Events.TOUCH_END,
+      this._endCallback as EventListener
+    );
+    element.removeEventListener(
+      Events.TOUCH_DRAG,
+      this._dragCallback as EventListener
+    );
+    element.removeEventListener(
+      Events.TOUCH_TAP,
+      this._endCallback as EventListener
+    );
+  };
 
   /**
    * @virtual Event handler for Cornerstone MOUSE_MOVE event.
@@ -492,9 +600,13 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
     targetId: string,
     imageId?: string
   ): boolean {
-    if (viewport instanceof BaseVolumeViewport) {
-      const volumeId = csUtils.getVolumeId(targetId);
-      const volume = cache.getVolume(volumeId);
+    const volumeId = csUtils.getVolumeId(targetId);
+    const volume = cache.getVolume(volumeId);
+
+    // Planar GenericViewports can also use cached volume targets. Prefer the
+    // target volume's scaling whenever one exists, regardless of the viewport
+    // class, so a secondary PT binding in a fused viewport reports SUV units.
+    if (volume) {
       return volume?.scaling?.PT !== undefined;
     }
     const scalingModule: Types.ScalingParameters | undefined =
@@ -503,6 +615,39 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
   }
 
   isSuvScaled = AnnotationTool.isSuvScaled;
+
+  /**
+   * Resolves the volume this tool measures on the given viewport, together
+   * with the targetId its statistics are cached under.
+   *
+   * The target comes from the inherited {@link BaseTool.getTargetId}, so it
+   * honours the `targetsFilter`/`targetPredicate` tool configuration (see
+   * `measurementTargetFilters`): on a fusion viewport, configuring
+   * `firstPixelData` with `forModality('PT')` measures the PT volume rather
+   * than the viewport's default (first) one.  Without a configured filter the
+   * viewport's default view reference is used.
+   *
+   * The annotation data is deliberately not passed to `getTargetId`. A tool
+   * whose `cachedStats` is a flat `VolumeStats` (`pointsInVolume`,
+   * `statistics`) rather than a map keyed by targetId holds no `volumeId:`
+   * key that the target selection can reuse. The viewport alone decides the
+   * target.
+   *
+   * @param viewport - the viewport to resolve the target on
+   * @returns the targetId and its cached volume, or `null` when a configured
+   *   filter selects no target on this viewport (eg a PT only filter on a CT
+   *   viewport) or the volume is no longer cached
+   */
+  protected getTargetVolume(
+    viewport: Types.IViewport
+  ): { targetId: string; imageVolume: Types.IImageVolume } | null {
+    const targetId = this.getTargetId(viewport);
+    const imageVolume = targetId
+      ? cache.getVolume(csUtils.getVolumeId(targetId))
+      : undefined;
+
+    return imageVolume ? { targetId, imageVolume } : null;
+  }
 
   /**
    * Get the style that will be applied to all annotations such as length, cobb
@@ -688,7 +833,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
         }
         const currentAnnotation = getAnnotation(annotationUID);
         if (!currentAnnotation) {
-          console.warn('No current annotation');
+          cs3dLogger.warn('No current annotation');
           return;
         }
         Object.assign(currentAnnotation.data, state.data);
@@ -756,7 +901,7 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
     const { viewport } = enabledElement;
     const FrameOfReferenceUID = viewport.getFrameOfReferenceUID();
 
-    const camera = viewport.getCamera();
+    const camera = getViewportICamera(viewport);
     const viewPlaneNormal = options.viewplaneNormal ?? camera.viewPlaneNormal;
     const viewUp = options.viewUp ?? camera.viewUp;
 
@@ -794,6 +939,20 @@ abstract class AnnotationTool extends AnnotationDisplayTool {
           viewPlaneNormal,
           viewUp
         );
+      } else if (csUtils.isGenericViewport(viewport)) {
+        // Native ("next") viewports are neither StackViewport nor
+        // BaseVolumeViewport; resolve the referenced image from the viewport's
+        // own view reference, which handles both stack and volume planar modes.
+        // Cast structurally: the param type excludes generic viewports, so the
+        // type guard narrows it to `never` here.
+        const genericViewport = viewport as unknown as {
+          getViewReference?: (specifier?: {
+            points?: Types.Point3[];
+          }) => { referencedImageId?: string } | undefined;
+        };
+        referencedImageId = genericViewport.getViewReference?.({
+          points: [points[0]],
+        })?.referencedImageId;
       } else {
         throw new Error('Unsupported viewport type');
       }
