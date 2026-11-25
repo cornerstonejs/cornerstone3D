@@ -2832,6 +2832,15 @@ is one, see [Functions of the core package](./3-api-map.md#functions-of-the-core
   viewport out. A viewport that is only a target is now taken out when its
   element is disabled, and `destroy()` removes the listeners of every
   viewport, where it skipped every other one.
+- **A stack prefetch goes with its element.** When the element of a viewport
+  is disabled, by `renderingEngine.disableElement` or by the destroy of its
+  rendering engine, `stackPrefetch` and `stackContextPrefetch` drop the
+  listeners, the timer, the state and the queued requests that they keep for
+  it, so an application no longer calls `disable(element)` before it
+  destroys a viewport (a call after it does nothing), and
+  `stackPrefetch.disable(element)` takes out the queued requests of that
+  element only, where it cleared every prefetch request of the pool, the
+  loads of the volumes with them.
 - **`viewport.type` is the plain string.** A planar viewport has the type
   `'planar'` where a 5.x next viewport had `'planarNext'`, and the other
   families have `'volume3d'`, `'video'`, `'wholeSlide'` and `'ecg'` in place

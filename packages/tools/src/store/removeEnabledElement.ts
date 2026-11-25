@@ -27,6 +27,10 @@ import getSynchronizersForViewport from './SynchronizerManager/getSynchronizersF
 import getToolGroupForViewport from './ToolGroupManager/getToolGroupForViewport';
 import { annotationRenderingEngine } from '../stateManagement/annotation/AnnotationRenderingEngine';
 import { removeSurfaceSlicePropsOfDisabledViewport } from '../tools/displayTools/Surface/surfaceSliceProps';
+import {
+  stackPrefetch,
+  stackContextPrefetch,
+} from '../utilities/stackPrefetch';
 
 const VIEWPORT_ELEMENT = 'viewport-element';
 
@@ -67,6 +71,7 @@ function removeEnabledElement(
   _removeViewportFromSynchronizers(element);
   _removeViewportFromToolGroup(element);
   _removeSurfaceSliceProps(element);
+  _disableStackPrefetch(element);
 
   // _removeAllToolsForElement(canvas)
   _removeEnabledElement(element);
@@ -110,6 +115,16 @@ const _removeSurfaceSliceProps = (element: HTMLDivElement) => {
   if (enabledElement) {
     removeSurfaceSlicePropsOfDisabledViewport(enabledElement.viewport);
   }
+};
+
+/**
+ * Stops both stack prefetches of the element, which takes their listeners,
+ * timers, state and queued requests away. It runs while the element is still
+ * enabled, as the state of a prefetch is kept by the id of its viewport.
+ */
+const _disableStackPrefetch = (element: HTMLDivElement) => {
+  stackPrefetch.disable(element);
+  stackContextPrefetch.disable(element);
 };
 
 const _removeAllToolsForElement = function (element) {

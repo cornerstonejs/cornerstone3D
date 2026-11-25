@@ -8,13 +8,19 @@ import {
   utilities,
   triggerEvent,
 } from '@cornerstonejs/core';
-import { addToolState, getToolState, type StackPrefetchData } from './state';
+import {
+  addToolState,
+  getToolState,
+  removeToolState,
+  type StackPrefetchData,
+} from './state';
 import {
   getStackData,
   requestType,
   clearFromImageIds,
   getPromiseRemovedHandler,
   isLoadedByProgressiveVolume,
+  removeQueuedRequests,
 } from './stackPrefetchUtils';
 import { Events } from '../../enums';
 import type { EventTypes } from '../../types';
@@ -36,7 +42,10 @@ let configuration = {
   preserveExistingPool: false,
 };
 
-let resetPrefetchTimeout;
+const resetPrefetchTimeouts = new WeakMap<
+  HTMLDivElement,
+  ReturnType<typeof setTimeout>
+>();
 // Starting the prefetch quickly isn't an issue as the main image is already being
 // loaded, so a 5 ms prefetch delay is fine
 const resetPrefetchDelay = 5;
@@ -262,6 +271,7 @@ function prefetch(element, priority = 0) {
       // Additional details
       {
         imageId,
+        element,
       },
       priority
       // addToBeginning
@@ -269,22 +279,32 @@ function prefetch(element, priority = 0) {
   });
 }
 
+/**
+ * Starts the prefetch of an element again a moment after it shows a new
+ * image, with one timer for each element, so a scroll of one viewport does
+ * not cancel the restart of another.
+ */
 function onImageUpdated(e) {
+  const element = e.target;
+
   // Start prefetching again (after a delay)
   // When the user has scrolled to a new image
-  clearTimeout(resetPrefetchTimeout);
-  resetPrefetchTimeout = setTimeout(function () {
-    const element = e.target;
+  clearTimeout(resetPrefetchTimeouts.get(element));
+  resetPrefetchTimeouts.set(
+    element,
+    setTimeout(function () {
+      resetPrefetchTimeouts.delete(element);
 
-    // If playClip is enabled and the user loads a different series in the viewport
-    // An exception will be thrown because the element will not be enabled anymore
-    try {
-      updateToolState(element);
-      prefetch(element, priorities.get(element));
-    } catch (error) {
-      return;
-    }
-  }, resetPrefetchDelay);
+      // If playClip is enabled and the user loads a different series in the viewport
+      // An exception will be thrown because the element will not be enabled anymore
+      try {
+        updateToolState(element);
+        prefetch(element, priorities.get(element));
+      } catch (error) {
+        return;
+      }
+    }, resetPrefetchDelay)
+  );
 }
 
 // Not a full signum, but good enough for direction.
@@ -371,8 +391,16 @@ const updateToolState = (element, usage?: number) => {
   addToolState(element, stackPrefetchData);
 };
 
+/**
+ * Stops the prefetch of an element and lets go of everything it keeps for
+ * it: its listeners, its timer, its state and its requests that wait in the
+ * image load pool. The tools call it when the element is disabled (a
+ * viewport that is disabled or whose rendering engine is destroyed), so an
+ * application need not; a second call does nothing.
+ */
 function disable(element) {
-  clearTimeout(resetPrefetchTimeout);
+  clearTimeout(resetPrefetchTimeouts.get(element));
+  resetPrefetchTimeouts.delete(element);
   element.removeEventListener(Enums.Events.NEW_IMAGE, onImageUpdated);
 
   const promiseRemovedHandler = getPromiseRemovedHandler(element);
@@ -387,8 +415,10 @@ function disable(element) {
 
   if (stackPrefetchData) {
     stackPrefetchData.enabled = false;
-    // Don't worry about clearing the requests - there aren't that many too be bothersome
   }
+
+  removeQueuedRequests(element);
+  removeToolState(element);
 }
 
 function getConfiguration() {

@@ -2,10 +2,18 @@ import * as cornerstone3D from '@cornerstonejs/core';
 import * as csTools3d from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
 import { startListenerCounts } from '../../../utils/test/listenerCounts';
+import { getToolState } from '../src/utilities/stackPrefetch/state';
 
-const { Enums, cache, eventTarget, imageLoadPoolManager, utilities } =
-  cornerstone3D;
-const { Events, ViewportType, OrientationAxis } = Enums;
+const {
+  Enums,
+  RenderingEngine,
+  cache,
+  eventTarget,
+  imageLoadPoolManager,
+  triggerEvent,
+  utilities,
+} = cornerstone3D;
+const { Events, ViewportType, OrientationAxis, RequestType } = Enums;
 const { stackPrefetch, stackContextPrefetch } = csTools3d.utilities;
 
 const renderingEngineId = utilities.uuidv4();
@@ -52,6 +60,39 @@ async function showStack(renderingEngine, viewportId, count = 8) {
   return { viewport, imageIds };
 }
 
+/** The image ids of the prefetch requests that wait in the image load pool. */
+function queuedPrefetchImageIds(imageIds) {
+  return Object.values(
+    imageLoadPoolManager.getRequestPool()[RequestType.Prefetch]
+  )
+    .flat()
+    .map(({ additionalDetails }) => additionalDetails?.imageId)
+    .filter((imageId) => imageIds.includes(imageId));
+}
+
+/**
+ * The ways a viewport goes: by `disableElement` on the rendering engine of the
+ * test, or with a rendering engine of its own that is destroyed. Each gives
+ * the engine to mount on and the function that ends the viewport.
+ */
+const endings = [
+  [
+    'disableElement',
+    (renderingEngine) => ({
+      engine: renderingEngine,
+      end: (viewport) => renderingEngine.disableElement(viewport.id),
+    }),
+  ],
+  [
+    'a destroyed rendering engine',
+    () => {
+      const engine = new RenderingEngine(utilities.uuidv4());
+
+      return { engine, end: () => engine.destroy() };
+    },
+  ],
+];
+
 describe('The listeners of the stack prefetch -- ', () => {
   let renderingEngine;
   let counts;
@@ -91,6 +132,117 @@ describe('The listeners of the stack prefetch -- ', () => {
         before
       );
       expect(counts.onElement(viewport.element, Events.NEW_IMAGE)).toBe(0);
+    });
+
+    for (const [ending, startRound] of endings) {
+      it(`${name}: five rounds of mount, enable, scroll and ${ending} leave every listener count where it started`, async function () {
+        const before = counts.onEventTarget();
+        const elements = [];
+
+        for (let round = 0; round < 5; round++) {
+          const { engine, end } = startRound(renderingEngine);
+          const { viewport } = await showStack(engine, `${name}Rounds`);
+
+          expect(getToolState(viewport.element)).toBeUndefined();
+
+          prefetch.enable(viewport.element);
+          await viewport.scroll(2);
+          elements.push(viewport.element);
+          end(viewport);
+        }
+
+        await wait(50);
+
+        expect(counts.onEventTarget()).toEqual(before);
+        elements.forEach((element) =>
+          expect(counts.onElement(element)).toEqual({})
+        );
+      });
+
+      it(`${name}: a request that waits in the pool when its viewport goes by ${ending} does not load`, async function () {
+        const { engine, end } = startRound(renderingEngine);
+        const { viewport, imageIds } = await showStack(engine, `${name}Queued`);
+        const maxRequests = imageLoadPoolManager.getMaxSimultaneousRequests(
+          RequestType.Prefetch
+        );
+        const errors = [];
+        const onError = (evt) => errors.push(evt.reason ?? evt.error);
+        let queued;
+
+        imageLoadPoolManager.setMaxSimultaneousRequests(
+          RequestType.Prefetch,
+          0
+        );
+
+        try {
+          prefetch.enable(viewport.element);
+          queued = queuedPrefetchImageIds(imageIds);
+          end(viewport);
+        } finally {
+          imageLoadPoolManager.setMaxSimultaneousRequests(
+            RequestType.Prefetch,
+            maxRequests
+          );
+        }
+
+        expect(queued.length).toBeGreaterThan(0);
+        expect(queuedPrefetchImageIds(imageIds)).toEqual([]);
+
+        window.addEventListener('error', onError);
+        window.addEventListener('unhandledrejection', onError);
+        imageLoadPoolManager.addRequest(
+          () => Promise.resolve(),
+          RequestType.Prefetch,
+          {},
+          0
+        );
+        await wait(100);
+        window.removeEventListener('error', onError);
+        window.removeEventListener('unhandledrejection', onError);
+
+        expect(queued.filter((imageId) => cache.isLoaded(imageId))).toEqual([]);
+        expect(errors).toEqual([]);
+      });
+    }
+
+    it(`${name}: a new image on two viewports at once starts the prefetch of both`, async function () {
+      const first = await showStack(renderingEngine, `${name}TimerA`, 20);
+      const second = await showStack(renderingEngine, `${name}TimerB`, 20);
+      const maxRequests = imageLoadPoolManager.getMaxSimultaneousRequests(
+        RequestType.Prefetch
+      );
+      let addRequest;
+
+      imageLoadPoolManager.setMaxSimultaneousRequests(RequestType.Prefetch, 0);
+
+      try {
+        prefetch.enable(first.viewport.element);
+        prefetch.enable(second.viewport.element);
+        addRequest = spyOn(
+          imageLoadPoolManager,
+          'addRequest'
+        ).and.callThrough();
+
+        triggerEvent(first.viewport.element, Events.NEW_IMAGE, {});
+        triggerEvent(second.viewport.element, Events.NEW_IMAGE, {});
+        await wait(50);
+
+        prefetch.disable(first.viewport.element);
+        prefetch.disable(second.viewport.element);
+      } finally {
+        imageLoadPoolManager.setMaxSimultaneousRequests(
+          RequestType.Prefetch,
+          maxRequests
+        );
+      }
+
+      const requested = ({ imageIds }) =>
+        addRequest.calls
+          .all()
+          .some(({ args }) => imageIds.includes(args[2]?.imageId));
+
+      expect(requested(first)).toBe(true);
+      expect(requested(second)).toBe(true);
     });
   }
 

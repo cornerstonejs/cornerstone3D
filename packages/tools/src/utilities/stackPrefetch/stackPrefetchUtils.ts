@@ -3,6 +3,7 @@ import {
   Enums,
   utilities,
   cache,
+  imageLoadPoolManager,
 } from '@cornerstonejs/core';
 import { getToolState } from './state';
 
@@ -150,6 +151,19 @@ export function isLoadedByProgressiveVolume(imageIds: string[]): boolean {
   };
 
   return !!volume?.isLoadingProgressively?.();
+}
+
+/**
+ * Takes the prefetch requests of an element that wait in the image load pool
+ * out of it. A request names its element in its details; the requests of the
+ * other viewports and of the volumes stay.
+ */
+export function removeQueuedRequests(element: HTMLDivElement): void {
+  imageLoadPoolManager.filterRequests(
+    ({ type, additionalDetails }) =>
+      type !== requestType ||
+      (additionalDetails as { element?: HTMLDivElement })?.element !== element
+  );
 }
 
 export const clearFromImageIds = (stack) => {

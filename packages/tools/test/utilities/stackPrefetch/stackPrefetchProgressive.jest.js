@@ -20,6 +20,7 @@ jest.mock('../../../src/utilities/stackPrefetch/state', () => {
   return {
     addToolState: (element, data) => mockState.set(element, data),
     getToolState: (element) => mockState.get(element),
+    removeToolState: (element) => mockState.delete(element),
   };
 });
 

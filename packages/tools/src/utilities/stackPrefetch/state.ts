@@ -29,10 +29,26 @@ function addToolState(element: HTMLDivElement, data): void {
   state[viewportId] = data;
 }
 
+/**
+ * The prefetch state of the viewport of an element, none when the element is
+ * not enabled (any more).
+ */
 function getToolState(element: HTMLDivElement): StackPrefetchData {
-  const enabledElement = getEnabledElement(element);
-  const { viewportId } = enabledElement;
-  return state[viewportId];
+  const viewportId = getEnabledElement(element)?.viewportId;
+
+  return viewportId === undefined ? undefined : state[viewportId];
 }
 
-export { addToolState, getToolState };
+/**
+ * Removes the prefetch state of the viewport of an element, so a viewport
+ * that comes later with the same id starts without it.
+ */
+function removeToolState(element: HTMLDivElement): void {
+  const viewportId = getEnabledElement(element)?.viewportId;
+
+  if (viewportId !== undefined) {
+    delete state[viewportId];
+  }
+}
+
+export { addToolState, getToolState, removeToolState };
