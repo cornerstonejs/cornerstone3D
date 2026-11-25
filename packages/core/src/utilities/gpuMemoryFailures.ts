@@ -74,7 +74,10 @@ function countsAtOrAbove(history: GpuMemoryHistory, failedBytes: number) {
  *   the failed size, the largest bucket with a success below the bucket of
  *   the failure gives the size, at the lower end of that bucket.
  * - With no success below the failed size, 128 MB.
- * - After a calibration, its largest success, rounded down to a bucket size.
+ * - After a calibration, its largest success, rounded down to a bucket size,
+ *   unless the failure came after the calibration at a size below that
+ *   success (for example with memory held in another tab): the rules above
+ *   apply then.
  *
  * The result is never below 128 MB.
  */
@@ -98,8 +101,19 @@ function suggestedLimitFor(
 
   let worked: number | undefined;
 
-  if (history.calibration) {
-    worked = history.calibration.largestSuccessBytes;
+  /**
+   * A calibration after the failure is the newer measurement. A failure
+   * after the calibration, below its largest success (for example with
+   * memory held in another tab), shows that the calibration no longer holds.
+   */
+  const { calibration } = history;
+
+  if (
+    calibration &&
+    (calibration.at >= failure.at ||
+      calibration.largestSuccessBytes < failure.failedBytes)
+  ) {
+    worked = calibration.largestSuccessBytes;
   } else if (
     history.largestLoad &&
     history.largestLoad.bytes < failure.failedBytes

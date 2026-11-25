@@ -138,6 +138,17 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
     // A draw that samples storage that the browser still clears would block.
     if (model.scalarTextures.some((texture) => texture?.isInitializing?.())) {
       actorsWaitingForStorage.set(actor, performance.now());
+    } else if (
+      model.scalarTextures.some(
+        (texture) => texture?.getHandle && !texture.getHandle()
+      )
+    ) {
+      /**
+       * A texture with no storage (refused by the GPU settings, or released
+       * after an out of memory) is not drawn: vtk.js would activate it with
+       * no handle. The next build tries the upload again.
+       */
+      actorsWaitingForStorage.delete(actor);
     } else {
       actorsWaitingForStorage.delete(actor);
       publicAPI.renderPieceDraw(ren, actor);

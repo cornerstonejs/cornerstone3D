@@ -18,6 +18,7 @@ import {
   cancelTextureAllocation,
   noteTextureAllocation,
   noteTextureRendered,
+  checkTextureOutOfMemory,
 } from '../../utilities/gpuAllocationTracker';
 import gridFitsGpuSettings from './gridFitsGpuSettings';
 import { gpuTextureBytesPerVoxel } from '../../utilities/gpuSettingsPresets';
@@ -366,10 +367,11 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
           });
 
         const newScalarTexture = newLedgerTexture();
+        const totalBytes = getGpuMemoryTotal() + textureBytes;
 
         noteTextureAllocation({
           textureBytes,
-          totalBytes: getGpuMemoryTotal() + textureBytes,
+          totalBytes,
           owner: newScalarTexture,
         });
         newScalarTexture.setOpenGLRenderWindow(model._openGLRenderWindow);
@@ -385,6 +387,22 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
         /** An upload that vtk.js refused holds no memory and draws nothing. */
         if (created === false) {
           cancelTextureAllocation(newScalarTexture);
+          newScalarTexture.delete();
+          model.scalarTextureRefused = true;
+          return;
+        }
+
+        /**
+         * vtk.js reports no allocation error, and Firefox and Safari keep the
+         * context after an out of memory, so the error is read here. The
+         * texture goes, and the next render tries again.
+         */
+        if (
+          checkTextureOutOfMemory(model.context, newScalarTexture, {
+            textureBytes,
+            totalBytes,
+          })
+        ) {
           newScalarTexture.delete();
           model.scalarTextureRefused = true;
           return;

@@ -114,14 +114,17 @@ function announce(block: WebGLBlock | undefined, sourceTab: 'self' | 'other') {
     return;
   }
 
+  /**
+   * The waiters of this wait are taken before the event, so a listener that
+   * starts another wait and waits for it is not resolved with them.
+   */
+  const resolved = waiters;
+
+  waiters = [];
   triggerEvent(eventTarget, Events.WEBGL_AVAILABILITY_CHANGED, {
     blocked: false,
     sourceTab,
   });
-
-  const resolved = waiters;
-
-  waiters = [];
   resolved.forEach((resolve) => resolve());
 }
 
@@ -194,8 +197,14 @@ function getWebGLBlock(): WebGLBlock | undefined {
   if (stored && stored.until !== announced?.until) {
     announce(stored, 'other');
   } else if (!stored && announced) {
-    /** The timer of a hidden tab can run late. */
-    setTimeout(endWait);
+    /**
+     * The timer of a hidden tab can run late, so the wait ends here, with
+     * the check of Chromium, which can extend it. Availability is reported
+     * only after that check.
+     */
+    endWait();
+
+    return readStoredBlock();
   }
 
   return stored;

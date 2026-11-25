@@ -195,10 +195,15 @@ function onContextLost(event?: Event): void {
 }
 
 /**
- * Checks a large allocation of this owner for `OUT_OF_MEMORY`, just after the
- * allocation, in a browser that reports a GPU out of memory through
- * `getError()` and keeps the context (Firefox, Safari). Chromium loses the
- * context instead, which `onContextLost` handles.
+ * Checks a large allocation for `OUT_OF_MEMORY`, just after the allocation,
+ * in a browser that reports a GPU out of memory through `getError()` and
+ * keeps the context (Firefox, Safari). Chromium loses the context instead,
+ * which `onContextLost` handles.
+ *
+ * The allocation is the pending one of this owner, or, with `sizes`, an
+ * allocation that wrote no pending record, for example a texture that moved
+ * to another context and uploads the same shape again. A small allocation, a
+ * hidden page and GPU settings that do not apply are not checked.
  *
  * An out of memory removes the pending record, counts the page total as a
  * failure in the history, and reports the failure. The caller releases the
@@ -209,13 +214,30 @@ function onContextLost(event?: Event): void {
  *
  * @param gl - the context of the allocation
  * @param owner - the texture that allocated
+ * @param sizes - the bytes of the texture and of the page with it, for an
+ * allocation with no pending record
  * @returns true when the GPU ran out of memory
  */
 export function checkTextureOutOfMemory(
   gl: WebGL2RenderingContext | undefined,
-  owner: unknown
+  owner: unknown,
+  sizes?: { textureBytes: number; totalBytes: number }
 ): boolean {
-  if (!gl || pending?.owner !== owner || isChromium()) {
+  if (!gl || isChromium()) {
+    return false;
+  }
+
+  const allocation =
+    pending?.owner === owner
+      ? pending
+      : sizes &&
+          sizes.textureBytes >= LARGE_ALLOCATION_BYTES &&
+          !isHidden() &&
+          gpuSettingsForRender()
+        ? sizes
+        : undefined;
+
+  if (!allocation) {
     return false;
   }
 
@@ -235,9 +257,12 @@ export function checkTextureOutOfMemory(
     return false;
   }
 
-  const { totalBytes, textureBytes } = pending;
+  const { totalBytes, textureBytes } = allocation;
 
-  abandonPendingAllocation();
+  if (allocation === pending) {
+    abandonPendingAllocation();
+  }
+
   lastLargeAllocation = null;
   recordGpuMemoryOutcome({ succeeded: false, totalBytes });
   reportGpuMemoryFailure({

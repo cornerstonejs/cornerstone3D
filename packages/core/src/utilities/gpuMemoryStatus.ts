@@ -21,15 +21,16 @@ function getGpuMemoryStatus(): GpuMemoryStatus {
   const limit = getGpuMemoryLimit();
   const block = getWebGLBlock();
   /**
-   * A failure at 128 MB or below, or a calibration that failed at its first
-   * step at or below 128 MB, means that no GPU size works.
+   * A calibration is the measurement when one exists: no GPU size works when
+   * it failed at its first step at or below 128 MB. Without one, a failure at
+   * 128 MB or below tells it.
    */
   const history = getGpuMemoryHistory();
   const { calibration } = history;
-  const noGpuSizeWorks =
-    history.buckets[0].failures > 0 ||
-    (calibration?.largestSuccessBytes === 0 &&
-      calibration.failedBytes <= GPU_MEMORY_MIN_BYTES);
+  const noGpuSizeWorks = calibration
+    ? calibration.largestSuccessBytes === 0 &&
+      calibration.failedBytes <= GPU_MEMORY_MIN_BYTES
+    : history.buckets[0].failures > 0;
 
   return {
     applies: limit !== undefined,

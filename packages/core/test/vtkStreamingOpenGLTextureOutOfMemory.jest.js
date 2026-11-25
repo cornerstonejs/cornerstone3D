@@ -85,7 +85,10 @@ describe('a texture that runs out of GPU memory', () => {
     checkTextureOutOfMemory.mockReturnValueOnce(true);
 
     expect(texture.create3DFromRaw(upload(64))).toBe(false);
-    expect(checkTextureOutOfMemory).toHaveBeenCalledWith(gl, texture);
+    expect(checkTextureOutOfMemory).toHaveBeenCalledWith(gl, texture, {
+      textureBytes: 256 * 256 * 64 * 4,
+      totalBytes: 256 * 256 * 64 * 4,
+    });
     expect(texture.releaseGraphicsResources).toHaveBeenCalledTimes(1);
     expect(getGpuMemoryEntryBytes(texture)).toBe(0);
 

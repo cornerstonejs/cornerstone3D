@@ -740,7 +740,7 @@ differently, and the 5.x code to use.
     message during the wait reads `webglBlocked` or `isWebGLBlocked()`.
 
     ```js
-    // 5.x
+    /** 5.x */
     if (getRenderingCapabilities().webglBlocked) {
       await whenWebGLAvailable();
     }
@@ -802,8 +802,19 @@ memory through `getError()` and keeps the context; 5.x reads it.
   the user's choice. Read `getLastGpuMemoryFailure()` when the application
   starts listening, for a crash that the start of the page found, and call
   `acknowledgeGpuMemoryFailure()` once the user answered.
-- **When `mustReload` is true,** reload the page after
-  `WEBGL_AVAILABILITY_CHANGED` fires with `blocked: false`.
+- **When `mustReload` is true,** the page must reload to draw again. A wait
+  does not always start: outside Chromium a first failure starts none, and
+  Chromium detects its block about one second after the failure. Wait a
+  moment, then reload once WebGL is available, preferably with the limit
+  that the user picked:
+
+  ```js
+  await new Promise((resolve) => setTimeout(resolve, 1500));
+  /** Resolves at once when no wait runs. */
+  await whenWebGLAvailable();
+  window.location.reload();
+  ```
+
 - **When `noGpuSizeWorks` is true,** offer CPU rendering with
   `setRenderBackend('cpu')`. A legacy volume viewport cannot render on the
   CPU.

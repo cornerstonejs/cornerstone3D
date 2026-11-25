@@ -380,7 +380,8 @@ export function attachGpuMemoryFailurePopup(log: (text: string) => void): void {
       button('Reload with CPU rendering', () => reloadWith({ cpu: 'true' }));
     }
 
-    if (detail.canCalibrate && canRunGpuMemoryCalibration()) {
+    /** Read now, not from the detail: a wait can have ended since. */
+    if (canRunGpuMemoryCalibration()) {
       button('Run calibration', () => {
         if (
           !window.confirm(
@@ -399,6 +400,14 @@ export function attachGpuMemoryFailurePopup(log: (text: string) => void): void {
           )
           .catch((error) => log(`Calibration: ${error.message}`));
       });
+    }
+
+    /**
+     * A page that lost its context must reload to draw again. When no wait
+     * starts (outside Chromium, a first failure), this is the way back.
+     */
+    if (detail.mustReload) {
+      button('Reload', () => window.location.reload());
     }
 
     button('Dismiss', () => {
@@ -438,6 +447,9 @@ export function attachGpuMemoryFailurePopup(log: (text: string) => void): void {
       if (shown?.mustReload) {
         log('WebGL is available again, so the failed page reloads');
         window.location.reload();
+      } else if (shown) {
+        /** The offers change when the wait ends, for example the calibration. */
+        show(shown);
       }
     }
   });
@@ -474,7 +486,9 @@ let stressRunning = false;
  * so on, made of the frames of the loaded series, repeated. The frames go in
  * volumes of 256 frames that share one buffer in memory, so the GPU memory
  * doubles at each step and the memory of the page does not. The run stops at
- * the first failure, on a hidden page, or at 32 GB.
+ * the first failure (a lost context or an out of memory), when WebGL waits,
+ * when a step allocates no texture, on a hidden page, or at 32 GB. It does
+ * not start while WebGL waits.
  *
  * For the run, a hard limit of 64 GB applies to this page only (a
  * configuration value, not a stored limit), so the strategy reduces nothing.
@@ -493,6 +507,14 @@ export async function allocateUntilFailure({
 }): Promise<void> {
   if (stressRunning) {
     log('Allocate until failure: already running');
+
+    return;
+  }
+
+  if (isWebGLBlocked()) {
+    log(
+      'Allocate until failure: WebGL waits after a GPU failure, so the run waits for the end of the wait'
+    );
 
     return;
   }
@@ -539,11 +561,19 @@ export async function allocateUntilFailure({
   );
 
   let contextLost = false;
+  let memoryFailed = false;
   const onContextLost = () => {
     contextLost = true;
   };
+  /** An out of memory keeps the context (Firefox, Safari), and stops the run too. */
+  const onMemoryFailure = () => {
+    memoryFailed = true;
+  };
+  const stopped = () => contextLost || memoryFailed || isWebGLBlocked();
+  let previousTexture = 0;
 
   eventTarget.addEventListener(Events.WEBGL_CONTEXT_LOST, onContextLost);
+  eventTarget.addEventListener(Events.GPU_MEMORY_FAILURE, onMemoryFailure);
 
   try {
     const chunk = stressChunk(sourceVolumeId);
@@ -581,7 +611,7 @@ export async function allocateUntilFailure({
 
       const start = Date.now();
 
-      while (Date.now() - start < STRESS_STEP_WAIT_MS && !contextLost) {
+      while (Date.now() - start < STRESS_STEP_WAIT_MS && !stopped()) {
         await new Promise((resolve) => setTimeout(resolve, 250));
       }
 
@@ -594,6 +624,27 @@ export async function allocateUntilFailure({
         );
         break;
       }
+
+      if (memoryFailed) {
+        log(
+          `Step ${step + 1}: ${frames} frames in ${volumesText(target)}, textures ${formatBytes(texture)}: a GPU memory failure, so the run stops`
+        );
+        break;
+      }
+
+      /** Another tab can start a wait at any time; large uploads stop then. */
+      if (isWebGLBlocked()) {
+        log(`Step ${step + 1}: WebGL waits, so the run stops`);
+        break;
+      }
+
+      /** A step that allocated no texture would add volumes for nothing. */
+      if (texture <= previousTexture) {
+        log(`Step ${step + 1}: no new texture was allocated, so the run stops`);
+        break;
+      }
+
+      previousTexture = texture;
 
       if (document.hidden) {
         log(`Step ${step + 1}: the page is hidden, so the run stops`);
@@ -613,6 +664,7 @@ export async function allocateUntilFailure({
     log(`Allocate until failure: ${(error as Error).message}`);
   } finally {
     eventTarget.removeEventListener(Events.WEBGL_CONTEXT_LOST, onContextLost);
+    eventTarget.removeEventListener(Events.GPU_MEMORY_FAILURE, onMemoryFailure);
     stressRunning = false;
   }
 }

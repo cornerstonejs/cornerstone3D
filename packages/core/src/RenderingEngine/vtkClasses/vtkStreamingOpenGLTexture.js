@@ -140,13 +140,23 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
    *
    * @returns the shape of the upload
    */
-  function noteAllocation({ width, height, depth, numComps, dataType }) {
-    const shape = shapeOf({ width, height, depth, numComps, dataType });
+  function noteAllocation(options) {
+    const shape = shapeOf(options);
 
     if (shape === model.allocatedShape) {
       return shape;
     }
 
+    noteTextureAllocation({ ...sizesOf(options), owner: publicAPI });
+
+    return shape;
+  }
+
+  /**
+   * The bytes of an upload, and of the page with it. The page total leaves
+   * out the earlier upload that this one replaces.
+   */
+  function sizesOf({ width, height, depth, numComps, dataType }) {
     const textureBytes =
       width *
       height *
@@ -155,15 +165,11 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
         norm16: Boolean(model.oglNorm16Ext),
       });
 
-    /** The page total leaves out the earlier upload that this one replaces. */
-    noteTextureAllocation({
+    return {
       textureBytes,
       totalBytes:
         getGpuMemoryTotal() - getGpuMemoryEntryBytes(publicAPI) + textureBytes,
-      owner: publicAPI,
-    });
-
-    return shape;
+    };
   }
 
   /** The shape of an upload, which tells a new allocation from a repeat. */
@@ -198,15 +204,18 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
       return false;
     }
 
+    const sizes = sizesOf(options);
     const shape = noteAllocation(options);
     let created = superCreate3DFromRaw(options);
 
     /**
      * Firefox and Safari report a GPU out of memory through `getError()` and
      * keep the context. The storage is released and the caller skips the
-     * draw, as for a texture that the GPU settings refuse.
+     * draw, as for a texture that the GPU settings refuse. A same-shape
+     * upload after a move to another context wrote no pending record, so its
+     * sizes go with the check.
      */
-    if (created && checkTextureOutOfMemory(model.context, publicAPI)) {
+    if (created && checkTextureOutOfMemory(model.context, publicAPI, sizes)) {
       model.outOfMemoryShape = shape;
       publicAPI.releaseGraphicsResources();
       created = false;
