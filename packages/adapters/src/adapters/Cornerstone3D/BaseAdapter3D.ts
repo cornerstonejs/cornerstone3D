@@ -220,8 +220,25 @@ export default class BaseAdapter3D {
    * Retrieve cached stats using either the referenced imageId
    * or the volumeId, depending on which key was used to store them.
    *
-   * For volume annotations, prefer the view reference key, then any
-   * cached stats key for the same volume.
+   * The lookup order is:
+   * 1. The `imageId:<referencedImageId>` key.
+   * 2. With `metadata.volumeId`: the exact view reference key
+   *    (`getVolumeViewReferenceId`), then any key of the same volume. The
+   *    second step is for annotations without a `sliceIndex`, for example
+   *    annotations from an earlier version.
+   * 3. Without `metadata.volumeId`: the first `volumeId:` key, in the
+   *    insertion order of `cachedStats`, whose `sliceIndex` is equal to
+   *    `metadata.sliceIndex` and whose `viewPlaneNormal` is equal to
+   *    `metadata.viewPlaneNormal` within 1e-3 per component.
+   *
+   * Step 3 is for MPR annotations from `createAnnotationForViewport`, which
+   * deletes `volumeId` so that the annotation applies to all volumes of the
+   * frame of reference. The normal is compared as numbers and not as the
+   * formatted key text, because the key rounds each component to 3 decimals,
+   * and a small camera difference can give a different text (for example
+   * `-0.000` and `0.000`). With two volumes on the same plane (fusion), the
+   * statistics of the first key are used: the volume whose statistics were
+   * computed first.
    *
    * @param cachedStats - The annotation cachedStats keyed by target id
    * @param metadata - The annotation metadata
@@ -235,7 +252,27 @@ export default class BaseAdapter3D {
       return imageStats;
     }
 
-    if (volumeId && viewPlaneNormal) {
+    if (!volumeId) {
+      const targetId =
+        viewPlaneNormal &&
+        Object.keys(cachedStats).find((key) => {
+          const match = key.match(
+            /^volumeId:.*[?&]sliceIndex=([^&]*)&viewPlaneNormal=([^&]*)$/
+          );
+          return (
+            match &&
+            Number(match[1]) === sliceIndex &&
+            csUtilities.isEqual(
+              match[2].split(',').map(Number),
+              viewPlaneNormal,
+              1e-3
+            )
+          );
+        });
+      return cachedStats[targetId] || {};
+    }
+
+    if (viewPlaneNormal) {
       const viewReferenceId = csUtilities.getVolumeViewReferenceId({
         volumeId,
         sliceIndex,

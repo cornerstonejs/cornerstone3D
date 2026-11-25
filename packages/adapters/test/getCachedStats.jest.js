@@ -64,10 +64,39 @@ describe('BaseAdapter3D.getCachedStats', () => {
     expect(BaseAdapter3D.getCachedStats(cachedStats, metadata)).toEqual({});
   });
 
-  it('returns an empty object when the metadata has no volumeId', () => {
-    const cachedStats = { [getViewReferenceId(ptVolumeId, 5)]: { mean: 4 } };
+  it('uses the key of the same slice and normal when the metadata has no volumeId', () => {
+    // MPR annotation from createAnnotationForViewport: no volumeId, and a
+    // normal with a small difference from the camera normal of the key.
+    const viewStats = { mean: 2 };
+    const cachedStats = { [getViewReferenceId(ctVolumeId, 5)]: viewStats };
+    const metadata = { sliceIndex: 5, viewPlaneNormal: [-0.0001, 0, 1] };
 
-    expect(BaseAdapter3D.getCachedStats(cachedStats, {})).toEqual({});
+    expect(BaseAdapter3D.getCachedStats(cachedStats, metadata)).toBe(viewStats);
+  });
+
+  it('does not use a key of a different slice or normal when the metadata has no volumeId', () => {
+    const cachedStats = {
+      [getViewReferenceId(ctVolumeId, 3)]: { mean: 3 },
+      [utilities.getVolumeViewReferenceId({
+        volumeId: ctVolumeId,
+        sliceIndex: 5,
+        viewPlaneNormal: [0, 1, 0],
+      })]: { mean: 4 },
+    };
+    const metadata = { sliceIndex: 5, viewPlaneNormal };
+
+    expect(BaseAdapter3D.getCachedStats(cachedStats, metadata)).toEqual({});
+  });
+
+  it('uses the first matching key for a fusion annotation without volumeId', () => {
+    const ptStats = { mean: 4 };
+    const cachedStats = {
+      [getViewReferenceId(ptVolumeId, 5)]: ptStats,
+      [getViewReferenceId(ctVolumeId, 5)]: { mean: 2 },
+    };
+    const metadata = { sliceIndex: 5, viewPlaneNormal };
+
+    expect(BaseAdapter3D.getCachedStats(cachedStats, metadata)).toBe(ptStats);
   });
 
   it('returns an empty object when no stats match', () => {
