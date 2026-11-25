@@ -61,10 +61,16 @@ export type VideoDisplaySetAppearance = VideoAppearanceProps & VideoProperties;
 export interface VideoMountOptions {
   /**
    * The role of the display set: the first entry of `setDisplaySets` is the
-   * source and the others are overlays when not given.
+   * source and the others are overlays when not given; `addDisplaySet`
+   * without a role mounts the source on a viewport that shows nothing, else
+   * an overlay.
    */
   role?: BindingRole;
-  /** The 1-based frame that the source shows after the mount. */
+  /**
+   * The 1-based frame that the view shows after the mount of the first
+   * video of a viewport. A video mounted over others joins the frame on
+   * display; `getDisplaySets` gives back the frame number of its mount.
+   */
   frameNumber?: number;
   /**
    * The appearance of the video from its first draw (its playback rate,

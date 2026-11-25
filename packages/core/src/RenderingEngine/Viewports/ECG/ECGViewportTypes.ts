@@ -173,8 +173,9 @@ export type ECGDisplaySetAppearance = ECGAppearanceProps & ECGProperties;
 /** The options of the mount of one waveform display set. */
 export interface ECGMountOptions {
   /**
-   * The role of the display set: the first entry of `setDisplaySets` is the
-   * source and the others are overlays when not given.
+   * The role of the display set. When not given, the waveform is the source
+   * on a viewport that shows nothing (`setDisplaySets`, or `addDisplaySet`
+   * on an empty viewport). An ECG viewport shows one waveform.
    */
   role?: BindingRole;
   /**

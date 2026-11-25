@@ -31,6 +31,7 @@ import { generateFrameImageId } from '../../../utilities/splitImageIdsBy4DTags';
 import imageIdToURI from '../../../utilities/imageIdToURI';
 import { DefaultVideoDataProvider } from './DefaultVideoDataProvider';
 import type {
+  BindingRole,
   LoadedData,
   ViewportDataBinding,
 } from '../ViewportArchitectureTypes';
@@ -159,6 +160,10 @@ class VideoViewport extends BaseViewport<
    * HTML video render path. The first entry is mounted as the source binding
    * and the others as overlays, unless an entry names its `role`, and the
    * first video then shows the 1-based `frameNumber` of its options. The
+   * first video sets the view up: the view state starts from the default.
+   * Each later video is drawn over the videos before it, in the same view
+   * and on the time that the view shows. The calls without a display set id
+   * follow the source. The
    * option `appearance` of an entry is the appearance of the video from its
    * first draw (its playback rate, loop, mute, object fit, opacity and the
    * rest), merged over the overrides set before the mount;
@@ -193,63 +198,131 @@ class VideoViewport extends BaseViewport<
 
     this.removeAllData();
     this.overlayActors = [];
-    this.frameScalarData = undefined;
-    this.lastFrameEventNumber = undefined;
 
     for (const [index, { displaySetId, options }] of entries.entries()) {
-      const restoreAppearance = this.stageMountedAppearance(
+      const mounted = await this.mountVideo(
         displaySetId,
-        {
-          visible: true,
-          opacity: 1,
-          playbackRate: 1,
-          loop: true,
-          muted: true,
-          objectFit: 'contain',
-        },
-        options?.appearance
+        options,
+        options?.role ?? (index === 0 ? 'source' : 'overlay'),
+        index === 0,
+        isSuperseded
       );
-      let bound = false;
 
-      try {
-        bound = await this.bindDisplaySet(
-          displaySetId,
-          {
-            renderMode: 'video2d',
-            role: options?.role ?? (index === 0 ? 'source' : 'overlay'),
-          },
-          isSuperseded
-        );
-      } finally {
-        if (!bound) {
-          restoreAppearance();
-        }
-      }
-
-      if (!bound) {
+      if (!mounted) {
         return;
       }
+    }
 
-      if (typeof options?.frameNumber === 'number') {
-        this.mountFrameNumbers.set(displaySetId, options.frameNumber);
+    this.showMountedFrame(entries[0]?.options?.frameNumber);
+    this.triggerDisplaySetsChanged(
+      entries.map(({ displaySetId }) => displaySetId)
+    );
+  }
+
+  /**
+   * Mounts one more video as `setDisplaySets` mounts that entry, and leaves
+   * the videos on display as they are. Without a `role` it is the source on
+   * a viewport that shows nothing, else an overlay. On a viewport that shows
+   * nothing it sets the view up and shows the `frameNumber` of its options,
+   * with its NEW_IMAGE; any other video is drawn over the videos on display,
+   * in their view and on the time that the view shows, and fires no
+   * NEW_IMAGE. It rejects as `setDisplaySets` does for a video that does
+   * not load. DISPLAY_SETS_CHANGED fires once it is mounted.
+   *
+   * @param displaySetId - The video display set to mount.
+   * @param options - The options of its mount, as for an entry of
+   * `setDisplaySets`.
+   */
+  async addDisplaySet(
+    displaySetId: string,
+    options: VideoMountOptions = {}
+  ): Promise<void> {
+    const opensView = Array.from(this.bindings.keys()).every(
+      (mountedId) => mountedId === displaySetId
+    );
+    const mounted = await this.mountVideo(
+      displaySetId,
+      options,
+      this.resolveAddRole(displaySetId, options.role),
+      opensView
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    this.showMountedFrame(opensView ? options.frameNumber : undefined);
+    this.triggerDisplaySetsChanged([displaySetId]);
+  }
+
+  /**
+   * Mounts one video with the HTML video render path and the appearance of
+   * its mount, the one mount of `setDisplaySets` and `addDisplaySet`, and
+   * waits for its first frame. A video that `opensView` (the first of a
+   * viewport) starts the view state from the default; another one keeps
+   * the view, and its element shows the time of the view. Gives false when
+   * a newer `setDisplaySets` superseded the call, and rejects, with the
+   * video unbound and the overrides from before the call, when the video
+   * does not load.
+   */
+  private async mountVideo(
+    displaySetId: string,
+    options: VideoMountOptions | undefined,
+    role: BindingRole,
+    opensView: boolean,
+    isSuperseded?: () => boolean
+  ): Promise<boolean> {
+    const restoreAppearance = this.stageMountedAppearance(
+      displaySetId,
+      {
+        visible: true,
+        opacity: 1,
+        playbackRate: 1,
+        loop: true,
+        muted: true,
+        objectFit: 'contain',
+      },
+      options?.appearance
+    );
+    let bound = false;
+
+    try {
+      bound = await this.bindDisplaySet(
+        displaySetId,
+        { renderMode: 'video2d', role },
+        isSuperseded
+      );
+    } finally {
+      if (!bound) {
+        restoreAppearance();
       }
+    }
 
-      const binding = this.getBinding(displaySetId);
+    if (!bound) {
+      return false;
+    }
 
-      if (!binding) {
-        continue;
-      }
+    if (typeof options?.frameNumber === 'number') {
+      this.mountFrameNumbers.set(displaySetId, options.frameNumber);
+    }
 
-      this.applyMountedAppearance(displaySetId);
+    const binding = this.getBinding(displaySetId);
 
-      const videoData = this.getVideoDataFromBinding(binding);
+    if (!binding) {
+      return true;
+    }
 
-      if (!videoData) {
-        throw new Error(
-          `[VideoViewport] Loaded data for ${displaySetId} is not a valid video stream`
-        );
-      }
+    this.applyMountedAppearance(displaySetId);
 
+    const videoData = this.getVideoDataFromBinding(binding);
+
+    if (!videoData) {
+      throw new Error(
+        `[VideoViewport] Loaded data for ${displaySetId} is not a valid video stream`
+      );
+    }
+
+    if (opensView) {
       this.viewState = this.normalizeViewState({
         ...createDefaultVideoViewState(),
         scrollStep: this.viewState.scrollStep,
@@ -262,27 +335,38 @@ class VideoViewport extends BaseViewport<
         );
       }
 
+      this.lastFrameEventNumber = undefined;
       this.modified();
-      this.trackVideoElement();
-
-      try {
-        await this.primeInitialFrame(videoData);
-      } catch (error) {
-        if (!isSuperseded()) {
-          this.removeDisplaySetBinding(displaySetId);
-          restoreAppearance();
-        }
-
-        throw error;
-      }
-
-      if (isSuperseded()) {
-        return;
-      }
     }
 
-    const frameNumber = entries[0]?.options?.frameNumber;
+    this.trackVideoElement();
 
+    try {
+      await this.primeInitialFrame(
+        isVideoElementRendering(binding.rendering)
+          ? binding.rendering.element
+          : undefined,
+        videoData,
+        this.getCurrentTime()
+      );
+    } catch (error) {
+      if (!isSuperseded?.()) {
+        this.removeDisplaySetBinding(displaySetId);
+        restoreAppearance();
+      }
+
+      throw error;
+    }
+
+    return !isSuperseded?.();
+  }
+
+  /**
+   * Ends a mount: the source shows `frameNumber` when it is given, and
+   * NEW_IMAGE fires for the frame on display unless it fired since the view
+   * was set up or a seek will fire it.
+   */
+  private showMountedFrame(frameNumber?: number): void {
     if (typeof frameNumber === 'number') {
       this.setFrameNumber(frameNumber);
     }
@@ -296,10 +380,6 @@ class VideoViewport extends BaseViewport<
     ) {
       this.triggerFrameEvents();
     }
-
-    this.triggerDisplaySetsChanged(
-      entries.map(({ displaySetId }) => displaySetId)
-    );
   }
 
   /**
@@ -332,8 +412,9 @@ class VideoViewport extends BaseViewport<
   }
 
   /**
-   * Removes a video dataset and rebinds tracking if the primary video changed.
-   * An id of an image drawn over the video (`addImages`) removes that image.
+   * Removes a video dataset and rebinds tracking when the current video, the
+   * source, goes. An id of an image drawn over the video (`addImages`)
+   * removes that image.
    *
    * @param displaySetId - Logical dataset id to remove.
    */
@@ -348,12 +429,12 @@ class VideoViewport extends BaseViewport<
       return;
     }
 
-    const firstDisplaySetId = this.getFirstBinding()?.data.id;
+    const currentDisplaySetId = this.getCurrentBinding()?.data.id;
 
     super.removeDisplaySetBinding(displaySetId);
     this.mountFrameNumbers.delete(displaySetId);
 
-    if (firstDisplaySetId === displaySetId) {
+    if (currentDisplaySetId === displaySetId) {
       this.untrackVideoElement();
       this.trackVideoElement();
     }
@@ -401,7 +482,7 @@ class VideoViewport extends BaseViewport<
       typeof sliceIndex === 'number'
         ? this.getCurrentImageId(sliceIndex)
         : this.getCurrentImageId();
-    const displaySetId = this.getFirstBinding()?.data.id;
+    const displaySetId = this.getCurrentBinding()?.data.id;
     const camera = this.getResolvedView()?.toICamera();
 
     return {
@@ -426,7 +507,7 @@ class VideoViewport extends BaseViewport<
 
   getCurrentImageId(index = this.getCurrentImageIdIndex()): string | undefined {
     const sourceImageId = getDisplaySetImageId(
-      this.getFirstBinding()?.data.id || ''
+      this.getCurrentBinding()?.data.id || ''
     );
 
     if (!sourceImageId) {
@@ -690,7 +771,7 @@ class VideoViewport extends BaseViewport<
    * is viewable here.
    */
   protected getReferenceViewContexts(): ViewReferenceContext[] {
-    const binding = this.getFirstBinding();
+    const binding = this.getCurrentBinding();
     const videoData = this.getVideoData();
 
     if (!binding || !videoData) {
@@ -806,7 +887,7 @@ class VideoViewport extends BaseViewport<
    * @param playbackRate - Playback rate to apply to the active dataset.
    */
   setPlaybackRate(playbackRate: number): void {
-    const displaySetId = this.getFirstBinding()?.data.id;
+    const displaySetId = this.getCurrentBinding()?.data.id;
 
     if (!displaySetId) {
       return;
@@ -917,7 +998,7 @@ class VideoViewport extends BaseViewport<
    * does not make the ids of every frame again.
    */
   getImageIds(): string[] {
-    const displaySetId = this.getFirstBinding()?.data.id;
+    const displaySetId = this.getCurrentBinding()?.data.id;
     const videoData = this.getVideoData();
 
     if (!displaySetId || !videoData) {
@@ -1187,7 +1268,7 @@ class VideoViewport extends BaseViewport<
   }
 
   private getVideoRendering(): VideoElementRendering | undefined {
-    const binding = this.getFirstBinding();
+    const binding = this.getCurrentBinding();
 
     if (!binding || !isVideoElementRendering(binding.rendering)) {
       return;
@@ -1223,6 +1304,7 @@ class VideoViewport extends BaseViewport<
     }
 
     this.untrackVideoElement();
+    this.frameScalarData = undefined;
 
     const syncCurrentTime = () => {
       this.syncCameraCurrentTimeFromElement();
@@ -1483,9 +1565,11 @@ class VideoViewport extends BaseViewport<
   }
 
   /**
-   * Shows the first frame of the range, paused, as the legacy viewport does:
-   * the video does not play, it only seeks to that frame when it shows
-   * another one, and waits until the frame is painted. A video that played
+   * Shows the frame of the mount of a video, paused, as the legacy viewport
+   * does: the video does not play, it only seeks to that frame when it shows
+   * another one, and waits until the frame is painted. The frame is the one
+   * at `targetTimeSeconds`, the time of the view: the first frame of the
+   * range for the video that set the view up. A video that played
    * to load its frame (`playMutedForFrameData`) can show a later frame at the
    * pause while `currentTime` has not moved, and a seek to the time that the
    * element has already shows nothing new, so it seeks one frame on and then
@@ -1493,20 +1577,15 @@ class VideoViewport extends BaseViewport<
    * before its first frame.
    */
   private async primeInitialFrame(
-    videoData: LoadedData<VideoStreamPayload>
+    element: HTMLVideoElement | undefined,
+    videoData: LoadedData<VideoStreamPayload>,
+    targetTimeSeconds: number
   ): Promise<void> {
-    const element = this.getVideoElement();
-
     if (!element) {
       return;
     }
 
     const played = await waitForVideoReady(element, videoData.id);
-
-    const targetTimeSeconds =
-      videoData.frameRange[0] > 1
-        ? frameNumberToTimeSeconds(videoData.frameRange[0], videoData.fps)
-        : 0;
 
     element.pause();
 

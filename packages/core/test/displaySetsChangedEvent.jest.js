@@ -899,28 +899,6 @@ describe('DISPLAY_SETS_CHANGED on an ECG viewport', () => {
     viewport.destroy();
   });
 
-  it('makes the second waveform the source when the first one goes', async () => {
-    const viewport = createECGViewport();
-
-    await viewport.setDisplaySets(
-      { displaySetId: ECG_IDS[0] },
-      { displaySetId: ECG_IDS[1] }
-    );
-
-    const events = recordDisplaySetsChanged(viewport);
-
-    viewport.removeDisplaySet(ECG_IDS[0]);
-
-    expect(events).toEqual([
-      changed([[ECG_IDS[1], 'source']], {
-        removed: [ECG_IDS[0]],
-        sourceChanged: true,
-      }),
-    ]);
-    expect(viewport.getSourceDisplaySetId()).toBe(ECG_IDS[1]);
-    viewport.destroy();
-  });
-
   it('fires nothing for a setDisplaySets that a newer one supersedes', async () => {
     const viewport = createECGViewport();
     const events = recordDisplaySetsChanged(viewport);

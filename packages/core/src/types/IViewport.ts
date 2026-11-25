@@ -548,9 +548,13 @@ interface IViewport<
     ...entries: Array<{ displaySetId: string; options?: unknown }>
   ): Promise<void>;
   /**
-   * Mounts one more display set. The options are those of the family, as in
-   * `setDisplaySets`: `PlanarMountOptions` on a planar viewport, a render
-   * mode and a role on the base class.
+   * Mounts one more display set, as `setDisplaySets` mounts that entry, and
+   * leaves the display sets on display as they are. Without a `role` it is
+   * the source on a viewport that shows nothing, else an overlay. The
+   * options are those of an entry of `setDisplaySets` of the family:
+   * `PlanarMountOptions`, `Volume3DMountOptions`, `VideoMountOptions`,
+   * `ECGMountOptions` or `WSIMountOptions`. An ECG viewport shows one
+   * waveform and rejects a second one.
    */
   addDisplaySet(displaySetId: string, options: unknown): Promise<void>;
   /** The mounted display sets, the source first. */

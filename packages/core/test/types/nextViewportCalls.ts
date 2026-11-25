@@ -227,6 +227,26 @@ export function copiesOfTheMountsOfEachFamily() {
   ];
 }
 
+/**
+ * `addDisplaySet` of a video, an ECG and a whole slide viewport takes the
+ * mount options of the family, as an entry of `setDisplaySets`, or none.
+ */
+export function addDisplaySetOfEachFamily() {
+  const videoOptions: VideoMountOptions = { frameNumber: 2, role: 'overlay' };
+  const ecgOptions: ECGMountOptions = { multiplexGroupIndex: 1 };
+  const wholeSlideOptions: WSIMountOptions = { appearance: { opacity: 0.5 } };
+
+  return [
+    video.addDisplaySet(displaySetId),
+    video.addDisplaySet(displaySetId, videoOptions),
+    ecg.addDisplaySet(displaySetId),
+    ecg.addDisplaySet(displaySetId, ecgOptions),
+    wholeSlide.addDisplaySet(displaySetId),
+    wholeSlide.addDisplaySet(displaySetId, wholeSlideOptions),
+    viewport.addDisplaySet(displaySetId, { role: 'overlay' }),
+  ];
+}
+
 /** The functions of `utilities` that the guide calls with a next viewport. */
 export function functionsOfTheGuide() {
   utilities.scroll(planar, { delta: 1 });

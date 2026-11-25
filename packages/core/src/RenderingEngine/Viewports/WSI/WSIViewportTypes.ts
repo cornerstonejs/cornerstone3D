@@ -76,7 +76,9 @@ export type WSIDisplaySetAppearance = WSIAppearanceProps & WSIProperties;
 export interface WSIMountOptions {
   /**
    * The role of the display set: the first entry of `setDisplaySets` is the
-   * source and the others are overlays when not given.
+   * source and the others are overlays when not given; `addDisplaySet`
+   * without a role mounts the source on a viewport that shows nothing, else
+   * an overlay.
    */
   role?: BindingRole;
   /**

@@ -1,5 +1,5 @@
 import getOrCreateCanvas from '../../helpers/getOrCreateCanvas';
-import type { LoadedData } from '../ViewportArchitectureTypes';
+import type { BindingRole, LoadedData } from '../ViewportArchitectureTypes';
 import BaseViewport from '../BaseViewport';
 import { ViewportType } from '../../../enums';
 import {
@@ -130,19 +130,21 @@ class ECGViewport extends BaseViewport<
   }
 
   /**
-   * Replaces all mounted waveform display sets with the provided ones using
-   * the canvas ECG render path.
+   * Replaces the mounted waveform with the provided one using the canvas ECG
+   * render path.
    *
    * The view state resets to the full record with every channel visible. The
    * trace layout, the sweep speed, the sensitivity and the amplitude scale stay.
-   * DISPLAY_SETS_CHANGED fires once the waveforms are mounted; a newer call
+   * DISPLAY_SETS_CHANGED fires once the waveform is mounted; a newer call
    * stops this one, which then fires nothing.
    *
-   * @param entries - Waveform display sets to mount. The first entry is the
-   * source and the others are overlays, unless an entry names its
-   * `options.role`. `options.multiplexGroupIndex` (0-based) names the
-   * multiplex group to show; undefined shows the default group.
-   * `options.appearance` is the
+   * An ECG viewport shows one waveform: a call with two different display
+   * sets rejects, and changes nothing (`oneWaveformError`).
+   *
+   * @param entries - The waveform display set to mount. It is the source,
+   * unless it names its `options.role`. `options.multiplexGroupIndex`
+   * (0-based) names the multiplex group to show; undefined shows the default
+   * group. `options.appearance` is the
    * appearance of the waveform from its first draw (line width, grid,
    * amplitude labels, opacity), merged over the overrides set before the
    * mount; DISPLAY_SET_APPEARANCE_CHANGED fires once for it, with cause
@@ -154,70 +156,133 @@ class ECGViewport extends BaseViewport<
       options?: ECGMountOptions;
     }>
   ): Promise<void> {
+    const displaySetIds = entries.map(({ displaySetId }) => displaySetId);
+
+    if (new Set(displaySetIds).size > 1) {
+      throw oneWaveformError('setDisplaySets', displaySetIds);
+    }
+
     const isSuperseded = this.startSetDisplaySets();
 
     this.removeAllData();
 
     for (const [index, { displaySetId, options }] of entries.entries()) {
-      const waveform = await this.loadWaveformData(displaySetId, options);
-
-      if (isSuperseded()) {
-        return;
-      }
-
-      const durationMs =
-        (waveform.numberOfSamples / waveform.samplingFrequency) * 1000;
-      const { traceLayout, sweepSpeed, sensitivityMmMv, amplitudeScale } =
-        this.viewState;
-
-      const restoreAppearance = this.stageMountedAppearance(
+      const bound = await this.mountWaveform(
         displaySetId,
-        {
-          visible: true,
-          opacity: 1,
-          lineWidth: 1,
-          showGrid: true,
-        },
-        options?.appearance
+        options,
+        options?.role ?? (index === 0 ? 'source' : 'overlay'),
+        isSuperseded
       );
-      this.viewState = createDefaultECGViewState({
-        timeRange: [0, durationMs],
-        valueRange: getDefaultECGValueRange(waveform),
-        traceLayout,
-        sweepSpeed,
-        sensitivityMmMv,
-        amplitudeScale,
-      });
-      warnIfAmplitudeScaleIgnored(this.viewState);
-
-      let bound = false;
-
-      try {
-        bound = await this.addLoadedData(
-          displaySetId,
-          waveform,
-          {
-            renderMode: 'signal2d',
-            role: options?.role ?? (index === 0 ? 'source' : 'overlay'),
-          },
-          isSuperseded
-        );
-      } finally {
-        if (!bound) {
-          restoreAppearance();
-        }
-      }
 
       if (!bound) {
         return;
       }
+    }
 
+    this.triggerDisplaySetsChanged(displaySetIds);
+  }
+
+  /**
+   * Mounts a waveform as `setDisplaySets` mounts that entry: the view state
+   * resets to its full record. Without a `role` it is the source on a
+   * viewport that shows nothing. An ECG viewport shows one waveform, so on a
+   * viewport that shows another one the call rejects and changes nothing
+   * (`oneWaveformError`); the waveform on display mounts again in its role.
+   * DISPLAY_SETS_CHANGED fires once it is mounted.
+   *
+   * @param displaySetId - The waveform display set to mount.
+   * @param options - The options of its mount, as for an entry of
+   * `setDisplaySets`.
+   */
+  async addDisplaySet(
+    displaySetId: string,
+    options: ECGMountOptions = {}
+  ): Promise<void> {
+    const displaySetIds = [
+      ...Array.from(this.bindings.keys()).filter(
+        (mountedId) => mountedId !== displaySetId
+      ),
+      displaySetId,
+    ];
+
+    if (displaySetIds.length > 1) {
+      throw oneWaveformError(`addDisplaySet("${displaySetId}")`, displaySetIds);
+    }
+
+    const bound = await this.mountWaveform(
+      displaySetId,
+      options,
+      this.resolveAddRole(displaySetId, options.role)
+    );
+
+    if (bound) {
+      this.triggerDisplaySetsChanged([displaySetId]);
+    }
+  }
+
+  /**
+   * Loads and mounts one waveform with the canvas render path, the view
+   * state of its full record and the appearance of its mount: the one mount
+   * of `setDisplaySets` and `addDisplaySet`. Gives false, and puts the
+   * overrides from before the call back, when the waveform is not bound.
+   */
+  private async mountWaveform(
+    displaySetId: string,
+    options: ECGMountOptions | undefined,
+    role: BindingRole,
+    isSuperseded?: () => boolean
+  ): Promise<boolean> {
+    const waveform = await this.loadWaveformData(displaySetId, options);
+
+    if (isSuperseded?.()) {
+      return false;
+    }
+
+    const durationMs =
+      (waveform.numberOfSamples / waveform.samplingFrequency) * 1000;
+    const { traceLayout, sweepSpeed, sensitivityMmMv, amplitudeScale } =
+      this.viewState;
+
+    const restoreAppearance = this.stageMountedAppearance(
+      displaySetId,
+      {
+        visible: true,
+        opacity: 1,
+        lineWidth: 1,
+        showGrid: true,
+      },
+      options?.appearance
+    );
+    this.viewState = createDefaultECGViewState({
+      timeRange: [0, durationMs],
+      valueRange: getDefaultECGValueRange(waveform),
+      traceLayout,
+      sweepSpeed,
+      sensitivityMmMv,
+      amplitudeScale,
+    });
+    warnIfAmplitudeScaleIgnored(this.viewState);
+
+    let bound = false;
+
+    try {
+      bound = await this.addLoadedData(
+        displaySetId,
+        waveform,
+        { renderMode: 'signal2d', role },
+        isSuperseded
+      );
+    } finally {
+      if (!bound) {
+        restoreAppearance();
+      }
+    }
+
+    if (bound) {
       this.applyMountedAppearance(displaySetId);
     }
 
-    this.triggerDisplaySetsChanged(
-      entries.map(({ displaySetId }) => displaySetId)
-    );
+    return bound;
   }
 
   /**
@@ -873,6 +938,19 @@ function isECGWaveformData(
     typeof waveform.numberOfSamples === 'number' &&
     typeof waveform.samplingFrequency === 'number' &&
     typeof waveform.numberOfChannels === 'number'
+  );
+}
+
+/**
+ * The error of a call that would show more than one waveform: the ECG
+ * render path draws the waveform of one display set.
+ */
+function oneWaveformError(call: string, displaySetIds: string[]): Error {
+  return new Error(
+    `[ECGViewport] An ECG viewport shows one waveform, and ${call} would show ${displaySetIds.length}: ` +
+      `${displaySetIds.map((displaySetId) => `"${displaySetId}"`).join(', ')}. ` +
+      'Mount one with setDisplaySets({ displaySetId }), which shows it in place of the waveform on display, ' +
+      'and show the others in other ECG viewports.'
   );
 }
 

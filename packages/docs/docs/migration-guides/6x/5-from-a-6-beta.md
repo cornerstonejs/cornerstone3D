@@ -81,6 +81,7 @@ person, and **Nothing** where the code stays the same and its result changes.
 | A volume takes the array type that its series can hold (its metadata), not the array of the images that a stack loaded before; its voxel manager answers `getConstructor()` with that type                                                                                                                          | Nothing; a 12 bit series is a `Uint16Array` volume where it could be a `Uint8Array` cut at 255                                    | Nothing                                                                               | [The array type of a volume](./2-rendering-changes.md#the-array-type-of-a-volume)                                                                               |
 | When the source goes and other display sets remain, the first of them becomes the source on every viewport family, where a 3D, video, whole slide and ECG viewport kept them as overlays with no source. `addDisplaySet` without a `role` mounts the source on a viewport that shows nothing                        | Pass `role: 'overlay'` where a display set mounted alone is to stay an overlay                                                    | Nothing                                                                               | [What the codemod cannot do](#what-the-codemod-cannot-do), item 11                                                                                              |
 | A resize keeps the camera of a planar view, as it kept that of a 3D view, so the zoom read against the fit changes where the fit changes; a framing keeps the zoom against the fit                                                                                                                                  | Read `getViewFraming()` before `renderingEngine.resize()` and write it after it where the zoom against the fit is to stay         | Nothing                                                                               | [What the codemod cannot do](#what-the-codemod-cannot-do), item 12                                                                                              |
+| `addDisplaySet` mounts on a video, an ECG and a whole slide viewport as an entry of `setDisplaySets` does, where it threw; an ECG viewport rejects a second waveform; on a video and a whole slide viewport the calls without an id follow the source                                                               | Mount a second waveform in another ECG viewport                                                                                   | Nothing                                                                               | [What the codemod cannot do](#what-the-codemod-cannot-do), item 13                                                                                              |
 
 ## What the codemod cannot do
 
@@ -224,3 +225,41 @@ application wants.
     family but the whole slide viewport, which keeps the resolution of its
     map in both cases. See
     [A framing carried to another size](./2-rendering-changes.md#display-area-and-stretch).
+
+13. **`addDisplaySet` on a video, an ECG and a whole slide viewport.** It
+    takes the mount options of the family (`VideoMountOptions`,
+    `ECGMountOptions`, `WSIMountOptions`) and mounts what the same entry of
+    `setDisplaySets` mounts, with the role rule of item 11, and leaves the
+    display sets on display as they are. 6.0.0-beta.2 threw
+    `No render path for video/video/undefined` (and the same for `ecg` and
+    `wsi`) unless the call passed a private render mode. A second video or
+    slide shows over the first, in the view of the source. An ECG viewport
+    shows one waveform: `setDisplaySets` with two display sets and
+    `addDisplaySet` of a second one reject and change nothing, where
+    6.0.0-beta.2 mounted the second waveform and never drew it.
+
+    ```ts
+    // Before: threw, so an application mounted again with setDisplaySets
+    await videoViewport.setDisplaySets(...videoViewport.getDisplaySets(), {
+      displaySetId: 'secondVideo',
+    });
+
+    // After
+    await videoViewport.addDisplaySet('secondVideo', {
+      appearance: { opacity: 0.5 },
+    });
+
+    // An ECG viewport: one waveform, in place of the one on display
+    await ecgViewport.setDisplaySets({ displaySetId: 'otherEcg' });
+    ```
+
+    The calls without a display set id (`setDisplaySetAppearance(props)`,
+    `getDisplaySetAppearance()`, the image, the frame of reference, the view
+    reference, playback and `NEW_IMAGE` of a video) follow the source of a
+    video and of a whole slide viewport, also when the source is not the
+    first display set. They followed the first video, and the last slide of
+    `setDisplaySets` even when it was an overlay. The window of each slide is
+    drawn on that slide, where only the window of the last slide was drawn.
+    See [Video viewports](./2-rendering-changes.md#video-viewports),
+    [ECG viewports](./2-rendering-changes.md#ecg-viewports) and
+    [Whole slide viewports](./2-rendering-changes.md#whole-slide-viewports).

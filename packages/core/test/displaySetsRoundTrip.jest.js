@@ -247,36 +247,35 @@ describe('getDisplaySets of an ECG viewport', () => {
     document.body.innerHTML = '';
   });
 
-  it('gives the role and the multiplex group that each waveform shows, and a copy shows the same groups in the same roles with the same look', async () => {
+  it('gives the role and the multiplex group that the waveform shows, and a copy shows the same group in the same role with the same look', async () => {
     const source = createECGViewport('ecgSource');
     const target = createECGViewport('ecgTarget');
 
-    await source.setDisplaySets(
-      {
-        displaySetId: ECG_IDS[0],
-        options: { multiplexGroupIndex: 1, appearance: { lineWidth: 3 } },
-      },
-      { displaySetId: ECG_IDS[1] }
-    );
+    await source.setDisplaySets({
+      displaySetId: ECG_IDS[0],
+      options: { multiplexGroupIndex: 1, appearance: { lineWidth: 3 } },
+    });
 
     expect(source.getDisplaySets()).toEqual([
       {
         displaySetId: ECG_IDS[0],
         options: { role: 'source', multiplexGroupIndex: 1 },
       },
+    ]);
+
+    await target.setDisplaySets({ displaySetId: ECG_IDS[1] });
+
+    expect(target.getDisplaySets()).toEqual([
       {
         displaySetId: ECG_IDS[1],
-        options: { role: 'overlay', multiplexGroupIndex: 0 },
+        options: { role: 'source', multiplexGroupIndex: 0 },
       },
     ]);
 
     loads = [];
     await target.setDisplaySets(...source.getDisplaySets());
 
-    expect(loads).toEqual([
-      [ECG_IDS[0], 1],
-      [ECG_IDS[1], 0],
-    ]);
+    expect(loads).toEqual([[ECG_IDS[0], 1]]);
     expect(target.getDisplaySets()).toEqual(source.getDisplaySets());
 
     await target.setDisplaySets(...displaySetsWithAppearance(source));
@@ -294,19 +293,16 @@ describe('getDisplaySets of an ECG viewport', () => {
   it('takes the role of the options', async () => {
     const viewport = createECGViewport('ecgRole');
 
-    await viewport.setDisplaySets(
-      { displaySetId: ECG_IDS[0], options: { role: 'overlay' } },
-      { displaySetId: ECG_IDS[1], options: { role: 'source' } }
-    );
+    await viewport.setDisplaySets({
+      displaySetId: ECG_IDS[0],
+      options: { role: 'overlay' },
+    });
 
     expect(
       viewport
         .getDisplaySets()
         .map(({ displaySetId, options }) => [displaySetId, options.role])
-    ).toEqual([
-      [ECG_IDS[0], 'overlay'],
-      [ECG_IDS[1], 'source'],
-    ]);
+    ).toEqual([[ECG_IDS[0], 'overlay']]);
     viewport.destroy();
   });
 });

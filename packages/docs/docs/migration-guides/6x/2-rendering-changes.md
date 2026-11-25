@@ -2133,6 +2133,23 @@ levels of 255.
   stayed `'preRender'`, so code that waited for `'rendered'` waited for
   ever. The legacy viewport was `'rendered'` after the first pass of the
   rendering engine, before any tile had come.
+- **`addDisplaySet` mounts a slide.**
+  `viewport.addDisplaySet(displaySetId, options)` takes the
+  `WSIMountOptions` of an entry of `setDisplaySets`, mounts what that entry
+  mounts, and leaves the slides on display as they are. Without a `role`
+  the slide is the source of a viewport that shows nothing, else an
+  overlay: a microscopy viewer of its own over the slides on display, with
+  the view of the source. In 6.0.0-beta.2 the call threw
+  `No render path for wsi/wsi/undefined`.
+- **The slide that the viewport is about is its source.** With two slides,
+  the calls without a display set id (`setDisplaySetAppearance(props)`,
+  `getDisplaySetAppearance()`), the frame of reference, `getImageData()`,
+  `getCurrentImageId()`, `getViewReference()`, the transforms and the view
+  that the viewport reads back from the map follow the source, as on every
+  family. In 6.0.0-beta.2 they followed the last entry of `setDisplaySets`,
+  an overlay. The window of a slide (`voiRange`, `averageWhite`) is drawn on
+  that slide, also on an overlay: in 6.0.0-beta.2 only the window of the
+  last slide was drawn.
 
 ## ECG viewports
 
@@ -2159,6 +2176,21 @@ levels of 255.
   them. The legacy viewport worked it out from the number of samples and the
   sampling frequency alone. Code that sizes its element from it reads it
   again after a change of `sweepSpeed` or `traceLayout`.
+- **An ECG viewport shows one waveform.**
+  `viewport.addDisplaySet(displaySetId, options)` takes the
+  `ECGMountOptions` of an entry of `setDisplaySets` and mounts what that
+  entry mounts: the waveform, with the view state of its full record. In
+  6.0.0-beta.2 the call threw `No render path for ecg/ecg/undefined`. A call
+  that would show two waveforms rejects and changes nothing:
+  `setDisplaySets` with two display sets, and `addDisplaySet` of another
+  display set on a viewport that shows a waveform. In 6.0.0-beta.2 the
+  second waveform was mounted and never drawn, while the time window came
+  from it. Show a second waveform in a second ECG viewport, or in place of
+  the first with `setDisplaySets`:
+
+  ```text
+  [ECGViewport] An ECG viewport shows one waveform, and addDisplaySet("ecg:second") would show 2: "ecg:first", "ecg:second". Mount one with setDisplaySets({ displaySetId }), which shows it in place of the waveform on display, and show the others in other ECG viewports.
+  ```
 
 ## 3D viewports
 
@@ -2384,6 +2416,27 @@ levels of 255.
   resize or a render: listen to `CAMERA_MODIFIED` for a pan or a zoom, and to
   `IMAGE_RENDERED` for a draw.
 - **`options.frameNumber` of `setDisplaySets` is honoured.**
+- **`addDisplaySet` mounts a video.**
+  `viewport.addDisplaySet(displaySetId, options)` takes the
+  `VideoMountOptions` of an entry of `setDisplaySets`, mounts what that
+  entry mounts, and leaves the videos on display as they are. In
+  6.0.0-beta.2 the call threw `No render path for video/video/undefined`.
+  Without a `role` the video is the source of a viewport that shows
+  nothing: it sets the view up, shows `options.frameNumber` and fires
+  `NEW_IMAGE`. On any other viewport it is an overlay: a video element over
+  the videos on display, in their view (zoom, pan, rotation) and on the
+  time that the view shows, with no `NEW_IMAGE`. The second entry of
+  `setDisplaySets` mounts in the same way; in 6.0.0-beta.2 it set the view
+  up again and sought the element of the first video to the first frame of
+  the second. A labelmap over a video is not a display set: the
+  segmentation tools draw it with `addImages`. `addDisplaySet` of a
+  labelmap display set rejects, as `setDisplaySets` does, with
+  `The display set "…" has no imageId, which a VideoViewport needs to show it`.
+- **The calls without a display set id follow the source,** also when the
+  source is not the first display set, as after a mount with
+  `role: 'source'`: playback, the frame, `NEW_IMAGE`, the image data, the
+  image ids, the view reference and `setDisplaySetAppearance(props)`. In
+  6.0.0-beta.2 they followed the first display set.
 - **`voiRange` and `averageWhite` of the appearance are applied.**
 - **`IMAGE_RENDERED` fires.** A next video viewport fires it when what it shows
   changes: a new frame, a seek, a pan, a zoom, a resize or a call of

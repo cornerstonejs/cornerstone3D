@@ -1830,11 +1830,14 @@ abstract class BaseViewport<
   }
 
   /**
-   * Returns the binding used for generic transform and frame-of-reference
-   * queries when a viewport family does not override the selection logic.
+   * The display set that the viewport is about, which the calls without a
+   * display set id follow (the appearance, the image, the frame of
+   * reference, the view reference): the source, else the first display set
+   * of a viewport that shows overlays only. A family overrides it where it
+   * keeps the source itself.
    */
   protected getCurrentBinding(): ViewportDataBinding<TAppearance> | undefined {
-    return this.getFirstBinding();
+    return this.getSourceBinding();
   }
 
   /**

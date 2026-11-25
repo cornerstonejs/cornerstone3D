@@ -12,10 +12,7 @@ import type {
   WSIMapViewLike,
   WSIViewerLike,
 } from '../../../utilities/WSIUtilities';
-import type {
-  LoadedData,
-  ViewportDataBinding,
-} from '../ViewportArchitectureTypes';
+import type { BindingRole, LoadedData } from '../ViewportArchitectureTypes';
 import getOrCreateCanvas from '../../helpers/getOrCreateCanvas';
 import BaseViewport from '../BaseViewport';
 import type { ViewReferenceContext } from '../viewReferenceCompatibility';
@@ -56,8 +53,6 @@ export default class WSIViewport extends BaseViewport<
   readonly canvas: HTMLCanvasElement;
 
   protected renderContext: WSIViewportRenderContext;
-
-  private activeDisplaySetId?: string;
 
   static get useCustomRenderingPipeline(): boolean {
     return true;
@@ -128,7 +123,10 @@ export default class WSIViewport extends BaseViewport<
    * draw (its window, average white and opacity), merged over the overrides
    * set before the mount; DISPLAY_SET_APPEARANCE_CHANGED fires once for it,
    * with cause `'mount'`. The first entry is the source and the others are
-   * overlays, unless an entry names its `role`.
+   * overlays, unless an entry names its `role`. Each slide has a microscopy
+   * viewer of its own, over the slides before it, and every slide shows the
+   * view state of the viewport; the view and the calls without a display
+   * set id are those of the source.
    */
   async setDisplaySets(
     ...entries: Array<{
@@ -146,34 +144,16 @@ export default class WSIViewport extends BaseViewport<
     }
 
     for (const [index, { displaySetId, options }] of entries.entries()) {
-      const restoreAppearance = this.stageMountedAppearance(
+      const bound = await this.mountSlide(
         displaySetId,
-        { visible: true, opacity: 1 },
-        options?.appearance
+        options,
+        options?.role ?? (index === 0 ? 'source' : 'overlay'),
+        isSuperseded
       );
-      let bound = false;
-
-      try {
-        bound = await this.bindDisplaySet(
-          displaySetId,
-          {
-            renderMode: 'wsi2d',
-            role: options?.role ?? (index === 0 ? 'source' : 'overlay'),
-          },
-          isSuperseded
-        );
-      } finally {
-        if (!bound) {
-          restoreAppearance();
-        }
-      }
 
       if (!bound) {
         return;
       }
-
-      this.activeDisplaySetId = displaySetId;
-      this.applyMountedAppearance(displaySetId);
     }
 
     this.syncCameraFromView();
@@ -181,6 +161,76 @@ export default class WSIViewport extends BaseViewport<
     this.triggerDisplaySetsChanged(
       entries.map(({ displaySetId }) => displaySetId)
     );
+  }
+
+  /**
+   * Mounts one more slide as `setDisplaySets` mounts that entry, and leaves
+   * the slides on display as they are. Without a `role` it is the source on
+   * a viewport that shows nothing, else an overlay over the slides on
+   * display, with the view of the source. DISPLAY_SETS_CHANGED fires once
+   * it is mounted.
+   *
+   * @param displaySetId - The slide display set to mount.
+   * @param options - The options of its mount, as for an entry of
+   * `setDisplaySets`.
+   */
+  async addDisplaySet(
+    displaySetId: string,
+    options: WSIMountOptions = {}
+  ): Promise<void> {
+    this.syncCameraFromView();
+
+    const bound = await this.mountSlide(
+      displaySetId,
+      options,
+      this.resolveAddRole(displaySetId, options.role)
+    );
+
+    if (!bound) {
+      return;
+    }
+
+    this.syncCameraFromView();
+    this.applyVOIToRendering();
+    this.triggerDisplaySetsChanged([displaySetId]);
+  }
+
+  /**
+   * Mounts one slide with the microscopy render path and the appearance of
+   * its mount, the one mount of `setDisplaySets` and `addDisplaySet`. Gives
+   * false, and puts the overrides from before the call back, when the slide
+   * is not bound.
+   */
+  private async mountSlide(
+    displaySetId: string,
+    options: WSIMountOptions | undefined,
+    role: BindingRole,
+    isSuperseded?: () => boolean
+  ): Promise<boolean> {
+    const restoreAppearance = this.stageMountedAppearance(
+      displaySetId,
+      { visible: true, opacity: 1 },
+      options?.appearance
+    );
+    let bound = false;
+
+    try {
+      bound = await this.bindDisplaySet(
+        displaySetId,
+        { renderMode: 'wsi2d', role },
+        isSuperseded
+      );
+    } finally {
+      if (!bound) {
+        restoreAppearance();
+      }
+    }
+
+    if (bound) {
+      this.applyMountedAppearance(displaySetId);
+    }
+
+    return bound;
   }
 
   /**
@@ -205,18 +255,15 @@ export default class WSIViewport extends BaseViewport<
 
   /**
    * Stores the overrides of a display set as the base class does, and
-   * applies the window of the display set on display to the slide, after a
-   * change or a reset of its appearance.
+   * applies its window to its slide, after a change or a reset of its
+   * appearance.
    */
   protected override setAppearanceState(
     displaySetId: string,
     props: WSIDisplaySetAppearance
   ): void {
     super.setAppearanceState(displaySetId, props);
-
-    if (displaySetId === this.getActiveDisplaySetId()) {
-      this.applyVOIToRendering();
-    }
+    this.applySlideWindow(displaySetId);
   }
 
   computeTransforms() {
@@ -557,10 +604,6 @@ export default class WSIViewport extends BaseViewport<
     this.clearGlobalDebugRefs({ map, viewer, view });
   }
 
-  protected override onDestroy(): void {
-    this.activeDisplaySetId = undefined;
-  }
-
   customRenderViewportToCanvas(): void {
     this.render();
   }
@@ -584,29 +627,6 @@ export default class WSIViewport extends BaseViewport<
    */
   private markMapRendered(): void {
     super.setRendered();
-  }
-
-  protected override removeDisplaySetBinding(displaySetId: string): void {
-    super.removeDisplaySetBinding(displaySetId);
-
-    if (this.activeDisplaySetId === displaySetId) {
-      this.activeDisplaySetId = this.bindings.keys().next().value;
-      this.applyVOIToRendering();
-    }
-  }
-
-  protected getCurrentBinding():
-    | ViewportDataBinding<WSIDisplaySetAppearance>
-    | undefined {
-    return (
-      (this.activeDisplaySetId
-        ? this.getBinding(this.activeDisplaySetId)
-        : undefined) ?? this.getFirstBinding()
-    );
-  }
-
-  protected getActiveDisplaySetId(): string | undefined {
-    return this.activeDisplaySetId;
   }
 
   /**
@@ -640,11 +660,26 @@ export default class WSIViewport extends BaseViewport<
     ];
   }
 
+  /** Applies the window of each slide on display to its slide. */
   private applyVOIToRendering(): void {
-    const activeDisplaySetId = this.getActiveDisplaySetId();
-    const appearance = activeDisplaySetId
-      ? this.getEffectiveDisplaySetAppearance(activeDisplaySetId)
-      : undefined;
+    for (const displaySetId of this.bindings.keys()) {
+      this.applySlideWindow(displaySetId);
+    }
+  }
+
+  /**
+   * Applies the window and the average white of a slide to the layers of
+   * the map that draws it. Each slide has a map of its own, so a slide that
+   * is not the source keeps its own window.
+   */
+  private applySlideWindow(displaySetId: string): void {
+    const rendering = this.getBinding(displaySetId)?.rendering;
+
+    if (!rendering || !isWSIRendering(rendering)) {
+      return;
+    }
+
+    const appearance = this.getEffectiveDisplaySetAppearance(displaySetId);
     const filter = buildWSIColorTransform(
       appearance?.voiRange || {
         lower: 0,
@@ -652,7 +687,7 @@ export default class WSIViewport extends BaseViewport<
       },
       appearance?.averageWhite
     );
-    const viewport = this.getMap()?.getViewport();
+    const viewport = rendering.map?.getViewport();
 
     if (!viewport) {
       return;
@@ -686,10 +721,6 @@ export default class WSIViewport extends BaseViewport<
       resolution: view.getResolution(),
       centerIndex: centerIndex ? [centerIndex[0], centerIndex[1]] : undefined,
     });
-  }
-
-  private getMap(): WSIMapLike | undefined {
-    return this.getWSIRendering()?.map;
   }
 
   protected getWSIData(): WSIPayload | undefined {
