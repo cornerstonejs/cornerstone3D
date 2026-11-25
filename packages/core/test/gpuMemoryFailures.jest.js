@@ -12,6 +12,7 @@ import {
   getStoredRenderingCapabilities,
   recordGpuMemoryOutcome,
   resetRenderingCapabilities,
+  storeGpuMemoryCalibration,
 } from '../src/utilities/renderingCapabilities';
 import {
   checkTextureOutOfMemory,
@@ -207,6 +208,24 @@ describe('the suggested limit', () => {
     expect(detail.suggestedBytes).toBe(GIGABYTE);
   });
 
+  it('follows a calibration after the failure, and not one that a later, smaller failure contradicts', () => {
+    storeGpuMemoryCalibration({
+      largestSuccessBytes: 3 * GIGABYTE,
+      at: Date.now() - 1000,
+    });
+    succeed(900 * MEGABYTE);
+
+    /** The failure came after the calibration, below its 3 GB. */
+    expect(fail(2 * GIGABYTE).suggestedBytes).toBe(512 * MEGABYTE);
+
+    storeGpuMemoryCalibration({
+      largestSuccessBytes: 3 * GIGABYTE,
+      at: Date.now() + 1000,
+    });
+
+    expect(suggestGpuMemoryLimit()).toBe(3 * GIGABYTE);
+  });
+
   it('offers 128 MB when nothing worked, and states that no GPU size works below it', () => {
     const detail = fail(100 * MEGABYTE);
 
@@ -265,6 +284,39 @@ describe('OUT_OF_MEMORY from getError', () => {
     expect(checkTextureOutOfMemory(other, {})).toBe(false);
     expect(other.getError).not.toHaveBeenCalled();
     expect(checkTextureOutOfMemory(glWithErrors([]), owner)).toBe(false);
+  });
+
+  it('checks an allocation with no pending record when its sizes come with it', () => {
+    const gl = glWithErrors([0x0505]);
+
+    expect(
+      checkTextureOutOfMemory(
+        gl,
+        {},
+        {
+          textureBytes: 512 * MEGABYTE,
+          totalBytes: GIGABYTE,
+        }
+      )
+    ).toBe(true);
+    expect(getStoredRenderingCapabilities().history.buckets[1]).toEqual({
+      successes: 0,
+      failures: 1,
+    });
+
+    const small = glWithErrors([0x0505]);
+
+    expect(
+      checkTextureOutOfMemory(
+        small,
+        {},
+        {
+          textureBytes: 32 * MEGABYTE,
+          totalBytes: GIGABYTE,
+        }
+      )
+    ).toBe(false);
+    expect(small.getError).not.toHaveBeenCalled();
   });
 
   it('reads no error in Chromium, which loses the context instead', () => {
@@ -345,6 +397,99 @@ describe('a crash that the start of a page finds', () => {
     expect(
       window.localStorage.getItem(`${STORAGE_KEY}.pending.this-tab`)
     ).toBeNull();
+  });
+
+  describe('with BroadcastChannel', () => {
+    /** Channels of one name reach each other at once, as in one browser. */
+    class FakeChannel {
+      static open = new Set();
+
+      constructor(name) {
+        this.name = name;
+        this.onmessage = null;
+        FakeChannel.open.add(this);
+      }
+
+      postMessage(data) {
+        for (const channel of FakeChannel.open) {
+          if (channel !== this && channel.name === this.name) {
+            channel.onmessage?.({ data });
+          }
+        }
+      }
+
+      close() {
+        FakeChannel.open.delete(this);
+      }
+    }
+
+    beforeEach(() => {
+      FakeChannel.open.clear();
+      global.BroadcastChannel = FakeChannel;
+    });
+
+    afterEach(() => {
+      delete global.BroadcastChannel;
+    });
+
+    /** Starts the next page of the tab, and lets the question time out. */
+    async function startNextPageAndWait() {
+      const details = [];
+
+      jest.isolateModules(() => {
+        const nextEvents = require('../src/eventTarget').default;
+        const nextEnums = require('../src/enums/Events').default;
+
+        require('../src/utilities/gpuMemoryFailures');
+        nextEvents.addEventListener(nextEnums.GPU_MEMORY_FAILURE, (event) =>
+          details.push(event.detail)
+        );
+        require('../src/utilities/renderingCapabilities').getRenderingCapabilities();
+      });
+
+      for (let round = 0; round < 6; round++) {
+        jest.runOnlyPendingTimers();
+        await Promise.resolve();
+      }
+
+      return details;
+    }
+
+    it('records nothing when the earlier page answers, as in a duplicated tab', async () => {
+      jest.useFakeTimers();
+      window.sessionStorage.setItem('cornerstone3D.tabId', 'this-tab');
+      leavePending('this-tab', { page: 'opener-page', age: 1000 });
+
+      /** The first tab still runs, and answers for its page. */
+      const opener = new FakeChannel('cornerstone3D.pages');
+
+      opener.onmessage = ({ data }) => {
+        if (data.type === 'alive?' && data.pageId === 'opener-page') {
+          opener.postMessage({ type: 'alive', pageId: 'opener-page' });
+        }
+      };
+
+      expect(await startNextPageAndWait()).toEqual([]);
+      expect(
+        window.localStorage.getItem(`${STORAGE_KEY}.pending.this-tab`)
+      ).not.toBeNull();
+    });
+
+    it('records the crash when the earlier page does not answer', async () => {
+      jest.useFakeTimers();
+      window.sessionStorage.setItem('cornerstone3D.tabId', 'this-tab');
+      leavePending('this-tab', { page: 'stopped-page', age: 1000 });
+
+      const [detail] = await startNextPageAndWait();
+
+      expect(detail).toMatchObject({
+        kind: 'crash',
+        failedBytes: 2 * GIGABYTE,
+      });
+      expect(
+        window.localStorage.getItem(`${STORAGE_KEY}.pending.this-tab`)
+      ).toBeNull();
+    });
   });
 
   it('leaves a young record of another tab, which may still be working', () => {

@@ -166,6 +166,15 @@ function onContextLost(event?: Event): void {
 
   abandonPendingAllocation();
 
+  /**
+   * One allocation counts once: another context that loses its context in
+   * the same window does not report it again. The pending record and the
+   * last large allocation describe the same allocation.
+   */
+  if (allocation) {
+    lastLargeAllocation = null;
+  }
+
   const totalBytes = allocation?.totalBytes;
 
   if (!totalBytes || isHidden()) {
@@ -314,25 +323,19 @@ export function noteTextureAllocation({
   }
 
   /**
-   * A new upload of the same owner keeps the larger total and the larger
-   * texture. The total of another owner's allocation is already part of
-   * `totalBytes`, through the ledger, while that allocation lives.
+   * A new upload of the same owner replaces the earlier one, whose storage
+   * goes, so only its own sizes count: an earlier, larger upload that never
+   * drew is not credited when this one draws. The total of another owner's
+   * allocation is already part of `totalBytes`, through the ledger, while
+   * that allocation lives.
    */
-  const sameOwner = pending !== null && pending.owner === owner;
-  const total = sameOwner
-    ? Math.max(totalBytes, pending.totalBytes)
-    : totalBytes;
-  const texture = sameOwner
-    ? Math.max(textureBytes, pending.textureBytes)
-    : textureBytes;
-
   if (pending) {
     clearTimeout(pending.timer);
   }
 
   lastLargeAllocation = {
-    totalBytes: total,
-    textureBytes: texture,
+    totalBytes,
+    textureBytes,
     at: Date.now(),
     probeAt: getLastProbeTime(),
     owner,
@@ -342,7 +345,7 @@ export function noteTextureAllocation({
     rendered: false,
     timer: setTimeout(abandonPendingAllocation, RENDER_TIMEOUT_MS),
   };
-  beginPendingAllocation(total);
+  beginPendingAllocation(totalBytes);
 }
 
 /**

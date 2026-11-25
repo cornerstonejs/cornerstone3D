@@ -282,6 +282,25 @@ describe('the block of Chromium', () => {
     expect(availability[availability.length - 1].blocked).toBe(false);
   });
 
+  it('runs the check of an overdue wait before it reports WebGL as available', async () => {
+    mockContexts(false);
+    startWebGLBlock(Date.now() + 1000, 'chrome');
+
+    /** A hidden tab: the time passes, and the timer has not run yet. */
+    jest.setSystemTime(Date.now() + 5000);
+
+    const available = jest.fn();
+
+    whenWebGLAvailable().then(available);
+    await Promise.resolve();
+
+    expect(available).not.toHaveBeenCalled();
+    expect(getWebGLBlock()).toEqual({
+      until: Date.now() + 30000,
+      reason: 'chrome',
+    });
+  });
+
   it('starts a wait from the last failure when a context is refused', () => {
     window.localStorage.setItem(
       GPU_FAILURE_TIMES_KEY,
@@ -293,6 +312,32 @@ describe('the block of Chromium', () => {
       until: Date.now() - 20000 + WEBGL_BLOCK_MS,
       reason: 'chrome',
     });
+  });
+});
+
+describe('the end of a wait', () => {
+  it('does not resolve a waiter of a wait that a listener starts at the end', async () => {
+    startWebGLBlock(Date.now() + 1000, 'cooldown');
+
+    const later = jest.fn();
+    const onEnd = (event) => {
+      if (!event.detail.blocked) {
+        startWebGLBlock(Date.now() + 60000, 'cooldown');
+        whenWebGLAvailable().then(later);
+      }
+    };
+
+    eventTarget.addEventListener(Events.WEBGL_AVAILABILITY_CHANGED, onEnd);
+
+    try {
+      jest.advanceTimersByTime(1000);
+      await Promise.resolve();
+
+      expect(isWebGLBlocked()).toBe(true);
+      expect(later).not.toHaveBeenCalled();
+    } finally {
+      eventTarget.removeEventListener(Events.WEBGL_AVAILABILITY_CHANGED, onEnd);
+    }
   });
 });
 

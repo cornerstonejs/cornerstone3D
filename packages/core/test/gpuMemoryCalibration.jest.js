@@ -248,6 +248,23 @@ describe('a calibration run', () => {
     expect(getGpuMemoryStatus().noGpuSizeWorks).toBe(true);
   });
 
+  it('lets a calibration that worked clear a failure at 128 MB or below', async () => {
+    fail(100 * MEGABYTE);
+
+    expect(getGpuMemoryStatus().noGpuSizeWorks).toBe(true);
+
+    fakeStress(2 * GIGABYTE);
+    await runGpuMemoryCalibration({
+      startBytes: GIGABYTE,
+      stepBytes: GIGABYTE,
+    });
+
+    expect(getGpuMemoryStatus()).toMatchObject({
+      noGpuSizeWorks: false,
+      cpuRecommended: false,
+    });
+  });
+
   it('rejects a second run while one is under way', async () => {
     fail(GIGABYTE);
 

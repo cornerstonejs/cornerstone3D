@@ -340,6 +340,21 @@ describe('the auto preset', () => {
     expect(getActiveGpuSettings().textureMemoryBytes).toBe(2 * GIGABYTE);
   });
 
+  it('keeps the small start when an edge failure at 2048 or below removes the reliable edge', () => {
+    mockWebGL();
+
+    expect(getGpuMemoryLimit().bytes).toBe(2 * GIGABYTE);
+
+    recordRenderingCapabilityFailure('edge', 1024);
+
+    expect(getStoredRenderingCapabilities().edge.reliable).toBeUndefined();
+    expect(getGpuMemoryLimit()).toEqual({
+      bytes: GIGABYTE / 2,
+      source: 'start',
+      hard: false,
+    });
+  });
+
   describe('on a software renderer', () => {
     beforeEach(() => {
       mockWebGL('Google SwiftShader');
@@ -558,6 +573,97 @@ describe('the auto preset', () => {
       } finally {
         claimed.mockRestore();
         getVolume.mockRestore();
+        setLossyDownsampling({ final: false });
+      }
+    });
+
+    /**
+     * The API must do this: the share of a display set depends on the other
+     * display sets, not only on its own size.
+     */
+    it('reduces a CT next to a PT that it holds at full resolution alone', () => {
+      mockWebGL();
+      setLossyDownsampling({ final: true });
+      /** Just above the 1 GB of the CT, so the PT does not fit beside it. */
+      setGpuMemoryLimit({ bytes: 1040 * MEGABYTE });
+
+      const volume = (volumeId, dimensions) => ({
+        volumeId,
+        dataType: 'Float32Array',
+        voxelGrid: { dimensions },
+        voxelManager: { numberOfComponents: 1 },
+        isDynamicVolume: () => false,
+      });
+      const pt = volume('pt', [128, 128, 512]);
+      const ct = volume('ct', [512, 512, 1024]);
+      const volumes = { pt, ct };
+      const claimed = jest.spyOn(volumeTextureStore, 'claimedVolumeIds');
+      const getVolume = jest
+        .spyOn(cache, 'getVolume')
+        .mockImplementation((volumeId) => volumes[volumeId]);
+
+      try {
+        claimed.mockReturnValue(new Set());
+
+        expect(
+          volumeTextureReductionFactors(ct, getActiveGpuSettings())
+        ).toEqual([1, 1, 1]);
+
+        claimed.mockReturnValue(new Set(['pt']));
+
+        expect(
+          volumeTextureReductionFactors(ct, getActiveGpuSettings()).some(
+            (factor) => factor > 1
+          )
+        ).toBe(true);
+      } finally {
+        claimed.mockRestore();
+        getVolume.mockRestore();
+        setLossyDownsampling({ final: false });
+      }
+    });
+
+    /**
+     * The API must do this: two volumes that join in one batch were each
+     * sized before the other was claimed, so their limits change.
+     */
+    it('changes the limits when two display sets join in one batch', async () => {
+      mockWebGL();
+      setLossyDownsampling({ final: true });
+
+      const listener = jest.fn();
+      const claimed = jest
+        .spyOn(volumeTextureStore, 'claimedVolumeIds')
+        .mockReturnValue(new Set());
+      /** The display sets at the last check, and the check itself. */
+      const store = volumeTextureStore;
+
+      eventTarget.addEventListener(
+        Events.VOLUME_TEXTURE_LIMITS_CHANGED,
+        listener
+      );
+
+      try {
+        store.displaySets = new Set();
+        claimed.mockReturnValue(new Set(['ct']));
+        store.noteClaimsChanged();
+        await new Promise((resolve) => setTimeout(resolve));
+
+        /** One volume alone was sized with the whole budget. */
+        expect(listener).not.toHaveBeenCalled();
+
+        store.displaySets = new Set();
+        claimed.mockReturnValue(new Set(['ct', 'pt']));
+        store.noteClaimsChanged();
+        await new Promise((resolve) => setTimeout(resolve));
+
+        expect(listener).toHaveBeenCalledTimes(1);
+      } finally {
+        eventTarget.removeEventListener(
+          Events.VOLUME_TEXTURE_LIMITS_CHANGED,
+          listener
+        );
+        claimed.mockRestore();
         setLossyDownsampling({ final: false });
       }
     });
@@ -922,5 +1028,67 @@ describe('CPU rendering', () => {
     setUseCPURendering(true, false);
 
     expect(gpuSettingsForRender()).toBeUndefined();
+  });
+});
+
+describe('the record of the edge search', () => {
+  const gl = { viewport: 'gl' };
+
+  beforeEach(() => {
+    probeEdgeSearch.mockReset();
+    setLossyDownsampling({ final: true });
+  });
+
+  afterEach(() => setLossyDownsampling({ final: false }));
+
+  it('keeps a failed edge that a search below it did not test', () => {
+    mockWebGL();
+    getActiveGpuSettings();
+    recordRenderingCapabilityFailure('edge', 1024);
+    probeEdgeSearch.mockReturnValue({
+      max3DTextureSize: 8192,
+      reliableEdge: 512,
+    });
+
+    runPendingEdgeSearch(gl);
+
+    expect(probeEdgeSearch).toHaveBeenCalledWith(
+      gl,
+      expect.objectContaining({ belowEdge: 1024 })
+    );
+    expect(getStoredRenderingCapabilities().edge).toMatchObject({
+      reliable: { value: 512, successes: 1 },
+      failed: { value: 1024, failures: 1 },
+    });
+  });
+
+  it('searches again from the new cap when maxTextureEdge rises', () => {
+    setAutoGpuConfig({ maxTextureEdge: 1024 });
+    mockWebGL();
+    probeRenderingLimits.mockReturnValue({
+      formats: { float: true, norm16: false },
+      max3DTextureSize: 8192,
+      reliableEdge: 1024,
+    });
+
+    expect(getActiveGpuSettings().maxTextureEdge).toBe(1024);
+    expect(getStoredRenderingCapabilities().edge.searchedFrom).toBe(1024);
+
+    runPendingEdgeSearch(gl);
+
+    expect(probeEdgeSearch).not.toHaveBeenCalled();
+
+    setAutoGpuConfig({});
+    probeEdgeSearch.mockReturnValue({
+      max3DTextureSize: 8192,
+      reliableEdge: 2048,
+    });
+    runPendingEdgeSearch(gl);
+
+    expect(probeEdgeSearch).toHaveBeenCalledWith(
+      gl,
+      expect.objectContaining({ startEdge: 2048 })
+    );
+    expect(getStoredRenderingCapabilities().edge.searchedFrom).toBe(2048);
   });
 });

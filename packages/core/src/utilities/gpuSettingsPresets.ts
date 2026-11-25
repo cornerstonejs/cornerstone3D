@@ -257,7 +257,8 @@ function configuredBytes(value: unknown, name: string): number | undefined {
 /**
  * The memory that `auto` starts from on this device, in GPU bytes of the
  * page: the memory of its class (see `START_MEMORY_OF_CLASS`), or 0.5 GB when
- * the probed edge is below 2048. The smallest wins.
+ * the probed edge is below 2048, or when an edge of 2048 or below failed and
+ * no reliable edge is known. The smallest wins.
  *
  * @returns the start, or `undefined` when the GPU settings do not apply
  */
@@ -269,8 +270,17 @@ function startMemoryBytes(): number | undefined {
   const classMemory =
     START_MEMORY_OF_CLASS[getRendererClass() as GpuRendererClass];
   const edge = getReliableEdge();
+  /**
+   * A failed edge removes the reliable edge, so it counts as well: a device
+   * that failed at 2048 or below keeps the small start until a search finds
+   * a reliable edge of 2048 again.
+   */
+  const failed = peekStoredRenderingCapabilities()?.edge.failed?.value;
+  const smallEdge =
+    (edge !== undefined && edge < SMALL_EDGE) ||
+    (edge === undefined && failed !== undefined && failed <= SMALL_EDGE);
 
-  return edge !== undefined && edge < SMALL_EDGE
+  return smallEdge
     ? Math.min(classMemory, SMALL_EDGE_START_MEMORY_BYTES)
     : classMemory;
 }

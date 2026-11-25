@@ -41,6 +41,7 @@ function recordKey() {
       (key) =>
         key.startsWith(`${STORAGE_KEY}.`) &&
         !key.includes('.pending.') &&
+        !key.endsWith('.limit') &&
         key !== `${STORAGE_KEY}.lastRenderer`
     ) ?? null
   );
@@ -218,7 +219,8 @@ describe('renderingCapabilities', () => {
 
     const reread = getStoredRenderingCapabilities();
 
-    expect(reread.edge).toEqual({});
+    /** The start of the last search stays; the invalid edge goes. */
+    expect(reread.edge).toEqual({ searchedFrom: 2048 });
     expect(reread.textureBytes).toEqual({});
     expect(() =>
       recordRenderingCapabilitySuccess('textureBytes', 1000)
@@ -347,20 +349,20 @@ describe('renderingCapabilities', () => {
     });
     expect(getStoredRenderingCapabilities()).toBeNull();
 
-    /** WebGL2 is back on the next page, and the record holds the limit. */
+    /** WebGL2 is back on the next page, and the renderer keeps the limit. */
     mockWebGL();
     resetRenderingCapabilities();
 
-    expect(getStoredRenderingCapabilities().memoryLimit).toEqual({
+    expect(getStoredGpuMemoryLimit()).toEqual({
       bytes: 512 * 1024 * 1024,
       hard: true,
     });
 
-    clearGpuMemoryRecords();
+    expect(clearGpuMemoryRecords()).toBe(true);
 
     const cleared = getStoredRenderingCapabilities();
 
-    expect(cleared.memoryLimit).toBeUndefined();
+    expect(getStoredGpuMemoryLimit()).toBeUndefined();
     expect(cleared.gpuBytes).toEqual({});
     expect(cleared.edge.reliable).toEqual({ value: 2048, successes: 1 });
     expect(cleared.formats).toEqual(ALL_FORMATS);
@@ -689,13 +691,63 @@ describe('renderingCapabilities', () => {
     detectRenderingCapabilities();
     storeGpuMemoryLimit({ bytes: 512 * 1024 * 1024, hard: false });
 
-    const stored = JSON.parse(window.localStorage.getItem(recordKey()));
+    const key = `${recordKey()}.limit`;
 
-    stored.memoryLimit.bytes = 1024;
-    window.localStorage.setItem(recordKey(), JSON.stringify(stored));
+    window.localStorage.setItem(
+      key,
+      JSON.stringify({ bytes: 1024, hard: false })
+    );
     resetRenderingCapabilities();
 
     expect(getStoredGpuMemoryLimit()).toBeUndefined();
+  });
+
+  it('keeps the limit apart from the record, so a write of the record does not bring back an earlier limit', () => {
+    mockWebGL();
+    detectRenderingCapabilities();
+    storeGpuMemoryLimit({ bytes: 512 * 1024 * 1024, hard: false });
+
+    /** Another tab read the record before the change, and writes it now. */
+    const earlier = JSON.parse(window.localStorage.getItem(recordKey()));
+
+    storeGpuMemoryLimit({ bytes: 1024 * 1024 * 1024, hard: false });
+    window.localStorage.setItem(recordKey(), JSON.stringify(earlier));
+    resetRenderingCapabilities();
+
+    expect(getStoredGpuMemoryLimit()).toEqual({
+      bytes: 1024 * 1024 * 1024,
+      hard: false,
+    });
+  });
+
+  it('reads the limit of a record from before the limit had its own key, until the user sets one', () => {
+    mockWebGL();
+    detectRenderingCapabilities();
+
+    const stored = JSON.parse(window.localStorage.getItem(recordKey()));
+
+    window.localStorage.setItem(
+      recordKey(),
+      JSON.stringify({
+        ...stored,
+        memoryLimit: { bytes: 768 * 1024 * 1024, hard: true },
+      })
+    );
+    resetRenderingCapabilities();
+
+    expect(getStoredGpuMemoryLimit()).toEqual({
+      bytes: 768 * 1024 * 1024,
+      hard: true,
+    });
+
+    storeGpuMemoryLimit({ bytes: 512 * 1024 * 1024, hard: false });
+    resetRenderingCapabilities();
+
+    expect(getStoredGpuMemoryLimit()).toEqual({
+      bytes: 512 * 1024 * 1024,
+      hard: false,
+    });
+    expect(getStoredRenderingCapabilities().memoryLimit).toBeUndefined();
   });
 
   it('keeps a recent pending record of another renderer, and drops an old one', () => {
@@ -726,6 +778,91 @@ describe('renderingCapabilities', () => {
       window.localStorage.getItem(`${STORAGE_KEY}.pending.old`)
     ).toBeNull();
     expect(getStoredRenderingCapabilities().gpuBytes.failed).toBeUndefined();
+  });
+
+  it('confirms a recovered crash by its own id, and counts a record that stayed once', () => {
+    mockWebGL();
+    detectRenderingCapabilities();
+
+    const key = `${STORAGE_KEY}.pending.stopped-tab`;
+    const marker = JSON.stringify({
+      renderer: 'NVIDIA GeForce RTX 3080',
+      probeVersion: RENDERING_CAPABILITIES_PROBE_VERSION,
+      totalBytes: 9000,
+      at: Date.now() - 60000,
+    });
+
+    window.localStorage.setItem(key, marker);
+    resetRenderingCapabilities();
+
+    expect(getStoredRenderingCapabilities().gpuBytes.failed).toEqual({
+      value: 9000,
+      failures: 1,
+    });
+    expect(window.localStorage.getItem(key)).toBeNull();
+
+    /** A refused removal left the same record: it counts once. */
+    window.localStorage.setItem(key, marker);
+    resetRenderingCapabilities();
+
+    expect(getStoredRenderingCapabilities().gpuBytes.failed.failures).toBe(1);
+    expect(window.localStorage.getItem(key)).toBeNull();
+  });
+
+  it('reports one allocation once when two contexts lose their context', () => {
+    const GIGABYTE = 1024 * 1024 * 1024;
+
+    mockWebGL();
+    detectRenderingCapabilities();
+    noteTextureAllocation({ textureBytes: GIGABYTE, totalBytes: GIGABYTE });
+
+    for (const contextIndex of [0, 1]) {
+      eventTarget.dispatchEvent(
+        new CustomEvent(Events.WEBGL_CONTEXT_LOST, {
+          detail: { contextIndex },
+        })
+      );
+    }
+
+    expect(getStoredRenderingCapabilities().textureBytes.failed).toEqual({
+      value: GIGABYTE,
+      failures: 1,
+    });
+  });
+
+  it('credits a replacement upload with its own size, not an earlier one that never drew', () => {
+    const MEGABYTE = 1024 * 1024;
+    const owner = {};
+
+    jest.useFakeTimers();
+
+    try {
+      mockWebGL();
+      detectRenderingCapabilities();
+      noteTextureAllocation({
+        textureBytes: 512 * MEGABYTE,
+        totalBytes: 512 * MEGABYTE,
+        owner,
+      });
+      noteTextureAllocation({
+        textureBytes: 128 * MEGABYTE,
+        totalBytes: 128 * MEGABYTE,
+        owner,
+      });
+      noteTextureRendered(undefined, [owner]);
+      jest.advanceTimersByTime(5000);
+
+      expect(getStoredRenderingCapabilities().textureBytes.largest).toEqual({
+        value: 128 * MEGABYTE,
+        successes: 1,
+      });
+      expect(getStoredRenderingCapabilities().history.largestTexture).toEqual({
+        value: 128 * MEGABYTE,
+        successes: 1,
+      });
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   describe('the history of the GPU memory', () => {

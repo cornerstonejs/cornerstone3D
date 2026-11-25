@@ -44,10 +44,15 @@ approach appears, as long as the user requirements stay satisfied.
   the change, so a change of another tab stays. A new probe version
   (`RENDERING_CAPABILITIES_PROBE_VERSION`, now 5) discards the earlier
   records. The record holds the texel formats, `MAX_3D_TEXTURE_SIZE`, the
-  reliable edge and the failed edge, the largest total and the smallest failed
-  total of the memory categories, the limit of the user, and the history of
-  the GPU memory (GPULIM-I-16). The history is an optional field, so a record
-  of version 5 without it stays valid.
+  reliable edge, the failed edge and the edge at which the last search
+  started, and the largest total and the smallest failed total of the memory
+  categories, and the history of the GPU memory (GPULIM-I-16), an optional
+  field, so a record of version 5 without it stays valid. The limit of the
+  user has its own key beside the record
+  (`<record key>.limit`, `null` after a reset), so a write of the record by
+  another tab, merged into an earlier read, never brings back an earlier
+  limit. A record of an earlier version that holds the limit is read until
+  the user sets or resets it.
   (GPULIM-U-3, GPULIM-U-8, GPULIM-U-9)
 
 ## The edge probe
@@ -58,7 +63,11 @@ approach appears, as long as the user requirements stay satisfied.
   with an N x 4 x 4 texture on each of the three axes. The search starts at
   the minimum of `maxTextureEdge`, `MAX_3D_TEXTURE_SIZE` and 2048, starts below
   a failed edge of the record, and halves on each failure down to 16. A stored
-  reliable edge does not raise the start: a search replaces it.
+  reliable edge does not raise the start: a search replaces it. A failed edge
+  stays until a search passes at that edge or a retest clears it, so a search
+  that starts below it keeps it. The search in a viewport context draws to a
+  4 x 1 framebuffer, and it does not run when the driver cannot complete that
+  framebuffer.
   (GPULIM-U-3, GPULIM-U-4, GPULIM-U-5)
 - **GPULIM-I-6** The probe tests no edge above 2048. When the test at 2048
   passes and `MAX_3D_TEXTURE_SIZE` is larger, the record stores
@@ -75,8 +84,9 @@ approach appears, as long as the user requirements stay satisfied.
   failed, and ends the search. The next search starts below it.
   (GPULIM-U-4)
 - **GPULIM-I-8** The render path creates no probe context. The edge search
-  runs again only in two cases: the startup probe could not run, or the
-  application called `retestRenderingCapabilities({ edge: true })`. Then the
+  runs again only in three cases: the startup probe could not run, the
+  application called `retestRenderingCapabilities({ edge: true })`, or the
+  last search started below the `maxTextureEdge` that applies now. Then the
   render window runs the search once in this page, in its own context, before
   its next render, and restores the state of that context after the search.
   The reliable edge of the record applies until the search ends. A changed
@@ -118,9 +128,11 @@ approach appears, as long as the user requirements stay satisfied.
 
 - **GPULIM-I-12** After a change of the claims, the texture store compares the
   set of display sets with the set at the last check, after the current work.
-  When the set changed and at least one display set stayed, and `auto`
-  applies, the store fires `VOLUME_TEXTURE_LIMITS_CHANGED`, so the strategies
-  provision again with the new shares. (GPULIM-U-11)
+  When the set changed, and at least one display set stayed or more than one
+  display set remains, and `auto` applies, the store fires
+  `VOLUME_TEXTURE_LIMITS_CHANGED`, so the strategies provision again with the
+  new shares. Volumes that join in one batch were each sized before the other
+  was claimed, so they provision again too. (GPULIM-U-11)
 - **GPULIM-I-13** The mapper check (`gridFitsGpuSettings`) uses the memory
   limit of the whole page, not the share, so a mapper never refuses a grid that
   the strategy chose. A full-resolution reslice texture that the check refuses
@@ -130,29 +142,38 @@ approach appears, as long as the user requirements stay satisfied.
 
 - **GPULIM-I-14** An allocation of 64 MB or more on a visible page, with GPU
   settings that apply, writes a pending record of the tab before the
-  allocation. The first draw that samples the texture starts a timer of 5 s.
-  At the end of the timer, the pending record goes and the total counts as a
-  success. With no draw in 30 s, the pending record goes and nothing is
-  recorded. A context loss while the record is pending, or within 5 s of the
-  allocation, records the total as a failure, except within 1 s after a
-  startup probe that followed the allocation, except on a hidden page, and
-  except during a calibration run and for 5 s after it (GPULIM-I-21). A
-  success or a failure also goes in the history (GPULIM-I-16), and a failure
-  is reported (GPULIM-I-17).
+  allocation. The first draw that samples the texture starts a timer of 5 s
+  (the streaming mappers report their textures, and a plain volume mapper,
+  for example after a projection converts it, reports itself). At the end of
+  the timer, the pending record goes and the total counts as a success. With
+  no draw in 30 s, the pending record goes and nothing is recorded. A new
+  upload of the same owner replaces the earlier one, with its own sizes. A
+  texture that is released or deleted cancels its allocation. A context loss
+  while the record is pending, or within 5 s of the allocation, records the
+  total as a failure once, however many contexts report the loss, except
+  within 1 s after a startup probe that followed the allocation, except on a
+  hidden page, and except during a calibration run and for 5 s after it
+  (GPULIM-I-21). A success or a failure also goes in the history
+  (GPULIM-I-16), and a failure is reported (GPULIM-I-17).
   (GPULIM-U-9, GPULIM-U-14)
 - **GPULIM-I-15** A start that finds a pending record of the same renderer,
   older than 60 s, records its total as a crash (`gpuBytes`). A pending record
   of another renderer stays for 7 days. `pagehide` and a hidden page remove the
-  pending record of the tab.
+  pending record of the tab. The record keeps the ids of the last 20 crash
+  records that it counted (the key and the time), so a start removes a crash
+  record only once the store holds its id, and a record that a refused
+  removal leaves counts once.
 
   The id of the tab is in `sessionStorage` (`cornerstone3D.tabId`), and a
-  pending record states the id of its page load. A start that finds the
-  record of its own tab from an earlier page load records it as a crash at
-  once, whatever its age, because a page that closes normally removes it. A
-  tab that the browser duplicates shares the id, so a duplicate that loads
-  while the first tab waits on a large allocation records that allocation as
-  a crash. No heartbeat refreshes a pending record: it lives at most 35 s
-  (the 30 s render timeout and the 5 s settle), under the 60 s rule.
+  pending record states the id of its page load. A start that finds a young
+  record of its own tab from an earlier page load asks that page, over the
+  `BroadcastChannel` `cornerstone3D.pages`, whether it still runs. With no
+  answer within 300 ms, it records a crash at once, whatever the age of the
+  record, because a page that closes normally removes its record. A tab that
+  the browser duplicated shares the id, and its first page answers, so the
+  duplicate records nothing. Without `BroadcastChannel`, the start records the
+  crash at once. No heartbeat refreshes a pending record: it lives at most
+  35 s (the 30 s render timeout and the 5 s settle), under the 60 s rule.
   (GPULIM-U-9, GPULIM-U-15)
 
 ## The history and the failures
@@ -182,7 +203,8 @@ approach appears, as long as the user requirements stay satisfied.
   history. The suggested limit is:
   1. the current limit after a one-off failure: the size worked at least
      twice, and this is its first failure;
-  2. else, after a calibration, its largest success;
+  2. else, after a calibration, its largest success, unless the failure came
+     after the calibration at a size below that success;
   3. else, the largest load that worked below the failed size;
   4. else, the lower end of the largest bucket with a success below the
      bucket of the failure;
@@ -195,14 +217,17 @@ approach appears, as long as the user requirements stay satisfied.
   (GPULIM-U-14, GPULIM-U-15)
 
 - **GPULIM-I-18** Outside Chromium, a large allocation reads every error that
-  waits after `texStorage3D`, because an earlier error can hide
-  `OUT_OF_MEMORY`. An out of memory removes the pending record, counts as a
-  failure, and is reported. The texture releases its storage and refuses that
-  shape until its shape changes, for example after a new limit, so a render
-  does not fail again with the same size. The volume mapper skips a texture
-  with no storage, as one that the GPU settings refuse. Chromium is left out:
-  it reports an out of memory as a lost context, and its `getError()` waits
-  for the GPU process. (GPULIM-U-13, GPULIM-U-14)
+  waits after the upload, because an earlier error can hide `OUT_OF_MEMORY`:
+  the streaming texture (also for a same-shape upload after a move to another
+  context, which writes no pending record) and the full-resolution reslice
+  texture. An out of memory removes the pending record, counts as a failure,
+  and is reported. The streaming texture releases its storage and refuses
+  that shape until its shape changes, for example after a new limit, so a
+  render does not fail again with the same size; the reslice texture is
+  deleted and its draw skipped. The volume mapper does not draw a texture
+  with no storage. Chromium is left out: it reports an out of memory as a
+  lost context, and its `getError()` waits for the GPU process.
+  (GPULIM-U-13, GPULIM-U-14)
 
 ## The wait for WebGL
 
@@ -222,7 +247,10 @@ approach appears, as long as the user requirements stay satisfied.
     `chrome` wait the test context runs again, and a refusal adds 30 s;
   - before each step of a calibration run (`calibration`).
 
-  Another tab follows the wait through the `storage` event.
+  Another tab follows the wait through the `storage` event. A read of the
+  wait after its end, for example in a tab whose timer ran late, ends it
+  first, with the check of Chromium, so availability is reported only after
+  that check.
   `WEBGL_AVAILABILITY_CHANGED` fires at the start and at the end, with
   `sourceTab` `self` or `other`. A crash found at a start starts no wait,
   because it happened in an earlier page. (GPULIM-U-16)
@@ -261,8 +289,9 @@ approach appears, as long as the user requirements stay satisfied.
   apply, the limit, its source and whether it is hard, the start of the
   device, the class of the renderer, the bytes of the page from the ledger,
   `noGpuSizeWorks`, `cpuRecommended`, `canCalibrate`, and the wait.
-  `noGpuSizeWorks` is true after a failure at 128 MB or below, or after a
-  calibration that failed at its first step at or below 128 MB.
+  `noGpuSizeWorks` follows the last calibration when one exists (true when it
+  failed at its first step at or below 128 MB), and else a failure at 128 MB
+  or below.
   `setGpuMemoryLimit` and `resetGpuMemoryLimit` fire
   `GPU_MEMORY_LIMIT_CHANGED` with the limit before and after, then
   `VOLUME_TEXTURE_LIMITS_CHANGED`. (GPULIM-U-19, GPULIM-U-20)

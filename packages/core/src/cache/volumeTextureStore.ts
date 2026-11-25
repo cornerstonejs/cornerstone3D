@@ -194,6 +194,10 @@ class VolumeTextureStore {
    * goes changes the memory share of the others, so the limits change for
    * each volume that stays. The check runs after the current work, so a
    * release and a claim of one volume in one provision change nothing.
+   *
+   * Volumes that join in one batch, for example the first two volumes of a
+   * page, were each sized before the other was claimed, so a change that
+   * leaves more than one display set changes the limits too.
    */
   private noteClaimsChanged(): void {
     this.claimsTimer ??= setTimeout(() => {
@@ -208,7 +212,11 @@ class VolumeTextureStore {
 
       this.displaySets = current;
 
-      if (changed && stayed && gpuSettingsForRender()?.id === 'auto') {
+      if (
+        changed &&
+        (stayed || current.size > 1) &&
+        gpuSettingsForRender()?.id === 'auto'
+      ) {
         triggerEvent(eventTarget, Events.VOLUME_TEXTURE_LIMITS_CHANGED);
       }
     });

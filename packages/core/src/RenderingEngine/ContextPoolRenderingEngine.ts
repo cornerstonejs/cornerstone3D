@@ -380,6 +380,16 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     );
   };
 
+  /**
+   * A reset of the layout (`setViewports`) drops the viewports without the
+   * removal path, so the pool forgets their sizes and their canvas entries in
+   * the GPU memory ledger here. The render buffer keeps its charge while no
+   * viewport remains, as after a removal.
+   */
+  protected _releaseViewportResources(viewportId: string): void {
+    this.contextPool?.removeViewport(viewportId);
+  }
+
   private renderViewportUsingCustomOrVtkPipeline(
     viewport: IViewport
   ): EventTypes.ImageRenderedEventDetail {

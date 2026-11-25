@@ -557,6 +557,12 @@ export function provisionReducedResolutionStrategy({
   const statistic = volume.reductionStatistic ?? VoxelStatistics.Average;
   const grid = deriveBoxAverageGrid(fullResolutionGrid, { factors });
   const name = reducedStrategyName(factors, statistic);
+  /**
+   * The cause comes from the budget that chose the grid: provisioning can
+   * evict a texture of another volume, which frees budget before a later
+   * read.
+   */
+  const reductionCause = reductionCauseOf(volume, gpuSettings);
 
   const set = volume.provisionTextureSet({
     name,
@@ -574,7 +580,7 @@ export function provisionReducedResolutionStrategy({
     volume,
     grid,
     statistic,
-    reductionCause: reductionCauseOf(volume, gpuSettings),
+    reductionCause,
   });
 }
 
