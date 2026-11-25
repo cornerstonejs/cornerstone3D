@@ -124,7 +124,9 @@ addButtonToToolbar({
   id: 'slabChange',
   title: 'Apply',
   onClick: () => {
-    const viewport = renderingEngine.getViewport(activeViewportId);
+    const viewport = renderingEngine.getViewport(
+      activeViewportId
+    ) as Types.IVolumeViewport;
 
     viewport.setProperties({ slabThickness: targetSlabThickness });
 

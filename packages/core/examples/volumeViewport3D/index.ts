@@ -1,4 +1,4 @@
-import type { Types } from '@cornerstonejs/core';
+import type { Types, VolumeViewport3D } from '@cornerstonejs/core';
 import {
   CONSTANTS,
   Enums,
@@ -88,7 +88,9 @@ addDropdownToToolbar({
   },
   onSelectedValueChange: (presetName) => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
-    const viewport = renderingEngine.getViewport(viewportId);
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as VolumeViewport3D;
     viewport.setProperties({ preset: presetName as string });
     viewport.render();
   },
@@ -101,7 +103,9 @@ addDropdownToToolbar({
   },
   onSelectedValueChange: (sampleDistanceMultiplier) => {
     const renderingEngine = getRenderingEngine(renderingEngineId);
-    const viewport = renderingEngine.getViewport(viewportId);
+    const viewport = renderingEngine.getViewport(
+      viewportId
+    ) as VolumeViewport3D;
     viewport.setProperties({
       sampleDistanceMultiplier: Number(sampleDistanceMultiplier),
     });
@@ -167,7 +171,7 @@ async function run() {
 
   // Set the volume to load
   volume.load();
-  viewport = renderingEngine.getViewport(viewportId);
+  const viewport = renderingEngine.getViewport(viewportId) as VolumeViewport3D;
 
   await setVolumesForViewports(
     renderingEngine,

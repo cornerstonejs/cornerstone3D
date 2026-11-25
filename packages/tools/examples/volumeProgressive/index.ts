@@ -1,4 +1,4 @@
-import type { Types } from '@cornerstonejs/core';
+import type { Types, VolumeViewport3D } from '@cornerstonejs/core';
 import {
   RenderingEngine,
   Enums,
@@ -766,9 +766,11 @@ async function run() {
     sizeViewportsToVolume(volume.dimensions, volume.spacing);
 
     // The 3D viewport shows nothing without a transfer function.
-    const viewport3D = renderingEngine.getViewport(viewportId3D);
+    const viewport3D = renderingEngine.getViewport(
+      viewportId3D
+    ) as VolumeViewport3D;
 
-    viewport3D?.setProperties?.({ preset: 'CT-Bone' });
+    viewport3D.setProperties({ preset: 'CT-Bone' });
 
     // Render the image
     renderingEngine.renderViewports(viewportIds);
