@@ -442,9 +442,13 @@ export function attachGpuMemoryFailurePopup(log: (text: string) => void): void {
     }
   });
 
+  /** A failure that fired before this page listened, such as a crash. */
   const waiting = getLastGpuMemoryFailure();
 
   if (waiting) {
+    log(
+      `Failure (${waiting.kind}) at ${formatBytes(waiting.failedBytes)}, found before the page listened, suggested ${formatBytes(waiting.suggestedBytes)}`
+    );
     show(waiting);
   }
 }

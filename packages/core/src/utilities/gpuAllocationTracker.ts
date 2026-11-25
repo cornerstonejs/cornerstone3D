@@ -10,6 +10,7 @@ import {
   recordRenderingCapabilitySuccess,
 } from './renderingCapabilities';
 import { gpuSettingsForRender } from './gpuSettingsPresets';
+import { reportGpuMemoryFailure } from './gpuMemoryFailures';
 
 const log = coreLog.getLogger('utilities', 'gpuAllocationTracker');
 
@@ -132,7 +133,7 @@ function settle(): void {
  * pending record. The edge probe that runs just before an allocation does not
  * exempt a loss of that allocation.
  */
-function onContextLost(): void {
+function onContextLost(event?: Event): void {
   const allocation =
     pending ??
     (lastLargeAllocation && Date.now() - lastLargeAllocation.at < LOSS_WINDOW_MS
@@ -169,6 +170,98 @@ function onContextLost(): void {
   log.warn(
     `a WebGL context was lost after a texture allocation, with ${totalBytes} texture bytes in use; the total is recorded as lost`
   );
+
+  const { renderingEngineId, contextIndex } =
+    (event as CustomEvent)?.detail ?? {};
+
+  reportGpuMemoryFailure({
+    kind: 'contextLost',
+    failedBytes: totalBytes,
+    textureBytes: allocation?.textureBytes,
+    renderingEngineId,
+    contextIndex,
+  });
+}
+
+/**
+ * True for a Chromium browser. Chromium reports a GPU out of memory as a
+ * context loss, and `getError()` there waits for the GPU process.
+ */
+function isChromium(): boolean {
+  if (typeof navigator === 'undefined') {
+    return false;
+  }
+
+  const brands = (
+    navigator as Navigator & {
+      userAgentData?: { brands?: { brand: string }[] };
+    }
+  ).userAgentData?.brands;
+
+  if (brands?.length) {
+    return brands.some(({ brand }) => /chromium/i.test(brand));
+  }
+
+  /** Chrome on iOS uses WebKit, so it is not Chromium here. */
+  return (
+    /\b(Chrome|Chromium)\//.test(navigator.userAgent) &&
+    !/\bCriOS\//.test(navigator.userAgent)
+  );
+}
+
+/**
+ * Checks a large allocation of this owner for `OUT_OF_MEMORY`, just after the
+ * allocation, in a browser that reports a GPU out of memory through
+ * `getError()` and keeps the context (Firefox, Safari). Chromium loses the
+ * context instead, which `onContextLost` handles.
+ *
+ * An out of memory removes the pending record, counts the page total as a
+ * failure in the history, and reports the failure. The caller releases the
+ * texture and skips its draw.
+ *
+ * The check reads every error that waits, because an earlier error can hide
+ * `OUT_OF_MEMORY` behind it.
+ *
+ * @param gl - the context of the allocation
+ * @param owner - the texture that allocated
+ * @returns true when the GPU ran out of memory
+ */
+export function checkTextureOutOfMemory(
+  gl: WebGL2RenderingContext | undefined,
+  owner: unknown
+): boolean {
+  if (!gl || pending?.owner !== owner || isChromium()) {
+    return false;
+  }
+
+  let outOfMemory = false;
+
+  for (let index = 0; index < 16; index++) {
+    const error = gl.getError();
+
+    if (error === gl.NO_ERROR) {
+      break;
+    }
+
+    outOfMemory ||= error === gl.OUT_OF_MEMORY;
+  }
+
+  if (!outOfMemory) {
+    return false;
+  }
+
+  const { totalBytes, textureBytes } = pending;
+
+  abandonPendingAllocation();
+  lastLargeAllocation = null;
+  recordGpuMemoryOutcome({ succeeded: false, totalBytes });
+  reportGpuMemoryFailure({
+    kind: 'outOfMemory',
+    failedBytes: totalBytes,
+    textureBytes,
+  });
+
+  return true;
 }
 
 /**

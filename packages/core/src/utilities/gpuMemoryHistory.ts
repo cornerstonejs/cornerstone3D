@@ -1,13 +1,5 @@
-import type {
-  GpuMemoryBucket,
-  GpuMemoryFailureEventDetail,
-  GpuMemoryHistory,
-} from '../types/GpuMemory';
-import { getGpuMemoryLimit } from './gpuSettingsPresets';
-import {
-  GPU_MEMORY_MIN_BYTES,
-  peekStoredRenderingCapabilities,
-} from './renderingCapabilities';
+import type { GpuMemoryBucket, GpuMemoryHistory } from '../types/GpuMemory';
+import { peekStoredRenderingCapabilities } from './renderingCapabilities';
 import { GPU_MEMORY_BUCKETS_GB } from './gpuMemoryBuckets';
 import type { GpuMemorySizeCount } from './gpuMemoryBuckets';
 
@@ -47,42 +39,8 @@ function getGpuMemoryHistory(): GpuMemoryHistory {
     buckets,
     ...(largestLoad && { largestLoad }),
     ...(largestTexture && { largestTexture }),
+    ...(stored?.lastFailure && { lastFailure: { ...stored.lastFailure } }),
   };
 }
 
-/**
- * The memory limit to offer the user after a failure, in GPU bytes of the
- * page. Cornerstone3D never applies it; the application offers it and the
- * user picks.
- *
- * With no failure recorded, the suggestion is the current limit, or 128 MB
- * when no limit applies.
- */
-function suggestGpuMemoryLimit(): number {
-  return getGpuMemoryLimit()?.bytes ?? GPU_MEMORY_MIN_BYTES;
-}
-
-/**
- * The last GPU memory failure that the application has not acknowledged, for
- * a listener that subscribes after the event fired, for example a crash that
- * the start of the page found. `undefined` when there is none.
- */
-function getLastGpuMemoryFailure(): GpuMemoryFailureEventDetail | undefined {
-  return undefined;
-}
-
-/**
- * Marks the last failure as handled, so `getLastGpuMemoryFailure` returns
- * `undefined` until the next failure.
- */
-function acknowledgeGpuMemoryFailure(): void {
-  /** No failure is kept yet, so there is nothing to clear. */
-}
-
-export {
-  GPU_MEMORY_BUCKETS_GB,
-  getGpuMemoryHistory,
-  suggestGpuMemoryLimit,
-  getLastGpuMemoryFailure,
-  acknowledgeGpuMemoryFailure,
-};
+export { GPU_MEMORY_BUCKETS_GB, getGpuMemoryHistory };

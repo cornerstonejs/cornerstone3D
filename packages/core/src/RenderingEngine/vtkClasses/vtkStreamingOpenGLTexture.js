@@ -10,7 +10,10 @@ import VoxelStatistics from '../../enums/VoxelStatistics';
 import ImageQualityStatus from '../../enums/ImageQualityStatus';
 import autoLoad from '../../utilities/autoLoad';
 import { getConfiguration } from '../../init';
-import { noteTextureAllocation } from '../../utilities/gpuAllocationTracker';
+import {
+  checkTextureOutOfMemory,
+  noteTextureAllocation,
+} from '../../utilities/gpuAllocationTracker';
 import { gpuTextureBytesPerVoxel } from '../../utilities/gpuSettingsPresets';
 import {
   getGpuMemoryEntryBytes,
@@ -138,7 +141,7 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
    * @returns the shape of the upload
    */
   function noteAllocation({ width, height, depth, numComps, dataType }) {
-    const shape = `${width}x${height}x${depth}x${numComps}x${dataType}`;
+    const shape = shapeOf({ width, height, depth, numComps, dataType });
 
     if (shape === model.allocatedShape) {
       return shape;
@@ -163,6 +166,11 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     return shape;
   }
 
+  /** The shape of an upload, which tells a new allocation from a repeat. */
+  function shapeOf({ width, height, depth, numComps, dataType }) {
+    return `${width}x${height}x${depth}x${numComps}x${dataType}`;
+  }
+
   /**
    * Records the upload in the GPU memory ledger, with the size that vtk.js
    * computed for the internal format it chose (half float, norm16 or float).
@@ -181,10 +189,31 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
    * re-allocation after the first fill would otherwise stay black.
    */
   publicAPI.create3DFromRaw = (options) => {
+    /**
+     * A shape that ran out of GPU memory is refused until the shape changes,
+     * for example after a new memory limit, so a render does not fail again
+     * with the same size.
+     */
+    if (shapeOf(options) === model.outOfMemoryShape) {
+      return false;
+    }
+
     const shape = noteAllocation(options);
-    const created = superCreate3DFromRaw(options);
+    let created = superCreate3DFromRaw(options);
+
+    /**
+     * Firefox and Safari report a GPU out of memory through `getError()` and
+     * keep the context. The storage is released and the caller skips the
+     * draw, as for a texture that the GPU settings refuse.
+     */
+    if (created && checkTextureOutOfMemory(model.context, publicAPI)) {
+      model.outOfMemoryShape = shape;
+      publicAPI.releaseGraphicsResources();
+      created = false;
+    }
 
     if (created) {
+      model.outOfMemoryShape = undefined;
       model.allocatedShape = shape;
       noteAllocated();
     }

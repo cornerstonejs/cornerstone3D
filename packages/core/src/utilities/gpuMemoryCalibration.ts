@@ -2,8 +2,6 @@ import type {
   GpuMemoryCalibration,
   RunGpuMemoryCalibrationOptions,
 } from '../types/GpuMemory';
-import { isWebGLBlocked } from './webglAvailability';
-import { getGpuMemoryHistory } from './gpuMemoryHistory';
 
 /**
  * True when a calibration run may start: the record holds a GPU memory
@@ -14,7 +12,8 @@ import { getGpuMemoryHistory } from './gpuMemoryHistory';
  * that before it starts a run.
  */
 function canRunGpuMemoryCalibration(): boolean {
-  return Boolean(getGpuMemoryHistory().lastFailure) && !isWebGLBlocked();
+  /** This version cannot calibrate yet, so it offers no run. */
+  return false;
 }
 
 /**
@@ -23,8 +22,8 @@ function canRunGpuMemoryCalibration(): boolean {
  * the viewports. The result is offered to the user; it does not change the
  * memory limit.
  *
- * It rejects when `canRunGpuMemoryCalibration()` is false. This version
- * records no failure yet, so it always rejects.
+ * It rejects when `canRunGpuMemoryCalibration()` is false, which it is in
+ * this version.
  *
  * @param _options.startBytes - the size of the first step
  * @param _options.stepBytes - the growth of each step
@@ -34,9 +33,7 @@ function runGpuMemoryCalibration(
   _options: RunGpuMemoryCalibrationOptions = {}
 ): Promise<GpuMemoryCalibration> {
   return Promise.reject(
-    new Error(
-      'runGpuMemoryCalibration: no GPU memory failure is recorded, or WebGL is blocked'
-    )
+    new Error('runGpuMemoryCalibration: a calibration cannot run now')
   );
 }
 

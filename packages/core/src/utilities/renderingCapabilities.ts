@@ -15,6 +15,7 @@ import {
   validGpuMemoryHistory,
 } from './gpuMemoryBuckets';
 import type { GpuMemoryHistoryRecord } from './gpuMemoryBuckets';
+import type { GpuMemoryFailure } from '../types/GpuMemory';
 
 const log = coreLog.getLogger('utilities', 'renderingCapabilities');
 
@@ -263,8 +264,43 @@ let lastProbeAt = Number.NEGATIVE_INFINITY;
 let tabId: string | undefined;
 
 /** Created on first use, so an import needs no `crypto`. */
+/** The key of the id of this tab in `sessionStorage`. */
+const TAB_ID_KEY = 'cornerstone3D.tabId';
+
+/** The id of this page load. A pending record states it (see `getTabId`). */
+const pageId = uuidv4();
+
+/**
+ * Receives each crash that the start of this page found, after the detection
+ * ends. See `setRecoveredCrashListener`.
+ */
+let onRecoveredCrash: ((totalBytes: number) => void) | undefined;
+
+/**
+ * The id of this tab. It stays in `sessionStorage` across the loads of the
+ * tab, so a page that loads after the tab stopped (for example after iOS
+ * stopped its WebContent process) finds the pending record that the earlier
+ * page of the tab left. Without `sessionStorage`, each load has its own id.
+ *
+ * A tab that the browser duplicates copies its `sessionStorage`, so its pages
+ * share the id with the first tab. A duplicate that loads while the first tab
+ * waits on a large allocation records that allocation as a crash.
+ */
 function getTabId(): string {
-  tabId ??= uuidv4();
+  if (tabId) {
+    return tabId;
+  }
+
+  try {
+    tabId = window.sessionStorage.getItem(TAB_ID_KEY) ?? undefined;
+
+    if (!tabId) {
+      tabId = uuidv4();
+      window.sessionStorage.setItem(TAB_ID_KEY, tabId);
+    }
+  } catch {
+    tabId = uuidv4();
+  }
 
   return tabId;
 }
@@ -714,26 +750,36 @@ function applyEdgeSearch(
  *
  * @param handled - receives the keys to remove: `recorded` once the store
  * confirms the record, so a page that stops before that, or a store that
- * refuses the write, finds them again; `dropped` in any case
+ * refuses the write, finds them again; `dropped` in any case. `crashes`
+ * receives the page total of each recorded crash.
  */
 function recoverPendingAllocations(
   target: StoredRenderingCapabilities,
-  handled: { recorded: string[]; dropped: string[] }
+  handled: { recorded: string[]; dropped: string[]; crashes: number[] }
 ): void {
   const storage = getCapabilityStorage();
   const now = Date.now();
+  const ownKey = PENDING_KEY_PREFIX + getTabId();
 
   for (const key of storage.keys(PENDING_KEY_PREFIX)) {
-    if (key === PENDING_KEY_PREFIX + tabId) {
-      continue;
-    }
-
     try {
       const pending = JSON.parse(storage.getItem(key) ?? 'null');
 
+      /**
+       * The pending record of this tab is live while this page wrote it. An
+       * earlier page of this tab removes its record on `pagehide`, so a record
+       * of an earlier page means that page stopped, whatever its age.
+       */
+      const fromEarlierPageOfThisTab =
+        key === ownKey && pending?.page !== pageId;
+
+      if (key === ownKey && !fromEarlierPageOfThisTab) {
+        continue;
+      }
+
       const age = now - (pending?.at ?? 0);
 
-      if (age < PENDING_STALE_MS) {
+      if (age < PENDING_STALE_MS && !fromEarlierPageOfThisTab) {
         continue;
       }
 
@@ -755,6 +801,7 @@ function recoverPendingAllocations(
           (target.history ??= emptyGpuMemoryHistory()),
           pending.totalBytes
         );
+        handled.crashes.push(pending.totalBytes);
         log.warn(
           `a previous page stopped during a texture allocation of ${pending.totalBytes} bytes, so it is recorded as a crash`
         );
@@ -840,7 +887,11 @@ export function detectRenderingCapabilities({
     formats = probed?.formats ?? { ...NO_GPU_FORMATS };
   }
 
-  const handled = { recorded: [] as string[], dropped: [] as string[] };
+  const handled = {
+    recorded: [] as string[],
+    dropped: [] as string[],
+    crashes: [] as number[],
+  };
 
   updateRecord((target) => recoverPendingAllocations(target, handled));
   handled.dropped.forEach((key) => storage.removeItem(key));
@@ -852,6 +903,16 @@ export function detectRenderingCapabilities({
       record.gpuBytes.failed?.failures
   ) {
     handled.recorded.forEach((key) => storage.removeItem(key));
+
+    /**
+     * The listener runs after the detection, so it can read the limit and
+     * the record, which would start this detection again from inside it.
+     */
+    const listener = onRecoveredCrash;
+
+    if (listener) {
+      setTimeout(() => handled.crashes.forEach((bytes) => listener(bytes)));
+    }
   }
 
   return {
@@ -1050,6 +1111,31 @@ export function recordGpuMemoryOutcome({
 }
 
 /**
+ * Sets the function that receives each crash that the start of a page found:
+ * a pending record that a stopped page left. It runs once the record holds the
+ * crash, after the detection. The failure events set it; an application
+ * listens to `GPU_MEMORY_FAILURE` instead.
+ *
+ * @param listener - receives the GPU bytes of the page at the crash
+ */
+export function setRecoveredCrashListener(
+  listener: ((totalBytes: number) => void) | undefined
+): void {
+  onRecoveredCrash = listener;
+}
+
+/**
+ * Stores the last GPU memory failure in the history of the record, for a
+ * memory dialog and the suggestion. The failure events call this.
+ */
+export function storeLastGpuMemoryFailure(failure: GpuMemoryFailure): void {
+  getRenderingCapabilities();
+  updateRecord((target) => {
+    (target.history ??= emptyGpuMemoryHistory()).lastFailure = { ...failure };
+  });
+}
+
+/**
  * The memory limit that the user chose, from the record of this page, or of
  * the last renderer when this page has no WebGL2.
  *
@@ -1137,6 +1223,7 @@ export function beginPendingAllocation(totalBytes: number): void {
       probeVersion: RENDERING_CAPABILITIES_PROBE_VERSION,
       totalBytes,
       at: Date.now(),
+      page: pageId,
     })
   );
 }

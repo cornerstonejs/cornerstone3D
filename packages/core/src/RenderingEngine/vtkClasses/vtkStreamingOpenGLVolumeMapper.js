@@ -450,7 +450,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
 
             // There are some bugs in mac for texStorage3D so basically here
             // we let the vtk.js decide if it wants to use it or not
-            currentTexture.create3DFromRaw({
+            const created = currentTexture.create3DFromRaw({
               width: dims[0],
               height: dims[1],
               depth: dims[2],
@@ -458,6 +458,17 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
               dataType,
               data: null,
             });
+
+            /**
+             * A texture that got no storage (the GPU ran out of memory) is
+             * skipped like a texture that the GPU settings refuse, and the
+             * next build tries again.
+             */
+            if (!created) {
+              currentTexture.deactivate();
+
+              return;
+            }
 
             // do an initial update since some data may be already
             // available and we can avoid a re-render to trigger

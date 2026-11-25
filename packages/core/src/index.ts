@@ -267,10 +267,12 @@ export { getGpuMemoryStatus } from './utilities/gpuMemoryStatus';
 export {
   GPU_MEMORY_BUCKETS_GB,
   getGpuMemoryHistory,
+} from './utilities/gpuMemoryHistory';
+export {
   suggestGpuMemoryLimit,
   getLastGpuMemoryFailure,
   acknowledgeGpuMemoryFailure,
-} from './utilities/gpuMemoryHistory';
+} from './utilities/gpuMemoryFailures';
 export {
   canRunGpuMemoryCalibration,
   runGpuMemoryCalibration,

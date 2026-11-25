@@ -4,9 +4,10 @@
  * worked. The record of the device stores it (see `renderingCapabilities`).
  * It only records; nothing changes the memory limit from it.
  *
- * This module holds no state and imports nothing, so the record and the
+ * This module holds no state and imports no module, so the record and the
  * readers of the history can both use it.
  */
+import type { GpuMemoryFailure } from '../types/GpuMemory';
 
 const GIGABYTE = 1024 ** 3;
 
@@ -40,7 +41,15 @@ export type GpuMemoryHistoryRecord = {
   buckets: Record<string, GpuMemoryBucketCounts>;
   largestLoad?: GpuMemorySizeCount;
   largestTexture?: GpuMemorySizeCount;
+  /** The last failure, for a memory dialog and the suggestion. */
+  lastFailure?: GpuMemoryFailure;
 };
+
+/** The ways a GPU memory failure shows. */
+const FAILURE_KINDS = ['contextLost', 'crash', 'outOfMemory'];
+
+/** The sources of a memory limit. */
+const LIMIT_SOURCES = ['hardConfig', 'hardUser', 'user', 'config', 'start'];
 
 /** An empty history. */
 export function emptyGpuMemoryHistory(): GpuMemoryHistoryRecord {
@@ -143,6 +152,30 @@ function validSizeCount(value: unknown): GpuMemorySizeCount | undefined {
     : undefined;
 }
 
+/** A stored failure, or `undefined` when it is not valid. */
+function validFailure(value: unknown): GpuMemoryFailure | undefined {
+  const entry = value as GpuMemoryFailure;
+
+  if (
+    !FAILURE_KINDS.includes(entry?.kind) ||
+    !LIMIT_SOURCES.includes(entry.limitSource) ||
+    !Number.isFinite(entry.at) ||
+    !(entry.failedBytes > 0) ||
+    !(entry.limitBytes >= 0)
+  ) {
+    return undefined;
+  }
+
+  return {
+    kind: entry.kind,
+    at: entry.at,
+    failedBytes: entry.failedBytes,
+    ...(entry.textureBytes > 0 && { textureBytes: entry.textureBytes }),
+    limitBytes: entry.limitBytes,
+    limitSource: entry.limitSource,
+  };
+}
+
 /**
  * A stored history with every invalid part removed, or `undefined` when none
  * of it is valid.
@@ -178,6 +211,7 @@ export function validGpuMemoryHistory(
 
   const largestLoad = validSizeCount(stored.largestLoad);
   const largestTexture = validSizeCount(stored.largestTexture);
+  const lastFailure = validFailure(stored.lastFailure);
 
   if (largestLoad) {
     history.largestLoad = largestLoad;
@@ -187,7 +221,14 @@ export function validGpuMemoryHistory(
     history.largestTexture = largestTexture;
   }
 
-  return Object.keys(history.buckets).length || largestLoad || largestTexture
+  if (lastFailure) {
+    history.lastFailure = lastFailure;
+  }
+
+  return Object.keys(history.buckets).length ||
+    largestLoad ||
+    largestTexture ||
+    lastFailure
     ? history
     : undefined;
 }

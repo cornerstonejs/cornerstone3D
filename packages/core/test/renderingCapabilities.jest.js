@@ -765,6 +765,14 @@ describe('renderingCapabilities', () => {
 
       expect(getStoredRenderingCapabilities().history).toEqual({
         buckets: { 3: { successes: 0, failures: 1 } },
+        lastFailure: {
+          kind: 'contextLost',
+          at: expect.any(Number),
+          failedBytes: 3 * GIGABYTE,
+          textureBytes: GIGABYTE,
+          limitBytes: 2 * GIGABYTE,
+          limitSource: 'start',
+        },
       });
     });
 

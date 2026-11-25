@@ -4,6 +4,7 @@ import { getGpuMemoryTotal } from './gpuMemoryLedger';
 import { getRendererClass } from './renderingCapabilities';
 import { getWebGLBlock } from './webglAvailability';
 import { canRunGpuMemoryCalibration } from './gpuMemoryCalibration';
+import { getGpuMemoryHistory } from './gpuMemoryHistory';
 
 /**
  * The GPU memory of `auto` now, for a memory dialog or a status line: the
@@ -16,7 +17,8 @@ import { canRunGpuMemoryCalibration } from './gpuMemoryCalibration';
 function getGpuMemoryStatus(): GpuMemoryStatus {
   const limit = getGpuMemoryLimit();
   const block = getWebGLBlock();
-  const noGpuSizeWorks = false;
+  /** A failure at 128 MB or below means that no GPU size works. */
+  const noGpuSizeWorks = getGpuMemoryHistory().buckets[0].failures > 0;
 
   return {
     applies: limit !== undefined,
