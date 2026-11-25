@@ -72,4 +72,29 @@ function getBufferConfiguration(
   return { numBytes, TypedArrayConstructor };
 }
 
-export { getBufferConfiguration, getConstructorFromType };
+/**
+ * The bytes of a volume texture of this many voxels: the type of the volume
+ * buffer times the components of one voxel. Without a type, the count of
+ * values.
+ *
+ * @deprecated The GPU settings count the bytes that vtk.js uploads, which can
+ * differ from the volume buffer (for example 2 bytes for 16-bit data with
+ * norm16). Use `gpuTextureBytesPerVoxel` of `gpuSettingsPresets`. This
+ * function stays for imports of `utilities/getBufferConfiguration`.
+ */
+function volumeTextureBytes(
+  voxelCount: number,
+  dataType?: PixelDataTypedArrayString,
+  numberOfComponents = 1
+): number {
+  const values = voxelCount * Math.max(numberOfComponents || 1, 1);
+
+  if (!dataType) {
+    return values;
+  }
+
+  return getBufferConfiguration(dataType, values, { isVolumeBuffer: true })
+    .numBytes;
+}
+
+export { getBufferConfiguration, getConstructorFromType, volumeTextureBytes };

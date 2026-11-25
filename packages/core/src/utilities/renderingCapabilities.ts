@@ -201,12 +201,31 @@ export interface StoredRenderingCapabilities {
   edge: {
     reliable?: RenderingCapabilitySuccess;
     failed?: RenderingCapabilityFailure;
+    /**
+     * The edge at which the last search started. A search below a configured
+     * `maxTextureEdge` tests no larger edge, so a larger cap later searches
+     * again. `undefined` counts as a search from 2048.
+     */
+    searchedFrom?: number;
   };
   textureBytes: RenderingCapabilityMemory;
   gpuBytes: RenderingCapabilityMemory;
-  /** The memory limit that the user chose, or `undefined` for none. */
+  /**
+   * The memory limit that the user chose, as an earlier version stored it.
+   * The limit now has its own key (see `getStoredGpuMemoryLimit`), and a
+   * record that still holds it is read until the user sets or resets it.
+   */
   memoryLimit?: GpuMemoryUserLimit;
+  /**
+   * The ids of the last crash records that the record holds (see
+   * `recoverPendingAllocations`), so a start confirms its own crash, and a
+   * record that a refused removal leaves counts once.
+   */
+  recoveredPending?: string[];
 }
+
+/** How many ids of recovered crash records the record keeps. */
+const RECOVERED_PENDING_KEPT = 20;
 
 /** The class of a renderer, which sets the conservative start of `auto`. */
 export type RendererClass = 'none' | 'software' | 'mobile' | 'desktop';
@@ -437,9 +456,19 @@ function readRecord(renderer: string): StoredRenderingCapabilities | null {
       'failed',
       numbers<RenderingCapabilityFailure>(edge.failed, ['value', 'failures'])
     );
+    setOrDelete(stored.edge, 'searchedFrom', finite(edge.searchedFrom));
     stored.textureBytes = validMemory(parsed.textureBytes);
     stored.gpuBytes = validMemory(parsed.gpuBytes);
     setOrDelete(stored, 'memoryLimit', validMemoryLimit(parsed.memoryLimit));
+    setOrDelete(
+      stored,
+      'recoveredPending',
+      Array.isArray(parsed.recoveredPending)
+        ? parsed.recoveredPending
+            .filter((id) => typeof id === 'string')
+            .slice(-RECOVERED_PENDING_KEPT)
+        : undefined
+    );
     setOrDelete(stored, 'max3DTextureSize', finite(parsed.max3DTextureSize));
     setOrDelete(stored, 'probeMs', finite(parsed.probeMs));
 
@@ -547,19 +576,6 @@ function updateRecordOfLastRenderer(
   }
 }
 
-/** The record of this page, or of the last renderer in a page with no WebGL2. */
-function recordOrLastRenderer(): StoredRenderingCapabilities | null {
-  getRenderingCapabilities();
-
-  if (record) {
-    return record;
-  }
-
-  const renderer = getCapabilityStorage().getItem(LAST_RENDERER_KEY);
-
-  return renderer ? readRecord(renderer) : null;
-}
-
 /**
  * Adds one success to the record.
  *
@@ -646,7 +662,7 @@ function edgeSearchOptions(
   target: StoredRenderingCapabilities | null
 ): EdgeSearchOptions {
   return {
-    startEdge: Math.min(getConfiguredMaxTextureEdge(), SAFE_PROBE_EDGE),
+    startEdge: searchStartEdge(),
     belowEdge: target?.edge.failed?.value,
     format: target?.formats
       ? target.formats.float
@@ -665,12 +681,14 @@ function edgeSearchOptions(
  */
 function applyEdgeSearch(
   target: StoredRenderingCapabilities,
-  probed: Omit<RenderingLimitsProbeResult, 'formats'>
+  probed: Omit<RenderingLimitsProbeResult, 'formats'>,
+  searchedFrom: number
 ): void {
   const { reliableEdge, failedEdge, max3DTextureSize } = probed;
   const edge = target.edge;
 
   target.max3DTextureSize = max3DTextureSize;
+  edge.searchedFrom = searchedFrom;
 
   if (!reliableEdge) {
     delete edge.reliable;
@@ -688,18 +706,29 @@ function applyEdgeSearch(
       value: failedEdge,
       failures: (edge.failed?.failures ?? 0) + 1,
     };
-  } else {
+  } else if (edge.failed && reliableEdge >= edge.failed.value) {
+    /**
+     * A search that started below a failed edge did not test it, so the
+     * failure stays until a search passes at that edge, or a retest of the
+     * edge clears it.
+     */
     delete edge.failed;
   }
+}
+
+/** The edge at which a search starts now (see `edgeSearchOptions`). */
+function searchStartEdge(): number {
+  return Math.min(getConfiguredMaxTextureEdge(), SAFE_PROBE_EDGE);
 }
 
 /**
  * Finds the pending records that a stopped tab left, and records each one as a
  * crash at its size. See {@link beginPendingAllocation}.
  *
- * @param handled - receives the keys to remove: `recorded` once the store
- * confirms the record, so a page that stops before that, or a store that
- * refuses the write, finds them again; `dropped` in any case
+ * @param handled - receives what to remove: `recorded` holds the ids of the
+ * crash records (the key and the time), removed once the store holds the id,
+ * so a page that stops before that, or a store that refuses the write, finds
+ * them again; `dropped` holds keys to remove in any case
  */
 function recoverPendingAllocations(
   target: StoredRenderingCapabilities,
@@ -735,11 +764,21 @@ function recoverPendingAllocations(
         pending?.probeVersion === RENDERING_CAPABILITIES_PROBE_VERSION &&
         pending.totalBytes > 0
       ) {
-        addFailure(target, 'gpuBytes', pending.totalBytes);
-        log.warn(
-          `a previous page stopped during a texture allocation of ${pending.totalBytes} bytes, so it is recorded as a crash`
-        );
-        handled.recorded.push(key);
+        /** The key of a tab repeats, so its time tells two crashes apart. */
+        const id = `${key}@${pending.at}`;
+
+        if (!target.recoveredPending?.includes(id)) {
+          addFailure(target, 'gpuBytes', pending.totalBytes);
+          target.recoveredPending = [
+            ...(target.recoveredPending ?? []),
+            id,
+          ].slice(-RECOVERED_PENDING_KEPT);
+          log.warn(
+            `a previous page stopped during a texture allocation of ${pending.totalBytes} bytes, so it is recorded as a crash`
+          );
+        }
+
+        handled.recorded.push(id);
 
         continue;
       }
@@ -813,7 +852,7 @@ export function detectRenderingCapabilities({
       updateRecord((target) => {
         target.formats = probed.formats;
         target.probeMs = Math.round(probeMs * 10) / 10;
-        applyEdgeSearch(target, probed);
+        applyEdgeSearch(target, probed, searchStartEdge());
       });
       edgeRetest = false;
     }
@@ -826,13 +865,16 @@ export function detectRenderingCapabilities({
   updateRecord((target) => recoverPendingAllocations(target, handled));
   handled.dropped.forEach((key) => storage.removeItem(key));
 
-  /** The crash counts are in the store, so the pending records can go. */
-  if (
-    handled.recorded.length &&
-    readRecord(record.renderer)?.gpuBytes.failed?.failures ===
-      record.gpuBytes.failed?.failures
-  ) {
-    handled.recorded.forEach((key) => storage.removeItem(key));
+  /**
+   * A crash record goes once the store holds its id, so a refused write, or
+   * a write of another tab in between, leaves it for a later start.
+   */
+  if (handled.recorded.length) {
+    const stored = readRecord(record.renderer)?.recoveredPending ?? [];
+
+    handled.recorded
+      .filter((id) => stored.includes(id))
+      .forEach((id) => storage.removeItem(id.slice(0, id.lastIndexOf('@'))));
   }
 
   return {
@@ -922,14 +964,18 @@ export function getReliableEdge(): number | undefined {
 
 /**
  * True when the edge search must run again: the startup probe could not test
- * the edge, or an application asked for a retest of the edge. It reads only
- * the state of this page, so a render can ask it each time.
+ * the edge, an application asked for a retest of the edge, or the last search
+ * started below the `maxTextureEdge` that applies now. It reads only the
+ * state of this page, so a render can ask it each time.
  */
 export function isEdgeSearchPending(): boolean {
   return (
     Boolean(record) &&
     !edgeSearchTried &&
-    (edgeRetest || getReliableEdge() === undefined)
+    (edgeRetest ||
+      getReliableEdge() === undefined ||
+      /** A search under a smaller cap tested no edge of the current cap. */
+      (record.edge.searchedFrom ?? SAFE_PROBE_EDGE) < searchStartEdge())
   );
 }
 
@@ -958,7 +1004,9 @@ export function runEdgeSearchInContext(gl: WebGL2RenderingContext): boolean {
   );
 
   if (probed) {
-    updateRecord((target) => applyEdgeSearch(target, probed));
+    updateRecord((target) =>
+      applyEdgeSearch(target, probed, searchStartEdge())
+    );
   }
 
   return getReliableEdge() !== before;
@@ -995,50 +1043,91 @@ export function recordRenderingCapabilityFailure(
 }
 
 /**
- * The memory limit that the user chose, from the record of this page, or of
+ * The key of the memory limit that the user chose for a renderer. The limit
+ * has its own key, apart from the record, so a write of the record by another
+ * tab, which merges its counts into an earlier read, never brings back an
+ * earlier limit. The key holds `null` after a reset.
+ */
+function limitKey(renderer: string): string {
+  return `${recordKey(renderer)}.limit`;
+}
+
+/** The renderer of this page, or the last renderer in a page with no WebGL2. */
+function currentRenderer(): string | null {
+  getRenderingCapabilities();
+
+  return record?.renderer ?? getCapabilityStorage().getItem(LAST_RENDERER_KEY);
+}
+
+/**
+ * The memory limit of a renderer as the store holds it now: its own key, or,
+ * while that key does not exist, the limit in a record from before it had
+ * its own key.
+ */
+function readLimit(renderer: string): GpuMemoryUserLimit | undefined {
+  try {
+    const raw = getCapabilityStorage().getItem(limitKey(renderer));
+
+    if (raw !== null) {
+      return validMemoryLimit(JSON.parse(raw));
+    }
+  } catch {
+    return undefined;
+  }
+
+  return readRecord(renderer)?.memoryLimit;
+}
+
+/**
+ * The memory limit that the user chose, for the renderer of this page, or of
  * the last renderer when this page has no WebGL2.
  *
  * @returns a copy, or `undefined` when the user chose none
  */
 export function getStoredGpuMemoryLimit(): GpuMemoryUserLimit | undefined {
-  const limit = recordOrLastRenderer()?.memoryLimit;
+  const renderer = currentRenderer();
+  const limit = renderer ? readLimit(renderer) : undefined;
 
   return limit ? { ...limit } : undefined;
 }
 
 /**
  * Stores the memory limit that the user chose, or removes it with
- * `undefined`. It works while WebGL2 is unavailable, through the record of the
- * last renderer, so the limit that the user picks after a failure is the one
- * that the next load uses. `gpuSettingsPresets` validates the value.
+ * `undefined`. It works while WebGL2 is unavailable, through the last
+ * renderer, so the limit that the user picks after a failure is the one that
+ * the next load uses. `gpuSettingsPresets` validates the value.
  *
  * @returns true when the store holds the change
  */
 export function storeGpuMemoryLimit(
   limit: GpuMemoryUserLimit | undefined
 ): boolean {
-  if (
-    !updateRecordOfLastRenderer((target) =>
-      setOrDelete(target, 'memoryLimit', limit && { ...limit })
-    )
-  ) {
+  const renderer = currentRenderer();
+
+  if (!renderer) {
     return false;
   }
 
+  try {
+    getCapabilityStorage().setItem(
+      limitKey(renderer),
+      JSON.stringify(limit ? { bytes: limit.bytes, hard: limit.hard } : null)
+    );
+  } catch {
+    return false;
+  }
+
+  /** The limit of an earlier version, in the record, is not read any more. */
+  if (readRecord(renderer)?.memoryLimit) {
+    updateRecordOfLastRenderer((target) => delete target.memoryLimit);
+  }
+
   /** A store that refused the write, for example a full quota, keeps the old value. */
-  const stored = getStoredGpuMemoryLimitFromStore();
+  const stored = readLimit(renderer);
 
   return limit
     ? stored?.bytes === limit.bytes && stored?.hard === limit.hard
     : stored === undefined;
-}
-
-/** The memory limit as the store holds it now, with no cached record. */
-function getStoredGpuMemoryLimitFromStore(): GpuMemoryUserLimit | undefined {
-  const renderer =
-    record?.renderer ?? getCapabilityStorage().getItem(LAST_RENDERER_KEY);
-
-  return renderer ? readRecord(renderer)?.memoryLimit : undefined;
 }
 
 /**
@@ -1048,12 +1137,24 @@ function getStoredGpuMemoryLimitFromStore(): GpuMemoryUserLimit | undefined {
  * @returns true when the store holds the change
  */
 export function clearGpuMemoryRecords(): boolean {
+  const cleared = updateRecordOfLastRenderer((target) => {
+    target.textureBytes = {};
+    target.gpuBytes = {};
+    delete target.memoryLimit;
+  });
+
+  if (!cleared || !storeGpuMemoryLimit(undefined)) {
+    return false;
+  }
+
+  /** A store that refused the write keeps the old records. */
+  const renderer = currentRenderer();
+  const stored = renderer ? readRecord(renderer) : null;
+
   return (
-    updateRecordOfLastRenderer((target) => {
-      target.textureBytes = {};
-      target.gpuBytes = {};
-      delete target.memoryLimit;
-    }) && getStoredGpuMemoryLimitFromStore() === undefined
+    !stored ||
+    (Object.keys(stored.textureBytes).length === 0 &&
+      Object.keys(stored.gpuBytes).length === 0)
   );
 }
 

@@ -222,6 +222,19 @@ export class TextureProbe {
       gl.RENDERBUFFER,
       renderbuffer
     );
+    /**
+     * A framebuffer that the driver cannot complete would make every edge
+     * look failed, so the probe does not run then.
+     */
+    if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) {
+      gl.deleteFramebuffer(framebuffer);
+      gl.deleteRenderbuffer(renderbuffer);
+      gl.deleteVertexArray(vertexArray);
+      gl.deleteProgram(program);
+
+      return null;
+    }
+
     gl.bindVertexArray(vertexArray);
     gl.useProgram(program);
     gl.viewport(0, 0, 4, 1);
@@ -519,7 +532,8 @@ function searchEdge(
   > = {};
   let edge = Math.min(startEdge, probe.max3DTextureSize);
 
-  while (belowEdge && edge >= belowEdge) {
+  /** A bound that is not positive (a damaged record) bounds nothing. */
+  while (belowEdge > 0 && edge >= belowEdge && edge > 0) {
     edge = Math.floor(edge / 2);
   }
 
@@ -616,6 +630,9 @@ const PROBE_DISABLED_CAPABILITIES = [
 /** The pixel store values that the probe sets, with the value it needs. */
 const PROBE_PIXEL_STORE = {
   PACK_ALIGNMENT: 4,
+  PACK_ROW_LENGTH: 0,
+  PACK_SKIP_PIXELS: 0,
+  PACK_SKIP_ROWS: 0,
   UNPACK_ALIGNMENT: 1,
   UNPACK_ROW_LENGTH: 0,
   UNPACK_IMAGE_HEIGHT: 0,

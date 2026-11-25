@@ -10,7 +10,10 @@ import VoxelStatistics from '../../enums/VoxelStatistics';
 import ImageQualityStatus from '../../enums/ImageQualityStatus';
 import autoLoad from '../../utilities/autoLoad';
 import { getConfiguration } from '../../init';
-import { noteTextureAllocation } from '../../utilities/gpuAllocationTracker';
+import {
+  cancelTextureAllocation,
+  noteTextureAllocation,
+} from '../../utilities/gpuAllocationTracker';
 import { gpuTextureBytesPerVoxel } from '../../utilities/gpuSettingsPresets';
 import {
   getGpuMemoryEntryBytes,
@@ -359,6 +362,8 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
 
     releaseInitFence();
     removeGpuMemoryEntry(publicAPI);
+    /** A released texture is no allocation that a later loss can report. */
+    cancelTextureAllocation(publicAPI);
     superReleaseGraphicsResources(
       rwin ?? (window?.isDeleted?.() ? undefined : window)
     );
@@ -369,6 +374,8 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
   publicAPI.delete = () => {
     releaseInitFence();
     removeGpuMemoryEntry(publicAPI);
+    /** A released texture is no allocation that a later loss can report. */
+    cancelTextureAllocation(publicAPI);
     superDelete();
   };
 
