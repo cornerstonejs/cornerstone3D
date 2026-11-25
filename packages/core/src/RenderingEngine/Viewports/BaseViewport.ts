@@ -133,6 +133,26 @@ function restoreMapEntry<K, V>(map: Map<K, V>, key: K, value: V | undefined) {
   }
 }
 
+/**
+ * Puts back the value that a map entry had before a staged change, unless a
+ * later change replaced the staged value: a newer mount of the same display
+ * set keeps what it staged when an older mount ends without a bind.
+ */
+function restoreStagedMapEntry<K, V>(
+  map: Map<K, V>,
+  key: K,
+  staged: V | undefined,
+  previous: V | undefined
+) {
+  const current = map.get(key);
+
+  if (current !== undefined && current !== staged) {
+    return;
+  }
+
+  restoreMapEntry(map, key, previous);
+}
+
 function isPlainObject(value: unknown): value is object {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
@@ -1408,7 +1428,7 @@ abstract class BaseViewport<
    * binding the whole appearance at once, so the mount draws once, and
    * {@link applyMountedAppearance} fires the event of the mount. Gives a
    * function that puts back what was stored before, for a mount that does
-   * not bind.
+   * not bind; it leaves an entry that a newer mount staged since.
    *
    * @param displaySetId - The display set that is mounted.
    * @param defaults - The defaults of the family, as `visible: true`.
@@ -1445,15 +1465,20 @@ abstract class BaseViewport<
       );
     }
 
+    const stagedDefaults = this.defaultDisplaySetAppearances.get(displaySetId);
+    const stagedOverrides = this.displaySetAppearances.get(displaySetId);
+
     return () => {
-      restoreMapEntry(
+      restoreStagedMapEntry(
         this.defaultDisplaySetAppearances,
         displaySetId,
+        stagedDefaults,
         previousDefaults
       );
-      restoreMapEntry(
+      restoreStagedMapEntry(
         this.displaySetAppearances,
         displaySetId,
+        stagedOverrides,
         previousOverrides
       );
     };

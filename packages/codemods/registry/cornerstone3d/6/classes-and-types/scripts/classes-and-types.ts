@@ -107,6 +107,17 @@ const VOLUME_OR_3D = new Set([
   'BaseVolumeViewport',
 ]);
 
+/** The names that type a 3D viewport only: the 6.0 class and its 5.x names. */
+const THREE_D_CLASSES = new Set([
+  'VolumeViewport3D',
+  ...Object.keys(RENAMED_CLASS).filter(
+    (name) => RENAMED_CLASS[name] === 'VolumeViewport3D'
+  ),
+]);
+
+/** The kinds of a function that a name can call. */
+const CALLABLE_KINDS = ['arrow_function', 'function_expression', 'function'];
+
 /** A viewport type of 3D, as code names it. */
 const THREE_D_TYPE = /\bVOLUME_3D(_NEXT)?\b|['"]volume3d(Next)?['"]/;
 
@@ -141,7 +152,9 @@ const INPUT_METHOD: Record<string, string> = {
  * What a test of the viewport type tells about the family of a node;
  * `mixed` when the viewport inputs of its id give a 3D type with another, or
  * a type that only the running code resolves; `unlinked` when they give a 3D
- * type and none of them is shown on the engine of the `getViewport` call.
+ * type and none of them is shown on the engine of the `getViewport` call;
+ * `parameter` when the file passes a 3D viewport and another viewport to the
+ * parameter that the node types.
  */
 type Decision =
   | '3d'
@@ -149,6 +162,7 @@ type Decision =
   | 'ambiguous'
   | 'mixed'
   | 'unlinked'
+  | 'parameter'
   | undefined;
 
 /**
@@ -558,8 +572,140 @@ function familyEvidence(run: Run, typeNode: Node): Decision {
 
   return (
     inputFamily(run, typeNode) ??
+    parameterFamily(run, typeNode) ??
     (ambiguous || own === 'ambiguous' ? 'ambiguous' : undefined)
   );
+}
+
+/**
+ * Returns the type node that a value has where the file gives it one: the
+ * type of a cast, the type argument of a `getViewport<T>` call, or the
+ * annotation or the start value of the `const` that a name holds.
+ */
+function valueTypeNode(value: Node, followName = true): Node | undefined {
+  const kind = value.kind();
+  const named = value.children().filter((child) => child.isNamed());
+
+  if (kind === 'parenthesized_expression' || kind === 'non_null_expression') {
+    return named[0] ? valueTypeNode(named[0], followName) : undefined;
+  }
+
+  if (kind === 'as_expression') {
+    return named[named.length - 1];
+  }
+
+  if (kind === 'type_assertion') {
+    return named[0]?.children().find((child) => child.isNamed());
+  }
+
+  if (kind === 'call_expression') {
+    return methodCall(value)?.method === 'getViewport'
+      ? value
+          .field('type_arguments')
+          ?.children()
+          .find((child) => child.isNamed())
+      : undefined;
+  }
+
+  const declaration =
+    kind === 'identifier' && followName ? stableBinding(value) : undefined;
+  const holder = declaration?.parent();
+
+  if (
+    holder?.kind() !== 'variable_declarator' ||
+    holder.field('name')?.id() !== declaration.id()
+  ) {
+    return undefined;
+  }
+
+  const annotation = holder
+    .children()
+    .find((child) => child.kind() === 'type_annotation');
+  const start = holder.field('value');
+
+  return (
+    annotation?.children().find((child) => child.isNamed()) ??
+    (start ? valueTypeNode(start, false) : undefined)
+  );
+}
+
+/**
+ * Tells whether the type node of a value types a 3D viewport: a 3D class by
+ * its name, or a name that typed a 3D viewport as well as a volume viewport
+ * in 5.x where the file shows a 3D viewport (`familyEvidence`).
+ */
+function typesThreeD(run: Run, typeNode: Node): boolean {
+  const name = typeNode.text().split('.').pop() ?? '';
+
+  return (
+    THREE_D_CLASSES.has(name) ||
+    (VOLUME_OR_3D.has(name) && familyEvidence(run, typeNode) === '3d')
+  );
+}
+
+/**
+ * Returns the family of a parameter that a type node types, by the calls of
+ * its function in the file: '3d' when each call passes a viewport that the
+ * file types as 3D, 'parameter' when a call passes one and another call
+ * passes another value, and undefined when no call passes a 3D viewport, or
+ * the node types no parameter of a function that a name calls.
+ */
+function parameterFamily(run: Run, typeNode: Node): Decision {
+  const annotation = typeNode.parent();
+  const parameter =
+    annotation?.kind() === 'type_annotation' ? annotation.parent() : undefined;
+  const list = parameter?.parent();
+  const fn = list?.parent();
+
+  if (
+    !parameter ||
+    !['required_parameter', 'optional_parameter'].includes(parameter.kind()) ||
+    list?.kind() !== 'formal_parameters' ||
+    !fn
+  ) {
+    return undefined;
+  }
+
+  const index = list
+    .children()
+    .filter((child) => child.isNamed() && child.kind() !== 'comment')
+    .findIndex((child) => child.id() === parameter.id());
+  const nameNode =
+    fn.kind() === 'function_declaration'
+      ? fn.field('name')
+      : CALLABLE_KINDS.includes(fn.kind()) &&
+          fn.parent()?.kind() === 'variable_declarator'
+        ? fn.parent()?.field('name')
+        : undefined;
+
+  if (!nameNode || nameNode.kind() !== 'identifier' || index < 0) {
+    return undefined;
+  }
+
+  const families = declarationReferences(nameNode).flatMap((reference) => {
+    const call = reference.parent();
+
+    if (
+      call?.kind() !== 'call_expression' ||
+      call.field('function')?.id() !== reference.id()
+    ) {
+      return [];
+    }
+
+    const argument = call
+      .field('arguments')
+      ?.children()
+      .filter((child) => child.isNamed() && child.kind() !== 'comment')[index];
+    const argumentType = argument ? valueTypeNode(argument) : undefined;
+
+    return [argumentType && typesThreeD(run, argumentType) ? '3d' : 'other'];
+  });
+
+  if (!families.includes('3d')) {
+    return undefined;
+  }
+
+  return families.every((family) => family === '3d') ? '3d' : 'parameter';
 }
 
 /**
@@ -863,13 +1009,20 @@ function classFor(
 
   const family = familyEvidence(run, typeNode);
 
-  if (family === 'ambiguous' || family === 'mixed' || family === 'unlinked') {
+  if (
+    family === 'ambiguous' ||
+    family === 'mixed' ||
+    family === 'unlinked' ||
+    family === 'parameter'
+  ) {
     const reason =
       family === 'mixed'
         ? 'the inputs of this viewport id do not give one static type'
         : family === 'unlinked'
           ? 'the 3D input of this viewport id is not tied to the engine of this call'
-          : 'a test of a 3D type here does not show the family';
+          : family === 'parameter'
+            ? 'the file passes a 3D viewport to this parameter and another value too: type it PlanarViewport | VolumeViewport3D, or split the function'
+            : 'a test of a 3D type here does not show the family';
 
     manual.increment(site(run.root, `${label}: ${reason}`, typeNode));
 
@@ -1329,8 +1482,9 @@ function reportMergedOperands(run: Run): void {
  * a type and a test of the content mode after `instanceof`, the deprecated
  * class aliases get their plain names, `Types.IStackViewport` and its kin
  * become the class of their family, and a cast of `getViewport` becomes its
- * type argument. Two operands that the renames make the same are reported
- * for review.
+ * type argument. The renamed classes go first, so that a legacy class that
+ * becomes the 3D class takes the import that the rename made. Two operands
+ * that the renames make the same are reported for review.
  */
 const codemod: Codemod<TSX> = (root) => {
   const rootNode = root.root();
@@ -1353,14 +1507,25 @@ const codemod: Codemod<TSX> = (root) => {
       );
     });
 
-  for (const specifier of specifiers) {
+  const named = specifiers.map((specifier) => {
     const name = specifier.field('name')?.text() ?? '';
-    const local = specifier.field('alias')?.text() ?? name;
 
+    return {
+      specifier,
+      name,
+      local: specifier.field('alias')?.text() ?? name,
+    };
+  });
+
+  for (const { specifier, name, local } of named) {
+    if (RENAMED_CLASS[name]) {
+      renameClass(run, specifier, name, local);
+    }
+  }
+
+  for (const { specifier, name, local } of named) {
     if (LEGACY_CLASS_TYPE[name]) {
       rewriteLegacyClass(run, specifier, name, local);
-    } else if (RENAMED_CLASS[name]) {
-      renameClass(run, specifier, name, local);
     }
   }
 

@@ -1,0 +1,28 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "13",
+        "rule": "Events.COLORMAP_MODIFIED: a key of the mock of @cornerstonejs/core, which has DISPLAY_SET_APPEARANCE_CHANGED already"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "19",
+        "rule": "utilities.genericViewportDisplaySetMetadataProvider: a key of the mock of @cornerstonejs/core, moves to displaySetRegistry: give the mock that path"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "20",
+        "rule": "utilities.isGenericViewport: a key of the mock of @cornerstonejs/core, true for every viewport in 6.0: delete the test and the branch for the other case"
+      },
+      "count": 1
+    }
+  ]
+}

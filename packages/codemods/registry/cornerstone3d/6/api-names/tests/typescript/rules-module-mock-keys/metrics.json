@@ -1,0 +1,22 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "19",
+        "rule": "'CORNERSTONE_VIEWPORT_NEW_IMAGE_SET'"
+      },
+      "count": 1
+    }
+  ],
+  "cornerstone3d-6-review": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "41",
+        "rule": "Events.VIEWPORT_NEW_IMAGE_SET: DISPLAY_SETS_CHANGED also fires when an overlay such as a labelmap is added or removed: a listener that cares only for the source adds if (!evt.detail.sourceChanged) return, and the detail has no imageIds and no currentImageIdIndex (ask the viewport)"
+      },
+      "count": 1
+    }
+  ]
+}

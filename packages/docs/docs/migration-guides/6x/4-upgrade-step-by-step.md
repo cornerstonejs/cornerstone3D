@@ -192,17 +192,26 @@ is left with a report, because that type declares the members: rename them
 there and at each use.
 
 What it did on real code, measured on 25 November 2026 (Cornerstone3D
-`880c03496` with the codemod of task V1):
+`f87fc2c46` with the codemod of task FX2):
 
 | Input                                                             | Rewritten   | Left with a report    | Wrong |
 | ----------------------------------------------------------------- | ----------- | --------------------- | ----- |
-| The 5.x examples of this repository, 1,335 uses of a removed name | 900 (67.4%) | 461 manual, 67 review | 0     |
-| OHIF Viewers `master` on 5.x, 32 files changed                    | 157         | 183 manual, 53 review | 0     |
-| OHIF on 6.0.0-beta.1, `-api-names` alone, 16 files changed        | 35          | 66 manual, 16 review  | 0     |
-| The examples, tests and docs of 6.0.0-beta.2, `-api-names` alone  | 1,458       | 402 manual, 78 review | 0     |
+| The 5.x examples of this repository, 1,335 uses of a removed name | 900 (67.4%) | 463 manual, 67 review | 0     |
+| OHIF Viewers `master` on 5.x, 32 files changed                    | 158         | 221 manual, 53 review | 0     |
+| OHIF on 6.0.0-beta.1, `-api-names` alone, 16 files changed        | 39          | 66 manual, 16 review  | 0     |
+| The examples, tests and docs of 6.0.0-beta.2, `-api-names` alone  | 1,463       | 401 manual, 78 review | 0     |
 
 Wrong means a rewritten line that no longer compiles and is not at a site
-that the codemod reported. Its
+that the codemod reported. A rewrite can also make another line fail to
+compile: a cast rewritten to a 6.0 class gives the lines that use the
+viewport its members, and a renamed event gives an untyped listener
+(`evt => evt.detail`) the type of its event. The measure counts those too:
+on the 5.x examples 178 of 184 are on a line that the codemod reported, the
+others were errors of the examples in 5.x already or are reported on the
+line where their call starts, and on OHIF `master` 20 of 23, the others an
+`IViewport` that OHIF passed where it typed `IVolumeViewport` and the
+listener above. Type the parameter of such a listener
+(`(evt: Types.EventTypes.DisplaySetsChangedEvent) => ...`). The codemod's
 [README](https://github.com/cornerstonejs/cornerstone3D/blob/main/packages/codemods/registry/cornerstone3d/6/README.md)
 lists each package with what it changes and what it reports.
 

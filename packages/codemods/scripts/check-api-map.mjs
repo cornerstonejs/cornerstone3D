@@ -20,10 +20,7 @@ const registry = join(packageRoot, 'registry/cornerstone3d/6');
 const UNREACHABLE = {
   'getZoom()':
     'a deprecated member of every 6.0 viewport (the "legacy shim" of PlanarViewport and its kin): the call still works',
-  'setZoom()':
-    'a deprecated member of every 6.0 viewport: the call still works',
   'getPan()': 'a deprecated member of every 6.0 viewport: the call still works',
-  'setPan()': 'a deprecated member of every 6.0 viewport: the call still works',
   'customRenderViewportToCanvas()':
     'still a method of the 6.0 video, whole slide and ECG viewports, which the rendering engine calls: the call still works',
   threshold:

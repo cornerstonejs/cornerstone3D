@@ -2317,6 +2317,47 @@ levels of 255.
   it asked for (two `seeked` events at mount). Chrome stops for a moment
   after the metadata too and then loads the frame by itself: there the video
   does not play.
+- **A video that does not load rejects the mount.** When the element of the
+  video fires `error` before its first frame (a URL that answers with an HTML
+  page or a 404, a file that the browser cannot decode), `setDisplaySets`
+  rejects with an error that names the display set, the URL and the media
+  error: its code, as `MEDIA_ERR_SRC_NOT_SUPPORTED`, and the message of the
+  browser. Its `cause` is the `MediaError` of the element. As for a planar
+  mount that rejects, `DISPLAY_SETS_CHANGED` does not fire. The video is
+  unbound and its element removed, its appearance overrides are those from
+  before the call, and the next `setDisplaySets` mounts as on a new
+  viewport; the videos shown before went when the call started, as they do
+  for a mount that loads. A video that fails after its metadata, before its
+  first frame, has fired `DISPLAY_SET_APPEARANCE_CHANGED` with cause
+  `'mount'` already, as its appearance applies when it is bound. A call that
+  a newer `setDisplaySets` superseded rejects too and changes nothing. An error after the first frame, as a
+  network that goes while the video plays, does not fail the mount. There is
+  no time limit: `stalled` says that the data is slow and `abort` that the
+  load starts again, so the call waits until the browser gives the frame or
+  an error, as a planar mount waits for its image. To give up after a time,
+  race the promise with a timer and mount again: the newer call supersedes
+  the waiting one. In 5.x `setVideo()` waited for ever, and so did
+  `setDisplaySets` of 6.0.0-beta.2.
+
+  Before, in 6.0.0-beta.2, a URL that is not a video:
+
+  ```ts
+  // never settles, and DISPLAY_SETS_CHANGED never fires
+  await viewport.setDisplaySets({ displaySetId: 'v' });
+  ```
+
+  After, in 6.0:
+
+  ```ts
+  try {
+    await viewport.setDisplaySets({ displaySetId: 'v' });
+  } catch (error) {
+    // [VideoViewport] The display set "v" did not load its video
+    // https://host/index.mp4: MEDIA_ERR_SRC_NOT_SUPPORTED (MEDIA_ELEMENT_ERROR: Format error)
+    showLoadError(error.message);
+  }
+  ```
+
 - **`getPan()` and `setPan()` are in canvas pixels on the screen,** `[0, 0]` at
   the fit, as on the other next viewports, and a drag of the pan tool moves
   the picture with the mouse at any rotation.

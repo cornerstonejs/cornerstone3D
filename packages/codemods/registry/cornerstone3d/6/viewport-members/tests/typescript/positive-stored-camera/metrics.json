@@ -1,0 +1,36 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "11",
+        "rule": "setPan: the second argument storeAsInitialCamera is gone (6.0 reads a second argument of setZoom as the canvas point to zoom about): a next viewport has no stored initial camera, a reset goes back to the fit, so delete the argument and set the zoom or the pan again after resetViewState where the application went back to it"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "13",
+        "rule": "setZoom: the second argument storeAsInitialCamera is gone (6.0 reads a second argument of setZoom as the canvas point to zoom about): a next viewport has no stored initial camera, a reset goes back to the fit, so delete the argument and set the zoom or the pan again after resetViewState where the application went back to it"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "17",
+        "rule": "setPan: the second argument storeAsInitialCamera is gone (6.0 reads a second argument of setZoom as the canvas point to zoom about): a next viewport has no stored initial camera, a reset goes back to the fit, so delete the argument and set the zoom or the pan again after resetViewState where the application went back to it"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "9",
+        "rule": "setZoom: the second argument storeAsInitialCamera is gone (6.0 reads a second argument of setZoom as the canvas point to zoom about): a next viewport has no stored initial camera, a reset goes back to the fit, so delete the argument and set the zoom or the pan again after resetViewState where the application went back to it"
+      },
+      "count": 1
+    }
+  ]
+}

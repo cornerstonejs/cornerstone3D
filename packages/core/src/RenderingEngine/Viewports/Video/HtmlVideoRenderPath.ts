@@ -21,6 +21,7 @@ import {
   resolveVideoCanvasMapping,
 } from './videoViewportCamera';
 import { buildWSIColorTransform } from '../WSI/wsiTransformUtils';
+import { videoLoadError } from './videoLoadError';
 
 /** @internal */
 export class HtmlVideoRenderPath
@@ -45,13 +46,23 @@ export class HtmlVideoRenderPath
     element.style.transformOrigin = 'top left';
     element.style.objectFit = 'fill';
 
-    await new Promise<void>((resolve) => {
+    await new Promise<void>((resolve, reject) => {
       const onLoadedMetadata = () => {
-        element.removeEventListener('loadedmetadata', onLoadedMetadata);
+        cleanup();
         resolve();
+      };
+      const onError = () => {
+        cleanup();
+        element.remove();
+        reject(videoLoadError(videoData.id, element));
+      };
+      const cleanup = () => {
+        element.removeEventListener('loadedmetadata', onLoadedMetadata);
+        element.removeEventListener('error', onError);
       };
 
       element.addEventListener('loadedmetadata', onLoadedMetadata);
+      element.addEventListener('error', onError);
       mountVideoElement(ctx, element);
     });
 

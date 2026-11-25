@@ -3,14 +3,6 @@
     {
       "cardinality": {
         "file": "input.js",
-        "line": "5",
-        "rule": "viewportSupportsDisplaySetPresentation: a key of an object that stands in for Cornerstone, such as a mock, in 6.0 its name is viewportSupportsDisplaySetAppearance"
-      },
-      "count": 1
-    },
-    {
-      "cardinality": {
-        "file": "input.js",
         "line": "9",
         "rule": "setDisplaySetPresentation: a key of an object that stands in for Cornerstone, such as a mock, in 6.0 its name is setDisplaySetAppearance"
       },

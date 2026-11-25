@@ -52,6 +52,7 @@ import {
 } from './videoViewportCamera';
 import { createVideoRenderPathResolver } from './VideoRenderPathResolver';
 import VideoResolvedView from './VideoResolvedView';
+import { videoLoadError } from './videoLoadError';
 
 /** The RGBA pixels of one video frame, with the frame number they show. */
 type FrameScalarData = Uint8ClampedArray & {
@@ -160,6 +161,18 @@ class VideoViewport extends BaseViewport<
    * once the videos are mounted; a newer call stops this one, which then
    * fires nothing.
    *
+   * A video whose element fires `error` before its first frame rejects the
+   * call with the display set, the URL and the media error
+   * (`videoLoadError`), as a planar mount rejects for an image that does
+   * not load: the failing video is unbound and its element removed, its
+   * appearance overrides are those from before the call, and
+   * DISPLAY_SETS_CHANGED does not fire (a video that fails after its
+   * metadata has fired the appearance event of its mount at the bind).
+   * A call that a newer one superseded rejects too and changes nothing.
+   * An error after the first frame does not fail the mount. There is no
+   * time limit: `stalled` and `abort` are not failures, and the call waits
+   * until the browser gives the frame or the error.
+   *
    * @param entries - Video display sets to mount.
    */
   async setDisplaySets(
@@ -242,7 +255,17 @@ class VideoViewport extends BaseViewport<
 
       this.modified();
       this.trackVideoElement();
-      await this.primeInitialFrame(videoData);
+
+      try {
+        await this.primeInitialFrame(videoData);
+      } catch (error) {
+        if (!isSuperseded()) {
+          this.removeDisplaySetBinding(displaySetId);
+          restoreAppearance();
+        }
+
+        throw error;
+      }
 
       if (isSuperseded()) {
         return;
@@ -1424,7 +1447,8 @@ class VideoViewport extends BaseViewport<
    * to load its frame (`playMutedForFrameData`) can show a later frame at the
    * pause while `currentTime` has not moved, and a seek to the time that the
    * element has already shows nothing new, so it seeks one frame on and then
-   * to the frame to show.
+   * to the frame to show. Rejects with `videoLoadError` when the video fails
+   * before its first frame.
    */
   private async primeInitialFrame(
     videoData: LoadedData<VideoStreamPayload>
@@ -1435,7 +1459,7 @@ class VideoViewport extends BaseViewport<
       return;
     }
 
-    const played = await waitForVideoReady(element);
+    const played = await waitForVideoReady(element, videoData.id);
 
     const targetTimeSeconds =
       videoData.frameRange[0] > 1
@@ -1516,20 +1540,33 @@ const FRAME_DATA_GRACE_MS = 250;
  * Waits until a video element has the data of its current frame. When the
  * network stops first and is still stopped, with no frame, after
  * `FRAME_DATA_GRACE_MS`, it plays the video muted to get the frame
- * (`playMutedForFrameData`). Gives whether it played.
+ * (`playMutedForFrameData`). Gives whether it played. Rejects with
+ * `videoLoadError` when the element has or fires a media error before the
+ * frame; `stalled` and `abort` do not end the wait.
  */
-async function waitForVideoReady(element: HTMLVideoElement): Promise<boolean> {
+async function waitForVideoReady(
+  element: HTMLVideoElement,
+  displaySetId: string
+): Promise<boolean> {
   if (element.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
     return false;
+  }
+
+  if (element.error) {
+    throw videoLoadError(displaySetId, element);
   }
 
   let played = false;
   let graceTimer: ReturnType<typeof setTimeout> | undefined;
 
-  await new Promise<void>((resolve) => {
+  await new Promise<void>((resolve, reject) => {
     const onReady = () => {
       cleanup();
       resolve();
+    };
+    const onError = () => {
+      cleanup();
+      reject(videoLoadError(displaySetId, element));
     };
     const playIfStillStopped = () => {
       if (
@@ -1552,11 +1589,13 @@ async function waitForVideoReady(element: HTMLVideoElement): Promise<boolean> {
       element.removeEventListener('loadeddata', onReady);
       element.removeEventListener('canplay', onReady);
       element.removeEventListener('suspend', onSuspend);
+      element.removeEventListener('error', onError);
     };
 
     element.addEventListener('loadeddata', onReady, { once: true });
     element.addEventListener('canplay', onReady, { once: true });
     element.addEventListener('suspend', onSuspend);
+    element.addEventListener('error', onError);
 
     if (element.networkState === HTMLMediaElement.NETWORK_IDLE) {
       onSuspend();
@@ -1591,24 +1630,32 @@ function playMutedForFrameData(element: HTMLVideoElement): void {
 
 /**
  * Seeks a video element and waits for `seeked`. Without `always` it does
- * nothing when the element is within a millisecond of the time.
+ * nothing when the element is within a millisecond of the time. A video
+ * with a media error does not seek, and an error during the seek ends the
+ * wait: an error after the first frame does not fail a mount, which keeps
+ * the frame that the video has.
  */
 async function seekVideoElement(
   element: HTMLVideoElement,
   timeSeconds: number,
   always = false
 ): Promise<void> {
-  if (!always && Math.abs((element.currentTime || 0) - timeSeconds) <= 0.001) {
+  if (
+    element.error ||
+    (!always && Math.abs((element.currentTime || 0) - timeSeconds) <= 0.001)
+  ) {
     return;
   }
 
   await new Promise<void>((resolve) => {
-    const onSeeked = () => {
-      element.removeEventListener('seeked', onSeeked);
+    const onDone = () => {
+      element.removeEventListener('seeked', onDone);
+      element.removeEventListener('error', onDone);
       resolve();
     };
 
-    element.addEventListener('seeked', onSeeked, { once: true });
+    element.addEventListener('seeked', onDone);
+    element.addEventListener('error', onDone);
     element.currentTime = timeSeconds;
   });
 }

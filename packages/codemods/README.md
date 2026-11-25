@@ -178,47 +178,87 @@ The numbers, as they are counted:
   `IStackViewport` or `.setStack(`) on the removed lines of the diff less
   those on its added lines, as the OHIF dry run of 20 November 2026 counted.
 - Manual and review: the sites of the metrics, and the files that have one.
+- Type errors: the input and the output are type checked against the
+  sources of this checkout: the examples in the layout of the repository
+  with `utils` linked, OHIF with the `node_modules` folders of the checkout
+  linked into the copy. An error of the output is new when the input had no
+  error with the same code and message at the same place: the line that
+  the output line stood on before the run (lines move by what the hunks of
+  the diff above them added or removed), or, for a line that the run
+  changed, one of the old lines of its hunk. The path of the checked tree
+  in a message counts as the same in both. The new errors of the changed
+  files are printed with file and line:
+  - on a changed line, an error at a site that a step left and reported (a
+    name that the error quotes stood there before the run and a manual or
+    review entry of the file names it, as
+    `(<PlanarViewport>viewport).setStack(ids)`: the cast was rewritten and
+    the `setStack` left with its report), or else a wrong rewrite;
+  - off the changed lines (`new errors off changed lines`), for a reader to
+    judge, with whether a manual or review entry of a step is on that line
+    of the output (the line of an entry is carried from the input of its
+    step to the output). A rewrite can give an error on another line, as a
+    renamed event gives its untyped listener the type of its detail, and
+    a rewritten cast gives the members of the 6.0 class to the lines that
+    use the viewport.
+    New errors in the files that the run did not change are printed too.
 - Wrong: a syntax error that the run made (the TypeScript parser on each
-  file), or a type error of the output on a line that the run changed that
-  is not at a site a step left and reported. Such a left site is a line
-  where a name that the error quotes stood before the run and a manual or
-  review entry of the file names it, as
-  `(<PlanarViewport>viewport).setStack(ids)`: the cast was rewritten and the
-  `setStack` left with its report. The examples are type checked against
-  the sources of this checkout, in the layout of the repository with
-  `utils` linked. OHIF is type checked against them too, with the
-  `node_modules` folders of the checkout linked into the copy, before and
-  after the run; an error that the changed lines had before the run, with
-  the same code and message, does not count.
+  file), or a new type error on a changed line that is not at a site a step
+  left and reported.
 
-It prints the numbers and writes `measure.json` (the numbers and every
-report entry), `diff.patch` and the logs of the type check into the
-measure folder (`--work`). `--skip-typecheck` leaves the type check out.
+It prints the numbers and writes `measure.json` (the numbers, every new
+type error and every report entry), `diff.patch` and the logs of the type
+checks (`before.tsc.log`, `after.tsc.log`) into the measure folder
+(`--work`). `--skip-typecheck` leaves the type checks out.
 
-The numbers of 25 November 2026, at `880c03496` with the work of task V1
-(every step, `-api-names` with its six families):
+The numbers of 25 November 2026, at `f87fc2c46` with the work of task FX2
+(every step, `-api-names` with its six families). Type errors: of the
+output, and in brackets of the input; new on changed lines (all at a site
+left and reported); new off changed lines (in brackets: on a line with a
+report).
 
-| Input                                                       | Files      | Sites | Rewritten   | Manual           | Review         | Wrong |
-| ----------------------------------------------------------- | ---------- | ----- | ----------- | ---------------- | -------------- | ----- |
-| Examples of `58914567b` (the input of the earlier measures) | 251        | 1,335 | 900 (67.4%) | 461 in 170 files | 67 in 38 files | 0     |
-| Examples of `v5.19.4`                                       | 249        | 1,334 | 899 (67.4%) | 457 in 169 files | 65 in 37 files | 0     |
-| OHIF `6fe59945a0` (master, 5.x)                             | 32 changed |       | 157         | 183 in 40 files  | 53 in 20 files | 0     |
+| Input                                                       | Files      | Sites | Rewritten   | Manual           | Review         | Type errors   | New, changed lines | New, off changed lines | Wrong |
+| ----------------------------------------------------------- | ---------- | ----- | ----------- | ---------------- | -------------- | ------------- | ------------------ | ---------------------- | ----- |
+| Examples of `58914567b` (the input of the earlier measures) | 251        | 1,335 | 900 (67.4%) | 463 in 170 files | 67 in 38 files | 713 (1,395)   | 5                  | 184 (178)              | 0     |
+| Examples of `v5.19.4`                                       | 249        | 1,334 | 899 (67.4%) | 459 in 169 files | 65 in 37 files | 710 (1,385)   | 5                  | 184 (178)              | 0     |
+| OHIF `6fe59945a0` (master, 5.x)                             | 32 changed |       | 158         | 221 in 42 files  | 53 in 20 files | 8,823 (8,962) | 8                  | 23 (20)                | 0     |
 
 `-api-names` alone, on code that is on a 6.0 beta (the rewritten sites from
 its metric):
 
-| Input                                                                                                             | Files                    | Rewritten | Manual           | Review         | Wrong |
-| ----------------------------------------------------------------------------------------------------------------- | ------------------------ | --------- | ---------------- | -------------- | ----- |
-| OHIF `78432e76cb` (`feat/cornerstone3d-6`)                                                                        | 16 changed               | 35        | 66 in 15 files   | 16 in 8 files  | 0     |
-| Examples, tests, `utils` and docs code blocks of 6.0.0-beta.2 (`1b3b2247e`): 834 files and 332 blocks of 67 pages | 275 changed, 1,413 lines | 1,458     | 402 in 120 files | 78 in 48 files | 0     |
+| Input                                                                                                             | Files                    | Rewritten | Manual           | Review         | Type errors   | New, changed lines | New, off changed lines | Wrong |
+| ----------------------------------------------------------------------------------------------------------------- | ------------------------ | --------- | ---------------- | -------------- | ------------- | ------------------ | ---------------------- | ----- |
+| OHIF `78432e76cb` (`feat/cornerstone3d-6`)                                                                        | 16 changed, 39 lines     | 39        | 66 in 15 files   | 16 in 8 files  | 9,068 (9,098) | 0                  | 1 (0)                  | 0     |
+| Examples of 6.0.0-beta.2 (`1b3b2247e`)                                                                            | 207 changed              |           | 38 in 17 files   | 30 in 20 files | 379 (1,001)   | 2                  | 4 (4)                  | 0     |
+| Examples, tests, `utils` and docs code blocks of 6.0.0-beta.2 (`1b3b2247e`): 834 files and 332 blocks of 67 pages | 275 changed, 1,418 lines | 1,463     | 401 in 120 files | 78 in 48 files |               |                    |                        |       |
 
-On the examples, 5 type errors are on changed lines, each at a site left and
-reported: 3 `setStack` on a line whose cast was rewritten, and 2
-`event.detail` of a listener whose `colormap.opacity` read is reported. On
-OHIF master, 8: 7 a `setProperties`, `setVolumes` or `getCamera` left and
-reported on a line whose cast was rewritten, and 1 the `VOLUME_3D` test that
-two operands of one `||` are now, listed for review. On the OHIF branch,
-none.
+None of these runs makes a new type error in a file that it did not
+change. On the examples, the 5 new errors on changed lines are each at a
+site left and reported: 3 `setStack` on a line whose cast was rewritten,
+and 2 `event.detail` of a listener whose `colormap.opacity` read is
+reported. On OHIF master, 8: 7 a `setProperties`, `setVolumes` or
+`getCamera` left and reported on a line whose cast was rewritten, and 1 the
+`VOLUME_3D` test that two operands of one `||` are now, listed for review.
+
+The new errors off changed lines are mostly a cast that the run rewrote to
+a 6.0 class on one line and a 5.x member that the run left with a report
+on a later line (`viewport.setProperties(...)` after
+`getViewport<PlanarViewport>(...)`): 178 of 184 on the examples sit on a
+line with a report. Of the others, 2 are reported on the line where their
+call starts (`volumeAPI`, `axisBasedImageStretching`), and 4 were errors of
+the examples in 5.x already, which showed only because the types of the
+input do not resolve against 6.0: a video view state read for
+`flipHorizontal` and `flipVertical`, which 5.x did not have, a `scale` in a
+`Types.ViewPresentation`, which 5.x did not have, and `background:
+number[]` where 5.x asked for `RGB`. On OHIF master, 20 of 23 sit on a
+reported line; 2 are OHIF passing an `IViewport` where it typed
+`IVolumeViewport`, an error in 5.x too, and 1 is an untyped listener of the
+renamed `DISPLAY_SETS_CHANGED` (`evt => evt.detail`) whose review entry is on
+the line of `addEventListener`, above it; the same listener is the one new
+error of the OHIF branch. The measure found three misses of a rule, fixed
+with fixtures (row 208 of `v6-open-issues.md`): `setZoom(zoom, true)` and
+`setPan(pan, true)`, a 5.x member read without a call (`if
+(!viewport.getAllVolumeIds)`), and a parameter typed `BaseVolumeViewport`
+that the file passes a 3D viewport.
 
 The output of 6.0.0-beta.2 type checks against this tree with 502 errors
 where its input had 1,150 (the tests import the sources of the packages, which changed by

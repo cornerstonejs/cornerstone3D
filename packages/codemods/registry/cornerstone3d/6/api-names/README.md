@@ -283,7 +283,8 @@ part of a view that another viewport can take is its framing.
   methods (`jest.spyOn(viewport, 'setDisplaySetPresentation')`); a key of an
   object literal that names one of them, or
   `viewportSupportsDisplaySetPresentation`, in a file that imports
-  Cornerstone (a mock of a viewport or of `utilities`); a member `setDisplaySetPresentation`,
+  Cornerstone (a mock of a viewport, or of `utilities` outside a module mock
+  of the package, whose keys are renamed); a member `setDisplaySetPresentation`,
   `getDisplaySetPresentation` or `resetDisplaySetPresentation` that a type of
   the application declares on top of a viewport type; the key `presentation`
   in the options of a `setDisplaySets` entry or of `addDisplaySet`
@@ -438,6 +439,10 @@ before.
 - Review: each rewritten site of a rule that names a decision of the
   guide, and two operands that the renames make the same, such as two
   events of one `||` that are one event now.
+- Manual, a key of a module mock of the package (see How the step decides)
+  whose name moves (`utilities.genericViewportDisplaySetMetadataProvider: a key of the mock of @cornerstonejs/core, moves to displaySetRegistry: give the mock that path`),
+  is reported, or would repeat a key that the object has
+  (`Events.COLORMAP_MODIFIED: a key of the mock of @cornerstonejs/core, which has DISPLAY_SET_APPEARANCE_CHANGED already`).
 - Manual, a renamed or removed name on a namespace that the file binds
   nowhere, as in a code block of a page that imports it in another block:
   `utilities.genericViewportDisplaySetMetadataProvider: the file does not bind utilities; if it is Cornerstone's, its name in 6.0 is displaySetRegistry, a top-level export`.
@@ -472,6 +477,24 @@ input in the same function that creates it: an object with the same
 application). An object literal reaches
 Cornerstone when it is an argument of a proven call, an entry of an array
 argument, or the value of a `const` passed there.
+
+A module mock is Cornerstone's when it names the package: the keys of the
+object that the factory of `jest.mock`, `jest.doMock`, `vi.mock` or
+`vi.doMock` of `@cornerstonejs/core` or `@cornerstonejs/tools` gives (the
+body of an arrow function or each `return` of the factory, with or without
+`...jest.requireActual(...)` or `...(await importOriginal())` spread in, or
+a `const` that holds the object), and the keys of the object literals under
+a key that names an exported object of a rule (`utilities: { ... }`,
+`viewportProjection: { ... }`, `Enums: { Events: { ... } }`, `EVENTS`), are
+the exports themselves. Each takes what the step does with the name: a
+renamed name is renamed (`getPresentation: jest.fn()` becomes
+`getFraming: jest.fn()`, a shorthand `getPresentation` becomes
+`getFraming: getPresentation`), and a moved or reported name is reported
+with `a key of the mock of <package>`. A key whose new name the object has
+already (two events that 6.0 merges into one) is reported. The tests that
+read the mock then find the names that the step wrote in their reads. A
+mock of a module of the application, an object outside a mock factory, and
+a computed key stay as they are.
 
 ## Contributing
 

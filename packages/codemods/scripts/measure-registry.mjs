@@ -5,6 +5,7 @@ import {
   mkdirSync,
   readdirSync,
   readFileSync,
+  realpathSync,
   rmSync,
   symlinkSync,
   writeFileSync,
@@ -133,6 +134,19 @@ function hunks(before, after) {
 }
 
 /**
+ * Returns a message of the type checker with the path of a checked tree, as
+ * given and as the file system resolves it, replaced by `<tree>`: the type
+ * checks of the input and of the output name their own tree, and an error
+ * that names a type of the tree is the same error in both.
+ */
+function treeMessage(message, tree) {
+  return [realpathSync(tree), tree].reduce(
+    (text, root) => text.split(root).join('<tree>'),
+    message
+  );
+}
+
+/**
  * Returns the files with a syntax error, each with its first message, read
  * from a map of path to text with the TypeScript parser of this repository:
  * a `.ts` file as TypeScript, any other as TSX.
@@ -175,12 +189,13 @@ function syntaxErrors(texts, files) {
 
 /**
  * Type checks the examples of a tree against the sources of this checkout:
- * the examples are copied into `<work>/tc` in the layout of the repository,
- * with `utils` linked to the checkout, so that their relative imports of
- * `utils/demo` resolve. Returns every error in an example file.
+ * the examples are copied into `<work>/tc-<name>` in the layout of the
+ * repository, with `utils` linked to the checkout, so that their relative
+ * imports of `utils/demo` resolve. Writes `<name>.tsc.log` and returns every
+ * error in an example file.
  */
-function typecheckExamples(work, tree) {
-  const tc = join(work, 'tc');
+function typecheckExamples(work, tree, name) {
+  const tc = join(work, `tc-${name}`);
 
   rmSync(tc, { recursive: true, force: true });
   mkdirSync(tc, { recursive: true });
@@ -238,7 +253,7 @@ function typecheckExamples(work, tree) {
   );
   const output = `${result.stdout ?? ''}${result.stderr ?? ''}`;
 
-  writeFileSync(join(work, 'tsc.log'), output);
+  writeFileSync(join(work, `${name}.tsc.log`), output);
 
   const errors = [];
 
@@ -252,7 +267,7 @@ function typecheckExamples(work, tree) {
         line: Number(match[2]),
         column: Number(match[3]),
         code: match[4],
-        message: match[5],
+        message: treeMessage(match[5], tc),
       });
     }
   }
@@ -269,9 +284,7 @@ function typecheckExamples(work, tree) {
  */
 function isAtLeftSite(error, hunk, beforeLines, rules) {
   const names = [
-    ...error.message.matchAll(
-      /'([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)'/g
-    ),
+    ...error.message.matchAll(/'([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)'/g),
   ].flatMap((match) => {
     const parts = match[1].split('.');
 
@@ -294,14 +307,130 @@ function isAtLeftSite(error, hunk, beforeLines, rules) {
 }
 
 /**
- * Returns the type errors on the lines that the run changed, each sorted
- * into a wrong rewrite or an error at a site that a step left and reported.
- * With the errors of the input, an error that the same lines had before the
- * run (same code and message) is not counted.
+ * Returns where a line of the output stood in the input: the hunk that holds
+ * it, with the range of its old lines, when the run changed the line;
+ * otherwise the one old line, moved by the lines that the hunks above it
+ * added or removed.
  */
-function changedLineErrors(errors, before, after, entries, beforeErrors) {
+function inputPlace(fileHunks, line) {
+  let shift = 0;
+
+  for (const hunk of fileHunks) {
+    if (
+      hunk.newLines > 0 &&
+      line >= hunk.newStart &&
+      line < hunk.newStart + hunk.newLines
+    ) {
+      return {
+        hunk,
+        from: hunk.oldLines ? hunk.oldStart : hunk.oldStart + 1,
+        to: hunk.oldStart + hunk.oldLines - 1,
+      };
+    }
+
+    const newEnd = hunk.newLines
+      ? hunk.newStart + hunk.newLines - 1
+      : hunk.newStart;
+
+    if (newEnd >= line) {
+      break;
+    }
+
+    shift += hunk.newLines - hunk.oldLines;
+  }
+
+  return { from: line - shift, to: line - shift };
+}
+
+/**
+ * Returns the line of the output that a line of an input stood on: a line
+ * that a hunk changed gives the first new line of its hunk; another line
+ * moves by the lines that the hunks above it added or removed.
+ */
+function outputLine(fileHunks, line) {
+  let shift = 0;
+
+  for (const hunk of fileHunks) {
+    if (
+      hunk.oldLines > 0 &&
+      line >= hunk.oldStart &&
+      line < hunk.oldStart + hunk.oldLines
+    ) {
+      return Math.max(1, hunk.newStart);
+    }
+
+    const oldEnd = hunk.oldLines
+      ? hunk.oldStart + hunk.oldLines - 1
+      : hunk.oldStart;
+
+    if (oldEnd >= line) {
+      break;
+    }
+
+    shift += hunk.newLines - hunk.oldLines;
+  }
+
+  return line + shift;
+}
+
+/**
+ * Gives each manual and review entry of a run the line of the output that
+ * its site is on (`outputLine`): the line of an entry is a line of the input
+ * of its step, and the later steps can add or remove lines above it.
+ */
+function placeEntries(run, entries) {
+  const stepIndex = new Map(
+    run.results.map((result, index) => [result.step, index])
+  );
+  const hunksOf = new Map();
+
+  return entries.map((entry) => {
+    const input = run.inputs[stepIndex.get(entry.step)]?.get(entry.file);
+    const output = run.after.get(entry.file);
+    const line = Number(entry.line);
+
+    if (
+      entry.metric === METRICS.rewritten ||
+      input === undefined ||
+      output === undefined ||
+      !Number.isFinite(line)
+    ) {
+      return entry;
+    }
+
+    const key = `${entry.step}\n${entry.file}`;
+
+    if (!hunksOf.has(key)) {
+      hunksOf.set(key, input === output ? [] : hunks(input, output));
+    }
+
+    return { ...entry, outputLine: outputLine(hunksOf.get(key), line) };
+  });
+}
+
+/**
+ * Returns the type errors of the output that the input did not have, in
+ * the files that the run changed. An error of the output is old when the
+ * input had an error with the same code and message at the same place: on
+ * the line that the output line stood on, or, for a changed line, on one of
+ * the old lines of its hunk; each error of the input stands for one error
+ * of the output. A new error on a changed line is a wrong rewrite or an
+ * error at a site that a step left and reported; a new error on another
+ * line of the file is `off changed lines`, as the error that a renamed
+ * event gives on the line after an untyped listener (`evt => evt.detail`),
+ * for a reader to judge. Without the errors of the input every error of a
+ * changed line is new, and the other lines are not looked at.
+ */
+function newTypeErrors(errors, before, after, entries, beforeErrors) {
   const found = [];
   const hunksByFile = new Map();
+  const unmatched = new Map();
+
+  for (const error of beforeErrors ?? []) {
+    const key = `${error.file}\n${error.code}\n${error.message}`;
+
+    unmatched.set(key, [...(unmatched.get(key) ?? []), error.line]);
+  }
 
   for (const error of errors) {
     const old = before.get(error.file);
@@ -315,25 +444,36 @@ function changedLineErrors(errors, before, after, entries, beforeErrors) {
       hunksByFile.set(error.file, hunks(old, text));
     }
 
-    const hunk = hunksByFile
-      .get(error.file)
-      .find(
-        (candidate) =>
-          candidate.newLines > 0 &&
-          error.line >= candidate.newStart &&
-          error.line < candidate.newStart + candidate.newLines
-      );
-    const hadIt = beforeErrors?.some(
-      (other) =>
-        other.file === error.file &&
-        other.code === error.code &&
-        other.message === error.message &&
-        hunk &&
-        other.line >= hunk.oldStart &&
-        other.line < hunk.oldStart + hunk.oldLines
+    const place = inputPlace(hunksByFile.get(error.file), error.line);
+
+    if (!place.hunk && !beforeErrors) {
+      continue;
+    }
+
+    const lines =
+      unmatched.get(`${error.file}\n${error.code}\n${error.message}`) ?? [];
+    const index = lines.findIndex(
+      (line) => line >= place.from && line <= place.to
     );
 
-    if (!hunk || hadIt) {
+    if (index !== -1) {
+      lines.splice(index, 1);
+      continue;
+    }
+
+    if (!place.hunk) {
+      const reported = entries.some(
+        (entry) =>
+          entry.file === error.file &&
+          entry.outputLine === error.line &&
+          (entry.metric === METRICS.manual || entry.metric === METRICS.review)
+      );
+
+      found.push({
+        ...error,
+        kind: 'off changed lines',
+        reported,
+      });
       continue;
     }
 
@@ -347,13 +487,88 @@ function changedLineErrors(errors, before, after, entries, beforeErrors) {
 
     found.push({
       ...error,
-      kind: isAtLeftSite(error, hunk, old.split('\n'), rules)
+      kind: isAtLeftSite(error, place.hunk, old.split('\n'), rules)
         ? 'left and reported'
         : 'wrong',
     });
   }
 
   return found;
+}
+
+/**
+ * Counts the type errors of the output in the files that the run did not
+ * change that the input did not have (by file, line, code and message): a
+ * change in one file that breaks another.
+ */
+function newErrorsInUnchangedFiles(errors, beforeErrors, before, after) {
+  const key = (error) =>
+    `${error.file}\n${error.line}\n${error.code}\n${error.message}`;
+  const old = new Map();
+
+  for (const error of beforeErrors) {
+    old.set(key(error), (old.get(key(error)) ?? 0) + 1);
+  }
+
+  return errors.filter((error) => {
+    if (before.get(error.file) !== after.get(error.file)) {
+      return false;
+    }
+
+    const count = old.get(key(error)) ?? 0;
+
+    old.set(key(error), count - 1);
+
+    return count <= 0;
+  });
+}
+
+/**
+ * Prints the type errors of a measure: all of the output, the new ones in
+ * the changed files by kind with file and line, and the new ones in the
+ * other files.
+ */
+function printTypeErrors(result) {
+  const byKind = (kind) =>
+    result.newTypeErrors.filter((error) => error.kind === kind);
+  const onChanged = result.newTypeErrors.filter(
+    (error) => error.kind !== 'off changed lines'
+  );
+
+  console.log(
+    `  type errors: ${result.typeErrors} (input ${result.inputTypeErrors}); new in the changed files ${result.newTypeErrors.length}: on changed lines ${onChanged.length} (${byKind('left and reported').length} at a site left and reported, ${byKind('wrong').length} wrong), new errors off changed lines ${byKind('off changed lines').length}`
+  );
+
+  const offReported = byKind('off changed lines').filter(
+    (error) => error.reported
+  ).length;
+
+  console.log(
+    `    of the new errors off changed lines, ${offReported} on a line with a manual or review entry, ${byKind('off changed lines').length - offReported} on a line with none`
+  );
+
+  for (const error of result.newTypeErrors) {
+    const where =
+      error.kind === 'off changed lines'
+        ? error.reported
+          ? ', reported on the line'
+          : ', no report on the line'
+        : '';
+
+    console.log(
+      `    ${error.kind}${where}: ${error.file}:${error.line} ${error.code} ${error.message}`
+    );
+  }
+
+  console.log(
+    `  new type errors in files the run did not change: ${result.unchangedFileTypeErrors.length}`
+  );
+
+  for (const error of result.unchangedFileTypeErrors) {
+    console.log(
+      `    ${error.file}:${error.line} ${error.code} ${error.message}`
+    );
+  }
 }
 
 /**
@@ -468,7 +683,7 @@ function typecheckOhif(tree, checkout, log) {
         line: Number(match[2]),
         column: Number(match[3]),
         code: match[4],
-        message: match[5],
+        message: treeMessage(match[5], tree),
       });
     }
   }
@@ -568,8 +783,11 @@ function measureExamples(options) {
   const run = runSteps(options.registry, steps, tree, (line) =>
     console.log(`  ${line}`)
   );
-  const entries = run.results.flatMap((result) =>
-    result.metrics.map((entry) => ({ ...entry, step: result.step }))
+  const entries = placeEntries(
+    run,
+    run.results.flatMap((result) =>
+      result.metrics.map((entry) => ({ ...entry, step: result.step }))
+    )
   );
   const families = {};
 
@@ -598,15 +816,35 @@ function measureExamples(options) {
   writeDiff(work, run.before, run.after);
 
   let typeErrors;
-  let onChanged = [];
+  let beforeErrors;
+  let found = [];
+  let unchangedFileErrors = [];
 
   if (!options['skip-typecheck']) {
-    console.log('Type check of the output against this checkout');
-    typeErrors = typecheckExamples(work, tree);
-    onChanged = changedLineErrors(typeErrors, run.before, run.after, entries);
+    console.log(
+      'Type check of the input and of the output against this checkout'
+    );
+    archive(repoRoot, ref, join(work, 'before'), [
+      ':(glob)packages/*/examples/**',
+    ]);
+    beforeErrors = typecheckExamples(work, join(work, 'before'), 'before');
+    typeErrors = typecheckExamples(work, tree, 'after');
+    found = newTypeErrors(
+      typeErrors,
+      run.before,
+      run.after,
+      entries,
+      beforeErrors
+    );
+    unchangedFileErrors = newErrorsInUnchangedFiles(
+      typeErrors,
+      beforeErrors,
+      run.before,
+      run.after
+    );
   }
 
-  const wrong = onChanged.filter((error) => error.kind === 'wrong');
+  const wrong = found.filter((error) => error.kind === 'wrong');
   const result = {
     input: `examples of ${ref}`,
     registry: options.registry,
@@ -623,7 +861,9 @@ function measureExamples(options) {
     review: reportCounts(entries, METRICS.review),
     syntaxErrors: newSyntax.map(([path, message]) => ({ path, message })),
     typeErrors: typeErrors?.length,
-    changedLineErrors: onChanged,
+    inputTypeErrors: beforeErrors?.length,
+    newTypeErrors: found,
+    unchangedFileTypeErrors: unchangedFileErrors,
     wrong: wrong.length + newSyntax.length,
     summary: summarize(run.results),
     entries,
@@ -662,24 +902,12 @@ function printExamples(result, work) {
   console.log(`  syntax errors made by the run: ${result.syntaxErrors.length}`);
 
   if (result.typeErrors !== undefined) {
-    const left =
-      result.changedLineErrors.length -
-      result.changedLineErrors.filter((error) => error.kind === 'wrong').length;
-
-    console.log(
-      `  type errors: ${result.typeErrors}, on changed lines ${result.changedLineErrors.length} (${left} at a site left and reported)`
-    );
-
-    for (const error of result.changedLineErrors) {
-      console.log(
-        `    ${error.kind}: ${error.file}:${error.line} ${error.code} ${error.message}`
-      );
-    }
+    printTypeErrors(result);
   }
 
   console.log(`  wrong: ${result.wrong}`);
   console.log(
-    `\nFiles: ${work}/measure.json, diff.patch${result.typeErrors !== undefined ? ', tsc.log' : ''}`
+    `\nFiles: ${work}/measure.json, diff.patch${result.typeErrors !== undefined ? ', before.tsc.log, after.tsc.log' : ''}`
   );
 }
 
@@ -741,8 +969,11 @@ function measureOhif(options) {
   const run = runSteps(options.registry, steps, tree, (line) =>
     console.log(`  ${line}`)
   );
-  const entries = run.results.flatMap((result) =>
-    result.metrics.map((entry) => ({ ...entry, step: result.step }))
+  const entries = placeEntries(
+    run,
+    run.results.flatMap((result) =>
+      result.metrics.map((entry) => ({ ...entry, step: result.step }))
+    )
   );
   const changed = [...run.after]
     .filter(([path, text]) => run.before.get(path) !== text)
@@ -753,8 +984,10 @@ function measureOhif(options) {
   const newSyntax = [...syntaxErrors(run.after, changed)].filter(
     ([path]) => !syntaxBefore.has(path)
   );
-  let onChanged;
+  let found;
   let typeErrors;
+  let beforeErrors;
+  let unchangedFileErrors;
 
   if (!options['skip-typecheck']) {
     const log = (line) => console.log(line);
@@ -764,21 +997,24 @@ function measureOhif(options) {
     );
     archive(checkout, commit, join(work, 'before'));
 
-    const beforeErrors = typecheckOhif(join(work, 'before'), checkout, log);
-
+    beforeErrors = typecheckOhif(join(work, 'before'), checkout, log);
     typeErrors = typecheckOhif(tree, checkout, log);
-    onChanged = changedLineErrors(
+    found = newTypeErrors(
       typeErrors,
       run.before,
       run.after,
       entries,
       beforeErrors
     );
+    unchangedFileErrors = newErrorsInUnchangedFiles(
+      typeErrors,
+      beforeErrors,
+      run.before,
+      run.after
+    );
   }
 
-  const wrongTypes = (onChanged ?? []).filter(
-    (error) => error.kind === 'wrong'
-  );
+  const wrongTypes = (found ?? []).filter((error) => error.kind === 'wrong');
   const result = {
     input: `OHIF ${commit}`,
     registry: options.registry,
@@ -790,7 +1026,9 @@ function measureOhif(options) {
     review: reportCounts(entries, METRICS.review),
     syntaxErrors: newSyntax.map(([path, message]) => ({ path, message })),
     typeErrors: typeErrors?.length,
-    changedLineErrors: onChanged,
+    inputTypeErrors: beforeErrors?.length,
+    newTypeErrors: found,
+    unchangedFileTypeErrors: unchangedFileErrors,
     wrong: newSyntax.length + wrongTypes.length,
     summary: summarize(run.results),
     entries,
@@ -813,23 +1051,13 @@ function measureOhif(options) {
   );
   console.log(`  syntax errors made by the run: ${newSyntax.length}`);
 
-  if (onChanged) {
-    const left = onChanged.length - wrongTypes.length;
-
-    console.log(
-      `  type errors: ${typeErrors.length}, new on changed lines ${onChanged.length} (${left} at a site left and reported)`
-    );
-
-    for (const error of onChanged) {
-      console.log(
-        `    ${error.kind}: ${error.file}:${error.line} ${error.code} ${error.message}`
-      );
-    }
+  if (found) {
+    printTypeErrors(result);
   }
 
   console.log(`  wrong: ${result.wrong}`);
   console.log(
-    `\nFiles: ${work}/measure.json, diff.patch${onChanged ? ', before.tsc.log, after.tsc.log' : ''}`
+    `\nFiles: ${work}/measure.json, diff.patch${found ? ', before.tsc.log, after.tsc.log' : ''}`
   );
 
   return result;
@@ -846,12 +1074,21 @@ git archive into a folder outside the repository.
 The examples (the default): the example files of a commit of this
 repository (--ref, default v5.19.4). Prints the 5.x sites, the rewritten
 and left ones by family, the manual and review reports, the syntax errors
-that the run made, the type errors of the output against this checkout on
-the lines that the run changed, and the wrong sites.
+that the run made, the type errors, and the wrong sites.
 
 OHIF (--ohif): a commit of an OHIF checkout (--ohif-ref, default HEAD), only
-read. Prints the files changed, the rewritten sites by kind, the reports and
-the syntax errors that the run made.
+read. Prints the files changed, the rewritten sites by kind, the reports,
+the syntax errors that the run made and the type errors.
+
+Type errors: the input and the output are type checked against this
+checkout. An error of the output is new when the input had no error with
+the same code and message at the same place (the line that the output line
+stood on, or for a changed line one of the old lines of its hunk). The new
+errors of the changed files are printed with file and line: on changed
+lines, a wrong rewrite or an error at a site that a step left and reported;
+off changed lines, for a reader to judge (an untyped listener of a renamed
+event gives its error on the next line). New errors in the files that the
+run did not change are printed too. Only a wrong rewrite counts as wrong.
 
 Options:
   --steps <names>    the steps, separated by commas, or all (the default)

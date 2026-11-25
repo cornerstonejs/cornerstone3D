@@ -1,0 +1,46 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "12",
+        "rule": "getProperties read"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "16",
+        "rule": "getCamera read"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "18",
+        "rule": "setZoom: the second argument storeAsInitialCamera is gone (6.0 reads a second argument of setZoom as the canvas point to zoom about): a next viewport has no stored initial camera, a reset goes back to the fit, so delete the argument and set the zoom or the pan again after resetViewState where the application went back to it"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "4",
+        "rule": "getAllVolumeIds read: a viewport has no getAllVolumeIds in 6.0, so a test of it is always false: test viewport.getVolumeIds, which a planar viewport has in stack mode too (it gives [] there), or utilities.viewportIsInVolumeMode(viewport)"
+      },
+      "count": 1
+    }
+  ],
+  "cornerstone3d-6-review": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "8",
+        "rule": "getAllVolumeIds: getVolumeIds gives the source first, [] while the viewport shows a stack, and no labelmap that the tools draw as images beside a slice cut on the CPU"
+      },
+      "count": 1
+    }
+  ]
+}

@@ -32,7 +32,11 @@ npx codemod @cornerstonejs/cornerstone3d-6-classes-and-types
   `<viewport>.type`, or a `const` that holds it such as
   `const { type } = viewport`, where `<viewport>` is the binding that the
   cast casts; without a negation or `||`, and a `case` that no case falls
-  into). Applications cast 3D viewports to `IVolumeViewport` in 5.x. Where a
+  into), or the type types a parameter of a function that each call of the
+  file passes a viewport that the file types as 3D (a cast or a
+  `getViewport<T>` of a 3D class, `LegacyVolumeViewport3D`, or an
+  `IVolumeViewport` that these rules make 3D, also through a `const`).
+  Applications cast 3D viewports to `IVolumeViewport` in 5.x. Where a
   test of `VOLUME_3D` encloses the node and decides nothing (a test of
   another value such as a parameter `type` or a `cardType`, of a shadowing
   name, or outside the function of the node), the type stays and is
@@ -97,7 +101,10 @@ npx codemod @cornerstonejs/cornerstone3d-6-classes-and-types
   the running code resolves (`type: flag ? VOLUME_3D : PLANAR`, a name, a
   call, or a `viewportId` or `type` that a spread, a computed key such as
   `[key]: value` or a getter after it can replace, or a type that a spread
-  can give: `{ ...base, viewportId }`), an `IVolumeViewport` whose
+  can give: `{ ...base, viewportId }`), a parameter that the file passes a
+  3D viewport and another value
+  (`the file passes a 3D viewport to this parameter and another value too: type it PlanarViewport | VolumeViewport3D, or split the function`),
+  an `IVolumeViewport` whose
   `VOLUME_3D` input is not shown on the engine of the call (another engine
   binding, an input from a helper or `push`, `this.renderingEngine`), the
   removed `Types.*ViewportProperties`, `Types.IVolumeInput`,

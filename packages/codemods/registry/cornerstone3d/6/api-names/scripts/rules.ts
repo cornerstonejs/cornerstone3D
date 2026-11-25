@@ -1514,6 +1514,240 @@ function applyValueRules(run: Run, rules: ExportRule[]): void {
   }
 }
 
+/** The calls that mock a module with a factory: the module, then the factory. */
+const MODULE_MOCK_CALLS = new Set([
+  'jest.mock',
+  'jest.doMock',
+  'vi.mock',
+  'vi.doMock',
+]);
+
+/** The kinds of a function that a module mock takes as its factory. */
+const FACTORY_KINDS = ['arrow_function', 'function_expression', 'function'];
+
+/**
+ * Returns the paths of the exported objects that hold a name of a rule,
+ * with each of their prefixes: `Enums` and `Enums.Events` for
+ * `Enums.Events.X`.
+ */
+function namespacePaths(rules: ExportRule[]): Set<string> {
+  const paths = new Set<string>();
+
+  for (const { namespace } of rules) {
+    const parts = namespace?.split('.') ?? [];
+
+    parts.forEach((_, index) => paths.add(parts.slice(0, index + 1).join('.')));
+  }
+
+  return paths;
+}
+
+/**
+ * Returns the object literals that the factory of a module mock gives: the
+ * body of an arrow function, or what each `return` of the factory's own
+ * block gives, through parentheses, casts and a `const` that holds the
+ * literal.
+ */
+function factoryObjects(factory: Node | undefined): Node[] {
+  const inner = factory ? unwrap(factory) : undefined;
+  const body =
+    inner && FACTORY_KINDS.includes(inner.kind())
+      ? inner.field('body')
+      : undefined;
+
+  if (!body) {
+    return [];
+  }
+
+  if (body.kind() !== 'statement_block') {
+    return objectsOf(body);
+  }
+
+  return body
+    .findAll({ rule: { kind: 'return_statement' } })
+    .filter(
+      (statement) =>
+        statement
+          .ancestors()
+          .find((ancestor) => FACTORY_KINDS.includes(ancestor.kind()))
+          ?.id() === inner.id()
+    )
+    .flatMap((statement) =>
+      objectsOf(statement.children().find((child) => child.isNamed()))
+    );
+}
+
+/**
+ * Returns the node of the name of an entry of an object literal: the key of
+ * a pair, the name of a method, or a shorthand property. Undefined for a
+ * spread.
+ */
+function entryKeyNode(entry: Node): Node | undefined {
+  const kind = entry.kind();
+
+  if (kind === 'pair') {
+    return entry.field('key') ?? undefined;
+  }
+
+  if (kind === 'method_definition') {
+    return entry.field('name') ?? undefined;
+  }
+
+  return kind === 'shorthand_property_identifier' ? entry : undefined;
+}
+
+/**
+ * Applies the rule of a name to a key of a module mock: renames the key
+ * (a shorthand keeps its value, `getFraming: getPresentation`), or reports
+ * it where the rule moves or reports the name, or where the object has the
+ * new name already, as for two events that 6.0 merges into one. A renamed
+ * key has no review entry: the review text of a name is for its readers.
+ */
+function applyMockKey(
+  run: Run,
+  rule: ExportRule,
+  entry: Node,
+  keyNode: Node,
+  taken: Set<string>,
+  packageName: string
+): void {
+  if (run.handled.has(keyNode.range().start.index)) {
+    return;
+  }
+
+  const label =
+    rule.label ?? pathLabel(joinPath(rule.namespace ?? '', rule.name));
+  const reason = `a key of the mock of ${packageName}`;
+
+  if (rule.moveTo) {
+    reportSite(
+      run,
+      rule,
+      label,
+      keyNode,
+      `${reason}, moves to ${rule.moveTo}: give the mock that path`
+    );
+
+    return;
+  }
+
+  if (!rule.to) {
+    reportSite(run, rule, label, keyNode, reason);
+
+    return;
+  }
+
+  if (taken.has(rule.to)) {
+    reportSite(
+      run,
+      rule,
+      label,
+      keyNode,
+      `${reason}, which has ${rule.to} already`
+    );
+
+    return;
+  }
+
+  taken.add(rule.to);
+  applyEdits(
+    run,
+    { ...rule, review: undefined },
+    label,
+    keyNode,
+    [
+      entry.kind() === 'shorthand_property_identifier'
+        ? entry.replace(`${rule.to}: ${entry.text()}`)
+        : renameKeyEdit(keyNode, rule.to),
+    ],
+    rule.to
+  );
+}
+
+/**
+ * Applies the rules of a package to the keys of an object of its module
+ * mock at a path (`''` at the top), and to the object literals under the
+ * keys that name an exported object of a rule, such as `utilities` or
+ * `Enums: { Events: { ... } }`.
+ */
+function applyMockObject(
+  run: Run,
+  packageName: string,
+  rules: ExportRule[],
+  namespaces: Set<string>,
+  object: Node,
+  base: string
+): void {
+  const entries = object.children().filter((entry) => entryKeyNode(entry));
+  const taken = new Set(
+    entries.map((entry) => staticKeyName(entryKeyNode(entry)))
+  );
+
+  for (const entry of entries) {
+    const keyNode = entryKeyNode(entry);
+    const key = staticKeyName(keyNode);
+
+    if (!keyNode || !key) {
+      continue;
+    }
+
+    const rule = ruleAt(rules, base, key);
+
+    if (rule) {
+      applyMockKey(run, rule, entry, keyNode, taken, packageName);
+      continue;
+    }
+
+    const path = resolveAlias(packageName, joinPath(base, key));
+
+    if (entry.kind() === 'pair' && namespaces.has(path)) {
+      for (const inner of objectsOf(entry.field('value') ?? undefined)) {
+        applyMockObject(run, packageName, rules, namespaces, inner, path);
+      }
+    }
+  }
+}
+
+/**
+ * Applies the rules of exported names to the keys of a module mock of their
+ * package: the object that the factory of `jest.mock`, `jest.doMock`,
+ * `vi.mock` or `vi.doMock` gives, with or without the actual module spread
+ * in, and the object literals in it under the path of an exported object.
+ * Such a key is the export itself, which the step renames in the reads of
+ * the file: a renamed name is renamed, and a moved or reported one is
+ * reported.
+ */
+export function applyModuleMockRules(run: Run, rules: ExportRule[]): void {
+  const byPackage = rulesByPackage(rules);
+
+  for (const call of run.rootNode.findAll({
+    rule: { kind: 'call_expression' },
+  })) {
+    if (!MODULE_MOCK_CALLS.has(call.field('function')?.text() ?? '')) {
+      continue;
+    }
+
+    const [moduleNode, factory] =
+      call
+        .field('arguments')
+        ?.children()
+        .filter((child) => child.isNamed() && child.kind() !== 'comment') ?? [];
+    const packageName =
+      moduleNode?.kind() === 'string' ? moduleNode.text().slice(1, -1) : '';
+    const packageRules = byPackage.get(packageName);
+
+    if (!packageRules) {
+      continue;
+    }
+
+    const namespaces = namespacePaths(packageRules);
+
+    for (const object of factoryObjects(factory)) {
+      applyMockObject(run, packageName, packageRules, namespaces, object, '');
+    }
+  }
+}
+
 /**
  * Applies the rules of exported names.
  */
@@ -2005,16 +2239,23 @@ export function reportMergedOperands(run: Run): void {
 }
 
 /**
- * Returns the transform of a list of families. Each family first rewrites
- * what its tables cannot say, then the tables of all families run: the
- * exported names, the members of Cornerstone objects and the keys of
- * objects that reach Cornerstone. Two operands that the rewrites make the
- * same are reported for review. A file that cannot be analysed stays as it
- * is, with one manual entry.
+ * Returns the transform of a list of families. The keys of the module
+ * mocks of a package go first (`applyModuleMockRules`), so that a family
+ * that reports a key of an object that only may stand in for Cornerstone
+ * leaves them. Then each family rewrites what its tables cannot say, then
+ * the tables of all families run: the exported names, the members of
+ * Cornerstone objects and the keys of objects that reach Cornerstone. Two
+ * operands that the rewrites make the same are reported for review. A file
+ * that cannot be analysed stays as it is, with one manual entry.
  */
 export function familiesCodemod(families: Family[]): Codemod<TSX> {
   const codemod: Codemod<TSX> = (root, options) => {
     const run = createRun(root, options);
+
+    applyModuleMockRules(
+      run,
+      families.flatMap((family) => family.rules.exports ?? [])
+    );
 
     for (const family of families) {
       family.rewrite?.(run);

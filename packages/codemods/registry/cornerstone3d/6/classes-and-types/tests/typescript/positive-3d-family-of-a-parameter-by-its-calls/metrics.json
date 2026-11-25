@@ -1,0 +1,12 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "15",
+        "rule": "Types.IBaseVolumeViewport: the file passes a 3D viewport to this parameter and another value too: type it PlanarViewport | VolumeViewport3D, or split the function"
+      },
+      "count": 1
+    }
+  ]
+}

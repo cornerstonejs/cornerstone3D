@@ -2,7 +2,7 @@ import { RenderingEngine } from '@cornerstonejs/core';
 
 jest.mock('@cornerstonejs/core', () => ({
   ...jest.requireActual('@cornerstonejs/core'),
-  utilities: { viewportSupportsDisplaySetPresentation: jest.fn(() => true) },
+  utilities: { viewportSupportsDisplaySetAppearance: jest.fn(() => true) },
 }));
 
 const viewport = {

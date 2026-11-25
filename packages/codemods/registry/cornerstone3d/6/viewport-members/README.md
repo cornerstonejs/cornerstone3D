@@ -74,6 +74,10 @@ its name, and so is a legacy member in brackets
   `getCamera()` read for its flip only (`const { flipHorizontal } =
 viewport.getCamera()`, `viewport.getCamera().flipVertical`) becomes
   `getViewState()`. Any other `getCamera()` is reported.
+- `setZoom(zoom, false)` and `setPan(pan, false)` on a viewport that the
+  file shows lose the second argument, the 5.x `storeAsInitialCamera`: a
+  next viewport has no stored initial camera, and 6.0 reads a second
+  argument of `setZoom` as the canvas point to zoom about.
 
 ## Reported
 
@@ -93,7 +97,14 @@ variable, a spread, or a key without a twin (`slabThickness`, `preset`,
 `setProperties` whose `colormap.opacity` is not a number or a list that the
 file shows, or whose colormap has `opacityMapping` too;
 `setAverageWhite` before the viewport shows its data;
-`resetCamera` with `resetToCenter` or `storeAsInitialCamera`; `getCamera`,
+`resetCamera` with `resetToCenter` or `storeAsInitialCamera`;
+`setZoom(zoom, true)`, `setPan(pan, true)`, a `false` there on a receiver
+known by its name only, and `setPan` with any second argument (6.0 takes the
+pan only), with `the second argument storeAsInitialCamera is gone`; a
+member of this list read without a call, as the test
+`if (!viewport.getAllVolumeIds)` or `typeof viewport.getProperties`, which
+6.0 answers with undefined (`getAllVolumeIds read:` says what to test
+instead); `getCamera`,
 `setCamera` of other keys, `getProperties`, `resetProperties`, the default
 properties, the actor members, `getSliceViewInfo`,
 `getIntensityFromWorld`, `jumpToWorld`, `flip`, `setBlendMode`,

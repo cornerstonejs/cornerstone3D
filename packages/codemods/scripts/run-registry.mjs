@@ -278,15 +278,19 @@ export function runStep(registry, step, folder) {
 /**
  * Runs steps one after the other on a folder in place. Before each step it
  * reads the files, so that each step's changed files and lines are known.
- * Returns the result of each step, and the texts before the first and after
- * the last.
+ * Returns the result of each step, the texts before the first and after
+ * the last, and the texts that each step read (`inputs`, in the order of the
+ * steps): the line of a metric entry of a step is a line of its input.
  */
 export function runSteps(registry, steps, folder, log = () => {}) {
   const before = snapshot(folder);
   let current = before;
   const results = [];
+  const inputs = [];
 
   for (const step of steps) {
+    inputs.push(current);
+
     const result = runStep(registry, step, folder);
     const after = snapshot(folder);
     const files = {};
@@ -307,7 +311,7 @@ export function runSteps(registry, steps, folder, log = () => {}) {
     );
   }
 
-  return { results, before, after: current };
+  return { results, before, after: current, inputs };
 }
 
 /**

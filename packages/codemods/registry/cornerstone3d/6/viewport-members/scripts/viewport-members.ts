@@ -269,6 +269,19 @@ const FLIP_KEYS = new Set(['flipHorizontal', 'flipVertical']);
 /** The calls that mount data on a viewport. */
 const MOUNT_CALL = /\.(setDisplaySets|setStack|setVolumes|setVideo)\(/;
 
+/** The members whose second argument was `storeAsInitialCamera` in 5.x. */
+const STORED_CAMERA_METHODS = new Set(['setZoom', 'setPan']);
+
+/** The report of a `storeAsInitialCamera` argument, word for word in the guide. */
+const STORED_CAMERA =
+  'the second argument storeAsInitialCamera is gone (6.0 reads a second argument of setZoom as the canvas point to zoom about): a next viewport has no stored initial camera, a reset goes back to the fit, so delete the argument and set the zoom or the pan again after resetViewState where the application went back to it';
+
+/** The reports of a member read without a call, by member. */
+const MEMBER_READS: Record<string, string> = {
+  getAllVolumeIds:
+    'a viewport has no getAllVolumeIds in 6.0, so a test of it is always false: test viewport.getVolumeIds, which a planar viewport has in stack mode too (it gives [] there), or utilities.viewportIsInVolumeMode(viewport)',
+};
+
 /**
  * The state of one run of the transform on a file.
  */
@@ -709,6 +722,80 @@ function readsOnlyFlip(call: Node): boolean {
 }
 
 /**
+ * Rewrites or reports the 5.x `storeAsInitialCamera` argument of `setZoom`
+ * and `setPan` (`STORED_CAMERA`): a literal `false` goes, on a viewport that
+ * the file shows; a literal `true`, a `false` on a receiver that only its
+ * name shows, and any second argument of `setPan`, which takes one argument
+ * in 6.0, are reported. Another second argument of `setZoom` is the canvas
+ * point of 6.0 and stays.
+ */
+function rewriteStoredCamera(
+  run: Run,
+  call: Node,
+  method: string,
+  args: Node[],
+  evidence: string
+): void {
+  const stored = args[1] ? unwrap(args[1]) : undefined;
+  const literal =
+    stored && ['true', 'false'].includes(stored.kind())
+      ? stored.kind()
+      : undefined;
+
+  if (args.length !== 2 || (!literal && method !== 'setPan')) {
+    return;
+  }
+
+  if (literal === 'false' && evidence === 'core') {
+    run.edits.add({
+      startPos: args[0].range().end.index,
+      endPos: args[1].range().end.index,
+      insertedText: '',
+    });
+
+    return;
+  }
+
+  reportSite(run, `${method}: ${STORED_CAMERA}`, call);
+}
+
+/**
+ * Reports a read without a call of a legacy member on a viewport, as the
+ * test `if (!viewport.getAllVolumeIds)`: 6.0 has no such member, so the read
+ * gives undefined. A member that keeps its name on another family, and the
+ * function of a call, which `rewriteCall` takes, are left.
+ */
+function reportMemberReads(run: Run, names: string[]): void {
+  for (const member of run.rootNode.findAll({
+    rule: {
+      kind: 'member_expression',
+      has: { field: 'property', regex: `^(${names.join('|')})$` },
+    },
+  })) {
+    const parent = member.parent();
+    const object = member.field('object');
+    const name = member.field('property')?.text() ?? '';
+
+    if (
+      (parent?.kind() === 'call_expression' &&
+        parent.field('function')?.id() === member.id()) ||
+      !object ||
+      !viewportEvidence(object)
+    ) {
+      continue;
+    }
+
+    reportSite(
+      run,
+      MEMBER_READS[name]
+        ? `${name} read: ${MEMBER_READS[name]}`
+        : `${memberRule(name, object)} read`,
+      member
+    );
+  }
+}
+
+/**
  * Rewrites or reports one call of a legacy member on a viewport. A receiver
  * that only its name shows to be a viewport is reported.
  */
@@ -721,6 +808,12 @@ function rewriteCall(run: Run, call: Node): void {
   }
 
   const { object, property, method, args } = parts;
+
+  if (STORED_CAMERA_METHODS.has(method)) {
+    rewriteStoredCamera(run, call, method, args, evidence);
+
+    return;
+  }
 
   if (FAMILY_METHODS.has(method)) {
     const family = evidence === 'core' ? viewportFamily(object) : undefined;
@@ -1107,9 +1200,28 @@ const codemod: Codemod<TSX> = (root) => {
     },
   });
 
-  for (const call of calls) {
+  const storedCameraCalls = rootNode.findAll({
+    rule: {
+      kind: 'call_expression',
+      has: {
+        field: 'function',
+        kind: 'member_expression',
+        has: {
+          field: 'property',
+          regex: `^(${[...STORED_CAMERA_METHODS].join('|')})$`,
+        },
+      },
+    },
+  });
+
+  for (const call of [...calls, ...storedCameraCalls]) {
     rewriteCall(run, call);
   }
+
+  reportMemberReads(
+    run,
+    methodNames.filter((name) => !FAMILY_METHODS.has(name))
+  );
 
   const propertyNames = [
     ...Object.keys(RENAMED_PROPERTIES),
