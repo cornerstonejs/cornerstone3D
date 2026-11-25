@@ -55,10 +55,7 @@ import {
 import * as windowLevelUtil from '../utilities/windowLevel';
 import createLinearRGBTransferFunction from '../utilities/createLinearRGBTransferFunction';
 import createSigmoidRGBTransferFunction from '../utilities/createSigmoidRGBTransferFunction';
-import {
-  ensureNonZeroVOIRange,
-  getVOIRangeOverlappingPixelRange,
-} from '../utilities/voiRangeGuards';
+import { ensureNonZeroVOIRange } from '../utilities/voiRangeGuards';
 import { updateVTKImageDataWithCornerstoneImage } from '../utilities/updateVTKImageDataWithCornerstoneImage';
 import triggerEvent from '../utilities/triggerEvent';
 import { isEqual } from '../utilities/isEqual';
@@ -2766,8 +2763,13 @@ class StackViewport extends Viewport {
     if (this.voiRange && this.voiUpdatedWithSetProperties) {
       return this.voiRange;
     }
+    const { windowCenter, windowWidth, voiLUTFunction } = image;
 
-    let voiRange = this._getVOIRangeForCurrentImage(image);
+    let voiRange = getVOIRangeFromWindowLevel(
+      windowWidth,
+      windowCenter,
+      voiLUTFunction
+    );
 
     // Get the range for the PT since if it is prescaled
     // we set a default range of 0-5
@@ -3349,22 +3351,13 @@ class StackViewport extends Viewport {
     return renderingEngine.offscreenMultiRenderWindow?.getRenderer(this.id);
   }
 
-  private _getVOIRangeForCurrentImage(image: IImage = this.csImage) {
-    const { windowCenter, windowWidth, voiLUTFunction } = image;
+  private _getVOIRangeForCurrentImage() {
+    const { windowCenter, windowWidth, voiLUTFunction } = this.csImage;
 
-    const voiRange = getVOIRangeFromWindowLevel(
+    return getVOIRangeFromWindowLevel(
       windowWidth,
       windowCenter,
       voiLUTFunction
-    );
-
-    // The header W/L can be meaningless for the rescaled data (e.g. a
-    // near-zero RescaleSlope), so fall back to the image's own pixel range
-    // when the window is zero-width or doesn't overlap the pixel values.
-    return getVOIRangeOverlappingPixelRange(
-      voiRange,
-      image.minPixelValue,
-      image.maxPixelValue
     );
   }
 

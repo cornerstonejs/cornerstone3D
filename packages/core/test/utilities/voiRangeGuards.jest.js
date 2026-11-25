@@ -3,7 +3,6 @@ import {
   VOI_RANGE_RELATIVE_EPSILON,
   ensureNonZeroVOIRange,
   getVOIRangeEpsilon,
-  getVOIRangeOverlappingPixelRange,
 } from '../../src/utilities/voiRangeGuards';
 import createLinearRGBTransferFunction from '../../src/utilities/createLinearRGBTransferFunction';
 import { describe, it, expect } from '@jest/globals';
@@ -74,107 +73,6 @@ describe('ensureNonZeroVOIRange', function () {
   it('Should handle NaN or missing properties', () => {
     const result = ensureNonZeroVOIRange({ lower: NaN, upper: NaN });
     expect(Number.isNaN(result.lower)).toBe(true);
-  });
-});
-
-describe('getVOIRangeOverlappingPixelRange', function () {
-  it('Should keep a window that overlaps the pixel range', () => {
-    const voiRange = { lower: -100, upper: 300 };
-    expect(getVOIRangeOverlappingPixelRange(voiRange, 0, 1000)).toBe(voiRange);
-  });
-
-  it('Should fall back to the pixel range when the window is entirely below it', () => {
-    // WW=1/WC=1 with a near-zero RescaleSlope
-    expect(
-      getVOIRangeOverlappingPixelRange({ lower: 0.5, upper: 1.5 }, 0, 3e-5)
-    ).toEqual({ lower: 0, upper: 3e-5 });
-  });
-
-  it('Should fall back to the pixel range when the window is entirely above it', () => {
-    expect(
-      getVOIRangeOverlappingPixelRange({ lower: 2000, upper: 3000 }, 0, 1000)
-    ).toEqual({ lower: 0, upper: 1000 });
-  });
-
-  it('Should fall back to the pixel range when the window touches only an edge', () => {
-    expect(
-      getVOIRangeOverlappingPixelRange({ lower: -10, upper: 0 }, 0, 1000)
-    ).toEqual({ lower: 0, upper: 1000 });
-    expect(
-      getVOIRangeOverlappingPixelRange({ lower: 1000, upper: 1010 }, 0, 1000)
-    ).toEqual({ lower: 0, upper: 1000 });
-  });
-
-  it('Should fall back to the pixel range for a zero-width window', () => {
-    expect(
-      getVOIRangeOverlappingPixelRange({ lower: 50, upper: 50 }, 0, 1000)
-    ).toEqual({ lower: 0, upper: 1000 });
-  });
-
-  it('Should fall back to a widened pixel range for a constant slice', () => {
-    // All-zero slice with a window entirely below it: 0 must sit at lower
-    // (black) rather than above upper (white).
-    expect(
-      getVOIRangeOverlappingPixelRange({ lower: -1.5, upper: -0.5 }, 0, 0)
-    ).toEqual({ lower: 0, upper: VOI_RANGE_MIN_EPSILON });
-    expect(
-      getVOIRangeOverlappingPixelRange({ lower: 0.5, upper: 1.5 }, 0, 0)
-    ).toEqual({ lower: 0, upper: VOI_RANGE_MIN_EPSILON });
-    expect(
-      getVOIRangeOverlappingPixelRange({ lower: 50, upper: 50 }, 0, 0)
-    ).toEqual({ lower: 0, upper: VOI_RANGE_MIN_EPSILON });
-    expect(
-      getVOIRangeOverlappingPixelRange({ lower: 10, upper: 20 }, 500, 500)
-    ).toEqual({ lower: 500, upper: 500 + getVOIRangeEpsilon(500) });
-  });
-
-  it('Should keep a window that overlaps a constant slice', () => {
-    const voiRange = { lower: -100, upper: 300 };
-    expect(getVOIRangeOverlappingPixelRange(voiRange, 0, 0)).toBe(voiRange);
-  });
-
-  it('Should keep the window when the pixel bounds are inverted', () => {
-    const voiRange = { lower: 2000, upper: 3000 };
-    expect(getVOIRangeOverlappingPixelRange(voiRange, 10, 5)).toBe(voiRange);
-  });
-
-  it('Should keep the window when the lower pixel bound is undefined', () => {
-    const voiRange = { lower: 2000, upper: 3000 };
-    expect(getVOIRangeOverlappingPixelRange(voiRange, undefined, 5)).toBe(
-      voiRange
-    );
-  });
-
-  it('Should keep the window when the upper pixel bound is undefined', () => {
-    const voiRange = { lower: 2000, upper: 3000 };
-    expect(getVOIRangeOverlappingPixelRange(voiRange, 0, undefined)).toBe(
-      voiRange
-    );
-  });
-
-  it('Should return undefined when there is no window', () => {
-    expect(getVOIRangeOverlappingPixelRange(undefined, 0, 1000)).toBe(
-      undefined
-    );
-  });
-
-  it('Should keep the window when pixel boundaries contain NaN', () => {
-    const voiRange = { lower: 200, upper: 400 };
-    expect(getVOIRangeOverlappingPixelRange(voiRange, NaN, 500)).toBe(voiRange);
-    expect(getVOIRangeOverlappingPixelRange(voiRange, 0, NaN)).toBe(voiRange);
-  });
-
-  it('Should keep the window when pixel boundaries contain non-finite numbers', () => {
-    const voiRange = { lower: 200, upper: 400 };
-    expect(getVOIRangeOverlappingPixelRange(voiRange, -Infinity, 500)).toBe(
-      voiRange
-    );
-    expect(getVOIRangeOverlappingPixelRange(voiRange, 0, Infinity)).toBe(
-      voiRange
-    );
-    expect(
-      getVOIRangeOverlappingPixelRange(voiRange, -Infinity, Infinity)
-    ).toBe(voiRange);
   });
 });
 

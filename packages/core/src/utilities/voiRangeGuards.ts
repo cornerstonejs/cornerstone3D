@@ -1,18 +1,40 @@
 import type { VOIRange } from '../types/voi';
 
 /**
- * Epsilon used to widen a zero-width VOI range. It is relative to the value
- * so it stays below the data range for images with a near-zero RescaleSlope
- * (e.g. PT with slope ~1e-10).
+ * Relative epsilon used to widen a zero-width VOI range.
+ *
+ * Rule for a zero-width window (`lower === upper`): a value at or below
+ * `lower` renders black, and a value above `lower` renders white. The range
+ * becomes `[lower, lower + ε]`, so only values strictly inside that interval
+ * get a gray ramp.
+ *
+ * ε must be small compared with the increment between two stored values after
+ * the modality LUT (`|RescaleSlope|` for integer data), so that the next value
+ * above `lower` is white. A fixed width of 1 fails for a near-zero slope (PT
+ * with slope ~1e-10).
+ *
+ * ε must also stay above the floating point resolution at `|lower|`:
+ * - In double precision, `lower + 1e-15 === lower` once `|lower| > ~8`, so both
+ *   transfer function points land on the same x, vtk drops the black one, and
+ *   the image renders white.
+ * - The GPU shader evaluates the LUT in float32 (about 1.2e-7 relative). The
+ *   mapper uses a scale of `1 / (upper - lower)` and a shift of `-lower`; a
+ *   tiny width makes both terms huge, and their difference loses all digits.
+ *
+ * `1e-6` is the smallest round factor that stays clear of float32 resolution.
  */
 export const VOI_RANGE_RELATIVE_EPSILON = 1e-6;
 
-/** Lower bound for the epsilon, used when the value itself is (near) zero. */
+/**
+ * Lower bound for the epsilon, used when `lower` is (near) zero. At zero the
+ * shift is zero, so float32 only has to hold the scale.
+ */
 export const VOI_RANGE_MIN_EPSILON = 1e-12;
 
 /**
  * Returns the width to add to a zero-width VOI range whose lower bound is
- * `value`.
+ * `value`. See {@link VOI_RANGE_RELATIVE_EPSILON} for the rule and the
+ * precision limits.
  */
 export function getVOIRangeEpsilon(value: number): number {
   return Math.max(
@@ -35,35 +57,4 @@ export function ensureNonZeroVOIRange<T extends VOIRange>(voiRange: T): T {
     ...voiRange,
     upper: voiRange.lower + getVOIRangeEpsilon(voiRange.lower),
   };
-}
-
-/**
- * The header W/L can be meaningless for the rescaled data, e.g. WW=1/WC=1
- * with a near-zero RescaleSlope puts every pixel (max ~3e-5) far below the
- * window and renders the image black. Falls back to the image's own range
- * when the window is zero-width or doesn't overlap the pixel values.
- * For a constant slice (min === max, e.g. all zeros) the fallback is widened
- * so the pixels sit at its lower bound and render black.
- */
-export function getVOIRangeOverlappingPixelRange(
-  voiRange: VOIRange | undefined,
-  minPixelValue: number,
-  maxPixelValue: number
-): VOIRange | undefined {
-  if (
-    voiRange &&
-    Number.isFinite(minPixelValue) &&
-    Number.isFinite(maxPixelValue) &&
-    maxPixelValue >= minPixelValue &&
-    (voiRange.upper <= voiRange.lower ||
-      voiRange.upper <= minPixelValue ||
-      voiRange.lower >= maxPixelValue)
-  ) {
-    return ensureNonZeroVOIRange({
-      lower: minPixelValue,
-      upper: maxPixelValue,
-    });
-  }
-
-  return voiRange;
 }
