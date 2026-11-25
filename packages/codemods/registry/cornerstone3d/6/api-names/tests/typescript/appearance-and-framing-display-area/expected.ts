@@ -33,7 +33,7 @@ export function frame(
 
   const zoom = viewport.getViewFraming({
     zoom: true,
-    });
+  });
   const framing = viewportProjection.getFraming(viewport, {
     selector: { pan: true },
   });

@@ -4,7 +4,7 @@
       "cardinality": {
         "file": "input.ts",
         "line": "23",
-        "rule": "setViewPresentation"
+        "rule": "setViewPresentation: the object has a type of the application, which declares the member: change it there and here"
       },
       "count": 1
     },

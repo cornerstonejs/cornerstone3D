@@ -27,10 +27,7 @@ const selfTestScript = 'scripts/self-test.ts';
  * `registry/`, each with the reason. A package run on its own `expected`
  * files changes nothing, except where this list says why.
  */
-const idempotencySkips = {
-  'cornerstone3d/6/settings/tests/typescript/review2-nested-cpu-getter-in-rewritten-setting':
-    'the first run reports `rendering.useCPURendering` because its value calls `getShouldUseCPURendering()`, and rewrites that call; a second run finds no removed call in the value and rewrites the setting to `planar.renderBackend`',
-};
+const idempotencySkips = {};
 
 const { values: options } = parseArgs({
   options: {

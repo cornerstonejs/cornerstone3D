@@ -1,3 +1,3 @@
 import { init, getEffectiveRenderBackend } from '@cornerstonejs/core';
 
-await init({ rendering: { useCPURendering: getEffectiveRenderBackend() === 'cpu' } });
+await init({ rendering: { planar: { renderBackend: getEffectiveRenderBackend() === 'cpu' ? 'cpu' : 'auto' } } });

@@ -355,7 +355,10 @@ function rewriteConfiguration(run: Run): void {
       continue;
     }
 
-    if (value && callsSettingFunction(value)) {
+    const removes = key !== 'useCPURendering' || value?.text() === 'false';
+    const callsFunction = Boolean(value && callsSettingFunction(value));
+
+    if (callsFunction && removes) {
       manual.increment(
         site(
           run.root,
@@ -365,8 +368,6 @@ function rewriteConfiguration(run: Run): void {
       );
       continue;
     }
-
-    const removes = key !== 'useCPURendering' || value?.text() === 'false';
 
     if (removes && (!value || !(isShorthand || isPure(value)))) {
       manual.increment(site(run.root, `${rule}: its value has effects`, pair));
@@ -389,8 +390,11 @@ function rewriteConfiguration(run: Run): void {
       value?.text() === 'true'
         ? "'cpu'"
         : `${LOW_PRECEDENCE.has(value.kind()) ? `(${value.text()})` : value.text()} ? 'cpu' : 'auto'`;
+    const edits = callsFunction
+      ? aroundValue(pair, value)
+      : [pair.replace(`planar: { renderBackend: ${backend} }`)];
 
-    if (run.edits.add(pair.replace(`planar: { renderBackend: ${backend} }`))) {
+    if (run.edits.add(...edits)) {
       review.increment(
         site(
           run.root,
@@ -407,9 +411,33 @@ function rewriteConfiguration(run: Run): void {
 }
 
 /**
+ * Returns the edits that make `useCPURendering: value` the setting
+ * `planar: { renderBackend: value ? 'cpu' : 'auto' }` around its value, for
+ * a value that calls a removed setting function: the function pass rewrites
+ * the call inside the value, and the edits of the two passes do not meet.
+ */
+function aroundValue(pair: Node, value: Node): Edit[] {
+  const open = LOW_PRECEDENCE.has(value.kind()) ? '(' : '';
+
+  return [
+    {
+      startPos: pair.range().start.index,
+      endPos: value.range().start.index,
+      insertedText: `planar: { renderBackend: ${open}`,
+    },
+    {
+      startPos: value.range().end.index,
+      endPos: value.range().end.index,
+      insertedText: `${open ? ')' : ''} ? 'cpu' : 'auto' }`,
+    },
+  ];
+}
+
+/**
  * Tells whether an expression refers to a removed setting function of the
  * core, which the function pass rewrites: the pair that holds it is
- * reported, so the two rewrites never replace the same text.
+ * reported when the pass of the settings would replace the text of the
+ * call, so the two rewrites never replace the same text.
  */
 function callsSettingFunction(value: Node): boolean {
   return [

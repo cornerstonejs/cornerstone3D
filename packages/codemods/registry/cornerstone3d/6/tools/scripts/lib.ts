@@ -90,6 +90,25 @@ const FAMILY_OF_TYPE: Record<string, ViewportFamily> = {
   ECGGenericViewport: 'ecg',
 };
 
+/** The family of each member of the core `ViewportType` that names one. */
+const FAMILY_OF_VIEWPORT_TYPE: Record<string, ViewportFamily> = {
+  STACK: 'planar',
+  ORTHOGRAPHIC: 'planar',
+  PLANAR: 'planar',
+  PLANAR_NEXT: 'planar',
+  VOLUME_3D: '3d',
+  VOLUME_3D_NEXT: '3d',
+  VIDEO: 'video',
+  VIDEO_NEXT: 'video',
+  WHOLE_SLIDE: 'wsi',
+  WHOLE_SLIDE_NEXT: 'wsi',
+  ECG: 'ecg',
+  ECG_NEXT: 'ecg',
+};
+
+/** The keys of a viewport input that hold its type. */
+const VIEWPORT_TYPE_KEYS = new Set(['type', 'viewportType']);
+
 /** The core types of a viewport of any family. */
 const ANY_VIEWPORT_TYPES = new Set([
   'IViewport',
@@ -97,6 +116,27 @@ const ANY_VIEWPORT_TYPES = new Set([
   'GenericViewport',
   'Viewport',
 ]);
+
+/** The type names that say nothing of a value. */
+const OPAQUE_TYPES = new Set(['unknown', 'any', 'object']);
+
+/**
+ * The reason of a report at a member of an object that the file gives a type
+ * of the application (`hasApplicationType`).
+ */
+export const APPLICATION_TYPE_NOTE =
+  'the object has a type of the application, which declares the member: change it there and here';
+
+/**
+ * Returns the rule of a report at a member of a receiver: the member, with
+ * `APPLICATION_TYPE_NOTE` when the file gives the receiver a type of the
+ * application.
+ */
+export function memberRule(member: string, receiver: Node | null): string {
+  return hasApplicationType(receiver)
+    ? `${member}: ${APPLICATION_TYPE_NOTE}`
+    : member;
+}
 
 /** The core classes and types of a rendering engine. */
 const ENGINE_TYPES = [
@@ -1578,12 +1618,70 @@ export function isCoreNamespace(identifier: Node): boolean {
 }
 
 /**
+ * Tells whether an identifier is bound by a `const` to the core export
+ * `name` of the core namespace: `const { Enums } = cornerstone3D`,
+ * `const { Enums: CoreEnums } = cornerstone3D` or
+ * `const Enums = cornerstone3D.Enums`.
+ */
+function isDestructuredCoreExport(identifier: Node, name: string): boolean {
+  const definition = definitionOf(identifier);
+
+  if (
+    !definition ||
+    definition.kind !== 'local' ||
+    !isStableBinding(definition.node)
+  ) {
+    return false;
+  }
+
+  const target = definition.node;
+  const declarator = target
+    .ancestors()
+    .find((ancestor) => ancestor.kind() === 'variable_declarator');
+  const value = declarator?.field('value');
+
+  if (!declarator || !value) {
+    return false;
+  }
+
+  if (declarator.field('name')?.id() === target.id()) {
+    const inner = unwrap(value);
+
+    return inner.kind() === 'member_expression' && isCoreExport(inner, name);
+  }
+
+  const parent = target.parent();
+  const isShorthand = target.kind() === 'shorthand_property_identifier_pattern';
+  const isPair =
+    parent?.kind() === 'pair_pattern' &&
+    parent.field('value')?.id() === target.id();
+  const key = isShorthand
+    ? target.text()
+    : isPair
+      ? staticKeyName(parent.field('key'))
+      : undefined;
+  const pattern = isShorthand ? parent : isPair ? parent.parent() : undefined;
+  const source = unwrap(value);
+
+  return (
+    key === name &&
+    pattern?.kind() === 'object_pattern' &&
+    pattern.parent()?.id() === declarator.id() &&
+    source.kind() === 'identifier' &&
+    isCoreNamespace(source)
+  );
+}
+
+/**
  * Tells whether an expression names the core export `name`: an identifier
- * bound to its import, or `namespace.name` of the core namespace.
+ * bound to its import or by a `const` to the core namespace
+ * (`isDestructuredCoreExport`), or `namespace.name` of the core namespace.
  */
 export function isCoreExport(node: Node, name: string): boolean {
   if (node.kind() === 'identifier') {
-    return coreImportOf(node)?.name === name;
+    return (
+      coreImportOf(node)?.name === name || isDestructuredCoreExport(node, name)
+    );
   }
 
   if (node.kind() === 'member_expression') {
@@ -1777,53 +1875,158 @@ export function topLevelCoreTypes(typeNode: Node | null | undefined): string[] {
 }
 
 /**
- * Returns the names of the core types that a cast puts on an expression at
- * its top, without following variables.
+ * Tells whether a type node says nothing of a value: `unknown`, `any` or
+ * `object`.
  */
-function castCoreTypes(node: Node | null | undefined): string[] {
-  const names: string[] = [];
+function isOpaqueType(typeNode: Node): boolean {
+  return OPAQUE_TYPES.has(typeNode.text());
+}
+
+/**
+ * Returns the type node of the outermost cast of an expression that says
+ * something of its value, through parentheses, non-null assertions and the
+ * casts to `unknown`, `any` or `object`. A `satisfies` keeps the type of its
+ * expression, so only one with a core type at its top counts.
+ */
+function outerCastType(node: Node | null | undefined): Node | undefined {
   let current: Node | null | undefined = node;
 
   while (current) {
     const kind = current.kind();
+    const named = current.children().filter((child) => child.isNamed());
 
-    if (
-      kind === 'as_expression' ||
-      kind === 'satisfies_expression' ||
-      kind === 'type_assertion'
-    ) {
-      const typeNode = current
-        .children()
-        .find((child) => child.isNamed() && /type/.test(child.kind()));
-      const typed =
-        typeNode?.kind() === 'type_arguments'
-          ? typeNode.children().find((child) => child.isNamed())
-          : typeNode;
-
-      names.push(...topLevelCoreTypes(typed));
+    if (kind === 'parenthesized_expression' || kind === 'non_null_expression') {
+      current = named[0];
+      continue;
     }
 
-    if (
-      kind === 'parenthesized_expression' ||
-      kind === 'non_null_expression' ||
-      kind === 'as_expression' ||
-      kind === 'satisfies_expression'
-    ) {
-      current = current.children().find((child) => child.isNamed()) ?? null;
+    if (kind === 'as_expression' || kind === 'satisfies_expression') {
+      const typeNode = named[named.length - 1];
+      const counts =
+        kind === 'as_expression'
+          ? !isOpaqueType(typeNode)
+          : topLevelCoreTypes(typeNode).length > 0;
+
+      if (typeNode && named.length > 1 && counts) {
+        return typeNode;
+      }
+
+      current = named[0];
       continue;
     }
 
     if (kind === 'type_assertion') {
-      const named = current.children().filter((child) => child.isNamed());
+      const typeNode = named[0]?.children().find((child) => child.isNamed());
 
-      current = named[named.length - 1] ?? null;
+      if (typeNode && !isOpaqueType(typeNode)) {
+        return typeNode;
+      }
+
+      current = named[named.length - 1];
       continue;
     }
 
-    current = null;
+    return undefined;
   }
 
-  return names;
+  return undefined;
+}
+
+/**
+ * Returns the names of the core types that the outermost cast of an
+ * expression puts on it at its top (see `outerCastType`), without following
+ * variables.
+ */
+export function castCoreTypes(node: Node | null | undefined): string[] {
+  return topLevelCoreTypes(outerCastType(node));
+}
+
+/**
+ * Tells whether a type node is a type of the application: a type that says
+ * something of a value and has no core type at its top, such as
+ * `NativeViewport`, `{ setDisplaySetPresentation(): void }` or
+ * `Types.IViewport & { extra(): void }`.
+ */
+function isApplicationType(typeNode: Node | null | undefined): boolean {
+  return Boolean(
+    typeNode && !isOpaqueType(typeNode) && !topLevelCoreTypes(typeNode).length
+  );
+}
+
+/**
+ * Returns the callee of a call, also where the grammar reads an `await`
+ * before a call with type arguments as part of the callee:
+ * `await engine.getViewport<PlanarViewport>(id)` is a call of
+ * `await engine.getViewport`.
+ */
+function calleeOf(call: Node): Node | null {
+  const callee = call.field('function');
+
+  return callee?.kind() === 'await_expression'
+    ? (callee.children().find((child) => child.isNamed()) ?? null)
+    : callee;
+}
+
+/**
+ * Tells whether the file gives an expression a type of the application at
+ * its top: the outermost cast that says something of its value
+ * (`viewport as unknown as NativeViewport`), the type argument of a
+ * `getViewport<NativeViewport>(...)`, or, for a name, its annotation or the
+ * value of a `const` that has such a type. The members of that type are the
+ * application's, whatever Cornerstone value is under it.
+ */
+export function hasApplicationType(
+  node: Node | null | undefined,
+  depth = 0
+): boolean {
+  if (!node || depth > 4) {
+    return false;
+  }
+
+  const cast = outerCastType(node);
+
+  if (cast) {
+    return isApplicationType(cast);
+  }
+
+  const inner = unwrap(node);
+
+  if (inner.kind() === 'call_expression') {
+    const callee = calleeOf(inner);
+    const typeArgument =
+      callee?.kind() === 'member_expression' &&
+      callee.field('property')?.text() === 'getViewport'
+        ? inner
+            .field('type_arguments')
+            ?.children()
+            .find((child) => child.isNamed())
+        : undefined;
+
+    return isApplicationType(typeArgument);
+  }
+
+  if (inner.kind() !== 'identifier') {
+    return false;
+  }
+
+  const declaration = declarationNodeOf(inner);
+  const holder = declaration?.parent();
+  const annotation = holder
+    ?.children()
+    .find((child) => child.kind() === 'type_annotation')
+    ?.children()
+    .find((child) => child.isNamed());
+
+  if (annotation && !isOpaqueType(annotation)) {
+    return isApplicationType(annotation);
+  }
+
+  return Boolean(
+    holder?.kind() === 'variable_declarator' &&
+      holder.field('name')?.id() === declaration.id() &&
+      isStableBinding(declaration) &&
+      hasApplicationType(holder.field('value'), depth + 1)
+  );
 }
 
 /**
@@ -2135,13 +2338,14 @@ function isEnabledElement(
  * Tells whether an expression is a rendering engine of the core: made with
  * `new RenderingEngine`, got with `getRenderingEngine`, read from an enabled
  * element, or a `const` or a parameter that the file never writes that holds
- * one or is typed as one.
+ * one or is typed as one. One that the file gives a type of the application
+ * at its top (`hasApplicationType`) is not: that type declares its members.
  */
 export function isRenderingEngine(
   node: Node | null | undefined,
   depth = 0
 ): boolean {
-  if (!node || depth > 4) {
+  if (!node || depth > 4 || hasApplicationType(node)) {
     return false;
   }
 
@@ -2240,11 +2444,26 @@ function isViewportList(node: Node | null | undefined, depth: number): boolean {
  * parameter that the file never writes that holds one of these; `name` for a
  * name such as `viewport` or `ctViewport` alone (a `let`, a `var` or a
  * written parameter among them), or `getViewport` on something else;
- * undefined otherwise. A type argument of another type is no evidence.
+ * undefined otherwise. A type argument of another type is no evidence. A
+ * Cornerstone viewport that the file gives a type of the application at its
+ * top (`hasApplicationType`) is `name`: that type declares its members.
  */
 export function viewportEvidence(
   node: Node | null | undefined,
   depth = 0
+): ViewportEvidence | undefined {
+  const evidence = coreViewportEvidence(node, depth);
+
+  return evidence === 'core' && hasApplicationType(node) ? 'name' : evidence;
+}
+
+/**
+ * Returns the evidence of `viewportEvidence` before the types of the
+ * application are taken into account.
+ */
+function coreViewportEvidence(
+  node: Node | null | undefined,
+  depth: number
 ): ViewportEvidence | undefined {
   if (!node || depth > 4) {
     return undefined;
@@ -2304,7 +2523,7 @@ export function viewportEvidence(
   }
 
   if (kind === 'call_expression') {
-    const callee = inner.field('function');
+    const callee = calleeOf(inner);
 
     if (
       callee?.kind() !== 'member_expression' ||
@@ -2333,15 +2552,119 @@ function familyOfTypes(names: string[]): ViewportFamily | undefined {
 }
 
 /**
+ * Tells whether two expressions name the same viewport id: two strings with
+ * the same text, or two names bound to the same declaration.
+ */
+function isSameViewportId(a: Node, b: Node): boolean {
+  const left = unwrap(a);
+  const right = unwrap(b);
+
+  if (left.kind() === 'string' && right.kind() === 'string') {
+    return left.text().slice(1, -1) === right.text().slice(1, -1);
+  }
+
+  const names = [left, right];
+
+  if (
+    !names.every(
+      (name) =>
+        name.kind() === 'identifier' ||
+        name.kind() === 'shorthand_property_identifier'
+    )
+  ) {
+    return false;
+  }
+
+  const [first, second] = names.map((name) => declarationNodeOf(name));
+
+  return Boolean(
+    first && second && first.range().start.index === second.range().start.index
+  );
+}
+
+/**
+ * Returns the family that a viewport input names with its type: the value
+ * of `type` (of the core) or `viewportType` (of many helpers) when it is a
+ * member of the core `ViewportType`.
+ */
+function inputFamily(object: Node): ViewportFamily | undefined {
+  for (const pair of object.children()) {
+    const value = pair.kind() === 'pair' ? pair.field('value') : undefined;
+    const member = value ? unwrap(value) : undefined;
+    const enumObject = member?.field('object');
+
+    if (
+      member?.kind() === 'member_expression' &&
+      enumObject &&
+      VIEWPORT_TYPE_KEYS.has(staticKeyName(pair.field('key')) ?? '') &&
+      isCoreEnum(enumObject, 'ViewportType')
+    ) {
+      return FAMILY_OF_VIEWPORT_TYPE[member.field('property')?.text() ?? ''];
+    }
+  }
+
+  return undefined;
+}
+
+/**
+ * Returns the family of the viewport that a call `getViewport(id)` gets,
+ * when the function of the call creates that viewport: every object literal
+ * of the function with the same `viewportId` and a type that names a family
+ * (`inputFamily`), such as the input of `enableElement` or of a helper of
+ * the application, names the same one.
+ */
+function viewportInputFamily(call: Node): ViewportFamily | undefined {
+  const id = call
+    .field('arguments')
+    ?.children()
+    .find((child) => child.isNamed());
+  const fn = enclosingFunction(call);
+  const scope = fn ?? call.ancestors().pop();
+
+  if (!id || !scope) {
+    return undefined;
+  }
+
+  const families = new Set<ViewportFamily>();
+
+  for (const object of scope.findAll({ rule: { kind: 'object' } })) {
+    if (enclosingFunction(object)?.id() !== fn?.id()) {
+      continue;
+    }
+
+    const idNode = object
+      .children()
+      .find((child) =>
+        child.kind() === 'pair'
+          ? staticKeyName(child.field('key')) === 'viewportId'
+          : child.kind() === 'shorthand_property_identifier' &&
+            child.text() === 'viewportId'
+      );
+    const value =
+      idNode?.kind() === 'pair' ? idNode.field('value') : (idNode ?? null);
+    const family = value && isSameViewportId(value, id) && inputFamily(object);
+
+    if (family) {
+      families.add(family);
+    }
+  }
+
+  return families.size === 1 ? [...families][0] : undefined;
+}
+
+/**
  * Returns the family of a viewport expression when the top type of a cast or
- * an annotation names it, or the type argument of `getViewport` on a core
- * rendering engine, or undefined.
+ * an annotation names it, the type argument of `getViewport` on a core
+ * rendering engine, or the input that creates the viewport of a
+ * `getViewport(id)` in the same function (`viewportInputFamily`); or
+ * undefined. A type of the application at the top (`hasApplicationType`)
+ * gives none.
  */
 export function viewportFamily(
   node: Node,
   depth = 0
 ): ViewportFamily | undefined {
-  if (depth > 4) {
+  if (depth > 4 || hasApplicationType(node)) {
     return undefined;
   }
 
@@ -2352,13 +2675,16 @@ export function viewportFamily(
   }
 
   const inner = unwrap(node);
-  const call = methodCall(inner);
-  const typeArguments = call ? inner.field('type_arguments') : undefined;
+  const callee = inner.kind() === 'call_expression' ? calleeOf(inner) : null;
+  const typeArguments =
+    callee?.kind() === 'member_expression'
+      ? inner.field('type_arguments')
+      : undefined;
 
   if (
-    call?.method === 'getViewport' &&
+    callee?.field('property')?.text() === 'getViewport' &&
     typeArguments &&
-    isRenderingEngine(call.object, depth + 1)
+    isRenderingEngine(callee.field('object'), depth + 1)
   ) {
     const argument = typeArguments
       .children()
@@ -2367,6 +2693,10 @@ export function viewportFamily(
     return argument.length === 1
       ? familyOfTypes(topLevelCoreTypes(argument[0]))
       : undefined;
+  }
+
+  if (callee?.field('property')?.text() === 'getViewport') {
+    return viewportInputFamily(inner);
   }
 
   if (inner.kind() !== 'identifier') {
@@ -2751,18 +3081,39 @@ export function objectEntries(objectNode: Node): {
 
 /**
  * Returns an edit that removes one property of an object literal, or one
- * specifier of a list, with its comma.
+ * specifier of a list, with its comma: its whole lines when it stands on
+ * lines of its own, so the lines around it keep their indentation; else up
+ * to the next entry, or from the comma before it when it is the last.
  */
 export function removeProperty(property: Node): Edit {
   const next = property.next();
   const prev = property.prev();
   const start = property.range().start.index;
+  const top = property.ancestors().pop() ?? property;
+  const text = top.text();
+  const base = top.range().start.index;
+  const end =
+    next?.kind() === ',' ? next.range().end.index : property.range().end.index;
+  const lineStart = text.lastIndexOf('\n', start - base - 1) + 1;
+  const lineEnd = text.indexOf('\n', end - base);
+
+  if (
+    /^[ \t]*$/.test(text.slice(lineStart, start - base)) &&
+    lineEnd !== -1 &&
+    /^[ \t]*$/.test(text.slice(end - base, lineEnd))
+  ) {
+    return {
+      startPos: base + lineStart,
+      endPos: base + lineEnd + 1,
+      insertedText: '',
+    };
+  }
 
   if (next?.kind() === ',') {
     const after = next.next();
-    const end = after ? after.range().start.index : next.range().end.index;
+    const stop = after ? after.range().start.index : next.range().end.index;
 
-    return { startPos: start, endPos: end, insertedText: '' };
+    return { startPos: start, endPos: stop, insertedText: '' };
   }
 
   if (prev?.kind() === ',') {
@@ -2781,7 +3132,8 @@ export function removeProperty(property: Node): Edit {
 }
 
 /**
- * The cardinality of a reported site: the rule, the file and the line.
+ * The cardinality of a reported site: the rule, on one line (the tool prints
+ * each entry on a line of its own), the file and the line.
  */
 export function site(
   root: SgRoot<TSX>,
@@ -2789,7 +3141,7 @@ export function site(
   node: Node
 ): Record<string, string> {
   return {
-    rule,
+    rule: rule.replace(/\s+/g, ' '),
     file: root.relativeFilename?.() || root.filename(),
     line: String(node.range().start.line + 1),
   };

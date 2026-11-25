@@ -9,7 +9,7 @@ export function stretch(renderingEngineId: string, viewportId: string) {
 
   const framing = viewport.getViewFraming({
     zoom: true,
-    });
+  });
   const picked = viewportProjection.getFraming(viewport, {
     selector: { pan: true },
   });
@@ -19,4 +19,16 @@ export function stretch(renderingEngineId: string, viewportId: string) {
   viewport.setViewFraming({ zoom: 2 });
 
   return [framing, picked, selector, kept];
+}
+
+export function beforeTheRename(viewport: PlanarViewport) {
+  const selector: Types.ViewFramingSelector = {
+    rotation: true,
+  };
+  const kept: Types.ViewFraming = { zoom: 2 };
+  const picked = viewportProjection.getFraming(viewport, {
+    selector: { pan: true },
+  });
+
+  return [selector, kept, picked];
 }

@@ -19,6 +19,14 @@
     {
       "cardinality": {
         "file": "input.ts",
+        "line": "25",
+        "rule": "getSourceDataId: the object has a type of the application, which declares the member: change it there and here, its name in 6.0 is getSourceDisplaySetId"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
         "line": "6",
         "rule": "getSourceDataId: a member of a type of the application on a Cornerstone type, its name in 6.0 is getSourceDisplaySetId"
       },

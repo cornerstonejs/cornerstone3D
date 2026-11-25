@@ -24,6 +24,9 @@ async function run(imageIds: string[]) {
   const threeD = renderingEngine.getViewport<VolumeViewport3D>('3D');
 
   await threeD.setDisplaySets({ displaySetId: 'mpr' });
+  await renderingEngine
+    .getViewport('3D_BY_ID')
+    .setDisplaySets({ displaySetId: 'mpr', options: { renderMode: 'vtkVolume3d' } });
 
   const parametricMap = renderingEngine.getViewport<PlanarViewport>('PMAP');
 

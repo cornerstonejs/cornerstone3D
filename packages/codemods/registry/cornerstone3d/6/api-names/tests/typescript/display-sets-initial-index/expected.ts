@@ -57,7 +57,7 @@ export async function fromBeta(viewport: PlanarViewport, imageIds: string[]) {
   });
   displaySetRegistry.add('betaLast', {
     imageIds,
-    });
+  });
   await viewport.setDisplaySets({ displaySetId: 'beta', options: { mode: 'volume', initialImageIdIndex: 2 } });
   await viewport.addDisplaySet('betaLast', { role: 'overlay', initialImageIdIndex: 1 });
 }

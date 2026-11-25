@@ -36,7 +36,7 @@
       "cardinality": {
         "file": "input.ts",
         "line": "43",
-        "rule": "setDisplaySetPresentation: the object has a type of the application, which declares the method: rename the method there and here, its name in 6.0 is setDisplaySetAppearance"
+        "rule": "setDisplaySetPresentation: the object has a type of the application, which declares the member: change it there and here, its name in 6.0 is setDisplaySetAppearance"
       },
       "count": 1
     },

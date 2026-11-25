@@ -91,6 +91,14 @@
     {
       "cardinality": {
         "file": "input.js",
+        "line": "71",
+        "rule": "setOrientation: a 3D viewport has no setOrientation in 6.0: viewport.setViewState({ viewPlaneNormal, viewUp }), then viewport.resetViewState()"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.js",
         "line": "8",
         "rule": "setProperties"
       },

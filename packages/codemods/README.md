@@ -71,6 +71,23 @@ cd packages/codemods
 yarn validate:registry
 ```
 
+Check the API map against the steps (`validate` runs it too):
+
+```sh
+cd packages/codemods
+yarn validate:api-map
+```
+
+`scripts/check-api-map.mjs` reads the code of the Legacy cell of each
+`Replaced` or `Removed` row of
+`packages/docs/docs/migration-guides/6x/3-api-map.md` that is not Private,
+and checks that a step names it as a rule does (in quotes, as the key of a
+table, in a regular expression of names or at the end of a module path). A
+name that no step can reach, such as a member that 6.0 keeps as a deprecated
+one or a key that is reported with its call, is listed in `UNREACHABLE` of
+the script with the reason. A name in neither place fails the check, with
+its line in the map.
+
 Run only the JSSG fixture tests:
 
 ```sh
@@ -87,12 +104,9 @@ made-up names).
 
 After the fixtures of a folder, the test runs the package on the `expected`
 files of that folder, as inputs: a package changes nothing in its own
-output. A fixture that a package does not pass this way is named in
+output. A fixture that a package does not pass this way would be named in
 `idempotencySkips` of `scripts/test-registry-packages.mjs`, with the reason.
-Today one is: `settings`, `review2-nested-cpu-getter-in-rewritten-setting`
-(the first run reports `rendering.useCPURendering` and rewrites the
-`getShouldUseCPURendering()` in its value; a second run rewrites the
-setting itself).
+None is.
 
 Run the fixtures of one package, or only those whose name holds a filter:
 
@@ -133,9 +147,9 @@ runner turns on (`--param cornerstone3d-6-rewritten=true`) and which only
 `-api-names` fills; for the other steps the changed lines stand for it.
 With `--markdown` the `ts`, `tsx`, `js` and `jsx` code blocks of the `.md`
 and `.mdx` files are files of their own (`page.md.snippet-3.ts`), and a
-changed block goes back into its page; leave
-`packages/docs/docs/migration-guides` out, its code shows old names on
-purpose. `--json` writes every entry, `--steps` takes names separated by
+changed block goes back into its page. The pages of a `migration-guides`
+folder are always left out, also when one is named as a target: their code
+shows the old names on purpose (the runner prints how many it left out). `--json` writes every entry, `--steps` takes names separated by
 commas, `--registry` another registry folder, `--help` the rest.
 
 ## Measure
@@ -181,20 +195,48 @@ It prints the numbers and writes `measure.json` (the numbers and every
 report entry), `diff.patch` and the logs of the type check into the
 measure folder (`--work`). `--skip-typecheck` leaves the type check out.
 
-The numbers at `1b3b2247e`, with `-api-names` empty:
+The numbers of 24 November 2026, at `1b00db4d7` with the work of task CM1
+(every step, `-api-names` with its six families):
 
 | Input                                                       | Files      | Sites | Rewritten   | Manual           | Review         | Wrong |
 | ----------------------------------------------------------- | ---------- | ----- | ----------- | ---------------- | -------------- | ----- |
-| Examples of `58914567b` (the input of the earlier measures) | 251        | 1,335 | 860 (64.4%) | 466 in 165 files | 25 in 19 files | 0     |
-| Examples of `v5.19.4`                                       | 249        | 1,334 | 859 (64.4%) | 466 in 165 files | 25 in 19 files | 0     |
-| OHIF `6fe59945a0`                                           | 25 changed |       | 157         | 138 in 33 files  | 25 in 12 files | 0     |
+| Examples of `58914567b` (the input of the earlier measures) | 251        | 1,335 | 900 (67.4%) | 461 in 170 files | 67 in 38 files | 0     |
+| Examples of `v5.19.4`                                       | 249        | 1,334 | 899 (67.4%) | 457 in 169 files | 65 in 37 files | 0     |
+| OHIF `6fe59945a0` (master, 5.x)                             | 32 changed |       | 157         | 183 in 40 files  | 53 in 20 files | 0     |
 
-`58914567b` has two example files more than `v5.19.4`: `genericSliceFirst`,
-with one `ViewportType.PLANAR_NEXT` that the run rewrites, and
-`genericDrawSelfTest`, with none. On the examples, 3 type errors are on
-changed lines, each a `setStack` left and reported on a line whose cast was
-rewritten; on OHIF, 7, each a `setProperties`, `setVolumes` or `getCamera`
-left and reported on such a line.
+`-api-names` alone, on code that is on a 6.0 beta (the rewritten sites from
+its metric):
+
+| Input                                                                                                             | Files                    | Rewritten | Manual           | Review         | Wrong |
+| ----------------------------------------------------------------------------------------------------------------- | ------------------------ | --------- | ---------------- | -------------- | ----- |
+| OHIF `78432e76cb` (`feat/cornerstone3d-6`)                                                                        | 16 changed               | 35        | 66 in 15 files   | 16 in 8 files  | 0     |
+| Examples, tests, `utils` and docs code blocks of 6.0.0-beta.2 (`1b3b2247e`): 834 files and 332 blocks of 67 pages | 275 changed, 1,413 lines | 1,456     | 404 in 121 files | 72 in 42 files | 0     |
+
+On the examples, 5 type errors are on changed lines, each at a site left and
+reported: 3 `setStack` on a line whose cast was rewritten, and 2
+`event.detail` of a listener whose `colormap.opacity` read is reported. On
+OHIF master, 8: 7 a `setProperties`, `setVolumes` or `getCamera` left and
+reported on a line whose cast was rewritten, and 1 the `VOLUME_3D` test that
+two operands of one `||` are now, listed for review. On the OHIF branch,
+none.
+
+The output of 6.0.0-beta.2 type checks against this tree with 502 errors
+where its input had 1,150 (the tests import the sources of the packages, which changed by
+hand); 2 are on changed lines, both left and reported. Compared file by file
+with this tree's own examples and tests (the right answer), the step changed
+nothing that the tree kept, and every other difference is a reported site,
+a local name the tree renamed (the step keeps local names), or a hand edit
+that a lane listed (text, comments, tests that import `../src`, Playwright
+page code).
+
+A second run on this repository's examples, tests, `utils` and docs changes
+3 test lines: the `mode: 'volume'` of the display sets family on 6.0 code
+whose file does not show the family of the viewport (row 199 of
+`v6-open-issues.md`).
+
+At `1b3b2247e`, with `-api-names` empty, the examples of `58914567b` gave 860
+rewritten, 466 manual and 25 review, and OHIF 157 rewritten, 138 manual and
+25 review.
 
 ## Registry Publishing
 

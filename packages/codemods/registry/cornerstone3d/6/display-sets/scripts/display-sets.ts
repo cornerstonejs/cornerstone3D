@@ -17,6 +17,7 @@ import {
   isOptionalCall,
   isPlainValue,
   isRepeatable,
+  memberRule,
   methodCall,
   objectEntries,
   referencesOf,
@@ -761,7 +762,7 @@ function rewriteMembers(run: Run): void {
     const { object, property, method, args } = methodCall(call);
 
     if (REPORTED_MEMBERS.has(method) || viewportEvidence(object) !== 'core') {
-      manual.increment(site(run.root, method, call));
+      manual.increment(site(run.root, memberRule(method, object), call));
       continue;
     }
 

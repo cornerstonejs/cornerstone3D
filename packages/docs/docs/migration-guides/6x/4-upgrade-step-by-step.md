@@ -186,9 +186,23 @@ changes what the code says:
   `case` labels only the first runs.
 
 Then run your formatter and your type checker, and do the steps of this page:
-their searches find what is left. On the 5.x examples of this repository the
-codemod rewrote almost two of three uses of a removed name, rewrote none
-wrongly, and reported every one it left. Its
+their searches find what is left. A viewport that your code casts to a type
+of its own (`viewport as MyViewport`, `MyViewport = Types.IViewport & { ... }`)
+is left with a report, because that type declares the members: rename them
+there and at each use.
+
+What it did on real code, measured on 24 November 2026 (Cornerstone3D
+`1b00db4d7` with the codemod of task CM1):
+
+| Input                                                             | Rewritten   | Left with a report    | Wrong |
+| ----------------------------------------------------------------- | ----------- | --------------------- | ----- |
+| The 5.x examples of this repository, 1,335 uses of a removed name | 900 (67.4%) | 461 manual, 67 review | 0     |
+| OHIF Viewers `master` on 5.x, 32 files changed                    | 157         | 183 manual, 53 review | 0     |
+| OHIF on 6.0.0-beta.1, `-api-names` alone, 16 files changed        | 35          | 66 manual, 16 review  | 0     |
+| The examples, tests and docs of 6.0.0-beta.2, `-api-names` alone  | 1,456       | 404 manual, 72 review | 0     |
+
+Wrong means a rewritten line that no longer compiles and is not at a site
+that the codemod reported. Its
 [README](https://github.com/cornerstonejs/cornerstone3D/blob/main/packages/codemods/registry/cornerstone3d/6/README.md)
 lists each package with what it changes and what it reports.
 

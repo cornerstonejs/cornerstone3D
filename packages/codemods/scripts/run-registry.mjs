@@ -426,13 +426,16 @@ function snippetPath(path, index, extension) {
 /**
  * Copies the targets into a work folder, each under its label: their source
  * files, and with `markdown` the code blocks of their Markdown files as
- * files of their own. Returns what is needed to write the result back: each
- * work file with its target file, and each Markdown file with its snippets.
+ * files of their own. The Markdown files of a `migration-guides` folder are
+ * left out (`guides` counts them): they show the old code on purpose.
+ * Returns what is needed to write the result back: each work file with its
+ * target file, and each Markdown file with its snippets.
  */
 export function copyTargets(targets, work, { markdown = false } = {}) {
   const used = new Set();
   const files = [];
   const documents = [];
+  let guides = 0;
 
   for (const target of targets) {
     const label = targetLabel(target, used);
@@ -455,6 +458,11 @@ export function copyTargets(targets, work, { markdown = false } = {}) {
       }
 
       if (!markdown || !MARKDOWN_FILE.test(path)) {
+        continue;
+      }
+
+      if (GUIDE_FOLDER.test(from)) {
+        guides += 1;
         continue;
       }
 
@@ -483,11 +491,14 @@ export function copyTargets(targets, work, { markdown = false } = {}) {
     }
   }
 
-  return { files, documents };
+  return { files, documents, guides };
 }
 
 /** The extensions of a Markdown file. */
 const MARKDOWN_FILE = /\.(md|mdx)$/;
+
+/** A path in a folder of migration guides, whose code shows old names on purpose. */
+const GUIDE_FOLDER = /(^|[\\/])migration-guides[\\/]/;
 
 /**
  * Returns the Markdown files under a folder, relative to it.
@@ -743,7 +754,9 @@ Options:
   --markdown        also run the steps on the ts, tsx, js and jsx code
                     blocks of the .md and .mdx files of the targets (each
                     block as a file of its own, path.md.snippet-<n>.<ext>),
-                    and write changed blocks back into the Markdown
+                    and write changed blocks back into the Markdown; the
+                    files of a migration-guides folder are left out, as
+                    their code shows the old names on purpose
   --work <dir>      the work folder, kept afterwards (default: a temporary
                     folder, deleted afterwards)
   --diff <file>     write the diff of the run, as the targets read it
@@ -803,6 +816,12 @@ function main() {
   console.log(
     `Targets: ${resolved.join(', ')} (${copy.files.length} source files${options.markdown ? `, ${snippets} code blocks of ${copy.documents.length} Markdown files` : ''})`
   );
+
+  if (copy.guides) {
+    console.log(
+      `Left out: ${copy.guides} Markdown files of migration guides, whose code shows the old names on purpose`
+    );
+  }
 
   const run = runSteps(registry, steps, work, (line) =>
     console.log(`  ${line}`)

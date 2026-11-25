@@ -1,0 +1,52 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "21",
+        "rule": "resetCameraForResize: the object has a type of the application, which declares the member: change it there and here"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "22",
+        "rule": "getTargetImageIdIndex: the object has a type of the application, which declares the member: change it there and here"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "23",
+        "rule": "resetCameraForResize: the object has a type of the application, which declares the member: change it there and here"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "24",
+        "rule": "resetCameraForResize: the object has a type of the application, which declares the member: change it there and here"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "25",
+        "rule": "getTargetImageIdIndex: the object has a type of the application, which declares the member: change it there and here"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "26",
+        "rule": "getTargetImageIdIndex: the object has a type of the application, which declares the member: change it there and here"
+      },
+      "count": 1
+    }
+  ]
+}

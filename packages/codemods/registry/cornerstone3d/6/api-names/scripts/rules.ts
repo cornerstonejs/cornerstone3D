@@ -2,14 +2,17 @@ import type { Codemod, Edit, SgRoot } from 'codemod:ast-grep';
 import type TSX from 'codemod:ast-grep/langs/tsx';
 import { useMetricAtom } from 'codemod:metrics';
 import {
+  APPLICATION_TYPE_NOTE,
   CORE_PACKAGE,
   CoreImports,
   EditSet,
   HeldMetric,
   analysed,
   bracketKey,
+  castCoreTypes,
   coreSpecifiers,
   definitionAt,
+  hasApplicationType,
   importSource,
   isNameTaken,
   isPure,
@@ -625,42 +628,6 @@ function typeModulePath(
 }
 
 /**
- * Returns the core types at the top of the casts around an expression.
- */
-function castTypes(node: Node): string[] {
-  const names: string[] = [];
-  let current: Node | undefined = node;
-
-  while (current) {
-    const kind = current.kind();
-    const named = current.children().filter((child) => child.isNamed());
-
-    if (kind === 'as_expression' || kind === 'satisfies_expression') {
-      names.push(...topLevelCoreTypes(named[named.length - 1]));
-      current = named[0];
-    } else if (kind === 'type_assertion') {
-      const typeArguments = named[0];
-
-      names.push(
-        ...topLevelCoreTypes(
-          typeArguments?.children().find((child) => child.isNamed())
-        )
-      );
-      current = named[named.length - 1];
-    } else if (
-      kind === 'parenthesized_expression' ||
-      kind === 'non_null_expression'
-    ) {
-      current = named[0];
-    } else {
-      current = undefined;
-    }
-  }
-
-  return names;
-}
-
-/**
  * Returns the core types of the annotation of the declaration of a name
  * whose binding holds one value, and the value it starts with.
  */
@@ -691,7 +658,11 @@ function declaredType(
  * the annotation of a binding that holds one value.
  */
 function hasCoreType(node: Node, typeName: string): boolean {
-  if (castTypes(node).includes(typeName)) {
+  if (hasApplicationType(node)) {
+    return false;
+  }
+
+  if (castCoreTypes(node).includes(typeName)) {
     return true;
   }
 
@@ -1199,6 +1170,72 @@ function ruleAt(
 }
 
 /**
+ * Returns the dotted path of a chain of property reads whose first name the
+ * file binds nowhere, such as `utilities` or `Enums.Events` in a code block
+ * of a page that imports them in another block; undefined otherwise.
+ */
+function unboundPath(node: Node | null | undefined): string | undefined {
+  const inner = node ? unwrap(node) : undefined;
+
+  if (inner?.kind() === 'identifier') {
+    return definitionAt(inner) ? undefined : inner.text();
+  }
+
+  if (
+    inner?.kind() !== 'member_expression' ||
+    inner.field('property')?.kind() !== 'property_identifier'
+  ) {
+    return undefined;
+  }
+
+  const base = unboundPath(inner.field('object'));
+
+  return base === undefined
+    ? undefined
+    : `${base}.${inner.field('property')?.text()}`;
+}
+
+/**
+ * Reports a renamed or removed name of a namespace whose first name the file
+ * binds nowhere (`unboundPath`): the code may be Cornerstone's, as in a
+ * block of a page, but the file does not show it.
+ */
+function reportUnboundAccess(
+  run: Run,
+  rules: ExportRule[],
+  node: Node,
+  nameNode: Node,
+  name: string
+): void {
+  const path = unboundPath(node.field('object'));
+  const rule = path ? ruleAt(rules, path, name) : undefined;
+
+  if (!rule || !path) {
+    return;
+  }
+
+  const to = rule.moveTo ?? rule.to;
+  const renamed = to
+    ? `its name in 6.0 is ${rule.moveTo ? `${to}, a top-level export` : to}`
+    : '';
+  const text = [
+    renamed,
+    typeof rule.manual === 'string' && !to ? rule.manual : '',
+    rule.review ?? '',
+  ]
+    .filter(Boolean)
+    .join('; ');
+
+  run.handled.add(nameNode.range().start.index);
+  report(
+    run,
+    'manual',
+    `${path}.${name}: the file does not bind ${path.split('.')[0]}; if it is Cornerstone's, ${text}`,
+    node
+  );
+}
+
+/**
  * Applies the rules of exported names at member accesses, strings in
  * brackets and nested types, for one package.
  */
@@ -1240,6 +1277,7 @@ function applyAccessRules(
     const rule = ruleAt(rules, pathOf(node.field('object'), packageName), name);
 
     if (!rule) {
+      reportUnboundAccess(run, rules, node, nameNode, name);
       continue;
     }
 
@@ -1556,6 +1594,26 @@ function applyMemberRules(run: Run, rules: MemberRule[]): void {
 }
 
 /**
+ * Returns the reason of a member site whose receiver only its name shows to
+ * be the rule's: a type of the application at the top of the receiver
+ * declares the member, and a renamed member whose rule has no text of its
+ * own says its new name.
+ */
+function nameOnlyReason(
+  rule: MemberRule,
+  receiver: Node | null
+): string | undefined {
+  const reasons = [
+    hasApplicationType(receiver) ? APPLICATION_TYPE_NOTE : '',
+    rule.to && typeof rule.manual !== 'string'
+      ? `its name in 6.0 is ${rule.to}`
+      : '',
+  ];
+
+  return reasons.filter(Boolean).join(', ') || undefined;
+}
+
+/**
  * Applies a member rule at one site, and tells whether its receiver is the
  * rule's.
  */
@@ -1575,7 +1633,9 @@ function applyMemberSite(
 
   run.handled.add(nameNode.range().start.index);
 
-  if (evidence === 'name' || !rewrites(rule)) {
+  if (evidence === 'name') {
+    reportSite(run, rule, label, node, nameOnlyReason(rule, object));
+  } else if (!rewrites(rule)) {
     reportSite(run, rule, label, node);
   } else if (rule.to) {
     applyEdits(
@@ -1634,7 +1694,9 @@ function applyMemberPatterns(run: Run, rules: MemberRule[]): void {
       const label = rule.label ?? rule.name;
       const evidence = receiverEvidence(value, rule.receiver);
 
-      if (evidence === 'name' || !rule.to) {
+      if (evidence === 'name') {
+        reportSite(run, rule, label, entry, nameOnlyReason(rule, value));
+      } else if (!rule.to) {
         reportSite(run, rule, label, entry);
       } else {
         applyEdits(
@@ -1724,7 +1786,7 @@ export function placeObjects(
         ? topLevelCoreTypes(
             node.children().find((child) => child.kind() === 'type_annotation')
           ).includes(place.type)
-        : castTypes(node).includes(place.type);
+        : castCoreTypes(node).includes(place.type);
       const value = isDeclarator
         ? node.field('value')
         : node.children().find((child) => child.isNamed());

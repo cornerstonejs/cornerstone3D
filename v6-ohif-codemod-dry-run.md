@@ -1,6 +1,74 @@
 # The 6.0 codemod on OHIF Viewers: the dry run
 
-## What was run
+## The run of 24 November 2026
+
+All eight packages of the 6.0 workflow (the seven steps from 5.x and
+`-api-names`), from the registry of Cornerstone3D at `1b00db4d7` with the work
+of task CM1, on the same OHIF commit `6fe59945a0`, with
+`node scripts/measure-registry.mjs --ohif ~/dev/Viewers-base --ohif-ref 6fe59945a0`
+from `packages/codemods`. The measure type checks OHIF against the sources of
+this Cornerstone3D tree before and after the run (the `node_modules` of the OHIF
+checkout linked into the copy).
+
+| | 20 November (below) | 24 November |
+|---|---|---|
+| Files changed | 25 | 32 |
+| Sites rewritten (5.x names, from the diff) | 157 | 157 |
+| Manual report | 138 sites in 33 files | 183 sites in 40 files |
+| Review report | 16 sites in 6 files | 53 sites in 20 files |
+| Syntax errors made by the run | 0 | 0 |
+| Type errors on changed lines that are not at a reported site | not measured | 0 (8 new on changed lines, each at a site left and reported) |
+| Wrong rewrites | 0 | 0 |
+
+What changed since 20 November:
+
+- The six families of `-api-names` (lanes N1 to RM2) rename the names of the
+  next viewports that OHIF's next lane uses (`setDisplaySetPresentation`,
+  `getSourceDataId`, `viewportProjection.getPresentation`, the events of the
+  appearance and of the display sets, `colormap.opacity`, `renderMode`). That
+  adds 7 changed files, and most of the new manual and review entries: OHIF's
+  next lane declares those members itself (`NativeViewport`,
+  `NativePlanarViewport` = `Types.IViewport & { ... }`), and every listener of
+  `VOI_MODIFIED` and of the two mount events is listed for review.
+- `getAllVolumeIds()` becomes `getVolumeIds({ includeSegmentations: true })` at
+  the 7 sites (it listed the labelmap volumes too in 5.x); the "unsure rewrites"
+  below are gone.
+- A receiver cast to a type of the application (`viewport as LegacyViewport`,
+  `target as NativeViewport`) is no longer taken for a Cornerstone viewport:
+  `NextViewportAdapter.ts:231` was renamed to `getSourceDisplaySetId` on a type
+  that does not declare it, and is reported now, with the text that the type of
+  the application declares the member. 11 report texts say so.
+- A key of an object literal that stands in for a viewport (a jest mock) is
+  reported: 11 sites in `SegmentationService.test.ts` and
+  `IViewportAdapter.contract.test.ts`.
+- A `getCamera()` read for its flip only becomes `getViewState()`, the twin
+  of the `setCamera({ flipHorizontal })` rewrite: 2 sites of
+  `LegacyViewportOperations.ts`.
+
+The manual list read as an OHIF developer would read it: could the codemod have
+resolved a site with what its own file shows? For none of the 183:
+
+- 55 are in the legacy lane (`Legacy*`, `getLegacyViewportType`), which OHIF
+  deletes on 6.0 (step 3 below).
+- 43 are in tests and their mocks.
+- 24 are `ViewportType.STACK` and `ORTHOGRAPHIC` values that OHIF uses as its
+  own data shape, and its tests of `getCornerstoneViewportType`.
+- 22 are in the next lane's adapters, whose own types declare the members: the
+  declaration and each use are reported together.
+- 39 others: removed names with no fixed 6.0 call (`getCamera`, `getBlendMode`,
+  `getImageSliceDataForVolumeViewport`, `STACK_VIEWPORT_SCROLL`, `_actors`,
+  `isDisabled`), receivers that come from an OHIF service in another file
+  (`cornerstoneViewportService.getCornerstoneViewport(viewportId)`, a listener
+  whose event name `getSliceEventName` gives), reads of `colormap.opacity`
+  (a number and a list go to different places in 6.0), and removed types. The
+  nearest to a fix is `ViewportWindowLevel.tsx:162`,
+  `viewports.forEach((vp) => vp.setProperties({ colormap: { opacity } }, volumeId))`
+  on a filter of `renderingEngine.getViewports()`: even with the receiver proven,
+  6.0 sets the appearance by display set, and the file has only the volume id.
+
+The run of 20 November follows.
+
+## What was run (20 November 2026)
 
 - OHIF Viewers, branch `master`, commit `6fe59945a05eb51874c034868597159facf67343`
   (20 November 2026, `3.14.0-beta.101`). It uses `@cornerstonejs/*` 5.18.3. 198 of its

@@ -1,0 +1,60 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "13",
+        "rule": "setOrientation: a 3D viewport has no setOrientation in 6.0: viewport.setViewState({ viewPlaneNormal, viewUp }), then viewport.resetViewState()"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "14",
+        "rule": "getImageActor: a 3D viewport has no getImageActor in 6.0: viewport.getActors().find((entry) => entry.referencedId === volumeId)?.actor"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "15",
+        "rule": "getNumberOfSlices: a 3D viewport has no slices in 6.0"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "16",
+        "rule": "scroll: a 3D viewport has no slices in 6.0"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "20",
+        "rule": "end: a video viewport has no end in 6.0: viewport.seek(timeSeconds), the start is 0"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "22",
+        "rule": "getNumberOfSlices: an ECG viewport has no getNumberOfSlices in 6.0: an ECG is one record and has no slices"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "28",
+        "rule": "hasImageURI: a video viewport has no hasImageURI in 6.0: viewport.isReferenceViewable({ referencedImageURI }, { withNavigation: true })"
+      },
+      "count": 1
+    }
+  ]
+}

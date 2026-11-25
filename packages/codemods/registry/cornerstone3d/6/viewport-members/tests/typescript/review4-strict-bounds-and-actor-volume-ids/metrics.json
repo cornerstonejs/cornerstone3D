@@ -4,7 +4,7 @@
       "cardinality": {
         "file": "input.ts",
         "line": "15",
-        "rule": "getAllVolumeIds: getActors() also lists labelmaps, surfaces and stack images, keep the ids that viewport.hasVolumeId(id) takes"
+        "rule": "getAllVolumeIds: getVolumeIds gives the source first, [] while the viewport shows a stack, and no labelmap that the tools draw as images beside a slice cut on the CPU"
       },
       "count": 1
     }

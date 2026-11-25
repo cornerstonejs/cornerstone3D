@@ -78,3 +78,21 @@ export function ownTypes(target: Types.IViewport, displaySetId: string) {
   planar.resetDisplaySetPresentation?.();
   (target as PlanarViewport).setDisplaySetAppearance(displaySetId, {});
 }
+
+export async function awaited(displaySetId: string) {
+  await renderingEngine.getViewport<PlanarViewport>('CT').setDisplaySetAppearance(displaySetId, {});
+  await renderingEngine.getViewport<NativePlanarViewport>('PT').resetDisplaySetPresentation?.();
+  (viewport as unknown as NativePlanarViewport).resetDisplaySetPresentation?.(displaySetId);
+}
+
+export const mockViewport = {
+  setDisplaySetPresentation: () => undefined,
+  getDisplaySetPresentation() {
+    return {};
+  },
+  'resetDisplaySetPresentation': () => undefined,
+};
+
+export const mockCore = {
+  utilities: { viewportSupportsDisplaySetPresentation: () => true },
+};

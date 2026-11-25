@@ -19,7 +19,17 @@ fully understand, and report it otherwise:
 - A receiver or an engine is shown by a `const`, or by a parameter that the
   file never writes, whose value or top type is Cornerstone's. A `let`, a
   `var`, an assignment and a type argument (`History<Types.IViewport>`) show
-  nothing.
+  nothing. The outermost cast or annotation decides: a viewport cast to a
+  type of the application (`viewport as LegacyViewport`, `target as
+NativeViewport` where `NativeViewport = Types.IViewport & { ... }`) is
+  known by its name only, because that type declares the members; such a
+  site is reported with the rule
+  `the object has a type of the application, which declares the member: change it there and here`.
+- The family of a viewport comes from its type, from the type argument of
+  `getViewport<T>`, or from the input that creates it in the same function
+  (an object with the same `viewportId` and a `type` or `viewportType` of
+  the core `ViewportType`, as `enableElement`, `setViewports` or a helper of
+  the application takes it).
 - A mount, a type or a family holds only for the same binding in the same
   function: a shadowing name, a closure, or a test of another value (a
   parameter `type`, a `cardType`) proves nothing.

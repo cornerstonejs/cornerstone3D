@@ -1,0 +1,28 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "1",
+        "rule": "utilities.genericViewportDisplaySetMetadataProvider: the file does not bind utilities; if it is Cornerstone's, its name in 6.0 is displaySetRegistry, a top-level export"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "3",
+        "rule": "viewportProjection.getPresentation: the file does not bind viewportProjection; if it is Cornerstone's, its name in 6.0 is getFraming"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "7",
+        "rule": "Enums.Events.VOI_MODIFIED: the file does not bind Enums; if it is Cornerstone's, its name in 6.0 is DISPLAY_SET_APPEARANCE_CHANGED; DISPLAY_SET_APPEARANCE_CHANGED fires once for every change of the appearance of a display set, also at its mount and when a scroll shows an image with another default window: test detail.cause and detail.changedKeys; the window is detail.effective.voiRange, the colormap detail.effective.colormap, what a caller set detail.overrides"
+      },
+      "count": 1
+    }
+  ]
+}

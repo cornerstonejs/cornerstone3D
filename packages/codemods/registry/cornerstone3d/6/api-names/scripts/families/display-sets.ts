@@ -125,6 +125,16 @@ const KEEPING_KINDS = new Set([
  */
 type Evidence = 'proven' | 'name' | undefined;
 
+/** The text of a `renderMode` mount option of a 3D viewport. */
+export const MOUNT_RENDER_MODE =
+  'a 3D viewport has no mount option renderMode in 6.0: the descriptor decides (image ids give a volume, a geometry id a surface), delete it';
+
+/**
+ * The values of the `renderMode` mount option of a 3D viewport of
+ * 6.0.0-beta.2 that no other option takes.
+ */
+export const THREE_D_MODES = new Set(['vtkVolume3d', 'vtkGeometry3d']);
+
 /**
  * Display sets: the registry (`displaySetRegistry.add` in place of the beta
  * metadata provider), `displaySetId` in place of `dataId`, the deleted
@@ -1636,7 +1646,7 @@ function initialIndexMove(
     text: shorthand.has('initialImageIdIndex')
       ? 'initialImageIdIndex'
       : `initialImageIdIndex: ${value.text()}`,
-    removal: removePropertyLine(run.rootNode, object, property),
+    removal: removeProperty(property),
   };
 }
 
@@ -1742,52 +1752,16 @@ function scopeOf(declaration: Node): Node | undefined {
 }
 
 /**
- * Returns an edit that removes one property of an object literal: its whole
- * line, with its comma, when it stands on a line of its own, else the
- * property with its comma (`removeProperty`). After a `kind`, which the key
- * table removes up to the start of the next property, it is the property
- * with its comma too, so the two edits meet and do not overlap.
- */
-function removePropertyLine(
-  rootNode: Node,
-  object: Node,
-  property: Node
-): Edit {
-  const previous =
-    property.prev()?.kind() === ',' ? property.prev()?.prev() : undefined;
-
-  if (
-    previous?.kind() === 'pair' &&
-    staticKeyName(previous.field('key')) === 'kind'
-  ) {
-    return removeProperty(property);
-  }
-
-  const text = rootNode.text();
-  const comma = property.next()?.kind() === ',' ? property.next() : undefined;
-  const start = property.range().start.index;
-  const end = (comma ?? property).range().end.index;
-  const lineStart = text.lastIndexOf('\n', start - 1) + 1;
-  const lineEnd = text.indexOf('\n', end);
-
-  if (
-    object.text().includes('\n') &&
-    text.slice(lineStart, start).trim() === '' &&
-    lineEnd !== -1 &&
-    text.slice(end, lineEnd).trim() === ''
-  ) {
-    return { startPos: lineStart, endPos: lineEnd + 1, insertedText: '' };
-  }
-
-  return removeProperty(property);
-}
-
-/**
  * Why the step cannot write the options of a mount: `other family` for a
- * mount that is not planar (a `renderMode` option, or a viewport of another
- * family: left as it is), or the reason of a report. Undefined when it can.
+ * mount that is not planar (a `renderMode` option, unless `ignoreRenderMode`,
+ * or a viewport of another family: left as it is), or the reason of a
+ * report. Undefined when it can.
  */
-function mountBlocker(run: Run, mount: Mount): string | undefined {
+function mountBlocker(
+  run: Run,
+  mount: Mount,
+  ignoreRenderMode = false
+): string | undefined {
   const family = mountFamily(mount.receiver);
   const evidence = viewportEvidence(mount.receiver);
   const options = mount.options ? unwrap(mount.options) : undefined;
@@ -1796,7 +1770,7 @@ function mountBlocker(run: Run, mount: Mount): string | undefined {
 
   if (
     (family && family !== 'planar' && family !== 'mixed') ||
-    entries?.keys.includes('renderMode')
+    (!ignoreRenderMode && entries?.keys.includes('renderMode'))
   ) {
     return 'other family';
   }
@@ -1823,6 +1797,41 @@ function mountBlocker(run: Run, mount: Mount): string | undefined {
 }
 
 /**
+ * Leaves and reports the `renderMode` of a mount of a display set that a
+ * literal registers with a `volumeId` and image ids, where its literal value
+ * names the 3D viewport and nothing else in the file shows the family of the
+ * viewport. The render modes family deletes such a key; here the key is
+ * what tells this step that the mount needs no `mode: 'volume'`, and a later
+ * run, which would see a mount of an unknown family, would write one.
+ */
+function keepRenderMode(run: Run, mount: Mount): void {
+  const options = mount.options ? unwrap(mount.options) : undefined;
+  const pair =
+    options?.kind() === 'object'
+      ? objectEntries(options).pairs.get('renderMode')
+      : undefined;
+  const value = pair?.field('value');
+
+  if (
+    !pair ||
+    value?.kind() !== 'string' ||
+    !THREE_D_MODES.has(value.text().slice(1, -1)) ||
+    run.handled.has(pair.range().start.index) ||
+    mountBlocker(run, mount, true)
+  ) {
+    return;
+  }
+
+  run.handled.add(pair.range().start.index);
+  report(
+    run,
+    'manual',
+    `renderMode: ${MOUNT_RENDER_MODE}; the step leaves it, as nothing else in the file shows that the viewport is a 3D viewport (on a planar viewport this display set needs options: { mode: 'volume' })`,
+    pair
+  );
+}
+
+/**
  * Writes in the options of one mount `mode: 'volume'` (`asVolume`, unless
  * the options say `mode`) and the moved `initialImageIdIndex` (`index`,
  * unless the options say it), in one edit. A mount that cannot be written
@@ -1839,6 +1848,10 @@ function writeMountOptions(
   const blocker = mountBlocker(run, mount);
 
   if (blocker === 'other family') {
+    if (asVolume) {
+      keepRenderMode(run, mount);
+    }
+
     return;
   }
 

@@ -49,9 +49,11 @@ reference to it changed, the new ones come in, under a fresh alias such as
   `useCPURendering` next to a `planar` key.
 - Manual: a key of an object that the file does not pass to `init`, a
   removed key whose value runs code, such as `useGenericViewport: read()`,
-  and a key whose value calls a setting function, such as
-  `useCPURendering: getShouldUseCPURendering()` (the call is rewritten, the
-  key stays for the reader).
+  and a removed key whose value calls a setting function (the call is
+  rewritten, the key stays for the reader). `useCPURendering` with such a
+  value, such as `useCPURendering: getShouldUseCPURendering()`, becomes
+  `planar: { renderBackend: getEffectiveRenderBackend() === 'cpu' ? 'cpu' : 'auto' }`
+  in one run.
 - `viewport.setUseCPURendering()`, the member of a stack viewport, is
   reported by `@cornerstonejs/cornerstone3d-6-viewport-members`.
 - Manual, at line 1: `the file was not analysed:` with the reason, for a

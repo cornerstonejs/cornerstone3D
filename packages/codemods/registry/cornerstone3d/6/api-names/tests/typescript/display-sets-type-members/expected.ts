@@ -22,5 +22,5 @@ export async function capture(target: CoreTypes.IViewport, shape: Shape) {
   const targetViewport = target as NativeViewport;
   const saved: SavedReference = { savedAt: Date.now() };
 
-  return [targetViewport.getSourceDisplaySetId?.(), saved, shape.dataId];
+  return [targetViewport.getSourceDataId?.(), saved, shape.dataId];
 }

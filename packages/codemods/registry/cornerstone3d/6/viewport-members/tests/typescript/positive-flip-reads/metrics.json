@@ -1,0 +1,36 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "15",
+        "rule": "getCamera"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "16",
+        "rule": "getCamera"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "17",
+        "rule": "getCamera"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "26",
+        "rule": "getCamera"
+      },
+      "count": 1
+    }
+  ]
+}

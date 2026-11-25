@@ -9,7 +9,6 @@ import {
   bracketKey,
   coreImportOf,
   coreReExports,
-  declarationNodeOf,
   enclosingFunction,
   indentOf,
   isBoundTo,
@@ -17,9 +16,9 @@ import {
   isMountedBefore,
   isRenderingEngine,
   isRepeatable,
-  isStableBinding,
-  topLevelCoreTypes,
+  keptValue,
   viewportEvidence,
+  memberRule,
   methodCall,
   objectEntries,
   removeProperty,
@@ -44,82 +43,6 @@ const RENAMED_METHODS: Record<string, string> = {
   setViewPresentation: 'setViewFraming',
 };
 
-/** The renamed members whose receiver must not have a type of the application. */
-const TYPED_RENAMES = new Set(['getViewPresentation', 'setViewPresentation']);
-
-/** The type names that say nothing of a value. */
-const OPAQUE_TYPES = new Set(['unknown', 'any', 'object']);
-
-/**
- * Tells whether a type node is a type of the application: not opaque
- * (`unknown`, `any`) and with no core type at its top.
- */
-function isApplicationType(typeNode: Node | null | undefined): boolean {
-  return Boolean(
-    typeNode &&
-      !OPAQUE_TYPES.has(typeNode.text()) &&
-      !topLevelCoreTypes(typeNode).length
-  );
-}
-
-/**
- * Tells whether the file gives an expression a type of the application: a
- * cast to such a type (`viewport as unknown as LegacyViewport`), or a name
- * declared with one or that holds such a cast. A member of that type is the
- * application's, whatever Cornerstone value is under the cast.
- */
-function hasApplicationType(node: Node | null | undefined, depth = 0): boolean {
-  let current = node;
-
-  while (current && depth <= 4) {
-    const kind = current.kind();
-    const named = current.children().filter((child) => child.isNamed());
-
-    if (kind === 'parenthesized_expression' || kind === 'non_null_expression') {
-      current = named[0];
-    } else if (kind === 'as_expression' || kind === 'satisfies_expression') {
-      if (isApplicationType(named[named.length - 1])) {
-        return true;
-      }
-
-      current = named[0];
-    } else if (kind === 'type_assertion') {
-      const typeNode = named[0]?.children().find((child) => child.isNamed());
-
-      if (isApplicationType(typeNode)) {
-        return true;
-      }
-
-      current = named[named.length - 1];
-    } else {
-      break;
-    }
-  }
-
-  if (current?.kind() !== 'identifier') {
-    return false;
-  }
-
-  const declaration = declarationNodeOf(current);
-  const holder = declaration?.parent();
-  const annotation = holder
-    ?.children()
-    .find((child) => child.kind() === 'type_annotation');
-
-  if (annotation) {
-    return isApplicationType(
-      annotation.children().find((child) => child.isNamed())
-    );
-  }
-
-  return (
-    holder?.kind() === 'variable_declarator' &&
-    holder.field('name')?.id() === declaration.id() &&
-    isStableBinding(declaration) &&
-    hasApplicationType(holder.field('value'), depth + 1)
-  );
-}
-
 /** The review note of a renamed member whose 6.0 call answers differently. */
 const RENAMED_METHOD_REVIEWS: Record<string, string> = {
   getViewPresentation:
@@ -128,13 +51,16 @@ const RENAMED_METHOD_REVIEWS: Record<string, string> = {
     'setViewFraming: zoom and pan are against the fit, a slab thickness or a window in the framing does nothing (set them with setDisplaySetAppearance), and an aspect ratio neither (give the stretch as scale)',
 };
 
-/** The members whose call becomes a fixed read of `getActors()`. */
+/**
+ * The members whose call becomes a fixed read of `getActors()`, of
+ * `getVolumeIds` or of `getImageData()`.
+ */
 const ACTOR_READS: Record<string, (args: string[]) => string | undefined> = {
   getActorUIDs: (args) =>
     args.length === 0 ? 'getActors().map((entry) => entry.uid)' : undefined,
   getAllVolumeIds: (args) =>
     args.length === 0
-      ? 'getActors().map((entry) => entry.referencedId)'
+      ? 'getVolumeIds({ includeSegmentations: true })'
       : undefined,
   getActorByIndex: (args) =>
     args.length === 1 ? `getActors()[${args[0]}]` : undefined,
@@ -145,12 +71,12 @@ const ACTOR_READS: Record<string, (args: string[]) => string | undefined> = {
 };
 
 /**
- * The review note of a rewritten read of `getActors()` whose answer can hold
- * more than the legacy member gave.
+ * The review note of a rewritten read whose answer can differ from what the
+ * legacy member gave.
  */
 const ACTOR_READ_REVIEWS: Record<string, string> = {
   getAllVolumeIds:
-    'getAllVolumeIds: getActors() also lists labelmaps, surfaces and stack images, keep the ids that viewport.hasVolumeId(id) takes',
+    'getAllVolumeIds: getVolumeIds gives the source first, [] while the viewport shows a stack, and no labelmap that the tools draw as images beside a slice cut on the CPU',
 };
 
 /** The members whose call becomes a function of the core `utilities`. */
@@ -226,6 +152,43 @@ const REPORTED_METHODS = new Set([
   'setAspectRatio',
   'getSliceIndexForImage',
 ]);
+
+/**
+ * The members that a viewport of one family lost in 6.0, with what to call
+ * instead. The other families keep the name, so a site is reported only on
+ * a viewport that the file shows to be of that family.
+ */
+const FAMILY_REPORTS: Partial<Record<string, Record<string, string>>> = {
+  '3d': {
+    setOrientation:
+      'a 3D viewport has no setOrientation in 6.0: viewport.setViewState({ viewPlaneNormal, viewUp }), then viewport.resetViewState()',
+    getImageActor:
+      'a 3D viewport has no getImageActor in 6.0: viewport.getActors().find((entry) => entry.referencedId === volumeId)?.actor',
+    hasImageURI:
+      'a 3D viewport has no hasImageURI in 6.0: viewport.isReferenceViewable({ referencedImageURI }, { withNavigation: true })',
+    getCurrentImageIdIndex: 'a 3D viewport has no slices in 6.0',
+    getSliceIndex: 'a 3D viewport has no slices in 6.0',
+    getCurrentImageId: 'a 3D viewport has no slices in 6.0',
+    getNumberOfSlices: 'a 3D viewport has no slices in 6.0',
+    getRotation:
+      'a 3D viewport has no getRotation in 6.0: read the camera with viewport.getViewState()',
+    scroll: 'a 3D viewport has no slices in 6.0',
+  },
+  video: {
+    end: 'a video viewport has no end in 6.0: viewport.seek(timeSeconds), the start is 0',
+    hasImageURI:
+      'a video viewport has no hasImageURI in 6.0: viewport.isReferenceViewable({ referencedImageURI }, { withNavigation: true })',
+  },
+  ecg: {
+    getNumberOfSlices:
+      'an ECG viewport has no getNumberOfSlices in 6.0: an ECG is one record and has no slices',
+  },
+};
+
+/** The member names of `FAMILY_REPORTS`. */
+const FAMILY_METHODS = new Set(
+  Object.values(FAMILY_REPORTS).flatMap((methods) => Object.keys(methods ?? {}))
+);
 
 /** The legacy properties that the transform reports on a viewport. */
 const REPORTED_PROPERTIES = new Set([
@@ -696,6 +659,48 @@ function rewriteSetProperties(
 }
 
 /**
+ * Tells whether the value of a call is read for its flip only: a pattern
+ * that takes nothing but `flipHorizontal` and `flipVertical`
+ * (`const { flipHorizontal } = viewport.getCamera()`), or one of the two
+ * read from it (`viewport.getCamera().flipVertical`). The view state of a
+ * planar viewport holds both.
+ */
+function readsOnlyFlip(call: Node): boolean {
+  const value = keptValue(call);
+  const parent = value.parent();
+
+  if (parent?.kind() === 'member_expression') {
+    return FLIP_KEYS.has(parent.field('property')?.text() ?? '');
+  }
+
+  const pattern =
+    parent?.kind() === 'variable_declarator' &&
+    parent.field('value')?.id() === value.id()
+      ? parent.field('name')
+      : undefined;
+
+  if (pattern?.kind() !== 'object_pattern') {
+    return false;
+  }
+
+  const entries = pattern.children().filter((child) => child.isNamed());
+
+  return (
+    entries.length > 0 &&
+    entries.every((entry) => {
+      const key =
+        entry.kind() === 'shorthand_property_identifier_pattern'
+          ? entry
+          : entry.kind() === 'pair_pattern'
+            ? entry.field('key')
+            : undefined;
+
+      return FLIP_KEYS.has(key?.text() ?? '');
+    })
+  );
+}
+
+/**
  * Rewrites or reports one call of a legacy member on a viewport. A receiver
  * that only its name shows to be a viewport is reported.
  */
@@ -709,18 +714,23 @@ function rewriteCall(run: Run, call: Node): void {
 
   const { object, property, method, args } = parts;
 
+  if (FAMILY_METHODS.has(method)) {
+    const family = evidence === 'core' ? viewportFamily(object) : undefined;
+    const text = family ? FAMILY_REPORTS[family]?.[method] : undefined;
+
+    if (text) {
+      reportSite(run, `${method}: ${text}`, call);
+    }
+
+    return;
+  }
+
   if (evidence === 'name') {
-    reportSite(run, method, call);
+    reportSite(run, memberRule(method, object), call);
 
     return;
   }
   const argTexts = args.map((arg) => arg.text());
-
-  if (TYPED_RENAMES.has(method) && hasApplicationType(object)) {
-    reportSite(run, method, call);
-
-    return;
-  }
 
   if (RENAMED_METHODS[method]) {
     run.edits.add(property.replace(RENAMED_METHODS[method]));
@@ -781,6 +791,19 @@ function rewriteCall(run: Run, call: Node): void {
 
     case 'setProperties':
       rewriteSetProperties(run, call, object, property, args);
+
+      return;
+
+    case 'getCamera':
+      if (
+        !args.length &&
+        readsOnlyFlip(call) &&
+        viewportFamily(object) === 'planar'
+      ) {
+        run.edits.add(property.replace('getViewState'));
+      } else {
+        reportSite(run, method, call);
+      }
 
       return;
 
@@ -901,7 +924,7 @@ function rewriteProperty(run: Run, member: Node): void {
   }
 
   if (evidence === 'name') {
-    reportSite(run, name, member);
+    reportSite(run, memberRule(name, member.field('object')), member);
 
     return;
   }
@@ -1056,6 +1079,7 @@ const codemod: Codemod<TSX> = (root) => {
     ...Object.keys(ACTOR_READS),
     ...Object.keys(UTILITY_CALLS),
     ...REPORTED_METHODS,
+    ...FAMILY_METHODS,
     'resetCamera',
     'setProperties',
     'setCamera',
@@ -1095,7 +1119,14 @@ const codemod: Codemod<TSX> = (root) => {
     rewriteProperty(run, member);
   }
 
-  reportBracketMembers(run, new Set([...methodNames, ...propertyNames]));
+  reportBracketMembers(
+    run,
+    new Set(
+      [...methodNames, ...propertyNames].filter(
+        (name) => !FAMILY_METHODS.has(name)
+      )
+    )
+  );
   reportCoreNames(run);
   reportEngineMembers(run);
 

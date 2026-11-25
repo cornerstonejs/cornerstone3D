@@ -1,0 +1,20 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.js",
+        "line": "2",
+        "rule": "utilities.genericViewportDisplaySetMetadataProvider: the file does not bind utilities; if it is Cornerstone's, its name in 6.0 is displaySetRegistry, a top-level export"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.js",
+        "line": "3",
+        "rule": "viewportProjection.withPresentation: the file does not bind viewportProjection; if it is Cornerstone's, its name in 6.0 is withFraming"
+      },
+      "count": 1
+    }
+  ]
+}

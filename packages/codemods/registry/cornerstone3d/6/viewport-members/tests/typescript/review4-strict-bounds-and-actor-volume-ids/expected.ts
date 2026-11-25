@@ -12,5 +12,5 @@ export function volumeIdsOf(viewportId: string) {
   const viewport =
     getRenderingEngine('engine').getViewport<PlanarViewport>(viewportId);
 
-  return viewport.getActors().map((entry) => entry.referencedId);
+  return viewport.getVolumeIds({ includeSegmentations: true });
 }

@@ -17,7 +17,7 @@ function describe(viewportId: string, imageId: string, canvasPoint: number[]) {
     pixels: utilities.getCurrentVolumeViewportSlice(viewport).scalarData,
     display: utilities.getVtkDisplayCoords(viewport, canvasPoint),
     uids: viewport.getActors().map((entry) => entry.uid),
-    volumes: viewport.getActors().map((entry) => entry.referencedId),
+    volumes: viewport.getVolumeIds({ includeSegmentations: true }),
     first: viewport.getActors()[0],
     firstUid: viewport.getActors()[0]?.uid,
     image: cache.getImage(viewport.getCurrentImageId()),

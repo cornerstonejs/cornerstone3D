@@ -1,5 +1,5 @@
 import React from 'react';
-import { utilities, RenderingEngine } from '@cornerstonejs/core';
+import { Enums, utilities, RenderingEngine } from '@cornerstonejs/core';
 
 export function Controls({ engine, displaySetId, imageIds }) {
   const viewport = engine.getViewport('ct');
@@ -38,4 +38,37 @@ export function reset() {
   stack.setProperties({ invert: true });
 
   return <i>{stack.getZoom()}</i>;
+}
+
+export function Flip({ element }) {
+  const renderingEngine = new RenderingEngine('engine');
+
+  renderingEngine.enableElement({
+    viewportId: 'flip',
+    type: Enums.ViewportType.STACK,
+    element,
+  });
+
+  const flip = renderingEngine.getViewport('flip');
+  const { flipHorizontal } = flip.getCamera();
+
+  flip.setCamera({ flipHorizontal: !flipHorizontal });
+
+  return <i>{String(flipHorizontal)}</i>;
+}
+
+export function Volume3D({ element }) {
+  const renderingEngine = new RenderingEngine('engine');
+
+  renderingEngine.enableElement({
+    viewportId: 'vr',
+    type: Enums.ViewportType.VOLUME_3D,
+    element,
+  });
+
+  const vr = renderingEngine.getViewport('vr');
+
+  vr.setOrientation(Enums.OrientationAxis.CORONAL);
+
+  return <canvas ref={() => vr.getCanvas()} />;
 }

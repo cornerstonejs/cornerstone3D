@@ -11,7 +11,6 @@ import {
   viewportFamily,
 } from '../lib.ts';
 import type { Node } from '../lib.ts';
-import type { Edit } from 'codemod:ast-grep';
 import {
   importOf,
   noteRewritten,
@@ -20,7 +19,11 @@ import {
   report,
 } from '../rules.ts';
 import type { Rules, Run } from '../rules.ts';
-import { importsCornerstone } from './display-sets.ts';
+import {
+  MOUNT_RENDER_MODE,
+  THREE_D_MODES,
+  importsCornerstone,
+} from './display-sets.ts';
 
 /** How to find the layer of an actor entry, word for word in the guide. */
 const PLAN_QUERY =
@@ -67,16 +70,6 @@ const PLAN_RENDER_MODE =
 /** The text of a `registerRenderBackend` whose slots the step cannot see. */
 const BACKEND_SLOTS =
   'the slots of renderModes are frame, cpu and gpuVolume in 6.0: image is frame, sampledVolume is cpu, and volume is cpu on a backend with surface cpu, gpuVolume on any other';
-
-/** The text of a `renderMode` mount option of a 3D viewport that is not a literal. */
-const MOUNT_RENDER_MODE =
-  'a 3D viewport has no mount option renderMode in 6.0: the descriptor decides (image ids give a volume, a geometry id a surface), delete it';
-
-/**
- * The values of the `renderMode` mount option of a 3D viewport of
- * 6.0.0-beta.2 that no other option takes.
- */
-const THREE_D_MODES = new Set(['vtkVolume3d', 'vtkGeometry3d']);
 
 /** The methods of an array that give one of its entries. */
 const ENTRY_GETTERS = new Set(['find', 'findLast', 'at']);
@@ -463,29 +456,6 @@ function reportModeRead(run: Run, label: string, read: Node, text: string) {
   }
 
   report(run, 'manual', `${label}: ${text}`, read);
-}
-
-/**
- * Returns an edit that removes one property of an object literal: its whole
- * line when it stands alone on it, else the property with its comma.
- */
-function removePropertyEdit(property: Node): Edit {
-  const text = property.getRoot().root().text();
-  const start = property.range().start.index;
-  const lineStart = text.lastIndexOf('\n', start - 1) + 1;
-  const comma = property.next()?.kind() === ',' ? property.next() : undefined;
-  const end = comma ? comma.range().end.index : property.range().end.index;
-  const lineEnd = text.indexOf('\n', end);
-
-  if (
-    /^[ \t]*$/.test(text.slice(lineStart, start)) &&
-    lineEnd !== -1 &&
-    /^[ \t]*$/.test(text.slice(end, lineEnd))
-  ) {
-    return { startPos: lineStart, endPos: lineEnd + 1, insertedText: '' };
-  }
-
-  return removeProperty(property);
 }
 
 /**
@@ -937,7 +907,7 @@ function removeMountRenderModes(run: Run): void {
       return;
     }
 
-    const edit = removePropertyEdit(pairs.length === 1 ? holder : pair);
+    const edit = removeProperty(pairs.length === 1 ? holder : pair);
 
     if (run.edits.add(edit)) {
       noteRewritten(run, `renderMode: ${value.text()} -> (removed)`, pair);

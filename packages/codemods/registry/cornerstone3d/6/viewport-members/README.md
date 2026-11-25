@@ -43,8 +43,10 @@ its name, and so is a legacy member in brackets
   application (a cast such as `viewport as unknown as LegacyViewport`, or a
   name declared with such a type) they are reported: that type declares
   them.
-- `getActorUIDs()`, `getAllVolumeIds()`, `getActorByIndex(i)` and
-  `getActorUIDByIndex(i)` become reads of `getActors()`; `getBounds()`
+- `getActorUIDs()`, `getActorByIndex(i)` and `getActorUIDByIndex(i)`
+  become reads of `getActors()`; `getAllVolumeIds()` becomes
+  `getVolumeIds({ includeSegmentations: true })`, which lists the labelmap
+  volumes too, as 5.x did; `getBounds()`
   becomes `getImageData()?.imageData.getBounds?.()`, which passes
   `strictNullChecks` and gives undefined while the viewport shows nothing.
 - `isInAcquisitionPlane()`, `getSlicesClippingPlanes()`,
@@ -66,10 +68,24 @@ its name, and so is a legacy member in brackets
   `await viewport.setStack(...)` and their kin), with no mount on it after
   the call or before it without `await`. A mount under an `if` or in
   another function proves nothing.
-- On a viewport typed as a planar viewport: `setCamera({ flipHorizontal })`
-  becomes `setViewState(...)`.
+- On a viewport typed as a planar viewport (or created in the same function
+  by an input of type `STACK`, `ORTHOGRAPHIC` or `PLANAR`):
+  `setCamera({ flipHorizontal })` becomes `setViewState(...)`, and a
+  `getCamera()` read for its flip only (`const { flipHorizontal } =
+viewport.getCamera()`, `viewport.getCamera().flipVertical`) becomes
+  `getViewState()`. Any other `getCamera()` is reported.
 
 ## Reported
+
+- On a viewport that the file shows to be of one family (a cast, a type, or
+  an input of that type in the same function), the members that family lost
+  while the other families keep them, with the 6.0 call: on a 3D viewport
+  `setOrientation`, `getImageActor`, `hasImageURI`, `getRotation` and the
+  slice members (`getCurrentImageIdIndex`, `getSliceIndex`,
+  `getCurrentImageId`, `getNumberOfSlices`, `scroll`); on a video viewport
+  `end` and `hasImageURI`; on an ECG viewport `getNumberOfSlices`. A
+  receiver known by its name only is left: the name is right on the other
+  families.
 
 All manual, with the rule name: `setProperties` with a second argument, a
 variable, a spread, or a key without a twin (`slabThickness`, `preset`,
@@ -96,10 +112,12 @@ the `api-names` step, with the text of the guide), and the removed helpers of th
 
 ## Review
 
-The rewrite of `getAllVolumeIds()` is listed for review: `getActors()` also
-lists the actors of labelmaps, surfaces and the images of a stack, whose
-`referencedId` is not a volume id or is undefined. Keep the ids that
-`viewport.hasVolumeId(id)` takes where only the volumes count.
+The rewrite of `getAllVolumeIds()` is listed for review: `getVolumeIds`
+gives the source first (5.x gave the order in which the volumes were
+added), `[]` while the viewport shows a stack, and leaves out a labelmap
+that the tools draw as images beside a slice cut on the CPU, which shows
+no volume. Without the labelmaps of segmentations, call
+`viewport.getVolumeIds()`.
 
 The rewrites of `getViewPresentation` and `setViewPresentation` are listed
 for review, with what the framing of 6.0 does differently.

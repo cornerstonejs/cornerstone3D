@@ -21,8 +21,9 @@
     "clean:deep": "pnpm run clean && shx rm -rf node_modules",
     "dev": "pnpm run test",
     "test": "node scripts/test-registry-packages.mjs",
-    "validate": "pnpm run validate:registry && pnpm run test",
+    "validate": "pnpm run validate:registry && pnpm run validate:api-map && pnpm run test",
     "validate:registry": "node scripts/validate-registry-packages.mjs",
+    "validate:api-map": "node scripts/check-api-map.mjs",
     "lint": "oxlint ."
   },
   "contributors": [

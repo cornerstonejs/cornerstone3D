@@ -1,6 +1,7 @@
 import {
   CORE_PACKAGE,
   declarationNodeOf,
+  hasApplicationType,
   isStableBinding,
   referencesOf,
   methodCall,
@@ -366,31 +367,39 @@ const framing: Rules = {
         key,
         remove: true,
       },
-      {
-        in: { call: 'viewportProjection.getFraming', argument: 1 },
-        key: `selector.${key}`,
-        remove: true,
-      },
-      { in: { type: 'ViewFramingSelector' }, key, remove: true },
+      ...['getFraming', 'getPresentation'].map(
+        (method): KeyRule => ({
+          in: { call: `viewportProjection.${method}`, argument: 1 },
+          key: `selector.${key}`,
+          remove: true,
+        })
+      ),
+      ...['ViewFramingSelector', 'ViewPresentationSelector'].map(
+        (type): KeyRule => ({ in: { type }, key, remove: true })
+      ),
     ]),
     {
       in: { receiver: 'viewport', method: 'setViewFraming', argument: 0 },
       key: 'slabThickness',
       remove: true,
     },
-    { in: { type: 'ViewFraming' }, key: 'slabThickness', remove: true },
+    ...['ViewFraming', 'ViewPresentation'].map(
+      (type): KeyRule => ({ in: { type }, key: 'slabThickness', remove: true })
+    ),
     {
       in: { receiver: 'viewport', method: 'setViewFraming', argument: 0 },
       key: 'aspectRatio',
       remove: true,
       review: ASPECT_RATIO_REVIEW,
     },
-    {
-      in: { type: 'ViewFraming' },
-      key: 'aspectRatio',
-      remove: true,
-      review: ASPECT_RATIO_REVIEW,
-    },
+    ...['ViewFraming', 'ViewPresentation'].map(
+      (type): KeyRule => ({
+        in: { type },
+        key: 'aspectRatio',
+        remove: true,
+        review: ASPECT_RATIO_REVIEW,
+      })
+    ),
     {
       in: { receiver: 'viewport', method: 'setViewState', argument: 0 },
       key: 'displayArea',
@@ -458,10 +467,11 @@ function annotationOf(identifier: Node): Node | undefined {
  * `getViewport<PlanarViewport>(...)` with a core viewport type, a
  * `getViewport` of a name declared with a core engine type, the call of a
  * function of the file declared to give a core viewport type, and a `const`
- * that holds one of these.
+ * that holds one of these. A type of the application at the top
+ * (`hasApplicationType`) shows none.
  */
 function isTypedViewport(node: Node | null | undefined, depth = 0): boolean {
-  if (!node || depth > 3) {
+  if (!node || depth > 3 || hasApplicationType(node)) {
     return false;
   }
 
@@ -516,117 +526,6 @@ function isTypedViewport(node: Node | null | undefined, depth = 0): boolean {
     ? hasTypeOf(typeArgument, VIEWPORT_TYPES)
     : engine.kind() === 'identifier' &&
         hasTypeOf(annotationOf(engine), ENGINE_TYPES);
-}
-
-/** The type names that say nothing of a value. */
-const OPAQUE_TYPES = new Set(['unknown', 'any', 'object']);
-
-/**
- * Tells whether a type node is a type of the application: not opaque
- * (`unknown`, `any`) and with no core type at its top.
- */
-function isApplicationType(typeNode: Node | null | undefined): boolean {
-  return Boolean(
-    typeNode &&
-      !OPAQUE_TYPES.has(typeNode.text()) &&
-      !topLevelCoreTypes(typeNode).length
-  );
-}
-
-/**
- * Tells whether the file gives an expression a type of the application: a
- * cast to such a type (`viewport as unknown as { setDisplaySetPresentation():
- * void }`, `viewport as NativeViewport`), or a name declared with one or
- * that holds such a cast. The members of that type are the application's,
- * whatever Cornerstone value is under the cast.
- */
-function hasApplicationType(node: Node | null | undefined, depth = 0): boolean {
-  let current = node;
-
-  while (current && depth <= 4) {
-    const kind = current.kind();
-    const named = current.children().filter((child) => child.isNamed());
-
-    if (kind === 'parenthesized_expression' || kind === 'non_null_expression') {
-      current = named[0];
-    } else if (kind === 'as_expression' || kind === 'satisfies_expression') {
-      if (isApplicationType(named[named.length - 1])) {
-        return true;
-      }
-
-      current = named[0];
-    } else if (kind === 'type_assertion') {
-      const typeNode = named[0]?.children().find((child) => child.isNamed());
-
-      if (isApplicationType(typeNode)) {
-        return true;
-      }
-
-      current = named[named.length - 1];
-    } else {
-      break;
-    }
-  }
-
-  if (current?.kind() !== 'identifier') {
-    return false;
-  }
-
-  const declaration = declarationNodeOf(current);
-  const holder = declaration?.parent();
-  const annotation = holder
-    ?.children()
-    .find((child) => child.kind() === 'type_annotation');
-
-  if (annotation) {
-    return isApplicationType(
-      annotation.children().find((child) => child.isNamed())
-    );
-  }
-
-  return (
-    holder?.kind() === 'variable_declarator' &&
-    holder.field('name')?.id() === declaration.id() &&
-    isStableBinding(declaration) &&
-    hasApplicationType(holder.field('value'), depth + 1)
-  );
-}
-
-/**
- * Reports a method of the look on a receiver that the file gives a type of
- * the application (`hasApplicationType`): the type declares the method, so
- * the step leaves the call and the declaration together, and the tables
- * leave the site.
- */
-function reportApplicationTypedReceivers(run: Run): void {
-  for (const member of run.rootNode.findAll({
-    rule: {
-      kind: 'member_expression',
-      has: {
-        field: 'property',
-        regex: `^(${Object.keys(APPEARANCE_METHODS).join('|')})$`,
-      },
-    },
-  })) {
-    const property = member.field('property');
-    const name = property?.text() ?? '';
-
-    if (
-      !property ||
-      run.handled.has(property.range().start.index) ||
-      !hasApplicationType(member.field('object'))
-    ) {
-      continue;
-    }
-
-    run.handled.add(property.range().start.index);
-    report(
-      run,
-      'manual',
-      `${name}: the object has a type of the application, which declares the method: rename the method there and here, its name in 6.0 is ${APPEARANCE_METHODS[name]}`,
-      member
-    );
-  }
 }
 
 /**
@@ -1191,16 +1090,68 @@ function reportShownOverrides(run: Run): void {
   }
 }
 
+/** The names of the look that an object literal may stand in for, such as a mock. */
+const LOOK_KEYS: Record<string, string> = {
+  ...APPEARANCE_METHODS,
+  viewportSupportsDisplaySetPresentation:
+    'viewportSupportsDisplaySetAppearance',
+};
+
+/**
+ * Reports a key of an object literal that names a method of the look, or
+ * `viewportSupportsDisplaySetPresentation`, in a file that imports
+ * Cornerstone: such an object stands in for a viewport or for the
+ * `utilities` of the core, as a mock of a test does, and its keys are not
+ * proven to be Cornerstone's.
+ */
+function reportLookKeys(run: Run): void {
+  if (!importsCornerstone(run)) {
+    return;
+  }
+
+  for (const key of run.rootNode.findAll({
+    rule: {
+      kind: 'property_identifier',
+      regex: `^(${Object.keys(LOOK_KEYS).join('|')})$`,
+      inside: { any: [{ kind: 'pair' }, { kind: 'method_definition' }] },
+    },
+  })) {
+    const holder = key.parent();
+    const isKey =
+      holder?.kind() === 'pair'
+        ? holder.field('key')?.id() === key.id()
+        : holder?.field('name')?.id() === key.id();
+
+    if (
+      !isKey ||
+      holder?.parent()?.kind() !== 'object' ||
+      run.handled.has(key.range().start.index)
+    ) {
+      continue;
+    }
+
+    run.handled.add(key.range().start.index);
+    report(
+      run,
+      'manual',
+      `${key.text()}: a key of an object that stands in for Cornerstone, such as a mock, in 6.0 its name is ${LOOK_KEYS[key.text()]}`,
+      key
+    );
+  }
+}
+
 /**
  * The rewrites of the appearance that no table entry says: `colormap.opacity`
  * of an appearance literal (`rewriteColormapOpacity`), a method of the
  * look on a receiver that only the types of the file show to be a viewport,
  * and its name in an indexed type of a viewport type, are renamed; a member
  * of the look that a type of the application declares on top of a viewport
- * type, a name of the look imported from a subpath of the core, a method of
- * the look on a receiver of a type of the application, another string that
- * names a method of the look, and a method of the look on an object that the
- * file does not show to be a viewport, are reported.
+ * type, a name of the look imported from a subpath of the core, another
+ * string that names a method of the look, a key of an object literal that
+ * names one (`reportLookKeys`), and a method of the look on an object that
+ * the file does not show to be a viewport, are reported. A
+ * method of the look on a receiver of a type of the application is the
+ * tables' to report (`viewportEvidence` gives `name` there).
  */
 function rewriteAppearance(run: Run): void {
   rewriteColormapOpacity(run);
@@ -1208,9 +1159,9 @@ function rewriteAppearance(run: Run): void {
   reportShownOverrides(run);
   reportMembersOfTypes(run, APPEARANCE_TYPE_MEMBERS);
   reportSubpathNames(run, new Set(), APPEARANCE_SUBPATH_NAMES);
-  reportApplicationTypedReceivers(run);
   rewriteTypedReceivers(run);
   rewriteMethodStrings(run);
+  reportLookKeys(run);
   reportUnprovenReceivers(run);
 }
 
@@ -1458,7 +1409,7 @@ function rewriteDisplayArea(run: Run): void {
       continue;
     }
 
-    noteRewritten(run, `${method} -> ${replacement}`, call);
+    noteRewritten(run, `${method} -> ${text(['displayArea'])}`, call);
 
     if (method === 'setDisplayArea' && unwrap(args[0]).kind() !== 'object') {
       report(

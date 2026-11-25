@@ -20,7 +20,7 @@
       "cardinality": {
         "file": "input.ts",
         "line": "75",
-        "rule": "getSourceDataId"
+        "rule": "getSourceDataId: its name in 6.0 is getSourceDisplaySetId"
       },
       "count": 1
     }

@@ -108,8 +108,14 @@ that has no entry yet changes nothing.
   that are an object literal get the key at the end, or first when they
   spread another object, so a `mode` of that object still wins. A mount that
   says `mode` already, a mount with `renderMode` (a 3D viewport) and a
-  viewport typed with another family are left. A registration with a
-  `volumeId` and no image ids is left: it shows a volume without a mode.
+  viewport of another family (by its type, or by the input that creates it
+  in the same function) are left. A registration with a `volumeId` and no
+  image ids is left: it shows a volume without a mode.
+- A literal `renderMode: 'vtkVolume3d'` (or `'vtkGeometry3d'`) on such a
+  mount, where nothing else in the file shows that the viewport is a 3D
+  viewport, stays, and is reported: it is what tells this step that the mount
+  needs no `mode: 'volume'`, and a second run, which would see a mount of an
+  unknown family, would write one. Delete it by hand.
 - `initialImageIdIndex` of a registration moves to the options of every
   planar mount of the display set in the file, found as for `mode: 'volume'`
   (both keys go into one edit of a mount): 6.0 reads it from the mount, and a
@@ -216,7 +222,9 @@ part of a view that another viewport can take is its framing.
   `viewport.getViewFraming`, to `viewportProjection.getFraming` (its
   `selector`) or typed `ViewFramingSelector`, and `slabThickness` and
   `aspectRatio` from a framing given to `viewport.setViewFraming` or typed
-  `ViewFraming`; a deleted `aspectRatio` of a framing is listed for review,
+  `ViewFraming`, also under their names of 6.0.0-beta.2, which the same run
+  renames (`viewportProjection.getPresentation`, `ViewPresentationSelector`,
+  `ViewPresentation`); a deleted `aspectRatio` of a framing is listed for review,
   because the 5.x `setViewPresentation` stretched the view by it (the
   stretch is `scale` of a planar framing). The 5.x steps leave
   `setDisplayArea` and `getDisplayArea` to this step, and since this step
@@ -255,7 +263,10 @@ part of a view that another viewport can take is its framing.
   a name declared with such a type: that type declares the method), or on an
   object that the file does not show to be a viewport in a file that imports
   Cornerstone; another string that names one of the three
-  methods (`jest.spyOn(viewport, 'setDisplaySetPresentation')`); a member `setDisplaySetPresentation`,
+  methods (`jest.spyOn(viewport, 'setDisplaySetPresentation')`); a key of an
+  object literal that names one of them, or
+  `viewportSupportsDisplaySetPresentation`, in a file that imports
+  Cornerstone (a mock of a viewport or of `utilities`); a member `setDisplaySetPresentation`,
   `getDisplaySetPresentation` or `resetDisplaySetPresentation` that a type of
   the application declares on top of a viewport type; the key `presentation`
   in the options of a `setDisplaySets` entry or of `addDisplaySet`
@@ -354,7 +365,7 @@ private.
   this also runs in a file that imports no Cornerstone package, such as a
   fragment of a page), and where it is `'auto'` on a viewport that the file
   types as a 3D viewport. An option object that held nothing else goes with
-  it.
+  it. A key that the display sets family keeps (see above) stays.
 - Reported, manual: each use of `ActorRenderMode` and
   `Types.ActorRenderMode`, a member with the test of the render plan that
   stands for it (`VTK_IMAGE` is `slice 'frame'` and `draw 'gpu'`,
@@ -407,6 +418,16 @@ before.
 - Review: each rewritten site of a rule that names a decision of the
   guide, and two operands that the renames make the same, such as two
   events of one `||` that are one event now.
+- Manual, a renamed or removed name on a namespace that the file binds
+  nowhere, as in a code block of a page that imports it in another block:
+  `utilities.genericViewportDisplaySetMetadataProvider: the file does not bind utilities; if it is Cornerstone's, its name in 6.0 is displaySetRegistry, a top-level export`.
+- Manual, on a receiver that the file gives a type of the application (a
+  cast such as `target as NativeViewport` or `viewport as unknown as { ... }`,
+  a `getViewport<NativeViewport>(...)`, a name declared with such a type),
+  also when the type is an intersection with a Cornerstone type: that type
+  declares the member, so the rule says
+  `the object has a type of the application, which declares the member: change it there and here`
+  with the 6.0 name.
 - Manual, at line 1: `the file was not analysed:` with the reason, for a
   file whose names cannot be looked up. See the README of
   `@cornerstonejs/cornerstone3d-6`.
@@ -417,9 +438,18 @@ It follows the rules of the other 6.0 steps: it changes a site only where
 the file shows that it is Cornerstone's. A name is Cornerstone's when it is
 bound to an import of the package, to its namespace import, or to a `const`
 that holds one of those (`const { Events } = Enums`); `EVENTS` of the core is
-`Enums.Events`. A receiver is a viewport, an engine or a typed value as
-`lib.ts` shows it (`viewportEvidence`, `isRenderingEngine`, the annotation
-or cast of a binding that holds one value). An object literal reaches
+`Enums.Events`; so is a name destructured from the namespace import
+(`const { Enums } = cornerstone3D`). A receiver is a viewport, an engine or
+a typed value as `lib.ts` shows it (`viewportEvidence`, `isRenderingEngine`,
+the annotation or cast of a binding that holds one value). The outermost
+cast or annotation decides: a type of the application there makes the
+receiver one known by its name only, whatever Cornerstone value is under
+it (`hasApplicationType`). The family of a viewport is that of its type, of
+the type argument of `getViewport<T>` (also after an `await`), or of an
+input in the same function that creates it: an object with the same
+`viewportId` and a `type` or `viewportType` that is a member of the core
+`ViewportType` (`enableElement`, `setViewports`, a helper of the
+application). An object literal reaches
 Cornerstone when it is an argument of a proven call, an entry of an array
 argument, or the value of a `const` passed there.
 
@@ -585,8 +615,9 @@ node scripts/run-registry.mjs --dry-run --steps api-names --markdown \
   ../docs/docs/getting-started ../docs/docs/contribute ../docs/docs/examples.md
 ```
 
-Leave `docs/migration-guides` out: its code shows the old names on purpose.
-A site that the rule should rewrite or report and does not is a new
+The runner leaves the pages of `docs/migration-guides` out by itself: their
+code shows the old names on purpose. A site that the rule should rewrite or
+report and does not is a new
 fixture, not a hand edit. Without `--dry-run` the runner writes the changed
 files back. The README of `packages/codemods` describes the runner and the
 measure of the whole migration.

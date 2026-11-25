@@ -21,3 +21,17 @@ export function stretch(renderingEngineId: string, viewportId: string) {
 
   return [framing, picked, selector, kept];
 }
+
+export function beforeTheRename(viewport: PlanarViewport) {
+  const selector: Types.ViewPresentationSelector = {
+    rotation: true,
+    aspectRatio: true,
+    slabThickness: true,
+  };
+  const kept: Types.ViewPresentation = { zoom: 2, aspectRatio: [2, 1] };
+  const picked = viewportProjection.getPresentation(viewport, {
+    selector: { pan: true, windowLevel: true },
+  });
+
+  return [selector, kept, picked];
+}

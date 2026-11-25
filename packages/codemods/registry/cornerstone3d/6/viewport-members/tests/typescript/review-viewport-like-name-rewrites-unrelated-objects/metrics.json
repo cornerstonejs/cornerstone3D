@@ -4,7 +4,7 @@
       "cardinality": {
         "file": "input.ts",
         "line": "4",
-        "rule": "resetCamera"
+        "rule": "resetCamera: the object has a type of the application, which declares the member: change it there and here"
       },
       "count": 1
     },
@@ -12,7 +12,7 @@
       "cardinality": {
         "file": "input.ts",
         "line": "6",
-        "rule": "uid"
+        "rule": "uid: the object has a type of the application, which declares the member: change it there and here"
       },
       "count": 1
     }

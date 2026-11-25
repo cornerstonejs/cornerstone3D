@@ -4,7 +4,7 @@
       "cardinality": {
         "file": "input.ts",
         "line": "13",
-        "rule": "getSampleOld"
+        "rule": "getSampleOld: its name in 6.0 is getSampleNew"
       },
       "count": 1
     },
