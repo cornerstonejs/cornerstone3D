@@ -362,6 +362,7 @@ function getBitmapFramesFromDataset(dataset: {
   Columns?: number | string;
   BitsAllocated?: number | string;
   PixelData?: unknown;
+  _vrMap?: Record<string, string>;
 }) {
   const numberOfFrames = Number(dataset.NumberOfFrames) || 1;
   const rows = Number(dataset.Rows);
@@ -382,8 +383,21 @@ function getBitmapFramesFromDataset(dataset: {
       samplesPerFrame * numberOfFrames
     );
     const frames: Uint8Array[] = [];
+    const pixelDataVR = dataset._vrMap?.PixelData;
+    // encodeFramesToTransferSyntax - saves 1bit segmentation data as VR OW(16bit)
+    // this makes total bytes ceil to next even number of bytes.
+    // Since stored 16bit DICOM buffer bytes are even-length, an odd-sized payload may carry one trailing pad byte.
+    // Example: rows=206; columns=206;
+    const matchesLength = (expectedBytes: number) => {
+      return (
+        buffer.length === expectedBytes ||
+        (pixelDataVR === 'OW' &&
+          expectedBytes % 2 === 1 &&
+          buffer.length === expectedBytes + 1)
+      );
+    };
 
-    if (buffer.length === unpackedFrameBytes) {
+    if (matchesLength(unpackedFrameBytes)) {
       for (let frameIndex = 0; frameIndex < numberOfFrames; frameIndex++) {
         const start = frameIndex * samplesPerFrame;
         frames.push(
@@ -392,7 +406,7 @@ function getBitmapFramesFromDataset(dataset: {
           )
         );
       }
-    } else if (buffer.length === perFramePackedBytes) {
+    } else if (matchesLength(perFramePackedBytes)) {
       for (let frameIndex = 0; frameIndex < numberOfFrames; frameIndex++) {
         const framePacked = buffer.subarray(
           frameIndex * bytesPerFrame,
@@ -400,7 +414,7 @@ function getBitmapFramesFromDataset(dataset: {
         );
         frames.push(unpackBinaryFrameFromPacked(framePacked, samplesPerFrame));
       }
-    } else if (buffer.length === continuousPackedBytes) {
+    } else if (matchesLength(continuousPackedBytes)) {
       for (let frameIndex = 0; frameIndex < numberOfFrames; frameIndex++) {
         frames.push(
           unpackBinaryFrameFromContinuousPack(

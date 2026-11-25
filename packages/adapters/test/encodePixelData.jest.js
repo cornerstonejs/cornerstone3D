@@ -134,6 +134,20 @@ describe('getBitmapFramesFromDataset', () => {
     expect(Array.from(frames[1])).toEqual([0, 1, 0, 1]);
   });
 
+  it('accepts a trailing even-length pad byte on packed 1-bit PixelData', () => {
+    const { frames } = getBitmapFramesFromDataset({
+      NumberOfFrames: 1,
+      Rows: 1,
+      Columns: 3,
+      BitsAllocated: 1,
+      // 3 pixels -> 1 packed byte, padded to 2 for even length
+      PixelData: new Uint8Array([0b101, 0]),
+      _vrMap: { PixelData: 'OW' },
+    });
+
+    expect(Array.from(frames[0])).toEqual([1, 0, 1]);
+  });
+
   it('reads an 8-bit labelmap layout', () => {
     const { frames, bitsAllocated } = getBitmapFramesFromDataset({
       ...baseDataset,
