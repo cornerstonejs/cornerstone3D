@@ -74,9 +74,14 @@ const DETAIL_KEYS: Record<string, string | null> = {
 const SHOWN_OVERRIDES =
   'it gives the overrides only, what a caller set, and here the value is shown or compared: use getEffectiveDisplaySetAppearance for what is drawn, the defaults included';
 
-/** The text of a mount option `presentation`, word for word in the guide. */
+/**
+ * The text of a mount option `presentation`, word for word in the guide. No
+ * released Cornerstone read such a key, so the step reports it and moves
+ * nothing: a rename to `appearance` would draw a look the application never
+ * had.
+ */
 const MOUNT_PRESENTATION =
-  'Cornerstone has no mount option presentation and never read it: set the look after the mount with viewport.setDisplaySetAppearance(displaySetId, appearance)';
+  'the key did nothing, Cornerstone never read a mount option presentation: an appearance from the first draw is the mount option appearance (options.appearance), and a value moved there changes what the viewport shows';
 
 /** The most entries of one `setDisplaySets` call that the step reads. */
 const MOUNT_ENTRIES = 8;

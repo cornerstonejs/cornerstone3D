@@ -85,7 +85,10 @@ application wants.
 1. **A `volumeId` no longer makes a volume.** A planar mount without `mode`
    shows a stack in the acquisition plane. The codemod writes
    `mode: 'volume'` only on a mount that it sees in the file of the
-   registration. Find the other mounts of each display set registered with a
+   registration, and only where the registration is on the beta registry
+   (`utilities.genericViewportDisplaySetMetadataProvider`): it reads a
+   registration on `displaySetRegistry` as 6.0 code, so run it before
+   renaming the registry by hand. Find the other mounts of each display set registered with a
    `volumeId`, and add the mode where the viewport shows a volume. Nothing
    fails: a screen shows a stack where it showed a volume. See
    [A volume id names a volume, the mount chooses the mode](./1-next-viewports-only.md#a-volume-id-names-a-volume-the-mount-chooses-the-mode).

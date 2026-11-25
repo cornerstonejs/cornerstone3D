@@ -1,4 +1,8 @@
-import { Enums, displaySetRegistry, getRenderingEngine } from '@cornerstonejs/core';
+import {
+  Enums,
+  getRenderingEngine,
+  displaySetRegistry,
+} from '@cornerstonejs/core';
 
 export function Viewer({ imageIds }) {
   const viewport = getRenderingEngine('engine').getViewport('CT_AXIAL');

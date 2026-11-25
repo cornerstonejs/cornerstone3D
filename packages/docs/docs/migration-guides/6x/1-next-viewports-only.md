@@ -485,9 +485,12 @@ await axialViewport.setDisplaySets({
   `${volumeLoaderSchema}:${displaySetInstanceUID}`, at registration or on
   the mount, with `mode: 'volume'` on a planar mount.
 - `npx codemod @cornerstonejs/cornerstone3d-6-api-names` writes
-  `mode: 'volume'` on each planar mount of a display set registered with a
-  `volumeId` and image ids in the same file, and reports the registration
-  when the file shows no such mount: `a volumeId no longer makes a planar viewport show a volume: the viewport shows this display set as a stack in its acquisition plane unless its mount asks for mode: 'volume' (setDisplaySets({ displaySetId, options: { mode: 'volume' } }) or addDisplaySet(displaySetId, { mode: 'volume' })); a 3D viewport shows it as before`.
+  `mode: 'volume'` on each planar mount of a display set registered on the
+  beta registry (`utilities.genericViewportDisplaySetMetadataProvider`) with
+  a `volumeId` and image ids in the same file, and reports the registration
+  when the file shows no such mount. It reads a registration on
+  `displaySetRegistry` as 6.0 code and leaves its mounts as they are, so run
+  it before renaming the registry by hand. The report: `a volumeId no longer makes a planar viewport show a volume: the viewport shows this display set as a stack in its acquisition plane unless its mount asks for mode: 'volume' (setDisplaySets({ displaySetId, options: { mode: 'volume' } }) or addDisplaySet(displaySetId, { mode: 'volume' })); a 3D viewport shows it as before`.
 
 ### One store for display sets
 

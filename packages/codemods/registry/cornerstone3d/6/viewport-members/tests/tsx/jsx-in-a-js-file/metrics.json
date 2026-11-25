@@ -107,6 +107,14 @@
     {
       "cardinality": {
         "file": "input.js",
+        "line": "87",
+        "rule": "getCanvas: an ECG viewport has no getCanvas in 6.0: viewport.canvas, the same canvas, on which the waveform is drawn"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.js",
         "line": "9",
         "rule": "setProperties"
       },

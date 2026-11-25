@@ -28,6 +28,7 @@ import {
   pathOf,
   receiverEvidence,
   report,
+  unboundPath,
 } from '../rules.ts';
 import type { Rules, Run } from '../rules.ts';
 
@@ -173,6 +174,8 @@ export const rules: Rules = {
  * (`run.handled`), and the tables leave it.
  */
 export function rewrite(run: Run): void {
+  reportUnboundRegistrations(run);
+
   if (!importsCornerstone(run)) {
     return;
   }
@@ -1508,12 +1511,16 @@ const INDEX_NOT_MOVED =
  * file with the same id, on a viewport that the file shows to be
  * Cornerstone's and not of another family than planar (`mountBlocker`).
  *
- * - A registration with a `volumeId` and its image ids: `mode: 'volume'` on
- *   each mount, as a `volumeId` made a planar viewport show a volume. A
- *   mount that says `mode` already is left. A registration with no such
- *   mount in the file, and a mount that the step cannot write, are
- *   reported. A registration with a `volumeId` and no image ids shows a
- *   volume without a mode.
+ * - A registration on the beta registry with a `volumeId` and its image
+ *   ids: `mode: 'volume'` on each mount, as a `volumeId` made a planar
+ *   viewport show a volume. A mount that says `mode` already is left. A
+ *   registration with no such mount in the file, and a mount that the step
+ *   cannot write, are reported. A registration with a `volumeId` and no
+ *   image ids shows a volume without a mode. A registration on
+ *   `displaySetRegistry` is 6.0 code, as no released Cornerstone had the
+ *   name (the 5.x steps write it with `mode: 'volume'` on every mount that
+ *   the file does not show to be 3D): its mounts mean what they say, so a
+ *   second run changes nothing.
  * - A registration with `initialImageIdIndex`: the key moves to the options
  *   of every planar mount of the display set in the file
  *   (`initialIndexMove`); a mount that names it already keeps its own. When
@@ -1550,7 +1557,9 @@ function rewriteRegisteredMounts(run: Run): void {
 
     const { keys, hasSpread } = objectEntries(object);
     const asVolume =
-      keys.includes('volumeId') && (keys.includes('imageIds') || hasSpread);
+      registryPath(member.field('object')) === OLD_REGISTRY &&
+      keys.includes('volumeId') &&
+      (keys.includes('imageIds') || hasSpread);
     const own = mounts.filter((mount) => isSameId(mount.id, id));
     const index = keys.includes('initialImageIdIndex')
       ? initialIndexMove(run, call, descriptor, object, own)
@@ -1581,6 +1590,116 @@ function rewriteRegisteredMounts(run: Run): void {
       );
     }
   }
+}
+
+/**
+ * Reports the mounts of a display set that the beta registry, by a name
+ * that the file binds nowhere, registers with a `volumeId` and image ids, as
+ * in a code block of a page whose import is in another block. The file does
+ * not show that the registry or the viewport is Cornerstone's, so the step
+ * writes nothing, as for every name that such a file does not bind
+ * (`unboundPath`). A mount that says `mode`, or that is not planar, is left;
+ * a registration with no mount in the file is reported where it is. A
+ * registration on `displaySetRegistry` is 6.0 code, here as in a file that
+ * imports it (`rewriteRegisteredMounts`).
+ */
+function reportUnboundRegistrations(run: Run): void {
+  let mounts: Mount[] | undefined;
+
+  for (const member of run.rootNode.findAll({
+    rule: {
+      kind: 'member_expression',
+      has: { field: 'property', regex: '^add$' },
+    },
+  })) {
+    const call = member.parent();
+    const path = unboundPath(member.field('object'));
+
+    if (
+      path !== OLD_REGISTRY ||
+      call?.kind() !== 'call_expression' ||
+      call.field('function')?.id() !== member.id()
+    ) {
+      continue;
+    }
+
+    const [id, descriptor] = argumentsOf(call);
+    const object = descriptor ? literalObjectOf(descriptor) : undefined;
+    const entries = object ? objectEntries(object) : undefined;
+
+    if (
+      !id ||
+      !entries?.keys.includes('volumeId') ||
+      !(entries.keys.includes('imageIds') || entries.hasSpread)
+    ) {
+      continue;
+    }
+
+    const unbound = `the file does not bind ${path.split('.')[0]}; if it is Cornerstone's`;
+
+    mounts ??= mountsOf(run);
+
+    const own = mounts.filter((mount) => isSameFragmentId(mount.id, id));
+
+    if (!own.length) {
+      report(
+        run,
+        'review',
+        `${path}.add: ${unbound}, ${VOLUME_ID_NO_MOUNT}`,
+        call
+      );
+    }
+
+    for (const mount of own.filter((mount) => !choosesItsMode(mount))) {
+      report(
+        run,
+        'review',
+        `${methodName(mount)}: ${unbound} and the viewport is planar, ${VOLUME_ID_MOUNT}`,
+        mount.call
+      );
+    }
+  }
+}
+
+/**
+ * Tells whether two ids of a code block name one display set: as
+ * `isSameId` does, or as one name that the block declares nowhere, such as
+ * the `displaySetId` of an earlier block of a page.
+ */
+function isSameFragmentId(a: Node, b: Node): boolean {
+  const left = unwrap(a);
+  const right = unwrap(b);
+  const isUnboundName = (node: Node) =>
+    (node.kind() === 'identifier' ||
+      node.kind() === 'shorthand_property_identifier') &&
+    !declarationNodeOf(node);
+
+  return (
+    isSameId(a, b) ||
+    (isUnboundName(left) &&
+      isUnboundName(right) &&
+      left.text() === right.text())
+  );
+}
+
+/**
+ * Tells whether a mount needs no `mode: 'volume'` for what it shows: its
+ * options say `mode`, a literal `renderMode` of the 3D viewport, or the
+ * file shows a viewport of another family than planar.
+ */
+function choosesItsMode(mount: Mount): boolean {
+  const options = mount.options ? unwrap(mount.options) : undefined;
+  const entries =
+    options?.kind() === 'object' ? objectEntries(options) : undefined;
+  const renderMode = entries?.pairs.get('renderMode')?.field('value');
+  const family = mountFamily(mount.receiver);
+
+  return Boolean(
+    entries?.keys.includes('mode') ||
+      (renderMode?.kind() === 'string' &&
+        THREE_D_MODES.has(renderMode.text().slice(1, -1))) ||
+      (family && family !== 'planar' && family !== 'mixed')
+  );
 }
 
 /**
@@ -1753,15 +1872,10 @@ function scopeOf(declaration: Node): Node | undefined {
 
 /**
  * Why the step cannot write the options of a mount: `other family` for a
- * mount that is not planar (a `renderMode` option, unless `ignoreRenderMode`,
- * or a viewport of another family: left as it is), or the reason of a
- * report. Undefined when it can.
+ * mount that is not planar (a `renderMode` option or a viewport of another
+ * family: left as it is), or the reason of a report. Undefined when it can.
  */
-function mountBlocker(
-  run: Run,
-  mount: Mount,
-  ignoreRenderMode = false
-): string | undefined {
+function mountBlocker(run: Run, mount: Mount): string | undefined {
   const family = mountFamily(mount.receiver);
   const evidence = viewportEvidence(mount.receiver);
   const options = mount.options ? unwrap(mount.options) : undefined;
@@ -1770,7 +1884,7 @@ function mountBlocker(
 
   if (
     (family && family !== 'planar' && family !== 'mixed') ||
-    (!ignoreRenderMode && entries?.keys.includes('renderMode'))
+    entries?.keys.includes('renderMode')
   ) {
     return 'other family';
   }
@@ -1797,41 +1911,6 @@ function mountBlocker(
 }
 
 /**
- * Leaves and reports the `renderMode` of a mount of a display set that a
- * literal registers with a `volumeId` and image ids, where its literal value
- * names the 3D viewport and nothing else in the file shows the family of the
- * viewport. The render modes family deletes such a key; here the key is
- * what tells this step that the mount needs no `mode: 'volume'`, and a later
- * run, which would see a mount of an unknown family, would write one.
- */
-function keepRenderMode(run: Run, mount: Mount): void {
-  const options = mount.options ? unwrap(mount.options) : undefined;
-  const pair =
-    options?.kind() === 'object'
-      ? objectEntries(options).pairs.get('renderMode')
-      : undefined;
-  const value = pair?.field('value');
-
-  if (
-    !pair ||
-    value?.kind() !== 'string' ||
-    !THREE_D_MODES.has(value.text().slice(1, -1)) ||
-    run.handled.has(pair.range().start.index) ||
-    mountBlocker(run, mount, true)
-  ) {
-    return;
-  }
-
-  run.handled.add(pair.range().start.index);
-  report(
-    run,
-    'manual',
-    `renderMode: ${MOUNT_RENDER_MODE}; the step leaves it, as nothing else in the file shows that the viewport is a 3D viewport (on a planar viewport this display set needs options: { mode: 'volume' })`,
-    pair
-  );
-}
-
-/**
  * Writes in the options of one mount `mode: 'volume'` (`asVolume`, unless
  * the options say `mode`) and the moved `initialImageIdIndex` (`index`,
  * unless the options say it), in one edit. A mount that cannot be written
@@ -1848,10 +1927,6 @@ function writeMountOptions(
   const blocker = mountBlocker(run, mount);
 
   if (blocker === 'other family') {
-    if (asVolume) {
-      keepRenderMode(run, mount);
-    }
-
     return;
   }
 

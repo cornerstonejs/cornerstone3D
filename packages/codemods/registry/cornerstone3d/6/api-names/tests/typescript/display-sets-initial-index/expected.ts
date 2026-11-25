@@ -42,12 +42,12 @@ async function run(
         initialImageIdIndex: Math.floor(imageIds.length / 2),
       },
     },
-    { displaySetId: 'pt', options: { mode: 'volume', initialImageIdIndex: MIDDLE, ...shared, role: 'overlay' } }
+    { displaySetId: 'pt', options: { initialImageIdIndex: MIDDLE, ...shared, role: 'overlay' } }
   );
 
   const pt = renderingEngine.getViewport<PlanarViewport>('PT');
 
-  await pt.setDisplaySets({ displaySetId: 'pt', options: { mode: 'volume', initialImageIdIndex: MIDDLE } });
+  await pt.setDisplaySets({ displaySetId: 'pt', options: { initialImageIdIndex: MIDDLE } });
 }
 
 export async function fromBeta(viewport: PlanarViewport, imageIds: string[]) {

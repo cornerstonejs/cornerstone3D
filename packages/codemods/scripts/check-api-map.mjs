@@ -18,8 +18,6 @@ const registry = join(packageRoot, 'registry/cornerstone3d/6');
  * neither in a step nor here fails the check.
  */
 const UNREACHABLE = {
-  'getCanvas()':
-    'still a member of the 6.0 planar and 3D viewports (the row names the property canvas beside it): the call still works',
   'getZoom()':
     'a deprecated member of every 6.0 viewport (the "legacy shim" of PlanarViewport and its kin): the call still works',
   'setZoom()':

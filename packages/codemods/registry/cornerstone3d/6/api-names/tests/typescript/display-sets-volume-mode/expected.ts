@@ -1,8 +1,8 @@
 import {
   Enums,
   RenderingEngine,
-  displaySetRegistry,
   volumeLoader,
+  displaySetRegistry,
 } from '@cornerstonejs/core';
 import type { PlanarViewport } from '@cornerstonejs/core';
 

@@ -1,4 +1,8 @@
-import { Enums, RenderingEngine, displaySetRegistry } from '@cornerstonejs/core';
+import {
+  Enums,
+  RenderingEngine,
+  displaySetRegistry,
+} from '@cornerstonejs/core';
 import { createViewports } from './helpers';
 
 const { ViewportType } = Enums;

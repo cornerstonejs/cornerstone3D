@@ -1416,7 +1416,11 @@ class VideoViewport extends BaseViewport<
   /**
    * Shows the first frame of the range, paused, as the legacy viewport does:
    * the video does not play, it only seeks to that frame when it shows
-   * another one, and waits until the frame is painted.
+   * another one, and waits until the frame is painted. A video that played
+   * to load its frame (`playMutedForFrameData`) can show a later frame at the
+   * pause while `currentTime` has not moved, and a seek to the time that the
+   * element has already shows nothing new, so it seeks one frame on and then
+   * to the frame to show.
    */
   private async primeInitialFrame(
     videoData: LoadedData<VideoStreamPayload>
@@ -1427,7 +1431,7 @@ class VideoViewport extends BaseViewport<
       return;
     }
 
-    await waitForVideoReady(element);
+    const played = await waitForVideoReady(element);
 
     const targetTimeSeconds =
       videoData.frameRange[0] > 1
@@ -1435,7 +1439,16 @@ class VideoViewport extends BaseViewport<
         : 0;
 
     element.pause();
-    await seekVideoElement(element, targetTimeSeconds);
+
+    if (played) {
+      await seekVideoElement(
+        element,
+        targetTimeSeconds + 1 / Math.max(1, videoData.fps),
+        true
+      );
+    }
+
+    await seekVideoElement(element, targetTimeSeconds, played);
     await new Promise((resolve) => requestAnimationFrame(resolve));
     this.syncCameraCurrentTimeFromElement();
   }
@@ -1487,23 +1500,51 @@ function asFrameRangeReference(viewRef: ViewReference): ViewReference {
   };
 }
 
-async function waitForVideoReady(element: HTMLVideoElement): Promise<void> {
+/**
+ * How long a video whose network stopped before its first frame may take to
+ * load the frame by itself before it plays muted to get it. Chrome stops for
+ * a moment after the metadata and goes on loading; Safari on iOS stays
+ * stopped.
+ */
+const FRAME_DATA_GRACE_MS = 250;
+
+/**
+ * Waits until a video element has the data of its current frame. When the
+ * network stops first and is still stopped, with no frame, after
+ * `FRAME_DATA_GRACE_MS`, it plays the video muted to get the frame
+ * (`playMutedForFrameData`). Gives whether it played.
+ */
+async function waitForVideoReady(element: HTMLVideoElement): Promise<boolean> {
   if (element.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
-    return;
+    return false;
   }
+
+  let played = false;
+  let graceTimer: ReturnType<typeof setTimeout> | undefined;
 
   await new Promise<void>((resolve) => {
     const onReady = () => {
       cleanup();
       resolve();
     };
-    const onSuspend = () => {
-      if (element.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
+    const playIfStillStopped = () => {
+      if (
+        element.readyState < HTMLMediaElement.HAVE_CURRENT_DATA &&
+        element.networkState === HTMLMediaElement.NETWORK_IDLE
+      ) {
         element.removeEventListener('suspend', onSuspend);
+        played = true;
         playMutedForFrameData(element);
       }
     };
+    const onSuspend = () => {
+      if (element.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) {
+        clearTimeout(graceTimer);
+        graceTimer = setTimeout(playIfStillStopped, FRAME_DATA_GRACE_MS);
+      }
+    };
     const cleanup = () => {
+      clearTimeout(graceTimer);
       element.removeEventListener('loadeddata', onReady);
       element.removeEventListener('canplay', onReady);
       element.removeEventListener('suspend', onSuspend);
@@ -1517,6 +1558,8 @@ async function waitForVideoReady(element: HTMLVideoElement): Promise<void> {
       onSuspend();
     }
   });
+
+  return played;
 }
 
 /**
@@ -1524,7 +1567,10 @@ async function waitForVideoReady(element: HTMLVideoElement): Promise<void> {
  * metadata of a video that has not played and then stops (`suspend`), so the
  * first frame never comes. A muted video may play there without a tap: it
  * plays muted and pauses at once, and its own `muted` comes back. The caller
- * then seeks to the frame to show. Other browsers load the frame without it.
+ * then seeks to the frame to show. Chrome too stops for a moment after the
+ * metadata (`suspend`, the network idle) and then loads the frame by
+ * itself; `waitForVideoReady` plays only when the network is still stopped
+ * after `FRAME_DATA_GRACE_MS`.
  */
 function playMutedForFrameData(element: HTMLVideoElement): void {
   const { muted } = element;
@@ -1539,11 +1585,16 @@ function playMutedForFrameData(element: HTMLVideoElement): void {
     });
 }
 
+/**
+ * Seeks a video element and waits for `seeked`. Without `always` it does
+ * nothing when the element is within a millisecond of the time.
+ */
 async function seekVideoElement(
   element: HTMLVideoElement,
-  timeSeconds: number
+  timeSeconds: number,
+  always = false
 ): Promise<void> {
-  if (Math.abs((element.currentTime || 0) - timeSeconds) <= 0.001) {
+  if (!always && Math.abs((element.currentTime || 0) - timeSeconds) <= 0.001) {
     return;
   }
 

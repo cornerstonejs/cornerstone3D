@@ -51,8 +51,32 @@
     {
       "cardinality": {
         "file": "input.ts",
+        "line": "23",
+        "rule": "getCanvas: an ECG viewport has no getCanvas in 6.0: viewport.canvas, the same canvas, on which the waveform is drawn"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
         "line": "28",
         "rule": "hasImageURI: a video viewport has no hasImageURI in 6.0: viewport.isReferenceViewable({ referencedImageURI }, { withNavigation: true })"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "37",
+        "rule": "getCanvas: a video viewport has no getCanvas in 6.0: viewport.canvas is its canvas, which holds no pixels of the frame, and viewport.getImageData() gives the pixels of the frame"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "37",
+        "rule": "getCanvas: a whole slide viewport has no getCanvas in 6.0: viewport.canvas, the same canvas"
       },
       "count": 1
     }

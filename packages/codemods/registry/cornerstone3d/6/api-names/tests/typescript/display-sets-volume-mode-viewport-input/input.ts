@@ -1,4 +1,4 @@
-import { Enums, RenderingEngine, displaySetRegistry } from '@cornerstonejs/core';
+import { Enums, RenderingEngine, utilities } from '@cornerstonejs/core';
 import { createViewports } from './helpers';
 
 const { ViewportType } = Enums;
@@ -7,7 +7,7 @@ export async function created(element: HTMLDivElement, imageIds: string[]) {
   const renderingEngine = new RenderingEngine('engine');
   const volumeId = 'cornerstoneStreamingImageVolume:CT';
 
-  displaySetRegistry.add('mpr', { imageIds, volumeId });
+  utilities.genericViewportDisplaySetMetadataProvider.add('mpr', { imageIds, volumeId });
 
   renderingEngine.enableElement({
     viewportId: '3D_INPUT',

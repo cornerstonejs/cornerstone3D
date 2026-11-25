@@ -53,3 +53,8 @@ export function byName(viewport2, displaySetId: string) {
 
   return viewport2.getDisplaySetPresentation(displaySetId);
 }
+
+export async function mountWithAppearance(displaySetId: string) {
+  await viewport.setDisplaySets({ displaySetId, options: { appearance: { invert: true } } });
+  await viewport.addDisplaySet('seg', { appearance: { visible: true } });
+}

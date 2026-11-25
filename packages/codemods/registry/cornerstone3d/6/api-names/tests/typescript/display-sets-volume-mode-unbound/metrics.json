@@ -1,0 +1,78 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "24",
+        "rule": "utilities.genericViewportDisplaySetMetadataProvider: the file does not bind utilities; if it is Cornerstone's, its name in 6.0 is displaySetRegistry, a top-level export"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "27",
+        "rule": "utilities.genericViewportDisplaySetMetadataProvider: the file does not bind utilities; if it is Cornerstone's, its name in 6.0 is displaySetRegistry, a top-level export"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "29",
+        "rule": "utilities.genericViewportDisplaySetMetadataProvider: the file does not bind utilities; if it is Cornerstone's, its name in 6.0 is displaySetRegistry, a top-level export"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "3",
+        "rule": "utilities.genericViewportDisplaySetMetadataProvider: the file does not bind utilities; if it is Cornerstone's, its name in 6.0 is displaySetRegistry, a top-level export"
+      },
+      "count": 1
+    }
+  ],
+  "cornerstone3d-6-review": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "11",
+        "rule": "setDisplaySets: the file does not bind utilities; if it is Cornerstone's and the viewport is planar, write mode: 'volume' in its options to show the volume, a volumeId no longer makes a planar viewport show one"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "19",
+        "rule": "setDisplaySets: the file does not bind utilities; if it is Cornerstone's and the viewport is planar, write mode: 'volume' in its options to show the volume, a volumeId no longer makes a planar viewport show one"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "20",
+        "rule": "addDisplaySet: the file does not bind utilities; if it is Cornerstone's and the viewport is planar, write mode: 'volume' in its options to show the volume, a volumeId no longer makes a planar viewport show one"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "25",
+        "rule": "setDisplaySets: the file does not bind utilities; if it is Cornerstone's and the viewport is planar, write mode: 'volume' in its options to show the volume, a volumeId no longer makes a planar viewport show one"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "27",
+        "rule": "utilities.genericViewportDisplaySetMetadataProvider.add: the file does not bind utilities; if it is Cornerstone's, a volumeId no longer makes a planar viewport show a volume: the viewport shows this display set as a stack in its acquisition plane unless its mount asks for mode: 'volume' (setDisplaySets({ displaySetId, options: { mode: 'volume' } }) or addDisplaySet(displaySetId, { mode: 'volume' })); a 3D viewport shows it as before"
+      },
+      "count": 1
+    }
+  ]
+}

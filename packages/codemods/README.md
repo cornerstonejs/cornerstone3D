@@ -195,7 +195,7 @@ It prints the numbers and writes `measure.json` (the numbers and every
 report entry), `diff.patch` and the logs of the type check into the
 measure folder (`--work`). `--skip-typecheck` leaves the type check out.
 
-The numbers of 24 November 2026, at `1b00db4d7` with the work of task CM1
+The numbers of 25 November 2026, at `880c03496` with the work of task V1
 (every step, `-api-names` with its six families):
 
 | Input                                                       | Files      | Sites | Rewritten   | Manual           | Review         | Wrong |
@@ -210,7 +210,7 @@ its metric):
 | Input                                                                                                             | Files                    | Rewritten | Manual           | Review         | Wrong |
 | ----------------------------------------------------------------------------------------------------------------- | ------------------------ | --------- | ---------------- | -------------- | ----- |
 | OHIF `78432e76cb` (`feat/cornerstone3d-6`)                                                                        | 16 changed               | 35        | 66 in 15 files   | 16 in 8 files  | 0     |
-| Examples, tests, `utils` and docs code blocks of 6.0.0-beta.2 (`1b3b2247e`): 834 files and 332 blocks of 67 pages | 275 changed, 1,413 lines | 1,456     | 404 in 121 files | 72 in 42 files | 0     |
+| Examples, tests, `utils` and docs code blocks of 6.0.0-beta.2 (`1b3b2247e`): 834 files and 332 blocks of 67 pages | 275 changed, 1,413 lines | 1,458     | 402 in 120 files | 78 in 48 files | 0     |
 
 On the examples, 5 type errors are on changed lines, each at a site left and
 reported: 3 `setStack` on a line whose cast was rewritten, and 2
@@ -230,9 +230,8 @@ that a lane listed (text, comments, tests that import `../src`, Playwright
 page code).
 
 A second run on this repository's examples, tests, `utils` and docs changes
-3 test lines: the `mode: 'volume'` of the display sets family on 6.0 code
-whose file does not show the family of the viewport (row 199 of
-`v6-open-issues.md`).
+nothing: the display sets family writes `mode: 'volume'` only for a
+registration on the beta registry (row 199 of `v6-open-issues.md`).
 
 At `1b3b2247e`, with `-api-names` empty, the examples of `58914567b` gave 860
 rewritten, 466 manual and 25 review, and OHIF 157 rewritten, 138 manual and

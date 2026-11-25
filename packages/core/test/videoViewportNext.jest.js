@@ -518,7 +518,7 @@ describe('Image plane metadata and frames of a video image', () => {
  * Gives a jsdom video element what Safari on iOS gives a video that has not
  * played: its metadata and no frame, and a network that stopped
  * (`suspend`). Only a muted `play()` loads the frame, as Safari allows
- * without a tap; an unmuted one is refused.
+ * without a tap; an unmuted one is refused. A seek ends with `seeked`.
  */
 function stubSafariVideoElement(video) {
   let paused = true;
@@ -529,7 +529,15 @@ function stubSafariVideoElement(video) {
   Object.defineProperty(video, 'duration', { value: FRAMES / FPS });
   Object.defineProperty(video, 'readyState', { get: () => readyState });
   Object.defineProperty(video, 'networkState', { get: () => 1 });
-  Object.defineProperty(video, 'currentTime', { value: 0, writable: true });
+  let currentTime = 0;
+
+  Object.defineProperty(video, 'currentTime', {
+    get: () => currentTime,
+    set: (value) => {
+      currentTime = value;
+      setTimeout(() => video.dispatchEvent(new Event('seeked')), 0);
+    },
+  });
   Object.defineProperty(video, 'paused', { get: () => paused });
   video.play = jest.fn(() => {
     if (!video.muted) {
@@ -591,6 +599,189 @@ describe('Next video viewport in Safari on iOS', () => {
       expect(outcome).toBe('mounted');
       expect(video.play).toHaveBeenCalled();
       expect(video.paused).toBe(true);
+      expect(viewport.getFrameNumber()).toBe(1);
+    } finally {
+      viewport.destroy();
+      element.remove();
+    }
+  });
+});
+
+/**
+ * Gives a jsdom video element what Chrome gives a video that it stopped
+ * loading after its metadata (`suspend`): the muted `play()` that loads the
+ * frame can show a later frame before the pause while `currentTime` and
+ * `played` have not moved. A seek to another time shows the frame of that
+ * time; a seek to the time that the element has already ends with `seeked`
+ * and shows nothing new, as Chrome skips it. `shown.time` is the time of the
+ * frame on display.
+ */
+function stubChromeVideoElement(video, shown) {
+  let paused = true;
+  let readyState = 1;
+  let currentTime = 0;
+
+  Object.defineProperty(video, 'videoWidth', { value: VIDEO_WIDTH });
+  Object.defineProperty(video, 'videoHeight', { value: VIDEO_HEIGHT });
+  Object.defineProperty(video, 'duration', { value: FRAMES / FPS });
+  Object.defineProperty(video, 'readyState', { get: () => readyState });
+  Object.defineProperty(video, 'networkState', { get: () => 1 });
+  Object.defineProperty(video, 'paused', { get: () => paused });
+  Object.defineProperty(video, 'currentTime', {
+    get: () => currentTime,
+    set: (value) => {
+      if (value !== currentTime) {
+        currentTime = value;
+        shown.time = value;
+      }
+      setTimeout(() => video.dispatchEvent(new Event('seeked')), 0);
+    },
+  });
+  video.play = jest.fn(() => {
+    paused = false;
+    readyState = 4;
+    shown.time = 1 / FPS;
+    video.dispatchEvent(new Event('loadeddata'));
+
+    return Promise.resolve();
+  });
+  video.pause = jest.fn(() => {
+    paused = true;
+  });
+}
+
+/**
+ * Gives a jsdom video element what Chrome gives a video right after its
+ * metadata: the network stopped for a moment (`suspend`, idle), then it
+ * loads again and the frame comes 40 ms later without a play.
+ */
+function stubResumingVideoElement(video) {
+  let paused = true;
+  let readyState = 1;
+  let networkState = 1;
+
+  Object.defineProperty(video, 'videoWidth', { value: VIDEO_WIDTH });
+  Object.defineProperty(video, 'videoHeight', { value: VIDEO_HEIGHT });
+  Object.defineProperty(video, 'duration', { value: FRAMES / FPS });
+  Object.defineProperty(video, 'readyState', { get: () => readyState });
+  Object.defineProperty(video, 'networkState', { get: () => networkState });
+  Object.defineProperty(video, 'paused', { get: () => paused });
+  Object.defineProperty(video, 'currentTime', { value: 0, writable: true });
+  video.play = jest.fn(() => {
+    paused = false;
+
+    return Promise.resolve();
+  });
+  video.pause = jest.fn(() => {
+    paused = true;
+  });
+  setTimeout(() => {
+    networkState = 2;
+  }, 5);
+  setTimeout(() => {
+    readyState = 4;
+    video.dispatchEvent(new Event('loadeddata'));
+  }, 40);
+}
+
+describe('Next video viewport whose network stops for a moment after the metadata', () => {
+  it('waits for the frame and does not play the video to get it', async () => {
+    const element = document.createElement('div');
+
+    Object.defineProperty(element, 'clientWidth', { value: WIDTH });
+    Object.defineProperty(element, 'clientHeight', { value: HEIGHT });
+    document.body.appendChild(element);
+
+    const viewport = new VideoViewport({
+      id: 'video-resuming',
+      element,
+      renderingEngineId: 'renderingEngine',
+      dataProvider: {
+        load: async (id) => ({
+          id,
+          type: 'video',
+          renderedUrl: 'https://server/video.mp4',
+          fps: FPS,
+          numberOfFrames: FRAMES,
+          frameRange: [1, FRAMES],
+          modality: 'XC',
+          metadata,
+        }),
+      },
+    });
+
+    try {
+      const mounted = viewport.setDisplaySets({ displaySetId: VIDEO_ID });
+
+      await flush();
+
+      const video = element.querySelector('video');
+
+      stubResumingVideoElement(video);
+      video.dispatchEvent(new Event('loadedmetadata'));
+
+      const outcome = await Promise.race([
+        mounted.then(() => 'mounted'),
+        new Promise((resolve) => setTimeout(() => resolve('stuck'), 500)),
+      ]);
+
+      expect(outcome).toBe('mounted');
+      expect(video.play).not.toHaveBeenCalled();
+      expect(viewport.getFrameNumber()).toBe(1);
+    } finally {
+      viewport.destroy();
+      element.remove();
+    }
+  });
+});
+
+describe('Next video viewport after a play that loads the first frame', () => {
+  it('shows the first frame when the mount ends, also when the play showed a later frame and the time did not move', async () => {
+    const element = document.createElement('div');
+
+    Object.defineProperty(element, 'clientWidth', { value: WIDTH });
+    Object.defineProperty(element, 'clientHeight', { value: HEIGHT });
+    document.body.appendChild(element);
+
+    const viewport = new VideoViewport({
+      id: 'video-played',
+      element,
+      renderingEngineId: 'renderingEngine',
+      dataProvider: {
+        load: async (id) => ({
+          id,
+          type: 'video',
+          renderedUrl: 'https://server/video.mp4',
+          fps: FPS,
+          numberOfFrames: FRAMES,
+          frameRange: [1, FRAMES],
+          modality: 'XC',
+          metadata,
+        }),
+      },
+    });
+    const shown = { time: 0 };
+
+    try {
+      const mounted = viewport.setDisplaySets({ displaySetId: VIDEO_ID });
+
+      await flush();
+
+      const video = element.querySelector('video');
+
+      stubChromeVideoElement(video, shown);
+      video.dispatchEvent(new Event('loadedmetadata'));
+
+      const outcome = await Promise.race([
+        mounted.then(() => 'mounted'),
+        new Promise((resolve) => setTimeout(() => resolve('stuck'), 500)),
+      ]);
+
+      expect(outcome).toBe('mounted');
+      expect(video.play).toHaveBeenCalled();
+      expect(video.paused).toBe(true);
+      expect(shown.time).toBe(0);
+      expect(video.currentTime).toBe(0);
       expect(viewport.getFrameNumber()).toBe(1);
     } finally {
       viewport.destroy();

@@ -1,7 +1,7 @@
 import {
   Enums,
   RenderingEngine,
-  displaySetRegistry,
+  utilities,
   volumeLoader,
 } from '@cornerstonejs/core';
 import type { PlanarViewport } from '@cornerstonejs/core';
@@ -16,8 +16,8 @@ async function run(imageIds: string[], ptImageIds: string[]) {
 
   await volumeLoader.createAndCacheVolume(volumeId, { imageIds });
 
-  displaySetRegistry.add(displaySetId, { imageIds, volumeId });
-  displaySetRegistry.add(ptDisplaySetId, {
+  utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, { imageIds, volumeId });
+  utilities.genericViewportDisplaySetMetadataProvider.add(ptDisplaySetId, {
     imageIds: ptImageIds,
     volumeId: ptVolumeId,
   });

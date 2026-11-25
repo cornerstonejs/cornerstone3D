@@ -72,3 +72,17 @@ export function Volume3D({ element }) {
 
   return <canvas ref={() => vr.getCanvas()} />;
 }
+
+export function Waveform({ element }) {
+  const renderingEngine = new RenderingEngine('engine');
+
+  renderingEngine.enableElement({
+    viewportId: 'ecg',
+    type: Enums.ViewportType.ECG,
+    element,
+  });
+
+  const ecg = renderingEngine.getViewport('ecg');
+
+  return <canvas ref={() => ecg.getCanvas()} />;
+}

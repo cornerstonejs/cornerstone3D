@@ -1174,7 +1174,7 @@ function ruleAt(
  * file binds nowhere, such as `utilities` or `Enums.Events` in a code block
  * of a page that imports them in another block; undefined otherwise.
  */
-function unboundPath(node: Node | null | undefined): string | undefined {
+export function unboundPath(node: Node | null | undefined): string | undefined {
   const inner = node ? unwrap(node) : undefined;
 
   if (inner?.kind() === 'identifier') {

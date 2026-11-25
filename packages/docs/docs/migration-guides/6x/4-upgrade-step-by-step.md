@@ -191,15 +191,15 @@ of its own (`viewport as MyViewport`, `MyViewport = Types.IViewport & { ... }`)
 is left with a report, because that type declares the members: rename them
 there and at each use.
 
-What it did on real code, measured on 24 November 2026 (Cornerstone3D
-`1b00db4d7` with the codemod of task CM1):
+What it did on real code, measured on 25 November 2026 (Cornerstone3D
+`880c03496` with the codemod of task V1):
 
 | Input                                                             | Rewritten   | Left with a report    | Wrong |
 | ----------------------------------------------------------------- | ----------- | --------------------- | ----- |
 | The 5.x examples of this repository, 1,335 uses of a removed name | 900 (67.4%) | 461 manual, 67 review | 0     |
 | OHIF Viewers `master` on 5.x, 32 files changed                    | 157         | 183 manual, 53 review | 0     |
 | OHIF on 6.0.0-beta.1, `-api-names` alone, 16 files changed        | 35          | 66 manual, 16 review  | 0     |
-| The examples, tests and docs of 6.0.0-beta.2, `-api-names` alone  | 1,456       | 404 manual, 72 review | 0     |
+| The examples, tests and docs of 6.0.0-beta.2, `-api-names` alone  | 1,458       | 402 manual, 78 review | 0     |
 
 Wrong means a rewritten line that no longer compiles and is not at a site
 that the codemod reported. Its

@@ -92,8 +92,9 @@ that has no entry yet changes nothing.
   result of `viewportProjection.get`. A shorthand keeps its value:
   `{ dataId }` becomes `{ displaySetId: dataId }`. Local names stay.
 - `mode: 'volume'` is written in the options of a planar mount of a display
-  set that a literal (or a `const` that holds one) registers with a
-  `volumeId` and image ids: an entry of `setDisplaySets` (also of an array
+  set that a literal (or a `const` that holds one) registers on the beta
+  registry (`utilities.genericViewportDisplaySetMetadataProvider`, by any
+  path) with a `volumeId` and image ids: an entry of `setDisplaySets` (also of an array
   that the call spreads, built of literals and `push`) or an `addDisplaySet`,
   in the same file, with the same id (a string, the same binding, or the same
   chain of property reads). A `volumeId` made a planar viewport show a volume;
@@ -111,11 +112,14 @@ that has no entry yet changes nothing.
   viewport of another family (by its type, or by the input that creates it
   in the same function) are left. A registration with a `volumeId` and no
   image ids is left: it shows a volume without a mode.
-- A literal `renderMode: 'vtkVolume3d'` (or `'vtkGeometry3d'`) on such a
-  mount, where nothing else in the file shows that the viewport is a 3D
-  viewport, stays, and is reported: it is what tells this step that the mount
-  needs no `mode: 'volume'`, and a second run, which would see a mount of an
-  unknown family, would write one. Delete it by hand.
+- A registration on `displaySetRegistry` is 6.0 code: no released
+  Cornerstone had the name (5.19.4 and 6.0.0-beta.2 have the beta registry),
+  and the 5.x steps write it with `mode: 'volume'` on every mount that the
+  file does not show to be 3D. Its mounts mean what they say, a stack where
+  they ask for nothing, so the step writes and reports nothing about their
+  mode, and a second run of the workflow changes nothing (the step renames
+  the registry and writes the mode in one run). An application that renamed
+  the registry by hand before the run adds the mode itself.
 - `initialImageIdIndex` of a registration moves to the options of every
   planar mount of the display set in the file, found as for `mode: 'volume'`
   (both keys go into one edit of a mount): 6.0 reads it from the mount, and a
@@ -139,6 +143,19 @@ viewport show a volume: ...`), and such a mount whose options are not a
   literal (a name, also as `{ displaySetId, options }`), on a viewport known
   by its name only, of a type of the application, or of several families
   (`PlanarViewport | VolumeViewport3D`).
+- Reported, review: such a registration on the beta registry by a name that
+  the file binds nowhere, as in a code block of a page whose import is in
+  another block (`utilities.genericViewportDisplaySetMetadataProvider.add(displaySetId, { imageIds, volumeId })`
+  and its mount in one block, with no import): each mount of the display set
+  in the file that does not say `mode`, has no literal 3D `renderMode` and is
+  not shown to be of another family, with the text
+  `setDisplaySets: the file does not bind utilities; if it is Cornerstone's and the viewport is planar, write mode: 'volume' in its options to show the volume, a volumeId no longer makes a planar viewport show one`,
+  or the registration when the file shows no mount of it. The ids match as
+  above, or as one name that the file declares nowhere. Nothing is written:
+  the file does not show that the registry and the viewport are
+  Cornerstone's. The docs author adds `mode: 'volume'` to the mount, or
+  `mode: 'stack'` where the stack is meant. A block on `displaySetRegistry`
+  is 6.0 code, as in a file.
 - Reported, manual: a descriptor of `add` that is not a literal (`kind` and
   `sourceDataId` may be in it), a registry in a name that the file writes,
   a `get` with other arguments or handed on as a metadata provider,
@@ -270,7 +287,10 @@ part of a view that another viewport can take is its framing.
   `getDisplaySetPresentation` or `resetDisplaySetPresentation` that a type of
   the application declares on top of a viewport type; the key `presentation`
   in the options of a `setDisplaySets` entry or of `addDisplaySet`
-  (Cornerstone never had such a mount option); a projection adapter of the
+  (Cornerstone never had such a mount option, so the key did nothing; the
+  report names the mount option `appearance` and the step does not move the
+  value there, which would draw a look the application never had); a
+  projection adapter of the
   application (its snapshots carry `framing`); `ViewPresentation`,
   `ViewPresentationSelector` and `viewportSupportsDisplaySetPresentation`
   imported from `@cornerstonejs/core/types` or `@cornerstonejs/core/utilities`,
@@ -365,7 +385,7 @@ private.
   this also runs in a file that imports no Cornerstone package, such as a
   fragment of a page), and where it is `'auto'` on a viewport that the file
   types as a 3D viewport. An option object that held nothing else goes with
-  it. A key that the display sets family keeps (see above) stays.
+  it.
 - Reported, manual: each use of `ActorRenderMode` and
   `Types.ActorRenderMode`, a member with the test of the render plan that
   stands for it (`VTK_IMAGE` is `slice 'frame'` and `draw 'gpu'`,

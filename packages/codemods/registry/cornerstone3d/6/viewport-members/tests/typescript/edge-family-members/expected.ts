@@ -27,3 +27,12 @@ export function families(renderingEngineId: string) {
 
   return [planar.getSliceIndex(), video.hasImageURI('uri')];
 }
+
+export function canvases(renderingEngineId: string) {
+  const engine = getRenderingEngine(renderingEngineId);
+  const video = engine.getViewport('VIDEO') as Types.IVideoViewport;
+  const slide = engine.getViewport('WSI') as Types.IWSIViewport;
+  const threeD = engine.getViewport('3D') as Types.IVolumeViewport3D;
+
+  return [video.getCanvas(), slide.getCanvas(), threeD.getCanvas()];
+}

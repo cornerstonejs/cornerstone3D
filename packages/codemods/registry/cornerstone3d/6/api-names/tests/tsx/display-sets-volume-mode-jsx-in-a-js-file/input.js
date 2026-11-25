@@ -1,9 +1,9 @@
-import { Enums, displaySetRegistry, getRenderingEngine } from '@cornerstonejs/core';
+import { Enums, utilities, getRenderingEngine } from '@cornerstonejs/core';
 
 export function Viewer({ imageIds }) {
   const viewport = getRenderingEngine('engine').getViewport('CT_AXIAL');
 
-  displaySetRegistry.add('ct', {
+  utilities.genericViewportDisplaySetMetadataProvider.add('ct', {
     imageIds,
     volumeId: 'cornerstoneStreamingImageVolume:CT',
   });
@@ -20,7 +20,7 @@ export async function Volume3D({ imageIds, testUtils, renderingEngine, viewportI
 
   const viewport = renderingEngine.getViewport(viewportId);
 
-  displaySetRegistry.add('ct3d', {
+  utilities.genericViewportDisplaySetMetadataProvider.add('ct3d', {
     imageIds,
     volumeId: 'cornerstoneStreamingImageVolume:CT',
   });

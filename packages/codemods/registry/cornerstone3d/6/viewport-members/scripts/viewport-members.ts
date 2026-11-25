@@ -178,10 +178,18 @@ const FAMILY_REPORTS: Partial<Record<string, Record<string, string>>> = {
     end: 'a video viewport has no end in 6.0: viewport.seek(timeSeconds), the start is 0',
     hasImageURI:
       'a video viewport has no hasImageURI in 6.0: viewport.isReferenceViewable({ referencedImageURI }, { withNavigation: true })',
+    getCanvas:
+      'a video viewport has no getCanvas in 6.0: viewport.canvas is its canvas, which holds no pixels of the frame, and viewport.getImageData() gives the pixels of the frame',
+  },
+  wsi: {
+    getCanvas:
+      'a whole slide viewport has no getCanvas in 6.0: viewport.canvas, the same canvas',
   },
   ecg: {
     getNumberOfSlices:
       'an ECG viewport has no getNumberOfSlices in 6.0: an ECG is one record and has no slices',
+    getCanvas:
+      'an ECG viewport has no getCanvas in 6.0: viewport.canvas, the same canvas, on which the waveform is drawn',
   },
 };
 

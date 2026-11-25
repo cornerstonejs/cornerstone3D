@@ -1,13 +1,13 @@
-import { RenderingEngine, displaySetRegistry } from '@cornerstonejs/core';
+import { RenderingEngine, utilities } from '@cornerstonejs/core';
 import type { PlanarViewport, VolumeViewport3D } from '@cornerstonejs/core';
 
 async function run(imageIds: string[]) {
   const renderingEngine = new RenderingEngine('engine');
   const volumeId = 'cornerstoneStreamingImageVolume:CT';
 
-  displaySetRegistry.add('stack', { imageIds });
-  displaySetRegistry.add('mpr', { imageIds, volumeId });
-  displaySetRegistry.add('pmap', { volumeId: 'pmap-volume' });
+  utilities.genericViewportDisplaySetMetadataProvider.add('stack', { imageIds });
+  utilities.genericViewportDisplaySetMetadataProvider.add('mpr', { imageIds, volumeId });
+  utilities.genericViewportDisplaySetMetadataProvider.add('pmap', { volumeId: 'pmap-volume' });
 
   const stack = renderingEngine.getViewport<PlanarViewport>('STACK');
 

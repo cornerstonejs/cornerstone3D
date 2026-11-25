@@ -1,4 +1,4 @@
-import { RenderingEngine, displaySetRegistry } from '@cornerstonejs/core';
+import { RenderingEngine, utilities } from '@cornerstonejs/core';
 import type { PlanarViewport, VolumeViewport3D } from '@cornerstonejs/core';
 import { mountElsewhere } from './mount';
 
@@ -20,18 +20,18 @@ async function run(
   appViewer: AppViewer,
   mountOptions: Record<string, unknown>
 ) {
-  displaySetRegistry.add('held', descriptor);
-  displaySetRegistry.add('spread', { ...descriptor, volumeId: 'v-spread' });
-  displaySetRegistry.add('hidden', { ...descriptor });
-  displaySetRegistry.add('elsewhere', {
+  utilities.genericViewportDisplaySetMetadataProvider.add('held', descriptor);
+  utilities.genericViewportDisplaySetMetadataProvider.add('spread', { ...descriptor, volumeId: 'v-spread' });
+  utilities.genericViewportDisplaySetMetadataProvider.add('hidden', { ...descriptor });
+  utilities.genericViewportDisplaySetMetadataProvider.add('elsewhere', {
     imageIds: ['c'],
     volumeId: 'cornerstoneStreamingImageVolume:ELSEWHERE',
   });
-  displaySetRegistry.add('byName', { imageIds: ['d'], volumeId: 'v-d' });
-  displaySetRegistry.add('appViewer', { imageIds: ['g'], volumeId: 'v-g' });
-  displaySetRegistry.add('either', { imageIds: ['h'], volumeId: 'v-h' });
-  displaySetRegistry.add('heldOptions', { imageIds: ['e'], volumeId: 'v-e' });
-  displaySetRegistry.add('spreadOptions', { imageIds: ['f'], volumeId: 'v-f' });
+  utilities.genericViewportDisplaySetMetadataProvider.add('byName', { imageIds: ['d'], volumeId: 'v-d' });
+  utilities.genericViewportDisplaySetMetadataProvider.add('appViewer', { imageIds: ['g'], volumeId: 'v-g' });
+  utilities.genericViewportDisplaySetMetadataProvider.add('either', { imageIds: ['h'], volumeId: 'v-h' });
+  utilities.genericViewportDisplaySetMetadataProvider.add('heldOptions', { imageIds: ['e'], volumeId: 'v-e' });
+  utilities.genericViewportDisplaySetMetadataProvider.add('spreadOptions', { imageIds: ['f'], volumeId: 'v-f' });
 
   await getViewport('HELD').setDisplaySets({ displaySetId: 'held' });
   await getViewport('SPREAD').addDisplaySet('spread', {

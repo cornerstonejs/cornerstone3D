@@ -20,7 +20,7 @@
       "cardinality": {
         "file": "input.ts",
         "line": "26",
-        "rule": "setDisplaySets: the key options.presentation: Cornerstone has no mount option presentation and never read it: set the look after the mount with viewport.setDisplaySetAppearance(displaySetId, appearance)"
+        "rule": "setDisplaySets: the key options.presentation: the key did nothing, Cornerstone never read a mount option presentation: an appearance from the first draw is the mount option appearance (options.appearance), and a value moved there changes what the viewport shows"
       },
       "count": 1
     },
@@ -28,7 +28,7 @@
       "cardinality": {
         "file": "input.ts",
         "line": "28",
-        "rule": "addDisplaySet: the key presentation: Cornerstone has no mount option presentation and never read it: set the look after the mount with viewport.setDisplaySetAppearance(displaySetId, appearance)"
+        "rule": "addDisplaySet: the key presentation: the key did nothing, Cornerstone never read a mount option presentation: an appearance from the first draw is the mount option appearance (options.appearance), and a value moved there changes what the viewport shows"
       },
       "count": 1
     },

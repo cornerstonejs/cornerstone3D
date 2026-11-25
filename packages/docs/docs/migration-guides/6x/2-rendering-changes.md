@@ -2289,9 +2289,14 @@ levels of 255.
 - **A video opens on its first frame,** or on `options.frameNumber`, and
   does not play to get there. In 5.x it could open on the second frame.
   Safari on iOS loads only the metadata of a video that has not played, so
-  there the viewport plays the video muted and pauses it at once to get the
-  frame (its element fires one `play` and one `pause` at mount); a video's own
-  `muted` comes back after.
+  when the network of a video stays stopped with no frame for 250 ms the
+  viewport plays the video muted and pauses it at once to get the frame (its
+  element fires one `play` and one `pause` at mount); a video's own `muted`
+  comes back after. The play can show a later frame before the pause, so the
+  viewport then seeks one frame on and back, and the mount ends on the frame
+  it asked for (two `seeked` events at mount). Chrome stops for a moment
+  after the metadata too and then loads the frame by itself: there the video
+  does not play.
 - **`getPan()` and `setPan()` are in canvas pixels on the screen,** `[0, 0]` at
   the fit, as on the other next viewports, and a drag of the pan tool moves
   the picture with the mouse at any rotation.

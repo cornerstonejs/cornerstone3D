@@ -1,0 +1,22 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.js",
+        "line": "5",
+        "rule": "utilities.genericViewportDisplaySetMetadataProvider: the file does not bind utilities; if it is Cornerstone's, its name in 6.0 is displaySetRegistry, a top-level export"
+      },
+      "count": 1
+    }
+  ],
+  "cornerstone3d-6-review": [
+    {
+      "cardinality": {
+        "file": "input.js",
+        "line": "6",
+        "rule": "setDisplaySets: the file does not bind utilities; if it is Cornerstone's and the viewport is planar, write mode: 'volume' in its options to show the volume, a volumeId no longer makes a planar viewport show one"
+      },
+      "count": 1
+    }
+  ]
+}
