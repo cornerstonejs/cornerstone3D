@@ -403,8 +403,8 @@ async function createImage(
         if (!isColorImage) {
           intercept = modalityLutModule.rescaleIntercept || 0;
           slope = modalityLutModule.rescaleSlope || 1;
-          windowCenter = voiLutModule.windowCenter?.[0];
-          windowWidth = voiLutModule.windowWidth?.[0];
+          windowCenter = utilities.asArrayFirst(voiLutModule.windowCenter);
+          windowWidth = utilities.asArrayFirst(voiLutModule.windowWidth);
           // VOI LUT Function (0028,1056) reaches us as a string from
           // dicom-parser, as a single element array from DICOMweb JSON, and
           // occasionally under the older `voiLutFunction` spelling. Indexing a

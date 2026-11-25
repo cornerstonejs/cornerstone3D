@@ -11,6 +11,7 @@ import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransf
 import { loadAndCacheImage } from '../../loaders/imageLoader';
 import * as metaData from '../../metaData';
 import * as windowLevel from '../../utilities/windowLevel';
+import { asArrayFirst } from '../../utilities/asArray';
 import { normalizeVOILUTFunction } from '../../utilities/voiLUTFunction';
 import normalizeVOILUTSequence from '../../utilities/normalizeVOILUTSequence';
 import createVOILUTSequenceTransferFunction, {
@@ -340,8 +341,8 @@ function getVOISourceFromImageId(imageId: string): VolumeVOISource | undefined {
   }
 
   const { windowWidth, windowCenter } = voiLutModule;
-  const width = Array.isArray(windowWidth) ? windowWidth[0] : windowWidth;
-  const center = Array.isArray(windowCenter) ? windowCenter[0] : windowCenter;
+  const width = asArrayFirst(windowWidth);
+  const center = asArrayFirst(windowCenter);
 
   // A center of 0 is a correct window. Prescaled PT volumes, parametric maps
   // and centered MR volumes use one. Thus make sure that the center exists,

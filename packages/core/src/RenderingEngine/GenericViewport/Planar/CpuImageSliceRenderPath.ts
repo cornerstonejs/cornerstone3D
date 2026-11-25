@@ -1,3 +1,4 @@
+import { fidelityIssuesOfImage } from '../../helpers/fidelityIndicator/fidelityIssues';
 import { vec3 } from 'gl-matrix';
 import { buildPlanarActorEntry } from './buildPlanarActorEntry';
 import CanvasActor from '../../CanvasActor';
@@ -121,6 +122,7 @@ export class CpuImageSliceRenderPath
       actorEntryUID: uuidv4(),
       excludeFromFidelity: isSegmentationOverlayData(payload, options),
       imageQualityStatus: imageQualityStatusOf(payload.image),
+      fidelityIssues: fidelityIssuesOfImage(payload.image),
       enabledElement,
       compatibilityActor,
       currentImageIdIndex: payload.initialImageIdIndex ?? 0,
@@ -784,6 +786,7 @@ async function updateRenderedImage(args: {
 
   enabledElement.image = image;
   rendering.imageQualityStatus = imageQualityStatusOf(image);
+  rendering.fidelityIssues = fidelityIssuesOfImage(image);
   enabledElement.viewport = {
     ...defaultViewport,
     hflip: previousViewport?.hflip ?? defaultViewport.hflip,

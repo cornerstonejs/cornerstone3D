@@ -1522,7 +1522,7 @@ class StackViewport extends Viewport {
     suppressEvents?: boolean
   ): void {
     // make sure the VOI LUT function is valid in the VOILUTFunctionType which is enum
-    const newVOILUTFunction = this._getValidVOILUTFunction(voiLUTFunction);
+    const newVOILUTFunction = getValidVOILUTFunction(voiLUTFunction);
 
     if (this.useCPURendering) {
       // The CPU path builds its 8 bit display LUT from viewport.voi, so
@@ -3796,12 +3796,6 @@ class StackViewport extends Viewport {
     );
   }
 
-  private _getValidVOILUTFunction(
-    voiLUTFunction: VOILUTFunctionType | unknown
-  ): VOILUTFunctionType {
-    return getValidVOILUTFunction(voiLUTFunction);
-  }
-
   /**
    * Sets the VOI LUT Function for a new frame of the stack. A function that the
    * application set (`voiLUTFunctionSetByUser`) stays active across the frames
@@ -3811,7 +3805,7 @@ class StackViewport extends Viewport {
    */
   private _setVOILUTFunctionForFrame(voiLUTFunction: unknown): void {
     if (!this.voiLUTFunctionSetByUser) {
-      this.VOILUTFunction = this._getValidVOILUTFunction(voiLUTFunction);
+      this.VOILUTFunction = getValidVOILUTFunction(voiLUTFunction);
     }
   }
 
