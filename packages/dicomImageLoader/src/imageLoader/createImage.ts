@@ -410,11 +410,13 @@ async function createImage(
           // occasionally under the older `voiLutFunction` spelling. Indexing a
           // string yields its first *character*, which is what turned "SIGMOID"
           // into "S" and made rendering throw "Invalid VOI LUT function"
-          // (cornerstone3D#2844), so normalize all the shapes here.
+          // (cornerstone3D#2844), so normalize all the shapes here. An unknown
+          // value stays as given, so that the fidelity check can report it.
+          const rawVOILUTFunction =
+            voiLutModule.voiLUTFunction ?? voiLutModule.voiLutFunction;
           voiLUTFunction =
-            utilities.normalizeVOILUTFunction(
-              voiLutModule.voiLUTFunction ?? voiLutModule.voiLutFunction
-            ) ?? undefined;
+            utilities.normalizeVOILUTFunction(rawVOILUTFunction) ??
+            utilities.asArrayFirst(rawVOILUTFunction);
         }
 
         const image: DICOMLoaderIImage = {
