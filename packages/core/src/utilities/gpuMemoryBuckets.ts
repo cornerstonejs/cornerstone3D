@@ -7,7 +7,10 @@
  * This module holds no state and imports no module, so the record and the
  * readers of the history can both use it.
  */
-import type { GpuMemoryFailure } from '../types/GpuMemory';
+import type {
+  GpuMemoryCalibration,
+  GpuMemoryFailure,
+} from '../types/GpuMemory';
 
 const GIGABYTE = 1024 ** 3;
 
@@ -43,6 +46,8 @@ export type GpuMemoryHistoryRecord = {
   largestTexture?: GpuMemorySizeCount;
   /** The last failure, for a memory dialog and the suggestion. */
   lastFailure?: GpuMemoryFailure;
+  /** The result of the last calibration run. */
+  calibration?: GpuMemoryCalibration;
 };
 
 /** The ways a GPU memory failure shows. */
@@ -176,6 +181,21 @@ function validFailure(value: unknown): GpuMemoryFailure | undefined {
   };
 }
 
+/** A stored calibration result, or `undefined` when it is not valid. */
+function validCalibration(value: unknown): GpuMemoryCalibration | undefined {
+  const entry = value as GpuMemoryCalibration;
+
+  if (!(entry?.largestSuccessBytes >= 0) || !Number.isFinite(entry.at)) {
+    return undefined;
+  }
+
+  return {
+    largestSuccessBytes: entry.largestSuccessBytes,
+    ...(entry.failedBytes > 0 && { failedBytes: entry.failedBytes }),
+    at: entry.at,
+  };
+}
+
 /**
  * A stored history with every invalid part removed, or `undefined` when none
  * of it is valid.
@@ -212,6 +232,7 @@ export function validGpuMemoryHistory(
   const largestLoad = validSizeCount(stored.largestLoad);
   const largestTexture = validSizeCount(stored.largestTexture);
   const lastFailure = validFailure(stored.lastFailure);
+  const calibration = validCalibration(stored.calibration);
 
   if (largestLoad) {
     history.largestLoad = largestLoad;
@@ -225,10 +246,15 @@ export function validGpuMemoryHistory(
     history.lastFailure = lastFailure;
   }
 
+  if (calibration) {
+    history.calibration = calibration;
+  }
+
   return Object.keys(history.buckets).length ||
     largestLoad ||
     largestTexture ||
-    lastFailure
+    lastFailure ||
+    calibration
     ? history
     : undefined;
 }

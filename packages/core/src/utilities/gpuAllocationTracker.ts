@@ -12,6 +12,7 @@ import {
 import { gpuSettingsForRender } from './gpuSettingsPresets';
 import { reportGpuMemoryFailure } from './gpuMemoryFailures';
 import isChromium from './isChromium';
+import { isGpuMemoryCalibrationActive } from './gpuMemoryCalibration';
 
 const log = coreLog.getLogger('utilities', 'gpuAllocationTracker');
 
@@ -135,6 +136,15 @@ function settle(): void {
  * exempt a loss of that allocation.
  */
 function onContextLost(event?: Event): void {
+  /** A calibration run fails on purpose, and can take the viewer with it. */
+  if (isGpuMemoryCalibrationActive()) {
+    abandonPendingAllocation();
+    lastLargeAllocation = null;
+    log.debug('a WebGL context was lost during a calibration run');
+
+    return;
+  }
+
   const allocation =
     pending ??
     (lastLargeAllocation && Date.now() - lastLargeAllocation.at < LOSS_WINDOW_MS

@@ -1,7 +1,10 @@
 import type { GpuMemoryStatus } from '../types/GpuMemory';
 import { getGpuMemoryLimit, startMemoryBytes } from './gpuSettingsPresets';
 import { getGpuMemoryTotal } from './gpuMemoryLedger';
-import { getRendererClass } from './renderingCapabilities';
+import {
+  GPU_MEMORY_MIN_BYTES,
+  getRendererClass,
+} from './renderingCapabilities';
 import { getWebGLBlock } from './webglAvailability';
 import { canRunGpuMemoryCalibration } from './gpuMemoryCalibration';
 import { getGpuMemoryHistory } from './gpuMemoryHistory';
@@ -17,8 +20,16 @@ import { getGpuMemoryHistory } from './gpuMemoryHistory';
 function getGpuMemoryStatus(): GpuMemoryStatus {
   const limit = getGpuMemoryLimit();
   const block = getWebGLBlock();
-  /** A failure at 128 MB or below means that no GPU size works. */
-  const noGpuSizeWorks = getGpuMemoryHistory().buckets[0].failures > 0;
+  /**
+   * A failure at 128 MB or below, or a calibration that failed at its first
+   * step at or below 128 MB, means that no GPU size works.
+   */
+  const history = getGpuMemoryHistory();
+  const { calibration } = history;
+  const noGpuSizeWorks =
+    history.buckets[0].failures > 0 ||
+    (calibration?.largestSuccessBytes === 0 &&
+      calibration.failedBytes <= GPU_MEMORY_MIN_BYTES);
 
   return {
     applies: limit !== undefined,

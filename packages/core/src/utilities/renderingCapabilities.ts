@@ -15,7 +15,10 @@ import {
   validGpuMemoryHistory,
 } from './gpuMemoryBuckets';
 import type { GpuMemoryHistoryRecord } from './gpuMemoryBuckets';
-import type { GpuMemoryFailure } from '../types/GpuMemory';
+import type {
+  GpuMemoryCalibration,
+  GpuMemoryFailure,
+} from '../types/GpuMemory';
 import Events from '../enums/Events';
 import eventTarget from '../eventTarget';
 import {
@@ -306,6 +309,12 @@ const pageId = uuidv4();
  * ends. See `setRecoveredCrashListener`.
  */
 let onRecoveredCrash: ((totalBytes: number) => void) | undefined;
+
+/**
+ * Runs after each detection that found WebGL, once the detection ends. See
+ * `setDetectionListener`.
+ */
+let onDetected: (() => void) | undefined;
 
 /**
  * The id of this tab. It stays in `sessionStorage` across the loads of the
@@ -976,6 +985,10 @@ export function detectRenderingCapabilities({
     }
   }
 
+  if (onDetected) {
+    setTimeout(onDetected);
+  }
+
   return {
     ...contextInfo,
     ...formats,
@@ -1196,6 +1209,35 @@ export function setRecoveredCrashListener(
   listener: ((totalBytes: number) => void) | undefined
 ): void {
   onRecoveredCrash = listener;
+}
+
+/**
+ * Sets the function that runs after each detection that found WebGL, once
+ * the detection ends, for work that reads the record at the start of a page.
+ * The calibration run sets it.
+ */
+export function setDetectionListener(listener: (() => void) | undefined): void {
+  onDetected = listener;
+}
+
+/**
+ * The id of this tab, kept across its loads, and the id of this page load.
+ * A record that a page leaves in the store states them, so the next page of
+ * the same tab knows that the earlier page stopped.
+ */
+export function getPageIdentity(): { tabId: string; pageId: string } {
+  return { tabId: getTabId(), pageId };
+}
+
+/**
+ * Stores the result of a calibration run in the history of the record. The
+ * calibration run calls this.
+ */
+export function storeGpuMemoryCalibration(result: GpuMemoryCalibration): void {
+  getRenderingCapabilities();
+  updateRecord((target) => {
+    (target.history ??= emptyGpuMemoryHistory()).calibration = { ...result };
+  });
 }
 
 /**

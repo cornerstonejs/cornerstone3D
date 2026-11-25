@@ -210,12 +210,12 @@ describe('the GPU memory history', () => {
 });
 
 describe('the calibration run and the WebGL wait', () => {
-  it('offers no calibration in this version, and a run rejects', async () => {
+  it('offers no calibration before a failure, and a run rejects', async () => {
     mockWebGL();
 
     expect(canRunGpuMemoryCalibration()).toBe(false);
     await expect(runGpuMemoryCalibration()).rejects.toThrow(
-      'a calibration cannot run now'
+      'only after a GPU memory failure'
     );
   });
 

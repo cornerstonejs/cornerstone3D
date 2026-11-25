@@ -254,6 +254,25 @@ function startWebGLBlock(until: number, reason: WebGLBlockReason): void {
   announce({ until: end, reason }, 'self');
 }
 
+/**
+ * Ends the wait now, in every tab, when it is a wait for this reason. A wait
+ * for another reason, for example the block of Chromium, stays. A calibration
+ * run that reached no failure calls this.
+ */
+function endWebGLBlock(reason: WebGLBlockReason): void {
+  if (readStoredBlock()?.reason !== reason) {
+    return;
+  }
+
+  try {
+    getCapabilityStorage().removeItem(WEBGL_BLOCK_KEY);
+  } catch {
+    /** The wait then ends by its time. */
+  }
+
+  announce(undefined, 'self');
+}
+
 /** The failure times of the last two minutes, with this one added. */
 function addFailureTime(now: number): number[] {
   const storage = getCapabilityStorage();
@@ -383,6 +402,7 @@ export {
   isWebGLBlocked,
   whenWebGLAvailable,
   startWebGLBlock,
+  endWebGLBlock,
   noteGpuMemoryFailure,
   noteContextCreationRefused,
   canCreateContext,

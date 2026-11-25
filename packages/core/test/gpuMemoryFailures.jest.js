@@ -134,7 +134,7 @@ describe('GPU_MEMORY_FAILURE after a context loss', () => {
       failuresAtOrAboveFailed: 1,
       oneOff: false,
       suggestedBytes: 128 * MEGABYTE,
-      canCalibrate: false,
+      canCalibrate: true,
       mustReload: true,
       noGpuSizeWorks: false,
       renderingEngineId: 'engine',

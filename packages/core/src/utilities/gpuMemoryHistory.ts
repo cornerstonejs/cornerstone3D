@@ -40,6 +40,7 @@ function getGpuMemoryHistory(): GpuMemoryHistory {
     ...(largestLoad && { largestLoad }),
     ...(largestTexture && { largestTexture }),
     ...(stored?.lastFailure && { lastFailure: { ...stored.lastFailure } }),
+    ...(stored?.calibration && { calibration: { ...stored.calibration } }),
   };
 }
 
