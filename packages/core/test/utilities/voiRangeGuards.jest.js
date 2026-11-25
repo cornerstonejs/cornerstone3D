@@ -111,6 +111,33 @@ describe('getVOIRangeOverlappingPixelRange', function () {
     ).toEqual({ lower: 0, upper: 1000 });
   });
 
+  it('Should fall back to a widened pixel range for a constant slice', () => {
+    // All-zero slice with a window entirely below it: 0 must sit at lower
+    // (black) rather than above upper (white).
+    expect(
+      getVOIRangeOverlappingPixelRange({ lower: -1.5, upper: -0.5 }, 0, 0)
+    ).toEqual({ lower: 0, upper: VOI_RANGE_MIN_EPSILON });
+    expect(
+      getVOIRangeOverlappingPixelRange({ lower: 0.5, upper: 1.5 }, 0, 0)
+    ).toEqual({ lower: 0, upper: VOI_RANGE_MIN_EPSILON });
+    expect(
+      getVOIRangeOverlappingPixelRange({ lower: 50, upper: 50 }, 0, 0)
+    ).toEqual({ lower: 0, upper: VOI_RANGE_MIN_EPSILON });
+    expect(
+      getVOIRangeOverlappingPixelRange({ lower: 10, upper: 20 }, 500, 500)
+    ).toEqual({ lower: 500, upper: 500 + getVOIRangeEpsilon(500) });
+  });
+
+  it('Should keep a window that overlaps a constant slice', () => {
+    const voiRange = { lower: -100, upper: 300 };
+    expect(getVOIRangeOverlappingPixelRange(voiRange, 0, 0)).toBe(voiRange);
+  });
+
+  it('Should keep the window when the pixel bounds are inverted', () => {
+    const voiRange = { lower: 2000, upper: 3000 };
+    expect(getVOIRangeOverlappingPixelRange(voiRange, 10, 5)).toBe(voiRange);
+  });
+
   it('Should keep the window when the lower pixel bound is undefined', () => {
     const voiRange = { lower: 2000, upper: 3000 };
     expect(getVOIRangeOverlappingPixelRange(voiRange, undefined, 5)).toBe(

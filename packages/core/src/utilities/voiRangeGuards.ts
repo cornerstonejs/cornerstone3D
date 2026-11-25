@@ -42,6 +42,8 @@ export function ensureNonZeroVOIRange<T extends VOIRange>(voiRange: T): T {
  * with a near-zero RescaleSlope puts every pixel (max ~3e-5) far below the
  * window and renders the image black. Falls back to the image's own range
  * when the window is zero-width or doesn't overlap the pixel values.
+ * For a constant slice (min === max, e.g. all zeros) the fallback is widened
+ * so the pixels sit at its lower bound and render black.
  */
 export function getVOIRangeOverlappingPixelRange(
   voiRange: VOIRange | undefined,
@@ -52,12 +54,15 @@ export function getVOIRangeOverlappingPixelRange(
     voiRange &&
     Number.isFinite(minPixelValue) &&
     Number.isFinite(maxPixelValue) &&
-    maxPixelValue > minPixelValue &&
+    maxPixelValue >= minPixelValue &&
     (voiRange.upper <= voiRange.lower ||
       voiRange.upper <= minPixelValue ||
       voiRange.lower >= maxPixelValue)
   ) {
-    return { lower: minPixelValue, upper: maxPixelValue };
+    return ensureNonZeroVOIRange({
+      lower: minPixelValue,
+      upper: maxPixelValue,
+    });
   }
 
   return voiRange;

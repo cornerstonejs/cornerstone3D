@@ -2766,22 +2766,8 @@ class StackViewport extends Viewport {
     if (this.voiRange && this.voiUpdatedWithSetProperties) {
       return this.voiRange;
     }
-    const { windowCenter, windowWidth, voiLUTFunction } = image;
 
-    let voiRange = getVOIRangeFromWindowLevel(
-      windowWidth,
-      windowCenter,
-      voiLUTFunction
-    );
-
-    // The header W/L can be meaningless for the rescaled data (e.g. a
-    // near-zero RescaleSlope), so fall back to the image's own pixel range
-    // when the window is zero-width or doesn't overlap the pixel values.
-    voiRange = getVOIRangeOverlappingPixelRange(
-      voiRange,
-      image.minPixelValue,
-      image.maxPixelValue
-    );
+    let voiRange = this._getVOIRangeForCurrentImage(image);
 
     // Get the range for the PT since if it is prescaled
     // we set a default range of 0-5
@@ -3363,13 +3349,22 @@ class StackViewport extends Viewport {
     return renderingEngine.offscreenMultiRenderWindow?.getRenderer(this.id);
   }
 
-  private _getVOIRangeForCurrentImage() {
-    const { windowCenter, windowWidth, voiLUTFunction } = this.csImage;
+  private _getVOIRangeForCurrentImage(image: IImage = this.csImage) {
+    const { windowCenter, windowWidth, voiLUTFunction } = image;
 
-    return getVOIRangeFromWindowLevel(
+    const voiRange = getVOIRangeFromWindowLevel(
       windowWidth,
       windowCenter,
       voiLUTFunction
+    );
+
+    // The header W/L can be meaningless for the rescaled data (e.g. a
+    // near-zero RescaleSlope), so fall back to the image's own pixel range
+    // when the window is zero-width or doesn't overlap the pixel values.
+    return getVOIRangeOverlappingPixelRange(
+      voiRange,
+      image.minPixelValue,
+      image.maxPixelValue
     );
   }
 
