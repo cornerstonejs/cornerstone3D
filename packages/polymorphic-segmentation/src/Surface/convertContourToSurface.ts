@@ -22,7 +22,10 @@ const triggerWorkerProgress = (eventTarget, progress, id) => {
 };
 
 /**
- * Converts a contour representation to a surface representation.
+ * Converts a contour representation to a surface representation. The closed
+ * contours of at least 3 points of the segment are converted; an open
+ * contour, a point or a line encloses nothing. A segment without such a
+ * contour gives no surface.
  *
  * @param contourRepresentationData - The contour segmentation data.
  * @param segmentIndex - The index of the segment to convert.
@@ -43,12 +46,21 @@ export async function convertContourToSurface(
   }
 
   for (const annotationUID of annotationUIDs) {
-    const annotation = getAnnotation(annotationUID);
-    const { polyline } = (
-      annotation as ToolsTypes.ContourSegmentationAnnotation
-    ).data.contour;
-    numPointsArray.push(polyline.length);
-    polyline.forEach((polyline) => polylines.push(...polyline));
+    const annotation = getAnnotation(
+      annotationUID
+    ) as ToolsTypes.ContourSegmentationAnnotation;
+    const contour = annotation?.data.contour;
+
+    if (!contour || contour.closed === false || contour.polyline.length < 3) {
+      continue;
+    }
+
+    numPointsArray.push(contour.polyline.length);
+    contour.polyline.forEach((point) => polylines.push(...point));
+  }
+
+  if (!numPointsArray.length) {
+    return;
   }
 
   triggerWorkerProgress(eventTarget, 0, segmentIndex);

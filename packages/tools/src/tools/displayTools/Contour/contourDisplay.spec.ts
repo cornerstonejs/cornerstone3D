@@ -1,36 +1,17 @@
 import contourDisplay from './contourDisplay';
-import { getPolySeg } from '../../../config';
+import { handleContourSegmentation } from './contourHandler/handleContourSegmentation';
+import { removeContourCuts, updateContourCuts } from './contourCuts';
 
-const geometries = {
-  contourGeometry: {
-    data: {
-      contours: [
-        {
-          points: [
-            [0, 0, 20],
-            [0, 0, 10],
-            [0, 0, 0],
-          ],
-        },
-      ],
-    },
-  },
-  'firstSegmentation-surface-1': {
-    data: { points: [1, 1, 1], polys: [3, 0, 0, 0], segmentIndex: 1 },
-  },
-  'firstSegmentation-surface-2': {
-    data: { points: [2, 2, 2], polys: [3, 0, 0, 0], segmentIndex: 2 },
-  },
+const mockContourData = {
+  geometryIds: ['contourGeometry'],
+  annotationUIDsMap: new Map(),
 };
 
 jest.mock('@cornerstonejs/core', () => ({
-  cache: {
-    getGeometry: (geometryId) => geometries[geometryId],
-  },
-  getEnabledElementByViewportId: jest.fn(),
-  Enums: { ViewportStatus: { RENDERED: 'rendered' } },
+  getEnabledElementByViewportId: jest.fn(() => ({
+    viewport: { render: jest.fn() },
+  })),
   utilities: {
-    getRandomSampleFromArray: (array) => array,
     logger: {
       toolsLog: { getLogger: () => ({ debug: jest.fn(), warn: jest.fn() }) },
     },
@@ -39,82 +20,82 @@ jest.mock('@cornerstonejs/core', () => ({
 
 jest.mock('../../../stateManagement/segmentation/getSegmentation', () => ({
   getSegmentation: () => ({
-    representationData: {
-      Contour: {
-        geometryIds: ['contourGeometry'],
-        annotationUIDsMap: new Map(),
-      },
-    },
+    representationData: { Contour: mockContourData },
   }),
 }));
 
-jest.mock('../../../config', () => {
-  const polySeg = {
-    canComputeRequestedRepresentation: jest.fn(() => true),
-    computeContourData: jest.fn(),
-    computeSurfaceData: jest.fn(async () => ({
-      geometryIds: new Map([
-        [1, 'firstSegmentation-surface-1'],
-        [2, 'firstSegmentation-surface-2'],
-      ]),
-    })),
-    clipAndCacheSurfacesForViewport: jest.fn(async () => new Map()),
-    extractContourData: jest.fn(() => new Map()),
-    createAndAddContourSegmentationsFromClippedSurfaces: jest.fn(
-      () => new Map()
-    ),
-  };
-
-  return { getPolySeg: () => polySeg };
-});
+jest.mock('../../../config', () => ({ getPolySeg: () => null }));
 
 jest.mock('./contourHandler/handleContourSegmentation', () => ({
   handleContourSegmentation: jest.fn(),
 }));
 
-jest.mock('./removeContourFromElement', () => jest.fn());
+jest.mock('./contourCuts', () => ({
+  updateContourCuts: jest.fn(() => Promise.resolve()),
+  removeContourCuts: jest.fn(),
+}));
 
-jest.mock('../../../utilities/getViewportICamera', () =>
-  jest.fn(() => ({ viewPlaneNormal: [0, 0, 1] }))
-);
+jest.mock('./removeContourFromElement', () => jest.fn());
 
 jest.mock(
   '../../../utilities/segmentation/computeAndAddRepresentation',
-  () => ({
-    computeAndAddRepresentation: jest.fn(),
-  })
+  () => ({ computeAndAddRepresentation: jest.fn() })
 );
 
-jest.mock('../../../utilities/segmentation/getUniqueSegmentIndices', () => ({
-  getUniqueSegmentIndices: jest.fn(() => [1, 2]),
-}));
-
-jest.mock('../../../stateManagement/annotation/annotationState', () => ({
-  getAnnotation: jest.fn(),
-}));
-
 describe('contourDisplay', () => {
-  it('names each surface by its geometry id when it cuts the surfaces of a segmentation for a viewport of another orientation', async () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('draws the contour sets first and then asks for the cuts of the plane of the viewport, whatever the status of the viewport', async () => {
+    const order = [];
     const viewport = {
       id: 'contourDisplayViewport',
-      viewportStatus: 'rendered',
+      viewportStatus: 'needsRender',
     };
+
+    (handleContourSegmentation as jest.Mock).mockImplementation(() =>
+      order.push('contour sets')
+    );
+    (updateContourCuts as jest.Mock).mockImplementation(() => {
+      order.push('cuts');
+      return Promise.resolve();
+    });
 
     await contourDisplay.render(
       viewport as never,
-      {
-        segmentationId: 'firstSegmentation',
-      } as never
+      { segmentationId: 'firstSegmentation' } as never
     );
 
-    const clip = getPolySeg().clipAndCacheSurfacesForViewport as jest.Mock;
+    expect(order).toEqual(['contour sets', 'cuts']);
+    expect(updateContourCuts).toHaveBeenCalledWith(
+      viewport,
+      'firstSegmentation'
+    );
+  });
 
-    expect(clip).toHaveBeenCalledTimes(1);
-    expect(
-      clip.mock.calls[0][0].map(({ id, segmentIndex }) => [id, segmentIndex])
-    ).toEqual([
-      ['firstSegmentation-surface-1', 1],
-      ['firstSegmentation-surface-2', 2],
-    ]);
+  it('does not wait for the cuts to finish its render', async () => {
+    (updateContourCuts as jest.Mock).mockImplementation(
+      () => new Promise(() => undefined)
+    );
+
+    await expect(
+      contourDisplay.render(
+        { id: 'contourDisplayViewport' } as never,
+        { segmentationId: 'firstSegmentation' } as never
+      )
+    ).resolves.toBeUndefined();
+  });
+
+  it('takes the cuts of the segmentation off the viewport when the representation goes', () => {
+    contourDisplay.removeRepresentation(
+      'contourDisplayViewport',
+      'firstSegmentation'
+    );
+
+    expect(removeContourCuts).toHaveBeenCalledWith(
+      'contourDisplayViewport',
+      'firstSegmentation'
+    );
   });
 });

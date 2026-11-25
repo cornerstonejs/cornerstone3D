@@ -27,6 +27,7 @@ import getSynchronizersForViewport from './SynchronizerManager/getSynchronizersF
 import getToolGroupForViewport from './ToolGroupManager/getToolGroupForViewport';
 import { annotationRenderingEngine } from '../stateManagement/annotation/AnnotationRenderingEngine';
 import { removeSurfaceSlicePropsOfDisabledViewport } from '../tools/displayTools/Surface/surfaceSliceProps';
+import { removeContourCutsOfViewport } from '../tools/displayTools/Contour/contourCuts';
 import {
   stackPrefetch,
   stackContextPrefetch,
@@ -71,6 +72,7 @@ function removeEnabledElement(
   _removeViewportFromSynchronizers(element);
   _removeViewportFromToolGroup(element);
   _removeSurfaceSliceProps(element);
+  removeContourCutsOfViewport(viewportId);
   _disableStackPrefetch(element);
 
   // _removeAllToolsForElement(canvas)

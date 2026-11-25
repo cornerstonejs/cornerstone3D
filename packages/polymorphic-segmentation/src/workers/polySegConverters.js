@@ -3,10 +3,6 @@ import { utilities } from '@cornerstonejs/core';
 import { utilities as ToolsUtilities } from '@cornerstonejs/tools';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
-import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
-import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
-import vtkContourLoopExtraction from '@kitware/vtk.js/Filters/General/ContourLoopExtraction';
-import vtkCutter from '@kitware/vtk.js/Filters/Core/Cutter';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
 const cs3dLogger = cornerstoneUtilities.logger.polySegLog.getLogger(
@@ -19,7 +15,6 @@ const {
   },
   geometricSurfaceUtils: { checkStandardBasis, rotatePoints },
   boundingBox: { getBoundingBoxAroundShapeWorld },
-  planar: { isPlaneIntersectingAABB },
 } = ToolsUtilities;
 
 async function peerImport(moduleId) {
@@ -570,16 +565,22 @@ const polySegConverters = {
     return aabbs;
   },
   /**
-   * Cuts the surfaces into planes.
+   * Cuts the surfaces with the first plane of each slice. The planes of one
+   * normal are cut in one pass over the triangles of each surface
+   * (`cutSurfaceWithParallelPlanes`), so the cost grows with the number of
+   * triangles and not with the number of planes times the triangles.
    *
    * The callbacks are proxies, each with its own message channel, so the
    * result of the task can reach the caller before the last cache updates.
    * The task therefore resolves only when every cache update has run, and
-   * the caller then finds the contours of every slice in its cache.
+   * the caller then finds the contours of every slice in its cache. A slice
+   * that cuts no surface gets no update.
    *
    * @param {Object} options - The options object.
    * @param {Array} options.planesInfo - The information about the planes.
    * @param {Array} options.surfacesInfo - The information about the surfaces.
+   * @param {Map} options.surfacesAABB - The bounding box of each surface by
+   * its id; a surface whose box no plane crosses is not read.
    * @param {Function} progressCallback - The callback function for progress updates.
    * @param {Function} updateCacheCallback - The callback function for updating the cache.
    */
@@ -588,121 +589,380 @@ const polySegConverters = {
     progressCallback,
     updateCacheCallback
   ) {
-    const numberOfPlanes = planesInfo.length;
-    const cutter = vtkCutter.newInstance();
-    const cacheUpdates = [];
+    const resultsBySlice = new Map();
+    const groups = groupPlanesByNormal(planesInfo);
+    const steps = groups.length * surfacesInfo.length;
+    let step = 0;
+    let reported = 0;
 
-    const plane1 = vtkPlane.newInstance();
+    for (const { normal, offsets, sliceIndices } of groups) {
+      for (const { points, polys, id, segmentIndex } of surfacesInfo) {
+        step++;
 
-    cutter.setCutFunction(plane1);
-
-    const surfacePolyData = vtkPolyData.newInstance();
-
-    try {
-      for (const [index, planeInfo] of planesInfo.entries()) {
-        const { sliceIndex, planes } = planeInfo;
-
-        const polyDataResults = new Map();
-        for (const polyDataInfo of surfacesInfo) {
-          const { points, polys, id, segmentIndex } = polyDataInfo;
-
-          const aabb3 =
+        try {
+          const aabb =
             surfacesAABB.get(id) || getAABB(points, { numDimensions: 3 });
 
-          if (!surfacesAABB.has(id)) {
-            surfacesAABB.set(id, aabb3);
-          }
-
-          const { minX, minY, minZ, maxX, maxY, maxZ } = aabb3;
-
-          const { origin, normal } = planes[0];
-
-          // Check if the plane intersects the AABB
-          if (
-            !isPlaneIntersectingAABB(
-              origin,
-              normal,
-              minX,
-              minY,
-              minZ,
-              maxX,
-              maxY,
-              maxZ
-            )
-          ) {
+          if (!isAnyOffsetInBox(normal, offsets, aabb)) {
             continue;
           }
 
-          // Set up the initial polydata
-          surfacePolyData.getPoints().setData(points, 3);
-          surfacePolyData.getPolys().setData(polys);
-          surfacePolyData.modified();
+          cutSurfaceWithParallelPlanes(points, polys, normal, offsets).forEach(
+            (result, planeIndex) => {
+              const sliceIndex = sliceIndices[planeIndex];
 
-          cutter.setInputData(surfacePolyData);
-          plane1.setOrigin(origin);
-          plane1.setNormal(normal);
-
-          try {
-            cutter.update();
-          } catch (e) {
-            cs3dLogger.warn('Error during clipping', e);
-            continue;
-          }
-
-          const polyData = cutter.getOutputData();
-
-          // Additional validation of cutter output
-          if (
-            !polyData ||
-            !polyData.getPoints() ||
-            polyData.getPoints().getNumberOfPoints() === 0
-          ) {
-            continue;
-          }
-
-          const cutterOutput = polyData;
-          cutterOutput.buildLinks();
-          const loopExtraction = vtkContourLoopExtraction.newInstance();
-          loopExtraction.setInputData(cutterOutput);
-
-          try {
-            loopExtraction.update();
-            const loopOutput = loopExtraction.getOutputData();
-
-            if (
-              loopOutput &&
-              loopOutput.getPoints() &&
-              loopOutput.getLines() &&
-              loopOutput.getPoints().getNumberOfPoints() > 0 &&
-              loopOutput.getLines().getNumberOfCells() > 0
-            ) {
-              polyDataResults.set(segmentIndex, {
-                points: loopOutput.getPoints().getData(),
-                lines: loopOutput.getLines().getData(),
-                numberOfCells: loopOutput.getLines().getNumberOfCells(),
-                segmentIndex,
-              });
+              if (!resultsBySlice.has(sliceIndex)) {
+                resultsBySlice.set(sliceIndex, new Map());
+              }
+              resultsBySlice
+                .get(sliceIndex)
+                .set(segmentIndex, { ...result, segmentIndex });
             }
-          } catch (loopError) {
-            cs3dLogger.warn('Error during loop extraction:', loopError);
-            continue;
-          }
+          );
+        } catch (e) {
+          cs3dLogger.warn('Error during clipping', e);
         }
 
-        progressCallback({ progress: (index + 1) / numberOfPlanes });
-
-        cacheUpdates.push(updateCacheCallback({ sliceIndex, polyDataResults }));
+        if (step / steps - reported >= 0.05 || step === steps) {
+          reported = step / steps;
+          progressCallback({ progress: reported });
+        }
       }
-    } catch (e) {
-      cs3dLogger.warn('Error during processing', e);
-    } finally {
-      // Cleanup on completion
-      surfacesInfo = null;
-      plane1.delete();
     }
+
+    const cacheUpdates = [];
+    resultsBySlice.forEach((polyDataResults, sliceIndex) => {
+      cacheUpdates.push(updateCacheCallback({ sliceIndex, polyDataResults }));
+    });
 
     await Promise.allSettled(cacheUpdates);
   },
 };
+
+/**
+ * The first plane of each slice, in groups of one normal: the offset of each
+ * plane along the normal, in ascending order, and the slice of each offset.
+ * The slices of a volume share one normal; the images of a stack may not.
+ *
+ * @param {Array} planesInfo - The planes of each slice.
+ * @returns {Array} The groups `{ normal, offsets, sliceIndices }`.
+ */
+function groupPlanesByNormal(planesInfo) {
+  const groups = new Map();
+
+  for (const { sliceIndex, planes } of planesInfo) {
+    const { origin, normal } = planes[0];
+    const length = Math.hypot(normal[0], normal[1], normal[2]);
+    const unit = [normal[0] / length, normal[1] / length, normal[2] / length];
+    const key = unit.map((value) => Math.round(value * 1e6)).join(',');
+
+    if (!groups.has(key)) {
+      groups.set(key, { normal: unit, planes: [] });
+    }
+    groups.get(key).planes.push({
+      sliceIndex,
+      offset: unit[0] * origin[0] + unit[1] * origin[1] + unit[2] * origin[2],
+    });
+  }
+
+  return [...groups.values()].map(({ normal, planes }) => {
+    planes.sort((a, b) => a.offset - b.offset);
+
+    return {
+      normal,
+      offsets: Float64Array.from(planes, ({ offset }) => offset),
+      sliceIndices: planes.map(({ sliceIndex }) => sliceIndex),
+    };
+  });
+}
+
+/**
+ * Whether a plane of the offsets crosses a box, from the projection of its
+ * corners on the normal.
+ */
+function isAnyOffsetInBox(
+  normal,
+  offsets,
+  { minX, minY, minZ, maxX, maxY, maxZ }
+) {
+  const center =
+    normal[0] * (minX + maxX) * 0.5 +
+    normal[1] * (minY + maxY) * 0.5 +
+    normal[2] * (minZ + maxZ) * 0.5;
+  const radius =
+    Math.abs(normal[0]) * (maxX - minX) * 0.5 +
+    Math.abs(normal[1]) * (maxY - minY) * 0.5 +
+    Math.abs(normal[2]) * (maxZ - minZ) * 0.5;
+  const first = firstOffsetAbove(offsets, center - radius - 1e-9);
+
+  return first < offsets.length && offsets[first] <= center + radius;
+}
+
+/** The index of the first offset above a value, or the number of offsets. */
+function firstOffsetAbove(offsets, value) {
+  let low = 0;
+  let high = offsets.length;
+
+  while (low < high) {
+    const middle = (low + high) >> 1;
+
+    if (offsets[middle] > value) {
+      high = middle;
+    } else {
+      low = middle + 1;
+    }
+  }
+
+  return low;
+}
+
+/**
+ * Cuts a closed surface with parallel planes in one pass over its polygons.
+ *
+ * The points of the surface at one position count as one point, as a
+ * surface may repeat a point under another id (where its strips meet), so
+ * the cut of each triangle meets the cut of the next one at the same edge.
+ * Each polygon is split into a fan of triangles. A triangle meets the planes
+ * whose offset lies above its lowest vertex and at or below its highest one;
+ * a vertex at the offset of a plane counts as above it, so each crossing lies
+ * on two edges and adjacent triangles meet at the same edge points. On each
+ * plane the segments are chained by their edges into polylines, in the form
+ * of `vtkContourLoopExtraction`: a cell array `[count, ids...]` where a
+ * closed loop repeats its first point id.
+ *
+ * @param {number[]} points - The points of the surface, x y z after one
+ * another.
+ * @param {number[]} polys - The polygons of the surface as a cell array.
+ * @param {number[]} normal - The unit normal of the planes.
+ * @param {Float64Array} offsets - The offsets of the planes along the normal,
+ * in ascending order.
+ * @returns {Map} The contours on each plane that the surface crosses, by the
+ * index of the plane: `{ points, lines, numberOfCells }`.
+ */
+function cutSurfaceWithParallelPlanes(points, polys, normal, offsets) {
+  const numberOfPoints = points.length / 3;
+  const distances = new Float64Array(numberOfPoints);
+
+  for (let i = 0; i < numberOfPoints; i++) {
+    distances[i] =
+      normal[0] * points[3 * i] +
+      normal[1] * points[3 * i + 1] +
+      normal[2] * points[3 * i + 2];
+  }
+
+  const pointIds = getPointIdsByPosition(points);
+  const edgeKey = (u, v) =>
+    u < v ? u * numberOfPoints + v : v * numberOfPoints + u;
+  const segmentsByPlane = new Map();
+
+  for (let cell = 0; cell < polys.length; cell += polys[cell] + 1) {
+    const count = polys[cell];
+    const a = pointIds[polys[cell + 1]];
+
+    for (let corner = 2; corner < count; corner++) {
+      const b = pointIds[polys[cell + corner]];
+      const c = pointIds[polys[cell + corner + 1]];
+
+      if (a === b || b === c || a === c) {
+        continue;
+      }
+
+      const da = distances[a];
+      const db = distances[b];
+      const dc = distances[c];
+      const high = Math.max(da, db, dc);
+
+      for (
+        let plane = firstOffsetAbove(offsets, Math.min(da, db, dc));
+        plane < offsets.length && offsets[plane] <= high;
+        plane++
+      ) {
+        const offset = offsets[plane];
+        const belowA = da < offset;
+        const belowB = db < offset;
+        const belowC = dc < offset;
+        let segments = segmentsByPlane.get(plane);
+
+        if (!segments) {
+          segments = [];
+          segmentsByPlane.set(plane, segments);
+        }
+
+        if (belowA !== belowB) {
+          segments.push(
+            edgeKey(a, b),
+            belowB !== belowC ? edgeKey(b, c) : edgeKey(c, a)
+          );
+        } else {
+          segments.push(edgeKey(b, c), edgeKey(c, a));
+        }
+      }
+    }
+  }
+
+  const contours = new Map();
+  segmentsByPlane.forEach((segments, plane) => {
+    contours.set(
+      plane,
+      chainSegments(segments, points, distances, offsets[plane], numberOfPoints)
+    );
+  });
+
+  return contours;
+}
+
+/**
+ * The id of each point of a surface as the first point at its position (to
+ * float precision), from a hash table of the bits of its coordinates.
+ */
+function getPointIdsByPosition(points) {
+  const numberOfPoints = points.length / 3;
+  const pointIds = new Int32Array(numberOfPoints);
+  const bits = new Uint32Array(Float32Array.from(points).buffer);
+  let size = 1;
+
+  while (size < numberOfPoints * 2) {
+    size *= 2;
+  }
+
+  const table = new Int32Array(size).fill(-1);
+  const mask = size - 1;
+
+  for (let i = 0; i < numberOfPoints; i++) {
+    const x = bits[3 * i];
+    const y = bits[3 * i + 1];
+    const z = bits[3 * i + 2];
+    let slot =
+      (Math.imul(x, 0x9e3779b1) ^
+        Math.imul(y, 0x85ebca77) ^
+        Math.imul(z, 0xc2b2ae3d)) &
+      mask;
+
+    while (true) {
+      const id = table[slot];
+
+      if (id === -1) {
+        table[slot] = i;
+        pointIds[i] = i;
+        break;
+      }
+
+      if (
+        bits[3 * id] === x &&
+        bits[3 * id + 1] === y &&
+        bits[3 * id + 2] === z
+      ) {
+        pointIds[i] = id;
+        break;
+      }
+
+      slot = (slot + 1) & mask;
+    }
+  }
+
+  return pointIds;
+}
+
+/**
+ * Chains the segments of one plane into polylines. Each segment is given by
+ * the keys of its two crossed edges, one after the other in `segments`; the
+ * key of an edge is `u * numberOfPoints + v` for its points u < v. Each
+ * crossed edge gives one point, at the offset of the plane along it.
+ */
+function chainSegments(segments, points, distances, offset, numberOfPoints) {
+  const numberOfSegments = segments.length / 2;
+  const firstSegmentOf = new Map();
+  const secondSegmentOf = new Map();
+
+  for (let index = 0; index < segments.length; index++) {
+    const segment = index >> 1;
+    const key = segments[index];
+
+    if (!firstSegmentOf.has(key)) {
+      firstSegmentOf.set(key, segment);
+    } else if (!secondSegmentOf.has(key)) {
+      secondSegmentOf.set(key, segment);
+    }
+  }
+
+  const pointIdByKey = new Map();
+  const outputPoints = [];
+  const pointIdOf = (key) => {
+    let pointId = pointIdByKey.get(key);
+
+    if (pointId === undefined) {
+      const u = Math.floor(key / numberOfPoints);
+      const v = key - u * numberOfPoints;
+      const t = (offset - distances[u]) / (distances[v] - distances[u]);
+
+      pointId = outputPoints.length / 3;
+      pointIdByKey.set(key, pointId);
+      outputPoints.push(
+        points[3 * u] + t * (points[3 * v] - points[3 * u]),
+        points[3 * u + 1] + t * (points[3 * v + 1] - points[3 * u + 1]),
+        points[3 * u + 2] + t * (points[3 * v + 2] - points[3 * u + 2])
+      );
+    }
+
+    return pointId;
+  };
+
+  const visited = new Uint8Array(numberOfSegments);
+  const nextSegmentAt = (key) => {
+    const first = firstSegmentOf.get(key);
+
+    if (first !== undefined && !visited[first]) {
+      return first;
+    }
+
+    const second = secondSegmentOf.get(key);
+
+    return second !== undefined && !visited[second] ? second : undefined;
+  };
+  const walk = (startSegment, startKey) => {
+    const keys = [startKey];
+    let segment = startSegment;
+    let key = startKey;
+
+    while (segment !== undefined) {
+      visited[segment] = 1;
+      key =
+        segments[2 * segment] === key
+          ? segments[2 * segment + 1]
+          : segments[2 * segment];
+      keys.push(key);
+      segment = nextSegmentAt(key);
+    }
+
+    return keys;
+  };
+
+  const lines = [];
+  let numberOfCells = 0;
+
+  for (let segment = 0; segment < numberOfSegments; segment++) {
+    if (visited[segment]) {
+      continue;
+    }
+
+    const startKey = segments[2 * segment];
+    const forward = walk(segment, startKey);
+    const closed = forward[forward.length - 1] === startKey;
+    const before = closed
+      ? []
+      : walk(nextSegmentAt(startKey), startKey).slice(1).reverse();
+    const keys = [...before, ...forward];
+
+    lines.push(keys.length);
+    keys.forEach((key) => lines.push(pointIdOf(key)));
+    numberOfCells++;
+  }
+
+  return {
+    points: Float32Array.from(outputPoints),
+    lines,
+    numberOfCells,
+  };
+}
 
 expose(polySegConverters);

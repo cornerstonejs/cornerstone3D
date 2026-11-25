@@ -2,6 +2,7 @@ import type { SegmentationDataModifiedEventType } from '../../types/EventTypes';
 import { triggerSegmentationRenderForModified } from '../../stateManagement/segmentation/SegmentationRenderingEngine';
 import onLabelmapSegmentationDataModified from './labelmap/onLabelmapSegmentationDataModified';
 import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
+import { updateContourCutsOfModifiedSegmentation } from '../../tools/displayTools/Contour/contourCuts';
 
 /** A callback function that is called when the segmentation data is modified which
  *  often is as a result of tool interactions e.g., scissors, eraser, etc.
@@ -14,6 +15,10 @@ const onSegmentationDataModified = function (
 
   if (representationData.Labelmap) {
     onLabelmapSegmentationDataModified(evt);
+  }
+
+  if (representationData.Contour) {
+    updateContourCutsOfModifiedSegmentation(segmentationId);
   }
 
   // Data modifications stream in at brush-stroke frequency; this trigger

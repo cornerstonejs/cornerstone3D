@@ -245,7 +245,7 @@ function createBoxSurfaceInfo() {
 
 /**
  * The contours that the surface clipping cached for one viewport, by cache
- * id without the viewport id, with the points rounded to 1e-3.
+ * id without the viewport id, with the points by `sortedPointsOf`.
  */
 function getCachedContours(polyDataCache, viewportId) {
   const prefix = `${viewportId}-`;
@@ -255,9 +255,27 @@ function getCachedContours(polyDataCache, viewportId) {
     .map(([cacheId, result]) => [
       cacheId.slice(prefix.length),
       result.numberOfCells,
-      Array.from(result.points, (value) => Math.round(value * 1000) / 1000),
+      sortedPointsOf(result.points),
     ])
     .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+}
+
+/**
+ * The points of a contour as x y z triples to 1e-3 mm, in ascending order:
+ * the cut gives the same points as the legacy cutter, in another order.
+ */
+function sortedPointsOf(points) {
+  const triples = [];
+
+  for (let i = 0; i < points.length; i += 3) {
+    triples.push(
+      [points[i], points[i + 1], points[i + 2]].map(
+        (value) => Math.round(value * 1000) / 1000
+      )
+    );
+  }
+
+  return triples.sort((a, b) => a[0] - b[0] || a[1] - b[1] || a[2] - b[2]);
 }
 
 const VOLUME_ORIENTATIONS = [
@@ -443,7 +461,13 @@ describe('Direct next planar viewport against the legacy viewports -- ', () => {
         surfacesInfo,
         next
       );
-      const legacyContours = LEGACY_SURFACE_CONTOURS;
+      const legacyContours = LEGACY_SURFACE_CONTOURS.map(
+        ([cacheId, numberOfCells, points]) => [
+          cacheId,
+          numberOfCells,
+          sortedPointsOf(points),
+        ]
+      );
 
       expect(legacyContours.length).toBeGreaterThan(0);
       expect(getCachedContours(polyDataCache, next.id)).toEqual(legacyContours);

@@ -44,6 +44,8 @@ export type SurfaceClipResult = {
   points: number[];
   lines: number[];
   numberOfCells: number;
+  /** The slice of the viewport whose plane gave the contours. */
+  sliceIndex?: number;
 };
 
 type PolySegAddOn = {

@@ -1625,6 +1625,17 @@ point of the image on display.
   its points or its polys change. In 5.x the result held every contour cut
   before, and a box was kept for good, in two of the paths by the segment
   index.
+- **A surface is cut by all the slices of a plane in one pass.** The worker
+  of polySeg gives each triangle to the planes that it crosses, so cutting
+  the 31 structures of an RTSTRUCT (2,265 contours) by the 512 slices of a
+  sagittal pane takes about 2 s where a vtkCutter run per plane took about
+  48 s. Points of a surface at one position count as one point, so a loop
+  that crosses a place where the surface repeats a point is one closed path;
+  the per-plane run split such loops into open pieces (the skin of that
+  RTSTRUCT gave 10 paths on a sagittal slice, now 2: its outer and inner
+  boundaries). Each contour of the result of
+  `clipAndCacheSurfacesForViewport` has the `sliceIndex` of its slice. The
+  points of a contour are the same, in another order.
 - **A Surface representation shows as its cut.** On a planar viewport the
   surface of each segment is a prop of the renderer of the viewport. In
   volume mode it is clipped to the slice on display, 0.05 mm on each side, as
@@ -2665,6 +2676,68 @@ levels of 255.
   which lie in axial planes, showed only in the sagittal pane of an MPR when
   the RTSTRUCT was added there first. A contour whose points span no plane
   still takes the normal of that viewport.
+- **A contour set shows its cut on a viewport of another plane.** A planar
+  viewport whose plane is not the plane of the contours of a segment (the
+  sagittal and coronal panes of an MPR over the axial contours of an
+  RTSTRUCT, an oblique plane, a stack whose images lie in another plane)
+  draws the cut of that segment by the slice on display. It needs the polySeg
+  add-on, `cornerstoneTools.init({ addons: { polySeg } })` with
+  `@cornerstonejs/polymorphic-segmentation`; without it the viewport draws
+  nothing of that segment and one warning says so. What happens:
+  - The contours of each segment are made into a surface once, in the worker
+    of polySeg, and again after each `SEGMENTATION_DATA_MODIFIED` of the
+    segmentation. A segmentation that has a Surface representation is cut
+    with that surface and not converted.
+  - The surfaces are cut by every slice of the plane in one task of the
+    worker, when a viewport first shows that plane and again when its plane
+    changes (a rotation, another orientation, another volume, 150 ms after
+    the last change). Viewports of one plane share the cut.
+  - A scroll shows the cut of the next slice from that cut, with no new task:
+    the cut of a slice is a set of locked `PlanarFreehandContourSegmentationTool`
+    annotations with the view reference of that slice, which exist while a
+    viewport shows that slice. They are not in the `annotationUIDsMap` of the
+    Contour representation, which holds the contours of the segmentation
+    only.
+  - The contours of a segment that lie in the plane of the viewport are drawn
+    as they are and not cut, so a pane never draws a cut over them. A 3D
+    viewport is not cut.
+  - A segment that cannot be converted (contours on planes that are not
+    parallel, no closed contour of three points or more, a conversion that
+    fails or gives no surface) gets no cut and one warning on the logger
+    `cs3d.tools.tools.displayTools.Contour.contourCuts` that names the
+    segmentation, the segment and the reason, once for each version of the
+    contours.
+
+  In 5.x the cut was tried only when the viewport had status `RENDERED` at the
+  draw of the representation, which a next planar viewport never has at that
+  moment, and the conversion read the contours from annotations that the
+  first viewport to draw the set had not made yet: no cut and no message. On
+  a viewport where it ran, the annotations of the cut of every slice replaced
+  the contours of the segment in `annotationUIDsMap`:
+
+  ```ts
+  // 5.x: after a cut, the set of a segment could hold the cut annotations of a
+  // sagittal pane in place of the contours of the RTSTRUCT
+  const { annotationUIDsMap } = segmentation.representationData.Contour;
+  annotationUIDsMap.get(segmentIndex);
+
+  // 6.0: the set holds the contours of the segment; the cut on a viewport is
+  // its annotations of the segmentation with the view plane normal of the
+  // viewport
+  annotation.state
+    .getAnnotations('PlanarFreehandContourSegmentationTool', viewport.element)
+    .filter(
+      (contour) =>
+        contour.data.segmentation.segmentationId === segmentationId &&
+        Math.abs(
+          vec3.dot(
+            contour.metadata.viewPlaneNormal,
+            viewport.getViewReference().viewPlaneNormal
+          )
+        ) > 0.999
+    );
+  ```
+
 - **A synchronizer keeps apart the options of two rendering engines whose
   viewports have the same id.** `setOptions` and `getOptions` of a
   synchronizer take the id of the rendering engine as a last argument,

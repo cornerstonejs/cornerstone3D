@@ -36,6 +36,8 @@ export type SurfaceClipResult = {
   points: number[];
   lines: number[];
   numberOfCells: number;
+  /** The slice of the viewport whose plane gave the contours. */
+  sliceIndex?: number;
 };
 
 export type PolyDataClipCacheType = Map<number, Map<string, SurfaceClipResult>>;
@@ -157,7 +159,10 @@ export async function clipAndCacheSurfacesForViewport(
                 viewPlaneNormal,
                 sliceIndex
               );
-              updatePolyDataCache(surfaceCache, cacheId, polyDataResult);
+              updatePolyDataCache(surfaceCache, cacheId, {
+                ...polyDataResult,
+                sliceIndex,
+              });
             });
           },
         ],
@@ -222,14 +227,15 @@ export function generateCacheId(viewport, viewPlaneNormal, sliceIndex) {
 }
 
 /**
- * Puts the contour of one slice into the cache of one surface on one viewport.
+ * Puts the contour of one slice into the cache of one surface on one viewport,
+ * with the index of the slice.
  */
 export function updatePolyDataCache(
   surfaceCache: Map<string, SurfaceClipResult>,
   cacheId: string,
   polyDataResult: SurfaceClipResult
 ) {
-  const { points, lines, numberOfCells } = polyDataResult;
+  const { points, lines, numberOfCells, sliceIndex } = polyDataResult;
 
-  surfaceCache.set(cacheId, { points, lines, numberOfCells });
+  surfaceCache.set(cacheId, { points, lines, numberOfCells, sliceIndex });
 }

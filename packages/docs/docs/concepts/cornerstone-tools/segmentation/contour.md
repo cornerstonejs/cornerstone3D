@@ -56,3 +56,26 @@ await segmentation.addContourRepresentationToViewport(viewportId, [
 ]);
 
 ```
+
+## Contours on a viewport of another plane
+
+A contour set usually lies in one plane orientation, as the axial contours of
+an RTSTRUCT. A planar viewport of that orientation draws the contours as they
+are. A planar viewport of another plane (the sagittal or coronal pane of an
+MPR, an oblique plane, a stack whose images lie in another plane) draws the cut
+of each structure by the slice on display: the contours of the structure are
+made into a surface once, the surface is cut by every slice of the viewport in
+a web worker, and a scroll shows the cut of the next slice. The viewport cuts
+again when its plane changes and when the contours change.
+
+This needs the polySeg add-on:
+
+```js
+import * as polySeg from '@cornerstonejs/polymorphic-segmentation';
+
+cornerstoneTools.init({ addons: { polySeg } });
+```
+
+A structure whose contours lie on planes that are not parallel, or whose
+conversion to a surface fails, is not cut, and a warning names the
+segmentation, the structure and the reason.

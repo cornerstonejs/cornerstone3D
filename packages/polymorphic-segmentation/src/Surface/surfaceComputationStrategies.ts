@@ -32,7 +32,8 @@ export type RawSurfacesData = {
  * @param segmentationId - The ID of the segmentation.
  * @param options - Additional options for surface computation.
  * @returns A promise that resolves to the computed surface data.
- * @throws An error if there is no surface data available for the segmentation.
+ * @throws An error if there is no surface data available for the segmentation,
+ * or the error of the conversion, which the caller reports.
  */
 export async function computeSurfaceData(
   segmentationId: string,
@@ -47,32 +48,27 @@ export async function computeSurfaceData(
   const segmentation = getSegmentation(segmentationId);
   const representationData = segmentation.representationData;
 
-  try {
-    if (representationData.Contour) {
-      source = SegmentationRepresentations.Contour;
-      rawSurfacesData = await computeSurfaceFromContourSegmentation(
-        segmentationId,
-        {
-          segmentIndices,
-          ...options,
-        }
-      );
-    } else if (
-      representationData.Labelmap as ToolsTypes.LabelmapSegmentationData
-    ) {
-      source = SegmentationRepresentations.Labelmap;
-      // convert volume labelmap to surface
-      rawSurfacesData = await computeSurfaceFromLabelmapSegmentation(
-        segmentation.segmentationId,
-        {
-          segmentIndices,
-          ...options,
-        }
-      );
-    }
-  } catch (error) {
-    cs3dLogger.error(error);
-    throw error;
+  if (representationData.Contour) {
+    source = SegmentationRepresentations.Contour;
+    rawSurfacesData = await computeSurfaceFromContourSegmentation(
+      segmentationId,
+      {
+        segmentIndices,
+        ...options,
+      }
+    );
+  } else if (
+    representationData.Labelmap as ToolsTypes.LabelmapSegmentationData
+  ) {
+    source = SegmentationRepresentations.Labelmap;
+    // convert volume labelmap to surface
+    rawSurfacesData = await computeSurfaceFromLabelmapSegmentation(
+      segmentation.segmentationId,
+      {
+        segmentIndices,
+        ...options,
+      }
+    );
   }
 
   if (!rawSurfacesData) {
