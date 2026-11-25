@@ -488,13 +488,17 @@ dimensions of the volume, no GPU settings preset applies, and a 3D render uses
 the sample distance of 4.x. The `interactive` and `interleavedLoading` kinds
 keep the behaviour of 4.x.
 
-With `final: true`, a volume texture comes from a GPU settings preset. A preset
-is a named set of values (`low-tablet`, `low`, `medium`, `high`), and nothing
-probes the device to choose it. When an application selects no preset, `high`
-applies, and it limits each edge of a 3D texture to 2048 voxels. A volume with a
-longer axis then draws from a box-average reduction of that axis. For example, a
-CT of 512 × 512 × 2464 draws with a factor of 2 along k, also on a device that
-supports a 4096 texture edge.
+With `final: true`, a volume texture comes from a GPU settings preset. When an
+application selects no preset, `auto` applies. `auto` tests the texture edge of
+the device once, keeps the result in the browser, and tests no edge above 2048.
+When 2048 passes, `auto` uses `MAX_3D_TEXTURE_SIZE` of the device. The memory
+limit of `auto` applies to the whole page: 2 GB on a desktop GPU and 1 GB on a
+phone or a tablet, unless the application or the user sets a different limit
+(`rendering.autoGpuSettings`, `setGpuMemoryLimit`). Each display set that fits a
+fair share of that limit draws at full resolution, and only a larger display set
+draws reduced. A named preset (`low-tablet`, `low`, `medium`, `high`) is a fixed
+limit for each texture, and it overrides `auto`. See
+[GPU device limits](../../specs/core/gpu-device-limits/requirements.md).
 
 ### Why This Matters
 
@@ -502,9 +506,9 @@ Each kind of lossy downsampling shows pixels that differ from the source data.
 An application turns on a kind only when it also tells the user that the image
 is lossy.
 
-The reported `MAX_3D_TEXTURE_SIZE` is not a reliable limit, so no preset reads
-it. Some Android devices report 2048 or more, but render only 256 per axis. No
-tested device renders beyond 2048. Without final downsampling, such a device can
+The reported `MAX_3D_TEXTURE_SIZE` is not a reliable limit below 2048: some
+Android devices report 2048 or more, but render only 256 per axis. The test of
+`auto` finds that edge. No tested device fails above 2048. Without final downsampling, such a device can
 show a uniform gray image or lose its WebGL context.
 
 ### Migration Guidance
@@ -517,8 +521,8 @@ show a uniform gray image or lose its WebGL context.
 - **To fit the texture to a weak device,** set
   `rendering.lossyDownsampling.final` to `true` in the `init` configuration, or
   call `setLossyDownsampling({ final: true })` before a viewport adds its
-  actors. Then call `setGpuSettingsPreset`. Use `low` or `low-tablet` for a
-  device that renders only 256 per axis.
+  actors. `auto` then fits the textures to the device. To force fixed limits,
+  call `setGpuSettingsPreset`, for example with `low` or `low-tablet`.
 - **To show no lossy pixels at all,** set `interactive` and
   `interleavedLoading` to `false` as well.
 - **For a full-resolution long axis with final downsampling on,** the only
