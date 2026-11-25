@@ -48,6 +48,8 @@ export interface CreatePlanarViewportOptions {
   viewportId?: string;
   renderingEngineId?: string;
   displaySetId?: string;
+  /** The background colour of the viewport, RGB from 0 to 1. Default black. */
+  background?: [number, number, number];
   /**
    * When true, enable the element but do not register/set display sets. For
    * lifecycle tests that need an enabled-but-empty viewport.
@@ -71,7 +73,7 @@ export interface PlanarViewportContext {
 // already does exactly what is needed here (load each imageId through the
 // registered image loader and derive volume props from per-image metadata),
 // so it is reused under a dedicated scheme rather than duplicated.
-const FAKE_VOLUME_LOADER_SCHEME = 'vitestFakePlanarVolume';
+export const FAKE_VOLUME_LOADER_SCHEME = 'vitestFakePlanarVolume';
 let fakeVolumeLoaderRegistered = false;
 
 function ensureFakeVolumeLoaderRegistered(): void {
@@ -164,6 +166,7 @@ export async function createPlanarViewport(
     element,
     defaultOptions: {
       orientation,
+      ...(opts.background ? { background: opts.background } : {}),
     },
   });
 
