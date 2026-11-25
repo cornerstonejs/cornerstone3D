@@ -360,7 +360,7 @@ function gpuSettingsForVolume(
     volume.voxelGrid.dimensions,
     bytesPerVoxelOf(volume),
     getGpuMemoryTotal(volume.volumeId),
-    { probe }
+    { probe, dataType: volume.dataType }
   );
 }
 

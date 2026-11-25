@@ -28,8 +28,9 @@ const warnedKeys = new Set();
  * @param {number[]} dims - the number of voxels on each axis
  * @param {string} dataType - the type of the buffer of the texture
  * @param {number} numberOfComponents - the number of components of one voxel
- * @param {{volumeId?: string, dynamic?: boolean}} context - what the mapper
- *   knows about the volume
+ * @param {{volumeId?: string, dynamic?: boolean, norm16?: boolean}} context -
+ *   what the mapper knows about the volume, and whether its upload gets the
+ *   norm16 extension (by default, the decision of the volume mappers)
  * @returns {boolean} true when the GPU settings can hold the texture
  */
 export default function gridFitsGpuSettings(
@@ -45,8 +46,12 @@ export default function gridFitsGpuSettings(
   }
 
   /** The bytes of the texture that vtk.js uploads, not of the CPU buffer. */
-  const numBytes = gpuTextureBytesPerVoxel(dataType, numberOfComponents);
-  const gpuSettings = gpuSettingsForGrid(active, dims, numBytes);
+  const numBytes = gpuTextureBytesPerVoxel(dataType, numberOfComponents, {
+    norm16: context?.norm16,
+  });
+  const gpuSettings = gpuSettingsForGrid(active, dims, numBytes, 0, {
+    dataType,
+  });
   const limits = gridLimitsOfGpuSettings(gpuSettings, numBytes);
   const grid = {
     dimensions: [dims[0], dims[1], dims[2]],

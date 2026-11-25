@@ -299,8 +299,12 @@ function startMemoryBytes({ probe = true } = {}): number | undefined {
     : classMemory;
 }
 
-/** The memory limit of the user that this page holds when no store does. */
-let unstoredUserLimit: GpuMemoryUserLimit | undefined;
+/**
+ * The user's latest choice, held by this page when the store refused it: a
+ * limit, or `limit: undefined` after a reset. It wins over the store until
+ * the next set or reset that the store keeps.
+ */
+let pageChoice: { limit?: GpuMemoryUserLimit } | undefined;
 
 /**
  * The memory limit of `auto`, in GPU bytes of the page, in this order:
@@ -335,7 +339,7 @@ function getGpuMemoryLimit({ probe = true } = {}): GpuMemoryLimit | undefined {
   }
 
   /** A choice of this page that the store could not keep wins over the store. */
-  const user = unstoredUserLimit ?? getStoredGpuMemoryLimit();
+  const user = pageChoice ? pageChoice.limit : getStoredGpuMemoryLimit();
 
   if (user) {
     return user.hard
@@ -388,7 +392,7 @@ function setGpuMemoryLimit({
 
   const limit = { bytes: Math.floor(bytes), hard: Boolean(hard) };
 
-  unstoredUserLimit = storeGpuMemoryLimit(limit) ? undefined : limit;
+  pageChoice = storeGpuMemoryLimit(limit) ? undefined : { limit };
   triggerEvent(eventTarget, Events.VOLUME_TEXTURE_LIMITS_CHANGED);
 }
 
@@ -399,8 +403,7 @@ function setGpuMemoryLimit({
  * `setGpuMemoryLimit`.
  */
 function resetGpuMemoryLimit(): void {
-  unstoredUserLimit = undefined;
-  clearGpuMemoryRecords();
+  pageChoice = clearGpuMemoryRecords() ? undefined : { limit: undefined };
   triggerEvent(eventTarget, Events.VOLUME_TEXTURE_LIMITS_CHANGED);
 }
 
@@ -540,12 +543,28 @@ function resetGpuSettingsPreset(): void {
 }
 
 /** The texel type that the edge probe tests for a voxel of this width. */
-function probeFormatOf(bytesPerVoxel: number): ProbeTextureFormat {
+/**
+ * The texel type that the edge probe tests for a voxel of this width: the
+ * unsigned or signed norm16 type that vtk.js uploads for 16-bit data of that
+ * sign.
+ */
+function probeFormatOf(
+  bytesPerVoxel: number,
+  dataType?: string
+): ProbeTextureFormat {
   if (bytesPerVoxel === 1) {
     return 'uint8';
   }
 
   if (bytesPerVoxel === 2) {
+    if (dataType === 'Uint16Array') {
+      return 'unorm16';
+    }
+
+    if (dataType === 'Int16Array') {
+      return 'norm16';
+    }
+
     return getRenderingCapabilities().norm16 ? 'norm16' : 'halfFloat';
   }
 
@@ -572,13 +591,15 @@ function probeFormatOf(bytesPerVoxel: number): ProbeTextureFormat {
  * @param otherBytes - the GPU bytes of the page that this grid does not
  * replace
  * @param options.probe - false to read the record only, with no probe
+ * @param options.dataType - the typed array of the data, so the edge probe
+ * tests the texel type of the upload
  */
 function gpuSettingsForGrid(
   gpuSettings: GpuSettings,
   dimensions: ArrayLike<number>,
   bytesPerVoxel: number,
   otherBytes = 0,
-  { probe = true }: { probe?: boolean } = {}
+  { probe = true, dataType }: { probe?: boolean; dataType?: string } = {}
 ): GpuSettings {
   if (gpuSettings.id !== 'auto') {
     return gpuSettings;
@@ -595,7 +616,7 @@ function gpuSettingsForGrid(
    */
   if (edge > gpuSettings.maxTextureEdge) {
     if (probe && edge <= configuredMaxEdge()) {
-      probeRenderingEdge(edge, probeFormatOf(bytesPerVoxel));
+      probeRenderingEdge(edge, probeFormatOf(bytesPerVoxel, dataType));
     }
 
     const recordedEdge = autoEdge({ probe: false });
@@ -623,17 +644,20 @@ function gpuSettingsForGrid(
  * volume data.
  *
  * The volume buffer in memory holds 16-bit data as Float32, but the texture
- * that vtk.js uploads holds 2 bytes per value when norm16 textures are usable
- * (see `getCanUseNorm16Texture`), and 4 bytes as float otherwise. 8-bit data
- * takes 1 byte, and any other type 4 bytes. With no type, the count of
- * values.
+ * that vtk.js uploads holds 2 bytes per value when it gets the norm16
+ * extension, and 4 bytes as float otherwise. `Uint8Array` takes 1 byte. Any
+ * other type, signed bytes included, uploads as float, 4 bytes. With no type,
+ * the count of values.
  *
  * @param dataType - the typed array of the volume data, such as 'Int16Array'
  * @param numberOfComponents - the components of one voxel
+ * @param options.norm16 - whether the upload gets the norm16 extension; by
+ * default the decision of the volume mappers (`getCanUseNorm16Texture`)
  */
 function gpuTextureBytesPerVoxel(
   dataType: string | undefined,
-  numberOfComponents = 1
+  numberOfComponents = 1,
+  { norm16 }: { norm16?: boolean } = {}
 ): number {
   const components = Math.max(numberOfComponents || 1, 1);
 
@@ -642,13 +666,11 @@ function gpuTextureBytesPerVoxel(
   }
 
   switch (dataType) {
-    case 'Int8Array':
     case 'Uint8Array':
-    case 'Uint8ClampedArray':
       return components;
     case 'Int16Array':
     case 'Uint16Array':
-      return (getCanUseNorm16Texture() ? 2 : 4) * components;
+      return ((norm16 ?? getCanUseNorm16Texture()) ? 2 : 4) * components;
     default:
       return 4 * components;
   }

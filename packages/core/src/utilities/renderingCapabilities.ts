@@ -952,11 +952,13 @@ function getStoredGpuMemoryLimitFromStore(): GpuMemoryUserLimit | undefined {
  * @returns true when the store holds the change
  */
 export function clearGpuMemoryRecords(): boolean {
-  return updateRecordOfLastRenderer((target) => {
-    target.textureBytes = {};
-    target.gpuBytes = {};
-    delete target.memoryLimit;
-  });
+  return (
+    updateRecordOfLastRenderer((target) => {
+      target.textureBytes = {};
+      target.gpuBytes = {};
+      delete target.memoryLimit;
+    }) && getStoredGpuMemoryLimitFromStore() === undefined
+  );
 }
 
 /** The time of the last probe context of this page, from `performance.now()`. */

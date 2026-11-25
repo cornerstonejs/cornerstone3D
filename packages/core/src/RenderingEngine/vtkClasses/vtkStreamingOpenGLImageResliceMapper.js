@@ -331,6 +331,11 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
         const dims = imageData.getDimensions();
         const numberOfComponents = scalars.getNumberOfComponents();
         const volumeId = imageData.get('id')?.id;
+        /**
+         * This path hands vtk.js the norm16 extension whenever the context
+         * has it, so 16-bit data uploads as 2 bytes then.
+         */
+        const norm16Ext = model.context.getExtension('EXT_texture_norm16');
 
         /**
          * The full-resolution voxels have no reduction here, so a grid that
@@ -343,6 +348,7 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
             numberOfComponents,
             {
               volumeId,
+              norm16: Boolean(norm16Ext),
             }
           )
         ) {
@@ -355,7 +361,9 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
           dims[0] *
           dims[1] *
           dims[2] *
-          gpuTextureBytesPerVoxel(scalars.getDataType(), numberOfComponents);
+          gpuTextureBytesPerVoxel(scalars.getDataType(), numberOfComponents, {
+            norm16: Boolean(norm16Ext),
+          });
 
         const newScalarTexture = newLedgerTexture();
 
@@ -365,9 +373,7 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
           owner: newScalarTexture,
         });
         newScalarTexture.setOpenGLRenderWindow(model._openGLRenderWindow);
-        newScalarTexture.setOglNorm16Ext(
-          model.context.getExtension('EXT_texture_norm16')
-        );
+        newScalarTexture.setOglNorm16Ext(norm16Ext);
         newScalarTexture.resetFormatAndType();
         const created = newScalarTexture.create3DFilterableFromDataArray({
           width: dims[0],

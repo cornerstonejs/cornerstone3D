@@ -248,20 +248,29 @@ export function convertMapperToNotSharedMapper(sharedMapper: vtkVolumeMapper) {
   /**
    * A caller can replace the scalars, as the labelmap edge projection does
    * with its two-component array, so the entry follows them until the mapper
-   * is deleted.
+   * is deleted. A new size is a new upload, which the allocation tracker
+   * notes first; an edit of the same size is not.
    */
   const subscription = scalarArray.onModified(() => {
-    if (!getGpuMemoryEntryBytes(volumeMapper)) {
+    const previous = getGpuMemoryEntryBytes(volumeMapper);
+
+    if (!previous) {
       subscription.unsubscribe();
 
       return;
     }
 
-    setGpuMemoryEntry(volumeMapper, {
-      kind: 'texture',
-      bytes: bytesOfScalars(),
-      volumeId,
-    });
+    const bytes = bytesOfScalars();
+
+    if (bytes !== previous) {
+      noteTextureAllocation({
+        textureBytes: bytes,
+        totalBytes: getGpuMemoryTotal() - previous + bytes,
+        owner: volumeMapper,
+      });
+    }
+
+    setGpuMemoryEntry(volumeMapper, { kind: 'texture', bytes, volumeId });
   });
 
   return volumeMapper;

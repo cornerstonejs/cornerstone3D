@@ -30,6 +30,7 @@ import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 import gridFitsGpuSettings from '../src/RenderingEngine/vtkClasses/gridFitsGpuSettings';
 import { convertMapperToNotSharedMapper } from '../src/RenderingEngine/helpers/createVolumeMapper';
+import * as gpuAllocationTracker from '../src/utilities/gpuAllocationTracker';
 import {
   getConfiguration,
   getLossyDownsampling,
@@ -255,15 +256,27 @@ describe('final downsampling on', () => {
 
       /**
        * The labelmap edge projection replaces the scalars with a
-       * two-component float array, and the entry follows.
+       * two-component float array: the entry follows, and the larger upload
+       * is noted first. An edit of the same size is no new upload.
        */
-      mapper
-        .getInputData()
-        .getPointData()
-        .getArray(0)
-        .setData(new Float32Array(2 * 16 * 16 * 16), 2);
+      const noted = jest.spyOn(gpuAllocationTracker, 'noteTextureAllocation');
+      const scalars = mapper.getInputData().getPointData().getArray(0);
+
+      scalars.setData(new Float32Array(2 * 16 * 16 * 16), 2);
 
       expect(getGpuMemoryEntryBytes(mapper)).toBe(2 * 16 * 16 * 16 * 4);
+      expect(noted).toHaveBeenCalledWith(
+        expect.objectContaining({
+          textureBytes: 2 * 16 * 16 * 16 * 4,
+          owner: mapper,
+        })
+      );
+
+      noted.mockClear();
+      scalars.modified();
+
+      expect(noted).not.toHaveBeenCalled();
+      noted.mockRestore();
 
       mapper.delete();
 
@@ -511,6 +524,13 @@ describe('the auto preset', () => {
       expect(gpuTextureBytesPerVoxel('Int16Array')).toBe(4);
       expect(gpuTextureBytesPerVoxel('Uint8Array')).toBe(1);
       expect(gpuTextureBytesPerVoxel('Float32Array', 2)).toBe(8);
+      /** vtk.js uploads signed and clamped bytes as float. */
+      expect(gpuTextureBytesPerVoxel('Int8Array')).toBe(4);
+      expect(gpuTextureBytesPerVoxel('Uint8ClampedArray')).toBe(4);
+      /** A path that hands vtk.js the extension states it. */
+      expect(gpuTextureBytesPerVoxel('Uint16Array', 1, { norm16: true })).toBe(
+        2
+      );
 
       resetRenderingCapabilities({ clearStorage: true });
       probeRenderingLimits.mockReturnValue({
@@ -521,6 +541,28 @@ describe('the auto preset', () => {
 
       expect(gpuTextureBytesPerVoxel('Int16Array')).toBe(2);
       expect(gpuTextureBytesPerVoxel('Uint16Array', 2)).toBe(4);
+      expect(gpuTextureBytesPerVoxel('Int16Array', 1, { norm16: false })).toBe(
+        4
+      );
+    });
+
+    it('probes an unsigned 16-bit grid as unorm16, and a signed one as norm16', () => {
+      mockWebGL();
+
+      const settings = getActiveGpuSettings();
+
+      probeTextureEdge.mockClear();
+      gpuSettingsForGrid(settings, [512, 512, 2464], 2, 0, {
+        dataType: 'Uint16Array',
+      });
+      gpuSettingsForGrid(settings, [512, 512, 3000], 2, 0, {
+        dataType: 'Int16Array',
+      });
+
+      expect(probeTextureEdge.mock.calls).toEqual([
+        [2464, 'unorm16'],
+        [3000, 'norm16'],
+      ]);
     });
 
     it('fits a 16-bit volume of 1 GB under a 2 GB limit with norm16', () => {
@@ -662,6 +704,27 @@ describe('the auto preset', () => {
 
     expect(probeTextureEdge).not.toHaveBeenCalled();
     expect(second.maxTextureEdge).toBe(2464);
+  });
+
+  it('keeps a reset that the store refused, ahead of the stored limit', () => {
+    mockWebGL();
+    setGpuMemoryLimit({ bytes: 768 * MEGABYTE });
+
+    const setItem = jest
+      .spyOn(Storage.prototype, 'setItem')
+      .mockImplementation(() => {
+        throw new Error('QuotaExceededError');
+      });
+
+    try {
+      resetGpuMemoryLimit();
+      /** A later write of the record reads the old limit back from the store. */
+      recordRenderingCapabilitySuccess('gpuBytes', GIGABYTE);
+
+      expect(getGpuMemoryLimit().source).toBe('start');
+    } finally {
+      setItem.mockRestore();
+    }
   });
 
   it('keeps a limit that the store refused, ahead of the stored one', () => {
