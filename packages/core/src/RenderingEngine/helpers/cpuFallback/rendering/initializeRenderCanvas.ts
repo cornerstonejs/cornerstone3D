@@ -1,7 +1,10 @@
 import type { CPUFallbackEnabledElement, IImage } from '../../../../types';
 
 /**
- * Sets size and clears canvas
+ * Sets size and clears canvas. The image data of white opaque pixels is made,
+ * not read back from the canvas, so the render canvas is never read: Chrome
+ * warns at the second read of a canvas, and a stack whose images have two
+ * sizes sets up the same render canvas again.
  *
  * @param {Object} enabledElement Cornerstone Enabled Element
  * @param {Object} image Image to be rendered
@@ -25,12 +28,12 @@ export default function (
   canvasContext.fillStyle = 'white';
   canvasContext.fillRect(0, 0, renderCanvas.width, renderCanvas.height);
 
-  const renderCanvasData = canvasContext.getImageData(
-    0,
-    0,
+  const renderCanvasData = canvasContext.createImageData(
     image.width,
     image.height
   );
+
+  renderCanvasData.data.fill(255);
 
   enabledElement.renderingTools.renderCanvasContext = canvasContext;
   enabledElement.renderingTools.renderCanvasData = renderCanvasData;

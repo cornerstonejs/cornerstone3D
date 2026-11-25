@@ -17,6 +17,7 @@ import type {
 } from './WSIViewportTypes';
 
 const EVENT_POSTRENDER = 'postrender';
+const EVENT_RENDERCOMPLETE = 'rendercomplete';
 
 /** @internal */
 export class DicomMicroscopyRenderPath
@@ -65,7 +66,12 @@ export class DicomMicroscopyRenderPath
       });
     };
 
+    const rendercompleteHandler = () => {
+      ctx.markRendered();
+    };
+
     map.on(EVENT_POSTRENDER, postrenderHandler);
+    map.on(EVENT_RENDERCOMPLETE, rendercompleteHandler);
     Object.assign(microscopyElement.style, {
       '--ol-partial-background-color': 'rgba(127, 127, 127, 0.7)',
       '--ol-foreground-color': '#000000',
@@ -81,6 +87,7 @@ export class DicomMicroscopyRenderPath
       map,
       transformUtils: DicomMicroscopyViewer.utils,
       postrenderHandler,
+      rendercompleteHandler,
       slideRotation,
     };
 
@@ -151,9 +158,16 @@ export class DicomMicroscopyRenderPath
   }
 
   private removeData(rendering: WSIRendering): void {
-    const { map, microscopyElement, viewer, postrenderHandler } = rendering;
+    const {
+      map,
+      microscopyElement,
+      viewer,
+      postrenderHandler,
+      rendercompleteHandler,
+    } = rendering;
 
     map?.un?.(EVENT_POSTRENDER, postrenderHandler);
+    map?.un?.(EVENT_RENDERCOMPLETE, rendercompleteHandler);
     viewer?.cleanup?.();
     microscopyElement.remove();
   }

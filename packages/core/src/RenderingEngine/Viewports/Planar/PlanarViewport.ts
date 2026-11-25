@@ -207,6 +207,22 @@ const log = coreLog.getLogger('RenderingEngine', 'PlanarViewport');
  */
 const CANVAS_CSS_CLASS = 'cornerstone-canvas';
 
+/**
+ * The attributes of the 2D context of the CPU canvas. The CPU draw step reads
+ * that canvas back on each draw that blends a translucent slice over what is
+ * below it (`planarCpuSliceCanvas`), composes overlapping labelmaps
+ * (`canvasLabelmapLayer`) or sharpens or smooths the picture
+ * (`planarCanvasSharpeningSmoothing`). Chrome keeps a 2D canvas on the GPU
+ * unless `willReadFrequently` is set, warns at the second `getImageData` of
+ * such a canvas and then moves it to the CPU itself. With the attribute the
+ * canvas is kept in CPU memory from the start: each read is a copy, and the
+ * draws onto it and its upload for display are done on the CPU. A draw of a
+ * stack took the same time with and without it (v6-open-issues row 225).
+ */
+const CPU_CANVAS_CONTEXT_ATTRIBUTES: CanvasRenderingContext2DSettings = {
+  willReadFrequently: true,
+};
+
 type PlanarSlabAppearance = Pick<
   PlanarDisplaySetAppearance,
   'slabThickness' | 'blendMode'
@@ -609,7 +625,10 @@ class PlanarViewport extends BaseViewport<
       viewportElement.style.zIndex = '1';
     }
 
-    const cpuCanvasContext = cpuCanvas.getContext('2d');
+    const cpuCanvasContext = cpuCanvas.getContext(
+      '2d',
+      CPU_CANVAS_CONTEXT_ATTRIBUTES
+    );
 
     if (!cpuCanvasContext) {
       throw new Error('[PlanarViewport] Failed to initialize CPU canvas');

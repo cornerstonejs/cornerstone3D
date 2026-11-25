@@ -109,6 +109,11 @@ export interface WSIViewportInput {
 export interface WSIViewportRenderContext extends BaseViewportRenderContext {
   type: 'wsi';
   element: HTMLDivElement;
+  /**
+   * Tells the viewport that the map has drawn the tiles of its view, at the
+   * `rendercomplete` of the map: the viewport is then rendered.
+   */
+  markRendered(): void;
 }
 
 /** @internal */
@@ -119,6 +124,7 @@ export type WSIRendering = MountedRendering<{
   map: WSIMapLike;
   transformUtils?: WSITransformUtilitiesLike;
   postrenderHandler: () => void;
+  rendercompleteHandler: () => void;
   /**
    * The rotation in radians that the microscopy viewer gives the map view of
    * the slide. The rotation of the view state turns the map on top of it.

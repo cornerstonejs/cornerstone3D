@@ -62,4 +62,45 @@ test.describe('WSIViewport', () => {
       maxDiffPixelRatio: 0.003,
     });
   });
+
+  test('should report rendered once the map has drawn the tiles of its view', async ({
+    page,
+  }) => {
+    const getStatus = () =>
+      page.evaluate(
+        () =>
+          (
+            window as unknown as {
+              cornerstone: typeof import('@cornerstonejs/core');
+            }
+          ).cornerstone
+            .getRenderingEngine('myRenderingEngine')
+            ?.getViewport('wsiGenericViewport')?.viewportStatus
+      );
+
+    await expect.poll(getStatus, { timeout: 20000 }).toBe('rendered');
+
+    const imageRendered = page.evaluate(
+      () =>
+        new Promise<boolean>((resolve) => {
+          const viewport = (
+            window as unknown as {
+              cornerstone: typeof import('@cornerstonejs/core');
+            }
+          ).cornerstone
+            .getRenderingEngine('myRenderingEngine')
+            .getViewport('wsiGenericViewport');
+
+          viewport.element.addEventListener(
+            'CORNERSTONE_IMAGE_RENDERED',
+            () => resolve(true),
+            { once: true }
+          );
+          viewport.setZoom(viewport.getZoom() * 2);
+        })
+    );
+
+    expect(await imageRendered).toBe(true);
+    await expect.poll(getStatus, { timeout: 20000 }).toBe('rendered');
+  });
 });

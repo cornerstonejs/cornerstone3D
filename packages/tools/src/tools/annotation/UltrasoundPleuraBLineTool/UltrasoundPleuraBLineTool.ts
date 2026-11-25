@@ -1001,12 +1001,19 @@ class UltrasoundPleuraBLineTool extends AnnotationTool {
   }
   /**
    * Derive the fan shape geometry parameters via US image segmentation, if the
-   * parameters were not defined
+   * parameters were not defined. A viewport that shows no image yet (a planar
+   * viewport between its mount and its first drawn image has no current image
+   * id) gives none; the next render of the annotations tries again.
    * @param viewport - The viewport to derive fan geometry from
    * @returns {void}
    */
   deriveFanGeometryFromViewport(viewport) {
     const imageId = viewport.getCurrentImageId();
+
+    if (!imageId) {
+      return;
+    }
+
     const { fanGeometry } = calculateFanGeometry(imageId) || {};
     if (fanGeometry) {
       this.updateFanGeometryConfiguration(fanGeometry);
@@ -1034,7 +1041,10 @@ class UltrasoundPleuraBLineTool extends AnnotationTool {
   }
 
   /**
-   * Gets the fan shape geometry parameters, attempting to derive them if they are invalid
+   * Gets the fan shape geometry parameters, attempting to derive them if they
+   * are invalid. Without a current image of the viewport there is nothing to
+   * derive them from: false, and the next render of the annotations tries
+   * again.
    * @param viewport - The viewport to get or derive fan geometry from
    * @returns {boolean} True if valid fan geometry parameters are available, false otherwise
    */
@@ -1042,8 +1052,14 @@ class UltrasoundPleuraBLineTool extends AnnotationTool {
     if (this.isFanShapeGeometryParametersValid()) {
       return true;
     }
+
+    const imageId = viewport.getCurrentImageId();
+
+    if (!imageId) {
+      return false;
+    }
+
     if (!this.isFanShapeGeometryParametersValid()) {
-      const imageId = viewport.getCurrentImageId();
       const fanGeometry = metaData.get(
         'ultrasoundFanShapeGeometry',
         imageId

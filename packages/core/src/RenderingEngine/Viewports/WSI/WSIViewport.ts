@@ -82,6 +82,7 @@ export default class WSIViewport extends BaseViewport<
       renderingEngineId: this.renderingEngineId,
       type: 'wsi',
       element: this.element,
+      markRendered: () => this.markMapRendered(),
     };
     this.viewState = {
       rotation: 0,
@@ -564,8 +565,25 @@ export default class WSIViewport extends BaseViewport<
     this.render();
   }
 
-  setRendered(): void {
-    // No-op for DOM-driven WSI rendering.
+  /**
+   * The rendering engine calls this after its pass, in which a whole slide
+   * viewport only asks the map to draw (`customRenderViewportToCanvas`): the
+   * map draws in a frame of its own and loads the tiles of the view after it.
+   * So the pass does not make the viewport rendered; the map does, when it
+   * has drawn the tiles of its view (`markMapRendered`).
+   */
+  setRendered(): void {}
+
+  /**
+   * The map has drawn the tiles of its view at the current resolution (its
+   * `rendercomplete`): the viewport is rendered, and keeps the canvas size of
+   * its framing, as the rendering engine marks the other families after it
+   * drew them. It runs again each time the map completes a draw, after the
+   * tiles of a new view arrive; `IMAGE_RENDERED` fires for every frame of the
+   * map (`postrender`), also while tiles still load.
+   */
+  private markMapRendered(): void {
+    super.setRendered();
   }
 
   protected override removeDisplaySetBinding(displaySetId: string): void {

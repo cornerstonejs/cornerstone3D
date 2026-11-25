@@ -1290,7 +1290,14 @@ point of the image on display.
   stack viewport, and `getCurrentImageIdIndex()` gives the requested index at
   once. In 5.x the promise resolved before the load and the index lagged
   behind until the image was drawn. `getCurrentImageId()` gives the image
-  that is drawn.
+  that is drawn. Before the first image of a mount is drawn it is undefined,
+  also between `setDisplaySets()` and the first `NEW_IMAGE`, where the
+  legacy stack viewport gave the image id of the index at once. The tools
+  render on a viewport that shows nothing yet, so a tool that reads the
+  image there waits for it: the ultrasound pleura and B-line tool finds no
+  fan until the first image is drawn (`getFanShapeGeometryParameters()`
+  gives false) and derives it at the next render. 6.0.0-beta.2 threw
+  `getImage: imageId must not be undefined` there.
 - **A stack follows the image retrieve configuration.** Staged and
   progressive loading that is registered for `'stack'` with
   `imageRetrieveMetadataProvider` works with `setDisplaySets`. Without a
@@ -1922,6 +1929,25 @@ through one CPU draw step that follows the GPU:
   `viewport.canvas` stays the GPU canvas, and `viewport.getCanvas()` gives
   the canvas that shows. In 5.x a next viewport kept the class on the hidden
   GPU canvas.
+- **The canvas that shows keeps its pixels in memory.** The CPU draw step
+  reads that canvas back at each draw that blends a translucent layer over
+  what is below it (a fusion), composes labelmaps that overlap, or sharpens
+  or smooths the picture, so its 2D context is made with
+  `willReadFrequently: true`. Chrome no longer warns "Canvas2D: Multiple
+  readback operations using getImageData are faster with the
+  willReadFrequently attribute set to true", which 6.0.0-beta.2 gave on the
+  CPU at the first images of a fusion, of an MPR that shows the faces of the
+  volume (their edge pixels are blended), and of a stack whose images have
+  two sizes. `viewport.getCanvas().getContext('2d')` gives that
+  context: what an application draws on it is drawn on the CPU, and a read
+  of it (`getImageData`) is a copy from memory. Chrome moved such a canvas
+  off the GPU itself after its second read; a canvas that was never read
+  now starts there too, and a draw of a stack on the CPU took the same time
+  (on a Mac, 1.4 ms at 512 by 512 pixels and 4.7 ms at 1024 by 1024, with
+  and without the attribute). The canvas into which the CPU draw step
+  writes the pixels of an image is no longer read back at all, and the
+  overlay layer of a video viewport, which composes its labelmaps the same
+  way, keeps its pixels in memory too.
 - **The VOI lookup table and the modality lookup table of an image are not
   applied.** The GPU path never applied them, and the CPU path of 5.x did. The
   window of the image is applied as before.
@@ -2095,6 +2121,18 @@ levels of 255.
   scroll tool no longer zooms a slide. Put the zoom tool on the wheel.
 - **`suppressEvents`** in the options silences `CAMERA_MODIFIED` and
   `CAMERA_RESET`, as on the legacy viewport.
+- **`viewportStatus` is `'rendered'` once the map has drawn the tiles of its
+  view.** The map of the microscopy viewer draws in frames of its own and
+  loads its tiles after them. `IMAGE_RENDERED` fires for each frame of the
+  map, also while tiles load, as on the legacy viewport; the status becomes
+  `'rendered'` when the map has drawn every tile of the view at its
+  resolution (its `rendercomplete`), and again after each later complete
+  draw, such as when the tiles of a zoom have come. A pass of the rendering
+  engine only asks the map to draw, so after one the status is
+  `'needsRender'` until the map has drawn. In 6.0.0-beta.2 the status
+  stayed `'preRender'`, so code that waited for `'rendered'` waited for
+  ever. The legacy viewport was `'rendered'` after the first pass of the
+  rendering engine, before any tile had come.
 
 ## ECG viewports
 

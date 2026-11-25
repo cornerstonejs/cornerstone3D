@@ -1362,7 +1362,10 @@ class VideoViewport extends BaseViewport<
    * the pixels of the layer, which the view gives (`worldToCanvas`), as the
    * planar viewport draws a labelmap on its CPU canvas. The layer is made on
    * the first draw with an actor, sized to the element in device pixels, and
-   * kept just above the video element.
+   * kept just above the video element. Its context is made with
+   * `willReadFrequently`: labelmaps that overlap are composed by reading the
+   * layer back on each draw (`composeCanvasLabelmapLayer`), as on the CPU
+   * canvas of a planar viewport.
    */
   private drawOverlayActors(videoElement: HTMLVideoElement): void {
     if (!this.overlayActors.length && !this.overlayLayer) {
@@ -1370,7 +1373,7 @@ class VideoViewport extends BaseViewport<
     }
 
     const layer = this.getOverlayLayer(videoElement);
-    const context = layer.getContext('2d');
+    const context = layer.getContext('2d', { willReadFrequently: true });
     const devicePixelRatio = window.devicePixelRatio || 1;
     const width = Math.max(
       1,

@@ -76,25 +76,48 @@ export function createClient() {
 }
 
 /**
- * A stand-in for the dicom-microscopy-viewer module. Its viewer makes a map
- * whose view starts at the rotation of the slide, and pushes the view into
- * `views`.
+ * A stand-in for the OpenLayers map that the microscopy viewer makes. It
+ * keeps the listeners of its events; `dispatch` calls them, as OpenLayers
+ * does after a frame (`postrender`) and once the tiles of the view are
+ * drawn (`rendercomplete`).
  */
-export function createMicroscopyViewerModule(slideRotation, views) {
+export function createMap(view) {
+  const mapViewport = document.createElement('div');
+  const listeners = new Map();
+
+  return {
+    getView: () => view,
+    getViewport: () => mapViewport,
+    on(eventName, handler) {
+      listeners.set(eventName, [...(listeners.get(eventName) ?? []), handler]);
+    },
+    un(eventName, handler) {
+      listeners.set(
+        eventName,
+        (listeners.get(eventName) ?? []).filter((other) => other !== handler)
+      );
+    },
+    dispatch(eventName) {
+      (listeners.get(eventName) ?? []).forEach((handler) => handler());
+    },
+    render() {},
+    updateSize() {},
+  };
+}
+
+/**
+ * A stand-in for the dicom-microscopy-viewer module. Its viewer makes a map
+ * whose view starts at the rotation of the slide, pushes the view into
+ * `views` and the map into `maps`.
+ */
+export function createMicroscopyViewerModule(slideRotation, views, maps = []) {
   class VolumeImageViewer {
     constructor() {
       const view = createView(slideRotation);
-      const mapViewport = document.createElement('div');
 
       views.push(view);
-      this.map = {
-        getView: () => view,
-        getViewport: () => mapViewport,
-        on() {},
-        un() {},
-        render() {},
-        updateSize() {},
-      };
+      this.map = createMap(view);
+      maps.push(this.map);
     }
 
     render() {}
@@ -161,16 +184,16 @@ function createElement() {
 
 /**
  * Runs `mountFn` with the stand-in microscopy viewer as the peer import of
- * dicom-microscopy-viewer.
+ * dicom-microscopy-viewer. The maps that the viewer makes go into `maps`.
  */
-export async function withMicroscopyViewer(slideRotation, mountFn) {
+export async function withMicroscopyViewer(slideRotation, mountFn, maps = []) {
   const views = [];
   const configuration = getConfiguration();
   const peerImport = configuration.peerImport;
 
   configuration.peerImport = async (moduleId) =>
     moduleId === 'dicom-microscopy-viewer'
-      ? createMicroscopyViewerModule(slideRotation, views)
+      ? createMicroscopyViewerModule(slideRotation, views, maps)
       : peerImport(moduleId);
 
   try {
@@ -186,7 +209,8 @@ export async function withMicroscopyViewer(slideRotation, mountFn) {
  * Mounts the slide on a next WSI viewport class (the direct class or the
  * adapter) through the default data provider and the real microscopy render
  * path, as an application does. Without a web client the data has none, and
- * without a canvas the viewport gets only the element.
+ * without a canvas the viewport gets only the element. Gives the viewport,
+ * its element, and the view and the map of the slide.
  */
 export async function mountNext(
   ViewportClass,
@@ -210,11 +234,14 @@ export async function mountNext(
     },
   });
 
-  const view = await withMicroscopyViewer(slideRotation, () =>
-    viewport.setDisplaySets({ displaySetId: IMAGE_ID })
+  const maps = [];
+  const view = await withMicroscopyViewer(
+    slideRotation,
+    () => viewport.setDisplaySets({ displaySetId: IMAGE_ID }),
+    maps
   );
 
-  return { viewport, element, view };
+  return { viewport, element, view, map: maps[maps.length - 1] };
 }
 
 /**
