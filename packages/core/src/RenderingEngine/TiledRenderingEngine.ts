@@ -488,12 +488,14 @@ class TiledRenderingEngine extends BaseRenderingEngine {
       const openGLRenderWindow =
         offscreenMultiRenderWindow.getOpenGLRenderWindow();
       const context = openGLRenderWindow.get3DContext();
-      const offScreenCanvas = context.canvas;
 
-      eventDetail = this._renderViewportFromVtkCanvasToOnscreenCanvas(
-        viewport,
-        offScreenCanvas
-      );
+      /** No context while WebGL waits: the image on screen stays. */
+      if (context) {
+        eventDetail = this._renderViewportFromVtkCanvasToOnscreenCanvas(
+          viewport,
+          context.canvas
+        );
+      }
     }
 
     return eventDetail;

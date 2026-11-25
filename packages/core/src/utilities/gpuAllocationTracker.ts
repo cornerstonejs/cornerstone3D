@@ -11,6 +11,7 @@ import {
 } from './renderingCapabilities';
 import { gpuSettingsForRender } from './gpuSettingsPresets';
 import { reportGpuMemoryFailure } from './gpuMemoryFailures';
+import isChromium from './isChromium';
 
 const log = coreLog.getLogger('utilities', 'gpuAllocationTracker');
 
@@ -181,32 +182,6 @@ function onContextLost(event?: Event): void {
     renderingEngineId,
     contextIndex,
   });
-}
-
-/**
- * True for a Chromium browser. Chromium reports a GPU out of memory as a
- * context loss, and `getError()` there waits for the GPU process.
- */
-function isChromium(): boolean {
-  if (typeof navigator === 'undefined') {
-    return false;
-  }
-
-  const brands = (
-    navigator as Navigator & {
-      userAgentData?: { brands?: { brand: string }[] };
-    }
-  ).userAgentData?.brands;
-
-  if (brands?.length) {
-    return brands.some(({ brand }) => /chromium/i.test(brand));
-  }
-
-  /** Chrome on iOS uses WebKit, so it is not Chromium here. */
-  return (
-    /\b(Chrome|Chromium)\//.test(navigator.userAgent) &&
-    !/\bCriOS\//.test(navigator.userAgent)
-  );
 }
 
 /**

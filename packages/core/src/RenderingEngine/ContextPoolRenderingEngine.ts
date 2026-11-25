@@ -518,6 +518,12 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     const openGLRenderWindow =
       offscreenMultiRenderWindow.getOpenGLRenderWindow();
     const context = openGLRenderWindow.get3DContext();
+
+    /** No context while WebGL waits: the image on screen stays. */
+    if (!context) {
+      return undefined;
+    }
+
     const offScreenCanvas = context.canvas;
 
     const eventDetail = this._copyToOnscreenCanvas(viewport, offScreenCanvas);

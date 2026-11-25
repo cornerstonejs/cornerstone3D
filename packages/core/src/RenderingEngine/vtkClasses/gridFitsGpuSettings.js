@@ -5,6 +5,8 @@ import {
   gridLimitsOfGpuSettings,
   gpuTextureBytesPerVoxel,
 } from '../../utilities/gpuSettingsPresets';
+import { isWebGLBlocked } from '../../utilities/webglAvailability';
+import { LARGE_ALLOCATION_BYTES } from '../../utilities/gpuAllocationTracker';
 
 const log = coreLog.getLogger('RenderingEngine', 'gridFitsGpuSettings');
 const warnedKeys = new Set();
@@ -23,6 +25,10 @@ const warnedKeys = new Set();
  * fit: the strategy does not reduce them (VRS-I-13, VRS-I-14), so the mapper
  * tries the upload as in 4.x instead of keeping the previous image.
  *
+ * While WebGL waits (see `isWebGLBlocked`), a texture of 64 MB or more never
+ * fits, whatever the GPU settings, so no large allocation follows a GPU
+ * failure until the wait ends. The next render tries again.
+ *
  * A refusal logs one warning for each volume, grid and GPU settings.
  *
  * @param {number[]} dims - the number of voxels on each axis
@@ -39,6 +45,23 @@ export default function gridFitsGpuSettings(
   numberOfComponents,
   context
 ) {
+  const textureBytes =
+    dims[0] *
+    dims[1] *
+    dims[2] *
+    gpuTextureBytesPerVoxel(dataType, numberOfComponents, {
+      norm16: context?.norm16,
+    });
+
+  if (textureBytes >= LARGE_ALLOCATION_BYTES && isWebGLBlocked()) {
+    warnOnce(
+      `blocked|${context?.volumeId}|${dims}`,
+      `WebGL waits after a GPU failure, so the texture of ${dims[0]}x${dims[1]}x${dims[2]} for the volume ${context?.volumeId} waits too`
+    );
+
+    return false;
+  }
+
   const active = gpuSettingsForRender();
 
   if (!active || numberOfComponents > 1 || context?.dynamic) {
@@ -62,15 +85,18 @@ export default function gridFitsGpuSettings(
     return true;
   }
 
-  /** A refused texture rebuilds on each render, so warn once for each key. */
-  const key = `${context?.volumeId}|${grid.dimensions}|${gpuSettings.id}|${limits.maxEdge}|${limits.maxVoxelCount}`;
-
-  if (!warnedKeys.has(key)) {
-    warnedKeys.add(key);
-    log.warn(
-      `the GPU settings preset ${gpuSettings.id} cannot hold a texture of ${dims[0]}x${dims[1]}x${dims[2]} for the volume ${context?.volumeId}, so no allocation is issued`
-    );
-  }
+  warnOnce(
+    `${context?.volumeId}|${grid.dimensions}|${gpuSettings.id}|${limits.maxEdge}|${limits.maxVoxelCount}`,
+    `the GPU settings preset ${gpuSettings.id} cannot hold a texture of ${dims[0]}x${dims[1]}x${dims[2]} for the volume ${context?.volumeId}, so no allocation is issued`
+  );
 
   return false;
+}
+
+/** A refused texture rebuilds on each render, so warn once for each key. */
+function warnOnce(key, message) {
+  if (!warnedKeys.has(key)) {
+    warnedKeys.add(key);
+    log.warn(message);
+  }
 }

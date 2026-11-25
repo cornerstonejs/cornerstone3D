@@ -16,6 +16,12 @@ import {
 } from './gpuMemoryBuckets';
 import type { GpuMemoryHistoryRecord } from './gpuMemoryBuckets';
 import type { GpuMemoryFailure } from '../types/GpuMemory';
+import Events from '../enums/Events';
+import eventTarget from '../eventTarget';
+import {
+  isWebGLBlocked,
+  noteContextCreationRefused,
+} from './webglAvailability';
 
 const log = coreLog.getLogger('utilities', 'renderingCapabilities');
 
@@ -147,6 +153,12 @@ export interface RenderingCapabilities extends TextureFormatSupport {
   renderer: string;
   /** True when the renderer string identifies a software rasterizer. */
   softwareRasterizer: boolean;
+  /**
+   * True when the profile comes from the stored record because WebGL waits
+   * (see `isWebGLBlocked`). `webgl` is true then, so the page keeps its GPU
+   * path, and the profile is detected again when the wait ends.
+   */
+  webglBlocked?: boolean;
 }
 
 /**
@@ -229,6 +241,25 @@ interface WebGLContextInfo {
   webgl: boolean;
   maxTextureSize: number;
   renderer: string;
+  /** True when WebGL waits, so no context was created. */
+  blocked?: boolean;
+}
+
+/**
+ * The context information while WebGL waits: the renderer of the last page,
+ * from the store, and WebGL taken as available, because a wait follows a
+ * failure of a page that had WebGL.
+ */
+function blockedContextInfo(): WebGLContextInfo {
+  let renderer = '';
+
+  try {
+    renderer = getCapabilityStorage().getItem(LAST_RENDERER_KEY) ?? '';
+  } catch {
+    renderer = '';
+  }
+
+  return { webgl: true, maxTextureSize: 0, renderer, blocked: true };
 }
 
 const CATEGORIES: RenderingCapabilityCategory[] = [
@@ -316,12 +347,26 @@ function getWebGLContextInfo(): WebGLContextInfo {
     return info;
   }
 
+  /** A new context during a wait could extend the block of the browser. */
+  if (isWebGLBlocked()) {
+    return blockedContextInfo();
+  }
+
   try {
     const canvas = document.createElement('canvas');
+    let statusMessage = '';
+
+    canvas.addEventListener('webglcontextcreationerror', (event) => {
+      statusMessage = (event as WebGLContextEvent).statusMessage ?? '';
+    });
+
     const gl = canvas.getContext('webgl2');
 
     if (!gl) {
-      return info;
+      /** Chromium refuses a context while it blocks WebGL for the site. */
+      noteContextCreationRefused(statusMessage);
+
+      return isWebGLBlocked() ? blockedContextInfo() : info;
     }
 
     info.webgl = true;
@@ -839,6 +884,22 @@ export function detectRenderingCapabilities({
 }: { useCache?: boolean } = {}): RenderingCapabilities {
   const contextInfo = getWebGLContextInfo();
 
+  if (contextInfo.blocked) {
+    const { renderer } = contextInfo;
+
+    record = renderer ? (readRecord(renderer) ?? emptyRecord(renderer)) : null;
+
+    return {
+      webgl: true,
+      maxTextureSize: 0,
+      renderer,
+      ...(record?.formats ?? NO_GPU_FORMATS),
+      max3DTextureSize: record?.max3DTextureSize ?? 0,
+      softwareRasterizer: SOFTWARE_RASTERIZER_PATTERN.test(renderer),
+      webglBlocked: true,
+    };
+  }
+
   if (!contextInfo.webgl) {
     record = null;
 
@@ -922,6 +983,19 @@ export function detectRenderingCapabilities({
     softwareRasterizer: SOFTWARE_RASTERIZER_PATTERN.test(contextInfo.renderer),
   };
 }
+
+/**
+ * A profile that came from the stored record during a wait is detected again
+ * when WebGL is available, so the probe and the crash records run then.
+ */
+eventTarget.addEventListener(Events.WEBGL_AVAILABILITY_CHANGED, (event) => {
+  if (
+    !(event as CustomEvent<{ blocked: boolean }>).detail?.blocked &&
+    cachedCapabilities?.webglBlocked
+  ) {
+    cachedCapabilities = null;
+  }
+});
 
 /**
  * Returns the memoized capability profile, detecting it on first access.

@@ -17,7 +17,7 @@ import {
 import { GPU_MEMORY_BUCKETS_GB, bucketKeyOf } from './gpuMemoryBuckets';
 import { getGpuMemoryHistory } from './gpuMemoryHistory';
 import { canRunGpuMemoryCalibration } from './gpuMemoryCalibration';
-import { getWebGLBlock } from './webglAvailability';
+import { getWebGLBlock, noteGpuMemoryFailure } from './webglAvailability';
 
 const log = coreLog.getLogger('utilities', 'gpuMemoryFailures');
 
@@ -191,6 +191,15 @@ export function reportGpuMemoryFailure({
   };
 
   storeLastGpuMemoryFailure(failure);
+
+  /**
+   * A failure of this page can start a wait for WebGL. A crash happened in an
+   * earlier page, so its time is not now.
+   */
+  if (kind !== 'crash') {
+    noteGpuMemoryFailure();
+  }
+
   unacknowledged = failureDetail(failure, {
     ...(renderingEngineId !== undefined && { renderingEngineId }),
     ...(contextIndex !== undefined && { contextIndex }),
