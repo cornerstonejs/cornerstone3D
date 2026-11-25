@@ -5,6 +5,7 @@ import {
   beginPendingAllocation,
   clearPendingAllocation,
   getLastProbeTime,
+  recordGpuMemoryOutcome,
   recordRenderingCapabilityFailure,
   recordRenderingCapabilitySuccess,
 } from './renderingCapabilities';
@@ -43,6 +44,8 @@ const PROBE_LOSS_WINDOW_MS = 1000;
  */
 type LargeAllocation = {
   totalBytes: number;
+  /** The bytes of the texture, for the largest texture of the history. */
+  textureBytes: number;
   at: number;
   probeAt: number;
   /**
@@ -107,12 +110,13 @@ function settle(): void {
     return;
   }
 
-  const { totalBytes } = pending;
+  const { totalBytes, textureBytes } = pending;
 
   pending = null;
   clearPendingAllocation();
   recordRenderingCapabilitySuccess('textureBytes', totalBytes);
   recordRenderingCapabilitySuccess('gpuBytes', totalBytes);
+  recordGpuMemoryOutcome({ succeeded: true, totalBytes, textureBytes });
 }
 
 /**
@@ -161,6 +165,7 @@ function onContextLost(): void {
   }
 
   recordRenderingCapabilityFailure('textureBytes', totalBytes);
+  recordGpuMemoryOutcome({ succeeded: false, totalBytes });
   log.warn(
     `a WebGL context was lost after a texture allocation, with ${totalBytes} texture bytes in use; the total is recorded as lost`
   );
@@ -206,14 +211,17 @@ export function noteTextureAllocation({
   }
 
   /**
-   * A new upload of the same owner keeps the larger total. The total of
-   * another owner's allocation is already part of `totalBytes`, through the
-   * ledger, while that allocation lives.
+   * A new upload of the same owner keeps the larger total and the larger
+   * texture. The total of another owner's allocation is already part of
+   * `totalBytes`, through the ledger, while that allocation lives.
    */
-  const total =
-    pending && pending.owner === owner
-      ? Math.max(totalBytes, pending.totalBytes)
-      : totalBytes;
+  const sameOwner = pending !== null && pending.owner === owner;
+  const total = sameOwner
+    ? Math.max(totalBytes, pending.totalBytes)
+    : totalBytes;
+  const texture = sameOwner
+    ? Math.max(textureBytes, pending.textureBytes)
+    : textureBytes;
 
   if (pending) {
     clearTimeout(pending.timer);
@@ -221,6 +229,7 @@ export function noteTextureAllocation({
 
   lastLargeAllocation = {
     totalBytes: total,
+    textureBytes: texture,
     at: Date.now(),
     probeAt: getLastProbeTime(),
     owner,

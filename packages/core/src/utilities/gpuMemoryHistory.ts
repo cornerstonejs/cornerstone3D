@@ -8,23 +8,12 @@ import {
   GPU_MEMORY_MIN_BYTES,
   peekStoredRenderingCapabilities,
 } from './renderingCapabilities';
+import { GPU_MEMORY_BUCKETS_GB } from './gpuMemoryBuckets';
+import type { GpuMemorySizeCount } from './gpuMemoryBuckets';
 
-/**
- * The size ranges of the record, in GB of the page, which are also the sizes
- * that a memory dialog offers. A load goes in the smallest bucket that holds
- * it, or in the last bucket above 32 GB.
- */
-const GPU_MEMORY_BUCKETS_GB: readonly number[] = Object.freeze([
-  0.125, 0.25, 0.5, 1, 1.5, 2, 3, 4, 6, 8, 12, 16, 24, 32,
-]);
-
-/** One empty bucket for each size, and the last one above 32 GB. */
-function emptyBuckets(): GpuMemoryBucket[] {
-  return [...GPU_MEMORY_BUCKETS_GB, Number.POSITIVE_INFINITY].map((gb) => ({
-    gb,
-    successes: 0,
-    failures: 0,
-  }));
+/** A stored size count as the history states it, or `undefined`. */
+function sizeOf(entry: GpuMemorySizeCount | undefined) {
+  return entry && { bytes: entry.value, successes: entry.successes };
 }
 
 /**
@@ -33,17 +22,31 @@ function emptyBuckets(): GpuMemoryBucket[] {
  * texture that worked, the last failure and the last calibration. It is a
  * copy, so a change to it changes nothing.
  *
- * The record keeps no counts by size yet, so each bucket is empty. The largest
- * page total that worked comes from the stored record of the device.
+ * `buckets` holds every size of `GPU_MEMORY_BUCKETS_GB`, in order, and the
+ * bucket above the last size, with zero counts where nothing is recorded. A
+ * record from before the history existed states its largest page total from
+ * the memory record of the device.
  */
 function getGpuMemoryHistory(): GpuMemoryHistory {
-  const largest = peekStoredRenderingCapabilities()?.textureBytes.largest;
+  const record = peekStoredRenderingCapabilities();
+  const stored = record?.history;
+  const buckets: GpuMemoryBucket[] = [
+    ...GPU_MEMORY_BUCKETS_GB,
+    Number.POSITIVE_INFINITY,
+  ].map((gb) => ({
+    gb,
+    successes: stored?.buckets[String(gb)]?.successes ?? 0,
+    failures: stored?.buckets[String(gb)]?.failures ?? 0,
+  }));
+  const largestLoad = sizeOf(
+    stored?.largestLoad ?? record?.textureBytes.largest
+  );
+  const largestTexture = sizeOf(stored?.largestTexture);
 
   return {
-    buckets: emptyBuckets(),
-    ...(largest && {
-      largestLoad: { bytes: largest.value, successes: largest.successes },
-    }),
+    buckets,
+    ...(largestLoad && { largestLoad }),
+    ...(largestTexture && { largestTexture }),
   };
 }
 

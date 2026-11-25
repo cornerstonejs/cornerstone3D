@@ -8,6 +8,13 @@ import { getCapabilityStorage } from './capabilityStorage';
 import { coreLog } from './logger';
 import uuidv4 from './uuidv4';
 import fnv1aHash from './fnv1aHash';
+import {
+  addGpuMemoryFailure,
+  addGpuMemorySuccess,
+  emptyGpuMemoryHistory,
+  validGpuMemoryHistory,
+} from './gpuMemoryBuckets';
+import type { GpuMemoryHistoryRecord } from './gpuMemoryBuckets';
 
 const log = coreLog.getLogger('utilities', 'renderingCapabilities');
 
@@ -206,6 +213,12 @@ export interface StoredRenderingCapabilities {
   gpuBytes: RenderingCapabilityMemory;
   /** The memory limit that the user chose, or `undefined` for none. */
   memoryLimit?: GpuMemoryUserLimit;
+  /**
+   * How often each size of the page worked and failed, and the largest page
+   * total and texture that worked (see `gpuMemoryBuckets`). `undefined` until
+   * the first large allocation settles or fails.
+   */
+  history?: GpuMemoryHistoryRecord;
 }
 
 /** The class of a renderer, which sets the conservative start of `auto`. */
@@ -440,6 +453,7 @@ function readRecord(renderer: string): StoredRenderingCapabilities | null {
     stored.textureBytes = validMemory(parsed.textureBytes);
     stored.gpuBytes = validMemory(parsed.gpuBytes);
     setOrDelete(stored, 'memoryLimit', validMemoryLimit(parsed.memoryLimit));
+    setOrDelete(stored, 'history', validGpuMemoryHistory(parsed.history));
     setOrDelete(stored, 'max3DTextureSize', finite(parsed.max3DTextureSize));
     setOrDelete(stored, 'probeMs', finite(parsed.probeMs));
 
@@ -470,6 +484,7 @@ function holdsData(target: StoredRenderingCapabilities): boolean {
   return Boolean(
     target.formats ||
       target.memoryLimit ||
+      target.history ||
       CATEGORIES.some((category) => Object.keys(target[category]).length > 0)
   );
 }
@@ -736,6 +751,10 @@ function recoverPendingAllocations(
         pending.totalBytes > 0
       ) {
         addFailure(target, 'gpuBytes', pending.totalBytes);
+        addGpuMemoryFailure(
+          (target.history ??= emptyGpuMemoryHistory()),
+          pending.totalBytes
+        );
         log.warn(
           `a previous page stopped during a texture allocation of ${pending.totalBytes} bytes, so it is recorded as a crash`
         );
@@ -995,6 +1014,42 @@ export function recordRenderingCapabilityFailure(
 }
 
 /**
+ * Adds a large allocation that worked or failed to the history of the record
+ * (see `gpuMemoryBuckets`). The allocation tracker calls this; an application
+ * does not need to.
+ *
+ * @param outcome.succeeded - true for an allocation that settled, false for a
+ * context loss during it
+ * @param outcome.totalBytes - the GPU bytes of the page with the allocation
+ * @param outcome.textureBytes - the bytes of the texture, for a success
+ */
+export function recordGpuMemoryOutcome({
+  succeeded,
+  totalBytes,
+  textureBytes,
+}: {
+  succeeded: boolean;
+  totalBytes: number;
+  textureBytes?: number;
+}): void {
+  getRenderingCapabilities();
+
+  if (!(totalBytes > 0)) {
+    return;
+  }
+
+  updateRecord((target) => {
+    const history = (target.history ??= emptyGpuMemoryHistory());
+
+    if (succeeded) {
+      addGpuMemorySuccess(history, totalBytes, textureBytes);
+    } else {
+      addGpuMemoryFailure(history, totalBytes);
+    }
+  });
+}
+
+/**
  * The memory limit that the user chose, from the record of this page, or of
  * the last renderer when this page has no WebGL2.
  *
@@ -1042,8 +1097,8 @@ function getStoredGpuMemoryLimitFromStore(): GpuMemoryUserLimit | undefined {
 }
 
 /**
- * Clears the memory records and the memory limit of the user. The edge and
- * the formats stay.
+ * Clears the memory records, the history and the memory limit of the user.
+ * The edge and the formats stay.
  *
  * @returns true when the store holds the change
  */
@@ -1052,6 +1107,7 @@ export function clearGpuMemoryRecords(): boolean {
     updateRecordOfLastRenderer((target) => {
       target.textureBytes = {};
       target.gpuBytes = {};
+      delete target.history;
       delete target.memoryLimit;
     }) && getStoredGpuMemoryLimitFromStore() === undefined
   );

@@ -390,6 +390,9 @@ describe('renderingCapabilities', () => {
     const stored = getStoredRenderingCapabilities();
 
     expect(stored.gpuBytes.failed).toEqual({ value: 9000, failures: 1 });
+    expect(stored.history.buckets).toEqual({
+      0.125: { successes: 0, failures: 1 },
+    });
     expect(
       window.localStorage.getItem(`${STORAGE_KEY}.pending.another-tab`)
     ).toBeNull();
@@ -723,5 +726,99 @@ describe('renderingCapabilities', () => {
       window.localStorage.getItem(`${STORAGE_KEY}.pending.old`)
     ).toBeNull();
     expect(getStoredRenderingCapabilities().gpuBytes.failed).toBeUndefined();
+  });
+
+  describe('the history of the GPU memory', () => {
+    const MEGABYTE = 1024 * 1024;
+    const GIGABYTE = 1024 * MEGABYTE;
+
+    beforeEach(() => jest.useFakeTimers());
+    afterEach(() => jest.useRealTimers());
+
+    it('adds a settled allocation with its page total and its texture', () => {
+      mockWebGL();
+      detectRenderingCapabilities();
+      noteTextureAllocation({
+        textureBytes: 512 * MEGABYTE,
+        totalBytes: 1.2 * GIGABYTE,
+      });
+      noteTextureRendered();
+      jest.advanceTimersByTime(5000);
+
+      expect(getStoredRenderingCapabilities().history).toEqual({
+        buckets: { 1.5: { successes: 1, failures: 0 } },
+        largestLoad: { value: 1.2 * GIGABYTE, successes: 1 },
+        largestTexture: { value: 512 * MEGABYTE, successes: 1 },
+      });
+    });
+
+    it('adds a context loss during an allocation as a failure of its page total', () => {
+      mockWebGL();
+      detectRenderingCapabilities();
+      noteTextureAllocation({
+        textureBytes: GIGABYTE,
+        totalBytes: 3 * GIGABYTE,
+      });
+      eventTarget.dispatchEvent(
+        new CustomEvent(Events.WEBGL_CONTEXT_LOST, { detail: {} })
+      );
+
+      expect(getStoredRenderingCapabilities().history).toEqual({
+        buckets: { 3: { successes: 0, failures: 1 } },
+      });
+    });
+
+    it('goes with a reset of the memory records, and the edge stays', () => {
+      mockWebGL();
+      detectRenderingCapabilities();
+      noteTextureAllocation({ textureBytes: GIGABYTE, totalBytes: GIGABYTE });
+      noteTextureRendered();
+      jest.advanceTimersByTime(5000);
+
+      expect(getStoredRenderingCapabilities().history).toBeDefined();
+
+      clearGpuMemoryRecords();
+
+      const cleared = getStoredRenderingCapabilities();
+
+      expect(cleared.history).toBeUndefined();
+      expect(cleared.edge.reliable).toEqual({ value: 2048, successes: 1 });
+    });
+
+    it('drops the invalid parts of a stored history and keeps the rest of the record', () => {
+      mockWebGL();
+      detectRenderingCapabilities();
+
+      const key = recordKey();
+      const stored = JSON.parse(window.localStorage.getItem(key));
+
+      window.localStorage.setItem(
+        key,
+        JSON.stringify({
+          ...stored,
+          memoryLimit: { bytes: GIGABYTE, hard: false },
+          history: {
+            buckets: {
+              2: { successes: 3, failures: 1 },
+              5: { successes: 1, failures: 0 },
+              4: { successes: -1, failures: 0 },
+              8: { successes: 0, failures: 0 },
+            },
+            largestLoad: { value: 'big', successes: 1 },
+            largestTexture: { value: GIGABYTE, successes: 2 },
+          },
+        })
+      );
+      resetRenderingCapabilities();
+
+      const read = getStoredRenderingCapabilities();
+
+      expect(read.history).toEqual({
+        buckets: { 2: { successes: 3, failures: 1 } },
+        largestTexture: { value: GIGABYTE, successes: 2 },
+      });
+      expect(read.memoryLimit).toEqual({ bytes: GIGABYTE, hard: false });
+      expect(read.probeVersion).toBe(RENDERING_CAPABILITIES_PROBE_VERSION);
+    });
   });
 });

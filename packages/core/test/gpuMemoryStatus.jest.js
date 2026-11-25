@@ -21,6 +21,7 @@ import {
   whenWebGLAvailable,
 } from '../src/utilities/webglAvailability';
 import {
+  recordGpuMemoryOutcome,
   recordRenderingCapabilitySuccess,
   resetRenderingCapabilities,
 } from '../src/utilities/renderingCapabilities';
@@ -163,6 +164,34 @@ describe('the GPU memory history', () => {
     history.largestLoad.bytes = 1;
 
     expect(getGpuMemoryHistory().largestLoad.bytes).toBe(300 * MEGABYTE);
+  });
+
+  it('states the counts of each size and the largest texture from the record', () => {
+    mockWebGL();
+    recordGpuMemoryOutcome({
+      succeeded: true,
+      totalBytes: 900 * MEGABYTE,
+      textureBytes: 400 * MEGABYTE,
+    });
+    recordGpuMemoryOutcome({ succeeded: false, totalBytes: 3 * GIGABYTE });
+
+    const history = getGpuMemoryHistory();
+    const counted = history.buckets.filter(
+      ({ successes, failures }) => successes || failures
+    );
+
+    expect(counted).toEqual([
+      { gb: 1, successes: 1, failures: 0 },
+      { gb: 3, successes: 0, failures: 1 },
+    ]);
+    expect(history.largestLoad).toEqual({
+      bytes: 900 * MEGABYTE,
+      successes: 1,
+    });
+    expect(history.largestTexture).toEqual({
+      bytes: 400 * MEGABYTE,
+      successes: 1,
+    });
   });
 
   it('suggests the current limit while no failure is recorded', () => {
