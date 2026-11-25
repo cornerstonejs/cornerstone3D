@@ -179,10 +179,12 @@ export interface Volume3DViewportRenderContext
     options: Pick<ViewportInputOptions, 'orientation' | 'parallelProjection'>;
     /**
      * The size, in device pixels, that the rendering engine draws the
-     * viewport at since its last resize. The context pool engine sizes the
-     * canvas only when it copies the next frame onto it, so until then the
-     * canvas still has the old size. Unset before the first resize, when the
-     * canvas has that size.
+     * viewport at: the size it gave at the creation of the viewport and at
+     * its last resize with a size. The context pool engine sizes the canvas
+     * only when it copies the next frame onto it, so until then the canvas
+     * still has the old size. A resize while the element has no size, which
+     * the tiled engine gives a size of 0, keeps it, so the fit keeps the
+     * shape of the view that was last drawn.
      */
     renderedSize?: { width: number; height: number };
   };

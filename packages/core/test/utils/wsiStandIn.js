@@ -136,10 +136,22 @@ function createElement() {
   const viewportElement = document.createElement('div');
   const canvas = document.createElement('canvas');
 
-  Object.defineProperty(element, 'clientWidth', { value: WIDTH });
-  Object.defineProperty(element, 'clientHeight', { value: HEIGHT });
-  Object.defineProperty(canvas, 'clientWidth', { value: WIDTH });
-  Object.defineProperty(canvas, 'clientHeight', { value: HEIGHT });
+  Object.defineProperty(element, 'clientWidth', {
+    value: WIDTH,
+    writable: true,
+  });
+  Object.defineProperty(element, 'clientHeight', {
+    value: HEIGHT,
+    writable: true,
+  });
+  Object.defineProperty(canvas, 'clientWidth', {
+    value: WIDTH,
+    writable: true,
+  });
+  Object.defineProperty(canvas, 'clientHeight', {
+    value: HEIGHT,
+    writable: true,
+  });
   viewportElement.appendChild(canvas);
   element.appendChild(viewportElement);
   document.body.appendChild(element);

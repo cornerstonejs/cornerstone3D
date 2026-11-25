@@ -1,6 +1,7 @@
 import type { ICamera, Point2, Point3 } from '../../../types';
 import {
   computeECGRenderMetrics,
+  type ECGCanvasSize,
   type ECGChannelLayout,
   type ECGRenderMetrics,
 } from './ecgGeometry';
@@ -33,7 +34,8 @@ import type {
 
 type ECGResolvedViewState = {
   viewState: ECGViewState;
-  canvas: HTMLCanvasElement;
+  /** The sizes of the canvas that the frame is laid out on. */
+  canvas: ECGCanvasSize;
   appearance?: ECGDisplaySetAppearance;
   frameOfReferenceUID: string;
   waveform: ECGWaveformPayload;

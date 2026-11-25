@@ -498,9 +498,12 @@ class ECGViewport extends BaseViewport<
   }
 
   /**
-   * Resizes the backing canvas to match the displayed viewport size.
+   * Resizes the backing canvas to match the displayed viewport size. A
+   * framing written while the element had no size is set again at the new
+   * size, see `setViewFraming`.
    */
   resize(): void {
+    const pending = this.takePendingViewFraming();
     const { clientWidth, clientHeight } = this.canvas;
 
     if (
@@ -513,6 +516,15 @@ class ECGViewport extends BaseViewport<
     }
 
     this.render();
+    this.applyPendingViewFraming(pending);
+  }
+
+  /** The CSS size of the canvas that the viewport draws the waveform on. */
+  protected override measureCanvasSize(): { width: number; height: number } {
+    return {
+      width: this.canvas.clientWidth,
+      height: this.canvas.clientHeight,
+    };
   }
 
   /**
@@ -777,7 +789,9 @@ class ECGViewport extends BaseViewport<
    * Builds the resolved view of the current frame from the mounted waveform,
    * the canvas geometry, the view state and the data appearance. It does not
    * read the mounted rendering, so a transform is correct before the first
-   * draw (GENVIEW-VIEW-2).
+   * draw (GENVIEW-VIEW-2). The canvas has the size that the view is framed
+   * at, the last size that it had while the element has none (see
+   * `getFramingCanvasSize`).
    */
   getResolvedView(): ECGResolvedView | undefined {
     const waveform = this.getWaveformBindingData();
@@ -786,9 +800,16 @@ class ECGViewport extends BaseViewport<
       return;
     }
 
+    const { width, height } = this.getFramingCanvasSize();
+
     return new ECGResolvedView({
       viewState: this.viewState,
-      canvas: this.canvas,
+      canvas: {
+        clientWidth: width,
+        clientHeight: height,
+        width: this.canvas.width,
+        height: this.canvas.height,
+      },
       appearance: this.getEffectiveDisplaySetAppearance(waveform.id),
       frameOfReferenceUID: getECGFrameOfReferenceUID(this.getCurrentImageId()),
       waveform,

@@ -241,11 +241,22 @@ function getVisibleBands(cells: ECGTraceCell[]): ECGBand[] {
 }
 
 /**
+ * The sizes of the canvas that an ECG frame is laid out on: its size in CSS
+ * pixels (`clientWidth`, `clientHeight`) and the size of its pixels. The
+ * viewport gives the size that the view is framed at, which is the last size
+ * of the canvas while the element has none.
+ */
+export type ECGCanvasSize = Pick<
+  HTMLCanvasElement,
+  'clientWidth' | 'clientHeight' | 'width' | 'height'
+>;
+
+/**
  * Computes the world geometry of one ECG frame: the world size, the amplitude
  * scale, the canvas fit, and the position of each visible region.
  */
 export function computeECGRenderMetrics<TChannel extends ECGChannelLike>(args: {
-  canvas: HTMLCanvasElement;
+  canvas: ECGCanvasSize;
   cells: ECGTraceCell<TChannel>[];
   numberOfSamples: number;
   samplingFrequency: number;

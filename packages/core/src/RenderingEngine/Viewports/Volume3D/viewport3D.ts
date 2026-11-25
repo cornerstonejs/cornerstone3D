@@ -180,6 +180,10 @@ class VolumeViewport3D extends BaseViewport<
           orientation: this.defaultOptions.orientation,
           parallelProjection: this.defaultOptions.parallelProjection,
         },
+        renderedSize:
+          this.sWidth > 0 && this.sHeight > 0
+            ? { width: this.sWidth, height: this.sHeight }
+            : undefined,
       },
       display: {
         requestRender: () => {
@@ -669,6 +673,7 @@ class VolumeViewport3D extends BaseViewport<
       canvas: this.canvas,
       frameOfReferenceUID: this.resolveFrameOfReferenceUID(),
       renderer: this.getRenderer(),
+      getCanvasSize: () => this.getFramingCanvasSize(),
       getFit: (direction) => this.getProjectionFit(direction),
     });
   }
@@ -1088,12 +1093,17 @@ class VolumeViewport3D extends BaseViewport<
    * Notifies the active render bindings of a new size. The rendering engine
    * sets `sWidth` and `sHeight`, the size that it draws the viewport at, and
    * the fit of the view follows that size from now on, as the fit of the
-   * legacy viewports did, also before the canvas takes it.
+   * legacy viewports did, also before the canvas takes it. A resize while
+   * the element has no size keeps the size of the fit and of the framing. A
+   * framing written while the element had no size is set again at the new
+   * size, see `setViewFraming`.
    */
   resize(): void {
     if (this.isDestroyed) {
       return;
     }
+
+    const pending = this.takePendingViewFraming();
 
     if (this.sWidth > 0 && this.sHeight > 0) {
       this.renderContext.viewport.renderedSize = {
@@ -1103,6 +1113,15 @@ class VolumeViewport3D extends BaseViewport<
     }
 
     this.resizeBindings();
+    this.applyPendingViewFraming(pending);
+  }
+
+  /** The CSS size of the canvas that the viewport draws on. */
+  protected override measureCanvasSize(): { width: number; height: number } {
+    return {
+      width: this.canvas.clientWidth,
+      height: this.canvas.clientHeight,
+    };
   }
 
   /**

@@ -94,13 +94,16 @@ export function getVolume3DProjectionSnapshot(
   const camera = cloneVolume3DCamera(
     rendererCamera as Volume3DCamera & ICamera
   );
+  const canvasSize = resolvedView?.canvasSize;
   const canvasWidth =
     request.canvasWidth ??
+    canvasSize?.width ??
     viewport.canvas?.clientWidth ??
     viewport.element?.clientWidth ??
     1;
   const canvasHeight =
     request.canvasHeight ??
+    canvasSize?.height ??
     viewport.canvas?.clientHeight ??
     viewport.element?.clientHeight ??
     1;

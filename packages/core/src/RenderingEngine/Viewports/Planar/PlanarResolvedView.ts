@@ -418,6 +418,11 @@ function getCurrentSliceIndex(rendering: PlanarRendering): number {
   return rendering.currentImageIdIndex;
 }
 
+/**
+ * The size in CSS pixels of the canvas that a planar rendering shows on: the
+ * CPU canvas by the size of its pixels, or the canvas of vtk.js by its size
+ * on the page, and by the size of its pixels while it has none.
+ */
 export function getPlanarViewStateCanvasDimensions(args: {
   rendering: PlanarRendering;
   renderContext: PlanarViewResolutionRenderContext;
@@ -446,11 +451,12 @@ export function getPlanarViewStateCanvasDimensions(args: {
     );
   }
 
+  const { clientHeight, clientWidth } = renderContext.vtk.canvas;
+  const drawn = getCanvasCssDimensions(renderContext.vtk.canvas);
+
   return {
-    canvasHeight:
-      renderContext.vtk.canvas.clientHeight || renderContext.vtk.canvas.height,
-    canvasWidth:
-      renderContext.vtk.canvas.clientWidth || renderContext.vtk.canvas.width,
+    canvasHeight: clientHeight || drawn.canvasHeight,
+    canvasWidth: clientWidth || drawn.canvasWidth,
   };
 }
 

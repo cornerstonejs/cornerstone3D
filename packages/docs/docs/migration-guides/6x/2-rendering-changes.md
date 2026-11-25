@@ -981,7 +981,27 @@ into a colormap whose type has an `opacity`, and each read of
   the fit of the viewport it is written to, for that direction. On the same
   viewport `setViewFraming(getViewFraming())` changes no pixel. Before this
   change the camera was applied as it was, so on a viewport of another size
-  the zoom against the fit changed.
+  the zoom against the fit changed. A framing without its `camera` keeps the
+  direction of the view and applies its `zoom`, `pan` and `rotation`, as a
+  partial framing does on a planar viewport; before, its `position` and
+  `scale` were taken as camera fields and the view lost its direction.
+- **A framing can be read and written while the element has no size.** While
+  the element of a viewport is hidden (`display: none`), detached from the
+  document (a pane that unmounts) or of zero width or height, every family
+  frames the view at the last size its canvas had: `getViewFraming()`,
+  `getZoom()` and `getPan()` give the view as it was last drawn, and
+  `setViewFraming(framing)` sets it, so a framing stored when a pane unmounts
+  restores its pan, also on a 3D viewport. A framing written without a size
+  is shown as written when the element gets its size back; when the element
+  comes back at another size, the next `renderingEngine.resize()` sets it
+  again against the fit of that size, as `setViewFraming(framing)` does on a
+  viewport of that size. A view that was set while the element had a size
+  follows the resize as any resize does. Before this change a 3D, video,
+  whole slide or ECG viewport read its size at the moment: a framing read
+  without a size had a pan of `[0, 0]` on a 3D viewport, a wrong pan on a
+  video or an ECG viewport and no zoom on a whole slide viewport, and a
+  planar viewport lost its pan after a `renderingEngine.resize()` of the
+  tiled engine while it was hidden.
 - **The framing has no slab thickness and no window.** `slabThickness` of
   `ViewFraming` and `slabThickness`, `windowLevel` and `paletteLut` of
   `ViewFramingSelector` are gone; nothing read them. The slab thickness and

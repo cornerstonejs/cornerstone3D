@@ -590,6 +590,8 @@ class VideoViewport extends BaseViewport<
   /**
    * Returns the computed camera that resolves layout, zoom, and pan
    * from the raw camera state and the current video element dimensions.
+   * While the element has no size, the view is resolved at the last size
+   * that it had (see `getFramingCanvasSize`).
    */
   getResolvedView(): VideoResolvedView | undefined {
     const videoElement = this.getVideoElement();
@@ -601,18 +603,20 @@ class VideoViewport extends BaseViewport<
 
     this.syncCameraCurrentTimeFromElement();
 
+    const { width, height } = this.getFramingCanvasSize();
+
     return new VideoResolvedView({
       viewState: this.viewState,
-      containerHeight: this.element.clientHeight,
-      containerWidth: this.element.clientWidth,
+      containerHeight: height,
+      containerWidth: width,
       frameOfReferenceUID:
         (
           videoData.metadata.imagePlaneModule as
             | { frameOfReferenceUID?: string }
             | undefined
         )?.frameOfReferenceUID || videoData.renderedUrl,
-      intrinsicHeight: videoElement.videoHeight || this.element.clientHeight,
-      intrinsicWidth: videoElement.videoWidth || this.element.clientWidth,
+      intrinsicHeight: videoElement.videoHeight || height,
+      intrinsicWidth: videoElement.videoWidth || width,
       objectFit: this.getEffectiveDisplaySetAppearance(videoData.id)?.objectFit,
       payload: videoData,
     });

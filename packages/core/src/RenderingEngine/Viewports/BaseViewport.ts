@@ -83,6 +83,19 @@ type AppearanceSnapshot = {
   effective: Record<string, unknown>;
 };
 
+/** The size of a canvas in CSS pixels. */
+type CanvasSize = { width: number; height: number };
+
+/** Whether a size has a width and a height. */
+function hasArea(size: CanvasSize): boolean {
+  return size.width > 0 && size.height > 0;
+}
+
+/** Whether two sizes are the same. */
+function isSameSize(a: CanvasSize, b: CanvasSize): boolean {
+  return a.width === b.width && a.height === b.height;
+}
+
 /** A copy of an object without the keys whose value is undefined. */
 function withoutUndefined<T extends object>(value: T): T {
   return Object.fromEntries(
@@ -200,6 +213,18 @@ abstract class BaseViewport<
     displaySetIds: DisplaySetId[];
     sourceDisplaySetId?: DisplaySetId;
   } = { displaySetIds: [] };
+  /**
+   * The last size of the canvas, in CSS pixels, that had a width and a
+   * height: the size that the view is framed at while the element has none.
+   * See `getFramingCanvasSize`.
+   */
+  private lastCanvasSize?: CanvasSize;
+  /**
+   * The framing that `setViewFraming` gave while the element had no size,
+   * read back after the write, and the size that it was measured at. See
+   * `setViewFraming`.
+   */
+  private pendingViewFraming?: { framing: TFraming; size: CanvasSize };
 
   // ── Debug ────────────────────────────────────────────────────────────
 
@@ -826,6 +851,14 @@ abstract class BaseViewport<
    * that `viewportProjection.withFraming(viewport, framing)` gives. Does
    * nothing while the viewport shows nothing.
    *
+   * While the element has no size the framing is measured at the last size
+   * that the canvas had (see `getFramingCanvasSize`), so `getViewFraming`
+   * gives it back, and the viewport keeps the framing that it gives. When
+   * the element gets another size, the next `resize()` sets that framing
+   * again at the new size, as `setViewFraming` of the same framing does on a
+   * viewport of that size. A later change of the view that is not a framing
+   * written without a size drops it.
+   *
    * @param framing - The keys of the framing to change.
    * @param options - The canvas point that a zoom keeps.
    */
@@ -833,6 +866,7 @@ abstract class BaseViewport<
     framing: Partial<TFraming>,
     options?: ProjectionWriteOptions
   ): void {
+    const hasSize = Boolean(this.keepCanvasSize());
     const viewState = viewportProjection.withFraming<
       Partial<TViewState>,
       TFraming
@@ -841,6 +875,109 @@ abstract class BaseViewport<
     if (viewState) {
       this.setViewState(viewState);
     }
+
+    this.pendingViewFraming = undefined;
+
+    if (!hasSize && viewState) {
+      const written = this.getViewFraming();
+
+      this.pendingViewFraming = written && {
+        framing: written,
+        size: this.getFramingCanvasSize(),
+      };
+    }
+  }
+
+  // ====================================================================
+  // Protected -- the size that the view is framed at
+  // ====================================================================
+
+  /**
+   * The size of the canvas now, in CSS pixels, as the family draws on it:
+   * the size of the element unless the family measures its canvas. It is 0
+   * by 0 while the element is hidden or detached from the document.
+   */
+  protected measureCanvasSize(): CanvasSize {
+    return {
+      width: this.element.clientWidth,
+      height: this.element.clientHeight,
+    };
+  }
+
+  /**
+   * Keeps the size of the canvas now as the size to frame the view at while
+   * the element has none, when it has a width and a height. The viewport
+   * keeps it at each read and write of its framing, at each resize and after
+   * each frame.
+   *
+   * @returns The size, or undefined while the element has no size.
+   */
+  protected keepCanvasSize(): CanvasSize | undefined {
+    const size = this.measureCanvasSize();
+
+    if (!hasArea(size)) {
+      return;
+    }
+
+    this.lastCanvasSize = { width: size.width, height: size.height };
+
+    return size;
+  }
+
+  /**
+   * The size, in CSS pixels, that the view is framed at: the zoom, the pan
+   * and the scale of the framing, of `getZoom` and `getPan`, and of their
+   * writers are measured on a canvas of this size. It is the size of the
+   * canvas now when it has a width and a height. While the element has no
+   * size (hidden with `display: none`, detached from the document, or of
+   * zero width or height) it is the last size that the canvas had, the size
+   * that the view was last drawn at, so a framing read or written then is
+   * the one of that view. A viewport whose canvas never had a size gives the
+   * size now.
+   */
+  protected getFramingCanvasSize(): CanvasSize {
+    const size =
+      this.keepCanvasSize() ?? this.lastCanvasSize ?? this.measureCanvasSize();
+
+    return { width: size.width, height: size.height };
+  }
+
+  /**
+   * Takes the framing that was written while the element had no size, once
+   * the element has one: a family's `resize()` takes it before it changes
+   * the view, and gives it to `applyPendingViewFraming` after. Undefined
+   * while the element has no size or when there is none.
+   */
+  protected takePendingViewFraming():
+    | { framing: TFraming; size: CanvasSize }
+    | undefined {
+    const pending = this.pendingViewFraming;
+
+    if (!pending || !hasArea(this.measureCanvasSize())) {
+      return;
+    }
+
+    this.pendingViewFraming = undefined;
+
+    return pending;
+  }
+
+  /**
+   * Sets a framing that was written while the element had no size again,
+   * when the canvas has another size now than the one it was measured at.
+   *
+   * @param pending - What `takePendingViewFraming` gave.
+   */
+  protected applyPendingViewFraming(
+    pending: { framing: TFraming; size: CanvasSize } | undefined
+  ): void {
+    const size = this.keepCanvasSize();
+
+    if (!pending || !size || isSameSize(size, pending.size)) {
+      return;
+    }
+
+    this.setViewFraming(pending.framing);
   }
 
   // ====================================================================
@@ -897,12 +1034,22 @@ abstract class BaseViewport<
   }
 
   /**
-   * Called by rendering engines after a frame is rendered.
+   * Called by rendering engines after a frame is rendered. The viewport
+   * keeps the size of its canvas, see `keepCanvasSize`, and a framing written
+   * while the element had no size, that the frame showed at the size it was
+   * measured at, is not set again at the next resize.
    *
    * Most BaseViewport families do not need to track this separately because
    * their render paths own concrete runtime state.
    */
   setRendered(): void {
+    const size = this.keepCanvasSize();
+    const pending = this.pendingViewFraming;
+
+    if (pending && size && isSameSize(size, pending.size)) {
+      this.pendingViewFraming = undefined;
+    }
+
     if (
       this.viewportStatus === ViewportStatus.NO_DATA ||
       this.viewportStatus === ViewportStatus.LOADING
@@ -940,14 +1087,19 @@ abstract class BaseViewport<
   /**
    * Recomputes viewport-owned runtime sizing. Concrete viewport families may
    * override this when they need to resize canvases or external runtimes.
+   * A framing written while the element had no size is set again at the new
+   * size, see `setViewFraming`.
    */
   resize(): void {
     if (this.isDestroyed) {
       return;
     }
 
+    const pending = this.takePendingViewFraming();
+
     this.resizeBindings();
     this.modified();
+    this.applyPendingViewFraming(pending);
   }
 
   /**
@@ -1504,9 +1656,13 @@ abstract class BaseViewport<
 
   /**
    * Fires a {@link Events.CAMERA_MODIFIED} event on the viewport element,
-   * unless the viewport was made with the `suppressEvents` option.
+   * unless the viewport was made with the `suppressEvents` option. The view
+   * changed, so a framing written while the element had no size is not set
+   * again at the next resize.
    */
   protected triggerCameraModifiedEvent(previousCamera: ICamera): void {
+    this.pendingViewFraming = undefined;
+
     if (this.defaultOptions.suppressEvents) {
       return;
     }

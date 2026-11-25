@@ -2595,13 +2595,17 @@ class PlanarViewport extends BaseViewport<
   /**
    * Resizes the internal CPU canvas and notifies active render bindings.
    * The view keeps its camera through the new size, as the legacy viewports
-   * did (`keepCameraThroughResize`).
+   * did (`keepCameraThroughResize`). A resize while the element has no size
+   * keeps the size that the view is framed at, so the view stays. A framing
+   * written while the element had no size is set again at the new size, see
+   * `setViewFraming`.
    */
   resize(): void {
     if (this.isDestroyed) {
       return;
     }
 
+    const pending = this.takePendingViewFraming();
     const previousView = this.getResolvedView();
 
     this.clearResolvedViewCache();
@@ -2626,6 +2630,8 @@ class PlanarViewport extends BaseViewport<
     if (previousCamera) {
       this.triggerCameraModifiedEvent(previousCamera);
     }
+
+    this.applyPendingViewFraming(pending);
   }
 
   /**
@@ -4165,6 +4171,9 @@ class PlanarViewport extends BaseViewport<
         args.frameOfReferenceUID ?? this.resolveFrameOfReferenceUID(),
       renderContext: this.renderContext,
       rendering,
+      canvasDimensions: rendering
+        ? this.getCachedPlanarCanvasDimensions()
+        : undefined,
       sliceIndex: args.sliceIndex,
     });
   }
@@ -4199,9 +4208,11 @@ class PlanarViewport extends BaseViewport<
    * a synchronous layout reflow when layout is dirty; the annotation rendering
    * loop (worldToCanvas per contour point, interleaved with SVG writes) would
    * otherwise thrash layout. Canvas CSS size only changes on resize(), which
-   * invalidates this cache.
+   * invalidates this cache. While the element has no size they are the last
+   * size that the canvas had (`getFramingCanvasSize`), which is not cached,
+   * so the size of the element is read again once it has one.
    */
-  private getCachedPlanarCanvasDimensions(rendering: PlanarRendering): {
+  private getCachedPlanarCanvasDimensions(): {
     canvasHeight: number;
     canvasWidth: number;
   } {
@@ -4210,18 +4221,38 @@ class PlanarViewport extends BaseViewport<
       return cached;
     }
 
-    const dimensions = getPlanarViewStateCanvasDimensions({
-      renderContext: this.renderContext,
-      rendering,
-    });
+    const measured = this.keepCanvasSize();
+    const { width, height } = measured ?? this.getFramingCanvasSize();
+    const dimensions = { canvasHeight: height, canvasWidth: width };
 
     // Don't cache a transient 0x0 read (canvas not laid out yet); recompute
     // until the element has real dimensions so a stale zero never sticks.
-    if (dimensions.canvasHeight > 0 && dimensions.canvasWidth > 0) {
+    if (measured) {
       this.cachedCanvasDimensions = dimensions;
     }
 
     return dimensions;
+  }
+
+  /**
+   * The CSS size of the canvas that shows the view: the CPU canvas while the
+   * CPU draws, else the canvas of vtk.js. 0 by 0 while the element has no
+   * size.
+   */
+  protected override measureCanvasSize(): { width: number; height: number } {
+    const rendering = this.getCurrentPlanarRendering();
+    const { clientWidth, clientHeight } = this.element;
+
+    if (!clientWidth || !clientHeight || !rendering) {
+      return { width: clientWidth, height: clientHeight };
+    }
+
+    const { canvasWidth, canvasHeight } = getPlanarViewStateCanvasDimensions({
+      renderContext: this.renderContext,
+      rendering,
+    });
+
+    return { width: canvasWidth, height: canvasHeight };
   }
 
   private resolveCachedViewState(
@@ -4246,7 +4277,7 @@ class PlanarViewport extends BaseViewport<
     }
 
     const { canvasHeight, canvasWidth } =
-      this.getCachedPlanarCanvasDimensions(rendering);
+      this.getCachedPlanarCanvasDimensions();
 
     if (
       cache &&
@@ -4404,7 +4435,7 @@ class PlanarViewport extends BaseViewport<
 
     if (rendering) {
       const { canvasHeight, canvasWidth } =
-        this.getCachedPlanarCanvasDimensions(rendering);
+        this.getCachedPlanarCanvasDimensions();
 
       return {
         width: canvasWidth || this.element.clientWidth,

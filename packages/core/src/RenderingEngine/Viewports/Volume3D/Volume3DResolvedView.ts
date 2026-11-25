@@ -11,6 +11,12 @@ import type { Volume3DCamera } from './viewport3DTypes';
 type Volume3DResolvedViewState = {
   camera: Volume3DCamera & ICamera;
   canvas: HTMLCanvasElement;
+  /**
+   * Gives the size of the canvas in CSS pixels that the zoom, the pan and
+   * the scale of the framing are measured at: the size now, or the last size
+   * that the canvas had while the element has none.
+   */
+  getCanvasSize?: () => { width: number; height: number };
   frameOfReferenceUID?: string;
   renderer: vtkRenderer;
   /**
@@ -30,6 +36,14 @@ class Volume3DResolvedView extends ResolvedViewportView<Volume3DResolvedViewStat
    */
   get fit(): Volume3DProjectionFit | undefined {
     return this.state.getFit?.();
+  }
+
+  /**
+   * The size of the canvas in CSS pixels that the view is framed at. It is
+   * computed when it is read, so a transform reads no layout.
+   */
+  get canvasSize(): { width: number; height: number } | undefined {
+    return this.state.getCanvasSize?.();
   }
 
   /**

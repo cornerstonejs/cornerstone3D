@@ -30,6 +30,8 @@ export type Volume3DProjectionFit = {
 };
 
 export type Volume3DResolvedViewLike = {
+  /** The size of the canvas in CSS pixels that the view is framed at. */
+  canvasSize?: { width: number; height: number };
   /** The fit of the viewport, when it shows something to fit. */
   fit?: Volume3DProjectionFit;
   /** The fit of the viewport for a camera that looks in another direction. */

@@ -268,10 +268,12 @@ export default class WSIViewport extends BaseViewport<
       return;
     }
 
+    const { width, height } = this.getFramingCanvasSize();
+
     return new WSIResolvedView({
       viewState: this.viewState,
-      canvasHeight: this.element.clientHeight,
-      canvasWidth: this.element.clientWidth,
+      canvasHeight: height,
+      canvasWidth: width,
       frameOfReferenceUID: data.frameOfReferenceUID,
       metadata: data.metadata,
       view,
@@ -286,15 +288,17 @@ export default class WSIViewport extends BaseViewport<
    * fills the canvas, and a view that snaps resolutions snaps it towards the
    * larger one. It is computed, not kept from the mount: the viewer fits the
    * view again after the mount, when its map has a size. The rotation of the
-   * view state does not change it.
+   * view state does not change it. The canvas is the size that the view is
+   * framed at, the last size that it had while the element has none (see
+   * `getFramingCanvasSize`).
    *
    * @param view - The map view.
    * @returns The resolution, or undefined without a canvas or an extent.
    */
   private getFitResolution(view: WSIMapViewLike): number | undefined {
     const extent = view.getProjection?.()?.getExtent?.();
-    const canvasWidth = this.element.clientWidth;
-    const canvasHeight = this.element.clientHeight;
+    const { width: canvasWidth, height: canvasHeight } =
+      this.getFramingCanvasSize();
 
     if (!extent || !canvasWidth || !canvasHeight) {
       return;
@@ -375,8 +379,11 @@ export default class WSIViewport extends BaseViewport<
       return;
     }
 
+    const pending = this.takePendingViewFraming();
+
     this.resizeBindings();
     this.render();
+    this.applyPendingViewFraming(pending);
   }
 
   worldToIndexWSI(point: Point3): Point2 {

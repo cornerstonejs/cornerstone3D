@@ -1,7 +1,7 @@
 import type { Point2 } from '../../../types';
 import type { ViewAnchor } from '../ViewportCameraTypes';
 import type { ECGViewState } from './ECGViewportTypes';
-import type { ECGRenderMetrics } from './ecgGeometry';
+import type { ECGCanvasSize, ECGRenderMetrics } from './ecgGeometry';
 
 export interface ECGCanvasMapping {
   anchorWorld: [number, number];
@@ -93,7 +93,7 @@ export function normalizeECGViewState(camera: ECGViewState): ECGViewState {
 export function resolveECGCanvasMapping(args: {
   metrics: ECGRenderMetrics;
   camera?: ECGViewState;
-  canvas: HTMLCanvasElement;
+  canvas: ECGCanvasSize;
 }): ECGCanvasMapping {
   const { metrics, camera, canvas } = args;
   const scale = Math.max(camera?.scale ?? 1, 0.001);

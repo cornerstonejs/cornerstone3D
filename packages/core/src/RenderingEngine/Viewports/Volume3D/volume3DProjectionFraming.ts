@@ -17,9 +17,23 @@ function hasOwn<T extends object, K extends PropertyKey>(
   return Object.prototype.hasOwnProperty.call(obj, key);
 }
 
+/** The fields of a camera that a raw camera patch can set. */
+const CAMERA_PATCH_KEYS = [
+  'focalPoint',
+  'parallelProjection',
+  'parallelScale',
+  'viewAngle',
+  'viewPlaneNormal',
+  'viewUp',
+] as const;
+
 /**
- * The camera fields of a framing patch: its `camera`, or else the patch
- * itself as a raw camera patch, without its zoom, its pan and its rotation.
+ * The camera fields of a framing patch: its `camera`, or else the fields of
+ * a camera that the patch has itself, as a raw camera patch. The `position`
+ * of a framing is a projection position and its `scale` a projection scale,
+ * which the reader gives and the writer does not apply, so a framing that was
+ * read without its camera keeps the direction; a `position` that is a point
+ * is the position of the camera.
  */
 function getCameraPatch(
   framing: Partial<Volume3DProjectionFraming>
@@ -28,15 +42,20 @@ function getCameraPatch(
     return framing.camera ?? {};
   }
 
-  const {
-    zoom: _zoom,
-    pan: _pan,
-    rawPan: _rawPan,
-    rotation: _rotation,
-    ...cameraPatch
-  } = framing;
+  const cameraPatch: Partial<Volume3DCamera> = {};
+  const raw = framing as Record<string, unknown>;
 
-  return cameraPatch as unknown as Partial<Volume3DCamera>;
+  for (const key of CAMERA_PATCH_KEYS) {
+    if (raw[key] !== undefined) {
+      (cameraPatch as Record<string, unknown>)[key] = raw[key];
+    }
+  }
+
+  if (Array.isArray(raw.position)) {
+    cameraPatch.position = raw.position as Volume3DCamera['position'];
+  }
+
+  return cameraPatch;
 }
 
 /**
