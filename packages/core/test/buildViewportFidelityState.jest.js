@@ -349,7 +349,7 @@ describe('display issues (FIDELITY-STATE-13)', () => {
       'unknownVOILUTFunction',
     ]);
     expect(fidelityDetailsTextOf(state, lines)).toContain(
-      'Unknown VOI LUT function "BOGUS". The display uses LINEAR.'
+      'The metadata gives an unknown VOI LUT function "BOGUS". The default display uses LINEAR.'
     );
   });
 

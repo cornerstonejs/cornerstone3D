@@ -507,11 +507,25 @@ FIDELITY-STATE-13 lists the rows and the columns of the decoded image as a
 display issue. The code does not detect that issue yet. A loader can report
 the issue on `IImage.fidelityIssues` when it adds the check.
 
+Core detects only a VOI LUT function that is not a known function. Core does
+not detect a known function that a viewport cannot draw. These viewports draw
+`LINEAR` for each function, and show no display issue:
+
+- The CPU viewports, for example `SIGMOID` or `LINEAR_EXACT`. #2856 adds the
+  function to the CPU render.
+- The generic viewport when it shows a slice of a volume, for example in MPR
+  (`planarAcquiredFrames.ts`). Issue #3021 records the volume work.
+
 A volume gets its issues from the metadata of the volume, which comes from the
-first image. An issue of a different image of the volume does not show.
+first image. An issue of a different image of the volume does not show. The
+default window of a volume comes from the middle image. If only the middle
+image has an unknown VOI LUT function, the window uses `LINEAR`, and no issue
+shows.
 
 When an application sets a VOI LUT function on a stack viewport, the issue of
-the metadata still shows.
+the metadata still shows, because the image still does not show as its
+metadata specifies. The message says what the metadata gives and what the
+default display uses, so the message stays true after the change.
 
 ### VF has no display issues yet
 

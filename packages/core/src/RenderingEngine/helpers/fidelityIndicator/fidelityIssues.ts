@@ -23,7 +23,7 @@ export function voiLUTFunctionIssueOf(
 
   return {
     code: 'unknownVOILUTFunction',
-    message: `Unknown VOI LUT function "${value}". The display uses LINEAR.`,
+    message: `The metadata gives an unknown VOI LUT function "${value}". The default display uses LINEAR.`,
   };
 }
 

@@ -146,7 +146,6 @@ function getVOIFromMetadata(imageVolume: IImageVolume): VOIRange | undefined {
         voi = {
           windowWidth: width,
           windowCenter: center,
-          // toLowHighRange throws on an unknown function
           voiLUTFunction: getValidVOILUTFunction(
             asArrayFirst(voiLutModule.voiLUTFunction)
           ),
