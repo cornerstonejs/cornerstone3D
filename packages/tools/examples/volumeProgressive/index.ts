@@ -11,9 +11,6 @@ import {
   imageLoadPoolManager,
   imageLoader,
   metaData,
-  getRenderingCapabilities,
-  getStoredRenderingCapabilities,
-  getGpuMemoryLimit,
   getLossyDownsampling,
 } from '@cornerstonejs/core';
 import {
@@ -25,6 +22,14 @@ import {
   addGpuSettingsPresetDropdown,
   addButtonToToolbar,
 } from '../../../../utils/demo/helpers';
+import { applyGpuMemoryUrlParameters } from '../../../../utils/demo/helpers/exampleParameters';
+import {
+  addGpuMemoryLog,
+  addGpuMemoryStatusLine,
+  allocateUntilFailure,
+  attachGpuMemoryFailurePopup,
+  gpuMemoryReport,
+} from './gpuMemoryControls';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import * as cornerstoneAdapters from '@cornerstonejs/adapters';
 import { wadouri } from '@cornerstonejs/dicom-image-loader';
@@ -502,6 +507,13 @@ async function run() {
     core: { rendering: { lossyDownsampling: { final: true } } },
   });
 
+  /**
+   * `?gpuMemory=512MB` (with `?gpuMemoryHard=1`) sets the memory limit as the
+   * user would in a dialog, and `?gpuReset=1` clears the record of the device.
+   * The status line and the log below show the effect.
+   */
+  const appliedGpuParameters = applyGpuMemoryUrlParameters();
+
   const toolGroupId = 'TOOL_GROUP_ID';
 
   // Add tools to Cornerstone3D
@@ -597,8 +609,9 @@ async function run() {
 
   /**
    * This button shows what getRenderingCapabilities() probed (formats,
-   * renderer, edge), the stored record of the device, and the memory limit of
-   * `auto` with its source.
+   * renderer, edge), the stored record of the device, the memory limit of
+   * `auto` with its source, the memory status, and the history of the sizes
+   * that worked and failed with the suggested limit.
    */
   const probePanel = document.createElement('div');
   probePanel.style.display = 'none';
@@ -622,15 +635,7 @@ async function run() {
     title: 'View GPU probe',
     container: loaders,
     onClick: () => {
-      const text = JSON.stringify(
-        {
-          capabilities: getRenderingCapabilities(),
-          memoryLimit: getGpuMemoryLimit() ?? 'none',
-          record: getStoredRenderingCapabilities(),
-        },
-        null,
-        2
-      );
+      const text = JSON.stringify(gpuMemoryReport(), null, 2);
       const wasVisible = probePanel.style.display !== 'none';
 
       probeOutput.textContent = text;
@@ -660,6 +665,31 @@ async function run() {
 
   // Instantiate a rendering engine
   const renderingEngine = new RenderingEngine(renderingEngineId);
+
+  /**
+   * "Allocate until failure" grows what the 3D viewport shows until the GPU
+   * fails, for a real failure. The status line, the log and the failure popup
+   * show what happens.
+   */
+  addButtonToToolbar({
+    id: 'allocateUntilFailure',
+    title: 'Allocate until failure',
+    container: loaders,
+    onClick: () =>
+      allocateUntilFailure({
+        renderingEngine,
+        viewportId: viewportId3D,
+        sourceVolumeId: volumeId,
+        log: gpuLog,
+      }),
+  });
+
+  addGpuMemoryStatusLine(loaders);
+
+  const gpuLog = addGpuMemoryLog(loaders);
+
+  appliedGpuParameters.forEach((text) => gpuLog(text));
+  attachGpuMemoryFailurePopup(gpuLog);
 
   // Create the viewports
   const viewportInputArray = [
