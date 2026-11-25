@@ -79,6 +79,8 @@ person, and **Nothing** where the code stays the same and its result changes.
 | `getDisplaySets()` of a 3D, a video, an ECG and a whole slide viewport gives the options of each mount, resolved (3D: the `volumeId` that it shows), as a planar viewport does; their mounts take `role`; `VideoMountOptions`, `ECGMountOptions` and `WSIMountOptions` are exported                                 | Copy a viewport with `other.setDisplaySets(...viewport.getDisplaySets())` and `getDisplaySetAppearance(id)`                       | Nothing                                                                               | [Mount options](./1-next-viewports-only.md#what-one-viewport-wants-is-said-on-its-mount)                                                                        |
 | The labelmap of a stack is one display set for each labelmap layer whose image follows the slice: a scroll fires no `DISPLAY_SETS_CHANGED`. `addImages` with the id of a mounted image replaces its image and fires nothing                                                                                         | A listener that followed the labelmap image through the event listens to `NEW_IMAGE`                                              | Nothing                                                                               | [Events and image loading](./2-rendering-changes.md#events-and-image-loading-of-a-planar-viewport)                                                              |
 | A volume takes the array type that its series can hold (its metadata), not the array of the images that a stack loaded before; its voxel manager answers `getConstructor()` with that type                                                                                                                          | Nothing; a 12 bit series is a `Uint16Array` volume where it could be a `Uint8Array` cut at 255                                    | Nothing                                                                               | [The array type of a volume](./2-rendering-changes.md#the-array-type-of-a-volume)                                                                               |
+| When the source goes and other display sets remain, the first of them becomes the source on every viewport family, where a 3D, video, whole slide and ECG viewport kept them as overlays with no source. `addDisplaySet` without a `role` mounts the source on a viewport that shows nothing                        | Pass `role: 'overlay'` where a display set mounted alone is to stay an overlay                                                    | Nothing                                                                               | [What the codemod cannot do](#what-the-codemod-cannot-do), item 11                                                                                              |
+| A resize keeps the camera of a planar view, as it kept that of a 3D view, so the zoom read against the fit changes where the fit changes; a framing keeps the zoom against the fit                                                                                                                                  | Read `getViewFraming()` before `renderingEngine.resize()` and write it after it where the zoom against the fit is to stay         | Nothing                                                                               | [What the codemod cannot do](#what-the-codemod-cannot-do), item 12                                                                                              |
 
 ## What the codemod cannot do
 
@@ -143,3 +145,82 @@ application wants.
     `loop`, and `sliceIndex` is where the scroll stopped, where the old
     events gave the index before the scroll. See
     [Scroll and its event](./2-rendering-changes.md#scroll-and-its-event).
+11. **When the source goes, the first display set left is the source.**
+    `removeDisplaySet` of the source makes the first display set that
+    remains the source, on every viewport family: `getDisplaySets()`, the
+    `DISPLAY_SETS_CHANGED` of the removal (`sourceChanged: true` and its
+    `sourceDisplaySetId`) and the viewport name it. 6.0.0-beta.2 did so on a
+    planar viewport only; a 3D, video, whole slide and ECG viewport kept the
+    others as overlays and its event gave no source. In the same way
+    `addDisplaySet` without a `role` mounts the source on a viewport that
+    shows nothing, as the first entry of `setDisplaySets` does, and an
+    overlay on any other; a display set mounted again keeps its role. A
+    mount with an explicit `role: 'overlay'` on an empty viewport, as a
+    segmentation shown without its background, stays a viewport of overlays
+    only: no removal makes one of them the source, and `addDisplaySet`
+    without a role adds an overlay to it.
+
+    ```ts
+    await viewport3D.setDisplaySets(
+      { displaySetId: 'ct' },
+      { displaySetId: 'lungSurface' }
+    );
+    viewport3D.removeDisplaySet('ct');
+    viewport3D.getDisplaySets();
+    // Before: [{ displaySetId: 'lungSurface', options: { role: 'overlay' } }]
+    // After:  [{ displaySetId: 'lungSurface', options: { role: 'source' } }]
+    ```
+
+    The display set that becomes the source keeps its look: its appearance
+    overrides and defaults (a 3D viewport keeps its transfer function and
+    opacity, a planar viewport its window), and nothing fires
+    `DISPLAY_SET_APPEARANCE_CHANGED` for the change; the events after it
+    give `role: 'source'`, and `setDisplaySetAppearance(props)` without an
+    id goes to it. A planar viewport keeps its view state and shows the
+    images of the new source (`getCurrentImageId()`), `NEW_IMAGE` follows
+    its slice, and
+    `getRenderPlan()` gives it the role `source` at once, without a
+    `RENDER_PLAN_CHANGED`; how it is drawn (its render backend) was decided
+    at its mount and stays. Code that mounted one display set alone as an
+    overlay with `addDisplaySet` says so:
+
+    ```ts
+    // Before: an overlay in 6.0.0-beta.2, the source in 6.0
+    await viewport.addDisplaySet('seg');
+
+    // After
+    await viewport.addDisplaySet('seg', { role: 'overlay' });
+    ```
+
+12. **A resize keeps the camera.** `renderingEngine.resize()` keeps the
+    parallel scale and the focal point of a planar view (in the scale mode
+    `fit` without a display area) and the camera of a 3D view, as 5.x did:
+    the picture keeps its scale, and the zoom read against the fit
+    (`getViewFraming().zoom`, `getZoom()`) changes where the fit changes. A
+    pane of 400 by 300 pixels at zoom 1.5 reads 1.8 after a resize to 250 by
+    300, and 1.98 after a further resize to 250 by 330. A framing written to
+    a pane of another size keeps the zoom against the fit and the world
+    point at the centre instead. So an application that stores a framing at
+    one size and restores it at another, or that wants the zoom against the
+    fit kept through a change of the layout, reads `getViewFraming()` before
+    the resize and writes it with `setViewFraming()` after it, as OHIF's
+    `performResize` does:
+
+    ```ts
+    // Keeps the camera: the zoom read after it follows the new fit
+    element.style.width = '250px';
+    renderingEngine.resize(true);
+
+    // Keeps the zoom against the fit and the world point at the centre
+    const framing = viewport.getViewFraming();
+    element.style.width = '250px';
+    renderingEngine.resize(true);
+    viewport.setViewFraming(framing);
+    ```
+
+    A planar view with a display area or a scale mode other than `fit`, a
+    video and an ECG viewport keep the zoom against the fit through a
+    resize, and `keepCamera` false fits the view to the new size on every
+    family but the whole slide viewport, which keeps the resolution of its
+    map in both cases. See
+    [A framing carried to another size](./2-rendering-changes.md#display-area-and-stretch).

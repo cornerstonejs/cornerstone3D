@@ -319,5 +319,32 @@ describe('A planar viewport on a device without WebGL -- ', () => {
       }).toEqual({ renderedEvents: 1, drawn: true, canvasSizes: [[96, 96]] });
       expect(webGL.counter.webGLContexts).toBe(0);
     });
+
+    it(`keeps the camera through a resize of ${name} with keepCamera true, and fits the view to the new size with keepCamera false`, async () => {
+      engine = new Engine(`withoutWebGLKeepCamera:${Engine.name}`);
+
+      const element = await showStackWithoutWebGL(engine);
+      const viewport = engine.getViewport('withoutWebGL');
+      const parallelScale = () =>
+        viewport.getResolvedView().toICamera().parallelScale;
+
+      viewport.setViewFraming({ zoom: 2, pan: [0, 0] });
+
+      const before = parallelScale();
+
+      element.style.height = '96px';
+      engine.resize(true, true);
+      await waitForDraws();
+
+      expect(parallelScale()).toBeCloseTo(before, 4);
+      expect(viewport.getViewFraming().zoom).not.toBeCloseTo(2, 2);
+
+      element.style.height = '128px';
+      engine.resize(true, false);
+      await waitForDraws();
+
+      expect(viewport.getViewFraming().zoom).toBeCloseTo(1, 4);
+      expect(webGL.counter.webGLContexts).toBe(0);
+    });
   });
 });

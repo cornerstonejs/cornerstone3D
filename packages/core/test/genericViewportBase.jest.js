@@ -244,7 +244,7 @@ describe('BaseViewport', () => {
       expect(viewport.renderCount).toBeGreaterThan(0);
       expect(viewport._debug.renderModes['ds-1']).toBe('fake');
       expect(viewport.getDisplaySets()).toEqual([
-        { displaySetId: 'ds-1', options: { role: 'overlay' } },
+        { displaySetId: 'ds-1', options: { role: 'source' } },
       ]);
     });
 
@@ -365,6 +365,38 @@ describe('BaseViewport', () => {
       expect(roleOf('ds-3')).toBe('source');
     });
 
+    it('mounts a display set that addDisplaySet gives without a role as the source on an empty viewport, as an overlay on any other, and with the role it has when it is mounted again', async () => {
+      const { viewport } = createHarness();
+      const roles = () =>
+        viewport
+          .getDisplaySets()
+          .map(({ displaySetId, options }) => [displaySetId, options.role]);
+
+      await mountDisplaySet(viewport, 'ds-1');
+      await mountDisplaySet(viewport, 'ds-2');
+      await mountDisplaySet(viewport, 'ds-1');
+      await mountDisplaySet(viewport, 'ds-2');
+
+      expect(roles()).toEqual([
+        ['ds-1', 'source'],
+        ['ds-2', 'overlay'],
+      ]);
+      expect(viewport.getCurrentMode()).toBe('unknown');
+    });
+
+    it('mounts the display set that addDisplaySet gives without a role as an overlay on a viewport that shows overlays only', async () => {
+      const { viewport } = createHarness();
+
+      await mountDisplaySet(viewport, 'ds-1', { role: 'overlay' });
+      await mountDisplaySet(viewport, 'ds-1');
+      await mountDisplaySet(viewport, 'ds-2');
+
+      expect(viewport.getDisplaySets()).toEqual([
+        { displaySetId: 'ds-1', options: { role: 'overlay' } },
+        { displaySetId: 'ds-2', options: { role: 'overlay' } },
+      ]);
+    });
+
     it('rejects addDisplaySet calls after the viewport has been destroyed', async () => {
       const { viewport } = createHarness();
 
@@ -392,6 +424,86 @@ describe('BaseViewport', () => {
       expect(viewport.getDisplaySetAppearance('ds-1')).toBeUndefined();
       expect(viewport._debug.renderModes['ds-1']).toBeUndefined();
       expect(viewport.renderCount).toBeGreaterThan(renderCountBefore);
+    });
+
+    it('makes the first display set that remains the source when the source goes, and the getters, the event and the appearance events follow it', async () => {
+      const { viewport, element } = createHarness();
+      const changes = [];
+      const appearanceEvents = [];
+
+      await mountDisplaySet(viewport, 'ds-1', { role: 'source' });
+      await mountDisplaySet(viewport, 'ds-2', { role: 'overlay' });
+      await mountDisplaySet(viewport, 'ds-3', { role: 'overlay' });
+      viewport.setDisplaySetAppearance('ds-2', { opacity: 0.4 });
+      element.addEventListener(Events.DISPLAY_SETS_CHANGED, (evt) =>
+        changes.push({
+          displaySets: evt.detail.displaySets,
+          sourceDisplaySetId: evt.detail.sourceDisplaySetId,
+          sourceChanged: evt.detail.sourceChanged,
+        })
+      );
+      element.addEventListener(Events.DISPLAY_SET_APPEARANCE_CHANGED, (evt) =>
+        appearanceEvents.push(evt.detail)
+      );
+
+      viewport.removeDisplaySet('ds-1');
+      viewport.setDisplaySetAppearance({ visible: false });
+
+      expect(changes).toEqual([
+        {
+          displaySets: [
+            { displaySetId: 'ds-2', role: 'source' },
+            { displaySetId: 'ds-3', role: 'overlay' },
+          ],
+          sourceDisplaySetId: 'ds-2',
+          sourceChanged: true,
+        },
+      ]);
+      expect(viewport.getDisplaySets()).toEqual([
+        { displaySetId: 'ds-2', options: { role: 'source' } },
+        { displaySetId: 'ds-3', options: { role: 'overlay' } },
+      ]);
+      expect(viewport.getSourceBinding()).toBe(viewport.bindings.get('ds-2'));
+      expect(viewport.getCurrentBinding()).toBe(viewport.bindings.get('ds-2'));
+      expect(
+        appearanceEvents.map(({ displaySetId, role, cause, effective }) => ({
+          displaySetId,
+          role,
+          cause,
+          effective,
+        }))
+      ).toEqual([
+        {
+          displaySetId: 'ds-2',
+          role: 'source',
+          cause: 'edit',
+          effective: { opacity: 0.4, visible: false },
+        },
+      ]);
+    });
+
+    it('makes no display set the source when an overlay goes, also on a viewport that shows overlays only', async () => {
+      const { viewport } = createHarness();
+
+      await mountDisplaySet(viewport, 'ds-1', { role: 'source' });
+      await mountDisplaySet(viewport, 'ds-2', { role: 'overlay' });
+      await mountDisplaySet(viewport, 'ds-3', { role: 'overlay' });
+      viewport.removeDisplaySet('ds-2');
+
+      expect(viewport.getDisplaySets()).toEqual([
+        { displaySetId: 'ds-1', options: { role: 'source' } },
+        { displaySetId: 'ds-3', options: { role: 'overlay' } },
+      ]);
+
+      const overlaysOnly = createHarness({ id: 'vp-2' }).viewport;
+
+      await mountDisplaySet(overlaysOnly, 'ds-1', { role: 'overlay' });
+      await mountDisplaySet(overlaysOnly, 'ds-2', { role: 'overlay' });
+      overlaysOnly.removeDisplaySet('ds-1');
+
+      expect(overlaysOnly.getDisplaySets()).toEqual([
+        { displaySetId: 'ds-2', options: { role: 'overlay' } },
+      ]);
     });
 
     it('is a no-op for an unknown display set id', () => {

@@ -348,10 +348,11 @@ class VolumeViewport3D extends BaseViewport<
    * source.
    *
    * The first display set of a viewport that shows nothing fits the camera
-   * in the orientation of the options. A camera that was written while the
-   * viewport showed nothing, as a reset on a resize does, is not applied over
-   * that fit; its projection stays. The legacy 3D viewport reset its camera
-   * at `setVolumes` in the same way.
+   * in the orientation of the options, and without a `role` it is the
+   * source (the base rule, `resolveAddRole`). A camera that was written while
+   * the viewport showed nothing, as a reset on a resize does, is not applied
+   * over that fit; its projection stays. The legacy 3D viewport reset its
+   * camera at `setVolumes` in the same way.
    *
    * @param displaySetId - Logical display set id to add.
    * @param options - The mount options of the display set.
@@ -360,7 +361,10 @@ class VolumeViewport3D extends BaseViewport<
     displaySetId: string,
     options: Volume3DMountOptions = {}
   ): Promise<void> {
-    const mounted = await this.mountDisplaySet(displaySetId, options);
+    const mounted = await this.mountDisplaySet(displaySetId, {
+      ...options,
+      role: this.resolveAddRole(displaySetId, options.role),
+    });
 
     if (mounted) {
       this.triggerDisplaySetsChanged([displaySetId]);
@@ -1282,14 +1286,17 @@ class VolumeViewport3D extends BaseViewport<
     return rendering?.renderMode === 'vtkVolume3d' ? rendering : undefined;
   }
 
+  /**
+   * The volume that was mounted as the source while it is still the source,
+   * else the first display set: after a removal of the source, the display
+   * set that became the source.
+   */
   protected getCurrentBinding() {
-    if (this.primaryDisplaySetId) {
-      return (
-        this.getBinding(this.primaryDisplaySetId) ?? this.getFirstBinding()
-      );
-    }
+    const primary = this.primaryDisplaySetId
+      ? this.getBinding(this.primaryDisplaySetId)
+      : undefined;
 
-    return this.getFirstBinding();
+    return primary?.role === 'source' ? primary : this.getFirstBinding();
   }
 
   protected getReferenceViewContexts(): ViewReferenceContext[] {

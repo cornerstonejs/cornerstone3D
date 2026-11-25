@@ -26,6 +26,7 @@ export type PlanarMountedDataHost = {
   getFirstBinding(): PlanarDataBinding | undefined;
   getBindings(): Iterable<[string, PlanarDataBinding]>;
   removeDisplaySet(displaySetId: string): void;
+  promoteFirstDisplaySetToSource(): string | undefined;
 };
 
 class PlanarMountedData {
@@ -56,12 +57,6 @@ class PlanarMountedData {
     return this.host.getFirstBinding();
   }
 
-  getFirstBoundDisplaySetId(): string | undefined {
-    for (const [displaySetId] of this.host.getBindings()) {
-      return displaySetId;
-    }
-  }
-
   hasBinding(displaySetId: string): boolean {
     return Boolean(this.host.getBinding(displaySetId));
   }
@@ -75,13 +70,17 @@ class PlanarMountedData {
     this.sourceDisplaySetId = displaySetId;
   }
 
+  /**
+   * After the removal of the source, the source is the first display set
+   * left, by the rule of the base viewport, which its removal already
+   * applied to the roles.
+   */
   handleRemovedData(displaySetId: string): void {
     if (this.sourceDisplaySetId !== displaySetId) {
       return;
     }
 
-    this.sourceDisplaySetId = undefined;
-    this.promoteFirstAvailableBindingToSource();
+    this.sourceDisplaySetId = this.host.promoteFirstDisplaySetToSource();
   }
 
   removeBindingsExcept(keepDisplaySetIds: Set<string>): void {
@@ -331,14 +330,6 @@ class PlanarMountedData {
     return displaySetId
       ? this.host.getBinding(displaySetId)
       : this.getCurrentBinding();
-  }
-
-  private promoteFirstAvailableBindingToSource(): void {
-    const firstBindingDisplaySetId = this.getFirstBoundDisplaySetId();
-
-    if (firstBindingDisplaySetId) {
-      this.promoteSourceDisplaySetId(firstBindingDisplaySetId);
-    }
   }
 }
 

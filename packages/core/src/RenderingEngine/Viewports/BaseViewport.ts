@@ -313,15 +313,59 @@ abstract class BaseViewport<
 
   /**
    * Loads a logical display set through the viewport data provider and adds it
-   * through the render-path resolver, then fires DISPLAY_SETS_CHANGED.
+   * through the render-path resolver, then fires DISPLAY_SETS_CHANGED. Without
+   * a `role` it mounts with the role that {@link resolveAddRole} gives: the
+   * source on a viewport that shows nothing.
    */
   async addDisplaySet(
     displaySetId: DisplaySetId,
     options: DataAddOptions
   ): Promise<void> {
-    if (await this.bindDisplaySet(displaySetId, options)) {
+    const bound = await this.bindDisplaySet(displaySetId, {
+      ...options,
+      role: this.resolveAddRole(displaySetId, options?.role),
+    });
+
+    if (bound) {
       this.triggerDisplaySetsChanged([displaySetId]);
     }
+  }
+
+  /**
+   * The role that `addDisplaySet` mounts a display set with. A role that the
+   * call names wins. Without one, a display set that the viewport shows
+   * already keeps its role, the first display set of a viewport that shows
+   * nothing is the source, as the first entry of `setDisplaySets` is, and
+   * any other is an overlay. So a viewport that was mounted with overlays
+   * only (an explicit `role: 'overlay'`) gets no source this way. The role is
+   * decided when the call starts, as the render path decision of a planar
+   * mount needs it before the load.
+   */
+  protected resolveAddRole(
+    displaySetId: DisplaySetId,
+    role?: BindingRole
+  ): BindingRole {
+    return (
+      role ??
+      this.bindings.get(displaySetId)?.role ??
+      (this.bindings.size ? 'overlay' : 'source')
+    );
+  }
+
+  /**
+   * Makes the first display set in mount order the source and the others
+   * overlays, and gives its id (undefined when the viewport shows nothing).
+   * The removal of the source calls it, so a viewport keeps a source while
+   * it shows display sets, unless it was mounted with overlays only.
+   */
+  protected promoteFirstDisplaySetToSource(): DisplaySetId | undefined {
+    const [firstDisplaySetId] = this.bindings.keys();
+
+    for (const [displaySetId, binding] of this.bindings) {
+      binding.role = displaySetId === firstDisplaySetId ? 'source' : 'overlay';
+    }
+
+    return firstDisplaySetId;
   }
 
   /**
@@ -386,7 +430,9 @@ abstract class BaseViewport<
 
   /**
    * Removes a mounted display set, then fires DISPLAY_SETS_CHANGED. An id
-   * that the viewport does not show fires nothing.
+   * that the viewport does not show fires nothing. When the source goes and
+   * other display sets remain, the first of them becomes the source
+   * (`sourceChanged: true`); the removal of an overlay changes no role.
    */
   removeDisplaySet(displaySetId: DisplaySetId): void {
     const mounted = this.bindings.has(displaySetId);
@@ -399,10 +445,12 @@ abstract class BaseViewport<
   }
 
   /**
-   * Removes a dataset binding and its stored appearance, then triggers a
-   * re-render so the viewport reflects the removal. It fires no event: the
-   * public call that removes the display set fires DISPLAY_SETS_CHANGED.
-   * A viewport family overrides it to release what it keeps per display set.
+   * Removes a dataset binding and its stored appearance, makes the first
+   * display set left the source when the removed one was the source
+   * ({@link promoteFirstDisplaySetToSource}), then triggers a re-render so
+   * the viewport reflects the removal. It fires no event: the public call
+   * that removes the display set fires DISPLAY_SETS_CHANGED. A viewport
+   * family overrides it to release what it keeps per display set.
    */
   protected removeDisplaySetBinding(displaySetId: DisplaySetId): void {
     const binding = this.bindings.get(displaySetId);
@@ -416,6 +464,10 @@ abstract class BaseViewport<
     this.displaySetAppearances.delete(displaySetId);
     this.defaultDisplaySetAppearances.delete(displaySetId);
     delete this._debug.renderModes[displaySetId];
+
+    if (binding.role === 'source') {
+      this.promoteFirstDisplaySetToSource();
+    }
 
     if (!this.isDestroyed) {
       this.render();

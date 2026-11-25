@@ -562,6 +562,8 @@ class PlanarViewport extends BaseViewport<
       getBindings: () => this.bindings.entries(),
       removeDisplaySet: (displaySetId) =>
         this.removeDisplaySetBinding(displaySetId),
+      promoteFirstDisplaySetToSource: () =>
+        this.promoteFirstDisplaySetToSource(),
     });
     this.viewReferences = new PlanarViewReferenceController({
       viewportId: this.id,
@@ -848,7 +850,9 @@ class PlanarViewport extends BaseViewport<
   }
 
   /**
-   * Adds a single logical planar display set.
+   * Adds a single logical planar display set. Without a `role` it mounts
+   * with the role of the base rule (`resolveAddRole`): the source on a
+   * viewport that shows nothing, an overlay on any other.
    *
    * @param displaySetId - Logical display set id to add.
    * @param options - Semantic orientation and binding options. The render path
@@ -858,7 +862,10 @@ class PlanarViewport extends BaseViewport<
     displaySetId: string,
     options: PlanarMountOptions = {}
   ): Promise<void> {
-    const added = await this.addDisplaySetInternal(displaySetId, options);
+    const added = await this.addDisplaySetInternal(displaySetId, {
+      ...options,
+      role: this.resolveAddRole(displaySetId, options.role),
+    });
 
     this.clearResolvedViewCache();
 

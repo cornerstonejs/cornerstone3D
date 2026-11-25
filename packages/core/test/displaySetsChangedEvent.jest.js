@@ -21,9 +21,11 @@ import VolumeViewport3D from '../src/RenderingEngine/Viewports/Volume3D/viewport
 import { createPlanarViewportOnStandInEngine } from './utils/planarViewportOnStandInEngine';
 import {
   IMAGE_ID as SLIDE_ID,
+  createClient,
   mountNext as mountSlide,
   remountNext as remountSlide,
   unmount as unmountSlide,
+  withMicroscopyViewer,
 } from './utils/wsiStandIn';
 
 const { setRenderBackend, Enums, imageLoader, metaData, init, cache } =
@@ -320,6 +322,109 @@ describe('DISPLAY_SETS_CHANGED and NEW_IMAGE on a planar viewport', () => {
     expect(newImages.at(-1).imageIdIndex).toBeUndefined();
     expect(newImages.at(-1).sliceIndex).toBe(viewport.getSliceIndex());
   });
+
+  it('makes the first display set that remains the source when the source goes, in the event, the getters, the render plan and NEW_IMAGE', async () => {
+    const viewport = createViewport();
+
+    registerStack('stack');
+    registerStack('first');
+    registerStack('second');
+    await viewport.setDisplaySets(
+      { displaySetId: 'stack' },
+      { displaySetId: 'first' },
+      { displaySetId: 'second' }
+    );
+
+    const events = recordDisplaySetsChanged(viewport);
+    const newImages = recordNewImage(viewport);
+
+    viewport.removeDisplaySet('stack');
+    await viewport.setImageIdIndex(2);
+    await settle();
+
+    expect(events).toEqual([
+      changed(
+        [
+          ['first', 'source'],
+          ['second', 'overlay'],
+        ],
+        { removed: ['stack'], sourceChanged: true }
+      ),
+    ]);
+    expect(viewport.getSourceDisplaySetId()).toBe('first');
+    expect(viewport.getCurrentImageId()).toBe(createImageIds('first')[2]);
+    expect(
+      viewport
+        .getRenderPlan()
+        .map(({ displaySetId, role }) => ({ displaySetId, role }))
+    ).toEqual([
+      { displaySetId: 'first', role: 'source' },
+      { displaySetId: 'second', role: 'overlay' },
+    ]);
+    expect(
+      newImages.map(({ displaySetId, sliceIndex }) => ({
+        displaySetId,
+        sliceIndex,
+      }))
+    ).toEqual([{ displaySetId: 'first', sliceIndex: 2 }]);
+  });
+
+  it('mounts the first display set that addDisplaySet gives without a role to an empty viewport as the source, a later one as an overlay', async () => {
+    const viewport = createViewport();
+    const events = recordDisplaySetsChanged(viewport);
+    const newImages = recordNewImage(viewport);
+
+    registerStack('stack');
+    registerStack('labelmap');
+    await viewport.addDisplaySet('stack');
+    await viewport.addDisplaySet('labelmap');
+    await settle();
+
+    expect(events).toEqual([
+      changed([['stack', 'source']], { added: ['stack'], sourceChanged: true }),
+      changed(
+        [
+          ['stack', 'source'],
+          ['labelmap', 'overlay'],
+        ],
+        { added: ['labelmap'], sourceChanged: false }
+      ),
+    ]);
+    expect(viewport.getSourceDisplaySetId()).toBe('stack');
+    expect(newImages.map(({ displaySetId }) => displaySetId)).toEqual([
+      'stack',
+    ]);
+  });
+
+  it('keeps a mount of overlays only without a source, also when one of them goes', async () => {
+    const viewport = createViewport();
+    const events = recordDisplaySetsChanged(viewport);
+
+    registerStack('first');
+    registerStack('second');
+    await viewport.addDisplaySet('first', { role: 'overlay' });
+    await viewport.addDisplaySet('second');
+    viewport.removeDisplaySet('first');
+
+    expect(events).toEqual([
+      changed([['first', 'overlay']], {
+        added: ['first'],
+        sourceChanged: false,
+      }),
+      changed(
+        [
+          ['first', 'overlay'],
+          ['second', 'overlay'],
+        ],
+        { added: ['second'], sourceChanged: false }
+      ),
+      changed([['second', 'overlay']], {
+        removed: ['first'],
+        sourceChanged: false,
+      }),
+    ]);
+    expect(viewport.getSourceDisplaySetId()).toBeUndefined();
+  });
 });
 
 describe('DISPLAY_SETS_CHANGED on a 3D viewport', () => {
@@ -411,11 +516,129 @@ describe('DISPLAY_SETS_CHANGED on a 3D viewport', () => {
         ],
         { removed: ['outline'], sourceChanged: false }
       ),
-      changed([['marker', 'overlay']], {
+      changed([['marker', 'source']], {
         removed: ['surface'],
         sourceChanged: true,
       }),
     ]);
+  });
+
+  it('mounts the first display set that addDisplaySet gives without a role to an empty viewport as the source, a later one as an overlay', async () => {
+    const events = recordDisplaySetsChanged(viewport);
+
+    await viewport.addDisplaySet('surface');
+    await viewport.addDisplaySet('marker');
+    await viewport.addDisplaySet('surface');
+
+    expect(events).toEqual([
+      changed([['surface', 'source']], {
+        added: ['surface'],
+        sourceChanged: true,
+      }),
+      changed(
+        [
+          ['surface', 'source'],
+          ['marker', 'overlay'],
+        ],
+        { added: ['marker'], sourceChanged: false }
+      ),
+      changed(
+        [
+          ['surface', 'source'],
+          ['marker', 'overlay'],
+        ],
+        { added: ['surface'], sourceChanged: true }
+      ),
+    ]);
+  });
+
+  it('keeps a mount of overlays only without a source, also when one of them goes', async () => {
+    const events = recordDisplaySetsChanged(viewport);
+
+    await viewport.addDisplaySet('surface', { role: 'overlay' });
+    await viewport.addDisplaySet('marker');
+    viewport.removeDisplaySet('surface');
+
+    expect(events).toEqual([
+      changed([['surface', 'overlay']], {
+        added: ['surface'],
+        sourceChanged: false,
+      }),
+      changed(
+        [
+          ['surface', 'overlay'],
+          ['marker', 'overlay'],
+        ],
+        { added: ['marker'], sourceChanged: false }
+      ),
+      changed([['marker', 'overlay']], {
+        removed: ['surface'],
+        sourceChanged: false,
+      }),
+    ]);
+  });
+
+  it('gives the display set that becomes the source its own look, and the role source in the appearance events after it', async () => {
+    const appearanceEvents = [];
+
+    await viewport.setDisplaySets(
+      { displaySetId: 'surface' },
+      { displaySetId: 'marker', options: { appearance: { opacity: 0.4 } } }
+    );
+    viewport.element.addEventListener(
+      Events.DISPLAY_SET_APPEARANCE_CHANGED,
+      (evt) => appearanceEvents.push(evt.detail)
+    );
+
+    viewport.removeDisplaySet('surface');
+    viewport.setDisplaySetAppearance({ visible: false });
+
+    expect(
+      appearanceEvents.map(({ displaySetId, role, cause, effective }) => ({
+        displaySetId,
+        role,
+        cause,
+        effective,
+      }))
+    ).toEqual([
+      {
+        displaySetId: 'marker',
+        role: 'source',
+        cause: 'edit',
+        effective: { visible: false, opacity: 0.4 },
+      },
+    ]);
+    expect(viewport.getCurrentMode()).toBe('geometry3d');
+  });
+
+  it('keeps the getters on the source that a removal made, also when the volume that was the source comes back as an overlay', async () => {
+    const appearanceEvents = [];
+
+    displaySetRegistry.add('volume', { imageIds: ['volume:1'] });
+    await viewport.setDisplaySets(
+      { displaySetId: 'volume' },
+      { displaySetId: 'surface' }
+    );
+    viewport.removeDisplaySet('volume');
+    await viewport.addDisplaySet('volume', { role: 'overlay' });
+    viewport.element.addEventListener(
+      Events.DISPLAY_SET_APPEARANCE_CHANGED,
+      (evt) => appearanceEvents.push(evt.detail)
+    );
+    viewport.setDisplaySetAppearance({ opacity: 0.5 });
+    displaySetRegistry.clear();
+
+    expect(
+      viewport
+        .getDisplaySets()
+        .map(({ displaySetId, options }) => [displaySetId, options.role])
+    ).toEqual([
+      ['surface', 'source'],
+      ['volume', 'overlay'],
+    ]);
+    expect(
+      appearanceEvents.map(({ displaySetId, role }) => [displaySetId, role])
+    ).toEqual([['surface', 'source']]);
   });
 
   it('fires nothing for a setDisplaySets that a newer one supersedes', async () => {
@@ -542,6 +765,40 @@ describe('DISPLAY_SETS_CHANGED and NEW_IMAGE on a video viewport', () => {
     viewport.destroy();
   });
 
+  it('makes the second video the source when the first one goes', async () => {
+    const viewport = createVideoViewport();
+    const mounted = viewport.setDisplaySets(
+      { displaySetId: 'first' },
+      { displaySetId: 'second' }
+    );
+
+    for (const index of [0, 1]) {
+      while (viewport.element.querySelectorAll('video').length <= index) {
+        await settle();
+      }
+
+      const video = viewport.element.querySelectorAll('video')[index];
+
+      stubVideoElement(video);
+      video.dispatchEvent(new Event('loadedmetadata'));
+    }
+
+    await mounted;
+
+    const events = recordDisplaySetsChanged(viewport);
+
+    viewport.removeDisplaySet('first');
+
+    expect(events).toEqual([
+      changed([['second', 'source']], {
+        removed: ['first'],
+        sourceChanged: true,
+      }),
+    ]);
+    expect(viewport.getCurrentMode()).toBe('video');
+    viewport.destroy();
+  });
+
   it('fires nothing for a setDisplaySets that a newer one supersedes', async () => {
     const viewport = createVideoViewport();
     const events = recordDisplaySetsChanged(viewport);
@@ -642,6 +899,28 @@ describe('DISPLAY_SETS_CHANGED on an ECG viewport', () => {
     viewport.destroy();
   });
 
+  it('makes the second waveform the source when the first one goes', async () => {
+    const viewport = createECGViewport();
+
+    await viewport.setDisplaySets(
+      { displaySetId: ECG_IDS[0] },
+      { displaySetId: ECG_IDS[1] }
+    );
+
+    const events = recordDisplaySetsChanged(viewport);
+
+    viewport.removeDisplaySet(ECG_IDS[0]);
+
+    expect(events).toEqual([
+      changed([[ECG_IDS[1], 'source']], {
+        removed: [ECG_IDS[0]],
+        sourceChanged: true,
+      }),
+    ]);
+    expect(viewport.getSourceDisplaySetId()).toBe(ECG_IDS[1]);
+    viewport.destroy();
+  });
+
   it('fires nothing for a setDisplaySets that a newer one supersedes', async () => {
     const viewport = createECGViewport();
     const events = recordDisplaySetsChanged(viewport);
@@ -690,6 +969,34 @@ describe('DISPLAY_SETS_CHANGED on a whole slide viewport', () => {
       }),
       changed([], { removed: [SLIDE_ID], sourceChanged: true }),
     ]);
+  });
+
+  it('makes the second slide the source when the first one goes', async () => {
+    const slide = await mountSlide(WSIViewport);
+
+    mounted.push(slide);
+    displaySetRegistry.add('secondSlide', {
+      imageIds: [SLIDE_ID],
+      options: { miniNavigationOverlay: false, webClient: createClient() },
+    });
+    await withMicroscopyViewer(0, () =>
+      slide.viewport.setDisplaySets(
+        { displaySetId: SLIDE_ID },
+        { displaySetId: 'secondSlide' }
+      )
+    );
+
+    const events = recordDisplaySetsChanged(slide.viewport);
+
+    slide.viewport.removeDisplaySet(SLIDE_ID);
+
+    expect(events).toEqual([
+      changed([['secondSlide', 'source']], {
+        removed: [SLIDE_ID],
+        sourceChanged: true,
+      }),
+    ]);
+    expect(slide.viewport.getCurrentMode()).toBe('wholeSlide');
   });
 
   it('fires nothing for a setDisplaySets that a newer one supersedes', async () => {

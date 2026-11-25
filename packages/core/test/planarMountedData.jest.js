@@ -1,6 +1,7 @@
 import { PlanarRenderModeId } from '../src/RenderingEngine/Viewports/Planar/planarRenderModeIds';
 import PlanarMountedData from '../src/RenderingEngine/Viewports/Planar/PlanarMountedData';
 import PlanarViewReferenceController from '../src/RenderingEngine/Viewports/Planar/PlanarViewReferenceController';
+import BaseViewport from '../src/RenderingEngine/Viewports/BaseViewport';
 
 function createBinding({
   actorUID,
@@ -42,6 +43,8 @@ function createMountedData(bindings) {
     getFirstBinding: () => bindings.values().next().value,
     getBindings: () => bindings.entries(),
     removeDisplaySet: (displaySetId) => bindings.delete(displaySetId),
+    promoteFirstDisplaySetToSource: () =>
+      BaseViewport.prototype.promoteFirstDisplaySetToSource.call({ bindings }),
   });
 }
 

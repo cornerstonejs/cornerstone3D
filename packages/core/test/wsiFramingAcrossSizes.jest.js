@@ -97,4 +97,26 @@ describe('The framing of a direct next whole slide viewport across sizes', () =>
     expectClose(framing.worldPan, start.worldPan, 'world pan back');
     expectClose(centreOf(back), startCentre, 'centre back');
   });
+
+  it('keeps the resolution of the map and the slide point at the centre through a resize with keepCamera false, which turns the view back to the rotation of the slide and fits nothing', async () => {
+    const first = await mountOfSize(WIDTH, HEIGHT);
+
+    first.viewport.setViewFraming(FRAMING);
+
+    const start = first.viewport.getViewFraming();
+    const resolution = first.view.getResolution();
+    const startCentre = centreOf(first);
+
+    setSize(first.element, WIDTH / 2, HEIGHT / 2);
+    first.viewport.resizeForRenderingEngine({ keepCamera: false });
+
+    expect(first.view.getResolution()).toBeCloseTo(resolution, 6);
+    expect(first.viewport.getViewFraming().zoom).toBeCloseTo(start.zoom * 2, 6);
+    expectClose(centreOf(first), startCentre, 'centre after the resize');
+
+    first.viewport.setViewState({ rotation: 30 });
+    first.viewport.resizeForRenderingEngine({ keepCamera: false });
+
+    expect(first.viewport.getViewState().rotation).toBe(0);
+  });
 });
