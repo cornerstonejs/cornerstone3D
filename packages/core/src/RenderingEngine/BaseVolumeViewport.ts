@@ -22,6 +22,7 @@ import ViewportType from '../enums/ViewportType';
 import eventTarget from '../eventTarget';
 import { getShouldUseCPURendering } from '../init';
 import type {
+  IDynamicImageVolume,
   ActorEntry,
   ColormapPublic,
   FlipDirection,
@@ -860,6 +861,10 @@ abstract class BaseVolumeViewport extends Viewport {
     if (viewRefSpecifier?.forFrameOfReference !== true) {
       target.volumeId = volumeId;
     }
+    const dimensionGroupNumber = this._getDimensionGroupNumber(volumeId);
+    if (dimensionGroupNumber) {
+      target.dimensionGroupNumber = dimensionGroupNumber;
+    }
     if (typeof viewRefSpecifier?.sliceIndex !== 'number') {
       return target;
     }
@@ -902,6 +907,17 @@ abstract class BaseVolumeViewport extends Viewport {
       return false;
     }
     if (!super.isReferenceViewable(viewRef, options)) {
+      return false;
+    }
+    const dimensionGroupNumber = this._getDimensionGroupNumber(
+      this.getVolumeId({ volumeId: viewRef.volumeId })
+    );
+    if (
+      !options?.withNavigation &&
+      viewRef.dimensionGroupNumber &&
+      dimensionGroupNumber &&
+      viewRef.dimensionGroupNumber !== dimensionGroupNumber
+    ) {
       return false;
     }
     if (options?.withNavigation) {
@@ -1054,6 +1070,21 @@ abstract class BaseVolumeViewport extends Viewport {
       viewUp,
     } = viewRef;
     let { sliceIndex } = viewRef;
+
+    // The time point belongs to the referenced volume, for example the PET of a fusion.
+    const timePointVolumeId = this.getVolumeId({ volumeId: viewRef.volumeId });
+    const timePointVolume =
+      timePointVolumeId &&
+      this._getDimensionGroupNumber(timePointVolumeId) &&
+      (cache.getVolume(timePointVolumeId) as IDynamicImageVolume);
+    if (
+      timePointVolume &&
+      viewRef.dimensionGroupNumber &&
+      viewRef.dimensionGroupNumber <= timePointVolume.numDimensionGroups &&
+      refFrameOfReference === this.getFrameOfReferenceUID()
+    ) {
+      timePointVolume.dimensionGroupNumber = viewRef.dimensionGroupNumber;
+    }
 
     if (planeRestriction && !refViewPlaneNormal) {
       return this.setViewPlane(planeRestriction);
@@ -2716,6 +2747,17 @@ abstract class BaseVolumeViewport extends Viewport {
       viewPlaneNormal,
       volumeId,
     });
+  }
+
+  /** The time point of a dynamic volume, or undefined for a 3D volume. */
+  private _getDimensionGroupNumber(
+    volumeId = this.getVolumeId()
+  ): number | undefined {
+    const volume =
+      volumeId && (cache.getVolume(volumeId) as IDynamicImageVolume);
+    return volume?.isDynamicVolume?.()
+      ? volume.dimensionGroupNumber
+      : undefined;
   }
 
   private _addVolumeId(volumeId: string): void {

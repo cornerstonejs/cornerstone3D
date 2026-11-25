@@ -33,7 +33,10 @@ import type {
   IViewport,
 } from '../types/IViewport';
 import { OrientationAxis } from '../enums';
-import type { VtkOffscreenMultiRenderWindow } from '../types';
+import type {
+  OffscreenCanvasContainer,
+  VtkOffscreenMultiRenderWindow,
+} from '../types';
 import { StatsOverlay } from './helpers/stats';
 import {
   detachFidelityIndicator,
@@ -60,7 +63,7 @@ abstract class BaseRenderingEngine {
   public hasBeenDestroyed: boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public offscreenMultiRenderWindow: VtkOffscreenMultiRenderWindow;
-  public offScreenCanvasContainer: HTMLDivElement;
+  public offScreenCanvasContainer: OffscreenCanvasContainer;
   protected _viewports: Map<string, IViewport>;
   protected _needsRender = new Set<string>();
   protected _animationFrameSet = false;

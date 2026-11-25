@@ -16,6 +16,7 @@ import type {
 import VoxelManager from '../../../utilities/VoxelManager';
 import getDefaultViewport from '../../helpers/cpuFallback/rendering/getDefaultViewport';
 import getSpacingInNormalDirection from '../../../utilities/getSpacingInNormalDirection';
+import sampleVolumeGrid from '../../../utilities/sampleVolumeGrid';
 import type { PlanarDataPresentation } from './PlanarViewportTypes';
 import { getPlanarScaleRatio } from './planarCameraScale';
 import PlanarCPUScalarViewportSampler from './PlanarCPUScalarViewportSampler';
@@ -646,6 +647,26 @@ export default class PlanarCPUVolumeSampler {
     if (scalarViewportSample) {
       sampledRange.min = scalarViewportSample.min;
       sampledRange.max = scalarViewportSample.max;
+    } else if (numberOfComponents < 2) {
+      const scalarGridRange = sampleVolumeGrid({
+        volume,
+        pixelData: sliceScalarData,
+        width,
+        height,
+        startIndex: rowStartIndex,
+        columnStep: xStepIndexDelta,
+        rowStep: yStepIndexDelta,
+        interpolationType,
+        outsideValue: fallbackRange.min,
+        valueRange: fallbackRange,
+        round: !(
+          sliceScalarData instanceof Float32Array ||
+          sliceScalarData instanceof Float64Array
+        ),
+      });
+
+      sampledRange.min = scalarGridRange.min;
+      sampledRange.max = scalarGridRange.max;
     } else {
       const sampleIndex = [...rowStartIndex] as Point3;
 

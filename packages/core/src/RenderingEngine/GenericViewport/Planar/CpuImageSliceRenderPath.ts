@@ -6,7 +6,7 @@ import canvasToPixel from '../../helpers/cpuFallback/rendering/canvasToPixel';
 import correctShift from '../../helpers/cpuFallback/rendering/correctShift';
 import getDefaultViewport from '../../helpers/cpuFallback/rendering/getDefaultViewport';
 import { getDefaultImageVOIRange } from '../../helpers/planarImageRendering';
-import resizeEnabledElement from '../../helpers/cpuFallback/rendering/resize';
+import fitToWindow from '../../helpers/cpuFallback/rendering/fitToWindow';
 import drawImageSync from '../../helpers/cpuFallback/drawImageSync';
 import { resolveCPUFallbackColormap } from '../../helpers/cpuFallback/colors';
 import {
@@ -110,7 +110,7 @@ export class CpuImageSliceRenderPath
       viewport: defaultViewport,
     } as CPUFallbackEnabledElement;
 
-    resizeEnabledElement(enabledElement, true);
+    fitToWindow(enabledElement);
     enabledElement.transform = calculateTransform(enabledElement);
     rendering = {
       renderMode: ActorRenderMode.CPU_IMAGE,
@@ -334,13 +334,14 @@ export class CpuImageSliceRenderPath
     rendering: PlanarCpuImageRendering,
     dataId: string
   ): void {
-    resizeEnabledElement(rendering.enabledElement, true);
     const image = rendering.enabledElement.image;
     const camera = ctx.viewport.getViewState();
 
     if (!image) {
       return;
     }
+
+    fitToWindow(rendering.enabledElement);
 
     const projection = resolvePlanarRenderPathProjection({
       ctx,

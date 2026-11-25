@@ -791,3 +791,75 @@ Two changes can change the output of an existing application:
   `generateRTSSFrom*` functions.
 - If your code compares `Manufacturer` with `'cs3d'`, compare it with
   `utilities.DEFAULT_WRITER_HEADER.Manufacturer`.
+
+## Labelmaps of a 4D series follow the time point
+
+### What Changed
+
+A labelmap that references a 4D (dynamic) series is now one volume of one
+time point. The volume follows the time point of the dynamic image volume.
+Before this change, the tools made one volume from the labelmap images of
+every time point, and that volume had the wrong depth.
+
+`SEGMENTATION_DATA_MODIFIED` changes in three ways:
+
+1. The event detail has a new field, `dimensionGroupNumber`. For a
+   segmentation of a 4D series that has a dynamic labelmap volume, the
+   field gives the time point of the modified data, from 1. An undo or a
+   redo gives the time point of the edit, which can be different from the
+   time point on display. For a segmentation of a 3D series, and for a 4D
+   segmentation with overlapping segments (one static volume), an edit does
+   not set the field.
+2. A change of time point (`DYNAMIC_VOLUME_DIMENSION_GROUP_CHANGED`) now fires
+   `SEGMENTATION_DATA_MODIFIED` for each segmentation with a 4D labelmap, with
+   the new `dimensionGroupNumber`.
+3. A change of time point also fires the event for a 3D labelmap that
+   references the images of the dynamic volume, with `voxelsUnchanged: true`.
+   The voxels of that labelmap do not change, but its statistics now use the
+   time point on display.
+
+Other changes:
+
+- One time point is active for each 4D labelmap, and all viewports share it.
+  An edit in a stack viewport first selects the time point of the image on
+  display.
+- The view reference of a volume viewport that shows a dynamic volume has
+  `dimensionGroupNumber`. `isReferenceViewable` without navigation returns
+  false for a different time point. `setViewReference` selects the time point
+  of the reference.
+- `convertStackToVolumeLabelmap` ignores `options.volumeId` for a 4D labelmap.
+  `convertVolumeToStackLabelmap` keeps the labelmap images of every time
+  point.
+- A 4D labelmap can cover only some time points of the series. When the image
+  shows a time point that the labelmap does not cover, the labelmap keeps its
+  last covered time point, and a stack or volume overlay can show the labels
+  of that time point. An edit on an uncovered time point changes nothing. The
+  change of time point fires no `SEGMENTATION_DATA_MODIFIED` for that
+  labelmap.
+- For a 4D labelmap that covers only some time points, `dimensionGroupNumber`
+  is not consistent: a change of time point gives the time point of the
+  series, and an edit or an undo gives the index among the covered time
+  points. The two numbers are equal when the labelmap covers every time point.
+  [#3090](https://github.com/cornerstonejs/cornerstone3D/issues/3090) tracks
+  one number for both. Until that fix, do not use `dimensionGroupNumber` as
+  a key for the data of each time point of such a labelmap, because two time
+  points can give the same number.
+- A 4D labelmap with more than one labelmap image for one referenced image
+  (overlapping segments) stays one static volume of every time point, as
+  before this change.
+- `getCompleteScalarDataArray`, `setCompleteScalarDataArray` and
+  `invalidateCache` of a 4D labelmap act on the active time point of the
+  labelmap. That is the time point on display, except when the labelmap does
+  not cover the time point on display: then it is the last covered time
+  point. Labelmap interpolation and grow cut edit only the active time point.
+  Grow cut discards its result when the time point changes during the
+  computation.
+
+### Migration Guidance
+
+- A listener of `SEGMENTATION_DATA_MODIFIED` that does slow work, for example
+  the statistics or a contour conversion, now also runs on each change of
+  time point. Debounce the work, or skip an event with `voxelsUnchanged` when
+  the work does not depend on the image values.
+- A listener that keeps data for each time point must read
+  `dimensionGroupNumber`, and not the time point on display.

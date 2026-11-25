@@ -38,7 +38,7 @@ function getGlobalGenericViewportOverride(): boolean {
   return Boolean((window as DemoWindow).__DEMO_USE_GENERIC_VIEWPORT__);
 }
 
-function getGenericViewportOverrideActive(): boolean {
+export function getGenericViewportOverrideActive(): boolean {
   return getGlobalGenericViewportOverride() || getUrlParam('type') === 'next';
 }
 
