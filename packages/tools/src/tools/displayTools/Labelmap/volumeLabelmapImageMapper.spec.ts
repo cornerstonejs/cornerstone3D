@@ -63,6 +63,11 @@ jest.mock('./volumeLabelmapSliceData', () => ({
   getSliceState: jest.fn(),
 }));
 
+jest.mock('./volumeLabelmapResampledSliceData', () => ({
+  canCreateResampledSliceImageData: jest.fn(),
+  createPlanarSliceImageData: jest.fn(),
+}));
+
 import {
   addVolumeLabelmapImageMapperActors,
   getLabelmapForActorReference,
@@ -89,6 +94,8 @@ const {
   getSliceRenderingCamera,
   getSliceState,
 } = jest.requireMock('./volumeLabelmapSliceData');
+const { canCreateResampledSliceImageData, createPlanarSliceImageData } =
+  jest.requireMock('./volumeLabelmapResampledSliceData');
 
 function makeSegmentation() {
   return {
@@ -201,6 +208,56 @@ describe('getVolumeLabelmapImageMapperRepresentationUIDs', () => {
     expect(uids).toHaveLength(1);
     expect(uids[0]).not.toContain('slice-key');
   });
+
+  it('keeps the planar UID for an off-axis view whose slice can be resampled', () => {
+    canRenderVolumeViewportLabelmapAsImage.mockReturnValue(true);
+    getLabelmaps.mockReturnValue([{ labelmapId: 'layer-1' }]);
+    getOrCreateLabelmapVolume.mockReturnValue({ imageIds: ['v-0'] });
+    getSliceState.mockReturnValue(undefined);
+    canCreateResampledSliceImageData.mockReturnValue(true);
+
+    const uids = getVolumeLabelmapImageMapperRepresentationUIDs(
+      makePlanarNextViewport() as never,
+      'seg-1',
+      makeSegmentation()
+    );
+
+    expect(uids).toHaveLength(1);
+    expect(uids[0]).toContain('layer-1');
+  });
+
+  it('returns no planar UID when the off-axis view plane misses the volume', () => {
+    canRenderVolumeViewportLabelmapAsImage.mockReturnValue(true);
+    getLabelmaps.mockReturnValue([{ labelmapId: 'layer-1' }]);
+    getOrCreateLabelmapVolume.mockReturnValue({ imageIds: ['v-0'] });
+    getSliceState.mockReturnValue(undefined);
+    canCreateResampledSliceImageData.mockReturnValue(false);
+
+    expect(
+      getVolumeLabelmapImageMapperRepresentationUIDs(
+        makePlanarNextViewport() as never,
+        'seg-1',
+        makeSegmentation()
+      )
+    ).toEqual([]);
+  });
+
+  it('does not resample an off-axis view on an orthographic viewport', () => {
+    canRenderVolumeViewportLabelmapAsImage.mockReturnValue(true);
+    getLabelmaps.mockReturnValue([{ labelmapId: 'layer-1' }]);
+    getOrCreateLabelmapVolume.mockReturnValue({ imageIds: ['v-0'] });
+    getSliceState.mockReturnValue(undefined);
+    canCreateResampledSliceImageData.mockReturnValue(true);
+
+    expect(
+      getVolumeLabelmapImageMapperRepresentationUIDs(
+        makeOrthographicViewport() as never,
+        'seg-1',
+        makeSegmentation()
+      )
+    ).toEqual([]);
+    expect(canCreateResampledSliceImageData).not.toHaveBeenCalled();
+  });
 });
 
 describe('addVolumeLabelmapImageMapperActors', () => {
@@ -257,9 +314,9 @@ describe('addVolumeLabelmapImageMapperActors', () => {
     getOrCreateLabelmapVolume.mockReturnValue({
       imageIds: ['v-0', 'v-1'],
     });
-    createSliceImageData.mockReturnValue({
+    createPlanarSliceImageData.mockReturnValue({
       imageData: {},
-      state: { key: 'slice-key', sliceIndex: 0 },
+      sliceIndex: 0,
     });
     getSliceRenderingCamera.mockReturnValue({
       viewPlaneNormal: [0, 0, 1],
@@ -286,6 +343,77 @@ describe('addVolumeLabelmapImageMapperActors', () => {
     };
     stackInputs[0].callback({ imageActor: fakeImageActor });
     expect(applyPlanarOverlayDepthOffset).toHaveBeenCalled();
+  });
+
+  it('gives the planar slice image of an off-axis view to addImages', async () => {
+    canRenderVolumeViewportLabelmapAsImage.mockReturnValue(true);
+    const viewport = makePlanarNextViewport();
+    const resampledImageData = {};
+
+    getLabelmaps.mockReturnValue([{ labelmapId: 'layer-1' }]);
+    getOrCreateLabelmapVolume.mockReturnValue({
+      imageIds: ['v-0', 'v-1'],
+    });
+    createPlanarSliceImageData.mockReturnValue({
+      imageData: resampledImageData,
+      sliceIndex: 1,
+    });
+
+    await addVolumeLabelmapImageMapperActors({
+      viewport: viewport as never,
+      segmentation: makeSegmentation(),
+      segmentationId: 'seg-1',
+    });
+
+    const [stackInputs] = viewport.addImages.mock.calls[0];
+
+    expect(createSliceImageData).not.toHaveBeenCalled();
+    expect(stackInputs[0].imageData).toBe(resampledImageData);
+    expect(stackInputs[0].useWorldCoordinateImageData).toBe(true);
+  });
+
+  it('falls back to the image of the slice index when the planar viewport has no current image', async () => {
+    canRenderVolumeViewportLabelmapAsImage.mockReturnValue(true);
+    const viewport = makePlanarNextViewport();
+
+    viewport.getCurrentImageId = jest.fn(() => undefined);
+    getLabelmaps.mockReturnValue([{ labelmapId: 'layer-1' }]);
+    getOrCreateLabelmapVolume.mockReturnValue({
+      imageIds: ['v-0', 'v-1'],
+    });
+    createPlanarSliceImageData.mockReturnValue({
+      imageData: {},
+      sliceIndex: 1,
+    });
+
+    await addVolumeLabelmapImageMapperActors({
+      viewport: viewport as never,
+      segmentation: makeSegmentation(),
+      segmentationId: 'seg-1',
+    });
+
+    const [stackInputs] = viewport.addImages.mock.calls[0];
+
+    expect(stackInputs[0].imageId).toBe('v-1');
+  });
+
+  it('adds no planar actor for a layer without a slice image', async () => {
+    canRenderVolumeViewportLabelmapAsImage.mockReturnValue(true);
+    const viewport = makePlanarNextViewport();
+
+    getLabelmaps.mockReturnValue([{ labelmapId: 'layer-1' }]);
+    getOrCreateLabelmapVolume.mockReturnValue({
+      imageIds: ['v-0', 'v-1'],
+    });
+    createPlanarSliceImageData.mockReturnValue(undefined);
+
+    await addVolumeLabelmapImageMapperActors({
+      viewport: viewport as never,
+      segmentation: makeSegmentation(),
+      segmentationId: 'seg-1',
+    });
+
+    expect(viewport.addImages).not.toHaveBeenCalled();
   });
 });
 
@@ -346,6 +474,41 @@ describe('updateVolumeLabelmapImageMapperActors', () => {
 
     expect(mapperA.setInputData).toHaveBeenCalled();
     expect(actorOther.actor.getMapper).not.toHaveBeenCalled();
+  });
+
+  it('gives planar actors the slice image of the planar slice data', () => {
+    canRenderVolumeViewportLabelmapAsImage.mockReturnValue(true);
+
+    const mapper = { setInputData: jest.fn(), modified: jest.fn() };
+    const actorEntry = {
+      uid: 'seg-1-Labelmap-layer-a',
+      representationUID: 'seg-1-Labelmap-layer-a',
+      referencedId: 'layer-a',
+      actor: {
+        getMapper: jest.fn(() => mapper),
+        modified: jest.fn(),
+      },
+    };
+    const resampledImageData = {};
+
+    getLabelmaps.mockReturnValue([{ labelmapId: 'layer-a' }]);
+    getOrCreateLabelmapVolume.mockReturnValue({ imageIds: ['v'] });
+    createPlanarSliceImageData.mockReturnValue({
+      imageData: resampledImageData,
+      sliceIndex: 0,
+    });
+
+    const viewport = makePlanarNextViewport();
+    viewport.getActors = jest.fn(() => [actorEntry]);
+
+    updateVolumeLabelmapImageMapperActors({
+      viewport: viewport as never,
+      segmentation: makeSegmentation(),
+      segmentationId: 'seg-1',
+    });
+
+    expect(createSliceImageData).not.toHaveBeenCalled();
+    expect(mapper.setInputData).toHaveBeenCalledWith(resampledImageData);
   });
 });
 

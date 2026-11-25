@@ -1,5 +1,8 @@
 import { vtkOffscreenMultiRenderWindow } from './vtkClasses';
-import type { VtkOffscreenMultiRenderWindow } from '../types';
+import type {
+  OffscreenCanvasContainer,
+  VtkOffscreenMultiRenderWindow,
+} from '../types';
 import { attachWebGLContextEvents } from './helpers/attachWebGLContextEvents';
 
 /**
@@ -9,7 +12,7 @@ import { attachWebGLContextEvents } from './helpers/attachWebGLContextEvents';
  */
 class WebGLContextPool {
   private contexts: VtkOffscreenMultiRenderWindow[] = [];
-  private offScreenCanvasContainers: HTMLDivElement[] = [];
+  private offScreenCanvasContainers: OffscreenCanvasContainer[] = [];
   private viewportToContext: Map<string, number> = new Map();
   private viewportSizes: Map<string, { width: number; height: number }> =
     new Map();
@@ -27,7 +30,10 @@ class WebGLContextPool {
     for (let i = 0; i < count; i++) {
       const offscreenMultiRenderWindow =
         vtkOffscreenMultiRenderWindow.newInstance();
-      const container = document.createElement('div');
+      const container = Object.assign(document.createElement('div'), {
+        width: 0,
+        height: 0,
+      });
       offscreenMultiRenderWindow.setContainer(container);
 
       attachWebGLContextEvents(
@@ -48,7 +54,7 @@ class WebGLContextPool {
    */
   getContextByIndex(index: number): {
     context: VtkOffscreenMultiRenderWindow;
-    container: HTMLDivElement;
+    container: OffscreenCanvasContainer;
   } | null {
     if (index >= 0 && index < this.contexts.length) {
       return {

@@ -4,6 +4,9 @@ import type { VolumeActor } from './../../types/IActor';
 import type { VoiModifiedEventDetail } from './../../types/EventTypes';
 import { loadVolume } from '../../loaders/volumeLoader';
 import createVolumeMapper from './createVolumeMapper';
+import { resolveVolumeTexture } from './resolveVolumeTexture';
+import type { ResolveVolumeTextureOptions } from './resolveVolumeTexture';
+import { claimLegacyActorTextureSet } from './legacyActorTextureSet';
 import type BlendModes from '../../enums/BlendModes';
 import triggerEvent from '../../utilities/triggerEvent';
 import { Events } from '../../enums';
@@ -11,7 +14,7 @@ import setDefaultVolumeVOI from './setDefaultVolumeVOI';
 import type { BlendMode } from '@kitware/vtk.js/Rendering/Core/VolumeMapper/Constants';
 import { getConfiguration } from '../../init';
 
-interface createVolumeActorInterface {
+interface createVolumeActorInterface extends ResolveVolumeTextureOptions {
   volumeId: string;
   callback?: ({
     volumeActor,
@@ -50,7 +53,30 @@ async function createVolumeActor(
     );
   }
 
-  const { imageData, vtkOpenGLTexture } = imageVolume;
+  const { imageData } = imageVolume;
+  // The strategies decide which grid this actor draws. A legacy viewport has no
+  // render path, so this one choice is what gives it the reduction that the
+  // capability of the device requires. A render path passes its own provider
+  // here and then keeps choosing on every render.
+  const { strategy, texture: vtkOpenGLTexture } = resolveVolumeTexture(
+    imageVolume,
+    {
+      provideStrategies: props.provideStrategies,
+      selectStrategy: props.selectStrategy,
+      viewportId,
+    }
+  );
+
+  // A render path applies its strategies after the mount, and it binds the
+  // base texture then, so only a legacy caller needs a texture here.
+  const usesRenderPath =
+    props.provideStrategies !== undefined || props.selectStrategy !== undefined;
+
+  if (!vtkOpenGLTexture && !usesRenderPath) {
+    throw new Error(
+      `no render strategy gives a texture for the volume ${volumeId}`
+    );
+  }
 
   const volumeMapper = createVolumeMapper(imageData, vtkOpenGLTexture);
 
@@ -60,6 +86,10 @@ async function createVolumeActor(
 
   const volumeActor = vtkVolume.newInstance();
   volumeActor.setMapper(volumeMapper);
+
+  if (!usesRenderPath) {
+    claimLegacyActorTextureSet(volumeActor, imageVolume, strategy.name);
+  }
 
   // Todo: fix this for 3D RGB
   const { numberOfComponents } = imageData.get('numberOfComponents') as {

@@ -10,6 +10,8 @@ import * as metaData from '../metaData';
 import { getImageDataMetadata as getImageDataMetadataUtil } from '../utilities/getImageDataMetadata';
 import { coreLog } from '../utilities/logger';
 import { getGenericViewportImageDisplaySet } from './GenericViewport/genericViewportDisplaySetAccess';
+import type { FidelityLine } from './helpers/fidelityIndicator/fidelityIndicatorState';
+import { fidelityLineFromStackImage } from './helpers/fidelityIndicator/collectFidelityLines';
 
 import type {
   ActorEntry,
@@ -64,7 +66,10 @@ import getVOIRangeFromWindowLevel from '../utilities/getVOIRangeFromWindowLevel'
 import Viewport from './Viewport';
 import drawImageSync from './helpers/cpuFallback/drawImageSync';
 import { resolveCPUFallbackColormap } from './helpers/cpuFallback/colors';
-import { getImagePlaneModule } from '../utilities/buildMetadata';
+import {
+  getImagePlaneModule,
+  getValidVOILUTFunction,
+} from '../utilities/buildMetadata';
 import { createEmptyVTKImageData } from './helpers/planarImageRendering';
 
 import {
@@ -211,6 +216,14 @@ class StackViewport extends Viewport {
   // if the viewport used the same actor/mapper to render the image
   // or because of the new image inconsistency, a new actor/mapper was created
   public stackActorReInitialized: boolean;
+
+  public canReportFidelity(): boolean {
+    return true;
+  }
+
+  protected collectFidelityLines(): FidelityLine[] {
+    return fidelityLineFromStackImage(this.csImage);
+  }
 
   /**
    * Constructor for the StackViewport class
@@ -1394,7 +1407,7 @@ class StackViewport extends Viewport {
     }
 
     // make sure the VOI LUT function is valid in the VOILUTFunctionType which is enum
-    const newVOILUTFunction = this._getValidVOILUTFunction(voiLUTFunction);
+    const newVOILUTFunction = getValidVOILUTFunction(voiLUTFunction);
 
     let forceRecreateLUTFunction = false;
     if (this.VOILUTFunction !== newVOILUTFunction) {
@@ -1748,7 +1761,7 @@ class StackViewport extends Viewport {
     }
 
     this.modality = modality;
-    const voiLUTFunctionEnum = this._getValidVOILUTFunction(voiLUTFunction);
+    const voiLUTFunctionEnum = getValidVOILUTFunction(voiLUTFunction);
     this.VOILUTFunction = voiLUTFunctionEnum;
 
     this.calibration = calibration;
@@ -3348,19 +3361,6 @@ class StackViewport extends Viewport {
       windowCenter,
       voiLUTFunction
     );
-  }
-
-  private _getValidVOILUTFunction(
-    voiLUTFunction: VOILUTFunctionType | unknown
-  ): VOILUTFunctionType {
-    if (
-      !Object.values(VOILUTFunctionType).includes(
-        voiLUTFunction as VOILUTFunctionType
-      )
-    ) {
-      return VOILUTFunctionType.LINEAR;
-    }
-    return voiLUTFunction as VOILUTFunctionType;
   }
 
   /**
