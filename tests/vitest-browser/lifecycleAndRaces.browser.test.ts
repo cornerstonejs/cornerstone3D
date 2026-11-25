@@ -312,11 +312,9 @@ function registerRaceStacks(prefix: string): RaceStacks {
 
   displaySetRegistry.add(idA, {
     imageIds: stackA.imageIds,
-    initialImageIdIndex: 0,
   });
   displaySetRegistry.add(idB, {
     imageIds: stackB.imageIds,
-    initialImageIdIndex: 0,
   });
 
   return {
@@ -446,7 +444,6 @@ test('scroll calls fired during an in-flight setDisplaySets reject cleanly and l
 
   displaySetRegistry.add(displaySetId, {
     imageIds,
-    initialImageIdIndex: 0,
   });
 
   const setDisplaySetsPromise = viewport.setDisplaySets({
@@ -606,7 +603,6 @@ test('a 2x2 grid of viewports on one engine renders independently; disabling one
 
   displaySetRegistry.add(gridDisplaySetId, {
     imageIds: stack.imageIds,
-    initialImageIdIndex: 0,
   });
 
   const cleanupGrid = (): void => {

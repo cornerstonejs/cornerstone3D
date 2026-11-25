@@ -57,11 +57,10 @@ async function showStack(viewport) {
 
   cornerstone3D.displaySetRegistry.add('brushStack', {
     imageIds,
-    initialImageIdIndex: 0,
   });
   await viewport.setDisplaySets({
     displaySetId: 'brushStack',
-    options: { renderBackend: 'gpu' },
+    options: { renderBackend: 'gpu', initialImageIdIndex: 0 },
   });
   await renderAndWait(viewport);
 

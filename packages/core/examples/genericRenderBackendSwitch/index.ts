@@ -601,22 +601,19 @@ async function run() {
 
   cornerstone.displaySetRegistry.add(stackDisplaySetId, {
     imageIds: stack,
-    initialImageIdIndex: 0,
   });
   cornerstone.displaySetRegistry.add(volumeDisplaySetId, {
     imageIds: ctImageIds,
-    initialImageIdIndex: Math.floor(ctImageIds.length / 2),
     volumeId,
   });
   cornerstone.displaySetRegistry.add(petDisplaySetId, {
     imageIds: ptStack,
-    initialImageIdIndex: 0,
   });
 
   const stackViewport = getViewport(stackViewportId);
   await stackViewport.setDisplaySets({
     displaySetId: stackDisplaySetId,
-    options: {},
+    options: { initialImageIdIndex: 0 },
   });
   stackViewport.setDisplaySetAppearance(stackDisplaySetId, {
     voiRange: ctVoiRange,
@@ -625,7 +622,11 @@ async function run() {
   const mprViewport = getViewport(mprViewportId);
   await mprViewport.setDisplaySets({
     displaySetId: volumeDisplaySetId,
-    options: { orientation: OrientationAxis.SAGITTAL, mode: 'volume' },
+    options: {
+      orientation: OrientationAxis.SAGITTAL,
+      mode: 'volume',
+      initialImageIdIndex: Math.floor(ctImageIds.length / 2),
+    },
   });
   mprViewport.setDisplaySetAppearance(volumeDisplaySetId, {
     voiRange: ctVoiRange,
@@ -634,7 +635,7 @@ async function run() {
   const petViewport = getViewport(petViewportId);
   await petViewport.setDisplaySets({
     displaySetId: petDisplaySetId,
-    options: {},
+    options: { initialImageIdIndex: 0 },
   });
 
   renderingEngine.render();

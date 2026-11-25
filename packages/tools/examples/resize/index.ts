@@ -512,11 +512,9 @@ async function run() {
   });
   displaySetRegistry.add(ctStackDisplaySetId, {
     imageIds,
-    initialImageIdIndex: 0,
   });
   displaySetRegistry.add(testStackDisplaySetId, {
     imageIds: stackImageIds,
-    initialImageIdIndex: 0,
   });
 
   await Promise.all(
@@ -537,14 +535,20 @@ async function run() {
 
   const stackViewport5 =
     renderingEngine.getViewport<PlanarViewport>(viewportId5);
-  await stackViewport5.setDisplaySets({ displaySetId: testStackDisplaySetId });
+  await stackViewport5.setDisplaySets({
+    displaySetId: testStackDisplaySetId,
+    options: { initialImageIdIndex: 0 },
+  });
   // stackViewport5.setProperties({
   //   interpolationType: Enums.InterpolationType.NEAREST,
   // });
 
   const stackViewport4 =
     renderingEngine.getViewport<PlanarViewport>(viewportId4);
-  await stackViewport4.setDisplaySets({ displaySetId: ctStackDisplaySetId });
+  await stackViewport4.setDisplaySets({
+    displaySetId: ctStackDisplaySetId,
+    options: { initialImageIdIndex: 0 },
+  });
   // Assign the initial viewport
   viewport = stackViewport4;
 

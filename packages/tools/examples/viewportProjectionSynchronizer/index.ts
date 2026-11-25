@@ -411,11 +411,9 @@ async function run() {
 
   displaySetRegistry.add(leftDisplaySetId, {
     imageIds,
-    initialImageIdIndex: middleImageIndex,
   });
   displaySetRegistry.add(rightDisplaySetId, {
     imageIds,
-    initialImageIdIndex: middleImageIndex,
   });
 
   const leftViewport = getViewport(leftViewportId);
@@ -424,11 +422,11 @@ async function run() {
   await Promise.all([
     leftViewport.setDisplaySets({
       displaySetId: leftDisplaySetId,
-      options: {},
+      options: { initialImageIdIndex: middleImageIndex },
     }),
     rightViewport.setDisplaySets({
       displaySetId: rightDisplaySetId,
-      options: {},
+      options: { initialImageIdIndex: middleImageIndex },
     }),
   ]);
 

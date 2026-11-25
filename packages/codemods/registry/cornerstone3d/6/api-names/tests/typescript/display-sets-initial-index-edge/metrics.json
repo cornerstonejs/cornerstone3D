@@ -1,0 +1,68 @@
+{
+  "cornerstone3d-6-manual": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "18",
+        "rule": "displaySetRegistry.add: its value cannot be read at every mount, initialImageIdIndex is a mount option in 6.0, and a planar viewport refuses a descriptor that has it: remove it from the descriptor and pass it on each planar mount, setDisplaySets({ displaySetId, options: { initialImageIdIndex } }) or addDisplaySet(displaySetId, { initialImageIdIndex })"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "21",
+        "rule": "displaySetRegistry.add: its value cannot be read at every mount, initialImageIdIndex is a mount option in 6.0, and a planar viewport refuses a descriptor that has it: remove it from the descriptor and pass it on each planar mount, setDisplaySets({ displaySetId, options: { initialImageIdIndex } }) or addDisplaySet(displaySetId, { initialImageIdIndex })"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "27",
+        "rule": "displaySetRegistry.add: a mount (setDisplaySets, line 28): the options are not a literal that the step can extend, initialImageIdIndex is a mount option in 6.0, and a planar viewport refuses a descriptor that has it: remove it from the descriptor and pass it on each planar mount, setDisplaySets({ displaySetId, options: { initialImageIdIndex } }) or addDisplaySet(displaySetId, { initialImageIdIndex })"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "35",
+        "rule": "displaySetRegistry.add: the descriptor is a const that the file reads elsewhere too, initialImageIdIndex is a mount option in 6.0, and a planar viewport refuses a descriptor that has it: remove it from the descriptor and pass it on each planar mount, setDisplaySets({ displaySetId, options: { initialImageIdIndex } }) or addDisplaySet(displaySetId, { initialImageIdIndex })"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "36",
+        "rule": "displaySetRegistry.add: the file shows no planar mount of this display set, initialImageIdIndex is a mount option in 6.0, and a planar viewport refuses a descriptor that has it: remove it from the descriptor and pass it on each planar mount, setDisplaySets({ displaySetId, options: { initialImageIdIndex } }) or addDisplaySet(displaySetId, { initialImageIdIndex })"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "39",
+        "rule": "displaySetRegistry.add: the file shows no planar mount of this display set, initialImageIdIndex is a mount option in 6.0, and a planar viewport refuses a descriptor that has it: remove it from the descriptor and pass it on each planar mount, setDisplaySets({ displaySetId, options: { initialImageIdIndex } }) or addDisplaySet(displaySetId, { initialImageIdIndex })"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "51",
+        "rule": "displaySetRegistry.add: its value cannot be read at every mount, initialImageIdIndex is a mount option in 6.0, and a planar viewport refuses a descriptor that has it: remove it from the descriptor and pass it on each planar mount, setDisplaySets({ displaySetId, options: { initialImageIdIndex } }) or addDisplaySet(displaySetId, { initialImageIdIndex })"
+      },
+      "count": 1
+    },
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "9",
+        "rule": "displaySetRegistry.add: the file shows no planar mount of this display set, initialImageIdIndex is a mount option in 6.0, and a planar viewport refuses a descriptor that has it: remove it from the descriptor and pass it on each planar mount, setDisplaySets({ displaySetId, options: { initialImageIdIndex } }) or addDisplaySet(displaySetId, { initialImageIdIndex })"
+      },
+      "count": 1
+    }
+  ]
+}

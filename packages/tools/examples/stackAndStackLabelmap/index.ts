@@ -188,16 +188,20 @@ async function run() {
 
   cornerstone.displaySetRegistry.add(ctDisplaySetId, {
     imageIds: ctImageIds,
-    initialImageIdIndex: 0,
   });
   cornerstone.displaySetRegistry.add(ptDisplaySetId, {
     imageIds: ptImageIds,
-    initialImageIdIndex: 0,
   });
 
   await Promise.all([
-    viewport1.setDisplaySets({ displaySetId: ctDisplaySetId }),
-    viewport2.setDisplaySets({ displaySetId: ptDisplaySetId }),
+    viewport1.setDisplaySets({
+      displaySetId: ctDisplaySetId,
+      options: { initialImageIdIndex: 0 },
+    }),
+    viewport2.setDisplaySets({
+      displaySetId: ptDisplaySetId,
+      options: { initialImageIdIndex: 0 },
+    }),
   ]);
 
   stackContextPrefetch.enable(element1);

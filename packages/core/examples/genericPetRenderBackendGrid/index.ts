@@ -212,11 +212,9 @@ async function run() {
 
   displaySetRegistry.add(petStackDisplaySetId, {
     imageIds: petImageIds,
-    initialImageIdIndex: Math.floor(petImageIds.length / 2),
   });
   displaySetRegistry.add(petVolumeDisplaySetId, {
     imageIds: petImageIds,
-    initialImageIdIndex: Math.floor(petImageIds.length / 2),
     volumeId: petVolumeId,
   });
 
@@ -230,6 +228,7 @@ async function run() {
           renderBackend: spec.renderBackend,
           mode:
             spec.displaySetId === petVolumeDisplaySetId ? 'volume' : 'stack',
+          initialImageIdIndex: Math.floor(petImageIds.length / 2),
           ...(spec.orientation ? { orientation: spec.orientation } : {}),
         },
       });

@@ -127,11 +127,13 @@ async function showNextStack(viewport, imageIds) {
 
   cornerstone3D.displaySetRegistry.add(displaySetId, {
     imageIds,
-    initialImageIdIndex: 0,
   });
   await viewport.setDisplaySets({
     displaySetId,
-    options: { orientation: OrientationAxis.ACQUISITION },
+    options: {
+      orientation: OrientationAxis.ACQUISITION,
+      initialImageIdIndex: 0,
+    },
   });
   await renderAndWait(viewport);
 }

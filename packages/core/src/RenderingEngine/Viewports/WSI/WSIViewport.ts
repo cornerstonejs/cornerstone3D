@@ -121,10 +121,17 @@ export default class WSIViewport extends BaseViewport<
    * as on the legacy viewport: a slide mounted in place of another one drops
    * the zoom, the resolution and the centre of the view, and keeps the
    * rotation. DISPLAY_SETS_CHANGED fires once the slides are mounted; a
-   * newer call stops this one, which then fires nothing.
+   * newer call stops this one, which then fires nothing. The option
+   * `appearance` of an entry is the appearance of the slide from its first
+   * draw (its window, average white and opacity), merged over the overrides
+   * set before the mount; DISPLAY_SET_APPEARANCE_CHANGED fires once for it,
+   * with cause `'mount'`.
    */
   async setDisplaySets(
-    ...entries: Array<{ displaySetId: string }>
+    ...entries: Array<{
+      displaySetId: string;
+      options?: { appearance?: Partial<WSIDisplaySetAppearance> };
+    }>
   ): Promise<void> {
     const isSuperseded = this.startSetDisplaySets();
     const hadSlide = Boolean(this.getWSIData());
@@ -135,24 +142,33 @@ export default class WSIViewport extends BaseViewport<
       this.viewState = { rotation: this.viewState.rotation ?? 0 };
     }
 
-    for (const [index, { displaySetId }] of entries.entries()) {
-      const bound = await this.bindDisplaySet(
+    for (const [index, { displaySetId, options }] of entries.entries()) {
+      const restoreAppearance = this.stageMountedAppearance(
         displaySetId,
-        {
-          renderMode: 'wsi2d',
-          role: index === 0 ? 'source' : 'overlay',
-        },
-        isSuperseded
+        { visible: true, opacity: 1 },
+        options?.appearance
       );
+      let bound = false;
+
+      try {
+        bound = await this.bindDisplaySet(
+          displaySetId,
+          {
+            renderMode: 'wsi2d',
+            role: index === 0 ? 'source' : 'overlay',
+          },
+          isSuperseded
+        );
+      } finally {
+        if (!bound) {
+          restoreAppearance();
+        }
+      }
 
       if (!bound) {
         return;
       }
 
-      this.setDefaultAppearance(displaySetId, {
-        visible: true,
-        opacity: 1,
-      });
       this.activeDisplaySetId = displaySetId;
       this.applyMountedAppearance(displaySetId);
     }

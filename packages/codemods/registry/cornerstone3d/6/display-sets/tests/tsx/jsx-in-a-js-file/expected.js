@@ -38,7 +38,6 @@ export async function run(element, imageIds) {
   const displaySetId = JSON.stringify([stack.renderingEngineId, stack.id, imageIds[0]]);
   cornerstone.displaySetRegistry.add(displaySetId, {
     imageIds,
-    initialImageIdIndex: 0,
   });
-  await stack.setDisplaySets({ displaySetId });
+  await stack.setDisplaySets({ displaySetId, options: { initialImageIdIndex: 0 } });
 }

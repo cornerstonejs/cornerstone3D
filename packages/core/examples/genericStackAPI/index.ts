@@ -279,12 +279,11 @@ async function run() {
 
   displaySetRegistry.add(stackDisplaySetId, {
     imageIds: stack,
-    initialImageIdIndex: 0,
   });
 
   await viewport.setDisplaySets({
     displaySetId: stackDisplaySetId,
-    options: {},
+    options: { initialImageIdIndex: 0 },
   });
   viewport.setDisplaySetAppearance(stackDisplaySetId, {
     voiRange: ctVoiRange,

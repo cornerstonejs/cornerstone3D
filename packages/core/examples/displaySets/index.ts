@@ -171,7 +171,6 @@ function registerDisplaySetData(row: Row) {
     case 'stack':
       provider.add(displaySetId, {
         imageIds,
-        initialImageIdIndex: Math.floor(imageIds.length / 2),
       });
       break;
     case 'volume':
@@ -251,7 +250,13 @@ async function mountRow(row: Row) {
     const options =
       row.hint === 'volume'
         ? { orientation: Enums.OrientationAxis.AXIAL, mode: 'volume' as const }
-        : undefined;
+        : row.hint === 'stack'
+          ? {
+              initialImageIdIndex: Math.floor(
+                row.displaySet.imageIds.length / 2
+              ),
+            }
+          : undefined;
 
     // The unified entry point: resolves the displaySetId through the registry,
     // loads the type-specific data, and records the mounted display set.

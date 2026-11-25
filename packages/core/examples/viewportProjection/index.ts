@@ -427,7 +427,6 @@ async function run() {
 
   displaySetRegistry.add(planarDisplaySetId, {
     imageIds: planarImageIds,
-    initialImageIdIndex: middleImageIndex,
   });
   displaySetRegistry.add(volumeDisplaySetId, {
     imageIds: volumeImageIds,
@@ -437,7 +436,7 @@ async function run() {
   await Promise.all([
     planarViewport.setDisplaySets({
       displaySetId: planarDisplaySetId,
-      options: {},
+      options: { initialImageIdIndex: middleImageIndex },
     }),
     volumeViewport.setDisplaySets({
       displaySetId: volumeDisplaySetId,

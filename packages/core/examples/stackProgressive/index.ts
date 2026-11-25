@@ -332,11 +332,9 @@ async function run() {
 
   displaySetRegistry.add(displaySetId, {
     imageIds,
-    initialImageIdIndex: 0,
   });
   displaySetRegistry.add(ctDisplaySetId, {
     imageIds: imageIdsCt,
-    initialImageIdIndex: 0,
   });
 
   const createButton = (text, action) => {

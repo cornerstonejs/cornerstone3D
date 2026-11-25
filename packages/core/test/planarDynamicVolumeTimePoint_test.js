@@ -153,6 +153,30 @@ describe('A planar viewport in volume mode on a dynamic volume -- ', () => {
     });
   });
 
+  it('shows a display set whose volume is a dynamic volume of the cache as a volume when the mount asks for no mode', async function () {
+    const viewport = createNextViewport(renderingEngine, 'timePointAuto');
+    const stack = createNextViewport(renderingEngine, 'timePointAutoStack');
+
+    await volumeLoader.createAndCacheVolume(dynamicVolumeId, {
+      imageIds: seriesImageIds('dynamic', TIME_POINTS),
+    });
+    await viewport.setDisplaySets({ displaySetId: 'dynamic' });
+    await stack.setDisplaySets({
+      displaySetId: 'dynamic',
+      options: { mode: 'stack' },
+    });
+    await frames();
+    await renderAndWait(viewport);
+
+    expect(cache.getVolume(dynamicVolumeId).isDynamicVolume()).toBe(true);
+    expect(viewport.getCurrentMode()).toBe('volume');
+    expect(viewport.getVolumeIds()).toEqual([dynamicVolumeId]);
+    expect(viewport.getDisplaySets()[0].options.mode).toBe('volume');
+    expect(viewport.getNumberOfSlices()).toBe(SLICES);
+    expect(stack.getCurrentMode()).toBe('stack');
+    expect(stack.getNumberOfSlices()).toBe(SLICES * TIME_POINTS);
+  });
+
   it('keeps the time point on display in its view reference', async function () {
     const viewport = createNextViewport(renderingEngine, 'timePointRef');
 
@@ -276,11 +300,13 @@ describe('A planar viewport in volume mode on a dynamic volume -- ', () => {
 
     cornerstone3D.displaySetRegistry.add('staticStack', {
       imageIds: seriesImageIds('static', 1),
-      initialImageIdIndex: 0,
     });
     await viewport.setDisplaySets({
       displaySetId: 'staticStack',
-      options: { orientation: OrientationAxis.ACQUISITION },
+      options: {
+        orientation: OrientationAxis.ACQUISITION,
+        initialImageIdIndex: 0,
+      },
     });
     await frames();
     await renderAndWait(viewport);

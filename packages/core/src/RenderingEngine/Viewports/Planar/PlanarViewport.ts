@@ -70,6 +70,7 @@ import {
   isPointNearImagePlane,
 } from '../viewReferenceCompatibility';
 import {
+  displaySetShapeError,
   getVolumeOrImageDisplaySet,
   isImageDisplaySet,
 } from '../displaySetAccess';
@@ -161,7 +162,8 @@ import type {
   PlanarOrientation,
   PlanarPayload,
   PlanarDisplaySetDescriptor,
-  PlanarSetDataOptions,
+  PlanarMountedDisplaySet,
+  PlanarMountOptions,
   PlanarViewFraming,
   PlanarViewFramingSelector,
   PlanarViewportRenderContext,
@@ -475,12 +477,15 @@ class PlanarViewport extends BaseViewport<
     string,
     string
   >();
-  // Original mount options per display set, kept so a live render-backend
-  // switch (updateRenderingPipeline) can re-run the render-path decision with
-  // the same per-mount semantics (orientation, thresholds, backend pins).
-  private readonly mountOptionsByDisplaySetId = new Map<
+  /**
+   * What the viewport keeps of each mounted display set: the descriptor that
+   * the mount read, the mode that it chose and its options. Every read after
+   * the mount (a live render backend switch, a slab, an orientation check,
+   * the replacement of the source) reads this, not the registry.
+   */
+  private readonly mountedDisplaySets = new Map<
     string,
-    PlanarSetDataOptions
+    PlanarMountedDisplaySet
   >();
   /**
    * The slab that a mounted binding draws while its display set waits for a
@@ -703,7 +708,7 @@ class PlanarViewport extends BaseViewport<
    * orientation and binding role resolution.
    */
   async setDisplaySets(
-    ...entries: Array<{ displaySetId: string; options?: PlanarSetDataOptions }>
+    ...entries: Array<{ displaySetId: string; options?: PlanarMountOptions }>
   ): Promise<void> {
     await this.mountDisplaySets(entries);
   }
@@ -733,13 +738,13 @@ class PlanarViewport extends BaseViewport<
    * fires DISPLAY_SETS_CHANGED.
    */
   private async mountDisplaySets(
-    entries: Array<{ displaySetId: string; options?: PlanarSetDataOptions }>
+    entries: Array<{ displaySetId: string; options?: PlanarMountOptions }>
   ): Promise<void> {
     const requestId = ++this.setDataRequestId;
     const isStale = () => requestId !== this.setDataRequestId;
     const mounts: Array<{
       displaySetId: string;
-      options: PlanarSetDataOptions;
+      options: PlanarMountOptions;
     }> = entries.map(({ displaySetId, options = {} }, index) => ({
       displaySetId,
       options: {
@@ -779,7 +784,7 @@ class PlanarViewport extends BaseViewport<
         );
       }
 
-      const commit = this.commitDisplaySets(entries, mounts, loaded);
+      const commit = this.commitDisplaySets(mounts, loaded);
 
       this.mountCommit = commit;
 
@@ -806,12 +811,11 @@ class PlanarViewport extends BaseViewport<
    * A newer call does not stop it.
    */
   private async commitDisplaySets(
-    entries: Array<{ displaySetId: string; options?: PlanarSetDataOptions }>,
-    mounts: Array<{ displaySetId: string; options: PlanarSetDataOptions }>,
+    mounts: Array<{ displaySetId: string; options: PlanarMountOptions }>,
     loaded: PlanarDataLoad[]
   ): Promise<void> {
     this.clearResolvedViewCache();
-    this.removeReplaceableData(entries);
+    this.removeReplaceableData(mounts, loaded);
 
     for (const [index, { displaySetId, options }] of mounts.entries()) {
       await this.addDisplaySetInternal(displaySetId, options, loaded[index]);
@@ -827,7 +831,7 @@ class PlanarViewport extends BaseViewport<
    */
   async addDisplaySet(
     displaySetId: string,
-    options: PlanarSetDataOptions = {}
+    options: PlanarMountOptions = {}
   ): Promise<void> {
     const added = await this.addDisplaySetInternal(displaySetId, options);
 
@@ -844,14 +848,21 @@ class PlanarViewport extends BaseViewport<
    * its last wait and in the same task as the render path that listens for
    * the later stages, so no stage comes between the two. Gives whether the
    * display set was bound.
+   *
+   * What the mount read and chose (`PlanarMountedDisplaySet`) and the
+   * appearance of the mount option `appearance` are in place before the
+   * bind, so the first draw has them; the mount fires
+   * `DISPLAY_SET_APPEARANCE_CHANGED` once, with cause `'mount'`. A source
+   * that comes after its overlays in one `setDisplaySets` call gives them
+   * its slice once it is bound.
    */
   private async addDisplaySetInternal(
     displaySetId: string,
-    options: PlanarSetDataOptions = {},
+    options: PlanarMountOptions = {},
     loaded?: PlanarDataLoad
   ): Promise<boolean> {
     const role = this.mountedData.resolveBindingRole(options);
-    const resolvedOptions: PlanarSetDataOptions = {
+    const resolvedOptions: PlanarMountOptions = {
       ...options,
       role,
     };
@@ -860,7 +871,7 @@ class PlanarViewport extends BaseViewport<
       resolvedOptions,
       loaded
     );
-    const { data, resolvedOrientation, selectedPath } = loaded
+    const { dataSet, data, resolvedOrientation, selectedPath } = loaded
       ? withBestCachedImage(planarLoad)
       : planarLoad;
 
@@ -869,21 +880,44 @@ class PlanarViewport extends BaseViewport<
       this.applyLoadedPlanarViewState(resolvedOrientation, data, selectedPath);
     }
 
-    const added = await this.addLoadedData(displaySetId, data, {
-      renderMode: selectedPath.renderMode,
-      role,
+    const mode = getMountMode(selectedPath.renderMode);
+    const previousMount = this.mountedDisplaySets.get(displaySetId);
+    const restoreAppearance = this.stageMountedAppearance(
+      displaySetId,
+      { visible: true },
+      options.appearance
+    );
+    let added = false;
+
+    this.mountedDisplaySets.set(displaySetId, {
+      descriptor: dataSet,
+      mode,
+      options: getMountedOptions(resolvedOptions, mode, data.volumeId),
     });
+
+    try {
+      added = await this.addLoadedData(displaySetId, data, {
+        renderMode: selectedPath.renderMode,
+        role,
+      });
+    } finally {
+      if (!added) {
+        restoreAppearance();
+        this.restoreMountedDisplaySet(displaySetId, previousMount);
+      }
+    }
 
     if (!added) {
       return false;
     }
 
     this.updateRenderPlan(displaySetId, selectedPath.reason);
-    this.mountOptionsByDisplaySetId.set(displaySetId, resolvedOptions);
     this.clearResolvedViewCache();
-    this.setDefaultAppearance(displaySetId, {
-      visible: true,
-    });
+
+    if (role === 'source' && this.bindings.size > 1) {
+      this.updateBindingsCameraState();
+    }
+
     this.applyMountedAppearance(displaySetId);
 
     if (role === 'source') {
@@ -896,6 +930,31 @@ class PlanarViewport extends BaseViewport<
     }
 
     return true;
+  }
+
+  /**
+   * The display sets that the viewport shows, in mount order, each with the
+   * options of its mount: the options that it was given, without
+   * `appearance` (applied once, at the mount), with the role that it has now,
+   * the mode that the mount chose (`'stack'` or `'volume'`, never `'auto'`)
+   * and, in volume mode, the id of the volume that it shows. Mounting them on
+   * another planar viewport shows the same data the same way, so a stack and
+   * a volume of one display set keep their modes, and a mount of another
+   * volume of a display set keeps that volume.
+   */
+  override getDisplaySets(): Array<{
+    displaySetId: string;
+    options: PlanarMountOptions;
+  }> {
+    return Array.from(this.bindings.entries()).map(
+      ([displaySetId, binding]) => ({
+        displaySetId,
+        options: {
+          ...(this.mountedDisplaySets.get(displaySetId)?.options ?? {}),
+          role: binding.role,
+        },
+      })
+    );
   }
 
   /**
@@ -997,7 +1056,7 @@ class PlanarViewport extends BaseViewport<
    */
   protected override removeDisplaySetBinding(displaySetId: string): void {
     this.clearResolvedViewCache();
-    this.mountOptionsByDisplaySetId.delete(displaySetId);
+    this.mountedDisplaySets.delete(displaySetId);
     this.lastRenderPathErrorByDisplaySetId.delete(displaySetId);
     this.renderPlanReasonByDisplaySetId.delete(displaySetId);
     this.renderPlanByDisplaySetId.delete(displaySetId);
@@ -1117,7 +1176,6 @@ class PlanarViewport extends BaseViewport<
     displaySetRegistry.add(displaySetId, {
       image,
       imageIds: [image.imageId],
-      initialImageIdIndex: 0,
     });
 
     return this.setDisplaySets({
@@ -1253,7 +1311,6 @@ class PlanarViewport extends BaseViewport<
         image,
         imageData: stackInput.imageData,
         imageIds: [stackInput.imageId],
-        initialImageIdIndex: 0,
         reference,
         useWorldCoordinateImageData:
           stackInput.useWorldCoordinateImageData === true,
@@ -1804,19 +1861,20 @@ class PlanarViewport extends BaseViewport<
     }
 
     const binding = this.bindings.get(displaySetId);
-    const dataSet = this.getDataSet(displaySetId);
+    const mounted = this.mountedDisplaySets.get(displaySetId);
 
     if (
       this.isDestroyed ||
       !binding ||
-      !dataSet ||
+      !mounted ||
       !isVolumeRenderMode(binding.rendering.renderMode)
     ) {
       return;
     }
 
+    const dataSet = mounted.descriptor;
     const options = {
-      ...(this.mountOptionsByDisplaySetId.get(displaySetId) ?? {}),
+      ...mounted.options,
       role: binding.role,
     };
 
@@ -2430,7 +2488,7 @@ class PlanarViewport extends BaseViewport<
       return false;
     }
 
-    const dataSet = this.getDataSet(targetDisplaySetId);
+    const dataSet = this.getDescriptor(targetDisplaySetId);
 
     if (!dataSet) {
       return false;
@@ -2991,17 +3049,28 @@ class PlanarViewport extends BaseViewport<
         continue;
       }
 
-      const options = this.mountOptionsByDisplaySetId.get(displaySetId) ?? {};
+      const mounted = this.mountedDisplaySets.get(displaySetId);
+
+      if (!mounted) {
+        continue;
+      }
+
+      const { options } = mounted;
 
       try {
-        const { data, selectedPath } = await this.loadPlanarData(displaySetId, {
-          ...options,
-          role: binding.role,
-          renderBackend:
-            binding === sourceBinding
-              ? options.renderBackend
-              : (options.renderBackend ?? sourceRenderBackend),
-        });
+        const { data, selectedPath } = await this.loadPlanarData(
+          displaySetId,
+          {
+            ...options,
+            role: binding.role,
+            renderBackend:
+              binding === sourceBinding
+                ? options.renderBackend
+                : (options.renderBackend ?? sourceRenderBackend),
+          },
+          undefined,
+          mounted.descriptor
+        );
 
         if (binding === sourceBinding) {
           sourceRenderBackend = getRenderBackendForRenderMode(
@@ -3311,18 +3380,18 @@ class PlanarViewport extends BaseViewport<
    */
   private canDrawAcquiredFrames(displaySetId: string): boolean {
     const binding = this.bindings.get(displaySetId);
-    const dataSet = this.getDataSet(displaySetId);
+    const mounted = this.mountedDisplaySets.get(displaySetId);
 
-    if (!binding || !dataSet) {
+    if (!binding || !mounted) {
       return false;
     }
 
     return defaultPlanarRenderPathDecisionService.canDrawAcquiredFrames(
-      dataSet,
+      mounted.descriptor,
       this.getRenderPathDecisionOptions(
         displaySetId,
         {
-          ...(this.mountOptionsByDisplaySetId.get(displaySetId) ?? {}),
+          ...mounted.options,
           role: binding.role,
         },
         this.viewState.orientation
@@ -3332,13 +3401,15 @@ class PlanarViewport extends BaseViewport<
 
   /**
    * The inputs of the render-path decision for one display set, with the
-   * stored appearance of the display set, or the given one.
+   * stored appearance of the display set, or the given one. A mount gives
+   * the stored appearance with its option `appearance` over it, so a slab
+   * that the mount asks for chooses the path of the first draw.
    *
    * Only the source may draw the acquired frames of a reduced volume.
    */
   private getRenderPathDecisionOptions(
     displaySetId: string,
-    options: PlanarSetDataOptions,
+    options: PlanarMountOptions,
     orientation: PlanarViewState['orientation'],
     appearance = this.getAppearanceState(displaySetId)
   ): PlanarRenderPathDecisionOptions {
@@ -3521,72 +3592,132 @@ class PlanarViewport extends BaseViewport<
   /**
    * Tears down currently-mounted data ahead of a `setDisplaySets` replace, but
    * preserves externally-managed segmentation overlays when the source is being
-   * re-set to the same display set.
+   * re-set to the same display set in the same mode.
    *
    * The segmentation display tool mounts labelmap overlays out-of-band (via
    * `addDisplaySet`), so a full teardown on every `setDisplaySets` would blank a
    * hydrated segmentation whenever the source is re-applied (e.g. when an
    * application re-runs its viewport-data sync). When the source changes (or no
    * source is being set), everything is removed so a stale segmentation cannot
-   * leak across datasets.
+   * leak across datasets. The mode counts too: one display set shows as a
+   * stack or as a volume under the same id, and the labelmap of a stack is
+   * drawn as images, that of a volume as a volume, so a source that changes
+   * its mode drops them as well. The overlays to keep are found before any
+   * binding goes: the removal of the source makes the first binding left the
+   * source, which would then no longer count as an overlay.
    */
   private removeReplaceableData(
-    entries: Array<{ displaySetId: string; options?: PlanarSetDataOptions }>
+    mounts: Array<{ displaySetId: string; options: PlanarMountOptions }>,
+    loaded: PlanarDataLoad[]
   ): void {
-    const nextSourceId = this.resolveNextSourceId(entries);
+    const nextSourceIndex = Math.max(
+      0,
+      mounts.findIndex(({ options }) => options.role === 'source')
+    );
+    const nextSourceId = mounts[nextSourceIndex]?.displaySetId;
+    const nextSourceRenderMode =
+      loaded[nextSourceIndex]?.selectedPath.renderMode;
+    const sourceDisplaySetId = this.getSourceDisplaySetId();
     const preserveSegmentationOverlays =
       nextSourceId !== undefined &&
-      nextSourceId === this.getSourceDisplaySetId();
+      nextSourceId === sourceDisplaySetId &&
+      nextSourceRenderMode !== undefined &&
+      getMountMode(nextSourceRenderMode) ===
+        this.mountedDisplaySets.get(sourceDisplaySetId)?.mode;
 
-    for (const displaySetId of Array.from(this.bindings.keys())) {
-      if (
-        preserveSegmentationOverlays &&
-        this.isSegmentationOverlayBinding(displaySetId)
-      ) {
-        continue;
+    const displaySetIds = Array.from(this.bindings.keys());
+    const kept = new Set(
+      preserveSegmentationOverlays
+        ? displaySetIds.filter((displaySetId) =>
+            this.isSegmentationOverlayBinding(displaySetId)
+          )
+        : []
+    );
+
+    for (const displaySetId of displaySetIds) {
+      if (!kept.has(displaySetId)) {
+        this.removeDisplaySetBinding(displaySetId);
       }
-
-      this.removeDisplaySetBinding(displaySetId);
     }
   }
 
   /**
-   * Resolves which entry will become the source binding for a `setDisplaySets`
-   * call: the entry explicitly flagged `role: 'source'`, otherwise the first.
-   */
-  private resolveNextSourceId(
-    entries: Array<{ displaySetId: string; options?: PlanarSetDataOptions }>
-  ): string | undefined {
-    const explicitSource = entries.find(
-      (entry) => entry.options?.role === 'source'
-    );
-
-    return explicitSource?.displaySetId ?? entries[0]?.displaySetId;
-  }
-
-  /**
    * Returns whether a mounted binding is an externally-managed segmentation
-   * overlay (an overlay-role binding whose registered data references a
-   * segmentation).
+   * overlay: an overlay-role binding whose descriptor, as its mount read it,
+   * references a segmentation.
    */
   private isSegmentationOverlayBinding(displaySetId: string): boolean {
     if (this.getDisplaySetRole(displaySetId) !== 'overlay') {
       return false;
     }
 
-    return this.getDataSet(displaySetId)?.reference?.kind === 'segmentation';
+    return (
+      this.mountedDisplaySets.get(displaySetId)?.descriptor.reference?.kind ===
+      'segmentation'
+    );
   }
 
-  private getDataSet(
+  /**
+   * The descriptor of a display set: as its mount read it when it is
+   * mounted, else as it is registered now (for a question about a mount
+   * that has not happened).
+   */
+  private getDescriptor(
     displaySetId: string
   ): PlanarDisplaySetDescriptor | undefined {
+    const mounted = this.mountedDisplaySets.get(displaySetId);
+
+    if (mounted) {
+      return mounted.descriptor;
+    }
+
+    const dataSet = getVolumeOrImageDisplaySet(displaySetId);
+
+    return isPlanarDisplaySetDescriptor(dataSet) ? dataSet : undefined;
+  }
+
+  /**
+   * Reads the registration of a display set for a mount, once, and gives a
+   * copy that the mount keeps. A display set that is not registered, or
+   * whose descriptor a planar viewport cannot show, fails the mount with the
+   * message of `displaySetShapeError`. A descriptor that still carries
+   * `initialImageIdIndex` fails it too: that index is a mount option.
+   */
+  private readRegisteredDescriptor(
+    displaySetId: string
+  ): PlanarDisplaySetDescriptor {
     const dataSet = getVolumeOrImageDisplaySet(displaySetId);
 
     if (!isPlanarDisplaySetDescriptor(dataSet)) {
-      return;
+      throw displaySetShapeError(
+        'PlanarViewport',
+        displaySetId,
+        'imageIds or volumeId of a cached volume'
+      );
     }
 
-    return dataSet;
+    if (dataSet.initialImageIdIndex !== undefined) {
+      throw new Error(
+        `[PlanarViewport] The display set "${displaySetId}" is registered with ` +
+          `initialImageIdIndex, which is a mount option: remove it from the ` +
+          `descriptor and pass it on the mount, ` +
+          `setDisplaySets({ displaySetId, options: { initialImageIdIndex } })`
+      );
+    }
+
+    return { ...dataSet, imageIds: [...dataSet.imageIds] };
+  }
+
+  /** Puts back the mount record that a mount which did not bind replaced. */
+  private restoreMountedDisplaySet(
+    displaySetId: string,
+    mounted: PlanarMountedDisplaySet | undefined
+  ): void {
+    if (mounted) {
+      this.mountedDisplaySets.set(displaySetId, mounted);
+    } else {
+      this.mountedDisplaySets.delete(displaySetId);
+    }
   }
 
   /**
@@ -3604,32 +3735,45 @@ class PlanarViewport extends BaseViewport<
    * `setRenderBackend` meanwhile changes it), so the decision runs once.
    * Else it decides again and takes the loaded data with the render mode of
    * the new decision in place of a load: only the render mode can change, as
-   * whether the display set takes the volume path depends on the display set
-   * and the orientation alone. With `loaded` it reads the registration that
-   * the load had, so a registration that goes or changes after the load does
-   * not count.
+   * whether the display set takes the volume path is kept: the decision
+   * runs in the mode of the loaded data. With `loaded` it reads the
+   * registration that the load had, so a registration that goes or changes
+   * after the load does not count.
+   *
+   * Without `loaded` it reads the registration once (`descriptor`, which a
+   * remount of a mounted display set gives in its place) and gives it to the
+   * data provider with the `initialImageIdIndex` of the options. The
+   * decision takes the mount option `appearance` over the stored
+   * appearance, so a slab that the mount asks for chooses the path.
    */
   private async loadPlanarData(
     displaySetId: string,
-    options: PlanarSetDataOptions,
-    loaded?: PlanarDataLoad
+    options: PlanarMountOptions,
+    loaded?: PlanarDataLoad,
+    descriptor?: PlanarDisplaySetDescriptor
   ): Promise<PlanarDataLoad> {
-    const dataSet = loaded?.dataSet ?? this.getDataSet(displaySetId);
-
-    if (!dataSet) {
-      throw new Error(
-        `[PlanarViewport] No registered planar dataset metadata for ${displaySetId}`
-      );
-    }
-
+    const dataSet =
+      loaded?.dataSet ??
+      descriptor ??
+      this.readRegisteredDescriptor(displaySetId);
+    const decisionMountOptions = loaded
+      ? {
+          ...options,
+          mode: getMountMode(loaded.selectedPath.renderMode),
+        }
+      : options;
     const resolvedOrientation = this.resolveRequestedOrientation(
       options.orientation,
       dataSet.imageIds
     );
+    const storedAppearance = this.getAppearanceState(displaySetId);
     const decisionOptions = this.getRenderPathDecisionOptions(
       displaySetId,
-      options,
-      resolvedOrientation
+      decisionMountOptions,
+      resolvedOrientation,
+      options.appearance
+        ? { ...(storedAppearance ?? {}), ...options.appearance }
+        : storedAppearance
     );
 
     const renderBackend = getEffectiveRenderBackend(
@@ -3652,6 +3796,8 @@ class PlanarViewport extends BaseViewport<
           orientation: resolvedOrientation,
           renderMode: selectedPath.renderMode,
           volumeId: selectedPath.volumeId,
+          initialImageIdIndex: options.initialImageIdIndex,
+          descriptor: dataSet,
         });
     const { renderMode, reason } = isVolumeRenderMode(selectedPath.renderMode)
       ? defaultPlanarRenderPathDecisionService.selectVolumeRenderModeForDataSet(
@@ -3691,7 +3837,7 @@ class PlanarViewport extends BaseViewport<
    * no source is mounted yet, leaving the global configuration to decide.
    */
   private getInheritedOverlayRenderBackend(
-    role: PlanarSetDataOptions['role']
+    role: PlanarMountOptions['role']
   ): EffectiveRenderBackend | undefined {
     if (role === 'source') {
       return undefined;
@@ -3798,7 +3944,7 @@ class PlanarViewport extends BaseViewport<
    * With the images of the data, a reformat name becomes their view vectors.
    */
   private resolveRequestedOrientation(
-    orientation?: PlanarSetDataOptions['orientation'],
+    orientation?: PlanarMountOptions['orientation'],
     imageIds?: string[]
   ): PlanarViewState['orientation'] {
     return this.resolveOrientation(
@@ -3880,7 +4026,7 @@ class PlanarViewport extends BaseViewport<
     displaySetId: string,
     orientation: PlanarViewState['orientation']
   ): boolean {
-    const dataSet = this.getDataSet(displaySetId);
+    const dataSet = this.getDescriptor(displaySetId);
     const binding = this.getBinding(displaySetId);
 
     if (
@@ -3903,7 +4049,7 @@ class PlanarViewport extends BaseViewport<
           this.getRenderPathDecisionOptions(
             displaySetId,
             {
-              ...(this.mountOptionsByDisplaySetId.get(displaySetId) ?? {}),
+              ...(this.mountedDisplaySets.get(displaySetId)?.options ?? {}),
               role: binding.role,
             },
             orientation
@@ -4443,11 +4589,37 @@ function isPlanarDisplaySetDescriptor(
     return false;
   }
 
-  return (
-    (value.initialImageIdIndex === undefined ||
-      typeof value.initialImageIdIndex === 'number') &&
-    (value.volumeId === undefined || typeof value.volumeId === 'string')
-  );
+  return value.volumeId === undefined || typeof value.volumeId === 'string';
+}
+
+/** The mode of a mount whose display set draws in `renderMode`. */
+function getMountMode(
+  renderMode: PlanarEffectiveRenderMode
+): PlanarMountedDisplaySet['mode'] {
+  return isVolumeRenderMode(renderMode) ? 'volume' : 'stack';
+}
+
+/**
+ * The options that a mount keeps: the options that it was given, without
+ * the appearance (applied once, at the mount), with the mode that it chose
+ * and, in volume mode, the id of the volume that it shows in place of the
+ * `volumeId` that it was given (a stack shows no volume).
+ */
+function getMountedOptions(
+  options: PlanarMountOptions,
+  mode: PlanarMountedDisplaySet['mode'],
+  volumeId: string | undefined
+): PlanarMountedDisplaySet['options'] {
+  const mounted: PlanarMountOptions = { ...options, mode };
+
+  delete mounted.appearance;
+  delete mounted.volumeId;
+
+  if (mode === 'volume' && volumeId) {
+    mounted.volumeId = volumeId;
+  }
+
+  return mounted;
 }
 
 export default PlanarViewport;

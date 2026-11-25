@@ -372,11 +372,9 @@ async function run() {
 
   displaySetRegistry.add(stackDisplaySetId, {
     imageIds,
-    initialImageIdIndex: Math.floor(imageIds.length / 2),
   });
   displaySetRegistry.add(volumeDisplaySetId, {
     imageIds,
-    initialImageIdIndex: Math.floor(imageIds.length / 2),
     volumeId,
   });
 
@@ -385,7 +383,7 @@ async function run() {
   ) as PlanarViewport;
   await stackViewport.setDisplaySets({
     displaySetId: stackDisplaySetId,
-    options: {},
+    options: { initialImageIdIndex: Math.floor(imageIds.length / 2) },
   });
 
   const volumeViewportInputs = [
@@ -414,6 +412,7 @@ async function run() {
         options: {
           orientation,
           mode: 'volume',
+          initialImageIdIndex: Math.floor(imageIds.length / 2),
         },
       });
     })

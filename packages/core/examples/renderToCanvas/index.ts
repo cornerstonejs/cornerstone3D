@@ -191,7 +191,6 @@ async function run() {
 
   displaySetRegistry.add(stackDisplaySetId, {
     imageIds: [imageIds[100]],
-    initialImageIdIndex: 0,
   });
   displaySetRegistry.add(volumeDisplaySetId, {
     imageIds,
@@ -228,7 +227,10 @@ async function run() {
         // Get the stack viewport that was created
         const viewport =
           renderingEngine.getViewport<PlanarViewport>(viewportId);
-        await viewport.setDisplaySets({ displaySetId: stackDisplaySetId });
+        await viewport.setDisplaySets({
+          displaySetId: stackDisplaySetId,
+          options: { initialImageIdIndex: 0 },
+        });
         viewport.resetViewState();
         viewport.render();
       }, 200);

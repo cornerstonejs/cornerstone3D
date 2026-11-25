@@ -354,15 +354,14 @@ describe('labelmapRenderPlan', () => {
         mode: 'volume',
         orientation: 'axial',
         role: 'overlay',
+        initialImageIdIndex: 1,
+        appearance: {
+          blendMode: 1,
+          visible: true,
+        },
       }
     );
-    expect(viewport.setDisplaySetAppearance).toHaveBeenCalledWith(
-      'segmentation-id-Labelmap-stack-layer-id',
-      {
-        blendMode: 1,
-        visible: true,
-      }
-    );
+    expect(viewport.setDisplaySetAppearance).not.toHaveBeenCalled();
   });
 
   it('reduces a volume labelmap by foreground majority whichever loader built it', async () => {
@@ -460,9 +459,14 @@ describe('labelmapRenderPlan', () => {
       labelMapData: segmentation.representationData.Labelmap as never,
     });
 
-    expect(viewport.setDisplaySetAppearance).toHaveBeenCalledWith(
+    expect(viewport.addDisplaySet).toHaveBeenCalledWith(
       'segmentation-id-Labelmap-volume-layer-id',
-      { blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND, visible: true }
+      expect.objectContaining({
+        appearance: {
+          blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
+          visible: true,
+        },
+      })
     );
     expect(utilities.logger.toolsLog.getLogger().warn).toHaveBeenCalledTimes(1);
   });

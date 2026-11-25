@@ -348,21 +348,17 @@ async function run() {
   // ----------------------------------------------------------------------
   displaySetRegistry.add(ctStackDisplaySetId, {
     imageIds: ctImageIds,
-    initialImageIdIndex: Math.floor(ctImageIds.length / 2),
   });
   displaySetRegistry.add(ctMprDisplaySetId, {
     imageIds: ctImageIds,
     volumeId: ctVolumeId,
-    initialImageIdIndex: Math.floor(ctImageIds.length / 2),
   });
   displaySetRegistry.add(ptStackDisplaySetId, {
     imageIds: ptImageIds,
-    initialImageIdIndex: Math.floor(ptImageIds.length / 2),
   });
   displaySetRegistry.add(ptMprDisplaySetId, {
     imageIds: ptImageIds,
     volumeId: ptVolumeId,
-    initialImageIdIndex: Math.floor(ptImageIds.length / 2),
   });
   displaySetRegistry.add(ct3dDisplaySetId, {
     imageIds: ctImageIds,
@@ -382,14 +378,15 @@ async function run() {
     spec: PlanarViewportSpec,
     displaySetId: string,
     voiRange: { lower: number; upper: number },
+    initialImageIdIndex: number,
     invert = false
   ): Promise<void> {
     const viewport = getPlanarViewport(spec.viewportId);
     await viewport.setDisplaySets({
       displaySetId,
       options: spec.orientation
-        ? { orientation: spec.orientation, mode: 'volume' }
-        : {},
+        ? { orientation: spec.orientation, mode: 'volume', initialImageIdIndex }
+        : { initialImageIdIndex },
     });
     viewport.setDisplaySetAppearance(displaySetId, {
       voiRange,
@@ -403,7 +400,8 @@ async function run() {
       mountViewport(
         spec,
         spec.orientation ? ctMprDisplaySetId : ctStackDisplaySetId,
-        ctVoiRange
+        ctVoiRange,
+        Math.floor(ctImageIds.length / 2)
       )
     ),
     ...ptViewportSpecs.map((spec) =>
@@ -411,6 +409,7 @@ async function run() {
         spec,
         spec.orientation ? ptMprDisplaySetId : ptStackDisplaySetId,
         ptVoiRange,
+        Math.floor(ptImageIds.length / 2),
         true
       )
     ),

@@ -232,9 +232,14 @@ function showVolume(
 ): Promise<void> {
   displaySetRegistry.add(displaySetId, {
     imageIds: volume.imageIds,
-    initialImageIdIndex: Math.floor(volume.imageIds.length / 2),
     volumeId: volume.volumeId,
   });
 
-  return viewport.setDisplaySets({ displaySetId, options: { mode: 'volume' } });
+  return viewport.setDisplaySets({
+    displaySetId,
+    options: {
+      mode: 'volume',
+      initialImageIdIndex: Math.floor(volume.imageIds.length / 2),
+    },
+  });
 }

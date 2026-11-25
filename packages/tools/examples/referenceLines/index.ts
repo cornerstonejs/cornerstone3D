@@ -338,19 +338,15 @@ async function run() {
   });
   displaySetRegistry.add(displaySetIds.sagittal, {
     imageIds: t2_tse_sag,
-    initialImageIdIndex: Math.floor(t2_tse_sag.length / 2),
   });
   displaySetRegistry.add(displaySetIds.transverse, {
     imageIds: t2_tse_tra,
-    initialImageIdIndex: Math.floor(t2_tse_tra.length / 2),
   });
   displaySetRegistry.add(displaySetIds.coronal, {
     imageIds: t2_tse_cor,
-    initialImageIdIndex: Math.floor(t2_tse_cor.length / 2),
   });
   displaySetRegistry.add(displaySetIds.adc, {
     imageIds: adc,
-    initialImageIdIndex: Math.floor(adc.length / 2),
   });
 
   const volumeViewport = renderingEngine.getViewport<PlanarViewport>(
@@ -378,10 +374,22 @@ async function run() {
       displaySetId: displaySetIds.volume,
       options: { mode: 'volume' },
     }),
-    stackViewport.setDisplaySets({ displaySetId: displaySetIds.sagittal }),
-    stackViewport2.setDisplaySets({ displaySetId: displaySetIds.transverse }),
-    stackViewport3.setDisplaySets({ displaySetId: displaySetIds.coronal }),
-    stackViewport4.setDisplaySets({ displaySetId: displaySetIds.adc }),
+    stackViewport.setDisplaySets({
+      displaySetId: displaySetIds.sagittal,
+      options: { initialImageIdIndex: Math.floor(t2_tse_sag.length / 2) },
+    }),
+    stackViewport2.setDisplaySets({
+      displaySetId: displaySetIds.transverse,
+      options: { initialImageIdIndex: Math.floor(t2_tse_tra.length / 2) },
+    }),
+    stackViewport3.setDisplaySets({
+      displaySetId: displaySetIds.coronal,
+      options: { initialImageIdIndex: Math.floor(t2_tse_cor.length / 2) },
+    }),
+    stackViewport4.setDisplaySets({
+      displaySetId: displaySetIds.adc,
+      options: { initialImageIdIndex: Math.floor(adc.length / 2) },
+    }),
   ]);
 
   // Render the image

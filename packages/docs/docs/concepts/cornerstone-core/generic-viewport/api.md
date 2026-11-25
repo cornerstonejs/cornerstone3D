@@ -55,19 +55,24 @@ const stackDisplaySetId = 'ct-stack';
 
 displaySetRegistry.add(stackDisplaySetId, {
   imageIds,
-  initialImageIdIndex: 0,
 });
 
 await viewport.setDisplaySets({
   displaySetId: stackDisplaySetId,
-});
-
-viewport.setDisplaySetAppearance(stackDisplaySetId, {
-  voiRange: { lower: -1500, upper: 2500 },
+  options: {
+    initialImageIdIndex: 0,
+    appearance: { voiRange: { lower: -1500, upper: 2500 } },
+  },
 });
 
 viewport.render();
 ```
+
+What is true of the data is registered once; what one viewport wants is said
+on its mount: the mode, the orientation, the first image
+(`initialImageIdIndex`) and the appearance that the display set has from its
+first draw (`appearance`). The mount draws once with that appearance and fires
+`DISPLAY_SET_APPEARANCE_CHANGED` once, with cause `'mount'`.
 
 `setDisplaySets()` is variadic; the first entry becomes the source binding
 unless a role is provided explicitly. Each call replaces all currently mounted
@@ -90,7 +95,6 @@ const ctDisplaySetId = 'ct-volume-source';
 
 displaySetRegistry.add(ctDisplaySetId, {
   imageIds: ctImageIds,
-  initialImageIdIndex: Math.floor(ctImageIds.length / 2),
   volumeId: ctVolumeId,
 });
 
@@ -117,7 +121,6 @@ const ptDisplaySetId = 'pt-volume-overlay';
 
 displaySetRegistry.add(ptDisplaySetId, {
   imageIds: ptImageIds,
-  initialImageIdIndex: Math.floor(ptImageIds.length / 2),
   volumeId: ptVolumeId,
 });
 

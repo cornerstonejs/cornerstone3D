@@ -54,7 +54,6 @@ function registerStack() {
 
   cornerstone3D.displaySetRegistry.add('voiSyncStack', {
     imageIds,
-    initialImageIdIndex: 0,
   });
 
   return 'voiSyncStack';
@@ -201,7 +200,6 @@ describe('VOI synchronizer on direct next planar viewports -- ', () => {
           sliceIndex,
         })
       ),
-      initialImageIdIndex: 0,
     });
 
     const synchronizer = synchronizers.createVOISynchronizer(synchronizerId, {

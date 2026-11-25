@@ -128,8 +128,9 @@ type Evidence = 'proven' | 'name' | undefined;
 /**
  * Display sets: the registry (`displaySetRegistry.add` in place of the beta
  * metadata provider), `displaySetId` in place of `dataId`, the deleted
- * `kind` of a registered display set, and `mode: 'volume'` on the mount of a
- * display set registered with a `volumeId` (lanes N2, DS1 to DS3).
+ * `kind` of a registered display set, `mode: 'volume'` on the mount of a
+ * display set registered with a `volumeId`, and `initialImageIdIndex` from
+ * the registration to the mount (lanes N2, DS1 to DS3).
  */
 export const rules: Rules = {
   exports: [{ namespace: 'utilities', name: OLD_NAME, moveTo: REGISTRY }],
@@ -167,7 +168,7 @@ export function rewrite(run: Run): void {
   }
 
   rewriteRegistryCalls(run);
-  rewriteVolumeMounts(run);
+  rewriteRegisteredMounts(run);
   rewriteRegistryPatterns(run);
   reportRegistryKey(run);
   reportRegistryModules(run);
@@ -1483,19 +1484,35 @@ interface Mount {
 }
 
 /**
- * Writes `mode: 'volume'` on the mounts of a display set whose registration
- * gives a `volumeId` with its image ids: a `volumeId` made a planar viewport
- * show a volume, and in 6.0 the mount asks for it. The registration is a
- * literal (or a `const` that holds one) given to `displaySetRegistry.add`,
- * and a mount is an entry of `setDisplaySets` or a call of `addDisplaySet`
- * in the same file with the same id, on a viewport that the file shows to
- * be Cornerstone's and not of another family than planar. A mount that says
- * `mode` already is left. A registration with no such mount in the file, a
- * mount whose options the step cannot see or extend, and a mount on a
- * viewport known by its name only are reported. A registration with a
- * `volumeId` and no image ids shows a volume without a mode.
+ * The text of a registered `initialImageIdIndex` that the step cannot move,
+ * word for word in the guide.
  */
-function rewriteVolumeMounts(run: Run): void {
+const INDEX_NOT_MOVED =
+  'initialImageIdIndex is a mount option in 6.0, and a planar viewport refuses a descriptor that has it: remove it from the descriptor and pass it on each planar mount, setDisplaySets({ displaySetId, options: { initialImageIdIndex } }) or addDisplaySet(displaySetId, { initialImageIdIndex })';
+
+/**
+ * Writes on the mounts of a registered display set what the registration
+ * said and 6.0 reads from the mount. The registration is a literal (or a
+ * `const` that holds one) given to `displaySetRegistry.add`, and a mount is
+ * an entry of `setDisplaySets` or a call of `addDisplaySet` in the same
+ * file with the same id, on a viewport that the file shows to be
+ * Cornerstone's and not of another family than planar (`mountBlocker`).
+ *
+ * - A registration with a `volumeId` and its image ids: `mode: 'volume'` on
+ *   each mount, as a `volumeId` made a planar viewport show a volume. A
+ *   mount that says `mode` already is left. A registration with no such
+ *   mount in the file, and a mount that the step cannot write, are
+ *   reported. A registration with a `volumeId` and no image ids shows a
+ *   volume without a mode.
+ * - A registration with `initialImageIdIndex`: the key moves to the options
+ *   of every planar mount of the display set in the file
+ *   (`initialIndexMove`); a mount that names it already keeps its own. When
+ *   it cannot move to all of them, nothing moves and the registration is
+ *   reported as manual.
+ *
+ * The two go into one edit of each mount, so they do not overlap.
+ */
+function rewriteRegisteredMounts(run: Run): void {
   const mounts = mountsOf(run);
 
   for (const member of run.rootNode.findAll({
@@ -1522,29 +1539,366 @@ function rewriteVolumeMounts(run: Run): void {
     }
 
     const { keys, hasSpread } = objectEntries(object);
+    const asVolume =
+      keys.includes('volumeId') && (keys.includes('imageIds') || hasSpread);
+    const own = mounts.filter((mount) => isSameId(mount.id, id));
+    const index = keys.includes('initialImageIdIndex')
+      ? initialIndexMove(run, call, descriptor, object, own)
+      : undefined;
 
-    if (
-      !keys.includes('volumeId') ||
-      (!keys.includes('imageIds') && !hasSpread)
-    ) {
+    if (!asVolume && !index) {
       continue;
     }
 
-    const own = mounts.filter((mount) => isSameId(mount.id, id));
-
-    if (!own.length) {
+    if (asVolume && !own.length) {
       report(
         run,
         'review',
         `displaySetRegistry.add: ${VOLUME_ID_NO_MOUNT}`,
         call
       );
-      continue;
     }
 
     for (const mount of own) {
-      writeVolumeMode(run, mount);
+      writeMountOptions(run, mount, asVolume, index?.text);
     }
+
+    if (index && run.edits.add(index.removal)) {
+      noteRewritten(
+        run,
+        'displaySetRegistry.add: initialImageIdIndex -> the options of its planar mounts',
+        call
+      );
+    }
+  }
+}
+
+/**
+ * What moves `initialImageIdIndex` of a registration to its mounts: the
+ * property to write in their options, and the edit that removes it from the
+ * registration. Undefined, with a manual report, when it cannot move to
+ * every planar mount of the display set in the file: there is none, the
+ * descriptor is a `const` that the file reads elsewhere too, a mount cannot
+ * be written, or the value cannot be read where a mount is (`isMovable`).
+ */
+function initialIndexMove(
+  run: Run,
+  call: Node,
+  descriptor: Node,
+  object: Node,
+  own: Mount[]
+): { text: string; removal: Edit } | undefined {
+  const { pairs, shorthand } = objectEntries(object);
+  const property =
+    pairs.get('initialImageIdIndex') ??
+    object
+      .children()
+      .find(
+        (child) =>
+          child.kind() === 'shorthand_property_identifier' &&
+          child.text() === 'initialImageIdIndex'
+      );
+  const value = shorthand.has('initialImageIdIndex')
+    ? property
+    : property?.field('value');
+  const planar = own
+    .map((mount) => ({ mount, blocker: mountBlocker(run, mount) }))
+    .filter(({ blocker }) => blocker !== 'other family');
+  const blocked = planar.find(({ blocker }) => blocker);
+  const held = unwrap(descriptor);
+  const heldDeclaration =
+    held.kind() === 'identifier' ? declarationNodeOf(held) : undefined;
+  const reason =
+    !property || !value
+      ? 'the key is not a plain property'
+      : !planar.length
+        ? 'the file shows no planar mount of this display set'
+        : heldDeclaration && referencesOf(heldDeclaration).length !== 1
+          ? 'the descriptor is a const that the file reads elsewhere too'
+          : blocked
+            ? `a mount (${methodName(blocked.mount)}, line ${blocked.mount.call.range().start.line + 1}): ${blocked.blocker}`
+            : !planar.every(({ mount }) => isMovable(value, mount.call))
+              ? 'its value cannot be read at every mount'
+              : undefined;
+
+  if (reason || !property || !value) {
+    report(
+      run,
+      'manual',
+      `displaySetRegistry.add: ${reason}, ${INDEX_NOT_MOVED}`,
+      call
+    );
+
+    return undefined;
+  }
+
+  return {
+    text: shorthand.has('initialImageIdIndex')
+      ? 'initialImageIdIndex'
+      : `initialImageIdIndex: ${value.text()}`,
+    removal: removePropertyLine(run.rootNode, object, property),
+  };
+}
+
+/** The names that a moved value may read without a declaration in the file. */
+const MOVABLE_GLOBALS = new Set(['Math', 'Number', 'Infinity', 'NaN']);
+
+/** The node kinds that a moved value may be made of. */
+const MOVABLE_KINDS = new Set([
+  'shorthand_property_identifier',
+  'number',
+  'string',
+  'true',
+  'false',
+  'null',
+  'undefined',
+  'identifier',
+  'property_identifier',
+  'member_expression',
+  'subscript_expression',
+  'binary_expression',
+  'unary_expression',
+  'parenthesized_expression',
+  'ternary_expression',
+  'call_expression',
+  'arguments',
+]);
+
+/**
+ * Tells whether a value read at a registration gives the same value when it
+ * is read at a mount: it is made of literals, names, property reads,
+ * arithmetic and calls of `Math`, and each name is a global of
+ * `MOVABLE_GLOBALS` or a `const`, an import or an unwritten parameter whose
+ * scope holds the mount, declared before it.
+ */
+function isMovable(value: Node, mount: Node): boolean {
+  const kind = value.kind();
+
+  if (!MOVABLE_KINDS.has(kind)) {
+    return false;
+  }
+
+  if (kind === 'call_expression') {
+    const callee = value.field('function');
+
+    if (
+      callee?.kind() !== 'member_expression' ||
+      callee.field('object')?.text() !== 'Math'
+    ) {
+      return false;
+    }
+  }
+
+  if (kind === 'identifier' || kind === 'shorthand_property_identifier') {
+    const declaration = declarationNodeOf(value);
+
+    if (!declaration) {
+      return MOVABLE_GLOBALS.has(value.text());
+    }
+
+    const scope = scopeOf(declaration);
+
+    return Boolean(
+      isStableBinding(declaration) &&
+        declaration.range().start.index < mount.range().start.index &&
+        scope &&
+        scope.range().start.index <= mount.range().start.index &&
+        mount.range().end.index <= scope.range().end.index
+    );
+  }
+
+  return value
+    .children()
+    .filter((child) => child.isNamed() && child.kind() !== 'comment')
+    .every((child) => isMovable(child, mount));
+}
+
+/**
+ * The node whose text a declared name is visible in: the block or program
+ * of a variable or an import, the function of a parameter.
+ */
+function scopeOf(declaration: Node): Node | undefined {
+  let current = declaration.parent();
+  let parameter = false;
+
+  while (current) {
+    const kind = current.kind();
+
+    if (kind === 'formal_parameters' || kind.endsWith('_parameter')) {
+      parameter = true;
+    } else if (FUNCTION_KINDS.has(kind) || kind === 'method_definition') {
+      return current;
+    } else if (
+      !parameter &&
+      (kind === 'statement_block' || kind === 'program')
+    ) {
+      return current;
+    }
+
+    current = current.parent();
+  }
+
+  return undefined;
+}
+
+/**
+ * Returns an edit that removes one property of an object literal: its whole
+ * line, with its comma, when it stands on a line of its own, else the
+ * property with its comma (`removeProperty`). After a `kind`, which the key
+ * table removes up to the start of the next property, it is the property
+ * with its comma too, so the two edits meet and do not overlap.
+ */
+function removePropertyLine(
+  rootNode: Node,
+  object: Node,
+  property: Node
+): Edit {
+  const previous =
+    property.prev()?.kind() === ',' ? property.prev()?.prev() : undefined;
+
+  if (
+    previous?.kind() === 'pair' &&
+    staticKeyName(previous.field('key')) === 'kind'
+  ) {
+    return removeProperty(property);
+  }
+
+  const text = rootNode.text();
+  const comma = property.next()?.kind() === ',' ? property.next() : undefined;
+  const start = property.range().start.index;
+  const end = (comma ?? property).range().end.index;
+  const lineStart = text.lastIndexOf('\n', start - 1) + 1;
+  const lineEnd = text.indexOf('\n', end);
+
+  if (
+    object.text().includes('\n') &&
+    text.slice(lineStart, start).trim() === '' &&
+    lineEnd !== -1 &&
+    text.slice(end, lineEnd).trim() === ''
+  ) {
+    return { startPos: lineStart, endPos: lineEnd + 1, insertedText: '' };
+  }
+
+  return removeProperty(property);
+}
+
+/**
+ * Why the step cannot write the options of a mount: `other family` for a
+ * mount that is not planar (a `renderMode` option, or a viewport of another
+ * family: left as it is), or the reason of a report. Undefined when it can.
+ */
+function mountBlocker(run: Run, mount: Mount): string | undefined {
+  const family = mountFamily(mount.receiver);
+  const evidence = viewportEvidence(mount.receiver);
+  const options = mount.options ? unwrap(mount.options) : undefined;
+  const entries =
+    options?.kind() === 'object' ? objectEntries(options) : undefined;
+
+  if (
+    (family && family !== 'planar' && family !== 'mixed') ||
+    entries?.keys.includes('renderMode')
+  ) {
+    return 'other family';
+  }
+
+  if (family === 'mixed') {
+    return 'the viewport may be of another family than planar';
+  }
+
+  if (
+    !family &&
+    evidence !== 'core' &&
+    !(evidence === 'name' && isUntyped(run, mount.receiver))
+  ) {
+    return evidence === 'name'
+      ? 'the viewport is known by its name only'
+      : 'the viewport is not shown';
+  }
+
+  if (mount.options && !entries) {
+    return 'the options are not a literal that the step can extend';
+  }
+
+  return undefined;
+}
+
+/**
+ * Writes in the options of one mount `mode: 'volume'` (`asVolume`, unless
+ * the options say `mode`) and the moved `initialImageIdIndex` (`index`,
+ * unless the options say it), in one edit. A mount that cannot be written
+ * is reported for the volume mode (the move of the index was refused before,
+ * by `initialIndexMove`). In options with a spread the keys go first, so a
+ * key of the spread still wins.
+ */
+function writeMountOptions(
+  run: Run,
+  mount: Mount,
+  asVolume: boolean,
+  index: string | undefined
+): void {
+  const blocker = mountBlocker(run, mount);
+
+  if (blocker === 'other family') {
+    return;
+  }
+
+  if (blocker) {
+    if (asVolume) {
+      const planar = blocker.startsWith('the viewport')
+        ? 'if it is a planar viewport '
+        : '';
+
+      report(
+        run,
+        'review',
+        `${methodName(mount)}: ${blocker}, ${planar}${VOLUME_ID_MOUNT}`,
+        mount.call
+      );
+    }
+
+    return;
+  }
+
+  const options = mount.options ? unwrap(mount.options) : undefined;
+  const entries =
+    options?.kind() === 'object' ? objectEntries(options) : undefined;
+  const writesMode = asVolume && !entries?.keys.includes('mode');
+  const properties = [
+    ...(writesMode ? ["mode: 'volume'"] : []),
+    ...(index && !entries?.keys.includes('initialImageIdIndex') ? [index] : []),
+  ];
+
+  if (!properties.length) {
+    return;
+  }
+
+  const edit = options
+    ? entries?.hasSpread
+      ? prependProperties(run.rootNode, options, properties)
+      : appendProperties(run.rootNode, options, properties)
+    : mount.holder.kind() === 'object'
+      ? appendProperties(run.rootNode, mount.holder, [
+          `options: { ${properties.join(', ')} }`,
+        ])
+      : appendArgument(mount.call, `{ ${properties.join(', ')} }`);
+
+  if (!edit || !run.edits.add(edit)) {
+    report(
+      run,
+      'review',
+      `${methodName(mount)}: another rewrite of the line overlaps it, ${writesMode ? VOLUME_ID_MOUNT : INDEX_NOT_MOVED}`,
+      mount.call
+    );
+
+    return;
+  }
+
+  if (writesMode) {
+    noteRewritten(
+      run,
+      `${methodName(mount)}: a registration with a volumeId -> mode: 'volume'`,
+      mount.call
+    );
   }
 }
 
@@ -1817,109 +2171,16 @@ function isUntyped(run: Run, receiver: Node): boolean {
   );
 }
 
-/**
- * Writes `mode: 'volume'` in the options of one mount, or reports it: the
- * mount says `mode` already (left), it is a mount of a 3D viewport (a
- * `renderMode` option, or a viewport of another family than planar: left),
- * its viewport may be of several families or is known by its name only, or
- * its options are not a literal that the step can extend. In options with a
- * spread the mode goes first, so a `mode` of the spread still wins.
- */
-function writeVolumeMode(run: Run, mount: Mount): void {
-  const family = mountFamily(mount.receiver);
-  const evidence = viewportEvidence(mount.receiver);
-  const options = mount.options ? unwrap(mount.options) : undefined;
-  const entries =
-    options?.kind() === 'object' ? objectEntries(options) : undefined;
-
-  if (
-    (family && family !== 'planar' && family !== 'mixed') ||
-    entries?.keys.includes('mode') ||
-    entries?.keys.includes('renderMode')
-  ) {
-    return;
-  }
-
-  if (family === 'mixed') {
-    report(
-      run,
-      'review',
-      `${methodName(mount)}: the viewport may be of another family than planar, if it is a planar viewport ${VOLUME_ID_MOUNT}`,
-      mount.call
-    );
-
-    return;
-  }
-
-  if (
-    !family &&
-    evidence !== 'core' &&
-    !(evidence === 'name' && isUntyped(run, mount.receiver))
-  ) {
-    const known =
-      evidence === 'name' ? 'is known by its name only' : 'is not shown';
-
-    report(
-      run,
-      'review',
-      `${methodName(mount)}: the viewport ${known}, if it is a planar viewport ${VOLUME_ID_MOUNT}`,
-      mount.call
-    );
-
-    return;
-  }
-
-  if (mount.options && !entries) {
-    report(
-      run,
-      'review',
-      `${methodName(mount)}: the options are not a literal that the step can extend, ${VOLUME_ID_MOUNT}`,
-      mount.call
-    );
-
-    return;
-  }
-
-  const edit = options
-    ? entries?.hasSpread
-      ? prependProperty(run.rootNode, options, "mode: 'volume'")
-      : appendProperty(run.rootNode, options, "mode: 'volume'")
-    : mount.holder.kind() === 'object'
-      ? appendProperty(
-          run.rootNode,
-          mount.holder,
-          "options: { mode: 'volume' }"
-        )
-      : appendArgument(mount.call, "{ mode: 'volume' }");
-
-  if (!edit || !run.edits.add(edit)) {
-    report(
-      run,
-      'review',
-      `${methodName(mount)}: another rewrite of the line overlaps it, ${VOLUME_ID_MOUNT}`,
-      mount.call
-    );
-
-    return;
-  }
-
-  noteRewritten(
-    run,
-    `${methodName(mount)}: a registration with a volumeId -> mode: 'volume'`,
-    mount.call
-  );
-}
-
 /** The name of the method of a mount. */
 function methodName(mount: Mount): string {
   return methodCall(mount.call)?.method ?? 'setDisplaySets';
 }
 
 /**
- * Returns an edit that adds a property at the end of an object literal, on
- * a line of its own when the literal spans lines.
+ * Returns an edit that adds properties at the end of an object literal, each
+ * on a line of its own when the literal spans lines.
  */
-function appendProperty(rootNode: Node, object: Node, text: string): Edit {
+function appendProperties(rootNode: Node, object: Node, texts: string[]): Edit {
   const last = object
     .children()
     .filter((child) => child.isNamed() && child.kind() !== 'comment')
@@ -1929,7 +2190,7 @@ function appendProperty(rootNode: Node, object: Node, text: string): Edit {
     return {
       startPos: object.range().start.index,
       endPos: object.range().end.index,
-      insertedText: `{ ${text} }`,
+      insertedText: `{ ${texts.join(', ')} }`,
     };
   }
 
@@ -1941,24 +2202,31 @@ function appendProperty(rootNode: Node, object: Node, text: string): Edit {
     return {
       startPos: after,
       endPos: after,
-      insertedText: trailing ? ` ${text},` : `, ${text}`,
+      insertedText: trailing
+        ? ` ${texts.join(', ')},`
+        : `, ${texts.join(', ')}`,
     };
   }
 
   const indent = indentOf(rootNode, last);
+  const lines = texts.map((text) => `\n${indent}${text},`).join('');
 
   return {
     startPos: after,
     endPos: after,
-    insertedText: trailing ? `\n${indent}${text},` : `,\n${indent}${text},`,
+    insertedText: trailing ? lines : `,${lines}`,
   };
 }
 
 /**
- * Returns an edit that adds a property at the start of an object literal, on
- * a line of its own when the literal spans lines.
+ * Returns an edit that adds properties at the start of an object literal,
+ * each on a line of its own when the literal spans lines.
  */
-function prependProperty(rootNode: Node, object: Node, text: string): Edit {
+function prependProperties(
+  rootNode: Node,
+  object: Node,
+  texts: string[]
+): Edit {
   const first = object
     .children()
     .find((child) => child.isNamed() && child.kind() !== 'comment');
@@ -1970,8 +2238,8 @@ function prependProperty(rootNode: Node, object: Node, text: string): Edit {
     endPos: start,
     insertedText:
       multiline && first
-        ? `${text},\n${indentOf(rootNode, first)}`
-        : `${text}, `,
+        ? texts.map((text) => `${text},\n${indentOf(rootNode, first)}`).join('')
+        : `${texts.join(', ')}, `,
   };
 }
 

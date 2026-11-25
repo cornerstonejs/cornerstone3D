@@ -10,13 +10,11 @@ export async function show(imageIds: string[]) {
   const displaySetId = JSON.stringify([left.renderingEngineId, left.id, imageIds[0]]);
   displaySetRegistry.add(displaySetId, {
     imageIds,
-    initialImageIdIndex: 0,
   });
-  await left.setDisplaySets({ displaySetId });
+  await left.setDisplaySets({ displaySetId, options: { initialImageIdIndex: 0 } });
   const displaySetId2 = JSON.stringify([right.renderingEngineId, right.id, imageIds[0]]);
   displaySetRegistry.add(displaySetId2, {
     imageIds,
-    initialImageIdIndex: 5,
   });
-  await right.setDisplaySets({ displaySetId: displaySetId2 });
+  await right.setDisplaySets({ displaySetId: displaySetId2, options: { initialImageIdIndex: 5 } });
 }

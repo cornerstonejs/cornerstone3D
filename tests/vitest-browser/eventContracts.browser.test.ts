@@ -326,12 +326,11 @@ test('golden event sequence for load -> scroll -> zoom', async () => {
   // -- load: setDisplaySets + first render --
   displaySetRegistry.add(ctx.displaySetId, {
     imageIds: ctx.imageIds,
-    initialImageIdIndex: 0,
   });
 
   await viewport.setDisplaySets({
     displaySetId: ctx.displaySetId,
-    options: { orientation: OrientationAxis.AXIAL },
+    options: { orientation: OrientationAxis.AXIAL, initialImageIdIndex: 0 },
   });
   await renderAndWait(element, viewport);
   await waitForQuiescence(recorder);

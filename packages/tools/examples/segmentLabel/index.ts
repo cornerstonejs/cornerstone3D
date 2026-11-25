@@ -423,11 +423,16 @@ async function _handleStackViewports(stackImageIds: string[]) {
 
   cornerstone.displaySetRegistry.add(stackDisplaySetId, {
     imageIds: imageIdsArray,
-    initialImageIdIndex: 0,
   });
 
-  await viewport1.setDisplaySets({ displaySetId: stackDisplaySetId });
-  await viewport3.setDisplaySets({ displaySetId: stackDisplaySetId });
+  await viewport1.setDisplaySets({
+    displaySetId: stackDisplaySetId,
+    options: { initialImageIdIndex: 0 },
+  });
+  await viewport3.setDisplaySets({
+    displaySetId: stackDisplaySetId,
+    options: { initialImageIdIndex: 0 },
+  });
 
   fillStackSegmentationWithMockData({
     imageIds: imageIdsArray,

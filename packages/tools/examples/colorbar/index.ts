@@ -347,10 +347,12 @@ async function run() {
   // Load the stack
   displaySetRegistry.add(displaySetId, {
     imageIds,
-    initialImageIdIndex: 0,
   });
 
-  await viewport.setDisplaySets({ displaySetId });
+  await viewport.setDisplaySets({
+    displaySetId,
+    options: { initialImageIdIndex: 0 },
+  });
 
   // Initial position of colorbar is 'right' (matching the dropdown default)
   updateColorbarPosition('right');

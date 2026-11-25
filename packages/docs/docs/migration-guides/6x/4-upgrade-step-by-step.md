@@ -416,11 +416,18 @@ After:
 ```ts
 displaySetRegistry.add(displaySetId, {
   imageIds,
-  initialImageIdIndex: 0,
 });
 
-await viewport.setDisplaySets({ displaySetId });
+await viewport.setDisplaySets({
+  displaySetId,
+  options: { initialImageIdIndex: 0 },
+});
 ```
+
+The registration says what is true of the images; the mount says what this
+viewport wants of them: the first image (`initialImageIdIndex`), the mode, the
+orientation and the appearance from the first draw (`appearance`). A
+descriptor that still has `initialImageIdIndex` fails the mount.
 
 For a volume.
 
@@ -506,8 +513,9 @@ new display sets.
   camera before its data, and a next viewport has no view before its mount.
 - Two viewports that show one stack at two first images, as
   `setStack(imageIds)` and `setStack(imageIds, 50)` did, share one
-  registration: call `await viewport.setImageIdIndex(50)` after
-  `setDisplaySets` on the second viewport.
+  registration: each mount gives its own image,
+  `options: { initialImageIdIndex: 50 }` on the second viewport. A
+  descriptor that has `initialImageIdIndex` fails a planar mount.
 - `addVolumes` of a volume that the viewport showed already made a new actor
   with the look of its callback. `addDisplaySet` of a display set that is
   mounted keeps its appearance. For the look of the callback again call

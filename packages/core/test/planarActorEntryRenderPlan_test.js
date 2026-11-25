@@ -55,6 +55,7 @@ describe('The display set id of an actor entry of a direct planar viewport -- ',
         const options = {
           mode,
           orientation: OrientationAxis.ACQUISITION,
+          mode,
           renderBackend: backend,
         };
 

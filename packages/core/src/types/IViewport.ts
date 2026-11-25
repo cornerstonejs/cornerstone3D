@@ -536,7 +536,7 @@ interface IViewport<
   ): Promise<void>;
   /**
    * Mounts one more display set. The options are those of the family, as in
-   * `setDisplaySets`: `PlanarSetDataOptions` on a planar viewport, a render
+   * `setDisplaySets`: `PlanarMountOptions` on a planar viewport, a render
    * mode and a role on the base class.
    */
   addDisplaySet(displaySetId: string, options: unknown): Promise<void>;

@@ -206,14 +206,19 @@ async function run() {
 
   displaySetRegistry.add(displaySetId, {
     imageIds,
-    initialImageIdIndex: 0,
   });
 
   const viewport1: PlanarViewport = renderingEngine.getViewport(viewportId1);
-  await viewport1.setDisplaySets({ displaySetId });
+  await viewport1.setDisplaySets({
+    displaySetId,
+    options: { initialImageIdIndex: 0 },
+  });
 
   const viewport2: PlanarViewport = renderingEngine.getViewport(viewportId2);
-  await viewport2.setDisplaySets({ displaySetId });
+  await viewport2.setDisplaySets({
+    displaySetId,
+    options: { initialImageIdIndex: 0 },
+  });
 
   cornerstoneTools.utilities.stackContextPrefetch.enable(element1);
   // Add the segmentations to state

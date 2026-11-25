@@ -107,6 +107,70 @@ describe('the mode and the volume id of a planar mount', () => {
     expect(service.canRender(volumeOnly, { mode: 'stack' })).toBe(false);
   });
 
+  it('takes the volume path for a slab in the acquisition plane when the mount asks for no mode, and the image path without one or for mode stack', () => {
+    jest
+      .spyOn(require('../src/utilities/isValidVolume'), 'isValidVolume')
+      .mockReturnValue(true);
+
+    const dataSet = { imageIds };
+    const acquisition = { orientation: OrientationAxis.ACQUISITION };
+
+    expect(
+      service.select(dataSet, { ...acquisition, slabThickness: 10 }).renderMode
+    ).toBe(PlanarRenderModeId.VTK_GPU_VOLUME_SLICE);
+    expect(service.select(dataSet, acquisition).renderMode).toBe(
+      PlanarRenderModeId.VTK_FRAME
+    );
+    expect(
+      service.select(dataSet, {
+        ...acquisition,
+        mode: 'stack',
+        slabThickness: 10,
+      }).renderMode
+    ).toBe(PlanarRenderModeId.VTK_FRAME);
+  });
+
+  it('takes the image path for a slab when the images form no volume', () => {
+    jest
+      .spyOn(require('../src/utilities/isValidVolume'), 'isValidVolume')
+      .mockReturnValue(false);
+
+    expect(
+      service.select(
+        { imageIds },
+        { orientation: OrientationAxis.ACQUISITION, slabThickness: 10 }
+      ).renderMode
+    ).toBe(PlanarRenderModeId.VTK_FRAME);
+  });
+
+  it('takes the volume path for a display set whose volume is a dynamic volume of the cache when the mount asks for no mode', () => {
+    const dynamic = cacheVolume('pet-dynamic');
+
+    dynamic.isDynamicVolume = () => true;
+    cacheVolume('ct-static');
+
+    const acquisition = { orientation: OrientationAxis.ACQUISITION };
+
+    expect(
+      service.select({ imageIds, volumeId: 'pet-dynamic' }, acquisition)
+        .renderMode
+    ).toBe(PlanarRenderModeId.VTK_GPU_VOLUME_SLICE);
+    expect(
+      service.select({ imageIds }, { ...acquisition, volumeId: 'pet-dynamic' })
+        .renderMode
+    ).toBe(PlanarRenderModeId.VTK_GPU_VOLUME_SLICE);
+    expect(
+      service.select({ imageIds, volumeId: 'ct-static' }, acquisition)
+        .renderMode
+    ).toBe(PlanarRenderModeId.VTK_FRAME);
+    expect(
+      service.select(
+        { imageIds, volumeId: 'pet-dynamic' },
+        { ...acquisition, mode: 'stack' }
+      ).renderMode
+    ).toBe(PlanarRenderModeId.VTK_FRAME);
+  });
+
   it('shows a display set that names a volume only as a volume when the mount asks for no mode', () => {
     cacheVolume('pmap-volume', volumeImageIds);
 

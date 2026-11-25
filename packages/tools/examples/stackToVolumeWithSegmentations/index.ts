@@ -375,7 +375,6 @@ async function _startFromVolume(
 function registerDisplaySets(imageIds: string[]) {
   cornerstone.displaySetRegistry.add(stackDisplaySetId, {
     imageIds,
-    initialImageIdIndex: 0,
   });
   cornerstone.displaySetRegistry.add(volumeDisplaySetId, {
     imageIds,
@@ -415,7 +414,10 @@ async function _startFromStack(
 
   // It is really important to await here, since the segmentation
   // data later on depends on the stack being set on the viewport
-  await viewport.setDisplaySets({ displaySetId: stackDisplaySetId });
+  await viewport.setDisplaySets({
+    displaySetId: stackDisplaySetId,
+    options: { initialImageIdIndex: 0 },
+  });
 
   utilities.stackContextPrefetch.enable(viewport.element);
 

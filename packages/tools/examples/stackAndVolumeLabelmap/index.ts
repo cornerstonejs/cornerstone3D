@@ -191,14 +191,16 @@ async function run() {
 
   cornerstone.displaySetRegistry.add(ptDisplaySetId, {
     imageIds: ptImageIds,
-    initialImageIdIndex: 70,
   });
   cornerstone.displaySetRegistry.add(ctDisplaySetId, {
     imageIds: ctImageIds,
     volumeId,
   });
 
-  await viewport2.setDisplaySets({ displaySetId: ptDisplaySetId });
+  await viewport2.setDisplaySets({
+    displaySetId: ptDisplaySetId,
+    options: { initialImageIdIndex: 70 },
+  });
 
   await viewport1.setDisplaySets({
     displaySetId: ctDisplaySetId,

@@ -194,17 +194,24 @@ async function run() {
   // Set the stack on the viewports
   displaySetRegistry.add(ctDisplaySetId, {
     imageIds: ctStack,
-    initialImageIdIndex: 0,
   });
   displaySetRegistry.add(ptDisplaySetId, {
     imageIds: ptStack,
-    initialImageIdIndex: 0,
   });
 
   await Promise.all([
-    viewport1.setDisplaySets({ displaySetId: ctDisplaySetId }),
-    viewport2.setDisplaySets({ displaySetId: ctDisplaySetId }),
-    viewport3.setDisplaySets({ displaySetId: ptDisplaySetId }),
+    viewport1.setDisplaySets({
+      displaySetId: ctDisplaySetId,
+      options: { initialImageIdIndex: 0 },
+    }),
+    viewport2.setDisplaySets({
+      displaySetId: ctDisplaySetId,
+      options: { initialImageIdIndex: 0 },
+    }),
+    viewport3.setDisplaySets({
+      displaySetId: ptDisplaySetId,
+      options: { initialImageIdIndex: 0 },
+    }),
   ]);
 
   // Set viewport 1 to toolgroup 1

@@ -200,16 +200,20 @@ async function run() {
   // Set the stack on the viewport
   displaySetRegistry.add(displaySetId, {
     imageIds: stack,
-    initialImageIdIndex: 0,
   });
   displaySetRegistry.add(displaySetId2, {
     imageIds: stack2,
-    initialImageIdIndex: 0,
   });
 
   await Promise.all([
-    viewport.setDisplaySets({ displaySetId }),
-    viewport2.setDisplaySets({ displaySetId: displaySetId2 }),
+    viewport.setDisplaySets({
+      displaySetId,
+      options: { initialImageIdIndex: 0 },
+    }),
+    viewport2.setDisplaySets({
+      displaySetId: displaySetId2,
+      options: { initialImageIdIndex: 0 },
+    }),
   ]);
 
   toolGroup.setToolEnabled(ScaleOverlayTool.toolName);

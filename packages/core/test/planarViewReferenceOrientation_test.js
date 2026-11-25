@@ -436,7 +436,6 @@ describe('A stack of images in two orientations on a direct next planar viewport
 
     cornerstone3D.displaySetRegistry.add(displaySetId, {
       imageIds: [...axial.imageIds, ...sagittal.imageIds],
-      initialImageIdIndex: 0,
     });
     await stack.setDisplaySets({
       displaySetId,

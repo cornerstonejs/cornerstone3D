@@ -472,9 +472,11 @@ describe('one rule for the orientation of a direct next planar viewport', () => 
     metaData.addProvider(fakeMetaDataProvider, 10000);
     displaySetRegistry.add('orientation:stack', {
       imageIds,
-      initialImageIdIndex: 1,
     });
-    await viewport.setDisplaySets({ displaySetId: 'orientation:stack' });
+    await viewport.setDisplaySets({
+      displaySetId: 'orientation:stack',
+      options: { initialImageIdIndex: 1 },
+    });
 
     return imageIds;
   }

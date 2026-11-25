@@ -74,13 +74,13 @@ describe('IMAGE_RENDERED of a direct next planar viewport that draws a stack on 
 
       cornerstone3D.displaySetRegistry.add('cpuMountStack', {
         imageIds: series.imageIds,
-        initialImageIdIndex: firstIndex,
       });
       await viewport.setDisplaySets({
         displaySetId: 'cpuMountStack',
         options: {
           orientation: OrientationAxis.ACQUISITION,
           renderBackend: 'cpu',
+          initialImageIdIndex: firstIndex,
         },
       });
       await frames();

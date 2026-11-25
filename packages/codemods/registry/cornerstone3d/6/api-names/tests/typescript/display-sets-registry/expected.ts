@@ -13,10 +13,9 @@ export async function showStack(
 
   cs.displaySetRegistry.add('ct', {
     imageIds,
-    initialImageIdIndex: 0,
   });
   provider.add('ct-volume', { imageIds, volumeId });
-  await viewport.setDisplaySets({ displaySetId: 'ct' });
+  await viewport.setDisplaySets({ displaySetId: 'ct', options: { initialImageIdIndex: 0 } });
 
   return provider.get('ct');
 }

@@ -372,7 +372,6 @@ async function run() {
 
   displaySetRegistry.add(stackDisplaySetId, {
     imageIds,
-    initialImageIdIndex: Math.floor(imageIds.length / 2),
   });
   displaySetRegistry.add(volumeDisplaySetId, {
     imageIds,
@@ -382,7 +381,10 @@ async function run() {
   const stackViewport = renderingEngine.getViewport<PlanarViewport>(
     viewportIds.STACK
   );
-  await stackViewport.setDisplaySets({ displaySetId: stackDisplaySetId });
+  await stackViewport.setDisplaySets({
+    displaySetId: stackDisplaySetId,
+    options: { initialImageIdIndex: Math.floor(imageIds.length / 2) },
+  });
 
   const volumeViewportIds = [
     viewportIds.AXIAL,

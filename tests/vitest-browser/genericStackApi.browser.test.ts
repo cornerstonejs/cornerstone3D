@@ -214,7 +214,6 @@ async function renderNextStackViewport() {
 
   displaySetRegistry.add(stackDisplaySetId, {
     imageIds: [imageId],
-    initialImageIdIndex: 0,
   });
 
   await viewport.setDisplaySets({

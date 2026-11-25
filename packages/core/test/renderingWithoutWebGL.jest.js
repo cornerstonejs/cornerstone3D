@@ -198,7 +198,6 @@ describe('Rendering on a device without WebGL', () => {
     engines.push(renderingEngine);
     displaySetRegistry.add('withoutWebGL:stack', {
       imageIds: createImageIds(),
-      initialImageIdIndex: 0,
     });
     await viewport.setDisplaySets({ displaySetId: 'withoutWebGL:stack' });
 

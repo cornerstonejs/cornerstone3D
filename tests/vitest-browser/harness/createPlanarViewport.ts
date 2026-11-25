@@ -207,7 +207,6 @@ export async function createPlanarViewport(
 
   displaySetRegistry.add(displaySetId, {
     imageIds,
-    initialImageIdIndex: 0,
     ...(isVolumeBacked
       ? { volumeId: `${FAKE_VOLUME_LOADER_SCHEME}:${displaySetId}` }
       : {}),
@@ -217,6 +216,7 @@ export async function createPlanarViewport(
     await viewport.setDisplaySets({
       displaySetId,
       options: {
+        initialImageIdIndex: 0,
         orientation,
         mode: isVolumeBacked ? 'volume' : 'stack',
         renderBackend: isCpu ? RenderBackends.CPU : RenderBackends.GPU,

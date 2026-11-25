@@ -338,16 +338,17 @@ function registration(
 }
 
 /** The mount options that ask a planar viewport for a volume. */
-const VOLUME_OPTIONS = "options: { mode: 'volume' }";
+const VOLUME_OPTIONS = "mode: 'volume'";
 
 /**
  * Formats the awaited call that mounts a display set by the expression of its
- * id, with the options that ask for a volume when `asVolume` is set.
+ * id, with the mount options `options` (the text of their properties), if
+ * any.
  */
-function mountCall(viewport: string, id: string, asVolume = false): string {
+function mountCall(viewport: string, id: string, options?: string): string {
   const key = id === 'displaySetId' ? id : `displaySetId: ${id}`;
 
-  return `await ${viewport}.setDisplaySets({ ${key}${asVolume ? `, ${VOLUME_OPTIONS}` : ''} });`;
+  return `await ${viewport}.setDisplaySets({ ${key}${options ? `, options: { ${options} }` : ''} });`;
 }
 
 /**
@@ -480,7 +481,11 @@ function rewriteSetStack(
       ? firstElement.text()
       : `${listLocal ?? asPrimary(list)}[0]`;
   const idLocal = run.imports.fresh('displaySetId');
-  const index = indexArg?.text() ?? '0';
+  const indexOption = indexArg
+    ? indexArg.text() === 'initialImageIdIndex'
+      ? 'initialImageIdIndex'
+      : `initialImageIdIndex: ${indexArg.text()}`
+    : undefined;
   const edit = replaceStatement(run.rootNode, statement, (indent) => [
     ...(viewportLocal
       ? [`const ${viewportLocal} = ${withoutParentheses(object).text()};`]
@@ -490,13 +495,10 @@ function rewriteSetStack(
     registration(
       registry,
       idLocal,
-      [
-        ['imageIds', listLocal ?? list.text()],
-        ['initialImageIdIndex', index],
-      ],
+      [['imageIds', listLocal ?? list.text()]],
       indent
     ),
-    mountCall(viewportLocal ?? object.text(), idLocal),
+    mountCall(viewportLocal ?? object.text(), idLocal, indexOption),
   ]);
 
   if (!run.edits.add(edit)) {
@@ -557,7 +559,11 @@ function rewriteSetVolumes(
       ],
       indent
     ),
-    mountCall(object.text(), id, viewportFamily(object) !== '3d'),
+    mountCall(
+      object.text(),
+      id,
+      viewportFamily(object) !== '3d' ? VOLUME_OPTIONS : undefined
+    ),
   ]);
 
   if (!run.edits.add(edit)) {
@@ -671,7 +677,7 @@ function rewriteSetVolumesForViewports(run: Run, call: Node): boolean {
     '',
     [
       'await Promise.all(',
-      `${indent}  ${viewports}.map((${element}) => ${element}.setDisplaySets({ displaySetId: ${id}, ${VOLUME_OPTIONS} }))`,
+      `${indent}  ${viewports}.map((${element}) => ${element}.setDisplaySets({ displaySetId: ${id}, options: { ${VOLUME_OPTIONS} } }))`,
       `${indent});`,
     ].join('\n'),
   ]);

@@ -171,7 +171,6 @@ async function run() {
 
   displaySetRegistry.add(stackDisplaySetId, {
     imageIds: smallStackImageIds,
-    initialImageIdIndex: 0,
   });
   displaySetRegistry.add(volumeDisplaySetId, {
     imageIds: smallVolumeImageIds,
@@ -179,7 +178,10 @@ async function run() {
   });
 
   // Set the stack on the stackViewport
-  await stackViewport.setDisplaySets({ displaySetId: stackDisplaySetId });
+  await stackViewport.setDisplaySets({
+    displaySetId: stackDisplaySetId,
+    options: { initialImageIdIndex: 0 },
+  });
 
   // Set the volume to load
   volume.load();

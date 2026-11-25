@@ -218,18 +218,22 @@ async function run() {
   const stack = [imageIds[0]];
   displaySetRegistry.add(displaySetId, {
     imageIds: stack,
-    initialImageIdIndex: 0,
   });
-  await viewport.setDisplaySets({ displaySetId });
+  await viewport.setDisplaySets({
+    displaySetId,
+    options: { initialImageIdIndex: 0 },
+  });
 
   const viewport2 = renderingEngine.getViewport<PlanarViewport>(viewportId2);
 
   const stack2 = [imageIds2[0]];
   displaySetRegistry.add(displaySetId2, {
     imageIds: stack2,
-    initialImageIdIndex: 0,
   });
-  await viewport2.setDisplaySets({ displaySetId: displaySetId2 });
+  await viewport2.setDisplaySets({
+    displaySetId: displaySetId2,
+    options: { initialImageIdIndex: 0 },
+  });
 
   // // Render the image
   viewport.render();

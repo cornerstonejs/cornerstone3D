@@ -198,11 +198,16 @@ async function run() {
 
   displaySetRegistry.add(stackDisplaySetId, {
     imageIds,
-    initialImageIdIndex: 0,
   });
 
-  await vp1.setDisplaySets({ displaySetId: stackDisplaySetId });
-  await vp2.setDisplaySets({ displaySetId: stackDisplaySetId });
+  await vp1.setDisplaySets({
+    displaySetId: stackDisplaySetId,
+    options: { initialImageIdIndex: 0 },
+  });
+  await vp2.setDisplaySets({
+    displaySetId: stackDisplaySetId,
+    options: { initialImageIdIndex: 0 },
+  });
   await vp2.setImageIdIndex(50);
 
   cornerstoneTools.utilities.stackPrefetch.enable(vp1.element);

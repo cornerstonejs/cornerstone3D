@@ -73,10 +73,12 @@ async function run() {
 
   displaySetRegistry.add(displaySetId, {
     imageIds,
-    initialImageIdIndex: 60,
   });
 
-  await viewport.setDisplaySets({ displaySetId });
+  await viewport.setDisplaySets({
+    displaySetId,
+    options: { initialImageIdIndex: 60 },
+  });
 
   viewport.render();
 }

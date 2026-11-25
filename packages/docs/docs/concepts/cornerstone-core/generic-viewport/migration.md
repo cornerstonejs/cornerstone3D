@@ -79,15 +79,14 @@ const displaySetId = 'ct-stack';
 
 displaySetRegistry.add(displaySetId, {
   imageIds,
-  initialImageIdIndex: 0,
 });
 
 await viewport.setDisplaySets({
   displaySetId,
-});
-
-viewport.setDisplaySetAppearance(displaySetId, {
-  voiRange: { lower: -1500, upper: 2500 },
+  options: {
+    initialImageIdIndex: 0,
+    appearance: { voiRange: { lower: -1500, upper: 2500 } },
+  },
 });
 viewport.render();
 ```
@@ -114,7 +113,6 @@ const displaySetId = 'ct-volume';
 
 displaySetRegistry.add(displaySetId, {
   imageIds,
-  initialImageIdIndex: Math.floor(imageIds.length / 2),
   volumeId,
 });
 
@@ -194,16 +192,11 @@ Now, prefer registering overlay data and setting the appearance of each display 
 ```ts
 displaySetRegistry.add(overlayDisplaySetId, {
   imageIds: [imageId],
-  initialImageIdIndex: 0,
 });
 
 await viewport.addDisplaySet(overlayDisplaySetId, {
   role: 'overlay',
-});
-
-viewport.setDisplaySetAppearance(overlayDisplaySetId, {
-  opacity: 0.5,
-  visible: true,
+  appearance: { opacity: 0.5, visible: true },
 });
 ```
 

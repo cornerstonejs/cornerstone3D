@@ -295,12 +295,10 @@ async function run() {
 
   displaySetRegistry.add(ctDisplaySetId, {
     imageIds: ctImageIds,
-    initialImageIdIndex: Math.floor(ctImageIds.length / 2),
     volumeId: ctVolumeId,
   });
   displaySetRegistry.add(ptDisplaySetId, {
     imageIds: ptImageIds,
-    initialImageIdIndex: Math.floor(ptImageIds.length / 2),
     volumeId: ptVolumeId,
   });
 
@@ -310,6 +308,7 @@ async function run() {
       options: {
         orientation: defaultOrientation,
         mode: 'volume',
+        initialImageIdIndex: Math.floor(ctImageIds.length / 2),
       },
     },
     {
@@ -317,6 +316,7 @@ async function run() {
       options: {
         orientation: defaultOrientation,
         mode: 'volume',
+        initialImageIdIndex: Math.floor(ptImageIds.length / 2),
       },
     }
   );

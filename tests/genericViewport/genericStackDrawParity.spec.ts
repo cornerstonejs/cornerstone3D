@@ -683,7 +683,6 @@ async function openExample(page: Page): Promise<string> {
 
           cs.displaySetRegistry.add(sourceId, {
             imageIds: [imageIdOf(stackCase.image)],
-            initialImageIdIndex: 0,
           });
 
           if (stackCase.overlay) {
@@ -691,7 +690,6 @@ async function openExample(page: Page): Promise<string> {
               overlayId,
               {
                 imageIds: [imageIdOf(stackCase.overlay.image)],
-                initialImageIdIndex: 0,
               }
             );
             entries.push({

@@ -189,11 +189,9 @@ describe('A stack of a direct next planar viewport whose final image stage comes
       });
       cornerstone3D.displaySetRegistry.add('staged:source', {
         imageIds: sourceImageIds,
-        initialImageIdIndex: 0,
       });
       cornerstone3D.displaySetRegistry.add('staged:overlay', {
         imageIds: overlayImageIds,
-        initialImageIdIndex: 0,
       });
 
       const viewport = createNextViewport(renderingEngine, 'stagedPreview');
@@ -240,11 +238,9 @@ describe('A stack of a direct next planar viewport whose final image stage comes
       });
       cornerstone3D.displaySetRegistry.add('commit:source', {
         imageIds: sourceImageIds,
-        initialImageIdIndex: 0,
       });
       cornerstone3D.displaySetRegistry.add('commit:overlay', {
         imageIds: overlayImageIds,
-        initialImageIdIndex: 0,
       });
 
       const viewport = createNextViewport(renderingEngine, 'stagedCommit');
@@ -347,7 +343,6 @@ describe('A display set of a direct next planar viewport whose registration goes
     ].forEach(([displaySetId, imageIds]) =>
       cornerstone3D.displaySetRegistry.add(displaySetId, {
         imageIds,
-        initialImageIdIndex: 0,
       })
     );
 
@@ -403,7 +398,6 @@ describe('A display set of a direct next planar viewport whose registration goes
     });
     cornerstone3D.displaySetRegistry.add('voi:overlay', {
       imageIds: overlayImageIds,
-      initialImageIdIndex: 0,
     });
 
     const viewport = createNextViewport(renderingEngine, 'stagedVOI');
@@ -487,11 +481,9 @@ describe('A stack of a direct next planar viewport whose render backend changes 
     });
     cornerstone3D.displaySetRegistry.add('backend:source', {
       imageIds: sourceImageIds,
-      initialImageIdIndex: 0,
     });
     cornerstone3D.displaySetRegistry.add('backend:overlay', {
       imageIds: overlayImageIds,
-      initialImageIdIndex: 0,
     });
     setRenderBackend('gpu');
 

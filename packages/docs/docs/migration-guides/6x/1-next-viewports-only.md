@@ -191,10 +191,12 @@ import { displaySetRegistry } from '@cornerstonejs/core';
 
 displaySetRegistry.add(displaySetId, {
   imageIds,
-  initialImageIdIndex: 0,
 });
 
-await stackViewport.setDisplaySets({ displaySetId });
+await stackViewport.setDisplaySets({
+  displaySetId,
+  options: { initialImageIdIndex: 0 },
+});
 await mprViewport.setDisplaySets({
   displaySetId,
   options: { mode: 'volume', orientation: Enums.OrientationAxis.SAGITTAL },
@@ -214,7 +216,7 @@ decide how its data is loaded. What each family reads:
 
 | Viewport      | Registered descriptor                                                                                                              |
 | ------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| Planar        | `{ imageIds, initialImageIdIndex }`, with a `volumeId` to name the volume; `{ volumeId }` for a volume of the cache                |
+| Planar        | `{ imageIds }`, with a `volumeId` to name the volume; `{ volumeId }` for a volume of the cache                                     |
 | 3D            | `{ imageIds }`, with a `volumeId` to name the volume; `{ volumeId }` for a volume of the cache                                     |
 | 3D, a surface | `{ geometryId }`, or nothing: the `displaySetId` is then the id of a geometry of the cache, shown as a surface                     |
 | Video         | `{ imageId }`, or pass the image id as `displaySetId`                                                                              |
@@ -355,18 +357,22 @@ await axialViewport.setDisplaySets({
 
 - **Code that is not changed shows a stack where it showed a volume.** An
   axial view of an axial series, the pane of an MPR in the plane of the
-  images, a fusion in that plane and a dynamic (4D) volume show the images as
-  a stack: `getCurrentMode()` says `'stack'`, a scroll steps through the
-  images (of every time point, for a 4D series), and a slab or an MIP is not
-  drawn. Nothing fails or warns. A view in another orientation than the
-  acquisition plane still shows a volume when the images form one.
+  images and a fusion in that plane show the images as a stack:
+  `getCurrentMode()` says `'stack'`, a scroll steps through the images, and
+  a slab or an MIP that is set after the mount is not drawn. Nothing fails or
+  warns. A view in another orientation than the acquisition plane still
+  shows a volume when the images form one, and so does a mount whose
+  `appearance` asks for a slab, and a display set whose volume is a dynamic
+  (4D) volume of the cache.
 - **The mode of the mount.** `mode: 'stack'` shows the images in their
   acquisition plane, and the mount fails for another orientation and for a
   display set with no image ids. `mode: 'volume'` shows slices of the volume
   in every orientation, and the mount fails when the images form no volume.
-  `mode: 'auto'`, the default, shows a volume for another orientation than
-  the acquisition plane when the images form one, and for a display set with
-  a `volumeId` and no image ids; else a stack. A 3D viewport has no mode.
+  `mode: 'auto'`, the default, shows a volume when the images form one and
+  the mount asks for another orientation than the acquisition plane or for a
+  slab (`appearance: { slabThickness }`), or the volume of the display set is
+  a dynamic (4D) volume of the cache, and for a display set with a `volumeId`
+  and no image ids; else a stack. A 3D viewport has no mode.
 - **Two volumes of one display set.** The mount options take a `volumeId`
   too. It wins over the one of the registration, so two panes can show a
   reduced and the full volume of one display set:
@@ -406,6 +412,92 @@ await axialViewport.setDisplaySets({
   `mode: 'volume'` on each planar mount of a display set registered with a
   `volumeId` and image ids in the same file, and reports the registration
   when the file shows no such mount: `a volumeId no longer makes a planar viewport show a volume: the viewport shows this display set as a stack in its acquisition plane unless its mount asks for mode: 'volume' (setDisplaySets({ displaySetId, options: { mode: 'volume' } }) or addDisplaySet(displaySetId, { mode: 'volume' })); a 3D viewport shows it as before`.
+
+### What one viewport wants is said on its mount
+
+What is true of the data is registered once, in `displaySetRegistry`: its
+image ids, its volume id. What one viewport wants of it is said on the mount:
+`mode`, `role`, `orientation`, `renderBackend`, `sliceFirst`, `volumeId`,
+`initialImageIdIndex` and `appearance` (`PlanarMountOptions`;
+`Volume3DMountOptions` takes `role`, `volumeId` and `appearance`). So one
+display set shows as a stack in one pane and as a volume in another under one
+id, each at its own image, and an annotation or a view reference made in one
+pane shows in the other.
+
+Before, in 6.0.0-beta.2:
+
+```ts
+displaySetRegistry.add('ct', { imageIds, initialImageIdIndex: 40 });
+
+await viewport.setDisplaySets({ displaySetId: 'ct' });
+viewport.setDisplaySetAppearance('ct', {
+  voiRange: { lower: -160, upper: 240 },
+  slabThickness: 20,
+});
+```
+
+After:
+
+```ts
+displaySetRegistry.add('ct', { imageIds });
+
+await viewport.setDisplaySets({
+  displaySetId: 'ct',
+  options: {
+    initialImageIdIndex: 40,
+    appearance: { voiRange: { lower: -160, upper: 240 }, slabThickness: 20 },
+  },
+});
+```
+
+- **`initialImageIdIndex` is a mount option.** It indexes the registered
+  image ids: the image of a stack, the slice of a volume in its acquisition
+  plane. A planar mount of a descriptor that still has it fails with
+  `[PlanarViewport] The display set "ct" is registered with initialImageIdIndex, which is a mount option: remove it from the descriptor and pass it on the mount, setDisplaySets({ displaySetId, options: { initialImageIdIndex } })`.
+  It fails, and does not warn, because a descriptor is shared by every
+  viewport: an index left in it would open each viewport on another image
+  than the one the application asked for, and nothing else would show it.
+- **`appearance` is the appearance from the first draw.** It merges over the
+  overrides set before the mount (a `colormap` one level deep, as
+  `setDisplaySetAppearance` merges it). The mount draws once with it and
+  fires `DISPLAY_SET_APPEARANCE_CHANGED` once, with cause `'mount'` and the
+  overrides of the mount. With `setDisplaySetAppearance` after the mount the
+  viewport drew twice, fired a second event with cause `'edit'`, and a slab
+  remounted the render path. A slab in `appearance` chooses the render path
+  of the first draw, and a mount without `mode` shows a volume for it. A 3D,
+  a video, an ECG and a whole slide viewport take `appearance` on their
+  mounts too, each with the keys of its own appearance (a video its
+  `playbackRate`, `loop`, `muted`, `objectFit`; an ECG its `lineWidth`,
+  `showGrid`; a slide its `voiRange` and `averageWhite`).
+- **A mount reads the registration once.** The image ids, the volume id, the
+  mode and whether the display set is the labelmap of a segmentation are read
+  at the mount and kept with it. A display set that is registered again or
+  removed after the mount does not change a viewport that shows it, also
+  through a switch of the render backend, a slab and an orientation check,
+  until the viewport mounts it again. The next mount reads the registration
+  as it is then.
+- **`getDisplaySets()` gives the options of each mount**, not only the role:
+  the options that the mount was given, without `appearance`, with the role
+  that the display set has now, the mode that the mount chose (`'stack'` or
+  `'volume'`, never `'auto'`) and, in volume mode, the id of the volume that it
+  shows. `target.setDisplaySets(...source.getDisplaySets())` shows the same
+  data the same way; the loupe of the magnify tools mounts its source so.
+- **A `setDisplaySets` that mounts the source again keeps the labelmaps of a
+  segmentation only when the source and its mode stay the same.** The same
+  display set mounted in the other mode drops them, as another source does.
+- **A mount that has no data names it.** An id that nothing is registered
+  under fails with
+  `[PlanarViewport] No display set is registered under "ct": register it with displaySetRegistry.add(displaySetId, descriptor)`,
+  and a display set registered with a `volumeId` and no image ids whose
+  volume is not in the cache with
+  `[PlanarViewport] The display set "pmap" names the volume "<volumeId>" and no imageIds, and the cache does not hold that volume: create the volume before the mount, or register the imageIds`.
+- `npx codemod @cornerstonejs/cornerstone3d-6-api-names` moves
+  `initialImageIdIndex` from a registered literal to the options of every
+  planar mount of the display set in the same file, and reports the
+  registration as manual when it cannot:
+  `initialImageIdIndex is a mount option in 6.0, and a planar viewport refuses a descriptor that has it: remove it from the descriptor and pass it on each planar mount, setDisplaySets({ displaySetId, options: { initialImageIdIndex } }) or addDisplaySet(displaySetId, { initialImageIdIndex })`.
+  The step from 5.x writes `setStack(imageIds, index)` as a registration of
+  the image ids and a mount with `initialImageIdIndex`.
 
 ### From 6.0.0-beta.2
 

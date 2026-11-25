@@ -364,10 +364,12 @@ async function run() {
   // Set the stack on the viewport
   displaySetRegistry.add(stackDisplaySetId, {
     imageIds,
-    initialImageIdIndex: 0,
   });
 
-  await stackViewport.setDisplaySets({ displaySetId: stackDisplaySetId });
+  await stackViewport.setDisplaySets({
+    displaySetId: stackDisplaySetId,
+    options: { initialImageIdIndex: 0 },
+  });
 
   // Set the VOI range
   stackViewport.setDisplaySetAppearance(stackDisplaySetId, {
@@ -384,10 +386,12 @@ async function run() {
   // Set the stack on the second viewport
   displaySetRegistry.add(stackDisplaySetId2, {
     imageIds: imageIds2,
-    initialImageIdIndex: 0,
   });
 
-  await stackViewport2.setDisplaySets({ displaySetId: stackDisplaySetId2 });
+  await stackViewport2.setDisplaySets({
+    displaySetId: stackDisplaySetId2,
+    options: { initialImageIdIndex: 0 },
+  });
 
   // Set the VOI range with custom window/level for this viewport
   stackViewport2.setDisplaySetAppearance(stackDisplaySetId2, {
@@ -407,10 +411,12 @@ async function run() {
   // Set the stack on the third viewport
   displaySetRegistry.add(stackDisplaySetId3, {
     imageIds: imageIds3,
-    initialImageIdIndex: 0,
   });
 
-  await stackViewport3.setDisplaySets({ displaySetId: stackDisplaySetId3 });
+  await stackViewport3.setDisplaySets({
+    displaySetId: stackDisplaySetId3,
+    options: { initialImageIdIndex: 0 },
+  });
 
   // Set the VOI range with custom window/level for this viewport
   stackViewport3.setDisplaySetAppearance(stackDisplaySetId3, {

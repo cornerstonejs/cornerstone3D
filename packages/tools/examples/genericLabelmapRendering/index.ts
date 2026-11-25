@@ -123,7 +123,6 @@ async function run() {
 
   cornerstone.displaySetRegistry.add(displaySetId, {
     imageIds,
-    initialImageIdIndex: Math.floor(imageIds.length / 2),
     volumeId,
   });
 
@@ -138,6 +137,7 @@ async function run() {
         options: {
           orientation,
           mode: 'volume',
+          initialImageIdIndex: Math.floor(imageIds.length / 2),
         },
       });
     })

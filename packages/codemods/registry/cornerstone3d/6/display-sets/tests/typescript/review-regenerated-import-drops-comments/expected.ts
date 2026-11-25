@@ -13,7 +13,6 @@ export async function show(ids: string[]) {
   const displaySetId = JSON.stringify([viewport.renderingEngineId, viewport.id, ids[0]]);
   displaySetRegistry.add(displaySetId, {
     imageIds: ids,
-    initialImageIdIndex: 0,
   });
   await viewport.setDisplaySets({ displaySetId });
 

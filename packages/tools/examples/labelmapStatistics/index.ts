@@ -295,11 +295,13 @@ async function run() {
 
   displaySetRegistry.add(displaySetId, {
     imageIds: imageIdsArray,
-    initialImageIdIndex: 0,
   });
 
   const viewport: PlanarViewport = renderingEngine.getViewport(viewportId);
-  await viewport.setDisplaySets({ displaySetId });
+  await viewport.setDisplaySets({
+    displaySetId,
+    options: { initialImageIdIndex: 0 },
+  });
 
   // Add the viewport to the toolgroup
   toolGroup.addViewport(viewportId, renderingEngineId);

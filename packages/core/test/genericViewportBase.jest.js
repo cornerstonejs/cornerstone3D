@@ -63,11 +63,8 @@ class TestViewport extends BaseViewport {
   }
 
   mount(displaySetId, defaults, appearance) {
-    if (defaults) {
-      this.setDefaultAppearance(displaySetId, defaults);
-    }
-
-    this.applyMountedAppearance(displaySetId, appearance);
+    this.stageMountedAppearance(displaySetId, defaults ?? {}, appearance);
+    this.applyMountedAppearance(displaySetId);
   }
 
   onDestroy() {

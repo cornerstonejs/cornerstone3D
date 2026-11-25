@@ -44,7 +44,7 @@ import type {
   PlanarEffectiveRenderMode,
   PlanarOrientation,
   PlanarDisplaySetDescriptor,
-  PlanarSetDataOptions,
+  PlanarMountOptions,
   RenderPlanReason,
 } from './PlanarViewportTypes';
 
@@ -61,9 +61,9 @@ export interface SelectedPlanarRenderPath extends PlanarRenderModeDecision {
 
 export interface PlanarRenderPathDecisionOptions {
   orientation?: PlanarOrientation;
-  /** Stack, volume or auto (see `PlanarSetDataOptions.mode`). */
-  mode?: PlanarSetDataOptions['mode'];
-  /** The volume id of the mount options (see `PlanarSetDataOptions.volumeId`). */
+  /** Stack, volume or auto (see `PlanarMountOptions.mode`). */
+  mode?: PlanarMountOptions['mode'];
+  /** The volume id of the mount options (see `PlanarMountOptions.volumeId`). */
   volumeId?: string;
   useSliceRendering?: boolean;
   /**
@@ -86,7 +86,7 @@ export interface PlanarRenderPathDecisionOptions {
   /** The blend mode of the data. */
   blendMode?: BlendModes;
   /**
-   * Slice first for this data set (see `PlanarSetDataOptions.sliceFirst`).
+   * Slice first for this data set (see `PlanarMountOptions.sliceFirst`).
    * When omitted, the global `rendering.planar.sliceFirst` decides.
    */
   sliceFirst?: boolean;
@@ -480,10 +480,11 @@ export class PlanarRenderPathDecisionService {
    * The inputs that `select` and `canRender` share, so the two cannot drift.
    * The mode of the options decides the path: 'stack' the image path,
    * 'volume' the volume path, 'auto' (the default) the volume path for a
-   * display set that names a volume only and for an orientation other than
-   * the acquisition plane when the images form a volume. A data set on the
-   * volume path keeps it also when its slice path draws the acquired frames
-   * (see `canDrawAcquiredFrames`).
+   * display set that names a volume only, and, when the images form a
+   * volume, for an orientation other than the acquisition plane, for a slab
+   * and for a dynamic volume of the cache (`isVolumeBackedDataSet`). A data
+   * set on the volume path keeps it also when its slice path draws the
+   * acquired frames (see `canDrawAcquiredFrames`).
    */
   private resolvePathInputs(
     dataSet: PlanarDisplaySetDescriptor,
@@ -840,8 +841,17 @@ function supportsVolumeRendering(
 
 /**
  * Whether the 'auto' mode puts a data set on the volume path: a data set
- * that names a volume only, and a data set in an orientation other than the
- * acquisition plane whose images form a volume. A volume id does not count.
+ * that names a volume only, and a data set whose images form a volume when
+ * one of these holds:
+ * - the orientation is not the acquisition plane;
+ * - the appearance asks for a slab (`slabThickness`), which only a volume
+ *   draws, so the slab is not dropped by a stack;
+ * - its volume (the volume id of the mount, else of the descriptor) is a
+ *   dynamic (4D) volume of the cache: as a stack it would show the images of
+ *   every time point one after the other, where an application that mounts a
+ *   4D display set wants the time point of a volume, as 5.x `setVolumes`
+ *   showed it.
+ * A volume id alone does not count.
  */
 function isVolumeBackedDataSet(
   dataSet: PlanarDisplaySetDescriptor,
@@ -856,5 +866,25 @@ function isVolumeBackedDataSet(
     return true;
   }
 
-  return !isAcquisitionPath && supportsVolumeRendering(dataSet, options);
+  return (
+    (!isAcquisitionPath ||
+      resolveSlabThickness(options.slabThickness) > 0 ||
+      hasDynamicVolume(dataSet, options)) &&
+    supportsVolumeRendering(dataSet, options)
+  );
+}
+
+/**
+ * Whether the volume that the volume id of the mount options, else of the
+ * data set, names is a dynamic (4D) volume of the cache.
+ */
+function hasDynamicVolume(
+  dataSet: PlanarDisplaySetDescriptor,
+  options: PlanarRenderPathDecisionOptions
+): boolean {
+  const volumeId = options.volumeId || dataSet.volumeId;
+
+  return Boolean(
+    volumeId && cache.getVolume(toCacheVolumeId(volumeId))?.isDynamicVolume?.()
+  );
 }

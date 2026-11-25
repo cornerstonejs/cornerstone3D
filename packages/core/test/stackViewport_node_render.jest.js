@@ -101,11 +101,10 @@ describe('stackViewport_node_render', function () {
     });
     cornerstone3D.displaySetRegistry.add('stack', {
       imageIds: [imageId],
-      initialImageIdIndex: 0,
     });
     viewport.setDisplaySets({
       displaySetId: 'stack',
-      options: { renderBackend: 'cpu' },
+      options: { renderBackend: 'cpu', initialImageIdIndex: 0 },
     });
     viewport.render();
     return promise;

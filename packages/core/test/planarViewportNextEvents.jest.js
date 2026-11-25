@@ -116,10 +116,12 @@ function setUpCore() {
 async function showStack(viewport, imageIds, imageIdIndex = 0) {
   displaySetRegistry.add('stack', {
     imageIds,
-    initialImageIdIndex: imageIdIndex,
   });
 
-  return viewport.setDisplaySets({ displaySetId: 'stack' });
+  return viewport.setDisplaySets({
+    displaySetId: 'stack',
+    options: { initialImageIdIndex: imageIdIndex },
+  });
 }
 
 /**

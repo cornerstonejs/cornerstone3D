@@ -52,7 +52,10 @@ addButtonToToolbar({
     // Get the stack viewport
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-    viewport.setDisplaySets({ displaySetId: ctDisplaySetId });
+    viewport.setDisplaySets({
+      displaySetId: ctDisplaySetId,
+      options: { initialImageIdIndex: 0 },
+    });
   },
 });
 
@@ -65,7 +68,10 @@ addButtonToToolbar({
     // Get the stack viewport
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
-    viewport.setDisplaySets({ displaySetId: ptDisplaySetId });
+    viewport.setDisplaySets({
+      displaySetId: ptDisplaySetId,
+      options: { initialImageIdIndex: 0 },
+    });
   },
 });
 /**
@@ -101,15 +107,16 @@ async function run() {
 
   displaySetRegistry.add(ctDisplaySetId, {
     imageIds: ctImageIds,
-    initialImageIdIndex: 0,
   });
   displaySetRegistry.add(ptDisplaySetId, {
     imageIds: ptImageIds,
-    initialImageIdIndex: 0,
   });
 
   // Set the stack on the viewport
-  await viewport.setDisplaySets({ displaySetId: ctDisplaySetId });
+  await viewport.setDisplaySets({
+    displaySetId: ctDisplaySetId,
+    options: { initialImageIdIndex: 0 },
+  });
 
   // Set the VOI of the stack
   viewport.setDisplaySetAppearance(ctDisplaySetId, { voiRange: ctVoiRange });

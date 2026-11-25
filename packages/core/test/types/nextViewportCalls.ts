@@ -17,11 +17,13 @@ import {
 } from '../../src';
 import type {
   ECGViewport,
+  PlanarMountOptions,
   PlanarResolvedICamera,
   PlanarViewport,
   RenderingEngine,
   Types,
   VideoViewport,
+  Volume3DMountOptions,
   VolumeViewport3D,
   WSIViewport,
 } from '../../src';
@@ -129,6 +131,22 @@ export function membersOfTheClasses() {
   const scaleOfCamera: number | Types.Point2 = camera.scale;
   const camera3D: Types.ICamera = volume3D.getResolvedView()?.toICamera();
 
+  const planarMount: PlanarMountOptions = {
+    mode: 'auto',
+    role: 'source',
+    orientation,
+    initialImageIdIndex: 3,
+    renderBackend: Enums.RenderBackends.CPU,
+    sliceFirst: true,
+    volumeId: 'cornerstoneStreamingImageVolume:ct',
+    appearance: { voiRange: { lower: 0, upper: 100 }, slabThickness: 10 },
+  };
+  const volume3DMount: Volume3DMountOptions = {
+    role: 'source',
+    volumeId: 'cornerstoneStreamingImageVolume:ct',
+    appearance: { opacity: 0.5 },
+  };
+
   return [
     planarViewState,
     bounds,
@@ -149,9 +167,25 @@ export function membersOfTheClasses() {
       },
     }),
     planar.addDisplaySet(displaySetId, { mode: 'stack', role: 'overlay' }),
+    planar.setDisplaySets({ displaySetId, options: planarMount }),
+    planar.getDisplaySets()[0].options.mode,
+    planar.getDisplaySets()[0].options.volumeId,
     volume3D.setDisplaySets({
       displaySetId,
       options: { volumeId: 'cornerstoneStreamingImageVolume:ct' },
+    }),
+    volume3D.setDisplaySets({ displaySetId, options: volume3DMount }),
+    video.setDisplaySets({
+      displaySetId,
+      options: { frameNumber: 2, appearance: { playbackRate: 2 } },
+    }),
+    ecg.setDisplaySets({
+      displaySetId,
+      options: { appearance: { lineWidth: 2 } },
+    }),
+    wholeSlide.setDisplaySets({
+      displaySetId,
+      options: { appearance: { opacity: 0.5 } },
     }),
     video.getImageData().dimensions,
     wholeSlide.getImageData().dimensions,

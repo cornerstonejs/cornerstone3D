@@ -123,11 +123,9 @@ function registerReplacement(mode, next, failing) {
   if (mode === 'stack') {
     provider.add('replacement:next', {
       imageIds: next.imageIds,
-      initialImageIdIndex: 0,
     });
     provider.add('replacement:failing', {
       imageIds: failing,
-      initialImageIdIndex: 0,
     });
 
     return;
@@ -223,7 +221,10 @@ describe('A replacement of the display sets of a direct next planar viewport who
         await renderAndWait(viewport);
 
         expect(viewport.getDisplaySets()).toEqual([
-          { displaySetId: 'replacement:next', options: { role: 'source' } },
+          {
+            displaySetId: 'replacement:next',
+            options: jasmine.objectContaining({ role: 'source' }),
+          },
         ]);
         expect(viewport.getImageIds()).toEqual(next.imageIds);
         expect(newData).toEqual({ displaySetsChanged: 1, sourceChanged: 1 });
@@ -255,7 +256,6 @@ describe('A replacement of the display sets of a direct next planar viewport who
     registerReplacement('stack', next, failing);
     cornerstone3D.displaySetRegistry.add('replacement:older', {
       imageIds: older,
-      initialImageIdIndex: 0,
     });
 
     const shownScene = sceneOf(viewport);
@@ -332,7 +332,10 @@ describe('A replacement of the display sets of a direct next planar viewport who
 
       expect(error).toBeDefined();
       expect(viewport.getDisplaySets()).toEqual([
-        { displaySetId: 'replacement:next', options: { role: 'source' } },
+        {
+          displaySetId: 'replacement:next',
+          options: jasmine.objectContaining({ role: 'source' }),
+        },
       ]);
       expect(viewport.getImageIds()).toEqual(next.imageIds);
       expect(viewport.getCurrentImageId()).toBe(next.imageIds[0]);
@@ -373,11 +376,9 @@ describe('A replacement of the display sets of a direct next planar viewport who
     await showStack(viewport, shown, SHOWN_SLICE, options);
     provider.add('replacement:next', {
       imageIds: next.imageIds,
-      initialImageIdIndex: 0,
     });
     provider.add('replacement:overlay', {
       imageIds: overlay.imageIds,
-      initialImageIdIndex: 0,
     });
     viewport.element.addEventListener(Events.IMAGE_RENDERED, () => {
       if (counting) {

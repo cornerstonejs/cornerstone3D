@@ -225,7 +225,6 @@ async function run() {
 
   displaySetRegistry.add(displaySetId, {
     imageIds,
-    initialImageIdIndex: 0,
   });
 
   // Set the stack on each viewport

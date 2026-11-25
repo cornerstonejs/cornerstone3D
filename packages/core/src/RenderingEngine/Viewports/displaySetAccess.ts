@@ -122,18 +122,33 @@ export function getDisplaySetImageId(displaySetId: string): string | undefined {
 
 /**
  * The error of a mount whose display set the viewport cannot load: nothing
- * is registered under the id, or the descriptor has none of the fields that
- * the viewport reads (`needs`).
+ * is registered under the id, the descriptor names a volume only and the
+ * cache does not hold that volume, or the descriptor has none of the fields
+ * that the viewport reads (`needs`).
  */
 export function displaySetShapeError(
   viewportName: string,
   displaySetId: string,
   needs: string
 ): Error {
-  if (!getDisplaySetDescriptor(displaySetId)) {
+  const descriptor = getDisplaySetDescriptor(displaySetId);
+
+  if (!descriptor) {
     return new Error(
       `[${viewportName}] No display set is registered under "${displaySetId}": ` +
         `register it with displaySetRegistry.add(displaySetId, descriptor)`
+    );
+  }
+
+  if (
+    typeof descriptor.volumeId === 'string' &&
+    !(isImageDisplaySet(descriptor) && descriptor.imageIds.length) &&
+    !cache.getVolume(toCacheVolumeId(descriptor.volumeId))
+  ) {
+    return new Error(
+      `[${viewportName}] The display set "${displaySetId}" names the volume ` +
+        `"${descriptor.volumeId}" and no imageIds, and the cache does not hold ` +
+        `that volume: create the volume before the mount, or register the imageIds`
     );
   }
 

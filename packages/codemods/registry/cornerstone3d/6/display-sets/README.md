@@ -31,9 +31,11 @@ as `viewport` alone, a `let`, a `var` and a container type such as
   ]);
   displaySetRegistry.add(displaySetId, {
     imageIds,
-    initialImageIdIndex: index,
   });
-  await viewport.setDisplaySets({ displaySetId });
+  await viewport.setDisplaySets({
+    displaySetId,
+    options: { initialImageIdIndex: index },
+  });
   ```
 
   The id is the JSON of the rendering engine id, the viewport id and the
@@ -41,7 +43,8 @@ as `viewport` alone, a `let`, a `var` and a container type such as
   segmentation overlays of the series before, and two engines with a
   viewport of one id never share a registration. JSON keeps the three parts
   apart, so engine `'a:b'` with viewport `'c'` and engine `'a'` with viewport
-  `'b:c'` get two ids. The index is 0 when the call had none, as in 5.x. A
+  `'b:c'` get two ids. The index is a mount option: a call without it mounts with no options, and
+  a stack shows its first image, as in 5.x. A
   viewport that is a member chain (`holder.viewport`, `this.viewport`, the
   `viewport` of an enabled element), which can be a getter, is read once
   into a fresh `const` first, and so is a name that a write can change (a

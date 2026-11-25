@@ -77,13 +77,13 @@ async function createFusionSeries(name, mode) {
     ctId,
     mode === 'volume'
       ? { imageIds: ct.imageIds, volumeId: ct.volumeId }
-      : { imageIds: ct.imageIds, initialImageIdIndex: 0 }
+      : { imageIds: ct.imageIds }
   );
   cornerstone3D.displaySetRegistry.add(
     ptId,
     mode === 'volume'
       ? { imageIds: pt.imageIds, volumeId: pt.volumeId }
-      : { imageIds: pt.imageIds, initialImageIdIndex: 0 }
+      : { imageIds: pt.imageIds }
   );
 
   return { ct, pt, ctId, ptId };

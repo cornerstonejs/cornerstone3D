@@ -190,10 +190,12 @@ async function run() {
 
   cornerstone.displaySetRegistry.add(stackDisplaySetId, {
     imageIds: volumeImageIds,
-    initialImageIdIndex: 67,
   });
 
-  await viewport1.setDisplaySets({ displaySetId: stackDisplaySetId });
+  await viewport1.setDisplaySets({
+    displaySetId: stackDisplaySetId,
+    options: { initialImageIdIndex: 67 },
+  });
   cornerstoneTools.utilities.stackContextPrefetch.enable(viewport1.element);
 
   const segmentationId = 'contour_segmentation';

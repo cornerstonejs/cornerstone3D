@@ -156,9 +156,11 @@ async function showStackWithoutWebGL(engine) {
 
   cornerstone3D.displaySetRegistry.add('withoutWebGL:stack', {
     imageIds: createImageIds(),
-    initialImageIdIndex: 0,
   });
-  await viewport.setDisplaySets({ displaySetId: 'withoutWebGL:stack' });
+  await viewport.setDisplaySets({
+    displaySetId: 'withoutWebGL:stack',
+    options: { initialImageIdIndex: 0 },
+  });
   await mounted;
   await waitForDraws();
 
@@ -219,9 +221,11 @@ describe('A planar viewport on a device without WebGL -- ', () => {
 
       cornerstone3D.displaySetRegistry.add('withoutWebGL:stack', {
         imageIds: createImageIds(),
-        initialImageIdIndex: 0,
       });
-      await viewport.setDisplaySets({ displaySetId: 'withoutWebGL:stack' });
+      await viewport.setDisplaySets({
+        displaySetId: 'withoutWebGL:stack',
+        options: { initialImageIdIndex: 0 },
+      });
       await rendered;
 
       expect(

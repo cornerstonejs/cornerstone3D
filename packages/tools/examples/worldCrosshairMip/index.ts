@@ -242,12 +242,10 @@ async function run() {
   displaySetRegistry.add(ctMprDisplaySetId, {
     imageIds: ctImageIds,
     volumeId: ctVolumeId,
-    initialImageIdIndex: Math.floor(ctImageIds.length / 2),
   });
   displaySetRegistry.add(ptMipDisplaySetId, {
     imageIds: ptImageIds,
     volumeId: ptVolumeId,
-    initialImageIdIndex: Math.floor(ptImageIds.length / 2),
   });
 
   function getViewport(viewportId: string): PlanarViewport {
@@ -260,7 +258,13 @@ async function run() {
     viewportSpecs.map((spec) =>
       getViewport(spec.viewportId).setDisplaySets({
         displaySetId: spec.isMip ? ptMipDisplaySetId : ctMprDisplaySetId,
-        options: { orientation: spec.orientation, mode: 'volume' },
+        options: {
+          orientation: spec.orientation,
+          mode: 'volume',
+          initialImageIdIndex: Math.floor(
+            (spec.isMip ? ptImageIds : ctImageIds).length / 2
+          ),
+        },
       })
     )
   );

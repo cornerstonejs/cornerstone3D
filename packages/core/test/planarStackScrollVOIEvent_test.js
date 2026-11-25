@@ -170,9 +170,9 @@ describe('DISPLAY_SET_APPEARANCE_CHANGED of a stack on a planar viewport whose i
 
       cornerstone3D.displaySetRegistry.add(overlayId, {
         imageIds: overlay.imageIds,
-        initialImageIdIndex: 0,
       });
       await viewport.addDisplaySet(overlayId, {
+        initialImageIdIndex: 0,
         orientation: OrientationAxis.ACQUISITION,
         role: 'overlay',
         ...options,

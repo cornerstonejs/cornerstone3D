@@ -72,7 +72,6 @@ async function createStalledSeries(id, stalls) {
 function addStack(displaySetId, series) {
   cornerstone3D.displaySetRegistry.add(displaySetId, {
     imageIds: series.imageIds,
-    initialImageIdIndex: 0,
   });
 }
 

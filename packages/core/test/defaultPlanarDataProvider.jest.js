@@ -43,15 +43,17 @@ describe('DefaultPlanarDataProvider', () => {
 
   describe('volume-slice payloads', () => {
     it('remaps initialImageIdIndex when the volume reorders the imageIds', async () => {
-      // The registered dataSet carries the caller's ordering; the cached volume
-      // sorts by position along the scan axis, here the exact reverse.
+      // The registered dataSet carries the caller's ordering, which the index
+      // of the mount indexes; the cached volume sorts by position along the
+      // scan axis, here the exact reverse.
       const dataSetImageIds = makeImageIds(30);
-      registerDataSet({ imageIds: dataSetImageIds, initialImageIdIndex: 12 });
+      registerDataSet({ imageIds: dataSetImageIds });
       mockVolume([...dataSetImageIds].reverse());
 
       const provider = new DefaultPlanarDataProvider();
       const payload = await provider.load(DATA_ID, {
         orientation: 'acquisition',
+        initialImageIdIndex: 12,
         renderMode: PlanarRenderModeId.VTK_GPU_VOLUME_SLICE,
         volumeId: 'volume-1',
       });
@@ -67,12 +69,13 @@ describe('DefaultPlanarDataProvider', () => {
 
     it('keeps the index unchanged when the volume preserves the ordering', async () => {
       const dataSetImageIds = makeImageIds(10);
-      registerDataSet({ imageIds: dataSetImageIds, initialImageIdIndex: 3 });
+      registerDataSet({ imageIds: dataSetImageIds });
       mockVolume([...dataSetImageIds]);
 
       const provider = new DefaultPlanarDataProvider();
       const payload = await provider.load(DATA_ID, {
         orientation: 'acquisition',
+        initialImageIdIndex: 3,
         renderMode: PlanarRenderModeId.VTK_GPU_VOLUME_SLICE,
         volumeId: 'volume-1',
       });
@@ -82,7 +85,7 @@ describe('DefaultPlanarDataProvider', () => {
 
     it('warns and keeps the original index when the imageId is not in the volume', async () => {
       const dataSetImageIds = makeImageIds(10);
-      registerDataSet({ imageIds: dataSetImageIds, initialImageIdIndex: 3 });
+      registerDataSet({ imageIds: dataSetImageIds });
       mockVolume(makeImageIds(10).map((id) => `${id}-other`));
       const warnSpy = jest
         .spyOn(
@@ -95,6 +98,7 @@ describe('DefaultPlanarDataProvider', () => {
         const provider = new DefaultPlanarDataProvider();
         const payload = await provider.load(DATA_ID, {
           orientation: 'acquisition',
+          initialImageIdIndex: 3,
           renderMode: PlanarRenderModeId.VTK_GPU_VOLUME_SLICE,
           volumeId: 'volume-1',
         });
@@ -124,14 +128,35 @@ describe('DefaultPlanarDataProvider', () => {
     });
   });
 
-  describe('image payloads', () => {
-    it('keeps the dataSet ordering and index on the image branch', async () => {
-      const dataSetImageIds = makeImageIds(5);
-      registerDataSet({ imageIds: dataSetImageIds, initialImageIdIndex: 2 });
+  describe('the descriptor of the mount', () => {
+    it('loads the descriptor that the viewport read for the mount, without reading the registry', async () => {
+      const dataSetImageIds = makeImageIds(4);
+      registerDataSet({ imageIds: makeImageIds(9) });
 
       const provider = new DefaultPlanarDataProvider();
       const payload = await provider.load(DATA_ID, {
         orientation: 'acquisition',
+        initialImageIdIndex: 1,
+        renderMode: PlanarRenderModeId.VTK_FRAME,
+        volumeId: undefined,
+        descriptor: { imageIds: dataSetImageIds },
+      });
+
+      expect(getVolumeOrImageDisplaySet).not.toHaveBeenCalled();
+      expect(payload.imageIds).toEqual(dataSetImageIds);
+      expect(payload.image.imageId).toBe('wadors:image-1');
+    });
+  });
+
+  describe('image payloads', () => {
+    it('keeps the dataSet ordering and index on the image branch', async () => {
+      const dataSetImageIds = makeImageIds(5);
+      registerDataSet({ imageIds: dataSetImageIds });
+
+      const provider = new DefaultPlanarDataProvider();
+      const payload = await provider.load(DATA_ID, {
+        orientation: 'acquisition',
+        initialImageIdIndex: 2,
         renderMode: PlanarRenderModeId.VTK_FRAME,
         volumeId: undefined,
       });

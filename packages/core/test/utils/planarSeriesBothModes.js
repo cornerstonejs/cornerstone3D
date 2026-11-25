@@ -210,11 +210,14 @@ export async function showStack(
 
   cornerstone3D.displaySetRegistry.add(displaySetId, {
     imageIds: series.imageIds,
-    initialImageIdIndex: 0,
   });
   await viewport.setDisplaySets({
     displaySetId,
-    options: { orientation: OrientationAxis.ACQUISITION, ...options },
+    options: {
+      initialImageIdIndex: 0,
+      orientation: OrientationAxis.ACQUISITION,
+      ...options,
+    },
   });
   await renderAndWait(viewport);
   viewport.setViewState({

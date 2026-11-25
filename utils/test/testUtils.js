@@ -300,12 +300,15 @@ function setStackOnNextViewport(
 
   displaySetRegistry.add(displaySetId, {
     imageIds,
-    initialImageIdIndex: imageIdIndex,
   });
 
   return viewport.setDisplaySets({
     displaySetId,
-    options: { orientation: Enums.OrientationAxis.ACQUISITION, ...options },
+    options: {
+      initialImageIdIndex: imageIdIndex,
+      orientation: Enums.OrientationAxis.ACQUISITION,
+      ...options,
+    },
   });
 }
 

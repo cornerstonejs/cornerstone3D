@@ -102,7 +102,10 @@ async function showStack(
   element.addEventListener(Enums.Events.NEW_IMAGE, newImageFunction);
   const start = Date.now();
   // Set the stack on the viewport
-  await viewport.setDisplaySets({ displaySetId });
+  await viewport.setDisplaySets({
+    displaySetId,
+    options: { initialImageIdIndex: 0 },
+  });
 
   // Render the image
   viewport.render();
@@ -239,7 +242,6 @@ async function run() {
 
   displaySetRegistry.add(displaySetId, {
     imageIds,
-    initialImageIdIndex: 0,
   });
 
   const createButton = (text, action) => {

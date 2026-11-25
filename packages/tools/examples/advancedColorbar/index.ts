@@ -539,10 +539,12 @@ async function initializeViewport(renderingEngine, toolGroup, viewportInfo) {
   } else {
     displaySetRegistry.add(ctStackDisplaySetId, {
       imageIds: ctImageIds,
-      initialImageIdIndex: 0,
     });
 
-    await viewport.setDisplaySets({ displaySetId: ctStackDisplaySetId });
+    await viewport.setDisplaySets({
+      displaySetId: ctStackDisplaySetId,
+      options: { initialImageIdIndex: 0 },
+    });
 
     // Apply initial CT colormap
     setViewportColormap(

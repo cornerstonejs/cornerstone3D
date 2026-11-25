@@ -31,6 +31,6 @@ export type {
   Volume3DDisplaySetAppearance,
   Volume3DAppearanceProps,
   Volume3DProperties,
-  Volume3DSetDataOptions,
+  Volume3DMountOptions,
   VolumeViewport3DInput,
 } from './viewport3DTypes';

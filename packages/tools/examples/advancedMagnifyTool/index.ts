@@ -274,10 +274,12 @@ async function initializeViewport(
     // Set the stack on the viewport
     cornerstone.displaySetRegistry.add(stackDisplaySetId, {
       imageIds,
-      initialImageIdIndex: 0,
     });
 
-    await viewport.setDisplaySets({ displaySetId: stackDisplaySetId });
+    await viewport.setDisplaySets({
+      displaySetId: stackDisplaySetId,
+      options: { initialImageIdIndex: 0 },
+    });
   } else {
     await initializeVolumeViewport(viewport, volumeId, imageIds);
 

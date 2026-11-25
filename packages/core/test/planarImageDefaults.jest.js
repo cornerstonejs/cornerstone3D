@@ -136,7 +136,6 @@ describe('Direct next planar viewport and the default invert of an image', () =>
         'MONOCHROME1',
         'MONOCHROME2',
       ]),
-      initialImageIdIndex: 0,
     });
     await viewport.setDisplaySets({ displaySetId: 'mixed' });
     steps.push(await readDrawnInvert(viewport, drawSpy));
@@ -163,7 +162,6 @@ describe('Direct next planar viewport and the default invert of an image', () =>
     renderingEngines.push(renderingEngine);
     displaySetRegistry.add('xray', {
       imageIds: createPhotometricImageIds(['MONOCHROME1']),
-      initialImageIdIndex: 0,
     });
 
     await viewport.setDisplaySets({ displaySetId: 'xray' });

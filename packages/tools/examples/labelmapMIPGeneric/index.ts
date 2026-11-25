@@ -183,7 +183,6 @@ async function run() {
   // Register the source display set for the viewports
   cornerstone.displaySetRegistry.add(sourceDisplaySetId, {
     imageIds,
-    initialImageIdIndex: Math.floor(imageIds.length / 2),
     volumeId,
   });
 
@@ -195,6 +194,7 @@ async function run() {
     options: {
       orientation: Enums.OrientationAxis.CORONAL,
       mode: 'volume',
+      initialImageIdIndex: Math.floor(imageIds.length / 2),
     },
   });
 
@@ -203,6 +203,7 @@ async function run() {
     options: {
       orientation: Enums.OrientationAxis.SAGITTAL,
       mode: 'volume',
+      initialImageIdIndex: Math.floor(imageIds.length / 2),
     },
   });
 

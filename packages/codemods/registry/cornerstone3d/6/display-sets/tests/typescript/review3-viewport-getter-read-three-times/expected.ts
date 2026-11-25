@@ -15,9 +15,8 @@ export async function fromGetter(holder: Holder) {
   const displaySetId = JSON.stringify([viewport.renderingEngineId, viewport.id, imageIds[0]]);
   displaySetRegistry.add(displaySetId, {
     imageIds,
-    initialImageIdIndex: 1,
   });
-  await viewport.setDisplaySets({ displaySetId });
+  await viewport.setDisplaySets({ displaySetId, options: { initialImageIdIndex: 1 } });
 }
 
 export async function fromEnabledElement(
@@ -30,7 +29,6 @@ export async function fromEnabledElement(
   const displaySetId2 = JSON.stringify([viewport2.renderingEngineId, viewport2.id, ids[0]]);
   displaySetRegistry.add(displaySetId2, {
     imageIds: ids,
-    initialImageIdIndex: 0,
   });
   await viewport2.setDisplaySets({ displaySetId: displaySetId2 });
 }

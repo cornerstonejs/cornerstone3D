@@ -27,6 +27,12 @@ type PlanarVolumeViewport = Types.IViewport<
       mode?: 'auto' | 'stack' | 'volume';
       orientation?: unknown;
       role?: 'source' | 'overlay';
+      initialImageIdIndex?: number;
+      appearance?: {
+        blendMode?: Enums.BlendModes;
+        slabThickness?: number;
+        visible?: boolean;
+      };
     }
   ) => Promise<void>;
   getSourceDisplaySetId?: () => string | undefined;
@@ -120,10 +126,6 @@ async function addLabelmapToPlanarVolumeViewport(args: {
 
     displaySetRegistry.add(displaySetId, {
       imageIds: volume.imageIds,
-      initialImageIdIndex: Math.min(
-        currentImageIdIndex,
-        Math.max(volume.imageIds.length - 1, 0)
-      ),
       reference: {
         kind: 'segmentation',
         segmentationId,
@@ -137,13 +139,17 @@ async function addLabelmapToPlanarVolumeViewport(args: {
       mode: 'volume',
       orientation: requestedOrientation,
       role: 'overlay',
-    });
-    viewport.setDisplaySetAppearance(displaySetId, {
-      blendMode,
-      visible: visibility,
-      ...(sourceSlabThickness !== undefined
-        ? { slabThickness: sourceSlabThickness }
-        : {}),
+      initialImageIdIndex: Math.min(
+        currentImageIdIndex,
+        Math.max(volume.imageIds.length - 1, 0)
+      ),
+      appearance: {
+        blendMode,
+        visible: visibility,
+        ...(sourceSlabThickness !== undefined
+          ? { slabThickness: sourceSlabThickness }
+          : {}),
+      },
     });
 
     firstActorEntry ||= viewport

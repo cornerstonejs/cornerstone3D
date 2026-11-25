@@ -139,12 +139,19 @@ class ECGViewport extends BaseViewport<
    *
    * @param entries - Waveform display sets to mount.
    * `options.multiplexGroupIndex` (0-based) names the multiplex group to
-   * show; undefined shows the default group.
+   * show; undefined shows the default group. `options.appearance` is the
+   * appearance of the waveform from its first draw (line width, grid,
+   * amplitude labels, opacity), merged over the overrides set before the
+   * mount; DISPLAY_SET_APPEARANCE_CHANGED fires once for it, with cause
+   * `'mount'`.
    */
   async setDisplaySets(
     ...entries: Array<{
       displaySetId: string;
-      options?: { multiplexGroupIndex?: number };
+      options?: {
+        multiplexGroupIndex?: number;
+        appearance?: Partial<ECGDisplaySetAppearance>;
+      };
     }>
   ): Promise<void> {
     const isSuperseded = this.startSetDisplaySets();
@@ -163,12 +170,16 @@ class ECGViewport extends BaseViewport<
       const { traceLayout, sweepSpeed, sensitivityMmMv, amplitudeScale } =
         this.viewState;
 
-      this.setDefaultAppearance(displaySetId, {
-        visible: true,
-        opacity: 1,
-        lineWidth: 1,
-        showGrid: true,
-      });
+      const restoreAppearance = this.stageMountedAppearance(
+        displaySetId,
+        {
+          visible: true,
+          opacity: 1,
+          lineWidth: 1,
+          showGrid: true,
+        },
+        options?.appearance
+      );
       this.viewState = createDefaultECGViewState({
         timeRange: [0, durationMs],
         valueRange: getDefaultECGValueRange(waveform),
@@ -179,15 +190,23 @@ class ECGViewport extends BaseViewport<
       });
       warnIfAmplitudeScaleIgnored(this.viewState);
 
-      const bound = await this.addLoadedData(
-        displaySetId,
-        waveform,
-        {
-          renderMode: 'signal2d',
-          role: index === 0 ? 'source' : 'overlay',
-        },
-        isSuperseded
-      );
+      let bound = false;
+
+      try {
+        bound = await this.addLoadedData(
+          displaySetId,
+          waveform,
+          {
+            renderMode: 'signal2d',
+            role: index === 0 ? 'source' : 'overlay',
+          },
+          isSuperseded
+        );
+      } finally {
+        if (!bound) {
+          restoreAppearance();
+        }
+      }
 
       if (!bound) {
         return;

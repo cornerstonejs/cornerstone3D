@@ -43,11 +43,13 @@ async function stackReferenceOf(viewport, series, imageIds, seriesIndex) {
 
   cornerstone3D.displaySetRegistry.add(displaySetId, {
     imageIds,
-    initialImageIdIndex: imageIdIndex,
   });
   await viewport.setDisplaySets({
     displaySetId,
-    options: { orientation: OrientationAxis.ACQUISITION },
+    options: {
+      orientation: OrientationAxis.ACQUISITION,
+      initialImageIdIndex: imageIdIndex,
+    },
   });
   await waitFor(() => shownIndex(viewport, series) === seriesIndex);
   await settle(viewport);

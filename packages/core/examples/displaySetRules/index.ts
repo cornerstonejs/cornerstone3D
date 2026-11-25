@@ -1227,7 +1227,6 @@ function registerDisplaySetData(displaySet: IDisplaySet, layout: string) {
     default:
       provider.add(displaySetId, {
         imageIds,
-        initialImageIdIndex: initialImageIndex(imageIds.length),
       });
   }
 }
@@ -1370,9 +1369,15 @@ async function mountViewport(
   await viewport.setDisplaySets({
     displaySetId: displaySet.displaySetId,
     options:
-      viewportType === ViewportType.PLANAR && orientation
-        ? { mode: 'volume' }
-        : undefined,
+      viewportType !== ViewportType.PLANAR
+        ? undefined
+        : orientation
+          ? { mode: 'volume' }
+          : {
+              initialImageIdIndex: initialImageIndex(
+                displaySet.imageIds.length
+              ),
+            },
   });
 
   if (viewportType === ViewportType.PLANAR && orientation) {

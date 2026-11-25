@@ -286,7 +286,6 @@ async function run() {
 
   displaySetRegistry.add(stackDisplaySetId, {
     imageIds,
-    initialImageIdIndex: 0,
   });
   displaySetRegistry.add(volumeDisplaySetId, {
     imageIds,
@@ -297,7 +296,10 @@ async function run() {
 
   await renderingEngine
     .getViewport<PlanarViewport>(stackViewportId)
-    .setDisplaySets({ displaySetId: stackDisplaySetId });
+    .setDisplaySets({
+      displaySetId: stackDisplaySetId,
+      options: { initialImageIdIndex: 0 },
+    });
 
   await Promise.all(
     volumeViewportsIds.map((viewportId) =>

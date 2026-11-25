@@ -62,7 +62,7 @@ export type {
   PlanarOrientation,
   PlanarAppearanceProps,
   PlanarProperties,
-  PlanarSetDataOptions,
+  PlanarMountOptions,
   PlanarViewportInput,
   PlanarViewportInputOptions,
   PlanarDisplayArea,

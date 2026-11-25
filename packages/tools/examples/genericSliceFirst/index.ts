@@ -889,12 +889,21 @@ function setupControls(): void {
 }
 
 /** Mounts the display sets of one viewport and sets their look. */
-async function mountViewport(spec: ViewportSpec): Promise<void> {
+async function mountViewport(
+  spec: ViewportSpec,
+  initialImageIdIndexes: Record<string, number>
+): Promise<void> {
   const viewport = getViewport(spec.viewportId);
-  const options = { orientation: spec.orientation, mode: 'volume' as const };
 
   await viewport.setDisplaySets(
-    ...getDisplaySetIds(spec).map((displaySetId) => ({ displaySetId, options }))
+    ...getDisplaySetIds(spec).map((displaySetId) => ({
+      displaySetId,
+      options: {
+        orientation: spec.orientation,
+        mode: 'volume' as const,
+        initialImageIdIndex: initialImageIdIndexes[displaySetId],
+      },
+    }))
   );
 
   viewport.setDisplaySetAppearance(ctDisplaySetId, { voiRange: ctVoiRange });
@@ -961,16 +970,21 @@ async function run() {
 
   displaySetRegistry.add(ctDisplaySetId, {
     imageIds: ctImageIds,
-    initialImageIdIndex: Math.floor(ctImageIds.length / 2),
     volumeId: ctVolumeId,
   });
   displaySetRegistry.add(ptDisplaySetId, {
     imageIds: ptImageIds,
-    initialImageIdIndex: Math.floor(ptImageIds.length / 2),
     volumeId: ptVolumeId,
   });
 
-  await Promise.all(viewportSpecs.map(mountViewport));
+  const initialImageIdIndexes = {
+    [ctDisplaySetId]: Math.floor(ctImageIds.length / 2),
+    [ptDisplaySetId]: Math.floor(ptImageIds.length / 2),
+  };
+
+  await Promise.all(
+    viewportSpecs.map((spec) => mountViewport(spec, initialImageIdIndexes))
+  );
 
   elementsByViewportId.forEach((element) =>
     element.addEventListener(Events.IMAGE_RENDERED, scheduleCaptions)

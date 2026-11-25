@@ -271,12 +271,11 @@ async function run() {
 
   displaySetRegistry.add(stackDisplaySetId, {
     imageIds,
-    initialImageIdIndex: 0,
   });
 
   await viewport.setDisplaySets({
     displaySetId: stackDisplaySetId,
-    options: {},
+    options: { initialImageIdIndex: 0 },
   });
 
   viewport.render();

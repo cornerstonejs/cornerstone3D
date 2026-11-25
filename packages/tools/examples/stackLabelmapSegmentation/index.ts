@@ -503,15 +503,19 @@ async function run() {
 
   displaySetRegistry.add(ctDisplaySetId, {
     imageIds: ctImageIds,
-    initialImageIdIndex: 0,
   });
   displaySetRegistry.add(mgDisplaySetId, {
     imageIds: [...mgImageIds, ctImageIds[2]],
-    initialImageIdIndex: 0,
   });
 
-  await viewport.setDisplaySets({ displaySetId: ctDisplaySetId });
-  await viewport2.setDisplaySets({ displaySetId: mgDisplaySetId });
+  await viewport.setDisplaySets({
+    displaySetId: ctDisplaySetId,
+    options: { initialImageIdIndex: 0 },
+  });
+  await viewport2.setDisplaySets({
+    displaySetId: mgDisplaySetId,
+    options: { initialImageIdIndex: 0 },
+  });
   cornerstoneTools.utilities.stackContextPrefetch.enable(element1);
   cornerstoneTools.utilities.stackContextPrefetch.enable(element2);
 

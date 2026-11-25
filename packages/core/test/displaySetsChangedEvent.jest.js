@@ -203,7 +203,6 @@ describe('DISPLAY_SETS_CHANGED and NEW_IMAGE on a planar viewport', () => {
   function registerStack(displaySetId, options = {}) {
     displaySetRegistry.add(displaySetId, {
       imageIds: createImageIds(displaySetId, options),
-      initialImageIdIndex: 0,
     });
   }
 

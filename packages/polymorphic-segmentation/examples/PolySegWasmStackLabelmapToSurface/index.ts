@@ -225,11 +225,13 @@ async function run() {
 
   displaySetRegistry.add(displaySetId, {
     imageIds,
-    initialImageIdIndex: 0,
   });
 
   const viewport1: PlanarViewport = renderingEngine.getViewport(viewportId1);
-  await viewport1.setDisplaySets({ displaySetId });
+  await viewport1.setDisplaySets({
+    displaySetId,
+    options: { initialImageIdIndex: 0 },
+  });
 
   cornerstoneTools.utilities.stackContextPrefetch.enable(element1);
 

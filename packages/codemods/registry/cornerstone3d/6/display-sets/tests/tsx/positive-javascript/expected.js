@@ -18,9 +18,8 @@ async function run(element, imageIds) {
   const displaySetId = JSON.stringify([viewport.renderingEngineId, viewport.id, imageIds[0]]);
   displaySetRegistry.add(displaySetId, {
     imageIds,
-    initialImageIdIndex: 0,
   });
-  await viewport.setDisplaySets({ displaySetId });
+  await viewport.setDisplaySets({ displaySetId, options: { initialImageIdIndex: 0 } });
 }
 
 export default run;

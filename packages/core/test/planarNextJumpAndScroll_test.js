@@ -51,9 +51,11 @@ async function showStack(viewport) {
 
   cornerstone3D.displaySetRegistry.add(displaySetId, {
     imageIds,
-    initialImageIdIndex: 0,
   });
-  await viewport.setDisplaySets({ displaySetId });
+  await viewport.setDisplaySets({
+    displaySetId,
+    options: { initialImageIdIndex: 0 },
+  });
   await renderAndWait(viewport);
 
   return displaySetId;

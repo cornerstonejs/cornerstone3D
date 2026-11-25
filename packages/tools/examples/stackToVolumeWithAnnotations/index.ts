@@ -257,7 +257,6 @@ async function run() {
 
   cornerstone.displaySetRegistry.add(stackDisplaySetId, {
     imageIds,
-    initialImageIdIndex: 80,
   });
   cornerstone.displaySetRegistry.add(volumeDisplaySetId, {
     imageIds,
@@ -265,7 +264,10 @@ async function run() {
   });
 
   // Set the stack on the viewport
-  await viewport.setDisplaySets({ displaySetId: stackDisplaySetId });
+  await viewport.setDisplaySets({
+    displaySetId: stackDisplaySetId,
+    options: { initialImageIdIndex: 80 },
+  });
 
   csToolsUtilities.stackContextPrefetch.enable(viewport.element);
 

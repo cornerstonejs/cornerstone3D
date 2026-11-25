@@ -57,11 +57,12 @@ export interface Volume3DDisplaySetDescriptor extends DisplaySetDescriptor {
 }
 
 /**
- * The mount options of a display set of a 3D viewport. What a display set
- * shows follows from its descriptor: image ids give a volume, a geometry id
- * (or an id of a geometry of the cache) gives a surface.
+ * The mount options of a display set of a 3D viewport: what this viewport
+ * wants of it. What a display set shows follows from its descriptor: image
+ * ids give a volume, a geometry id (or an id of a geometry of the cache)
+ * gives a surface.
  */
-export interface Volume3DSetDataOptions {
+export interface Volume3DMountOptions {
   role?: BindingRole;
   /**
    * The volume that the display set shows, in place of the `volumeId` of
@@ -70,6 +71,13 @@ export interface Volume3DSetDataOptions {
    * in volume mode takes.
    */
   volumeId?: string;
+  /**
+   * The appearance that the display set has in this viewport from its first
+   * draw: its overrides, merged over those set before the mount. The mount
+   * draws once with it and fires `DISPLAY_SET_APPEARANCE_CHANGED` once, with
+   * cause `'mount'`.
+   */
+  appearance?: Partial<Volume3DDisplaySetAppearance>;
 }
 
 /** @internal */

@@ -19,7 +19,6 @@ export async function getterInTheList(
   const displaySetId = JSON.stringify([viewport2.renderingEngineId, viewport2.id, imageIds2[0]]);
   displaySetRegistry.add(displaySetId, {
     imageIds: imageIds2,
-    initialImageIdIndex: 0,
   });
   await viewport2.setDisplaySets({ displaySetId });
 }
@@ -40,9 +39,8 @@ export async function callInTheIndex(
   const displaySetId2 = JSON.stringify([viewport3.renderingEngineId, viewport3.id, imageIds[0]]);
   displaySetRegistry.add(displaySetId2, {
     imageIds,
-    initialImageIdIndex: pick(),
   });
-  await viewport3.setDisplaySets({ displaySetId: displaySetId2 });
+  await viewport3.setDisplaySets({ displaySetId: displaySetId2, options: { initialImageIdIndex: pick() } });
 }
 
 export async function writtenParameter(
@@ -54,7 +52,6 @@ export async function writtenParameter(
   const displaySetId3 = JSON.stringify([viewport4.renderingEngineId, viewport4.id, imageIds3[0]]);
   displaySetRegistry.add(displaySetId3, {
     imageIds: imageIds3,
-    initialImageIdIndex: 0,
   });
   await viewport4.setDisplaySets({ displaySetId: displaySetId3 });
   viewport = undefined;
@@ -69,8 +66,7 @@ export async function plainArguments(
   const displaySetId4 = JSON.stringify([viewport.renderingEngineId, viewport.id, imageIds[0]]);
   displaySetRegistry.add(displaySetId4, {
     imageIds,
-    initialImageIdIndex: 2,
   });
-  await (viewport as Types.IStackViewport).setDisplaySets({ displaySetId: displaySetId4 });
+  await (viewport as Types.IStackViewport).setDisplaySets({ displaySetId: displaySetId4, options: { initialImageIdIndex: 2 } });
   viewport = undefined;
 }

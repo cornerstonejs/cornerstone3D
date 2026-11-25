@@ -87,18 +87,20 @@ const displaySetId = 'ctStack';
 
 displaySetRegistry.add(displaySetId, {
   imageIds,
-  initialImageIdIndex: 60,
 });
 
-await viewport.setDisplaySets({ displaySetId });
+await viewport.setDisplaySets({
+  displaySetId,
+  options: { initialImageIdIndex: 60 },
+});
 
 viewport.render();
 ```
 
 :::note Tip
 Since imageIds is an arrays of imageId, we can set which one to be displayed using
-`initialImageIdIndex` of the display set. A display set mounted without a mode
-shows as a stack in its acquisition plane.
+the `initialImageIdIndex` option of the mount. A display set mounted without a
+mode shows as a stack in its acquisition plane.
 :::
 
 ## Final code
@@ -159,10 +161,12 @@ async function run() {
 
   displaySetRegistry.add(displaySetId, {
     imageIds,
-    initialImageIdIndex: 60,
   });
 
-  await viewport.setDisplaySets({ displaySetId });
+  await viewport.setDisplaySets({
+    displaySetId,
+    options: { initialImageIdIndex: 60 },
+  });
 
   viewport.render();
 }

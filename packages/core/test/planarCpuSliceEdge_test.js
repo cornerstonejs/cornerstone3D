@@ -184,11 +184,14 @@ async function showStack(renderingEngine, viewportId, imageIds, options) {
 
   cornerstone3D.displaySetRegistry.add(displaySetId, {
     imageIds,
-    initialImageIdIndex: 0,
   });
   await viewport.setDisplaySets({
     displaySetId,
-    options: { ...options, orientation: OrientationAxis.ACQUISITION },
+    options: {
+      initialImageIdIndex: 0,
+      ...options,
+      orientation: OrientationAxis.ACQUISITION,
+    },
   });
   viewport.setDisplaySetAppearance(displaySetId, { voiRange: VOI_RANGE });
   await renderAndWait(viewport);
@@ -226,7 +229,6 @@ async function addFullLabelmap(viewport, volumeId) {
   labelmap.modified();
   cornerstone3D.displaySetRegistry.add(representationUID, {
     imageIds: labelmap.imageIds,
-    initialImageIdIndex: 0,
     volumeId: labelmapId,
     reference: {
       kind: 'segmentation',
@@ -239,6 +241,7 @@ async function addFullLabelmap(viewport, volumeId) {
     role: 'overlay',
     renderBackend: 'cpu',
     mode: 'volume',
+    initialImageIdIndex: 0,
   });
 
   const colours = vtkColorTransferFunction.newInstance();

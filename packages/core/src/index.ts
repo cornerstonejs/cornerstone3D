@@ -123,6 +123,7 @@ export type {
   PlanarResolvedICamera,
   PlanarSliceBasis,
   PlanarDisplayArea,
+  PlanarMountOptions,
   PlanarProjectionFraming,
   PlanarProjectionRequest,
   PlanarProjectionSnapshot,
@@ -143,6 +144,7 @@ export type {
 } from './RenderingEngine/Viewports/WSI';
 export type {
   Volume3DCamera,
+  Volume3DMountOptions,
   Volume3DProjectionFraming,
   Volume3DProjectionRequest,
   Volume3DProjectionSnapshot,

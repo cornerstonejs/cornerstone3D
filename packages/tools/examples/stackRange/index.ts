@@ -102,7 +102,10 @@ async function showView(view: string) {
   const orientation = views[view];
 
   if (!orientation) {
-    await viewport.setDisplaySets({ displaySetId });
+    await viewport.setDisplaySets({
+      displaySetId,
+      options: { initialImageIdIndex: 1 },
+    });
     return;
   }
 
@@ -402,10 +405,12 @@ async function run() {
   // on a compliant DICOMweb endpoint
   displaySetRegistry.add(displaySetId, {
     imageIds,
-    initialImageIdIndex: 1,
   });
 
-  await viewport.setDisplaySets({ displaySetId });
+  await viewport.setDisplaySets({
+    displaySetId,
+    options: { initialImageIdIndex: 1 },
+  });
 }
 
 run();

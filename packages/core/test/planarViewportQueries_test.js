@@ -84,7 +84,6 @@ function registerVolume(displaySetId, series, extra = {}) {
 function registerStack(displaySetId, series) {
   displaySetRegistry.add(displaySetId, {
     imageIds: series.imageIds,
-    initialImageIdIndex: SLICE,
   });
 }
 
@@ -245,7 +244,11 @@ describe('The queries of a direct planar and 3D viewport -- ', () => {
 
           register(ctId, ct);
           register(ptId, pt);
-          await showFusion(viewport, ctId, ptId, { mode, ...options });
+          await showFusion(viewport, ctId, ptId, {
+            ...options,
+            mode,
+            ...(mode === 'stack' ? { initialImageIdIndex: SLICE } : {}),
+          });
 
           if (mode === 'stack') {
             await waitFor(
@@ -286,7 +289,7 @@ describe('The queries of a direct planar and 3D viewport -- ', () => {
           viewport,
           ctId,
           ptId,
-          { mode: 'volume', ...options },
+          { ...options, mode: 'volume' },
           true
         );
 
@@ -320,13 +323,14 @@ describe('The queries of a direct planar and 3D viewport -- ', () => {
       await viewport.setDisplaySets(
         {
           displaySetId: 'idsLabelmap:ct',
-          options: { mode: 'volume', orientation: OrientationAxis.ACQUISITION },
+          options: { orientation: OrientationAxis.ACQUISITION, mode: 'volume' },
         },
         {
           displaySetId: representationUID,
           options: {
             mode: 'volume',
             orientation: OrientationAxis.ACQUISITION,
+            mode: 'volume',
             role: 'overlay',
           },
         }

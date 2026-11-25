@@ -356,10 +356,12 @@ async function run() {
   );
   displaySetRegistry.add(displaySetId, {
     imageIds: sortedImageIds,
-    initialImageIdIndex: mid,
   });
 
-  await viewport.setDisplaySets({ displaySetId });
+  await viewport.setDisplaySets({
+    displaySetId,
+    options: { initialImageIdIndex: mid },
+  });
   cornerstoneTools.utilities.stackContextPrefetch.enable(element);
 
   await segmentation.addSegmentationRepresentations(viewportId, [

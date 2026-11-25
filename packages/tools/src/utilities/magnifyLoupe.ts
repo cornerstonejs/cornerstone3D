@@ -1,4 +1,5 @@
 import type {
+  PlanarMountOptions,
   PlanarViewport,
   PlanarViewState,
   Types,
@@ -23,13 +24,14 @@ export function getWorldHeightPerPixel(viewport: {
 
 /**
  * The display sets of a planar viewport that a loupe shows, in mount order
- * with their roles: all but the labelmaps, which the tools mount as display
- * sets named by the representation of the segmentation and which a loupe
- * gets as segmentation representations.
+ * with the options of their mounts (role, mode, volume): all but the
+ * labelmaps, which the tools mount as display sets named by the
+ * representation of the segmentation and which a loupe gets as segmentation
+ * representations.
  */
 function getMagnifiedDisplaySets(
   viewport: PlanarViewport
-): Array<{ displaySetId: string; role?: 'source' | 'overlay' }> {
+): Array<{ displaySetId: string; options: PlanarMountOptions }> {
   const labelmapIds = new Set(
     viewport
       .getActors()
@@ -39,36 +41,15 @@ function getMagnifiedDisplaySets(
 
   return viewport
     .getDisplaySets()
-    .filter(({ displaySetId }) => !labelmapIds.has(displaySetId))
-    .map(({ displaySetId, options }) => ({
-      displaySetId,
-      role: (options as { role?: 'source' | 'overlay' } | undefined)?.role,
-    }));
-}
-
-/**
- * The mode of each display set of a planar viewport, from its render plan:
- * 'stack' for a layer that draws the acquired frames of a stack, 'volume'
- * for a layer that draws a slice of a volume.
- */
-function getMountedModes(
-  viewport: PlanarViewport
-): Map<string, 'stack' | 'volume'> {
-  return new Map(
-    viewport
-      .getRenderPlan()
-      .map(({ displaySetId, slice }) => [
-        displaySetId,
-        slice === 'frame' ? 'stack' : 'volume',
-      ])
-  );
+    .filter(({ displaySetId }) => !labelmapIds.has(displaySetId));
 }
 
 /**
  * Mounts on a loupe the display sets of the planar viewport that it
- * magnifies, in the orientation of the view of that viewport and in the
- * mode that each has there: its source display set and its overlays, as a
- * fusion. A stack shows its images, a volume shows its slices.
+ * magnifies, in the orientation of the view of that viewport and with the
+ * options of their mounts there: the source display set and its overlays,
+ * as a fusion, each in its mode and with the volume that it shows. A stack
+ * shows its images, a volume shows its slices.
  *
  * @returns False when the source viewport shows nothing.
  */
@@ -83,12 +64,11 @@ export async function mountLoupeSource(
   }
 
   const { orientation } = sourceViewport.getViewState();
-  const modes = getMountedModes(sourceViewport);
 
   await loupeViewport.setDisplaySets(
-    ...displaySets.map(({ displaySetId, role }) => ({
+    ...displaySets.map(({ displaySetId, options }) => ({
       displaySetId,
-      options: { orientation, role, mode: modes.get(displaySetId) },
+      options: { ...options, orientation },
     }))
   );
 

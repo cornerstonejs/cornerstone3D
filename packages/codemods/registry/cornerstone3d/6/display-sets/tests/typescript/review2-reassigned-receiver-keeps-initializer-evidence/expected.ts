@@ -38,7 +38,6 @@ export async function constBinding() {
   const displaySetId = JSON.stringify([viewport.renderingEngineId, viewport.id, 'kept-1']);
   displaySetRegistry.add(displaySetId, {
     imageIds: ['kept-1'],
-    initialImageIdIndex: 0,
   });
   await viewport.setDisplaySets({ displaySetId });
 }

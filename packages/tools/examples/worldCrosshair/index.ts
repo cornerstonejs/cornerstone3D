@@ -187,7 +187,6 @@ async function run() {
   displaySetRegistry.add(mprDisplaySetId, {
     imageIds,
     volumeId,
-    initialImageIdIndex: Math.floor(imageIds.length / 2),
   });
 
   await Promise.all(
@@ -197,7 +196,11 @@ async function run() {
       ) as PlanarViewport;
       return viewport.setDisplaySets({
         displaySetId: mprDisplaySetId,
-        options: { orientation: orientations[index], mode: 'volume' },
+        options: {
+          orientation: orientations[index],
+          mode: 'volume',
+          initialImageIdIndex: Math.floor(imageIds.length / 2),
+        },
       });
     })
   );

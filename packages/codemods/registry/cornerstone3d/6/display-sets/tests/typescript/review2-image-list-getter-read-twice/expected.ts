@@ -8,7 +8,6 @@ export async function fromGetter(model: { imageIds: string[] }) {
   const displaySetId = JSON.stringify([viewport.renderingEngineId, viewport.id, imageIds2[0]]);
   displaySetRegistry.add(displaySetId, {
     imageIds: imageIds2,
-    initialImageIdIndex: 0,
   });
   await viewport.setDisplaySets({ displaySetId });
 }
@@ -19,9 +18,8 @@ export async function fromIndex(series: string[][], index: number) {
   const displaySetId2 = JSON.stringify([viewport.renderingEngineId, viewport.id, imageIds3[0]]);
   displaySetRegistry.add(displaySetId2, {
     imageIds: imageIds3,
-    initialImageIdIndex: index,
   });
-  await viewport.setDisplaySets({ displaySetId: displaySetId2 });
+  await viewport.setDisplaySets({ displaySetId: displaySetId2, options: { initialImageIdIndex: index } });
 }
 
 export async function fromArrayOfReads(model: { first: string }) {
@@ -30,7 +28,6 @@ export async function fromArrayOfReads(model: { first: string }) {
   const displaySetId3 = JSON.stringify([viewport.renderingEngineId, viewport.id, imageIds4[0]]);
   displaySetRegistry.add(displaySetId3, {
     imageIds: imageIds4,
-    initialImageIdIndex: 0,
   });
   await viewport.setDisplaySets({ displaySetId: displaySetId3 });
 }
@@ -41,7 +38,6 @@ export async function fromSpread(ids: string[]) {
   const displaySetId4 = JSON.stringify([viewport.renderingEngineId, viewport.id, imageIds5[0]]);
   displaySetRegistry.add(displaySetId4, {
     imageIds: imageIds5,
-    initialImageIdIndex: 0,
   });
   await viewport.setDisplaySets({ displaySetId: displaySetId4 });
 }
@@ -51,7 +47,6 @@ export async function fromName(imageIds: string[]) {
   const displaySetId5 = JSON.stringify([viewport.renderingEngineId, viewport.id, imageIds[0]]);
   displaySetRegistry.add(displaySetId5, {
     imageIds,
-    initialImageIdIndex: 2,
   });
-  await viewport.setDisplaySets({ displaySetId: displaySetId5 });
+  await viewport.setDisplaySets({ displaySetId: displaySetId5, options: { initialImageIdIndex: 2 } });
 }

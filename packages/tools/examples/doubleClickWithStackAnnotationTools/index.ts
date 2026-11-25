@@ -289,7 +289,6 @@ async function run() {
 
   displaySetRegistry.add(displaySetId, {
     imageIds: [imageIds[0]],
-    initialImageIdIndex: 0,
   });
 
   for (const viewportElement of viewportElements) {
@@ -314,7 +313,10 @@ async function run() {
     const viewport = renderingEngine.getViewport<PlanarViewport>(viewportId);
 
     // Set the stack on the viewport
-    await viewport.setDisplaySets({ displaySetId });
+    await viewport.setDisplaySets({
+      displaySetId,
+      options: { initialImageIdIndex: 0 },
+    });
 
     // Render the image
     viewport.render();

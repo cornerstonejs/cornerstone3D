@@ -176,7 +176,7 @@ async function showSeries(viewport, series, path) {
   cornerstone3D.displaySetRegistry.add(
     displaySetId,
     path.mode === 'stack'
-      ? { imageIds: series.imageIds, initialImageIdIndex: 1 }
+      ? { imageIds: series.imageIds }
       : { imageIds: series.imageIds, volumeId: series.volumeId }
   );
   await viewport.setDisplaySets({
@@ -184,6 +184,7 @@ async function showSeries(viewport, series, path) {
     options: {
       mode: path.mode,
       orientation: OrientationAxis.ACQUISITION,
+      ...(path.mode === 'stack' ? { initialImageIdIndex: 1 } : {}),
       ...path.options,
     },
   });

@@ -110,6 +110,23 @@ that has no entry yet changes nothing.
   says `mode` already, a mount with `renderMode` (a 3D viewport) and a
   viewport typed with another family are left. A registration with a
   `volumeId` and no image ids is left: it shows a volume without a mode.
+- `initialImageIdIndex` of a registration moves to the options of every
+  planar mount of the display set in the file, found as for `mode: 'volume'`
+  (both keys go into one edit of a mount): 6.0 reads it from the mount, and a
+  planar viewport refuses a descriptor that has it. A shorthand stays a
+  shorthand. It moves only when it can move to every planar mount, and when
+  its value reads the same at each of them: literals, names, property reads,
+  arithmetic and calls of `Math`, each name a global or a `const`, an import
+  or an unwritten parameter whose scope holds the mount. A mount that names
+  `initialImageIdIndex` keeps its own; the key still leaves the
+  registration.
+- Reported, manual: such a registration whose key cannot move: the file shows
+  no planar mount of the display set, the descriptor is a `const` that the
+  file reads elsewhere too, a mount cannot be written (its options are not a
+  literal, its viewport is known by its name only, of a type of the
+  application or of several families), or the value cannot be read at every
+  mount. The text is that of the guide row: `initialImageIdIndex is a mount
+option in 6.0, and a planar viewport refuses a descriptor that has it: ...`.
 - Reported, review: such a registration whose planar mount the file does not
   show (the text of the guide row: `a volumeId no longer makes a planar
 viewport show a volume: ...`), and such a mount whose options are not a

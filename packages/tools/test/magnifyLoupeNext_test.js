@@ -407,9 +407,11 @@ async function showStack(source) {
   await loadRampImages(imageIds);
   cornerstone3D.displaySetRegistry.add('magnifyRamp', {
     imageIds,
-    initialImageIdIndex: 1,
   });
-  await source.setDisplaySets({ displaySetId: 'magnifyRamp' });
+  await source.setDisplaySets({
+    displaySetId: 'magnifyRamp',
+    options: { initialImageIdIndex: 1 },
+  });
   source.setDisplaySetAppearance('magnifyRamp', PRESENTATION);
   source.setViewState(STACK_VIEW);
   source.setZoom(1.5);
@@ -877,6 +879,45 @@ describe('The loupe of MagnifyTool on a next planar viewport -- ', () => {
     expect(source.getCurrentMode()).toBe('volume');
 
     await pressAndDrag(source, [180, 160], LEGACY_MAGNIFY.volume);
+  }, 20000);
+
+  it('shows the volume that the mount of its source names in place of the volume of the registration', async function () {
+    const source = createSource(renderingEngine);
+    const registered = await createRampVolume('magnifyLoupeRegistered');
+    const mounted = await createRampVolume(
+      'magnifyLoupeMounted',
+      (i, j, k) => 3 * i + k
+    );
+    const getLoupe = () => renderingEngine.getViewport(MAGNIFY_VIEWPORT_ID);
+
+    cornerstone3D.displaySetRegistry.add('magnifyLoupeMountVolume', {
+      imageIds: registered.imageIds,
+      volumeId: registered.volumeId,
+    });
+    await source.setDisplaySets({
+      displaySetId: 'magnifyLoupeMountVolume',
+      options: {
+        orientation: OrientationAxis.AXIAL,
+        mode: 'volume',
+        volumeId: mounted.volumeId,
+      },
+    });
+    await renderAndWait(source);
+
+    tool.preMouseDownCallback({
+      type: csTools3d.Enums.Events.MOUSE_DOWN,
+      detail: pointer(source, [180, 160]),
+      preventDefault() {},
+    });
+
+    const loupe = await waitForLoupe(getLoupe);
+
+    expect(source.getVolumeIds()).toEqual([mounted.volumeId]);
+    expect(loupe.getCurrentMode()).toBe('volume');
+    expect(loupe.getVolumeIds()).toEqual([mounted.volumeId]);
+    expect(loupe.getDisplaySets()[0].options.volumeId).toBe(mounted.volumeId);
+
+    tool._dragEndCallback({ detail: { element: source.element } });
   }, 20000);
 
   it('shows the overlays of its source with their presentation', async function () {

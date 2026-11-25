@@ -143,10 +143,12 @@ async function run() {
 
   displaySetRegistry.add(ctStackDisplaySetId, {
     imageIds: ctStacks,
-    initialImageIdIndex: 0,
   });
 
-  await stackViewport.setDisplaySets({ displaySetId: ctStackDisplaySetId });
+  await stackViewport.setDisplaySets({
+    displaySetId: ctStackDisplaySetId,
+    options: { initialImageIdIndex: 0 },
+  });
 
   const ptVolumeId = 'myVolume-pt';
   const ctVolumeId = 'myVolume-ct';

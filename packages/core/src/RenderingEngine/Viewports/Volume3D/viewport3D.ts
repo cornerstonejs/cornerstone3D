@@ -61,7 +61,7 @@ import type {
   Volume3DDisplaySetAppearance,
   Volume3DDisplaySetDescriptor,
   Volume3DRendering,
-  Volume3DSetDataOptions,
+  Volume3DMountOptions,
   Volume3DViewportRenderContext,
   Volume3DVolumePayload,
   Volume3DVolumeRendering,
@@ -257,7 +257,7 @@ class VolumeViewport3D extends BaseViewport<
   async setDisplaySets(
     ...entries: Array<{
       displaySetId: string;
-      options?: Volume3DSetDataOptions;
+      options?: Volume3DMountOptions;
     }>
   ): Promise<void> {
     const requestId = ++this.setDataRequestId;
@@ -320,7 +320,7 @@ class VolumeViewport3D extends BaseViewport<
   private async commitDisplaySets(
     entries: Array<{
       displaySetId: string;
-      options?: Volume3DSetDataOptions;
+      options?: Volume3DMountOptions;
     }>,
     staged: Volume3DStagedLoad[]
   ): Promise<void> {
@@ -354,7 +354,7 @@ class VolumeViewport3D extends BaseViewport<
    */
   async addDisplaySet(
     displaySetId: string,
-    options: Volume3DSetDataOptions = {}
+    options: Volume3DMountOptions = {}
   ): Promise<void> {
     const mounted = await this.mountDisplaySet(displaySetId, options);
 
@@ -371,7 +371,7 @@ class VolumeViewport3D extends BaseViewport<
    */
   private async mountDisplaySet(
     displaySetId: string,
-    volumeOptions: Volume3DSetDataOptions,
+    volumeOptions: Volume3DMountOptions,
     staged?: Volume3DStagedLoad
   ): Promise<boolean> {
     if (this.isDestroyed) {
@@ -399,7 +399,20 @@ class VolumeViewport3D extends BaseViewport<
           ...dataOptions,
           volumeId: volumeOptions.volumeId,
         });
-    const added = await this.addLoadedData(displaySetId, data, dataOptions);
+    const restoreAppearance = this.stageMountedAppearance(
+      displaySetId,
+      { visible: true, opacity: 1 },
+      volumeOptions.appearance
+    );
+    let added = false;
+
+    try {
+      added = await this.addLoadedData(displaySetId, data, dataOptions);
+    } finally {
+      if (!added) {
+        restoreAppearance();
+      }
+    }
 
     if (!added) {
       return false;
@@ -409,10 +422,6 @@ class VolumeViewport3D extends BaseViewport<
       this.primaryDisplaySetId = displaySetId;
     }
 
-    this.setDefaultAppearance(displaySetId, {
-      visible: true,
-      opacity: 1,
-    });
     this.viewState = this.getViewState();
 
     if (showedNothing && this.viewState.viewUp) {

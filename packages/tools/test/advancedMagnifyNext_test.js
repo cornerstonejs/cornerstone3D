@@ -60,9 +60,11 @@ function renderAndWait(viewport) {
 async function showStack(viewport, imageIds) {
   cornerstone3D.displaySetRegistry.add('magnifyStack', {
     imageIds,
-    initialImageIdIndex: 0,
   });
-  await viewport.setDisplaySets({ displaySetId: 'magnifyStack' });
+  await viewport.setDisplaySets({
+    displaySetId: 'magnifyStack',
+    options: { initialImageIdIndex: 0 },
+  });
   await renderAndWait(viewport);
 }
 

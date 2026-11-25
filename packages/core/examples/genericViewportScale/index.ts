@@ -423,24 +423,23 @@ async function run() {
 
   displaySetRegistry.add(stackDisplaySetId, {
     imageIds,
-    initialImageIdIndex: middleImageIndex,
   });
   displaySetRegistry.add(volumeDisplaySetId, {
     imageIds,
-    initialImageIdIndex: middleImageIndex,
     volumeId,
   });
 
   await Promise.all([
     stackViewport.setDisplaySets({
       displaySetId: stackDisplaySetId,
-      options: {},
+      options: { initialImageIdIndex: middleImageIndex },
     }),
     volumeViewport.setDisplaySets({
       displaySetId: volumeDisplaySetId,
       options: {
         orientation: OrientationAxis.SAGITTAL,
         mode: 'volume',
+        initialImageIdIndex: middleImageIndex,
       },
     }),
   ]);

@@ -74,12 +74,11 @@ function addVolumeDisplaySet(viewport, series, fields = {}) {
 }
 
 /** Registers the display set of a stack and gives its id. */
-function addStackDisplaySet(viewport, series, initialImageIdIndex) {
+function addStackDisplaySet(viewport, series) {
   const displaySetId = `stack:${viewport.id}`;
 
   cornerstone3D.displaySetRegistry.add(displaySetId, {
     imageIds: series.imageIds,
-    initialImageIdIndex,
   });
 
   return displaySetId;
@@ -193,12 +192,11 @@ describe('The new image event of a mount and of a scroll on a planar viewport --
       const events = recordNewImageEvents(viewport.element);
 
       await viewport.setDisplaySets({
-        displaySetId: addVolumeDisplaySet(viewport, series, {
-          initialImageIdIndex: 6,
-        }),
+        displaySetId: addVolumeDisplaySet(viewport, series),
         options: {
           mode: 'volume',
           orientation: OrientationAxis.ACQUISITION,
+          initialImageIdIndex: 6,
           ...pathOptions,
         },
       });
@@ -227,12 +225,11 @@ describe('The new image event of a mount and of a scroll on a planar viewport --
       const events = recordNewImageEvents(viewport.element);
 
       await viewport.setDisplaySets({
-        displaySetId: addVolumeDisplaySet(viewport, series, {
-          initialImageIdIndex: 3,
-        }),
+        displaySetId: addVolumeDisplaySet(viewport, series),
         options: {
           mode: 'volume',
           orientation: OrientationAxis.ACQUISITION,
+          initialImageIdIndex: 3,
           ...pathOptions,
         },
       });
@@ -357,12 +354,11 @@ describe('The new image event of a mount and of a scroll on a planar viewport --
       const events = recordNewImageEvents(viewport.element);
 
       await viewport.setDisplaySets({
-        displaySetId: addVolumeDisplaySet(viewport, series, {
-          initialImageIdIndex: 6,
-        }),
+        displaySetId: addVolumeDisplaySet(viewport, series),
         options: {
           mode: 'volume',
           orientation: OrientationAxis.ACQUISITION,
+          initialImageIdIndex: 6,
           ...pathOptions,
         },
       });
@@ -401,8 +397,12 @@ describe('The new image event of a mount and of a scroll on a planar viewport --
         const events = recordNewImageEvents(viewport.element);
 
         await viewport.setDisplaySets({
-          displaySetId: addStackDisplaySet(viewport, series, first),
-          options: { orientation: OrientationAxis.ACQUISITION, ...pathOptions },
+          displaySetId: addStackDisplaySet(viewport, series),
+          options: {
+            orientation: OrientationAxis.ACQUISITION,
+            initialImageIdIndex: first,
+            ...pathOptions,
+          },
         });
         await firstRenderDone(viewport);
 
@@ -424,8 +424,12 @@ describe('The new image event of a mount and of a scroll on a planar viewport --
       const events = recordNewImageEvents(viewport.element);
 
       await viewport.setDisplaySets({
-        displaySetId: addStackDisplaySet(viewport, series, 2),
-        options: { orientation: OrientationAxis.ACQUISITION, ...pathOptions },
+        displaySetId: addStackDisplaySet(viewport, series),
+        options: {
+          orientation: OrientationAxis.ACQUISITION,
+          initialImageIdIndex: 2,
+          ...pathOptions,
+        },
       });
       await firstRenderDone(viewport);
       clearEvents(events);

@@ -99,7 +99,6 @@ async function showStackAt(viewport, displaySetId, imageIds, imageIdIndex) {
 function registerStack(displaySetId, imageIds) {
   cornerstone3D.displaySetRegistry.add(displaySetId, {
     imageIds,
-    initialImageIdIndex: 0,
   });
 }
 

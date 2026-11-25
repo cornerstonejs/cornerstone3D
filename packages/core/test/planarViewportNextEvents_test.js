@@ -340,9 +340,11 @@ async function showStack(viewport, imageIds) {
 
   cornerstone3D.displaySetRegistry.add(displaySetId, {
     imageIds,
-    initialImageIdIndex: 0,
   });
-  await viewport.setDisplaySets({ displaySetId });
+  await viewport.setDisplaySets({
+    displaySetId,
+    options: { initialImageIdIndex: 0 },
+  });
   await renderAndWait(viewport);
 }
 
@@ -721,9 +723,11 @@ describe('Direct next planar viewport events against the legacy viewports -- ', 
 
         cornerstone3D.displaySetRegistry.add('stack', {
           imageIds,
-          initialImageIdIndex: 0,
         });
-        await viewport.setDisplaySets({ displaySetId: 'stack' });
+        await viewport.setDisplaySets({
+          displaySetId: 'stack',
+          options: { initialImageIdIndex: 0 },
+        });
         await renderAndWait(viewport);
         await frames();
         cameraEvents.splice(0);

@@ -73,7 +73,6 @@ async function mountCpuStack(
 
   cornerstone3D.displaySetRegistry.add(`${id}Stack`, {
     imageIds: series.imageIds,
-    initialImageIdIndex: 0,
   });
   await viewport.setDisplaySets({
     displaySetId: `${id}Stack`,

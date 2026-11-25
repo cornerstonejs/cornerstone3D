@@ -438,12 +438,10 @@ async function run() {
   // --------------------------------------------------------------------------
   displaySetRegistry.add(acqDisplaySetId, {
     imageIds,
-    initialImageIdIndex: middleImageIndex,
   });
   displaySetRegistry.add(mprDisplaySetId, {
     imageIds,
     volumeId,
-    initialImageIdIndex: middleImageIndex,
   });
   displaySetRegistry.add(volume3dDisplaySetId, {
     imageIds,
@@ -456,7 +454,7 @@ async function run() {
   const acqViewport = getAcqViewport();
   await acqViewport.setDisplaySets({
     displaySetId: acqDisplaySetId,
-    options: {},
+    options: { initialImageIdIndex: middleImageIndex },
   });
   acqViewport.setDisplaySetAppearance(acqDisplaySetId, {
     voiRange: ctVoiRange,
@@ -468,15 +466,27 @@ async function run() {
   await Promise.all([
     axialViewport.setDisplaySets({
       displaySetId: mprDisplaySetId,
-      options: { orientation: OrientationAxis.AXIAL, mode: 'volume' },
+      options: {
+        orientation: OrientationAxis.AXIAL,
+        mode: 'volume',
+        initialImageIdIndex: middleImageIndex,
+      },
     }),
     sagittalViewport.setDisplaySets({
       displaySetId: mprDisplaySetId,
-      options: { orientation: OrientationAxis.SAGITTAL, mode: 'volume' },
+      options: {
+        orientation: OrientationAxis.SAGITTAL,
+        mode: 'volume',
+        initialImageIdIndex: middleImageIndex,
+      },
     }),
     coronalViewport.setDisplaySets({
       displaySetId: mprDisplaySetId,
-      options: { orientation: OrientationAxis.CORONAL, mode: 'volume' },
+      options: {
+        orientation: OrientationAxis.CORONAL,
+        mode: 'volume',
+        initialImageIdIndex: middleImageIndex,
+      },
     }),
   ]);
   getMprViewports().forEach((viewport) => {

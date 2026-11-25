@@ -166,7 +166,6 @@ export type PlanarOrientation =
  */
 export interface PlanarDisplaySetDescriptor extends DisplaySetDescriptor {
   imageIds: string[];
-  initialImageIdIndex?: number;
   volumeId?: string;
   image?: IImage;
   imageData?: vtkImageData;
@@ -179,20 +178,44 @@ export interface PlanarDisplaySetDescriptor extends DisplaySetDescriptor {
   volumeOnly?: boolean;
 }
 
-export interface PlanarSetDataOptions {
+/**
+ * What one planar viewport wants of a display set that it mounts, given to
+ * `setDisplaySets` and `addDisplaySet`. What is true of the data (its image
+ * ids, its volume id) is registered once in `displaySetRegistry`; these
+ * options are of this mount only, so one display set can show as a stack in
+ * one viewport and as a volume in another under the same id.
+ */
+export interface PlanarMountOptions {
   orientation?: PlanarOrientation;
   /**
    * Whether the display set shows as a stack of its images or as a volume.
    * 'stack' draws the images in their acquisition plane and fails the mount
    * for another orientation. 'volume' draws slices of the volume of the
    * images in any orientation and fails the mount when the images form no
-   * volume. 'auto', the default, shows a volume for an orientation other
-   * than the acquisition plane when the images form one, and for a display
-   * set registered with a `volumeId` and no image ids; else a stack. A
-   * `volumeId` of the display set or of these options never chooses the
-   * volume.
+   * volume. 'auto', the default, shows a volume when the images form one
+   * and the mount asks for an orientation other than the acquisition plane,
+   * or for a slab (`appearance.slabThickness`), or when the volume of the
+   * display set is a dynamic (4D) volume of the cache; it also shows a
+   * volume for a display set registered with a `volumeId` and no image ids.
+   * Else a stack. A `volumeId` of the display set or of these options never
+   * chooses the volume.
    */
   mode?: 'auto' | 'stack' | 'volume';
+  /**
+   * The index, in the registered image ids, of the image that the mount
+   * shows first: the image of a stack, the slice of a volume in its
+   * acquisition plane. Without it a stack shows its first image and a volume
+   * its middle slice.
+   */
+  initialImageIdIndex?: number;
+  /**
+   * The appearance that the display set has in this viewport from its first
+   * draw: its overrides, merged over those set before the mount. The mount
+   * draws once with it and fires `DISPLAY_SET_APPEARANCE_CHANGED` once, with
+   * cause `'mount'`. A slab in it (`slabThickness`) takes part in the choice
+   * of the render path, so the first draw is already the slab.
+   */
+  appearance?: Partial<PlanarDisplaySetAppearance>;
   /**
    * The volume that the display set shows in volume mode, in place of the
    * `volumeId` of its registration, so two viewports can show two volumes
@@ -234,12 +257,40 @@ export interface PlanarStackImageLoadFailure {
   imageId: string;
 }
 
+/**
+ * What a planar viewport keeps of a display set that it mounted: the facts
+ * of the descriptor, read once at the mount, the mode that the mount chose,
+ * and the options of the mount. A change of the registration after the mount
+ * does not reach it; the next mount reads the registration again.
+ *
+ * @internal
+ */
+export interface PlanarMountedDisplaySet {
+  /** A copy of the descriptor that the mount read. */
+  descriptor: PlanarDisplaySetDescriptor;
+  /** The mode that the mount chose. */
+  mode: 'stack' | 'volume';
+  /**
+   * The options of the mount, without the appearance (applied once), with
+   * the role and the mode that the mount chose and, in volume mode, the id
+   * of the volume that it shows.
+   */
+  options: Omit<PlanarMountOptions, 'appearance'>;
+}
+
 /** @internal */
 export interface PlanarDataLoadOptions {
   acquisitionOrientation?: PlanarViewState['orientation'];
   orientation: PlanarOrientation;
   renderMode: PlanarEffectiveRenderMode;
   volumeId: string;
+  /** The `initialImageIdIndex` of the mount. */
+  initialImageIdIndex?: number;
+  /**
+   * The descriptor that the viewport read for the mount, so the provider
+   * does not read the registry again.
+   */
+  descriptor?: PlanarDisplaySetDescriptor;
 }
 
 /** @internal */

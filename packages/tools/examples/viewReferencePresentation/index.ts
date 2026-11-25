@@ -484,12 +484,10 @@ async function run() {
 
   displaySetRegistry.add(ctStackDisplaySetId, {
     imageIds,
-    initialImageIdIndex: 0,
   });
   displaySetRegistry.add(ctVolumeDisplaySetId, { imageIds, volumeId });
   displaySetRegistry.add(testStackDisplaySetId, {
     imageIds: stackImageIds,
-    initialImageIdIndex: 0,
   });
 
   // Set volumes on the viewports

@@ -490,9 +490,11 @@ async function run() {
     const stackDisplaySetId = `${currentVolumeId}:stack`;
     displaySetRegistry.add(stackDisplaySetId, {
       imageIds,
-      initialImageIdIndex: centerSliceIndex,
     });
-    await stackViewport.setDisplaySets({ displaySetId: stackDisplaySetId }); // Start at center slice
+    await stackViewport.setDisplaySets({
+      displaySetId: stackDisplaySetId,
+      options: { initialImageIdIndex: centerSliceIndex },
+    }); // Start at center slice
 
     vrtViewport.setDisplaySetAppearance(currentVolumeId, {
       preset: 'CT-Bone',

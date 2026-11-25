@@ -149,7 +149,11 @@ class VideoViewport extends BaseViewport<
   /**
    * Replaces all mounted video display sets with the provided ones using the
    * HTML video render path. The first entry is mounted as the source binding,
-   * and the video then shows the 1-based `frameNumber` of its options.
+   * and the video then shows the 1-based `frameNumber` of its options. The
+   * option `appearance` of an entry is the appearance of the video from its
+   * first draw (its playback rate, loop, mute, object fit, opacity and the
+   * rest), merged over the overrides set before the mount;
+   * DISPLAY_SET_APPEARANCE_CHANGED fires once for it, with cause `'mount'`.
    * NEW_IMAGE fires once for the frame that the mount shows: after the seek
    * when the mount seeks, else when the frame shows. The legacy video viewport
    * fired its new image event at every mount too. DISPLAY_SETS_CHANGED fires
@@ -161,7 +165,10 @@ class VideoViewport extends BaseViewport<
   async setDisplaySets(
     ...entries: Array<{
       displaySetId: string;
-      options?: { frameNumber?: number };
+      options?: {
+        frameNumber?: number;
+        appearance?: Partial<VideoDisplaySetAppearance>;
+      };
     }>
   ): Promise<void> {
     const isSuperseded = this.startSetDisplaySets();
@@ -171,15 +178,35 @@ class VideoViewport extends BaseViewport<
     this.frameScalarData = undefined;
     this.lastFrameEventNumber = undefined;
 
-    for (const [index, { displaySetId }] of entries.entries()) {
-      const bound = await this.bindDisplaySet(
+    for (const [index, { displaySetId, options }] of entries.entries()) {
+      const restoreAppearance = this.stageMountedAppearance(
         displaySetId,
         {
-          renderMode: 'video2d',
-          role: index === 0 ? 'source' : 'overlay',
+          visible: true,
+          opacity: 1,
+          playbackRate: 1,
+          loop: true,
+          muted: true,
+          objectFit: 'contain',
         },
-        isSuperseded
+        options?.appearance
       );
+      let bound = false;
+
+      try {
+        bound = await this.bindDisplaySet(
+          displaySetId,
+          {
+            renderMode: 'video2d',
+            role: index === 0 ? 'source' : 'overlay',
+          },
+          isSuperseded
+        );
+      } finally {
+        if (!bound) {
+          restoreAppearance();
+        }
+      }
 
       if (!bound) {
         return;
@@ -191,14 +218,6 @@ class VideoViewport extends BaseViewport<
         continue;
       }
 
-      this.setDefaultAppearance(displaySetId, {
-        visible: true,
-        opacity: 1,
-        playbackRate: 1,
-        loop: true,
-        muted: true,
-        objectFit: 'contain',
-      });
       this.applyMountedAppearance(displaySetId);
 
       const videoData = this.getVideoDataFromBinding(binding);

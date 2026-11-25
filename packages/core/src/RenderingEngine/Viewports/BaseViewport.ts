@@ -111,6 +111,15 @@ function mergedColormapOf(
   return { colormap: withoutUndefined({ ...stored, ...changed }) };
 }
 
+/** Puts a value back into a map, or removes the key when there was none. */
+function restoreMapEntry<K, V>(map: Map<K, V>, key: K, value: V | undefined) {
+  if (value === undefined) {
+    map.delete(key);
+  } else {
+    map.set(key, value);
+  }
+}
+
 function isPlainObject(value: unknown): value is object {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
@@ -1239,31 +1248,77 @@ abstract class BaseViewport<
   }
 
   /**
-   * The one entry point of the appearance of a mount. Every family calls it
-   * once when a display set is mounted, after the display set is bound:
-   * it merges `appearance`, the overrides that the mount asks for, over the
-   * overrides stored before, and fires `DISPLAY_SET_APPEARANCE_CHANGED` once
-   * with cause `'mount'` and every key that has an effective value. A mount
-   * option `appearance` comes in here, in the same task as the bind, so the
-   * first draw has it.
+   * Stores, before the bind of a mount, the appearance that the binding
+   * draws with from its first draw: the defaults of the family, and the
+   * overrides of the mount option `appearance` merged over the overrides
+   * stored before (a `colormap` one level deep, as `setDisplaySetAppearance`
+   * merges it). It forwards nothing and fires nothing: the bind gives the
+   * binding the whole appearance at once, so the mount draws once, and
+   * {@link applyMountedAppearance} fires the event of the mount. Gives a
+   * function that puts back what was stored before, for a mount that does
+   * not bind.
    *
-   * @param displaySetId - The display set that was mounted.
-   * @param appearance - Overrides that the mount sets.
+   * @param displaySetId - The display set that is mounted.
+   * @param defaults - The defaults of the family, as `visible: true`.
+   * @param appearance - The mount option `appearance`.
+   * @returns A function that undoes the staging.
    */
-  protected applyMountedAppearance(
+  protected stageMountedAppearance(
     displaySetId: DisplaySetId,
+    defaults: Partial<TAppearance>,
     appearance?: Partial<TAppearance>
-  ): void {
+  ): () => void {
+    const previousDefaults =
+      this.defaultDisplaySetAppearances.get(displaySetId);
+    const previousOverrides = this.displaySetAppearances.get(displaySetId);
+
+    this.defaultDisplaySetAppearances.set(displaySetId, {
+      ...(previousDefaults ?? {}),
+      ...defaults,
+    } as TAppearance);
+
     if (appearance) {
-      this.setAppearanceState(
+      const overrides = { ...(previousOverrides ?? {}) } as Record<
+        string,
+        unknown
+      >;
+
+      this.displaySetAppearances.set(
         displaySetId,
         withoutUndefined({
-          ...(this.getAppearanceState(displaySetId) ?? {}),
+          ...overrides,
           ...appearance,
+          ...mergedColormapOf(overrides, appearance),
         }) as TAppearance
       );
     }
 
+    return () => {
+      restoreMapEntry(
+        this.defaultDisplaySetAppearances,
+        displaySetId,
+        previousDefaults
+      );
+      restoreMapEntry(
+        this.displaySetAppearances,
+        displaySetId,
+        previousOverrides
+      );
+    };
+  }
+
+  /**
+   * The one entry point of the appearance event of a mount. Every family
+   * calls it once when a display set is mounted, after the display set is
+   * bound: it fires `DISPLAY_SET_APPEARANCE_CHANGED` once with cause
+   * `'mount'` and every key that has an effective value. The overrides of
+   * the mount option `appearance` are in place before the bind
+   * ({@link stageMountedAppearance}), so the first draw has them and the
+   * event names them.
+   *
+   * @param displaySetId - The display set that was mounted.
+   */
+  protected applyMountedAppearance(displaySetId: DisplaySetId): void {
     const effective = this.getEffectiveDisplaySetAppearance(displaySetId);
 
     if (!effective) {

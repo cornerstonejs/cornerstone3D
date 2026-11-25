@@ -214,10 +214,12 @@ async function run() {
 
   displaySetRegistry.add(stackDisplaySetId, {
     imageIds: stackImageIds,
-    initialImageIdIndex: 10,
   });
 
-  await stackViewport.setDisplaySets({ displaySetId: stackDisplaySetId });
+  await stackViewport.setDisplaySets({
+    displaySetId: stackDisplaySetId,
+    options: { initialImageIdIndex: 10 },
+  });
 
   const volumeViewport =
     renderingEngine.getViewport<PlanarViewport>(viewportIdVolume);

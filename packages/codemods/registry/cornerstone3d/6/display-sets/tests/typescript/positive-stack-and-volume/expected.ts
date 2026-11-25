@@ -13,7 +13,6 @@ async function run(imageIds: string[]) {
   const displaySetId = JSON.stringify([viewport.renderingEngineId, viewport.id, stack[0]]);
   displaySetRegistry.add(displaySetId, {
     imageIds: stack,
-    initialImageIdIndex: 0,
   });
   await viewport.setDisplaySets({ displaySetId });
   viewport.render();

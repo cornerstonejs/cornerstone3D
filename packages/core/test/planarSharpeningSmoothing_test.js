@@ -368,11 +368,14 @@ async function showNextStack(renderingEngine, renderBackend) {
 
   cornerstone3D.displaySetRegistry.add(displaySetId, {
     imageIds: await createPatternImageIds('nextPattern'),
-    initialImageIdIndex: 0,
   });
   await viewport.setDisplaySets({
     displaySetId,
-    options: { orientation: OrientationAxis.ACQUISITION, renderBackend },
+    options: {
+      orientation: OrientationAxis.ACQUISITION,
+      renderBackend,
+      initialImageIdIndex: 0,
+    },
   });
   viewport.setDisplaySetAppearance(displaySetId, { voiRange: VOI_RANGE });
   await renderAndWait(viewport);

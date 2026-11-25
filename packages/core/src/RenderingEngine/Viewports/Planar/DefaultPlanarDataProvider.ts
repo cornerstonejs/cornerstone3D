@@ -18,12 +18,19 @@ import { loadPlanarStackImage } from './planarStackImageLoad';
 
 const log = coreLog.getLogger('RenderingEngine', 'DefaultPlanarDataProvider');
 
+/**
+ * Loads the data of a planar mount: the first image of a stack, or the
+ * volume of a display set in volume mode. It reads the descriptor that the
+ * viewport read for the mount (`options.descriptor`), else the registration,
+ * and takes the first image or slice from the `initialImageIdIndex` of the
+ * mount: an index in the registered image ids.
+ */
 export class DefaultPlanarDataProvider implements PlanarDataProvider {
   async load(
     displaySetId: string,
     options?: PlanarDataLoadOptions
   ): Promise<LoadedData<PlanarPayload>> {
-    const dataSet = this.getDataSet(displaySetId);
+    const dataSet = options?.descriptor ?? this.getDataSet(displaySetId);
 
     if (!dataSet) {
       throw displaySetShapeError(
@@ -45,14 +52,14 @@ export class DefaultPlanarDataProvider implements PlanarDataProvider {
 
     // A concrete, clamped index is always needed to load a single image below.
     const clampedImageIdIndex = Math.min(
-      Math.max(0, dataSet.initialImageIdIndex ?? 0),
+      Math.max(0, options.initialImageIdIndex ?? 0),
       dataSet.imageIds.length - 1
     );
     // But preserve "no slice requested" (undefined) in the payload so the volume
     // acquisition view can center instead of pinning to slice 0; an explicit
     // index (including 0) is clamped and honored downstream.
     const initialImageIdIndex =
-      dataSet.initialImageIdIndex === undefined
+      options.initialImageIdIndex === undefined
         ? undefined
         : clampedImageIdIndex;
 
@@ -149,11 +156,7 @@ function isPlanarDisplaySetDescriptor(
 
   const dataSet = value as PlanarDisplaySetDescriptor;
 
-  return (
-    (dataSet.initialImageIdIndex === undefined ||
-      typeof dataSet.initialImageIdIndex === 'number') &&
-    (dataSet.volumeId === undefined || typeof dataSet.volumeId === 'string')
-  );
+  return dataSet.volumeId === undefined || typeof dataSet.volumeId === 'string';
 }
 
 /**

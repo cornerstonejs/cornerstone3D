@@ -16,7 +16,7 @@ import type {
 import type {
   PlanarDisplaySetAppearance,
   PlanarPayload,
-  PlanarSetDataOptions,
+  PlanarMountOptions,
 } from './PlanarViewportTypes';
 
 export type PlanarDataBinding = ViewportDataBinding<PlanarDisplaySetAppearance>;
@@ -33,7 +33,7 @@ class PlanarMountedData {
 
   constructor(private readonly host: PlanarMountedDataHost) {}
 
-  resolveBindingRole(options: PlanarSetDataOptions): BindingRole {
+  resolveBindingRole(options: PlanarMountOptions): BindingRole {
     return options.role === 'source' ? 'source' : 'overlay';
   }
 

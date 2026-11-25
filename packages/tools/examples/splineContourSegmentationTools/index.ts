@@ -335,10 +335,12 @@ async function run() {
   // Set the stack on the viewport
   displaySetRegistry.add(displaySetId, {
     imageIds: imageIds.slice(0, 10),
-    initialImageIdIndex: 0,
   });
 
-  await stackViewport.setDisplaySets({ displaySetId });
+  await stackViewport.setDisplaySets({
+    displaySetId,
+    options: { initialImageIdIndex: 0 },
+  });
 
   // Render the image
   renderingEngine.render();
