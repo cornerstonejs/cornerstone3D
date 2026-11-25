@@ -123,6 +123,26 @@ class WSIResolvedView extends ResolvedViewportView<WSIResolvedViewState> {
     });
   }
 
+  /**
+   * The size of a canvas pixel in world units along each canvas axis: the
+   * resolution of the map, in pixels of the slide, times the spacing of the
+   * slide along that axis at the rotation of the map. It is worked out from
+   * the view and the metadata, not through the transforms of the slide,
+   * which keep single precision.
+   */
+  get canvasPixelSize(): Point2 {
+    const resolution = this.getResolution();
+    const rotation = this.state.view.getRotation?.() ?? 0;
+    const [spacingX, spacingY] = this.state.metadata?.spacing ?? [1, 1];
+    const cos = Math.cos(rotation);
+    const sin = Math.sin(rotation);
+
+    return [
+      resolution * Math.hypot(cos * spacingX, sin * spacingY),
+      resolution * Math.hypot(sin * spacingX, cos * spacingY),
+    ];
+  }
+
   getFrameOfReferenceUID(): string | undefined {
     return this.state.frameOfReferenceUID || undefined;
   }

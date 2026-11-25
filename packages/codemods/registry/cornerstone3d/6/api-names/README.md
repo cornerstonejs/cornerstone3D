@@ -257,6 +257,13 @@ part of a view that another viewport can take is its framing.
   `DisplayAreaModifiedEventDetail`. Review: each `setViewState` whose literal
   patch has `displayArea`, which shows the area at scale `[1, 1]` now when
   the patch has no `scale`, `scaleMode`, `anchorWorld` or `anchorCanvas`.
+- The pan of a framing patch that spreads another framing: a framing that
+  `getViewFraming` gives has `worldPan`, which a patch takes in place of
+  `pan`, so `viewport.setViewFraming({ ...framing, pan })` and
+  `viewportProjection.withFraming(viewport, { ...framing, pan })` get
+  `worldPan: undefined` before the `pan` and keep the pan that they set. A
+  patch with `worldPan`, or whose `pan` comes before its last spread, is
+  left. Review: the same patch on a viewport known by its name only.
 - One opacity: in an appearance literal that reaches
   `setDisplaySetAppearance` (or `setDisplaySetPresentation`), the
   `appearance` of a mount entry, or a value typed

@@ -16,6 +16,11 @@ export type ECGResolvedViewLike = {
   };
   pan: Point2;
   zoom: number;
+  /**
+   * The canvas pixels of one unit of the world of the trace layout, with the
+   * zoom of the view.
+   */
+  worldToCanvasRatio?: number;
   canvasToWorld(canvasPos: Point2): Point3;
   worldToCanvas(worldPos: Point3): Point2;
   getFrameOfReferenceUID(): string | undefined;

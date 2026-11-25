@@ -327,6 +327,27 @@ export function framingOfEachFamily() {
 }
 
 /**
+ * Every family's framing has its pan in world units, and a patch and a
+ * selector take it.
+ */
+export function framingWorldPanOfEachFamily() {
+  const planarPan: Types.Point2 | undefined = planar.getViewFraming({
+    worldPan: true,
+  })?.worldPan;
+  const volume3DPan: Types.Point2 | undefined =
+    volume3D.getViewFraming()?.worldPan;
+  const anyPan: Types.Point2 | undefined = viewport.getViewFraming({
+    worldPan: true,
+  })?.worldPan;
+
+  planar.setViewFraming({ worldPan: [4, 2] });
+  volume3D.setViewFraming({ worldPan: [4, 2] });
+  viewport.setViewFraming({ worldPan: [4, 2], zoom: 2 });
+
+  return [planarPan, volume3DPan, anyPan];
+}
+
+/**
  * A framing and its selector have no aspect ratio: the stretch of a planar
  * view is the scale pair of its framing.
  */

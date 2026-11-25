@@ -408,6 +408,18 @@ export interface ViewFraming {
   pan?: Point2;
 
   /**
+   * The pan in world units: where the centre of the fitted picture shows,
+   * less the centre of the canvas, along the canvas axes, in the units of
+   * the world of the viewport (millimetres on a planar or a 3D viewport).
+   * It is `pan` times the size of a canvas pixel at zoom 1, so it does not
+   * depend on the size of the canvas: a resize, which keeps the camera,
+   * keeps it, and a framing written to a viewport of another size shows the
+   * same world point at the centre of the canvas. A patch with it takes it
+   * in place of `pan`.
+   */
+  worldPan?: Point2;
+
+  /**
    * The flip horizontal value is true if the view is flipped horizontally.
    */
   flipHorizontal?: boolean;
@@ -444,6 +456,7 @@ export interface ViewFramingSelector {
   displayArea?: boolean;
   zoom?: boolean;
   pan?: boolean;
+  worldPan?: boolean;
   flipHorizontal?: boolean;
   flipVertical?: boolean;
 }

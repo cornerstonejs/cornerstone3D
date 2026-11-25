@@ -54,6 +54,8 @@ export interface ProjectionFraming<TDisplayArea = DisplayArea> {
   displayArea?: TDisplayArea;
   zoom?: number;
   pan?: Point2;
+  /** The pan in world units, see `ViewFraming.worldPan`. */
+  worldPan?: Point2;
   scale?: ProjectionScale;
   position?: ProjectionPosition;
   flipHorizontal?: boolean;

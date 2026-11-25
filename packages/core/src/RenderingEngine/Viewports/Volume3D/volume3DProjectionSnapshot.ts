@@ -6,6 +6,7 @@ import {
   getVolume3DProjectionPosition,
   getVolume3DProjectionRotation,
   getVolume3DProjectionScale,
+  getVolume3DProjectionWorldPan,
   getVolume3DProjectionZoom,
 } from './volume3DProjectionCamera';
 import { getOrientationVectors } from './vtkVolume3DInitialCamera';
@@ -136,6 +137,7 @@ export function getVolume3DProjectionSnapshot(
         zeroRotationView?.viewPlaneNormal
       ),
       scale: getVolume3DProjectionScale({ camera, canvasHeight }),
+      worldPan: fit ? getVolume3DProjectionWorldPan(camera, fit) : undefined,
       zoom: fit ? getVolume3DProjectionZoom(camera, fit) : undefined,
     },
     rendererCamera: cloneVolume3DCamera(camera),

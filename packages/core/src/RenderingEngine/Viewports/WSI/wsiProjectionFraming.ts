@@ -1,15 +1,17 @@
-import type { Point2, ViewFraming } from '../../../types';
+import type { ViewFraming } from '../../../types';
 import type { ViewFramingSelector } from '../../../types/IViewport';
 import type { ProjectionWriteOptions } from '../ViewportProjectionTypes';
+import { getPatchCanvasPan, toWorldPan } from '../viewportWorldPan';
 import type { WSIProjectionSnapshot } from './WSIProjectionTypes';
 import type { WSIViewState } from './WSIViewportTypes';
 
 const DEFAULT_SELECTOR: Required<
-  Pick<ViewFramingSelector, 'rotation' | 'zoom' | 'pan'>
+  Pick<ViewFramingSelector, 'rotation' | 'zoom' | 'pan' | 'worldPan'>
 > = {
   rotation: true,
   zoom: true,
   pan: true,
+  worldPan: true,
 };
 
 /**
@@ -25,7 +27,8 @@ function hasOwn<T extends object, K extends PropertyKey>(
 /**
  * Converts a WSI projection snapshot to the public view-framing shape.
  * The zoom is a factor against the fit of the microscopy viewer, and the pan
- * is in canvas pixels divided by the zoom, as on the other families.
+ * is in canvas pixels divided by the zoom, as on the other families. The
+ * world pan is the same shift in the world units of the slide.
  */
 export function getWSIProjectionFraming(
   snapshot: WSIProjectionSnapshot,
@@ -49,6 +52,12 @@ export function getWSIProjectionFraming(
     target.pan = [pan[0] / zoom, pan[1] / zoom];
   }
 
+  const pixelSize = snapshot.resolvedView?.canvasPixelSize;
+
+  if (wsiSelector.worldPan && pixelSize) {
+    target.worldPan = toWorldPan(snapshot.framing.rawPan, pixelSize);
+  }
+
   return target;
 }
 
@@ -57,7 +66,9 @@ export function getWSIProjectionFraming(
  * The zoom applies first, and the pan then at the new zoom. A zoom is a
  * factor against the fit: the map gets the resolution of the fit divided by
  * the zoom, about `options.anchorCanvas` when given. A zoom does nothing
- * when the viewport shows nothing to fit.
+ * when the viewport shows nothing to fit. A `worldPan` is taken in place of
+ * `pan`: a canvas pixel of the map, measured in the world, grows as the zoom
+ * shrinks.
  */
 export function withWSIProjectionFraming(
   snapshot: WSIProjectionSnapshot,
@@ -66,7 +77,7 @@ export function withWSIProjectionFraming(
 ): WSIViewState {
   const hasZoom = hasOwn(framing, 'zoom');
   const hasRotation = hasOwn(framing, 'rotation');
-  const hasPan = hasOwn(framing, 'pan');
+  const hasPan = hasOwn(framing, 'pan') || hasOwn(framing, 'worldPan');
   const nextZoom = Math.max(framing.zoom ?? snapshot.framing.zoom ?? 1, 0.001);
   let nextViewState: WSIViewState = {
     ...snapshot.viewState,
@@ -86,12 +97,20 @@ export function withWSIProjectionFraming(
     nextViewState = { ...resolvedView.state.viewState };
   }
 
-  if (hasPan && framing.pan && resolvedView?.withPan) {
-    const targetPan: Point2 = [
-      framing.pan[0] * nextZoom,
-      framing.pan[1] * nextZoom,
-    ];
+  const currentZoom = snapshot.framing.zoom ?? 1;
+  const pixelSize = snapshot.resolvedView?.canvasPixelSize;
+  const targetPan =
+    hasPan &&
+    getPatchCanvasPan(
+      framing,
+      [nextZoom, nextZoom],
+      pixelSize && [
+        (pixelSize[0] * currentZoom) / nextZoom,
+        (pixelSize[1] * currentZoom) / nextZoom,
+      ]
+    );
 
+  if (targetPan && resolvedView?.withPan) {
     nextViewState = { ...resolvedView.withPan(targetPan).state.viewState };
   }
 

@@ -21,6 +21,8 @@ export type WSIResolvedViewLike = {
   };
   /** The pan in canvas pixels: the centre of the slide from the centre of the canvas. */
   pan?: Point2;
+  /** The size of a canvas pixel in world units along each canvas axis. */
+  canvasPixelSize?: Point2;
   canvasToWorld(canvasPos: Point2): Point3;
   worldToCanvas(worldPos: Point3): Point2;
   getFrameOfReferenceUID(): string | undefined;

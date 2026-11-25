@@ -1,0 +1,12 @@
+{
+  "cornerstone3d-6-review": [
+    {
+      "cardinality": {
+        "file": "input.ts",
+        "line": "17",
+        "rule": "pan: a viewport by its name only, a framing that getViewFraming gives has worldPan, which setViewFraming takes in place of pan: set worldPan: undefined next to this pan, or set worldPan"
+      },
+      "count": 1
+    }
+  ]
+}

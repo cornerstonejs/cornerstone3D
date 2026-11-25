@@ -99,6 +99,14 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
   }
 
   /**
+   * The canvas pixels of one unit of the world of the trace layout, the
+   * space of the `anchorWorld` of the view state, with the zoom of the view.
+   */
+  get worldToCanvasRatio(): number {
+    return this.getCanvasMapping().effectiveRatio;
+  }
+
+  /**
    * World geometry of this frame: the world size, the amplitude scale and the
    * pixels for each second. The render path draws with these values.
    */

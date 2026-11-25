@@ -15,7 +15,9 @@ const renderingEngineId = utilities.uuidv4();
 /**
  * The views whose framing a round trip must give back: each scale mode of
  * the view state, a stretched scale, and a display area in each scale mode,
- * also with a scale of its own.
+ * also with a scale of its own. On a viewport of another size the framing of
+ * a panned view shows the world point that was at the centre of the canvas
+ * at its centre, at the same zoom against the fit.
  */
 const CASES = [
   {
@@ -238,10 +240,6 @@ describe('setViewFraming(getViewFraming()) on a planar viewport -- ', () => {
         expect(countChangedPixels(await pictureOf(source), resized)).toBe(0);
       }, 20000);
 
-      if (panned) {
-        continue;
-      }
-
       it(`gives the same fit on a viewport of another size for ${name}, in ${mode} mode`, async function () {
         const source = createPlanarViewport(
           renderingEngine,
@@ -266,8 +264,16 @@ describe('setViewFraming(getViewFraming()) on a planar viewport -- ', () => {
         await show(direct, series, 3);
         await show(copied, series, 3);
         source.setViewState(viewState);
-        direct.setViewState(viewState);
         await renderAndWait(source);
+        direct.setViewState(
+          panned
+            ? {
+                ...viewState,
+                anchorCanvas: [0.5, 0.5],
+                anchorWorld: source.canvasToWorld([200, 150]),
+              }
+            : viewState
+        );
         copied.setViewFraming(source.getViewFraming());
 
         expect(
@@ -438,7 +444,7 @@ describe('setViewFraming(getViewFraming()) on a 3D viewport -- ', () => {
     expect(countChangedPixels(await picture3D(viewport), before)).toBe(0);
   }, 20000);
 
-  it('gives the direction, the zoom and the pan against the fit to a viewport of another size', async function () {
+  it('gives the direction, the zoom against the fit and the world point at the centre to a viewport of another size', async function () {
     const source = await show3DViewport(
       renderingEngine,
       'framing3DSource',
@@ -469,8 +475,13 @@ describe('setViewFraming(getViewFraming()) on a 3D viewport -- ', () => {
     );
     expectVectorClose(copied.camera.viewUp, framing.camera.viewUp, 'view up');
     expect(copied.zoom).toBeCloseTo(framing.zoom, 4);
-    expect(copied.pan[0]).toBeCloseTo(framing.pan[0], 3);
-    expect(copied.pan[1]).toBeCloseTo(framing.pan[1], 3);
+    expect(copied.worldPan[0]).toBeCloseTo(framing.worldPan[0], 4);
+    expect(copied.worldPan[1]).toBeCloseTo(framing.worldPan[1], 4);
+    expectVectorClose(
+      copied.camera.focalPoint,
+      framing.camera.focalPoint,
+      'focal point'
+    );
     expect(copied.rotation).toBeCloseTo(framing.rotation, 3);
   }, 20000);
 });

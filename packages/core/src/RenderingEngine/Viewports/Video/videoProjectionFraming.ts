@@ -1,6 +1,11 @@
-import type { Point2, ViewFraming } from '../../../types';
+import type { ViewFraming } from '../../../types';
 import type { ViewFramingSelector } from '../../../types/IViewport';
 import type { ProjectionWriteOptions } from '../ViewportProjectionTypes';
+import {
+  getCanvasPixelWorldSize,
+  getPatchCanvasPan,
+  toWorldPan,
+} from '../viewportWorldPan';
 import { normalizeVideoViewState } from './videoViewportCamera';
 import type {
   VideoProjectionSnapshot,
@@ -10,11 +15,12 @@ import VideoResolvedView from './VideoResolvedView';
 import type { VideoViewState } from './VideoViewportTypes';
 
 const DEFAULT_SELECTOR: Required<
-  Pick<ViewFramingSelector, 'rotation' | 'zoom' | 'pan'>
+  Pick<ViewFramingSelector, 'rotation' | 'zoom' | 'pan' | 'worldPan'>
 > = {
   rotation: true,
   zoom: true,
   pan: true,
+  worldPan: true,
 };
 
 /**
@@ -31,7 +37,7 @@ function hasOwn<T extends object, K extends PropertyKey>(
  * Converts a Video projection snapshot to the public view-framing shape.
  * The pan is the pan of `getPan` of the viewport divided by the zoom: canvas
  * pixels on the screen at zoom 1, `[0, 0]` for the fitted view, at any
- * rotation.
+ * rotation. The world pan is the same shift in pixels of the video.
  */
 export function getVideoProjectionFraming(
   snapshot: VideoProjectionSnapshot,
@@ -53,6 +59,13 @@ export function getVideoProjectionFraming(
     const pan = snapshot.framing.rawPan;
 
     target.pan = [pan[0] / zoom, pan[1] / zoom];
+  }
+
+  if (videoSelector.worldPan && snapshot.transforms?.canvasToWorld) {
+    target.worldPan = toWorldPan(
+      snapshot.framing.rawPan,
+      getCanvasPixelWorldSize(snapshot.transforms.canvasToWorld)
+    );
   }
 
   return target;
@@ -83,7 +96,7 @@ function withRotation(
 /**
  * Converts a Video view-framing patch back into semantic Video view state.
  * A new rotation applies first, then the zoom, and the pan then at the new
- * rotation and zoom, on the screen.
+ * rotation and zoom, on the screen. A `worldPan` is taken in place of `pan`.
  */
 export function withVideoProjectionFraming(
   snapshot: VideoProjectionSnapshot,
@@ -92,7 +105,7 @@ export function withVideoProjectionFraming(
 ): VideoViewState {
   const viewState = snapshot.viewState ?? {};
   const hasZoom = hasOwn(framing, 'zoom');
-  const hasPan = hasOwn(framing, 'pan');
+  const hasPan = hasOwn(framing, 'pan') || hasOwn(framing, 'worldPan');
   const hasRotation = hasOwn(framing, 'rotation');
   const nextZoom = Math.max(
     framing.zoom ?? snapshot.framing.zoom ?? viewState.scale ?? 1,
@@ -123,12 +136,17 @@ export function withVideoProjectionFraming(
     }
   }
 
-  if (hasPan && framing.pan) {
-    const targetPan: Point2 = [
-      framing.pan[0] * nextZoom,
-      framing.pan[1] * nextZoom,
-    ];
+  const targetPan =
+    hasPan &&
+    getPatchCanvasPan(
+      framing,
+      [nextZoom, nextZoom],
+      framing.worldPan && resolvedView
+        ? getCanvasPixelWorldSize((point) => resolvedView.canvasToWorld(point))
+        : undefined
+    );
 
+  if (targetPan) {
     if (resolvedView) {
       const pannedView =
         resolvedView.withCanvasPan?.(targetPan) ??

@@ -3,6 +3,11 @@ import type { ViewFramingSelector } from '../../../types/IViewport';
 import type { ProjectionWriteOptions } from '../ViewportProjectionTypes';
 import type { CameraScaleMode } from '../ViewportCameraTypes';
 import {
+  getCanvasPixelWorldSize,
+  getPatchCanvasPan,
+  toWorldPan,
+} from '../viewportWorldPan';
+import {
   normalizePlanarScale,
   normalizePlanarScaleMode,
 } from './planarCameraScale';
@@ -37,6 +42,7 @@ const DEFAULT_SELECTOR: Required<
     | 'scaleMode'
     | 'fitScale'
     | 'pan'
+    | 'worldPan'
     | 'flipHorizontal'
     | 'flipVertical'
   >
@@ -48,6 +54,7 @@ const DEFAULT_SELECTOR: Required<
   scaleMode: true,
   fitScale: true,
   pan: true,
+  worldPan: true,
   flipHorizontal: true,
   flipVertical: true,
 };
@@ -150,6 +157,28 @@ function getPlanarViewStateWithPanFromSliceCentre(
 }
 
 /**
+ * The size in world units of a canvas pixel of the picture that a patch
+ * gives, at the scale `panScale` against the fit: a canvas pixel of the view
+ * now, measured in the world, grows as the scale shrinks; a rotation and a
+ * flip do not change it. Undefined for a view that shows nothing.
+ */
+function getPatchPixelSize(
+  snapshot: PlanarProjectionSnapshot,
+  panScale: Point2
+): Point2 | undefined {
+  const canvasToWorld = snapshot.transforms?.canvasToWorld;
+
+  if (!canvasToWorld) {
+    return;
+  }
+
+  const [sizeX, sizeY] = getCanvasPixelWorldSize(canvasToWorld);
+  const [scaleX, scaleY] = snapshot.framing.scaleVector;
+
+  return [(sizeX * scaleX) / panScale[0], (sizeY * scaleY) / panScale[1]];
+}
+
+/**
  * Converts a Planar projection snapshot to the existing public
  * PlanarViewFraming compatibility shape.
  */
@@ -190,6 +219,16 @@ export function getPlanarProjectionFraming(
     const pan = getPlanarProjectionPan(snapshot);
 
     target.pan = [pan[0] / scale[0], pan[1] / scale[1]];
+  }
+
+  if (planarSelector.worldPan && snapshot.transforms?.canvasToWorld) {
+    const pixelSize = getCanvasPixelWorldSize(
+      snapshot.transforms.canvasToWorld
+    );
+
+    if (pixelSize[0] > 0 && pixelSize[1] > 0) {
+      target.worldPan = toWorldPan(getPlanarProjectionPan(snapshot), pixelSize);
+    }
   }
 
   if (planarSelector.flipHorizontal) {
@@ -276,7 +315,9 @@ function withScaleMode(
  *
  * A pan in the patch is the place of the centre of the slice. The view
  * state it gives holds no world anchor, so a pan after a zoom at a canvas
- * point is right at the new scale and rotation.
+ * point is right at the new scale and rotation. A `worldPan` in the patch is
+ * taken in place of `pan`: the same shift in world units, so a framing read
+ * on a canvas of another size shows the same world point at the centre.
  *
  * A display area in the patch decides where the picture is: the pan of the
  * same patch is not used. It shows the area as `setViewState({ displayArea
@@ -308,6 +349,7 @@ export function withPlanarProjectionFraming(
 ): PlanarViewState {
   const {
     pan,
+    worldPan,
     flipHorizontal = snapshot.viewState?.flipHorizontal ?? false,
     flipVertical = snapshot.viewState?.flipVertical ?? false,
   } = framing;
@@ -331,6 +373,7 @@ export function withPlanarProjectionFraming(
     ? normalizePlanarScaleMode(framing.scaleMode)
     : undefined;
   const changesScale = hasZoom || hasScale || Boolean(fitScale);
+  const hasPan = Boolean(pan) || Boolean(worldPan);
   const currentScale = snapshot.framing.scaleVector;
   const nextCamera: Partial<PlanarViewState> = {
     flipHorizontal,
@@ -368,7 +411,7 @@ export function withPlanarProjectionFraming(
 
   const clearsDisplayArea = hasOwn(framing, 'displayArea');
 
-  if (clearsDisplayArea && !pan && !changesScale) {
+  if (clearsDisplayArea && !hasPan && !changesScale) {
     return preserveClears(
       normalizePlanarViewState({
         ...viewState,
@@ -385,7 +428,7 @@ export function withPlanarProjectionFraming(
 
   const dropsDisplayArea =
     (Boolean(viewState.displayArea) || clearsDisplayArea) &&
-    (Boolean(pan) || changesScale);
+    (hasPan || changesScale);
   const setsScale = changesScale || dropsDisplayArea || !viewState.displayArea;
   const nextScaleMode = scaleMode ?? 'fit';
   let nextScale = currentScale;
@@ -425,7 +468,7 @@ export function withPlanarProjectionFraming(
         )
       : state;
 
-  if (pan) {
+  if (hasPan) {
     const baseViewState = normalizePlanarViewState({
       ...viewState,
       ...nextCamera,
@@ -436,25 +479,31 @@ export function withPlanarProjectionFraming(
         ? snapshot.resolvedView
         : undefined);
     const panScale = resolvedView?.scale ?? nextScale;
-    const targetPan: Point2 = [pan[0] * panScale[0], pan[1] * panScale[1]];
-
-    const getViewStateWithPan = snapshot.resolvedView
-      ? getPlanarViewStateWithPanFromSliceCentre
-      : getPlanarProjectionFallbackViewStateWithPan;
-    const nextViewState = inScaleMode(
-      resolvedView?.withPan(targetPan).state.viewState ??
-        getViewStateWithPan(
-          baseViewState,
-          targetPan,
-          snapshot.canvasWidth,
-          snapshot.canvasHeight
-        )
+    const targetPan = getPatchCanvasPan(
+      { pan, worldPan },
+      panScale,
+      worldPan && getPatchPixelSize(snapshot, panScale)
     );
 
-    return preserveClears(nextViewState, {
-      displayArea: dropsDisplayArea,
-      anchorWorld: !nextViewState.anchorWorld,
-    });
+    if (targetPan) {
+      const getViewStateWithPan = snapshot.resolvedView
+        ? getPlanarViewStateWithPanFromSliceCentre
+        : getPlanarProjectionFallbackViewStateWithPan;
+      const nextViewState = inScaleMode(
+        resolvedView?.withPan(targetPan).state.viewState ??
+          getViewStateWithPan(
+            baseViewState,
+            targetPan,
+            snapshot.canvasWidth,
+            snapshot.canvasHeight
+          )
+      );
+
+      return preserveClears(nextViewState, {
+        displayArea: dropsDisplayArea,
+        anchorWorld: !nextViewState.anchorWorld,
+      });
+    }
   }
 
   const anchoredView = changesScale

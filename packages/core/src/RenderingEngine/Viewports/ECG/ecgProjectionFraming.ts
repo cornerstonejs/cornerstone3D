@@ -1,13 +1,17 @@
 import type { Point2, ViewFraming } from '../../../types';
 import type { ViewFramingSelector } from '../../../types/IViewport';
 import type { ProjectionWriteOptions } from '../ViewportProjectionTypes';
+import { getPatchCanvasPan, toWorldPan } from '../viewportWorldPan';
 import { normalizeECGViewState } from './ecgViewportCamera';
 import type { ECGProjectionSnapshot } from './ECGProjectionTypes';
 import type { ECGViewState } from './ECGViewportTypes';
 
-const DEFAULT_SELECTOR: Required<Pick<ViewFramingSelector, 'zoom' | 'pan'>> = {
+const DEFAULT_SELECTOR: Required<
+  Pick<ViewFramingSelector, 'zoom' | 'pan' | 'worldPan'>
+> = {
   zoom: true,
   pan: true,
+  worldPan: true,
 };
 
 /**
@@ -21,7 +25,17 @@ function hasOwn<T extends object, K extends PropertyKey>(
 }
 
 /**
- * Converts an ECG projection snapshot to the public view-framing shape.
+ * The size of a canvas pixel in units of the world of the trace layout, by
+ * the canvas pixels of one such unit. Undefined without a ratio.
+ */
+function getPixelSize(ratio: number | undefined): Point2 | undefined {
+  return ratio > 0 ? [1 / ratio, 1 / ratio] : undefined;
+}
+
+/**
+ * Converts an ECG projection snapshot to the public view-framing shape. The
+ * world pan is the pan in units of the world of the trace layout, the space
+ * of the `anchorWorld` of the view state.
  */
 export function getECGProjectionFraming(
   snapshot: ECGProjectionSnapshot,
@@ -41,11 +55,19 @@ export function getECGProjectionFraming(
     target.pan = [pan[0] / zoom, pan[1] / zoom];
   }
 
+  const pixelSize = getPixelSize(snapshot.resolvedView?.worldToCanvasRatio);
+
+  if (ecgSelector.worldPan && pixelSize) {
+    target.worldPan = toWorldPan(snapshot.framing.rawPan, pixelSize);
+  }
+
   return target;
 }
 
 /**
- * Converts an ECG view-framing patch back into semantic ECG view state.
+ * Converts an ECG view-framing patch back into semantic ECG view state. The
+ * zoom applies first, and the pan then at the new zoom. A `worldPan` is
+ * taken in place of `pan`.
  */
 export function withECGProjectionFraming(
   snapshot: ECGProjectionSnapshot,
@@ -54,7 +76,7 @@ export function withECGProjectionFraming(
 ): ECGViewState {
   const viewState = snapshot.viewState;
   const hasZoom = hasOwn(framing, 'zoom');
-  const hasPan = hasOwn(framing, 'pan');
+  const hasPan = hasOwn(framing, 'pan') || hasOwn(framing, 'worldPan');
   const nextZoom = Math.max(
     framing.zoom ?? snapshot.framing.zoom ?? viewState.scale ?? 1,
     0.001
@@ -75,17 +97,18 @@ export function withECGProjectionFraming(
     }
   }
 
-  if (hasPan && framing.pan) {
-    const targetPan: Point2 = [
-      framing.pan[0] * nextZoom,
-      framing.pan[1] * nextZoom,
-    ];
+  const targetPan =
+    hasPan &&
+    getPatchCanvasPan(
+      framing,
+      [nextZoom, nextZoom],
+      getPixelSize(resolvedView?.worldToCanvasRatio)
+    );
 
-    if (resolvedView) {
-      nextViewState = normalizeECGViewState(
-        resolvedView.withPan(targetPan).state.viewState
-      );
-    }
+  if (targetPan && resolvedView) {
+    nextViewState = normalizeECGViewState(
+      resolvedView.withPan(targetPan).state.viewState
+    );
   }
 
   return nextViewState;

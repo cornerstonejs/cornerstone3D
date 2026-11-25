@@ -464,16 +464,24 @@ describe('The framing of a viewport whose element has no size -- ', () => {
           [250, 330]
         );
 
-        twin.setViewFraming(FRAMING);
         viewport.element.style.display = 'none';
         viewport.setViewFraming(FRAMING);
+
+        const written = viewport.getViewFraming();
+
+        twin.setViewFraming(written);
         viewport.element.style.display = '';
         await resizeTo(renderingEngine, [viewport], [250, 330]);
 
         expectPointClose(
           viewport.getViewFraming().pan,
-          FRAMING.pan,
+          twin.getViewFraming().pan,
           'pan at the other size'
+        );
+        expectPointClose(
+          viewport.getViewFraming().worldPan,
+          written.worldPan,
+          'world pan at the other size'
         );
         expect(viewport.getViewFraming().zoom).toBeCloseTo(FRAMING.zoom, 4);
         expect(

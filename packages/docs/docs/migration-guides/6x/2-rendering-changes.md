@@ -976,12 +976,45 @@ into a colormap whose type has an `opacity`, and each read of
   other.setViewFraming(framing);
   ```
 
+- **A framing carried to another size keeps the world point at the
+  centre.** The `zoom` of a framing is measured against the fit of the
+  canvas it is written to, and its `pan` is in canvas pixels at zoom 1, as
+  `getPan()` and the tools read it. Every framing also has `worldPan`, the
+  same shift in world units (millimetres on a planar or 3D viewport, pixels
+  of the video, the units of the slide, and of the trace layout on an ECG
+  viewport), and `setViewFraming` takes it in place of `pan`. So a framing
+  read on one pane and written to a pane of another size shows the same
+  world point at the centre at the same zoom against the fit, a resize,
+  which keeps the camera, keeps `worldPan`, and a view that goes to a pane
+  of another size and back, by framings, by resizes or by a mix of the two,
+  comes back as it was. Before this change the pan in canvas pixels was
+  kept: a 3D or planar view resized into a pane of half the size and
+  written back to a pane of the first size by its framing came back with
+  half its pan. A resize keeps the parallel scale, as in 5.x, so where the
+  fit changes with the shape of the pane (a pane taller than the picture),
+  a framing written back after a resize has the zoom of the resized pane; a
+  whole slide viewport keeps the resolution of its map through a resize, as
+  in 5.x, so there it has it at any change of size. The view framing synchronizer copies `worldPan` too when it has no
+  selector. To change the pan of a framing that was read, drop its
+  `worldPan`:
+
+  ```ts
+  // Before: pan [40, 20] on a pane of 400 by 300 pixels
+  const framing = viewport.getViewFraming();
+  smallPane.setViewFraming(framing); // pan [40, 20], another world point
+
+  // After
+  smallPane.setViewFraming(framing); // pan [20, 10] on 200 by 150, same point
+  viewport.setViewFraming({ ...framing, worldPan: undefined, pan: [0, 0] });
+  ```
+
 - **The framing of a 3D viewport goes to a viewport of another size.** Its
-  `camera` gives the direction, and its `zoom` and `pan` are applied against
-  the fit of the viewport it is written to, for that direction. On the same
-  viewport `setViewFraming(getViewFraming())` changes no pixel. Before this
-  change the camera was applied as it was, so on a viewport of another size
-  the zoom against the fit changed. A framing without its `camera` keeps the
+  `camera` gives the direction, its `zoom` is applied against the fit of the
+  viewport it is written to, for that direction, and its `worldPan` keeps
+  the world point at the centre. On the same viewport
+  `setViewFraming(getViewFraming())` changes no pixel. Before this change
+  the camera was applied as it was, so on a viewport of another size the
+  zoom against the fit changed. A framing without its `camera` keeps the
   direction of the view and applies its `zoom`, `pan` and `rotation`, as a
   partial framing does on a planar viewport; before, its `position` and
   `scale` were taken as camera fields and the view lost its direction.
@@ -993,9 +1026,10 @@ into a colormap whose type has an `opacity`, and each read of
   `setViewFraming(framing)` sets it, so a framing stored when a pane unmounts
   restores its pan, also on a 3D viewport. A framing written without a size
   is shown as written when the element gets its size back; when the element
-  comes back at another size, the next `renderingEngine.resize()` sets it
-  again against the fit of that size, as `setViewFraming(framing)` does on a
-  viewport of that size. A view that was set while the element had a size
+  comes back at another size, the next `renderingEngine.resize()` sets the
+  framing that the viewport read back after the write again, against the fit
+  of that size and with the same world point at the centre, as
+  `setViewFraming(framing)` of that framing does on a viewport of that size. A view that was set while the element had a size
   follows the resize as any resize does. Before this change a 3D, video,
   whole slide or ECG viewport read its size at the moment: a framing read
   without a size had a pan of `[0, 0]` on a 3D viewport, a wrong pan on a

@@ -12,13 +12,22 @@ import {
 } from '../lib.ts';
 import type { Node } from '../lib.ts';
 import {
+  entryOf,
   mergeRules,
   noteRewritten,
   pathOf,
+  placeObjects,
   receiverEvidence,
   report,
 } from '../rules.ts';
-import type { ExportRule, KeyRule, MemberRule, Rules, Run } from '../rules.ts';
+import type {
+  ExportRule,
+  KeyPlace,
+  KeyRule,
+  MemberRule,
+  Rules,
+  Run,
+} from '../rules.ts';
 import {
   COLORMAP_OPACITY,
   rewriteColormapOpacity,
@@ -1427,12 +1436,87 @@ function rewriteDisplayArea(run: Run): void {
   }
 }
 
+/** The framing patches that a framing read with `getViewFraming` can reach. */
+const FRAMING_PATCH_PLACES: KeyPlace[] = [
+  { receiver: 'viewport', method: 'setViewFraming', argument: 0 },
+  { call: 'viewportProjection.withFraming', argument: 1 },
+];
+
+/** The review text of a pan after a spread that the step could not keep. */
+const PAN_AFTER_SPREAD_REVIEW =
+  'a framing that getViewFraming gives has worldPan, which setViewFraming takes in place of pan: set worldPan: undefined next to this pan, or set worldPan';
+
+/**
+ * Keeps the pan of a framing patch that spreads another framing and sets
+ * `pan` after it: `viewport.setViewFraming({ ...framing, pan })` becomes
+ * `viewport.setViewFraming({ ...framing, worldPan: undefined, pan })`. A
+ * framing that `getViewFraming` gives has `worldPan`, the pan in world
+ * units, which a patch takes in place of `pan`, so without it the pan of
+ * the patch would do nothing. A patch that has `worldPan` itself, or whose
+ * `pan` comes before its last spread, stays as it is. A viewport shown by
+ * its name alone is reported for review.
+ */
+function keepPanAfterSpread(run: Run): void {
+  const source = run.rootNode.text();
+
+  for (const place of FRAMING_PATCH_PLACES) {
+    for (const { object, evidence } of placeObjects(run, place)) {
+      const pan = entryOf(object, 'pan');
+      const spreads = object
+        .children()
+        .filter((child) => child.kind() === 'spread_element');
+      const panStart = pan?.entry.range().start.index;
+
+      if (
+        !pan ||
+        !spreads.length ||
+        entryOf(object, 'worldPan') ||
+        panStart < spreads[spreads.length - 1].range().start.index ||
+        run.handled.has(panStart)
+      ) {
+        continue;
+      }
+
+      run.handled.add(panStart);
+
+      if (evidence !== 'proven') {
+        report(
+          run,
+          'review',
+          `pan: a viewport by its name only, ${PAN_AFTER_SPREAD_REVIEW}`,
+          pan.entry
+        );
+        continue;
+      }
+
+      const lineStart = source.lastIndexOf('\n', panStart - 1) + 1;
+      const prefix = source.slice(lineStart, panStart);
+      const insertedText = /^\s*$/.test(prefix)
+        ? `worldPan: undefined,\n${prefix}`
+        : 'worldPan: undefined, ';
+
+      if (
+        !run.edits.add({ startPos: panStart, endPos: panStart, insertedText })
+      ) {
+        report(run, 'review', `pan: ${PAN_AFTER_SPREAD_REVIEW}`, pan.entry);
+        continue;
+      }
+
+      noteRewritten(
+        run,
+        'pan after a spread -> worldPan: undefined, pan',
+        pan.entry
+      );
+    }
+  }
+}
+
 /**
  * The rewrites of the framing that no table entry says: the module of the
- * framing of the tools, the `presentation` of a projection snapshot and the
- * display area calls of a viewport. The names of the framing imported from
- * a subpath of the core and each projection adapter of the application are
- * reported.
+ * framing of the tools, the `presentation` of a projection snapshot, the
+ * display area calls of a viewport and the pan of a patch that spreads a
+ * framing. The names of the framing imported from a subpath of the core
+ * and each projection adapter of the application are reported.
  */
 function rewriteFraming(run: Run): void {
   const taken = rewriteModulePaths(run, FRAMING_MODULES, {});
@@ -1441,6 +1525,7 @@ function rewriteFraming(run: Run): void {
   rewriteSnapshotFraming(run);
   reportProjectionAdapters(run);
   rewriteDisplayArea(run);
+  keepPanAfterSpread(run);
 }
 
 /**

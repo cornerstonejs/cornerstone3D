@@ -232,6 +232,25 @@ export function getVolume3DProjectionZoom(
 }
 
 /**
+ * The pan of a 3D camera against its fit in world units: how far the focal
+ * point of the fit is from the focal point of the camera along the canvas
+ * axes, right and down. It does not depend on the size of the canvas.
+ */
+export function getVolume3DProjectionWorldPan(
+  camera: Volume3DCamera & ICamera,
+  fit: Volume3DProjectionFit
+): Point2 {
+  const { right, down } = getCanvasAxes(camera);
+  const offset = vec3.subtract(
+    vec3.create(),
+    fit.focalPoint,
+    camera.focalPoint
+  );
+
+  return [vec3.dot(offset, right), vec3.dot(offset, down)];
+}
+
+/**
  * The pan of a 3D camera against its fit in canvas pixels on the screen:
  * where the focal point of the fit shows, less the centre of the canvas.
  */
@@ -240,18 +259,10 @@ export function getVolume3DProjectionPan(
   fit: Volume3DProjectionFit,
   canvasHeight: number
 ): Point2 {
-  const { right, down } = getCanvasAxes(camera);
   const pixelsPerWorldUnit = canvasHeight / (2 * getViewHalfHeight(camera));
-  const offset = vec3.subtract(
-    vec3.create(),
-    fit.focalPoint,
-    camera.focalPoint
-  );
+  const [x, y] = getVolume3DProjectionWorldPan(camera, fit);
 
-  return [
-    vec3.dot(offset, right) * pixelsPerWorldUnit,
-    vec3.dot(offset, down) * pixelsPerWorldUnit,
-  ];
+  return [x * pixelsPerWorldUnit, y * pixelsPerWorldUnit];
 }
 
 /**
@@ -259,21 +270,28 @@ export function getVolume3DProjectionPan(
  * the parallel scale of the zoom. A perspective camera moves along its view
  * plane normal to the distance of the zoom, and keeps its focal point and
  * its view angle. The pan then moves the focal point and the position in the
- * plane of the view. Without a pan, a zoom keeps the world point of
- * `anchorCanvas` under that canvas point, and without either the focal point.
+ * plane of the view: a pan in world units as it is, a pan in canvas pixels
+ * at zoom 1 at the scale of the zoom. Without a pan, a zoom keeps the world
+ * point of `anchorCanvas` under that canvas point, and without either the
+ * focal point.
  *
  * @param camera - The camera now.
  * @param fit - The fit of the viewport.
  * @param canvas - The size of the canvas in canvas pixels.
- * @param change - The zoom, the pan in canvas pixels at zoom 1, and the
- *   canvas point that a zoom keeps.
+ * @param change - The zoom, the pan in world units or else in canvas pixels
+ *   at zoom 1, and the canvas point that a zoom keeps.
  * @returns The camera fields that change.
  */
 export function withVolume3DProjectionZoomPan(
   camera: Volume3DCamera & ICamera,
   fit: Volume3DProjectionFit,
   canvas: { width: number; height: number },
-  change: { zoom?: number; pan?: Point2; anchorCanvas?: Point2 }
+  change: {
+    zoom?: number;
+    pan?: Point2;
+    worldPan?: Point2;
+    anchorCanvas?: Point2;
+  }
 ): Pick<Volume3DCamera, 'focalPoint' | 'parallelScale' | 'position'> {
   const { right, down } = getCanvasAxes(camera);
   const zoom = Math.max(
@@ -292,21 +310,20 @@ export function withVolume3DProjectionZoomPan(
       canvasOffset[1] * scale
     );
   const focalPoint = vec3.clone(camera.focalPoint);
+  const worldPan: Point2 | undefined =
+    change.worldPan ??
+    (change.pan && [
+      change.pan[0] * zoom * nextWorldUnitsPerPixel,
+      change.pan[1] * zoom * nextWorldUnitsPerPixel,
+    ]);
 
-  if (change.pan) {
+  if (worldPan) {
     const depth = vec3.dot(
       vec3.subtract(vec3.create(), camera.focalPoint, fit.focalPoint),
       camera.viewPlaneNormal
     );
 
-    vec3.subtract(
-      focalPoint,
-      fit.focalPoint,
-      inPlane(
-        [change.pan[0] * zoom, change.pan[1] * zoom],
-        nextWorldUnitsPerPixel
-      )
-    );
+    vec3.subtract(focalPoint, fit.focalPoint, inPlane(worldPan, 1));
     vec3.scaleAndAdd(focalPoint, focalPoint, camera.viewPlaneNormal, depth);
   } else if (change.anchorCanvas) {
     const fromCentre: Point2 = [

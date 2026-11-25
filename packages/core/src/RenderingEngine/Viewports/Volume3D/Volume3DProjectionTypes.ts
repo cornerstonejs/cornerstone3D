@@ -71,14 +71,18 @@ export type Volume3DRenderTarget = Pick<Volume3DViewportRenderContext, 'vtk'>;
  * - `pan` is the shift of the picture on the canvas, in canvas pixels at
  *   zoom 1: the centre of the fit shows `pan * zoom` pixels from the centre
  *   of the canvas. It is `[0, 0]` for the fit.
+ * - `worldPan` is the same shift in world units along the canvas axes: how
+ *   far the focal point of the fit is from the focal point of the camera.
+ *   A resize keeps it, and a patch takes it in place of `pan`.
  *
- * Both are missing when the viewport shows nothing to fit.
+ * They are missing when the viewport shows nothing to fit.
  *
  * `camera` is the camera of the view. A patch with it takes the direction
- * and the projection of that camera, and then its `zoom` and its `pan`
+ * and the projection of that camera, and then its `zoom` and its pan
  * against the fit of the viewport for that direction, so that
  * `setViewFraming(getViewFraming())` changes nothing, and gives the same
- * zoom and pan against the fit on a viewport of another size.
+ * zoom against the fit and the same world point at the centre on a
+ * viewport of another size.
  */
 export interface Volume3DProjectionFraming extends ProjectionFraming {
   camera: Volume3DCamera & ICamera;
