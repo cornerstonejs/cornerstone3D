@@ -4,9 +4,9 @@ import {
   deriveBoxAverageGrid,
 } from '../../utilities/voxelGrid';
 import type { ViewportFidelityCause } from '../../types/ViewportFidelity';
-import { volumeTextureBytes } from '../../utilities/getBufferConfiguration';
 import {
   gpuSettingsForGrid,
+  gpuTextureBytesPerVoxel,
   gridLimitsOfGpuSettings,
 } from '../../utilities/gpuSettingsPresets';
 import { getGpuMemoryTotal } from '../../utilities/gpuMemoryLedger';
@@ -272,9 +272,12 @@ function componentsOf(volume: IImageVolume): number {
   return volume.voxelManager?.numberOfComponents || 1;
 }
 
-/** The number of bytes of one voxel of a texture of this volume. */
+/**
+ * The number of bytes of one voxel of the GPU texture of this volume, in the
+ * format that vtk.js uploads (see `gpuTextureBytesPerVoxel`).
+ */
 function bytesPerVoxelOf(volume: IImageVolume): number {
-  return volumeTextureBytes(1, volume.dataType, componentsOf(volume));
+  return gpuTextureBytesPerVoxel(volume.dataType, componentsOf(volume));
 }
 
 /**

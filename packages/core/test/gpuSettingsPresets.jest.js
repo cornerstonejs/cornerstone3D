@@ -19,6 +19,7 @@ import {
   gridLimitsOfGpuSettings,
   gpuSettingsForGrid,
   gpuSettingsForRender,
+  gpuTextureBytesPerVoxel,
   getGpuMemoryLimit,
   setGpuMemoryLimit,
   resetGpuMemoryLimit,
@@ -251,6 +252,18 @@ describe('final downsampling on', () => {
       expect(getGpuMemoryTotal('converted-volume')).toBe(
         getGpuMemoryTotal() - 16 * 16 * 16 * 4
       );
+
+      /**
+       * The labelmap edge projection replaces the scalars with a
+       * two-component float array, and the entry follows.
+       */
+      mapper
+        .getInputData()
+        .getPointData()
+        .getArray(0)
+        .setData(new Float32Array(2 * 16 * 16 * 16), 2);
+
+      expect(getGpuMemoryEntryBytes(mapper)).toBe(2 * 16 * 16 * 16 * 4);
 
       mapper.delete();
 
@@ -491,6 +504,52 @@ describe('the auto preset', () => {
     }
   });
 
+  describe('the bytes of a voxel on the GPU', () => {
+    it('counts 16-bit data at 2 bytes with norm16, and at 4 bytes without', () => {
+      mockWebGL();
+
+      expect(gpuTextureBytesPerVoxel('Int16Array')).toBe(4);
+      expect(gpuTextureBytesPerVoxel('Uint8Array')).toBe(1);
+      expect(gpuTextureBytesPerVoxel('Float32Array', 2)).toBe(8);
+
+      resetRenderingCapabilities({ clearStorage: true });
+      probeRenderingLimits.mockReturnValue({
+        formats: { float: true, norm16: true, norm16Linear: true },
+        max3DTextureSize: 8192,
+        reliableEdge: 2048,
+      });
+
+      expect(gpuTextureBytesPerVoxel('Int16Array')).toBe(2);
+      expect(gpuTextureBytesPerVoxel('Uint16Array', 2)).toBe(4);
+    });
+
+    it('fits a 16-bit volume of 1 GB under a 2 GB limit with norm16', () => {
+      mockWebGL();
+      probeRenderingLimits.mockReturnValue({
+        formats: { float: true, norm16: true, norm16Linear: true },
+        max3DTextureSize: 8192,
+        reliableEdge: 2048,
+      });
+      setLossyDownsampling({ final: true });
+
+      try {
+        const volume = {
+          volumeId: 'ct',
+          dataType: 'Int16Array',
+          voxelGrid: { dimensions: [512, 512, 2048] },
+          voxelManager: { numberOfComponents: 1 },
+          isDynamicVolume: () => false,
+        };
+
+        expect(
+          volumeTextureReductionFactors(volume, getActiveGpuSettings())
+        ).toEqual([1, 1, 1]);
+      } finally {
+        setLossyDownsampling({ final: false });
+      }
+    });
+  });
+
   describe('the cause of a reduction', () => {
     const volume = {
       volumeId: 'v',
@@ -508,7 +567,10 @@ describe('the auto preset', () => {
     afterEach(() => setLossyDownsampling({ final: false }));
 
     it('is the memory limit when it reduces at least as much as the edge', () => {
-      /** 512 x 512 x 2048 at 16 bits is 1 GB, which 768 MB cannot hold. */
+      /**
+       * With no norm16 here, 512 x 512 x 2048 at 16 bits uploads as float, 2
+       * GB, which 768 MB cannot hold.
+       */
       setGpuMemoryLimit({ bytes: 768 * MEGABYTE });
 
       expect(reductionCauseOf(volume, getActiveGpuSettings())).toBe(

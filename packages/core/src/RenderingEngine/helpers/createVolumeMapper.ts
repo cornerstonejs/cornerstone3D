@@ -10,10 +10,12 @@ import {
   gpuSettingsForRender,
   gridLimitsOfGpuSettings,
   gpuSettingsForGrid,
+  gpuTextureBytesPerVoxel,
 } from '../../utilities/gpuSettingsPresets';
 import { voxelGridWithinLimits } from '../../utilities/voxelGrid';
 import { noteTextureAllocation } from '../../utilities/gpuAllocationTracker';
 import {
+  getGpuMemoryEntryBytes,
   getGpuMemoryTotal,
   removeGpuMemoryEntry,
   setGpuMemoryEntry,
@@ -198,9 +200,12 @@ export function convertMapperToNotSharedMapper(sharedMapper: vtkVolumeMapper) {
   }
 
   const dimensions = imageData.getDimensions();
-  const bytesPerVoxel = values.BYTES_PER_ELEMENT;
-  const textureBytes =
-    dimensions[0] * dimensions[1] * dimensions[2] * bytesPerVoxel;
+  const bytesPerVoxel = gpuTextureBytesPerVoxel(scalarArray.getDataType());
+  /** The texture holds every value of the scalars, in the format of vtk.js. */
+  const bytesOfScalars = () =>
+    scalarArray.getData().length *
+    gpuTextureBytesPerVoxel(scalarArray.getDataType());
+  const textureBytes = bytesOfScalars();
   const limits = gridLimitsOfGpuSettings(
     gpuSettingsForGrid(gpuSettings, dimensions, bytesPerVoxel),
     bytesPerVoxel
@@ -232,10 +237,31 @@ export function convertMapperToNotSharedMapper(sharedMapper: vtkVolumeMapper) {
    * of the ledger until it is deleted. A caller that replaces the mapper
    * deletes it.
    */
+  const volumeId = imageData.get('id')?.id;
+
   setGpuMemoryEntry(volumeMapper, {
     kind: 'texture',
     bytes: textureBytes,
-    volumeId: imageData.get('id')?.id,
+    volumeId,
+  });
+
+  /**
+   * A caller can replace the scalars, as the labelmap edge projection does
+   * with its two-component array, so the entry follows them until the mapper
+   * is deleted.
+   */
+  const subscription = scalarArray.onModified(() => {
+    if (!getGpuMemoryEntryBytes(volumeMapper)) {
+      subscription.unsubscribe();
+
+      return;
+    }
+
+    setGpuMemoryEntry(volumeMapper, {
+      kind: 'texture',
+      bytes: bytesOfScalars(),
+      volumeId,
+    });
   });
 
   return volumeMapper;

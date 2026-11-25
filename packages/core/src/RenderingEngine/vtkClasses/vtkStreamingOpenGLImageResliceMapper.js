@@ -19,6 +19,7 @@ import {
   noteTextureRendered,
 } from '../../utilities/gpuAllocationTracker';
 import gridFitsGpuSettings from './gridFitsGpuSettings';
+import { gpuTextureBytesPerVoxel } from '../../utilities/gpuSettingsPresets';
 import takeBoundScalarTexture from './takeBoundScalarTexture';
 import actorsWaitingForStorage from '../helpers/actorsWaitingForStorage';
 
@@ -340,12 +341,12 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
           return;
         }
 
+        /** The format that vtk.js uploads, not the type of the scalars. */
         const textureBytes =
           dims[0] *
           dims[1] *
           dims[2] *
-          numberOfComponents *
-          (scalars.getData()?.BYTES_PER_ELEMENT ?? 4);
+          gpuTextureBytesPerVoxel(scalars.getDataType(), numberOfComponents);
 
         const newScalarTexture = newLedgerTexture();
 

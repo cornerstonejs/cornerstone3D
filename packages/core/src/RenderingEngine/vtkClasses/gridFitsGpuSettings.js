@@ -1,10 +1,10 @@
 import { coreLog } from '../../utilities/logger';
-import { volumeTextureBytes } from '../../utilities/getBufferConfiguration';
 import { voxelGridWithinLimits } from '../../utilities/voxelGrid';
 import {
   gpuSettingsForRender,
   gridLimitsOfGpuSettings,
   gpuSettingsForGrid,
+  gpuTextureBytesPerVoxel,
 } from '../../utilities/gpuSettingsPresets';
 
 const log = coreLog.getLogger('RenderingEngine', 'gridFitsGpuSettings');
@@ -44,13 +44,8 @@ export default function gridFitsGpuSettings(
     return true;
   }
 
-  let numBytes = 4 * (numberOfComponents || 1);
-
-  try {
-    numBytes = volumeTextureBytes(1, dataType, numberOfComponents);
-  } catch {
-    /** A type that the volume buffer does not name counts as float. */
-  }
+  /** The bytes of the texture that vtk.js uploads, not of the CPU buffer. */
+  const numBytes = gpuTextureBytesPerVoxel(dataType, numberOfComponents);
   const gpuSettings = gpuSettingsForGrid(active, dims, numBytes);
   const limits = gridLimitsOfGpuSettings(gpuSettings, numBytes);
   const grid = {

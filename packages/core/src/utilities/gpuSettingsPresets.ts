@@ -1,5 +1,6 @@
 import type { VoxelGridLimits } from '../types';
 import {
+  getCanUseNorm16Texture,
   getConfiguration,
   getLossyDownsampling,
   getShouldUseCPURendering,
@@ -618,6 +619,42 @@ function gpuSettingsForGrid(
 }
 
 /**
+ * The bytes of one voxel of a volume texture on the GPU, for the type of the
+ * volume data.
+ *
+ * The volume buffer in memory holds 16-bit data as Float32, but the texture
+ * that vtk.js uploads holds 2 bytes per value when norm16 textures are usable
+ * (see `getCanUseNorm16Texture`), and 4 bytes as float otherwise. 8-bit data
+ * takes 1 byte, and any other type 4 bytes. With no type, the count of
+ * values.
+ *
+ * @param dataType - the typed array of the volume data, such as 'Int16Array'
+ * @param numberOfComponents - the components of one voxel
+ */
+function gpuTextureBytesPerVoxel(
+  dataType: string | undefined,
+  numberOfComponents = 1
+): number {
+  const components = Math.max(numberOfComponents || 1, 1);
+
+  if (!dataType) {
+    return components;
+  }
+
+  switch (dataType) {
+    case 'Int8Array':
+    case 'Uint8Array':
+    case 'Uint8ClampedArray':
+      return components;
+    case 'Int16Array':
+    case 'Uint16Array':
+      return (getCanUseNorm16Texture() ? 2 : 4) * components;
+    default:
+      return 4 * components;
+  }
+}
+
+/**
  * The limits of one grid under some GPU settings.
  *
  * `maxEdge` is the limit on one axis. `maxVoxelCount` comes from the texture
@@ -658,6 +695,7 @@ export {
   gpuSettingsForGrid,
   resetGpuSettingsPreset,
   gridLimitsOfGpuSettings,
+  gpuTextureBytesPerVoxel,
   gpuSettingsApply,
   getGpuMemoryLimit,
   setGpuMemoryLimit,
