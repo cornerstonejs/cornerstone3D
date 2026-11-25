@@ -340,7 +340,8 @@ function getGpuMemoryLimit(): GpuMemoryLimit | undefined {
  * choice or `resetGpuMemoryLimit`. A hard limit from the configuration still
  * wins (see `getGpuMemoryLimit`).
  *
- * The change applies at once: `VOLUME_TEXTURE_LIMITS_CHANGED` fires, so a
+ * The change applies at once: `GPU_MEMORY_LIMIT_CHANGED` fires with the
+ * previous and the current limit, then `VOLUME_TEXTURE_LIMITS_CHANGED`, so a
  * lower limit provisions the textures on screen smaller, and a higher one
  * provisions them larger. It works while the WebGL context is lost or WebGL
  * is unavailable, because it only writes the record.
@@ -366,9 +367,10 @@ function setGpuMemoryLimit({
   }
 
   const limit = { bytes: Math.floor(bytes), hard: Boolean(hard) };
+  const previous = getGpuMemoryLimit();
 
   pageChoice = storeGpuMemoryLimit(limit) ? undefined : { limit };
-  triggerEvent(eventTarget, Events.VOLUME_TEXTURE_LIMITS_CHANGED);
+  announceLimitChange(previous);
 }
 
 /**
@@ -378,7 +380,22 @@ function setGpuMemoryLimit({
  * `setGpuMemoryLimit`.
  */
 function resetGpuMemoryLimit(): void {
+  const previous = getGpuMemoryLimit();
+
   pageChoice = clearGpuMemoryRecords() ? undefined : { limit: undefined };
+  announceLimitChange(previous);
+}
+
+/**
+ * Fires `GPU_MEMORY_LIMIT_CHANGED` with the limit before and after a set or a
+ * reset, then `VOLUME_TEXTURE_LIMITS_CHANGED`, so the strategies provision
+ * again under the new limit.
+ */
+function announceLimitChange(previous: GpuMemoryLimit | undefined): void {
+  triggerEvent(eventTarget, Events.GPU_MEMORY_LIMIT_CHANGED, {
+    previous,
+    current: getGpuMemoryLimit(),
+  });
   triggerEvent(eventTarget, Events.VOLUME_TEXTURE_LIMITS_CHANGED);
 }
 

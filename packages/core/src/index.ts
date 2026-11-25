@@ -263,6 +263,22 @@ export type {
   GpuMemoryKind,
   GpuMemoryEntry,
 } from './utilities/gpuMemoryLedger';
+export { getGpuMemoryStatus } from './utilities/gpuMemoryStatus';
+export {
+  GPU_MEMORY_BUCKETS_GB,
+  getGpuMemoryHistory,
+  suggestGpuMemoryLimit,
+  getLastGpuMemoryFailure,
+  acknowledgeGpuMemoryFailure,
+} from './utilities/gpuMemoryHistory';
+export {
+  canRunGpuMemoryCalibration,
+  runGpuMemoryCalibration,
+} from './utilities/gpuMemoryCalibration';
+export {
+  isWebGLBlocked,
+  whenWebGLAvailable,
+} from './utilities/webglAvailability';
 
 // Classes
 import Settings from './Settings';
