@@ -55,6 +55,10 @@ import {
 import * as windowLevelUtil from '../utilities/windowLevel';
 import createLinearRGBTransferFunction from '../utilities/createLinearRGBTransferFunction';
 import createSigmoidRGBTransferFunction from '../utilities/createSigmoidRGBTransferFunction';
+import {
+  ensureNonZeroVOIRange,
+  getVOIRangeOverlappingPixelRange,
+} from '../utilities/voiRangeGuards';
 import { updateVTKImageDataWithCornerstoneImage } from '../utilities/updateVTKImageDataWithCornerstoneImage';
 import triggerEvent from '../utilities/triggerEvent';
 import { isEqual } from '../utilities/isEqual';
@@ -1639,6 +1643,10 @@ class StackViewport extends Viewport {
       voiRangeToUse = maxVoiRange;
     }
 
+    // Guard against a zero-width VOI (e.g. an empty slice where min === max),
+    // which would collapse the transfer function and render the image white.
+    voiRangeToUse = ensureNonZeroVOIRange(voiRangeToUse);
+
     // scaling logic here
     // https://github.com/Kitware/vtk-js/blob/master/Sources/Rendering/OpenGL/ImageMapper/index.js#L540-L549
     imageActor.getProperty().setUseLookupTableScalarRange(true);
@@ -2764,6 +2772,15 @@ class StackViewport extends Viewport {
       windowWidth,
       windowCenter,
       voiLUTFunction
+    );
+
+    // The header W/L can be meaningless for the rescaled data (e.g. a
+    // near-zero RescaleSlope), so fall back to the image's own pixel range
+    // when the window is zero-width or doesn't overlap the pixel values.
+    voiRange = getVOIRangeOverlappingPixelRange(
+      voiRange,
+      image.minPixelValue,
+      image.maxPixelValue
     );
 
     // Get the range for the PT since if it is prescaled
