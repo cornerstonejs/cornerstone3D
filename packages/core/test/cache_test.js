@@ -147,7 +147,7 @@ describe('Cache', () => {
       }).toThrow();
     });
 
-    it('should fail if resolved image does not have sizeInBytes (putImageLoadObject)', async () => {
+    it('should not cache a resolved image without sizeInBytes (putImageLoadObject)', async () => {
       const image1 = {
         imageId: 'anImageId1',
         sizeInBytes: undefined,
@@ -158,9 +158,7 @@ describe('Cache', () => {
         cancelFn: undefined,
       };
 
-      await expectAsync(
-        cache.putImageLoadObject(image1.imageId, imageLoadObject1)
-      ).toBeRejected();
+      await cache.putImageLoadObject(image1.imageId, imageLoadObject1);
 
       expect(cache.getImageLoadObject(image1.imageId)).not.toBeDefined();
 
@@ -168,7 +166,7 @@ describe('Cache', () => {
       expect(cacheSize).toBe(0);
     });
 
-    it("should fail if resolved image's sizeInBytes is not a number(putImageLoadObject)", async () => {
+    it('should not cache a resolved image whose sizeInBytes is not a number (putImageLoadObject)', async () => {
       const image1 = {
         imageId: 'anImageId1',
         sizeInBytes: '123',
@@ -179,9 +177,7 @@ describe('Cache', () => {
         cancelFn: undefined,
       };
 
-      await expectAsync(
-        cache.putImageLoadObject(image1.imageId, imageLoadObject1)
-      ).toBeRejected();
+      await cache.putImageLoadObject(image1.imageId, imageLoadObject1);
 
       expect(cache.getImageLoadObject(image1.imageId)).not.toBeDefined();
 

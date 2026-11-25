@@ -8,14 +8,16 @@ export type RegisterDisplaySetMetadataOptions = {
 };
 
 /**
- * Stores display set metadata in the typed metadata cache via addTyped.
+ * Stores display set metadata in the typed metadata cache via addTyped, under
+ * its `displaySetId` and under its image ids. A viewport finds the display set
+ * by its `displaySetId`.
  */
 export function registerDisplaySetMetadata(
   imageIds: string[],
   displaySet: IDisplaySet,
   options: RegisterDisplaySetMetadataOptions = {}
 ): void {
-  const idsToRegister = new Set<string>(imageIds);
+  const idsToRegister = new Set<string>([displaySet.displaySetId, ...imageIds]);
 
   if (options.includeImageIds) {
     for (const frameId of displaySet.imageIds) {

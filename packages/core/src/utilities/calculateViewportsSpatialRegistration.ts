@@ -23,8 +23,10 @@ const ALLOWED_DELTA = 0.05;
  * If the viewports are in the same frame of reference, it will return early,
  * but otherwise it will use the current image's metadata to calculate the
  * translation between the two viewports and adds it to the spatialRegistrationModule
- * metadata provider
+ * metadata provider.
  *
+ * The current images are the reference, so the user can scroll both viewports
+ * to matching anatomy before the registration is calculated.
  *
  * @param viewport1 - The first stack viewport
  * @param viewport2 - The second stack viewport
@@ -33,11 +35,11 @@ function calculateViewportsSpatialRegistration(
   viewport1: IStackViewport | IVolumeViewport,
   viewport2: IStackViewport | IVolumeViewport
 ): void {
-  const imageId1 = viewport1.getSliceIndex();
-  const imageId2 = viewport2.getSliceIndex();
+  const imageId1 = viewport1.getCurrentImageId();
+  const imageId2 = viewport2.getCurrentImageId();
 
-  const imagePlaneModule1 = get('imagePlaneModule', imageId1.toString());
-  const imagePlaneModule2 = get('imagePlaneModule', imageId2.toString());
+  const imagePlaneModule1 = get('imagePlaneModule', imageId1);
+  const imagePlaneModule2 = get('imagePlaneModule', imageId2);
 
   if (!imagePlaneModule1 || !imagePlaneModule2) {
     log.info('Viewport spatial registration requires image plane module');

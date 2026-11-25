@@ -13,15 +13,21 @@ import { resolveSplitRuleSet } from './splitRuleSet';
 import { displaySetContextFor, withInstances } from './displaySetContext';
 import { sortInstancesCopy } from './sortInstances';
 import { hasNoValue, isUnsafeKey } from '../safeFunctions';
+import { logging } from '@cornerstonejs/utils';
+
+const log = logging.metadataLog.getLogger(
+  'displayset',
+  'groupInstancesBySplitRules'
+);
 
 /**
  * Builds the series context of one split: runs the `series` hook of each rule,
- * in the order given (priority order), and merges what it returns.
+ * in the order given (rule order), and merges what it returns.
  *
  * The first rule that computes a name wins. A later hook gets the facts so far
  * as `context.series`, and a name it returns that is already present is
  * ignored, so two rules can each declare the fact they read and the fact is
- * computed once. A rule that is turned off (`priority: null`) is not in
+ * computed once. A rule that is not in the rule order is not in
  * `rules`, so it computes nothing.
  *
  * Exported so that a host which re-sorts a display set outside a split
@@ -297,14 +303,14 @@ function buildSplitKey(
 }
 
 /**
- * Groups instances by the first matching split rule of `ruleSet` (keyed by rule
- * id, tried in ascending priority; see `resolveSplitRuleSet`).
+ * Groups instances by the first matching split rule of `ruleSet` (an array, tried
+ * in order; see `materializeSplitRules`).
  *
  * - The split sorts a copy of the input one time into the default order,
  *   {@link sortByInstanceNumber}
  *   (`InstanceNumber`, then `SOPInstanceUID`) before anything else, so the
  *   series functions never see the input order.
- * - Each rule's `series` hook runs once, in priority order, and extends one
+ * - Each rule's `series` hook runs once, in rule order, and extends one
  *   series context (see {@link computeSeriesFacts}); the first rule that
  *   computes a name wins.
  * - The split key of a group is `[ruleId, ...groupBy values]`.
@@ -313,8 +319,9 @@ function buildSplitKey(
  *   part of the result depends on the input order.
  *
  * @param onUnmatched - called for each instance that matches no rule and is
- *   therefore placed in no group, so callers can see what was dropped.
- * @throws if a rule set entry is invalid (see `validateSplitRuleSetEntry`).
+ *   therefore placed in no group, so callers can see what was dropped. With
+ *   no callback, the split writes one warning with the count.
+ * @throws if the rule set is invalid (see `resolveSplitRuleSet`).
  */
 export function groupInstancesBySplitRules(
   instances: NaturalizedInstance[],
@@ -342,6 +349,7 @@ export function groupInstancesBySplitRules(
   // Claim instances first, then group the instances of each rule.
   const claimedByRule: NaturalizedInstance[][] = splitRules.map(() => []);
 
+  let unmatchedCount = 0;
   for (const instance of sorted) {
     let matched = false;
 
@@ -356,8 +364,15 @@ export function groupInstancesBySplitRules(
     }
 
     if (!matched) {
+      unmatchedCount++;
       onUnmatched?.(instance);
     }
+  }
+  if (unmatchedCount && !onUnmatched) {
+    // A rule order without `unsupported` drops what no other rule claims.
+    log.warn(
+      `groupInstancesBySplitRules: ${unmatchedCount} instance(s) match no split rule, and get no display set`
+    );
   }
 
   const ruleOrderers = splitRules.map((rule) =>
