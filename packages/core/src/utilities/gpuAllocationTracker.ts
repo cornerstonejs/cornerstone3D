@@ -234,6 +234,23 @@ export function noteTextureAllocation({
 }
 
 /**
+ * Cancels the noted allocation of this owner, for an upload that vtk.js
+ * refused before it created any storage. Nothing is recorded for it, and the
+ * allocation of another owner stays pending.
+ *
+ * @param owner - the texture or mapper that noted the allocation
+ */
+export function cancelTextureAllocation(owner: unknown): void {
+  if (lastLargeAllocation?.owner === owner) {
+    lastLargeAllocation = null;
+  }
+
+  if (pending?.owner === owner) {
+    abandonPendingAllocation();
+  }
+}
+
+/**
  * Notes the end of a draw of a volume mapper. The first draw after a large
  * allocation that samples its texture settles that allocation after
  * `SETTLE_MS`. A draw of another mapper does not, because the texture of the

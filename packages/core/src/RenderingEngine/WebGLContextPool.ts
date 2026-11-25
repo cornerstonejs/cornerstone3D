@@ -7,7 +7,6 @@ import type {
 import { attachWebGLContextEvents } from './helpers/attachWebGLContextEvents';
 import {
   CANVAS_BYTES_PER_PIXEL,
-  getGpuMemoryEntryBytes,
   RENDER_BUFFER_BYTES_PER_PIXEL,
   removeGpuMemoryEntry,
   setGpuMemoryEntry,
@@ -75,15 +74,11 @@ class WebGLContextPool {
    * Records the GPU memory of the canvas of a viewport and of the render
    * buffer of its context, from the sizes that this pool tracks.
    *
-   * The engine resizes the offscreen canvas when a viewport resizes, not when
-   * a viewport goes, so a removal (`shrink: false`) never lowers the charge of
-   * the render buffer.
+   * The engine fits the offscreen canvas to the viewports that remain after
+   * a removal, but leaves it as it is when no viewport remains, so the charge
+   * of the render buffer stays then.
    */
-  private updateLedger(
-    contextIndex: number,
-    viewportId?: string,
-    { shrink = true }: { shrink?: boolean } = {}
-  ): void {
+  private updateLedger(contextIndex: number, viewportId?: string): void {
     const size = viewportId ? this.viewportSizes.get(viewportId) : undefined;
     const max = this.contextMaxSizes.get(contextIndex);
 
@@ -94,14 +89,13 @@ class WebGLContextPool {
       });
     }
 
-    const key = this.renderBufferKey(contextIndex);
-    const bytes = max
-      ? max.width * max.height * RENDER_BUFFER_BYTES_PER_PIXEL
-      : 0;
+    if (!max || max.width * max.height === 0) {
+      return;
+    }
 
-    setGpuMemoryEntry(key, {
+    setGpuMemoryEntry(this.renderBufferKey(contextIndex), {
       kind: 'renderBuffer',
-      bytes: shrink ? bytes : Math.max(bytes, getGpuMemoryEntryBytes(key)),
+      bytes: max.width * max.height * RENDER_BUFFER_BYTES_PER_PIXEL,
     });
   }
 
@@ -249,7 +243,7 @@ class WebGLContextPool {
     if (contextIndex !== undefined) {
       const newMax = this.calculateMaxSizeForContext(contextIndex);
       this.contextMaxSizes.set(contextIndex, newMax);
-      this.updateLedger(contextIndex, undefined, { shrink: false });
+      this.updateLedger(contextIndex);
     }
   }
 

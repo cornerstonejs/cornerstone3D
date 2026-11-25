@@ -15,6 +15,7 @@ import {
   setGpuMemoryEntry,
 } from '../../utilities/gpuMemoryLedger';
 import {
+  cancelTextureAllocation,
   noteTextureAllocation,
   noteTextureRendered,
 } from '../../utilities/gpuAllocationTracker';
@@ -180,6 +181,14 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
 
   publicAPI.getNeedToRebuildBufferObjects = (ren, actor) => {
     const useLabelOutline = model.labelOutlineProperties.length > 0;
+
+    /**
+     * A refused upload tries again on each render, also when the slot still
+     * holds an earlier texture, until the upload succeeds.
+     */
+    if (model.scalarTextureRefused) {
+      return true;
+    }
 
     if (
       model.VBOBuildTime.getMTime() < publicAPI.getMTime() ||
@@ -369,6 +378,7 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
 
         /** An upload that vtk.js refused holds no memory and draws nothing. */
         if (created === false) {
+          cancelTextureAllocation(newScalarTexture);
           newScalarTexture.delete();
           model.scalarTextureRefused = true;
           return;

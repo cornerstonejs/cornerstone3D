@@ -17,6 +17,7 @@ import {
   probeTextureEdge,
 } from '../src/utilities/textureSupport';
 import {
+  cancelTextureAllocation,
   noteTextureAllocation,
   noteTextureRendered,
 } from '../src/utilities/gpuAllocationTracker';
@@ -550,6 +551,61 @@ describe('renderingCapabilities', () => {
     } finally {
       jest.useRealTimers();
     }
+  });
+
+  it('cancels the noted allocation of an upload that vtk.js refused', () => {
+    const GIGABYTE = 1024 * 1024 * 1024;
+    const refused = {};
+
+    mockWebGL();
+    detectRenderingCapabilities();
+    noteTextureAllocation({
+      textureBytes: GIGABYTE,
+      totalBytes: GIGABYTE,
+      owner: refused,
+    });
+    cancelTextureAllocation(refused);
+    eventTarget.dispatchEvent(
+      new CustomEvent(Events.WEBGL_CONTEXT_LOST, { detail: {} })
+    );
+
+    expect(
+      getStoredRenderingCapabilities().textureBytes.failed
+    ).toBeUndefined();
+    expect(
+      Object.keys(window.localStorage).some((key) => key.includes('.pending.'))
+    ).toBe(false);
+  });
+
+  it('keeps a crash record that the store did not confirm, for a later start', () => {
+    mockWebGL();
+    detectRenderingCapabilities();
+    window.localStorage.setItem(
+      `${STORAGE_KEY}.pending.stopped-tab`,
+      JSON.stringify({
+        renderer: 'NVIDIA GeForce RTX 3080',
+        probeVersion: RENDERING_CAPABILITIES_PROBE_VERSION,
+        totalBytes: 9000,
+        at: Date.now() - 60000,
+      })
+    );
+
+    const setItem = jest
+      .spyOn(Storage.prototype, 'setItem')
+      .mockImplementation(() => {
+        throw new Error('QuotaExceededError');
+      });
+
+    try {
+      resetRenderingCapabilities();
+      getStoredRenderingCapabilities();
+    } finally {
+      setItem.mockRestore();
+    }
+
+    expect(
+      window.localStorage.getItem(`${STORAGE_KEY}.pending.stopped-tab`)
+    ).not.toBeNull();
   });
 
   it('settles another owner with its own total, not the earlier pending one', () => {

@@ -597,12 +597,13 @@ function addFailure(
  * Finds the pending records that a stopped tab left, and records each one as a
  * crash at its size. See {@link beginPendingAllocation}.
  *
- * @param handled - receives the keys to remove once the record is stored, so
- * a page that stops before that finds them again
+ * @param handled - receives the keys to remove: `recorded` once the store
+ * confirms the record, so a page that stops before that, or a store that
+ * refuses the write, finds them again; `dropped` in any case
  */
 function recoverPendingAllocations(
   target: StoredRenderingCapabilities,
-  handled: string[]
+  handled: { recorded: string[]; dropped: string[] }
 ): void {
   const storage = getCapabilityStorage();
   const now = Date.now();
@@ -638,12 +639,15 @@ function recoverPendingAllocations(
         log.warn(
           `a previous page stopped during a texture allocation of ${pending.totalBytes} bytes, so it is recorded as a crash`
         );
+        handled.recorded.push(key);
+
+        continue;
       }
     } catch {
       /** A record that does not parse is removed too. */
     }
 
-    handled.push(key);
+    handled.dropped.push(key);
   }
 }
 
@@ -723,10 +727,19 @@ export function detectRenderingCapabilities({
     formats = probed?.formats ?? { ...NO_GPU_FORMATS };
   }
 
-  const handled: string[] = [];
+  const handled = { recorded: [] as string[], dropped: [] as string[] };
 
   updateRecord((target) => recoverPendingAllocations(target, handled));
-  handled.forEach((key) => storage.removeItem(key));
+  handled.dropped.forEach((key) => storage.removeItem(key));
+
+  /** The crash counts are in the store, so the pending records can go. */
+  if (
+    handled.recorded.length &&
+    readRecord(record.renderer)?.gpuBytes.failed?.failures ===
+      record.gpuBytes.failed?.failures
+  ) {
+    handled.recorded.forEach((key) => storage.removeItem(key));
+  }
 
   return {
     ...contextInfo,

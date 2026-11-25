@@ -23,7 +23,7 @@ const RENDER_BUFFER_BYTES_PER_PIXEL = 8;
 describe('the GPU memory ledger of the context pool', () => {
   beforeEach(() => resetGpuMemoryLedger());
 
-  it('keeps the render buffer charge when a viewport goes, and drops it on destroy', () => {
+  it('follows the remaining viewports, keeps the charge when none remain, and drops it on destroy', () => {
     const pool = new WebGLContextPool(1);
 
     pool.assignViewportToContext('large', 0);
@@ -31,18 +31,21 @@ describe('the GPU memory ledger of the context pool', () => {
     pool.assignViewportToContext('small', 0);
     pool.updateViewportSize('small', 100, 100);
 
-    const charged = 1000 * 1000 * RENDER_BUFFER_BYTES_PER_PIXEL;
+    expect(getGpuMemoryByKind().renderBuffer).toBe(
+      1000 * 1000 * RENDER_BUFFER_BYTES_PER_PIXEL
+    );
 
-    expect(getGpuMemoryByKind().renderBuffer).toBe(charged);
-
-    /** The engine does not shrink the offscreen canvas on a removal. */
+    /** The engine fits the offscreen canvas to the viewport that remains. */
     pool.removeViewport('large');
 
-    expect(getGpuMemoryByKind().renderBuffer).toBe(charged);
+    const small = 100 * 100 * RENDER_BUFFER_BYTES_PER_PIXEL;
 
+    expect(getGpuMemoryByKind().renderBuffer).toBe(small);
+
+    /** With no viewport left, the engine leaves the canvas as it is. */
     pool.removeViewport('small');
 
-    expect(getGpuMemoryByKind().renderBuffer).toBe(charged);
+    expect(getGpuMemoryByKind().renderBuffer).toBe(small);
     expect(getGpuMemoryByKind().canvas).toBe(0);
 
     pool.destroy();
