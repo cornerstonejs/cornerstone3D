@@ -205,7 +205,15 @@ export function noteTextureAllocation({
     return;
   }
 
-  const total = Math.max(totalBytes, pending?.totalBytes ?? 0);
+  /**
+   * A new upload of the same owner keeps the larger total. The total of
+   * another owner's allocation is already part of `totalBytes`, through the
+   * ledger, while that allocation lives.
+   */
+  const total =
+    pending && pending.owner === owner
+      ? Math.max(totalBytes, pending.totalBytes)
+      : totalBytes;
 
   if (pending) {
     clearTimeout(pending.timer);

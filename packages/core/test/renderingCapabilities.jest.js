@@ -552,6 +552,50 @@ describe('renderingCapabilities', () => {
     }
   });
 
+  it('settles another owner with its own total, not the earlier pending one', () => {
+    const GIGABYTE = 1024 * 1024 * 1024;
+    const first = {};
+    const second = {};
+
+    jest.useFakeTimers();
+
+    try {
+      mockWebGL();
+      detectRenderingCapabilities();
+      noteTextureAllocation({
+        textureBytes: GIGABYTE,
+        totalBytes: 3 * GIGABYTE,
+        owner: first,
+      });
+      noteTextureAllocation({
+        textureBytes: GIGABYTE,
+        totalBytes: GIGABYTE,
+        owner: second,
+      });
+      noteTextureRendered(undefined, [second]);
+      jest.advanceTimersByTime(6000);
+
+      expect(getStoredRenderingCapabilities().textureBytes.largest.value).toBe(
+        GIGABYTE
+      );
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('probes again when the stored formats are incomplete', () => {
+    mockWebGL();
+    detectRenderingCapabilities();
+
+    const stored = JSON.parse(window.localStorage.getItem(recordKey()));
+
+    stored.formats = [];
+    window.localStorage.setItem(recordKey(), JSON.stringify(stored));
+    detectRenderingCapabilities();
+
+    expect(getSupportedTextureFormats).toHaveBeenCalledTimes(2);
+  });
+
   it('settles an allocation only on a draw that samples its texture', () => {
     const GIGABYTE = 1024 * 1024 * 1024;
     const texture = {};

@@ -333,7 +333,8 @@ function getGpuMemoryLimit({ probe = true } = {}): GpuMemoryLimit | undefined {
     return { bytes: hardConfig, source: 'hardConfig', hard: true };
   }
 
-  const user = getStoredGpuMemoryLimit() ?? unstoredUserLimit;
+  /** A choice of this page that the store could not keep wins over the store. */
+  const user = unstoredUserLimit ?? getStoredGpuMemoryLimit();
 
   if (user) {
     return user.hard
@@ -585,14 +586,22 @@ function gpuSettingsForGrid(
   const edge = Math.max(dimensions[0], dimensions[1], dimensions[2]);
   let result = gpuSettings;
 
-  /** An `auto` with no limits has an infinite edge, so it never probes. */
-  if (
-    probe &&
-    edge > gpuSettings.maxTextureEdge &&
-    edge <= configuredMaxEdge() &&
-    probeRenderingEdge(edge, probeFormatOf(bytesPerVoxel))
-  ) {
-    result = getAutoGpuSettings();
+  /**
+   * An `auto` with no limits has an infinite edge, so it never probes. The
+   * edge comes from the record after a probe, and also when an earlier check
+   * already passed this edge, because the settings that a caller holds can
+   * predate that probe.
+   */
+  if (edge > gpuSettings.maxTextureEdge) {
+    if (probe && edge <= configuredMaxEdge()) {
+      probeRenderingEdge(edge, probeFormatOf(bytesPerVoxel));
+    }
+
+    const recordedEdge = autoEdge({ probe: false });
+
+    if (recordedEdge > gpuSettings.maxTextureEdge) {
+      result = { ...gpuSettings, maxTextureEdge: recordedEdge };
+    }
   }
 
   if (otherBytes <= 0 || !Number.isFinite(result.textureMemoryBytes)) {

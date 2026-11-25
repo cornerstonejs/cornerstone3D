@@ -159,6 +159,13 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
     // A draw that samples storage that the browser still clears would block.
     if (model.scalarTextures?.some((texture) => texture?.isInitializing?.())) {
       actorsWaitingForStorage.set(actor, performance.now());
+    } else if (model.scalarTextureRefused) {
+      /**
+       * The GPU settings refused a full-resolution texture, so its slot holds
+       * a texture with no storage, which vtk.js cannot activate. Nothing
+       * draws, and the next render tries the upload again.
+       */
+      actorsWaitingForStorage.delete(actor);
     } else {
       actorsWaitingForStorage.delete(actor);
       publicAPI.renderPieceDraw(ren, actor);
@@ -214,6 +221,7 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
     const actorProperties = actor.getProperties();
 
     takeBoundScalarTexture(model);
+    model.scalarTextureRefused = false;
     model.currentValidInputs.forEach(({ imageData }, component) => {
       if (!model.scalarTextures) {
         model.scalarTextures = [];
@@ -328,6 +336,7 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
             }
           )
         ) {
+          model.scalarTextureRefused = true;
           return;
         }
 
@@ -350,12 +359,20 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
           model.context.getExtension('EXT_texture_norm16')
         );
         newScalarTexture.resetFormatAndType();
-        newScalarTexture.create3DFilterableFromDataArray({
+        const created = newScalarTexture.create3DFilterableFromDataArray({
           width: dims[0],
           height: dims[1],
           depth: dims[2],
           dataArray: scalars,
         });
+
+        /** An upload that vtk.js refused holds no memory and draws nothing. */
+        if (created === false) {
+          newScalarTexture.delete();
+          model.scalarTextureRefused = true;
+          return;
+        }
+
         /** The size that vtk.js computed for the format it chose. */
         setGpuMemoryEntry(newScalarTexture, {
           kind: 'texture',

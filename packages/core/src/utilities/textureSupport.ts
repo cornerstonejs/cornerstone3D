@@ -325,16 +325,23 @@ export class TextureProbe {
 
       /**
        * Texel centres, so a LINEAR filter returns the texel value. The thin
-       * axes sample between two equal texels.
+       * axes sample between two equal texels. A LINEAR test replaces the
+       * middle texel with the point halfway between the first two texels,
+       * which hold different values, so a driver that accepts LINEAR but
+       * samples the nearest texel fails.
        */
-      const sampled = [0, middle, edge - 2, edge - 1];
+      const sampled = [linear ? 0.5 : middle, 0, edge - 2, edge - 1];
+      const expectedAt = (position: number) =>
+        Number.isInteger(position)
+          ? valueAt(position)
+          : (valueAt(Math.floor(position)) + valueAt(Math.ceil(position))) / 2;
       const coords = new Float32Array(12);
 
-      sampled.forEach((i, pixel) => {
+      sampled.forEach((position, pixel) => {
         coords[pixel * 3] = 0.5;
         coords[pixel * 3 + 1] = 0.5;
         coords[pixel * 3 + 2] = 0.5;
-        coords[pixel * 3 + axis] = (i + 0.5) / edge;
+        coords[pixel * 3 + axis] = (position + 0.5) / edge;
       });
       gl.uniform3fv(this.coordsLocation, coords);
 
@@ -345,8 +352,8 @@ export class TextureProbe {
       const pixels = new Uint8Array(16);
       gl.readPixels(0, 0, 4, 1, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
 
-      return sampled.every((i, pixel) => {
-        const expected = Math.round(valueAt(i) * 255);
+      return sampled.every((position, pixel) => {
+        const expected = Math.round(expectedAt(position) * 255);
         const [r, g, b] = pixels.subarray(pixel * 4, pixel * 4 + 3);
 
         return r === g && g === b && Math.abs(r - expected) <= TOLERANCE;

@@ -7,6 +7,7 @@ import type {
 import { attachWebGLContextEvents } from './helpers/attachWebGLContextEvents';
 import {
   CANVAS_BYTES_PER_PIXEL,
+  getGpuMemoryEntryBytes,
   RENDER_BUFFER_BYTES_PER_PIXEL,
   removeGpuMemoryEntry,
   setGpuMemoryEntry,
@@ -73,8 +74,16 @@ class WebGLContextPool {
   /**
    * Records the GPU memory of the canvas of a viewport and of the render
    * buffer of its context, from the sizes that this pool tracks.
+   *
+   * The engine resizes the offscreen canvas when a viewport resizes, not when
+   * a viewport goes, so a removal (`shrink: false`) never lowers the charge of
+   * the render buffer.
    */
-  private updateLedger(contextIndex: number, viewportId?: string): void {
+  private updateLedger(
+    contextIndex: number,
+    viewportId?: string,
+    { shrink = true }: { shrink?: boolean } = {}
+  ): void {
     const size = viewportId ? this.viewportSizes.get(viewportId) : undefined;
     const max = this.contextMaxSizes.get(contextIndex);
 
@@ -85,9 +94,14 @@ class WebGLContextPool {
       });
     }
 
-    setGpuMemoryEntry(this.renderBufferKey(contextIndex), {
+    const key = this.renderBufferKey(contextIndex);
+    const bytes = max
+      ? max.width * max.height * RENDER_BUFFER_BYTES_PER_PIXEL
+      : 0;
+
+    setGpuMemoryEntry(key, {
       kind: 'renderBuffer',
-      bytes: max ? max.width * max.height * RENDER_BUFFER_BYTES_PER_PIXEL : 0,
+      bytes: shrink ? bytes : Math.max(bytes, getGpuMemoryEntryBytes(key)),
     });
   }
 
@@ -235,7 +249,7 @@ class WebGLContextPool {
     if (contextIndex !== undefined) {
       const newMax = this.calculateMaxSizeForContext(contextIndex);
       this.contextMaxSizes.set(contextIndex, newMax);
-      this.updateLedger(contextIndex);
+      this.updateLedger(contextIndex, undefined, { shrink: false });
     }
   }
 

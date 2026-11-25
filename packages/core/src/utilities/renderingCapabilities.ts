@@ -396,7 +396,16 @@ function readRecord(renderer: string): StoredRenderingCapabilities | null {
     setOrDelete(stored, 'max3DTextureSize', finite(parsed.max3DTextureSize));
     setOrDelete(stored, 'probeMs', finite(parsed.probeMs));
 
-    if (isObject(parsed.formats)) {
+    /**
+     * Formats count as probed only when every flag is a boolean, so an
+     * incomplete record probes again instead of reporting no support.
+     */
+    if (
+      isObject(parsed.formats) &&
+      Object.keys(NO_GPU_FORMATS).every(
+        (name) => typeof parsed.formats[name] === 'boolean'
+      )
+    ) {
       stored.formats = { ...NO_GPU_FORMATS };
 
       for (const name of Object.keys(NO_GPU_FORMATS)) {
@@ -587,8 +596,14 @@ function addFailure(
 /**
  * Finds the pending records that a stopped tab left, and records each one as a
  * crash at its size. See {@link beginPendingAllocation}.
+ *
+ * @param handled - receives the keys to remove once the record is stored, so
+ * a page that stops before that finds them again
  */
-function recoverPendingAllocations(target: StoredRenderingCapabilities): void {
+function recoverPendingAllocations(
+  target: StoredRenderingCapabilities,
+  handled: string[]
+): void {
   const storage = getCapabilityStorage();
   const now = Date.now();
 
@@ -625,10 +640,10 @@ function recoverPendingAllocations(target: StoredRenderingCapabilities): void {
         );
       }
     } catch {
-      /** A record that does not parse is removed below. */
+      /** A record that does not parse is removed too. */
     }
 
-    storage.removeItem(key);
+    handled.push(key);
   }
 }
 
@@ -708,7 +723,10 @@ export function detectRenderingCapabilities({
     formats = probed?.formats ?? { ...NO_GPU_FORMATS };
   }
 
-  updateRecord(recoverPendingAllocations);
+  const handled: string[] = [];
+
+  updateRecord((target) => recoverPendingAllocations(target, handled));
+  handled.forEach((key) => storage.removeItem(key));
 
   return {
     ...contextInfo,
@@ -890,9 +908,28 @@ export function getStoredGpuMemoryLimit(): GpuMemoryUserLimit | undefined {
 export function storeGpuMemoryLimit(
   limit: GpuMemoryUserLimit | undefined
 ): boolean {
-  return updateRecordOfLastRenderer((target) =>
-    setOrDelete(target, 'memoryLimit', limit && { ...limit })
-  );
+  if (
+    !updateRecordOfLastRenderer((target) =>
+      setOrDelete(target, 'memoryLimit', limit && { ...limit })
+    )
+  ) {
+    return false;
+  }
+
+  /** A store that refused the write, for example a full quota, keeps the old value. */
+  const stored = getStoredGpuMemoryLimitFromStore();
+
+  return limit
+    ? stored?.bytes === limit.bytes && stored?.hard === limit.hard
+    : stored === undefined;
+}
+
+/** The memory limit as the store holds it now, with no cached record. */
+function getStoredGpuMemoryLimitFromStore(): GpuMemoryUserLimit | undefined {
+  const renderer =
+    record?.renderer ?? getCapabilityStorage().getItem(LAST_RENDERER_KEY);
+
+  return renderer ? readRecord(renderer)?.memoryLimit : undefined;
 }
 
 /**

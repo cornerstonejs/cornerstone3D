@@ -586,6 +586,45 @@ describe('the auto preset', () => {
     }
   });
 
+  it('reuses an edge that an earlier check passed, with settings from before it', () => {
+    mockWebGL();
+    probeTextureEdge.mockReturnValueOnce(true);
+
+    const before = getActiveGpuSettings();
+
+    gpuSettingsForGrid(before, [512, 512, 2464], 4);
+    probeTextureEdge.mockClear();
+
+    /** The second check holds the settings from before the probe. */
+    const second = gpuSettingsForGrid(before, [512, 512, 2464], 4);
+
+    expect(probeTextureEdge).not.toHaveBeenCalled();
+    expect(second.maxTextureEdge).toBe(2464);
+  });
+
+  it('keeps a limit that the store refused, ahead of the stored one', () => {
+    mockWebGL();
+    setGpuMemoryLimit({ bytes: 768 * MEGABYTE });
+
+    const setItem = jest
+      .spyOn(Storage.prototype, 'setItem')
+      .mockImplementation(() => {
+        throw new Error('QuotaExceededError');
+      });
+
+    try {
+      setGpuMemoryLimit({ bytes: 256 * MEGABYTE });
+
+      expect(getGpuMemoryLimit()).toEqual({
+        bytes: 256 * MEGABYTE,
+        source: 'user',
+        hard: false,
+      });
+    } finally {
+      setItem.mockRestore();
+    }
+  });
+
   it('probes an edge that a grid needs before it raises the edge', () => {
     mockWebGL();
     probeTextureEdge.mockReturnValueOnce(true).mockReturnValueOnce(false);

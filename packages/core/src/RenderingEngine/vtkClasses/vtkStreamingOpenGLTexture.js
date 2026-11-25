@@ -126,19 +126,21 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
    * Tells the allocation tracker about a new GPU allocation, before it
    * happens. An update of some extents of the same texture is no allocation,
    * and a new upload of the same shape, after the texture moved to another
-   * context, writes no pending record either.
+   * context, writes no pending record either. The shape counts as allocated
+   * only after an upload succeeded (see `create3DFromRaw`), so a retry after a
+   * failed upload is noted again.
    *
    * The size is an estimate from the typed array. The ledger takes the size
    * that vtk.js states after the allocation (see `noteAllocated`).
+   *
+   * @returns the shape of the upload
    */
   function noteAllocation({ width, height, depth, numComps, dataType }) {
     const shape = `${width}x${height}x${depth}x${numComps}x${dataType}`;
 
     if (shape === model.allocatedShape) {
-      return;
+      return shape;
     }
-
-    model.allocatedShape = shape;
 
     /** `dataType` names a typed array, such as 'Float32Array'. */
     const textureBytes =
@@ -155,6 +157,8 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
         getGpuMemoryTotal() - getGpuMemoryEntryBytes(publicAPI) + textureBytes,
       owner: publicAPI,
     });
+
+    return shape;
   }
 
   /**
@@ -175,11 +179,11 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
    * re-allocation after the first fill would otherwise stay black.
    */
   publicAPI.create3DFromRaw = (options) => {
-    noteAllocation(options);
-
+    const shape = noteAllocation(options);
     const created = superCreate3DFromRaw(options);
 
     if (created) {
+      model.allocatedShape = shape;
       noteAllocated();
     }
 
