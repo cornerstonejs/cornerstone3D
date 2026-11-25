@@ -421,7 +421,13 @@ export async function decodeImageFrame(
       decodePromise = decodeJPEGBaseline8Bit(pixelData, opts);
       break;
     case '1.2.840.10008.1.2.4.51':
-      // JPEG Baseline lossy process 2 & 4 (12 bit)
+    // JPEG Baseline lossy process 2 & 4 (12 bit)
+    case '1.2.840.10008.1.2.4.53':
+    // JPEG Spectral Selection, Non-Hierarchical, processes 6 & 8 (retired)
+    case '1.2.840.10008.1.2.4.55':
+      // JPEG Full Progression, Non-Hierarchical, processes 10 & 12 (retired).
+      // Both are progressive (SOF2) JPEG, which the JavaScript decoder used for
+      // process 2 & 4 also reads.
       // opts = {
       //   ...imageFrame,
       // };
