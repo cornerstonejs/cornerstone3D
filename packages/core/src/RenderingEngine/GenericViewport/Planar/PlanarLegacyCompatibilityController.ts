@@ -201,8 +201,9 @@ class PlanarLegacyCompatibilityController {
       return;
     }
 
+    const previousProperties = this.properties.get(targetDataId) || {};
     const nextProperties = mergePlanarLegacyProperties(
-      this.properties.get(targetDataId) || {},
+      previousProperties,
       properties
     );
 
@@ -232,7 +233,12 @@ class PlanarLegacyCompatibilityController {
     }
 
     if (properties.voiRange !== undefined || properties.invert !== undefined) {
-      this.emitVOIModified(targetDataId, volumeId);
+      this.emitVOIModified(
+        targetDataId,
+        volumeId,
+        properties.invert !== undefined &&
+          !!properties.invert !== !!previousProperties.invert
+      );
     }
 
     if (properties.colormap !== undefined) {
@@ -683,7 +689,17 @@ class PlanarLegacyCompatibilityController {
     return this.host.getActiveDataId() || this.host.getFirstBoundDataId();
   }
 
-  private emitVOIModified(dataId: string, requestedVolumeId?: string): void {
+  /**
+   * Sends VOI_MODIFIED with the same detail fields as the legacy viewports and
+   * the native planar event. A change of `invert` alone has no stored range, so
+   * the event gives the default range. `invertStateChanged` lets the VOI
+   * synchronizer copy the invert state, as from the legacy volume viewport.
+   */
+  private emitVOIModified(
+    dataId: string,
+    requestedVolumeId?: string,
+    invertStateChanged = false
+  ): void {
     const properties = this.properties.get(dataId);
     const range = properties?.voiRange ?? this.host.getDefaultVOIRange(dataId);
 
@@ -695,7 +711,10 @@ class PlanarLegacyCompatibilityController {
       viewportId: this.host.getViewportId(),
       volumeId: requestedVolumeId || this.resolveVolumeIdForDataId(dataId),
       range,
+      VOILUTFunction: properties?.VOILUTFunction,
       invert: properties?.invert,
+      invertStateChanged,
+      colormap: properties?.colormap,
     });
   }
 

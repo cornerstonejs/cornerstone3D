@@ -292,11 +292,16 @@ describe('PlanarLegacyCompatibilityController', () => {
       const listener = jest.fn();
       element.addEventListener(Events.VOI_MODIFIED, listener);
 
-      controller.setProperties({ voiRange: { lower: 10, upper: 20 } });
+      controller.setProperties({
+        voiRange: { lower: 10, upper: 20 },
+        VOILUTFunction: 'LINEAR_EXACT',
+      });
       expect(listener).toHaveBeenCalledTimes(1);
       expect(listener.mock.calls[0][0].detail).toMatchObject({
         viewportId: 'vp-1',
         range: { lower: 10, upper: 20 },
+        VOILUTFunction: 'LINEAR_EXACT',
+        invertStateChanged: false,
       });
     });
 
@@ -314,7 +319,12 @@ describe('PlanarLegacyCompatibilityController', () => {
       expect(listener.mock.calls[0][0].detail).toMatchObject({
         range,
         invert: true,
+        invertStateChanged: true,
       });
+
+      // The VOI synchronizer copies invert only when the state changed.
+      controller.setProperties({ invert: true });
+      expect(listener.mock.calls[1][0].detail.invertStateChanged).toBe(false);
     });
 
     it('does not emit VOI_MODIFIED when the VOI is untouched', () => {
