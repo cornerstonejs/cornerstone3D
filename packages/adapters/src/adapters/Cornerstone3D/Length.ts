@@ -3,6 +3,7 @@ import MeasurementReport from './MeasurementReport';
 import BaseAdapter3D from './BaseAdapter3D';
 import { toScoord } from '../helpers';
 import { resolveUnit } from './metricHandler';
+import { mapUnitFromUCUM } from './unitMapper';
 
 const { Length: TID300Length } = utilities.TID300;
 
@@ -15,10 +16,11 @@ export default class Length extends BaseAdapter3D {
     this.registerLegacy();
   }
 
-  // TODO: this function is required for all Cornerstone Tool Adapters, since it is called by MeasurementReport.
   /**
    * Restores a Length annotation from a TID 1500 measurement group, including
    * the length and the unit it was measured in.
+   *
+   * TODO: this function is required for all Cornerstone Tool Adapters, since it is called by MeasurementReport.
    */
   static getMeasurementData(
     MeasurementGroup,
@@ -43,9 +45,11 @@ export default class Length extends BaseAdapter3D {
           [`imageId:${referencedImageId}`]: {
             length: NUMGroup ? NUMGroup.MeasuredValueSequence.NumericValue : 0,
             // dcmjs writes px as the UCUM unity code "1" with CodeMeaning "px"
-            unit: resolveUnit(
-              'Length',
-              NUMGroup.MeasuredValueSequence.MeasurementUnitsCodeSequence
+            unit: mapUnitFromUCUM(
+              resolveUnit(
+                'Length',
+                NUMGroup.MeasuredValueSequence.MeasurementUnitsCodeSequence
+              )
             ),
           },
         }

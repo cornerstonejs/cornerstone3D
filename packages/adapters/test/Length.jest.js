@@ -1,4 +1,11 @@
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  afterEach,
+  jest,
+} from '@jest/globals';
 import { utilities } from '@cornerstonejs/core';
 import { Cornerstone3DSR } from '../src/adapters/Cornerstone3D';
 import MeasurementReport from '../src/adapters/Cornerstone3D/MeasurementReport';
@@ -149,6 +156,12 @@ describe('Length measurement unit', () => {
 
   it('Must restore mm from the SR', () => {
     expect(roundTrip('mm')).toEqual({ length: 10.04, unit: 'mm' });
+  });
+
+  it('Must keep a cm US Region unit over two saves', () => {
+    const first = roundTrip('cm US Region');
+    expect(first.unit).toBe('cm US Region');
+    expect(roundTrip(first.unit).unit).toBe('cm US Region');
   });
 });
 
