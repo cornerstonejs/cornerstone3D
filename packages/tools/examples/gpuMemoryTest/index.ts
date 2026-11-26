@@ -397,18 +397,67 @@ function setResult(id: StepId, status: Status, details: string): void {
 }
 
 /** Runs a step, and turns an unexpected error into its failure. */
-async function runStep(id: StepId, run: () => Promise<void>): Promise<void> {
-  const button = buttons.get(id);
+/**
+ * True when the page draws: it is visible, and an animation frame comes. A
+ * browser draws nothing in a hidden tab, and Chrome on macOS draws nothing in
+ * a window that another window covers, so a step there would test nothing.
+ */
+async function pageDraws(): Promise<boolean> {
+  if (document.visibilityState !== 'visible') {
+    return false;
+  }
 
-  button.disabled = true;
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => resolve(false), 1000);
+
+    requestAnimationFrame(() => {
+      clearTimeout(timer);
+      resolve(true);
+    });
+  });
+}
+
+const NOT_DRAWING =
+  'the page did not draw: keep the browser window in front and fully visible (not covered by another window), and run the step again';
+
+/** One step at a time: a step that runs keeps the others from starting. */
+function setBusy(busy: boolean): void {
+  buttons.forEach((button) => {
+    button.disabled = busy;
+  });
+}
+
+let busy = false;
+
+async function runStep(id: StepId, run: () => Promise<void>): Promise<void> {
+  if (busy) {
+    log('Wait for the running step to end');
+
+    return;
+  }
+
+  busy = true;
+  setBusy(true);
   setResult(id, 'running', 'running');
 
   try {
+    if (!(await pageDraws())) {
+      setResult(id, 'fail', NOT_DRAWING);
+
+      return;
+    }
+
     await run();
+
+    /** A step whose page stopped drawing meanwhile tested nothing. */
+    if (readResults()[id]?.status === 'fail' && !(await pageDraws())) {
+      setResult(id, 'fail', `${readResults()[id].details}; ${NOT_DRAWING}`);
+    }
   } catch (error) {
     setResult(id, 'fail', `error: ${(error as Error).message}`);
   } finally {
-    button.disabled = false;
+    busy = false;
+    setBusy(false);
   }
 }
 
@@ -437,8 +486,19 @@ async function loadCt(): Promise<void> {
     throw new Error('the CT did not load in 5 minutes');
   }
 
-  /** A large upload settles 5 s after its first draw. */
-  await waitFor(() => pendingRecords() === 0, 15_000);
+  /**
+   * A CT from the cache of the browser loads before anything draws. The
+   * texture uploads at the first draw, and a large upload settles 5 s after
+   * it, so the step waits for the upload, then for its record.
+   */
+  await waitFor(() => getGpuMemoryByKind().texture > 0, 30_000);
+  await waitFor(
+    () =>
+      pendingRecords() === 0 &&
+      (!getGpuMemoryStatus().applies ||
+        Boolean(getGpuMemoryHistory().largestLoad)),
+    20_000
+  );
 }
 
 async function stepDevice(): Promise<void> {
@@ -599,7 +659,19 @@ async function stepLimit(): Promise<void> {
  * Step 4 reloads with a fresh record, then loses the context of the first
  * large 3D texture as it uploads (see `armContextLoss`).
  */
-function stepContextLoss(): void {
+async function stepContextLoss(): Promise<void> {
+  if (busy) {
+    log('Wait for the running step to end');
+
+    return;
+  }
+
+  if (!(await pageDraws())) {
+    setResult('contextLoss', 'fail', NOT_DRAWING);
+
+    return;
+  }
+
   sessionStorage.setItem(PENDING_KEY, 'contextLoss');
 
   const url = new URL(window.location.href);
@@ -644,7 +716,11 @@ function armContextLoss(): void {
 }
 
 async function finishContextLoss(): Promise<void> {
-  setResult('contextLoss', 'running', 'losing the context during the load');
+  setResult(
+    'contextLoss',
+    'running',
+    'losing the context during the load: keep the page in front, and wait for the result before you use the popup'
+  );
 
   const failures: Types.EventTypes.GpuMemoryFailureEventDetail[] = [];
 
@@ -667,7 +743,9 @@ async function finishContextLoss(): Promise<void> {
       'fail',
       document.visibilityState === 'hidden'
         ? 'no failure reported: the page was hidden, and a hidden page counts no loss'
-        : 'no failure reported within 60 s'
+        : (await pageDraws())
+          ? 'no failure reported within 60 s'
+          : `no failure reported; ${NOT_DRAWING}`
     );
 
     return;
@@ -870,6 +948,23 @@ async function finishPendingStep(): Promise<void> {
 
   sessionStorage.removeItem(PENDING_KEY);
 
+  if (!pending) {
+    return;
+  }
+
+  busy = true;
+  setBusy(true);
+
+  try {
+    await finishInterruptedStep(pending);
+  } finally {
+    busy = false;
+    setBusy(false);
+  }
+}
+
+/** Ends the step that the reload or a stopped tab interrupted. */
+async function finishInterruptedStep(pending: string): Promise<void> {
   if (pending === 'contextLoss') {
     await finishContextLoss();
   } else if (pending === 'allocate') {
