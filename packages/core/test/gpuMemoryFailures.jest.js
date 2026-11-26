@@ -29,7 +29,10 @@ import { getGpuMemoryStatus } from '../src/utilities/gpuMemoryStatus';
 import { resetGpuMemoryLimit } from '../src/utilities/gpuSettingsPresets';
 import { probeRenderingLimits } from '../src/utilities/textureSupport';
 import { setLossyDownsampling } from '../src/init';
-import { resetWebGLAvailability } from '../src/utilities/webglAvailability';
+import {
+  isWebGLBlocked,
+  resetWebGLAvailability,
+} from '../src/utilities/webglAvailability';
 import eventTarget from '../src/eventTarget';
 import Events from '../src/enums/Events';
 
@@ -384,6 +387,19 @@ describe('a crash that the start of a page finds', () => {
 
     return details;
   }
+
+  it('starts no wait for WebGL with the crash, so one more failure does not start one either', () => {
+    jest.useFakeTimers();
+    window.sessionStorage.setItem('cornerstone3D.tabId', 'this-tab');
+    leavePending('this-tab', { page: 'earlier-page', age: 1000 });
+
+    expect(startNextPage()).toMatchObject([{ kind: 'crash' }]);
+
+    /** The crash happened in an earlier page: its time is not a failure of now. */
+    reportGpuMemoryFailure({ kind: 'contextLost', failedBytes: GIGABYTE });
+
+    expect(isWebGLBlocked()).toBe(false);
+  });
 
   it('records a young record of an earlier page of this tab at once, after the start', () => {
     jest.useFakeTimers();

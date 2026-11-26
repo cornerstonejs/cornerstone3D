@@ -20,6 +20,8 @@ import {
 } from '../src/utilities/gpuMemoryCalibration';
 import {
   isWebGLBlocked,
+  resetWebGLAvailability,
+  startWebGLBlock,
   whenWebGLAvailable,
 } from '../src/utilities/webglAvailability';
 import {
@@ -118,6 +120,25 @@ describe('the GPU memory status', () => {
       hard: true,
       startBytes: 2 * GIGABYTE,
     });
+  });
+
+  it('states a wait for WebGL with its end and its reason, for the memory dialog', () => {
+    mockWebGL();
+
+    const until = Date.now() + 60000;
+
+    startWebGLBlock(until, 'cooldown');
+
+    try {
+      expect(getGpuMemoryStatus()).toMatchObject({
+        webglBlocked: true,
+        webglBlockedUntil: until,
+        webglBlockReason: 'cooldown',
+      });
+    } finally {
+      window.localStorage.clear();
+      resetWebGLAvailability();
+    }
   });
 
   it('states no limit on a software renderer', () => {

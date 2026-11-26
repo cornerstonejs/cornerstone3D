@@ -28,7 +28,9 @@ import { probeRenderingLimits } from '../src/utilities/textureSupport';
 import { reportGpuMemoryFailure } from '../src/utilities/gpuMemoryFailures';
 import gridFitsGpuSettings from '../src/RenderingEngine/vtkClasses/gridFitsGpuSettings';
 import vtkStreamingOpenGLRenderWindow from '../src/RenderingEngine/vtkClasses/vtkStreamingOpenGLRenderWindow';
-import { setLossyDownsampling } from '../src/init';
+import * as init from '../src/init';
+import BaseRenderingEngine from '../src/RenderingEngine/BaseRenderingEngine';
+import renderingEngineCache from '../src/RenderingEngine/renderingEngineCache';
 import eventTarget from '../src/eventTarget';
 import Events from '../src/enums/Events';
 
@@ -121,7 +123,7 @@ afterEach(() => {
   resetWebGLAvailability();
   resetRenderingCapabilities({ clearStorage: true });
   window.localStorage.clear();
-  setLossyDownsampling({ final: false });
+  init.setLossyDownsampling({ final: false });
   jest.useRealTimers();
 });
 
@@ -564,6 +566,35 @@ describe('a store that refuses the wait', () => {
 });
 
 describe('the end of a wait', () => {
+  it('renders each rendering engine when the wait ends, and none when it starts', () => {
+    jest.spyOn(init, 'isCornerstoneInitialized').mockReturnValue(true);
+
+    /** An engine with nothing to render, which records its renders. */
+    class Engine extends BaseRenderingEngine {}
+
+    const engine = new Engine('waiting-engine');
+
+    engine.render = jest.fn();
+
+    try {
+      startWebGLBlock(Date.now() + 1000, 'cooldown');
+
+      expect(engine.render).not.toHaveBeenCalled();
+
+      jest.advanceTimersByTime(1000);
+
+      expect(isWebGLBlocked()).toBe(false);
+      expect(engine.render).toHaveBeenCalledTimes(1);
+    } finally {
+      eventTarget.removeEventListener(
+        Events.WEBGL_AVAILABILITY_CHANGED,
+        engine._onWebGLAvailabilityChanged
+      );
+      renderingEngineCache.delete(engine.id);
+      jest.restoreAllMocks();
+    }
+  });
+
   it('does not resolve a waiter of a wait that a listener starts at the end', async () => {
     startWebGLBlock(Date.now() + 1000, 'cooldown');
 
@@ -649,7 +680,7 @@ describe('the gate of large textures', () => {
     expect(gridFitsGpuSettings([512, 512, 256], 'Float32Array', 1)).toBe(false);
     expect(gridFitsGpuSettings([256, 256, 64], 'Float32Array', 1)).toBe(true);
 
-    setLossyDownsampling({ final: true });
+    init.setLossyDownsampling({ final: true });
 
     expect(gridFitsGpuSettings([512, 512, 256], 'Float32Array', 1)).toBe(false);
 

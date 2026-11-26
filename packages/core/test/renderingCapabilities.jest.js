@@ -319,6 +319,26 @@ describe('renderingCapabilities', () => {
     });
   });
 
+  it('keeps what another tab stored since this page read the record', () => {
+    mockWebGL();
+    /** The detection of this page reads the record once, and keeps it. */
+    getRenderingCapabilities();
+
+    /** Another tab of the site records a success in the shared record. */
+    const key = recordKey();
+    const stored = JSON.parse(window.localStorage.getItem(key));
+
+    stored.gpuBytes = { largest: { value: 6000, successes: 1 } };
+    window.localStorage.setItem(key, JSON.stringify(stored));
+
+    recordRenderingCapabilityFailure('textureBytes', 4000);
+
+    expect(getStoredRenderingCapabilities()).toMatchObject({
+      gpuBytes: { largest: { value: 6000, successes: 1 } },
+      textureBytes: { failed: { value: 4000, failures: 1 } },
+    });
+  });
+
   it('removes the single record of version 1, and keeps the last renderer', () => {
     window.localStorage.setItem(
       STORAGE_KEY,
@@ -996,6 +1016,103 @@ describe('renderingCapabilities', () => {
     } finally {
       jest.useRealTimers();
     }
+  });
+
+  /**
+   * A pending record that stays is counted as a crash by the next start, so
+   * each way a page ends an allocation with no crash must remove it.
+   */
+  describe('the pending record of a large allocation', () => {
+    const MEGABYTE = 1024 * 1024;
+    const pendingKeys = () =>
+      Object.keys(window.localStorage).filter((key) =>
+        key.includes('.pending.')
+      );
+    const allocate = () =>
+      noteTextureAllocation({
+        textureBytes: 128 * MEGABYTE,
+        totalBytes: 512 * MEGABYTE,
+      });
+
+    /** The failures that a context loss reports now. */
+    function failuresOfLoss() {
+      const failures = [];
+      const listener = (event) => failures.push(event.detail);
+
+      eventTarget.addEventListener(Events.GPU_MEMORY_FAILURE, listener);
+      eventTarget.dispatchEvent(
+        new CustomEvent(Events.WEBGL_CONTEXT_LOST, { detail: {} })
+      );
+      eventTarget.removeEventListener(Events.GPU_MEMORY_FAILURE, listener);
+
+      return failures;
+    }
+
+    it('goes when the page closes normally, so the next start finds no crash', () => {
+      mockWebGL();
+      detectRenderingCapabilities();
+      allocate();
+
+      expect(pendingKeys()).toHaveLength(1);
+
+      window.dispatchEvent(new Event('pagehide'));
+
+      expect(pendingKeys()).toEqual([]);
+    });
+
+    it('is not written by a hidden page, and goes when the page hides, with no failure for a later loss', () => {
+      mockWebGL();
+      detectRenderingCapabilities();
+
+      const visibility = jest
+        .spyOn(document, 'visibilityState', 'get')
+        .mockReturnValue('hidden');
+
+      try {
+        allocate();
+
+        expect(pendingKeys()).toEqual([]);
+
+        visibility.mockReturnValue('visible');
+        allocate();
+
+        expect(pendingKeys()).toHaveLength(1);
+
+        /** The browser can reclaim the GPU of a hidden page. */
+        visibility.mockReturnValue('hidden');
+        document.dispatchEvent(new Event('visibilitychange'));
+
+        expect(pendingKeys()).toEqual([]);
+        expect(failuresOfLoss()).toEqual([]);
+      } finally {
+        visibility.mockRestore();
+      }
+    });
+
+    it('goes when no draw samples the texture in 30 s, and records nothing', () => {
+      jest.useFakeTimers();
+
+      try {
+        mockWebGL();
+        detectRenderingCapabilities();
+        allocate();
+        jest.advanceTimersByTime(30000);
+
+        expect(pendingKeys()).toEqual([]);
+
+        const { textureBytes, gpuBytes } = getStoredRenderingCapabilities();
+
+        expect(textureBytes?.largest).toBeUndefined();
+        expect(gpuBytes?.failed).toBeUndefined();
+        expect(
+          getStoredRenderingCapabilities().history?.buckets?.some(
+            ({ successes, failures }) => successes || failures
+          ) ?? false
+        ).toBe(false);
+      } finally {
+        jest.useRealTimers();
+      }
+    });
   });
 
   describe('the history of the GPU memory', () => {

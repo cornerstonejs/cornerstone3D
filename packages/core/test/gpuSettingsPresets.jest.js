@@ -46,6 +46,7 @@ import {
 import {
   getGpuMemoryEntryBytes,
   getGpuMemoryTotal,
+  removeGpuMemoryEntry,
   setGpuMemoryEntry,
 } from '../src/utilities/gpuMemoryLedger';
 import { newLedgerTexture } from '../src/RenderingEngine/vtkClasses/vtkStreamingOpenGLImageResliceMapper';
@@ -667,6 +668,86 @@ describe('the auto preset', () => {
         setLossyDownsampling({ final: false });
       }
     });
+
+    /**
+     * The user experience must have this: when a series closes, the series
+     * that stays gets its memory back.
+     */
+    it('changes the limits when a display set goes and another stays', async () => {
+      mockWebGL();
+      setLossyDownsampling({ final: true });
+
+      const listener = jest.fn();
+      const claimed = jest
+        .spyOn(volumeTextureStore, 'claimedVolumeIds')
+        .mockReturnValue(new Set(['ct']));
+      const store = volumeTextureStore;
+
+      eventTarget.addEventListener(
+        Events.VOLUME_TEXTURE_LIMITS_CHANGED,
+        listener
+      );
+
+      try {
+        store.displaySets = new Set(['ct', 'pt']);
+        store.noteClaimsChanged();
+        await new Promise((resolve) => setTimeout(resolve));
+
+        expect(listener).toHaveBeenCalledTimes(1);
+      } finally {
+        eventTarget.removeEventListener(
+          Events.VOLUME_TEXTURE_LIMITS_CHANGED,
+          listener
+        );
+        claimed.mockRestore();
+        setLossyDownsampling({ final: false });
+      }
+    });
+
+    /**
+     * The API must do this: the contexts and canvases of the page take their
+     * memory from the limit before the volumes share it.
+     */
+    it('reduces a volume that fits the limit alone when the contexts of the page take part of it', () => {
+      mockWebGL();
+      setLossyDownsampling({ final: true });
+      /** Just above the 1 GB of the CT. */
+      setGpuMemoryLimit({ bytes: 1040 * MEGABYTE });
+
+      const ct = {
+        volumeId: 'ct',
+        dataType: 'Float32Array',
+        voxelGrid: { dimensions: [512, 512, 1024] },
+        voxelManager: { numberOfComponents: 1 },
+        isDynamicVolume: () => false,
+      };
+      const claimed = jest
+        .spyOn(volumeTextureStore, 'claimedVolumeIds')
+        .mockReturnValue(new Set(['ct']));
+      const getVolume = jest.spyOn(cache, 'getVolume').mockReturnValue(ct);
+      const contexts = [{}, {}];
+
+      try {
+        expect(
+          volumeTextureReductionFactors(ct, getActiveGpuSettings())
+        ).toEqual([1, 1, 1]);
+
+        contexts.forEach((owner) =>
+          setGpuMemoryEntry(owner, { kind: 'context', bytes: 32 * MEGABYTE })
+        );
+
+        expect(
+          volumeTextureReductionFactors(ct, getActiveGpuSettings()).some(
+            (factor) => factor > 1
+          )
+        ).toBe(true);
+      } finally {
+        contexts.forEach((owner) => removeGpuMemoryEntry(owner));
+        claimed.mockRestore();
+        getVolume.mockRestore();
+        setLossyDownsampling({ final: false });
+      }
+    });
   });
 
   describe('the bytes of a voxel on the GPU', () => {
@@ -857,6 +938,26 @@ describe('the auto preset', () => {
       expect(getActiveGpuSettings().textureMemoryBytes).toBe(2 * GIGABYTE);
     } finally {
       platform.mockRestore();
+    }
+  });
+
+  it('classes "Apple GPU" on an iPad in desktop mode, a Mac platform with touch, as a tablet', () => {
+    const platform = jest
+      .spyOn(navigator, 'platform', 'get')
+      .mockReturnValue('MacIntel');
+    /** jsdom has no touch points, so the iPad gets its own. */
+    Object.defineProperty(navigator, 'maxTouchPoints', {
+      value: 5,
+      configurable: true,
+    });
+
+    try {
+      mockWebGL('Apple GPU');
+
+      expect(getActiveGpuSettings().textureMemoryBytes).toBe(GIGABYTE);
+    } finally {
+      platform.mockRestore();
+      delete navigator.maxTouchPoints;
     }
   });
 

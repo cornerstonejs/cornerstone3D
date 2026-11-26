@@ -33,7 +33,10 @@ import {
   startWebGLBlock,
 } from '../src/utilities/webglAvailability';
 import { probeRenderingLimits } from '../src/utilities/textureSupport';
-import { resetGpuMemoryLimit } from '../src/utilities/gpuSettingsPresets';
+import {
+  getGpuMemoryLimit,
+  resetGpuMemoryLimit,
+} from '../src/utilities/gpuSettingsPresets';
 import { setLossyDownsampling } from '../src/init';
 import eventTarget from '../src/eventTarget';
 import Events from '../src/enums/Events';
@@ -179,6 +182,8 @@ describe('a calibration run', () => {
     );
     /** The suggestion follows the calibration, rounded down to a bucket. */
     expect(suggestGpuMemoryLimit()).toBe(GIGABYTE);
+    /** The result is offered, not applied. */
+    expect(getGpuMemoryLimit()).toMatchObject({ source: 'start' });
   });
 
   it('stores a record and starts a wait for WebGL before each step, and removes the record at the end', async () => {
@@ -237,6 +242,43 @@ describe('a calibration run', () => {
     expect(
       Object.keys(window.localStorage).some((key) => key.includes('.pending.'))
     ).toBe(false);
+  });
+
+  it('records no failure of the viewer for a loss just after the run, and one 5 s later', async () => {
+    fail(GIGABYTE);
+    fakeStress(0);
+    await runGpuMemoryCalibration();
+
+    /** Chromium loses the viewport contexts with the context of the run. */
+    const loseDuringAllocation = () => {
+      noteTextureAllocation({
+        textureBytes: GIGABYTE,
+        totalBytes: 2 * GIGABYTE,
+      });
+
+      const failures = [];
+      const listener = (event) => failures.push(event.detail);
+
+      eventTarget.addEventListener(Events.GPU_MEMORY_FAILURE, listener);
+      eventTarget.dispatchEvent(
+        new CustomEvent(Events.WEBGL_CONTEXT_LOST, { detail: {} })
+      );
+      eventTarget.removeEventListener(Events.GPU_MEMORY_FAILURE, listener);
+
+      return failures;
+    };
+
+    expect(loseDuringAllocation()).toEqual([]);
+
+    const now = Date.now();
+    const dateSpy = jest.spyOn(Date, 'now').mockReturnValue(now + 5000);
+
+    try {
+      expect(loseDuringAllocation()).toMatchObject([{ kind: 'contextLost' }]);
+    } finally {
+      dateSpy.mockRestore();
+      acknowledgeGpuMemoryFailure();
+    }
   });
 
   it('states that no GPU size works when the first step fails at 128 MB or below', async () => {
@@ -350,5 +392,16 @@ describe('a run that stopped its tab', () => {
 
     expect(startNextPage()).toEqual([]);
     expect(window.localStorage.getItem(CALIBRATION_PENDING_KEY)).not.toBeNull();
+  });
+
+  it('is recorded by a page of any tab once it is a minute old, since its run stopped', () => {
+    jest.useFakeTimers();
+    window.sessionStorage.setItem('cornerstone3D.tabId', 'this-tab');
+    leaveRecord({ tabId: 'other-tab', pageId: 'other-page', age: 61000 });
+
+    expect(startNextPage()).toMatchObject([
+      { largestSuccessBytes: 2.7 * GIGABYTE, failedBytes: 3 * GIGABYTE },
+    ]);
+    expect(window.localStorage.getItem(CALIBRATION_PENDING_KEY)).toBeNull();
   });
 });
