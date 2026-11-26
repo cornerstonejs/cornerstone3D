@@ -104,6 +104,10 @@ class VolumeViewport3D extends BaseViewport<
   readonly type = ViewportType.VOLUME_3D;
   readonly renderingEngineId: string;
   readonly canvas: HTMLCanvasElement;
+  /** The x offset of the viewport in the offscreen canvas of a tiled engine. */
+  sx: number;
+  /** The y offset of the viewport in the offscreen canvas of a tiled engine. */
+  sy: number;
   sWidth: number;
   sHeight: number;
   suppressEvents = false;
@@ -147,6 +151,8 @@ class VolumeViewport3D extends BaseViewport<
     // PlanarViewport, that viewport hid this shared canvas (display:none) in favor of
     // its cpuCanvas; ensure it is visible again so the volume rendering is shown.
     this.canvas.style.display = '';
+    this.sx = args.sx;
+    this.sy = args.sy;
     this.sWidth = args.sWidth;
     this.sHeight = args.sHeight;
     this.suppressEvents = Boolean(this.defaultOptions.suppressEvents);
