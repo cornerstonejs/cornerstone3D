@@ -90,6 +90,39 @@ describe('A planar mount that starts at a view reference -- ', () => {
     );
   });
 
+  it('starts at the stored reference of a sagittal slice beyond the number of acquired images (OHIF M91)', async function () {
+    const source = createNextViewport(renderingEngine, 'storedSagittal');
+
+    await source.setDisplaySets({
+      displaySetId: 'initialViewReference',
+      options: { mode: 'volume', orientation: OrientationAxis.SAGITTAL },
+    });
+    await source.setImageIdIndex(20);
+    await renderAndWait(source);
+
+    const reference = source.getViewReference();
+    const viewport = createNextViewport(renderingEngine, 'startStored');
+    const record = recordMount(viewport);
+
+    await viewport.setDisplaySets({
+      displaySetId: 'initialViewReference',
+      options: {
+        mode: 'volume',
+        orientation: OrientationAxis.SAGITTAL,
+        initialViewReference: reference,
+      },
+    });
+    await renderAndWait(viewport);
+
+    expect(reference.sliceIndex).toBe(20);
+    expect(series.size.slices).toBeLessThan(20);
+    expect(record.newImages.map(({ sliceIndex }) => sliceIndex)).toEqual([20]);
+    expect(viewport.getSliceIndex()).toBe(20);
+    record.drawnFocalPoints.forEach((focalPoint) =>
+      expect(focalPoint[0]).toBeCloseTo(reference.cameraFocalPoint[0], 3)
+    );
+  });
+
   it('starts an acquisition plane volume at the image that the reference names', async function () {
     const viewport = createNextViewport(renderingEngine, 'startImage');
     const record = recordMount(viewport);

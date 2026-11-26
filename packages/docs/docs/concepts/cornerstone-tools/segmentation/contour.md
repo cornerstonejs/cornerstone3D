@@ -99,3 +99,61 @@ after 2 s without one.
 A structure whose contours lie on planes that are not parallel, or whose
 conversion to a surface fails, is not cut, and a warning names the
 segmentation, the structure and the reason.
+
+## Knowing when the cuts are drawn
+
+The cuts of a viewport come over seconds, structure by structure, so a test
+that takes a picture or an application that shows progress waits for them by
+their state, not by a time:
+
+- `segmentation.getContourCutsState(viewportId, segmentationId)` gives
+  `'pending'` while the viewport has the Contour representation of the
+  segmentation and the cut of its plane for the current contours is not all
+  drawn (the representation has not rendered on it yet, its plane changed
+  and waits to settle, or a conversion or a cut runs), and `'complete'`
+  otherwise.
+- `Enums.Events.SEGMENTATION_CONTOUR_CUTS_COMPLETED` fires on the
+  `eventTarget` once per viewport and segmentation each time the state
+  becomes complete: after the first conversion, and again after a change of
+  the contours or of the plane once the new cuts are drawn. The contours of
+  the slice on display are drawn when it fires. Its detail has `viewportId`,
+  `segmentationId`, `segmentIndices` (the structures that are cut) and
+  `failedSegmentIndices` (the structures that are not cut, each reported in
+  the log with its reason).
+
+A scroll needs no new cut, as every slice of the plane is cut at once: the
+state stays complete and nothing fires. A viewport in the plane of the
+contours needs no cut: its state is complete as soon as the representation
+has rendered on it, and the event fires once then, with no structure. A
+segmentation whose contours are not contour sets (`geometryIds`) is not cut,
+so its state is complete.
+
+```js
+async function waitForContourCuts(viewportId, segmentationId) {
+  if (
+    segmentation.getContourCutsState(viewportId, segmentationId) === 'complete'
+  ) {
+    return;
+  }
+
+  await new Promise((resolve) => {
+    const onCompleted = ({ detail }) => {
+      if (
+        detail.viewportId === viewportId &&
+        detail.segmentationId === segmentationId
+      ) {
+        eventTarget.removeEventListener(
+          Enums.Events.SEGMENTATION_CONTOUR_CUTS_COMPLETED,
+          onCompleted
+        );
+        resolve(detail);
+      }
+    };
+
+    eventTarget.addEventListener(
+      Enums.Events.SEGMENTATION_CONTOUR_CUTS_COMPLETED,
+      onCompleted
+    );
+  });
+}
+```

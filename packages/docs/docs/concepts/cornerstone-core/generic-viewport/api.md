@@ -340,6 +340,51 @@ otherViewport.setViewReference(reference);
 otherViewport.render();
 ```
 
+A mount starts at a view reference with the mount option
+`initialViewReference`, before its first draw and its first `NEW_IMAGE`. The
+reference is judged against the view that the mount shows (its orientation
+and the slices of that orientation), with the answer that
+`isReferenceViewable(reference, { withNavigation: true })` gives on the
+mounted viewport:
+
+```ts
+await otherViewport.setDisplaySets({
+  displaySetId: ctDisplaySetId,
+  options: {
+    mode: 'volume',
+    orientation: Enums.OrientationAxis.SAGITTAL,
+    initialViewReference: reference,
+  },
+});
+```
+
+`utilities.getVolumeSliceGrid` gives the slices of a view of a volume before
+any viewport shows it: the number of slices, the step, the default slice and
+its point, the point of each slice, and a view reference of a slice that a
+mount of any volume of the frame of reference takes as
+`initialViewReference`. It runs the code of the viewport, and needs the
+volume in the cache or only the `imagePlaneModule` metadata of its images:
+
+```ts
+const grid = utilities.getVolumeSliceGrid({
+  imageIds: ctImageIds,
+  orientation: Enums.OrientationAxis.SAGITTAL,
+});
+
+grid.numberOfSlices; // getNumberOfSlices() after a mount
+grid.defaultSliceIndex; // getSliceIndex() after a mount with no start
+grid.getSliceWorldPoint(100); // the focal point of slice 100
+
+await petViewport.setDisplaySets({
+  displaySetId: petDisplaySetId,
+  options: {
+    mode: 'volume',
+    orientation: Enums.OrientationAxis.SAGITTAL,
+    initialViewReference: grid.getViewReference(),
+  },
+});
+```
+
 Use the framing when only pan, zoom, rotation, flips, and display
 area should be copied between compatible viewport families. The framing
 shape is adapter-specific, so this is appropriate for planar to planar. Do not treat it as a universal cross-family camera copy; use view

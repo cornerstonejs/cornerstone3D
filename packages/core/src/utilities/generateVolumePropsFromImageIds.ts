@@ -10,32 +10,41 @@ import type {
 import getScalingParameters from './getScalingParameters';
 import { hasFloatScalingParameters } from './hasFloatScalingParameters';
 import { canRenderFloatTextures } from '../init';
+import * as metaData from '../metaData';
+import { MetadataModules } from '../enums';
 
 /**
- * Generates volume properties from a list of image IDs.
+ * The geometry of the volume that a series of images makes, from their
+ * metadata only: no pixel is loaded. It reads the `imagePlaneModule` of the
+ * images: `imageOrientationPatient`, `pixelSpacing`, `rows` and `columns` of
+ * the first image, and `imagePositionPatient` of each image, by which the
+ * images are sorted along the scan axis and their spacing is measured.
  *
- * @param imageIds - An array of image IDs.
- * @param volumeId - The ID of the volume.
- * @returns The generated ImageVolumeProps object.
+ * @param imageIds - The image ids of the series.
+ * @returns The dimensions, the spacing, the origin and the direction of the
+ * volume, and its image ids in the order of its slices.
  */
-function generateVolumePropsFromImageIds(
-  imageIds: string[],
-  volumeId: string
-): ImageVolumeProps {
-  const volumeMetadata = makeVolumeMetadata(imageIds);
-
-  const { ImageOrientationPatient, PixelSpacing, Columns, Rows } =
-    volumeMetadata;
+function getVolumeGeometryFromImageIds(imageIds: string[]): {
+  dimensions: Point3;
+  spacing: Point3;
+  origin: Point3;
+  direction: Mat3;
+  sortedImageIds: string[];
+} {
+  const { imageOrientationPatient, pixelSpacing, columns, rows } = metaData.get(
+    MetadataModules.IMAGE_PLANE,
+    imageIds[0]
+  );
 
   const rowCosineVec = vec3.fromValues(
-    ImageOrientationPatient[0],
-    ImageOrientationPatient[1],
-    ImageOrientationPatient[2]
+    imageOrientationPatient[0],
+    imageOrientationPatient[1],
+    imageOrientationPatient[2]
   );
   const colCosineVec = vec3.fromValues(
-    ImageOrientationPatient[3],
-    ImageOrientationPatient[4],
-    ImageOrientationPatient[5]
+    imageOrientationPatient[3],
+    imageOrientationPatient[4],
+    imageOrientationPatient[5]
   );
 
   const scanAxisNormal = vec3.create();
@@ -49,8 +58,8 @@ function generateVolumePropsFromImageIds(
   const numFrames = imageIds.length;
 
   // Spacing goes [1] then [0], as [1] is column spacing (x) and [0] is row spacing (y)
-  const spacing = [PixelSpacing[1], PixelSpacing[0], zSpacing] as Point3;
-  const dimensions = [Columns, Rows, numFrames].map((it) =>
+  const spacing = [pixelSpacing[1], pixelSpacing[0], zSpacing] as Point3;
+  const dimensions = [columns, rows, numFrames].map((it) =>
     Math.floor(it)
   ) as Point3;
   const direction = [
@@ -58,6 +67,24 @@ function generateVolumePropsFromImageIds(
     ...colCosineVec,
     ...scanAxisNormal,
   ] as Mat3;
+
+  return { dimensions, spacing, origin, direction, sortedImageIds };
+}
+
+/**
+ * Generates volume properties from a list of image IDs.
+ *
+ * @param imageIds - An array of image IDs.
+ * @param volumeId - The ID of the volume.
+ * @returns The generated ImageVolumeProps object.
+ */
+function generateVolumePropsFromImageIds(
+  imageIds: string[],
+  volumeId: string
+): ImageVolumeProps {
+  const volumeMetadata = makeVolumeMetadata(imageIds);
+  const { dimensions, spacing, origin, direction, sortedImageIds } =
+    getVolumeGeometryFromImageIds(imageIds);
 
   return {
     dimensions,
@@ -158,4 +185,4 @@ function _determineDataType(
   }
 }
 
-export { generateVolumePropsFromImageIds };
+export { generateVolumePropsFromImageIds, getVolumeGeometryFromImageIds };

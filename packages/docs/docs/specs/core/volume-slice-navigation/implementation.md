@@ -10,7 +10,7 @@ summary: The slice grid of a volume view - its range, step, count, positions, de
 
 This specification gives the design that meets the
 [volume slice navigation requirements](./requirements.md) (VSN-U-1 to
-VSN-U-9) in a planar viewport in volume mode. It is for the developer who
+VSN-U-11) in a planar viewport in volume mode. It is for the developer who
 builds an application on Cornerstone3D or changes the slice code. A planar
 viewport in stack mode shows its images; it has no slice grid.
 
@@ -57,7 +57,44 @@ Every slice position, index and count of the view comes from it.
 The grid lives in `utilities/volumeSliceGrid.ts` (`getSliceGrid`,
 `getGridSliceIndex`, `getGridSliceProjection`, `getDefaultGridSliceIndex`,
 `getSliceStepAlongNormal`) and, for a volume and a normal,
-`getPlanarVolumeSliceGrid` of `planarSliceBasis.ts`. Both are internal.
+`getPlanarVolumeSliceGrid` of `planarSliceBasis.ts`. Both are internal; the
+public way to read the grid is `utilities.getVolumeSliceGrid` (VSN-I-9).
+
+- **VSN-I-9 The grid before a mount** (VSN-U-10).
+  `utilities.getVolumeSliceGrid({ volumeId | imageIds, orientation })` gives
+  the grid of a view with the code of the viewport: the orientation as a
+  mount resolves it (`normalizePlanarOrientation` with the acquisition
+  orientation of the images, so a standard orientation within the tilt of
+  VSN-I-6 is the acquisition view), the view vectors
+  (`getPlanarViewStateVectors`), the slice basis
+  (`createPlanarVolumeSliceBasis`) and the grid
+  (`getPlanarVolumeSliceGrid`). It gives `numberOfSlices` (`M + 1`), `step`
+  (`s`), `defaultSliceIndex` (VSN-I-5), `defaultSliceWorldPoint` (the focal
+  point of a mount with no start), `viewPlaneNormal`, `viewUp`,
+  `getSliceWorldPoint(k)` (the focal point of slice `k` with no pan),
+  `getSliceIndex(point)` (VSN-I-4) and `getViewReference(k)`. The volume is
+  one of the cache, whose pixels need not be loaded, or the images of a
+  series: the geometry comes then from their `imagePlaneModule`
+  (`imageOrientationPatient`, `pixelSpacing`, `rows`, `columns` and
+  `frameOfReferenceUID` of the first image, `imagePositionPatient` of each
+  image), by the code that makes the geometry of a volume of the images
+  (`getVolumeGeometryFromImageIds`, used by
+  `generateVolumePropsFromImageIds`). A reformat name is refused: its
+  vectors depend on the view on display. `getViewReference(k)` names the
+  frame of reference, the focal point of slice `k`, the normal and the view
+  up, and no volume and no slice index: a mount of any volume of the frame
+  of reference takes it as `initialViewReference` and opens on its slice
+  nearest to the point (VSN-I-4), with the focal point at the depth of the
+  point.
+- **VSN-I-10 A start at a view reference reads the view of the mount**
+  (VSN-U-11). The mount option `initialViewReference` is checked and applied
+  after the view state of the mount (its orientation and its default slice)
+  is in place and before the first draw. The slice count and the slice on
+  display that the check reads come from the view of that view state (its
+  slice basis), not from the render path, which holds the count of the
+  acquired images until its first draw. So the check gives the answer that
+  `isReferenceViewable(ref, { withNavigation: true })` gives on the mounted
+  viewport, and the start goes where `setViewReference(ref)` goes on it.
 
 ### Why VSN-U-1 holds
 

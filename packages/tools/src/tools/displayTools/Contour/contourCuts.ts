@@ -3,7 +3,9 @@ import {
   cache,
   CONSTANTS,
   Enums,
+  eventTarget,
   getEnabledElementByViewportId,
+  triggerEvent,
   utilities,
 } from '@cornerstonejs/core';
 import { vec3 } from 'gl-matrix';
@@ -21,6 +23,8 @@ import {
 import { getSegmentation } from '../../../stateManagement/segmentation/getSegmentation';
 import type { ContourSegmentationAnnotation } from '../../../types/ContourSegmentationAnnotation';
 import type { Segmentation } from '../../../types/SegmentationStateTypes';
+import type { SegmentationContourCutsCompletedEventDetail } from '../../../types/EventTypes';
+import { Events } from '../../../enums';
 import { triggerAnnotationRenderForViewportIds } from '../../../utilities/triggerAnnotationRenderForViewportIds';
 
 const cs3dLogger = utilities.logger.toolsLog.getLogger(
@@ -58,7 +62,9 @@ type ShownSlice = {
  * which grow as the surfaces of the segments are made and cut, the surfaces
  * that wait for the cut that is running, and the contour annotations of the
  * slices that the viewports of that plane show. The viewports of one plane
- * share it.
+ * share it. It is finished when every segment that needs a cut in the plane
+ * is cut (`cutSegmentIndices`) or has failed (`failedSegmentIndices`), and
+ * each viewport of the plane is told so once (`announcedViewportIds`).
  */
 type PlaneCut = {
   key: string;
@@ -71,6 +77,10 @@ type PlaneCut = {
   cutting: Promise<void>;
   released: boolean;
   done: Promise<void>;
+  finished: boolean;
+  cutSegmentIndices: Set<number>;
+  failedSegmentIndices: Set<number>;
+  announcedViewportIds: Set<string>;
 };
 
 /**
@@ -327,7 +337,7 @@ function updateViewportCut(
   let planeCut = segmentationCuts.planeCuts.get(key);
 
   if (!planeCut) {
-    planeCut = {
+    const newPlaneCut: PlaneCut = {
       key,
       segmentationId,
       viewportIds: new Set(),
@@ -337,24 +347,126 @@ function updateViewportCut(
       cutting: Promise.resolve(),
       released: false,
       done: undefined,
+      finished: false,
+      cutSegmentIndices: new Set(),
+      failedSegmentIndices: new Set(),
+      announcedViewportIds: new Set(),
     };
+
+    planeCut = newPlaneCut;
     segmentationCuts.planeCuts.set(key, planeCut);
     planeCut.done = cutPlane(
       segmentationId,
       segmentationCuts,
       planeCut,
       viewport
-    ).catch((error) =>
-      report(segmentationCuts, 'all', `the cut failed: ${describe(error)}`)
-    );
+    )
+      .catch((error) =>
+        report(segmentationCuts, 'all', `the cut failed: ${describe(error)}`)
+      )
+      .then(() => {
+        newPlaneCut.finished = true;
+      });
   }
+
+  const shownPlaneCut = planeCut;
 
   planeCut.viewportIds.add(viewport.id);
   viewportCuts.planeCuts.set(segmentationId, planeCut);
   releasePlaneCut(segmentationId, current, viewport.id);
   showSliceOfViewport(planeCut, viewport);
+  planeCut.done.then(() => announceContourCuts(viewport.id, shownPlaneCut));
 
   return planeCut.done;
+}
+
+/**
+ * Whether the cuts of a segmentation on a viewport are all drawn for the
+ * plane on display, by what the cuts keep: `'pending'` while the viewport
+ * has not cut its plane for the current contours yet (no render of the
+ * representation since it was added or since the contours changed, or a
+ * change of plane that waits for the plane to settle) or while a conversion
+ * or a cut of that plane runs; `'complete'` otherwise, also for a viewport
+ * that cannot show a cut (a 3D viewport, one that shows nothing) and for a
+ * segmentation without contours. A scroll keeps the plane, so it keeps the
+ * state. Only the contour sets of a segmentation (`geometryIds`, as an
+ * RTSTRUCT gives them) are cut, so a segmentation without them is complete.
+ * Whether the viewport shows the representation at all is
+ * `segmentation.getContourCutsState`.
+ *
+ * @param viewportId - The id of the viewport.
+ * @param segmentationId - The id of the segmentation.
+ */
+function getViewportContourCutsState(
+  viewportId: string,
+  segmentationId: string
+): 'pending' | 'complete' {
+  const viewport = getEnabledElementByViewportId(viewportId)?.viewport;
+
+  if (
+    !viewport ||
+    viewport.type === Enums.ViewportType.VOLUME_3D ||
+    !getSegmentation(segmentationId)?.representationData.Contour?.geometryIds
+      ?.length
+  ) {
+    return 'complete';
+  }
+
+  const planeKey = getPlaneKey(viewport);
+
+  if (!planeKey) {
+    return 'complete';
+  }
+
+  const planeCut = cutsByViewport
+    .get(viewportId)
+    ?.planeCuts.get(segmentationId);
+
+  return planeCut?.finished &&
+    !planeCut.released &&
+    planeCut.key === getPlaneCutKey(segmentationId, planeKey)
+    ? 'complete'
+    : 'pending';
+}
+
+/**
+ * Fires `SEGMENTATION_CONTOUR_CUTS_COMPLETED` for a viewport whose cut of its
+ * plane is finished, once per cut and viewport, at the next animation frame:
+ * the annotation render that the last cut asked for draws in that frame
+ * before it, so the contours of the slice on display are drawn when the
+ * event fires. Nothing fires when the viewport left the cut or its cut is
+ * pending again by then (a change of plane or of the contours): the next cut
+ * fires.
+ */
+function announceContourCuts(viewportId: string, planeCut: PlaneCut): void {
+  window.requestAnimationFrame(() => {
+    const { segmentationId } = planeCut;
+
+    if (
+      planeCut.announcedViewportIds.has(viewportId) ||
+      cutsByViewport.get(viewportId)?.planeCuts.get(segmentationId) !==
+        planeCut ||
+      getViewportContourCutsState(viewportId, segmentationId) !== 'complete'
+    ) {
+      return;
+    }
+
+    planeCut.announcedViewportIds.add(viewportId);
+
+    const sorted = (indices: Set<number>) => [...indices].sort((a, b) => a - b);
+    const detail: SegmentationContourCutsCompletedEventDetail = {
+      viewportId,
+      segmentationId,
+      segmentIndices: sorted(planeCut.cutSegmentIndices),
+      failedSegmentIndices: sorted(planeCut.failedSegmentIndices),
+    };
+
+    triggerEvent(
+      eventTarget,
+      Events.SEGMENTATION_CONTOUR_CUTS_COMPLETED,
+      detail
+    );
+  });
 }
 
 /**
@@ -475,6 +587,7 @@ function releasePlaneCut(
 
   hideSliceOfViewport(planeCut, viewportId);
   planeCut.viewportIds.delete(viewportId);
+  planeCut.announcedViewportIds.delete(viewportId);
 
   if (planeCut.viewportIds.size) {
     return;
@@ -509,7 +622,11 @@ async function cutPlane(
   viewport: Types.IViewport
 ): Promise<void> {
   const viewPlaneNormal = viewport.getViewReference().viewPlaneNormal;
-  const segmentIndices = getSegmentsToCut(segmentationCuts, viewPlaneNormal);
+  const segmentIndices = getSegmentsToCut(
+    segmentationCuts,
+    viewPlaneNormal,
+    planeCut
+  );
 
   if (!segmentIndices.length) {
     return;
@@ -517,6 +634,9 @@ async function cutPlane(
 
   const polySeg = getAvailablePolySeg(segmentationCuts, segmentIndices);
   if (!polySeg) {
+    segmentIndices.forEach((segmentIndex) =>
+      planeCut.failedSegmentIndices.add(segmentIndex)
+    );
     return;
   }
 
@@ -525,9 +645,25 @@ async function cutPlane(
   await Promise.all(
     getConversionOrder(segmentationCuts, segmentIndices, viewport).map(
       (segmentIndex) =>
-        getSegmentSurface(segmentationCuts, segmentIndex, viewport).then(
-          (surface) => surface && queueCut(planeCut, surface, polySeg)
-        )
+        getSegmentSurface(segmentationCuts, segmentIndex, viewport)
+          .then((surface) => {
+            if (!surface) {
+              planeCut.failedSegmentIndices.add(segmentIndex);
+              return;
+            }
+
+            return queueCut(planeCut, surface, polySeg).then(() => {
+              planeCut.cutSegmentIndices.add(segmentIndex);
+            });
+          })
+          .catch((error) => {
+            planeCut.failedSegmentIndices.add(segmentIndex);
+            report(
+              segmentationCuts,
+              'all',
+              `the cut failed: ${describe(error)}`
+            );
+          })
     )
   );
 }
@@ -641,11 +777,13 @@ function groupBySlice(
  * The segments of a segmentation that a viewport of this normal shows as a
  * cut: those whose contours do not lie in its plane. A segment with contours
  * on planes that are not parallel cannot be made into a surface; it is
- * reported and not cut, and its contours of the plane of the viewport show.
+ * reported, counted as failed in the cut of the plane, and not cut, and its
+ * contours of the plane of the viewport show.
  */
 function getSegmentsToCut(
   segmentationCuts: SegmentationCuts,
-  viewPlaneNormal: Types.Point3
+  viewPlaneNormal: Types.Point3,
+  planeCut: PlaneCut
 ): number[] {
   const annotationUIDsMap = getSegmentation(segmentationCuts.segmentationId)
     ?.representationData.Contour?.annotationUIDsMap;
@@ -665,6 +803,7 @@ function getSegmentsToCut(
     }
 
     if (normals.some((normal) => !isParallel(normal, normals[0]))) {
+      planeCut.failedSegmentIndices.add(segmentIndex);
       report(
         segmentationCuts,
         segmentIndex,
@@ -1079,6 +1218,7 @@ function removeConvertedGeometry(
 
 export {
   updateContourCuts,
+  getViewportContourCutsState,
   removeContourCuts,
   removeContourCutsOfViewport,
   removeContourCutsOfSegmentation,

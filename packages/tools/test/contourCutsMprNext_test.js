@@ -1258,3 +1258,350 @@ describe('The contours of a segmentation on a pane that has no contour represent
     await expectContoursOnlyWhereRepresented(panes, 'filterCut');
   }, 60000);
 });
+
+const CUTS_COMPLETED = csToolsEnums.Events.SEGMENTATION_CONTOUR_CUTS_COMPLETED;
+
+/**
+ * Three structures of different sizes that the sagittal plane through the
+ * centre crosses, and of which the coronal plane through the centre crosses
+ * the largest only.
+ */
+const THREE_STRUCTURES = {
+  1: sphereContours(CENTER, RADIUS),
+  2: sphereContours([CENTER[0], CENTER[1] + 13, CENTER[2]], 5),
+  3: sphereContours([CENTER[0], CENTER[1] - 13, CENTER[2]], 3.5),
+};
+
+/** The number of contour points of the largest structure. */
+const LARGEST_POINTS = THREE_STRUCTURES[1].flat(2).length;
+
+/**
+ * Whether the svg layer of a viewport holds a drawn node of each contour
+ * that the contour tool shows on it.
+ */
+function isEveryShownContourDrawn(viewport) {
+  const caches = Object.values(csTools3d.state.svgNodeCache);
+
+  return shownContours(viewport).every(({ annotationUID }) =>
+    caches.some((cache) =>
+      Object.entries(cache).some(
+        ([key, node]) =>
+          key.startsWith(`${annotationUID}::`) &&
+          viewport.element.contains(node.domRef)
+      )
+    )
+  );
+}
+
+/**
+ * Records each SEGMENTATION_CONTOUR_CUTS_COMPLETED of a segmentation, with
+ * the state, the segments shown and whether they are drawn on its viewport
+ * at that moment.
+ */
+function recordCutsCompleted(segmentationId, panes) {
+  const events = [];
+  const listener = (evt) => {
+    const { detail } = evt;
+    const viewport = Object.values(panes).find(
+      (pane) => pane.id === detail.viewportId
+    );
+
+    if (detail.segmentationId !== segmentationId) {
+      return;
+    }
+
+    events.push({
+      ...detail,
+      state: segmentation.getContourCutsState(
+        detail.viewportId,
+        segmentationId
+      ),
+      shown: viewport && segmentsShown(viewport),
+      drawn: viewport && isEveryShownContourDrawn(viewport),
+    });
+  };
+
+  cornerstone3D.eventTarget.addEventListener(CUTS_COMPLETED, listener);
+
+  return {
+    of: (viewport) =>
+      events.filter(({ viewportId }) => viewportId === viewport.id),
+    stop: () =>
+      cornerstone3D.eventTarget.removeEventListener(CUTS_COMPLETED, listener),
+  };
+}
+
+/**
+ * Holds the conversion of the largest structure until `release` is called,
+ * and makes the conversion of the segments whose number of points is in
+ * `failing` fail.
+ */
+function holdLargestConversion(failing = []) {
+  const workerManager = getWebWorkerManager();
+  const executeTask = workerManager.executeTask.bind(workerManager);
+  let release;
+  const held = new Promise((resolve) => (release = resolve));
+
+  spyOn(workerManager, 'executeTask').and.callFake(
+    (worker, task, args, ...rest) => {
+      const points = args?.numPointsArray?.reduce((sum, n) => sum + n, 0);
+
+      if (task === 'convertContourToSurface' && failing.includes(points)) {
+        return Promise.reject(new Error('no surface for these contours'));
+      }
+
+      return task === 'convertContourToSurface' && points === LARGEST_POINTS
+        ? held.then(() => executeTask(worker, task, args, ...rest))
+        : executeTask(worker, task, args, ...rest);
+    }
+  );
+
+  return () => release();
+}
+
+/** Lets the events of the next few frames come. */
+async function quietFrames(viewports) {
+  for (const viewport of viewports) {
+    await settle(viewport);
+  }
+  await nextFrames();
+  await nextFrames();
+}
+
+describe('The end of the cuts of a contour segmentation on the panes of an MPR -- ', () => {
+  let renderingEngine;
+  let config;
+
+  beforeEach(function () {
+    renderingEngine = testUtils.setupTestEnvironment({
+      renderingEngineId,
+      toolGroupIds: [toolGroupId],
+    }).renderingEngine;
+    config = getConfig();
+    setConfig({ ...config, addons: { ...config.addons, polySeg } });
+  });
+
+  afterEach(function () {
+    setConfig(config);
+    testUtils.cleanupTestEnvironment({
+      renderingEngineId,
+      toolGroupIds: [toolGroupId],
+    });
+    cornerstone3D.displaySetRegistry.clear?.();
+  });
+
+  it('fires SEGMENTATION_CONTOUR_CUTS_COMPLETED once per pane after the last cut of three structures, not before, and gives the state before, during and after', async function () {
+    const series = await createSeries({ id: 'cutsCompleted', size: SIZE });
+    const panes = await createMpr(renderingEngine, series);
+    const releaseLargest = holdLargestConversion();
+    const record = recordCutsCompleted('cutsCompleted', panes);
+    const state = (viewport) =>
+      segmentation.getContourCutsState(viewport.id, 'cutsCompleted');
+
+    addRtStructLikeSegmentation('cutsCompleted', THREE_STRUCTURES);
+
+    expect(state(panes.sagittal))
+      .withContext('before the representation is added')
+      .toBe('complete');
+
+    await segmentation.addContourRepresentationToViewport(panes.sagittal.id, [
+      { segmentationId: 'cutsCompleted' },
+    ]);
+
+    expect(state(panes.sagittal))
+      .withContext('before the representation is rendered')
+      .toBe('pending');
+
+    await showContours('cutsCompleted', [panes.axial, panes.coronal]);
+    await waitForSegments(panes.sagittal, [2, 3]);
+    await quietFrames([panes.sagittal, panes.coronal]);
+
+    expect(record.of(panes.sagittal).length)
+      .withContext('sagittal events while the largest converts')
+      .toBe(0);
+    expect(record.of(panes.coronal).length)
+      .withContext('coronal events while the largest converts')
+      .toBe(0);
+    expect(state(panes.sagittal)).toBe('pending');
+    expect(state(panes.coronal)).toBe('pending');
+    expect(state(panes.axial))
+      .withContext('the axial pane needs no cut')
+      .toBe('complete');
+
+    releaseLargest();
+    await waitFor(
+      () =>
+        record.of(panes.sagittal).length > 0 &&
+        record.of(panes.coronal).length > 0,
+      20000
+    );
+    await quietFrames([panes.sagittal, panes.coronal, panes.axial]);
+    record.stop();
+
+    const [sagittal] = record.of(panes.sagittal);
+    const [coronal] = record.of(panes.coronal);
+
+    expect(record.of(panes.sagittal).length).toBe(1);
+    expect(record.of(panes.coronal).length).toBe(1);
+    expect(sagittal.segmentIndices).toEqual([1, 2, 3]);
+    expect(sagittal.failedSegmentIndices).toEqual([]);
+    expect(sagittal.state).toBe('complete');
+    expect(sagittal.shown).toEqual([1, 2, 3]);
+    expect(sagittal.drawn).withContext('sagittal cuts drawn').toBe(true);
+    expect(coronal.segmentIndices).toEqual([1, 2, 3]);
+    expect(coronal.shown).toEqual([1]);
+    expect(coronal.drawn).withContext('coronal cuts drawn').toBe(true);
+    expect(record.of(panes.axial).map((event) => event.segmentIndices))
+      .withContext('the axial pane, in the plane of the contours')
+      .toEqual([[]]);
+    expect(state(panes.sagittal)).toBe('complete');
+    expect(state(panes.coronal)).toBe('complete');
+  }, 60000);
+
+  it('fires nothing for a scroll, whose slices are cut already, and once again after a change of plane', async function () {
+    const series = await createSeries({ id: 'cutsScrollPlane', size: SIZE });
+    const panes = await createMpr(renderingEngine, series);
+    const record = recordCutsCompleted('cutsScrollPlane', panes);
+    const state = (viewport) =>
+      segmentation.getContourCutsState(viewport.id, 'cutsScrollPlane');
+
+    addRtStructLikeSegmentation('cutsScrollPlane', THREE_STRUCTURES);
+    await showContours('cutsScrollPlane', [
+      panes.sagittal,
+      panes.axial,
+      panes.coronal,
+    ]);
+    await waitFor(() => record.of(panes.sagittal).length === 1, 20000);
+    await quietFrames([panes.sagittal]);
+
+    const tasks = countWorkerTasks();
+
+    for (let step = 0; step < 6; step++) {
+      await panes.sagittal.scroll(step < 3 ? 2 : -2);
+
+      expect(state(panes.sagittal))
+        .withContext(`state after scroll ${step}`)
+        .toBe('complete');
+      await settle(panes.sagittal);
+    }
+    await quietFrames([panes.sagittal]);
+
+    expect(record.of(panes.sagittal).length)
+      .withContext('events of six scrolls')
+      .toBe(1);
+    expect(tasks).withContext('worker tasks of six scrolls').toEqual({});
+
+    const normal = [Math.SQRT1_2, Math.SQRT1_2, 0];
+
+    panes.sagittal.setOrientation({
+      viewPlaneNormal: normal,
+      viewUp: [0, 0, 1],
+    });
+    await moveToPoint(panes.sagittal, CENTER);
+
+    expect(state(panes.sagittal))
+      .withContext('state while the new plane settles')
+      .toBe('pending');
+
+    await waitFor(() => record.of(panes.sagittal).length === 2, 20000);
+    await quietFrames([panes.sagittal]);
+    record.stop();
+
+    const [, oblique] = record.of(panes.sagittal);
+
+    expect(record.of(panes.sagittal).length).toBe(2);
+    expect(oblique.segmentIndices).toEqual([1, 2, 3]);
+    expect(oblique.drawn).toBe(true);
+    expect(
+      shownContours(panes.sagittal).every(
+        (contour) =>
+          Math.abs(dot(contour.metadata.viewPlaneNormal, normal)) > 0.99
+      )
+    ).toBe(true);
+    expect(state(panes.sagittal)).toBe('complete');
+  }, 60000);
+
+  it('fires once again on each pane after a change of the contours, once the new cuts are drawn', async function () {
+    const series = await createSeries({ id: 'cutsEdit', size: SIZE });
+    const panes = await createMpr(renderingEngine, series);
+    const record = recordCutsCompleted('cutsEdit', panes);
+    const state = (viewport) =>
+      segmentation.getContourCutsState(viewport.id, 'cutsEdit');
+
+    addRtStructLikeSegmentation('cutsEdit', THREE_STRUCTURES);
+    await showContours('cutsEdit', [
+      panes.sagittal,
+      panes.axial,
+      panes.coronal,
+    ]);
+    await waitFor(
+      () =>
+        record.of(panes.sagittal).length === 1 &&
+        record.of(panes.coronal).length === 1,
+      20000
+    );
+    await quietFrames([panes.sagittal, panes.coronal]);
+
+    const tasks = countWorkerTasks();
+
+    segmentation.triggerSegmentationEvents.triggerSegmentationDataModified(
+      'cutsEdit'
+    );
+
+    expect(state(panes.sagittal))
+      .withContext('state after the change of the contours')
+      .toBe('pending');
+
+    await waitFor(
+      () =>
+        record.of(panes.sagittal).length === 2 &&
+        record.of(panes.coronal).length === 2,
+      20000
+    );
+
+    expect(tasks.convertContourToSurface)
+      .withContext('conversions when the event fires')
+      .toBe(3);
+
+    await quietFrames([panes.sagittal, panes.coronal, panes.axial]);
+    record.stop();
+
+    expect(record.of(panes.sagittal).length).toBe(2);
+    expect(record.of(panes.coronal).length).toBe(2);
+    expect(record.of(panes.sagittal)[1].segmentIndices).toEqual([1, 2, 3]);
+    expect(record.of(panes.sagittal)[1].shown).toEqual([1, 2, 3]);
+    expect(record.of(panes.sagittal)[1].drawn).toBe(true);
+    expect(record.of(panes.coronal)[1].shown).toEqual([1]);
+    expect(state(panes.sagittal)).toBe('complete');
+  }, 60000);
+
+  it('fires with the segment whose conversion failed, once the others are drawn', async function () {
+    const series = await createSeries({ id: 'cutsFailed', size: SIZE });
+    const panes = await createMpr(renderingEngine, series);
+    const smallest = THREE_STRUCTURES[3].flat(2).length;
+
+    holdLargestConversion([smallest])();
+
+    const record = recordCutsCompleted('cutsFailed', panes);
+
+    addRtStructLikeSegmentation('cutsFailed', THREE_STRUCTURES);
+    await showContours('cutsFailed', [
+      panes.sagittal,
+      panes.axial,
+      panes.coronal,
+    ]);
+    await waitFor(() => record.of(panes.sagittal).length === 1, 20000);
+    await quietFrames([panes.sagittal]);
+    record.stop();
+
+    const [sagittal] = record.of(panes.sagittal);
+
+    expect(sagittal.segmentIndices).toEqual([1, 2]);
+    expect(sagittal.failedSegmentIndices).toEqual([3]);
+    expect(sagittal.shown).toEqual([1, 2]);
+    expect(sagittal.drawn).toBe(true);
+    expect(
+      segmentation.getContourCutsState(panes.sagittal.id, 'cutsFailed')
+    ).toBe('complete');
+  }, 60000);
+});

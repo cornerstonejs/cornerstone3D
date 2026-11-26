@@ -1,4 +1,5 @@
 import {
+  getViewportContourCutsState,
   removeContourCuts,
   updateContourCuts,
   updateContourCutsOfModifiedSegmentation,
@@ -15,6 +16,7 @@ const mockAnnotations = new Map();
 const mockSegmentations = new Map();
 const mockViewports = new Map();
 const mockGeometries = new Map();
+const mockTriggerEvent = jest.fn();
 
 jest.mock('@cornerstonejs/core', () => ({
   cache: {
@@ -22,6 +24,8 @@ jest.mock('@cornerstonejs/core', () => ({
     removeGeometryLoadObject: (geometryId) => mockGeometries.delete(geometryId),
   },
   CONSTANTS: { EPSILON: 1e-3 },
+  eventTarget: {},
+  triggerEvent: (...args) => mockTriggerEvent(...args),
   Enums: {
     ViewportType: { VOLUME_3D: 'volume3d' },
     Events: { IMAGE_RENDERED: 'IMAGE_RENDERED' },
@@ -123,6 +127,11 @@ function addViewport(id, viewPlaneNormal, volumeId = 'volume') {
   mockViewports.set(id, viewport);
 
   return viewport;
+}
+
+/** Resolves after the next animation frame. */
+function nextFrame() {
+  return new Promise((resolve) => window.requestAnimationFrame(resolve));
 }
 
 const mockLogger = utilities.logger.toolsLog.getLogger() as unknown as {
@@ -507,5 +516,105 @@ describe('contourCuts', () => {
 
     expect(polySeg.computeSurfaceData).not.toHaveBeenCalled();
     expect(viewport.element.addEventListener).not.toHaveBeenCalled();
+  });
+
+  describe('the state and the end of the cuts', () => {
+    beforeEach(() => {
+      (getAddOns as jest.Mock).mockReturnValue({ polySeg });
+    });
+
+    /** The details of the events fired for a viewport. */
+    const eventsOf = (viewportId) =>
+      mockTriggerEvent.mock.calls
+        .map((call) => call[2])
+        .filter((detail) => detail.viewportId === viewportId);
+
+    it('gives the state pending until the cut of the plane is finished, and fires the event once at the next frame', async () => {
+      addSegmentation('state', { 1: [AXIAL], 2: [AXIAL] });
+      const viewport = addViewport('stateSagittal', SAGITTAL);
+
+      expect(getViewportContourCutsState(viewport.id, 'state')).toBe('pending');
+
+      const done = updateContourCuts(viewport as never, 'state');
+
+      expect(getViewportContourCutsState(viewport.id, 'state')).toBe('pending');
+      await done;
+      expect(getViewportContourCutsState(viewport.id, 'state')).toBe(
+        'complete'
+      );
+      expect(eventsOf(viewport.id)).toEqual([]);
+
+      await nextFrame();
+      await nextFrame();
+      await updateContourCuts(viewport as never, 'state');
+      await nextFrame();
+
+      expect(eventsOf(viewport.id)).toEqual([
+        {
+          viewportId: 'stateSagittal',
+          segmentationId: 'state',
+          segmentIndices: [1, 2],
+          failedSegmentIndices: [],
+        },
+      ]);
+    });
+
+    it('gives the state pending again after a change of the contours or of the plane, and fires again once the new cut is finished', async () => {
+      addSegmentation('again', { 1: [AXIAL] });
+      const viewport = addViewport('againSagittal', SAGITTAL);
+
+      await updateContourCuts(viewport as never, 'again');
+      await nextFrame();
+      updateContourCutsOfModifiedSegmentation('again');
+
+      expect(getViewportContourCutsState(viewport.id, 'again')).toBe('pending');
+
+      await updateContourCuts(viewport as never, 'again');
+      await nextFrame();
+
+      viewport.getViewReference = () => ({ viewPlaneNormal: CORONAL });
+
+      expect(getViewportContourCutsState(viewport.id, 'again')).toBe('pending');
+
+      await updateContourCuts(viewport as never, 'again');
+      await nextFrame();
+
+      expect(getViewportContourCutsState(viewport.id, 'again')).toBe(
+        'complete'
+      );
+      expect(eventsOf(viewport.id).length).toBe(3);
+    });
+
+    it('fires no event for a cut that is no longer the one of the viewport when its frame comes', async () => {
+      addSegmentation('stale', { 1: [AXIAL] });
+      const viewport = addViewport('staleSagittal', SAGITTAL);
+
+      await updateContourCuts(viewport as never, 'stale');
+      updateContourCutsOfModifiedSegmentation('stale');
+      await nextFrame();
+
+      expect(eventsOf(viewport.id)).toEqual([]);
+      expect(getViewportContourCutsState(viewport.id, 'stale')).toBe('pending');
+    });
+
+    it('counts a segment whose conversion gives no surface as failed', async () => {
+      addSegmentation('failed', { 1: [AXIAL], 2: [AXIAL] });
+      mockGeometries.delete('failed-surface-2');
+
+      await updateContourCuts(
+        addViewport('failedSagittal', SAGITTAL) as never,
+        'failed'
+      );
+      await nextFrame();
+
+      expect(eventsOf('failedSagittal')).toEqual([
+        {
+          viewportId: 'failedSagittal',
+          segmentationId: 'failed',
+          segmentIndices: [1],
+          failedSegmentIndices: [2],
+        },
+      ]);
+    });
   });
 });

@@ -267,6 +267,31 @@ type SegmentationRenderedEventDetail = {
 };
 
 /**
+ * EventDetail for when the cuts of a contour segmentation in a viewport are
+ * all drawn (`Events.SEGMENTATION_CONTOUR_CUTS_COMPLETED`)
+ */
+type SegmentationContourCutsCompletedEventDetail = {
+  /** unique id of the viewport */
+  viewportId: string;
+  /** unique id of the segmentation */
+  segmentationId: string;
+  /**
+   * The segments whose surface is cut with the slices of the plane on
+   * display, in ascending order. Empty for a viewport in the plane of the
+   * contours, which needs no cut.
+   */
+  segmentIndices: number[];
+  /**
+   * The segments that need a cut in the plane on display and get none,
+   * because the conversion of their contours to a surface failed or gave no
+   * surface, their contours lie on planes that are not parallel, the PolySeg
+   * add-on is not registered, or the cut failed. Each is reported once in the
+   * log with the reason. In ascending order.
+   */
+  failedSegmentIndices: number[];
+};
+
+/**
  * EventDetail for when a Segmentation Representation for a toolGroup is modified
  */
 type SegmentationRepresentationModifiedEventDetail = {
@@ -608,6 +633,12 @@ type SegmentationRenderedEventType =
   Types.CustomEventType<SegmentationRenderedEventDetail>;
 
 /**
+ * Event for when the cuts of a contour segmentation in a viewport are all drawn
+ */
+type SegmentationContourCutsCompletedEventType =
+  Types.CustomEventType<SegmentationContourCutsCompletedEventDetail>;
+
+/**
  * Event for when Segmentation Global State is modified
  */
 type SegmentationModifiedEventType =
@@ -764,6 +795,8 @@ export type {
   SegmentationDataModifiedEventDetail,
   SegmentationRenderedEventType,
   SegmentationRenderedEventDetail,
+  SegmentationContourCutsCompletedEventType,
+  SegmentationContourCutsCompletedEventDetail,
   SegmentationModifiedEventType,
   SegmentationModifiedEventDetail,
   KeyDownEventDetail,

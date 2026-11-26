@@ -170,6 +170,12 @@ export { updatePlaneRestriction } from './updatePlaneRestriction';
 export { isAcquisitionPlaneNormal } from './isAcquisitionPlaneNormal';
 export { isInAcquisitionPlane } from './isInAcquisitionPlane';
 export { getSlicesClippingPlanes } from './getSlicesClippingPlanes';
+export { default as getVolumeSliceGrid } from './getVolumeSliceGrid';
+export type {
+  VolumeSliceGridInfo,
+  VolumeSliceGridOptions,
+  VolumeSliceGridOrientation,
+} from './getVolumeSliceGrid';
 export { runDrawSelfTest } from './drawSelfTest';
 export type {
   DrawSelfTestCase,

@@ -361,6 +361,41 @@ plane, see
   It fails, and does not warn, because a descriptor is shared by every
   viewport: an index left in it would open each viewport on another image
   than the one the application asked for, and nothing else would show it.
+- **`initialViewReference` is judged against the view that the mount
+  shows.** The source starts at the reference when the mounted viewport would
+  take it with `isReferenceViewable(reference, { withNavigation: true })`,
+  and goes where `setViewReference(reference)` on the mounted viewport would
+  go: the orientation of the mount options and the slices of that
+  orientation count, not the acquired images: a stored reference of sagittal
+  slice 300 of a 512 x 512 x 262 CT starts a sagittal mount on slice 300. A
+  reference that the mounted viewport would not take, as one of another
+  orientation, is ignored with a warning and the mount shows its default
+  slice.
+- **The start of a pane that mounts with others.** A mount that should start
+  where another pane of its group will be, before that pane is mounted (the
+  panes of a layout mount at the same time), takes the slice grid of the
+  other pane's view from `utilities.getVolumeSliceGrid`: the volume (in the
+  cache, or its image ids with their `imagePlaneModule` metadata) and the
+  orientation give the number of slices, the step, the default slice and the
+  point of each slice, by the code that the viewport runs. A view reference
+  of it starts the mount on the slice nearest to that point:
+
+  ```ts
+  const ctGrid = utilities.getVolumeSliceGrid({
+    imageIds: ctImageIds,
+    orientation: Enums.OrientationAxis.AXIAL,
+  });
+
+  await ptViewport.setDisplaySets({
+    displaySetId: 'pt',
+    options: {
+      mode: 'volume',
+      orientation: Enums.OrientationAxis.AXIAL,
+      initialViewReference: ctGrid.getViewReference(),
+    },
+  });
+  ```
+
 - **`appearance` is the appearance from the first draw.** It merges over the
   overrides set before the mount (a `colormap` one level deep, as
   `setDisplaySetAppearance` merges it). The mount draws once with it and

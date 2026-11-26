@@ -51,6 +51,7 @@ import {
   getLabelmapImageIdsForImageId,
 } from './getCurrentLabelmapImageIdForViewport';
 import { getActiveSegmentation } from './getActiveSegmentation';
+import { getContourCutsState } from './getContourCutsState';
 import {
   addSegmentationListener,
   addDefaultSegmentationListener,
@@ -111,4 +112,5 @@ export {
   getCurrentLabelmapImageIdsForViewport,
   getLabelmapImageIdsForImageId,
   getActiveSegmentation,
+  getContourCutsState,
 };

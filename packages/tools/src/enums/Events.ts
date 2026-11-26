@@ -201,6 +201,26 @@ enum Events {
   SEGMENTATION_RENDERED = 'CORNERSTONE_TOOLS_SEGMENTATION_RENDERED',
 
   /**
+   * Triggers on the eventTarget when the cuts of a contour segmentation in
+   * a viewport whose plane is not the plane of the contours are all drawn:
+   * every segment that needs a cut in the plane on display has its surface
+   * made and cut, and the contours of the slice on display are drawn. It
+   * fires once per viewport and segmentation each time the cuts become
+   * complete: after the first conversion, and again after a change of the
+   * contours or of the plane of the viewport, never while a conversion or a
+   * cut for that viewport is pending. A scroll needs no new cut (every slice
+   * of the plane is cut at once), so it fires nothing. A viewport in the
+   * plane of the contours needs no cut: it fires once at the render of the
+   * representation, with no segment index.
+   * `segmentation.getContourCutsState(viewportId, segmentationId)` gives the
+   * state at any time.
+   * Make use of {@link EventTypes.SegmentationContourCutsCompletedEventType | Segmentation Contour Cuts Completed Event Type}
+   * for typing your event listeners, and see what event detail is included in
+   * {@link EventTypes.SegmentationContourCutsCompletedEventDetail | Segmentation Contour Cuts Completed Event Detail}.
+   */
+  SEGMENTATION_CONTOUR_CUTS_COMPLETED = 'CORNERSTONE_TOOLS_SEGMENTATION_CONTOUR_CUTS_COMPLETED',
+
+  /**
    * Triggers on the eventTarget when a Segmentation representation of a toolGroup is added in the state manager.
    */
   SEGMENTATION_REPRESENTATION_ADDED = 'CORNERSTONE_TOOLS_SEGMENTATION_REPRESENTATION_ADDED',

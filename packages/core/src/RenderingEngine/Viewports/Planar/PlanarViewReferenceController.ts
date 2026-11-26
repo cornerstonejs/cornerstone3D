@@ -400,26 +400,25 @@ class PlanarViewReferenceController {
   private toViewReferenceContext(
     referenceContext: PlanarReferenceContext
   ): ViewReferenceContext {
-    const resolvedView = resolvePlanarViewportView({
-      viewState: this.host.getViewState(),
-      data: referenceContext.data,
-      frameOfReferenceUID: referenceContext.frameOfReferenceUID,
-      rendering: referenceContext.rendering,
-      renderContext: this.host.getRenderContext(),
-    })?.toICamera();
+    const view = this.resolveReferenceView(referenceContext);
+    const resolvedView = view?.toICamera();
     const volumeId = isImageRenderMode(referenceContext.rendering?.renderMode)
       ? undefined
       : referenceContext.data.volumeId;
-    const { maxImageIdIndex } = referenceContext.rendering as {
-      maxImageIdIndex?: number;
-    };
+    const maxImageIdIndex = this.getReferenceMaxImageIdIndex(
+      referenceContext,
+      view
+    );
 
     return {
       displaySetId: referenceContext.displaySetId,
       displaySetIds: [referenceContext.data.id],
       frameOfReferenceUID: referenceContext.frameOfReferenceUID,
       imageIds: this.getImageIdsBySliceIndex(referenceContext),
-      currentImageIdIndex: this.getReferenceImageIdIndex(referenceContext),
+      currentImageIdIndex: this.getReferenceImageIdIndex(
+        referenceContext,
+        view
+      ),
       numberOfSlices:
         typeof maxImageIdIndex === 'number' ? maxImageIdIndex + 1 : undefined,
       volumeId,
@@ -489,25 +488,76 @@ class PlanarViewReferenceController {
   }
 
   /**
+   * The view of a binding in the view state of the viewport: its slice basis,
+   * its slice index and its number of slices, by the slice grid of the
+   * orientation of the view state.
+   */
+  private resolveReferenceView(referenceContext: PlanarReferenceContext) {
+    return resolvePlanarViewportView({
+      viewState: this.host.getViewState(),
+      data: referenceContext.data,
+      frameOfReferenceUID: referenceContext.frameOfReferenceUID,
+      rendering: referenceContext.rendering,
+      renderContext: this.host.getRenderContext(),
+    });
+  }
+
+  /**
+   * The last slice index of the view of a binding in a volume render mode:
+   * that of its view in the view state of the viewport, which is what
+   * `getNumberOfSlices` answers once the binding draws. The rendering keeps
+   * the number of the acquired images until its first draw, so a mount that
+   * starts at a view reference reads the view that it is about to show.
+   * Otherwise the last index that the rendering keeps.
+   */
+  private getReferenceMaxImageIdIndex(
+    referenceContext: PlanarReferenceContext,
+    view = this.resolveReferenceView(referenceContext)
+  ): number | undefined {
+    const { rendering } = referenceContext;
+
+    if (isVolumeRenderMode(rendering?.renderMode)) {
+      const maxImageIdIndex = view?.state.maxImageIdIndex;
+
+      if (typeof maxImageIdIndex === 'number') {
+        return maxImageIdIndex;
+      }
+    }
+
+    return (rendering as { maxImageIdIndex?: number } | undefined)
+      ?.maxImageIdIndex;
+  }
+
+  /**
    * The image index that a reference is checked against. For the source of a
    * stack it is the requested index of the view state, as the legacy stack
-   * viewport checks against the index of the last request; otherwise it is
-   * the index that the rendering shows.
+   * viewport checks against the index of the last request. For a volume it is
+   * the slice index of its view in the view state, as `getSliceIndex`
+   * answers. Otherwise it is the index that the rendering shows.
    */
   private getReferenceImageIdIndex(
-    referenceContext: PlanarReferenceContext
+    referenceContext: PlanarReferenceContext,
+    view = this.resolveReferenceView(referenceContext)
   ): number {
     const { slice } = this.host.getViewState();
+    const { rendering } = referenceContext;
 
     if (
       slice?.kind === 'stackIndex' &&
       referenceContext.displaySetId === this.host.getSourceDisplaySetId() &&
-      isImageRenderMode(referenceContext.rendering.renderMode)
+      isImageRenderMode(rendering.renderMode)
     ) {
       return slice.imageIdIndex;
     }
 
-    return referenceContext.rendering.currentImageIdIndex;
+    if (
+      isVolumeRenderMode(rendering.renderMode) &&
+      typeof view?.state.currentImageIdIndex === 'number'
+    ) {
+      return view.state.currentImageIdIndex;
+    }
+
+    return rendering.currentImageIdIndex;
   }
 
   private findPlanarReferenceContextByVolumeId(
@@ -1073,7 +1123,9 @@ class PlanarViewReferenceController {
     }
 
     const imageIds = this.getImageIdsForReferenceContext(referenceContext);
-    const maxImageIdIndex = rendering.maxImageIdIndex;
+    const maxImageIdIndex =
+      this.getReferenceMaxImageIdIndex(referenceContext) ??
+      rendering.maxImageIdIndex;
 
     if (
       typeof viewRef.sliceIndex === 'number' &&

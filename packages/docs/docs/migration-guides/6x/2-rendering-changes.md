@@ -198,6 +198,31 @@ What changes for an application:
 - **`getSlicesClippingPlanes` gives one entry for each slice of the grid,**
   so the cut of a surface (a contour segmentation on an MPR view) is the cut
   of the slice on display, also for an oblique view.
+- **`utilities.getVolumeSliceGrid` gives the grid of a view before a
+  mount.** For a volume (`volumeId` of a volume in the cache, or `imageIds`,
+  whose `imagePlaneModule` metadata gives the geometry: no pixel is loaded)
+  and an orientation (`ACQUISITION`, `AXIAL`, `SAGITTAL`, `CORONAL` or view
+  vectors) it gives `numberOfSlices`, `step`, `defaultSliceIndex`,
+  `defaultSliceWorldPoint`, `viewPlaneNormal`, `viewUp`,
+  `getSliceWorldPoint(k)`, `getSliceIndex(point)` and
+  `getViewReference(k)`. It runs the slice basis and the grid of the
+  viewport, so its answers are what a viewport reports after a mount with no
+  start: `getNumberOfSlices()`, `getSliceIndex()`, the camera focal point.
+  `getViewReference(k)` names the point and the plane of slice k and no
+  volume or slice index, so a mount of any volume of the frame of reference
+  takes it as `initialViewReference` and starts on its slice nearest to that
+  point. The grid and the slice step were internal before (no public way to
+  know them before a mount).
+
+  ```ts
+  const grid = utilities.getVolumeSliceGrid({
+    volumeId: ctVolumeId,
+    orientation: Enums.OrientationAxis.CORONAL,
+  });
+
+  grid.numberOfSlices; // 512 for a 512 x 512 x N axial CT
+  grid.defaultSliceIndex; // 256
+  ```
 
 ### A series tilted less than half a slice
 
@@ -3118,6 +3143,58 @@ levels of 255.
     `cs3d.tools.tools.displayTools.Contour.contourCuts` that names the
     segmentation, the segment and the reason, once for each version of the
     contours.
+  - `Events.SEGMENTATION_CONTOUR_CUTS_COMPLETED` (new) fires on the
+    `eventTarget` when the cuts of a segmentation on a viewport are all drawn
+    for its plane: every segment that needs a cut is cut or has failed, and
+    the contours of the slice on display are drawn. Its detail has the
+    `viewportId`, the `segmentationId`, the `segmentIndices` that are cut and
+    the `failedSegmentIndices`. It fires once per viewport and segmentation
+    each time the cuts become complete: after the first conversion, and again
+    after a change of the contours or of the plane, never while a conversion
+    or a cut for that viewport is pending. A scroll needs no new cut, so it
+    fires nothing. A viewport in the plane of the contours needs no cut: it
+    is complete when the representation has rendered on it, and fires once
+    then with no segment index.
+    `segmentation.getContourCutsState(viewportId, segmentationId)` (new)
+    gives `'pending'` or `'complete'` at any time, so a caller that
+    subscribes late asks it first. `SEGMENTATION_RENDERED`
+    fires before the cuts, as before, and `ANNOTATION_RENDERED` after each
+    batch of them, with nothing that marks the last.
+
+  A wait for the cuts of a pane:
+
+  ```ts
+  function waitForContourCuts(viewportId, segmentationId) {
+    if (
+      segmentation.getContourCutsState(viewportId, segmentationId) ===
+      'complete'
+    ) {
+      return Promise.resolve();
+    }
+
+    return new Promise((resolve) => {
+      const onCompleted = (evt) => {
+        const { detail } = evt;
+
+        if (
+          detail.viewportId === viewportId &&
+          detail.segmentationId === segmentationId
+        ) {
+          eventTarget.removeEventListener(
+            Enums.Events.SEGMENTATION_CONTOUR_CUTS_COMPLETED,
+            onCompleted
+          );
+          resolve(detail);
+        }
+      };
+
+      eventTarget.addEventListener(
+        Enums.Events.SEGMENTATION_CONTOUR_CUTS_COMPLETED,
+        onCompleted
+      );
+    });
+  }
+  ```
 
   The contours of an RTSTRUCT of 31 structures (2,265 contours) show their
   first cut in the sagittal and coronal panes about 1.8 s after the

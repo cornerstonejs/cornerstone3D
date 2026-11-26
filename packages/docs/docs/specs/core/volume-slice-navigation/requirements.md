@@ -61,6 +61,18 @@ reason to change a requirement.
   orientation, or in the same orientation with another number of slices,
   names another plane. To come back to a plane later, the application keeps
   a view reference with its point and its orientation.
+- **VSN-U-10** The application can know the slices of a view of a volume
+  before a viewport shows it: the number of slices, the distance between
+  them, the slice that the view opens on and the position of each slice, the
+  same as a viewport reports once it shows the view. So the panes of a
+  layout that open together can open on one position: a pane opens on the
+  slice of its view nearest to the position that another pane will show,
+  before that pane is shown.
+- **VSN-U-11** A view that opens at a stored view reference of its own
+  orientation opens on the slice of the reference, whatever the number of
+  acquired images: a sagittal view of an axial series has more slices than
+  the series has images, and a reference of any of them is a slice of the
+  view.
 
 ## Standard orientations of a tilted series
 
