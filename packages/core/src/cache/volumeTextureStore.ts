@@ -398,6 +398,19 @@ class VolumeTextureStore {
   }
 
   /**
+   * Removes every set that no consumer holds. A backstop set goes too: it
+   * leaves last only when a budget must choose, and a set that no viewport
+   * draws holds GPU memory for nothing.
+   */
+  public evictUnheld(): void {
+    for (const stored of [...this.sets.values()]) {
+      if (stored.set.references === 0) {
+        this.evict(stored.volumeId, stored.set.name);
+      }
+    }
+  }
+
+  /**
    * Releases memory until the store can hold `bytes` more.
    *
    * The store first removes the set that no consumer holds and that is the
@@ -468,6 +481,25 @@ eventTarget.addEventListener(Events.VOLUME_CACHE_VOLUME_REMOVED, (evt) => {
   if (volumeId) {
     volumeTextureStore.evictVolume(volumeId);
   }
+});
+
+let unheldTimer: ReturnType<typeof setTimeout> | undefined;
+
+/**
+ * Under `auto`, a change of the limits gives each volume a set of a new size,
+ * and the memory limit applies to the textures of the page. A set of the old
+ * size that no viewport holds goes, so a lower limit frees GPU memory at once
+ * and not only when a later set needs room. The check runs after the current
+ * work, when the viewports hold the sets of the new size.
+ */
+eventTarget.addEventListener(Events.VOLUME_TEXTURE_LIMITS_CHANGED, () => {
+  unheldTimer ??= setTimeout(() => {
+    unheldTimer = undefined;
+
+    if (gpuSettingsForRender()?.id === 'auto') {
+      volumeTextureStore.evictUnheld();
+    }
+  });
 });
 
 export { VolumeTextureStore, volumeTextureStore };
