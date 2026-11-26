@@ -6,7 +6,10 @@ import createVOILUTSequenceTransferFunction, {
   createVOILUTSampler,
 } from '../../src/utilities/createVOILUTSequenceTransferFunction';
 import VOILUTFunctionType from '../../src/enums/VOILUTFunctionType';
-import { getImageVOILUT } from '../../src/RenderingEngine/helpers/planarImageRendering';
+import {
+  getDefaultImageVOIRange,
+  getImageVOILUT,
+} from '../../src/RenderingEngine/helpers/planarImageRendering';
 
 describe('cpuFallback getVOILut', function () {
   it('maps the window center to mid grey for LINEAR', () => {
@@ -279,7 +282,11 @@ describe('createVOILUTSequenceTransferFunction', function () {
 describe('getImageVOILUT', function () {
   // The stack and the generic viewports must show a PT image the same way.
   it('gives no VOI LUT Sequence for a prescaled PT image', () => {
-    const voiLUT = { firstValueMapped: 0, numBitsPerEntry: 8, lut: [0, 255] };
+    const voiLUT = {
+      firstValueMapped: 0,
+      numBitsPerEntry: 8,
+      lut: [0, 64, 128, 255],
+    };
     const ptImage = {
       voiLUT,
       preScale: { scaled: true, scalingParameters: { suvbw: 2 } },
@@ -287,5 +294,27 @@ describe('getImageVOILUT', function () {
 
     expect(getImageVOILUT(ptImage)).toBeUndefined();
     expect(getImageVOILUT({ voiLUT })).toBe(voiLUT);
+  });
+});
+
+describe('getDefaultImageVOIRange', function () {
+  // With the sequence off, the default range is the window of the file, as on
+  // StackViewport, and not the input domain of the sequence.
+  it('uses the window of the file when the sequence is not drawn', () => {
+    const image = {
+      voiLUT: {
+        firstValueMapped: 0,
+        numBitsPerEntry: 8,
+        lut: [0, 64, 128, 255],
+      },
+      windowCenter: 40,
+      windowWidth: 400,
+      voiLUTFunction: VOILUTFunctionType.LINEAR,
+    };
+
+    expect(getDefaultImageVOIRange(image)).toEqual({ lower: 0, upper: 3 });
+    expect(
+      getDefaultImageVOIRange(image, { useVOILUTSequence: false })
+    ).toEqual({ lower: -160, upper: 239 });
   });
 });

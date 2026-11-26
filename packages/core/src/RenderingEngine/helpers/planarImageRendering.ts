@@ -151,7 +151,15 @@ export function getImageVOILUT(image?: IImage): CPUFallbackLUT | undefined {
   return image && !isPTPrescaledWithSUV(image) ? image.voiLUT : undefined;
 }
 
-export function getDefaultImageVOIRange(image: IImage): VOIRange | undefined {
+/**
+ * The default VOI range of an image. The range of the VOI LUT Sequence applies
+ * only when the presentation draws the sequence (resolveVOILUTSequenceToApply),
+ * else the window of the file applies, as on StackViewport.
+ */
+export function getDefaultImageVOIRange(
+  image: IImage,
+  props?: Pick<PlanarImagePresentation, 'voiLUTFunction' | 'useVOILUTSequence'>
+): VOIRange | undefined {
   // Mirror legacy StackViewport._getInitialVOIRange: a prescaled PT (SUV) image
   // defaults to a 0-5 VOI range rather than its raw DICOM window center/width,
   // which is too wide for PET and skews the display. Keyed off the loader-set
@@ -162,8 +170,14 @@ export function getDefaultImageVOIRange(image: IImage): VOIRange | undefined {
 
   // A VOI LUT Sequence defines the range it is mapped over, and it takes
   // precedence over a window the file may also carry
-  if (isRenderableVOILUT(image.voiLUT)) {
-    return getVOILUTSequenceRange(image.voiLUT);
+  const voiLUT = resolveVOILUTSequenceToApply({
+    defaultVOILUT: image.voiLUT,
+    defaultVOILUTFunction: image.voiLUTFunction,
+    props,
+  });
+
+  if (isRenderableVOILUT(voiLUT)) {
+    return getVOILUTSequenceRange(voiLUT);
   }
 
   return getVOIRangeFromWindowLevel(

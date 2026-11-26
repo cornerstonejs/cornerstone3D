@@ -433,7 +433,14 @@ function applyDataPresentation(
   rendering: PlanarCpuImageRendering,
   props?: PlanarDataPresentation
 ): void {
-  const { enabledElement, defaultVOIRange } = rendering;
+  const { enabledElement } = rendering;
+  if (enabledElement.image) {
+    rendering.defaultVOIRange = getDefaultImageVOIRange(
+      enabledElement.image,
+      props
+    );
+  }
+  const { defaultVOIRange } = rendering;
   const { viewport } = enabledElement;
   const canvas = enabledElement.canvas as HTMLCanvasElement;
   const voiRange = props?.voiRange ?? defaultVOIRange;
@@ -800,7 +807,10 @@ async function updateRenderedImage(args: {
   };
 
   rendering.currentImageIdIndex = imageIdIndex;
-  rendering.defaultVOIRange = getDefaultImageVOIRange(image);
+  rendering.defaultVOIRange = getDefaultImageVOIRange(
+    image,
+    rendering.dataPresentation
+  );
   rendering.fitScale = getCPUFallbackScalarScale(defaultViewport.scale);
   rendering.renderingInvalidated = true;
   ctx.viewport.invalidateResolvedView();
