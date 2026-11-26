@@ -711,6 +711,10 @@
         "name": "Volume Progressive Loading",
         "description": "Volume progressive loading inter and intra image"
       },
+      "gpuMemoryTest": {
+        "name": "GPU Memory Test",
+        "description": "Checks the automatic GPU memory limit and the handling of a GPU failure, step by step, with a report"
+      },
       "volumeDecimatedLoading": {
         "name": "Volume Decimated Loading",
         "description": "Volume Decimated loading"
