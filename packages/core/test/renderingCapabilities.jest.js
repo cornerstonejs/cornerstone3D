@@ -704,8 +704,14 @@ describe('renderingCapabilities', () => {
     detectRenderingCapabilities();
     storeGpuMemoryLimit({ bytes: 512 * 1024 * 1024, hard: false });
 
-    /** Another tab read the record before the change, and writes it now. */
-    const earlier = JSON.parse(window.localStorage.getItem(recordKey()));
+    /**
+     * Another tab read the record before the change, and writes it now, with
+     * an earlier limit in it, as a version before the limit key wrote it.
+     */
+    const earlier = {
+      ...JSON.parse(window.localStorage.getItem(recordKey())),
+      memoryLimit: { bytes: 512 * 1024 * 1024, hard: false },
+    };
 
     storeGpuMemoryLimit({ bytes: 1024 * 1024 * 1024, hard: false });
     window.localStorage.setItem(recordKey(), JSON.stringify(earlier));
@@ -806,6 +812,41 @@ describe('renderingCapabilities', () => {
     expect(window.localStorage.getItem(key)).toBeNull();
   });
 
+  it('handles at most 20 crash records in one start, and the rest at the next', () => {
+    mockWebGL();
+    detectRenderingCapabilities();
+
+    const keys = Array.from(
+      { length: 21 },
+      (_, index) => `${STORAGE_KEY}.pending.stopped-tab-${index}`
+    );
+
+    keys.forEach((key) =>
+      window.localStorage.setItem(
+        key,
+        JSON.stringify({
+          renderer: 'NVIDIA GeForce RTX 3080',
+          probeVersion: RENDERING_CAPABILITIES_PROBE_VERSION,
+          totalBytes: 9000,
+          at: Date.now() - 60000,
+        })
+      )
+    );
+    resetRenderingCapabilities();
+
+    expect(getStoredRenderingCapabilities().gpuBytes.failed.failures).toBe(20);
+    expect(
+      keys.filter((key) => window.localStorage.getItem(key) !== null)
+    ).toHaveLength(1);
+
+    resetRenderingCapabilities();
+
+    expect(getStoredRenderingCapabilities().gpuBytes.failed.failures).toBe(21);
+    expect(
+      keys.filter((key) => window.localStorage.getItem(key) !== null)
+    ).toHaveLength(0);
+  });
+
   it('reports one allocation once when two contexts lose their context', () => {
     const GIGABYTE = 1024 * 1024 * 1024;
 
@@ -853,6 +894,36 @@ describe('renderingCapabilities', () => {
         value: 128 * MEGABYTE,
         successes: 1,
       });
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  it('does not credit an earlier upload that a small upload of the same owner replaced', () => {
+    const MEGABYTE = 1024 * 1024;
+    const owner = {};
+
+    jest.useFakeTimers();
+
+    try {
+      mockWebGL();
+      detectRenderingCapabilities();
+      noteTextureAllocation({
+        textureBytes: 512 * MEGABYTE,
+        totalBytes: 512 * MEGABYTE,
+        owner,
+      });
+      noteTextureAllocation({
+        textureBytes: 16 * MEGABYTE,
+        totalBytes: 16 * MEGABYTE,
+        owner,
+      });
+      noteTextureRendered(undefined, [owner]);
+      jest.advanceTimersByTime(5000);
+
+      expect(
+        getStoredRenderingCapabilities().textureBytes.largest
+      ).toBeUndefined();
     } finally {
       jest.useRealTimers();
     }

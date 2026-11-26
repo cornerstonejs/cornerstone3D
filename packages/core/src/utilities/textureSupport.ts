@@ -213,6 +213,19 @@ export class TextureProbe {
     const framebuffer = gl.createFramebuffer();
     const vertexArray = gl.createVertexArray();
 
+    /**
+     * A binding of `null` would bind the default framebuffer, which is the
+     * drawing buffer of the viewport, so the probe does not run then.
+     */
+    if (!renderbuffer || !framebuffer || !vertexArray) {
+      gl.deleteFramebuffer(framebuffer);
+      gl.deleteRenderbuffer(renderbuffer);
+      gl.deleteVertexArray(vertexArray);
+      gl.deleteProgram(program);
+
+      return null;
+    }
+
     gl.bindRenderbuffer(gl.RENDERBUFFER, renderbuffer);
     gl.renderbufferStorage(gl.RENDERBUFFER, gl.RGBA8, 4, 1);
     gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);

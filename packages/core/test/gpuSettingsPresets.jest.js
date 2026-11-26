@@ -988,6 +988,35 @@ describe('the edge search in the context of a viewport', () => {
     }
   });
 
+  it('keeps the search pending for another context when the probe cannot run', () => {
+    mockSmallEdgeDevice();
+    probeRenderingLimits.mockReturnValue(null);
+    probeEdgeSearch.mockReturnValueOnce(null).mockReturnValue({
+      max3DTextureSize: 8192,
+      reliableEdge: 2048,
+    });
+
+    const otherGl = { viewport: 'other' };
+
+    expect(getActiveGpuSettings().maxTextureEdge).toBe(128);
+
+    runPendingEdgeSearch(gl);
+    /** The same context does not try again on each frame. */
+    runPendingEdgeSearch(gl);
+
+    expect(probeEdgeSearch).toHaveBeenCalledTimes(1);
+    expect(getActiveGpuSettings().maxTextureEdge).toBe(128);
+
+    runPendingEdgeSearch(otherGl);
+
+    expect(probeEdgeSearch).toHaveBeenCalledTimes(2);
+    expect(probeEdgeSearch).toHaveBeenLastCalledWith(
+      otherGl,
+      expect.anything()
+    );
+    expect(getActiveGpuSettings().maxTextureEdge).toBe(8192);
+  });
+
   it('starts below an edge whose test lost the context', () => {
     mockSmallEdgeDevice();
     probeRenderingLimits.mockReturnValue({

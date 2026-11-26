@@ -261,6 +261,11 @@ let cachedCapabilities: RenderingCapabilities | null = null;
 let record: StoredRenderingCapabilities | null = null;
 /** True after this page ran the edge search in the context of a viewport. */
 let edgeSearchTried = false;
+/**
+ * The viewport contexts in which the probe of the edge search could not run,
+ * so a later context tries it, and not each frame of the same one.
+ */
+let edgeSearchFailedContexts = new WeakSet<WebGL2RenderingContext>();
 /** True after a retest of the edge, until the next edge search. */
 let edgeRetest = false;
 /** The time of the last probe context, from `performance.now()`. */
@@ -764,6 +769,15 @@ function recoverPendingAllocations(
         pending?.probeVersion === RENDERING_CAPABILITIES_PROBE_VERSION &&
         pending.totalBytes > 0
       ) {
+        /**
+         * The record keeps the ids of the last crash records only, so one
+         * start handles at most that many, and a later start the rest: an id
+         * that dropped out before its record went would count again.
+         */
+        if (handled.recorded.length >= RECOVERED_PENDING_KEPT) {
+          continue;
+        }
+
         /** The key of a tab repeats, so its time tells two crashes apart. */
         const id = `${key}@${pending.at}`;
 
@@ -988,9 +1002,11 @@ export function isEdgeSearchPending(): boolean {
  * @returns true when the edge of the record changed
  */
 export function runEdgeSearchInContext(gl: WebGL2RenderingContext): boolean {
-  if (!isEdgeSearchPending()) {
+  if (!isEdgeSearchPending() || edgeSearchFailedContexts.has(gl)) {
     return false;
   }
+
+  const retest = edgeRetest;
 
   edgeSearchTried = true;
   edgeRetest = false;
@@ -1007,6 +1023,11 @@ export function runEdgeSearchInContext(gl: WebGL2RenderingContext): boolean {
     updateRecord((target) =>
       applyEdgeSearch(target, probed, searchStartEdge())
     );
+  } else {
+    /** The probe did not run, so the search stays pending for another context. */
+    edgeSearchFailedContexts.add(gl);
+    edgeSearchTried = false;
+    edgeRetest = retest;
   }
 
   return getReliableEdge() !== before;
@@ -1243,6 +1264,7 @@ export function retestRenderingCapabilities(
 
   if (all || options.edge) {
     edgeSearchTried = false;
+    edgeSearchFailedContexts = new WeakSet();
     edgeRetest = true;
   }
 
@@ -1263,6 +1285,7 @@ export function resetRenderingCapabilities({
   cachedCapabilities = null;
   record = null;
   edgeSearchTried = false;
+  edgeSearchFailedContexts = new WeakSet();
   edgeRetest = false;
 
   if (clearStorage) {

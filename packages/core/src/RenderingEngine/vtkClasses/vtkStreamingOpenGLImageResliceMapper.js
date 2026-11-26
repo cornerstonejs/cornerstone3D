@@ -264,7 +264,12 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
 
         let shouldReset = true;
 
-        if (previousTextureParameters?.dataType === dataType) {
+        /** A texture whose creation failed has no storage to update. */
+        const hasStorage =
+          typeof currentTexture.getHandle !== 'function' ||
+          Boolean(currentTexture.getHandle());
+
+        if (hasStorage && previousTextureParameters?.dataType === dataType) {
           if (
             previousTextureParameters?.width === dims[0] &&
             previousTextureParameters?.height === dims[1] &&
@@ -288,7 +293,7 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
             numberOfComponents: numComps,
             dataType,
           });
-          currentTexture.create3DFromRaw({
+          const created = currentTexture.create3DFromRaw({
             width: dims[0],
             height: dims[1],
             depth: dims[2],
@@ -296,7 +301,16 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
             dataType,
             data: null,
           });
-          currentTexture.update3DFromRaw();
+
+          /**
+           * A refused texture has no storage, which vtk.js cannot activate,
+           * so nothing draws and the next render tries again.
+           */
+          if (created === false) {
+            model.scalarTextureRefused = true;
+          } else {
+            currentTexture.update3DFromRaw();
+          }
         } else {
           currentTexture.deactivate?.();
           currentTexture.update3DFromRaw();
