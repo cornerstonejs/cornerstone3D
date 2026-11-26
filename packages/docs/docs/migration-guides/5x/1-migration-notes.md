@@ -482,6 +482,22 @@ application requests `preScale`.
   that you convert without the function shows `W 401 / C 40.5` for a window of
   `W 400 / C 40`.
 
+## `roundNumber` removes trailing zeros
+
+### What Changed
+
+`utilities.roundNumber` removes the trailing zeros after the decimal point, and a
+decimal point with no digits after it. `1.00` gives `1`, and `12.30` gives
+`12.3`. A value that rounds to zero gives `0`, not `-0`. The tools use
+`roundNumber` for the text of measurements. Thus a Length of exactly 10 mm shows
+`10 mm`, not `10.0 mm`.
+
+### Migration Guidance
+
+- Update screenshot tests and text assertions that expect trailing zeros.
+- To keep a fixed number of decimals, format the value with
+  `Number.prototype.toFixed`.
+
 ## `StackViewport.getProperties()` reports the VOI LUT Function in effect
 
 ### What Changed
