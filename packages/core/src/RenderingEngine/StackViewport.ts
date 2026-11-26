@@ -964,13 +964,14 @@ class StackViewport extends Viewport {
     this.VOILUTFunction = normalizeVOILUTFunction(this.csImage?.voiLUTFunction);
     this.viewportStatus = ViewportStatus.PRE_RENDER;
 
-    // Reset restores the curve of the file, and a colormap replaces that curve.
-    // Remove the colormap first, or setVOI cannot put the sequence back.
-    // The CPU also removes a colormap applied after the load, as the GPU does.
+    // Reset restores the display of the file, and a colormap replaces it.
+    // Remove the colormap first: setVOI builds the function from this.colormap
+    // and records it as the initial nodes. The CPU keeps a colormap of the load.
     if (
       (this.colormap as ColormapPublic)?.name &&
-      (this._getVOILUTSequenceToApply() ||
-        (this.useCPURendering && this.colormap !== this.cpuInitialColormap))
+      (!this.useCPURendering ||
+        this._getVOILUTSequenceToApply() ||
+        this.colormap !== this.cpuInitialColormap)
     ) {
       this.colormap = undefined;
       delete this._cpuFallbackEnabledElement?.viewport?.colormap;
