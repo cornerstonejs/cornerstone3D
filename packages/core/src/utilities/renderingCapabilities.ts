@@ -357,6 +357,11 @@ if (typeof BroadcastChannel !== 'undefined') {
         responder.postMessage({ type: 'alive', pageId });
       }
     };
+    /**
+     * Node has `BroadcastChannel` too, and an open channel keeps its process
+     * running: a script that imports this package would never exit.
+     */
+    (responder as BroadcastChannel & { unref?: () => void }).unref?.();
   } catch {
     /** A page with no channel answers nothing, and a start records at once. */
   }
