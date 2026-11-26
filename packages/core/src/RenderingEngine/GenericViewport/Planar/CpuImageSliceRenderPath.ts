@@ -6,7 +6,11 @@ import calculateTransform from '../../helpers/cpuFallback/rendering/calculateTra
 import canvasToPixel from '../../helpers/cpuFallback/rendering/canvasToPixel';
 import correctShift from '../../helpers/cpuFallback/rendering/correctShift';
 import getDefaultViewport from '../../helpers/cpuFallback/rendering/getDefaultViewport';
-import { getDefaultImageVOIRange } from '../../helpers/planarImageRendering';
+import {
+  getDefaultImageVOIRange,
+  getImageVOILUT,
+  resolveVOILUTSequenceToApply,
+} from '../../helpers/planarImageRendering';
 import fitToWindow from '../../helpers/cpuFallback/rendering/fitToWindow';
 import drawImageSync from '../../helpers/cpuFallback/drawImageSync';
 import { resolveCPUFallbackColormap } from '../../helpers/cpuFallback/colors';
@@ -16,6 +20,7 @@ import {
   ViewportType,
   Events,
   ViewportStatus,
+  VOILUTFunctionType,
 } from '../../../enums';
 import { loadAndCacheImage } from '../../../loaders/imageLoader';
 import * as metaData from '../../../metaData';
@@ -428,7 +433,14 @@ function applyDataPresentation(
   rendering: PlanarCpuImageRendering,
   props?: PlanarDataPresentation
 ): void {
-  const { enabledElement, defaultVOIRange } = rendering;
+  const { enabledElement } = rendering;
+  if (enabledElement.image) {
+    rendering.defaultVOIRange = getDefaultImageVOIRange(
+      enabledElement.image,
+      props
+    );
+  }
+  const { defaultVOIRange } = rendering;
   const { viewport } = enabledElement;
   const canvas = enabledElement.canvas as HTMLCanvasElement;
   const voiRange = props?.voiRange ?? defaultVOIRange;
@@ -441,17 +453,32 @@ function applyDataPresentation(
     enabledElement.image?.colormap
   );
   viewport.invert = props?.invert ?? false;
+  const voiLUTFunction =
+    props?.voiLUTFunction ??
+    enabledElement.image?.voiLUTFunction ??
+    VOILUTFunctionType.LINEAR;
+
+  // A colormap replaces the VOI LUT Sequence, as on the GPU path.
+  viewport.voiLUT =
+    props?.colormap?.name === undefined
+      ? resolveVOILUTSequenceToApply({
+          defaultVOILUT: getImageVOILUT(enabledElement.image),
+          defaultVOILUTFunction: enabledElement.image?.voiLUTFunction,
+          props,
+        })
+      : undefined;
 
   if (voiRange) {
     const { windowCenter, windowWidth } = toWindowLevel(
       voiRange.lower,
-      voiRange.upper
+      voiRange.upper,
+      voiLUTFunction
     );
 
     viewport.voi = {
       windowCenter,
       windowWidth,
-      voiLUTFunction: enabledElement.image?.voiLUTFunction,
+      voiLUTFunction,
     };
   }
 
@@ -780,7 +807,10 @@ async function updateRenderedImage(args: {
   };
 
   rendering.currentImageIdIndex = imageIdIndex;
-  rendering.defaultVOIRange = getDefaultImageVOIRange(image);
+  rendering.defaultVOIRange = getDefaultImageVOIRange(
+    image,
+    rendering.dataPresentation
+  );
   rendering.fitScale = getCPUFallbackScalarScale(defaultViewport.scale);
   rendering.renderingInvalidated = true;
   ctx.viewport.invalidateResolvedView();

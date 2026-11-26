@@ -1,6 +1,7 @@
 import * as eventListener from './eventListener';
 import csUtils from './invertRgbTransferFunction';
 import createSigmoidRGBTransferFunction from './createSigmoidRGBTransferFunction';
+import createVOILUTSequenceTransferFunction from './createVOILUTSequenceTransferFunction';
 import getVoiFromSigmoidRGBTransferFunction from './getVoiFromSigmoidRGBTransferFunction';
 import createLinearRGBTransferFunction from './createLinearRGBTransferFunction';
 import scaleRgbTransferFunction from './scaleRgbTransferFunction';
@@ -72,7 +73,7 @@ import { convertVolumeToStackViewport } from './convertVolumeToStackViewport';
 import VoxelManager from './VoxelManager';
 import CompositeVoxelManager from './CompositeVoxelManager';
 import RLEVoxelMap from './RLEVoxelMap';
-import roundNumber, { roundToPrecision } from './roundNumber';
+import roundNumber, { roundNumberTrim, roundToPrecision } from './roundNumber';
 import convertToGrayscale from './convertToGrayscale';
 import { convertColorArrayToRgbString } from './convertColorArrayToRgbString';
 import getViewportImageIds from './getViewportImageIds';
@@ -133,6 +134,23 @@ import {
   mapMappedBandToRawRange,
 } from './viewportVoiIntensityMapping';
 export type { ViewportVoiMappingProps } from './viewportVoiIntensityMapping';
+export {
+  isRenderableVOILUT,
+  getVOILUTSequenceRange,
+  getVOILUTOutputScale,
+  sampleVOILUT,
+  createVOILUTSampler,
+  invertVOILUTSample,
+} from './createVOILUTSequenceTransferFunction';
+export type { RenderableVOILUT } from './createVOILUTSequenceTransferFunction';
+export {
+  normalizeVOILUTFunction,
+  getValidVOILUTFunction,
+} from './voiLUTFunction';
+export {
+  default as normalizeVOILUTSequence,
+  getVOILUTBytesPerEntry,
+} from './normalizeVOILUTSequence';
 export * from './getPixelSpacingInformation';
 export * from './getPlaneCubeIntersectionDimensions';
 export * from './rotateToViewCoordinates';
@@ -173,6 +191,7 @@ export {
   eventListener,
   csUtils as invertRgbTransferFunction,
   createSigmoidRGBTransferFunction,
+  createVOILUTSequenceTransferFunction,
   getVoiFromSigmoidRGBTransferFunction,
   createLinearRGBTransferFunction,
   scaleRgbTransferFunction,
@@ -253,6 +272,7 @@ export {
   convertStackToVolumeViewport,
   convertVolumeToStackViewport,
   roundNumber,
+  roundNumberTrim,
   roundToPrecision,
   getViewportImageIds,
   getRandomSampleFromArray,
