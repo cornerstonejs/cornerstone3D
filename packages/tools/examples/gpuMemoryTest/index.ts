@@ -86,14 +86,43 @@ type Status = 'pass' | 'fail' | 'info' | 'running';
 type StepResult = { status: Status; details: string; at: number };
 type Results = Record<string, StepResult>;
 
+/** Each step, with what to do and what to expect, shown under its button. */
 const STEPS = [
-  { id: 'device', title: '1. Check the device and the start limit' },
-  { id: 'load', title: '2. Load the CT' },
-  { id: 'limit', title: '3. Lower the limit, then reset it' },
-  { id: 'contextLoss', title: '4. Lose the context during a load' },
-  { id: 'tabs', title: '5. Share a wait for WebGL with a second tab' },
-  { id: 'allocate', title: '6. Allocate until a real GPU failure' },
-  { id: 'calibrate', title: '7. Run a calibration' },
+  {
+    id: 'device',
+    title: '1. Check the device and the start limit',
+    how: 'Press it. The result shows at once.',
+  },
+  {
+    id: 'load',
+    title: '2. Load the CT',
+    how: 'Press it, and wait for the result: up to a minute while the CT loads. The four images appear.',
+  },
+  {
+    id: 'limit',
+    title: '3. Lower the limit, then reset it',
+    how: 'Press it, and watch the images: within 15 s they turn softer with a red "Low Fidelity" label, then sharp again, with no click from you.',
+  },
+  {
+    id: 'contextLoss',
+    title: '4. Lose the context during a load',
+    how: 'Press it. The page reloads, loads the CT, and loses its WebGL context on purpose: the images turn black and a "GPU memory failure" popup opens. Wait for the result here, then press "Reload" in the popup (not "Reload with …", which would set a lower limit for the next steps).',
+  },
+  {
+    id: 'tabs',
+    title: '5. Share a wait for WebGL with a second tab',
+    how: 'Press it. A second tab opens and closes by itself within a few seconds. If the browser blocks it, open the link that the result shows. Then wait 20 s before step 6.',
+  },
+  {
+    id: 'allocate',
+    title: '6. Allocate until a real GPU failure',
+    how: 'Start a screen recording first. Press it and confirm the warning: the GPU fails on purpose, and the tab can freeze or stop. Then follow the note in the popup. If the tab stopped, reload it: the result shows here.',
+  },
+  {
+    id: 'calibrate',
+    title: '7. Run a calibration',
+    how: 'Needs a failure first (step 4 or 6), and no countdown in the popup. Press it and confirm: the GPU fails again, and the result shows here. The images can stay black afterwards; that is expected. If the tab stopped, reload it.',
+  },
 ] as const;
 
 type StepId = (typeof STEPS)[number]['id'];
@@ -760,8 +789,84 @@ async function finishContextLoss(): Promise<void> {
   setResult(
     'contextLoss',
     ok ? 'pass' : 'fail',
-    `${failures.length} failure(s): ${failure.kind} at ${formatBytes(failure.failedBytes)}, suggested ${formatBytes(failure.suggestedBytes)}, reload ${failure.mustReload ? 'required' : 'not required'}. The popup offers the suggestion; "Reload" brings the viewer back. On a dev server, close the error overlay of the known vtk.js error after a loss (cornerstonejs/cornerstone3D#3174).`
+    `${failures.length} failure(s): ${failure.kind} at ${formatBytes(failure.failedBytes)}, suggested ${formatBytes(failure.suggestedBytes)}, reload ${failure.mustReload ? 'required' : 'not required'}. Now press "Reload" in the popup, then step 5.`
   );
+  guidePopup(
+    'Test step 4 is done. Press "Reload" to continue with step 5. Do not press "Reload with …": it sets a lower limit for the next steps.',
+    'Reload'
+  );
+}
+
+/**
+ * The guide of the test in the failure popup: a note on top, and the button
+ * to press marked. The popup redraws its buttons when the wait for WebGL
+ * changes, so an observer applies the guide again after each redraw.
+ */
+let popupGuide: { text: string; press?: string } | undefined;
+let popupObserver: MutationObserver | undefined;
+
+function failurePopup(): HTMLElement | undefined {
+  return [...document.querySelectorAll<HTMLElement>('div')].find(
+    (element) =>
+      element.style.position === 'fixed' && element.style.zIndex === '1000'
+  );
+}
+
+function applyPopupGuide(): void {
+  const popup = failurePopup();
+  const panel = popup?.firstElementChild as HTMLElement | null;
+
+  if (!panel || !popupGuide) {
+    return;
+  }
+
+  popupObserver?.disconnect();
+
+  let note = panel.querySelector<HTMLElement>('[data-test-guide]');
+
+  if (!note) {
+    note = document.createElement('div');
+    note.dataset.testGuide = 'true';
+    Object.assign(note.style, {
+      margin: '0 0 8px',
+      padding: '6px 8px',
+      background: '#e8f5e9',
+      border: '1px solid #1b7f3b',
+      borderRadius: '4px',
+      fontWeight: 'bold',
+    });
+    panel.prepend(note);
+  }
+
+  note.textContent = popupGuide.text;
+  panel.querySelectorAll('button').forEach((button) => {
+    button.style.outline =
+      button.textContent === popupGuide.press ? '3px solid #1b7f3b' : '';
+  });
+
+  popupObserver = new MutationObserver(applyPopupGuide);
+  popupObserver.observe(panel, { childList: true, subtree: true });
+}
+
+/** Shows the guide of a test step in the failure popup. */
+function guidePopup(text: string, press?: string): void {
+  popupGuide = { text, press };
+  applyPopupGuide();
+}
+
+/** The guide for a failure that step 6 caused, by what the popup offers. */
+function guideAfterRealFailure(
+  failure: Types.EventTypes.GpuMemoryFailureEventDetail
+): void {
+  if (failure.mustReload && isWebGLBlocked()) {
+    guidePopup(
+      'Test step 6: press nothing. The browser blocks WebGL for a while; when the countdown ends, this page reloads by itself. Then press step 7.'
+    );
+  } else if (failure.mustReload) {
+    guidePopup('Test step 6: press "Reload", then step 7.', 'Reload');
+  } else {
+    guidePopup('Test step 6: press "Dismiss", then step 7.', 'Dismiss');
+  }
 }
 
 /** The messages of the second tab since `since`. */
@@ -865,12 +970,21 @@ async function stepAllocate(): Promise<void> {
   const start = Date.now();
 
   sessionStorage.setItem(PENDING_KEY, 'allocate');
+
+  const onFailure = (event: Event) =>
+    guideAfterRealFailure(
+      (event as CustomEvent<Types.EventTypes.GpuMemoryFailureEventDetail>)
+        .detail
+    );
+
+  eventTarget.addEventListener(Events.GPU_MEMORY_FAILURE, onFailure);
   await allocateUntilFailure({
     renderingEngine,
     viewportId: viewport3DId,
     sourceVolumeId: volumeId,
     log,
   });
+  eventTarget.removeEventListener(Events.GPU_MEMORY_FAILURE, onFailure);
   sessionStorage.removeItem(PENDING_KEY);
 
   const failure = getLastGpuMemoryFailure();
@@ -979,6 +1093,13 @@ async function finishInterruptedStep(pending: string): Promise<void> {
         ? `the tab stopped; the next start found a ${failure.kind} at ${formatBytes(failure.failedBytes)}`
         : 'the tab stopped, and the next start found no failure'
     );
+
+    if (failure) {
+      guidePopup(
+        'Test step 6 is done: the tab stopped, and this start found it. Press "Dismiss", then step 7.',
+        'Dismiss'
+      );
+    }
   } else if (pending === 'calibrate') {
     await waitFor(() => Boolean(getGpuMemoryHistory().calibration), 5000);
     checkCalibration(undefined);
@@ -1011,16 +1132,34 @@ function buildSteps(): void {
   };
   stepsBox.appendChild(fresh);
 
-  STEPS.forEach(({ id, title }) => {
+  const intro = document.createElement('div');
+
+  intro.textContent =
+    'Run the steps from top to bottom, one at a time. Each step says what to do and what you will see. Keep this window in front and uncovered while a step runs.';
+  Object.assign(intro.style, { fontSize: '12px', margin: '6px 0' });
+  stepsBox.appendChild(intro);
+
+  STEPS.forEach(({ id, title, how }) => {
     const row = document.createElement('div');
     const button = document.createElement('button');
+    const instructions = document.createElement('div');
     const status = document.createElement('div');
 
-    Object.assign(row.style, { margin: '6px 0' });
+    Object.assign(row.style, { margin: '8px 0' });
     button.textContent = title;
     button.onclick = STEP_RUNNERS[id];
-    Object.assign(status.style, { fontSize: '12px', marginLeft: '4px' });
-    row.append(button, status);
+    instructions.textContent = how;
+    Object.assign(instructions.style, {
+      fontSize: '12px',
+      marginLeft: '4px',
+      color: '#444',
+    });
+    Object.assign(status.style, {
+      fontSize: '12px',
+      marginLeft: '4px',
+      fontWeight: 'bold',
+    });
+    row.append(button, instructions, status);
     stepsBox.appendChild(row);
     buttons.set(id, button);
     statusViews.set(id, status);
