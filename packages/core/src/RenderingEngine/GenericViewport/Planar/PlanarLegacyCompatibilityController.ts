@@ -203,8 +203,9 @@ class PlanarLegacyCompatibilityController {
       return;
     }
 
+    const previousProperties = this.properties.get(targetDataId) || {};
     const nextProperties = mergePlanarLegacyProperties(
-      this.properties.get(targetDataId) || {},
+      previousProperties,
       properties
     );
 
@@ -228,7 +229,21 @@ class PlanarLegacyCompatibilityController {
       toPlanarDataPresentation(nextProperties)
     );
 
-    if (!suppressEvents && properties.colormap !== undefined) {
+    // Stack callers pass suppressEvents second, volume callers third.
+    if (suppressEvents || volumeIdOrSuppressEvents === true) {
+      return;
+    }
+
+    if (properties.voiRange !== undefined || properties.invert !== undefined) {
+      this.emitVOIModified(
+        targetDataId,
+        volumeId,
+        properties.invert !== undefined &&
+          !!properties.invert !== !!previousProperties.invert
+      );
+    }
+
+    if (properties.colormap !== undefined) {
       this.emitColormapModified(targetDataId, volumeId);
     }
   }
@@ -688,6 +703,35 @@ class PlanarLegacyCompatibilityController {
     }
 
     return this.host.getActiveDataId() || this.host.getFirstBoundDataId();
+  }
+
+  /**
+   * Sends VOI_MODIFIED with the same detail fields as the legacy viewports and
+   * the native planar event. A change of `invert` alone has no stored range, so
+   * the event gives the default range. `invertStateChanged` lets the VOI
+   * synchronizer copy the invert state, as from the legacy volume viewport.
+   */
+  private emitVOIModified(
+    dataId: string,
+    requestedVolumeId?: string,
+    invertStateChanged = false
+  ): void {
+    const properties = this.properties.get(dataId);
+    const range = properties?.voiRange ?? this.host.getDefaultVOIRange(dataId);
+
+    if (!range) {
+      return;
+    }
+
+    triggerEvent(this.host.getElement(), Events.VOI_MODIFIED, {
+      viewportId: this.host.getViewportId(),
+      volumeId: requestedVolumeId || this.resolveVolumeIdForDataId(dataId),
+      range,
+      VOILUTFunction: properties?.VOILUTFunction,
+      invert: properties?.invert,
+      invertStateChanged,
+      colormap: properties?.colormap,
+    });
   }
 
   private emitColormapModified(

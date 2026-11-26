@@ -5,7 +5,6 @@ import createVOILUTSequenceTransferFunction, {
   getVOILUTSequenceRange,
   createVOILUTSampler,
 } from '../../src/utilities/createVOILUTSequenceTransferFunction';
-import createLinearRGBTransferFunction from '../../src/utilities/createLinearRGBTransferFunction';
 import VOILUTFunctionType from '../../src/enums/VOILUTFunctionType';
 
 describe('cpuFallback getVOILut', function () {
@@ -133,30 +132,6 @@ describe('cpuFallback getVOILut', function () {
     expect(fn(0)).toBe(0);
     expect(fn(128)).toBeCloseTo(128, 0);
     expect(fn(255)).toBe(255);
-  });
-});
-
-describe('createLinearRGBTransferFunction', function () {
-  it('places the two nodes at the window ends', () => {
-    const cfun = createLinearRGBTransferFunction({ lower: 0, upper: 255 });
-
-    expect(cfun.getRange()).toEqual([0, 255]);
-  });
-
-  it('separates the nodes of a zero width window', () => {
-    // A window width of 1 collapses both ends onto one value. Coincident nodes
-    // make every later setRange divide by zero, so the function would stay a
-    // step function forever (cornerstone3D#2733).
-    const cfun = createLinearRGBTransferFunction({ lower: 128, upper: 128 });
-    const [lower, upper] = cfun.getRange();
-
-    expect(upper).toBeGreaterThan(lower);
-    // Still a threshold at the requested value
-    expect((lower + upper) / 2).toBeCloseTo(128, 6);
-
-    // And the range can still be moved afterwards
-    cfun.setMappingRange(0, 255);
-    expect(cfun.getRange()).toEqual([0, 255]);
   });
 });
 

@@ -64,6 +64,7 @@ import {
   getValidVOILUTFunction,
   normalizeVOILUTFunction,
 } from '../utilities/voiLUTFunction';
+import { ensureNonZeroVOIRange } from '../utilities/voiRangeGuards';
 import { updateVTKImageDataWithCornerstoneImage } from '../utilities/updateVTKImageDataWithCornerstoneImage';
 import triggerEvent from '../utilities/triggerEvent';
 import { isEqual } from '../utilities/isEqual';
@@ -1866,6 +1867,10 @@ class StackViewport extends Viewport {
       const maxVoiRange = { lower: range[0], upper: range[1] };
       voiRangeToUse = maxVoiRange;
     }
+
+    // Guard against a zero-width VOI (e.g. an empty slice where min === max),
+    // which would collapse the transfer function and render the image white.
+    voiRangeToUse = ensureNonZeroVOIRange(voiRangeToUse);
 
     // scaling logic here
     // https://github.com/Kitware/vtk-js/blob/master/Sources/Rendering/OpenGL/ImageMapper/index.js#L540-L549
