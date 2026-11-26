@@ -13,7 +13,14 @@ export interface VideoCanvasMapping {
   intrinsicHeight: number;
   anchorWorld: [number, number];
   anchorCanvas: ViewAnchor;
+  /** The canvas pixels of one media pixel along the width. */
   worldToCanvasRatio: number;
+  /**
+   * The canvas pixels of one media pixel along the height. It equals
+   * `worldToCanvasRatio` for every object fit but `fill`, which stretches the
+   * video to the pane on each axis.
+   */
+  worldToCanvasRatioY: number;
 }
 
 interface VideoCanvasMappingInput {
@@ -182,6 +189,8 @@ export function resolveVideoCanvasMapping(
   height *= zoom;
 
   const worldToCanvasRatio = width / intrinsicWidth;
+  const worldToCanvasRatioY =
+    objectFit === 'fill' ? height / intrinsicHeight : worldToCanvasRatio;
   const anchorCanvas = cloneAnchorCanvas(camera?.anchorCanvas ?? [0.5, 0.5]);
   const anchorWorld =
     cloneAnchorWorld(camera?.anchorWorld) ??
@@ -189,7 +198,7 @@ export function resolveVideoCanvasMapping(
   const left =
     containerWidth * anchorCanvas[0] - anchorWorld[0] * worldToCanvasRatio;
   const top =
-    containerHeight * anchorCanvas[1] - anchorWorld[1] * worldToCanvasRatio;
+    containerHeight * anchorCanvas[1] - anchorWorld[1] * worldToCanvasRatioY;
 
   return {
     left,
@@ -203,6 +212,7 @@ export function resolveVideoCanvasMapping(
     anchorWorld,
     anchorCanvas,
     worldToCanvasRatio,
+    worldToCanvasRatioY,
   };
 }
 
@@ -247,7 +257,7 @@ export function getPanForVideoCanvasMapping(
 ): [number, number] {
   return [
     mapping.left / mapping.worldToCanvasRatio,
-    mapping.top / mapping.worldToCanvasRatio,
+    mapping.top / mapping.worldToCanvasRatioY,
   ];
 }
 
@@ -260,7 +270,7 @@ export function getAnchorWorldForPan(
       mapping.worldToCanvasRatio -
       pan[0],
     (mapping.containerHeight * mapping.anchorCanvas[1]) /
-      mapping.worldToCanvasRatio -
+      mapping.worldToCanvasRatioY -
       pan[1],
   ];
 }

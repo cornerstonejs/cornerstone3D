@@ -1755,6 +1755,36 @@ point of the image on display.
   gave undefined for both, so the ONNX segmentation controller of
   `@cornerstonejs/ai` threw on a CPU viewport.
 
+### An overlay of a streaming volume shows no copy of another slice
+
+A volume that loads with the interleaved retrieve stages
+(`ProgressiveRetrieveImages.coarseInterleavedRetrieveStages`, the default of
+OHIF) first fills each frame that has not arrived with a copy of the image of a
+loaded frame near it, up to 32 frames away. A source shows those copies: they
+are its coarse preview, and that stays. In 5.x and in 6.0.0-beta.2 an overlay
+drew them too, so a PET over a CT showed another slice of the PET (in OHIF, a
+copy of the frame 27 slices away, then of a neighbour) until the frame on the
+plane of the CT arrived.
+
+In 6.0 an overlay draws nothing where its plane reads a frame that holds no data
+of its own position (a copy, or nothing yet), until that frame arrives at any
+quality (`SUBRESOLUTION` and up). In the acquisition plane that is the frame on
+the plane; between two frames the nearest one, within half a slice, is enough
+for the sampled slice paths, which then read it alone; a slab needs every frame
+of the slab, and a sagittal, coronal or oblique plane every frame that it
+crosses, so such an overlay shows once the frames that it crosses have loaded.
+The application changes nothing; a labelmap is not a streaming volume and
+draws as before.
+
+```ts
+viewport.setDisplaySets(
+  { displaySetId: 'ct', options: { mode: 'volume', initialImageIdIndex: 40 } },
+  { displaySetId: 'pt', options: { mode: 'volume', role: 'overlay' } }
+);
+// Before: the PET layer showed copies of other PET slices while it loaded.
+// Now: the PET layer is empty on slice 40 until its frame there arrives.
+```
+
 ## Surfaces in a planar viewport
 
 - **A surface shows as contours.** The conversion of a Surface representation

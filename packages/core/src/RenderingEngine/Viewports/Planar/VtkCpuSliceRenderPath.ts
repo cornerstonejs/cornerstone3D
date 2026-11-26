@@ -37,7 +37,7 @@ import {
   getPlanarCpuSliceInputs,
   getVolumeClipPlanes,
 } from './planarCpuSlice';
-import type { PlanarCpuSlice } from './planarCpuSlice';
+import type { PlanarCpuSlice, PlanarCpuSliceInputs } from './planarCpuSlice';
 import {
   getCanvasScreenSliceGeometry,
   getNeighbourCameras,
@@ -56,6 +56,9 @@ import {
 } from '../renderingFidelity';
 import { getRenderingCapabilities } from '../../../utilities/renderingCapabilities';
 import { canFilterFloatTextures } from '../../vtkClasses/floatLinearFilter';
+import { getPlanarOverlayFrameState } from './planarOverlayFrames';
+import type { PlanarOverlayFrameState } from './planarOverlayFrames';
+import { resolveSlabThickness } from './planarVolumeSliceBlendMode';
 
 /**
  * The shortest time between two samples of the visible slice while the volume
@@ -75,6 +78,8 @@ type CpuSliceMount = PlanarSlicePlaneMoves & {
   maxSliceSize: number;
   /** Cancels the pending work at rest: the rest timer or an idle prefetch. */
   cancelRestWork?: () => void;
+  /** What the layer may draw of the plane of the last update. */
+  overlayFrames?: PlanarOverlayFrameState;
 };
 
 /**
@@ -378,13 +383,21 @@ export class VtkCpuSliceRenderPath
 
     cancelRestWork(mount);
     recordPlaneMove(mount, camera);
+    mount.overlayFrames = getCpuSliceOverlayFrames(mount, camera);
+
+    if (mount.overlayFrames === 'empty') {
+      this.drawSlice(mount, camera, undefined);
+      reportSamplingState(mount);
+      return;
+    }
+
     this.drawSlice(
       mount,
       camera,
       sampler.sample(
         rendering.imageVolume,
         camera,
-        getPlanarCpuSliceInputs(rendering.imageVolume, rendering.appearance),
+        getCpuSliceMountInputs(mount),
         getCanvasScreenSliceGeometry(
           mount.ctx.vtk.canvas,
           camera,
@@ -433,8 +446,7 @@ export class VtkCpuSliceRenderPath
       sampler,
       volume: rendering.imageVolume,
       getCamera: () => getPlanarRenderPathActiveSourceICamera(ctx),
-      getInputs: () =>
-        getPlanarCpuSliceInputs(rendering.imageVolume, rendering.appearance),
+      getInputs: () => getCpuSliceMountInputs(mount),
       getScreen: (camera) =>
         getCanvasScreenSliceGeometry(
           ctx.vtk.canvas,
@@ -471,6 +483,48 @@ export class VtkCpuSliceRenderPath
     mount.draw.remove(mount.ctx.vtk.renderer);
     mount.sampler.release();
   }
+}
+
+/**
+ * What the layer of a mount may draw of the plane of a camera: a source draws
+ * every frame, the coarse preview of a streaming volume too; an overlay
+ * follows `getPlanarOverlayFrameState`. A segmentation is not a streaming
+ * volume.
+ */
+function getCpuSliceOverlayFrames(
+  mount: CpuSliceMount,
+  camera: PlanarResolvedICamera | undefined
+): PlanarOverlayFrameState {
+  const { ctx, displaySetId, rendering } = mount;
+
+  if (
+    rendering.isSegmentationOverlay ||
+    ctx.viewport.isCurrentDisplaySetId(displaySetId)
+  ) {
+    return 'ready';
+  }
+
+  return getPlanarOverlayFrameState(
+    rendering.imageVolume,
+    camera,
+    resolveSlabThickness(rendering.appearance?.slabThickness)
+  );
+}
+
+/**
+ * The sample inputs of a mount: those of its appearance, on the nearest
+ * frame while that frame alone holds data of its own position.
+ */
+function getCpuSliceMountInputs(mount: CpuSliceMount): PlanarCpuSliceInputs {
+  const { rendering } = mount;
+  const inputs = getPlanarCpuSliceInputs(
+    rendering.imageVolume,
+    rendering.appearance
+  );
+
+  return mount.overlayFrames === 'nearest'
+    ? { ...inputs, snapToSlice: true }
+    : inputs;
 }
 
 function cancelRestWork(mount: CpuSliceMount): void {

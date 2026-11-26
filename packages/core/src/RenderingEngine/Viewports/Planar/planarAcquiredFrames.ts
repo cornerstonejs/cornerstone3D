@@ -163,7 +163,9 @@ export function withAcquiredFrames(
       rendering?.currentImageIdIndex === wantedIndex;
     const visible = volumeRendering.appearance?.visible !== false;
 
-    volumeRendering.actor.setVisibility(visible && !showsFrame);
+    volumeRendering.actor.setVisibility(
+      visible && !showsFrame && !volumeRendering.hidesOverlayFrames
+    );
 
     if (!volumeRendering.isSegmentationOverlay) {
       // A hidden volume ignores its data events; read the record again.

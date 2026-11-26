@@ -244,7 +244,9 @@ class VideoViewport extends BaseViewport<
    * with its NEW_IMAGE; any other video is drawn over the videos on display,
    * in their view and on the time that the view shows, and fires no
    * NEW_IMAGE. It rejects as `setDisplaySets` does for a video that does
-   * not load. DISPLAY_SETS_CHANGED fires once it is mounted.
+   * not load. DISPLAY_SETS_CHANGED fires once it is mounted. Calls that race
+   * mount in call order; a `setDisplaySets` or a `destroy` that starts while
+   * it waits for its video ends it at once, and it binds nothing.
    *
    * @param displaySetId - The video display set to mount.
    * @param options - The options of its mount, as for an entry of
@@ -254,22 +256,26 @@ class VideoViewport extends BaseViewport<
     displaySetId: string,
     options: VideoMountOptions = {}
   ): Promise<void> {
-    const opensView = Array.from(this.bindings.keys()).every(
-      (mountedId) => mountedId === displaySetId
-    );
-    const mounted = await this.mountVideo(
-      displaySetId,
-      options,
-      this.resolveAddRole(displaySetId, options.role),
-      opensView
-    );
+    return this.queueAddDisplaySet(async (isSuperseded, signal) => {
+      const opensView = Array.from(this.bindings.keys()).every(
+        (mountedId) => mountedId === displaySetId
+      );
+      const mounted = await this.mountVideo(
+        displaySetId,
+        options,
+        this.resolveAddRole(displaySetId, options.role),
+        opensView,
+        isSuperseded,
+        signal
+      );
 
-    if (!mounted) {
-      return;
-    }
+      if (!mounted) {
+        return;
+      }
 
-    this.showMountedFrame(opensView ? options.frameNumber : undefined);
-    this.triggerDisplaySetsChanged([displaySetId]);
+      this.showMountedFrame(opensView ? options.frameNumber : undefined);
+      this.triggerDisplaySetsChanged([displaySetId]);
+    });
   }
 
   /**

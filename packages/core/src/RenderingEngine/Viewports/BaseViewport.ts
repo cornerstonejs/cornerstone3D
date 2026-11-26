@@ -159,6 +159,26 @@ function isPlainObject(value: unknown): value is object {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+/** Resolves when `promise` settles or when `signal` aborts, whichever is first. */
+function settledOrAborted(
+  promise: Promise<unknown>,
+  signal: AbortSignal
+): Promise<void> {
+  if (signal.aborted) {
+    return Promise.resolve();
+  }
+
+  return new Promise((resolve) => {
+    const done = () => {
+      signal.removeEventListener('abort', done);
+      resolve();
+    };
+
+    signal.addEventListener('abort', done, { once: true });
+    promise.then(done, done);
+  });
+}
+
 /**
  * The base controller of every viewport family.
  *
@@ -228,9 +248,12 @@ abstract class BaseViewport<
   private setDisplaySetsCallId = 0;
   /**
    * The abort of the newest `setDisplaySets` call: a newer call aborts it,
-   * so that a mount that waits for its data stops at once.
+   * so that a mount that waits for its data stops at once. `destroy` aborts
+   * it too. An `addDisplaySet` takes the one that is current when it starts.
    */
-  private setDisplaySetsAbort?: AbortController;
+  private setDisplaySetsAbort = new AbortController();
+  /** The newest `addDisplaySet`, which the next one waits for. */
+  private pendingAddDisplaySet: Promise<unknown> = Promise.resolve();
   /**
    * The display sets and the source of the last DISPLAY_SETS_CHANGED, which
    * the next one compares with to say what was removed and whether the
@@ -281,13 +304,15 @@ abstract class BaseViewport<
    * Replaces all mounted display sets with the provided logical display sets.
    * The first entry is mounted as the source binding; subsequent entries default
    * to the overlay role unless they specify one explicitly. Fires
-   * DISPLAY_SETS_CHANGED once when all are mounted; a newer call stops this
-   * one, which then fires nothing.
+   * DISPLAY_SETS_CHANGED once when all are mounted; a newer call, or a
+   * `destroy`, stops this one, which then fires nothing. The render path gets
+   * the signal of the call, which aborts at that moment.
    */
   async setDisplaySets(
     ...entries: Array<{ displaySetId: DisplaySetId; options?: unknown }>
   ): Promise<void> {
     const isSuperseded = this.startSetDisplaySets();
+    const signal = this.getSetDisplaySetsSignal();
 
     this.removeAllData();
 
@@ -305,7 +330,8 @@ abstract class BaseViewport<
           ...dataOptions,
           role: dataOptions.role ?? (index === 0 ? 'source' : 'overlay'),
         },
-        isSuperseded
+        isSuperseded,
+        signal
       );
 
       if (!bound) {
@@ -328,14 +354,45 @@ abstract class BaseViewport<
     displaySetId: DisplaySetId,
     options: DataAddOptions
   ): Promise<void> {
-    const bound = await this.bindDisplaySet(displaySetId, {
-      ...options,
-      role: this.resolveAddRole(displaySetId, options?.role),
-    });
+    return this.queueAddDisplaySet(async (isSuperseded, signal) => {
+      const bound = await this.bindDisplaySet(
+        displaySetId,
+        {
+          ...options,
+          role: this.resolveAddRole(displaySetId, options?.role),
+        },
+        isSuperseded,
+        signal
+      );
 
-    if (bound) {
-      this.triggerDisplaySetsChanged([displaySetId]);
-    }
+      if (bound) {
+        this.triggerDisplaySetsChanged([displaySetId]);
+      }
+    });
+  }
+
+  /**
+   * Runs one `addDisplaySet` after the `addDisplaySet` calls of this viewport
+   * that started before it, so that calls that race mount in call order and
+   * each one sees what the earlier ones bound. A `setDisplaySets` or a
+   * `destroy` that starts while the call waits or mounts ends it, as a newer
+   * `setDisplaySets` ends an older one: the call resolves at once, binds
+   * nothing and fires nothing. `add` gets the check of that end and its
+   * signal, which aborts at that moment.
+   */
+  protected queueAddDisplaySet(
+    add: (isSuperseded: () => boolean, signal: AbortSignal) => Promise<void>
+  ): Promise<void> {
+    const callId = this.setDisplaySetsCallId;
+    const { signal } = this.setDisplaySetsAbort;
+    const isSuperseded = () => callId !== this.setDisplaySetsCallId;
+    const run = settledOrAborted(this.pendingAddDisplaySet, signal).then(() =>
+      isSuperseded() ? undefined : add(isSuperseded, signal)
+    );
+
+    this.pendingAddDisplaySet = run.catch(() => undefined);
+
+    return run;
   }
 
   /**
@@ -1110,6 +1167,8 @@ abstract class BaseViewport<
     }
 
     this.destroyed = true;
+    this.setDisplaySetsCallId++;
+    this.setDisplaySetsAbort.abort();
     this.destroyBindings();
     this.onDestroy();
     this.bindings.clear();
@@ -1332,12 +1391,22 @@ abstract class BaseViewport<
       binding.updateAppearance(props);
     }
 
+    this.beforeFirstViewState(displaySetId);
     binding.applyViewState(this.viewState);
     this._debug.renderModes[displaySetId] = attachment.rendering.renderMode;
     this.viewportStatus = ViewportStatus.PRE_RENDER;
     this.render();
 
     return true;
+  }
+
+  /**
+   * Called when a binding is in place and before it gets the view state for
+   * the first time, so before its first draw and its first event: a family
+   * can set the view state that the display set starts in there.
+   */
+  protected beforeFirstViewState(_displaySetId: DisplaySetId): void {
+    return;
   }
 
   protected removeAllData(): void {
@@ -1348,14 +1417,16 @@ abstract class BaseViewport<
 
   /**
    * Starts a `setDisplaySets` call. The function that it gives tells whether
-   * a newer `setDisplaySets` started since: the call is then superseded, it
-   * stops, and it fires no DISPLAY_SETS_CHANGED. The signal of the call
-   * (`getSetDisplaySetsSignal`) aborts at that moment.
+   * a newer `setDisplaySets` started since, or the viewport was destroyed:
+   * the call is then superseded, it stops, and it fires no
+   * DISPLAY_SETS_CHANGED. The signal of the call (`getSetDisplaySetsSignal`)
+   * aborts at that moment. A pending `addDisplaySet` ends the same way
+   * (`queueAddDisplaySet`).
    */
   protected startSetDisplaySets(): () => boolean {
     const callId = ++this.setDisplaySetsCallId;
 
-    this.setDisplaySetsAbort?.abort();
+    this.setDisplaySetsAbort.abort();
     this.setDisplaySetsAbort = new AbortController();
 
     return () => callId !== this.setDisplaySetsCallId;
@@ -1363,10 +1434,11 @@ abstract class BaseViewport<
 
   /**
    * The signal of the newest `setDisplaySets` call, which aborts when a newer
-   * call starts. Read it just after `startSetDisplaySets`.
+   * call starts or the viewport is destroyed. Read it just after
+   * `startSetDisplaySets`.
    */
-  protected getSetDisplaySetsSignal(): AbortSignal | undefined {
-    return this.setDisplaySetsAbort?.signal;
+  protected getSetDisplaySetsSignal(): AbortSignal {
+    return this.setDisplaySetsAbort.signal;
   }
 
   /**

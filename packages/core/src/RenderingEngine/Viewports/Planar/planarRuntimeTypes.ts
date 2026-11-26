@@ -181,6 +181,12 @@ export type PlanarVtkGpuVolumeSliceRendering = MountedRendering<{
    * place of this slice (see `withAcquiredFrames`).
    */
   showsAcquiredFrame?: boolean;
+  /**
+   * The internal render path state: true while this layer is an overlay and
+   * a frame that its plane reads holds no data of its own position (see
+   * `getPlanarOverlayFrameState`), so it draws nothing.
+   */
+  hidesOverlayFrames?: boolean;
 }> &
   VolumeStrategyState;
 

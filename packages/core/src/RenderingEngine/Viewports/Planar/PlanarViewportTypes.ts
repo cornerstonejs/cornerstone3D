@@ -19,7 +19,11 @@ import type {
 } from '../../../types';
 import type { ViewportInput } from '../../../types/IViewport';
 import type ViewportInputOptions from '../../../types/ViewportInputOptions';
-import type { ViewFraming, ViewFramingSelector } from '../../../types';
+import type {
+  ViewFraming,
+  ViewFramingSelector,
+  ViewReference,
+} from '../../../types';
 import type {
   BaseViewportRenderContext,
   BaseAppearanceProps,
@@ -205,9 +209,23 @@ export interface PlanarMountOptions {
    * The index, in the registered image ids, of the image that the mount
    * shows first: the image of a stack, the slice of a volume in its
    * acquisition plane. Without it a stack shows its first image and a volume
-   * its middle slice.
+   * its middle slice. A volume in another orientation (sagittal, coronal,
+   * oblique) does not read it and shows its middle slice: start such a mount
+   * with `initialViewReference`.
    */
   initialImageIdIndex?: number;
+  /**
+   * The view reference that the source starts at, in any orientation: what
+   * `setViewReference` takes (a `referencedImageId`, a point with a plane,
+   * a slice index of the view), applied as `setViewReference` applies it,
+   * before the first draw and the first `NEW_IMAGE`, so no other slice is
+   * drawn or reported first. A reference that the mount cannot show
+   * (`isReferenceViewable` with navigation, for example a plane of another
+   * orientation) is ignored with a warning, and the mount shows its default
+   * slice, or the image of `initialImageIdIndex`. An overlay follows the
+   * source and does not read it.
+   */
+  initialViewReference?: ViewReference;
   /**
    * The appearance that the display set has in this viewport from its first
    * draw: its overrides, merged over those set before the mount. The mount

@@ -26,6 +26,9 @@ const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
   'utilities.segmentation.utilsForWorker'
 );
 
+/** The tolerance of a position, a direction and a spacing of one plane. */
+const IMAGE_PLANE_TOLERANCE = 1e-3;
+
 /**
  * Trigger worker progress event
  * @param workerType - The worker type
@@ -143,13 +146,19 @@ export const prepareImageInfo = (imageVoxelManager, imageData) => {
 /**
  * Prepare stack data for worker tasks
  * @param segImageIds - The segmentation image IDs
+ * @param referencedImageIds - The image of each labelmap image, as
+ * `getReferencedImageIdsOfLabelmap` gives them; without it, the
+ * `referencedImageId` of each labelmap image
  * @returns The segmentation and image info arrays
  */
-export const prepareStackDataForWorker = (segImageIds) => {
+export const prepareStackDataForWorker = (
+  segImageIds: string[],
+  referencedImageIds?: string[]
+) => {
   const segmentationInfo = [];
   const imageInfo = [];
 
-  for (const segImageId of segImageIds) {
+  for (const [index, segImageId] of segImageIds.entries()) {
     const segImage = cache.getImage(segImageId);
     const segPixelData = segImage.getPixelData();
 
@@ -165,7 +174,8 @@ export const prepareStackDataForWorker = (segImageIds) => {
     });
 
     // Add image info if referenced image exists
-    const refImageId = segImage.referencedImageId;
+    const refImageId =
+      referencedImageIds?.[index] ?? segImage.referencedImageId;
     if (refImageId) {
       const refImage = cache.getImage(refImageId);
 
@@ -281,10 +291,20 @@ export const prepareVideoFrameDataForWorker = (
  * Gets the reference image ID and modality unit options based on segmentation data
  * @param segVolumeId - The segmentation volume ID
  * @param segImageIds - The segmentation image IDs
+ * @param referencedImageIds - The image of each labelmap image of a stack, as
+ * `getReferencedImageIdsOfLabelmap` gives them
  * @returns Object containing reference image ID and modality unit options
  */
-export const getImageReferenceInfo = (segVolumeId, segImageIds) => {
-  let refImageId;
+export const getImageReferenceInfo = (
+  segVolumeId,
+  segImageIds,
+  referencedImageIds?: string[]
+) => {
+  let refImageId = referencedImageIds?.[0];
+
+  if (refImageId) {
+    return getModalityUnitInfo(refImageId);
+  }
 
   if (segVolumeId) {
     const segmentationVolume = cache.getVolume(segVolumeId);
@@ -300,7 +320,12 @@ export const getImageReferenceInfo = (segVolumeId, segImageIds) => {
     refImageId = segImage.referencedImageId;
   }
 
-  const refImage = cache.getImage(refImageId);
+  return getModalityUnitInfo(refImageId);
+};
+
+/** The image id and the options of the unit of the values of an image. */
+function getModalityUnitInfo(refImageId: string) {
+  const refImage = refImageId ? cache.getImage(refImageId) : undefined;
   const scalingModule = metaData.get('scalingModule', refImageId);
 
   const modalityUnitOptions = {
@@ -309,4 +334,73 @@ export const getImageReferenceInfo = (segVolumeId, segImageIds) => {
   };
 
   return { refImageId, modalityUnitOptions };
+}
+
+/** Whether two images lie on one plane with one pixel grid. */
+function isSameImagePlane(segImage, image): boolean {
+  if (!image) {
+    return false;
+  }
+
+  const a = utilities.getImageDataMetadata(segImage);
+  const b = utilities.getImageDataMetadata(image);
+
+  return (
+    a.dimensions[0] === b.dimensions[0] &&
+    a.dimensions[1] === b.dimensions[1] &&
+    utilities.isEqual(a.origin, b.origin, IMAGE_PLANE_TOLERANCE) &&
+    utilities.isEqual(a.direction, b.direction, IMAGE_PLANE_TOLERANCE) &&
+    utilities.isEqual(a.spacing, b.spacing, IMAGE_PLANE_TOLERANCE)
+  );
+}
+
+/**
+ * The image that each labelmap image of a stack segmentation is drawn on:
+ * its `referencedImageId`, else the image of the cache that lies on its
+ * plane with its pixel grid, of the images of the viewports that show the
+ * segmentation. An application that makes the labelmap images with
+ * `createAndCacheLocalImage` from the geometry alone gives no
+ * `referencedImageId`.
+ *
+ * @throws When a labelmap image references no image and no such image lies
+ * on its plane.
+ */
+export const getReferencedImageIdsOfLabelmap = (
+  segmentationId: string,
+  segImageIds: string[]
+): string[] => {
+  let candidates: string[] | undefined;
+  const getCandidates = () => {
+    candidates ??= getViewportIdsWithSegmentation(segmentationId).flatMap(
+      (viewportId) => {
+        const viewport = getEnabledElementByViewportId(viewportId)?.viewport as
+          | { getImageIds?: () => string[] }
+          | undefined;
+
+        return viewport?.getImageIds?.() ?? [];
+      }
+    );
+
+    return candidates;
+  };
+
+  return segImageIds.map((segImageId) => {
+    const segImage = cache.getImage(segImageId);
+
+    if (segImage?.referencedImageId) {
+      return segImage.referencedImageId;
+    }
+
+    const imageId = getCandidates().find((candidate) =>
+      isSameImagePlane(segImage, cache.getImage(candidate))
+    );
+
+    if (!imageId) {
+      throw new Error(
+        `getStatistics: the labelmap image ${segImageId} references no image, and no image of the viewports that show the segmentation ${segmentationId} is in the cache on its plane with its size. Give the labelmap images a referencedImageId, or show the segmentation over the images that it was drawn on.`
+      );
+    }
+
+    return imageId;
+  });
 };

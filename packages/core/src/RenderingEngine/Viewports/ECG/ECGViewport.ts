@@ -208,7 +208,10 @@ class ECGViewport extends BaseViewport<
    * viewport that shows nothing. An ECG viewport shows one waveform, so on a
    * viewport that shows another one the call rejects and changes nothing
    * (`oneWaveformError`); the waveform on display mounts again in its role.
-   * DISPLAY_SETS_CHANGED fires once it is mounted.
+   * DISPLAY_SETS_CHANGED fires once it is mounted. Calls that race run in
+   * call order, so of two waveforms added at once the first mounts and the
+   * second is refused; a `setDisplaySets` that starts while it loads ends it,
+   * and it binds nothing.
    *
    * @param displaySetId - The waveform display set to mount.
    * @param options - The options of its mount, as for an entry of
@@ -218,26 +221,32 @@ class ECGViewport extends BaseViewport<
     displaySetId: string,
     options: ECGMountOptions = {}
   ): Promise<void> {
-    const displaySetIds = [
-      ...Array.from(this.bindings.keys()).filter(
-        (mountedId) => mountedId !== displaySetId
-      ),
-      displaySetId,
-    ];
+    return this.queueAddDisplaySet(async (isSuperseded) => {
+      const displaySetIds = [
+        ...Array.from(this.bindings.keys()).filter(
+          (mountedId) => mountedId !== displaySetId
+        ),
+        displaySetId,
+      ];
 
-    if (displaySetIds.length > 1) {
-      throw oneWaveformError(`addDisplaySet("${displaySetId}")`, displaySetIds);
-    }
+      if (displaySetIds.length > 1) {
+        throw oneWaveformError(
+          `addDisplaySet("${displaySetId}")`,
+          displaySetIds
+        );
+      }
 
-    const bound = await this.mountWaveform(
-      displaySetId,
-      options,
-      this.resolveAddRole(displaySetId, options.role)
-    );
+      const bound = await this.mountWaveform(
+        displaySetId,
+        options,
+        this.resolveAddRole(displaySetId, options.role),
+        isSuperseded
+      );
 
-    if (bound) {
-      this.triggerDisplaySetsChanged([displaySetId]);
-    }
+      if (bound) {
+        this.triggerDisplaySetsChanged([displaySetId]);
+      }
+    });
   }
 
   /**
@@ -634,14 +643,13 @@ class ECGViewport extends BaseViewport<
     const pending = this.takePendingViewFraming();
     const previousCamera = this.keepCameraThroughResize();
     const { clientWidth, clientHeight } = this.canvas;
+    const dpr = window.devicePixelRatio || 1;
+    const width = Math.floor(Math.max(1, clientWidth) * dpr);
+    const height = Math.floor(Math.max(1, clientHeight) * dpr);
 
-    if (
-      this.canvas.width !== clientWidth ||
-      this.canvas.height !== clientHeight
-    ) {
-      const dpr = window.devicePixelRatio || 1;
-      this.canvas.width = Math.floor(Math.max(1, clientWidth) * dpr);
-      this.canvas.height = Math.floor(Math.max(1, clientHeight) * dpr);
+    if (this.canvas.width !== width || this.canvas.height !== height) {
+      this.canvas.width = width;
+      this.canvas.height = height;
     }
 
     this.render();

@@ -75,7 +75,7 @@ class VideoResolvedView extends ResolvedViewportView<VideoResolvedViewState> {
 
     return [
       (x - mapping.left) / mapping.worldToCanvasRatio,
-      (y - mapping.top) / mapping.worldToCanvasRatio,
+      (y - mapping.top) / mapping.worldToCanvasRatioY,
       0,
     ];
   }
@@ -90,7 +90,7 @@ class VideoResolvedView extends ResolvedViewportView<VideoResolvedViewState> {
     return rotateVideoCanvasPoint(
       [
         mapping.left + worldPos[0] * mapping.worldToCanvasRatio,
-        mapping.top + worldPos[1] * mapping.worldToCanvasRatio,
+        mapping.top + worldPos[1] * mapping.worldToCanvasRatioY,
       ],
       mapping,
       this.rotation
@@ -148,12 +148,14 @@ class VideoResolvedView extends ResolvedViewportView<VideoResolvedViewState> {
     const sin = Math.sin(radians);
     const dx = pan[0] - currentPan[0];
     const dy = pan[1] - currentPan[1];
-    const ratio = Math.max(this.worldToCanvasRatio, 0.000001);
+    const mapping = this.getCanvasMapping();
+    const ratioX = Math.max(mapping.worldToCanvasRatio, 0.000001);
+    const ratioY = Math.max(mapping.worldToCanvasRatioY, 0.000001);
     const rawPan = this.pan;
 
     return this.withPan([
-      rawPan[0] + (dx * cos - dy * sin) / ratio,
-      rawPan[1] + (dx * sin + dy * cos) / ratio,
+      rawPan[0] + (dx * cos - dy * sin) / ratioX,
+      rawPan[1] + (dx * sin + dy * cos) / ratioY,
     ]);
   }
 
@@ -172,7 +174,7 @@ class VideoResolvedView extends ResolvedViewportView<VideoResolvedViewState> {
       parallelScale:
         this.state.containerHeight /
         2 /
-        Math.max(mapping.worldToCanvasRatio, 0.001),
+        Math.max(mapping.worldToCanvasRatioY, 0.001),
       viewPlaneNormal: [0, 0, 1],
       rotation: this.rotation,
     };
@@ -198,6 +200,7 @@ class VideoResolvedView extends ResolvedViewportView<VideoResolvedViewState> {
       anchorWorld: [0, 0],
       anchorCanvas: [0.5, 0.5],
       worldToCanvasRatio: 1,
+      worldToCanvasRatioY: 1,
     };
 
     return this.cachedCanvasMapping;

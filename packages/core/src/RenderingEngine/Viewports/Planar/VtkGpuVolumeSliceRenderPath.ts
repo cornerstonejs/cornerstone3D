@@ -57,8 +57,47 @@ import { isSegmentationOverlayData } from '../renderingFidelity';
 import { gridWorldToIndex } from '../../../utilities/voxelGrid';
 import { getConfiguration } from '../../../init';
 import volumeTextureStore from '../../../cache/volumeTextureStore';
+import { getPlanarOverlayFrameState } from './planarOverlayFrames';
+import { resolveSlabThickness } from './planarVolumeSliceBlendMode';
 
 const SLICE_OVERLAY_DEPTH_EPSILON = 1e-4;
+
+/**
+ * Shows the slice of an overlay only while every frame that its plane reads
+ * holds data of its own position (`getPlanarOverlayFrameState`; this path
+ * samples the 3D texture and cannot read the nearest frame alone). A source
+ * and a segmentation draw every frame, and their visibility is not touched.
+ * The visibility of the appearance and an acquired frame that shows in place
+ * of the slice still hide it.
+ */
+export function applyOverlayFrameVisibility(
+  ctx: PlanarVtkVolumeAdapterContext,
+  rendering: PlanarVtkGpuVolumeSliceRendering,
+  displaySetId: string
+): void {
+  const hides =
+    !rendering.isSegmentationOverlay &&
+    ctx.viewport.isCurrentDisplaySetId?.(displaySetId) === false &&
+    getPlanarOverlayFrameState(
+      rendering.imageVolume,
+      getPlanarRenderPathActiveSourceICamera(ctx),
+      resolveSlabThickness(rendering.appearance?.slabThickness)
+    ) !== 'ready';
+  const changed = hides !== !!rendering.hidesOverlayFrames;
+
+  rendering.hidesOverlayFrames = hides;
+
+  if (!hides && !changed) {
+    return;
+  }
+
+  rendering.actor.setVisibility(
+    rendering.appearance?.visible !== false &&
+      !rendering.showsAcquiredFrame &&
+      !hides
+  );
+}
+
 // Trailing delay before repainting a slab-projecting segmentation overlay
 // after its volume was modified (brush edits fire many events per second).
 const PROJECTING_OVERLAY_RENDER_DELAY_MS = 240;
@@ -149,6 +188,7 @@ export class VtkGpuVolumeSliceRenderPath
           rendering.mapper.modified();
         }
         lifecycle.onVolumeData(rendering, eventType, this.hooks);
+        applyOverlayFrameVisibility(ctx, rendering, data.id);
 
         const isProjectingOverlay =
           rendering.isSegmentationOverlay &&
@@ -259,6 +299,7 @@ export class VtkGpuVolumeSliceRenderPath
       activeSourceICamera,
       rendering.overlayOrder
     );
+    applyOverlayFrameVisibility(ctx, rendering, displaySetId);
     ctx.vtk.renderer.resetCameraClippingRange();
     fitPlanarCameraClippingRange(ctx.vtk.renderer);
   }
@@ -327,6 +368,7 @@ export class VtkGpuVolumeSliceRenderPath
       projection.activeSourceICamera,
       rendering.overlayOrder
     );
+    applyOverlayFrameVisibility(ctx, rendering, displaySetId);
     ctx.vtk.renderer.resetCameraClippingRange();
     fitPlanarCameraClippingRange(ctx.vtk.renderer);
 

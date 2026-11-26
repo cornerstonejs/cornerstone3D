@@ -284,7 +284,8 @@ differs after the renames. The renames are in
 What is true of the data is registered once, in `displaySetRegistry`: its
 image ids, its volume id. What one viewport wants of it is said on the mount:
 `mode`, `role`, `orientation`, `renderBackend`, `sliceFirst`, `volumeId`,
-`initialImageIdIndex` and `appearance` (`PlanarMountOptions`;
+`initialImageIdIndex`, `initialViewReference` and `appearance`
+(`PlanarMountOptions`;
 `Volume3DMountOptions` takes `role`, `volumeId` and `appearance`). So one
 display set shows as a stack in one pane and as a volume in another under one
 id, each at its own image, and a view reference made in one pane is viewable

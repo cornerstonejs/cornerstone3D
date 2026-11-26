@@ -7,6 +7,7 @@ import {
   prepareVideoFrameDataForWorker,
   getVideoViewportOfSegmentation,
   getImageReferenceInfo,
+  getReferencedImageIdsOfLabelmap,
 } from './utilsForWorker';
 import { getPixelValueUnitsImageId } from '../getPixelValueUnits';
 import VolumetricCalculator from './VolumetricCalculator';
@@ -66,10 +67,16 @@ async function getStatistics({
     indices,
   } = segData;
 
+  const referencedImageIds =
+    !segVolumeId && segImageIds?.length
+      ? getReferencedImageIdsOfLabelmap(segmentationId, segImageIds)
+      : undefined;
+
   // Get reference image ID and modality unit options
   const { refImageId, modalityUnitOptions } = getImageReferenceInfo(
     segVolumeId,
-    segImageIds
+    segImageIds,
+    referencedImageIds
   );
 
   const unit = getPixelValueUnitsImageId(refImageId, modalityUnitOptions);
@@ -98,6 +105,7 @@ async function getStatistics({
         indices,
         unit,
         mode,
+        referencedImageIds,
       });
 
   return stats;
@@ -334,12 +342,13 @@ async function calculateStackStatistics({
   unit,
   mode,
   stackData = undefined,
+  referencedImageIds = undefined,
 }) {
   triggerWorkerProgress(WorkerTypes.COMPUTE_STATISTICS, 0);
 
   // Get segmentation and image info for each image in the stack
   const { segmentationInfo, imageInfo } =
-    stackData ?? prepareStackDataForWorker(segImageIds);
+    stackData ?? prepareStackDataForWorker(segImageIds, referencedImageIds);
 
   const stats = await getWebWorkerManager().executeTask(
     'compute',

@@ -468,6 +468,13 @@ class PlanarViewport extends BaseViewport<
 
   private readonly mountedData: PlanarMountedData;
   private readonly viewReferences: PlanarViewReferenceController;
+  /** The `initialViewReference` of the source that mounts now. */
+  private pendingInitialViewReference?: {
+    displaySetId: string;
+    viewRef: ViewReference;
+  };
+  /** True while `applyInitialViewReference` runs. */
+  private stagesInitialViewReference = false;
   private cpuCanvas?: HTMLCanvasElement;
   private renderImageObjectDisplaySetId?: string;
   private resolvedViewCache?: ResolvedViewCache;
@@ -587,8 +594,14 @@ class PlanarViewport extends BaseViewport<
       getViewState: () => this.viewState,
       getVolumeSliceWorldPointForImageIdIndex: (imageIdIndex) =>
         this.getVolumeSliceWorldPointForImageIdIndex(imageIdIndex),
-      setImageIdIndex: (imageIdIndex) => this.setImageIdIndex(imageIdIndex),
-      setViewState: (viewStatePatch) => this.setViewState(viewStatePatch),
+      setImageIdIndex: (imageIdIndex) =>
+        this.stagesInitialViewReference
+          ? this.stageImageIdIndex(imageIdIndex)
+          : this.setImageIdIndex(imageIdIndex),
+      setViewState: (viewStatePatch) =>
+        this.stagesInitialViewReference
+          ? this.stageViewState(viewStatePatch)
+          : this.setViewState(viewStatePatch),
     });
     const renderer = isWebGLUnavailable()
       ? vtkRenderer.newInstance()
@@ -765,7 +778,8 @@ class PlanarViewport extends BaseViewport<
    * both have ended, also when a call rejects, the viewport draws once when
    * a draw was asked for meanwhile.
    *
-   * A newer call stops an older one while the older one loads. Once a call
+   * A newer call, or a `destroy`, stops an older one while the older one
+   * loads; a pending `addDisplaySet` ends at its start. Once a call
    * has loaded, its commit (the removal of the shown display sets and the
    * mounts) runs to its end, and a newer call waits for it before it removes
    * anything. So a listener of an event of the commit, as NEW_IMAGE, that
@@ -776,7 +790,11 @@ class PlanarViewport extends BaseViewport<
     entries: Array<{ displaySetId: string; options?: PlanarMountOptions }>
   ): Promise<void> {
     const requestId = ++this.setDataRequestId;
-    const isStale = () => requestId !== this.setDataRequestId;
+
+    this.startSetDisplaySets();
+
+    const signal = this.getSetDisplaySetsSignal();
+    const isStale = () => requestId !== this.setDataRequestId || signal.aborted;
     const mounts: Array<{
       displaySetId: string;
       options: PlanarMountOptions;
@@ -860,7 +878,9 @@ class PlanarViewport extends BaseViewport<
   /**
    * Adds a single logical planar display set. Without a `role` it mounts
    * with the role of the base rule (`resolveAddRole`): the source on a
-   * viewport that shows nothing, an overlay on any other.
+   * viewport that shows nothing, an overlay on any other. Calls that race
+   * mount in call order; a `setDisplaySets` that starts while it loads ends
+   * it, and it binds nothing (`queueAddDisplaySet`).
    *
    * @param displaySetId - Logical display set id to add.
    * @param options - Semantic orientation and binding options. The render path
@@ -870,16 +890,23 @@ class PlanarViewport extends BaseViewport<
     displaySetId: string,
     options: PlanarMountOptions = {}
   ): Promise<void> {
-    const added = await this.addDisplaySetInternal(displaySetId, {
-      ...options,
-      role: this.resolveAddRole(displaySetId, options.role),
+    return this.queueAddDisplaySet(async (isSuperseded) => {
+      const added = await this.addDisplaySetInternal(
+        displaySetId,
+        {
+          ...options,
+          role: this.resolveAddRole(displaySetId, options.role),
+        },
+        undefined,
+        isSuperseded
+      );
+
+      this.clearResolvedViewCache();
+
+      if (added) {
+        this.triggerDisplaySetsChanged([displaySetId]);
+      }
     });
-
-    this.clearResolvedViewCache();
-
-    if (added) {
-      this.triggerDisplaySetsChanged([displaySetId]);
-    }
   }
 
   /**
@@ -936,6 +963,10 @@ class PlanarViewport extends BaseViewport<
       mode,
       options: getMountedOptions(resolvedOptions, mode, data.volumeId),
     });
+    this.pendingInitialViewReference =
+      role === 'source' && options.initialViewReference
+        ? { displaySetId, viewRef: options.initialViewReference }
+        : undefined;
 
     try {
       added = await this.addLoadedData(
@@ -948,6 +979,8 @@ class PlanarViewport extends BaseViewport<
         shouldIgnore
       );
     } finally {
+      this.pendingInitialViewReference = undefined;
+
       if (!added) {
         restoreAppearance();
         this.restoreMountedDisplaySet(displaySetId, previousMount);
@@ -977,6 +1010,61 @@ class PlanarViewport extends BaseViewport<
     }
 
     return true;
+  }
+
+  /**
+   * Moves the source that mounts now to its `initialViewReference`, once its
+   * binding is in place and before the binding gets the view state, so its
+   * first draw and its first NEW_IMAGE are of that view.
+   */
+  protected override beforeFirstViewState(displaySetId: string): void {
+    const pending = this.pendingInitialViewReference;
+
+    if (pending?.displaySetId !== displaySetId) {
+      return;
+    }
+
+    this.pendingInitialViewReference = undefined;
+    this.applyInitialViewReference(pending.viewRef);
+  }
+
+  /**
+   * Applies a view reference as `setViewReference` does, writing the view
+   * state it gives without a draw or an event. A reference that the mount
+   * cannot show with navigation is ignored with a warning.
+   */
+  private applyInitialViewReference(viewRef: ViewReference): void {
+    if (!this.isReferenceViewable(viewRef, { withNavigation: true })) {
+      log.warn(
+        '[PlanarViewport] The initialViewReference of the mount is not viewable in this viewport, so the mount shows its default slice',
+        viewRef
+      );
+      return;
+    }
+
+    this.stagesInitialViewReference = true;
+
+    try {
+      this.viewReferences.setViewReference(viewRef);
+    } finally {
+      this.stagesInitialViewReference = false;
+    }
+  }
+
+  /** Writes a view state patch with no draw and no event. */
+  private stageViewState(viewStatePatch: Partial<PlanarViewState>): void {
+    this.clearResolvedViewCache();
+    this.viewState = this.normalizeViewState({
+      ...this.viewState,
+      ...viewStatePatch,
+    });
+  }
+
+  /** Writes the image of a stack into the view state, with no load. */
+  private stageImageIdIndex(imageIdIndex: number): Promise<string> {
+    this.stageViewState({ slice: { kind: 'stackIndex', imageIdIndex } });
+
+    return Promise.resolve(this.getImageIds()[imageIdIndex]);
   }
 
   /**
@@ -3951,7 +4039,9 @@ class PlanarViewport extends BaseViewport<
           orientation: resolvedOrientation,
           renderMode: selectedPath.renderMode,
           volumeId: selectedPath.volumeId,
-          initialImageIdIndex: options.initialImageIdIndex,
+          initialImageIdIndex:
+            options.initialImageIdIndex ??
+            getImageIdIndexOfInitialViewReference(dataSet.imageIds, options),
           descriptor: dataSet,
         });
     const { renderMode, reason } = isVolumeRenderMode(selectedPath.renderMode)
@@ -4791,6 +4881,26 @@ function getMountMode(
  * and, in volume mode, the id of the volume that it shows in place of the
  * `volumeId` that it was given (a stack shows no volume).
  */
+/**
+ * The index of the image that the `initialViewReference` of a source names,
+ * when it is one of the images of the display set, so the first image that a
+ * stack loads is that image, as `setViewReference` shows it.
+ */
+function getImageIdIndexOfInitialViewReference(
+  imageIds: string[],
+  options: PlanarMountOptions
+): number | undefined {
+  const referencedImageId = options.initialViewReference?.referencedImageId;
+
+  if (options.role !== 'source' || !referencedImageId) {
+    return;
+  }
+
+  const index = imageIds.indexOf(referencedImageId);
+
+  return index >= 0 ? index : undefined;
+}
+
 function getMountedOptions(
   options: PlanarMountOptions,
   mode: PlanarMountedDisplaySet['mode'],

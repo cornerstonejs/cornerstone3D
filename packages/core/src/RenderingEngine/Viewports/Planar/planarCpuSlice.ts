@@ -139,6 +139,13 @@ export type PlanarCpuSliceInputs = {
   slab?: VolumeSliceSlab;
   /** The active time point (dimension group) of a dynamic volume. */
   timePoint?: number;
+  /**
+   * Puts a slice along the frames on the centre of its nearest frame, as
+   * NEAREST does, so a linear sample reads that frame alone. An overlay
+   * takes it while the other frame of the plane holds no data of its own
+   * position (`getPlanarOverlayFrameState`).
+   */
+  snapToSlice?: boolean;
 };
 
 /**
@@ -1213,7 +1220,9 @@ function getSliceGeometry(
   maxSize: number
 ): VolumeSliceGeometry | undefined {
   return getVolumeSliceGeometry(volume, camera, {
-    snapToSlice: inputs.interpolationType === InterpolationType.NEAREST,
+    snapToSlice:
+      inputs.interpolationType === InterpolationType.NEAREST ||
+      inputs.snapToSlice === true,
     maxSize,
   });
 }
@@ -1631,6 +1640,7 @@ function isSameInputs(
   return (
     previous.interpolationType === next.interpolationType &&
     previous.timePoint === next.timePoint &&
+    !!previous.snapToSlice === !!next.snapToSlice &&
     previous.slab?.thickness === next.slab?.thickness &&
     previous.slab?.blendMode === next.slab?.blendMode
   );

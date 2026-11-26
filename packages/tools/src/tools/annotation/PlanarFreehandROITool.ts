@@ -788,7 +788,7 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
     const perimeter = PlanarFreehandROITool.calculateLengthInIndex(
       calibratedScale,
       indexPoints,
-      closed
+      true
     );
 
     // Rule M of #2889: a voxel belongs to this annotation when its centre is

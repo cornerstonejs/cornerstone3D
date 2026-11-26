@@ -193,7 +193,7 @@ export class HtmlVideoRenderPath
 
     return [
       (canvasPos[0] - mapping.left) / mapping.worldToCanvasRatio,
-      (canvasPos[1] - mapping.top) / mapping.worldToCanvasRatio,
+      (canvasPos[1] - mapping.top) / mapping.worldToCanvasRatioY,
       0,
     ];
   }
@@ -213,7 +213,7 @@ export class HtmlVideoRenderPath
 
     return [
       mapping.left + worldPos[0] * mapping.worldToCanvasRatio,
-      mapping.top + worldPos[1] * mapping.worldToCanvasRatio,
+      mapping.top + worldPos[1] * mapping.worldToCanvasRatioY,
     ];
   }
 
