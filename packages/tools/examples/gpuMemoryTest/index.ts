@@ -335,14 +335,18 @@ function deviceFacts() {
   const capabilities = getRenderingCapabilities();
   const record = getStoredRenderingCapabilities();
   const status = getGpuMemoryStatus();
-  const gl = document.createElement('canvas').getContext('webgl2');
 
   return {
     userAgent: navigator.userAgent,
     renderer: capabilities.renderer,
     rendererClass: status.rendererClass,
     webgl: capabilities.webgl,
-    norm16: Boolean(gl?.getExtension('EXT_texture_norm16')),
+    /**
+     * From the probe of the library, which tested the format: a context made
+     * here each second would reach the context limit of the browser, which
+     * then drops the oldest context, a viewport's.
+     */
+    norm16: Boolean(capabilities.norm16),
     applies: status.applies,
     limit: status.applies
       ? `${formatBytes(status.limitBytes)} ${status.source}${status.hard ? ' hard' : ''}`
