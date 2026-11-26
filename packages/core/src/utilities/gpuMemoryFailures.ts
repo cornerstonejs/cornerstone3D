@@ -103,7 +103,7 @@ function suggestedLimitFor(
 
   /**
    * A calibration after the failure is the newer measurement. A failure
-   * after the calibration, below its largest success (for example with
+   * after the calibration, at or below its largest success (for example with
    * memory held in another tab), shows that the calibration no longer holds.
    */
   const { calibration } = history;

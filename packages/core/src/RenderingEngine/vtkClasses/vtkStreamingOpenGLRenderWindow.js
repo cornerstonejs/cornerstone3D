@@ -72,7 +72,8 @@ function vtkStreamingOpenGLRenderWindow(publicAPI, model) {
         ? superGet3DContext()
         : superGet3DContext(options);
     } catch {
-      noteContextCreationRefused(statusMessage);
+      /** A render window exists only after a detection that found WebGL. */
+      noteContextCreationRefused(statusMessage, true);
 
       return null;
     } finally {

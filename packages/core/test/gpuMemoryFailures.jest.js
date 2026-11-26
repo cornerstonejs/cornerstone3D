@@ -29,6 +29,7 @@ import { getGpuMemoryStatus } from '../src/utilities/gpuMemoryStatus';
 import { resetGpuMemoryLimit } from '../src/utilities/gpuSettingsPresets';
 import { probeRenderingLimits } from '../src/utilities/textureSupport';
 import { setLossyDownsampling } from '../src/init';
+import { resetWebGLAvailability } from '../src/utilities/webglAvailability';
 import eventTarget from '../src/eventTarget';
 import Events from '../src/enums/Events';
 
@@ -94,6 +95,8 @@ function glWithErrors(errors) {
 beforeEach(() => {
   window.localStorage.clear();
   window.sessionStorage.clear();
+  /** A wait of an earlier test holds in this tab until its end. */
+  resetWebGLAvailability();
   resetRenderingCapabilities();
   setLossyDownsampling({ final: true });
   mockWebGL();
@@ -345,11 +348,11 @@ describe('OUT_OF_MEMORY from getError', () => {
 
 describe('a crash that the start of a page finds', () => {
   /** A pending record that a page of this tab or of another tab left. */
-  function leavePending(tab, { page, age }) {
+  function leavePending(tab, { page, age, renderer = RENDERER }) {
     window.localStorage.setItem(
       `${STORAGE_KEY}.pending.${tab}`,
       JSON.stringify({
-        renderer: RENDERER,
+        renderer,
         probeVersion: RENDERING_CAPABILITIES_PROBE_VERSION,
         totalBytes: 2 * GIGABYTE,
         at: Date.now() - age,
@@ -432,8 +435,12 @@ describe('a crash that the start of a page finds', () => {
       delete global.BroadcastChannel;
     });
 
-    /** Starts the next page of the tab, and lets the question time out. */
-    async function startNextPageAndWait() {
+    /**
+     * Starts the next page of the tab, and lets the question time out.
+     *
+     * @param during - runs while the earlier page is asked
+     */
+    async function startNextPageAndWait(during) {
       const details = [];
 
       jest.isolateModules(() => {
@@ -446,6 +453,7 @@ describe('a crash that the start of a page finds', () => {
         );
         require('../src/utilities/renderingCapabilities').getRenderingCapabilities();
       });
+      during?.();
 
       for (let round = 0; round < 6; round++) {
         jest.runOnlyPendingTimers();
@@ -489,6 +497,38 @@ describe('a crash that the start of a page finds', () => {
       expect(
         window.localStorage.getItem(`${STORAGE_KEY}.pending.this-tab`)
       ).toBeNull();
+    });
+
+    it('keeps the record that this page writes under the key of the tab while it asks', async () => {
+      jest.useFakeTimers();
+      window.sessionStorage.setItem('cornerstone3D.tabId', 'this-tab');
+      leavePending('this-tab', { page: 'stopped-page', age: 1000 });
+
+      const [detail] = await startNextPageAndWait(() =>
+        leavePending('this-tab', { page: 'this-page', age: 0 })
+      );
+
+      expect(detail).toMatchObject({ kind: 'crash' });
+      expect(
+        JSON.parse(
+          window.localStorage.getItem(`${STORAGE_KEY}.pending.this-tab`)
+        )
+      ).toMatchObject({ page: 'this-page' });
+    });
+
+    it('does not count a record of an earlier page on another renderer', async () => {
+      jest.useFakeTimers();
+      window.sessionStorage.setItem('cornerstone3D.tabId', 'this-tab');
+      leavePending('this-tab', {
+        page: 'stopped-page',
+        age: 1000,
+        renderer: 'Another GPU',
+      });
+
+      expect(await startNextPageAndWait()).toEqual([]);
+      expect(
+        window.localStorage.getItem(`${STORAGE_KEY}.pending.this-tab`)
+      ).not.toBeNull();
     });
   });
 

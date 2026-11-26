@@ -13,6 +13,7 @@ jest.mock('../src/utilities/autoLoad', () => ({
 }));
 jest.mock('../src/utilities/gpuAllocationTracker', () => ({
   noteTextureAllocation: jest.fn(),
+  cancelTextureAllocation: jest.fn(),
   checkTextureOutOfMemory: jest.fn(() => false),
 }));
 /** The superclass allocation alone, with the size that vtk.js records. */
@@ -40,7 +41,10 @@ jest.mock('@kitware/vtk.js/Rendering/OpenGL/Texture', () => {
 });
 
 import { extend } from '../src/RenderingEngine/vtkClasses/vtkStreamingOpenGLTexture';
-import { checkTextureOutOfMemory } from '../src/utilities/gpuAllocationTracker';
+import {
+  checkTextureOutOfMemory,
+  noteTextureAllocation,
+} from '../src/utilities/gpuAllocationTracker';
 import { getGpuMemoryEntryBytes } from '../src/utilities/gpuMemoryLedger';
 
 /** A texture with the parts of its context that an allocation reaches. */
@@ -101,5 +105,30 @@ describe('a texture that runs out of GPU memory', () => {
     expect(texture.create3DFromRaw(upload(32))).toBe(true);
     expect(mockAllocate).toHaveBeenCalledTimes(1);
     expect(getGpuMemoryEntryBytes(texture)).toBe(256 * 256 * 32 * 4);
+  });
+});
+
+describe('a texture that moves to another context', () => {
+  it('notes the upload of the same shape after a release as a new allocation', () => {
+    const { texture } = newTexture();
+
+    texture.releaseGraphicsResources.mockRestore();
+    noteTextureAllocation.mockClear();
+
+    expect(texture.create3DFromRaw(upload(64))).toBe(true);
+    expect(texture.create3DFromRaw(upload(64))).toBe(true);
+    /** The same shape in the same storage is no new allocation. */
+    expect(noteTextureAllocation).toHaveBeenCalledTimes(1);
+
+    texture.releaseGraphicsResources();
+
+    expect(texture.create3DFromRaw(upload(64))).toBe(true);
+    expect(noteTextureAllocation).toHaveBeenCalledTimes(2);
+    expect(noteTextureAllocation).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        textureBytes: 256 * 256 * 64 * 4,
+        owner: texture,
+      })
+    );
   });
 });

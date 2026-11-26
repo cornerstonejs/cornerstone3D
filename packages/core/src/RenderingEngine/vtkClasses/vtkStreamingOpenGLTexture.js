@@ -129,11 +129,11 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
 
   /**
    * Tells the allocation tracker about a new GPU allocation, before it
-   * happens. An update of some extents of the same texture is no allocation,
-   * and a new upload of the same shape, after the texture moved to another
-   * context, writes no pending record either. The shape counts as allocated
-   * only after an upload succeeded (see `create3DFromRaw`), so a retry after a
-   * failed upload is noted again.
+   * happens. A new upload of the same shape into the storage that the texture
+   * holds is no allocation. A release forgets the shape, so an upload after a
+   * move to another context is noted, and a loss or a crash during it is
+   * recorded. The shape counts as allocated only after an upload succeeded
+   * (see `create3DFromRaw`), so a retry after a failed upload is noted again.
    *
    * The size is the count of the strategy (see `gpuTextureBytesPerVoxel`).
    * The ledger takes the size that vtk.js states after the allocation (see
@@ -212,9 +212,9 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     /**
      * Firefox and Safari report a GPU out of memory through `getError()` and
      * keep the context. The storage is released and the caller skips the
-     * draw, as for a texture that the GPU settings refuse. A same-shape
-     * upload after a move to another context wrote no pending record, so its
-     * sizes go with the check.
+     * draw, as for a texture that the GPU settings refuse. The sizes go
+     * with the check, for an upload that wrote no pending record (a hidden
+     * page, or a texture below the size that the tracker notes).
      */
     if (created && checkTextureOutOfMemory(model.context, publicAPI, sizes)) {
       model.outOfMemoryShape = shape;
@@ -400,6 +400,8 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     removeGpuMemoryEntry(publicAPI);
     /** A released texture is no allocation that a later loss can report. */
     cancelTextureAllocation(publicAPI);
+    /** The next upload allocates again, also at the same shape. */
+    model.allocatedShape = undefined;
     superReleaseGraphicsResources(
       rwin ?? (window?.isDeleted?.() ? undefined : window)
     );

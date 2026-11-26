@@ -315,6 +315,57 @@ describe('the block of Chromium', () => {
   });
 });
 
+describe('a refused context with no sign of a block', () => {
+  it('starts no wait in Chromium when WebGL never worked on the device', () => {
+    asChromium();
+    mockContexts(false);
+
+    const capabilities = detectRenderingCapabilities();
+
+    expect(isWebGLBlocked()).toBe(false);
+    expect(capabilities.webgl).toBe(false);
+    expect(capabilities.webglBlocked).toBeUndefined();
+  });
+});
+
+describe('a store that refuses the wait', () => {
+  it('keeps the wait of this tab until its end', async () => {
+    const setItem = jest
+      .spyOn(Storage.prototype, 'setItem')
+      .mockImplementation(() => {
+        throw new Error('QuotaExceededError');
+      });
+
+    try {
+      startWebGLBlock(Date.now() + 60000, 'cooldown');
+
+      const available = jest.fn();
+
+      whenWebGLAvailable().then(available);
+      jest.advanceTimersByTime(30000);
+      await Promise.resolve();
+
+      expect(getWebGLBlock()).toEqual({
+        until: Date.now() + 30000,
+        reason: 'cooldown',
+      });
+      expect(available).not.toHaveBeenCalled();
+
+      /** A shorter wait does not end it early. */
+      startWebGLBlock(Date.now() + 1000, 'cooldown');
+      expect(getWebGLBlock()?.until).toBe(Date.now() + 30000);
+
+      jest.advanceTimersByTime(30000);
+      await Promise.resolve();
+
+      expect(isWebGLBlocked()).toBe(false);
+      expect(available).toHaveBeenCalledTimes(1);
+    } finally {
+      setItem.mockRestore();
+    }
+  });
+});
+
 describe('the end of a wait', () => {
   it('does not resolve a waiter of a wait that a listener starts at the end', async () => {
     startWebGLBlock(Date.now() + 1000, 'cooldown');

@@ -198,13 +198,22 @@ function getWebGLBlock(): WebGLBlock | undefined {
     announce(stored, 'other');
   } else if (!stored && announced) {
     /**
+     * A store that refused the wait reads back empty, so the wait of this
+     * tab holds until its end. Another tab that ends a wait early is
+     * followed through its storage event.
+     */
+    if (announced.until > Date.now()) {
+      return announced;
+    }
+
+    /**
      * The timer of a hidden tab can run late, so the wait ends here, with
      * the check of Chromium, which can extend it. Availability is reported
      * only after that check.
      */
     endWait();
 
-    return readStoredBlock();
+    return readStoredBlock() ?? announced;
   }
 
   return stored;
@@ -239,7 +248,10 @@ function startWebGLBlock(until: number, reason: WebGLBlockReason): void {
   listen();
 
   const end = Math.min(until, Date.now() + WEBGL_BLOCK_MS);
-  const running = readStoredBlock();
+  /** The wait of this tab counts too, when the store refused it. */
+  const running =
+    readStoredBlock() ??
+    (announced && announced.until > Date.now() ? announced : undefined);
 
   if (running && running.until >= end) {
     return;
@@ -364,33 +376,49 @@ function noteGpuMemoryFailure(): void {
 }
 
 /**
- * Notes that the browser refused a new WebGL context of a page that had
- * WebGL, for example at the start of a page during the block of Chromium, or
- * in a render window. A wait from the last failure of the site starts, so
- * the page keeps its GPU path instead of falling back to the CPU. Outside
- * Chromium a refused context is not a block, and nothing starts.
+ * Notes that the browser refused a new WebGL context, for example at the
+ * start of a page during the block of Chromium, or in a render window. A
+ * refusal counts as a block only with a sign of one: a block message, a
+ * recent GPU memory failure of the site, or WebGL that worked on this device
+ * before (`hadWebGL`). A wait from the last failure of the site then starts,
+ * so the page keeps its GPU path instead of falling back to the CPU. Without
+ * a sign, for example in a browser with WebGL turned off, nothing starts and
+ * the page has no WebGL. Outside Chromium only a block message counts.
  *
  * @param statusMessage - the message of `webglcontextcreationerror`, if any
+ * @param hadWebGL - true when WebGL worked on this device before
  */
-function noteContextCreationRefused(statusMessage = ''): void {
-  if (!isChromium() && !/blocked/i.test(statusMessage)) {
+function noteContextCreationRefused(
+  statusMessage = '',
+  hadWebGL = false
+): void {
+  const blockMessage = /blocked/i.test(statusMessage);
+
+  if (!isChromium() && !blockMessage) {
     return;
   }
 
-  let lastFailure = Date.now();
+  let recent: number[] = [];
 
   try {
     const times = JSON.parse(
       getCapabilityStorage().getItem(GPU_FAILURE_TIMES_KEY) ?? '[]'
     );
-    const recent = Array.isArray(times)
-      ? times.filter((time) => Date.now() - time < WEBGL_BLOCK_MS)
-      : [];
 
-    lastFailure = recent.length ? Math.max(...recent) : lastFailure;
+    recent = Array.isArray(times)
+      ? times.filter(
+          (time) => Number.isFinite(time) && Date.now() - time < WEBGL_BLOCK_MS
+        )
+      : [];
   } catch {
     /** With no stored failure, the wait starts now. */
   }
+
+  if (!blockMessage && !hadWebGL && !recent.length) {
+    return;
+  }
+
+  const lastFailure = recent.length ? Math.max(...recent) : Date.now();
 
   startWebGLBlock(lastFailure + WEBGL_BLOCK_MS, 'chrome');
 }

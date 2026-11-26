@@ -272,6 +272,15 @@ interface WebGLContextInfo {
  * from the store, and WebGL taken as available, because a wait follows a
  * failure of a page that had WebGL.
  */
+/** True when a page of this site found a WebGL renderer before. */
+function hadWebGL(): boolean {
+  try {
+    return Boolean(getCapabilityStorage().getItem(LAST_RENDERER_KEY));
+  } catch {
+    return false;
+  }
+}
+
 function blockedContextInfo(): WebGLContextInfo {
   let renderer = '';
 
@@ -440,7 +449,7 @@ function getWebGLContextInfo(): WebGLContextInfo {
 
     if (!gl) {
       /** Chromium refuses a context while it blocks WebGL for the site. */
-      noteContextCreationRefused(statusMessage);
+      noteContextCreationRefused(statusMessage, hadWebGL());
 
       return isWebGLBlocked() ? blockedContextInfo() : info;
     }
@@ -875,6 +884,21 @@ function searchStartEdge(): number {
 }
 
 /**
+ * True when a crash record counts in this record: the same renderer, the
+ * current probe version, and a size.
+ */
+function isCountableCrash(
+  target: StoredRenderingCapabilities,
+  pending: PendingRecord | null
+): boolean {
+  return (
+    pending?.renderer === target.renderer &&
+    pending?.probeVersion === RENDERING_CAPABILITIES_PROBE_VERSION &&
+    pending.totalBytes > 0
+  );
+}
+
+/**
  * Counts one crash record in the record, once: the key of a tab repeats, so
  * the key and the time name the record.
  */
@@ -922,7 +946,24 @@ function finishRecovery(handled: RecoveryResult): void {
 
   handled.recorded
     .filter((id) => confirmed.includes(id))
-    .forEach((id) => storage.removeItem(id.slice(0, id.lastIndexOf('@'))));
+    .forEach((id) => {
+      const at = id.slice(id.lastIndexOf('@') + 1);
+      const key = id.slice(0, id.lastIndexOf('@'));
+
+      /**
+       * The key of a tab repeats: while the earlier page was asked, this
+       * page can have written its own record under it, which stays.
+       */
+      try {
+        if (String(JSON.parse(storage.getItem(key) ?? 'null')?.at) !== at) {
+          return;
+        }
+      } catch {
+        /** A record that does not parse goes too. */
+      }
+
+      storage.removeItem(key);
+    });
 
   const listener = onRecoveredCrash;
   const crashes = handled.crashes.filter(({ id }) => confirmed.includes(id));
@@ -980,7 +1021,12 @@ async function recordSuspectedCrashes(
       suspected: [],
     };
 
-    updateRecord((target) => countCrash(target, key, pending, handled));
+    /** The record can have changed during the wait, so it is checked again. */
+    updateRecord((target) => {
+      if (isCountableCrash(target, pending)) {
+        countCrash(target, key, pending, handled);
+      }
+    });
     finishRecovery(handled);
   }
 }
@@ -1031,12 +1077,14 @@ function recoverPendingAllocations(
       /**
        * A young record of an earlier page of this tab can belong to a page
        * that still runs, in a tab that the browser duplicated, so that page
-       * is asked first (see `recordSuspectedCrashes`).
+       * is asked first (see `recordSuspectedCrashes`). Only a record that
+       * this start would count is asked about.
        */
       if (
         fromEarlierPageOfThisTab &&
         age < PENDING_STALE_MS &&
-        typeof BroadcastChannel !== 'undefined'
+        typeof BroadcastChannel !== 'undefined' &&
+        isCountableCrash(target, pending)
       ) {
         handled.suspected.push({ key, pending });
 
@@ -1051,11 +1099,7 @@ function recoverPendingAllocations(
         continue;
       }
 
-      if (
-        pending?.renderer === target.renderer &&
-        pending?.probeVersion === RENDERING_CAPABILITIES_PROBE_VERSION &&
-        pending.totalBytes > 0
-      ) {
+      if (isCountableCrash(target, pending)) {
         /**
          * The record keeps the ids of the last crash records only, so one
          * start handles at most that many, and a later start the rest: an id

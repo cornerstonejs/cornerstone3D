@@ -162,16 +162,19 @@ approach appears, as long as the user requirements stay satisfied.
   pending record of the tab. The record keeps the ids of the last 20 crash
   records that it counted (the key and the time), so a start removes a crash
   record only once the store holds its id, and a record that a refused
-  removal leaves counts once.
+  removal leaves counts once. A start handles at most 20 crash records, and
+  a later start the rest, and it removes a record only while the key holds
+  the record that it counted.
 
   The id of the tab is in `sessionStorage` (`cornerstone3D.tabId`), and a
   pending record states the id of its page load. A start that finds a young
   record of its own tab from an earlier page load asks that page, over the
-  `BroadcastChannel` `cornerstone3D.pages`, whether it still runs. With no
-  answer within 300 ms, it records a crash at once, whatever the age of the
-  record, because a page that closes normally removes its record. A tab that
-  the browser duplicated shares the id, and its first page answers, so the
-  duplicate records nothing. Without `BroadcastChannel`, the start records the
+  `BroadcastChannel` `cornerstone3D.pages`, whether it still runs, when the
+  record is of its renderer and probe version. With no answer within 300 ms,
+  it records a crash at once, whatever the age of the record, because a page
+  that closes normally removes its record. A tab that the browser duplicated
+  shares the id, and its first page answers, so the duplicate records
+  nothing. Without `BroadcastChannel`, the start records the
   crash at once. No heartbeat refreshes a pending record: it lives at most
   35 s (the 30 s render timeout and the 5 s settle), under the 60 s rule.
   (GPULIM-U-9, GPULIM-U-15)
@@ -204,7 +207,7 @@ approach appears, as long as the user requirements stay satisfied.
   1. the current limit after a one-off failure: the size worked at least
      twice, and this is its first failure;
   2. else, after a calibration, its largest success, unless the failure came
-     after the calibration at a size below that success;
+     after the calibration at a size at or below that success;
   3. else, the largest load that worked below the failed size;
   4. else, the lower end of the largest bucket with a success below the
      bucket of the failure;
@@ -243,14 +246,18 @@ approach appears, as long as the user requirements stay satisfied.
   - in Chromium, when a 1 x 1 test context, created 1 s after a failure, is
     refused (`chrome`). A context that works is lost at once. A refused
     context at any other time, for example at the start of a page or in a
-    render window, starts it too, from the last failure. At the end of a
-    `chrome` wait the test context runs again, and a refusal adds 30 s;
+    render window, starts it too, from the last failure, when there is a
+    sign of a block: a block message, a failure of the last two minutes, or
+    a renderer that a page found before. Without one, for example with WebGL
+    turned off, the page has no WebGL. At the end of a `chrome` wait the test
+    context runs again, and a refusal adds 30 s;
   - before each step of a calibration run (`calibration`).
 
-  Another tab follows the wait through the `storage` event. A read of the
-  wait after its end, for example in a tab whose timer ran late, ends it
-  first, with the check of Chromium, so availability is reported only after
-  that check.
+  Another tab follows the wait through the `storage` event. A store that
+  refuses the wait leaves it in the tab that started it, until its end. A
+  read of the wait after its end, for example in a tab whose timer ran
+  late, ends it first, with the check of Chromium, so availability is
+  reported only after that check.
   `WEBGL_AVAILABILITY_CHANGED` fires at the start and at the end, with
   `sourceTab` `self` or `other`. A crash found at a start starts no wait,
   because it happened in an earlier page. (GPULIM-U-16)
