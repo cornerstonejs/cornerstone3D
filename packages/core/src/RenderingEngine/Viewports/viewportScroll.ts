@@ -12,6 +12,10 @@ import getTargetVolumeAndSpacingInNormalDir from '../../utilities/getTargetVolum
 import { getVolumeId as getVolumeIdOfSpecifier } from '../../utilities/getVolumeId';
 import snapFocalPointToSlice from '../../utilities/snapFocalPointToSlice';
 import triggerEvent from '../../utilities/triggerEvent';
+import {
+  getGridSliceIndex,
+  getSliceGrid,
+} from '../../utilities/volumeSliceGrid';
 import { getViewportContentMode } from '../../utilities/viewportCapabilities';
 import type PlanarViewport from './Planar/PlanarViewport';
 import { getPlanarVolumeSliceRange } from './Planar/planarSliceBasis';
@@ -136,8 +140,9 @@ export function getPlanarVolumeScrollSteps(
 }
 
 /**
- * The number of steps and the current step of a volume scroll, as the
- * legacy `getVolumeViewportScrollInfo` counts them.
+ * The number of steps and the current step of a volume scroll: the slice
+ * grid of the range with the step (`utilities/volumeSliceGrid`), which
+ * `snapFocalPointToSlice` moves on.
  */
 export function countPlanarVolumeScrollSteps({
   sliceRange,
@@ -147,20 +152,11 @@ export function countPlanarVolumeScrollSteps({
   currentStepIndex: number;
 } {
   const { min, max, current } = sliceRange;
-  const range = max - min;
-
-  if (range === 0) {
-    return { numScrollSteps: 0, currentStepIndex: 0 };
-  }
-
-  const numScrollSteps = Math.round(range / spacingInNormalDirection);
-  const currentStepIndex = Math.round(
-    ((current - min) / range) * numScrollSteps
-  );
+  const grid = getSliceGrid(min, max, spacingInNormalDirection);
 
   return {
-    numScrollSteps,
-    currentStepIndex: Number.isFinite(currentStepIndex) ? currentStepIndex : 0,
+    numScrollSteps: grid.maxSliceIndex,
+    currentStepIndex: getGridSliceIndex(grid, current),
   };
 }
 

@@ -32,7 +32,7 @@ import {
   resetElementCursor,
 } from '../cursors/elementCursor';
 import { getToolGroup } from '../store/ToolGroupManager';
-import { jumpToFocalPoint } from '../utilities/viewportToolHelpers';
+import { navigatePlanarViewportToPoint } from '../utilities/viewportToolHelpers';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
 const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
@@ -515,7 +515,7 @@ class ReferenceCursors extends AnnotationDisplayTool {
     ) as Types.Point3;
 
     this._syncedCursorPositions.set(viewport.element, currentMousePosition);
-    jumpToFocalPoint(viewport, newFocalPoint);
+    navigatePlanarViewportToPoint(viewport, newFocalPoint);
   }
 }
 

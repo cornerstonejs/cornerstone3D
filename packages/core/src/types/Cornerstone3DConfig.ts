@@ -58,24 +58,23 @@ interface Cornerstone3DConfig {
     strictZSpacingForVolumeViewport?: boolean;
 
     /**
-     * EXPERIMENTAL, and off by default. Which measure gives the distance
-     * between two adjacent slices of a volume viewport.
+     * Which measure gives the distance between two adjacent slices of a
+     * volume view, the step of its slice grid (see the volume slice
+     * navigation specification).
      *
-     * - `'l2'` - the default and the historic behaviour.
-     *   `getSpacingInNormalDirection` gives the L2 length of the projected
-     *   spacing vector, `sqrt( Σᵢ (n · aᵢ · sᵢ)² )`.
-     * - `'l1'` - `getVoxelThicknessAlongNormal` gives the L1 length,
-     *   `Σᵢ |n · aᵢ| · sᵢ`, which is how far one voxel reaches along the
-     *   normal.
+     * - `'l1'` - the default. `getVoxelThicknessAlongNormal` gives the L1
+     *   length, `Σᵢ |n · aᵢ| · sᵢ`, which is how far one voxel reaches along
+     *   the normal. A one-step traversal shows each voxel on exactly one
+     *   slice, in every orientation.
+     * - `'l2'` - the measure of 5.x. `getSpacingInNormalDirection` gives the
+     *   L2 length of the projected spacing vector, `sqrt( Σᵢ (n · aᵢ · sᵢ)² )`.
+     *   It is shorter than one voxel for an oblique normal, so an oblique view
+     *   has more slices and two adjacent slices show some of the same voxels:
+     *   a brush fill on one oblique slice shows on the next and the previous
+     *   slice (https://github.com/cornerstonejs/cornerstone3D/issues/2912).
      *
      * The two measures are equal when the normal is parallel to a voxel axis,
-     * so an acquisition-orientation view behaves the same either way. The L2
-     * value is the smaller one for an oblique normal, so the viewport steps
-     * less than the width of one voxel, and two adjacent oblique slices show
-     * some of the same voxels. A brush fill on an oblique plane then appears
-     * on the next slice and on the previous slice.
-     *
-     * See https://github.com/cornerstonejs/cornerstone3D/issues/2912.
+     * so a view along a volume axis has the same slices either way.
      */
     sliceStepMeasure?: 'l1' | 'l2';
 

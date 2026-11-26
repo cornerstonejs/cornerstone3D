@@ -1,11 +1,8 @@
 import { vec3 } from 'gl-matrix';
 import { RENDERING_DEFAULTS } from '../constants';
 import type { IImageVolume, Point3 } from '../types';
-import { getPlanarVolumeSliceRange } from '../RenderingEngine/Viewports/Planar/planarSliceBasis';
-import {
-  getPlanarVolumeSliceNavigationState,
-  getPlanarVolumeSlicePoint,
-} from '../RenderingEngine/helpers/planarVolumeRendering';
+import { getPlanarVolumeSliceGrid } from '../RenderingEngine/Viewports/Planar/planarSliceBasis';
+import { getGridSliceProjection } from './volumeSliceGrid';
 
 /** The camera fields that place the slices of a volume along a view. */
 type SliceCamera = {
@@ -16,46 +13,31 @@ type SliceCamera = {
 
 /**
  * The point of each slice of a volume along the view normal of a camera,
- * with the index of the slice.
+ * with the index of the slice: the slices of the slice grid of the planar
+ * viewport (`getPlanarVolumeSliceGrid`), each on the line of the focal point
+ * along the normal.
  */
 function getVolumeSlicePoints(
   imageVolume: IImageVolume,
   camera: SliceCamera
 ): { sliceIndex: number; point: Point3 }[] {
   const { focalPoint, viewPlaneNormal } = camera;
-  const { currentSliceIndex, sliceRange, spacingInNormalDirection } =
-    getPlanarVolumeSliceNavigationState({
-      camera,
-      imageVolume,
-      sliceRange: getPlanarVolumeSliceRange(
-        imageVolume,
-        viewPlaneNormal,
-        focalPoint
-      ),
-    });
-  const numSlicesBackward = Math.round(
-    (sliceRange.current - sliceRange.min) / spacingInNormalDirection
+  const grid = getPlanarVolumeSliceGrid(imageVolume, viewPlaneNormal);
+  const focalProjection = vec3.dot(
+    focalPoint as unknown as vec3,
+    viewPlaneNormal as unknown as vec3
   );
-  const numSlicesForward = Math.round(
-    (sliceRange.max - sliceRange.current) / spacingInNormalDirection
-  );
-  const slicePoints: { sliceIndex: number; point: Point3 }[] = [];
 
-  for (let delta = -numSlicesBackward; delta <= numSlicesForward; delta++) {
-    const { newFocalPoint } = getPlanarVolumeSlicePoint({
-      camera,
-      delta,
-      sliceRange,
-      spacingInNormalDirection,
-    });
+  return Array.from({ length: grid.maxSliceIndex + 1 }, (_, sliceIndex) => {
+    const offset = getGridSliceProjection(grid, sliceIndex) - focalProjection;
 
-    slicePoints.push({
-      sliceIndex: currentSliceIndex + delta,
-      point: newFocalPoint,
-    });
-  }
-
-  return slicePoints;
+    return {
+      sliceIndex,
+      point: [0, 1, 2].map(
+        (axis) => focalPoint[axis] + viewPlaneNormal[axis] * offset
+      ) as Point3,
+    };
+  });
 }
 
 /** The pair of clipping planes around one slice, with the index of the slice. */

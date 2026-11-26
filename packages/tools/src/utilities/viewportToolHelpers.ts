@@ -45,7 +45,9 @@ export function getViewSlabDepthOfViewport(
 /**
  * Navigates a viewport to a focal point via its view reference.
  * Native PLANAR has no setCamera; navigating by view reference snaps to the
- * nearest slice along the view-plane normal.
+ * nearest slice along the view-plane normal. A planar viewport in stack mode
+ * takes no reference that names only a point, so it does not move: use
+ * `navigatePlanarViewportToPoint` for a viewport that can show a stack.
  */
 export function jumpToFocalPoint(
   viewport: Types.IViewport,

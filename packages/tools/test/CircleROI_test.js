@@ -227,8 +227,8 @@ describe('Circle Tool: ', () => {
     };
 
     element.addEventListener(Events.IMAGE_RENDERED, () => {
-      const index1 = [53, 53, 2];
-      const index2 = [54, 54, 2];
+      const index1 = [28, 28, 1];
+      const index2 = [29, 29, 1];
 
       const { imageData } = vp.getImageData();
 

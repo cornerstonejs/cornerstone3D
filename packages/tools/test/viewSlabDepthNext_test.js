@@ -25,7 +25,10 @@ const segmentationId = 'slabDepthNextSegmentation';
  * circle brush filled, the `planeRestriction.referencePlaneThickness` of the
  * view reference that a new annotation takes, and the slices that the
  * statistics of a rectangle drawn there cover. The legacy number reached
- * that far on each side of the plane, so the depth was twice the number.
+ * that far on each side of the plane, so the depth was twice the number. The
+ * legacy view opened on slice 10, the middle in volume order; a next axial
+ * view opens on slice 9, the middle in view order (index 10 of 20 against
+ * k), so the test goes to slice 10 (index 9) first.
  */
 const LEGACY_SLAB_DEPTH = {
   0: {
@@ -333,6 +336,11 @@ describe('The depth of a brush and of the statistics in a slab of a direct next 
 
     const labelmap = cache.getVolume(segmentationId);
     const imageVolume = cache.getVolume(volumeId);
+
+    expect(viewport.getResolvedView().toICamera().focalPoint[2]).toBe(9);
+
+    await viewport.setImageIdIndex(9);
+    await new Promise((resolve) => requestAnimationFrame(resolve));
 
     expect(viewport.getResolvedView().toICamera().focalPoint[2]).toBe(10);
 

@@ -8,6 +8,7 @@ import renderingEngineCache from '../src/RenderingEngine/renderingEngineCache';
 import getSliceRange from '../src/utilities/getSliceRange';
 import snapFocalPointToSlice from '../src/utilities/snapFocalPointToSlice';
 import getSpacingInNormalDirection from '../src/utilities/getSpacingInNormalDirection';
+import getVoxelThicknessAlongNormal from '../src/utilities/voxelSlab/getVoxelThicknessAlongNormal';
 
 const { utilities, setRenderBackend, Enums, init, cache, volumeLoader } =
   cornerstone3D;
@@ -224,7 +225,7 @@ describe('the number of slices of a direct next planar viewport', () => {
 
   /**
    * The number of slices of a legacy volume viewport for the camera, as
-   * `getImageSliceDataForVolumeViewport` counts them.
+   * `getImageSliceDataForVolumeViewport` counts them with the L2 step.
    */
   function getLegacyNumberOfSlices(camera, volume) {
     const { min, max } = getLegacySliceRange(camera, volume);
@@ -233,6 +234,21 @@ describe('the number of slices of a direct next planar viewport', () => {
       Math.round(
         (max - min) /
           getSpacingInNormalDirection(volume, camera.viewPlaneNormal)
+      ) + 1
+    );
+  }
+
+  /**
+   * The number of slices of the slice grid for the camera: the range over
+   * the thickness of one voxel along the normal.
+   */
+  function getGridNumberOfSlices(camera, volume) {
+    const { min, max } = getLegacySliceRange(camera, volume);
+
+    return (
+      Math.round(
+        (max - min) /
+          getVoxelThicknessAlongNormal(volume, camera.viewPlaneNormal)
       ) + 1
     );
   }
@@ -247,7 +263,7 @@ describe('the number of slices of a direct next planar viewport', () => {
   };
 
   Object.entries(views).forEach(([name, orientation]) => {
-    it(`gives the number of the legacy volume viewport on an ${name} view`, async () => {
+    it(`gives the number of slices of one voxel step on an ${name} view`, async () => {
       let viewport;
 
       ({ renderingEngine, viewport } = createViewport(
@@ -275,12 +291,17 @@ describe('the number of slices of a direct next planar viewport', () => {
         options: { orientation },
       });
 
-      const legacy = getLegacyNumberOfSlices(
-        viewport.getCameraForEvent(),
-        volume
-      );
+      const camera = viewport.getCameraForEvent();
+      const legacy = getLegacyNumberOfSlices(camera, volume);
+      const grid = getGridNumberOfSlices(camera, volume);
 
-      expect(viewport.getNumberOfSlices()).toBe(legacy);
+      expect(viewport.getNumberOfSlices()).toBe(grid);
+
+      if (name === 'oblique') {
+        expect(grid).toBeLessThan(legacy);
+      } else {
+        expect(grid).toBe(legacy);
+      }
     });
   });
 });

@@ -219,6 +219,112 @@ describe('brushVoxelSlab', () => {
       }
     });
 
+    describe('on the slices of a one-step traversal of an oblique view (#2912)', () => {
+      const spacing: Types.Point3 = [1, 1, 1.5];
+      const volume = {
+        dimensions,
+        direction: IDENTITY_DIRECTION,
+        spacing,
+        origin: [0, 0, 0] as Types.Point3,
+      };
+
+      /**
+       * The painted voxels that a slice shows: those nearest to a point of
+       * the slice plane, sampled every 0.1 mm around the brush.
+       */
+      function shownOnPlane(
+        imageData: ReturnType<typeof makeImageData>,
+        painted: Set<string>,
+        planePoint: Types.Point3,
+        viewPlaneNormal: Types.Point3
+      ): Set<string> {
+        const viewUp: Types.Point3 = [0, 1, 0];
+        const viewRight = vec3.cross(vec3.create(), viewUp, viewPlaneNormal);
+        const shown = new Set<string>();
+
+        for (let u = -8; u <= 8; u += 0.1) {
+          for (let v = -8; v <= 8; v += 0.1) {
+            const point = vec3.scaleAndAdd(
+              vec3.create(),
+              vec3.scaleAndAdd(vec3.create(), planePoint, viewRight, u),
+              viewUp,
+              v
+            );
+            const key = imageData
+              .worldToIndex(point as Types.Point3)
+              .map(Math.round)
+              .join(',');
+
+            if (painted.has(key)) {
+              shown.add(key);
+            }
+          }
+        }
+
+        return shown;
+      }
+
+      function paintAndLook(degrees: number, step: (normal) => number) {
+        const imageData = makeImageData(dimensions, { spacing });
+        const viewPlaneNormal = obliqueNormal(degrees);
+        const painted = new Set(
+          keys(
+            collect(
+              createCircleBrushFill({
+                segmentationImageData: imageData,
+                viewUp: [0, 1, 0],
+                viewPlaneNormal,
+                centerWorld: center,
+                xRadius: 5,
+                yRadius: 5,
+              }),
+              dimensions
+            )
+          )
+        );
+        const neighbour = (sign: number) =>
+          vec3.scaleAndAdd(
+            vec3.create(),
+            center,
+            viewPlaneNormal,
+            sign * step(viewPlaneNormal)
+          ) as Types.Point3;
+
+        return {
+          own: shownOnPlane(imageData, painted, center, viewPlaneNormal),
+          next: shownOnPlane(imageData, painted, neighbour(1), viewPlaneNormal),
+          previous: shownOnPlane(
+            imageData,
+            painted,
+            neighbour(-1),
+            viewPlaneNormal
+          ),
+        };
+      }
+
+      it.each([17, 35, 45, 62])(
+        'shows a fill of one slice at %i degrees on that slice only, with the step of one voxel thickness',
+        (degrees) => {
+          const { own, next, previous } = paintAndLook(degrees, (normal) =>
+            getVoxelThicknessAlongNormal(volume, normal)
+          );
+
+          expect(own.size).toBeGreaterThan(0);
+          expect(next.size).toBe(0);
+          expect(previous.size).toBe(0);
+        }
+      );
+
+      it('shows the fill on the next and the previous slice with the l2 step of 5.x', () => {
+        const { next, previous } = paintAndLook(45, (normal) =>
+          csUtils.getSpacingInNormalDirection(volume, normal)
+        );
+
+        expect(next.size).toBeGreaterThan(0);
+        expect(previous.size).toBeGreaterThan(0);
+      });
+    });
+
     it('paints every layer through a thick slab', () => {
       const imageData = makeImageData(dimensions);
       const common = {

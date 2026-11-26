@@ -24,6 +24,21 @@ import type {
 import { getViewportClassForInput } from './helpers/viewportTypeToViewportClass';
 import copyWebGLCanvasToCanvas from './helpers/copyWebGLCanvasToCanvas';
 
+/**
+ * Gives a canvas the size of its element in device pixels, rounded to whole
+ * pixels. The tiled engine sizes a canvas by this one rule when it enables a
+ * viewport, when it sets its viewports and when it resizes, so the first
+ * frame of a viewport is drawn at the size that a resize keeps. A hidden
+ * element gives a canvas of no size.
+ */
+function sizeCanvasToElement(canvas: HTMLCanvasElement): void {
+  const devicePixelRatio = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+
+  canvas.width = Math.round(rect.width * devicePixelRatio);
+  canvas.height = Math.round(rect.height * devicePixelRatio);
+}
+
 interface ViewportDisplayCoords {
   sxStartDisplayCoords: number;
   syStartDisplayCoords: number;
@@ -146,6 +161,7 @@ class TiledRenderingEngine extends BaseRenderingEngine {
     const canvasesDrivenByVtkJs = viewportsDrivenByVtkJs.map((vp) => vp.canvas);
 
     const canvas = getOrCreateCanvas(viewportInputEntry.element);
+    sizeCanvasToElement(canvas);
     canvasesDrivenByVtkJs.push(canvas);
 
     // 2.c Calculating the new size for offScreen Canvas
@@ -286,13 +302,7 @@ class TiledRenderingEngine extends BaseRenderingEngine {
       );
 
       // Ensure the canvas size includes any scaling due to device pixel ratio
-      vtkDrivenCanvases.forEach((canvas) => {
-        const devicePixelRatio = window.devicePixelRatio || 1;
-
-        const rect = canvas.getBoundingClientRect();
-        canvas.width = rect.width * devicePixelRatio;
-        canvas.height = rect.height * devicePixelRatio;
-      });
+      vtkDrivenCanvases.forEach(sizeCanvasToElement);
 
       // 2. Set canvas size based on height and sum of widths
       const { offScreenCanvasWidth, offScreenCanvasHeight } =
@@ -347,11 +357,7 @@ class TiledRenderingEngine extends BaseRenderingEngine {
     );
 
     // reset the canvas size to the client size
-    canvasesDrivenByVtkJs.forEach((canvas) => {
-      const devicePixelRatio = window.devicePixelRatio || 1;
-      canvas.width = canvas.clientWidth * devicePixelRatio;
-      canvas.height = canvas.clientHeight * devicePixelRatio;
-    });
+    canvasesDrivenByVtkJs.forEach(sizeCanvasToElement);
 
     if (canvasesDrivenByVtkJs.length) {
       // 1. Recalculate and resize the offscreen canvas size

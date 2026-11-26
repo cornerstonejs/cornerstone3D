@@ -7,6 +7,7 @@ import getVoxelThicknessAlongNormal from './voxelSlab/getVoxelThicknessAlongNorm
 import { getConfiguration } from '../init';
 import { getVolumeLoaderSchemes } from '../loaders/volumeLoader';
 import { getVolumeId } from './getVolumeId';
+import { getSliceStepAlongNormal } from './volumeSliceGrid';
 import { coreLog } from './logger';
 
 /**
@@ -179,12 +180,7 @@ function getSpacingInNormal(
         ?.slabThickness
     : undefined;
 
-  // See Cornerstone3DConfig.rendering.sliceStepMeasure.
-  const measure = getConfiguration().rendering?.sliceStepMeasure;
-  const geometric =
-    measure === 'l1'
-      ? getVoxelThicknessAlongNormal(imageVolume, viewPlaneNormal)
-      : getSpacingInNormalDirection(imageVolume, viewPlaneNormal);
+  const geometric = getSliceStepAlongNormal(imageVolume, viewPlaneNormal);
   const used = slabThickness && useSlabThickness ? slabThickness : geometric;
 
   // This function runs on every render, so the diagnostics stay behind the
@@ -197,7 +193,8 @@ function getSpacingInNormal(
     // axis-aligned normal gives `l1 === l2`, which tells the reader nothing.
     if (Math.abs(l1 - l2) > 1e-6 * Math.max(l1, l2)) {
       const line =
-        `slice step [${viewport?.id}] measure=${measure ?? 'l2'} ` +
+        `slice step [${viewport?.id}] ` +
+        `measure=${getConfiguration().rendering?.sliceStepMeasure ?? 'l1'} ` +
         `used=${used.toFixed(4)} l1=${l1.toFixed(4)} l2=${l2.toFixed(4)} ` +
         `l1/l2=${(l1 / l2).toFixed(4)} ` +
         `fromSlabThickness=${Boolean(slabThickness && useSlabThickness)}`;

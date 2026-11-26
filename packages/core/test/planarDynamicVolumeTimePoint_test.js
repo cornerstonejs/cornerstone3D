@@ -295,7 +295,7 @@ describe('A planar viewport in volume mode on a dynamic volume -- ', () => {
     ).toBe(true);
   });
 
-  it('takes a reference of a time point that names only a frame of reference, a plane and a focal point on a stack', async function () {
+  it('takes a reference of a time point that names only a frame of reference, a plane and a focal point on a stack as a nearby projection or a volume only', async function () {
     const viewport = createNextViewport(renderingEngine, 'timePointStack');
 
     cornerstone3D.displaySetRegistry.add('staticStack', {
@@ -315,10 +315,16 @@ describe('A planar viewport in volume mode on a dynamic volume -- ', () => {
 
     expect(viewport.getCurrentMode()).toBe('stack');
     expect(viewRef.FrameOfReferenceUID).toBe(FRAME_OF_REFERENCE);
-    expect(viewport.isReferenceViewable(viewRef)).toBe(true);
+    expect(viewport.isReferenceViewable(viewRef)).toBe(false);
     expect(
       viewport.isReferenceViewable(viewRef, { withNavigation: true })
+    ).toBe(false);
+    expect(
+      viewport.isReferenceViewable(viewRef, { asNearbyProjection: true })
     ).toBe(true);
+    expect(viewport.isReferenceViewable(viewRef, { asVolume: true })).toBe(
+      true
+    );
   });
 
   it('takes such a reference of another time point on the dynamic volume only with navigation', async function () {

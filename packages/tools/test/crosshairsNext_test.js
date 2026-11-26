@@ -13,6 +13,21 @@ const {
 const { Events: csToolsEvents } = csToolsEnums;
 
 const renderingEngineId = utilities.uuidv4();
+
+/**
+ * The index of the point where the middle slices of the axial, sagittal and
+ * coronal views meet: each view opens on its middle slice counted along the
+ * view, `floor(N / 2)`. The sagittal normal follows i; the coronal and the
+ * axial normals point against j and k, so their middle slice counts from the
+ * last voxel plane.
+ */
+function getMiddleOfViews([columns, rows, slices]) {
+  return [
+    Math.floor(columns / 2),
+    rows - 1 - Math.floor(rows / 2),
+    slices - 1 - Math.floor(slices / 2),
+  ];
+}
 const toolGroupId = 'crosshairsNext';
 const viewportIds = ['AXIAL', 'SAGITTAL', 'CORONAL'];
 
@@ -133,7 +148,7 @@ describe('CrosshairsTool on a direct next planar viewport -- ', () => {
       .getViewport(viewportIds[0])
       .getImageData();
     const middle = imageData.indexToWorld(
-      imageData.getDimensions().map((size) => Math.floor(size / 2))
+      getMiddleOfViews(imageData.getDimensions())
     );
     const crosshairsAnnotations = getCrosshairsAnnotations(elements[0]);
     const { toolCenter } = toolGroup.getToolInstance(CrosshairsTool.toolName);

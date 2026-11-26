@@ -111,4 +111,30 @@ describe('snapFocalPointToSlice', () => {
       expect(newPosition).not.toBe(position);
     });
   });
+
+  describe('with a range of 10.4 and a step of 1: 10 steps centred on the range, frames at 0.2 to 10.2', () => {
+    const sliceRange = { min: 0, max: 10.4, current: 0 };
+
+    it.each([
+      [0, 0.2],
+      [3, 3.2],
+      [20, 10.2],
+      [-2, 0.2],
+    ])(
+      'snaps a move of %i frames to the grid centred on the range',
+      (delta, expectedZ) => {
+        const { newFocalPoint, newPosition } = snapFocalPointToSlice(
+          focalPoint,
+          position,
+          sliceRange,
+          viewPlaneNormal,
+          1,
+          delta
+        );
+
+        expect(newFocalPoint[2]).toBeCloseTo(expectedZ, 10);
+        expect(newPosition[2]).toBeCloseTo(expectedZ + 100, 10);
+      }
+    );
+  });
 });

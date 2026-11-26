@@ -633,21 +633,31 @@ describe('PlanarViewport acquired frames in the volume path (user experience)', 
   it('moves a stack to the image closest to a focal-point reference', () => {
     const setImageIdIndex = bindStack();
 
-    // The reference that crosshairs send through jumpToFocalPoint.
-    viewport.setViewReference({ cameraFocalPoint: [100, 100, 16] });
+    // A reference of the display set of the stack with a focal point.
+    viewport.setViewReference({
+      displaySetId,
+      cameraFocalPoint: [100, 100, 16],
+    });
     expect(setImageIdIndex).toHaveBeenLastCalledWith(8);
   });
 
   // The API must do this: a focal point that no image of the stack holds,
-  // or a plane of another orientation, does not move the stack.
+  // or a plane of another orientation, does not move the stack. Nor does a
+  // reference that names only a point (row 248): a stack does not take it
+  // with navigation, as the legacy stack viewport of 5.18.3.
   it('keeps the image for a focal point far from the stack or of another plane', () => {
     const setImageIdIndex = bindStack();
 
-    viewport.setViewReference({ cameraFocalPoint: [100, 100, 516] });
     viewport.setViewReference({
+      displaySetId,
+      cameraFocalPoint: [100, 100, 516],
+    });
+    viewport.setViewReference({
+      displaySetId,
       cameraFocalPoint: [100, 100, 16],
       viewPlaneNormal: [1, 0, 0],
     });
+    viewport.setViewReference({ cameraFocalPoint: [100, 100, 16] });
     expect(setImageIdIndex).not.toHaveBeenCalled();
   });
 

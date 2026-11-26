@@ -267,8 +267,32 @@ function drag(element, fromCanvas, toCanvas) {
 }
 
 /**
+ * Moves the axial and the coronal viewport one slice back, to the slice that
+ * the legacy volume viewport opened on, and waits for the crosshairs to be
+ * drawn there. A view opens on its middle slice in view order, index 32 of
+ * 64; the axial and the coronal normals point against k and j, so that is
+ * k = 31 and j = 31, where the legacy viewport opened on the middle in volume
+ * order, k = 32 and j = 32 (row 260). The legacy values of this file are of
+ * that start.
+ */
+async function moveToLegacyStart(renderingEngine, elements) {
+  const annotationsRendered = waitForAnnotationsRendered(elements);
+
+  for (const viewportId of ['AXIAL', 'CORONAL']) {
+    const viewport = renderingEngine.getViewport(viewportId);
+
+    expect(viewport.getCurrentImageIdIndex()).toBe(32);
+    await utilities.jumpToSlice(viewport.element, { imageIndex: 31 });
+  }
+
+  renderingEngine.render();
+  await annotationsRendered;
+}
+
+/**
  * Makes an axial, a sagittal and a coronal direct next planar viewport, shows
- * the volumes on each and waits for the first drawing of the crosshairs.
+ * the volumes on each, waits for the first drawing of the crosshairs and moves
+ * the views to the start of the legacy volume viewport.
  */
 async function mountViewports(renderingEngine, volumeIds = [volumeId]) {
   const elements = testUtils.createViewports(
@@ -298,6 +322,7 @@ async function mountViewports(renderingEngine, volumeIds = [volumeId]) {
   );
   renderingEngine.render();
   await annotationsRendered;
+  await moveToLegacyStart(renderingEngine, elements);
 
   return elements;
 }

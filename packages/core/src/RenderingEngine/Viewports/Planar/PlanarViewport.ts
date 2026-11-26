@@ -151,6 +151,7 @@ import {
   getPlanarReferenceForViewableCheck,
   hasNonFiniteViewReferenceGeometry,
   namesImageWithoutFrameOfReference,
+  namesOnlyFrameOfReferencePlaneOrPoints,
 } from './planarViewReference';
 import { applyCanvasSharpeningSmoothing } from './planarCanvasSharpeningSmoothing';
 import { createSharpeningSmoothingRenderPasses } from '../../renderPasses/createSharpeningSmoothingRenderPasses';
@@ -425,6 +426,10 @@ class PlanarViewport extends BaseViewport<
   readonly type = ViewportType.PLANAR;
   readonly renderingEngineId: string;
   readonly canvas: HTMLCanvasElement;
+  /** The x offset of the viewport in the offscreen canvas of a tiled engine. */
+  sx: number;
+  /** The y offset of the viewport in the offscreen canvas of a tiled engine. */
+  sy: number;
   sWidth: number;
   sHeight: number;
   defaultOptions: PlanarViewportInputOptions;
@@ -550,6 +555,8 @@ class PlanarViewport extends BaseViewport<
     super(args);
     this.renderingEngineId = args.renderingEngineId;
     this.canvas = args.canvas;
+    this.sx = args.sx;
+    this.sy = args.sy;
     this.sWidth = args.sWidth;
     this.sHeight = args.sHeight;
     this.defaultOptions = cloneViewportOptions(args.defaultOptions || {});
@@ -2324,6 +2331,14 @@ class PlanarViewport extends BaseViewport<
    * only as viewable when the point lies within half a slice spacing of the
    * image shown, as the legacy stack viewport does.
    *
+   * In stack mode a reference that names only a frame of reference, a plane
+   * or points (no image, volume, display set, slice index, range or plane
+   * restriction; `namesOnlyFrameOfReferencePlaneOrPoints`), as a 3D point
+   * annotation, is viewable only with `asVolume` or, when its point lies
+   * within half a slice of the image shown, with `asNearbyProjection`, as on
+   * the legacy stack viewport of 5.18.3. It does not show on every image of
+   * the stack, also not with `withNavigation`.
+   *
    * In stack mode `asVolume` takes a reference that names no image as
    * viewable when it names a volume or a frame of reference and is in the
    * frame of reference of the stack, whatever its plane and slice, as the
@@ -2382,6 +2397,27 @@ class PlanarViewport extends BaseViewport<
         namesImageWithoutFrameOfReference(viewRef)
       ) {
         return false;
+      }
+
+      if (isStack && namesOnlyFrameOfReferencePlaneOrPoints(viewRef)) {
+        if (options.asVolume) {
+          return isViewReferenceViewableAsVolume(reference, contexts);
+        }
+
+        if (
+          !options.asNearbyProjection ||
+          !viewRef.cameraFocalPoint ||
+          !isViewReferenceViewable(reference, contexts, {})
+        ) {
+          return false;
+        }
+
+        imageData ??= this.getImageData() as CPUIImageData | undefined;
+
+        return Boolean(
+          imageData &&
+            isPointNearImagePlane(viewRef.cameraFocalPoint, imageData)
+        );
       }
 
       const checkOptions = isStack
@@ -4013,10 +4049,10 @@ class PlanarViewport extends BaseViewport<
         ? createPlanarCpuVolumeSliceBasis
         : createPlanarVolumeSliceBasis;
     // The acquisition orientation honors an explicitly carried initial slice but
-    // otherwise centers the volume, matching legacy and the reformatted
+    // otherwise opens on the legacy middle slice, like the reformatted
     // (sagittal/coronal) orientations. "No slice requested" now propagates as
     // undefined all the way from the data provider (it no longer defaults to 0),
-    // so we can pass the index through directly: undefined -> center, while a
+    // so we can pass the index through directly: undefined -> middle, while a
     // real carried slice - including an explicit 0 - is honored instead of being
     // collapsed to center.
     const initialImageIdIndex =

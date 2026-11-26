@@ -27,10 +27,13 @@ const BAR_VALUE = 255;
 const LINEAR_ROUNDING_LEVELS = 1;
 
 /**
- * The middle slice of an axial view of the bar volume: the slice that the
- * view of a volume of 10 or 11 slices shows.
+ * The slice k that an axial view of the bar volume shows: the middle slice
+ * counted along the view, whose normal [0, 0, -1] points against k, so
+ * `slices - 1 - floor(slices / 2)`: 5 of 11 slices, 4 of 10.
  */
-const MIDDLE_SLICE = 5;
+function middleSliceOf(slices) {
+  return slices - 1 - Math.floor(slices / 2);
+}
 
 /** The frame of reference of the fake volumes. */
 const VOLUME_FRAME_OF_REFERENCE = 'Volume_Frame_Of_Reference';
@@ -75,8 +78,8 @@ function axialBarColorOf(width, slices, interpolationType) {
     const place = (x + 0.5) / pixelsPerVoxel - 0.5;
     const grey =
       interpolationType === InterpolationType.NEAREST
-        ? barVolumeValue(Math.round(place), MIDDLE_SLICE, slices)
-        : linearBarVolumeValue(place, MIDDLE_SLICE, slices);
+        ? barVolumeValue(Math.round(place), middleSliceOf(slices), slices)
+        : linearBarVolumeValue(place, middleSliceOf(slices), slices);
 
     return [grey, grey, grey];
   };
@@ -1086,7 +1089,10 @@ describe('Volume Viewport GPU -- ', () => {
         Events.IMAGE_RENDERED,
         () => {
           expect(
-            pixelsOff(readPicture(vp), () => testUtils.colors[MIDDLE_SLICE])
+            pixelsOff(
+              readPicture(vp),
+              () => testUtils.colors[middleSliceOf(10)]
+            )
           ).toEqual([]);
           done();
         },

@@ -19,11 +19,13 @@ const displaySetId = 'roundTripVolume';
  * one has 24 and opens on slice 11. After each wheel of the first, its view
  * reference was viewable on the second with navigation (and not without it,
  * on another slice), and `setViewReference` put the second on the same slice;
- * the same the other way.
+ * the same the other way. A next coronal view opens on slice 12, the middle
+ * in view order (its normal points against j), one slice after the legacy
+ * middle in volume order.
  */
 const LEGACY = {
   [OrientationAxis.SAGITTAL]: { slices: 32, firstSlice: 16 },
-  [OrientationAxis.CORONAL]: { slices: 24, firstSlice: 11 },
+  [OrientationAxis.CORONAL]: { slices: 24, firstSlice: 12 },
 };
 
 async function frames(count = 3) {

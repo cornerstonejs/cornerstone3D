@@ -231,11 +231,11 @@ describe('Rectangle ROI Tool:', () => {
     };
 
     element.addEventListener(Events.IMAGE_RENDERED, () => {
-      // Inside the strip which is from 50-75 in slice 2
+      // Inside the strip which is from 25-50 in slice 1, the middle slice of
+      // 4 in view order (normal [0, 0, -1])
       // volumeURI_100_100_4_1_1_1_0
-      // The strip is from
-      const index1 = [50, 10, 2];
-      const index2 = [52, 20, 2];
+      const index1 = [30, 10, 1];
+      const index2 = [32, 20, 1];
 
       const { imageData } = vp.getImageData();
 

@@ -1,7 +1,9 @@
+import { vec3 } from 'gl-matrix';
 import { EPSILON, MPR_CAMERA_VALUES } from '../../../constants';
 import { OrientationAxis } from '../../../enums';
-import type { IImageVolume } from '../../../types';
+import type { IImageVolume, Point3 } from '../../../types';
 import isEqual from '../../../utilities/isEqual';
+import { isAcquisitionPlaneNormal } from '../../../utilities/isAcquisitionPlaneNormal';
 import type { PlanarViewState, PlanarOrientation } from './PlanarViewportTypes';
 import { clonePlanarOrientation } from './planarOrientationAndScaling';
 import { getAcquisitionCameraVectors } from './planarOrientationVectors';
@@ -47,8 +49,13 @@ export function normalizePlanarOrientation(
 }
 
 /**
- * Whether the camera of an orientation name has the view plane normal and
- * the view up of the acquisition camera of a volume.
+ * Whether the camera of an orientation name shows the view of the
+ * acquisition camera of a volume: its view plane normal is in the
+ * acquisition plane by `isAcquisitionPlaneNormal` (a tilt that moves the
+ * plane by less than half a slice across the volume) and on the same side,
+ * and its view up, laid into the acquisition plane, is the view up of the
+ * acquisition camera. A series whose images are turned in their plane or
+ * face another way keeps the camera of the name.
  */
 function isAcquisitionCamera(
   orientation: PlanarOrientation,
@@ -61,9 +68,25 @@ function isAcquisitionCamera(
   }
 
   const acquisition = getAcquisitionCameraVectors(imageVolume);
+  const normal = acquisition.viewPlaneNormal;
 
-  return (
-    isEqual(camera.viewPlaneNormal, acquisition.viewPlaneNormal, EPSILON) &&
-    isEqual(camera.viewUp, acquisition.viewUp, EPSILON)
+  if (
+    !isAcquisitionPlaneNormal(imageVolume, camera.viewPlaneNormal) ||
+    !(vec3.dot(camera.viewPlaneNormal, normal as unknown as vec3) > 0)
+  ) {
+    return false;
+  }
+
+  const viewUpInPlane = vec3.scaleAndAdd(
+    vec3.create(),
+    camera.viewUp,
+    normal as unknown as vec3,
+    -vec3.dot(camera.viewUp, normal as unknown as vec3)
+  );
+
+  return isEqual(
+    vec3.normalize(viewUpInPlane, viewUpInPlane) as unknown as Point3,
+    acquisition.viewUp,
+    EPSILON
   );
 }

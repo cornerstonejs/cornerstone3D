@@ -180,6 +180,11 @@ function getClosestImageIdOfVolume(
  * plane restriction when it is given, as the thickness that a new annotation
  * takes.
  *
+ * On a volume path the referenced image is the image of the slice on display
+ * (the slice of `sliceIndex`, whose centre is `cameraFocalPoint`), not of the
+ * point of the view state, which can lie between two slices. A slice that
+ * lies on no image, as a slice of an oblique view, names no image.
+ *
  * @returns A ViewReference suitable for `isReferenceViewable` comparisons.
  */
 export function getPlanarViewReference(args: {
@@ -238,7 +243,13 @@ export function getPlanarViewReference(args: {
           }
         : undefined,
   };
-  const referencedImageId = getPlanarReferencedImageId(args);
+  const referencedImageId = getPlanarReferencedImageId(
+    rendering &&
+      isVolumeRenderMode(rendering.renderMode) &&
+      typeof sliceIndex === 'number'
+      ? { ...args, viewRefSpecifier: { ...viewRefSpecifier, sliceIndex } }
+      : args
+  );
   const rangeEndReferencedImageId =
     typeof sliceIndex === 'number' &&
     typeof rangeEndSliceIndex === 'number' &&
@@ -414,6 +425,32 @@ export function namesImageWithoutFrameOfReference(
     viewRef &&
       (viewRef.referencedImageId || viewRef.referencedImageURI) &&
       !viewRef.FrameOfReferenceUID
+  );
+}
+
+/**
+ * Whether a reference names nothing that a stack holds: no image (by its id
+ * or its URI), no volume, no display set, no slice index, no range of slices
+ * and no plane restriction, only a frame of reference, a plane or points, as
+ * a 3D point annotation or the reference of a cursor. A stack shows the
+ * planes of its images only, so in stack mode such a reference is viewable
+ * only with `asVolume` (the stack could show it as a volume) or
+ * `asNearbyProjection` (its point lies within half a slice of the image on
+ * display), as on the legacy stack viewport of 5.18.3, and `setViewReference`
+ * moves nothing for it.
+ */
+export function namesOnlyFrameOfReferencePlaneOrPoints(
+  viewRef: ViewReference
+): boolean {
+  return Boolean(
+    viewRef &&
+      !viewRef.referencedImageId &&
+      !viewRef.referencedImageURI &&
+      !viewRef.volumeId &&
+      !viewRef.displaySetId &&
+      viewRef.sliceIndex === undefined &&
+      !viewRef.multiSliceReference &&
+      !viewRef.planeRestriction
   );
 }
 

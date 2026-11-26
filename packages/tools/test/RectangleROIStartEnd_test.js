@@ -108,8 +108,8 @@ describe('Rectangle ROI StartEnd Tool:', () => {
         const data = rectangleAnnotation.data.cachedStats;
         const targets = Array.from(Object.keys(data));
         expect(targets.length).toBe(4);
-        expect(data.statistics.mean).toBe(85);
-        expect(data.statistics.stdDev).toBeCloseTo(120.208);
+        expect(data.statistics.mean).toBe(127.5);
+        expect(data.statistics.stdDev).toBeCloseTo(127.5);
 
         annotation.state.removeAnnotation(rectangleAnnotation.annotationUID);
         done();
@@ -117,11 +117,11 @@ describe('Rectangle ROI StartEnd Tool:', () => {
     };
 
     element.addEventListener(Events.IMAGE_RENDERED, () => {
-      // Inside the strip which is from 50-75 in slice 2
+      // Inside the strip which is from 25-50 in slice 1, the middle slice of
+      // 4 in view order (normal [0, 0, -1])
       // volumeURI_100_100_4_1_1_1_0
-      // The strip is from
-      const index1 = [50, 10, 2];
-      const index2 = [52, 20, 2];
+      const index1 = [30, 10, 1];
+      const index2 = [32, 20, 1];
 
       const { imageData } = vp.getImageData();
 

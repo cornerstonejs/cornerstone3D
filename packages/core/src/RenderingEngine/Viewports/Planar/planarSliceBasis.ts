@@ -26,10 +26,14 @@ import type {
 } from '../../../types';
 import { getImageDataMetadata } from '../../../utilities/getImageDataMetadata';
 import { getCubeSizeInView } from '../../../utilities/getPlaneCubeIntersectionDimensions';
-import getSpacingInNormalDirection from '../../../utilities/getSpacingInNormalDirection';
-import getVoxelThicknessAlongNormal from '../../../utilities/voxelSlab/getVoxelThicknessAlongNormal';
-import { getConfiguration } from '../../../init';
-import { getVolumeCenterIJK } from '../../helpers/getVolumeCenterIJK';
+import {
+  getDefaultGridSliceIndex,
+  getGridSliceIndex,
+  getGridSliceProjection,
+  getSliceGrid,
+  getSliceStepAlongNormal,
+} from '../../../utilities/volumeSliceGrid';
+import type { VolumeSliceGrid } from '../../../utilities/volumeSliceGrid';
 import {
   getCpuEquivalentParallelScale,
   getOrthogonalVolumeSliceGeometry,
@@ -350,29 +354,14 @@ export function getPlanarVolumeSliceRange(
 /**
  * Returns the world-space center of a volume, computed from the midpoint
  * of the voxel-center index domain. Falls back to averaging the bounding-box
- * corners if vtkImageData is unavailable.
- *
- * When `viewPlaneNormal` is supplied, the slice-direction axis is snapped to
- * `Math.floor(d / 2)` via `getVolumeCenterIJK`, matching legacy resetCamera
- * behavior. Without this snap, even-dimensioned slice axes (e.g. 512) land on
- * `(d - 1) / 2 = 255.5` and the VTK reslice mapper rounds the focal point to
- * the adjacent voxel, producing a one-slice offset on initial render.
+ * corners if vtkImageData is unavailable. Only its position across the view
+ * counts: the slice basis moves it along the normal onto the slice.
  */
-function getGeometricImageVolumeCenter(
-  imageVolume: IImageVolume,
-  viewPlaneNormal?: Point3
-): Point3 {
+function getGeometricImageVolumeCenter(imageVolume: IImageVolume): Point3 {
   const imageData = imageVolume.imageData;
 
   if (imageData) {
-    const dimensions = imageData.getDimensions();
-    const ijk = viewPlaneNormal
-      ? getVolumeCenterIJK(
-          dimensions,
-          imageData.getDirection(),
-          viewPlaneNormal
-        )
-      : dimensions.map((d) => (d - 1) / 2);
+    const ijk = imageData.getDimensions().map((d) => (d - 1) / 2);
 
     return imageData.indexToWorld(ijk as [number, number, number]) as Point3;
   }
@@ -440,101 +429,40 @@ export function getVolumeImageIdIndexWorldPoint(
 }
 
 /**
- * Computes the min/max projections of a volume's corners onto the
- * viewPlaneNormal, along with the spacing between adjacent slices and
- * the maximum valid slice index.
+ * The slice grid of a volume along a view plane normal (see
+ * `utilities/volumeSliceGrid`): the range is spanned by the projections of
+ * the centres of the corner voxels, the step is the slice step of
+ * `rendering.sliceStepMeasure`. Every index and every slice position of a
+ * planar view of the volume comes from it.
  *
- * These metrics are used by `createPlanarVolumeSliceBasis` to position
- * the sliceCenterWorld at the correct depth for a given imageIdIndex.
+ * @internal
  */
-function getSliceMetrics(args: {
-  imageVolume: IImageVolume;
-  viewPlaneNormal: Point3;
-}) {
-  const { imageVolume, viewPlaneNormal } = args;
+export function getPlanarVolumeSliceGrid(
+  imageVolume: IImageVolume,
+  viewPlaneNormal: Point3
+): VolumeSliceGrid {
   const corners = buildImageVolumeCorners(imageVolume);
-
-  // See Cornerstone3DConfig.rendering.sliceStepMeasure.
-  const measure =
-    getConfiguration().rendering?.sliceStepMeasure === 'l1'
-      ? getVoxelThicknessAlongNormal
-      : getSpacingInNormalDirection;
-
-  const spacingInNormalDirection = Math.max(
-    measure(imageVolume, viewPlaneNormal),
+  const step = Math.max(
+    getSliceStepAlongNormal(imageVolume, viewPlaneNormal),
     MIN_SLICE_SPACING
   );
 
   if (!corners.length) {
-    return {
-      min: 0,
-      max: 0,
-      spacingInNormalDirection,
-      maxImageIdIndex: 0,
-    };
+    return getSliceGrid(0, 0, step);
   }
 
-  const projectedValues = corners.map((corner) =>
-    vec3.dot(corner as unknown as vec3, viewPlaneNormal as unknown as vec3)
-  );
-  const min = Math.min(...projectedValues);
-  const max = Math.max(...projectedValues);
-  const maxImageIdIndex = Math.max(
-    0,
-    Math.round((max - min) / spacingInNormalDirection)
+  const projectedValues = corners.map(
+    (corner) =>
+      corner[0] * viewPlaneNormal[0] +
+      corner[1] * viewPlaneNormal[1] +
+      corner[2] * viewPlaneNormal[2]
   );
 
-  return {
-    min,
-    max,
-    spacingInNormalDirection,
-    maxImageIdIndex,
-  };
-}
-
-/**
- * Clamps an imageIdIndex to [0, maxImageIdIndex]. If the index is undefined,
- * derives the centered slice index using the same projection math as the
- * legacy volume viewport scroll utilities.
- */
-function resolveCenteredImageIdIndex(args: {
-  centerProjection: number;
-  min: number;
-  max: number;
-  maxImageIdIndex: number;
-}): number {
-  const { centerProjection, min, max, maxImageIdIndex } = args;
-  const range = max - min;
-
-  if (!(range > 0) || maxImageIdIndex === 0) {
-    return 0;
-  }
-
-  const fraction = (centerProjection - min) / range;
-  const floatingImageIdIndex = fraction * maxImageIdIndex;
-
-  return Math.round(floatingImageIdIndex);
-}
-
-function clampImageIdIndex(args: {
-  imageIdIndex: number | undefined;
-  centerProjection: number;
-  min: number;
-  max: number;
-  maxImageIdIndex: number;
-}): number {
-  const { centerProjection, imageIdIndex, max, maxImageIdIndex, min } = args;
-
-  if (typeof imageIdIndex !== 'number') {
-    return resolveCenteredImageIdIndex({
-      centerProjection,
-      min,
-      max,
-      maxImageIdIndex,
-    });
-  }
-
-  return Math.min(Math.max(0, imageIdIndex), maxImageIdIndex);
+  return getSliceGrid(
+    Math.min(...projectedValues),
+    Math.max(...projectedValues),
+    step
+  );
 }
 
 export function resolvePlanarVolumeImageIdIndex(args: {
@@ -665,7 +593,6 @@ function buildPlanarVolumeSliceBasis(args: {
   const {
     center,
     fitParallelScale,
-    imageIdIndex,
     imageVolume,
     orientation,
     sliceHeightWorld,
@@ -695,56 +622,37 @@ function buildPlanarVolumeSliceBasis(args: {
 
   const viewPlaneNormal = normalizePoint3(cameraValues.viewPlaneNormal);
   const viewUp = normalizePoint3(cameraValues.viewUp);
-  const { max, maxImageIdIndex, min, spacingInNormalDirection } =
-    getSliceMetrics({
-      imageVolume,
-      viewPlaneNormal,
-    });
-  const centerProjection = vec3.dot(
-    center as unknown as vec3,
-    viewPlaneNormal as unknown as vec3
-  );
+  const grid = getPlanarVolumeSliceGrid(imageVolume, viewPlaneNormal);
+  const { max, maxSliceIndex: maxImageIdIndex, min, step } = grid;
+  const project = (point: Point3) =>
+    point[0] * viewPlaneNormal[0] +
+    point[1] * viewPlaneNormal[1] +
+    point[2] * viewPlaneNormal[2];
   const volumePoint =
     viewState?.slice?.kind === 'volumePoint'
       ? viewState.slice.sliceWorldPoint
       : undefined;
-  const requestedSliceProjection = Math.min(
-    max,
-    Math.max(
-      min,
-      volumePoint
-        ? vec3.dot(
-            volumePoint as unknown as vec3,
-            viewPlaneNormal as unknown as vec3
-          )
-        : centerProjection
-    )
-  );
-  const currentImageIdIndex = clampImageIdIndex({
-    imageIdIndex,
-    centerProjection: requestedSliceProjection,
-    min,
-    max,
-    maxImageIdIndex,
-  });
-
-  // Project volume center onto the viewing direction to compute the
-  // scalar offset needed to reach the target slice depth.
+  const imageIdIndex =
+    args.imageIdIndex ??
+    (volumePoint ? undefined : getDefaultGridSliceIndex(grid));
+  const currentImageIdIndex =
+    typeof imageIdIndex === 'number'
+      ? Math.min(Math.max(0, imageIdIndex), maxImageIdIndex)
+      : getGridSliceIndex(grid, project(volumePoint));
+  const first = Math.min(min, getGridSliceProjection(grid, 0));
+  const last = Math.max(max, getGridSliceProjection(grid, maxImageIdIndex));
   const targetProjection =
     typeof imageIdIndex === 'number'
-      ? Math.min(max, min + currentImageIdIndex * spacingInNormalDirection)
-      : requestedSliceProjection;
-  const scalarOffset = targetProjection - centerProjection;
-  const sliceCenterWorld = vec3.scaleAndAdd(
-    vec3.create(),
-    center as unknown as vec3,
-    viewPlaneNormal as unknown as vec3,
-    scalarOffset
+      ? getGridSliceProjection(grid, currentImageIdIndex)
+      : Math.min(last, Math.max(first, project(volumePoint)));
+  const scalarOffset = targetProjection - project(center);
+  const sliceCenterWorld = [0, 1, 2].map(
+    (axis) => center[axis] + viewPlaneNormal[axis] * scalarOffset
   ) as Point3;
 
   // cameraDistance spans the full volume depth so the clipping range
   // can capture the entire volume when needed.
-  const cameraDistance = Math.max(max - min, spacingInNormalDirection, 1);
+  const cameraDistance = Math.max(max - min, step, 1);
 
   return {
     sliceBasis: {
@@ -788,10 +696,7 @@ export function createPlanarVolumeSliceBasis(args: {
 
   return buildPlanarVolumeSliceBasis({
     ...args,
-    center: getGeometricImageVolumeCenter(
-      imageVolume,
-      cameraValues?.viewPlaneNormal
-    ),
+    center: getGeometricImageVolumeCenter(imageVolume),
     ...sliceFitMetrics,
   });
 }

@@ -360,13 +360,14 @@ addToggleButtonToToolbar({
   },
 });
 
-// EXPERIMENTAL, and for https://github.com/cornerstonejs/cornerstone3D/issues/2912.
-// The slice step decides how far the viewport moves between two slices. The
-// default 'l2' measure is smaller than the width of one voxel on an oblique
-// plane, so two adjacent slices show some of the same voxels, and one brush
-// stroke appears on the next slice and on the previous slice. The 'l1' measure
-// is the width of one voxel along the normal, so each slice shows a new set of
-// voxels. The two measures are equal at an angle of 0 degrees.
+// For https://github.com/cornerstonejs/cornerstone3D/issues/2912. The slice
+// step decides how far the viewport moves between two slices. The default 'l1'
+// measure is the width of one voxel along the normal, so each slice of an
+// oblique plane shows a new set of voxels, and one brush stroke shows on one
+// slice only. The 'l2' measure is smaller than the width of one voxel on an
+// oblique plane, so two adjacent slices show some of the same voxels, and one
+// brush stroke appears on the next slice and on the previous slice. The two
+// measures are equal at an angle of 0 degrees.
 //
 // Paint a stroke, then step one slice, to compare the two measures. Toggle this
 // button before you paint, because the button changes the step and not the
@@ -374,7 +375,7 @@ addToggleButtonToToolbar({
 addToggleButtonToToolbar({
   id: 'sliceStepMeasure',
   title: 'Slice step: voxel width (L1)',
-  defaultToggle: false,
+  defaultToggle: true,
   onClick: (toggle) => {
     const configuration = getConfiguration();
 

@@ -37,6 +37,21 @@ const { fakeMetaDataProvider, fakeVolumeLoader, createNormalizedMouseEvent } =
 
 const renderingEngineId = utilities.uuidv4();
 
+/**
+ * The index of the point where the middle slices of the axial, sagittal and
+ * coronal views meet: each view opens on its middle slice counted along the
+ * view, `floor(N / 2)`. The sagittal normal follows i; the coronal and the
+ * axial normals point against j and k, so their middle slice counts from the
+ * last voxel plane.
+ */
+function getMiddleOfViews([columns, rows, slices]) {
+  return [
+    Math.floor(columns / 2),
+    rows - 1 - Math.floor(rows / 2),
+    slices - 1 - Math.floor(slices / 2),
+  ];
+}
+
 const viewportIds = ['VIEWPORT1', 'VIEWPORT2', 'VIEWPORT3'];
 
 const volumeId = testUtils.encodeVolumeIdInfo({
@@ -149,9 +164,7 @@ describe('Cornerstone Tools: ', () => {
       const vp = renderingEngine.getViewport(viewportIds[0]);
       const { imageData } = vp.getImageData();
 
-      const indexMiddle = imageData
-        .getDimensions()
-        .map((s) => Math.floor(s / 2));
+      const indexMiddle = getMiddleOfViews(imageData.getDimensions());
 
       const imageCenterWorld = imageData.indexToWorld(indexMiddle);
 

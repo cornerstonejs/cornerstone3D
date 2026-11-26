@@ -104,6 +104,116 @@ leave the canvas. Against the legacy volume viewport:
 - `resetCrosshairs` resets the views and takes the slabs back to none, as
   before.
 
+## The slice grid of a volume view
+
+The slices of a view of a volume lie on one grid along the view normal: the
+scroll, the snap, the reported index, `getNumberOfSlices()`, the default
+slice, a view reference and the cut of a surface all use it. The
+[volume slice navigation specification](../../specs/core/volume-slice-navigation/implementation.md)
+defines it. In short, with `n` the view normal and `min` and `max` the
+smallest and the largest projection of the centres of the corner voxels:
+
+- the step `s` is the thickness of one voxel along `n` (the default of
+  `rendering.sliceStepMeasure`, `'l1'`);
+- the view has `M + 1` slices, `M = round((max - min) / s)`;
+- slice `k` lies at `start + k * s`, `start = min + (max - min - M * s) / 2`,
+  so the grid is centred on the volume;
+- a view that asks for no slice opens on slice `floor((M + 1) / 2)`, the
+  middle slice counted along the view.
+
+So a one-step traversal shows each voxel on exactly one slice, in every
+orientation, and a brush fill on one oblique slice no longer shows on the
+next and the previous slice
+([#2912](https://github.com/cornerstonejs/cornerstone3D/issues/2912)).
+
+What changes for an application:
+
+- **A view along a volume axis keeps its slices.** An axial, sagittal or
+  coronal view of an axial series has one slice for each plane of voxels, at
+  the voxel centres, as before: the positions and `getNumberOfSlices()` do
+  not change.
+- **A view with an even number of slices opens one slice further, where its
+  normal points against the volume axis.** The default slice is
+  `floor(N / 2)` in view order, where 6.0.0-beta.2 and the legacy
+  `resetCamera` took `floor(N / 2)` in volume order. A coronal view of a
+  512 x 512 x N axial CT (normal `[0, -1, 0]`) opens on index 256, at
+  `j = 255`, where it opened on index 255 (`j = 256`); an axial view of an
+  even number of slices (normal `[0, 0, -1]`) and the acquisition view of an
+  even count move the same way. A sagittal view and every view of an odd
+  count open where they did. The OHIF `'middle'` preset and the default now
+  agree. `resetViewState()` keeps the slice, as before.
+
+  ```ts
+  // Before (6.0.0-beta.2): a coronal view of 512 slices opened on 255
+  // After: it opens on 256, the middle slice in view order
+  const middle = Math.floor(viewport.getNumberOfSlices() / 2);
+  viewport.getCurrentImageIdIndex() === middle; // true after a mount
+  ```
+
+- **An oblique view has fewer slices, on another grid.** The step was the
+  length of the projected spacing (`'l2'`), which is shorter than one voxel
+  for an oblique normal; the step is now the voxel thickness. A view tilted by
+  45 degrees between two axes of 1 mm has a step of 1.41 mm where it had 1 mm,
+  so about 30 % fewer slices, and its slices lie on the grid centred on the
+  volume. A slice index of an oblique view that an application stored names
+  another position now. Store a view reference with its point instead
+  (`viewport.getViewReference()`, which has `cameraFocalPoint` and
+  `viewPlaneNormal`), and give it to `setViewReference` later. To convert a
+  stored index `k` of the old grid, take its point `min + k * l2` along the
+  normal, with `l2 = utilities.getSpacingInNormalDirection(volume, normal)`
+  and `min` the smallest projection of the corner voxel centres, and go to
+  that point:
+
+  ```ts
+  // Before: an index stored for an oblique view
+  viewport.setImageIdIndex(storedIndex);
+
+  // After: a point stored for the view
+  viewport.setViewReference({
+    FrameOfReferenceUID: viewport.getFrameOfReferenceUID(),
+    viewPlaneNormal: stored.viewPlaneNormal,
+    cameraFocalPoint: stored.cameraFocalPoint,
+  });
+  ```
+
+- **`rendering.sliceStepMeasure` is `'l1'` by default.** `'l1'` steps by the
+  thickness of one voxel along the normal; `'l2'` by the length of the
+  projected spacing, the step of 5.x and of the 6.0 betas. Both give the same
+  slices along a volume axis. `'l2'` stays an option: an oblique view then
+  has the old count and step, on the centred grid, and two adjacent oblique
+  slices show some of the same voxels.
+
+  ```ts
+  init({ rendering: { sliceStepMeasure: 'l2' } }); // the step of 5.x
+  ```
+
+- **`utilities.snapFocalPointToSlice` snaps to the centred grid** of the range
+  and the step it is given: for a range that is not a whole number of steps
+  its first frame lies `(range - M * step) / 2` past `min`, where it lay at
+  `min`. `scrollSlabs` and the scroll by another volume step on that grid.
+- **`utilities.getTargetVolumeAndSpacingInNormalDir` gives the voxel
+  thickness** along an oblique normal, so an annotation of the tools shows on
+  an oblique slice when it lies within half a voxel thickness of it, one
+  slice only.
+- **`getSlicesClippingPlanes` gives one entry for each slice of the grid,**
+  so the cut of a surface (a contour segmentation on an MPR view) is the cut
+  of the slice on display, also for an oblique view.
+
+### A series tilted less than half a slice
+
+A request for a standard orientation (`OrientationAxis.AXIAL`, `SAGITTAL` or
+`CORONAL`) shows the acquired images when the series is tilted from that
+orientation so little that the plane of an image moves by less than half a
+slice across the image (`utilities.isAcquisitionPlaneNormal` on the frame
+geometry: rows, columns, the pixel spacing, `spacingBetweenSlices` or
+`sliceThickness`). 6.0.0-beta.2 showed the acquired images only for an
+exact alignment and reformatted a tilt of 0.2 degrees. A larger tilt, such as
+a sagittal MR tilted by 13 degrees, shows the true axis, reformatted, as
+before and as the legacy volume viewport did. Images that cannot form a
+volume stay on the image path for any standard orientation. To see the
+acquired images of a tilted series, ask for `OrientationAxis.ACQUISITION` or
+give no orientation.
+
 ## Orientation of a volume
 
 - **A requested axis is the true axis.** A viewport asked for `AXIAL`,
@@ -1444,6 +1554,45 @@ point of the image on display.
   answered false. A reference whose `referencedImageId` is the image on
   display is viewable with no options at all, whatever plane it names, as
   on the legacy stack viewport.
+- **A stack takes a reference of a frame of reference, a plane or points
+  only as a volume or as a nearby projection.** A reference that names no
+  image, no volume, no display set, no slice index, no range and no plane
+  restriction, as a 3D point annotation or
+  `{ FrameOfReferenceUID, viewPlaneNormal, cameraFocalPoint }`, is viewable
+  in stack mode only with `asVolume`, or with `asNearbyProjection` when its
+  point lies within half a slice of the image on display, as on the legacy
+  stack viewport of 5.18.3. 6.0.0-beta.2 showed it on every image of the
+  stack, also far from its point. `setViewReference` with such a reference
+  moves a stack nowhere, as on the legacy stack viewport, so the setter and
+  `isReferenceViewable(viewRef, { withNavigation: true })` agree. To move a
+  stack to a point, give the index of the nearest image:
+
+  ```ts
+  // Before: the stack went to the image nearest to the point
+  stackViewport.setViewReference({ cameraFocalPoint: point });
+
+  // After
+  const index = utilities.getClosestStackImageIndexForPoint(
+    point,
+    stackViewport
+  );
+  stackViewport.setViewReference({ sliceIndex: index });
+  ```
+
+  `navigatePlanarViewportToPoint` of the tools does this for a stack, and
+  `ReferenceCursors` uses it; `jumpToFocalPoint` moves only a volume view.
+
+- **A stack takes a slice index only of its own display set.** In stack
+  mode `setViewReference({ displaySetId: 'other', sliceIndex: 3 })` moves
+  nothing, where 6.0.0-beta.2 went to image 3; a slice index past the last
+  image or between two images moves nothing either. A slice index with no
+  display set, or with the display set of the stack, goes to that image.
+- **The referenced image of a volume view is the image of the slice on
+  display.** `getViewReference()` in volume mode names the image of the slice
+  whose centre is its `cameraFocalPoint`, where 6.0.0-beta.2 looked from the
+  point of the view state and named none when that point lay half a slice
+  between two images. A slice that lies on no image, as a slice of an
+  oblique view, names none.
 - **A volume goes where the legacy volume went for a part of a reference.**
   In volume mode, `setViewReference` uses a `sliceIndex` only with the
   `volumeId` of the volume and a `viewPlaneNormal`; a slice index without
@@ -1900,7 +2049,10 @@ const inAcquisitionPlane = viewport.isInAcquisitionPlane();
 A stack is always in its acquisition plane. A volume is when the view plane
 normal is the scan axis of the source volume, by
 `utilities.isAcquisitionPlaneNormal`: an axial view of an axial series is, a
-sagittal reformat or an oblique plane of it is not. With nothing mounted the
+sagittal reformat or an oblique plane of it is not. The same rule (a tilt
+that moves the plane by less than half a slice across the image) decides
+which standard orientation shows the acquired images, see
+[A series tilted less than half a slice](#a-series-tilted-less-than-half-a-slice). With nothing mounted the
 answer is false. `utilities.isInAcquisitionPlane(viewport)` stays: it calls
 the member of a planar viewport, gives true for a video and a whole slide
 viewport, and false for a 3D viewport, which has no plane of its own, and for

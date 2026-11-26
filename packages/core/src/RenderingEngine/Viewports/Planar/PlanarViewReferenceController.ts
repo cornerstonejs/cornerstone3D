@@ -40,6 +40,7 @@ import {
   getPlanarViewReferenceId,
   hasNonFiniteViewReferenceGeometry,
   isPlanarPlaneViewable,
+  namesOnlyFrameOfReferencePlaneOrPoints,
 } from './planarViewReference';
 import { resolvePlanarViewportView } from './PlanarResolvedView';
 import type { PlanarDataBinding } from './PlanarMountedData';
@@ -696,6 +697,16 @@ class PlanarViewReferenceController {
    * stack takes it with navigation (`isViewReferenceViewable`), as a volume
    * that it shows as an overlay, and then to the image at its focal point.
    * The legacy stack viewport went to the image at the slice index.
+   *
+   * A slice index counts only when the reference names no display set or the
+   * display set of the stack (as `isSliceIndexOfContext` reads it), and only
+   * for an image of the stack: a slice index of another display set, past
+   * the last image or between two images moves nothing. A reference of a
+   * display set that the viewport does not show, or one that names only a
+   * frame of reference, a plane or points
+   * (`namesOnlyFrameOfReferencePlaneOrPoints`), moves nothing either: the
+   * stack does not take it with navigation, so `setViewReference` and
+   * `isReferenceViewable(ref, { withNavigation: true })` agree.
    */
   private applyImageViewReference(
     referenceContext: PlanarReferenceContext,
@@ -726,9 +737,34 @@ class PlanarViewReferenceController {
       return false;
     }
 
-    if (typeof viewRef.sliceIndex === 'number' && !viewRef.volumeId) {
+    if (
+      !viewRef.volumeId &&
+      viewRef.displaySetId &&
+      !this.getPlanarReferenceContextByDisplaySetId(viewRef.displaySetId)
+    ) {
+      return false;
+    }
+
+    if (
+      typeof viewRef.sliceIndex === 'number' &&
+      !viewRef.volumeId &&
+      (!viewRef.displaySetId ||
+        viewRef.displaySetId === referenceContext.displaySetId)
+    ) {
+      if (
+        !Number.isInteger(viewRef.sliceIndex) ||
+        viewRef.sliceIndex < 0 ||
+        viewRef.sliceIndex >= imageIds.length
+      ) {
+        return false;
+      }
+
       this.host.setImageIdIndex(viewRef.sliceIndex);
       return true;
+    }
+
+    if (namesOnlyFrameOfReferencePlaneOrPoints(viewRef)) {
+      return false;
     }
 
     const closestFrameIndex = this.findClosestFrameIndexOfFocalPoint(

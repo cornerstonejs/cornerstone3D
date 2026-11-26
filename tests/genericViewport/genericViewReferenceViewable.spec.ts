@@ -121,7 +121,7 @@ test('reports viewport view reference compatibility as JSON', async ({
     badDisplaySetIdNavigation: true,
     badFrameOfReferenceNavigation: false,
     displaySetIdOnlyStrict: true,
-    forOnlyStrict: true,
+    forOnlyStrict: false,
     fullNavigation: true,
     fullStrict: false,
     imageNavigation: true,

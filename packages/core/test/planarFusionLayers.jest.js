@@ -12,13 +12,15 @@ const { OrientationAxis } = Enums;
  * 8 by 4 voxels of 1 by 1 by 3 mm), each with its volume id as actor UID, and
  * then `removeVolumeActors(['volume-b'])`: the actor of volume-a only, the
  * image data and the focal point of volume-a. Its `hasVolumeId('volume-b')`
- * still answered true there; a next viewport answers false.
+ * still answered true there; a next viewport answers false. The focal point
+ * is one slice lower than the legacy z = 5: a view opens on the middle slice
+ * in view order, index 5 of 10 against the k axis, which is k = 4.
  */
 const LEGACY_FUSION_AFTER_REMOVAL = {
   actorReferencedIds: ['volume-a'],
   volumeId: 'volume-a',
   dimensions: [8, 8, 10],
-  focalPoint: [3.5, 3.5, 5],
+  focalPoint: [3.5, 3.5, 4],
 };
 
 function setSize(element, width, height) {

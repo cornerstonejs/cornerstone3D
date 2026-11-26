@@ -1,10 +1,14 @@
 import { vec3 } from 'gl-matrix';
 import type { ActorSliceRange, Point3 } from '../types';
+import { getGridSliceProjection, getSliceGrid } from './volumeSliceGrid';
 
 /**
  * Given a number of frames, `deltaFrames`,
  * move the `focalPoint` and camera `position` so that it moves forward/backwards
  * `deltaFrames` in the camera's normal direction, and snaps to the nearest frame.
+ * The frames are the slice grid of the range (`utilities/volumeSliceGrid`):
+ * `round(range / spacing) + 1` frames centred on the range, so for a range that
+ * is not a whole number of steps the first frame is not at `min`.
  *
  * @param focalPoint - The focal point to move.
  * @param position - The camera position to move.
@@ -49,8 +53,8 @@ export default function snapFocalPointToSlice(
   // undefined spacing, which produce the same NaN by a different route. It is needed
   // in its own right, since `steps` is NaN when spacing is and `NaN <= 0` is false.
   //
-  // countPlanarVolumeScrollSteps and getPlanarVolumeSliceNavigationState guard the
-  // same degenerate range; all three agree on what "can't scroll" means.
+  // countPlanarVolumeScrollSteps and getSliceGrid guard the same degenerate
+  // range; all three agree on what "can't scroll" means.
   if (steps <= 0 || max - min === 0 || !(spacingInNormalDirection > 0)) {
     return {
       newFocalPoint: [...focalPoint] as Point3,
@@ -58,50 +62,27 @@ export default function snapFocalPointToSlice(
     };
   }
 
-  // Get the current offset off the camera position so we can add it on at the end.
-  const posDiffFromFocalPoint = vec3.create();
-
-  vec3.sub(posDiffFromFocalPoint, position as vec3, focalPoint as vec3);
-
-  // Find out current frameIndex
-  const fraction = (current - min) / (max - min);
-  const floatingStepNumber = fraction * steps;
-  let frameIndex = Math.round(floatingStepNumber);
-
-  // Dolly the focal point back to min slice focal point.
-  let newFocalPoint = [
-    focalPoint[0] -
-      viewPlaneNormal[0] * floatingStepNumber * spacingInNormalDirection,
-    focalPoint[1] -
-      viewPlaneNormal[1] * floatingStepNumber * spacingInNormalDirection,
-    focalPoint[2] -
-      viewPlaneNormal[2] * floatingStepNumber * spacingInNormalDirection,
-  ] as Point3;
-
-  // Increment the slice number by deltaFrames.
-  frameIndex += deltaFrames;
-
-  // Clamp sliceNumber to volume.
-  if (frameIndex > steps) {
-    frameIndex = steps;
-  } else if (frameIndex < 0) {
-    frameIndex = 0;
-  }
-
-  // Dolly the focal towards to the correct frame focal point.
-  const newSlicePosFromMin = frameIndex * spacingInNormalDirection;
-
-  newFocalPoint = [
-    newFocalPoint[0] + viewPlaneNormal[0] * newSlicePosFromMin,
-    newFocalPoint[1] + viewPlaneNormal[1] * newSlicePosFromMin,
-    newFocalPoint[2] + viewPlaneNormal[2] * newSlicePosFromMin,
-  ] as Point3;
-
-  const newPosition = [
-    newFocalPoint[0] + posDiffFromFocalPoint[0],
-    newFocalPoint[1] + posDiffFromFocalPoint[1],
-    newFocalPoint[2] + posDiffFromFocalPoint[2],
-  ] as Point3;
+  const posDiffFromFocalPoint = vec3.sub(
+    vec3.create(),
+    position as vec3,
+    focalPoint as vec3
+  );
+  const grid = getSliceGrid(min, max, spacingInNormalDirection);
+  const frameIndex = Math.min(
+    Math.max(
+      Math.round((current - grid.start) / spacingInNormalDirection) +
+        deltaFrames,
+      0
+    ),
+    grid.maxSliceIndex
+  );
+  const offset = getGridSliceProjection(grid, frameIndex) - current;
+  const newFocalPoint = [0, 1, 2].map(
+    (axis) => focalPoint[axis] + viewPlaneNormal[axis] * offset
+  ) as Point3;
+  const newPosition = [0, 1, 2].map(
+    (axis) => newFocalPoint[axis] + posDiffFromFocalPoint[axis]
+  ) as Point3;
 
   return { newFocalPoint, newPosition };
 }

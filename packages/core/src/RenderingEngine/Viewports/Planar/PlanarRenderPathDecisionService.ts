@@ -34,11 +34,12 @@ import { getRenderingCapabilities } from '../../../utilities/renderingCapabiliti
 import type { RenderingCapabilities } from '../../../utilities/renderingCapabilities';
 import { getSlabSampleOffsets } from '../../../utilities/sampleVolumeSlice';
 import { getExactSliceAxis } from '../../../utilities/volumeSliceGeometry';
+import { isAcquisitionPlaneNormal } from '../../../utilities/isAcquisitionPlaneNormal';
 import { getOrientationFromScanAxisNormal } from '../../helpers/getCameraVectors';
 import { resolveSlabThickness } from './planarVolumeSliceBlendMode';
 import { isSegmentationOverlayData } from '../renderingFidelity';
 import type { BindingRole } from '../ViewportArchitectureTypes';
-import type { IImageVolume, Point3 } from '../../../types';
+import type { IImageVolume, Mat3, Point3 } from '../../../types';
 import type {
   PlanarViewState,
   PlanarEffectiveRenderMode,
@@ -714,18 +715,22 @@ export function selectPlanarRenderPath(
 }
 
 /**
- * The axis (axial, sagittal or coronal) that stands for the acquisition plane
- * of the images, or undefined when none does.
+ * The standard orientation (axial, sagittal or coronal) that the acquired
+ * frames show, or undefined when none does.
  *
- * With `exact`, an axis stands for the acquisition only when its plane is a
- * slice of the acquisition (`getExactSliceAxis`), so that a straight cut stays
- * a plain copy, while a tilted series keeps the true axis apart, as the legacy
- * volume viewport shows it. Without it, the closest axis stands for the
- * acquisition, which suits images that cannot be reformatted.
+ * With `canReformat` (images that can be a volume), the frames show a
+ * standard orientation only when `isAcquisitionPlaneNormal` accepts its view
+ * plane normal for the frame geometry of `imagePlaneModule`: a tilt that
+ * moves the plane by less than half a slice across the frame. An oblique
+ * series (for example a sagittal MR with a 13 degree tilt) gets undefined, so
+ * a request for that standard orientation reformats to the true axes, as the
+ * legacy volume viewport did. Without it, the closest axis stands for the
+ * acquisition, so an oblique stack that cannot be a volume stays on the image
+ * path.
  */
 export function getPlanarAcquisitionOrientation(
   imageIds: string[],
-  exact = false
+  canReformat = false
 ): PlanarViewState['orientation'] | undefined {
   const imageId = imageIds[0];
 
@@ -768,14 +773,31 @@ export function getPlanarAcquisitionOrientation(
     return;
   }
 
+  if (!canReformat) {
+    return orientation;
+  }
+
+  const {
+    rows = 1,
+    columns = 1,
+    rowPixelSpacing = 1,
+    columnPixelSpacing = 1,
+  } = imagePlaneModule;
+  const sliceSpacing =
+    imagePlaneModule.spacingBetweenSlices ||
+    imagePlaneModule.sliceThickness ||
+    1;
+  const frameGeometry = {
+    direction: getImageDirection(imageOrientationPatient) as unknown as Mat3,
+    dimensions: [columns, rows, 1] as Point3,
+    spacing: [columnPixelSpacing, rowPixelSpacing, sliceSpacing] as Point3,
+  };
+
   if (
-    exact &&
-    getExactSliceAxis(
-      {
-        direction: getImageDirection(imageOrientationPatient),
-      } as unknown as IImageVolume,
+    !isAcquisitionPlaneNormal(
+      frameGeometry,
       MPR_CAMERA_VALUES[orientation].viewPlaneNormal
-    ) !== 2
+    )
   ) {
     return;
   }

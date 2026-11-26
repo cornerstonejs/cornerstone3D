@@ -17,9 +17,23 @@ const OBLIQUE = {
 /**
  * What `MIPJumpToClickTool` did on the legacy volume viewports for a click
  * at the world point 14, 9.5, 6 of a sagittal viewport: the slice index of
- * its axial target, and the focal point of the target along z.
+ * its axial target, and the focal point of the target along z. The volume of
+ * the tests is 11 mm deep and the line of sight keeps 10 mm from each bound
+ * of the volume, so the tool finds no point and the target does not move, on
+ * the legacy viewport as on a next one: the target keeps the slice it opened
+ * on. The legacy viewport opened on index 5 (z = 6), the middle in volume
+ * order; a next viewport opens on the middle in view order, index 6 (z = 5).
  */
-const LEGACY_MIP_JUMP_TARGET = { sliceIndex: 5, focalPointZ: 6 };
+const LEGACY_MIP_JUMP_TARGET = { sliceIndex: 6, focalPointZ: 5 };
+
+/**
+ * The index of the slice that `getCurrentVolumeViewportSlice` of the legacy
+ * volume viewport read in `LEGACY_SLICES`: `scroll(2)` from the slice it
+ * opened on, the middle in volume order. A next viewport opens on the middle
+ * in view order, one slice further in the axial and the coronal view, whose
+ * normals point against k and j, so the tests go to these indices.
+ */
+const LEGACY_SLICE_INDEX = { axial: 7, sagittal: 17, coronal: 21 };
 
 /**
  * What `getCurrentVolumeViewportSlice` gave for the legacy volume viewport
@@ -404,7 +418,7 @@ describe('Direct next planar viewport against the legacy viewports -- ', () => {
         const volumeId = await createVolume();
         const next = await showVolume(renderingEngine, orientation, [volumeId]);
 
-        await next.scroll(2);
+        await next.setImageIdIndex(LEGACY_SLICE_INDEX[name]);
         await renderAndWait(next);
 
         const legacySlice = LEGACY_SLICES[name];
@@ -428,27 +442,59 @@ describe('Direct next planar viewport against the legacy viewports -- ', () => {
   });
 
   describe('the clipping planes of each slice', () => {
-    VOLUME_ORIENTATIONS.forEach(([name, orientation]) => {
-      it(`give the legacy plane of each slice in the ${name} view, within 1e-3 mm, 5e-3 mm when oblique`, async function () {
-        const volumeId = await createVolume();
-        const next = await showVolume(renderingEngine, orientation, [volumeId]);
-        const precision = typeof orientation === 'object' ? 2 : 3;
-        const legacyPlanes = legacySlicePlanes(name);
-        const nextPlanes = utilities.getSlicesClippingPlanes(next);
+    VOLUME_ORIENTATIONS.filter(([name]) => name !== 'oblique').forEach(
+      ([name, orientation]) => {
+        it(`give the legacy plane of each slice in the ${name} view, within 1e-3 mm, 5e-3 mm when oblique`, async function () {
+          const volumeId = await createVolume();
+          const next = await showVolume(renderingEngine, orientation, [
+            volumeId,
+          ]);
+          const precision = typeof orientation === 'object' ? 2 : 3;
+          const legacyPlanes = legacySlicePlanes(name);
+          const nextPlanes = utilities.getSlicesClippingPlanes(next);
 
-        expect(legacyPlanes.length).toBeGreaterThan(0);
-        expect(nextPlanes.length).toBe(legacyPlanes.length);
-        nextPlanes.forEach(({ sliceIndex, planes }, index) => {
-          expect(sliceIndex).toBe(legacyPlanes[index].sliceIndex);
-          expect(planes.length).toBe(2);
-          planes.forEach((plane, planeIndex) => {
-            const legacyPlane = legacyPlanes[index].planes[planeIndex];
+          expect(legacyPlanes.length).toBeGreaterThan(0);
+          expect(nextPlanes.length).toBe(legacyPlanes.length);
+          nextPlanes.forEach(({ sliceIndex, planes }, index) => {
+            expect(sliceIndex).toBe(legacyPlanes[index].sliceIndex);
+            expect(planes.length).toBe(2);
+            planes.forEach((plane, planeIndex) => {
+              const legacyPlane = legacyPlanes[index].planes[planeIndex];
 
-            expectPointsClose(plane.normal, legacyPlane.normal);
-            expectPointsClose(plane.origin, legacyPlane.origin, precision);
+              expectPointsClose(plane.normal, legacyPlane.normal);
+              expectPointsClose(plane.origin, legacyPlane.origin, precision);
+            });
           });
         });
+      }
+    );
+
+    it('give the plane of each slice of the slice grid in the oblique view, one voxel thickness apart, fewer than the legacy ones, the current one nearest to the view', async function () {
+      const volumeId = await createVolume();
+      const next = await showVolume(renderingEngine, OBLIQUE, [volumeId]);
+      const normal = OBLIQUE.viewPlaneNormal;
+      const nextPlanes = utilities.getSlicesClippingPlanes(next);
+      const depths = nextPlanes.map(({ planes }) =>
+        dot(planes[0].origin, normal)
+      );
+      const current = next.getCurrentImageIdIndex();
+
+      expect(nextPlanes.length).toBe(next.getNumberOfSlices());
+      expect(nextPlanes.length).toBeLessThan(
+        LEGACY_SLICE_PLANES.oblique.slices
+      );
+      nextPlanes.forEach(({ sliceIndex, planes }, index) => {
+        expect(sliceIndex).toBe(index);
+        expectPointsClose(planes[0].normal, normal);
+        if (index > 0) {
+          expect(depths[index] - depths[index - 1]).toBeCloseTo(Math.SQRT2, 3);
+        }
       });
+      expect(
+        Math.abs(
+          depths[current] + 0.05 - dot(nextCamera(next).focalPoint, normal)
+        )
+      ).toBeLessThanOrEqual(Math.SQRT2 / 2);
     });
 
     it('let a surface be cut into the contours of each slice as on a legacy viewport', async function () {

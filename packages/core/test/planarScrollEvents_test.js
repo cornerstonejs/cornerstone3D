@@ -436,7 +436,7 @@ describe('SCROLL_OUT_OF_BOUNDS of a planar viewport -- ', () => {
       scrollSlabs: true,
     });
 
-    expect(sliceIndices).toEqual([3, 6, 8, 11, 11]);
+    expect(sliceIndices).toEqual([3, 6, 9, 11, 11]);
     expect(forward.slice(0, 4)).toEqual([[], [], [], []]);
     expect(forward[4]).toEqual([
       {

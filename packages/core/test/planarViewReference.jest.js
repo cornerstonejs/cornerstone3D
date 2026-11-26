@@ -82,6 +82,14 @@ function createImageVolume({
       getExtent: () => [0, columns - 1, 0, rows - 1, 0, numSlices - 1],
       extentToBounds: (extent) => extent,
       indexToWorld: ([i, j, k]) => [i, j, k],
+      getSpatialExtent: () => [
+        -0.5,
+        columns - 0.5,
+        -0.5,
+        rows - 0.5,
+        -0.5,
+        numSlices - 0.5,
+      ],
     },
   };
 }
@@ -541,6 +549,47 @@ describe('planarViewReference', () => {
         expectedAxialFocalZ(5, 4),
         5
       );
+    });
+
+    it('names the image of the slice on display for a point between two slices', () => {
+      const volume = createImageVolume({ volumeId: 'vol-a', numSlices: 5 });
+      const viewRef = getPlanarViewReference({
+        viewState: {
+          orientation: OrientationAxis.AXIAL,
+          slice: { kind: 'volumePoint', sliceWorldPoint: [1.5, 1.5, 2.5] },
+        },
+        frameOfReferenceUID: VOLUME_FOR,
+        data: createVolumeData(volume),
+        rendering: createVolumeRendering(volume, 2),
+        renderContext,
+      });
+
+      expect(viewRef.sliceIndex).toBe(2);
+      expect(viewRef.cameraFocalPoint[2]).toBeCloseTo(
+        expectedAxialFocalZ(5, 2),
+        5
+      );
+      expect(viewRef.referencedImageId).toBe(volume.imageIds[2]);
+    });
+
+    it('names no image for an oblique slice, which lies on no image', () => {
+      const volume = createImageVolume({ volumeId: 'vol-a', numSlices: 5 });
+      const viewRef = getPlanarViewReference({
+        viewState: {
+          orientation: {
+            viewPlaneNormal: [0, 0.6, -0.8],
+            viewUp: [0, -0.8, -0.6],
+          },
+          slice: { kind: 'stackIndex', imageIdIndex: 2 },
+        },
+        frameOfReferenceUID: VOLUME_FOR,
+        data: createVolumeData(volume),
+        rendering: createVolumeRendering(volume, 2),
+        renderContext,
+      });
+
+      expect(viewRef.sliceIndex).toBe(2);
+      expect(viewRef.referencedImageId).toBeUndefined();
     });
 
     it('omits volumeId when forFrameOfReference is explicitly true', () => {
