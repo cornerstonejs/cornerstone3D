@@ -121,7 +121,7 @@ const STEPS = [
   {
     id: 'calibrate',
     title: '7. Run a calibration',
-    how: 'Needs a failure first (step 4 or 6), and no countdown in the popup. Press it and confirm: the GPU fails again, and the result shows here. The images can stay black afterwards; that is expected. If the tab stopped, reload it.',
+    how: 'Runs only after a real failure in step 6, and with no countdown in the popup; otherwise it says it was skipped. Press it and confirm: the GPU fails again, and the result shows here. The images can stay black afterwards; that is expected. If the tab stopped, reload it.',
   },
 ] as const;
 
@@ -1003,12 +1003,28 @@ async function stepAllocate(): Promise<void> {
     setResult(
       'allocate',
       'info',
-      'no failure was reported: the run was cancelled, reached 32 GB, or stopped early (see the log)'
+      'no failure was reported: the run was cancelled, reached 32 GB, or stopped early (see the log). With no real failure, step 7 is skipped; reload the page to drop the temporary 64 GB limit of the run.'
     );
   }
 }
 
 async function stepCalibrate(): Promise<void> {
+  /**
+   * A calibration starts at 90 % of the failed size, and adds 10 % of that at
+   * each step. After the forced failure of step 4 (some 300 MB) on a GPU that
+   * does not fail, it would climb in steps of some 30 MB for a very long time,
+   * so it needs a real failure from step 6.
+   */
+  if (readResults().allocate?.status !== 'pass') {
+    setResult(
+      'calibrate',
+      'info',
+      'skipped: a calibration needs a real GPU failure from step 6, and step 6 found none on this device. This is expected where the GPU shares the system memory, such as a Mac with Apple silicon.'
+    );
+
+    return;
+  }
+
   if (!canRunGpuMemoryCalibration()) {
     setResult(
       'calibrate',
