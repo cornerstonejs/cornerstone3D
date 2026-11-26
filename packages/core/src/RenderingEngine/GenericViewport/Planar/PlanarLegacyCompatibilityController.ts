@@ -61,7 +61,10 @@ export type PlanarLegacyCompatibilityHost = {
   getDefaultVOIRange(
     dataId: string
   ): { lower: number; upper: number } | undefined;
-  getVOILUTState(dataId: string): { VOILUTFunction: VOILUTFunctionType };
+  getVOILUTState(dataId: string): {
+    VOILUTFunction: VOILUTFunctionType;
+    voiLUTSequenceApplied: boolean;
+  };
   getImageCount(): number;
   getMaxImageIdIndex(): number;
 };
@@ -727,7 +730,7 @@ class PlanarLegacyCompatibilityController {
       viewportId: this.host.getViewportId(),
       volumeId: requestedVolumeId || this.resolveVolumeIdForDataId(dataId),
       range,
-      VOILUTFunction: properties?.VOILUTFunction,
+      ...this.host.getVOILUTState(dataId),
       invert: properties?.invert,
       invertStateChanged,
       colormap: properties?.colormap,

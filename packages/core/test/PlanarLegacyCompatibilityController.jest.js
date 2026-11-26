@@ -51,7 +51,10 @@ function createHost(overrides = {}) {
     findDataIdByVolumeId: jest.fn(() => undefined),
     getBindingActor: jest.fn(() => undefined),
     getDefaultVOIRange: jest.fn(() => undefined),
-    getVOILUTState: jest.fn(() => ({ VOILUTFunction: 'LINEAR' })),
+    getVOILUTState: jest.fn(() => ({
+      VOILUTFunction: 'LINEAR',
+      voiLUTSequenceApplied: false,
+    })),
     getImageCount: jest.fn(() => 0),
     getMaxImageIdIndex: jest.fn(() => -1),
     ...overrides,
@@ -307,8 +310,13 @@ describe('PlanarLegacyCompatibilityController', () => {
     });
 
     it('emits VOI_MODIFIED when voiRange is set and not suppressed', () => {
+      // The event gives the VOI LUT state in effect, as the native event does.
       const { host, element } = createHost({
         getActiveDataId: jest.fn(() => 'data-1'),
+        getVOILUTState: jest.fn(() => ({
+          VOILUTFunction: 'LINEAR_EXACT',
+          voiLUTSequenceApplied: true,
+        })),
       });
       const controller = new PlanarLegacyCompatibilityController(host);
       const listener = jest.fn();
@@ -323,6 +331,7 @@ describe('PlanarLegacyCompatibilityController', () => {
         viewportId: 'vp-1',
         range: { lower: 10, upper: 20 },
         VOILUTFunction: 'LINEAR_EXACT',
+        voiLUTSequenceApplied: true,
         invertStateChanged: false,
       });
     });
