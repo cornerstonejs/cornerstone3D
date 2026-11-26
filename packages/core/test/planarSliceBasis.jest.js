@@ -394,8 +394,8 @@ describe('createPlanarImageSliceBasis (stack image basis)', () => {
 });
 
 describe('createPlanarVolumeSliceBasis (volume slice basis)', () => {
-  // Legacy middle slice in view order: getImageSliceDataForVolumeViewport
-  // gives floor(0.5 * N) at the centre, and the OHIF 'middle' preset gives the same.
+  // The middle slice in view order, floor(N / 2): the legacy resetCamera
+  // (getVolumeCenterIJK) and the OHIF 'middle' preset open on the same slice.
   it.each([
     // [orientation, slice count, world axis of the normal, slice centre on that axis]
     [OrientationAxis.AXIAL, 6, 2, 304],

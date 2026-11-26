@@ -373,7 +373,7 @@ addToggleButtonToToolbar({
 addToggleButtonToToolbar({
   id: 'sliceStepMeasure',
   title: 'Slice step: voxel width (L1)',
-  defaultToggle: false,
+  defaultToggle: true,
   onClick: (toggle) => {
     const configuration = getConfiguration();
 

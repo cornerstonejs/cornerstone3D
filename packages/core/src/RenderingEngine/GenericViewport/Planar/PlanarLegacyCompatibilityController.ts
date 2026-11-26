@@ -643,11 +643,10 @@ class PlanarLegacyCompatibilityController {
       );
     }
 
-    // Match legacy VolumeViewport startup behavior: resetCamera positions
-    // the focal point at the center of the volume snapped to the nearest
-    // integer voxel center along the slice axis. For even slice counts this
-    // leans up (Math.floor(d / 2)), matching getVolumeCenterIJK in Viewport.ts.
-    return Math.floor(imageCount / 2);
+    // This index counts the imageId list (IJK order), and the acquisition
+    // normal is the negated scan axis. IJK floor((N - 1) / 2) is the view index
+    // floor(N / 2), the middle slice of getVolumeCenterIJK and the planar default.
+    return Math.max(0, Math.floor((imageCount - 1) / 2));
   }
 
   private getBlendModeTargetDataIds(filterActorUIDs: string[]): string[] {

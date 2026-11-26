@@ -21,9 +21,11 @@ import { InterpolationType, OrientationAxis } from '../../../enums';
 import type { IImage, IImageVolume, Point3 } from '../../../types';
 import { getImageDataMetadata } from '../../../utilities/getImageDataMetadata';
 import { getCubeSizeInView } from '../../../utilities/getPlaneCubeIntersectionDimensions';
-import getSpacingInNormalDirection from '../../../utilities/getSpacingInNormalDirection';
-import getVoxelThicknessAlongNormal from '../../../utilities/voxelSlab/getVoxelThicknessAlongNormal';
-import { getConfiguration } from '../../../init';
+import getVolumeSliceGrid, {
+  getInitialSliceGridIndex,
+  getSliceGridIndex,
+  getSliceStep,
+} from '../../../utilities/getVolumeSliceGrid';
 import { getVolumeCenterIJK } from '../../Viewport';
 import {
   getCpuEquivalentParallelScale,
@@ -282,11 +284,9 @@ function buildImageVolumeCorners(imageVolume: IImageVolume): Point3[] {
  * of the voxel-center index domain. Falls back to averaging the bounding-box
  * corners if vtkImageData is unavailable.
  *
- * When `viewPlaneNormal` is supplied, the slice-direction axis is snapped to
- * `Math.floor(d / 2)` via `getVolumeCenterIJK`, matching legacy resetCamera
- * behavior. Without this snap, even-dimensioned slice axes (e.g. 512) land on
- * `(d - 1) / 2 = 255.5` and the VTK reslice mapper rounds the focal point to
- * the adjacent voxel, producing a one-slice offset on initial render.
+ * When `viewPlaneNormal` is supplied, the point comes from `getVolumeCenterIJK`,
+ * as the legacy resetCamera. Only its in-plane position matters here:
+ * `buildPlanarVolumeSliceBasis` replaces its depth with the slice grid depth.
  */
 function getGeometricImageVolumeCenter(
   imageVolume: IImageVolume,
@@ -370,12 +370,10 @@ export function getVolumeImageIdIndexWorldPoint(
 }
 
 /**
- * Computes the min/max projections of a volume's corners onto the
- * viewPlaneNormal, along with the spacing between adjacent slices and
- * the maximum valid slice index.
- *
- * These metrics are used by `createPlanarVolumeSliceBasis` to position
- * the sliceCenterWorld at the correct depth for a given imageIdIndex.
+ * Computes the slice grid of a volume along the viewPlaneNormal: the min/max
+ * projections of the corner voxel centres, the step between adjacent slices,
+ * the depth of slice 0 (`start`), and the maximum valid slice index. The grid
+ * is the one that the legacy volume viewport uses (see getVolumeSliceGrid).
  */
 function getSliceMetrics(args: {
   imageVolume: IImageVolume;
@@ -383,88 +381,24 @@ function getSliceMetrics(args: {
 }) {
   const { imageVolume, viewPlaneNormal } = args;
   const corners = buildImageVolumeCorners(imageVolume);
-
-  // See Cornerstone3DConfig.rendering.sliceStepMeasure.
-  const measure =
-    getConfiguration().rendering?.sliceStepMeasure === 'l1'
-      ? getVoxelThicknessAlongNormal
-      : getSpacingInNormalDirection;
-
   const spacingInNormalDirection = Math.max(
-    measure(imageVolume, viewPlaneNormal),
+    getSliceStep(imageVolume, viewPlaneNormal),
     MIN_SLICE_SPACING
   );
-
-  if (!corners.length) {
-    return {
-      min: 0,
-      max: 0,
-      spacingInNormalDirection,
-      maxImageIdIndex: 0,
-    };
-  }
-
   const projectedValues = corners.map((corner) =>
     vec3.dot(corner as unknown as vec3, viewPlaneNormal as unknown as vec3)
   );
-  const min = Math.min(...projectedValues);
-  const max = Math.max(...projectedValues);
-  const maxImageIdIndex = Math.max(
-    0,
-    Math.round((max - min) / spacingInNormalDirection)
-  );
+  const min = corners.length ? Math.min(...projectedValues) : 0;
+  const max = corners.length ? Math.max(...projectedValues) : 0;
+  const grid = getVolumeSliceGrid(min, max, spacingInNormalDirection);
 
   return {
     min,
     max,
+    grid,
     spacingInNormalDirection,
-    maxImageIdIndex,
+    maxImageIdIndex: grid.maxIndex,
   };
-}
-
-/**
- * Clamps an imageIdIndex to [0, maxImageIdIndex]. If the index is undefined,
- * derives the centered slice index using the same projection math as the
- * legacy volume viewport scroll utilities.
- */
-function resolveCenteredImageIdIndex(args: {
-  centerProjection: number;
-  min: number;
-  max: number;
-  maxImageIdIndex: number;
-}): number {
-  const { centerProjection, min, max, maxImageIdIndex } = args;
-  const range = max - min;
-
-  if (!(range > 0) || maxImageIdIndex === 0) {
-    return 0;
-  }
-
-  const fraction = (centerProjection - min) / range;
-  const floatingImageIdIndex = fraction * maxImageIdIndex;
-
-  return Math.round(floatingImageIdIndex);
-}
-
-function clampImageIdIndex(args: {
-  imageIdIndex: number | undefined;
-  centerProjection: number;
-  min: number;
-  max: number;
-  maxImageIdIndex: number;
-}): number {
-  const { centerProjection, imageIdIndex, max, maxImageIdIndex, min } = args;
-
-  if (typeof imageIdIndex !== 'number') {
-    return resolveCenteredImageIdIndex({
-      centerProjection,
-      min,
-      max,
-      maxImageIdIndex,
-    });
-  }
-
-  return Math.min(Math.max(0, imageIdIndex), maxImageIdIndex);
 }
 
 export function resolvePlanarVolumeImageIdIndex(args: {
@@ -565,8 +499,11 @@ function getCpuVolumeSliceFitMetrics(args: {
  * along the normal to display.
  *
  * Slice positioning works by:
- *   1. Computing the volume's bounding box projection onto the viewPlaneNormal.
- *   2. Mapping `imageIdIndex` to a depth within [min, max] at `spacingInNormalDirection` intervals.
+ *   1. Building the slice grid of the volume along the viewPlaneNormal
+ *      (`getVolumeSliceGrid`): slice `k` is at the depth `start + k * step`.
+ *   2. Mapping `imageIdIndex` to the depth of its slice on that grid. With no
+ *      index and no `volumePoint`, the index is `floor((maxImageIdIndex + 1) / 2)`
+ *      in view order.
  *   3. Offsetting the volume center along the normal to reach that depth.
  *
  * @param args.canvasWidth - Current canvas width in CSS pixels.
@@ -624,7 +561,7 @@ function buildPlanarVolumeSliceBasis(args: {
 
   const viewPlaneNormal = normalizePoint3(cameraValues.viewPlaneNormal);
   const viewUp = normalizePoint3(cameraValues.viewUp);
-  const { max, maxImageIdIndex, min, spacingInNormalDirection } =
+  const { grid, max, maxImageIdIndex, min, spacingInNormalDirection } =
     getSliceMetrics({
       imageVolume,
       viewPlaneNormal,
@@ -637,36 +574,32 @@ function buildPlanarVolumeSliceBasis(args: {
     viewState?.slice?.kind === 'volumePoint'
       ? viewState.slice.sliceWorldPoint
       : undefined;
-  // No requested slice: the legacy middle slice, counted in view order.
-  const imageIdIndex =
-    args.imageIdIndex ??
-    (volumePoint ? undefined : Math.floor((maxImageIdIndex + 1) / 2));
-  const requestedSliceProjection = Math.min(
-    max,
-    Math.max(
-      min,
-      volumePoint
-        ? vec3.dot(
-            volumePoint as unknown as vec3,
-            viewPlaneNormal as unknown as vec3
-          )
-        : centerProjection
-    )
-  );
-  const currentImageIdIndex = clampImageIdIndex({
-    imageIdIndex,
-    centerProjection: requestedSliceProjection,
-    min,
-    max,
-    maxImageIdIndex,
-  });
+  let currentImageIdIndex: number;
+  let targetProjection: number;
 
-  // Project volume center onto the viewing direction to compute the
-  // scalar offset needed to reach the target slice depth.
-  const targetProjection =
-    typeof imageIdIndex === 'number'
-      ? Math.min(max, min + currentImageIdIndex * spacingInNormalDirection)
-      : requestedSliceProjection;
+  if (volumePoint && args.imageIdIndex === undefined) {
+    // A volumePoint keeps its own depth, clamped to the end slices (VSN-I-3).
+    targetProjection = Math.min(
+      grid.start + maxImageIdIndex * grid.step,
+      Math.max(
+        grid.start,
+        vec3.dot(
+          volumePoint as unknown as vec3,
+          viewPlaneNormal as unknown as vec3
+        )
+      )
+    );
+    currentImageIdIndex = getSliceGridIndex(grid, targetProjection);
+  } else {
+    // No requested slice: the middle slice in view order (VSN-I-4).
+    currentImageIdIndex = Math.min(
+      Math.max(0, args.imageIdIndex ?? getInitialSliceGridIndex(grid)),
+      maxImageIdIndex
+    );
+    targetProjection = grid.start + currentImageIdIndex * grid.step;
+  }
+
+  // Offset the volume center along the normal to the target slice depth.
   const scalarOffset = targetProjection - centerProjection;
   const sliceCenterWorld = vec3.scaleAndAdd(
     vec3.create(),
