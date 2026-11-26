@@ -370,40 +370,44 @@ class TiledRenderingEngine extends BaseRenderingEngine {
   protected _renderFlaggedViewports = () => {
     this._throwIfDestroyed();
     const renderStart = performance.now();
-
-    if (this.offscreenMultiRenderWindow) {
-      this.performVtkDrawCall();
-    }
-
     const viewports = this._getViewportsAsArray();
     const eventDetailArray = [];
     const renderedViewports: IViewport[] = [];
 
-    for (let i = 0; i < viewports.length; i++) {
-      const viewport = viewports[i];
-      if (this._needsRender.has(viewport.id)) {
-        const eventDetail =
-          this.renderViewportUsingCustomOrVtkPipeline(viewport);
+    try {
+      if (this.offscreenMultiRenderWindow) {
+        this.performVtkDrawCall();
+      }
 
-        if (!this._waitsForStorage(viewport, renderStart)) {
-          eventDetailArray.push(eventDetail);
-          renderedViewports.push(viewport);
-        }
-        viewport.setRendered();
+      for (let i = 0; i < viewports.length; i++) {
+        const viewport = viewports[i];
+        if (this._needsRender.has(viewport.id)) {
+          const eventDetail =
+            this.renderViewportUsingCustomOrVtkPipeline(viewport);
 
-        // This viewport has been rendered, we can remove it from the set
-        this._needsRender.delete(viewport.id);
+          if (!this._waitsForStorage(viewport, renderStart)) {
+            eventDetailArray.push(eventDetail);
+            renderedViewports.push(viewport);
+          }
+          viewport.setRendered();
 
-        // If there is nothing left that is flagged for rendering, stop the loop
-        if (this._needsRender.size === 0) {
-          break;
+          /** This viewport has been rendered, so it leaves the set. */
+          this._needsRender.delete(viewport.id);
+
+          /** Nothing left that is flagged for rendering stops the loop. */
+          if (this._needsRender.size === 0) {
+            break;
+          }
         }
       }
+    } finally {
+      /**
+       * Allow the next animation frame, also after a render that threw: the
+       * engine would otherwise schedule no frame again, for any viewport.
+       */
+      this._animationFrameSet = false;
+      this._animationFrameHandle = null;
     }
-
-    // allow RAF to be called again
-    this._animationFrameSet = false;
-    this._animationFrameHandle = null;
 
     eventDetailArray.forEach((eventDetail) => {
       // Very small viewports won't have an element
@@ -456,11 +460,27 @@ class TiledRenderingEngine extends BaseRenderingEngine {
       }
     }
 
-    renderWindow.render();
+    try {
+      renderWindow.render();
+    } catch (error) {
+      /**
+       * A context lost in the middle of the draw, for example during the
+       * upload of a large texture, makes vtk.js throw. That draw ends here;
+       * any other error is thrown on.
+       */
+      if (!isWebGLContextLost(offscreenMultiRenderWindow)) {
+        throw error;
+      }
 
-    // After redraw we set all renderers to not render until necessary
-    for (let i = 0; i < renderers.length; i++) {
-      renderers[i].renderer.setDraw(false);
+      log.warn(
+        'a draw ended because its WebGL context was lost during it',
+        error
+      );
+    } finally {
+      /** After a draw, no renderer draws until it is needed. */
+      for (let i = 0; i < renderers.length; i++) {
+        renderers[i].renderer.setDraw(false);
+      }
     }
   }
 
