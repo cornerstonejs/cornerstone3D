@@ -485,10 +485,13 @@ let stressRunning = false;
  * Each step doubles the frames that the 3D viewport shows: 256, 512, 1024 and
  * so on, made of the frames of the loaded series, repeated. The frames go in
  * volumes of 256 frames that share one buffer in memory, so the GPU memory
- * doubles at each step and the memory of the page does not. The run stops at
- * the first failure (a lost context or an out of memory), when WebGL waits,
- * when a step allocates no texture, on a hidden page, or at 32 GB. It does
- * not start while WebGL waits.
+ * doubles at each step and the memory of the page does not. Once a doubling
+ * would pass 32 GB, each step adds a quarter instead, so a GPU that fails
+ * between the last doubling and 32 GB fails too: Windows, for one, lets a
+ * GPU use shared system memory well beyond its own. The run stops at the
+ * first failure (a lost context or an out of memory), when WebGL waits, when
+ * a step allocates no texture, on a hidden page, or at 32 GB. It does not
+ * start while WebGL waits.
  *
  * For the run, a hard limit of 64 GB applies to this page only (a
  * configuration value, not a stored limit), so the strategy reduces nothing.
@@ -579,8 +582,9 @@ export async function allocateUntilFailure({
     const chunk = stressChunk(sourceVolumeId);
     const volumeIds: string[] = [];
 
+    let target = 1;
+
     for (let step = 0; ; step++) {
-      const target = 2 ** step;
       const added: string[] = [];
 
       while (volumeIds.length < target) {
@@ -655,10 +659,16 @@ export async function allocateUntilFailure({
         `Step ${step + 1}: ${frames} frames in ${volumesText(target)}, textures ${formatBytes(texture)}, page ${formatBytes(getGpuMemoryStatus().pageBytes)}: drew`
       );
 
-      if (texture * 2 > STRESS_MAX_BYTES) {
+      /** Double while that stays under the cap, then add a quarter. */
+      const next =
+        texture * 2 <= STRESS_MAX_BYTES ? target * 2 : Math.ceil(target * 1.25);
+
+      if ((texture / target) * next > STRESS_MAX_BYTES) {
         log('Allocate until failure: 32 GB reached with no failure');
         break;
       }
+
+      target = next;
     }
   } catch (error) {
     log(`Allocate until failure: ${(error as Error).message}`);
