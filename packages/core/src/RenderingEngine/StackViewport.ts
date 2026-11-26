@@ -1007,9 +1007,11 @@ class StackViewport extends Viewport {
       voiRange = this._getVOIRangeForCurrentImage();
     }
 
-    this.setVOI(voiRange, { forceRecreateLUTFunction });
-
+    // Restore the invert first: a recreated transfer function records its nodes
+    // as the initial nodes, and must not record the inverted nodes.
     this.setInvertColor(this.initialInvert);
+
+    this.setVOI(voiRange, { forceRecreateLUTFunction });
 
     this.setInterpolationType(InterpolationType.LINEAR);
 
