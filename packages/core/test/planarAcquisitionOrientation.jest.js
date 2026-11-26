@@ -9,6 +9,16 @@ const tilt = (13 * Math.PI) / 180;
 const IOP = {
   sagittal: [0, 1, 0, 0, 0, -1],
   obliqueSagittal: [Math.sin(tilt), Math.cos(tilt), 0, 0, 0, -1],
+  // The normal stays [-1, 0, 0]; the in-plane axes turn by 13 degrees.
+  rotatedSagittal: [
+    0,
+    Math.cos(tilt),
+    -Math.sin(tilt),
+    0,
+    -Math.sin(tilt),
+    -Math.cos(tilt),
+  ],
+  mirroredSagittal: [0, -1, 0, 0, 0, -1],
 };
 
 describe('getPlanarAcquisitionOrientation', () => {
@@ -43,5 +53,14 @@ describe('getPlanarAcquisitionOrientation', () => {
     expect(
       normalizePlanarOrientation(OrientationAxis.SAGITTAL, acquisition)
     ).toBe(OrientationAxis.SAGITTAL);
+  });
+
+  it('does not equate a series with a 13 degree in-plane rotation or a mirror', () => {
+    expect(
+      getPlanarAcquisitionOrientation(['rotatedSagittal'])
+    ).toBeUndefined();
+    expect(
+      getPlanarAcquisitionOrientation(['mirroredSagittal'])
+    ).toBeUndefined();
   });
 });

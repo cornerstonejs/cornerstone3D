@@ -15,7 +15,8 @@ import { isValidVolume } from '../../../utilities/isValidVolume';
 import { getOrientationFromScanAxisNormal } from '../../helpers/getCameraVectors';
 import { MPR_CAMERA_VALUES } from '../../../constants';
 import { isAcquisitionPlaneNormal } from '../../../utilities/isAcquisitionPlaneNormal';
-import type { Mat3, Point3 } from '../../../types';
+import getAcquisitionPlaneOrientation from '../../../utilities/getAcquisitionPlaneOrientation';
+import type { IImageVolume, Mat3, Point3 } from '../../../types';
 import { resolveSlabThickness } from './planarVolumeSliceBlendMode';
 import type {
   PlanarViewState,
@@ -265,11 +266,19 @@ export function selectPlanarRenderPath(
 /**
  * The standard orientation that the acquired frames show, or undefined.
  *
- * The frames show a standard orientation only when `isAcquisitionPlaneNormal`
- * accepts the standard view plane normal for the frame geometry. An oblique
- * series (for example a sagittal MR with a 13 degree tilt) gets undefined, so
- * a request for that standard orientation reformats to the true axes, as the
- * legacy volume viewport does.
+ * The frames show a standard orientation only when the acquisition view is
+ * that orientation on the screen:
+ * - `isAcquisitionPlaneNormal` accepts the standard view plane normal for the
+ *   frame geometry (the plane moves less than half a slice across the image);
+ * - the acquisition normal and view up point the same way as the standard
+ *   ones, so the view is not mirrored or upside down;
+ * - an in-plane rotation of the frames moves the image corners by less than
+ *   half a pixel.
+ *
+ * Any other series gets undefined, for example a sagittal MR with a 13 degree
+ * tilt of its normal or of its in-plane axes. A request for the standard
+ * orientation then reformats to the true axes, as the legacy volume viewport
+ * does.
  */
 export function getPlanarAcquisitionOrientation(
   imageIds: string[]
@@ -331,11 +340,30 @@ export function getPlanarAcquisitionOrientation(
     spacing: [columnPixelSpacing, rowPixelSpacing, sliceSpacing] as Point3,
   };
 
+  const standard = MPR_CAMERA_VALUES[orientation];
+
+  if (!isAcquisitionPlaneNormal(frameGeometry, standard.viewPlaneNormal)) {
+    return;
+  }
+
+  const acquisition = getAcquisitionPlaneOrientation(
+    frameGeometry as unknown as IImageVolume
+  );
+  const upCos = vec3.dot(
+    acquisition.viewUp as unknown as vec3,
+    standard.viewUp as unknown as vec3
+  );
+  const upSin = Math.sqrt(Math.max(0, 1 - upCos * upCos));
+  const halfDiagonal =
+    Math.hypot(columns * columnPixelSpacing, rows * rowPixelSpacing) / 2;
+
   if (
-    !isAcquisitionPlaneNormal(
-      frameGeometry,
-      MPR_CAMERA_VALUES[orientation].viewPlaneNormal
-    )
+    vec3.dot(
+      acquisition.viewPlaneNormal as unknown as vec3,
+      standard.viewPlaneNormal as unknown as vec3
+    ) <= 0 ||
+    upCos <= 0 ||
+    upSin * halfDiagonal >= Math.min(columnPixelSpacing, rowPixelSpacing) / 2
   ) {
     return;
   }
