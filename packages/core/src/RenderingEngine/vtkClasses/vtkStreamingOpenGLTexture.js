@@ -22,6 +22,7 @@ import {
   removeGpuMemoryEntry,
   setGpuMemoryEntry,
 } from '../../utilities/gpuMemoryLedger';
+import allocatedTextureBytes from './allocatedTextureBytes';
 
 const DEFAULT_MAX_SLICES_PER_RENDER = 16;
 const DEFAULT_MAX_MILLISECONDS_PER_RENDER = 8;
@@ -179,13 +180,13 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
   }
 
   /**
-   * Records the upload in the GPU memory ledger, with the size that vtk.js
-   * computed for the internal format it chose (half float, norm16 or float).
+   * Records the upload in the GPU memory ledger, with the bytes of the type
+   * that vtk.js uploaded (norm16, half float or float).
    */
   function noteAllocated() {
     setGpuMemoryEntry(publicAPI, {
       kind: 'texture',
-      bytes: model.allocatedGPUMemoryInBytes || 0,
+      bytes: allocatedTextureBytes(publicAPI),
       volumeId: model.volumeId,
     });
   }

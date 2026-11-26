@@ -61,6 +61,8 @@ type LargeAllocation = {
 type PendingAllocation = LargeAllocation & {
   rendered: boolean;
   timer: ReturnType<typeof setTimeout>;
+  /** The context of the draw that started the settle. */
+  gl?: WebGL2RenderingContext;
 };
 
 let pending: PendingAllocation | null = null;
@@ -110,6 +112,19 @@ function abandonPendingAllocation(): void {
 
 function settle(): void {
   if (!pending) {
+    return;
+  }
+
+  /**
+   * A context that is lost when the settle time comes has a loss event
+   * queued: a main thread busy for the whole settle time runs the timer and
+   * the event in one turn, and the timer can come first. The allocation stays
+   * pending, so the loss event reports it as a failure. When no event comes,
+   * the allocation is abandoned, and nothing is recorded.
+   */
+  if (pending.gl?.isContextLost?.()) {
+    pending.timer = setTimeout(abandonPendingAllocation, RENDER_TIMEOUT_MS);
+
     return;
   }
 
@@ -397,5 +412,6 @@ export function noteTextureRendered(
 
   clearTimeout(pending.timer);
   pending.rendered = true;
+  pending.gl = gl;
   pending.timer = setTimeout(settle, SETTLE_MS);
 }

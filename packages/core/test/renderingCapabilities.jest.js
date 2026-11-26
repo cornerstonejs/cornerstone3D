@@ -1089,6 +1089,36 @@ describe('renderingCapabilities', () => {
       }
     });
 
+    it('reports a loss whose event comes after the settle time as a failure, not a success', () => {
+      jest.useFakeTimers();
+
+      try {
+        mockWebGL();
+        detectRenderingCapabilities();
+
+        let lost = false;
+        const gl = { isContextLost: () => lost };
+
+        allocate();
+        noteTextureRendered(gl);
+        /**
+         * The context is lost while the main thread is busy: the settle timer
+         * runs before the browser dispatches the loss event.
+         */
+        lost = true;
+        jest.advanceTimersByTime(5000);
+
+        expect(
+          getStoredRenderingCapabilities().textureBytes?.largest
+        ).toBeUndefined();
+        expect(failuresOfLoss()).toMatchObject([
+          { kind: 'contextLost', failedBytes: 512 * MEGABYTE },
+        ]);
+      } finally {
+        jest.useRealTimers();
+      }
+    });
+
     it('goes when no draw samples the texture in 30 s, and records nothing', () => {
       jest.useFakeTimers();
 

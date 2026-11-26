@@ -21,6 +21,7 @@ import {
   checkTextureOutOfMemory,
 } from '../../utilities/gpuAllocationTracker';
 import gridFitsGpuSettings from './gridFitsGpuSettings';
+import allocatedTextureBytes from './allocatedTextureBytes';
 import { gpuTextureBytesPerVoxel } from '../../utilities/gpuSettingsPresets';
 import takeBoundScalarTexture from './takeBoundScalarTexture';
 import actorsWaitingForStorage from '../helpers/actorsWaitingForStorage';
@@ -422,11 +423,10 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
           return;
         }
 
-        /** The size that vtk.js computed for the format it chose. */
+        /** The bytes of the type that vtk.js uploaded. */
         setGpuMemoryEntry(newScalarTexture, {
           kind: 'texture',
-          bytes:
-            newScalarTexture.getAllocatedGPUMemoryInBytes?.() || textureBytes,
+          bytes: allocatedTextureBytes(newScalarTexture) || textureBytes,
           volumeId,
         });
         model._openGLRenderWindow.setGraphicsResourceForObject(

@@ -33,6 +33,23 @@ jest.mock('@kitware/vtk.js/Rendering/OpenGL/Texture', () => {
           model.allocatedGPUMemoryInBytes =
             options.width * options.height * options.depth * 4;
 
+          /**
+           * vtk.js on a context with no norm16: 16-bit values upload as
+           * float, and vtk.js states 2 bytes for each, as measured in
+           * Chromium with the extension hidden.
+           */
+          if (options.dataType === 'Int16Array') {
+            Object.assign(model, {
+              width: options.width,
+              height: options.height,
+              depth: options.depth,
+              components: options.numComps,
+              openGLDataType: model.context.FLOAT,
+              allocatedGPUMemoryInBytes:
+                options.width * options.height * options.depth * 2,
+            });
+          }
+
           return true;
         };
       },
@@ -52,6 +69,7 @@ function newTexture() {
   const publicAPI = {};
   const model = {};
   const gl = {
+    FLOAT: 0x1406,
     texSubImage3D: jest.fn(),
     isContextLost: () => false,
   };
@@ -130,5 +148,28 @@ describe('a texture that moves to another context', () => {
         owner: texture,
       })
     );
+  });
+});
+
+describe('the GPU memory of a texture', () => {
+  it('books the bytes of the type that vtk.js uploaded, not the size that vtk.js states', () => {
+    const { texture } = newTexture();
+    const voxels = 256 * 256 * 16;
+
+    expect(
+      texture.create3DFromRaw({
+        width: 256,
+        height: 256,
+        depth: 16,
+        numComps: 1,
+        dataType: 'Int16Array',
+        data: null,
+      })
+    ).toBe(true);
+    /** vtk.js states 2 bytes, and the GPU holds 4 bytes of float. */
+    expect(texture.get('allocatedGPUMemoryInBytes')).toEqual({
+      allocatedGPUMemoryInBytes: voxels * 2,
+    });
+    expect(getGpuMemoryEntryBytes(texture)).toBe(voxels * 4);
   });
 });

@@ -96,10 +96,12 @@ approach appears, as long as the user requirements stay satisfied.
 ## The memory of the page
 
 - **GPULIM-I-9** The GPU memory ledger holds the bytes of each texture, canvas,
-  render buffer and context of the page. A texture uses the size that vtk.js
-  states after the allocation. A context costs an estimate of 32 MB, a canvas
-  4 bytes for each pixel, and a render buffer 8 bytes for each pixel. Only the
-  context pool rendering engine books the canvases and the render buffers.
+  render buffer and context of the page. A texture uses the bytes of the type
+  that vtk.js uploaded (float 4, half float and 16-bit 2, 8-bit 1): vtk.js
+  states 2 bytes for 16-bit data also when it uploads float. A context costs
+  an estimate of 32 MB, a canvas 4 bytes for each pixel, and a render buffer
+  8 bytes for each pixel. Only the context pool rendering engine books the
+  canvases and the render buffers.
   (GPULIM-U-7)
 - **GPULIM-I-10** `gpuTextureBytesPerVoxel` is the one count of the bytes of a
   voxel of a texture. The strategy, the texture store and the allocation
