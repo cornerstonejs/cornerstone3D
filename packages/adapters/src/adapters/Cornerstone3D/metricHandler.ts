@@ -17,6 +17,8 @@ export interface AdditionalMetrics {
   perimeter?: number;
   modalityUnit?: string;
   areaUnit?: string;
+  radiusUnit?: string;
+  unit?: string;
   [key: string]: number | string | undefined;
 }
 
