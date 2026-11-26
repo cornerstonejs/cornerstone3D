@@ -51,6 +51,11 @@ function createHost(overrides = {}) {
     findDataIdByVolumeId: jest.fn(() => undefined),
     getBindingActor: jest.fn(() => undefined),
     getDefaultVOIRange: jest.fn(() => undefined),
+    getVOILUTState: jest.fn(() => ({
+      VOILUTFunction: 'LINEAR',
+      voiLUTSequenceApplied: false,
+    })),
+    getDefaultVOILUTFunction: jest.fn(() => undefined),
     getImageCount: jest.fn(() => 0),
     getMaxImageIdIndex: jest.fn(() => -1),
     ...overrides,
@@ -248,6 +253,45 @@ describe('PlanarLegacyCompatibilityController', () => {
       );
     });
 
+    it('does not pin a resolved image VOI LUT function into the presentation', () => {
+      const { host } = createHost({
+        getActiveDataId: jest.fn(() => 'data-1'),
+      });
+      const controller = new PlanarLegacyCompatibilityController(host);
+
+      controller.setProperties({
+        VOILUTFunction: 'SIGMOID',
+        voiLUTFunctionSetByUser: false,
+      });
+
+      expect(host.setDataPresentationState).toHaveBeenCalledWith('data-1', {});
+
+      controller.setProperties({
+        VOILUTFunction: 'SIGMOID',
+      });
+      expect(host.setDataPresentationState).toHaveBeenLastCalledWith('data-1', {
+        voiLUTFunction: 'SIGMOID',
+      });
+    });
+
+    // Same rule as StackViewport, which the migration notes tell apps to read.
+    it('reports voiLUTFunctionSetByUser only for a function different from the file', () => {
+      const state = { VOILUTFunction: 'LINEAR', voiLUTSequenceApplied: false };
+      const { host } = createHost({
+        getActiveDataId: jest.fn(() => 'data-1'),
+        getVOILUTState: jest.fn(() => state),
+        getDefaultVOILUTFunction: jest.fn(() => 'LINEAR'),
+      });
+      const controller = new PlanarLegacyCompatibilityController(host);
+
+      controller.setProperties({ VOILUTFunction: 'LINEAR' });
+      expect(controller.getProperties().voiLUTFunctionSetByUser).toBe(false);
+
+      state.VOILUTFunction = 'SIGMOID';
+      controller.setProperties({ VOILUTFunction: 'SIGMOID' });
+      expect(controller.getProperties().voiLUTFunctionSetByUser).toBe(true);
+    });
+
     it('does nothing when no target data id can be resolved', () => {
       const { host } = createHost({
         getActiveDataId: jest.fn(() => undefined),
@@ -285,8 +329,13 @@ describe('PlanarLegacyCompatibilityController', () => {
     });
 
     it('emits VOI_MODIFIED when voiRange is set and not suppressed', () => {
+      // The event gives the VOI LUT state in effect, as the native event does.
       const { host, element } = createHost({
         getActiveDataId: jest.fn(() => 'data-1'),
+        getVOILUTState: jest.fn(() => ({
+          VOILUTFunction: 'LINEAR_EXACT',
+          voiLUTSequenceApplied: true,
+        })),
       });
       const controller = new PlanarLegacyCompatibilityController(host);
       const listener = jest.fn();
@@ -301,6 +350,7 @@ describe('PlanarLegacyCompatibilityController', () => {
         viewportId: 'vp-1',
         range: { lower: 10, upper: 20 },
         VOILUTFunction: 'LINEAR_EXACT',
+        voiLUTSequenceApplied: true,
         invertStateChanged: false,
       });
     });

@@ -23,6 +23,7 @@ export default function (
   enabledElement.renderingTools.lastRenderedViewport = {
     windowCenter: viewport.voi.windowCenter,
     windowWidth: viewport.voi.windowWidth,
+    voiLUTFunction: viewport.voi.voiLUTFunction,
     invert: viewport.invert,
     rotation: viewport.rotation,
     hflip: viewport.hflip,
