@@ -47,9 +47,12 @@ describe('createImage VOI LUT module', () => {
   // The metadata providers give single values as a string; a string must not
   // be read as an array of characters.
   it('gives the image the whole VOI LUT function and the first window', async () => {
-    for (const [voiLUTFunction, windowCenter, windowWidth] of [
-      ['SIGMOID', 40, 400],
-      [['SIGMOID'], [40, 50], [400, 500]],
+    // An unknown function stays as given, so that the fidelity check reports it.
+    for (const [voiLUTFunction, windowCenter, windowWidth, expected] of [
+      ['SIGMOID', 40, 400, 'SIGMOID'],
+      [['SIGMOID'], [40, 50], [400, 500], 'SIGMOID'],
+      ['sigmoid ', 40, 400, 'SIGMOID'],
+      ['BOGUS', 40, 400, 'BOGUS'],
     ]) {
       voiLutModule = { voiLUTFunction, windowCenter, windowWidth };
       const image = await createImage(
@@ -58,7 +61,7 @@ describe('createImage VOI LUT module', () => {
         '1.2.840.10008.1.2.1'
       );
       expect(image).toMatchObject({
-        voiLUTFunction: 'SIGMOID',
+        voiLUTFunction: expected,
         windowCenter: 40,
         windowWidth: 400,
       });
