@@ -352,16 +352,25 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
 
     const renderStart = performance.now();
 
-    // Render all viewports synchronously
-    const eventDetails = viewportsToRender.map((viewport) => {
-      const eventDetail = this.renderViewportUsingCustomOrVtkPipeline(viewport);
-      viewport.setRendered();
-      this._needsRender.delete(viewport.id);
-      return eventDetail;
-    });
+    let eventDetails: EventTypes.ImageRenderedEventDetail[];
 
-    this._animationFrameSet = false;
-    this._animationFrameHandle = null;
+    try {
+      /** Render all viewports synchronously. */
+      eventDetails = viewportsToRender.map((viewport) => {
+        const eventDetail =
+          this.renderViewportUsingCustomOrVtkPipeline(viewport);
+        viewport.setRendered();
+        this._needsRender.delete(viewport.id);
+        return eventDetail;
+      });
+    } finally {
+      /**
+       * A render that throws must not leave the frame flag set: the engine
+       * would then schedule no frame again, for any viewport.
+       */
+      this._animationFrameSet = false;
+      this._animationFrameHandle = null;
+    }
 
     const waiting = viewportsToRender.map((vp) =>
       this._waitsForStorage(vp, renderStart)
@@ -543,16 +552,40 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
       renderer.setDraw(viewportId === viewport.id);
     });
 
-    renderWindow.render();
+    let lostDuringRender = false;
 
-    allRenderers.forEach(({ renderer: r }) => r.setDraw(false));
+    try {
+      renderWindow.render();
+    } catch (error) {
+      /**
+       * A context can be lost in the middle of a render, for example during
+       * the upload of a large texture, and vtk.js then throws at the next call
+       * that the lost context refuses. That render ends here; any other error
+       * is thrown on.
+       */
+      if (!isWebGLContextLost(offscreenMultiRenderWindow)) {
+        throw error;
+      }
 
-    widgetRenderers.forEach((_, renderer) => {
-      renderer.setDraw(false);
-    });
+      lostDuringRender = true;
+      log.warn(
+        'a render ended because its WebGL context was lost during it',
+        error
+      );
+    } finally {
+      allRenderers.forEach(({ renderer: r }) => r.setDraw(false));
 
-    if (originalRenderPasses) {
-      view.setRenderPasses(originalRenderPasses);
+      widgetRenderers.forEach((_, renderer) => {
+        renderer.setDraw(false);
+      });
+
+      if (originalRenderPasses) {
+        view.setRenderPasses(originalRenderPasses);
+      }
+    }
+
+    if (lostDuringRender) {
+      return;
     }
 
     const openGLRenderWindow =
