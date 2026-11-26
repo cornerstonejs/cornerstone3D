@@ -28,6 +28,7 @@ import type {
   VtkOffscreenMultiRenderWindow,
 } from '../types';
 import { getViewportClassForInput } from './helpers/viewportTypeToViewportClass';
+import isWebGLContextLost from './helpers/isWebGLContextLost';
 import { isGenericViewport } from '../utilities/viewportCapabilities';
 
 /**
@@ -443,6 +444,14 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
       throw new Error(
         'GPU not available, and using a viewport with no custom render pipeline.'
       );
+    }
+
+    /**
+     * A lost context renders nothing: vtk.js throws there, and the throw would
+     * stop the renders of every other viewport. The canvas keeps its image.
+     */
+    if (isWebGLContextLost(offscreenMultiRenderWindow)) {
+      return;
     }
 
     // Add renderer if not already present
