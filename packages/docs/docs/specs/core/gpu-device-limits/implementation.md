@@ -62,12 +62,14 @@ approach appears, as long as the user requirements stay satisfied.
   formats. It tests the texel formats at an edge of 8, then searches the edge
   with an N x 4 x 4 texture on each of the three axes. The search starts at
   the minimum of `maxTextureEdge`, `MAX_3D_TEXTURE_SIZE` and 2048, starts below
-  a failed edge of the record, and halves on each failure down to 16. A stored
-  reliable edge does not raise the start: a search replaces it. A failed edge
-  stays until a search passes at that edge or a retest clears it, so a search
-  that starts below it keeps it. The search in a viewport context draws to a
-  4 x 1 framebuffer, and it does not run when the driver cannot complete that
-  framebuffer.
+  a failed edge of the record, and halves on each failure down to 16; 16 is
+  always the last edge tested. It tests float textures, else half float, and
+  no edge when neither uploads, so a format failure is not an edge failure. A
+  stored reliable edge does not raise the start: a search replaces it. A failed
+  edge stays until a search passes at that edge or a retest clears it, so a
+  search that starts below it keeps it. The search in a viewport context draws
+  to a 4 x 1 framebuffer, and it does not run when the driver cannot complete
+  that framebuffer.
   (GPULIM-U-3, GPULIM-U-4, GPULIM-U-5)
 - **GPULIM-I-6** The probe tests no edge above 2048. When the test at 2048
   passes and `MAX_3D_TEXTURE_SIZE` is larger, the record stores

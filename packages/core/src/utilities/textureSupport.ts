@@ -509,7 +509,10 @@ export function probeRenderingLimits(
       max3DTextureSize: probe.max3DTextureSize,
       ...searchEdge(probe, {
         ...edgeSearch,
-        format: edgeSearch.format ?? (formats.float ? 'float' : 'halfFloat'),
+        format:
+          edgeSearch.format !== undefined
+            ? edgeSearch.format
+            : searchFormatOf(formats),
       }),
     };
   } finally {
@@ -523,12 +526,43 @@ export type EdgeSearchOptions = {
   startEdge?: number;
   /** Every tested edge is below this edge, a failed edge of the record. */
   belowEdge?: number;
-  format?: ProbeTextureFormat;
+  /**
+   * The texel type of the test textures; `null` when no float type uploads,
+   * and the search then tests nothing (see {@link searchFormatOf}).
+   */
+  format?: ProbeTextureFormat | null;
 };
 
 /**
- * Tests from `startEdge` down, halving on each failure, down to 16. Returns
- * the largest edge that passed and the smallest edge that failed. A context
+ * The texel type that the edge search tests: float, else half float, else
+ * none. With none, every edge would fail for the format, not for its size,
+ * and a stored failure at 16 would stop every later search.
+ */
+function searchFormatOf(
+  formats: Pick<RenderingLimitsProbeResult['formats'], 'float' | 'halfFloat'>
+): ProbeTextureFormat | null {
+  if (formats.float) {
+    return 'float';
+  }
+
+  return formats.halfFloat ? 'halfFloat' : null;
+}
+
+/**
+ * The next edge after a failure: half the edge, and 16 once more when the
+ * half of an edge that is not a power of two falls below 16.
+ */
+function nextSearchEdge(edge: number): number {
+  const half = Math.floor(edge / 2);
+
+  return edge > MIN_PROBE_EDGE && half < MIN_PROBE_EDGE ? MIN_PROBE_EDGE : half;
+}
+
+/**
+ * Tests from `startEdge` down, halving on each failure, down to 16: 16 is
+ * always the last edge tested. With no texel type (`format: null`), it tests
+ * nothing. Returns the largest edge that passed and the smallest edge that
+ * failed. A context
  * lost during a test counts as a failure of that edge, and ends the search
  * (`contextLost`), so the next start begins below it.
  */
@@ -545,12 +579,16 @@ function searchEdge(
   > = {};
   let edge = Math.min(startEdge, probe.max3DTextureSize);
 
+  if (format === null) {
+    return result;
+  }
+
   /** A bound that is not positive (a damaged record) bounds nothing. */
   while (belowEdge > 0 && edge >= belowEdge && edge > 0) {
     edge = Math.floor(edge / 2);
   }
 
-  for (; edge >= MIN_PROBE_EDGE; edge = Math.floor(edge / 2)) {
+  for (; edge >= MIN_PROBE_EDGE; edge = nextSearchEdge(edge)) {
     const passed = probe.probeEdge(edge, format);
 
     if (probe.isContextLost()) {

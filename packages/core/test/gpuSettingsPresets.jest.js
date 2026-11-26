@@ -1055,6 +1055,36 @@ describe('the edge search in the context of a viewport', () => {
     expect(getActiveGpuSettings().maxTextureEdge).toBe(128);
   });
 
+  it('asks a retest in the viewport to test no edge when no float type uploads', () => {
+    mockWebGL('Mali-G52');
+    probeRenderingLimits.mockReturnValue({
+      /** A complete set of formats, as the record keeps only a complete one. */
+      formats: {
+        norm16: false,
+        norm16Linear: false,
+        unorm16: false,
+        unorm16Linear: false,
+        float: false,
+        floatLinear: false,
+        halfFloat: false,
+        halfFloatLinear: false,
+      },
+      max3DTextureSize: 8192,
+    });
+    probeEdgeSearch.mockReset();
+    probeEdgeSearch.mockReturnValue({ max3DTextureSize: 8192 });
+    setLossyDownsampling({ final: true });
+    getActiveGpuSettings();
+
+    retestRenderingCapabilities({ edge: true });
+    runPendingEdgeSearch(gl);
+
+    expect(probeEdgeSearch).toHaveBeenCalledWith(
+      gl,
+      expect.objectContaining({ format: null })
+    );
+  });
+
   it('searches in the context of the viewport when the startup probe could not run, and applies the new edge', async () => {
     mockSmallEdgeDevice();
     probeRenderingLimits.mockReturnValue(null);

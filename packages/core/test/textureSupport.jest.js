@@ -732,6 +732,19 @@ describe('the texel format test of the startup probe', () => {
     expect([...new Set(searchFormats)]).toEqual(['R16F']);
   });
 
+  it('tests no edge when no float type uploads, so a format failure is not stored as an edge failure', () => {
+    const fake = createFakeGl({ rejectedFormats: ['R32F', 'R16F'] });
+
+    useContextForNewCanvases(fake.gl);
+
+    const result = probeRenderingLimits();
+
+    expect(result.formats).toMatchObject({ float: false, halfFloat: false });
+    expect(fake.searchedEdges()).toEqual([]);
+    expect(result).not.toHaveProperty('failedEdge');
+    expect(result).not.toHaveProperty('reliableEdge');
+  });
+
   it('returns no result when the context is lost during the format test', () => {
     const fake = createFakeGl({ loseContextOn: (event) => event === 'upload' });
 
@@ -809,6 +822,19 @@ describe('the edge search', () => {
       2048, 1024, 512, 256, 128, 64, 32, 16,
     ]);
     expect(result).toEqual({ max3DTextureSize: 2048, failedEdge: 16 });
+  });
+
+  it('tests 16 last when the halving of the start edge falls below 16', () => {
+    const fake = createFakeGl({
+      drawsCorrectly: (_format, dims) => Math.max(...dims) <= 16,
+    });
+
+    const result = probeEdgeSearch(fake.gl, { startEdge: 1000 });
+
+    expect([...new Set(fake.searchedEdges())]).toEqual([
+      1000, 500, 250, 125, 62, 31, 16,
+    ]);
+    expect(result.reliableEdge).toBe(16);
   });
 
   it('ends the search and reports the edge as failed when the context is lost during its test, even after a correct readback', () => {

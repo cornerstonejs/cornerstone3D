@@ -831,10 +831,13 @@ function edgeSearchOptions(
   return {
     startEdge: searchStartEdge(),
     belowEdge: target?.edge.failed?.value,
+    /** No float type uploads: the search tests nothing (see `searchEdge`). */
     format: target?.formats
       ? target.formats.float
         ? 'float'
-        : 'halfFloat'
+        : target.formats.halfFloat
+          ? 'halfFloat'
+          : null
       : undefined,
   };
 }
