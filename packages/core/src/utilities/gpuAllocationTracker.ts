@@ -314,6 +314,15 @@ export function noteTextureAllocation({
 }): void {
   listen();
 
+  /**
+   * A new upload of an owner replaces its earlier one, whose storage goes, so
+   * the earlier allocation is forgotten first, even when this upload is too
+   * small to note: its draw must not settle the earlier size.
+   */
+  if (owner !== undefined) {
+    cancelTextureAllocation(owner);
+  }
+
   if (
     textureBytes < LARGE_ALLOCATION_BYTES ||
     isHidden() ||

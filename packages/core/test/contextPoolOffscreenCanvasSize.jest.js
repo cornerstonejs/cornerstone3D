@@ -53,7 +53,10 @@ describe('ContextPoolRenderingEngine shared offscreen canvas size', () => {
   beforeEach(() => {
     jest
       .spyOn(BaseRenderingEngine.prototype, 'disableElement')
-      .mockImplementation(() => undefined);
+      .mockImplementation(function (viewportId) {
+        /** The base removal releases the viewport, as `_resetViewport` does. */
+        this._releaseViewportResources(viewportId);
+      });
   });
 
   afterEach(() => {
@@ -96,6 +99,24 @@ describe('ContextPoolRenderingEngine shared offscreen canvas size', () => {
 
     expect([container.width, container.height]).toEqual([512, 512]);
     expect(context.resize).not.toHaveBeenCalled();
+  });
+
+  it('fits the offscreen canvas when a reset of the layout releases the viewports', () => {
+    const { engine, pool, context, container } = setUpEngine({
+      small: [100, 100],
+      large: [1000, 1000],
+    });
+
+    engine._releaseViewportResources('large');
+
+    expect(pool.getMaxSizeForContext(0)).toEqual({ width: 100, height: 100 });
+    expect([container.width, container.height]).toEqual([100, 100]);
+    expect(context.resize).toHaveBeenCalledTimes(1);
+
+    engine._releaseViewportResources('small');
+
+    expect([container.width, container.height]).toEqual([100, 100]);
+    expect(context.removeRenderer).not.toHaveBeenCalled();
   });
 
   it('fits an oversized offscreen canvas on the next render even when the max size did not change', () => {

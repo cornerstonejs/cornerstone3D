@@ -79,8 +79,10 @@ function getBufferConfiguration(
  *
  * @deprecated The GPU settings count the bytes that vtk.js uploads, which can
  * differ from the volume buffer (for example 2 bytes for 16-bit data with
- * norm16). Use `gpuTextureBytesPerVoxel` of `gpuSettingsPresets`. This
- * function stays for imports of `utilities/getBufferConfiguration`.
+ * norm16). Use `gpuTextureBytesPerVoxel` of `gpuSettingsPresets`, which
+ * returns the bytes of one voxel, so multiply it by `voxelCount` for the
+ * bytes of the texture. This function stays for imports of
+ * `utilities/getBufferConfiguration`.
  */
 function volumeTextureBytes(
   voxelCount: number,
