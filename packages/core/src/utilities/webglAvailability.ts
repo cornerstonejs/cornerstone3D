@@ -200,8 +200,27 @@ function onStorage(event: StorageEvent): void {
       announce(stored, 'other');
     }
   } else if (announced) {
-    /** Another tab ended the wait. */
+    /**
+     * The removed wait tells why it went: one whose end had passed ran out,
+     * and a later wait of this tab, which the store refused, holds. One that
+     * another tab removed before its end was ended on purpose.
+     */
+    if (local && hadEnded(event.oldValue)) {
+      return;
+    }
+
     announce(undefined, 'other');
+  }
+}
+
+/** True when a stored wait, as text, had reached its end. */
+function hadEnded(value: string | null): boolean {
+  try {
+    const until = JSON.parse(value ?? 'null')?.until;
+
+    return Number.isFinite(until) && until <= Date.now();
+  } catch {
+    return false;
   }
 }
 
