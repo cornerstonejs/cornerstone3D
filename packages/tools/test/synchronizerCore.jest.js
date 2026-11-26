@@ -26,6 +26,7 @@ jest.mock('@cornerstonejs/core', () => {
         },
       },
       clonePoint3: jest.fn((point) => (point ? [...point] : undefined)),
+      clip: jest.fn((value, low, high) => Math.min(Math.max(value, low), high)),
       isEqual: jest.fn((v1, v2) =>
         v1.every((value, index) => Math.abs(value - v2[index]) < 1e-5)
       ),
@@ -683,59 +684,72 @@ describe('cameraSyncCallback', () => {
   });
 
   const SQRT_HALF = Math.sqrt(0.5);
-  const ZOOM_PAN = { zoom: 2, pan: [3, 4] };
   const UNTURNED = { rotation: 0, flipHorizontal: false, flipVertical: false };
+  const SOURCE = { renderingEngineId: 're', viewportId: 'source' };
+  const TARGET = { renderingEngineId: 're', viewportId: 'target' };
+  const GROUP = { renderingEngineId: 're', viewportId: 'group' };
 
   /**
-   * Runs the callback from a planar source to a planar target, each with
-   * the view reference and the rotation and flips given, and gives the
-   * presentation written to the target, or undefined when none is.
+   * A stand-in of a planar viewport that shows a volume: its camera, its
+   * frame of reference, the rotation and the flips of its framing, its scale
+   * against the fit, and its slices, whose centres lie `first + index *
+   * step` along its normal. `setViewState` and `setViewReference` record
+   * what they are given.
    */
-  function presentationWrittenToTarget(source, target) {
-    const sourceViewport = {
+  function makePlanarViewport({
+    camera,
+    framing = UNTURNED,
+    frameOfReferenceUID = 'FOR1',
+    mode = 'volume',
+    scale = [1, 1],
+    slices = { first: 0, step: 1, count: 10, index: 0 },
+  }) {
+    const centreOf = (index) =>
+      camera.viewPlaneNormal.map(
+        (component) => component * (slices.first + index * slices.step)
+      );
+
+    return {
       type: 'planar',
-      getViewReference: jest.fn(() => source.viewReference),
-    };
-    const targetViewport = {
-      type: 'planar',
-      getViewReference: jest.fn(() => target.viewReference),
-      setViewReference: jest.fn(),
+      framing,
+      getResolvedView: jest.fn(() => ({ toICamera: () => camera })),
+      getFrameOfReferenceUID: jest.fn(() => frameOfReferenceUID),
+      getCurrentMode: jest.fn(() => mode),
+      getScale: jest.fn(() => scale),
+      getNumberOfSlices: jest.fn(() => slices.count),
+      getSliceIndex: jest.fn(() => slices.index),
+      getViewReference: jest.fn(({ sliceIndex } = {}) => ({
+        cameraFocalPoint: centreOf(sliceIndex ?? slices.index),
+      })),
       setViewState: jest.fn(),
+      setViewReference: jest.fn(),
       render: jest.fn(),
     };
+  }
 
+  /** A camera of a planar view along a normal. */
+  function makeCamera({
+    focalPoint = [0, 0, 0],
+    viewPlaneNormal = [0, 0, 1],
+    viewUp = [0, -1, 0],
+    parallelScale = 100,
+  } = {}) {
+    return { focalPoint, viewPlaneNormal, viewUp, parallelScale };
+  }
+
+  /**
+   * A synchronizer whose targets are the panes given, in that order, and the
+   * rendering engine that holds the stand-ins by viewport id.
+   */
+  function makeGroup(viewports, targets = [SOURCE, TARGET]) {
     viewportProjection.getFraming.mockImplementation(
-      (viewport, { selector }) => {
-        if (!selector.rotation) {
-          return viewport === sourceViewport ? ZOOM_PAN : undefined;
-        }
+      (viewport, { selector }) => (selector.rotation ? viewport.framing : {})
+    );
+    getRenderingEngine.mockImplementation(() => ({
+      getViewport: jest.fn((viewportId) => viewports[viewportId]),
+    }));
 
-        return viewport === sourceViewport
-          ? source.presentation
-          : target.presentation;
-      }
-    );
-    viewportProjection.withFraming.mockImplementation(
-      (_viewport, presentation) => ({ presentation })
-    );
-    getRenderingEngine.mockImplementation((id) =>
-      id === 're-source'
-        ? { getViewport: jest.fn(() => sourceViewport) }
-        : { getViewport: jest.fn(() => targetViewport) }
-    );
-
-    cameraSyncCallback(
-      {},
-      { renderingEngineId: 're-source', viewportId: 'source' },
-      { renderingEngineId: 're-target', viewportId: 'target' },
-      { detail: { camera: {} } }
-    );
-
-    expect(targetViewport.setViewReference).toHaveBeenCalledWith(
-      source.viewReference
-    );
-
-    return targetViewport.setViewState.mock.calls[0]?.[0].presentation;
+    return { getTargetViewports: () => targets };
   }
 
   afterEach(() => {
@@ -743,23 +757,40 @@ describe('cameraSyncCallback', () => {
     viewportProjection.withFraming.mockImplementation(() => undefined);
   });
 
-  it('gives a planar target of the same view the rotation of the source, with the zoom and the pan', () => {
-    expect(
-      presentationWrittenToTarget(
-        {
-          viewReference: {
-            viewPlaneNormal: [0, 0, -1],
-            viewUp: [-SQRT_HALF, -SQRT_HALF, 0],
-          },
-          presentation: { ...UNTURNED, rotation: 45 },
-        },
-        {
-          viewReference: { viewPlaneNormal: [0, 0, -1], viewUp: [0, -1, 0] },
-          presentation: UNTURNED,
-        }
-      )
-    ).toEqual({
-      ...ZOOM_PAN,
+  it('gives a planar target of the same view the rotation, the parallel scale and the centre of the source, in one write of its view state', () => {
+    const camera = makeCamera({
+      focalPoint: [10, 20, 5],
+      viewPlaneNormal: [0, 0, -1],
+      viewUp: [-SQRT_HALF, -SQRT_HALF, 0],
+    });
+    const source = makePlanarViewport({
+      camera,
+      framing: { ...UNTURNED, rotation: 45 },
+    });
+    const target = makePlanarViewport({
+      camera: makeCamera({
+        focalPoint: [0, 0, 5],
+        viewPlaneNormal: [0, 0, -1],
+        parallelScale: 150,
+      }),
+    });
+    const synchronizer = makeGroup({ source, target });
+
+    cameraSyncCallback(synchronizer, SOURCE, TARGET, {
+      detail: {
+        camera,
+        previousCamera: makeCamera({ focalPoint: [10, 20, 5] }),
+      },
+    });
+
+    expect(target.setViewReference).not.toHaveBeenCalled();
+    expect(target.setViewState).toHaveBeenCalledTimes(1);
+    expect(target.setViewState).toHaveBeenCalledWith({
+      anchorWorld: [10, 20, 5],
+      anchorCanvas: [0.5, 0.5],
+      scale: [1.5, 1.5],
+      scaleMode: 'fit',
+      displayArea: undefined,
       rotation: 45,
       flipHorizontal: false,
       flipVertical: false,
@@ -767,60 +798,179 @@ describe('cameraSyncCallback', () => {
   });
 
   it('gives a planar target the flips and the rotation of a flipped source', () => {
-    expect(
-      presentationWrittenToTarget(
-        {
-          viewReference: {
-            viewPlaneNormal: [0, 0, 1],
-            viewUp: [0.5, -Math.sqrt(0.75), 0],
-          },
-          presentation: { ...UNTURNED, rotation: 30, flipHorizontal: true },
-        },
-        {
-          viewReference: { viewPlaneNormal: [0, 0, -1], viewUp: [0, -1, 0] },
-          presentation: UNTURNED,
-        }
-      )
-    ).toEqual({
-      ...ZOOM_PAN,
+    const camera = makeCamera({ viewUp: [0.5, -Math.sqrt(0.75), 0] });
+    const source = makePlanarViewport({
+      camera,
+      framing: { ...UNTURNED, rotation: 30, flipHorizontal: true },
+    });
+    const target = makePlanarViewport({
+      camera: makeCamera({ viewPlaneNormal: [0, 0, -1] }),
+    });
+    const synchronizer = makeGroup({ source, target });
+
+    cameraSyncCallback(synchronizer, SOURCE, TARGET, {
+      detail: { camera, previousCamera: makeCamera() },
+    });
+
+    expect(target.setViewState).toHaveBeenCalledWith({
       rotation: 30,
       flipHorizontal: true,
       flipVertical: false,
     });
   });
 
-  it('does not turn again a planar target that the view reference turned to the view up of the source', () => {
-    const viewReference = {
+  it('does not write a planar target that has the view up, the scale and the centre of the source', () => {
+    const camera = makeCamera({
       viewPlaneNormal: [0, 0, -1],
       viewUp: [-SQRT_HALF, -SQRT_HALF, 0],
-    };
+    });
+    const source = makePlanarViewport({
+      camera,
+      framing: { ...UNTURNED, rotation: 45 },
+    });
+    const target = makePlanarViewport({ camera: { ...camera } });
+    const synchronizer = makeGroup({ source, target });
 
-    expect(
-      presentationWrittenToTarget(
-        { viewReference, presentation: { ...UNTURNED, rotation: 45 } },
-        { viewReference, presentation: UNTURNED }
-      )
-    ).toEqual({
-      ...ZOOM_PAN,
-      rotation: 0,
-      flipHorizontal: false,
-      flipVertical: false,
+    cameraSyncCallback(synchronizer, SOURCE, TARGET, {
+      detail: { camera, previousCamera: makeCamera({ parallelScale: 90 }) },
+    });
+
+    expect(target.setViewState).not.toHaveBeenCalled();
+    expect(target.setViewReference).not.toHaveBeenCalled();
+  });
+
+  it('keeps the slice of a target when the source zooms, and gives it the parallel scale of the source', () => {
+    const camera = makeCamera({ focalPoint: [0, 0, 7.4], parallelScale: 80 });
+    const source = makePlanarViewport({ camera });
+    const target = makePlanarViewport({
+      camera: makeCamera({ focalPoint: [0, 0, 3], parallelScale: 120 }),
+      slices: { first: 0, step: 1, count: 10, index: 3 },
+    });
+    const synchronizer = makeGroup({ source, target });
+
+    cameraSyncCallback(synchronizer, SOURCE, TARGET, {
+      detail: {
+        camera,
+        previousCamera: makeCamera({ focalPoint: [0, 0, 7.4] }),
+      },
+    });
+
+    expect(target.setViewState).toHaveBeenCalledWith({
+      anchorWorld: [0, 0, 3],
+      anchorCanvas: [0.5, 0.5],
+      scale: [1.5, 1.5],
+      scaleMode: 'fit',
+      displayArea: undefined,
     });
   });
 
-  it('copies only the zoom and the pan to a planar target of another plane', () => {
-    expect(
-      presentationWrittenToTarget(
-        {
-          viewReference: { viewPlaneNormal: [0, 0, -1], viewUp: [0, -1, 0] },
-          presentation: UNTURNED,
+  it('moves a target to the point of a source that scrolls when the target is not on its slice nearest to it, and does not write a target that is', () => {
+    const scroll = (from, to, index) => {
+      const camera = makeCamera({ focalPoint: [0, 0, to] });
+      const source = makePlanarViewport({ camera });
+      const target = makePlanarViewport({
+        camera: makeCamera({ focalPoint: [0, 0, index] }),
+        slices: { first: 0, step: 1, count: 10, index },
+      });
+      const synchronizer = makeGroup({ source, target });
+
+      cameraSyncCallback(synchronizer, SOURCE, TARGET, {
+        detail: {
+          camera,
+          previousCamera: makeCamera({ focalPoint: [0, 0, from] }),
         },
-        {
-          viewReference: { viewPlaneNormal: [1, 0, 0], viewUp: [0, 0, 1] },
-          presentation: UNTURNED,
-        }
-      )
-    ).toEqual(ZOOM_PAN);
+      });
+
+      return target.setViewState.mock.calls;
+    };
+
+    expect(scroll(6.4, 7.4, 3)).toEqual([
+      [{ slice: { kind: 'volumePoint', sliceWorldPoint: [0, 0, 7.4] } }],
+    ]);
+    expect(scroll(6.4, 7.4, 7)).toEqual([]);
+    expect(scroll(6.5, 7.5, 7)).toEqual([]);
+    expect(scroll(20, 30, 9)).toEqual([]);
+  });
+
+  it('gives the source the scale, the centre and the view up of the first pane of the group in step at a camera event that changes no camera, and moves no slice and writes no target', () => {
+    const groupCamera = makeCamera({
+      focalPoint: [4, 5, 6.2],
+      parallelScale: 50,
+    });
+    const sourceCamera = makeCamera({
+      focalPoint: [0, 0, 2],
+      parallelScale: 100,
+    });
+    const group = makePlanarViewport({
+      camera: groupCamera,
+      slices: { first: 0, step: 1, count: 10, index: 6 },
+    });
+    const source = makePlanarViewport({
+      camera: sourceCamera,
+      slices: { first: 0, step: 1, count: 10, index: 2 },
+    });
+    const target = makePlanarViewport({
+      camera: { ...groupCamera },
+      slices: { first: 0, step: 1, count: 10, index: 6 },
+    });
+    const synchronizer = makeGroup({ group, source, target }, [
+      GROUP,
+      SOURCE,
+      TARGET,
+    ]);
+
+    cameraSyncCallback(synchronizer, GROUP, TARGET, {
+      detail: { camera: groupCamera, previousCamera: makeCamera() },
+    });
+
+    const mount = {
+      detail: { camera: sourceCamera, previousCamera: { ...sourceCamera } },
+    };
+
+    cameraSyncCallback(synchronizer, SOURCE, TARGET, mount);
+    cameraSyncCallback(synchronizer, SOURCE, GROUP, mount);
+
+    expect(target.setViewState).not.toHaveBeenCalled();
+    expect(group.setViewState).not.toHaveBeenCalled();
+    expect(source.setViewState).toHaveBeenCalledTimes(1);
+    expect(source.setViewState).toHaveBeenCalledWith({
+      anchorWorld: [4, 5, 2],
+      anchorCanvas: [0.5, 0.5],
+      scale: [2, 2],
+      scaleMode: 'fit',
+      displayArea: undefined,
+    });
+  });
+
+  it('turns a volume target of another plane through a view reference of the plane and the point of the source, and gives a stack of another plane nothing', () => {
+    const camera = makeCamera({
+      focalPoint: [1, 2, 3],
+      viewPlaneNormal: [0, 0, -1],
+    });
+    const source = makePlanarViewport({ camera });
+    const otherPlane = makeCamera({
+      viewPlaneNormal: [1, 0, 0],
+      viewUp: [0, 0, 1],
+    });
+    const volume = makePlanarViewport({ camera: otherPlane });
+    const stack = makePlanarViewport({ camera: otherPlane, mode: 'stack' });
+
+    [volume, stack].forEach((target) => {
+      const synchronizer = makeGroup({ source, target });
+
+      cameraSyncCallback(synchronizer, SOURCE, TARGET, {
+        detail: { camera, previousCamera: makeCamera() },
+      });
+    });
+
+    expect(volume.setViewReference).toHaveBeenCalledWith({
+      FrameOfReferenceUID: 'FOR1',
+      viewPlaneNormal: [0, 0, -1],
+      viewUp: [0, -1, 0],
+      cameraFocalPoint: [1, 2, 3],
+    });
+    expect(stack.setViewReference).not.toHaveBeenCalled();
+    expect(stack.setViewState).not.toHaveBeenCalled();
   });
 });
 

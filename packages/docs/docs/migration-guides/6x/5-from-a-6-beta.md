@@ -101,6 +101,7 @@ person, and **Nothing** where the code stays the same and its result changes.
 | The default window of a streaming volume without a window in its metadata reads the image that the volume loads, and the stages ask for that image first (a stage position is rounded to the nearest image: 0.5 is `floor(N / 2)`); the mount settles once it is there, where it waited for the whole load. `imageLoader.createAndCacheLocalImage` without `scalarData` makes an empty image of `dimensions` and `targetBuffer.type`. On the context pool engine the first frame of a pane is the frame that a resize keeps | Nothing to change                                                                                                                            | Nothing                                                                               | [The default window](./2-rendering-changes.md#the-default-window-of-a-streaming-volume)                                                                         |
 | A video with the object fit `fill` maps each axis with its own ratio (`canvasToWorld`, `worldToCanvas`, the annotations, the place of its element); the ECG viewport sizes its canvas once on a screen with a device pixel ratio other than 1                                                                                                                                                                                                                                                                               | Nothing to change                                                                                                                            | Nothing                                                                               |                                                                                                                                                                 |
 | `utilities.segmentation.getStatistics` of a stack labelmap whose images reference no image reads the image of the viewports that show it on the plane of each labelmap image, or says which labelmap image has none; it threw `getImage: imageId must not be undefined`. The perimeter of a closed freehand contour counts its closing segment                                                                                                                                                                              | Nothing to change                                                                                                                            | Nothing                                                                               |                                                                                                                                                                 |
+| The camera position synchronizer gives every planar pane of a group the parallel scale and the centre of the source, whatever the extents of the volumes, as 5.x did; a pane takes a slice only when the source moved along its normal, so a zoom or a resize of a PET pane moves no CT pane; a mount takes the scale and the centre of the group                                                                                                                                                                           | Nothing to change                                                                                                                            | Nothing                                                                               | [Tools on the next viewports](./2-rendering-changes.md#tools-on-the-next-viewports)                                                                             |
 
 ## What the codemod cannot do
 
@@ -382,3 +383,42 @@ application wants.
     ```
 
     See [Events and image loading of a planar viewport](./2-rendering-changes.md#events-and-image-loading-of-a-planar-viewport).
+
+17. **One scale and one centre in a camera position group.** Between two
+    planar viewports the camera position synchronizer gives the target the
+    parallel scale of the source and the world point at the centre of its
+    canvas, where 6.0.0-beta.2 gave it the zoom and the pan against its own
+    fit and the view reference of the source. A PET pane next to a CT pane
+    of the same group now draws the body at the size of the CT pane, and the
+    zoom that each pane reports differs between them. A target takes a slice
+    only when the source moved along its normal, the slice of its own grid
+    nearest to the position of the source; 6.0.0-beta.2 gave it the centre
+    of the slice of the source at every camera event, so a zoom, a pan or a
+    resize of a PET pane moved the CT panes of its group by up to half a PET
+    slice. A pane whose camera event changes no camera, its mount or a
+    resize, takes the scale, the centre and the view up of the group and
+    keeps its slice, where it gave the group its own view. Code that gave a
+    joining pane the scale of its group after its mount, or that wrote the
+    zoom and the pan of each pane back after a resize, can go; code that
+    puts a joining pane on the slice of its group stays, and needs no hold
+    of the synchronizer, since a mount no longer moves the group:
+
+    ```ts
+    // Before: after the mount of a pane of a group, with the pane taken
+    // out of the sources of the synchronizer during the mount
+    viewport.setViewReference(groupViewport.getViewReference());
+    viewport.setViewFraming(scaledFramingOf(groupViewport));
+
+    // After: the mount fires CAMERA_MODIFIED and the pane takes the scale and
+    // the centre of the group; a point and a plane put it on the slice
+    const { focalPoint, viewPlaneNormal } = groupViewport
+      .getResolvedView()
+      .toICamera();
+    viewport.setViewReference({
+      FrameOfReferenceUID: groupViewport.getFrameOfReferenceUID(),
+      viewPlaneNormal,
+      cameraFocalPoint: focalPoint,
+    });
+    ```
+
+    See [Tools on the next viewports](./2-rendering-changes.md#tools-on-the-next-viewports).

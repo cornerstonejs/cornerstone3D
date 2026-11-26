@@ -1218,9 +1218,22 @@ another size and another place. These calls give the legacy picture:
    canvas: with `point = tViewport.worldToCanvas(sourceFocalPoint)`, the pan
    is `pan + (centre - point) / zoom`.
 
-Steps 2 and 3 go through `viewportProjection.withFraming`. The camera
-position synchronizer copies the view reference, the zoom and the pan as they
-are, so between viewports of other data it gives another size.
+Steps 2 and 3 go through `viewportProjection.withFraming`. In step 1 the
+focal point of the view reference is the centre of the slice that the source
+draws (see "getViewReference() in volume mode names the image of the slice
+on display"), so a target of a finer grid goes to that centre, up to half a
+slice of the source away from the point that the source shows. To give the
+target the point of the source, write a reference of a point and a plane:
+`{ FrameOfReferenceUID, viewPlaneNormal, cameraFocalPoint }` with the focal
+point of `sViewport.getResolvedView()?.toICamera()`.
+
+The camera position synchronizer does all of it between two planar
+viewports: the same parallel scale and the same world point at the centre of
+the canvas, whatever the extents of the two volumes, as the 5.x `setCamera`
+gave. See "The camera position synchronizer keeps one scale, one centre and
+moves a slice only with a move along the normal" below. 6.0.0-beta.2 copied
+the view reference, the zoom and the pan against the fit as they were, so
+between viewports of other data it gave another size.
 
 ## The time point of a dynamic volume
 
@@ -1513,8 +1526,9 @@ point of the image on display.
   volume mode a reference of another series in the same frame of reference
   still moves the view to its plane, as on the legacy volume viewport.
 - **A stack stays where it is for a reference of a volume that names no
-  image.** A sagittal or a coronal slice of a volume, as
-  `cameraSyncCallback` copies from a volume viewport to a stack, gives a
+  image.** A sagittal or a coronal slice of a volume, as the camera
+  position synchronizer of 6.0.0-beta.2 copied from a volume viewport to a
+  stack, gives a
   `volumeId`, no image, and a slice index that counts in the slices of that
   view. In stack mode `setViewReference` moves nothing for it, as
   `isReferenceViewable(viewRef, { withNavigation: true })` answers false: a
@@ -2977,16 +2991,74 @@ levels of 255.
   to every display set of each target. A source that shows a stack
   gives no slab, as the legacy synchronizer took none from a stack viewport,
   and each viewport is read from its own rendering engine.
-- **The camera position synchronizer copies a view reference.** On a next
-  target it sets the view reference of the source, and its zoom and pan.
-  Between two planar viewports of parallel planes it also gives the target
-  the view up and the view plane normal of the source, through the rotation
-  and the flips of its framing, as the 5.x `setCamera` did. Two
-  viewports with the same view before their rotation get the same rotation
-  and flips. A target of another plane turns to the plane and the view up
-  of the source with the view reference, and its rotation is then counted
-  from that view up: 0 for a sagittal target of an axial source turned by
-  45, where 5.x read 90, the angle from the view up of its first plane.
+- **The camera position synchronizer keeps one scale, one centre and moves
+  a slice only with a move along the normal.** Between two planar viewports
+  it gives the target, in one write of its view state, what the 5.x
+  `setCamera` gave it:
+  - the parallel scale of the source, so the panes of a group show the same
+    world height in the canvas: the same millimetres per canvas pixel on
+    panes of one size, and on panes of other sizes the same parallel scale,
+    as 5.x. The zoom that each pane reports against its own fit (`getZoom()`)
+    then differs between panes of volumes of other extents, a CT and a PET:
+    that is right, zoom 1 is the fit of each pane;
+  - the world point at the centre of the canvas of the source, whatever the
+    extent and the centre of each volume;
+  - the view up and the view plane normal of the source, through the
+    rotation and the flips of its framing. Two viewports with the same view
+    before their rotation get the same rotation and flips;
+  - a slice only when the event moved the source along its normal (a
+    scroll, a jump, a move of the crosshairs, a reset): the slice of the
+    target's own grid nearest to the position of the source, with the
+    position itself as the point of the view state, so the target reads it
+    back without moving. A target that shows that slice already (within
+    half a slice, a point half way between two slices keeps the slice on
+    display) is not written for it. A zoom, a pan, a rotation in the plane,
+    a flip or a resize of the source never moves a target along its normal,
+    and a write that comes back from a target never moves the source.
+
+  A camera event that changes no camera, the mount of the source (it fires
+  the camera that it opens with) or a resize (it keeps the camera), moves no
+  pane along its normal and writes no other pane: the source takes the
+  scale, the centre and the view up of the first other pane of the group in
+  step with it, in the order the viewports were added to the synchronizer,
+  and keeps its slice. So a pane that joins a group at its mount takes the
+  scale and the centre of the group, where 5.x and 6.0.0-beta.2 gave the
+  group the first view of the pane (its slice too). The slice that a joining
+  pane opens on stays its own: an application that puts it on the slice of
+  the group moves it there (`setViewReference` with a point and a plane),
+  and that move along the normal moves the others only where they are not
+  on their nearest slice. When no pane of the group is in step yet (the
+  synchronizer was made after the mounts), the first event drives the scale
+  and the centre of the group. A target of another
+  plane in the frame of reference of the source turns to its plane and view
+  up with a view reference of the plane and the point (a second write, the
+  first time only), and its rotation is then counted from that view up: 0
+  for a sagittal target of an axial source turned by 45, where 5.x read 90,
+  the angle from the view up of its first plane. A stack of another plane
+  takes nothing. A target of another frame of reference takes the parallel
+  scale only. A 3D viewport, or a pair of other families, takes the view
+  reference of the source and its zoom and pan against the fit, as in
+  6.0.0-beta.2.
+
+  The camera position synchronizer has no option for the other behaviour,
+  each pane at the same zoom against its own fit. The zoom and pan
+  synchronizer (`createZoomPanSynchronizer`) and the view framing
+  synchronizer give the same zoom and pan against the fit of each pane, and
+  no slice; with a camera position synchronizer on the same panes the two
+  write the scale in turn.
+
+  ```js
+  // The petCt example: a CT pane (512 x 512, 0.977 mm) and a PET pane
+  // (128 x 128, 4.69 mm), sagittal, in one camera position synchronizer
+  await utilities.jumpToSlice(ct.element, { imageIndex: 256 });
+  pt.setZoom(pt.getZoom() * 1.5);
+
+  // 6.0.0-beta.2: ct.getSliceIndex() 254, the centre of the PET slice;
+  // parallel scale 147.15 on the CT, 173.68 on the PET (the body smaller)
+  // Now: ct.getSliceIndex() 256; parallel scale 147.15 on both panes;
+  // ct.getZoom() 1.5, pt.getZoom() 1.77
+  ```
+
 - **`SEGMENTATION_REPRESENTATION_ADDED` fires.** `addSegmentationRepresentations`
   and the add functions of each representation type fire it on the
   `eventTarget` once for each representation that is new to the viewport,
