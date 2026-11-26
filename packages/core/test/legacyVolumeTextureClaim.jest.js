@@ -17,6 +17,7 @@ import {
 } from '../src/utilities/gpuSettingsPresets';
 import { setLossyDownsampling } from '../src/init';
 import * as renderingCapabilities from '../src/utilities/renderingCapabilities';
+import * as getRenderingEngineModule from '../src/RenderingEngine/getRenderingEngine';
 import vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 
 // A legacy viewport has no render path, so the set that its actor draws is held
@@ -160,6 +161,63 @@ describe('a legacy viewport follows a change of the GPU settings', () => {
       resetGpuSettingsPreset();
       setLossyDownsampling({ final: false });
     }
+  });
+
+  it('renders the viewport that shows the actor, so the new texture shows at once', async () => {
+    const viewport = legacyViewport();
+
+    makeVolume('wide', [512, 64, 8]);
+    setLossyDownsampling({ final: true });
+
+    try {
+      await show(viewport, 'wide');
+
+      viewport.render = jest.fn();
+      jest
+        .spyOn(getRenderingEngineModule, 'getRenderingEngines')
+        .mockReturnValue([
+          { hasBeenDestroyed: false, getViewports: () => [viewport] },
+        ]);
+
+      setGpuSettingsPreset('low');
+
+      expect(viewport.render).toHaveBeenCalledTimes(1);
+
+      /** A change that leaves the texture as it is renders nothing. */
+      setGpuSettingsPreset('low');
+
+      expect(viewport.render).toHaveBeenCalledTimes(1);
+    } finally {
+      jest.restoreAllMocks();
+      rendererClassSpy = jest
+        .spyOn(renderingCapabilities, 'getRendererClass')
+        .mockReturnValue('desktop');
+      resetGpuSettingsPreset();
+      setLossyDownsampling({ final: false });
+    }
+  });
+
+  it('chooses a texture again for an actor whose set the store evicted while it was away', async () => {
+    const viewport = legacyViewport();
+    const volume = makeVolume('wide', [512, 64, 8]);
+
+    await show(viewport, 'wide');
+
+    const entry = viewport.getActor('wide');
+    const mapper = entry.actor.getMapper();
+    const evicted = mapper.getScalarTexture();
+
+    viewport.removeActors(['wide']);
+    volumeTextureStore.evictUnheld();
+    viewport.addActor(entry);
+
+    expect(mapper.getScalarTexture()).not.toBe(evicted);
+    expect(mapper.getScalarTexture()).toBe(
+      volume.getTextureSet('full-resolution/full-extent').members()[0].texture
+    );
+    expect(
+      volume.getTextureSet('full-resolution/full-extent').references
+    ).toBe(1);
   });
 
   it('keeps the set of an actor that a tool moved to a mapper with no shared texture', async () => {

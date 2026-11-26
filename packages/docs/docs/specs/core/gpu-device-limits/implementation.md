@@ -131,6 +131,10 @@ approach appears, as long as the user requirements stay satisfied.
   `VOLUME_TEXTURE_LIMITS_CHANGED`, so the strategies provision again with the
   new shares. Volumes that join in one batch were each sized before the other
   was claimed, so they provision again too. (GPULIM-U-11)
+  After each `VOLUME_TEXTURE_LIMITS_CHANGED` under `auto`, the store evicts
+  every set that no viewport holds, after the current work, and a legacy
+  viewport whose actor got a texture of the new size renders. A lower limit
+  then shows and frees GPU memory at once. (GPULIM-U-8)
 - **GPULIM-I-13** The mapper check (`gridFitsGpuSettings`) uses the memory
   limit of the whole page, not the share, so a mapper never refuses a grid that
   the strategy chose. A full-resolution reslice texture that the check refuses
