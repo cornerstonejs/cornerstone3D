@@ -4,7 +4,6 @@ import {
   Enums,
   volumeLoader,
   getRenderingEngine,
-  viewportProjection,
   displaySetRegistry,
 } from '@cornerstonejs/core';
 import {
@@ -176,7 +175,7 @@ const resizeObserver = new ResizeObserver(() => {
   renderingEngine = getRenderingEngine(renderingEngineId);
 
   if (renderingEngine) {
-    renderingEngine.resize(true, false);
+    renderingEngine.resize(true);
   }
 });
 
@@ -509,6 +508,13 @@ function setUpToolGroups() {
   mipToolGroup.addViewport(viewportIds.PETMIP.CORONAL, renderingEngineId);
 }
 
+/**
+ * Puts the panes of each orientation in a camera position synchronizer and
+ * the panes of each volume in a VOI synchronizer, after the viewports are
+ * enabled and before they show their display sets: a pane that joins its
+ * camera position group at its mount takes the parallel scale and the world
+ * point at the centre of the group.
+ */
 function setUpSynchronizers() {
   axialCameraPositionSynchronizer = createCameraPositionSynchronizer(
     axialCameraSynchronizerId
@@ -713,6 +719,8 @@ async function setUpDisplay() {
   ];
 
   renderingEngine.setViewports(viewportInputArray);
+  setUpToolGroups();
+  setUpSynchronizers();
 
   // Set the volumes to load
   ptVolume.load();
@@ -902,53 +910,26 @@ function initializeCameraSync(renderingEngine: RenderingEngine) {
 }
 
 /**
- * Shows in the target viewport what the source viewport shows: the same
- * slice, the same world point at the centre of the canvas, and the same size.
- * Zoom 1 is the fit of each viewport, and the PT volume has another fit than
- * the CT volume, so the zoom of the target is its own zoom times the ratio of
- * the two parallel scales. The pan then moves the focal point of the source
- * to the centre of the target canvas.
+ * Puts the target viewport at the position of the source viewport along the
+ * normal: the target volume takes the point at the centre of the source and
+ * draws its slice nearest to it, as the camera position synchronizer moves
+ * the panes of its group, so a target of coarse slices does not move the
+ * panes of fine slices to the centre of its own slice. The synchronizer gives
+ * the panes of its group one parallel scale and one world point at the
+ * centre of the canvas, also to a pane that joins the group at its mount, and
+ * moves no pane along its normal for a zoom, a pan or a resize; the slice
+ * that a pane opens on is the application's to choose.
  */
 function initCameraSynchronization(
   sViewport: PlanarViewport,
   tViewport: PlanarViewport
 ) {
-  tViewport.setViewReference(sViewport.getViewReference());
+  const point = sViewport.getResolvedView()?.toICamera().focalPoint;
 
-  const sourceCamera = sViewport.getResolvedView()?.toICamera();
-  const targetCamera = tViewport.getResolvedView()?.toICamera();
-
-  if (!sourceCamera || !targetCamera) {
-    return;
-  }
-
-  const { zoom = 1 } =
-    viewportProjection.getFraming(tViewport, {
-      selector: { zoom: true },
-    }) ?? {};
-  const zoomed = viewportProjection.withFraming(tViewport, {
-    zoom: (zoom * targetCamera.parallelScale) / sourceCamera.parallelScale,
-  });
-
-  if (zoomed) {
-    tViewport.setViewState(zoomed);
-  }
-
-  const { pan = [0, 0], zoom: targetZoom = 1 } =
-    viewportProjection.getFraming(tViewport, {
-      selector: { zoom: true, pan: true },
-    }) ?? {};
-  const [x, y] = tViewport.worldToCanvas(sourceCamera.focalPoint);
-  const { clientWidth, clientHeight } = tViewport.canvas;
-  const panned = viewportProjection.withFraming(tViewport, {
-    pan: [
-      pan[0] + (clientWidth / 2 - x) / targetZoom,
-      pan[1] + (clientHeight / 2 - y) / targetZoom,
-    ],
-  });
-
-  if (panned) {
-    tViewport.setViewState(panned);
+  if (point) {
+    tViewport.setViewState({
+      slice: { kind: 'volumePoint', sliceWorldPoint: point },
+    });
   }
 }
 
@@ -1011,10 +992,6 @@ async function run() {
 
   // Display needs to be set up first so that we have viewport to reference for tools and synchronizers.
   await setUpDisplay();
-
-  // Tools and synchronizers can be set up in any order.
-  setUpToolGroups();
-  setUpSynchronizers();
 }
 
 run();

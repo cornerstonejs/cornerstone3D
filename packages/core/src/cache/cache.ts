@@ -1180,21 +1180,33 @@ class Cache {
   };
 
   /**
-   * Sets a partial image qualty to use, allowing another load to occur.
-   * If the partialImage is not defined, will use any current image defined.
-   * This will ONLY replace the current image if the quality is at least as
-   * good.
+   * Sets a partial image of a frame, allowing another load to occur. It
+   * never replaces an image by one of a worse quality
+   * (`ImageQualityStatus`, an image without one being of full resolution):
+   * a copy of another frame (a replicate) is worse than any data of the
+   * frame itself, so a replicate replaces only an image of a lower quality,
+   * while data of the frame itself also replaces an image of its own quality
+   * (a decode again). An image that is kept keeps its entry as it was.
+   * Without a partial image, the current image stays and only the load state
+   * changes.
    * This will not cancel any in flight requests, but will remove any partial
    * loaded requests.
    *
    * @param imageId - image ID
    * @param partialImage - partial image to use
+   * @param removeImageLoadObject - drops the load object of an entry that is
+   *   not loaded, so that a new request can run
+   * @returns whether the partial image is now the image of the entry
    */
   public setPartialImage(
     imageId: string,
     partialImage?: IImage,
     removeImageLoadObject = false
-  ) {
+  ): boolean {
+    if (partialImage && !this.takesPartialImage(imageId, partialImage)) {
+      return false;
+    }
+
     if (partialImage) {
       this._imageGeneration++;
     }
@@ -1210,7 +1222,7 @@ class Cache {
           sizeInBytes: 0,
         });
       }
-      return;
+      return !!partialImage;
     }
     if (cachedImage.loaded) {
       cachedImage.loaded = false;
@@ -1224,6 +1236,30 @@ class Cache {
       }
       cachedImage.image = partialImage || cachedImage.image;
     }
+
+    return !!partialImage;
+  }
+
+  /**
+   * Whether a partial image may replace the image of an entry: there is no
+   * image, the partial image is better, or it is data of the frame itself
+   * (not a replicate) of the same quality.
+   */
+  private takesPartialImage(imageId: string, partialImage: IImage): boolean {
+    const current = this.getImageQuality(imageId);
+
+    if (current === undefined) {
+      return true;
+    }
+
+    const quality =
+      partialImage.imageQualityStatus ?? ImageQualityStatus.FULL_RESOLUTION;
+
+    if (quality === current) {
+      return quality >= ImageQualityStatus.SUBRESOLUTION;
+    }
+
+    return quality > current;
   }
 
   /**

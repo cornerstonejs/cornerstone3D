@@ -14,10 +14,6 @@ export function fillNearbyFrames(listener: ImageLoadListener, request, image) {
   for (const nearbyItem of request.nearbyRequests) {
     try {
       const { itemId: targetId, imageQualityStatus } = nearbyItem;
-      const currentStatus = cache.getImageQuality(targetId);
-      if (currentStatus !== undefined && currentStatus >= imageQualityStatus) {
-        continue;
-      }
       const nearbyImage = {
         ...image,
         imageId: targetId,
@@ -26,7 +22,9 @@ export function fillNearbyFrames(listener: ImageLoadListener, request, image) {
 
       // This will deliver the partial image as something that can be
       // immediate rendered, but won't replace any future fetches.
-      cache.setPartialImage(targetId, nearbyImage);
+      if (!cache.setPartialImage(targetId, nearbyImage)) {
+        continue;
+      }
       listener.successCallback(targetId, nearbyImage);
     } catch (e) {
       log.warn("Couldn't fill nearby item ", nearbyItem.itemId, e);

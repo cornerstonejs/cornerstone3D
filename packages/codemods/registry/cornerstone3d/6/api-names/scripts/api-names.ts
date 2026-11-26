@@ -4,6 +4,7 @@ import * as displaySets from './families/display-sets.ts';
 import * as events from './families/events.ts';
 import * as genericNames from './families/generic-names.ts';
 import * as renderModes from './families/render-modes.ts';
+import * as synchronizerNames from './families/synchronizer-names.ts';
 import * as viewportMembers from './families/viewport-members.ts';
 
 /**
@@ -17,4 +18,5 @@ export default familiesCodemod([
   events,
   renderModes,
   viewportMembers,
+  synchronizerNames,
 ]);

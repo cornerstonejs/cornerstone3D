@@ -27,11 +27,13 @@ import renderingEngineCache from '../src/RenderingEngine/renderingEngineCache';
 import { displaySetRegistry } from '@cornerstonejs/metadata';
 
 /**
- * Row 290 of `v6-open-issues.md`: while a volume streams, the sampled slice
- * path sampled its slice again after each delivery, also a copy into a frame
- * that its plane does not read, which changes nothing on the screen. It now
- * samples again only when the record of a frame of its plane changes; an
- * axial plane reads one frame, so most deliveries of a load cost no sample.
+ * Rows 290 and 295 of `v6-open-issues.md`: while a volume streams, the
+ * sampled slice path of each backend (`VtkCpuSliceRenderPath` on the GPU,
+ * `CanvasCpuSliceRenderPath` on the CPU) sampled its slice again after each
+ * delivery, also a copy into a frame that its plane does not read, which
+ * changes nothing on the screen. Each now samples again only when the record
+ * of a frame of its plane changes; an axial plane reads one frame, so most
+ * deliveries of a load cost no sample.
  */
 
 const displaySetId = 'streaming-display-set';
@@ -79,12 +81,17 @@ function createStreamingVolume(quality) {
     imageData,
     metadata: { FrameOfReferenceUID: 'streaming-frame' },
     loadStatus: { loaded: false, loading: true },
+    framesLoaded: 1,
     load: jest.fn(),
     getVoxelQuality: jest.fn((options) => {
       const region = options?.region;
 
       if (!region || region[2][0] !== region[2][1]) {
-        return { status: ImageQualityStatus.FAR_REPLICATE, missing: 0 };
+        return {
+          status: ImageQualityStatus.FAR_REPLICATE,
+          missing: 0,
+          grid: { dimensions, spacing, direction, origin },
+        };
       }
 
       const status = quality[region[2][0]];
@@ -99,133 +106,163 @@ function createStreamingVolume(quality) {
   };
 }
 
-describe('The sampled slice path of a streaming volume', () => {
-  let viewport;
-  let provider;
-  let sampleSpy;
-  let quality;
+/**
+ * Gives the element of a viewport the size of its canvas, which the test
+ * environment does not lay out, and draws its first frame, as an engine does:
+ * the CPU backend sizes its canvas by the element and draws when the viewport
+ * renders.
+ */
+function drawFirstCpuFrame(viewport) {
+  Object.defineProperty(viewport.element, 'clientWidth', { value: 200 });
+  Object.defineProperty(viewport.element, 'clientHeight', { value: 100 });
+  viewport.resize();
+  viewport.render();
+}
 
-  beforeEach(() => {
-    const actors = [];
-    const camera = vtkCamera.newInstance();
-    const renderer = {
-      getActiveCamera: jest.fn(() => camera),
-      addActor: jest.fn((actor) => actors.push(actor)),
-      removeActor: jest.fn((actor) => actors.splice(actors.indexOf(actor), 1)),
-      getActors: jest.fn(() => actors),
-      resetCameraClippingRange: jest.fn(),
-      computeVisiblePropBounds: () => [1, -1, 1, -1, 1, -1],
-      getViewProps: () => actors,
-    };
+/** The backends of a sampled slice. */
+const backends = [
+  ['the GPU backend', {}, () => undefined],
+  ['the CPU backend', { renderBackend: 'cpu' }, drawFirstCpuFrame],
+];
 
-    renderingEngineCache.set({
-      id: engineId,
-      getRenderer: jest.fn(() => renderer),
-      getViewports: jest.fn(() => (viewport ? [viewport] : [])),
-      renderViewport: jest.fn(),
-    });
-    viewport = new PlanarViewport({
-      id: 'streaming-deliveries-viewport',
-      element: document.createElement('div'),
-      renderingEngineId: engineId,
-      canvas: document.createElement('canvas'),
-      sWidth: 200,
-      sHeight: 100,
-      defaultOptions: {},
-    });
-    provider = (type, imageId) => {
-      const i = imageIds.indexOf(imageId);
+describe.each(backends)(
+  'The sampled slice path of a streaming volume on %s',
+  (_, backendOptions, drawFirstFrame) => {
+    let viewport;
+    let provider;
+    let sampleSpy;
+    let quality;
 
-      if (i < 0 || type !== MetadataModules.IMAGE_PLANE) {
-        return;
-      }
-
-      return {
-        imageOrientationPatient: [1, 0, 0, 0, 1, 0],
-        rowCosines: [1, 0, 0],
-        columnCosines: [0, 1, 0],
-        imagePositionPatient: [0, 0, i * 2],
-        rowPixelSpacing: 1,
-        columnPixelSpacing: 1,
-        rows: 6,
-        columns: 8,
-        frameOfReferenceUID: 'streaming-frame',
+    beforeEach(() => {
+      const actors = [];
+      const camera = vtkCamera.newInstance();
+      const renderer = {
+        getActiveCamera: jest.fn(() => camera),
+        addActor: jest.fn((actor) => actors.push(actor)),
+        removeActor: jest.fn((actor) =>
+          actors.splice(actors.indexOf(actor), 1)
+        ),
+        getActors: jest.fn(() => actors),
+        resetCameraClippingRange: jest.fn(),
+        computeVisiblePropBounds: () => [1, -1, 1, -1, 1, -1],
+        getViewProps: () => actors,
       };
-    };
-    metaData.addProvider(provider, 10000);
-    displaySetRegistry.add(displaySetId, { imageIds, volumeId });
-    quality = new Array(dimensions[2]).fill(ImageQualityStatus.FAR_REPLICATE);
 
-    const volume = createStreamingVolume(quality);
+      renderingEngineCache.set({
+        id: engineId,
+        getRenderer: jest.fn(() => renderer),
+        getViewports: jest.fn(() => (viewport ? [viewport] : [])),
+        renderViewport: jest.fn(),
+      });
+      viewport = new PlanarViewport({
+        id: 'streaming-deliveries-viewport',
+        element: document.createElement('div'),
+        renderingEngineId: engineId,
+        canvas: document.createElement('canvas'),
+        sWidth: 200,
+        sHeight: 100,
+        defaultOptions: {},
+      });
+      provider = (type, imageId) => {
+        const i = imageIds.indexOf(imageId);
 
-    jest
-      .spyOn(cache, 'getVolume')
-      .mockImplementation((id) => (id === volumeId ? volume : undefined));
-    jest
-      .spyOn(viewport.dataProvider, 'load')
-      .mockImplementation(async (id, options) => ({
-        id,
-        type: 'image',
-        imageIds,
-        imageVolume: volume,
-        renderMode: options.renderMode,
-        volumeId,
-      }));
-    jest
-      .spyOn(setDefaultVolumeVOIModule, 'getDefaultVolumeVOIRange')
-      .mockResolvedValue({ lower: 0, upper: 10 });
-    sampleSpy = jest
-      .spyOn(sampleVolumeSliceModule, 'sampleVolumeSlice')
-      .mockImplementation(({ geometry }) => ({
-        pixelData: new Float32Array(geometry.width * geometry.height),
-        min: 0,
-        max: 1,
-      }));
-  });
+        if (i < 0 || type !== MetadataModules.IMAGE_PLANE) {
+          return;
+        }
 
-  afterEach(() => {
-    viewport.destroy();
-    renderingEngineCache.delete(engineId);
-    setSliceFirst(false);
-    metaData.removeProvider(provider);
-    displaySetRegistry.clear();
-    jest.restoreAllMocks();
-  });
+        return {
+          imageOrientationPatient: [1, 0, 0, 0, 1, 0],
+          rowCosines: [1, 0, 0],
+          columnCosines: [0, 1, 0],
+          imagePositionPatient: [0, 0, i * 2],
+          rowPixelSpacing: 1,
+          columnPixelSpacing: 1,
+          rows: 6,
+          columns: 8,
+          frameOfReferenceUID: 'streaming-frame',
+        };
+      };
+      metaData.addProvider(provider, 10000);
+      displaySetRegistry.add(displaySetId, { imageIds, volumeId });
+      quality = new Array(dimensions[2]).fill(ImageQualityStatus.FAR_REPLICATE);
 
-  async function deliver(frame, status) {
-    quality[frame] = status;
-    triggerEvent(eventTarget, Events.IMAGE_VOLUME_MODIFIED, { volumeId });
-    await waitForUpdate();
-  }
+      const volume = createStreamingVolume(quality);
 
-  it('samples nothing for a delivery into a frame that its plane does not read, and samples for one into its frame', async () => {
-    await viewport.setDisplaySets({
-      displaySetId,
-      options: {
-        orientation: OrientationAxis.AXIAL,
-        mode: 'volume',
-        sliceFirst: true,
-      },
+      jest
+        .spyOn(cache, 'getVolume')
+        .mockImplementation((id) => (id === volumeId ? volume : undefined));
+      jest
+        .spyOn(viewport.dataProvider, 'load')
+        .mockImplementation(async (id, options) => ({
+          id,
+          type: 'image',
+          imageIds,
+          imageVolume: volume,
+          renderMode: options.renderMode,
+          volumeId,
+        }));
+      jest
+        .spyOn(setDefaultVolumeVOIModule, 'getDefaultVolumeVOIRange')
+        .mockResolvedValue({ lower: 0, upper: 10 });
+      sampleSpy = jest
+        .spyOn(sampleVolumeSliceModule, 'sampleVolumeSlice')
+        .mockImplementation(({ geometry }) => ({
+          pixelData: new Float32Array(geometry.width * geometry.height),
+          min: 0,
+          max: 1,
+        }));
     });
-    await flush();
-    await waitForUpdate();
-    sampleSpy.mockClear();
 
-    const planeFrame = viewport.getViewState().slice.sliceWorldPoint[2] / 2;
-    const farFrames = [0, 9].filter(
-      (frame) => Math.abs(frame - planeFrame) > 1
-    );
+    afterEach(() => {
+      viewport.destroy();
+      renderingEngineCache.delete(engineId);
+      setSliceFirst(false);
+      metaData.removeProvider(provider);
+      displaySetRegistry.clear();
+      jest.restoreAllMocks();
+    });
 
-    expect(Number.isInteger(planeFrame)).toBe(true);
-    expect(farFrames.length).toBe(2);
+    async function deliver(frame, status) {
+      quality[frame] = status;
+      triggerEvent(eventTarget, Events.IMAGE_VOLUME_MODIFIED, { volumeId });
+      await waitForUpdate();
+    }
 
-    await deliver(farFrames[0], ImageQualityStatus.ADJACENT_REPLICATE);
-    await deliver(farFrames[1], ImageQualityStatus.FULL_RESOLUTION);
+    it('samples nothing for a delivery into a frame that its plane does not read, and samples for one into its frame', async () => {
+      await viewport.setDisplaySets({
+        displaySetId,
+        options: {
+          orientation: OrientationAxis.AXIAL,
+          mode: 'volume',
+          sliceFirst: true,
+          ...backendOptions,
+        },
+      });
+      await flush();
+      drawFirstFrame(viewport);
+      await waitForUpdate();
+      await waitForUpdate();
 
-    expect(sampleSpy).not.toHaveBeenCalled();
+      expect(sampleSpy).toHaveBeenCalled();
 
-    await deliver(planeFrame, ImageQualityStatus.FULL_RESOLUTION);
+      sampleSpy.mockClear();
 
-    expect(sampleSpy).toHaveBeenCalled();
-  });
-});
+      const planeFrame = viewport.getViewState().slice.sliceWorldPoint[2] / 2;
+      const farFrames = [0, 9].filter(
+        (frame) => Math.abs(frame - planeFrame) > 1
+      );
+
+      expect(Number.isInteger(planeFrame)).toBe(true);
+      expect(farFrames.length).toBe(2);
+
+      await deliver(farFrames[0], ImageQualityStatus.ADJACENT_REPLICATE);
+      await deliver(farFrames[1], ImageQualityStatus.FULL_RESOLUTION);
+
+      expect(sampleSpy).not.toHaveBeenCalled();
+
+      await deliver(planeFrame, ImageQualityStatus.FULL_RESOLUTION);
+
+      expect(sampleSpy).toHaveBeenCalled();
+    });
+  }
+);

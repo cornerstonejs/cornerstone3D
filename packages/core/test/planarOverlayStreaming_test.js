@@ -7,6 +7,7 @@ import {
   renderAndWait,
   waitFor,
 } from './utils/planarSeriesBothModes';
+import { PlanarCpuSliceCanvas } from '../src/RenderingEngine/Viewports/Planar/planarCpuSliceCanvas';
 
 const {
   Enums,
@@ -138,9 +139,15 @@ function slicePixels(actor) {
  * as its overlay, and a second viewport with the streaming volume as its
  * source, and opens the requests of the streaming volume a few at a time.
  * After each step, `check` gets the viewports and whether the frame SLICE
- * holds its own data.
+ * holds its own data. `sourceOptions` go to the mounts of both sources.
  */
-async function streamOverlay(renderingEngine, id, overlayOptions, check) {
+async function streamOverlay(
+  renderingEngine,
+  id,
+  overlayOptions,
+  check,
+  sourceOptions = {}
+) {
   const source = await createSeries({ id: `${id}Source`, size: SIZE });
   const requests = registerGatedLoader(id);
   const imageIds = seriesImageIds(id);
@@ -191,7 +198,7 @@ async function streamOverlay(renderingEngine, id, overlayOptions, check) {
   await fused.setDisplaySets(
     {
       displaySetId: `${id}Source`,
-      options: { mode: 'volume', initialImageIdIndex: SLICE },
+      options: { mode: 'volume', initialImageIdIndex: SLICE, ...sourceOptions },
     },
     {
       displaySetId: id,
@@ -200,7 +207,7 @@ async function streamOverlay(renderingEngine, id, overlayOptions, check) {
   );
   await alone.setDisplaySets({
     displaySetId: id,
-    options: { mode: 'volume', initialImageIdIndex: SLICE },
+    options: { mode: 'volume', initialImageIdIndex: SLICE, ...sourceOptions },
   });
   mounted = true;
   await steps;
@@ -287,6 +294,76 @@ describe('An overlay of a volume that streams with the interleaved stages -- ', 
     slicePixels(actorOf(alone, 'overlayStreamCpu')).forEach((value) =>
       expect(value).toBeCloseTo(frameValue(SLICE), 3)
     );
+  }, 60000);
+
+  it('shows nothing or the frame on the plane of the source on the CPU backend, never a copy of another frame, and the source alone keeps its coarse preview', async function () {
+    const id = 'overlayStreamCanvas';
+    const volumeId = `cornerstoneStreamingImageVolume:${id}`;
+    const draws = [];
+    const draw = PlanarCpuSliceCanvas.prototype.draw;
+
+    spyOn(PlanarCpuSliceCanvas.prototype, 'draw').and.callFake(function (args) {
+      draws.push({
+        volumeId: this.volume.volumeId,
+        canvas: args.target.canvas,
+        pixels: Array.from(this.slice?.pixelData ?? []),
+      });
+
+      return draw.call(this, args);
+    });
+    const drawsOf = (viewport) =>
+      draws.filter(
+        (draw) =>
+          draw.volumeId === volumeId && viewport.element.contains(draw.canvas)
+      );
+    const shown = [];
+    let previewSeen = false;
+    const nearest = {
+      appearance: { interpolationType: Enums.InterpolationType.NEAREST },
+    };
+    const { fused } = await streamOverlay(
+      renderingEngine,
+      id,
+      { renderBackend: 'cpu', ...nearest },
+      ({ fused, alone, ownFrame }) => {
+        const overlayDraws = drawsOf(fused);
+        const aloneDraws = drawsOf(alone);
+
+        shown.push({
+          ownFrame,
+          drawn: overlayDraws.length > 0,
+          pixels: overlayDraws.flatMap(({ pixels }) => pixels),
+        });
+        previewSeen ||=
+          !ownFrame &&
+          aloneDraws.some(({ pixels }) =>
+            pixels.some(
+              (value) => value > 0 && Math.abs(value - frameValue(SLICE)) > 0.5
+            )
+          );
+        draws.length = 0;
+      },
+      { renderBackend: 'cpu', ...nearest }
+    );
+
+    shown.forEach(({ ownFrame, drawn, pixels }) => {
+      if (!ownFrame) {
+        expect(drawn).toBe(false);
+      }
+
+      pixels.forEach((value) =>
+        expect(value).toBeCloseTo(frameValue(SLICE), 3)
+      );
+    });
+
+    const firstOwn = shown.findIndex(({ ownFrame }) => ownFrame);
+
+    expect(firstOwn).toBeGreaterThan(0);
+    shown.slice(firstOwn).forEach(({ drawn }) => expect(drawn).toBe(true));
+    expect(previewSeen).toBe(true);
+    expect(
+      fused.getRenderPlan().find(({ role }) => role === 'overlay')
+    ).toEqual(jasmine.objectContaining({ slice: 'cpu', backend: 'cpu' }));
   }, 60000);
 
   it('hides the slice of the GPU volume path until the frame on the plane of the source has its own data', async function () {

@@ -238,6 +238,43 @@ export function getPlanarFrameDeliveryKey(
 }
 
 /**
+ * What a sampled slice of a volume that loads does for a delivery
+ * (`IMAGE_VOLUME_MODIFIED`), by the key of the deliveries of its plane
+ * (`getPlanarFrameDeliveryKey`) at its last sample:
+ *
+ * - `'now'`: a frame of the plane changed: sample at the next animation
+ *   frame, so the own frame of the plane shows as soon as it arrives;
+ * - `'soon'`: no key is kept for the plane, whose picture changes with most
+ *   deliveries: sample after the shortest time between two samples of a load
+ *   of the render path;
+ * - `'none'`: the frames of the plane are as they were (a copy into a frame
+ *   that the plane does not read): the picture would be the same, so nothing
+ *   is sampled. The kept slices of other planes are stale all the same.
+ *
+ * Both backends follow it: the sampled slice path of the GPU
+ * (`VtkCpuSliceRenderPath`) and of the CPU (`CanvasCpuSliceRenderPath`).
+ *
+ * @param volume - The volume of the layer
+ * @param camera - The plane of the view
+ * @param slabThickness - The slab of the layer, in world units, or 0
+ * @param sampledKey - The key of the plane at the last sample, if any
+ */
+export function getPlanarDeliveryUpdate(
+  volume: IImageVolume,
+  camera: { focalPoint?: Point3; viewPlaneNormal?: Point3 } | undefined,
+  slabThickness: number,
+  sampledKey: string | undefined
+): 'now' | 'soon' | 'none' {
+  const key = getPlanarFrameDeliveryKey(volume, camera, slabThickness);
+
+  if (key === undefined) {
+    return 'soon';
+  }
+
+  return key === sampledKey ? 'none' : 'now';
+}
+
+/**
  * What an overlay layer of a volume may draw of the plane of a camera (see
  * {@link PlanarOverlayFrameState}).
  *

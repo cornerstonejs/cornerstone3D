@@ -55,8 +55,15 @@ import {
   refreshCpuSliceFidelity,
   reportSamplingState,
 } from './VtkCpuSliceRenderPath';
-import { isSegmentationOverlayData } from '../renderingFidelity';
-import { getPlanarOverlayFrameState } from './planarOverlayFrames';
+import {
+  isSegmentationOverlayData,
+  isVolumeLoading,
+} from '../renderingFidelity';
+import {
+  getPlanarDeliveryUpdate,
+  getPlanarFrameDeliveryKey,
+  getPlanarOverlayFrameState,
+} from './planarOverlayFrames';
 import type { PlanarOverlayFrameState } from './planarOverlayFrames';
 import { resolveSlabThickness } from './planarVolumeSliceBlendMode';
 
@@ -88,6 +95,11 @@ type CpuVolumeSliceMount = PlanarSlicePlaneMoves & {
   sampledFor?: string;
   /** What the layer may draw of the plane of the last render. */
   overlayFrames?: PlanarOverlayFrameState;
+  /**
+   * The key of the deliveries of the frames of the plane of the last render
+   * (`getPlanarFrameDeliveryKey`), when one is kept.
+   */
+  deliveryKey?: string;
 };
 
 /**
@@ -228,8 +240,13 @@ export class CanvasCpuSliceRenderPath
   /**
    * Listens for new voxel data of the volume and for a change of its active
    * time point. Each makes the kept slices stale, so the next render samples
-   * again, and asks for a render. A progressive or edited update
-   * (`IMAGE_VOLUME_MODIFIED`) renders at most once per
+   * again, and asks for a render. A delivery while the volume loads follows
+   * the rule of both sampled slice paths (`getPlanarDeliveryUpdate`): one that
+   * leaves the frames of the plane as they were samples nothing (the slice on
+   * screen stays, the kept slices of other planes are stale), one that
+   * changes them renders at the next animation frame, and one for a plane
+   * without a key renders as an edit does. An edit of the voxels
+   * (`IMAGE_VOLUME_MODIFIED` of a loaded volume) renders at most once per
    * `rendering.planar.cpuVolume.volumeModifiedThrottleMs`; the end of the load
    * renders at once and once more at the next animation frame, because the
    * completion event can arrive before the streamed voxels are stable; a new
@@ -246,6 +263,7 @@ export class CanvasCpuSliceRenderPath
     const throttleMs = getCpuVolumeModifiedThrottleMs();
     let isActive = true;
     let frameId: number | undefined;
+    let deliveryFrameId: number | undefined;
     let throttleTimeoutId: number | undefined;
     let lastThrottledRenderTime = -Infinity;
     const invalidate = () => {
@@ -288,6 +306,37 @@ export class CanvasCpuSliceRenderPath
         }
       }, remainingDelay);
     };
+    const onDelivery = () => {
+      const update = getPlanarDeliveryUpdate(
+        rendering.imageVolume,
+        getPlanarRenderPathActiveSourceICamera(ctx),
+        resolveSlabThickness(rendering.appearance?.slabThickness),
+        mount.deliveryKey
+      );
+
+      if (update === 'none') {
+        voxelManager?.invalidateCache?.();
+        sampler.invalidate();
+        return;
+      }
+
+      invalidate();
+
+      if (update === 'soon') {
+        onVolumeModified();
+        return;
+      }
+
+      if (deliveryFrameId === undefined) {
+        deliveryFrameId = window.requestAnimationFrame(() => {
+          deliveryFrameId = undefined;
+
+          if (isActive) {
+            ctx.display.renderNow();
+          }
+        });
+      }
+    };
     const onLoadingCompleted = () => {
       clearThrottle();
       ctx.display.renderNow();
@@ -312,6 +361,14 @@ export class CanvasCpuSliceRenderPath
       volumeId,
       (eventType) => {
         if (!isActive || eventType === Events.VOLUME_TEXTURE_LIMITS_CHANGED) {
+          return;
+        }
+
+        if (
+          eventType === Events.IMAGE_VOLUME_MODIFIED &&
+          isVolumeLoading(rendering.imageVolume)
+        ) {
+          onDelivery();
           return;
         }
 
@@ -351,6 +408,11 @@ export class CanvasCpuSliceRenderPath
       if (frameId !== undefined) {
         window.cancelAnimationFrame(frameId);
         frameId = undefined;
+      }
+
+      if (deliveryFrameId !== undefined) {
+        window.cancelAnimationFrame(deliveryFrameId);
+        deliveryFrameId = undefined;
       }
 
       removeVolumeSubscriptions();
@@ -457,6 +519,11 @@ export class CanvasCpuSliceRenderPath
     refreshCpuVolumeFidelity(rendering, sampler);
     recordPlaneMove(mount, camera);
     mount.overlayFrames = getCanvasSliceOverlayFrames(mount, camera);
+    mount.deliveryKey = getPlanarFrameDeliveryKey(
+      rendering.imageVolume,
+      camera,
+      resolveSlabThickness(rendering.appearance?.slabThickness)
+    );
 
     if (mount.overlayFrames === 'empty') {
       mount.shownSlice = undefined;

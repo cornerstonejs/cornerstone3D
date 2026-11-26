@@ -6,6 +6,7 @@ jest.mock('@cornerstonejs/core', () => {
       },
       ViewportType: {
         PLANAR: 'planar',
+        VOLUME_3D: 'volume3d',
       },
     },
     eventTarget: new EventTarget(),

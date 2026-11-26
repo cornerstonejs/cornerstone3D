@@ -3,6 +3,7 @@ import type {
   PlanarViewport,
   PlanarViewState,
   Types,
+  VolumeViewport3D,
 } from '@cornerstonejs/core';
 import { Enums, getRenderingEngine, utilities } from '@cornerstonejs/core';
 import type { Synchronizer } from '../../store';
@@ -20,6 +21,12 @@ const ZOOM_PAN_SELECTOR: Types.ViewFramingSelector = {
   pan: true,
   zoom: true,
 };
+
+/** The families of viewports whose cameras `syncPanes` keeps in step. */
+const SYNCED_VIEWPORT_TYPES: string[] = [
+  Enums.ViewportType.PLANAR,
+  Enums.ViewportType.VOLUME_3D,
+];
 
 /** The fields of a planar framing that turn and flip the view. */
 const ROTATION_FLIP_SELECTOR: Types.ViewFramingSelector = {
@@ -51,6 +58,23 @@ type PlanarPane = {
   camera: Types.ICamera;
 };
 
+/** A 3D viewport of a synchronizer, its ids and its camera. */
+type Volume3DPane = {
+  id: Types.IViewportId;
+  viewport: VolumeViewport3D;
+  camera: Types.ICamera;
+};
+
+/** A planar or a 3D viewport of a synchronizer that shows data. */
+type Pane = PlanarPane | Volume3DPane;
+
+/** The framing of a view that is not turned in its plane nor flipped. */
+const UNTURNED_FRAMING: Types.ViewFraming = {
+  rotation: 0,
+  flipHorizontal: false,
+  flipVertical: false,
+};
+
 /**
  * The panes of each synchronizer that are in step with its group, by
  * `renderingEngineId:viewportId`: a pane that drove the group, or that the
@@ -63,7 +87,7 @@ const panesInStep = new WeakMap<Synchronizer, Set<string>>();
  * event, so that every target of one event reads the same answer. `null`
  * when the source drives the group.
  */
-const groupPaneOfEvent = new WeakMap<object, PlanarPane | null>();
+const groupPaneOfEvent = new WeakMap<object, Pane | null>();
 
 /** The key of a pane in `panesInStep`. */
 function paneKey({ renderingEngineId, viewportId }: Types.IViewportId): string {
@@ -102,6 +126,29 @@ function isSameScale(scale: number, other: number): boolean {
     Math.abs(scale - other) <=
     SCALE_TOLERANCE * Math.max(Math.abs(scale), Math.abs(other))
   );
+}
+
+/** Whether a pane is a 3D viewport. */
+function is3DPane(pane: Pane): pane is Volume3DPane {
+  return pane.viewport.type === Enums.ViewportType.VOLUME_3D;
+}
+
+/** The tangent of half an angle in degrees. */
+function tanOfHalf(degrees: number): number {
+  return Math.tan((degrees * Math.PI) / 360);
+}
+
+/**
+ * Half the world height of the canvas at the focal point of a camera: the
+ * parallel scale of a parallel camera, and for a perspective camera the
+ * distance of its position from the focal point times the tangent of half
+ * its view angle.
+ */
+function getHalfHeight(camera: Types.ICamera): number {
+  return camera.parallelProjection === false
+    ? vec3.distance(camera.position, camera.focalPoint) *
+        tanOfHalf(camera.viewAngle)
+    : camera.parallelScale;
 }
 
 /** Whether two normals are parallel, in the same or the other direction. */
@@ -155,6 +202,12 @@ function changesCamera(detail?: Types.EventTypes.CameraModifiedEventDetail) {
     vec3.distance(camera.focalPoint, previousCamera.focalPoint) >
       POSITION_TOLERANCE ||
     !isSameScale(camera.parallelScale, previousCamera.parallelScale) ||
+    (camera.parallelProjection === false &&
+      (!camera.position ||
+        !previousCamera.position ||
+        vec3.distance(camera.position, previousCamera.position) >
+          POSITION_TOLERANCE ||
+        camera.viewAngle !== previousCamera.viewAngle)) ||
     !utilities.isEqual(
       camera.viewPlaneNormal,
       previousCamera.viewPlaneNormal
@@ -323,12 +376,15 @@ function getFramingTowards(
 function getViewUpFramingTowards(
   viewport: PlanarViewport,
   camera: Types.ICamera,
-  fromViewport: PlanarViewport,
+  fromViewport: Types.IViewport,
   fromCamera: Types.ICamera
 ): Partial<PlanarViewState> | undefined {
-  const source = getViewportFraming(fromViewport, ROTATION_FLIP_SELECTOR) as
-    | Types.ViewFraming
-    | undefined;
+  const source =
+    fromViewport.type === Enums.ViewportType.PLANAR
+      ? (getViewportFraming(fromViewport, ROTATION_FLIP_SELECTOR) as
+          | Types.ViewFraming
+          | undefined)
+      : UNTURNED_FRAMING;
   const target = getViewportFraming(viewport, ROTATION_FLIP_SELECTOR) as
     | Types.ViewFraming
     | undefined;
@@ -385,12 +441,15 @@ function getViewUpFramingTowards(
  * plane turns to the plane of `from` first, through a view reference of the
  * plane and the point, as the 5.x camera did; a stack cannot turn and takes
  * nothing. A view of another frame of reference takes the parallel scale
- * only. Nothing is written when `to` has all of it.
+ * only. Nothing is written when `to` has all of it. A 3D view as `from` is
+ * a view of its direction, its view up and its focal point, neither turned
+ * in its plane nor flipped, whose scale is the half height of its canvas at
+ * the focal point (`getHalfHeight`).
  *
  * @returns Whether `to` shows the view of `from`.
  */
 function followPlanarView(
-  from: PlanarPane,
+  from: Pane,
   to: PlanarPane,
   moveSlice: boolean
 ): boolean {
@@ -451,13 +510,128 @@ function followPlanarView(
 }
 
 /**
- * A planar pane of a synchronizer, with its camera, or undefined when it is
- * not a planar viewport that shows data.
+ * Gives the 3D view of `to` the view of `from` in one write of its camera, as
+ * the 5.18.3 `setCamera` of the camera of `from` did, so that both show the
+ * same world point at the centre of the canvas from the same side at the same
+ * scale:
+ *
+ * - the direction (view plane normal) and the view up of `from`;
+ * - the focal point of a 3D `from`; of a planar `from`, the world point at
+ *   the centre of its canvas at the depth of `to` along the normal, as the
+ *   slice of a planar view means nothing to a 3D camera, so a scroll of the
+ *   planar view writes no 3D view;
+ * - the scale as the half height of the canvas at the focal point
+ *   (`getHalfHeight`): a parallel `to` takes it as its parallel scale, and
+ *   the distance of the position of a 3D `from` (5.18.3 copied the
+ *   position); a perspective `to` keeps its view angle, or takes the one of a
+ *   perspective `from` (5.18.3 copied it, so two perspective views have one
+ *   camera), and the distance that gives the half height.
+ *
+ * The projection of `to` (parallel or perspective) stays, as 5.18.3 did not
+ * copy it; the clipping range is fitted by the viewport. A view of another
+ * frame of reference takes the scale only. Nothing is written when `to` has
+ * all of it.
+ *
+ * @returns Whether `to` shows the view of `from`.
  */
-function getPlanarPane(id: Types.IViewportId): PlanarPane | undefined {
+function followVolume3DView(from: Pane, to: Volume3DPane): boolean {
+  const source = from.camera;
+  const target = to.camera;
+  const sameFrame =
+    from.viewport.getFrameOfReferenceUID() ===
+    to.viewport.getFrameOfReferenceUID();
+  const normal = sameFrame ? source.viewPlaneNormal : target.viewPlaneNormal;
+  const viewUp = sameFrame ? source.viewUp : target.viewUp;
+  const focalPoint = !sameFrame
+    ? target.focalPoint
+    : is3DPane(from)
+      ? source.focalPoint
+      : vec3.scaleAndAdd(
+          vec3.create(),
+          source.focalPoint,
+          normal,
+          distanceAlong(normal, source.focalPoint, target.focalPoint)
+        );
+  const halfHeight = getHalfHeight(source);
+  const perspective = target.parallelProjection === false;
+  const viewAngle =
+    perspective && sameFrame && source.parallelProjection === false
+      ? source.viewAngle
+      : target.viewAngle;
+  const placed = sameFrame && is3DPane(from) ? source : target;
+  const distance = perspective
+    ? halfHeight / tanOfHalf(viewAngle)
+    : vec3.distance(placed.position, placed.focalPoint);
+  const position = vec3.scaleAndAdd(
+    vec3.create(),
+    focalPoint,
+    normal,
+    distance
+  );
+  const parallelScale = perspective ? target.parallelScale : halfHeight;
+
+  if (
+    utilities.isEqual(normal, target.viewPlaneNormal) &&
+    (!viewUp || !target.viewUp || utilities.isEqual(viewUp, target.viewUp)) &&
+    vec3.distance(focalPoint, target.focalPoint) <= POSITION_TOLERANCE &&
+    vec3.distance(position, target.position) <= POSITION_TOLERANCE &&
+    isSameScale(parallelScale, target.parallelScale) &&
+    viewAngle === target.viewAngle
+  ) {
+    return true;
+  }
+
+  to.viewport.setViewState({
+    viewPlaneNormal: [...normal] as Types.Point3,
+    viewUp: viewUp ? ([...viewUp] as Types.Point3) : undefined,
+    focalPoint: [focalPoint[0], focalPoint[1], focalPoint[2]],
+    position: [position[0], position[1], position[2]],
+    parallelScale,
+    viewAngle,
+  });
+
+  return true;
+}
+
+/**
+ * Gives the view of `to` the view of `from`: `followPlanarView` for a planar
+ * view, with the half height of the canvas of `from` as its scale, and
+ * `followVolume3DView` for a 3D view.
+ *
+ * @returns Whether `to` shows the view of `from`.
+ */
+function followView(from: Pane, to: Pane, moveSlice: boolean): boolean {
+  if (is3DPane(to)) {
+    return followVolume3DView(from, to);
+  }
+
+  return followPlanarView(
+    {
+      ...from,
+      camera: { ...from.camera, parallelScale: getHalfHeight(from.camera) },
+    },
+    to,
+    moveSlice
+  );
+}
+
+/**
+ * A pane of a synchronizer, with its camera, or undefined when it is not a
+ * planar or a 3D viewport that shows data.
+ */
+function getPane(id: Types.IViewportId): Pane | undefined {
   const viewport = getRenderingEngine(id.renderingEngineId)?.getViewport(
     id.viewportId
   );
+
+  if (viewport?.type === Enums.ViewportType.VOLUME_3D) {
+    const volume3D = viewport as VolumeViewport3D;
+
+    return volume3D.getDisplaySets().length
+      ? { id, viewport: volume3D, camera: volume3D.getViewState() }
+      : undefined;
+  }
+
   const camera = getPlanarCamera(viewport);
 
   return camera
@@ -474,8 +648,8 @@ function getPlanarPane(id: Types.IViewportId): PlanarPane | undefined {
  */
 function getGroupPane(
   synchronizer: Synchronizer,
-  source: PlanarPane
-): PlanarPane | undefined {
+  source: Pane
+): Pane | undefined {
   const inStep = panesInStep.get(synchronizer);
   const sourceKey = paneKey(source.id);
   const frameOfReferenceUID = source.viewport.getFrameOfReferenceUID();
@@ -487,7 +661,7 @@ function getGroupPane(
       continue;
     }
 
-    const pane = getPlanarPane(id);
+    const pane = getPane(id);
 
     if (pane?.viewport.getFrameOfReferenceUID() === frameOfReferenceUID) {
       return pane;
@@ -496,9 +670,9 @@ function getGroupPane(
 }
 
 /**
- * The camera position sync between two planar viewports, as the 5.x
+ * The camera position sync between two planar or 3D viewports, as the 5.x
  * camera copy kept them, whatever the grids and the extents of their
- * volumes.
+ * volumes. A target follows the source with `followView`.
  *
  * A camera event that changed the camera of the source (a zoom, a pan, a
  * rotation, a flip, a scroll, a jump, a reset) gives every target the
@@ -522,13 +696,13 @@ function getGroupPane(
  * written can lie up to half a slice of it from the position of a pane of a
  * fine grid, so a slice taken from it at a resize would move the fine pane.
  */
-function syncPlanarViewports(
+function syncPanes(
   synchronizer: Synchronizer,
   sourceId: Types.IViewportId,
   targetId: Types.IViewportId,
   cameraModifiedEvent: CustomEvent | undefined
 ): void {
-  const source = getPlanarPane(sourceId);
+  const source = getPane(sourceId);
 
   if (!source) {
     return;
@@ -552,7 +726,7 @@ function syncPlanarViewports(
 
     if (group) {
       if (paneKey(group.id) === paneKey(targetId)) {
-        followPlanarView(group, source, false);
+        followView(group, source, false);
         setInStep(synchronizer, sourceId);
       }
 
@@ -562,9 +736,9 @@ function syncPlanarViewports(
 
   setInStep(synchronizer, sourceId);
 
-  const target = getPlanarPane(targetId);
+  const target = getPane(targetId);
 
-  if (target && followPlanarView(source, target, movesAlongNormal(detail))) {
+  if (target && followView(source, target, movesAlongNormal(detail))) {
     setInStep(synchronizer, targetId);
   }
 }
@@ -573,16 +747,20 @@ function syncPlanarViewports(
  * Synchronizer callback of the camera position synchronizer: the target
  * shows what the source shows.
  *
- * Between two planar viewports, see `syncPlanarViewports`: the panes of one
- * group show the same parallel scale (the same world height of the canvas,
- * so the same millimetres per canvas pixel on panes of one size) and the
- * same world point at the centre of the canvas, whatever the extents of
+ * Between planar and 3D viewports, see `syncPanes`: the panes of one group
+ * show the same scale (the same world height of the canvas at the focal
+ * point, so the same millimetres per canvas pixel on panes of one size) and
+ * the same world point at the centre of the canvas, whatever the extents of
  * their volumes, so the zoom that each pane reports against its own fit
- * differs between panes of other extents; each pane shows the slice of its
- * own grid nearest to the position of the pane that moved along its normal.
+ * differs between panes of other extents; each planar pane shows the slice
+ * of its own grid nearest to the position of the pane that moved along its
+ * normal. Two 3D panes have one camera (`followVolume3DView`); a 3D pane
+ * takes the plane, the centre and the scale of a planar pane, and a planar
+ * pane the ones of a 3D pane, as the 5.18.3 camera copy turned them.
  *
- * A target or a source of another family takes the view reference of the
- * source and its zoom and pan against the fit.
+ * A target or a source of another family (a video, a whole slide, an ECG)
+ * takes the view reference of the source and its zoom and pan against the
+ * fit.
  *
  * @param synchronizerInstance - The Instance of the Synchronizer
  * @param sourceViewport - The list of IDs defining the source viewport.
@@ -613,10 +791,10 @@ export default function cameraSyncCallback(
   }
 
   if (
-    sViewport.type === Enums.ViewportType.PLANAR &&
-    tViewport.type === Enums.ViewportType.PLANAR
+    SYNCED_VIEWPORT_TYPES.includes(sViewport.type) &&
+    SYNCED_VIEWPORT_TYPES.includes(tViewport.type)
   ) {
-    syncPlanarViewports(
+    syncPanes(
       synchronizerInstance,
       sourceViewport,
       targetViewport,

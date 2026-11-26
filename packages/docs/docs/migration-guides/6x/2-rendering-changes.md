@@ -1849,7 +1849,13 @@ A listener that counted the events to follow the load reads
 `detail.framesProcessed` or `volume.getImageQuality(index)` instead. While a
 volume loads, the sampled slice paths of a planar viewport draw again only when
 a frame that their plane reads changed, so a copy into a frame that the view
-does not show costs no sample of the slice.
+does not show costs no sample of the slice. Both backends follow that rule: on
+the CPU (`renderBackend: 'cpu'`) a change of a frame of the plane draws at the
+next animation frame, where 6.0.0-beta.2 sampled again at each event and drew
+at most once per `rendering.planar.cpuVolume.volumeModifiedThrottleMs`
+(5000 ms by default). That throttle still holds for a plane that reads more
+than four frames (a sagittal, coronal or oblique view of an axial series, a
+thick slab) and for an edit of the voxels of a loaded volume.
 
 ### The default window of a streaming volume
 
@@ -3061,9 +3067,34 @@ levels of 255.
   for a sagittal target of an axial source turned by 45, where 5.x read 90,
   the angle from the view up of its first plane. A stack of another plane
   takes nothing. A target of another frame of reference takes the parallel
-  scale only. A 3D viewport, or a pair of other families, takes the view
-  reference of the source and its zoom and pan against the fit, as in
-  6.0.0-beta.2.
+  scale only. A pane joins a group at its mount only when it is in the
+  group at that time: add it to the synchronizer after `setViewports` (or
+  `enableElement`) and before its `setDisplaySets`. `Synchronizer.add` of a
+  viewport that is not enabled yet leaves it out of the sources, so the pane
+  follows the group and never drives it.
+
+  A 3D viewport of a group takes the camera of a 3D source, as the 5.x
+  `setCamera` gave it: the direction, the view up and the focal point, and
+  the half height of the view at the focal point (the parallel scale of a
+  parallel camera, the distance times the tangent of half the view angle of
+  a perspective one). A parallel target takes it as its parallel scale, and
+  the distance of the source; a perspective target takes the view angle of
+  a perspective source and the distance that gives that height, so two
+  perspective views have one camera, and keeps its own view angle for a
+  parallel source. The projection of each pane stays, as 5.x did not copy
+  it. Between a planar and a 3D viewport the target turns to the plane and
+  the view up of the source, as the 5.x camera copy turned it, and takes the
+  world point at the centre and the scale; a 3D target keeps its depth
+  along the normal, as the slice of a planar view means nothing to a 3D
+  camera, so a scroll of the planar pane writes no 3D pane. Each target is
+  written once, not when it has the view already, and nothing comes back.
+  A 3D mount fires no camera event, so a 3D pane that joins a group takes
+  its view at the next change of a pane of the group. 6.0.0-beta.2 gave a 3D
+  target the view reference of the source and its zoom and pan against its
+  own fit, so two 3D panes of volumes of other extents showed other sizes.
+  A pair of other families (a video, a whole slide, an ECG viewport) takes
+  the view reference of the source and its zoom and pan against the fit, as
+  in 6.0.0-beta.2.
 
   The camera position synchronizer has no option for the other behaviour,
   each pane at the same zoom against its own fit. The zoom and pan
@@ -3541,6 +3572,29 @@ as it did in 5.x. The 5.x guard of a next viewport is gone: every viewport
 is one, see [Functions of the core package](./3-api-map.md#functions-of-the-core-package).
 
 ## Smaller changes
+
+- **`cache.setPartialImage` keeps the better image.** It never replaces the
+  image of a cache entry by one of a worse `ImageQualityStatus` (an image
+  without one counts as full resolution). A copy of another frame
+  (`FAR_REPLICATE`, `ADJACENT_REPLICATE`) is worse than any data of the frame
+  itself, and replaces only a worse image; data of the frame itself also
+  replaces an image of its own quality, as a decode again. A refused image
+  leaves the entry as it was. It answers whether it took the image; 5.x and
+  6.0.0-beta.2 replaced the image whatever the qualities and answered
+  nothing, so a caller checked first:
+
+  ```ts
+  // Before
+  if ((cache.getImageQuality(imageId) ?? 0) < copy.imageQualityStatus) {
+    cache.setPartialImage(imageId, copy);
+    deliver(imageId, copy);
+  }
+
+  // After
+  if (cache.setPartialImage(imageId, copy)) {
+    deliver(imageId, copy);
+  }
+  ```
 
 - **A planar viewport that draws on the CPU is drawn in its resize.** On a
   device with WebGL, a planar viewport whose display sets are drawn on the

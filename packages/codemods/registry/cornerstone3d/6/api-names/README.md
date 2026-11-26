@@ -433,6 +433,18 @@ before.
   class or an object literal of the application. The other queries are new:
   nothing to rewrite.
 
+### Synchronizer names
+
+`synchronizers.createStackImageSynchronizer` of the tools, the alias that 5.x
+and 6.0.0-beta.2 kept of `createImageSliceSynchronizer`, is gone.
+
+- `createStackImageSynchronizer` becomes `createImageSliceSynchronizer` on
+  the `synchronizers` of `@cornerstonejs/tools`: a member, a member of a
+  namespace import, a string in brackets and a destructured key, which keeps
+  its local name (`{ createImageSliceSynchronizer: createSliceSync }`).
+- Left: a member of that name on another object, such as a module of the
+  application or an object literal, and a local function of that name.
+
 ## Reported
 
 - Manual: each site of a removed name, and each site of a renamed name
@@ -516,6 +528,7 @@ family, and its fixtures. Lanes that work in parallel edit different files:
 | Events                       | `scripts/families/events.ts`                 | EV1, EV2                                                           |
 | Render modes                 | `scripts/families/render-modes.ts`           | RM1                                                                |
 | Viewport members and queries | `scripts/families/viewport-members.ts`       | RM2                                                                |
+| Synchronizer names           | `scripts/families/synchronizer-names.ts`     | FX20                                                               |
 
 Do not edit `scripts/lib.ts`: it is an equal copy in every 6.0 step, and
 `yarn validate:registry` fails when the copies differ. Do not edit

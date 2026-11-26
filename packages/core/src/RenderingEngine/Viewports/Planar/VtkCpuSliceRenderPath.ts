@@ -57,6 +57,7 @@ import {
 import { getRenderingCapabilities } from '../../../utilities/renderingCapabilities';
 import { canFilterFloatTextures } from '../../vtkClasses/floatLinearFilter';
 import {
+  getPlanarDeliveryUpdate,
   getPlanarFrameDeliveryKey,
   getPlanarOverlayFrameState,
 } from './planarOverlayFrames';
@@ -266,15 +267,15 @@ export class VtkCpuSliceRenderPath
           eventType === Events.IMAGE_VOLUME_MODIFIED &&
           isVolumeLoading(rendering.imageVolume)
         ) {
-          const deliveryKey = getCpuSliceDeliveryKey(
-            mount,
-            getPlanarRenderPathActiveSourceICamera(mount.ctx)
+          const update = getPlanarDeliveryUpdate(
+            rendering.imageVolume,
+            getPlanarRenderPathActiveSourceICamera(mount.ctx),
+            resolveSlabThickness(rendering.appearance?.slabThickness),
+            mount.deliveryKey
           );
 
-          if (deliveryKey === undefined) {
-            updates.soon();
-          } else if (deliveryKey !== mount.deliveryKey) {
-            updates.now();
+          if (update !== 'none') {
+            updates[update]();
           }
 
           return;

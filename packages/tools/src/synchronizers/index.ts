@@ -6,16 +6,12 @@ import createImageSliceSynchronizer from './synchronizers/createImageSliceSynchr
 import createSlabThicknessSynchronizer from './synchronizers/createSlabThicknessSynchronizer';
 import imageSliceSyncCallback from './callbacks/imageSliceSyncCallback';
 
-// for backward compatibility
-const createStackImageSynchronizer = createImageSliceSynchronizer;
-
 export {
   createCameraPositionSynchronizer,
   createViewFramingSynchronizer,
   createVOISynchronizer,
   createZoomPanSynchronizer,
   createImageSliceSynchronizer,
-  createStackImageSynchronizer,
   createSlabThicknessSynchronizer,
   imageSliceSyncCallback,
 };
