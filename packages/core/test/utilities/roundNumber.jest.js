@@ -21,5 +21,7 @@ describe('roundNumber', function () {
     expect(roundNumber(40.5, 5)).toBe('40.5');
     expect(roundNumber(401.12345, 5)).toBe('401.123');
     expect(roundNumber([1, 2.5])).toBe('1, 2.5');
+    // The exponent of a very large value stays.
+    expect(roundNumber(1.2e30)).toBe('1.2e+30');
   });
 });

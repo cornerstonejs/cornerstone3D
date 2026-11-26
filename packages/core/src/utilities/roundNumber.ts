@@ -46,7 +46,11 @@ function roundNumber(
                 ? precision + 3
                 : precision + 4;
   const text = value.toFixed(fixedPrecision);
-  const trimmed = text.includes('.') ? text.replace(/\.?0+$/, '') : text;
+  // toFixed gives exponential text from 1e21; trimming would cut its exponent.
+  const trimmed =
+    text.includes('.') && !text.includes('e')
+      ? text.replace(/\.?0+$/, '')
+      : text;
   return trimmed === '-0' ? '0' : trimmed;
 }
 
