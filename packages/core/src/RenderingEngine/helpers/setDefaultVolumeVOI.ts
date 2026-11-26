@@ -319,8 +319,16 @@ function getVOILUTSequenceForImageId(
     return imageVOILUT;
   }
 
+  const voiLUTSequence =
+    voiLutModule.voiLUTSequence ?? voiLutModule.VOILUTSequence;
+
+  if (!voiLUTSequence) {
+    return undefined;
+  }
+
   const voiLUT = normalizeVOILUTSequence(
-    voiLutModule.voiLUTSequence ?? voiLutModule.VOILUTSequence
+    voiLUTSequence,
+    metaData.get('imagePixelModule', imageId)?.pixelRepresentation
   );
 
   return isRenderableVOILUT(voiLUT) ? voiLUT : undefined;

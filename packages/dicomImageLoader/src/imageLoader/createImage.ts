@@ -523,7 +523,8 @@ async function createImage(
 
         if (!isColorImage) {
           voiLUT = normalizeVOILUTSequence(
-            voiLutModule.voiLUTSequence ?? voiLutModule.VOILUTSequence
+            voiLutModule.voiLUTSequence ?? voiLutModule.VOILUTSequence,
+            imageFrame.pixelRepresentation
           );
         }
 

@@ -25,6 +25,9 @@ type RawLUTItem = {
  * 65536 entries, and an indexed loop is faster than `Array.from`, which walks
  * the iterator protocol.
  */
+const toUint16 = (value: number) => (value < 0 ? value + 65536 : value);
+const toInt16 = (value: number) => (value > 32767 ? value - 65536 : value);
+
 function copyElements(source: ArrayLike<number>): number[] {
   const entries = new Array<number>(source.length);
 
@@ -164,17 +167,21 @@ function fromInlineBinary(
  * package, where both paths reach it.
  *
  * @param voiLUTSequence - the VOI LUT Sequence, or a single item of it
+ * @param pixelRepresentation - (0028,0103) of the image. LUT Descriptor value 2
+ *   (First Value Mapped) is signed when it is 1 (C.11.2.1.1), and a provider
+ *   can give the descriptor as US or as SS.
  * @returns the first usable LUT of the sequence, or undefined
  */
 export default function normalizeVOILUTSequence(
-  voiLUTSequence: unknown
+  voiLUTSequence: unknown,
+  pixelRepresentation?: number
 ): CPUFallbackLUT | undefined {
   const items = Array.isArray(voiLUTSequence)
     ? voiLUTSequence
     : [voiLUTSequence];
 
   for (const item of items) {
-    const lut = normalizeItem(item as RawLUTItem);
+    const lut = normalizeItem(item as RawLUTItem, pixelRepresentation);
 
     if (lut) {
       return lut;
@@ -184,7 +191,10 @@ export default function normalizeVOILUTSequence(
   return undefined;
 }
 
-function normalizeItem(item: RawLUTItem): CPUFallbackLUT | undefined {
+function normalizeItem(
+  item: RawLUTItem,
+  pixelRepresentation?: number
+): CPUFallbackLUT | undefined {
   if (!item || typeof item !== 'object') {
     return undefined;
   }
@@ -212,7 +222,8 @@ function normalizeItem(item: RawLUTItem): CPUFallbackLUT | undefined {
   const bitsPerEntry = descriptor[2];
   // LUT Descriptor value 1 of 0 means 65536 entries (it is a US that cannot
   // hold 65536), and cannot be trusted beyond the data we actually received.
-  const declaredEntries = descriptor[0] || 65536;
+  // Read as US also when the provider gave SS.
+  const declaredEntries = toUint16(descriptor[0]) || 65536;
   const data =
     toNumberArray(item.LUTData, bitsPerEntry, declaredEntries) ??
     toNumberArray(item['00283006']?.Value, bitsPerEntry, declaredEntries) ??
@@ -230,7 +241,12 @@ function normalizeItem(item: RawLUTItem): CPUFallbackLUT | undefined {
 
   return {
     lut: numEntries === data.length ? data : data.slice(0, numEntries),
-    firstValueMapped: descriptor[1],
+    firstValueMapped:
+      pixelRepresentation === 1
+        ? toInt16(descriptor[1])
+        : pixelRepresentation === 0
+          ? toUint16(descriptor[1])
+          : descriptor[1],
     numBitsPerEntry: bitsPerEntry,
   };
 }

@@ -41,6 +41,16 @@ describe('normalizeVOILUTSequence', () => {
     ).toEqual([0, 4096, 65535]);
   });
 
+  it('reads First Value Mapped with the pixel representation', () => {
+    // A signed image with the descriptor written as US gives 64512 for -1024.
+    // A count above 32767 written as SS gives a negative value.
+    const item = { LUTDescriptor: [-32768, 64512, 8], LUTData: [0, 255] };
+
+    expect(normalizeVOILUTSequence(item, 1)?.firstValueMapped).toBe(-1024);
+    expect(normalizeVOILUTSequence(item, 0)?.firstValueMapped).toBe(64512);
+    expect(normalizeVOILUTSequence(item, 1)?.lut).toEqual([0, 255]);
+  });
+
   it('decodes 8 bit LUT Data as one entry per byte', () => {
     // LUT Descriptor value 3 is the width of an entry. Reading an 8 bit LUT as
     // 16 bit words gave half a LUT of nonsense
