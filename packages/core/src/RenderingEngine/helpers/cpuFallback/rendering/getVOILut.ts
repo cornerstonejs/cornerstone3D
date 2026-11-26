@@ -48,8 +48,12 @@ function generateLinearVOILUT(windowWidth: number, windowCenter: number) {
   // rather than a ramp: y = ymin for x <= c - 0.5 and ymax above it. The
   // continuous form divides by w - 1, so it cannot express that - it would
   // divide by zero, and the value exactly at the threshold would land halfway
-  // up the display range instead of at ymin.
-  if (windowWidth <= 1) {
+  // up the display range instead of at ymin. A width below 1 is not valid for
+  // LINEAR, so it falls back to the LINEAR_EXACT ramp, as toLowHighRange does.
+  if (windowWidth < 1) {
+    return generateLinearExactVOILUT(windowWidth, windowCenter);
+  }
+  if (windowWidth === 1) {
     const threshold = windowCenter - 0.5;
 
     return function (modalityLutValue: number): number {

@@ -38,6 +38,16 @@ describe('cpuFallback getVOILut', function () {
     expect(fn(129)).toBe(255);
   });
 
+  it('gives a ramp for a LINEAR width below 1, as LINEAR_EXACT', () => {
+    // The FA map of #2706: WC 0.5, WW 1 is a threshold; WW 0.5 is not valid
+    // for LINEAR, so it falls back to the LINEAR_EXACT ramp
+    const fn = getVOILUT(0.5, 0.5);
+
+    expect(fn(0.25)).toBe(0);
+    expect(fn(0.5)).toBeCloseTo(127.5, 5);
+    expect(fn(0.75)).toBe(255);
+  });
+
   it('applies the LINEAR_EXACT formula', () => {
     const fn = getVOILUT(100, 50, undefined, VOILUTFunctionType.LINEAR_EXACT);
 
