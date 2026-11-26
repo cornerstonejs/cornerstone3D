@@ -36,6 +36,12 @@ type ECGResolvedViewState = {
   viewState: ECGViewState;
   /** The sizes of the canvas that the frame is laid out on. */
   canvas: ECGCanvasSize;
+  /**
+   * The height over the width of the canvas whose height the traces fill
+   * without a sensitivity: the shape that the view was fitted at. The shape
+   * of `canvas` when not given.
+   */
+  layoutAspect?: number;
   appearance?: ECGDisplaySetAppearance;
   frameOfReferenceUID: string;
   waveform: ECGWaveformPayload;
@@ -592,6 +598,7 @@ class ECGResolvedView extends ResolvedViewportView<ECGResolvedViewState> {
       samplingFrequency: this.state.waveform.samplingFrequency,
       sweepSpeed: this.state.viewState.sweepSpeed,
       sensitivityMmMv: this.state.viewState.sensitivityMmMv,
+      layoutAspect: this.state.layoutAspect,
     });
 
     return this.cachedGeometry;

@@ -24,6 +24,7 @@ import type {
   DataProvider,
   LoadedData,
   MountedRendering,
+  RenderPathAttachment,
   ViewportDataBinding,
   RenderPathResolver,
   ViewportController,
@@ -226,6 +227,11 @@ abstract class BaseViewport<
   private destroyed = false;
   private setDisplaySetsCallId = 0;
   /**
+   * The abort of the newest `setDisplaySets` call: a newer call aborts it,
+   * so that a mount that waits for its data stops at once.
+   */
+  private setDisplaySetsAbort?: AbortController;
+  /**
    * The display sets and the source of the last DISPLAY_SETS_CHANGED, which
    * the next one compares with to say what was removed and whether the
    * source changed.
@@ -373,12 +379,13 @@ abstract class BaseViewport<
    * Loads a display set through the data provider and binds it, without an
    * event. Gives false, and binds nothing, when `shouldIgnore` tells after
    * the load or after the render path added the data that the call is
-   * stale.
+   * stale, or when `signal` aborts while the render path adds the data.
    */
   protected async bindDisplaySet(
     displaySetId: DisplaySetId,
     options: DataAddOptions,
-    shouldIgnore?: () => boolean
+    shouldIgnore?: () => boolean,
+    signal?: AbortSignal
   ): Promise<boolean> {
     if (this.isDestroyed) {
       throw new Error('Viewport has been destroyed');
@@ -386,7 +393,13 @@ abstract class BaseViewport<
 
     const data = await this.dataProvider.load(displaySetId, options);
 
-    return this.addLoadedData(displaySetId, data, options, shouldIgnore);
+    return this.addLoadedData(
+      displaySetId,
+      data,
+      options,
+      shouldIgnore,
+      signal
+    );
   }
 
   /**
@@ -1227,12 +1240,17 @@ abstract class BaseViewport<
    * The binding stores render-path callbacks so future per-dataset render
    * state, camera, transform, resize, and render requests can be routed back
    * to the correct render-path runtime.
+   *
+   * The render path gets `signal`: when it aborts (a newer `setDisplaySets`
+   * superseded the call) while the path waits for its data, the path stops,
+   * removes what it added, and this gives false.
    */
   protected async addLoadedData(
     displaySetId: DisplaySetId,
     data: LoadedData,
     options: DataAddOptions,
-    shouldIgnore?: () => boolean
+    shouldIgnore?: () => boolean,
+    signal?: AbortSignal
   ): Promise<boolean> {
     if (this.isDestroyed) {
       throw new Error('Viewport has been destroyed');
@@ -1256,7 +1274,17 @@ abstract class BaseViewport<
     // teardown-first order left a dead binding whose recorded renderMode made
     // a later remount (e.g. switching the render backend back after a failed
     // swap) skip as a no-op, blanking the display set.
-    const attachment = await renderPath.addData(ctx, data, options);
+    let attachment: RenderPathAttachment;
+
+    try {
+      attachment = await renderPath.addData(ctx, data, options, signal);
+    } catch (error) {
+      if (signal?.aborted) {
+        return false;
+      }
+
+      throw error;
+    }
 
     if (shouldIgnore?.()) {
       attachment.removeData();
@@ -1321,12 +1349,24 @@ abstract class BaseViewport<
   /**
    * Starts a `setDisplaySets` call. The function that it gives tells whether
    * a newer `setDisplaySets` started since: the call is then superseded, it
-   * stops, and it fires no DISPLAY_SETS_CHANGED.
+   * stops, and it fires no DISPLAY_SETS_CHANGED. The signal of the call
+   * (`getSetDisplaySetsSignal`) aborts at that moment.
    */
   protected startSetDisplaySets(): () => boolean {
     const callId = ++this.setDisplaySetsCallId;
 
+    this.setDisplaySetsAbort?.abort();
+    this.setDisplaySetsAbort = new AbortController();
+
     return () => callId !== this.setDisplaySetsCallId;
+  }
+
+  /**
+   * The signal of the newest `setDisplaySets` call, which aborts when a newer
+   * call starts. Read it just after `startSetDisplaySets`.
+   */
+  protected getSetDisplaySetsSignal(): AbortSignal | undefined {
+    return this.setDisplaySetsAbort?.signal;
   }
 
   /**

@@ -264,6 +264,13 @@ export function computeECGRenderMetrics<TChannel extends ECGChannelLike>(args: {
   sweepSpeed?: number;
   /** Amplitude sensitivity in mm/mV. Undefined fits the canvas height. */
   sensitivityMmMv?: number;
+  /**
+   * The height over the width of the canvas whose height a layout without a
+   * sensitivity fills. The shape of `canvas` when not given. The viewport
+   * gives the shape that the view was fitted at, so that a resize keeps the
+   * world of the traces.
+   */
+  layoutAspect?: number;
 }): { metrics: ECGRenderMetrics; layouts: ECGChannelLayout<TChannel>[] } {
   const {
     canvas,
@@ -272,6 +279,7 @@ export function computeECGRenderMetrics<TChannel extends ECGChannelLike>(args: {
     samplingFrequency,
     sweepSpeed,
     sensitivityMmMv,
+    layoutAspect,
   } = args;
   const resolvedSweepSpeed = sweepSpeed ?? ECG_DEFAULT_SWEEP_SPEED_MM_S;
   const pxPerSecond = resolvedSweepSpeed * ECG_PX_PER_MM;
@@ -282,9 +290,11 @@ export function computeECGRenderMetrics<TChannel extends ECGChannelLike>(args: {
     pxPerSecond,
   });
   const canvasAspect =
-    canvas.clientHeight && canvas.clientWidth
-      ? canvas.clientHeight / canvas.clientWidth
-      : 2 / 3;
+    layoutAspect > 0
+      ? layoutAspect
+      : canvas.clientHeight && canvas.clientWidth
+        ? canvas.clientHeight / canvas.clientWidth
+        : 2 / 3;
   const { channelScale, ecgHeight, layouts } = computeECGTraceGeometry({
     cells,
     ecgWidth,

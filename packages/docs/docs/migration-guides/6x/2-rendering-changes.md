@@ -2187,6 +2187,31 @@ levels of 255.
   them. The legacy viewport worked it out from the number of samples and the
   sampling frequency alone. Code that sizes its element from it reads it
   again after a change of `sweepSpeed` or `traceLayout`.
+- **A resize keeps the camera and the layout of the traces.** Without a
+  sensitivity the traces fill the height of the canvas at the mount and at
+  a reset of the pan and the zoom (`resetViewState()`, the toolbar reset,
+  `renderingEngine.resize()` with `keepCamera` false). A resize keeps that
+  layout and the camera, as a planar viewport keeps its own: the time and
+  the amplitude at the centre of the canvas stay at the centre, and the
+  height of the canvas in units of the traces stays. Across a change of the
+  width the traces keep their size in pixels and show more or less time;
+  across a change of the height they scale with the canvas. A pane of
+  another shape shows the same traces with room above and below them, or
+  on the sides; `getContentDimensions()` stays. In 6.0.0-beta.2 the layout
+  filled the height of the new shape and the zoom against the fit stayed,
+  so the traces moved up or down and a framing read after the resize did
+  not give back the view:
+
+  ```ts
+  // On a pane of 400 by 300 pixels
+  viewport.setViewFraming({ pan: [40, 20], zoom: 1.5 });
+  element.style.width = '600px';
+  renderingEngine.resize(true);
+  viewport.getViewFraming();
+  // Before (6.0.0-beta.2): { zoom: 1.5, pan: [60, -45] }, the traces moved up
+  // After: { zoom: 1.5, pan: [40, 20] }, the traces where they were
+  ```
+
 - **An ECG viewport shows one waveform.**
   `viewport.addDisplaySet(displaySetId, options)` takes the
   `ECGMountOptions` of an entry of `setDisplaySets` and mounts what that
@@ -2532,7 +2557,15 @@ levels of 255.
   for a mount that loads. A video that fails after its metadata, before its
   first frame, has fired `DISPLAY_SET_APPEARANCE_CHANGED` with cause
   `'mount'` already, as its appearance applies when it is bound. A call that
-  a newer `setDisplaySets` superseded rejects too and changes nothing. An error after the first frame, as a
+  a newer `setDisplaySets` supersedes ends at once, as on a planar viewport:
+  it resolves and fires nothing, and the video that it waits for, before or
+  after its metadata, stops its load (its `src` is removed and `load()`
+  drops the request) and goes with its listeners, also when its server
+  never answers. A later error of that video changes nothing. In
+  6.0.0-beta.2 the empty `<video>` element and its request stayed until the
+  browser ended the load. A video that the viewport removes
+  (`removeDisplaySet`, a new `setDisplaySets`, `destroy()`) drops its
+  request too. An error after the first frame, as a
   network that goes while the video plays, does not fail the mount. There is
   no time limit: `stalled` says that the data is slow and `abort` that the
   load starts again, so the call waits until the browser gives the frame or
@@ -2563,6 +2596,33 @@ levels of 255.
 - **`getPan()` and `setPan()` are in canvas pixels on the screen,** `[0, 0]` at
   the fit, as on the other next viewports, and a drag of the pan tool moves
   the picture with the mouse at any rotation.
+- **A resize keeps the camera,** as on a planar viewport: the height of the
+  canvas in pixels of the video and the point of the video at the centre of
+  the canvas stay. Across a change of the width the video keeps its size in
+  pixels and its distance from the centre; across a change of the height it
+  scales with the canvas. The zoom against the fit (`getZoom()`,
+  `getViewFraming().zoom`) and `getPan()` read after it are those of the new
+  size; the world pan stays. One `CAMERA_MODIFIED` fires. With the object fit
+  `fill` the video has no one scale and fills the new size. 6.0.0-beta.2
+  kept the zoom against the fit, so the video shrank or grew with the fit.
+  Write the framing read before the resize back after it to keep the zoom
+  against the fit:
+
+  ```ts
+  // A video of 4 by 3 on a pane of 400 by 300 pixels at zoom 1.5
+  element.style.width = '250px';
+  renderingEngine.resize(true);
+  viewport.getViewFraming().zoom;
+  // Before (6.0.0-beta.2): 1.5, the video drawn smaller
+  // After: 2.4, the video at the size in pixels that it had
+
+  const framing = viewport.getViewFraming();
+  element.style.width = '250px';
+  renderingEngine.resize(true);
+  viewport.setViewFraming(framing);
+  // Both: 1.5 against the fit of the new size
+  ```
+
 - **A framing patch with a new rotation turns first.**
   `viewportProjection.withFraming(viewport, { rotation, zoom, pan })` on
   a video applies the rotation, then the zoom, then the pan, so the pan
@@ -3031,6 +3091,18 @@ as it did in 5.x. The 5.x guard of a next viewport is gone: every viewport
 is one, see [Functions of the core package](./3-api-map.md#functions-of-the-core-package).
 
 ## Smaller changes
+
+- **A planar viewport that draws on the CPU is drawn in its resize.** On a
+  device with WebGL, a planar viewport whose display sets are drawn on the
+  CPU (`renderBackend: 'cpu'`) draws them again in `renderingEngine.resize()`
+  when its canvas changed size, which clears it, so no frame shows the
+  cleared canvas. 6.0.0-beta.2 left the canvas blank until the next draw of
+  the view (a pan, a scroll, a framing written back), as the rendering
+  engine does not draw such a viewport in its frame. A resize draws once,
+  also when a listener of its `CAMERA_MODIFIED` draws the view (the sync of
+  a stack labelmap). The fine sample of a volume at rest comes 100 ms after
+  the last resize of a drag, as after a pan. The example `cpuResizeFlash`
+  shows the time that the canvas stays blank.
 
 - **Destroying a tool group disables its tools.**
   `ToolGroupManager.destroyToolGroup` (and `ToolGroupManager.destroy`) calls

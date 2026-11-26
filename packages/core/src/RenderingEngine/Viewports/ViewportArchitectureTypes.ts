@@ -166,10 +166,19 @@ export interface BaseViewportRenderContext {
 export interface RenderPath<
   TContext extends BaseViewportRenderContext = BaseViewportRenderContext,
 > {
+  /**
+   * Adds the data to the context and gives its attachment.
+   *
+   * @param signal - Aborts when a newer `setDisplaySets` of the viewport
+   *   supersedes the mount. A path that waits for its data (the video
+   *   element of the video path) then stops the wait, removes what it added
+   *   and rejects; the viewport ends the superseded mount without a bind.
+   */
   addData(
     ctx: TContext,
     data: LoadedData,
-    options: DataAddOptions
+    options: DataAddOptions,
+    signal?: AbortSignal
   ): Promise<RenderPathAttachment>;
 }
 

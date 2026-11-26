@@ -102,6 +102,33 @@ function worldPerCanvasPixel(viewport) {
   return Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
 }
 
+/**
+ * The changes of size of the video and the ECG cases, from the large pane:
+ * the canvas height in units of the picture stays, so the world length of a
+ * canvas pixel scales by the old height over the new one.
+ */
+const SELF_DRAWN_RESIZES = [
+  { name: 'a change of the width', size: [250, 300] },
+  { name: 'a change of the height', size: [400, 200] },
+  { name: 'a change to another shape', size: TALL },
+  { name: 'a change to a wider shape', size: [600, 300] },
+];
+
+/** The world point at the centre of the canvas of a viewport. */
+function centreWorld(viewport) {
+  return viewport.canvasToWorld([
+    viewport.element.clientWidth / 2,
+    viewport.element.clientHeight / 2,
+  ]);
+}
+
+function expectCloseArray(actual, expected, digits, context) {
+  expect(actual.length).withContext(context).toBe(expected.length);
+  expected.forEach((value, index) => {
+    expect(actual[index]).withContext(context).toBeCloseTo(value, digits);
+  });
+}
+
 /** Gives the element of a viewport a size and resizes the engine. */
 async function resizeTo(renderingEngine, viewport, size, keepCamera) {
   viewport.element.style.width = `${size[0]}px`;
@@ -241,32 +268,6 @@ describe('The views that renderingEngine.resize() does not keep the camera of --
   }
 
   for (const family of createSelfDrawnFamilies()) {
-    it(`keeps the zoom against the fit of ${family.name}, not its camera, through a resize to another shape with keepCamera true, as a framing written at that size`, async function () {
-      family.setUp();
-
-      const viewport = await family.make(renderingEngine, LARGE);
-      const twin = await family.make(renderingEngine, TALL);
-
-      viewport.setViewFraming({ zoom: 1.5, pan: [0, 0] });
-      twin.setViewFraming({ zoom: 1.5, pan: [0, 0] });
-      viewport.render();
-      twin.render();
-      await frames(3);
-
-      const before = worldPerCanvasPixel(viewport);
-
-      await resizeTo(renderingEngine, viewport, TALL, true);
-      viewport.render();
-      await frames(3);
-
-      expect(viewport.getViewFraming().zoom).toBeCloseTo(1.5, 4);
-      expect(worldPerCanvasPixel(viewport)).not.toBeCloseTo(before, 3);
-      expect(worldPerCanvasPixel(viewport)).toBeCloseTo(
-        worldPerCanvasPixel(twin),
-        4
-      );
-    }, 30000);
-
     it(`fits ${family.name} to the new size with keepCamera false`, async function () {
       family.setUp();
 
@@ -286,4 +287,144 @@ describe('The views that renderingEngine.resize() does not keep the camera of --
       expect(pan[1]).toBeCloseTo(0, 3);
     }, 30000);
   }
+});
+
+describe('renderingEngine.resize() keeps the camera of the video and the ECG viewport -- ', () => {
+  let renderingEngine;
+
+  beforeEach(function () {
+    renderingEngine = testUtils.setupTestEnvironment({
+      renderingEngineId,
+      toolGroupIds: ['default'],
+    }).renderingEngine;
+  });
+
+  afterEach(function () {
+    cornerstone3D.displaySetRegistry.clear();
+    testUtils.cleanupTestEnvironment({
+      renderingEngineId,
+      toolGroupIds: ['default'],
+    });
+  });
+
+  for (const family of createSelfDrawnFamilies()) {
+    for (const { name: resizeName, size } of SELF_DRAWN_RESIZES) {
+      it(`keeps the parallel scale and the world point at the centre of ${family.name} through ${resizeName} with keepCamera true, as the planar viewport`, async function () {
+        family.setUp();
+
+        const viewport = await family.make(renderingEngine, LARGE);
+
+        viewport.setViewFraming({ zoom: 1.5, pan: [40, 20] });
+        viewport.render();
+        await frames(3);
+
+        const framing = viewport.getViewFraming();
+        const parallelScale = viewport
+          .getResolvedView()
+          .toICamera().parallelScale;
+        const centre = centreWorld(viewport);
+        const pixel = worldPerCanvasPixel(viewport);
+        const cameraEvents = [];
+        const onCameraModified = (event) => cameraEvents.push(event);
+
+        viewport.element.addEventListener(
+          Enums.Events.CAMERA_MODIFIED,
+          onCameraModified
+        );
+        await resizeTo(renderingEngine, viewport, size, true);
+        viewport.element.removeEventListener(
+          Enums.Events.CAMERA_MODIFIED,
+          onCameraModified
+        );
+
+        expect(
+          viewport.getResolvedView().toICamera().parallelScale
+        ).toBeCloseTo(parallelScale, 4);
+        expectCloseArray(centreWorld(viewport), centre, 3, 'centre');
+        expect(worldPerCanvasPixel(viewport)).toBeCloseTo(
+          (pixel * LARGE[1]) / size[1],
+          4
+        );
+        expectCloseArray(
+          viewport.getViewFraming().worldPan,
+          framing.worldPan,
+          3,
+          'world pan'
+        );
+        expect(cameraEvents.length).toBe(1);
+
+        const framingThere = viewport.getViewFraming();
+
+        viewport.setViewFraming(framingThere);
+        viewport.render();
+        await frames(2);
+
+        expectCloseArray(centreWorld(viewport), centre, 3, 'written there');
+        expect(viewport.getViewFraming().zoom).toBeCloseTo(
+          framingThere.zoom,
+          6
+        );
+
+        await resizeTo(renderingEngine, viewport, LARGE, true);
+
+        const back = viewport.getViewFraming();
+
+        expect(back.zoom).toBeCloseTo(framing.zoom, 4);
+        expectCloseArray(back.pan, framing.pan, 3, 'pan back');
+        expectCloseArray(centreWorld(viewport), centre, 3, 'centre back');
+      }, 30000);
+    }
+  }
+
+  it('keeps the traces of an ECG viewport without a sensitivity where they are through a resize to a wider shape, so the framing reads back as it was written (row 222)', async function () {
+    const [, ecg] = createSelfDrawnFamilies();
+
+    ecg.setUp();
+
+    const viewport = await ecg.make(renderingEngine, LARGE);
+
+    viewport.setViewFraming({ zoom: 1.5, pan: [40, 20] });
+    viewport.render();
+    await frames(3);
+
+    const framing = viewport.getViewFraming();
+    const centre = centreWorld(viewport);
+    const content = viewport.getContentDimensions();
+
+    await resizeTo(renderingEngine, viewport, [600, 300], true);
+
+    const there = viewport.getViewFraming();
+
+    expect(there.zoom).toBeCloseTo(1.5, 4);
+    expectCloseArray(there.pan, framing.pan, 3, 'pan');
+    expectCloseArray(centreWorld(viewport), centre, 3, 'centre');
+    expect(viewport.getContentDimensions()).toEqual(content);
+  }, 30000);
+
+  it('fits the traces of an ECG viewport without a sensitivity to the height of the new shape with keepCamera false', async function () {
+    const [, ecg] = createSelfDrawnFamilies();
+
+    ecg.setUp();
+
+    const viewport = await ecg.make(renderingEngine, LARGE);
+    const twin = await ecg.make(renderingEngine, TALL);
+
+    viewport.setViewFraming({ zoom: 1.5, pan: [40, 20] });
+    viewport.render();
+    await frames(3);
+    await resizeTo(renderingEngine, viewport, TALL, false);
+    viewport.render();
+    await frames(3);
+
+    const { width, height } = viewport.getContentDimensions();
+
+    expect(height / width).toBeCloseTo(TALL[1] / TALL[0], 2);
+    expect(viewport.getContentDimensions()).toEqual(
+      twin.getContentDimensions()
+    );
+    expect(worldPerCanvasPixel(viewport)).toBeCloseTo(
+      worldPerCanvasPixel(twin),
+      4
+    );
+  }, 30000);
 });

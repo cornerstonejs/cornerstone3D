@@ -92,6 +92,7 @@ function stubVideoElement(
   video.pause = jest.fn(() => {
     state.paused = true;
   });
+  video.load = jest.fn();
 
   return state;
 }
@@ -380,7 +381,7 @@ describe('A video mount whose video does not load', () => {
 });
 
 describe('A failing video mount that a newer mount superseded', () => {
-  it('rejects and leaves the newer mount, its video and its event alone', async () => {
+  it('ends when the newer mount starts, so a later failure of its video leaves the newer mount, its video and its event alone', async () => {
     const { viewport, element, events } = createViewport({ older: HTML_URL });
     const older = viewport.setDisplaySets({ displaySetId: 'older' });
 
@@ -392,10 +393,7 @@ describe('A failing video mount that a newer mount superseded', () => {
 
     failVideo(olderVideo, olderState, 4, CHROME_OPEN_ERROR);
 
-    const outcome = await outcomeOf(older);
-
-    expect(outcome).toBeInstanceOf(Error);
-    expect(outcome.message).toContain('The display set "older"');
+    expect(await outcomeOf(older)).toBe('mounted');
     expect(events.map(({ displaySets }) => displaySets)).toEqual([
       [{ displaySetId: 'newer', role: 'source' }],
     ]);
@@ -425,7 +423,7 @@ describe('A failing video mount that a newer mount superseded', () => {
 
       await flush();
 
-      const newerVideo = element.querySelectorAll('video')[1];
+      const newerVideo = Array.from(element.querySelectorAll('video')).at(-1);
 
       stubVideoElement(newerVideo, { readyState: 4 });
 
@@ -447,5 +445,70 @@ describe('A failing video mount that a newer mount superseded', () => {
       viewport.destroy();
       document.body.innerHTML = '';
     }
+  });
+});
+
+describe('A video mount that a newer mount superseded while its video never answers', () => {
+  it('resolves at once, as a superseded planar mount, and its element goes with its listeners and its request, before the metadata', async () => {
+    const { viewport, element, events } = createViewport();
+    const stuck = viewport.setDisplaySets({ displaySetId: 'stuck' });
+
+    await flush();
+
+    const stuckVideo = element.querySelector('video');
+
+    stubVideoElement(stuckVideo);
+    expect(await outcomeOf(stuck, 100)).toBe('pending');
+
+    const newer = viewport.setDisplaySets({ displaySetId: 'newer' });
+
+    expect(await outcomeOf(stuck, 100)).toBe('mounted');
+    expect(stuckVideo.isConnected).toBe(false);
+    expect(stuckVideo.hasAttribute('src')).toBe(false);
+    expect(stuckVideo.load).toHaveBeenCalledTimes(1);
+
+    await flush();
+
+    const newerVideo = videoOf(element, GOOD_URL);
+
+    stubVideoElement(newerVideo, { readyState: 4 });
+    newerVideo.dispatchEvent(new Event('loadedmetadata'));
+    await newer;
+    stuckVideo.dispatchEvent(new Event('loadedmetadata'));
+    await flush();
+
+    expect(Array.from(element.querySelectorAll('video'))).toEqual([newerVideo]);
+    expect(events.map(({ displaySets }) => displaySets)).toEqual([
+      [{ displaySetId: 'newer', role: 'source' }],
+    ]);
+    expect(viewport.getDisplaySets()).toEqual([
+      { displaySetId: 'newer', options: { role: 'source' } },
+    ]);
+    viewport.destroy();
+  });
+
+  it('resolves at once and drops the request of its video when the video has its metadata and never gives its first frame', async () => {
+    const { viewport, element, events } = createViewport();
+    const stuck = viewport.setDisplaySets({ displaySetId: 'stuck' });
+
+    await flush();
+
+    const stuckVideo = element.querySelector('video');
+
+    stubVideoElement(stuckVideo);
+    stuckVideo.dispatchEvent(new Event('loadedmetadata'));
+    expect(await outcomeOf(stuck, 400)).toBe('pending');
+
+    const { video: newerVideo } = await mountGood(viewport, element, 'newer');
+
+    expect(await outcomeOf(stuck, 100)).toBe('mounted');
+    expect(stuckVideo.isConnected).toBe(false);
+    expect(stuckVideo.hasAttribute('src')).toBe(false);
+    expect(stuckVideo.load).toHaveBeenCalledTimes(1);
+    expect(Array.from(element.querySelectorAll('video'))).toEqual([newerVideo]);
+    expect(events.map(({ displaySets }) => displaySets)).toEqual([
+      [{ displaySetId: 'newer', role: 'source' }],
+    ]);
+    viewport.destroy();
   });
 });

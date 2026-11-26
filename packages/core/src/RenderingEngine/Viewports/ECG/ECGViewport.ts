@@ -12,6 +12,7 @@ import { getDisplaySetImageId } from '../displaySetAccess';
 import imageIdToURI from '../../../utilities/imageIdToURI';
 import type {
   CPUIImageData,
+  ICamera,
   Mat3,
   Point2,
   Point3,
@@ -41,6 +42,10 @@ import {
   normalizeECGViewState,
 } from './ecgViewportCamera';
 import ECGResolvedView from './ECGResolvedView';
+import {
+  getViewStateKeptThroughResize,
+  type ResizeCanvasSize,
+} from '../viewportResizeCamera';
 
 class ECGViewport extends BaseViewport<
   ECGViewState,
@@ -66,6 +71,21 @@ class ECGViewport extends BaseViewport<
    * annotation in that one cell.
    */
   private pointRegions = new WeakMap<Point3, number>();
+
+  /**
+   * The height over the width of the canvas whose height the traces fill
+   * without a sensitivity: the shape of the canvas when the view was fitted,
+   * at the mount and at a reset of the pan and the zoom. Undefined until the
+   * canvas has a size after those. A resize keeps it, so the world of the
+   * traces does not change with the shape of the canvas.
+   */
+  private layoutAspect?: number;
+
+  /**
+   * The size of the canvas, in CSS pixels, of the last draw: the camera
+   * that a resize keeps is the one of this size.
+   */
+  private layoutSize?: ResizeCanvasSize;
 
   static get useCustomRenderingPipeline(): boolean {
     return true;
@@ -253,6 +273,7 @@ class ECGViewport extends BaseViewport<
       },
       options?.appearance
     );
+    this.layoutAspect = undefined;
     this.viewState = createDefaultECGViewState({
       timeRange: [0, durationMs],
       valueRange: getDefaultECGValueRange(waveform),
@@ -595,12 +616,23 @@ class ECGViewport extends BaseViewport<
   }
 
   /**
-   * Resizes the backing canvas to match the displayed viewport size. A
-   * framing written while the element had no size is set again at the new
-   * size, see `setViewFraming`.
+   * Resizes the backing canvas to match the displayed viewport size, and
+   * keeps the camera of the view, as the planar viewport keeps its parallel
+   * scale and its focal point: the time and the amplitude at the centre of
+   * the canvas stay at the centre, and the height of the canvas in units of
+   * the traces stays. Across a change of the width the traces keep their
+   * size in pixels and show more or less time; across a change of the height
+   * they scale with the canvas. The traces keep the layout that the view
+   * was fitted at (they fill the height of the canvas of the mount or of the
+   * last reset), so a canvas of another shape shows the same traces with
+   * room above and below them or on the sides. The zoom against the fit and
+   * `getPan` read after it are those of the new size. One CAMERA_MODIFIED
+   * fires when the view changed. A framing written while the element had no
+   * size is set again at the new size, see `setViewFraming`.
    */
   resize(): void {
     const pending = this.takePendingViewFraming();
+    const previousCamera = this.keepCameraThroughResize();
     const { clientWidth, clientHeight } = this.canvas;
 
     if (
@@ -613,7 +645,54 @@ class ECGViewport extends BaseViewport<
     }
 
     this.render();
+
+    if (previousCamera) {
+      this.triggerCameraModifiedEvent(previousCamera);
+    }
+
     this.applyPendingViewFraming(pending);
+  }
+
+  /**
+   * Writes the view state that keeps the camera of the view drawn at
+   * `layoutSize` on the canvas of the size now.
+   *
+   * @returns The camera before the resize when the view state changed.
+   */
+  private keepCameraThroughResize(): ICamera | undefined {
+    const previousSize = this.layoutSize;
+    const nextSize = this.keepCanvasSize();
+
+    if (!previousSize || !nextSize) {
+      return;
+    }
+
+    const previousView = this.resolveViewAt(previousSize);
+    const nextView = this.resolveViewAt(nextSize);
+
+    if (!previousView || !nextView) {
+      return;
+    }
+
+    const { effectiveRatio, xOffset, yOffset } = previousView.canvasTransform;
+    const kept = getViewStateKeptThroughResize({
+      previousSize,
+      nextSize,
+      previousCentre: [
+        (previousSize.width / 2 - xOffset) / effectiveRatio,
+        (previousSize.height / 2 - yOffset) / effectiveRatio,
+      ],
+      previousRatio: effectiveRatio,
+      nextFitRatio: nextView.metrics.worldToCanvasRatio,
+    });
+
+    if (!kept) {
+      return;
+    }
+
+    this.viewState = this.normalizeViewState({ ...this.viewState, ...kept });
+
+    return previousView.toICamera();
   }
 
   /** The CSS size of the canvas that the viewport draws the waveform on. */
@@ -625,9 +704,11 @@ class ECGViewport extends BaseViewport<
   }
 
   /**
-   * Renders all active ECG bindings.
+   * Renders all active ECG bindings at the size of the canvas now, which the
+   * next resize keeps the camera of.
    */
   render(): void {
+    this.layoutSize = this.keepCanvasSize() ?? this.layoutSize;
     this.renderBindings();
   }
 
@@ -640,8 +721,10 @@ class ECGViewport extends BaseViewport<
 
   /**
    * Resets the pan and the zoom, and optionally the time window. The layout
-   * options of the view state stay. Called by `resetCamera()` and the toolbar
-   * "Reset View" button.
+   * options of the view state stay. A reset of both the pan and the zoom
+   * fits the traces to the canvas again: without a sensitivity they fill
+   * its height. Called by `resetCamera()`, the toolbar "Reset View" button
+   * and `renderingEngine.resize()` with `keepCamera` false.
    *
    * @param options - Flags controlling which view-state fields are reset.
    * @returns Always `true` for compatibility with legacy viewport contracts.
@@ -666,6 +749,10 @@ class ECGViewport extends BaseViewport<
 
     if (resetTimeRange) {
       nextViewState.timeRange = [0, this.getDurationMs()];
+    }
+
+    if (resetPan && resetZoom) {
+      this.layoutAspect = undefined;
     }
 
     this.setViewState(nextViewState);
@@ -891,13 +978,26 @@ class ECGViewport extends BaseViewport<
    * `getFramingCanvasSize`).
    */
   getResolvedView(): ECGResolvedView | undefined {
+    return this.resolveViewAt(this.getFramingCanvasSize());
+  }
+
+  /**
+   * The view resolved on a canvas of the given size in CSS pixels, with the
+   * layout that the view was fitted at. The first resolve on a canvas with
+   * a size after a mount or a reset fits the layout to that canvas.
+   */
+  private resolveViewAt(size: ResizeCanvasSize): ECGResolvedView | undefined {
     const waveform = this.getWaveformBindingData();
 
     if (!waveform) {
       return;
     }
 
-    const { width, height } = this.getFramingCanvasSize();
+    const { width, height } = size;
+
+    if (this.layoutAspect === undefined && width > 0 && height > 0) {
+      this.layoutAspect = height / width;
+    }
 
     return new ECGResolvedView({
       viewState: this.viewState,
@@ -907,6 +1007,7 @@ class ECGViewport extends BaseViewport<
         width: this.canvas.width,
         height: this.canvas.height,
       },
+      layoutAspect: this.layoutAspect,
       appearance: this.getEffectiveDisplaySetAppearance(waveform.id),
       frameOfReferenceUID: getECGFrameOfReferenceUID(this.getCurrentImageId()),
       waveform,

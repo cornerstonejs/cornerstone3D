@@ -3,6 +3,7 @@ import type {
   ActorEntry,
   CPUIImageData,
   EventTypes,
+  ICamera,
   IStackInput,
   IViewport,
   IVoxelManager,
@@ -54,6 +55,10 @@ import {
 } from './videoViewportCamera';
 import { createVideoRenderPathResolver } from './VideoRenderPathResolver';
 import VideoResolvedView from './VideoResolvedView';
+import {
+  getViewStateKeptThroughResize,
+  type ResizeCanvasSize,
+} from '../viewportResizeCamera';
 import { videoLoadError } from './videoLoadError';
 
 /** The RGBA pixels of one video frame, with the frame number they show. */
@@ -103,6 +108,13 @@ class VideoViewport extends BaseViewport<
 
   /** The canvas just above the video that the overlay actors draw on. */
   private overlayLayer?: HTMLCanvasElement;
+
+  /**
+   * The size of the canvas, in CSS pixels, that the view was last laid out
+   * at on the video elements: the camera that a resize keeps is the one of
+   * this size.
+   */
+  private layoutSize?: ResizeCanvasSize;
 
   /**
    * The frame number of the mount of each video that was given one, for
@@ -171,8 +183,10 @@ class VideoViewport extends BaseViewport<
    * NEW_IMAGE fires once for the frame that the mount shows: after the seek
    * when the mount seeks, else when the frame shows. The legacy video viewport
    * fired its new image event at every mount too. DISPLAY_SETS_CHANGED fires
-   * once the videos are mounted; a newer call stops this one, which then
-   * fires nothing.
+   * once the videos are mounted. A newer call stops this one at once, as on
+   * the planar viewport: it resolves and fires nothing, and the video that it
+   * waits for, before or after its metadata, stops its load and goes with
+   * its listeners, also when its server never answers.
    *
    * A video whose element fires `error` before its first frame rejects the
    * call with the display set, the URL and the media error
@@ -181,8 +195,9 @@ class VideoViewport extends BaseViewport<
    * appearance overrides are those from before the call, and
    * DISPLAY_SETS_CHANGED does not fire (a video that fails after its
    * metadata has fired the appearance event of its mount at the bind).
-   * A call that a newer one superseded rejects too and changes nothing.
-   * An error after the first frame does not fail the mount. There is no
+   * A call that a newer one superseded has ended, so a later error of its
+   * video changes nothing. An error after the first frame does not fail
+   * the mount. There is no
    * time limit: `stalled` and `abort` are not failures, and the call waits
    * until the browser gives the frame or the error.
    *
@@ -195,6 +210,7 @@ class VideoViewport extends BaseViewport<
     }>
   ): Promise<void> {
     const isSuperseded = this.startSetDisplaySets();
+    const signal = this.getSetDisplaySetsSignal();
 
     this.removeAllData();
     this.overlayActors = [];
@@ -205,7 +221,8 @@ class VideoViewport extends BaseViewport<
         options,
         options?.role ?? (index === 0 ? 'source' : 'overlay'),
         index === 0,
-        isSuperseded
+        isSuperseded,
+        signal
       );
 
       if (!mounted) {
@@ -261,8 +278,9 @@ class VideoViewport extends BaseViewport<
    * waits for its first frame. A video that `opensView` (the first of a
    * viewport) starts the view state from the default; another one keeps
    * the view, and its element shows the time of the view. Gives false when
-   * a newer `setDisplaySets` superseded the call, and rejects, with the
-   * video unbound and the overrides from before the call, when the video
+   * a newer `setDisplaySets` superseded the call: `signal` aborts then, and
+   * the wait for the metadata or the first frame ends at once. Rejects, with
+   * the video unbound and the overrides from before the call, when the video
    * does not load.
    */
   private async mountVideo(
@@ -270,7 +288,8 @@ class VideoViewport extends BaseViewport<
     options: VideoMountOptions | undefined,
     role: BindingRole,
     opensView: boolean,
-    isSuperseded?: () => boolean
+    isSuperseded?: () => boolean,
+    signal?: AbortSignal
   ): Promise<boolean> {
     const restoreAppearance = this.stageMountedAppearance(
       displaySetId,
@@ -290,7 +309,8 @@ class VideoViewport extends BaseViewport<
       bound = await this.bindDisplaySet(
         displaySetId,
         { renderMode: 'video2d', role },
-        isSuperseded
+        isSuperseded,
+        signal
       );
     } finally {
       if (!bound) {
@@ -342,14 +362,21 @@ class VideoViewport extends BaseViewport<
     this.trackVideoElement();
 
     try {
-      await this.primeInitialFrame(
-        isVideoElementRendering(binding.rendering)
-          ? binding.rendering.element
-          : undefined,
-        videoData,
-        this.getCurrentTime()
+      await untilAborted(
+        this.primeInitialFrame(
+          isVideoElementRendering(binding.rendering)
+            ? binding.rendering.element
+            : undefined,
+          videoData,
+          this.getCurrentTime()
+        ),
+        signal
       );
     } catch (error) {
+      if (signal?.aborted) {
+        return false;
+      }
+
       if (!isSuperseded?.()) {
         this.removeDisplaySetBinding(displaySetId);
         restoreAppearance();
@@ -738,6 +765,14 @@ class VideoViewport extends BaseViewport<
    * that it had (see `getFramingCanvasSize`).
    */
   getResolvedView(): VideoResolvedView | undefined {
+    return this.resolveViewAt(this.getFramingCanvasSize());
+  }
+
+  /**
+   * The view resolved on a canvas of the given size in CSS pixels, from the
+   * view state and the video on display.
+   */
+  private resolveViewAt(size: ResizeCanvasSize): VideoResolvedView | undefined {
     const videoElement = this.getVideoElement();
     const videoData = this.getVideoData();
 
@@ -747,7 +782,7 @@ class VideoViewport extends BaseViewport<
 
     this.syncCameraCurrentTimeFromElement();
 
-    const { width, height } = this.getFramingCanvasSize();
+    const { width, height } = size;
 
     return new VideoResolvedView({
       viewState: this.viewState,
@@ -1088,6 +1123,86 @@ class VideoViewport extends BaseViewport<
   override setViewState(viewStatePatch: Partial<VideoViewState>): void {
     this.syncCameraCurrentTimeFromElement();
     super.setViewState(viewStatePatch);
+  }
+
+  /**
+   * Keeps the camera of the view through a change of the size of the
+   * element, as the planar viewport keeps its parallel scale and its focal
+   * point: the point of the video at the centre of the canvas stays at the
+   * centre, and the height of the canvas in pixels of the video stays. Across
+   * a change of the width the video keeps its size in pixels and its distance
+   * from the centre; across a change of the height it scales with the
+   * canvas. The zoom against the fit and `getPan` read after it are those of
+   * the new size; the world pan stays. One CAMERA_MODIFIED fires when the
+   * view changed. With the object fit `fill` the video has no one scale, and
+   * it fills the new size. A framing written while the element had no size
+   * is set again at the new size, see `setViewFraming`.
+   */
+  override resize(): void {
+    if (this.isDestroyed) {
+      return;
+    }
+
+    const pending = this.takePendingViewFraming();
+    const previousCamera = this.keepCameraThroughResize();
+
+    this.resizeBindings();
+    this.modified(previousCamera);
+    this.applyPendingViewFraming(pending);
+  }
+
+  /**
+   * Writes the view state that keeps the camera of the view laid out at
+   * `layoutSize` on the canvas of the size now.
+   *
+   * @returns The camera before the resize when the view state changed.
+   */
+  private keepCameraThroughResize(): ICamera | undefined {
+    const previousSize = this.layoutSize;
+    const nextSize = this.keepCanvasSize();
+    const objectFit = this.getEffectiveDisplaySetAppearance(
+      this.getVideoData()?.id
+    )?.objectFit;
+
+    if (!previousSize || !nextSize || objectFit === 'fill') {
+      return;
+    }
+
+    const previousView = this.resolveViewAt(previousSize);
+    const nextView = this.resolveViewAt(nextSize);
+
+    if (!previousView || !nextView) {
+      return;
+    }
+
+    const centre = previousView.canvasToWorld([
+      previousSize.width / 2,
+      previousSize.height / 2,
+    ]);
+    const kept = getViewStateKeptThroughResize({
+      previousSize,
+      nextSize,
+      previousCentre: [centre[0], centre[1]],
+      previousRatio: previousView.worldToCanvasRatio,
+      nextFitRatio: nextView.worldToCanvasRatio / nextView.zoom,
+    });
+
+    if (!kept) {
+      return;
+    }
+
+    this.viewState = this.normalizeViewState({ ...this.viewState, ...kept });
+
+    return previousView.toICamera();
+  }
+
+  /**
+   * Lays the view out on the video elements at the size of the canvas now,
+   * which the next resize keeps the camera of.
+   */
+  protected override modified(previousCamera?: ICamera): void {
+    this.layoutSize = this.keepCanvasSize() ?? this.layoutSize;
+    super.modified(previousCamera);
   }
 
   /**
@@ -1605,6 +1720,40 @@ class VideoViewport extends BaseViewport<
 }
 
 export default VideoViewport;
+
+/**
+ * Settles as the promise does, or rejects with the reason of the signal when
+ * it aborts first.
+ */
+function untilAborted<T>(
+  promise: Promise<T>,
+  signal?: AbortSignal
+): Promise<T> {
+  if (!signal) {
+    return promise;
+  }
+
+  return new Promise<T>((resolve, reject) => {
+    const onAbort = () => reject(signal.reason);
+
+    if (signal.aborted) {
+      onAbort();
+      return;
+    }
+
+    signal.addEventListener('abort', onAbort, { once: true });
+    promise.then(
+      (value) => {
+        signal.removeEventListener('abort', onAbort);
+        resolve(value);
+      },
+      (error) => {
+        signal.removeEventListener('abort', onAbort);
+        reject(error);
+      }
+    );
+  });
+}
 
 /** An image id or an image URI of a video without its frame part. */
 function withoutFrames(image: string): string {

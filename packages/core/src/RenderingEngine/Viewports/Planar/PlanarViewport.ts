@@ -2666,8 +2666,10 @@ class PlanarViewport extends BaseViewport<
 
   /**
    * Resizes the internal CPU canvas and notifies active render bindings.
-   * The view keeps its camera through the new size, as the legacy viewports
-   * did (`keepCameraThroughResize`). A resize while the element has no size
+   * The display sets drawn on the CPU are drawn again at once on the
+   * resized canvas (`drawClearedCpuCanvas`). The view keeps its camera
+   * through the new size, as the legacy viewports did
+   * (`keepCameraThroughResize`). A resize while the element has no size
    * keeps the size that the view is framed at, so the view stays. A framing
    * written while the element had no size is set again at the new size, see
    * `setViewFraming`.
@@ -2690,7 +2692,12 @@ class PlanarViewport extends BaseViewport<
     const targetWidth = Math.round(clientWidth * devicePixelRatio);
     const targetHeight = Math.round(clientHeight * devicePixelRatio);
 
-    if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
+    const cpuCanvasCleared =
+      canvas.width !== targetWidth || canvas.height !== targetHeight;
+    const { composition } = this.renderContext.cpu;
+    const renderPassOfClear = composition.renderPassId;
+
+    if (cpuCanvasCleared) {
       canvas.width = targetWidth;
       canvas.height = targetHeight;
     }
@@ -2704,6 +2711,40 @@ class PlanarViewport extends BaseViewport<
     }
 
     this.applyPendingViewFraming(pending);
+
+    if (
+      cpuCanvasCleared &&
+      targetWidth > 0 &&
+      targetHeight > 0 &&
+      composition.renderPassId === renderPassOfClear
+    ) {
+      this.drawClearedCpuCanvas();
+    }
+  }
+
+  /**
+   * Draws the display sets on the CPU canvas that a resize cleared (a new
+   * size of a canvas clears it), in the task of the resize, so that no frame
+   * shows the cleared canvas. On a device with WebGL the rendering engine
+   * does not draw a planar viewport whose display sets are drawn on the CPU,
+   * and the canvas stayed blank until the next draw of the view. On a device
+   * without WebGL the engine draws the viewport in its next frame, so it does
+   * not draw here. The resize calls it only when nothing drew the view since
+   * the clear (a listener of the CAMERA_MODIFIED of the resize, as the sync
+   * of a stack labelmap, or a framing written while the element had no
+   * size), so a resize draws once.
+   */
+  private drawClearedCpuCanvas(): void {
+    if (
+      this.getUseCustomRenderingPipeline() ||
+      getRenderSurfaceForRenderMode(
+        this.renderContext.renderPath.renderMode
+      ) !== 'cpu'
+    ) {
+      return;
+    }
+
+    this.render();
   }
 
   /**

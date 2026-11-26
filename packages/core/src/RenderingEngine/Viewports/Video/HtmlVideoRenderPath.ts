@@ -27,10 +27,18 @@ import { videoLoadError } from './videoLoadError';
 export class HtmlVideoRenderPath
   implements RenderPath<VideoElementRenderContext>
 {
+  /**
+   * Puts a video element of the data in the layer of the viewport and waits
+   * for its metadata. Rejects with `videoLoadError` when the element fails
+   * first. When `signal` aborts first (a newer `setDisplaySets` superseded
+   * the mount), the element stops its load, goes with its listeners, and
+   * the call rejects with the reason of the signal.
+   */
   async addData(
     ctx: VideoElementRenderContext,
     data: LoadedData,
-    options: DataAddOptions
+    options: DataAddOptions,
+    signal?: AbortSignal
   ): Promise<RenderPathAttachment<VideoDisplaySetAppearance>> {
     const videoData = data as unknown as LoadedData<VideoStreamPayload>;
     const payload: VideoStreamPayload = videoData;
@@ -52,17 +60,31 @@ export class HtmlVideoRenderPath
         resolve();
       };
       const onError = () => {
+        const error = videoLoadError(videoData.id, element);
+
         cleanup();
-        element.remove();
-        reject(videoLoadError(videoData.id, element));
+        dropVideoElement(element);
+        reject(error);
+      };
+      const onAbort = () => {
+        cleanup();
+        dropVideoElement(element);
+        reject(signal.reason);
       };
       const cleanup = () => {
         element.removeEventListener('loadedmetadata', onLoadedMetadata);
         element.removeEventListener('error', onError);
+        signal?.removeEventListener('abort', onAbort);
       };
+
+      if (signal?.aborted) {
+        onAbort();
+        return;
+      }
 
       element.addEventListener('loadedmetadata', onLoadedMetadata);
       element.addEventListener('error', onError);
+      signal?.addEventListener('abort', onAbort);
       mountVideoElement(ctx, element);
     });
 
@@ -219,8 +241,19 @@ export class HtmlVideoRenderPath
   private removeData(rendering: VideoElementRendering): void {
     const { element } = rendering;
     element.pause();
-    element.remove();
+    dropVideoElement(element);
   }
+}
+
+/**
+ * Takes a video element out of the viewport and ends its load: without its
+ * source and after `load()` the browser drops the request of the media, which
+ * a removed element otherwise keeps open until it ends.
+ */
+function dropVideoElement(element: HTMLVideoElement): void {
+  element.remove();
+  element.removeAttribute('src');
+  element.load();
 }
 
 /**
