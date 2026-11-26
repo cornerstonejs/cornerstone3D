@@ -142,6 +142,15 @@ export function updateVTKImageDataGeometryFromImage(
   imageData.setSpacing(spacing);
 }
 
+/**
+ * The VOI LUT Sequence of an image for the display. A prescaled PT image is in
+ * SUV, and the sequence is in stored values, so the image gives no sequence,
+ * as on StackViewport.
+ */
+export function getImageVOILUT(image?: IImage): CPUFallbackLUT | undefined {
+  return image && !isPTPrescaledWithSUV(image) ? image.voiLUT : undefined;
+}
+
 export function getDefaultImageVOIRange(image: IImage): VOIRange | undefined {
   // Mirror legacy StackViewport._getInitialVOIRange: a prescaled PT (SUV) image
   // defaults to a 0-5 VOI range rather than its raw DICOM window center/width,

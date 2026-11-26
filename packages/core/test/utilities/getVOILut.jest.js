@@ -6,6 +6,7 @@ import createVOILUTSequenceTransferFunction, {
   createVOILUTSampler,
 } from '../../src/utilities/createVOILUTSequenceTransferFunction';
 import VOILUTFunctionType from '../../src/enums/VOILUTFunctionType';
+import { getImageVOILUT } from '../../src/RenderingEngine/helpers/planarImageRendering';
 
 describe('cpuFallback getVOILut', function () {
   it('maps the window center to mid grey for LINEAR', () => {
@@ -272,5 +273,19 @@ describe('createVOILUTSequenceTransferFunction', function () {
         lut: [0, 0, 0],
       })
     ).toBeUndefined();
+  });
+});
+
+describe('getImageVOILUT', function () {
+  // The stack and the generic viewports must show a PT image the same way.
+  it('gives no VOI LUT Sequence for a prescaled PT image', () => {
+    const voiLUT = { firstValueMapped: 0, numBitsPerEntry: 8, lut: [0, 255] };
+    const ptImage = {
+      voiLUT,
+      preScale: { scaled: true, scalingParameters: { suvbw: 2 } },
+    };
+
+    expect(getImageVOILUT(ptImage)).toBeUndefined();
+    expect(getImageVOILUT({ voiLUT })).toBe(voiLUT);
   });
 });

@@ -2,6 +2,7 @@ import { ActorRenderMode } from '../../../types';
 import type { ActorEntry, IImage, VOIRange } from '../../../types';
 import { getVolumeVOIShape } from '../../helpers/setDefaultVolumeVOI';
 import type { VolumeVOIShape } from '../../helpers/setDefaultVolumeVOI';
+import { getImageVOILUT } from '../../helpers/planarImageRendering';
 import type { PlanarRendering } from './planarRuntimeTypes';
 import type {
   BindingRole,
@@ -17,7 +18,10 @@ import type {
 export type PlanarDataBinding = ViewportDataBinding<PlanarDataPresentation>;
 
 function shapeOfImage(image?: IImage): VolumeVOIShape {
-  return { voiLUTFunction: image?.voiLUTFunction, voiLUT: image?.voiLUT };
+  return {
+    voiLUTFunction: image?.voiLUTFunction,
+    voiLUT: getImageVOILUT(image),
+  };
 }
 
 export type PlanarMountedDataHost = {

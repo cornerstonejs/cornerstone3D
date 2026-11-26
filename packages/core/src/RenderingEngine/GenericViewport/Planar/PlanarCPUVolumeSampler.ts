@@ -14,7 +14,10 @@ import type {
   VOIRange,
 } from '../../../types';
 import VoxelManager from '../../../utilities/VoxelManager';
-import { resolveVOILUTSequenceToApply } from '../../helpers/planarImageRendering';
+import {
+  getImageVOILUT,
+  resolveVOILUTSequenceToApply,
+} from '../../helpers/planarImageRendering';
 import {
   getVolumeVOIShape,
   type VolumeVOIShape,
@@ -431,7 +434,7 @@ export default class PlanarCPUVolumeSampler {
     viewport.voiLUT =
       dataPresentation?.colormap?.name === undefined
         ? resolveVOILUTSequenceToApply({
-            defaultVOILUT: sampledSliceState.image.voiLUT,
+            defaultVOILUT: getImageVOILUT(sampledSliceState.image),
             defaultVOILUTFunction: sampledSliceState.image.voiLUTFunction,
             props: dataPresentation,
           })

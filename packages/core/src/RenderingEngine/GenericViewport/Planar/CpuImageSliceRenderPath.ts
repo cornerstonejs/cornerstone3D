@@ -8,6 +8,7 @@ import correctShift from '../../helpers/cpuFallback/rendering/correctShift';
 import getDefaultViewport from '../../helpers/cpuFallback/rendering/getDefaultViewport';
 import {
   getDefaultImageVOIRange,
+  getImageVOILUT,
   resolveVOILUTSequenceToApply,
 } from '../../helpers/planarImageRendering';
 import fitToWindow from '../../helpers/cpuFallback/rendering/fitToWindow';
@@ -454,7 +455,7 @@ function applyDataPresentation(
   viewport.voiLUT =
     props?.colormap?.name === undefined
       ? resolveVOILUTSequenceToApply({
-          defaultVOILUT: enabledElement.image?.voiLUT,
+          defaultVOILUT: getImageVOILUT(enabledElement.image),
           defaultVOILUTFunction: enabledElement.image?.voiLUTFunction,
           props,
         })
