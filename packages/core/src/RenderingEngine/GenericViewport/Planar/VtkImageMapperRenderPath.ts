@@ -1,3 +1,4 @@
+import { fidelityIssuesOfImage } from '../../helpers/fidelityIndicator/fidelityIssues';
 import vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import { buildPlanarActorEntry } from './buildPlanarActorEntry';
@@ -99,6 +100,7 @@ export class VtkImageMapperRenderPath
       actor,
       currentImage: payload.image,
       imageQualityStatus: imageQualityStatusOf(payload.image),
+      fidelityIssues: fidelityIssuesOfImage(payload.image),
       excludeFromFidelity: isSegmentationOverlayData(payload, options),
       mapper,
       imageData,
@@ -431,6 +433,7 @@ async function updateRenderedImage(args: {
 
   rendering.currentImage = image;
   rendering.imageQualityStatus = imageQualityStatusOf(image);
+  rendering.fidelityIssues = fidelityIssuesOfImage(image);
   rendering.imageData = imageData;
   rendering.currentImageIdIndex = imageIdIndex;
   rendering.defaultVOIRange = getDefaultImageVOIRange(image);
