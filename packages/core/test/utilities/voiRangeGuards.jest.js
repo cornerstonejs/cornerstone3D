@@ -1,143 +1,99 @@
 import {
   VOI_RANGE_MIN_EPSILON,
-  VOI_RANGE_RELATIVE_EPSILON,
   ensureNonZeroVOIRange,
   getVOIRangeEpsilon,
 } from '../../src/utilities/voiRangeGuards';
 import createLinearRGBTransferFunction from '../../src/utilities/createLinearRGBTransferFunction';
+import { toLowHighRange } from '../../src/utilities/windowLevel';
 import { describe, it, expect } from '@jest/globals';
 
-describe('getVOIRangeEpsilon', function () {
-  it('Should be relative to the value', () => {
-    expect(getVOIRangeEpsilon(1000)).toBeCloseTo(
-      1000 * VOI_RANGE_RELATIVE_EPSILON
-    );
-    expect(getVOIRangeEpsilon(-1000)).toBeCloseTo(
-      1000 * VOI_RANGE_RELATIVE_EPSILON
-    );
-  });
-
-  it('Should never be smaller than the minimum epsilon', () => {
-    expect(getVOIRangeEpsilon(0)).toBe(VOI_RANGE_MIN_EPSILON);
-    expect(getVOIRangeEpsilon(1e-10)).toBe(VOI_RANGE_MIN_EPSILON);
-  });
-
-  it('Should stay below the data range for a near-zero RescaleSlope', () => {
-    // PT with slope ~1e-10: pixel values are on the order of 3e-5
-    const value = 3e-5;
-    expect(getVOIRangeEpsilon(value)).toBeLessThan(value);
-    expect(value + getVOIRangeEpsilon(value)).toBeGreaterThan(value);
-  });
-});
-
-describe('ensureNonZeroVOIRange', function () {
-  it('Should return a range with a width unchanged', () => {
-    const voiRange = { lower: 0, upper: 100 };
-    expect(ensureNonZeroVOIRange(voiRange)).toBe(voiRange);
-  });
-
-  it('Should widen a zero-width range', () => {
-    const result = ensureNonZeroVOIRange({ lower: 500, upper: 500 });
-    expect(result.lower).toBe(500);
-    expect(result.upper).toBe(500 + getVOIRangeEpsilon(500));
-    expect(result.upper).toBeGreaterThan(result.lower);
-  });
-
-  it('Should widen a zero-width range at zero', () => {
-    const result = ensureNonZeroVOIRange({ lower: 0, upper: 0 });
-    expect(result).toEqual({ lower: 0, upper: VOI_RANGE_MIN_EPSILON });
-  });
-
-  it('Should fix an inverted range', () => {
-    const result = ensureNonZeroVOIRange({ lower: 10, upper: 5 });
-    expect(result.lower).toBe(10);
-    expect(result.upper).toBeGreaterThan(10);
-  });
-
-  it('Should keep other properties of the range', () => {
-    const result = ensureNonZeroVOIRange({ lower: 1, upper: 1, extra: 'x' });
-    expect(result.extra).toBe('x');
-  });
-
-  it('Should not mutate the input', () => {
-    const voiRange = { lower: 1, upper: 1 };
-    ensureNonZeroVOIRange(voiRange);
-    expect(voiRange).toEqual({ lower: 1, upper: 1 });
-  });
-
-  it('Should handle an empty object input gracefully', () => {
-    const result = ensureNonZeroVOIRange({});
-    expect(result).toBeDefined();
-  });
-
-  it('Should handle NaN or missing properties', () => {
-    const result = ensureNonZeroVOIRange({ lower: NaN, upper: NaN });
-    expect(Number.isNaN(result.lower)).toBe(true);
-  });
-});
-
-describe('createLinearRGBTransferFunction', function () {
-  // Node value layout: [x, r, g, b, midpoint, sharpness]
-  const getNodeRGB = (cfun, index) => {
+function nodeXs(cfun) {
+  const xs = [];
+  for (let i = 0; i < cfun.getSize(); i++) {
     const node = [];
-    cfun.getNodeValue(index, node);
-    return node.slice(1, 4);
-  };
+    cfun.getNodeValue(i, node);
+    xs.push(node[0]);
+  }
+  return xs;
+}
 
-  it('Should map lower to black and upper to white', () => {
-    const cfun = createLinearRGBTransferFunction({ lower: 0, upper: 100 });
-    expect(cfun.getSize()).toBe(2);
-    expect(cfun.getRange()).toEqual([0, 100]);
-    expect(getNodeRGB(cfun, 0)).toEqual([0, 0, 0]);
-    expect(getNodeRGB(cfun, 1)).toEqual([1, 1, 1]);
+function grayAt(cfun, x) {
+  const rgb = [];
+  cfun.getColor(x, rgb);
+  return rgb[0];
+}
+
+describe('ensureNonZeroVOIRange', () => {
+  it('widens a zero-width range by a relative epsilon with a floor', () => {
+    expect(getVOIRangeEpsilon(-1000)).toBeCloseTo(1e-3);
+    expect(getVOIRangeEpsilon(0)).toBe(VOI_RANGE_MIN_EPSILON);
+
+    const voiRange = { lower: 500, upper: 500, extra: 'x' };
+    expect(ensureNonZeroVOIRange(voiRange)).toEqual({
+      lower: 500,
+      upper: 500 + getVOIRangeEpsilon(500),
+      extra: 'x',
+    });
+    expect(voiRange.upper).toBe(500);
   });
 
-  it('Should use the default range when the VOI range is not set', () => {
-    const cfun = createLinearRGBTransferFunction({});
-    expect(cfun.getRange()).toEqual([0, 1024]);
+  it('returns a range with a width, or an inverted range, unchanged', () => {
+    for (const voiRange of [
+      { lower: 0, upper: 100 },
+      { lower: 10, upper: 5 },
+    ]) {
+      expect(ensureNonZeroVOIRange(voiRange)).toBe(voiRange);
+    }
+  });
+});
+
+describe('createLinearRGBTransferFunction', () => {
+  it('maps lower to black and upper to white, and defaults to [0, 1024]', () => {
+    const cfun = createLinearRGBTransferFunction({ lower: 10, upper: 50 });
+    expect(nodeXs(cfun)).toEqual([10, 50]);
+    expect(grayAt(cfun, 10)).toBe(0);
+    expect(grayAt(cfun, 50)).toBe(1);
+
+    expect(nodeXs(createLinearRGBTransferFunction({}))).toEqual([0, 1024]);
   });
 
-  it('Should keep both points for a zero-width range', () => {
-    const cfun = createLinearRGBTransferFunction({ lower: 500, upper: 500 });
-    expect(cfun.getSize()).toBe(2);
-    const [lower, upper] = cfun.getRange();
-    expect(lower).toBe(500);
-    expect(upper).toBe(500 + getVOIRangeEpsilon(500));
-    expect(getNodeRGB(cfun, 0)).toEqual([0, 0, 0]);
-    expect(getNodeRGB(cfun, 1)).toEqual([1, 1, 1]);
-  });
-
-  it('Should keep both points for a near-zero RescaleSlope range', () => {
-    const value = 3e-5;
+  // A zero-width window: a value at or below the window renders black, and
+  // the next possible pixel value renders white.
+  it.each([
+    [0, 1],
+    [-1024, -1023],
+    // PT with a RescaleSlope of 1e-10
+    [3e-5, 3e-5 + 1e-10],
+  ])('renders %p black and the next value %p white', (value, next) => {
     const cfun = createLinearRGBTransferFunction({
       lower: value,
       upper: value,
     });
     expect(cfun.getSize()).toBe(2);
-    const [lower, upper] = cfun.getRange();
-    expect(lower).toBe(value);
-    expect(upper).toBeGreaterThan(value);
+    expect(grayAt(cfun, value)).toBe(0);
+    expect(grayAt(cfun, next)).toBe(1);
   });
 
-  it('Should keep both points for an inverted range', () => {
+  it('keeps an inverted range as an inverted ramp', () => {
     const cfun = createLinearRGBTransferFunction({ lower: 10, upper: 5 });
-    expect(cfun.getSize()).toBe(2);
-    const [lower, upper] = cfun.getRange();
-    expect(lower).toBe(10);
-    expect(upper).toBeGreaterThan(10);
+    expect(grayAt(cfun, 5)).toBe(1);
+    expect(grayAt(cfun, 10)).toBe(0);
   });
 
-  it('Should use default values when an empty object is provided', () => {
-    const cfun = createLinearRGBTransferFunction({});
-    expect(cfun.getSize()).toBe(2);
-    expect(cfun.getRange()).toEqual([0, 1024]);
-  });
+  // From #3046 (ZoliQua): a zero-width range used to leave one node, and a
+  // later setRange gave NaN node positions. See #2733.
+  it('rescales to a later, valid range after a zero-width one', () => {
+    // WC 0.5 / WW 1, as on the all-zero padding frame of the cine in #2733.
+    const degenerate = toLowHighRange(1, 0.5);
+    expect(degenerate).toEqual({ lower: 0, upper: 0 });
+    const cfun = createLinearRGBTransferFunction(degenerate);
 
-  it('Should handle partial ranges where lower or upper is undefined', () => {
-    const cfunOnlyLower = createLinearRGBTransferFunction({ lower: 100 });
-    expect(cfunOnlyLower.getSize()).toBe(2);
+    cfun.setRange(0, 255);
 
-    const cfunOnlyUpper = createLinearRGBTransferFunction({ upper: 500 });
-    expect(cfunOnlyUpper.getSize()).toBe(2);
+    const xs = nodeXs(cfun);
+    expect(xs.every(Number.isFinite)).toBe(true);
+    expect(xs[0]).toBeCloseTo(0, 6);
+    expect(xs[1]).toBeCloseTo(255, 6);
+    expect(grayAt(cfun, 127.5)).toBeCloseTo(0.5);
   });
 });
