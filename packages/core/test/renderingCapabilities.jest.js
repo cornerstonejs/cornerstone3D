@@ -20,6 +20,7 @@ import {
 import eventTarget from '../src/eventTarget';
 import { setLossyDownsampling } from '../src/init';
 import Events from '../src/enums/Events';
+import { resetWebGLAvailability } from '../src/utilities/webglAvailability';
 
 jest.mock('../src/utilities/textureSupport', () => ({
   probeRenderingLimits: jest.fn(),
@@ -98,6 +99,8 @@ describe('renderingCapabilities', () => {
 
   beforeEach(() => {
     window.localStorage.clear();
+    /** A wait or failure times of an earlier test stay in this tab. */
+    resetWebGLAvailability();
     resetRenderingCapabilities();
     /** The tracker records only when the GPU settings apply. */
     setLossyDownsampling({ final: true });
@@ -848,6 +851,62 @@ describe('renderingCapabilities', () => {
     expect(
       keys.filter((key) => window.localStorage.getItem(key) !== null)
     ).toHaveLength(0);
+  });
+
+  it('keeps the id of a crash record whose removal failed, so it counts once', () => {
+    mockWebGL();
+    detectRenderingCapabilities();
+
+    const start = Date.now();
+    const marker = (index) =>
+      JSON.stringify({
+        renderer: 'NVIDIA GeForce RTX 3080',
+        probeVersion: RENDERING_CAPABILITIES_PROBE_VERSION,
+        totalBytes: 9000,
+        at: start - 60000 - index,
+      });
+    const stuck = `${STORAGE_KEY}.pending.stuck-tab`;
+    const removeItem = Storage.prototype.removeItem;
+    const refuse = jest
+      .spyOn(Storage.prototype, 'removeItem')
+      .mockImplementation(function (key) {
+        if (key === stuck) {
+          throw new Error('SecurityError');
+        }
+
+        return removeItem.call(this, key);
+      });
+
+    try {
+      window.localStorage.setItem(stuck, marker(0));
+      resetRenderingCapabilities();
+
+      expect(getStoredRenderingCapabilities().gpuBytes.failed.failures).toBe(1);
+
+      for (let index = 1; index <= 20; index++) {
+        window.localStorage.setItem(
+          `${STORAGE_KEY}.pending.stopped-tab-${index}`,
+          marker(index)
+        );
+      }
+
+      /** The stuck id and 19 new ones fill the 20 ids; one record waits. */
+      resetRenderingCapabilities();
+      expect(getStoredRenderingCapabilities().gpuBytes.failed.failures).toBe(
+        20
+      );
+
+      resetRenderingCapabilities();
+      expect(getStoredRenderingCapabilities().gpuBytes.failed.failures).toBe(
+        21
+      );
+      expect(window.localStorage.getItem(stuck)).not.toBeNull();
+      expect(getStoredRenderingCapabilities().recoveredPending).toContain(
+        `${stuck}@${JSON.parse(marker(0)).at}`
+      );
+    } finally {
+      refuse.mockRestore();
+    }
   });
 
   it('reports one allocation once when two contexts lose their context', () => {

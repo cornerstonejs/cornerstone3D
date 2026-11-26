@@ -899,8 +899,30 @@ function isCountableCrash(
 }
 
 /**
+ * True while the store holds the crash record of this id: the key of the id
+ * holds a record of the same time. A record that does not parse counts as
+ * held, so it goes.
+ */
+function holdsCrashRecord(id: string): boolean {
+  const at = id.slice(id.lastIndexOf('@') + 1);
+  const key = id.slice(0, id.lastIndexOf('@'));
+
+  try {
+    const stored = getCapabilityStorage().getItem(key);
+
+    return stored !== null && String(JSON.parse(stored)?.at) === at;
+  } catch {
+    return true;
+  }
+}
+
+/**
  * Counts one crash record in the record, once: the key of a tab repeats, so
  * the key and the time name the record.
+ *
+ * The record keeps the ids of 20 crash records. An id goes only once its
+ * record went, so a record whose removal failed is not counted again; while
+ * 20 records stay, a new one waits for a later start.
  */
 function countCrash(
   target: StoredRenderingCapabilities,
@@ -911,14 +933,18 @@ function countCrash(
   const id = `${key}@${pending.at}`;
 
   if (!target.recoveredPending?.includes(id)) {
+    const kept = (target.recoveredPending ?? []).filter(holdsCrashRecord);
+
+    if (kept.length >= RECOVERED_PENDING_KEPT) {
+      return;
+    }
+
     addFailure(target, 'gpuBytes', pending.totalBytes);
     addGpuMemoryFailure(
       (target.history ??= emptyGpuMemoryHistory()),
       pending.totalBytes
     );
-    target.recoveredPending = [...(target.recoveredPending ?? []), id].slice(
-      -RECOVERED_PENDING_KEPT
-    );
+    target.recoveredPending = [...kept, id];
     handled.crashes.push({ id, totalBytes: pending.totalBytes });
     log.warn(
       `a previous page stopped during a texture allocation of ${pending.totalBytes} bytes, so it is recorded as a crash`
@@ -947,22 +973,13 @@ function finishRecovery(handled: RecoveryResult): void {
   handled.recorded
     .filter((id) => confirmed.includes(id))
     .forEach((id) => {
-      const at = id.slice(id.lastIndexOf('@') + 1);
-      const key = id.slice(0, id.lastIndexOf('@'));
-
       /**
        * The key of a tab repeats: while the earlier page was asked, this
        * page can have written its own record under it, which stays.
        */
-      try {
-        if (String(JSON.parse(storage.getItem(key) ?? 'null')?.at) !== at) {
-          return;
-        }
-      } catch {
-        /** A record that does not parse goes too. */
+      if (holdsCrashRecord(id)) {
+        storage.removeItem(id.slice(0, id.lastIndexOf('@')));
       }
-
-      storage.removeItem(key);
     });
 
   const listener = onRecoveredCrash;
@@ -1100,15 +1117,6 @@ function recoverPendingAllocations(
       }
 
       if (isCountableCrash(target, pending)) {
-        /**
-         * The record keeps the ids of the last crash records only, so one
-         * start handles at most that many, and a later start the rest: an id
-         * that dropped out before its record went would count again.
-         */
-        if (handled.recorded.length >= RECOVERED_PENDING_KEPT) {
-          continue;
-        }
-
         countCrash(target, key, pending, handled);
 
         continue;

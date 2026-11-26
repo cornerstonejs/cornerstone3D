@@ -66,6 +66,11 @@ let announced: WebGLBlock | undefined;
 let endTimer: ReturnType<typeof setTimeout> | undefined;
 let waiters: (() => void)[] = [];
 let listening = false;
+/**
+ * The failure times of this tab, so the cooldown rule counts them when the
+ * store refuses a write.
+ */
+let localFailureTimes: number[] = [];
 
 const REASONS: WebGLBlockReason[] = ['chrome', 'cooldown', 'calibration'];
 
@@ -161,6 +166,22 @@ function endWait(): void {
   announce(undefined, 'self');
 }
 
+/** The wait that this tab announced, while it runs. */
+function localBlock(): WebGLBlock | undefined {
+  return announced && announced.until > Date.now() ? announced : undefined;
+}
+
+/**
+ * The later of the stored wait and the wait of this tab. A store that refused
+ * a write holds an earlier end, or none, so the wait of this tab counts too.
+ */
+function effectiveBlock(): WebGLBlock | undefined {
+  const stored = readStoredBlock();
+  const local = localBlock();
+
+  return local && (!stored || local.until >= stored.until) ? local : stored;
+}
+
 /** Follows the wait that another tab of the site starts or ends. */
 function onStorage(event: StorageEvent): void {
   if (event.key !== WEBGL_BLOCK_KEY && event.key !== null) {
@@ -168,10 +189,18 @@ function onStorage(event: StorageEvent): void {
   }
 
   const stored = readStoredBlock();
+  const local = localBlock();
 
-  if (stored && stored.until !== announced?.until) {
-    announce(stored, 'other');
-  } else if (!stored && announced) {
+  if (stored) {
+    /** A later wait of this tab, which the store refused, holds. */
+    if (
+      stored.until !== announced?.until &&
+      !((local?.until ?? 0) > stored.until)
+    ) {
+      announce(stored, 'other');
+    }
+  } else if (announced) {
+    /** Another tab ended the wait. */
     announce(undefined, 'other');
   }
 }
@@ -193,19 +222,26 @@ function getWebGLBlock(): WebGLBlock | undefined {
   listen();
 
   const stored = readStoredBlock();
+  const local = localBlock();
 
-  if (stored && stored.until !== announced?.until) {
-    announce(stored, 'other');
-  } else if (!stored && announced) {
-    /**
-     * A store that refused the wait reads back empty, so the wait of this
-     * tab holds until its end. Another tab that ends a wait early is
-     * followed through its storage event.
-     */
-    if (announced.until > Date.now()) {
-      return announced;
+  /**
+   * A store that refused the wait reads back empty, or with an earlier end,
+   * so the wait of this tab holds until its end. Another tab that ends a
+   * wait early is followed through its storage event.
+   */
+  if (local && (!stored || local.until >= stored.until)) {
+    return local;
+  }
+
+  if (stored) {
+    if (stored.until !== announced?.until) {
+      announce(stored, 'other');
     }
 
+    return stored;
+  }
+
+  if (announced) {
     /**
      * The timer of a hidden tab can run late, so the wait ends here, with
      * the check of Chromium, which can extend it. Availability is reported
@@ -213,10 +249,10 @@ function getWebGLBlock(): WebGLBlock | undefined {
      */
     endWait();
 
-    return readStoredBlock() ?? announced;
+    return effectiveBlock();
   }
 
-  return stored;
+  return undefined;
 }
 
 /** True while new WebGL contexts and large GPU allocations wait. */
@@ -248,10 +284,7 @@ function startWebGLBlock(until: number, reason: WebGLBlockReason): void {
   listen();
 
   const end = Math.min(until, Date.now() + WEBGL_BLOCK_MS);
-  /** The wait of this tab counts too, when the store refused it. */
-  const running =
-    readStoredBlock() ??
-    (announced && announced.until > Date.now() ? announced : undefined);
+  const running = effectiveBlock();
 
   if (running && running.until >= end) {
     return;
@@ -281,36 +314,62 @@ function startWebGLBlock(until: number, reason: WebGLBlockReason): void {
  * run that reached no failure calls this.
  */
 function endWebGLBlock(reason: WebGLBlockReason): void {
-  if (readStoredBlock()?.reason !== reason) {
+  /** The wait of this tab counts too, when the store refused it. */
+  if (effectiveBlock()?.reason !== reason) {
     return;
   }
 
-  try {
-    getCapabilityStorage().removeItem(WEBGL_BLOCK_KEY);
-  } catch {
-    /** The wait then ends by its time. */
+  if (readStoredBlock()?.reason === reason) {
+    try {
+      getCapabilityStorage().removeItem(WEBGL_BLOCK_KEY);
+    } catch {
+      /** The wait then ends by its time. */
+    }
   }
 
-  announce(undefined, 'self');
+  /** A stored wait for another reason stays. */
+  const rest = readStoredBlock();
+
+  announce(rest, rest ? 'other' : 'self');
+}
+
+/**
+ * The failure times of the last two minutes, of every tab in the store and of
+ * this tab.
+ */
+function recentFailureTimes(now: number): number[] {
+  let stored: number[] = [];
+
+  try {
+    const parsed = JSON.parse(
+      getCapabilityStorage().getItem(GPU_FAILURE_TIMES_KEY) ?? '[]'
+    );
+
+    stored = Array.isArray(parsed) ? parsed.filter(Number.isFinite) : [];
+  } catch {
+    stored = [];
+  }
+
+  return [...new Set([...stored, ...localFailureTimes])]
+    .filter((time) => now - time < WEBGL_BLOCK_MS)
+    .sort((a, b) => a - b);
 }
 
 /** The failure times of the last two minutes, with this one added. */
 function addFailureTime(now: number): number[] {
-  const storage = getCapabilityStorage();
-  let times: number[] = [];
+  const times = [...recentFailureTimes(now), now];
+
+  /**
+   * The times of this tab stay here too, so a store that refuses the write
+   * still counts them.
+   */
+  localFailureTimes = times;
 
   try {
-    const stored = JSON.parse(storage.getItem(GPU_FAILURE_TIMES_KEY) ?? '[]');
-
-    times = Array.isArray(stored) ? stored.filter(Number.isFinite) : [];
-  } catch {
-    times = [];
-  }
-
-  times = [...times.filter((time) => now - time < WEBGL_BLOCK_MS), now];
-
-  try {
-    storage.setItem(GPU_FAILURE_TIMES_KEY, JSON.stringify(times));
+    getCapabilityStorage().setItem(
+      GPU_FAILURE_TIMES_KEY,
+      JSON.stringify(times)
+    );
   } catch {
     /** The rule then counts the failures of this tab only. */
   }
@@ -398,21 +457,7 @@ function noteContextCreationRefused(
     return;
   }
 
-  let recent: number[] = [];
-
-  try {
-    const times = JSON.parse(
-      getCapabilityStorage().getItem(GPU_FAILURE_TIMES_KEY) ?? '[]'
-    );
-
-    recent = Array.isArray(times)
-      ? times.filter(
-          (time) => Number.isFinite(time) && Date.now() - time < WEBGL_BLOCK_MS
-        )
-      : [];
-  } catch {
-    /** With no stored failure, the wait starts now. */
-  }
+  const recent = recentFailureTimes(Date.now());
 
   if (!blockMessage && !hadWebGL && !recent.length) {
     return;
@@ -424,14 +469,15 @@ function noteContextCreationRefused(
 }
 
 /**
- * Forgets the wait that this tab announced, and its timer, for tests. The
- * store keeps its value.
+ * Forgets the wait that this tab announced, its timer and its failure times,
+ * for tests. The store keeps its values.
  */
 function resetWebGLAvailability(): void {
   clearTimeout(endTimer);
   endTimer = undefined;
   announced = undefined;
   waiters = [];
+  localFailureTimes = [];
 }
 
 export {

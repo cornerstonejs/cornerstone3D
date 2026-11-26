@@ -10,6 +10,7 @@ import {
   GPU_FAILURE_TIMES_KEY,
   WEBGL_BLOCK_KEY,
   WEBGL_BLOCK_MS,
+  endWebGLBlock,
   getWebGLBlock,
   isWebGLBlocked,
   noteContextCreationRefused,
@@ -360,6 +361,119 @@ describe('a store that refuses the wait', () => {
 
       expect(isWebGLBlocked()).toBe(false);
       expect(available).toHaveBeenCalledTimes(1);
+    } finally {
+      setItem.mockRestore();
+    }
+  });
+
+  /** The store keeps an earlier wait and refuses each later one. */
+  function refuseWritesAfter(value) {
+    window.localStorage.setItem(WEBGL_BLOCK_KEY, JSON.stringify(value));
+
+    return jest.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('QuotaExceededError');
+    });
+  }
+
+  it('keeps a later end of this tab over an earlier end that the store kept', () => {
+    const setItem = refuseWritesAfter({
+      until: Date.now() + 60000,
+      reason: 'cooldown',
+      at: Date.now(),
+    });
+
+    try {
+      startWebGLBlock(Date.now() + WEBGL_BLOCK_MS, 'cooldown');
+
+      expect(getWebGLBlock()?.until).toBe(Date.now() + WEBGL_BLOCK_MS);
+
+      /** A shorter wait, and the storage event of the earlier one, change nothing. */
+      startWebGLBlock(Date.now() + 90000, 'cooldown');
+      window.dispatchEvent(
+        new StorageEvent('storage', { key: WEBGL_BLOCK_KEY })
+      );
+
+      expect(getWebGLBlock()?.until).toBe(Date.now() + WEBGL_BLOCK_MS);
+
+      jest.advanceTimersByTime(60000);
+
+      expect(isWebGLBlocked()).toBe(true);
+    } finally {
+      setItem.mockRestore();
+    }
+  });
+
+  it('ends a calibration wait that the store refused', () => {
+    const setItem = jest
+      .spyOn(Storage.prototype, 'setItem')
+      .mockImplementation(() => {
+        throw new Error('QuotaExceededError');
+      });
+
+    try {
+      startWebGLBlock(Date.now() + 60000, 'calibration');
+      expect(isWebGLBlocked()).toBe(true);
+
+      endWebGLBlock('cooldown');
+      expect(isWebGLBlocked()).toBe(true);
+
+      endWebGLBlock('calibration');
+      expect(isWebGLBlocked()).toBe(false);
+    } finally {
+      setItem.mockRestore();
+    }
+  });
+
+  it('counts the failures of this tab for the cooldown when the store refuses them', () => {
+    const setItem = jest
+      .spyOn(Storage.prototype, 'setItem')
+      .mockImplementation(() => {
+        throw new Error('QuotaExceededError');
+      });
+
+    try {
+      noteGpuMemoryFailure();
+      expect(isWebGLBlocked()).toBe(false);
+
+      jest.advanceTimersByTime(1000);
+      noteGpuMemoryFailure();
+
+      expect(getWebGLBlock()?.reason).toBe('cooldown');
+    } finally {
+      setItem.mockRestore();
+    }
+  });
+
+  it('keeps the 30 s of a Chromium recheck that the store refused', async () => {
+    asChromium();
+    mockContexts(false);
+    startWebGLBlock(Date.now() + 1000, 'chrome');
+
+    const setItem = jest
+      .spyOn(Storage.prototype, 'setItem')
+      .mockImplementation(() => {
+        throw new Error('QuotaExceededError');
+      });
+
+    try {
+      const available = jest.fn();
+
+      whenWebGLAvailable().then(available);
+      jest.advanceTimersByTime(1000);
+      await Promise.resolve();
+
+      /** The browser still refuses, so the wait goes on for 30 s more. */
+      expect(getWebGLBlock()).toEqual({
+        until: Date.now() + 30000,
+        reason: 'chrome',
+      });
+      expect(available).not.toHaveBeenCalled();
+
+      jest.advanceTimersByTime(20000);
+      await Promise.resolve();
+
+      expect(isWebGLBlocked()).toBe(true);
+      expect(available).not.toHaveBeenCalled();
     } finally {
       setItem.mockRestore();
     }
