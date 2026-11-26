@@ -2686,12 +2686,19 @@ levels of 255.
   nothing of that segment and one warning says so. What happens:
   - The contours of each segment are made into a surface once, in the worker
     of polySeg, and again after each `SEGMENTATION_DATA_MODIFIED` of the
-    segmentation. A segmentation that has a Surface representation is cut
-    with that surface and not converted.
-  - The surfaces are cut by every slice of the plane in one task of the
-    worker, when a viewport first shows that plane and again when its plane
-    changes (a rotation, another orientation, another volume, 150 ms after
-    the last change). Viewports of one plane share the cut.
+    segmentation, however many viewports, planes or representations ask for
+    it and whenever they ask: a conversion that runs is shared. A
+    segmentation that has a Surface representation is cut with that surface
+    and not converted. The segments whose contours reach the slice on display
+    are converted first, and in each group the ones with fewer contour points
+    first.
+  - Each surface is cut by every slice of the plane as soon as it is made
+    (with the surfaces made while the cut before it ran), in one task of the
+    worker, and its contours are added to the slice on display: the panes
+    fill in segment by segment, and no cut annotation is taken away while
+    they fill. A viewport cuts again when its plane changes (a rotation,
+    another orientation, another volume, 150 ms after the last change).
+    Viewports of one plane share the cut.
   - A scroll shows the cut of the next slice from that cut, with no new task:
     the cut of a slice is a set of locked `PlanarFreehandContourSegmentationTool`
     annotations with the view reference of that slice, which exist while a
@@ -2707,6 +2714,11 @@ levels of 255.
     `cs3d.tools.tools.displayTools.Contour.contourCuts` that names the
     segmentation, the segment and the reason, once for each version of the
     contours.
+
+  The contours of an RTSTRUCT of 31 structures (2,265 contours) show their
+  first cut in the sagittal and coronal panes about 3 s after the
+  representation is added and their last about 13 s after, in Chrome on a
+  recent Mac; before the cut came for every structure at once after 18.6 s.
 
   In 5.x the cut was tried only when the viewport had status `RENDERED` at the
   draw of the representation, which a next planar viewport never has at that
@@ -2738,6 +2750,48 @@ levels of 255.
     );
   ```
 
+- **polySeg runs two instances of its worker.** `registerPolySegWorker`,
+  which the polySeg add-on calls at its first use, makes
+  `min(2, navigator.hardwareConcurrency - 1)` instances, and at least one, in
+  place of one in 5.x. Each instance loads the 5.6 MB wasm of the
+  conversions with its first one and holds about 300 MB more at the peak of
+  a large RTSTRUCT; it ends after 2 s without a task. With two, the last cut
+  of the RTSTRUCT above comes after about 12 s instead of 16 to 17 s with
+  one; four do no better there, as its largest structure alone takes 7 s.
+  polySeg sends one task to each instance at a time, and the cut of a
+  surface goes before the conversions that wait. To choose the number, call
+  `init` of the add-on before its first conversion:
+
+  ```ts
+  import * as polySeg from '@cornerstonejs/polymorphic-segmentation';
+
+  // 5.x: one instance. 6.0: two, unless set
+  polySeg.init({ maxWorkerInstances: 1 });
+  cornerstoneTools.init({ addons: { polySeg } });
+  ```
+
+  `@icr/polyseg-wasm` prints `icrPlanarContourToClosedSurfaceConversion ...
+GetSpacingBetweenLines: Contour spacing is not consistent` for a structure
+  whose contours have a gap along their normal: a structure of two parts,
+  such as a PTV that holds two targets. It is noise. The surface goes through
+  every contour of both parts and does not cross the gap; the conversion
+  takes the mean spacing of the contours, so the surface of each part ends
+  half that mean spacing beyond its last contour (0.7 to 1.5 mm for the five
+  such structures of the RTSTRUCT above) instead of half the spacing of its
+  contours (0.5 mm).
+
+- **The contours of a contour segmentation show only on a viewport that has
+  its contour representation, in stack and in volume mode.** The filter of
+  the freehand contour tools (`filterInteractableAnnotationsForElement` of
+  `PlanarFreehandROITool`, which `PlanarFreehandContourSegmentationTool`
+  inherits) gives the annotations that the viewport shows and, of a contour
+  segmentation, those of a segmentation with a Contour representation on the
+  viewport; a hidden segment or a hidden representation draws nothing on any
+  viewport. The cut of a contour set on a viewport of another plane follows
+  the same rule. 5.x kept that rule in volume mode only; in stack mode a
+  viewport drew the contours of every segmentation of its frame of reference
+  on its image once one annotation of the tool passed the rule, and
+  6.0.0-beta.2 did so in both modes.
 - **A synchronizer keeps apart the options of two rendering engines whose
   viewports have the same id.** `setOptions` and `getOptions` of a
   synchronizer take the id of the rendering engine as a last argument,

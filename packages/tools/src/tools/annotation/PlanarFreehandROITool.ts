@@ -5,7 +5,6 @@ import { vec3 } from 'gl-matrix';
 import { getCalibratedLengthUnitsAndScale } from '../../utilities/getCalibratedUnits';
 import * as math from '../../utilities/math';
 import { polyline } from '../../utilities/math';
-import { filterAnnotationsForDisplay } from '../../utilities/planar';
 import throttle from '../../utilities/throttle';
 import { getViewportIdsWithToolToRender } from '../../utilities/viewportFilters';
 import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
@@ -418,9 +417,10 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
   };
 
   /**
-   * @override We need to override this method as the tool doesn't always have
-   * `handles`, which means `filterAnnotationsForDisplay` fails inside
-   * `filterAnnotationsWithinSlice`.
+   * @override The annotations of the base filter: those that the viewport
+   * shows (`filterAnnotationsForDisplay`), and of a contour segmentation only
+   * those of a segmentation with a contour representation on the viewport,
+   * in stack and in volume mode. An empty array when none is kept.
    */
   public filterInteractableAnnotationsForElement(
     element: HTMLDivElement,
@@ -430,16 +430,9 @@ class PlanarFreehandROITool extends ContourSegmentationBaseTool {
       return [];
     }
 
-    const baseFilteredAnnotations =
-      super.filterInteractableAnnotationsForElement(element, annotations);
-    if (!baseFilteredAnnotations?.length) {
-      return [];
-    }
-
-    const enabledElement = getEnabledElement(element);
-    const { viewport } = enabledElement;
-
-    return filterAnnotationsForDisplay(viewport, annotations);
+    return (
+      super.filterInteractableAnnotationsForElement(element, annotations) ?? []
+    );
   }
 
   protected isContourSegmentationTool(): boolean {

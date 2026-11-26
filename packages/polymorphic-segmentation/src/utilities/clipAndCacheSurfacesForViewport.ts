@@ -8,6 +8,7 @@ import {
 
 import { Enums as ToolsEnums, utilities } from '@cornerstonejs/tools';
 import { registerPolySegWorker } from '../registerPolySegWorker';
+import { runPolySegTask } from './runPolySegTask';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
 const cs3dLogger = cornerstoneUtilities.logger.polySegLog.getLogger(
@@ -68,7 +69,8 @@ function getSlicesClippingPlanes(viewport: Types.IViewport) {
 }
 
 /**
- * Clips and caches surfaces for a specific viewport.
+ * Clips and caches surfaces for a specific viewport. Its tasks go to the
+ * polySeg worker before the conversions that wait (`runPolySegTask`).
  *
  * @param surfacesInfo - An array of surfaces information. The id of each
  * surface must name that surface (its geometry id).
@@ -128,49 +130,51 @@ export async function clipAndCacheSurfacesForViewport(
     );
   });
 
-  await workerManager
-    .executeTask(
-      'polySeg',
-      'cutSurfacesIntoPlanes',
-      {
-        surfacesInfo,
-        planesInfo,
-        surfacesAABB,
-      },
-      {
-        callbacks: [
-          // progress callback
-          ({ progress }) => {
-            triggerWorkerProgress(eventTarget, progress);
-          },
-          // update cache callback
-          ({ sliceIndex, polyDataResults }) => {
-            polyDataResults.forEach((polyDataResult, segmentIndex) => {
-              const surfaceCache = contoursBySegmentIndex.get(
-                Number(segmentIndex)
-              );
+  await runPolySegTask(
+    () =>
+      workerManager.executeTask(
+        'polySeg',
+        'cutSurfacesIntoPlanes',
+        {
+          surfacesInfo,
+          planesInfo,
+          surfacesAABB,
+        },
+        {
+          callbacks: [
+            // progress callback
+            ({ progress }) => {
+              triggerWorkerProgress(eventTarget, progress);
+            },
+            // update cache callback
+            ({ sliceIndex, polyDataResults }) => {
+              polyDataResults.forEach((polyDataResult, segmentIndex) => {
+                const surfaceCache = contoursBySegmentIndex.get(
+                  Number(segmentIndex)
+                );
 
-              if (!surfaceCache) {
-                return;
-              }
+                if (!surfaceCache) {
+                  return;
+                }
 
-              const cacheId = generateCacheId(
-                viewport,
-                viewPlaneNormal,
-                sliceIndex
-              );
-              updatePolyDataCache(surfaceCache, cacheId, {
-                ...polyDataResult,
-                sliceIndex,
+                const cacheId = generateCacheId(
+                  viewport,
+                  viewPlaneNormal,
+                  sliceIndex
+                );
+                updatePolyDataCache(surfaceCache, cacheId, {
+                  ...polyDataResult,
+                  sliceIndex,
+                });
               });
-            });
-          },
-        ],
-      }
-    )
-    .catch((error) => {
-      cs3dLogger.error(error);
-    });
+            },
+          ],
+        }
+      ),
+    true
+  ).catch((error) => {
+    cs3dLogger.error(error);
+  });
 
   triggerWorkerProgress(eventTarget, 100);
 
@@ -193,20 +197,24 @@ async function updateSurfacesAABBCache(surfacesInfo: SurfacesInfo[]) {
     return;
   }
 
-  const surfacesAABB = await workerManager.executeTask(
-    'polySeg',
-    'getSurfacesAABBs',
-    {
-      surfacesInfo: surfacesWithoutAABB,
-    },
-    {
-      callbacks: [
-        // progress callback
-        ({ progress }) => {
-          triggerWorkerProgress(eventTarget, progress);
+  const surfacesAABB = await runPolySegTask(
+    () =>
+      workerManager.executeTask(
+        'polySeg',
+        'getSurfacesAABBs',
+        {
+          surfacesInfo: surfacesWithoutAABB,
         },
-      ],
-    }
+        {
+          callbacks: [
+            // progress callback
+            ({ progress }) => {
+              triggerWorkerProgress(eventTarget, progress);
+            },
+          ],
+        }
+      ),
+    true
   );
 
   // update the surfacesAABBCache with the new surfacesAABB

@@ -126,6 +126,40 @@ function getSourceImageIds(
 }
 
 /**
+ * The color of a segment for its surface: the one that the viewport of the
+ * conversion gives it, else the one of a viewport that shows the
+ * segmentation, else the one of the default color LUT. The viewport of a
+ * conversion may stop showing the segmentation before the worker answers,
+ * and the surface display colors a surface by its representation anyway.
+ */
+function getSurfaceColor(
+  viewportId: string | undefined,
+  segmentationId: string,
+  segmentIndex: number
+): Types.Point3 {
+  const viewportIds = new Set([
+    viewportId,
+    ...cornerstoneTools.segmentation.state.getViewportIdsWithSegmentation(
+      segmentationId
+    ),
+  ]);
+
+  for (const id of viewportIds) {
+    const color = id
+      ? getSegmentIndexColor(id, segmentationId, segmentIndex)
+      : undefined;
+
+    if (color) {
+      return color.slice(0, 3) as Types.Point3;
+    }
+  }
+
+  const { COLOR_LUT } = cornerstoneTools.CONSTANTS;
+
+  return COLOR_LUT[segmentIndex % COLOR_LUT.length].slice(0, 3) as Types.Point3;
+}
+
+/**
  * Creates and caches surfaces from raw surface data.
  *
  * @param segmentationId - The id of the segmentation
@@ -152,18 +186,11 @@ export async function createAndCacheSurfacesFromRaw(
     const rawSurfaceData = rawSurfacesData[index];
     const segmentIndex = rawSurfaceData.segmentIndex;
 
-    // Get the color either from the segmentation representation or randomly generated
-    const color = getSegmentIndexColor(
-      options.viewport.id,
+    const color = getSurfaceColor(
+      options.viewport?.id,
       segmentation.segmentationId,
       segmentIndex
-    ).slice(0, 3);
-
-    if (!color) {
-      throw new Error(
-        'No color found for segment index, unable to create surface'
-      );
-    }
+    );
 
     if (!rawSurfaceData.data?.points) {
       throw new Error('No points found for surface');

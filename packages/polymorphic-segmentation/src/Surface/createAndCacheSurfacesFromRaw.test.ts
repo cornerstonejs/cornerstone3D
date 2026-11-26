@@ -38,6 +38,12 @@ const mockAnnotations = {
   },
 };
 
+/** The color of segment 1 on each viewport that shows the segmentation. */
+let mockColors = {};
+
+/** The viewports that show the segmentation. */
+let mockViewportIdsWithSegmentation = [];
+
 /** The raw surface that each conversion gives. */
 const mockRawSurface = { points: [0, 0, 0], polys: [1, 0] };
 
@@ -65,8 +71,21 @@ jest.mock('@cornerstonejs/tools', () => ({
     segmentation: { getUniqueSegmentIndices: () => [1] },
   },
   segmentation: {
-    state: { getSegmentation: () => mockSegmentation },
-    config: { color: { getSegmentIndexColor: () => [10, 20, 30, 255] } },
+    state: {
+      getSegmentation: () => mockSegmentation,
+      getViewportIdsWithSegmentation: () => mockViewportIdsWithSegmentation,
+    },
+    config: {
+      color: {
+        getSegmentIndexColor: (viewportId) => mockColors[viewportId] ?? null,
+      },
+    },
+  },
+  CONSTANTS: {
+    COLOR_LUT: [
+      [0, 0, 0, 0],
+      [70, 80, 90, 255],
+    ],
   },
   annotation: {
     state: { getAnnotation: (annotationUID) => mockAnnotations[annotationUID] },
@@ -134,6 +153,30 @@ function contoursAndLabelmap() {
 describe('createAndCacheSurfacesFromRaw', () => {
   beforeEach(() => {
     (geometryLoader.createAndCacheGeometry as jest.Mock).mockClear();
+    mockColors = { viewport: [10, 20, 30, 255] };
+    mockViewportIdsWithSegmentation = ['viewport'];
+  });
+
+  it('gives the surface the color of the segment on another viewport when the viewport of the conversion stopped showing the segmentation, else the color of the default color LUT', async () => {
+    const colorOfCachedSurface = async () => {
+      (geometryLoader.createAndCacheGeometry as jest.Mock).mockClear();
+      await frameOfReferenceOfConvertedSurface({
+        Contour: { annotationUIDsMap: new Map([[1, new Set(['contour'])]]) },
+      });
+
+      return (geometryLoader.createAndCacheGeometry as jest.Mock).mock
+        .calls[0][1].geometryData.color;
+    };
+
+    await expect(colorOfCachedSurface()).resolves.toEqual([10, 20, 30]);
+
+    mockColors = { otherViewport: [40, 50, 60, 255] };
+    mockViewportIdsWithSegmentation = ['otherViewport'];
+    await expect(colorOfCachedSurface()).resolves.toEqual([40, 50, 60]);
+
+    mockColors = {};
+    mockViewportIdsWithSegmentation = [];
+    await expect(colorOfCachedSurface()).resolves.toEqual([70, 80, 90]);
   });
 
   it('gives the surface of a volume labelmap the frame of reference of the labelmap volume', async () => {

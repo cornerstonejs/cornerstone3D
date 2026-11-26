@@ -134,6 +134,15 @@ describe('contourCuts', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    (polySeg.clipAndCacheSurfacesForViewport as jest.Mock).mockImplementation(
+      async () => new Map()
+    );
+    (polySeg.extractContourData as jest.Mock).mockImplementation(
+      () =>
+        new Map([
+          [1, [{ points: [], lines: [], numberOfCells: 1, sliceIndex: 0 }]],
+        ])
+    );
     (polySeg.computeSurfaceData as jest.Mock).mockImplementation(
       async (segmentationId, { segmentIndices: [segmentIndex] }) => ({
         geometryIds: new Map([
@@ -223,6 +232,211 @@ describe('contourCuts', () => {
 
     expect(polySeg.computeSurfaceData).toHaveBeenCalledTimes(2);
     expect(removeAnnotation).toHaveBeenCalledWith('cut-modifiedSagittal');
+  });
+
+  it('keeps the surfaces when the segmentation state gives a new object for the segmentation, as it does at every change', async () => {
+    addSegmentation('cloned', { 1: [AXIAL] });
+
+    await updateContourCuts(
+      addViewport('clonedSagittal', SAGITTAL) as never,
+      'cloned'
+    );
+    mockSegmentations.set(
+      'cloned',
+      structuredClone(mockSegmentations.get('cloned'))
+    );
+    await updateContourCuts(
+      addViewport('clonedCoronal', CORONAL) as never,
+      'cloned'
+    );
+
+    expect(polySeg.computeSurfaceData).toHaveBeenCalledTimes(1);
+    expect(polySeg.clipAndCacheSurfacesForViewport).toHaveBeenCalledTimes(2);
+  });
+
+  it('converts a change of the contours after the conversion of the old ones that is still running, and takes the old surface out of the cache', async () => {
+    addSegmentation('racing', { 1: [AXIAL] });
+    const finishes = [];
+    const started = [];
+
+    (polySeg.computeSurfaceData as jest.Mock).mockImplementation(
+      (segmentationId, { segmentIndices: [segmentIndex] }) => {
+        const geometryId = `${segmentationId}-surface-${segmentIndex}`;
+
+        started.push(geometryId);
+        return new Promise((resolve) =>
+          finishes.push((points) => {
+            if (!mockGeometries.has(geometryId)) {
+              mockGeometries.set(geometryId, {
+                data: { points, polys: [1, 0] },
+              });
+            }
+            resolve({ geometryIds: new Map([[segmentIndex, geometryId]]) });
+          })
+        );
+      }
+    );
+    mockGeometries.delete('racing-surface-1');
+
+    const sagittal = addViewport('racingSagittal', SAGITTAL);
+    const oldCut = updateContourCuts(sagittal as never, 'racing');
+
+    await Promise.resolve();
+    updateContourCutsOfModifiedSegmentation('racing');
+    const coronal = addViewport('racingCoronal', CORONAL);
+    const newCut = updateContourCuts(coronal as never, 'racing');
+
+    await new Promise((resolve) => setTimeout(resolve));
+    expect(started.length).toBe(1);
+
+    finishes[0]([0, 0, 0]);
+    await oldCut;
+    await new Promise((resolve) => setTimeout(resolve));
+    expect(started.length).toBe(2);
+    expect(mockGeometries.has('racing-surface-1')).toBe(false);
+
+    finishes[1]([2, 2, 2]);
+    await newCut;
+
+    const clipped = (polySeg.clipAndCacheSurfacesForViewport as jest.Mock).mock
+      .calls;
+    expect(clipped.length).toBe(1);
+    expect(clipped[0][0][0].points).toEqual([2, 2, 2]);
+  });
+
+  it('cuts each surface as soon as it is made, only the new ones, and adds the contours of its segment to the slice on display without taking the others away', async () => {
+    addSegmentation('each', { 1: [AXIAL], 2: [AXIAL] });
+    const answers = new Map();
+
+    (polySeg.computeSurfaceData as jest.Mock).mockImplementation(
+      (segmentationId, { segmentIndices: [segmentIndex] }) =>
+        new Promise((resolve) =>
+          answers.set(segmentIndex, () =>
+            resolve({
+              geometryIds: new Map([
+                [segmentIndex, `${segmentationId}-surface-${segmentIndex}`],
+              ]),
+            })
+          )
+        )
+    );
+    (polySeg.clipAndCacheSurfacesForViewport as jest.Mock).mockImplementation(
+      async (surfaces) =>
+        new Map(surfaces.map(({ segmentIndex }) => [segmentIndex, true]))
+    );
+    (polySeg.extractContourData as jest.Mock).mockImplementation(
+      (clipped) =>
+        new Map(
+          [...clipped.keys()].map((segmentIndex) => [
+            segmentIndex,
+            [{ points: [], lines: [], numberOfCells: 1, sliceIndex: 0 }],
+          ])
+        )
+    );
+    (
+      polySeg.createAndAddContourSegmentationsFromClippedSurfaces as jest.Mock
+    ).mockImplementation(
+      (contours, viewport) =>
+        new Map(
+          [...contours.keys()].map((segmentIndex) => [
+            segmentIndex,
+            new Set([`cut-${viewport.id}-${segmentIndex}`]),
+          ])
+        )
+    );
+    const settle = () => new Promise((resolve) => setTimeout(resolve));
+
+    const cut = updateContourCuts(
+      addViewport('eachSagittal', SAGITTAL) as never,
+      'each'
+    );
+    await settle();
+    answers.get(2)();
+    await settle();
+
+    const clip = polySeg.clipAndCacheSurfacesForViewport as jest.Mock;
+    const add =
+      polySeg.createAndAddContourSegmentationsFromClippedSurfaces as jest.Mock;
+
+    expect(
+      clip.mock.calls.map(([surfaces]) =>
+        surfaces.map((surface) => surface.segmentIndex)
+      )
+    ).toEqual([[2]]);
+    expect(add.mock.calls.map(([contours]) => [...contours.keys()])).toEqual([
+      [2],
+    ]);
+
+    answers.get(1)();
+    await cut;
+
+    expect(
+      clip.mock.calls.map(([surfaces]) =>
+        surfaces.map((surface) => surface.segmentIndex)
+      )
+    ).toEqual([[2], [1]]);
+    expect(add.mock.calls.map(([contours]) => [...contours.keys()])).toEqual([
+      [2],
+      [1],
+    ]);
+    expect(removeAnnotation).not.toHaveBeenCalled();
+  });
+
+  it('converts first the segments whose contours reach the slice on display, and in each group the ones with fewer points first', async () => {
+    const polylines = {
+      1: [
+        [5, 0, 0],
+        [10, 0, 0],
+        [7, 3, 0],
+      ],
+      2: Array.from({ length: 30 }, (_, i) => [
+        Math.cos(i) - 0.5,
+        Math.sin(i),
+        0,
+      ]),
+      3: [
+        [-2, 0, 0],
+        [2, 0, 0],
+        [0, 2, 0],
+        [0, -2, 0],
+        [1, 1, 0],
+        [-1, 1, 0],
+      ],
+    };
+    const annotationUIDsMap = new Map();
+
+    Object.entries(polylines).forEach(([segmentIndex, polyline]) => {
+      mockAnnotations.set(`order-${segmentIndex}`, {
+        metadata: { viewPlaneNormal: AXIAL },
+        data: { contour: { polyline } },
+      });
+      annotationUIDsMap.set(
+        Number(segmentIndex),
+        new Set([`order-${segmentIndex}`])
+      );
+    });
+    mockSegmentations.set('order', {
+      segmentationId: 'order',
+      representationData: {
+        Contour: { geometryIds: ['geometry'], annotationUIDsMap },
+      },
+    });
+    const viewport = {
+      ...addViewport('orderSagittal', SAGITTAL),
+      getViewReference: () => ({
+        viewPlaneNormal: SAGITTAL,
+        cameraFocalPoint: [0, 0, 0],
+      }),
+    };
+    mockViewports.set(viewport.id, viewport);
+
+    await updateContourCuts(viewport as never, 'order');
+
+    expect(
+      (polySeg.computeSurfaceData as jest.Mock).mock.calls.map(
+        ([, { segmentIndices }]) => segmentIndices[0]
+      )
+    ).toEqual([3, 2, 1]);
   });
 
   it('reports a segment with contours on planes that are not parallel once, and does not convert it', async () => {

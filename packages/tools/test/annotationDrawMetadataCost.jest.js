@@ -41,9 +41,9 @@ function setSize(element, width, height) {
 }
 
 /** The image ids of a stack of 16 by 16 axial images, one per millimetre. */
-function createImageIds() {
+function createImageIds(slices = SLICES) {
   return Array.from(
-    { length: SLICES },
+    { length: slices },
     (_, sliceIndex) =>
       `fakeImageLoader:${encodeURIComponent(
         JSON.stringify({
@@ -202,7 +202,7 @@ describe('The metadata calls of a draw of the annotations', () => {
     metaData.removeAllProviders();
   });
 
-  async function mount(mode) {
+  async function mount(mode, slices = SLICES, initialImageIdIndex = 104) {
     setRenderBackend('cpu');
     imageLoader.registerImageLoader('fakeImageLoader', fakeImageLoader);
     metaData.addProvider(fakeMetaDataProvider, 10000);
@@ -217,23 +217,23 @@ describe('The metadata calls of a draw of the annotations', () => {
 
     ({ renderingEngine, viewport } = createPlanarViewportOnStandInEngine(
       element,
-      `cost-${mode}`
+      `cost-${mode}-${slices}`
     ));
 
-    const imageIds = createImageIds();
-    const volumeId = `cornerstoneStreamingImageVolume:cost-${mode}`;
+    const imageIds = createImageIds(slices);
+    const volumeId = `cornerstoneStreamingImageVolume:cost-${mode}-${slices}`;
 
     if (mode === 'volume') {
       await volumeLoader.createAndCacheVolume(volumeId, { imageIds });
     }
 
-    displaySetRegistry.add(`cost-${mode}`, {
+    displaySetRegistry.add(`cost-${mode}-${slices}`, {
       imageIds,
       ...(mode === 'volume' ? { volumeId } : {}),
     });
     await viewport.setDisplaySets({
-      displaySetId: `cost-${mode}`,
-      options: { mode, initialImageIdIndex: 104 },
+      displaySetId: `cost-${mode}-${slices}`,
+      options: { mode, initialImageIdIndex },
     });
     counter = addCountingProvider();
 
@@ -262,6 +262,35 @@ describe('The metadata calls of a draw of the annotations', () => {
       expect(many.calls).toEqual(few.calls);
     }
   );
+
+  /**
+   * In volume mode the filter takes the plane of the view from its view
+   * reference, whose image is the one of the volume closest to the focal
+   * point. Finding it reads the image plane of the images near the slice,
+   * not of every image of the volume.
+   */
+  it('is the same in volume mode for a volume of 50 and of 500 images', async () => {
+    const callsOfVolume = async (slices) => {
+      const { viewport, imageIds } = await mount('volume', slices, 25);
+      const contours = createContours(imageIds.slice(0, 50), 40);
+      const calls = countDrawCalls(counter, viewport, contours);
+
+      expect(viewport.getViewReference().referencedImageId).toBe(imageIds[25]);
+      renderingEngine.destroy();
+      renderingEngine = undefined;
+      cache.purgeCache();
+      displaySetRegistry.clear();
+      metaData.removeAllProviders();
+
+      return calls;
+    };
+    const few = await callsOfVolume(50);
+    const many = await callsOfVolume(500);
+
+    expect(few.drawn).toBeGreaterThan(0);
+    expect(many.drawn).toBe(few.drawn);
+    expect(many.calls).toEqual(few.calls);
+  });
 
   /**
    * The draw of the freehand contour tool is the draw of the contour

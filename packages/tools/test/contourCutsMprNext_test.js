@@ -274,6 +274,71 @@ async function settle(viewport) {
   await nextFrames();
 }
 
+/**
+ * Two structures of the series: the sphere at the centre, and a smaller one
+ * in front of it that the sagittal plane through the centre crosses and the
+ * coronal plane through the centre does not.
+ */
+const HYDRATED_STRUCTURES = {
+  1: sphereContours(CENTER, RADIUS),
+  2: sphereContours([CENTER[0], CENTER[1] + 13, CENTER[2]], 5),
+};
+
+/**
+ * Hydrates the segmentation of an RTSTRUCT loaded in the sagittal pane, the
+ * way OHIF does: the RTSTRUCT pane leaves (its representation is removed and
+ * its element disabled), a pane of the series is made under the same id, and
+ * the contour representation is added to the sagittal, axial and coronal
+ * panes. Gives the new sagittal pane.
+ */
+async function hydrate(renderingEngine, series, panes, segmentationId) {
+  segmentation.removeSegmentationRepresentation(panes.sagittal.id, {
+    segmentationId,
+    type: Contour,
+  });
+  renderingEngine.disableElement(panes.sagittal.id);
+
+  const sagittal = createNextViewport(renderingEngine, panes.sagittal.id);
+
+  ToolGroupManager.getToolGroup(toolGroupId).addViewport(
+    sagittal.id,
+    renderingEngineId
+  );
+  await showVolume(sagittal, series, 0, {
+    orientation: OrientationAxis.SAGITTAL,
+  });
+  await moveToPoint(sagittal, CENTER);
+  await showContours(segmentationId, [sagittal, panes.axial, panes.coronal]);
+
+  return sagittal;
+}
+
+/** The segments whose contours a viewport shows, in order. */
+function segmentsShown(viewport) {
+  return [
+    ...new Set(
+      shownContours(viewport).map(
+        (contour) => contour.data.segmentation.segmentIndex
+      )
+    ),
+  ].sort((a, b) => a - b);
+}
+
+/**
+ * Waits until a viewport shows the contours of these segments and no other,
+ * then for the draw: the cuts of the segments come one by one.
+ */
+async function waitForSegments(viewport, segmentIndices, timeout = 15000) {
+  await waitFor(
+    () =>
+      JSON.stringify(segmentsShown(viewport)) ===
+      JSON.stringify(segmentIndices),
+    timeout
+  );
+  await renderAndWait(viewport);
+  await nextFrames();
+}
+
 function dot(a, b) {
   return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 }
@@ -521,6 +586,124 @@ describe('The contours of an RTSTRUCT on the panes of an MPR -- ', () => {
     expectCutOfTheSphere(panes.coronal, CENTER, RADIUS);
   }, 60000);
 
+  it('converts each structure once when the RTSTRUCT is loaded in the sagittal pane and hydrated into every pane while it converts, as OHIF does', async function () {
+    const series = await createSeries({ id: 'contourCutsHydrate', size: SIZE });
+    const panes = await createMpr(renderingEngine, series);
+    const tasks = countWorkerTasks();
+
+    addRtStructLikeSegmentation('cutsHydrate', HYDRATED_STRUCTURES);
+    await showContours('cutsHydrate', [panes.sagittal]);
+    await waitFor(() => tasks.convertContourToSurface >= 1, 15000);
+
+    const sagittal = await hydrate(
+      renderingEngine,
+      series,
+      panes,
+      'cutsHydrate'
+    );
+
+    await waitForSegments(sagittal, [1, 2]);
+    await waitForSegments(panes.coronal, [1]);
+
+    expect(tasks.convertContourToSurface)
+      .withContext('conversions of the two structures')
+      .toBe(2);
+    expect(segmentsShown(sagittal)).toEqual([1, 2]);
+    expect(segmentsShown(panes.coronal)).toEqual([1]);
+  }, 60000);
+
+  it('converts each structure once when the RTSTRUCT is hydrated after its cut is drawn in the pane it was loaded in, and the segmentation changes', async function () {
+    const series = await createSeries({ id: 'contourCutsLate', size: SIZE });
+    const panes = await createMpr(renderingEngine, series);
+    const tasks = countWorkerTasks();
+
+    addRtStructLikeSegmentation('cutsLate', HYDRATED_STRUCTURES);
+    await showContours('cutsLate', [panes.sagittal]);
+    await waitForSegments(panes.sagittal, [1, 2]);
+    segmentation.updateSegmentations([
+      { segmentationId: 'cutsLate', payload: { label: 'Hydrated' } },
+    ]);
+
+    const sagittal = await hydrate(renderingEngine, series, panes, 'cutsLate');
+
+    await waitForSegments(sagittal, [1, 2]);
+    await waitForSegments(panes.coronal, [1]);
+    segmentation.updateSegmentations([
+      { segmentationId: 'cutsLate', payload: { label: 'Renamed' } },
+    ]);
+    await panes.coronal.scroll(1);
+    await settle(panes.coronal);
+    await panes.coronal.scroll(-1);
+    await settle(panes.coronal);
+
+    expect(tasks.convertContourToSurface)
+      .withContext('conversions of the two structures')
+      .toBe(2);
+    expect(segmentsShown(sagittal)).toEqual([1, 2]);
+    expect(segmentsShown(panes.coronal)).toEqual([1]);
+  }, 60000);
+
+  it('shows the cut of each structure as soon as its surface is made, cuts each surface once per plane, and removes no cut meanwhile', async function () {
+    const series = await createSeries({ id: 'contourCutsEach', size: SIZE });
+    const panes = await createMpr(renderingEngine, series);
+    const workerManager = getWebWorkerManager();
+    const executeTask = workerManager.executeTask.bind(workerManager);
+    const largest = sphereContours(CENTER, RADIUS).flat(2).length;
+    const cutSurfaces = [];
+    const removed = [];
+    let releaseLargest;
+    const largestHeld = new Promise((resolve) => (releaseLargest = resolve));
+
+    spyOn(workerManager, 'executeTask').and.callFake(
+      (worker, task, args, ...rest) => {
+        if (task === 'cutSurfacesIntoPlanes') {
+          const normal = args.planesInfo[0].planes[0].normal.map(Math.round);
+
+          args.surfacesInfo.forEach(({ segmentIndex }) =>
+            cutSurfaces.push(`${normal}|${segmentIndex}`)
+          );
+        }
+
+        const points = args?.numPointsArray?.reduce((sum, n) => sum + n, 0);
+
+        return task === 'convertContourToSurface' && points === largest
+          ? largestHeld.then(() => executeTask(worker, task, args, ...rest))
+          : executeTask(worker, task, args, ...rest);
+      }
+    );
+    const onRemoved = (evt) => removed.push(evt.detail.annotation);
+    cornerstone3D.eventTarget.addEventListener(
+      csToolsEnums.Events.ANNOTATION_REMOVED,
+      onRemoved
+    );
+
+    addRtStructLikeSegmentation('cutsEach', HYDRATED_STRUCTURES);
+    await showContours('cutsEach', [
+      panes.sagittal,
+      panes.axial,
+      panes.coronal,
+    ]);
+    await waitForSegments(panes.sagittal, [2]);
+
+    expect(segmentsShown(panes.coronal))
+      .withContext('the coronal plane does not cross the small structure')
+      .toEqual([]);
+
+    releaseLargest();
+    await waitForSegments(panes.sagittal, [1, 2]);
+    await waitForSegments(panes.coronal, [1]);
+    cornerstone3D.eventTarget.removeEventListener(
+      csToolsEnums.Events.ANNOTATION_REMOVED,
+      onRemoved
+    );
+
+    expect(removed.length).withContext('cut annotations removed').toBe(0);
+    expect([...cutSurfaces].sort())
+      .withContext('surfaces cut, by plane')
+      .toEqual([...new Set(cutSurfaces)].sort());
+    expect(new Set(cutSurfaces).size).toBe(4);
+  }, 60000);
+
   it('cuts the surface of the Surface representation of the segmentation, with no conversion', async function () {
     const series = await createSeries({ id: 'contourCutsSurface', size: SIZE });
     const panes = await createMpr(renderingEngine, series);
@@ -685,8 +868,8 @@ describe('The contours of an RTSTRUCT on the panes of an MPR -- ', () => {
       panes.axial,
       panes.coronal,
     ]);
-    await waitForShownContours(panes.sagittal);
-    await waitForShownContours(panes.coronal);
+    await waitForSegments(panes.sagittal, [1, 2]);
+    await waitForSegments(panes.coronal, [2]);
 
     const bySegment = (viewport, segmentIndex) =>
       shownContours(viewport).filter(
@@ -795,5 +978,227 @@ describe('The contours of an RTSTRUCT on the panes of an MPR -- ', () => {
     await waitForShownContours(viewport);
 
     expectCutOfTheSphere(viewport, CENTER, RADIUS);
+  }, 60000);
+});
+
+/**
+ * Records which contour annotations the contour tool draws on each viewport:
+ * an annotation is drawn when the tool keeps it for the viewport and its
+ * style makes it visible.
+ */
+function recordDrawnContours() {
+  const drawn = [];
+  const tool =
+    ToolGroupManager.getToolGroup(toolGroupId).getToolInstance(contourToolName);
+  const renderAnnotationInstance = tool.renderAnnotationInstance.bind(tool);
+
+  spyOn(tool, 'renderAnnotationInstance').and.callFake((renderContext) => {
+    drawn.push({
+      viewportId: renderContext.enabledElement.viewport.id,
+      annotation: renderContext.annotation,
+    });
+    return renderAnnotationInstance(renderContext);
+  });
+
+  return drawn;
+}
+
+/**
+ * The segments of a segmentation whose contours a viewport draws at its next
+ * draw.
+ */
+async function drawnSegments(drawn, viewport, segmentationId) {
+  drawn.length = 0;
+  csTools3d.utilities.triggerAnnotationRenderForViewportIds([viewport.id]);
+  await renderAndWait(viewport);
+  await nextFrames();
+
+  return [
+    ...new Set(
+      drawn
+        .filter(
+          ({ viewportId, annotation: drawnAnnotation }) =>
+            viewportId === viewport.id &&
+            drawnAnnotation.data.segmentation?.segmentationId === segmentationId
+        )
+        .map(
+          ({ annotation: drawnAnnotation }) =>
+            drawnAnnotation.data.segmentation.segmentIndex
+        )
+    ),
+  ].sort((a, b) => a - b);
+}
+
+describe('The contours of a segmentation on a pane that has no contour representation of it -- ', () => {
+  let renderingEngine;
+  let config;
+
+  beforeEach(function () {
+    renderingEngine = testUtils.setupTestEnvironment({
+      renderingEngineId,
+      toolGroupIds: [toolGroupId],
+    }).renderingEngine;
+    config = getConfig();
+    setConfig({ ...config, addons: { ...config.addons, polySeg } });
+  });
+
+  afterEach(function () {
+    setConfig(config);
+    testUtils.cleanupTestEnvironment({
+      renderingEngineId,
+      toolGroupIds: [toolGroupId],
+    });
+    cornerstone3D.displaySetRegistry.clear?.();
+  });
+
+  /**
+   * Makes two panes of the series, A and B, on the same plane and slice, in
+   * the mode given; the contour representation of the segmentation is added
+   * to A only.
+   */
+  async function createPanes(id, show, orientation) {
+    const series = await createSeries({ id, size: SIZE });
+    const panes = {};
+
+    for (const name of ['A', 'B']) {
+      const viewport = createNextViewport(renderingEngine, `${id}-${name}`);
+
+      ToolGroupManager.getToolGroup(toolGroupId).addViewport(
+        viewport.id,
+        renderingEngineId
+      );
+      await show(viewport, series);
+      if (orientation) {
+        await moveToPoint(viewport, CENTER);
+      }
+      panes[name] = viewport;
+    }
+
+    return panes;
+  }
+
+  /**
+   * Checks what B draws while A shows the contour representation, after a
+   * representation of B is added and removed, and while a segment and then
+   * the representation are hidden on A. Both panes show the contours of
+   * another segmentation on the slice, a sphere behind the others.
+   */
+  async function expectContoursOnlyWhereRepresented(panes, segmentationId) {
+    const { A, B } = panes;
+    const specifier = { segmentationId, type: Contour };
+    const otherId = `${segmentationId}Other`;
+
+    addRtStructLikeSegmentation(otherId, {
+      1: sphereContours([CENTER[0], CENTER[1] - 14, CENTER[2]], 4),
+    });
+    await showContours(otherId, [A, B]);
+    await waitForSegments(A, [1]);
+    await waitForSegments(B, [1]);
+    await showContours(segmentationId, [A]);
+    await waitFor(
+      () =>
+        shownContours(A).some(
+          (contour) =>
+            contour.data.segmentation.segmentationId === segmentationId &&
+            contour.data.segmentation.segmentIndex === 2
+        ) &&
+        shownContours(A).some(
+          (contour) =>
+            contour.data.segmentation.segmentationId === segmentationId &&
+            contour.data.segmentation.segmentIndex === 1
+        ),
+      15000
+    );
+
+    const drawn = recordDrawnContours();
+
+    expect(await drawnSegments(drawn, B, otherId))
+      .withContext('B, the other segmentation')
+      .toEqual([1]);
+
+    expect(await drawnSegments(drawn, A, segmentationId)).toEqual([1, 2]);
+    expect(await drawnSegments(drawn, B, segmentationId))
+      .withContext('B, with no representation')
+      .toEqual([]);
+
+    await showContours(segmentationId, [B]);
+    expect(await drawnSegments(drawn, B, segmentationId))
+      .withContext('B, with its representation')
+      .toEqual([1, 2]);
+    segmentation.removeSegmentationRepresentation(B.id, specifier);
+    expect(await drawnSegments(drawn, B, segmentationId))
+      .withContext('B, after its representation is removed')
+      .toEqual([]);
+
+    segmentation.config.visibility.setSegmentIndexVisibility(
+      A.id,
+      specifier,
+      2,
+      false
+    );
+    expect(await drawnSegments(drawn, A, segmentationId))
+      .withContext('A, segment 2 hidden')
+      .toEqual([1]);
+    expect(await drawnSegments(drawn, B, segmentationId))
+      .withContext('B, segment 2 hidden on A')
+      .toEqual([]);
+
+    segmentation.config.visibility.setSegmentationRepresentationVisibility(
+      A.id,
+      specifier,
+      false
+    );
+    expect(await drawnSegments(drawn, A, segmentationId))
+      .withContext('A, representation hidden')
+      .toEqual([]);
+    expect(await drawnSegments(drawn, B, segmentationId))
+      .withContext('B, representation hidden on A')
+      .toEqual([]);
+  }
+
+  it('draws them in volume mode only on the pane that has the representation, as 5.18.3 did', async function () {
+    const panes = await createPanes(
+      'contourFilterVolume',
+      (viewport, series) =>
+        showVolume(viewport, series, 0, {
+          orientation: OrientationAxis.AXIAL,
+        }),
+      true
+    );
+
+    addRtStructLikeSegmentation('filterVolume', {
+      1: sphereContours(CENTER, RADIUS),
+      2: sphereContours([CENTER[0], CENTER[1] + 13, CENTER[2]], 5),
+    });
+    await expectContoursOnlyWhereRepresented(panes, 'filterVolume');
+  }, 60000);
+
+  it('draws them in stack mode only on the pane that has the representation', async function () {
+    const middle = SLICE_DEPTHS.indexOf(CENTER[2]);
+    const panes = await createPanes(
+      'contourFilterStack',
+      (viewport, series) => showStack(viewport, series, middle),
+      false
+    );
+
+    addRtStructLikeSegmentation('filterStack', {
+      1: sphereContours(CENTER, RADIUS),
+      2: sphereContours([CENTER[0], CENTER[1] + 13, CENTER[2]], 5),
+    });
+    await expectContoursOnlyWhereRepresented(panes, 'filterStack');
+  }, 60000);
+
+  it('draws the cut of the contours only on the pane of the other plane that has the representation', async function () {
+    const panes = await createPanes(
+      'contourFilterCut',
+      (viewport, series) =>
+        showVolume(viewport, series, 0, {
+          orientation: OrientationAxis.SAGITTAL,
+        }),
+      true
+    );
+
+    addRtStructLikeSegmentation('filterCut', HYDRATED_STRUCTURES);
+    await expectContoursOnlyWhereRepresented(panes, 'filterCut');
   }, 60000);
 });

@@ -54,9 +54,11 @@ type ShownSlice = {
 
 /**
  * The cut of the surfaces of a segmentation by the slices of one plane
- * orientation of one volume or stack: the contours of each slice, kept once
- * the worker has cut every slice, and the contour annotations of the slices
- * that the viewports of that plane show. The viewports of one plane share it.
+ * orientation of one volume or stack: the contours of each slice by segment,
+ * which grow as the surfaces of the segments are made and cut, the surfaces
+ * that wait for the cut that is running, and the contour annotations of the
+ * slices that the viewports of that plane show. The viewports of one plane
+ * share it.
  */
 type PlaneCut = {
   key: string;
@@ -65,6 +67,8 @@ type PlaneCut = {
   slices?: Map<number, Map<number, SurfaceClipResult[]>>;
   shownSlices: Map<number, ShownSlice>;
   sliceOfViewport: Map<string, number>;
+  waitingSurfaces: SurfacesInfo[];
+  cutting: Promise<void>;
   released: boolean;
   done: Promise<void>;
 };
@@ -72,11 +76,14 @@ type PlaneCut = {
 /**
  * What the cuts keep of one segmentation: the surface of each segment, made
  * once per version of its contours, the failures already reported for that
- * version, and the cuts by plane.
+ * version, and the cuts by plane. The segmentation itself is read from the
+ * segmentation state at each use: the state gives a new object for every
+ * segmentation at each change of any of them.
  */
 type SegmentationCuts = {
-  segmentation: Segmentation;
+  segmentationId: string;
   version: number;
+  removed: boolean;
   surfaces: Map<number, Promise<SurfacesInfo | undefined>>;
   convertedGeometryIds: Set<string>;
   reported: Set<string>;
@@ -102,6 +109,14 @@ const VIEW_EVENTS = [
 
 const cutsBySegmentation = new Map<string, SegmentationCuts>();
 const cutsByViewport = new Map<string, ViewportCuts>();
+
+/**
+ * The last conversion of each segment that is asked or running, by
+ * segmentation id and segment index: the conversion of a newer version of the
+ * contours of a segment runs after it, as both put their surface in the cache
+ * under one geometry id.
+ */
+const conversionsInFlight = new Map<string, Promise<unknown>>();
 
 /**
  * Draws the contours of a contour segmentation on a viewport whose plane is
@@ -318,6 +333,8 @@ function updateViewportCut(
       viewportIds: new Set(),
       shownSlices: new Map(),
       sliceOfViewport: new Map(),
+      waitingSurfaces: [],
+      cutting: Promise.resolve(),
       released: false,
       done: undefined,
     };
@@ -342,9 +359,9 @@ function updateViewportCut(
 
 /**
  * Shows on a viewport the cut of the slice on display: the contour
- * annotations of that slice, made from the kept cut when no other viewport of
- * the plane shows it, in place of the ones of the slice that it showed before.
- * Nothing before the worker has cut the plane.
+ * annotations of that slice, made from the contours cut so far when no other
+ * viewport of the plane shows it, in place of the ones of the slice that it
+ * showed before. Nothing before the cut of the plane starts.
  */
 function showSliceOfViewport(planeCut: PlaneCut, viewport: Types.IViewport) {
   const sliceIndex = (
@@ -369,7 +386,11 @@ function showSliceOfViewport(planeCut: PlaneCut, viewport: Types.IViewport) {
 
   if (!shownSlice) {
     shownSlice = {
-      annotationUIDs: addSliceAnnotations(planeCut, sliceIndex, viewport),
+      annotationUIDs: addSliceAnnotations(
+        planeCut.segmentationId,
+        planeCut.slices.get(sliceIndex),
+        viewport
+      ),
       viewportIds: new Set(),
     };
     planeCut.shownSlices.set(sliceIndex, shownSlice);
@@ -409,11 +430,10 @@ function hideSliceOfViewport(planeCut: PlaneCut, viewportId: string): void {
  * the view reference of that slice, and gives their UIDs.
  */
 function addSliceAnnotations(
-  planeCut: PlaneCut,
-  sliceIndex: number,
+  segmentationId: string,
+  contours: Map<number, SurfaceClipResult[]> | undefined,
   viewport: Types.IViewport
 ): string[] {
-  const contours = planeCut.slices.get(sliceIndex);
   const annotationUIDs: string[] = [];
 
   if (!contours?.size) {
@@ -424,7 +444,7 @@ function addSliceAnnotations(
     .createAndAddContourSegmentationsFromClippedSurfaces(
       contours,
       viewport,
-      planeCut.segmentationId
+      segmentationId
     )
     ?.forEach((uids) =>
       uids.forEach((annotationUID) => {
@@ -475,10 +495,12 @@ function releasePlaneCut(
 
 /**
  * Cuts the surfaces of the segments that do not lie in the plane of the
- * viewport with every slice of the viewport, keeps the contours by slice, and
- * shows the slice on display of each viewport of the plane. The cut of a
- * plane that no viewport shows any more by the time the worker answers adds
- * nothing.
+ * viewport with every slice of the viewport, and shows the cut of the slice on
+ * display of each viewport of the plane as it grows: each surface is cut as
+ * soon as it is made, with the others made while the cut before it ran, and
+ * the contours of those segments are added to the slices on display. The
+ * segments are converted in the order of `getConversionOrder`. The cut of a
+ * plane that no viewport shows any more adds nothing.
  */
 async function cutPlane(
   segmentationId: string,
@@ -498,15 +520,51 @@ async function cutPlane(
     return;
   }
 
-  const surfaces = (
-    await Promise.all(
-      segmentIndices.map((segmentIndex) =>
-        getSegmentSurface(segmentationCuts, segmentIndex, viewport)
-      )
-    )
-  ).filter(Boolean);
+  planeCut.slices = new Map();
 
-  if (planeCut.released || !surfaces.length) {
+  await Promise.all(
+    getConversionOrder(segmentationCuts, segmentIndices, viewport).map(
+      (segmentIndex) =>
+        getSegmentSurface(segmentationCuts, segmentIndex, viewport).then(
+          (surface) => surface && queueCut(planeCut, surface, polySeg)
+        )
+    )
+  );
+}
+
+/**
+ * Puts a surface in the queue of the cut of a plane. A cut takes every
+ * surface that waits when it starts, so the surfaces made while one cut runs
+ * go into the next one together.
+ */
+function queueCut(
+  planeCut: PlaneCut,
+  surface: SurfacesInfo,
+  polySeg: ReturnType<typeof getPolySeg>
+): Promise<void> {
+  planeCut.waitingSurfaces.push(surface);
+  planeCut.cutting = planeCut.cutting
+    .catch(() => undefined)
+    .then(() => cutWaitingSurfaces(planeCut, polySeg));
+
+  return planeCut.cutting;
+}
+
+/**
+ * Cuts the surfaces that wait with every slice of the plane, in one task of
+ * the worker, keeps their contours by slice, and adds the contours of each
+ * slice on display to the annotations of that slice.
+ */
+async function cutWaitingSurfaces(
+  planeCut: PlaneCut,
+  polySeg: ReturnType<typeof getPolySeg>
+): Promise<void> {
+  const surfaces = planeCut.waitingSurfaces.splice(0);
+  const viewport = [...planeCut.viewportIds]
+    .map((viewportId) => getEnabledElementByViewportId(viewportId)?.viewport)
+    .find(Boolean);
+
+  if (!surfaces.length || planeCut.released || !viewport) {
     return;
   }
 
@@ -519,7 +577,33 @@ async function cutPlane(
     return;
   }
 
-  planeCut.slices = groupBySlice(polySeg.extractContourData(clipped));
+  const cutSlices = groupBySlice(polySeg.extractContourData(clipped));
+
+  cutSlices.forEach((contours, sliceIndex) => {
+    const slice = planeCut.slices.get(sliceIndex) ?? new Map();
+
+    contours.forEach((segmentContours, segmentIndex) =>
+      slice.set(segmentIndex, segmentContours)
+    );
+    planeCut.slices.set(sliceIndex, slice);
+  });
+
+  planeCut.shownSlices.forEach((shownSlice, sliceIndex) => {
+    const shownViewport = [...shownSlice.viewportIds]
+      .map((viewportId) => getEnabledElementByViewportId(viewportId)?.viewport)
+      .find(Boolean);
+
+    if (shownViewport) {
+      shownSlice.annotationUIDs.push(
+        ...addSliceAnnotations(
+          planeCut.segmentationId,
+          cutSlices.get(sliceIndex),
+          shownViewport
+        )
+      );
+    }
+  });
+
   planeCut.viewportIds.forEach((viewportId) => {
     const planeViewport = getEnabledElementByViewportId(viewportId)?.viewport;
 
@@ -527,6 +611,7 @@ async function cutPlane(
       showSliceOfViewport(planeCut, planeViewport);
     }
   });
+  triggerAnnotationRenderForViewportIds([...planeCut.viewportIds]);
 }
 
 /** The contours of a cut by slice, and in each slice by segment. */
@@ -562,8 +647,8 @@ function getSegmentsToCut(
   segmentationCuts: SegmentationCuts,
   viewPlaneNormal: Types.Point3
 ): number[] {
-  const annotationUIDsMap =
-    segmentationCuts.segmentation.representationData.Contour?.annotationUIDsMap;
+  const annotationUIDsMap = getSegmentation(segmentationCuts.segmentationId)
+    ?.representationData.Contour?.annotationUIDsMap;
   const segmentIndices: number[] = [];
 
   annotationUIDsMap?.forEach((annotationUIDs, segmentIndex) => {
@@ -594,6 +679,60 @@ function getSegmentsToCut(
   });
 
   return segmentIndices;
+}
+
+/**
+ * The order in which the segments of a plane are converted: first the ones
+ * whose contours reach the slice that the viewport shows, then the others,
+ * and in each group the ones with fewer contour points first, as a
+ * conversion takes longer for more points. The worker converts in the order
+ * asked, so the first cuts come soon and where the viewport looks.
+ */
+function getConversionOrder(
+  segmentationCuts: SegmentationCuts,
+  segmentIndices: number[],
+  viewport: Types.IViewport
+): number[] {
+  const { viewPlaneNormal, cameraFocalPoint } = viewport.getViewReference();
+  const annotationUIDsMap = getSegmentation(segmentationCuts.segmentationId)
+    ?.representationData.Contour?.annotationUIDsMap;
+  const depthOfSlice = cameraFocalPoint
+    ? vec3.dot(cameraFocalPoint, viewPlaneNormal)
+    : undefined;
+  const segments = segmentIndices.map((segmentIndex) => {
+    let points = 0;
+    let nearest = Infinity;
+    let farthest = -Infinity;
+
+    annotationUIDsMap?.get(segmentIndex)?.forEach((annotationUID) => {
+      const polyline =
+        (getAnnotation(annotationUID) as ContourSegmentationAnnotation)?.data
+          ?.contour?.polyline ?? [];
+
+      points += polyline.length;
+      polyline.forEach((point) => {
+        const depth = vec3.dot(point, viewPlaneNormal);
+
+        nearest = Math.min(nearest, depth);
+        farthest = Math.max(farthest, depth);
+      });
+    });
+
+    return {
+      segmentIndex,
+      points,
+      onSlice:
+        depthOfSlice !== undefined &&
+        nearest <= depthOfSlice &&
+        depthOfSlice <= farthest,
+    };
+  });
+
+  return segments
+    .sort(
+      (a, b) => Number(b.onSlice) - Number(a.onSlice) || a.points - b.points
+    )
+    .map(({ segmentIndex }) => segmentIndex);
 }
 
 /**
@@ -630,7 +769,7 @@ function getSegmentSurface(
   viewport: Types.IViewport
 ): Promise<SurfacesInfo | undefined> {
   const representedSurface = getRepresentedSurface(
-    segmentationCuts.segmentation,
+    getSegmentation(segmentationCuts.segmentationId),
     segmentIndex
   );
 
@@ -649,11 +788,11 @@ function getSegmentSurface(
 }
 
 function getRepresentedSurface(
-  segmentation: Segmentation,
+  segmentation: Segmentation | undefined,
   segmentIndex: number
 ): SurfacesInfo | undefined {
   const geometryId =
-    segmentation.representationData.Surface?.geometryIds?.get(segmentIndex);
+    segmentation?.representationData.Surface?.geometryIds?.get(segmentIndex);
   const surface = geometryId
     ? (cache.getGeometry(geometryId)?.data as Types.ISurface)
     : undefined;
@@ -670,13 +809,47 @@ function getRepresentedSurface(
   };
 }
 
-async function convertSegment(
+/**
+ * Converts the contours of a segment to a surface for the version of the
+ * contours at the time of the call. The conversion waits for the one of an
+ * older version of the segment that is still running; a version that is no
+ * longer current by the time its turn comes is not converted, and the surface
+ * of one that became old while it ran leaves the cache.
+ */
+function convertSegment(
   segmentationCuts: SegmentationCuts,
   segmentIndex: number,
   viewport: Types.IViewport
 ): Promise<SurfacesInfo | undefined> {
-  const { segmentationId } = segmentationCuts.segmentation;
+  const key = `${segmentationCuts.segmentationId}|${segmentIndex}`;
   const { version } = segmentationCuts;
+  const conversion = (conversionsInFlight.get(key) ?? Promise.resolve()).then(
+    () => runConversion(segmentationCuts, segmentIndex, version, viewport)
+  );
+
+  conversionsInFlight.set(key, conversion);
+  conversion.then(() => {
+    if (conversionsInFlight.get(key) === conversion) {
+      conversionsInFlight.delete(key);
+    }
+  });
+
+  return conversion;
+}
+
+async function runConversion(
+  segmentationCuts: SegmentationCuts,
+  segmentIndex: number,
+  version: number,
+  viewport: Types.IViewport
+): Promise<SurfacesInfo | undefined> {
+  const { segmentationId } = segmentationCuts;
+  const isOutdated = () =>
+    segmentationCuts.removed || segmentationCuts.version !== version;
+
+  if (isOutdated()) {
+    return;
+  }
 
   try {
     const { geometryIds } = await getPolySeg().computeSurfaceData(
@@ -688,7 +861,12 @@ async function convertSegment(
       ? (cache.getGeometry(geometryId)?.data as Types.ISurface)
       : undefined;
 
-    if (segmentationCuts.version === version && geometryId) {
+    if (isOutdated()) {
+      removeConvertedGeometry(segmentationId, geometryId);
+      return;
+    }
+
+    if (geometryId) {
       segmentationCuts.convertedGeometryIds.add(geometryId);
     }
 
@@ -708,40 +886,37 @@ async function convertSegment(
       segmentIndex,
     };
   } catch (error) {
-    report(
-      segmentationCuts,
-      segmentIndex,
-      `the conversion of its contours to a surface failed: ${describe(error)}`
-    );
+    if (!isOutdated()) {
+      report(
+        segmentationCuts,
+        segmentIndex,
+        `the conversion of its contours to a surface failed: ${describe(error)}`
+      );
+    }
   }
 }
 
 /**
  * What the cuts keep of a segmentation, made at the first call. A
- * segmentation that was removed and added again under the same id starts
- * again.
+ * segmentation that is removed loses it (`removeContourCutsOfSegmentation` on
+ * SEGMENTATION_REMOVED), so one added again under the same id starts again.
  */
 function getSegmentationCuts(
   segmentationId: string
 ): SegmentationCuts | undefined {
-  const segmentation = getSegmentation(segmentationId);
-
-  if (!segmentation?.representationData.Contour) {
+  if (!getSegmentation(segmentationId)?.representationData.Contour) {
     return;
   }
 
   const existing = cutsBySegmentation.get(segmentationId);
-  if (existing?.segmentation === segmentation) {
+  if (existing) {
     return existing;
   }
 
-  if (existing) {
-    removeContourCutsOfSegmentation(segmentationId);
-  }
-
   const segmentationCuts: SegmentationCuts = {
-    segmentation,
+    segmentationId,
     version: 0,
+    removed: false,
     surfaces: new Map(),
     convertedGeometryIds: new Set(),
     reported: new Set(),
@@ -812,7 +987,7 @@ function report(
 
   segmentationCuts.reported.add(key);
   cs3dLogger.warn(
-    `The contours of segmentation ${segmentationCuts.segmentation.segmentationId}${
+    `The contours of segmentation ${segmentationCuts.segmentationId}${
       segmentIndex === 'all' ? '' : `, segment ${segmentIndex},`
     } are not drawn on planes other than their own: ${reason}.`
   );
@@ -863,6 +1038,7 @@ function removeContourCutsOfSegmentation(segmentationId: string): void {
     return;
   }
 
+  segmentationCuts.removed = true;
   segmentationCuts.planeCuts.forEach((planeCut) => {
     planeCut.viewportIds.clear();
     releasePlaneCut(segmentationId, planeCut, undefined);
@@ -877,17 +1053,28 @@ function removeContourCutsOfSegmentation(segmentationId: string): void {
  * to the next conversion. A surface of the Surface representation stays.
  */
 function removeConvertedGeometries(segmentationCuts: SegmentationCuts): void {
-  const represented = new Set(
-    segmentationCuts.segmentation.representationData.Surface?.geometryIds?.values() ??
-      []
+  segmentationCuts.convertedGeometryIds.forEach((geometryId) =>
+    removeConvertedGeometry(segmentationCuts.segmentationId, geometryId)
   );
-
-  segmentationCuts.convertedGeometryIds.forEach((geometryId) => {
-    if (!represented.has(geometryId) && cache.getGeometry(geometryId)) {
-      cache.removeGeometryLoadObject(geometryId);
-    }
-  });
   segmentationCuts.convertedGeometryIds.clear();
+}
+
+function removeConvertedGeometry(
+  segmentationId: string,
+  geometryId: string | undefined
+): void {
+  const represented =
+    getSegmentation(
+      segmentationId
+    )?.representationData.Surface?.geometryIds?.values();
+
+  if (
+    geometryId &&
+    cache.getGeometry(geometryId) &&
+    !new Set(represented ?? []).has(geometryId)
+  ) {
+    cache.removeGeometryLoadObject(geometryId);
+  }
 }
 
 export {

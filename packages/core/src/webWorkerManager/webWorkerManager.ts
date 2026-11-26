@@ -259,8 +259,7 @@ class CentralizedWorkerManager {
 
     workerProperties.instances.forEach((_, index) => {
       const lastActiveTime = workerProperties.lastActiveTime[index];
-      const isWorkerActive =
-        lastActiveTime !== null && workerProperties.loadCounters[index] > 0;
+      const isWorkerActive = workerProperties.loadCounters[index] > 0;
       const idleTime = now - lastActiveTime;
 
       if (!isWorkerActive && idleTime > idleTimeThreshold) {

@@ -19,11 +19,13 @@ import { vec3 } from 'gl-matrix';
 import { PlanarRenderModeId } from './planarRenderModeIds';
 import { isVolumeRenderMode } from '../../helpers/renderBackendRegistry';
 import type {
+  IImageVolume,
   Point3,
   ReferenceCompatibleOptions,
   ViewReference,
   ViewReferenceSpecifier,
 } from '../../../types';
+import { EPSILON } from '../../../constants';
 import type { PlaneRestriction } from '../../../types/IViewport';
 import getClosestImageId from '../../../utilities/getClosestImageId';
 import imageIdToURI from '../../../utilities/imageIdToURI';
@@ -46,7 +48,7 @@ import type { PlanarRendering } from './planarRuntimeTypes';
  * For image-based paths (cpuImage, vtkImage) this is a direct index lookup.
  * For volume paths (cpuVolume, vtkVolume) the computed camera's focalPoint
  * and viewPlaneNormal are used to find the closest imageId in the volume's
- * imageId list via `getClosestImageId`.
+ * imageId list (`getClosestImageIdOfVolume`).
  *
  * @param args.viewState - The current semantic PlanarViewState.
  * @param args.data - The loaded PlanarPayload (provides imageIds and volumeId).
@@ -110,10 +112,51 @@ export function getPlanarReferencedImageId(args: {
     ];
   }
 
-  return getClosestImageId(
+  return getClosestImageIdOfVolume(
     rendering.imageVolume,
-    resolvedView.focalPoint,
-    resolvedView.viewPlaneNormal
+    resolvedView.focalPoint as Point3,
+    resolvedView.viewPlaneNormal as Point3
+  );
+}
+
+/**
+ * The image of a volume closest to a point along the view plane normal, as
+ * `getClosestImageId` finds it, without reading the image plane of every
+ * image of the volume: the slice of the point in the grid of the volume
+ * names an image, and `getClosestImageId` decides among that image and its
+ * two neighbours by their image planes, so the images of a series that lie a
+ * little off the grid give the same image. The cost does not grow with the
+ * number of images. Undefined when the view is not in the plane of the images
+ * or no image lies within half a slice of the point.
+ */
+function getClosestImageIdOfVolume(
+  imageVolume: IImageVolume,
+  worldPos: Point3,
+  viewPlaneNormal: Point3
+): string | undefined {
+  const { direction, origin, spacing, imageIds } = imageVolume;
+
+  if (!imageIds?.length || !direction || !origin || !spacing?.[2]) {
+    return getClosestImageId(imageVolume, worldPos, viewPlaneNormal);
+  }
+
+  const kVector = [direction[6], direction[7], direction[8]] as Point3;
+
+  if (Math.abs(vec3.dot(kVector, viewPlaneNormal)) < 1 - EPSILON) {
+    return;
+  }
+
+  const slice = Math.round(
+    vec3.dot(vec3.sub(vec3.create(), worldPos, origin), kVector) / spacing[2]
+  );
+  const nearImageIds = [slice - 1, slice, slice + 1]
+    .filter((index) => index >= 0 && index < imageIds.length)
+    .map((index) => imageIds[index]);
+
+  return getClosestImageId(
+    { direction, spacing, imageIds: nearImageIds },
+    worldPos,
+    viewPlaneNormal
   );
 }
 

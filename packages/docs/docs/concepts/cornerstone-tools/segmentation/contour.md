@@ -65,14 +65,20 @@ are. A planar viewport of another plane (the sagittal or coronal pane of an
 MPR, an oblique plane, a stack whose images lie in another plane) draws the cut
 of each structure by the slice on display: the contours of the structure are
 made into a surface once, the surface is cut by every slice of the viewport in
-a web worker, and a scroll shows the cut of the next slice. The viewport cuts
-again when its plane changes and when the contours change.
+a web worker, and a scroll shows the cut of the next slice. Each structure is
+cut and shown as soon as its surface is made, the structures on the slice on
+display and the small ones first, so the viewport fills in structure by
+structure. The viewport cuts again when its plane changes and when the
+contours change.
 
-This needs the polySeg add-on:
+This needs the polySeg add-on, which converts in two web workers by default
+(one less than the logical processors of the machine when that is fewer);
+`init` of the add-on sets another number before its first conversion:
 
 ```js
 import * as polySeg from '@cornerstonejs/polymorphic-segmentation';
 
+polySeg.init({ maxWorkerInstances: 1 });
 cornerstoneTools.init({ addons: { polySeg } });
 ```
 

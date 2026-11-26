@@ -287,6 +287,7 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
 
     const enabledElement = getEnabledElement(element);
     const { viewport } = enabledElement;
+    const representedSegmentations = new Map<string, boolean>();
 
     return baseFilteredAnnotations.filter((annotation) => {
       const segmentationId = (annotation as ContourSegmentationAnnotation)?.data
@@ -298,13 +299,20 @@ abstract class ContourSegmentationBaseTool extends ContourBaseTool {
         return true;
       }
 
-      return !!defaultSegmentationStateManager.getSegmentationRepresentation(
-        viewport.id,
-        {
+      if (!representedSegmentations.has(segmentationId)) {
+        representedSegmentations.set(
           segmentationId,
-          type: SegmentationRepresentations.Contour,
-        }
-      );
+          !!defaultSegmentationStateManager.getSegmentationRepresentation(
+            viewport.id,
+            {
+              segmentationId,
+              type: SegmentationRepresentations.Contour,
+            }
+          )
+        );
+      }
+
+      return representedSegmentations.get(segmentationId);
     });
   }
 
