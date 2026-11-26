@@ -9,6 +9,7 @@ import type IStackViewport from '../types/IStackViewport';
 import type IVolumeViewport from '../types/IVolumeViewport';
 import { vtkOffscreenMultiRenderWindow } from './vtkClasses';
 import { attachWebGLContextEvents } from './helpers/attachWebGLContextEvents';
+import isWebGLContextLost from './helpers/isWebGLContextLost';
 import { setElementTouchActionNone } from './helpers/elementTouchAction';
 
 import type * as EventTypes from '../types/EventTypes';
@@ -425,6 +426,15 @@ class TiledRenderingEngine extends BaseRenderingEngine {
   private performVtkDrawCall() {
     // Render all viewports under vtk.js' control.
     const { offscreenMultiRenderWindow } = this;
+
+    /**
+     * A lost context draws nothing: vtk.js throws there, and the throw would
+     * stop the renders of every viewport. The canvases keep their image.
+     */
+    if (isWebGLContextLost(offscreenMultiRenderWindow)) {
+      return;
+    }
+
     const renderWindow = offscreenMultiRenderWindow.getRenderWindow();
 
     const renderers = offscreenMultiRenderWindow.getRenderers();
@@ -485,6 +495,12 @@ class TiledRenderingEngine extends BaseRenderingEngine {
       }
 
       const { offscreenMultiRenderWindow } = this;
+
+      /** The offscreen canvas of a lost context holds nothing to copy. */
+      if (isWebGLContextLost(offscreenMultiRenderWindow)) {
+        return;
+      }
+
       const openGLRenderWindow =
         offscreenMultiRenderWindow.getOpenGLRenderWindow();
       const context = openGLRenderWindow.get3DContext();
