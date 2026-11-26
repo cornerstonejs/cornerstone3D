@@ -9,6 +9,8 @@ import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransf
 import { loadAndCacheImage } from '../../loaders/imageLoader';
 import * as metaData from '../../metaData';
 import * as windowLevel from '../../utilities/windowLevel';
+import { asArrayFirst } from '../../utilities/asArray';
+import { getValidVOILUTFunction } from '../../utilities/buildMetadata';
 import { MetadataModules, RequestType } from '../../enums';
 import cache from '../../cache/cache';
 
@@ -137,20 +139,17 @@ function getVOIFromMetadata(imageVolume: IImageVolume): VOIRange | undefined {
     const imageId = imageIds[imageIdIndex];
     const voiLutModule = metaData.get(MetadataModules.VOI_LUT, imageId);
     if (voiLutModule && voiLutModule.windowWidth && voiLutModule.windowCenter) {
-      if (voiLutModule?.voiLUTFunction) {
-        voi = {};
-        voi.voiLUTFunction = voiLutModule?.voiLUTFunction;
-      }
-      const { windowWidth, windowCenter } = voiLutModule;
-
-      const width = Array.isArray(windowWidth) ? windowWidth[0] : windowWidth;
-      const center = Array.isArray(windowCenter)
-        ? windowCenter[0]
-        : windowCenter;
-
-      // Skip if width is 0
-      if (width !== 0) {
-        voi = { windowWidth: width, windowCenter: center };
+      const width = asArrayFirst(voiLutModule.windowWidth);
+      const center = asArrayFirst(voiLutModule.windowCenter);
+      // Skip if width is 0 or missing
+      if (width) {
+        voi = {
+          windowWidth: width,
+          windowCenter: center,
+          voiLUTFunction: getValidVOILUTFunction(
+            asArrayFirst(voiLutModule.voiLUTFunction)
+          ),
+        };
       }
     }
   } else {
@@ -243,16 +242,21 @@ async function getVOIFromMiddleSliceMinMax(
   }
 
   // Get the min and max pixel values of the middle slice
-  let { min, max } = image.voxelManager.getMinMax();
+  const { min, max } = image.voxelManager.getMinMax();
 
-  if (min?.length > 1) {
-    min = Math.min(...min);
-    max = Math.max(...max);
+  // An RGB voxel manager gives an array of one value for each component, and a
+  // grayscale voxel manager gives a number. The `length > 1` test is the test
+  // that this code applied before, and it keeps an array of one value as it is.
+  if (Array.isArray(min) && min.length > 1) {
+    return {
+      lower: Math.min(...min),
+      upper: Math.max(...(max as number[])),
+    };
   }
 
   return {
-    lower: min,
-    upper: max,
+    lower: min as number,
+    upper: max as number,
   };
 }
 

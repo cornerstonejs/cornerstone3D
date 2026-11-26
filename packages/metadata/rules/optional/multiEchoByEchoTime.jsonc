@@ -1,0 +1,52 @@
+// Multi-echo MR: one display set for each echo time.
+//
+// A single-frame MR series that holds more than one EchoTime gives one display
+// set for each EchoTime, with the description
+// `<SeriesDescription> TE=<EchoTime>`. The slices of each display set are in
+// the order of their position along the normal of the image plane. A series
+// with one echo time keeps the default display sets.
+//
+// The rule does not read localizer images (`LOCALIZER` in ImageType): they do
+// not count as an echo time, and they stay with the default `localizer` rule.
+//
+// Multi-frame instances (for example an Enhanced MR instance with more than one
+// echo) stay with the default `multiFrame` rule. A split of the frames of one
+// instance needs a change to the rule language.
+//
+// The file puts the rule just before the default `volume3d` rule, which
+// would otherwise take the series.
+// `$spliceById` needs `spliceById` of @cornerstonejs/metadata, registered with
+// immutability-helper `extend`.
+{
+  // New rules for the registry.
+  "displaySetRules": {
+    "$merge": {
+      "multiEchoByEchoTime": {
+        "description": "Single-frame MR with two or more echo times: one display set for each EchoTime.",
+        "context": {
+          // No value for a localizer, so the aggregates and `notNull` skip it.
+          "echoTime": "isLocalizer ? null : Number(EchoTime)",
+          // A series value: the images of the series have two or more echo times.
+          "isMultiEcho": "series.instances.min(echoTime) < series.instances.max(echoTime)"
+        },
+        "matches": {
+          "Modality": "MR",
+          "isImage": true,
+          "isMultiFrame": false,
+          "isMultiEcho": true,
+          "echoTime": { "notNull": true }
+        },
+        "groupBy": ["SeriesInstanceUID", "echoTime"],
+        "sortBy": ["displaySet.sliceDistance", "InstanceNumber"],
+        "attributes": {
+          "SeriesDescription": {
+            "template": "{SeriesDescription} TE={EchoTime}"
+          }
+        }
+      }
+    }
+  },
+  "displaySetRuleOrder": {
+    "$spliceById": [["volume3d", 0, "multiEchoByEchoTime"]]
+  }
+}

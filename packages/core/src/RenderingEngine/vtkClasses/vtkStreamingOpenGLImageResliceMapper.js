@@ -9,6 +9,8 @@ import {
 } from '@kitware/vtk.js/Rendering/OpenGL/RenderWindow/resourceSharingHelper';
 import vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
 import { getCanUseNorm16Texture } from '../../init';
+import takeBoundScalarTexture from './takeBoundScalarTexture';
+import actorsWaitingForStorage from '../helpers/actorsWaitingForStorage';
 
 const { vtkErrorMacro } = macro;
 
@@ -118,7 +120,15 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
 
     publicAPI.updateResliceGeometry();
     publicAPI.renderPieceStart(ren, actor);
-    publicAPI.renderPieceDraw(ren, actor);
+
+    // A draw that samples storage that the browser still clears would block.
+    if (model.scalarTextures?.some((texture) => texture?.isInitializing?.())) {
+      actorsWaitingForStorage.set(actor, performance.now());
+    } else {
+      actorsWaitingForStorage.delete(actor);
+      publicAPI.renderPieceDraw(ren, actor);
+    }
+
     publicAPI.renderPieceFinish(ren, actor);
     publicAPI.invokeEvent({ type: 'EndEvent' });
   };
@@ -166,6 +176,7 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
   publicAPI.buildBufferObjects = (ren, actor) => {
     const actorProperties = actor.getProperties();
 
+    takeBoundScalarTexture(model);
     model.currentValidInputs.forEach(({ imageData }, component) => {
       if (!model.scalarTextures) {
         model.scalarTextures = [];
@@ -183,7 +194,10 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
         currentTexture && typeof currentTexture.hasUpdatedFrames === 'function';
 
       if (canStream) {
-        const dims = imageData.getDimensions();
+        // A reduced texture states its own grid; `imageData` is always the
+        // full-resolution grid.
+        const dims =
+          currentTexture.getGrid?.()?.dimensions ?? imageData.getDimensions();
         const { dataType } = imageData.get('dataType');
         const numComps = model.numberOfComponents;
 
@@ -257,6 +271,9 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
         const newScalarTexture = vtkOpenGLTexture.newInstance();
 
         newScalarTexture.setOpenGLRenderWindow(model._openGLRenderWindow);
+        // This path builds the texture from the scalars of `imageData`, which
+        // are the full-resolution voxels, so the dimensions must be the ones of
+        // `imageData`. Only the streaming path below reads a reduced grid.
         const dims = imageData.getDimensions();
         newScalarTexture.setOglNorm16Ext(
           model.context.getExtension('EXT_texture_norm16')
@@ -280,6 +297,7 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
 
       if (hasUpdatedExtents) {
         actorProperty.setUpdatedExtents([]);
+        // The scalars of `imageData` again, so the dimensions are its own.
         const dims = imageData.getDimensions();
         model.scalarTextures[component].create3DFilterableFromDataArray({
           width: dims[0],

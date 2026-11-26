@@ -1,3 +1,4 @@
+import { fidelityIssuesOfImage } from '../../helpers/fidelityIndicator/fidelityIssues';
 import vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
 import { buildPlanarActorEntry } from './buildPlanarActorEntry';
@@ -40,7 +41,10 @@ import {
   worldToCanvasContextPool,
 } from './planarAdapterCoordinateTransforms';
 import { buildPlanarImageData } from './CpuImageSliceRenderPath';
-import { triggerPlanarNewImage } from './planarImageEvents';
+import {
+  subscribeToBetterImageStages,
+  triggerPlanarNewImage,
+} from './planarImageEvents';
 import {
   applyPlanarICameraToActor,
   applyPlanarICameraToRenderer,
@@ -49,6 +53,8 @@ import {
   resolvePlanarRenderPathCurrentImageIdIndex,
   resolvePlanarRenderPathProjection,
 } from './planarRenderPathProjection';
+import { imageQualityStatusOf } from '../../helpers/fidelityIndicator/collectFidelityLines';
+import { isSegmentationOverlayData } from '../renderingFidelity';
 
 /** @internal */
 export class VtkImageMapperRenderPath
@@ -93,6 +99,9 @@ export class VtkImageMapperRenderPath
       actorEntryUID: uuidv4(),
       actor,
       currentImage: payload.image,
+      imageQualityStatus: imageQualityStatusOf(payload.image),
+      fidelityIssues: fidelityIssuesOfImage(payload.image),
+      excludeFromFidelity: isSegmentationOverlayData(payload, options),
       mapper,
       imageData,
       useWorldCoordinateImageData: payload.useWorldCoordinateImageData,
@@ -100,7 +109,23 @@ export class VtkImageMapperRenderPath
       defaultVOIRange: getDefaultImageVOIRange(payload.image),
       dataPresentation: undefined,
       loadRequestId: 0,
+      refreshFidelity: () => {
+        rendering.qualityPending = rendering.currentImage.imageQualityPending;
+      },
     };
+    const unsubscribeStages = subscribeToBetterImageStages(
+      rendering,
+      () => rendering.currentImage.imageId,
+      (image) =>
+        void updateRenderedImage({
+          ctx,
+          dataId: data.id,
+          image,
+          rendering,
+          imageIdIndex: rendering.currentImageIdIndex,
+          dataPresentation: rendering.dataPresentation,
+        })
+    );
 
     // STACK_NEW_IMAGE drives the source slice scrollbar/thumb. Only the source
     // binding represents a displayed-slice change; overlays (e.g. a segmentation
@@ -140,6 +165,7 @@ export class VtkImageMapperRenderPath
         this.resize(ctx, rendering, data.id);
       },
       removeData: () => {
+        unsubscribeStages();
         this.removeData(ctx, rendering);
       },
     };
@@ -406,6 +432,8 @@ async function updateRenderedImage(args: {
   }
 
   rendering.currentImage = image;
+  rendering.imageQualityStatus = imageQualityStatusOf(image);
+  rendering.fidelityIssues = fidelityIssuesOfImage(image);
   rendering.imageData = imageData;
   rendering.currentImageIdIndex = imageIdIndex;
   rendering.defaultVOIRange = getDefaultImageVOIRange(image);

@@ -137,4 +137,86 @@ describe('SegmentationRenderingEngine', () => {
 
     expect(viewport.render).toHaveBeenCalledTimes(1);
   });
+
+  describe('frame scheduling', () => {
+    let frames: FrameRequestCallback[];
+    let rafSpy: jest.SpyInstance;
+    let triggerRenderSpy: jest.SpyInstance;
+    const runNextFrame = () => frames.shift()(0);
+
+    beforeEach(() => {
+      frames = [];
+      rafSpy = jest
+        .spyOn(window, 'requestAnimationFrame')
+        .mockImplementation((callback) => {
+          frames.push(callback);
+          return frames.length;
+        });
+      triggerRenderSpy = jest
+        .spyOn(segmentationRenderingEngine, '_triggerRender')
+        .mockImplementation(() => undefined);
+    });
+
+    afterEach(() => {
+      // The engine is a shared singleton: run the frames that a test left
+      // scheduled, so that the next test starts with no frame scheduled.
+      while (frames.length) {
+        runNextFrame();
+      }
+      rafSpy.mockRestore();
+      triggerRenderSpy.mockRestore();
+    });
+
+    it('renders each viewport once for many requests before a frame', () => {
+      for (let index = 0; index < 1000; index++) {
+        segmentationRenderingEngine.renderSegmentationsForViewport(
+          index % 2 ? 'viewport-a' : 'viewport-b'
+        );
+      }
+
+      expect(frames).toHaveLength(1);
+      runNextFrame();
+
+      expect(triggerRenderSpy.mock.calls).toEqual([
+        ['viewport-b'],
+        ['viewport-a'],
+      ]);
+      expect(frames).toHaveLength(0);
+    });
+
+    it('renders the other viewports of a frame when one viewport throws', () => {
+      triggerRenderSpy.mockImplementationOnce(() => {
+        throw new Error('render failed');
+      });
+
+      segmentationRenderingEngine.renderSegmentationsForViewport('viewport-a');
+      segmentationRenderingEngine.renderSegmentationsForViewport('viewport-b');
+      runNextFrame();
+
+      expect(triggerRenderSpy.mock.calls).toEqual([
+        ['viewport-a'],
+        ['viewport-b'],
+      ]);
+      expect(frames).toHaveLength(0);
+    });
+
+    it('renders a request made during a frame in the next frame', () => {
+      triggerRenderSpy.mockImplementationOnce(() => {
+        segmentationRenderingEngine.renderSegmentationsForViewport(
+          'viewport-a'
+        );
+      });
+
+      segmentationRenderingEngine.renderSegmentationsForViewport('viewport-a');
+      runNextFrame();
+
+      expect(triggerRenderSpy).toHaveBeenCalledTimes(1);
+      expect(frames).toHaveLength(1);
+
+      runNextFrame();
+
+      expect(triggerRenderSpy).toHaveBeenCalledTimes(2);
+      expect(frames).toHaveLength(0);
+    });
+  });
 });
