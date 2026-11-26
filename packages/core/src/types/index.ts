@@ -219,6 +219,7 @@ import type {
   ViewportFidelityCause,
   ViewportFidelityState,
   ViewportFidelityShownState,
+  FidelityIssue,
 } from './ViewportFidelity';
 
 export type * from './MetadataModuleTypes';
@@ -424,6 +425,7 @@ export type {
   ViewportFidelityCause,
   ViewportFidelityState,
   ViewportFidelityShownState,
+  FidelityIssue,
 };
 
 export { ActorRenderMode };

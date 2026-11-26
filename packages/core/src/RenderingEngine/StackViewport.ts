@@ -55,6 +55,7 @@ import {
 import * as windowLevelUtil from '../utilities/windowLevel';
 import createLinearRGBTransferFunction from '../utilities/createLinearRGBTransferFunction';
 import createSigmoidRGBTransferFunction from '../utilities/createSigmoidRGBTransferFunction';
+import { ensureNonZeroVOIRange } from '../utilities/voiRangeGuards';
 import { updateVTKImageDataWithCornerstoneImage } from '../utilities/updateVTKImageDataWithCornerstoneImage';
 import triggerEvent from '../utilities/triggerEvent';
 import { isEqual } from '../utilities/isEqual';
@@ -66,7 +67,10 @@ import getVOIRangeFromWindowLevel from '../utilities/getVOIRangeFromWindowLevel'
 import Viewport from './Viewport';
 import drawImageSync from './helpers/cpuFallback/drawImageSync';
 import { resolveCPUFallbackColormap } from './helpers/cpuFallback/colors';
-import { getImagePlaneModule } from '../utilities/buildMetadata';
+import {
+  getImagePlaneModule,
+  getValidVOILUTFunction,
+} from '../utilities/buildMetadata';
 import { createEmptyVTKImageData } from './helpers/planarImageRendering';
 
 import {
@@ -1404,7 +1408,7 @@ class StackViewport extends Viewport {
     }
 
     // make sure the VOI LUT function is valid in the VOILUTFunctionType which is enum
-    const newVOILUTFunction = this._getValidVOILUTFunction(voiLUTFunction);
+    const newVOILUTFunction = getValidVOILUTFunction(voiLUTFunction);
 
     let forceRecreateLUTFunction = false;
     if (this.VOILUTFunction !== newVOILUTFunction) {
@@ -1639,6 +1643,10 @@ class StackViewport extends Viewport {
       voiRangeToUse = maxVoiRange;
     }
 
+    // Guard against a zero-width VOI (e.g. an empty slice where min === max),
+    // which would collapse the transfer function and render the image white.
+    voiRangeToUse = ensureNonZeroVOIRange(voiRangeToUse);
+
     // scaling logic here
     // https://github.com/Kitware/vtk-js/blob/master/Sources/Rendering/OpenGL/ImageMapper/index.js#L540-L549
     imageActor.getProperty().setUseLookupTableScalarRange(true);
@@ -1754,7 +1762,7 @@ class StackViewport extends Viewport {
     }
 
     this.modality = modality;
-    const voiLUTFunctionEnum = this._getValidVOILUTFunction(voiLUTFunction);
+    const voiLUTFunctionEnum = getValidVOILUTFunction(voiLUTFunction);
     this.VOILUTFunction = voiLUTFunctionEnum;
 
     this.calibration = calibration;
@@ -3354,19 +3362,6 @@ class StackViewport extends Viewport {
       windowCenter,
       voiLUTFunction
     );
-  }
-
-  private _getValidVOILUTFunction(
-    voiLUTFunction: VOILUTFunctionType | unknown
-  ): VOILUTFunctionType {
-    if (
-      !Object.values(VOILUTFunctionType).includes(
-        voiLUTFunction as VOILUTFunctionType
-      )
-    ) {
-      return VOILUTFunctionType.LINEAR;
-    }
-    return voiLUTFunction as VOILUTFunctionType;
   }
 
   /**
