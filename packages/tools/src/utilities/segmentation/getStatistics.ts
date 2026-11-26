@@ -4,6 +4,8 @@ import {
   getSegmentationDataForWorker,
   prepareVolumeStrategyDataForWorker,
   prepareStackDataForWorker,
+  prepareVideoFrameDataForWorker,
+  getVideoViewportOfSegmentation,
   getImageReferenceInfo,
 } from './utilsForWorker';
 import { getPixelValueUnitsImageId } from '../getPixelValueUnits';
@@ -30,6 +32,12 @@ const radiusForVol1 = Math.pow((3 * 1000) / (4 * Math.PI), 1 / 3);
  *
  * @returns The statistics, either as a single aggregated result (if `collective` mode)
  * or an object with segment indices as keys and statistics as values (if `individual` mode).
+ *
+ * A labelmap over a video viewport gives the statistics of the frame on
+ * display of the video viewport that shows the segmentation: the pixels of
+ * that frame under the labelmap image of that frame, red, green and blue
+ * apart as for a colour image of a stack, and `frameNumber` says which frame
+ * it was. The other frames are not read: show a frame to get its statistics.
  */
 async function getStatistics({
   segmentationId,
@@ -65,6 +73,19 @@ async function getStatistics({
   );
 
   const unit = getPixelValueUnitsImageId(refImageId, modalityUnitOptions);
+  const videoViewport = getVideoViewportOfSegmentation(segmentationId);
+
+  if (videoViewport) {
+    return calculateVideoFrameStatistics({
+      segmentationId,
+      videoViewport,
+      segImageIds,
+      indices,
+      unit,
+      mode,
+    });
+  }
+
   const stats = reconstructableVolume
     ? await calculateVolumeStatistics({
         operationData,
@@ -271,14 +292,54 @@ const processSegmentationStatistics = ({
 };
 
 /**
+ * Calculates the statistics of the labelmap image of the frame on display of
+ * a video viewport over the pixels of that frame, in the worker of the stack
+ * statistics, and says which frame they are of.
+ */
+async function calculateVideoFrameStatistics({
+  segmentationId,
+  videoViewport,
+  segImageIds,
+  indices,
+  unit,
+  mode,
+}) {
+  const { segmentationInfo, imageInfo, frameNumber } =
+    prepareVideoFrameDataForWorker(segmentationId, videoViewport, segImageIds);
+  const stats = await calculateStackStatistics({
+    segImageIds,
+    indices,
+    unit,
+    mode,
+    stackData: { segmentationInfo, imageInfo },
+  });
+
+  if (mode === 'collective') {
+    return { ...stats, frameNumber };
+  }
+
+  return Object.fromEntries(
+    Object.entries(stats as Record<string, NamedStatistics>).map(
+      ([segmentIndex, stat]) => [segmentIndex, { ...stat, frameNumber }]
+    )
+  );
+}
+
+/**
  * Calculate statistics for a stack of images
  */
-async function calculateStackStatistics({ segImageIds, indices, unit, mode }) {
+async function calculateStackStatistics({
+  segImageIds,
+  indices,
+  unit,
+  mode,
+  stackData = undefined,
+}) {
   triggerWorkerProgress(WorkerTypes.COMPUTE_STATISTICS, 0);
 
   // Get segmentation and image info for each image in the stack
   const { segmentationInfo, imageInfo } =
-    prepareStackDataForWorker(segImageIds);
+    stackData ?? prepareStackDataForWorker(segImageIds);
 
   const stats = await getWebWorkerManager().executeTask(
     'compute',

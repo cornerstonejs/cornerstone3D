@@ -66,7 +66,9 @@ Arguments are
 - `workerFn`: a function that returns a new Worker instance (more on this later)
 - `options` an object with the following properties:
   - `maxWorkerInstances(default=1)`: the maximum number of instances of this worker type that can be created. More instance mean if there are multiple calls
-    to the same function they can be offloaded to the other instances of the worker type.
+    to the same function they can be offloaded to the other instances of the worker type. Registering makes no instance: an instance is made when a task
+    needs it (no instance is idle), so the instances beyond the first cost nothing until as many tasks run at the same time. A task goes to the instance
+    with the fewest tasks in flight.
   - `overwrite (default=false)`: whether to overwrite an existing worker type if already registered
   - `autoTerminateOnIdle` (default false) can be used to terminate a worker after a certain amount of idle time (in milliseconds) has passed. This is useful for workers that are not used frequently, and you want to terminate them after a specific period of time. on the manager. The argument for this method is the object of
     `{enabled: boolean, idleTimeThreshold: number(ms)}`.

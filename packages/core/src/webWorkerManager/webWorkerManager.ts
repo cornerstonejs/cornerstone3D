@@ -53,8 +53,9 @@ class CentralizedWorkerManager {
    * @param workerFn - The function that creates a new instance of the worker.
    * @param {object} options - Optional parameters.
    * @param {number} [options.maxWorkerInstances=1] - The maximum number of instances of this worker that can be created.
-   * For instance if you create a worker with maxWorkerInstances = 2, then only 2 instances of this worker will be created
-   * and in case there are 10 tasks that need to be executed, each will get assigned 5 tasks.
+   * For instance if you create a worker with maxWorkerInstances = 2, then at most 2 instances of this worker will be created
+   * and in case there are 10 tasks that need to be executed, each will get assigned 5 tasks. An instance is created when
+   * a task needs it (no instance is idle), not at registration, and again after it was terminated.
    * @param {boolean} [options.overwrite=false] - Whether to overwrite the worker if it's already registered.
    * @param {object} [options.autoTerminateOnIdle] - Configuration for automatically terminating idle workers.
    * @param {boolean} [options.autoTerminateOnIdle.enabled=false] - Whether to enable auto-termination.
@@ -100,17 +101,23 @@ class CentralizedWorkerManager {
 
     workerProperties.loadCounters = Array(maxWorkerInstances).fill(0);
     workerProperties.lastActiveTime = Array(maxWorkerInstances).fill(null);
-
-    for (let i = 0; i < maxWorkerInstances; i++) {
-      const worker = workerFn();
-      workerProperties.instances.push(Comlink.wrap(worker));
-      workerProperties.nativeWorkers.push(worker);
-      workerProperties.workerFn = workerFn;
-    }
+    workerProperties.instances = Array(maxWorkerInstances).fill(null);
+    workerProperties.nativeWorkers = Array(maxWorkerInstances).fill(null);
+    workerProperties.workerFn = workerFn;
 
     this.workerRegistry[workerName] = workerProperties;
   }
 
+  /**
+   * Gives the instance of a worker that takes the next task, and makes it
+   * when it does not exist yet or was terminated. Every instance is weighed by
+   * its own index, whatever instances before it were terminated: the one with
+   * the fewest tasks in flight wins, so an idle instance goes before one that
+   * runs a task, and among instances with no task one that exists goes before
+   * one that must be made. An instance is made when a task needs it, so
+   * registering several instances costs nothing until as many tasks run at
+   * once.
+   */
   getNextWorkerAPI(workerName: string) {
     const workerProperties = this.workerRegistry[workerName];
 
@@ -119,34 +126,34 @@ class CentralizedWorkerManager {
       return null;
     }
 
-    // Find the worker with the minimum load.
-    const workerInstances = workerProperties.instances.filter(
-      (instance) => instance !== null
-    );
-
+    const { instances, loadCounters } = workerProperties;
     let minLoadIndex = 0;
-    let minLoadValue = workerProperties.loadCounters[0] || 0;
-    for (let i = 1; i < workerInstances.length; i++) {
-      const currentLoadValue = workerProperties.loadCounters[i] || 0;
-      if (currentLoadValue < minLoadValue) {
-        minLoadIndex = i;
-        minLoadValue = currentLoadValue;
+
+    for (let index = 1; index < instances.length; index++) {
+      const load = loadCounters[index] || 0;
+      const minLoad = loadCounters[minLoadIndex] || 0;
+
+      if (
+        load < minLoad ||
+        (load === minLoad &&
+          instances[minLoadIndex] === null &&
+          instances[index] !== null)
+      ) {
+        minLoadIndex = index;
       }
     }
 
-    // Check and recreate the worker if it was terminated.
-    if (workerProperties.instances[minLoadIndex] === null) {
+    if (instances[minLoadIndex] === null) {
       const worker = workerProperties.workerFn();
-      workerProperties.instances[minLoadIndex] = Comlink.wrap(worker);
+
+      instances[minLoadIndex] = Comlink.wrap(worker);
       workerProperties.nativeWorkers[minLoadIndex] = worker;
     }
 
-    // Update the load counter.
-    workerProperties.loadCounters[minLoadIndex] += 1;
+    loadCounters[minLoadIndex] += 1;
 
-    // return the worker that has the minimum load.
     return {
-      api: workerProperties.instances[minLoadIndex],
+      api: instances[minLoadIndex],
       index: minLoadIndex,
     };
   }

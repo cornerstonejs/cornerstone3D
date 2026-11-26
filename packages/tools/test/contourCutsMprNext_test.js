@@ -502,6 +502,62 @@ describe('The contours of an RTSTRUCT on the panes of an MPR -- ', () => {
       .toBe(contours.length);
   }, 60000);
 
+  it('fires ANNOTATION_RENDERED once for each draw of a pane that shows the contours or their cut, and none for a pane that draws none', async function () {
+    const series = await createSeries({ id: 'contourCutsEvent', size: SIZE });
+    const panes = await createMpr(renderingEngine, series);
+    const events = { axial: 0, sagittal: 0, coronal: 0 };
+    const listeners = Object.keys(events).map((orientation) => {
+      const listener = () => events[orientation]++;
+
+      panes[orientation].element.addEventListener(
+        csToolsEnums.Events.ANNOTATION_RENDERED,
+        listener
+      );
+
+      return () =>
+        panes[orientation].element.removeEventListener(
+          csToolsEnums.Events.ANNOTATION_RENDERED,
+          listener
+        );
+    });
+    const drawOnce = async (viewports) => {
+      await settle(panes.sagittal);
+      Object.keys(events).forEach((orientation) => (events[orientation] = 0));
+      csTools3d.utilities.triggerAnnotationRenderForViewportIds(
+        viewports.map((viewport) => viewport.id)
+      );
+      await nextFrames();
+      await nextFrames();
+
+      return { ...events };
+    };
+
+    addRtStructLikeSegmentation('cutsEvent', {
+      1: sphereContours(CENTER, RADIUS),
+    });
+    await showContours('cutsEvent', [
+      panes.sagittal,
+      panes.axial,
+      panes.coronal,
+    ]);
+    await waitForShownContours(panes.sagittal);
+    await waitForShownContours(panes.coronal);
+
+    expect(shownContours(panes.axial).length).toBe(1);
+    expect(await drawOnce([panes.axial, panes.sagittal, panes.coronal]))
+      .withContext('one draw of each pane')
+      .toEqual({ axial: 1, sagittal: 1, coronal: 1 });
+
+    await moveToPoint(panes.sagittal, worldOfVoxel(series, [5, 24, 12]));
+    await settle(panes.sagittal);
+    expect(shownContours(panes.sagittal).length).toBe(0);
+    expect(await drawOnce([panes.sagittal]))
+      .withContext('a draw of a sagittal slice outside the sphere')
+      .toEqual({ axial: 0, sagittal: 0, coronal: 0 });
+
+    listeners.forEach((removeListener) => removeListener());
+  }, 60000);
+
   it('follows a scroll of the sagittal pane with the cut of each slice, and keeps the annotation state bounded over 50 scrolls', async function () {
     const series = await createSeries({ id: 'contourCutsScroll', size: SIZE });
     const panes = await createMpr(renderingEngine, series);

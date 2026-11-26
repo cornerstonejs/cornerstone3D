@@ -338,4 +338,67 @@ describe('The metadata calls of a draw of the annotations', () => {
     expect(many.drawn).toBeGreaterThan(few.drawn);
     expect(many.calls).toEqual(few.calls);
   });
+
+  /**
+   * The annotation rendering engine fires `ANNOTATION_RENDERED` for a draw of
+   * a viewport when a tool says that it drew. The freehand contour tool, which
+   * the contour segmentation tool extends, says so for the contours that are
+   * not being edited too, as the contours of an RTSTRUCT, whether it computes
+   * statistics or not, and not when no contour is on the slice on display.
+   * The contours are open when it computes statistics: the statistics of a
+   * closed contour read `closed`, which only a browser defines (row 270 of
+   * v6-open-issues.md).
+   */
+  it.each([false, true])(
+    'reports a draw of contours that are not being edited by the freehand contour tool, with calculateStats %s',
+    async (calculateStats) => {
+      const { viewport, imageIds } = await mount('stack');
+      const enabledElement = {
+        viewport,
+        viewportId: viewport.id,
+        renderingEngineId: renderingEngine.id,
+        renderingEngine,
+        FrameOfReferenceUID: FRAME_OF_REFERENCE_UID,
+      };
+      const tool = new PlanarFreehandROITool({
+        configuration: { calculateStats },
+      });
+      const draw = (contours) => {
+        const svgDrawingHelper = createSvgDrawingHelper(viewport.element);
+
+        removeAllAnnotations();
+        contours.forEach((annotation) => {
+          annotation.metadata.toolName = PlanarFreehandROITool.toolName;
+          annotation.data.contour.closed = !calculateStats;
+          addAnnotation(annotation, FRAME_OF_REFERENCE_UID);
+        });
+
+        return {
+          rendered: tool.renderAnnotation(enabledElement, svgDrawingHelper),
+          drawn: svgDrawingHelper.svgLayerElement.childNodes.length,
+        };
+      };
+
+      const { getBBox } = window.SVGElement.prototype;
+
+      window.SVGElement.prototype.getBBox = () => ({
+        x: 0,
+        y: 0,
+        width: 20,
+        height: 10,
+      });
+      getEnabledElement.mockReturnValue(enabledElement);
+
+      const onSlice = draw(createContours(imageIds, 10, null));
+      const offSlice = draw(createContours(imageIds.slice(0, 50), 5, null));
+
+      removeAllAnnotations();
+      window.SVGElement.prototype.getBBox = getBBox;
+
+      expect(onSlice.drawn).toBeGreaterThan(0);
+      expect(onSlice.rendered).toBe(true);
+      expect(offSlice.drawn).toBe(0);
+      expect(offSlice.rendered).toBe(false);
+    }
+  );
 });

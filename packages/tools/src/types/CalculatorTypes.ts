@@ -33,5 +33,10 @@ export type NamedStatistics = {
    * This can be used to test peak intensities in the areas.
    */
   maxIJKs?: Array<{ value: number; pointIJK: Types.Point3 }>;
+  /**
+   * The frame of a video whose pixels the statistics read: the statistics of
+   * a labelmap over a video are those of the frame on display.
+   */
+  frameNumber?: number;
   array: Statistics[];
 };

@@ -2668,10 +2668,28 @@ levels of 255.
   stroke back, `SEGMENTATION_DATA_MODIFIED` and `SEGMENTATION_RENDERED` fire
   as on a planar viewport, and `getSegmentIndexAtWorldPoint` reads the
   labelmap of the frame on display. `utilities.segmentation.getStatistics`
-  gives no statistics for it: it reads the pixels of each frame as an image
-  in the cache, and the frames of a video are not images in the cache (the
-  video element gives the pixels of the frame on display only). A video has
-  no flip, so there is none to follow.
+  gives the statistics of the frame on display of the video viewport that
+  shows the segmentation: the pixels of that frame under its labelmap image,
+  red, green and blue apart (`mean.value` is `[r, g, b]`), as for a colour
+  image of a stack, and `frameNumber` in the result names the frame. The
+  other frames are not read, as the video element gives the pixels of the
+  frame on display only: show a frame (`setFrameNumber`) to get its
+  statistics. Without a video viewport that shows the segmentation,
+  `getStatistics` rejects with an error that says so; a frame without a
+  labelmap image rejects too. A video has no flip, so there is none to
+  follow.
+
+  ```ts
+  // 6.0.0-beta.2: threw in its worker for a labelmap over a video
+  // 6.0: the statistics of frame 12, the frame on display
+  videoViewport.setFrameNumber(12);
+  const stats = await cornerstoneTools.utilities.segmentation.getStatistics({
+    segmentationId,
+    segmentIndices: 1,
+  });
+  const { frameNumber } = stats;
+  const [meanRed, meanGreen, meanBlue] = stats.mean.value;
+  ```
 
 - **`getActors()` and `addImages()`** are on the video viewport again, as on
   the legacy one. `getActors()` lists the images drawn over the video (the
@@ -2776,9 +2794,10 @@ levels of 255.
     contours.
 
   The contours of an RTSTRUCT of 31 structures (2,265 contours) show their
-  first cut in the sagittal and coronal panes about 3 s after the
-  representation is added and their last about 13 s after, in Chrome on a
-  recent Mac; before the cut came for every structure at once after 18.6 s.
+  first cut in the sagittal and coronal panes about 1.8 s after the
+  representation is added and their last about 16 s after, with the one
+  polySeg worker of the default, in Chrome on a recent Mac; before, the cut
+  came for every structure at once after 18.6 s.
 
   In 5.x the cut was tried only when the viewport had status `RENDERED` at the
   draw of the representation, which a next planar viewport never has at that
@@ -2810,23 +2829,32 @@ levels of 255.
     );
   ```
 
-- **polySeg runs two instances of its worker.** `registerPolySegWorker`,
-  which the polySeg add-on calls at its first use, makes
-  `min(2, navigator.hardwareConcurrency - 1)` instances, and at least one, in
-  place of one in 5.x. Each instance loads the 5.6 MB wasm of the
-  conversions with its first one and holds about 300 MB more at the peak of
-  a large RTSTRUCT; it ends after 2 s without a task. With two, the last cut
-  of the RTSTRUCT above comes after about 12 s instead of 16 to 17 s with
-  one; four do no better there, as its largest structure alone takes 7 s.
-  polySeg sends one task to each instance at a time, and the cut of a
-  surface goes before the conversions that wait. To choose the number, call
-  `init` of the add-on before its first conversion:
+- **polySeg converts in one instance of its worker by default, and an
+  application can ask for more.** `registerPolySegWorker`, which the polySeg
+  add-on calls at its first use, registers one instance, as in 5.x, and
+  takes `maxWorkerInstances` from `init` of the add-on. An instance is made
+  at the first task that needs it and ends after 2 s without a task; each
+  loads the 5.6 MB wasm of the conversions with its first task and holds
+  about 400 MB more at the peak of a large RTSTRUCT. polySeg sends one task
+  to each instance at a time, and the cut of a surface goes before the
+  conversions that wait. Measured on the RTSTRUCT above, from the moment the
+  representation is added:
+
+  | Workers | First cut shown | Last cut shown | Memory at the peak (browser total) |
+  | ------- | --------------- | -------------- | ---------------------------------- |
+  | 1       | 1.8 s           | 16 s           | 2.2 GB                             |
+  | 2       | 1.8 to 3 s      | 12 to 13 s     | 2.6 GB                             |
+  | 4       | 2 s             | 11 to 12 s     | 3.2 GB                             |
+
+  Four do little better than two there, as its largest structure alone
+  takes 7 s. To choose the number, call `init` of the add-on before its
+  first conversion:
 
   ```ts
   import * as polySeg from '@cornerstonejs/polymorphic-segmentation';
 
-  // 5.x: one instance. 6.0: two, unless set
-  polySeg.init({ maxWorkerInstances: 1 });
+  // 5.x and 6.0: one instance, unless set
+  polySeg.init({ maxWorkerInstances: 2 });
   cornerstoneTools.init({ addons: { polySeg } });
   ```
 
@@ -2839,6 +2867,25 @@ GetSpacingBetweenLines: Contour spacing is not consistent` for a structure
   half that mean spacing beyond its last contour (0.7 to 1.5 mm for the five
   such structures of the RTSTRUCT above) instead of half the spacing of its
   contours (0.5 mm).
+
+- **`ANNOTATION_RENDERED` fires after a draw of contours that are not being
+  edited.** The annotation rendering engine fires it once for each draw of a
+  viewport in which a tool drew, and the freehand contour tool, which the
+  contour segmentation tool extends, now says that it drew whenever it drew
+  a contour, with `calculateStats` on or off. 5.x and 6.0.0-beta.2 said so
+  only while a contour was drawn or edited, so a pane that showed only the
+  contours of an RTSTRUCT, or finished freehand contours, never fired the
+  event. A draw that draws nothing, as a slice with no contour, fires none.
+  The spline and livewire contour tools already said so.
+
+  ```ts
+  // 5.x: never fired on a pane with only the contours of an RTSTRUCT
+  // 6.0: fires once for each draw of the pane that drew a contour or its cut
+  element.addEventListener(
+    cornerstoneTools.Enums.Events.ANNOTATION_RENDERED,
+    (evt) => updateOverlay(evt.detail.viewportId)
+  );
+  ```
 
 - **The contours of a contour segmentation show only on a viewport that has
   its contour representation, in stack and in volume mode.** The filter of
@@ -3103,7 +3150,31 @@ is one, see [Functions of the core package](./3-api-map.md#functions-of-the-core
   a stack labelmap). The fine sample of a volume at rest comes 100 ms after
   the last resize of a drag, as after a pan. The example `cpuResizeFlash`
   shows the time that the canvas stays blank.
-
+- **The web worker manager makes an instance of a worker when a task needs
+  it.** `registerWorker(name, workerFn, { maxWorkerInstances })` makes no
+  worker; `executeTask` makes an instance when no instance is idle and fewer
+  than `maxWorkerInstances` exist, and makes again an instance that ended on
+  idle. A task goes to the instance with the fewest tasks in flight, read by
+  the index of each instance (an instance after one that had ended was read
+  with the load of another), and among instances with none to one that
+  exists before one to make. `workerRegistry[name].instances` holds `null`
+  for an instance that does not exist. 5.x made every instance at
+  registration and gave a tie to the first instance.
+- **A scroll of a stack with a labelmap no longer checks every labelmap
+  image.** The labelmap images of each image of the stack come from a map
+  that is made once for the image ids of the stack and of the labelmap, and
+  made again when one of them changes (another stack, a labelmap image added
+  to or taken from a layer, the segmentation removed); a scroll looks its
+  image up. The display no longer calls
+  `segmentation.state.updateLabelmapSegmentationImageReferences` at each
+  image, and that function, which gives the same answer, finds the labelmap
+  images on the plane of the image without checking the others. With a
+  labelmap of 300 images, a step of a scroll read the metadata 4,503 times
+  and checked 300 references; it reads 18 times and checks one, as with a
+  labelmap of 10 images. A scroll of a stack of 300 images of 512 by 512
+  with a labelmap of 300 images takes 18.6 ms from the scroll to the draw
+  instead of 26 ms in Chrome on a recent Mac, and 18.5 ms instead of 43 ms
+  when a read of the metadata costs 2 µs.
 - **Destroying a tool group disables its tools.**
   `ToolGroupManager.destroyToolGroup` (and `ToolGroupManager.destroy`) calls
   `onSetToolDisabled` of each tool of the group that is enabled, passive or

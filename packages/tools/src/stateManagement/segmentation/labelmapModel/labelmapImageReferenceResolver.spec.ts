@@ -5,6 +5,15 @@ jest.mock('@cornerstonejs/core', () => ({
     getVolume: jest.fn(),
   },
   getEnabledElementByViewportId: jest.fn(),
+  metaData: {
+    get: jest.fn(),
+  },
+  utilities: {
+    imageIdToURI: (imageId) => imageId,
+  },
+  Enums: {
+    MetadataModules: { IMAGE_PLANE: 'imagePlaneModule' },
+  },
 }));
 
 jest.mock('../helpers/getViewportLabelmapRenderMode', () => ({
@@ -31,9 +40,20 @@ jest.mock('./labelmapPrimaryLayerFields', () => ({
 
 import LabelmapImageReferenceResolver from './labelmapImageReferenceResolver';
 
-const { cache, getEnabledElementByViewportId } = jest.requireMock(
+const { cache, getEnabledElementByViewportId, metaData } = jest.requireMock(
   '@cornerstonejs/core'
 );
+
+/**
+ * The image plane of the images of the tests: an image whose id ends with
+ * `-n` lies on the axial plane at z = n, so `lm-a-1` lies on `ref-1`.
+ */
+metaData.get.mockImplementation((type, imageId) => ({
+  rows: 2,
+  columns: 2,
+  imageOrientationPatient: [1, 0, 0, 0, 1, 0],
+  imagePositionPatient: [0, 0, Number(imageId.split('-').pop())],
+}));
 const getViewportLabelmapRenderMode = jest.requireMock(
   '../helpers/getViewportLabelmapRenderMode'
 ).default;
@@ -229,7 +249,7 @@ describe('LabelmapImageReferenceResolver', () => {
       });
       const viewport2 = makeStackViewport({
         id: 'vp-2',
-        getCurrentImageId: jest.fn(() => 'ref-0'),
+        getCurrentImageId: jest.fn(() => 'ref-1'),
         isReferenceViewable: jest.fn(
           (ref) => ref.referencedImageId === 'lm-a-1'
         ),
@@ -247,8 +267,8 @@ describe('LabelmapImageReferenceResolver', () => {
       expect(
         resolver.updateLabelmapSegmentationImageReferences('vp-1', 'seg-1')
       ).toBe('lm-a-0');
-      expect(viewport1.isReferenceViewable).toHaveBeenCalledTimes(2);
-      expect(viewport2.isReferenceViewable).toHaveBeenCalledTimes(2);
+      expect(viewport1.isReferenceViewable).toHaveBeenCalledTimes(1);
+      expect(viewport2.isReferenceViewable).toHaveBeenCalledTimes(1);
     });
   });
 

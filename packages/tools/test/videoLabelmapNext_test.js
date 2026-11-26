@@ -308,6 +308,42 @@ function frameGrayAt(next, [x, y]) {
   );
 }
 
+/**
+ * The number of pixels of a block and the mean and maximum of each of the
+ * red, green and blue values of the frame on display over it.
+ */
+function frameStatsOver(next, { x, y }) {
+  const { scalarData } = next.getImageData();
+  const sum = [0, 0, 0];
+  const max = [-Infinity, -Infinity, -Infinity];
+  let count = 0;
+
+  for (let row = y[0]; row < y[1]; row++) {
+    for (let column = x[0]; column < x[1]; column++) {
+      const offset = (row * TEST_VIDEO.width + column) * 4;
+
+      for (let channel = 0; channel < 3; channel++) {
+        sum[channel] += scalarData[offset + channel];
+        max[channel] = Math.max(max[channel], scalarData[offset + channel]);
+      }
+      count++;
+    }
+  }
+
+  return { count, mean: sum.map((value) => value / count), max };
+}
+
+/** Expects statistics of a block of the frame on display, by channel. */
+function expectFrameStats(stats, expected, frameNumber) {
+  expect(stats.frameNumber).toBe(frameNumber);
+  expect(stats.count.value).toBe(expected.count);
+  expect(stats.mean.value.length).toBe(3);
+  stats.mean.value.forEach((value, channel) =>
+    expect(value).toBeCloseTo(expected.mean[channel], 6)
+  );
+  expect(stats.max.value).toEqual(expected.max);
+}
+
 describe('A labelmap over a direct next video viewport -- ', () => {
   let renderingEngine;
   let videoUrl;
@@ -718,6 +754,54 @@ describe('A labelmap over a direct next video viewport -- ', () => {
     expect(
       toolsUtilities.segmentation.getUniqueSegmentIndices(segmentationId)
     ).toEqual([1, 2]);
+  }, 30000);
+
+  it('gives the statistics of a segment over the pixels of the frame on display, red, green and blue apart', async function () {
+    await addVideoLabelmap(next, {
+      segments: {
+        1: { label: 'Segment 1' },
+        2: { label: 'Segment 2' },
+      },
+    });
+
+    const getStatistics = toolsUtilities.segmentation.getStatistics;
+    const frame6 = await getStatistics({ segmentationId, segmentIndices: 1 });
+
+    expectFrameStats(
+      frame6,
+      frameStatsOver(next, FRAME_6_BLOCK),
+      FRAME_6_BLOCK.frame
+    );
+    expect(frame6.count.value).toBe(20 * 24);
+
+    await goToFrame(next, FRAME_12_BLOCK.frame);
+
+    const frame12 = await getStatistics({
+      segmentationId,
+      segmentIndices: [1, 2],
+      mode: 'individual',
+    });
+
+    expectFrameStats(
+      frame12[2],
+      frameStatsOver(next, FRAME_12_BLOCK),
+      FRAME_12_BLOCK.frame
+    );
+    expect(frame12[2].count.value).toBe(20 * 20);
+  }, 30000);
+
+  it('says that the statistics of a labelmap over a video need a video viewport that shows it', async function () {
+    await addVideoLabelmap(next);
+    segmentation.removeSegmentationRepresentations(next.id, {
+      segmentationId,
+    });
+
+    await expectAsync(
+      toolsUtilities.segmentation.getStatistics({
+        segmentationId,
+        segmentIndices: 1,
+      })
+    ).toBeRejectedWithError(/needs? a video viewport that shows/);
   }, 30000);
 
   it('draws and paints a labelmap of RLE images, one per frame', async function () {

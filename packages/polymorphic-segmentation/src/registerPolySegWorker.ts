@@ -12,20 +12,16 @@ export type PolySegInitOptions = {
 };
 
 /**
- * The default number of instances of the polySeg worker: two, and at most one
- * less than the logical processors of the machine, so the main thread keeps
- * one, but at least one. Measured on the RTSTRUCT of 31 structures of OHIF
- * M79 cut in the two other panes of an MPR: two instances draw the last cut
- * 12 s after the representation is added instead of 16 to 17 s with one, and
- * four do no better, as the largest structure alone takes 7 s; each instance
- * holds about 300 MB more at the peak. The first cut comes as soon with one.
+ * Registers the polySeg worker, one instance by default, as in 5.x: each
+ * instance loads the wasm of the conversions with its first one and holds
+ * about 400 MB more at the peak of a large RTSTRUCT, and a second instance
+ * made at once delays the first cut of a cold start. An application opts into
+ * more with `polySeg.init({ maxWorkerInstances })`. Measured on the RTSTRUCT
+ * of 31 structures of OHIF M79 cut in the two other panes of an MPR (Chrome,
+ * Apple silicon): one instance draws the first cut 1.8 s and the last 16 s
+ * after the representation is added, two 1.8 to 3 s and 12 to 13 s, four
+ * 2 s and 11 to 12 s, as the largest structure alone takes 7 s.
  */
-function getDefaultWorkerCount(): number {
-  const processors = globalThis.navigator?.hardwareConcurrency || 1;
-
-  return Math.max(1, Math.min(2, processors - 1));
-}
-
 export function registerPolySegWorker(userOptions?: PolySegInitOptions) {
   if (registered) {
     return;
@@ -48,7 +44,7 @@ export function registerPolySegWorker(userOptions?: PolySegInitOptions) {
   const workerManager = getWebWorkerManager();
 
   const defaultOptions = {
-    maxWorkerInstances: getDefaultWorkerCount(),
+    maxWorkerInstances: 1,
     autoTerminateOnIdle: {
       enabled: true,
       idleTimeThreshold: 2000,

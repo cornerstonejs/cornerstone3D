@@ -5,9 +5,13 @@ import {
   Enums,
   triggerEvent,
   metaData,
+  getEnabledElementByViewportId,
+  type VideoViewport,
 } from '@cornerstonejs/core';
 import { getActiveSegmentIndex } from '../../stateManagement/segmentation/getActiveSegmentIndex';
 import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
+import { getViewportIdsWithSegmentation } from '../../stateManagement/segmentation/getViewportIdsWithSegmentation';
+import { getCurrentLabelmapImageIdsForViewport } from '../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
 import { getStrategyData } from '../../tools/segmentation/strategies/utils/getStrategyData';
 import type { StrategyData } from '../../tools/segmentation/strategies/utils/getStrategyData';
 import ensureSegmentationVolume from '../../tools/segmentation/strategies/compositions/ensureSegmentationVolume';
@@ -166,7 +170,9 @@ export const prepareStackDataForWorker = (segImageIds) => {
       const refImage = cache.getImage(refImageId);
 
       if (!refImage) {
-        continue;
+        throw new Error(
+          `getStatistics: the image ${refImageId} of the labelmap image ${segImageId} is not in the cache. The frames of a video never are: the statistics of a labelmap over a video need a video viewport that shows the segmentation.`
+        );
       }
 
       const refPixelData = refImage.getPixelData();
@@ -188,6 +194,87 @@ export const prepareStackDataForWorker = (segImageIds) => {
   }
 
   return { segmentationInfo, imageInfo };
+};
+
+/**
+ * The video viewport that shows a segmentation, the first of them when more
+ * do, or undefined. The statistics of a labelmap over a video read the frame
+ * on display of this viewport.
+ */
+export const getVideoViewportOfSegmentation = (
+  segmentationId: string
+): VideoViewport | undefined => {
+  for (const viewportId of getViewportIdsWithSegmentation(segmentationId)) {
+    const viewport = getEnabledElementByViewportId(viewportId)?.viewport;
+
+    if (viewport?.type === Enums.ViewportType.VIDEO) {
+      return viewport as VideoViewport;
+    }
+  }
+};
+
+/**
+ * The data of the worker of the stack statistics for the frame on display of
+ * a video viewport: the labelmap image of that frame, of the labelmap images
+ * of the segmentation (as a stack reads its labelmap images), each paired
+ * with the RGBA pixels of the frame, which the worker reads as red, green and
+ * blue.
+ *
+ * @throws When the frame has no labelmap image, or the frame and its labelmap
+ * image differ in size.
+ */
+export const prepareVideoFrameDataForWorker = (
+  segmentationId: string,
+  viewport: VideoViewport,
+  segImageIds: string[]
+) => {
+  const frameNumber = viewport.getFrameNumber();
+  const segImageIdSet = new Set(segImageIds);
+  const frameSegImageIds = (
+    getCurrentLabelmapImageIdsForViewport(viewport.id, segmentationId) ?? []
+  ).filter((imageId) => segImageIdSet.has(imageId));
+  if (!frameSegImageIds.length) {
+    throw new Error(
+      `getStatistics: frame ${frameNumber} of the video viewport ${viewport.id} has no labelmap image of the segmentation ${segmentationId}.`
+    );
+  }
+
+  const frame = viewport.getImageData();
+  const segmentationInfo = [];
+  const imageInfo = [];
+
+  for (const segImageId of frameSegImageIds) {
+    const segImage = cache.getImage(segImageId);
+    const { origin, direction, spacing, dimensions } =
+      utilities.getImageDataMetadata(segImage);
+    const frameScalarData = frame?.scalarData;
+
+    if (
+      !frameScalarData?.length ||
+      frameScalarData.length !== dimensions[0] * dimensions[1] * 4
+    ) {
+      throw new Error(
+        `getStatistics: frame ${frameNumber} of the video viewport ${viewport.id} has ${
+          frameScalarData?.length ?? 0
+        } RGBA values, and its labelmap image ${segImageId} is ${dimensions[0]} by ${dimensions[1]} pixels.`
+      );
+    }
+
+    segmentationInfo.push({
+      scalarData: segImage.getPixelData(),
+      dimensions,
+      spacing,
+      origin,
+      direction,
+    });
+    imageInfo.push({
+      scalarData: frameScalarData,
+      dimensions,
+      spacing: [spacing[0], spacing[1]],
+    });
+  }
+
+  return { segmentationInfo, imageInfo, frameNumber };
 };
 
 /**

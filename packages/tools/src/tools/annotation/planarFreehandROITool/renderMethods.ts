@@ -80,19 +80,26 @@ function hasImageDataForDraw(
 
 /**
  * Renders a `PlanarFreehandROIAnnotation` that is not currently being drawn or edited.
+ *
+ * @returns Whether it drew: not while the viewport has no image data, and not
+ * for a hole, which its parent contour draws.
  */
 function renderContour(
   enabledElement: Types.IEnabledElement,
   svgDrawingHelper: SVGDrawingHelper,
   annotation: PlanarFreehandROIAnnotation
-): void {
+): boolean {
   // prevent drawing or further calculation in case viewport data is not ready yet
   if (!hasImageDataForDraw(enabledElement, svgDrawingHelper)) {
-    return;
+    return false;
   }
   // Check if the contour is an open contour
   if (annotation.data.contour.closed) {
-    this.renderClosedContour(enabledElement, svgDrawingHelper, annotation);
+    return this.renderClosedContour(
+      enabledElement,
+      svgDrawingHelper,
+      annotation
+    );
   } else {
     // If its an open contour, check i its a U-shaped contour
     if (annotation.data.isOpenUShapeContour) {
@@ -113,6 +120,8 @@ function renderContour(
       this.renderOpenContour(enabledElement, svgDrawingHelper, annotation);
     }
   }
+
+  return true;
 }
 
 /**
@@ -132,14 +141,16 @@ function calculateUShapeContourVectorToPeakIfNotPresent(
 
 /**
  * Renders an closed `PlanarFreehandROIAnnotation` annotation.
+ *
+ * @returns Whether it drew: a hole is drawn by its parent contour.
  */
 function renderClosedContour(
   enabledElement: Types.IEnabledElement,
   svgDrawingHelper: SVGDrawingHelper,
   annotation: PlanarFreehandROIAnnotation
-): void {
+): boolean {
   if (annotation.parentAnnotationUID) {
-    return;
+    return false;
   }
 
   const { viewport } = enabledElement;
@@ -165,6 +176,8 @@ function renderClosedContour(
     allContours,
     options
   );
+
+  return true;
 }
 
 /**
@@ -465,15 +478,17 @@ function renderOpenContourBeingEdited(
 
 /**
  * Renders a point `PlanarFreehandROIAnnotation` annotation by drawing a circle and a crosshair
+ *
+ * @returns Whether it drew: a hole is drawn by its parent contour.
  */
 
 function renderPointContourWithMarker(
   enabledElement: Types.IEnabledElement,
   svgDrawingHelper: SVGDrawingHelper,
   annotation: PlanarFreehandROIAnnotation
-): void {
+): boolean {
   if (annotation.parentAnnotationUID) {
-    return;
+    return false;
   }
   const { viewport } = enabledElement;
   const options = this._getRenderingOptions(enabledElement, annotation);
@@ -527,6 +542,8 @@ function renderPointContourWithMarker(
     allContours,
     options
   );
+
+  return true;
 }
 /**
  * Registers the render methods of various contour states to the tool instance.

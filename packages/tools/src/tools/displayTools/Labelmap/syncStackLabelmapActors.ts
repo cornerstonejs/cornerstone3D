@@ -6,7 +6,6 @@ import type { PlanarViewport } from '@cornerstonejs/core';
 import { triggerSegmentationRender } from '../../../stateManagement/segmentation/SegmentationRenderingEngine';
 import { isSegmentationOverlayCompatible } from '../../../stateManagement/segmentation/helpers/isSegmentationOverlayCompatible';
 import { SegmentationRepresentations } from '../../../enums';
-import { updateLabelmapSegmentationImageReferences } from '../../../stateManagement/segmentation/updateLabelmapSegmentationImageReferences';
 import { getCurrentLabelmapImageIdsForViewport } from '../../../stateManagement/segmentation/getCurrentLabelmapImageIdForViewport';
 import { getLabelmapActorEntries } from '../../../stateManagement/segmentation/helpers/getSegmentationActor';
 import getViewportLabelmapRenderMode from '../../../stateManagement/segmentation/helpers/getViewportLabelmapRenderMode';
@@ -68,11 +67,11 @@ export function getCurrentStackLabelmapImages(
  * viewport (`getCurrentStackLabelmapImages`): a layer that shows the image
  * of another slice gets the new image through `addImages` with its id, which
  * replaces the image and fires no `DISPLAY_SETS_CHANGED`.
- * A video does not run the reference scan of
- * `updateLabelmapSegmentationImageReferences`: each labelmap image of a video
- * lies on the plane of every frame, so the scan matched all of them on each
- * frame, at a cost that grows with the square of the number of frames, and
- * nothing here reads its result.
+ * The labelmap images of the image come from the map of the images of the
+ * stack to their labelmap images, which is made once for the image ids of the
+ * stack and of the labelmap, so a scroll looks its image up; it runs no scan
+ * of the labelmap images (`updateLabelmapSegmentationImageReferences`), whose
+ * answer nothing here reads.
  */
 export function syncStackLabelmapActors(
   viewport: PlanarViewport,
@@ -109,10 +108,6 @@ export function syncStackLabelmapActors(
 
   const isVideo =
     (viewport as Types.IViewport).type === Enums.ViewportType.VIDEO;
-
-  if (!isVideo) {
-    updateLabelmapSegmentationImageReferences(viewport.id, segmentationId);
-  }
 
   const labelmapImages = getCurrentStackLabelmapImages(
     viewport.id,

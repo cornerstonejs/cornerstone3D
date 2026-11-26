@@ -9,6 +9,7 @@ import type {
   Segmentation,
 } from '../../../types/SegmentationStateTypes';
 import type {
+  LabelmapLayer,
   LabelmapSegmentationDataStack,
   LabelmapSegmentationDataVolume,
 } from '../../../types/LabelmapTypes';
@@ -17,7 +18,11 @@ import { ensureLabelmapState } from './normalizeLabelmapSegmentationData';
 import { getLabelmaps } from './labelmapLayerStore';
 import { getLabelmapForSegment } from './labelmapSegmentBindings';
 import { getReferencedImageIdToCurrentImageIdMap } from './labelmapPrimaryLayerFields';
-import { getLabelmapImageIdsForReferencedImageId } from './labelmapImageIdMapping';
+import {
+  StackLabelmapImageReferences,
+  ViewableLabelmapImages,
+  getLabelmapImageIdSources,
+} from './stackLabelmapImageReferences';
 
 type GetSegmentation = (segmentationId: string) => Segmentation | undefined;
 
@@ -43,6 +48,18 @@ class LabelmapImageReferenceResolver {
     string,
     Map<string, string | undefined>
   >();
+  // The labelmap images of the images of the stack of each viewport, by
+  // segmentation, made once for the image ids of the stack and of the
+  // labelmap (see stackLabelmapImageReferences), so a scroll looks its image
+  // up instead of checking every labelmap image against it.
+  private readonly stackImageReferencesBySegmentationId = new Map<
+    string,
+    WeakMap<object, StackLabelmapImageReferences>
+  >();
+  private readonly viewableImagesBySegmentationId = new Map<
+    string,
+    WeakMap<object, ViewableLabelmapImages>
+  >();
 
   constructor(getSegmentation: GetSegmentation) {
     this.getSegmentation = getSegmentation;
@@ -53,11 +70,15 @@ class LabelmapImageReferenceResolver {
     this.labelmapImageIdReferenceMap.clear();
     this.keysBySegmentationId.clear();
     this.completedScanResultsBySegmentationId.clear();
+    this.stackImageReferencesBySegmentationId.clear();
+    this.viewableImagesBySegmentationId.clear();
   }
 
   removeSegmentation(segmentationId: string): void {
     this.stackLabelmapImageIdReferenceMap.delete(segmentationId);
     this.completedScanResultsBySegmentationId.delete(segmentationId);
+    this.stackImageReferencesBySegmentationId.delete(segmentationId);
+    this.viewableImagesBySegmentationId.delete(segmentationId);
     const keys = this.keysBySegmentationId.get(segmentationId);
     if (keys) {
       for (const key of keys) {
@@ -156,11 +177,9 @@ class LabelmapImageReferenceResolver {
       return;
     }
 
-    const labelmapImageIds = this.getLabelmapImageIds(representationData);
     const enabledElement = getEnabledElementByViewportId(viewportId);
     if (
       !enabledElement ||
-      !labelmapImageIds?.length ||
       typeof (enabledElement.viewport as PlanarViewport).getCurrentImageId !==
         'function'
     ) {
@@ -168,22 +187,84 @@ class LabelmapImageReferenceResolver {
     }
 
     const viewport = enabledElement.viewport as PlanarViewport;
-    const scanKey = this.generateScanKey('current', viewport, labelmapImageIds);
-    if (scanKey && this.hasCompletedScan(segmentationId, scanKey)) {
-      return this.getCompletedScanResult(segmentationId, scanKey);
-    }
-
-    const result = this.updateLabelmapSegmentationReferences(
+    const referenceImageId = viewport.getCurrentImageId();
+    const viewableImages = this.getViewableLabelmapImages(
       segmentationId,
       viewport,
-      labelmapImageIds
+      getLabelmapImageIdSources(representationData.Labelmap)
     );
 
-    if (scanKey) {
-      this.markCompletedScan(segmentationId, scanKey, result);
+    if (!referenceImageId || !viewableImages.getLabelmapImageIds().length) {
+      return;
     }
 
-    return result;
+    const viewableImageIds = viewableImages.getViewableImageIds(
+      referenceImageId,
+      viewport
+    );
+
+    viewableImageIds.forEach((labelmapImageId) => {
+      this.stackLabelmapImageIdReferenceMap
+        .get(segmentationId)
+        .set(referenceImageId, labelmapImageId);
+      this.updateLabelmapImageIdReferenceMap({
+        segmentationId,
+        referenceImageId,
+        labelmapImageId,
+      });
+    });
+
+    return viewableImageIds[viewableImageIds.length - 1];
+  }
+
+  /**
+   * The labelmap images of the stack of a viewport for a segmentation, made
+   * again when the image ids of the stack or of the labelmap layers change.
+   */
+  private getStackImageReferences(
+    segmentationId: string,
+    viewport: PlanarViewport,
+    layers: LabelmapLayer[]
+  ): StackLabelmapImageReferences {
+    let byViewport =
+      this.stackImageReferencesBySegmentationId.get(segmentationId);
+
+    if (!byViewport) {
+      byViewport = new WeakMap();
+      this.stackImageReferencesBySegmentationId.set(segmentationId, byViewport);
+    }
+
+    const stackImageIds = viewport.getImageIds();
+    let references = byViewport.get(viewport);
+
+    if (!references?.isFor(stackImageIds, layers)) {
+      references = new StackLabelmapImageReferences(stackImageIds, layers);
+      byViewport.set(viewport, references);
+    }
+
+    return references;
+  }
+
+  private getViewableLabelmapImages(
+    segmentationId: string,
+    viewport: PlanarViewport,
+    sources: ReturnType<typeof getLabelmapImageIdSources>
+  ): ViewableLabelmapImages {
+    let byViewport = this.viewableImagesBySegmentationId.get(segmentationId);
+
+    if (!byViewport) {
+      byViewport = new WeakMap();
+      this.viewableImagesBySegmentationId.set(segmentationId, byViewport);
+    }
+
+    let viewableImages = byViewport.get(viewport);
+
+    if (!viewableImages?.isFor(sources)) {
+      viewableImages = new ViewableLabelmapImages(sources);
+      byViewport.set(viewport, viewableImages);
+    }
+
+    return viewableImages;
   }
 
   /** Signature of one isReferenceViewable scan: the viewport's current image
@@ -210,15 +291,6 @@ class LabelmapImageReferenceResolver {
     return !!this.completedScanResultsBySegmentationId
       .get(segmentationId)
       ?.has(scanKey);
-  }
-
-  private getCompletedScanResult(
-    segmentationId: string,
-    scanKey: string
-  ): string | undefined {
-    return this.completedScanResultsBySegmentationId
-      .get(segmentationId)
-      ?.get(scanKey);
   }
 
   private markCompletedScan(
@@ -262,41 +334,16 @@ class LabelmapImageReferenceResolver {
 
     ensureLabelmapState(segmentation);
 
-    const viewportImageIds = (viewport as PlanarViewport).getImageIds();
-    const currentIndex = viewportImageIds.indexOf(referenceImageId);
-    const labelmapImageIds: string[] = [];
-
-    getLabelmaps(segmentation).forEach((layer) => {
-      const referencedLabelmapImageIds =
-        getLabelmapImageIdsForReferencedImageId(layer, referenceImageId);
-
-      if (referencedLabelmapImageIds.length) {
-        labelmapImageIds.push(...referencedLabelmapImageIds);
-        return;
-      }
-
-      if (currentIndex !== -1 && layer.imageIds?.[currentIndex]) {
-        labelmapImageIds.push(layer.imageIds[currentIndex]);
-        return;
-      }
-
-      layer.imageIds?.some((candidateImageId) => {
-        const viewableImageId = (
-          viewport as PlanarViewport
-        ).isReferenceViewable(
-          { referencedImageId: candidateImageId },
-          { asOverlay: true }
-        );
-
-        if (viewableImageId) {
-          labelmapImageIds.push(candidateImageId);
-        }
-
-        return !!viewableImageId;
-      });
-    });
-
-    const resolvedImageIds = Array.from(new Set(labelmapImageIds));
+    const stackImageReferences = this.getStackImageReferences(
+      segmentationId,
+      viewport as PlanarViewport,
+      getLabelmaps(segmentation) ?? []
+    );
+    const currentIndex = stackImageReferences.getImageIndex(referenceImageId);
+    const resolvedImageIds = stackImageReferences.getLabelmapImageIds(
+      referenceImageId,
+      viewport
+    );
     const key = this.generateMapKey({
       segmentationId,
       referenceImageId,

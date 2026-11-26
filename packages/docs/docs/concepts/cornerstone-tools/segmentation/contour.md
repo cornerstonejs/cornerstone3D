@@ -71,16 +71,30 @@ display and the small ones first, so the viewport fills in structure by
 structure. The viewport cuts again when its plane changes and when the
 contours change.
 
-This needs the polySeg add-on, which converts in two web workers by default
-(one less than the logical processors of the machine when that is fewer);
-`init` of the add-on sets another number before its first conversion:
+This needs the polySeg add-on, which converts in one web worker by default.
+More workers finish a large set sooner but each holds more memory; `init` of
+the add-on sets the number before its first conversion:
 
 ```js
 import * as polySeg from '@cornerstonejs/polymorphic-segmentation';
 
-polySeg.init({ maxWorkerInstances: 1 });
+polySeg.init({ maxWorkerInstances: 2 });
 cornerstoneTools.init({ addons: { polySeg } });
 ```
+
+Measured on an RTSTRUCT of 31 structures (2,265 contours) shown in the
+sagittal and coronal panes of an MPR, in Chrome on a recent Mac, from the
+moment the representation is added:
+
+| Workers | First cut shown | Last cut shown | Memory at the peak (browser total) |
+| ------- | --------------- | -------------- | ---------------------------------- |
+| 1       | 1.8 s           | 16 s           | 2.2 GB                             |
+| 2       | 1.8 to 3 s      | 12 to 13 s     | 2.6 GB                             |
+| 4       | 2 s             | 11 to 12 s     | 3.2 GB                             |
+
+The largest structure alone takes 7 s, so more than two workers gain little
+there. A worker is started at the first conversion that needs it and stops
+after 2 s without one.
 
 A structure whose contours lie on planes that are not parallel, or whose
 conversion to a surface fails, is not cut, and a warning names the
