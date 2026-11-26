@@ -2,7 +2,10 @@
   __esModule: true,
   default: { getImage: () => undefined },
 }));
-jest.mock('../src/init', () => ({ canRenderFloatTextures: () => true }));
+let mockCanRenderFloat = true;
+jest.mock('../src/init', () => ({
+  canRenderFloatTextures: () => mockCanRenderFloat,
+}));
 jest.mock('../src/utilities/sortImageIdsAndGetSpacing', () => ({
   __esModule: true,
   default: (imageIds) => ({
@@ -71,5 +74,11 @@ describe('volume data type from the scaled stored range', () => {
   it('uses Float32 for a non-integer rescale (#2706)', () => {
     expect(dataType(16, 12, 0, 0.001, 0)).toBe('Float32Array');
     expect(dataType(8, 8, 0, 0.5, 0)).toBe('Float32Array');
+  });
+
+  it('uses the stored range when the loader cannot apply a non-integer rescale', () => {
+    mockCanRenderFloat = false;
+    expect(dataType(16, 16, 0, 0.5, -100)).toBe('Uint16Array');
+    mockCanRenderFloat = true;
   });
 });

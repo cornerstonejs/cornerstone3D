@@ -136,9 +136,10 @@ function _determineDataType(
       }
       // A typed array wraps a value out of its range, so the type must hold
       // the scaled range of every stored value, not only the sign.
+      // Without float textures the loader does not apply a non-integer rescale.
       const { min, max } = _getScaledStoredRange(
         volumeMetadata,
-        scalingParameters
+        floatAfterScale ? [{}] : scalingParameters
       );
       if (BitsAllocated === 8 && min >= 0 && max <= 255) {
         return 'Uint8Array';
