@@ -595,7 +595,6 @@ function buildPlanarVolumeSliceBasis(args: {
   const {
     center,
     fitParallelScale,
-    imageIdIndex,
     imageVolume,
     orientation,
     sliceHeightWorld,
@@ -638,6 +637,10 @@ function buildPlanarVolumeSliceBasis(args: {
     viewState?.slice?.kind === 'volumePoint'
       ? viewState.slice.sliceWorldPoint
       : undefined;
+  // No requested slice: the legacy middle slice, counted in view order.
+  const imageIdIndex =
+    args.imageIdIndex ??
+    (volumePoint ? undefined : Math.floor((maxImageIdIndex + 1) / 2));
   const requestedSliceProjection = Math.min(
     max,
     Math.max(
