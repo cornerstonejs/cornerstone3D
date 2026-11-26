@@ -61,6 +61,12 @@ describe('windowLevel conversions', function () {
     });
   });
 
+  it('uses the LINEAR_EXACT bounds for a LINEAR width below 1', () => {
+    expect(toLowHighRange(0.5, 0.5)).toEqual({ lower: 0.25, upper: 0.75 });
+    // W = 1 stays the C.11.2.1.2.1 threshold
+    expect(toLowHighRange(1, 0.5)).toEqual({ lower: 0, upper: 0 });
+  });
+
   it('carries the window unchanged for SIGMOID', () => {
     // The sigmoid transfer function recovers width/center from the range, so
     // the round trip has to be lossless

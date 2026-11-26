@@ -50,6 +50,11 @@ function toWindowLevel(
  *   if x {'<='} c - 0.5 - (w-1)/2 {'=>'} lower bound
  *   if x {'>'} c - 0.5 + (w-1)/2 {'=>'} upper bound
  *
+ * - W {'<'} 1 is not valid for LINEAR (C.11.2.1.2.1 requires w {'>='} 1), so it
+ *   uses the LINEAR_EXACT bounds below, and gives a ramp. W = 1 stays a
+ *   threshold. {@link toWindowLevel} cannot tell this range from a LINEAR
+ *   window of W + 1, so the window readout shows that equivalent window.
+ *
  * LINEAR_EXACT (C.11.2.1.3.2):
  * - Uses:
  *   lower = c - w/2
@@ -82,8 +87,10 @@ function toLowHighRange(
   lower: number;
   upper: number;
 } {
+  const fn = getValidVOILUTFunction(voiLUTFunction);
   if (
-    getValidVOILUTFunction(voiLUTFunction) === VOILUTFunctionType.LINEAR_EXACT
+    fn === VOILUTFunctionType.LINEAR_EXACT ||
+    (fn === VOILUTFunctionType.LINEAR && windowWidth < 1)
   ) {
     // From C.11.2.1.3.2 (linear exact function)
     return {
