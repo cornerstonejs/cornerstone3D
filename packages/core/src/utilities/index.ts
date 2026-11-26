@@ -73,7 +73,7 @@ import { convertVolumeToStackViewport } from './convertVolumeToStackViewport';
 import VoxelManager from './VoxelManager';
 import CompositeVoxelManager from './CompositeVoxelManager';
 import RLEVoxelMap from './RLEVoxelMap';
-import roundNumber, { roundToPrecision } from './roundNumber';
+import roundNumber, { roundNumberTrim, roundToPrecision } from './roundNumber';
 import convertToGrayscale from './convertToGrayscale';
 import { convertColorArrayToRgbString } from './convertColorArrayToRgbString';
 import getViewportImageIds from './getViewportImageIds';
@@ -272,6 +272,7 @@ export {
   convertStackToVolumeViewport,
   convertVolumeToStackViewport,
   roundNumber,
+  roundNumberTrim,
   roundToPrecision,
   getViewportImageIds,
   getRandomSampleFromArray,

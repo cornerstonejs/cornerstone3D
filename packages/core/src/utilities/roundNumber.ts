@@ -9,10 +9,6 @@ import { EPSILON } from '../constants';
  * * Values between 10 and 99 show 1 decimal point
  * * Values between 1 and 9 show 2 decimal points
  *
- * Trailing zeros after the decimal point are removed, and so is a decimal
- * point with no digits after it: 1 gives `1`, 12.30 gives `12.3`. A value that
- * rounds to zero gives `0`, never `-0`.
- *
  * @param value - to return a fixed measurement value from
  * @param precision - defining how many digits after 1..9 are desired
  */
@@ -45,7 +41,26 @@ function roundNumber(
               : absValue >= 0.001
                 ? precision + 3
                 : precision + 4;
-  const text = value.toFixed(fixedPrecision);
+  return value.toFixed(fixedPrecision);
+}
+
+/**
+ * The same rounding as roundNumber, and then the trailing zeros after the
+ * decimal point are removed, and so is a decimal point with no digits after
+ * it: 1 gives `1`, 12.30 gives `12.3`, and roundNumberTrim(400, 5) gives `400`.
+ * A value that rounds to zero gives `0`, never `-0`.
+ *
+ * @param value - to return a measurement value from
+ * @param precision - defining how many digits after 1..9 are desired
+ */
+function roundNumberTrim(
+  value: string | number | (string | number)[],
+  precision = 2
+): string {
+  if (Array.isArray(value)) {
+    return value.map((v) => roundNumberTrim(v, precision)).join(', ');
+  }
+  const text = roundNumber(value, precision);
   // toFixed gives exponential text from 1e21; trimming would cut its exponent.
   const trimmed =
     text.includes('.') && !text.includes('e')
@@ -63,5 +78,5 @@ function roundToPrecision(value) {
   return Math.round(value / EPSILON) * EPSILON;
 }
 
-export { roundToPrecision };
+export { roundToPrecision, roundNumberTrim };
 export default roundNumber;
