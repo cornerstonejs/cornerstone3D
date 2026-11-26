@@ -13,6 +13,9 @@ import { gpuSettingsForRender } from '../../../utilities/gpuSettingsPresets';
 import type { EffectiveRenderBackend } from '../../../types/RenderBackendRegistry';
 import { isValidVolume } from '../../../utilities/isValidVolume';
 import { getOrientationFromScanAxisNormal } from '../../helpers/getCameraVectors';
+import { MPR_CAMERA_VALUES } from '../../../constants';
+import { isAcquisitionPlaneNormal } from '../../../utilities/isAcquisitionPlaneNormal';
+import type { Mat3, Point3 } from '../../../types';
 import { resolveSlabThickness } from './planarVolumeSliceBlendMode';
 import type {
   PlanarViewState,
@@ -259,6 +262,15 @@ export function selectPlanarRenderPath(
   return defaultPlanarRenderPathDecisionService.select(dataSet, options);
 }
 
+/**
+ * The standard orientation that the acquired frames show, or undefined.
+ *
+ * The frames show a standard orientation only when `isAcquisitionPlaneNormal`
+ * accepts the standard view plane normal for the frame geometry. An oblique
+ * series (for example a sagittal MR with a 13 degree tilt) gets undefined, so
+ * a request for that standard orientation reformats to the true axes, as the
+ * legacy volume viewport does.
+ */
 export function getPlanarAcquisitionOrientation(
   imageIds: string[]
 ): PlanarViewState['orientation'] | undefined {
@@ -299,6 +311,31 @@ export function getPlanarAcquisitionOrientation(
     orientation !== OrientationAxis.AXIAL &&
     orientation !== OrientationAxis.CORONAL &&
     orientation !== OrientationAxis.SAGITTAL
+  ) {
+    return;
+  }
+
+  const {
+    rows = 1,
+    columns = 1,
+    rowPixelSpacing = 1,
+    columnPixelSpacing = 1,
+  } = imagePlaneModule;
+  const sliceSpacing =
+    imagePlaneModule.spacingBetweenSlices ||
+    imagePlaneModule.sliceThickness ||
+    1;
+  const frameGeometry = {
+    direction: [...rowVec, ...colVec, ...scanAxisNormal] as unknown as Mat3,
+    dimensions: [columns, rows, 1] as Point3,
+    spacing: [columnPixelSpacing, rowPixelSpacing, sliceSpacing] as Point3,
+  };
+
+  if (
+    !isAcquisitionPlaneNormal(
+      frameGeometry,
+      MPR_CAMERA_VALUES[orientation].viewPlaneNormal
+    )
   ) {
     return;
   }
