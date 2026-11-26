@@ -317,7 +317,14 @@ class ProgressiveRetrieveImagesInstance {
     }
   }
 
-  /** Interleaves the values according to the stages definition */
+  /**
+   * Interleaves the values according to the stages definition. A position
+   * between 0 and 1 is a fraction of the list, rounded to the nearest image,
+   * so the position 0.5 is the image `floor(length / 2)`: the middle image
+   * whose range gives the default window of a volume without a window in its
+   * metadata (`getDefaultVolumeVOIRange`), which then waits for the first
+   * request of the volume only.
+   */
   protected createStageRequests() {
     const interleaved = new Array<ProgressiveRequest>();
     // Maps image id to the LAST progressive request - to allow tail append
@@ -328,7 +335,7 @@ class ProgressiveRetrieveImagesInstance {
         position < 0
           ? this.imageIds.length + position
           : position < 1
-            ? Math.floor((this.imageIds.length - 1) * position)
+            ? Math.round((this.imageIds.length - 1) * position)
             : position;
       const imageId = this.imageIds[index];
       if (!imageId) {

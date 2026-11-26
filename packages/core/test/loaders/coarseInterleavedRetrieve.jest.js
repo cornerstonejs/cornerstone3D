@@ -44,7 +44,7 @@ function loadStages(imageCount, stages, afterStage) {
   stages.forEach((stage, stageIndex) => {
     const indices = stage.positions
       ? stage.positions.map((p) =>
-          p < 0 ? imageCount + p : Math.floor((imageCount - 1) * p)
+          p < 0 ? imageCount + p : Math.round((imageCount - 1) * p)
         )
       : decimate(new Array(imageCount), stage.decimate, stage.offset);
     indices.reverse().forEach((index) => deliver(index, stage));

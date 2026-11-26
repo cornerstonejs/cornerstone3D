@@ -255,6 +255,11 @@ abstract class BaseViewport<
   /** The newest `addDisplaySet`, which the next one waits for. */
   private pendingAddDisplaySet: Promise<unknown> = Promise.resolve();
   /**
+   * The newest `setDisplaySets` while it is pending, which an
+   * `addDisplaySet` made after it waits for.
+   */
+  private pendingSetDisplaySets?: Promise<unknown>;
+  /**
    * The display sets and the source of the last DISPLAY_SETS_CHANGED, which
    * the next one compares with to say what was removed and whether the
    * source changed.
@@ -294,6 +299,7 @@ abstract class BaseViewport<
     // as the legacy viewports allow, so they must keep `this`.
     this.canvasToWorld = this.canvasToWorld.bind(this);
     this.worldToCanvas = this.worldToCanvas.bind(this);
+    this.setDisplaySets = this.keepPendingSetDisplaySets(this.setDisplaySets);
   }
 
   // ====================================================================
@@ -372,13 +378,14 @@ abstract class BaseViewport<
   }
 
   /**
-   * Runs one `addDisplaySet` after the `addDisplaySet` calls of this viewport
-   * that started before it, so that calls that race mount in call order and
-   * each one sees what the earlier ones bound. A `setDisplaySets` or a
-   * `destroy` that starts while the call waits or mounts ends it, as a newer
-   * `setDisplaySets` ends an older one: the call resolves at once, binds
-   * nothing and fires nothing. `add` gets the check of that end and its
-   * signal, which aborts at that moment.
+   * Runs one `addDisplaySet` after the `setDisplaySets` and the
+   * `addDisplaySet` calls of this viewport that started before it, so that
+   * the calls take effect in call order and each one sees what the earlier
+   * ones bound: an add made while a `setDisplaySets` loads adds to its
+   * result. A `setDisplaySets` or a `destroy` that starts while the call
+   * waits or mounts ends it, as a newer `setDisplaySets` ends an older one:
+   * the call resolves at once, binds nothing and fires nothing. `add` gets
+   * the check of that end and its signal, which aborts at that moment.
    */
   protected queueAddDisplaySet(
     add: (isSuperseded: () => boolean, signal: AbortSignal) => Promise<void>
@@ -386,13 +393,40 @@ abstract class BaseViewport<
     const callId = this.setDisplaySetsCallId;
     const { signal } = this.setDisplaySetsAbort;
     const isSuperseded = () => callId !== this.setDisplaySetsCallId;
-    const run = settledOrAborted(this.pendingAddDisplaySet, signal).then(() =>
+    const earlierCalls = this.pendingSetDisplaySets
+      ? Promise.all([this.pendingSetDisplaySets, this.pendingAddDisplaySet])
+      : this.pendingAddDisplaySet;
+    const run = settledOrAborted(earlierCalls, signal).then(() =>
       isSuperseded() ? undefined : add(isSuperseded, signal)
     );
 
     this.pendingAddDisplaySet = run.catch(() => undefined);
 
     return run;
+  }
+
+  /**
+   * Wraps the `setDisplaySets` of the family, which each family writes, so
+   * that the viewport holds the promise of the newest call for
+   * `queueAddDisplaySet`, until it settles (also when it rejects).
+   */
+  private keepPendingSetDisplaySets(
+    setDisplaySets: this['setDisplaySets']
+  ): this['setDisplaySets'] {
+    return (...entries) => {
+      const run = setDisplaySets.apply(this, entries);
+      const pending = run
+        .catch(() => undefined)
+        .then(() => {
+          if (this.pendingSetDisplaySets === pending) {
+            this.pendingSetDisplaySets = undefined;
+          }
+        });
+
+      this.pendingSetDisplaySets = pending;
+
+      return run;
+    };
   }
 
   /**

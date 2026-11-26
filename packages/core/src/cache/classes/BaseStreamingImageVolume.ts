@@ -53,6 +53,8 @@ export class BaseStreamingImageVolume
   private markOnImageCached: ((event) => void) | null = null;
   /** Increments for each load, so the batches of an older load stop. */
   private takeInGeneration = 0;
+  /** True while an IMAGE_VOLUME_MODIFIED waits for its microtask. */
+  private volumeModifiedPending = false;
 
   loadStatus: {
     loaded: boolean;
@@ -160,6 +162,7 @@ export class BaseStreamingImageVolume
       }
     }
     if (framesProcessed === totalNumFrames) {
+      this.flushVolumeModified();
       loadStatus.callbacks.forEach((callback) => callback(evt));
 
       const eventDetail = {
@@ -184,7 +187,6 @@ export class BaseStreamingImageVolume
   ) {
     const frameIndex = this.imageIdIndexToFrameIndex(imageIdIndex);
     const { cachedFrames, numFrames, totalNumFrames } = this;
-    const { FrameOfReferenceUID } = this.metadata;
     // `cachedFrames` holds one entry for each image id, and not for each frame:
     // the frames of the dimension groups of a dynamic volume share one index.
     const currentStatus = cachedFrames[imageIdIndex];
@@ -216,14 +218,7 @@ export class BaseStreamingImageVolume
       this.recordFrameDelivery(frameIndex, imageQualityStatus);
     }
 
-    const eventDetail = {
-      FrameOfReferenceUID,
-      volumeId: this.volumeId,
-      numberOfFrames: numFrames,
-      framesProcessed: this.framesProcessed,
-    };
-
-    triggerEvent(eventTarget, Events.IMAGE_VOLUME_MODIFIED, eventDetail);
+    this.queueVolumeModified();
 
     if (complete && this.framesProcessed === this.totalNumFrames) {
       this.loadStatus.loaded = true;
@@ -246,6 +241,41 @@ export class BaseStreamingImageVolume
     if (this.loadStatus.loaded) {
       this.loadStatus.callbacks = [];
     }
+  }
+
+  /**
+   * Fires IMAGE_VOLUME_MODIFIED once for the deliveries of one task: an image
+   * and the copies of it that a progressive load puts into the frames near
+   * it, or a batch of the images that the cache already held. The event
+   * fires in a microtask, before any render, so a listener still sees each
+   * change before it is drawn, once instead of once for each frame.
+   */
+  private queueVolumeModified(): void {
+    if (this.volumeModifiedPending) {
+      return;
+    }
+
+    this.volumeModifiedPending = true;
+    queueMicrotask(() => this.flushVolumeModified());
+  }
+
+  /**
+   * Fires the IMAGE_VOLUME_MODIFIED that waits, if any, with the state of the
+   * load now. The end of a load calls it before LOADING_COMPLETED, so the
+   * last change comes before the end, as each delivery did.
+   */
+  protected flushVolumeModified(): void {
+    if (!this.volumeModifiedPending) {
+      return;
+    }
+
+    this.volumeModifiedPending = false;
+    triggerEvent(eventTarget, Events.IMAGE_VOLUME_MODIFIED, {
+      FrameOfReferenceUID: this.metadata.FrameOfReferenceUID,
+      volumeId: this.volumeId,
+      numberOfFrames: this.numFrames,
+      framesProcessed: this.framesProcessed,
+    });
   }
 
   /**

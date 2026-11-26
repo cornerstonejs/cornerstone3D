@@ -975,11 +975,26 @@ export default class CompositeVoxelManager<T> implements IVoxelManager<T> {
    * selection rule applies to a read through the result. A render path does
    * this when it draws the sub-resolution data, and this is the only way to
    * reach a statistic that a default selection does not consider.
+   *
+   * A representation of exactly the same grid is found without its key, as
+   * the record of every delivery of a load asks for the grid of the volume:
+   * equal numbers give equal keys, and the keys of the representations are
+   * unique.
    */
   public getRepresentation(
     grid: VoxelGrid,
     statistic: VoxelStatistic = VoxelStatistics.Average
   ): VoxelRepresentation<T> {
+    const sameGrid = this.representations.find(
+      (candidate) =>
+        candidate.statistic === statistic &&
+        voxelGridsEqual(candidate.grid, grid, 0)
+    );
+
+    if (sameGrid) {
+      return sameGrid;
+    }
+
     const key = voxelGridKey(grid, statistic);
 
     return this.representations.find(

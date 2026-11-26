@@ -249,12 +249,19 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
   }
 
   /**
-   * Returns the displayed size (in device pixels) of a viewport's container.
+   * Returns the displayed size (in device pixels) of a viewport's container:
+   * the size of its box times the device pixel ratio, rounded to whole
+   * pixels, the one rule by which the enable path sizes the canvas
+   * (`updateCanvasSizeAndAspectRatio`) and the tiled engine sizes every
+   * canvas. A rounded CSS size (`clientWidth`) differs from it by a pixel
+   * where the box is not a whole number of device pixels, and the first
+   * resize then drew the viewport at another size than its first frame.
    *
    * The on-screen canvas of a viewport returned by
    * getOrCreateCanvas (the .cornerstone-canvas / VTK target) can report
-   * clientWidth/Height === 0 when the CPU render path is active and that canvas
-   * is hidden in favor of the CPU canvas. Measuring from the viewport element
+   * a size of 0 when the CPU render path is active and that canvas is hidden
+   * in favor of the CPU canvas. Measuring the box that holds the canvas (the
+   * viewport element of `getOrCreateCanvas`, whose size the canvas takes)
    * instead always reflects the real container size, so native viewports are
    * detected on container resize and their resize() (which refits the active
    * CPU/VTK canvas) actually runs.
@@ -264,10 +271,12 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     displayedHeight: number;
   } {
     const devicePixelRatio = window.devicePixelRatio || 1;
-    const sizeSource = vp.element;
+    const sizeSource = vp.canvas?.parentElement ?? vp.element;
+    const { width, height } = sizeSource.getBoundingClientRect();
+
     return {
-      displayedWidth: Math.round(sizeSource.clientWidth * devicePixelRatio),
-      displayedHeight: Math.round(sizeSource.clientHeight * devicePixelRatio),
+      displayedWidth: Math.round(width * devicePixelRatio),
+      displayedHeight: Math.round(height * devicePixelRatio),
     };
   }
 

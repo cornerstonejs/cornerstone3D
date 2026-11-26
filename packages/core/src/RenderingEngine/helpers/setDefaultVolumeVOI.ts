@@ -9,11 +9,11 @@ import vtkColorTransferFunction from '@kitware/vtk.js/Rendering/Core/ColorTransf
 import { loadAndCacheImage } from '../../loaders/imageLoader';
 import * as metaData from '../../metaData';
 import * as windowLevel from '../../utilities/windowLevel';
-import { MetadataModules, RequestType } from '../../enums';
+import { ImageQualityStatus, MetadataModules, RequestType } from '../../enums';
 import cache from '../../cache/cache';
 
 const PRIORITY = 0;
-const REQUEST_TYPE = RequestType.Prefetch;
+const REQUEST_TYPE = RequestType.Interaction;
 
 /**
  * It sets the default window level of an image volume based on the VOI.
@@ -72,8 +72,11 @@ export async function getDefaultVolumeVOIRange(
     imageVolume.imageIds.length &&
     shouldUseImageIdsForVOI(imageVolume)
   ) {
-    voi = await getVOIFromMiddleSliceMinMax(imageVolume);
-    voi = handlePreScaledVolume(imageVolume, voi);
+    voi = handlePreScaledVolume(imageVolume, undefined);
+    voi ??= handlePreScaledVolume(
+      imageVolume,
+      await getVOIFromMiddleSliceMinMax(imageVolume)
+    );
   }
 
   return voi;
@@ -222,24 +225,17 @@ async function getVOIFromMiddleSliceMinMax(
     },
   };
 
-  // Loading the middle slice image for a volume has two scenarios, the first one is that
-  // uses the same volumeLoader which might not resolve to an image (since for performance
-  // reasons volumes' pixelData is set via offset and length on the volume arrayBuffer
-  // when each slice is loaded). The second scenario is that the image might not reach
-  // to the volumeLoader, and an already cached image (with Image object) is used
-  // instead. For the first scenario, we use the arrayBuffer of the volume to get the correct
-  // slice for the imageScalarData, and for the second scenario we use the getPixelData
-  // on the Cornerstone IImage object to get the pixel data.
-  // Note: we don't want to use the derived or generated images for setting the
-  // default VOI, because they are not the original. This is ugly but don't
-  // know how to do it better.
+  // A derived volume takes the image of its cache as it is. A streaming
+  // volume reads the image that it shows: it reads its frames from the image
+  // cache, so the image of a frame that it delivered, or its own pending
+  // request for that image, gives the values that it draws. A second request
+  // of an image that the volume loads would come after every request of its
+  // retrieve stages and hold the mount until the whole volume has loaded.
+  // Any other volume loads the image again with the scaling of now.
   let image = cache.getImage(imageId);
 
   if (!imageVolume.referencedImageIds?.length) {
-    // we should ignore the cache here,
-    // since we want to load the image from with the most
-    // recent preScale settings
-    image = await loadAndCacheImage(imageId, { ...options, ignoreCache: true });
+    image = await getImageOfVolume(imageVolume, imageIdIndex, options);
   }
 
   // Get the min and max pixel values of the middle slice
@@ -259,6 +255,48 @@ async function getVOIFromMiddleSliceMinMax(
     lower: min as number,
     upper: max as number,
   };
+}
+
+/**
+ * The middle image of a volume with data of its own: of a streaming volume
+ * (a volume with a load status, which loads its images itself), the image of
+ * the cache when the volume delivered that frame, else the image of its
+ * pending request; else a new request of the image. A volume without a load
+ * status answers every frame as delivered, so it takes the new request.
+ */
+async function getImageOfVolume(
+  imageVolume: IImageVolume,
+  imageIdIndex: number,
+  options
+) {
+  const imageId = imageVolume.imageIds[imageIdIndex];
+  const streamingVolume = imageVolume as IImageVolume & {
+    getImageQuality?: (index: number) => ImageQualityStatus | undefined;
+    loadStatus?: { loading?: boolean };
+  };
+  const delivered =
+    Boolean(streamingVolume.loadStatus) &&
+    streamingVolume.getImageQuality?.(imageIdIndex) >=
+      ImageQualityStatus.SUBRESOLUTION;
+  const cachedImage =
+    delivered && cache.getImage(imageId, ImageQualityStatus.SUBRESOLUTION);
+
+  if (cachedImage) {
+    return cachedImage;
+  }
+
+  const pendingImage = streamingVolume.loadStatus?.loading
+    ? await cache.getImageLoadObject(imageId)?.promise.catch(() => undefined)
+    : undefined;
+
+  if (
+    pendingImage &&
+    !(pendingImage.imageQualityStatus < ImageQualityStatus.SUBRESOLUTION)
+  ) {
+    return pendingImage;
+  }
+
+  return loadAndCacheImage(imageId, { ...options, ignoreCache: true });
 }
 
 function _isCurrentImagePTPrescaled(modality, imageVolume) {

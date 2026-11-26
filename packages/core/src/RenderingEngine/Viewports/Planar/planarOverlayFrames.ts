@@ -143,6 +143,100 @@ function holdsOwnFrames(
   );
 }
 
+/** The largest number of frames of a plane that a delivery key states. */
+const MAX_KEYED_FRAMES = 4;
+
+/**
+ * The frames that a plane, and the slab around it, reads of a volume that
+ * records its deliveries: the continuous frame indices `low` to `high` that
+ * it meets, the frames `first` to `last` that a sample reads, or `outside`
+ * when the plane misses the volume. Undefined for a volume that records no
+ * deliveries or a camera without a plane.
+ */
+function getPlaneFrames(
+  volume: IImageVolume,
+  camera: { focalPoint?: Point3; viewPlaneNormal?: Point3 } | undefined,
+  slabThickness: number
+):
+  | { outside: boolean; first: number; last: number; low: number; high: number }
+  | undefined {
+  if (
+    !camera?.focalPoint ||
+    !camera.viewPlaneNormal ||
+    !volume?.imageData ||
+    !volume.getVoxelQuality
+  ) {
+    return;
+  }
+
+  const frames = volume.dimensions[2];
+  const [low, high] = getFrameIndexRange(
+    volume,
+    camera.focalPoint,
+    camera.viewPlaneNormal,
+    slabThickness
+  );
+
+  return {
+    outside: high < -0.5 || low > frames - 0.5,
+    first: Math.max(0, Math.floor(low + FRAME_INDEX_EPSILON)),
+    last: Math.min(frames - 1, Math.ceil(high - FRAME_INDEX_EPSILON)),
+    low,
+    high,
+  };
+}
+
+/**
+ * A key of the deliveries of the frames that a plane reads of a streaming
+ * volume: the record of each frame (its quality and whether data is
+ * missing). While the key stays the same, a sample of the plane gives the
+ * same picture, as a frame holds new data only with a new record. Undefined
+ * where no key is kept: a volume that records no deliveries, or a plane that
+ * reads more than MAX_KEYED_FRAMES frames (a sagittal, coronal or oblique
+ * plane, a thick slab), whose picture changes with most deliveries.
+ *
+ * @param volume - The volume of the layer
+ * @param camera - The plane of the view
+ * @param slabThickness - The slab of the layer, in world units, or 0
+ */
+export function getPlanarFrameDeliveryKey(
+  volume: IImageVolume,
+  camera: { focalPoint?: Point3; viewPlaneNormal?: Point3 } | undefined,
+  slabThickness = 0
+): string | undefined {
+  const planeFrames = getPlaneFrames(volume, camera, slabThickness);
+
+  if (!planeFrames) {
+    return;
+  }
+
+  if (planeFrames.outside) {
+    return 'outside';
+  }
+
+  const { first, last } = planeFrames;
+
+  if (last - first + 1 > MAX_KEYED_FRAMES) {
+    return;
+  }
+
+  const records: string[] = [];
+
+  for (let frame = first; frame <= last; frame++) {
+    const record = volume.getVoxelQuality({
+      region: boundsOfFrames(volume, frame, frame),
+    });
+
+    if (!record) {
+      return;
+    }
+
+    records.push(`${frame}:${record.status}:${record.missing}`);
+  }
+
+  return records.join('|');
+}
+
 /**
  * What an overlay layer of a volume may draw of the plane of a camera (see
  * {@link PlanarOverlayFrameState}).
@@ -162,29 +256,14 @@ export function getPlanarOverlayFrameState(
   camera: { focalPoint?: Point3; viewPlaneNormal?: Point3 } | undefined,
   slabThickness = 0
 ): PlanarOverlayFrameState {
-  if (
-    !camera?.focalPoint ||
-    !camera.viewPlaneNormal ||
-    !volume?.imageData ||
-    !volume.getVoxelQuality
-  ) {
+  const planeFrames = getPlaneFrames(volume, camera, slabThickness);
+
+  if (!planeFrames || planeFrames.outside) {
     return 'ready';
   }
 
+  const { first, last, low, high } = planeFrames;
   const frames = volume.dimensions[2];
-  const [low, high] = getFrameIndexRange(
-    volume,
-    camera.focalPoint,
-    camera.viewPlaneNormal,
-    slabThickness
-  );
-
-  if (high < -0.5 || low > frames - 0.5) {
-    return 'ready';
-  }
-
-  const first = Math.max(0, Math.floor(low + FRAME_INDEX_EPSILON));
-  const last = Math.min(frames - 1, Math.ceil(high - FRAME_INDEX_EPSILON));
 
   if (holdsOwnFrames(volume, first, last)) {
     return 'ready';

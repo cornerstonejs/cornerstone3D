@@ -271,7 +271,8 @@ class VolumeViewport3D extends BaseViewport<
     }>
   ): Promise<void> {
     const requestId = ++this.setDataRequestId;
-    const isStale = () => requestId !== this.setDataRequestId;
+    const isSuperseded = this.startSetDisplaySets();
+    const isStale = () => requestId !== this.setDataRequestId || isSuperseded();
     const staged: Volume3DStagedLoad[] = [];
 
     for (const { displaySetId, options = {} } of entries) {
@@ -358,7 +359,10 @@ class VolumeViewport3D extends BaseViewport<
    * source (the base rule, `resolveAddRole`). A camera that was written while
    * the viewport showed nothing, as a reset on a resize does, is not applied
    * over that fit; its projection stays. The legacy 3D viewport reset its
-   * camera at `setVolumes` in the same way.
+   * camera at `setVolumes` in the same way. The calls take effect in call
+   * order: an add made while a `setDisplaySets` or another add is pending
+   * waits for it, and a `setDisplaySets` that starts later ends it
+   * (`queueAddDisplaySet`).
    *
    * @param displaySetId - Logical display set id to add.
    * @param options - The mount options of the display set.
@@ -367,14 +371,21 @@ class VolumeViewport3D extends BaseViewport<
     displaySetId: string,
     options: Volume3DMountOptions = {}
   ): Promise<void> {
-    const mounted = await this.mountDisplaySet(displaySetId, {
-      ...options,
-      role: this.resolveAddRole(displaySetId, options.role),
-    });
+    return this.queueAddDisplaySet(async (isSuperseded) => {
+      const mounted = await this.mountDisplaySet(
+        displaySetId,
+        {
+          ...options,
+          role: this.resolveAddRole(displaySetId, options.role),
+        },
+        undefined,
+        isSuperseded
+      );
 
-    if (mounted) {
-      this.triggerDisplaySetsChanged([displaySetId]);
-    }
+      if (mounted) {
+        this.triggerDisplaySetsChanged([displaySetId]);
+      }
+    });
   }
 
   /**
@@ -416,7 +427,8 @@ class VolumeViewport3D extends BaseViewport<
   private async mountDisplaySet(
     displaySetId: string,
     volumeOptions: Volume3DMountOptions,
-    staged?: Volume3DStagedLoad
+    staged?: Volume3DStagedLoad,
+    isSuperseded?: () => boolean
   ): Promise<boolean> {
     if (this.isDestroyed) {
       throw new Error('Viewport has been destroyed');
@@ -451,7 +463,12 @@ class VolumeViewport3D extends BaseViewport<
     let added = false;
 
     try {
-      added = await this.addLoadedData(displaySetId, data, dataOptions);
+      added = await this.addLoadedData(
+        displaySetId,
+        data,
+        dataOptions,
+        isSuperseded
+      );
     } finally {
       if (!added) {
         restoreAppearance();

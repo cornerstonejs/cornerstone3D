@@ -56,7 +56,10 @@ import {
 } from '../renderingFidelity';
 import { getRenderingCapabilities } from '../../../utilities/renderingCapabilities';
 import { canFilterFloatTextures } from '../../vtkClasses/floatLinearFilter';
-import { getPlanarOverlayFrameState } from './planarOverlayFrames';
+import {
+  getPlanarFrameDeliveryKey,
+  getPlanarOverlayFrameState,
+} from './planarOverlayFrames';
 import type { PlanarOverlayFrameState } from './planarOverlayFrames';
 import { resolveSlabThickness } from './planarVolumeSliceBlendMode';
 
@@ -80,6 +83,11 @@ type CpuSliceMount = PlanarSlicePlaneMoves & {
   cancelRestWork?: () => void;
   /** What the layer may draw of the plane of the last update. */
   overlayFrames?: PlanarOverlayFrameState;
+  /**
+   * The key of the deliveries of the frames of the plane of the last update
+   * (`getPlanarFrameDeliveryKey`), when one is kept.
+   */
+  deliveryKey?: string;
 };
 
 /**
@@ -219,11 +227,17 @@ export class VtkCpuSliceRenderPath
    * Listens for new voxel data of the volume and for a change of its active
    * time point, and samples the visible slice again for each. While the
    * volume loads, the samples are at least CPU_SLICE_LOADING_UPDATE_MS
-   * apart. Any other change (an edit of the voxels, the end of the load, a new
-   * time point) samples at the next animation frame. A change of the texture
-   * limits does not concern this path, which holds no 3D texture. The load
-   * callback of the volume can come after the listeners are removed; it then
-   * does nothing.
+   * apart. Where the frames of the plane are few enough to keep their key
+   * (`getPlanarFrameDeliveryKey`), a delivery that leaves them as they were
+   * (a copy into a frame that the plane does not read) samples nothing, and
+   * one that changes them samples at the next animation frame, so the own
+   * frame of the plane shows as soon as it arrives; the kept slices are
+   * stale all the same, so a move to another plane samples it again. Any other
+   * change (an edit of the voxels, the end of the load, a new time point)
+   * samples at the next animation frame. A change of the texture limits does
+   * not concern this path, which holds no 3D texture. The load callback of
+   * the volume can come after the listeners are removed; it then does
+   * nothing.
    *
    * @returns the function that removes the listeners
    */
@@ -252,7 +266,17 @@ export class VtkCpuSliceRenderPath
           eventType === Events.IMAGE_VOLUME_MODIFIED &&
           isVolumeLoading(rendering.imageVolume)
         ) {
-          updates.soon();
+          const deliveryKey = getCpuSliceDeliveryKey(
+            mount,
+            getPlanarRenderPathActiveSourceICamera(mount.ctx)
+          );
+
+          if (deliveryKey === undefined) {
+            updates.soon();
+          } else if (deliveryKey !== mount.deliveryKey) {
+            updates.now();
+          }
+
           return;
         }
 
@@ -384,6 +408,7 @@ export class VtkCpuSliceRenderPath
     cancelRestWork(mount);
     recordPlaneMove(mount, camera);
     mount.overlayFrames = getCpuSliceOverlayFrames(mount, camera);
+    mount.deliveryKey = getCpuSliceDeliveryKey(mount, camera);
 
     if (mount.overlayFrames === 'empty') {
       this.drawSlice(mount, camera, undefined);
@@ -505,6 +530,20 @@ function getCpuSliceOverlayFrames(
   }
 
   return getPlanarOverlayFrameState(
+    rendering.imageVolume,
+    camera,
+    resolveSlabThickness(rendering.appearance?.slabThickness)
+  );
+}
+
+/** The key of the deliveries of the frames that the plane of a camera reads. */
+function getCpuSliceDeliveryKey(
+  mount: CpuSliceMount,
+  camera: PlanarResolvedICamera | undefined
+): string | undefined {
+  const { rendering } = mount;
+
+  return getPlanarFrameDeliveryKey(
     rendering.imageVolume,
     camera,
     resolveSlabThickness(rendering.appearance?.slabThickness)

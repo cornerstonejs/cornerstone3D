@@ -168,7 +168,9 @@ export default class WSIViewport extends BaseViewport<
    * the slides on display as they are. Without a `role` it is the source on
    * a viewport that shows nothing, else an overlay over the slides on
    * display, with the view of the source. DISPLAY_SETS_CHANGED fires once
-   * it is mounted.
+   * it is mounted. The calls take effect in call order: an add made while a
+   * `setDisplaySets` or another add is pending waits for it, and a
+   * `setDisplaySets` that starts later ends it (`queueAddDisplaySet`).
    *
    * @param displaySetId - The slide display set to mount.
    * @param options - The options of its mount, as for an entry of
@@ -178,21 +180,24 @@ export default class WSIViewport extends BaseViewport<
     displaySetId: string,
     options: WSIMountOptions = {}
   ): Promise<void> {
-    this.syncCameraFromView();
+    return this.queueAddDisplaySet(async (isSuperseded) => {
+      this.syncCameraFromView();
 
-    const bound = await this.mountSlide(
-      displaySetId,
-      options,
-      this.resolveAddRole(displaySetId, options.role)
-    );
+      const bound = await this.mountSlide(
+        displaySetId,
+        options,
+        this.resolveAddRole(displaySetId, options.role),
+        isSuperseded
+      );
 
-    if (!bound) {
-      return;
-    }
+      if (!bound) {
+        return;
+      }
 
-    this.syncCameraFromView();
-    this.applyVOIToRendering();
-    this.triggerDisplaySetsChanged([displaySetId]);
+      this.syncCameraFromView();
+      this.applyVOIToRendering();
+      this.triggerDisplaySetsChanged([displaySetId]);
+    });
   }
 
   /**

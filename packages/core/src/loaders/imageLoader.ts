@@ -461,7 +461,6 @@ export function createAndCacheLocalImage(
   } as ImagePlaneModuleMetadata;
 
   const length = width * height;
-  const numberOfComponents = scalarData.length / length;
 
   let scalarDataToUse;
   if (scalarData) {
@@ -479,17 +478,16 @@ export function createAndCacheLocalImage(
     }
 
     scalarDataToUse = scalarData;
-  } else if (!skipCreateBuffer) {
-    // Todo: need to handle numberOfComponents > 1
+  } else {
     const { TypedArrayConstructor } = getBufferConfiguration(
       targetBuffer?.type,
       length
     );
 
-    const imageScalarData = new TypedArrayConstructor(length);
-
-    scalarDataToUse = imageScalarData;
+    scalarDataToUse = new TypedArrayConstructor(skipCreateBuffer ? 1 : length);
   }
+
+  const numberOfComponents = scalarData ? scalarData.length / length : 1;
 
   // Determine bit depth based on scalarData type
   let bitsAllocated, bitsStored, highBit;
@@ -621,7 +619,7 @@ export function createAndCacheLocalImage(
     // An RLE image has no up-front size (its runs grow as voxels are written),
     // so it is charged the same nominal figure `addInstanceToImage` uses rather
     // than the size of the 1-element stand-in buffer above.
-    sizeInBytes: isRle ? DEFAULT_RLE_SIZE : scalarData.byteLength,
+    sizeInBytes: isRle ? DEFAULT_RLE_SIZE : scalarDataToUse.byteLength,
     referencedImageId,
   } as IImage;
 

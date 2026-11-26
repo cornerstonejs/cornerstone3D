@@ -1785,6 +1785,78 @@ viewport.setDisplaySets(
 // Now: the PET layer is empty on slice 40 until its frame there arrives.
 ```
 
+### One IMAGE_VOLUME_MODIFIED for an image and its copies
+
+A streaming volume fired `IMAGE_VOLUME_MODIFIED` once for each frame that a
+delivery changed. The interleaved retrieve stages copy each image that arrives
+into the empty frames near it, in the same task, so the 135 images of a PET
+fired 518 events, and every listener ran 518 times. In 6.0 the volume fires one
+event for the deliveries of one task (an image and its copies, or one batch of
+the images that the cache already held): 135 events for that PET. The event
+fires in a microtask after the deliveries, before any render, and the last one
+before `IMAGE_VOLUME_LOADING_COMPLETED`. Its detail is as before
+(`volumeId`, `numberOfFrames`, `framesProcessed`, `FrameOfReferenceUID`), with
+the numbers of the last delivery.
+
+```ts
+eventTarget.addEventListener(Events.IMAGE_VOLUME_MODIFIED, onModified);
+volume.load();
+// Before: onModified ran once for each frame that a delivery changed (518).
+// Now: once for each image and the copies of it (135), never after
+// IMAGE_VOLUME_LOADING_COMPLETED.
+```
+
+A listener that counted the events to follow the load reads
+`detail.framesProcessed` or `volume.getImageQuality(index)` instead. While a
+volume loads, the sampled slice paths of a planar viewport draw again only when
+a frame that their plane reads changed, so a copy into a frame that the view
+does not show costs no sample of the slice.
+
+### The default window of a streaming volume
+
+A volume whose metadata gives no window takes the range of its middle image
+(`floor(N / 2)`), as before. That image came from a second request, made after
+the volume had queued every request of its retrieve stages, so the mount of
+the volume (`setDisplaySets`) waited for the whole load. In 6.0 the window of
+a streaming volume reads the image that the volume itself loads: the image of
+the cache once the volume has that frame, else the pending request of the
+volume for it. A volume that does not stream loads the image as before. The stages ask for that image first: a
+position between 0 and 1 of a stage is rounded to the nearest image, so
+position 0.5 is image `floor(N / 2)` for an even count too (it was
+`floor((N - 1) / 2)`). A PT volume scaled to SUV takes the window 0 to 5 at
+once, as it did after loading the image. The mount settles once the middle
+image is there.
+
+```ts
+await viewport.setDisplaySets({
+  displaySetId: 'pt',
+  options: { mode: 'volume' },
+});
+// Before: resolved after every image of a PET without a window had loaded.
+// Now: resolves after its middle image, the first request of the stages.
+```
+
+### setDisplaySets and addDisplaySet take effect in call order
+
+On every viewport family (planar, 3D, video, ECG and whole slide) the calls of
+`setDisplaySets` and `addDisplaySet` of one viewport take effect in the order
+they were made. An `addDisplaySet` made while a `setDisplaySets` still loads
+waits for it and adds to its result; before, it mounted at once, and the
+`setDisplaySets` then removed it (planar, 3D) or mounted beside it (an ECG
+viewport could bind two waveforms). A later `setDisplaySets`, or a `destroy`,
+ends both: they resolve at once, bind nothing and fire no
+`DISPLAY_SETS_CHANGED`. On an ECG viewport the add of a second waveform is
+refused with its message once the `setDisplaySets` has settled. The 3D and the
+whole slide viewport had no queue at all; they follow the rule now too.
+
+```ts
+viewport.setDisplaySets({ displaySetId: 'ct', options: { mode: 'volume' } });
+viewport.addDisplaySet('labelmap', { role: 'overlay' });
+// Before: the labelmap mounted first and the CT replaced it.
+// Now: the CT mounts, then the labelmap over it; DISPLAY_SETS_CHANGED fires
+// for each, in that order.
+```
+
 ## Surfaces in a planar viewport
 
 - **A surface shows as contours.** The conversion of a Surface representation
