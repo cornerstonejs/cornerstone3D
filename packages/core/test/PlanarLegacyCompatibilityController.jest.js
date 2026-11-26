@@ -55,6 +55,7 @@ function createHost(overrides = {}) {
       VOILUTFunction: 'LINEAR',
       voiLUTSequenceApplied: false,
     })),
+    getDefaultVOILUTFunction: jest.fn(() => undefined),
     getImageCount: jest.fn(() => 0),
     getMaxImageIdIndex: jest.fn(() => -1),
     ...overrides,
@@ -271,6 +272,24 @@ describe('PlanarLegacyCompatibilityController', () => {
       expect(host.setDataPresentationState).toHaveBeenLastCalledWith('data-1', {
         voiLUTFunction: 'SIGMOID',
       });
+    });
+
+    // Same rule as StackViewport, which the migration notes tell apps to read.
+    it('reports voiLUTFunctionSetByUser only for a function different from the file', () => {
+      const state = { VOILUTFunction: 'LINEAR', voiLUTSequenceApplied: false };
+      const { host } = createHost({
+        getActiveDataId: jest.fn(() => 'data-1'),
+        getVOILUTState: jest.fn(() => state),
+        getDefaultVOILUTFunction: jest.fn(() => 'LINEAR'),
+      });
+      const controller = new PlanarLegacyCompatibilityController(host);
+
+      controller.setProperties({ VOILUTFunction: 'LINEAR' });
+      expect(controller.getProperties().voiLUTFunctionSetByUser).toBe(false);
+
+      state.VOILUTFunction = 'SIGMOID';
+      controller.setProperties({ VOILUTFunction: 'SIGMOID' });
+      expect(controller.getProperties().voiLUTFunctionSetByUser).toBe(true);
     });
 
     it('does nothing when no target data id can be resolved', () => {

@@ -77,6 +77,7 @@ describe('generic planar viewport VOI LUT Function (API)', () => {
       getCameraOrientation: () => undefined,
       getDefaultVOIRange: () => exactRange,
       getVOILUTState: (id) => viewport.getVOILUTState(id),
+      getDefaultVOILUTFunction: () => VOILUTFunctionType.LINEAR_EXACT,
     });
 
     const { voiRange, VOILUTFunction, voiLUTFunctionSetByUser } =

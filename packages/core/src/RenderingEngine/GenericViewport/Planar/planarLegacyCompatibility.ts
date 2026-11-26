@@ -193,9 +193,9 @@ export function mergePlanarLegacyProperties(
     next.VOILUTFunction !== undefined &&
     next.voiLUTFunctionSetByUser === undefined
   ) {
-    // A VOILUTFunction passed to setProperties is an application choice.
-    // getProperties returns false when the value came from image metadata.
-    merged.voiLUTFunctionSetByUser = true;
+    // A new application value clears an earlier flag; getProperties then
+    // compares the function with the function of the file.
+    delete merged.voiLUTFunctionSetByUser;
   }
 
   if (next.colormap) {

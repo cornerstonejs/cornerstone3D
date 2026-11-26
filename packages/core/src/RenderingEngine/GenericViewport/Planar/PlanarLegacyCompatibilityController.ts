@@ -5,6 +5,7 @@ import type { VOILUTFunctionType } from '../../../enums';
 import { ActorRenderMode } from '../../../types';
 import type { ActorEntry, ColormapPublic, IVolumeInput } from '../../../types';
 import triggerEvent from '../../../utilities/triggerEvent';
+import { getValidVOILUTFunction } from '../../../utilities/voiLUTFunction';
 import {
   findMatchingColormap,
   getMaxOpacity,
@@ -65,6 +66,7 @@ export type PlanarLegacyCompatibilityHost = {
     VOILUTFunction: VOILUTFunctionType;
     voiLUTSequenceApplied: boolean;
   };
+  getDefaultVOILUTFunction(dataId: string): VOILUTFunctionType | undefined;
   getImageCount(): number;
   getMaxImageIdIndex(): number;
 };
@@ -352,13 +354,15 @@ class PlanarLegacyCompatibilityController {
     }
 
     if (targetDataId) {
-      // The function in effect, as on the stack viewport; a value from the file
-      // is not an application choice.
+      // As on the stack viewport: set by the user only when the function in
+      // effect is different from the function of the file.
+      const { VOILUTFunction } = this.host.getVOILUTState(targetDataId);
       merged.voiLUTFunctionSetByUser ??=
-        (merged.VOILUTFunction ?? dataPresentation?.voiLUTFunction) !==
-        undefined;
-      merged.VOILUTFunction =
-        this.host.getVOILUTState(targetDataId).VOILUTFunction;
+        VOILUTFunction !==
+        getValidVOILUTFunction(
+          this.host.getDefaultVOILUTFunction(targetDataId)
+        );
+      merged.VOILUTFunction = VOILUTFunction;
     }
 
     return merged;

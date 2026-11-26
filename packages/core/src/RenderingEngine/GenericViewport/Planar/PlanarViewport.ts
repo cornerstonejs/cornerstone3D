@@ -2073,6 +2073,8 @@ class PlanarViewport extends GenericViewport<
       getBindingActor: (dataId) => this.mountedData.getBindingActor(dataId),
       getDefaultVOIRange: (dataId) => this.getDefaultVOIRange(dataId),
       getVOILUTState: (dataId) => this.getVOILUTState(dataId),
+      getDefaultVOILUTFunction: (dataId) =>
+        this.mountedData.getDefaultVOIShape(dataId).voiLUTFunction,
       getImageCount: () => this.getImageIds().length,
       getMaxImageIdIndex: () => this.getMaxImageIdIndex(),
     };
