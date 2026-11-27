@@ -291,7 +291,9 @@ async function run() {
 
   [viewportIdAxial, viewportIdCoronal, viewportIdSagittal].forEach(
     (viewportId) => {
-      const viewport = renderingEngine.getViewport(viewportId);
+      const viewport = renderingEngine.getViewport(
+        viewportId
+      ) as Types.IVolumeViewport;
       viewport.setProperties({
         interpolationType: InterpolationType.NEAREST,
       });
