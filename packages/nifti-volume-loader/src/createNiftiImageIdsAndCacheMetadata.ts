@@ -16,6 +16,9 @@ export const urlsMap = new Map();
 const NIFTI1_HEADER_SIZE = 348;
 const NIFTI2_HEADER_SIZE = 540;
 const HEADER_CHECK_SIZE = Math.max(NIFTI1_HEADER_SIZE, NIFTI2_HEADER_SIZE);
+const GZIP_MAGIC_COOKIE_1 = 0x1f;
+const GZIP_MAGIC_COOKIE_2 = 0x8b;
+const GZIP_MAGIC_LENGTH = 2;
 
 // Note: I spent several hours attempting to use the stream request in dicomImageLoader,
 // but I couldn't make the decompression work properly and eventually gave up.
@@ -30,8 +33,6 @@ export async function fetchArrayBuffer({
   onHeader,
   loadFullVolume = false,
 }) {
-  const _url = new URL(url);
-  const isCompressed = _url.pathname.endsWith('.gz');
   let receivedData = new Uint8Array(0);
   let niftiHeader = null;
   const sliceInfo = null;
@@ -64,6 +65,18 @@ export async function fetchArrayBuffer({
 
     const reader = response.body.getReader();
 
+    const firstChunk = await readFirstChunk(reader);
+    if (!firstChunk) {
+      if (onLoad && typeof onLoad === 'function') {
+        onLoad();
+      }
+      return { data: receivedData, headerInfo: niftiHeader, sliceInfo };
+    }
+
+    // Detect compression from the file contents rather than the URL so that
+    // blob/object URLs, which have no file extension, work as well.
+    const isCompressed = isGzip(firstChunk);
+
     const decompressionStream = isCompressed
       ? new DecompressionStream('gzip')
       : null;
@@ -71,13 +84,14 @@ export async function fetchArrayBuffer({
       ? decompressionStream.writable.getWriter()
       : null;
 
-    readStream(
+    const streamPromise = readStream(
       reader,
       decompressionWriter,
       isCompressed,
       receivedLength,
       processChunk,
-      controller
+      controller,
+      firstChunk
     ).catch(cs3dLogger.error);
 
     if (isCompressed) {
@@ -95,6 +109,10 @@ export async function fetchArrayBuffer({
           break;
         }
       }
+    } else {
+      // Plain data has no decompressed reader to drain, so wait for the source
+      // stream to finish before reporting the buffer as loaded.
+      await streamPromise;
     }
 
     if (onLoad && typeof onLoad === 'function') {
@@ -140,35 +158,70 @@ export async function fetchArrayBuffer({
   }
 }
 
+async function readFirstChunk(reader) {
+  const first = await reader.read();
+  if (first.done) {
+    return null;
+  }
+  if (first.value.length >= GZIP_MAGIC_LENGTH) {
+    return first.value;
+  }
+  // A chunk smaller than the magic cookie cannot be classified on its own, so
+  // merge it with the next chunk when one is available.
+  const second = await reader.read();
+  if (second.done) {
+    return first.value;
+  }
+  const merged = new Uint8Array(first.value.length + second.value.length);
+  merged.set(first.value);
+  merged.set(second.value, first.value.length);
+  return merged;
+}
+
+function isGzip(chunk: Uint8Array): boolean {
+  return (
+    chunk.length >= GZIP_MAGIC_LENGTH &&
+    chunk[0] === GZIP_MAGIC_COOKIE_1 &&
+    chunk[1] === GZIP_MAGIC_COOKIE_2
+  );
+}
+
 async function readStream(
   reader,
   decompressionWriter,
   isCompressed,
   receivedLength,
   processChunk,
-  controller
+  controller,
+  firstChunk?: Uint8Array
 ) {
+  let chunk = firstChunk;
   // eslint-disable-next-line no-constant-condition
   while (true) {
-    const { done, value } = await reader.read();
-    if (done) {
-      if (isCompressed) {
-        decompressionWriter.close();
+    if (chunk === undefined) {
+      const { done, value } = await reader.read();
+      if (done) {
+        if (isCompressed) {
+          decompressionWriter.close();
+        }
+        break;
       }
-      break;
+      chunk = value;
     }
 
-    receivedLength += value.length;
+    receivedLength += chunk.length;
 
     if (isCompressed) {
-      await decompressionWriter.write(value);
+      await decompressionWriter.write(chunk);
     } else {
-      processChunk(value);
+      processChunk(chunk);
     }
 
     if (controller.signal.aborted) {
       break;
     }
+
+    chunk = undefined;
   }
 }
 
