@@ -159,7 +159,9 @@ export default class StreamingDynamicImageVolume
    */
   public getImageLoadRequests = (priority: number) => {
     const imageIds = this.getImageIdsToLoad();
-    return this._getImageIdRequests(imageIds, priority);
+    // BaseStreamingImageVolume.loadImages reverses requests before queueing them.
+    // Compensate here so the active dimension group is queued first.
+    return this._getImageIdRequests(imageIds, priority).reverse();
   };
 
   /**
