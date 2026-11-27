@@ -915,7 +915,6 @@ export function findReferenceSourceImageId(
   const {
     FrameOfReferenceUID,
     PerFrameFunctionalGroupsSequence,
-    SharedFunctionalGroupsSequence,
     SourceImageSequence,
     ReferencedSeriesSequence,
   } = multiframe;
@@ -945,7 +944,11 @@ export function findReferenceSourceImageId(
       functionalGroup?.SourceImageSequence;
     if (sourceImageSequence) {
       if (Array.isArray(sourceImageSequence)) {
-        sourceImageSequence = sourceImageSequence[sourceImageIndex];
+        // A single source applies to every frame
+        sourceImageSequence =
+          sourceImageSequence[
+            sourceImageSequence.length === 1 ? 0 : sourceImageIndex
+          ];
       }
 
       return sourceImageSequence;
@@ -962,18 +965,27 @@ export function findReferenceSourceImageId(
   }
 
   // 2. SharedFunctionalGroupsSequence DerivationImageSequence / SourceImageSequence
-  if (!frameSourceImageSequence && SharedFunctionalGroupsSequence) {
-    console.warn('Using SharedFunctionalGroupsSequence SourceImageSequence.');
-
+  const sharedFunctionalGroup = getSharedFunctionalGroupsSequence(multiframe);
+  if (!frameSourceImageSequence && sharedFunctionalGroup) {
     frameSourceImageSequence = getSourceImageSequenceItem(
-      SharedFunctionalGroupsSequence,
+      sharedFunctionalGroup,
       frameSegment
     );
+    if (frameSourceImageSequence) {
+      cs3dLogger.debug(
+        'Using SharedFunctionalGroupsSequence SourceImageSequence.'
+      );
+    }
   }
 
-  // 3. Top-level SourceImageSequence (legacy fallback)
-  if (!frameSourceImageSequence && SourceImageSequence?.length) {
-    console.warn(
+  // 3. Top-level SourceImageSequence (legacy fallback). As on main, a per-frame
+  // DerivationImageSequence, even an empty one, goes to the geometry match.
+  if (
+    !frameSourceImageSequence &&
+    !PerFrameFunctionalGroup?.DerivationImageSequence &&
+    SourceImageSequence?.length
+  ) {
+    cs3dLogger.warn(
       'DerivationImageSequence not present, using top-level SourceImageSequence assuming SEG has the same geometry as the source image.'
     );
 

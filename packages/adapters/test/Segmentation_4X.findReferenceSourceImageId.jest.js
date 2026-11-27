@@ -6,7 +6,12 @@ import {
   afterEach,
   jest,
 } from '@jest/globals';
+import { utilities } from '@cornerstonejs/core';
 import { findReferenceSourceImageId } from '../src/adapters/Cornerstone/Segmentation_4X';
+
+const segLogger = utilities.logger.adaptersLog.getLogger(
+  'Cornerstone.Segmentation_4X'
+);
 
 /**
  * findReferenceSourceImageId resolves a SEG frame to its source imageId using,
@@ -14,8 +19,9 @@ import { findReferenceSourceImageId } from '../src/adapters/Cornerstone/Segmenta
  *   1. PerFrameFunctionalGroupsSequence[frame] DerivationImageSequence
  *      (or the functional group's own SourceImageSequence)
  *   2. SharedFunctionalGroupsSequence DerivationImageSequence / SourceImageSequence,
- *      indexed by the frame
- *   3. Top-level SourceImageSequence[frame]
+ *      indexed by the frame (a single source applies to every frame)
+ *   3. Top-level SourceImageSequence[frame], only when the per-frame group
+ *      has no DerivationImageSequence
  *   4. Geometry match via ReferencedSeriesSequence (only with a per-frame group)
  */
 
@@ -40,13 +46,16 @@ const resolve = (multiframe, frameSegment = 0, metadataProvider = undefined) =>
 
 describe('findReferenceSourceImageId', () => {
   let warnSpy;
+  let debugSpy;
 
   beforeEach(() => {
-    warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    warnSpy = jest.spyOn(segLogger, 'warn').mockImplementation(() => {});
+    debugSpy = jest.spyOn(segLogger, 'debug').mockImplementation(() => {});
   });
 
   afterEach(() => {
     warnSpy.mockRestore();
+    debugSpy.mockRestore();
   });
 
   it('returns undefined when no multiframe is given', () => {
@@ -108,6 +117,7 @@ describe('findReferenceSourceImageId', () => {
 
       expect(resolve(multiframe, 0)).toBe(sopUIDImageIdIndexMap['sop.1']);
       expect(warnSpy).not.toHaveBeenCalled();
+      expect(debugSpy).not.toHaveBeenCalled();
     });
 
     it('preserves ReferencedFrameNumber for multiframe sources', () => {
@@ -149,9 +159,23 @@ describe('findReferenceSourceImageId', () => {
       expect(resolve(multiframe, 0)).toBe(sopUIDImageIdIndexMap['sop.1']);
       expect(resolve(multiframe, 1)).toBe(sopUIDImageIdIndexMap['sop.2']);
       expect(resolve(multiframe, 2)).toBe(sopUIDImageIdIndexMap['sop.3']);
-      expect(warnSpy).toHaveBeenCalledWith(
+      expect(debugSpy).toHaveBeenCalledWith(
         'Using SharedFunctionalGroupsSequence SourceImageSequence.'
       );
+    });
+
+    it('maps a single shared source to every frame (dcmjs array form)', () => {
+      const multiframe = {
+        PerFrameFunctionalGroupsSequence: [{}, {}],
+        SharedFunctionalGroupsSequence: [
+          {
+            DerivationImageSequence: [{ SourceImageSequence: [ref('sop.2')] }],
+          },
+        ],
+      };
+
+      expect(resolve(multiframe, 0)).toBe(sopUIDImageIdIndexMap['sop.2']);
+      expect(resolve(multiframe, 1)).toBe(sopUIDImageIdIndexMap['sop.2']);
     });
 
     it('is used when the per-frame group has no source reference', () => {
@@ -200,6 +224,15 @@ describe('findReferenceSourceImageId', () => {
 
     it('is ignored when empty', () => {
       expect(resolve({ SourceImageSequence: [] }, 0)).toBeUndefined();
+    });
+
+    it('is not used when the per-frame DerivationImageSequence is empty', () => {
+      const multiframe = {
+        PerFrameFunctionalGroupsSequence: [{ DerivationImageSequence: [] }],
+        SourceImageSequence: [ref('sop.1')],
+      };
+
+      expect(resolve(multiframe, 0)).toBeUndefined();
     });
   });
 
