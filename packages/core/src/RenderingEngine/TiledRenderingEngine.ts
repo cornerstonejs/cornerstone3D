@@ -23,6 +23,7 @@ import type {
 } from '../types/IViewport';
 import { getViewportClassForInput } from './helpers/viewportTypeToViewportClass';
 import copyWebGLCanvasToCanvas from './helpers/copyWebGLCanvasToCanvas';
+import getDevicePixelSize from './helpers/getDevicePixelSize';
 
 /**
  * Gives a canvas the size of its element in device pixels, rounded to whole
@@ -32,11 +33,10 @@ import copyWebGLCanvasToCanvas from './helpers/copyWebGLCanvasToCanvas';
  * element gives a canvas of no size.
  */
 function sizeCanvasToElement(canvas: HTMLCanvasElement): void {
-  const devicePixelRatio = window.devicePixelRatio || 1;
-  const rect = canvas.getBoundingClientRect();
+  const { width, height } = getDevicePixelSize(canvas);
 
-  canvas.width = Math.round(rect.width * devicePixelRatio);
-  canvas.height = Math.round(rect.height * devicePixelRatio);
+  canvas.width = width;
+  canvas.height = height;
 }
 
 interface ViewportDisplayCoords {

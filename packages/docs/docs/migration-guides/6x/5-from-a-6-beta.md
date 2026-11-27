@@ -120,6 +120,11 @@ person, and **Nothing** where the code stays the same and its result changes.
 | `Synchronizer.add` (and `addSource`) of a viewport that is not enabled yet makes it a source when it is enabled; it warned `No viewport` and left it out of the sources                                                                                                                                                                                                                                                                                                                                                                                               |
 | The set up of `CrosshairsTool` (active, passive, enabled, a mount, an added viewport) and `setToolCenter` write no viewport whose slice holds the centre, so a pane of a coarse grid between two of its slices keeps its point and the panes of its camera position group keep their slices                                                                                                                                                                                                                                                                           |
 | A view reference with a slice index and another plane than the view, and no point, is no slice of the view: `isReferenceViewable` refuses it with every option and `setViewReference` moves nothing; it turned the view and showed another slice. With a point, the point decides, as before                                                                                                                                                                                                                                                                          |
+| With `asNearbyProjection` a stack takes a point within half the distance to the next image of the image on display (beyond the first or the last image, half the distance to its one neighbour; a stack without a usable neighbour, half its `spacingBetweenSlices` or `sliceThickness`), as a volume takes half its slice spacing; the betas took a point only within 0.0005 mm. The annotations that the tools draw do not change, and `setViewReference` of a point moves a stack nowhere as before                                                                | Nothing to change; code that asked `asNearbyProjection` to find the image of a point gets the image nearest to it                            | Nothing                                                                               | [What the codemod cannot do](#what-the-codemod-cannot-do), item 19                                                                                              |
+| The zoom and pan synchronizer and the view framing synchronizer give a pane that mounts (or that is resized) the zoom and the pan of its group, from the first other pane of the group in step, and write no other pane, as the camera position synchronizer does; the betas gave the whole group the fit of the pane that mounted. Planar panes in stack and volume mode and 3D panes                                                                                                                                                                                | Remove code that wrote the zoom of the group back after a mount                                                                              | Nothing                                                                               | [What the codemod cannot do](#what-the-codemod-cannot-do), item 20                                                                                              |
+| The time point of a dynamic volume does not travel with the camera position synchronizer, as in 5.18.3; the betas gave a target the `dimensionGroupNumber` of the source with its view reference                                                                                                                                                                                                                                                                                                                                                                      | Set the time point on the target with `setViewReference({ ...target.getViewReference(), dimensionGroupNumber })` where it must follow        | Nothing                                                                               | [Tools on the next viewports](./2-rendering-changes.md#tools-on-the-next-viewports)                                                                             |
+| The CPU canvas of a planar viewport has the size of the GPU canvas of the pane, `round(getBoundingClientRect() * devicePixelRatio)`, at the first frame and after a resize; the betas sized it by `clientWidth`, one device pixel off on a pane whose CSS size times the ratio is not a whole number                                                                                                                                                                                                                                                                  | Read the size from `viewport.getCanvas()`                                                                                                    | Nothing                                                                               | [A viewport on the CPU shows the GPU picture](./2-rendering-changes.md#a-viewport-on-the-cpu-shows-the-gpu-picture)                                             |
+| A planar viewport whose volume left the cache (`cache.purgeCache()`) gives the frame of reference of its data and resolves no view, where it threw a `TypeError`; so a tool group with `CrosshairsTool` destroyed after a purge no longer warns and removes its annotations                                                                                                                                                                                                                                                                                           | Nothing to change                                                                                                                            | Nothing                                                                               | [Smaller changes](./2-rendering-changes.md#smaller-changes)                                                                                                     |
 
 ## What the codemod cannot do
 
@@ -479,3 +484,56 @@ application wants.
     ```
 
     See [Tools on the next viewports](./2-rendering-changes.md#tools-on-the-next-viewports).
+
+19. **The half slice of a stack.** With `asNearbyProjection`, in stack
+    mode, a reference by a point is viewable when the point lies within
+    half the distance to the next image of the image on display (towards
+    each neighbour its own half; beyond the first or the last image, half
+    the distance to its one neighbour). The betas, as 5.x, measured half the
+    z spacing of the image data of a stack, 0.0005 mm. A stack whose
+    neighbour images have no position or lie in another plane, and a stack
+    of one image, take half the `spacingBetweenSlices` of the image on
+    display, else half its `sliceThickness`, else 0.0005 mm as before. Code
+    that passes `asNearbyProjection` to `isReferenceViewable`,
+    `getReferenceViewableCheck()` or `filterAnnotationsForDisplay` gets a
+    point annotation on the image nearest to it:
+
+    ```ts
+    // A stack of images 1 mm apart, on the image at z = 10
+    viewport.isReferenceViewable(
+      { cameraFocalPoint: [x, y, 10.3] },
+      { asNearbyProjection: true }
+    );
+    // Before: false
+    // After: true
+    ```
+
+    The tools ask no `asNearbyProjection`, so the annotations that a stack
+    draws stay as they were. See
+    [Events and image loading of a planar viewport](./2-rendering-changes.md#events-and-image-loading-of-a-planar-viewport).
+
+20. **A pane that mounts takes the zoom and the pan of its group.** The
+    zoom and pan synchronizer and the view framing synchronizer read a
+    camera event that changes no camera (a mount, a resize) as no change of
+    the group: the pane takes the zoom and the pan of the first other pane
+    of the group in step with it (or of the one other pane that shows data
+    when none is in step) and writes no other pane; with no such pane it
+    keeps its own. The betas gave the whole group the fit of a pane that
+    mounted, also of a 3D pane. Code that wrote the zoom of the group back
+    after a mount can go:
+
+    ```ts
+    // Before: the mount of a pane gave the group its fit
+    await viewport.setDisplaySets({ displaySetId });
+    viewport.setViewState(
+      viewportProjection.withFraming(viewport, groupZoomPan)
+    );
+
+    // After: the pane takes the zoom and the pan of the group at its mount
+    await viewport.setDisplaySets({ displaySetId });
+    ```
+
+    A resize of a pane in such a group gives that pane the zoom and the pan
+    of the group against its new size; the betas gave the group the zoom of
+    the resized pane against its new fit. See
+    [Tools on the next viewports](./2-rendering-changes.md#tools-on-the-next-viewports).

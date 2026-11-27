@@ -109,12 +109,15 @@ function createStreamingVolume(quality) {
 /**
  * Gives the element of a viewport the size of its canvas, which the test
  * environment does not lay out, and draws its first frame, as an engine does:
- * the CPU backend sizes its canvas by the element and draws when the viewport
- * renders.
+ * the CPU backend sizes its canvas by the box of the element and draws when
+ * the viewport renders.
  */
 function drawFirstCpuFrame(viewport) {
   Object.defineProperty(viewport.element, 'clientWidth', { value: 200 });
   Object.defineProperty(viewport.element, 'clientHeight', { value: 100 });
+  Object.defineProperty(viewport.element, 'getBoundingClientRect', {
+    value: () => ({ width: 200, height: 100 }),
+  });
   viewport.resize();
   viewport.render();
 }

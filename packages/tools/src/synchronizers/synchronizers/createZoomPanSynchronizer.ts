@@ -2,6 +2,7 @@ import { createSynchronizer } from '../../store/SynchronizerManager';
 import { Enums } from '@cornerstonejs/core';
 import zoomPanSyncCallback from '../callbacks/zoomPanSyncCallback';
 import type Synchronizer from '../../store/SynchronizerManager/Synchronizer';
+import type { ISynchronizerEventHandler } from '../../types';
 
 const { CAMERA_MODIFIED } = Enums.Events;
 
@@ -18,7 +19,7 @@ export default function createZoomPanSynchronizer(
   const zoomPanSynchronizer = createSynchronizer(
     synchronizerName,
     CAMERA_MODIFIED,
-    zoomPanSyncCallback
+    zoomPanSyncCallback as ISynchronizerEventHandler
   );
 
   return zoomPanSynchronizer;

@@ -55,6 +55,7 @@ import {
   calculateCameraPosition,
   getOrientationFromScanAxisNormal,
 } from '../../helpers/getCameraVectors';
+import getDevicePixelSize from '../../helpers/getDevicePixelSize';
 import * as metaData from '../../../metaData';
 import type {
   LoadedData,
@@ -65,8 +66,12 @@ import BaseViewport from '../BaseViewport';
 import { disableViewportWidgets } from '../viewportWidgets';
 import { isSegmentationOverlayData } from '../renderingFidelity';
 import type { ViewportWidget } from '../Volume3D/viewport3DTypes';
-import type { ViewReferenceContext } from '../viewReferenceCompatibility';
+import type {
+  StackImageHalfSlices,
+  ViewReferenceContext,
+} from '../viewReferenceCompatibility';
 import {
+  getStackImageHalfSlices,
   isViewReferenceViewable,
   isViewReferenceViewableAsVolume,
   isPointNearImagePlane,
@@ -2416,8 +2421,13 @@ class PlanarViewport extends BaseViewport<
    * slice, is not asked then.
    *
    * In stack mode `asNearbyProjection` takes a reference by a focal point
-   * only as viewable when the point lies within half a slice spacing of the
-   * image shown, as the legacy stack viewport does.
+   * only as viewable when the point lies within half a slice of the image
+   * shown: on each side of its plane, half the distance to the image next to
+   * it in the stack on that side, or beyond the first or the last image half
+   * the distance to its one neighbour (`getStackImageHalfSlices`), so that a
+   * point belongs to the image of the stack nearest to it, as a slice of a
+   * volume. The legacy stack viewport of 5.x took a point only within
+   * 0.0005 mm of the image.
    *
    * In stack mode a reference that names only a frame of reference, a plane
    * or points (no image, volume, display set, slice index, range or plane
@@ -2463,6 +2473,22 @@ class PlanarViewport extends BaseViewport<
     const isStack = mode === 'stack';
     const currentImageId = isStack ? this.getCurrentImageId() : undefined;
     let imageData: CPUIImageData | undefined;
+    let halfSlices: StackImageHalfSlices | undefined;
+    const isNearImageOnDisplay = (point: Point3): boolean => {
+      imageData ??= this.getImageData() as CPUIImageData | undefined;
+
+      if (!imageData) {
+        return false;
+      }
+
+      halfSlices ??= getStackImageHalfSlices(
+        this.getImageIds(),
+        this.getCurrentImageIdIndex(),
+        imageData
+      );
+
+      return isPointNearImagePlane(point, imageData, halfSlices);
+    };
 
     return (viewRef, options = {}) => {
       if (hasNonFiniteViewReferenceGeometry(viewRef)) {
@@ -2500,12 +2526,7 @@ class PlanarViewport extends BaseViewport<
           return false;
         }
 
-        imageData ??= this.getImageData() as CPUIImageData | undefined;
-
-        return Boolean(
-          imageData &&
-            isPointNearImagePlane(viewRef.cameraFocalPoint, imageData)
-        );
+        return isNearImageOnDisplay(viewRef.cameraFocalPoint);
       }
 
       const checkOptions = isStack
@@ -2538,11 +2559,7 @@ class PlanarViewport extends BaseViewport<
         return isViewable;
       }
 
-      imageData ??= this.getImageData() as CPUIImageData | undefined;
-
-      return Boolean(
-        imageData && isPointNearImagePlane(viewRef.cameraFocalPoint, imageData)
-      );
+      return isNearImageOnDisplay(viewRef.cameraFocalPoint);
     };
   }
 
@@ -2790,6 +2807,9 @@ class PlanarViewport extends BaseViewport<
 
   /**
    * Resizes the internal CPU canvas and notifies active render bindings.
+   * The CPU canvas takes the size that the rendering engine gives the canvas
+   * of the pane (`getDevicePixelSize` of the box that holds that canvas), so
+   * a pane has one canvas size on the CPU and on the GPU.
    * The display sets drawn on the CPU are drawn again at once on the
    * resized canvas (`drawClearedCpuCanvas`). The view keeps its camera
    * through the new size, as the legacy viewports did
@@ -2810,11 +2830,10 @@ class PlanarViewport extends BaseViewport<
     // The canvas CSS size may have changed; drop the cached dimensions so the
     // next resolve/transform re-reads clientWidth/clientHeight exactly once.
     this.cachedCanvasDimensions = undefined;
-    const { clientHeight, clientWidth } = this.element;
     const { canvas } = this.renderContext.cpu;
-    const devicePixelRatio = window.devicePixelRatio || 1;
-    const targetWidth = Math.round(clientWidth * devicePixelRatio);
-    const targetHeight = Math.round(clientHeight * devicePixelRatio);
+    const { width: targetWidth, height: targetHeight } = getDevicePixelSize(
+      this.renderContext.vtk.canvas?.parentElement ?? this.element
+    );
 
     const cpuCanvasCleared =
       canvas.width !== targetWidth || canvas.height !== targetHeight;

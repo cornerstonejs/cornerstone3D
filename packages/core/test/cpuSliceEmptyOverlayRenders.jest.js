@@ -104,6 +104,9 @@ function createVolume(name, quality) {
 function drawFirstCpuFrame(viewport) {
   Object.defineProperty(viewport.element, 'clientWidth', { value: 200 });
   Object.defineProperty(viewport.element, 'clientHeight', { value: 100 });
+  Object.defineProperty(viewport.element, 'getBoundingClientRect', {
+    value: () => ({ width: 200, height: 100 }),
+  });
   viewport.resize();
   viewport.render();
 }

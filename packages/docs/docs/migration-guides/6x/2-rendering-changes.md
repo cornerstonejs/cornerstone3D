@@ -1524,8 +1524,9 @@ point of the image on display.
 - **`isReferenceViewable` honours `asOverlay`,** so a labelmap image that is
   not in the stack but lies on the geometry of the image on display shows.
   With `asNearbyProjection` a reference by a focal point only shows in stack
-  mode when the point lies within half a slice spacing of the image on
-  display, as on the legacy stack viewport.
+  mode when the point lies within half a slice of the image on display: half
+  the distance to the next image of the stack (see "The half slice of a
+  stack is half the distance to the next image" below).
 - **`isReferenceViewable` honours `asVolume` in stack mode,** which asks
   whether the stack could show the reference as a volume. A reference that
   names no image is viewable with it when it names a volume or a frame of
@@ -1653,9 +1654,9 @@ point of the image on display.
   restriction, as a 3D point annotation or
   `{ FrameOfReferenceUID, viewPlaneNormal, cameraFocalPoint }`, is viewable
   in stack mode only with `asVolume`, or with `asNearbyProjection` when its
-  point lies within half a slice of the image on display, as on the legacy
-  stack viewport of 5.18.3. 6.0.0-beta.2 showed it on every image of the
-  stack, also far from its point. `setViewReference` with such a reference
+  point lies within half a slice of the image on display (the next bullet),
+  as on the legacy stack viewport of 5.18.3. 6.0.0-beta.2 showed it on every
+  image of the stack, also far from its point. `setViewReference` with such a reference
   moves a stack nowhere, as on the legacy stack viewport, so the setter and
   `isReferenceViewable(viewRef, { withNavigation: true })` agree. To move a
   stack to a point, give the index of the nearest image:
@@ -1674,6 +1675,46 @@ point of the image on display.
 
   `navigatePlanarViewportToPoint` of the tools does this for a stack, and
   `ReferenceCursors` uses it; `jumpToFocalPoint` moves only a volume view.
+
+- **The half slice of a stack is half the distance to the next image.**
+  With `asNearbyProjection` a stack takes a point that belongs to the image
+  on display: the image of the stack nearest to the point along the normal
+  of the image. Towards a neighbour image the image reaches half the
+  distance to that neighbour (on each side its own neighbour, so a stack of
+  uneven spacing has an uneven half slice); beyond the first or the last
+  image, half the distance to its one neighbour. A volume view has the same
+  half slice, half its slice spacing. The legacy stack viewport of 5.x and
+  the 6.0 betas measured half the z spacing of the image data of a stack,
+  which is 0.001 mm, so they took a point only within 0.0005 mm of the
+  image: a 3D point annotation 0.2 mm from the image did not show.
+
+  ```ts
+  // A stack of images 1 mm apart, on the image at z = 10
+  viewport.isReferenceViewable(
+    { FrameOfReferenceUID, cameraFocalPoint: [x, y, 10.3] },
+    { asNearbyProjection: true }
+  );
+  // Before: false (within 0.0005 mm only)
+  // After: true (within 0.5 mm, half the distance to the next image)
+  ```
+
+  The neighbours are the images before and after the image on display in
+  the stack, with a position and an orientation in their image plane
+  metadata, in a plane parallel to the image and not on it. A stack of one
+  image, or one whose neighbours have no position, lie in another plane or
+  at the same position (the frames of a multiframe image without a
+  position of each frame), takes half the `spacingBetweenSlices` of the
+  image on display, else half its `sliceThickness`, and without either keeps
+  the half slice of 5.x (0.0005 mm). The z spacing of the image data of a
+  stack (`getImageData().spacing[2]`) stays 0.001 mm; other code reads it.
+
+  What changes with it: `isReferenceViewable` and
+  `getReferenceViewableCheck()` with `asNearbyProjection` in stack mode, and
+  `filterAnnotationsForDisplay(viewport, annotations, { asNearbyProjection:
+true })`. The tools draw their annotations without that option, so the
+  annotations that a stack draws do not change. `setViewReference` with a
+  reference of only a point moves a stack nowhere, as before. Volume mode is
+  unchanged.
 
 - **A stack takes a slice index only of its own display set.** In stack
   mode `setViewReference({ displaySetId: 'other', sliceIndex: 3 })` moves
@@ -2427,6 +2468,26 @@ through one CPU draw step that follows the GPU:
   writes the pixels of an image is no longer read back at all, and the
   overlay layer of a video viewport, which composes its labelmaps the same
   way, keeps its pixels in memory too.
+- **The canvas that shows has the size of the GPU canvas.** A planar
+  viewport sizes its CPU canvas as the rendering engines size the canvas of
+  a pane, at the first frame and at each resize: the CSS size of the box of
+  the pane (`getBoundingClientRect()`) times the device pixel ratio,
+  rounded. 5.x and the 6.0 betas sized the CPU canvas by `clientWidth` and
+  `clientHeight`, which are rounded CSS sizes, so a pane whose CSS size
+  times the device pixel ratio is not a whole number had a CPU canvas one
+  device pixel off its GPU canvas: a pane of 333.3 by 250.7 CSS pixels at a
+  ratio of 1.25 had a CPU canvas of 416 by 314 pixels and a GPU canvas of
+  417 by 313. Code that sizes a canvas of its own to match the one that
+  shows reads it from the canvas:
+
+  ```ts
+  // Before: the size of the CPU canvas, which could be a pixel off the GPU one
+  const width = Math.round(element.clientWidth * window.devicePixelRatio);
+
+  // After: the size of the canvas that shows, on the CPU and on the GPU
+  const { width, height } = viewport.getCanvas();
+  ```
+
 - **The VOI lookup table and the modality lookup table of an image are not
   applied.** The GPU path never applied them, and the CPU path of 5.x did. The
   window of the image is applied as before.
@@ -3235,7 +3296,8 @@ levels of 255.
     position itself as the point of the view state, so the target reads it
     back without moving. A target that shows that slice already (within
     half a slice, a point half way between two slices keeps the slice on
-    display) is not written for it. A zoom, a pan, a rotation in the plane,
+    display; 5.18.3 put the target one slice lower on such a tie) is not
+    written for it. A zoom, a pan, a rotation in the plane,
     a flip or a resize of the source never moves a target along its normal,
     and a write that comes back from a target never moves the source.
 
@@ -3297,6 +3359,65 @@ levels of 255.
   synchronizer give the same zoom and pan against the fit of each pane, and
   no slice; with a camera position synchronizer on the same panes the two
   write the scale in turn.
+
+  The time point of a dynamic (4D) volume does not travel with the camera
+  position synchronizer, as in 5.18.3: a target keeps its time point. The
+  6.0 betas gave the target the view reference of the source, with its
+  `dimensionGroupNumber`, so a target that showed another dynamic volume
+  of the frame of reference took the time point of the source. Panes that
+  show one dynamic volume show one time point, the time point of the
+  volume. To give the panes of another volume the time point of a source,
+  set it on them:
+
+  ```ts
+  const { dimensionGroupNumber } = source.getViewReference();
+
+  target.setViewReference({
+    ...target.getViewReference(),
+    dimensionGroupNumber,
+  });
+  ```
+
+- **The zoom and pan synchronizer and the view framing synchronizer give a
+  pane that mounts the zoom and the pan of its group.** They read a camera
+  event that changes no camera (a mount fires the camera that the view opens
+  with, a resize keeps the camera) as the camera position synchronizer
+  reads it: it is not a change of the group. The pane that fired it writes
+  no other pane and takes the zoom and the pan (the framing that the view
+  framing synchronizer copies) of the first other pane of the group in step
+  with it, in the order the viewports were added; a pane is in step once a
+  change of it reached the group or the group wrote it. When none is in
+  step and one other pane alone shows data (it was placed while it was
+  alone in the group, or mounted before the synchronizer was made), that
+  pane is the group. With no such pane, or with several none of which is in
+  step, the pane keeps its own zoom and pan and writes nothing; the next
+  change of a pane drives the group. This holds for planar panes in stack
+  and in volume mode and for 3D panes. A change of a camera (a zoom, a pan,
+  a scroll, a reset) still gives every other pane the zoom and the pan of
+  the pane that changed.
+
+  5.x and the 6.0 betas gave the whole group the fit (zoom 1, pan 0) of a
+  pane that mounted in it, also a 3D pane since its mount fires a camera
+  event: a group at a zoom of 2 went back to its fit when a pane got new
+  data. A resize of a pane in a group now gives that pane the zoom and the
+  pan of the group against its new size; before, it gave the group the zoom
+  that the kept camera had against the new fit of the resized pane.
+
+  ```ts
+  const synchronizer = synchronizers.createZoomPanSynchronizer('zoomPan');
+
+  synchronizer.add({ renderingEngineId, viewportId: 'ct' });
+  synchronizer.add({ renderingEngineId, viewportId: 'pt' });
+  // The ct pane is at a zoom of 2; the pt pane mounts new data
+  await ptViewport.setDisplaySets({ displaySetId: 'pt2' });
+  // Before: both panes at zoom 1, the fit of the pt pane
+  // After: both panes at zoom 2, the zoom of the group
+  ```
+
+  The camera position synchronizer differs in one case: when several panes
+  show data and none is in step (the synchronizer was made after their
+  mounts), the event of a mount there drives the scale and the centre of
+  the group.
 
   ```js
   // The petCt example: a CT pane (512 x 512, 0.977 mm) and a PET pane
@@ -4071,6 +4192,18 @@ is one, see [Functions of the core package](./3-api-map.md#functions-of-the-core
   `GEOMETRY_CACHE_GEOMETRY_REMOVED`. No member lists the geometries of the
   cache. The `geometryIds` of the Surface and Contour data of a segmentation
   name those that it uses.
+- **A planar viewport whose volume left the cache gives its frame of
+  reference.** The cache deletes the image data of a volume that it removes
+  (`cache.purgeCache()`, `cache.removeVolumeLoadObject(volumeId)`). A
+  planar viewport in volume mode that still shows such a volume resolves no
+  view, so `getFrameOfReferenceUID()` gives the frame of reference of its
+  data and draws nothing, until the volume is mounted again. In the 6.0
+  betas it threw `TypeError: Cannot read properties of undefined (reading
+'1')` from the deleted image data, so a tool group with `CrosshairsTool`
+  destroyed after a purge of the cache warned "The tool Crosshairs failed to
+  disable while its tool group was destroyed" and kept its crosshairs
+  annotations. An application that purges the cache before it destroys its
+  tool groups needs no change.
 - **`segmentation.getLabelmapImageIds(segmentationId)` is typed
   `string[] | undefined`,** what it gives: the labelmap image ids, or
   undefined for a segmentation without a labelmap. In 5.x it was declared

@@ -460,6 +460,15 @@ export function getPlanarViewStateCanvasDimensions(args: {
   };
 }
 
+/**
+ * Resolves the view of a planar viewport: the image on display in stack
+ * mode, the slice of the volume in volume mode. Nothing without a rendering,
+ * without an image on display, or for a volume that the cache removed (the
+ * cache deletes the image data of a volume that it removes), so that a
+ * viewport whose volume is gone, as after `cache.purgeCache()`, gives the
+ * frame of reference of its data and draws nothing instead of reading the
+ * deleted image data.
+ */
 export function resolvePlanarViewportView(args: {
   viewState: PlanarViewState;
   data?: PlanarPayload;
@@ -536,6 +545,10 @@ export function resolvePlanarViewportView(args: {
     rendering.renderMode === PlanarRenderModeId.VTK_GPU_VOLUME_SLICE ||
     rendering.renderMode === PlanarRenderModeId.VTK_CPU_SLICE
   ) {
+    if (rendering.imageVolume?.imageData?.isDeleted()) {
+      return;
+    }
+
     const resolvedViewState =
       typeof sliceIndex === 'number'
         ? {

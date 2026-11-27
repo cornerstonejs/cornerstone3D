@@ -7,6 +7,7 @@ import type {
   ViewReference,
 } from '../../types';
 import type { PlaneRestriction } from '../../types/IViewport';
+import { EPSILON } from '../../constants';
 import { MetadataModules } from '../../enums';
 import * as metaData from '../../metaData';
 import getSpacingInNormalDirection from '../../utilities/getSpacingInNormalDirection';
@@ -985,21 +986,145 @@ export function isImageOnOverlayGeometry(
 }
 
 /**
- * Whether a point lies within half a slice spacing of the plane of an image,
- * as the legacy stack viewport checks `asNearbyProjection`: the spacing is
- * the spacing of the image data along its normal, the third column of its
- * direction.
+ * The half slice of an image of a stack on each side of its plane, in
+ * millimetres along the normal of its image data: `above` on the side that
+ * the normal points to, `below` on the other side.
+ */
+export type StackImageHalfSlices = {
+  below: number;
+  above: number;
+};
+
+/**
+ * The cosine above which the plane of a neighbour image counts as parallel
+ * to the image on display, as the stack takes a reference with a plane.
+ */
+const NEIGHBOUR_PARALLEL_COSINE = 0.99;
+
+/**
+ * The half slice of the image on display of a stack, as a volume has half
+ * its slice spacing: on each side of the plane of the image, half the
+ * distance along its normal to the image next to it in the stack on that
+ * side, so that a point belongs to the image of the stack nearest to it.
+ * Beyond the first or the last image of the stack, half the distance to its
+ * one neighbour.
+ *
+ * The neighbours are the images before and after it in the stack, each with
+ * a position and an orientation in its image plane metadata, in a plane
+ * parallel to the image on display and not on it. Without such a neighbour
+ * (a stack of one image, positions unknown, planes not parallel, frames of
+ * one position), half the spacing between slices of the image on display,
+ * or else half its slice thickness; without either, half the spacing of the
+ * image data along its normal (0.0005 mm), as on 5.x.
+ */
+export function getStackImageHalfSlices(
+  imageIds: string[],
+  imageIdIndex: number,
+  imageData: Pick<CPUIImageData, 'spacing' | 'direction'>
+): StackImageHalfSlices {
+  const { spacing, direction } = imageData;
+  const normal = direction.slice(6, 9) as Point3;
+  const position = getImagePositionAlongNormal(imageIds[imageIdIndex], normal);
+  const distances =
+    position === undefined
+      ? []
+      : [imageIds[imageIdIndex - 1], imageIds[imageIdIndex + 1]]
+          .map((imageId) => getImagePositionAlongNormal(imageId, normal))
+          .filter((neighbour) => neighbour !== undefined)
+          .map((neighbour) => neighbour - position)
+          .filter((distance) => Math.abs(distance) > EPSILON);
+
+  if (!distances.length) {
+    const halfSlice =
+      getImageSliceSpacingFromMetadata(imageIds[imageIdIndex]) / 2 ||
+      getSpacingInNormalDirection(
+        { direction: direction as unknown as mat3, spacing },
+        normal
+      ) / 2;
+
+    return { below: halfSlice, above: halfSlice };
+  }
+
+  const above = Math.min(...distances.filter((distance) => distance > 0));
+  const below = Math.min(
+    ...distances.filter((distance) => distance < 0).map((distance) => -distance)
+  );
+  const nearest = Math.min(above, below);
+
+  return {
+    below: (Number.isFinite(below) ? below : nearest) / 2,
+    above: (Number.isFinite(above) ? above : nearest) / 2,
+  };
+}
+
+/**
+ * The position of the plane of an image along a normal (the dot product of
+ * its image position with the normal), when its image plane metadata has a
+ * position and an orientation parallel to the normal.
+ */
+function getImagePositionAlongNormal(
+  imageId: string | undefined,
+  normal: Point3
+): number | undefined {
+  const plane = imageId
+    ? metaData.get(MetadataModules.IMAGE_PLANE, imageId)
+    : undefined;
+  const { rowCosines, columnCosines, imagePositionPatient } = plane || {};
+
+  if (
+    rowCosines?.length !== 3 ||
+    columnCosines?.length !== 3 ||
+    imagePositionPatient?.length !== 3
+  ) {
+    return;
+  }
+
+  const imageNormal = vec3.cross(
+    vec3.create(),
+    rowCosines as vec3,
+    columnCosines as vec3
+  );
+
+  if (
+    Math.abs(vec3.dot(imageNormal, normal as unknown as vec3)) <
+    NEIGHBOUR_PARALLEL_COSINE
+  ) {
+    return;
+  }
+
+  return vec3.dot(
+    imagePositionPatient as unknown as vec3,
+    normal as unknown as vec3
+  );
+}
+
+/**
+ * The spacing between slices of an image as its image plane metadata gives
+ * it, or else its slice thickness; 0 without either.
+ */
+function getImageSliceSpacingFromMetadata(imageId: string | undefined): number {
+  const plane = imageId
+    ? metaData.get(MetadataModules.IMAGE_PLANE, imageId)
+    : undefined;
+  const spacing = Number(plane?.spacingBetweenSlices || plane?.sliceThickness);
+
+  return Number.isFinite(spacing) && spacing > 0 ? spacing : 0;
+}
+
+/**
+ * Whether a point lies within the half slice of an image on the side of its
+ * plane that the point is on, measured along the normal of its image data
+ * (the third column of its direction) from its origin. The legacy stack
+ * viewport of 5.x checked `asNearbyProjection` against half the spacing of
+ * the image data along its normal on both sides.
  */
 export function isPointNearImagePlane(
   point: Point3,
-  imageData: Pick<CPUIImageData, 'spacing' | 'direction' | 'origin'>
+  imageData: Pick<CPUIImageData, 'direction' | 'origin'>,
+  halfSlices: StackImageHalfSlices
 ): boolean {
-  const { spacing, direction, origin } = imageData;
+  const { direction, origin } = imageData;
   const viewPlaneNormal = direction.slice(6, 9) as Point3;
-  const sliceThickness = getSpacingInNormalDirection(
-    { direction: direction as unknown as mat3, spacing },
-    viewPlaneNormal
-  );
   const distanceToPlane = vec3.dot(
     vec3.subtract(
       vec3.create(),
@@ -1009,5 +1134,7 @@ export function isPointNearImagePlane(
     viewPlaneNormal as unknown as vec3
   );
 
-  return Math.abs(distanceToPlane) <= sliceThickness / 2;
+  return distanceToPlane >= 0
+    ? distanceToPlane <= halfSlices.above
+    : -distanceToPlane <= halfSlices.below;
 }

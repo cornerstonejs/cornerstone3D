@@ -193,11 +193,17 @@ const LEGACY_OVERLAY_VIEWABLE = [true, false, false];
 /**
  * What `isReferenceViewable` of the legacy stack viewport on image 1, on the
  * CPU and on the GPU, answered with `asNearbyProjection` for references with
- * only the focal point [3, 4, z], for z = 1.0004, 0.9996 and 1.002: a point
- * within half the spacing of the image data along its normal (0.001) is
- * viewable.
+ * only the focal point [3, 4, z], for z = 1.0004, 0.9996, 1.002, 1.49 and
+ * 1.51: a point within half the spacing of the image data along its normal
+ * (0.001) was viewable.
  */
-const LEGACY_NEARBY_PROJECTION_VIEWABLE = [true, true, false];
+const LEGACY_NEARBY_PROJECTION_VIEWABLE = [true, true, false, false, false];
+
+/**
+ * What the next viewport answers for the same references since row 264: a
+ * point within half the distance to the next image (1 mm) is viewable.
+ */
+const NEARBY_PROJECTION_VIEWABLE = [true, true, true, true, false];
 
 /**
  * Resolves when the element fires NEW_IMAGE for an image index. A direct next
@@ -487,7 +493,7 @@ describe('Direct next planar viewport events and image loads against the legacy 
       expect(answers).toEqual(LEGACY_OVERLAY_VIEWABLE);
     });
 
-    it('takes a point within half a slice spacing of the image shown as viewable with asNearbyProjection, as the legacy stack viewport', async () => {
+    it('takes a point within half the distance to the next image of the image shown as viewable with asNearbyProjection, where the legacy stack viewport took 0.0005 mm', async () => {
       const viewport = createNextViewport();
 
       await showStack(viewport, createImageIds(), 1);
@@ -496,6 +502,8 @@ describe('Direct next planar viewport events and image loads against the legacy 
         [3, 4, 1.0004],
         [3, 4, 0.9996],
         [3, 4, 1.002],
+        [3, 4, 1.49],
+        [3, 4, 1.51],
       ].map((cameraFocalPoint) =>
         viewport.isReferenceViewable(
           { cameraFocalPoint },
@@ -503,7 +511,8 @@ describe('Direct next planar viewport events and image loads against the legacy 
         )
       );
 
-      expect(answers).toEqual(LEGACY_NEARBY_PROJECTION_VIEWABLE);
+      expect(answers).toEqual(NEARBY_PROJECTION_VIEWABLE);
+      expect(answers).not.toEqual(LEGACY_NEARBY_PROJECTION_VIEWABLE);
     });
   });
 });

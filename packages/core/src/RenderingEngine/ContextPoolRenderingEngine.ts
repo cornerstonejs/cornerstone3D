@@ -28,6 +28,7 @@ import type {
 } from '../types';
 import { getViewportClassForInput } from './helpers/viewportTypeToViewportClass';
 import copyWebGLCanvasToCanvas from './helpers/copyWebGLCanvasToCanvas';
+import getDevicePixelSize from './helpers/getDevicePixelSize';
 
 /**
  * ContextPoolRenderingEngine extends BaseRenderingEngine to provide parallel rendering
@@ -270,14 +271,11 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     displayedWidth: number;
     displayedHeight: number;
   } {
-    const devicePixelRatio = window.devicePixelRatio || 1;
-    const sizeSource = vp.canvas?.parentElement ?? vp.element;
-    const { width, height } = sizeSource.getBoundingClientRect();
+    const { width, height } = getDevicePixelSize(
+      vp.canvas?.parentElement ?? vp.element
+    );
 
-    return {
-      displayedWidth: Math.round(width * devicePixelRatio),
-      displayedHeight: Math.round(height * devicePixelRatio),
-    };
+    return { displayedWidth: width, displayedHeight: height };
   }
 
   /**

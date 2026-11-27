@@ -77,6 +77,7 @@ function createImageVolume({
     spacing: [1, 1, 1],
     metadata: { FrameOfReferenceUID: frameOfReferenceUID },
     imageData: {
+      isDeleted: () => false,
       getDimensions: () => [columns, rows, numSlices],
       getDirection: () => [1, 0, 0, 0, 1, 0, 0, 0, 1],
       getExtent: () => [0, columns - 1, 0, rows - 1, 0, numSlices - 1],

@@ -52,6 +52,7 @@ function createImageVolume() {
       FrameOfReferenceUID: 'volume-for',
     },
     imageData: {
+      isDeleted: () => false,
       getDimensions: () => [8, 10, 12],
       getDirection: () => [1, 0, 0, 0, 1, 0, 0, 0, 1],
       getExtent: () => [0, 7, 0, 9, 0, 11],

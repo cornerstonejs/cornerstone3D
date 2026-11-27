@@ -77,6 +77,7 @@ import cameraSyncCallback from '../src/synchronizers/callbacks/cameraSyncCallbac
 import voiSyncCallback from '../src/synchronizers/callbacks/voiSyncCallback';
 import slabThicknessSyncCallback from '../src/synchronizers/callbacks/slabThicknessSyncCallback';
 import viewFramingSyncCallback from '../src/synchronizers/callbacks/viewFramingSyncCallback';
+import zoomPanSyncCallback from '../src/synchronizers/callbacks/zoomPanSyncCallback';
 import areViewportsCoplanar from '../src/synchronizers/callbacks/areViewportsCoplanar';
 
 /**
@@ -1638,6 +1639,228 @@ describe('viewFramingSyncCallback', () => {
       )
     ).toThrow();
   });
+});
+
+describe('the zoom and pan and the view framing synchronizers at a camera event that changes no camera (row 330)', () => {
+  const SOURCE = { renderingEngineId: 're', viewportId: 'source' };
+  const TARGET = { renderingEngineId: 're', viewportId: 'target' };
+  const GROUP = { renderingEngineId: 're', viewportId: 'group' };
+  const CALLBACKS = [
+    ['zoom and pan', zoomPanSyncCallback, undefined],
+    [
+      'view framing',
+      viewFramingSyncCallback,
+      { viewFraming: { zoom: true, pan: true } },
+    ],
+  ];
+
+  /** A camera of a planar view along the axial normal. */
+  function makeCamera({ focalPoint = [0, 0, 0], parallelScale = 100 } = {}) {
+    return {
+      focalPoint,
+      viewPlaneNormal: [0, 0, 1],
+      viewUp: [0, -1, 0],
+      parallelScale,
+    };
+  }
+
+  /**
+   * A stand-in of a viewport of any family with a zoom and a pan against its
+   * fit (`framing`), that shows data unless `empty`. `setViewState` records
+   * what it is given.
+   */
+  function makeViewport({ framing, empty = false, type = 'planar' }) {
+    return {
+      type,
+      framing,
+      getDisplaySets: jest.fn(() => (empty ? [] : [{ displaySetId: 'ds' }])),
+      setViewState: jest.fn(),
+      render: jest.fn(),
+    };
+  }
+
+  /**
+   * A synchronizer whose targets are the viewports given, in that order, and
+   * the rendering engine that holds the stand-ins by viewport id.
+   */
+  function makeGroup(viewports, targets) {
+    viewportProjection.getFraming.mockImplementation(
+      (viewport) => viewport.framing
+    );
+    viewportProjection.withFraming.mockImplementation((_viewport, framing) => ({
+      ...framing,
+    }));
+    getRenderingEngine.mockImplementation(() => ({
+      getViewport: jest.fn((viewportId) => viewports[viewportId]),
+    }));
+
+    return { getTargetViewports: () => targets, getOptions: () => undefined };
+  }
+
+  /** Runs one camera event of a source for each target, as `fireEvent`. */
+  function fire(callback, options, synchronizer, sourceId, event) {
+    synchronizer
+      .getTargetViewports()
+      .filter((id) => id.viewportId !== sourceId.viewportId)
+      .forEach((targetId) =>
+        callback(synchronizer, sourceId, targetId, event, options)
+      );
+  }
+
+  /** The event of a mount: the camera it opens with, as both cameras. */
+  function mountEvent(camera = makeCamera()) {
+    return { detail: { camera, previousCamera: { ...camera } } };
+  }
+
+  /** The event of a zoom: another parallel scale. */
+  function zoomEvent() {
+    return {
+      detail: {
+        camera: makeCamera({ parallelScale: 50 }),
+        previousCamera: makeCamera(),
+      },
+    };
+  }
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  afterEach(() => {
+    viewportProjection.getFraming.mockImplementation(() => undefined);
+    viewportProjection.withFraming.mockImplementation(() => undefined);
+  });
+
+  describe.each(CALLBACKS)(
+    'the %s synchronizer',
+    (_name, callback, options) => {
+      it('gives a pane that mounts the zoom and the pan of the first pane of the group in step, and writes no other pane', () => {
+        const group = makeViewport({ framing: { zoom: 2, pan: [10, -4] } });
+        const target = makeViewport({ framing: { zoom: 2, pan: [10, -4] } });
+        const source = makeViewport({ framing: { zoom: 1, pan: [0, 0] } });
+        const synchronizer = makeGroup({ group, target, source }, [
+          GROUP,
+          TARGET,
+          SOURCE,
+        ]);
+
+        fire(callback, options, synchronizer, GROUP, zoomEvent());
+        target.setViewState.mockClear();
+        source.setViewState.mockClear();
+        source.framing = { zoom: 1, pan: [0, 0] };
+        fire(callback, options, synchronizer, SOURCE, mountEvent());
+
+        expect(group.setViewState).not.toHaveBeenCalled();
+        expect(target.setViewState).not.toHaveBeenCalled();
+        expect(source.setViewState).toHaveBeenCalledTimes(1);
+        expect(source.setViewState).toHaveBeenCalledWith({
+          zoom: 2,
+          pan: [10, -4],
+        });
+      });
+
+      it('gives a pane that joins a group of one placed pane, which no event put in step, the zoom and the pan of that pane', () => {
+        const placed = makeViewport({ framing: { zoom: 3, pan: [5, 5] } });
+        const source = makeViewport({ framing: { zoom: 1, pan: [0, 0] } });
+        const synchronizer = makeGroup({ group: placed, source }, [
+          GROUP,
+          SOURCE,
+        ]);
+
+        fire(callback, options, synchronizer, SOURCE, mountEvent());
+
+        expect(placed.setViewState).not.toHaveBeenCalled();
+        expect(source.setViewState).toHaveBeenCalledTimes(1);
+        expect(source.setViewState).toHaveBeenCalledWith({
+          zoom: 3,
+          pan: [5, 5],
+        });
+      });
+
+      it('lets a pane that mounts keep its own zoom and pan, and writes no pane, when no other pane shows data or several placed panes none of which is in step', () => {
+        const lonely = makeViewport({ framing: { zoom: 1, pan: [0, 0] } });
+        const emptyPane = makeViewport({
+          framing: { zoom: 2, pan: [1, 1] },
+          empty: true,
+        });
+
+        fire(
+          callback,
+          options,
+          makeGroup({ source: lonely, target: emptyPane }, [SOURCE, TARGET]),
+          SOURCE,
+          mountEvent()
+        );
+
+        expect(lonely.setViewState).not.toHaveBeenCalled();
+        expect(emptyPane.setViewState).not.toHaveBeenCalled();
+
+        const placed = [
+          makeViewport({ framing: { zoom: 2, pan: [1, 1] } }),
+          makeViewport({ framing: { zoom: 4, pan: [2, 2] } }),
+        ];
+        const source = makeViewport({ framing: { zoom: 1, pan: [0, 0] } });
+
+        fire(
+          callback,
+          options,
+          makeGroup({ group: placed[0], target: placed[1], source }, [
+            GROUP,
+            TARGET,
+            SOURCE,
+          ]),
+          SOURCE,
+          mountEvent()
+        );
+
+        [source, ...placed].forEach((viewport) =>
+          expect(viewport.setViewState).not.toHaveBeenCalled()
+        );
+      });
+
+      it('gives a 3D pane that mounts the zoom and the pan of the group, as a planar pane', () => {
+        const group = makeViewport({ framing: { zoom: 2, pan: [3, 0] } });
+        const source = makeViewport({
+          framing: { zoom: 1, pan: [0, 0] },
+          type: 'volume3d',
+        });
+        const synchronizer = makeGroup({ group, source }, [GROUP, SOURCE]);
+
+        fire(callback, options, synchronizer, GROUP, zoomEvent());
+        source.setViewState.mockClear();
+        source.framing = { zoom: 1, pan: [0, 0] };
+        fire(callback, options, synchronizer, SOURCE, mountEvent());
+
+        expect(group.setViewState).not.toHaveBeenCalled();
+        expect(source.setViewState).toHaveBeenCalledTimes(1);
+        expect(source.setViewState).toHaveBeenCalledWith({
+          zoom: 2,
+          pan: [3, 0],
+        });
+      });
+
+      it('still gives every target the zoom and the pan of a source whose camera changed', () => {
+        const group = makeViewport({ framing: { zoom: 1, pan: [0, 0] } });
+        const target = makeViewport({ framing: { zoom: 1, pan: [0, 0] } });
+        const source = makeViewport({ framing: { zoom: 2.5, pan: [7, 1] } });
+        const synchronizer = makeGroup({ group, target, source }, [
+          GROUP,
+          TARGET,
+          SOURCE,
+        ]);
+
+        fire(callback, options, synchronizer, SOURCE, zoomEvent());
+
+        [group, target].forEach((viewport) =>
+          expect(viewport.setViewState).toHaveBeenCalledWith({
+            zoom: 2.5,
+            pan: [7, 1],
+          })
+        );
+        expect(source.setViewState).not.toHaveBeenCalled();
+      });
+    }
+  );
 });
 
 describe('areViewportsCoplanar', () => {

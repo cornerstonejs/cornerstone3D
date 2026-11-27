@@ -2,7 +2,7 @@ import * as cornerstone3D from '@cornerstonejs/core';
 import * as csTools3d from '../src/index';
 import * as testUtils from '../../../utils/test/testUtils';
 
-const { utilities, Enums, volumeLoader } = cornerstone3D;
+const { utilities, Enums, volumeLoader, cache } = cornerstone3D;
 const { ViewportType, OrientationAxis } = Enums;
 const {
   CrosshairsTool,
@@ -183,5 +183,49 @@ describe('CrosshairsTool on a direct next planar viewport -- ', () => {
         .sort()
     ).toEqual(viewportIds.slice(0, 2).sort());
     expect(getCrosshairsAnnotations(elements[2]).length).toBe(0);
+  });
+
+  it('destroys its tool group and removes its annotations after the cache removed the volume that its viewports show (row 329)', async function () {
+    const elements = createEmptyViewports(renderingEngine);
+
+    activateCrosshairs();
+    await volumeLoader.createAndCacheVolume(volumeId, { imageIds: [] });
+
+    const annotationsRendered = waitForAnnotationsRendered(elements);
+
+    await testUtils.setVolumesOnNextViewports(
+      renderingEngine,
+      [volumeId],
+      viewportIds
+    );
+    renderingEngine.render();
+    await annotationsRendered;
+
+    const viewports = viewportIds.map((viewportId) =>
+      renderingEngine.getViewport(viewportId)
+    );
+    const frameOfReferenceUID = viewports[0].getFrameOfReferenceUID();
+
+    expect(
+      annotation.state.getAnnotations(
+        CrosshairsTool.toolName,
+        frameOfReferenceUID
+      ).length
+    ).toBe(3);
+
+    cache.purgeCache();
+
+    viewports.forEach((viewport) => {
+      expect(viewport.getFrameOfReferenceUID()).toBe(frameOfReferenceUID);
+    });
+
+    ToolGroupManager.destroyToolGroup(toolGroupId);
+
+    expect(
+      annotation.state.getAnnotations(
+        CrosshairsTool.toolName,
+        frameOfReferenceUID
+      )?.length ?? 0
+    ).toBe(0);
   });
 });

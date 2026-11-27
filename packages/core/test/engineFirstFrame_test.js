@@ -30,6 +30,17 @@ const PANES = [
   { size: [333.3, 250.7], devicePixelRatio: 1.25, useEnableElement: false },
 ];
 
+/**
+ * The CSS size that a pane takes for a resize, by its device pixel ratio:
+ * one where the CSS size times the ratio, rounded, is not the rounded CSS
+ * size times the ratio, rounded (row 297).
+ */
+const RESIZED = {
+  1: [420, 310],
+  1.5: [400.6, 300.4],
+  1.25: [350.6, 241.4],
+};
+
 /** Waits for the given number of animation frames. */
 async function frames(count) {
   for (let frame = 0; frame < count; frame++) {
@@ -181,6 +192,66 @@ ENGINES.forEach(({ name: engineName, Engine }) => {
           firstSize
         );
         expect(countChangedPixels(readPixels(viewport.canvas), first)).toBe(0);
+      });
+
+      it(`gives the CPU canvas of a planar viewport the size of the canvas of the engine, at the first frame and after a resize, for a pane of ${size[0]} by ${size[1]} CSS pixels at ${devicePixelRatio} device pixels each, enabled by ${enabledBy}`, async function () {
+        setDevicePixelRatio(devicePixelRatio);
+        renderingEngine = new Engine(utilities.uuidv4());
+
+        const series = await createSeries({ id: `cpuCanvas-${enabledBy}` });
+        const pane = {
+          viewportType: ViewportType.PLANAR,
+          orientation: OrientationAxis.ACQUISITION,
+          width: size[0],
+          height: size[1],
+          useEnableElement,
+        };
+        const elements = testUtils.createViewports(renderingEngine, [
+          { ...pane, viewportId: 'gpuPane' },
+          { ...pane, viewportId: 'cpuPane' },
+        ]);
+        const gpu = renderingEngine.getViewport('gpuPane');
+        const cpu = renderingEngine.getViewport('cpuPane');
+        const sizes = () => {
+          const { width, height } =
+            gpu.canvas.parentElement.getBoundingClientRect();
+
+          return {
+            rule: [
+              Math.round(width * devicePixelRatio),
+              Math.round(height * devicePixelRatio),
+            ],
+            gpu: [gpu.getCanvas().width, gpu.getCanvas().height],
+            cpu: [cpu.getCanvas().width, cpu.getCanvas().height],
+          };
+        };
+
+        await showStack(gpu, series, 3);
+        await showStack(cpu, series, 3, { renderBackend: 'cpu' });
+
+        expect(cpu.getCanvas()).not.toBe(gpu.getCanvas());
+
+        const first = sizes();
+
+        expect(first.gpu).toEqual(first.rule);
+        expect(first.cpu).toEqual(first.rule);
+
+        const [width, height] = RESIZED[devicePixelRatio];
+
+        elements.forEach((element) => {
+          element.style.width = `${width}px`;
+          element.style.height = `${height}px`;
+        });
+        renderingEngine.resize(true, true);
+        await frames(2);
+        await renderAndWait(gpu);
+        await renderAndWait(cpu);
+
+        const resized = sizes();
+
+        expect(resized.rule).not.toEqual(first.rule);
+        expect(resized.gpu).toEqual(resized.rule);
+        expect(resized.cpu).toEqual(resized.rule);
       });
 
       it(`keeps the camera and the canvas size of a 3D viewport at a resize that changes no size, for a pane of ${size[0]} by ${size[1]} CSS pixels at ${devicePixelRatio} device pixels each, enabled by ${enabledBy}`, async function () {

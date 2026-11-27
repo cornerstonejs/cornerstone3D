@@ -1,3 +1,5 @@
+import getDevicePixelSize from './getDevicePixelSize';
+
 const VIEWPORT_ELEMENT = 'viewport-element';
 const CANVAS_CSS_CLASS = 'cornerstone-canvas';
 export const EPSILON = 1e-4;
@@ -103,10 +105,7 @@ export function updateCanvasSizeAndAspectRatio(
   extentOrOffscreen?: ViewportCanvasExtent
 ): boolean | undefined {
   if (extentOrOffscreen === undefined) {
-    const devicePixelRatio = window.devicePixelRatio || 1;
-    const rect = canvas.getBoundingClientRect();
-    const w = Math.round(rect.width * devicePixelRatio);
-    const h = Math.round(rect.height * devicePixelRatio);
+    const { width: w, height: h } = getDevicePixelSize(canvas);
     if (w > 0 && h > 0) {
       canvas.width = w;
       canvas.height = h;

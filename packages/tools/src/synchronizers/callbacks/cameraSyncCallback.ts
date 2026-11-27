@@ -11,6 +11,14 @@ import {
   applyViewportFraming,
   getViewportFraming,
 } from '../../utilities/viewportFraming';
+import {
+  POSITION_TOLERANCE,
+  changesCamera,
+  getGroupMember,
+  isSameScale,
+  setInStep,
+  viewportKey,
+} from './synchronizerGroup';
 
 /**
  * The framing that a viewport of another family than planar takes from its
@@ -34,12 +42,6 @@ const ROTATION_FLIP_SELECTOR: Types.ViewFramingSelector = {
   flipHorizontal: true,
   flipVertical: true,
 };
-
-/** The distance in millimetres under which two positions are one. */
-const POSITION_TOLERANCE = 1e-4;
-
-/** The relative difference under which two parallel scales are one. */
-const SCALE_TOLERANCE = 1e-6;
 
 /**
  * How far past half a slice a position still counts as on that slice, in
@@ -75,37 +77,6 @@ const UNTURNED_FRAMING: Types.ViewFraming = {
   flipVertical: false,
 };
 
-/**
- * The panes of each synchronizer that are in step with its group, by
- * `renderingEngineId:viewportId`: a pane that drove the group, or that the
- * group wrote or found in step.
- */
-const panesInStep = new WeakMap<Synchronizer, Set<string>>();
-
-/**
- * The pane whose view a camera event that changed no camera takes, by
- * event, so that every target of one event reads the same answer. `null`
- * when the source drives the group.
- */
-const groupPaneOfEvent = new WeakMap<object, Pane | null>();
-
-/** The key of a pane in `panesInStep`. */
-function paneKey({ renderingEngineId, viewportId }: Types.IViewportId): string {
-  return `${renderingEngineId}:${viewportId}`;
-}
-
-/** Records that a pane is in step with the group of a synchronizer. */
-function setInStep(synchronizer: Synchronizer, pane: Types.IViewportId): void {
-  let panes = panesInStep.get(synchronizer);
-
-  if (!panes) {
-    panes = new Set();
-    panesInStep.set(synchronizer, panes);
-  }
-
-  panes.add(paneKey(pane));
-}
-
 /** The vector that points the other way. */
 function negated(vector: Types.Point3): Types.Point3 {
   return [-vector[0], -vector[1], -vector[2]];
@@ -118,14 +89,6 @@ function distanceAlong(
   to: Types.Point3
 ): number {
   return vec3.dot(vec3.sub(vec3.create(), to, from), normal);
-}
-
-/** Whether two parallel scales are one. */
-function isSameScale(scale: number, other: number): boolean {
-  return (
-    Math.abs(scale - other) <=
-    SCALE_TOLERANCE * Math.max(Math.abs(scale), Math.abs(other))
-  );
 }
 
 /** Whether a pane is a 3D viewport. */
@@ -178,44 +141,6 @@ function getPlanarCamera(
   return camera?.focalPoint && camera.viewPlaneNormal && camera.parallelScale
     ? camera
     : undefined;
-}
-
-/**
- * Whether a CAMERA_MODIFIED event changed the camera of its viewport. A
- * mount fires the camera that the view opens with, and a resize keeps the
- * camera, so neither changes it. An event without its two cameras counts as
- * a change.
- */
-function changesCamera(detail?: Types.EventTypes.CameraModifiedEventDetail) {
-  const { camera, previousCamera } = detail ?? {};
-
-  if (
-    !camera?.focalPoint ||
-    !camera.viewPlaneNormal ||
-    !previousCamera?.focalPoint ||
-    !previousCamera.viewPlaneNormal
-  ) {
-    return true;
-  }
-
-  return (
-    vec3.distance(camera.focalPoint, previousCamera.focalPoint) >
-      POSITION_TOLERANCE ||
-    !isSameScale(camera.parallelScale, previousCamera.parallelScale) ||
-    (camera.parallelProjection === false &&
-      (!camera.position ||
-        !previousCamera.position ||
-        vec3.distance(camera.position, previousCamera.position) >
-          POSITION_TOLERANCE ||
-        camera.viewAngle !== previousCamera.viewAngle)) ||
-    !utilities.isEqual(
-      camera.viewPlaneNormal,
-      previousCamera.viewPlaneNormal
-    ) ||
-    (camera.viewUp && previousCamera.viewUp
-      ? !utilities.isEqual(camera.viewUp, previousCamera.viewUp)
-      : camera.viewUp !== previousCamera.viewUp)
-  );
 }
 
 /**
@@ -641,45 +566,26 @@ function getPane(id: Types.IViewportId): Pane | undefined {
 
 /**
  * The pane of the group whose scale, centre and view up a source takes when
- * its camera event changed no camera: the first target of the synchronizer, in the order the
- * viewports were added, that is in step with the group, shows data and has
- * the frame of reference of the source. When no such pane is in step and one
- * other pane alone shows data of that frame of reference, the group is that
- * pane: a pane that was placed while it was alone in the group (no camera
- * event of it reached a target), or mounted before it was added. Undefined
- * when there is none, or several placed panes none of which is in step: then
- * the source drives the group.
+ * its camera event changed no camera (`getGroupMember`): the first target
+ * in step with the group that shows data and has the frame of reference of
+ * the source, or the one such target when none is in step. Undefined when
+ * there is none, or several placed panes none of which is in step: then the
+ * source drives the group.
  */
 function getGroupPane(
   synchronizer: Synchronizer,
-  source: Pane
+  source: Pane,
+  cameraModifiedEvent: CustomEvent | undefined
 ): Pane | undefined {
-  const inStep = panesInStep.get(synchronizer);
-  const sourceKey = paneKey(source.id);
   const frameOfReferenceUID = source.viewport.getFrameOfReferenceUID();
-  const placedPanes: Pane[] = [];
 
-  for (const id of synchronizer.getTargetViewports()) {
-    const key = paneKey(id);
-
-    if (key === sourceKey) {
-      continue;
-    }
-
+  return getGroupMember(synchronizer, source.id, cameraModifiedEvent, (id) => {
     const pane = getPane(id);
 
-    if (pane?.viewport.getFrameOfReferenceUID() !== frameOfReferenceUID) {
-      continue;
-    }
-
-    if (inStep?.has(key)) {
-      return pane;
-    }
-
-    placedPanes.push(pane);
-  }
-
-  return placedPanes.length === 1 ? placedPanes[0] : undefined;
+    return pane?.viewport.getFrameOfReferenceUID() === frameOfReferenceUID
+      ? pane
+      : undefined;
+  });
 }
 
 /**
@@ -727,19 +633,10 @@ function syncPanes(
     | undefined;
 
   if (!changesCamera(detail)) {
-    if (cameraModifiedEvent && !groupPaneOfEvent.has(cameraModifiedEvent)) {
-      groupPaneOfEvent.set(
-        cameraModifiedEvent,
-        getGroupPane(synchronizer, source) ?? null
-      );
-    }
-
-    const group = cameraModifiedEvent
-      ? groupPaneOfEvent.get(cameraModifiedEvent)
-      : getGroupPane(synchronizer, source);
+    const group = getGroupPane(synchronizer, source, cameraModifiedEvent);
 
     if (group) {
-      if (paneKey(group.id) === paneKey(targetId)) {
+      if (viewportKey(group.id) === viewportKey(targetId)) {
         followView(group, source, false);
         setInStep(synchronizer, group.id);
         setInStep(synchronizer, sourceId);

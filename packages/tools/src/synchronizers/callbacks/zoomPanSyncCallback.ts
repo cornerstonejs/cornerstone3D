@@ -6,6 +6,12 @@ import {
   viewportProjection,
 } from '@cornerstonejs/core';
 import type { Synchronizer } from '../../store';
+import {
+  changesCamera,
+  getGroupMember,
+  setInStep,
+  viewportKey,
+} from './synchronizerGroup';
 
 type ZoomPanProjectionFraming = {
   pan?: Types.Point2;
@@ -94,6 +100,55 @@ function syncProjectionZoomPan(
 }
 
 /**
+ * Gives one viewport the zoom and the pan of another, through the viewport
+ * projection service, or else through their zoom and pan members, and
+ * renders it. `options` are the options of the viewport that takes them:
+ * `syncZoom` or `syncPan` false leaves that one. The members set the zoom
+ * first, as the pan is relative to the zoom.
+ */
+function copyZoomPan(
+  from: Types.IViewport,
+  to: Types.IViewport,
+  options: { syncPan?: boolean; syncZoom?: boolean } | undefined
+): void {
+  if (syncProjectionZoomPan(from, to, options)) {
+    to.render();
+    return;
+  }
+
+  if (
+    options?.syncZoom !== false &&
+    viewportHasZoom(from) &&
+    viewportHasZoom(to)
+  ) {
+    to.setZoom(from.getZoom());
+  }
+  if (
+    options?.syncPan !== false &&
+    viewportHasPan(from) &&
+    viewportHasPan(to)
+  ) {
+    to.setPan(from.getPan());
+  }
+
+  to.render();
+}
+
+/** The viewport of the ids of a synchronizer member, when it is enabled. */
+function getViewportOf(id: Types.IViewportId): Types.IViewport | undefined {
+  return getRenderingEngine(id.renderingEngineId)?.getViewport(id.viewportId);
+}
+
+/** The ids and the viewport of a member, when it shows data. */
+function getMemberShowingData(
+  id: Types.IViewportId
+): { id: Types.IViewportId; viewport: Types.IViewport } | undefined {
+  const viewport = getViewportOf(id);
+
+  return viewport?.getDisplaySets?.().length ? { id, viewport } : undefined;
+}
+
+/**
  * Synchronizer callback to synchronize the camera. Synchronization
  *
  * targetViewport.options.syncZoom set to false to not sync the zoom
@@ -101,16 +156,27 @@ function syncProjectionZoomPan(
  *
  * Each viewport is read from its own rendering engine, and a disabled source
  * or target does nothing.
+ *
+ * A camera event that changed no camera (the mount of the source, which
+ * fires the camera that it opens with, or a resize, which keeps the camera)
+ * is not a change of the group, as the camera position synchronizer reads
+ * it: it writes no other viewport, and the source takes the zoom and the pan
+ * of the group from the first other viewport of the group in step with it
+ * (`getGroupMember`). With no such viewport the source keeps its own. A pane
+ * that joins a group at its mount so takes the zoom and the pan of the
+ * group; 5.x and the 6.0 betas gave the group the fit of the joining pane.
 
  * @param synchronizerInstance - The Instance of the Synchronizer
  * @param sourceViewport - The list of IDs defining the source viewport.
  * @param targetViewport - The list of IDs defining the target viewport, different
  *   from sourceViewport
+ * @param cameraModifiedEvent - The CAMERA_MODIFIED event.
  */
 export default function zoomPanSyncCallback(
   synchronizerInstance: Synchronizer,
   sourceViewport: Types.IViewportId,
-  targetViewport: Types.IViewportId
+  targetViewport: Types.IViewportId,
+  cameraModifiedEvent?: CustomEvent
 ): void {
   const renderingEngine = getRenderingEngine(targetViewport.renderingEngineId);
   if (!renderingEngine) {
@@ -119,48 +185,45 @@ export default function zoomPanSyncCallback(
     );
   }
 
-  const options = synchronizerInstance.getOptions(
-    targetViewport.viewportId,
-    targetViewport.renderingEngineId
-  );
-
   const tViewport = renderingEngine.getViewport(targetViewport.viewportId);
-  const sViewport = getRenderingEngine(
-    sourceViewport.renderingEngineId
-  )?.getViewport(sourceViewport.viewportId);
+  const sViewport = getViewportOf(sourceViewport);
 
   if (!sViewport || !tViewport) {
     return;
   }
 
-  const syncedByProjection = syncProjectionZoomPan(
-    sViewport,
-    tViewport,
-    options
-  );
+  if (!changesCamera(cameraModifiedEvent?.detail)) {
+    const group = getGroupMember(
+      synchronizerInstance,
+      sourceViewport,
+      cameraModifiedEvent,
+      getMemberShowingData
+    );
 
-  if (syncedByProjection) {
-    tViewport.render();
+    if (group && viewportKey(group.id) === viewportKey(targetViewport)) {
+      copyZoomPan(
+        group.viewport,
+        sViewport,
+        synchronizerInstance.getOptions(
+          sourceViewport.viewportId,
+          sourceViewport.renderingEngineId
+        )
+      );
+      setInStep(synchronizerInstance, group.id);
+      setInStep(synchronizerInstance, sourceViewport);
+    }
+
     return;
   }
 
-  if (
-    options?.syncZoom !== false &&
-    viewportHasZoom(sViewport) &&
-    viewportHasZoom(tViewport)
-  ) {
-    const srcZoom = sViewport.getZoom();
-    // Do the zoom first, as the pan is relative to the zoom level
-    tViewport.setZoom(srcZoom);
-  }
-  if (
-    options?.syncPan !== false &&
-    viewportHasPan(sViewport) &&
-    viewportHasPan(tViewport)
-  ) {
-    const srcPan = sViewport.getPan();
-    tViewport.setPan(srcPan);
-  }
-
-  tViewport.render();
+  copyZoomPan(
+    sViewport,
+    tViewport,
+    synchronizerInstance.getOptions(
+      targetViewport.viewportId,
+      targetViewport.renderingEngineId
+    )
+  );
+  setInStep(synchronizerInstance, sourceViewport);
+  setInStep(synchronizerInstance, targetViewport);
 }
