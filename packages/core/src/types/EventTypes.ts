@@ -61,6 +61,13 @@ interface VoiModifiedEventDetail {
   volumeId?: string;
   /** VOILUTFunction */
   VOILUTFunction?: VOILUTFunctionType;
+  /**
+   * True when a VOI LUT Sequence (0028,3010) of the file controls the display.
+   * The range is then the input domain of the curve, and the VOI LUT Function
+   * does not apply. A colorbar that draws a ramp from the range and the
+   * function shows a curve that the viewport does not use.
+   */
+  voiLUTSequenceApplied?: boolean;
   /** inverted */
   invert?: boolean;
   /** Indicates if the 'invert' state has changed from the previous state */
@@ -232,6 +239,16 @@ interface ImageCacheImageRemovedEventDetail {
 interface ImageCacheImageAddedEventDetail {
   /** the added image */
   image: ICachedImage;
+}
+
+/**
+ * CACHE_SIZE_EXCEEDED Event's data
+ */
+interface CacheSizeExceededEventDetail {
+  /** the id of the image that did not fit */
+  imageId: string;
+  /** the size of the image in bytes */
+  sizeInBytes: number;
 }
 
 /**
@@ -428,6 +445,11 @@ type ImageCacheImageAddedEvent =
   CustomEventType<ImageCacheImageAddedEventDetail>;
 
 /**
+ * CACHE_SIZE_EXCEEDED Event type
+ */
+type CacheSizeExceededEvent = CustomEventType<CacheSizeExceededEventDetail>;
+
+/**
  * IMAGE_CACHE_IMAGE_REMOVED Event type
  */
 type ImageCacheImageRemovedEvent =
@@ -530,6 +552,8 @@ export type {
   VolumeLoadedFailedEventDetail,
   ImageCacheImageAddedEvent,
   ImageCacheImageAddedEventDetail,
+  CacheSizeExceededEvent,
+  CacheSizeExceededEventDetail,
   ImageCacheImageRemovedEvent,
   ImageCacheImageRemovedEventDetail,
   VolumeCacheVolumeAddedEvent,

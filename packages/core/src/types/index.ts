@@ -177,7 +177,10 @@ import type JumpToSliceOptions from './JumpToSliceOptions';
 import type GeometryLoaderFn from './GeometryLoaderFn';
 
 import type { RenderingEngineModeType } from './RenderingEngineMode';
-import type { VtkOffscreenMultiRenderWindow } from './VtkOffscreenMultiRenderWindow';
+import type {
+  OffscreenCanvasContainer,
+  VtkOffscreenMultiRenderWindow,
+} from './VtkOffscreenMultiRenderWindow';
 import type { ViewportDataReference } from '../RenderingEngine/GenericViewport';
 import type { ResetCameraOptions, SetAspectRatioOptions } from './ICamera';
 import type {
@@ -216,6 +219,7 @@ import type {
   ViewportFidelityCause,
   ViewportFidelityState,
   ViewportFidelityShownState,
+  FidelityIssue,
 } from './ViewportFidelity';
 
 export type * from './MetadataModuleTypes';
@@ -395,6 +399,7 @@ export type {
   RLEVoxelMap,
   RenderingEngineModeType,
   VtkOffscreenMultiRenderWindow,
+  OffscreenCanvasContainer,
   ViewportDataReference,
   ViewportType,
   ViewportTypeRegistry,
@@ -420,6 +425,7 @@ export type {
   ViewportFidelityCause,
   ViewportFidelityState,
   ViewportFidelityShownState,
+  FidelityIssue,
 };
 
 export { ActorRenderMode };
