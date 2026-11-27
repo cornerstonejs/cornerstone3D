@@ -30,7 +30,7 @@ const defaultConfig: Cornerstone3DConfig = {
     // Use new method by default for accurate full-width display
     useLegacyCameraFOV: false,
     strictZSpacingForVolumeViewport: true,
-    sliceStepMeasure: 'l2',
+    sliceStepMeasure: 'l1',
     /**
      * The rendering engine mode to use.
      * 'contextPool' is the a rendering engine that uses sequential rendering, pararllization and has enhanced support/performance for multi-monitor and high resolution displays.

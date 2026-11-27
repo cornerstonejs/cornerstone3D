@@ -394,7 +394,32 @@ describe('createPlanarImageSliceBasis (stack image basis)', () => {
 });
 
 describe('createPlanarVolumeSliceBasis (volume slice basis)', () => {
-  it('derives an axial volume slice basis with the geometric center as the default slice', () => {
+  // The middle slice in view order, floor(N / 2): the legacy resetCamera
+  // (getVolumeCenterIJK) and the OHIF 'middle' preset open on the same slice.
+  it.each([
+    // [orientation, slice count, world axis of the normal, slice centre on that axis]
+    [OrientationAxis.AXIAL, 6, 2, 304],
+    [OrientationAxis.ACQUISITION, 6, 2, 304],
+    [OrientationAxis.CORONAL, 8, 1, 203],
+    [OrientationAxis.SAGITTAL, 10, 0, 102.5],
+  ])(
+    'opens %s on the legacy middle slice of an even slice count, at a slice centre',
+    (orientation, numberOfSlices, axis, expectedDepth) => {
+      const { sliceBasis, currentImageIdIndex, maxImageIdIndex } =
+        createPlanarVolumeSliceBasis({
+          canvasWidth: 256,
+          canvasHeight: 256,
+          imageVolume: createOrthonormalVolume(),
+          orientation,
+        });
+
+      expect(maxImageIdIndex).toBe(numberOfSlices - 1);
+      expect(currentImageIdIndex).toBe(Math.floor(0.5 * numberOfSlices));
+      expect(sliceBasis.sliceCenterWorld[axis]).toBeCloseTo(expectedDepth, 5);
+    }
+  );
+
+  it('derives an axial volume slice basis with the legacy middle slice as the default slice', () => {
     const imageVolume = createOrthonormalVolume();
     const { sliceBasis, currentImageIdIndex, maxImageIdIndex } =
       createPlanarVolumeSliceBasis({
@@ -406,16 +431,13 @@ describe('createPlanarVolumeSliceBasis (volume slice basis)', () => {
 
     expectPoint3Close(sliceBasis.viewPlaneNormal, [0, 0, -1]);
     expectPoint3Close(sliceBasis.viewUp, [0, -1, 0]);
-    // getVolumeCenterIJK snaps the axis aligned with viewPlaneNormal (k, dim=6)
-    // to floor(6/2)=3, the other two axes use (d-1)/2: ijk=[4.5, 3.5, 3]
-    // world = origin + ijk*spacing = [100+2.25, 200+3.5, 300+6] = [102.25, 203.5, 306]
-    expectPoint3Close(sliceBasis.sliceCenterWorld, [102.25, 203.5, 306]);
     // dims[2]-1 = 5 slices available along the normal
     expect(maxImageIdIndex).toBe(5);
     // viewPlaneNormal is -z, so index 0 <-> z=310 (max k) and index 5 <-> z=300
-    // (min k); the geometric center (k=3, z=306) falls 4/10 of the way from
-    // min(z=310) to max(z=300), i.e. floatingIndex = 0.4*5 = 2.
-    expect(currentImageIdIndex).toBe(2);
+    // (min k). The default is the legacy middle slice floor(6/2)=3 in view
+    // order, i.e. k=2, z=304; in-plane axes stay at (d-1)/2.
+    expectPoint3Close(sliceBasis.sliceCenterWorld, [102.25, 203.5, 304]);
+    expect(currentImageIdIndex).toBe(3);
   });
 
   it.each([
@@ -514,13 +536,11 @@ describe('createPlanarVolumeSliceBasis (volume slice basis)', () => {
 
     expectPoint3Close(sliceBasis.viewPlaneNormal, [0, -1, 0]);
     expectPoint3Close(sliceBasis.viewUp, [0, 0, 1]);
-    // sliceAxis snaps to j (dim=8): ijk=[(10-1)/2=4.5, floor(8/2)=4, (6-1)/2=2.5]
-    // world = [102.25, 204, 305]
-    expectPoint3Close(sliceBasis.sliceCenterWorld, [102.25, 204, 305]);
     expect(maxImageIdIndex).toBe(7);
-    // viewPlaneNormal is -y, so mapping inverts like the AXIAL case:
-    // j=4 out of [0,7] centered -> currentImageIdIndex = 3.
-    expect(currentImageIdIndex).toBe(3);
+    // viewPlaneNormal is -y, so mapping inverts like the AXIAL case: the
+    // legacy middle slice floor(8/2)=4 in view order is j=3, y=203.
+    expectPoint3Close(sliceBasis.sliceCenterWorld, [102.25, 203, 305]);
+    expect(currentImageIdIndex).toBe(4);
   });
 
   it('honors an explicit volumePoint slice request over the geometric center', () => {
@@ -617,14 +637,13 @@ describe('createPlanarVolumeSliceBasis (volume slice basis)', () => {
     // scanAxis (k) is still pure +z, so it aligns with the AXIAL normal
     // ([0,0,-1]) even though rows/columns are rotated 45 degrees in-plane.
     expect(maxImageIdIndex).toBe(3);
-    // ijk=[(4-1)/2=1.5, 1.5, floor(4/2)=2]
+    // in-plane ijk=[(4-1)/2=1.5, 1.5]
     // x = 1.5*cos45 + 1.5*(-cos45) = 0
     // y = 1.5*cos45 + 1.5*cos45 = 1.5*sqrt(2)
-    // z = 2
-    expectPoint3Close(sliceBasis.sliceCenterWorld, [0, 1.5 * Math.SQRT2, 2]);
     // z corners are 0 (k=0) and 3 (k=3); projected onto normal [0,0,-1] gives
-    // min=-3 (k=3), max=0 (k=0); center k=2 -> fraction=(-2-(-3))/3=1/3 -> index=1
-    expect(currentImageIdIndex).toBe(1);
+    // min=-3 (k=3), max=0 (k=0); legacy middle index floor(4/2)=2 -> k=1, z=1
+    expectPoint3Close(sliceBasis.sliceCenterWorld, [0, 1.5 * Math.SQRT2, 1]);
+    expect(currentImageIdIndex).toBe(2);
   });
 
   it('resolves correct slice depths for a volume with a flipped (negative) direction axis', () => {

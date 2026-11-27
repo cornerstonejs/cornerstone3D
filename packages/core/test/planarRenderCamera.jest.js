@@ -852,15 +852,16 @@ describe('PlanarVolumeResolvedView (parity with PlanarStackResolvedView)', () =>
   //   -> indexToWorld -> center = [13.5, 29, 48].
   //   Volume corners project onto normal=[0,0,-1] as -z, z in [30,63], so
   //   min=-63, max=-30 (range 33). spacingInNormalDirection = |spacing.z| = 3.
-  //   No explicit slice/imageIdIndex was requested, so sliceCenterWorld stays
-  //   at the volume center: [13.5, 29, 48]. cameraDistance = max(33,3,1)=33.
+  //   No explicit slice/imageIdIndex was requested, so the slice is the legacy
+  //   middle slice in view order: floor(12/2)=6 -> z = 63 - 6*3 = 45, giving
+  //   sliceCenterWorld = [13.5, 29, 45]. cameraDistance = max(33,3,1)=33.
   //   getOrthogonalVolumeSliceGeometry for AXIAL picks columns from the row
   //   axis (dim 8, spacing 1) and rows from the column axis (dim 10, spacing 2):
   //     sliceWidthWorld=8, sliceHeightWorld=20
   //     fitParallelScale = max(rows*rowSpacing, cols*colSpacing/aspect)*0.5
   //                      = max(20, 8)*0.5 = 10   (square canvas, aspect=1)
-  const EXPECTED_FOCAL_POINT = [13.5, 29, 48];
-  const EXPECTED_POSITION = [13.5, 29, 15]; // focal + [0,0,-1]*33
+  const EXPECTED_FOCAL_POINT = [13.5, 29, 45];
+  const EXPECTED_POSITION = [13.5, 29, 12]; // focal + [0,0,-1]*33
   const EXPECTED_VIEW_UP = [0, -1, 0];
   const EXPECTED_VIEW_PLANE_NORMAL = [0, 0, -1];
   const EXPECTED_PARALLEL_SCALE = 10;

@@ -53,4 +53,21 @@ describe('the image volume voxel manager remembers a missing image', () => {
 
     expect(voxelManager.getAtIJK(0, 0, 1)).toBe(7);
   });
+
+  it('returns the complete scalar data while the image of slice 0 is missing', () => {
+    const voxelManager = VoxelManager.createImageVolumeVoxelManager({
+      dimensions: [width, height, imageIds.length],
+      imageIds,
+      numberOfComponents: 1,
+      dataType: 'Uint16Array',
+    });
+
+    putSlice(imageIds[1], 7);
+
+    const scalarData = voxelManager.getCompleteScalarDataArray();
+
+    expect(scalarData.length).toBe(width * height * imageIds.length);
+    expect(scalarData[0]).toBe(0);
+    expect(scalarData[width * height]).toBe(7);
+  });
 });

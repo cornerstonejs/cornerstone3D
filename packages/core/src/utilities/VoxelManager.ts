@@ -1554,10 +1554,10 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
         return new Uint8Array(0);
       }
 
-      const dataLength = voxelManager.getScalarDataLength();
-      const scalarData = new ScalarDataConstructor(dataLength);
-
       const sliceSize = dimensions[0] * dimensions[1] * numberOfComponents;
+      // From the grid, and not from `getScalarDataLength`, which is 0 while
+      // the image of slice 0 is missing, although later slices can be loaded.
+      const scalarData = new ScalarDataConstructor(sliceSize * dimensions[2]);
 
       for (let sliceIndex = 0; sliceIndex < dimensions[2]; sliceIndex++) {
         const imageVoxelManager = resolveSliceVoxelManager(sliceIndex);

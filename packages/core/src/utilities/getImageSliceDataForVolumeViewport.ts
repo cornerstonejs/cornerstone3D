@@ -1,6 +1,7 @@
 import type { ImageSliceData, IVolumeViewport, VolumeActor } from '../types';
 import getSliceRange from './getSliceRange';
 import getTargetVolumeAndSpacingInNormalDir from './getTargetVolumeAndSpacingInNormalDir';
+import getVolumeSliceGrid, { getSliceGridIndex } from './getVolumeSliceGrid';
 import { coreLog } from './logger';
 
 const log = coreLog.getLogger(
@@ -44,20 +45,10 @@ function getImageSliceDataForVolumeViewport(
   const sliceRange = getSliceRange(volumeActor, viewPlaneNormal, focalPoint);
 
   const { min, max, current } = sliceRange;
-
-  // calculate number of steps from min to max with current normal spacing in direction
-  const numberOfSlices = Math.round((max - min) / spacingInNormalDirection) + 1;
-
-  // calculate the imageIndex based on min, max, current
-  let imageIndex = ((current - min) / (max - min)) * numberOfSlices;
-  imageIndex = Math.floor(imageIndex);
-
-  // Clamp imageIndex
-  if (imageIndex > numberOfSlices - 1) {
-    imageIndex = numberOfSlices - 1;
-  } else if (imageIndex < 0) {
-    imageIndex = 0;
-  }
+  const grid = getVolumeSliceGrid(min, max, spacingInNormalDirection);
+  const numberOfSlices = grid.maxIndex + 1;
+  // The same index as the scroll and the planar viewport (VSN-I-4).
+  const imageIndex = getSliceGridIndex(grid, current);
 
   return {
     numberOfSlices,
