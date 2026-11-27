@@ -10,7 +10,8 @@ const PRESET = 'CT-Coronary-Arteries-3';
 
 /**
  * The part of a volume viewport that setProperties and setPreset use, with a
- * real vtkVolume actor.
+ * real vtkVolume actor. Object.create skips the constructor, so the instance
+ * fields that these methods read are set here.
  */
 function createViewport() {
   const volumeActor = vtkVolume.newInstance();
@@ -20,6 +21,9 @@ function createViewport() {
     id: 'viewport',
     element: document.createElement('div'),
     viewportProperties: {},
+    volumeVOIShapes: new Map(),
+    volumeVOICurveApplied: new Map(),
+    getProperties: () => ({}),
     _getApplicableVolumeActor: () => ({ volumeActor, volumeId: 'volume' }),
     render: jest.fn(),
   });
