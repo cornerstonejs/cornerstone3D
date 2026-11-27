@@ -66,24 +66,26 @@ interface Cornerstone3DConfig {
     strictZSpacingForVolumeViewport?: boolean;
 
     /**
-     * EXPERIMENTAL, and off by default. Which measure gives the distance
-     * between two adjacent slices of a volume viewport.
+     * Which measure gives the distance between two adjacent slices of a
+     * volume viewport, for the planar and the legacy volume viewports.
      *
-     * - `'l2'` - the default and the historic behaviour.
-     *   `getSpacingInNormalDirection` gives the L2 length of the projected
-     *   spacing vector, `sqrt( Σᵢ (n · aᵢ · sᵢ)² )`.
-     * - `'l1'` - `getVoxelThicknessAlongNormal` gives the L1 length,
-     *   `Σᵢ |n · aᵢ| · sᵢ`, which is how far one voxel reaches along the
-     *   normal.
+     * - `'l1'` - the default. `getVoxelThicknessAlongNormal` gives the L1
+     *   length, `Σᵢ |n · aᵢ| · sᵢ`, which is how far one voxel reaches along
+     *   the normal. Each voxel then shows on exactly one slice.
+     * - `'l2'` - the historic behaviour. `getSpacingInNormalDirection` gives
+     *   the L2 length of the projected spacing vector,
+     *   `sqrt( Σᵢ (n · aᵢ · sᵢ)² )`.
      *
      * The two measures are equal when the normal is parallel to a voxel axis,
-     * so an acquisition-orientation view behaves the same either way. The L2
-     * value is the smaller one for an oblique normal, so the viewport steps
-     * less than the width of one voxel, and two adjacent oblique slices show
-     * some of the same voxels. A brush fill on an oblique plane then appears
-     * on the next slice and on the previous slice.
+     * so an axis-aligned view behaves the same either way. The L2 value is the
+     * smaller one for an oblique normal, so the viewport steps less than the
+     * width of one voxel, and two adjacent oblique slices show some of the
+     * same voxels. A brush fill on an oblique plane then appears on the next
+     * slice and on the previous slice. With `'l1'` an oblique view has fewer
+     * slices than with `'l2'`.
      *
-     * See https://github.com/cornerstonejs/cornerstone3D/issues/2912.
+     * See https://github.com/cornerstonejs/cornerstone3D/issues/2912 and the
+     * volume slice navigation specification.
      */
     sliceStepMeasure?: 'l1' | 'l2';
 

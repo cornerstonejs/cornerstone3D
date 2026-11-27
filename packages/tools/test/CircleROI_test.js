@@ -228,8 +228,9 @@ describe('Circle Tool: ', () => {
     };
 
     element.addEventListener(Events.IMAGE_RENDERED, () => {
-      const index1 = [53, 53, 2];
-      const index2 = [54, 54, 2];
+      // The view opens on IJK slice 1 (view index 2), whose bar is x 25-49.
+      const index1 = [37, 53, 2];
+      const index2 = [40, 56, 2];
 
       const { imageData } = vp.getImageData();
 

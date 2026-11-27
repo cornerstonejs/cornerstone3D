@@ -490,7 +490,8 @@ function _createVolumeViewportCinePlayContext(
 
   return {
     get numScrollSteps(): number {
-      return getScrollInfo().numScrollSteps;
+      // The scroll info gives the last index; a cine context counts the slices.
+      return getScrollInfo().numScrollSteps + 1;
     },
     get currentStepIndex(): number {
       return getScrollInfo().currentStepIndex;

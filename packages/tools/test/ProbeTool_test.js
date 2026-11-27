@@ -530,7 +530,8 @@ describe('Probe Tool:', () => {
     };
 
     element.addEventListener(Events.IMAGE_RENDERED, () => {
-      const index1 = [50, 50, 4];
+      // The view opens on IJK slice 4 (view index 5), whose bar is x 40-49.
+      const index1 = [45, 50, 4];
 
       const { imageData } = vp.getImageData();
 

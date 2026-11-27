@@ -13,6 +13,10 @@ import { gpuSettingsForRender } from '../../../utilities/gpuSettingsPresets';
 import type { EffectiveRenderBackend } from '../../../types/RenderBackendRegistry';
 import { isValidVolume } from '../../../utilities/isValidVolume';
 import { getOrientationFromScanAxisNormal } from '../../helpers/getCameraVectors';
+import { MPR_CAMERA_VALUES } from '../../../constants';
+import { isAcquisitionPlaneNormal } from '../../../utilities/isAcquisitionPlaneNormal';
+import getAcquisitionPlaneOrientation from '../../../utilities/getAcquisitionPlaneOrientation';
+import type { IImageVolume, Mat3, Point3 } from '../../../types';
 import { resolveSlabThickness } from './planarVolumeSliceBlendMode';
 import type {
   PlanarViewState,
@@ -259,6 +263,28 @@ export function selectPlanarRenderPath(
   return defaultPlanarRenderPathDecisionService.select(dataSet, options);
 }
 
+/**
+ * The standard orientation that the acquired frames show, or undefined.
+ *
+ * The frames show a standard orientation only when the acquisition view is
+ * that orientation on the screen:
+ * - `isAcquisitionPlaneNormal` accepts the standard view plane normal for the
+ *   frame geometry (the plane moves less than half a slice across the image);
+ * - the acquisition normal and view up point the same way as the standard
+ *   ones, so the view is not mirrored or upside down;
+ * - an in-plane rotation of the frames moves the image corners by less than
+ *   half a pixel.
+ *
+ * Any other series gets undefined, for example a sagittal MR with a 13 degree
+ * tilt of its normal or of its in-plane axes. A request for the standard
+ * orientation then reformats to the true axes, as the legacy volume viewport
+ * does.
+ *
+ * The frame geometry comes from `imagePlaneModule` and approximates the volume
+ * geometry: the slice spacing is `spacingBetweenSlices || sliceThickness`, not
+ * the spacing of the image positions. A missing value is 1, so a series with no
+ * `rows`, `columns` or pixel spacing keeps the nearest standard orientation.
+ */
 export function getPlanarAcquisitionOrientation(
   imageIds: string[]
 ): PlanarViewState['orientation'] | undefined {
@@ -288,6 +314,7 @@ export function getPlanarAcquisitionOrientation(
   const scanAxisNormal = vec3.create();
 
   vec3.cross(scanAxisNormal, rowVec, colVec);
+  vec3.normalize(scanAxisNormal, scanAxisNormal);
 
   const orientation = getOrientationFromScanAxisNormal([
     scanAxisNormal[0],
@@ -299,6 +326,50 @@ export function getPlanarAcquisitionOrientation(
     orientation !== OrientationAxis.AXIAL &&
     orientation !== OrientationAxis.CORONAL &&
     orientation !== OrientationAxis.SAGITTAL
+  ) {
+    return;
+  }
+
+  const {
+    rows = 1,
+    columns = 1,
+    rowPixelSpacing = 1,
+    columnPixelSpacing = 1,
+  } = imagePlaneModule;
+  const sliceSpacing =
+    imagePlaneModule.spacingBetweenSlices ||
+    imagePlaneModule.sliceThickness ||
+    1;
+  const frameGeometry = {
+    direction: [...rowVec, ...colVec, ...scanAxisNormal] as unknown as Mat3,
+    dimensions: [columns, rows, 1] as Point3,
+    spacing: [columnPixelSpacing, rowPixelSpacing, sliceSpacing] as Point3,
+  };
+
+  const standard = MPR_CAMERA_VALUES[orientation];
+
+  if (!isAcquisitionPlaneNormal(frameGeometry, standard.viewPlaneNormal)) {
+    return;
+  }
+
+  const acquisition = getAcquisitionPlaneOrientation(
+    frameGeometry as unknown as IImageVolume
+  );
+  const upCos = vec3.dot(
+    acquisition.viewUp as unknown as vec3,
+    standard.viewUp as unknown as vec3
+  );
+  const upSin = Math.sqrt(Math.max(0, 1 - upCos * upCos));
+  const halfDiagonal =
+    Math.hypot(columns * columnPixelSpacing, rows * rowPixelSpacing) / 2;
+
+  if (
+    vec3.dot(
+      acquisition.viewPlaneNormal as unknown as vec3,
+      standard.viewPlaneNormal as unknown as vec3
+    ) <= 0 ||
+    upCos <= 0 ||
+    upSin * halfDiagonal >= Math.min(columnPixelSpacing, rowPixelSpacing) / 2
   ) {
     return;
   }
