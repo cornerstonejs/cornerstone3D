@@ -113,8 +113,9 @@ describe('Rectangle ROI StartEnd Tool:', () => {
         const data = rectangleAnnotation.data.cachedStats;
         const targets = Array.from(Object.keys(data));
         expect(targets.length).toBe(4);
-        expect(data.statistics.mean).toBe(85);
-        expect(data.statistics.stdDev).toBeCloseTo(120.208);
+        // Slices 1 and 0 (the propagation follows the normal): one has the bar.
+        expect(data.statistics.mean).toBe(127.5);
+        expect(data.statistics.stdDev).toBeCloseTo(127.5);
 
         annotation.state.removeAnnotation(rectangleAnnotation.annotationUID);
         done();
@@ -122,11 +123,9 @@ describe('Rectangle ROI StartEnd Tool:', () => {
     };
 
     element.addEventListener(Events.IMAGE_RENDERED, () => {
-      // Inside the strip which is from 50-75 in slice 2
-      // volumeURI_100_100_4_1_1_1_0
-      // The strip is from
-      const index1 = [50, 10, 2];
-      const index2 = [52, 20, 2];
+      // The view opens on IJK slice 1 (view index 2), whose bar is x 25-49.
+      const index1 = [25, 10, 1];
+      const index2 = [27, 20, 1];
 
       const { imageData } = vp.getImageData();
 

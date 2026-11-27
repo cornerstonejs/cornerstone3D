@@ -236,11 +236,9 @@ describe('Rectangle ROI Tool:', () => {
     };
 
     element.addEventListener(Events.IMAGE_RENDERED, () => {
-      // Inside the strip which is from 50-75 in slice 2
-      // volumeURI_100_100_4_1_1_1_0
-      // The strip is from
-      const index1 = [50, 10, 2];
-      const index2 = [52, 20, 2];
+      // The view opens on IJK slice 1 (view index 2), whose bar is x 25-49.
+      const index1 = [40, 10, 2];
+      const index2 = [42, 20, 2];
 
       const { imageData } = vp.getImageData();
 
