@@ -93,8 +93,11 @@ export class NaturalTagListener {
   ) {
     const tagData = mapTagInfo.get(tag);
     const dictEntry = !tagData ? dictionaryLookup(tag) : undefined;
+    // The Tags name comes first: a few Tags entries use a name that differs
+    // from the dcmjs keyword (e.g. RadiopharmaceuticalInfo for 00540016), and
+    // the dcmjs reader passes its own keyword as tagInfo.name.
     const name =
-      tagInfo?.name || tagData?.[DEFAULT_NAME_KEY] || dictEntry?.name || tag;
+      tagData?.[DEFAULT_NAME_KEY] || tagInfo?.name || dictEntry?.name || tag;
     const singleVm = resolveSingleVm(tagData, dictEntry, tagInfo);
 
     next(tag, tagInfo);
