@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { eventTarget } from '@cornerstonejs/core';
+import * as dicomParser from 'dicom-parser';
 import { logging } from '@cornerstonejs/utils';
 
 import { metadataForDataset } from '../imageLoader/wadouri/metaData/metaDataProvider';
@@ -895,15 +896,10 @@ describe('wadouri dataSet-layer', () => {
         });
       });
 
-      // NOTE: see "suspected product bugs" in the final report - PET_IMAGE
-      // resolves x00541300/x00181242 to a *string value* first, and uses that
-      // resolved value as the tag argument to floatString/intString, instead of
-      // reading those tags directly. This test characterizes the actual
-      // (surprising) behavior rather than the presumably-intended one.
-      it('characterizes the double-indirection lookup for frameReferenceTime/actualFrameDuration', () => {
+      it('reads frameReferenceTime (DS) and actualFrameDuration (IS) from their own tags', () => {
         const dataSet = fakeDataSet({
-          x00541300: 'x00181242', // value of frameReferenceTime tag reused as a tag name
-          x00181242: '55.5', // this is what actually gets floatString'd
+          x00541300: '12345.678',
+          x00181242: '180000',
         });
 
         const result = metadataForDataset(
@@ -912,12 +908,8 @@ describe('wadouri dataSet-layer', () => {
           dataSet as any
         );
 
-        // frameReferenceTime = floatString(string('x00541300')) = floatString('x00181242') = 55.5
-        expect(result.frameReferenceTime).toBeCloseTo(55.5);
-        // actualFrameDuration = intString(string('x00181242')) = intString('55.5'),
-        // and tag '55.5' does not exist, so the resolved value is undefined
-        // rather than the (presumably intended) parsed integer duration.
-        expect(result.actualFrameDuration).toBeUndefined();
+        expect(result.frameReferenceTime).toBeCloseTo(12345.678);
+        expect(result.actualFrameDuration).toBe(180000);
       });
 
       it('returns undefined fields when the underlying tags are absent', () => {
@@ -1791,6 +1783,97 @@ describe('wadouri dataSet-layer', () => {
 
       expect(dataSetCacheManager.getInfo().numberOfDataSetsCached).toBe(0);
       expect(dataSetCacheManager.getInfo().cacheSizeInBytes).toBe(0);
+    });
+  });
+
+  describe('value representations read with real dicom-parser DataSets', () => {
+    /**
+     * Builds a real little endian dicom-parser DataSet, so the typed accessors
+     * (uint16, double, intString, ...) read the encoded bytes the way they do
+     * for a loaded instance. The fake data set above returns values as given
+     * and so cannot show an accessor that does not match the tag's VR.
+     */
+    function realDataSet(
+      entries: Record<string, { vr: string; value: string | number }>
+    ) {
+      const chunks: Uint8Array[] = [];
+      const elements = {};
+      let offset = 0;
+      for (const [tag, { vr, value }] of Object.entries(entries)) {
+        let bytes: Uint8Array;
+        if (vr === 'FD') {
+          bytes = new Uint8Array(8);
+          new DataView(bytes.buffer).setFloat64(0, value as number, true);
+        } else {
+          let text = String(value);
+          if (text.length % 2) {
+            text += ' ';
+          }
+          bytes = new TextEncoder().encode(text);
+        }
+        elements[tag] = { tag, vr, length: bytes.length, dataOffset: offset };
+        chunks.push(bytes);
+        offset += bytes.length;
+      }
+      const byteArray = new Uint8Array(offset);
+      let position = 0;
+      for (const chunk of chunks) {
+        byteArray.set(chunk, position);
+        position += chunk.length;
+      }
+      return new (dicomParser as any).DataSet(
+        dicomParser.littleEndianByteArrayParser,
+        byteArray,
+        elements
+      );
+    }
+
+    it('NM_MULTIFRAME_GEOMETRY parses NumberOfFrames (IS) as text', () => {
+      const dataSet = realDataSet({
+        x00080060: { vr: 'CS', value: 'NM' },
+        x00080008: { vr: 'CS', value: 'ORIGINAL\\PRIMARY\\RECON TOMO' },
+        x00280008: { vr: 'IS', value: '10' },
+      });
+
+      const result = metadataForDataset(
+        'nmMultiframeGeometryModule',
+        'imageId',
+        dataSet
+      );
+
+      expect(result.numberOfFrames).toBe(10);
+    });
+
+    it('PET_IMAGE reads FrameReferenceTime (DS) and ActualFrameDuration (IS)', () => {
+      const dataSet = realDataSet({
+        x00181242: { vr: 'IS', value: '180000' },
+        x00541300: { vr: 'DS', value: '12345.678' },
+      });
+
+      const result = metadataForDataset('petImageModule', 'imageId', dataSet);
+
+      expect(result.frameReferenceTime).toBeCloseTo(12345.678);
+      expect(result.actualFrameDuration).toBe(180000);
+    });
+
+    it('getUSEnhancedRegions reads the reference pixel physical values (FD) as doubles', () => {
+      const regionItem = realDataSet({
+        x00186028: { vr: 'FD', value: 1.5 },
+        x0018602a: { vr: 'FD', value: -2.25 },
+        x0018602c: { vr: 'FD', value: 0.1 },
+        x0018602e: { vr: 'FD', value: 0.2 },
+      });
+      const dataSet = fakeDataSet(
+        {},
+        { x00186011: { items: [{ dataSet: regionItem }] } }
+      );
+
+      const [region] = getUSEnhancedRegions(dataSet as any);
+
+      expect(region.physicalDeltaX).toBeCloseTo(0.1);
+      expect(region.physicalDeltaY).toBeCloseTo(0.2);
+      expect(region.referencePhysicalPixelValueX).toBe(1.5);
+      expect(region.referencePhysicalPixelValueY).toBe(-2.25);
     });
   });
 });

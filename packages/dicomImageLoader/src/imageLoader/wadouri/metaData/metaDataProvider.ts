@@ -173,7 +173,8 @@ export function metadataForDataset(
       imagePositionPatient: extractPositionFromDataset(dataSet),
       sliceThickness: extractSliceThicknessFromDataset(dataSet),
       pixelSpacing: extractSpacingFromDataset(dataSet),
-      numberOfFrames: dataSet.uint16('x00280008'),
+      // NumberOfFrames is IS (a decimal string), not a binary integer
+      numberOfFrames: dataSet.intString('x00280008'),
       isNMReconstructable:
         isNMReconstructable(imageSubType) && modality.includes('NM'),
     };
@@ -356,10 +357,8 @@ export function metadataForDataset(
 
   if (type === MetadataModules.PET_IMAGE) {
     return {
-      frameReferenceTime: dataSet.floatString(
-        dataSet.string('x00541300') || ''
-      ),
-      actualFrameDuration: dataSet.intString(dataSet.string('x00181242')),
+      frameReferenceTime: dataSet.floatString('x00541300'),
+      actualFrameDuration: dataSet.intString('x00181242'),
     };
   }
 
