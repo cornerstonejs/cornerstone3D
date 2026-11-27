@@ -28,6 +28,7 @@ import type {
   VtkOffscreenMultiRenderWindow,
 } from '../types';
 import { getViewportClassForInput } from './helpers/viewportTypeToViewportClass';
+import isWebGLContextLost from './helpers/isWebGLContextLost';
 import { isGenericViewport } from '../utilities/viewportCapabilities';
 
 /**
@@ -335,6 +336,13 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
   /**
    * Renders all viewports.
    */
+  /**
+   * The viewports of this frame whose render a lost WebGL context skipped:
+   * their canvas keeps its image, so they count as neither rendered nor
+   * drawn at a new fidelity.
+   */
+  private _skippedByLostContext = new Set<string>();
+
   protected _renderFlaggedViewports = (): void => {
     this._throwIfDestroyed();
 
@@ -351,16 +359,31 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
 
     const renderStart = performance.now();
 
-    // Render all viewports synchronously
-    const eventDetails = viewportsToRender.map((viewport) => {
-      const eventDetail = this.renderViewportUsingCustomOrVtkPipeline(viewport);
-      viewport.setRendered();
-      this._needsRender.delete(viewport.id);
-      return eventDetail;
-    });
+    let eventDetails: EventTypes.ImageRenderedEventDetail[];
 
-    this._animationFrameSet = false;
-    this._animationFrameHandle = null;
+    this._skippedByLostContext.clear();
+
+    try {
+      /** Render all viewports synchronously. */
+      eventDetails = viewportsToRender.map((viewport) => {
+        const eventDetail =
+          this.renderViewportUsingCustomOrVtkPipeline(viewport);
+
+        if (!this._skippedByLostContext.has(viewport.id)) {
+          viewport.setRendered();
+        }
+
+        this._needsRender.delete(viewport.id);
+        return eventDetail;
+      });
+    } finally {
+      /**
+       * A render that throws must not leave the frame flag set: the engine
+       * would then schedule no frame again, for any viewport.
+       */
+      this._animationFrameSet = false;
+      this._animationFrameHandle = null;
+    }
 
     const waiting = viewportsToRender.map((vp) =>
       this._waitsForStorage(vp, renderStart)
@@ -376,7 +399,9 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     // Fidelity event after IMAGE_RENDERED so consumers can query the frame
     // that was just drawn.
     this._notifyFidelityOfRenderedViewports(
-      viewportsToRender.filter((_vp, index) => !waiting[index])
+      viewportsToRender.filter(
+        (vp, index) => !waiting[index] && !this._skippedByLostContext.has(vp.id)
+      )
     );
   };
 
@@ -445,6 +470,15 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
       );
     }
 
+    /**
+     * A lost context renders nothing: vtk.js throws there, and the throw would
+     * stop the renders of every other viewport. The canvas keeps its image.
+     */
+    if (isWebGLContextLost(offscreenMultiRenderWindow)) {
+      this._skippedByLostContext.add(viewport.id);
+      return;
+    }
+
     // Add renderer if not already present
     if (!offscreenMultiRenderWindow.getRenderer(viewport.id)) {
       offscreenMultiRenderWindow.addRenderer({
@@ -503,16 +537,45 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
       renderer.setDraw(viewportId === viewport.id);
     });
 
-    renderWindow.render();
+    let lostDuringRender = false;
 
-    allRenderers.forEach(({ renderer: r }) => r.setDraw(false));
+    try {
+      renderWindow.render();
+    } catch (error) {
+      /**
+       * A context can be lost in the middle of a render, for example during
+       * the upload of a large texture, and vtk.js then throws at the next call
+       * that the lost context refuses. That render ends here; any other error
+       * is thrown on.
+       */
+      if (!isWebGLContextLost(offscreenMultiRenderWindow)) {
+        throw error;
+      }
 
-    widgetRenderers.forEach((_, renderer) => {
-      renderer.setDraw(false);
-    });
+      lostDuringRender = true;
+      log.warn(
+        'a render ended because its WebGL context was lost during it',
+        error
+      );
+    } finally {
+      allRenderers.forEach(({ renderer: r }) => r.setDraw(false));
 
-    if (originalRenderPasses) {
-      view.setRenderPasses(originalRenderPasses);
+      widgetRenderers.forEach((_, renderer) => {
+        renderer.setDraw(false);
+      });
+
+      if (originalRenderPasses) {
+        view.setRenderPasses(originalRenderPasses);
+      }
+    }
+
+    /**
+     * A lost context can also fail its calls with no throw, so the render
+     * returns normally: its offscreen canvas then holds nothing to copy.
+     */
+    if (lostDuringRender || isWebGLContextLost(offscreenMultiRenderWindow)) {
+      this._skippedByLostContext.add(viewport.id);
+      return;
     }
 
     const openGLRenderWindow =

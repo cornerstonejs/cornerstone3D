@@ -9,6 +9,7 @@ import type IStackViewport from '../types/IStackViewport';
 import type IVolumeViewport from '../types/IVolumeViewport';
 import { vtkOffscreenMultiRenderWindow } from './vtkClasses';
 import { attachWebGLContextEvents } from './helpers/attachWebGLContextEvents';
+import isWebGLContextLost from './helpers/isWebGLContextLost';
 import { setElementTouchActionNone } from './helpers/elementTouchAction';
 
 import type * as EventTypes from '../types/EventTypes';
@@ -364,45 +365,62 @@ class TiledRenderingEngine extends BaseRenderingEngine {
   }
 
   /**
+   * The viewports of this frame whose copy a lost WebGL context skipped:
+   * their canvas keeps its image, so they count as neither rendered nor
+   * drawn at a new fidelity.
+   */
+  private _skippedByLostContext = new Set<string>();
+
+  /**
    * Renders all viewports.
    */
   protected _renderFlaggedViewports = () => {
     this._throwIfDestroyed();
+    this._skippedByLostContext.clear();
     const renderStart = performance.now();
-
-    if (this.offscreenMultiRenderWindow) {
-      this.performVtkDrawCall();
-    }
-
     const viewports = this._getViewportsAsArray();
     const eventDetailArray = [];
     const renderedViewports: IViewport[] = [];
 
-    for (let i = 0; i < viewports.length; i++) {
-      const viewport = viewports[i];
-      if (this._needsRender.has(viewport.id)) {
-        const eventDetail =
-          this.renderViewportUsingCustomOrVtkPipeline(viewport);
+    try {
+      if (this.offscreenMultiRenderWindow) {
+        this.performVtkDrawCall();
+      }
 
-        if (!this._waitsForStorage(viewport, renderStart)) {
-          eventDetailArray.push(eventDetail);
-          renderedViewports.push(viewport);
-        }
-        viewport.setRendered();
+      for (let i = 0; i < viewports.length; i++) {
+        const viewport = viewports[i];
+        if (this._needsRender.has(viewport.id)) {
+          const eventDetail =
+            this.renderViewportUsingCustomOrVtkPipeline(viewport);
 
-        // This viewport has been rendered, we can remove it from the set
-        this._needsRender.delete(viewport.id);
+          const skipped = this._skippedByLostContext.has(viewport.id);
 
-        // If there is nothing left that is flagged for rendering, stop the loop
-        if (this._needsRender.size === 0) {
-          break;
+          if (!skipped && !this._waitsForStorage(viewport, renderStart)) {
+            eventDetailArray.push(eventDetail);
+            renderedViewports.push(viewport);
+          }
+
+          if (!skipped) {
+            viewport.setRendered();
+          }
+
+          /** This viewport has been rendered, so it leaves the set. */
+          this._needsRender.delete(viewport.id);
+
+          /** Nothing left that is flagged for rendering stops the loop. */
+          if (this._needsRender.size === 0) {
+            break;
+          }
         }
       }
+    } finally {
+      /**
+       * Allow the next animation frame, also after a render that threw: the
+       * engine would otherwise schedule no frame again, for any viewport.
+       */
+      this._animationFrameSet = false;
+      this._animationFrameHandle = null;
     }
-
-    // allow RAF to be called again
-    this._animationFrameSet = false;
-    this._animationFrameHandle = null;
 
     eventDetailArray.forEach((eventDetail) => {
       // Very small viewports won't have an element
@@ -425,6 +443,15 @@ class TiledRenderingEngine extends BaseRenderingEngine {
   private performVtkDrawCall() {
     // Render all viewports under vtk.js' control.
     const { offscreenMultiRenderWindow } = this;
+
+    /**
+     * A lost context draws nothing: vtk.js throws there, and the throw would
+     * stop the renders of every viewport. The canvases keep their image.
+     */
+    if (isWebGLContextLost(offscreenMultiRenderWindow)) {
+      return;
+    }
+
     const renderWindow = offscreenMultiRenderWindow.getRenderWindow();
 
     const renderers = offscreenMultiRenderWindow.getRenderers();
@@ -446,11 +473,27 @@ class TiledRenderingEngine extends BaseRenderingEngine {
       }
     }
 
-    renderWindow.render();
+    try {
+      renderWindow.render();
+    } catch (error) {
+      /**
+       * A context lost in the middle of the draw, for example during the
+       * upload of a large texture, makes vtk.js throw. That draw ends here;
+       * any other error is thrown on.
+       */
+      if (!isWebGLContextLost(offscreenMultiRenderWindow)) {
+        throw error;
+      }
 
-    // After redraw we set all renderers to not render until necessary
-    for (let i = 0; i < renderers.length; i++) {
-      renderers[i].renderer.setDraw(false);
+      log.warn(
+        'a draw ended because its WebGL context was lost during it',
+        error
+      );
+    } finally {
+      /** After a draw, no renderer draws until it is needed. */
+      for (let i = 0; i < renderers.length; i++) {
+        renderers[i].renderer.setDraw(false);
+      }
     }
   }
 
@@ -485,6 +528,13 @@ class TiledRenderingEngine extends BaseRenderingEngine {
       }
 
       const { offscreenMultiRenderWindow } = this;
+
+      /** The offscreen canvas of a lost context holds nothing to copy. */
+      if (isWebGLContextLost(offscreenMultiRenderWindow)) {
+        this._skippedByLostContext.add(viewport.id);
+        return;
+      }
+
       const openGLRenderWindow =
         offscreenMultiRenderWindow.getOpenGLRenderWindow();
       const context = openGLRenderWindow.get3DContext();
