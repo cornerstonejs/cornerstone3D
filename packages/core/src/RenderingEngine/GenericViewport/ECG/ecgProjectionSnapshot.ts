@@ -6,7 +6,6 @@ import {
   type ECGProjectionSnapshot,
 } from './ECGProjectionTypes';
 import { normalizeECGViewState } from './ecgViewportCamera';
-import type { ECGViewState } from './ECGViewportTypes';
 
 /**
  * Clones a canvas-space point so projection snapshots cannot leak mutable
@@ -28,13 +27,26 @@ function getCenterCanvasPoint(
 
 /**
  * Derives signal-space sampling density from the resolved canvas transform.
+ *
+ * The finite difference starts at `canvasPoint`, which is the centre of the
+ * canvas, and not at the canvas origin. `canvasToWorld` clamps a sample index
+ * to the signal, and the ECG content is centred, so the canvas origin normally
+ * lies outside the drawn content. Both samples then clamped to sample 0 and the
+ * reported density was 0.
  */
 function getSignalScale(
-  resolvedView: NonNullable<ECGProjectionSnapshot['resolvedView']>
+  resolvedView: NonNullable<ECGProjectionSnapshot['resolvedView']>,
+  canvasPoint: Point2
 ): ProjectionScale {
-  const origin = resolvedView.canvasToWorld([0, 0]);
-  const nextSample = resolvedView.canvasToWorld([1, 0]);
-  const nextValue = resolvedView.canvasToWorld([0, 1]);
+  const origin = resolvedView.canvasToWorld(canvasPoint);
+  const nextSample = resolvedView.canvasToWorld([
+    canvasPoint[0] + 1,
+    canvasPoint[1],
+  ]);
+  const nextValue = resolvedView.canvasToWorld([
+    canvasPoint[0],
+    canvasPoint[1] + 1,
+  ]);
 
   return {
     kind: 'signal',
@@ -48,13 +60,14 @@ function getSignalScale(
  */
 function getScale(
   resolvedView: ECGProjectionSnapshot['resolvedView'],
-  zoom: number
+  zoom: number,
+  canvasPoint: Point2
 ): ProjectionScale {
   if (!resolvedView) {
     return { kind: 'fit', value: zoom };
   }
 
-  return getSignalScale(resolvedView);
+  return getSignalScale(resolvedView, canvasPoint);
 }
 
 /**
@@ -125,7 +138,7 @@ export function getECGProjectionSnapshot(
       pan: clonePoint2(rawPan),
       position: getSignalPosition(signalPoint, canvasPoint),
       rawPan: clonePoint2(rawPan),
-      scale: getScale(resolvedView, zoom),
+      scale: getScale(resolvedView, zoom, canvasPoint),
       zoom,
     },
     rendererCamera,

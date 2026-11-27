@@ -57,6 +57,15 @@ import { getCubeSizeInView } from '../utilities/getPlaneCubeIntersectionDimensio
 import { getNormalizedAspectRatio } from '../utilities/getNormalizedAspectRatio';
 import { getConfiguration } from '../init';
 import type { extendedVtkCamera } from './vtkClasses/extendedVtkCamera';
+import type { FidelityLine } from './helpers/fidelityIndicator/fidelityIndicatorState';
+import type {
+  IViewportFidelity,
+  ViewportFidelityState,
+} from '../types/ViewportFidelity';
+import { buildViewportFidelityState } from './helpers/fidelityIndicator/buildViewportFidelityState';
+import { displaySpacingOfViewport } from './helpers/fidelityIndicator/displaySpacingOfViewport';
+import { notifyFidelityStateChanged } from './helpers/fidelityIndicator/notifyFidelityStateChanged';
+import { holdLegacyActorTextureSet } from './helpers/legacyActorTextureSet';
 
 /**
  * An object representing a single viewport, which is a camera
@@ -69,7 +78,7 @@ import type { extendedVtkCamera } from './vtkClasses/extendedVtkCamera';
  */
 const log = coreLog.getLogger('RenderingEngine', 'Viewport');
 
-class Viewport {
+class Viewport implements IViewportFidelity {
   /**
    * CameraViewPresentation is a view presentation selector that has all the
    * camera related presentation selections, and would typically be used for
@@ -284,8 +293,11 @@ class Viewport {
   };
 
   public dispose(): void {
-    // Legacy viewports do not own extra teardown beyond the rendering engine
-    // reset path and widget cleanup above.
+    // Beyond the rendering engine reset path and the widget cleanup above, a
+    // legacy viewport only gives back the texture sets that its actors hold.
+    this._actors?.forEach(({ actor }) =>
+      holdLegacyActorTextureSet(actor, false)
+    );
   }
 
   public destroy(): void {
@@ -375,6 +387,64 @@ class Viewport {
     const renderingEngine = this.getRenderingEngine();
 
     renderingEngine.renderViewport(this.id);
+  }
+
+  /**
+   * Whether this viewport can report fidelity (GENVIEW-FIDELITY-8). Subclasses
+   * that show degraded data override this. The built-in indicator attaches
+   * only when this returns true.
+   */
+  public canReportFidelity(): boolean {
+    return false;
+  }
+
+  /**
+   * Absolute per-viewport fidelity record (FIDELITY-EVENT-5).
+   * Does not fire `VIEWPORT_FIDELITY_CHANGED`. Does not include a reader
+   * verdict — use {@link compareVoxelQuality} for that.
+   */
+  public getFidelityState(): ViewportFidelityState {
+    return buildViewportFidelityState(
+      this.collectFidelityLines(),
+      displaySpacingOfViewport(this)
+    );
+  }
+
+  /**
+   * Fidelity lines for the built-in indicator UI. Applications should use
+   * {@link getFidelityState} instead.
+   */
+  public getFidelityLines(): FidelityLine[] {
+    return this.collectFidelityLines();
+  }
+
+  /**
+   * Fires `VIEWPORT_FIDELITY_CHANGED` when the derived fidelity state changes
+   * (FIDELITY-EVENT-2..4). The rendering engines call this after each render.
+   * A viewport that cannot report fidelity does nothing.
+   *
+   * @internal
+   */
+  public notifyFidelityStateChanged(): void {
+    if (!this.canReportFidelity()) {
+      return;
+    }
+
+    notifyFidelityStateChanged(
+      this,
+      this.collectFidelityLines(),
+      displaySpacingOfViewport(this)
+    );
+  }
+
+  /**
+   * Builds the fidelity lines for this viewport. Subclasses that can show
+   * degraded data override this. The indicator and fidelity builders read
+   * only this method — they do not inspect actors or mappers
+   * (GENVIEW-FIDELITY-2).
+   */
+  protected collectFidelityLines(): FidelityLine[] {
+    return [];
   }
 
   /**
@@ -682,6 +752,7 @@ class Viewport {
     const renderer = this.getRenderer();
     renderer.removeActor(actorEntry.actor as vtkActor);
     this._actors.delete(actorUID);
+    holdLegacyActorTextureSet(actorEntry.actor, false);
 
     return actorEntry;
   }
@@ -787,6 +858,7 @@ class Viewport {
     const renderer = this.getRenderer();
     renderer?.addActor(actor as vtkActor);
     this._actors.set(actorUID, Object.assign({}, actorEntry));
+    holdLegacyActorTextureSet(actor, true);
 
     // when we add an actor we should update the camera clipping range and
     // clipping planes as well
@@ -808,6 +880,9 @@ class Viewport {
     const currentActors = this.getActors();
     this.getRenderer()?.removeAllViewProps();
     this._actors = new Map();
+    currentActors.forEach(({ actor }) =>
+      holdLegacyActorTextureSet(actor, false)
+    );
 
     // Trigger ACTORS_CHANGED event when removing all actors
     triggerEvent(this.element, Events.ACTORS_CHANGED, {
