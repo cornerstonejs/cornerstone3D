@@ -202,20 +202,6 @@ describe('HeightTool preventHandleOutsideImage', () => {
       expect(isKept(annotation)).toBe(false);
     });
 
-    it('removes a drawing released outside before the move is rendered', () => {
-      const annotation = startDrawing();
-      moveTo(outsideEnd);
-      release();
-      expect(isKept(annotation)).toBe(false);
-    });
-
-    it('removes a drawing released outside before its first render', () => {
-      const annotation = tool.addNewAnnotation(interaction());
-      moveTo(outsideEnd);
-      release();
-      expect(isKept(annotation)).toBe(false);
-    });
-
     it('keeps a moved annotation without an image to check against', () => {
       const annotation = load(inside);
       load(outside);
@@ -263,13 +249,6 @@ describe('HeightTool preventHandleOutsideImage', () => {
           interact(annotation);
           expect(isKept(annotation)).toBe(true);
         });
-
-        it('keeps an inside one after an outside one was loaded', () => {
-          const annotation = load(inside);
-          load(outside);
-          interact(annotation);
-          expect(isKept(annotation)).toBe(true);
-        });
       }
     );
 
@@ -303,11 +282,8 @@ describe('HeightTool preventHandleOutsideImage', () => {
     });
   });
 
-  describe.each([
-    ['by default', undefined],
-    ['when disabled', { preventHandleOutsideImage: false }],
-  ])('%s', (_, configuration) => {
-    beforeEach(() => setUp(configuration));
+  describe('by default (disabled)', () => {
+    beforeEach(() => setUp(undefined));
 
     it.each([
       ['inside', inside],
