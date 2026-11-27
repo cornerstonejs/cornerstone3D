@@ -1,3 +1,4 @@
+import { normalizeVOILUTFunction } from '../../../../utilities/voiLUTFunction';
 import type { IImage, CPUFallbackViewport } from '../../../../types';
 
 /**
@@ -14,8 +15,13 @@ export default function computeAutoVoi(
     return;
   }
 
-  const maxVoi = image.maxPixelValue * image.slope + image.intercept;
-  const minVoi = image.minPixelValue * image.slope + image.intercept;
+  // A prescaled image already has the modality LUT baked into its pixel values
+  // (and therefore into min/maxPixelValue), so applying slope/intercept again
+  // here would compute a window for the wrong value range.
+  const slope = image.isPreScaled ? 1 : image.slope;
+  const intercept = image.isPreScaled ? 0 : image.intercept;
+  const maxVoi = image.maxPixelValue * slope + intercept;
+  const minVoi = image.minPixelValue * slope + intercept;
   const ww = maxVoi - minVoi;
   const wc = (maxVoi + minVoi) / 2;
 
@@ -23,11 +29,14 @@ export default function computeAutoVoi(
     viewport.voi = {
       windowWidth: ww,
       windowCenter: wc,
-      voiLUTFunction: image.voiLUTFunction,
+      voiLUTFunction: normalizeVOILUTFunction(image.voiLUTFunction),
     };
   } else {
     viewport.voi.windowWidth = ww;
     viewport.voi.windowCenter = wc;
+    viewport.voi.voiLUTFunction ??= normalizeVOILUTFunction(
+      image.voiLUTFunction
+    );
   }
 }
 
@@ -42,7 +51,7 @@ function hasVoi(viewport: CPUFallbackViewport): boolean {
 
   return (
     hasLut ||
-    (viewport.voi.windowWidth !== undefined &&
-      viewport.voi.windowCenter !== undefined)
+    (viewport.voi?.windowWidth !== undefined &&
+      viewport.voi?.windowCenter !== undefined)
   );
 }

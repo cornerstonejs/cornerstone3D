@@ -1,4 +1,5 @@
 import getVOILUT from './getVOILut';
+import type VOILUTFunctionType from '../../../../enums/VOILUTFunctionType';
 import type { IImage, CPUFallbackLUT } from '../../../../types';
 
 /**
@@ -10,6 +11,7 @@ import type { IImage, CPUFallbackLUT } from '../../../../types';
  * @param windowCenter - The Window Center
  * @param invert - A boolean describing whether or not the image has been inverted
  * @param voiLUT- A Volume of Interest Lookup Table
+ * @param voiLUTFunction - VOI LUT Function (0028,1056)
  *
  * @returns A lookup table to apply to the image
  */
@@ -18,7 +20,8 @@ export default function generateColorLUT(
   windowWidth: number | number[],
   windowCenter: number | number[],
   invert: boolean,
-  voiLUT?: CPUFallbackLUT
+  voiLUT?: CPUFallbackLUT,
+  voiLUTFunction?: VOILUTFunctionType | string
 ) {
   const maxPixelValue = image.maxPixelValue;
   const minPixelValue = image.minPixelValue;
@@ -35,7 +38,8 @@ export default function generateColorLUT(
   const vlutfn = getVOILUT(
     Array.isArray(windowWidth) ? windowWidth[0] : windowWidth,
     Array.isArray(windowCenter) ? windowCenter[0] : windowCenter,
-    voiLUT
+    voiLUT,
+    voiLUTFunction
   );
 
   if (invert) {

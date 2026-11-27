@@ -1,3 +1,4 @@
+import { fidelityIssuesOfVolume } from './fidelityIndicator/fidelityIssues';
 import { Events } from '../../enums';
 import eventTarget from '../../eventTarget';
 import type { IImageVolume } from '../../types';
@@ -259,6 +260,7 @@ export function refreshFidelity(rendering: VolumeStrategyRendering): void {
     rendering.imageVolume,
     rendering.boundTexture
   );
+  rendering.fidelityIssues = fidelityIssuesOfVolume(rendering.imageVolume);
 }
 
 /** Gives back the strategy of a render path whose actor is gone. */
