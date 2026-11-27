@@ -18,6 +18,16 @@ interface RendererConfig {
   background?: [number, number, number];
 }
 
+/**
+ * The div that holds the offscreen canvas of a vtkOffscreenMultiRenderWindow.
+ * `width` and `height` are plain properties, not DOM attributes: the rendering
+ * engine writes the offscreen canvas size to them, and `resize()` reads them.
+ */
+export type OffscreenCanvasContainer = HTMLDivElement & {
+  width: number;
+  height: number;
+};
+
 export interface VtkOffscreenMultiRenderWindow extends vtkObject {
   renderWindow: vtkRenderWindow;
   getRenderWindow: () => vtkRenderWindow;
@@ -32,14 +42,14 @@ export interface VtkOffscreenMultiRenderWindow extends vtkObject {
   interactor: vtkRenderWindowInteractor;
   getInteractor: () => vtkRenderWindowInteractor;
 
-  container: HTMLDivElement | null;
-  getContainer: () => HTMLDivElement | null;
+  container: OffscreenCanvasContainer | null;
+  getContainer: () => OffscreenCanvasContainer | null;
 
   addRenderer: (config: RendererConfig) => void;
   removeRenderer: (id: string) => void;
   getRenderer: (id: string) => vtkRenderer;
   getRenderers: () => Array<{ id: string; renderer: vtkRenderer }>;
   resize: () => void;
-  setContainer: (el: HTMLDivElement) => void;
+  setContainer: (el: OffscreenCanvasContainer) => void;
   destroy: () => void;
 }

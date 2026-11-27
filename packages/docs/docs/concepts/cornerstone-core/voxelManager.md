@@ -123,6 +123,13 @@ const streamingImageVolume = new StreamingImageVolume({
 - **Memory Management**: Avoid `getCompleteScalarDataArray()` as it rebuilds large data arrays and can degrade performance.
 - **Handling RGB Data**: `getAtIndex` and `getAtIJK` return `[r, g, b]` arrays for RGB volumes.
 
+## More than one representation of one volume
+
+A [Composite Voxel Manager](./compositeVoxelManager.md) holds more than one representation of the
+same data at the same time, for example a full-resolution volume and a reduced-resolution copy. A
+device that cannot hold the full-resolution texture then still shows an image. The composite
+implements the same `IVoxelManager` interface, so every consumer of this page continues to work.
+
 ## Conclusion
 
 The VoxelManager is central to Cornerstone’s new volume management strategy, offering a flexible, efficient API for voxel data access and manipulation. This migration to VoxelManager allows for more efficient memory usage, faster performance, and improved compatibility with large datasets, ensuring a smoother workflow for developers working with complex medical imaging data.

@@ -1,7 +1,11 @@
 import type { ByteArray, DataSet } from 'dicom-parser';
 import type { Types } from '@cornerstonejs/core';
 import { Enums, metaData } from '@cornerstonejs/core';
-import { Enums as MetadataEnums, utilities } from '@cornerstonejs/metadata';
+import {
+  Enums as MetadataEnums,
+  utilities,
+  logging,
+} from '@cornerstonejs/metadata';
 import createImage from '../createImage';
 import { xhrRequest } from '../internal/index';
 import dataSetCacheManager from './dataSetCacheManager';
@@ -16,13 +20,14 @@ import parseImageId from './parseImageId';
 
 const { ImageQualityStatus } = Enums;
 
+const log = logging.loaderLog.getLogger('wadouri');
 const { addDicomPart10Instance } = utilities;
 const NATURALIZED = MetadataEnums.MetadataModules.NATURALIZED;
 
 // add a decache callback function to clear out our dataSetCacheManager
 function addDecache(imageLoadObject: Types.IImageLoadObject, imageId: string) {
   imageLoadObject.decache = function () {
-    // console.log('decache');
+    // log.debug('decache');
     const parsedImageId = parseImageId(imageId);
 
     dataSetCacheManager.unload(parsedImageId.url);
@@ -226,7 +231,7 @@ function loadImageFromNaturalizedMetadata(
 
   const promise = (async (): Promise<DICOMLoaderIImage> => {
     const start = Date.now();
-    console.log(
+    log.info(
       '[dicomImageLoader/wadouri] loadImageFromNaturalizedMetadata: start',
       {
         imageId,
@@ -238,7 +243,7 @@ function loadImageFromNaturalizedMetadata(
 
     let natural = metaData.get(NATURALIZED, imageId);
     if (!natural) {
-      console.log(
+      log.info(
         '[dicomImageLoader/wadouri] loadImageFromNaturalizedMetadata: no NATURALIZED metadata, attempting to fetch and populate',
         { imageId }
       );
@@ -267,7 +272,7 @@ function loadImageFromNaturalizedMetadata(
       { frameIndex }
     );
     if (!frameData) {
-      console.warn(
+      log.warn(
         '[dicomImageLoader/wadouri] loadImageFromNaturalizedMetadata: no COMPRESSED_FRAME_DATA for imageId',
         { imageId, frameIndex }
       );

@@ -30,6 +30,7 @@ class MagnifyTool extends BaseTool {
     enabledElement: Types.IEnabledElement;
     renderingEngine: Types.IRenderingEngine;
     currentPoints: IPoints;
+    isTouch: boolean;
   } | null;
 
   constructor(
@@ -40,6 +41,9 @@ class MagnifyTool extends BaseTool {
         magnifySize: 10, // parallel scale , higher more zoom
         magnifyWidth: 250, //px
         magnifyHeight: 250, //px
+        // On touch, the loupe is lifted above the contact point; this is the
+        // gap in px between the contact point and the loupe's bottom edge.
+        touchOffset: 40, //px
       },
     }
   ) {
@@ -91,12 +95,17 @@ class MagnifyTool extends BaseTool {
       this.getToolName()
     );
 
+    // True when reached via preTouchStartCallback (explicit alias or the
+    // dispatcher-level touch fallback) — both deliver the TOUCH_START event.
+    const isTouch = evt.type === Events.TOUCH_START;
+
     this.editData = {
       referencedImageId,
       viewportIdsToRender,
       enabledElement,
       renderingEngine,
       currentPoints,
+      isTouch,
     };
 
     this._createMagnificationViewport();
@@ -113,6 +122,36 @@ class MagnifyTool extends BaseTool {
 
   preTouchStartCallback = (evt: EventTypes.InteractionEventType) => {
     this.preMouseDownCallback(evt);
+  };
+
+  /**
+   * Positions the magnify loupe element relative to the interaction point.
+   * Mouse: centered on the pointer (unchanged legacy behavior). Touch: lifted
+   * above the contact point by `configuration.touchOffset` so the finger does
+   * not occlude the loupe, clamped to the viewport bounds.
+   */
+  private _positionMagnifyElement = (
+    magnifyElement: HTMLDivElement,
+    canvasPos: Types.Point2,
+    element: HTMLDivElement
+  ) => {
+    const { magnifyWidth, magnifyHeight, touchOffset } = this.configuration;
+
+    let left = canvasPos[0] - magnifyWidth / 2;
+    let top = canvasPos[1] - magnifyHeight / 2;
+
+    if (this.editData?.isTouch) {
+      top = canvasPos[1] - magnifyHeight - (touchOffset ?? 0);
+
+      const maxLeft = Math.max(element.clientWidth - magnifyWidth, 0);
+      const maxTop = Math.max(element.clientHeight - magnifyHeight, 0);
+
+      left = Math.min(Math.max(left, 0), maxLeft);
+      top = Math.min(Math.max(top, 0), maxTop);
+    }
+
+    magnifyElement.style.top = `${top}px`;
+    magnifyElement.style.left = `${left}px`;
   };
 
   _createMagnificationViewport = () => {
@@ -170,12 +209,7 @@ class MagnifyTool extends BaseTool {
     }
 
     // Todo: use CSS transform instead of setting top and left for better performance
-    magnifyToolElement.style.top = `${
-      canvasPos[1] - this.configuration.magnifyHeight / 2
-    }px`;
-    magnifyToolElement.style.left = `${
-      canvasPos[0] - this.configuration.magnifyWidth / 2
-    }px`;
+    this._positionMagnifyElement(magnifyToolElement, canvasPos, element);
 
     const magnifyViewport = renderingEngine.getViewport(
       MAGNIFY_VIEWPORT_ID
@@ -275,12 +309,7 @@ class MagnifyTool extends BaseTool {
       return;
     }
 
-    magnifyElement.style.top = `${
-      canvasPos[1] - this.configuration.magnifyHeight / 2
-    }px`;
-    magnifyElement.style.left = `${
-      canvasPos[0] - this.configuration.magnifyWidth / 2
-    }px`;
+    this._positionMagnifyElement(magnifyElement, canvasPos, element);
 
     const { focalPoint, position } = magnifyViewport.getCamera();
 

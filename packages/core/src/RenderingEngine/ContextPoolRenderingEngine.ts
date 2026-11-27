@@ -4,6 +4,7 @@ import { getConfiguration } from '../init';
 import Events from '../enums/Events';
 import eventTarget from '../eventTarget';
 import triggerEvent from '../utilities/triggerEvent';
+import { coreLog } from '../utilities/logger';
 import ViewportType from '../enums/ViewportType';
 import viewportTypeUsesCustomRenderingPipeline, {
   viewportUsesCustomRenderingPipeline,
@@ -11,6 +12,7 @@ import viewportTypeUsesCustomRenderingPipeline, {
 import getOrCreateCanvas, {
   updateCanvasSizeAndAspectRatio,
 } from './helpers/getOrCreateCanvas';
+import { setElementTouchActionNone } from './helpers/elementTouchAction';
 import type * as EventTypes from '../types/EventTypes';
 import type {
   ViewportInput,
@@ -22,6 +24,7 @@ import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import type {
   IStackViewport,
   IVolumeViewport,
+  OffscreenCanvasContainer,
   VtkOffscreenMultiRenderWindow,
 } from '../types';
 import { getViewportClassForInput } from './helpers/viewportTypeToViewportClass';
@@ -33,6 +36,8 @@ import { isGenericViewport } from '../utilities/viewportCapabilities';
  *
  * @public
  */
+const log = coreLog.getLogger('RenderingEngine', 'ContextPoolRenderingEngine');
+
 class ContextPoolRenderingEngine extends BaseRenderingEngine {
   private contextPool?: WebGLContextPool;
 
@@ -92,6 +97,10 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
 
     element.tabIndex = -1;
 
+    // Deliver touch input to cornerstone tools instead of the browser
+    // (scroll, pinch-zoom, double-tap zoom). Restored in _resetViewport.
+    setElementTouchActionNone(element);
+
     // Assign viewport to a context
     // Stack viewports can be distributed across contexts. Planar Next may mount
     // volume-backed GPU renderings, which cannot safely share volume textures
@@ -113,9 +122,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
 
     // Initialize the offscreen canvas size to the max size for this context
     const maxSize = contextPool.getMaxSizeForContext(contextIndex);
-    // @ts-expect-error
     container.width = maxSize.width;
-    // @ts-expect-error
     container.height = maxSize.height;
 
     offscreenMultiRenderWindow.resize();
@@ -342,6 +349,8 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
       return;
     }
 
+    const renderStart = performance.now();
+
     // Render all viewports synchronously
     const eventDetails = viewportsToRender.map((viewport) => {
       const eventDetail = this.renderViewportUsingCustomOrVtkPipeline(viewport);
@@ -353,12 +362,22 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     this._animationFrameSet = false;
     this._animationFrameHandle = null;
 
+    const waiting = viewportsToRender.map((vp) =>
+      this._waitsForStorage(vp, renderStart)
+    );
+
     // Trigger all events after rendering is complete
-    eventDetails.forEach((eventDetail) => {
-      if (eventDetail?.element) {
+    eventDetails.forEach((eventDetail, index) => {
+      if (eventDetail?.element && !waiting[index]) {
         triggerEvent(eventDetail.element, Events.IMAGE_RENDERED, eventDetail);
       }
     });
+
+    // Fidelity event after IMAGE_RENDERED so consumers can query the frame
+    // that was just drawn.
+    this._notifyFidelityOfRenderedViewports(
+      viewportsToRender.filter((_vp, index) => !waiting[index])
+    );
   };
 
   private renderViewportUsingCustomOrVtkPipeline(
@@ -399,7 +418,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
   private _renderViewportWithContext(
     viewport: IViewport,
     offscreenMultiRenderWindow: VtkOffscreenMultiRenderWindow,
-    offScreenCanvasContainer: HTMLDivElement
+    offScreenCanvasContainer: OffscreenCanvasContainer
   ): EventTypes.ImageRenderedEventDetail {
     if (
       viewport.canvas.clientWidth === 0 ||
@@ -412,7 +431,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
       viewport.sWidth < VIEWPORT_MIN_SIZE ||
       viewport.sHeight < VIEWPORT_MIN_SIZE
     ) {
-      console.warn('Viewport is too small', viewport.sWidth, viewport.sHeight);
+      log.warn('Viewport is too small', viewport.sWidth, viewport.sHeight);
       return;
     }
 
@@ -520,7 +539,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
 
   private _resizeOffScreenCanvasForViewport(
     viewport: IViewport,
-    offScreenCanvasContainer: HTMLDivElement,
+    offScreenCanvasContainer: OffscreenCanvasContainer,
     offscreenMultiRenderWindow: VtkOffscreenMultiRenderWindow
   ): void {
     const contextIndex = this.contextPool.getContextIndexForViewport(
@@ -530,30 +549,44 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
       return;
     }
 
-    const maxSizeChanged = this.contextPool.updateViewportSize(
+    this.contextPool.updateViewportSize(
       viewport.id,
       viewport.sWidth,
       viewport.sHeight
     );
 
-    if (!maxSizeChanged) {
-      return;
-    }
+    // The max size can also shrink on removal: compare with the canvas.
+    this._fitOffScreenCanvasToContext(
+      contextIndex,
+      offScreenCanvasContainer,
+      offscreenMultiRenderWindow
+    );
+  }
 
+  /**
+   * Sizes a context's shared offscreen canvas to the largest viewport still
+   * assigned to it. Each viewport renders into the bottom-left corner of that
+   * canvas and is copied out using the context's max size, so a canvas larger
+   * than the max size makes every viewport render into a region bigger than
+   * itself and only part of it reaches the screen (the image looks zoomed in).
+   */
+  private _fitOffScreenCanvasToContext(
+    contextIndex: number,
+    offScreenCanvasContainer: OffscreenCanvasContainer,
+    offscreenMultiRenderWindow: VtkOffscreenMultiRenderWindow
+  ): void {
     const maxSize = this.contextPool.getMaxSizeForContext(contextIndex);
 
     if (
-      // @ts-expect-error
-      offScreenCanvasContainer.width === maxSize.width &&
-      // @ts-expect-error
-      offScreenCanvasContainer.height === maxSize.height
+      !maxSize?.width ||
+      !maxSize?.height ||
+      (offScreenCanvasContainer.width === maxSize.width &&
+        offScreenCanvasContainer.height === maxSize.height)
     ) {
       return;
     }
 
-    // @ts-expect-error
     offScreenCanvasContainer.width = maxSize.width;
-    // @ts-expect-error
     offScreenCanvasContainer.height = maxSize.height;
 
     offscreenMultiRenderWindow.resize();
@@ -654,9 +687,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
         const { context: offscreenMultiRenderWindow, container } = contextData;
         const maxSize = this.contextPool.getMaxSizeForContext(contextIndex);
 
-        // @ts-expect-error
         container.width = maxSize.width;
-        // @ts-expect-error
         container.height = maxSize.height;
 
         offscreenMultiRenderWindow.resize();
@@ -734,16 +765,26 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
       const contextIndex =
         this.contextPool.getContextIndexForViewport(viewportId);
 
-      if (contextIndex !== undefined) {
-        const contextData = this.contextPool.getContextByIndex(contextIndex);
+      const contextData =
+        contextIndex !== undefined
+          ? this.contextPool.getContextByIndex(contextIndex)
+          : null;
 
-        if (contextData) {
-          const { context: offscreenMultiRenderWindow } = contextData;
-          offscreenMultiRenderWindow.removeRenderer(viewportId);
-        }
+      if (contextData) {
+        contextData.context.removeRenderer(viewportId);
       }
 
       this.contextPool.removeViewport(viewportId);
+
+      // The removed viewport may have been the largest one on this context:
+      // shrink the shared offscreen canvas to the viewports that remain.
+      if (contextData) {
+        this._fitOffScreenCanvasToContext(
+          contextIndex,
+          contextData.container,
+          contextData.context
+        );
+      }
     }
   }
 

@@ -8,6 +8,7 @@ import {
   metaData,
   utilities,
 } from '@cornerstonejs/core';
+import { logging } from '@cornerstonejs/metadata';
 import convertColorSpace from './convertColorSpace';
 import isColorConversionRequired from './isColorConversionRequired';
 import decodeImageFrame from './decodeImageFrame';
@@ -17,8 +18,11 @@ import { getOptions } from './internal/options';
 import isColorImageFn from '../shared/isColorImage';
 import removeAFromRGBA from './removeAFromRGBA';
 import isModalityLUTForDisplay from './isModalityLutForDisplay';
+import normalizeVOILUTSequence from './normalizeVOILUTSequence';
 import setPixelDataType from './setPixelDataType';
 import { fetchPaletteData } from './colorSpaceConverters/fetchPaletteData';
+
+const log = logging.loaderLog.getLogger('createImage');
 
 let lastImageIdDrawn = '';
 
@@ -33,13 +37,7 @@ async function createImage(
   // in cs3d
   const useRGBA = options.useRGBA;
 
-  // always preScale the pixel array unless it is asked not to
-  options.preScale = {
-    enabled:
-      options.preScale && options.preScale.enabled !== undefined
-        ? options.preScale.enabled
-        : true,
-  };
+  const imageOptions: DICOMLoaderImageOptions = { ...options };
 
   if (!pixelData?.length) {
     return Promise.reject(new Error('The pixel data is missing'));
@@ -48,9 +46,20 @@ async function createImage(
   const { MetadataModules } = Enums;
   const canvas = document.createElement('canvas');
   const imageFrame = getImageFrame(imageId);
-  imageFrame.decodeLevel = options.decodeLevel;
+  imageFrame.decodeLevel = imageOptions.decodeLevel;
 
-  options.allowFloatRendering = canRenderFloatTextures();
+  const isColorImage = isColorImageFn(imageFrame.photometricInterpretation);
+
+  // always preScale the pixel array unless it is asked not to, or unless the
+  // image is not monochrome: the Modality LUT only applies to grayscale images
+  // (DICOM PS3.3 C.11.2.1.2.2).
+  const preScaleRequested = imageOptions.preScale?.enabled ?? true;
+
+  imageOptions.preScale = {
+    enabled: preScaleRequested && !isColorImage,
+  };
+
+  imageOptions.allowFloatRendering = canRenderFloatTextures();
 
   let redData, greenData, blueData;
   // Capture palette descriptors before decode (worker may not return them).
@@ -72,21 +81,31 @@ async function createImage(
   }
 
   // Get the scaling parameters from the metadata
-  if (options.preScale.enabled) {
+  if (imageOptions.preScale.enabled) {
     const scalingParameters = getScalingParameters(metaData, imageId);
 
     if (scalingParameters) {
-      options.preScale = {
-        ...options.preScale,
+      imageOptions.preScale = {
+        ...imageOptions.preScale,
         scalingParameters: scalingParameters as Types.ScalingParameters,
       };
     } else {
       // Identity transform (slope 1, intercept 0) or no LUT: treat as non-prescaled so worker does not use scalingParameters.
-      options.preScale.enabled = false;
+      imageOptions.preScale.enabled = false;
     }
   }
 
-  const { decodeConfig } = getOptions();
+  // `setOptions` publishes the loader option system-wide, so the two agree;
+  // reading the system value as the fallback also picks up a directory set
+  // through `utilities.setWasmBasePath` alone.
+  const { decodeConfig, wasmBasePath = utilities.getWasmBasePath() } =
+    getOptions();
+  // Forward the WASM base path to the worker, where the decoders resolve their
+  // binaries. The loader-level option wins over one set in decodeConfig.
+  const taskDecodeConfig =
+    wasmBasePath === undefined
+      ? decodeConfig
+      : { ...decodeConfig, wasmBasePath };
 
   // Remove any property of the `imageFrame` that cannot be transferred to the worker,
   // such as promises and functions.
@@ -105,11 +124,9 @@ async function createImage(
     transferSyntax,
     pixelData,
     canvas,
-    options,
-    decodeConfig
+    imageOptions,
+    taskDecodeConfig
   );
-
-  const isColorImage = isColorImageFn(imageFrame.photometricInterpretation);
 
   return new Promise<DICOMLoaderIImage | Types.IImageFrame>(
     (resolve, reject) => {
@@ -120,8 +137,8 @@ async function createImage(
         let alreadyTyped = false;
         // We can safely render color image in 8 bit, so no need to convert
         if (
-          options.targetBuffer &&
-          options.targetBuffer.type &&
+          imageOptions.targetBuffer &&
+          imageOptions.targetBuffer.type &&
           !isColorImage
         ) {
           const {
@@ -129,7 +146,7 @@ async function createImage(
             type,
             offset: rawOffset = 0,
             length: rawLength,
-          } = options.targetBuffer;
+          } = imageOptions.targetBuffer;
 
           const imageFrameLength = imageFrame.pixelDataLength;
 
@@ -293,36 +310,33 @@ async function createImage(
                 typeof (x as { length?: number }).length === 'number'
                   ? Array.from(x as ArrayLike<number>).slice(0, 10)
                   : null;
-              console.log(
-                '[createImage] PALETTE COLOR before convertColorSpace',
-                {
-                  imageId,
-                  descriptor: desc,
-                  pixelDataLength: len,
-                  pixelDataSlice:
-                    sliceSize > 0 && pd
-                      ? Array.from(
-                          { length: sliceSize },
-                          (_, i) => (pd as ArrayLike<number>)[i]
-                        )
-                      : [],
-                  redLUT: {
-                    length: lutLen(r),
-                    byteLength: lutByteLen(r),
-                    first10: first10(r),
-                  },
-                  greenLUT: {
-                    length: lutLen(g),
-                    byteLength: lutByteLen(g),
-                    first10: first10(g),
-                  },
-                  blueLUT: {
-                    length: lutLen(b),
-                    byteLength: lutByteLen(b),
-                    first10: first10(b),
-                  },
-                }
-              );
+              log.info('[createImage] PALETTE COLOR before convertColorSpace', {
+                imageId,
+                descriptor: desc,
+                pixelDataLength: len,
+                pixelDataSlice:
+                  sliceSize > 0 && pd
+                    ? Array.from(
+                        { length: sliceSize },
+                        (_, i) => (pd as ArrayLike<number>)[i]
+                      )
+                    : [],
+                redLUT: {
+                  length: lutLen(r),
+                  byteLength: lutByteLen(r),
+                  first10: first10(r),
+                },
+                greenLUT: {
+                  length: lutLen(g),
+                  byteLength: lutByteLen(g),
+                  first10: first10(g),
+                },
+                blueLUT: {
+                  length: lutLen(b),
+                  byteLength: lutByteLen(b),
+                  first10: first10(b),
+                },
+              });
             }
             convertColorSpace(imageFrame, imageData.data, useRGBA);
             imageFrame.imageData = imageData;
@@ -374,6 +388,37 @@ async function createImage(
           numberOfComponents: numberOfComponents,
         });
 
+        // The rescale slope/intercept, the VOI descriptors and the LUT
+        // sequences only apply to monochrome images (DICOM PS3.3 C.11.2.1.2.2),
+        // so color images get the identity modality transform and no VOI at
+        // all. StackViewport derives its initial VOI range from these, and a
+        // grayscale window would land nowhere near the [0, 255] range of the
+        // color samples.
+        let intercept = 0;
+        let slope = 1;
+        let windowCenter;
+        let windowWidth;
+        let voiLUTFunction;
+
+        if (!isColorImage) {
+          intercept = modalityLutModule.rescaleIntercept || 0;
+          slope = modalityLutModule.rescaleSlope || 1;
+          windowCenter = utilities.asArrayFirst(voiLutModule.windowCenter);
+          windowWidth = utilities.asArrayFirst(voiLutModule.windowWidth);
+          // VOI LUT Function (0028,1056) reaches us as a string from
+          // dicom-parser, as a single element array from DICOMweb JSON, and
+          // occasionally under the older `voiLutFunction` spelling. Indexing a
+          // string yields its first *character*, which is what turned "SIGMOID"
+          // into "S" and made rendering throw "Invalid VOI LUT function"
+          // (cornerstone3D#2844), so normalize all the shapes here. An unknown
+          // value stays as given, so that the fidelity check can report it.
+          const rawVOILUTFunction =
+            voiLutModule.voiLUTFunction ?? voiLutModule.voiLutFunction;
+          voiLUTFunction =
+            utilities.normalizeVOILUTFunction(rawVOILUTFunction) ??
+            utilities.asArrayFirst(rawVOILUTFunction);
+        }
+
         const image: DICOMLoaderIImage = {
           imageId,
           dataType: imageFrame.pixelData.constructor
@@ -384,12 +429,8 @@ async function createImage(
           columns: imageFrame.columns,
           height: imageFrame.rows,
           preScale: imageFrame.preScale,
-          intercept: modalityLutModule.rescaleIntercept
-            ? modalityLutModule.rescaleIntercept
-            : 0,
-          slope: modalityLutModule.rescaleSlope
-            ? modalityLutModule.rescaleSlope
-            : 1,
+          intercept,
+          slope,
           invert: imageFrame.photometricInterpretation === 'MONOCHROME1',
           minPixelValue: imageFrame.smallestPixelValue,
           maxPixelValue: imageFrame.largestPixelValue,
@@ -399,17 +440,9 @@ async function createImage(
           width: imageFrame.columns,
           // use the first value for rendering, if other values
           // are needed later, it can be grabbed again from the voiLUtModule
-          windowCenter: voiLutModule.windowCenter
-            ? voiLutModule.windowCenter[0]
-            : undefined,
-          windowWidth: voiLutModule.windowWidth
-            ? voiLutModule.windowWidth[0]
-            : undefined,
-          voiLUTFunction:
-            (voiLutModule.voiLUTFunction?.length &&
-              voiLutModule.voiLUTFunction[0]) ||
-            voiLutModule.voiLutFunction ||
-            undefined,
+          windowCenter,
+          windowWidth,
+          voiLUTFunction,
           decodeTimeInMS: imageFrame.decodeTimeInMS,
           floatPixelData: undefined,
           imageFrame,
@@ -471,8 +504,10 @@ async function createImage(
           };
         }
 
-        // Modality LUT
+        // Modality LUT, skipped for non-monochrome images for the same reason
+        // the rescale slope/intercept is skipped above.
         if (
+          !isColorImage &&
           modalityLutModule.modalityLUTSequence &&
           modalityLutModule.modalityLUTSequence.length > 0 &&
           isModalityLUTForDisplay(sopCommonModule.sopClassUID)
@@ -480,12 +515,21 @@ async function createImage(
           image.modalityLUT = modalityLutModule.modalityLUTSequence[0];
         }
 
-        // VOI LUT
-        if (
-          voiLutModule.voiLUTSequence &&
-          voiLutModule.voiLUTSequence.length > 0
-        ) {
-          image.voiLUT = voiLutModule.voiLUTSequence[0];
+        // VOI LUT Sequence (0028,3010), also skipped for non-monochrome images.
+        // Providers hand this back in several shapes (already parsed,
+        // naturalized dcmjs, or raw DICOMweb JSON), so normalize before handing
+        // it to the renderers.
+        let voiLUT;
+
+        if (!isColorImage) {
+          voiLUT = normalizeVOILUTSequence(
+            voiLutModule.voiLUTSequence ?? voiLutModule.VOILUTSequence,
+            imageFrame.pixelRepresentation
+          );
+        }
+
+        if (voiLUT) {
+          image.voiLUT = voiLUT;
         }
 
         if (image.color) {

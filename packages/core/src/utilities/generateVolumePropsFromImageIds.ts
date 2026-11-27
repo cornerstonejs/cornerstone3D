@@ -129,20 +129,38 @@ function _determineDataType(
 
   switch (BitsAllocated) {
     case 8:
-      return 'Uint8Array';
-
-    case 16:
-      // Temporary fix for 16 bit images to use Float32
+    case 16: {
+      // Non-integer scaling needs Float32. See #2706.
       if (canRenderFloat && floatAfterScale) {
         return 'Float32Array';
       }
-      if (signed || hasNegativeRescale) {
-        return 'Int16Array';
+      // A typed array wraps a value out of its range, so the type must hold
+      // the scaled range of every stored value, not only the sign.
+      // Without float textures the loader does not apply a non-integer rescale.
+      const { min, max } = _getScaledStoredRange(
+        volumeMetadata,
+        floatAfterScale ? [{}] : scalingParameters
+      );
+      if (BitsAllocated === 8 && min >= 0 && max <= 255) {
+        return 'Uint8Array';
       }
-      if (!signed && !hasNegativeRescale) {
+      if (min >= 0 && max <= 65535) {
         return 'Uint16Array';
       }
-      return 'Float32Array';
+      if (min >= -32768 && max <= 32767) {
+        return 'Int16Array';
+      }
+      const expands = scalingParameters.some(
+        (params) => Math.abs(params.rescaleSlope) > 1
+      );
+      if (canRenderFloat && expands) {
+        return 'Float32Array';
+      }
+      // shortcut: an offset alone on 16-bit stored data keeps a 16-bit type,
+      // because real data rarely uses the full stored range, and Float32 doubles
+      // the memory of many CT series. Upgrade when the loader knows the real range.
+      return signed || hasNegativeRescale ? 'Int16Array' : 'Uint16Array';
+    }
 
     case 24:
       return 'Uint8Array';
@@ -158,6 +176,31 @@ function _determineDataType(
         `Bits allocated of ${BitsAllocated} is not defined to generate scalarData for the volume.`
       );
   }
+}
+
+/**
+ * The range of the modality values for all stored values that Bits Stored and
+ * Pixel Representation allow, with the rescale of each sampled image.
+ */
+function _getScaledStoredRange(
+  volumeMetadata,
+  scalingParameters: { rescaleSlope?: number; rescaleIntercept?: number }[]
+): { min: number; max: number } {
+  const { BitsAllocated, BitsStored, PixelRepresentation } = volumeMetadata;
+  const bits = BitsStored || BitsAllocated;
+  const storedMin = PixelRepresentation === 1 ? -(2 ** (bits - 1)) : 0;
+  const storedMax =
+    PixelRepresentation === 1 ? 2 ** (bits - 1) - 1 : 2 ** bits - 1;
+
+  let min = Infinity;
+  let max = -Infinity;
+  for (const { rescaleSlope = 1, rescaleIntercept = 0 } of scalingParameters) {
+    const a = storedMin * rescaleSlope + rescaleIntercept;
+    const b = storedMax * rescaleSlope + rescaleIntercept;
+    min = Math.min(min, a, b);
+    max = Math.max(max, a, b);
+  }
+  return { min, max };
 }
 
 /**

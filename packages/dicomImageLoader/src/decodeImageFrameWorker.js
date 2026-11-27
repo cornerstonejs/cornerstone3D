@@ -13,12 +13,20 @@ import decodeJPEGLossless from './shared/decoders/decodeJPEGLossless';
 import decodeJPEGLS from './shared/decoders/decodeJPEGLS';
 import decodeJPEG2000 from './shared/decoders/decodeJPEG2000';
 import decodeHTJ2K from './shared/decoders/decodeHTJ2K';
+import decodeEncapsulatedUncompressed from './shared/decoders/decodeEncapsulatedUncompressed';
+import decodeDeflatedFrame from './shared/decoders/decodeDeflatedFrame';
+import decodeJPEGXL from './shared/decoders/decodeJPEGXL';
 // Note that the scaling is pixel value scaling, which is applying a modality LUT
 import applyModalityLUT from './shared/scaling/scaleArray';
+import { setWasmBasePathFromConfig } from './shared/wasmBasePath';
 import getMinMax from './shared/getMinMax';
 import getPixelDataTypeFromMinMax, {
   validatePixelDataType,
 } from './shared/getPixelDataTypeFromMinMax';
+import {
+  getScalingMode,
+  hasNonIntegerScaling,
+} from './shared/scaling/getScalingMode';
 import isColorImage from './shared/isColorImage';
 
 const imageUtils = {
@@ -77,10 +85,7 @@ export function postProcessDecodedPixels(
   const willScale = options.preScale?.enabled;
 
   const hasFloatRescale =
-    willScale &&
-    Object.values(options.preScale.scalingParameters).some(
-      (v) => typeof v === 'number' && !Number.isInteger(v)
-    );
+    willScale && hasNonIntegerScaling(options.preScale.scalingParameters);
 
   const disableScale =
     !options.preScale.enabled || (!canRenderFloat && hasFloatRescale);
@@ -97,11 +102,17 @@ export function postProcessDecodedPixels(
       maxBeforeScale,
       scalingParameters
     );
-    invalidType = !validatePixelDataType(
-      scaledValues.min,
-      scaledValues.max,
-      typedArrayConstructors[type]
-    );
+    // Non-integer scaling into an integer target truncates. Scaled min/max can
+    // look integer (e.g. [0, 1]) so validatePixelDataType alone isn't enough.
+    // See #2706.
+    const isFloatTarget = typedArrayConstructors[type] === Float32Array;
+    invalidType =
+      (hasFloatRescale && !isFloatTarget) ||
+      !validatePixelDataType(
+        scaledValues.min,
+        scaledValues.max,
+        typedArrayConstructors[type]
+      );
   }
 
   if (type && !invalidType) {
@@ -116,7 +127,8 @@ export function postProcessDecodedPixels(
       options,
       minBeforeScale,
       maxBeforeScale,
-      imageFrame
+      imageFrame,
+      hasFloatRescale
     );
   } else {
     pixelDataArray = _getDefaultPixelDataArray(
@@ -235,10 +247,19 @@ function _handlePreScaleSetup(
   options,
   minBeforeScale,
   maxBeforeScale,
-  imageFrame
+  imageFrame,
+  hasFloatRescale
 ) {
   const scalingParameters = options.preScale.scalingParameters;
   _validateScalingParameters(scalingParameters);
+
+  // Force Float32Array for non-integer scaling; scaled min/max can look integer
+  // (e.g. [0, 1]) and mislead getPixelDataTypeFromMinMax. See #2706.
+  if (hasFloatRescale) {
+    const typedArray = new Float32Array(imageFrame.pixelData.length);
+    typedArray.set(imageFrame.pixelData, 0);
+    return typedArray;
+  }
 
   const scaledValues = _calculateScaledMinMax(
     minBeforeScale,
@@ -263,36 +284,30 @@ function _getDefaultPixelDataArray(min, max, imageFrame) {
 }
 
 function _calculateScaledMinMax(minValue, maxValue, scalingParameters) {
-  const { rescaleSlope, rescaleIntercept, modality, doseGridScaling, suvbw } =
+  const { rescaleSlope, rescaleIntercept, doseGridScaling, suvbw } =
     scalingParameters;
 
-  if (modality === 'PT' && typeof suvbw === 'number' && !isNaN(suvbw)) {
-    return {
-      min: suvbw * (minValue * rescaleSlope + rescaleIntercept),
-      max: suvbw * (maxValue * rescaleSlope + rescaleIntercept),
-    };
-  } else if (
-    modality === 'RTDOSE' &&
-    typeof doseGridScaling === 'number' &&
-    !isNaN(doseGridScaling)
-  ) {
-    return {
-      min: minValue * doseGridScaling,
-      max: maxValue * doseGridScaling,
-    };
-  } else if (
-    typeof rescaleSlope === 'number' &&
-    typeof rescaleIntercept === 'number'
-  ) {
-    return {
-      min: rescaleSlope * minValue + rescaleIntercept,
-      max: rescaleSlope * maxValue + rescaleIntercept,
-    };
-  } else {
-    return {
-      min: minValue,
-      max: maxValue,
-    };
+  switch (getScalingMode(scalingParameters)) {
+    case 'PT_SUV':
+      return {
+        min: suvbw * (minValue * rescaleSlope + rescaleIntercept),
+        max: suvbw * (maxValue * rescaleSlope + rescaleIntercept),
+      };
+    case 'RTDOSE':
+      return {
+        min: minValue * doseGridScaling,
+        max: maxValue * doseGridScaling,
+      };
+    case 'RESCALE':
+      return {
+        min: rescaleSlope * minValue + rescaleIntercept,
+        max: rescaleSlope * maxValue + rescaleIntercept,
+      };
+    default:
+      return {
+        min: minValue,
+        max: maxValue,
+      };
   }
 }
 
@@ -363,6 +378,19 @@ export async function decodeImageFrame(
 ) {
   const start = new Date().getTime();
 
+  // Apply the configured WASM base path before any codec initializes, so the
+  // decoders below resolve their binaries from it.
+  //
+  // A decodeConfig without wasmBasePath deliberately leaves the current value
+  // in place rather than clearing it - that stickiness is load-bearing. Every
+  // decoder calls its own initialize()/initLibjpegTurbo() with no arguments
+  // from decodeAsync, which passes undefined straight back into this setter; a
+  // reset there would wipe the path between here and the codec's first
+  // locateFile call, putting back the bare-specifier 404 the option fixes.
+  // The value is write-once in effect anyway, since initialize() returns early
+  // once its codec is instantiated.
+  setWasmBasePathFromConfig(decodeConfig);
+
   let decodePromise = null;
 
   let opts;
@@ -378,8 +406,18 @@ export async function decodeImageFrame(
       decodePromise = decodeBigEndian(imageFrame, pixelData);
       break;
     case '1.2.840.10008.1.2.1.99':
-      // Deflate transfer syntax (deflated by dicomParser)
+      // Deflated Explicit VR Little Endian - the whole data set is deflated, so
+      // dicomParser has already inflated it by the time a frame reaches here.
       decodePromise = decodeLittleEndian(imageFrame, pixelData);
+      break;
+    case '1.2.840.10008.1.2.1.98':
+      // Encapsulated Uncompressed Explicit VR Little Endian
+      decodePromise = decodeEncapsulatedUncompressed(imageFrame, pixelData);
+      break;
+    case '1.2.840.10008.1.2.8.1':
+      // Deflated Image Frame Compression - unlike 1.99 above, each frame is
+      // deflated separately, so inflating is per frame and happens here.
+      decodePromise = decodeDeflatedFrame(imageFrame, pixelData);
       break;
     case '1.2.840.10008.1.2.5':
       // RLE Lossless
@@ -394,7 +432,13 @@ export async function decodeImageFrame(
       decodePromise = decodeJPEGBaseline8Bit(pixelData, opts);
       break;
     case '1.2.840.10008.1.2.4.51':
-      // JPEG Baseline lossy process 2 & 4 (12 bit)
+    // JPEG Baseline lossy process 2 & 4 (12 bit)
+    case '1.2.840.10008.1.2.4.53':
+    // JPEG Spectral Selection, Non-Hierarchical, processes 6 & 8 (retired)
+    case '1.2.840.10008.1.2.4.55':
+      // JPEG Full Progression, Non-Hierarchical, processes 10 & 12 (retired).
+      // Both are progressive (SOF2) JPEG, which the JavaScript decoder used for
+      // process 2 & 4 also reads.
       // opts = {
       //   ...imageFrame,
       // };
@@ -461,6 +505,21 @@ export async function decodeImageFrame(
       };
 
       decodePromise = decodeHTJ2K(pixelData, opts);
+      break;
+    case '1.2.840.10008.1.2.4.110':
+    case '1.2.840.10008.1.2.4.111':
+    case '1.2.840.10008.1.2.4.112':
+      // JPEG XL - lossless, JPEG recompression and general. All three read the
+      // same way; they differ in what the encoder was allowed to do.
+      opts = {
+        // JPEG XL carries no signed sample type, so signedness comes from
+        // PixelRepresentation rather than from the codestream.
+        signed: imageFrame.pixelRepresentation === 1,
+        bytesPerPixel: imageFrame.bitsAllocated <= 8 ? 1 : 2,
+        ...imageFrame,
+      };
+
+      decodePromise = decodeJPEGXL(pixelData, opts);
       break;
     default:
       throw new Error(`no decoder for transfer syntax ${transferSyntax}`);

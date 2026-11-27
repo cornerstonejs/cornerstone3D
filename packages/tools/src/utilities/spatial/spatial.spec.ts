@@ -92,7 +92,7 @@ describe('spatial utilities', () => {
         normal: [1, 1, 0].map((v) => v / Math.sqrt(2)) as [
           number,
           number,
-          number
+          number,
         ],
         point: [0, 0, 0],
       };
@@ -331,9 +331,9 @@ describe('spatial utilities', () => {
       expect(camera.position[2]).toBeCloseTo(0);
 
       // Camera distance is preserved.
-      expect(
-        vec3.distance(camera.position, camera.focalPoint)
-      ).toBeCloseTo(100);
+      expect(vec3.distance(camera.position, camera.focalPoint)).toBeCloseTo(
+        100
+      );
 
       // viewUp is perpendicular to the rotation axis here and unchanged.
       expect(camera.viewUp[0]).toBeCloseTo(0);

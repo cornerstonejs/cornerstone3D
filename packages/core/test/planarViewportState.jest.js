@@ -1,5 +1,6 @@
 import {
   Events,
+  ImageQualityStatus,
   MetadataModules,
   OrientationAxis,
   ViewportType,
@@ -746,5 +747,87 @@ describe('PlanarViewport view state', () => {
         secondDataId
       ).image
     ).toBe(secondImage);
+  });
+});
+
+describe('PlanarViewport fidelity events', () => {
+  let context;
+
+  afterEach(() => {
+    context.viewport.destroy();
+    renderingEngineCache.delete(context.renderingEngineId);
+    for (const provider of metadataProviders) {
+      metaData.removeProvider(provider);
+    }
+    metadataProviders = [];
+  });
+
+  it('fires VIEWPORT_FIDELITY_CHANGED once per change for a render path that draws itself', () => {
+    context = createViewport();
+    const { viewport, element } = context;
+    const image = createPlanarImage('cpu:1');
+    addPlanarImageMetadata([image.imageId]);
+    const { binding, rendering } = mountStackBinding(viewport, [image]);
+    let quality = ImageQualityStatus.LOSSY;
+    // A CPU path draws in `render()`, marks the frame and fires IMAGE_RENDERED.
+    binding.render = jest.fn(() => {
+      rendering.imageQualityStatus = quality;
+      viewport.renderContext.display.markRendered();
+      element.dispatchEvent(new CustomEvent(Events.IMAGE_RENDERED));
+    });
+    const states = [];
+    element.addEventListener(Events.VIEWPORT_FIDELITY_CHANGED, (evt) =>
+      states.push(evt.detail.state.shownState)
+    );
+
+    viewport.render();
+    expect(states).toEqual(['lossy']);
+    viewport.renderContext.display.renderNow();
+    quality = ImageQualityStatus.FULL_RESOLUTION;
+    viewport.renderContext.display.renderNow();
+
+    expect(binding.render).toHaveBeenCalledTimes(3);
+    expect(states).toEqual(['lossy', 'done']);
+  });
+
+  it('fires VIEWPORT_FIDELITY_CHANGED after IMAGE_RENDERED of the same draw', () => {
+    context = createViewport();
+    const { viewport, element } = context;
+    const image = createPlanarImage('cpu:order');
+    addPlanarImageMetadata([image.imageId]);
+    const { binding, rendering } = mountStackBinding(viewport, [image]);
+    binding.render = () => {
+      rendering.imageQualityStatus = ImageQualityStatus.LOSSY;
+      viewport.renderContext.display.markRendered();
+      element.dispatchEvent(new CustomEvent(Events.IMAGE_RENDERED));
+    };
+    const order = [];
+    element.addEventListener(Events.IMAGE_RENDERED, () =>
+      order.push('rendered')
+    );
+    element.addEventListener(Events.VIEWPORT_FIDELITY_CHANGED, () =>
+      order.push('fidelity')
+    );
+
+    viewport.render();
+
+    expect(order).toEqual(['rendered', 'fidelity']);
+  });
+
+  it('leaves the event to the engine for a render path that the engine draws', () => {
+    context = createViewport();
+    const { viewport, element } = context;
+    addPlanarImageMetadata(['vtk:1']);
+    const { binding, rendering } = mountStackBinding(viewport, [
+      createPlanarImage('vtk:1'),
+    ]);
+    rendering.imageQualityStatus = ImageQualityStatus.LOSSY;
+    binding.render = jest.fn();
+    const listener = jest.fn();
+    element.addEventListener(Events.VIEWPORT_FIDELITY_CHANGED, listener);
+
+    viewport.render();
+
+    expect(listener).not.toHaveBeenCalled();
   });
 });

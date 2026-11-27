@@ -51,6 +51,11 @@ function createHost(overrides = {}) {
     findDataIdByVolumeId: jest.fn(() => undefined),
     getBindingActor: jest.fn(() => undefined),
     getDefaultVOIRange: jest.fn(() => undefined),
+    getVOILUTState: jest.fn(() => ({
+      VOILUTFunction: 'LINEAR',
+      voiLUTSequenceApplied: false,
+    })),
+    getDefaultVOILUTFunction: jest.fn(() => undefined),
     getImageCount: jest.fn(() => 0),
     getMaxImageIdIndex: jest.fn(() => -1),
     ...overrides,
@@ -174,6 +179,48 @@ describe('PlanarLegacyCompatibilityController', () => {
       await controller.setVolumes([{ volumeId: 'vol-1' }], true);
       expect(host.render).toHaveBeenCalled();
     });
+
+    it('keeps the registration of a volume that the viewport already holds', async () => {
+      // The viewport removes every binding that it holds before the viewport
+      // mounts the new bindings, so setDisplaySets calls removeData for the
+      // volume that this call mounts again. The registration has to survive
+      // that removal, because the mount reads the registration back.
+      cache.getVolume.mockReturnValue({ imageIds: ['v-0', 'v-1'] });
+      const dataId = '__planar_v2__:vp-1:volume:vol-1';
+      const { host } = createHost();
+      const controller = new PlanarLegacyCompatibilityController(host);
+
+      await controller.setVolumes([{ volumeId: 'vol-1' }]);
+
+      host.setDisplaySets.mockImplementationOnce(async () => {
+        controller.removeData(dataId);
+      });
+      metadataProvider.remove.mockClear();
+
+      await controller.setVolumes([{ volumeId: 'vol-1' }]);
+
+      expect(metadataProvider.remove).not.toHaveBeenCalledWith(dataId);
+      expect(metadataProvider.add).toHaveBeenLastCalledWith(
+        dataId,
+        expect.objectContaining({ volumeId: 'vol-1' })
+      );
+    });
+
+    it('removes the data of a volume when the mount of that volume fails', async () => {
+      cache.getVolume.mockReturnValue({ imageIds: ['v-0'] });
+      const dataId = '__planar_v2__:vp-1:volume:vol-1';
+      const { host } = createHost();
+      host.setDisplaySets.mockImplementationOnce(async () => {
+        throw new Error('mount failed');
+      });
+      const controller = new PlanarLegacyCompatibilityController(host);
+
+      await expect(
+        controller.setVolumes([{ volumeId: 'vol-1' }])
+      ).rejects.toThrow(/mount failed/);
+
+      expect(metadataProvider.remove).toHaveBeenCalledWith(dataId);
+    });
   });
 
   describe('property management', () => {
@@ -204,6 +251,45 @@ describe('PlanarLegacyCompatibilityController', () => {
           viewUp: [0, 1, 0],
         })
       );
+    });
+
+    it('does not pin a resolved image VOI LUT function into the presentation', () => {
+      const { host } = createHost({
+        getActiveDataId: jest.fn(() => 'data-1'),
+      });
+      const controller = new PlanarLegacyCompatibilityController(host);
+
+      controller.setProperties({
+        VOILUTFunction: 'SIGMOID',
+        voiLUTFunctionSetByUser: false,
+      });
+
+      expect(host.setDataPresentationState).toHaveBeenCalledWith('data-1', {});
+
+      controller.setProperties({
+        VOILUTFunction: 'SIGMOID',
+      });
+      expect(host.setDataPresentationState).toHaveBeenLastCalledWith('data-1', {
+        voiLUTFunction: 'SIGMOID',
+      });
+    });
+
+    // Same rule as StackViewport, which the migration notes tell apps to read.
+    it('reports voiLUTFunctionSetByUser only for a function different from the file', () => {
+      const state = { VOILUTFunction: 'LINEAR', voiLUTSequenceApplied: false };
+      const { host } = createHost({
+        getActiveDataId: jest.fn(() => 'data-1'),
+        getVOILUTState: jest.fn(() => state),
+        getDefaultVOILUTFunction: jest.fn(() => 'LINEAR'),
+      });
+      const controller = new PlanarLegacyCompatibilityController(host);
+
+      controller.setProperties({ VOILUTFunction: 'LINEAR' });
+      expect(controller.getProperties().voiLUTFunctionSetByUser).toBe(false);
+
+      state.VOILUTFunction = 'SIGMOID';
+      controller.setProperties({ VOILUTFunction: 'SIGMOID' });
+      expect(controller.getProperties().voiLUTFunctionSetByUser).toBe(true);
     });
 
     it('does nothing when no target data id can be resolved', () => {
@@ -239,6 +325,81 @@ describe('PlanarLegacyCompatibilityController', () => {
 
       // suppressEvents is the third positional arg; the second is volumeId.
       controller.setProperties({ colormap: { name: 'hot' } }, undefined, true);
+      expect(listener).not.toHaveBeenCalled();
+    });
+
+    it('emits VOI_MODIFIED when voiRange is set and not suppressed', () => {
+      // The event gives the VOI LUT state in effect, as the native event does.
+      const { host, element } = createHost({
+        getActiveDataId: jest.fn(() => 'data-1'),
+        getVOILUTState: jest.fn(() => ({
+          VOILUTFunction: 'LINEAR_EXACT',
+          voiLUTSequenceApplied: true,
+        })),
+      });
+      const controller = new PlanarLegacyCompatibilityController(host);
+      const listener = jest.fn();
+      element.addEventListener(Events.VOI_MODIFIED, listener);
+
+      controller.setProperties({
+        voiRange: { lower: 10, upper: 20 },
+        VOILUTFunction: 'LINEAR_EXACT',
+      });
+      expect(listener).toHaveBeenCalledTimes(1);
+      expect(listener.mock.calls[0][0].detail).toMatchObject({
+        viewportId: 'vp-1',
+        range: { lower: 10, upper: 20 },
+        VOILUTFunction: 'LINEAR_EXACT',
+        voiLUTSequenceApplied: true,
+        invertStateChanged: false,
+      });
+    });
+
+    it('emits VOI_MODIFIED with the default range when only invert is set', () => {
+      const range = { lower: 0, upper: 100 };
+      const { host, element } = createHost({
+        getActiveDataId: jest.fn(() => 'data-1'),
+        getDefaultVOIRange: jest.fn(() => range),
+      });
+      const controller = new PlanarLegacyCompatibilityController(host);
+      const listener = jest.fn();
+      element.addEventListener(Events.VOI_MODIFIED, listener);
+
+      controller.setProperties({ invert: true });
+      expect(listener.mock.calls[0][0].detail).toMatchObject({
+        range,
+        invert: true,
+        invertStateChanged: true,
+      });
+
+      // The VOI synchronizer copies invert only when the state changed.
+      controller.setProperties({ invert: true });
+      expect(listener.mock.calls[1][0].detail.invertStateChanged).toBe(false);
+    });
+
+    it('does not emit VOI_MODIFIED when the VOI is untouched', () => {
+      const { host, element } = createHost({
+        getActiveDataId: jest.fn(() => 'data-1'),
+      });
+      const controller = new PlanarLegacyCompatibilityController(host);
+      const listener = jest.fn();
+      element.addEventListener(Events.VOI_MODIFIED, listener);
+
+      controller.setProperties({ colormap: { name: 'hot' } });
+      expect(listener).not.toHaveBeenCalled();
+    });
+
+    it('honours suppressEvents in either the stack or the volume position', () => {
+      const { host, element } = createHost({
+        getActiveDataId: jest.fn(() => 'data-1'),
+      });
+      const controller = new PlanarLegacyCompatibilityController(host);
+      const listener = jest.fn();
+      element.addEventListener(Events.VOI_MODIFIED, listener);
+
+      const voiRange = { lower: 10, upper: 20 };
+      controller.setProperties({ voiRange }, true);
+      controller.setProperties({ voiRange }, undefined, true);
       expect(listener).not.toHaveBeenCalled();
     });
   });

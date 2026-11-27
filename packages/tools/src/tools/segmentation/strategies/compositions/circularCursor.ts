@@ -11,6 +11,12 @@ import {
   drawPath as drawPathSvg,
 } from '../../../../drawingSvg';
 import getViewportICamera from '../../../../utilities/getViewportICamera';
+import { getCenterAndRadiusInCanvas } from '../../../../utilities/getCenterAndRadiusInCanvas';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.segmentation.strategies.compositions.circularCursor'
+);
 
 export default {
   [StrategyCallbacks.CalculateCursorGeometry]: function (
@@ -124,7 +130,7 @@ export default {
 
     // If rendering engine has been destroyed while rendering
     if (!viewport.getRenderingEngine()) {
-      console.warn('Rendering Engine has been destroyed');
+      cs3dLogger.warn('Rendering Engine has been destroyed');
       return;
     }
 
@@ -136,20 +142,15 @@ export default {
     for (let i = 0; i < points.length; i += 4) {
       const circlePoints = points.slice(i, i + 4);
 
-      if (circlePoints.length < 2) {
+      // getCenterAndRadiusInCanvas needs all four points (bottom, top, left, right)
+      if (circlePoints.length < 4) {
         continue;
       }
 
-      const canvasCoordinates = circlePoints.map((p) =>
-        viewport.worldToCanvas(p)
+      const { center, radius } = getCenterAndRadiusInCanvas(
+        circlePoints,
+        viewport
       );
-      const bottom = canvasCoordinates[0];
-      const top = canvasCoordinates[1];
-      const center = [
-        Math.floor((bottom[0] + top[0]) / 2),
-        Math.floor((bottom[1] + top[1]) / 2),
-      ] as Types.Point2;
-      const radius = Math.round(Math.abs(bottom[1] - center[1]));
 
       circleGeometries.push({ center, radius });
     }

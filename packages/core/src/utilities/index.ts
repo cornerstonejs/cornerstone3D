@@ -1,6 +1,7 @@
 import * as eventListener from './eventListener';
 import csUtils from './invertRgbTransferFunction';
 import createSigmoidRGBTransferFunction from './createSigmoidRGBTransferFunction';
+import createVOILUTSequenceTransferFunction from './createVOILUTSequenceTransferFunction';
 import getVoiFromSigmoidRGBTransferFunction from './getVoiFromSigmoidRGBTransferFunction';
 import createLinearRGBTransferFunction from './createLinearRGBTransferFunction';
 import scaleRgbTransferFunction from './scaleRgbTransferFunction';
@@ -17,6 +18,9 @@ import clamp from './clamp';
 import isOpposite from './isOpposite';
 import getClosestImageId from './getClosestImageId';
 import getSpacingInNormalDirection from './getSpacingInNormalDirection';
+import getEffectiveSpacingAlongDirection from './getEffectiveSpacingAlongDirection';
+import sampleVolumeGrid from './sampleVolumeGrid';
+import getViewSlabDepth from './getViewSlabDepth';
 import getTargetVolumeAndSpacingInNormalDir from './getTargetVolumeAndSpacingInNormalDir';
 import getVolumeActorCorners from './getVolumeActorCorners';
 import indexWithinDimensions from './indexWithinDimensions';
@@ -67,18 +71,28 @@ import { generateVolumePropsFromImageIds } from './generateVolumePropsFromImageI
 import { convertStackToVolumeViewport } from './convertStackToVolumeViewport';
 import { convertVolumeToStackViewport } from './convertVolumeToStackViewport';
 import VoxelManager from './VoxelManager';
+import CompositeVoxelManager from './CompositeVoxelManager';
 import RLEVoxelMap from './RLEVoxelMap';
-import roundNumber, { roundToPrecision } from './roundNumber';
+import roundNumber, { roundNumberTrim, roundToPrecision } from './roundNumber';
 import convertToGrayscale from './convertToGrayscale';
 import { convertColorArrayToRgbString } from './convertColorArrayToRgbString';
 import getViewportImageIds from './getViewportImageIds';
 import { getRandomSampleFromArray } from './getRandomSampleFromArray';
 import { getVolumeId } from './getVolumeId';
 import { hasFloatScalingParameters } from './hasFloatScalingParameters';
+import { getScalingMode } from './getScalingMode';
 import { pointInShapeCallback } from './pointInShapeCallback';
-import * as ECGUtilities from './ECGUtilities';
+import * as ECGUtilitiesModule from './ECGUtilities';
 import * as VideoUtilities from './VideoUtilities';
 import * as WSIUtilities from './WSIUtilities';
+import * as voxelGrid from './voxelGrid';
+
+/**
+ * @deprecated Kept for 5.x compatibility. Use the ECG functions of
+ * `GenericViewport/ECG`, for example `getECGTraceLayout`. The next major
+ * release removes it.
+ */
+const ECGUtilities = ECGUtilitiesModule;
 // name spaces
 export * as planar from './planar';
 import * as windowLevel from './windowLevel';
@@ -121,10 +135,28 @@ import {
   mapMappedBandToRawRange,
 } from './viewportVoiIntensityMapping';
 export type { ViewportVoiMappingProps } from './viewportVoiIntensityMapping';
+export {
+  isRenderableVOILUT,
+  getVOILUTSequenceRange,
+  getVOILUTOutputScale,
+  sampleVOILUT,
+  createVOILUTSampler,
+  invertVOILUTSample,
+} from './createVOILUTSequenceTransferFunction';
+export type { RenderableVOILUT } from './createVOILUTSequenceTransferFunction';
+export {
+  normalizeVOILUTFunction,
+  getValidVOILUTFunction,
+} from './voiLUTFunction';
+export {
+  default as normalizeVOILUTSequence,
+  getVOILUTBytesPerEntry,
+} from './normalizeVOILUTSequence';
 export * from './getPixelSpacingInformation';
 export * from './getPlaneCubeIntersectionDimensions';
 export * from './rotateToViewCoordinates';
-import { asArray } from './asArray';
+export * as voxelSlab from './voxelSlab';
+import { asArray, asArrayFirst } from './asArray';
 import {
   viewportSupportsImageSlices,
   viewportSupportsStackCalibration,
@@ -140,7 +172,14 @@ import {
   viewportIsInStackMode,
 } from './viewportCapabilities';
 import { getNormalizedAspectRatio } from './getNormalizedAspectRatio';
+import {
+  getWasmBasePath,
+  resolveWasmBasePath,
+  setWasmBasePath,
+} from './wasmBasePath';
+import resolveApplicationUrl, { getPublicUrl } from './resolveApplicationUrl';
 export { updatePlaneRestriction } from './updatePlaneRestriction';
+export { isAcquisitionPlaneNormal } from './isAcquisitionPlaneNormal';
 const getViewportModality = (viewport: IViewport, volumeId?: string) =>
   _getViewportModality(viewport, volumeId, cache.getVolume);
 const getScalingDescriptor = (viewport: IViewport, targetId?: string) =>
@@ -153,6 +192,7 @@ export {
   eventListener,
   csUtils as invertRgbTransferFunction,
   createSigmoidRGBTransferFunction,
+  createVOILUTSequenceTransferFunction,
   getVoiFromSigmoidRGBTransferFunction,
   createLinearRGBTransferFunction,
   scaleRgbTransferFunction,
@@ -176,6 +216,9 @@ export {
   convertColorArrayToRgbString,
   getClosestImageId,
   getSpacingInNormalDirection,
+  getEffectiveSpacingAlongDirection,
+  sampleVolumeGrid,
+  getViewSlabDepth,
   getTargetVolumeAndSpacingInNormalDir,
   getVolumeActorCorners,
   indexWithinDimensions,
@@ -225,16 +268,19 @@ export {
   generateVolumePropsFromImageIds,
   getBufferConfiguration,
   VoxelManager,
+  CompositeVoxelManager,
   RLEVoxelMap,
   convertStackToVolumeViewport,
   convertVolumeToStackViewport,
   roundNumber,
+  roundNumberTrim,
   roundToPrecision,
   getViewportImageIds,
   getRandomSampleFromArray,
   getVolumeId,
   color,
   hasFloatScalingParameters,
+  getScalingMode,
   getDynamicVolumeInfo,
   autoLoad,
   scaleArray,
@@ -246,6 +292,7 @@ export {
   ECGUtilities,
   VideoUtilities,
   WSIUtilities,
+  voxelGrid,
   deepEqual,
   jumpToSlice,
   scroll,
@@ -263,6 +310,7 @@ export {
   mapViewportVoiIntensityToScalar,
   mapMappedBandToRawRange,
   asArray,
+  asArrayFirst,
   viewportSupportsImageSlices,
   viewportSupportsStackCalibration,
   viewportSupportsStackCompatibility,
@@ -276,4 +324,9 @@ export {
   viewportIsInVolumeMode,
   viewportIsInStackMode,
   getNormalizedAspectRatio,
+  getWasmBasePath,
+  setWasmBasePath,
+  resolveWasmBasePath,
+  resolveApplicationUrl,
+  getPublicUrl,
 };

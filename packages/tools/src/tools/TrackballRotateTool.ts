@@ -5,6 +5,7 @@ import {
   getEnabledElement,
   getEnabledElementByIds,
   utilities as csUtils,
+  getLossyDownsampling,
 } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import { mat4, vec3 } from 'gl-matrix';
@@ -64,7 +65,10 @@ class TrackballRotateTool extends BaseTool {
     const originalSampleDistance = mapper.getSampleDistance();
 
     if (!this._hasResolutionChanged) {
-      const { rotateSampleDistanceFactor } = this.configuration;
+      // A larger sample distance is an interactive downsampling.
+      const rotateSampleDistanceFactor = getLossyDownsampling().interactive
+        ? this.configuration.rotateSampleDistanceFactor
+        : 1;
       mapper.setSampleDistance(
         originalSampleDistance * rotateSampleDistanceFactor
       );
@@ -73,15 +77,26 @@ class TrackballRotateTool extends BaseTool {
       if (this.cleanUp !== null) {
         // Clean up previous event listener
         document.removeEventListener('mouseup', this.cleanUp);
+        document.removeEventListener('touchend', this.cleanUp);
+        document.removeEventListener('touchcancel', this.cleanUp);
       }
 
       this.cleanUp = () => {
+        // All listener types are armed below; whichever fires first must
+        // clear the others so no stale once-listener lingers on document.
+        document.removeEventListener('mouseup', this.cleanUp);
+        document.removeEventListener('touchend', this.cleanUp);
+        document.removeEventListener('touchcancel', this.cleanUp);
         mapper.setSampleDistance(originalSampleDistance);
         viewport.render();
         this._hasResolutionChanged = false;
       };
 
       document.addEventListener('mouseup', this.cleanUp, { once: true });
+      document.addEventListener('touchend', this.cleanUp, { once: true });
+      // OS-interrupted gestures (incoming call, notification shade) end in
+      // touchcancel, never touchend.
+      document.addEventListener('touchcancel', this.cleanUp, { once: true });
     }
     return true;
   };

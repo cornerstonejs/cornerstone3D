@@ -82,7 +82,7 @@ type ListParamsType = [number, number, Types.Point2[]];
  * const criteria = (pointA, pointB) => areSamePosition(pointA, pointB)
  * const direction = 1;
  * let result = circularFindNextIndexBy(firstParam, secondParam, criteria,direction);
- * console.log(result);
+ * logger.info(result);
  * // prints [1, 2]
  * // use this result and find again
  * firstParam = [result[0]+1, result[0], pointsA]

@@ -18,6 +18,11 @@ import AnnotationDisplayTool from './base/AnnotationDisplayTool';
 import { distanceToPoint } from '../utilities/math/point';
 import { pointToString } from '../utilities/pointToString';
 import { polyDataUtils } from '../utilities';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'tools.SegmentationIntersectionTool'
+);
 
 export type WorldPointSet = {
   worldPointsSet;
@@ -52,7 +57,7 @@ class SegmentationIntersectionTool extends AnnotationDisplayTool {
     const viewportsInfo = getToolGroup(this.toolGroupId).viewportsInfo;
 
     if (!viewportsInfo?.length) {
-      console.warn(this.getToolName() + 'Tool: No viewports found');
+      cs3dLogger.warn(this.getToolName() + 'Tool: No viewports found');
       return;
     }
 

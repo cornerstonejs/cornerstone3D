@@ -2,6 +2,11 @@ import { state } from '../../store/state';
 import getActiveToolForMouseEvent from '../shared/getActiveToolForMouseEvent';
 import { setAnnotationSelected } from '../../stateManagement/annotation/annotationSelection';
 import type { EventTypes } from '../../types';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+
+const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
+  'eventDispatchers.mouseEventHandlers.mouseDownActivate'
+);
 
 /**
  * If the `mouseDown` handler does not consume an event,
@@ -31,9 +36,17 @@ export default function mouseDownActivate(
   if (activeTool.addNewAnnotation) {
     try {
       const annotation = activeTool.addNewAnnotation(evt, 'mouse');
-      setAnnotationSelected(annotation.annotationUID);
+      // A tool returns null when it creates no annotation, because it has
+      // nothing to measure on this viewport - for example when a configured
+      // targetsFilter selects no target. That is not an error.
+      if (annotation?.annotationUID) {
+        setAnnotationSelected(annotation.annotationUID);
+      }
     } catch (error) {
-      console.warn('Error adding new annotation, viewport not ready:', error);
+      cs3dLogger.warn(
+        'Error adding new annotation, viewport not ready:',
+        error
+      );
     }
   }
 }

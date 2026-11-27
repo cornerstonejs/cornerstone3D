@@ -246,6 +246,12 @@ addCheckboxToToolbar({
   },
 });
 
+/** Stretches one viewport, and fits the stretched image if the user asks. */
+const applyAspectRatio = (vp, aspect: Types.Point2) => {
+  vp.setAspectRatio(aspect, { fit: isFitViewportAfterStretch });
+  vp.render();
+};
+
 let stretchAxis = ['Stretch X', 'Stretch Y'];
 let selectedAxis = stretchAxis[0];
 
@@ -270,8 +276,7 @@ const setStretch = (value) => {
     if (!vp) {
       return;
     }
-    vp.setAspectRatio([sx, sy], isFitViewportAfterStretch);
-    vp.render();
+    applyAspectRatio(vp, [sx, sy]);
   });
 };
 
@@ -293,8 +298,7 @@ addDropdownToToolbar({
       if (!vp) {
         return;
       }
-      vp.setAspectRatio(aspect, isFitViewportAfterStretch);
-      vp.render();
+      applyAspectRatio(vp, aspect);
     });
   },
 });

@@ -1,5 +1,6 @@
 import type IBaseStreamingImageVolume from './IBaseStreamingImageVolume';
 import type Cornerstone3DConfig from './Cornerstone3DConfig';
+import type { LossyDownsampling } from './Cornerstone3DConfig';
 import type ICamera from './ICamera';
 import type IEnabledElement from './IEnabledElement';
 import type ICache from './ICache';
@@ -149,7 +150,24 @@ import type {
   PolyDataPointConfiguration,
 } from './IPointsManager';
 import type IImageFrame from './IImageFrame';
-import type { IVoxelManager } from './IVoxelManager';
+import type {
+  IVolumeVoxelManager,
+  IVoxelManager,
+  VoxelManagerForEachCallbackArguments,
+  VoxelManagerForEachOptions,
+} from './IVoxelManager';
+import type {
+  VoxelGrid,
+  VoxelGridLimits,
+  VoxelGridReduction,
+  VoxelRepresentationId,
+} from './VoxelGrid';
+import type {
+  VoxelStatisticAccumulator,
+  VoxelStatisticDefinition,
+  VoxelStatisticSliceReducer,
+  VoxelStatisticPlaneFill,
+} from './VoxelStatistic';
 import type { IRLEVoxelMap, RLERun } from './IRLEVoxelMap';
 import type ImageLoadRequests from './ImageLoadRequests';
 import type { IBaseVolumeViewport } from './IBaseVolumeViewport';
@@ -159,9 +177,12 @@ import type JumpToSliceOptions from './JumpToSliceOptions';
 import type GeometryLoaderFn from './GeometryLoaderFn';
 
 import type { RenderingEngineModeType } from './RenderingEngineMode';
-import type { VtkOffscreenMultiRenderWindow } from './VtkOffscreenMultiRenderWindow';
+import type {
+  OffscreenCanvasContainer,
+  VtkOffscreenMultiRenderWindow,
+} from './VtkOffscreenMultiRenderWindow';
 import type { ViewportDataReference } from '../RenderingEngine/GenericViewport';
-import type { ResetCameraOptions } from './ICamera';
+import type { ResetCameraOptions, SetAspectRatioOptions } from './ICamera';
 import type {
   ViewportType,
   ViewportTypeConstants,
@@ -172,6 +193,34 @@ import type {
   RenderBackendConstants,
   RenderBackendRegistry,
 } from './RenderBackendRegistry';
+import type {
+  VoxelStatistic,
+  VoxelStatisticConstants,
+  VoxelStatisticRegistry,
+} from './VoxelStatisticRegistry';
+import type {
+  VoxelDataSource,
+  VoxelDataSourceConstants,
+  VoxelDataSourceRegistry,
+  VoxelReduction,
+  VoxelReductionConstants,
+  VoxelReductionRegistry,
+} from './VoxelQualityRegistry';
+import type {
+  DeliveredRegion,
+  VoxelQualityCause,
+  VoxelQualityRecord,
+  VoxelQualityRequirement,
+  VoxelQualityVerdict,
+  VoxelReductionDefinition,
+} from './VoxelQuality';
+import type {
+  IViewportFidelity,
+  ViewportFidelityCause,
+  ViewportFidelityState,
+  ViewportFidelityShownState,
+  FidelityIssue,
+} from './ViewportFidelity';
 
 export type * from './MetadataModuleTypes';
 export type * from './InstanceTypes';
@@ -179,10 +228,12 @@ export type * from './InstanceTypes';
 export type {
   // config
   Cornerstone3DConfig,
+  LossyDownsampling,
   //
   IBaseStreamingImageVolume,
   ICamera,
   ResetCameraOptions,
+  SetAspectRatioOptions,
   IStackViewport,
   IVideoViewport,
   IECGViewport,
@@ -322,6 +373,18 @@ export type {
   IImageFrame,
   LocalVolumeOptions,
   IVoxelManager,
+  IVolumeVoxelManager,
+  VoxelManagerForEachCallbackArguments,
+  VoxelManagerForEachOptions,
+  VoxelGrid,
+  VoxelGridLimits,
+  VoxelGridReduction,
+  VoxelRepresentationId,
+  VoxelStatistic,
+  VoxelStatisticAccumulator,
+  VoxelStatisticDefinition,
+  VoxelStatisticSliceReducer,
+  VoxelStatisticPlaneFill,
   IRLEVoxelMap,
   RLERun,
   ViewportInput,
@@ -336,6 +399,7 @@ export type {
   RLEVoxelMap,
   RenderingEngineModeType,
   VtkOffscreenMultiRenderWindow,
+  OffscreenCanvasContainer,
   ViewportDataReference,
   ViewportType,
   ViewportTypeRegistry,
@@ -343,6 +407,25 @@ export type {
   EffectiveRenderBackend,
   RenderBackendRegistry,
   RenderBackendConstants,
+  VoxelStatisticRegistry,
+  VoxelStatisticConstants,
+  VoxelReduction,
+  VoxelReductionRegistry,
+  VoxelReductionConstants,
+  VoxelReductionDefinition,
+  VoxelDataSource,
+  VoxelDataSourceRegistry,
+  VoxelDataSourceConstants,
+  DeliveredRegion,
+  VoxelQualityRecord,
+  VoxelQualityRequirement,
+  VoxelQualityVerdict,
+  VoxelQualityCause,
+  IViewportFidelity,
+  ViewportFidelityCause,
+  ViewportFidelityState,
+  ViewportFidelityShownState,
+  FidelityIssue,
 };
 
 export { ActorRenderMode };

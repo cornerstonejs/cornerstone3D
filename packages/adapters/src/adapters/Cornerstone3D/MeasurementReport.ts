@@ -30,6 +30,12 @@ import {
   TEXT_ANNOTATION_POSITION,
 } from './constants';
 import LabelData from './LabelData';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+import { getWriterHeader } from '../../utilities/getWriterHeader';
+
+const cs3dLogger = cornerstoneUtilities.logger.adaptersLog.getLogger(
+  'Cornerstone3D.MeasurementReport'
+);
 
 const { MetadataModules } = Enums;
 
@@ -677,6 +683,12 @@ export default class MeasurementReport {
     return imageId;
   }
 
+  /**
+   * Generates the SR report dataset from the tool state.
+   *
+   * The writer header (`Manufacturer`, `ManufacturerModelName`,
+   * `SoftwareVersions`) comes from `getWriterHeader(options)`.
+   */
   static generateReport(toolState, metadataProvider, options) {
     // ToolState for array of imageIDs to a Report
     // Assume Cornerstone metadata provider has access to Study / Series / Sop Instance UID
@@ -737,7 +749,10 @@ export default class MeasurementReport {
       options
     );
 
-    const report = new StructuredReport(derivationSourceDatasets, options);
+    const report = new StructuredReport(derivationSourceDatasets, {
+      ...options,
+      ...getWriterHeader(options),
+    });
 
     const contentItem = tid1500MeasurementReport.contentItem(
       derivationSourceDatasets,
@@ -854,13 +869,17 @@ export default class MeasurementReport {
           measurement.TrackingUniqueIdentifier = trackingUniqueIdentifierValue;
           measurement.predecessorImageId = predecessorImageId;
 
-          console.log(`=== ${toolAdapter.toolType} ===`);
-          console.log(measurement);
+          cs3dLogger.info(`=== ${toolAdapter.toolType} ===`);
+          cs3dLogger.info(measurement);
           measurementData[toolAdapter.toolType] ||= [];
           measurementData[toolAdapter.toolType].push(measurement);
         }
       } catch (e) {
-        console.warn('Unable to generate tool state for', measurementGroup, e);
+        cs3dLogger.warn(
+          'Unable to generate tool state for',
+          measurementGroup,
+          e
+        );
       }
     });
 

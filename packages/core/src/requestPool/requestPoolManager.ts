@@ -1,6 +1,9 @@
 import RequestType from '../enums/RequestType';
 import type { IImage } from '../types';
 import uuidv4 from '../utilities/uuidv4';
+import { coreLog } from '../utilities/logger';
+
+const log = coreLog.getLogger('requestPool', 'requestPoolManager');
 
 interface AdditionalDetails {
   imageId?: string;
@@ -248,7 +251,7 @@ class RequestPoolManager {
           requestResult = requestDetails.requestFn();
         } catch (e) {
           // This is the only warning one will get, so need a warn message
-          console.warn('sendRequest failed', e);
+          log.warn('sendRequest failed', e);
         }
         if (requestResult?.finally) {
           requestResult.finally(() => {

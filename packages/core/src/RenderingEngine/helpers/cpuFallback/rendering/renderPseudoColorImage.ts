@@ -7,13 +7,52 @@ import doesImageNeedToBeRendered from './doesImageNeedToBeRendered';
 import storedPixelDataToCanvasImageDataPseudocolorLUT from './storedPixelDataToCanvasImageDataPseudocolorLUT';
 import storedPixelDataToCanvasImageDataPseudocolorLUTPET from './storedPixelDataToCanvasImageDataPseudocolorLUTPET';
 import * as colors from '../colors/index';
+import computeAutoVoi from './computeAutoVoi';
+import VOILUTFunctionType from '../../../../enums/VOILUTFunctionType';
+import { getValidVOILUTFunction } from '../../../../utilities/voiLUTFunction';
 import type {
   ColormapPublic,
   IImage,
   CPUFallbackEnabledElement,
+  CPUFallbackViewport,
 } from '../../../../types';
 import { clamp } from '../../../../utilities/clamp';
+import { toLowHighRange } from '../../../../utilities/windowLevel';
 import { createCanvas } from '../../getOrCreateCanvas';
+import { coreLog } from '../../../../utilities/logger';
+
+const log = coreLog.getLogger('RenderingEngine', 'renderPseudoColorImage');
+
+/**
+ * Gets the LUT that maps the stored values to the indices of the colormap.
+ *
+ * On the GPU a colormap fills the transfer function with its own colors, so it
+ * replaces the curve of a VOI LUT Sequence and the curve of a sigmoid (refer to
+ * setVOIGPU in StackViewport). The CPU path follows the same rule: it drops
+ * the VOI LUT Sequence, and it maps the window with a linear ramp. The sigmoid
+ * carries its window in the LINEAR bounds, so LINEAR gives the GPU ramp.
+ * LINEAR_EXACT keeps its exact bounds, as on the GPU.
+ */
+export function getColormapLut(
+  image: IImage,
+  viewport: CPUFallbackViewport,
+  invalidated: boolean
+): Uint8ClampedArray {
+  const lutViewport = { ...viewport, voiLUT: undefined };
+  // Without the sequence, a viewport with no window gets the automatic window.
+  computeAutoVoi(lutViewport, image);
+  viewport.voi = lutViewport.voi;
+  const { voiLUTFunction } = viewport.voi;
+  const isSigmoid =
+    getValidVOILUTFunction(voiLUTFunction) ===
+    VOILUTFunctionType.SAMPLED_SIGMOID;
+  lutViewport.voi = {
+    ...viewport.voi,
+    voiLUTFunction: isSigmoid ? VOILUTFunctionType.LINEAR : voiLUTFunction,
+  };
+
+  return getLut(image, lutViewport, invalidated);
+}
 
 /**
  * Returns an appropriate canvas to render the Image. If the canvas available in the cache is appropriate
@@ -44,7 +83,7 @@ function getRenderCanvas(
     enabledElement.viewport.colormap || enabledElement.options.colormap;
 
   if (enabledElement.options && enabledElement.options.colormap) {
-    console.warn(
+    log.warn(
       'enabledElement.options.colormap is deprecated. Use enabledElement.viewport.colormap instead'
     );
   }
@@ -102,29 +141,30 @@ function getRenderCanvas(
   const colorLUT = enabledElement.renderingTools.colorLUT;
 
   if (viewport.modality === 'PT') {
-    const { windowWidth, windowCenter } = viewport.voi;
-    const minimum = windowCenter - windowWidth / 2;
-    const maximum = windowCenter + windowWidth / 2;
+    const { windowWidth, windowCenter, voiLUTFunction } = viewport.voi;
+    // A linear ramp over the window bounds, as on the GPU (see getColormapLut).
+    const { lower: minimum, upper: maximum } = toLowHighRange(
+      windowWidth,
+      windowCenter,
+      voiLUTFunction
+    );
     const range = maximum - minimum;
     const collectedMultiplierTerms = 255.0 / range;
+    // A LINEAR window of width 1 has no range: a threshold, as in getVOILut.
+    const ramp =
+      range > 0
+        ? (value) => (value - minimum) * collectedMultiplierTerms
+        : (value) => (value > minimum ? 255 : 0);
 
     let petVOILutFunction;
 
     if (viewport.invert) {
       petVOILutFunction = (value) => {
-        return clamp(
-          Math.floor(255 - (value - minimum) * collectedMultiplierTerms),
-          0,
-          255
-        );
+        return clamp(Math.floor(255 - ramp(value)), 0, 255);
       };
     } else {
       petVOILutFunction = (value) => {
-        return clamp(
-          Math.floor((value - minimum) * collectedMultiplierTerms),
-          0,
-          255
-        );
+        return clamp(Math.floor(ramp(value)), 0, 255);
       };
     }
 
@@ -135,7 +175,7 @@ function getRenderCanvas(
       renderCanvasData.data
     );
   } else {
-    const lut = getLut(image, enabledElement.viewport, invalidated);
+    const lut = getColormapLut(image, viewport, invalidated);
 
     image.stats = image.stats || {};
     image.stats.lastLutGenerateTime = now() - start;

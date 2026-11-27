@@ -1,19 +1,28 @@
 import { getRenderingEngines } from './RenderingEngine/getRenderingEngine';
 let csRenderInitialized = false;
 import deepMerge from './utilities/deepMerge';
-import type { Cornerstone3DConfig } from './types';
+import type { Cornerstone3DConfig, LossyDownsampling } from './types';
 import CentralizedWebWorkerManager from './webWorkerManager/webWorkerManager';
 import { getRenderingCapabilities } from './utilities/renderingCapabilities';
 import triggerEvent from './utilities/triggerEvent';
 import eventTarget from './eventTarget';
-import { Events, RenderBackends, RenderingEngineModeEnum } from './enums';
+import {
+  Events,
+  RenderBackends,
+  RenderingEngineModeEnum,
+  VoxelManagerEnum,
+} from './enums';
 import type { RenderBackendValue } from './enums';
 import { isRegisteredRenderBackend } from './RenderingEngine/helpers/renderBackendRegistry';
 import type { EffectiveRenderBackend } from './types/RenderBackendRegistry';
+import { coreLog } from './utilities/logger';
+
+const log = coreLog.getLogger('init');
 
 // TODO: change config into a class with methods to better control get/set
 const defaultConfig: Cornerstone3DConfig = {
   isMobile: false, // is mobile device
+  dangerouslyDisableFidelityIndicator: false,
   rendering: {
     useCPURendering: false,
     // GPU rendering options
@@ -21,6 +30,7 @@ const defaultConfig: Cornerstone3DConfig = {
     // Use new method by default for accurate full-width display
     useLegacyCameraFOV: false,
     strictZSpacingForVolumeViewport: true,
+    sliceStepMeasure: 'l2',
     /**
      * The rendering engine mode to use.
      * 'contextPool' is the a rendering engine that uses sequential rendering, pararllization and has enhanced support/performance for multi-monitor and high resolution displays.
@@ -49,6 +59,19 @@ const defaultConfig: Cornerstone3DConfig = {
       /** Multiplier for the calculated sample distance */
       sampleDistanceMultiplier: 1,
     },
+    lossyDownsampling: {
+      final: false,
+      interactive: true,
+      interleavedLoading: true,
+    },
+  },
+
+  segmentation: {
+    /**
+     * Labelmaps get a full frame buffer unless a host opts into RLE, which
+     * changes what its own code reads out of a labelmap (see the type docs).
+     */
+    labelmapVoxelRepresentation: VoxelManagerEnum.Volume,
   },
 
   debug: {
@@ -59,6 +82,7 @@ const defaultConfig: Cornerstone3DConfig = {
      * - MB MBytes of allocated memory. (Run Chrome with --enable-precise-memory-info)
      */
     statsOverlay: false,
+    fidelityIndicatorDebug: false,
   },
 
   /**
@@ -72,6 +96,7 @@ const defaultConfig: Cornerstone3DConfig = {
 let config: Cornerstone3DConfig = {
   ...defaultConfig,
   rendering: { ...defaultConfig.rendering },
+  segmentation: { ...defaultConfig.segmentation },
 };
 
 let webWorkerManager: CentralizedWebWorkerManager | null = null;
@@ -95,11 +120,11 @@ function isIOS() {
 
 /**
  * Initialize the cornerstone-core. This function runs the GPU capability
- * detection (WebGL availability, texture-format probes -- cached across page
+ * detection (WebGL2 availability, texture-format probes -- cached across page
  * loads, see `getRenderingCapabilities`) which the 'auto' render backend and
  * texture-format decisions resolve against.
  *
- * If no WebGL context is available, rendering falls back to the CPU for
+ * If no WebGL2 context is available, rendering falls back to the CPU for
  * supported operations.
  *
  * @param configuration - A configuration object
@@ -123,7 +148,7 @@ function init(configuration = config): boolean {
     if (configuration.rendering?.preferSizeOverAccuracy) {
       config.rendering.preferSizeOverAccuracy = true;
     } else if (!_hasNorm16TextureSupport()) {
-      console.log(
+      log.info(
         'norm16 texture not supported, you can turn on the preferSizeOverAccuracy flag to use native data type, but be aware of the inaccuracy of the rendering in high bits'
       );
     }
@@ -131,13 +156,13 @@ function init(configuration = config): boolean {
 
   const capabilities = getRenderingCapabilities();
   if (!capabilities.webgl) {
-    console.log('CornerstoneRender: GPU not detected, using CPU rendering');
+    log.info('CornerstoneRender: GPU not detected, using CPU rendering');
     config.rendering.useCPURendering = true;
   } else {
-    console.log('CornerstoneRender: using GPU rendering');
+    log.info('CornerstoneRender: using GPU rendering');
 
     if (capabilities.softwareRasterizer) {
-      console.log(
+      log.info(
         `CornerstoneRender: software rasterizer detected (${capabilities.renderer}), GPU rendering may be slow`
       );
     }
@@ -214,7 +239,7 @@ function getEffectiveRenderBackend(
     // registered would otherwise be silently downgraded to 'auto'.
     if (!warnedUnregisteredBackends.has(backend)) {
       warnedUnregisteredBackends.add(backend);
-      console.warn(
+      log.warn(
         `[getEffectiveRenderBackend] Unregistered render backend "${backend}"; ` +
           `falling back to 'auto'. Register custom backends with registerRenderBackend().`
       );
@@ -306,14 +331,13 @@ function setPreferSizeOverAccuracy(status: boolean): void {
  * Whether float (32-bit) textures can be linearly sampled, based on the
  * probed capability profile (OES_texture_float_linear draw + readback).
  * Historically this was a user-agent iOS check; environments where the probe
- * cannot run (no WebGL context, e.g. unit tests, or WebGL1-only browsers --
- * the texture probes require WebGL2) keep the legacy user-agent behavior so
- * data-preparation code paths stay deterministic there.
+ * cannot run (no WebGL2 context, e.g. unit tests) keep the legacy user-agent
+ * behavior so data-preparation code paths stay deterministic there.
  */
 function canRenderFloatTextures(): boolean {
   const capabilities = getRenderingCapabilities();
 
-  if (capabilities.webgl2) {
+  if (capabilities.webgl) {
     return capabilities.floatLinear;
   }
 
@@ -434,6 +458,31 @@ function getWebWorkerManager() {
   return webWorkerManager;
 }
 
+/**
+ * The lossy downsampling that the viewer may use, with the defaults filled in.
+ * See `rendering.lossyDownsampling` of the configuration.
+ */
+function getLossyDownsampling(): Required<LossyDownsampling> {
+  return {
+    ...(defaultConfig.rendering
+      .lossyDownsampling as Required<LossyDownsampling>),
+    ...config.rendering?.lossyDownsampling,
+  };
+}
+
+/**
+ * Turns kinds of lossy downsampling on or off. A kind that `change` omits keeps
+ * its value. Each viewport that draws a volume then chooses its texture
+ * again.
+ */
+function setLossyDownsampling(change: LossyDownsampling): void {
+  config.rendering = {
+    ...config.rendering,
+    lossyDownsampling: { ...getLossyDownsampling(), ...change },
+  };
+  triggerEvent(eventTarget, Events.VOLUME_TEXTURE_LIMITS_CHANGED);
+}
+
 async function peerImport(moduleId: string) {
   return config.peerImport(moduleId);
 }
@@ -452,6 +501,8 @@ export {
   resolveAutoRenderBackend,
   getConfiguration,
   setConfiguration,
+  getLossyDownsampling,
+  setLossyDownsampling,
   getWebWorkerManager,
   canRenderFloatTextures,
   peerImport,

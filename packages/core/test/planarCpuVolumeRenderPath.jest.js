@@ -3,12 +3,15 @@ jest.mock('../src/RenderingEngine/helpers/cpuFallback/drawImageSync', () => ({
   default: jest.fn(),
 }));
 
-import { Events, InterpolationType } from '../src/enums';
+import { Events, InterpolationType, VOILUTFunctionType } from '../src/enums';
 import { ActorRenderMode } from '../src/types';
 import drawImageSync from '../src/RenderingEngine/helpers/cpuFallback/drawImageSync';
 import { CpuVolumeSliceRenderPath } from '../src/RenderingEngine/GenericViewport/Planar/CpuVolumeSliceRenderPath';
 import PlanarCPUVolumeSampler from '../src/RenderingEngine/GenericViewport/Planar/PlanarCPUVolumeSampler';
 import eventTarget from '../src/eventTarget';
+import * as metaData from '../src/metaData';
+import { shownStateOf } from '../src/RenderingEngine/helpers/fidelityIndicator/fidelityIndicatorState';
+import { fidelityLinesFromBindings } from '../src/RenderingEngine/helpers/fidelityIndicator/collectFidelityLines';
 
 function createCanvas(width = 256, height = 256) {
   const canvas = document.createElement('canvas');
@@ -276,6 +279,62 @@ describe('CpuVolumeSliceRenderPath', () => {
     jest.useRealTimers();
   });
 
+  it('records the volume quality and reports a deferred resample as interactive reduction', () => {
+    jest.useFakeTimers();
+
+    const sampledSliceState = {
+      ...createSampledSliceState(),
+      samplingMode: 'viewport',
+    };
+    const rendering = createRendering(sampledSliceState);
+    const record = {
+      grid: { spacing: [1, 1, 1] },
+      missing: 0,
+      voxels: 1,
+      lowest: 8,
+      reduction: 'none',
+    };
+    const shownState = () =>
+      shownStateOf(
+        fidelityLinesFromBindings(undefined, [
+          {
+            record: rendering.voxelQuality,
+            fullGrid: rendering.fullGrid,
+            interactiveReduction: rendering.interactiveReduction,
+          },
+        ])
+      );
+    rendering.imageVolume.getVoxelQuality = jest.fn(() => record);
+    rendering.imageVolume.voxelGrid = { spacing: [1, 1, 1] };
+    const path = new CpuVolumeSliceRenderPath();
+    const ctx = createContext();
+    let decision = 'defer';
+
+    path.sampler = {
+      getResampleDecision: jest.fn(() => decision),
+      sampleSliceImage: jest.fn(() => sampledSliceState),
+      createOrUpdateEnabledElement: jest.fn(() => rendering.enabledElement),
+      updateCPUFallbackViewport: jest.fn(),
+      getResolvedVOIRange: jest.fn(() => ({ lower: 0, upper: 255 })),
+    };
+
+    path.render(ctx, rendering);
+
+    expect(rendering.voxelQuality).toBe(record);
+    expect(rendering.fullGrid).toBe(rendering.imageVolume.voxelGrid);
+    expect(rendering.interactiveReduction).toBe(true);
+    // The user sees the interactive state while the older sample shows.
+    expect(shownState()).toBe('lod');
+
+    decision = 'resample';
+    path.render(ctx, rendering);
+
+    expect(rendering.interactiveReduction).toBe(false);
+    expect(shownState()).toBe('done');
+
+    jest.useRealTimers();
+  });
+
   it('clears cached CPU volume scalar data again on the deferred loading-completed render', async () => {
     let animationFrameCallback;
     const requestAnimationFrame = jest
@@ -344,6 +403,115 @@ describe('CpuVolumeSliceRenderPath', () => {
 });
 
 describe('PlanarCPUVolumeSampler resampling decisions', () => {
+  it('reads a volume VOI shape only once across resamples', () => {
+    const sampler = new PlanarCPUVolumeSampler();
+    const volume = {
+      ...createTestVolume(),
+      imageIds: ['image-0', 'image-1'],
+    };
+    const getMetadata = jest.spyOn(metaData, 'get').mockReturnValue(undefined);
+    const sampleArgs = {
+      volume,
+      width: 1,
+      height: 1,
+      dataPresentation: {
+        interpolationType: InterpolationType.LINEAR,
+      },
+    };
+
+    sampler.sampleSliceImage({
+      ...sampleArgs,
+      camera: createCoronalCamera([1.5, 1.5, 1.5]),
+    });
+    sampler.sampleSliceImage({
+      ...sampleArgs,
+      camera: createCoronalCamera([1.5, 2.5, 1.5]),
+    });
+
+    expect(getMetadata).toHaveBeenCalledTimes(3);
+    getMetadata.mockRestore();
+  });
+
+  it('reads the volume VOI shape again when the volume load completes', () => {
+    const sampler = new PlanarCPUVolumeSampler();
+    const volume = {
+      ...createTestVolume(),
+      loadStatus: { loaded: false },
+    };
+    const sampleArgs = {
+      volume,
+      width: 1,
+      height: 1,
+      camera: createCoronalCamera([1.5, 1.5, 1.5]),
+    };
+
+    expect(sampler.sampleSliceImage(sampleArgs).image.voiLUTFunction).toBe(
+      VOILUTFunctionType.LINEAR
+    );
+
+    volume.metadata = {
+      voiLut: [
+        { windowWidth: 400, windowCenter: 40, voiLUTFunction: 'SIGMOID' },
+      ],
+    };
+    volume.loadStatus.loaded = true;
+
+    expect(sampler.sampleSliceImage(sampleArgs).image.voiLUTFunction).toBe(
+      VOILUTFunctionType.SAMPLED_SIGMOID
+    );
+  });
+
+  it('converts the CPU window with the selected VOI LUT function', () => {
+    const sampler = new PlanarCPUVolumeSampler();
+    const sampledSliceState = createSampledSliceState({
+      ...createSampledImage(),
+      voiLUTFunction: VOILUTFunctionType.LINEAR,
+    });
+    const enabledElement = {
+      canvas: createCanvas(),
+      image: sampledSliceState.image,
+      viewport: {},
+    };
+
+    sampler.updateCPUFallbackViewport({
+      enabledElement,
+      sampledSliceState,
+      camera: {
+        focalPoint: [0, 0, 0],
+        parallelScale: 32,
+      },
+      dataPresentation: {
+        voiRange: { lower: 0, upper: 100 },
+        voiLUTFunction: VOILUTFunctionType.LINEAR,
+      },
+    });
+
+    expect(enabledElement.viewport.voi).toEqual({
+      windowCenter: 50.5,
+      windowWidth: 101,
+      voiLUTFunction: VOILUTFunctionType.LINEAR,
+    });
+
+    sampler.updateCPUFallbackViewport({
+      enabledElement,
+      sampledSliceState,
+      camera: {
+        focalPoint: [0, 0, 0],
+        parallelScale: 32,
+      },
+      dataPresentation: {
+        voiRange: { lower: 0, upper: 100 },
+        voiLUTFunction: VOILUTFunctionType.LINEAR_EXACT,
+      },
+    });
+
+    expect(enabledElement.viewport.voi).toEqual({
+      windowCenter: 50,
+      windowWidth: 100,
+      voiLUTFunction: VOILUTFunctionType.LINEAR_EXACT,
+    });
+  });
+
   it('reuses orthogonal source-slice samples across zoom changes', () => {
     const sampler = new PlanarCPUVolumeSampler();
     const sampledSliceState = {

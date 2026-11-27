@@ -4,7 +4,7 @@ import { toScoords } from '../helpers';
 import MeasurementReport from './MeasurementReport';
 import BaseAdapter3D from './BaseAdapter3D';
 import { extractAllNUMGroups, restoreAdditionalMetrics } from './metricHandler';
-import { mapUnitFromUCUM } from './unitMapper';
+import { mapUnitFromUCUM, mapUnitToUCUM } from './unitMapper';
 
 const { Polyline: TID300Polyline } = utilities.TID300;
 
@@ -108,7 +108,7 @@ export class RectangleROI extends BaseAdapter3D {
       mean,
       stdDev,
       areaUnit,
-      modalityUnit,
+      modalityUnit: mapUnitToUCUM(modalityUnit),
       trackingIdentifierTextValue: this.trackingIdentifierTextValue,
       finding,
       findingSites: findingSites || [],

@@ -1,5 +1,12 @@
 export { getSingleBufferFromArray } from './bulkDataFromArray';
-export { toNumber, toFiniteNumber } from './toNumber';
+export { decodeMultipartRelated } from './decodeMultipartRelated';
+export { definedAttributesOf } from './definedAttributesOf';
+export {
+  toNumber,
+  toFiniteNumber,
+  toFiniteFirst,
+  toFiniteVector,
+} from './toNumber';
 export { default as toNumberDefault } from './toNumber';
 export {
   default as isVideoTransferSyntax,
