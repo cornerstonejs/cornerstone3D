@@ -25,7 +25,7 @@ class EllipticalROI extends BaseAdapter3D {
       state,
       NUMGroup,
       worldCoords,
-      referencedImageId,
+      statsTargetId,
       ReferencedFrameNumber,
     } = MeasurementReport.getSetupMeasurementData(
       MeasurementGroup,
@@ -33,12 +33,8 @@ class EllipticalROI extends BaseAdapter3D {
       metadata,
       EllipticalROI.toolType
     );
-    const referencedSOPInstanceUID = state.sopInstanceUid;
-    const allNUMGroups = extractAllNUMGroups(
-      MeasurementGroup,
-      referencedSOPInstanceUID
-    );
-    const measurementNUMGroups = allNUMGroups[referencedSOPInstanceUID] || {};
+    const allNUMGroups = extractAllNUMGroups(MeasurementGroup, statsTargetId);
+    const measurementNUMGroups = allNUMGroups[statsTargetId] || {};
     state.annotation.data = {
       ...state.annotation.data,
       handles: {
@@ -47,9 +43,9 @@ class EllipticalROI extends BaseAdapter3D {
       },
       frameNumber: ReferencedFrameNumber,
     };
-    state.annotation.data.cachedStats = referencedImageId
+    state.annotation.data.cachedStats = statsTargetId
       ? {
-          [`imageId:${referencedImageId}`]: {
+          [statsTargetId]: {
             area: NUMGroup ? NUMGroup.MeasuredValueSequence.NumericValue : 0,
             ...restoreAdditionalMetrics(measurementNUMGroups),
           },

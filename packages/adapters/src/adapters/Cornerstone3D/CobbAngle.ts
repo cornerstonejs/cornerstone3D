@@ -21,7 +21,7 @@ class CobbAngle extends BaseAdapter3D {
     const {
       state,
       NUMGroup,
-      referencedImageId,
+      statsTargetId,
       worldCoords,
       ReferencedFrameNumber,
     } = MeasurementReport.getSetupMeasurementData(
@@ -44,9 +44,9 @@ class CobbAngle extends BaseAdapter3D {
       },
       frameNumber: ReferencedFrameNumber,
     };
-    if (referencedImageId) {
+    if (statsTargetId) {
       state.annotation.data.cachedStats = {
-        [`imageId:${referencedImageId}`]: {
+        [statsTargetId]: {
           angle: NUMGroup ? NUMGroup.MeasuredValueSequence.NumericValue : null,
         },
       };
@@ -72,7 +72,7 @@ class CobbAngle extends BaseAdapter3D {
     // Using image coordinates for 2D points
     const [point1, point2, point3, point4] = points;
 
-    const { angle } = cachedStats[`imageId:${referencedImageId}`] || {};
+    const { angle } = super.getCachedStats(cachedStats, metadata);
 
     return {
       point1,

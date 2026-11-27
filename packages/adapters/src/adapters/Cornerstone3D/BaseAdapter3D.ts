@@ -230,6 +230,9 @@ export default class BaseAdapter3D {
    *    insertion order of `cachedStats`, whose `sliceIndex` is equal to
    *    `metadata.sliceIndex` and whose `viewPlaneNormal` is equal to
    *    `metadata.viewPlaneNormal` within 1e-3 per component.
+   * 4. The `frameOfReference:<FrameOfReferenceUID>` key, which holds the
+   *    statistics read from an SR that references the frame of reference
+   *    only (SCOORD3D), until a viewport computes them.
    *
    * Step 3 is for MPR annotations from `createAnnotationForViewport`, which
    * deletes `volumeId` so that the annotation applies to all volumes of the
@@ -245,12 +248,19 @@ export default class BaseAdapter3D {
    * @returns The cached stats for the annotation target, or an empty object
    */
   public static getCachedStats(cachedStats, metadata) {
-    const { referencedImageId, volumeId, sliceIndex, viewPlaneNormal } =
-      metadata;
+    const {
+      referencedImageId,
+      volumeId,
+      sliceIndex,
+      viewPlaneNormal,
+      FrameOfReferenceUID,
+    } = metadata;
     const imageStats = cachedStats[`imageId:${referencedImageId}`];
     if (imageStats) {
       return imageStats;
     }
+    const frameOfReferenceStats =
+      cachedStats[`frameOfReference:${FrameOfReferenceUID}`] || {};
 
     if (!volumeId) {
       const targetId =
@@ -269,7 +279,7 @@ export default class BaseAdapter3D {
             )
           );
         });
-      return cachedStats[targetId] || {};
+      return cachedStats[targetId] || frameOfReferenceStats;
     }
 
     if (viewPlaneNormal) {
@@ -288,6 +298,6 @@ export default class BaseAdapter3D {
         key.startsWith('volumeId:') && csUtilities.getVolumeId(key) === volumeId
     );
 
-    return cachedStats[targetId] || {};
+    return cachedStats[targetId] || frameOfReferenceStats;
   }
 }
