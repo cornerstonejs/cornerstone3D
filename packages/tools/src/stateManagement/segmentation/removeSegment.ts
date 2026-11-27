@@ -5,6 +5,7 @@ import { getViewportIdsWithSegmentation } from './getViewportIdsWithSegmentation
 import { removeContourSegmentAnnotations } from './helpers/removeSegmentAnnotations';
 import { clearSegmentValue } from './helpers/clearSegmentValue';
 import { setActiveSegmentIndex } from './segmentIndex';
+import { triggerSegmentationRepresentationModified } from './triggerSegmentationEvents';
 import { updateSegmentations } from './updateSegmentations';
 
 /**
@@ -95,7 +96,15 @@ export function removeSegment(
     });
 
     representations.forEach((representation) => {
+      if (!representation.segments[segmentIndex]) {
+        return;
+      }
       delete representation.segments[segmentIndex];
+      triggerSegmentationRepresentationModified(
+        viewportId,
+        segmentationId,
+        representation.type
+      );
     });
   });
 }

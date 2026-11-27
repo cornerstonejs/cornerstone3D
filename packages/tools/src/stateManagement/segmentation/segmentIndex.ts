@@ -2,7 +2,10 @@ import { getToolGroupForViewport } from '../../store/ToolGroupManager';
 import { invalidateBrushCursor } from '../../utilities/segmentation/invalidateBrushCursor';
 import { getSegmentation } from './getSegmentation';
 import { getViewportIdsWithSegmentation } from './getViewportIdsWithSegmentation';
-import { triggerSegmentationModified } from './triggerSegmentationEvents';
+import {
+  triggerSegmentationModified,
+  triggerSegmentationRepresentationModified,
+} from './triggerSegmentationEvents';
 import { getActiveSegmentIndex } from './getActiveSegmentIndex';
 import { getSegmentationRepresentations } from './getSegmentationRepresentation';
 import {
@@ -25,6 +28,8 @@ const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
  * should change as well)
  *
  * @triggers SEGMENTATION_MODIFIED
+ * @triggers SEGMENTATION_REPRESENTATION_MODIFIED for each viewport representation
+ * that gains the segment
  * @param segmentationId - The id of the segmentation that the segment belongs to.
  * @param segmentIndex - The index of the segment to be activated.
  */
@@ -102,6 +107,11 @@ function setActiveSegmentIndex(
         representation.segments[segmentIndex] = {
           visible: true,
         };
+        triggerSegmentationRepresentationModified(
+          viewportId,
+          segmentationId,
+          representation.type
+        );
       }
     });
   });
