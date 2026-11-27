@@ -16,8 +16,11 @@ import renderingEngineCache from '../src/RenderingEngine/renderingEngineCache';
 import VolumeViewport from '../src/RenderingEngine/VolumeViewport';
 import getCurrentVolumeViewportSlice from '../src/utilities/getCurrentVolumeViewportSlice';
 
+// Only the default VOI setup is stubbed; the viewport also uses the other
+// exports of the module.
 jest.mock('../src/RenderingEngine/helpers/setDefaultVolumeVOI', () => ({
   __esModule: true,
+  ...jest.requireActual('../src/RenderingEngine/helpers/setDefaultVolumeVOI'),
   default: async () => undefined,
 }));
 
