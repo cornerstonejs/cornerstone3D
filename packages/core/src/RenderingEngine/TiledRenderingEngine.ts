@@ -365,10 +365,18 @@ class TiledRenderingEngine extends BaseRenderingEngine {
   }
 
   /**
+   * The viewports of this frame whose copy a lost WebGL context skipped:
+   * their canvas keeps its image, so they count as neither rendered nor
+   * drawn at a new fidelity.
+   */
+  private _skippedByLostContext = new Set<string>();
+
+  /**
    * Renders all viewports.
    */
   protected _renderFlaggedViewports = () => {
     this._throwIfDestroyed();
+    this._skippedByLostContext.clear();
     const renderStart = performance.now();
     const viewports = this._getViewportsAsArray();
     const eventDetailArray = [];
@@ -385,11 +393,16 @@ class TiledRenderingEngine extends BaseRenderingEngine {
           const eventDetail =
             this.renderViewportUsingCustomOrVtkPipeline(viewport);
 
-          if (!this._waitsForStorage(viewport, renderStart)) {
+          const skipped = this._skippedByLostContext.has(viewport.id);
+
+          if (!skipped && !this._waitsForStorage(viewport, renderStart)) {
             eventDetailArray.push(eventDetail);
             renderedViewports.push(viewport);
           }
-          viewport.setRendered();
+
+          if (!skipped) {
+            viewport.setRendered();
+          }
 
           /** This viewport has been rendered, so it leaves the set. */
           this._needsRender.delete(viewport.id);
@@ -518,6 +531,7 @@ class TiledRenderingEngine extends BaseRenderingEngine {
 
       /** The offscreen canvas of a lost context holds nothing to copy. */
       if (isWebGLContextLost(offscreenMultiRenderWindow)) {
+        this._skippedByLostContext.add(viewport.id);
         return;
       }
 

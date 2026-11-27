@@ -336,6 +336,13 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
   /**
    * Renders all viewports.
    */
+  /**
+   * The viewports of this frame whose render a lost WebGL context skipped:
+   * their canvas keeps its image, so they count as neither rendered nor
+   * drawn at a new fidelity.
+   */
+  private _skippedByLostContext = new Set<string>();
+
   protected _renderFlaggedViewports = (): void => {
     this._throwIfDestroyed();
 
@@ -354,12 +361,18 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
 
     let eventDetails: EventTypes.ImageRenderedEventDetail[];
 
+    this._skippedByLostContext.clear();
+
     try {
       /** Render all viewports synchronously. */
       eventDetails = viewportsToRender.map((viewport) => {
         const eventDetail =
           this.renderViewportUsingCustomOrVtkPipeline(viewport);
-        viewport.setRendered();
+
+        if (!this._skippedByLostContext.has(viewport.id)) {
+          viewport.setRendered();
+        }
+
         this._needsRender.delete(viewport.id);
         return eventDetail;
       });
@@ -386,7 +399,9 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     // Fidelity event after IMAGE_RENDERED so consumers can query the frame
     // that was just drawn.
     this._notifyFidelityOfRenderedViewports(
-      viewportsToRender.filter((_vp, index) => !waiting[index])
+      viewportsToRender.filter(
+        (vp, index) => !waiting[index] && !this._skippedByLostContext.has(vp.id)
+      )
     );
   };
 
@@ -491,6 +506,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
      * stop the renders of every other viewport. The canvas keeps its image.
      */
     if (isWebGLContextLost(offscreenMultiRenderWindow)) {
+      this._skippedByLostContext.add(viewport.id);
       return;
     }
 
@@ -584,7 +600,12 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
       }
     }
 
-    if (lostDuringRender) {
+    /**
+     * A lost context can also fail its calls with no throw, so the render
+     * returns normally: its offscreen canvas then holds nothing to copy.
+     */
+    if (lostDuringRender || isWebGLContextLost(offscreenMultiRenderWindow)) {
+      this._skippedByLostContext.add(viewport.id);
       return;
     }
 
