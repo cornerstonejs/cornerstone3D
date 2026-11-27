@@ -180,8 +180,11 @@ describe('a calibration run', () => {
     expect(getStoredRenderingCapabilities().history.calibration).toEqual(
       result
     );
-    /** The suggestion follows the calibration, rounded down to a bucket. */
-    expect(suggestGpuMemoryLimit()).toBe(GIGABYTE);
+    /**
+     * The run worked above the 1 GB at which the viewer failed, so the
+     * suggestion stays below that failure, at the bucket under it.
+     */
+    expect(suggestGpuMemoryLimit()).toBe(512 * MEGABYTE);
     /** The result is offered, not applied. */
     expect(getGpuMemoryLimit()).toMatchObject({ source: 'start' });
   });

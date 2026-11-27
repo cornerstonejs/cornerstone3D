@@ -215,7 +215,10 @@ approach appears, as long as the user requirements stay satisfied.
   1. the current limit after a one-off failure: the size worked at least
      twice, and this is its first failure;
   2. else, after a calibration, its largest success, unless the failure came
-     after the calibration at a size at or below that success;
+     after the calibration at a size at or below that success; a calibration
+     after a failure below its success gives no more than the largest bucket
+     below the failed size, because the run measures the GPU without the
+     other memory of the viewer (iOS stops a tab for its whole memory);
   3. else, the largest load that worked below the failed size;
   4. else, the lower end of the largest bucket with a success below the
      bucket of the failure;

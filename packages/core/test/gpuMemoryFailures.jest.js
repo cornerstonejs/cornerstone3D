@@ -225,11 +225,28 @@ describe('the suggested limit', () => {
     expect(fail(2 * GIGABYTE).suggestedBytes).toBe(512 * MEGABYTE);
 
     storeGpuMemoryCalibration({
-      largestSuccessBytes: 3 * GIGABYTE,
+      largestSuccessBytes: 1.6 * GIGABYTE,
       at: Date.now() + 1000,
     });
 
-    expect(suggestGpuMemoryLimit()).toBe(3 * GIGABYTE);
+    expect(suggestGpuMemoryLimit()).toBe(1.5 * GIGABYTE);
+  });
+
+  it('keeps a calibration after the failure below the size at which the viewer failed', () => {
+    succeed(800 * MEGABYTE);
+    fail(1.3 * GIGABYTE);
+
+    /**
+     * As on an iPad: the calibration, in a context of its own, worked far
+     * above the size at which the viewer stopped the tab.
+     */
+    storeGpuMemoryCalibration({
+      largestSuccessBytes: 2.1 * GIGABYTE,
+      failedBytes: 2.2 * GIGABYTE,
+      at: Date.now() + 1000,
+    });
+
+    expect(suggestGpuMemoryLimit()).toBe(GIGABYTE);
   });
 
   it('offers 128 MB when nothing worked, and states that no GPU size works below it', () => {

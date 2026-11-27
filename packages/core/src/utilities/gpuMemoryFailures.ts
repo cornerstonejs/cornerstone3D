@@ -46,6 +46,15 @@ function bucketFloor(bytes: number): number | undefined {
   return gb === undefined ? undefined : gb * GIGABYTE;
 }
 
+/** The largest bucket size below `bytes`, or `undefined` below the first. */
+function bucketBelow(bytes: number): number | undefined {
+  const gb = [...GPU_MEMORY_BUCKETS_GB]
+    .reverse()
+    .find((size) => size * GIGABYTE < bytes);
+
+  return gb === undefined ? undefined : gb * GIGABYTE;
+}
+
 /**
  * How often the page totals at or above a failed size worked and failed, by
  * bucket: the bucket of the failure and every larger one.
@@ -77,7 +86,8 @@ function countsAtOrAbove(history: GpuMemoryHistory, failedBytes: number) {
  * - After a calibration, its largest success, rounded down to a bucket size,
  *   unless the failure came after the calibration at a size below that
  *   success (for example with memory held in another tab): the rules above
- *   apply then.
+ *   apply then. A calibration after a failure below its success gives no more
+ *   than the largest bucket below the failed size.
  *
  * The result is never below 128 MB.
  */
@@ -114,6 +124,17 @@ function suggestedLimitFor(
       calibration.largestSuccessBytes < failure.failedBytes)
   ) {
     worked = calibration.largestSuccessBytes;
+
+    /**
+     * A calibration measures the GPU in a context of its own, with none of
+     * the memory that the viewer holds besides its textures. iOS stops a tab
+     * for its whole memory, which holds the CPU copy of each volume too, so
+     * on an iPad a calibration reached 2.1 GB where the viewer stopped at
+     * 1.3 GB twice. The failure of the viewer is the stronger evidence.
+     */
+    if (worked >= failure.failedBytes) {
+      worked = bucketBelow(failure.failedBytes) ?? 0;
+    }
   } else if (
     history.largestLoad &&
     history.largestLoad.bytes < failure.failedBytes
