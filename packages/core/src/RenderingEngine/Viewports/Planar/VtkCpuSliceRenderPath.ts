@@ -66,6 +66,7 @@ import {
 } from './planarOverlayFrames';
 import type { PlanarOverlayFrameState } from './planarOverlayFrames';
 import { resolveSlabThickness } from './planarVolumeSliceBlendMode';
+import { isGpuVolumePathClosed } from './PlanarRenderPathDecisionService';
 import { createPlanarLoadingUpdates } from './planarLoadingUpdates';
 import { inBackgroundTask } from '../../../utilities/whenIdle';
 
@@ -656,7 +657,11 @@ function getCpuSliceDeliveryKey(
 
 /**
  * The sample inputs of a mount: those of its appearance, on the nearest
- * frame while that frame alone holds data of its own position.
+ * frame while that frame alone holds data of its own position. The slab of
+ * a layer that the GPU volume path cannot draw at all
+ * (`isGpuVolumePathClosed`) has no GPU picture to match, so it steps by the
+ * voxels along the normal (`PlanarCpuSliceInputs.stepSlabByVoxels`); any
+ * other slab keeps the sample positions of the GPU volume path.
  */
 function getCpuSliceMountInputs(mount: CpuSliceMount): PlanarCpuSliceInputs {
   const { rendering } = mount;
@@ -664,10 +669,14 @@ function getCpuSliceMountInputs(mount: CpuSliceMount): PlanarCpuSliceInputs {
     rendering.imageVolume,
     rendering.appearance
   );
+  const stepped =
+    inputs.slab && isGpuVolumePathClosed(rendering.imageVolume)
+      ? { ...inputs, stepSlabByVoxels: true }
+      : inputs;
 
   return mount.overlayFrames === 'nearest'
-    ? { ...inputs, snapToSlice: true }
-    : inputs;
+    ? { ...stepped, snapToSlice: true }
+    : stepped;
 }
 
 /**

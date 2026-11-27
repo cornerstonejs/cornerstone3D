@@ -474,7 +474,7 @@ describe('CanvasCpuSliceRenderPath', () => {
     ).toBe(true);
   });
 
-  it('draws the plain slice for a slab beyond the CPU work limit, then the slab sampled in steps at rest', async () => {
+  it('draws a coarse slab, never the plain slice, for a slab beyond the work done at once, then the slab sampled in steps at rest', async () => {
     const { attachment, rendering } = await mount({
       canvas: createCanvas(8, 8),
       camera: axialCamera(1),
@@ -489,7 +489,7 @@ describe('CanvasCpuSliceRenderPath', () => {
     rendering.refreshFidelity();
 
     expect(
-      lastDrawnPixels().every((value) => Math.floor(value / 100) === 1)
+      lastDrawnPixels().some((value) => Math.floor(value / 100) !== 1)
     ).toBe(true);
     expect(rendering.qualityPending).toBe(true);
 

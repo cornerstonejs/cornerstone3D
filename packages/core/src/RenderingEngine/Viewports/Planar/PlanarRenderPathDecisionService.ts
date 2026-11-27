@@ -271,6 +271,24 @@ export function getGpuVolumePathLimit(
 }
 
 /**
+ * Whether the GPU volume path cannot draw a layer at all on this device: its
+ * 3D texture failed on this page, or is larger than the largest 3D texture
+ * of the device (`getGpuVolumePathLimit` gives `textureFailed` or
+ * `textureSize`). The slab of such a layer is sampled on the CPU with no GPU
+ * picture to match (`PlanarCpuSliceInputs.stepSlabByVoxels`). A layer that
+ * the GPU path can draw, even with other pixels (`textureReduced`,
+ * `floatFilter`), is not closed.
+ */
+export function isGpuVolumePathClosed(volume: IImageVolume): boolean {
+  const limit = getGpuVolumePathLimit(
+    getLayerFacts(volume),
+    getRenderingCapabilities()
+  );
+
+  return limit === 'textureFailed' || limit === 'textureSize';
+}
+
+/**
  * Whether the 3D texture of the GPU volume path holds the voxels of an array
  * type as 32-bit floats. That path never uses half floats for its 3D texture,
  * so float data and 32-bit integer data are 32-bit floats, and 16-bit data

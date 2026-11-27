@@ -66,6 +66,7 @@ import {
 } from './planarOverlayFrames';
 import type { PlanarOverlayFrameState } from './planarOverlayFrames';
 import { resolveSlabThickness } from './planarVolumeSliceBlendMode';
+import { isGpuVolumePathClosed } from './PlanarRenderPathDecisionService';
 
 /**
  * The largest width or height of a slice that this path draws: 16384, the
@@ -706,13 +707,24 @@ function getCanvasSliceMountInputs(
     : inputs;
 }
 
+/**
+ * The sampling inputs of a layer of the CPU backend: those of its appearance,
+ * NEAREST for a labelmap. The slab of a layer that the GPU volume path cannot
+ * draw at all (`isGpuVolumePathClosed`) has no GPU picture to match, so it
+ * steps by the voxels along the normal (`PlanarCpuSliceInputs.stepSlabByVoxels`);
+ * any other slab keeps the picture of the GPU volume path.
+ */
 function getCpuSliceInputs(
   rendering: PlanarCanvasCpuSliceRendering
 ): PlanarCpuSliceInputs {
-  const inputs = getPlanarCpuSliceInputs(
+  const appearanceInputs = getPlanarCpuSliceInputs(
     rendering.imageVolume,
     rendering.appearance
   );
+  const inputs =
+    appearanceInputs.slab && isGpuVolumePathClosed(rendering.imageVolume)
+      ? { ...appearanceInputs, stepSlabByVoxels: true }
+      : appearanceInputs;
 
   return rendering.compositeActor
     ? { ...inputs, interpolationType: InterpolationType.NEAREST }

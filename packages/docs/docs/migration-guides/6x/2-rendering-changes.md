@@ -445,6 +445,43 @@ give no orientation.
   stack mode and in volume mode. The legacy volume viewport ignored `loop`.
   `StackScrollTool` passes its `loop` configuration on, so a tool that is set
   to loop wraps a volume too.
+- **A volume too deep for a 3D texture draws its slabs on the CPU.** A
+  volume with more slices, rows or columns than the largest 3D texture of the
+  device (`max3DTextureSize`, 2048 on many GPUs) cannot be drawn by the GPU
+  volume path, so the CPU cuts its slabs too: the layer of the render plan has
+  `slice: 'cpu'` and `reason: 'textureSize'` (`'textureFailed'` after its 3D
+  texture failed on the page). With no GPU picture to match, such a slab, on
+  the GPU backend and on the CPU backend, takes one sample per voxel along
+  the view normal, on the voxel centres, as far as the slab of the GPU volume
+  path reaches (about the thickness on each side, as above). The GPU volume
+  path takes its samples half the smallest voxel spacing apart in every
+  direction, so a sagittal slab of a CT with 0.3 mm slices and 1 mm pixels
+  takes about three times fewer samples. A nearest maximum or minimum is the
+  same as on the GPU; a linear maximum keeps each voxel peak, which the GPU
+  samples between two voxels can miss by a part of its neighbour. A slab
+  whose spacing along the normal is the smallest spacing, and the slab of
+  any layer that fits a 3D texture, keep the positions of the GPU volume
+  path, also on the CPU backend. While a large slab is sampled
+  in steps, a coarse slab of the plane shows at once in place of the plain
+  slice. A slab that needs more than 200 million voxel samples shows a
+  coarser slab within that limit (one sample per voxel along the normal,
+  then a coarser grid of pixels), and its layer keeps
+  `reason: 'slabTooLarge'`, so an application can tell that the picture is
+  not the exact slab. `utilities.sampleVolumeSlice` takes the even step as
+  `slab.sampleSpacing`.
+
+  ```ts
+  viewport.setDisplaySetAppearance(displaySetId, {
+    blendMode: Enums.BlendModes.MAXIMUM_INTENSITY_BLEND,
+    slabThickness: 30,
+  });
+  // 6.0.0-beta.2: the plain slice until the slab is done, and for ever for
+  // a slab over the limit ('slabTooLarge').
+  // 6.0: a coarse slab at once, then the slab; over the limit a coarser
+  // slab, still 'slabTooLarge'.
+  const [layer] = viewport.getRenderPlan();
+  ```
+
 - **`jumpToSlice` with a `volumeId` counts the slices of that volume.**
   `utilities.jumpToSlice(element, { imageIndex, volumeId })`, with the id of
   another volume that the viewport shows in volume mode, goes to slice

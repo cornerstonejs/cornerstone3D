@@ -4,6 +4,7 @@ import { BlendModes, InterpolationType } from '../src/enums';
 import VoxelManager from '../src/utilities/VoxelManager';
 import * as sampleVolumeSliceModule from '../src/utilities/sampleVolumeSlice';
 import {
+  MAX_PREVIEW_SLAB_SAMPLES,
   MAX_SLAB_SAMPLES_AT_ONCE,
   PlanarSliceSampler,
 } from '../src/RenderingEngine/Viewports/Planar/planarCpuSlice';
@@ -126,12 +127,13 @@ describe('a slab sampled in steps', () => {
         inputs
       );
       const sampler = new PlanarSliceSampler({ sampleSlabsInSteps: true });
-      const thin = sampler.sample(volume, CAMERAS[view], inputs);
+      const first = sampler.sample(volume, CAMERAS[view], inputs);
 
       expect(oneShot.width * oneShot.height * 41).toBeGreaterThan(
         MAX_SLAB_SAMPLES_AT_ONCE
       );
-      expect(thin.sampledFor.slab).toBeUndefined();
+      expect(first.coarse).toBe(true);
+      expect(first.sampledFor.slab).toEqual(inputs.slab);
       expect(sampler.hasPendingSteps()).toBe(true);
 
       const { slice, steps } = finishSteps(sampler, volume);
@@ -146,7 +148,7 @@ describe('a slab sampled in steps', () => {
     }
   );
 
-  it('shows the plain slice of the plane at once, gathered without a slab', () => {
+  it('shows a coarse slab of the plane at once, never the plain slice, within MAX_PREVIEW_SLAB_SAMPLES', () => {
     const volume = createVolume();
     const spy = jest.spyOn(sampleVolumeSliceModule, 'sampleVolumeSlice');
     const gather = jest.spyOn(sampleVolumeSliceModule, 'gatherVolumeSlice');
@@ -162,15 +164,23 @@ describe('a slab sampled in steps', () => {
     spy.mockClear();
     gather.mockClear();
 
-    const thin = sampler.sample(volume, CAMERAS.axial, inputs);
+    const first = sampler.sample(volume, CAMERAS.axial, inputs);
 
-    expect(spy).not.toHaveBeenCalled();
-    expect(gather).toHaveBeenCalledTimes(1);
-    expect(gather.mock.calls[0][0].slab).toBeUndefined();
-    expect(Array.from(thin.pixelData)).toEqual(Array.from(plain.pixelData));
+    expect(gather.mock.calls.filter(([options]) => !options.slab).length).toBe(
+      0
+    );
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy.mock.calls[0][0].slab).toMatchObject(inputs.slab);
+    expect(
+      sampleVolumeSliceModule.getVolumeSliceSampleCount(spy.mock.calls[0][0])
+    ).toBeLessThanOrEqual(MAX_PREVIEW_SLAB_SAMPLES);
+    expect(first.coarse).toBe(true);
+    expect(Array.from(first.pixelData)).not.toEqual(
+      Array.from(plain.pixelData)
+    );
   });
 
-  it('scrolls through a thick slab with one plain sample per step and keeps only the steps of the last plane', () => {
+  it('scrolls through a thick slab with one coarse sample per step and keeps only the steps of the last plane', () => {
     const volume = createVolume();
     const spy = jest.spyOn(sampleVolumeSliceModule, 'sampleVolumeSlice');
     const gather = jest.spyOn(sampleVolumeSliceModule, 'gatherVolumeSlice');
@@ -188,17 +198,20 @@ describe('a slab sampled in steps', () => {
         { ...CAMERAS.axial, focalPoint: [63.5, 47.5, z] },
         inputs
       );
+      const preview = spy.mock.calls.length;
+
       sampler.continueSampling(volume, -Infinity);
 
       expect(
         gather.mock.calls.filter(([options]) => !options.slab).length
-      ).toBe(1);
+      ).toBe(0);
+      expect(preview).toBe(1);
       expect(spy.mock.calls.filter(([options]) => !options.slab).length).toBe(
         0
       );
       expect(
         spy.mock.calls.filter(([options]) => options.slab).length
-      ).toBeLessThanOrEqual(1);
+      ).toBeLessThanOrEqual(2);
     }
 
     const { slice } = finishSteps(sampler, volume);
@@ -252,21 +265,25 @@ describe('a slab sampled in steps', () => {
     expect(spy).not.toHaveBeenCalled();
   });
 
-  it('says a slab is too large and samples none of it', () => {
+  it('says a slab is too large and shows a coarse slab of it within the limit, never the plain slice', () => {
     const volume = createVolume();
     const sampler = new PlanarSliceSampler({ sampleSlabsInSteps: true });
-    const thin = sampler.sample(
-      volume,
-      CAMERAS.axial,
-      slabInputs(
-        BlendModes.MAXIMUM_INTENSITY_BLEND,
-        InterpolationType.NEAREST,
-        20000
-      )
+    const inputs = slabInputs(
+      BlendModes.MAXIMUM_INTENSITY_BLEND,
+      InterpolationType.NEAREST,
+      20000
     );
+    const first = sampler.sample(volume, CAMERAS.axial, inputs);
 
-    expect(thin.sampledFor.slab).toBeUndefined();
-    expect(sampler.hasPendingSteps()).toBe(false);
+    expect(first.sampledFor.slab).toEqual(inputs.slab);
+    expect(first.coarse).toBe(true);
+    expect(sampler.isSlabTooLarge()).toBe(true);
+
+    const { slice } = finishSteps(sampler, volume);
+    const shown = slice ?? first;
+
+    expect(shown.coarse).toBe(true);
+    expect(shown.sampledFor.slab).toEqual(inputs.slab);
     expect(sampler.isSlabTooLarge()).toBe(true);
 
     sampler.sample(volume, CAMERAS.axial, {

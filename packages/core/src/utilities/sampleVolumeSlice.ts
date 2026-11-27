@@ -18,6 +18,16 @@ type VolumeSliceSlab = {
   thickness: number;
   /** MAXIMUM_INTENSITY_BLEND, MINIMUM_INTENSITY_BLEND or AVERAGE_INTENSITY_BLEND. */
   blendMode: BlendModes;
+  /**
+   * The distance in mm between two samples along the normal. When it is set,
+   * the samples lie evenly at 0, +-sampleSpacing, +-2 sampleSpacing and so on,
+   * as far from the plane as the samples of the GPU volume path reach (about
+   * the thickness on each side), and the samples that lie outside the volume
+   * for every pixel are not taken (`getEvenSlabOffsets`). When it is not set,
+   * the samples lie where the vtk.js image reslice mapper takes them, so that
+   * the picture is that of the GPU volume path (`getSlabSampleOffsets`).
+   */
+  sampleSpacing?: number;
 };
 
 type SampleVolumeSliceOptions = {
@@ -424,24 +434,200 @@ function getObliqueSlabOffsets(
 }
 
 /**
- * Returns the offsets of the slab layers of a grid that are sampled: those
- * of the reslice shader for a straight cut (getStraightCutSlabOffsets), and
- * the fixed offsets of a pixel deep inside for any other cut, without the
- * layers that miss the volume (getObliqueSlabOffsets).
+ * Returns the range of layer offsets of a straight cut (see
+ * getStraightSlabAxis) whose layer lies inside the volume, by the rule of
+ * getStraightCutSlabOffsets: a voxel index on the slab axis from -0.5 to the
+ * size minus 0.5, both included, up to WHOLE_INDEX_EPSILON.
+ */
+function getStraightLayerReach(
+  volume: IImageVolume,
+  grid: SliceGrid,
+  axis: number
+): LayerReach {
+  const start = grid.startIndex[axis];
+  const indexPerMillimetre = grid.normalStep[axis];
+  const lowest = (-0.5 - WHOLE_INDEX_EPSILON - start) / indexPerMillimetre;
+  const highest =
+    (volume.dimensions[axis] - 0.5 + WHOLE_INDEX_EPSILON - start) /
+    indexPerMillimetre;
+
+  return {
+    low: Math.min(lowest, highest),
+    high: Math.max(lowest, highest),
+  };
+}
+
+/** The most reaches that getEvenSlabReach keeps. */
+const MAX_KEPT_SLAB_REACHES = 32;
+
+/** The reaches of getEvenSlabReach, by smallest voxel spacing and thickness. */
+const slabReaches = new Map<string, number>();
+
+/**
+ * The farthest distance from the plane that a slab with an even sample
+ * spacing reaches: as far as the samples of the vtk.js image reslice mapper
+ * reach for this volume and thickness (getSlabSampleOffsets), about the
+ * thickness on each side, so the slab covers the slab of the GPU volume path.
+ * The walk of the mapper takes the thickness divided by the smallest spacing
+ * steps, so each reach is kept for the next band of a slab sampled in steps.
+ */
+function getEvenSlabReach(volume: IImageVolume, thickness: number): number {
+  const key = `${Math.min(...volume.spacing)}:${thickness}`;
+  const kept = slabReaches.get(key);
+
+  if (kept !== undefined) {
+    return kept;
+  }
+
+  const reach = getSlabSampleOffsets(volume, thickness).reduce(
+    (farthest, offset) => Math.max(farthest, Math.abs(offset)),
+    0
+  );
+
+  if (slabReaches.size >= MAX_KEPT_SLAB_REACHES) {
+    slabReaches.clear();
+  }
+
+  slabReaches.set(key, reach);
+
+  return reach;
+}
+
+/**
+ * The distances from the plane of the even samples of a slab on one side,
+ * before the volume leaves any out: the whole multiples of the spacing below
+ * the reach of the mapper (getEvenSlabReach), then the reach itself, where
+ * the mapper takes its farthest sample. A slab whose reach is 0 has none.
+ */
+function getEvenSlabDistances(
+  volume: IImageVolume,
+  thickness: number,
+  sampleSpacing: number
+): number[] {
+  const reach = getEvenSlabReach(volume, thickness);
+
+  if (!(sampleSpacing > 0) || !(reach > 0)) {
+    return [];
+  }
+
+  const distances = [];
+
+  for (
+    let step = 1;
+    step * sampleSpacing < reach - WHOLE_INDEX_EPSILON;
+    step++
+  ) {
+    distances.push(step * sampleSpacing);
+  }
+
+  distances.push(reach);
+
+  return distances;
+}
+
+/**
+ * Returns the number of samples along the normal of a slab with an even
+ * sample spacing in a volume deeper than the slab (getEvenSlabOffsets
+ * without the layers that miss the volume): the sample on the plane and a
+ * pair for each distance of getEvenSlabDistances.
+ */
+function getEvenSlabSampleCount(
+  volume: IImageVolume,
+  thickness: number,
+  sampleSpacing: number
+): number {
+  return 1 + 2 * getEvenSlabDistances(volume, thickness, sampleSpacing).length;
+}
+
+/**
+ * Returns the offsets of a slab whose samples lie evenly along the normal
+ * (`VolumeSliceSlab.sampleSpacing`): 0, then the pairs -k and +k times the
+ * spacing below the reach of the samples of the vtk.js mapper, then the pair
+ * at that reach (getEvenSlabDistances). The mapper takes its samples half the
+ * smallest voxel spacing apart at odd multiples, the smallest spacing apart
+ * on each side, so with the voxel spacing along the normal these are fewer
+ * by the ratio of the two spacings. A plane of a planar volume view sits on a
+ * slice centre, so along an axis of the volume the multiples lie on voxel
+ * centres, and the last pair takes the part of the next layer that the
+ * mapper's farthest sample takes. A sample of the mapper between two voxel
+ * centres lies between their values, so a nearest maximum or minimum of these
+ * samples is the one of the mapper, and a linear maximum keeps each voxel
+ * peak that the mapper misses by up to the share of its neighbour (a minimum
+ * the other way round). A layer that lies outside the volume for
+ * every pixel is left out, as sampleVolumeSlice leaves out a sample outside
+ * the volume (straight cut: getStraightLayerReach; any other cut:
+ * getLayerReach), so a slab thicker than the volume costs only the layers
+ * that cut it.
+ */
+function getEvenSlabOffsets(
+  volume: IImageVolume,
+  grid: SliceGrid,
+  axis: number,
+  thickness: number,
+  sampleSpacing: number
+): number[] {
+  const offsets = [0];
+  const distances = getEvenSlabDistances(volume, thickness, sampleSpacing);
+
+  if (!distances.length) {
+    return offsets;
+  }
+
+  const layerReach =
+    axis >= 0
+      ? getStraightLayerReach(volume, grid, axis)
+      : getLayerReach(volume, grid);
+  const low = layerReach?.low ?? -Infinity;
+  const high = layerReach?.high ?? Infinity;
+
+  for (const distance of distances) {
+    if (-distance < low && distance > high) {
+      break;
+    }
+
+    if (-distance >= low) {
+      offsets.push(-distance);
+    }
+
+    if (distance <= high) {
+      offsets.push(distance);
+    }
+  }
+
+  return offsets;
+}
+
+/**
+ * Returns the offsets of the slab layers of a grid that are sampled: evenly
+ * spaced ones for a slab with a sample spacing (getEvenSlabOffsets);
+ * otherwise those of the reslice shader for a straight cut
+ * (getStraightCutSlabOffsets), and the fixed offsets of a pixel deep inside
+ * for any other cut, without the layers that miss the volume
+ * (getObliqueSlabOffsets).
  */
 function getSlabLayerOffsets(
   volume: IImageVolume,
   geometry: VolumeSliceGeometry,
   grid: SliceGrid,
-  thickness: number
+  slab: VolumeSliceSlab
 ): number[] {
   const axis = getStraightSlabAxis(grid, geometry.width, geometry.height);
 
-  if (axis >= 0) {
-    return getStraightCutSlabOffsets(volume, grid, axis, thickness);
+  if (slab.sampleSpacing !== undefined) {
+    return getEvenSlabOffsets(
+      volume,
+      grid,
+      axis,
+      slab.thickness,
+      slab.sampleSpacing
+    );
   }
 
-  return getObliqueSlabOffsets(volume, grid, thickness);
+  if (axis >= 0) {
+    return getStraightCutSlabOffsets(volume, grid, axis, slab.thickness);
+  }
+
+  return getObliqueSlabOffsets(volume, grid, slab.thickness);
 }
 
 /**
@@ -475,7 +661,7 @@ function planVolumeSlice(options: SampleVolumeSliceOptions): SlicePlan {
   const offsets =
     slabType === undefined
       ? [0]
-      : getSlabLayerOffsets(volume, geometry, grid, slab.thickness);
+      : getSlabLayerOffsets(volume, geometry, grid, slab);
   const integers = holdsIntegers(VolumeArrayType);
   const linear = interpolationType !== InterpolationType.NEAREST;
   const isSlab = offsets.length > 1;
@@ -503,6 +689,18 @@ function getVolumeSliceArrayType(
   options: SampleVolumeSliceOptions
 ): SliceArrayType {
   return planVolumeSlice(options).ArrayType;
+}
+
+/**
+ * Returns the number of voxel samples that sampleVolumeSlice takes for these
+ * options, without sampling: the pixels of the geometry times the slab layers
+ * that it samples, which leaves out the layers that miss the volume for every
+ * pixel. A plain slice takes one sample per pixel.
+ */
+function getVolumeSliceSampleCount(options: SampleVolumeSliceOptions): number {
+  const { width, height } = options.geometry;
+
+  return width * height * planVolumeSlice(options).offsets.length;
 }
 
 /**
@@ -789,6 +987,9 @@ function sampleSlab(
  *   slab leaves the volume. The layers that miss the volume for every pixel
  *   are not sampled (getObliqueSlabOffsets), so the work stays bounded for any
  *   thickness and the values do not change.
+ * A slab with a sample spacing (`VolumeSliceSlab.sampleSpacing`) takes even
+ * samples as far as the mapper's reach instead (getEvenSlabOffsets), for a
+ * slab that no GPU picture has to match.
  * The mapper works in single precision on the GPU, and its average is a
  * float. Without keepFractions the average of an integer volume is rounded.
  * A slab of zero thickness, or of a blend mode without a slab type, gives the
@@ -1056,5 +1257,7 @@ export {
   getSlabSampleOffsets,
   getNumberOfComponents,
   getVolumeSliceArrayType,
+  getVolumeSliceSampleCount,
+  getEvenSlabSampleCount,
 };
 export type { SampleVolumeSliceOptions, SampledVolumeSlice, VolumeSliceSlab };
