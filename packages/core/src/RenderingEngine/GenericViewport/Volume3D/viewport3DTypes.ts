@@ -1,6 +1,7 @@
 import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 import type vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
+import type { BlendMode } from '@kitware/vtk.js/Rendering/Core/VolumeMapper/Constants';
 import type { GeometryOptions } from '../../../loaders/geometryLoader';
 import type {
   ActorEntry,
@@ -69,6 +70,7 @@ export interface Volume3DPresentationProps extends BasePresentationProps {
 
 export interface Volume3DProperties {
   interpolationType?: InterpolationType;
+  blendMode?: BlendMode;
   sampleDistanceMultiplier?: number;
 }
 
