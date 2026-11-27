@@ -66,6 +66,7 @@ import {
 } from '../utilities/voiLUTFunction';
 import { ensureNonZeroVOIRange } from '../utilities/voiRangeGuards';
 import { updateVTKImageDataWithCornerstoneImage } from '../utilities/updateVTKImageDataWithCornerstoneImage';
+import { normalizeRGBAImageToRGB } from '../utilities/normalizeRGBAImageToRGB';
 import triggerEvent from '../utilities/triggerEvent';
 import { isEqual } from '../utilities/isEqual';
 import invertRgbTransferFunction from '../utilities/invertRgbTransferFunction';
@@ -2965,6 +2966,10 @@ class StackViewport extends Viewport {
     // - Get the existing actor's vtkImageData that is being used to render the current image and check if we can reuse the vtkImageData that is in place (i.e. do the image dimensions and data type match?)
     // - If we can reuse it, replace the scalar data under the hood
     // - If we cannot reuse it, create a new actor, remove the old one, and reset the camera
+
+    // 1. An RGBA color image (e.g. cached by a CPU render) is converted to RGB
+    // before anything is sized from it, as the vtkImageData is 3-component.
+    normalizeRGBAImageToRGB(image);
 
     // 2. Check if we can reuse the existing vtkImageData object, if one is present.
     const sameImageData = this._checkVTKImageDataMatchesCornerstoneImage(

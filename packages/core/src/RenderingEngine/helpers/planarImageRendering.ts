@@ -24,6 +24,7 @@ import { getImageDataMetadata } from '../../utilities/getImageDataMetadata';
 import invertRgbTransferFunction from '../../utilities/invertRgbTransferFunction';
 import { resolveColormap } from '../../utilities/colormap';
 import { updateVTKImageDataWithCornerstoneImage } from '../../utilities/updateVTKImageDataWithCornerstoneImage';
+import { normalizeRGBAImageToRGB } from '../../utilities/normalizeRGBAImageToRGB';
 
 export interface PlanarCameraState {
   focalPoint: Point3;
@@ -96,6 +97,8 @@ export function createEmptyVTKImageData(args: {
 }
 
 export function createVTKImageDataFromImage(image: IImage): vtkImageData {
+  // Convert an RGBA color image to RGB before sizing the vtkImageData from it.
+  normalizeRGBAImageToRGB(image);
   const { dimensions, direction, numberOfComponents, origin, spacing } =
     getImageDataMetadata(image);
   // Own a PRIVATE copy of the scalars rather than wrapping the source image's
