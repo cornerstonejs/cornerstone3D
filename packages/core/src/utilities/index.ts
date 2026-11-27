@@ -1,6 +1,7 @@
 import * as eventListener from './eventListener';
 import csUtils from './invertRgbTransferFunction';
 import createSigmoidRGBTransferFunction from './createSigmoidRGBTransferFunction';
+import createVOILUTSequenceTransferFunction from './createVOILUTSequenceTransferFunction';
 import getVoiFromSigmoidRGBTransferFunction from './getVoiFromSigmoidRGBTransferFunction';
 import createLinearRGBTransferFunction from './createLinearRGBTransferFunction';
 import scaleRgbTransferFunction from './scaleRgbTransferFunction';
@@ -18,6 +19,7 @@ import isOpposite from './isOpposite';
 import getClosestImageId from './getClosestImageId';
 import getSpacingInNormalDirection from './getSpacingInNormalDirection';
 import getEffectiveSpacingAlongDirection from './getEffectiveSpacingAlongDirection';
+import sampleVolumeGrid from './sampleVolumeGrid';
 import getViewSlabDepth from './getViewSlabDepth';
 import getTargetVolumeAndSpacingInNormalDir from './getTargetVolumeAndSpacingInNormalDir';
 import getVolumeActorCorners from './getVolumeActorCorners';
@@ -71,13 +73,14 @@ import { convertVolumeToStackViewport } from './convertVolumeToStackViewport';
 import VoxelManager from './VoxelManager';
 import CompositeVoxelManager from './CompositeVoxelManager';
 import RLEVoxelMap from './RLEVoxelMap';
-import roundNumber, { roundToPrecision } from './roundNumber';
+import roundNumber, { roundNumberTrim, roundToPrecision } from './roundNumber';
 import convertToGrayscale from './convertToGrayscale';
 import { convertColorArrayToRgbString } from './convertColorArrayToRgbString';
 import getViewportImageIds from './getViewportImageIds';
 import { getRandomSampleFromArray } from './getRandomSampleFromArray';
 import { getVolumeId } from './getVolumeId';
 import { hasFloatScalingParameters } from './hasFloatScalingParameters';
+import { getScalingMode } from './getScalingMode';
 import { pointInShapeCallback } from './pointInShapeCallback';
 import * as ECGUtilitiesModule from './ECGUtilities';
 import * as VideoUtilities from './VideoUtilities';
@@ -132,6 +135,23 @@ import {
   mapMappedBandToRawRange,
 } from './viewportVoiIntensityMapping';
 export type { ViewportVoiMappingProps } from './viewportVoiIntensityMapping';
+export {
+  isRenderableVOILUT,
+  getVOILUTSequenceRange,
+  getVOILUTOutputScale,
+  sampleVOILUT,
+  createVOILUTSampler,
+  invertVOILUTSample,
+} from './createVOILUTSequenceTransferFunction';
+export type { RenderableVOILUT } from './createVOILUTSequenceTransferFunction';
+export {
+  normalizeVOILUTFunction,
+  getValidVOILUTFunction,
+} from './voiLUTFunction';
+export {
+  default as normalizeVOILUTSequence,
+  getVOILUTBytesPerEntry,
+} from './normalizeVOILUTSequence';
 export * from './getPixelSpacingInformation';
 export * from './getPlaneCubeIntersectionDimensions';
 export * from './rotateToViewCoordinates';
@@ -172,6 +192,7 @@ export {
   eventListener,
   csUtils as invertRgbTransferFunction,
   createSigmoidRGBTransferFunction,
+  createVOILUTSequenceTransferFunction,
   getVoiFromSigmoidRGBTransferFunction,
   createLinearRGBTransferFunction,
   scaleRgbTransferFunction,
@@ -196,6 +217,7 @@ export {
   getClosestImageId,
   getSpacingInNormalDirection,
   getEffectiveSpacingAlongDirection,
+  sampleVolumeGrid,
   getViewSlabDepth,
   getTargetVolumeAndSpacingInNormalDir,
   getVolumeActorCorners,
@@ -251,12 +273,14 @@ export {
   convertStackToVolumeViewport,
   convertVolumeToStackViewport,
   roundNumber,
+  roundNumberTrim,
   roundToPrecision,
   getViewportImageIds,
   getRandomSampleFromArray,
   getVolumeId,
   color,
   hasFloatScalingParameters,
+  getScalingMode,
   getDynamicVolumeInfo,
   autoLoad,
   scaleArray,

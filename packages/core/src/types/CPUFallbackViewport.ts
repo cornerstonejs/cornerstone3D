@@ -15,7 +15,7 @@ interface CPUFallbackViewport {
   voi?: {
     windowWidth: number;
     windowCenter: number;
-    voiLUTFunction: VOILUTFunctionType;
+    voiLUTFunction?: VOILUTFunctionType;
   };
   invert?: boolean;
   pixelReplication?: boolean;

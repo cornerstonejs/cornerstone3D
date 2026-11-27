@@ -39,11 +39,11 @@ import type {
   ContextValues,
 } from './displaySetContext';
 import { getMetadataContextProgram } from './metadataContext';
-import { validateSplitRuleSetEntry } from './splitRuleSet';
+import { resolveSplitRuleSet } from './splitRuleSet';
 import { splitRuleSchema } from './splitRuleSchema';
 import type {
   CreateDisplaySetSplitRulesOptions,
-  DisplaySetRules,
+  RawSplitRule,
 } from './displaySetRulesTypes';
 import type {
   NaturalizedInstance,
@@ -351,14 +351,13 @@ function compileRule(
 }
 
 /**
- * Compiles a set of display set rules into executable split rules.
+ * Compiles an ordered list of display set rules into executable split rules.
  *
- * The result is a {@link SplitRuleSet} with the same keys and priorities, ready
- * to hand to `splitImageIdsBySplitRules` / `groupInstancesBySplitRules`, or to
- * merge with another rule set by key. An excluded entry (`priority: null`) is
- * compiled and kept, so a later layer can include it again by giving it a
- * priority. Compilation is eager: a malformed rule set throws here, at setup,
- * rather than midway through splitting a study.
+ * The input is the result of `materializeSplitRules`: each rule with its `id`,
+ * in evaluation order. The result is a {@link SplitRuleSet} in the same order,
+ * ready to hand to `splitImageIdsBySplitRules` / `groupInstancesBySplitRules`.
+ * Compilation is eager: a malformed rule throws here, at setup, rather than
+ * midway through splitting a study.
  *
  * The rules read the names of {@link defaultMetadataContext}, with the
  * entries of `options.context` over them. Every name is checked: an
@@ -366,12 +365,12 @@ function compileRule(
  * with the rule id and the path of the fragment.
  */
 export function compileDisplaySetSplitRules(
-  rules: DisplaySetRules,
+  rules: readonly RawSplitRule[],
   options: CreateDisplaySetSplitRulesOptions = {}
 ): SplitRuleSet {
-  if (!rules || typeof rules !== 'object' || Array.isArray(rules)) {
+  if (!Array.isArray(rules)) {
     throw new Error(
-      `Invalid ${DEFINITION}: the rules must be an object keyed by rule id: ${JSON.stringify(rules)}`
+      `Invalid ${DEFINITION}: the rules must be an array in evaluation order (see materializeSplitRules): ${JSON.stringify(rules)}`
     );
   }
 
@@ -384,23 +383,21 @@ export function compileDisplaySetSplitRules(
   });
   const sortFunctions = options.sortFunctions ?? {};
 
-  const compiledSet: SplitRuleSet = {};
-  for (const [id, rule] of Object.entries(rules)) {
-    validateSplitRuleSetEntry(id, rule);
+  // Checks the ids first (present, safe, unique), so a message can name them.
+  resolveSplitRuleSet(rules as unknown as SplitRuleSet);
+  return rules.map((rule) => {
+    const id = rule.id as string;
     const site = createSite(
       { definition: DEFINITION, path: `rule '${id}'` },
       splitRuleSchema,
       safeFunctionCompilers
     );
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { id: _id, ...compiledRule } = compileRule(
+    return compileRule(
       id,
       rule as Record<string, unknown>,
       site,
       program,
       sortFunctions
     );
-    compiledSet[id] = { ...compiledRule, priority: rule.priority };
-  }
-  return compiledSet;
+  });
 }

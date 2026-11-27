@@ -8,6 +8,7 @@ import type {
   VoxelQualityRecord,
 } from '../../types';
 import type ImageQualityStatus from '../../enums/ImageQualityStatus';
+import type { FidelityIssue } from '../../types/ViewportFidelity';
 import type {
   ReferenceCompatibleOptions,
   ViewReference,
@@ -97,6 +98,8 @@ export type RenderingFidelity = {
   interactiveReduction?: boolean;
   /** The quality of the stack image that the render drew. */
   imageQualityStatus?: ImageQualityStatus;
+  /** Display issues of the drawn data (FIDELITY-STATE-13). */
+  fidelityIssues?: FidelityIssue[];
   /**
    * True while a load continues, so a later delivery replaces the data. A
    * stack path takes it from `imageQualityPending` of the image that it
