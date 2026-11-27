@@ -3,7 +3,7 @@ import vtkMatrixBuilder from '@kitware/vtk.js/Common/Core/MatrixBuilder';
 import vtkMath from '@kitware/vtk.js/Common/Core/Math';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 
-import type { mat4, ReadonlyVec3 } from 'gl-matrix';
+import type { mat3, mat4, ReadonlyVec3 } from 'gl-matrix';
 import { vec2, vec3 } from 'gl-matrix';
 
 import Events from '../enums/Events';
@@ -56,6 +56,10 @@ import { isPlaneDepthViewable } from '../utilities/voxelSlab/isPlaneDepthViewabl
 import { getCubeSizeInView } from '../utilities/getPlaneCubeIntersectionDimensions';
 import { getNormalizedAspectRatio } from '../utilities/getNormalizedAspectRatio';
 import { getConfiguration } from '../init';
+import getVolumeSliceGrid, {
+  getInitialSliceGridIndex,
+  getSliceStep,
+} from '../utilities/getVolumeSliceGrid';
 import type { extendedVtkCamera } from './vtkClasses/extendedVtkCamera';
 import type { FidelityLine } from './helpers/fidelityIndicator/fidelityIndicatorState';
 import type {
@@ -534,7 +538,8 @@ class Viewport implements IViewportFidelity {
     const middleIJK = getVolumeCenterIJK(
       dimensions,
       imageData.getDirection(),
-      viewPlaneNormal
+      viewPlaneNormal,
+      imageData.getSpacing()
     );
 
     const idx = [middleIJK[0], middleIJK[1], middleIJK[2]] as ReadonlyVec3;
@@ -1382,7 +1387,8 @@ class Viewport implements IViewportFidelity {
       const middleIJK = getVolumeCenterIJK(
         dimensions,
         imageData.getDirection(),
-        viewPlaneNormal
+        viewPlaneNormal,
+        imageData.getSpacing()
       );
       const idx = [middleIJK[0], middleIJK[1], middleIJK[2]] as ReadonlyVec3;
       // Modifies the focal point in place, as this hits the vtk indexToWorld function
@@ -2727,26 +2733,24 @@ class Viewport implements IViewportFidelity {
 }
 
 /**
- * Compute the IJK index of the volume center for use as a camera focal point.
+ * Compute the IJK index of the initial slice centre, for use as a camera focal
+ * point. The in-plane axes use the continuous geometric center `(d - 1) / 2`.
+ * Along the normal, the point is on the initial slice of the centred slice grid,
+ * `floor((M + 1) / 2)` counted in view order from the minimum projection, as
+ * the planar viewport does (volume slice navigation spec, VSN-I-4).
  *
- * Mirrors 3D Slicer's behavior in vtkMRMLSliceLogic::FitSliceToVolumes +
- * SnapSliceOffsetToIJK: center the focal point on the volume's geometric
- * center, then snap *only* the slice-direction axis to the nearest integer
- * voxel center so the camera doesn't land between two slices. The in-plane
- * axes use the continuous geometric center `(d - 1) / 2`.
- *
- * The snap only fires when `viewPlaneNormal` is aligned with an IJK axis
- * (axis-aligned MPR of an axis-aligned acquisition). For oblique acquisitions
- * the IJK axes are tilted relative to the requested MPR plane, so projecting
- * onto a single IJK axis is an approximation -- snapping there shifts the
- * focal point by ~0.5 voxel in world space and can flip the displayed slice
- * index. In that case we fall back to the continuous geometric center on all
- * axes, matching the pre-snap behavior.
+ * - Normal aligned with an IJK axis: the slice axis snaps to an integer voxel
+ *   centre, `floor(d / 2)` with the axis or `floor((d - 1) / 2)` against it.
+ *   Both are view index `floor(d / 2)`.
+ * - Oblique normal with `spacing`: the continuous centre moves along the
+ *   normal by `(floor((M + 1) / 2) - M / 2) * step`, so 0 or half a step.
+ * - Oblique normal without `spacing`: the continuous centre.
  */
 export function getVolumeCenterIJK(
   dimensions: number[],
   direction: ArrayLike<number>,
-  viewPlaneNormal: ArrayLike<number>
+  viewPlaneNormal: ArrayLike<number>,
+  spacing?: ArrayLike<number>
 ): number[] {
   const ijkAxes: vec3[] = [
     [direction[0], direction[1], direction[2]] as vec3,
@@ -2758,24 +2762,46 @@ export function getVolumeCenterIJK(
     viewPlaneNormal[1],
     viewPlaneNormal[2],
   ] as vec3;
+  const dots = ijkAxes.map((axis) => vec3.dot(axis, normal));
 
   let sliceAxis = 0;
-  let maxDot = -1;
-  for (let i = 0; i < 3; i++) {
-    const dot = Math.abs(vec3.dot(ijkAxes[i], normal));
-    if (dot > maxDot) {
-      maxDot = dot;
+  for (let i = 1; i < 3; i++) {
+    if (Math.abs(dots[i]) > Math.abs(dots[sliceAxis])) {
       sliceAxis = i;
     }
   }
 
-  // Only snap when the slice axis is exactly aligned with viewPlaneNormal.
   // EPSILON matches the orthonormal tolerance used elsewhere (1e-3).
-  const isAxisAligned = Math.abs(maxDot - 1) < 1e-3;
+  if (Math.abs(Math.abs(dots[sliceAxis]) - 1) < 1e-3) {
+    return dimensions.map((d, i) =>
+      i !== sliceAxis
+        ? (d - 1) / 2
+        : dots[i] > 0
+          ? Math.floor(d / 2)
+          : Math.floor((d - 1) / 2)
+    );
+  }
 
-  return dimensions.map((d, i) =>
-    i === sliceAxis && isAxisAligned ? Math.floor(d / 2) : (d - 1) / 2
+  const center = dimensions.map((d) => (d - 1) / 2);
+
+  if (!spacing) {
+    return center;
+  }
+
+  const point3Spacing = [spacing[0], spacing[1], spacing[2]] as Point3;
+  const step = getSliceStep(
+    { direction: direction as unknown as mat3, spacing: point3Spacing },
+    normal as unknown as Point3
   );
+  const range = dimensions.reduce(
+    (sum, d, i) => sum + Math.abs(dots[i]) * spacing[i] * (d - 1),
+    0
+  );
+  const grid = getVolumeSliceGrid(0, range, step);
+  const offset =
+    grid.start + getInitialSliceGridIndex(grid) * grid.step - range / 2;
+
+  return center.map((c, i) => c + (dots[i] * offset) / spacing[i]);
 }
 
 export default Viewport;

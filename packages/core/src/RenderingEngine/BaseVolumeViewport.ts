@@ -1279,7 +1279,7 @@ abstract class BaseVolumeViewport extends Viewport {
       const { sliceRange, spacingInNormalDirection } = sliceRangeInfo;
       if (isNegativeNormal) {
         // Convert opposite orientation view refs to normal orientation
-        sliceIndex = numScrollSteps - sliceIndex - 1;
+        sliceIndex = numScrollSteps - sliceIndex;
       }
       const delta = sliceIndex - currentStepIndex;
       const { newFocalPoint, newPosition } = snapFocalPointToSlice(

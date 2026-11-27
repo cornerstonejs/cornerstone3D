@@ -932,26 +932,24 @@ class VolumeViewport extends BaseVolumeViewport {
 
     const camera = this.getCamera();
     const { focalPoint, position, viewPlaneNormal } = camera;
-    const { currentSliceIndex, sliceRange, spacingInNormalDirection } =
-      getPlanarVolumeSliceNavigationState({
-        actor: actorEntry.actor as vtkVolume,
-        camera: {
-          focalPoint,
-          position,
-          viewPlaneNormal,
-        },
-        imageVolume,
-      });
+    const {
+      currentSliceIndex,
+      maxSliceIndex,
+      sliceRange,
+      spacingInNormalDirection,
+    } = getPlanarVolumeSliceNavigationState({
+      actor: actorEntry.actor as vtkVolume,
+      camera: {
+        focalPoint,
+        position,
+        viewPlaneNormal,
+      },
+      imageVolume,
+    });
 
-    // calculate the number of slices that is possible to visit
-    // in the direction of the view back and forward
-    const numSlicesBackward = Math.round(
-      (sliceRange.current - sliceRange.min) / spacingInNormalDirection
-    );
-
-    const numSlicesForward = Math.round(
-      (sliceRange.max - sliceRange.current) / spacingInNormalDirection
-    );
+    // The slices that the view can visit back and forward on the slice grid.
+    const numSlicesBackward = currentSliceIndex;
+    const numSlicesForward = maxSliceIndex - currentSliceIndex;
 
     const focalPoints = [];
 

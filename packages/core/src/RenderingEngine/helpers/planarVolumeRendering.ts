@@ -1,11 +1,16 @@
 import type vtkVolume from '@kitware/vtk.js/Rendering/Core/Volume';
 import type { ICamera, IImageVolume, Point3 } from '../../types';
 import getSliceRange from '../../utilities/getSliceRange';
-import getSpacingInNormalDirection from '../../utilities/getSpacingInNormalDirection';
+import getVolumeSliceGrid, {
+  getSliceGridIndex,
+  getSliceStep,
+} from '../../utilities/getVolumeSliceGrid';
 import snapFocalPointToSlice from '../../utilities/snapFocalPointToSlice';
 
 export interface PlanarVolumeSliceNavigationState {
   currentSliceIndex: number;
+  /** The index of the last slice of the grid. */
+  maxSliceIndex: number;
   sliceRange: ReturnType<typeof getSliceRange>;
   spacingInNormalDirection: number;
 }
@@ -18,27 +23,16 @@ export function getPlanarVolumeSliceNavigationState(args: {
   const { actor, camera, imageVolume } = args;
   const { focalPoint, viewPlaneNormal } = camera;
   const sliceRange = getSliceRange(actor, viewPlaneNormal, focalPoint);
-  const spacingInNormalDirection = getSpacingInNormalDirection(
-    imageVolume,
-    viewPlaneNormal
+  const spacingInNormalDirection = getSliceStep(imageVolume, viewPlaneNormal);
+  const grid = getVolumeSliceGrid(
+    sliceRange.min,
+    sliceRange.max,
+    spacingInNormalDirection
   );
-  const steps = Math.round(
-    (sliceRange.max - sliceRange.min) / spacingInNormalDirection
-  );
-  const range = sliceRange.max - sliceRange.min;
-
-  if (steps <= 0 || range === 0) {
-    return {
-      currentSliceIndex: 0,
-      sliceRange,
-      spacingInNormalDirection,
-    };
-  }
-
-  const fraction = (sliceRange.current - sliceRange.min) / range;
 
   return {
-    currentSliceIndex: Math.round(fraction * steps),
+    currentSliceIndex: getSliceGridIndex(grid, sliceRange.current),
+    maxSliceIndex: grid.maxIndex,
     sliceRange,
     spacingInNormalDirection,
   };

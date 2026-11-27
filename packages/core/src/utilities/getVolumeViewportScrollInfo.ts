@@ -1,5 +1,6 @@
 import type { IVolumeViewport } from '../types';
 import getVolumeSliceRangeInfo from './getVolumeSliceRangeInfo';
+import getVolumeSliceGrid, { getSliceGridIndex } from './getVolumeSliceGrid';
 
 /**
  * Calculates the number os steps the volume can scroll based on its orientation
@@ -29,21 +30,11 @@ function getVolumeViewportScrollInfo(
   const { sliceRange, spacingInNormalDirection, camera } = rangeInfo;
   const { min, max, current } = sliceRange;
 
-  const range = max - min;
-
-  // A single-slice volume collapses the range to zero (min === max === current).
-  // Guard against it so `(current - min) / range` doesn't evaluate to 0 / 0 = NaN,
-  // which would propagate to getCurrentImageIdIndex() and the overlay (rendering
-  // "NaN/1" and an undefined imageId).
-  const numScrollSteps =
-    range === 0 ? 0 : Math.round(range / spacingInNormalDirection);
-
-  // Find out current frameIndex
-  const fraction = range === 0 ? 0 : (current - min) / range;
-  const floatingStepNumber = fraction * numScrollSteps;
-  const currentStepIndex = Number.isFinite(floatingStepNumber)
-    ? Math.round(floatingStepNumber)
-    : 0;
+  // A single-slice volume collapses the range to zero; the grid then has no
+  // steps and index 0, so no NaN reaches getCurrentImageIdIndex() or the overlay.
+  const grid = getVolumeSliceGrid(min, max, spacingInNormalDirection);
+  const numScrollSteps = grid.maxIndex;
+  const currentStepIndex = getSliceGridIndex(grid, current);
 
   return {
     numScrollSteps,

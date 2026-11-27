@@ -2343,10 +2343,10 @@ class PlanarViewport extends GenericViewport<
         ? createPlanarCpuVolumeSliceBasis
         : createPlanarVolumeSliceBasis;
     // The acquisition orientation honors an explicitly carried initial slice but
-    // otherwise centers the volume, matching legacy and the reformatted
+    // otherwise opens on the legacy middle slice, like the reformatted
     // (sagittal/coronal) orientations. "No slice requested" now propagates as
     // undefined all the way from the data provider (it no longer defaults to 0),
-    // so we can pass the index through directly: undefined -> center, while a
+    // so we can pass the index through directly: undefined -> middle, while a
     // real carried slice - including an explicit 0 - is honored instead of being
     // collapsed to center.
     const initialImageIdIndex =
