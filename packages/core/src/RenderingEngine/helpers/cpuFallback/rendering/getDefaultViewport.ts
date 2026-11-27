@@ -1,5 +1,6 @@
 import createViewport from './createViewport';
 import getImageFitScale from './getImageFitScale';
+import { normalizeVOILUTFunction } from '../../../../utilities/voiLUTFunction';
 import type {
   IImage,
   CPUFallbackColormap,
@@ -34,10 +35,16 @@ export default function (
 
   let voi;
 
+  // The VOI LUT Function decides how the window is applied (C.11.2.1.3), so it
+  // has to travel with the window itself - the CPU render path reads it off
+  // viewport.voi to pick the linear/linear exact/sigmoid mapping.
+  const voiLUTFunction = normalizeVOILUTFunction(image.voiLUTFunction);
+
   if (modality === 'PT' && image.isPreScaled) {
     voi = {
       windowWidth: 5,
       windowCenter: 2.5,
+      voiLUTFunction,
     };
   } else if (
     image.windowWidth !== undefined &&
@@ -50,6 +57,7 @@ export default function (
       windowCenter: Array.isArray(image.windowCenter)
         ? image.windowCenter[0]
         : image.windowCenter,
+      voiLUTFunction,
     };
   }
 

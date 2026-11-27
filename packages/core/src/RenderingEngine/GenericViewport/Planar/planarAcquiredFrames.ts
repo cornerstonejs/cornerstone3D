@@ -1,6 +1,5 @@
 import { loadAndCacheImage } from '../../../loaders/imageLoader';
 import { isAcquisitionPlaneNormal } from '../../../utilities/isAcquisitionPlaneNormal';
-import { VOILUTFunctionType } from '../../../enums';
 import { ActorRenderMode } from '../../../types';
 import type { ActorEntry, IImageVolume, Point3 } from '../../../types';
 import { coreLog } from '../../../utilities/logger';
@@ -149,14 +148,16 @@ export function withAcquiredFrames(
       },
     },
   };
-  // The volume slice draws a linear VOI and ignores `voiLUTFunction`, so the
-  // frame does too. Limit: the frame has no colormap opacity table.
+  // The frame draws the VOI LUT Function of the volume slice, so a SIGMOID
+  // volume keeps its sigmoid. Limit: the frame has no colormap opacity table.
   const framePresentation = (): PlanarDataPresentation => ({
     ...volumeRendering.dataPresentation,
     voiRange:
       volumeRendering.dataPresentation?.voiRange ??
       volumeRendering.defaultVOIRange,
-    voiLUTFunction: VOILUTFunctionType.LINEAR,
+    voiLUTFunction:
+      volumeRendering.dataPresentation?.voiLUTFunction ??
+      volumeRendering.defaultVOILUTFunction,
   });
 
   function updateVisibility(): void {
