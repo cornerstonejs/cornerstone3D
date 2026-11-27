@@ -56,7 +56,6 @@ function makeVolume(volumeId) {
     }
   );
 
-  volume.autoRenderOnLoad = false;
   volume.totalNumFrames = imageIds.length;
 
   return { volume, imageIds };

@@ -134,6 +134,17 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
    * copy, or nothing when it does not hold them together. Read only.
    */
   _getSliceView?: (sliceIndex: number) => PixelDataTypedArray | undefined;
+  /**
+   * A reader of the voxels of one k slice, for a caller that reads many
+   * voxels of that slice: what holds the slice is found once, here, and each
+   * call of the reader gives the value that `getAtIJK(i, j, sliceIndex)`
+   * gives. The voxel manager of an image volume finds the image of the slice
+   * and its scaling once, and gives null for a slice that has no image, whose
+   * every voxel reads null.
+   */
+  _getSliceReader?: (
+    sliceIndex: number
+  ) => ((i: number, j: number) => T) | null;
 
   /**
    * Gets the ID of the voxel manager
@@ -1484,6 +1495,25 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
       return sliceScalings[sliceIndex] ? undefined : scalarData;
     };
 
+    voxelManager._getSliceReader = (sliceIndex: number) => {
+      const imageVoxelManager = resolveSliceVoxelManager(sliceIndex);
+
+      if (!imageVoxelManager) {
+        return null;
+      }
+
+      const scaling = sliceScalings[sliceIndex];
+
+      if (!scaling) {
+        return (i: number, j: number) => imageVoxelManager._get(j * width + i);
+      }
+
+      const { rows, columns } = scaling;
+
+      return (i: number, j: number) =>
+        imageVoxelManager._get(rows[j] + columns[i]);
+    };
+
     voxelManager.getMiddleSliceData = () => {
       const middleSliceIndex = Math.floor(dimensions[2] / 2);
       return voxelManager.getSliceData({
@@ -1816,6 +1846,14 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
       return (
         voxelGroups[activeDimensionGroup] as VoxelManager<number | RGB>
       )._getSliceView?.(sliceIndex);
+    };
+
+    (voxelManager as VoxelManager<number | RGB>)._getSliceReader = (
+      sliceIndex: number
+    ) => {
+      return (
+        voxelGroups[activeDimensionGroup] as VoxelManager<number | RGB>
+      )._getSliceReader?.(sliceIndex);
     };
 
     // Each group remembers a slice that had no image, so an arrival must reach

@@ -243,7 +243,8 @@ export class CanvasCpuSliceRenderPath
    * again, and asks for a render. A delivery while the volume loads follows
    * the rule of both sampled slice paths (`getPlanarDeliveryUpdate`): one that
    * leaves the frames of the plane as they were samples nothing (the slice on
-   * screen stays, the kept slices of other planes are stale), one that
+   * screen stays, the kept slices of other planes are stale), and so does one
+   * to an overlay that drew nothing and still has nothing to draw; one that
    * changes them renders at the next animation frame, and one for a plane
    * without a key renders as an edit does. An edit of the voxels
    * (`IMAGE_VOLUME_MODIFIED` of a loaded volume) renders at most once per
@@ -307,14 +308,19 @@ export class CanvasCpuSliceRenderPath
       }, remainingDelay);
     };
     const onDelivery = () => {
+      const camera = getPlanarRenderPathActiveSourceICamera(ctx);
       const update = getPlanarDeliveryUpdate(
         rendering.imageVolume,
-        getPlanarRenderPathActiveSourceICamera(ctx),
+        camera,
         resolveSlabThickness(rendering.appearance?.slabThickness),
         mount.deliveryKey
       );
 
-      if (update === 'none') {
+      if (
+        update === 'none' ||
+        (mount.overlayFrames === 'empty' &&
+          getCanvasSliceOverlayFrames(mount, camera) === 'empty')
+      ) {
         voxelManager?.invalidateCache?.();
         sampler.invalidate();
         return;

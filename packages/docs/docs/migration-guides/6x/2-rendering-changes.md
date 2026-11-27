@@ -1921,6 +1921,77 @@ await viewport.setDisplaySets({
 // Now: resolves after its middle image, the first request of the stages.
 ```
 
+### When a pane draws while a volume loads
+
+A streaming volume asked every rendering engine to render each viewport that
+showed it at every 2% of its deliveries (`utilities.autoLoad`), and once more
+at the end of its load. In 6.0 the volume asks for no render while it loads:
+the render path of each layer that shows it follows `IMAGE_VOLUME_MODIFIED`
+and `IMAGE_VOLUME_LOADING_COMPLETED` and draws its pane only when its own
+picture can have changed, at most once per animation frame:
+
+- a plane that reads a few frames (the acquisition plane of the volume, a thin
+  slab along it) draws at the next animation frame when one of its frames
+  changed, and nothing for a delivery into another frame;
+- a plane that reads most frames (the other planes of the grid, an oblique
+  plane, a slab such as a MIP over the whole volume, on the sampled slice
+  paths and on the slab path of the 3D texture) draws at the ticks of one
+  clock that every loading picture shares, every 100 ms, so the layers and
+  the panes that a load changes draw in the same animation frame;
+- an overlay that draws nothing yet (its frames hold no data of its plane)
+  draws no frame until it has something to draw;
+- the end of the load draws at once.
+
+In the TMTV layout of OHIF (ten panes, a CT and a PET streaming) the panes
+drew 263 frames during the load in a page without OHIF, and 5.18.3 drew 274;
+they draw 31 now, and the pictures at the end are the same. `utilities.autoLoad(volumeId)`
+is unchanged: an application that calls it still renders every viewport that
+shows the volume. The protected fields `autoRenderOnLoad`, `reRenderFraction`
+and `reRenderTarget` of the streaming volume are gone.
+
+```ts
+document.addEventListener('CORNERSTONE_IMAGE_RENDERED', countFrames, true);
+await viewport.setDisplaySets({
+  displaySetId: 'pt',
+  options: { mode: 'volume' },
+});
+// Before: every pane that shows the PET fired IMAGE_RENDERED at every 2% of
+// its deliveries, whether its picture changed or not.
+// Now: a pane fires IMAGE_RENDERED when its picture changed: about 10 times a
+// second for a pane across the frames, once per arriving frame of its plane
+// for the acquisition plane.
+```
+
+An application that drew something of its own on each render of a pane during
+a load (a progress overlay that listens to `IMAGE_RENDERED`) listens to
+`IMAGE_VOLUME_MODIFIED` and reads `detail.framesProcessed` instead.
+
+### A volume whose requests the application queued loads once
+
+`getImageLoadRequests()` hands out the requests of the images of a streaming
+volume, for an application that orders the requests of several volumes itself
+(OHIF's `interleaveTopToBottom`: one request of the CT, one of the PET, in
+turn). The volume did not know that its requests were out, and the mount of a
+6.0 planar or 3D viewport loads its volume (`volume.load()`): a second load
+started with the retrieve stages, which copied each image that it delivered
+into the frames near it, delivered about half of the frames twice, and took
+request slots beside the application's requests. In 6.0 the volume counts as
+loading once it has handed out its requests: a later `load` joins that load,
+starts no second one, and its callback is called when the load ends (a `load`
+during a load dropped its callback before).
+
+```ts
+const requests = [...ct.getImageLoadRequests(0), ...pt.getImageLoadRequests(0)];
+requests.forEach(queueInYourOrder);
+await viewport.setDisplaySets({
+  displaySetId: 'ct',
+  options: { mode: 'volume' },
+});
+// Before: the mount started the retrieve stages of the CT beside these
+// requests (372 copies into empty frames, 69 frames delivered twice).
+// Now: the mount joins the load of these requests; each frame is delivered once.
+```
+
 ### setDisplaySets and addDisplaySet take effect in call order
 
 On every viewport family (planar, 3D, video, ECG and whole slide) the calls of

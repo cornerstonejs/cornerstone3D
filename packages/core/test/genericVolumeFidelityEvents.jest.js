@@ -37,6 +37,7 @@ import { VtkGpuVolumeSliceRenderPath } from '../src/RenderingEngine/Viewports/Pl
 import { VtkVolume3DRenderPath } from '../src/RenderingEngine/Viewports/Volume3D/VtkVolume3DRenderPath';
 import { shownStateOf } from '../src/RenderingEngine/helpers/fidelityIndicator/fidelityIndicatorState';
 import { fidelityLinesFromBindings } from '../src/RenderingEngine/helpers/fidelityIndicator/collectFidelityLines';
+import { PLANAR_LOADING_UPDATE_MS } from '../src/RenderingEngine/Viewports/Planar/planarLoadingUpdates';
 
 const fullGrid = {
   origin: [0, 0, 0],
@@ -194,6 +195,9 @@ describe.each([
       missing: 100,
     };
     sendVolumeEvent(Events.IMAGE_VOLUME_MODIFIED, volumeId);
+    await new Promise((resolve) =>
+      setTimeout(resolve, 2 * PLANAR_LOADING_UPDATE_MS + 50)
+    );
     expect(ctx.display.requestRender).toHaveBeenCalled();
     expect(shownState(rendering)).toBe('loading');
 

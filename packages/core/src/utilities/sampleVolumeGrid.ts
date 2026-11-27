@@ -12,6 +12,32 @@ type SampledVolume = Pick<IImageVolume, 'dimensions' | 'voxelManager'>;
 
 type SliceArray = PixelDataTypedArray | null;
 
+/** Reads the voxel (i, j) of one slice of a volume. */
+type SliceReader = (i: number, j: number) => unknown;
+
+/** The members of a voxel manager that give a slice at once. */
+type SliceAccess = SampledVolume['voxelManager'] & {
+  _getSliceView?: (sliceIndex: number) => PixelDataTypedArray | undefined;
+  _getSliceReader?: (sliceIndex: number) => SliceReader | null;
+};
+
+/** The zeros that stand for a slice without voxels, kept for the next grid. */
+let emptySlice: Uint8Array | undefined;
+
+/**
+ * A slice of zeros of the given size. A slice whose voxel manager has no
+ * voxels for it (`_getSliceReader` gives null) reads null for each voxel,
+ * which a sample counts as 0, so this array gives the same values and lets
+ * the loops that read typed arrays sample it. It is only read.
+ */
+function getEmptySlice(sliceSize: number): Uint8Array {
+  if (emptySlice?.length !== sliceSize) {
+    emptySlice = new Uint8Array(sliceSize);
+  }
+
+  return emptySlice;
+}
+
 type SampledValueRange = {
   min: number;
   max: number;
@@ -72,6 +98,7 @@ type GridSamplingContext = {
   volume: SampledVolume;
   volumeArray: PixelDataTypedArray | undefined;
   sliceArrays: Array<SliceArray | undefined>;
+  sliceReaders: Array<SliceReader | undefined>;
   columns: number;
   rows: number;
   slices: number;
@@ -101,7 +128,10 @@ function getVolumeArray(
  * or null when the slice has to be read one voxel at a time. A slice has such
  * an array when the volume keeps all its voxels in one typed array, or when
  * the voxel manager gives an unscaled view of the slice (_getSliceView) of the
- * slice size. Any other slice gives null. The answer is kept for the next read.
+ * slice size. A slice that the voxel manager holds no voxels for
+ * (`_getSliceReader` gives null) reads as a slice of zeros
+ * (`getEmptySlice`). Any other slice gives null and is read through its
+ * reader (`getSliceReader`). The answer is kept for the next read.
  */
 function getSliceArray(
   context: GridSamplingContext,
@@ -123,21 +153,63 @@ function getSliceArray(
       (sliceIndex + 1) * sliceSize
     ) as PixelDataTypedArray;
   } else {
-    // A voxel manager without _getSliceView is read through getAtIJK.
-    const scalarData = (
-      volume.voxelManager as {
-        _getSliceView?: (sliceIndex: number) => PixelDataTypedArray | undefined;
-      }
-    )._getSliceView?.(sliceIndex);
+    const voxelManager = volume.voxelManager as SliceAccess;
+    const scalarData = voxelManager._getSliceView?.(sliceIndex);
 
     if (scalarData?.length === sliceSize) {
       sliceArray = scalarData;
+    } else if (voxelManager._getSliceReader?.(sliceIndex) === null) {
+      sliceArray = getEmptySlice(sliceSize);
     }
   }
 
   context.sliceArrays[sliceIndex] = sliceArray;
 
   return sliceArray;
+}
+
+/** The reader of a slice without voxels: each voxel reads null. */
+const readNothing: SliceReader = () => null;
+
+/**
+ * Returns the reader of the voxels of one slice of the volume, for a slice
+ * that has no typed array (`getSliceArray`): the reader of the voxel manager
+ * (`_getSliceReader`), which finds what holds the slice once, or else a read
+ * of `getAtIJK` for each voxel. Both give the value of `getAtIJK`. The reader
+ * is kept for the next read, so a sample finds what holds a slice once for
+ * the whole grid and not once for each voxel.
+ */
+function getSliceReader(
+  context: GridSamplingContext,
+  sliceIndex: number
+): SliceReader {
+  const known = context.sliceReaders[sliceIndex];
+
+  if (known) {
+    return known;
+  }
+
+  const voxelManager = context.volume.voxelManager as SliceAccess;
+  const sliceReader = voxelManager._getSliceReader?.(sliceIndex);
+  const reader =
+    sliceReader === null
+      ? readNothing
+      : (sliceReader ??
+        ((i: number, j: number) => voxelManager.getAtIJK(i, j, sliceIndex)));
+
+  context.sliceReaders[sliceIndex] = reader;
+
+  return reader;
+}
+
+/** The value of one voxel of a slice that has no typed array. */
+function readVoxel(
+  context: GridSamplingContext,
+  i: number,
+  j: number,
+  k: number
+): number {
+  return Number((context.sliceReaders[k] ?? getSliceReader(context, k))(i, j));
 }
 
 /**
@@ -204,7 +276,6 @@ function sampleCheckedPoint(
     return context.outsideValue;
   }
 
-  const { voxelManager } = context.volume;
   const lastI = columns - 1;
   const lastJ = rows - 1;
   const lastK = slices - 1;
@@ -222,7 +293,7 @@ function sampleCheckedPoint(
       context,
       sliceArray
         ? sliceArray[voxelJ * columns + voxelI]
-        : Number(voxelManager.getAtIJK(voxelI, voxelJ, voxelK))
+        : readVoxel(context, voxelI, voxelJ, voxelK)
     );
   }
 
@@ -259,14 +330,14 @@ function sampleCheckedPoint(
     c011 = upperSlice[j1 * columns + i0];
     c111 = upperSlice[j1 * columns + i1];
   } else {
-    c000 = Number(voxelManager.getAtIJK(i0, j0, k0));
-    c100 = Number(voxelManager.getAtIJK(i1, j0, k0));
-    c010 = Number(voxelManager.getAtIJK(i0, j1, k0));
-    c110 = Number(voxelManager.getAtIJK(i1, j1, k0));
-    c001 = Number(voxelManager.getAtIJK(i0, j0, k1));
-    c101 = Number(voxelManager.getAtIJK(i1, j0, k1));
-    c011 = Number(voxelManager.getAtIJK(i0, j1, k1));
-    c111 = Number(voxelManager.getAtIJK(i1, j1, k1));
+    c000 = readVoxel(context, i0, j0, k0);
+    c100 = readVoxel(context, i1, j0, k0);
+    c010 = readVoxel(context, i0, j1, k0);
+    c110 = readVoxel(context, i1, j1, k0);
+    c001 = readVoxel(context, i0, j0, k1);
+    c101 = readVoxel(context, i1, j0, k1);
+    c011 = readVoxel(context, i0, j1, k1);
+    c111 = readVoxel(context, i1, j1, k1);
   }
 
   const c00 = c000 * oneMinusDi + c100 * di;
@@ -646,12 +717,13 @@ function sampleStraightCut(
 /**
  * Reads the components of one voxel into values, from offset on. A volume
  * whose voxel manager keeps every component of every voxel in one array is
- * read from that array. Any other volume is read through getAtIJK, which
- * gives the components of a voxel as an array; a component it does not give
- * reads 0, and a single number is the value of every component.
+ * read from that array. Any other volume is read through the reader of the
+ * slice (`getSliceReader`), which gives what getAtIJK gives: the components
+ * of a voxel as an array; a component it does not give reads 0, and a single
+ * number is the value of every component.
  */
 function readVoxelComponents(
-  volume: SampledVolume,
+  context: GridSamplingContext,
   componentArray: PixelDataTypedArray | undefined,
   numberOfComponents: number,
   i: number,
@@ -660,7 +732,7 @@ function readVoxelComponents(
   values: Float64Array,
   offset: number
 ): void {
-  const [columns, rows] = volume.dimensions;
+  const { columns, rows } = context;
 
   if (componentArray) {
     const first = ((k * rows + j) * columns + i) * numberOfComponents;
@@ -672,7 +744,7 @@ function readVoxelComponents(
     return;
   }
 
-  const voxel = volume.voxelManager.getAtIJK(i, j, k) as unknown;
+  const voxel = (context.sliceReaders[k] ?? getSliceReader(context, k))(i, j);
 
   for (let component = 0; component < numberOfComponents; component++) {
     values[offset + component] = Array.isArray(voxel)
@@ -748,7 +820,7 @@ function sampleComponentGrid(
 
       if (useNearest) {
         readVoxelComponents(
-          volume,
+          context,
           componentArray,
           n,
           Math.floor(clampedI + 0.5 - NEAREST_VOXEL_TIE_EPSILON),
@@ -773,7 +845,7 @@ function sampleComponentGrid(
 
         for (let corner = 0; corner < 8; corner++) {
           readVoxelComponents(
-            volume,
+            context,
             componentArray,
             n,
             corner & 1 ? i1 : i0,
@@ -874,7 +946,6 @@ function sampleVolumeGrid(options: SampleVolumeGridOptions): SampledValueRange {
     round = false,
     numberOfComponents = 1,
   } = options;
-  const { voxelManager } = volume;
   const [columns, rows, slices] = volume.dimensions;
   const useNearest = interpolationType === InterpolationType.NEAREST;
   const limitValues = !!valueRange;
@@ -883,6 +954,7 @@ function sampleVolumeGrid(options: SampleVolumeGridOptions): SampledValueRange {
     volume,
     volumeArray: getVolumeArray(volume, columns * rows * slices),
     sliceArrays: new Array<SliceArray | undefined>(slices),
+    sliceReaders: new Array<SliceReader | undefined>(slices),
     columns,
     rows,
     slices,
@@ -992,7 +1064,7 @@ function sampleVolumeGrid(options: SampleVolumeGridOptions): SampledValueRange {
           sliceArrays[voxelK] ?? getSliceArray(context, voxelK);
         let value = sliceArray
           ? sliceArray[voxelJ * columns + voxelI]
-          : Number(voxelManager.getAtIJK(voxelI, voxelJ, voxelK));
+          : readVoxel(context, voxelI, voxelJ, voxelK);
 
         if (finishValues) {
           value = finishSample(context, value);

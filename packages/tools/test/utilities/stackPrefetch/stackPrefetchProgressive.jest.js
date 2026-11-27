@@ -70,7 +70,6 @@ describe('stackPrefetch with a progressive volume of the same images', () => {
       .spyOn(imageLoadPoolManager, 'addRequest')
       .mockImplementation(() => undefined);
     const volume = makeVolume();
-    volume.autoRenderOnLoad = false;
     cache.putVolumeSync(volume.volumeId, volume);
     const element = document.createElement('div');
     const queued = () =>

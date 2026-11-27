@@ -63,13 +63,7 @@ import {
 } from './planarOverlayFrames';
 import type { PlanarOverlayFrameState } from './planarOverlayFrames';
 import { resolveSlabThickness } from './planarVolumeSliceBlendMode';
-
-/**
- * The shortest time between two samples of the visible slice while the volume
- * loads. A frame that arrives shows within this time, and a long load does
- * not sample once for each of its frames.
- */
-export const CPU_SLICE_LOADING_UPDATE_MS = 100;
+import { createPlanarLoadingUpdates } from './planarLoadingUpdates';
 
 /** The parts of one mounted sampled slice. */
 type CpuSliceMount = PlanarSlicePlaneMoves & {
@@ -227,15 +221,19 @@ export class VtkCpuSliceRenderPath
   /**
    * Listens for new voxel data of the volume and for a change of its active
    * time point, and samples the visible slice again for each. While the
-   * volume loads, the samples are at least CPU_SLICE_LOADING_UPDATE_MS
-   * apart. Where the frames of the plane are few enough to keep their key
+   * volume loads, a plane whose frames have no key samples at the ticks of
+   * the shared clock of the load updates (`createPlanarLoadingUpdates`), at
+   * most once per tick. Where the frames of the plane are few enough to keep their key
    * (`getPlanarFrameDeliveryKey`), a delivery that leaves them as they were
    * (a copy into a frame that the plane does not read) samples nothing, and
    * one that changes them samples at the next animation frame, so the own
    * frame of the plane shows as soon as it arrives; the kept slices are
    * stale all the same, so a move to another plane samples it again. Any other
    * change (an edit of the voxels, the end of the load, a new time point)
-   * samples at the next animation frame. A change of the texture limits does
+   * samples at the next animation frame. An update renders only when the
+   * layer drew something before or draws something now (`updateSlice`): an
+   * overlay whose frames still hold no data of its plane stays as it was, and
+   * its pane draws no frame for it. A change of the texture limits does
    * not concern this path, which holds no 3D texture. The load callback of
    * the volume can come after the listeners are removed; it then does
    * nothing.
@@ -247,12 +245,15 @@ export class VtkCpuSliceRenderPath
     volumeId: string
   ): () => void {
     const { rendering, sampler } = mount;
-    const updates = createCpuSliceUpdates(() => {
-      this.updateSlice(
-        mount,
-        getPlanarRenderPathActiveSourceICamera(mount.ctx)
-      );
-      mount.ctx.display.requestRender();
+    const updates = createPlanarLoadingUpdates(() => {
+      if (
+        this.updateSlice(
+          mount,
+          getPlanarRenderPathActiveSourceICamera(mount.ctx)
+        )
+      ) {
+        mount.ctx.display.requestRender();
+      }
     });
     const removeVolumeSubscriptions = lifecycle.subscribeToVolumeEvents(
       volumeId,
@@ -399,12 +400,17 @@ export class VtkCpuSliceRenderPath
    * grid is drawn instead when the screen grid did not move (a change of the
    * appearance). Each call is a change of the view: it cancels the work at
    * rest and starts the rest timer again.
+   *
+   * @returns false when the layer draws nothing now and drew nothing before
+   * (an overlay whose frames still hold no data of its plane): its picture
+   * did not change, and an update of the load renders nothing for it.
    */
   private updateSlice(
     mount: CpuSliceMount,
     camera: PlanarResolvedICamera | undefined
-  ): void {
+  ): boolean {
     const { rendering, sampler } = mount;
+    const drewNothing = mount.overlayFrames === 'empty';
 
     cancelRestWork(mount);
     recordPlaneMove(mount, camera);
@@ -414,7 +420,7 @@ export class VtkCpuSliceRenderPath
     if (mount.overlayFrames === 'empty') {
       this.drawSlice(mount, camera, undefined);
       reportSamplingState(mount);
-      return;
+      return !drewNothing;
     }
 
     this.drawSlice(
@@ -433,6 +439,8 @@ export class VtkCpuSliceRenderPath
     );
     reportSamplingState(mount);
     this.scheduleRestWork(mount);
+
+    return true;
   }
 
   /**
@@ -705,69 +713,4 @@ export function refreshCpuSliceFidelity(
     sampler.hasPendingSteps() ||
     sampler.isSlabTooLarge();
   rendering.fullGrid = rendering.imageVolume.voxelGrid;
-}
-
-/**
- * Coalesces the samples that volume data asks for. `now` samples at the next
- * animation frame; `soon` samples at the next animation frame after at least
- * CPU_SLICE_LOADING_UPDATE_MS since the last sample; a pending sample
- * takes any later request.
- */
-function createCpuSliceUpdates(update: () => void): {
-  now: () => void;
-  soon: () => void;
-  cancel: () => void;
-} {
-  let frameId: number | undefined;
-  let timeoutId: ReturnType<typeof setTimeout> | undefined;
-  let lastUpdateTime = -Infinity;
-
-  const runUpdate = () => {
-    frameId = undefined;
-    lastUpdateTime = performance.now();
-    update();
-  };
-  const now = () => {
-    if (timeoutId !== undefined) {
-      clearTimeout(timeoutId);
-      timeoutId = undefined;
-    }
-
-    if (frameId === undefined) {
-      frameId = requestAnimationFrame(runUpdate);
-    }
-  };
-  const soon = () => {
-    if (frameId !== undefined || timeoutId !== undefined) {
-      return;
-    }
-
-    const delay = Math.max(
-      0,
-      CPU_SLICE_LOADING_UPDATE_MS - (performance.now() - lastUpdateTime)
-    );
-
-    if (delay === 0) {
-      now();
-      return;
-    }
-
-    timeoutId = setTimeout(() => {
-      timeoutId = undefined;
-      now();
-    }, delay);
-  };
-  const cancel = () => {
-    if (timeoutId !== undefined) {
-      clearTimeout(timeoutId);
-      timeoutId = undefined;
-    }
-
-    if (frameId !== undefined) {
-      cancelAnimationFrame(frameId);
-      frameId = undefined;
-    }
-  };
-
-  return { now, soon, cancel };
 }

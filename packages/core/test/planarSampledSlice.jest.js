@@ -56,10 +56,10 @@ import {
 } from '../src/RenderingEngine/Viewports/Planar/planarCpuSlice';
 import { PlanarCpuSliceActor } from '../src/RenderingEngine/Viewports/Planar/planarCpuSliceActor';
 import {
-  CPU_SLICE_LOADING_UPDATE_MS,
   getCpuSliceDefaultVOIRange,
   getCpuSliceMaxSize,
 } from '../src/RenderingEngine/Viewports/Planar/VtkCpuSliceRenderPath';
+import { PLANAR_LOADING_UPDATE_MS } from '../src/RenderingEngine/Viewports/Planar/planarLoadingUpdates';
 import { MAX_CPU_CANVAS_SLICE_SIZE } from '../src/RenderingEngine/Viewports/Planar/CanvasCpuSliceRenderPath';
 import {
   CPU_SLICE_REST_DELAY_MS,
@@ -2232,7 +2232,7 @@ describe('PlanarViewport with slice first (render path)', () => {
     viewport.removeDisplaySet(displaySetId);
     sampleSpy.mockClear();
     onLoad();
-    jest.advanceTimersByTime(10 * CPU_SLICE_LOADING_UPDATE_MS);
+    jest.advanceTimersByTime(10 * PLANAR_LOADING_UPDATE_MS);
 
     expect(sampleSpy).not.toHaveBeenCalled();
   });

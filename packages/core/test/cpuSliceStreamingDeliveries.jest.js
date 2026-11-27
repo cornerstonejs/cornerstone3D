@@ -21,7 +21,7 @@ import triggerEvent from '../src/utilities/triggerEvent';
 import { setSliceFirst } from '../src/init';
 import * as sampleVolumeSliceModule from '../src/utilities/sampleVolumeSlice';
 import * as setDefaultVolumeVOIModule from '../src/RenderingEngine/helpers/setDefaultVolumeVOI';
-import { CPU_SLICE_LOADING_UPDATE_MS } from '../src/RenderingEngine/Viewports/Planar/VtkCpuSliceRenderPath';
+import { PLANAR_LOADING_UPDATE_MS } from '../src/RenderingEngine/Viewports/Planar/planarLoadingUpdates';
 import PlanarViewport from '../src/RenderingEngine/Viewports/Planar/PlanarViewport';
 import renderingEngineCache from '../src/RenderingEngine/renderingEngineCache';
 import { displaySetRegistry } from '@cornerstonejs/metadata';
@@ -52,7 +52,7 @@ const waitForUpdate = () =>
   new Promise((resolve) =>
     setTimeout(
       () => requestAnimationFrame(() => resolve()),
-      CPU_SLICE_LOADING_UPDATE_MS + 20
+      PLANAR_LOADING_UPDATE_MS + 20
     )
   );
 

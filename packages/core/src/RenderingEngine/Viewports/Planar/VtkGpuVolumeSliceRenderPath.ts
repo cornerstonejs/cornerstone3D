@@ -53,14 +53,56 @@ import {
   acquiredFrameActors,
   withAcquiredFrames,
 } from './planarAcquiredFrames';
-import { isSegmentationOverlayData } from '../renderingFidelity';
+import {
+  isSegmentationOverlayData,
+  isVolumeLoading,
+} from '../renderingFidelity';
 import { gridWorldToIndex } from '../../../utilities/voxelGrid';
 import { getConfiguration } from '../../../init';
 import volumeTextureStore from '../../../cache/volumeTextureStore';
-import { getPlanarOverlayFrameState } from './planarOverlayFrames';
+import {
+  getPlanarDeliveryUpdate,
+  getPlanarFrameDeliveryKey,
+  getPlanarOverlayFrameState,
+} from './planarOverlayFrames';
 import { resolveSlabThickness } from './planarVolumeSliceBlendMode';
+import { createPlanarLoadingUpdates } from './planarLoadingUpdates';
 
 const SLICE_OVERLAY_DEPTH_EPSILON = 1e-4;
+
+/**
+ * Renders for a delivery of a volume that loads, by the rule of the sampled
+ * slice paths (`getPlanarDeliveryUpdate`): at the next animation frame when a
+ * frame of the plane changed, at the next tick of the shared clock of the
+ * load updates when the plane has no key (a plane across the frames, a slab
+ * such as a MIP over the whole volume, which reads every frame), and not at
+ * all when the frames of the plane are as they were at the last render. The
+ * texture keeps the delivered frames marked, and the next render uploads
+ * them. An overlay that was hidden and is still hidden (its frames hold no
+ * data of its plane yet) renders nothing.
+ */
+function renderLoadingDelivery(
+  rendering: PlanarVtkGpuVolumeSliceRendering,
+  hidOverlayFrames: boolean,
+  deliveryKey: string | undefined,
+  loadingUpdates: ReturnType<typeof createPlanarLoadingUpdates>,
+  camera: Parameters<typeof getPlanarDeliveryUpdate>[1]
+): void {
+  if (hidOverlayFrames && rendering.hidesOverlayFrames) {
+    return;
+  }
+
+  const update = getPlanarDeliveryUpdate(
+    rendering.imageVolume,
+    camera,
+    resolveSlabThickness(rendering.appearance?.slabThickness),
+    deliveryKey
+  );
+
+  if (update !== 'none') {
+    loadingUpdates[update]();
+  }
+}
 
 /**
  * Shows the slice of an overlay only while every frame that its plane reads
@@ -178,6 +220,17 @@ export class VtkGpuVolumeSliceRenderPath
 
     let deferredProjectionRenderTimer: ReturnType<typeof setTimeout> | null =
       null;
+    let deliveryKey: string | undefined;
+    const getDeliveryKey = () =>
+      getPlanarFrameDeliveryKey(
+        rendering.imageVolume,
+        getPlanarRenderPathActiveSourceICamera(ctx),
+        resolveSlabThickness(rendering.appearance?.slabThickness)
+      );
+    const loadingUpdates = createPlanarLoadingUpdates(() => {
+      deliveryKey = getDeliveryKey();
+      ctx.display.requestRender();
+    });
     const removeVolumeSubscriptions = lifecycle.subscribeToVolumeEvents(
       payload.volumeId,
       (eventType) => {
@@ -188,13 +241,32 @@ export class VtkGpuVolumeSliceRenderPath
           rendering.mapper.modified();
         }
         lifecycle.onVolumeData(rendering, eventType, this.hooks);
+
+        const hidOverlayFrames = !!rendering.hidesOverlayFrames;
+
         applyOverlayFrameVisibility(ctx, rendering, data.id);
 
         const isProjectingOverlay =
           rendering.isSegmentationOverlay &&
           (rendering.appearance?.slabThickness ?? 0) > 0;
 
+        if (
+          !isProjectingOverlay &&
+          eventType === Events.IMAGE_VOLUME_MODIFIED &&
+          isVolumeLoading(rendering.imageVolume)
+        ) {
+          renderLoadingDelivery(
+            rendering,
+            hidOverlayFrames,
+            deliveryKey,
+            loadingUpdates,
+            getPlanarRenderPathActiveSourceICamera(ctx)
+          );
+          return;
+        }
+
         if (!isProjectingOverlay) {
+          loadingUpdates.cancel();
           ctx.display.requestRender();
           return;
         }
@@ -213,6 +285,8 @@ export class VtkGpuVolumeSliceRenderPath
       }
     );
     rendering.removeStreamingSubscriptions = () => {
+      loadingUpdates.cancel();
+
       if (deferredProjectionRenderTimer !== null) {
         clearTimeout(deferredProjectionRenderTimer);
         deferredProjectionRenderTimer = null;

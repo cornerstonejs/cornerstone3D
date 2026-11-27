@@ -45,10 +45,7 @@ export class BaseStreamingImageVolume
   private framesLoaded = 0;
   private framesProcessed = 0;
   private framesUpdated = 0;
-  protected autoRenderOnLoad = true;
   protected cachedFrames = [];
-  protected reRenderTarget = 0;
-  protected reRenderFraction = 2;
   /** The listener of `listenForCachedImages`, while this volume loads. */
   private markOnImageCached: ((event) => void) | null = null;
   /** Increments for each load, so the batches of an older load stop. */
@@ -147,20 +144,18 @@ export class BaseStreamingImageVolume
     this.loadStatus.callbacks = [];
   }
 
+  /**
+   * Ends the load when the last frame is processed: the IMAGE_VOLUME_MODIFIED
+   * that waits, the load callbacks and IMAGE_VOLUME_LOADING_COMPLETED. The
+   * volume asks no rendering engine to render while it loads: each render
+   * path that shows it follows these events and renders when its own picture
+   * changes.
+   */
   protected callLoadStatusCallback(evt) {
-    const { framesUpdated, framesProcessed, totalNumFrames } = evt;
-    const { volumeId, reRenderFraction, loadStatus, metadata } = this;
+    const { framesProcessed, totalNumFrames } = evt;
+    const { volumeId, loadStatus, metadata } = this;
     const { FrameOfReferenceUID } = metadata;
-    // TODO: probably don't want this here
-    if (this.autoRenderOnLoad) {
-      if (
-        framesUpdated > this.reRenderTarget ||
-        framesProcessed === totalNumFrames
-      ) {
-        this.reRenderTarget += reRenderFraction;
-        autoLoad(volumeId);
-      }
-    }
+
     if (framesProcessed === totalNumFrames) {
       this.flushVolumeModified();
       loadStatus.callbacks.forEach((callback) => callback(evt));
@@ -409,13 +404,25 @@ export class BaseStreamingImageVolume
   }
 
   /**
-   * It triggers a prefetch for images in the volume.
+   * It triggers a prefetch for images in the volume. A volume that loads
+   * already, by an earlier call or by the requests that an application took
+   * from `getImageLoadRequests` and queued, starts no second load: the
+   * callback is called when that load ends.
    * @param callback - A callback function to be called when the volume is fully loaded
    * @param priority - The priority for loading the volume images, lower number is higher priority
    * @returns
    */
   public load(callback: (...args: unknown[]) => void): void {
     const { imageIds, loadStatus, numFrames } = this;
+
+    if (loadStatus.loading === true) {
+      if (callback) {
+        loadStatus.callbacks.push(callback);
+      }
+
+      return;
+    }
+
     const { transferSyntaxUID } =
       metaData.get(MetadataModules.TRANSFER_SYNTAX, imageIds[0]) || {};
     const imageRetrieveConfiguration = metaData.get(
@@ -433,10 +440,6 @@ export class BaseStreamingImageVolume
             ProgressiveRetrieveImages.createProgressive
           )(imageRetrieveConfiguration)
         : this;
-
-    if (loadStatus.loading === true) {
-      return; // Already loading, will get callbacks from main load.
-    }
 
     const { loaded } = this.loadStatus;
     const totalNumFrames = imageIds.length;
@@ -726,15 +729,14 @@ export class BaseStreamingImageVolume
     );
   }
 
+  /**
+   * The requests of the images of the volume. The volume counts as loading
+   * from then on: the requests are its load, whoever queues them, so a later
+   * `load` (the one of a mount) joins them and starts no second load.
+   */
   protected getImageIdsRequests(imageIds: string[], priorityDefault: number) {
+    this.loadStatus.loading = true;
     this.totalNumFrames = this.imageIds.length;
-    const autoRenderPercentage = 2;
-
-    if (this.autoRenderOnLoad) {
-      this.reRenderFraction =
-        this.totalNumFrames * (autoRenderPercentage / 100);
-      this.reRenderTarget = this.reRenderFraction;
-    }
 
     // 4D datasets load one time point at a time and the frameIndex is
     // the position of the imageId in the current time point while the
@@ -844,13 +846,6 @@ export class BaseStreamingImageVolume
     const imageIds = [...this.getImageIdsToLoad()];
 
     this.totalNumFrames = this.imageIds.length;
-    const autoRenderPercentage = 2;
-
-    if (this.autoRenderOnLoad) {
-      this.reRenderFraction =
-        this.totalNumFrames * (autoRenderPercentage / 100);
-      this.reRenderTarget = this.reRenderFraction;
-    }
 
     return this.imagesLoader.loadImages(imageIds, this).catch((e) => {
       log.debug('progressive loading failed to complete', e);

@@ -68,7 +68,6 @@ function makeVolume() {
   );
 
   // No rendering engine exists in these tests.
-  volume.autoRenderOnLoad = false;
 
   return { volume, imageIds };
 }
