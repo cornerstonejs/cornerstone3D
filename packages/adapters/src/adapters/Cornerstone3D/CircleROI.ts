@@ -23,7 +23,7 @@ class CircleROI extends BaseAdapter3D {
       state,
       NUMGroup,
       worldCoords,
-      referencedImageId,
+      statsTargetId,
       ReferencedFrameNumber,
     } = MeasurementReport.getSetupMeasurementData(
       MeasurementGroup,
@@ -31,12 +31,8 @@ class CircleROI extends BaseAdapter3D {
       metadata,
       this.toolType
     );
-    const referencedSOPInstanceUID = state.sopInstanceUid;
-    const allNUMGroups = extractAllNUMGroups(
-      MeasurementGroup,
-      referencedSOPInstanceUID
-    );
-    const measurementNUMGroups = allNUMGroups[referencedSOPInstanceUID] || {};
+    const allNUMGroups = extractAllNUMGroups(MeasurementGroup, statsTargetId);
+    const measurementNUMGroups = allNUMGroups[statsTargetId] || {};
     state.annotation.data = {
       ...state.annotation.data,
       handles: {
@@ -45,14 +41,14 @@ class CircleROI extends BaseAdapter3D {
       },
       frameNumber: ReferencedFrameNumber,
     };
-    if (referencedImageId) {
+    if (statsTargetId) {
       const metrics = restoreAdditionalMetrics(measurementNUMGroups);
       // The tool recomputes its stats only when the units are missing, so a
       // restored radius is shown as is. SRs written before the radius was
       // stored carry only the perimeter, which gives it.
       const radius = metrics.radius ?? (metrics.perimeter ?? 0) / (2 * Math.PI);
       state.annotation.data.cachedStats = {
-        [`imageId:${referencedImageId}`]: {
+        [statsTargetId]: {
           area: NUMGroup ? NUMGroup.MeasuredValueSequence.NumericValue : 0,
           perimeter: 0,
           ...metrics,

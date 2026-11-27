@@ -31,7 +31,7 @@ export class RectangleROI extends BaseAdapter3D {
     sopInstanceUIDToImageIdMap,
     metadata
   ) {
-    const { state, worldCoords, referencedImageId, ReferencedFrameNumber } =
+    const { state, worldCoords, statsTargetId, ReferencedFrameNumber } =
       MeasurementReport.getSetupMeasurementData(
         MeasurementGroup,
         sopInstanceUIDToImageIdMap,
@@ -43,16 +43,12 @@ export class RectangleROI extends BaseAdapter3D {
     const points =
       worldCoords.length === 5 ? worldCoords.slice(0, 4) : worldCoords;
 
-    const referencedSOPInstanceUID = state.sopInstanceUid;
-    const allNUMGroups = extractAllNUMGroups(
-      MeasurementGroup,
-      referencedSOPInstanceUID
-    );
-    const measurementNUMGroups = allNUMGroups[referencedSOPInstanceUID] || {};
+    const allNUMGroups = extractAllNUMGroups(MeasurementGroup, statsTargetId);
+    const measurementNUMGroups = allNUMGroups[statsTargetId] || {};
 
-    const cachedStats = referencedImageId
+    const cachedStats = statsTargetId
       ? {
-          [`imageId:${referencedImageId}`]: {
+          [statsTargetId]: {
             area: 0,
             ...restoreAdditionalMetrics(measurementNUMGroups),
           },

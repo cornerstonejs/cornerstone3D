@@ -20,7 +20,7 @@ class Bidirectional extends BaseAdapter3D {
     sopInstanceUIDToImageIdMap,
     metadata
   ) {
-    const { state, scoordArgs, referencedImageId, ReferencedFrameNumber } =
+    const { state, scoordArgs, statsTargetId, ReferencedFrameNumber } =
       MeasurementReport.getSetupMeasurementData(
         MeasurementGroup,
         sopInstanceUIDToImageIdMap,
@@ -66,14 +66,13 @@ class Bidirectional extends BaseAdapter3D {
       frameNumber: ReferencedFrameNumber,
     };
 
-    if (referencedImageId) {
+    if (statsTargetId) {
       const { length, width, unit, widthUnit } = restoreAdditionalMetrics(
-        extractAllNUMGroups(MeasurementGroup, state.sopInstanceUid)[
-          state.sopInstanceUid
-        ] || {}
+        extractAllNUMGroups(MeasurementGroup, statsTargetId)[statsTargetId] ||
+          {}
       );
       state.annotation.data.cachedStats = {
-        [`imageId:${referencedImageId}`]: { length, width, unit, widthUnit },
+        [statsTargetId]: { length, width, unit, widthUnit },
       };
     }
 

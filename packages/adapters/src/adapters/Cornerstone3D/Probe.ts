@@ -31,7 +31,7 @@ class Probe extends BaseAdapter3D {
       state,
       NUMGroup,
       worldCoords,
-      referencedImageId,
+      statsTargetId,
       ReferencedFrameNumber,
     } = MeasurementReport.getSetupMeasurementData(
       MeasurementGroup,
@@ -40,9 +40,9 @@ class Probe extends BaseAdapter3D {
       this.toolType
     );
 
-    const cachedStats = referencedImageId
+    const cachedStats = statsTargetId
       ? {
-          [`imageId:${referencedImageId}`]: {
+          [statsTargetId]: {
             value: NUMGroup?.MeasuredValueSequence?.NumericValue ?? null,
           },
         }

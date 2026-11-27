@@ -115,6 +115,7 @@ describe('Length measurement unit', () => {
         NUMGroup,
         worldCoords: tool2d.data.handles.points,
         referencedImageId: tool2d.metadata.referencedImageId,
+        statsTargetId: imageKey,
         ReferencedFrameNumber: undefined,
       });
     try {

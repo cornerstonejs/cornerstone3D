@@ -37,6 +37,9 @@ export interface AdditionalMetrics {
  * contains a set of measurements for that instance (e.g., `{ Mean: { value, unit }, Area: { value, unit } }`).
  *
  * @param {Object} MeasurementGroup - The TID1500 Measurement Group content item to parse.
+ * @param referencedSOPInstanceUID - The key of the result. The adapters pass
+ *   the `statsTargetId` of `getSetupMeasurementData`, which also covers an SR
+ *   that references the frame of reference only.
  *
  * @returns {Object} A dictionary of extracted NUM groups organized by SOP Instance UID.
  */

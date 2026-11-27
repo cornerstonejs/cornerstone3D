@@ -26,7 +26,7 @@ export default class Length extends BaseAdapter3D {
     sopInstanceUIDToImageIdMap,
     metadata
   ) {
-    const { state, worldCoords, referencedImageId, ReferencedFrameNumber } =
+    const { state, worldCoords, statsTargetId, ReferencedFrameNumber } =
       MeasurementReport.getSetupMeasurementData(
         MeasurementGroup,
         sopInstanceUIDToImageIdMap,
@@ -35,12 +35,10 @@ export default class Length extends BaseAdapter3D {
       );
 
     const { length = 0, unit } = restoreAdditionalMetrics(
-      extractAllNUMGroups(MeasurementGroup, state.sopInstanceUid)[
-        state.sopInstanceUid
-      ] || {}
+      extractAllNUMGroups(MeasurementGroup, statsTargetId)[statsTargetId] || {}
     );
-    const cachedStats = referencedImageId
-      ? { [`imageId:${referencedImageId}`]: { length, unit } }
+    const cachedStats = statsTargetId
+      ? { [statsTargetId]: { length, unit } }
       : {};
     state.annotation.data = {
       ...state.annotation.data,
