@@ -290,13 +290,20 @@ export function compileTemplate<Subject extends SafeFunctionSubject>(
       : readNameAt(segment.name, site, segment.field)
   );
   return (subject, context) =>
-    parts
-      .map((part) => {
-        const value = part(subject, context);
-        return hasNoValue(value) ? '' : String(value);
-      })
-      .join('')
-      .trim();
+    templateText(parts.map((part) => part(subject, context)));
+}
+
+/**
+ * Joins the values of the segments of a template into its text. A value with
+ * no value gives an empty string, and the text is trimmed, so a name with no
+ * value at the start or the end leaves no space. Each template compiler of
+ * the package uses this function, so all templates give the same text.
+ */
+export function templateText(values: unknown[]): string {
+  return values
+    .map((value) => (hasNoValue(value) ? '' : String(value)))
+    .join('')
+    .trim();
 }
 
 /**

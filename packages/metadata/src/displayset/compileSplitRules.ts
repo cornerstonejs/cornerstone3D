@@ -23,6 +23,7 @@ import {
   parseTemplate,
   readOwn,
   safeFunctionCompilers,
+  templateText,
   unrecognized,
 } from '../safeFunctions';
 import type { NameReaderFunction, SchemaSite } from '../safeFunctions';
@@ -209,13 +210,7 @@ function compileAttributeValue(
         })
   );
   return (runtime, instances, extras) =>
-    parts
-      .map((part) => {
-        const text = part(runtime, instances[0], extras);
-        return hasNoValue(text) ? '' : String(text);
-      })
-      .join('')
-      .trim(); // A name with no value must not leave a leading space: see compileTemplate.
+    templateText(parts.map((part) => part(runtime, instances[0], extras)));
 }
 
 /** `attributes`: a record of attribute values, or a whole `customAttributes` hook. */

@@ -19,7 +19,6 @@ import {
   didYouMean,
   compileExpressionAt,
   FORBIDDEN_PROPERTIES,
-  hasNoValue,
   hasOwn,
   invalidAt,
   isUnsafeKey,
@@ -28,6 +27,7 @@ import {
   parseTemplate,
   readOwn,
   RuleCompileError,
+  templateText,
 } from '../safeFunctions';
 import type {
   CompiledExpression,
@@ -1455,12 +1455,7 @@ export class ContextProgram {
               }
         );
         bound.compute = (runtime, instance) =>
-          parts
-            .map((part) => {
-              const value = part(runtime, instance);
-              return hasNoValue(value) ? '' : String(value);
-            })
-            .join('');
+          templateText(parts.map((part) => part(runtime, instance)));
         break;
       }
       case 'group': {

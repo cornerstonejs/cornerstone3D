@@ -866,6 +866,10 @@ changes the threshold.
 `"label": "SCOUT"` is a compile error, because `SCOUT` is not a name. The
 message names the template form.
 
+A name with no value gives no text, and each template (in `attributes` and in
+`context`) trims its text. `{SeriesDescription} b={DiffusionBValue}` without a
+description gives `b=0`, not `' b=0'`.
+
 #### The series and the display set
 
 A bare name always means the value of the series. A value of the display set
