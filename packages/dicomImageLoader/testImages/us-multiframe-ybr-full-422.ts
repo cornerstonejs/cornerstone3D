@@ -31,7 +31,7 @@ const EXPECTED_IMAGE: Types.IImage = {
   color: true,
   columnPixelSpacing: 1,
   columns: 800,
-  dataType: 'Uint8Array',
+  dataType: 'Uint8ClampedArray',
   data: jasmine.any(Object),
   // @ts-expect-error Extra fields not defined in IImage
   decodeTimeInMS: jasmine.any(Number),
@@ -53,12 +53,14 @@ const EXPECTED_IMAGE: Types.IImage = {
     greenPaletteColorLookupTableData: undefined,
     greenPaletteColorLookupTableDescriptor: undefined,
     // @ts-expect-error jasmine matcher
+    imageData: { data: jasmine.any(Uint8ClampedArray) },
+    // @ts-expect-error jasmine matcher
     imageId: jasmine.any(String),
     largestPixelValue: 255,
     photometricInterpretation: 'YBR_FULL_422',
     // @ts-expect-error jasmine matcher
-    pixelData: jasmine.any(Uint8Array),
-    pixelDataLength: 960000,
+    pixelData: jasmine.any(Uint8ClampedArray),
+    pixelDataLength: 1440000,
     pixelRepresentation: 0,
     planarConfiguration: 0,
     redPaletteColorLookupTableData: undefined,
@@ -78,7 +80,7 @@ const EXPECTED_IMAGE: Types.IImage = {
   rgba: undefined,
   rowPixelSpacing: 1,
   rows: 600,
-  sizeInBytes: 960000,
+  sizeInBytes: 1440000,
   slope: 1,
   voiLUTFunction: undefined,
   width: 800,
@@ -147,9 +149,9 @@ const MULTIFRAME_MODULE = {
 const TEST_NAME = 'US Multiframe YBR Full 422';
 
 const FRAME_1_PIXEL_DATA_HASH =
-  '969155018b2b569d530b22bfdc537650c7162c56bad3783f1d1ecab2d558abf0';
+  '61a7604d8c642293c8eef82bbed95e82125f3c9e940d46ee029001d357f3a0b3';
 const FRAME_78_PIXEL_DATA_HASH =
-  '31f6c10f923f9b970dc81e7bd6b2a68376abceeb47b91efa6ea481391df1c6c0';
+  '802c5dd537f7adff670e09538f026df26818278cf695f9ab2b818f6329649411';
 
 export const WADOURI_TEST: IWadoUriTest = {
   name: TEST_NAME,
