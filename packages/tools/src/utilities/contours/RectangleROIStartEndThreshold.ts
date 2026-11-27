@@ -19,7 +19,9 @@ class RectangleROIStartEndThreshold {
 
       return {
         NumberOfContourPoints: ContourData.length / 3,
-        ContourImageSequence,
+        // Contour Image Sequence is optional (Type 3); leave it out for a
+        // projection without a matching image, e.g. outside the volume.
+        ...(ContourImageSequence && { ContourImageSequence }),
         ContourGeometricType: 'CLOSED_PLANAR',
         ContourData,
       };
@@ -50,7 +52,14 @@ function getPointData(points) {
 }
 
 function getContourImageSequence(imageId, metadataProvider) {
+  if (!imageId) {
+    return;
+  }
+
   const sopCommon = metadataProvider.get('sopCommonModule', imageId);
+  if (!sopCommon) {
+    return;
+  }
 
   return {
     ReferencedSOPClassUID: sopCommon.sopClassUID,
