@@ -44,12 +44,16 @@ function getImageSliceDataForVolumeViewport(
   const sliceRange = getSliceRange(volumeActor, viewPlaneNormal, focalPoint);
 
   const { min, max, current } = sliceRange;
+  const range = max - min;
 
   // calculate number of steps from min to max with current normal spacing in direction
-  const numberOfSlices = Math.round((max - min) / spacingInNormalDirection) + 1;
+  const numberOfSlices = Math.round(range / spacingInNormalDirection) + 1;
 
   // calculate the imageIndex based on min, max, current
-  let imageIndex = ((current - min) / (max - min)) * numberOfSlices;
+  // A single-slice volume can collapse the range to zero, where
+  // `(current - min) / range` would be 0 / 0 = NaN, which the clamp below
+  // does not catch.
+  let imageIndex = range === 0 ? 0 : ((current - min) / range) * numberOfSlices;
   imageIndex = Math.floor(imageIndex);
 
   // Clamp imageIndex
