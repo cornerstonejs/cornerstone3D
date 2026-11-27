@@ -3,7 +3,10 @@ let csRenderInitialized = false;
 import deepMerge from './utilities/deepMerge';
 import type { Cornerstone3DConfig, LossyDownsampling } from './types';
 import CentralizedWebWorkerManager from './webWorkerManager/webWorkerManager';
-import { getRenderingCapabilities } from './utilities/renderingCapabilities';
+import {
+  getRenderingCapabilities,
+  setMaxTextureEdgeReader,
+} from './utilities/renderingCapabilities';
 import triggerEvent from './utilities/triggerEvent';
 import eventTarget from './eventTarget';
 import {
@@ -98,6 +101,10 @@ let config: Cornerstone3DConfig = {
   rendering: { ...defaultConfig.rendering },
   segmentation: { ...defaultConfig.segmentation },
 };
+
+setMaxTextureEdgeReader(
+  () => config.rendering?.autoGpuSettings?.maxTextureEdge
+);
 
 let webWorkerManager: CentralizedWebWorkerManager | null = null;
 

@@ -21,7 +21,7 @@ class Angle extends BaseAdapter3D {
       state,
       NUMGroup,
       worldCoords,
-      referencedImageId,
+      statsTargetId,
       ReferencedFrameNumber,
     } = MeasurementReport.getSetupMeasurementData(
       MeasurementGroup,
@@ -30,9 +30,9 @@ class Angle extends BaseAdapter3D {
       this.toolType
     );
 
-    const cachedStats = referencedImageId
+    const cachedStats = statsTargetId
       ? {
-          [`imageId:${referencedImageId}`]: {
+          [statsTargetId]: {
             angle: NUMGroup
               ? NUMGroup.MeasuredValueSequence.NumericValue
               : null,

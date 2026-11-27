@@ -1,6 +1,6 @@
-import { VOILUTFunctionType } from '../../../enums';
 import type { FidelityIssue, IImage, IImageVolume } from '../../../types';
 import { asArrayFirst } from '../../../utilities/asArray';
+import { normalizeVOILUTFunction } from '../../../utilities/voiLUTFunction';
 
 /**
  * The issue for a VOI LUT function that the display does not know
@@ -15,8 +15,8 @@ export function voiLUTFunctionIssueOf(
   if (
     value === undefined ||
     value === null ||
-    value === '' ||
-    Object.values(VOILUTFunctionType).includes(value as VOILUTFunctionType)
+    String(value).replace(/\0/g, '').trim() === '' ||
+    normalizeVOILUTFunction(value)
   ) {
     return;
   }

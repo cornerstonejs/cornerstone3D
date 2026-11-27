@@ -401,8 +401,13 @@ states map to the states of this specification: transiently lossy is
     `done` or `hidden`.
   - A spatial reduction takes `cause` from the strategy that chose the grid
     (`IVolumeRenderStrategy.reductionCause`, `reductionCauseOf()`):
-    `deviceTextureLimit` when the edge limit of the GPU settings alone reduces
-    the volume, `memoryBudget` when only the texture memory does. A reduction
+    `memoryBudget` when the memory limit of the GPU settings reduces the
+    volume at least as much as the edge limit does, and `deviceTextureLimit`
+    when the edge limit reduces it more. Under `auto`, the memory limit is the
+    share of the volume (see
+    [GPU device limits](./gpu-device-limits/implementation.md), GPULIM-I-4).
+    An application can thus offer a larger memory limit when the cause is
+    `memoryBudget`. A reduction
     that no strategy explains gives no cause. `lod` and an idle sample distance multiplier give
     `performanceTarget`.
   - `shownState` and `lossy` come from every volume of the viewport. The other
@@ -507,14 +512,11 @@ FIDELITY-STATE-13 lists the rows and the columns of the decoded image as a
 display issue. The code does not detect that issue yet. A loader can report
 the issue on `IImage.fidelityIssues` when it adds the check.
 
-Core detects only a VOI LUT function that is not a known function. Core does
-not detect a known function that a viewport cannot draw. These viewports draw
-`LINEAR` for each function, and show no display issue:
-
-- The CPU viewports, for example `SIGMOID` or `LINEAR_EXACT`. #2856 adds the
-  function to the CPU render.
-- The generic viewport when it shows a slice of a volume, for example in MPR
-  (`planarAcquiredFrames.ts`). Issue #3021 records the volume work.
+Core detects only a VOI LUT function that is not a known function. Each
+viewport draws the known functions (`LINEAR`, `LINEAR_EXACT` and `SIGMOID`):
+the stack and volume viewports, the CPU viewports, and the generic viewport
+when it shows a slice of a volume, for example in MPR. Thus a known function
+gives no display issue.
 
 A volume gets its issues from the metadata of the volume, which comes from the
 first image. An issue of a different image of the volume does not show. The

@@ -32,10 +32,21 @@ import {
   setGpuSettingsPreset,
 } from '../src/utilities/gpuSettingsPresets';
 import { setLossyDownsampling } from '../src/init';
+import * as renderingCapabilities from '../src/utilities/renderingCapabilities';
 import eventTarget from '../src/eventTarget';
 import triggerEvent from '../src/utilities/triggerEvent';
 import { VtkImageMapperRenderPath } from '../src/RenderingEngine/GenericViewport/Planar/VtkImageMapperRenderPath';
 import { dataKindOf } from '../src/RenderingEngine/helpers/fidelityIndicator/fidelityIndicatorState';
+
+/**
+ * The GPU settings apply to a GPU renderer only, and jsdom has no WebGL, so
+ * the renderer is a desktop GPU here.
+ */
+beforeEach(() => {
+  jest
+    .spyOn(renderingCapabilities, 'getRendererClass')
+    .mockReturnValue('desktop');
+});
 
 // These tests need final downsampling, which is off by default.
 beforeAll(() => setLossyDownsampling({ final: true }));
@@ -501,7 +512,7 @@ describe('PlanarViewport acquired frames in the volume path (user experience)', 
     expect(frameRendering().actor.getVisibility()).toBe(false);
   });
 
-  it('draws the frame with the volume VOI and its linear function', async () => {
+  it('draws the frame with the volume VOI and the function of the volume slice', async () => {
     await mount();
     await releaseFrames();
     viewport.setDisplaySetPresentation(dataId, {
@@ -512,12 +523,8 @@ describe('PlanarViewport acquired frames in the volume path (user experience)', 
       .actor.getProperty()
       .getRGBTransferFunction(0);
 
-    // The frame window (center 1000, width 50) does not apply, and a sigmoid
-    // does not apply because the volume slice draws a linear VOI.
-    expect(transferFunction.getRange()).toEqual([
-      volumeVOI.lower,
-      volumeVOI.upper,
-    ]);
+    // The frame window (center 1000, width 50) does not apply; the sigmoid of
+    // the volume slice does.
     const nodes = (tf) =>
       Array.from({ length: tf.getSize() }, (_, i) => {
         const node = [];
@@ -525,7 +532,7 @@ describe('PlanarViewport acquired frames in the volume path (user experience)', 
         return node;
       });
     expect(nodes(transferFunction)).toEqual(
-      nodes(utilities.createLinearRGBTransferFunction(volumeVOI))
+      nodes(utilities.createSigmoidRGBTransferFunction(volumeVOI))
     );
   });
 
