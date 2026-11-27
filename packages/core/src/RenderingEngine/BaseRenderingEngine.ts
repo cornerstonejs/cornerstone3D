@@ -71,6 +71,20 @@ abstract class BaseRenderingEngine {
   protected useCPURendering: boolean;
 
   /**
+   * Renders every viewport when a wait for WebGL ends, so the textures and the
+   * contexts that waited are created, and the images catch up with the data
+   * that loaded during the wait.
+   */
+  private _onWebGLAvailabilityChanged = (event: Event): void => {
+    const { blocked } =
+      (event as CustomEvent<{ blocked: boolean }>).detail ?? {};
+
+    if (!blocked && !this.hasBeenDestroyed) {
+      this.render();
+    }
+  };
+
+  /**
    * @param uid - Unique identifier for RenderingEngine
    */
   constructor(id?: string) {
@@ -87,6 +101,10 @@ abstract class BaseRenderingEngine {
 
     this._viewports = new Map();
     this.hasBeenDestroyed = false;
+    eventTarget.addEventListener(
+      Events.WEBGL_AVAILABILITY_CHANGED,
+      this._onWebGLAvailabilityChanged
+    );
 
     const config = getConfiguration();
 
@@ -444,6 +462,10 @@ abstract class BaseRenderingEngine {
     }
 
     renderingEngineCache.delete(this.id);
+    eventTarget.removeEventListener(
+      Events.WEBGL_AVAILABILITY_CHANGED,
+      this._onWebGLAvailabilityChanged
+    );
 
     this.hasBeenDestroyed = true;
   }
@@ -765,6 +787,17 @@ abstract class BaseRenderingEngine {
    *
    * @param viewport - The `Viewport` to render.
    */
+  /**
+   * Releases what the engine holds for a viewport that a reset of the layout
+   * removes, for example its GPU memory entries. A removal of one viewport
+   * releases them through the engine's own removal path.
+   *
+   * @param _viewportId - the viewport that goes
+   */
+  protected _releaseViewportResources(_viewportId: string): void {
+    /** The base engine holds nothing for a viewport. */
+  }
+
   private _resetViewport(viewport: IViewport) {
     const renderingEngineId = this.id;
 
@@ -792,6 +825,7 @@ abstract class BaseRenderingEngine {
     element.removeAttribute('data-viewport-uid');
     element.removeAttribute('data-rendering-engine-uid');
     restoreElementTouchAction(element);
+    this._releaseViewportResources(viewportId);
 
     // clear drawing
     const context = canvas.getContext('2d');

@@ -28,6 +28,7 @@ import type {
   VtkOffscreenMultiRenderWindow,
 } from '../types';
 import { getViewportClassForInput } from './helpers/viewportTypeToViewportClass';
+import isWebGLContextLost from './helpers/isWebGLContextLost';
 import { isGenericViewport } from '../utilities/viewportCapabilities';
 
 /**
@@ -335,6 +336,13 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
   /**
    * Renders all viewports.
    */
+  /**
+   * The viewports of this frame whose render a lost WebGL context skipped:
+   * their canvas keeps its image, so they count as neither rendered nor
+   * drawn at a new fidelity.
+   */
+  private _skippedByLostContext = new Set<string>();
+
   protected _renderFlaggedViewports = (): void => {
     this._throwIfDestroyed();
 
@@ -351,16 +359,31 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
 
     const renderStart = performance.now();
 
-    // Render all viewports synchronously
-    const eventDetails = viewportsToRender.map((viewport) => {
-      const eventDetail = this.renderViewportUsingCustomOrVtkPipeline(viewport);
-      viewport.setRendered();
-      this._needsRender.delete(viewport.id);
-      return eventDetail;
-    });
+    let eventDetails: EventTypes.ImageRenderedEventDetail[];
 
-    this._animationFrameSet = false;
-    this._animationFrameHandle = null;
+    this._skippedByLostContext.clear();
+
+    try {
+      /** Render all viewports synchronously. */
+      eventDetails = viewportsToRender.map((viewport) => {
+        const eventDetail =
+          this.renderViewportUsingCustomOrVtkPipeline(viewport);
+
+        if (!this._skippedByLostContext.has(viewport.id)) {
+          viewport.setRendered();
+        }
+
+        this._needsRender.delete(viewport.id);
+        return eventDetail;
+      });
+    } finally {
+      /**
+       * A render that throws must not leave the frame flag set: the engine
+       * would then schedule no frame again, for any viewport.
+       */
+      this._animationFrameSet = false;
+      this._animationFrameHandle = null;
+    }
 
     const waiting = viewportsToRender.map((vp) =>
       this._waitsForStorage(vp, renderStart)
@@ -376,9 +399,42 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     // Fidelity event after IMAGE_RENDERED so consumers can query the frame
     // that was just drawn.
     this._notifyFidelityOfRenderedViewports(
-      viewportsToRender.filter((_vp, index) => !waiting[index])
+      viewportsToRender.filter(
+        (vp, index) => !waiting[index] && !this._skippedByLostContext.has(vp.id)
+      )
     );
   };
+
+  /**
+   * Runs for each viewport that goes, by a removal or by a reset of the layout
+   * (`setViewports`): the pool forgets its size and its canvas entry in the
+   * GPU memory ledger, and the shared offscreen canvas of its context shrinks
+   * to the viewports that remain, so the render-buffer charge matches the
+   * canvas. The render buffer keeps its charge while no viewport remains.
+   */
+  protected _releaseViewportResources(viewportId: string): void {
+    if (!this.contextPool) {
+      return;
+    }
+
+    const contextIndex =
+      this.contextPool.getContextIndexForViewport(viewportId);
+
+    this.contextPool.removeViewport(viewportId);
+
+    const contextData =
+      contextIndex !== undefined
+        ? this.contextPool.getContextByIndex(contextIndex)
+        : null;
+
+    if (contextData) {
+      this._fitOffScreenCanvasToContext(
+        contextIndex,
+        contextData.container,
+        contextData.context
+      );
+    }
+  }
 
   private renderViewportUsingCustomOrVtkPipeline(
     viewport: IViewport
@@ -445,6 +501,15 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
       );
     }
 
+    /**
+     * A lost context renders nothing: vtk.js throws there, and the throw would
+     * stop the renders of every other viewport. The canvas keeps its image.
+     */
+    if (isWebGLContextLost(offscreenMultiRenderWindow)) {
+      this._skippedByLostContext.add(viewport.id);
+      return;
+    }
+
     // Add renderer if not already present
     if (!offscreenMultiRenderWindow.getRenderer(viewport.id)) {
       offscreenMultiRenderWindow.addRenderer({
@@ -503,21 +568,56 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
       renderer.setDraw(viewportId === viewport.id);
     });
 
-    renderWindow.render();
+    let lostDuringRender = false;
 
-    allRenderers.forEach(({ renderer: r }) => r.setDraw(false));
+    try {
+      renderWindow.render();
+    } catch (error) {
+      /**
+       * A context can be lost in the middle of a render, for example during
+       * the upload of a large texture, and vtk.js then throws at the next call
+       * that the lost context refuses. That render ends here; any other error
+       * is thrown on.
+       */
+      if (!isWebGLContextLost(offscreenMultiRenderWindow)) {
+        throw error;
+      }
 
-    widgetRenderers.forEach((_, renderer) => {
-      renderer.setDraw(false);
-    });
+      lostDuringRender = true;
+      log.warn(
+        'a render ended because its WebGL context was lost during it',
+        error
+      );
+    } finally {
+      allRenderers.forEach(({ renderer: r }) => r.setDraw(false));
 
-    if (originalRenderPasses) {
-      view.setRenderPasses(originalRenderPasses);
+      widgetRenderers.forEach((_, renderer) => {
+        renderer.setDraw(false);
+      });
+
+      if (originalRenderPasses) {
+        view.setRenderPasses(originalRenderPasses);
+      }
+    }
+
+    /**
+     * A lost context can also fail its calls with no throw, so the render
+     * returns normally: its offscreen canvas then holds nothing to copy.
+     */
+    if (lostDuringRender || isWebGLContextLost(offscreenMultiRenderWindow)) {
+      this._skippedByLostContext.add(viewport.id);
+      return;
     }
 
     const openGLRenderWindow =
       offscreenMultiRenderWindow.getOpenGLRenderWindow();
     const context = openGLRenderWindow.get3DContext();
+
+    /** No context while WebGL waits: the image on screen stays. */
+    if (!context) {
+      return undefined;
+    }
+
     const offScreenCanvas = context.canvas;
 
     const eventDetail = this._copyToOnscreenCanvas(viewport, offScreenCanvas);
@@ -756,35 +856,25 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     if (!viewport) {
       return;
     }
+
+    /**
+     * The base removal releases the viewport from the pool (see
+     * `_releaseViewportResources`), so its context is read first.
+     */
+    const contextIndex =
+      this.contextPool?.getContextIndexForViewport(viewportId);
+    const contextData =
+      contextIndex !== undefined
+        ? this.contextPool.getContextByIndex(contextIndex)
+        : null;
+
     super.disableElement(viewportId);
 
     if (
       !viewportTypeUsesCustomRenderingPipeline(viewport.type) &&
-      this.contextPool
+      contextData
     ) {
-      const contextIndex =
-        this.contextPool.getContextIndexForViewport(viewportId);
-
-      const contextData =
-        contextIndex !== undefined
-          ? this.contextPool.getContextByIndex(contextIndex)
-          : null;
-
-      if (contextData) {
-        contextData.context.removeRenderer(viewportId);
-      }
-
-      this.contextPool.removeViewport(viewportId);
-
-      // The removed viewport may have been the largest one on this context:
-      // shrink the shared offscreen canvas to the viewports that remain.
-      if (contextData) {
-        this._fitOffScreenCanvasToContext(
-          contextIndex,
-          contextData.container,
-          contextData.context
-        );
-      }
+      contextData.context.removeRenderer(viewportId);
     }
   }
 

@@ -350,6 +350,34 @@ enum Events {
   WEBGL_CONTEXT_RESTORED = 'CORNERSTONE_WEBGL_CONTEXT_RESTORED',
 
   /**
+   * Triggers on the eventTarget when a large GPU allocation fails: a context
+   * loss, a tab that stopped (found at the next start), or `OUT_OF_MEMORY`.
+   * The detail holds the failure, the record and a suggested limit, which
+   * Cornerstone3D does not apply. See `GpuMemoryFailureEventDetail`.
+   */
+  GPU_MEMORY_FAILURE = 'CORNERSTONE_GPU_MEMORY_FAILURE',
+
+  /**
+   * Triggers on the eventTarget when `setGpuMemoryLimit` or
+   * `resetGpuMemoryLimit` runs. `VOLUME_TEXTURE_LIMITS_CHANGED` follows.
+   * See `GpuMemoryLimitChangedEventDetail`.
+   */
+  GPU_MEMORY_LIMIT_CHANGED = 'CORNERSTONE_GPU_MEMORY_LIMIT_CHANGED',
+
+  /**
+   * Triggers on the eventTarget when a calibration run ends with a result.
+   * See `GpuMemoryCalibratedEventDetail`.
+   */
+  GPU_MEMORY_CALIBRATED = 'CORNERSTONE_GPU_MEMORY_CALIBRATED',
+
+  /**
+   * Triggers on the eventTarget when new WebGL contexts and large GPU
+   * allocations start to wait, and again when the wait ends, in every open
+   * tab of the site. See `WebGLAvailabilityChangedEventDetail`.
+   */
+  WEBGL_AVAILABILITY_CHANGED = 'CORNERSTONE_WEBGL_AVAILABILITY_CHANGED',
+
+  /**
    * Triggers on the eventTarget when a GenericViewport render path throws
    * while mounting or rendering data. Like WEBGL_CONTEXT_LOST this is a
    * degradation signal for applications; no automatic backend switch happens.

@@ -224,6 +224,7 @@ import type {
 
 export type * from './MetadataModuleTypes';
 export type * from './InstanceTypes';
+export type * from './GpuMemory';
 
 export type {
   // config

@@ -15,6 +15,12 @@ import type { ColormapPublic } from './Colormap';
 import type IVolumeViewport from './IVolumeViewport';
 import type { ActorEntry } from './IActor';
 import type { ViewportFidelityState } from './ViewportFidelity';
+import type {
+  GpuMemoryCalibratedEventDetail,
+  GpuMemoryFailureEventDetail,
+  GpuMemoryLimitChangedEventDetail,
+  WebGLAvailabilityChangedEventDetail,
+} from './GpuMemory';
 
 /**
  * CAMERA_MODIFIED Event's data
@@ -502,6 +508,20 @@ type StackScrollOutOfBoundsEvent =
 type VolumeScrollOutOfBoundsEvent =
   CustomEventType<VolumeScrollOutOfBoundsEventDetail>;
 
+/** GPU_MEMORY_FAILURE event type */
+type GpuMemoryFailureEvent = CustomEventType<GpuMemoryFailureEventDetail>;
+
+/** GPU_MEMORY_LIMIT_CHANGED event type */
+type GpuMemoryLimitChangedEvent =
+  CustomEventType<GpuMemoryLimitChangedEventDetail>;
+
+/** GPU_MEMORY_CALIBRATED event type */
+type GpuMemoryCalibratedEvent = CustomEventType<GpuMemoryCalibratedEventDetail>;
+
+/** WEBGL_AVAILABILITY_CHANGED event type */
+type WebGLAvailabilityChangedEvent =
+  CustomEventType<WebGLAvailabilityChangedEventDetail>;
+
 /**
  * ACTORS_CHANGED Event's data
  */
@@ -576,4 +596,12 @@ export type {
   StackScrollOutOfBoundsEventDetail,
   CameraResetEvent,
   CameraResetEventDetail,
+  GpuMemoryFailureEvent,
+  GpuMemoryFailureEventDetail,
+  GpuMemoryLimitChangedEvent,
+  GpuMemoryLimitChangedEventDetail,
+  GpuMemoryCalibratedEvent,
+  GpuMemoryCalibratedEventDetail,
+  WebGLAvailabilityChangedEvent,
+  WebGLAvailabilityChangedEventDetail,
 };

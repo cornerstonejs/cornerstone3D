@@ -1,4 +1,8 @@
-import { utilities } from '@cornerstonejs/core';
+import {
+  utilities,
+  resetRenderingCapabilities,
+  setGpuMemoryLimit,
+} from '@cornerstonejs/core';
 
 type DemoConfig = {
   core?: {
@@ -106,4 +110,74 @@ export function applyLossyDownsamplingOverride(
       },
     },
   });
+}
+
+/** The bytes of each unit that `parseByteSize` reads. */
+const BYTES_OF_UNIT = {
+  MB: 1024 ** 2,
+  GB: 1024 ** 3,
+};
+
+/**
+ * Reads a size such as `512MB`, `1.5GB` or `2gb` as bytes. A number with no
+ * unit counts as megabytes.
+ *
+ * @returns the bytes, or `undefined` when the text is not a size
+ */
+export function parseByteSize(text: string | null): number | undefined {
+  const match = /^\s*(\d+(?:\.\d+)?)\s*(MB|GB)?\s*$/i.exec(text ?? '');
+
+  if (!match) {
+    return undefined;
+  }
+
+  const unit = (match[2] ?? 'MB').toUpperCase() as keyof typeof BYTES_OF_UNIT;
+
+  return Math.round(Number(match[1]) * BYTES_OF_UNIT[unit]);
+}
+
+/**
+ * Applies the GPU memory parameters of an example, in this order:
+ *
+ * - `?gpuReset=1` clears the stored record of the device and the memory limit
+ *   of the user, so the device is probed again.
+ * - `?gpuMemory=512MB` sets the memory limit as the user would in a dialog
+ *   (`MB` or `GB`). `?gpuMemoryHard=1` makes it a hard limit. The limit is
+ *   stored, so it stays after the parameter goes, until a reset.
+ *
+ * Call it after `initDemo`.
+ *
+ * @returns what was applied, for the log of the example, or an empty list
+ */
+export function applyGpuMemoryUrlParameters(): string[] {
+  const applied: string[] = [];
+
+  if (getBooleanUrlParam('gpuReset')) {
+    resetRenderingCapabilities({ clearStorage: true });
+    applied.push(
+      'gpuReset: the record of the device and the limit are cleared'
+    );
+  }
+
+  const sizeText = getUrlParam('gpuMemory');
+
+  if (sizeText === null) {
+    return applied;
+  }
+
+  const bytes = parseByteSize(sizeText);
+  const hard = getBooleanUrlParam('gpuMemoryHard');
+
+  try {
+    if (bytes === undefined) {
+      throw new Error(`"${sizeText}" is not a size such as 512MB or 2GB`);
+    }
+
+    setGpuMemoryLimit({ bytes, hard });
+    applied.push(`gpuMemory: the limit is ${sizeText}${hard ? ', hard' : ''}`);
+  } catch (error) {
+    applied.push(`gpuMemory: ignored, ${(error as Error).message}`);
+  }
+
+  return applied;
 }

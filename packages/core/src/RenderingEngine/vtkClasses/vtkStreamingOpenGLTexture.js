@@ -10,6 +10,19 @@ import VoxelStatistics from '../../enums/VoxelStatistics';
 import ImageQualityStatus from '../../enums/ImageQualityStatus';
 import autoLoad from '../../utilities/autoLoad';
 import { getConfiguration } from '../../init';
+import {
+  cancelTextureAllocation,
+  checkTextureOutOfMemory,
+  noteTextureAllocation,
+} from '../../utilities/gpuAllocationTracker';
+import { gpuTextureBytesPerVoxel } from '../../utilities/gpuSettingsPresets';
+import {
+  getGpuMemoryEntryBytes,
+  getGpuMemoryTotal,
+  removeGpuMemoryEntry,
+  setGpuMemoryEntry,
+} from '../../utilities/gpuMemoryLedger';
+import allocatedTextureBytes from './allocatedTextureBytes';
 
 const DEFAULT_MAX_SLICES_PER_RENDER = 16;
 const DEFAULT_MAX_MILLISECONDS_PER_RENDER = 8;
@@ -116,12 +129,105 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
   const superCreate3DFromRaw = publicAPI.create3DFromRaw;
 
   /**
+   * Tells the allocation tracker about a new GPU allocation, before it
+   * happens. A new upload of the same shape into the storage that the texture
+   * holds is no allocation. A release forgets the shape, so an upload after a
+   * move to another context is noted, and a loss or a crash during it is
+   * recorded. The shape counts as allocated only after an upload succeeded
+   * (see `create3DFromRaw`), so a retry after a failed upload is noted again.
+   *
+   * The size is the count of the strategy (see `gpuTextureBytesPerVoxel`).
+   * The ledger takes the size that vtk.js states after the allocation (see
+   * `noteAllocated`).
+   *
+   * @returns the shape of the upload
+   */
+  function noteAllocation(options) {
+    const shape = shapeOf(options);
+
+    if (shape === model.allocatedShape) {
+      return shape;
+    }
+
+    noteTextureAllocation({ ...sizesOf(options), owner: publicAPI });
+
+    return shape;
+  }
+
+  /**
+   * The bytes of an upload, and of the page with it. The page total leaves
+   * out the earlier upload that this one replaces.
+   */
+  function sizesOf({ width, height, depth, numComps, dataType }) {
+    const textureBytes =
+      width *
+      height *
+      depth *
+      gpuTextureBytesPerVoxel(dataType, numComps, {
+        norm16: Boolean(model.oglNorm16Ext),
+      });
+
+    return {
+      textureBytes,
+      totalBytes:
+        getGpuMemoryTotal() - getGpuMemoryEntryBytes(publicAPI) + textureBytes,
+    };
+  }
+
+  /** The shape of an upload, which tells a new allocation from a repeat. */
+  function shapeOf({ width, height, depth, numComps, dataType }) {
+    return `${width}x${height}x${depth}x${numComps}x${dataType}`;
+  }
+
+  /**
+   * Records the upload in the GPU memory ledger, with the bytes of the type
+   * that vtk.js uploaded (norm16, half float or float).
+   */
+  function noteAllocated() {
+    setGpuMemoryEntry(publicAPI, {
+      kind: 'texture',
+      bytes: allocatedTextureBytes(publicAPI),
+      volumeId: model.volumeId,
+    });
+  }
+
+  /**
    * The mappers allocate with `data: null`, which leaves the GPU storage empty,
    * so every slice needs a fill. `modified()` no longer implies that, and a
    * re-allocation after the first fill would otherwise stay black.
    */
   publicAPI.create3DFromRaw = (options) => {
-    const created = superCreate3DFromRaw(options);
+    /**
+     * A shape that ran out of GPU memory is refused until the shape changes,
+     * for example after a new memory limit, so a render does not fail again
+     * with the same size.
+     */
+    if (shapeOf(options) === model.outOfMemoryShape) {
+      return false;
+    }
+
+    const sizes = sizesOf(options);
+    const shape = noteAllocation(options);
+    let created = superCreate3DFromRaw(options);
+
+    /**
+     * Firefox and Safari report a GPU out of memory through `getError()` and
+     * keep the context. The storage is released and the caller skips the
+     * draw, as for a texture that the GPU settings refuse. The sizes go
+     * with the check, for an upload that wrote no pending record (a hidden
+     * page, or a texture below the size that the tracker notes).
+     */
+    if (created && checkTextureOutOfMemory(model.context, publicAPI, sizes)) {
+      model.outOfMemoryShape = shape;
+      publicAPI.releaseGraphicsResources();
+      created = false;
+    }
+
+    if (created) {
+      model.outOfMemoryShape = undefined;
+      model.allocatedShape = shape;
+      noteAllocated();
+    }
 
     if (created && !options.data) {
       // New storage reads 0, so a slice with no data needs no upload until a
@@ -292,6 +398,11 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
     const window = model._openGLRenderWindow;
 
     releaseInitFence();
+    removeGpuMemoryEntry(publicAPI);
+    /** A released texture is no allocation that a later loss can report. */
+    cancelTextureAllocation(publicAPI);
+    /** The next upload allocates again, also at the same shape. */
+    model.allocatedShape = undefined;
     superReleaseGraphicsResources(
       rwin ?? (window?.isDeleted?.() ? undefined : window)
     );
@@ -301,6 +412,9 @@ function vtkStreamingOpenGLTexture(publicAPI, model) {
 
   publicAPI.delete = () => {
     releaseInitFence();
+    removeGpuMemoryEntry(publicAPI);
+    /** A released texture is no allocation that a later loss can report. */
+    cancelTextureAllocation(publicAPI);
     superDelete();
   };
 

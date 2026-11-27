@@ -401,8 +401,13 @@ states map to the states of this specification: transiently lossy is
     `done` or `hidden`.
   - A spatial reduction takes `cause` from the strategy that chose the grid
     (`IVolumeRenderStrategy.reductionCause`, `reductionCauseOf()`):
-    `deviceTextureLimit` when the edge limit of the GPU settings alone reduces
-    the volume, `memoryBudget` when only the texture memory does. A reduction
+    `memoryBudget` when the memory limit of the GPU settings reduces the
+    volume at least as much as the edge limit does, and `deviceTextureLimit`
+    when the edge limit reduces it more. Under `auto`, the memory limit is the
+    share of the volume (see
+    [GPU device limits](./gpu-device-limits/implementation.md), GPULIM-I-4).
+    An application can thus offer a larger memory limit when the cause is
+    `memoryBudget`. A reduction
     that no strategy explains gives no cause. `lod` and an idle sample distance multiplier give
     `performanceTarget`.
   - `shownState` and `lossy` come from every volume of the viewport. The other

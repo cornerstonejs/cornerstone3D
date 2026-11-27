@@ -783,13 +783,17 @@ dimensions of the volume, no GPU settings preset applies, and a 3D render uses
 the sample distance of 4.x. The `interactive` and `interleavedLoading` kinds
 keep the behaviour of 4.x.
 
-With `final: true`, a volume texture comes from a GPU settings preset. A preset
-is a named set of values (`low-tablet`, `low`, `medium`, `high`), and nothing
-probes the device to choose it. When an application selects no preset, `high`
-applies, and it limits each edge of a 3D texture to 2048 voxels. A volume with a
-longer axis then draws from a box-average reduction of that axis. For example, a
-CT of 512 × 512 × 2464 draws with a factor of 2 along k, also on a device that
-supports a 4096 texture edge.
+With `final: true`, a volume texture comes from a GPU settings preset. When an
+application selects no preset, `auto` applies. `auto` tests the texture edge of
+the device once, keeps the result in the browser, and tests no edge above 2048.
+When 2048 passes, `auto` uses `MAX_3D_TEXTURE_SIZE` of the device. The memory
+limit of `auto` applies to the whole page: 2 GB on a desktop GPU and 1 GB on a
+phone or a tablet, unless the application or the user sets a different limit
+(`rendering.autoGpuSettings`, `setGpuMemoryLimit`). Each display set that fits a
+fair share of that limit draws at full resolution, and only a larger display set
+draws reduced. A named preset (`low-tablet`, `low`, `medium`, `high`) is a fixed
+limit for each texture, and it overrides `auto`. See
+[GPU device limits](../../specs/core/gpu-device-limits/requirements.md).
 
 ### Why This Matters
 
@@ -797,9 +801,9 @@ Each kind of lossy downsampling shows pixels that differ from the source data.
 An application turns on a kind only when it also tells the user that the image
 is lossy.
 
-The reported `MAX_3D_TEXTURE_SIZE` is not a reliable limit, so no preset reads
-it. Some Android devices report 2048 or more, but render only 256 per axis. No
-tested device renders beyond 2048. Without final downsampling, such a device can
+The reported `MAX_3D_TEXTURE_SIZE` is not a reliable limit below 2048: some
+Android devices report 2048 or more, but render only 256 per axis. The test of
+`auto` finds that edge. No tested device fails above 2048. Without final downsampling, such a device can
 show a uniform gray image or lose its WebGL context.
 
 ### Migration Guidance
@@ -812,8 +816,8 @@ show a uniform gray image or lose its WebGL context.
 - **To fit the texture to a weak device,** set
   `rendering.lossyDownsampling.final` to `true` in the `init` configuration, or
   call `setLossyDownsampling({ final: true })` before a viewport adds its
-  actors. Then call `setGpuSettingsPreset`. Use `low` or `low-tablet` for a
-  device that renders only 256 per axis.
+  actors. `auto` then fits the textures to the device. To force fixed limits,
+  call `setGpuSettingsPreset`, for example with `low` or `low-tablet`.
 - **To show no lossy pixels at all,** set `interactive` and
   `interleavedLoading` to `false` as well.
 - **For a full-resolution long axis with final downsampling on,** the only
@@ -1018,6 +1022,102 @@ differently, and the 5.x code to use.
     // Code that captures the first frame needs no change: wait for the event.
     element.addEventListener(Events.IMAGE_RENDERED, capture, { once: true });
     ```
+
+14. **A page keeps GPU rendering while the browser blocks WebGL.** Default
+    settings. Chromium blocks WebGL for a site for about two minutes after
+    repeated context losses. In 4.x a page that loaded during the block found
+    no WebGL2 context, so `init` switched it to CPU rendering, and a render
+    window that got no context threw. In 5.x the page waits for WebGL:
+    `getRenderingCapabilities()` reports `webgl: true` with
+    `webglBlocked: true`, from the stored record of the device, the viewports
+    draw nothing until the wait ends, and then they draw. An application that
+    reads `webgl === false` as "no GPU" needs no change; one that shows its own
+    message during the wait reads `webglBlocked` or `isWebGLBlocked()`.
+
+    ```js
+    /** 5.x */
+    if (getRenderingCapabilities().webglBlocked) {
+      await whenWebGLAvailable();
+    }
+    ```
+
+15. **A large texture waits after a GPU memory failure.** Default settings.
+    After a failure, a texture of 64 MB or more is not allocated in any tab of
+    the site until WebGL works again (see
+    [GPU memory failures and the wait for WebGL](#gpu-memory-failures-and-the-wait-for-webgl)).
+    A viewport that needs one draws it when the wait ends, and every
+    rendering engine renders then.
+
+## GPU memory failures and the wait for WebGL
+
+### What Changed
+
+Cornerstone3D reports a GPU memory failure, waits for WebGL after it in every
+tab of the site, and offers one calibration run. It never changes the memory
+limit by itself: the application shows the facts and the user picks.
+
+| Event                        | When it fires                                                                                      |
+| ---------------------------- | -------------------------------------------------------------------------------------------------- |
+| `GPU_MEMORY_FAILURE`         | A lost context, a tab that stopped (found at the next start), or an out of memory during an upload |
+| `GPU_MEMORY_LIMIT_CHANGED`   | `setGpuMemoryLimit` or `resetGpuMemoryLimit`, with the limit before and after                      |
+| `WEBGL_AVAILABILITY_CHANGED` | A wait for WebGL starts or ends, in this tab or in another tab of the site                         |
+| `GPU_MEMORY_CALIBRATED`      | A calibration run ends with a result                                                               |
+
+The new functions of `@cornerstonejs/core`:
+
+- `getGpuMemoryStatus()`: the limit and its source, the GPU memory of the
+  page, `noGpuSizeWorks`, `cpuRecommended`, `canCalibrate` and the wait.
+- `getGpuMemoryHistory()`: the successes and the failures of each size of
+  `GPU_MEMORY_BUCKETS_GB`, the largest load and texture that worked, the last
+  failure and the last calibration.
+- `suggestGpuMemoryLimit()`, `getLastGpuMemoryFailure()`,
+  `acknowledgeGpuMemoryFailure()`.
+- `canRunGpuMemoryCalibration()`, `runGpuMemoryCalibration()`.
+- `isWebGLBlocked()`, `whenWebGLAvailable()`.
+
+The browser storage holds new keys: `cornerstone3D.webglBlockedUntil`,
+`cornerstone3D.gpuMemoryFailureTimes` and `cornerstone3D.gpuMemoryCalibration`
+in the capability storage, and `cornerstone3D.tabId` in `sessionStorage`.
+
+### Why This Matters
+
+After a GPU failure, a browser can fail again at once, and Chromium blocks
+WebGL for the site for about two minutes. A tab that creates a context or
+uploads a large texture during that time fails again, and in 4.x it fell back
+to CPU rendering. iOS stops a tab that runs out of GPU memory with no event;
+5.x finds that at the next load of the same tab. Firefox reports an out of
+memory through `getError()` and keeps the context; 5.x reads it.
+
+### Migration Guidance
+
+- **Nothing changes until a failure happens.** An application that ignores
+  the new events gets the wait for WebGL and the record, and no dialog.
+- **To offer a new limit,** listen to `GPU_MEMORY_FAILURE`, show the facts of
+  the detail, pre-select `suggestedBytes`, and call `setGpuMemoryLimit` with
+  the user's choice. Read `getLastGpuMemoryFailure()` when the application
+  starts listening, for a crash that the start of the page found, and call
+  `acknowledgeGpuMemoryFailure()` once the user answered.
+- **When `mustReload` is true,** the page must reload to draw again. A wait
+  does not always start: outside Chromium a first failure starts none, and
+  Chromium detects its block about one second after the failure. Wait a
+  moment, then reload once WebGL is available, preferably with the limit
+  that the user picked:
+
+  ```js
+  await new Promise((resolve) => setTimeout(resolve, 1500));
+  /** Resolves at once when no wait runs. */
+  await whenWebGLAvailable();
+  window.location.reload();
+  ```
+
+- **When `noGpuSizeWorks` is true,** offer CPU rendering with
+  `setRenderBackend('cpu')`. A legacy volume viewport cannot render on the
+  CPU.
+- **Offer the calibration run only when `canCalibrate` is true,** and warn the
+  user first that it causes a GPU failure and a wait of about two minutes in
+  every tab.
+- **A custom `CapabilityStorage`** (`setCapabilityStorage`) gets no `storage`
+  event, so the tabs share a wait only through the default `localStorage`.
 
 ## Locked segments stop the brush, and do not cause an overlap
 

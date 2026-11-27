@@ -12,81 +12,14 @@ import cache from '../../cache/cache';
 import canUseFloatOpacityTexture from './canUseFloatOpacityTexture';
 import takeBoundScalarTexture from './takeBoundScalarTexture';
 import actorsWaitingForStorage from '../helpers/actorsWaitingForStorage';
+import { noteTextureRendered } from '../../utilities/gpuAllocationTracker';
+import gridFitsGpuSettings from './gridFitsGpuSettings';
 import { coreLog } from '../../utilities/logger';
-import { volumeTextureBytes } from '../../utilities/getBufferConfiguration';
-import { voxelGridWithinLimits } from '../../utilities/voxelGrid';
-import {
-  gpuSettingsForRender,
-  gridLimitsOfGpuSettings,
-} from '../../utilities/gpuSettingsPresets';
 
 const log = coreLog.getLogger(
   'RenderingEngine',
   'vtkStreamingOpenGLVolumeMapper'
 );
-const warnedKeys = new Set();
-
-/**
- * States whether the active GPU settings can hold a texture of these
- * dimensions.
- *
- * The count happens before the allocation. An application selects the GPU
- * settings, and this function probes nothing. With final downsampling off,
- * every texture fits, so the mapper allocates as it did before the GPU
- * settings existed.
- *
- * A dynamic (4D) volume and a texture of more than one component also always
- * fit: the strategy does not reduce them (VRS-I-13, VRS-I-14), so the mapper
- * tries the upload as in 4.x instead of keeping the previous image.
- *
- * A refusal logs one warning for each volume, grid and GPU settings.
- *
- * @param {number[]} dims - the number of voxels on each axis
- * @param {string} dataType - the type of the buffer of the texture
- * @param {number} numberOfComponents - the number of components of one voxel
- * @param {{volumeId?: string, dynamic?: boolean}} context - what the mapper
- *   knows about the volume
- * @returns {boolean} true when the GPU settings can hold the texture
- */
-export function gridFitsGpuSettings(
-  dims,
-  dataType,
-  numberOfComponents,
-  context
-) {
-  const gpuSettings = gpuSettingsForRender();
-
-  if (!gpuSettings || numberOfComponents > 1 || context?.dynamic) {
-    return true;
-  }
-
-  const limits = gridLimitsOfGpuSettings(
-    gpuSettings,
-    volumeTextureBytes(1, dataType, numberOfComponents)
-  );
-  const grid = {
-    dimensions: [dims[0], dims[1], dims[2]],
-    spacing: [1, 1, 1],
-    origin: [0, 0, 0],
-    direction: [1, 0, 0, 0, 1, 0, 0, 0, 1],
-  };
-
-  if (voxelGridWithinLimits(grid, limits)) {
-    return true;
-  }
-
-  // A refused texture rebuilds on each render, so warn once for each key.
-  const key = `${context?.volumeId}|${grid.dimensions}|${gpuSettings.id}|${limits.maxEdge}|${limits.maxVoxelCount}`;
-
-  if (!warnedKeys.has(key)) {
-    warnedKeys.add(key);
-    log.warn(
-      `the GPU settings preset ${gpuSettings.id} cannot hold a texture of ${dims[0]}x${dims[1]}x${dims[2]} for the volume ${context?.volumeId}, so no allocation is issued`
-    );
-  }
-
-  return false;
-}
 
 /**
  * vtkStreamingOpenGLVolumeMapper - A derived class of the core vtkOpenGLVolumeMapper class.
@@ -205,9 +138,22 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
     // A draw that samples storage that the browser still clears would block.
     if (model.scalarTextures.some((texture) => texture?.isInitializing?.())) {
       actorsWaitingForStorage.set(actor, performance.now());
+    } else if (
+      model.scalarTextures.some(
+        (texture) => texture?.getHandle && !texture.getHandle()
+      )
+    ) {
+      /**
+       * A texture with no storage (refused by the GPU settings, or released
+       * after an out of memory) is not drawn: vtk.js would activate it with
+       * no handle. The next build tries the upload again.
+       */
+      actorsWaitingForStorage.delete(actor);
     } else {
       actorsWaitingForStorage.delete(actor);
       publicAPI.renderPieceDraw(ren, actor);
+      /** Only a draw that ran settles a large allocation. */
+      noteTextureRendered(model.context, model.scalarTextures);
     }
 
     publicAPI.renderPieceFinish(ren, actor);
@@ -515,7 +461,7 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
 
             // There are some bugs in mac for texStorage3D so basically here
             // we let the vtk.js decide if it wants to use it or not
-            currentTexture.create3DFromRaw({
+            const created = currentTexture.create3DFromRaw({
               width: dims[0],
               height: dims[1],
               depth: dims[2],
@@ -523,6 +469,17 @@ function vtkStreamingOpenGLVolumeMapper(publicAPI, model) {
               dataType,
               data: null,
             });
+
+            /**
+             * A texture that got no storage (the GPU ran out of memory) is
+             * skipped like a texture that the GPU settings refuse, and the
+             * next build tries again.
+             */
+            if (!created) {
+              currentTexture.deactivate();
+
+              return;
+            }
 
             // do an initial update since some data may be already
             // available and we can avoid a re-render to trigger
