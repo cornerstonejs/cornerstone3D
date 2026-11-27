@@ -45,12 +45,14 @@ describe('a rendering engine whose WebGL context is lost', () => {
     const window = offscreenWindow(true);
 
     engine.contextPool = {};
+    engine._skippedByLostContext = new Set();
 
     expect(
       engine._renderViewportWithContext(viewport, window, {})
     ).toBeUndefined();
     expect(window.addRenderer).not.toHaveBeenCalled();
     expect(window.getRenderWindow).not.toHaveBeenCalled();
+    expect(engine._skippedByLostContext.has(viewport.id)).toBe(true);
   });
 
   it('draws nothing and copies nothing in a lost context of the tiled engine', () => {
@@ -59,6 +61,7 @@ describe('a rendering engine whose WebGL context is lost', () => {
 
     engine.offscreenMultiRenderWindow = window;
     engine._needsRender = new Set([viewport.id]);
+    engine._skippedByLostContext = new Set();
 
     expect(() => engine.performVtkDrawCall()).not.toThrow();
     expect(window.getRenderWindow).not.toHaveBeenCalled();
@@ -66,6 +69,7 @@ describe('a rendering engine whose WebGL context is lost', () => {
       engine.renderViewportUsingCustomOrVtkPipeline(viewport)
     ).toBeUndefined();
     expect(window.getOpenGLRenderWindow().get3DContext).not.toHaveBeenCalled();
+    expect(engine._skippedByLostContext.has(viewport.id)).toBe(true);
   });
 });
 
@@ -111,12 +115,54 @@ describe('a WebGL context lost in the middle of a render', () => {
       getViewportRenderPasses: () => undefined,
       _resizeOffScreenCanvasForViewport: () => undefined,
       getWidgetRenderers: () => new Map(),
+      _skippedByLostContext: new Set(),
     });
 
     expect(
       engine._renderViewportWithContext(viewport, window, {})
     ).toBeUndefined();
     expect(setDraw).toHaveBeenLastCalledWith(false);
+  });
+
+  it('copies nothing from a context lost during a render that returns normally', () => {
+    const lostRef = { lost: false };
+    const gl = { isContextLost: () => lostRef.lost, canvas: {} };
+    const renderer = { setViewport: jest.fn(), setDraw: jest.fn() };
+    const get3DContext = jest.fn(() => gl);
+    const window = {
+      getOpenGLRenderWindow: () => ({ getContext: () => gl, get3DContext }),
+      getRenderer: () => renderer,
+      getRenderers: () => [{ renderer, id: viewport.id }],
+      getRenderWindow: () => ({
+        getViews: () => [
+          { getRenderPasses: () => null, setRenderPasses: jest.fn() },
+        ],
+        /** The lost context fails its calls with no throw. */
+        render: () => {
+          lostRef.lost = true;
+        },
+      }),
+    };
+    const engine = Object.create(ContextPoolRenderingEngine.prototype);
+
+    Object.assign(engine, {
+      contextPool: {
+        getContextIndexForViewport: () => 0,
+        getMaxSizeForContext: () => ({ width: 256, height: 256 }),
+      },
+      getViewportRenderPasses: () => undefined,
+      _resizeOffScreenCanvasForViewport: () => undefined,
+      getWidgetRenderers: () => new Map(),
+      _copyToOnscreenCanvas: jest.fn(),
+      _skippedByLostContext: new Set(),
+    });
+
+    expect(
+      engine._renderViewportWithContext(viewport, window, {})
+    ).toBeUndefined();
+    expect(engine._copyToOnscreenCanvas).not.toHaveBeenCalled();
+    expect(get3DContext).not.toHaveBeenCalled();
+    expect(engine._skippedByLostContext.has(viewport.id)).toBe(true);
   });
 
   it('throws on an error of a render whose context is not lost', () => {
@@ -153,6 +199,7 @@ describe('a WebGL context lost in the middle of a render', () => {
       getRenderWindow: () => renderWindow,
     };
     engine._needsRender = new Set(['viewport']);
+    engine._skippedByLostContext = new Set();
 
     expect(() => engine.performVtkDrawCall()).not.toThrow();
     expect(renderWindow.render).toHaveBeenCalled();
@@ -190,6 +237,53 @@ describe('a rendering engine whose render throws', () => {
 
       try {
         expect(() => engine._renderFlaggedViewports()).toThrow('boom');
+        expect(engine._animationFrameSet).toBe(false);
+      } finally {
+        renderingEngineCache.delete(engine.id);
+        jest.restoreAllMocks();
+      }
+    }
+  );
+});
+
+describe('a frame that a lost context skipped', () => {
+  /**
+   * An engine of CPU rendering with one viewport, whose render a lost context
+   * skips, as the engine marks it.
+   */
+  function engineThatSkips(EngineClass) {
+    jest.spyOn(init, 'isCornerstoneInitialized').mockReturnValue(true);
+    jest.spyOn(init, 'getShouldUseCPURendering').mockReturnValue(true);
+
+    const engine = new EngineClass(`skipping-${EngineClass.name}`);
+    const skipped = { ...viewport, setRendered: jest.fn() };
+
+    Object.assign(engine, {
+      _getViewportsAsArray: () => [skipped],
+      _needsRender: new Set([skipped.id]),
+      _waitsForStorage: () => false,
+      _notifyFidelityOfRenderedViewports: jest.fn(),
+      renderViewportUsingCustomOrVtkPipeline(vp) {
+        this._skippedByLostContext.add(vp.id);
+      },
+    });
+
+    return { engine, skipped };
+  }
+
+  it.each([ContextPoolRenderingEngine, TiledRenderingEngine])(
+    'counts as neither rendered nor drawn at a new fidelity in %p',
+    (EngineClass) => {
+      const { engine, skipped } = engineThatSkips(EngineClass);
+
+      try {
+        engine._renderFlaggedViewports();
+
+        expect(skipped.setRendered).not.toHaveBeenCalled();
+        expect(engine._notifyFidelityOfRenderedViewports).toHaveBeenCalledWith(
+          []
+        );
+        expect(engine._needsRender.size).toBe(0);
         expect(engine._animationFrameSet).toBe(false);
       } finally {
         renderingEngineCache.delete(engine.id);
