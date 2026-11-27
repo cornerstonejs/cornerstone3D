@@ -13,6 +13,7 @@ const mockEventTarget = {
 };
 
 const mockTriggerEvent = jest.fn();
+const mockGetEnabledElementByViewportId = jest.fn();
 
 const mockEnabledElements = new Map();
 let mockUuidCounter = 0;
@@ -31,6 +32,8 @@ jest.mock('@cornerstonejs/core', () => ({
   triggerEvent: (...args) => mockTriggerEvent(...args),
   getEnabledElement: (...args) => mockGetEnabledElement(...args),
   getEnabledElementByIds: jest.fn(),
+  getEnabledElementByViewportId: (...args) =>
+    mockGetEnabledElementByViewportId(...args),
   utilities: {
     logger: {
       toolsLog: {
@@ -1290,6 +1293,7 @@ describe('AnnotationGroup', () => {
     annotation.isVisible = true;
     addAnnotation(annotation, 'FOR-1');
     mockTriggerEvent.mockClear();
+    mockGetEnabledElementByViewportId.mockClear();
   });
 
   it('is visible by default and has no members', () => {
@@ -1320,18 +1324,55 @@ describe('AnnotationGroup', () => {
     expect(group.has('b')).toBe(false);
   });
 
-  it('setVisible(false) hides member annotations and triggers ANNOTATION_MODIFIED per changed annotation', () => {
+  it('setVisible(false) hides member annotations and triggers ANNOTATION_VISIBILITY_CHANGE', () => {
     group.add('group-member');
 
     group.setVisible(false, baseEvent);
 
     expect(group.isVisible).toBe(false);
     expect(annotation.isVisible).toBe(false);
+    expect(isAnnotationVisible('group-member')).toBe(false);
+    expect(mockTriggerEvent).toHaveBeenCalledTimes(1);
     expect(mockTriggerEvent).toHaveBeenCalledWith(
       mockEventTarget,
-      Events.ANNOTATION_MODIFIED,
-      { viewportId: 'vp-1', renderingEngineId: 'engine-1', annotation }
+      Events.ANNOTATION_VISIBILITY_CHANGE,
+      {
+        lastVisible: [],
+        lastHidden: ['group-member'],
+        hidden: ['group-member'],
+      }
     );
+  });
+
+  it('setVisible(true) shows the members again', () => {
+    group.add('group-member');
+    group.setVisible(false, baseEvent);
+
+    group.setVisible(true, baseEvent);
+
+    expect(annotation.isVisible).toBe(true);
+    expect(isAnnotationVisible('group-member')).toBe(true);
+  });
+
+  it('showAllAnnotations() brings back annotations hidden by a group', () => {
+    group.add('group-member');
+    group.setVisible(false, baseEvent);
+
+    showAllAnnotations();
+
+    expect(annotation.isVisible).toBe(true);
+  });
+
+  it('setVisible redraws the viewport of the base event once', () => {
+    const other = makeAnnotation({ annotationUID: 'other-member' });
+    other.isVisible = true;
+    addAnnotation(other, 'FOR-1');
+    group.add('group-member', 'other-member');
+
+    group.setVisible(false, baseEvent);
+
+    expect(mockGetEnabledElementByViewportId).toHaveBeenCalledTimes(1);
+    expect(mockGetEnabledElementByViewportId).toHaveBeenCalledWith('vp-1');
   });
 
   it('setVisible is a no-op when the visibility flag does not change', () => {

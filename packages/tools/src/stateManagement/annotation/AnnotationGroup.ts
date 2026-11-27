@@ -1,6 +1,6 @@
-import { eventTarget, triggerEvent } from '@cornerstonejs/core';
-import Events from '../../enums/Events';
 import { getAnnotation } from './annotationState';
+import { setAnnotationVisibility } from './annotationVisibility';
+import triggerAnnotationRenderForViewportIds from '../../utilities/triggerAnnotationRenderForViewportIds';
 
 export type BaseEventDetail = {
   viewportId: string;
@@ -46,6 +46,7 @@ export default class AnnotationGroup {
       return;
     }
     this._isVisible = isVisible;
+    let changed = false;
     this.annotationUIDs.forEach((uid) => {
       const annotation = getAnnotation(uid);
       if (!annotation) {
@@ -58,13 +59,14 @@ export default class AnnotationGroup {
       if (!isVisible && filter?.(uid) === false) {
         return;
       }
-      annotation.isVisible = isVisible;
-      const eventDetail = {
-        ...baseEvent,
-        annotation,
-      };
-      triggerEvent(eventTarget, Events.ANNOTATION_MODIFIED, eventDetail);
+      setAnnotationVisibility(uid, isVisible);
+      changed = true;
     });
+
+    // Nothing redraws on ANNOTATION_VISIBILITY_CHANGE, so do it here.
+    if (changed && baseEvent?.viewportId) {
+      triggerAnnotationRenderForViewportIds([baseEvent.viewportId]);
+    }
   }
 
   public get isVisible() {
