@@ -86,6 +86,8 @@ describe('renderingCapabilities', () => {
 
     const capabilities = detectRenderingCapabilities();
 
+    expect(capabilities.norm16).toBe(true);
+
     expect(getSupportedTextureFormats).toHaveBeenCalledTimes(1);
     expect(capabilities).toMatchObject({
       webgl: true,
@@ -99,7 +101,7 @@ describe('renderingCapabilities', () => {
   it('persists probe results and skips probing on the next detection', () => {
     mockWebGL();
 
-    detectRenderingCapabilities();
+    expect(detectRenderingCapabilities().norm16).toBe(true);
     expect(getSupportedTextureFormats).toHaveBeenCalledTimes(1);
 
     const second = detectRenderingCapabilities();
@@ -110,11 +112,11 @@ describe('renderingCapabilities', () => {
 
   it('re-probes when the renderer string changes', () => {
     mockWebGL('Renderer A');
-    detectRenderingCapabilities();
+    expect(detectRenderingCapabilities().norm16).toBe(true);
     getContextSpy.mockRestore();
 
     mockWebGL('Renderer B');
-    detectRenderingCapabilities();
+    expect(detectRenderingCapabilities().norm16).toBe(true);
 
     expect(getSupportedTextureFormats).toHaveBeenCalledTimes(2);
   });
@@ -133,7 +135,7 @@ describe('renderingCapabilities', () => {
 
   it('re-probes when the cached probe version is stale', () => {
     mockWebGL();
-    detectRenderingCapabilities();
+    expect(detectRenderingCapabilities().norm16).toBe(true);
 
     const cached = JSON.parse(window.localStorage.getItem(STORAGE_KEY));
     expect(cached.probeVersion).toBe(RENDERING_CAPABILITIES_PROBE_VERSION);
@@ -141,15 +143,15 @@ describe('renderingCapabilities', () => {
     cached.probeVersion = RENDERING_CAPABILITIES_PROBE_VERSION - 1;
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(cached));
 
-    detectRenderingCapabilities();
+    expect(detectRenderingCapabilities().norm16).toBe(true);
 
     expect(getSupportedTextureFormats).toHaveBeenCalledTimes(2);
   });
 
   it('re-probes when useCache is false', () => {
     mockWebGL();
-    detectRenderingCapabilities();
-    detectRenderingCapabilities({ useCache: false });
+    expect(detectRenderingCapabilities().norm16).toBe(true);
+    expect(detectRenderingCapabilities({ useCache: false }).norm16).toBe(true);
 
     expect(getSupportedTextureFormats).toHaveBeenCalledTimes(2);
   });
@@ -170,8 +172,10 @@ describe('renderingCapabilities', () => {
     mockWebGL();
     getSupportedTextureFormats.mockReturnValueOnce(null);
 
-    detectRenderingCapabilities();
+    expect(detectRenderingCapabilities().norm16).toBe(false);
     const second = detectRenderingCapabilities();
+
+    expect(second.norm16).toBe(true);
 
     expect(getSupportedTextureFormats).toHaveBeenCalledTimes(2);
     expect(second.norm16).toBe(true);

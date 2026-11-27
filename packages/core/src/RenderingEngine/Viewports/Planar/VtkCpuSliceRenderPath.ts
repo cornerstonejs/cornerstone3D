@@ -83,6 +83,12 @@ type CpuSliceMount = PlanarSlicePlaneMoves & {
    * (`getPlanarFrameDeliveryKey`), when one is kept.
    */
   deliveryKey?: string;
+  /**
+   * True while the layer drew nothing at the fit of the clipping range of
+   * the camera (a mount or a move before any frame of its plane arrived), so
+   * that its first slice fits it (`fitClippingRangeToSlice`).
+   */
+  fitWhenDrawn?: boolean;
 };
 
 /**
@@ -145,6 +151,7 @@ export class VtkCpuSliceRenderPath
       maxSliceSize,
       canFilterFloatTextures: () => canFilterFloatTextures(),
       sampleSlabsInSteps: true,
+      onlyArrivedFrames: true,
     });
     const rendering: PlanarVtkCpuSliceRendering = {
       renderMode: PlanarRenderModeId.VTK_CPU_SLICE,
@@ -236,8 +243,10 @@ export class VtkCpuSliceRenderPath
    * change (an edit of the voxels, the end of the load, a new time point)
    * samples at the next animation frame. An update renders only when the
    * layer drew something before or draws something now (`updateSlice`): an
-   * overlay whose frames still hold no data of its plane stays as it was, and
-   * its pane draws no frame for it. A change of the texture limits does
+   * overlay whose frames still hold no data of its plane, and a layer none of
+   * whose frames of its plane has arrived (the sampler samples only arrived
+   * frames), stay as they were, and the pane draws no frame for them. A
+   * change of the texture limits does
    * not concern this path, which holds no 3D texture. The load callback of
    * the volume can come after the listeners are removed; it then does
    * nothing.
@@ -259,7 +268,7 @@ export class VtkCpuSliceRenderPath
         mount.ctx.display.requestRender();
       }
 
-      return mount.overlayFrames !== 'empty';
+      return mount.draw.getSlice() !== undefined;
     });
     const removeVolumeSubscriptions = lifecycle.subscribeToVolumeEvents(
       volumeId,
@@ -408,15 +417,16 @@ export class VtkCpuSliceRenderPath
    * rest and starts the rest timer again.
    *
    * @returns false when the layer draws nothing now and drew nothing before
-   * (an overlay whose frames still hold no data of its plane): its picture
-   * did not change, and an update of the load renders nothing for it.
+   * (an overlay whose frames still hold no data of its plane, a plane none of
+   * whose frames has arrived): its picture did not change, and an update of
+   * the load renders nothing for it.
    */
   private updateSlice(
     mount: CpuSliceMount,
     camera: PlanarResolvedICamera | undefined
   ): boolean {
-    const { rendering, sampler } = mount;
-    const drewNothing = mount.overlayFrames === 'empty';
+    const { draw, rendering, sampler } = mount;
+    const drewSomething = draw.getSlice() !== undefined;
 
     cancelRestWork(mount);
     recordPlaneMove(mount, camera);
@@ -426,27 +436,33 @@ export class VtkCpuSliceRenderPath
     if (mount.overlayFrames === 'empty') {
       this.drawSlice(mount, camera, undefined);
       reportSamplingState(mount);
-      return !drewNothing;
+      return drewSomething;
     }
 
-    this.drawSlice(
-      mount,
+    const slice = sampler.sample(
+      rendering.imageVolume,
       camera,
-      sampler.sample(
-        rendering.imageVolume,
+      getCpuSliceMountInputs(mount),
+      getCanvasScreenSliceGeometry(
+        mount.ctx.vtk.canvas,
         camera,
-        getCpuSliceMountInputs(mount),
-        getCanvasScreenSliceGeometry(
-          mount.ctx.vtk.canvas,
-          camera,
-          mount.maxSliceSize
-        )
+        mount.maxSliceSize
       )
     );
+
+    this.drawSlice(mount, camera, slice);
+
+    if (!slice) {
+      mount.fitWhenDrawn = true;
+    } else if (mount.fitWhenDrawn) {
+      mount.fitWhenDrawn = false;
+      fitClippingRangeToSlice(mount);
+    }
+
     reportSamplingState(mount);
     this.scheduleRestWork(mount);
 
-    return true;
+    return drewSomething || draw.getSlice() !== undefined;
   }
 
   /**
@@ -579,6 +595,22 @@ function getCpuSliceMountInputs(mount: CpuSliceMount): PlanarCpuSliceInputs {
   return mount.overlayFrames === 'nearest'
     ? { ...inputs, snapToSlice: true }
     : inputs;
+}
+
+/**
+ * Fits the clipping range of the camera to the first slice of a layer that
+ * drew nothing when the range was last fitted (`CpuSliceMount.fitWhenDrawn`),
+ * as a mount fits it to a layer that draws: the range of the slice, then
+ * widened to hold every visible prop (`fitPlanarCameraClippingRange`). A
+ * load update does not fit the range, so without this the range stays the
+ * one of a renderer that held no slice, whose far plane can cut a slice
+ * away.
+ */
+function fitClippingRangeToSlice(mount: CpuSliceMount): void {
+  const { renderer } = mount.ctx.vtk;
+
+  renderer.resetCameraClippingRange(mount.draw.actor.getBounds());
+  fitPlanarCameraClippingRange(renderer);
 }
 
 function cancelRestWork(mount: CpuSliceMount): void {

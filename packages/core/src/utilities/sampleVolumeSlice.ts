@@ -1009,12 +1009,49 @@ function getVolumeSliceFrameRows(
   return { firstFrame: startIndex[2], frameStep: rowStep[2] };
 }
 
+/**
+ * The frames (k slices) of the volume that a sample of a slice can read: from
+ * the lowest to the highest frame that a pixel of the slice, or a layer of its
+ * slab, reaches, each fractional frame index widened to the frames on both
+ * sides of it, which a linear sample mixes, and clamped to the frames of the
+ * volume. The frame index is linear across the grid, so the corners of the
+ * grid hold its extremes. Undefined when the slice reaches no frame of the
+ * volume.
+ */
+function getVolumeSliceFrameSpan(
+  options: SampleVolumeSliceOptions
+): { first: number; last: number } | undefined {
+  const { volume, geometry } = options;
+  const { grid, offsets } = planVolumeSlice(options);
+  const { startIndex, columnStep, rowStep, normalStep } = grid;
+  const columnReach = (geometry.width - 1) * columnStep[2];
+  const rowReach = (geometry.height - 1) * rowStep[2];
+  const layerReaches = offsets.map((offset) => offset * normalStep[2]);
+  let low = Infinity;
+  let high = -Infinity;
+
+  for (const corner of [0, columnReach, rowReach, columnReach + rowReach]) {
+    for (const layer of layerReaches) {
+      const frame = startIndex[2] + corner + layer;
+
+      low = Math.min(low, frame);
+      high = Math.max(high, frame);
+    }
+  }
+
+  const first = Math.max(0, Math.floor(low));
+  const last = Math.min(volume.dimensions[2] - 1, Math.ceil(high));
+
+  return first <= last ? { first, last } : undefined;
+}
+
 export {
   sampleVolumeSlice as default,
   sampleVolumeSlice,
   getFrameOfVolumeSlice,
   gatherVolumeSlice,
   getVolumeSliceFrameRows,
+  getVolumeSliceFrameSpan,
   getValueRange,
   getSlabSampleOffsets,
   getNumberOfComponents,

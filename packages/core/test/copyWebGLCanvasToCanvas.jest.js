@@ -100,7 +100,9 @@ describe('copyWebGLCanvasToCanvas', () => {
         return type === '2d' ? probeContext : null;
       });
     resetRenderingCapabilities();
-    getRenderingCapabilities();
+    expect(getRenderingCapabilities().webglCanvasCopy).toBe(
+      webgl && webglCanvasCopy
+    );
     getContextSpy.mockImplementation((type) =>
       type === '2d' ? scratchContext : null
     );

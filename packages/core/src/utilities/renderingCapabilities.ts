@@ -1,5 +1,6 @@
 import type { TextureFormatSupport } from './textureSupport';
 import { getSupportedTextureFormats } from './textureSupport';
+import whenIdle from './whenIdle';
 
 /**
  * Bump when the probes (or the meaning of any profile field) change so that
@@ -50,12 +51,21 @@ export interface RenderingCapabilities extends TextureFormatSupport {
   webglCanvasCopy: boolean;
 }
 
+/** The texture-format answers, measured at their first read unless stored. */
+const LAZY_FORMAT_KEYS: Array<keyof TextureFormatSupport> = [
+  'norm16',
+  'norm16Linear',
+  'float',
+  'floatLinear',
+  'halfFloat',
+  'halfFloatLinear',
+];
+
 interface WebGLContextInfo {
   webgl: boolean;
   maxTextureSize: number;
   max3DTextureSize: number;
   renderer: string;
-  webglCanvasCopy: boolean;
 }
 
 const CANVAS_COPY_PROBE_SIZE = 2;
@@ -123,13 +133,16 @@ function canCopyWebGLCanvas(
   }
 }
 
+/**
+ * Gathers WebGL2 availability, the texture size limits and the renderer
+ * string from one context, which it releases.
+ */
 function getWebGLContextInfo(): WebGLContextInfo {
   const info: WebGLContextInfo = {
     webgl: false,
     maxTextureSize: 0,
     max3DTextureSize: 0,
     renderer: '',
-    webglCanvasCopy: false,
   };
 
   if (typeof document === 'undefined') {
@@ -157,17 +170,41 @@ function getWebGLContextInfo(): WebGLContextInfo {
       : gl.getParameter(gl.RENDERER);
 
     info.renderer = typeof renderer === 'string' ? renderer : '';
-    info.webglCanvasCopy = canCopyWebGLCanvas(canvas, gl);
-
-    const loseContext = gl.getExtension('WEBGL_lose_context');
-    if (loseContext) {
-      loseContext.loseContext();
-    }
+    releaseContext(gl);
   } catch {
     // A throwing context factory is equivalent to "no GPU".
   }
 
   return info;
+}
+
+/** Releases a context of the probes. */
+function releaseContext(gl: WebGL2RenderingContext): void {
+  gl.getExtension('WEBGL_lose_context')?.loseContext();
+}
+
+/**
+ * Measures `webglCanvasCopy` (`canCopyWebGLCanvas`) on a WebGL2 context of
+ * its own, which it releases. A browser in which that context cannot be made
+ * counts as able to copy, as a check that cannot run does.
+ */
+function measureWebGLCanvasCopy(): boolean {
+  try {
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl2');
+
+    if (!gl) {
+      return true;
+    }
+
+    const copies = canCopyWebGLCanvas(canvas, gl);
+
+    releaseContext(gl);
+
+    return copies;
+  } catch {
+    return true;
+  }
 }
 
 function readCachedFormats(renderer: string): TextureFormatSupport | null {
@@ -214,9 +251,55 @@ function writeCachedFormats(
 }
 
 /**
- * Runs the capability detection: one cheap context to gather renderer string,
- * WebGL2 availability, MAX_TEXTURE_SIZE and whether a WebGL canvas can be
- * copied with `drawImage`, then the texture-format probes.
+ * Runs the texture-format probes (`getSupportedTextureFormats`, on a context
+ * of their own) and stores what they found for the renderer. A null probe
+ * result means the probes could not run (context limit hit, GPU process
+ * restarting, context lost mid-probe): the profile reports no format support
+ * for this load but does not store it, so a transient bad run costs one
+ * re-probe at the next load instead of poisoning the store under an
+ * otherwise valid renderer key.
+ */
+function probeFormats(renderer: string): TextureFormatSupport {
+  const probed = getSupportedTextureFormats();
+
+  if (probed) {
+    writeCachedFormats(renderer, probed);
+  }
+
+  return probed ?? { ...NO_GPU_FORMATS };
+}
+
+/**
+ * Gives a profile answers that are measured at the first read of any of
+ * them, once: `measure` runs then and its answers are kept.
+ */
+function defineLazyAnswers<K extends keyof RenderingCapabilities>(
+  profile: Partial<RenderingCapabilities>,
+  keys: K[],
+  measure: () => Pick<RenderingCapabilities, K>
+): void {
+  let answers: Pick<RenderingCapabilities, K> | undefined;
+
+  keys.forEach((key) => {
+    Object.defineProperty(profile, key, {
+      enumerable: true,
+      get: () => {
+        answers ??= measure();
+
+        return answers[key];
+      },
+    });
+  });
+}
+
+/**
+ * Runs the capability detection: one context gathers WebGL2 availability,
+ * the texture size limits and the renderer string, and is released. The
+ * answers that only a draw path needs are measured at the first read of any
+ * of them, once, each on a context of its own: the texture formats (the
+ * texture-format probes, a draw and a read-back per format), unless the
+ * formats of the renderer are stored, and `webglCanvasCopy` (a draw and a
+ * 2D copy read back).
  *
  * Probe results are cached in localStorage keyed by renderer string and
  * probe version, so repeat page loads on the same GPU skip
@@ -233,41 +316,56 @@ export function detectRenderingCapabilities({
       ...contextInfo,
       ...NO_GPU_FORMATS,
       softwareRasterizer: false,
+      webglCanvasCopy: false,
     };
   }
 
-  let formats = useCache ? readCachedFormats(contextInfo.renderer) : null;
-
-  if (!formats) {
-    const probed = getSupportedTextureFormats();
-
-    // A null probe result means the probes could not run (context limit hit,
-    // GPU process restarting, context lost mid-probe) — report no format
-    // support for this load but do NOT persist it, so a transient bad run
-    // costs one re-probe next load instead of poisoning the cache under an
-    // otherwise valid renderer key.
-    if (probed) {
-      writeCachedFormats(contextInfo.renderer, probed);
-    }
-
-    formats = probed ?? { ...NO_GPU_FORMATS };
-  }
-
-  return {
+  const cachedFormats = useCache
+    ? readCachedFormats(contextInfo.renderer)
+    : null;
+  const profile: Partial<RenderingCapabilities> = {
     ...contextInfo,
-    ...formats,
+    ...cachedFormats,
     softwareRasterizer: SOFTWARE_RASTERIZER_PATTERN.test(contextInfo.renderer),
   };
+
+  if (!cachedFormats) {
+    defineLazyAnswers(profile, LAZY_FORMAT_KEYS, () =>
+      probeFormats(contextInfo.renderer)
+    );
+  }
+
+  defineLazyAnswers(profile, ['webglCanvasCopy'], () => ({
+    webglCanvasCopy: measureWebGLCanvasCopy(),
+  }));
+
+  return profile as RenderingCapabilities;
 }
 
 /**
  * Returns the memoized capability profile, detecting it on first access.
  * This is the accessor the rest of the library (backend resolution, texture
- * format selection) reads.
+ * format selection) reads. On a WebGL2 device it reads the answers that are
+ * measured at their first read (`detectRenderingCapabilities`) in the next
+ * idle periods, so that they are measured before a viewport first draws,
+ * without holding up `init()`. A profile that `resetRenderingCapabilities`
+ * dropped before then is not measured.
  */
 export function getRenderingCapabilities(): RenderingCapabilities {
   if (!cachedCapabilities) {
-    cachedCapabilities = detectRenderingCapabilities();
+    const capabilities = detectRenderingCapabilities();
+
+    cachedCapabilities = capabilities;
+
+    if (capabilities.webgl) {
+      whenIdle(
+        () => cachedCapabilities === capabilities && capabilities.norm16
+      );
+      whenIdle(
+        () =>
+          cachedCapabilities === capabilities && capabilities.webglCanvasCopy
+      );
+    }
   }
 
   return cachedCapabilities;

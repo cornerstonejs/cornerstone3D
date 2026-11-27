@@ -67,16 +67,29 @@ acquisition plane.
   is copied; the GPU uploads the array of the frame. While the volume loads,
   each arriving frame of the plane is shown the same way. One copy, a gather
   of the frame, is still made when the frame is seen from its back (its rows
-  then run the other way), when the frame is held in another array type than
-  the volume's, and for a frame that has not arrived yet (a slice of zeros).
-  A frame decoded at a lower resolution (a sub-resolution decode) is scaled
-  to the grid once, when it arrives, and that copy is shown.
+  then run the other way) and when the frame is held in another array type
+  than the volume's. A frame decoded at a lower resolution (a sub-resolution
+  decode) is scaled to the grid once, when it arrives, and that copy is
+  shown.
 - **The two other planes of the grid** (the normal along one axis of a frame)
   are gathered from the frames, one row of the slice per frame: a row is a
   run of the frame (`TypedArray.set` of a part of it) where the plane runs
   along the rows of the frame, and a column of the frame where it runs along
-  its columns. While the volume loads, a frame that arrives changes its one
-  row: that row is written, and only that row of the texture is uploaded.
+  its columns. Only the rows of the frames that have arrived are gathered;
+  the frames that have not are not read, and their rows hold zeros. While the
+  volume loads, a frame that arrives changes its one row: that row is
+  written, and only that row of the texture is uploaded.
+- **A plane none of whose frames has arrived** (the mount of a pane before
+  the first frame of a streaming volume, or a plane whose frames come later)
+  is not read, nothing is allocated for it and nothing is uploaded: the layer
+  shows nothing, only the background of the pane, until the first frame of
+  the plane arrives, which is drawn at the next animation frame. The pane
+  reports its render and fires its events as before (`IMAGE_RENDERED`,
+  `NEW_IMAGE`, `DISPLAY_SETS_CHANGED`, `CAMERA_MODIFIED`), and its camera is
+  the same. 5.x and the earlier 6.0 betas showed a slice of zeros through the
+  window of the layer there, a grey square for a CT. This holds for the GPU
+  backend; the CPU backend draws a volume once it holds a frame, and draws
+  zeros for the frames that have not arrived.
 - **NEAREST and LINEAR give the same values on the grid**: the interpolation
   type does not choose another path for these planes; the GPU filters the
   texture when it enlarges it.
@@ -91,7 +104,9 @@ What this costs for one 512 x 512 x 135 CT: the acquisition plane copies 0
 bytes per arriving frame and reads its 262,144 values once for their range;
 a sagittal or coronal plane writes and uploads 1 kB (one row of 512 values)
 per arriving frame, where it gathered and uploaded the whole 512 x 135 slice
-at each update before.
+at each update before; a pane mounted before the first frame reads and
+allocates nothing, where it allocated, wrote and uploaded a slice of zeros
+(1 MB for the axial plane).
 
 ## A volume slice sits on a slice centre
 
@@ -3850,6 +3865,18 @@ is one, see [Functions of the core package](./3-api-map.md#functions-of-the-core
     createInstances: 'whenIdle',
   });
   ```
+
+- **The capability profile measures what only a draw needs at its first
+  use.** `init()` opens one WebGL2 context for `getRenderingCapabilities()`
+  (WebGL2, the size limits, the renderer string) and releases it. The texture
+  formats (`norm16`, `float`, `halfFloat` and their linear filtering), unless
+  they are stored for the renderer from an earlier page load, and
+  `webglCanvasCopy` are measured at the first read of any of them, or in the
+  first idle periods after `init()`, once, each on a context of its own. The
+  answers are the same. `init()` took 15 to 20 ms on a first visit, most of
+  it in those probes; it takes about 6 ms. `detectRenderingCapabilities()`
+  returns a profile measured the same way, so code that counts probe runs or
+  reads the stored formats right after it reads a format answer first.
 
 - **A scroll of a stack with a labelmap no longer checks every labelmap
   image.** The labelmap images of each image of the stack come from a map

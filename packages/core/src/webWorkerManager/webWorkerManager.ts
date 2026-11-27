@@ -2,6 +2,7 @@ import * as Comlink from 'comlink';
 import { RequestType } from '../enums';
 import { RequestPoolManager } from '../requestPool/requestPoolManager';
 import { coreLog } from '../utilities/logger';
+import whenIdle from '../utilities/whenIdle';
 
 const registrationLog = coreLog.getLogger(
   'webWorkerManager',
@@ -58,18 +59,6 @@ type WebWorkerProperties = {
   idleTimeThreshold: number;
   processing?: boolean; // Indicates if the worker is currently processing a task
 };
-
-/**
- * Calls back at the next idle period of the main thread, or after the
- * current task where the browser has no `requestIdleCallback`.
- */
-function whenIdle(callback: () => void): void {
-  if (typeof globalThis.requestIdleCallback === 'function') {
-    globalThis.requestIdleCallback(callback);
-  } else {
-    setTimeout(callback, 0);
-  }
-}
 
 class CentralizedWorkerManager {
   workerRegistry: Record<string, WebWorkerProperties> = {};
