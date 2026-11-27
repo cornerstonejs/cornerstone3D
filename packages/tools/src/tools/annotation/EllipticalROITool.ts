@@ -402,9 +402,28 @@ class EllipticalROITool extends AnnotationTool {
       const { viewport } = getEnabledElement(element);
       const { worldToCanvas, canvasToWorld } = viewport;
 
-      handleIndex = points.findIndex((p) => p === handle);
+      let pointsCanvas = points.map(worldToCanvas);
 
-      const pointsCanvas = points.map(worldToCanvas);
+      // Dragging treats handles 0/1 as the axis that is vertical on the canvas
+      // and 2/3 as the horizontal one. The points can arrive the other way
+      // round: an ellipse read back from a structured report keeps the order it
+      // was stored in, and turning the viewport by 90 degrees swaps the axes on
+      // the canvas. Put the vertical pair first, so a drag resizes the axis
+      // under the cursor instead of collapsing the ellipse.
+      if (
+        Math.abs(pointsCanvas[0][0] - pointsCanvas[1][0]) >
+        Math.abs(pointsCanvas[0][1] - pointsCanvas[1][1])
+      ) {
+        points.splice(0, 4, points[2], points[3], points[0], points[1]);
+        pointsCanvas = points.map(worldToCanvas);
+
+        if (typeof data.handles.activeHandleIndex === 'number') {
+          data.handles.activeHandleIndex =
+            (data.handles.activeHandleIndex + 2) % 4;
+        }
+      }
+
+      handleIndex = points.findIndex((p) => p === handle);
 
       originalHandleCanvas = pointsCanvas[handleIndex];
 
