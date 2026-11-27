@@ -158,6 +158,12 @@ function extractSpacingFromDataset(dataSet: DataSet) {
     );
   }
 
+  // If pixelSpacing not valid to this point, trying to get the spacing
+  // from the Imager Pixel Spacing
+  if (!pixelSpacing && dataSet.elements.x00181164) {
+    pixelSpacing = getNumberValues(dataSet, 'x00181164', 2);
+  }
+
   return pixelSpacing;
 }
 
