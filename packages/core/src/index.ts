@@ -173,11 +173,16 @@ export {
   resetGpuSettingsPreset,
   gridLimitsOfGpuSettings,
   gpuSettingsForRender,
+  getGpuMemoryLimit,
+  setGpuMemoryLimit,
+  resetGpuMemoryLimit,
 } from './utilities/gpuSettingsPresets';
 export type {
   GpuSettings,
   GpuSettingsPresetId,
   GpuSpeedIndex,
+  GpuMemoryLimit,
+  GpuMemoryLimitSource,
 } from './utilities/gpuSettingsPresets';
 export {
   defaultVolumeStrategyProvider,
@@ -229,7 +234,35 @@ import {
 import {
   getRenderingCapabilities,
   detectRenderingCapabilities,
+  getStoredRenderingCapabilities,
+  retestRenderingCapabilities,
+  resetRenderingCapabilities,
 } from './utilities/renderingCapabilities';
+export type {
+  GpuMemoryUserLimit,
+  RendererClass,
+  RenderingCapabilities,
+  RenderingCapabilityCategory,
+  RenderingCapabilityFailure,
+  RenderingCapabilitySuccess,
+  RenderingCapabilityMemory,
+  RetestRenderingCapabilitiesOptions,
+  StoredRenderingCapabilities,
+} from './utilities/renderingCapabilities';
+export { GPU_MEMORY_MIN_BYTES } from './utilities/renderingCapabilities';
+export {
+  getCapabilityStorage,
+  setCapabilityStorage,
+} from './utilities/capabilityStorage';
+export type { CapabilityStorage } from './utilities/capabilityStorage';
+export {
+  getGpuMemoryTotal,
+  getGpuMemoryByKind,
+} from './utilities/gpuMemoryLedger';
+export type {
+  GpuMemoryKind,
+  GpuMemoryEntry,
+} from './utilities/gpuMemoryLedger';
 
 // Classes
 import Settings from './Settings';
@@ -497,6 +530,9 @@ export {
   getEffectiveRenderBackend,
   getRenderingCapabilities,
   detectRenderingCapabilities,
+  getStoredRenderingCapabilities,
+  retestRenderingCapabilities,
+  resetRenderingCapabilities,
   // GenericViewport
   getUseGenericViewport,
   // Geometry Loader

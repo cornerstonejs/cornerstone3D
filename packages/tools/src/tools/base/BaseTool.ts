@@ -371,6 +371,9 @@ abstract class BaseTool {
       }
 
       return viewports[0].getImageData();
+    } else if (targetId.startsWith('frameOfReference:')) {
+      // Statistics restored from an SR for the frame of reference, no image
+      return;
     } else {
       throw new Error(
         'getTargetIdImage: targetId must start with "imageId:" or "volumeId:"'

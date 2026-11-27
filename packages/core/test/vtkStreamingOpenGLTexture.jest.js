@@ -5,6 +5,8 @@ const mockVolumes = new Map();
 
 jest.mock('../src/init', () => ({
   getConfiguration: () => mockConfig,
+  getShouldUseCPURendering: () => false,
+  getLossyDownsampling: () => ({ final: false }),
 }));
 jest.mock('../src/utilities/autoLoad', () => ({
   __esModule: true,
@@ -42,6 +44,7 @@ jest.mock('../src/cache/cache', () => ({
 
 import { extend } from '../src/RenderingEngine/vtkClasses/vtkStreamingOpenGLTexture';
 import autoLoad from '../src/utilities/autoLoad';
+import * as gpuAllocationTracker from '../src/utilities/gpuAllocationTracker';
 
 const depth = 8;
 const frameLength = 4 * 4;
@@ -288,5 +291,26 @@ describe('vtkStreamingOpenGLTexture storage fence', () => {
     expect(gl.getSyncParameter).not.toHaveBeenCalled();
     expect(modified).not.toHaveBeenCalled();
     expect(autoLoad).not.toHaveBeenCalled();
+  });
+});
+
+describe('vtkStreamingOpenGLTexture allocation tracking', () => {
+  it('cancels the noted allocation of this texture when it is released or deleted', () => {
+    const cancel = jest.spyOn(gpuAllocationTracker, 'cancelTextureAllocation');
+
+    try {
+      const { texture } = reducedTexture();
+
+      texture.releaseGraphicsResources();
+
+      expect(cancel).toHaveBeenLastCalledWith(texture);
+
+      cancel.mockClear();
+      texture.delete();
+
+      expect(cancel).toHaveBeenCalledWith(texture);
+    } finally {
+      cancel.mockRestore();
+    }
   });
 });

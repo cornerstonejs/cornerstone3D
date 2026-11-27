@@ -1,5 +1,6 @@
 import ImageQualityStatus from '../../../enums/ImageQualityStatus';
 import type {
+  FidelityIssue,
   Point3,
   ViewportFidelityCause,
   VoxelGrid,
@@ -67,6 +68,11 @@ export type FidelityLine = {
    * sample distance does.
    */
   interactiveReduction?: boolean;
+  /**
+   * Issues that stop the display of this data as its metadata specifies
+   * (FIDELITY-STATE-13). Any issue makes the line a standing `lossy`.
+   */
+  issues?: FidelityIssue[];
 };
 
 /**
@@ -145,9 +151,15 @@ export type FidelityDataKind = 'loading' | 'decimated' | 'reduced' | 'full';
  *   texture has not filled yet. Missing data with only full-resolution
  *   deliveries is not `loading` and not lossy while the load runs.
  * - `full`: lossless at the current display spacing.
+ *
+ * A display issue (FIDELITY-STATE-13) is `reduced`: waiting does not fix it.
  */
 export function dataKindOf(line: FidelityLine): FidelityDataKind {
   const { record, imageQualityStatus, qualityPending } = line;
+
+  if (line.issues?.length) {
+    return 'reduced';
+  }
 
   if (!record) {
     // A reduced texture with no record is lossy, not hidden.

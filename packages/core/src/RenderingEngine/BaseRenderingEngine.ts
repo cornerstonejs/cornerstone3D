@@ -760,6 +760,17 @@ abstract class BaseRenderingEngine {
   }
 
   /**
+   * Releases what the engine holds for a viewport that goes, by a removal or by
+   * a reset of the layout: for example its renderer and its GPU memory
+   * entries. The base engine holds nothing for a viewport.
+   *
+   * @param _viewport - the viewport that goes
+   */
+  protected _releaseViewportResources(_viewport: IViewport): void {
+    return;
+  }
+
+  /**
    * Reset the viewport by removing the data attributes
    * and clearing the context of draw. It also emits an element disabled event
    *
@@ -792,6 +803,7 @@ abstract class BaseRenderingEngine {
     element.removeAttribute('data-viewport-uid');
     element.removeAttribute('data-rendering-engine-uid');
     restoreElementTouchAction(element);
+    this._releaseViewportResources(viewport);
 
     // clear drawing
     const context = canvas.getContext('2d');

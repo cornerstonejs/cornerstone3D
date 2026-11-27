@@ -9,10 +9,47 @@ import {
 } from '@kitware/vtk.js/Rendering/OpenGL/RenderWindow/resourceSharingHelper';
 import vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
 import { getCanUseNorm16Texture } from '../../init';
+import {
+  getGpuMemoryTotal,
+  removeGpuMemoryEntry,
+  setGpuMemoryEntry,
+} from '../../utilities/gpuMemoryLedger';
+import {
+  cancelTextureAllocation,
+  noteTextureAllocation,
+  noteTextureRendered,
+} from '../../utilities/gpuAllocationTracker';
+import gridFitsGpuSettings from './gridFitsGpuSettings';
+import { gpuTextureBytesPerVoxel } from '../../utilities/gpuSettingsPresets';
 import takeBoundScalarTexture from './takeBoundScalarTexture';
 import actorsWaitingForStorage from '../helpers/actorsWaitingForStorage';
 
 const { vtkErrorMacro } = macro;
+
+/**
+ * A plain vtk.js texture whose release and delete also remove its entry of
+ * the GPU memory ledger. vtk.js freezes the public API of an instance, so the
+ * override happens in the constructor, before the freeze. It registers no
+ * class name, so the vtk.js factory of `vtkOpenGLTexture` stays as it is.
+ */
+export const newLedgerTexture = macro.newInstance(
+  (publicAPI, model, initialValues) => {
+    vtkOpenGLTexture.extend(publicAPI, model, initialValues);
+
+    const superRelease = publicAPI.releaseGraphicsResources;
+    const superDelete = publicAPI.delete;
+
+    publicAPI.releaseGraphicsResources = (...args) => {
+      removeGpuMemoryEntry(publicAPI);
+
+      return superRelease(...args);
+    };
+    publicAPI.delete = () => {
+      removeGpuMemoryEntry(publicAPI);
+      superDelete();
+    };
+  }
+);
 
 function findLabelOutlineProperties(actor, currentValidInputs) {
   const labelmapProperties = [];
@@ -124,9 +161,18 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
     // A draw that samples storage that the browser still clears would block.
     if (model.scalarTextures?.some((texture) => texture?.isInitializing?.())) {
       actorsWaitingForStorage.set(actor, performance.now());
+    } else if (model.scalarTextureRefused) {
+      /**
+       * The GPU settings refused a full-resolution texture, so its slot holds
+       * a texture with no storage, which vtk.js cannot activate. Nothing
+       * draws, and the next render tries the upload again.
+       */
+      actorsWaitingForStorage.delete(actor);
     } else {
       actorsWaitingForStorage.delete(actor);
       publicAPI.renderPieceDraw(ren, actor);
+      /** Only a draw that ran settles a large allocation. */
+      noteTextureRendered(model.context, model.scalarTextures);
     }
 
     publicAPI.renderPieceFinish(ren, actor);
@@ -135,6 +181,14 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
 
   publicAPI.getNeedToRebuildBufferObjects = (ren, actor) => {
     const useLabelOutline = model.labelOutlineProperties.length > 0;
+
+    /**
+     * A refused upload tries again on each render, also when the slot still
+     * holds an earlier texture, until the upload succeeds.
+     */
+    if (model.scalarTextureRefused) {
+      return true;
+    }
 
     if (
       model.VBOBuildTime.getMTime() < publicAPI.getMTime() ||
@@ -177,6 +231,7 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
     const actorProperties = actor.getProperties();
 
     takeBoundScalarTexture(model);
+    model.scalarTextureRefused = false;
     model.currentValidInputs.forEach(({ imageData }, component) => {
       if (!model.scalarTextures) {
         model.scalarTextures = [];
@@ -209,7 +264,12 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
 
         let shouldReset = true;
 
-        if (previousTextureParameters?.dataType === dataType) {
+        /** A texture whose creation failed has no storage to update. */
+        const hasStorage =
+          typeof currentTexture.getHandle !== 'function' ||
+          Boolean(currentTexture.getHandle());
+
+        if (hasStorage && previousTextureParameters?.dataType === dataType) {
           if (
             previousTextureParameters?.width === dims[0] &&
             previousTextureParameters?.height === dims[1] &&
@@ -233,7 +293,7 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
             numberOfComponents: numComps,
             dataType,
           });
-          currentTexture.create3DFromRaw({
+          const created = currentTexture.create3DFromRaw({
             width: dims[0],
             height: dims[1],
             depth: dims[2],
@@ -241,7 +301,16 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
             dataType,
             data: null,
           });
-          currentTexture.update3DFromRaw();
+
+          /**
+           * A refused texture has no storage, which vtk.js cannot activate,
+           * so nothing draws and the next render tries again.
+           */
+          if (created === false) {
+            model.scalarTextureRefused = true;
+          } else {
+            currentTexture.update3DFromRaw();
+          }
         } else {
           currentTexture.deactivate?.();
           currentTexture.update3DFromRaw();
@@ -268,22 +337,76 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
         !tex?.oglObject?.getHandle() || tex?.hash !== scalarsHash;
 
       if (reBuildTex && !hasUpdatedExtents) {
-        const newScalarTexture = vtkOpenGLTexture.newInstance();
-
-        newScalarTexture.setOpenGLRenderWindow(model._openGLRenderWindow);
-        // This path builds the texture from the scalars of `imageData`, which
-        // are the full-resolution voxels, so the dimensions must be the ones of
-        // `imageData`. Only the streaming path below reads a reduced grid.
+        /**
+         * This path builds the texture from the scalars of `imageData`, which
+         * are the full-resolution voxels, so the dimensions must be the ones of
+         * `imageData`. Only the streaming path below reads a reduced grid.
+         */
         const dims = imageData.getDimensions();
-        newScalarTexture.setOglNorm16Ext(
-          model.context.getExtension('EXT_texture_norm16')
-        );
+        const numberOfComponents = scalars.getNumberOfComponents();
+        const volumeId = imageData.get('id')?.id;
+        /**
+         * This path hands vtk.js the norm16 extension whenever the context
+         * has it, so 16-bit data uploads as 2 bytes then.
+         */
+        const norm16Ext = model.context.getExtension('EXT_texture_norm16');
+
+        /** No reduction here: an edge above the limit gets no texture rather than a gray one. */
+        if (
+          !gridFitsGpuSettings(
+            dims,
+            scalars.getDataType(),
+            numberOfComponents,
+            {
+              volumeId,
+              norm16: Boolean(norm16Ext),
+            }
+          )
+        ) {
+          model.scalarTextureRefused = true;
+          return;
+        }
+
+        /** The format that vtk.js uploads, not the type of the scalars. */
+        const textureBytes =
+          dims[0] *
+          dims[1] *
+          dims[2] *
+          gpuTextureBytesPerVoxel(scalars.getDataType(), numberOfComponents, {
+            norm16: Boolean(norm16Ext),
+          });
+
+        const newScalarTexture = newLedgerTexture();
+
+        noteTextureAllocation({
+          textureBytes,
+          totalBytes: getGpuMemoryTotal() + textureBytes,
+          owner: newScalarTexture,
+        });
+        newScalarTexture.setOpenGLRenderWindow(model._openGLRenderWindow);
+        newScalarTexture.setOglNorm16Ext(norm16Ext);
         newScalarTexture.resetFormatAndType();
-        newScalarTexture.create3DFilterableFromDataArray({
+        const created = newScalarTexture.create3DFilterableFromDataArray({
           width: dims[0],
           height: dims[1],
           depth: dims[2],
           dataArray: scalars,
+        });
+
+        /** An upload that vtk.js refused holds no memory and draws nothing. */
+        if (created === false) {
+          cancelTextureAllocation(newScalarTexture);
+          newScalarTexture.delete();
+          model.scalarTextureRefused = true;
+          return;
+        }
+
+        /** The size that vtk.js computed for the format it chose. */
+        setGpuMemoryEntry(newScalarTexture, {
+          kind: 'texture',
+          bytes:
+            newScalarTexture.getAllocatedGPUMemoryInBytes?.() || textureBytes,
+          volumeId,
         });
         model._openGLRenderWindow.setGraphicsResourceForObject(
           scalars,
