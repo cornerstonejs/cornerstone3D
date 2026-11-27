@@ -1,8 +1,23 @@
 import ONNXSegmentationController from './ONNXSegmentationController';
+import { eventTarget, triggerEvent, utilities } from '@cornerstonejs/core';
+import ort from 'onnxruntime-web/webgpu';
+import { Enums as toolsEnums } from '@cornerstonejs/tools';
+import type { Types } from '@cornerstonejs/tools';
+
+jest.mock('@cornerstonejs/core', () => {
+  const actual = jest.requireActual('@cornerstonejs/core');
+  return {
+    ...actual,
+    utilities: { ...actual.utilities, loadImageToCanvas: jest.fn() },
+  };
+});
 
 jest.mock('onnxruntime-web/webgpu', () => ({
   __esModule: true,
-  default: { env: { wasm: {} } },
+  default: {
+    env: { wasm: {} },
+    Tensor: { fromImage: jest.fn() },
+  },
 }));
 
 /**
@@ -88,5 +103,231 @@ describe('ONNXSegmentationController auto segment mode', () => {
     controller.initViewport(viewportWithoutSegmentation);
 
     expect(internals.randomPoints).toEqual([]);
+  });
+});
+
+describe('ONNXSegmentationController marker mode', () => {
+  const imageId = 'imageId:1';
+  const marker: Types.Annotation = {
+    metadata: { toolName: ONNXSegmentationController.MarkerInclude },
+    data: { handles: { points: [[10, 20, 0]] } },
+  };
+  let viewport;
+  let prompts: Types.Annotation[];
+  let controller: ONNXSegmentationController;
+  let decode: jest.SpyInstance;
+  let internals: {
+    viewport: typeof viewport;
+    sessions: unknown[];
+    config: { encoder: { feedType: string } };
+    isGpuInUse: boolean;
+    getActiveSegmentation: () => unknown;
+  };
+
+  beforeEach(() => {
+    jest.useFakeTimers();
+    viewport = {
+      id: 'marker-viewport',
+      element: document.createElement('div'),
+      getCurrentImageId: () => imageId,
+    };
+    prompts = [];
+    controller = new ONNXSegmentationController({
+      getPromptAnnotations: () => prompts,
+    });
+    controller.enabled = true;
+    internals = controller as unknown as typeof internals;
+    // Supply an encoded image; exercise scheduling and point mapping without
+    // loading an ONNX model or rendering a labelmap in jsdom.
+    internals.sessions = [
+      {
+        imageId,
+        imageEmbeddings: {},
+        canvasPosition: {
+          origin: [0, 0, 0],
+          rightVector: [1, 0, 0],
+          downVector: [0, 1, 0],
+        },
+      },
+    ];
+    jest
+      .spyOn(internals, 'getActiveSegmentation')
+      .mockReturnValue({ segmentationId: 'segmentation' });
+    decode = jest.spyOn(controller, 'decode').mockResolvedValue(undefined);
+  });
+
+  afterEach(() => {
+    if (internals.viewport) {
+      controller.disconnectViewport(internals.viewport);
+    }
+    jest.clearAllTimers();
+    jest.useRealTimers();
+    jest.restoreAllMocks();
+  });
+
+  it('decodes markers added before the first viewport connection', () => {
+    prompts.push(marker);
+    triggerEvent(eventTarget, toolsEnums.Events.ANNOTATION_ADDED, {
+      annotation: marker,
+    });
+    jest.advanceTimersByTime(300);
+    expect(decode).not.toHaveBeenCalled();
+
+    controller.initViewport(viewport);
+
+    expect(decode).toHaveBeenCalledTimes(1);
+    expect(decode).toHaveBeenCalledWith([10, 20], [1]);
+  });
+
+  it('decodes pre-connect markers after model and embedding readiness', async () => {
+    internals.sessions = [];
+    viewport.getRenderingEngine = () => ({ id: 'marker-engine' });
+    const canvasPosition = {
+      origin: [0, 0, 0],
+      rightVector: [1, 0, 0],
+      downVector: [0, 1, 0],
+    };
+    jest.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
+      clearRect: jest.fn(),
+      getImageData: jest.fn().mockReturnValue({}),
+    } as never);
+    jest
+      .mocked(utilities.loadImageToCanvas)
+      .mockResolvedValue(canvasPosition as never);
+    jest.mocked(ort.Tensor.fromImage).mockResolvedValue({} as never);
+    jest.spyOn(controller, 'restoreImageEncoding').mockResolvedValue(undefined);
+    jest.spyOn(controller, 'storeImageEncoding').mockImplementation(() => {});
+
+    let finishModels: () => void;
+    let finishEncoding: (value: unknown) => void;
+    const modelReady = new Promise<void>((resolve) => {
+      finishModels = resolve;
+    });
+    const embeddingsReady = new Promise((resolve) => {
+      finishEncoding = resolve;
+    });
+    let encodingStarted: () => void;
+    const started = new Promise<void>((resolve) => {
+      encodingStarted = resolve;
+    });
+    const encode = jest.fn().mockImplementation(() => {
+      encodingStarted();
+      return embeddingsReady;
+    });
+    jest
+      .spyOn(controller, 'loadModels')
+      .mockImplementation(async (_, session) => {
+        internals.config.encoder = { feedType: 'input_image' };
+        await modelReady;
+        session.encoder = { run: encode } as never;
+      });
+    const handleImage = jest.spyOn(
+      controller as unknown as {
+        handleImage: (...args: unknown[]) => Promise<void>;
+      },
+      'handleImage'
+    );
+
+    const loading = controller.initModel();
+    prompts.push(marker);
+    triggerEvent(eventTarget, toolsEnums.Events.ANNOTATION_ADDED, {
+      annotation: marker,
+    });
+    jest.advanceTimersByTime(300);
+    controller.initViewport(viewport);
+    const handling = handleImage.mock.results[0].value;
+    expect(decode).not.toHaveBeenCalled();
+    expect(encode).not.toHaveBeenCalled();
+
+    finishModels();
+    await loading;
+    await started;
+    expect(encode).toHaveBeenCalledTimes(1);
+    expect(decode).not.toHaveBeenCalled();
+
+    finishEncoding({ image_embeddings: {} });
+    await handling;
+
+    expect(decode).toHaveBeenCalledTimes(1);
+    expect(decode).toHaveBeenCalledWith([10, 20], [1]);
+  });
+
+  it('does not decode an empty first viewport', () => {
+    controller.initViewport(viewport);
+
+    expect(decode).not.toHaveBeenCalled();
+  });
+
+  it('keeps the first update pending while the GPU is busy', () => {
+    prompts.push(marker);
+    internals.isGpuInUse = true;
+    controller.initViewport(viewport);
+    expect(decode).not.toHaveBeenCalled();
+
+    internals.isGpuInUse = false;
+    controller.tryLoad();
+
+    expect(decode).toHaveBeenCalledWith([10, 20], [1]);
+  });
+
+  it.each(['same', 'different'])(
+    'does not decode accepted markers again on the %s viewport',
+    async (target) => {
+      prompts.push(marker);
+      controller.initViewport(viewport);
+      expect(decode).toHaveBeenCalledTimes(1);
+      await Promise.resolve();
+
+      // The controller delegates acceptance; committing voxels is outside
+      // this scheduling test. The prompt remains after the preview is accepted.
+      jest.spyOn(controller.tool, 'acceptPreview').mockImplementation(() => {});
+      controller.acceptPreview(viewport.element);
+      decode.mockClear();
+      const nextViewport =
+        target === 'same'
+          ? viewport
+          : {
+              ...viewport,
+              id: 'other-marker-viewport',
+              element: document.createElement('div'),
+            };
+
+      controller.initViewport(nextViewport);
+      controller.tryLoad();
+
+      expect(decode).not.toHaveBeenCalled();
+    }
+  );
+
+  it.each([
+    toolsEnums.Events.ANNOTATION_ADDED,
+    toolsEnums.Events.ANNOTATION_MODIFIED,
+    toolsEnums.Events.ANNOTATION_COMPLETED,
+  ])('still decodes markers on %s after connecting', (eventName) => {
+    controller.initViewport(viewport);
+    prompts.push(marker);
+
+    triggerEvent(eventTarget, eventName, { annotation: marker });
+    jest.advanceTimersByTime(300);
+
+    expect(decode).toHaveBeenCalledTimes(1);
+    expect(decode).toHaveBeenCalledWith([10, 20], [1]);
+  });
+
+  it('preserves an event update pending across a reconnect', () => {
+    controller.initViewport(viewport);
+    prompts.push(marker);
+    internals.isGpuInUse = true;
+    triggerEvent(eventTarget, toolsEnums.Events.ANNOTATION_MODIFIED, {
+      annotation: marker,
+    });
+    jest.advanceTimersByTime(300);
+
+    controller.initViewport(viewport);
+    internals.isGpuInUse = false;
+    controller.tryLoad();
+
+    expect(decode).toHaveBeenCalledTimes(1);
+    expect(decode).toHaveBeenCalledWith([10, 20], [1]);
   });
 });
