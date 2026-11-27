@@ -148,6 +148,20 @@ describe('getBitmapFramesFromDataset', () => {
     expect(Array.from(frames[0])).toEqual([1, 0, 1]);
   });
 
+  it('rejects an extra byte when the packed 1-bit length is already even', () => {
+    expect(() =>
+      getBitmapFramesFromDataset({
+        NumberOfFrames: 1,
+        Rows: 1,
+        Columns: 16,
+        BitsAllocated: 1,
+        // 16 pixels -> 2 packed bytes, so a third byte is not a pad byte
+        PixelData: new Uint8Array([0xff, 0xff, 0]),
+        _vrMap: { PixelData: 'OW' },
+      })
+    ).toThrow(/Unexpected 1-bit SEG PixelData length/);
+  });
+
   it('reads an 8-bit labelmap layout', () => {
     const { frames, bitsAllocated } = getBitmapFramesFromDataset({
       ...baseDataset,
