@@ -167,8 +167,14 @@ async function waitForViewportStatuses(
           ? viewports
           : viewports.slice(0, expectedCount);
 
+      // A stack viewport reports 'rendered' while its image still loads, so
+      // also require the displayed image.
       const allRendered = trackedViewports.every(
-        (viewport) => viewport?.viewportStatus === 'rendered'
+        (viewport) =>
+          viewport?.viewportStatus === 'rendered' &&
+          (viewport.type !== 'stack' ||
+            !viewport.getCurrentImageId?.() ||
+            viewport.csImage)
       );
 
       if (!allRendered) {
