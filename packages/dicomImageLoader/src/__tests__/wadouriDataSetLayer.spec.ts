@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { eventTarget } from '@cornerstonejs/core';
+import * as dicomParser from 'dicom-parser';
 import { logging } from '@cornerstonejs/utils';
 
 import { metadataForDataset } from '../imageLoader/wadouri/metaData/metaDataProvider';
@@ -830,6 +831,37 @@ describe('wadouri dataSet-layer', () => {
 
         expect(result.isNMReconstructable).toBe(false);
       });
+
+      it.each(['RECON TOMO', 'RECON GATED TOMO'])(
+        'is false and does not throw for %s when Modality is missing',
+        (imageSubType) => {
+          // Real dicom-parser DataSet holding only ImageType (0008,0008), so
+          // dataSet.string('x00080060') returns undefined as for a real file.
+          const imageType = `ORIGINAL\\PRIMARY\\${imageSubType}`;
+          const dataSet = new (dicomParser as any).DataSet(
+            dicomParser.littleEndianByteArrayParser,
+            new TextEncoder().encode(imageType),
+            {
+              x00080008: {
+                tag: 'x00080008',
+                vr: 'CS',
+                length: imageType.length,
+                dataOffset: 0,
+              },
+            }
+          );
+
+          const result = metadataForDataset(
+            'nmMultiframeGeometryModule',
+            'imageId',
+            dataSet
+          );
+
+          expect(result.modality).toBeUndefined();
+          expect(result.imageSubType).toBe(imageSubType);
+          expect(result.isNMReconstructable).toBe(false);
+        }
+      );
     });
 
     describe('PET_ISOTOPE module', () => {
