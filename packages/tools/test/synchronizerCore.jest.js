@@ -302,6 +302,114 @@ describe('Synchronizer', () => {
     expect(callback).not.toHaveBeenCalled();
   });
 
+  it('destroy removes every viewport when several were added', () => {
+    const callback = jest.fn();
+    const sync = new Synchronizer('sync-g2', 'my-event', callback);
+    const viewports = ['vp1', 'vp2', 'vp3', 'vp4'].map((id) =>
+      world.addViewport('re1', id)
+    );
+
+    viewports.forEach(({ renderingEngineId, viewportId }) =>
+      sync.add({ renderingEngineId, viewportId })
+    );
+
+    sync.destroy();
+
+    expect(sync.getSourceViewports()).toHaveLength(0);
+    expect(sync.getTargetViewports()).toHaveLength(0);
+
+    viewports.forEach(({ element }) =>
+      element.dispatchEvent(new CustomEvent('my-event'))
+    );
+    expect(callback).not.toHaveBeenCalled();
+  });
+
+  // The ELEMENT_DISABLED handlers that are still registered on a target
+  function trackDisableHandlers(target) {
+    const handlers = new Set();
+    const isDisableEvent = (name) => name === 'CORNERSTONE_ELEMENT_DISABLED';
+
+    jest.spyOn(target, 'addEventListener').mockImplementation((name, fn) => {
+      if (isDisableEvent(name)) {
+        handlers.add(fn);
+      }
+    });
+    jest.spyOn(target, 'removeEventListener').mockImplementation((name, fn) => {
+      if (isDisableEvent(name)) {
+        handlers.delete(fn);
+      }
+    });
+
+    return handlers;
+  }
+
+  it('keeps one ELEMENT_DISABLED handler per element and detaches it on destroy', () => {
+    const sync = new Synchronizer('sync-i', 'my-event', jest.fn());
+    const viewports = ['vp1', 'vp2', 'vp3', 'vp4'].map((id) =>
+      world.addViewport('re1', id)
+    );
+    const handlers = viewports.map(({ element }) =>
+      trackDisableHandlers(element)
+    );
+
+    viewports.forEach((viewport) => sync.add(viewport));
+    expect(handlers.map((set) => set.size)).toEqual([1, 1, 1, 1]);
+
+    sync.destroy();
+    expect(handlers.map((set) => set.size)).toEqual([0, 0, 0, 0]);
+  });
+
+  it('detaches the ELEMENT_DISABLED handler when a viewport leaves both lists', () => {
+    const sync = new Synchronizer('sync-j', 'my-event', jest.fn());
+    const viewport = world.addViewport('re1', 'vp1');
+    const handlers = trackDisableHandlers(viewport.element);
+
+    sync.add(viewport);
+    sync.removeTarget(viewport);
+    expect(handlers.size).toBe(1);
+
+    sync.removeSource(viewport);
+    expect(handlers.size).toBe(0);
+  });
+
+  it('keeps the shared eventTarget handler until the last viewport leaves', () => {
+    const handlers = trackDisableHandlers(eventTarget);
+    const sync = new Synchronizer('sync-k', 'my-event', jest.fn(), {
+      eventSource: 'eventTarget',
+    });
+    const vp1 = world.addViewport('re1', 'vp1');
+    const vp2 = world.addViewport('re1', 'vp2');
+
+    try {
+      sync.add(vp1);
+      sync.add(vp2);
+      sync.remove(vp1);
+      expect(handlers.size).toBe(1);
+
+      sync.remove(vp2);
+      expect(handlers.size).toBe(0);
+    } finally {
+      eventTarget.addEventListener.mockRestore();
+      eventTarget.removeEventListener.mockRestore();
+    }
+  });
+
+  it('destroy does not throw when a viewport no longer exists', () => {
+    const sync = new Synchronizer('sync-l', 'my-event', jest.fn(), {
+      auxiliaryEvents: [{ name: 'aux-event' }],
+    });
+    const vp1 = world.addViewport('re1', 'vp1');
+    const vp2 = world.addViewport('re1', 'vp2');
+
+    sync.add(vp1);
+    sync.add(vp2);
+    getRenderingEngine('re1').__viewportMap.delete('vp2');
+
+    expect(() => sync.destroy()).not.toThrow();
+    expect(sync.getSourceViewports()).toHaveLength(0);
+    expect(sync.getTargetViewports()).toHaveLength(0);
+  });
+
   it('supports the eventTarget event source option', () => {
     const callback = jest.fn();
     const sync = new Synchronizer('sync-h', 'my-event', callback, {
@@ -417,6 +525,24 @@ describe('SynchronizerManager', () => {
 
     expect(destroySpy).toHaveBeenCalledTimes(1);
     expect(getSynchronizer('sync-y')).toBeUndefined();
+  });
+
+  it('a destroyed synchronizer no longer syncs any of its viewports', () => {
+    const world = createWorld();
+    const handler = jest.fn();
+    const sync = createSynchronizer('sync-y2', 'evt', handler);
+    const viewports = ['vp1', 'vp2', 'vp3', 'vp4'].map((id) =>
+      world.addViewport('re1', id)
+    );
+    viewports.forEach(({ renderingEngineId, viewportId }) =>
+      sync.add({ renderingEngineId, viewportId })
+    );
+
+    destroySynchronizer('sync-y2');
+
+    viewports[1].element.dispatchEvent(new CustomEvent('evt'));
+
+    expect(handler).not.toHaveBeenCalled();
   });
 
   it('destroySynchronizer is a no-op for an unknown id', () => {
