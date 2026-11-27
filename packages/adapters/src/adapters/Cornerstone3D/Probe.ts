@@ -40,13 +40,15 @@ class Probe extends BaseAdapter3D {
       this.toolType
     );
 
-    const cachedStats = statsTargetId
-      ? {
-          [statsTargetId]: {
-            value: NUMGroup?.MeasuredValueSequence?.NumericValue ?? null,
-          },
-        }
-      : {};
+    // A probe with no NUM value (often SCOORD3D) gets no stats, so viewers show no value
+    const cachedStats =
+      statsTargetId && NUMGroup
+        ? {
+            [statsTargetId]: {
+              value: NUMGroup.MeasuredValueSequence?.NumericValue ?? null,
+            },
+          }
+        : {};
     state.annotation.data = {
       ...state.annotation.data,
       handles: {
