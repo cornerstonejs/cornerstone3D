@@ -3,7 +3,6 @@ import { utilities } from 'dcmjs';
 import { vec3 } from 'gl-matrix';
 import BaseAdapter3D from './BaseAdapter3D';
 import { extractAllNUMGroups, restoreAdditionalMetrics } from './metricHandler';
-import { mapUnitToUCUM } from './unitMapper';
 import { toScoords, toArray } from '../helpers';
 import ControlPointPolyline from './ControlPointPolyline';
 import { SPLINE_TYPE_CODE } from './constants';
@@ -146,28 +145,16 @@ class PlanarFreehandROI extends BaseAdapter3D {
     const controlPoints =
       handles?.points?.length && toScoords(scoordProps, handles.points);
 
-    const {
-      area,
-      areaUnit,
-      modalityUnit,
-      perimeter,
-      mean,
-      max,
-      stdDev,
-      length,
-      unit,
-    } = super.getCachedStats(data.cachedStats, metadata);
+    const stats = super.getCachedStats(data.cachedStats, metadata);
+    const { area, perimeter, mean, max, stdDev, length } = stats;
 
     return {
       /** From cachedStats */
       points,
       controlPoints,
+      ...this.getUnitArguments(stats),
       area,
-      areaUnit,
       perimeter: perimeter ?? length,
-      // Without a unit dcmjs writes "mm", whatever the contour was measured in
-      unit,
-      modalityUnit: mapUnitToUCUM(modalityUnit),
       mean,
       max,
       stdDev,
