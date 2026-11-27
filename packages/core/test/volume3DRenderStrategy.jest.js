@@ -33,6 +33,8 @@ jest.mock('../src/loaders/volumeLoader', () => ({
 jest.mock('../src/RenderingEngine/helpers/setDefaultVolumeVOI', () => ({
   __esModule: true,
   default: async () => undefined,
+  getVolumeVOIShape: () => ({}),
+  volumeVOIIsCurve: () => false,
 }));
 
 // These tests check the reductions of final downsampling, which is off by

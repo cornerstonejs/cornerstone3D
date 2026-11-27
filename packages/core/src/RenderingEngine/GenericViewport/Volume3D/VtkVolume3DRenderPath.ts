@@ -43,6 +43,7 @@ import type {
   Volume3DVolumeRendering,
   Volume3DVtkVolumeAdapterContext,
 } from './viewport3DTypes';
+import { getVolumeActorDefaultVOIRange } from '../Planar/planarVolumePresentation';
 import applyVolume3DCamera from './applyVolume3DCamera';
 import { getInitialVolume3DCamera } from './vtkVolume3DInitialCamera';
 import { isSegmentationOverlayData } from '../renderingFidelity';
@@ -101,18 +102,16 @@ export class VtkVolume3DRenderPath
     }
     setCameraClippingRange(ctx);
 
-    const defaultRange = actor
-      .getProperty()
-      .getRGBTransferFunction(0)
-      .getRange();
+    const defaultVOIRange = await getVolumeActorDefaultVOIRange(
+      actor,
+      payload.imageVolume
+    );
 
     const rendering: Volume3DVolumeRendering = {
       renderMode: 'vtkVolume3d',
       actorEntryUID: uuidv4(),
       actor,
-      defaultVOIRange: defaultRange
-        ? { lower: defaultRange[0], upper: defaultRange[1] }
-        : undefined,
+      defaultVOIRange,
       imageVolume: payload.imageVolume,
       mapper,
       viewportId: ctx.viewportId,
