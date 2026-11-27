@@ -29,7 +29,6 @@ import {
 import { applyGpuMemoryUrlParameters } from '../../../../utils/demo/helpers/exampleParameters';
 import {
   addGpuMemoryLog,
-  addGpuMemoryStatusLine,
   allocateUntilFailure,
   attachGpuMemoryFailurePopup,
   gpuMemoryReport,
@@ -86,42 +85,44 @@ type Status = 'pass' | 'fail' | 'info' | 'running';
 type StepResult = { status: Status; details: string; at: number };
 type Results = Record<string, StepResult>;
 
-/** Each step, with what to do and what to expect, shown under its button. */
+/**
+ * Each step, with a one-line hint. The hint shows on the next step to run, on
+ * a running step and on a failed one; `risky` marks the steps that make the
+ * GPU fail on purpose.
+ */
 const STEPS = [
-  {
-    id: 'device',
-    title: '1. Check the device and the start limit',
-    how: 'Press it. The result shows at once.',
-  },
+  { id: 'device', title: 'Device and start limit', hint: 'Shows at once.' },
   {
     id: 'load',
-    title: '2. Load the CT',
-    how: 'Press it, and wait for the result: up to a minute while the CT loads. The four images appear.',
+    title: 'Load the CT',
+    hint: 'Up to a minute; the four images appear.',
   },
   {
     id: 'limit',
-    title: '3. Lower the limit, then reset it',
-    how: 'Press it, and watch the images: within 15 s they turn softer with a red "Low Fidelity" label, then sharp again, with no click from you.',
+    title: 'Lower, then reset the limit',
+    hint: 'The images turn soft, then sharp again, by themselves (up to 15 s).',
   },
   {
     id: 'contextLoss',
-    title: '4. Lose the context during a load',
-    how: 'Press it. The page reloads, loads the CT, and loses its WebGL context on purpose: the images turn black and a "GPU memory failure" popup opens. Wait for the result here, then press "Reload" in the popup (not "Reload with …", which would set a lower limit for the next steps).',
+    title: 'Lose the context during a load',
+    hint: 'The page reloads, turns black, and a popup opens: press the outlined button.',
   },
   {
     id: 'tabs',
-    title: '5. Share a wait for WebGL with a second tab',
-    how: 'Press it. A second tab opens and closes by itself within a few seconds. If the browser blocks it, open the link that the result shows. Then wait 20 s before step 6.',
+    title: 'Share the WebGL wait with a 2nd tab',
+    hint: 'A tab opens and closes by itself. If it is blocked, open the link shown.',
   },
   {
     id: 'allocate',
-    title: '6. Allocate until a real GPU failure',
-    how: 'Start a screen recording first. Press it and confirm the warning: the GPU fails on purpose, and the tab can freeze or stop. Then follow the note in the popup. If the tab stopped, reload it: the result shows here.',
+    title: 'Allocate until the GPU fails',
+    hint: 'Record the screen first. The tab can freeze or stop: reload it if so.',
+    risky: true,
   },
   {
     id: 'calibrate',
-    title: '7. Run a calibration',
-    how: 'Runs only after a real failure in step 6, and with no countdown in the popup; otherwise it says it was skipped. Press it and confirm: the GPU fails again, and the result shows here. The images can stay black afterwards; that is expected. If the tab stopped, reload it.',
+    title: 'Run a calibration',
+    hint: 'The GPU fails again. The images can stay black after it.',
+    risky: true,
   },
 ] as const;
 
@@ -178,88 +179,164 @@ const isSecondTab =
   new URLSearchParams(window.location.search).get(SECOND_TAB_PARAMETER) ===
   'second';
 
-/** The page: a panel of steps beside the four viewports. */
+/**
+ * The page: a toolbar above three columns, the steps, the four viewports, and
+ * the live numbers with the log. Narrower windows move the numbers under the
+ * viewports, then stack everything. The tiles stay at 300 px or less, as on
+ * the earlier runs, so the cost of each draw during the load and the GPU
+ * memory of the page that the steps measure stay comparable.
+ */
 setTitleAndDescription(
   'GPU Memory Test',
-  'Checks the automatic GPU memory limit and the handling of a GPU failure, one step at a time. Run the steps in order, then press "Copy report". Steps 6 and 7 make the GPU fail on purpose.'
+  'Run the steps in order with this window in front, then copy the report. Steps 6 and 7 make the GPU fail on purpose.'
 );
 
+const style = document.createElement('style');
+
+style.textContent = `
+:root { color-scheme: light; }
+body { margin: 12px 16px; background: #fff; color: #1f2328; }
+#demo-title { margin: 0; font: 600 20px system-ui, sans-serif; }
+#demo-description { margin: 2px 0 10px; font: 13px system-ui, sans-serif; color: #57606a; }
+.gmt { font: 13px/1.4 system-ui, sans-serif; color: #1f2328; }
+.gmt button { font: inherit; cursor: pointer; }
+.gmt button:disabled { cursor: not-allowed; opacity: 0.55; }
+.gmt-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 10px; }
+.gmt-bar button { padding: 4px 12px; border: 1px solid #c8ccd1; border-radius: 6px; background: #fff; }
+.gmt-bar .gmt-primary { background: #1f6feb; border-color: #1f6feb; color: #fff; }
+.gmt-progress { margin-left: auto; color: #57606a; }
+.gmt-main { display: grid; grid-template-columns: minmax(280px, 360px) minmax(0, 604px) minmax(230px, 340px); grid-template-areas: 'steps viewports side'; gap: 14px; align-items: start; }
+@media (max-width: 1100px) { .gmt-main { grid-template-columns: minmax(280px, 360px) minmax(0, 604px); grid-template-areas: 'steps viewports' 'steps side'; } }
+@media (max-width: 760px) { .gmt-main { grid-template-columns: minmax(0, 1fr); grid-template-areas: 'steps' 'viewports' 'side'; } }
+.gmt-left { grid-area: steps; }
+.gmt-viewports { grid-area: viewports; }
+.gmt-right { grid-area: side; }
+.gmt-left, .gmt-right { display: grid; gap: 10px; min-width: 0; }
+.gmt-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.gmt-step { border: 1px solid #d0d7de; border-radius: 8px; background: #fff; }
+.gmt-step[data-next] { border-color: #1f6feb; box-shadow: 0 0 0 1px #1f6feb; }
+.gmt-run { display: flex; align-items: center; gap: 8px; width: 100%; padding: 7px 10px; border: 0; background: none; text-align: left; color: inherit; }
+.gmt-num { flex: none; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: #eaeef2; font-size: 12px; font-weight: 600; }
+.gmt-title { flex: 1; font-weight: 600; }
+.gmt-tag { margin-left: 6px; font-size: 11px; font-weight: 500; color: #9a6700; }
+.gmt-badge { flex: none; padding: 1px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; }
+.gmt-badge:empty { display: none; }
+[data-state=pass] .gmt-badge { background: #dafbe1; color: #1a7f37; }
+[data-state=fail] .gmt-badge { background: #ffebe9; color: #cf222e; }
+[data-state=info] .gmt-badge { background: #fff8c5; color: #9a6700; }
+[data-state=running] .gmt-badge { background: #ddf4ff; color: #0969da; }
+[data-state=pass] .gmt-num { background: #1a7f37; color: #fff; }
+[data-state=fail] .gmt-num { background: #cf222e; color: #fff; }
+[data-state=info] .gmt-num { background: #bf8700; color: #fff; }
+[data-state=running] .gmt-num { background: #0969da; color: #fff; }
+.gmt-hint, .gmt-result { padding: 0 10px 7px 40px; font-size: 12px; }
+.gmt-hint { display: none; color: #57606a; }
+.gmt-step[data-next] .gmt-hint, [data-state=running] .gmt-hint, [data-state=fail] .gmt-hint, .gmt-step[data-locked] .gmt-hint { display: block; }
+.gmt-step[data-locked] { background: #f6f8fa; }
+.gmt-result { color: #424a53; overflow-wrap: anywhere; }
+.gmt-result:empty { display: none; }
+.gmt-report { width: 100%; height: 10em; box-sizing: border-box; font: 11px ui-monospace, monospace; }
+.gmt-viewports { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; width: min(100%, calc(100vh - 130px), 604px); min-width: 260px; }
+.gmt-tile { position: relative; aspect-ratio: 1 / 1; border-radius: 4px; overflow: hidden; background: #000; }
+.gmt-tile > div:first-child { width: 100%; height: 100%; }
+.gmt-label { position: absolute; left: 6px; bottom: 4px; font: 11px ui-monospace, monospace; color: #fff; text-shadow: 0 0 3px #000; pointer-events: none; }
+.gmt-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+.gmt-card { padding: 8px 10px; border: 1px solid #d0d7de; border-radius: 8px; }
+.gmt-card h3 { margin: 0 0 4px; font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: #57606a; }
+.gmt-card dl { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2px 10px; margin: 0; }
+.gmt-card dt { color: #57606a; }
+.gmt-card dd { margin: 0; font: 12px ui-monospace, monospace; overflow-wrap: anywhere; }
+.gmt-card dd.gmt-bad { color: #cf222e; font-weight: 600; }
+.gmt-log summary { cursor: pointer; color: #57606a; }
+.gmt-log pre { max-width: none !important; max-height: 16em !important; }
+`;
+document.head.appendChild(style);
+
+/** Creates an element with a class and, optionally, its text. */
+function make<K extends keyof HTMLElementTagNameMap>(
+  tag: K,
+  className?: string,
+  text?: string
+): HTMLElementTagNameMap[K] {
+  const element = document.createElement(tag);
+
+  if (className) {
+    element.className = className;
+  }
+
+  if (text !== undefined) {
+    element.textContent = text;
+  }
+
+  return element;
+}
+
 const content = document.getElementById('content');
-const layout = document.createElement('div');
+const root = make('div', 'gmt');
+const toolbar = make('div', 'gmt-bar');
+const main = make('div', 'gmt-main');
+const left = make('div', 'gmt-left');
+const right = make('div', 'gmt-right');
+const stepsList = make('ol', 'gmt-steps');
+const grid = make('div', 'gmt-viewports');
 
-Object.assign(layout.style, {
-  display: 'flex',
-  flexWrap: 'wrap',
-  gap: '12px',
-  alignItems: 'flex-start',
-});
-content.appendChild(layout);
+left.appendChild(stepsList);
+main.append(left, grid, right);
+root.append(toolbar, main);
+content.appendChild(root);
 
-const panel = document.createElement('div');
+const VIEWPORT_NAMES = ['Axial', 'Sagittal', 'Coronal', '3D'];
+const labels: HTMLElement[] = [];
 
-Object.assign(panel.style, {
-  flex: '1 1 380px',
-  maxWidth: '560px',
-  fontFamily: 'sans-serif',
-  fontSize: '14px',
-});
-layout.appendChild(panel);
+const elements = viewports.map((_, index) => {
+  const tile = make('div', 'gmt-tile');
+  const element = make('div');
+  const label = make('div', 'gmt-label', VIEWPORT_NAMES[index]);
 
-const grid = document.createElement('div');
-
-Object.assign(grid.style, {
-  flex: '1 1 400px',
-  display: 'grid',
-  gridTemplateColumns: 'repeat(2, minmax(160px, 300px))',
-  gap: '4px',
-});
-layout.appendChild(grid);
-
-const elements = viewports.map(() => {
-  const element = document.createElement('div');
-
-  Object.assign(element.style, { width: '100%', aspectRatio: '1 / 1' });
   element.oncontextmenu = (event) => event.preventDefault();
-  grid.appendChild(element);
+  tile.append(element, label);
+  grid.appendChild(tile);
+  labels.push(label);
 
   return element;
 });
 
-/** A section of the panel, with a title. */
-function section(title: string): HTMLElement {
-  const box = document.createElement('div');
-  const heading = document.createElement('div');
+/** A card of label and value rows, refreshed by `fillFacts`. */
+function factsCard(title: string): HTMLElement {
+  const card = make('div', 'gmt-card');
+  const list = make('dl');
 
-  heading.textContent = title;
-  Object.assign(heading.style, { fontWeight: 'bold', margin: '8px 0 4px' });
-  box.appendChild(heading);
-  panel.appendChild(box);
+  card.append(make('h3', undefined, title), list);
+  facts.appendChild(card);
 
-  return box;
+  return list;
 }
 
-const deviceBox = section('Device');
-const deviceText = document.createElement('pre');
+const facts = make('div', 'gmt-facts');
 
-Object.assign(deviceText.style, {
-  margin: '0',
-  fontSize: '12px',
-  whiteSpace: 'pre-wrap',
-});
-deviceBox.appendChild(deviceText);
+right.appendChild(facts);
 
-const numbersBox = section('GPU memory now');
-const numbersText = document.createElement('pre');
+const deviceList = factsCard('Device');
+const memoryList = factsCard('GPU memory');
 
-Object.assign(numbersText.style, {
-  margin: '0',
-  fontSize: '12px',
-  whiteSpace: 'pre-wrap',
-});
-numbersBox.appendChild(numbersText);
+function fillFacts(
+  list: HTMLElement,
+  rows: Array<[string, string, boolean?]>
+): void {
+  list.replaceChildren(
+    ...rows.flatMap(([label, value, bad]) => {
+      const term = make('dt', undefined, label);
+      const description = make('dd', bad ? 'gmt-bad' : undefined, value);
 
-const stepsBox = section('Steps');
-const logBox = section('Status and log');
+      return [term, description];
+    })
+  );
+}
+
+const logBox = make('details', 'gmt-log');
+
+logBox.appendChild(make('summary', undefined, 'Log'));
+right.appendChild(logBox);
 
 let renderingEngine: RenderingEngine | undefined;
 let imageIds: string[] = [];
@@ -361,36 +438,79 @@ function deviceFacts() {
 
 function updateLivePanels(): void {
   const device = deviceFacts();
-
-  deviceText.textContent = [
-    `Renderer: ${device.renderer || 'none'} (${device.rendererClass})`,
-    `16-bit textures (norm16): ${device.norm16 ? 'yes' : 'no'}`,
-    `Limit: ${device.limit}, start of the device ${device.start}`,
-    `Probe: version ${device.probeVersion ?? 'none'}, edge ${device.edge ? `${device.edge.value}${device.edge.assumed ? ' (assumed)' : ''}` : 'none'}`,
-    `WebGL: ${device.webgl ? (device.webglBlocked ? 'waits after a failure' : 'available') : 'none'}`,
-  ].join('\n');
-
+  const status = getGpuMemoryStatus();
   const { sets, heldBytes } = ctSets();
   const ledgerBytes = getGpuMemoryByKind().texture;
   const matches =
     sets.length === 0 || Math.abs(heldBytes - ledgerBytes) <= 0.01 * heldBytes;
+  const webgl = !device.webgl
+    ? 'none'
+    : status.webglBlocked
+      ? `waits (${status.webglBlockReason}) until ${status.webglBlockedUntil ? new Date(status.webglBlockedUntil).toLocaleTimeString() : '?'}`
+      : 'available';
 
-  numbersText.textContent = [
-    `Texture store: ${formatBytes(heldBytes)} | GPU memory count: ${formatBytes(ledgerBytes)}${matches ? '' : '   <- MISMATCH'}`,
-    `Page total: ${formatBytes(getGpuMemoryStatus().pageBytes)}`,
-    `Sets: ${sets.map(({ name, references }) => `${name} (${references})`).join(', ') || 'none'}`,
-    ...viewportStates().map(
-      ({ id, dimensions, cause }) =>
-        `${id}: ${dimensions ? dimensions.join(' x ') : 'nothing'} ${dimensions ? `(${cause})` : ''}`
-    ),
-  ].join('\n');
-  numbersText.style.color = matches ? '' : '#b00020';
+  fillFacts(deviceList, [
+    ['Renderer', device.renderer || 'none'],
+    ['Class', device.rendererClass],
+    ['16-bit', device.norm16 ? 'yes' : 'no'],
+    [
+      'Edge',
+      device.edge
+        ? `${device.edge.value}${device.edge.assumed ? ' (assumed)' : ''}`
+        : 'none',
+      !device.edge,
+    ],
+    ['Probe', `version ${device.probeVersion ?? 'none'}`],
+    ['WebGL', webgl, status.webglBlocked],
+  ]);
+  fillFacts(memoryList, [
+    [
+      'Limit',
+      status.applies
+        ? `${formatBytes(status.limitBytes)} (${status.source}${status.hard ? ', hard' : ''})`
+        : 'none',
+    ],
+    ['Start', device.start],
+    ['Store', formatBytes(heldBytes)],
+    [
+      'Counted',
+      `${formatBytes(ledgerBytes)}${matches ? '' : ' (mismatch)'}`,
+      !matches,
+    ],
+    ['Page', formatBytes(status.pageBytes)],
+    [
+      'Sets',
+      sets
+        .map(({ name, references }) => `${name} (${references})`)
+        .join(', ') || 'none',
+    ],
+  ]);
+
+  viewportStates().forEach(({ dimensions, cause }, index) => {
+    labels[index].textContent = [
+      VIEWPORT_NAMES[index],
+      dimensions?.join('×'),
+      dimensions && cause !== 'full' ? cause : undefined,
+    ]
+      .filter(Boolean)
+      .join(' · ');
+  });
 }
 
 /** The steps. */
 
-const statusViews = new Map<StepId, HTMLElement>();
+type StepView = {
+  row: HTMLElement;
+  badge: HTMLElement;
+  hint: HTMLElement;
+  result: HTMLElement;
+};
+
+const stepViews = new Map<StepId, StepView>();
+/** True while a step runs: the other steps cannot start. */
+let busy = false;
 const buttons = new Map<StepId, HTMLButtonElement>();
+const progress = make('span', 'gmt-progress');
 
 const BADGE: Record<Status, string> = {
   pass: 'PASS',
@@ -399,25 +519,77 @@ const BADGE: Record<Status, string> = {
   running: 'RUNNING',
 };
 
-const BADGE_COLOR: Record<Status, string> = {
-  pass: '#1b7f3b',
-  fail: '#b00020',
-  info: '#8a6d00',
-  running: '#555',
-};
+const BEFORE_ALLOCATE: StepId[] = [
+  'device',
+  'load',
+  'limit',
+  'contextLoss',
+  'tabs',
+];
 
-function showResult(id: StepId): void {
-  const result = readResults()[id];
-  const view = statusViews.get(id);
-
-  if (!view) {
-    return;
+/**
+ * Why a step cannot run yet, or `undefined` when it can. Step 6 comes after
+ * the others, since its failure can block WebGL for the steps after it, and
+ * a calibration needs the real failure of step 6.
+ */
+function lockReason(id: StepId, results: Results): string | undefined {
+  if (
+    id === 'allocate' &&
+    BEFORE_ALLOCATE.some(
+      (before) => !results[before] || results[before].status === 'running'
+    )
+  ) {
+    return 'Run steps 1 to 5 first.';
   }
 
-  view.textContent = result
-    ? `${BADGE[result.status]}: ${result.details}`
-    : 'Not run yet';
-  view.style.color = result ? BADGE_COLOR[result.status] : '#777';
+  if (id === 'calibrate' && results.allocate?.status !== 'pass') {
+    return 'Needs a real GPU failure from step 6.';
+  }
+
+  return undefined;
+}
+
+/**
+ * Shows each result, marks the next step to run, enables the steps that can
+ * run, and counts the done ones.
+ */
+function showResults(): void {
+  const results = readResults();
+  const running = Object.values(results).some(
+    ({ status }) => status === 'running'
+  );
+  const next = running
+    ? undefined
+    : STEPS.find(
+        ({ id }) =>
+          !lockReason(id, results) &&
+          (!results[id] || results[id].status === 'fail')
+      )?.id;
+
+  STEPS.forEach(({ id, hint }) => {
+    const view = stepViews.get(id);
+    const result = results[id];
+    const locked = lockReason(id, results);
+
+    if (!view) {
+      return;
+    }
+
+    buttons.get(id).disabled = busy || Boolean(locked);
+    view.row.toggleAttribute('data-locked', Boolean(locked));
+    view.hint.textContent = locked ?? hint;
+    view.row.dataset.state = result?.status ?? 'none';
+    view.badge.textContent = result ? BADGE[result.status] : '';
+    view.result.textContent =
+      result && result.details !== 'running' ? result.details : '';
+    view.row.toggleAttribute('data-next', id === next);
+  });
+
+  const done = STEPS.filter(
+    ({ id }) => results[id]?.status === 'pass' || results[id]?.status === 'info'
+  ).length;
+
+  progress.textContent = `${done} of ${STEPS.length} done`;
 }
 
 function setResult(id: StepId, status: Status, details: string): void {
@@ -425,11 +597,10 @@ function setResult(id: StepId, status: Status, details: string): void {
 
   results[id] = { status, details, at: Date.now() };
   sessionStorage.setItem(RESULTS_KEY, JSON.stringify(results));
-  showResult(id);
+  showResults();
   log(`Step ${id}: ${BADGE[status]} ${details}`);
 }
 
-/** Runs a step, and turns an unexpected error into its failure. */
 /**
  * True when the page draws: it is visible, and an animation frame comes. A
  * browser draws nothing in a hidden tab, and Chrome on macOS draws nothing in
@@ -451,16 +622,13 @@ async function pageDraws(): Promise<boolean> {
 }
 
 const NOT_DRAWING =
-  'the page did not draw: keep the browser window in front and fully visible (not covered by another window), and run the step again';
+  'the page did not draw: keep the window in front and uncovered, then run the step again';
 
 /** One step at a time: a step that runs keeps the others from starting. */
-function setBusy(busy: boolean): void {
-  buttons.forEach((button) => {
-    button.disabled = busy;
-  });
+function setBusy(value: boolean): void {
+  busy = value;
+  showResults();
 }
-
-let busy = false;
 
 async function runStep(id: StepId, run: () => Promise<void>): Promise<void> {
   if (busy) {
@@ -469,7 +637,6 @@ async function runStep(id: StepId, run: () => Promise<void>): Promise<void> {
     return;
   }
 
-  busy = true;
   setBusy(true);
   setResult(id, 'running', 'running');
 
@@ -489,7 +656,6 @@ async function runStep(id: StepId, run: () => Promise<void>): Promise<void> {
   } catch (error) {
     setResult(id, 'fail', `error: ${(error as Error).message}`);
   } finally {
-    busy = false;
     setBusy(false);
   }
 }
@@ -589,7 +755,7 @@ async function stepLoad(): Promise<void> {
 
   if (sets.length !== 1 || sets[0].references !== viewportIds.length) {
     problems.push(
-      `sets ${sets.map(({ name, references }) => `${name} (${references})`).join(', ')}, one set held by 4 viewports expected`
+      `sets ${sets.map(({ name, references }) => `${name} (${references})`).join(', ')}; one set held by 4 viewports expected`
     );
   }
 
@@ -684,7 +850,7 @@ async function stepLimit(): Promise<void> {
     reduced && restored ? 'pass' : 'fail',
     problems.length
       ? problems.join('; ')
-      : `256 MB: ${formatBytes(reducedBytes)}, reset: ${formatBytes(before.bytes)}, redrawn with no click`
+      : `${formatBytes(reducedBytes)} at 256 MB, ${formatBytes(before.bytes)} after the reset, redrawn by itself`
   );
 }
 
@@ -752,7 +918,7 @@ async function finishContextLoss(): Promise<void> {
   setResult(
     'contextLoss',
     'running',
-    'losing the context during the load: keep the page in front, and wait for the result before you use the popup'
+    'losing the context: wait for the result before you use the popup'
   );
 
   const failures: Types.EventTypes.GpuMemoryFailureEventDetail[] = [];
@@ -775,10 +941,10 @@ async function finishContextLoss(): Promise<void> {
       'contextLoss',
       'fail',
       document.visibilityState === 'hidden'
-        ? 'no failure reported: the page was hidden, and a hidden page counts no loss'
+        ? 'no failure: the page was hidden, and a hidden page counts no loss'
         : (await pageDraws())
-          ? 'no failure reported within 60 s'
-          : `no failure reported; ${NOT_DRAWING}`
+          ? 'no failure within 60 s'
+          : `no failure; ${NOT_DRAWING}`
     );
 
     return;
@@ -793,12 +959,9 @@ async function finishContextLoss(): Promise<void> {
   setResult(
     'contextLoss',
     ok ? 'pass' : 'fail',
-    `${failures.length} failure(s): ${failure.kind} at ${formatBytes(failure.failedBytes)}, suggested ${formatBytes(failure.suggestedBytes)}, reload ${failure.mustReload ? 'required' : 'not required'}. Now press "Reload" in the popup, then step 5.`
+    `${failures.length} failure(s): ${failure.kind} at ${formatBytes(failure.failedBytes)}, ${formatBytes(failure.suggestedBytes)} suggested, reload ${failure.mustReload ? 'required' : 'not required'}`
   );
-  guidePopup(
-    'Test step 4 is done. Press "Reload" to continue with step 5. Do not press "Reload with …": it sets a lower limit for the next steps.',
-    'Reload'
-  );
+  guidePopup('Step 4 done. Press "Reload", not "Reload with …".', 'Reload');
 }
 
 /**
@@ -864,12 +1027,12 @@ function guideAfterRealFailure(
 ): void {
   if (failure.mustReload && isWebGLBlocked()) {
     guidePopup(
-      'Test step 6: press nothing. The browser blocks WebGL for a while; when the countdown ends, this page reloads by itself. Then press step 7.'
+      'Step 6 done. Press nothing: the page reloads after the countdown. Then run step 7.'
     );
   } else if (failure.mustReload) {
-    guidePopup('Test step 6: press "Reload", then step 7.', 'Reload');
+    guidePopup('Step 6 done. Press "Reload", then run step 7.', 'Reload');
   } else {
-    guidePopup('Test step 6: press "Dismiss", then step 7.', 'Dismiss');
+    guidePopup('Step 6 done. Press "Dismiss", then run step 7.', 'Dismiss');
   }
 }
 
@@ -898,7 +1061,7 @@ async function stepTabs(): Promise<void> {
     'running',
     second
       ? 'waiting for the second tab'
-      : `pop-ups are blocked: open ${url.toString()} in a new tab of this browser`
+      : `pop-ups are blocked: open ${url.toString()} in a new tab`
   );
 
   const problems = [];
@@ -933,7 +1096,7 @@ async function stepTabs(): Promise<void> {
     problems.length ? 'fail' : 'pass',
     problems.length
       ? problems.join('; ')
-      : 'the second tab saw the wait start and end. This tab follows the wait it wrote for up to 20 s.'
+      : 'the second tab saw the wait start and end; wait 20 s before step 6'
   );
 }
 
@@ -965,7 +1128,7 @@ async function stepAllocate(): Promise<void> {
     setResult(
       'allocate',
       'info',
-      'WebGL waits after a failure: run the step again when it ends'
+      'WebGL waits after a failure: run it again when the wait ends'
     );
 
     return;
@@ -997,13 +1160,13 @@ async function stepAllocate(): Promise<void> {
     setResult(
       'allocate',
       'pass',
-      `${failure.kind} at ${formatBytes(failure.failedBytes)}, suggested ${formatBytes(failure.suggestedBytes)}; WebGL ${isWebGLBlocked() ? `waits (${getGpuMemoryStatus().webglBlockReason})` : 'is available'}`
+      `${failure.kind} at ${formatBytes(failure.failedBytes)}, ${formatBytes(failure.suggestedBytes)} suggested; WebGL ${isWebGLBlocked() ? `waits (${getGpuMemoryStatus().webglBlockReason})` : 'available'}`
     );
   } else {
     setResult(
       'allocate',
       'info',
-      'no failure was reported: the run was cancelled, reached 32 GB, or stopped early (see the log). With no real failure, step 7 is skipped; reload the page to drop the temporary 64 GB limit of the run.'
+      'no failure: cancelled, or none up to 32 GB (see the log). Step 7 will skip; reload to drop the 64 GB limit of the run.'
     );
   }
 }
@@ -1019,7 +1182,7 @@ async function stepCalibrate(): Promise<void> {
     setResult(
       'calibrate',
       'info',
-      'skipped: a calibration needs a real GPU failure from step 6, and step 6 found none on this device. This is expected where the GPU shares the system memory, such as a Mac with Apple silicon.'
+      'skipped: step 6 found no real failure, as expected where the GPU pages to system memory'
     );
 
     return;
@@ -1029,7 +1192,7 @@ async function stepCalibrate(): Promise<void> {
     setResult(
       'calibrate',
       'info',
-      'a calibration runs only after a GPU failure, and while WebGL does not wait: run step 6 first, or wait'
+      'needs a failure and no WebGL wait: run step 6 first, or wait'
     );
 
     return;
@@ -1037,7 +1200,7 @@ async function stepCalibrate(): Promise<void> {
 
   if (
     !window.confirm(
-      'The calibration allocates GPU memory until the GPU fails. The browser then blocks WebGL for this site for about two minutes, in every tab. Run it?'
+      'The calibration allocates GPU memory until the GPU fails. The browser can then block WebGL for this site for about two minutes. Run it?'
     )
   ) {
     setResult('calibrate', 'info', 'cancelled');
@@ -1072,8 +1235,27 @@ function checkCalibration(
   setResult(
     'calibrate',
     unchanged ? 'pass' : 'fail',
-    `worked up to ${formatBytes(result.largestSuccessBytes)}, failed at ${formatBytes(result.failedBytes)}; the limit ${unchanged ? 'is unchanged' : 'changed, which it must not'}`
+    `worked up to ${formatBytes(result.largestSuccessBytes)}, failed at ${formatBytes(result.failedBytes)}; limit ${unchanged ? 'unchanged' : 'changed, which it must not'}`
   );
+}
+
+/**
+ * A step left running by a reload it did not ask for, such as a reload of the
+ * dev server, cannot end: it fails, so that it can run again. A step that
+ * reloads on purpose is pending, and ends in `finishPendingStep`.
+ */
+function failInterruptedSteps(): void {
+  const pending = sessionStorage.getItem(PENDING_KEY);
+
+  Object.entries(readResults())
+    .filter(([id, { status }]) => status === 'running' && id !== pending)
+    .forEach(([id]) =>
+      setResult(
+        id as StepId,
+        'fail',
+        'interrupted by a reload of the page: run it again'
+      )
+    );
 }
 
 /** A step that the reload or a stopped tab interrupted ends here. */
@@ -1086,13 +1268,11 @@ async function finishPendingStep(): Promise<void> {
     return;
   }
 
-  busy = true;
   setBusy(true);
 
   try {
     await finishInterruptedStep(pending);
   } finally {
-    busy = false;
     setBusy(false);
   }
 }
@@ -1110,13 +1290,13 @@ async function finishInterruptedStep(pending: string): Promise<void> {
       'allocate',
       failure ? 'pass' : 'fail',
       failure
-        ? `the tab stopped; the next start found a ${failure.kind} at ${formatBytes(failure.failedBytes)}`
-        : 'the tab stopped, and the next start found no failure'
+        ? `the tab stopped; ${failure.kind} at ${formatBytes(failure.failedBytes)} found on reload`
+        : 'the tab stopped, and the reload found no failure'
     );
 
     if (failure) {
       guidePopup(
-        'Test step 6 is done: the tab stopped, and this start found it. Press "Dismiss", then step 7.',
+        'Step 6 done: the tab stopped, and the reload found it. Press "Dismiss", then run step 7.',
         'Dismiss'
       );
     }
@@ -1137,9 +1317,11 @@ const STEP_RUNNERS: Record<StepId, () => void> = {
 };
 
 function buildSteps(): void {
-  const fresh = document.createElement('button');
+  const fresh = make('button', undefined, 'Fresh start');
+  const report = make('button', 'gmt-primary', 'Copy report');
+  const output = make('textarea', 'gmt-report');
 
-  fresh.textContent = 'Fresh start (clears the record and the results)';
+  fresh.title = 'Clears the device record and the results, then reloads';
   fresh.onclick = () => {
     Object.keys(localStorage)
       .filter(
@@ -1150,52 +1332,33 @@ function buildSteps(): void {
     sessionStorage.clear();
     window.location.href = window.location.pathname;
   };
-  stepsBox.appendChild(fresh);
+  toolbar.append(fresh, report, progress);
 
-  const intro = document.createElement('div');
+  STEPS.forEach((step, index) => {
+    const row = make('li', 'gmt-step');
+    const button = make('button', 'gmt-run');
+    const title = make('span', 'gmt-title', step.title);
+    const badge = make('span', 'gmt-badge');
+    const result = make('div', 'gmt-result');
 
-  intro.textContent =
-    'Run the steps from top to bottom, one at a time. Each step says what to do and what you will see. Keep this window in front and uncovered while a step runs.';
-  Object.assign(intro.style, { fontSize: '12px', margin: '6px 0' });
-  stepsBox.appendChild(intro);
+    if ('risky' in step) {
+      title.appendChild(make('span', 'gmt-tag', 'fails the GPU'));
+    }
 
-  STEPS.forEach(({ id, title, how }) => {
-    const row = document.createElement('div');
-    const button = document.createElement('button');
-    const instructions = document.createElement('div');
-    const status = document.createElement('div');
+    button.append(make('span', 'gmt-num', String(index + 1)), title, badge);
+    button.onclick = STEP_RUNNERS[step.id];
+    const hint = make('div', 'gmt-hint', step.hint);
 
-    Object.assign(row.style, { margin: '8px 0' });
-    button.textContent = title;
-    button.onclick = STEP_RUNNERS[id];
-    instructions.textContent = how;
-    Object.assign(instructions.style, {
-      fontSize: '12px',
-      marginLeft: '4px',
-      color: '#444',
-    });
-    Object.assign(status.style, {
-      fontSize: '12px',
-      marginLeft: '4px',
-      fontWeight: 'bold',
-    });
-    row.append(button, instructions, status);
-    stepsBox.appendChild(row);
-    buttons.set(id, button);
-    statusViews.set(id, status);
-    showResult(id);
+    row.append(button, hint, result);
+    stepsList.appendChild(row);
+    buttons.set(step.id, button);
+    stepViews.set(step.id, { row, badge, hint, result });
   });
+  showResults();
 
-  const report = document.createElement('button');
-  const output = document.createElement('textarea');
-
-  report.textContent = 'Copy report';
-  Object.assign(output.style, {
-    display: 'none',
-    width: '100%',
-    height: '10em',
-    fontSize: '11px',
-  });
+  output.hidden = true;
+  output.readOnly = true;
+  left.appendChild(output);
   report.onclick = async () => {
     const text = JSON.stringify(
       {
@@ -1210,17 +1373,20 @@ function buildSteps(): void {
     );
 
     output.value = text;
-    output.style.display = 'block';
+    output.hidden = false;
     output.select();
 
     try {
       await navigator.clipboard.writeText(text);
-      report.textContent = 'Copied. Copy report again';
+      report.textContent = 'Copied';
     } catch {
-      report.textContent = 'Select the text below and copy it';
+      report.textContent = 'Copy the text below';
     }
+
+    setTimeout(() => {
+      report.textContent = 'Copy report';
+    }, 3000);
   };
-  stepsBox.append(report, output);
 }
 
 /**
@@ -1242,18 +1408,17 @@ async function run() {
   }
 
   if (isSecondTab) {
-    panel.textContent =
-      'This is the second tab of step 5. It reports the wait for WebGL to the first tab, and closes by itself.';
-    grid.remove();
+    root.textContent =
+      'Second tab of step 5: it reports the WebGL wait to the first tab, and closes by itself.';
     runAsSecondTab();
 
     return;
   }
 
-  addGpuMemoryStatusLine(logBox);
   log = addGpuMemoryLog(logBox);
   applied.forEach((text) => log(text));
   attachGpuMemoryFailurePopup(log);
+  failInterruptedSteps();
   buildSteps();
 
   renderingEngine = new RenderingEngine(renderingEngineId);
@@ -1272,6 +1437,7 @@ async function run() {
     }))
   );
 
+  window.addEventListener('resize', () => renderingEngine?.resize(true, true));
   imageIds = await createImageIdsAndCacheMetaData(ctSeries);
 
   updateLivePanels();
