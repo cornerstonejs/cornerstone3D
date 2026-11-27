@@ -4,12 +4,38 @@ import type { BoundsIJK } from '../../types';
 import type { ThresholdInformation } from './utilities';
 import { getVoxelOverlap, processVolumes } from './utilities';
 
+export type ThresholdVoxel = {
+  index: number;
+  pointIJK: Types.Point3;
+  pointLPS: Types.Point3;
+};
+
 export type ThresholdRangeOptions = {
   overwrite: boolean;
   segmentationId: string;
-  boundsIJK: BoundsIJK;
+  /**
+   * The IJK box to test. Defaults to the whole volume. Ignored when
+   * `forEachVoxel` is given.
+   */
+  boundsIJK?: BoundsIJK;
   overlapType?: number;
   segmentIndex?: number;
+  /**
+   * Calls the callback for each segmentation voxel to test, in place of the
+   * `boundsIJK` box. Use it for an exact region, for example the shape of an
+   * annotation from `utilities.voxelSlab`, or to skip voxels that the run must
+   * not write, for example the voxels of other segments.
+   *
+   * `overwrite: true` clears every voxel before the run, the skipped voxels
+   * included. Use `overwrite: false` to keep the skipped voxels.
+   */
+  forEachVoxel?: (callback: (voxel: ThresholdVoxel) => void) => void;
+  /**
+   * Receives every write, the `overwrite` clear included. Defaults to the
+   * voxel manager of the segmentation volume. Pass the voxel manager of a
+   * labelmap memo to record the run for undo.
+   */
+  writeVoxelManager?: Types.IVoxelManager<number>;
 };
 
 /**
@@ -46,7 +72,8 @@ function thresholdVolumeByRange(
   }
   const overlapType = options?.overlapType || 0;
   const segVoxelManager =
-    segmentationVolume.voxelManager as Types.IVoxelManager<number>;
+    options.writeVoxelManager ??
+    (segmentationVolume.voxelManager as Types.IVoxelManager<number>);
   const scalarDataLength =
     segmentationVolume.voxelManager.getScalarDataLength();
 
@@ -128,7 +155,7 @@ function thresholdVolumeByRange(
    * volume (the reference for segmentation volume creation) and voxels in other
    * volumes.
    */
-  const callback = ({ index, pointIJK, pointLPS }) => {
+  const callback = ({ index, pointIJK, pointLPS }: ThresholdVoxel) => {
     let insert = volumeInfoList.length > 0;
     for (let i = 0; i < volumeInfoList.length; i++) {
       // if volume has the same size as segmentation volume, just range check
@@ -152,12 +179,16 @@ function thresholdVolumeByRange(
     }
   };
 
-  const voxelManager = segmentationVolume.voxelManager;
-
-  voxelManager.forEach(callback, {
-    imageData: segmentationImageData,
-    boundsIJK,
-  });
+  if (options.forEachVoxel) {
+    options.forEachVoxel(callback);
+  } else {
+    // Without bounds, forEach uses the box of the earlier writes, not the volume.
+    segmentationVolume.voxelManager.forEach(callback, {
+      imageData: segmentationImageData,
+      boundsIJK:
+        boundsIJK ?? segmentationVolume.voxelManager.getDefaultBounds(),
+    });
+  }
 
   triggerSegmentationDataModified(options.segmentationId);
 
