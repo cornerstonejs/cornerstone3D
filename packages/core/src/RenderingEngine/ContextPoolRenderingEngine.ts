@@ -382,25 +382,34 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
 
   /**
    * Runs for each viewport that goes, by a removal or by a reset of the layout
-   * (`setViewports`): the pool forgets its size and its canvas entry in the
-   * GPU memory ledger, and the shared offscreen canvas of its context shrinks
-   * to the viewports that remain, so the render-buffer charge matches the
-   * canvas. The render buffer keeps its charge while no viewport remains.
+   * (`setViewports`): the shared render window drops its renderer, the pool
+   * forgets its size and its canvas entry in the GPU memory ledger, and the
+   * shared offscreen canvas of its context shrinks to the viewports that
+   * remain, so the render-buffer charge matches the canvas. The renderer goes
+   * first, because the fit of the canvas renders the shared window. The render
+   * buffer keeps its charge while no viewport remains.
    */
-  protected _releaseViewportResources(viewportId: string): void {
+  protected _releaseViewportResources(viewport: IViewport): void {
     if (!this.contextPool) {
       return;
     }
 
+    const viewportId = viewport.id;
     const contextIndex =
       this.contextPool.getContextIndexForViewport(viewportId);
-
-    this.contextPool.removeViewport(viewportId);
-
     const contextData =
       contextIndex !== undefined
         ? this.contextPool.getContextByIndex(contextIndex)
         : null;
+
+    if (
+      contextData &&
+      !viewportTypeUsesCustomRenderingPipeline(viewport.type)
+    ) {
+      contextData.context.removeRenderer(viewportId);
+    }
+
+    this.contextPool.removeViewport(viewportId);
 
     if (contextData) {
       this._fitOffScreenCanvasToContext(
@@ -774,39 +783,6 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
 
     const { context: offscreenMultiRenderWindow } = contextData;
     return offscreenMultiRenderWindow.getRenderer(viewportId);
-  }
-
-  /**
-   * Disables the requested viewportId from the rendering engine.
-   * Calls the base implementation and then handles context-specific cleanup.
-   *
-   * @param viewportId - viewport Id
-   */
-  public disableElement(viewportId: string): void {
-    const viewport = this.getViewport(viewportId);
-    if (!viewport) {
-      return;
-    }
-
-    /**
-     * The base removal releases the viewport from the pool (see
-     * `_releaseViewportResources`), so its context is read first.
-     */
-    const contextIndex =
-      this.contextPool?.getContextIndexForViewport(viewportId);
-    const contextData =
-      contextIndex !== undefined
-        ? this.contextPool.getContextByIndex(contextIndex)
-        : null;
-
-    super.disableElement(viewportId);
-
-    if (
-      !viewportTypeUsesCustomRenderingPipeline(viewport.type) &&
-      contextData
-    ) {
-      contextData.context.removeRenderer(viewportId);
-    }
   }
 
   public destroy(): void {

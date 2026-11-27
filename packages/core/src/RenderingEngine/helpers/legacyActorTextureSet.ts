@@ -73,8 +73,8 @@ export function holdLegacyActorTextureSet(actor: object, held: boolean): void {
  * apply now, and moves the claim and the mapper to that texture.
  *
  * A legacy viewport chooses its texture once, when it creates the actor. A
- * mapper that has not yet allocated that texture refuses one that the new
- * limits cannot hold, and the viewport then shows nothing. The next render
+ * mapper that has not yet allocated that texture refuses one whose edge the
+ * new limits cannot hold, and the viewport then shows nothing. The next render
  * of the viewport draws the new texture. An actor whose set the store evicted
  * gets a texture again, even of the same name.
  *

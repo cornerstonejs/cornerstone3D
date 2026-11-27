@@ -55,7 +55,7 @@ describe('ContextPoolRenderingEngine shared offscreen canvas size', () => {
       .spyOn(BaseRenderingEngine.prototype, 'disableElement')
       .mockImplementation(function (viewportId) {
         /** The base removal releases the viewport, as `_resetViewport` does. */
-        this._releaseViewportResources(viewportId);
+        this._releaseViewportResources(this.getViewport(viewportId));
       });
   });
 
@@ -76,6 +76,10 @@ describe('ContextPoolRenderingEngine shared offscreen canvas size', () => {
     expect([container.width, container.height]).toEqual([320, 200]);
     expect(context.resize).toHaveBeenCalledTimes(1);
     expect(context.removeRenderer).toHaveBeenCalledWith('large');
+    // The fit renders the shared window, so the removed renderer goes first.
+    expect(context.removeRenderer.mock.invocationCallOrder[0]).toBeLessThan(
+      context.resize.mock.invocationCallOrder[0]
+    );
   });
 
   it('leaves the offscreen canvas alone when the disabled viewport was not the largest', () => {
@@ -101,22 +105,22 @@ describe('ContextPoolRenderingEngine shared offscreen canvas size', () => {
     expect(context.resize).not.toHaveBeenCalled();
   });
 
-  it('fits the offscreen canvas when a reset of the layout releases the viewports', () => {
+  it('removes the renderers and fits the offscreen canvas when a reset of the layout releases the viewports', () => {
     const { engine, pool, context, container } = setUpEngine({
       small: [100, 100],
       large: [1000, 1000],
     });
 
-    engine._releaseViewportResources('large');
+    engine._releaseViewportResources(engine.getViewport('large'));
 
     expect(pool.getMaxSizeForContext(0)).toEqual({ width: 100, height: 100 });
     expect([container.width, container.height]).toEqual([100, 100]);
     expect(context.resize).toHaveBeenCalledTimes(1);
 
-    engine._releaseViewportResources('small');
+    engine._releaseViewportResources(engine.getViewport('small'));
 
     expect([container.width, container.height]).toEqual([100, 100]);
-    expect(context.removeRenderer).not.toHaveBeenCalled();
+    expect(context.removeRenderer.mock.calls).toEqual([['large'], ['small']]);
   });
 
   it('fits an oversized offscreen canvas on the next render even when the max size did not change', () => {

@@ -231,6 +231,22 @@ describe('the default provider builds the strategies', () => {
     }
   });
 
+  it('lets the mapper allocate a texture above the memory limit, and refuses one above the edge limit', () => {
+    setGpuSettingsPreset('medium');
+
+    try {
+      // 2048 x 2048 x 600 float voxels are about 10 GB, above the 8 GB of `medium`.
+      expect(gridFitsGpuSettings([2048, 2048, 600], 'Float32Array', 1)).toBe(
+        true
+      );
+      expect(gridFitsGpuSettings([16, 16, 4096], 'Float32Array', 1)).toBe(
+        false
+      );
+    } finally {
+      resetGpuSettingsPreset();
+    }
+  });
+
   it('lets the mapper upload a dynamic or multi-component texture that the preset cannot hold', () => {
     setGpuSettingsPreset('low-tablet');
 

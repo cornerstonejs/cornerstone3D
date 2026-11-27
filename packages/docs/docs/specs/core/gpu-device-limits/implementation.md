@@ -56,8 +56,8 @@ approach appears, as long as the user requirements stay satisfied.
 ## The edge probe
 
 - **GPULIM-I-5** The startup probe runs in its own small WebGL2 context, at
-  the first detection of the capabilities, and only when the record holds no
-  formats. It tests the texel formats at an edge of 8, then searches the edge
+  the first detection of the capabilities, when the record holds no formats or
+  holds an edge that failed once (GPULIM-I-7). It tests the texel formats at an edge of 8, then searches the edge
   with an N x 4 x 4 texture on each of the three axes. The search starts at
   the minimum of `maxTextureEdge`, `MAX_3D_TEXTURE_SIZE` and 2048, starts below
   a failed edge of the record, and halves on each failure down to 16. A stored
@@ -79,8 +79,11 @@ approach appears, as long as the user requirements stay satisfied.
   smaller `maxTextureEdge` is the remedy.
 
 - **GPULIM-I-7** A context lost during the test of an edge stores that edge as
-  failed, and ends the search. The next search starts below it.
-  (GPULIM-U-4)
+  failed, and ends the search. A failed edge bounds the search of the startup
+  probe only after two failures: after one failure, the startup probe of the
+  next page tests that edge again in its own context, once. A pass clears the
+  failure. A search in a viewport context always starts below a failed edge,
+  so it cannot lose the context of the viewport. (GPULIM-U-4)
 - **GPULIM-I-8** The render path creates no probe context. The edge search
   runs again only in three cases: the startup probe could not run, the
   application called `retestRenderingCapabilities({ edge: true })`, or the
@@ -102,8 +105,9 @@ approach appears, as long as the user requirements stay satisfied.
 - **GPULIM-I-10** `gpuTextureBytesPerVoxel` is the one count of the bytes of a
   voxel of a texture. The strategy, the texture store and the allocation
   tracker use it. A 16-bit voxel (`Int16Array`, `Uint16Array`) takes 2 bytes
-  when the upload gets the norm16 extension, or when
-  `rendering.preferSizeOverAccuracy` is on, and 4 bytes otherwise.
+  when the upload gets the norm16 extension, and 4 bytes otherwise. The
+  volume mappers turn half float off, so `rendering.preferSizeOverAccuracy`
+  does not change the count.
   `Uint8Array` takes 1 byte, and every other type 4 bytes. (GPULIM-U-10)
 
 ## The fair share
@@ -137,8 +141,10 @@ approach appears, as long as the user requirements stay satisfied.
   then shows and frees GPU memory at once. (GPULIM-U-8)
 - **GPULIM-I-13** The mapper check (`gridFitsGpuSettings`) uses the memory
   limit of the whole page, not the share, so a mapper never refuses a grid that
-  the strategy chose. A full-resolution reslice texture that the check refuses
-  draws nothing, and the next render tries the upload again. (GPULIM-U-13)
+  the strategy chose. A texture above the memory limit passes the check with
+  a warning, and the mapper allocates it. Only a texture edge above the edge
+  limit fails the check: that texture draws nothing, and the next render tries
+  the upload again. (GPULIM-U-13, GPULIM-U-14)
 
 ## The allocation tracker
 

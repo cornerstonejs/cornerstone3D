@@ -351,10 +351,7 @@ function vtkStreamingOpenGLImageResliceMapper(publicAPI, model) {
          */
         const norm16Ext = model.context.getExtension('EXT_texture_norm16');
 
-        /**
-         * The full-resolution voxels have no reduction here, so a grid that
-         * the GPU settings cannot hold gets no texture rather than a gray one.
-         */
+        /** No reduction here: an edge above the limit gets no texture rather than a gray one. */
         if (
           !gridFitsGpuSettings(
             dims,

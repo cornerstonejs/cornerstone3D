@@ -125,6 +125,68 @@ describe('renderingCapabilities', () => {
     expect(getSupportedTextureFormats).not.toHaveBeenCalled();
   });
 
+  /**
+   * The user experience must have this: one transient failure of an edge does
+   * not keep a small edge on the device. The next start tests the edge again,
+   * and only a second failure keeps it.
+   */
+  it('tests an edge that failed once again at the next start, and keeps it after a second failure', () => {
+    mockWebGL();
+    const failedAt2048 = {
+      formats: { ...ALL_FORMATS },
+      max3DTextureSize: 2048,
+      reliableEdge: 1024,
+      failedEdge: 2048,
+    };
+
+    getSupportedTextureFormats.mockReturnValue(failedAt2048);
+    detectRenderingCapabilities();
+    expect(getStoredRenderingCapabilities().edge.failed).toEqual({
+      value: 2048,
+      failures: 1,
+    });
+
+    resetRenderingCapabilities();
+    getSupportedTextureFormats.mockClear();
+    detectRenderingCapabilities();
+
+    expect(getSupportedTextureFormats).toHaveBeenCalledWith(
+      expect.objectContaining({ belowEdge: undefined })
+    );
+    expect(getStoredRenderingCapabilities().edge.failed).toEqual({
+      value: 2048,
+      failures: 2,
+    });
+
+    resetRenderingCapabilities();
+    getSupportedTextureFormats.mockClear();
+    detectRenderingCapabilities();
+
+    expect(getSupportedTextureFormats).not.toHaveBeenCalled();
+  });
+
+  it('clears an edge that failed once when the next start passes it', () => {
+    mockWebGL();
+    getSupportedTextureFormats.mockReturnValue({
+      formats: { ...ALL_FORMATS },
+      max3DTextureSize: 2048,
+      reliableEdge: 1024,
+      failedEdge: 2048,
+    });
+    detectRenderingCapabilities();
+
+    resetRenderingCapabilities();
+    getSupportedTextureFormats.mockReturnValue({
+      formats: { ...ALL_FORMATS },
+      max3DTextureSize: 2048,
+      reliableEdge: 2048,
+    });
+    detectRenderingCapabilities();
+
+    expect(getStoredRenderingCapabilities().edge.failed).toBeUndefined();
+    expect(getStoredRenderingCapabilities().edge.reliable.value).toBe(2048);
+  });
+
   it('runs the probes and merges context info on a cache miss', () => {
     mockWebGL();
 

@@ -82,6 +82,9 @@ export function getConfiguredMaxTextureEdge(): number {
 /** The smallest GPU memory limit that the user or the configuration can state. */
 export const GPU_MEMORY_MIN_BYTES = 128 * 1024 * 1024;
 
+/** The failures of one edge before that edge bounds the edge search. */
+const EDGE_FAILURES_TO_CONFIRM = 2;
+
 /**
  * A pending record of another renderer stays this long, for a page of that
  * renderer to find it, for example after a laptop switches its GPU.
@@ -268,6 +271,8 @@ let edgeSearchTried = false;
 let edgeSearchFailedContexts = new WeakSet<WebGL2RenderingContext>();
 /** True after a retest of the edge, until the next edge search. */
 let edgeRetest = false;
+/** True after the startup probe ran in this page, so an edge that failed once is not tested twice. */
+let unconfirmedEdgeTested = false;
 /** The time of the last probe context, from `performance.now()`. */
 let lastProbeAt = Number.NEGATIVE_INFINITY;
 
@@ -664,11 +669,15 @@ function addFailure(
  * texel type from its own test of the formats.
  */
 function edgeSearchOptions(
-  target: StoredRenderingCapabilities | null
+  target: StoredRenderingCapabilities | null,
+  { ownContext = false }: { ownContext?: boolean } = {}
 ): EdgeSearchOptions {
+  /** Only a probe in its own context retests an edge that failed once. */
+  const bounded = !ownContext || isEdgeFailureConfirmed(target);
+
   return {
     startEdge: searchStartEdge(),
-    belowEdge: target?.edge.failed?.value,
+    belowEdge: bounded ? target?.edge.failed?.value : undefined,
     format: target?.formats
       ? target.formats.float
         ? 'float'
@@ -719,6 +728,19 @@ function applyEdgeSearch(
      */
     delete edge.failed;
   }
+}
+
+/**
+ * True when the failed edge of the record failed at least
+ * `EDGE_FAILURES_TO_CONFIRM` times. One failure can be transient (a busy GPU,
+ * a reset of the GPU process), so the next start tests that edge once more in
+ * the probe's own context. A search in a viewport context stays below every
+ * failed edge, so it cannot lose the context of the viewport.
+ */
+function isEdgeFailureConfirmed(
+  target: StoredRenderingCapabilities | null
+): boolean {
+  return (target?.edge.failed?.failures ?? 0) >= EDGE_FAILURES_TO_CONFIRM;
 }
 
 /** The edge at which a search starts now (see `edgeSearchOptions`). */
@@ -847,9 +869,18 @@ export function detectRenderingCapabilities({
     readRecord(contextInfo.renderer) ?? emptyRecord(contextInfo.renderer);
   let formats = useCache ? record.formats : undefined;
 
-  if (!formats) {
+  /** An edge that failed once is tested again, once a page, in the probe's own context. */
+  const retestFailedEdge =
+    !unconfirmedEdgeTested &&
+    Boolean(record.edge.failed) &&
+    !isEdgeFailureConfirmed(record);
+
+  if (!formats || retestFailedEdge) {
+    unconfirmedEdgeTested = true;
     const start = performance.now();
-    const probed = probeRenderingLimits(edgeSearchOptions(record));
+    const probed = probeRenderingLimits(
+      edgeSearchOptions(record, { ownContext: true })
+    );
     const probeMs = performance.now() - start;
 
     noteProbe();
@@ -871,7 +902,7 @@ export function detectRenderingCapabilities({
       edgeRetest = false;
     }
 
-    formats = probed?.formats ?? { ...NO_GPU_FORMATS };
+    formats = probed?.formats ?? formats ?? { ...NO_GPU_FORMATS };
   }
 
   const handled = { recorded: [] as string[], dropped: [] as string[] };
@@ -1287,6 +1318,7 @@ export function resetRenderingCapabilities({
   edgeSearchTried = false;
   edgeSearchFailedContexts = new WeakSet();
   edgeRetest = false;
+  unconfirmedEdgeTested = false;
 
   if (clearStorage) {
     const storage = getCapabilityStorage();

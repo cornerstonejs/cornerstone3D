@@ -698,7 +698,7 @@ describe('the auto preset', () => {
       );
     });
 
-    it('counts 16-bit data at 2 bytes with 16-bit float on, and the texture store counts the same', () => {
+    it('counts 16-bit data at 4 bytes without norm16, also with preferSizeOverAccuracy, as vtk.js uploads float', () => {
       mockWebGL();
 
       const grid = { dimensions: [64, 64, 64] };
@@ -716,9 +716,9 @@ describe('the auto preset', () => {
       });
 
       try {
-        expect(gpuTextureBytesPerVoxel('Int16Array')).toBe(2);
+        expect(gpuTextureBytesPerVoxel('Int16Array')).toBe(4);
         expect(volumeTextureStore.costOf(grid, 'Uint16Array')).toBe(
-          64 * 64 * 64 * 2
+          64 * 64 * 64 * 4
         );
       } finally {
         setConfiguration({

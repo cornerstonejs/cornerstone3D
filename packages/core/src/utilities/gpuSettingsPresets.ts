@@ -580,8 +580,9 @@ function gpuSettingsForShare(
  *
  * The volume buffer in memory holds 16-bit data as Float32, but the texture
  * that vtk.js uploads holds 2 bytes per value when it gets the norm16
- * extension, or when `rendering.preferSizeOverAccuracy` lets it upload half
- * float, and 4 bytes as float otherwise. `Uint8Array` takes 1 byte. Any other
+ * extension, and 4 bytes as float otherwise. The volume mappers turn half
+ * float off (`enableUseHalfFloat(false)`), so `preferSizeOverAccuracy` does
+ * not make the texture smaller. `Uint8Array` takes 1 byte. Any other
  * type, signed bytes included, uploads as float, 4 bytes. With no type, the
  * count of values.
  *
@@ -606,12 +607,7 @@ function gpuTextureBytesPerVoxel(
       return components;
     case 'Int16Array':
     case 'Uint16Array':
-      return (
-        ((norm16 ?? getCanUseNorm16Texture()) ||
-        getConfiguration()?.rendering?.preferSizeOverAccuracy
-          ? 2
-          : 4) * components
-      );
+      return ((norm16 ?? getCanUseNorm16Texture()) ? 2 : 4) * components;
     default:
       return 4 * components;
   }

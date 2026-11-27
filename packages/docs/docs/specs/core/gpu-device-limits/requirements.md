@@ -86,5 +86,10 @@ Related documents:
   When the memory limit is the cause, the application can offer the user a
   larger memory limit.
 - **GPULIM-U-13** A view that must draw a volume at full resolution, and that
-  the limits cannot hold, draws nothing in place of a wrong image. It tries
-  again at the next render, for example after the user sets a larger limit.
+  is larger than the memory limit, draws the volume at full resolution
+  anyway. The memory limit came from the application or the user, so a
+  failure of that draw is the result that they chose, and the viewer records
+  the failure (GPULIM-U-9).
+- **GPULIM-U-14** A view that must draw a volume at full resolution with a
+  texture size that the device failed draws nothing in place of a wrong image.
+  It tries again at the next render.
