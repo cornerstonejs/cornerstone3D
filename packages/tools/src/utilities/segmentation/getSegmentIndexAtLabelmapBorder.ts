@@ -105,6 +105,11 @@ export function getSegmentIndexAtLabelmapBorder(
   const indexIJK = utilities.transformWorldToIndex(imageData, worldPoint);
 
   const dimensions = imageData.getDimensions();
+
+  if (indexIJK.some((value, axis) => value < 0 || value >= dimensions[axis])) {
+    return;
+  }
+
   const voxelManager = (imageData.voxelManager ||
     utilities.VoxelManager.createScalarVolumeVoxelManager({
       dimensions,
@@ -117,7 +122,8 @@ export function getSegmentIndexAtLabelmapBorder(
     indexIJK as Types.Point3,
     dimensions,
     voxelManager,
-    labelValue
+    labelValue,
+    searchRadius
   );
 
   if (!onEdge || !labelValue) {
@@ -193,6 +199,14 @@ function isSegmentOnEdgeIJK(
       indexIJK[2] + deltaK,
     ];
 
+    // Neighbors outside the labelmap have no value; reading them would wrap
+    // to another row of the flat scalar array.
+    if (
+      neighborIJK.some((value, axis) => value < 0 || value >= dimensions[axis])
+    ) {
+      return undefined;
+    }
+
     return voxelManager.getAtIJK(
       neighborIJK[0],
       neighborIJK[1],
@@ -200,7 +214,11 @@ function isSegmentOnEdgeIJK(
     );
   };
 
-  return isSegmentOnEdge(getNeighborIndex, segmentIndex, searchRadius);
+  // Voxel neighbors are whole-pixel offsets: a fractional radius would give
+  // fractional indices, which read no value or the wrong voxel.
+  const voxelSearchRadius = Math.max(1, Math.floor(searchRadius ?? 1));
+
+  return isSegmentOnEdge(getNeighborIndex, segmentIndex, voxelSearchRadius);
 }
 
 function isSegmentOnEdgeCanvas(
