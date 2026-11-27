@@ -5,6 +5,7 @@ import {
   eraseLabelmapEditTransactionOverwrites,
 } from '../../../../stateManagement/segmentation/helpers/labelmapSegmentationState';
 import type { InitializedOperationData } from '../BrushStrategy';
+import { isImageSliceEdit } from './imageSliceEdit';
 
 function collectCrossLayerEraseBindingsForOperation(
   operationData: InitializedOperationData
@@ -41,6 +42,10 @@ function eraseCrossLayerOverwrites(
       isInObject: operationData.isInObject,
       isInObjectBoundsIJK: operationData.isInObjectBoundsIJK,
       imageId: operationData.imageId,
+      // Decided before a segment move could swap the voxel manager.
+      imageSliceEdit:
+        operationData.labelmapEditTransaction?.imageSliceEdit ??
+        isImageSliceEdit(operationData),
       // Record every cross-layer erase on the stroke's memo so undo/redo
       // restores the other layers too - these writes bypass the memo's own
       // history voxel manager (they target other layers' voxel managers).
