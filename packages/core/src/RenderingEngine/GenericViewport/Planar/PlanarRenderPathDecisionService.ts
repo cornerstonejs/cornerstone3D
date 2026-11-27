@@ -279,6 +279,11 @@ export function selectPlanarRenderPath(
  * tilt of its normal or of its in-plane axes. A request for the standard
  * orientation then reformats to the true axes, as the legacy volume viewport
  * does.
+ *
+ * The frame geometry comes from `imagePlaneModule` and approximates the volume
+ * geometry: the slice spacing is `spacingBetweenSlices || sliceThickness`, not
+ * the spacing of the image positions. A missing value is 1, so a series with no
+ * `rows`, `columns` or pixel spacing keeps the nearest standard orientation.
  */
 export function getPlanarAcquisitionOrientation(
   imageIds: string[]
@@ -309,6 +314,7 @@ export function getPlanarAcquisitionOrientation(
   const scanAxisNormal = vec3.create();
 
   vec3.cross(scanAxisNormal, rowVec, colVec);
+  vec3.normalize(scanAxisNormal, scanAxisNormal);
 
   const orientation = getOrientationFromScanAxisNormal([
     scanAxisNormal[0],
