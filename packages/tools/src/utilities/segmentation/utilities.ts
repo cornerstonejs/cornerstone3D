@@ -140,6 +140,22 @@ export const setSegmentationClean = (segmentationId: string) => {
   }
 };
 
+/**
+ * Removes the cached segment indices of a segmentation, e.g. when the
+ * segmentation is removed.
+ */
+export const clearCachedSegmentIndices = (segmentationId: string) => {
+  segmentIndicesCache.delete(segmentationId);
+};
+
+/**
+ * Removes the cached segment indices of all segmentations, e.g. when the
+ * segmentation state is reset.
+ */
+export const clearAllCachedSegmentIndices = () => {
+  segmentIndicesCache.clear();
+};
+
 export const getCachedSegmentIndices = (segmentationId: string) => {
   const cached = segmentIndicesCache.get(segmentationId);
   if (cached && !cached.isDirty) {
