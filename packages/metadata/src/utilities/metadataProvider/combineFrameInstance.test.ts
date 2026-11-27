@@ -58,6 +58,24 @@ describe('combineFrameInstance fallbacks', () => {
     ]);
   });
 
+  // OHIF/Viewers#6309: a second call must not move the cached frame again.
+  it('returns the same RTDOSE frame position when a frame is combined again', () => {
+    const instance = {
+      Modality: 'RTDOSE',
+      NumberOfFrames: 3,
+      ImagePositionPatient: [84.9602, 99.4275, -1461.54],
+      ImageOrientationPatient: [1, 0, 0, 0, 1, 0],
+      GridFrameOffsetVector: [0, 4, 8],
+    };
+
+    combineFrameInstance(2, instance);
+    combineFrameInstance(3, instance);
+    const position = combineFrameInstance(2, instance).ImagePositionPatient;
+
+    expect(position[2]).toBeCloseTo(-1457.54);
+    expect(instance.ImagePositionPatient).toEqual([84.9602, 99.4275, -1461.54]);
+  });
+
   // The user experience must have this: the frames of a US or XA cine with no
   // position stay distinct (OHIF/Viewers#5811, RTSTRUCT contours per frame).
   it('gives [0, 0, frameNumber] to a plain multi-frame frame with no position', () => {

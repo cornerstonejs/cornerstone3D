@@ -113,7 +113,8 @@ const frameOptions = { frameAttributes, frameProperties, privateMacros: true };
  * functional groups, then the root, plus the modality fallbacks of
  * `frameAttributes`. A private sequence directly in a functional group item
  * (for example Philips `00211001`) is merged too (`privateMacros: true`). The
- * view is cached on the instance, and the instance is not changed. `frameNumber` is a non-enumerable property of the view.
+ * view is cached on the instance, and the instance is not changed.
+ * `frameNumber` is a non-enumerable property of the view.
  * An instance with fewer than 2 frames and no functional groups comes back
  * unchanged. An undefined frame is frame 1.
  */
@@ -124,6 +125,7 @@ export const combineFrameProvider = (next, query, instance, options) => {
   if (!instance) {
     return next(query, instance, options);
   }
+  // A single-frame instance is its own frame view; only no instance falls through.
   if (!instance.NumberOfFrames) {
     return instance;
   }
