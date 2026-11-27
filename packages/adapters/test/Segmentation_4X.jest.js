@@ -26,8 +26,11 @@ describe('getImageIdOfSourceImageBySourceImageSequence', () => {
       expect(resolve(ids, 3)).toBe('custom:c');
     });
 
-    it('defaults ReferencedFrameNumber to 1', () => {
+    it('returns the first imageId unchanged without ReferencedFrameNumber', () => {
       expect(resolve(['custom:a', 'custom:b'])).toBe('custom:a');
+      expect(resolve(['wadors:https://x/instances/1'])).toBe(
+        'wadors:https://x/instances/1'
+      );
     });
 
     it('prefers the frame rewrite over the list lookup for known schemes', () => {

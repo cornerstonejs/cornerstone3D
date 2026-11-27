@@ -147,6 +147,10 @@ function buildSopUIDImageIdIndexMap(referencedImageIds, metadataProvider) {
     const { sopInstanceUID } =
       metadataProvider.get('generalImageModule', imageId) ?? {};
 
+    if (!sopInstanceUID) {
+      return acc;
+    }
+
     const existingImageId = acc[sopInstanceUID];
     if (existingImageId === undefined) {
       // If DerivationImageSequence is missing from the PerFrameFunctionalGroupsSequence in

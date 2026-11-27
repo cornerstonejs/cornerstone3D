@@ -1625,7 +1625,7 @@ export function getImageIdOfSourceImageBySourceImageSequence(
   SourceImageSequence,
   sopUIDImageIdIndexMap
 ) {
-  const { ReferencedSOPInstanceUID, ReferencedFrameNumber = 1 } =
+  const { ReferencedSOPInstanceUID, ReferencedFrameNumber } =
     SourceImageSequence;
 
   const mapped = sopUIDImageIdIndexMap[ReferencedSOPInstanceUID];
@@ -1637,6 +1637,10 @@ export function getImageIdOfSourceImageBySourceImageSequence(
       `No imageId found for SOPInstanceUID: ${ReferencedSOPInstanceUID}`
     );
     return undefined;
+  }
+
+  if (ReferencedFrameNumber === undefined) {
+    return baseImageIds[0];
   }
 
   // Otherwise derive the frame's imageId from the first one by rewriting

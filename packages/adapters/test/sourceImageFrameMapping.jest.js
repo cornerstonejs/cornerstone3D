@@ -136,9 +136,9 @@ describe('buildSopUIDImageIdIndexMap', () => {
     );
   });
 
-  it('does not throw when metadata is missing for an imageId', () => {
-    expect(() =>
+  it('skips an imageId without a SOP Instance UID', () => {
+    expect(
       buildSopUIDImageIdIndexMap(['custom:none'], { get: () => undefined })
-    ).not.toThrow();
+    ).toEqual({});
   });
 });
