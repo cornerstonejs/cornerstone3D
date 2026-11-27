@@ -54,7 +54,26 @@ export interface WSIMapViewLike {
   setZoom(zoom: number): void;
 }
 
+export interface WSIMapBrowserEventLike {
+  coordinate: [number, number];
+  pixel: [number, number];
+}
+
+export type WSIInteractionHandler = (
+  event: WSIMapBrowserEventLike
+) => boolean | void;
+
+export interface WSIInteractionLike {
+  handleDownEvent?: WSIInteractionHandler;
+  handleDragEvent?: WSIInteractionHandler;
+  handleUpEvent?: WSIInteractionHandler;
+}
+
 export interface WSIMapLike {
+  getInteractions?(): {
+    getArray(): WSIInteractionLike[];
+  };
+  getPixelFromCoordinate?(coordinate: [number, number]): [number, number];
   getView(): WSIMapViewLike;
   getViewport(): HTMLElement;
   on(eventName: string, handler: () => void): void;
@@ -64,8 +83,12 @@ export interface WSIMapLike {
 }
 
 export interface WSIViewerLike {
+  activateDragZoomInteraction?(options: {
+    bindings: { mouseButtons: string[] };
+  }): void;
   cleanup?(): void;
   deactivateDragPanInteraction(): void;
+  deactivateDragZoomInteraction?(): void;
   getAffine(): unknown;
   getMap(): WSIMapLike;
   render(args: { container: HTMLElement }): void;
