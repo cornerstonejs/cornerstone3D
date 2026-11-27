@@ -593,15 +593,7 @@ describe('FrameOfReferenceSpecificAnnotationManager', () => {
     expect(manager.getNumberOfAnnotations('missing-group')).toBe(0);
   });
 
-  it('BUG: getNumberOfAnnotations(groupKey) without a toolName incorrectly returns 0 even when the group has annotations', () => {
-    // getNumberOfAnnotations() does `const annotations = this.getAnnotations(groupKey, toolName);
-    // if (!annotations.length) return 0;`. When toolName is omitted,
-    // getAnnotations returns the {toolName: Annotations[]} map, which has no
-    // `.length` property, so `!annotations.length` is `!undefined` -> true,
-    // and the function bails out to 0 before ever reaching the
-    // `for (const toolName in annotations)` summation below. The "total
-    // annotations in a group across every tool" mode of this API is
-    // effectively dead code.
+  it('getNumberOfAnnotations(groupKey) without a toolName counts the annotations of every tool in the group', () => {
     manager.addAnnotation(
       makeAnnotation({ annotationUID: 'a1', toolName: 'ToolA' }),
       'FOR-1'
@@ -615,7 +607,14 @@ describe('FrameOfReferenceSpecificAnnotationManager', () => {
       'FOR-1'
     );
 
-    expect(manager.getNumberOfAnnotations('FOR-1')).toBe(0);
+    manager.addAnnotation(
+      makeAnnotation({ annotationUID: 'c1', FrameOfReferenceUID: 'FOR-2' }),
+      'FOR-2'
+    );
+
+    expect(manager.getNumberOfAnnotations('FOR-1')).toBe(3);
+    expect(manager.getNumberOfAnnotations('FOR-2')).toBe(1);
+    expect(manager.getNumberOfAnnotations('missing-group')).toBe(0);
   });
 
   it('getNumberOfAllAnnotations sums across every group and tool', () => {
