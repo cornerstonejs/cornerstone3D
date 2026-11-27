@@ -39,6 +39,9 @@ export function fidelityDetailsTextOf(
     parts.push(multi.join(', '));
   }
 
+  // Every issue shows, also when another cause decides the label.
+  parts.push(...(state.issues ?? []).map((issue) => issue.message));
+
   switch (state.cause) {
     case 'incompleteLoad':
       parts.push('Image is still loading.');
@@ -68,6 +71,9 @@ export function fidelityDetailsTextOf(
     case 'deviceTextureLimit':
       parts.push('Image detail is reduced to fit the limits of this device.');
       parts.push(...magnitudeLines(state.magnitude));
+      parts.push('Waiting will not improve the image.');
+      break;
+    case 'displayIssue':
       parts.push('Waiting will not improve the image.');
       break;
     case 'memoryBudget':
