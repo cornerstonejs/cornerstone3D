@@ -231,7 +231,8 @@ class MarkerLabelmapTool extends LabelmapBaseTool {
   };
 
   interpolateScroll = (): void => {
-    this.segmentAI.interpolateScroll();
+    // The hotkey can fire before the tool was ever activated (no segmentAI yet).
+    this.segmentAI?.interpolateScroll();
   };
 
   onSetToolDisabled = (): void => {

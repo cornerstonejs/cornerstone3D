@@ -14,6 +14,12 @@ enum Events {
    * Triggers when a component of the AI model is loaded.
    */
   MODEL_COMPONENT_LOADED = 'AI_MODEL_COMPONENT_LOADED',
+  /**
+   * Triggers when the AI model loading fails, for example when the model
+   * files cannot be downloaded or instantiated. The event detail contains
+   * the `error` that caused the failure.
+   */
+  MODEL_LOADING_ERROR = 'AI_MODEL_LOADING_ERROR',
 }
 
 export default Events;

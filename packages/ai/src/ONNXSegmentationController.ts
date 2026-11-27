@@ -223,6 +223,11 @@ export default class ONNXSegmentationController {
   private randomPoints;
   private _searchBreadth = 3;
   private loadingAI: Promise<unknown>;
+  /**
+   * Set when the model download/loading failed, so that image handling can
+   * bail out cleanly instead of reading unset model configuration.
+   */
+  private modelLoadError: unknown = null;
 
   protected viewport;
   /** Counts the initViewport calls, so a decode can tell that it is stale. */
@@ -905,6 +910,13 @@ export default class ONNXSegmentationController {
           sessions[i]
         ).catch((e) => {
           this.log(Loggers.Log, "Couldn't load models", e);
+          this.modelLoadError = e;
+          // Trigger an event so applications can react to the failure
+          // (e.g. display a notification or offer a retry).
+          triggerEvent(eventTarget, aiEvents.MODEL_LOADING_ERROR, {
+            modelConfig: this.config.model,
+            error: e,
+          });
         });
         await loader;
       } else {
@@ -1063,21 +1075,27 @@ export default class ONNXSegmentationController {
           canvas.style.cursor = 'default';
         }
       } else {
+        await imageSession.loader;
+        const session = await imageSession.encoder;
+        if (this.modelLoadError || !session) {
+          // The model files could not be downloaded/instantiated, so there is
+          // no encoder session to run; bail out cleanly without throwing.
+          this.log(
+            Loggers.Log,
+            'No encoder session available, skipping image encoding',
+            imageId
+          );
+          return;
+        }
         const t = await ort.Tensor.fromImage(this.imageImageData, {
           resizedWidth: this.modelWidth,
           resizedHeight: this.modelHeight,
         });
-        const { feedType = 'input_image' } = this.config.encoder;
+        const { feedType = 'input_image' } = this.config.encoder || {};
         const feed = (feedType === 'images' && { images: t }) ||
           (feedType === 'pixelValues' && { pixel_values: t }) || {
             input_image: t,
           };
-        await imageSession.loader;
-        const session = await imageSession.encoder;
-        if (!session) {
-          this.log(Loggers.Log, '****** No session');
-          return;
-        }
         const start = performance.now();
         imageSession.imageEmbeddings = session.run(feed);
         const data = await imageSession.imageEmbeddings;
