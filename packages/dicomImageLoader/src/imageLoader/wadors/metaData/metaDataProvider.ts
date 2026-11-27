@@ -19,7 +19,7 @@ import {
   extractOrientationFromMetadata,
   extractPositionFromMetadata,
 } from './extractPositioningFromMetadata';
-import { getImageTypeSubItemFromMetadata } from './NMHelpers';
+import { getImageTypeSubItemFromMetadata, isNMModality } from './NMHelpers';
 import isNMReconstructable from '../../isNMReconstructable';
 import { instanceModuleNames } from '../../getInstanceModule';
 import { getUSEnhancedRegions } from './USHelpers';
@@ -134,7 +134,7 @@ function metaDataProvider(type, imageId) {
       pixelSpacing: getNumberValues(metaData['00280030'], 2),
       numberOfFrames: getNumberValue(metaData['00280008']),
       isNMReconstructable:
-        isNMReconstructable(imageSubType) && modality.includes('NM'),
+        isNMReconstructable(imageSubType) && isNMModality(metaData),
     };
   }
 

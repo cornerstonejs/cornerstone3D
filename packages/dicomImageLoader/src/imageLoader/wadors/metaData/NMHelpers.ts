@@ -9,9 +9,10 @@ import getNumberValues from './getNumberValues';
  * @returns True if the modality includes 'NM', false otherwise
  */
 function isNMModality(metaData) {
-  const modality = getValue(metaData['00080060']) as string;
+  const modality = getValue(metaData['00080060']) as string | undefined;
 
-  return modality.includes('NM');
+  // Modality (0008,0060) may be absent; treat that as "not NM".
+  return modality?.includes('NM') ?? false;
 }
 
 /**
