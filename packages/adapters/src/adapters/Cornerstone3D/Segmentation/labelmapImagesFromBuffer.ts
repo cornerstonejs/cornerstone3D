@@ -675,6 +675,27 @@ const updateSegmentsPixelIndices = ({
   segmentsPixelIndices.set(segmentIndex, segmentIndexObject);
 };
 
+/**
+ * The orientation of a SEG frame, from the shared or the per-frame Plane
+ * Orientation (Patient) functional group. A SEG of images that have no Frame
+ * of Reference (2D ultrasound, endoscopy, photographs) carries neither: PS3.3
+ * A.51.5 requires each of its pixels to correspond to a pixel of the image
+ * referenced by its Derivation Image Functional Group, so the frame takes the
+ * source orientation and is inserted without rotation or flip.
+ */
+function getFrameImageOrientationPatient(
+  sharedImageOrientationPatient,
+  perFrameFunctionalGroups,
+  validOrientations
+) {
+  return (
+    sharedImageOrientationPatient ||
+    perFrameFunctionalGroups?.PlaneOrientationSequence
+      ?.ImageOrientationPatient ||
+    validOrientations[0]
+  );
+}
+
 const extractInfoFromPerFrameFunctionalGroups = ({
   PerFrameFunctionalGroups,
   sequenceIndex,
@@ -797,16 +818,21 @@ async function createLabelmapsFromSegImageIds(
     cs3dLogger.warn('Insufficient metadata, imagePlaneModule missing.');
   }
 
-  const ImageOrientationPatient = Array.isArray(imagePlaneModule.rowCosines)
-    ? [...imagePlaneModule.rowCosines, ...imagePlaneModule.columnCosines]
-    : [
-        imagePlaneModule.rowCosines.x,
-        imagePlaneModule.rowCosines.y,
-        imagePlaneModule.rowCosines.z,
-        imagePlaneModule.columnCosines.x,
-        imagePlaneModule.columnCosines.y,
-        imagePlaneModule.columnCosines.z,
-      ];
+  const { rowCosines, columnCosines } = imagePlaneModule ?? {};
+  // No source orientation (no Frame of Reference): default as the WADO-RS provider does
+  const ImageOrientationPatient =
+    !rowCosines || !columnCosines
+      ? [1, 0, 0, 0, 1, 0]
+      : Array.isArray(rowCosines)
+        ? [...rowCosines, ...columnCosines]
+        : [
+            rowCosines.x,
+            rowCosines.y,
+            rowCosines.z,
+            columnCosines.x,
+            columnCosines.y,
+            columnCosines.z,
+          ];
 
   // Get IOP from ref series, compute supported orientations:
   const validOrientations = getValidOrientations(ImageOrientationPatient);
@@ -1034,16 +1060,11 @@ export function insertPixelDataPlanar({
       ) {
         const PerFrameFunctionalGroups = PerFrameFunctionalGroupsSequence[i];
 
-        const ImageOrientationPatientI =
-          sharedImageOrientationPatient ||
-          PerFrameFunctionalGroups?.PlaneOrientationSequence
-            ?.ImageOrientationPatient;
-
-        if (!ImageOrientationPatientI) {
-          throw new Error(
-            `SEG frame ${i + 1} is missing ImageOrientationPatient in per-frame and shared functional groups.`
-          );
-        }
+        const ImageOrientationPatientI = getFrameImageOrientationPatient(
+          sharedImageOrientationPatient,
+          PerFrameFunctionalGroups,
+          validOrientations
+        );
 
         const view = readFromUnpackedChunks(
           pixelDataChunks,
@@ -1227,11 +1248,11 @@ export function insertPixelDataPlanar({
         i++
       ) {
         const PerFrameFunctionalGroups = pfSeq[i];
-        const ImageOrientationPatientI =
-          sharedPlaneOrientation ||
-          PerFrameFunctionalGroups?.PlaneOrientationSequence
-            ?.ImageOrientationPatient ||
-          validOrientations[0];
+        const ImageOrientationPatientI = getFrameImageOrientationPatient(
+          sharedPlaneOrientation,
+          PerFrameFunctionalGroups,
+          validOrientations
+        );
         const view = readFromUnpackedChunks(
           pixelDataChunks,
           i * sliceLength,
@@ -1381,9 +1402,11 @@ const getAlignedPixelData = ({
   validOrientations,
   tolerance,
 }) => {
-  const ImageOrientationPatientI =
-    sharedImageOrientationPatient ||
-    PerFrameFunctionalGroups.PlaneOrientationSequence.ImageOrientationPatient;
+  const ImageOrientationPatientI = getFrameImageOrientationPatient(
+    sharedImageOrientationPatient,
+    PerFrameFunctionalGroups,
+    validOrientations
+  );
 
   const view = readFromUnpackedChunks(
     pixelDataChunks,

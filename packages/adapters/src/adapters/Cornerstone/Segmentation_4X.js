@@ -2060,13 +2060,13 @@ export function calculateCentroid(
       continue;
     }
 
-    const {
-      imagePositionPatient,
-      rowCosines,
-      columnCosines,
-      rowPixelSpacing,
-      columnPixelSpacing,
-    } = imagePlaneModule;
+    const { rowPixelSpacing, columnPixelSpacing } = imagePlaneModule;
+    // Images without a Frame of Reference: use the stack viewport defaults
+    const imagePositionPatient = imagePlaneModule.imagePositionPatient ?? [
+      0, 0, 0,
+    ];
+    const rowCosines = imagePlaneModule.rowCosines ?? [1, 0, 0];
+    const columnCosines = imagePlaneModule.columnCosines ?? [0, 1, 0];
 
     for (const bufferIndex of bufferIndices) {
       const y = Math.floor(bufferIndex / multiframe.Rows);
