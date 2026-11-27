@@ -2,8 +2,7 @@ import { utilities } from 'dcmjs';
 import MeasurementReport from './MeasurementReport';
 import BaseAdapter3D from './BaseAdapter3D';
 import { toScoord } from '../helpers';
-import { resolveUnit } from './metricHandler';
-import { mapUnitFromUCUM } from './unitMapper';
+import { extractAllNUMGroups, restoreAdditionalMetrics } from './metricHandler';
 
 const { Length: TID300Length } = utilities.TID300;
 
@@ -27,32 +26,21 @@ export default class Length extends BaseAdapter3D {
     sopInstanceUIDToImageIdMap,
     metadata
   ) {
-    const {
-      state,
-      NUMGroup,
-      worldCoords,
-      referencedImageId,
-      ReferencedFrameNumber,
-    } = MeasurementReport.getSetupMeasurementData(
-      MeasurementGroup,
-      sopInstanceUIDToImageIdMap,
-      metadata,
-      this.toolType
-    );
+    const { state, worldCoords, referencedImageId, ReferencedFrameNumber } =
+      MeasurementReport.getSetupMeasurementData(
+        MeasurementGroup,
+        sopInstanceUIDToImageIdMap,
+        metadata,
+        this.toolType
+      );
 
+    const { length = 0, unit } = restoreAdditionalMetrics(
+      extractAllNUMGroups(MeasurementGroup, state.sopInstanceUid)[
+        state.sopInstanceUid
+      ] || {}
+    );
     const cachedStats = referencedImageId
-      ? {
-          [`imageId:${referencedImageId}`]: {
-            length: NUMGroup ? NUMGroup.MeasuredValueSequence.NumericValue : 0,
-            // dcmjs writes px as the UCUM unity code "1" with CodeMeaning "px"
-            unit: mapUnitFromUCUM(
-              resolveUnit(
-                'Length',
-                NUMGroup.MeasuredValueSequence.MeasurementUnitsCodeSequence
-              )
-            ),
-          },
-        }
+      ? { [`imageId:${referencedImageId}`]: { length, unit } }
       : {};
     state.annotation.data = {
       ...state.annotation.data,

@@ -95,7 +95,7 @@ type SetupMeasurementData = {
   };
   NUMGroup: {
     MeasuredValueSequence: {
-      MeasurementUnitsCodeSequence: { CodeValue: string; CodeMeaning: string };
+      MeasurementUnitsCodeSequence: { CodeValue: string };
       NumericValue: number;
     };
   };

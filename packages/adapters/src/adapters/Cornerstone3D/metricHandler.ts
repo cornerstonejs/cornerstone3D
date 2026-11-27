@@ -15,7 +15,10 @@ export interface AdditionalMetrics {
   area?: number;
   radius?: number;
   perimeter?: number;
+  length?: number;
+  width?: number;
   modalityUnit?: string;
+  widthUnit?: string;
   areaUnit?: string;
   radiusUnit?: string;
   unit?: string;
@@ -106,6 +109,9 @@ export function restoreAdditionalMetrics(numGroups): AdditionalMetrics {
     Perimeter: 'perimeter',
     Length: 'length',
     Width: 'width',
+    // The axes of a Bidirectional measurement
+    'Long Axis': 'length',
+    'Short Axis': 'width',
   };
 
   // Define what kind of unit each metric type should use
@@ -172,7 +178,7 @@ export function restoreAdditionalMetrics(numGroups): AdditionalMetrics {
  * @returns Formatted unit string or empty string if unitless
  */
 
-export function resolveUnit(
+function resolveUnit(
   codeMeaning: string,
   unitCode?: {
     CodeValue: string;

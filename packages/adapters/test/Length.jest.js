@@ -111,14 +111,18 @@ describe('Length measurement unit', () => {
     const spy = jest
       .spyOn(MeasurementReport, 'getSetupMeasurementData')
       .mockReturnValue({
-        state: { annotation: { data: { handles: {} } } },
+        state: { annotation: { data: { handles: {} } }, sopInstanceUid: '1.2' },
         NUMGroup,
         worldCoords: tool2d.data.handles.points,
         referencedImageId: tool2d.metadata.referencedImageId,
         ReferencedFrameNumber: undefined,
       });
     try {
-      const state = Length.getMeasurementData({}, {}, {});
+      const state = Length.getMeasurementData(
+        { ContentSequence: [NUMGroup] },
+        {},
+        {}
+      );
       return state.annotation.data.cachedStats[imageKey];
     } finally {
       spy.mockRestore();
