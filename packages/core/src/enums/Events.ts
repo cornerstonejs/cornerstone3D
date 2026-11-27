@@ -8,8 +8,9 @@ enum Events {
   ERROR_EVENT = 'CORNERSTONE_ERROR',
 
   /**
-   * Error that is thrown when the ImageCache exceeds its max cache size.
-   * This can happen for both volumes and stack images.
+   * Fired when an image does not fit in the ImageCache. This can happen for
+   * both volumes and stack images. `putImageSync` also throws an error with
+   * this message.
    */
   CACHE_SIZE_EXCEEDED = 'CACHE_SIZE_EXCEEDED',
   /**

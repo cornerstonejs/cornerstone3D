@@ -3,6 +3,7 @@ import { utilities } from 'dcmjs';
 import { vec3 } from 'gl-matrix';
 import BaseAdapter3D from './BaseAdapter3D';
 import { extractAllNUMGroups, restoreAdditionalMetrics } from './metricHandler';
+import { mapUnitToUCUM } from './unitMapper';
 import { toScoords, toArray } from '../helpers';
 import ControlPointPolyline from './ControlPointPolyline';
 import { SPLINE_TYPE_CODE } from './constants';
@@ -17,6 +18,11 @@ class PlanarFreehandROI extends BaseAdapter3D {
     PlanarFreehandROI.registerSubType(PlanarFreehandROI, 'SplineROI');
   }
 
+  /**
+   * Restores a PlanarFreehandROI annotation from a TID 1500 measurement group:
+   * the contour, its control points and spline type, and the stats with their
+   * units. The perimeter of an open contour is restored as its length.
+   */
   static getMeasurementData(
     MeasurementGroup,
     sopInstanceUIDToImageIdMap,
@@ -26,7 +32,7 @@ class PlanarFreehandROI extends BaseAdapter3D {
       state,
       NUMGroup,
       worldCoords,
-      referencedImageId,
+      statsTargetId,
       ReferencedFrameNumber,
     } = MeasurementReport.getSetupMeasurementData(
       MeasurementGroup,
@@ -55,12 +61,8 @@ class PlanarFreehandROI extends BaseAdapter3D {
       points = [worldCoords[0], worldCoords[worldCoords.length - 1]];
     }
 
-    const referencedSOPInstanceUID = state.sopInstanceUid;
-    const allNUMGroups = extractAllNUMGroups(
-      MeasurementGroup,
-      referencedSOPInstanceUID
-    );
-    const measurementNUMGroups = allNUMGroups[referencedSOPInstanceUID] || {};
+    const allNUMGroups = extractAllNUMGroups(MeasurementGroup, statsTargetId);
+    const measurementNUMGroups = allNUMGroups[statsTargetId] || {};
     const SPLINE_TYPE = {
       CodingSchemeDesignator: SPLINE_TYPE_CODE.schemeDesignator,
       CodeValue: SPLINE_TYPE_CODE.value,
@@ -92,13 +94,19 @@ class PlanarFreehandROI extends BaseAdapter3D {
       }),
     };
 
-    if (referencedImageId) {
+    if (statsTargetId) {
+      const { perimeter, ...metrics } =
+        restoreAdditionalMetrics(measurementNUMGroups);
+      // dcmjs writes the length of an open contour as its perimeter
+      const lengthStat = isOpenContour ? 'length' : 'perimeter';
       state.annotation.data.cachedStats = {
-        [`imageId:${referencedImageId}`]: {
+        [statsTargetId]: {
           ...(!isOpenContour && NUMGroup
             ? { area: NUMGroup.MeasuredValueSequence.NumericValue }
             : {}),
-          ...restoreAdditionalMetrics(measurementNUMGroups),
+          ...metrics,
+          // An SR may store the length of an open contour as a Length item
+          ...(perimeter === undefined ? {} : { [lengthStat]: perimeter }),
         },
       };
     }
@@ -147,7 +155,7 @@ class PlanarFreehandROI extends BaseAdapter3D {
       area,
       areaUnit,
       perimeter: perimeter ?? length,
-      modalityUnit,
+      modalityUnit: mapUnitToUCUM(modalityUnit),
       mean,
       max,
       stdDev,

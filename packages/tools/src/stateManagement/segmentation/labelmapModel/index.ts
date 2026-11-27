@@ -19,6 +19,7 @@ export {
   registerLabelmap,
   removeLabelmap,
 } from './labelmapLayerStore';
+export { hasMultipleLabelmapImagesPerReferencedImageId } from './labelmapImageIdMapping';
 export {
   getReferencedImageIdToCurrentImageIdMap,
   syncLegacyLabelmapData,

@@ -46,20 +46,34 @@ export const compactMergeSegmentDataWithoutInformationLoss = ({
       continue;
     }
 
-    largerArray.forEach((_, currentImageIndex) => {
+    // Iterate the index RANGE rather than one array's populated entries.
+    //
+    // getSegmentData() builds its result as a SPARSE array — segmentData[i] is assigned
+    // only for images that actually hold voxels — and Array.prototype.forEach SKIPS HOLES.
+    // Iterating `largerArray` therefore visited only the indices where that array had an
+    // element. When the existing layer is the longer one, `largerArray` IS the existing
+    // layer, so every image where only the INCOMING segment had data was never visited,
+    // and was silently dropped.
+    const mergeLength = Math.max(
+      currentTestedArray.length,
+      newSegmentData.length
+    );
+
+    for (
+      let currentImageIndex = 0;
+      currentImageIndex < mergeLength;
+      currentImageIndex++
+    ) {
       const originalImagePixelData = currentTestedArray[currentImageIndex];
       const newImagePixelData = newSegmentData[currentImageIndex];
 
-      if (
-        (!originalImagePixelData && !newImagePixelData) ||
-        !newImagePixelData
-      ) {
-        return;
+      if (!newImagePixelData) {
+        continue;
       }
 
       if (!originalImagePixelData) {
         currentTestedArray[currentImageIndex] = newImagePixelData;
-        return;
+        continue;
       }
 
       const mergedPixelData = originalImagePixelData.map(
@@ -70,7 +84,7 @@ export const compactMergeSegmentDataWithoutInformationLoss = ({
       );
 
       currentTestedArray[currentImageIndex] = mergedPixelData;
-    });
+    }
     return;
   }
 

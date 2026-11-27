@@ -1,3 +1,4 @@
+import { fidelityIssuesOfVolume } from '../../helpers/fidelityIndicator/fidelityIssues';
 import { buildPlanarActorEntry } from './buildPlanarActorEntry';
 import CanvasActor from '../../CanvasActor';
 import { Events, ViewportStatus, ViewportType } from '../../../enums';
@@ -431,6 +432,7 @@ export class CpuVolumeSliceRenderPath
     runtime.voxelQuality = runtime.imageVolume.getVoxelQuality?.();
     runtime.qualityPending = isVolumeLoading(runtime.imageVolume);
     runtime.fullGrid = runtime.imageVolume.voxelGrid;
+    runtime.fidelityIssues = fidelityIssuesOfVolume(runtime.imageVolume);
     runtime.interactiveReduction =
       resampleDecision === 'defer' && !!runtime.sampledSliceState;
 

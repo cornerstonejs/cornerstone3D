@@ -85,7 +85,7 @@ already exists.
 | `VolumeTextureSet`       | A named set of textures, and the unit of storage, of cost and of eviction.                                                                             |
 | `volumeTextureStore`     | The global store of the sets, with one budget for the texture memory of every volume.                                                                  |
 | `CompositeVoxelManager`  | The voxels. It holds the full-resolution data and every reduced representation, and it fills a grid from the best sources that it has.                 |
-| `GpuSettings`            | The values that a preset gives: the texture edge, the texture memory and the speed. An application selects the preset, and nothing probes.             |
+| `GpuSettings`            | The values that a preset gives: the texture edge, the texture memory and the speed. `auto` takes them from the device; a named preset is fixed.        |
 | `VoxelQualityRecord`     | The absolute record of the data that a render drew. It states no verdict.                                                                              |
 
 ## Where the code is
@@ -93,19 +93,21 @@ already exists.
 [Volume Render Sequences](./volumeRenderSequences.md) gives the sequence of calls as diagrams. The
 table gives the file of each piece. The paths are under `packages/core/src/`, except the last row.
 
-| Piece or step                                       | Code                                                                                                               |
-| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| The presets, and the limits of a grid               | `utilities/gpuSettingsPresets.ts`: `setGpuSettingsPreset`, `gridLimitsOfGpuSettings`                               |
-| The factors of a reduction, and the reduced grid    | `utilities/voxelGrid/`: `boxAverageReductionFactors`, `reducedDimensions`, `deriveBoxAverageGrid`                  |
-| The default provider and the default selection      | `RenderingEngine/helpers/volumeRenderStrategy.ts`: `defaultVolumeStrategyProvider`, `selectFirstReadyStrategy`     |
-| The one place that both architectures share         | `RenderingEngine/helpers/resolveVolumeTexture.ts`, called by `createVolumeActor` and `createVolumeSliceActor`      |
-| The texture sets and the store                      | `cache/classes/VolumeTextureSet.ts`, `cache/volumeTextureStore.ts`, `ImageVolume.provisionTextureSet`              |
-| The marks and the deliveries                        | `cache/classes/ImageVolume.ts`: `markFrameTexturesDirty`, `recordFrameDelivery`, `markFrameModified`               |
-| The load                                            | `cache/classes/BaseStreamingImageVolume.ts`: `load`, `successCallback`, `takeInCachedImages`                       |
-| The fill of a reduced texture                       | `RenderingEngine/vtkClasses/vtkStreamingOpenGLTexture.js`: `updateTextureFromComposite`, `fillSliceByBoxStatistic` |
-| The selection on each render (generic architecture) | `RenderingEngine/helpers/volumeStrategyLifecycle.ts`: `provisionStrategies`, `applyStrategy`, `onVolumeData`       |
-| The sample distance of a 3D render                  | `RenderingEngine/helpers/createVolumeMapper.ts`: `sampleDistanceOf`                                                |
-| The statistic of a labelmap                         | `packages/tools/src/stateManagement/segmentation/labelmapModel/labelmapLayerStore.ts`: `tagLabelmapVolume`         |
+| Piece or step                                       | Code                                                                                                                                              |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The presets, and the limits of a grid               | `utilities/gpuSettingsPresets.ts`: `setGpuSettingsPreset`, `gridLimitsOfGpuSettings`                                                              |
+| The record of the device, and the edge probe        | `utilities/renderingCapabilities.ts`, `utilities/textureSupport.ts` (see [GPU device limits](../../specs/core/gpu-device-limits/requirements.md)) |
+| The fair share of the memory limit of `auto`        | `RenderingEngine/helpers/volumeRenderStrategy.ts`: `fairShares`                                                                                   |
+| The factors of a reduction, and the reduced grid    | `utilities/voxelGrid/`: `boxAverageReductionFactors`, `reducedDimensions`, `deriveBoxAverageGrid`                                                 |
+| The default provider and the default selection      | `RenderingEngine/helpers/volumeRenderStrategy.ts`: `defaultVolumeStrategyProvider`, `selectFirstReadyStrategy`                                    |
+| The one place that both architectures share         | `RenderingEngine/helpers/resolveVolumeTexture.ts`, called by `createVolumeActor` and `createVolumeSliceActor`                                     |
+| The texture sets and the store                      | `cache/classes/VolumeTextureSet.ts`, `cache/volumeTextureStore.ts`, `ImageVolume.provisionTextureSet`                                             |
+| The marks and the deliveries                        | `cache/classes/ImageVolume.ts`: `markFrameTexturesDirty`, `recordFrameDelivery`, `markFrameModified`                                              |
+| The load                                            | `cache/classes/BaseStreamingImageVolume.ts`: `load`, `successCallback`, `takeInCachedImages`                                                      |
+| The fill of a reduced texture                       | `RenderingEngine/vtkClasses/vtkStreamingOpenGLTexture.js`: `updateTextureFromComposite`, `fillSliceByBoxStatistic`                                |
+| The selection on each render (generic architecture) | `RenderingEngine/helpers/volumeStrategyLifecycle.ts`: `provisionStrategies`, `applyStrategy`, `onVolumeData`                                      |
+| The sample distance of a 3D render                  | `RenderingEngine/helpers/createVolumeMapper.ts`: `sampleDistanceOf`                                                                               |
+| The statistic of a labelmap                         | `packages/tools/src/stateManagement/segmentation/labelmapModel/labelmapLayerStore.ts`: `tagLabelmapVolume`                                        |
 
 ## How the viewport builds the strategies
 
@@ -186,10 +188,10 @@ reads it, so the primary grid answers over its whole extent.
 **The provider runs again whenever something changes that could change its answer.** A render path
 is long-lived, and two things move under it:
 
-| Reason   | What changed                                                                                                                                                       |
-| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `loaded` | The data of the volume finished loading, so a strategy that could not draw before may now be worth building                                                        |
-| `memory` | The GPU settings preset, the lossy downsampling or the texture budget changed, so a strategy may need to be rebuilt, or replaced by one that the device can afford |
+| Reason   | What changed                                                                                                                                                                                   |
+| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `loaded` | The data of the volume finished loading, so a strategy that could not draw before may now be worth building                                                                                    |
+| `memory` | The GPU settings preset, the lossy downsampling, the texture budget or the display sets of `auto` changed, so a strategy may need to be rebuilt, or replaced by one that the device can afford |
 
 **A rebuild is an event, and never a render**, so `VRS-C-1` still holds: nothing allocates on the
 frame path.
@@ -424,6 +426,5 @@ and needs no change.
 | A consumer of the `refinement` role                                                                                                                                                                                                                                            | the multi-texture render component       |
 | A performance-bound choice of strategy                                                                                                                                                                                                                                         | task T14                                 |
 | An automatic policy with recorded fixtures                                                                                                                                                                                                                                     | task T15                                 |
-| A capability probe, and the override of an overstated memory value                                                                                                                                                                                                             | task T15                                 |
 | A brick loader, and the sets that it would provision                                                                                                                                                                                                                           | task T7                                  |
 | The state that a user sees, and the indicator of OHIF                                                                                                                                                                                                                          | tasks T3 and T6                          |

@@ -1,5 +1,10 @@
 import { describe, it, expect, jest, afterEach } from '@jest/globals';
-import { VolumeTextureStore } from '../src/cache/volumeTextureStore';
+import volumeTextureStore, {
+  VolumeTextureStore,
+} from '../src/cache/volumeTextureStore';
+import * as gpuSettingsPresets from '../src/utilities/gpuSettingsPresets';
+import eventTarget from '../src/eventTarget';
+import Events from '../src/enums/Events';
 
 // The global store of the named texture sets. A set is the unit of storage, of
 // cost and of eviction, and a selection reads the stored sets instead of
@@ -204,6 +209,78 @@ describe('the store counts one global budget', () => {
 
     expect(destroyed.length).toBe(brickGrids(32).length);
     expect(store.bytesUsed).toBe(0);
+  });
+
+  it('evicts every set that nothing holds, a backstop set too, and keeps a held set', () => {
+    const { store, destroyed, options } = makeStore();
+
+    store.provision(options({ name: 'held', backstop: true }));
+    store.claim('volume-1', 'held');
+    store.provision(options({ name: 'idle' }));
+    store.provision(options({ name: 'backstop', backstop: true }));
+
+    store.evictUnheld();
+
+    expect(store.getSet('volume-1', 'held')).toBeDefined();
+    expect(store.getSet('volume-1', 'idle')).toBeUndefined();
+    expect(store.getSet('volume-1', 'backstop')).toBeUndefined();
+    expect(destroyed.length).toBe(2);
+  });
+});
+
+describe('a change of the limits frees the sets of the old size', () => {
+  const oneSet = 64 * 64 * 16 * 4;
+
+  /** The global store with a held set of the new size and an idle set of the old size. */
+  function provisionOldAndNew() {
+    const { options } = makeStore();
+
+    volumeTextureStore.clear();
+    volumeTextureStore.provision(options({ name: 'old' }));
+    volumeTextureStore.provision(options({ name: 'new' }));
+    volumeTextureStore.claim('volume-1', 'new');
+  }
+
+  afterEach(() => {
+    volumeTextureStore.clear();
+    jest.restoreAllMocks();
+    jest.useRealTimers();
+  });
+
+  it('evicts a set that no viewport holds after the change, under auto', () => {
+    jest.useFakeTimers();
+    jest
+      .spyOn(gpuSettingsPresets, 'gpuSettingsForRender')
+      .mockReturnValue({ id: 'auto' });
+    provisionOldAndNew();
+
+    eventTarget.dispatchEvent(
+      new CustomEvent(Events.VOLUME_TEXTURE_LIMITS_CHANGED)
+    );
+
+    /** The viewports move their claims first, in the same event. */
+    expect(volumeTextureStore.getSet('volume-1', 'old')).toBeDefined();
+
+    jest.runOnlyPendingTimers();
+
+    expect(volumeTextureStore.getSet('volume-1', 'old')).toBeUndefined();
+    expect(volumeTextureStore.getSet('volume-1', 'new')).toBeDefined();
+    expect(volumeTextureStore.bytesUsed).toBe(oneSet);
+  });
+
+  it('keeps the sets under a named preset, which sets no memory limit', () => {
+    jest.useFakeTimers();
+    jest
+      .spyOn(gpuSettingsPresets, 'gpuSettingsForRender')
+      .mockReturnValue({ id: 'low' });
+    provisionOldAndNew();
+
+    eventTarget.dispatchEvent(
+      new CustomEvent(Events.VOLUME_TEXTURE_LIMITS_CHANGED)
+    );
+    jest.runOnlyPendingTimers();
+
+    expect(volumeTextureStore.getSet('volume-1', 'old')).toBeDefined();
   });
 });
 

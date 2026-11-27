@@ -164,6 +164,29 @@ interface Cornerstone3DConfig {
      */
     lossyDownsampling?: LossyDownsampling;
     /**
+     * The settings of the `auto` GPU settings preset. A named preset ignores
+     * them. Each size is in GPU bytes of the page and must be at least 128 MB.
+     *
+     * - `hardMemoryBytes` is a hard memory limit, used as it is. It wins over
+     *   a limit that the user sets (see `setGpuMemoryLimit`).
+     * - `startMemoryBytes` is the initial memory limit, which applies while
+     *   the user has set none. With neither, `auto` starts from the class of
+     *   the device: 1 GB for a phone or a tablet, 2 GB for any other GPU, and
+     *   0.5 GB when the probed texture edge is below 2048.
+     * - `maxTextureEdge` caps the texture edge of `auto`, and the edge that the
+     *   startup probe tests. The probe never tests above 2048. When the test
+     *   at 2048 passes, `auto` uses `MAX_3D_TEXTURE_SIZE` of the device, or
+     *   this value when it is smaller.
+     *
+     * An application maps its own settings to these values. Nothing raises or
+     * lowers the limit by itself.
+     */
+    autoGpuSettings?: {
+      hardMemoryBytes?: number;
+      startMemoryBytes?: number;
+      maxTextureEdge?: number;
+    };
+    /**
      * When true, legacy viewport types (STACK, ORTHOGRAPHIC, VIDEO, ECG,
      * WHOLE_SLIDE) are internally backed by GenericViewport implementations
      * through legacy compatibility adapters at viewport creation time.
