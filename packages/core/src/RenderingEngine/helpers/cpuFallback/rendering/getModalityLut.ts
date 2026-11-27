@@ -28,7 +28,8 @@ function generateNonLinearModalityLUT(modalityLUT) {
       return maxValue;
     }
 
-    return modalityLUT.lut[storedPixelValue];
+    // The first LUT entry corresponds to firstValueMapped (DICOM PS3.3 C.11.1.1)
+    return modalityLUT.lut[storedPixelValue - modalityLUT.firstValueMapped];
   };
 }
 
