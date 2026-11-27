@@ -1,0 +1,57 @@
+// Diffusion MR: one display set for each b-value and gradient direction.
+//
+// dwiByBValue gives one display set for each b-value, so a DTI b-value holds
+// all of its directions at each position, and shows as a stack. This rule
+// also groups by DiffusionGradientOrientation (0018,9089), so each direction
+// becomes its own display set of one image at each position. A DTI series of
+// 33 directions gives 34 display sets (b=0 and 33 directions). The rule is for
+// tests and for a review of single directions; it is not a default.
+//
+// The description is `<SeriesDescription> b=<DiffusionBValue> #<InstanceNumber>`,
+// with the InstanceNumber of the first image of the display set. A DICOMweb
+// server can send the direction as InlineBinary, so the rule cannot write the
+// direction itself. Images without a direction (b=0, or a trace) group by
+// b-value only.
+//
+// The context, the matches and the sort are those of dwiByBValue. The rule
+// sits before the default `multiFrame` rule, so it comes before dwiByBValue
+// when a deployment loads both. Localizers and multi-frame instances keep
+// their default rules.
+// `$spliceById` needs `spliceById` of @cornerstonejs/metadata, registered with
+// immutability-helper `extend`.
+{
+  // New rules for the registry.
+  "displaySetRules": {
+    "$merge": {
+      "dtiByDirection": {
+        "description": "Diffusion MR: one display set for each b-value and gradient direction.",
+        "context": {
+          "bValue": "isLocalizer ? null : Number(DiffusionBValue)",
+          "isDiffusion": "series.instances.max(bValue) > 0"
+        },
+        "matches": {
+          "Modality": "MR",
+          "isDiffusion": true,
+          "isImage": true,
+          "isMultiFrame": false,
+          "isLocalizer": false,
+          "DiffusionBValue": { "notNull": true }
+        },
+        "groupBy": [
+          "SeriesInstanceUID",
+          "bValue",
+          "DiffusionGradientOrientation"
+        ],
+        "sortBy": ["displaySet.sliceDistance", "InstanceNumber"],
+        "attributes": {
+          "SeriesDescription": {
+            "template": "{SeriesDescription} b={DiffusionBValue} #{InstanceNumber}"
+          }
+        }
+      }
+    }
+  },
+  "displaySetRuleOrder": {
+    "$spliceById": [["multiFrame", 0, "dtiByDirection"]]
+  }
+}

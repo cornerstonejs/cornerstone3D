@@ -99,4 +99,10 @@ describe('compileCondition / compileValue - strict and stand-alone', () => {
     expect(compileValue('constructor')({})).toBeUndefined();
     expect(compileCondition({ toString: null })({})).toBe(true);
   });
+
+  it('trims a template, so a name with no value leaves no space', () => {
+    const label = compileValue({ template: '{SeriesDescription} b={bValue}' });
+    expect(label({ bValue: 0 })).toBe('b=0');
+    expect(label({ SeriesDescription: 'DTI', bValue: 0 })).toBe('DTI b=0');
+  });
 });

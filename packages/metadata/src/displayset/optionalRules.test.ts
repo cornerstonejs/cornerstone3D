@@ -229,6 +229,38 @@ describe('rules/optional/*.jsonc - one split for each file', () => {
     ).toEqual(['dwiByBValue:2', 'localizer:1', 'multiFrame:1']);
   });
 
+  it('dtiByDirection: one display set for each b-value and direction, and no leading space without a description', () => {
+    let InstanceNumber = 0;
+    const dti = (
+      DiffusionBValue: number,
+      DiffusionGradientOrientation: unknown,
+      z: number
+    ) =>
+      mr({
+        SeriesDescription: undefined,
+        InstanceNumber: ++InstanceNumber,
+        DiffusionBValue,
+        DiffusionGradientOrientation,
+        ImageOrientationPatient: AXIAL,
+        ImagePositionPatient: [0, 0, z],
+      });
+    const b0 = [dti(0, [0, 0, 0], 2), dti(0, [0, 0, 0], 1)];
+    const x = [dti(800, [1, 0, 0], 1), dti(800, [1, 0, 0], 2)];
+    // DICOMweb can send the FD vector as InlineBinary; it still groups.
+    const y = [
+      dti(800, { InlineBinary: 'AAAAAAAA8D8=' }, 1),
+      dti(800, { InlineBinary: 'AAAAAAAA8D8=' }, 2),
+    ];
+
+    expect(
+      splitWith('dtiByDirection', [...b0, ...x, ...y], description)
+    ).toEqual([
+      ['dtiByDirection', uids([b0[1], b0[0]]), 'b=0 #2'],
+      ['dtiByDirection', uids(x), 'b=800 #3'],
+      ['dtiByDirection', uids(y), 'b=800 #5'],
+    ]);
+  });
+
   it('multiEchoByEchoTime: one display set for each echo time, in position order', () => {
     const echo = (EchoTime: number, z: number) =>
       mr({

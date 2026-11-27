@@ -35,6 +35,7 @@ export {
   compareFinite,
   looseEquals,
   parseTemplate,
+  templateText,
   readNameAt,
   readOwnName,
   safeFunctionCompilers,
