@@ -119,6 +119,7 @@ async function generateContourSetsFromLabelmap({ segmentations }) {
       }
 
       return {
+        segmentIndex: contourSet.segment.segmentIndex,
         label: segment.label,
         color: segment.color,
         metadata: {
