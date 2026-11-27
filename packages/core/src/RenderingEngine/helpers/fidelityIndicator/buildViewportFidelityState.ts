@@ -1,5 +1,6 @@
 import ImageQualityStatus from '../../../enums/ImageQualityStatus';
 import type {
+  FidelityIssue,
   Point3,
   ViewportFidelityCause,
   ViewportFidelityState,
@@ -71,6 +72,7 @@ export function buildViewportFidelityState(
           loading,
           lod,
           missingFrames: !line.qualityPending && record?.missing > 0,
+          displayIssue: !!line.issues?.length,
         })
       : undefined,
     // The worst line decides: a standing reduction anywhere is not transient.
@@ -78,6 +80,7 @@ export function buildViewportFidelityState(
     progressive: progressiveOf(line),
     shownState,
     lossy,
+    issues: issuesOf(lines),
   };
 
   return state;
@@ -97,6 +100,7 @@ function emptyState(displaySpacing?: Point3): ViewportFidelityState {
     progressive: undefined,
     shownState: 'hidden',
     lossy: false,
+    issues: undefined,
   };
 }
 
@@ -126,6 +130,19 @@ function worstLineOf(lines: FidelityLine[]): FidelityLine | undefined {
   }
 
   return worst;
+}
+
+/** Every display issue of the lines with data, once for each message. */
+function issuesOf(lines: FidelityLine[]): FidelityIssue[] | undefined {
+  const issues = new Map<string, FidelityIssue>();
+
+  for (const line of lines) {
+    if (lineHasData(line)) {
+      line.issues?.forEach((issue) => issues.set(issue.message, issue));
+    }
+  }
+
+  return issues.size ? [...issues.values()] : undefined;
 }
 
 function progressiveOf(
@@ -166,6 +183,7 @@ function causeOf(args: {
   loading: boolean;
   lod: boolean;
   missingFrames: boolean;
+  displayIssue: boolean;
 }): ViewportFidelityCause | undefined {
   const {
     record,
@@ -176,6 +194,7 @@ function causeOf(args: {
     loading,
     lod,
     missingFrames,
+    displayIssue,
   } = args;
 
   if (loading) {
@@ -211,7 +230,12 @@ function causeOf(args: {
   }
 
   // A standing sample distance multiplier is a performance choice.
-  return standingSample && !spatial ? 'performanceTarget' : undefined;
+  if (standingSample && !spatial) {
+    return 'performanceTarget';
+  }
+
+  // The details list each issue, also with another cause (FIDELITY-UI-5).
+  return displayIssue ? 'displayIssue' : undefined;
 }
 
 /**
@@ -233,5 +257,6 @@ export function viewportFidelityStateKey(state: ViewportFidelityState): string {
     cause: state.cause,
     transient: state.transient,
     progressive: state.lossy ? state.progressive : undefined,
+    issues: state.issues,
   });
 }

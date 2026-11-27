@@ -618,8 +618,8 @@ importers:
         specifier: 7.26.10
         version: 7.26.10
       '@dcmjs-org/dcmjs':
-        specifier: 1.0.0-beta.10
-        version: 1.0.0-beta.10
+        specifier: 1.0.0
+        version: 1.0.0
       buffer:
         specifier: 6.0.3
         version: 6.0.3
@@ -631,13 +631,13 @@ importers:
         version: 1.0.19
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.19.6
+        specifier: 5.22.1
         version: link:../core
       '@cornerstonejs/metadata':
-        specifier: 5.19.6
+        specifier: 5.22.1
         version: link:../metadata
       '@cornerstonejs/tools':
-        specifier: 5.19.6
+        specifier: 5.22.1
         version: link:../tools
 
   packages/ai:
@@ -665,10 +665,10 @@ importers:
         version: 1.17.1
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.19.6
+        specifier: 5.22.1
         version: link:../core
       '@cornerstonejs/tools':
-        specifier: 5.19.6
+        specifier: 5.22.1
         version: link:../tools
 
   packages/codemods: {}
@@ -676,7 +676,7 @@ importers:
   packages/core:
     dependencies:
       '@cornerstonejs/utils':
-        specifier: 5.19.6
+        specifier: 5.22.1
         version: link:../utils
       '@kitware/vtk.js':
         specifier: 36.4.1
@@ -692,7 +692,7 @@ importers:
         version: 1.9.2
     devDependencies:
       '@cornerstonejs/metadata':
-        specifier: 5.19.6
+        specifier: 5.22.1
         version: link:../metadata
 
   packages/dicomImageLoader:
@@ -729,10 +729,10 @@ importers:
         version: 9.0.1
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.19.6
+        specifier: 5.22.1
         version: link:../core
       '@cornerstonejs/metadata':
-        specifier: 5.19.6
+        specifier: 5.22.1
         version: link:../metadata
 
   packages/docs:
@@ -833,10 +833,10 @@ importers:
         version: 1.0.0-b.165(debug@4.4.3(supports-color@8.1.1))(supports-color@8.1.1)
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.19.6
+        specifier: 5.22.1
         version: link:../core
       '@cornerstonejs/tools':
-        specifier: 5.19.6
+        specifier: 5.22.1
         version: link:../tools
 
   packages/metadata:
@@ -845,11 +845,11 @@ importers:
         specifier: 1.0.3
         version: 1.0.3
       '@cornerstonejs/utils':
-        specifier: 5.19.6
+        specifier: 5.22.1
         version: link:../utils
       '@dcmjs-org/dcmjs':
-        specifier: 1.0.0-beta.10
-        version: 1.0.0-beta.10
+        specifier: 1.0.0
+        version: 1.0.0
       gl-matrix:
         specifier: 3.4.3
         version: 3.4.3
@@ -861,7 +861,7 @@ importers:
         version: 0.6.9
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.19.6
+        specifier: 5.22.1
         version: link:../core
 
   packages/polymorphic-segmentation:
@@ -874,10 +874,10 @@ importers:
         version: 36.4.1(autoprefixer@10.4.21(postcss@8.5.26))(wslink@2.5.0)
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.19.6
+        specifier: 5.22.1
         version: link:../core
       '@cornerstonejs/tools':
-        specifier: 5.19.6
+        specifier: 5.22.1
         version: link:../tools
 
   packages/tools:
@@ -914,7 +914,7 @@ importers:
         version: 4.4.2
     devDependencies:
       '@cornerstonejs/core':
-        specifier: 5.19.6
+        specifier: 5.22.1
         version: link:../core
       canvas:
         specifier: 3.2.0
@@ -923,8 +923,8 @@ importers:
   packages/utils:
     devDependencies:
       '@dcmjs-org/dcmjs':
-        specifier: 1.0.0-beta.10
-        version: 1.0.0-beta.10
+        specifier: 1.0.0
+        version: 1.0.0
       loglevel:
         specifier: 1.9.2
         version: 1.9.2
@@ -3104,53 +3104,53 @@ packages:
     peerDependencies:
       postcss: 8.5.26
 
-  '@dcmjs-org/core@1.0.0-beta.10':
+  '@dcmjs-org/core@1.0.0':
     resolution:
       {
-        integrity: sha512-KatRCUwrn0AbTGYULCLZbOqTJP+8ep5bxuBQ+cGWaxFnZ5dz9b76hh8hIwWLbMqSzqVpgqbs2PTpljynf08F8g==,
+        integrity: sha512-r03Pk7+NHlF1hlR5FRnhBWYF97TkjvqjEF8TX+wC7g8C+WI3pajKC1moMekzhfD27tkXL76gz4zFk0JBEH+IIw==,
       }
 
-  '@dcmjs-org/dcmjs@1.0.0-beta.10':
+  '@dcmjs-org/dcmjs@1.0.0':
     resolution:
       {
-        integrity: sha512-bmzXmaBklWIWiar3eTzzqG1sIyqfBgef9Ep3uA+Nb0ZOvCPHXyiGrMC+srj1KZX5WQQ+PrDq8R2uH8zyYCU0fw==,
+        integrity: sha512-PaDNf1gZd8VW6LREynftJrdGsF1r9bmlWIsnoXFBkuDVXXNeWBGm78py1Ga+rVSoxGnSkIbVtjJ2ygPOeaAM6Q==,
       }
     engines: { node: '>=22.13' }
 
-  '@dcmjs-org/dicomdir@1.0.0-beta.10':
+  '@dcmjs-org/dicomdir@1.0.0':
     resolution:
       {
-        integrity: sha512-CkskqWukk8KLiizocznUAhWW2Rj1xzmGNndQCQJgfh6pQYCBxh+okk89uJym79YrRrubELubsci3VGnGUOlgLA==,
+        integrity: sha512-dgHrP/tZtZsxykOtmXDkOVfNS7iI7OlTT0Z1FkRIWaGp8hk0kwcChezVKqKukF0G8CwF2XALdIkFPhpANBFnrw==,
       }
 
-  '@dcmjs-org/encapsulated@1.0.0-beta.10':
+  '@dcmjs-org/encapsulated@1.0.0':
     resolution:
       {
-        integrity: sha512-B6ClYrbnlp38ZhBdDnuqnbSKNj/CmckY1cpNZT2gyw6aCD+zDedOIOdpL6eD0AdBlWq9grjzDB6s+Fz1h23J3w==,
+        integrity: sha512-iSUHXUTAGyMDDim3BrxORZAQkasdm0EeLNcvdMozKr6uwwP9ABHXD47Ph/4AeXlE13TyWCQyklFJR9Yit5QM9Q==,
       }
 
-  '@dcmjs-org/imaging@1.0.0-beta.10':
+  '@dcmjs-org/imaging@1.0.0':
     resolution:
       {
-        integrity: sha512-9q+8fEETyJYhhTZTkUHgdZveb8il4XmT7Vc9wdGAJlTSwODDO99lx5YPw3p5KEeHHcDoB11BAcIwgqIQ3J5W2A==,
+        integrity: sha512-R4mb5d/NEkeP/pQnbHA1I3jbyYh8AnHQtzRnx17tc9osud30w6lnONO2n6Kh+LgXZ3Wnt0ARC/YoZnw/j+lQWw==,
       }
 
-  '@dcmjs-org/media@1.0.0-beta.10':
+  '@dcmjs-org/media@1.0.0':
     resolution:
       {
-        integrity: sha512-n/UrvtGeFmFh90ZRVNi9dnfB28GXHXh6AOq0oQsA3Vck1Jhc8hSuyOiDK5fTisBylFUw0EdaVQmORYrKOxJAhQ==,
+        integrity: sha512-K2YAphjuzc0fax0p2vPwpU1JA9dWR9k3YqzdKuHUEv6mJL6L8EOnJMQi2GFlfKbyTvZ3bQksev+gCgoSq72Mcg==,
       }
 
-  '@dcmjs-org/parser@1.0.0-beta.10':
+  '@dcmjs-org/parser@1.0.0':
     resolution:
       {
-        integrity: sha512-Fq7GeY3GQDuX2cleCSva9KoAESwN5hTtaLDisrkNgOt33tfV2JhFxX2mu+4Yzqn09NxbruGiMforP1u8DKKTqg==,
+        integrity: sha512-eHElukQQnnLcq1b59b7PuPGmVWJ2d3noDplGRU8a+GMF44lasKJygU74HDsO0oCq6k9uSn5Hz1DfkdvabR+6ew==,
       }
 
-  '@dcmjs-org/video@1.0.0-beta.10':
+  '@dcmjs-org/video@1.0.0':
     resolution:
       {
-        integrity: sha512-DmPHdlCJkdbEBtPOl/U025rHWm/dqePKlfAq7Cr667aeVOiOGVhzGu8nPFNkE05ixWPiOK/8fPA4cTlkrOVhtQ==,
+        integrity: sha512-pnWWiz7RKxrYJNJTsViSN2nytHuKtF6hzyjXERNzHloYCBEHC6QsGo2unU27V/3r3swpAEoRzwIthx7L0/wWGg==,
       }
 
   '@discoveryjs/json-ext@0.5.7':
@@ -21132,56 +21132,55 @@ snapshots:
     dependencies:
       postcss: 8.5.26
 
-  '@dcmjs-org/core@1.0.0-beta.10':
+  '@dcmjs-org/core@1.0.0':
     dependencies:
       loglevel: 1.9.2
       pako: 2.1.0
 
-  '@dcmjs-org/dcmjs@1.0.0-beta.10':
+  '@dcmjs-org/dcmjs@1.0.0':
     dependencies:
       '@babel/runtime-corejs3': 7.29.2
-      '@dcmjs-org/core': 1.0.0-beta.10
-      '@dcmjs-org/encapsulated': 1.0.0-beta.10
-      '@dcmjs-org/imaging': 1.0.0-beta.10
-      '@dcmjs-org/media': 1.0.0-beta.10
-      '@dcmjs-org/parser': 1.0.0-beta.10
-      '@dcmjs-org/video': 1.0.0-beta.10
-      adm-zip: 0.6.1
+      '@dcmjs-org/core': 1.0.0
+      '@dcmjs-org/encapsulated': 1.0.0
+      '@dcmjs-org/imaging': 1.0.0
+      '@dcmjs-org/media': 1.0.0
+      '@dcmjs-org/parser': 1.0.0
+      '@dcmjs-org/video': 1.0.0
       gl-matrix: 3.4.4
       lodash.clonedeep: 4.5.0
       loglevel: 1.9.2
       ndarray: 1.0.19
       pako: 2.1.0
 
-  '@dcmjs-org/dicomdir@1.0.0-beta.10':
+  '@dcmjs-org/dicomdir@1.0.0':
     dependencies:
-      '@dcmjs-org/core': 1.0.0-beta.10
+      '@dcmjs-org/core': 1.0.0
 
-  '@dcmjs-org/encapsulated@1.0.0-beta.10':
+  '@dcmjs-org/encapsulated@1.0.0':
     dependencies:
-      '@dcmjs-org/core': 1.0.0-beta.10
+      '@dcmjs-org/core': 1.0.0
 
-  '@dcmjs-org/imaging@1.0.0-beta.10':
+  '@dcmjs-org/imaging@1.0.0':
     dependencies:
-      '@dcmjs-org/core': 1.0.0-beta.10
+      '@dcmjs-org/core': 1.0.0
 
-  '@dcmjs-org/media@1.0.0-beta.10':
+  '@dcmjs-org/media@1.0.0':
     dependencies:
-      '@dcmjs-org/dicomdir': 1.0.0-beta.10
-      '@dcmjs-org/encapsulated': 1.0.0-beta.10
-      '@dcmjs-org/imaging': 1.0.0-beta.10
-      '@dcmjs-org/video': 1.0.0-beta.10
+      '@dcmjs-org/dicomdir': 1.0.0
+      '@dcmjs-org/encapsulated': 1.0.0
+      '@dcmjs-org/imaging': 1.0.0
+      '@dcmjs-org/video': 1.0.0
 
-  '@dcmjs-org/parser@1.0.0-beta.10':
+  '@dcmjs-org/parser@1.0.0':
     dependencies:
-      '@dcmjs-org/core': 1.0.0-beta.10
+      '@dcmjs-org/core': 1.0.0
       pako: 2.1.0
 
-  '@dcmjs-org/video@1.0.0-beta.10':
+  '@dcmjs-org/video@1.0.0':
     dependencies:
-      '@dcmjs-org/core': 1.0.0-beta.10
-      '@dcmjs-org/imaging': 1.0.0-beta.10
-      '@dcmjs-org/parser': 1.0.0-beta.10
+      '@dcmjs-org/core': 1.0.0
+      '@dcmjs-org/imaging': 1.0.0
+      '@dcmjs-org/parser': 1.0.0
 
   '@discoveryjs/json-ext@0.5.7': {}
 

@@ -1,4 +1,11 @@
-import { describe, it, expect, jest, beforeEach } from '@jest/globals';
+import {
+  describe,
+  it,
+  expect,
+  jest,
+  beforeEach,
+  afterEach,
+} from '@jest/globals';
 import ImageVolume from '../src/cache/classes/ImageVolume';
 import volumeTextureStore from '../src/cache/volumeTextureStore';
 import VoxelManager from '../src/utilities/VoxelManager';
@@ -9,6 +16,8 @@ import {
   setGpuSettingsPreset,
 } from '../src/utilities/gpuSettingsPresets';
 import { setLossyDownsampling } from '../src/init';
+import * as renderingCapabilities from '../src/utilities/renderingCapabilities';
+import * as getRenderingEngineModule from '../src/RenderingEngine/getRenderingEngine';
 import vtkVolumeMapper from '@kitware/vtk.js/Rendering/Core/VolumeMapper';
 
 // A legacy viewport has no render path, so the set that its actor draws is held
@@ -79,10 +88,26 @@ async function show(viewport, volumeId) {
   viewport.setActors([{ uid: volumeId, actor, referencedId: volumeId }]);
 }
 
+let rendererClassSpy;
+
 beforeEach(() => {
   volumeTextureStore.clear();
   volumeTextureStore.setBudget(0);
   mockVolumes.clear();
+  /**
+   * The GPU settings apply to a GPU renderer only, and jsdom has no WebGL, so
+   * the renderer is a desktop GPU here.
+   */
+  rendererClassSpy = jest
+    .spyOn(renderingCapabilities, 'getRendererClass')
+    .mockReturnValue('desktop');
+  /** The default `auto` reads a WebGL probe, which jest does not have. */
+  setGpuSettingsPreset('high');
+});
+
+afterEach(() => {
+  resetGpuSettingsPreset();
+  rendererClassSpy.mockRestore();
 });
 
 describe('a legacy viewport holds the texture set that it draws', () => {
@@ -136,6 +161,63 @@ describe('a legacy viewport follows a change of the GPU settings', () => {
       resetGpuSettingsPreset();
       setLossyDownsampling({ final: false });
     }
+  });
+
+  it('renders the viewport that shows the actor, so the new texture shows at once', async () => {
+    const viewport = legacyViewport();
+
+    makeVolume('wide', [512, 64, 8]);
+    setLossyDownsampling({ final: true });
+
+    try {
+      await show(viewport, 'wide');
+
+      viewport.render = jest.fn();
+      jest
+        .spyOn(getRenderingEngineModule, 'getRenderingEngines')
+        .mockReturnValue([
+          { hasBeenDestroyed: false, getViewports: () => [viewport] },
+        ]);
+
+      setGpuSettingsPreset('low');
+
+      expect(viewport.render).toHaveBeenCalledTimes(1);
+
+      /** A change that leaves the texture as it is renders nothing. */
+      setGpuSettingsPreset('low');
+
+      expect(viewport.render).toHaveBeenCalledTimes(1);
+    } finally {
+      jest.restoreAllMocks();
+      rendererClassSpy = jest
+        .spyOn(renderingCapabilities, 'getRendererClass')
+        .mockReturnValue('desktop');
+      resetGpuSettingsPreset();
+      setLossyDownsampling({ final: false });
+    }
+  });
+
+  it('chooses a texture again for an actor whose set the store evicted while it was away', async () => {
+    const viewport = legacyViewport();
+    const volume = makeVolume('wide', [512, 64, 8]);
+
+    await show(viewport, 'wide');
+
+    const entry = viewport.getActor('wide');
+    const mapper = entry.actor.getMapper();
+    const evicted = mapper.getScalarTexture();
+
+    viewport.removeActors(['wide']);
+    volumeTextureStore.evictUnheld();
+    viewport.addActor(entry);
+
+    expect(mapper.getScalarTexture()).not.toBe(evicted);
+    expect(mapper.getScalarTexture()).toBe(
+      volume.getTextureSet('full-resolution/full-extent').members()[0].texture
+    );
+    expect(volume.getTextureSet('full-resolution/full-extent').references).toBe(
+      1
+    );
   });
 
   it('keeps the set of an actor that a tool moved to a mapper with no shared texture', async () => {

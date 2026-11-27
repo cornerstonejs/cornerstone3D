@@ -13,7 +13,7 @@ after Cornerstone has been initialized.
 ## Logging
 
 Cornerstone writes its messages with [loglevel](https://github.com/pimterry/loglevel),
-through the same log root as the dcmjs 1.0 beta (`@dcmjs-org/dcmjs`).
+through the same log root as dcmjs 1.0 (`@dcmjs-org/dcmjs`).
 Configure the logs with the loglevel interface, not with the `init`
 configuration. Thus one interface controls the logs of Cornerstone, of dcmjs,
 and of the other components of your application. An application that also

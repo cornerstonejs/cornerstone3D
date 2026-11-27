@@ -264,11 +264,16 @@ export async function addVolumesAsIndependentComponents({
     internalCache.delete(uid);
 
     if (viewport.isDisabled) {
+      /** The converted mapper holds GPU memory in the ledger until deleted. */
+      mapper.delete();
+
       return;
     }
 
     // Restore the original actor and add it back to the viewport.
     actor.setMapper(oldMapper);
+    /** The converted mapper holds GPU memory in the ledger until deleted. */
+    mapper.delete();
 
     const pointData = sharedImageData.getPointData();
 

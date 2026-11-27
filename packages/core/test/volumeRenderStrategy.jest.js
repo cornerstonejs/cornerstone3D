@@ -30,7 +30,8 @@ import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import { sampleDistanceOf } from '../src/RenderingEngine/helpers/createVolumeMapper';
 import { VoxelStatistics } from '../src/enums';
 import { setLossyDownsampling } from '../src/init';
-import { gridFitsGpuSettings } from '../src/RenderingEngine/vtkClasses/vtkStreamingOpenGLVolumeMapper';
+import * as renderingCapabilities from '../src/utilities/renderingCapabilities';
+import gridFitsGpuSettings from '../src/RenderingEngine/vtkClasses/gridFitsGpuSettings';
 
 // These tests check the reductions of final downsampling, which is off by
 // default.
@@ -97,13 +98,24 @@ function render(path, rendering) {
   path.applyStrategy(rendering);
 }
 
+let rendererClassSpy;
+
 beforeEach(() => {
   volumeTextureStore.clear();
   volumeTextureStore.setBudget(0);
+  /**
+   * The default `auto` reads a WebGL probe, which jest does not have, and the
+   * GPU settings apply to a GPU renderer only, which jsdom does not have.
+   */
+  setGpuSettingsPreset('high');
+  rendererClassSpy = jest
+    .spyOn(renderingCapabilities, 'getRendererClass')
+    .mockReturnValue('desktop');
 });
 
 afterEach(() => {
   resetGpuSettingsPreset();
+  rendererClassSpy.mockRestore();
 });
 
 describe('the default provider builds the strategies', () => {
@@ -216,6 +228,22 @@ describe('the default provider builds the strategies', () => {
           (strategy) => strategy.name
         )
       ).toEqual(['full-resolution/full-extent']);
+    }
+  });
+
+  it('lets the mapper allocate a texture above the memory limit, and refuses one above the edge limit', () => {
+    setGpuSettingsPreset('medium');
+
+    try {
+      // 2048 x 2048 x 600 float voxels are about 10 GB, above the 8 GB of `medium`.
+      expect(gridFitsGpuSettings([2048, 2048, 600], 'Float32Array', 1)).toBe(
+        true
+      );
+      expect(gridFitsGpuSettings([16, 16, 4096], 'Float32Array', 1)).toBe(
+        false
+      );
+    } finally {
+      resetGpuSettingsPreset();
     }
   });
 

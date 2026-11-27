@@ -1,5 +1,6 @@
 import { utilities } from '@dcmjs-org/dcmjs';
 import Probe from './Probe';
+import MeasurementReport from './MeasurementReport';
 const { Point: TID300Point } = utilities.TID300;
 
 export default class KeyImage extends Probe {
@@ -9,6 +10,17 @@ export default class KeyImage extends Probe {
   static trackingSeriesIdentifier = `${this.trackingIdentifierTextValue}:Series`;
   static trackingPointIdentifier = `${this.trackingIdentifierTextValue}:Point`;
   static trackingSeriesPointIdentifier = `${this.trackingIdentifierTextValue}:SeriesPoint`;
+
+  // The suffixed identifiers also start with the Probe identifier, so register
+  // them for KeyImage or the tracking identifier lookup resolves them to Probe.
+  static {
+    MeasurementReport.registerTrackingIdentifier(
+      this,
+      this.trackingPointIdentifier,
+      this.trackingSeriesIdentifier,
+      this.trackingSeriesPointIdentifier
+    );
+  }
 
   static getMeasurementData(
     measurementGroup,
@@ -24,6 +36,7 @@ export default class KeyImage extends Probe {
     );
     const { data } = baseData.annotation;
     data.isPoint = trackingIdentifier.indexOf('Point') !== -1;
+    data.seriesLevel = trackingIdentifier.indexOf(':Series') > 0;
 
     return baseData;
   }
@@ -39,8 +52,7 @@ export default class KeyImage extends Probe {
         tid300Arguments.trackingIdentifierTextValue =
           this.trackingPointIdentifier;
       }
-    }
-    if (data.seriesLevel) {
+    } else if (data.seriesLevel) {
       tid300Arguments.trackingIdentifierTextValue =
         this.trackingSeriesIdentifier;
     }

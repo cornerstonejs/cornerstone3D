@@ -107,11 +107,12 @@ type SetupMeasurementData = {
   ReferencedFrameNumber?: number | string;
   SCOORD3DGroup?: ScoordType;
   FrameOfReferenceUID?: string;
+  statsTargetId?: string;
 };
 
 type SpatialCoordinatesData = Omit<
   SetupMeasurementData,
-  'defaultState' | 'NUMGroup'
+  'defaultState' | 'NUMGroup' | 'statsTargetId'
 > & {
   state: SpatialCoordinatesState;
 };
@@ -604,7 +605,12 @@ export default class MeasurementReport {
       toolType,
     });
 
-    const { referencedImageId } = spatialGroup.state.annotation.metadata;
+    const { referencedImageId, FrameOfReferenceUID } =
+      spatialGroup.state.annotation.metadata;
+    // A SCOORD3D references the frame of reference only, with no image
+    const statsTargetId = referencedImageId
+      ? `imageId:${referencedImageId}`
+      : FrameOfReferenceUID && `frameOfReference:${FrameOfReferenceUID}`;
     const is3DMeasurement = !!spatialGroup.SCOORD3DGroup;
     const scoordArgs = {
       referencedImageId,
@@ -619,6 +625,7 @@ export default class MeasurementReport {
       scoordArgs,
       scoord,
       worldCoords,
+      statsTargetId,
     };
   }
 

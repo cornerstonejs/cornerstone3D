@@ -1,6 +1,6 @@
 {
   "name": "@cornerstonejs/metadata",
-  "version": "5.19.6",
+  "version": "5.22.1",
   "description": "Cornerstone3D Metadata Foundation - Provider chain, DICOM stream parsing, tag modules, and series splitting",
   "module": "./dist/esm/index.js",
   "types": "./dist/esm/index.d.ts",
@@ -83,8 +83,8 @@
   },
   "dependencies": {
     "@cornerstonejs/calculate-suv": "1.0.3",
-    "@cornerstonejs/utils": "5.19.6",
-    "@dcmjs-org/dcmjs": "1.0.0-beta.10",
+    "@cornerstonejs/utils": "5.22.1",
+    "@dcmjs-org/dcmjs": "1.0.0",
     "gl-matrix": "3.4.3"
   },
   "contributors": [

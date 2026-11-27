@@ -1,7 +1,7 @@
 ---
 id: viewport-fidelity
 title: Viewport fidelity
-summary: How the user learns that a viewport shows a lossy image - replicated, sub-resolution or lossy data, a decimation, a box average under magnification, or a sample distance larger than at full quality - and the events and queries that report it
+summary: How the user learns that a viewport shows a lossy image - replicated, sub-resolution or lossy data, a decimation, a box average under magnification, a sample distance larger than at full quality, or a display issue such as an unknown VOI LUT function - and the events and queries that report it
 ---
 
 # Viewport fidelity
@@ -61,6 +61,8 @@ displayed image lossy:
   pixel.
 - The render samples the data more coarsely than at full quality. The sample
   distance is larger than at full quality, during an interaction or after it.
+- A display issue: the viewport cannot show the data as its metadata
+  specifies. FIDELITY-STATE-13 gives the examples.
 
 While the load continues, data that has not arrived does not make the image
 lossy when the viewport shows no other data in its place. An ordinary load
@@ -144,6 +146,20 @@ states map to the states of this specification: transiently lossy is
   pixels than half of the source slice count (`p ≥ 2S`). After more zoom,
   sagittal and coronal show `lossy`.
 
+- **FIDELITY-STATE-13** A display issue makes the image lossy, and the
+  viewport shows `lossy` with the `Low Fidelity` label. Waiting does not fix a
+  display issue. The hover details list each display issue of the view, also
+  when a different cause also makes the image lossy. These are display issues:
+  - The VOI LUT function of the metadata is not a known function. The viewport
+    then uses `LINEAR`, so the window is not the window that the metadata
+    specifies.
+  - The rows or the columns of the decoded image do not agree with the rows or
+    the columns of the DICOM metadata.
+  - Another case where the viewport cannot apply the metadata, so the image does
+    not show as the metadata specifies.
+
+  This serves FIDELITY-USER-1.
+
 - **FIDELITY-UI-2** The indicator sits in the top-right corner of the viewport.
   The user does not need to hover over the viewport, and the viewport does not
   need to be the active viewport. The indicator has the same form in every
@@ -165,13 +181,13 @@ states map to the states of this specification: transiently lossy is
 - **FIDELITY-STATE-1** The viewport reports its fidelity in one of five states.
   This serves FIDELITY-USER-1.
 
-| State     | What it means                                                                                                      | Expected to improve |
-| --------- | ------------------------------------------------------------------------------------------------------------------ | ------------------- |
-| `loading` | The viewport shows replicated, sub-resolution or lossy data that a later delivery replaces.                        | Yes                 |
-| `lod`     | An interaction samples the data more coarsely than when no interaction runs.                                       | When it stops       |
-| `lossy`   | A standing reduction: the data is reduced, decimated or lossy, or sampled coarsely, and this is the final quality. | No                  |
-| `done`    | The viewport shows a lossless image.                                                                               | Not applicable      |
-| `hidden`  | The viewport shows no image data yet.                                                                              | Not applicable      |
+| State     | What it means                                                                                                                                                           | Expected to improve |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
+| `loading` | The viewport shows replicated, sub-resolution or lossy data that a later delivery replaces.                                                                             | Yes                 |
+| `lod`     | An interaction samples the data more coarsely than when no interaction runs.                                                                                            | When it stops       |
+| `lossy`   | A standing reduction: the data is reduced, decimated or lossy, or sampled coarsely, and this is the final quality. A display issue (FIDELITY-STATE-13) is also `lossy`. | No                  |
+| `done`    | The viewport shows a lossless image.                                                                                                                                    | Not applicable      |
+| `hidden`  | The viewport shows no image data yet.                                                                                                                                   | Not applicable      |
 
 - **FIDELITY-STATE-5** Each viewport reports its own fidelity. Two viewports
   that show one volume can report a different state at one time.
@@ -286,6 +302,17 @@ states map to the states of this specification: transiently lossy is
   reports the idle ratio in `RenderingFidelity.sampleDistanceIdle`. A slice view
   samples no ray, so a slice line has ratios of 1 on the legacy and the
   generic paths.
+- **FIDELITY-RECORD-8** A display issue (FIDELITY-STATE-13) is a
+  `FidelityIssue`, with a `code` and a clinician-facing `message`. A fidelity
+  line holds the issues of its data in `issues`, and any issue makes the line
+  `lossy` (`dataKindOf()` gives `reduced`). The sources of the issues:
+  - A stack image: `fidelityIssuesOfImage()` gives the issues that the loader
+    set on `IImage.fidelityIssues`, and the issues that core detects.
+  - A volume: `fidelityIssuesOfVolume()` reads the metadata of the volume.
+  - A generic render path sets `fidelityIssues` on its rendering when it sets
+    the image or refreshes the fidelity.
+  - Core detects an unknown VOI LUT function with `voiLUTFunctionIssueOf()`
+    (code `unknownVOILUTFunction`). No value is not an issue.
 - **FIDELITY-RECORD-7** `record.lowest` decides whether delivered data is lossy.
   A value below `ImageQualityStatus.FULL_RESOLUTION` is replicated,
   sub-resolution or lossy data. While the load continues (FIDELITY-STATE-11),
@@ -374,8 +401,13 @@ states map to the states of this specification: transiently lossy is
     `done` or `hidden`.
   - A spatial reduction takes `cause` from the strategy that chose the grid
     (`IVolumeRenderStrategy.reductionCause`, `reductionCauseOf()`):
-    `deviceTextureLimit` when the edge limit of the GPU settings alone reduces
-    the volume, `memoryBudget` when only the texture memory does. A reduction
+    `memoryBudget` when the memory limit of the GPU settings reduces the
+    volume at least as much as the edge limit does, and `deviceTextureLimit`
+    when the edge limit reduces it more. Under `auto`, the memory limit is the
+    share of the volume (see
+    [GPU device limits](./gpu-device-limits/implementation.md), GPULIM-I-4).
+    An application can thus offer a larger memory limit when the cause is
+    `memoryBudget`. A reduction
     that no strategy explains gives no cause. `lod` and an idle sample distance multiplier give
     `performanceTarget`.
   - `shownState` and `lossy` come from every volume of the viewport. The other
@@ -383,6 +415,9 @@ states map to the states of this specification: transiently lossy is
     Thus `cause` agrees with `lossy` when the viewport shows several volumes.
   - `done` is the state of every lossless view. The built-in indicator shows
     nothing for `done` (FIDELITY-UI-4).
+  - `issues` holds each display issue of each data set in the view, once for
+    each message (FIDELITY-STATE-13). `cause` is `displayIssue` when no other
+    cause applies. `issues` is part of the change key of FIDELITY-EVENT-4.
 
 ### The built-in indicator (FIDELITY-UI)
 
@@ -411,7 +446,9 @@ states map to the states of this specification: transiently lossy is
   by `fidelityDetailsTextOf()` from the absolute `ViewportFidelityState`: why
   the image is degraded (the cause), how much (percentage arrived, reduction
   `x/2, y/2, z/4`), and whether waiting should improve the image. The text of
-  the cause `missingFrames` is `Missing frame(s)`. The copy avoids GPU, texture and retrieval jargon. The
+  the cause `missingFrames` is `Missing frame(s)`. The details give the
+  `message` of each display issue (FIDELITY-RECORD-8) before the text of the
+  cause. The copy avoids GPU, texture and retrieval jargon. The
   debug badge (`fidelityIndicatorDebug`) keeps a separate developer dump.
 - **FIDELITY-UI-6** A consumer reads the derived state with
   `viewport.getFidelityState()` (FIDELITY-EVENT-5), and observes changes with
@@ -468,6 +505,34 @@ recovery mark, and VF-VIS-1d requires that the recovered state is
 re-revealable on demand.
 
 The OHIF indicator follows VF.
+
+### Some display issues are not detected yet
+
+FIDELITY-STATE-13 lists the rows and the columns of the decoded image as a
+display issue. The code does not detect that issue yet. A loader can report
+the issue on `IImage.fidelityIssues` when it adds the check.
+
+Core detects only a VOI LUT function that is not a known function. Each
+viewport draws the known functions (`LINEAR`, `LINEAR_EXACT` and `SIGMOID`):
+the stack and volume viewports, the CPU viewports, and the generic viewport
+when it shows a slice of a volume, for example in MPR. Thus a known function
+gives no display issue.
+
+A volume gets its issues from the metadata of the volume, which comes from the
+first image. An issue of a different image of the volume does not show. The
+default window of a volume comes from the middle image. If only the middle
+image has an unknown VOI LUT function, the window uses `LINEAR`, and no issue
+shows.
+
+When an application sets a VOI LUT function on a stack viewport, the issue of
+the metadata still shows, because the image still does not show as its
+metadata specifies. The message says what the metadata gives and what the
+default display uses, so the message stays true after the change.
+
+### VF has no display issues yet
+
+The OHIF specification (VF) does not list display issues. This specification
+adds FIDELITY-STATE-13 first. VF must add the same user requirement.
 
 ## Past defects
 

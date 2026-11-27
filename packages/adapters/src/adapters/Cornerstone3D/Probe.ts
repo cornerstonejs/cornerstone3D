@@ -31,7 +31,7 @@ class Probe extends BaseAdapter3D {
       state,
       NUMGroup,
       worldCoords,
-      referencedImageId,
+      statsTargetId,
       ReferencedFrameNumber,
     } = MeasurementReport.getSetupMeasurementData(
       MeasurementGroup,
@@ -40,13 +40,10 @@ class Probe extends BaseAdapter3D {
       this.toolType
     );
 
-    const cachedStats = referencedImageId
-      ? {
-          [`imageId:${referencedImageId}`]: {
-            value: NUMGroup?.MeasuredValueSequence?.NumericValue ?? null,
-          },
-        }
-      : {};
+    // A probe with no NUM value (often SCOORD3D) gets no stats, so viewers show no value
+    const value = NUMGroup?.MeasuredValueSequence?.NumericValue;
+    const cachedStats =
+      statsTargetId && value != null ? { [statsTargetId]: { value } } : {};
     state.annotation.data = {
       ...state.annotation.data,
       handles: {
