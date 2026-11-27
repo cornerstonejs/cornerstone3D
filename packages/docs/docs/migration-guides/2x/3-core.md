@@ -17,17 +17,18 @@ Cornerstone3D 2.x has removed the dependency on `detect-gpu`. This change addres
 
 #### Key Changes:
 
-1. **Default GPU Tier**: We now use a default GPU tier of 2 (medium tier).
+1. **Default GPU Tier**: Version 2.x uses a default GPU tier of 2 (medium tier).
 2. **No Internet Dependency**: The library no longer requires internet access for GPU detection.
-3. **Configurable GPU Tier**: You can still configure your own GPU tier if needed.
 
 #### How to Migrate:
 
-If you were previously relying on `detect-gpu` for GPU tier detection, you'll need to update your initialization code. Here's an example of how to initialize Cornerstone3D with a custom GPU tier:
+If you relied on `detect-gpu` for GPU tier detection, remove that code.
 
-```js
-cornerstone3D.init({ gpuTier: 3 });
-```
+:::note
+Version 2.x also accepted `init({ gpuTier })`. A later version removed the `gpuTier` option
+([#2782](https://github.com/cornerstonejs/cornerstone3D/pull/2782)). To select GPU or CPU
+rendering, use `rendering.planar.renderBackend` in `init`, or `setRenderBackend()`.
+:::
 
 ### removal of `use16BitDataType`
 
