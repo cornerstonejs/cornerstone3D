@@ -818,16 +818,21 @@ async function createLabelmapsFromSegImageIds(
     cs3dLogger.warn('Insufficient metadata, imagePlaneModule missing.');
   }
 
-  const ImageOrientationPatient = Array.isArray(imagePlaneModule.rowCosines)
-    ? [...imagePlaneModule.rowCosines, ...imagePlaneModule.columnCosines]
-    : [
-        imagePlaneModule.rowCosines.x,
-        imagePlaneModule.rowCosines.y,
-        imagePlaneModule.rowCosines.z,
-        imagePlaneModule.columnCosines.x,
-        imagePlaneModule.columnCosines.y,
-        imagePlaneModule.columnCosines.z,
-      ];
+  const { rowCosines, columnCosines } = imagePlaneModule ?? {};
+  // No source orientation (no Frame of Reference): default as the WADO-RS provider does
+  const ImageOrientationPatient =
+    !rowCosines || !columnCosines
+      ? [1, 0, 0, 0, 1, 0]
+      : Array.isArray(rowCosines)
+        ? [...rowCosines, ...columnCosines]
+        : [
+            rowCosines.x,
+            rowCosines.y,
+            rowCosines.z,
+            columnCosines.x,
+            columnCosines.y,
+            columnCosines.z,
+          ];
 
   // Get IOP from ref series, compute supported orientations:
   const validOrientations = getValidOrientations(ImageOrientationPatient);

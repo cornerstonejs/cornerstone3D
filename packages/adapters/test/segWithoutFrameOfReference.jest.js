@@ -279,6 +279,31 @@ describe('importing a BINARY SEG without a Frame of Reference', () => {
     expect(pixelsForImage(0)).toEqual(EMPTY);
   });
 
+  it('loads when the source imagePlaneModule has null cosines (WADO-URI provider)', async () => {
+    const stack = makeUltrasoundStack(2);
+    const source = {
+      imageIds: stack.imageIds,
+      metadataProvider: {
+        get(type, imageId) {
+          const value = stack.metadataProvider.get(type, imageId);
+          return type === 'imagePlaneModule' && value
+            ? { ...value, rowCosines: null, columnCosines: null }
+            : value;
+        },
+      },
+    };
+
+    const [pixelsForImage] = await importSeg(source, [
+      {
+        segmentNumber: 1,
+        sopInstanceUid: sopInstanceUidForSlice(1),
+        pixels: NODULE_1,
+      },
+    ]);
+
+    expect(pixelsForImage(1)).toEqual(NODULE_1);
+  });
+
   it('places overlapping segments on separate labelmap layers', async () => {
     const source = makeUltrasoundStack(2);
     // prettier-ignore
