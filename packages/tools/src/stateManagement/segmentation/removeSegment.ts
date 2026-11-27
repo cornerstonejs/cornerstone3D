@@ -70,14 +70,18 @@ export function removeSegment(
   ]);
 
   if (isThisSegmentActive && options.setNextSegmentAsActive !== false) {
-    // set the next or previous segment as active
+    // set the next or previous segment as active. The removed segment is no
+    // longer in `segments`, so look for the nearest index on either side of it.
     const segmentIndices = Object.keys(segments)
       .map(Number)
       .sort((a, b) => a - b);
-    const currentIndex = segmentIndices.indexOf(segmentIndex);
 
-    const nextSegmentIndex = segmentIndices[currentIndex + 1];
-    const previousSegmentIndex = segmentIndices[currentIndex - 1];
+    const nextSegmentIndex = segmentIndices.find(
+      (index) => index > segmentIndex
+    );
+    const previousSegmentIndex = segmentIndices
+      .filter((index) => index < segmentIndex)
+      .pop();
 
     if (nextSegmentIndex !== undefined) {
       setActiveSegmentIndex(segmentationId, nextSegmentIndex);
