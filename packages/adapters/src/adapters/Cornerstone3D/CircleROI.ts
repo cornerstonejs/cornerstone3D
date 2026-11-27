@@ -3,6 +3,7 @@ import MeasurementReport from './MeasurementReport';
 import BaseAdapter3D from './BaseAdapter3D';
 import { toScoord } from '../helpers';
 import { extractAllNUMGroups, restoreAdditionalMetrics } from './metricHandler';
+import { mapUnitToUCUM } from './unitMapper';
 
 const { Circle: TID300Circle } = utilities.TID300;
 
@@ -45,13 +46,18 @@ class CircleROI extends BaseAdapter3D {
       frameNumber: ReferencedFrameNumber,
     };
     if (referencedImageId) {
+      const metrics = restoreAdditionalMetrics(measurementNUMGroups);
+      // The tool recomputes its stats only when the units are missing, so a
+      // restored radius is shown as is. SRs written before the radius was
+      // stored carry only the perimeter, which gives it.
+      const radius = metrics.radius ?? (metrics.perimeter ?? 0) / (2 * Math.PI);
       state.annotation.data.cachedStats = {
         [`imageId:${referencedImageId}`]: {
           area: NUMGroup ? NUMGroup.MeasuredValueSequence.NumericValue : 0,
-          // Dummy values to be updated by cornerstone
-          radius: 0,
           perimeter: 0,
-          ...restoreAdditionalMetrics(measurementNUMGroups),
+          ...metrics,
+          radius,
+          radiusUnit: metrics.radiusUnit ?? metrics.unit,
         },
       };
     }
@@ -61,6 +67,8 @@ class CircleROI extends BaseAdapter3D {
 
   /**
    * Gets the TID 300 representation of a circle, given the cornerstone representation.
+   * The perimeter is written with `unit`, because without a unit dcmjs writes
+   * "mm", whatever the radius was measured in.
    *
    * @param {Object} tool
    * @returns
@@ -96,10 +104,9 @@ class CircleROI extends BaseAdapter3D {
       area,
       areaUnit,
       perimeter,
-      // The perimeter is in the unit of the radius. Without a unit dcmjs
-      // writes "mm", whatever the radius was measured in.
+      // The perimeter is in the unit of the radius
       unit: radiusUnit,
-      modalityUnit,
+      modalityUnit: mapUnitToUCUM(modalityUnit),
       radiusUnit,
       radius,
       max,

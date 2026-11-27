@@ -1,18 +1,50 @@
 import { cache, Enums, eventTarget, type Types } from '@cornerstonejs/core';
+import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type {
   LabelmapToolOperationDataStack,
   LabelmapToolOperationDataVolume,
 } from '../../../../types';
 import { getCurrentLabelmapImageIdForViewport } from '../../../../stateManagement/segmentation/segmentationState';
 import { getLabelmapActorEntry } from '../../../../stateManagement/segmentation/helpers';
+import {
+  getDynamicLabelmapTimePoint,
+  isDynamicLabelmapImageCovered,
+} from '../../../../stateManagement/segmentation/labelmapModel/dynamicLabelmapVolume';
 import { getReferenceVolumeForSegmentationVolume } from '../../../../utilities/segmentation/getReferenceVolumeForSegmentationVolume';
+
+/**
+ * Data that brush / labelmap strategies need from the cache for one edit.
+ *
+ * Explicit so `declaration` emit does not try to name VTK `ImageData` through
+ * `@cornerstonejs/core/node_modules/...` (TS2742).
+ */
+export type StrategyData = {
+  segmentationImageData: vtkImageData;
+  /**
+   * Volume voxel managers still expose the recorded-write `boundsIJK` field
+   * that {@link getStatistics} reads; keep it on the type so declaration emit
+   * does not collapse to a bare {@link Types.IVoxelManager}.
+   */
+  segmentationVoxelManager: Types.IVoxelManager<number> & {
+    boundsIJK?: Types.BoundsIJK;
+  };
+  segmentationScalarData: unknown;
+  imageScalarData: unknown;
+  imageVoxelManager:
+    | Types.IVoxelManager<number>
+    | Types.IVoxelManager<Types.RGB>
+    | undefined;
+  imageData: vtkImageData | null | undefined;
+};
 
 /**
  * Get strategy data for volume viewport
  * @param operationData - The operation data containing volumeId and referencedVolumeId
  * @returns The strategy data for volume viewport or null if error
  */
-function getStrategyDataForVolumeViewport({ operationData }) {
+function getStrategyDataForVolumeViewport({
+  operationData,
+}): StrategyData | null {
   const { volumeId } = operationData;
 
   if (!volumeId) {
@@ -34,8 +66,23 @@ function getStrategyDataForVolumeViewport({ operationData }) {
     return null;
   }
 
+  // The image shows a time point that the 4D labelmap does not cover.
+  const currentImageIds = (
+    imageVolume as { getCurrentDimensionGroupImageIds?: () => string[] }
+  ).getCurrentDimensionGroupImageIds?.();
+  if (
+    currentImageIds?.length &&
+    !isDynamicLabelmapImageCovered(segmentationVolume, currentImageIds[0])
+  ) {
+    return null;
+  }
+
   const { imageData: segmentationImageData } = segmentationVolume;
-  const { voxelManager: segmentationVoxelManager } = segmentationVolume;
+  // A 4D labelmap edits through the voxel manager of one time point, so that
+  // the undo memo restores that time point.
+  const segmentationVoxelManager =
+    getDynamicLabelmapTimePoint(segmentationVolume)?.voxelManager ??
+    segmentationVolume.voxelManager;
   const { voxelManager: imageVoxelManager, imageData } = imageVolume;
 
   return {
@@ -45,7 +92,7 @@ function getStrategyDataForVolumeViewport({ operationData }) {
     imageScalarData: null,
     imageVoxelManager,
     imageData,
-  };
+  } as StrategyData;
 }
 
 /**
@@ -58,7 +105,7 @@ function getStrategyDataForStackViewport({
   operationData,
   viewport,
   strategy,
-}) {
+}): StrategyData | null {
   const { segmentationId } = operationData as LabelmapToolOperationDataStack;
 
   let segmentationImageData;
@@ -76,6 +123,9 @@ function getStrategyDataForStackViewport({
     });
 
     segmentationVoxelManager = operationData.segmentationVoxelManager;
+    if (!segmentationVoxelManager) {
+      return null;
+    }
     segmentationImageData = operationData.segmentationImageData;
     getSegmentationScalarData = () => null;
   } else {
@@ -147,7 +197,7 @@ function getStrategyDataForStackViewport({
     segmentationVoxelManager,
     imageVoxelManager,
     imageData,
-  };
+  } as StrategyData;
 }
 
 /**
@@ -165,7 +215,7 @@ function getStrategyData({
     | LabelmapToolOperationDataVolume;
   viewport?: Types.IStackViewport | Types.IVolumeViewport;
   strategy: unknown;
-}) {
+}): StrategyData | null {
   if (!operationData) {
     return null;
   }

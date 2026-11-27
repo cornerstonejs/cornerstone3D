@@ -23,6 +23,7 @@ export default function (
     image.cachedLut !== undefined &&
     image.cachedLut.windowCenter === viewport.voi.windowCenter &&
     image.cachedLut.windowWidth === viewport.voi.windowWidth &&
+    image.cachedLut.voiLUTFunction === viewport.voi.voiLUTFunction &&
     lutMatches(image.cachedLut.modalityLUT, viewport.modalityLUT) &&
     lutMatches(image.cachedLut.voiLUT, viewport.voiLUT) &&
     image.cachedLut.invert === viewport.invert &&
@@ -40,11 +41,13 @@ export default function (
     viewport.voi.windowCenter,
     viewport.invert,
     viewport.modalityLUT,
-    viewport.voiLUT
+    viewport.voiLUT,
+    viewport.voi.voiLUTFunction
   );
 
   image.cachedLut.windowWidth = viewport.voi.windowWidth;
   image.cachedLut.windowCenter = viewport.voi.windowCenter;
+  image.cachedLut.voiLUTFunction = viewport.voi.voiLUTFunction;
   image.cachedLut.invert = viewport.invert;
   image.cachedLut.voiLUT = viewport.voiLUT;
   image.cachedLut.modalityLUT = viewport.modalityLUT;

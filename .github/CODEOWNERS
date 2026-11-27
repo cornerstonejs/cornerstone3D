@@ -24,10 +24,11 @@
 
 # ── Self-hosted runner ────────────────────────────────────────────────────────
 # Code and configuration that decide what executes on the shared self-hosted
-# "nashua" box. The same paths are listed in the `gate` job of
-# .github/workflows/playwright.yml and ohif-downstream.yml; keep the two in
-# step. They do different jobs: the gate keeps a fork PR off the box until its
-# change is merged, and these rules put a code owner in front of the merge.
+# "nashua" box. The `gate` job of .github/workflows/playwright.yml and
+# ohif-downstream.yml covers an overlapping but narrower set of paths; the two
+# are maintained separately and are not mirrors. They act at different moments:
+# the gate keeps a fork PR off the box before review, these rules put a code
+# owner in front of the merge.
 
 /scripts/ci/                                     @jbocce @sedghi @wayfarer3130
 /scripts/run-playwright.sh                       @jbocce @sedghi @wayfarer3130

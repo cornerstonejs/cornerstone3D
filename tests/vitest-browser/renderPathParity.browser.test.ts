@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, test } from 'vitest';
+import { Enums } from '@cornerstonejs/core';
 import {
   captureViewportState,
   createPlanarViewport,
@@ -202,9 +203,8 @@ describe('renderPathParity', () => {
     '%s vs vtkImage baseline core-state parity',
     (mode) => {
       test('core state matches the vtkImage baseline across the canonical scenario', async () => {
-        const { baseline, target } = await collectBaselineAndTargetSnapshots(
-          mode
-        );
+        const { baseline, target } =
+          await collectBaselineAndTargetSnapshots(mode);
 
         expect(target.length).toBe(baseline.length);
 
@@ -274,15 +274,98 @@ describe('renderPathParity', () => {
   //    with zoom/pan/rotation/VOI changes in between having no further
   //    effect on slice alignment).
   // ------------------------------------------------------------------------
+  // vtkVolumeSliceFrames: a reduced volume draws the acquired frames in the
+  // acquisition plane. A one-pixel bar on a 512 x 512 stack shows the
+  // difference: `low` halves the texture and blurs the bar, the frame keeps it.
+  describe('vtkVolumeSliceFrames (acquired frames of a reduced volume)', () => {
+    const stack = { rows: 512, columns: 512, barStart: 256, barWidth: 1 };
+
+    const setupFrames = async (mode: PlanarRenderMode) => {
+      const ctx = await createPlanarViewport({
+        renderMode: mode,
+        stack,
+        width: 512,
+        height: 512,
+      });
+      activeCleanups.push(ctx.cleanup);
+      return ctx;
+    };
+
+    const frameEntry = (ctx: PlanarViewportContext) =>
+      ctx.viewport.getActors().find((entry) => !entry.referencedId);
+
+    const showsFrame = (ctx: PlanarViewportContext) =>
+      frameEntry(ctx)?.actor.getVisibility() === true;
+
+    const centerRow = (ctx: PlanarViewportContext) => {
+      const canvas = ctx.viewport.getCanvas();
+      const { width, height } = canvas;
+
+      return Array.from(
+        canvas
+          .getContext('2d')
+          .getImageData(0, Math.floor(height / 2), width, 1).data
+      ).filter((_, i) => i % 4 === 0);
+    };
+
+    test('shows the frame in the acquisition plane, as the stack draws it', async () => {
+      const stackCtx = await setupFrames('vtkImage');
+      const stackRow = centerRow(stackCtx);
+      teardown(stackCtx);
+
+      const ctx = await setupFrames('vtkVolumeSliceFrames');
+
+      await expect.poll(() => showsFrame(ctx)).toBe(true);
+      await renderAndWait(ctx.element, ctx.viewport);
+
+      expect(ctx.viewport.getCurrentMode()).toBe('volume');
+      expect(ctx.viewport.getDefaultActor().referencedId).toBeDefined();
+      expect(ctx.viewport.getFidelityState().lossy).toBe(false);
+      expect(Math.max(...centerRow(ctx))).toBe(Math.max(...stackRow));
+      teardown(ctx);
+    });
+
+    test('shows the reduced slice off the acquisition plane, and the same frame actor on return', async () => {
+      const ctx = await setupFrames('vtkVolumeSliceFrames');
+
+      await expect.poll(() => showsFrame(ctx)).toBe(true);
+      await renderAndWait(ctx.element, ctx.viewport);
+      const framePeak = Math.max(...centerRow(ctx));
+      const frameActor = frameEntry(ctx).actor;
+
+      // 5 degrees moves the plane by more than half a slice (CS-B4).
+      const angle = (5 * Math.PI) / 180;
+      ctx.viewport.setViewState({
+        orientation: {
+          viewPlaneNormal: [0, Math.sin(angle), Math.cos(angle)],
+          viewUp: [0, -Math.cos(angle), Math.sin(angle)],
+        },
+      });
+      await renderAndWait(ctx.element, ctx.viewport);
+
+      expect(showsFrame(ctx)).toBe(false);
+      expect(ctx.viewport.getFidelityState().lossy).toBe(true);
+      expect(Math.max(...centerRow(ctx))).toBeLessThan(framePeak);
+
+      ctx.viewport.setOrientation(Enums.OrientationAxis.SAGITTAL);
+      await renderAndWait(ctx.element, ctx.viewport);
+      expect(showsFrame(ctx)).toBe(false);
+
+      ctx.viewport.setOrientation(Enums.OrientationAxis.AXIAL);
+      await expect.poll(() => showsFrame(ctx)).toBe(true);
+      expect(frameEntry(ctx).actor).toBe(frameActor);
+      teardown(ctx);
+    });
+  });
+
   describe.each(VOLUME_BACKED_NON_BASELINE_MODES)(
     '%s vs vtkImage baseline core-state parity',
     (mode) => {
       test.fails(
         'core state matches the vtkImage baseline across the canonical scenario',
         async () => {
-          const { baseline, target } = await collectBaselineAndTargetSnapshots(
-            mode
-          );
+          const { baseline, target } =
+            await collectBaselineAndTargetSnapshots(mode);
 
           expect(target.length).toBe(baseline.length);
 

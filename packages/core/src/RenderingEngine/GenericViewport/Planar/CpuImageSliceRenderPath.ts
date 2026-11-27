@@ -1,3 +1,4 @@
+import { fidelityIssuesOfImage } from '../../helpers/fidelityIndicator/fidelityIssues';
 import { vec3 } from 'gl-matrix';
 import { buildPlanarActorEntry } from './buildPlanarActorEntry';
 import CanvasActor from '../../CanvasActor';
@@ -5,8 +6,12 @@ import calculateTransform from '../../helpers/cpuFallback/rendering/calculateTra
 import canvasToPixel from '../../helpers/cpuFallback/rendering/canvasToPixel';
 import correctShift from '../../helpers/cpuFallback/rendering/correctShift';
 import getDefaultViewport from '../../helpers/cpuFallback/rendering/getDefaultViewport';
-import { getDefaultImageVOIRange } from '../../helpers/planarImageRendering';
-import resizeEnabledElement from '../../helpers/cpuFallback/rendering/resize';
+import {
+  getDefaultImageVOIRange,
+  getImageVOILUT,
+  resolveVOILUTSequenceToApply,
+} from '../../helpers/planarImageRendering';
+import fitToWindow from '../../helpers/cpuFallback/rendering/fitToWindow';
 import drawImageSync from '../../helpers/cpuFallback/drawImageSync';
 import { resolveCPUFallbackColormap } from '../../helpers/cpuFallback/colors';
 import {
@@ -15,6 +20,7 @@ import {
   ViewportType,
   Events,
   ViewportStatus,
+  VOILUTFunctionType,
 } from '../../../enums';
 import { loadAndCacheImage } from '../../../loaders/imageLoader';
 import * as metaData from '../../../metaData';
@@ -52,13 +58,18 @@ import {
   resolvePlanarCpuImageDisplayedArea,
   resolvePlanarCpuViewportScale,
 } from './planarCpuViewportMath';
-import { triggerPlanarNewImage } from './planarImageEvents';
+import {
+  subscribeToBetterImageStages,
+  triggerPlanarNewImage,
+} from './planarImageEvents';
 import {
   canvasToWorldPlanarRenderPathProjection,
   resolvePlanarRenderPathCurrentImageIdIndex,
   resolvePlanarRenderPathProjection,
   worldToCanvasPlanarRenderPathProjection,
 } from './planarRenderPathProjection';
+import { imageQualityStatusOf } from '../../helpers/fidelityIndicator/collectFidelityLines';
+import { isSegmentationOverlayData } from '../renderingFidelity';
 
 /** @internal */
 export class CpuImageSliceRenderPath
@@ -105,11 +116,14 @@ export class CpuImageSliceRenderPath
       viewport: defaultViewport,
     } as CPUFallbackEnabledElement;
 
-    resizeEnabledElement(enabledElement, true);
+    fitToWindow(enabledElement);
     enabledElement.transform = calculateTransform(enabledElement);
     rendering = {
       renderMode: ActorRenderMode.CPU_IMAGE,
       actorEntryUID: uuidv4(),
+      excludeFromFidelity: isSegmentationOverlayData(payload, options),
+      imageQualityStatus: imageQualityStatusOf(payload.image),
+      fidelityIssues: fidelityIssuesOfImage(payload.image),
       enabledElement,
       compatibilityActor,
       currentImageIdIndex: payload.initialImageIdIndex ?? 0,
@@ -118,7 +132,24 @@ export class CpuImageSliceRenderPath
       fitScale: getCPUFallbackScalarScale(enabledElement.viewport.scale),
       loadRequestId: 0,
       renderingInvalidated: true,
+      refreshFidelity: () => {
+        rendering.qualityPending =
+          rendering.enabledElement.image?.imageQualityPending;
+      },
     };
+    const unsubscribeStages = subscribeToBetterImageStages(
+      rendering,
+      () => rendering.enabledElement.image?.imageId,
+      (image) =>
+        void updateRenderedImage({
+          ctx,
+          dataId: data.id,
+          image,
+          imageIdIndex: rendering.currentImageIdIndex,
+          props: rendering.dataPresentation,
+          rendering,
+        })
+    );
 
     triggerPlanarNewImage(ctx, {
       image: payload.image,
@@ -155,6 +186,7 @@ export class CpuImageSliceRenderPath
         this.resize(ctx, rendering, data.id);
       },
       removeData: () => {
+        unsubscribeStages();
         this.removeData(ctx, rendering);
       },
     };
@@ -309,13 +341,14 @@ export class CpuImageSliceRenderPath
     rendering: PlanarCpuImageRendering,
     dataId: string
   ): void {
-    resizeEnabledElement(rendering.enabledElement, true);
     const image = rendering.enabledElement.image;
     const camera = ctx.viewport.getViewState();
 
     if (!image) {
       return;
     }
+
+    fitToWindow(rendering.enabledElement);
 
     const projection = resolvePlanarRenderPathProjection({
       ctx,
@@ -400,7 +433,14 @@ function applyDataPresentation(
   rendering: PlanarCpuImageRendering,
   props?: PlanarDataPresentation
 ): void {
-  const { enabledElement, defaultVOIRange } = rendering;
+  const { enabledElement } = rendering;
+  if (enabledElement.image) {
+    rendering.defaultVOIRange = getDefaultImageVOIRange(
+      enabledElement.image,
+      props
+    );
+  }
+  const { defaultVOIRange } = rendering;
   const { viewport } = enabledElement;
   const canvas = enabledElement.canvas as HTMLCanvasElement;
   const voiRange = props?.voiRange ?? defaultVOIRange;
@@ -413,17 +453,32 @@ function applyDataPresentation(
     enabledElement.image?.colormap
   );
   viewport.invert = props?.invert ?? false;
+  const voiLUTFunction =
+    props?.voiLUTFunction ??
+    enabledElement.image?.voiLUTFunction ??
+    VOILUTFunctionType.LINEAR;
+
+  // A colormap replaces the VOI LUT Sequence, as on the GPU path.
+  viewport.voiLUT =
+    props?.colormap?.name === undefined
+      ? resolveVOILUTSequenceToApply({
+          defaultVOILUT: getImageVOILUT(enabledElement.image),
+          defaultVOILUTFunction: enabledElement.image?.voiLUTFunction,
+          props,
+        })
+      : undefined;
 
   if (voiRange) {
     const { windowCenter, windowWidth } = toWindowLevel(
       voiRange.lower,
-      voiRange.upper
+      voiRange.upper,
+      voiLUTFunction
     );
 
     viewport.voi = {
       windowCenter,
       windowWidth,
-      voiLUTFunction: enabledElement.image?.voiLUTFunction,
+      voiLUTFunction,
     };
   }
 
@@ -738,6 +793,8 @@ async function updateRenderedImage(args: {
   defaultViewport.displayedArea = resolvePlanarCpuImageDisplayedArea(image);
 
   enabledElement.image = image;
+  rendering.imageQualityStatus = imageQualityStatusOf(image);
+  rendering.fidelityIssues = fidelityIssuesOfImage(image);
   enabledElement.viewport = {
     ...defaultViewport,
     hflip: previousViewport?.hflip ?? defaultViewport.hflip,
@@ -750,7 +807,10 @@ async function updateRenderedImage(args: {
   };
 
   rendering.currentImageIdIndex = imageIdIndex;
-  rendering.defaultVOIRange = getDefaultImageVOIRange(image);
+  rendering.defaultVOIRange = getDefaultImageVOIRange(
+    image,
+    rendering.dataPresentation
+  );
   rendering.fitScale = getCPUFallbackScalarScale(defaultViewport.scale);
   rendering.renderingInvalidated = true;
   ctx.viewport.invalidateResolvedView();

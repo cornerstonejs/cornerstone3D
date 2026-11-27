@@ -21,10 +21,11 @@ import type vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import type vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
 import type vtkImageResliceMapper from '@kitware/vtk.js/Rendering/Core/ImageResliceMapper';
 import type vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
-import type { InterpolationType } from '../../../enums';
+import type { InterpolationType, VOILUTFunctionType } from '../../../enums';
 import type {
   CPUFallbackEnabledElement,
   ActorRenderMode,
+  CPUFallbackLUT,
   ICanvasActor,
   IImage,
   IImageVolume,
@@ -32,6 +33,7 @@ import type {
   VOIRange,
 } from '../../../types';
 import type { MountedRendering } from '../ViewportArchitectureTypes';
+import type { VolumeStrategyState } from '../../helpers/volumeStrategyLifecycle';
 import type {
   PlanarViewState,
   PlanarDataPresentation,
@@ -148,10 +150,20 @@ export type PlanarVolumeSliceRendering = MountedRendering<{
   currentImageIdIndex: number;
   maxImageIdIndex: number;
   defaultVOIRange?: VOIRange;
+  /** VOI LUT Function (0028,1056) of the file of the volume. */
+  defaultVOILUTFunction?: VOILUTFunctionType;
+  /** VOI LUT Sequence (0028,3010) of the file of the volume. */
+  defaultVOILUT?: CPUFallbackLUT;
   dataPresentation?: PlanarDataPresentation;
   isSegmentationOverlay?: boolean;
   removeStreamingSubscriptions?: () => void;
-}>;
+  /**
+   * The internal render path state: true while the acquired frame shows in
+   * place of this slice (see `withAcquiredFrames`).
+   */
+  showsAcquiredFrame?: boolean;
+}> &
+  VolumeStrategyState;
 
 /**
  * Discriminated union of all planar rendering states.
