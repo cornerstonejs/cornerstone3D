@@ -303,6 +303,12 @@ function readTextureFacts(context, texture) {
  * The line of the label outline shader of vtk.js 36.4.1
  * (`Rendering/OpenGL/ImageMapper.js`) that reads a neighbour of a pixel.
  */
+/**
+ * The image that {@link vtkStreamingOpenGLImageMapper} shows vtk.js when it
+ * asks whether the shader must be built again: one modified at time 0.
+ */
+const UNCHANGED_IMAGE = Object.freeze({ getMTime: () => 0 });
+
 const LABEL_OUTLINE_NEIGHBOR_READ =
   'float value = texture2D(texture1, getSliceCoords(neighborPosIS, sliceAxis)).r;';
 
@@ -416,6 +422,29 @@ function vtkStreamingOpenGLImageMapper(publicAPI, model) {
       scalars.modified();
     }
   }
+
+  const superGetNeedToRebuildShaders = publicAPI.getNeedToRebuildShaders;
+
+  /**
+   * vtk.js builds the shader of the image again whenever the image data was
+   * modified after the last build: the text of both shaders, its MD5 hash for
+   * the shader cache and the vertex attributes, for every new slice. The text
+   * does not read the image data (it reads the components of the texture,
+   * the property, the mapper and the render pass, which vtk.js still
+   * checks), so this asks vtk.js with an image that never changed: a new
+   * slice keeps the program it has.
+   */
+  publicAPI.getNeedToRebuildShaders = (cellBO, ren, actor) => {
+    const image = model.currentInput;
+
+    model.currentInput = UNCHANGED_IMAGE;
+
+    try {
+      return superGetNeedToRebuildShaders(cellBO, ren, actor);
+    } finally {
+      model.currentInput = image;
+    }
+  };
 
   const superReplaceShaderValues = publicAPI.replaceShaderValues;
 

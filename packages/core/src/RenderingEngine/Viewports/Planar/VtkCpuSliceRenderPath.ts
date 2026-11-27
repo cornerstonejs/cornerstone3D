@@ -45,7 +45,10 @@ import {
   scheduleCpuSliceRestWork,
 } from './planarCpuSliceRest';
 import type { PlanarSlicePlaneMoves } from './planarCpuSliceRest';
-import { PlanarCpuSliceActor } from './planarCpuSliceActor';
+import {
+  PlanarCpuSliceActor,
+  drawLayersWithoutSlice,
+} from './planarCpuSliceActor';
 import {
   buildPlanarVolumeImageData,
   getSliceActorDepthOrder,
@@ -64,6 +67,13 @@ import {
 import type { PlanarOverlayFrameState } from './planarOverlayFrames';
 import { resolveSlabThickness } from './planarVolumeSliceBlendMode';
 import { createPlanarLoadingUpdates } from './planarLoadingUpdates';
+import { inBackgroundTask } from '../../../utilities/whenIdle';
+
+/**
+ * The layers of each pane (by its vtk.js renderer) whose build before the
+ * first slice waits for its task (`scheduleBuildBeforeFirstSlice`).
+ */
+const layersToBuild = new WeakMap<object, Set<PlanarCpuSliceActor>>();
 
 /** The parts of one mounted sampled slice. */
 type CpuSliceMount = PlanarSlicePlaneMoves & {
@@ -76,6 +86,8 @@ type CpuSliceMount = PlanarSlicePlaneMoves & {
   maxSliceSize: number;
   /** Cancels the pending work at rest: the rest timer or an idle prefetch. */
   cancelRestWork?: () => void;
+  /** Cancels the build before the first slice (`scheduleBuildBeforeFirstSlice`). */
+  cancelBuildBeforeFirstSlice?: () => void;
   /** What the layer may draw of the plane of the last update. */
   overlayFrames?: PlanarOverlayFrameState;
   /**
@@ -188,6 +200,8 @@ export class VtkCpuSliceRenderPath
       mount,
       payload.volumeId
     );
+    mount.cancelBuildBeforeFirstSlice =
+      this.scheduleBuildBeforeFirstSlice(mount);
 
     return {
       rendering,
@@ -269,7 +283,7 @@ export class VtkCpuSliceRenderPath
       }
 
       return mount.draw.getSlice() !== undefined;
-    });
+    }, mount.ctx.display.scheduleBeforeRender);
     const removeVolumeSubscriptions = lifecycle.subscribeToVolumeEvents(
       volumeId,
       (eventType) => {
@@ -533,7 +547,66 @@ export class VtkCpuSliceRenderPath
     });
   }
 
+  /**
+   * Has vtk.js build what the layer draws with before its first slice (see
+   * `drawLayersWithoutSlice`), in a task of its own after the next frame that
+   * draws the pane, the first picture of the mount: the pane is drawn once
+   * more into its WebGL context, without showing it and without an event,
+   * with every layer of the pane that waits for this build shown as its
+   * image of one texel. vtk.js then compiles the programs, makes the
+   * textures and, for a translucent layer, the buffers of the translucent
+   * pass, so that the frame of the first slice only uploads its pixels. Not
+   * sooner, so that the first picture comes no later; in a task of
+   * background priority (`inBackgroundTask`), so that the responses and the
+   * decoded frames of the load go first; one pane per task, so that a
+   * delivery waits for one build at most. A layer whose first slice comes
+   * before the task builds all that in the frame of that slice, as it did
+   * before.
+   *
+   * @returns the function that cancels it
+   */
+  private scheduleBuildBeforeFirstSlice(mount: CpuSliceMount): () => void {
+    const { ctx, draw } = mount;
+    const { element } = ctx.viewport;
+    const { renderer } = ctx.vtk;
+    let layers = layersToBuild.get(renderer);
+    let cancelTask: (() => void) | undefined;
+
+    if (!layers) {
+      layers = new Set();
+      layersToBuild.set(renderer, layers);
+    }
+
+    layers.add(draw);
+
+    const build = () => {
+      cancelTask = undefined;
+
+      const waiting = [...layers];
+
+      layers.clear();
+      drawLayersWithoutSlice(
+        waiting,
+        () => ctx.display.drawWithoutShowing?.() ?? false
+      );
+    };
+    const onRendered = () => {
+      element.removeEventListener(Events.IMAGE_RENDERED, onRendered);
+      cancelTask = inBackgroundTask(build);
+    };
+
+    element.addEventListener(Events.IMAGE_RENDERED, onRendered);
+
+    return () => {
+      element.removeEventListener(Events.IMAGE_RENDERED, onRendered);
+      layers.delete(draw);
+      cancelTask?.();
+      cancelTask = undefined;
+    };
+  }
+
   private removeData(mount: CpuSliceMount): void {
+    mount.cancelBuildBeforeFirstSlice?.();
     cancelRestWork(mount);
     mount.rendering.removeStreamingSubscriptions?.();
     mount.draw.remove(mount.ctx.vtk.renderer);

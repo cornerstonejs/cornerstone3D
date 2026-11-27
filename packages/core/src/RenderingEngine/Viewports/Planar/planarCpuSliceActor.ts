@@ -1,5 +1,6 @@
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
+import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
@@ -34,10 +35,82 @@ function setScalarRange(
 }
 
 /**
+ * An opacity function of 1 for every value. vtk.js keeps one opacity
+ * texture per opacity function and makes a new one at every build of a
+ * property that has none, so each new slice of a layer with no opacity ramp
+ * made a texture. The table of this function is 1 everywhere, as the
+ * texture that vtk.js makes for no function is, so the pixels are the same.
+ */
+function createFullOpacityFunction(): vtkPiecewiseFunction {
+  const opacityFunction = vtkPiecewiseFunction.newInstance();
+
+  opacityFunction.addPoint(0, 1);
+  opacityFunction.addPoint(1, 1);
+
+  return opacityFunction;
+}
+
+/** The typed array of the voxels of a volume (`getConstructor`). */
+type VoxelArrayConstructor = new (length: number) => ArrayLike<number>;
+
+/**
+ * The array type of the voxels that a voxel manager holds, or Float32Array
+ * when it does not say.
+ */
+function getVoxelArrayType(voxelManager: unknown): VoxelArrayConstructor {
+  const ArrayType = (
+    voxelManager as { getConstructor?: () => unknown } | undefined
+  )?.getConstructor?.();
+
+  return typeof ArrayType === 'function'
+    ? (ArrayType as VoxelArrayConstructor)
+    : Float32Array;
+}
+
+/**
+ * Has vtk.js build what the layers of one pane draw with before their first
+ * slice: the layers that have drawn no slice show their image of one texel,
+ * which covers no pixel, while `draw` draws the pane without showing it,
+ * and are hidden again. vtk.js then compiles the program of each layer,
+ * makes its colour, opacity and image textures and, for a translucent layer,
+ * the buffers and the program of the translucent pass. The layers of a pane
+ * are drawn together because vtk.js builds some of that by their
+ * combination: with a translucent layer it asks the opaque layers of the
+ * pane for their depth, which gives them another program.
+ *
+ * @param layers - The layers of one pane
+ * @param draw - Draws the pane into its WebGL context, without showing it;
+ *   returns false when it drew nothing
+ * @returns true when a layer was shown and `draw` drew the pane
+ */
+export function drawLayersWithoutSlice(
+  layers: PlanarCpuSliceActor[],
+  draw: () => boolean
+): boolean {
+  const shown = layers.filter((layer) => layer.showWithoutSlice());
+
+  if (!shown.length) {
+    return false;
+  }
+
+  try {
+    return draw();
+  } finally {
+    shown.forEach((layer) => layer.hideWithoutSlice());
+  }
+}
+
+/**
  * The draw step of the sampled slice render path, and the only part of that
  * path that knows vtk.js image classes. It owns one vtkImageData, one
  * vtkImageMapper and one vtkImageSlice, and draws a `PlanarCpuSlice` in
  * world coordinates.
+ *
+ * Until its first slice the image data is one texel of the data type of the
+ * volume, with a spacing of 0, so that the quad of the image covers no
+ * pixel: `drawLayersWithoutSlice` draws it once so that vtk.js builds the
+ * program of the layer, its colour and opacity textures and its image
+ * texture before the first slice, which then only uploads its pixels.
  *
  * The vtkImageData and its scalar array object are reused, as the image path
  * does (see `canReuseImageDataForImage`): a new vtkImageData builds a new
@@ -69,16 +142,21 @@ export class PlanarCpuSliceActor {
   private volumeClipPlanes: PlanarSliceClipPlane[] = [];
   private clipping = false;
   private slice?: PlanarCpuSlice;
+  private drewSlice = false;
   private appearanceVisible = true;
+  private readonly fullOpacity = createFullOpacityFunction();
 
   constructor(options: { voxelManager?: unknown; viewportId?: string } = {}) {
+    const VoxelArrayType = getVoxelArrayType(options.voxelManager);
+
     this.imageData = vtkImageData.newInstance();
     this.imageData.setDimensions(1, 1, 1);
+    this.imageData.setSpacing([0, 0, 0]);
     this.imageData.getPointData().setScalars(
       vtkDataArray.newInstance({
         name: 'Pixels',
         numberOfComponents: 1,
-        values: new Float32Array(1),
+        values: new VoxelArrayType(1),
       })
     );
 
@@ -112,6 +190,7 @@ export class PlanarCpuSliceActor {
     this.slice = slice;
 
     if (slice) {
+      this.drewSlice = true;
       this.writeSlice(slice);
     }
 
@@ -125,6 +204,33 @@ export class PlanarCpuSliceActor {
   /** The slice that the actor draws, or undefined. */
   getSlice(): PlanarCpuSlice | undefined {
     return this.slice;
+  }
+
+  /**
+   * Shows the image of one texel of a layer that has drawn no slice yet and
+   * that its appearance shows, for `drawLayersWithoutSlice`: it covers no
+   * pixel and adds nothing to the bounds of the renderer. The clip planes are
+   * those of a slice inside the volume (none), as for the slices of the
+   * planes of the volume grid.
+   *
+   * @returns false when the layer is not shown: it has drawn a slice, or its
+   *   appearance hides it
+   */
+  showWithoutSlice(): boolean {
+    if (this.slice || this.drewSlice || !this.appearanceVisible) {
+      return false;
+    }
+
+    this.actor.setUseBounds(false);
+    this.actor.setVisibility(true);
+
+    return true;
+  }
+
+  /** Hides again a layer that `showWithoutSlice` showed. */
+  hideWithoutSlice(): void {
+    this.actor.setUseBounds(true);
+    this.updateVisibility();
   }
 
   /** Sets the faces of the volume that the slice is clipped to (at most six). */
@@ -144,10 +250,13 @@ export class PlanarCpuSliceActor {
 
   /**
    * Gives the mapper the clip planes for a slice that can reach outside the
-   * volume, and none for a slice inside the volume (`insideVolume`).
+   * volume, and none for a slice inside the volume (`insideVolume`) or for no
+   * slice, so that a layer drawn before its first slice (`drawWithoutSlice`)
+   * and the first slice of a plane of the volume grid draw with one program.
    */
   private updateClipping(): void {
-    const clipping = !!this.clipPlanes.length && !this.slice?.insideVolume;
+    const clipping =
+      !!this.clipPlanes.length && !!this.slice && !this.slice.insideVolume;
 
     if (clipping === this.clipping) {
       return;
@@ -164,7 +273,8 @@ export class PlanarCpuSliceActor {
   /**
    * Applies the appearance (VOI, colormap with its opacity table, invert,
    * opacity, visibility, interpolation) with the appearance function of the
-   * volume path.
+   * volume path. A layer with no opacity ramp gets an opacity function of 1
+   * (`createFullOpacityFunction`), so that vtk.js keeps its opacity texture.
    */
   applyAppearance(
     props: PlanarDisplaySetAppearance | undefined,
@@ -176,6 +286,11 @@ export class PlanarCpuSliceActor {
       defaultVOIRange,
       props,
     });
+
+    if (!this.actor.getProperty().getScalarOpacity(0)) {
+      this.actor.getProperty().setScalarOpacity(0, this.fullOpacity);
+    }
+
     this.appearanceVisible = props?.visible !== false;
     this.updateVisibility();
   }

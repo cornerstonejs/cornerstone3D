@@ -1,3 +1,4 @@
+import supportsNorm16LinearCached from '@kitware/vtk.js/Rendering/OpenGL/Texture/supportsNorm16Linear';
 import { getCanUseNorm16Texture } from '../../init';
 import { getRenderingCapabilities } from '../../utilities/renderingCapabilities';
 import { coreLog } from '../../utilities/logger';
@@ -99,6 +100,22 @@ export function applyNorm16ExtensionGate<T>(context: T): T {
   warnWhenFilteredImagesCannotBeDrawn();
 
   return withoutNorm16Extension(context as T & object);
+}
+
+/**
+ * Runs, once per page, the probe with which vtk.js decides whether it may
+ * filter a norm16 texture linearly (`supportsNorm16Linear` of vtk.js: a WebGL2
+ * context of its own, a shader, a draw and a read-back; about 5 ms on an
+ * Apple M2 Ultra). vtk.js runs it at the first texture that it makes with a
+ * linear filter while norm16 is on, of any data type, which is the first
+ * slice that a viewport draws; run in an idle period before that, the first
+ * slice does not pay it. Nothing runs when norm16 is off: vtk.js then never
+ * asks.
+ */
+export function runNorm16LinearProbe(): void {
+  if (getCanUseNorm16Texture()) {
+    supportsNorm16LinearCached();
+  }
 }
 
 /** Lets the next hidden context log its warning again. For tests. */

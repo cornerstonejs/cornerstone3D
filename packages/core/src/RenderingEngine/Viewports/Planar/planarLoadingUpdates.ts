@@ -15,10 +15,10 @@ export const PLANAR_LOADING_UPDATE_MS = 100;
 /** The updates that a volume load asks a picture for. */
 export type PlanarLoadingUpdates = {
   /**
-   * Updates at the next animation frame, once for all the requests before
-   * it. Not sooner: the voxels of a frame that a delivery announces are in
-   * place by then, where an update right after the event can read the frame
-   * before its image replaced the copy that it held.
+   * Updates at the next frame (see {@link PlanarFrameScheduler}), once for
+   * all the requests before it. Not sooner: the voxels of a frame that a
+   * delivery announces are in place by then, where an update right after the
+   * event can read the frame before its image replaced the copy that it held.
    */
   now: () => void;
   /**
@@ -32,6 +32,22 @@ export type PlanarLoadingUpdates = {
 };
 
 /**
+ * Runs a callback at the next frame and returns the function that cancels
+ * it. The default is the next animation frame of the browser; a viewport
+ * gives the start of the next frame of its rendering engine
+ * (`runBeforeNextRender`), so that the render that an update asks for draws
+ * in the frame of the update.
+ */
+export type PlanarFrameScheduler = (callback: () => void) => () => void;
+
+/** Runs a callback at the next animation frame of the browser. */
+function scheduleAnimationFrame(callback: () => void): () => void {
+  const frameId = requestAnimationFrame(() => callback());
+
+  return () => cancelAnimationFrame(frameId);
+}
+
+/**
  * Coalesces the updates that a volume load asks a picture for: a pending
  * update takes any later request, and `soon` waits for the shared clock
  * (`PLANAR_LOADING_UPDATE_MS`) once an update has drawn something.
@@ -39,17 +55,20 @@ export type PlanarLoadingUpdates = {
  * @param update - What one update does; it returns false when the picture
  *   still shows nothing of the load (an overlay whose frames hold no data of
  *   its plane yet), so that the next update does not wait for the clock
+ * @param scheduleFrame - Where "the next frame" of an update is (see
+ *   {@link PlanarFrameScheduler}); the next animation frame by default
  */
 export function createPlanarLoadingUpdates(
-  update: () => boolean | void
+  update: () => boolean | void,
+  scheduleFrame: PlanarFrameScheduler = scheduleAnimationFrame
 ): PlanarLoadingUpdates {
-  let frameId: number | undefined;
+  let cancelFrame: (() => void) | undefined;
   let timeoutId: ReturnType<typeof setTimeout> | undefined;
   let lastTick = -Infinity;
   let drew = false;
 
   const runUpdate = () => {
-    frameId = undefined;
+    cancelFrame = undefined;
     lastTick = Math.floor(performance.now() / PLANAR_LOADING_UPDATE_MS);
 
     if (update() !== false) {
@@ -62,8 +81,8 @@ export function createPlanarLoadingUpdates(
       timeoutId = undefined;
     }
 
-    if (frameId === undefined) {
-      frameId = requestAnimationFrame(runUpdate);
+    if (cancelFrame === undefined) {
+      cancelFrame = scheduleFrame(runUpdate);
     }
   };
   const soon = () => {
@@ -72,7 +91,7 @@ export function createPlanarLoadingUpdates(
       return;
     }
 
-    if (frameId !== undefined || timeoutId !== undefined) {
+    if (cancelFrame !== undefined || timeoutId !== undefined) {
       return;
     }
 
@@ -99,9 +118,9 @@ export function createPlanarLoadingUpdates(
       timeoutId = undefined;
     }
 
-    if (frameId !== undefined) {
-      cancelAnimationFrame(frameId);
-      frameId = undefined;
+    if (cancelFrame !== undefined) {
+      cancelFrame();
+      cancelFrame = undefined;
     }
   };
 

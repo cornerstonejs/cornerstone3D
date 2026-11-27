@@ -90,6 +90,22 @@ acquisition plane.
   window of the layer there, a grey square for a CT. This holds for the GPU
   backend; the CPU backend draws a volume once it holds a frame, and draws
   zeros for the frames that have not arrived.
+- **The first frame of such a plane only uploads its slice**: after the
+  first picture of the pane, in a task of background priority, the engine
+  draws the pane once into its WebGL context, without showing it and without
+  an event, with each layer that has no slice yet as an image of one texel
+  that covers no pixel. vtk.js then compiles the programs of the layers,
+  makes their colour and opacity textures and, for a translucent overlay, the
+  buffers of its pass, which it did in the frame of the first slice before.
+  A first frame that comes before that task builds them in its own frame,
+  as before. The update of a load and the render that it asks for are one
+  animation frame (the engine runs the update at the start of its frame),
+  where the render came one frame after the update before; this holds for the
+  volume slice path of the 3D texture too. A layer of this path that has no
+  opacity ramp has an opacity function of 1
+  (`actor.getProperty().getScalarOpacity(0)`), where it had none: vtk.js
+  keeps one opacity texture per function, and made a new one at every slice
+  of a layer with none. The pixels are the same.
 - **NEAREST and LINEAR give the same values on the grid**: the interpolation
   type does not choose another path for these planes; the GPU filters the
   texture when it enlarges it.
@@ -106,7 +122,12 @@ a sagittal or coronal plane writes and uploads 1 kB (one row of 512 values)
 per arriving frame, where it gathered and uploaded the whole 512 x 135 slice
 at each update before; a pane mounted before the first frame reads and
 allocates nothing, where it allocated, wrote and uploaded a slice of zeros
-(1 MB for the axial plane).
+(1 MB for the axial plane). In the ten panes of OHIF's TMTV layout (a page
+bundled as OHIF bundles Cornerstone, Apple M2 Ultra), the first content of
+the CT panes comes 104 ms after the mounts (134 ms when the first slice still
+built them, 65 ms in 5.18.3, which builds its 3D textures and programs in its
+mounts and shows its first picture 16 ms later), 22 ms after the first CT
+frame (54 ms).
 
 ## A volume slice sits on a slice centre
 

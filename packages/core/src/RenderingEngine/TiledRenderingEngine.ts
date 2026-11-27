@@ -391,7 +391,14 @@ class TiledRenderingEngine extends BaseRenderingEngine {
    */
   protected _renderFlaggedViewports = () => {
     this._throwIfDestroyed();
+    this._runBeforeRenderTasks();
     this._deferHeldViewports();
+
+    if (this._needsRender.size === 0) {
+      this._animationFrameSet = false;
+      this._animationFrameHandle = null;
+      return;
+    }
 
     const renderStart = performance.now();
     const contextLost = isWebGLContextLost(this.offscreenMultiRenderWindow);

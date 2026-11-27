@@ -4,6 +4,8 @@ import eventTarget from '../eventTarget';
 import uuidv4 from '../utilities/uuidv4';
 import triggerEvent from '../utilities/triggerEvent';
 import { coreLog } from '../utilities/logger';
+import whenIdle from '../utilities/whenIdle';
+import { runNorm16LinearProbe } from './vtkClasses/norm16ExtensionGate';
 import viewportTypeUsesCustomRenderingPipeline, {
   viewportUsesCustomRenderingPipeline,
 } from './helpers/viewportTypeUsesCustomRenderingPipeline';
@@ -65,6 +67,8 @@ abstract class BaseRenderingEngine {
   public offScreenCanvasContainer: OffscreenCanvasContainer;
   protected _viewports: Map<string, EngineViewport>;
   protected _needsRender = new Set<string>();
+  /** The tasks that run at the start of the next frame (`runBeforeNextRender`). */
+  protected _beforeRenderTasks = new Set<() => void>();
   protected _animationFrameSet = false;
   protected _animationFrameHandle: number | null = null;
   /**
@@ -90,6 +94,14 @@ abstract class BaseRenderingEngine {
 
     this._viewports = new Map();
     this.hasBeenDestroyed = false;
+
+    if (!this.useCPURendering) {
+      whenIdle(() => {
+        if (!this.hasBeenDestroyed) {
+          runNorm16LinearProbe();
+        }
+      });
+    }
 
     const config = getConfiguration();
 
@@ -395,6 +407,26 @@ abstract class BaseRenderingEngine {
   }
 
   /**
+   * Runs a task at the start of the next frame of this engine, before the
+   * engine draws the viewports flagged for that frame. A viewport that the
+   * task flags (`renderViewport`) draws in that same frame, not in the
+   * frame after it, as it would from an animation frame of its own. A task
+   * that throws is logged and the frame goes on.
+   *
+   * @internal
+   * @param task - What to run
+   * @returns A function that drops the task when it has not run yet
+   */
+  public runBeforeNextRender(task: () => void): () => void {
+    this._beforeRenderTasks.add(task);
+    this._render();
+
+    return () => {
+      this._beforeRenderTasks.delete(task);
+    };
+  }
+
+  /**
    * destroy the rendering engine. It will remove all the viewports and,
    * if the rendering engine is using the GPU, it will also destroy the GPU
    * resources.
@@ -681,6 +713,27 @@ abstract class BaseRenderingEngine {
   }
 
   /**
+   * Runs the tasks of `runBeforeNextRender`, each once, in the order they
+   * came. A task that one of them adds runs in the next frame.
+   */
+  protected _runBeforeRenderTasks(): void {
+    if (!this._beforeRenderTasks.size) {
+      return;
+    }
+
+    const tasks = [...this._beforeRenderTasks];
+
+    this._beforeRenderTasks.clear();
+    tasks.forEach((task) => {
+      try {
+        task();
+      } catch (error) {
+        log.error('A task before the render of a frame failed', error);
+      }
+    });
+  }
+
+  /**
    * Takes the viewports that hold their renders out of the frame that is
    * about to be drawn. A next viewport holds its renders while it swaps the
    * render paths of its layers, so that no frame shows a viewport that is
@@ -718,7 +771,10 @@ abstract class BaseRenderingEngine {
   private _render() {
     // If we have viewports that need rendering and we have not already
     // set the RAF callback to run on the next frame.
-    if (this._needsRender.size > 0 && !this._animationFrameSet) {
+    if (
+      (this._needsRender.size > 0 || this._beforeRenderTasks.size > 0) &&
+      !this._animationFrameSet
+    ) {
       this._animationFrameHandle = window.requestAnimationFrame(
         this._renderFlaggedViewports
       );
@@ -771,6 +827,7 @@ abstract class BaseRenderingEngine {
     window.cancelAnimationFrame(this._animationFrameHandle);
 
     this._needsRender.clear();
+    this._beforeRenderTasks.clear();
     this._animationFrameSet = false;
     this._animationFrameHandle = null;
   }

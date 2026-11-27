@@ -695,6 +695,8 @@ class PlanarViewport extends BaseViewport<
         requestRender: () => {
           this.requestRenderingEngineRender();
         },
+        scheduleBeforeRender: (task) => this.scheduleBeforeRender(task),
+        drawWithoutShowing: () => this.drawWithoutShowing(),
         renderNow: () => {
           this.render();
         },
@@ -3717,6 +3719,40 @@ class PlanarViewport extends BaseViewport<
       displaySetId,
       error,
     });
+  }
+
+  /**
+   * Runs a task at the start of the next frame of the rendering engine of
+   * this viewport (`runBeforeNextRender`), or at the next animation frame
+   * when the engine has no such frame.
+   */
+  private scheduleBeforeRender(task: () => void): () => void {
+    const renderingEngine = renderingEngineCache.get(this.renderingEngineId) as
+      | { runBeforeNextRender?: (task: () => void) => () => void }
+      | undefined;
+
+    if (renderingEngine?.runBeforeNextRender) {
+      return renderingEngine.runBeforeNextRender(task);
+    }
+
+    const frameId = requestAnimationFrame(() => task());
+
+    return () => cancelAnimationFrame(frameId);
+  }
+
+  /**
+   * Draws this viewport into its WebGL context without showing it and
+   * without an event (`prepareViewport` of the rendering engine), so that
+   * vtk.js builds the GL resources of what it shows.
+   *
+   * @returns false when the engine drew nothing
+   */
+  private drawWithoutShowing(): boolean {
+    const renderingEngine = renderingEngineCache.get(this.renderingEngineId) as
+      | { prepareViewport?: (viewportId: string) => boolean }
+      | undefined;
+
+    return renderingEngine?.prepareViewport?.(this.id) ?? false;
   }
 
   private requestRenderingEngineRender(): void {

@@ -364,6 +364,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
    */
   protected _renderFlaggedViewports = (): void => {
     this._throwIfDestroyed();
+    this._runBeforeRenderTasks();
     this._deferHeldViewports();
 
     const viewports = this._getViewportsAsArray();
@@ -471,6 +472,32 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
       );
     }
 
+    this._drawViewportWithContext(
+      viewport,
+      offscreenMultiRenderWindow,
+      offScreenCanvasContainer
+    );
+
+    const openGLRenderWindow =
+      offscreenMultiRenderWindow.getOpenGLRenderWindow();
+    const context = openGLRenderWindow.get3DContext();
+    const offScreenCanvas = context.canvas;
+
+    const eventDetail = this._copyToOnscreenCanvas(viewport, offScreenCanvas);
+
+    return eventDetail;
+  }
+
+  /**
+   * Draws a viewport into the canvas of its context: the vtk.js render of its
+   * renderer (and its overlay and widget renderers), without the copy to the
+   * canvas of the viewport.
+   */
+  private _drawViewportWithContext(
+    viewport: EngineViewport,
+    offscreenMultiRenderWindow: VtkOffscreenMultiRenderWindow,
+    offScreenCanvasContainer: OffscreenCanvasContainer
+  ): void {
     // Add renderer if not already present
     if (!offscreenMultiRenderWindow.getRenderer(viewport.id)) {
       offscreenMultiRenderWindow.addRenderer({
@@ -540,15 +567,54 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     if (originalRenderPasses) {
       view.setRenderPasses(originalRenderPasses);
     }
+  }
 
-    const openGLRenderWindow =
-      offscreenMultiRenderWindow.getOpenGLRenderWindow();
-    const context = openGLRenderWindow.get3DContext();
-    const offScreenCanvas = context.canvas;
+  /**
+   * Draws a viewport into its WebGL context without showing it: no copy to
+   * the canvas of the viewport and no event. vtk.js then builds the GL
+   * resources of the actors that the viewport shows (shader programs,
+   * textures, the buffers of a translucent pass), so that the frame that
+   * first shows them does not build them. The next render of any viewport
+   * of the context draws over what it drew.
+   *
+   * @internal
+   * @param viewportId - The viewport to draw
+   * @returns false when nothing was drawn: an unknown viewport, a viewport
+   *   of a custom pipeline or of a lost context, a viewport with no size,
+   *   or an engine with no WebGL
+   */
+  public prepareViewport(viewportId: string): boolean {
+    const viewport = this._viewports.get(viewportId);
 
-    const eventDetail = this._copyToOnscreenCanvas(viewport, offScreenCanvas);
+    if (
+      !viewport ||
+      this.hasBeenDestroyed ||
+      !this.contextPool ||
+      viewportUsesCustomRenderingPipeline(viewport) ||
+      this._isViewportContextLost(viewport) ||
+      viewport.canvas.clientWidth === 0 ||
+      viewport.canvas.clientHeight === 0 ||
+      viewport.sWidth < VIEWPORT_MIN_SIZE ||
+      viewport.sHeight < VIEWPORT_MIN_SIZE
+    ) {
+      return false;
+    }
 
-    return eventDetail;
+    const contextData = this.contextPool.getContextByIndex(
+      this.contextPool.getContextIndexForViewport(viewport.id)
+    );
+
+    if (!contextData) {
+      return false;
+    }
+
+    this._drawViewportWithContext(
+      viewport,
+      contextData.context,
+      contextData.container
+    );
+
+    return true;
   }
 
   /**

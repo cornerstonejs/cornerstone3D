@@ -487,6 +487,19 @@ export interface PlanarViewportRenderContext extends BaseViewportRenderContext {
   view: PlanarActiveViewRuntime;
   display: {
     requestRender(): void;
+    /**
+     * Runs a task at the start of the next frame of the rendering engine,
+     * before the engine draws; a render that the task asks for draws in that
+     * frame (`runBeforeNextRender`). Returns the function that drops the task.
+     */
+    scheduleBeforeRender?(task: () => void): () => void;
+    /**
+     * Draws the viewport into its WebGL context without showing it and
+     * without an event (`prepareViewport` of the rendering engine), so that
+     * vtk.js builds the GL resources of what it shows. Returns false when
+     * nothing was drawn.
+     */
+    drawWithoutShowing?(): boolean;
     renderNow(): void;
     setNeedsRender(): void;
     markRendered(): void;

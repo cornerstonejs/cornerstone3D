@@ -230,7 +230,7 @@ export class VtkGpuVolumeSliceRenderPath
     const loadingUpdates = createPlanarLoadingUpdates(() => {
       deliveryKey = getDeliveryKey();
       ctx.display.requestRender();
-    });
+    }, ctx.display.scheduleBeforeRender);
     const removeVolumeSubscriptions = lifecycle.subscribeToVolumeEvents(
       payload.volumeId,
       (eventType) => {
