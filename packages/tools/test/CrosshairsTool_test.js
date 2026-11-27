@@ -122,9 +122,14 @@ describe('Cornerstone Tools: ', () => {
       const vp = renderingEngine.getViewport(viewportIds[0]);
       const { imageData } = vp.getImageData();
 
-      const indexMiddle = imageData
-        .getDimensions()
-        .map((s) => Math.floor(s / 2));
+      // The middle slice in view order: the sagittal normal points along i,
+      // and the coronal and axial normals point against j and k.
+      const [di, dj, dk] = imageData.getDimensions();
+      const indexMiddle = [
+        Math.floor(di / 2),
+        Math.floor((dj - 1) / 2),
+        Math.floor((dk - 1) / 2),
+      ];
 
       const imageCenterWorld = imageData.indexToWorld(indexMiddle);
 
