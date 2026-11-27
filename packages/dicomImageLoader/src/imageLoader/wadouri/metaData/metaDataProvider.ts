@@ -304,14 +304,12 @@ export function metadataForDataset(
   }
 
   if (type === MetadataModules.PET_ISOTOPE) {
-    const radiopharmaceuticalInfo = dataSet.elements.x00540016;
+    const firstRadiopharmaceuticalInfoDataSet =
+      dataSet.elements.x00540016?.items?.[0]?.dataSet;
 
-    if (radiopharmaceuticalInfo === undefined) {
+    if (!firstRadiopharmaceuticalInfoDataSet) {
       return;
     }
-
-    const firstRadiopharmaceuticalInfoDataSet =
-      radiopharmaceuticalInfo.items[0].dataSet;
 
     return {
       radiopharmaceuticalInfo: {

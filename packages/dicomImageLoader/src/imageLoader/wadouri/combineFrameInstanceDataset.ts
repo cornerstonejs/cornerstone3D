@@ -35,7 +35,7 @@ function getFrameInformation(
 ) {
   const shared = {};
 
-  (SharedFunctionalGroupsSequence
+  (SharedFunctionalGroupsSequence?.items?.[0]?.dataSet
     ? Object.values(SharedFunctionalGroupsSequence.items[0].dataSet.elements)
     : []
   )
