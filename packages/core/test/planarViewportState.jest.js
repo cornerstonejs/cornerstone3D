@@ -279,6 +279,32 @@ describe('PlanarViewport view state', () => {
     expect(events).toHaveLength(0);
   });
 
+  it('uses the base class transforms when no data is mounted', () => {
+    const { viewport } = track(createViewport());
+
+    expect(() => viewport.canvasToWorld([0, 0])).toThrow(/no data is mounted/);
+    expect(() => viewport.worldToCanvas([0, 0, 0])).toThrow(
+      /no data is mounted/
+    );
+  });
+
+  it('delegates the coordinate transforms to the resolved view', () => {
+    const { viewport } = track(createViewport());
+    const image = createPlanarImage('transform-image-1');
+
+    addPlanarImageMetadata([image.imageId]);
+    mountStackBinding(viewport, [image]);
+
+    const resolvedView = viewport.getResolvedView();
+
+    expect(viewport.canvasToWorld([100, 50])).toEqual(
+      resolvedView.canvasToWorld([100, 50])
+    );
+    expect(viewport.worldToCanvas([5, 4, 0])).toEqual(
+      resolvedView.worldToCanvas([5, 4, 0])
+    );
+  });
+
   it('does not expose view-presentation methods on Planar Next', () => {
     const { viewport } = track(createViewport());
 
