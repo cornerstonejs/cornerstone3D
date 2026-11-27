@@ -60,4 +60,31 @@ describe('thresholdVolumeByRange', () => {
     ]);
     expect(segmentationVolume.voxelManager.forEach).not.toHaveBeenCalled();
   });
+
+  it('tests the whole volume when the caller gives no boundsIJK and no forEachVoxel', () => {
+    const wholeVolume = [
+      [0, 3],
+      [0, 0],
+      [0, 0],
+    ];
+    const segmentationVolume = {
+      spacing: [1, 1, 1],
+      imageData: {},
+      voxelManager: {
+        getScalarDataLength: () => 4,
+        getDefaultBounds: () => wholeVolume,
+        forEach: jest.fn(),
+      },
+    } as unknown as Types.IImageVolume;
+
+    thresholdVolumeByRange(segmentationVolume, [], {
+      overwrite: false,
+      segmentationId: 'seg',
+    });
+
+    expect(segmentationVolume.voxelManager.forEach).toHaveBeenCalledWith(
+      expect.any(Function),
+      { imageData: segmentationVolume.imageData, boundsIJK: wholeVolume }
+    );
+  });
 });

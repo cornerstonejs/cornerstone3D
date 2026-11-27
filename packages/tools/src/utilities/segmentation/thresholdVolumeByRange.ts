@@ -13,7 +13,10 @@ export type ThresholdVoxel = {
 export type ThresholdRangeOptions = {
   overwrite: boolean;
   segmentationId: string;
-  /** The IJK box to test. Ignored when `forEachVoxel` is given. */
+  /**
+   * The IJK box to test. Defaults to the whole volume. Ignored when
+   * `forEachVoxel` is given.
+   */
   boundsIJK?: BoundsIJK;
   overlapType?: number;
   segmentIndex?: number;
@@ -22,6 +25,9 @@ export type ThresholdRangeOptions = {
    * `boundsIJK` box. Use it for an exact region, for example the shape of an
    * annotation from `utilities.voxelSlab`, or to skip voxels that the run must
    * not write, for example the voxels of other segments.
+   *
+   * `overwrite: true` clears every voxel before the run, the skipped voxels
+   * included. Use `overwrite: false` to keep the skipped voxels.
    */
   forEachVoxel?: (callback: (voxel: ThresholdVoxel) => void) => void;
   /**
@@ -176,9 +182,11 @@ function thresholdVolumeByRange(
   if (options.forEachVoxel) {
     options.forEachVoxel(callback);
   } else {
+    // Without bounds, forEach uses the box of the earlier writes, not the volume.
     segmentationVolume.voxelManager.forEach(callback, {
       imageData: segmentationImageData,
-      boundsIJK,
+      boundsIJK:
+        boundsIJK ?? segmentationVolume.voxelManager.getDefaultBounds(),
     });
   }
 
