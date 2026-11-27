@@ -15,6 +15,7 @@ import {
 import { getSegmentationRepresentations } from '../../stateManagement/segmentation/getSegmentationRepresentation';
 import { getSegmentation } from '../../stateManagement/segmentation/getSegmentation';
 import { syncStackLabelmapActors } from '../../tools/displayTools/Labelmap/syncStackLabelmapActors';
+import { placeVolumeLabelmapImageMapperActors } from '../../tools/displayTools/Labelmap/volumeLabelmapImageMapper';
 
 const enable = function (element: HTMLDivElement): void {
   if (!element) {
@@ -141,6 +142,10 @@ function _imageChangeEventListener(evt) {
 
   if (evt.type === Enums.Events.CAMERA_MODIFIED) {
     if (hasVolumeImageMapperRepresentation) {
+      labelmapRepresentations.forEach(({ segmentationId }) => {
+        placeVolumeLabelmapImageMapperActors({ viewport, segmentationId });
+      });
+
       const nextState = getVolumeViewportLabelmapImageMapperState(viewport);
       const previousState = perViewportManualTriggers.get(viewportId);
 

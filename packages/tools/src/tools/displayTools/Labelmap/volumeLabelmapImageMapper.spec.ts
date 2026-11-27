@@ -72,6 +72,7 @@ import {
   addVolumeLabelmapImageMapperActors,
   getLabelmapForActorReference,
   getVolumeLabelmapImageMapperRepresentationUIDs,
+  placeVolumeLabelmapImageMapperActors,
   removeVolumeLabelmapImageMapperActors,
   updateVolumeLabelmapImageMapperActors,
 } from './volumeLabelmapImageMapper';
@@ -155,6 +156,49 @@ function makePlanarNextViewport() {
     getCurrentImageId: jest.fn(() => 'curr-image'),
     getActors: jest.fn(() => []),
     render: jest.fn(),
+  };
+}
+
+/**
+ * An actor entry of an image slice that the viewport draws under or over a
+ * labelmap slice, such as the CT or the PT layer of a fusion view.
+ */
+function makeImageSliceEntry(uid: string) {
+  return {
+    uid,
+    actor: {
+      getClassName: () => 'vtkImageSlice',
+      getMapper: jest.fn(),
+      modified: jest.fn(),
+    },
+  };
+}
+
+/**
+ * An actor entry of a labelmap slice image on a planar viewport.
+ */
+function makeLabelmapSliceEntry(args: {
+  representationUID: string;
+  referencedId: string;
+  imageData?: unknown;
+  renderMode?: string;
+}) {
+  const mapper = {
+    setInputData: jest.fn(),
+    modified: jest.fn(),
+    getInputData: jest.fn(() => args.imageData),
+  };
+
+  return {
+    uid: args.representationUID,
+    representationUID: args.representationUID,
+    referencedId: args.referencedId,
+    actorMapper: { renderMode: args.renderMode ?? 'VTK_IMAGE' },
+    actor: {
+      getClassName: () => 'vtkImageSlice',
+      getMapper: jest.fn(() => mapper),
+      modified: jest.fn(),
+    },
   };
 }
 
@@ -345,6 +389,46 @@ describe('addVolumeLabelmapImageMapperActors', () => {
     expect(applyPlanarOverlayDepthOffset).toHaveBeenCalled();
   });
 
+  it('places a new planar slice after the image slices that the viewport already draws', async () => {
+    canRenderVolumeViewportLabelmapAsImage.mockReturnValue(true);
+    const viewport = makePlanarNextViewport();
+    const camera = { focalPoint: [0, 0, 10], viewPlaneNormal: [0, 0, 1] };
+    const sliceImageData = {};
+
+    viewport.getActors = jest.fn(() => [
+      makeImageSliceEntry('ct'),
+      makeImageSliceEntry('pt'),
+    ]) as never;
+    getLabelmaps.mockReturnValue([{ labelmapId: 'layer-1' }]);
+    getOrCreateLabelmapVolume.mockReturnValue({ imageIds: ['v-0'] });
+    createPlanarSliceImageData.mockReturnValue({
+      imageData: sliceImageData,
+      sliceIndex: 0,
+    });
+    getSliceRenderingCamera.mockReturnValue(camera);
+
+    await addVolumeLabelmapImageMapperActors({
+      viewport: viewport as never,
+      segmentation: makeSegmentation(),
+      segmentationId: 'seg-1',
+    });
+
+    const [stackInputs] = viewport.addImages.mock.calls[0];
+    const newImageActor = {
+      getClassName: () => 'vtkImageSlice',
+      getMapper: () => ({ setInputData: jest.fn(), modified: jest.fn() }),
+    };
+
+    stackInputs[0].callback({ imageActor: newImageActor });
+
+    expect(applyPlanarOverlayDepthOffset).toHaveBeenCalledWith(
+      newImageActor,
+      sliceImageData,
+      camera,
+      2
+    );
+  });
+
   it('gives the planar slice image of an off-axis view to addImages', async () => {
     canRenderVolumeViewportLabelmapAsImage.mockReturnValue(true);
     const viewport = makePlanarNextViewport();
@@ -509,6 +593,165 @@ describe('updateVolumeLabelmapImageMapperActors', () => {
 
     expect(createSliceImageData).not.toHaveBeenCalled();
     expect(mapper.setInputData).toHaveBeenCalledWith(resampledImageData);
+  });
+
+  it('places a planar slice by its order among the image slices of the viewport', () => {
+    canRenderVolumeViewportLabelmapAsImage.mockReturnValue(true);
+
+    const camera = { focalPoint: [0, 0, 10], viewPlaneNormal: [0, 0, 1] };
+    const sliceImageData = {};
+    const labelmapEntry = makeLabelmapSliceEntry({
+      representationUID: 'seg-1-Labelmap-layer-a',
+      referencedId: 'layer-a',
+    });
+    const contourEntry = {
+      uid: 'contour',
+      actor: { getClassName: () => 'vtkActor' },
+    };
+
+    getLabelmaps.mockReturnValue([{ labelmapId: 'layer-a' }]);
+    getOrCreateLabelmapVolume.mockReturnValue({ imageIds: ['v'] });
+    createPlanarSliceImageData.mockReturnValue({
+      imageData: sliceImageData,
+      sliceIndex: 0,
+    });
+    getSliceRenderingCamera.mockReturnValue(camera);
+
+    const viewport = makePlanarNextViewport();
+    viewport.getActors = jest.fn(() => [
+      makeImageSliceEntry('ct'),
+      contourEntry,
+      makeImageSliceEntry('pt'),
+      labelmapEntry,
+    ]) as never;
+
+    updateVolumeLabelmapImageMapperActors({
+      viewport: viewport as never,
+      segmentation: makeSegmentation(),
+      segmentationId: 'seg-1',
+    });
+
+    expect(applyPlanarOverlayDepthOffset).toHaveBeenCalledTimes(1);
+    expect(applyPlanarOverlayDepthOffset).toHaveBeenCalledWith(
+      labelmapEntry.actor,
+      sliceImageData,
+      camera,
+      2
+    );
+  });
+});
+
+describe('placeVolumeLabelmapImageMapperActors', () => {
+  const camera = { focalPoint: [0, 0, 10], viewPlaneNormal: [0, 0, 1] };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    getSliceRenderingCamera.mockReturnValue(camera);
+  });
+
+  it('places each labelmap slice of the segmentation with the image that it holds', () => {
+    canRenderVolumeViewportLabelmapAsImage.mockReturnValue(true);
+
+    const heldImageData = {};
+    const labelmapEntry = makeLabelmapSliceEntry({
+      representationUID: 'seg-1-Labelmap-layer-a',
+      referencedId: 'layer-a',
+      imageData: heldImageData,
+    });
+    const otherSegmentationEntry = makeLabelmapSliceEntry({
+      representationUID: 'seg-2-Labelmap-layer-b',
+      referencedId: 'layer-b',
+      imageData: {},
+    });
+    const volumeLabelmapEntry = makeLabelmapSliceEntry({
+      representationUID: 'seg-1-Labelmap-layer-c',
+      referencedId: 'layer-c',
+      imageData: {},
+      renderMode: 'VTK_VOLUME_SLICE',
+    });
+    const viewport = makePlanarNextViewport();
+
+    viewport.getActors = jest.fn(() => [
+      makeImageSliceEntry('ct'),
+      otherSegmentationEntry,
+      volumeLabelmapEntry,
+      labelmapEntry,
+    ]) as never;
+
+    placeVolumeLabelmapImageMapperActors({
+      viewport: viewport as never,
+      segmentationId: 'seg-1',
+    });
+
+    expect(applyPlanarOverlayDepthOffset).toHaveBeenCalledTimes(1);
+    expect(applyPlanarOverlayDepthOffset).toHaveBeenCalledWith(
+      labelmapEntry.actor,
+      heldImageData,
+      camera,
+      3
+    );
+    expect(createPlanarSliceImageData).not.toHaveBeenCalled();
+  });
+
+  it('skips a labelmap slice that holds no image yet', () => {
+    canRenderVolumeViewportLabelmapAsImage.mockReturnValue(true);
+
+    const viewport = makePlanarNextViewport();
+
+    viewport.getActors = jest.fn(() => [
+      makeLabelmapSliceEntry({
+        representationUID: 'seg-1-Labelmap-layer-a',
+        referencedId: 'layer-a',
+      }),
+    ]) as never;
+
+    placeVolumeLabelmapImageMapperActors({
+      viewport: viewport as never,
+      segmentationId: 'seg-1',
+    });
+
+    expect(applyPlanarOverlayDepthOffset).not.toHaveBeenCalled();
+  });
+
+  it('does nothing on an orthographic viewport, which draws labelmap slices in its own layer', () => {
+    canRenderVolumeViewportLabelmapAsImage.mockReturnValue(true);
+
+    const viewport = makeOrthographicViewport();
+
+    placeVolumeLabelmapImageMapperActors({
+      viewport: viewport as never,
+      segmentationId: 'seg-1',
+    });
+
+    expect(viewport.getActors).not.toHaveBeenCalled();
+    expect(applyPlanarOverlayDepthOffset).not.toHaveBeenCalled();
+  });
+
+  it('does nothing when the viewport cannot draw the labelmap as a slice image', () => {
+    canRenderVolumeViewportLabelmapAsImage.mockReturnValue(false);
+
+    const viewport = makePlanarNextViewport();
+
+    placeVolumeLabelmapImageMapperActors({
+      viewport: viewport as never,
+      segmentationId: 'seg-1',
+    });
+
+    expect(viewport.getActors).not.toHaveBeenCalled();
+  });
+
+  it('does nothing when the viewport has no camera', () => {
+    canRenderVolumeViewportLabelmapAsImage.mockReturnValue(true);
+    getSliceRenderingCamera.mockReturnValue(undefined);
+
+    const viewport = makePlanarNextViewport();
+
+    placeVolumeLabelmapImageMapperActors({
+      viewport: viewport as never,
+      segmentationId: 'seg-1',
+    });
+
+    expect(viewport.getActors).not.toHaveBeenCalled();
   });
 });
 
