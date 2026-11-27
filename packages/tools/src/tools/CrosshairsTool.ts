@@ -60,6 +60,7 @@ import type {
 } from '../types';
 import { isAnnotationLocked } from '../stateManagement/annotation/annotationLocking';
 import triggerAnnotationRenderForViewportIds from '../utilities/triggerAnnotationRenderForViewportIds';
+import { triggerSegmentationRender } from '../stateManagement/segmentation/SegmentationRenderingEngine';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
 const cs3dLogger = cornerstoneUtilities.logger.toolsLog.getLogger(
@@ -2615,9 +2616,26 @@ class CrosshairsTool extends AnnotationTool {
       blendModeToUse = Enums.BlendModes.COMPOSITE;
     }
 
+    // A labelmap's opacity depends on the blend mode of its actor: with
+    // LABELMAP_EDGE_PROJECTION_BLEND it is the outline's, not the fill's. When
+    // the slab changes the mode of an actor, the labelmaps are styled again.
+    const changesBlendMode = viewport
+      .getActors()
+      .filter(({ uid }) => !actorUIDs || actorUIDs.includes(uid))
+      .some(
+        ({ actor }) =>
+          (
+            actor.getMapper() as { getBlendMode?: () => number } | undefined
+          )?.getBlendMode?.() !== blendModeToUse
+      );
+
     const immediate = false;
     viewport.setBlendMode(blendModeToUse, actorUIDs, immediate);
     viewport.setSlabThickness(slabThickness, actorUIDs);
+
+    if (changesBlendMode) {
+      triggerSegmentationRender(viewport.id);
+    }
   }
 
   _isClockWise(a, b, c) {
