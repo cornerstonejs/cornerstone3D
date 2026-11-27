@@ -1659,6 +1659,10 @@ abstract class BaseVolumeViewport extends Viewport {
       this.setSampleDistanceMultiplier(properties.sampleDistanceMultiplier);
     }
 
+    if (properties.interpolationType !== undefined) {
+      this.setInterpolationType(properties.interpolationType, volumeId);
+    }
+
     if (properties.preset !== undefined) {
       this.setPreset(properties.preset, volumeId, false);
     }
@@ -1699,6 +1703,15 @@ abstract class BaseVolumeViewport extends Viewport {
     applyPreset(volumeActor, viewportPreset);
     // The preset replaces the transfer function, as a colormap does.
     this.volumeVOICurveApplied.set(applicableVolumeActorInfo.volumeId, false);
+
+    // A preset sets its own interpolation (most use fast linear). An
+    // interpolation type that was set on the viewport is still what
+    // getProperties reports, so apply it again over the preset's.
+    const { interpolationType } = this.viewportProperties;
+    if (interpolationType !== undefined) {
+      // @ts-ignore
+      volumeActor.getProperty().setInterpolationType(interpolationType);
+    }
 
     this.viewportProperties.preset = viewportPreset.name;
     this.render();
