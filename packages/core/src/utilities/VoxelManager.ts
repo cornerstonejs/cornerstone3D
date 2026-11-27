@@ -1191,6 +1191,9 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
     // been resolved, and `null` that the image matches the volume exactly.
     const sliceScalings = new Array<SliceScaling | null | undefined>(depth);
     const scalingsBySize = new Map<string, SliceScaling>();
+    const sliceScaledViews = new Array<
+      { source: PixelDataTypedArray; view: PixelDataTypedArray } | undefined
+    >(depth);
 
     /**
      * The lookup that takes a column and a row of this volume to a column and a
@@ -1231,6 +1234,31 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
       scalingsBySize.set(key, scaling);
 
       return scaling;
+    };
+
+    /**
+     * The values of an image of another size on the grid of one slice of this
+     * volume, in the array type of the image: the value that a read of each
+     * voxel through the scaling gives, in one pass over the slice.
+     */
+    const scaleSlice = (
+      scalarData: PixelDataTypedArray,
+      scaling: SliceScaling
+    ): PixelDataTypedArray => {
+      const slice = new (scalarData.constructor as new (
+        length: number
+      ) => PixelDataTypedArray)(pixelsPerSlice);
+
+      for (let j = 0; j < height; j++) {
+        const sourceRow = scaling.rows[j];
+        const targetRow = j * width;
+
+        for (let i = 0; i < width; i++) {
+          slice[targetRow + i] = scalarData[sourceRow + scaling.columns[i]];
+        }
+      }
+
+      return slice;
     };
 
     /** The index in the image that holds the value of an index of a slice. */
@@ -1375,6 +1403,7 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
         return isChanged;
       }
       imageVoxelManager.setAtIndex(pixelIndex, v as number);
+      sliceScaledViews[sliceIndex] = undefined;
 
       return true;
     }
@@ -1398,6 +1427,7 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
     voxelManager.invalidateCache = () => {
       sliceVoxelManagers.fill(undefined);
       sliceScalings.fill(undefined);
+      sliceScaledViews.fill(undefined);
       lastSliceIndex = -1;
       lastSliceVoxelManager = null;
     };
@@ -1419,6 +1449,7 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
 
       sliceVoxelManagers[sliceIndex] = undefined;
       sliceScalings[sliceIndex] = undefined;
+      sliceScaledViews[sliceIndex] = undefined;
 
       if (lastSliceIndex === sliceIndex) {
         lastSliceIndex = -1;
@@ -1464,35 +1495,41 @@ export default class VoxelManager<T> implements IVoxelManager<T> {
 
       // The image holds a different number of voxels from the slice of this
       // volume, so scale it rather than copy it.
-      const slice = new (scalarData.constructor as new (
-        length: number
-      ) => PixelDataTypedArray)(pixelsPerSlice);
-
-      for (let j = 0; j < height; j++) {
-        const sourceRow = scaling.rows[j];
-        const targetRow = j * width;
-
-        for (let i = 0; i < width; i++) {
-          slice[targetRow + i] = scalarData[sourceRow + scaling.columns[i]];
-        }
-      }
-
-      return slice;
+      return scaleSlice(scalarData as PixelDataTypedArray, scaling);
     };
 
-    // The scalar data of the cached image of one k slice, with no copy. A
-    // caller must not write to it. It gives nothing when the image has not
-    // arrived, when the image needs scaling to the slice, or when a voxel holds
-    // more than one value, and the caller then takes `_getSliceData`.
+    // The scalar data of the cached image of one k slice, with no copy, or
+    // for an image of another size (a sub-resolution decode) its scaled copy
+    // (`scaleSlice`), made at the first read and kept until the image of the
+    // slice changes or a voxel of it is set. A caller must not write to it. It
+    // gives nothing when the image has not arrived, when the image keeps no
+    // array, or when a voxel holds more than one value, and the caller then
+    // takes `_getSliceData`.
     voxelManager._getSliceView = (sliceIndex: number) => {
       if (numberOfComponents !== 1) {
         return undefined;
       }
 
-      const scalarData = resolveSliceVoxelManager(sliceIndex)?.scalarData;
+      const scalarData = resolveSliceVoxelManager(sliceIndex)?.scalarData as
+        | PixelDataTypedArray
+        | undefined;
+      const scaling = sliceScalings[sliceIndex];
 
-      // The resolution states the scaling of the slice, so read it after.
-      return sliceScalings[sliceIndex] ? undefined : scalarData;
+      if (!scaling || !scalarData) {
+        return scalarData;
+      }
+
+      const kept = sliceScaledViews[sliceIndex];
+
+      if (kept?.source === scalarData) {
+        return kept.view;
+      }
+
+      const view = scaleSlice(scalarData, scaling);
+
+      sliceScaledViews[sliceIndex] = { source: scalarData, view };
+
+      return view;
     };
 
     voxelManager._getSliceReader = (sliceIndex: number) => {

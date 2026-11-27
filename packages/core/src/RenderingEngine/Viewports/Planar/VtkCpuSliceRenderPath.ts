@@ -220,7 +220,11 @@ export class VtkCpuSliceRenderPath
 
   /**
    * Listens for new voxel data of the volume and for a change of its active
-   * time point, and samples the visible slice again for each. While the
+   * time point, and samples the visible slice again for each. A delivery of
+   * a load changes frames only (`PlanarSliceSampler.invalidateFrames`): the
+   * acquisition plane takes its frame again, and a plane across the frames
+   * gathers again the rows of the frames that arrived and uploads only those;
+   * the end of the load samples the slice whole once more. While the
    * volume loads, a plane whose frames have no key samples at the ticks of
    * the shared clock of the load updates (`createPlanarLoadingUpdates`), at
    * most once per tick. Where the frames of the plane are few enough to keep their key
@@ -246,14 +250,16 @@ export class VtkCpuSliceRenderPath
   ): () => void {
     const { rendering, sampler } = mount;
     const updates = createPlanarLoadingUpdates(() => {
-      if (
-        this.updateSlice(
-          mount,
-          getPlanarRenderPathActiveSourceICamera(mount.ctx)
-        )
-      ) {
+      const changed = this.updateSlice(
+        mount,
+        getPlanarRenderPathActiveSourceICamera(mount.ctx)
+      );
+
+      if (changed) {
         mount.ctx.display.requestRender();
       }
+
+      return mount.overlayFrames !== 'empty';
     });
     const removeVolumeSubscriptions = lifecycle.subscribeToVolumeEvents(
       volumeId,
@@ -262,27 +268,27 @@ export class VtkCpuSliceRenderPath
           return;
         }
 
-        sampler.invalidate();
-
         if (
-          eventType === Events.IMAGE_VOLUME_MODIFIED &&
-          isVolumeLoading(rendering.imageVolume)
+          eventType !== Events.IMAGE_VOLUME_MODIFIED ||
+          !isVolumeLoading(rendering.imageVolume)
         ) {
-          const update = getPlanarDeliveryUpdate(
-            rendering.imageVolume,
-            getPlanarRenderPathActiveSourceICamera(mount.ctx),
-            resolveSlabThickness(rendering.appearance?.slabThickness),
-            mount.deliveryKey
-          );
-
-          if (update !== 'none') {
-            updates[update]();
-          }
-
+          sampler.invalidate();
+          updates.now();
           return;
         }
 
-        updates.now();
+        sampler.invalidateFrames();
+
+        const update = getPlanarDeliveryUpdate(
+          rendering.imageVolume,
+          getPlanarRenderPathActiveSourceICamera(mount.ctx),
+          resolveSlabThickness(rendering.appearance?.slabThickness),
+          mount.deliveryKey
+        );
+
+        if (update !== 'none') {
+          updates[update]();
+        }
       }
     );
     const onTimePointChanged = (evt: Event) => {

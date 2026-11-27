@@ -13,10 +13,24 @@ import type { PlanarCpuSlice, PlanarSliceClipPlane } from './planarCpuSlice';
 import { applyPlanarICameraToActor } from './planarRenderCamera';
 import { applyPlanarVolumeAppearance } from './planarVolumeAppearance';
 import { updateVolumeSliceActorDepthOffset } from './VtkGpuVolumeSliceRenderPath';
+import { requestImageTextureRows } from '../../vtkClasses/vtkStreamingOpenGLImageMapper';
 
 /** Returns an empty vector that holds double precision numbers. */
 function createVector(): vec3 {
   return [0, 0, 0] as unknown as vec3;
+}
+
+/**
+ * Gives the scalars of the image the range of the slice, which the sampler
+ * knows, so that vtk.js does not read every pixel for it at the upload.
+ */
+function setScalarRange(
+  scalars: ReturnType<ReturnType<vtkImageData['getPointData']>['getScalars']>,
+  slice: PlanarCpuSlice
+): void {
+  if (Number.isFinite(slice.min) && Number.isFinite(slice.max)) {
+    scalars.setRange({ min: slice.min, max: slice.max }, 0);
+  }
 }
 
 /**
@@ -25,12 +39,17 @@ function createVector(): vec3 {
  * vtkImageMapper and one vtkImageSlice, and draws a `PlanarCpuSlice` in
  * world coordinates.
  *
- * The vtkImageData and its scalar array are reused while the size and the
- * array type of the slice stay the same, as the image path does (see
- * `canReuseImageDataForImage`): a new vtkImageData builds a new texture, and
- * the first render after that draws before the upload, a one-frame flash. The
- * actor owns its scalar array and copies each slice into it, because the
- * sampler reuses the pixel arrays of the slices it drops from its cache.
+ * The vtkImageData and its scalar array object are reused, as the image path
+ * does (see `canReuseImageDataForImage`): a new vtkImageData builds a new
+ * texture, and the first render after that draws before the upload, a
+ * one-frame flash. The scalar array holds the pixel array of the slice itself,
+ * with no copy: the array of a frame of the volume for the acquisition plane,
+ * the array of the sampler for any other slice, which the sampler does not
+ * reuse while it is on screen. A slice that names its updated rows
+ * (`updatedRows`, rows of a slice across the frames written in place) has
+ * only those rows uploaded (`requestImageTextureRows`); any other slice is
+ * uploaded whole. The range of the scalars is the range of the slice, so
+ * vtk.js does not read the pixels again for it.
  *
  * The mapper clips the slice to the faces of the volume, so that the pixels
  * of an oblique slice outside the volume are not drawn, as with the GPU volume
@@ -192,26 +211,27 @@ export class PlanarCpuSliceActor {
   private writeSlice(slice: PlanarCpuSlice): void {
     const { imageData } = this;
     const scalars = imageData.getPointData().getScalars();
-    const values = scalars?.getData();
+    const values = scalars.getData();
     const [width, height] = imageData.getDimensions();
 
     if (
-      values &&
-      values !== slice.pixelData &&
-      values.length === slice.pixelData.length &&
-      values.constructor === slice.pixelData.constructor
+      values === slice.pixelData &&
+      slice.updatedRows &&
+      width === slice.width &&
+      height === slice.height
     ) {
-      (values as typeof slice.pixelData).set(slice.pixelData);
+      setScalarRange(scalars, slice);
+      requestImageTextureRows(this.mapper, slice.updatedRows);
+      return;
+    }
+
+    if (values === slice.pixelData) {
       scalars.dataChange();
     } else {
-      imageData.getPointData().setScalars(
-        vtkDataArray.newInstance({
-          name: 'Pixels',
-          numberOfComponents: 1,
-          values: slice.pixelData.slice(),
-        })
-      );
+      scalars.setData(slice.pixelData, 1);
     }
+
+    setScalarRange(scalars, slice);
 
     if (width !== slice.width || height !== slice.height) {
       imageData.setDimensions(slice.width, slice.height, 1);

@@ -5,7 +5,11 @@ import type BlendModes from '../enums/BlendModes';
 import { SOURCE_SLICE_INDEX_TOLERANCE } from '../RenderingEngine/Viewports/Planar/planarCPUVolumeSamplingUtils';
 import { mapBlendModeToSlabType } from '../RenderingEngine/Viewports/Planar/planarVolumeSliceBlendMode';
 import type { IImageVolume, PixelDataTypedArray, Point3 } from '../types';
-import sampleVolumeGrid, { isIndexInsideVolume } from './sampleVolumeGrid';
+import sampleVolumeGrid, {
+  getFrameArray,
+  isIndexInsideVolume,
+  sampleStraightCutGrid,
+} from './sampleVolumeGrid';
 import { transformWorldToIndexContinuous } from './transformWorldToIndex';
 import type { VolumeSliceGeometry } from './volumeSliceGeometry';
 
@@ -850,9 +854,168 @@ function sampleVolumeSlice(
   return { pixelData, ...getValueRange(pixelData) };
 }
 
+/**
+ * Returns whether a step moves by exactly one voxel along an axis and not at
+ * all along the others.
+ */
+function isUnitStepAlong(step: Point3, axis: number): boolean {
+  return step.every((value, index) => value === (index === axis ? 1 : 0));
+}
+
+/**
+ * The frame of the volume that a slice is, as the volume holds it: the slice
+ * of the acquisition plane (its normal along the frame axis, the k axis of
+ * the volume) on the centre of a frame, with no slab, whose columns and rows
+ * are those of the frame in the order of the frame (`getFrameArray`), and
+ * whose array type is the one that a sample of it gives. The draw step can
+ * show that array as it is: nothing is sampled and nothing copied.
+ *
+ * Undefined for any other slice. A slice of the acquisition plane is still
+ * gathered (`gatherVolumeSlice`), one copy, for a frame seen from its back,
+ * whose rows run the other way along j, for a frame held in an array of
+ * another type than the slice (the type of the volume), and for a frame
+ * held in no array of the frame size (`getFrameArray` gives none: a frame
+ * that has not arrived reads as zeros).
+ */
+function getFrameOfVolumeSlice(
+  options: SampleVolumeSliceOptions
+): PixelDataTypedArray | undefined {
+  const { volume, geometry } = options;
+
+  if (getNumberOfComponents(volume) !== 1) {
+    return;
+  }
+
+  const { grid, offsets, ArrayType } = planVolumeSlice(options);
+  const { startIndex, columnStep, rowStep } = grid;
+  const [columns, rows] = volume.dimensions;
+
+  if (
+    offsets.length !== 1 ||
+    geometry.width !== columns ||
+    geometry.height !== rows ||
+    !isUnitStepAlong(columnStep, 0) ||
+    !isUnitStepAlong(rowStep, 1) ||
+    startIndex[0] !== 0 ||
+    startIndex[1] !== 0 ||
+    !Number.isInteger(startIndex[2])
+  ) {
+    return;
+  }
+
+  const frame = getFrameArray(volume, startIndex[2]);
+
+  return frame?.constructor === ArrayType ? frame : undefined;
+}
+
+/**
+ * Samples a slice whose grid is a straight cut of the volume, with no slab:
+ * a plane of the voxel grid (the acquisition plane or one of the two planes
+ * across the frames), on voxel centres or between two planes of voxels, as
+ * an overlay on another volume's plane lies. Each pixel is a copy of one
+ * voxel, or the mix of the two voxels on either side of the plane, read from
+ * the arrays of the frames (`sampleStraightCutGrid`): the values that
+ * `sampleVolumeSlice` gives, with no call of its general loop. Only the rows
+ * from `firstRow` on, `rowCount` of them, are written; a plane across the
+ * frames has one row per frame, so a frame that arrives changes one row. With
+ * `rowRanges`, the lowest and highest value of each row written is kept
+ * there, from index 0 for `firstRow`.
+ *
+ * @returns the pixels and the lowest and highest value of the rows written,
+ *   or undefined for a slice that is not such a cut, has a slab, has several
+ *   components or reads a frame held in no array: `sampleVolumeSlice`
+ *   samples that one.
+ */
+function gatherVolumeSlice(
+  options: SampleVolumeSliceOptions,
+  firstRow = 0,
+  rowCount = options.geometry.height,
+  rowRanges?: { min: Float64Array; max: Float64Array }
+): SampledVolumeSlice | undefined {
+  const {
+    volume,
+    geometry,
+    interpolationType = InterpolationType.NEAREST,
+    outsideValue = 0,
+  } = options;
+
+  if (getNumberOfComponents(volume) !== 1) {
+    return;
+  }
+
+  const { grid, offsets, ArrayType, round } = planVolumeSlice(options);
+
+  if (offsets.length !== 1) {
+    return;
+  }
+
+  const { width, height } = geometry;
+  const length = width * height;
+  const pixelData =
+    options.pixelData instanceof ArrayType &&
+    options.pixelData.length === length
+      ? options.pixelData
+      : (new ArrayType(length) as PixelDataTypedArray);
+  const { startIndex, rowStep, columnStep } = grid;
+  const range = sampleStraightCutGrid(
+    {
+      volume,
+      pixelData: pixelData.subarray(
+        firstRow * width,
+        (firstRow + rowCount) * width
+      ) as PixelDataTypedArray,
+      width,
+      height: rowCount,
+      startIndex: [
+        startIndex[0] + firstRow * rowStep[0],
+        startIndex[1] + firstRow * rowStep[1],
+        startIndex[2] + firstRow * rowStep[2],
+      ],
+      columnStep,
+      rowStep,
+      interpolationType,
+      outsideValue,
+      round,
+    },
+    rowRanges
+  );
+
+  return range && { pixelData, ...range };
+}
+
+/**
+ * The frame that each row of a slice reads, when each row of the slice reads
+ * one frame: a straight cut across the frames (its rows follow the frame
+ * axis, the k axis, by whole frames, as the two planes of the voxel grid
+ * across the frames do), with no slab. Row r reads frame
+ * `firstFrame + r * frameStep`. Undefined for any other slice.
+ */
+function getVolumeSliceFrameRows(
+  options: SampleVolumeSliceOptions
+): { firstFrame: number; frameStep: number } | undefined {
+  const { grid, offsets } = planVolumeSlice(options);
+  const { startIndex, rowStep, columnStep } = grid;
+
+  if (
+    offsets.length !== 1 ||
+    getStepAxis(rowStep) !== 2 ||
+    !Number.isInteger(rowStep[2]) ||
+    columnStep[2] !== 0 ||
+    !Number.isInteger(startIndex[2])
+  ) {
+    return;
+  }
+
+  return { firstFrame: startIndex[2], frameStep: rowStep[2] };
+}
+
 export {
   sampleVolumeSlice as default,
   sampleVolumeSlice,
+  getFrameOfVolumeSlice,
+  gatherVolumeSlice,
+  getVolumeSliceFrameRows,
+  getValueRange,
   getSlabSampleOffsets,
   getNumberOfComponents,
   getVolumeSliceArrayType,

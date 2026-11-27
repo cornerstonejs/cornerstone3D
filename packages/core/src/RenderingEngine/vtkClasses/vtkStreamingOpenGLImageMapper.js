@@ -108,6 +108,147 @@ export function useNearestForUnfilterableFloat(context, texture) {
   return true;
 }
 
+const pendingTextureRows = new WeakMap();
+
+/**
+ * Asks the OpenGL image mapper of an image mapper to upload only some rows of
+ * its 2D texture at the next render: rows of the image whose values changed
+ * in place in the same scalar array, whose size and type did not change. The
+ * rows of several requests before a render add up. The image data and its
+ * scalars must not be marked modified for such a change, or vtk.js uploads
+ * the whole texture anyway.
+ *
+ * @param mapper - The vtkImageMapper (not its OpenGL node)
+ * @param rows - The rows of the image that changed
+ */
+export function requestImageTextureRows(mapper, rows) {
+  if (!mapper || !rows?.length) {
+    return;
+  }
+
+  const pending = pendingTextureRows.get(mapper) ?? new Set();
+
+  rows.forEach((row) => pending.add(row));
+  pendingTextureRows.set(mapper, pending);
+  mapper.modified();
+}
+
+/**
+ * The rows of the 2D texture of an image mapper that wait for their upload
+ * (see {@link requestImageTextureRows}), in order.
+ *
+ * @param mapper - The vtkImageMapper (not its OpenGL node)
+ */
+export function getPendingImageTextureRows(mapper) {
+  return [...(pendingTextureRows.get(mapper) ?? [])].sort((a, b) => a - b);
+}
+
+/**
+ * The values of some rows of an image in the form of the texture that holds
+ * the image, as `vtkOpenGLTexture.updateArrayDataTypeForGL` gives them for the
+ * whole image: as they are for a texture of their own type (a norm16 texture
+ * of 16-bit integers, a float texture of float values), converted for a float
+ * texture of integer values, or undefined for a texture that needs another
+ * conversion (half float, 8-bit from wider values), which is uploaded whole.
+ */
+function getTextureRowValues(context, openGLDataType, values) {
+  const isFloatArray = values instanceof Float32Array;
+
+  if (openGLDataType === context.FLOAT) {
+    return isFloatArray ? values : new Float32Array(values);
+  }
+
+  if (
+    (openGLDataType === context.SHORT && values instanceof Int16Array) ||
+    (openGLDataType === context.UNSIGNED_SHORT &&
+      values instanceof Uint16Array) ||
+    (openGLDataType === context.UNSIGNED_BYTE && values instanceof Uint8Array)
+  ) {
+    return values;
+  }
+}
+
+/**
+ * Uploads some rows of the image of a 2D texture with `texSubImage2D`, one
+ * call for each run of adjacent rows, when the texture holds an image of this
+ * width and these components and their values need no conversion that
+ * vtk.js makes for the whole image only (see `getTextureRowValues`).
+ *
+ * @param context - The WebGL2 context
+ * @param texture - The vtk.js OpenGL texture of the image
+ * @param values - The scalar values of the whole image
+ * @param width - The width of the image
+ * @param numberOfComponents - The values of one pixel
+ * @param rows - The rows to upload, in order
+ * @returns The number of rows uploaded, or -1 when the rows cannot be
+ *   uploaded on their own and the texture needs a whole upload
+ */
+export function uploadImageTextureRows(
+  context,
+  texture,
+  values,
+  width,
+  numberOfComponents,
+  rows
+) {
+  if (
+    !context?.texSubImage2D ||
+    !texture?.getHandle?.() ||
+    texture.getWidth() !== width ||
+    texture.getComponents() !== numberOfComponents ||
+    texture.getHeight() * width * numberOfComponents !== values.length
+  ) {
+    return -1;
+  }
+
+  const openGLDataType = texture.getReferenceByName('openGLDataType');
+  const format = texture.getReferenceByName('format');
+  const rowLength = width * numberOfComponents;
+  const runs = [];
+
+  rows.forEach((row) => {
+    const run = runs[runs.length - 1];
+
+    if (run && run.last === row - 1) {
+      run.last = row;
+    } else {
+      runs.push({ first: row, last: row });
+    }
+  });
+
+  const runValues = runs.map(({ first, last }) =>
+    getTextureRowValues(
+      context,
+      openGLDataType,
+      values.subarray(first * rowLength, (last + 1) * rowLength)
+    )
+  );
+
+  if (runValues.some((runValue) => !runValue)) {
+    return -1;
+  }
+
+  texture.activate();
+  context.pixelStorei(context.UNPACK_FLIP_Y_WEBGL, false);
+  context.pixelStorei(context.UNPACK_ALIGNMENT, 1);
+  runs.forEach(({ first, last }, index) => {
+    context.texSubImage2D(
+      context.TEXTURE_2D,
+      0,
+      0,
+      first,
+      width,
+      last - first + 1,
+      format,
+      openGLDataType,
+      runValues[index]
+    );
+  });
+  texture.deactivate();
+
+  return rows.length;
+}
+
 const TEXTURE_FORMAT_NAMES = {
   0x8f98: 'R16_SNORM',
   0x822a: 'R16',
@@ -231,6 +372,7 @@ function vtkStreamingOpenGLImageMapper(publicAPI, model) {
   const superBuildBufferObjects = publicAPI.buildBufferObjects;
 
   publicAPI.buildBufferObjects = (ren, actor) => {
+    uploadPendingRows();
     superBuildBufferObjects(ren, actor);
     useNearestForUnfilterableFloat(model.context, model.pwfTexture);
 
@@ -240,6 +382,40 @@ function vtkStreamingOpenGLImageMapper(publicAPI, model) {
       imageTextureFacts.set(model.renderable, facts);
     }
   };
+
+  /**
+   * Uploads the rows that wait (`requestImageTextureRows`) into the texture
+   * that holds the image now, or, when they cannot go on their own, marks the
+   * scalars modified so that vtk.js uploads the whole image in this build.
+   */
+  function uploadPendingRows() {
+    const rows = getPendingImageTextureRows(model.renderable);
+
+    if (!rows.length) {
+      return;
+    }
+
+    pendingTextureRows.delete(model.renderable);
+
+    const scalars = model.currentInput?.getPointData?.()?.getScalars?.();
+
+    if (!scalars) {
+      return;
+    }
+
+    const uploaded = uploadImageTextureRows(
+      model.context,
+      model.openGLTexture,
+      scalars.getData(),
+      model.currentInput.getDimensions()[0],
+      scalars.getNumberOfComponents(),
+      rows
+    );
+
+    if (uploaded < 0) {
+      scalars.modified();
+    }
+  }
 
   const superReplaceShaderValues = publicAPI.replaceShaderValues;
 

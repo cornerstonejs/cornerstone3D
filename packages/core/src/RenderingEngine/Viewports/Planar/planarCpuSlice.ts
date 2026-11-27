@@ -15,13 +15,19 @@ import {
 } from '../../../utilities/volumeSliceGeometry';
 import type { VolumeSliceGeometry } from '../../../utilities/volumeSliceGeometry';
 import {
+  gatherVolumeSlice,
+  getFrameOfVolumeSlice,
   getNumberOfComponents,
   getSlabSampleOffsets,
+  getValueRange,
   getVolumeSliceArrayType,
+  getVolumeSliceFrameRows,
   sampleVolumeSlice,
 } from '../../../utilities/sampleVolumeSlice';
+import { getFrameArray } from '../../../utilities/sampleVolumeGrid';
 import type {
   SampleVolumeSliceOptions,
+  SampledVolumeSlice,
   VolumeSliceSlab,
 } from '../../../utilities/sampleVolumeSlice';
 import type { PlanarDisplaySetAppearance } from './PlanarViewportTypes';
@@ -189,6 +195,20 @@ export type PlanarCpuSlice = {
   insideVolume: boolean;
   /** The inputs that this slice was sampled for. */
   sampledFor: PlanarCpuSliceInputs & { sliceIndex: number };
+  /**
+   * True when `pixelData` is a frame of the volume as the volume holds it
+   * (the acquisition plane, see `getFrameOfVolumeSlice`): it is only read,
+   * and the draw step shows it with no copy.
+   */
+  frameOfVolume?: boolean;
+  /**
+   * The rows that changed since the slice that this one follows, when only
+   * they did: the rows of the frames that arrived, written in place into the
+   * same `pixelData` (see `PlanarSliceSampler.invalidateFrames`). The draw
+   * step uploads those rows only. Undefined for a slice whose every pixel is
+   * new.
+   */
+  updatedRows?: number[];
 };
 
 /** A plane that keeps the side its normal points to. */
@@ -232,6 +252,30 @@ export type PlanarSliceCacheStatistics = {
    * before the first one.
    */
   lastFineSampleMs?: number;
+  /**
+   * Slices that are a frame of the volume as it holds it (the acquisition
+   * plane), shown with no sample and no copy.
+   */
+  frameSlices: number;
+  /**
+   * Slices gathered whole from the arrays of the frames (a plane of the voxel
+   * grid that is not a frame as it is held, or a plane between two planes of
+   * voxels), with no call of the general sampler.
+   */
+  gatheredSlices: number;
+  /**
+   * Rows of a kept slice across the frames gathered again on their own, for
+   * a frame that arrived (`invalidateFrames`).
+   */
+  gatheredRows: number;
+  /**
+   * Calls of the general sampler (`sampleVolumeSlice`): an oblique plane, a
+   * volume whose axes do not follow the view, a slab, a slice of several
+   * components, the screen grid, or a frame held in no array.
+   */
+  generalSamples: number;
+  /** Bytes that the sampler wrote into the pixel arrays of slices. */
+  copiedBytes: number;
 };
 
 /** The options of a `PlanarSliceSampler`, set by its draw step. */
@@ -372,11 +416,29 @@ export function drawsWithNearestFilter(
   );
 }
 
+/** The source of a row that reads a frame the volume holds no voxels of. */
+const EMPTY_FRAME = Symbol('emptyFrame');
+
+/**
+ * For a slice each of whose rows reads one frame (a plane across the frames,
+ * see `getVolumeSliceFrameRows`): the frame of each row, what it read (the
+ * array of the frame, or EMPTY_FRAME) and the lowest and highest value of
+ * each row.
+ */
+type FrameRows = {
+  firstFrame: number;
+  frameStep: number;
+  sources: Array<PixelDataTypedArray | typeof EMPTY_FRAME>;
+  rowMin: Float64Array;
+  rowMax: Float64Array;
+};
+
 /** One kept slice with the geometry it was sampled for. */
 type CachedSlice = {
   geometry: VolumeSliceGeometry;
   slice: PlanarCpuSlice;
   generation: number;
+  frameRows?: FrameRows;
 };
 
 /**
@@ -420,12 +482,19 @@ export class PlanarSliceSampler {
   private thin?: CachedSlice;
   private slabTooLarge = false;
   private spareArrays: PixelDataTypedArray[] = [];
+  private readonly frameArrays = new WeakSet<PixelDataTypedArray>();
   private generation = 0;
+  private framesOnlySince = 0;
   private statistics: Omit<PlanarSliceCacheStatistics, 'size'> = {
     hits: 0,
     misses: 0,
     prefetched: 0,
     refined: 0,
+    frameSlices: 0,
+    gatheredSlices: 0,
+    gatheredRows: 0,
+    generalSamples: 0,
+    copiedBytes: 0,
   };
 
   constructor(options: PlanarSliceSamplerOptions = {}) {
@@ -474,6 +543,7 @@ export class PlanarSliceSampler {
       return;
     }
 
+    this.refreshFrameRows(volume, geometry, inputs);
     this.dropOtherViews(geometry, inputs);
 
     const cached = this.find(geometry, inputs);
@@ -794,6 +864,20 @@ export class PlanarSliceSampler {
    */
   invalidate(): void {
     this.generation++;
+    this.framesOnlySince = this.generation;
+  }
+
+  /**
+   * Makes every kept slice stale for frames that the volume delivered while
+   * it loads, and for nothing else: the voxels of a frame change only with a
+   * new array for it (an image that arrives). The next request takes the
+   * slice of the acquisition plane again (the array of the frame), and
+   * gathers again only the rows of the slice on screen across the frames
+   * whose frame holds another array than when they were gathered
+   * (`refreshFrameRows`). Any other slice is sampled again.
+   */
+  invalidateFrames(): void {
+    this.generation++;
   }
 
   /** Drops the kept slices and their pixel arrays. */
@@ -807,6 +891,90 @@ export class PlanarSliceSampler {
     this.slabTooLarge = false;
     this.spareArrays = [];
     this.generation++;
+    this.framesOnlySince = this.generation;
+  }
+
+  /**
+   * Brings the slice on screen up to date row by row after frames arrived
+   * (`invalidateFrames`), when it is a slice across the frames of the same
+   * plane and inputs that was sampled since the last full invalidation: each
+   * row whose frame holds another array now is gathered again in place, into
+   * the same pixel array, and the slice is a new object that names those
+   * rows (`updatedRows`). Rows whose frame did not change are not touched.
+   * Gives up, leaving the slice stale so that it is sampled again whole,
+   * when a frame is held in no array or a row cannot be gathered.
+   */
+  private refreshFrameRows(
+    volume: IImageVolume,
+    geometry: VolumeSliceGeometry,
+    inputs: PlanarCpuSliceInputs
+  ): void {
+    const entry = this.current;
+    const frameRows = entry?.frameRows;
+
+    if (
+      !frameRows ||
+      entry.generation === this.generation ||
+      entry.generation < this.framesOnlySince ||
+      !isSameInputs(entry.slice.sampledFor, inputs) ||
+      !isSamePlane(entry.geometry, geometry)
+    ) {
+      return;
+    }
+
+    const { height, width } = entry.geometry;
+    const sources = new Array<PixelDataTypedArray | typeof EMPTY_FRAME>(height);
+    const changed: number[] = [];
+
+    for (let row = 0; row < height; row++) {
+      const source = getFrameSource(
+        volume,
+        frameRows.firstFrame + row * frameRows.frameStep
+      );
+
+      if (!source) {
+        return;
+      }
+
+      sources[row] = source;
+
+      if (source !== frameRows.sources[row]) {
+        changed.push(row);
+      }
+    }
+
+    const options = {
+      ...this.getSampleOptions(volume, entry.geometry, inputs),
+      pixelData: entry.slice.pixelData,
+    };
+
+    for (const row of changed) {
+      const gathered = gatherVolumeSlice(options, row, 1);
+
+      if (!gathered || gathered.pixelData !== entry.slice.pixelData) {
+        return;
+      }
+
+      frameRows.sources[row] = sources[row];
+      frameRows.rowMin[row] = gathered.min;
+      frameRows.rowMax[row] = gathered.max;
+      this.statistics.gatheredRows++;
+      this.statistics.copiedBytes +=
+        width * entry.slice.pixelData.BYTES_PER_ELEMENT;
+    }
+
+    entry.generation = this.generation;
+
+    if (!changed.length) {
+      return;
+    }
+
+    entry.slice = {
+      ...entry.slice,
+      min: Math.min(...frameRows.rowMin),
+      max: Math.max(...frameRows.rowMax),
+      updatedRows: changed,
+    };
   }
 
   /**
@@ -1087,13 +1255,68 @@ export class PlanarSliceSampler {
     insideVolume: boolean
   ): CachedSlice {
     const options = this.getSampleOptions(volume, geometry, inputs);
+    const frame = getFrameOfVolumeSlice(options);
+
+    if (frame) {
+      const { min, max } = getValueRange(frame);
+
+      this.frameArrays.add(frame);
+      this.statistics.frameSlices++;
+
+      return {
+        geometry,
+        generation: this.generation,
+        slice: {
+          ...this.createSlice(
+            volume,
+            geometry,
+            inputs,
+            frame,
+            min,
+            max,
+            insideVolume
+          ),
+          frameOfVolume: true,
+        },
+      };
+    }
+
+    const spare = this.takeSpareArray(
+      getVolumeSliceArrayType(options),
+      geometry.width * geometry.height * getNumberOfComponents(volume)
+    );
+    const byRows = gatherFrameRows(volume, { ...options, pixelData: spare });
+    const gathered =
+      byRows ?? gatherVolumeSlice({ ...options, pixelData: spare });
+
+    if (gathered) {
+      this.statistics.gatheredSlices++;
+      this.statistics.copiedBytes += gathered.pixelData.byteLength;
+
+      return {
+        geometry,
+        generation: this.generation,
+        frameRows: byRows?.frameRows,
+        slice: this.createSlice(
+          volume,
+          geometry,
+          inputs,
+          gathered.pixelData,
+          gathered.min,
+          gathered.max,
+          insideVolume
+        ),
+      };
+    }
+
+    this.statistics.generalSamples++;
+
     const { pixelData, min, max } = sampleVolumeSlice({
       ...options,
-      pixelData: this.takeSpareArray(
-        getVolumeSliceArrayType(options),
-        geometry.width * geometry.height * getNumberOfComponents(volume)
-      ),
+      pixelData: spare,
     });
+
+    this.statistics.copiedBytes += pixelData.byteLength;
 
     return {
       geometry,
@@ -1182,7 +1405,20 @@ export class PlanarSliceSampler {
     }
   }
 
+  /**
+   * Keeps the pixel array of a dropped slice for a later sample of the same
+   * size and type, unless the draw step may still show it (the array of the
+   * slice on screen, which it shows with no copy) or it is a frame of the
+   * volume, which the sampler must never write.
+   */
   private addSpareArray(pixelData: PixelDataTypedArray): void {
+    if (
+      this.frameArrays.has(pixelData) ||
+      pixelData === this.shown?.pixelData
+    ) {
+      return;
+    }
+
     this.spareArrays.push(pixelData);
 
     if (this.spareArrays.length > MAX_SPARE_PIXEL_ARRAYS) {
@@ -1206,6 +1442,86 @@ export class PlanarSliceSampler {
 
     return this.spareArrays.splice(index, 1)[0];
   }
+}
+
+/**
+ * What a frame of a volume is held in, for `FrameRows`: the array of the
+ * frame (`getFrameArray`, from the view of the voxel manager), EMPTY_FRAME
+ * for a frame that the volume holds no voxels of, or undefined when neither
+ * can be told (a volume without views of its frames), whose rows are then
+ * not followed.
+ */
+function getFrameSource(
+  volume: IImageVolume,
+  frame: number
+): PixelDataTypedArray | typeof EMPTY_FRAME | undefined {
+  const voxelManager = volume.voxelManager as IImageVolume['voxelManager'] & {
+    _getSliceView?: (sliceIndex: number) => PixelDataTypedArray | undefined;
+    _getSliceReader?: (sliceIndex: number) => unknown;
+  };
+
+  if (!voxelManager?._getSliceView) {
+    return;
+  }
+
+  const array = getFrameArray(volume, frame);
+
+  if (array) {
+    return array;
+  }
+
+  return voxelManager._getSliceReader?.(frame) === null
+    ? EMPTY_FRAME
+    : undefined;
+}
+
+/**
+ * Gathers a slice each of whose rows reads one frame (a plane across the
+ * frames, see `getVolumeSliceFrameRows`) row by row, and keeps for each row
+ * its frame, what it read and the lowest and highest value of its samples
+ * (`FrameRows`), so that a frame that arrives later changes its row only.
+ * Undefined for any other slice, for a volume whose frames cannot be
+ * followed, or when a row cannot be gathered.
+ */
+function gatherFrameRows(
+  volume: IImageVolume,
+  options: SampleVolumeSliceOptions
+): (SampledVolumeSlice & { frameRows: FrameRows }) | undefined {
+  const frames = getVolumeSliceFrameRows(options);
+
+  if (!frames) {
+    return;
+  }
+
+  const { height } = options.geometry;
+  const sources = new Array<PixelDataTypedArray | typeof EMPTY_FRAME>(height);
+
+  for (let row = 0; row < height; row++) {
+    const source = getFrameSource(
+      volume,
+      frames.firstFrame + row * frames.frameStep
+    );
+
+    if (!source) {
+      return;
+    }
+
+    sources[row] = source;
+  }
+
+  const rowMin = new Float64Array(height);
+  const rowMax = new Float64Array(height);
+  const gathered = gatherVolumeSlice(options, 0, height, {
+    min: rowMin,
+    max: rowMax,
+  });
+
+  return (
+    gathered && {
+      ...gathered,
+      frameRows: { ...frames, sources, rowMin, rowMax },
+    }
+  );
 }
 
 /**

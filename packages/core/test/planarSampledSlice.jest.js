@@ -1299,10 +1299,7 @@ describe('draw step', () => {
     expect(Array.from(imageData.getDirection())).toEqual([
       1, 0, 0, 0, 1, 0, 0, 0, 1,
     ]);
-    expect(imageData.getPointData().getScalars().getData()).not.toBe(
-      slice.pixelData
-    );
-    expect(imageData.getPointData().getScalars().getData()).toEqual(
+    expect(imageData.getPointData().getScalars().getData()).toBe(
       slice.pixelData
     );
     expect(imageData.get('voxelManager').voxelManager).toEqual({ id: 'vm' });
@@ -1460,7 +1457,7 @@ describe('sample step: array types and size limits', () => {
 
   it('keeps fractions only when asked, and reuses spare arrays of the type of each sample', () => {
     const volume = createSampledVolume();
-    const spy = jest.spyOn(sampleVolumeSliceModule, 'sampleVolumeSlice');
+    const spy = jest.spyOn(sampleVolumeSliceModule, 'gatherVolumeSlice');
     const sampler = new PlanarSliceSampler({ keepFractions: true });
     const slices = [];
 

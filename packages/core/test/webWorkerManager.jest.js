@@ -215,6 +215,78 @@ describe('The web worker manager makes and chooses instances', () => {
     await long;
   });
 
+  it('makes every instance at registration when asked, and gives the first tasks to them', async () => {
+    const manager = new CentralizedWorkerManager();
+    const created = [];
+
+    registerCountingWorker(manager, created, {
+      createInstances: 'atRegistration',
+    });
+
+    expect(created.length).toBe(3);
+    expect(
+      manager.workerRegistry.three.instances.every(
+        (instance) => instance !== null
+      )
+    ).toBe(true);
+
+    await Promise.all([
+      manager.executeTask('three', 'run', { delay: 20 }),
+      manager.executeTask('three', 'run', { delay: 20 }),
+      manager.executeTask('three', 'run', { delay: 20 }),
+    ]);
+    expect(created.length).toBe(3);
+  });
+
+  it('makes every instance of a warm pool in the first idle period, before the first task', async () => {
+    const manager = new CentralizedWorkerManager();
+    const created = [];
+
+    registerCountingWorker(manager, created, { createInstances: 'whenIdle' });
+
+    expect(created.length).toBe(0);
+
+    await sleep(5);
+
+    expect(created.length).toBe(3);
+
+    await Promise.all([
+      manager.executeTask('three', 'run', { delay: 20 }),
+      manager.executeTask('three', 'run', { delay: 20 }),
+      manager.executeTask('three', 'run', { delay: 20 }),
+    ]);
+    expect(created.length).toBe(3);
+  });
+
+  it('makes no instance of a lazy pool in an idle period', async () => {
+    const manager = new CentralizedWorkerManager();
+    const created = [];
+
+    registerCountingWorker(manager, created);
+    await sleep(5);
+
+    expect(created.length).toBe(0);
+    expect(manager.workerRegistry.three.instances).toEqual([null, null, null]);
+  });
+
+  it('gives a task that comes before the idle period an instance at once, and the idle period makes only the others', async () => {
+    const manager = new CentralizedWorkerManager();
+    const created = [];
+
+    registerCountingWorker(manager, created, { createInstances: 'whenIdle' });
+
+    const first = manager.executeTask('three', 'run', { delay: 1 });
+
+    await Promise.resolve();
+    expect(created.length).toBe(1);
+
+    await expect(first).resolves.toBe(1);
+    await sleep(5);
+
+    expect(created.length).toBe(3);
+    expect(new Set(manager.workerRegistry.three.nativeWorkers).size).toBe(3);
+  });
+
   it('terminates an idle instance and makes it again for the next task', async () => {
     const manager = new CentralizedWorkerManager();
     const created = [];

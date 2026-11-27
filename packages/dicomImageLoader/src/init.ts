@@ -22,6 +22,7 @@ function init(options: LoaderOptions = {}): void {
   const maxWorkers = options?.maxWebWorkers || getReasonableWorkerCount();
   workerManager.registerWorker('dicomImageLoader', workerFn, {
     maxWorkerInstances: maxWorkers,
+    createInstances: 'whenIdle',
   });
 }
 

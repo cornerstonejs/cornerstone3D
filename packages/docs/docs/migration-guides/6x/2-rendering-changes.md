@@ -54,6 +54,45 @@ What changes for an application:
 `rendering.planar.sliceFirst: false`, or `setSliceFirst(false)` at run time,
 turns it off. The `sliceFirst` option of one display set wins over both.
 
+### How the CPU cuts the slice of a volume
+
+The rule follows the axes of the volume itself, the frame axis (the axis
+along which the frames, the images of the series, are stacked) and the two
+axes of a frame, whatever the orientation of the patient: an axial view of
+a sagittal series is a plane across its frames, a sagittal view of it is its
+acquisition plane.
+
+- **The acquisition plane** (the view normal along the frame axis, on a
+  frame) is the frame as the volume holds it: nothing is sampled and nothing
+  is copied; the GPU uploads the array of the frame. While the volume loads,
+  each arriving frame of the plane is shown the same way. One copy, a gather
+  of the frame, is still made when the frame is seen from its back (its rows
+  then run the other way), when the frame is held in another array type than
+  the volume's, and for a frame that has not arrived yet (a slice of zeros).
+  A frame decoded at a lower resolution (a sub-resolution decode) is scaled
+  to the grid once, when it arrives, and that copy is shown.
+- **The two other planes of the grid** (the normal along one axis of a frame)
+  are gathered from the frames, one row of the slice per frame: a row is a
+  run of the frame (`TypedArray.set` of a part of it) where the plane runs
+  along the rows of the frame, and a column of the frame where it runs along
+  its columns. While the volume loads, a frame that arrives changes its one
+  row: that row is written, and only that row of the texture is uploaded.
+- **NEAREST and LINEAR give the same values on the grid**: the interpolation
+  type does not choose another path for these planes; the GPU filters the
+  texture when it enlarges it.
+- **An overlay on another volume's plane** (a PET over a CT) keeps its own
+  grid in its plane, as a texture that the GPU scales; along the normal it is
+  the mix of its two planes of voxels on either side of the plane (LINEAR) or
+  the nearest one (NEAREST), a mix of two gathered planes.
+- **Only an oblique plane, a volume whose axes do not follow the view, or a
+  slab** goes through the general sampler (`utilities.sampleVolumeSlice`).
+
+What this costs for one 512 x 512 x 135 CT: the acquisition plane copies 0
+bytes per arriving frame and reads its 262,144 values once for their range;
+a sagittal or coronal plane writes and uploads 1 kB (one row of 512 values)
+per arriving frame, where it gathered and uploaded the whole 512 x 135 slice
+at each update before.
+
 ## A volume slice sits on a slice centre
 
 A planar viewport moves through a volume in whole slices: steps of the spacing
@@ -1937,7 +1976,11 @@ picture can have changed, at most once per animation frame:
   plane, a slab such as a MIP over the whole volume, on the sampled slice
   paths and on the slab path of the 3D texture) draws at the ticks of one
   clock that every loading picture shares, every 100 ms, so the layers and
-  the panes that a load changes draw in the same animation frame;
+  the panes that a load changes draw in the same animation frame; the first
+  delivery that gives such a pane something to show is drawn at the next
+  animation frame, and the ticks pace only the updates after it (the
+  sagittal and coronal panes of OHIF's TMTV layout showed their first rows up
+  to 100 ms after they arrived);
 - an overlay that draws nothing yet (its frames hold no data of its plane)
   draws no frame until it has something to draw;
 - the end of the load draws at once.
@@ -3790,7 +3833,24 @@ is one, see [Functions of the core package](./3-api-map.md#functions-of-the-core
   with the load of another), and among instances with none to one that
   exists before one to make. `workerRegistry[name].instances` holds `null`
   for an instance that does not exist. 5.x made every instance at
-  registration and gave a tie to the first instance.
+  registration and gave a tie to the first instance. The option
+  `createInstances` of `registerWorker` says when the instances are made:
+  `'onFirstTask'` (the default), `'atRegistration'` (as 5.x), or
+  `'whenIdle'`, at the first idle period of the main thread after the
+  registration, so that they start before their first task without adding
+  to the start-up of the page; a task that comes first makes the instance
+  it needs at once. The decode workers of the DICOM image loader are made
+  when idle: made at the first image, they started with the first frames of
+  the first load, which reached the cache about 80 ms later than on 5.18.3
+  in OHIF's TMTV mode.
+
+  ```ts
+  getWebWorkerManager().registerWorker('myDecoder', () => new Worker(url), {
+    maxWorkerInstances: 3,
+    createInstances: 'whenIdle',
+  });
+  ```
+
 - **A scroll of a stack with a labelmap no longer checks every labelmap
   image.** The labelmap images of each image of the stack come from a map
   that is made once for the image ids of the stack and of the labelmap, and

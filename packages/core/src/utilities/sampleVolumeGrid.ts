@@ -124,14 +124,51 @@ function getVolumeArray(
 }
 
 /**
+ * Returns the typed array that holds the voxels of one frame (one k slice)
+ * of a single component volume as the volume holds them, with no copy, or
+ * undefined when the volume holds them in no such array. A frame has such an
+ * array when the volume keeps all its voxels in one typed array (the frame is
+ * a part of it; `volumeArray` is that array when the caller has it already),
+ * or when the voxel manager gives a view of the frame (`_getSliceView`) of the
+ * frame size. The array is only read.
+ */
+function getFrameArray(
+  volume: SampledVolume,
+  sliceIndex: number,
+  volumeArray?: PixelDataTypedArray
+): PixelDataTypedArray | undefined {
+  const [columns, rows, slices] = volume.dimensions;
+  const sliceSize = columns * rows;
+
+  if (!(sliceIndex >= 0 && sliceIndex < slices)) {
+    return;
+  }
+
+  const wholeArray =
+    volumeArray ?? getVolumeArray(volume, columns * rows * slices);
+
+  if (wholeArray) {
+    return wholeArray.subarray(
+      sliceIndex * sliceSize,
+      (sliceIndex + 1) * sliceSize
+    ) as PixelDataTypedArray;
+  }
+
+  const scalarData = (volume.voxelManager as SliceAccess)._getSliceView?.(
+    sliceIndex
+  );
+
+  return scalarData?.length === sliceSize ? scalarData : undefined;
+}
+
+/**
  * Returns the typed array that holds the voxels of one slice of the volume,
  * or null when the slice has to be read one voxel at a time. A slice has such
- * an array when the volume keeps all its voxels in one typed array, or when
- * the voxel manager gives an unscaled view of the slice (_getSliceView) of the
- * slice size. A slice that the voxel manager holds no voxels for
- * (`_getSliceReader` gives null) reads as a slice of zeros
- * (`getEmptySlice`). Any other slice gives null and is read through its
- * reader (`getSliceReader`). The answer is kept for the next read.
+ * an array when the volume holds the frame in one (`getFrameArray`). A slice
+ * that the voxel manager holds no voxels for (`_getSliceReader` gives null)
+ * reads as a slice of zeros (`getEmptySlice`). Any other slice gives null and
+ * is read through its reader (`getSliceReader`). The answer is kept for the
+ * next read.
  */
 function getSliceArray(
   context: GridSamplingContext,
@@ -144,22 +181,19 @@ function getSliceArray(
   }
 
   const { volume, volumeArray, columns, rows } = context;
-  const sliceSize = columns * rows;
   let sliceArray: SliceArray = null;
 
   if (volumeArray) {
-    sliceArray = volumeArray.subarray(
-      sliceIndex * sliceSize,
-      (sliceIndex + 1) * sliceSize
-    ) as PixelDataTypedArray;
+    sliceArray = getFrameArray(volume, sliceIndex, volumeArray) ?? null;
   } else {
-    const voxelManager = volume.voxelManager as SliceAccess;
-    const scalarData = voxelManager._getSliceView?.(sliceIndex);
+    sliceArray = getFrameArray(volume, sliceIndex) ?? null;
 
-    if (scalarData?.length === sliceSize) {
-      sliceArray = scalarData;
-    } else if (voxelManager._getSliceReader?.(sliceIndex) === null) {
-      sliceArray = getEmptySlice(sliceSize);
+    if (
+      !sliceArray &&
+      (volume.voxelManager as SliceAccess)._getSliceReader?.(sliceIndex) ===
+        null
+    ) {
+      sliceArray = getEmptySlice(columns * rows);
     }
   }
 
@@ -904,6 +938,94 @@ function sampleComponentGrid(
   return { min, max };
 }
 
+/** The context of one sample of a grid with these options. */
+function createGridSamplingContext(
+  options: SampleVolumeGridOptions
+): GridSamplingContext {
+  const {
+    volume,
+    interpolationType = InterpolationType.NEAREST,
+    outsideValue = 0,
+    valueRange,
+    round = false,
+  } = options;
+  const [columns, rows, slices] = volume.dimensions;
+
+  return {
+    volume,
+    volumeArray: getVolumeArray(volume, columns * rows * slices),
+    sliceArrays: new Array<SliceArray | undefined>(slices),
+    sliceReaders: new Array<SliceReader | undefined>(slices),
+    columns,
+    rows,
+    slices,
+    useNearest: interpolationType === InterpolationType.NEAREST,
+    outsideValue,
+    limitValues: !!valueRange,
+    rangeMin: valueRange ? valueRange.min : 0,
+    rangeMax: valueRange ? valueRange.max : 0,
+    round,
+  };
+}
+
+/**
+ * Samples a grid that is a straight cut of a single component volume (see
+ * `sampleStraightCut`): a copy of one voxel per grid point, row by row, a
+ * `set` of a run where a row of the grid is a run of a frame, or the mix of
+ * the two planes of voxels around the cut. Gives the values of
+ * `sampleVolumeGrid` for the same options. With `rowRanges`, each row is
+ * sampled on its own and its lowest and highest value are written there.
+ * Returns undefined, with the pixels not all written, for any grid that is
+ * not such a cut or that reads a frame held in no array: such a grid needs
+ * `sampleVolumeGrid`.
+ */
+function sampleStraightCutGrid(
+  options: SampleVolumeGridOptions,
+  rowRanges?: { min: Float64Array; max: Float64Array }
+): SampledValueRange | undefined {
+  if ((options.numberOfComponents ?? 1) !== 1) {
+    return;
+  }
+
+  const context = createGridSamplingContext(options);
+
+  if (!rowRanges) {
+    return sampleStraightCut(context, options);
+  }
+
+  const { width, height, startIndex, rowStep } = options;
+  const pixelData = options.pixelData as PixelDataTypedArray;
+  let min = Infinity;
+  let max = -Infinity;
+
+  for (let row = 0; row < height; row++) {
+    const range = sampleStraightCut(context, {
+      ...options,
+      pixelData: pixelData.subarray(
+        row * width,
+        (row + 1) * width
+      ) as PixelDataTypedArray,
+      height: 1,
+      startIndex: [
+        startIndex[0] + row * rowStep[0],
+        startIndex[1] + row * rowStep[1],
+        startIndex[2] + row * rowStep[2],
+      ],
+    });
+
+    if (!range) {
+      return;
+    }
+
+    rowRanges.min[row] = range.min;
+    rowRanges.max[row] = range.max;
+    min = range.min < min ? range.min : min;
+    max = range.max > max ? range.max : max;
+  }
+
+  return { min, max };
+}
+
 /**
  * Samples a volume on a regular grid of points and writes one value per grid
  * point into pixelData. The grid is given in continuous voxel indices: a first
@@ -933,38 +1055,17 @@ function sampleComponentGrid(
  */
 function sampleVolumeGrid(options: SampleVolumeGridOptions): SampledValueRange {
   const {
-    volume,
     pixelData,
     width,
     height,
     startIndex,
     columnStep,
     rowStep,
-    interpolationType = InterpolationType.NEAREST,
-    outsideValue = 0,
-    valueRange,
-    round = false,
     numberOfComponents = 1,
   } = options;
-  const [columns, rows, slices] = volume.dimensions;
-  const useNearest = interpolationType === InterpolationType.NEAREST;
-  const limitValues = !!valueRange;
-  const finishValues = limitValues || round;
-  const context: GridSamplingContext = {
-    volume,
-    volumeArray: getVolumeArray(volume, columns * rows * slices),
-    sliceArrays: new Array<SliceArray | undefined>(slices),
-    sliceReaders: new Array<SliceReader | undefined>(slices),
-    columns,
-    rows,
-    slices,
-    useNearest,
-    outsideValue,
-    limitValues,
-    rangeMin: valueRange ? valueRange.min : 0,
-    rangeMax: valueRange ? valueRange.max : 0,
-    round,
-  };
+  const context = createGridSamplingContext(options);
+  const { columns, rows, slices, useNearest, outsideValue } = context;
+  const finishValues = context.limitValues || context.round;
 
   if (numberOfComponents > 1) {
     return sampleComponentGrid(context, options, numberOfComponents);
@@ -1179,5 +1280,11 @@ function sampleVolumeGrid(options: SampleVolumeGridOptions): SampledValueRange {
   return { min, max };
 }
 
-export { sampleVolumeGrid as default, sampleVolumeGrid, isIndexInsideVolume };
+export {
+  sampleVolumeGrid as default,
+  sampleVolumeGrid,
+  sampleStraightCutGrid,
+  getFrameArray,
+  isIndexInsideVolume,
+};
 export type { SampleVolumeGridOptions, SampledValueRange };

@@ -22,6 +22,23 @@ export type WebWorkerManagerOptions = {
   overwrite?: boolean;
 
   /**
+   * When the instances are made:
+   * - `'onFirstTask'`: an instance is made when a task needs it (no instance
+   *   is idle), so a worker that is registered and never used costs nothing;
+   * - `'atRegistration'`: every instance is made at registration;
+   * - `'whenIdle'`: every instance is made at the first idle period of the
+   *   main thread after registration (`requestIdleCallback`), so each loads
+   *   its script before the first task without adding to the start-up work;
+   *   a task that comes first makes the instance it needs at once, as with
+   *   `'onFirstTask'`.
+   * The decode workers of the DICOM image loader are made when idle: their
+   * first task is the first image of a load, which would otherwise wait for
+   * a worker to start.
+   * @default 'onFirstTask'
+   */
+  createInstances?: 'onFirstTask' | 'atRegistration' | 'whenIdle';
+
+  /**
    * Configuration for automatically terminating idle workers.
    */
   autoTerminateOnIdle?: {
@@ -42,6 +59,18 @@ type WebWorkerProperties = {
   processing?: boolean; // Indicates if the worker is currently processing a task
 };
 
+/**
+ * Calls back at the next idle period of the main thread, or after the
+ * current task where the browser has no `requestIdleCallback`.
+ */
+function whenIdle(callback: () => void): void {
+  if (typeof globalThis.requestIdleCallback === 'function') {
+    globalThis.requestIdleCallback(callback);
+  } else {
+    setTimeout(callback, 0);
+  }
+}
+
 class CentralizedWorkerManager {
   workerRegistry: Record<string, WebWorkerProperties> = {};
   workerPoolManager = new RequestPoolManager('webworker');
@@ -57,6 +86,7 @@ class CentralizedWorkerManager {
    * and in case there are 10 tasks that need to be executed, each will get assigned 5 tasks. An instance is created when
    * a task needs it (no instance is idle), not at registration, and again after it was terminated.
    * @param {boolean} [options.overwrite=false] - Whether to overwrite the worker if it's already registered.
+   * @param {string} [options.createInstances='onFirstTask'] - When the instances are made: 'onFirstTask', 'atRegistration' or 'whenIdle'.
    * @param {object} [options.autoTerminateOnIdle] - Configuration for automatically terminating idle workers.
    * @param {boolean} [options.autoTerminateOnIdle.enabled=false] - Whether to enable auto-termination.
    * @param {number} [options.autoTerminateOnIdle.idleTimeThreshold=3000] - Idle time threshold in milliseconds.
@@ -69,6 +99,7 @@ class CentralizedWorkerManager {
     const {
       maxWorkerInstances = 1,
       overwrite = false,
+      createInstances = 'onFirstTask',
       autoTerminateOnIdle = {
         enabled: false,
         idleTimeThreshold: 3000, // 3 seconds
@@ -106,6 +137,33 @@ class CentralizedWorkerManager {
     workerProperties.workerFn = workerFn;
 
     this.workerRegistry[workerName] = workerProperties;
+
+    if (createInstances === 'atRegistration') {
+      this.createMissingInstances(workerProperties);
+    } else if (createInstances === 'whenIdle') {
+      whenIdle(() => {
+        if (this.workerRegistry[workerName] === workerProperties) {
+          this.createMissingInstances(workerProperties);
+        }
+      });
+    }
+  }
+
+  /** Makes every instance of a worker that does not exist. */
+  private createMissingInstances(workerProperties: WebWorkerProperties) {
+    workerProperties.instances.forEach((instance, index) => {
+      if (instance === null) {
+        this.createInstance(workerProperties, index);
+      }
+    });
+  }
+
+  /** Makes the instance of a worker at an index. */
+  private createInstance(workerProperties: WebWorkerProperties, index: number) {
+    const worker = workerProperties.workerFn();
+
+    workerProperties.instances[index] = Comlink.wrap(worker);
+    workerProperties.nativeWorkers[index] = worker;
   }
 
   /**
@@ -144,10 +202,7 @@ class CentralizedWorkerManager {
     }
 
     if (instances[minLoadIndex] === null) {
-      const worker = workerProperties.workerFn();
-
-      instances[minLoadIndex] = Comlink.wrap(worker);
-      workerProperties.nativeWorkers[minLoadIndex] = worker;
+      this.createInstance(workerProperties, minLoadIndex);
     }
 
     loadCounters[minLoadIndex] += 1;

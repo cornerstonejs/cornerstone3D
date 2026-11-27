@@ -146,9 +146,10 @@ describe('a slab sampled in steps', () => {
     }
   );
 
-  it('shows the plain slice of the plane at once, sampled without a slab', () => {
+  it('shows the plain slice of the plane at once, gathered without a slab', () => {
     const volume = createVolume();
     const spy = jest.spyOn(sampleVolumeSliceModule, 'sampleVolumeSlice');
+    const gather = jest.spyOn(sampleVolumeSliceModule, 'gatherVolumeSlice');
     const sampler = new PlanarSliceSampler({ sampleSlabsInSteps: true });
     const inputs = slabInputs(
       BlendModes.MAXIMUM_INTENSITY_BLEND,
@@ -159,17 +160,20 @@ describe('a slab sampled in steps', () => {
     });
 
     spy.mockClear();
+    gather.mockClear();
 
     const thin = sampler.sample(volume, CAMERAS.axial, inputs);
 
-    expect(spy).toHaveBeenCalledTimes(1);
-    expect(spy.mock.calls[0][0].slab).toBeUndefined();
+    expect(spy).not.toHaveBeenCalled();
+    expect(gather).toHaveBeenCalledTimes(1);
+    expect(gather.mock.calls[0][0].slab).toBeUndefined();
     expect(Array.from(thin.pixelData)).toEqual(Array.from(plain.pixelData));
   });
 
   it('scrolls through a thick slab with one plain sample per step and keeps only the steps of the last plane', () => {
     const volume = createVolume();
     const spy = jest.spyOn(sampleVolumeSliceModule, 'sampleVolumeSlice');
+    const gather = jest.spyOn(sampleVolumeSliceModule, 'gatherVolumeSlice');
     const sampler = new PlanarSliceSampler({ sampleSlabsInSteps: true });
     const inputs = slabInputs(
       BlendModes.MAXIMUM_INTENSITY_BLEND,
@@ -178,6 +182,7 @@ describe('a slab sampled in steps', () => {
 
     for (let z = 20; z < 30; z++) {
       spy.mockClear();
+      gather.mockClear();
       sampler.sample(
         volume,
         { ...CAMERAS.axial, focalPoint: [63.5, 47.5, z] },
@@ -185,8 +190,11 @@ describe('a slab sampled in steps', () => {
       );
       sampler.continueSampling(volume, -Infinity);
 
+      expect(
+        gather.mock.calls.filter(([options]) => !options.slab).length
+      ).toBe(1);
       expect(spy.mock.calls.filter(([options]) => !options.slab).length).toBe(
-        1
+        0
       );
       expect(
         spy.mock.calls.filter(([options]) => options.slab).length
