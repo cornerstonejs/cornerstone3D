@@ -28,6 +28,7 @@ import {
   hasNonIntegerScaling,
 } from './shared/scaling/getScalingMode';
 import isColorImage from './shared/isColorImage';
+import normalizeStoredPixelData from './shared/normalizeStoredPixelData';
 
 const imageUtils = {
   bilinear,
@@ -48,20 +49,7 @@ export function postProcessDecodedPixels(
   start,
   decodeConfig
 ) {
-  const shouldShift =
-    imageFrame.pixelRepresentation !== undefined &&
-    imageFrame.pixelRepresentation === 1;
-
-  const shift =
-    shouldShift && imageFrame.bitsStored !== undefined
-      ? 32 - imageFrame.bitsStored
-      : undefined;
-
-  if (shouldShift && shift !== undefined) {
-    for (let i = 0; i < imageFrame.pixelData.length; i++) {
-      imageFrame.pixelData[i] = (imageFrame.pixelData[i] << shift) >> shift;
-    }
-  }
+  normalizeStoredPixelData(imageFrame);
 
   // Cache the pixelData reference quickly incase we want to set a targetBuffer _and_ scale.
   let pixelDataArray = imageFrame.pixelData;
