@@ -45,6 +45,12 @@ class Synchronizer {
   private _eventSource: eventSource;
   private _ignoreFiredEvents: boolean;
   private _sourceViewports: Array<Types.IViewportId>;
+  /**
+   * The element of each source viewport whose events the synchronizer
+   * listens to, by `renderingEngineId:viewportId`. A source that is not
+   * enabled yet has none until its ELEMENT_ENABLED.
+   */
+  private _sourceElements = new Map<string, HTMLDivElement>();
   private _targetViewports: Array<Types.IViewportId>;
   private _viewportOptions: Record<string, Record<string, unknown>> = {};
   /**
@@ -152,7 +158,9 @@ class Synchronizer {
   }
 
   /**
-   * Add a viewport to the list of targets and sources both.
+   * Add a viewport to the list of targets and sources both. A viewport that
+   * is not enabled yet is added too, and becomes a source when it is
+   * enabled (see `addSource`).
    * @param viewportInfo - The viewportId and its renderingEngineId to add to the list of targets and sources.
    */
   public add(viewportInfo: Types.IViewportId): void {
@@ -161,7 +169,14 @@ class Synchronizer {
   }
 
   /**
-   * Add a viewport to the list of sources (source ONLY)
+   * Add a viewport to the list of sources (source ONLY).
+   *
+   * The viewport is known by its rendering engine id and its viewport id, so
+   * it can be added before it is enabled, as an application names the panes
+   * of a group before they exist: the synchronizer then listens to its events
+   * from its ELEMENT_ENABLED on. A viewport that is disabled leaves the
+   * synchronizer, so one that is enabled again under the same id is added
+   * again, before or after that enable.
    * @param viewportInfo - The viewportId and its renderingEngineId to add to the list of targets and sources.
    */
   public addSource(viewportInfo: Types.IViewportId): void {
@@ -169,31 +184,9 @@ class Synchronizer {
       return;
     }
 
-    const { renderingEngineId, viewportId } = viewportInfo;
-
-    const viewport =
-      getRenderingEngine(renderingEngineId).getViewport(viewportId);
-
-    if (!viewport) {
-      cs3dLogger.warn(
-        `Synchronizer.addSource: No viewport for ${renderingEngineId} ${viewportId}`
-      );
-      return;
-    }
-
-    const eventSource =
-      this._eventSource === 'element' ? viewport.element : eventTarget;
-
-    eventSource.addEventListener(this._eventName, this._eventListener);
-
-    // Use a default source of 'element' if not provided just like we do for the main event.
-    this._auxiliaryEvents.forEach(({ name, source = 'element' }) => {
-      const target = source === 'element' ? viewport.element : eventTarget;
-      target.addEventListener(name, this._eventListener);
-    });
-
     this._sourceViewports.push(viewportInfo);
-    this._updateDisableHandlers();
+    this._listenToSource(viewportInfo);
+    this._updateElementHandlers();
   }
 
   /**
@@ -207,7 +200,7 @@ class Synchronizer {
     }
 
     this._targetViewports.push(viewportInfo);
-    this._updateDisableHandlers();
+    this._updateElementHandlers();
   }
 
   /**
@@ -254,24 +247,9 @@ class Synchronizer {
       return;
     }
 
-    const eventSource =
-      this._eventSource === 'element'
-        ? this.getViewportElement(viewportInfo)
-        : eventTarget;
-
     this._sourceViewports.splice(index, 1);
-
-    eventSource.removeEventListener(this._eventName, this._eventListener);
-
-    this._auxiliaryEvents.forEach(({ name, source = 'element' }) => {
-      const target =
-        source === 'element'
-          ? this.getViewportElement(viewportInfo)
-          : eventTarget;
-      target.removeEventListener(name, this._eventListener);
-    });
-
-    this._updateDisableHandlers();
+    this._stopListeningToSource(viewportInfo);
+    this._updateElementHandlers();
   }
 
   /**
@@ -288,7 +266,7 @@ class Synchronizer {
     }
 
     this._targetViewports.splice(index, 1);
-    this._updateDisableHandlers();
+    this._updateElementHandlers();
   }
 
   public hasSourceViewport(
@@ -410,6 +388,79 @@ class Synchronizer {
   }
 
   /**
+   * Listens to the events of a source viewport, on its element or on the
+   * global event target, when the viewport is enabled; a viewport that is
+   * not enabled yet gets its listeners at its ELEMENT_ENABLED.
+   */
+  private _listenToSource(viewportInfo: Types.IViewportId): void {
+    const { renderingEngineId, viewportId } = viewportInfo;
+    const viewport =
+      getRenderingEngine(renderingEngineId)?.getViewport(viewportId);
+
+    if (!viewport) {
+      return;
+    }
+
+    const { element } = viewport;
+    const eventSource = this._eventSource === 'element' ? element : eventTarget;
+
+    eventSource.addEventListener(this._eventName, this._eventListener);
+
+    this._auxiliaryEvents.forEach(({ name, source = 'element' }) => {
+      const target = source === 'element' ? element : eventTarget;
+      target.addEventListener(name, this._eventListener);
+    });
+
+    this._sourceElements.set(_getViewportKey(viewportInfo), element);
+  }
+
+  /**
+   * Removes the listeners of a source viewport from the element they were
+   * added to, which a disabled viewport no longer gives. A source that was
+   * never enabled has none.
+   */
+  private _stopListeningToSource(viewportInfo: Types.IViewportId): void {
+    const key = _getViewportKey(viewportInfo);
+    const element = this._sourceElements.get(key);
+
+    if (!element) {
+      return;
+    }
+
+    this._sourceElements.delete(key);
+
+    const eventSource = this._eventSource === 'element' ? element : eventTarget;
+
+    eventSource.removeEventListener(this._eventName, this._eventListener);
+
+    this._auxiliaryEvents.forEach(({ name, source = 'element' }) => {
+      const target = source === 'element' ? element : eventTarget;
+      target.removeEventListener(name, this._eventListener);
+    });
+  }
+
+  /**
+   * Listens to the events of a source viewport that was added before it was
+   * enabled, by the rendering engine id and the viewport id of the event.
+   */
+  private _onElementEnabled = (
+    evt: Types.EventTypes.ElementEnabledEvent
+  ): void => {
+    const { renderingEngineId, viewportId } = evt.detail;
+    const viewportInfo = { renderingEngineId, viewportId };
+
+    if (
+      !_containsViewport(this._sourceViewports, viewportInfo) ||
+      this._sourceElements.has(_getViewportKey(viewportInfo))
+    ) {
+      return;
+    }
+
+    this._listenToSource(viewportInfo);
+    this._updateElementHandlers();
+  };
+
+  /**
    * Takes the viewport of a disabled element out of the synchronizer, by the
    * rendering engine id and the viewport id of the event.
    */
@@ -422,12 +473,13 @@ class Synchronizer {
   };
 
   /**
-   * Listens to `ELEMENT_DISABLED` while the synchronizer has a viewport, with
-   * one function for the synchronizer, on the global event target where the
-   * rendering engine fires the event, so the listener is added once and goes
-   * with the last viewport.
+   * Listens to `ELEMENT_DISABLED` while the synchronizer has a viewport, and
+   * to `ELEMENT_ENABLED` while it has a source that is not enabled yet, each
+   * with one function for the synchronizer, on the global event target where
+   * the rendering engine fires the events, so each listener is added once
+   * and goes with the last viewport that needs it.
    */
-  private _updateDisableHandlers(): void {
+  private _updateElementHandlers(): void {
     if (this._sourceViewports.length || this._targetViewports.length) {
       eventTarget.addEventListener(
         Enums.Events.ELEMENT_DISABLED,
@@ -439,20 +491,27 @@ class Synchronizer {
         this._onElementDisabled
       );
     }
-  }
 
-  private getViewportElement(viewportInfo: Types.IViewportId): HTMLDivElement {
-    const { renderingEngineId, viewportId } = viewportInfo;
-    const renderingEngine = getRenderingEngine(renderingEngineId);
-    if (!renderingEngine) {
-      return null;
+    if (this._sourceViewports.length > this._sourceElements.size) {
+      eventTarget.addEventListener(
+        Enums.Events.ELEMENT_ENABLED,
+        this._onElementEnabled
+      );
+    } else {
+      eventTarget.removeEventListener(
+        Enums.Events.ELEMENT_ENABLED,
+        this._onElementEnabled
+      );
     }
-    const viewport = renderingEngine.getViewport(viewportId);
-    if (!viewport) {
-      return null;
-    }
-    return viewport.element;
   }
+}
+
+/** The key of a viewport in `_sourceElements`. */
+function _getViewportKey({
+  renderingEngineId,
+  viewportId,
+}: Types.IViewportId): string {
+  return `${renderingEngineId}:${viewportId}`;
 }
 
 function _getViewportIndex(

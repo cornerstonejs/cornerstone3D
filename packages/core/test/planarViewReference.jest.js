@@ -1437,7 +1437,7 @@ describe('PlanarViewReferenceController', () => {
       expect(harness.controller.getCurrentImageId()).toBe(volume.imageIds[2]);
     });
 
-    it('reorients to a new viewPlaneNormal/viewUp supplied directly on the reference', () => {
+    it('reorients to a new viewPlaneNormal/viewUp supplied directly on the reference, at the point of the reference', () => {
       const { harness, volume } = createHarness();
 
       harness.controller.setViewReference({
@@ -1446,6 +1446,7 @@ describe('PlanarViewReferenceController', () => {
         viewPlaneNormal: [1, 0, 0],
         viewUp: [0, 0, 1],
         sliceIndex: 1,
+        cameraFocalPoint: [0, 0, 1],
       });
 
       const patch = harness.setViewState.mock.calls[0][0];
@@ -1458,6 +1459,20 @@ describe('PlanarViewReferenceController', () => {
         kind: 'volumePoint',
         sliceWorldPoint: [0, 0, 1],
       });
+    });
+
+    it('moves nothing for a slice index in another plane without a point, which is no slice of the view (row 324)', () => {
+      const { harness, volume } = createHarness();
+
+      harness.controller.setViewReference({
+        FrameOfReferenceUID: volume.metadata.FrameOfReferenceUID,
+        volumeId: volume.volumeId,
+        viewPlaneNormal: [1, 0, 0],
+        viewUp: [0, 0, 1],
+        sliceIndex: 1,
+      });
+
+      expect(harness.setViewState).not.toHaveBeenCalled();
     });
 
     it('flips the target sliceIndex when the requested normal is the exact opposite of the current one', () => {

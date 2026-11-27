@@ -108,6 +108,11 @@ person, and **Nothing** where the code stays the same and its result changes.
 | While a volume loads, a planar viewport on the CPU draws again only when a frame that its plane reads changed, at the next animation frame, as on the GPU; a copy into another frame draws nothing                                                                                                                                                                                                                                                                                                                          | Nothing to change                                                                                                                            | Nothing                                                                               | [One event](./2-rendering-changes.md#one-image_volume_modified-for-an-image-and-its-copies)                                                                     |
 | `cache.setPartialImage` never replaces an image by one of a worse quality (a copy of another frame by none of the data of the frame) and answers whether it took the image                                                                                                                                                                                                                                                                                                                                                  | Read the answer in place of a check of the qualities before the call                                                                         | Nothing                                                                               | [Smaller changes](./2-rendering-changes.md#smaller-changes)                                                                                                     |
 | `synchronizers.createStackImageSynchronizer`, an alias of `createImageSliceSynchronizer`, is gone                                                                                                                                                                                                                                                                                                                                                                                                                           | Rename                                                                                                                                       | Rewrites                                                                              | [API map](./3-api-map.md#synchronizer-names)                                                                                                                    |
+| A 3D mount fires `CAMERA_MODIFIED` once, before `DISPLAY_SETS_CHANGED`, with the camera it opens with as `camera` and `previousCamera`, at the first mount and at a mount whose fit changed the camera on display, as a planar mount does; so a 3D pane takes the camera of its camera position group at its mount                                                                                                                                                                                                          |
+| A pane alone in a camera position group, or the one pane of the group that shows data, is the group for a pane that joins it: the joining pane takes its scale and centre (and a 3D pane its camera) at its mount                                                                                                                                                                                                                                                                                                           |
+| `Synchronizer.add` (and `addSource`) of a viewport that is not enabled yet makes it a source when it is enabled; it warned `No viewport` and left it out of the sources                                                                                                                                                                                                                                                                                                                                                     |
+| The set up of `CrosshairsTool` (active, passive, enabled, a mount, an added viewport) and `setToolCenter` write no viewport whose slice holds the centre, so a pane of a coarse grid between two of its slices keeps its point and the panes of its camera position group keep their slices                                                                                                                                                                                                                                 |
+| A view reference with a slice index and another plane than the view, and no point, is no slice of the view: `isReferenceViewable` refuses it with every option and `setViewReference` moves nothing; it turned the view and showed another slice. With a point, the point decides, as before                                                                                                                                                                                                                                |
 
 ## What the codemod cannot do
 
@@ -428,14 +433,42 @@ application wants.
     ```
 
     A pane joins a group at its mount only when it is in the group then:
-    add it to the synchronizer after `setViewports` (or `enableElement`) and
-    before its `setDisplaySets`; `Synchronizer.add` of a viewport that is not
-    enabled yet leaves it out of the sources. A 3D pane of a group takes the
-    camera of a 3D source (the direction, the view up, the focal point and
-    the height of the view at the focal point), where 6.0.0-beta.2 gave it
-    the view reference and the zoom against its own fit; a 3D and a planar
-    pane take the plane, the centre and the scale of each other. A 3D mount
-    fires no camera event, so a 3D pane takes the view of its group at the
-    next change of a pane of the group.
+    add it to the synchronizer before its `setDisplaySets`, before or after
+    it is enabled (a viewport added before its enable becomes a source at
+    its enable). A 3D pane of a group takes the camera of a 3D source (the
+    direction, the view up, the focal point and the height of the view at
+    the focal point), where 6.0.0-beta.2 gave it the view reference and the
+    zoom against its own fit; a 3D and a planar pane take the plane, the
+    centre and the scale of each other. A 3D mount fires a camera event as a
+    planar mount does, so a 3D pane takes the camera of its group at its
+    mount; a pane that was alone in the group is the group for the pane
+    that joins it.
+
+18. **A slice index of another plane needs a point.** A view reference
+    with a `sliceIndex` and a `viewPlaneNormal` (or a plane restriction) of
+    another plane than the view, and no `cameraFocalPoint`, is refused by
+    `isReferenceViewable` and moves nothing with `setViewReference`; in
+    6.0.0-beta.2 it turned the view and showed the slice of that index
+    counted in the slices of the old view. A reference from
+    `getViewReference()` has its focal point and is not concerned. Code that
+    builds such a reference from a slice index gives it the point of that
+    slice:
+
+    ```ts
+    // Before
+    viewport.setViewReference({
+      FrameOfReferenceUID,
+      volumeId,
+      viewPlaneNormal: [1, 0, 0],
+      sliceIndex: 40,
+    });
+
+    // After
+    const grid = utilities.getVolumeSliceGrid({
+      volumeId,
+      orientation: Enums.OrientationAxis.SAGITTAL,
+    });
+    viewport.setViewReference(grid.getViewReference(40));
+    ```
 
     See [Tools on the next viewports](./2-rendering-changes.md#tools-on-the-next-viewports).

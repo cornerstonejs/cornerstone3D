@@ -888,6 +888,14 @@ class PlanarViewReferenceController {
     return index;
   }
 
+  /**
+   * Turns a volume binding to the plane of a reference and moves it to the
+   * slice of the reference. A reference with a slice index in another plane
+   * than the view and no point moves nothing: its slice index counts in the
+   * slices of its own plane, so it is no slice of this view, and
+   * `isReferenceViewable(ref, { withNavigation: true, withOrientation: true })`
+   * refuses it too. With a point, the point decides.
+   */
   private applyVolumeViewReference(
     referenceContext: PlanarReferenceContext,
     viewRef: ViewReference
@@ -912,6 +920,18 @@ class PlanarViewReferenceController {
       refViewPlaneNormal &&
       !this.areNormalsEqual(currentViewPlaneNormal, refViewPlaneNormal) &&
       !this.areNormalsOpposite(currentViewPlaneNormal, refViewPlaneNormal);
+
+    if (
+      shouldReorient &&
+      viewRef.sliceIndex !== undefined &&
+      !isViewReferenceViewable(viewRef, this.getReferenceViewContexts([]), {
+        withNavigation: true,
+        withOrientation: true,
+      })
+    ) {
+      return false;
+    }
+
     const effectiveViewPlaneNormal =
       refViewPlaneNormal ?? currentViewPlaneNormal;
     const isOppositeNormal =

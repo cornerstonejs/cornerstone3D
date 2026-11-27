@@ -193,6 +193,38 @@ function countCameraEvents(viewports) {
   };
 }
 
+/**
+ * Counts the IMAGE_RENDERED events of viewports from now on, and gives the
+ * counts by viewport id at the call of the function it returns, which
+ * removes the listeners.
+ */
+function countFrames(viewports) {
+  const counts = Object.fromEntries(viewports.map(({ id }) => [id, 0]));
+  const removers = viewports.map((viewport) => {
+    const listener = () => {
+      counts[viewport.id] += 1;
+    };
+
+    viewport.element.addEventListener(Events.IMAGE_RENDERED, listener);
+
+    return () =>
+      viewport.element.removeEventListener(Events.IMAGE_RENDERED, listener);
+  });
+
+  return () => {
+    removers.forEach((remove) => remove());
+
+    return { ...counts };
+  };
+}
+
+/** Waits for a number of animation frames. */
+async function waitFrames(count) {
+  for (let frame = 0; frame < count; frame++) {
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+  }
+}
+
 /** Renders every viewport once and waits for their frames. */
 function renderAll(viewports) {
   return Promise.all(viewports.map((viewport) => renderAndWait(viewport)));
@@ -346,7 +378,7 @@ describe('The camera position synchronizer with 3D viewports (row 307) -- ', () 
     expectSame3DCamera(coarse, fine);
   });
 
-  it('writes no pane of the group at the mount of a 3D view that joins it, and gives it the camera of the group at the next change', async function () {
+  it('gives a 3D view that joins a group of one placed 3D view the camera of the group at its mount, writes no pane of the group, and draws the mount in as many frames (row 314)', async function () {
     const fine = await show3D(
       renderingEngine,
       'fine3D',
@@ -356,6 +388,7 @@ describe('The camera position synchronizer with 3D viewports (row 307) -- ', () 
 
     fine.setZoom(2);
     fine.setPan([15, 8]);
+    fine.setViewState(turnedAboutY(fine, 25));
     await renderAll([fine]);
 
     const fineCamera = cameraOf(fine);
@@ -364,23 +397,59 @@ describe('The camera position synchronizer with 3D viewports (row 307) -- ', () 
 
     synchronizer.add({ renderingEngineId, viewportId: coarse.id });
 
-    const events = countCameraEvents([fine]);
+    const events = countCameraEvents([fine, coarse]);
+    const frames = countFrames([fine, coarse]);
 
     await mount3D(coarse, coarseSeries);
-    await renderAll([fine, coarse]);
+    await waitFrames(4);
     events.stop();
 
-    expect(events.counts()).toEqual({ [fine.id]: 0 });
+    expect(events.counts()).toEqual({ [fine.id]: 0, [coarse.id]: 2 });
+    expect(frames()).toEqual({ [fine.id]: 0, [coarse.id]: 1 });
     expectPointsClose(cameraOf(fine).focalPoint, fineCamera.focalPoint, 6);
+    expectPointsClose(cameraOf(fine).position, fineCamera.position, 4);
     expect(cameraOf(fine).parallelScale).toBeCloseTo(
       fineCamera.parallelScale,
       6
     );
+    expectSame3DCamera(coarse, fine);
 
     await changeOnce(fine, [fine, coarse], (viewport) =>
       viewport.setPan([10, 4])
     );
     expectSame3DCamera(coarse, fine);
+  });
+
+  it('gives a 3D view that joins a group of placed 3D views in step the camera of the group at its mount', async function () {
+    const fine = await show3D(
+      renderingEngine,
+      'fine3D',
+      await seriesOf('fine')
+    );
+    const other = await show3D(
+      renderingEngine,
+      'other3D',
+      await seriesOf('fine')
+    );
+    const synchronizer = synchronize([fine, other]);
+
+    await changeOnce(fine, [fine, other], (viewport) =>
+      viewport.setViewState(turnedAboutY(viewport, -35))
+    );
+
+    const coarse = enable3D(renderingEngine, 'coarse3D');
+
+    synchronizer.add({ renderingEngineId, viewportId: coarse.id });
+
+    const events = countCameraEvents([fine, other]);
+
+    await mount3D(coarse, await seriesOf('coarse'));
+    await renderAll([fine, other, coarse]);
+    events.stop();
+
+    expect(events.counts()).toEqual({ [fine.id]: 0, [other.id]: 0 });
+    expectSame3DCamera(coarse, fine);
+    expectSame3DCamera(other, fine);
   });
 
   it('gives a 3D view in a group with a planar view the plane, the centre and the scale of the planar view, and no slice', async function () {

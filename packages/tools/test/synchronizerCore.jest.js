@@ -943,6 +943,73 @@ describe('cameraSyncCallback', () => {
     });
   });
 
+  it('gives a pane that joins a group of one placed pane, which no event put in step, the scale and the centre of that pane at its mount, and lets it drive a group of several placed panes none of which is in step', () => {
+    const placedCamera = makeCamera({
+      focalPoint: [4, 5, 6.2],
+      parallelScale: 50,
+    });
+    const sourceCamera = makeCamera({
+      focalPoint: [0, 0, 2],
+      parallelScale: 100,
+    });
+    const mount = {
+      detail: { camera: sourceCamera, previousCamera: { ...sourceCamera } },
+    };
+    const placed = makePlanarViewport({
+      camera: placedCamera,
+      slices: { first: 0, step: 1, count: 10, index: 6 },
+    });
+    const source = makePlanarViewport({
+      camera: sourceCamera,
+      slices: { first: 0, step: 1, count: 10, index: 2 },
+    });
+
+    cameraSyncCallback(
+      makeGroup({ group: placed, source }, [GROUP, SOURCE]),
+      SOURCE,
+      GROUP,
+      mount
+    );
+
+    expect(placed.setViewState).not.toHaveBeenCalled();
+    expect(source.setViewState).toHaveBeenCalledTimes(1);
+    expect(source.setViewState).toHaveBeenCalledWith({
+      anchorWorld: [4, 5, 2],
+      anchorCanvas: [0.5, 0.5],
+      scale: [2, 2],
+      scaleMode: 'fit',
+      displayArea: undefined,
+    });
+
+    const placedPanes = [placedCamera, makeCamera({ parallelScale: 70 })].map(
+      (camera) =>
+        makePlanarViewport({
+          camera,
+          slices: { first: 0, step: 1, count: 10, index: 6 },
+        })
+    );
+    const driver = makePlanarViewport({
+      camera: sourceCamera,
+      slices: { first: 0, step: 1, count: 10, index: 2 },
+    });
+    const synchronizer = makeGroup(
+      { group: placedPanes[0], target: placedPanes[1], source: driver },
+      [GROUP, TARGET, SOURCE]
+    );
+
+    const driverMount = {
+      detail: { camera: sourceCamera, previousCamera: { ...sourceCamera } },
+    };
+
+    cameraSyncCallback(synchronizer, SOURCE, GROUP, driverMount);
+    cameraSyncCallback(synchronizer, SOURCE, TARGET, driverMount);
+
+    expect(driver.setViewState).not.toHaveBeenCalled();
+    placedPanes.forEach((pane) =>
+      expect(pane.setViewState).toHaveBeenCalledTimes(1)
+    );
+  });
+
   it('turns a volume target of another plane through a view reference of the plane and the point of the source, and gives a stack of another plane nothing', () => {
     const camera = makeCamera({
       focalPoint: [1, 2, 3],

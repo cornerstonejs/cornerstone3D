@@ -643,7 +643,11 @@ function getPane(id: Types.IViewportId): Pane | undefined {
  * The pane of the group whose scale, centre and view up a source takes when
  * its camera event changed no camera: the first target of the synchronizer, in the order the
  * viewports were added, that is in step with the group, shows data and has
- * the frame of reference of the source. Undefined when there is none: then
+ * the frame of reference of the source. When no such pane is in step and one
+ * other pane alone shows data of that frame of reference, the group is that
+ * pane: a pane that was placed while it was alone in the group (no camera
+ * event of it reached a target), or mounted before it was added. Undefined
+ * when there is none, or several placed panes none of which is in step: then
  * the source drives the group.
  */
 function getGroupPane(
@@ -653,20 +657,29 @@ function getGroupPane(
   const inStep = panesInStep.get(synchronizer);
   const sourceKey = paneKey(source.id);
   const frameOfReferenceUID = source.viewport.getFrameOfReferenceUID();
+  const placedPanes: Pane[] = [];
 
   for (const id of synchronizer.getTargetViewports()) {
     const key = paneKey(id);
 
-    if (key === sourceKey || !inStep?.has(key)) {
+    if (key === sourceKey) {
       continue;
     }
 
     const pane = getPane(id);
 
-    if (pane?.viewport.getFrameOfReferenceUID() === frameOfReferenceUID) {
+    if (pane?.viewport.getFrameOfReferenceUID() !== frameOfReferenceUID) {
+      continue;
+    }
+
+    if (inStep?.has(key)) {
       return pane;
     }
+
+    placedPanes.push(pane);
   }
+
+  return placedPanes.length === 1 ? placedPanes[0] : undefined;
 }
 
 /**
@@ -690,9 +703,10 @@ function getGroupPane(
  * group instead, from the first pane of the group in step with it, and
  * keeps its slice. A pane that joins a group at its mount so takes the scale
  * and the centre of the group; the slice it opens on is the one of its
- * mount, and a move of it along its normal then moves the group. When no
- * pane of the group is in step yet, the source drives the scale and the
- * centre of the group. The slice of a pane of a coarse grid that was not
+ * mount, and a move of it along its normal then moves the group. A pane
+ * that was placed alone in the group is the group for a pane that joins it
+ * (`getGroupPane`). When no pane of the group is in step yet and several
+ * show data, the source drives the scale and the centre of the group. The slice of a pane of a coarse grid that was not
  * written can lie up to half a slice of it from the position of a pane of a
  * fine grid, so a slice taken from it at a resize would move the fine pane.
  */
@@ -727,6 +741,7 @@ function syncPanes(
     if (group) {
       if (paneKey(group.id) === paneKey(targetId)) {
         followView(group, source, false);
+        setInStep(synchronizer, group.id);
         setInStep(synchronizer, sourceId);
       }
 

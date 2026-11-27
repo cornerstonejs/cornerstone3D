@@ -395,6 +395,31 @@ function isPlaneCompatible(
 }
 
 /**
+ * Whether a reference names a plane that is not a plane of the view: its
+ * view plane normal is not along the view plane normal, or, without one, an
+ * in-plane vector of its plane restriction is not across it.
+ */
+function isOfOtherPlane(
+  viewRef: ViewReference,
+  viewPlaneNormal: Point3
+): boolean {
+  if (viewRef.viewPlaneNormal) {
+    return !isAlongViewPlaneNormal(viewRef.viewPlaneNormal, viewPlaneNormal);
+  }
+
+  const { inPlaneVector1, inPlaneVector2 } = viewRef.planeRestriction ?? {};
+
+  return [inPlaneVector1, inPlaneVector2].some(
+    (vector) =>
+      vector &&
+      !isEqual(
+        0,
+        vec3.dot(viewPlaneNormal as unknown as vec3, vector as unknown as vec3)
+      )
+  );
+}
+
+/**
  * Whether a normal is the view plane normal or its opposite, so that a
  * reference with that normal lies in the planes of the view.
  */
@@ -625,9 +650,12 @@ function isDimensionGroupCompatible(
 /**
  * Whether the slice index of a reference is the slice of the view, or one
  * that navigation reaches. The slice index of a reference in another plane
- * counts in the slices of that plane: with orientation and navigation the
- * view turns to that plane and goes to that slice, so the index is not
- * checked against the slices of the view, as on the legacy volume viewport.
+ * (its view plane normal, or the plane of its plane restriction) counts in
+ * the slices of that plane, which the view does not have, so it is not a
+ * slice of the view: with orientation and navigation such a reference is
+ * viewable only by its point (its focal point or the point of its plane
+ * restriction), where the view turns and goes, and `setViewReference`
+ * moves nothing for one without a point.
  */
 function isSliceIndexCompatible(
   viewRef: ViewReference,
@@ -646,11 +674,10 @@ function isSliceIndexCompatible(
   if (
     options.withOrientation &&
     options.withNavigation &&
-    viewRef.viewPlaneNormal &&
     context.viewPlaneNormal &&
-    !isAlongViewPlaneNormal(viewRef.viewPlaneNormal, context.viewPlaneNormal)
+    isOfOtherPlane(viewRef, context.viewPlaneNormal)
   ) {
-    return true;
+    return Boolean(viewRef.cameraFocalPoint ?? viewRef.planeRestriction?.point);
   }
 
   const { currentImageIdIndex } = context;

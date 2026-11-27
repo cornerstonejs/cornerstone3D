@@ -95,6 +95,24 @@ function isRemovedVolume({ data }: Volume3DStagedLoad): boolean {
   );
 }
 
+/**
+ * Whether two cameras of a 3D viewport show one view: the same projection,
+ * direction, view up, focal point, position, scale and view angle. The
+ * clipping range, which each write of the camera fits again, is not part of
+ * the view.
+ */
+function isSameCamera(camera: ICamera, other: ICamera): boolean {
+  return (
+    camera.parallelProjection === other.parallelProjection &&
+    isEqual(camera.viewPlaneNormal, other.viewPlaneNormal) &&
+    isEqual(camera.viewUp, other.viewUp) &&
+    isEqual(camera.focalPoint, other.focalPoint) &&
+    isEqual(camera.position, other.position) &&
+    isEqual(camera.parallelScale, other.parallelScale) &&
+    isEqual(camera.viewAngle, other.viewAngle)
+  );
+}
+
 class VolumeViewport3D extends BaseViewport<
   Volume3DCamera,
   Volume3DDisplaySetAppearance,
@@ -262,6 +280,10 @@ class VolumeViewport3D extends BaseViewport<
    * of the commit, as DISPLAY_SET_APPEARANCE_CHANGED, that starts a call
    * that rejects leaves the complete new scene.
    *
+   * Before DISPLAY_SETS_CHANGED the call fires one CAMERA_MODIFIED when the
+   * fit of the mount changed the camera on display, and at the first mount
+   * (`triggerMountCameraEvent`).
+   *
    * @param entries - Display sets to mount, each with its own mount options.
    */
   async setDisplaySets(
@@ -306,6 +328,7 @@ class VolumeViewport3D extends BaseViewport<
       );
     }
 
+    const shownCamera = this.getShownCamera();
     const commit = this.commitDisplaySets(entries, staged);
 
     this.mountCommit = commit;
@@ -318,6 +341,7 @@ class VolumeViewport3D extends BaseViewport<
       }
     }
 
+    this.triggerMountCameraEvent(shownCamera);
     this.triggerDisplaySetsChanged(
       entries.map(({ displaySetId }) => displaySetId)
     );
@@ -372,6 +396,7 @@ class VolumeViewport3D extends BaseViewport<
     options: Volume3DMountOptions = {}
   ): Promise<void> {
     return this.queueAddDisplaySet(async (isSuperseded) => {
+      const shownCamera = this.getShownCamera();
       const mounted = await this.mountDisplaySet(
         displaySetId,
         {
@@ -383,9 +408,47 @@ class VolumeViewport3D extends BaseViewport<
       );
 
       if (mounted) {
+        this.triggerMountCameraEvent(shownCamera);
         this.triggerDisplaySetsChanged([displaySetId]);
       }
     });
+  }
+
+  /**
+   * The camera of the view that the viewport shows, or undefined when it
+   * shows no display set: what a mount compares the camera it opens with
+   * against.
+   */
+  private getShownCamera(): ICamera | undefined {
+    return this.bindings.size ? this.getCameraForEvent() : undefined;
+  }
+
+  /**
+   * Fires the CAMERA_MODIFIED of a mount as a planar mount fires it: once
+   * for the call, after the display sets are bound and before
+   * DISPLAY_SETS_CHANGED, with the camera that the view opens with as its
+   * camera and as its previous camera. A camera position synchronizer so
+   * reads a mount, and gives the pane the view of its group. It fires at the
+   * first mount of the viewport, and at a later mount whose fit changed the
+   * camera on display (other data, or a camera moved since the last fit); a
+   * mount that leaves the camera as it was (the same data again, an overlay)
+   * fires none.
+   *
+   * @param shownCamera - The camera before the mount, undefined when the
+   *   viewport showed nothing.
+   */
+  private triggerMountCameraEvent(shownCamera: ICamera | undefined): void {
+    if (!this.bindings.size) {
+      return;
+    }
+
+    const camera = this.getCameraForEvent();
+
+    if (shownCamera && isSameCamera(shownCamera, camera)) {
+      return;
+    }
+
+    this.triggerCameraModifiedEvent(camera);
   }
 
   /**

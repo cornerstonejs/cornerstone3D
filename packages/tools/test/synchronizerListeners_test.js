@@ -58,6 +58,47 @@ async function showStacks(renderingEngine) {
   return viewports;
 }
 
+/**
+ * Enables a planar viewport of 200 by 200 pixels with a new element under
+ * this id, shows a stack on it and gives it.
+ */
+async function enableWithStack(renderingEngine, viewportId) {
+  const element = document.createElement('div');
+
+  element.style.width = '200px';
+  element.style.height = '200px';
+  document.body.appendChild(element);
+  renderingEngine.enableElement({
+    viewportId,
+    type: ViewportType.PLANAR,
+    element,
+    defaultOptions: { orientation: OrientationAxis.AXIAL },
+  });
+
+  const viewport = renderingEngine.getViewport(viewportId);
+
+  await testUtils.setStackOnNextViewport(viewport, createImageIds(viewportId));
+
+  return viewport;
+}
+
+/**
+ * Zooms a viewport and gives the number of CAMERA_MODIFIED events that the
+ * other viewport fired meanwhile: one when the synchronizer wrote it.
+ */
+function writesOfZoom(viewport, other) {
+  let writes = 0;
+  const listener = () => {
+    writes += 1;
+  };
+
+  other.element.addEventListener(Events.CAMERA_MODIFIED, listener);
+  viewport.setZoom(viewport.getZoom() * 1.5);
+  other.element.removeEventListener(Events.CAMERA_MODIFIED, listener);
+
+  return writes;
+}
+
 /** The viewport ids of a viewport, as a synchronizer takes them. */
 function idsOf(viewport) {
   return { renderingEngineId, viewportId: viewport.id };
@@ -160,6 +201,78 @@ describe('The listeners of a synchronizer -- ', () => {
     expect(cameraListeners()).toEqual(before);
     expect(synchronizer.getSourceViewports()).toEqual([]);
     expect(synchronizer.getTargetViewports()).toEqual([]);
+  });
+
+  it('makes a viewport added before it is enabled a source and a target at its enable, as one added after it (row 316)', async function () {
+    const synchronizer =
+      synchronizers.createCameraPositionSynchronizer(synchronizerId);
+    const enabledBefore = counts.onEventTarget(Events.ELEMENT_ENABLED);
+
+    synchronizer.add({ renderingEngineId, viewportId: 'syncFirst' });
+
+    expect(counts.onEventTarget(Events.ELEMENT_ENABLED)).toBe(
+      enabledBefore + 1
+    );
+
+    const first = await enableWithStack(renderingEngine, 'syncFirst');
+    const second = await enableWithStack(renderingEngine, 'syncSecond');
+    const control = await enableWithStack(renderingEngine, 'syncThird');
+    const cameraListeners = (viewport) =>
+      counts.onElement(viewport.element, Events.CAMERA_MODIFIED) -
+      counts.onElement(control.element, Events.CAMERA_MODIFIED);
+
+    synchronizer.add(idsOf(second));
+
+    expect(counts.onEventTarget(Events.ELEMENT_ENABLED)).toBe(enabledBefore);
+    expect(cameraListeners(first)).toBe(1);
+    expect(cameraListeners(second)).toBe(1);
+    expect(synchronizer.getSourceViewports()).toEqual([
+      idsOf(first),
+      idsOf(second),
+    ]);
+    expect(writesOfZoom(first, second)).toBe(1);
+    expect(writesOfZoom(second, first)).toBe(1);
+  });
+
+  it('leaves no listener when a viewport that was never enabled is removed', function () {
+    const before = counts.onEventTarget();
+    const synchronizer =
+      synchronizers.createCameraPositionSynchronizer(synchronizerId);
+
+    synchronizer.add({ renderingEngineId, viewportId: 'neverEnabled' });
+    synchronizer.remove({ renderingEngineId, viewportId: 'neverEnabled' });
+
+    expect(counts.onEventTarget()).toEqual(before);
+    expect(synchronizer.getSourceViewports()).toEqual([]);
+  });
+
+  it('listens to the new element of a viewport that is disabled and enabled again under the same id, and to no element of it before', async function () {
+    const synchronizer =
+      synchronizers.createCameraPositionSynchronizer(synchronizerId);
+    const first = await enableWithStack(renderingEngine, 'syncFirst');
+    const second = await enableWithStack(renderingEngine, 'syncSecond');
+    const control = await enableWithStack(renderingEngine, 'syncThird');
+    const oldElement = first.element;
+
+    synchronizer.add(idsOf(first));
+    synchronizer.add(idsOf(second));
+    renderingEngine.disableElement(first.id);
+
+    expect(synchronizer.getSourceViewports()).toEqual([idsOf(second)]);
+    expect(counts.onElement(oldElement, Events.CAMERA_MODIFIED)).toBe(0);
+
+    synchronizer.add(idsOf(first));
+
+    const again = await enableWithStack(renderingEngine, 'syncFirst');
+
+    expect(again.element).not.toBe(oldElement);
+    expect(counts.onElement(oldElement, Events.CAMERA_MODIFIED)).toBe(0);
+    expect(
+      counts.onElement(again.element, Events.CAMERA_MODIFIED) -
+        counts.onElement(control.element, Events.CAMERA_MODIFIED)
+    ).toBe(1);
+    expect(writesOfZoom(again, second)).toBe(1);
+    expect(writesOfZoom(second, again)).toBe(1);
   });
 
   it('takes out a viewport that is only a target when its element is disabled', async function () {

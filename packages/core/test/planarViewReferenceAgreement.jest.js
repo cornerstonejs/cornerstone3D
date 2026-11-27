@@ -6,6 +6,13 @@ import {
 import { describe, it, expect, afterEach } from '@jest/globals';
 import { displaySetRegistry } from '@cornerstonejs/metadata';
 import { createPlanarViewportOnStandInEngine } from './utils/planarViewportOnStandInEngine';
+import {
+  cleanUp,
+  createCpuViewport,
+  createLocalVolume,
+  destroyViewport,
+  mountVolume,
+} from './utils/cpuPlanarViewport';
 
 const { setRenderBackend, imageLoader, metaData, init, cache, utilities } =
   cornerstone3D;
@@ -273,5 +280,170 @@ describe('setViewReference and isReferenceViewable of a stack agree', () => {
     expect(
       viewport.isReferenceViewable(reference, { asNearbyProjection: true })
     ).toBe(false);
+  });
+});
+
+const VOLUME_ID = 'agreementVolume';
+const VOLUME_FRAME = 'agreementVolumeFrame';
+
+/**
+ * References with a slice index that a volume viewport gets (row 324): of
+ * the volume on display, in the plane of the view (axial) and in another
+ * plane (sagittal, whose 64 slices the axial view does not have), with and
+ * without a point, and with a slice index alone in another plane.
+ */
+function volumeReferences() {
+  const base = { FrameOfReferenceUID: VOLUME_FRAME, volumeId: VOLUME_ID };
+
+  return {
+    'slice index in the plane of the view': {
+      ...base,
+      viewPlaneNormal: [0, 0, -1],
+      sliceIndex: 3,
+    },
+    'slice index in the opposite normal of the view': {
+      ...base,
+      viewPlaneNormal: [0, 0, 1],
+      sliceIndex: 3,
+    },
+    'slice index in another plane and no point': {
+      ...base,
+      viewPlaneNormal: [1, 0, 0],
+      sliceIndex: 40,
+    },
+    'slice index in another plane, past the slices of the view, and no point': {
+      ...base,
+      viewPlaneNormal: [1, 0, 0],
+      sliceIndex: 12,
+    },
+    'slice index in another plane with no volume id and no point': {
+      FrameOfReferenceUID: VOLUME_FRAME,
+      viewPlaneNormal: [1, 0, 0],
+      sliceIndex: 40,
+    },
+    'slice index in another plane and a point': {
+      ...base,
+      viewPlaneNormal: [1, 0, 0],
+      sliceIndex: 40,
+      cameraFocalPoint: [20, 24, 10],
+    },
+    'slice index in another plane and a plane restriction': {
+      ...base,
+      sliceIndex: 40,
+      planeRestriction: {
+        FrameOfReferenceUID: VOLUME_FRAME,
+        point: [20, 24, 10],
+        inPlaneVector1: [0, 0, 1],
+        inPlaneVector2: [0, 1, 0],
+      },
+    },
+  };
+}
+
+describe('setViewReference and isReferenceViewable of a volume agree on a slice index of another plane (row 324)', () => {
+  const viewports = [];
+
+  afterEach(() => {
+    viewports.splice(0).forEach((viewport) => destroyViewport(viewport));
+    cleanUp();
+  });
+
+  /**
+   * Mounts a volume of 64 by 48 by 20 voxels of 1 mm axially, on slice 5
+   * of the view.
+   */
+  async function mountAxialVolume() {
+    const viewport = createCpuViewport('agreementVolume');
+
+    viewports.push(viewport);
+    createLocalVolume(VOLUME_ID, {
+      dimensions: [64, 48, 20],
+      frameOfReferenceUID: VOLUME_FRAME,
+    });
+    await mountVolume(viewport, VOLUME_ID, {
+      orientation: cornerstone3D.Enums.OrientationAxis.AXIAL,
+    });
+    viewport.setViewState({
+      slice: {
+        kind: 'volumePoint',
+        sliceWorldPoint: viewport.getViewReference({ sliceIndex: 5 })
+          .cameraFocalPoint,
+      },
+    });
+
+    return viewport;
+  }
+
+  const options = { withNavigation: true, withOrientation: true };
+  const kinds = Object.keys(volumeReferences());
+
+  it.each(kinds)(
+    'moves nothing for a reference that is not viewable with orientation and navigation: %s',
+    async (kind) => {
+      const viewport = await mountAxialVolume();
+      const reference = volumeReferences()[kind];
+
+      if (viewport.isReferenceViewable(reference, options)) {
+        return;
+      }
+
+      const before = JSON.stringify(viewport.getViewState());
+
+      viewport.setViewReference(reference);
+
+      expect(viewport.getSliceIndex()).toBe(5);
+      expect(JSON.stringify(viewport.getViewState())).toBe(before);
+    }
+  );
+
+  it.each([
+    'slice index in another plane and no point',
+    'slice index in another plane, past the slices of the view, and no point',
+    'slice index in another plane with no volume id and no point',
+  ])(
+    'refuses a reference with a %s: it is not a slice of the view',
+    async (kind) => {
+      const viewport = await mountAxialVolume();
+      const reference = volumeReferences()[kind];
+
+      expect(viewport.isReferenceViewable(reference, options)).toBe(false);
+
+      viewport.setViewReference(reference);
+
+      expect(viewport.getSliceIndex()).toBe(5);
+      expect(viewport.getViewReference().viewPlaneNormal[2]).toBeCloseTo(-1, 6);
+    }
+  );
+
+  it.each([
+    'slice index in another plane and a point',
+    'slice index in another plane and a plane restriction',
+  ])(
+    'takes a reference with a %s, which decides: the view turns to the plane of the point',
+    async (kind) => {
+      const viewport = await mountAxialVolume();
+      const reference = volumeReferences()[kind];
+
+      expect(viewport.isReferenceViewable(reference, options)).toBe(true);
+
+      viewport.setViewReference(reference);
+
+      const { viewPlaneNormal, cameraFocalPoint } = viewport.getViewReference();
+
+      expect(Math.abs(viewPlaneNormal[0])).toBeCloseTo(1, 6);
+      expect(cameraFocalPoint[0]).toBeCloseTo(20, 6);
+    }
+  );
+
+  it('goes to a slice index in the plane of the view, as before', async () => {
+    const viewport = await mountAxialVolume();
+    const reference =
+      volumeReferences()['slice index in the plane of the view'];
+
+    expect(viewport.isReferenceViewable(reference, options)).toBe(true);
+
+    viewport.setViewReference(reference);
+
+    expect(viewport.getSliceIndex()).toBe(3);
   });
 });

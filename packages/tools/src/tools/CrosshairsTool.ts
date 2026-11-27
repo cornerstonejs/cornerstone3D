@@ -124,6 +124,12 @@ function defaultReferenceLineSlabThicknessControlsOn() {
   return true;
 }
 
+/**
+ * The distance in millimetres along its normal under which the plane of a
+ * viewport holds the tool centre, so `setToolCenter` does not move it.
+ */
+const TOOL_CENTER_PLANE_TOLERANCE = 1e-3;
+
 const OPERATION = {
   DRAG: 1,
   ROTATE: 2,
@@ -391,7 +397,9 @@ class CrosshairsTool extends AnnotationTool {
    * centre of the views. A viewport whose element is given has just reset
    * itself, and the crosshairs answer its CAMERA_RESET: its view is not reset
    * again, so it keeps what its caller asked to keep, such as its orientation
-   * with `resetOrientation: false`.
+   * with `resetOrientation: false`. Each viewport then shows the centre of
+   * the slice it draws, as the legacy volume viewport did after a reset: a
+   * reset keeps the depth of a turned view, which can lie between two slices.
    *
    * @param resetElement - The element of a viewport that has reset itself.
    */
@@ -420,6 +428,7 @@ class CrosshairsTool extends AnnotationTool {
             resetFlip: true,
           });
         }
+        jumpToFocalPoint(viewport, getViewportICamera(viewport).focalPoint);
         this._resetSlabThickness(viewport);
       } finally {
         this._ignoreFiredEvents = previousIgnoreFiredEvents;
@@ -471,6 +480,19 @@ class CrosshairsTool extends AnnotationTool {
     });
   };
 
+  /**
+   * Moves each viewport of the tool group along its normal to the plane
+   * through the tool centre, renders it, and keeps the centre. A viewport
+   * whose plane holds the centre already is not written, so the set up of
+   * the tool, whose centre is where the planes of the views meet, moves no
+   * viewport and fires no camera event: a pane that shows a point between two
+   * slices of its grid (a camera position group gives a pane of a coarse grid
+   * the point of a pane of a fine grid) keeps that point, and the panes of
+   * its group keep their slices.
+   *
+   * @param toolCenter - The world point of the new centre.
+   * @param suppressEvents - Whether CROSSHAIR_TOOL_CENTER_CHANGED is not fired.
+   */
   setToolCenter(toolCenter: Types.Point3, suppressEvents = false): void {
     const viewportsInfo = this._getViewportsInfo();
     const previousIgnoreFiredEvents = this._ignoreFiredEvents;
@@ -516,7 +538,9 @@ class CrosshairsTool extends AnnotationTool {
           focalPoint[2] + scrollDelta[2],
         ];
 
-        jumpToFocalPoint(viewport, newFocalPoint);
+        if (Math.abs(scroll) > TOOL_CENTER_PLANE_TOLERANCE) {
+          jumpToFocalPoint(viewport, newFocalPoint);
+        }
 
         viewport.render();
       });

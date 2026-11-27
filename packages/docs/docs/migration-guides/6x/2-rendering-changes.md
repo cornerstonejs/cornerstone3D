@@ -1675,10 +1675,50 @@ point of the image on display.
   most sagittal and coronal slices of a CT, and a viewport that copied
   another only after that check stayed on its slice. With
   `{ withOrientation: true, withNavigation: true }` a reference of another
-  plane of the volume is viewable whatever its slice index, which counts in
-  the slices of its own plane, as on the legacy volume viewport. In 5.x the
-  next planar viewport checked it against the slices of the view, so an axial
+  plane of the volume with a point (its focal point, as `getViewReference()`
+  gives it, or the point of its plane restriction) is viewable whatever its
+  slice index, which counts in the slices of its own plane, and
+  `setViewReference` turns the view and goes to that point. In 5.x the next
+  planar viewport checked it against the slices of the view, so an axial
   view of 8 slices refused a sagittal reference at slice 16.
+- **A slice index of another plane without a point is no slice of the
+  view.** A reference with a slice index and a plane that is not the plane
+  of the view (its view plane normal, or the plane of its plane
+  restriction), and no point, names a slice of the grid of that plane, which
+  the view does not have: `isReferenceViewable` refuses it with every
+  option and `setViewReference` moves nothing. 6.0.0-beta.2 took it with
+  orientation and navigation, and `setViewReference` turned the view and
+  read the slice index in the slices of the view on display, so it showed
+  another slice; the legacy volume viewport turned the view and did not read
+  the slice index.
+
+  ```js
+  // An axial view of a volume of 64 x 48 x 20 voxels
+  const sagittal40 = {
+    FrameOfReferenceUID,
+    volumeId,
+    viewPlaneNormal: [1, 0, 0],
+    sliceIndex: 40,
+  };
+
+  viewport.isReferenceViewable(sagittal40, {
+    withOrientation: true,
+    withNavigation: true,
+  });
+  viewport.setViewReference(sagittal40);
+
+  // 6.0.0-beta.2: true, then a sagittal view on slice 32
+  // Now: false, and the view stays axial on its slice. Give a point
+  // (cameraFocalPoint) to go there, or use getVolumeSliceGrid to turn a
+  // slice index of that plane into its point:
+  const grid = utilities.getVolumeSliceGrid({
+    volumeId,
+    orientation: Enums.OrientationAxis.SAGITTAL,
+  });
+
+  viewport.setViewReference(grid.getViewReference(40));
+  ```
+
 - **A reference of a volume is viewable on every display set of that
   volume.** Two display sets that register the same `volumeId` show the same
   voxels, so a viewport of one takes a reference that names the other as its
@@ -2537,6 +2577,29 @@ levels of 255.
   that camera back after the fit, so it kept the default camera of vtk.js
   until `resetViewState()`, and that reset kept the wrong orientation. The
   legacy 3D viewport reset the camera at `setVolumes` in the same way.
+- **A mount fires `CAMERA_MODIFIED`, as a planar mount does.** It fires once
+  for the call, after the display sets are bound and before
+  `DISPLAY_SETS_CHANGED`, with the camera that the view opens with as its
+  `camera` and as its `previousCamera`: at the first mount, and at a
+  `setDisplaySets` (or an `addDisplaySet` on a viewport that shows nothing)
+  whose fit changed the camera on display, for other data or for a camera
+  that was turned or zoomed since the last fit. A mount that leaves the
+  camera as it was fires none: the same data again on an untouched camera,
+  or an overlay added with `addDisplaySet`. With `suppressEvents` it fires
+  none. 6.0.0-beta.2 fired none at a 3D mount, so a camera position group,
+  `OrientationControllerTool` and `VolumeCroppingTool` saw the fit only at
+  the next change of the camera; the legacy 3D viewport fired one at each
+  `setVolumes`, through its reset. The mount still draws in one frame.
+
+  ```js
+  viewport3D.element.addEventListener(Events.CAMERA_MODIFIED, onCamera);
+  await viewport3D.setDisplaySets({ displaySetId: 'ct' });
+
+  // 6.0.0-beta.2: onCamera is not called until the camera changes
+  // Now: onCamera is called once, before DISPLAY_SETS_CHANGED, and
+  // detail.previousCamera is the camera of detail.camera
+  ```
+
 - **A 3D viewport turns to the orientation of its options when it is made,**
   as the legacy 3D viewport did, so a surface or a prop of a tool that shows
   before any volume is seen from that side, and `resetViewState()` fits it
@@ -3058,9 +3121,12 @@ levels of 255.
   pane opens on stays its own: an application that puts it on the slice of
   the group moves it there (`setViewReference` with a point and a plane),
   and that move along the normal moves the others only where they are not
-  on their nearest slice. When no pane of the group is in step yet (the
-  synchronizer was made after the mounts), the first event drives the scale
-  and the centre of the group. A target of another
+  on their nearest slice. A pane that was placed while it was alone in the
+  group (no camera event of it reached another pane), or the one pane of the
+  group that shows data when the synchronizer was made after its mount, is
+  the group for a pane that joins it. When several panes show data and none
+  is in step yet (the synchronizer was made after their mounts), the first
+  event drives the scale and the centre of the group. A target of another
   plane in the frame of reference of the source turns to its plane and view
   up with a view reference of the plane and the point (a second write, the
   first time only), and its rotation is then counted from that view up: 0
@@ -3068,10 +3134,9 @@ levels of 255.
   the angle from the view up of its first plane. A stack of another plane
   takes nothing. A target of another frame of reference takes the parallel
   scale only. A pane joins a group at its mount only when it is in the
-  group at that time: add it to the synchronizer after `setViewports` (or
-  `enableElement`) and before its `setDisplaySets`. `Synchronizer.add` of a
-  viewport that is not enabled yet leaves it out of the sources, so the pane
-  follows the group and never drives it.
+  group at that time: add it to the synchronizer before its
+  `setDisplaySets`, before or after it is enabled (see "A synchronizer takes
+  a viewport before it is enabled").
 
   A 3D viewport of a group takes the camera of a 3D source, as the 5.x
   `setCamera` gave it: the direction, the view up and the focal point, and
@@ -3088,8 +3153,9 @@ levels of 255.
   along the normal, as the slice of a planar view means nothing to a 3D
   camera, so a scroll of the planar pane writes no 3D pane. Each target is
   written once, not when it has the view already, and nothing comes back.
-  A 3D mount fires no camera event, so a 3D pane that joins a group takes
-  its view at the next change of a pane of the group. 6.0.0-beta.2 gave a 3D
+  A 3D mount fires a camera event as a planar mount does (see
+  [3D viewports](#3d-viewports)), so a 3D pane that joins a group takes the
+  camera of the group at its mount. 6.0.0-beta.2 gave a 3D
   target the view reference of the source and its zoom and pan against its
   own fit, so two 3D panes of volumes of other extents showed other sizes.
   A pair of other families (a video, a whole slide, an ECG viewport) takes
@@ -3114,6 +3180,43 @@ levels of 255.
   // Now: ct.getSliceIndex() 256; parallel scale 147.15 on both panes;
   // ct.getZoom() 1.5, pt.getZoom() 1.77
   ```
+
+- **A synchronizer takes a viewport before it is enabled.** A synchronizer
+  knows a viewport by its rendering engine id and its viewport id, so
+  `add`, `addSource` and `addTarget` take one that is not enabled yet, as an
+  application that names the panes of its groups before they exist does:
+  the viewport becomes a source when it is enabled (`ELEMENT_ENABLED`), and
+  a target at once. 6.0.0-beta.2 warned `No viewport` and left it out of the
+  sources for good, so the pane followed its group and never drove it; 5.x
+  did the same. A viewport that is disabled still leaves the synchronizer,
+  so one that is enabled again under the same id is added again, before or
+  after that enable. The synchronizer listens to `ELEMENT_ENABLED` only while
+  one of its sources is not enabled yet, and the removal of one that never
+  came leaves no listener.
+
+  ```js
+  const sync = synchronizers.createCameraPositionSynchronizer('axial');
+
+  sync.add({ renderingEngineId, viewportId: 'ctAxial' });
+  renderingEngine.setViewports(viewportInputs);
+
+  // 6.0.0-beta.2: a camera change of ctAxial moves no other pane
+  // Now: ctAxial is a source from its enable on
+  ```
+
+- **The crosshairs set up moves no viewport.** `CrosshairsTool` set active,
+  passive or enabled, a mount of a viewport of its tool group and the add of
+  a viewport work out the centre where the slices that the views draw meet
+  (as before) and write no viewport whose slice holds that centre already,
+  so the set up fires no `CAMERA_MODIFIED` on such a viewport.
+  `setToolCenter` moves only the viewports whose slice does not hold the
+  centre. 6.0.0-beta.2 wrote every viewport with a view reference of its
+  own slice, which put a pane that shows a point between two slices of its
+  grid (a camera position group gives a PET pane the point of its CT pane)
+  on the centre of its nearest slice, and that move along the normal moved
+  the CT pane of the group: the `tmtv` example opened its CT sagittal pane
+  on slice 254 for 256. `resetCrosshairs` still puts each view on the centre
+  of the slice it draws after its reset, as the legacy volume viewport did.
 
 - **`SEGMENTATION_REPRESENTATION_ADDED` fires.** `addSegmentationRepresentations`
   and the add functions of each representation type fire it on the
