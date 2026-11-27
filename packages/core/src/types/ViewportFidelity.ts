@@ -12,7 +12,18 @@ export type ViewportFidelityCause =
   | 'performanceTarget'
   | 'incompleteLoad'
   | 'missingFrames'
-  | 'lossyDecode';
+  | 'lossyDecode'
+  | 'displayIssue';
+
+/**
+ * An issue that stops the display of the data as its metadata specifies, for
+ * example an unknown VOI LUT function (FIDELITY-STATE-13). `message` is
+ * clinician-facing text for the hover details.
+ */
+export type FidelityIssue = {
+  code: string;
+  message: string;
+};
 
 /** The derived state of a view; see `ViewportFidelityState.shownState`. */
 export type ViewportFidelityShownState =
@@ -90,6 +101,11 @@ export type ViewportFidelityState = {
    * or `lossy`). An ordinary load of full-resolution frames is not lossy.
    */
   lossy?: boolean;
+  /**
+   * Every display issue of every data set in the view (FIDELITY-STATE-13).
+   * Undefined when there is none. Any issue makes the view `lossy`.
+   */
+  issues?: FidelityIssue[];
 };
 
 /**

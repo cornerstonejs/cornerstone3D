@@ -24,6 +24,7 @@ import type vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
 import type {
   IStackViewport,
   IVolumeViewport,
+  OffscreenCanvasContainer,
   VtkOffscreenMultiRenderWindow,
 } from '../types';
 import { getViewportClassForInput } from './helpers/viewportTypeToViewportClass';
@@ -121,9 +122,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
 
     // Initialize the offscreen canvas size to the max size for this context
     const maxSize = contextPool.getMaxSizeForContext(contextIndex);
-    // @ts-expect-error
     container.width = maxSize.width;
-    // @ts-expect-error
     container.height = maxSize.height;
 
     offscreenMultiRenderWindow.resize();
@@ -381,6 +380,46 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     );
   };
 
+  /**
+   * Runs for each viewport that goes, by a removal or by a reset of the layout
+   * (`setViewports`): the shared render window drops its renderer, the pool
+   * forgets its size and its canvas entry in the GPU memory ledger, and the
+   * shared offscreen canvas of its context shrinks to the viewports that
+   * remain, so the render-buffer charge matches the canvas. The renderer goes
+   * first, because the fit of the canvas renders the shared window. The render
+   * buffer keeps its charge while no viewport remains.
+   */
+  protected _releaseViewportResources(viewport: IViewport): void {
+    if (!this.contextPool) {
+      return;
+    }
+
+    const viewportId = viewport.id;
+    const contextIndex =
+      this.contextPool.getContextIndexForViewport(viewportId);
+    const contextData =
+      contextIndex !== undefined
+        ? this.contextPool.getContextByIndex(contextIndex)
+        : null;
+
+    if (
+      contextData &&
+      !viewportTypeUsesCustomRenderingPipeline(viewport.type)
+    ) {
+      contextData.context.removeRenderer(viewportId);
+    }
+
+    this.contextPool.removeViewport(viewportId);
+
+    if (contextData) {
+      this._fitOffScreenCanvasToContext(
+        contextIndex,
+        contextData.container,
+        contextData.context
+      );
+    }
+  }
+
   private renderViewportUsingCustomOrVtkPipeline(
     viewport: IViewport
   ): EventTypes.ImageRenderedEventDetail {
@@ -419,7 +458,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
   private _renderViewportWithContext(
     viewport: IViewport,
     offscreenMultiRenderWindow: VtkOffscreenMultiRenderWindow,
-    offScreenCanvasContainer: HTMLDivElement
+    offScreenCanvasContainer: OffscreenCanvasContainer
   ): EventTypes.ImageRenderedEventDetail {
     if (
       viewport.canvas.clientWidth === 0 ||
@@ -540,7 +579,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
 
   private _resizeOffScreenCanvasForViewport(
     viewport: IViewport,
-    offScreenCanvasContainer: HTMLDivElement,
+    offScreenCanvasContainer: OffscreenCanvasContainer,
     offscreenMultiRenderWindow: VtkOffscreenMultiRenderWindow
   ): void {
     const contextIndex = this.contextPool.getContextIndexForViewport(
@@ -550,30 +589,44 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
       return;
     }
 
-    const maxSizeChanged = this.contextPool.updateViewportSize(
+    this.contextPool.updateViewportSize(
       viewport.id,
       viewport.sWidth,
       viewport.sHeight
     );
 
-    if (!maxSizeChanged) {
-      return;
-    }
+    // The max size can also shrink on removal: compare with the canvas.
+    this._fitOffScreenCanvasToContext(
+      contextIndex,
+      offScreenCanvasContainer,
+      offscreenMultiRenderWindow
+    );
+  }
 
+  /**
+   * Sizes a context's shared offscreen canvas to the largest viewport still
+   * assigned to it. Each viewport renders into the bottom-left corner of that
+   * canvas and is copied out using the context's max size, so a canvas larger
+   * than the max size makes every viewport render into a region bigger than
+   * itself and only part of it reaches the screen (the image looks zoomed in).
+   */
+  private _fitOffScreenCanvasToContext(
+    contextIndex: number,
+    offScreenCanvasContainer: OffscreenCanvasContainer,
+    offscreenMultiRenderWindow: VtkOffscreenMultiRenderWindow
+  ): void {
     const maxSize = this.contextPool.getMaxSizeForContext(contextIndex);
 
     if (
-      // @ts-expect-error
-      offScreenCanvasContainer.width === maxSize.width &&
-      // @ts-expect-error
-      offScreenCanvasContainer.height === maxSize.height
+      !maxSize?.width ||
+      !maxSize?.height ||
+      (offScreenCanvasContainer.width === maxSize.width &&
+        offScreenCanvasContainer.height === maxSize.height)
     ) {
       return;
     }
 
-    // @ts-expect-error
     offScreenCanvasContainer.width = maxSize.width;
-    // @ts-expect-error
     offScreenCanvasContainer.height = maxSize.height;
 
     offscreenMultiRenderWindow.resize();
@@ -674,9 +727,7 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
         const { context: offscreenMultiRenderWindow, container } = contextData;
         const maxSize = this.contextPool.getMaxSizeForContext(contextIndex);
 
-        // @ts-expect-error
         container.width = maxSize.width;
-        // @ts-expect-error
         container.height = maxSize.height;
 
         offscreenMultiRenderWindow.resize();
@@ -732,39 +783,6 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
 
     const { context: offscreenMultiRenderWindow } = contextData;
     return offscreenMultiRenderWindow.getRenderer(viewportId);
-  }
-
-  /**
-   * Disables the requested viewportId from the rendering engine.
-   * Calls the base implementation and then handles context-specific cleanup.
-   *
-   * @param viewportId - viewport Id
-   */
-  public disableElement(viewportId: string): void {
-    const viewport = this.getViewport(viewportId);
-    if (!viewport) {
-      return;
-    }
-    super.disableElement(viewportId);
-
-    if (
-      !viewportTypeUsesCustomRenderingPipeline(viewport.type) &&
-      this.contextPool
-    ) {
-      const contextIndex =
-        this.contextPool.getContextIndexForViewport(viewportId);
-
-      if (contextIndex !== undefined) {
-        const contextData = this.contextPool.getContextByIndex(contextIndex);
-
-        if (contextData) {
-          const { context: offscreenMultiRenderWindow } = contextData;
-          offscreenMultiRenderWindow.removeRenderer(viewportId);
-        }
-      }
-
-      this.contextPool.removeViewport(viewportId);
-    }
   }
 
   public destroy(): void {

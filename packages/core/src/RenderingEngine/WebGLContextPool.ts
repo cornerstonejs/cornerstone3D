@@ -1,6 +1,16 @@
 import { vtkOffscreenMultiRenderWindow } from './vtkClasses';
-import type { VtkOffscreenMultiRenderWindow } from '../types';
+import uuidv4 from '../utilities/uuidv4';
+import type {
+  OffscreenCanvasContainer,
+  VtkOffscreenMultiRenderWindow,
+} from '../types';
 import { attachWebGLContextEvents } from './helpers/attachWebGLContextEvents';
+import {
+  CANVAS_BYTES_PER_PIXEL,
+  RENDER_BUFFER_BYTES_PER_PIXEL,
+  removeGpuMemoryEntry,
+  setGpuMemoryEntry,
+} from '../utilities/gpuMemoryLedger';
 
 /**
  * Manages a pool of WebGL contexts for parallel rendering.
@@ -9,12 +19,20 @@ import { attachWebGLContextEvents } from './helpers/attachWebGLContextEvents';
  */
 class WebGLContextPool {
   private contexts: VtkOffscreenMultiRenderWindow[] = [];
-  private offScreenCanvasContainers: HTMLDivElement[] = [];
+  private offScreenCanvasContainers: OffscreenCanvasContainer[] = [];
   private viewportToContext: Map<string, number> = new Map();
   private viewportSizes: Map<string, { width: number; height: number }> =
     new Map();
   private contextMaxSizes: Map<number, { width: number; height: number }> =
     new Map();
+
+  /**
+   * The prefix of the GPU memory ledger keys of this pool. The fixed cost of
+   * each context is booked by its render window when vtk.js creates the
+   * context (see `vtkStreamingOpenGLRenderWindow`), not here, because vtk.js
+   * creates a context only at its first render.
+   */
+  private readonly ledgerKey = `contextPool:${uuidv4()}`;
 
   /**
    * Creates a pool with the specified number of WebGL contexts
@@ -27,7 +45,10 @@ class WebGLContextPool {
     for (let i = 0; i < count; i++) {
       const offscreenMultiRenderWindow =
         vtkOffscreenMultiRenderWindow.newInstance();
-      const container = document.createElement('div');
+      const container = Object.assign(document.createElement('div'), {
+        width: 0,
+        height: 0,
+      });
       offscreenMultiRenderWindow.setContainer(container);
 
       attachWebGLContextEvents(
@@ -41,6 +62,43 @@ class WebGLContextPool {
     }
   }
 
+  private renderBufferKey(contextIndex: number): string {
+    return `${this.ledgerKey}:renderBuffer:${contextIndex}`;
+  }
+
+  private canvasKey(viewportId: string): string {
+    return `${this.ledgerKey}:canvas:${viewportId}`;
+  }
+
+  /**
+   * Records the GPU memory of the canvas of a viewport and of the render
+   * buffer of its context, from the sizes that this pool tracks.
+   *
+   * The engine fits the offscreen canvas to the viewports that remain after
+   * a removal, but leaves it as it is when no viewport remains, so the charge
+   * of the render buffer stays then.
+   */
+  private updateLedger(contextIndex: number, viewportId?: string): void {
+    const size = viewportId ? this.viewportSizes.get(viewportId) : undefined;
+    const max = this.contextMaxSizes.get(contextIndex);
+
+    if (viewportId) {
+      setGpuMemoryEntry(this.canvasKey(viewportId), {
+        kind: 'canvas',
+        bytes: size ? size.width * size.height * CANVAS_BYTES_PER_PIXEL : 0,
+      });
+    }
+
+    if (!max || max.width * max.height === 0) {
+      return;
+    }
+
+    setGpuMemoryEntry(this.renderBufferKey(contextIndex), {
+      kind: 'renderBuffer',
+      bytes: max.width * max.height * RENDER_BUFFER_BYTES_PER_PIXEL,
+    });
+  }
+
   /**
    * Gets the context and container at the specified index
    * @param index - Context index
@@ -48,7 +106,7 @@ class WebGLContextPool {
    */
   getContextByIndex(index: number): {
     context: VtkOffscreenMultiRenderWindow;
-    container: HTMLDivElement;
+    container: OffscreenCanvasContainer;
   } | null {
     if (index >= 0 && index < this.contexts.length) {
       return {
@@ -119,6 +177,7 @@ class WebGLContextPool {
 
     // Update the max size
     this.contextMaxSizes.set(contextIndex, newMax);
+    this.updateLedger(contextIndex, viewportId);
 
     // Return whether the max size changed
     return (
@@ -178,11 +237,13 @@ class WebGLContextPool {
     const contextIndex = this.viewportToContext.get(viewportId);
     this.viewportToContext.delete(viewportId);
     this.viewportSizes.delete(viewportId);
+    removeGpuMemoryEntry(this.canvasKey(viewportId));
 
     // Recalculate max size for the affected context
     if (contextIndex !== undefined) {
       const newMax = this.calculateMaxSizeForContext(contextIndex);
       this.contextMaxSizes.set(contextIndex, newMax);
+      this.updateLedger(contextIndex);
     }
   }
 
@@ -190,6 +251,12 @@ class WebGLContextPool {
    * Cleans up all contexts and releases resources
    */
   destroy(): void {
+    this.viewportToContext.forEach((_contextIndex, viewportId) => {
+      removeGpuMemoryEntry(this.canvasKey(viewportId));
+    });
+    this.contexts.forEach((_context, index) => {
+      removeGpuMemoryEntry(this.renderBufferKey(index));
+    });
     this.contexts.forEach((context: VtkOffscreenMultiRenderWindow) => {
       context.delete();
     });

@@ -33,7 +33,10 @@ import type {
   IViewport,
 } from '../types/IViewport';
 import { OrientationAxis } from '../enums';
-import type { VtkOffscreenMultiRenderWindow } from '../types';
+import type {
+  OffscreenCanvasContainer,
+  VtkOffscreenMultiRenderWindow,
+} from '../types';
 import { StatsOverlay } from './helpers/stats';
 import {
   detachFidelityIndicator,
@@ -60,7 +63,7 @@ abstract class BaseRenderingEngine {
   public hasBeenDestroyed: boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   public offscreenMultiRenderWindow: VtkOffscreenMultiRenderWindow;
-  public offScreenCanvasContainer: HTMLDivElement;
+  public offScreenCanvasContainer: OffscreenCanvasContainer;
   protected _viewports: Map<string, IViewport>;
   protected _needsRender = new Set<string>();
   protected _animationFrameSet = false;
@@ -757,6 +760,17 @@ abstract class BaseRenderingEngine {
   }
 
   /**
+   * Releases what the engine holds for a viewport that goes, by a removal or by
+   * a reset of the layout: for example its renderer and its GPU memory
+   * entries. The base engine holds nothing for a viewport.
+   *
+   * @param _viewport - the viewport that goes
+   */
+  protected _releaseViewportResources(_viewport: IViewport): void {
+    return;
+  }
+
+  /**
    * Reset the viewport by removing the data attributes
    * and clearing the context of draw. It also emits an element disabled event
    *
@@ -789,6 +803,7 @@ abstract class BaseRenderingEngine {
     element.removeAttribute('data-viewport-uid');
     element.removeAttribute('data-rendering-engine-uid');
     restoreElementTouchAction(element);
+    this._releaseViewportResources(viewport);
 
     // clear drawing
     const context = canvas.getContext('2d');

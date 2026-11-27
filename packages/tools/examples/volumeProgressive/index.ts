@@ -12,6 +12,8 @@ import {
   imageLoader,
   metaData,
   getRenderingCapabilities,
+  getStoredRenderingCapabilities,
+  getGpuMemoryLimit,
   getLossyDownsampling,
 } from '@cornerstonejs/core';
 import {
@@ -579,9 +581,12 @@ async function run() {
     },
   });
 
-  // An application selects the GPU settings preset, and nothing probes the device. The
-  // strategies of a viewport are built when that viewport adds its actor, so a
-  // change applies at the next load, which rebuilds every viewport.
+  /**
+   * `auto` probes the texture edge of the device and takes its memory from
+   * the limit choice; a named preset overrides it. The strategies of a
+   * viewport are built when that viewport adds its actor, so a change applies
+   * at the next load, which rebuilds every viewport.
+   */
   addGpuSettingsPresetDropdown({
     container: loaders,
     onSelectedValueChange: (gpuSettings) => {
@@ -590,8 +595,11 @@ async function run() {
     },
   });
 
-  // The preset drop down is an application statement; this button shows what
-  // getRenderingCapabilities() actually probed (WebGL level, formats, renderer).
+  /**
+   * This button shows what getRenderingCapabilities() probed (formats,
+   * renderer, edge), the stored record of the device, and the memory limit of
+   * `auto` with its source.
+   */
   const probePanel = document.createElement('div');
   probePanel.style.display = 'none';
   probePanel.style.clear = 'both';
@@ -614,8 +622,15 @@ async function run() {
     title: 'View GPU probe',
     container: loaders,
     onClick: () => {
-      const caps = getRenderingCapabilities();
-      const text = JSON.stringify(caps, null, 2);
+      const text = JSON.stringify(
+        {
+          capabilities: getRenderingCapabilities(),
+          memoryLimit: getGpuMemoryLimit() ?? 'none',
+          record: getStoredRenderingCapabilities(),
+        },
+        null,
+        2
+      );
       const wasVisible = probePanel.style.display !== 'none';
 
       probeOutput.textContent = text;
