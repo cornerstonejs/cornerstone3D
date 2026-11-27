@@ -1,3 +1,4 @@
+import { Enums, metaData } from '@cornerstonejs/metadata';
 import type { IImage } from '../../types';
 import type { WSIClientLike } from '../../utilities/WSIUtilities';
 import genericViewportDisplaySetMetadataProvider from '../../utilities/genericViewportDisplaySetMetadataProvider';
@@ -15,6 +16,18 @@ export interface GenericViewportPlanarDisplaySet
   volumeId?: string;
   image?: IImage;
   reference?: ViewportDataReference;
+}
+
+/**
+ * A display set from the `DISPLAY_SET` metadata cache, in the shape that the
+ * data providers read. `sourceDataId` is the image id of the object to show:
+ * `instance.imageId`, else the first underlying image id, else the first image
+ * id. `webClient` is the WSI client that the display set carries, if any.
+ */
+export interface GenericViewportCachedDisplaySet
+  extends GenericViewportImageDisplaySet {
+  sourceDataId: string;
+  webClient?: unknown;
 }
 
 export interface GenericViewportSourceAliasDisplaySet {
@@ -35,16 +48,66 @@ export type GenericViewportRegisteredDisplaySet =
   | string
   | string[]
   | GenericViewportPlanarDisplaySet
+  | GenericViewportCachedDisplaySet
   | GenericViewportSourceAliasDisplaySet
   | GenericViewportWSIDisplaySet;
 
+/**
+ * Finds the display set of `displaySetId` for a data provider. An entry of
+ * `genericViewportDisplaySetMetadataProvider` wins. Otherwise the display set
+ * comes from the `DISPLAY_SET` metadata cache, by its display set id.
+ */
 export function getGenericViewportRegisteredDisplaySet(
   displaySetId: string
 ): GenericViewportRegisteredDisplaySet | undefined {
-  return genericViewportDisplaySetMetadataProvider.get(
-    genericViewportDisplaySetMetadataProvider.VIEWPORT_V2_DISPLAY_SET,
+  return (
+    (genericViewportDisplaySetMetadataProvider.get(
+      genericViewportDisplaySetMetadataProvider.VIEWPORT_V2_DISPLAY_SET,
+      displaySetId
+    ) as GenericViewportRegisteredDisplaySet | undefined) ??
+    getCachedDisplaySet(displaySetId)
+  );
+}
+
+/**
+ * Reads the `DISPLAY_SET` cache. The cache also holds a display set under
+ * each of its image ids, so the id of the display set must equal the key:
+ * `displaySetId` (`IDisplaySet`) or `displaySetInstanceUID` (OHIF).
+ */
+function getCachedDisplaySet(
+  displaySetId: string
+): GenericViewportCachedDisplaySet | undefined {
+  const displaySet: unknown = metaData.getTyped(
+    Enums.MetadataModules.DISPLAY_SET,
     displaySetId
-  ) as GenericViewportRegisteredDisplaySet | undefined;
+  );
+
+  if (
+    !isRecord(displaySet) ||
+    (displaySet.displaySetId !== displaySetId &&
+      displaySet.displaySetInstanceUID !== displaySetId)
+  ) {
+    return;
+  }
+
+  const imageIds = isStringArray(displaySet.imageIds)
+    ? [...displaySet.imageIds]
+    : [];
+  const underlyingImageIds = isStringArray(displaySet.underlyingImageIds)
+    ? displaySet.underlyingImageIds
+    : [];
+  // `instance` is the object to show for a video, an ECG or a SEG.
+  const instanceImageId = isRecord(displaySet.instance)
+    ? displaySet.instance.imageId
+    : undefined;
+  const sourceDataId =
+    (typeof instanceImageId === 'string' && instanceImageId) ||
+    underlyingImageIds[0] ||
+    imageIds[0];
+
+  return sourceDataId
+    ? { imageIds, sourceDataId, webClient: displaySet.webClient }
+    : undefined;
 }
 
 export function getGenericViewportImageDisplaySet(
@@ -113,6 +176,30 @@ export function getGenericViewportWSIDisplaySet(
       },
     };
   }
+
+  // A cached display set: its own client, else the client that the
+  // application registered under `WADO_WEB_CLIENT` for the first image id.
+  if (
+    isRecord(registered) &&
+    typeof registered.sourceDataId === 'string' &&
+    isStringArray(registered.imageIds) &&
+    registered.imageIds.length
+  ) {
+    const webClient =
+      registered.webClient ??
+      metaData.get(
+        Enums.MetadataModules.WADO_WEB_CLIENT,
+        registered.imageIds[0]
+      );
+
+    if (isWSIClientLike(webClient)) {
+      return {
+        kind: 'wsi',
+        imageIds: registered.imageIds,
+        options: { webClient },
+      };
+    }
+  }
 }
 
 export function getGenericViewportSourceDataId(displaySetId: string): string {
@@ -126,7 +213,7 @@ export function getGenericViewportSourceDataId(displaySetId: string): string {
     return registered[0];
   }
 
-  if (isGenericViewportSourceAliasDisplaySet(registered)) {
+  if (isRecord(registered) && typeof registered.sourceDataId === 'string') {
     return registered.sourceDataId;
   }
 

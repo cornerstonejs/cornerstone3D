@@ -35,6 +35,11 @@ class PlanarViewportLegacyAdapter extends PlanarViewport {
       this.createLegacyCompatibilityHost()
     );
 
+  /** The legacy viewports keep their 4.x display, so no acquired frames. */
+  protected override prefersAcquiredFrames(): boolean {
+    return false;
+  }
+
   private cloneTuple<T extends ArrayLike<number> | undefined>(
     tuple: T
   ): T extends undefined ? undefined : [number, number, number] {

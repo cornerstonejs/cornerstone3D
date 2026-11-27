@@ -85,11 +85,14 @@ function matchAxis(
   };
 }
 
+type SliceRenderingCamera = Pick<
+  Types.ICamera,
+  'focalPoint' | 'viewPlaneNormal' | 'viewUp'
+>;
+
 function getSliceRenderingCamera(
   viewport: SliceRenderingViewport
-):
-  | Pick<Types.ICamera, 'focalPoint' | 'viewPlaneNormal' | 'viewUp'>
-  | undefined {
+): SliceRenderingCamera | undefined {
   const resolvedCamera = viewport.getResolvedView?.()?.toICamera?.();
   const normalizedResolvedCamera =
     normalizeSliceRenderingCamera(resolvedCamera);
@@ -157,10 +160,9 @@ function getVolumeAxes(volume: Types.IImageVolume): Types.Point3[] {
 
 function getSliceState(
   viewport: SliceRenderingViewport,
-  volume: Types.IImageVolume
+  volume: Types.IImageVolume,
+  camera = getSliceRenderingCamera(viewport)
 ): ImageMapperSliceState | undefined {
-  const camera = getSliceRenderingCamera(viewport);
-
   if (!camera) {
     return;
   }
@@ -223,9 +225,10 @@ function getSliceState(
 
 function createSliceImageData(
   volume: Types.IImageVolume,
-  viewport: SliceRenderingViewport
+  viewport: SliceRenderingViewport,
+  camera = getSliceRenderingCamera(viewport)
 ): { imageData: vtkImageData; state: ImageMapperSliceState } | undefined {
-  const state = getSliceState(viewport, volume);
+  const state = camera && getSliceState(viewport, volume, camera);
 
   if (!state) {
     return;
@@ -267,12 +270,6 @@ function createSliceImageData(
   const yDirection = axisVectors[state.yAxis].map(
     (value) => value * state.ySign
   ) as Types.Point3;
-  const camera = getSliceRenderingCamera(viewport);
-
-  if (!camera) {
-    return;
-  }
-
   const zDirection = vec3.normalize(
     vec3.create(),
     camera.viewPlaneNormal as unknown as vec3
@@ -316,5 +313,11 @@ export {
   createSliceImageData,
   getSliceRenderingCamera,
   getSliceState,
+  getVolumeAxes,
+  matchAxis,
 };
-export type { ImageMapperSliceState, SliceRenderingViewport };
+export type {
+  ImageMapperSliceState,
+  SliceRenderingCamera,
+  SliceRenderingViewport,
+};

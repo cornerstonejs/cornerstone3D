@@ -354,7 +354,8 @@ Video projection uses:
 ECG projection uses:
 
 - `ECGViewState` as semantic state
-- signal tuples shaped as `[sampleIndex, amplitudeValue, channelIndex]`
+- signal tuples shaped as `[sampleIndex, amplitude, leadIndex]`, with the
+  amplitude in raw units of the first channel (see the camera page)
 - `signalPoint` position tags
 - `signal` scale tags with samples and value units per canvas pixel
 - optional renderer-camera output for legacy interop
