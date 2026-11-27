@@ -4,7 +4,7 @@ import { toScoords } from '../helpers';
 import MeasurementReport from './MeasurementReport';
 import BaseAdapter3D from './BaseAdapter3D';
 import { extractAllNUMGroups, restoreAdditionalMetrics } from './metricHandler';
-import { mapUnitFromUCUM, mapUnitToUCUM } from './unitMapper';
+import { mapUnitToUCUM } from './unitMapper';
 
 const { Polyline: TID300Polyline } = utilities.TID300;
 
@@ -31,7 +31,7 @@ export class RectangleROI extends BaseAdapter3D {
     sopInstanceUIDToImageIdMap,
     metadata
   ) {
-    const { state, worldCoords, referencedImageId, ReferencedFrameNumber } =
+    const { state, worldCoords, statsTargetId, ReferencedFrameNumber } =
       MeasurementReport.getSetupMeasurementData(
         MeasurementGroup,
         sopInstanceUIDToImageIdMap,
@@ -43,33 +43,14 @@ export class RectangleROI extends BaseAdapter3D {
     const points =
       worldCoords.length === 5 ? worldCoords.slice(0, 4) : worldCoords;
 
-    const areaGroup = MeasurementGroup.ContentSequence.find(
-      (g) =>
-        g.ValueType === 'NUM' &&
-        g.ConceptNameCodeSequence.CodeMeaning === 'Area'
-    );
+    const allNUMGroups = extractAllNUMGroups(MeasurementGroup, statsTargetId);
+    const measurementNUMGroups = allNUMGroups[statsTargetId] || {};
 
-    const referencedSOPInstanceUID = state.sopInstanceUid;
-    const allNUMGroups = extractAllNUMGroups(
-      MeasurementGroup,
-      referencedSOPInstanceUID
-    );
-    const measurementNUMGroups = allNUMGroups[referencedSOPInstanceUID] || {};
-
-    const restoredMetrics = restoreAdditionalMetrics(measurementNUMGroups);
-    const rawAreaUnit =
-      areaGroup?.MeasuredValueSequence?.[0]?.MeasurementUnitsCodeSequence;
-    const areaUnitFromSR = rawAreaUnit?.CodeValue;
-    const mappedAreaUnit = areaUnitFromSR
-      ? mapUnitFromUCUM(areaUnitFromSR)
-      : restoredMetrics.areaUnit;
-
-    const cachedStats = referencedImageId
+    const cachedStats = statsTargetId
       ? {
-          [`imageId:${referencedImageId}`]: {
-            area: areaGroup?.MeasuredValueSequence?.[0]?.NumericValue || 0,
-            areaUnit: mappedAreaUnit,
-            ...restoredMetrics,
+          [statsTargetId]: {
+            area: 0,
+            ...restoreAdditionalMetrics(measurementNUMGroups),
           },
         }
       : {};

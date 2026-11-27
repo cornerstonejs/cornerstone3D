@@ -2,6 +2,7 @@ import { utilities } from 'dcmjs';
 import MeasurementReport from './MeasurementReport';
 import { scoordToWorld, toScoord, toArray } from '../helpers';
 import BaseAdapter3D from './BaseAdapter3D';
+import { extractAllNUMGroups, restoreAdditionalMetrics } from './metricHandler';
 
 const { Bidirectional: TID300Bidirectional } = utilities.TID300;
 
@@ -19,7 +20,7 @@ class Bidirectional extends BaseAdapter3D {
     sopInstanceUIDToImageIdMap,
     metadata
   ) {
-    const { state, scoordArgs, referencedImageId, ReferencedFrameNumber } =
+    const { state, scoordArgs, statsTargetId, ReferencedFrameNumber } =
       MeasurementReport.getSetupMeasurementData(
         MeasurementGroup,
         sopInstanceUIDToImageIdMap,
@@ -65,17 +66,13 @@ class Bidirectional extends BaseAdapter3D {
       frameNumber: ReferencedFrameNumber,
     };
 
-    if (referencedImageId) {
+    if (statsTargetId) {
+      const { length, width, unit, widthUnit } = restoreAdditionalMetrics(
+        extractAllNUMGroups(MeasurementGroup, statsTargetId)[statsTargetId] ||
+          {}
+      );
       state.annotation.data.cachedStats = {
-        [`imageId:${referencedImageId}`]: {
-          length: longAxisNUMGroup.MeasuredValueSequence.NumericValue,
-          width: shortAxisNUMGroup.MeasuredValueSequence.NumericValue,
-          unit: longAxisNUMGroup.MeasuredValueSequence
-            .MeasurementUnitsCodeSequence.CodeValue,
-          widthUnit:
-            shortAxisNUMGroup.MeasuredValueSequence.MeasurementUnitsCodeSequence
-              .CodeValue,
-        },
+        [statsTargetId]: { length, width, unit, widthUnit },
       };
     }
 
