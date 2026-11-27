@@ -3417,6 +3417,35 @@ class StackViewport extends Viewport {
     }
 
     // Otherwise, get the imageId and attempt to display it
+    return this.reloadImageIdIndex(imageIdIndex);
+  }
+
+  /**
+   * Loads and displays the image at imageIdIndex, even if it is the current
+   * index. Use it to retry an image that failed to load: setImageIdIndex
+   * stops early on the current index, and setStack resets the viewport
+   * properties.
+   *
+   * It treats the viewport properties as setImageIdIndex does: it keeps
+   * them, but applies the defaults from setDefaultProperties after the load.
+   * It also settles the same way: when the load fails, it resolves on the
+   * GPU path and rejects on the CPU path. Events.IMAGE_LOAD_ERROR reports
+   * the failure.
+   *
+   * Call it after the IMAGE_LOAD_ERROR listeners have returned, for example
+   * from a retry button or a setTimeout. While they run, the cache still
+   * holds the failed load, so a call from a listener fails again without a
+   * new request. The event is global: it has no viewport ID, and it also
+   * fires for an index the viewport has already left. When the retry runs,
+   * check that getCurrentImageIdIndex() and getCurrentImageId() still equal
+   * the event's imageIdIndex and imageId.
+   *
+   * @param imageIdIndex - number represents imageId index in the list of
+   * provided imageIds in setStack
+   */
+  public reloadImageIdIndex(imageIdIndex: number): Promise<string> {
+    this._throwIfDestroyed();
+
     const imageIdPromise = this._setImageIdIndex(imageIdIndex);
     this.targetImageIdIndex = imageIdIndex;
 
