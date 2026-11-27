@@ -560,6 +560,79 @@ describe('math/angle/angleBetweenLines', () => {
     ];
     expect(angleBetweenLines(line1, line2)).toBeCloseTo(0, 10);
   });
+
+  // The cosine of collinear vectors can round to just past -1 or 1, for
+  // example -1.0000000000000004 for the vectors (1, 6) and (-1, -6). Without
+  // clamping, Math.acos returns NaN, so AngleTool shows "Incomplete Angle"
+  // for a complete straight angle and CobbAngleTool shows "NaN" for two
+  // parallel lines.
+  it('returns 180 for a straight 3D angle whose cosine rounds past -1', () => {
+    // AngleTool calls angleBetweenLines([p1, p2], [p2, p3]).
+    const p1 = [0, 0, 0];
+    const p2 = [1, 6, 0];
+    const p3 = [2, 12, 0];
+    expect(angleBetweenLines([p1, p2], [p2, p3])).toBeCloseTo(180, 10);
+  });
+
+  it('returns 0 for parallel 3D lines whose cosine rounds past 1', () => {
+    // CobbAngleTool orders each segment so that seg1[1] and seg2[0] are the
+    // closest endpoints: line (0,0)-(1,6) and line (0,1)-(1,7) give
+    // seg1 = [(1,6), (0,0)] and seg2 = [(0,1), (1,7)].
+    const seg1 = [
+      [1, 6, 0],
+      [0, 0, 0],
+    ];
+    const seg2 = [
+      [0, 1, 0],
+      [1, 7, 0],
+    ];
+    expect(angleBetweenLines(seg1, seg2)).toBeCloseTo(0, 5);
+  });
+
+  it('returns 180 and 0 for 2D lines whose cosine rounds past -1 and 1', () => {
+    expect(
+      angleBetweenLines(
+        [
+          [0, 0],
+          [1, 6],
+        ],
+        [
+          [1, 6],
+          [2, 12],
+        ]
+      )
+    ).toBeCloseTo(180, 10);
+    expect(
+      angleBetweenLines(
+        [
+          [1, 6],
+          [0, 0],
+        ],
+        [
+          [0, 1],
+          [1, 7],
+        ]
+      )
+    ).toBeCloseTo(0, 5);
+  });
+
+  it('still returns NaN when a line has zero length', () => {
+    // AngleTool relies on NaN to show "Incomplete Angle".
+    const p = [3, 4, 5];
+    expect(angleBetweenLines([p, p], [p, [6, 8, 5]])).toBeNaN();
+    expect(
+      angleBetweenLines(
+        [
+          [3, 4],
+          [3, 4],
+        ],
+        [
+          [3, 4],
+          [6, 8],
+        ]
+      )
+    ).toBeNaN();
+  });
 });
 
 describe('math/point/distanceToPoint(Squared)', () => {

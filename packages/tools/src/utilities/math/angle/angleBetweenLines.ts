@@ -6,6 +6,15 @@ type Line3D = [Types.Point3, Types.Point3];
 type Line = Line2D | Line3D;
 
 /**
+ * Floating point rounding can put the cosine of parallel or anti-parallel
+ * vectors just outside [-1, 1], for example -1.0000000000000004, where
+ * Math.acos returns NaN. NaN from a zero length vector is kept.
+ */
+function clampCosine(cos: number): number {
+  return Math.min(1, Math.max(-1, cos));
+}
+
+/**
  * Calculates the angle between two 3D lines.
  */
 function angleBetween3DLines(line1: Line3D, line2: Line3D): number {
@@ -20,7 +29,7 @@ function angleBetween3DLines(line1: Line3D, line2: Line3D): number {
   const v1Length = vec3.length(v1);
   const v2Length = vec3.length(v2);
 
-  const cos = dot / (v1Length * v2Length);
+  const cos = clampCosine(dot / (v1Length * v2Length));
 
   const radian = Math.acos(cos);
 
@@ -41,7 +50,7 @@ function angleBetween2DLines(line1: Line2D, line2: Line2D): number {
   const v1Length = vec2.length(v1);
   const v2Length = vec2.length(v2);
 
-  const cos = dot / (v1Length * v2Length);
+  const cos = clampCosine(dot / (v1Length * v2Length));
   return Math.acos(cos) * (180 / Math.PI);
 }
 
