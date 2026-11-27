@@ -40,8 +40,10 @@ import {
  * so a device with no developer console (a phone or a tablet) can run the
  * whole test. "Copy report" gives every result and number as text.
  *
- * The results live in the session storage of the tab, because the context
- * loss, a real failure and a calibration reload the page or stop the tab.
+ * The results live in the local storage of the site, because the context
+ * loss, a real failure and a calibration reload the page or stop the tab, and
+ * Safari on iOS drops the session of a tab that stops twice in a row.
+ * "Fresh start" clears them.
  */
 
 console.warn(
@@ -171,7 +173,7 @@ function readJson<T>(storage: Storage, key: string, fallback: T): T {
 }
 
 function readResults(): Results {
-  return readJson<Results>(sessionStorage, RESULTS_KEY, {});
+  return readJson<Results>(localStorage, RESULTS_KEY, {});
 }
 
 /** The second tab of step 5 only reports the wait it sees. */
@@ -204,6 +206,8 @@ body { margin: 12px 16px; background: #fff; color: #1f2328; }
 .gmt-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 10px; }
 .gmt-bar button { padding: 4px 12px; border: 1px solid #c8ccd1; border-radius: 6px; background: #fff; }
 .gmt-bar .gmt-primary { background: #1f6feb; border-color: #1f6feb; color: #fff; }
+.gmt-errors { margin-bottom: 10px; padding: 6px 10px; border: 1px solid #cf222e; border-radius: 6px; background: #ffebe9; color: #cf222e; font: 12px ui-monospace, monospace; white-space: pre-wrap; }
+.gmt-errors[hidden] { display: none; }
 .gmt-progress { margin-left: auto; color: #57606a; }
 .gmt-main { display: grid; grid-template-columns: minmax(280px, 360px) minmax(0, 604px) minmax(230px, 340px); grid-template-areas: 'steps viewports side'; gap: 14px; align-items: start; }
 @media (max-width: 1100px) { .gmt-main { grid-template-columns: minmax(280px, 360px) minmax(0, 604px); grid-template-areas: 'steps viewports' 'steps side'; } }
@@ -282,8 +286,35 @@ const grid = make('div', 'gmt-viewports');
 
 left.appendChild(stepsList);
 main.append(left, grid, right);
-root.append(toolbar, main);
+
+/**
+ * Errors show on the page: a phone or a tablet has no console to read them.
+ */
+const errors = make('div', 'gmt-errors');
+
+root.append(errors, toolbar, main);
 content.appendChild(root);
+
+function showError(text: string): void {
+  const line = make(
+    'div',
+    undefined,
+    `${new Date().toLocaleTimeString()} ${text}`
+  );
+
+  errors.prepend(line);
+  errors.hidden = false;
+}
+
+errors.hidden = true;
+window.addEventListener('error', (event) =>
+  showError(`Error: ${event.message} (${event.filename}:${event.lineno})`)
+);
+window.addEventListener('unhandledrejection', (event) =>
+  showError(
+    `Error: ${(event.reason as Error)?.message ?? String(event.reason)}`
+  )
+);
 
 const VIEWPORT_NAMES = ['Axial', 'Sagittal', 'Coronal', '3D'];
 const labels: HTMLElement[] = [];
@@ -596,7 +627,7 @@ function setResult(id: StepId, status: Status, details: string): void {
   const results = readResults();
 
   results[id] = { status, details, at: Date.now() };
-  sessionStorage.setItem(RESULTS_KEY, JSON.stringify(results));
+  localStorage.setItem(RESULTS_KEY, JSON.stringify(results));
   showResults();
   log(`Step ${id}: ${BADGE[status]} ${details}`);
 }
@@ -871,7 +902,7 @@ async function stepContextLoss(): Promise<void> {
     return;
   }
 
-  sessionStorage.setItem(PENDING_KEY, 'contextLoss');
+  localStorage.setItem(PENDING_KEY, 'contextLoss');
 
   const url = new URL(window.location.href);
 
@@ -1136,7 +1167,7 @@ async function stepAllocate(): Promise<void> {
 
   const start = Date.now();
 
-  sessionStorage.setItem(PENDING_KEY, 'allocate');
+  localStorage.setItem(PENDING_KEY, 'allocate');
 
   const onFailure = (event: Event) =>
     guideAfterRealFailure(
@@ -1152,7 +1183,7 @@ async function stepAllocate(): Promise<void> {
     log,
   });
   eventTarget.removeEventListener(Events.GPU_MEMORY_FAILURE, onFailure);
-  sessionStorage.removeItem(PENDING_KEY);
+  localStorage.removeItem(PENDING_KEY);
 
   const failure = getLastGpuMemoryFailure();
 
@@ -1210,11 +1241,11 @@ async function stepCalibrate(): Promise<void> {
 
   const limitBefore = JSON.stringify(getGpuMemoryLimit());
 
-  sessionStorage.setItem(PENDING_KEY, 'calibrate');
+  localStorage.setItem(PENDING_KEY, 'calibrate');
 
   const result = await runGpuMemoryCalibration();
 
-  sessionStorage.removeItem(PENDING_KEY);
+  localStorage.removeItem(PENDING_KEY);
   checkCalibration(limitBefore, result);
 }
 
@@ -1245,7 +1276,7 @@ function checkCalibration(
  * reloads on purpose is pending, and ends in `finishPendingStep`.
  */
 function failInterruptedSteps(): void {
-  const pending = sessionStorage.getItem(PENDING_KEY);
+  const pending = localStorage.getItem(PENDING_KEY);
 
   Object.entries(readResults())
     .filter(([id, { status }]) => status === 'running' && id !== pending)
@@ -1260,9 +1291,9 @@ function failInterruptedSteps(): void {
 
 /** A step that the reload or a stopped tab interrupted ends here. */
 async function finishPendingStep(): Promise<void> {
-  const pending = sessionStorage.getItem(PENDING_KEY);
+  const pending = localStorage.getItem(PENDING_KEY);
 
-  sessionStorage.removeItem(PENDING_KEY);
+  localStorage.removeItem(PENDING_KEY);
 
   if (!pending) {
     return;
@@ -1275,6 +1306,30 @@ async function finishPendingStep(): Promise<void> {
   } finally {
     setBusy(false);
   }
+}
+
+/**
+ * A calibration that stopped the tab leaves the wait for WebGL of its last
+ * step, and the library records the run only when WebGL is available again,
+ * up to two minutes later. The step waits for that, and stays pending
+ * meanwhile, so a reload during the wait still ends it.
+ */
+async function finishStoppedCalibration(): Promise<void> {
+  const until = getGpuMemoryStatus().webglBlockedUntil ?? Date.now();
+
+  localStorage.setItem(PENDING_KEY, 'calibrate');
+  setResult(
+    'calibrate',
+    'running',
+    `the tab stopped; the result is recorded when the WebGL wait ends, at ${new Date(until).toLocaleTimeString()}. Keep the page open.`
+  );
+  await waitFor(
+    () => Boolean(getGpuMemoryHistory().calibration),
+    Math.max(0, until - Date.now()) + 15_000,
+    1000
+  );
+  localStorage.removeItem(PENDING_KEY);
+  checkCalibration(undefined);
 }
 
 /** Ends the step that the reload or a stopped tab interrupted. */
@@ -1301,8 +1356,7 @@ async function finishInterruptedStep(pending: string): Promise<void> {
       );
     }
   } else if (pending === 'calibrate') {
-    await waitFor(() => Boolean(getGpuMemoryHistory().calibration), 5000);
-    checkCalibration(undefined);
+    await finishStoppedCalibration();
   }
 }
 
