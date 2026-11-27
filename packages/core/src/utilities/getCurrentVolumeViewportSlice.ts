@@ -1,6 +1,7 @@
-import { glMatrix, vec3 } from 'gl-matrix';
+import { glMatrix, mat4, vec3 } from 'gl-matrix';
 import type { IVolumeViewport } from '../types';
 import { transformCanvasToIJK } from './transformCanvasToIJK';
+import getCurrentSliceStorageLocation from '../RenderingEngine/helpers/getCurrentSliceStorageLocation';
 
 /**
  * Get the image data for the current slice rendered on the viewport. The image
@@ -57,7 +58,12 @@ function getCurrentVolumeViewportSlice(viewport: IVolumeViewport) {
   const { voxelManager } = viewport.getImageData();
 
   const sliceViewInfo = viewport.getSliceViewInfo();
-  const scalarData = voxelManager.getSliceData(sliceViewInfo);
+  const { sliceIndex, slicePlane, planeIndex } =
+    getCurrentSliceStorageLocation(viewport);
+  // transformCanvasToIJK can round a tie to the other slice
+  sliceToIndexMatrix[12 + slicePlane] = planeIndex;
+  mat4.invert(indexToSliceMatrix, sliceToIndexMatrix);
+  const scalarData = voxelManager.getSliceData({ sliceIndex, slicePlane });
 
   return {
     width: sliceViewInfo.width,
