@@ -272,7 +272,7 @@ addToggleButtonToToolbar({
     const croppingTool =
       cornerstoneTools.ToolGroupManager.getToolGroup(
         toolGroupIdVRT
-      ).getToolInstance('VolumeCropping');
+      )?.getToolInstance('VolumeCropping');
     croppingTool?.setDisjointSegmentation(
       !croppingTool.getDisjointSegmentation()
     );

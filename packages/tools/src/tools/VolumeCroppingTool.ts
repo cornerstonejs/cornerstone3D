@@ -412,6 +412,8 @@ class VolumeCroppingTool extends BaseTool {
     // A segmentation that is added or re-created later gets the crop.
     if (this._isCropActive()) {
       const viewport = this._getViewport();
+      // addActor rewrites planes 0 and 1 of the image mapper with the camera slab.
+      this._updateClippingPlanes(viewport);
       this._updateSegmentationClipping(viewport);
       viewport?.render();
     }

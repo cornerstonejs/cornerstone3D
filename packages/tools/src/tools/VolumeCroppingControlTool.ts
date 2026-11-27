@@ -401,6 +401,12 @@ class VolumeCroppingControlTool extends AnnotationTool {
       Events.VOLUMECROPPING_TOOL_CHANGED,
       this._onSphereMoved
     );
+    // Asks the VolumeCroppingTool for its current planes and disjoint state.
+    triggerEvent(eventTarget, Events.VOLUMECROPPINGCONTROL_TOOL_CHANGED, {
+      toolGroupId: this.toolGroupId,
+      viewportsInfo: this._getViewportsInfo(),
+      seriesInstanceUID: this.seriesInstanceUID,
+    });
   }
 
   onSetToolDisabled() {
@@ -570,8 +576,17 @@ class VolumeCroppingControlTool extends AnnotationTool {
       if (enabled && representationUID) {
         planes = excludingPlane ? null : inPlane;
       } else if (enabled) {
-        // The slab lies on the clipped side of the plane: no image on this slice.
-        planes = excludingPlane ? [excludingPlane] : inPlane;
+        // No image on this slice: the plane, moved far along its normal, clips the whole slab.
+        planes = excludingPlane
+          ? [
+              {
+                origin: excludingPlane.origin.map(
+                  (value, i) => value + excludingPlane.normal[i] * 1e6
+                ) as Types.Point3,
+                normal: excludingPlane.normal,
+              },
+            ]
+          : inPlane;
       }
       setCropClippingPlanes(actor, planes, {
         keepCount: 2,
