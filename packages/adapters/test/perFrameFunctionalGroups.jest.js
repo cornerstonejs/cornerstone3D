@@ -205,4 +205,144 @@ describe('applyPerFrameFunctionalGroups', () => {
     // Other inherited fields are preserved.
     expect(group.PlanePositionSequence.ImagePositionPatient).toEqual([0, 0, 0]);
   });
+
+  it('falls back to the frame module for a multiframe custom scheme', () => {
+    const frameMetadata = (numberOfFrames) => ({
+      get: (type) =>
+        type === 'frameModule' ? { frameNumber: 3, numberOfFrames } : undefined,
+    });
+
+    expect(getReferencedFrameNumber('custom://abc', frameMetadata(5))).toBe(3);
+    expect(
+      getReferencedFrameNumber('custom://abc', frameMetadata(1))
+    ).toBeUndefined();
+  });
+
+  describe('frame module fallback (!Number.isFinite(frameNumber))', () => {
+    // Records every metadata.get call so tests can assert whether the fallback
+    // branch ran (it is the only place get() is called).
+    const makeMetadata = ({ providerFrame, instance, frameModule } = {}) => {
+      const calls = [];
+      const md = {
+        calls,
+        get: (type, imageId) => {
+          calls.push(type);
+          if (type === 'instance') {
+            return instance;
+          }
+          if (type === 'frameModule') {
+            return frameModule;
+          }
+          return undefined;
+        },
+      };
+      if (providerFrame !== undefined) {
+        md.getFrameInformationFromURL = () => providerFrame;
+      }
+      return md;
+    };
+
+    describe('skips the fallback when a finite frame is resolved', () => {
+      it('uses the provider frame without consulting the frame module', () => {
+        const md = makeMetadata({
+          providerFrame: 6,
+          frameModule: { frameNumber: 99, numberOfFrames: 100 },
+        });
+
+        expect(getReferencedFrameNumber('custom://abc', md)).toBe(6);
+        expect(md.calls).toEqual([]);
+      });
+
+      it('coerces a numeric-string provider frame and skips the fallback', () => {
+        const md = makeMetadata({
+          providerFrame: '5',
+          frameModule: { frameNumber: 99, numberOfFrames: 100 },
+        });
+
+        expect(getReferencedFrameNumber('custom://abc', md)).toBe(5);
+        expect(md.calls).toEqual([]);
+      });
+
+      it('uses FrameRange (/frames/N) when the provider has no frame extractor', () => {
+        const md = makeMetadata({
+          frameModule: { frameNumber: 99, numberOfFrames: 100 },
+        });
+
+        expect(
+          getReferencedFrameNumber('wadors:https://x/studies/1/frames/8', md)
+        ).toBe(8);
+        expect(md.calls).toEqual([]);
+      });
+
+      it('uses FrameRange (frameNumber=N) when the provider returns null', () => {
+        const md = makeMetadata({
+          providerFrame: null,
+          frameModule: { frameNumber: 99, numberOfFrames: 100 },
+        });
+
+        expect(getReferencedFrameNumber('custom://abc?frameNumber=2', md)).toBe(
+          2
+        );
+        expect(md.calls).toEqual([]);
+      });
+    });
+
+    describe('enters the fallback when no finite frame is resolved', () => {
+      it('enters when FrameRange finds no frame (null) and uses the frame module', () => {
+        const md = makeMetadata({
+          frameModule: { frameNumber: 4, numberOfFrames: 10 },
+        });
+
+        expect(getReferencedFrameNumber('custom://abc', md)).toBe(4);
+        expect(md.calls).toEqual(['frameModule', 'instance']);
+      });
+
+      it('enters when the provider frame is non-numeric (NaN)', () => {
+        const md = makeMetadata({
+          providerFrame: 'abc',
+          frameModule: { frameNumber: 2, numberOfFrames: 3 },
+        });
+
+        expect(getReferencedFrameNumber('custom://abc', md)).toBe(2);
+        expect(md.calls).toContain('frameModule');
+      });
+
+      it('prefers instance NumberOfFrames over frameModule.numberOfFrames', () => {
+        const md = makeMetadata({
+          instance: { NumberOfFrames: '12' },
+          frameModule: { frameNumber: 7, numberOfFrames: 1 },
+        });
+
+        expect(getReferencedFrameNumber('custom://abc', md)).toBe(7);
+      });
+
+      it('returns undefined for a single-frame instance', () => {
+        const md = makeMetadata({
+          instance: { NumberOfFrames: 1 },
+          frameModule: { frameNumber: 1, numberOfFrames: 1 },
+        });
+
+        expect(getReferencedFrameNumber('custom://abc', md)).toBeUndefined();
+        expect(md.calls).toContain('frameModule');
+      });
+
+      it('returns undefined when NumberOfFrames is unknown', () => {
+        const md = makeMetadata({ frameModule: { frameNumber: 3 } });
+
+        expect(getReferencedFrameNumber('custom://abc', md)).toBeUndefined();
+      });
+
+      it('returns undefined for a multiframe instance without a frameNumber', () => {
+        const md = makeMetadata({ frameModule: { numberOfFrames: 5 } });
+
+        expect(getReferencedFrameNumber('custom://abc', md)).toBeUndefined();
+      });
+
+      it('returns undefined without throwing when metadata is missing', () => {
+        expect(
+          getReferencedFrameNumber('custom://abc', undefined)
+        ).toBeUndefined();
+      });
+    });
+  });
 });
