@@ -269,6 +269,67 @@ describe('wadouri dataSet-layer', () => {
         expect(result.columnCosines).toBeNull();
         expect(result.imageOrientationPatient).toBeUndefined();
       });
+
+      it('reads spacingBetweenSlices from the root Spacing Between Slices tag', () => {
+        const dataSet = fakeDataSet(
+          { x00180050: '5', x00180088: '2.5' },
+          { x00180050: { length: 1 }, x00180088: { length: 3 } }
+        );
+
+        const result = metadataForDataset(
+          'imagePlaneModule',
+          'imageId',
+          dataSet as any
+        );
+
+        expect(result.sliceThickness).toBe(5);
+        expect(result.spacingBetweenSlices).toBe(2.5);
+      });
+
+      it('returns undefined spacingBetweenSlices when the tag is absent', () => {
+        const dataSet = fakeDataSet({ x00180050: '5' }, { x00180050: {} });
+
+        const result = metadataForDataset(
+          'imagePlaneModule',
+          'imageId',
+          dataSet as any
+        );
+
+        expect(result.spacingBetweenSlices).toBeUndefined();
+      });
+
+      it('reads spacingBetweenSlices from the shared Pixel Measures Sequence of an enhanced multiframe', () => {
+        const pixelMeasuresItem = fakeDataSet(
+          { x00180050: '5', x00180088: '1.25' },
+          { x00180050: { length: 1 }, x00180088: { length: 4 } }
+        );
+        const sharedGroupItem = fakeDataSet(
+          {},
+          {
+            x00289110: {
+              tag: 'x00289110',
+              items: [{ dataSet: pixelMeasuresItem }],
+            },
+          }
+        );
+        const multiframeDataSet = fakeDataSet(
+          { x00280008: '2' },
+          { x52009229: { items: [{ dataSet: sharedGroupItem }] } }
+        );
+
+        const frameDataSet = combineFrameInstanceDataset(
+          1,
+          multiframeDataSet as any
+        );
+        const result = metadataForDataset(
+          'imagePlaneModule',
+          'imageId',
+          frameDataSet
+        );
+
+        expect(result.sliceThickness).toBe(5);
+        expect(result.spacingBetweenSlices).toBe(1.25);
+      });
     });
 
     describe('IMAGE_PIXEL module dispatch', () => {

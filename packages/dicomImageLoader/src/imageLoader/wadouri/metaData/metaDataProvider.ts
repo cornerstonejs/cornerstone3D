@@ -15,6 +15,7 @@ import {
   extractPositionFromDataset,
   extractSpacingFromDataset,
   extractSliceThicknessFromDataset,
+  extractSpacingBetweenSlicesFromDataset,
 } from './extractPositioningFromDataset';
 import isNMReconstructable from '../../isNMReconstructable';
 import { instanceModuleNames } from '../../getInstanceModule';
@@ -184,6 +185,8 @@ export function metadataForDataset(
     const imagePositionPatient = extractPositionFromDataset(dataSet);
     const pixelSpacing = extractSpacingFromDataset(dataSet);
     const sliceThickness = extractSliceThicknessFromDataset(dataSet);
+    const spacingBetweenSlices =
+      extractSpacingBetweenSlicesFromDataset(dataSet);
 
     let columnPixelSpacing = null;
 
@@ -231,6 +234,7 @@ export function metadataForDataset(
       columnCosines,
       imagePositionPatient,
       sliceThickness,
+      spacingBetweenSlices,
       sliceLocation: dataSet.floatString('x00201041'),
       pixelSpacing,
       rowPixelSpacing,
