@@ -65,6 +65,13 @@ export default {
   [StrategyCallbacks.AcceptPreview]: (
     operationData: InitializedOperationData
   ) => {
+    // The strategy initializes no data when the segmentation has no labelmap
+    // to edit, for example when it was removed while the brush was active.
+    // There is then no preview to accept.
+    if (!operationData?.segmentationVoxelManager) {
+      return;
+    }
+
     const {
       previewSegmentIndex,
       segmentationVoxelManager,
@@ -72,7 +79,7 @@ export default {
       segmentIndex,
       labelValue,
       centerSegmentIndexInfo,
-    } = operationData || {};
+    } = operationData;
 
     const { changedIndices } = centerSegmentIndexInfo || {};
 
@@ -104,7 +111,9 @@ export default {
     );
 
     // reset the centerSegmentIndexInfo
-    operationData.centerSegmentIndexInfo.changedIndices = [];
+    if (centerSegmentIndexInfo) {
+      centerSegmentIndexInfo.changedIndices = [];
+    }
   },
 
   [StrategyCallbacks.RejectPreview]: (
