@@ -5,6 +5,7 @@ import MeasurementReport, {
   type MeasurementAdapter,
 } from './MeasurementReport';
 import { toScoords } from '../helpers';
+import { mapUnitToUCUM } from './unitMapper';
 
 export type Point = {
   x: number;
@@ -289,5 +290,23 @@ export default class BaseAdapter3D {
     );
 
     return cachedStats[targetId] || {};
+  }
+
+  /**
+   * Gets the unit arguments of a TID300 representation from the cached stats.
+   * Each adapter must give all of its units: without `unit` dcmjs writes a
+   * length or a perimeter as "mm", and without `areaUnit` an area as "mm2",
+   * whatever unit the measurement was made in.
+   *
+   * @param stats - The cached stats from {@link getCachedStats}
+   * @returns `unit`, `areaUnit`, `radiusUnit`, and `modalityUnit` as a UCUM code
+   */
+  public static getUnitArguments({ unit, areaUnit, radiusUnit, modalityUnit }) {
+    return {
+      unit,
+      areaUnit,
+      radiusUnit,
+      modalityUnit: mapUnitToUCUM(modalityUnit),
+    };
   }
 }

@@ -3,7 +3,6 @@ import MeasurementReport from './MeasurementReport';
 import BaseAdapter3D from './BaseAdapter3D';
 import { toScoord } from '../helpers';
 import { extractAllNUMGroups, restoreAdditionalMetrics } from './metricHandler';
-import { mapUnitToUCUM } from './unitMapper';
 
 const { Circle: TID300Circle } = utilities.TID300;
 
@@ -67,6 +66,7 @@ class CircleROI extends BaseAdapter3D {
 
   /**
    * Gets the TID 300 representation of a circle, given the cornerstone representation.
+   * The perimeter is 2πr, so it is written in the unit of the radius.
    *
    * @param {Object} tool
    * @returns
@@ -85,25 +85,15 @@ class CircleROI extends BaseAdapter3D {
     const center = toScoord(scoordProps, handles.points[0]);
     const end = toScoord(scoordProps, handles.points[1]);
 
-    const {
-      area,
-      radius,
-      max,
-      min,
-      stdDev,
-      mean,
-      modalityUnit,
-      radiusUnit,
-      areaUnit,
-    } = super.getCachedStats(cachedStats, metadata);
+    const stats = super.getCachedStats(cachedStats, metadata);
+    const { area, radius, max, min, stdDev, mean, radiusUnit } = stats;
     const perimeter = 2 * Math.PI * radius;
 
     return {
+      ...this.getUnitArguments(stats),
       area,
-      areaUnit,
       perimeter,
-      modalityUnit: mapUnitToUCUM(modalityUnit),
-      radiusUnit,
+      unit: radiusUnit,
       radius,
       max,
       min,

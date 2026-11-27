@@ -3,7 +3,6 @@ import { utilities } from 'dcmjs';
 import { vec3 } from 'gl-matrix';
 import BaseAdapter3D from './BaseAdapter3D';
 import { extractAllNUMGroups, restoreAdditionalMetrics } from './metricHandler';
-import { mapUnitToUCUM } from './unitMapper';
 import { toScoords, toArray } from '../helpers';
 import ControlPointPolyline from './ControlPointPolyline';
 import { SPLINE_TYPE_CODE } from './constants';
@@ -117,6 +116,11 @@ class PlanarFreehandROI extends BaseAdapter3D {
     return state;
   }
 
+  /**
+   * Builds the TID300 polyline arguments from the annotation: the contour, its
+   * control points, and the area and perimeter with their units from the
+   * cached stats. An open contour writes its length as the perimeter.
+   */
   static getTID300RepresentationArguments(tool, is3DMeasurement = false) {
     const { data, finding, findingSites, metadata } = tool;
 
@@ -141,25 +145,16 @@ class PlanarFreehandROI extends BaseAdapter3D {
     const controlPoints =
       handles?.points?.length && toScoords(scoordProps, handles.points);
 
-    const {
-      area,
-      areaUnit,
-      modalityUnit,
-      perimeter,
-      mean,
-      max,
-      stdDev,
-      length,
-    } = super.getCachedStats(data.cachedStats, metadata);
+    const stats = super.getCachedStats(data.cachedStats, metadata);
+    const { area, perimeter, mean, max, stdDev, length } = stats;
 
     return {
       /** From cachedStats */
       points,
       controlPoints,
+      ...this.getUnitArguments(stats),
       area,
-      areaUnit,
       perimeter: perimeter ?? length,
-      modalityUnit: mapUnitToUCUM(modalityUnit),
       mean,
       max,
       stdDev,
