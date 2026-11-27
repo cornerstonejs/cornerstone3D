@@ -37,9 +37,7 @@ function createVolume(volumeId: string) {
     metadata: {
       FrameOfReferenceUID: 'frame-of-reference',
     },
-    vtkOpenGLTexture: {
-      setUpdatedFrame: jest.fn(),
-    },
+    markFrameModified: jest.fn(),
     voxelManager: {
       invalidateCache: jest.fn(),
     },
@@ -74,7 +72,7 @@ describe('performVolumeLabelmapUpdate', () => {
     });
 
     expect(getOrCreateLabelmapVolumeMock).toHaveBeenCalledWith(stackLayer);
-    expect(volume.vtkOpenGLTexture.setUpdatedFrame).toHaveBeenCalledWith(1);
+    expect(volume.markFrameModified).toHaveBeenCalledWith(1);
     expect(volume.voxelManager.invalidateCache).toHaveBeenCalledTimes(1);
     expect(volume.imageData.modified).toHaveBeenCalledTimes(1);
     expect(triggerEventMock).toHaveBeenCalledWith(
@@ -82,6 +80,36 @@ describe('performVolumeLabelmapUpdate', () => {
       'IMAGE_VOLUME_MODIFIED',
       {
         volumeId: 'stack-layer-geometry-volume',
+        FrameOfReferenceUID: 'frame-of-reference',
+        numberOfFrames: 3,
+        framesProcessed: 3,
+      }
+    );
+  });
+
+  it('renders without re-reducing when no voxel changed', () => {
+    const volume = createVolume('unchanged-volume-id');
+
+    getVolumeMock.mockReturnValue(volume);
+
+    performVolumeLabelmapUpdate({
+      modifiedSlicesToUse: [],
+      representationData: {
+        Labelmap: {
+          volumeId: 'unchanged-volume-id',
+        },
+      },
+      type: 'Labelmap' as never,
+      voxelsUnchanged: true,
+    });
+
+    expect(volume.markFrameModified).not.toHaveBeenCalled();
+    expect(volume.voxelManager.invalidateCache).not.toHaveBeenCalled();
+    expect(triggerEventMock).toHaveBeenCalledWith(
+      eventTarget,
+      'IMAGE_VOLUME_MODIFIED',
+      {
+        volumeId: 'unchanged-volume-id',
         FrameOfReferenceUID: 'frame-of-reference',
         numberOfFrames: 3,
         framesProcessed: 3,
@@ -105,7 +133,7 @@ describe('performVolumeLabelmapUpdate', () => {
     });
 
     expect(getVolumeMock).toHaveBeenCalledWith('legacy-volume-id');
-    expect(volume.vtkOpenGLTexture.setUpdatedFrame).toHaveBeenCalledTimes(3);
+    expect(volume.markFrameModified).toHaveBeenCalledTimes(3);
     expect(triggerEventMock).toHaveBeenCalledWith(
       eventTarget,
       'IMAGE_VOLUME_MODIFIED',
