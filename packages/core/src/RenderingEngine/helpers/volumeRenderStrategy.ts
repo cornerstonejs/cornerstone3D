@@ -4,8 +4,14 @@ import {
   deriveBoxAverageGrid,
 } from '../../utilities/voxelGrid';
 import type { ViewportFidelityCause } from '../../types/ViewportFidelity';
-import { volumeTextureBytes } from '../../utilities/getBufferConfiguration';
-import { gridLimitsOfGpuSettings } from '../../utilities/gpuSettingsPresets';
+import {
+  gpuSettingsForShare,
+  gpuTextureBytesPerVoxel,
+  gridLimitsOfGpuSettings,
+} from '../../utilities/gpuSettingsPresets';
+import { getGpuMemoryTotal } from '../../utilities/gpuMemoryLedger';
+import { volumeTextureStore } from '../../cache/volumeTextureStore';
+import cache from '../../cache/cache';
 import { getLossyDownsampling } from '../../init';
 import { FULL_RESOLUTION_TEXTURE_SET } from '../../cache/classes/ImageVolume';
 import type { GpuSettings } from '../../utilities/gpuSettingsPresets';
@@ -268,9 +274,12 @@ function componentsOf(volume: IImageVolume): number {
   return volume.voxelManager?.numberOfComponents || 1;
 }
 
-/** The number of bytes of one voxel of a texture of this volume. */
+/**
+ * The number of bytes of one voxel of the GPU texture of this volume, in the
+ * format that vtk.js uploads (see `gpuTextureBytesPerVoxel`).
+ */
 function bytesPerVoxelOf(volume: IImageVolume): number {
-  return volumeTextureBytes(1, volume.dataType, componentsOf(volume));
+  return gpuTextureBytesPerVoxel(volume.dataType, componentsOf(volume));
 }
 
 /**
@@ -308,6 +317,10 @@ export function reducedStrategyName(
  * must know whether a volume draws reduced, before any texture exists, reads
  * the same answer here.
  *
+ * Under `auto`, the memory limit is a budget of the page, and the volume gets
+ * its fair share of it (see {@link fairShares}). This reads the record of the
+ * device and runs no probe.
+ *
  * @param volume - the volume to draw
  * @param gpuSettings - the GPU settings that apply
  * @returns the box size on each axis of the voxel grid
@@ -316,24 +329,140 @@ export function volumeTextureReductionFactors(
   volume: IImageVolume,
   gpuSettings: GpuSettings | undefined
 ): Point3 {
-  if (
-    !gpuSettings ||
-    !getLossyDownsampling().final ||
-    volume.isDynamicVolume?.() ||
-    componentsOf(volume) > 1
-  ) {
+  if (!gpuSettings || !getLossyDownsampling().final || !isReducible(volume)) {
     return [1, 1, 1];
   }
 
-  const limits = gridLimitsOfGpuSettings(gpuSettings, bytesPerVoxelOf(volume));
+  const bytesPerVoxel = bytesPerVoxelOf(volume);
+  const limits = gridLimitsOfGpuSettings(
+    gpuSettingsForVolume(volume, gpuSettings),
+    bytesPerVoxel
+  );
 
   return boxAverageReductionFactors(volume.voxelGrid.dimensions, limits);
 }
 
 /**
- * Why the GPU settings reduce this volume: `deviceTextureLimit` when the edge
- * limit alone reduces it, `memoryBudget` when only the texture memory does.
- * Undefined when the settings do not reduce the volume.
+ * False for a dynamic (4D) volume and a volume of more than one component,
+ * which the reduced fill does not support yet.
+ */
+function isReducible(volume: IImageVolume): boolean {
+  return !volume.isDynamicVolume?.() && componentsOf(volume) <= 1;
+}
+
+/** The GPU bytes of the full-resolution texture of a volume. */
+function fullTextureBytesOf(volume: IImageVolume): number {
+  const [x, y, z] = volume.voxelGrid.dimensions;
+
+  return x * y * z * bytesPerVoxelOf(volume);
+}
+
+/**
+ * Divides a memory budget among display sets, so that each display set that
+ * fits a fair share gets all that it needs, and only the large ones are
+ * reduced.
+ *
+ * Each pass gives its full need to each display set whose need is at most
+ * `budget / count` of the display sets still open, and takes those needs out
+ * of the budget. The passes repeat until no more display sets fit. The display
+ * sets that remain share the rest of the budget equally. The repeat never
+ * gives a display set less than one pass does.
+ *
+ * @param needs - the bytes that each display set needs at full resolution
+ * @param budget - the bytes to divide
+ * @returns the bytes of each display set, in the order of `needs`
+ */
+export function fairShares(needs: readonly number[], budget: number): number[] {
+  const shares = new Array<number>(needs.length);
+  let remaining = Math.max(budget, 0);
+  let open = needs.map((_need, index) => index);
+  let fitted = true;
+
+  while (open.length && fitted) {
+    const share = remaining / open.length;
+
+    fitted = false;
+    open = open.filter((index) => {
+      if (needs[index] > share) {
+        return true;
+      }
+
+      shares[index] = needs[index];
+      remaining -= needs[index];
+      fitted = true;
+
+      return false;
+    });
+  }
+
+  open.forEach((index) => (shares[index] = remaining / open.length));
+
+  return shares;
+}
+
+/**
+ * The texture memory of a volume under `auto`: its fair share of the limit.
+ *
+ * The display sets are the volumes whose texture set a viewport holds, and
+ * this volume. The budget is the limit less the GPU bytes of the page that are
+ * not textures of a display set: the canvases, the contexts and the other
+ * textures. A display set that the strategy cannot reduce takes its full need
+ * first.
+ */
+function memoryShareOf(volume: IImageVolume, limit: number): number {
+  const volumes = [volume];
+
+  for (const volumeId of volumeTextureStore.claimedVolumeIds()) {
+    const other = volumeId !== volume.volumeId && cache.getVolume(volumeId);
+
+    if (other?.voxelGrid) {
+      volumes.push(other);
+    }
+  }
+
+  const reducible = volumes.filter(isReducible);
+  let budget =
+    limit - getGpuMemoryTotal(new Set(volumes.map((v) => v.volumeId)));
+
+  volumes
+    .filter((other) => !isReducible(other))
+    .forEach((other) => (budget -= fullTextureBytesOf(other)));
+
+  return fairShares(reducible.map(fullTextureBytesOf), budget)[
+    reducible.indexOf(volume)
+  ];
+}
+
+/** The GPU settings for the grid of a volume, with its share of the page. */
+function gpuSettingsForVolume(
+  volume: IImageVolume,
+  gpuSettings: GpuSettings
+): GpuSettings {
+  if (
+    gpuSettings.id !== 'auto' ||
+    !Number.isFinite(gpuSettings.textureMemoryBytes)
+  ) {
+    return gpuSettings;
+  }
+
+  return gpuSettingsForShare(
+    gpuSettings,
+    memoryShareOf(volume, gpuSettings.textureMemoryBytes)
+  );
+}
+
+/** The share of the voxels that the factors keep, inverted: 8 for 2x2x2. */
+function reductionOf(factors: Point3): number {
+  return factors[0] * factors[1] * factors[2];
+}
+
+/**
+ * Why the GPU settings reduce this volume: `memoryBudget` when the memory
+ * limit reduces it at least as much as the edge limit does, and
+ * `deviceTextureLimit` when the edge limit reduces it more. Undefined when the
+ * settings do not reduce the volume. The limits are the ones of the settings
+ * for this grid, as in {@link volumeTextureReductionFactors}, so an
+ * application can offer a larger memory limit when that would help.
  */
 export function reductionCauseOf(
   volume: IImageVolume,
@@ -343,11 +472,22 @@ export function reductionCauseOf(
     return undefined;
   }
 
-  const edgeFactors = boxAverageReductionFactors(volume.voxelGrid.dimensions, {
-    maxEdge: gpuSettings.maxTextureEdge,
-  });
+  const { dimensions } = volume.voxelGrid;
+  const settings = gpuSettingsForVolume(volume, gpuSettings);
+  const { maxVoxelCount } = gridLimitsOfGpuSettings(
+    settings,
+    bytesPerVoxelOf(volume)
+  );
+  const edgeReduction = reductionOf(
+    boxAverageReductionFactors(dimensions, { maxEdge: settings.maxTextureEdge })
+  );
+  const memoryReduction = reductionOf(
+    boxAverageReductionFactors(dimensions, { maxVoxelCount })
+  );
 
-  return edgeFactors.some((f) => f > 1) ? 'deviceTextureLimit' : 'memoryBudget';
+  return memoryReduction > 1 && memoryReduction >= edgeReduction
+    ? 'memoryBudget'
+    : 'deviceTextureLimit';
 }
 
 /**
@@ -417,6 +557,12 @@ export function provisionReducedResolutionStrategy({
   const statistic = volume.reductionStatistic ?? VoxelStatistics.Average;
   const grid = deriveBoxAverageGrid(fullResolutionGrid, { factors });
   const name = reducedStrategyName(factors, statistic);
+  /**
+   * The cause comes from the budget that chose the grid: provisioning can
+   * evict a texture of another volume, which frees budget before a later
+   * read.
+   */
+  const reductionCause = reductionCauseOf(volume, gpuSettings);
 
   const set = volume.provisionTextureSet({
     name,
@@ -434,7 +580,7 @@ export function provisionReducedResolutionStrategy({
     volume,
     grid,
     statistic,
-    reductionCause: reductionCauseOf(volume, gpuSettings),
+    reductionCause,
   });
 }
 

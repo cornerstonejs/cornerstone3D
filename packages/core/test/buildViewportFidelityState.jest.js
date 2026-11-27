@@ -354,7 +354,7 @@ describe('display issues (FIDELITY-STATE-13)', () => {
   });
 
   it('shows no indicator for a known VOI LUT function', () => {
-    for (const voiLUTFunction of ['SIGMOID', undefined]) {
+    for (const voiLUTFunction of ['SIGMOID', 'sigmoid ', undefined]) {
       const state = buildViewportFidelityState(
         fidelityLineFromStackImage({ voiLUTFunction })
       );

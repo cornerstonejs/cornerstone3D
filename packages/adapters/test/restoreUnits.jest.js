@@ -15,8 +15,14 @@ import { setWorldToImageCoords } from '../src/adapters/helpers';
 const { worldToImageCoords: globalWorldToImageCoords } = utilities;
 const { DicomMetaDictionary } = dcmjsData;
 
-const { CircleROI, EllipticalROI, PlanarFreehandROI, RectangleROI } =
-  Cornerstone3DSR;
+const {
+  Bidirectional,
+  CircleROI,
+  EllipticalROI,
+  Length,
+  PlanarFreehandROI,
+  RectangleROI,
+} = Cornerstone3DSR;
 
 const referencedImageId = '2';
 const imageKey = `imageId:${referencedImageId}`;
@@ -50,7 +56,10 @@ function roundTrip(
       state: { annotation: { data: { handles: {} } }, sopInstanceUid },
       NUMGroup: items.find((item) => item.ValueType === 'NUM'),
       worldCoords: worldCoordsOf(tool),
+      // Bidirectional reads its points from the scoords. The test checks only the units.
+      scoordArgs: { is3DMeasurement: true, referencedImageId },
       referencedImageId,
+      statsTargetId: imageKey,
       ReferencedFrameNumber: undefined,
     });
   try {
@@ -131,6 +140,38 @@ describe('units restored from an SR', () => {
       expect(Number(stats.radius)).toBe(5);
     }
   );
+
+  it.each(UNITS)('Length on %s', (_name, { unit }) => {
+    const stats = roundTrip(
+      Length,
+      toolWith({
+        handles: { points: circlePoints },
+        cachedStats: { [imageKey]: { length: 5, unit } },
+      })
+    );
+
+    expect(stats.unit).toBe(unit);
+    expect(Number(stats.length)).toBe(5);
+  });
+
+  it.each(UNITS)('Bidirectional on %s', (_name, { unit }) => {
+    const stats = roundTrip(
+      Bidirectional,
+      toolWith({
+        handles: {
+          points: [
+            [0, 5, 2],
+            [10, 5, 2],
+            [5, 3, 2],
+            [5, 7, 2],
+          ],
+        },
+        cachedStats: { [imageKey]: { length: 10, width: 4, unit } },
+      })
+    );
+
+    expect(stats).toMatchObject({ unit, widthUnit: unit });
+  });
 
   it.each(UNITS)('EllipticalROI on %s', (_name, { areaUnit, modalityUnit }) => {
     const stats = roundTrip(
@@ -294,5 +335,47 @@ describe('units restored from an SR', () => {
 
     expect(Number(stats.length)).toBe(20);
     expect(stats.unit).toBe('mm');
+  });
+});
+
+describe('an SR that references the frame of reference only', () => {
+  it('keeps the Length value and unit over a load and a second save', () => {
+    const FrameOfReferenceUID = '1.2.840.99';
+    const tidArgs = Length.getTID300RepresentationArguments(
+      {
+        metadata: { FrameOfReferenceUID, volumeId: 'ct' },
+        data: {
+          handles: { points: circlePoints },
+          cachedStats: {
+            'volumeId:ct?sliceIndex=2': { length: 5, unit: 'mm' },
+          },
+        },
+      },
+      true
+    );
+    // MeasurementReport adds the frame of reference for a 3D measurement
+    tidArgs.ReferencedFrameOfReferenceUID = FrameOfReferenceUID;
+    const { ContentSequence } = DicomMetaDictionary.naturalizeDataset(
+      DicomMetaDictionary.denaturalizeDataset({
+        ContentSequence: new Length.TID300Representation(tidArgs).contentItem(),
+      })
+    );
+
+    const { annotation } = Length.getMeasurementData(
+      { ContentSequence: [].concat(ContentSequence) },
+      {},
+      {}
+    );
+    const stats =
+      annotation.data.cachedStats[`frameOfReference:${FrameOfReferenceUID}`];
+    expect(stats.unit).toBe('mm');
+    expect(Number(stats.length)).toBe(5);
+
+    const saved = Length.getTID300RepresentationArguments(
+      { metadata: annotation.metadata, data: annotation.data },
+      true
+    );
+    expect(saved.unit).toBe('mm');
+    expect(Number(saved.distance)).toBe(5);
   });
 });

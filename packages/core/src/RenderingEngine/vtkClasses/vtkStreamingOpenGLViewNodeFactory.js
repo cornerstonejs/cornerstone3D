@@ -16,10 +16,10 @@ import vtkOpenGLSphereMapper from '@kitware/vtk.js/Rendering/OpenGL/SphereMapper
 import vtkOpenGLStickMapper from '@kitware/vtk.js/Rendering/OpenGL/StickMapper';
 import vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
 import vtkOpenGLVolume from '@kitware/vtk.js/Rendering/OpenGL/Volume';
-import vtkOpenGLVolumeMapper from '@kitware/vtk.js/Rendering/OpenGL/VolumeMapper';
 import vtkViewNodeFactory from '@kitware/vtk.js/Rendering/SceneGraph/ViewNodeFactory';
 import vtkStreamingOpenGLImageResliceMapper from './vtkStreamingOpenGLImageResliceMapper';
 import vtkStreamingOpenGLVolumeMapper from './vtkStreamingOpenGLVolumeMapper';
+import vtkLedgerOpenGLVolumeMapper from './vtkLedgerOpenGLVolumeMapper';
 
 const CLASS_MAPPING = Object.create(null);
 
@@ -141,7 +141,8 @@ export function extend(publicAPI, model, initialValues = {}) {
   registerOverride('vtkStickMapper', vtkOpenGLStickMapper.newInstance);
   registerOverride('vtkTexture', vtkOpenGLTexture.newInstance);
   registerOverride('vtkVolume', vtkOpenGLVolume.newInstance);
-  registerOverride('vtkVolumeMapper', vtkOpenGLVolumeMapper.newInstance);
+  /** A plain volume mapper reports its draw to the allocation tracker. */
+  registerOverride('vtkVolumeMapper', vtkLedgerOpenGLVolumeMapper.newInstance);
   registerOverride(
     'vtkSharedVolumeMapper',
     vtkStreamingOpenGLVolumeMapper.newInstance

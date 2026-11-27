@@ -34,6 +34,15 @@ function formatMemory(bytes: number): string {
 
 /** Describes one preset in a form that a reader can compare at a glance. */
 function describe(gpuSettings: GpuSettings): string {
+  /**
+   * The values of `auto` come from the probe of the device and the memory
+   * limit, which can change, so the label names the source and not the
+   * values.
+   */
+  if (gpuSettings.id === 'auto') {
+    return 'auto (from the device and the memory limit)';
+  }
+
   const internal = gpuSettings.internal ? ', internal' : '';
 
   return `${gpuSettings.id} (edge ${gpuSettings.maxTextureEdge}, ${formatMemory(gpuSettings.textureMemoryBytes)}, speed ${gpuSettings.speed}${internal})`;
@@ -42,10 +51,12 @@ function describe(gpuSettings: GpuSettings): string {
 /**
  * Adds a drop down that selects the GPU settings preset.
  *
- * A preset is a set of values, and nothing probes the device. The preset
- * decides which render strategies a provider can build, so a page reloads its
- * data after a change: the strategies of a viewport are built when that
- * viewport adds its actor.
+ * `auto` is the default: it probes the texture edge of the device and takes
+ * its memory from the limit choice (see `getGpuMemoryLimit`). A named preset
+ * is a fixed set of values and overrides `auto`. The preset decides which
+ * render strategies a provider can build, so a page reloads its data after a
+ * change: the strategies of a viewport are built when that viewport adds its
+ * actor.
  *
  * `high` and `high-texture-4096` are the pair to compare. They describe the
  * same values except the edge of a texture, so one volume draws with

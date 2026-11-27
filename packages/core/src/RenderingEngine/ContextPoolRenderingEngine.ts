@@ -380,6 +380,46 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
     );
   };
 
+  /**
+   * Runs for each viewport that goes, by a removal or by a reset of the layout
+   * (`setViewports`): the shared render window drops its renderer, the pool
+   * forgets its size and its canvas entry in the GPU memory ledger, and the
+   * shared offscreen canvas of its context shrinks to the viewports that
+   * remain, so the render-buffer charge matches the canvas. The renderer goes
+   * first, because the fit of the canvas renders the shared window. The render
+   * buffer keeps its charge while no viewport remains.
+   */
+  protected _releaseViewportResources(viewport: IViewport): void {
+    if (!this.contextPool) {
+      return;
+    }
+
+    const viewportId = viewport.id;
+    const contextIndex =
+      this.contextPool.getContextIndexForViewport(viewportId);
+    const contextData =
+      contextIndex !== undefined
+        ? this.contextPool.getContextByIndex(contextIndex)
+        : null;
+
+    if (
+      contextData &&
+      !viewportTypeUsesCustomRenderingPipeline(viewport.type)
+    ) {
+      contextData.context.removeRenderer(viewportId);
+    }
+
+    this.contextPool.removeViewport(viewportId);
+
+    if (contextData) {
+      this._fitOffScreenCanvasToContext(
+        contextIndex,
+        contextData.container,
+        contextData.context
+      );
+    }
+  }
+
   private renderViewportUsingCustomOrVtkPipeline(
     viewport: IViewport
   ): EventTypes.ImageRenderedEventDetail {
@@ -743,49 +783,6 @@ class ContextPoolRenderingEngine extends BaseRenderingEngine {
 
     const { context: offscreenMultiRenderWindow } = contextData;
     return offscreenMultiRenderWindow.getRenderer(viewportId);
-  }
-
-  /**
-   * Disables the requested viewportId from the rendering engine.
-   * Calls the base implementation and then handles context-specific cleanup.
-   *
-   * @param viewportId - viewport Id
-   */
-  public disableElement(viewportId: string): void {
-    const viewport = this.getViewport(viewportId);
-    if (!viewport) {
-      return;
-    }
-    super.disableElement(viewportId);
-
-    if (
-      !viewportTypeUsesCustomRenderingPipeline(viewport.type) &&
-      this.contextPool
-    ) {
-      const contextIndex =
-        this.contextPool.getContextIndexForViewport(viewportId);
-
-      const contextData =
-        contextIndex !== undefined
-          ? this.contextPool.getContextByIndex(contextIndex)
-          : null;
-
-      if (contextData) {
-        contextData.context.removeRenderer(viewportId);
-      }
-
-      this.contextPool.removeViewport(viewportId);
-
-      // The removed viewport may have been the largest one on this context:
-      // shrink the shared offscreen canvas to the viewports that remain.
-      if (contextData) {
-        this._fitOffScreenCanvasToContext(
-          contextIndex,
-          contextData.container,
-          contextData.context
-        );
-      }
-    }
   }
 
   public destroy(): void {
