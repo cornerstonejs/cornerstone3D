@@ -420,31 +420,18 @@ describe('getOverlayPlaneModule (wadors)', () => {
     expect(result).toEqual({ overlays: [] });
   });
 
-  // NOTE: the implementation reads overlay pixel bits from `metaData.Value`
-  // (the top-level Value array of the whole tag map passed in) rather than
-  // from the specific overlay-data element's own Value/InlineBinary payload
-  // - see getOverlayPlaneModule.ts line "metaData.Value[data.dataOffset + i]".
-  // The wadouri sibling module reads from `dataSet.byteArray` instead, which
-  // is the correct raw-byte source for that loader. For real wadors metadata
-  // (a flat per-tag object with no top-level "Value" key) this line would
-  // read `undefined[...]` and throw. This fixture exercises the code exactly
-  // as written (a top-level `Value` array standing in for the byte source) to
-  // get coverage of the bit-unpacking/field-extraction logic; it does not
-  // assert this is the intended/correct real-world shape.
-  it('extracts overlay group 0 (x6000) fields and unpacks bits from the data offset', () => {
+  it('extracts overlay group 0 (6000) fields and unpacks bits from InlineBinary', () => {
     const metaData: Record<string, unknown> = {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      Value: [0b00000001] as any,
-      x60003000: { Value: [{ length: 1, dataOffset: 0 }] },
-      x60000010: { Value: [5] }, // rows
-      x60000011: { Value: [4] }, // columns
-      x60000040: { Value: ['G'] }, // type
-      x60000050: { Value: [10, 20] }, // origin (row, col)
-      x60000022: { Value: ['a description'] },
-      x60001500: { Value: ['a label'] },
-      x60001301: { Value: [100] },
-      x60001302: { Value: [50] },
-      x60001303: { Value: [5] },
+      '60003000': { vr: 'OW', InlineBinary: 'AQA=' }, // bytes [1, 0]
+      '60000010': { vr: 'US', Value: [5] }, // rows
+      '60000011': { vr: 'US', Value: [4] }, // columns
+      '60000040': { vr: 'CS', Value: ['G'] }, // type
+      '60000050': { vr: 'SS', Value: [10, 20] }, // origin (row, col)
+      '60000022': { vr: 'LO', Value: ['a description'] },
+      '60001500': { vr: 'LO', Value: ['a label'] },
+      '60001301': { vr: 'IS', Value: [100] },
+      '60001302': { vr: 'DS', Value: [50] },
+      '60001303': { vr: 'DS', Value: [5] },
     };
 
     const result = getOverlayPlaneModule(metaData as never);
@@ -455,7 +442,7 @@ describe('getOverlayPlaneModule (wadors)', () => {
     expect(overlay.rows).toBe(5);
     expect(overlay.columns).toBe(4);
     expect(overlay.type).toBe('G');
-    // x = getNumberValue(..., 1) - 1, y = getNumberValue(..., 0) - 1
+    // x = origin column - 1, y = origin row - 1
     expect(overlay.x).toBe(19);
     expect(overlay.y).toBe(9);
     expect(overlay.description).toBe('a description');
@@ -463,21 +450,21 @@ describe('getOverlayPlaneModule (wadors)', () => {
     expect(overlay.roiArea).toBe(100);
     expect(overlay.roiMean).toBe(50);
     expect(overlay.roiStandardDeviation).toBe(5);
-    // byte 0b00000001 unpacked LSB-first across 8 bits
-    expect(overlay.pixelData).toEqual([1, 0, 0, 0, 0, 0, 0, 0]);
+    // bytes [0b00000001, 0] unpacked LSB-first, 8 bits per byte
+    expect(overlay.pixelData).toEqual([
+      1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    ]);
   });
 
-  it('collects multiple overlay groups using the correct hex group tag padding', () => {
+  it('collects multiple overlay groups using uppercase, zero-padded group keys', () => {
     const metaData: Record<string, unknown> = {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      Value: [0b00000011, 0b00000101] as any,
-      x60003000: { Value: [{ length: 1, dataOffset: 0 }] },
-      x60000010: { Value: [1] },
-      x60000011: { Value: [1] },
-      // group 2 (0x02) -> tag prefix x6002
-      x60023000: { Value: [{ length: 1, dataOffset: 1 }] },
-      x60020010: { Value: [2] },
-      x60020011: { Value: [2] },
+      '60003000': { vr: 'OW', InlineBinary: 'AwA=' },
+      '60000010': { vr: 'US', Value: [1] },
+      '60000011': { vr: 'US', Value: [1] },
+      // group 0x1E -> tag prefix 601E
+      '601E3000': { vr: 'OW', InlineBinary: 'BQA=' },
+      '601E0010': { vr: 'US', Value: [2] },
+      '601E0011': { vr: 'US', Value: [2] },
     };
 
     const result = getOverlayPlaneModule(metaData as never);
@@ -485,6 +472,16 @@ describe('getOverlayPlaneModule (wadors)', () => {
     expect(result.overlays.length).toBe(2);
     expect(result.overlays[0].rows).toBe(1);
     expect(result.overlays[1].rows).toBe(2);
+  });
+
+  it('does not read dicom-parser style x60xx keys', () => {
+    const metaData: Record<string, unknown> = {
+      x60003000: { Value: [{ length: 1, dataOffset: 0 }] },
+      x60000010: { Value: [1] },
+      x60000011: { Value: [1] },
+    };
+
+    expect(getOverlayPlaneModule(metaData as never)).toEqual({ overlays: [] });
   });
 });
 
