@@ -82,6 +82,8 @@ import Viewport from './Viewport';
 import type { vtkSlabCamera as vtkSlabCameraType } from './vtkClasses/vtkSlabCamera';
 import vtkSlabCamera from './vtkClasses/vtkSlabCamera';
 import getVolumeViewportScrollInfo from '../utilities/getVolumeViewportScrollInfo';
+import getTargetVolumeAndSpacingInNormalDir from '../utilities/getTargetVolumeAndSpacingInNormalDir';
+import getSliceRange from '../utilities/getSliceRange';
 import getViewSlabDepth from '../utilities/getViewSlabDepth';
 import { actorIsA, isImageActor } from '../utilities/actorCheck';
 import type { ImageActor } from '../types/IActor';
@@ -1032,26 +1034,9 @@ abstract class BaseVolumeViewport extends Viewport {
     if (typeof viewRefSpecifier?.sliceIndex !== 'number') {
       return target;
     }
-    const { viewPlaneNormal } = target;
-    const delta = viewRefSpecifier?.sliceIndex - this.getSliceIndex();
-    // Calculate a camera focal point and position
-    const { sliceRangeInfo } = getVolumeViewportScrollInfo(
-      this as unknown as IVolumeViewport,
-      volumeId,
-      true
-    );
-
-    const { sliceRange, spacingInNormalDirection, camera } = sliceRangeInfo;
-    const { focalPoint, position } = camera;
-    const { newFocalPoint } = snapFocalPointToSlice(
-      focalPoint,
-      position,
-      sliceRange,
-      viewPlaneNormal,
-      spacingInNormalDirection,
-      delta
-    );
-    target.cameraFocalPoint = newFocalPoint;
+    target.cameraFocalPoint = this._cameraAtSliceIndex(
+      viewRefSpecifier.sliceIndex
+    ).focalPoint;
 
     return target;
   }
@@ -1218,6 +1203,85 @@ abstract class BaseVolumeViewport extends Viewport {
   }
 
   /**
+   * The camera moved along the view plane normal onto the slice of the given
+   * index, counted as `getSliceIndex` counts the slices: on the grid of the
+   * volume of the smallest spacing along the normal. That volume need not be
+   * the one of `getVolumeId`, which is the first one added: in a fusion of a
+   * CT and a PET, the slices of one are not the slices of the other.
+   *
+   * The camera is returned as it is when there is no slice to move onto: no
+   * volume, a single slice, or an index that is not a finite number.
+   *
+   * @param sliceIndex - The index of the slice, as `getSliceIndex` gives it.
+   * An index past either end is brought to that end.
+   * @param fromOtherEnd - Counts the slices from the other end, for a view
+   * reference of the opposite orientation.
+   */
+  private _cameraAtSliceIndex(
+    sliceIndex: number,
+    fromOtherEnd = false
+  ): { focalPoint: Point3; position: Point3 } {
+    const camera = this.getCamera();
+    const { focalPoint, position, viewPlaneNormal } = camera;
+    const { spacingInNormalDirection, imageVolume } =
+      getTargetVolumeAndSpacingInNormalDir(
+        this as unknown as IVolumeViewport,
+        camera
+      );
+    // The actor whose range getSliceIndex measures
+    const actorEntry =
+      imageVolume &&
+      this.getActors().find(
+        (actor) =>
+          actor.referencedId === imageVolume.volumeId ||
+          actor.uid === imageVolume.volumeId
+      );
+
+    if (
+      !actorEntry ||
+      !Number.isFinite(sliceIndex) ||
+      !(spacingInNormalDirection > 0)
+    ) {
+      return { focalPoint, position };
+    }
+
+    const { min, max, current } = getSliceRange(
+      actorEntry.actor as vtkVolume,
+      viewPlaneNormal,
+      focalPoint
+    );
+    const lastSliceIndex = Math.round((max - min) / spacingInNormalDirection);
+
+    if (!(lastSliceIndex > 0)) {
+      return { focalPoint, position };
+    }
+
+    // The slices divide the range evenly, the first at `min` and the last at
+    // `max`: getSliceIndex reads each of them back as its own index. In an
+    // oblique view the range is not a whole number of spacings, and slices one
+    // spacing apart from `min` would be read back, towards `max`, as the next.
+    const index = Math.min(lastSliceIndex, Math.max(0, sliceIndex));
+    const fraction =
+      (fromOtherEnd ? lastSliceIndex - index : index) / lastSliceIndex;
+    const shift = min + fraction * (max - min) - current;
+
+    return {
+      focalPoint: vec3.scaleAndAdd(
+        vec3.create(),
+        focalPoint,
+        viewPlaneNormal,
+        shift
+      ) as Point3,
+      position: vec3.scaleAndAdd(
+        vec3.create(),
+        position,
+        viewPlaneNormal,
+        shift
+      ) as Point3,
+    };
+  }
+
+  /**
    * Navigates to the specified view reference.
    */
   public setViewReference(viewRef: ViewReference): void {
@@ -1232,8 +1296,8 @@ abstract class BaseVolumeViewport extends Viewport {
       planeRestriction,
       viewPlaneNormal: refViewPlaneNormal,
       viewUp,
+      sliceIndex,
     } = viewRef;
-    let { sliceIndex } = viewRef;
 
     // The time point belongs to the referenced volume, for example the PET of a fusion.
     const timePointVolumeId = this.getVolumeId({ volumeId: viewRef.volumeId });
@@ -1269,28 +1333,8 @@ abstract class BaseVolumeViewport extends Viewport {
       viewRef.volumeId === volumeId &&
       (isNegativeNormal || isSameNormal)
     ) {
-      const { currentStepIndex, sliceRangeInfo, numScrollSteps } =
-        getVolumeViewportScrollInfo(
-          this as unknown as IVolumeViewport,
-          volumeId,
-          true
-        );
-
-      const { sliceRange, spacingInNormalDirection } = sliceRangeInfo;
-      if (isNegativeNormal) {
-        // Convert opposite orientation view refs to normal orientation
-        sliceIndex = numScrollSteps - sliceIndex - 1;
-      }
-      const delta = sliceIndex - currentStepIndex;
-      const { newFocalPoint, newPosition } = snapFocalPointToSlice(
-        focalPoint,
-        position,
-        sliceRange,
-        viewPlaneNormal,
-        spacingInNormalDirection,
-        delta
-      );
-      this.setCamera({ focalPoint: newFocalPoint, position: newPosition });
+      // An opposite orientation counts the slices from the other end.
+      this.setCamera(this._cameraAtSliceIndex(sliceIndex, isNegativeNormal));
     } else if (refFrameOfReference === this.getFrameOfReferenceUID()) {
       // Handle same frame of reference navigation
 
