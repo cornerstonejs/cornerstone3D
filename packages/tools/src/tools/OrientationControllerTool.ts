@@ -133,6 +133,7 @@ class OrientationControllerTool extends BaseTool {
         opacity: 1.0,
         size: 0.04,
         position: 'bottom-right',
+        margin: 8,
         colorScheme: 'rgy',
         letterColorScheme: 'mixed',
         showEdgeFaces: true,
@@ -158,6 +159,7 @@ class OrientationControllerTool extends BaseTool {
     return {
       position: this.configuration.position || 'bottom-right',
       size: this.configuration.size || 0.04,
+      margin: this.configuration.margin ?? 8,
     };
   }
 
