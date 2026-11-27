@@ -1,0 +1,416 @@
+import VoxelStatistics from '../enums/VoxelStatistics';
+import { volumeTextureBytes } from '../utilities/getBufferConfiguration';
+import {
+  voxelCountOfGrid,
+  voxelGridWithinLimits,
+} from '../utilities/voxelGrid';
+import { VolumeTextureSet } from './classes/VolumeTextureSet';
+import type {
+  FixedVolumeTextureSlot,
+  VolumeTextureSetDescription,
+  VolumeTextureSlot,
+} from './classes/VolumeTextureSet';
+import type {
+  PixelDataTypedArrayString,
+  VoxelGrid,
+  VoxelGridLimits,
+  VoxelStatistic,
+} from '../types';
+import { coreLog } from '../utilities/logger';
+import eventTarget from '../eventTarget';
+import Events from '../enums/Events';
+
+const log = coreLog.getLogger('cache', 'volumeTextureStore');
+
+/** What a caller states to provision one named set. */
+export type ProvisionTextureSetOptions<TextureType> = {
+  /** The volume that owns the set. */
+  volumeId: string;
+  /** The name of the set, which a selection states to find the set again. */
+  name: string;
+  /** The grid of the volume, which is the index space of every region. */
+  volumeGrid: VoxelGrid;
+  /** The grids of the members. One grid gives a full-extent set. */
+  grids: VoxelGrid[];
+  /** The type of the voxel data, which gives the cost of one voxel. */
+  dataType?: PixelDataTypedArrayString;
+  /** The number of components of one voxel. One by default. */
+  numberOfComponents?: number;
+  /** The statistic that every member holds. */
+  statistic?: VoxelStatistic;
+  /** Whether the members cover the whole volume between them. */
+  coverage?: VolumeTextureSetDescription['coverage'];
+  /** True for the set that a selection falls back on. */
+  backstop?: boolean;
+  /** Builds one texture. The store calls this after it accepts the cost. */
+  createTexture: (request: {
+    grid: VoxelGrid;
+    statistic: VoxelStatistic;
+    setName: string;
+    id: string;
+  }) => TextureType;
+  /** Releases one texture. The store calls this when it evicts the set. */
+  destroyTexture?: (texture: TextureType) => void;
+  /** States the grid on a texture. */
+  applyGrid?: (texture: TextureType, grid: VoxelGrid) => void;
+  /**
+   * Marks one z slice of one texture for a refill.
+   *
+   * A new texture holds uninitialised memory, so the store marks every slice of
+   * it. A slice that nothing marks is never uploaded, and it draws whatever the
+   * driver left in that memory.
+   */
+  markTextureSlice?: (
+    slot: VolumeTextureSlot<TextureType>,
+    slice: number
+  ) => void;
+  /** The limits of one texture. No limit by default. */
+  limits?: VoxelGridLimits;
+};
+
+type StoredSet = {
+  volumeId: string;
+  set: VolumeTextureSet<unknown>;
+  destroyTexture?: (texture: unknown) => void;
+};
+
+/**
+ * The global store of the texture sets.
+ *
+ * The budget of the texture memory is global, because the device holds one
+ * amount of it and a volume does not know what the other volumes take. The list
+ * of sets of one volume is therefore a view of this store, which
+ * `ImageVolume.textureSets` reads.
+ *
+ * The set is the unit of eviction. A set holds the members that belong
+ * together, so a store that evicted one member would leave a set that covers
+ * part of the volume and that no selection can reason about.
+ */
+class VolumeTextureStore {
+  private readonly sets = new Map<string, StoredSet>();
+  private budgetBytes = 0;
+  private clock = 0;
+
+  /** The number of bytes that every texture of every volume takes. */
+  public get bytesUsed(): number {
+    let total = 0;
+
+    for (const stored of this.sets.values()) {
+      total += stored.set.bytes;
+    }
+
+    return total;
+  }
+
+  /** The number of bytes that the store may take. Zero means no limit. */
+  public get budget(): number {
+    return this.budgetBytes;
+  }
+
+  /**
+   * States the budget of the texture memory. An application states it from a
+   * capability profile, and a budget that nobody states is no limit, so the
+   * behaviour of a viewport does not change.
+   */
+  public setBudget(bytes: number): void {
+    this.budgetBytes = bytes > 0 ? bytes : 0;
+  }
+
+  /** The number of bytes that the store can still take. */
+  public get bytesAvailable(): number {
+    return this.budgetBytes > 0
+      ? Math.max(this.budgetBytes - this.bytesUsed, 0)
+      : Number.POSITIVE_INFINITY;
+  }
+
+  /** Every named set of one volume. */
+  public setsOfVolume<TextureType>(
+    volumeId: string
+  ): VolumeTextureSet<TextureType>[] {
+    const found: VolumeTextureSet<TextureType>[] = [];
+
+    for (const stored of this.sets.values()) {
+      if (stored.volumeId === volumeId) {
+        found.push(stored.set as VolumeTextureSet<TextureType>);
+      }
+    }
+
+    return found;
+  }
+
+  /** One named set of one volume. */
+  public getSet<TextureType>(
+    volumeId: string,
+    name: string
+  ): VolumeTextureSet<TextureType> | undefined {
+    return this.sets.get(keyOf(volumeId, name))?.set as
+      | VolumeTextureSet<TextureType>
+      | undefined;
+  }
+
+  /**
+   * The cost of a texture for a grid, in bytes, counted before the store builds
+   * the texture. The code therefore knows in advance whether a texture can
+   * work.
+   *
+   * The count uses the type of the buffer of a volume, which is the type that
+   * the texture really holds. A `Uint16Array` volume renders through a
+   * `Float32Array` buffer, so a count that read `Uint16Array` would state half
+   * of the true cost.
+   */
+  public costOf(
+    grid: VoxelGrid,
+    dataType?: PixelDataTypedArrayString,
+    numberOfComponents = 1
+  ): number {
+    return volumeTextureBytes(
+      voxelCountOfGrid(grid),
+      dataType,
+      numberOfComponents
+    );
+  }
+
+  /**
+   * Provisions a named set. This is the expensive step, and it never runs on
+   * the frame path: it counts the cost, evicts if it must, builds the textures
+   * and builds the area index.
+   *
+   * A set of this name that already exists is returned as it is, so a caller
+   * may ask without a test of its own.
+   *
+   * @returns the set, or `undefined` when the store refuses it because the
+   * limits or the budget cannot hold it
+   */
+  public provision<TextureType>(
+    options: ProvisionTextureSetOptions<TextureType>
+  ): VolumeTextureSet<TextureType> | undefined {
+    const {
+      volumeId,
+      name,
+      volumeGrid,
+      grids,
+      dataType,
+      numberOfComponents = 1,
+      statistic = VoxelStatistics.Average,
+      coverage,
+      backstop,
+      createTexture,
+      destroyTexture,
+      applyGrid,
+      limits,
+    } = options;
+    const key = keyOf(volumeId, name);
+    const existing = this.sets.get(key);
+
+    if (existing) {
+      existing.set.lastUsed = ++this.clock;
+
+      return existing.set as VolumeTextureSet<TextureType>;
+    }
+
+    if (grids.length === 0) {
+      return undefined;
+    }
+
+    for (const grid of grids) {
+      if (!voxelGridWithinLimits(grid, limits)) {
+        log.warn(
+          `the set ${name} of the volume ${volumeId} holds a grid of ${grid.dimensions} that exceeds the limits, so nothing is built`
+        );
+
+        return undefined;
+      }
+    }
+
+    const perTexture = grids.map((grid) =>
+      this.costOf(grid, dataType, numberOfComponents)
+    );
+    const bytes = perTexture.reduce((total, cost) => total + cost, 0);
+
+    if (!this.makeRoomFor(bytes)) {
+      log.warn(
+        `the budget of ${this.budgetBytes} bytes cannot hold the set ${name} of the volume ${volumeId}, which costs ${bytes} bytes`
+      );
+
+      return undefined;
+    }
+
+    const set = new VolumeTextureSet<TextureType>({
+      name,
+      volumeGrid,
+      statistic,
+      coverage: coverage ?? (grids.length === 1 ? 'full-extent' : 'partial'),
+      spacing: grids[0].spacing,
+      backstop,
+    });
+
+    grids.forEach((grid, index) => {
+      const id = `${name}#${index}`;
+      const texture = createTexture({ grid, statistic, setName: name, id });
+
+      applyGrid?.(texture, grid);
+
+      const slot: FixedVolumeTextureSlot<TextureType> = {
+        id,
+        grid,
+        statistic,
+        texture,
+        bytes: perTexture[index],
+        dirty: [],
+      };
+
+      set.add(slot);
+    });
+
+    // Every texture holds uninitialised memory, so every slice of it must
+    // upload once before it is drawn.
+    set.markAllDirty(options.markTextureSlice);
+    set.lastUsed = ++this.clock;
+
+    this.sets.set(key, {
+      volumeId,
+      set: set as VolumeTextureSet<unknown>,
+      destroyTexture: destroyTexture as (texture: unknown) => void,
+    });
+
+    return set;
+  }
+
+  /** Adds one holder of a set, so an eviction cannot take it. */
+  public claim(volumeId: string, name: string): boolean {
+    const stored = this.sets.get(keyOf(volumeId, name));
+
+    if (!stored) {
+      return false;
+    }
+
+    stored.set.references++;
+    stored.set.lastUsed = ++this.clock;
+
+    return true;
+  }
+
+  /** Gives one holder of a set back. */
+  public release(volumeId: string, name: string): boolean {
+    const stored = this.sets.get(keyOf(volumeId, name));
+
+    if (!stored) {
+      return false;
+    }
+
+    stored.set.references = Math.max(stored.set.references - 1, 0);
+
+    return true;
+  }
+
+  /** Removes one set, and releases every texture of that set. */
+  public evict(volumeId: string, name: string): boolean {
+    const key = keyOf(volumeId, name);
+    const stored = this.sets.get(key);
+
+    if (!stored) {
+      return false;
+    }
+
+    this.sets.delete(key);
+
+    if (stored.destroyTexture) {
+      for (const slot of stored.set.members()) {
+        stored.destroyTexture(slot.texture);
+      }
+    }
+
+    return true;
+  }
+
+  /** Removes every set of one volume. */
+  public evictVolume(volumeId: string): void {
+    for (const stored of [...this.sets.values()]) {
+      if (stored.volumeId === volumeId) {
+        this.evict(volumeId, stored.set.name);
+      }
+    }
+  }
+
+  /** Removes every set of every volume. */
+  public clear(): void {
+    for (const [, stored] of [...this.sets.entries()]) {
+      this.evictVolume(stored.volumeId);
+    }
+  }
+
+  /**
+   * Releases memory until the store can hold `bytes` more.
+   *
+   * The store first removes the set that no consumer holds and that is the
+   * least recently used. It never removes a set that a viewport draws: a render
+   * path claims the set that it draws, and a legacy viewport claims the set of
+   * each actor that it holds.
+   * A backstop set leaves last, because a fill that finds no source leaves a
+   * blank region, and the user must not see a blank region.
+   *
+   * When all the evictable sets together cannot make room, the store evicts
+   * nothing and refuses, so a refusal never costs the sets that it kept.
+   *
+   * @returns true when the store can now hold the new set
+   */
+  private makeRoomFor(bytes: number): boolean {
+    const used = this.bytesUsed;
+
+    if (this.budgetBytes <= 0 || used + bytes <= this.budgetBytes) {
+      return true;
+    }
+
+    const evictable = [...this.sets.values()].filter(
+      (stored) => stored.set.references === 0
+    );
+    const evictableBytes = evictable.reduce(
+      (total, stored) => total + stored.set.bytes,
+      0
+    );
+
+    if (used - evictableBytes + bytes > this.budgetBytes) {
+      return false;
+    }
+
+    evictable.sort((a, b) => {
+      if (a.set.backstop !== b.set.backstop) {
+        return a.set.backstop ? 1 : -1;
+      }
+
+      return a.set.lastUsed - b.set.lastUsed;
+    });
+
+    for (const stored of evictable) {
+      this.evict(stored.volumeId, stored.set.name);
+
+      if (this.bytesUsed + bytes <= this.budgetBytes) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+}
+
+// JSON keeps the two parts apart, whatever characters they hold.
+function keyOf(volumeId: string, name: string): string {
+  return JSON.stringify([volumeId, name]);
+}
+
+const volumeTextureStore = new VolumeTextureStore();
+
+// A volume that leaves the cache takes its textures with it. The cache does not
+// call `ImageVolume.destroy`, so the store listens for the removal instead:
+// this store is global, and a set that nobody evicts would hold its textures
+// for the life of the page.
+eventTarget.addEventListener(Events.VOLUME_CACHE_VOLUME_REMOVED, (evt) => {
+  const { volumeId } = (evt as CustomEvent<{ volumeId?: string }>).detail ?? {};
+
+  if (volumeId) {
+    volumeTextureStore.evictVolume(volumeId);
+  }
+});
+
+export { VolumeTextureStore, volumeTextureStore };
+export default volumeTextureStore;

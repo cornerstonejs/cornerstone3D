@@ -121,6 +121,12 @@ export interface PlanarPresentationProps extends BasePresentationProps {
   colormap?: ColormapPublic;
   voiRange?: VOIRange;
   voiLUTFunction?: VOILUTFunctionType;
+  /**
+   * The use of the VOI LUT Sequence (0028,3010) of the image. If this property
+   * is undefined, the viewport uses the sequence when the image has one. If it
+   * is false, the viewport ignores the sequence and uses the VOI LUT Function.
+   */
+  useVOILUTSequence?: boolean;
   invert?: boolean;
 }
 
@@ -213,6 +219,12 @@ export interface PlanarViewportRenderContext extends BaseViewportRenderContext {
     getViewState(): PlanarViewState;
     isCurrentDataId(dataId: string): boolean;
     getOverlayActors(): ActorEntry[];
+    /**
+     * Whether the volume slice path of `dataId` may draw the acquired frames in
+     * place of a reduced slice. The render path adds the check of the
+     * acquisition plane.
+     */
+    canDrawAcquiredFrames?(dataId: string): boolean;
   };
   renderPath: PlanarRenderPathRuntime;
   view: PlanarActiveViewRuntime;

@@ -30,6 +30,9 @@ import type {
   ViewportContentMode,
 } from '../../../types';
 import { isImageActor } from '../../../utilities/actorCheck';
+import { getValidVOILUTFunction } from '../../../utilities/voiLUTFunction';
+import { isRenderableVOILUT } from '../../../utilities/createVOILUTSequenceTransferFunction';
+import { resolveVOILUTSequenceToApply } from '../../helpers/planarImageRendering';
 import cache from '../../../cache/cache';
 import type { PlaneRestriction } from '../../../types/IViewport';
 import type ViewportInputOptions from '../../../types/ViewportInputOptions';
@@ -56,6 +59,7 @@ import {
 import { DefaultPlanarDataProvider } from './DefaultPlanarDataProvider';
 import { createPlanarRenderPathResolver } from './PlanarRenderPathResolver';
 import { defaultPlanarRenderPathDecisionService } from './PlanarRenderPathDecisionService';
+import type { PlanarRenderPathDecisionOptions } from './PlanarRenderPathDecisionService';
 import {
   normalizePlanarOrientation,
   selectPlanarRenderPath,
@@ -89,7 +93,17 @@ import {
   createPlanarVolumeSliceBasis,
   getVolumeImageIdIndexWorldPoint,
 } from './planarSliceBasis';
-import type { PlanarRendering } from './planarRuntimeTypes';
+import type {
+  PlanarRendering,
+  PlanarVolumeSliceRendering,
+} from './planarRuntimeTypes';
+import type { FidelityDisplay } from '../../helpers/fidelityIndicator/displaySpacingOfViewport';
+import { fidelityLinesFromBindings } from '../../helpers/fidelityIndicator/collectFidelityLines';
+import {
+  type FidelityLine,
+  isReduced,
+  reductionFactorsOf,
+} from '../../helpers/fidelityIndicator/fidelityIndicatorState';
 import PlanarMountedData from './PlanarMountedData';
 import PlanarViewReferenceController from './PlanarViewReferenceController';
 export type { PlanarReferenceContext } from './PlanarViewReferenceController';
@@ -156,6 +170,8 @@ class PlanarViewport extends GenericViewport<
   defaultOptions: PlanarViewportInputOptions;
   options: PlanarViewportInputOptions;
   suppressEvents = false;
+  /** Set when a render path draws in `render()` instead of the engine. */
+  private drewOutsideEngine = false;
 
   protected renderContext: PlanarViewportRenderContext;
 
@@ -301,6 +317,7 @@ class PlanarViewport extends GenericViewport<
           this.getCurrentBinding()?.data.id === dataId,
         getOverlayActors: () =>
           this.mountedData.getProjectedActorEntries('overlay'),
+        canDrawAcquiredFrames: (dataId) => this.canDrawAcquiredFrames(dataId),
       },
       renderPath: {
         renderMode: ActorRenderMode.VTK_IMAGE,
@@ -317,6 +334,7 @@ class PlanarViewport extends GenericViewport<
           this.setNeedsRender();
         },
         markRendered: () => {
+          this.drewOutsideEngine = true;
           this.setRendered();
         },
         activateRenderMode: (renderMode: PlanarEffectiveRenderMode) => {
@@ -507,6 +525,16 @@ class PlanarViewport extends GenericViewport<
    * Returns the primary actor entry for the viewport.
    */
   getDefaultActor(): ActorEntry | undefined {
+    return this.getDefaultActorEntry();
+  }
+
+  /**
+   * The default actor entry of `getDefaultActor`, `getImageActor()` and
+   * `getDefaultImageData`. It is the volume slice entry, also while the
+   * acquired frame shows (`showsAcquiredFrame` of the source rendering): the
+   * volume data is at full resolution, and only its GPU texture is reduced.
+   */
+  private getDefaultActorEntry(): ActorEntry | undefined {
     return this.mountedData.getDefaultActor();
   }
 
@@ -523,7 +551,7 @@ class PlanarViewport extends GenericViewport<
   getImageActor(volumeId?: string): ImageActor | null {
     const actorEntries = this.getActors();
 
-    let actorEntry = actorEntries[0];
+    let actorEntry = this.getDefaultActorEntry();
     if (volumeId) {
       // Match by actor referencedId first (e.g. the prefixed volume id
       // "cornerstoneStreamingImageVolume:<uid>"). VOI/colorbar tooling, however,
@@ -700,6 +728,14 @@ class PlanarViewport extends GenericViewport<
   }
 
   /**
+   * The planar family can show a lossy stack image or reduced volume data
+   * (GENVIEW-FIDELITY-8), so it reports fidelity before it mounts data.
+   */
+  override canReportFidelity(): boolean {
+    return true;
+  }
+
+  /**
    * Content-true classification of the bound source data for a planar viewport.
    *
    * A `PLANAR_NEXT` viewport renders both image-id stacks and volume slices, so
@@ -782,7 +818,7 @@ class PlanarViewport extends GenericViewport<
           viewportId: this.id,
           range,
           volumeId,
-          VOILUTFunction: props.voiLUTFunction ?? presentation?.voiLUTFunction,
+          ...this.getVOILUTState(displaySetId, { ...presentation, ...props }),
           invert: props.invert ?? presentation?.invert,
           colormap: presentation?.colormap,
         });
@@ -800,6 +836,36 @@ class PlanarViewport extends GenericViewport<
 
   getDefaultVOIRange(dataId?: string): VOIRange | undefined {
     return this.mountedData.getDefaultVOIRange(dataId);
+  }
+
+  /**
+   * The VOI LUT Function in effect for a display set, and whether its VOI LUT
+   * Sequence draws it, with the rule of the stack viewport: the application
+   * value, else the value of the file, else LINEAR. A colormap replaces the
+   * sequence. An application converts the range with this function.
+   */
+  getVOILUTState(
+    dataId: string,
+    presentation:
+      | PlanarDataPresentation
+      | undefined = this.getDisplaySetPresentation(dataId)
+  ): { VOILUTFunction: VOILUTFunctionType; voiLUTSequenceApplied: boolean } {
+    const shape = this.mountedData.getDefaultVOIShape(dataId);
+    const voiLUT =
+      presentation?.colormap?.name === undefined
+        ? resolveVOILUTSequenceToApply({
+            defaultVOILUT: shape.voiLUT,
+            defaultVOILUTFunction: shape.voiLUTFunction,
+            props: presentation,
+          })
+        : undefined;
+
+    return {
+      VOILUTFunction: getValidVOILUTFunction(
+        presentation?.voiLUTFunction ?? shape.voiLUTFunction
+      ),
+      voiLUTSequenceApplied: isRenderableVOILUT(voiLUT),
+    };
   }
 
   /**
@@ -1609,15 +1675,70 @@ class PlanarViewport extends GenericViewport<
 
     this.setNeedsRender();
     this.renderContext.cpu.composition.renderPassId += 1;
+    this.drewOutsideEngine = false;
 
     if (!this.renderBindings()) {
       this.requestRenderingEngineRender();
+    }
+
+    // A CPU path draws here and fires IMAGE_RENDERED itself; the engine does
+    // not draw this frame, so the viewport reports the fidelity
+    // (FIDELITY-EVENT-7). A VTK path draws in the engine, which reports.
+    if (this.drewOutsideEngine) {
+      this.drewOutsideEngine = false;
+      this.notifyFidelityStateChanged();
     }
   }
 
   // ====================================================================
   // Protected & private
   // ====================================================================
+
+  /**
+   * Adds a line for each reduced labelmap while the acquired frame shows
+   * (FIDELITY-STATE-9). The frame draws the source at full resolution, and a
+   * labelmap with a reduced texture can then draw a contour of a nearby slice
+   * on it. Over the reduced volume slice, the source line already reports the
+   * reduction, so a labelmap adds no line there.
+   */
+  protected override collectFidelityLines(
+    display?: FidelityDisplay
+  ): FidelityLine[] {
+    const lines = super.collectFidelityLines(display);
+    const renderings: Partial<PlanarVolumeSliceRendering>[] = [];
+
+    this.forEachBinding((binding) => {
+      renderings.push(
+        ...((binding.getRenderings?.() ?? [
+          binding.rendering,
+        ]) as Partial<PlanarVolumeSliceRendering>[])
+      );
+    });
+
+    if (!renderings.some((rendering) => rendering.showsAcquiredFrame)) {
+      return lines;
+    }
+
+    const labelmaps = renderings.filter(
+      ({ isSegmentationOverlay, voxelQuality, fullGrid }) =>
+        isSegmentationOverlay &&
+        voxelQuality &&
+        fullGrid &&
+        isReduced(reductionFactorsOf(voxelQuality.grid, fullGrid))
+    );
+
+    return lines.concat(
+      fidelityLinesFromBindings(
+        display,
+        labelmaps.map((rendering) => ({
+          record: rendering.voxelQuality,
+          fullGrid: rendering.fullGrid,
+          reductionCause: rendering.reductionCause,
+          label: 'Labelmap',
+        }))
+      )
+    );
+  }
 
   protected override onDestroy(): void {
     this.clearResolvedViewCache();
@@ -1797,6 +1918,68 @@ class PlanarViewport extends GenericViewport<
   }
 
   /**
+   * Whether the source of this viewport may draw the acquired frames of a
+   * reduced volume in the acquisition plane. The legacy adapter turns this off,
+   * so the legacy viewports keep their 4.x display.
+   */
+  protected prefersAcquiredFrames(): boolean {
+    return true;
+  }
+
+  /**
+   * Whether the volume slice path of `dataId` may draw the acquired frames
+   * (`PlanarRenderPathDecisionService.canDrawAcquiredFrames`). The render path
+   * reads this at each change of the view or the presentation.
+   */
+  private canDrawAcquiredFrames(dataId: string): boolean {
+    const binding = this.bindings.get(dataId);
+    const dataSet = this.getDataSet(dataId);
+
+    if (!binding || !dataSet) {
+      return false;
+    }
+
+    return defaultPlanarRenderPathDecisionService.canDrawAcquiredFrames(
+      dataSet,
+      this.getRenderPathDecisionOptions(
+        dataId,
+        {
+          ...(this.mountOptionsByDataId.get(dataId) ?? {}),
+          role: binding.role,
+        },
+        this.viewState.orientation
+      )
+    );
+  }
+
+  /**
+   * The inputs of the render-path decision for one display set.
+   *
+   * Only the source may draw the acquired frames of a reduced volume.
+   */
+  private getRenderPathDecisionOptions(
+    dataId: string,
+    options: PlanarSetDataOptions,
+    orientation: PlanarViewState['orientation']
+  ): PlanarRenderPathDecisionOptions {
+    const presentation = this.getDataPresentationState(dataId);
+
+    return {
+      orientation,
+      // Per-mount backend pin/override. Overlays without an explicit pin
+      // follow the source binding's mounted backend rather than the global
+      // configuration; only then does the global renderBackend decide.
+      renderBackend:
+        options.renderBackend ??
+        this.getInheritedOverlayRenderBackend(options.role),
+      preferAcquiredFrames:
+        options.role === 'source' && this.prefersAcquiredFrames(),
+      slabThickness: presentation?.slabThickness,
+      blendMode: presentation?.blendMode,
+    };
+  }
+
+  /**
    * Emits the RENDER_PATH_ERROR degradation signal (and logs) for a render
    * path that threw while mounting or rendering. Repeated identical failures
    * for a display set are reported once so a per-frame render error does not
@@ -1889,6 +2072,9 @@ class PlanarViewport extends GenericViewport<
         this.mountedData.findDataIdByVolumeId(volumeId),
       getBindingActor: (dataId) => this.mountedData.getBindingActor(dataId),
       getDefaultVOIRange: (dataId) => this.getDefaultVOIRange(dataId),
+      getVOILUTState: (dataId) => this.getVOILUTState(dataId),
+      getDefaultVOILUTFunction: (dataId) =>
+        this.mountedData.getDefaultVOIShape(dataId).voiLUTFunction,
       getImageCount: () => this.getImageIds().length,
       getMaxImageIdIndex: () => this.getMaxImageIdIndex(),
     };
@@ -2073,15 +2259,10 @@ class PlanarViewport extends GenericViewport<
     const resolvedOrientation = this.resolveRequestedOrientation(
       options.orientation
     );
-    const selectedPath = selectPlanarRenderPath(dataSet, {
-      orientation: resolvedOrientation,
-      // Per-mount backend pin/override. Overlays without an explicit pin
-      // follow the source binding's mounted backend rather than the global
-      // configuration; only then does the global renderBackend decide.
-      renderBackend:
-        options.renderBackend ??
-        this.getInheritedOverlayRenderBackend(options.role),
-    });
+    const selectedPath = selectPlanarRenderPath(
+      dataSet,
+      this.getRenderPathDecisionOptions(dataId, options, resolvedOrientation)
+    );
     const data = await (this.dataProvider as PlanarDataProvider).load(dataId, {
       acquisitionOrientation: selectedPath.acquisitionOrientation,
       orientation: resolvedOrientation,

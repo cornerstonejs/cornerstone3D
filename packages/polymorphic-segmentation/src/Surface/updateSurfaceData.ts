@@ -1,5 +1,9 @@
 import type { Types } from '@cornerstonejs/core';
-import { cache, getEnabledElementByViewportId } from '@cornerstonejs/core';
+import {
+  cache,
+  getEnabledElementByViewportId,
+  utilities,
+} from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 
 import { computeSurfaceFromLabelmapSegmentation } from './surfaceComputationStrategies';
@@ -20,7 +24,52 @@ const {
   Enums: { SegmentationRepresentations },
 } = cornerstoneTools;
 
-export async function updateSurfaceData(segmentationId) {
+const cs3dLogger = utilities.logger.polySegLog.getLogger(
+  'Surface.updateSurfaceData'
+);
+
+const updates = new Map<string, { promise: Promise<void>; rerun: boolean }>();
+
+/**
+ * Updates the surfaces of a segmentation from its labelmap.
+ *
+ * Only one update runs for a segmentation at a time. A call while an update
+ * runs does not start a second conversion: it asks the running update for one
+ * more pass, which reads the latest labelmap, and it gets the promise of that
+ * update. So conversions do not pile up during a paint, and an older result
+ * never replaces a newer one.
+ */
+export function updateSurfaceData(segmentationId: string): Promise<void> {
+  const running = updates.get(segmentationId);
+  if (running) {
+    running.rerun = true;
+    return running.promise;
+  }
+
+  const update = { promise: undefined as Promise<void>, rerun: false };
+  update.promise = (async () => {
+    try {
+      do {
+        update.rerun = false;
+        try {
+          await updateSurfaceDataOnce(segmentationId);
+        } catch (error) {
+          // A newer labelmap is waiting, so its pass replaces this failed one.
+          if (!update.rerun) {
+            throw error;
+          }
+          cs3dLogger.warn(error);
+        }
+      } while (update.rerun);
+    } finally {
+      updates.delete(segmentationId);
+    }
+  })();
+  updates.set(segmentationId, update);
+  return update.promise;
+}
+
+async function updateSurfaceDataOnce(segmentationId: string) {
   const surfacesObj =
     await computeSurfaceFromLabelmapSegmentation(segmentationId);
 

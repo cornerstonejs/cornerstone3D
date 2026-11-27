@@ -14,8 +14,11 @@ export interface AdditionalMetrics {
   min?: number;
   area?: number;
   radius?: number;
+  perimeter?: number;
   modalityUnit?: string;
   areaUnit?: string;
+  radiusUnit?: string;
+  unit?: string;
   [key: string]: number | string | undefined;
 }
 
@@ -46,8 +49,10 @@ export function extractAllNUMGroups(
       if (item.ValueType === 'NUM' && item.ConceptNameCodeSequence) {
         const codeMeaning = item.ConceptNameCodeSequence.CodeMeaning;
         const numericValue = item.MeasuredValueSequence?.NumericValue;
+        // resolveUnit reads both CodeValue and CodeMeaning: px is written as
+        // the UCUM unity code "1" with CodeMeaning "px"
         const unitCode =
-          item.MeasuredValueSequence?.MeasurementUnitsCodeSequence?.CodeValue;
+          item.MeasuredValueSequence?.MeasurementUnitsCodeSequence;
 
         if (numericValue !== undefined && referencedSOPInstanceUID) {
           if (!numGroupsBySOPInstanceUID[referencedSOPInstanceUID]) {

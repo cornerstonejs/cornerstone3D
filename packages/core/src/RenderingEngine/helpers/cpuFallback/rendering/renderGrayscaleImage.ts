@@ -7,8 +7,33 @@ import getLut from './getLut';
 import doesImageNeedToBeRendered from './doesImageNeedToBeRendered';
 import initializeRenderCanvas from './initializeRenderCanvas';
 import saveLastRendered from './saveLastRendered';
-import type { IImage, CPUFallbackEnabledElement } from '../../../../types';
+import getVOILut from './getVOILut';
+import type {
+  IImage,
+  CPUFallbackEnabledElement,
+  CPUFallbackViewport,
+} from '../../../../types';
 import { createCanvas } from '../../getOrCreateCanvas';
+
+/**
+ * Gets the function that maps a prescaled (floating point) value to a display
+ * value from 0 to 255. It uses the same curve as the GPU path: the linear
+ * ramp, the exact ramp, the sigmoid, or the VOI LUT Sequence of the viewport.
+ * The caller writes the result into a Uint8ClampedArray, which rounds it.
+ */
+export function getPreScaledVOIFunction(
+  viewport: CPUFallbackViewport
+): (value: number) => number {
+  const { windowWidth, windowCenter, voiLUTFunction } = viewport.voi;
+  const voiFunction = getVOILut(
+    windowWidth,
+    windowCenter,
+    viewport.voiLUT,
+    voiLUTFunction
+  );
+
+  return viewport.invert ? (value) => 255 - voiFunction(value) : voiFunction;
+}
 
 /**
  * Returns an appropriate canvas to render the Image. If the canvas available in the cache is appropriate
@@ -69,26 +94,9 @@ function getRenderCanvas(
   // we use a mapping function to get the voiLUT from the values by applying
   // the windowLevel and windowWidth.
   if (viewport.modality === 'PT' && image.isPreScaled) {
-    const { windowWidth, windowCenter } = viewport.voi;
-    const minimum = windowCenter - windowWidth / 2;
-    const maximum = windowCenter + windowWidth / 2;
-    const range = maximum - minimum;
-    const collectedMultiplierTerms = 255.0 / range;
-
-    let petVOILutFunction;
-
-    if (viewport.invert) {
-      petVOILutFunction = (value) =>
-        255 - (value - minimum) * collectedMultiplierTerms;
-    } else {
-      // Note, don't need to math.floor, that is dealt with by setting the value in the Uint8Array.
-      petVOILutFunction = (value) =>
-        (value - minimum) * collectedMultiplierTerms;
-    }
-
     storedPixelDataToCanvasImageDataPET(
       image,
-      petVOILutFunction,
+      getPreScaledVOIFunction(viewport),
       renderCanvasData.data
     );
   } else {

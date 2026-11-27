@@ -15,6 +15,7 @@ jest.mock('@cornerstonejs/core', () => {
       calculateViewportsSpatialRegistration: jest.fn(),
       jumpToSlice: jest.fn(),
       spatialRegistrationMetadataProvider: {
+        add: jest.fn(),
         get: jest.fn(),
       },
       // These fixtures are plain stack/volume mocks, not native Generic
@@ -169,5 +170,46 @@ describe('imageSliceSyncCallback', () => {
     );
 
     expect(utilities.jumpToSlice).not.toHaveBeenCalled();
+  });
+
+  it('recalculates the registration when the target shows a different frame of reference', async () => {
+    const {
+      calculateViewportsSpatialRegistration,
+      spatialRegistrationMetadataProvider,
+    } = utilities;
+    const identity = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1];
+    const sourceViewport = createSourceViewport('image:2');
+    const targetViewport = createTargetViewport();
+    targetViewport.getFrameOfReferenceUID.mockReturnValue('other-for-1');
+    mockRenderingEngine(sourceViewport, targetViewport);
+
+    calculateViewportsSpatialRegistration.mockImplementation(() =>
+      spatialRegistrationMetadataProvider.get.mockReturnValue(identity)
+    );
+    spatialRegistrationMetadataProvider.add.mockImplementation(() =>
+      spatialRegistrationMetadataProvider.get.mockReturnValue(undefined)
+    );
+    const sync = () =>
+      imageSliceSyncCallback(
+        createSynchronizerInstance(),
+        { renderingEngineId: 'rendering-engine', viewportId: 'source' },
+        { renderingEngineId: 'rendering-engine', viewportId: 'target' }
+      );
+
+    await sync();
+    await sync();
+    expect(calculateViewportsSpatialRegistration).toHaveBeenCalledTimes(1);
+
+    targetViewport.getFrameOfReferenceUID.mockReturnValue('other-for-2');
+    await sync();
+
+    expect(spatialRegistrationMetadataProvider.add).toHaveBeenCalledWith(
+      ['source', 'target'],
+      undefined
+    );
+    expect(calculateViewportsSpatialRegistration).toHaveBeenCalledTimes(2);
+
+    calculateViewportsSpatialRegistration.mockReset();
+    spatialRegistrationMetadataProvider.add.mockReset();
   });
 });

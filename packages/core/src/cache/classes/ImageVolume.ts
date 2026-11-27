@@ -1,8 +1,18 @@
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
 import imageIdToURI from '../../utilities/imageIdToURI';
 import VoxelManager from '../../utilities/VoxelManager';
+import CompositeVoxelManager from '../../utilities/CompositeVoxelManager';
+import volumeTextureStore from '../volumeTextureStore';
+import { boundsOfFrame } from '../../utilities/voxelGrid';
 import { vtkStreamingOpenGLTexture } from '../../RenderingEngine/vtkClasses';
 import type {
+  VoxelRepresentation,
+  VoxelRepresentationSelector,
+} from '../../utilities/CompositeVoxelManager';
+import type { VolumeTextureSet, VolumeTextureSlot } from './VolumeTextureSet';
+import type { ProvisionTextureSetOptions } from '../volumeTextureStore';
+import type {
+  DeliveredRegion,
   Metadata,
   Point3,
   Mat3,
@@ -11,15 +21,66 @@ import type {
   PixelDataTypedArrayString,
   RGB,
   IVoxelManager,
+  VoxelGrid,
+  VoxelQualityRecord,
+  VoxelStatistic,
 } from '../../types';
+import ImageQualityStatus from '../../enums/ImageQualityStatus';
+import VoxelStatistics from '../../enums/VoxelStatistics';
+import Events from '../../enums/Events';
+import eventTarget from '../../eventTarget';
+import triggerEvent from '../../utilities/triggerEvent';
 import cache from '../cache';
 import type vtkOpenGLTexture from '@kitware/vtk.js/Rendering/OpenGL/Texture';
+import { coreLog } from '../../utilities/logger';
+
+const log = coreLog.getLogger('cache', 'ImageVolume');
+
+/** The name of the set that holds the full-resolution data of the whole volume. */
+export const FULL_RESOLUTION_TEXTURE_SET = 'full-resolution/full-extent';
+
+/**
+ * What a caller states to provision one named set of a volume. The volume
+ * itself states the identity, the grid, the type and the factories.
+ */
+export type VolumeProvisionTextureSetOptions = Omit<
+  ProvisionTextureSetOptions<vtkStreamingOpenGLTexture>,
+  | 'volumeId'
+  | 'volumeGrid'
+  | 'dataType'
+  | 'numberOfComponents'
+  | 'createTexture'
+  | 'destroyTexture'
+  | 'applyGrid'
+>;
+
+/** Marks one z slice of one texture for a refill. */
+function markSlice(
+  slot: VolumeTextureSlot<vtkStreamingOpenGLTexture>,
+  slice: number
+): void {
+  slot.texture.setUpdatedFrame(slice);
+}
 
 export interface vtkStreamingOpenGLTexture extends vtkOpenGLTexture {
   setUpdatedFrame: (frame: number) => void;
+  /** Marks every slice dirty for the next upload. Not implied by `modified()`. */
+  markAllFramesUpdated: () => void;
   setVolumeId: (volumeId: string) => void;
   releaseGraphicsResources: () => void;
   hasUpdatedFrames: () => boolean;
+  /** Sets the slice at which the next budgeted fill of a reduced texture starts. */
+  setFillHint?: (slice: number) => void;
+  /** Whether slices of a reduced texture wait for the budgeted fill. */
+  isFillPending?: () => boolean;
+  /** States the grid that this texture holds. */
+  setGrid: (grid: VoxelGrid) => void;
+  /** The grid that this texture holds. */
+  getGrid: () => VoxelGrid | undefined;
+  /** States the statistic that this texture holds. */
+  setStatistic: (statistic: VoxelStatistic) => void;
+  /** The statistic that this texture holds. */
+  getStatistic: () => VoxelStatistic | null | undefined;
 }
 
 /** The base class for volume data. It includes the volume metadata
@@ -64,8 +125,6 @@ export class ImageVolume {
   numVoxels: number;
   /** volume image data */
   imageData?: vtkImageData;
-  /** open gl texture for the volume */
-  vtkOpenGLTexture: vtkStreamingOpenGLTexture;
   /** load status object for the volume */
   loadStatus?: Record<string, unknown>;
   /** optional reference volume id if the volume is derived from another volume */
@@ -76,6 +135,7 @@ export class ImageVolume {
   hasPixelSpacing: boolean;
   /** Property to store additional information */
   additionalDetails?: Record<string, unknown>;
+  private _reductionStatistic?: VoxelStatistic;
   /**
    *  Property to store the number of dimension groups.
    * @deprecated
@@ -88,6 +148,15 @@ export class ImageVolume {
    */
   voxelManager?: IVoxelManager<number> | IVoxelManager<RGB>;
   dataType?: PixelDataTypedArrayString;
+
+  /**
+   * The composite of the alternate representations, which the volume builds on
+   * the first request. See `compositeVoxelManager`.
+   */
+  private _compositeVoxelManager?: CompositeVoxelManager<number | RGB>;
+
+  /** The number of components of one voxel, which gives the cost of a texture. */
+  private _numberOfComponents: number;
 
   /**
    * Calculates the number of time points to be the number of dimension groups
@@ -118,6 +187,7 @@ export class ImageVolume {
       additionalDetails,
       voxelManager,
       numberOfComponents,
+      reductionStatistic,
     } = props;
 
     if (!dataType) {
@@ -137,15 +207,18 @@ export class ImageVolume {
     this.origin = origin;
     this.direction = direction;
     this.dataType = dataType;
+    this.reductionStatistic = reductionStatistic;
+    this._numberOfComponents = numberOfComponents || 1;
     this.hasPixelSpacing =
       Number.isFinite(spacing[0]) &&
       spacing[0] > 0 &&
       Number.isFinite(spacing[1]) &&
       spacing[1] > 0;
 
-    this.vtkOpenGLTexture = vtkStreamingOpenGLTexture.newInstance();
-    this.vtkOpenGLTexture.setVolumeId(volumeId);
-
+    // The constructor builds no texture. A caller provisions a named texture
+    // set when a render path needs one, so a volume that nothing draws costs no
+    // texture at all, and no oversized allocation is issued for a volume that
+    // no device can hold.
     this.voxelManager =
       voxelManager ??
       VoxelManager.createImageVolumeVoxelManager({
@@ -153,6 +226,7 @@ export class ImageVolume {
         imageIds,
         numberOfComponents,
         id: volumeId,
+        dataType,
       });
 
     this.numVoxels =
@@ -207,6 +281,391 @@ export class ImageVolume {
 
   public get sizeInBytes(): number {
     return this.voxelManager.sizeInBytes;
+  }
+
+  // ==========================================================================
+  // The multi-resolution API: the alternate representations of the voxel
+  // data. The members above keep their behaviour.
+  // ==========================================================================
+
+  /**
+   * The grid descriptor of the data of this volume.
+   *
+   * The grid states the origin, the direction, the spacing and the dimensions
+   * that the volume already holds, and it states nothing else. There is no
+   * level index: the grid of this volume is the primary representation of the
+   * composite, and it carries no ordinal that would make it "level 0".
+   *
+   * Each call gives a new record, and the record holds a copy of each array, so
+   * a consumer that stores the grid is not exposed to a later change of
+   * `this.origin` or of `this.dimensions`.
+   */
+  public get voxelGrid(): VoxelGrid {
+    return {
+      origin: [...this.origin] as Point3,
+      direction: [...this.direction] as Mat3,
+      spacing: [...this.spacing] as Point3,
+      dimensions: [...this.dimensions] as Point3,
+    };
+  }
+
+  /**
+   * The regions of this volume that a loader has already delivered.
+   *
+   * A volume of this class holds every voxel from the moment of its
+   * construction, and it therefore states nothing: a derivation reads the whole
+   * grid. A volume that loads its frames one at a time overrides this member
+   * and states which frames arrived, so that a derivation reduces those frames
+   * and no others.
+   */
+  protected deliveredRegions(): DeliveredRegion[] | undefined {
+    return undefined;
+  }
+
+  /**
+   * Statistic used when this volume must be reduced to fit a GPU texture.
+   * Intensity volumes use average. Labelmaps use foregroundMajority. Defaults
+   * to average.
+   */
+  public get reductionStatistic(): VoxelStatistic | undefined {
+    return this._reductionStatistic;
+  }
+
+  /**
+   * Set it before a render path provisions a texture. A derived representation
+   * keeps the statistic it was built with, but a reduced texture refills each
+   * dirty slice with the statistic of the volume at that time, so a later
+   * change mixes two statistics in one texture.
+   */
+  public set reductionStatistic(statistic: VoxelStatistic | undefined) {
+    if (statistic === this._reductionStatistic) {
+      return;
+    }
+
+    const effective = statistic ?? VoxelStatistics.Average;
+    const reducedWithAnother = this.textureSets.some(
+      (set) =>
+        set.name !== FULL_RESOLUTION_TEXTURE_SET && set.statistic !== effective
+    );
+
+    if (reducedWithAnother) {
+      log.warn(
+        `reductionStatistic of ${this.volumeId} changed to ${statistic} after a reduction with another statistic; existing reduced textures do not match it.`
+      );
+    }
+
+    this._reductionStatistic = statistic;
+  }
+
+  /**
+   * Discards the composite, so that the next read builds it again from
+   * `deliveredRegions`. A caller that replaces every voxel of the volume calls
+   * this member, because each record then describes data that the volume no
+   * longer holds.
+   */
+  protected resetCompositeVoxelManager(): void {
+    this._compositeVoxelManager = undefined;
+  }
+
+  /**
+   * The composite of this volume, which holds every representation of the voxel
+   * data. The volume builds it on the first request, and the representation of
+   * `voxelManager` is the primary one.
+   *
+   * `voxelManager` stays the primary voxel manager, so a read through it reads
+   * the data of this grid alone. A caller that wants the best data for a
+   * region, at a resolution that it states, reads the composite.
+   *
+   * The volume discards the composite when a caller assigns a new
+   * `voxelManager`, because the alternate representations describe the data of
+   * the voxel manager that produced them. `volumeLoader.createLocalVolume`
+   * assigns a new voxel manager immediately after the construction, and the
+   * discard makes that assignment safe.
+   *
+   * `sizeInBytes` counts the primary voxel manager alone. A derived
+   * representation is extra memory that the cache does not count yet.
+   */
+  public get compositeVoxelManager(): CompositeVoxelManager<number | RGB> {
+    const primary = this.voxelManager as IVoxelManager<number | RGB>;
+
+    if (
+      !this._compositeVoxelManager ||
+      this._compositeVoxelManager.primary !== primary
+    ) {
+      const delivered = this.deliveredRegions();
+      this._compositeVoxelManager = new CompositeVoxelManager<number | RGB>({
+        primary,
+        grid: this.voxelGrid,
+        delivered,
+        // A volume that states no deliveries holds every voxel.
+        quality:
+          delivered === undefined
+            ? ImageQualityStatus.FULL_RESOLUTION
+            : undefined,
+        id: `composite-${this.volumeId}`,
+      });
+    }
+
+    return this._compositeVoxelManager;
+  }
+
+  /**
+   * Every representation of the voxel data, the primary one included.
+   *
+   * Many representations can exist at one resolution, each one covering a
+   * different part of the volume, because a set of bricks is exactly that. A
+   * caller must not assume one representation for each spacing.
+   */
+  public getVoxelRepresentations(): VoxelRepresentation<number | RGB>[] {
+    return this.compositeVoxelManager.getRepresentations();
+  }
+
+  /**
+   * The representation that a reader gets for a region, at a statistic, under a
+   * ceiling. The ceiling is the resolution that the caller will use, so a
+   * render path that fills a texture at one eighth passes the spacing of that
+   * texture, and the selection does not return the full-resolution data.
+   *
+   * The selection never creates a representation.
+   */
+  public selectVoxelRepresentation(
+    selector: VoxelRepresentationSelector = {}
+  ): VoxelRepresentation<number | RGB> {
+    return this.compositeVoxelManager.selectRepresentation(selector);
+  }
+
+  /**
+   * The absolute record of the data that a reader would get for a region, under
+   * the same three inputs that the selection takes.
+   *
+   * The record states no verdict. A reader compares it against its own
+   * requirement with `compareVoxelQuality`, so two viewports over one volume
+   * can report a different verdict at the same moment.
+   */
+  public getVoxelQuality(
+    selector: VoxelRepresentationSelector = {}
+  ): VoxelQualityRecord {
+    return this.compositeVoxelManager.getQuality(selector);
+  }
+
+  /**
+   * The record of the data that a texture of one grid holds. A render path
+   * reads it for the grid that it bound. A reduced texture fills by box
+   * average straight from the source, so no representation of its grid needs
+   * to exist.
+   */
+  public getGridQuality(
+    grid: VoxelGrid,
+    statistic?: VoxelRepresentationSelector['statistic']
+  ): VoxelQualityRecord {
+    return this.compositeVoxelManager.getGridQuality(grid, { statistic });
+  }
+
+  // ==========================================================================
+  // The named texture sets: a view of the global texture store. Only
+  // `provisionTextureSet` allocates, and it never runs on the frame path.
+  // ==========================================================================
+
+  /** The number of bytes that the textures of every volume take. */
+  public static get textureBytesUsed(): number {
+    return volumeTextureStore.bytesUsed;
+  }
+
+  /** The number of bytes that the textures of every volume may take. */
+  public static get textureBudget(): number {
+    return volumeTextureStore.budget;
+  }
+
+  /**
+   * States the budget of the texture memory of every volume. An application
+   * states it from a capability profile, and a budget that nobody states is no
+   * limit, so the behaviour of a viewport does not change.
+   */
+  public static setTextureBudget(bytes: number): void {
+    volumeTextureStore.setBudget(bytes);
+    triggerEvent(eventTarget, Events.VOLUME_TEXTURE_LIMITS_CHANGED);
+  }
+
+  /** Removes every texture set of every volume. */
+  public static clearTextureSets(): void {
+    volumeTextureStore.clear();
+  }
+
+  /** The named texture sets of this volume, which the global store holds. */
+  public get textureSets(): VolumeTextureSet<vtkStreamingOpenGLTexture>[] {
+    return volumeTextureStore.setsOfVolume<vtkStreamingOpenGLTexture>(
+      this.volumeId
+    );
+  }
+
+  /** One named texture set of this volume. */
+  public getTextureSet(
+    name: string
+  ): VolumeTextureSet<vtkStreamingOpenGLTexture> | undefined {
+    return volumeTextureStore.getSet<vtkStreamingOpenGLTexture>(
+      this.volumeId,
+      name
+    );
+  }
+
+  /**
+   * Provisions a named texture set. This is the expensive step: it counts the
+   * cost, evicts if it must, and allocates the textures.
+   *
+   * A set of this name that already exists comes back as it is, so a caller may
+   * ask without a test of its own.
+   *
+   * @returns the set, or `undefined` when the store refuses it
+   */
+  public provisionTextureSet(
+    options: VolumeProvisionTextureSetOptions
+  ): VolumeTextureSet<vtkStreamingOpenGLTexture> | undefined {
+    return volumeTextureStore.provision<vtkStreamingOpenGLTexture>({
+      volumeId: this.volumeId,
+      volumeGrid: this.voxelGrid,
+      dataType: this.dataType,
+      numberOfComponents: this._numberOfComponents,
+      createTexture: ({ grid, statistic }) => {
+        const texture = vtkStreamingOpenGLTexture.newInstance();
+
+        texture.setVolumeId(this.volumeId);
+        texture.setGrid(grid);
+        texture.setStatistic(statistic);
+
+        return texture;
+      },
+      destroyTexture: (texture) => {
+        texture.releaseGraphicsResources();
+        texture.delete();
+      },
+      applyGrid: (texture, grid) => {
+        texture.setGrid(grid);
+        // A new grid holds none of the old content, so every slice refills.
+        texture.markAllFramesUpdated();
+      },
+      markTextureSlice: markSlice,
+      ...options,
+    });
+  }
+
+  /** Adds one holder of a named set, so an eviction cannot take it. */
+  public claimTextureSet(name: string): boolean {
+    return volumeTextureStore.claim(this.volumeId, name);
+  }
+
+  /** Gives one holder of a named set back. */
+  public releaseTextureSet(name: string): boolean {
+    return volumeTextureStore.release(this.volumeId, name);
+  }
+
+  /**
+   * The texture of the full-resolution grid. The member provisions the set
+   * named `full-resolution/full-extent` when the store does not hold it.
+   *
+   * @returns the texture, or `undefined` when the store refuses it
+   */
+  public getFullResolutionTexture(): vtkStreamingOpenGLTexture | undefined {
+    if (this.vtkOpenGLTexture) {
+      return this.vtkOpenGLTexture;
+    }
+
+    this.provisionTextureSet({
+      name: FULL_RESOLUTION_TEXTURE_SET,
+      grids: [this.voxelGrid],
+      coverage: 'full-extent',
+      backstop: true,
+    });
+
+    return this.vtkOpenGLTexture;
+  }
+
+  /**
+   * The texture of the full-resolution grid, and not every texture of the
+   * volume. The volume holds named sets of textures, and this member names the
+   * one member of the set `full-resolution/full-extent`.
+   *
+   * The value follows the store. It is `undefined` until something provisions
+   * that set, and it returns to `undefined` when the store evicts that set. A
+   * render path that draws a reduced grid reads a different set, and this value
+   * stays `undefined`.
+   */
+  public get vtkOpenGLTexture(): vtkStreamingOpenGLTexture | undefined {
+    const member = this.getTextureSet(
+      FULL_RESOLUTION_TEXTURE_SET
+    )?.members()[0];
+
+    return member?.texture;
+  }
+
+  /**
+   * Marks one frame for a refill in every texture of every set whose grid
+   * covers the frame. The member records no quality.
+   *
+   * One frame changes several textures, because each texture that covers the
+   * frame reads the same voxels. A mark
+   * uploads nothing: the refill happens at the next render of each texture.
+   */
+  public markFrameTexturesDirty(frameIndex: number): void {
+    // The image of this frame can have changed, and the voxel manager holds the
+    // image that it last resolved for the frame. Forget that image, so the
+    // refill reads the image that the cache holds now.
+    this.voxelManager?.invalidateSlice?.(frameIndex);
+
+    for (const set of this.textureSets) {
+      set.markDirty(boundsOfFrame(this.voxelGrid, frameIndex), markSlice);
+    }
+  }
+
+  /**
+   * Records that the data of one frame arrived at a known quality.
+   *
+   * The composite records the delivery. Only a caller that knows the quality
+   * of the data calls this member, because a lower record never replaces a
+   * higher one.
+   *
+   * The member marks no texture. A loader calls `markFrameTexturesDirty` too.
+   *
+   * @param quality - the quality of the data that arrived
+   */
+  public recordFrameDelivery(
+    frameIndex: number,
+    quality: ImageQualityStatus
+  ): void {
+    this.compositeVoxelManager.acceptData({
+      grid: this.voxelGrid,
+      frameIndex,
+      quality,
+    });
+  }
+
+  /**
+   * Takes a change of the voxels of one frame at an unchanged quality.
+   *
+   * An edit of a labelmap, or a computed volume that writes new values, is
+   * such a change. The member marks the textures.
+   */
+  public markFrameModified(frameIndex: number): void {
+    this.markFrameTexturesDirty(frameIndex);
+  }
+
+  /** Marks every voxel of every texture of every set for a refill. */
+  public markAllTexturesDirty(): void {
+    for (const set of this.textureSets) {
+      set.markAllDirty(markSlice);
+    }
+  }
+
+  /**
+   * The quality of the data that the image of one image id index holds. A
+   * volume that does not stream holds every image at full resolution, and a
+   * streaming volume states the quality that each delivery recorded.
+   *
+   * @returns the quality, or undefined when no data of the image has arrived
+   */
+  public getImageQuality(
+    _imageIdIndex: number
+  ): ImageQualityStatus | undefined {
+    return ImageQualityStatus.FULL_RESOLUTION;
   }
 
   /** return the image ids for the volume if it is made of separated images */
@@ -273,19 +732,20 @@ export class ImageVolume {
    * destroy the volume and make it unusable
    */
   destroy(): void {
-    // TODO: GPU memory associated with volume is not cleared.
     this.imageData.delete();
     this.imageData = null;
     this.voxelManager.clear();
+    // The alternate representations hold their own voxels, and nothing else
+    // refers to them, so the discard of the composite releases that memory.
+    this.resetCompositeVoxelManager();
 
-    this.vtkOpenGLTexture.releaseGraphicsResources();
-    this.vtkOpenGLTexture.delete();
+    // Every texture set of this volume, and not one texture. The eviction
+    // releases the graphics resources of each member.
+    volumeTextureStore.evictVolume(this.volumeId);
   }
 
   public invalidate() {
-    for (let i = 0; i < this.imageIds.length; i++) {
-      this.vtkOpenGLTexture.setUpdatedFrame(i);
-    }
+    this.markAllTexturesDirty();
 
     this.imageData.modified();
   }
@@ -297,7 +757,7 @@ export class ImageVolume {
    */
   public modified() {
     this.imageData.modified();
-    this.vtkOpenGLTexture.modified();
+    this.markAllTexturesDirty();
 
     this.numFrames = this._getNumFrames();
   }

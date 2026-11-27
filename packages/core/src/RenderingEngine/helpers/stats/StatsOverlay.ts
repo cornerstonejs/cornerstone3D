@@ -1,7 +1,10 @@
+import cache from '../../../cache/cache';
+import type { VoxelQualityRecord } from '../../../types';
 import renderingEngineCache from '../../renderingEngineCache';
 import {
   RenderModesPanel,
   type RenderModePanelBinding,
+  type RenderModePanelEntry,
 } from './RenderModesPanel';
 import { StatsPanel } from './StatsPanel';
 import type { Panel, StatsInstance, PerformanceWithMemory } from './types';
@@ -69,6 +72,7 @@ export class StatsOverlay implements StatsInstance {
 
       // Apply styles and add to DOM
       this.applyOverlayStyles();
+      this.addCloseButton();
       this.restorePosition();
       this.attachDragHandlers();
       document.body.appendChild(this.dom);
@@ -124,6 +128,34 @@ export class StatsOverlay implements StatsInstance {
    */
   private applyOverlayStyles(): void {
     Object.assign(this.dom.style, STATS_CONFIG.OVERLAY_STYLES);
+  }
+
+  /**
+   * Adds a top-right close control that dismisses the HUD without starting a drag.
+   */
+  private addCloseButton(): void {
+    if (!this.dom) {
+      return;
+    }
+
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.setAttribute('aria-label', 'Close stats overlay');
+    close.title = 'Close';
+    close.textContent = '×';
+    Object.assign(close.style, STATS_CONFIG.CLOSE_BUTTON_STYLES);
+
+    close.addEventListener('pointerdown', (event) => {
+      event.stopPropagation();
+      event.preventDefault();
+    });
+    close.addEventListener('click', (event) => {
+      event.stopPropagation();
+      event.preventDefault();
+      this.cleanup();
+    });
+
+    this.dom.appendChild(close);
   }
 
   /**
@@ -259,8 +291,10 @@ export class StatsOverlay implements StatsInstance {
   }
 
   /**
-   * Collects every viewport's GenericViewport binding debug state from the
-   * rendering engine cache and pushes a role-aware list to the bindings panel.
+   * Collects every viewport's GenericViewport binding debug state and volume
+   * {@link VoxelQualityRecord}s. Within one tick, `getVoxelQuality` runs at
+   * most once per `volumeId` so MPR viewports that share a volume do not
+   * recompute the same record.
    */
   private updateRenderModesPanel(): void {
     const panel = this.panels.get(PanelType.RENDER_MODES);
@@ -269,12 +303,8 @@ export class StatsOverlay implements StatsInstance {
       return;
     }
 
-    const entries: Array<{
-      renderingEngineId: string;
-      viewportId: string;
-      viewportType: string;
-      bindings: RenderModePanelBinding[];
-    }> = [];
+    const qualityByVolumeId = new Map<string, VoxelQualityRecord | undefined>();
+    const entries: RenderModePanelEntry[] = [];
 
     for (const renderingEngine of renderingEngineCache.getAll()) {
       if (!renderingEngine || renderingEngine.hasBeenDestroyed) {
@@ -284,6 +314,17 @@ export class StatsOverlay implements StatsInstance {
       for (const viewport of renderingEngine.getViewports()) {
         const debugViewport = viewport as unknown as DebugBindingsViewport;
         const renderModes = debugViewport._debug?.renderModes;
+        const volumeIds = this.collectViewportVolumeIds(debugViewport);
+        const volumes = volumeIds.map((volumeId) => {
+          if (!qualityByVolumeId.has(volumeId)) {
+            qualityByVolumeId.set(volumeId, this.readVoxelQuality(volumeId));
+          }
+
+          return {
+            volumeId,
+            record: qualityByVolumeId.get(volumeId),
+          };
+        });
 
         entries.push({
           renderingEngineId: renderingEngine.id,
@@ -293,6 +334,7 @@ export class StatsOverlay implements StatsInstance {
             debugViewport,
             (renderModes as Record<string, string> | undefined) ?? {}
           ),
+          volumes,
         });
       }
     }
@@ -347,6 +389,53 @@ export class StatsOverlay implements StatsInstance {
   }
 
   /**
+   * Volume ids bound to a viewport: source data id first, then actor
+   * `referencedId`s that resolve in the volume cache.
+   */
+  private collectViewportVolumeIds(viewport: DebugBindingsViewport): string[] {
+    const ids: string[] = [];
+    const seen = new Set<string>();
+
+    const push = (candidate: string | undefined) => {
+      if (!candidate || seen.has(candidate)) {
+        return;
+      }
+
+      if (!cache.getVolume(candidate)) {
+        return;
+      }
+
+      seen.add(candidate);
+      ids.push(candidate);
+    };
+
+    push(viewport.getSourceDataId?.());
+
+    for (const actor of viewport.getActors?.() ?? []) {
+      push(actor.referencedId);
+    }
+
+    return ids;
+  }
+
+  private readVoxelQuality(volumeId: string): VoxelQualityRecord | undefined {
+    try {
+      const volume = cache.getVolume(volumeId) as
+        | { getVoxelQuality?: () => VoxelQualityRecord | undefined }
+        | undefined;
+
+      if (typeof volume?.getVoxelQuality !== 'function') {
+        return undefined;
+      }
+
+      return volume.getVoxelQuality();
+    } catch {
+      // The debug overlay must never throw on a missing or partial volume.
+      return undefined;
+    }
+  }
+
+  /**
    * Updates the memory panel if available.
    */
   private updateMemoryPanel(): void {
@@ -376,6 +465,14 @@ export class StatsOverlay implements StatsInstance {
 
   private onPointerDown(event: PointerEvent): void {
     if (!this.dom || event.button !== 0) {
+      return;
+    }
+
+    // Close control handles its own pointer events; do not start a drag.
+    if (
+      event.target instanceof Element &&
+      event.target.closest('button[aria-label="Close stats overlay"]')
+    ) {
       return;
     }
 

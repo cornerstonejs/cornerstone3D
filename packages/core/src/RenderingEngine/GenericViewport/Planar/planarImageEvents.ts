@@ -1,7 +1,46 @@
 import { Events, OrientationAxis } from '../../../enums';
+import type ImageQualityStatus from '../../../enums/ImageQualityStatus';
+import eventTarget from '../../../eventTarget';
 import triggerEvent from '../../../utilities/triggerEvent';
 import type { IImage } from '../../../types';
+import { imageQualityStatusOf } from '../../helpers/fidelityIndicator/collectFidelityLines';
 import type { PlanarViewState } from './PlanarViewportTypes';
+
+/**
+ * Calls `onBetterStage` when a progressive load delivers a better stage of the
+ * image that a stack rendering shows, as the legacy stack viewport draws each
+ * stage. The progressive loader fires `IMAGE_LOADED` for each stage. A stage
+ * that arrives while a load of another index is in flight is ignored.
+ *
+ * @returns the function that removes the listener
+ */
+export function subscribeToBetterImageStages(
+  rendering: {
+    imageQualityStatus?: ImageQualityStatus;
+    currentImageIdIndex: number;
+    lastRequestedImageIdIndex?: number;
+  },
+  shownImageId: () => string | undefined,
+  onBetterStage: (image: IImage) => void
+): () => void {
+  const listener = (evt: CustomEvent<{ image?: IImage }>) => {
+    const { image } = evt.detail;
+    const { currentImageIdIndex, lastRequestedImageIdIndex } = rendering;
+
+    if (
+      image?.imageId === shownImageId() &&
+      (lastRequestedImageIdIndex ?? currentImageIdIndex) ===
+        currentImageIdIndex &&
+      imageQualityStatusOf(image) > rendering.imageQualityStatus
+    ) {
+      onBetterStage(image);
+    }
+  };
+
+  eventTarget.addEventListener(Events.IMAGE_LOADED, listener);
+
+  return () => eventTarget.removeEventListener(Events.IMAGE_LOADED, listener);
+}
 
 interface PlanarImageEventContext {
   viewportId: string;

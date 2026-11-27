@@ -1,11 +1,12 @@
 import { VOILUTFunctionType } from '../enums';
 import type { VOIRange } from '../types';
 import { toLowHighRange } from './windowLevel';
+import { getValidVOILUTFunction } from './buildMetadata';
 
 export default function getVOIRangeFromWindowLevel(
   windowWidth: number | number[] | undefined,
   windowCenter: number | number[] | undefined,
-  voiLUTFunction: VOILUTFunctionType = VOILUTFunctionType.LINEAR
+  voiLUTFunction: VOILUTFunctionType | string = VOILUTFunctionType.LINEAR
 ): VOIRange | undefined {
   let center: number | undefined;
   let width: number | undefined;
@@ -22,5 +23,6 @@ export default function getVOIRangeFromWindowLevel(
     return;
   }
 
-  return toLowHighRange(width, center, voiLUTFunction);
+  // toLowHighRange throws on an unknown function, so use LINEAR for it
+  return toLowHighRange(width, center, getValidVOILUTFunction(voiLUTFunction));
 }

@@ -2,6 +2,10 @@ export const UCUM_HOUNSFIELD_UNIT = "[hnsf'U]";
 export const DISPLAY_HOUNSFIELD_UNIT = 'HU';
 export const UCUM_SQUARE_MILLIMETER = 'mm2';
 export const DISPLAY_SQUARE_MILLIMETER = 'mm²';
+// Cornerstone reports SUV only for PT images prescaled with suvbw, so the
+// display unit SUV is always the body weight SUV (DICOM CID 85).
+export const UCUM_SUV_BODY_WEIGHT = 'g/ml{SUVbw}';
+export const DISPLAY_SUV = 'SUV';
 
 /**
  * Mapping from UCUM codes to display units.
@@ -9,10 +13,41 @@ export const DISPLAY_SQUARE_MILLIMETER = 'mm²';
 const UNIT_MAP_FROM_UCUM: Record<string, string> = {
   [UCUM_HOUNSFIELD_UNIT]: DISPLAY_HOUNSFIELD_UNIT,
   [UCUM_SQUARE_MILLIMETER]: DISPLAY_SQUARE_MILLIMETER,
+  [UCUM_SUV_BODY_WEIGHT]: DISPLAY_SUV,
 };
 
 /**
+ * Mapping from display units to UCUM codes, for the units that dcmjs
+ * cannot map by itself.
+ */
+const UNIT_MAP_TO_UCUM: Record<string, string> = {
+  [DISPLAY_SUV]: UCUM_SUV_BODY_WEIGHT,
+};
+
+/**
+ * Converts a display unit to the UCUM code for the units that dcmjs does not
+ * map by itself. Other units are returned unchanged so that dcmjs keeps
+ * handling them.
+ *
+ * @param unit - The display unit (e.g., "SUV")
+ * @returns The UCUM code (e.g., "g/ml{SUVbw}") or original unit if no mapping
+ */
+export function mapUnitToUCUM(unit: string | undefined): string | undefined {
+  if (!unit) {
+    return unit;
+  }
+  return UNIT_MAP_TO_UCUM[unit] || unit;
+}
+
+/**
+ * dcmjs writes a unit it has no UCUM code for (SUV, raw, cm US Region...) as
+ * the arbitrary unit "[arb'U]{<unit>}".
+ */
+const ARBITRARY_UNIT = /^\[arb'U\]\{(.*)\}$/;
+
+/**
  * Converts a UCUM code to display format.
+ * An arbitrary unit written by dcmjs gives back the unit it wraps.
  * If no mapping exists, returns the original unit.
  *
  * @param unit - The UCUM code (e.g., "[hnsf'U]")
@@ -21,6 +56,10 @@ const UNIT_MAP_FROM_UCUM: Record<string, string> = {
 export function mapUnitFromUCUM(unit: string | undefined): string | undefined {
   if (!unit) {
     return unit;
+  }
+  const arbitrary = ARBITRARY_UNIT.exec(unit);
+  if (arbitrary) {
+    return arbitrary[1];
   }
   return UNIT_MAP_FROM_UCUM[unit] || unit;
 }
