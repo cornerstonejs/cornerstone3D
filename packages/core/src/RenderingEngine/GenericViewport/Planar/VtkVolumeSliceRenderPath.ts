@@ -5,6 +5,7 @@ import { buildPlanarActorEntry } from './buildPlanarActorEntry';
 import uuidv4 from '../../../utilities/uuidv4';
 import { Events, ViewportType } from '../../../enums';
 import createVolumeSliceActor from '../../helpers/createVolumeSliceActor';
+import { getVolumeVOIShape } from '../../helpers/setDefaultVolumeVOI';
 import {
   defaultVolumeStrategyProvider,
   selectFirstReadyStrategy,
@@ -47,7 +48,10 @@ import {
   getPlanarRenderPathActiveSourceICamera,
   resolvePlanarRenderPathProjection,
 } from './planarRenderPathProjection';
-import { applyPlanarVolumePresentation } from './planarVolumePresentation';
+import {
+  applyPlanarVolumePresentation,
+  getVolumeActorDefaultVOIRange,
+} from './planarVolumePresentation';
 import {
   acquiredFrameActors,
   withAcquiredFrames,
@@ -107,8 +111,15 @@ export class VtkVolumeSliceRenderPath
     ctx.display.activateRenderMode(ActorRenderMode.VTK_VOLUME_SLICE);
     ctx.vtk.renderer.addActor(actor);
 
-    const transferFunction = actor.getProperty().getRGBTransferFunction(0);
-    const defaultRange = transferFunction?.getRange?.();
+    // The VOI LUT Function and the VOI LUT Sequence of the file, which the
+    // range cannot carry. setDefaultVolumeVOI already put them on the actor;
+    // the presentation needs them again on each change of the VOI.
+    const volumeVOIShape = getVolumeVOIShape(imageVolume);
+    const defaultVOIRange = await getVolumeActorDefaultVOIRange(
+      actor,
+      imageVolume,
+      volumeVOIShape
+    );
 
     const rendering: PlanarVolumeSliceRendering = {
       renderMode: ActorRenderMode.VTK_VOLUME_SLICE,
@@ -121,9 +132,9 @@ export class VtkVolumeSliceRenderPath
       mapper,
       currentImageIdIndex: payload.initialImageIdIndex ?? 0,
       maxImageIdIndex: payload.imageIds.length - 1,
-      defaultVOIRange: defaultRange
-        ? { lower: defaultRange[0], upper: defaultRange[1] }
-        : undefined,
+      defaultVOIRange,
+      defaultVOILUTFunction: volumeVOIShape.voiLUTFunction,
+      defaultVOILUT: volumeVOIShape.voiLUT,
       dataPresentation: undefined,
       isSegmentationOverlay,
       viewportId: ctx.viewportId,
@@ -248,6 +259,10 @@ export class VtkVolumeSliceRenderPath
       defaultVOIRange: rendering.isSegmentationOverlay
         ? undefined
         : rendering.defaultVOIRange,
+      defaultVOILUTFunction: rendering.defaultVOILUTFunction,
+      defaultVOILUT: rendering.isSegmentationOverlay
+        ? undefined
+        : rendering.defaultVOILUT,
       mapper: rendering.mapper,
       props: rendering.dataPresentation,
     });
