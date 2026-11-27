@@ -26,10 +26,19 @@ function toHex(value: number | string, digits: number): string | undefined {
 /** The creator text without the LO padding, as dcmjs keys the block. */
 function trimCreator(value: unknown): string | undefined {
   const text = Array.isArray(value) ? value[0] : value;
-  return typeof text === 'string'
-    ? // eslint-disable-next-line no-control-regex -- the NUL padding of a value
-      text.replace(/^ +|[\0 ]+$/g, '')
-    : undefined;
+  if (typeof text !== 'string') {
+    return undefined;
+  }
+  // A loop, not a regular expression: linear time on any input (CodeQL).
+  let start = 0;
+  let end = text.length;
+  while (start < end && text[start] === ' ') {
+    start++;
+  }
+  while (end > start && (text[end - 1] === ' ' || text[end - 1] === '\0')) {
+    end--;
+  }
+  return text.slice(start, end);
 }
 
 function isBlock(value: unknown): value is Record<string, unknown> {
@@ -50,9 +59,11 @@ function findBlock(
   group: string,
   creator: string
 ): Record<string, unknown> | undefined {
+  // The same escape as dcmjs `data.privateBlockKey`; utils has no run-time dcmjs.
+  const keyText = creator.replace(/\r/g, '\\r').replace(/\n/g, '\\n');
   const direct =
-    dataset[`${group}:${creator}`] ??
-    dataset[`${group.toLowerCase()}:${creator}`];
+    dataset[`${group}:${keyText}`] ??
+    dataset[`${group.toLowerCase()}:${keyText}`];
   if (isBlock(direct)) {
     return direct;
   }

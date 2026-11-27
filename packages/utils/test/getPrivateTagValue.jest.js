@@ -34,6 +34,16 @@ describe('getPrivateTagValue', () => {
     ]);
   });
 
+  it('reads the block key of a creator with a line break, as dcmjs writes it', () => {
+    const creator = 'Line\nBreak';
+    const dataset = {
+      [dcmjs.data.privateBlockKey(0x0029, creator)]: { x01: ['value'] },
+    };
+    expect(getPrivateTagValue(dataset, 0x0029, creator, 0x01)).toEqual([
+      'value',
+    ]);
+  });
+
   it('gives undefined when the creator is absent', () => {
     const dataset = { 70531009: [1.88], '7053:Other': { x09: [2] } };
     expect(getPrivateTagValue(dataset, 0x7053, PHILIPS, 0x09)).toBeUndefined();
