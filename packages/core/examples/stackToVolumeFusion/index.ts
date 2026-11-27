@@ -47,7 +47,7 @@ const wadoRsRootFromUrl = urlParams.get('url') ?? urlParams.get('wadoRsRoot');
 const useLegacyMetadataProvider =
   urlParams.get('useLegacyMetadataProvider') === 'true';
 
-const defaultWadoRsRoot = 'https://d33do7qe4w26qo.cloudfront.net/dicomweb';
+const defaultWadoRsRoot = 'https://d14fa38qiwhyfd.cloudfront.net/dicomweb';
 const wadoRsRoot = wadoRsRootFromUrl ?? defaultWadoRsRoot;
 
 // ======== Set up page ======== //
