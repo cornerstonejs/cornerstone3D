@@ -21,6 +21,11 @@ const EDGE_FACES = [
 
 // Half-extent of the square main faces in geometry/model space (not pixels).
 const FACE_HALF_SIZE = 0.792;
+// Distance of the main faces from the center.
+const PHI = 1.4;
+
+/** Distance from the center to the farthest vertex, at scale 1. */
+export const BOUNDING_RADIUS = Math.hypot(PHI, FACE_HALF_SIZE, FACE_HALF_SIZE);
 
 function vtkRhombicuboctahedronSource(publicAPI, model) {
   model.classHierarchy.push('vtkRhombicuboctahedronSource');
@@ -38,7 +43,7 @@ function vtkRhombicuboctahedronSource(publicAPI, model) {
       }
     }
 
-    const phi = 1.4;
+    const phi = PHI;
     const vertices = [];
 
     vertices.push(-FACE_HALF_SIZE, -FACE_HALF_SIZE, -phi);

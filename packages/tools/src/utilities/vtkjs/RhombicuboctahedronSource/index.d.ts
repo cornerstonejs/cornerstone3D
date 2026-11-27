@@ -1,5 +1,8 @@
 import { vtkAlgorithm, vtkObject } from '@kitware/vtk.js/interfaces';
 
+/** Distance from the center to the farthest vertex, at scale 1. */
+export declare const BOUNDING_RADIUS: number;
+
 /**
  * vtkRhombicuboctahedronSource
  */

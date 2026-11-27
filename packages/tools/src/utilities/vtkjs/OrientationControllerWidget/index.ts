@@ -5,9 +5,9 @@ import vtkMapper from '@kitware/vtk.js/Rendering/Core/Mapper';
 import vtkPoints from '@kitware/vtk.js/Common/Core/Points';
 import vtkPolyData from '@kitware/vtk.js/Common/DataModel/PolyData';
 import vtkRenderer from '@kitware/vtk.js/Rendering/Core/Renderer';
-import { Enums } from '@cornerstonejs/core';
 import type { Types } from '@cornerstonejs/core';
 import vtkAnnotatedRhombicuboctahedronActor from '../AnnotatedRhombicuboctahedronActor';
+import { BOUNDING_RADIUS } from '../RhombicuboctahedronSource';
 import { beginOwnedDrag, endOwnedDrag } from '../../interactionDragCoordinator';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
 
@@ -48,6 +48,8 @@ export interface PickResult {
 export interface PositionConfig {
   position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
   size: number;
+  /** Clear space in CSS pixels between the controller and the viewport edges. */
+  margin?: number;
 }
 
 export interface MouseHandlersCallbacks {
@@ -350,10 +352,17 @@ export class vtkOrientationControllerWidget {
     return null;
   }
 
+  /**
+   * Gets the world position of the controller center. The center is
+   * `margin` pixels plus the bounding radius of the controller from the two
+   * edges of the corner, so no orientation of the controller touches an edge.
+   * The offset is clamped so the center stays inside the viewport.
+   */
   calculateMarkerPosition(
     viewport: Types.IVolumeViewport,
     position: PositionConfig['position'],
-    screenSizePixels: number
+    screenSizePixels: number,
+    margin = 0
   ): [number, number, number] | null {
     const canvas = viewport.canvas;
     if (!canvas) {
@@ -365,39 +374,31 @@ export class vtkOrientationControllerWidget {
     const canvasHeight =
       canvas.clientHeight || canvas.height / devicePixelRatio;
 
-    // We want the distance between the controller and the viewport border
-    // to scale with the controller size.
-    //
-    // We clamp the margin so the controller stays fully within the viewport
-    // even when the size is large.
-    const marginRatio =
-      viewport.type === Enums.ViewportType.VOLUME_3D ? 1.3 : 1.1;
-    const marginPxRaw = marginRatio * screenSizePixels;
-    const halfPx = screenSizePixels * 0.5;
-
-    const maxMarginX = Math.max(0, (canvasWidth - screenSizePixels) / 2);
-    const maxMarginY = Math.max(0, (canvasHeight - screenSizePixels) / 2);
-    const marginPx = Math.min(marginPxRaw, maxMarginX, maxMarginY);
+    const offset = Math.min(
+      BOUNDING_RADIUS * screenSizePixels + Math.max(0, margin),
+      canvasWidth / 2,
+      canvasHeight / 2
+    );
 
     let canvasX: number;
     let canvasY: number;
 
     switch (position) {
       case 'top-left':
-        canvasX = marginPx + halfPx;
-        canvasY = marginPx + halfPx;
+        canvasX = offset;
+        canvasY = offset;
         break;
       case 'top-right':
-        canvasX = canvasWidth - marginPx - halfPx;
-        canvasY = marginPx + halfPx;
+        canvasX = canvasWidth - offset;
+        canvasY = offset;
         break;
       case 'bottom-left':
-        canvasX = marginPx + halfPx;
-        canvasY = canvasHeight - marginPx - halfPx;
+        canvasX = offset;
+        canvasY = canvasHeight - offset;
         break;
       default: // bottom-right
-        canvasX = canvasWidth - marginPx - halfPx;
-        canvasY = canvasHeight - marginPx - halfPx;
+        canvasX = canvasWidth - offset;
+        canvasY = canvasHeight - offset;
     }
 
     const canvasPos: Types.Point2 = [canvasX, canvasY];
@@ -455,7 +456,8 @@ export class vtkOrientationControllerWidget {
       const worldPos = this.calculateMarkerPosition(
         viewport,
         config.position,
-        screenSizePixels
+        screenSizePixels,
+        config.margin
       );
       if (!worldPos) {
         cs3dLogger.warn(
