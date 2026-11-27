@@ -296,10 +296,13 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
       return removedAnnotations;
     }
 
+    // removeAnnotation splices each annotation out of the tool's array, so the
+    // loops iterate over a copy. Iterating the live array skips every other
+    // annotation.
     if (toolName) {
       const annotationsForTool = annotations[groupKey][toolName];
       if (annotationsForTool) {
-        for (const annotation of annotationsForTool) {
+        for (const annotation of [...annotationsForTool]) {
           this.removeAnnotation(annotation.annotationUID);
           removedAnnotations.push(annotation);
         }
@@ -307,7 +310,7 @@ class FrameOfReferenceSpecificAnnotationManager implements IAnnotationManager {
     } else {
       for (const toolName in annotations[groupKey]) {
         const annotationsForTool = annotations[groupKey][toolName];
-        for (const annotation of annotationsForTool) {
+        for (const annotation of [...annotationsForTool]) {
           this.removeAnnotation(annotation.annotationUID);
           removedAnnotations.push(annotation);
         }
