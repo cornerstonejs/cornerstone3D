@@ -1065,7 +1065,10 @@ gives that map for one layer.
 ### What Changed
 
 `@cornerstonejs/adapters`, `@cornerstonejs/metadata` and `@cornerstonejs/utils`
-now depend on `@dcmjs-org/dcmjs` 1.0.0 instead of `dcmjs` 0.52.0.
+now depend on dcmjs 1.0.2 instead of `dcmjs` 0.52.0. They import the dcmjs
+sub-packages directly: `@dcmjs-org/core` and `@dcmjs-org/legacy`. The adapters
+also import `@dcmjs-org/dcmjs` for the SR, SEG and normalizer code, because no
+sub-package exports that code.
 `@cornerstonejs/ai` no longer depends on dcmjs, because it did not use it.
 The default export of dcmjs 1.0 has the 0.52 names, but the naturalized
 datasets have new shapes (see the dcmjs `docs/MIGRATION.md`, section
@@ -1142,8 +1145,9 @@ These shapes reach your code through the adapters:
   and the hex key is a hidden alias that a spread or JSON loses. The reader also
   reads the hex-key form. A display set rule declaration takes `creator` for the
   same read: `{ "attribute": "00431039", "creator": "GEMS_PARM_01" }`.
-- Move the application to `@dcmjs-org/dcmjs` in the same release, so that one
-  copy of dcmjs sets the log levels and the shapes.
+- Move the application to dcmjs 1.0.2 (`@dcmjs-org/dcmjs`) in the same
+  release, so that one copy of `@dcmjs-org/core` sets the log levels and the
+  shapes.
 - Do not rely on a fixed length of the generated UIDs.
 
 ## Adapters name the writer in SR, SEG and RTSTRUCT
