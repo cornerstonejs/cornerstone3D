@@ -116,11 +116,7 @@ function thresholdVolumeByRange(
     const offset = voxelManager.toIndex(pointIJK);
 
     const value = voxelManager.getAtIndex(offset);
-    if (value <= lower || value >= upper) {
-      return false;
-    } else {
-      return true;
-    }
+    return value >= lower && value <= upper;
   };
 
   /**
