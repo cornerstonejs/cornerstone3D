@@ -794,6 +794,12 @@ class VolumeCroppingTool extends BaseTool {
    * - Labelmaps that render as image slices (vtkImageMapper) and surface
    *   segmentations in the 2D viewports ignore the shader replacements, so
    *   they still overlap the image inside the crop rectangle.
+   * - With `LABELMAP_EDGE_PROJECTION_BLEND`, the labelmap renderer can replace
+   *   the image actor with one actor that has two components (image and
+   *   labelmap). The 2D viewports do not split this combined actor, because
+   *   the inverted shader would hide the image inside the crop rectangle. The
+   *   actor keeps its slab planes only, as it did before the disjoint mode,
+   *   so the image and the labelmap overlap there.
    * - The split applies only while the VolumeCroppingControlTool of a 2D
    *   viewport is not disabled.
    * - The 3D segmentation uses the crop planes in world coordinates, so it

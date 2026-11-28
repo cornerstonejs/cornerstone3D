@@ -573,6 +573,15 @@ class VolumeCroppingControlTool extends AnnotationTool {
     );
     viewport.getActors().forEach(({ actor, representationUID }) => {
       let planes = null;
+      // The combined image and labelmap actor of edge projection stays unsplit.
+      const mapper = actor.getMapper() as { getBlendMode?: () => number };
+      if (
+        mapper?.getBlendMode?.() ===
+        Enums.BlendModes.LABELMAP_EDGE_PROJECTION_BLEND
+      ) {
+        setCropClippingPlanes(actor, null, { keepCount: 2 });
+        return;
+      }
       if (enabled && representationUID) {
         planes = excludingPlane ? null : inPlane;
       } else if (enabled) {
