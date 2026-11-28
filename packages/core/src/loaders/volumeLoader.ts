@@ -420,11 +420,19 @@ export function createLocalVolume(
       (i + 1) * sliceLength
     );
 
+    // Each slice image is positioned at its own slice, i steps of the slice
+    // spacing along the k direction from the volume origin
+    const sliceOrigin = [
+      origin[0] + i * spacing[2] * direction[6],
+      origin[1] + i * spacing[2] * direction[7],
+      origin[2] + i * spacing[2] * direction[8],
+    ] as Point3;
+
     const derivedImage = createAndCacheLocalImage(imageId, {
       scalarData: sliceData,
       dimensions: [dimensions[0], dimensions[1]],
       spacing: [spacing[0], spacing[1]],
-      origin,
+      origin: sliceOrigin,
       direction,
       referencedImageId: referencedImageIds?.[i],
       targetBuffer: { type: dataType },
