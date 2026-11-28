@@ -21,8 +21,11 @@ export default function modalityScaleNifti(
 
   let slope = scl_slope;
   let inter = scl_inter;
+  // NIfTI-1 scales voxel values only when scl_slope is nonzero, so a missing
+  // slope also means no intercept.
   if (!scl_slope || scl_slope === 0 || Number.isNaN(scl_slope)) {
     slope = 1;
+    inter = 0;
   }
   if (!scl_inter || Number.isNaN(scl_inter)) {
     inter = 0;
@@ -31,17 +34,21 @@ export default function modalityScaleNifti(
   const hasFloatRescale = inter % 1 !== 0 || slope % 1 !== 0;
   let niiBuffer;
   let scalarData;
-  let pixelRepresentation = 1;
   switch (datatypeCode) {
     case NIFTICONSTANTS.NIFTI_TYPE_UINT8:
       niiBuffer = new Uint8Array(niftiImageBuffer);
       if (hasFloatRescale) {
         scalarData = allocateScalarData('Float32Array', niiBuffer);
       } else if (hasNegativeRescale) {
-        scalarData = allocateScalarData('Int16Array', niiBuffer);
+        scalarData = allocateScalarData(
+          fitScaledRange('Int16Array', niiBuffer, slope, inter),
+          niiBuffer
+        );
       } else {
-        pixelRepresentation = 0;
-        scalarData = allocateScalarData('Uint8Array', niiBuffer);
+        scalarData = allocateScalarData(
+          fitScaledRange('Uint8Array', niiBuffer, slope, inter),
+          niiBuffer
+        );
       }
       break;
     case NIFTICONSTANTS.NIFTI_TYPE_INT16:
@@ -49,7 +56,10 @@ export default function modalityScaleNifti(
       if (hasFloatRescale) {
         scalarData = allocateScalarData('Float32Array', niiBuffer);
       } else {
-        scalarData = allocateScalarData('Int16Array', niiBuffer);
+        scalarData = allocateScalarData(
+          fitScaledRange('Int16Array', niiBuffer, slope, inter),
+          niiBuffer
+        );
       }
       break;
     case NIFTICONSTANTS.NIFTI_TYPE_INT32:
@@ -66,7 +76,10 @@ export default function modalityScaleNifti(
       if (hasFloatRescale) {
         scalarData = allocateScalarData('Float32Array', niiBuffer);
       } else {
-        scalarData = allocateScalarData('Int8Array', niiBuffer);
+        scalarData = allocateScalarData(
+          fitScaledRange('Int8Array', niiBuffer, slope, inter),
+          niiBuffer
+        );
       }
       break;
     case NIFTICONSTANTS.NIFTI_TYPE_UINT16:
@@ -74,8 +87,10 @@ export default function modalityScaleNifti(
       if (hasFloatRescale || hasNegativeRescale) {
         scalarData = allocateScalarData('Float32Array', niiBuffer);
       } else {
-        pixelRepresentation = 0;
-        scalarData = allocateScalarData('Uint16Array', niiBuffer);
+        scalarData = allocateScalarData(
+          fitScaledRange('Uint16Array', niiBuffer, slope, inter),
+          niiBuffer
+        );
       }
       break;
     case NIFTICONSTANTS.NIFTI_TYPE_UINT32:
@@ -92,16 +107,64 @@ export default function modalityScaleNifti(
       );
   }
   const nVox = scalarData.length;
-  if (slope !== 1 && inter !== 0) {
+  if (slope !== 1 || inter !== 0) {
     for (let i = 0; i < nVox; i++) {
       scalarData[i] = intensityRaw2Scaled(scalarData[i], slope, inter);
     }
   }
   niftiHeader.numBitsPerVoxel = (scalarData.byteLength / scalarData.length) * 8;
+  // Unsigned arrays only hold non-negative values (fitScaledRange checks the
+  // scaled range), so they are the unsigned pixel representation.
+  const pixelRepresentation =
+    scalarData instanceof Uint8Array || scalarData instanceof Uint16Array
+      ? 0
+      : 1;
   return {
     scalarData,
     pixelRepresentation,
   };
+}
+
+/**
+ * Value range of the array that allocateScalarData creates for each integer
+ * type. allocateScalarData allocates an Int16Array for 'Int8Array'.
+ */
+const INTEGER_TYPE_RANGES: Partial<
+  Record<Types.PixelDataTypedArrayString, [number, number]>
+> = {
+  Uint8Array: [0, 255],
+  Int8Array: [-32768, 32767],
+  Int16Array: [-32768, 32767],
+  Uint16Array: [0, 65535],
+};
+
+/**
+ * Returns the integer array type when the scaled values of the data fit in
+ * it, otherwise 'Float32Array', so that scaling does not wrap the values.
+ */
+function fitScaledRange(
+  type: Types.PixelDataTypedArrayString,
+  niiBuffer: Types.PixelDataTypedArray,
+  slope: number,
+  inter: number
+): Types.PixelDataTypedArrayString {
+  const range = INTEGER_TYPE_RANGES[type];
+  if (!range || (slope === 1 && inter === 0) || !niiBuffer.length) {
+    return type;
+  }
+  let min = niiBuffer[0];
+  let max = niiBuffer[0];
+  for (let i = 1; i < niiBuffer.length; i++) {
+    const value = niiBuffer[i];
+    if (value < min) {
+      min = value;
+    } else if (value > max) {
+      max = value;
+    }
+  }
+  const scaledMin = Math.min(min * slope + inter, max * slope + inter);
+  const scaledMax = Math.max(min * slope + inter, max * slope + inter);
+  return scaledMin < range[0] || scaledMax > range[1] ? 'Float32Array' : type;
 }
 
 function intensityRaw2Scaled(
