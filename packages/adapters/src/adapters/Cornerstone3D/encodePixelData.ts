@@ -1,9 +1,8 @@
-import { constants } from '@dcmjs-org/dcmjs';
+import { EXPLICIT_LITTLE_ENDIAN } from '@dcmjs-org/core';
 
 // dcmjs has no named constant for RLE Lossless, so keep it declared here.
 const RLE_LOSSLESS_TRANSFER_SYNTAX_UID = '1.2.840.10008.1.2.5';
-const EXPLICIT_VR_LITTLE_ENDIAN_TRANSFER_SYNTAX_UID =
-  constants.EXPLICIT_LITTLE_ENDIAN;
+const EXPLICIT_VR_LITTLE_ENDIAN_TRANSFER_SYNTAX_UID = EXPLICIT_LITTLE_ENDIAN;
 
 function getTransferSyntaxUid(multiframe: Record<string, unknown>): string {
   const meta = multiframe._meta as

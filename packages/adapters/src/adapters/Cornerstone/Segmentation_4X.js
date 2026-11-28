@@ -1,10 +1,11 @@
 import {
-  log,
   data as dcmjsData,
   utilities,
   normalizers,
   derivations,
 } from '@dcmjs-org/dcmjs';
+import { log, DicomMetaDictionary } from '@dcmjs-org/core';
+import { DicomMessage } from '@dcmjs-org/legacy';
 import ndarray from 'ndarray';
 import { vec3 } from 'gl-matrix';
 import getDatasetsFromImages from '../helpers/getDatasetsFromImages';
@@ -31,7 +32,7 @@ const cs3dLogger = cornerstoneUtilities.logger.adaptersLog.getLogger(
   'Cornerstone.Segmentation_4X'
 );
 
-const { BitArray, DicomMessage, DicomMetaDictionary } = dcmjsData;
+const { BitArray } = dcmjsData;
 
 const { Normalizer } = normalizers;
 const { Segmentation: SegmentationDerivation } = derivations;

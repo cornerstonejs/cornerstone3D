@@ -11,7 +11,8 @@ import {
   init as dicomImageLoaderInit,
   wadouri,
 } from '@cornerstonejs/dicom-image-loader';
-import * as dcmjs from '@dcmjs-org/dcmjs';
+import { DicomMetaDictionary } from '@dcmjs-org/core';
+import { DicomMessage } from '@dcmjs-org/legacy';
 import { createImageHash } from '../../../utils/test/pixel-data-hash';
 import { WADOURI_TEST as CtBigEndian_1_2_840_1008_1_2_2 } from '../../dicomImageLoader/testImages/CTImage.dcm_BigEndianExplicitTransferSyntax_1.2.840.10008.1.2.2';
 import { WADOURI_TEST as CtJpeg2000Lossless_1_2_840_10008_1_2_4_90 } from '../../dicomImageLoader/testImages/CTImage.dcm_JPEG2000LosslessOnlyTransferSyntax_1.2.840.10008.1.2.4.90';
@@ -402,10 +403,8 @@ describe('dicomImageLoader - WADO-URI', () => {
         await fetch(wadorsUrl.replace('wadouri:', ''))
       ).arrayBuffer();
       // Load it using dcmjs
-      const dicomDataset = dcmjs.data.DicomMessage.readFile(data);
-      const dataset = dcmjs.data.DicomMetaDictionary.naturalizeDataset(
-        dicomDataset.dict
-      );
+      const dicomDataset = DicomMessage.readFile(data);
+      const dataset = DicomMetaDictionary.naturalizeDataset(dicomDataset.dict);
       // Modify the dataset to
       // SharedFunctionalGroupsSequence[0].PlanePositionSequence to be empty
       dataset.SharedFunctionalGroupsSequence = [
@@ -422,7 +421,7 @@ describe('dicomImageLoader - WADO-URI', () => {
 
       // Denaturalize the dataset back to dicom format
       const modifiedDicomData =
-        dcmjs.data.DicomMetaDictionary.denaturalizeDataset(dataset);
+        DicomMetaDictionary.denaturalizeDataset(dataset);
       dicomDataset.dict = modifiedDicomData;
 
       // Write the modified dicom dataset back to a byte array

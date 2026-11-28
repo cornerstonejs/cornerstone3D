@@ -1,5 +1,5 @@
 import * as metaData from '../metaData';
-import dcmjs from '@dcmjs-org/dcmjs';
+import { DicomMetaDictionary } from '@dcmjs-org/core';
 import {
   moduleDefinitions,
   USRegionChild,
@@ -11,8 +11,8 @@ import { logging as cornerstoneLogging } from '@cornerstonejs/utils';
 
 const cs3dLogger = cornerstoneLogging.metadataLog.getLogger('utilities.Tags');
 
-const dicomDictionary = dcmjs.data.DicomMetaDictionary.dictionary;
-const nameMap = dcmjs.data.DicomMetaDictionary.nameMap;
+const dicomDictionary = DicomMetaDictionary.dictionary;
+const nameMap = DicomMetaDictionary.nameMap;
 
 // Re-export custom module name constants for backward compatibility
 export { USRegionChild, CLINICAL_TRIAL, RadiopharmaceuticalInfoModule };

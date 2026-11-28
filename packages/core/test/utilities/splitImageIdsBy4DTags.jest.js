@@ -1,4 +1,4 @@
-import dcmjs from '@dcmjs-org/dcmjs';
+import { DicomMetaDictionary } from '@dcmjs-org/core';
 import splitImageIdsBy4DTags, {
   handleMultiframe4D,
   generateFrameImageId,
@@ -221,7 +221,7 @@ describe('splitImageIdsBy4DTags - Multiframe 4D Functions', () => {
       for (const z of [0, 4]) {
         for (const bValue of ['0', '1000']) {
           const imageId = `wadors:/ge/${z}/${bValue}`;
-          const naturalized = dcmjs.data.DicomMetaDictionary.naturalizeDataset({
+          const naturalized = DicomMetaDictionary.naturalizeDataset({
             '00430010': { vr: 'LO', Value: ['GEMS_PARM_01'] },
             '00431039': { vr: 'IS', Value: [bValue, '8', '0', '0'] },
           });

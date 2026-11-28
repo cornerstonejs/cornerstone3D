@@ -5,7 +5,7 @@ import {
   type Types,
 } from '@cornerstonejs/core';
 import { utilities as metadataUtilities } from '@cornerstonejs/metadata';
-import dcmjs from '@dcmjs-org/dcmjs';
+import { DicomMetaDictionary } from '@dcmjs-org/core';
 
 import {
   metaSRAnnotation,
@@ -13,7 +13,6 @@ import {
 } from '../adapters/Cornerstone3D/constants';
 import { getWriterHeader } from './getWriterHeader';
 
-const { DicomMetaDictionary } = dcmjs.data;
 const { MetadataModules } = Enums;
 const { definedAttributesOf } = metadataUtilities;
 

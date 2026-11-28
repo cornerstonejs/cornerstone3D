@@ -7,13 +7,12 @@ import {
   jest,
 } from '@jest/globals';
 import { utilities } from '@cornerstonejs/core';
-import { data as dcmjsData } from '@dcmjs-org/dcmjs';
+import { DicomMetaDictionary } from '@dcmjs-org/core';
 import { Cornerstone3DSR } from '../src/adapters/Cornerstone3D';
 import MeasurementReport from '../src/adapters/Cornerstone3D/MeasurementReport';
 import { setWorldToImageCoords } from '../src/adapters/helpers';
 
 const { worldToImageCoords: globalWorldToImageCoords } = utilities;
-const { DicomMetaDictionary } = dcmjsData;
 
 const {
   Bidirectional,

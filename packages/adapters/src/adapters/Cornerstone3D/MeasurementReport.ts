@@ -1,9 +1,9 @@
 import {
   normalizers,
-  data,
   utilities as dcmjsUtilities,
   derivations,
 } from '@dcmjs-org/dcmjs';
+import { addAccessors, DicomMetaDictionary } from '@dcmjs-org/core';
 import {
   cache,
   Enums,
@@ -41,15 +41,13 @@ const { MetadataModules } = Enums;
 
 type Annotation = Types.Annotation;
 
-const { TID1500, addAccessors } = dcmjsUtilities;
+const { TID1500 } = dcmjsUtilities;
 
 const { StructuredReport } = derivations;
 
 const { Normalizer } = normalizers;
 
 const { TID1500MeasurementReport, TID1501MeasurementGroup } = TID1500;
-
-const { DicomMetaDictionary } = data;
 
 const FINDING = { CodingSchemeDesignator: 'DCM', CodeValue: '121071' };
 const COMMENT = {

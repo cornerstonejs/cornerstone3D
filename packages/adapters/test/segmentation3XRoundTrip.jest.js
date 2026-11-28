@@ -1,13 +1,12 @@
 import { describe, it, expect } from '@jest/globals';
-import { data as dcmjsData } from '@dcmjs-org/dcmjs';
+import { DicomMetaDictionary } from '@dcmjs-org/core';
+import { DicomDict, DicomMessage } from '@dcmjs-org/legacy';
 import Segmentation_3X from '../src/adapters/Cornerstone/Segmentation_3X';
 import {
   makeReferencedStack,
   buildLabelmap3D,
   BINARY_SEG_SOP_CLASS_UID,
 } from './helpers/segRoundTrip';
-
-const { DicomDict, DicomMessage, DicomMetaDictionary } = dcmjsData;
 
 // prettier-ignore
 const SHAPE = [

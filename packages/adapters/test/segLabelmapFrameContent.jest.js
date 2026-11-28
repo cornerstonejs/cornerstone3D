@@ -1,5 +1,6 @@
 import { describe, it, expect } from '@jest/globals';
-import { data as dcmjsData } from '@dcmjs-org/dcmjs';
+import { DicomMetaDictionary } from '@dcmjs-org/core';
+import { DicomMessage } from '@dcmjs-org/legacy';
 
 const {
   generateSegmentation,
@@ -12,8 +13,6 @@ const {
   datasetToPart10Buffer,
   firstItem,
 } = require('./helpers/segRoundTrip');
-
-const { DicomMessage, DicomMetaDictionary } = dcmjsData;
 
 const SLICE_COUNT = 12;
 const IMAGE_POSITION_PATIENT_TAG = 0x00200032;

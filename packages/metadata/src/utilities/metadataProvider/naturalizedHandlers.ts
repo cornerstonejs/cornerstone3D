@@ -1,10 +1,8 @@
-import dcmjs from '@dcmjs-org/dcmjs';
+import { AsyncDicomReader } from '@dcmjs-org/legacy';
 import { MetadataModules } from '../../enums';
 import { addAddProvider, addTypedProvider } from '../../metaData';
 import { MetaDataIterator, NaturalTagListener } from '../dicomStream';
 import { baseImageIdQueryFilter } from './imageIdsProviders';
-
-const { AsyncDicomReader } = dcmjs.async;
 
 const NATURAL_BASE_IMAGE_ID_FILTER_PRIORITY = 60_000;
 const NATURALIZED_ADD_HANDLER_PRIORITY = 30_000;

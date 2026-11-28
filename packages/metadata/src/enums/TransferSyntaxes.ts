@@ -1,4 +1,9 @@
-import { constants } from '@dcmjs-org/dcmjs';
+import {
+  IMPLICIT_LITTLE_ENDIAN,
+  EXPLICIT_LITTLE_ENDIAN,
+  DEFLATED_EXPLICIT_LITTLE_ENDIAN,
+  EXPLICIT_BIG_ENDIAN,
+} from '@dcmjs-org/core';
 
 /**
  * DICOM Transfer Syntax UIDs, keyed by name.
@@ -8,15 +13,15 @@ import { constants } from '@dcmjs-org/dcmjs';
  * the string UIDs flowing through dcmjs datasets and the metadata providers.
  *
  * UIDs that dcmjs already exposes as named constants are referenced from
- * `dcmjs.constants` rather than re-typing the literal here. dcmjs does not
+ * `@dcmjs-org/core` rather than re-typing the literal here. dcmjs does not
  * export a named constant for RLE Lossless, so it is declared directly.
  */
 export const TransferSyntaxes = {
   // Uncompressed / native
-  IMPLICIT_VR_LITTLE_ENDIAN: constants.IMPLICIT_LITTLE_ENDIAN,
-  EXPLICIT_VR_LITTLE_ENDIAN: constants.EXPLICIT_LITTLE_ENDIAN,
-  DEFLATED_EXPLICIT_VR_LITTLE_ENDIAN: constants.DEFLATED_EXPLICIT_LITTLE_ENDIAN,
-  EXPLICIT_VR_BIG_ENDIAN: constants.EXPLICIT_BIG_ENDIAN,
+  IMPLICIT_VR_LITTLE_ENDIAN: IMPLICIT_LITTLE_ENDIAN,
+  EXPLICIT_VR_LITTLE_ENDIAN: EXPLICIT_LITTLE_ENDIAN,
+  DEFLATED_EXPLICIT_VR_LITTLE_ENDIAN: DEFLATED_EXPLICIT_LITTLE_ENDIAN,
+  EXPLICIT_VR_BIG_ENDIAN: EXPLICIT_BIG_ENDIAN,
 
   // Run Length Encoding
   RLE_LOSSLESS: '1.2.840.10008.1.2.5',

@@ -1,6 +1,7 @@
-import { data as dcmjsData, normalizers } from '@dcmjs-org/dcmjs';
+import { normalizers } from '@dcmjs-org/dcmjs';
+import { DicomMetaDictionary } from '@dcmjs-org/core';
+import { DicomMessage } from '@dcmjs-org/legacy';
 
-const { DicomMessage, DicomMetaDictionary } = dcmjsData;
 const { Normalizer } = normalizers;
 
 /**

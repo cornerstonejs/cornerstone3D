@@ -1,6 +1,8 @@
 import { eventTarget, imageLoader, triggerEvent } from '@cornerstonejs/core';
 import { utilities as cstUtils } from '@cornerstonejs/tools';
-import { data as dcmjsData, normalizers } from '@dcmjs-org/dcmjs';
+import { normalizers } from '@dcmjs-org/dcmjs';
+import { DicomMetaDictionary } from '@dcmjs-org/core';
+import { DicomMessage } from '@dcmjs-org/legacy';
 import ndarray from 'ndarray';
 import checkOrientation from '../../helpers/checkOrientation';
 import {
@@ -27,7 +29,6 @@ const cs3dLogger = cornerstoneUtilities.logger.adaptersLog.getLogger(
   'Cornerstone3D.Segmentation.labelmapImagesFromBuffer'
 );
 
-const { DicomMessage, DicomMetaDictionary } = dcmjsData;
 const { Normalizer } = normalizers;
 const LABELMAP_SEG_SOP_CLASS_UID = '1.2.840.10008.5.1.4.1.1.66.7';
 const BUFFER_SEG_IMAGE_ID = 'cornerstone-adapters-buffer-seg:0';

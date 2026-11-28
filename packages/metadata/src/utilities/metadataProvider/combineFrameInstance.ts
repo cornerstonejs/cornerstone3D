@@ -1,11 +1,9 @@
-import dcmjs from '@dcmjs-org/dcmjs';
+import { frameDataset } from '@dcmjs-org/core';
 import { vec3 } from 'gl-matrix';
 import { dicomSplit } from './dicomSplit';
 import { addTypedProvider, getMetaData } from '../../metaData';
 import { MetadataModules } from '../../enums';
 import { isEqual } from '../isEqual';
-
-const { frameDataset } = dcmjs.data;
 
 /** The position of `origin` moved `distance` along the normal of `orientation`. */
 function alongNormal(origin, orientation, distance) {
@@ -109,7 +107,7 @@ const frameOptions = { frameAttributes, frameProperties, privateMacros: true };
 
 /**
  * The view of one frame of a multi-frame naturalized instance, from
- * `dcmjs.data.frameDataset`: per-frame functional groups, then shared
+ * `frameDataset` of `@dcmjs-org/core`: per-frame functional groups, then shared
  * functional groups, then the root, plus the modality fallbacks of
  * `frameAttributes`. A private sequence directly in a functional group item
  * (for example Philips `00211001`) is merged too (`privateMacros: true`). The

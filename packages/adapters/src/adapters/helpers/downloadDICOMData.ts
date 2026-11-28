@@ -1,5 +1,4 @@
-import { data } from '@dcmjs-org/dcmjs';
-const { datasetToBlob } = data;
+import { datasetToBlob } from '@dcmjs-org/legacy';
 
 interface DicomDataset {
   _meta?: unknown;

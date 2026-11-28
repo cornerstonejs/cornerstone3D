@@ -1,10 +1,10 @@
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
-import dcmjs from '@dcmjs-org/dcmjs';
+import { DicomMetaDictionary } from '@dcmjs-org/core';
+import { DicomDict, DicomMessage } from '@dcmjs-org/legacy';
 import { metaData } from '@cornerstonejs/core';
 import { Cornerstone3DSR } from '../src/adapters/Cornerstone3D';
 
 const { KeyImage, Probe, MeasurementReport } = Cornerstone3DSR;
-const { DicomMessage, DicomMetaDictionary } = dcmjs.data;
 
 const IMAGE_ID = 'wadors:/studies/1/series/2/instances/3/frames/1';
 const SOP_INSTANCE_UID = '1.2.826.0.1.3680043.8.498.3';
@@ -78,7 +78,7 @@ function roundTrip(annotation) {
     TransferSyntaxUID: '1.2.840.10008.1.2.1',
     ImplementationClassUID: '1.2.3.4',
   };
-  const dicomDict = new dcmjs.data.DicomDict(
+  const dicomDict = new DicomDict(
     DicomMetaDictionary.denaturalizeDataset(meta)
   );
   dicomDict.dict = DicomMetaDictionary.denaturalizeDataset(dataset);

@@ -6,10 +6,9 @@
  *
  * Not a test file — jest only collects test/**\/*.jest.js.
  */
-const { data: dcmjsData } = require('@dcmjs-org/dcmjs');
+const { DicomMetaDictionary } = require('@dcmjs-org/core');
+const { DicomDict } = require('@dcmjs-org/legacy');
 const { vec3 } = require('gl-matrix');
-
-const { DicomMetaDictionary, DicomDict } = dcmjsData;
 
 const CT_SOP_CLASS_UID = '1.2.840.10008.5.1.4.1.1.2';
 const LABELMAP_SEG_SOP_CLASS_UID = '1.2.840.10008.5.1.4.1.1.66.7';

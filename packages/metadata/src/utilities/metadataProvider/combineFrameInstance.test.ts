@@ -1,7 +1,7 @@
-import dcmjs from '@dcmjs-org/dcmjs';
+import { DicomMetaDictionary } from '@dcmjs-org/core';
 import { combineFrameInstance } from './combineFrameInstance';
 
-const { naturalizeDataset } = dcmjs.data.DicomMetaDictionary;
+const { naturalizeDataset } = DicomMetaDictionary;
 
 // The API must do this: the modality fallbacks that dcmjs frameDataset does not
 // compute (NM detector position, RTDOSE GridFrameOffsetVector).

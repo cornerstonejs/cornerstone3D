@@ -87,7 +87,7 @@
     "loglevel": "^1.9.2"
   },
   "devDependencies": {
-    "@dcmjs-org/dcmjs": "1.0.0",
+    "@dcmjs-org/core": "1.0.2",
     "loglevel": "1.9.2"
   },
   "contributors": [

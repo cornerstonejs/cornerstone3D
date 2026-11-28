@@ -8,7 +8,6 @@ const pkg = JSON.parse(readFileSync('package.json', { encoding: 'utf8' }));
 
 /** Declared dependencies + Babel runtime (babelHelpers: "runtime"); keep out of dist/esm/node_modules. */
 const EXTERNAL_IDS = new Set([
-  '@dcmjs-org/dcmjs',
   'gl-matrix',
   'ndarray',
   '@cornerstonejs/tools',
@@ -20,7 +19,9 @@ const EXTERNAL_IDS = new Set([
 
 function isExternal(id) {
   if (EXTERNAL_IDS.has(id)) return true;
-  // Subpath imports, for example `@dcmjs-org/dcmjs/eventStream`
+  // dcmjs 1.0: @dcmjs-org/core, @dcmjs-org/legacy and @dcmjs-org/dcmjs (with subpaths)
+  if (id.startsWith('@dcmjs-org/')) return true;
+  // Subpath imports of the other externals
   for (const external of EXTERNAL_IDS) {
     if (id.startsWith(`${external}/`)) return true;
   }

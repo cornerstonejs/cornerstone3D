@@ -1,8 +1,6 @@
 import { describe, it, expect } from '@jest/globals';
-import { data as dcmjsData } from '@dcmjs-org/dcmjs';
+import { DicomMetaDictionary } from '@dcmjs-org/core';
 import { getSegmentIndex } from '../src/adapters/Cornerstone/Segmentation_4X';
-
-const { DicomMetaDictionary } = dcmjsData;
 
 /**
  * dcmjs 1.0 naturalizes a one-item sequence as the item object (not an array)

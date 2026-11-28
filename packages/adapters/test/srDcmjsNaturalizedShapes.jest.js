@@ -1,11 +1,9 @@
 import { describe, it, expect } from '@jest/globals';
-import { data as dcmjsData } from '@dcmjs-org/dcmjs';
+import { DicomMetaDictionary } from '@dcmjs-org/core';
 import { metaData } from '@cornerstonejs/core';
 import MeasurementReport from '../src/adapters/Cornerstone3D/MeasurementReport';
 import BaseAdapter3D from '../src/adapters/Cornerstone3D/BaseAdapter3D';
 import { RectangleROI } from '../src/adapters/Cornerstone3D/RectangleROI';
-
-const { DicomMetaDictionary } = dcmjsData;
 
 /**
  * dcmjs 1.0 naturalizes a one-item sequence as the item object (not an array)

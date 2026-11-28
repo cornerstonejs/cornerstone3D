@@ -1,5 +1,5 @@
 import { describe, it, expect } from '@jest/globals';
-import { utilities } from '@dcmjs-org/dcmjs';
+import { addAccessors } from '@dcmjs-org/core';
 import {
   extractAllNUMGroups,
   restoreAdditionalMetrics,
@@ -12,8 +12,6 @@ import {
   UCUM_SQUARE_MILLIMETER,
   UCUM_SUV_BODY_WEIGHT,
 } from '../src/adapters/Cornerstone3D/unitMapper';
-
-const { addAccessors } = utilities;
 
 const sopInstanceUID = '1.2.3.4';
 
