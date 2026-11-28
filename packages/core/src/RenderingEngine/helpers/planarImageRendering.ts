@@ -236,20 +236,64 @@ export function applyPlanarImageAppearance(args: {
     );
   }
 
-  if (!voiRange) {
+  if (voiRange) {
+    const transferFunction = createPlanarRGBTransferFunction({
+      colormap: props?.colormap,
+      invert: props?.invert ?? defaultInvert,
+      voiRange,
+      voiLUTFunction: props?.voiLUTFunction ?? defaultVOILUTFunction,
+    });
+
+    property.setUseLookupTableScalarRange(true);
+    property.setRGBTransferFunction(0, transferFunction);
+    applyPlanarOpacityRamp(actor, props?.colormap);
+  }
+
+  ensureFullOpacityFunction(actor);
+}
+
+/** The opacity function of 1 of each actor (`ensureFullOpacityFunction`). */
+const fullOpacityFunctions = new WeakMap<vtkImageSlice, vtkPiecewiseFunction>();
+
+/**
+ * An opacity function of 1 for every value. vtk.js keeps one opacity
+ * texture per opacity function and makes a new one at every build of a
+ * property that has none, so each new image or slice of a layer with no
+ * opacity ramp made a texture. The table of this function is 1 everywhere,
+ * as the texture that vtk.js makes for no function is, so the pixels are the
+ * same.
+ */
+function createFullOpacityFunction(): vtkPiecewiseFunction {
+  const opacityFunction = vtkPiecewiseFunction.newInstance();
+
+  opacityFunction.addPoint(0, 1);
+  opacityFunction.addPoint(1, 1);
+
+  return opacityFunction;
+}
+
+/**
+ * Gives an actor whose property has no opacity function the opacity function
+ * of 1 of that actor (`createFullOpacityFunction`), made once per actor, so
+ * that vtk.js keeps one opacity texture for the actor and does not make one
+ * at each new image or slice. An opacity function that the property has, the
+ * ramp of a colormap or the style of a labelmap, stays.
+ */
+export function ensureFullOpacityFunction(actor: vtkImageSlice): void {
+  const property = actor.getProperty();
+
+  if (property.getScalarOpacity(0)) {
     return;
   }
 
-  const transferFunction = createPlanarRGBTransferFunction({
-    colormap: props?.colormap,
-    invert: props?.invert ?? defaultInvert,
-    voiRange,
-    voiLUTFunction: props?.voiLUTFunction ?? defaultVOILUTFunction,
-  });
+  let opacityFunction = fullOpacityFunctions.get(actor);
 
-  property.setUseLookupTableScalarRange(true);
-  property.setRGBTransferFunction(0, transferFunction);
-  applyPlanarOpacityRamp(actor, props?.colormap);
+  if (!opacityFunction) {
+    opacityFunction = createFullOpacityFunction();
+    fullOpacityFunctions.set(actor, opacityFunction);
+  }
+
+  property.setScalarOpacity(0, opacityFunction);
 }
 
 /** The actors whose opacity function `applyPlanarOpacityRamp` set. */

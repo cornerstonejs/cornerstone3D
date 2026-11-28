@@ -1,6 +1,5 @@
 import vtkDataArray from '@kitware/vtk.js/Common/Core/DataArray';
 import vtkImageData from '@kitware/vtk.js/Common/DataModel/ImageData';
-import vtkPiecewiseFunction from '@kitware/vtk.js/Common/DataModel/PiecewiseFunction';
 import vtkPlane from '@kitware/vtk.js/Common/DataModel/Plane';
 import vtkImageMapper from '@kitware/vtk.js/Rendering/Core/ImageMapper';
 import vtkImageSlice from '@kitware/vtk.js/Rendering/Core/ImageSlice';
@@ -13,6 +12,7 @@ import type {
 import type { PlanarCpuSlice, PlanarSliceClipPlane } from './planarCpuSlice';
 import { applyPlanarICameraToActor } from './planarRenderCamera';
 import { applyPlanarVolumeAppearance } from './planarVolumeAppearance';
+import { ensureFullOpacityFunction } from '../../helpers/planarImageRendering';
 import { updateVolumeSliceActorDepthOffset } from './VtkGpuVolumeSliceRenderPath';
 import { requestImageTextureRows } from '../../vtkClasses/vtkStreamingOpenGLImageMapper';
 
@@ -32,22 +32,6 @@ function setScalarRange(
   if (Number.isFinite(slice.min) && Number.isFinite(slice.max)) {
     scalars.setRange({ min: slice.min, max: slice.max }, 0);
   }
-}
-
-/**
- * An opacity function of 1 for every value. vtk.js keeps one opacity
- * texture per opacity function and makes a new one at every build of a
- * property that has none, so each new slice of a layer with no opacity ramp
- * made a texture. The table of this function is 1 everywhere, as the
- * texture that vtk.js makes for no function is, so the pixels are the same.
- */
-function createFullOpacityFunction(): vtkPiecewiseFunction {
-  const opacityFunction = vtkPiecewiseFunction.newInstance();
-
-  opacityFunction.addPoint(0, 1);
-  opacityFunction.addPoint(1, 1);
-
-  return opacityFunction;
 }
 
 /** The typed array of the voxels of a volume (`getConstructor`). */
@@ -144,7 +128,6 @@ export class PlanarCpuSliceActor {
   private slice?: PlanarCpuSlice;
   private drewSlice = false;
   private appearanceVisible = true;
-  private readonly fullOpacity = createFullOpacityFunction();
 
   constructor(options: { voxelManager?: unknown; viewportId?: string } = {}) {
     const VoxelArrayType = getVoxelArrayType(options.voxelManager);
@@ -274,7 +257,7 @@ export class PlanarCpuSliceActor {
    * Applies the appearance (VOI, colormap with its opacity table, invert,
    * opacity, visibility, interpolation) with the appearance function of the
    * volume path. A layer with no opacity ramp gets an opacity function of 1
-   * (`createFullOpacityFunction`), so that vtk.js keeps its opacity texture.
+   * (`ensureFullOpacityFunction`), so that vtk.js keeps its opacity texture.
    */
   applyAppearance(
     props: PlanarDisplaySetAppearance | undefined,
@@ -287,9 +270,7 @@ export class PlanarCpuSliceActor {
       props,
     });
 
-    if (!this.actor.getProperty().getScalarOpacity(0)) {
-      this.actor.getProperty().setScalarOpacity(0, this.fullOpacity);
-    }
+    ensureFullOpacityFunction(this.actor);
 
     this.appearanceVisible = props?.visible !== false;
     this.updateVisibility();

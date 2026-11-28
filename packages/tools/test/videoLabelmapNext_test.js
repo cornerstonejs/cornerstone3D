@@ -863,3 +863,275 @@ describe('A labelmap over a direct next video viewport -- ', () => {
     expect(segmentAt(INSIDE_FRAME_6[1])).toBeFalsy();
   }, 30000);
 });
+
+/** The frame whose labelmap image is labelled whole, segment 1. */
+const WHOLE_FRAME_BLOCK = {
+  frame: 9,
+  label: 1,
+  x: [0, TEST_VIDEO.width],
+  y: [0, TEST_VIDEO.height],
+};
+
+/**
+ * The panes whose CSS size times the device pixel ratio is not a whole
+ * number, with the CSS size they take for a resize (as in
+ * `engineFirstFrame_test.js`, row 297).
+ */
+const FRACTIONAL_PANES = [
+  { size: [333.3, 250.7], devicePixelRatio: 1.25, resized: [350.6, 241.4] },
+  { size: [401.5, 300.5], devicePixelRatio: 1.5, resized: [400.6, 300.4] },
+];
+
+/**
+ * The panes of a whole number of device pixels, with what the labelmap layer
+ * held there before row 365: the columns and the rows from the first to the
+ * last pixel that shows a label, and the number of such pixels, for the
+ * block of frame 6 and for the frame labelled whole.
+ */
+const WHOLE_PANES = [
+  {
+    size: [320, 200],
+    devicePixelRatio: 1,
+    expected: {
+      block: { columns: [60, 142], rows: [67, 166], count: 8300 },
+      whole: { columns: [27, 292], rows: [0, 199], count: 53200 },
+    },
+  },
+  {
+    size: [320, 200],
+    devicePixelRatio: 1.5,
+    expected: {
+      block: { columns: [90, 214], rows: [100, 249], count: 18750 },
+      whole: { columns: [40, 439], rows: [0, 299], count: 120000 },
+    },
+  },
+];
+
+/**
+ * The size in device pixels of the box of an element by the rule of every
+ * canvas of a pane (`getDevicePixelSize`, rows 210, 263, 297).
+ */
+function devicePixelSizeOf(element) {
+  const { width, height } = element.getBoundingClientRect();
+  const ratio = window.devicePixelRatio || 1;
+
+  return [Math.round(width * ratio), Math.round(height * ratio)];
+}
+
+/**
+ * The columns and the rows, from the first to the last, of the pixels of the
+ * labelmap layer that show a label, and the number of those pixels.
+ */
+function labelledExtentOf(canvas) {
+  const { data } = canvas
+    .getContext('2d')
+    .getImageData(0, 0, canvas.width, canvas.height);
+  const columns = [Infinity, -1];
+  const rows = [Infinity, -1];
+  let count = 0;
+
+  for (let row = 0; row < canvas.height; row++) {
+    for (let column = 0; column < canvas.width; column++) {
+      if (data[(row * canvas.width + column) * 4 + 3] > 0) {
+        columns[0] = Math.min(columns[0], column);
+        columns[1] = Math.max(columns[1], column);
+        rows[0] = Math.min(rows[0], row);
+        rows[1] = Math.max(rows[1], row);
+        count++;
+      }
+    }
+  }
+
+  return { columns, rows, count };
+}
+
+/**
+ * The columns and the rows of the labelmap layer whose pixel centres are on
+ * a block of video pixels where the video shows it: the layer is stretched
+ * over the CSS box of the element, so a CSS point of the video is at
+ * `layer.width / box.width` layer pixels per CSS pixel across and
+ * `layer.height / box.height` down.
+ */
+function videoExtentOnLayer(next, canvas, { x, y }) {
+  const box = next.element.getBoundingClientRect();
+  const scaleX = canvas.width / box.width;
+  const scaleY = canvas.height / box.height;
+  const [left, top] = next.worldToCanvas([x[0], y[0], 0]);
+  const [right, bottom] = next.worldToCanvas([x[1], y[1], 0]);
+  const first = (edge, size) =>
+    Math.min(size - 1, Math.max(0, Math.ceil(edge - 0.5)));
+  const last = (edge, size) =>
+    Math.min(size - 1, Math.max(0, Math.ceil(edge - 0.5) - 1));
+
+  return {
+    columns: [
+      first(left * scaleX, canvas.width),
+      last(right * scaleX, canvas.width),
+    ],
+    rows: [
+      first(top * scaleY, canvas.height),
+      last(bottom * scaleY, canvas.height),
+    ],
+  };
+}
+
+describe('The labelmap layer of a direct next video viewport, by the size of the pane -- ', () => {
+  let renderingEngine;
+  let videoUrl;
+  let restoreDevicePixelRatio;
+
+  afterEach(function () {
+    testUtils.cleanupTestEnvironment({
+      renderingEngineId,
+      toolGroupIds: [toolGroupId],
+    });
+    URL.revokeObjectURL(videoUrl);
+    restoreDevicePixelRatio?.();
+    restoreDevicePixelRatio = undefined;
+  });
+
+  /** Sets the device pixel ratio of the window until the test ends. */
+  function setDevicePixelRatio(ratio) {
+    const own = Object.getOwnPropertyDescriptor(window, 'devicePixelRatio');
+
+    Object.defineProperty(window, 'devicePixelRatio', {
+      configurable: true,
+      get: () => ratio,
+    });
+    restoreDevicePixelRatio = () => {
+      if (own) {
+        Object.defineProperty(window, 'devicePixelRatio', own);
+      } else {
+        delete window.devicePixelRatio;
+      }
+    };
+  }
+
+  /**
+   * Makes a video viewport of a CSS size at a device pixel ratio, with the
+   * labelmap of the other tests and frame 9 labelled whole, on frame 6.
+   */
+  async function createPane({ size, devicePixelRatio }) {
+    const setup = testUtils.setupTestEnvironment({
+      renderingEngineId,
+      toolGroupIds: [toolGroupId],
+      tools: [BrushTool],
+    });
+
+    setDevicePixelRatio(devicePixelRatio);
+    renderingEngine = setup.renderingEngine;
+    videoUrl = addTestVideoMetadata();
+
+    const element = testUtils.createViewports(renderingEngine, {
+      width: size[0],
+      height: size[1],
+      useEnableElement: true,
+      orientation: null,
+      viewportId: 'paneVideo',
+      viewportType: ViewportType.VIDEO,
+    });
+
+    setup.toolGroups[toolGroupId].addViewport('paneVideo', renderingEngineId);
+
+    const next = renderingEngine.getViewport('paneVideo');
+
+    await next.setDisplaySets({ displaySetId: TEST_VIDEO.imageId });
+    await goToFrame(next, FRAME_6_BLOCK.frame);
+
+    const { images } = await addVideoLabelmap(next);
+
+    fillBlock(images[WHOLE_FRAME_BLOCK.frame - 1], WHOLE_FRAME_BLOCK);
+    await waitForLayerColor(next, INSIDE_FRAME_6[0], fillColorOf(next, 1));
+
+    return { element, next };
+  }
+
+  /** The labelled extent of the layer on a frame, once it shows its label. */
+  async function extentOnFrame(next, block, point) {
+    await goToFrame(next, block.frame);
+    await waitForLayerColor(next, point, fillColorOf(next, block.label));
+
+    const canvas = labelmapLayer(next);
+
+    return {
+      actual: labelledExtentOf(canvas),
+      expected: videoExtentOnLayer(next, canvas, block),
+    };
+  }
+
+  FRACTIONAL_PANES.forEach((pane) => {
+    const { size, devicePixelRatio, resized } = pane;
+    const name = `${size[0]} by ${size[1]} CSS pixels at ${devicePixelRatio} device pixels each`;
+
+    it(`sizes the layer by the device pixel size of the element, at the first draw and after a resize, for a pane of ${name}`, async function () {
+      const { element, next } = await createPane(pane);
+      const first = labelmapLayer(next);
+      const firstRule = devicePixelSizeOf(element);
+
+      expect([first.width, first.height])
+        .withContext('the layer at the first draw')
+        .toEqual(firstRule);
+
+      element.style.width = `${resized[0]}px`;
+      element.style.height = `${resized[1]}px`;
+      renderingEngine.resize(true, true);
+      await animationFrames(6);
+
+      const resizedRule = devicePixelSizeOf(element);
+
+      expect(resizedRule).not.toEqual(firstRule);
+      expect([labelmapLayer(next).width, labelmapLayer(next).height])
+        .withContext('the layer after a resize')
+        .toEqual(resizedRule);
+    }, 30000);
+
+    it(`draws the labelmap on the layer pixels that cover its video pixels, for a pane of ${name}`, async function () {
+      const { next } = await createPane(pane);
+      const whole = await extentOnFrame(next, WHOLE_FRAME_BLOCK, [32, 24]);
+
+      expect(whole.actual.columns)
+        .withContext('columns of the frame labelled whole')
+        .toEqual(whole.expected.columns);
+      expect(whole.actual.rows)
+        .withContext('rows of the frame labelled whole')
+        .toEqual(whole.expected.rows);
+
+      const block = await extentOnFrame(next, FRAME_6_BLOCK, INSIDE_FRAME_6[0]);
+
+      expect(block.actual.columns)
+        .withContext('columns of the block of frame 6')
+        .toEqual(block.expected.columns);
+      expect(block.actual.rows)
+        .withContext('rows of the block of frame 6')
+        .toEqual(block.expected.rows);
+    }, 30000);
+  });
+
+  WHOLE_PANES.forEach((pane) => {
+    const { size, devicePixelRatio, expected } = pane;
+
+    it(`draws the labelmap on the same layer pixels as before, for a pane of ${size[0]} by ${size[1]} CSS pixels at ${devicePixelRatio} device pixels each`, async function () {
+      const { element, next } = await createPane(pane);
+
+      expect([labelmapLayer(next).width, labelmapLayer(next).height]).toEqual(
+        devicePixelSizeOf(element)
+      );
+
+      const block = await extentOnFrame(next, FRAME_6_BLOCK, INSIDE_FRAME_6[0]);
+
+      expect(block.actual)
+        .withContext('block of frame 6')
+        .toEqual(expected.block);
+      expect(block.actual.columns).toEqual(block.expected.columns);
+      expect(block.actual.rows).toEqual(block.expected.rows);
+
+      const whole = await extentOnFrame(next, WHOLE_FRAME_BLOCK, [32, 24]);
+
+      expect(whole.actual)
+        .withContext('frame labelled whole')
+        .toEqual(expected.whole);
+      expect(whole.actual.columns).toEqual(whole.expected.columns);
+      expect(whole.actual.rows).toEqual(whole.expected.rows);
+    }, 30000);
+  });
+});

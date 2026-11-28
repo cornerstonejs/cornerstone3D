@@ -3324,6 +3324,35 @@ levels of 255.
   and covered the SVG layer, so an annotation, a contour segmentation and the
   brush cursor did not show over a video (measured: a contour drawn on the
   `videoContourSegmentation` example changed no pixel on the screen).
+- **The layer of the labelmaps has the size of the canvas of a pane.** The
+  canvas over the video on which a video viewport draws its labelmaps (the
+  canvas after the video elements) takes the size that the rendering
+  engines give the canvas of a pane, at its first draw and at each resize:
+  the CSS size of the box of the element (`getBoundingClientRect()`) times
+  the device pixel ratio, rounded. A CSS pixel of the view is drawn on it as
+  the width of the layer over the width of the box across and as its height
+  over the height of the box down, so a labelmap lands on the pixels of the
+  video on the screen. 6.0.0-beta.2 sized the layer by `clientWidth` and
+  `clientHeight`, which are rounded CSS sizes, and scaled both axes by its
+  width over `clientWidth`: on a pane whose CSS size times the ratio is not
+  a whole number the layer was a device pixel off the box that it covers
+  and the labelmap was stretched by up to a pixel. A pane of 333.3 by 250.7
+  CSS pixels at a ratio of 1.25 had a layer 416 pixels wide where the canvas
+  of the pane is 417; on a pane of 401.5 by 300.5 at 1.5 a labelmap that
+  covers the whole frame reached one row of the layer below the video. On a
+  pane of a whole number of device pixels the layer and its pixels are the
+  same. 5.x had no such layer. Code that reads the layer reads its size from
+  it:
+
+  ```ts
+  // Before: the size of the layer, which could be a pixel off the box
+  const width = Math.round(element.clientWidth * window.devicePixelRatio);
+
+  // After: the size of the layer
+  const layer = element.querySelector('video + canvas');
+  const { width, height } = layer;
+  ```
+
 - **`getImageIds()` gives the same array** while the video stays the same, as
   a planar viewport gives the same array for its stack. With a new array on
   each call, a reference check of each labelmap image worked out the ids of
@@ -3996,6 +4025,32 @@ as it did in 5.x. The 5.x guard of a next viewport is gone: every viewport
 is one, see [Functions of the core package](./3-api-map.md#functions-of-the-core-package).
 
 ## Smaller changes
+
+- **A stack layer with no opacity ramp has an opacity function of 1.** On
+  the GPU backend the vtk.js actor of a stack whose appearance has no
+  opacity ramp (`colormap.opacityMapping` or `colormap.threshold`) has an
+  opacity function of 1 for every value, one for each actor
+  (`actor.getProperty().getScalarOpacity(0)`, the points `[0, 1, 1, 1]`),
+  where the stack viewport of 5.x and 6.0.0-beta.2 gave none. vtk.js keeps
+  one opacity texture per opacity function, and made a new one, a table of
+  1,024 values, at every new image of a layer with none, without deleting
+  the one before; a scroll through a stack now makes no opacity texture.
+  The pixels are the same: vtk.js draws a layer with no function with a
+  table of 1. An opacity ramp of a colormap and the opacity function of a
+  labelmap stay as they are. Code that reads the function of the actor gets
+  that function in place of none, and
+  `utilities.colormap.findMatchingColormap` of such an actor gives
+  `opacityMapping` with the two points of 1 beside the name, where it gave
+  the name alone. Read a ramp from the appearance:
+
+  ```ts
+  // Before: a layer without an opacity ramp had no opacity function
+  const hasRamp = !!actor.getProperty().getScalarOpacity(0);
+
+  // After: the ramp is in the appearance of the display set
+  const { colormap } = viewport.getDisplaySetAppearance(displaySetId) ?? {};
+  const hasRamp = !!(colormap?.opacityMapping?.length || colormap?.threshold);
+  ```
 
 - **`cache.setPartialImage` keeps the better image.** It never replaces the
   image of a cache entry by one of a worse `ImageQualityStatus` (an image

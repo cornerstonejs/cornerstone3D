@@ -28,6 +28,7 @@ import {
 import FrameRange from '../../../utilities/FrameRange';
 import VoxelManager from '../../../utilities/VoxelManager';
 import getOrCreateCanvas from '../../helpers/getOrCreateCanvas';
+import getDevicePixelSize from '../../helpers/getDevicePixelSize';
 import { generateFrameImageId } from '../../../utilities/splitImageIdsBy4DTags';
 import imageIdToURI from '../../../utilities/imageIdToURI';
 import { DefaultVideoDataProvider } from './DefaultVideoDataProvider';
@@ -1565,8 +1566,12 @@ class VideoViewport extends BaseViewport<
    * each visible actor through the transform from the pixels of the video to
    * the pixels of the layer, which the view gives (`worldToCanvas`), as the
    * planar viewport draws a labelmap on its CPU canvas. The layer is made on
-   * the first draw with an actor, sized to the element in device pixels, and
-   * kept just above the video element. Its context is made with
+   * the first draw with an actor, sized to the element in device pixels by
+   * the rule of every canvas of a pane (`getDevicePixelSize`), and kept just
+   * above the video element. CSS stretches the layer over the box of the
+   * element, so a CSS pixel of the view is `layer.width / box.width` layer
+   * pixels across and `layer.height / box.height` down, the box being the
+   * `getBoundingClientRect()` of the element. Its context is made with
    * `willReadFrequently`: labelmaps that overlap are composed by reading the
    * layer back on each draw (`composeCanvasLabelmapLayer`), as on the CPU
    * canvas of a planar viewport.
@@ -1578,15 +1583,9 @@ class VideoViewport extends BaseViewport<
 
     const layer = this.getOverlayLayer(videoElement);
     const context = layer.getContext('2d', { willReadFrequently: true });
-    const devicePixelRatio = window.devicePixelRatio || 1;
-    const width = Math.max(
-      1,
-      Math.round(this.element.clientWidth * devicePixelRatio)
-    );
-    const height = Math.max(
-      1,
-      Math.round(this.element.clientHeight * devicePixelRatio)
-    );
+    const devicePixelSize = getDevicePixelSize(this.element);
+    const width = Math.max(1, devicePixelSize.width);
+    const height = Math.max(1, devicePixelSize.height);
 
     if (layer.width !== width || layer.height !== height) {
       layer.width = width;
@@ -1603,18 +1602,20 @@ class VideoViewport extends BaseViewport<
       return;
     }
 
-    const scale = width / Math.max(this.element.clientWidth, 1);
+    const box = this.element.getBoundingClientRect();
+    const scaleX = width / Math.max(box.width, 1);
+    const scaleY = height / Math.max(box.height, 1);
     const origin = resolvedView.worldToCanvas([0, 0, 0]);
     const column = resolvedView.worldToCanvas([1, 0, 0]);
     const row = resolvedView.worldToCanvas([0, 1, 0]);
 
     context.setTransform(
-      (column[0] - origin[0]) * scale,
-      (column[1] - origin[1]) * scale,
-      (row[0] - origin[0]) * scale,
-      (row[1] - origin[1]) * scale,
-      origin[0] * scale,
-      origin[1] * scale
+      (column[0] - origin[0]) * scaleX,
+      (column[1] - origin[1]) * scaleY,
+      (row[0] - origin[0]) * scaleX,
+      (row[1] - origin[1]) * scaleY,
+      origin[0] * scaleX,
+      origin[1] * scaleY
     );
 
     for (const { actor } of this.overlayActors) {
