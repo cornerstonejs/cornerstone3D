@@ -2748,6 +2748,14 @@ levels of 255.
   an overlay. The window of a slide (`voiRange`, `averageWhite`) is drawn on
   that slide, also on an overlay: in 6.0.0-beta.2 only the window of the
   last slide was drawn.
+- **A whole slide viewport is made for one slide.** A second slide mounts
+  (`addDisplaySet`, or two entries of `setDisplaySets`), but 6.0 does not
+  support it for interaction. The microscopy viewer keeps its own mouse wheel
+  zoom, pinch zoom and rotation and shift drag zoom on each slide, and they
+  move the slide on top alone. The viewport reads its view from the source,
+  so it does not see such a move, and the next `setViewState` (a tool, a
+  synchronizer, a reset) takes the slide on top back to the view of the
+  source. Show one slide per viewport.
 
 ## ECG viewports
 
@@ -3579,6 +3587,11 @@ levels of 255.
   - The contours of a segment that lie in the plane of the viewport are drawn
     as they are and not cut, so a pane never draws a cut over them. A 3D
     viewport is not cut.
+  - Only a contour set is cut: a segmentation whose Contour representation
+    has geometry (`geometryIds`, such as an RTSTRUCT). Contours drawn with
+    the contour segmentation tools (freehand, spline, livewire) are
+    annotations only; they show on the plane they were drawn on and on no
+    other plane, as in 5.x.
   - A segment that cannot be converted (contours on planes that are not
     parallel, no closed contour of three points or more, a conversion that
     fails or gives no surface) gets no cut and one warning on the logger
