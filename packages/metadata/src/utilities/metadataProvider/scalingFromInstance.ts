@@ -9,6 +9,7 @@
 import { addTypedProvider } from '../../metaData';
 import type { TypedProvider } from '../../metaData';
 import { MetadataModules } from '../../enums';
+import { asMultiValueArray } from '@cornerstonejs/utils';
 import { calculateSUVScalingFactors } from '@cornerstonejs/calculate-suv';
 import type { InstanceMetadata } from '@cornerstonejs/calculate-suv';
 
@@ -126,15 +127,8 @@ function buildPTInstanceMetadataFromData(
         ? timeToString(v as Parameters<typeof timeToString>[0])
         : (v as string);
 
-  const correctedImageValue =
-    typeof correctedImage === 'string'
-      ? correctedImage.split('\\')
-      : Array.isArray(correctedImage)
-        ? correctedImage
-        : correctedImage;
-
   const instanceMetadata: InstanceMetadata = {
-    CorrectedImage: correctedImageValue as string | string[],
+    CorrectedImage: asMultiValueArray(correctedImage as string | string[]),
     Units: units as string,
     RadionuclideHalfLife: radionuclideHalfLife,
     RadionuclideTotalDose: radionuclideTotalDose,

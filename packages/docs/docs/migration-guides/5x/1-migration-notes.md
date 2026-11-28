@@ -1060,6 +1060,96 @@ gives that map for one layer.
 - If you export SEG from a multi-layer labelmap, set `labelToSegmentIndex` on
   each `labelmap3D` instead of a remap of the voxel values in your own code.
 
+## dcmjs 1.0 (`@dcmjs-org/dcmjs`)
+
+### What Changed
+
+`@cornerstonejs/adapters`, `@cornerstonejs/metadata` and `@cornerstonejs/utils`
+now depend on dcmjs 1.1.0 instead of `dcmjs` 0.52.0. They import the dcmjs
+sub-packages directly: `@dcmjs-org/core` and `@dcmjs-org/legacy`. The adapters
+also import `@dcmjs-org/dcmjs` for the SR, SEG and normalizer code, because no
+sub-package exports that code.
+`@cornerstonejs/ai` no longer depends on dcmjs, because it did not use it.
+The default export of dcmjs 1.0 has the 0.52 names, but the naturalized
+datasets have new shapes (see the dcmjs `docs/MIGRATION.md`, section
+"Naturalization"):
+
+- A sequence with one item is the item object, not an array. The item has a
+  hidden `[0]` (the item), a `length` of 1 and an iterator. `Array.isArray`,
+  `map`, `forEach`, `filter` and `push` do not work on it.
+- The dictionary VM sets the shape of a value. A VM 1 value is a scalar (`null`
+  when it is empty). A VM 1-n value is a list, also for one value, for example
+  `ImageType`, `WindowCenter`, `ReferencedSegmentNumber` and
+  `ReferencedFrameNumber`.
+- A PN value is an object, for example `{ Alphabetic: 'Doe^John' }`.
+  `String(value)` gives `'Doe^John'`.
+
+These shapes reach your code through the adapters:
+
+- The segment items in `segMetadata.data` (from `getSegmentMetadata`) have the
+  new shapes when the adapter reads the Part 10 buffer itself
+  (`createLabelmapsFromDICOMBuffer`, `createFromDICOMSegBuffer`). When the SEG
+  comes from a metadata provider (`createFromDicomSegImageId`), the items have
+  the shapes of the code that naturalized the SEG.
+- `finding` and `findingSites[i]` of the SR `generateToolState` results come
+  from the dcmjs `addAccessors`. In 1.0 each one is the code item object, not a
+  Proxy array. The same applies to the one-item sequences of the SR writer
+  objects (`dcmjs.utilities.TID300`), for example `ConceptCodeSequence`. Read
+  them with `toArray` or `asArray`.
+- The `ReferencedFrameNumber` of the SR measurement data (`MeasurementReport`
+  in `Cornerstone3D`) now has the type `number | string`, not `string`, because
+  dcmjs 1.0 gives a number.
+- `DicomMetaDictionary.uid()` makes the UIDs of new SEG, SR and RTSTRUCT
+  instances, and the `annotationUID` of the annotations that the SR reader
+  makes, from a random UUID (`2.25.<integer>`). The integer has 39 digits or
+  fewer. In 0.52 it always had 39 digits.
+- `@cornerstonejs/utils` takes `loglevel` (`^1.9.2`) as a peer dependency,
+  and no longer depends on dcmjs. The Cornerstone loggers, the application
+  and `@dcmjs-org/dcmjs` share the log root of that one `loglevel` copy.
+- A zero-length string element now naturalizes as empty: `[]` for a list VM
+  and `null` for VM 1. Before 1.0.0-beta.9 the reader gave `['']`.
+- `combineFrameInstance` of `@cornerstonejs/metadata` now uses the dcmjs
+  `frameDataset`. The frame view is cached on the instance, and the function
+  no longer changes the instance (`ImageType`, `ImageOrientationPatient`,
+  `_parentInstance`). `frameNumber` is a non-enumerable property of the view.
+  An enhanced instance with one frame now gets a frame view. A frame with no
+  position gets `[0, 0, frameNumber]`, also for a plain multi-frame image. A
+  missing or `0` frame number is frame 1. A frame number above
+  `NumberOfFrames`, or one that is not an integer, throws a `RangeError`. The export
+  `createCombinedValue` is removed.
+
+### Why This Matters
+
+- Code that tests `Array.isArray(finding)`, or that calls `map` or `forEach` on a
+  sequence with one item, now gets a different result or a `TypeError`.
+- A spread, `structuredClone` or `JSON.stringify` of an item object does not
+  keep the hidden `[0]` and `length`.
+- An application that also loads `dcmjs` 0.x has two copies of dcmjs. Each copy
+  has its own `registerTag()` entries. dcmjs 0.x bundles its own copy of
+  `loglevel`, so the `log` of the 0.x copy does not control the Cornerstone
+  loggers.
+
+### Migration Guidance
+
+- Read a code item as `item.CodeValue` or `item[0].CodeValue`. Both work with
+  0.52 and with 1.0.
+- Use `asArray` or `asArrayFirst` from `@cornerstonejs/utils` when a value can
+  be a scalar or a list.
+- Use `asMultiValueArray` from `@cornerstonejs/utils` for a multi-valued
+  attribute such as `ImageType` or `CorrectedImage`: it splits a
+  backslash-joined value (`['DECY\\ATTN\\SCAT']` in 1.0, a string in 0.52) and
+  gives `[]` for a missing value, where `asArray(undefined)` gives `[undefined]`.
+- Read a private tag with `getPrivateTagValue(dataset, group, creator, element)`
+  from `@cornerstonejs/utils`, not by its 8-digit hex key. dcmjs 1.0 puts a
+  private element in a block (`dataset['7053:Philips PET Private Group'].x09`),
+  and the hex key is a hidden alias that a spread or JSON loses. The reader also
+  reads the hex-key form. A display set rule declaration takes `creator` for the
+  same read: `{ "attribute": "00431039", "creator": "GEMS_PARM_01" }`.
+- Move the application to dcmjs 1.1.0 (`dcmjs` or `@dcmjs-org/dcmjs`) in the same
+  release, so that one copy of `@dcmjs-org/core` sets the log levels and the
+  shapes.
+- Do not rely on a fixed length of the generated UIDs.
+
 ## Adapters name the writer in SR, SEG and RTSTRUCT
 
 ### What Changed

@@ -1,4 +1,4 @@
-import { utilities } from 'dcmjs';
+import { utilities } from '@dcmjs-org/dcmjs';
 import MeasurementReport from './MeasurementReport';
 import BaseAdapter3D from './BaseAdapter3D';
 import { toScoords } from '../helpers';

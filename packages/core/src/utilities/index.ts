@@ -156,7 +156,8 @@ export * from './getPixelSpacingInformation';
 export * from './getPlaneCubeIntersectionDimensions';
 export * from './rotateToViewCoordinates';
 export * as voxelSlab from './voxelSlab';
-import { asArray, asArrayFirst } from './asArray';
+import { asArray, asArrayFirst, asMultiValueArray } from './asArray';
+import { findPrivateTag, getPrivateTagValue } from './privateTag';
 import {
   viewportSupportsImageSlices,
   viewportSupportsStackCalibration,
@@ -311,6 +312,9 @@ export {
   mapMappedBandToRawRange,
   asArray,
   asArrayFirst,
+  asMultiValueArray,
+  findPrivateTag,
+  getPrivateTagValue,
   viewportSupportsImageSlices,
   viewportSupportsStackCalibration,
   viewportSupportsStackCompatibility,

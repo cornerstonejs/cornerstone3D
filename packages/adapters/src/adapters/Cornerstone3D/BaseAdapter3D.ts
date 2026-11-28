@@ -4,7 +4,7 @@ import MeasurementReport, {
   type AdapterOptions,
   type MeasurementAdapter,
 } from './MeasurementReport';
-import { toScoords } from '../helpers';
+import { toArray, toScoords } from '../helpers';
 
 export type Point = {
   x: number;
@@ -60,7 +60,7 @@ export default class BaseAdapter3D {
   }
 
   public static getGraphicItems(measurementGroup, filter) {
-    const items = measurementGroup.ContentSequence.filter(
+    const items = toArray(measurementGroup.ContentSequence).filter(
       (group) => group.ValueType === 'SCOORD' || group.ValueType === 'SCOORD3D'
     );
     return filter ? items.filter(filter) : items;

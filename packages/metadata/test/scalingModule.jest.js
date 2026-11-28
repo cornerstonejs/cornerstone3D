@@ -96,6 +96,31 @@ describe('scalingModule typed provider', () => {
       expect(result).toHaveProperty('suvbw');
     });
 
+    it('applies SUV scaling when dcmjs 1.0 gives CorrectedImage as a one-item backslash-joined list', () => {
+      setCacheData(MetadataModules.NATURALIZED, PT_BASE_IMAGE_ID, {
+        Modality: 'PT',
+        SeriesDate: '20200101',
+        SeriesTime: '120000',
+        AcquisitionDate: '20200101',
+        AcquisitionTime: '120000',
+        PatientWeight: 70,
+        CorrectedImage: ['DECY\\ATTN\\SCAT'],
+        Units: 'BQML',
+        DecayCorrection: 'ADMIN',
+        RadiopharmaceuticalInfo: [
+          {
+            RadionuclideTotalDose: 400000000,
+            RadionuclideHalfLife: 6588,
+            RadiopharmaceuticalStartDateTime: '20200101100000.000000',
+          },
+        ],
+      });
+
+      const result = getMetaData(MetadataModules.SCALING, PT_IMAGE_ID);
+
+      expect(result?.suvbw).toBeGreaterThan(0);
+    });
+
     it('returns undefined when modality is not PT or RTDOSE', () => {
       setCacheData(MetadataModules.NATURALIZED, 'ct-image-id', {
         Modality: 'CT',

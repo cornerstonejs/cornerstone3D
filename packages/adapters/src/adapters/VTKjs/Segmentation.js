@@ -1,4 +1,6 @@
-import { data } from 'dcmjs';
+import { data } from '@dcmjs-org/dcmjs';
+import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
+import { toArray } from '../helpers';
 
 const { Colors, BitArray } = data;
 
@@ -177,12 +179,16 @@ export default class Segmentation {
     });
 
     // make a list of functional groups per segment
-    dataset.PerFrameFunctionalGroupsSequence.forEach((functionalGroup) => {
-      const segmentNumber =
-        functionalGroup.SegmentIdentificationSequence.ReferencedSegmentNumber;
+    toArray(dataset.PerFrameFunctionalGroupsSequence).forEach(
+      (functionalGroup) => {
+        // VM 1-n: dcmjs 1.0 naturalizes it as a list, also for one value.
+        const segmentNumber = cornerstoneUtilities.asArrayFirst(
+          functionalGroup.SegmentIdentificationSequence.ReferencedSegmentNumber
+        );
 
-      segments[segmentNumber].functionalGroups.push(functionalGroup);
-    });
+        segments[segmentNumber].functionalGroups.push(functionalGroup);
+      }
+    );
 
     // determine per-segment index into the pixel data
     // TODO: only handles one-bit-per pixel

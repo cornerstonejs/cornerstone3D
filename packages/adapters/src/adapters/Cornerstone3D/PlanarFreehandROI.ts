@@ -1,5 +1,5 @@
 import MeasurementReport from './MeasurementReport';
-import { utilities } from 'dcmjs';
+import { utilities } from '@dcmjs-org/dcmjs';
 import { vec3 } from 'gl-matrix';
 import BaseAdapter3D from './BaseAdapter3D';
 import { extractAllNUMGroups, restoreAdditionalMetrics } from './metricHandler';

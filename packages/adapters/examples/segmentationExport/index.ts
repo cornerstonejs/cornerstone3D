@@ -16,7 +16,7 @@ import {
 } from '../../../../utils/demo/helpers';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import { adaptersSEG, helpers } from '@cornerstonejs/adapters';
-import dcmjs from 'dcmjs';
+import dcmjs from '@dcmjs-org/dcmjs';
 
 const { downloadDICOMData } = helpers;
 

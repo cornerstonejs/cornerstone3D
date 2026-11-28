@@ -1,9 +1,7 @@
-import dcmjs from 'dcmjs';
+import { DicomMetadataListener } from '@dcmjs-org/core';
 import { makeArrayLike } from '../metadataProvider/makeArrayLike';
 import { dictionaryLookup, mapTagInfo, parseVm } from '../Tags';
 import type { IListenerInfo } from '../../types';
-
-const { DicomMetadataListener } = dcmjs.utilities;
 
 export type ListenerContext = {
   natural?: { name: string; singleVm: boolean | null; tag: string };

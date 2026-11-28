@@ -1,4 +1,5 @@
 import { mapUnitFromUCUM } from './unitMapper';
+import { toArray } from '../helpers';
 
 const INTENSITY_METRICS = new Set([
   'Mean',
@@ -51,7 +52,7 @@ export function extractAllNUMGroups(
   const numGroupsBySOPInstanceUID = {};
 
   if (MeasurementGroup.ContentSequence) {
-    MeasurementGroup.ContentSequence.forEach((item) => {
+    toArray(MeasurementGroup.ContentSequence).forEach((item) => {
       if (item.ValueType === 'NUM' && item.ConceptNameCodeSequence) {
         const codeMeaning = item.ConceptNameCodeSequence.CodeMeaning;
         const numericValue = item.MeasuredValueSequence?.NumericValue;

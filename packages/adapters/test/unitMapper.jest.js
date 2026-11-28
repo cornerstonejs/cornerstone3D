@@ -1,5 +1,6 @@
 import { afterEach, describe, it, expect, jest } from '@jest/globals';
-import { log, utilities } from 'dcmjs';
+import { utilities } from '@dcmjs-org/dcmjs';
+import { log } from '@dcmjs-org/core';
 import { Cornerstone3DSR } from '../src/adapters/Cornerstone3D';
 import {
   DISPLAY_HOUNSFIELD_UNIT,

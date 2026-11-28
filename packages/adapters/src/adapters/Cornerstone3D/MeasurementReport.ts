@@ -1,9 +1,9 @@
 import {
   normalizers,
-  data,
   utilities as dcmjsUtilities,
   derivations,
-} from 'dcmjs';
+} from '@dcmjs-org/dcmjs';
+import { addAccessors, DicomMetaDictionary } from '@dcmjs-org/core';
 import {
   cache,
   Enums,
@@ -41,15 +41,13 @@ const { MetadataModules } = Enums;
 
 type Annotation = Types.Annotation;
 
-const { TID1500, addAccessors } = dcmjsUtilities;
+const { TID1500 } = dcmjsUtilities;
 
 const { StructuredReport } = derivations;
 
 const { Normalizer } = normalizers;
 
 const { TID1500MeasurementReport, TID1501MeasurementGroup } = TID1500;
-
-const { DicomMetaDictionary } = data;
 
 const FINDING = { CodingSchemeDesignator: 'DCM', CodeValue: '121071' };
 const COMMENT = {
@@ -104,7 +102,7 @@ type SetupMeasurementData = {
   ReferencedSOPInstanceUID?: string;
   referencedImageId?: string;
   textBoxPosition?: ScoordType;
-  ReferencedFrameNumber?: string;
+  ReferencedFrameNumber?: number | string;
   SCOORD3DGroup?: ScoordType;
   FrameOfReferenceUID?: string;
   statsTargetId?: string;
@@ -338,8 +336,12 @@ export default class MeasurementReport {
     metadata,
   }) {
     const { ReferencedSOPSequence } = SCOORDGroup.ContentSequence;
-    const { ReferencedSOPInstanceUID, ReferencedFrameNumber = 1 } =
-      ReferencedSOPSequence;
+    const { ReferencedSOPInstanceUID } = ReferencedSOPSequence;
+    // VM 1-n: dcmjs 1.0 naturalizes it as a list, also for one value.
+    const ReferencedFrameNumber =
+      cornerstoneUtilities.asArrayFirst(
+        ReferencedSOPSequence.ReferencedFrameNumber
+      ) ?? 1;
 
     const referencedImageId =
       sopInstanceUIDToImageIdMap[

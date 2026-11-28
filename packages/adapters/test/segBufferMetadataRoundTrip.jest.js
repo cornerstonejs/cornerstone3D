@@ -1,5 +1,6 @@
 import { describe, it, expect, jest, beforeAll } from '@jest/globals';
-import { data as dcmjsData } from 'dcmjs';
+import { DicomMetaDictionary } from '@dcmjs-org/core';
+import { DicomDict } from '@dcmjs-org/legacy';
 
 // Only the derived-labelmap image factory needs stubbing — the referenced
 // images are not really loaded in this unit test. Everything else (decode,
@@ -46,8 +47,6 @@ const SEG_SERIES_INSTANCE_UID = '1.2.3.4.2';
  * parse path inside createFromDICOMSegBuffer.
  */
 function buildSegPart10Buffer() {
-  const { DicomMetaDictionary, DicomDict } = dcmjsData;
-
   const frame = new Uint8Array([1, 0, 0, 1]);
 
   const dataset = {

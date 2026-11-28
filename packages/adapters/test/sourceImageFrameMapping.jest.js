@@ -76,4 +76,17 @@ describe('buildSopUIDImageIdIndexMap + source-image frame mapping', () => {
     expect(resolveFrame(referencedImageIds, 2)).toBe(referencedImageIds[1]);
     expect(resolveFrame(referencedImageIds, 3)).toBe(referencedImageIds[2]);
   });
+
+  it('adds no frame suffix for an empty ReferencedFrameNumber, and reads a list', () => {
+    const base = 'wadors:https://x/studies/1/series/2/instances/3';
+    const map = { [SOP]: base };
+    const resolve = (ReferencedFrameNumber) =>
+      getImageIdOfSourceImageBySourceImageSequence(
+        { ReferencedSOPInstanceUID: SOP, ReferencedFrameNumber },
+        map
+      );
+
+    expect(resolve([])).toBe(base);
+    expect(resolve([2])).toBe(`${base}/frames/2`);
+  });
 });

@@ -1,4 +1,6 @@
-import { log, data as dcmjsData, normalizers } from 'dcmjs';
+import { normalizers } from '@dcmjs-org/dcmjs';
+import { log, DicomMetaDictionary } from '@dcmjs-org/core';
+import { DicomMessage } from '@dcmjs-org/legacy';
 import checkOrientation from '../helpers/checkOrientation';
 import { utilities } from '@cornerstonejs/core';
 import { utilities as cornerstoneUtilities } from '@cornerstonejs/core';
@@ -7,7 +9,6 @@ const cs3dLogger = cornerstoneUtilities.logger.adaptersLog.getLogger(
   'Cornerstone.ParametricMap'
 );
 
-const { DicomMessage, DicomMetaDictionary } = dcmjsData;
 const { Normalizer } = normalizers;
 
 async function generateToolState(
@@ -291,8 +292,10 @@ function getImageIdOfSourceImageBySourceImageSequence(
   SourceImageSequence,
   sopUIDImageIdIndexMap
 ) {
-  const { ReferencedSOPInstanceUID, ReferencedFrameNumber } =
-    SourceImageSequence;
+  const { ReferencedSOPInstanceUID } = SourceImageSequence;
+  const ReferencedFrameNumber = utilities.asArrayFirst(
+    SourceImageSequence.ReferencedFrameNumber
+  );
 
   return ReferencedFrameNumber
     ? getImageIdOfReferencedFrame(

@@ -1,4 +1,5 @@
-import { normalizers, derivations, data as dcmjsData } from 'dcmjs';
+import { normalizers, derivations } from '@dcmjs-org/dcmjs';
+import { DicomMetaDictionary } from '@dcmjs-org/core';
 import { Enums } from '@cornerstonejs/core';
 import {
   fillSegmentation as fillBitmapSegmentation,
@@ -616,7 +617,7 @@ function fillLabelmapSegmentation(
 
   const dimensionOrganizationUID =
     toArray(dataset.DimensionOrganizationSequence)[0]
-      ?.DimensionOrganizationUID ?? dcmjsData.DicomMetaDictionary.uid();
+      ?.DimensionOrganizationUID ?? DicomMetaDictionary.uid();
   dataset.DimensionOrganizationSequence = {
     DimensionOrganizationUID: dimensionOrganizationUID,
   };

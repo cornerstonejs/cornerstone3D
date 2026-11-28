@@ -22,7 +22,10 @@ export function getScalingMode(
   ) {
     return 'RTDOSE';
   }
-  if (typeof rescaleSlope === 'number' && typeof rescaleIntercept === 'number') {
+  if (
+    typeof rescaleSlope === 'number' &&
+    typeof rescaleIntercept === 'number'
+  ) {
     return 'RESCALE';
   }
   return 'NONE';

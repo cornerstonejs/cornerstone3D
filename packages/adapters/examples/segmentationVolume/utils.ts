@@ -2,7 +2,7 @@ import * as cornerstone from '@cornerstonejs/core';
 import * as cornerstoneTools from '@cornerstonejs/tools';
 import * as cornerstoneDicomImageLoader from '@cornerstonejs/dicom-image-loader';
 import * as cornerstoneAdapters from '@cornerstonejs/adapters';
-import dcmjs from 'dcmjs';
+import dcmjs from '@dcmjs-org/dcmjs';
 
 const { cache, imageLoader, metaData } = cornerstone;
 const { segmentation: csToolsSegmentation } = cornerstoneTools;

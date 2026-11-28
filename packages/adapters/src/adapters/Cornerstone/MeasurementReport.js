@@ -1,4 +1,5 @@
-import { normalizers, data, utilities, derivations } from 'dcmjs';
+import { normalizers, utilities, derivations } from '@dcmjs-org/dcmjs';
+import { DicomMetaDictionary } from '@dcmjs-org/core';
 
 import { toArray, codeMeaningEquals } from '../helpers';
 import { getWriterHeader } from '../../utilities/getWriterHeader';
@@ -15,8 +16,6 @@ const { StructuredReport } = derivations;
 const { Normalizer } = normalizers;
 
 const { TID1500MeasurementReport, TID1501MeasurementGroup } = TID1500;
-
-const { DicomMetaDictionary } = data;
 
 const FINDING = { CodingSchemeDesignator: 'DCM', CodeValue: '121071' };
 const FINDING_SITE = { CodingSchemeDesignator: 'SCT', CodeValue: '363698007' };
@@ -95,7 +94,8 @@ export default class MeasurementReport {
 
     const defaultState = {
       sopInstanceUid: ReferencedSOPInstanceUID,
-      frameIndex: ReferencedFrameNumber || 1,
+      // VM 1-n: dcmjs 1.0 naturalizes it as a list, also for one value.
+      frameIndex: cornerstoneUtilities.asArrayFirst(ReferencedFrameNumber) || 1,
       complete: true,
       finding: findingGroup
         ? addAccessors(findingGroup.ConceptCodeSequence)

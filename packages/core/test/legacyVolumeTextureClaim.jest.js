@@ -215,9 +215,9 @@ describe('a legacy viewport follows a change of the GPU settings', () => {
     expect(mapper.getScalarTexture()).toBe(
       volume.getTextureSet('full-resolution/full-extent').members()[0].texture
     );
-    expect(
-      volume.getTextureSet('full-resolution/full-extent').references
-    ).toBe(1);
+    expect(volume.getTextureSet('full-resolution/full-extent').references).toBe(
+      1
+    );
   });
 
   it('keeps the set of an actor that a tool moved to a mapper with no shared texture', async () => {
